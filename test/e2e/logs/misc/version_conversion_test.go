@@ -56,7 +56,7 @@ func TestVersionConversion(t *testing.T) {
 					},
 					Port: "443",
 					URI:  "/",
-					TLSConfig: telemetryv1beta1.OutputTLS{
+					TLS: telemetryv1beta1.OutputTLS{
 						Insecure: true,
 					},
 				},

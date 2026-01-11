@@ -10,7 +10,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
@@ -61,7 +61,7 @@ func MetricPipelineHealthy(t *testing.T, pipelineName string) {
 	t.Helper()
 
 	Eventually(func(g Gomega) {
-		var pipeline telemetryv1alpha1.MetricPipeline
+		var pipeline telemetryv1beta1.MetricPipeline
 
 		key := types.NamespacedName{Name: pipelineName}
 		g.Expect(suite.K8sClient.Get(t.Context(), key, &pipeline)).To(Succeed())
@@ -84,7 +84,7 @@ func MetricPipelineHasCondition(t *testing.T, pipelineName string, expectedCond 
 	t.Helper()
 
 	Eventually(func(g Gomega) {
-		var pipeline telemetryv1alpha1.MetricPipeline
+		var pipeline telemetryv1beta1.MetricPipeline
 
 		key := types.NamespacedName{Name: pipelineName}
 		g.Expect(suite.K8sClient.Get(t.Context(), key, &pipeline)).To(Succeed())
@@ -109,7 +109,7 @@ func MetricPipelineConditionReasonsTransition(t *testing.T, pipelineName, condTy
 	for _, expected := range expected {
 		// Wait for the current condition to match the expected condition
 		Eventually(func(g Gomega) ReasonStatus {
-			var pipeline telemetryv1alpha1.MetricPipeline
+			var pipeline telemetryv1beta1.MetricPipeline
 
 			key := types.NamespacedName{Name: pipelineName}
 			err := suite.K8sClient.Get(t.Context(), key, &pipeline)
@@ -132,7 +132,7 @@ func MetricPipelineSelfMonitorIsHealthy(t *testing.T, k8sClient client.Client, p
 	t.Helper()
 
 	Eventually(func(g Gomega) {
-		var pipeline telemetryv1alpha1.MetricPipeline
+		var pipeline telemetryv1beta1.MetricPipeline
 
 		key := types.NamespacedName{Name: pipelineName}
 		g.Expect(k8sClient.Get(t.Context(), key, &pipeline)).To(Succeed())

@@ -173,7 +173,7 @@ type FluentBitHTTPOutput struct {
 	Format string `json:"format,omitempty"`
 	// TLS configures TLS for the HTTP backend.
 	// +kubebuilder:validation:Optional
-	TLSConfig OutputTLS `json:"tls"`
+	TLS OutputTLS `json:"tls"`
 	// Dedot enables de-dotting of Kubernetes labels and annotations. For compatibility with OpenSearch-based backends, dots (.) are replaced by underscores (_). Default is `false`.
 	// +kubebuilder:validation:Optional
 	Dedot bool `json:"dedot,omitempty"`

@@ -11,7 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
@@ -24,7 +24,7 @@ import (
 )
 
 func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) error {
-	var pipeline telemetryv1alpha1.LogPipeline
+	var pipeline telemetryv1beta1.LogPipeline
 	if err := r.Get(ctx, types.NamespacedName{Name: pipelineName}, &pipeline); err != nil {
 		if apierrors.IsNotFound(err) {
 			logf.FromContext(ctx).V(1).Info("Skipping status update for LogPipeline - not found")
@@ -54,7 +54,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) erro
 	return nil
 }
 
-func (r *Reconciler) updateStatusUnsupportedMode(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error {
+func (r *Reconciler) updateStatusUnsupportedMode(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) error {
 	desiredUnsupportedMode := logpipelineutils.ContainsCustomPlugin(pipeline)
 	if pipeline.Status.UnsupportedMode == nil || *pipeline.Status.UnsupportedMode != desiredUnsupportedMode {
 		pipeline.Status.UnsupportedMode = &desiredUnsupportedMode
@@ -66,7 +66,7 @@ func (r *Reconciler) updateStatusUnsupportedMode(ctx context.Context, pipeline *
 	return nil
 }
 
-func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) {
+func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) {
 	condition := commonstatus.GetAgentHealthyCondition(ctx,
 		r.agentProber,
 		types.NamespacedName{Name: fluentbit.LogAgentName, Namespace: r.globals.TargetNamespace()},
@@ -75,7 +75,7 @@ func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *tel
 	meta.SetStatusCondition(&pipeline.Status.Conditions, *condition)
 }
 
-func (r *Reconciler) setFluentBitConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) {
+func (r *Reconciler) setFluentBitConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) {
 	status, reason, message := r.evaluateConfigGeneratedCondition(ctx, pipeline)
 
 	condition := metav1.Condition{
@@ -89,7 +89,7 @@ func (r *Reconciler) setFluentBitConfigGeneratedCondition(ctx context.Context, p
 	meta.SetStatusCondition(&pipeline.Status.Conditions, condition)
 }
 
-func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) (status metav1.ConditionStatus, reason string, message string) {
+func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) (status metav1.ConditionStatus, reason string, message string) {
 	if r.globals.OperateInFIPSMode() {
 		return metav1.ConditionFalse, conditions.ReasonNoFluentbitInFipsMode, conditions.MessageForFluentBitLogPipeline(conditions.ReasonNoFluentbitInFipsMode)
 	}
@@ -121,7 +121,7 @@ func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipel
 	return conditions.EvaluateTLSCertCondition(err)
 }
 
-func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) {
+func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) {
 	status, reason := r.evaluateFlowHealthCondition(ctx, pipeline)
 
 	condition := metav1.Condition{
@@ -135,7 +135,7 @@ func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telem
 	meta.SetStatusCondition(&pipeline.Status.Conditions, condition)
 }
 
-func (r *Reconciler) evaluateFlowHealthCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) (metav1.ConditionStatus, string) {
+func (r *Reconciler) evaluateFlowHealthCondition(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) (metav1.ConditionStatus, string) {
 	configGeneratedStatus, _, _ := r.evaluateConfigGeneratedCondition(ctx, pipeline)
 	if configGeneratedStatus == metav1.ConditionFalse {
 		return metav1.ConditionFalse, conditions.ReasonSelfMonConfigNotGenerated

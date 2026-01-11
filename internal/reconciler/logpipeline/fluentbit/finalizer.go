@@ -6,7 +6,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
 
 const (
@@ -14,7 +14,7 @@ const (
 	filesFinalizer    = "FLUENT_BIT_FILES"
 )
 
-func ensureFinalizers(ctx context.Context, client client.Client, pipeline *telemetryv1alpha1.LogPipeline) error {
+func ensureFinalizers(ctx context.Context, client client.Client, pipeline *telemetryv1beta1.LogPipeline) error {
 	if !pipeline.DeletionTimestamp.IsZero() {
 		return nil
 	}
@@ -40,7 +40,7 @@ func ensureFinalizers(ctx context.Context, client client.Client, pipeline *telem
 	return client.Update(ctx, pipeline)
 }
 
-func cleanupFinalizersIfNeeded(ctx context.Context, client client.Client, pipeline *telemetryv1alpha1.LogPipeline) error {
+func cleanupFinalizersIfNeeded(ctx context.Context, client client.Client, pipeline *telemetryv1beta1.LogPipeline) error {
 	if pipeline.DeletionTimestamp.IsZero() {
 		return nil
 	}

@@ -222,7 +222,7 @@ var v1beta1LogPipeline = &telemetryv1beta1.LogPipeline{
 				Port:     "8080",
 				Compress: "on",
 				Format:   "json",
-				TLSConfig: telemetryv1beta1.OutputTLS{
+				TLS: telemetryv1beta1.OutputTLS{
 					Insecure:           true,
 					InsecureSkipVerify: true,
 					CA: &telemetryv1beta1.ValueType{

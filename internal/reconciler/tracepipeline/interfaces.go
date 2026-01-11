@@ -6,7 +6,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/tracegateway"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
@@ -19,7 +19,7 @@ import (
 // GatewayConfigBuilder builds OpenTelemetry Collector configuration for the trace gateway from TracePipeline resources.
 type GatewayConfigBuilder interface {
 	// Build constructs the collector configuration and environment variables from the provided pipelines and build options.
-	Build(ctx context.Context, pipelines []telemetryv1alpha1.TracePipeline, opts tracegateway.BuildOptions) (*common.Config, common.EnvVars, error)
+	Build(ctx context.Context, pipelines []telemetryv1beta1.TracePipeline, opts tracegateway.BuildOptions) (*common.Config, common.EnvVars, error)
 }
 
 // GatewayApplierDeleter manages the lifecycle of trace gateway Kubernetes resources.
@@ -72,7 +72,7 @@ type EndpointValidator interface {
 // SecretRefValidator validates secret references in TracePipeline resources.
 type SecretRefValidator interface {
 	// ValidateTracePipeline checks if all secret references in the pipeline exist and are accessible.
-	ValidateTracePipeline(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) error
+	ValidateTracePipeline(ctx context.Context, pipeline *telemetryv1beta1.TracePipeline) error
 }
 
 // TLSCertValidator validates TLS certificate configurations.
@@ -84,11 +84,11 @@ type TLSCertValidator interface {
 // TransformSpecValidator validates transform specifications in pipeline configurations.
 type TransformSpecValidator interface {
 	// Validate checks if the transform specifications are valid.
-	Validate(transforms []telemetryv1alpha1.TransformSpec) error
+	Validate(transforms []telemetryv1beta1.TransformSpec) error
 }
 
 // FilterSpecValidator validates filter specifications in pipeline configurations.
 type FilterSpecValidator interface {
 	// Validate checks if the filter specifications are valid.
-	Validate(filters []telemetryv1alpha1.FilterSpec) error
+	Validate(filters []telemetryv1beta1.FilterSpec) error
 }

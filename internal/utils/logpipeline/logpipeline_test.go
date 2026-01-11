@@ -5,13 +5,13 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
 
 func TestLogPipelineOutput(t *testing.T) {
 	tests := []struct {
 		name           string
-		given          telemetryv1alpha1.LogPipelineOutput
+		given          telemetryv1beta1.LogPipelineOutput
 		expectedCustom bool
 		expectedHTTP   bool
 		expectedLoki   bool
@@ -20,21 +20,21 @@ func TestLogPipelineOutput(t *testing.T) {
 	}{
 		{
 			name:           "custom",
-			given:          telemetryv1alpha1.LogPipelineOutput{FluentBitCustom: "name: null"},
+			given:          telemetryv1beta1.LogPipelineOutput{FluentBitCustom: "name: null"},
 			expectedCustom: true,
 			expectedAny:    true,
 			expectedSingle: true,
 		},
 		{
 			name:           "http",
-			given:          telemetryv1alpha1.LogPipelineOutput{FluentBitHTTP: &telemetryv1alpha1.FluentBitHTTPOutput{Host: telemetryv1alpha1.ValueType{Value: "localhost"}}},
+			given:          telemetryv1beta1.LogPipelineOutput{FluentBitHTTP: &telemetryv1beta1.FluentBitHTTPOutput{Host: telemetryv1beta1.ValueType{Value: "localhost"}}},
 			expectedHTTP:   true,
 			expectedAny:    true,
 			expectedSingle: true,
 		},
 		{
 			name:           "invalid: none defined",
-			given:          telemetryv1alpha1.LogPipelineOutput{},
+			given:          telemetryv1beta1.LogPipelineOutput{},
 			expectedAny:    false,
 			expectedSingle: false,
 		},
@@ -50,9 +50,9 @@ func TestLogPipelineOutput(t *testing.T) {
 }
 
 func TestLogPipelineContainsCustomPluginWithCustomFilter(t *testing.T) {
-	logPipeline := &telemetryv1alpha1.LogPipeline{
-		Spec: telemetryv1alpha1.LogPipelineSpec{
-			FluentBitFilters: []telemetryv1alpha1.FluentBitFilter{
+	logPipeline := &telemetryv1beta1.LogPipeline{
+		Spec: telemetryv1beta1.LogPipelineSpec{
+			FluentBitFilters: []telemetryv1beta1.FluentBitFilter{
 				{Custom: `
     Name    some-filter`,
 				},
@@ -65,9 +65,9 @@ func TestLogPipelineContainsCustomPluginWithCustomFilter(t *testing.T) {
 }
 
 func TestLogPipelineContainsCustomPluginWithCustomOutput(t *testing.T) {
-	logPipeline := &telemetryv1alpha1.LogPipeline{
-		Spec: telemetryv1alpha1.LogPipelineSpec{
-			Output: telemetryv1alpha1.LogPipelineOutput{
+	logPipeline := &telemetryv1beta1.LogPipeline{
+		Spec: telemetryv1beta1.LogPipelineSpec{
+			Output: telemetryv1beta1.LogPipelineOutput{
 				FluentBitCustom: `
     Name    some-output`,
 			},
@@ -79,7 +79,7 @@ func TestLogPipelineContainsCustomPluginWithCustomOutput(t *testing.T) {
 }
 
 func TestLogPipelineContainsCustomPluginWithoutAny(t *testing.T) {
-	logPipeline := &telemetryv1alpha1.LogPipeline{Spec: telemetryv1alpha1.LogPipelineSpec{}}
+	logPipeline := &telemetryv1beta1.LogPipeline{Spec: telemetryv1beta1.LogPipelineSpec{}}
 
 	result := ContainsCustomPlugin(logPipeline)
 	require.False(t, result)

@@ -9,7 +9,7 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -22,7 +22,7 @@ import (
 func TestResources(t *testing.T) {
 	tests := []struct {
 		label     string
-		input     telemetryv1alpha1.MetricPipelineInput
+		input     telemetryv1beta1.MetricPipelineInput
 		resources []assert.Resource
 	}{
 		{

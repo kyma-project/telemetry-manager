@@ -10,7 +10,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
+	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
@@ -60,15 +60,15 @@ func TestTelemetry(t *testing.T) {
 
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
-	assertTelemtryCRExistsAndHasCorrectEndpointsInStatus(logGRPCEndpoint, logHTTPEndpoint, traceGRPCEndpoint, traceHTTPEndpoint, metricGRPCEndpoint, metricHTTPEndpoint)
+	assertTelemetryCRExistsAndHasCorrectEndpointsInStatus(logGRPCEndpoint, logHTTPEndpoint, traceGRPCEndpoint, traceHTTPEndpoint, metricGRPCEndpoint, metricHTTPEndpoint)
 	assertValidatingWebhookConfiguration()
 	assertWebhookCA()
 	assertWebhookSecretReconcilation()
 }
 
-func assertTelemtryCRExistsAndHasCorrectEndpointsInStatus(logGRPCEndpoint string, logHTTPEndpoint string, traceGRPCEndpoint string, traceHTTPEndpoint string, metricGRPCEndpoint string, metricHTTPEndpoint string) bool {
+func assertTelemetryCRExistsAndHasCorrectEndpointsInStatus(logGRPCEndpoint string, logHTTPEndpoint string, traceGRPCEndpoint string, traceHTTPEndpoint string, metricGRPCEndpoint string, metricHTTPEndpoint string) bool {
 	return Eventually(func(g Gomega) {
-		var telemetry operatorv1alpha1.Telemetry
+		var telemetry operatorv1beta1.Telemetry
 		g.Expect(suite.K8sClient.Get(suite.Ctx, kitkyma.TelemetryName, &telemetry)).Should(Succeed())
 
 		g.Expect(telemetry.Status.Endpoints.Logs).ShouldNot(BeNil())
@@ -109,7 +109,7 @@ func TestTelemetryWarning(t *testing.T) {
 
 	// assert for misconfigured trace pipeline we have correct telemetry state and condition
 	Eventually(func(g Gomega) {
-		assert.TelemetryHasState(t, operatorv1alpha1.StateWarning)
+		assert.TelemetryHasState(t, operatorv1beta1.StateWarning)
 		assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
 			Type:   conditions.TypeTraceComponentsHealthy,
 			Status: metav1.ConditionFalse,
@@ -139,7 +139,7 @@ func TestTelemetryDeletionBlocking(t *testing.T) {
 
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
-	var telemetry operatorv1alpha1.Telemetry
+	var telemetry operatorv1beta1.Telemetry
 	Expect(suite.K8sClient.Get(suite.Ctx, kitkyma.TelemetryName, &telemetry)).Should(Succeed())
 	Expect(kitk8s.ForceDeleteObjects(t, &telemetry)).Should(Succeed())
 
@@ -148,7 +148,7 @@ func TestTelemetryDeletionBlocking(t *testing.T) {
 	Expect(kitk8s.DeleteObjects(&logPipeline)).Should(Succeed())
 
 	Eventually(func(g Gomega) {
-		var telemetry operatorv1alpha1.Telemetry
+		var telemetry operatorv1beta1.Telemetry
 		g.Expect(suite.K8sClient.Get(suite.Ctx, kitkyma.TelemetryName, &telemetry)).ShouldNot(Succeed())
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 
@@ -163,12 +163,18 @@ func assertValidatingWebhookConfiguration() {
 		var validatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
 		g.Expect(suite.K8sClient.Get(suite.Ctx, client.ObjectKey{Name: kitkyma.ValidatingWebhookName}, &validatingWebhookConfiguration)).Should(Succeed())
 
-		g.Expect(validatingWebhookConfiguration.Webhooks).Should(HaveLen(3))
+		g.Expect(validatingWebhookConfiguration.Webhooks).Should(HaveLen(6))
 
 		assertWebhook(g,
 			findWebhook(validatingWebhookConfiguration.Webhooks, "validating-logpipelines.kyma-project.io"),
 			"validating-logpipelines.kyma-project.io",
 			"/validate-telemetry-kyma-project-io-v1alpha1-logpipeline",
+			"logpipelines")
+
+		assertWebhook(g,
+			findWebhook(validatingWebhookConfiguration.Webhooks, "validating-logpipelines-v1beta1.kyma-project.io"),
+			"validating-logpipelines-v1beta1.kyma-project.io",
+			"/validate-telemetry-kyma-project-io-v1beta1-logpipeline",
 			"logpipelines")
 
 		assertWebhook(g,
@@ -178,9 +184,21 @@ func assertValidatingWebhookConfiguration() {
 			"metricpipelines")
 
 		assertWebhook(g,
+			findWebhook(validatingWebhookConfiguration.Webhooks, "validating-metricpipelines-v1beta1.kyma-project.io"),
+			"validating-metricpipelines-v1beta1.kyma-project.io",
+			"/validate-telemetry-kyma-project-io-v1beta1-metricpipeline",
+			"metricpipelines")
+
+		assertWebhook(g,
 			findWebhook(validatingWebhookConfiguration.Webhooks, "validating-tracepipelines.kyma-project.io"),
 			"validating-tracepipelines.kyma-project.io",
 			"/validate-telemetry-kyma-project-io-v1alpha1-tracepipeline",
+			"tracepipelines")
+
+		assertWebhook(g,
+			findWebhook(validatingWebhookConfiguration.Webhooks, "validating-tracepipelines-v1beta1.kyma-project.io"),
+			"validating-tracepipelines-v1beta1.kyma-project.io",
+			"/validate-telemetry-kyma-project-io-v1beta1-tracepipeline",
 			"tracepipelines")
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
@@ -213,11 +231,11 @@ func assertWebhookSecretReconcilation() {
 
 func assertTelemetryCRDeletionIsBlocked(logPipelineName string) {
 	Eventually(func(g Gomega) {
-		var telemetry operatorv1alpha1.Telemetry
+		var telemetry operatorv1beta1.Telemetry
 		g.Expect(suite.K8sClient.Get(suite.Ctx, kitkyma.TelemetryName, &telemetry)).Should(Succeed())
 		g.Expect(telemetry.Finalizers).Should(HaveLen(1))
 		g.Expect(telemetry.Finalizers[0]).Should(Equal("telemetry.kyma-project.io/finalizer"))
-		g.Expect(telemetry.Status.State).Should(Equal(operatorv1alpha1.StateWarning))
+		g.Expect(telemetry.Status.State).Should(Equal(operatorv1beta1.StateWarning))
 		expectedConditions := map[string]metav1.Condition{
 			conditions.TypeLogComponentsHealthy: {
 				Status:  "False",

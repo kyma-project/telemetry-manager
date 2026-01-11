@@ -12,8 +12,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
@@ -23,7 +23,7 @@ type ComponentHealthChecker interface {
 	Check(ctx context.Context, telemetryInDeletion bool) (*metav1.Condition, error)
 }
 
-func (r *Reconciler) updateStatus(ctx context.Context, telemetry *operatorv1alpha1.Telemetry) error {
+func (r *Reconciler) updateStatus(ctx context.Context, telemetry *operatorv1beta1.Telemetry) error {
 	telemetryInDeletion := !telemetry.GetDeletionTimestamp().IsZero()
 
 	for _, checker := range r.enabledHealthCheckers() {
@@ -49,7 +49,7 @@ func (r *Reconciler) enabledHealthCheckers() []ComponentHealthChecker {
 	return []ComponentHealthChecker{r.healthCheckers.logs, r.healthCheckers.metrics, r.healthCheckers.traces}
 }
 
-func (r *Reconciler) updateComponentCondition(ctx context.Context, checker ComponentHealthChecker, telemetry *operatorv1alpha1.Telemetry, telemetryInDeletion bool) error {
+func (r *Reconciler) updateComponentCondition(ctx context.Context, checker ComponentHealthChecker, telemetry *operatorv1beta1.Telemetry, telemetryInDeletion bool) error {
 	newCondition, err := checker.Check(ctx, telemetryInDeletion)
 	if err != nil {
 		return fmt.Errorf("unable to check component: %w", err)
@@ -61,14 +61,14 @@ func (r *Reconciler) updateComponentCondition(ctx context.Context, checker Compo
 	return nil
 }
 
-func (r *Reconciler) updateOverallState(ctx context.Context, telemetry *operatorv1alpha1.Telemetry, telemetryInDeletion bool) {
+func (r *Reconciler) updateOverallState(ctx context.Context, telemetry *operatorv1beta1.Telemetry, telemetryInDeletion bool) {
 	if telemetryInDeletion {
 		// If the provided Telemetry CR is being deleted and dependent Telemetry CRs (LogPipeline, MetricPipeline, TracePipeline) are found, the state is set to "Warning" until they are removed from the cluster.
 		// If dependent CRs are not found, the state is set to "Deleting"
 		if r.dependentCRsFound(ctx) {
-			telemetry.Status.State = operatorv1alpha1.StateWarning
+			telemetry.Status.State = operatorv1beta1.StateWarning
 		} else {
-			telemetry.Status.State = operatorv1alpha1.StateDeleting
+			telemetry.Status.State = operatorv1beta1.StateDeleting
 		}
 
 		return
@@ -80,13 +80,13 @@ func (r *Reconciler) updateOverallState(ctx context.Context, telemetry *operator
 	if slices.ContainsFunc(telemetry.Status.Conditions, func(cond metav1.Condition) bool {
 		return cond.Status == metav1.ConditionFalse || cond.Reason == conditions.ReasonTLSCertificateAboutToExpire
 	}) {
-		telemetry.Status.State = operatorv1alpha1.StateWarning
+		telemetry.Status.State = operatorv1beta1.StateWarning
 	} else {
-		telemetry.Status.State = operatorv1alpha1.StateReady
+		telemetry.Status.State = operatorv1beta1.StateReady
 	}
 }
 
-func (r *Reconciler) updateGatewayEndpoints(ctx context.Context, telemetry *operatorv1alpha1.Telemetry) error {
+func (r *Reconciler) updateGatewayEndpoints(ctx context.Context, telemetry *operatorv1beta1.Telemetry) error {
 	logEndpoints, err := r.logEndpoints(ctx, r.config)
 	if err != nil {
 		return fmt.Errorf("failed to get log endpoints: %w", err)
@@ -102,7 +102,7 @@ func (r *Reconciler) updateGatewayEndpoints(ctx context.Context, telemetry *oper
 		return fmt.Errorf("failed to get metric endpoints: %w", err)
 	}
 
-	telemetry.Status.Endpoints = operatorv1alpha1.GatewayEndpoints{
+	telemetry.Status.Endpoints = operatorv1beta1.GatewayEndpoints{
 		Logs:    logEndpoints,
 		Traces:  traceEndpoints,
 		Metrics: metricEndpoints,
@@ -111,7 +111,7 @@ func (r *Reconciler) updateGatewayEndpoints(ctx context.Context, telemetry *oper
 	return nil
 }
 
-func (r *Reconciler) logEndpoints(ctx context.Context, config Config) (*operatorv1alpha1.OTLPEndpoints, error) {
+func (r *Reconciler) logEndpoints(ctx context.Context, config Config) (*operatorv1beta1.OTLPEndpoints, error) {
 	pushEndpoint := types.NamespacedName{
 		Name:      otelcollector.LogOTLPServiceName,
 		Namespace: config.TargetNamespace(),
@@ -130,7 +130,7 @@ func (r *Reconciler) logEndpoints(ctx context.Context, config Config) (*operator
 	return makeOTLPEndpoints(pushEndpoint.Name, pushEndpoint.Namespace), nil
 }
 
-func (r *Reconciler) traceEndpoints(ctx context.Context, config Config) (*operatorv1alpha1.OTLPEndpoints, error) {
+func (r *Reconciler) traceEndpoints(ctx context.Context, config Config) (*operatorv1beta1.OTLPEndpoints, error) {
 	pushEndpoint := types.NamespacedName{
 		Name:      otelcollector.TraceOTLPServiceName,
 		Namespace: config.TargetNamespace(),
@@ -149,7 +149,7 @@ func (r *Reconciler) traceEndpoints(ctx context.Context, config Config) (*operat
 	return makeOTLPEndpoints(pushEndpoint.Name, pushEndpoint.Namespace), nil
 }
 
-func (r *Reconciler) metricEndpoints(ctx context.Context, config Config) (*operatorv1alpha1.OTLPEndpoints, error) {
+func (r *Reconciler) metricEndpoints(ctx context.Context, config Config) (*operatorv1beta1.OTLPEndpoints, error) {
 	pushEndpoint := types.NamespacedName{
 		Name:      otelcollector.MetricOTLPServiceName,
 		Namespace: config.TargetNamespace(),
@@ -184,17 +184,17 @@ func (r *Reconciler) checkServiceExists(ctx context.Context, svcName types.Names
 	return true, nil
 }
 
-func makeOTLPEndpoints(serviceName, namespace string) *operatorv1alpha1.OTLPEndpoints {
-	return &operatorv1alpha1.OTLPEndpoints{
+func makeOTLPEndpoints(serviceName, namespace string) *operatorv1beta1.OTLPEndpoints {
+	return &operatorv1beta1.OTLPEndpoints{
 		HTTP: fmt.Sprintf("http://%s.%s:%d", serviceName, namespace, ports.OTLPHTTP),
 		GRPC: fmt.Sprintf("http://%s.%s:%d", serviceName, namespace, ports.OTLPGRPC),
 	}
 }
 
 func (r *Reconciler) dependentCRsFound(ctx context.Context) bool {
-	return r.resourcesExist(ctx, &telemetryv1alpha1.LogPipelineList{}) ||
-		r.resourcesExist(ctx, &telemetryv1alpha1.MetricPipelineList{}) ||
-		r.resourcesExist(ctx, &telemetryv1alpha1.TracePipelineList{})
+	return r.resourcesExist(ctx, &telemetryv1beta1.LogPipelineList{}) ||
+		r.resourcesExist(ctx, &telemetryv1beta1.MetricPipelineList{}) ||
+		r.resourcesExist(ctx, &telemetryv1beta1.TracePipelineList{})
 }
 
 func (r *Reconciler) resourcesExist(ctx context.Context, list client.ObjectList) bool {

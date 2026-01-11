@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
+	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
 )
 
 func TestInsertClusterAttributesProcessorStatements(t *testing.T) {
@@ -238,8 +238,8 @@ func TestK8sAttributesProcessorConfig(t *testing.T) {
 		},
 	}
 
-	config := K8sAttributesProcessorConfig(&operatorv1alpha1.EnrichmentSpec{
-		ExtractPodLabels: []operatorv1alpha1.PodLabel{
+	config := K8sAttributesProcessorConfig(&operatorv1beta1.EnrichmentSpec{
+		ExtractPodLabels: []operatorv1beta1.PodLabel{
 			{Key: "", KeyPrefix: "app.kubernetes.io/name"},
 			{Key: "app", KeyPrefix: ""},
 		},
@@ -256,20 +256,20 @@ func TestK8sAttributesProcessorConfig(t *testing.T) {
 func TestBuildPodLabelEnrichments(t *testing.T) {
 	tests := []struct {
 		name     string
-		presets  *operatorv1alpha1.EnrichmentSpec
+		presets  *operatorv1beta1.EnrichmentSpec
 		expected []ExtractLabel
 	}{
 		{
 			name: "Enrichments disabled",
-			presets: &operatorv1alpha1.EnrichmentSpec{
-				ExtractPodLabels: []operatorv1alpha1.PodLabel{},
+			presets: &operatorv1beta1.EnrichmentSpec{
+				ExtractPodLabels: []operatorv1beta1.PodLabel{},
 			},
 			expected: []ExtractLabel{},
 		},
 		{
 			name: "Enrichments enabled with key",
-			presets: &operatorv1alpha1.EnrichmentSpec{
-				ExtractPodLabels: []operatorv1alpha1.PodLabel{
+			presets: &operatorv1beta1.EnrichmentSpec{
+				ExtractPodLabels: []operatorv1beta1.PodLabel{
 					{Key: "app"},
 				},
 			},
@@ -283,8 +283,8 @@ func TestBuildPodLabelEnrichments(t *testing.T) {
 		},
 		{
 			name: "Enrichments enabled with key prefix",
-			presets: &operatorv1alpha1.EnrichmentSpec{
-				ExtractPodLabels: []operatorv1alpha1.PodLabel{
+			presets: &operatorv1beta1.EnrichmentSpec{
+				ExtractPodLabels: []operatorv1beta1.PodLabel{
 					{KeyPrefix: "app.kubernetes.io"},
 				},
 			},
@@ -298,8 +298,8 @@ func TestBuildPodLabelEnrichments(t *testing.T) {
 		},
 		{
 			name: "Enrichments enabled with multiple labels",
-			presets: &operatorv1alpha1.EnrichmentSpec{
-				ExtractPodLabels: []operatorv1alpha1.PodLabel{
+			presets: &operatorv1beta1.EnrichmentSpec{
+				ExtractPodLabels: []operatorv1beta1.PodLabel{
 					{Key: "app"},
 					{KeyPrefix: "app.kubernetes.io"},
 				},

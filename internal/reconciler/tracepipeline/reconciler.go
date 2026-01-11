@@ -28,8 +28,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	"github.com/kyma-project/telemetry-manager/internal/metrics"
@@ -178,7 +178,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, nil
 	}
 
-	var tracePipeline telemetryv1alpha1.TracePipeline
+	var tracePipeline telemetryv1beta1.TracePipeline
 	if err := r.Get(ctx, req.NamespacedName, &tracePipeline); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
@@ -206,7 +206,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 // doReconcile performs the main reconciliation logic for a TracePipeline.
 // It lists all pipelines, determines which are reconcilable, and either deploys or deletes the trace gateway accordingly.
-func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) error {
+func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1.TracePipeline) error {
 	if err := r.pipelineLock.TryAcquireLock(ctx, pipeline); err != nil {
 		if errors.Is(err, resourcelock.ErrMaxPipelinesExceeded) {
 			logf.FromContext(ctx).V(1).Info("Skipping reconciliation: maximum pipeline count limit exceeded")
@@ -216,7 +216,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		return err
 	}
 
-	var allPipelinesList telemetryv1alpha1.TracePipelineList
+	var allPipelinesList telemetryv1beta1.TracePipelineList
 	if err := r.List(ctx, &allPipelinesList); err != nil {
 		return fmt.Errorf("failed to list trace pipelines: %w", err)
 	}
@@ -246,8 +246,8 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 }
 
 // getReconcilablePipelines returns the list of trace pipelines that are ready to be rendered into the otel collector configuration. A pipeline is deployable if it is not being deleted, all secret references exist, and is not above the pipeline limit.
-func (r *Reconciler) getReconcilablePipelines(ctx context.Context, allPipelines []telemetryv1alpha1.TracePipeline) ([]telemetryv1alpha1.TracePipeline, error) {
-	var reconcilablePipelines []telemetryv1alpha1.TracePipeline
+func (r *Reconciler) getReconcilablePipelines(ctx context.Context, allPipelines []telemetryv1beta1.TracePipeline) ([]telemetryv1beta1.TracePipeline, error) {
+	var reconcilablePipelines []telemetryv1beta1.TracePipeline
 
 	for i := range allPipelines {
 		isReconcilable, err := r.isReconcilable(ctx, &allPipelines[i])
@@ -266,7 +266,7 @@ func (r *Reconciler) getReconcilablePipelines(ctx context.Context, allPipelines 
 // isReconcilable determines whether a TracePipeline is ready to be reconciled.
 // A pipeline is reconcilable if it is not being deleted, passes validation, and has valid certificate references.
 // Pipelines with certificates about to expire are still considered reconcilable.
-func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) (bool, error) {
+func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1beta1.TracePipeline) (bool, error) {
 	if !pipeline.GetDeletionTimestamp().IsZero() {
 		return false, nil
 	}
@@ -290,7 +290,7 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1al
 
 // reconcileTraceGateway reconciles the trace gateway by building and applying the OpenTelemetry Collector configuration.
 // It gathers cluster information, builds the collector configuration from all reconcilable pipelines, and applies the gateway resources.
-func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, allPipelines []telemetryv1alpha1.TracePipeline) error {
+func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *telemetryv1beta1.TracePipeline, allPipelines []telemetryv1beta1.TracePipeline) error {
 	shootInfo := k8sutils.GetGardenerShootInfo(ctx, r.Client)
 	clusterName := r.getClusterNameFromTelemetry(ctx, shootInfo.ClusterName)
 
@@ -299,7 +299,7 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 		return fmt.Errorf("failed to get kube-system namespace for cluster UID: %w", err)
 	}
 
-	var enrichments *operatorv1alpha1.EnrichmentSpec
+	var enrichments *operatorv1beta1.EnrichmentSpec
 
 	t, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.config.DefaultTelemetryNamespace())
 	if err == nil {
@@ -354,7 +354,7 @@ func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
 	}
 
 	if telemetry.Spec.Trace != nil &&
-		telemetry.Spec.Trace.Gateway.Scaling.Type == operatorv1alpha1.StaticScalingStrategyType &&
+		telemetry.Spec.Trace.Gateway.Scaling.Type == operatorv1beta1.StaticScalingStrategyType &&
 		telemetry.Spec.Trace.Gateway.Scaling.Static != nil &&
 		telemetry.Spec.Trace.Gateway.Scaling.Static.Replicas > 0 {
 		return telemetry.Spec.Trace.Gateway.Scaling.Static.Replicas
@@ -397,7 +397,7 @@ func (r *Reconciler) getK8sClusterUID(ctx context.Context) (string, error) {
 	return string(kubeSystem.UID), nil
 }
 
-func (r *Reconciler) trackOTTLFeaturesUsage(pipelines []telemetryv1alpha1.TracePipeline) {
+func (r *Reconciler) trackOTTLFeaturesUsage(pipelines []telemetryv1beta1.TracePipeline) {
 	for i := range pipelines {
 		// General features
 		if sharedtypesutils.IsTransformDefined(pipelines[i].Spec.Transforms) {

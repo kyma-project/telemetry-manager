@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
 
 func TestOAuth2ExtensionID(t *testing.T) {
@@ -14,10 +14,10 @@ func TestOAuth2ExtensionID(t *testing.T) {
 }
 
 func TestMakeExtensionConfig(t *testing.T) {
-	oauth2Options := &telemetryv1alpha1.OAuth2Options{
-		TokenURL:     telemetryv1alpha1.ValueType{Value: "token-url"},
-		ClientID:     telemetryv1alpha1.ValueType{Value: "client-id"},
-		ClientSecret: telemetryv1alpha1.ValueType{Value: "client-secret"},
+	oauth2Options := &telemetryv1beta1.OAuth2Options{
+		TokenURL:     telemetryv1beta1.ValueType{Value: "token-url"},
+		ClientID:     telemetryv1beta1.ValueType{Value: "client-id"},
+		ClientSecret: telemetryv1beta1.ValueType{Value: "client-secret"},
 	}
 
 	cb := NewOAuth2ExtensionConfigBuilder(fake.NewClientBuilder().Build(), oauth2Options, "test", SignalTypeTrace)

@@ -7,7 +7,7 @@ import (
 	"github.com/onsi/gomega/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -25,20 +25,20 @@ func TestTransform_OTel(t *testing.T) {
 	tests := []struct {
 		label               string
 		name                string
-		input               telemetryv1alpha1.LogPipelineInput
+		input               telemetryv1beta1.LogPipelineInput
 		logGeneratorBuilder func(ns string) client.Object
-		transformSpec       telemetryv1alpha1.TransformSpec
+		transformSpec       telemetryv1beta1.TransformSpec
 		assertion           types.GomegaMatcher
 		expectAgent         bool
 	}{
 		{
 			label: suite.LabelLogAgent,
 			name:  "with-where",
-			input: testutils.BuildLogPipelineApplicationInput(),
+			input: testutils.BuildLogPipelineRuntimeInput(),
 			logGeneratorBuilder: func(ns string) client.Object {
 				return stdoutloggen.NewDeployment(ns).K8sObject()
 			},
-			transformSpec: telemetryv1alpha1.TransformSpec{
+			transformSpec: telemetryv1beta1.TransformSpec{
 				Statements: []string{"set(log.attributes[\"system\"], \"false\") where not IsMatch(resource.attributes[\"k8s.namespace.name\"], \".*-system\")"},
 			},
 			assertion: HaveFlatLogs(ContainElement(SatisfyAll(
@@ -50,7 +50,7 @@ func TestTransform_OTel(t *testing.T) {
 		{
 			label: suite.LabelLogAgent,
 			name:  "infer-context",
-			input: testutils.BuildLogPipelineApplicationInput(),
+			input: testutils.BuildLogPipelineRuntimeInput(),
 			logGeneratorBuilder: func(ns string) client.Object {
 				return stdoutloggen.NewDeployment(ns, stdoutloggen.WithFields(map[string]string{
 					"scenario": "level-info",
@@ -58,7 +58,7 @@ func TestTransform_OTel(t *testing.T) {
 				})).K8sObject()
 			},
 			expectAgent: true,
-			transformSpec: telemetryv1alpha1.TransformSpec{
+			transformSpec: telemetryv1beta1.TransformSpec{
 				Statements: []string{"set(resource.attributes[\"test\"], \"passed\")",
 					"set(log.attributes[\"name\"], \"InfoLogs\")",
 				},
@@ -70,7 +70,7 @@ func TestTransform_OTel(t *testing.T) {
 		}, {
 			label: suite.LabelLogAgent,
 			name:  "cond-and-stmts",
-			input: testutils.BuildLogPipelineApplicationInput(),
+			input: testutils.BuildLogPipelineRuntimeInput(),
 			logGeneratorBuilder: func(ns string) client.Object {
 				return stdoutloggen.NewDeployment(ns, stdoutloggen.WithFields(map[string]string{
 					"scenario": "level-info",
@@ -78,7 +78,7 @@ func TestTransform_OTel(t *testing.T) {
 				})).K8sObject()
 			},
 			expectAgent: true,
-			transformSpec: telemetryv1alpha1.TransformSpec{
+			transformSpec: telemetryv1beta1.TransformSpec{
 				Conditions: []string{"log.severity_text == \"info\" or log.severity_text == \"Info\""},
 				Statements: []string{"set(log.severity_text, ToUpperCase(log.severity_text))"},
 			},
@@ -93,7 +93,7 @@ func TestTransform_OTel(t *testing.T) {
 			logGeneratorBuilder: func(ns string) client.Object {
 				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeLogs).K8sObject()
 			},
-			transformSpec: telemetryv1alpha1.TransformSpec{
+			transformSpec: telemetryv1beta1.TransformSpec{
 				Statements: []string{"set(log.attributes[\"system\"], \"false\") where not IsMatch(resource.attributes[\"k8s.namespace.name\"], \".*-system\")"},
 			},
 			assertion: HaveFlatLogs(ContainElement(SatisfyAll(
@@ -107,7 +107,7 @@ func TestTransform_OTel(t *testing.T) {
 			logGeneratorBuilder: func(ns string) client.Object {
 				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeLogs).K8sObject()
 			},
-			transformSpec: telemetryv1alpha1.TransformSpec{
+			transformSpec: telemetryv1beta1.TransformSpec{
 				Statements: []string{"set(resource.attributes[\"test\"], \"passed\")",
 					"set(log.attributes[\"name\"], \"InfoLogs\")",
 				},
@@ -123,7 +123,7 @@ func TestTransform_OTel(t *testing.T) {
 			logGeneratorBuilder: func(ns string) client.Object {
 				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeLogs).K8sObject()
 			},
-			transformSpec: telemetryv1alpha1.TransformSpec{
+			transformSpec: telemetryv1beta1.TransformSpec{
 				Conditions: []string{"log.severity_text == \"info\" or log.severity_text == \"Info\""},
 				Statements: []string{"set(log.severity_text, ToUpperCase(log.severity_text))"},
 			},

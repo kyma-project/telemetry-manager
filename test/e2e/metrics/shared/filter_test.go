@@ -6,7 +6,7 @@ import (
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -21,17 +21,17 @@ import (
 func TestFilter(t *testing.T) {
 	tests := []struct {
 		label        string
-		inputBuilder func(includeNs string) telemetryv1alpha1.MetricPipelineInput
+		inputBuilder func(includeNs string) telemetryv1beta1.MetricPipelineInput
 	}{
 		{
 			label: suite.LabelMetricAgentSetC,
-			inputBuilder: func(includeNs string) telemetryv1alpha1.MetricPipelineInput {
+			inputBuilder: func(includeNs string) telemetryv1beta1.MetricPipelineInput {
 				return testutils.BuildMetricPipelineRuntimeInput(testutils.IncludeNamespaces(includeNs))
 			},
 		},
 		{
 			label: suite.LabelMetricGatewaySetC,
-			inputBuilder: func(includeNs string) telemetryv1alpha1.MetricPipelineInput {
+			inputBuilder: func(includeNs string) telemetryv1beta1.MetricPipelineInput {
 				return testutils.BuildMetricPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
 			},
 		},
@@ -53,10 +53,10 @@ func TestFilter(t *testing.T) {
 				WithName(pipelineName).
 				WithInput(tc.inputBuilder(genNs)).
 				WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
-				WithTransform(telemetryv1alpha1.TransformSpec{
+				WithTransform(telemetryv1beta1.TransformSpec{
 					Statements: []string{"set(datapoint.attributes[\"test\"], \"passed\")"},
 				}).
-				WithFilter(telemetryv1alpha1.FilterSpec{
+				WithFilter(telemetryv1beta1.FilterSpec{
 					Conditions: []string{"datapoint.attributes[\"test\"] == \"passed\""},
 				}).
 				Build()

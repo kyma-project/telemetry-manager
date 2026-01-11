@@ -6,7 +6,7 @@ import (
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	fbports "github.com/kyma-project/telemetry-manager/internal/fluentbit/ports"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
@@ -24,13 +24,13 @@ import (
 func TestMetricsEndpoint_OTel(t *testing.T) {
 	tests := []struct {
 		label               string
-		input               telemetryv1alpha1.LogPipelineInput
+		input               telemetryv1beta1.LogPipelineInput
 		logGeneratorBuilder func(namespace string) client.Object
 		expectAgent         bool
 	}{
 		{
 			label: suite.LabelLogAgent,
-			input: testutils.BuildLogPipelineApplicationInput(),
+			input: testutils.BuildLogPipelineRuntimeInput(),
 			logGeneratorBuilder: func(namespace string) client.Object {
 				return stdoutloggen.NewDeployment(namespace).K8sObject()
 			},

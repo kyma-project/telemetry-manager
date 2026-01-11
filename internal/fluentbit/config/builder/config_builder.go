@@ -7,7 +7,7 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
 
 const (
@@ -73,7 +73,7 @@ func NewFluentBitConfigBuilder(client client.Reader) *ConfigBuilder {
 	}
 }
 
-func (b *ConfigBuilder) Build(ctx context.Context, allPipelines []telemetryv1alpha1.LogPipeline, clusterName string) (*FluentBitConfig, error) {
+func (b *ConfigBuilder) Build(ctx context.Context, allPipelines []telemetryv1beta1.LogPipeline, clusterName string) (*FluentBitConfig, error) {
 	config := FluentBitConfig{
 		SectionsConfig:  make(map[string]string),
 		FilesConfig:     make(map[string]string),

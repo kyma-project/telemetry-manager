@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
 
 type filterTestCase struct {
@@ -44,7 +44,7 @@ func runFilterValidatorTestCases(t *testing.T, context string, signalType Signal
 				validator, err := NewFilterSpecValidator(signalType)
 				require.NoError(t, err)
 
-				filters := []telemetryv1alpha1.FilterSpec{{Conditions: test.conditions}}
+				filters := []telemetryv1beta1.FilterSpec{{Conditions: test.conditions}}
 
 				err = validator.Validate(filters)
 				if test.isErrorExpected {

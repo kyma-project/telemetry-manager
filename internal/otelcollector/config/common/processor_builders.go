@@ -3,15 +3,15 @@ package common
 import (
 	"fmt"
 
-	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
 
 // =============================================================================
 // KUBERNETES ATTRIBUTES PROCESSOR BUILDERS
 // =============================================================================
 
-func K8sAttributesProcessorConfig(enrichments *operatorv1alpha1.EnrichmentSpec) *K8sAttributesProcessor {
+func K8sAttributesProcessorConfig(enrichments *operatorv1beta1.EnrichmentSpec) *K8sAttributesProcessor {
 	k8sAttributes := []string{
 		"k8s.pod.name",
 		"k8s.node.name",
@@ -81,7 +81,7 @@ func extractLabels() []ExtractLabel {
 	}
 }
 
-func extractPodLabels(enrichments *operatorv1alpha1.EnrichmentSpec) []ExtractLabel {
+func extractPodLabels(enrichments *operatorv1beta1.EnrichmentSpec) []ExtractLabel {
 	extractPodLabels := make([]ExtractLabel, 0)
 
 	if enrichments != nil && len(enrichments.ExtractPodLabels) > 0 {
@@ -146,7 +146,7 @@ func TraceFilterProcessorConfig(traces FilterProcessorTraces) *FilterProcessor {
 	}
 }
 
-func FilterSpecsToLogFilterProcessorConfig(specs []telemetryv1alpha1.FilterSpec) *FilterProcessor {
+func FilterSpecsToLogFilterProcessorConfig(specs []telemetryv1beta1.FilterSpec) *FilterProcessor {
 	var mergedConditions []string
 	for _, spec := range specs {
 		mergedConditions = append(mergedConditions, spec.Conditions...)
@@ -161,7 +161,7 @@ func FilterSpecsToLogFilterProcessorConfig(specs []telemetryv1alpha1.FilterSpec)
 	}
 }
 
-func FilterSpecsToMetricFilterProcessorConfig(specs []telemetryv1alpha1.FilterSpec) *FilterProcessor {
+func FilterSpecsToMetricFilterProcessorConfig(specs []telemetryv1beta1.FilterSpec) *FilterProcessor {
 	var mergedConditions []string
 	for _, spec := range specs {
 		mergedConditions = append(mergedConditions, spec.Conditions...)
@@ -176,7 +176,7 @@ func FilterSpecsToMetricFilterProcessorConfig(specs []telemetryv1alpha1.FilterSp
 	}
 }
 
-func FilterSpecsToTraceFilterProcessorConfig(specs []telemetryv1alpha1.FilterSpec) *FilterProcessor {
+func FilterSpecsToTraceFilterProcessorConfig(specs []telemetryv1beta1.FilterSpec) *FilterProcessor {
 	var mergedConditions []string
 	for _, spec := range specs {
 		mergedConditions = append(mergedConditions, spec.Conditions...)
@@ -221,7 +221,7 @@ func TraceTransformProcessorConfig(statements []TransformProcessorStatements) *T
 }
 
 // TransformSpecsToProcessorStatements converts transform specs to processor statements
-func TransformSpecsToProcessorStatements(specs []telemetryv1alpha1.TransformSpec) []TransformProcessorStatements {
+func TransformSpecsToProcessorStatements(specs []telemetryv1beta1.TransformSpec) []TransformProcessorStatements {
 	result := make([]TransformProcessorStatements, 0, len(specs))
 	for _, spec := range specs {
 		result = append(result, TransformProcessorStatements{

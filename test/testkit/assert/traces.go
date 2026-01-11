@@ -10,7 +10,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/trace"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
@@ -46,7 +46,7 @@ func TracePipelineHealthy(t *testing.T, pipelineName string) {
 	t.Helper()
 
 	Eventually(func(g Gomega) {
-		var pipeline telemetryv1alpha1.TracePipeline
+		var pipeline telemetryv1beta1.TracePipeline
 
 		key := types.NamespacedName{Name: pipelineName}
 		g.Expect(suite.K8sClient.Get(t.Context(), key, &pipeline)).To(Succeed())
@@ -65,7 +65,7 @@ func TracePipelineHasCondition(t *testing.T, pipelineName string, expectedCond m
 	t.Helper()
 
 	Eventually(func(g Gomega) {
-		var pipeline telemetryv1alpha1.TracePipeline
+		var pipeline telemetryv1beta1.TracePipeline
 
 		key := types.NamespacedName{Name: pipelineName}
 		g.Expect(suite.K8sClient.Get(t.Context(), key, &pipeline)).To(Succeed())
@@ -85,7 +85,7 @@ func TracePipelineConditionReasonsTransition(t *testing.T, pipelineName, condTyp
 	for _, expected := range expected {
 		// Wait for the current condition to match the expected condition
 		Eventually(func(g Gomega) ReasonStatus {
-			var pipeline telemetryv1alpha1.TracePipeline
+			var pipeline telemetryv1beta1.TracePipeline
 
 			key := types.NamespacedName{Name: pipelineName}
 			err := suite.K8sClient.Get(t.Context(), key, &pipeline)
@@ -108,7 +108,7 @@ func TracePipelineSelfMonitorIsHealthy(t *testing.T, k8sClient client.Client, pi
 	t.Helper()
 
 	Eventually(func(g Gomega) {
-		var pipeline telemetryv1alpha1.TracePipeline
+		var pipeline telemetryv1beta1.TracePipeline
 
 		key := types.NamespacedName{Name: pipelineName}
 		g.Expect(k8sClient.Get(t.Context(), key, &pipeline)).To(Succeed())

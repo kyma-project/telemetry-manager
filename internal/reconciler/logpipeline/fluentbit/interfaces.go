@@ -7,7 +7,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
@@ -20,7 +20,7 @@ import (
 type AgentConfigBuilder interface {
 	// Build constructs the Fluent Bit configuration from the given pipelines and cluster name.
 	// The cluster name is used for enriching logs with cluster-specific metadata.
-	Build(ctx context.Context, reconcilablePipelines []telemetryv1alpha1.LogPipeline, clusterName string) (*builder.FluentBitConfig, error)
+	Build(ctx context.Context, reconcilablePipelines []telemetryv1beta1.LogPipeline, clusterName string) (*builder.FluentBitConfig, error)
 }
 
 // AgentApplierDeleter manages the lifecycle of Fluent Bit agent resources in the cluster.
@@ -49,7 +49,7 @@ type IstioStatusChecker interface {
 type PipelineValidator interface {
 	// Validate performs all validation checks on the given pipeline.
 	// It returns an error if the pipeline configuration is invalid or if validation cannot be completed.
-	Validate(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error
+	Validate(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) error
 }
 
 // ErrorToMessageConverter converts internal error types into user-friendly messages
@@ -100,7 +100,7 @@ type SecretRefValidator interface {
 	// ValidateLogPipeline checks if all secret references in the pipeline exist and are accessible.
 	// It verifies that secrets are present in the correct namespace and contain required keys.
 	// Returns an error if any secret is missing, inaccessible, or malformed.
-	ValidateLogPipeline(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error
+	ValidateLogPipeline(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) error
 }
 
 // PipelineLock manages exclusive access to pipeline resources to enforce maximum pipeline limits.

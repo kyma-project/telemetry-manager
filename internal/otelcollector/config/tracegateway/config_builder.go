@@ -6,26 +6,26 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 )
 
-type buildComponentFunc = common.BuildComponentFunc[*telemetryv1alpha1.TracePipeline]
+type buildComponentFunc = common.BuildComponentFunc[*telemetryv1beta1.TracePipeline]
 
 type Builder struct {
-	common.ComponentBuilder[*telemetryv1alpha1.TracePipeline]
+	common.ComponentBuilder[*telemetryv1beta1.TracePipeline]
 
 	Reader client.Reader
 }
 
 type BuildOptions struct {
 	Cluster     common.ClusterOptions
-	Enrichments *operatorv1alpha1.EnrichmentSpec
+	Enrichments *operatorv1beta1.EnrichmentSpec
 }
 
-func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.TracePipeline, opts BuildOptions) (*common.Config, common.EnvVars, error) {
+func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1beta1.TracePipeline, opts BuildOptions) (*common.Config, common.EnvVars, error) {
 	b.Config = common.NewConfig()
 	b.EnvVars = make(common.EnvVars)
 
@@ -66,7 +66,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1alpha1.Trace
 func (b *Builder) addOTLPReceiver() buildComponentFunc {
 	return b.AddReceiver(
 		b.StaticComponentID(common.ComponentIDOTLPReceiver),
-		func(tp *telemetryv1alpha1.TracePipeline) any {
+		func(tp *telemetryv1beta1.TracePipeline) any {
 			return &common.OTLPReceiver{
 				Protocols: common.ReceiverProtocols{
 					HTTP: common.Endpoint{
@@ -85,7 +85,7 @@ func (b *Builder) addOTLPReceiver() buildComponentFunc {
 func (b *Builder) addMemoryLimiterProcessor() buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDMemoryLimiterProcessor),
-		func(tp *telemetryv1alpha1.TracePipeline) any {
+		func(tp *telemetryv1beta1.TracePipeline) any {
 			return &common.MemoryLimiter{
 				CheckInterval:        "1s",
 				LimitPercentage:      75,
@@ -98,7 +98,7 @@ func (b *Builder) addMemoryLimiterProcessor() buildComponentFunc {
 func (b *Builder) addK8sAttributesProcessor(opts BuildOptions) buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDK8sAttributesProcessor),
-		func(tp *telemetryv1alpha1.TracePipeline) any {
+		func(tp *telemetryv1beta1.TracePipeline) any {
 			return common.K8sAttributesProcessorConfig(opts.Enrichments)
 		},
 	)
@@ -107,7 +107,7 @@ func (b *Builder) addK8sAttributesProcessor(opts BuildOptions) buildComponentFun
 func (b *Builder) addIstioNoiseFilterProcessor() buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDIstioNoiseFilterProcessor),
-		func(tp *telemetryv1alpha1.TracePipeline) any {
+		func(tp *telemetryv1beta1.TracePipeline) any {
 			return &common.IstioNoiseFilterProcessor{}
 		},
 	)
@@ -116,7 +116,7 @@ func (b *Builder) addIstioNoiseFilterProcessor() buildComponentFunc {
 func (b *Builder) addInsertClusterAttributesProcessor(opts BuildOptions) buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDInsertClusterAttributesProcessor),
-		func(tp *telemetryv1alpha1.TracePipeline) any {
+		func(tp *telemetryv1beta1.TracePipeline) any {
 			transformStatements := common.InsertClusterAttributesProcessorStatements(opts.Cluster)
 			return common.TraceTransformProcessorConfig(transformStatements)
 		},
@@ -126,7 +126,7 @@ func (b *Builder) addInsertClusterAttributesProcessor(opts BuildOptions) buildCo
 func (b *Builder) addServiceEnrichmentProcessor() buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDServiceEnrichmentProcessor),
-		func(tp *telemetryv1alpha1.TracePipeline) any {
+		func(tp *telemetryv1beta1.TracePipeline) any {
 			return common.ResolveServiceNameConfig()
 		},
 	)
@@ -135,7 +135,7 @@ func (b *Builder) addServiceEnrichmentProcessor() buildComponentFunc {
 func (b *Builder) addDropKymaAttributesProcessor() buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDDropKymaAttributesProcessor),
-		func(tp *telemetryv1alpha1.TracePipeline) any {
+		func(tp *telemetryv1beta1.TracePipeline) any {
 			transformStatements := common.DropKymaAttributesProcessorStatements()
 			return common.TraceTransformProcessorConfig(transformStatements)
 		},
@@ -146,7 +146,7 @@ func (b *Builder) addDropKymaAttributesProcessor() buildComponentFunc {
 func (b *Builder) addUserDefinedTransformProcessor() buildComponentFunc {
 	return b.AddProcessor(
 		formatUserDefinedTransformProcessorID,
-		func(tp *telemetryv1alpha1.TracePipeline) any {
+		func(tp *telemetryv1beta1.TracePipeline) any {
 			if len(tp.Spec.Transforms) == 0 {
 				return nil // No transforms, no processor needed
 			}
@@ -161,7 +161,7 @@ func (b *Builder) addUserDefinedTransformProcessor() buildComponentFunc {
 func (b *Builder) addUserDefinedFilterProcessor() buildComponentFunc {
 	return b.AddProcessor(
 		formatUserDefinedFilterProcessorID,
-		func(tp *telemetryv1alpha1.TracePipeline) any {
+		func(tp *telemetryv1beta1.TracePipeline) any {
 			if tp.Spec.Filters == nil {
 				return nil // No filters, no processor needed
 			}
@@ -174,7 +174,7 @@ func (b *Builder) addUserDefinedFilterProcessor() buildComponentFunc {
 func (b *Builder) addBatchProcessor() buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDBatchProcessor),
-		func(_ *telemetryv1alpha1.TracePipeline) any {
+		func(_ *telemetryv1beta1.TracePipeline) any {
 			return &common.BatchProcessor{
 				SendBatchSize:    512,
 				Timeout:          "10s",
@@ -187,7 +187,7 @@ func (b *Builder) addBatchProcessor() buildComponentFunc {
 func (b *Builder) addOTLPExporter(queueSize int) buildComponentFunc {
 	return b.AddExporter(
 		formatOTLPExporterID,
-		func(ctx context.Context, tp *telemetryv1alpha1.TracePipeline) (any, common.EnvVars, error) {
+		func(ctx context.Context, tp *telemetryv1beta1.TracePipeline) (any, common.EnvVars, error) {
 			otlpExporterBuilder := common.NewOTLPExporterConfigBuilder(
 				b.Reader,
 				tp.Spec.Output.OTLP,
@@ -201,7 +201,7 @@ func (b *Builder) addOTLPExporter(queueSize int) buildComponentFunc {
 	)
 }
 
-func (b *Builder) addOAuth2Extension(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) error {
+func (b *Builder) addOAuth2Extension(ctx context.Context, pipeline *telemetryv1beta1.TracePipeline) error {
 	oauth2ExtensionID := common.OAuth2ExtensionID(pipeline.Name)
 
 	oauth2ExtensionConfig, oauth2ExtensionEnvVars, err := common.NewOAuth2ExtensionConfigBuilder(
@@ -219,22 +219,22 @@ func (b *Builder) addOAuth2Extension(ctx context.Context, pipeline *telemetryv1a
 	return nil
 }
 
-func shouldEnableOAuth2(tp *telemetryv1alpha1.TracePipeline) bool {
+func shouldEnableOAuth2(tp *telemetryv1beta1.TracePipeline) bool {
 	return tp.Spec.Output.OTLP.Authentication != nil && tp.Spec.Output.OTLP.Authentication.OAuth2 != nil
 }
 
-func formatTraceServicePipelineID(tp *telemetryv1alpha1.TracePipeline) string {
+func formatTraceServicePipelineID(tp *telemetryv1beta1.TracePipeline) string {
 	return fmt.Sprintf("traces/%s", tp.Name)
 }
 
-func formatUserDefinedTransformProcessorID(tp *telemetryv1alpha1.TracePipeline) string {
+func formatUserDefinedTransformProcessorID(tp *telemetryv1beta1.TracePipeline) string {
 	return fmt.Sprintf(common.ComponentIDUserDefinedTransformProcessor, tp.Name)
 }
 
-func formatUserDefinedFilterProcessorID(tp *telemetryv1alpha1.TracePipeline) string {
+func formatUserDefinedFilterProcessorID(tp *telemetryv1beta1.TracePipeline) string {
 	return fmt.Sprintf(common.ComponentIDUserDefinedFilterProcessor, tp.Name)
 }
 
-func formatOTLPExporterID(tp *telemetryv1alpha1.TracePipeline) string {
+func formatOTLPExporterID(tp *telemetryv1beta1.TracePipeline) string {
 	return common.ExporterID(tp.Spec.Output.OTLP.Protocol, tp.Name)
 }

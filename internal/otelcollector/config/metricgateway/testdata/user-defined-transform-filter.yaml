@@ -64,16 +64,16 @@ receivers:
         collection_interval: 30s
         resources:
             - group: operator.kyma-project.io
-              version: v1alpha1
+              version: v1beta1
               resource: telemetries
             - group: telemetry.kyma-project.io
-              version: v1alpha1
+              version: v1beta1
               resource: logpipelines
             - group: telemetry.kyma-project.io
-              version: v1alpha1
+              version: v1beta1
               resource: tracepipelines
             - group: telemetry.kyma-project.io
-              version: v1alpha1
+              version: v1beta1
               resource: metricpipelines
         k8s_leader_elector: k8s_leader_elector
     otlp:

@@ -11,7 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
@@ -24,7 +24,7 @@ import (
 )
 
 func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) error {
-	var pipeline telemetryv1alpha1.TracePipeline
+	var pipeline telemetryv1beta1.TracePipeline
 	if err := r.Get(ctx, types.NamespacedName{Name: pipelineName}, &pipeline); err != nil {
 		if apierrors.IsNotFound(err) {
 			logf.FromContext(ctx).V(1).Info("Skipping status update for TracePipeline - not found")
@@ -50,7 +50,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) erro
 	return nil
 }
 
-func (r *Reconciler) setGatewayHealthyCondition(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) {
+func (r *Reconciler) setGatewayHealthyCondition(ctx context.Context, pipeline *telemetryv1beta1.TracePipeline) {
 	condition := commonstatus.GetGatewayHealthyCondition(ctx,
 		r.gatewayProber, types.NamespacedName{Name: otelcollector.TraceGatewayName, Namespace: r.config.TargetNamespace()},
 		r.errToMsgConverter,
@@ -59,7 +59,7 @@ func (r *Reconciler) setGatewayHealthyCondition(ctx context.Context, pipeline *t
 	meta.SetStatusCondition(&pipeline.Status.Conditions, *condition)
 }
 
-func (r *Reconciler) setGatewayConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) {
+func (r *Reconciler) setGatewayConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1beta1.TracePipeline) {
 	status, reason, message := r.evaluateConfigGeneratedCondition(ctx, pipeline)
 
 	condition := metav1.Condition{
@@ -73,7 +73,7 @@ func (r *Reconciler) setGatewayConfigGeneratedCondition(ctx context.Context, pip
 	meta.SetStatusCondition(&pipeline.Status.Conditions, condition)
 }
 
-func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) (status metav1.ConditionStatus, reason string, message string) {
+func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1beta1.TracePipeline) (status metav1.ConditionStatus, reason string, message string) {
 	err := r.pipelineValidator.validate(ctx, pipeline)
 	if err == nil {
 		return metav1.ConditionTrue, conditions.ReasonGatewayConfigured, conditions.MessageForTracePipeline(conditions.ReasonGatewayConfigured)
@@ -107,7 +107,7 @@ func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipel
 	return conditions.EvaluateTLSCertCondition(err)
 }
 
-func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) {
+func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telemetryv1beta1.TracePipeline) {
 	status, reason := r.evaluateFlowHealthCondition(ctx, pipeline)
 
 	condition := metav1.Condition{
@@ -121,7 +121,7 @@ func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telem
 	meta.SetStatusCondition(&pipeline.Status.Conditions, condition)
 }
 
-func (r *Reconciler) evaluateFlowHealthCondition(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) (metav1.ConditionStatus, string) {
+func (r *Reconciler) evaluateFlowHealthCondition(ctx context.Context, pipeline *telemetryv1beta1.TracePipeline) (metav1.ConditionStatus, string) {
 	configGeneratedStatus, _, _ := r.evaluateConfigGeneratedCondition(ctx, pipeline)
 	if configGeneratedStatus == metav1.ConditionFalse {
 		return metav1.ConditionFalse, conditions.ReasonSelfMonConfigNotGenerated

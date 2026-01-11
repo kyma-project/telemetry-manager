@@ -7,7 +7,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -24,12 +24,12 @@ import (
 func TestNamespaceSelector(t *testing.T) {
 	tests := []struct {
 		label            string
-		inputBuilder     func(includeNss, excludeNss []string) telemetryv1alpha1.MetricPipelineInput
+		inputBuilder     func(includeNss, excludeNss []string) telemetryv1beta1.MetricPipelineInput
 		generatorBuilder func(ns1, ns2 string) []client.Object
 	}{
 		{
 			label: suite.LabelMetricAgentSetC,
-			inputBuilder: func(includeNss, excludeNss []string) telemetryv1alpha1.MetricPipelineInput {
+			inputBuilder: func(includeNss, excludeNss []string) telemetryv1beta1.MetricPipelineInput {
 				var opts []testutils.NamespaceSelectorOptions
 				if len(includeNss) > 0 {
 					opts = append(opts, testutils.IncludeNamespaces(includeNss...))
@@ -51,7 +51,7 @@ func TestNamespaceSelector(t *testing.T) {
 		},
 		{
 			label: suite.LabelMetricGatewaySetB,
-			inputBuilder: func(includeNss, excludeNss []string) telemetryv1alpha1.MetricPipelineInput {
+			inputBuilder: func(includeNss, excludeNss []string) telemetryv1beta1.MetricPipelineInput {
 				var opts []testutils.NamespaceSelectorOptions
 				if len(includeNss) > 0 {
 					opts = append(opts, testutils.IncludeNamespaces(includeNss...))

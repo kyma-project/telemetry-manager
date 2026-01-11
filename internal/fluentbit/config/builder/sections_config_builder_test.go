@@ -9,7 +9,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
 
 func TestCreateRecordModifierFilter(t *testing.T) {
@@ -19,7 +19,7 @@ func TestCreateRecordModifierFilter(t *testing.T) {
     record cluster_identifier test-cluster-name
 
 `
-	logPipeline := &telemetryv1alpha1.LogPipeline{ObjectMeta: metav1.ObjectMeta{Name: "foo"}}
+	logPipeline := &telemetryv1beta1.LogPipeline{ObjectMeta: metav1.ObjectMeta{Name: "foo"}}
 
 	actual := createRecordModifierFilter(logPipeline, "test-cluster-name")
 	require.Equal(t, expected, actual, "Fluent Bit Permanent parser config is invalid")
@@ -33,13 +33,13 @@ func TestCreateLuaFilterWithDefinedHostAndDedot(t *testing.T) {
     script /fluent-bit/scripts/filter-script.lua
 
 `
-	logPipeline := &telemetryv1alpha1.LogPipeline{
+	logPipeline := &telemetryv1beta1.LogPipeline{
 		ObjectMeta: metav1.ObjectMeta{Name: "foo"},
-		Spec: telemetryv1alpha1.LogPipelineSpec{
-			Output: telemetryv1alpha1.LogPipelineOutput{
-				FluentBitHTTP: &telemetryv1alpha1.FluentBitHTTPOutput{
+		Spec: telemetryv1beta1.LogPipelineSpec{
+			Output: telemetryv1beta1.LogPipelineOutput{
+				FluentBitHTTP: &telemetryv1beta1.FluentBitHTTPOutput{
 					Dedot: true,
-					Host:  telemetryv1alpha1.ValueType{Value: "localhost"},
+					Host:  telemetryv1beta1.ValueType{Value: "localhost"},
 				},
 			},
 		},
@@ -50,10 +50,10 @@ func TestCreateLuaFilterWithDefinedHostAndDedot(t *testing.T) {
 }
 
 func TestCreateLuaFilterWithUndefinedHostAndDedot(t *testing.T) {
-	logPipeline := &telemetryv1alpha1.LogPipeline{
-		Spec: telemetryv1alpha1.LogPipelineSpec{
-			Output: telemetryv1alpha1.LogPipelineOutput{
-				FluentBitHTTP: &telemetryv1alpha1.FluentBitHTTPOutput{Dedot: true},
+	logPipeline := &telemetryv1beta1.LogPipeline{
+		Spec: telemetryv1beta1.LogPipelineSpec{
+			Output: telemetryv1beta1.LogPipelineOutput{
+				FluentBitHTTP: &telemetryv1beta1.FluentBitHTTPOutput{Dedot: true},
 			},
 		},
 	}
@@ -70,13 +70,13 @@ func TestCreateLuaFilterWithDedotFalse(t *testing.T) {
     script /fluent-bit/scripts/filter-script.lua
 
 `
-	logPipeline := &telemetryv1alpha1.LogPipeline{
+	logPipeline := &telemetryv1beta1.LogPipeline{
 		ObjectMeta: metav1.ObjectMeta{Name: "foo"},
-		Spec: telemetryv1alpha1.LogPipelineSpec{
-			Output: telemetryv1alpha1.LogPipelineOutput{
-				FluentBitHTTP: &telemetryv1alpha1.FluentBitHTTPOutput{
+		Spec: telemetryv1beta1.LogPipelineSpec{
+			Output: telemetryv1beta1.LogPipelineOutput{
+				FluentBitHTTP: &telemetryv1beta1.FluentBitHTTPOutput{
 					Dedot: false,
-					Host:  telemetryv1alpha1.ValueType{Value: "localhost"},
+					Host:  telemetryv1beta1.ValueType{Value: "localhost"},
 				},
 			},
 		},
@@ -93,12 +93,12 @@ func TestCreateTimestampModifyFilter(t *testing.T) {
     copy  time @timestamp
 
 `
-	logPipeline := &telemetryv1alpha1.LogPipeline{
+	logPipeline := &telemetryv1beta1.LogPipeline{
 		ObjectMeta: metav1.ObjectMeta{Name: "foo"},
-		Spec: telemetryv1alpha1.LogPipelineSpec{
-			Output: telemetryv1alpha1.LogPipelineOutput{
-				FluentBitHTTP: &telemetryv1alpha1.FluentBitHTTPOutput{
-					Host: telemetryv1alpha1.ValueType{Value: "localhost"},
+		Spec: telemetryv1beta1.LogPipelineSpec{
+			Output: telemetryv1beta1.LogPipelineOutput{
+				FluentBitHTTP: &telemetryv1beta1.FluentBitHTTPOutput{
+					Host: telemetryv1beta1.ValueType{Value: "localhost"},
 				},
 			},
 		},
@@ -183,22 +183,20 @@ func TestMergeSectionsConfig(t *testing.T) {
     tls.verify               on
 
 `, excludePath)
-	logPipeline := &telemetryv1alpha1.LogPipeline{
-		Spec: telemetryv1alpha1.LogPipelineSpec{
-			Input: telemetryv1alpha1.LogPipelineInput{
-				Application: &telemetryv1alpha1.LogPipelineApplicationInput{
-					Containers: telemetryv1alpha1.LogPipelineContainerSelector{
+	logPipeline := &telemetryv1beta1.LogPipeline{
+		Spec: telemetryv1beta1.LogPipelineSpec{
+			Input: telemetryv1beta1.LogPipelineInput{
+				Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
+					Containers: &telemetryv1beta1.LogPipelineContainerSelector{
 						Exclude: []string{"container1", "container2"},
 					},
-					Namespaces: telemetryv1alpha1.LogPipelineNamespaceSelector{
-						System: true,
-					},
+					Namespaces:               &telemetryv1beta1.NamespaceSelector{},
 					FluentBitKeepAnnotations: ptr.To(true),
 					FluentBitDropLabels:      ptr.To(false),
 					KeepOriginalBody:         ptr.To(true),
 				},
 			},
-			FluentBitFilters: []telemetryv1alpha1.FluentBitFilter{
+			FluentBitFilters: []telemetryv1beta1.FluentBitFilter{
 				{
 					Custom: `
 						name grep
@@ -212,10 +210,10 @@ func TestMergeSectionsConfig(t *testing.T) {
 					`,
 				},
 			},
-			Output: telemetryv1alpha1.LogPipelineOutput{
-				FluentBitHTTP: &telemetryv1alpha1.FluentBitHTTPOutput{
+			Output: telemetryv1beta1.LogPipelineOutput{
+				FluentBitHTTP: &telemetryv1beta1.FluentBitHTTPOutput{
 					Dedot: true,
-					Host: telemetryv1alpha1.ValueType{
+					Host: telemetryv1beta1.ValueType{
 						Value: "localhost",
 					},
 				},
@@ -279,19 +277,17 @@ func TestMergeSectionsConfigCustomOutput(t *testing.T) {
     storage.total_limit_size 1G
 
 `, excludePath)
-	logPipeline := &telemetryv1alpha1.LogPipeline{
-		Spec: telemetryv1alpha1.LogPipelineSpec{
-			Input: telemetryv1alpha1.LogPipelineInput{
-				Application: &telemetryv1alpha1.LogPipelineApplicationInput{
+	logPipeline := &telemetryv1beta1.LogPipeline{
+		Spec: telemetryv1beta1.LogPipelineSpec{
+			Input: telemetryv1beta1.LogPipelineInput{
+				Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
 					FluentBitKeepAnnotations: ptr.To(true),
 					FluentBitDropLabels:      ptr.To(false),
 					KeepOriginalBody:         ptr.To(true),
-					Namespaces: telemetryv1alpha1.LogPipelineNamespaceSelector{
-						System: true,
-					},
+					Namespaces:               &telemetryv1beta1.NamespaceSelector{},
 				},
 			},
-			Output: telemetryv1alpha1.LogPipelineOutput{
+			Output: telemetryv1beta1.LogPipelineOutput{
 				FluentBitCustom: `
     name stdout`,
 			},

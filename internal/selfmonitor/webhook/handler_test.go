@@ -17,7 +17,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
@@ -188,7 +188,7 @@ func TestHandler(t *testing.T) {
 
 			scheme := runtime.NewScheme()
 			_ = clientgoscheme.AddToScheme(scheme)
-			_ = telemetryv1alpha1.AddToScheme(scheme)
+			_ = telemetryv1beta1.AddToScheme(scheme)
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(tc.resources...).Build()
 			handler := NewHandler(fakeClient,
 				WithMetricPipelineSubscriber(metricPipelineEvents),

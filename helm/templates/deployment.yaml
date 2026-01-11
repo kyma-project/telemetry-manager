@@ -38,9 +38,6 @@ spec:
         {{- range $key, $value := .Values.manager.container.args }}
         - --{{ $key }}={{ $value }}
         {{- end }}
-        {{- if .Values.experimental.enabled }}
-        - --enable-v1beta1-log-pipelines=true
-        {{- end }}
         {{- if not (empty .Values.additionalMetadata.labels) }}
         {{- range $k, $v := .Values.additionalMetadata.labels }}
         - --additional-label={{ (printf "%s=%s" $k $v) }}

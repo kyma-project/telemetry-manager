@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config"
 	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
 )
@@ -15,7 +15,7 @@ var (
 )
 
 // buildFluentBitSectionsConfig merges Fluent Bit filters and outputs to a single Fluent Bit configuration.
-func buildFluentBitSectionsConfig(pipeline *telemetryv1alpha1.LogPipeline, config builderConfig, clusterName string) (string, error) {
+func buildFluentBitSectionsConfig(pipeline *telemetryv1beta1.LogPipeline, config builderConfig, clusterName string) (string, error) {
 	pm := logpipelineutils.PipelineMode(pipeline)
 	if pm != logpipelineutils.FluentBit {
 		return "", fmt.Errorf("%w: unsupported pipeline mode: %s", errInvalidPipelineDefinition, pm.String())
@@ -45,7 +45,7 @@ func buildFluentBitSectionsConfig(pipeline *telemetryv1alpha1.LogPipeline, confi
 	return sb.String(), nil
 }
 
-func createRecordModifierFilter(pipeline *telemetryv1alpha1.LogPipeline, clusterName string) string {
+func createRecordModifierFilter(pipeline *telemetryv1beta1.LogPipeline, clusterName string) string {
 	return NewFilterSectionBuilder().
 		AddConfigParam("name", "record_modifier").
 		AddConfigParam("match", fmt.Sprintf("%s.*", pipeline.Name)).
@@ -53,7 +53,7 @@ func createRecordModifierFilter(pipeline *telemetryv1alpha1.LogPipeline, cluster
 		Build()
 }
 
-func createLuaFilter(logPipeline *telemetryv1alpha1.LogPipeline) string {
+func createLuaFilter(logPipeline *telemetryv1beta1.LogPipeline) string {
 	output := logPipeline.Spec.Output
 	if !logpipelineutils.IsHTTPOutputDefined(&output) {
 		return ""
@@ -72,7 +72,7 @@ func createLuaFilter(logPipeline *telemetryv1alpha1.LogPipeline) string {
 		Build()
 }
 
-func validateCustomSections(pipeline *telemetryv1alpha1.LogPipeline) error {
+func validateCustomSections(pipeline *telemetryv1beta1.LogPipeline) error {
 	customOutput := pipeline.Spec.Output.FluentBitCustom
 	if customOutput != "" {
 		_, err := config.ParseCustomSection(customOutput)
@@ -91,7 +91,7 @@ func validateCustomSections(pipeline *telemetryv1alpha1.LogPipeline) error {
 	return nil
 }
 
-func createTimestampModifyFilter(pipeline *telemetryv1alpha1.LogPipeline) string {
+func createTimestampModifyFilter(pipeline *telemetryv1beta1.LogPipeline) string {
 	output := pipeline.Spec.Output
 	if !logpipelineutils.IsHTTPOutputDefined(&output) {
 		return ""

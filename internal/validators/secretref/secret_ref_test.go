@@ -8,18 +8,18 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
 
 func TestValidate(t *testing.T) {
 	tests := []struct {
 		name        string
-		refs        []telemetryv1alpha1.SecretKeyRef
+		refs        []telemetryv1beta1.SecretKeyRef
 		expectError error
 	}{
 		{
 			name: "Success",
-			refs: []telemetryv1alpha1.SecretKeyRef{
+			refs: []telemetryv1beta1.SecretKeyRef{
 				{Name: "my-secret1", Namespace: "default", Key: "myKey1"},
 				{Name: "my-secret2", Namespace: "default", Key: "myKey2"},
 			},
@@ -27,7 +27,7 @@ func TestValidate(t *testing.T) {
 		},
 		{
 			name: "SecretNameNotPresent",
-			refs: []telemetryv1alpha1.SecretKeyRef{
+			refs: []telemetryv1beta1.SecretKeyRef{
 				{Name: "my-secret1", Namespace: "default", Key: "myKey1"},
 				{Name: "notExistent", Namespace: "default", Key: "myKey2"},
 			},
@@ -35,7 +35,7 @@ func TestValidate(t *testing.T) {
 		},
 		{
 			name: "SecretNamespaceNotPresent",
-			refs: []telemetryv1alpha1.SecretKeyRef{
+			refs: []telemetryv1beta1.SecretKeyRef{
 				{Name: "my-secret1", Namespace: "default", Key: "myKey1"},
 				{Name: "my-secret2", Namespace: "notExistent", Key: "myKey2"},
 			},
@@ -43,7 +43,7 @@ func TestValidate(t *testing.T) {
 		},
 		{
 			name: "SecretKeyNotPresent",
-			refs: []telemetryv1alpha1.SecretKeyRef{
+			refs: []telemetryv1beta1.SecretKeyRef{
 				{Name: "my-secret1", Namespace: "default", Key: "myKey1"},
 				{Name: "my-secret2", Namespace: "default", Key: "notExistent"},
 			},
@@ -86,13 +86,13 @@ func TestValidate(t *testing.T) {
 func TestGetValue(t *testing.T) {
 	tests := []struct {
 		name          string
-		refs          telemetryv1alpha1.SecretKeyRef
+		refs          telemetryv1beta1.SecretKeyRef
 		expectError   error
 		expectedValue string
 	}{
 		{
 			name: "Success",
-			refs: telemetryv1alpha1.SecretKeyRef{
+			refs: telemetryv1beta1.SecretKeyRef{
 				Name: "my-secret1", Namespace: "default", Key: "myKey1",
 			},
 			expectError:   nil,
@@ -100,7 +100,7 @@ func TestGetValue(t *testing.T) {
 		},
 		{
 			name: "SecretNameNotPresent",
-			refs: telemetryv1alpha1.SecretKeyRef{
+			refs: telemetryv1beta1.SecretKeyRef{
 				Name: "notExistent", Namespace: "default", Key: "myKey1",
 			},
 			expectError:   ErrSecretRefNotFound,
@@ -108,7 +108,7 @@ func TestGetValue(t *testing.T) {
 		},
 		{
 			name: "SecretNamespaceNotPresent",
-			refs: telemetryv1alpha1.SecretKeyRef{
+			refs: telemetryv1beta1.SecretKeyRef{
 				Name: "my-secret1", Namespace: "notExistent", Key: "myKey1",
 			},
 			expectError:   ErrSecretRefNotFound,
@@ -116,7 +116,7 @@ func TestGetValue(t *testing.T) {
 		},
 		{
 			name: "SecretKeyNotPresent",
-			refs: telemetryv1alpha1.SecretKeyRef{
+			refs: telemetryv1beta1.SecretKeyRef{
 				Name: "my-secret1", Namespace: "default", Key: "notExistent",
 			},
 			expectError:   ErrSecretKeyNotFound,
@@ -124,7 +124,7 @@ func TestGetValue(t *testing.T) {
 		},
 		{
 			name: "SecretRefMissingKey",
-			refs: telemetryv1alpha1.SecretKeyRef{
+			refs: telemetryv1beta1.SecretKeyRef{
 				Name: "my-secret1", Namespace: "default",
 			},
 			expectError:   ErrSecretRefMissingFields,
@@ -132,7 +132,7 @@ func TestGetValue(t *testing.T) {
 		},
 		{
 			name: "SecretRefMissingName",
-			refs: telemetryv1alpha1.SecretKeyRef{
+			refs: telemetryv1beta1.SecretKeyRef{
 				Namespace: "default", Key: "notExistent",
 			},
 			expectError:   ErrSecretRefMissingFields,
@@ -140,7 +140,7 @@ func TestGetValue(t *testing.T) {
 		},
 		{
 			name: "SecretRefMissingNamespace",
-			refs: telemetryv1alpha1.SecretKeyRef{
+			refs: telemetryv1beta1.SecretKeyRef{
 				Name: "my-secret1", Key: "notExistent",
 			},
 			expectError:   ErrSecretRefMissingFields,
@@ -173,47 +173,47 @@ func TestGetValue(t *testing.T) {
 func TestTracePipeline_GetSecretRefs(t *testing.T) {
 	tests := []struct {
 		name         string
-		given        *telemetryv1alpha1.OTLPOutput
+		given        *telemetryv1beta1.OTLPOutput
 		pipelineName string
-		expected     []telemetryv1alpha1.SecretKeyRef
+		expected     []telemetryv1beta1.SecretKeyRef
 	}{
 		{
 			name:         "only endpoint",
 			pipelineName: "test-pipeline",
-			given: &telemetryv1alpha1.OTLPOutput{
-				Endpoint: telemetryv1alpha1.ValueType{
+			given: &telemetryv1beta1.OTLPOutput{
+				Endpoint: telemetryv1beta1.ValueType{
 					Value: "",
-					ValueFrom: &telemetryv1alpha1.ValueFromSource{
-						SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+					ValueFrom: &telemetryv1beta1.ValueFromSource{
+						SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 							Name: "secret-1",
 							Key:  "endpoint",
 						}},
 				},
 			},
 
-			expected: []telemetryv1alpha1.SecretKeyRef{
+			expected: []telemetryv1beta1.SecretKeyRef{
 				{Name: "secret-1", Key: "endpoint"},
 			},
 		},
 		{
 			name:         "basic auth and header",
 			pipelineName: "test-pipeline",
-			given: &telemetryv1alpha1.OTLPOutput{
-				Authentication: &telemetryv1alpha1.AuthenticationOptions{
-					Basic: &telemetryv1alpha1.BasicAuthOptions{
-						User: telemetryv1alpha1.ValueType{
+			given: &telemetryv1beta1.OTLPOutput{
+				Authentication: &telemetryv1beta1.AuthenticationOptions{
+					Basic: &telemetryv1beta1.BasicAuthOptions{
+						User: telemetryv1beta1.ValueType{
 							Value: "",
-							ValueFrom: &telemetryv1alpha1.ValueFromSource{
-								SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+							ValueFrom: &telemetryv1beta1.ValueFromSource{
+								SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 									Name:      "secret-1",
 									Namespace: "default",
 									Key:       "user",
 								}},
 						},
-						Password: telemetryv1alpha1.ValueType{
+						Password: telemetryv1beta1.ValueType{
 							Value: "",
-							ValueFrom: &telemetryv1alpha1.ValueFromSource{
-								SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+							ValueFrom: &telemetryv1beta1.ValueFromSource{
+								SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 									Name:      "secret-2",
 									Namespace: "default",
 									Key:       "password",
@@ -221,13 +221,13 @@ func TestTracePipeline_GetSecretRefs(t *testing.T) {
 						},
 					},
 				},
-				Headers: []telemetryv1alpha1.Header{
+				Headers: []telemetryv1beta1.Header{
 					{
 						Name: "header-1",
-						ValueType: telemetryv1alpha1.ValueType{
+						ValueType: telemetryv1beta1.ValueType{
 							Value: "",
-							ValueFrom: &telemetryv1alpha1.ValueFromSource{
-								SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+							ValueFrom: &telemetryv1beta1.ValueFromSource{
+								SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 									Name:      "secret-3",
 									Namespace: "default",
 									Key:       "myheader",
@@ -237,7 +237,7 @@ func TestTracePipeline_GetSecretRefs(t *testing.T) {
 				},
 			},
 
-			expected: []telemetryv1alpha1.SecretKeyRef{
+			expected: []telemetryv1beta1.SecretKeyRef{
 				{Name: "secret-1", Namespace: "default", Key: "user"},
 				{Name: "secret-2", Namespace: "default", Key: "password"},
 				{Name: "secret-3", Namespace: "default", Key: "myheader"},
@@ -246,34 +246,34 @@ func TestTracePipeline_GetSecretRefs(t *testing.T) {
 		{
 			name:         "basic auth and header (with missing fields)",
 			pipelineName: "test-pipeline",
-			given: &telemetryv1alpha1.OTLPOutput{
-				Authentication: &telemetryv1alpha1.AuthenticationOptions{
-					Basic: &telemetryv1alpha1.BasicAuthOptions{
-						User: telemetryv1alpha1.ValueType{
+			given: &telemetryv1beta1.OTLPOutput{
+				Authentication: &telemetryv1beta1.AuthenticationOptions{
+					Basic: &telemetryv1beta1.BasicAuthOptions{
+						User: telemetryv1beta1.ValueType{
 							Value: "",
-							ValueFrom: &telemetryv1alpha1.ValueFromSource{
-								SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+							ValueFrom: &telemetryv1beta1.ValueFromSource{
+								SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 									Name: "secret-1",
 									Key:  "user",
 								}},
 						},
-						Password: telemetryv1alpha1.ValueType{
+						Password: telemetryv1beta1.ValueType{
 							Value: "",
-							ValueFrom: &telemetryv1alpha1.ValueFromSource{
-								SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+							ValueFrom: &telemetryv1beta1.ValueFromSource{
+								SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 									Namespace: "default",
 									Key:       "password",
 								}},
 						},
 					},
 				},
-				Headers: []telemetryv1alpha1.Header{
+				Headers: []telemetryv1beta1.Header{
 					{
 						Name: "header-1",
-						ValueType: telemetryv1alpha1.ValueType{
+						ValueType: telemetryv1beta1.ValueType{
 							Value: "",
-							ValueFrom: &telemetryv1alpha1.ValueFromSource{
-								SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+							ValueFrom: &telemetryv1beta1.ValueFromSource{
+								SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 									Name:      "secret-3",
 									Namespace: "default",
 								}},
@@ -282,7 +282,7 @@ func TestTracePipeline_GetSecretRefs(t *testing.T) {
 				},
 			},
 
-			expected: []telemetryv1alpha1.SecretKeyRef{
+			expected: []telemetryv1beta1.SecretKeyRef{
 				{Name: "secret-1", Key: "user"},
 				{Namespace: "default", Key: "password"},
 				{Name: "secret-3", Namespace: "default"},
@@ -291,31 +291,31 @@ func TestTracePipeline_GetSecretRefs(t *testing.T) {
 		{
 			name:         "oauth2",
 			pipelineName: "test-pipeline",
-			given: &telemetryv1alpha1.OTLPOutput{
-				Authentication: &telemetryv1alpha1.AuthenticationOptions{
-					OAuth2: &telemetryv1alpha1.OAuth2Options{
-						TokenURL: telemetryv1alpha1.ValueType{
+			given: &telemetryv1beta1.OTLPOutput{
+				Authentication: &telemetryv1beta1.AuthenticationOptions{
+					OAuth2: &telemetryv1beta1.OAuth2Options{
+						TokenURL: telemetryv1beta1.ValueType{
 							Value: "",
-							ValueFrom: &telemetryv1alpha1.ValueFromSource{
-								SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+							ValueFrom: &telemetryv1beta1.ValueFromSource{
+								SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 									Name:      "secret-1",
 									Namespace: "default",
 									Key:       "token-url",
 								}},
 						},
-						ClientID: telemetryv1alpha1.ValueType{
+						ClientID: telemetryv1beta1.ValueType{
 							Value: "",
-							ValueFrom: &telemetryv1alpha1.ValueFromSource{
-								SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+							ValueFrom: &telemetryv1beta1.ValueFromSource{
+								SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 									Name:      "secret-2",
 									Namespace: "default",
 									Key:       "client-id",
 								}},
 						},
-						ClientSecret: telemetryv1alpha1.ValueType{
+						ClientSecret: telemetryv1beta1.ValueType{
 							Value: "",
-							ValueFrom: &telemetryv1alpha1.ValueFromSource{
-								SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+							ValueFrom: &telemetryv1beta1.ValueFromSource{
+								SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 									Name:      "secret-3",
 									Namespace: "default",
 									Key:       "client-secret",
@@ -325,7 +325,7 @@ func TestTracePipeline_GetSecretRefs(t *testing.T) {
 				},
 			},
 
-			expected: []telemetryv1alpha1.SecretKeyRef{
+			expected: []telemetryv1beta1.SecretKeyRef{
 				{Name: "secret-1", Namespace: "default", Key: "token-url"},
 				{Name: "secret-2", Namespace: "default", Key: "client-id"},
 				{Name: "secret-3", Namespace: "default", Key: "client-secret"},
@@ -335,7 +335,7 @@ func TestTracePipeline_GetSecretRefs(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			sut := telemetryv1alpha1.TracePipeline{ObjectMeta: metav1.ObjectMeta{Name: test.pipelineName}, Spec: telemetryv1alpha1.TracePipelineSpec{Output: telemetryv1alpha1.TracePipelineOutput{OTLP: test.given}}}
+			sut := telemetryv1beta1.TracePipeline{ObjectMeta: metav1.ObjectMeta{Name: test.pipelineName}, Spec: telemetryv1beta1.TracePipelineSpec{Output: telemetryv1beta1.TracePipelineOutput{OTLP: test.given}}}
 			actual := getSecretRefsTracePipeline(&sut)
 			require.ElementsMatch(t, test.expected, actual)
 		})
@@ -345,47 +345,47 @@ func TestTracePipeline_GetSecretRefs(t *testing.T) {
 func TestMetricPipeline_GetSecretRefs(t *testing.T) {
 	tests := []struct {
 		name         string
-		given        *telemetryv1alpha1.OTLPOutput
+		given        *telemetryv1beta1.OTLPOutput
 		pipelineName string
-		expected     []telemetryv1alpha1.SecretKeyRef
+		expected     []telemetryv1beta1.SecretKeyRef
 	}{
 		{
 			name:         "only endpoint",
 			pipelineName: "test-pipeline",
-			given: &telemetryv1alpha1.OTLPOutput{
-				Endpoint: telemetryv1alpha1.ValueType{
+			given: &telemetryv1beta1.OTLPOutput{
+				Endpoint: telemetryv1beta1.ValueType{
 					Value: "",
-					ValueFrom: &telemetryv1alpha1.ValueFromSource{
-						SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+					ValueFrom: &telemetryv1beta1.ValueFromSource{
+						SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 							Name: "secret-1",
 							Key:  "endpoint",
 						}},
 				},
 			},
 
-			expected: []telemetryv1alpha1.SecretKeyRef{
+			expected: []telemetryv1beta1.SecretKeyRef{
 				{Name: "secret-1", Key: "endpoint"},
 			},
 		},
 		{
 			name:         "basic auth and header",
 			pipelineName: "test-pipeline",
-			given: &telemetryv1alpha1.OTLPOutput{
-				Authentication: &telemetryv1alpha1.AuthenticationOptions{
-					Basic: &telemetryv1alpha1.BasicAuthOptions{
-						User: telemetryv1alpha1.ValueType{
+			given: &telemetryv1beta1.OTLPOutput{
+				Authentication: &telemetryv1beta1.AuthenticationOptions{
+					Basic: &telemetryv1beta1.BasicAuthOptions{
+						User: telemetryv1beta1.ValueType{
 							Value: "",
-							ValueFrom: &telemetryv1alpha1.ValueFromSource{
-								SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+							ValueFrom: &telemetryv1beta1.ValueFromSource{
+								SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 									Name:      "secret-1",
 									Namespace: "default",
 									Key:       "user",
 								}},
 						},
-						Password: telemetryv1alpha1.ValueType{
+						Password: telemetryv1beta1.ValueType{
 							Value: "",
-							ValueFrom: &telemetryv1alpha1.ValueFromSource{
-								SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+							ValueFrom: &telemetryv1beta1.ValueFromSource{
+								SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 									Name:      "secret-2",
 									Namespace: "default",
 									Key:       "password",
@@ -393,13 +393,13 @@ func TestMetricPipeline_GetSecretRefs(t *testing.T) {
 						},
 					},
 				},
-				Headers: []telemetryv1alpha1.Header{
+				Headers: []telemetryv1beta1.Header{
 					{
 						Name: "header-1",
-						ValueType: telemetryv1alpha1.ValueType{
+						ValueType: telemetryv1beta1.ValueType{
 							Value: "",
-							ValueFrom: &telemetryv1alpha1.ValueFromSource{
-								SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+							ValueFrom: &telemetryv1beta1.ValueFromSource{
+								SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 									Name:      "secret-3",
 									Namespace: "default",
 									Key:       "myheader",
@@ -409,7 +409,7 @@ func TestMetricPipeline_GetSecretRefs(t *testing.T) {
 				},
 			},
 
-			expected: []telemetryv1alpha1.SecretKeyRef{
+			expected: []telemetryv1beta1.SecretKeyRef{
 				{Name: "secret-1", Namespace: "default", Key: "user"},
 				{Name: "secret-2", Namespace: "default", Key: "password"},
 				{Name: "secret-3", Namespace: "default", Key: "myheader"},
@@ -418,34 +418,34 @@ func TestMetricPipeline_GetSecretRefs(t *testing.T) {
 		{
 			name:         "basic auth and header (with missing fields)",
 			pipelineName: "test-pipeline",
-			given: &telemetryv1alpha1.OTLPOutput{
-				Authentication: &telemetryv1alpha1.AuthenticationOptions{
-					Basic: &telemetryv1alpha1.BasicAuthOptions{
-						User: telemetryv1alpha1.ValueType{
+			given: &telemetryv1beta1.OTLPOutput{
+				Authentication: &telemetryv1beta1.AuthenticationOptions{
+					Basic: &telemetryv1beta1.BasicAuthOptions{
+						User: telemetryv1beta1.ValueType{
 							Value: "",
-							ValueFrom: &telemetryv1alpha1.ValueFromSource{
-								SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+							ValueFrom: &telemetryv1beta1.ValueFromSource{
+								SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 									Namespace: "default",
 									Key:       "user",
 								}},
 						},
-						Password: telemetryv1alpha1.ValueType{
+						Password: telemetryv1beta1.ValueType{
 							Value: "",
-							ValueFrom: &telemetryv1alpha1.ValueFromSource{
-								SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+							ValueFrom: &telemetryv1beta1.ValueFromSource{
+								SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 									Name: "secret-2",
 									Key:  "password",
 								}},
 						},
 					},
 				},
-				Headers: []telemetryv1alpha1.Header{
+				Headers: []telemetryv1beta1.Header{
 					{
 						Name: "header-1",
-						ValueType: telemetryv1alpha1.ValueType{
+						ValueType: telemetryv1beta1.ValueType{
 							Value: "",
-							ValueFrom: &telemetryv1alpha1.ValueFromSource{
-								SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+							ValueFrom: &telemetryv1beta1.ValueFromSource{
+								SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 									Name:      "secret-3",
 									Namespace: "default",
 								}},
@@ -454,7 +454,7 @@ func TestMetricPipeline_GetSecretRefs(t *testing.T) {
 				},
 			},
 
-			expected: []telemetryv1alpha1.SecretKeyRef{
+			expected: []telemetryv1beta1.SecretKeyRef{
 				{Namespace: "default", Key: "user"},
 				{Name: "secret-2", Key: "password"},
 				{Name: "secret-3", Namespace: "default"},
@@ -464,7 +464,7 @@ func TestMetricPipeline_GetSecretRefs(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			sut := telemetryv1alpha1.MetricPipeline{ObjectMeta: metav1.ObjectMeta{Name: test.pipelineName}, Spec: telemetryv1alpha1.MetricPipelineSpec{Output: telemetryv1alpha1.MetricPipelineOutput{OTLP: test.given}}}
+			sut := telemetryv1beta1.MetricPipeline{ObjectMeta: metav1.ObjectMeta{Name: test.pipelineName}, Spec: telemetryv1beta1.MetricPipelineSpec{Output: telemetryv1beta1.MetricPipelineOutput{OTLP: test.given}}}
 			actual := getSecretRefsMetricPipeline(&sut)
 			require.ElementsMatch(t, test.expected, actual)
 		})
@@ -474,61 +474,61 @@ func TestMetricPipeline_GetSecretRefs(t *testing.T) {
 func TestLogPipeline_GetSecretRefs(t *testing.T) {
 	tests := []struct {
 		name     string
-		given    telemetryv1alpha1.LogPipeline
-		expected []telemetryv1alpha1.SecretKeyRef
+		given    telemetryv1beta1.LogPipeline
+		expected []telemetryv1beta1.SecretKeyRef
 	}{
 		{
 			name: "only variables",
-			given: telemetryv1alpha1.LogPipeline{
-				Spec: telemetryv1alpha1.LogPipelineSpec{
-					FluentBitVariables: []telemetryv1alpha1.FluentBitVariable{
+			given: telemetryv1beta1.LogPipeline{
+				Spec: telemetryv1beta1.LogPipelineSpec{
+					FluentBitVariables: []telemetryv1beta1.FluentBitVariable{
 						{
 							Name: "password-1",
-							ValueFrom: telemetryv1alpha1.ValueFromSource{
-								SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{Name: "secret-1", Key: "password"},
+							ValueFrom: telemetryv1beta1.ValueFromSource{
+								SecretKeyRef: &telemetryv1beta1.SecretKeyRef{Name: "secret-1", Key: "password"},
 							},
 						},
 						{
 							Name: "password-2",
-							ValueFrom: telemetryv1alpha1.ValueFromSource{
-								SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{Name: "secret-2", Key: "password"},
+							ValueFrom: telemetryv1beta1.ValueFromSource{
+								SecretKeyRef: &telemetryv1beta1.SecretKeyRef{Name: "secret-2", Key: "password"},
 							},
 						},
 					},
 				},
 			},
 
-			expected: []telemetryv1alpha1.SecretKeyRef{
+			expected: []telemetryv1beta1.SecretKeyRef{
 				{Name: "secret-1", Key: "password"},
 				{Name: "secret-2", Key: "password"},
 			},
 		},
 		{
 			name: "http output secret refs",
-			given: telemetryv1alpha1.LogPipeline{
+			given: telemetryv1beta1.LogPipeline{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "cls",
 				},
-				Spec: telemetryv1alpha1.LogPipelineSpec{
-					Output: telemetryv1alpha1.LogPipelineOutput{
-						FluentBitHTTP: &telemetryv1alpha1.FluentBitHTTPOutput{
-							Host: telemetryv1alpha1.ValueType{
-								ValueFrom: &telemetryv1alpha1.ValueFromSource{
-									SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+				Spec: telemetryv1beta1.LogPipelineSpec{
+					Output: telemetryv1beta1.LogPipelineOutput{
+						FluentBitHTTP: &telemetryv1beta1.FluentBitHTTPOutput{
+							Host: telemetryv1beta1.ValueType{
+								ValueFrom: &telemetryv1beta1.ValueFromSource{
+									SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 										Name: "creds", Namespace: "default", Key: "host",
 									},
 								},
 							},
-							User: &telemetryv1alpha1.ValueType{
-								ValueFrom: &telemetryv1alpha1.ValueFromSource{
-									SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+							User: &telemetryv1beta1.ValueType{
+								ValueFrom: &telemetryv1beta1.ValueFromSource{
+									SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 										Name: "creds", Namespace: "default", Key: "user",
 									},
 								},
 							},
-							Password: &telemetryv1alpha1.ValueType{
-								ValueFrom: &telemetryv1alpha1.ValueFromSource{
-									SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+							Password: &telemetryv1beta1.ValueType{
+								ValueFrom: &telemetryv1beta1.ValueFromSource{
+									SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 										Name: "creds", Namespace: "default", Key: "password",
 									},
 								},
@@ -537,7 +537,7 @@ func TestLogPipeline_GetSecretRefs(t *testing.T) {
 					},
 				},
 			},
-			expected: []telemetryv1alpha1.SecretKeyRef{
+			expected: []telemetryv1beta1.SecretKeyRef{
 				{Name: "creds", Namespace: "default", Key: "host"},
 				{Name: "creds", Namespace: "default", Key: "user"},
 				{Name: "creds", Namespace: "default", Key: "password"},
@@ -545,30 +545,30 @@ func TestLogPipeline_GetSecretRefs(t *testing.T) {
 		},
 		{
 			name: "http output secret refs (with missing fields)",
-			given: telemetryv1alpha1.LogPipeline{
+			given: telemetryv1beta1.LogPipeline{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "cls",
 				},
-				Spec: telemetryv1alpha1.LogPipelineSpec{
-					Output: telemetryv1alpha1.LogPipelineOutput{
-						FluentBitHTTP: &telemetryv1alpha1.FluentBitHTTPOutput{
-							Host: telemetryv1alpha1.ValueType{
-								ValueFrom: &telemetryv1alpha1.ValueFromSource{
-									SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+				Spec: telemetryv1beta1.LogPipelineSpec{
+					Output: telemetryv1beta1.LogPipelineOutput{
+						FluentBitHTTP: &telemetryv1beta1.FluentBitHTTPOutput{
+							Host: telemetryv1beta1.ValueType{
+								ValueFrom: &telemetryv1beta1.ValueFromSource{
+									SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 										Name: "creds", Namespace: "default",
 									},
 								},
 							},
-							User: &telemetryv1alpha1.ValueType{
-								ValueFrom: &telemetryv1alpha1.ValueFromSource{
-									SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+							User: &telemetryv1beta1.ValueType{
+								ValueFrom: &telemetryv1beta1.ValueFromSource{
+									SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 										Name: "creds", Key: "user",
 									},
 								},
 							},
-							Password: &telemetryv1alpha1.ValueType{
-								ValueFrom: &telemetryv1alpha1.ValueFromSource{
-									SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+							Password: &telemetryv1beta1.ValueType{
+								ValueFrom: &telemetryv1beta1.ValueFromSource{
+									SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 										Namespace: "default", Key: "password",
 									},
 								},
@@ -577,7 +577,7 @@ func TestLogPipeline_GetSecretRefs(t *testing.T) {
 					},
 				},
 			},
-			expected: []telemetryv1alpha1.SecretKeyRef{
+			expected: []telemetryv1beta1.SecretKeyRef{
 				{Name: "creds", Namespace: "default"},
 				{Name: "creds", Key: "user"},
 				{Namespace: "default", Key: "password"},
@@ -595,7 +595,7 @@ func TestLogPipeline_GetSecretRefs(t *testing.T) {
 
 func TestGetValue_SecretNotFound(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().Build()
-	ref := telemetryv1alpha1.SecretKeyRef{Name: "my-secret1", Namespace: "default", Key: "myKey1"}
+	ref := telemetryv1beta1.SecretKeyRef{Name: "my-secret1", Namespace: "default", Key: "myKey1"}
 
 	_, err := GetValue(t.Context(), fakeClient, ref)
 	require.Error(t, err)
@@ -603,16 +603,16 @@ func TestGetValue_SecretNotFound(t *testing.T) {
 }
 
 func TestGetSecretRefsInHTTPOutput_TLSFields(t *testing.T) {
-	httpOutput := &telemetryv1alpha1.FluentBitHTTPOutput{
+	httpOutput := &telemetryv1beta1.FluentBitHTTPOutput{
 
-		TLS: telemetryv1alpha1.FluentBitHTTPOutputTLS{
-			CA:   &telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{Name: "ca", Key: "ca"}}},
-			Cert: &telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{Name: "cert", Key: "cert"}}},
-			Key:  &telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{Name: "key", Key: "key"}}},
+		TLS: telemetryv1beta1.OutputTLS{
+			CA:   &telemetryv1beta1.ValueType{ValueFrom: &telemetryv1beta1.ValueFromSource{SecretKeyRef: &telemetryv1beta1.SecretKeyRef{Name: "ca", Key: "ca"}}},
+			Cert: &telemetryv1beta1.ValueType{ValueFrom: &telemetryv1beta1.ValueFromSource{SecretKeyRef: &telemetryv1beta1.SecretKeyRef{Name: "cert", Key: "cert"}}},
+			Key:  &telemetryv1beta1.ValueType{ValueFrom: &telemetryv1beta1.ValueFromSource{SecretKeyRef: &telemetryv1beta1.SecretKeyRef{Name: "key", Key: "key"}}},
 		},
 	}
 	refs := getSecretRefsInHTTPOutput(httpOutput)
-	require.ElementsMatch(t, []telemetryv1alpha1.SecretKeyRef{
+	require.ElementsMatch(t, []telemetryv1beta1.SecretKeyRef{
 		{Name: "ca", Key: "ca"},
 		{Name: "cert", Key: "cert"},
 		{Name: "key", Key: "key"},
@@ -620,16 +620,16 @@ func TestGetSecretRefsInHTTPOutput_TLSFields(t *testing.T) {
 }
 
 func TestGetSecretRefsInOTLPOutput_TLSFieldsAndInsecure(t *testing.T) {
-	otlp := &telemetryv1alpha1.OTLPOutput{
-		TLS: &telemetryv1alpha1.OTLPTLS{
+	otlp := &telemetryv1beta1.OTLPOutput{
+		TLS: &telemetryv1beta1.OutputTLS{
 			Insecure: false,
-			CA:       &telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{Name: "ca", Key: "ca"}}},
-			Cert:     &telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{Name: "cert", Key: "cert"}}},
-			Key:      &telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{Name: "key", Key: "key"}}},
+			CA:       &telemetryv1beta1.ValueType{ValueFrom: &telemetryv1beta1.ValueFromSource{SecretKeyRef: &telemetryv1beta1.SecretKeyRef{Name: "ca", Key: "ca"}}},
+			Cert:     &telemetryv1beta1.ValueType{ValueFrom: &telemetryv1beta1.ValueFromSource{SecretKeyRef: &telemetryv1beta1.SecretKeyRef{Name: "cert", Key: "cert"}}},
+			Key:      &telemetryv1beta1.ValueType{ValueFrom: &telemetryv1beta1.ValueFromSource{SecretKeyRef: &telemetryv1beta1.SecretKeyRef{Name: "key", Key: "key"}}},
 		},
 	}
 	refs := getSecretRefsInOTLPOutput(otlp)
-	require.ElementsMatch(t, []telemetryv1alpha1.SecretKeyRef{
+	require.ElementsMatch(t, []telemetryv1beta1.SecretKeyRef{
 		{Name: "ca", Key: "ca"},
 		{Name: "cert", Key: "cert"},
 		{Name: "key", Key: "key"},
@@ -641,6 +641,6 @@ func TestGetSecretRefsInOTLPOutput_TLSFieldsAndInsecure(t *testing.T) {
 }
 
 func TestAppendIfSecretRef_NonSecretValue(t *testing.T) {
-	refs := appendIfSecretRef(nil, &telemetryv1alpha1.ValueType{Value: "not-a-secret"})
+	refs := appendIfSecretRef(nil, &telemetryv1beta1.ValueType{Value: "not-a-secret"})
 	require.Empty(t, refs)
 }

@@ -5,13 +5,13 @@ import (
 	"fmt"
 
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
-	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/validators/ottl"
 	webhookutils "github.com/kyma-project/telemetry-manager/webhook/utils"
 )
@@ -64,31 +64,31 @@ func validate(ctx context.Context, obj runtime.Object) (admission.Warnings, erro
 		return nil, err
 	}
 
-	if logpipelineutils.IsCustomFilterDefined(pipeline.Spec.FluentBitFilters) {
+	if isCustomFilterDefined(pipeline.Spec.FluentBitFilters) {
 		warnings = append(warnings, renderDeprecationWarning(pipeline.Name, "filters"))
 	}
 
-	if logpipelineutils.IsCustomOutputDefined(&pipeline.Spec.Output) {
+	if isCustomOutputDefined(&pipeline.Spec.Output) {
 		warnings = append(warnings, renderDeprecationWarning(pipeline.Name, "output.custom"))
 	}
 
-	if logpipelineutils.IsHTTPOutputDefined(&pipeline.Spec.Output) {
+	if isHTTPOutputDefined(&pipeline.Spec.Output) {
 		warnings = append(warnings, renderDeprecationWarning(pipeline.Name, "output.http"))
 	}
 
-	if logpipelineutils.IsVariablesDefined(pipeline.Spec.FluentBitVariables) {
+	if isVariablesDefined(pipeline.Spec.FluentBitVariables) {
 		warnings = append(warnings, renderDeprecationWarning(pipeline.Name, "variables"))
 	}
 
-	if logpipelineutils.IsFilesDefined(pipeline.Spec.FluentBitFiles) {
+	if isFilesDefined(pipeline.Spec.FluentBitFiles) {
 		warnings = append(warnings, renderDeprecationWarning(pipeline.Name, "files"))
 	}
 
-	if logpipelineutils.IsApplicationInputEnabled(&pipeline.Spec.Input) && pipeline.Spec.Input.Application.FluentBitDropLabels != nil {
+	if isApplicationInputEnabled(&pipeline.Spec.Input) && pipeline.Spec.Input.Application.FluentBitDropLabels != nil {
 		warnings = append(warnings, renderDeprecationWarning(pipeline.Name, "input.application.dropLabels"))
 	}
 
-	if logpipelineutils.IsApplicationInputEnabled(&pipeline.Spec.Input) && pipeline.Spec.Input.Application.FluentBitKeepAnnotations != nil {
+	if isApplicationInputEnabled(&pipeline.Spec.Input) && pipeline.Spec.Input.Application.FluentBitKeepAnnotations != nil {
 		warnings = append(warnings, renderDeprecationWarning(pipeline.Name, "input.application.keepAnnotations"))
 	}
 
@@ -97,4 +97,34 @@ func validate(ctx context.Context, obj runtime.Object) (admission.Warnings, erro
 
 func renderDeprecationWarning(pipelineName string, attribute string) string {
 	return fmt.Sprintf("LogPipeline '%s' uses the attribute '%s' which is based on the deprecated FluentBit technology stack. Please migrate to an Open Telemetry based pipeline instead. See the documentation: %s", pipelineName, attribute, migrationGuideLink)
+}
+
+func isCustomFilterDefined(filters []telemetryv1alpha1.FluentBitFilter) bool {
+	for _, filter := range filters {
+		if filter.Custom != "" {
+			return true
+		}
+	}
+
+	return false
+}
+
+func isCustomOutputDefined(o *telemetryv1alpha1.LogPipelineOutput) bool {
+	return o.FluentBitCustom != ""
+}
+
+func isHTTPOutputDefined(o *telemetryv1alpha1.LogPipelineOutput) bool {
+	return o.FluentBitHTTP != nil
+}
+
+func isVariablesDefined(v []telemetryv1alpha1.FluentBitVariable) bool {
+	return len(v) > 0
+}
+
+func isFilesDefined(v []telemetryv1alpha1.FluentBitFile) bool {
+	return len(v) > 0
+}
+
+func isApplicationInputEnabled(i *telemetryv1alpha1.LogPipelineInput) bool {
+	return i.Application != nil && ptr.Deref(i.Application.Enabled, false)
 }
