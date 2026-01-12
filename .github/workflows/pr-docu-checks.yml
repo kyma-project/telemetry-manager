@@ -13,6 +13,7 @@ on:
       - "OWNERS"
       - "CODEOWNERS"
       - "external-images.yaml"
+    types: [opened, synchronize, reopened, labeled, unlabeled]
   workflow_dispatch:
 
 jobs:

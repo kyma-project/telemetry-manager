@@ -17,7 +17,7 @@ on:
       - "CODEOWNERS"
       - "external-images.yaml"
   pull_request_target:
-    types: [opened, synchronize, reopened]
+    types: [opened, synchronize, reopened, labeled, unlabeled]
   workflow_dispatch:
 
 jobs:

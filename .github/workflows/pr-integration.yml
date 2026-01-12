@@ -36,6 +36,7 @@ on:
       - ".env"
       - ".k3d-kyma.yaml"
       - "Makefile"
+    types: [opened, synchronize, reopened, labeled, unlabeled]
 
   workflow_dispatch:
 
