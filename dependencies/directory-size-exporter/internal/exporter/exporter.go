@@ -69,22 +69,47 @@ func (v *exporter) recordingIteration(ctx context.Context, logPath string) {
 	}
 }
 
+// dirSize calculates the total size of all regular files in a directory tree.
+// It explicitly skips symbolic links to avoid CVE-2024-8244 (TOCTOU vulnerability in filepath.Walk).
 func dirSize(path string) (int64, error) {
 	var size int64
 
-	err := filepath.Walk(path, func(_ string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
+	entries, err := os.ReadDir(path)
+	if err != nil {
+		return 0, err
+	}
+
+	for _, entry := range entries {
+		// Explicitly skip symbolic links to prevent TOCTOU attacks (CVE-2024-8244)
+		if entry.Type()&os.ModeSymlink != 0 {
+			continue
 		}
 
-		if info.Mode().IsRegular() {
-			size += info.Size()
+		fullPath := filepath.Join(path, entry.Name())
+
+		if entry.IsDir() {
+			// Recursively calculate subdirectory size
+			subSize, err := dirSize(fullPath)
+			if err != nil {
+				// Log error but continue processing other directories
+				continue
+			}
+
+			size += subSize
+		} else {
+			// Get file info for regular files
+			info, err := entry.Info()
+			if err != nil {
+				continue
+			}
+
+			if info.Mode().IsRegular() {
+				size += info.Size()
+			}
 		}
+	}
 
-		return err
-	})
-
-	return size, err
+	return size, nil
 }
 
 func listDirs(path string) ([]directory, error) {
@@ -96,17 +121,23 @@ func listDirs(path string) ([]directory, error) {
 	}
 
 	for _, file := range files {
+		// Skip symbolic links to prevent security issues
+		if file.Type()&os.ModeSymlink != 0 {
+			continue
+		}
+
 		if !file.IsDir() {
 			continue
 		}
 
-		size, err := dirSize(path + "/" + file.Name())
+		size, err := dirSize(filepath.Join(path, file.Name()))
 		if err != nil {
-			return directories, err
+			// Skip directories that cannot be read, but continue processing others
+			continue
 		}
 
 		directories = append(directories, directory{file.Name(), size})
 	}
 
-	return directories, err
+	return directories, nil
 }
