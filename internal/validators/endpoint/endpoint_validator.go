@@ -77,10 +77,8 @@ func (v *Validator) Validate(ctx context.Context, params EndpointValidationParam
 		return nil
 	}
 
-	var hostport = u.Host + u.Path
-
 	// port validation
-	if err := validatePort(hostport, params.Protocol == OTLPProtocolHTTP); err != nil {
+	if err := validatePort(u.Host, params.Protocol == OTLPProtocolHTTP); err != nil {
 		return err
 	}
 
