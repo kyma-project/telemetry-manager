@@ -143,7 +143,7 @@ func checkTelemetryModuleMetricState(t *testing.T, g Gomega, body []byte) {
 			HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", kitkyma.SystemNamespaceName)),
 			HaveResourceAttributes(HaveKeyWithValue("k8s.resource.name", "default")),
 			HaveResourceAttributes(HaveKeyWithValue("k8s.resource.group", "operator.kyma-project.io")),
-			HaveResourceAttributes(HaveKeyWithValue("k8s.resource.version", "v1alpha1")),
+			HaveResourceAttributes(HaveKeyWithValue("k8s.resource.version", "v1beta1")),
 			HaveResourceAttributes(HaveKeyWithValue("k8s.resource.kind", "telemetries")),
 			HaveScopeName(Equal(common.InstrumentationScopeKyma)),
 			HaveScopeVersion(SatisfyAny(
@@ -166,7 +166,7 @@ func checkTelemtryModuleMetricsConditions(t *testing.T, g Gomega, body []byte, t
 			HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", kitkyma.SystemNamespaceName)),
 			HaveResourceAttributes(HaveKeyWithValue("k8s.resource.name", "default")),
 			HaveResourceAttributes(HaveKeyWithValue("k8s.resource.group", "operator.kyma-project.io")),
-			HaveResourceAttributes(HaveKeyWithValue("k8s.resource.version", "v1alpha1")),
+			HaveResourceAttributes(HaveKeyWithValue("k8s.resource.version", "v1beta1")),
 			HaveResourceAttributes(HaveKeyWithValue("k8s.resource.kind", "telemetries")),
 			HaveScopeName(Equal(common.InstrumentationScopeKyma)),
 			HaveScopeVersion(SatisfyAny(
@@ -188,7 +188,7 @@ func checkMetricPipelineMetricsConditions(t *testing.T, g Gomega, body []byte, t
 			HaveMetricAttributes(HaveKey("reason")),
 			HaveResourceAttributes(HaveKeyWithValue("k8s.resource.name", pipelineName)),
 			HaveResourceAttributes(HaveKeyWithValue("k8s.resource.group", "telemetry.kyma-project.io")),
-			HaveResourceAttributes(HaveKeyWithValue("k8s.resource.version", "v1alpha1")),
+			HaveResourceAttributes(HaveKeyWithValue("k8s.resource.version", "v1beta1")),
 			HaveResourceAttributes(HaveKeyWithValue("k8s.resource.kind", "metricpipelines")),
 			HaveScopeName(Equal(common.InstrumentationScopeKyma)),
 			HaveScopeVersion(SatisfyAny(
