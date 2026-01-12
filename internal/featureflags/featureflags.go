@@ -2,6 +2,10 @@ package featureflags
 
 type FeatureFlag int
 
+const (
+	V1Beta1 FeatureFlag = iota
+)
+
 var f = &map[FeatureFlag]bool{}
 
 func Enable(flag FeatureFlag) {
