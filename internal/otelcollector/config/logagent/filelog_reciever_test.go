@@ -239,7 +239,6 @@ func TestExcludePath(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-
 			excludePaths := createExcludePath(tc.pipeline.Spec.Input.Runtime, false)
 			require.Equal(t, tc.expected, excludePaths)
 		})
