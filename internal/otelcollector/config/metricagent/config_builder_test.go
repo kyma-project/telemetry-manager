@@ -298,7 +298,18 @@ func TestBuildConfig(t *testing.T) {
 					).
 					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
 			},
-		}, {
+		},
+		{
+			name:           "pipeline with istio input and no namespace filters",
+			goldenFileName: "istio-namespace-no-filters.yaml",
+			pipelines: []telemetryv1beta1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().
+					WithName("test").
+					WithIstioInput(true).
+					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+			},
+		},
+		{
 			name:           "three pipelines with multiple input types and mixed configurations",
 			goldenFileName: "multiple-inputs-mixed.yaml",
 			pipelines: []telemetryv1beta1.MetricPipeline{
