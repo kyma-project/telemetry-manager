@@ -1625,6 +1625,9 @@ spec:
                                     type: object
                                 type: object
                                 x-kubernetes-validations:
+                                - message: '''tokenURL'' must be a valid URL'
+                                  rule: '(self.value != '''' ) ? (isURL(self.value))
+                                    : true'
                                 - message: Exactly one of 'value' or 'valueFrom' must
                                     be set
                                   rule: has(self.value) != has(self.valueFrom)

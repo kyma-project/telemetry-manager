@@ -89,6 +89,7 @@ type BasicAuthOptions struct {
 type OAuth2Options struct {
 	// TokenURL contains the OAuth2 token endpoint URL or a Secret reference.
 	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:XValidation:rule="(self.value != '' ) ? (isURL(self.value)) : true", message="'tokenURL' must be a valid URL"
 	TokenURL ValueType `json:"tokenURL"`
 	// ClientID contains the OAuth2 client ID or a Secret reference.
 	// +kubebuilder:validation:Required
