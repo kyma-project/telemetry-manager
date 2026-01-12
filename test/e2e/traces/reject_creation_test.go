@@ -238,9 +238,9 @@ func TestRejectTracePipelineCreation(t *testing.T) {
 					),
 				).
 				Build(),
-			errorMsg: "Invalid value: \"object\": no such key: value evaluating rule: 'clientID' missing",
+			errorMsg: "Exactly one of 'value' or 'valueFrom' must be set",
 			field:    "spec.output.otlp.authentication.oauth2.clientID",
-			causes:   2,
+			causes:   1,
 		},
 		{
 			name: "otlp-output-oauth2-insecure",
