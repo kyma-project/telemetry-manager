@@ -19,6 +19,7 @@ import (
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/trace"
 )
 
 const (
@@ -67,19 +68,28 @@ func initMetrics() error {
 		return fmt.Errorf("error creating cpu.energy.watt histogram: %w", err)
 	}
 
-	if _, err = meter.Float64ObservableGauge(
+	cpuTempGauge, err := meter.Float64ObservableGauge(
 		"cpu.temperature.celsius",
 		metric.WithDescription("Current temperature of the CPU."),
 		metric.WithUnit("celsius"),
-		metric.WithFloat64Callback(func(ctx context.Context, o metric.Float64Observer) error {
-			o.Observe(randomTemp())
-			// as there is no async histogram, use this callbacl to also record the other meters
+	)
+	if err != nil {
+		return fmt.Errorf("error creating cpu.temperature.celsius gauge: %w", err)
+	}
+
+	_, err = meter.RegisterCallback(
+		func(ctx context.Context, o metric.Observer) error {
+			o.ObserveFloat64(cpuTempGauge, randomTemp())
+			// as there is no async histogram, use this callback to also record the other meters
 			hdErrorsMeter.Add(ctx, 1, metric.WithAttributes(hdErrorsAttributeSdb))
 			cpuEnergyMeter.Record(ctx, randomEnergy(), metric.WithAttributes(cpuEnergyAttribute1))
+
 			return nil
-		}),
-	); err != nil {
-		return fmt.Errorf("error creating cpu.temperature.celsius gauge: %w", err)
+		},
+		cpuTempGauge,
+	)
+	if err != nil {
+		return fmt.Errorf("error registering callback: %w", err)
 	}
 
 	requestURLParamsMeter, err = meter.Int64Counter(
@@ -128,30 +138,24 @@ func forwardHandler(w http.ResponseWriter, r *http.Request) {
 	// Forward the request to the terminate endpoint using the instrumented HTTP client, so that trace context gets propagated
 	requestURL := fmt.Sprintf("http://%s/terminate", terminateEndpoint)
 
-	res, err := otelhttp.Get(ctx, requestURL)
+	client := http.Client{Transport: otelhttp.NewTransport(http.DefaultTransport)}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, requestURL, nil)
 	if err != nil {
-		logger.ErrorContext(ctx, "client: error making http request", slog.String("error", err.Error()), slog.String("traceId", span.SpanContext().TraceID().String()))
+		handleError(ctx, w, span, err, "error creating request")
+		return
+	}
 
-		span.RecordError(err)
-		span.SetStatus(codes.Error, "exception in client call")
-
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(w, "Error")
-
+	res, err := client.Do(req)
+	if err != nil {
+		handleError(ctx, w, span, err, "exception in client call")
 		return
 	}
 	defer res.Body.Close()
 
 	resBody, err := io.ReadAll(res.Body)
 	if err != nil {
-		logger.ErrorContext(ctx, "client: could not read response body", slog.String("error", err.Error()), slog.String("traceId", span.SpanContext().TraceID().String()))
-
-		span.RecordError(err)
-		span.SetStatus(codes.Error, "client call returned malformed body")
-
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(w, "Error")
-
+		handleError(ctx, w, span, err, "client call returned malformed body")
 		return
 	}
 
@@ -164,6 +168,14 @@ func forwardHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(res.StatusCode)
 	fmt.Fprint(w, string(resBody))
+}
+
+func handleError(ctx context.Context, w http.ResponseWriter, span trace.Span, err error, message string) {
+	logger.ErrorContext(ctx, "client: "+message, slog.String("error", err.Error()), slog.String("traceId", span.SpanContext().TraceID().String()))
+	span.RecordError(err)
+	span.SetStatus(codes.Error, message)
+	w.WriteHeader(http.StatusInternalServerError)
+	fmt.Fprintf(w, "Error")
 }
 
 func isSuccess(status int) bool {
