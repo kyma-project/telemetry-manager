@@ -38,14 +38,15 @@ type LogPipelineBuilder struct {
 func BuildLogPipelineRuntimeInput(opts ...NamespaceSelectorOptions) telemetryv1beta1.LogPipelineInput {
 	input := telemetryv1beta1.LogPipelineInput{
 		Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
-			Enabled:    ptr.To(true),
-			Namespaces: &telemetryv1beta1.NamespaceSelector{},
+			Enabled: ptr.To(true),
 		},
 	}
 
 	if len(opts) == 0 {
 		return input
 	}
+
+	input.Runtime.Namespaces = &telemetryv1beta1.NamespaceSelector{}
 
 	for _, opt := range opts {
 		opt(input.Runtime.Namespaces)
