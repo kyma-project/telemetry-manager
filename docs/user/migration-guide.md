@@ -46,8 +46,10 @@ spec:
     runtime:
       enabled: true
       namespaces:
-        exclude: {}  # This will include system namespaces
+        exclude: []  # This will include system namespaces
 ```
+
+An empty exclude list includes system namespaces in log collection.
 
 ```yaml
 spec:
@@ -55,3 +57,15 @@ spec:
     runtime: # if neither exclude nor include is provided, system namespaces are excluded by default
       enabled: true
 ```
+
+Omitting the namespace configuration completely excludes system namespaces.
+
+```yaml
+spec:
+  input:
+    runtime: # if neither exclude nor include is provided, system namespaces are excluded by default
+      enabled: true
+      namespaces: {}
+```
+
+An empty namespaces object excludes system namespaces by default.
