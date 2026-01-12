@@ -5,7 +5,7 @@ bdba:
   - europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20251210-3d7f23ad
   - europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluent-bit:4.2.2
   - europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.141.0-main
-  - europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:3.8.0-3d7f23a
+  - europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:3.9.1-df41af5
   - europe-docker.pkg.dev/kyma-project/prod/external/library/alpine:3.23.2
 mend:
   language: golang-mod

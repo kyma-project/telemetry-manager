@@ -59,7 +59,6 @@ YQ               := $(TOOLS_BIN_DIR)/yq
 JQ               := $(TOOLS_BIN_DIR)/gojq
 YAMLFMT          := $(TOOLS_BIN_DIR)/yamlfmt
 STRINGER         := $(TOOLS_BIN_DIR)/stringer
-WSL              := $(TOOLS_BIN_DIR)/wsl
 K3D              := $(TOOLS_BIN_DIR)/k3d
 PROMLINTER       := $(TOOLS_BIN_DIR)/promlinter
 GOMPLATE         := $(TOOLS_BIN_DIR)/gomplate
@@ -98,6 +97,9 @@ MODULE_NAMES := $(notdir $(GO_MODULE_DIRS))
 # All standard and fix lint targets
 LINT_TARGETS := $(addprefix lint-,$(MODULE_NAMES))
 LINT_FIX_TARGETS := $(addprefix lint-fix-,$(MODULE_NAMES))
+
+# All build targets for dependencies
+BUILD_DEPENDENCY_TARGETS := $(addprefix build-,$(MODULE_NAMES))
 
 ##@ Code Quality
 
@@ -229,8 +231,28 @@ update-golden-files: ## Update all golden files for config builder tests
 ##@ Build
 
 .PHONY: build
-build: generate fmt vet tidy ## Build manager binary
-	go build -o bin/manager main.go
+build: build-manager fmt vet tidy ## Format, vet and build the manager
+
+.PHONY: build-for-codeql
+build-for-codeql: build-manager-no-generate build-dependencies ## Build the manager and the custom tools in dependencies
+
+.PHONY: build-manager
+build-manager: generate
+	go build -o $(ARTIFACTS)/manager .
+
+.PHONY: build-manager-no-generate
+build-manager-no-generate:
+	go build -o $(ARTIFACTS)/manager .
+
+# Pattern rule for building each dependency module
+$(BUILD_DEPENDENCY_TARGETS):
+	@modname=$(@:build-%=%); \
+	echo "Building $$modname..."; \
+	cd $(DEPENDENCIES_DIR)/$$modname && pwd && go build -o $(ARTIFACTS)/$$modname .
+
+.PHONY: build-dependencies $(BUILD_DEPENDENCY_TARGETS)
+build-dependencies: $(BUILD_DEPENDENCY_TARGETS) ## Build custom tools in dependencies
+
 
 .PHONY: docker-build
 docker-build: ## Build docker image with the manager
