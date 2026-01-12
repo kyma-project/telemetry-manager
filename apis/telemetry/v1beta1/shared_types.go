@@ -99,7 +99,7 @@ type OAuth2Options struct {
 	ClientID ValueType `json:"clientID"`
 	// ClientSecret contains the OAuth2 client secret or a Secret reference.
 	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:XValidation:rule="(self.value != '' ) || (has(self.valueFrom))", message="clientSecret' missing"
+	// +kubebuilder:validation:XValidation:rule="(self.value != '' ) || (has(self.valueFrom))", message="'clientSecret' missing"
 	ClientSecret ValueType `json:"clientSecret"`
 	// Scopes contains optional OAuth2 scopes.
 	// +kubebuilder:validation:Optional

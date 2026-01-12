@@ -1,5 +1,6 @@
 package v1alpha1
 
+
 // ValueType represents either a direct value or a reference to a value stored in a Secret.
 // +kubebuilder:validation:XValidation:rule="!(has(self.value) && size(self.value) > 0 && has(self.valueFrom))",message="Only one of 'value' or 'valueFrom' can be set"
 type ValueType struct {

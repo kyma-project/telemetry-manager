@@ -34,11 +34,11 @@ func createIncludePath(pipeline *telemetryv1beta1.LogPipeline) string {
 	includeContainers := []string{"*"}
 
 	if pipeline.Spec.Input.Runtime != nil {
-		if pipeline.Spec.Input.Runtime.Namespaces != nil && pipeline.Spec.Input.Runtime.Namespaces.Include != nil && len(pipeline.Spec.Input.Runtime.Namespaces.Include) > 0 {
+		if pipeline.Spec.Input.Runtime.Namespaces != nil && len(pipeline.Spec.Input.Runtime.Namespaces.Include) > 0 {
 			includeNamespaces = pipeline.Spec.Input.Runtime.Namespaces.Include
 		}
 
-		if pipeline.Spec.Input.Runtime.Containers != nil && pipeline.Spec.Input.Runtime.Containers.Include != nil && len(pipeline.Spec.Input.Runtime.Containers.Include) > 0 {
+		if pipeline.Spec.Input.Runtime.Containers != nil && len(pipeline.Spec.Input.Runtime.Containers.Include) > 0 {
 			includeContainers = pipeline.Spec.Input.Runtime.Containers.Include
 		}
 	}
