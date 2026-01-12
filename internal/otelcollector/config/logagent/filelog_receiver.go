@@ -105,7 +105,7 @@ func createExcludePath(runtime *telemetryv1beta1.LogPipelineRuntimeInput, collec
 		}
 	}
 
-	if runtime == nil || runtime.Namespaces == nil || (len(runtime.Namespaces.Include) == 0 && len(runtime.Namespaces.Exclude) == 0) {
+	if runtime == nil || runtime.Namespaces == nil {
 		excludeNamespaces = namespaces.System()
 	}
 

@@ -230,10 +230,16 @@ func TestExcludePath(t *testing.T) {
 			pipeline: testutils.NewLogPipelineBuilder().WithRuntimeInput(true).WithExcludeContainers("foo", "bar").Build(),
 			expected: getExcludePaths(systemNamespacesIncluded, "/var/log/pods/*_*/foo/*.log", "/var/log/pods/*_*/bar/*.log"),
 		},
+		{
+			name:     "Should include system namespaces when empty namespace selector is provided",
+			pipeline: testutils.NewLogPipelineBuilder().WithRuntimeInput(true).WithExcludeNamespaces().Build(),
+			expected: getExcludePaths(systemNamespacesExcluded),
+		},
 	}
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
+
 			excludePaths := createExcludePath(tc.pipeline.Spec.Input.Runtime, false)
 			require.Equal(t, tc.expected, excludePaths)
 		})
