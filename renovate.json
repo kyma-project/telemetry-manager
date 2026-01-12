@@ -1,42 +1,116 @@
 {
-    "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-    "extends": [
-      "config:recommended"
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":semanticCommits",
+    ":semanticCommitTypeAll(chore)",
+    ":semanticCommitScopeDisabled",
+    "helpers:pinGitHubActionDigests"
+  ],
+  "labels": [
+    "area/dependency",
+    "kind/chore"
+  ],
+  "gomod": {
+    "postUpdateOptions": [
+      "gomodTidy"
     ],
-    "labels": [
-        "area/dependency",
-        "kind/chore"
-    ],
-    "ignorePaths": [
-        "docs/"
-    ],
-    "gomod": {
-        "enabled": false
+    "enabled": true
+  },
+  "kustomize": {
+    "enabled": false
+  },
+  "dockerfile": {
+    "enabled": true
+  },
+  "helm-values": {
+    "enabled": false
+  },
+  "github-actions": {
+    "enabled": true
+  },
+  "packageRules": [
+    {
+      "matchCategories": [
+        "golang"
+      ],
+      "postUpdateOptions": [
+        "gomodTidy"
+      ],
+      "enabled": true
     },
-    "kustomize": {
-        "enabled": false
+    {
+      "matchDatasources": [
+        "golang-version"
+      ],
+      "rangeStrategy": "bump"
     },
-    "dockerfile": {
-        "enabled": false
+    {
+      "matchManagers": [
+        "gomod"
+      ],
+      "matchDepTypes": [
+        "indirect"
+      ],
+      "enabled": false
     },
-    "helm-values": {
-        "enabled": false
+    {
+      "matchManagers": [
+        "gomod"
+      ],
+      "matchUpdateTypes": [
+        "digest"
+      ],
+      "schedule": "every month",
+      "enabled": false
     },
-    "github-actions": {
-        "enabled": false
+    {
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "matchCurrentVersion": "!/^0/",
+      "automerge": true
     },
-    "customManagers": [
-        {
-            "customType": "regex",
-            "fileMatch": [
-                "^\\.env$"
-            ],
-            "matchStrings": [
-                "ENV_ISTIO_VERSION=(?<currentValue>\\d+?\\.\\d+?\\.\\d+?)"
-            ],
-            "datasourceTemplate": "github-releases",
-            "versioningTemplate": "semver",
-            "depNameTemplate": "kyma-project/istio"
-        }
-    ]
+    {
+      "matchManagers": [
+        "gomod"
+      ],
+      "groupName": "All opentelemetry collector packages",
+      "matchSourceUrls": [
+        "https://go.opentelemetry.io/collector{/,}**",
+        "https://github.com/open-telemetry/opentelemetry-collector{/,}**",
+        "https://github.com/open-telemetry/opentelemetry-collector-contrib{/,}**"
+      ]
+    }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^\\.env$/"
+      ],
+      "matchStrings": [
+        "ENV_ISTIO_VERSION=(?<currentValue>\\d+?\\.\\d+?\\.\\d+?)"
+      ],
+      "datasourceTemplate": "github-releases",
+      "versioningTemplate": "semver",
+      "depNameTemplate": "kyma-project/istio"
+    },
+    {
+      "customType": "jsonata",
+      "fileFormat": "yaml",
+      "managerFilePatterns": [
+        "/^external-images\\.yaml$/"
+      ],
+      "matchStrings": [
+        "images[].{\"depName\": $substringBefore(source, \"@\"), \"currentDigest\": $substringAfter(source, \"@\"), \"currentValue\": tag}"
+      ],
+      "datasourceTemplate": "docker",
+      "autoReplaceStringTemplate": "{\"source\": \"{{{depName}}}@{{{newDigest}}}\", \"tag\": \"{{{newValue}}}\"}"
+    }
+  ],
+  "ignorePaths": [
+    "docs/**"
+  ]
 }

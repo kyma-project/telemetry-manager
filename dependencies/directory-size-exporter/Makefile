@@ -75,7 +75,7 @@ test: fmt vet tidy
 	go test ./... -coverprofile cover.out
 
 build: fmt vet tidy
-	go build -o bin/manager main.go
+	go build -o bin/exporter main.go
 
 run: fmt vet tidy
 	go run ./main.go
