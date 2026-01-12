@@ -325,6 +325,114 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 				"/var/log/containers/telemetry-log-agent-*_kyma-system_collector-*.log",
 			},
 		},
+		{
+			"empty include namespace list",
+			&telemetryv1beta1.LogPipeline{
+				ObjectMeta: metav1.ObjectMeta{Name: "test-logpipeline"},
+				Spec: telemetryv1beta1.LogPipelineSpec{
+					Input: telemetryv1beta1.LogPipelineInput{
+						Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
+							Namespaces: &telemetryv1beta1.NamespaceSelector{
+								Include: []string{},
+							},
+						},
+					},
+				},
+			},
+			false,
+			[]string{
+				"/var/log/containers/*_*_*-*.log", // should fall back to wildcard
+			},
+			[]string{
+				"/var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log",
+				"/var/log/containers/*system-logs-agent-*_kyma-system_collector-*.log",
+				"/var/log/containers/*system-logs-collector-*_kyma-system_collector-*.log",
+				"/var/log/containers/telemetry-log-agent-*_kyma-system_collector-*.log",
+			},
+		},
+		{
+			"empty include container list",
+			&telemetryv1beta1.LogPipeline{
+				ObjectMeta: metav1.ObjectMeta{Name: "test-logpipeline"},
+				Spec: telemetryv1beta1.LogPipelineSpec{
+					Input: telemetryv1beta1.LogPipelineInput{
+						Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
+							Containers: &telemetryv1beta1.LogPipelineContainerSelector{
+								Include: []string{},
+							},
+						},
+					},
+				},
+			},
+			false,
+			[]string{
+				"/var/log/containers/*_*_*-*.log", // should fall back to wildcard
+			},
+			[]string{
+				"/var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log",
+				"/var/log/containers/*system-logs-agent-*_kyma-system_collector-*.log",
+				"/var/log/containers/*system-logs-collector-*_kyma-system_collector-*.log",
+				"/var/log/containers/telemetry-log-agent-*_kyma-system_collector-*.log",
+				"/var/log/containers/*_kyma-system_*-*.log",
+				"/var/log/containers/*_kube-system_*-*.log",
+				"/var/log/containers/*_istio-system_*-*.log",
+			},
+		},
+		{
+			"empty exclude namespace list - should include system namespaces",
+			&telemetryv1beta1.LogPipeline{
+				ObjectMeta: metav1.ObjectMeta{Name: "test-logpipeline"},
+				Spec: telemetryv1beta1.LogPipelineSpec{
+					Input: telemetryv1beta1.LogPipelineInput{
+						Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
+							Namespaces: &telemetryv1beta1.NamespaceSelector{
+								Exclude: []string{},
+							},
+						},
+					},
+				},
+			},
+			false,
+			[]string{
+				"/var/log/containers/*_*_*-*.log",
+			},
+			[]string{
+				// Only agent exclusions, NO system namespace exclusions
+				"/var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log",
+				"/var/log/containers/*system-logs-agent-*_kyma-system_collector-*.log",
+				"/var/log/containers/*system-logs-collector-*_kyma-system_collector-*.log",
+				"/var/log/containers/telemetry-log-agent-*_kyma-system_collector-*.log",
+			},
+		},
+		{
+			"empty exclude container list",
+			&telemetryv1beta1.LogPipeline{
+				ObjectMeta: metav1.ObjectMeta{Name: "test-logpipeline"},
+				Spec: telemetryv1beta1.LogPipelineSpec{
+					Input: telemetryv1beta1.LogPipelineInput{
+						Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
+							Containers: &telemetryv1beta1.LogPipelineContainerSelector{
+								Exclude: []string{},
+							},
+						},
+					},
+				},
+			},
+			false,
+			[]string{
+				"/var/log/containers/*_*_*-*.log",
+			},
+			[]string{
+				// System namespaces still excluded (default behavior)
+				"/var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log",
+				"/var/log/containers/*system-logs-agent-*_kyma-system_collector-*.log",
+				"/var/log/containers/*system-logs-collector-*_kyma-system_collector-*.log",
+				"/var/log/containers/telemetry-log-agent-*_kyma-system_collector-*.log",
+				"/var/log/containers/*_kyma-system_*-*.log",
+				"/var/log/containers/*_kube-system_*-*.log",
+				"/var/log/containers/*_istio-system_*-*.log",
+			},
+		},
 	}
 
 	for _, test := range tests {
