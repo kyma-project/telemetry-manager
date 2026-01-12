@@ -243,6 +243,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 				Build(),
 			errorMsg: "Invalid value: \"object\": no such key: value evaluating rule: 'clientID' missing",
 			field:    "spec.output.otlp.authentication.oauth2.clientID",
+			causes:   2,
 		},
 		{
 			name: "otlp-output-oauth2-insecure",
