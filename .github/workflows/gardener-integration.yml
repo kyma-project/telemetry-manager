@@ -16,44 +16,17 @@ on:
       - "OWNERS"
       - "CODEOWNERS"
       - "external-images.yaml"
-  # in the pr trigger we need to check if a certain label is present to run the gardener tests: `test-on-gardener`
   pull_request_target:
-    types: [labeled, opened, synchronize, reopened]
+    types: [opened, synchronize, reopened]
   workflow_dispatch:
 
 jobs:
-  check-trigger:
-    runs-on: ubuntu-latest
-    outputs:
-      run-gardener-tests: ${{ steps.check-label.outputs.run-gardener-tests }}
-    steps:
-      - name: Check if gardener tests should run
-        id: check-label
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          TRIGGER_LABEL="test-on-gardener"
-          
-          echo "Trigger label: $TRIGGER_LABEL"
-          
-          if [[ "${{ github.event_name }}" == "pull_request_target" ]]; then
-            echo "PR event detected"
-            LABELS=$(gh pr view ${{ github.event.number }} --repo ${{ github.repository }} --json labels --template '{{range .labels}}{{.name}} {{end}}')
-            echo "Labels on PR: $LABELS"
-            if [[ "$LABELS" == *"$TRIGGER_LABEL"* ]]; then
-              echo "Label '$TRIGGER_LABEL' found. Gardener tests will run."
-              echo "run-gardener-tests=true" >> $GITHUB_OUTPUT
-            else
-              echo "Label '$TRIGGER_LABEL' not found. Skipping gardener tests."
-              echo "run-gardener-tests=false" >> $GITHUB_OUTPUT
-            fi
-          else
-            echo "Not a PR event. Gardener tests will run."
-            echo "run-gardener-tests=true" >> $GITHUB_OUTPUT
-          fi
   gardener-integration-test:
-    needs: check-trigger
-    if: needs.check-trigger.outputs.run-gardener-tests == 'true'
+    if: >-
+      ${{ 
+        !((github.event_name == 'pull_request_target') && 
+        contains(github.event.pull_request.labels.*.name, 'ci-pause'))
+      }}
     strategy:
       fail-fast: false # if one version is not working, continue tests on other versions
       matrix:
@@ -190,28 +163,23 @@ jobs:
                   text: "See related <${{ github.event.pull_request.html_url || github.event.head_commit.url }}|commit>"
 
   summary:
-    needs: [check-trigger, gardener-integration-test]
+    needs: [gardener-integration-test]
     if: always()
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        if: needs.check-trigger.outputs.run-gardener-tests == 'true'
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Generate test summary
-        if: needs.check-trigger.outputs.run-gardener-tests == 'true'
         uses: "./.github/template/test-summary"
 
       - name: Check workflow status
         run: |
-          if [[ "${{ needs.check-trigger.outputs.run-gardener-tests }}" == "false" ]]; then
-            echo "✓ Gardener tests were skipped (no 'test-gardener' label found)"
-            exit 0
-          elif [[ "${{ needs.gardener-integration-test.result }}" == "success" ]]; then
+          if [[ "${{ needs.gardener-integration-test.result }}" == "success" ]]; then
             echo "✓ Gardener tests passed successfully"
             exit 0
           elif [[ "${{ needs.gardener-integration-test.result }}" == "skipped" ]]; then
-            echo "✓ Gardener tests were skipped"
+            echo "✓ Gardener tests were skipped (ci-pause label present)"
             exit 0
           else
             echo "✗ Gardener tests failed"

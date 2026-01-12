@@ -9,6 +9,12 @@ on:
       - "release-*"
 jobs:
   validate-envs:
+    if: >-
+      ${{ 
+        (github.event_name == 'pull_request' || 
+         github.event_name == 'pull_request_target') && 
+        !contains(github.event.pull_request.labels.*.name, 'ci-pause')
+      }}
     name: Validate .env file
     runs-on: ubuntu-latest
     steps:

@@ -28,6 +28,12 @@ env:
 
 jobs:
   pr-milestone-project-check:
+    if: >-
+      ${{ 
+        (github.event_name == 'pull_request' || 
+         github.event_name == 'pull_request_target') && 
+        !contains(github.event.pull_request.labels.*.name, 'ci-pause')
+      }}
     permissions:
       pull-requests: write # Required for setting the milestone
       contents: read
@@ -49,6 +55,12 @@ jobs:
           gh pr edit ${{ github.event.number }} --milestone "${latest_milestone}"
 
   pr-label-check:
+    if: >-
+      ${{ 
+        (github.event_name == 'pull_request' || 
+         github.event_name == 'pull_request_target') && 
+        !contains(github.event.pull_request.labels.*.name, 'ci-pause')
+      }}
     permissions:
       pull-requests: write # Required for setting the labels
       contents: read
@@ -104,6 +116,12 @@ jobs:
           NUMBER: ${{ github.event.number }}
 
   pr-title-check:
+    if: >-
+      ${{ 
+        (github.event_name == 'pull_request' || 
+         github.event_name == 'pull_request_target') && 
+        !contains(github.event.pull_request.labels.*.name, 'ci-pause')
+      }}
     runs-on: ubuntu-latest
     steps:
       - name: Validate title
@@ -127,8 +145,8 @@ jobs:
           requireScope: false
 
   pr-prevent-kustomization:
-    runs-on: ubuntu-latest
     if: ${{ github.event.pull_request.base.ref == 'main' }}
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2

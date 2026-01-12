@@ -41,6 +41,12 @@ on:
 
 jobs:
   setup:
+    if: >-
+      ${{ 
+        (github.event_name == 'pull_request' || 
+         github.event_name == 'pull_request_target') && 
+        !contains(github.event.pull_request.labels.*.name, 'ci-pause')
+      }}
     runs-on: ubuntu-latest
     outputs:
       manager-image: ${{ steps.set-env.outputs.image-repo }}:${{ steps.set-env.outputs.image-tag }}
@@ -84,6 +90,12 @@ jobs:
           QUERY_INTERVAL: 30
 
   e2e-selfmonitor:
+    if: >-
+      ${{ 
+        (github.event_name == 'pull_request' || 
+         github.event_name == 'pull_request_target') && 
+        !contains(github.event.pull_request.labels.*.name, 'ci-pause')
+      }}
     needs: setup
     strategy:
       fail-fast: false
@@ -128,6 +140,12 @@ jobs:
           failure: failure()
 
   e2e-custom-labels-annotations-no-fips:
+    if: >-
+      ${{ 
+        (github.event_name == 'pull_request' || 
+         github.event_name == 'pull_request_target') && 
+        !contains(github.event.pull_request.labels.*.name, 'ci-pause')
+      }}
     needs: setup
     name: "e2e-custom-labels-annotations-no-fips"
     runs-on: ubuntu-latest
@@ -152,6 +170,12 @@ jobs:
           labels: "custom-label-annotation"
 
   e2e:
+    if: >-
+      ${{ 
+        (github.event_name == 'pull_request' || 
+         github.event_name == 'pull_request_target') && 
+        !contains(github.event.pull_request.labels.*.name, 'ci-pause')
+      }}
     needs: setup
     env:
       MANAGER_IMAGE: ${{ needs.setup.outputs.manager-image }}

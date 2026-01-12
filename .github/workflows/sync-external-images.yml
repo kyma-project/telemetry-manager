@@ -18,6 +18,12 @@ on:
 
 jobs:
   sync-external-images:
+    if: >-
+      ${{ 
+        !((github.event_name == 'pull_request' || 
+         github.event_name == 'pull_request_target') && 
+        contains(github.event.pull_request.labels.*.name, 'ci-pause'))
+      }}
     permissions:
       id-token: write # Required for requesting the JWT token
       contents: read

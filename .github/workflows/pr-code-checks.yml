@@ -19,6 +19,12 @@ on:
 
 jobs:
   unit-tests:
+    if: >-
+      ${{ 
+        (github.event_name == 'pull_request' || 
+         github.event_name == 'pull_request_target') && 
+        !contains(github.event.pull_request.labels.*.name, 'ci-pause')
+      }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -31,6 +37,12 @@ jobs:
         run: make test
 
   lint:
+    if: >-
+      ${{ 
+        (github.event_name == 'pull_request' || 
+         github.event_name == 'pull_request_target') && 
+        !contains(github.event.pull_request.labels.*.name, 'ci-pause')
+      }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -43,6 +55,12 @@ jobs:
         run: make --debug lint
 
   coverage:
+    if: >-
+      ${{ 
+        (github.event_name == 'pull_request' || 
+         github.event_name == 'pull_request_target') && 
+        !contains(github.event.pull_request.labels.*.name, 'ci-pause')
+      }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -55,6 +73,12 @@ jobs:
         run: make check-coverage
 
   verify-code-generated:
+    if: >-
+      ${{ 
+        (github.event_name == 'pull_request' || 
+         github.event_name == 'pull_request_target') && 
+        !contains(github.event.pull_request.labels.*.name, 'ci-pause')
+      }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -67,6 +91,12 @@ jobs:
         run: make check-clean
 
   test-renovate:
+    if: >-
+      ${{ 
+        (github.event_name == 'pull_request' || 
+         github.event_name == 'pull_request_target') && 
+        !contains(github.event.pull_request.labels.*.name, 'ci-pause')
+      }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code

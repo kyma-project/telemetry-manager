@@ -17,6 +17,12 @@ on:
 
 jobs:
   verify-manifests:
+    if: >-
+      ${{ 
+        (github.event_name == 'pull_request' || 
+         github.event_name == 'pull_request_target') && 
+        !contains(github.event.pull_request.labels.*.name, 'ci-pause')
+      }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -29,6 +35,12 @@ jobs:
         run: make crd-docs-gen manifests-experimental check-clean
 
   markdown-link-check:
+    if: >-
+      ${{ 
+        (github.event_name == 'pull_request' || 
+         github.event_name == 'pull_request_target') && 
+        !contains(github.event.pull_request.labels.*.name, 'ci-pause')
+      }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code

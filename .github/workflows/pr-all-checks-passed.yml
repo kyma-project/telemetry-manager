@@ -31,6 +31,10 @@ jobs:
       checks: read # Required for checking the status of actions
       contents: read
     steps:
+      - name: Fail if ci-pause label exists
+        if: ${{ contains(github.event.pull_request.labels.*.name, 'ci-pause') }}
+        run: exit 1
+
       - name: Check if all checks passed
         uses: wechuli/allcheckspassed@b0eaef5be76003932c9520e2b3dd03c85cc43d87 # v2.2.0
         with:
