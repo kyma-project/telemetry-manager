@@ -2060,7 +2060,7 @@ spec:
                                     type: object
                                 type: object
                                 x-kubernetes-validations:
-                                - message: clientSecret' missing
+                                - message: '''clientSecret'' missing'
                                   rule: (self.value != '' ) || (has(self.valueFrom))
                                 - message: Exactly one of 'value' or 'valueFrom' must
                                     be set
