@@ -7,9 +7,14 @@
     ":semanticCommitScopeDisabled",
     "helpers:pinGitHubActionDigests"
   ],
-  "labels": ["area/dependency", "kind/chore"],
+  "labels": [
+    "area/dependency",
+    "kind/chore"
+  ],
   "gomod": {
-    "postUpdateOptions": ["gomodTidy"],
+    "postUpdateOptions": [
+      "gomodTidy"
+    ],
     "enabled": true
   },
   "kustomize": {
@@ -26,32 +31,51 @@
   },
   "packageRules": [
     {
-      "matchCategories": ["golang"],
-      "postUpdateOptions": ["gomodTidy"],
+      "matchCategories": [
+        "golang"
+      ],
+      "postUpdateOptions": [
+        "gomodTidy"
+      ],
       "enabled": true
     },
     {
-      "matchDatasources": ["golang-version"],
+      "matchDatasources": [
+        "golang-version"
+      ],
       "rangeStrategy": "bump"
     },
     {
-      "matchManagers": ["gomod"],
-      "matchDepTypes": ["indirect"],
+      "matchManagers": [
+        "gomod"
+      ],
+      "matchDepTypes": [
+        "indirect"
+      ],
       "enabled": false
     },
     {
-      "matchManagers": ["gomod"],
-      "matchUpdateTypes": ["digest"],
+      "matchManagers": [
+        "gomod"
+      ],
+      "matchUpdateTypes": [
+        "digest"
+      ],
       "schedule": "every month",
       "enabled": false
     },
     {
-      "matchUpdateTypes": ["minor", "patch"],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
       "matchCurrentVersion": "!/^0/",
       "automerge": true
     },
     {
-      "matchManagers": ["gomod"],
+      "matchManagers": [
+        "gomod"
+      ],
       "groupName": "All opentelemetry collector packages",
       "matchSourceUrls": [
         "https://go.opentelemetry.io/collector{/,}**",
@@ -63,7 +87,9 @@
   "customManagers": [
     {
       "customType": "regex",
-      "fileMatch": ["^\\.env$"],
+      "managerFilePatterns": [
+        "/^\\.env$/"
+      ],
       "matchStrings": [
         "ENV_ISTIO_VERSION=(?<currentValue>\\d+?\\.\\d+?\\.\\d+?)"
       ],
@@ -74,7 +100,9 @@
     {
       "customType": "jsonata",
       "fileFormat": "yaml",
-      "fileMatch": ["^external-images\\.yaml$"],
+      "managerFilePatterns": [
+        "/^external-images\\.yaml$/"
+      ],
       "matchStrings": [
         "images[].{\"depName\": $substringBefore(source, \"@\"), \"currentDigest\": $substringAfter(source, \"@\"), \"currentValue\": tag}"
       ],
@@ -82,5 +110,7 @@
       "autoReplaceStringTemplate": "{\"source\": \"{{{depName}}}@{{{newDigest}}}\", \"tag\": \"{{{newValue}}}\"}"
     }
   ],
-  "ignorePaths": ["docs/**"]
+  "ignorePaths": [
+    "docs/**"
+  ]
 }
