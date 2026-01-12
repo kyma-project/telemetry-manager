@@ -21,7 +21,7 @@ import (
 	_ "github.com/yeya24/promlinter/cmd/promlinter"
 	_ "golang.org/x/tools/cmd/stringer"
 	_ "gotest.tools/gotestsum"
-	_ "helm.sh/helm/v3/cmd/helm"
+	_ "helm.sh/helm/v4/cmd/helm"
 	_ "k8s.io/code-generator/cmd/conversion-gen"
 	_ "sigs.k8s.io/controller-tools/cmd/controller-gen"
 )
