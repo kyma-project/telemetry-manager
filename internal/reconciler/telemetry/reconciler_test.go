@@ -11,8 +11,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry/mocks"
 )
@@ -20,15 +20,15 @@ import (
 func TestReconcile(t *testing.T) {
 	scheme := runtime.NewScheme()
 	_ = clientgoscheme.AddToScheme(scheme)
-	_ = telemetryv1alpha1.AddToScheme(scheme)
-	_ = operatorv1alpha1.AddToScheme(scheme)
+	_ = telemetryv1beta1.AddToScheme(scheme)
+	_ = operatorv1beta1.AddToScheme(scheme)
 
-	telemetry := operatorv1alpha1.Telemetry{
+	telemetry := operatorv1beta1.Telemetry{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "default",
 			Namespace: "default",
 		},
-		Spec: operatorv1alpha1.TelemetrySpec{},
+		Spec: operatorv1beta1.TelemetrySpec{},
 	}
 	fakeClient := fake.NewClientBuilder().
 		WithObjects(&telemetry).

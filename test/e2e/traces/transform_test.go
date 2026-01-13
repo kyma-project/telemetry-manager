@@ -7,7 +7,7 @@ import (
 	"github.com/onsi/gomega/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -25,7 +25,7 @@ func TestTransform(t *testing.T) {
 
 	tests := []struct {
 		name          string
-		transformSpec telemetryv1alpha1.TransformSpec
+		transformSpec telemetryv1beta1.TransformSpec
 		assertion     types.GomegaMatcher
 		tranceGen     func(ns string) client.Object
 	}{
@@ -34,7 +34,7 @@ func TestTransform(t *testing.T) {
 			tranceGen: func(ns string) client.Object {
 				return telemetrygen.NewPod(ns, telemetrygen.SignalTypeTraces).K8sObject()
 			},
-			transformSpec: telemetryv1alpha1.TransformSpec{
+			transformSpec: telemetryv1beta1.TransformSpec{
 				Statements: []string{"set(span.attributes[\"system\"], \"false\") where not IsMatch(resource.attributes[\"k8s.namespace.name\"], \".*-system\")"},
 			},
 			assertion: HaveFlatTraces(ContainElement(SatisfyAll(
@@ -46,7 +46,7 @@ func TestTransform(t *testing.T) {
 			tranceGen: func(ns string) client.Object {
 				return telemetrygen.NewPod(ns, telemetrygen.SignalTypeTraces, telemetrygen.WithTelemetryAttribute("component", "proxy")).K8sObject()
 			},
-			transformSpec: telemetryv1alpha1.TransformSpec{
+			transformSpec: telemetryv1beta1.TransformSpec{
 				Conditions: []string{"span.attributes[\"component\"] == \"proxy\""},
 				Statements: []string{"set(span.attributes[\"FromProxy\"], \"true\")"},
 			},
@@ -59,7 +59,7 @@ func TestTransform(t *testing.T) {
 			tranceGen: func(ns string) client.Object {
 				return telemetrygen.NewPod(ns, telemetrygen.SignalTypeTraces).K8sObject()
 			},
-			transformSpec: telemetryv1alpha1.TransformSpec{
+			transformSpec: telemetryv1beta1.TransformSpec{
 				Statements: []string{"set(span.attributes[\"name\"], \"passed\")",
 					"set(resource.attributes[\"test\"], \"passed\")",
 				},

@@ -3,7 +3,7 @@ package stubs
 import (
 	"context"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
 
 type SecretRefValidator struct {
@@ -16,6 +16,6 @@ func NewSecretRefValidator(err error) *SecretRefValidator {
 	}
 }
 
-func (s *SecretRefValidator) ValidateLogPipeline(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error {
+func (s *SecretRefValidator) ValidateLogPipeline(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) error {
 	return s.err
 }

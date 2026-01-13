@@ -6,7 +6,7 @@ import (
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -23,14 +23,14 @@ import (
 func TestOAuth2(t *testing.T) {
 	tests := []struct {
 		label               string
-		inputBuilder        func(includeNs string) telemetryv1alpha1.LogPipelineInput
+		inputBuilder        func(includeNs string) telemetryv1beta1.LogPipelineInput
 		logGeneratorBuilder func(ns string) client.Object
 		expectAgent         bool
 	}{
 		{
 			label: suite.LabelLogAgent,
-			inputBuilder: func(includeNs string) telemetryv1alpha1.LogPipelineInput {
-				return testutils.BuildLogPipelineApplicationInput(testutils.ExtIncludeNamespaces(includeNs))
+			inputBuilder: func(includeNs string) telemetryv1beta1.LogPipelineInput {
+				return testutils.BuildLogPipelineRuntimeInput(testutils.IncludeNamespaces(includeNs))
 			},
 			logGeneratorBuilder: func(ns string) client.Object {
 				return stdoutloggen.NewDeployment(ns).K8sObject()
@@ -39,7 +39,7 @@ func TestOAuth2(t *testing.T) {
 		},
 		{
 			label: suite.LabelLogGateway,
-			inputBuilder: func(includeNs string) telemetryv1alpha1.LogPipelineInput {
+			inputBuilder: func(includeNs string) telemetryv1beta1.LogPipelineInput {
 				return testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
 			},
 			logGeneratorBuilder: func(ns string) client.Object {

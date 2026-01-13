@@ -6,7 +6,7 @@ import (
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
@@ -24,12 +24,12 @@ import (
 func TestSinglePipeline(t *testing.T) {
 	tests := []struct {
 		label            string
-		inputBuilder     func(includeNs string) telemetryv1alpha1.MetricPipelineInput
+		inputBuilder     func(includeNs string) telemetryv1beta1.MetricPipelineInput
 		generatorBuilder func(ns string) []client.Object
 	}{
 		{
 			label: suite.LabelMetricAgentSetC,
-			inputBuilder: func(includeNs string) telemetryv1alpha1.MetricPipelineInput {
+			inputBuilder: func(includeNs string) telemetryv1beta1.MetricPipelineInput {
 				return testutils.BuildMetricPipelineRuntimeInput(testutils.IncludeNamespaces(includeNs))
 			},
 			generatorBuilder: func(ns string) []client.Object {
@@ -43,7 +43,7 @@ func TestSinglePipeline(t *testing.T) {
 		},
 		{
 			label: suite.LabelMetricGatewaySetC,
-			inputBuilder: func(includeNs string) telemetryv1alpha1.MetricPipelineInput {
+			inputBuilder: func(includeNs string) telemetryv1beta1.MetricPipelineInput {
 				return testutils.BuildMetricPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
 			},
 			generatorBuilder: func(ns string) []client.Object {

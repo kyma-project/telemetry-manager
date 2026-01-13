@@ -15,7 +15,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	"github.com/kyma-project/telemetry-manager/internal/metrics"
@@ -97,7 +97,7 @@ func TestGatewayHealthCondition(t *testing.T) {
 func TestSecretReferenceValidation(t *testing.T) {
 	tests := []struct {
 		name                      string
-		setupPipeline             func() telemetryv1alpha1.TracePipeline
+		setupPipeline             func() telemetryv1beta1.TracePipeline
 		setupSecret               func() *corev1.Secret
 		includeSecret             bool
 		secretValidatorError      error
@@ -109,7 +109,7 @@ func TestSecretReferenceValidation(t *testing.T) {
 	}{
 		{
 			name: "referenced secret missing",
-			setupPipeline: func() telemetryv1alpha1.TracePipeline {
+			setupPipeline: func() telemetryv1beta1.TracePipeline {
 				return testutils.NewTracePipelineBuilder().
 					WithOTLPOutput(testutils.OTLPBasicAuthFromSecret("some-secret", "some-namespace", "user", "password")).
 					Build()
@@ -125,7 +125,7 @@ func TestSecretReferenceValidation(t *testing.T) {
 		},
 		{
 			name: "referenced secret exists",
-			setupPipeline: func() telemetryv1alpha1.TracePipeline {
+			setupPipeline: func() telemetryv1beta1.TracePipeline {
 				return testutils.NewTracePipelineBuilder().
 					WithOTLPOutput(testutils.OTLPEndpointFromSecret("existing", "default", "endpoint")).
 					Build()
@@ -524,19 +524,19 @@ func TestAPIServerFailureHandling(t *testing.T) {
 
 	tests := []struct {
 		name            string
-		setupPipeline   func() telemetryv1alpha1.TracePipeline
-		setupClient     func(*testing.T, *telemetryv1alpha1.TracePipeline) client.Client
+		setupPipeline   func() telemetryv1beta1.TracePipeline
+		setupClient     func(*testing.T, *telemetryv1beta1.TracePipeline) client.Client
 		setupReconciler func(client.Client, *mocks.GatewayConfigBuilder) (*testReconciler, func(*testing.T))
 	}{
 		{
 			name: "a request to the Kubernetes API server has failed when validating the secret references",
-			setupPipeline: func() telemetryv1alpha1.TracePipeline {
+			setupPipeline: func() telemetryv1beta1.TracePipeline {
 				return testutils.NewTracePipelineBuilder().WithOTLPOutput(testutils.OTLPEndpointFromSecret(
 					"existing",
 					"default",
 					"endpoint")).Build()
 			},
-			setupClient: func(t *testing.T, pipeline *telemetryv1alpha1.TracePipeline) client.Client {
+			setupClient: func(t *testing.T, pipeline *telemetryv1beta1.TracePipeline) client.Client {
 				secret := &corev1.Secret{
 					TypeMeta: metav1.TypeMeta{},
 					ObjectMeta: metav1.ObjectMeta{
@@ -563,10 +563,10 @@ func TestAPIServerFailureHandling(t *testing.T) {
 		},
 		{
 			name: "a request to the Kubernetes API server has failed when validating the max pipeline count limit",
-			setupPipeline: func() telemetryv1alpha1.TracePipeline {
+			setupPipeline: func() telemetryv1beta1.TracePipeline {
 				return testutils.NewTracePipelineBuilder().WithName("pipeline").Build()
 			},
-			setupClient: func(t *testing.T, pipeline *telemetryv1alpha1.TracePipeline) client.Client {
+			setupClient: func(t *testing.T, pipeline *telemetryv1beta1.TracePipeline) client.Client {
 				return newTestClient(t, pipeline)
 			},
 			setupReconciler: func(fakeClient client.Client, gatewayConfigBuilderMock *mocks.GatewayConfigBuilder) (*testReconciler, func(*testing.T)) {
@@ -733,7 +733,7 @@ func TestPodErrorConditionReporting(t *testing.T) {
 func TestUsageTracking(t *testing.T) {
 	tests := []struct {
 		name                 string
-		pipeline             telemetryv1alpha1.TracePipeline
+		pipeline             telemetryv1beta1.TracePipeline
 		expectedFeatureUsage map[string]float64
 	}{
 		{
@@ -745,7 +745,7 @@ func TestUsageTracking(t *testing.T) {
 			name: "pipeline with transform",
 			pipeline: testutils.NewTracePipelineBuilder().
 				WithName("pipeline-2").
-				WithTransform(telemetryv1alpha1.TransformSpec{
+				WithTransform(telemetryv1beta1.TransformSpec{
 					Statements: []string{"set(attributes[\"test\"], \"value\")"},
 				}).
 				Build(),
@@ -757,7 +757,7 @@ func TestUsageTracking(t *testing.T) {
 			name: "pipeline with filter",
 			pipeline: testutils.NewTracePipelineBuilder().
 				WithName("pipeline-3").
-				WithFilter(telemetryv1alpha1.FilterSpec{
+				WithFilter(telemetryv1beta1.FilterSpec{
 					Conditions: []string{"attributes[\"test\"] == \"value\""},
 				}).
 				Build(),
@@ -769,10 +769,10 @@ func TestUsageTracking(t *testing.T) {
 			name: "pipeline with transform and filter",
 			pipeline: testutils.NewTracePipelineBuilder().
 				WithName("pipeline-4").
-				WithTransform(telemetryv1alpha1.TransformSpec{
+				WithTransform(telemetryv1beta1.TransformSpec{
 					Statements: []string{"set(attributes[\"test\"], \"value\")"},
 				}).
-				WithFilter(telemetryv1alpha1.FilterSpec{
+				WithFilter(telemetryv1beta1.FilterSpec{
 					Conditions: []string{"attributes[\"test\"] == \"value\""},
 				}).
 				Build(),

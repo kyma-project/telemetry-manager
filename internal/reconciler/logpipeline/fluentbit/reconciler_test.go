@@ -15,7 +15,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
@@ -33,7 +33,7 @@ import (
 )
 
 func TestAppInputDisabled(t *testing.T) {
-	pipeline := testutils.NewLogPipelineBuilder().WithApplicationInput(false).Build()
+	pipeline := testutils.NewLogPipelineBuilder().WithRuntimeInput(false).Build()
 	testClient := newTestClient(t, &pipeline)
 	reconciler := newTestReconciler(testClient)
 
@@ -272,14 +272,14 @@ func TestUnsupportedMode(t *testing.T) {
 func TestSecretReferenceValidation(t *testing.T) {
 	tests := []struct {
 		name       string
-		setupObjs  func() (telemetryv1alpha1.LogPipeline, []client.Object)
+		setupObjs  func() (telemetryv1beta1.LogPipeline, []client.Object)
 		secretErr  error
 		expectErr  error
 		conditions []conditionCheck
 	}{
 		{
 			name: "API request failed",
-			setupObjs: func() (telemetryv1alpha1.LogPipeline, []client.Object) {
+			setupObjs: func() (telemetryv1beta1.LogPipeline, []client.Object) {
 				p := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").Build()
 				return p, []client.Object{&p}
 			},
@@ -292,7 +292,7 @@ func TestSecretReferenceValidation(t *testing.T) {
 		},
 		{
 			name: "secret missing",
-			setupObjs: func() (telemetryv1alpha1.LogPipeline, []client.Object) {
+			setupObjs: func() (telemetryv1beta1.LogPipeline, []client.Object) {
 				p := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").Build()
 				return p, []client.Object{&p}
 			},
@@ -304,7 +304,7 @@ func TestSecretReferenceValidation(t *testing.T) {
 		},
 		{
 			name: "referenced secret exists",
-			setupObjs: func() (telemetryv1alpha1.LogPipeline, []client.Object) {
+			setupObjs: func() (telemetryv1beta1.LogPipeline, []client.Object) {
 				secret := &corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "some-secret",
@@ -529,7 +529,7 @@ func TestFIPSMode(t *testing.T) {
 	tests := []struct {
 		name               string
 		fipsEnabled        bool
-		pipeline           telemetryv1alpha1.LogPipeline
+		pipeline           telemetryv1beta1.LogPipeline
 		expectReconcilable bool
 		verifyResources    bool
 		conditions         []conditionCheck
@@ -652,7 +652,7 @@ func TestFIPSMode(t *testing.T) {
 func TestFeatureUsageTracking(t *testing.T) {
 	tests := []struct {
 		name                 string
-		pipeline             telemetryv1alpha1.LogPipeline
+		pipeline             telemetryv1beta1.LogPipeline
 		expectedFeatureUsage map[string]float64
 	}{
 		{
@@ -660,7 +660,7 @@ func TestFeatureUsageTracking(t *testing.T) {
 			pipeline: testutils.NewLogPipelineBuilder().
 				WithName("pipeline-1").
 				WithHTTPOutput().
-				WithApplicationInput(true).
+				WithRuntimeInput(true).
 				Build(),
 			expectedFeatureUsage: map[string]float64{
 				metrics.FeatureInputRuntime: 1,
@@ -672,7 +672,7 @@ func TestFeatureUsageTracking(t *testing.T) {
 			pipeline: testutils.NewLogPipelineBuilder().
 				WithName("pipeline-6").
 				WithHTTPOutput().
-				WithApplicationInput(true).
+				WithRuntimeInput(true).
 				Build(),
 			expectedFeatureUsage: map[string]float64{
 				metrics.FeatureInputRuntime: 1,
@@ -684,7 +684,7 @@ func TestFeatureUsageTracking(t *testing.T) {
 			pipeline: testutils.NewLogPipelineBuilder().
 				WithName("pipeline-7").
 				WithHTTPOutput().
-				WithApplicationInput(true).
+				WithRuntimeInput(true).
 				Build(),
 			expectedFeatureUsage: map[string]float64{
 				metrics.FeatureOutputHTTP:   1,
@@ -696,7 +696,7 @@ func TestFeatureUsageTracking(t *testing.T) {
 			pipeline: testutils.NewLogPipelineBuilder().
 				WithName("pipeline-8").
 				WithCustomOutput("Name stdout").
-				WithApplicationInput(true).
+				WithRuntimeInput(true).
 				Build(),
 			expectedFeatureUsage: map[string]float64{
 				metrics.FeatureOutputCustom: 1,
@@ -709,7 +709,7 @@ func TestFeatureUsageTracking(t *testing.T) {
 				WithName("pipeline-9").
 				WithHTTPOutput().
 				WithCustomFilter("Name grep").
-				WithApplicationInput(true).
+				WithRuntimeInput(true).
 				Build(),
 			expectedFeatureUsage: map[string]float64{
 				metrics.FeatureFilters:      1,
@@ -723,7 +723,7 @@ func TestFeatureUsageTracking(t *testing.T) {
 				WithName("pipeline-10").
 				WithHTTPOutput().
 				WithVariable("var1", "secret1", "default", "key1").
-				WithApplicationInput(true).
+				WithRuntimeInput(true).
 				Build(),
 			expectedFeatureUsage: map[string]float64{
 				metrics.FeatureVariables:    1,
@@ -737,7 +737,7 @@ func TestFeatureUsageTracking(t *testing.T) {
 				WithName("pipeline-11").
 				WithHTTPOutput().
 				WithFile("file1", "content1").
-				WithApplicationInput(true).
+				WithRuntimeInput(true).
 				Build(),
 			expectedFeatureUsage: map[string]float64{
 				metrics.FeatureFiles:        1,
@@ -753,7 +753,7 @@ func TestFeatureUsageTracking(t *testing.T) {
 				WithCustomFilter("Name grep").
 				WithVariable("var1", "secret1", "default", "key1").
 				WithFile("file1", "content1").
-				WithApplicationInput(true).
+				WithRuntimeInput(true).
 				Build(),
 			expectedFeatureUsage: map[string]float64{
 				metrics.FeatureOutputHTTP:   1,
