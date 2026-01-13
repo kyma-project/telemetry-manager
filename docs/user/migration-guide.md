@@ -17,7 +17,7 @@ The following sections provide details on the most important changes in the pipe
 
 ## Prerequisites
 
--You have an active Kyma cluster with the Telemetry module added.
+- You have an active Kyma cluster with the Telemetry module added.
 - You have one or more Telemetry pipeline resources that use the `telemetry.kyma-project.io/v1alpha1` API.
 
 ## Procedure
@@ -38,12 +38,12 @@ The following sections provide details on the most important changes in the pipe
    By default, system namespaces are excluded (as in v1alpha1), but v1beta1 removes the **spec.input.application.namespaces.system** field. To include application logs from system namespaces (like `kyma-system`), you must now provide an empty object `({})` for the **namespaces** selector. For details, see [Filter Application Logs by Namespace](https://kyma-project.io/external-content/telemetry-manager/docs/user/filter-and-process/filter-logs.html#filter-application-logs-by-namespace).
    ```yaml
    spec:
-  input:
-    runtime:
-      enabled: true
-      namespaces:
-        exclude: []  # This includes system namespaces
-   ``
+    input:
+      runtime:
+        enabled: true
+        namespaces:
+          exclude: []  # This includes system namespaces
+   ```
 
 4. Validate and apply your updated configuration with kubectl.
 
