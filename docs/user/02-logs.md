@@ -308,7 +308,7 @@ spec:
     - name: ENDPOINT
       valueFrom:
         secretKeyRef:
-        - name: http-backend-credentials
+          name: http-backend-credentials
           namespace: default
           key: HTTP_ENDPOINT
   input:
