@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
+    controller-gen.kubebuilder.io/version: v0.20.0
   labels:
     app.kubernetes.io/component: controller
     app.kubernetes.io/managed-by: kyma
@@ -31,6 +31,291 @@ spec:
       name: age
       type: date
     name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Telemetry is the Schema for the telemetries API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: TelemetrySpec defines the desired state of Telemetry
+            properties:
+              enrichments:
+                description: Enrichments configures optional enrichments of all telemetry
+                  data collected by pipelines. This field is optional.
+                properties:
+                  cluster:
+                    description: Cluster provides user-defined cluster definitions
+                      to enrich resource attributes.
+                    properties:
+                      name:
+                        description: Name specifies a custom cluster name for the
+                          resource attribute `k8s.cluster.name`.
+                        type: string
+                    type: object
+                  extractPodLabels:
+                    description: ExtractPodLabels specifies the list of Pod labels
+                      to be used for enrichment.
+                    items:
+                      description: |-
+                        PodLabel defines labels from a Pod used for telemetry data enrichments, which can be specified either by a key or a key prefix.
+                        Either 'key' or 'keyPrefix' must be specified, but not both.
+                        The enriched telemetry data contains resource attributes with key k8s.pod.label.<label_key>.
+                      properties:
+                        key:
+                          description: Key specifies the exact label key to be used.
+                          type: string
+                        keyPrefix:
+                          description: KeyPrefix specifies a prefix for label keys
+                            to be used.
+                          type: string
+                      type: object
+                      x-kubernetes-validations:
+                      - message: Either 'key' or 'keyPrefix' must be specified
+                        rule: (has(self.key) || has(self.keyPrefix))
+                      - message: Either 'key' or 'keyPrefix' must be specified
+                        rule: '!(has(self.key) && has(self.keyPrefix))'
+                    type: array
+                type: object
+              log:
+                description: Log configures module settings specific to the log features.
+                  This field is optional.
+                properties:
+                  gateway:
+                    description: Gateway configures the log gateway.
+                    properties:
+                      scaling:
+                        description: Scaling defines which strategy is used for scaling
+                          the gateway, with detailed configuration options for each
+                          strategy type.
+                        properties:
+                          static:
+                            description: |-
+                              Static is a scaling strategy enabling you to define a custom amount of replicas to be used for the gateway. Present only if Type =
+                              StaticScalingStrategyType.
+                            properties:
+                              replicas:
+                                description: Replicas defines a static number of Pods
+                                  to run the gateway. Minimum is 1.
+                                format: int32
+                                minimum: 1
+                                type: integer
+                            type: object
+                          type:
+                            description: Type of scaling strategy. Default is none,
+                              using a fixed amount of replicas.
+                            enum:
+                            - Static
+                            type: string
+                        type: object
+                    type: object
+                type: object
+              metric:
+                description: Metric configures module settings specific to the metric
+                  features. This field is optional.
+                properties:
+                  gateway:
+                    description: Gateway configures the metric gateway.
+                    properties:
+                      scaling:
+                        description: Scaling defines which strategy is used for scaling
+                          the gateway, with detailed configuration options for each
+                          strategy type.
+                        properties:
+                          static:
+                            description: |-
+                              Static is a scaling strategy enabling you to define a custom amount of replicas to be used for the gateway. Present only if Type =
+                              StaticScalingStrategyType.
+                            properties:
+                              replicas:
+                                description: Replicas defines a static number of Pods
+                                  to run the gateway. Minimum is 1.
+                                format: int32
+                                minimum: 1
+                                type: integer
+                            type: object
+                          type:
+                            description: Type of scaling strategy. Default is none,
+                              using a fixed amount of replicas.
+                            enum:
+                            - Static
+                            type: string
+                        type: object
+                    type: object
+                type: object
+              trace:
+                description: Trace configures module settings specific to the trace
+                  features. This field is optional.
+                properties:
+                  gateway:
+                    description: Gateway configures the trace gateway.
+                    properties:
+                      scaling:
+                        description: Scaling defines which strategy is used for scaling
+                          the gateway, with detailed configuration options for each
+                          strategy type.
+                        properties:
+                          static:
+                            description: |-
+                              Static is a scaling strategy enabling you to define a custom amount of replicas to be used for the gateway. Present only if Type =
+                              StaticScalingStrategyType.
+                            properties:
+                              replicas:
+                                description: Replicas defines a static number of Pods
+                                  to run the gateway. Minimum is 1.
+                                format: int32
+                                minimum: 1
+                                type: integer
+                            type: object
+                          type:
+                            description: Type of scaling strategy. Default is none,
+                              using a fixed amount of replicas.
+                            enum:
+                            - Static
+                            type: string
+                        type: object
+                    type: object
+                type: object
+            type: object
+          status:
+            description: TelemetryStatus defines the observed state of Telemetry
+            properties:
+              conditions:
+                description: |-
+                  Conditions contain a set of conditionals to determine the State of Status.
+                  If all Conditions are met, State is expected to be in StateReady.
+                items:
+                  description: Condition contains details for one aspect of the current
+                    state of this API Resource.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        lastTransitionTime is the last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        message is a human readable message indicating details about the transition.
+                        This may be an empty string.
+                      maxLength: 32768
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        observedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      minimum: 0
+                      type: integer
+                    reason:
+                      description: |-
+                        reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                        Producers of specific condition types may define expected values and meanings for this field,
+                        and whether the values are considered a guaranteed API.
+                        The value should be a CamelCase string.
+                        This field may not be empty.
+                      maxLength: 1024
+                      minLength: 1
+                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                      type: string
+                    status:
+                      description: status of the condition, one of True, False, Unknown.
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+              endpoints:
+                description: Endpoints for log, trace, and metric gateway.
+                properties:
+                  logs:
+                    description: Logs contains the endpoints for log gateway supporting
+                      OTLP.
+                    properties:
+                      grpc:
+                        description: gRPC endpoint for OTLP.
+                        type: string
+                      http:
+                        description: HTTP endpoint for OTLP.
+                        type: string
+                    type: object
+                  metrics:
+                    description: Metrics contains the endpoints for metric gateway
+                      supporting OTLP.
+                    properties:
+                      grpc:
+                        description: gRPC endpoint for OTLP.
+                        type: string
+                      http:
+                        description: HTTP endpoint for OTLP.
+                        type: string
+                    type: object
+                  traces:
+                    description: Traces contains the endpoints for trace gateway supporting
+                      OTLP.
+                    properties:
+                      grpc:
+                        description: gRPC endpoint for OTLP.
+                        type: string
+                      http:
+                        description: HTTP endpoint for OTLP.
+                        type: string
+                    type: object
+                type: object
+              state:
+                description: |-
+                  State signifies current state of Module CR.
+                  Value can be one of these three: "Ready", "Deleting", or "Warning".
+                enum:
+                - Deleting
+                - Ready
+                - Warning
+                type: string
+            required:
+            - state
+            type: object
+        type: object
+    served: true
+    storage: false
+    subresources:
+      status: {}
+  - additionalPrinterColumns:
+    - jsonPath: .status.state
+      name: state
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: age
+      type: date
+    name: v1beta1
     schema:
       openAPIV3Schema:
         description: Telemetry is the Schema for the telemetries API

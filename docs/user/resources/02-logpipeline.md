@@ -97,6 +97,196 @@ For details, see the [LogPipeline specification file](https://github.com/kyma-pr
 <!-- The content between "TABLE-START" and "TABLE-END" will be replaced -->
 
 <!-- TABLE-START -->
+### LogPipeline.telemetry.kyma-project.io/v1beta1
+
+**Spec:**
+
+| Parameter | Type | Description |
+| ---- | ----------- | ---- |
+| **files**  | \[\]object | Deprecated: The field is based on the Fluent Bit-based technology stack. Use the OpenTelemetry-based stack instead, see https://kyma-project.io/external-content/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html. FluentBitFiles is a list of content snippets that are mounted as files in the Fluent Bit configuration, which can be linked in the `custom` filters and a `custom` output. Only available when using an output of type `http` and `custom`. |
+| **files.&#x200b;content** (required) | string | Content of the file to be mounted in the Fluent Bit configuration. |
+| **files.&#x200b;name** (required) | string | Name of the file under which the content is mounted in the Fluent Bit configuration. |
+| **filter**  | \[\]object | Filters specifies a list of filters to apply to telemetry data. |
+| **filter.&#x200b;conditions**  | \[\]string | Conditions specify a list of multiple conditions which are ORed together, which means only one condition needs to evaluate to true in order for the telemetry to be dropped. |
+| **filters**  | \[\]object | Deprecated: The field is based on the Fluent Bit-based technology stack. Use the OpenTelemetry-based stack instead, see https://kyma-project.io/external-content/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html. FluentBitFilters configures custom Fluent Bit `filters` to transform logs. Only available when using an output of type `http` and `custom`. |
+| **filters.&#x200b;custom**  | string | Custom defines a custom filter in the [Fluent Bit syntax](https://docs.fluentbit.io/manual/pipeline/outputs). If you use a `custom` filter, you put the LogPipeline in unsupported mode. Only available when using an output of type `http` and `custom`. |
+| **input**  | object | Input configures additional inputs for log collection. |
+| **input.&#x200b;otlp**  | object | OTLP input configures the push endpoint to receive logs from an OTLP source. |
+| **input.&#x200b;otlp.&#x200b;enabled**  | boolean | Enabled specifies if the 'otlp' input is enabled. If enabled, then push-based OTLP signals are collected. The default is `true`. |
+| **input.&#x200b;otlp.&#x200b;namespaces**  | object | Namespaces describe whether push-based OTLP signals from specific namespaces are selected. By default, all namespaces except system namespaces are enabled. To enable all namespaces including system namespaces, use an empty struct notation. |
+| **input.&#x200b;otlp.&#x200b;namespaces.&#x200b;exclude**  | \[\]string | Exclude telemetry data from the specified namespace names only. By default, all namespaces (depending on input type: except system namespaces) are collected. You cannot specify an exclude list together with an include list. |
+| **input.&#x200b;otlp.&#x200b;namespaces.&#x200b;include**  | \[\]string | Include telemetry data from the specified namespace names only. By default, all namespaces (depending on input type: except system namespaces) are included. You cannot specify an include list together with an exclude list. |
+| **input.&#x200b;runtime**  | object | Runtime input configures the log collection from application containers stdout/stderr by tailing the log files of the underlying container runtime. |
+| **input.&#x200b;runtime.&#x200b;containers**  | object | Containers describes whether application logs from specific containers are selected. The options are mutually exclusive. |
+| **input.&#x200b;runtime.&#x200b;containers.&#x200b;exclude**  | \[\]string | Exclude specifies to exclude only the container logs with the specified container names. |
+| **input.&#x200b;runtime.&#x200b;containers.&#x200b;include**  | \[\]string | Include specifies to include only the container logs with the specified container names. |
+| **input.&#x200b;runtime.&#x200b;dropLabels**  | boolean | Deprecated: The field is based on the Fluent Bit-based technology stack. Use the OpenTelemetry-based stack instead, see https://kyma-project.io/external-content/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html. FluentBitDropLabels defines whether to drop all Kubernetes labels. The default is `false`. Only available when using an output of type `http` and `custom`. For an `otlp` output, use the label enrichement feature in the Telemetry resource instead. |
+| **input.&#x200b;runtime.&#x200b;enabled**  | boolean | Enabled specifies if the 'runtime' input is enabled. If enabled, application logs are collected from application containers stdout/stderr. The default is `true`. |
+| **input.&#x200b;runtime.&#x200b;keepAnnotations**  | boolean | Deprecated: The field is based on the Fluent Bit-based technology stack. Use the OpenTelemetry-based stack instead, see https://kyma-project.io/external-content/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html. FluentBitKeepAnnotations defines whether to keep all Kubernetes annotations. The default is `false`.  Only available when using an output of type `http` and `custom`. |
+| **input.&#x200b;runtime.&#x200b;keepOriginalBody**  | boolean | KeepOriginalBody retains the original log data if the log data is in JSON and it is successfully parsed. If set to `false`, the original log data is removed from the log record. The default is `true`. |
+| **input.&#x200b;runtime.&#x200b;namespaces**  | object | Namespaces describes whether application logs from specific namespaces are selected. The options are mutually exclusive. By default, all namespaces except the system namespaces are enabled. To enable all namespaces including system namespaces, use an empty struct notation. |
+| **input.&#x200b;runtime.&#x200b;namespaces.&#x200b;exclude**  | \[\]string | Exclude telemetry data from the specified namespace names only. By default, all namespaces (depending on input type: except system namespaces) are collected. You cannot specify an exclude list together with an include list. |
+| **input.&#x200b;runtime.&#x200b;namespaces.&#x200b;include**  | \[\]string | Include telemetry data from the specified namespace names only. By default, all namespaces (depending on input type: except system namespaces) are included. You cannot specify an include list together with an exclude list. |
+| **output** (required) | object | Output configures the backend to which logs are sent. You must specify exactly one output per pipeline. |
+| **output.&#x200b;custom**  | string | Deprecated: The field is based on the Fluent Bit-based technology stack. Use the OpenTelemetry-based stack instead, see https://kyma-project.io/external-content/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html. FluentBitCustom defines a custom output in the [Fluent Bit syntax](https://docs.fluentbit.io/manual/pipeline/outputs) where you want to push the logs. If you use a `custom` output, you put the LogPipeline in unsupported mode. Only available when using an output of type `http` and `custom`. |
+| **output.&#x200b;http**  | object | Deprecated: The field is based on the Fluent Bit-based technology stack. Use the OpenTelemetry-based stack instead, see https://kyma-project.io/external-content/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html. FluentBitHTTP configures a FluentBitHTTP-based output compatible with the Fluent Bit FluentBitHTTP output plugin. |
+| **output.&#x200b;http.&#x200b;compress**  | string | Compress defines the compression algorithm to use. Either `none` or `gzip`. Default is `none`. |
+| **output.&#x200b;http.&#x200b;dedot**  | boolean | Dedot enables de-dotting of Kubernetes labels and annotations. For compatibility with OpenSearch-based backends, dots (.) are replaced by underscores (_). Default is `false`. |
+| **output.&#x200b;http.&#x200b;format**  | string | Format is the data format to be used in the HTTP request body. Either `gelf`, `json`, `json_stream`, `json_lines`, or `msgpack`. Default is `json`. |
+| **output.&#x200b;http.&#x200b;host** (required) | object | Host defines the host of the HTTP backend. |
+| **output.&#x200b;http.&#x200b;host.&#x200b;value**  | string | Value as plain text. |
+| **output.&#x200b;http.&#x200b;host.&#x200b;valueFrom**  | object | ValueFrom is the value as a reference to a resource. |
+| **output.&#x200b;http.&#x200b;host.&#x200b;valueFrom.&#x200b;secretKeyRef** (required) | object | SecretKeyRef refers to the value of a specific key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`. |
+| **output.&#x200b;http.&#x200b;host.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;key** (required) | string | Key defines the name of the attribute of the Secret holding the referenced value. |
+| **output.&#x200b;http.&#x200b;host.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;name** (required) | string | Name of the Secret containing the referenced value. |
+| **output.&#x200b;http.&#x200b;host.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace** (required) | string | Namespace containing the Secret with the referenced value. |
+| **output.&#x200b;http.&#x200b;password**  | object | Password defines the basic auth password. |
+| **output.&#x200b;http.&#x200b;password.&#x200b;value**  | string | Value as plain text. |
+| **output.&#x200b;http.&#x200b;password.&#x200b;valueFrom**  | object | ValueFrom is the value as a reference to a resource. |
+| **output.&#x200b;http.&#x200b;password.&#x200b;valueFrom.&#x200b;secretKeyRef** (required) | object | SecretKeyRef refers to the value of a specific key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`. |
+| **output.&#x200b;http.&#x200b;password.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;key** (required) | string | Key defines the name of the attribute of the Secret holding the referenced value. |
+| **output.&#x200b;http.&#x200b;password.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;name** (required) | string | Name of the Secret containing the referenced value. |
+| **output.&#x200b;http.&#x200b;password.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace** (required) | string | Namespace containing the Secret with the referenced value. |
+| **output.&#x200b;http.&#x200b;port**  | string | Port defines the port of the HTTP backend. Default is 443. |
+| **output.&#x200b;http.&#x200b;tls**  | object | TLS configures TLS for the HTTP backend. |
+| **output.&#x200b;http.&#x200b;tls.&#x200b;ca**  | object | Defines an optional CA certificate for server certificate verification when using TLS. The certificate must be provided in PEM format. |
+| **output.&#x200b;http.&#x200b;tls.&#x200b;ca.&#x200b;value**  | string | Value as plain text. |
+| **output.&#x200b;http.&#x200b;tls.&#x200b;ca.&#x200b;valueFrom**  | object | ValueFrom is the value as a reference to a resource. |
+| **output.&#x200b;http.&#x200b;tls.&#x200b;ca.&#x200b;valueFrom.&#x200b;secretKeyRef** (required) | object | SecretKeyRef refers to the value of a specific key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`. |
+| **output.&#x200b;http.&#x200b;tls.&#x200b;ca.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;key** (required) | string | Key defines the name of the attribute of the Secret holding the referenced value. |
+| **output.&#x200b;http.&#x200b;tls.&#x200b;ca.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;name** (required) | string | Name of the Secret containing the referenced value. |
+| **output.&#x200b;http.&#x200b;tls.&#x200b;ca.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace** (required) | string | Namespace containing the Secret with the referenced value. |
+| **output.&#x200b;http.&#x200b;tls.&#x200b;cert**  | object | Defines a client certificate to use when using TLS. The certificate must be provided in PEM format. |
+| **output.&#x200b;http.&#x200b;tls.&#x200b;cert.&#x200b;value**  | string | Value as plain text. |
+| **output.&#x200b;http.&#x200b;tls.&#x200b;cert.&#x200b;valueFrom**  | object | ValueFrom is the value as a reference to a resource. |
+| **output.&#x200b;http.&#x200b;tls.&#x200b;cert.&#x200b;valueFrom.&#x200b;secretKeyRef** (required) | object | SecretKeyRef refers to the value of a specific key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`. |
+| **output.&#x200b;http.&#x200b;tls.&#x200b;cert.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;key** (required) | string | Key defines the name of the attribute of the Secret holding the referenced value. |
+| **output.&#x200b;http.&#x200b;tls.&#x200b;cert.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;name** (required) | string | Name of the Secret containing the referenced value. |
+| **output.&#x200b;http.&#x200b;tls.&#x200b;cert.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace** (required) | string | Namespace containing the Secret with the referenced value. |
+| **output.&#x200b;http.&#x200b;tls.&#x200b;insecure**  | boolean | Insecure defines whether to send requests using plaintext instead of TLS. |
+| **output.&#x200b;http.&#x200b;tls.&#x200b;insecureSkipVerify**  | boolean | InsecureSkipVerify defines whether to skip server certificate verification when using TLS. |
+| **output.&#x200b;http.&#x200b;tls.&#x200b;key**  | object | Defines the client key to use when using TLS. The key must be provided in PEM format. |
+| **output.&#x200b;http.&#x200b;tls.&#x200b;key.&#x200b;value**  | string | Value as plain text. |
+| **output.&#x200b;http.&#x200b;tls.&#x200b;key.&#x200b;valueFrom**  | object | ValueFrom is the value as a reference to a resource. |
+| **output.&#x200b;http.&#x200b;tls.&#x200b;key.&#x200b;valueFrom.&#x200b;secretKeyRef** (required) | object | SecretKeyRef refers to the value of a specific key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`. |
+| **output.&#x200b;http.&#x200b;tls.&#x200b;key.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;key** (required) | string | Key defines the name of the attribute of the Secret holding the referenced value. |
+| **output.&#x200b;http.&#x200b;tls.&#x200b;key.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;name** (required) | string | Name of the Secret containing the referenced value. |
+| **output.&#x200b;http.&#x200b;tls.&#x200b;key.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace** (required) | string | Namespace containing the Secret with the referenced value. |
+| **output.&#x200b;http.&#x200b;uri**  | string | URI defines the URI of the HTTP backend. Default is "/". |
+| **output.&#x200b;http.&#x200b;user**  | object | User defines the basic auth user. |
+| **output.&#x200b;http.&#x200b;user.&#x200b;value**  | string | Value as plain text. |
+| **output.&#x200b;http.&#x200b;user.&#x200b;valueFrom**  | object | ValueFrom is the value as a reference to a resource. |
+| **output.&#x200b;http.&#x200b;user.&#x200b;valueFrom.&#x200b;secretKeyRef** (required) | object | SecretKeyRef refers to the value of a specific key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`. |
+| **output.&#x200b;http.&#x200b;user.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;key** (required) | string | Key defines the name of the attribute of the Secret holding the referenced value. |
+| **output.&#x200b;http.&#x200b;user.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;name** (required) | string | Name of the Secret containing the referenced value. |
+| **output.&#x200b;http.&#x200b;user.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace** (required) | string | Namespace containing the Secret with the referenced value. |
+| **output.&#x200b;otlp**  | object | OTLP defines an output using the OpenTelemetry protocol. |
+| **output.&#x200b;otlp.&#x200b;authentication**  | object | Authentication defines authentication options for the OTLP output |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;basic**  | object | Basic activates `Basic` authentication for the destination providing relevant Secrets. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;basic.&#x200b;password** (required) | object | Password contains the basic auth password or a Secret reference. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;basic.&#x200b;password.&#x200b;value**  | string | Value as plain text. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;basic.&#x200b;password.&#x200b;valueFrom**  | object | ValueFrom is the value as a reference to a resource. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;basic.&#x200b;password.&#x200b;valueFrom.&#x200b;secretKeyRef** (required) | object | SecretKeyRef refers to the value of a specific key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;basic.&#x200b;password.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;key** (required) | string | Key defines the name of the attribute of the Secret holding the referenced value. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;basic.&#x200b;password.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;name** (required) | string | Name of the Secret containing the referenced value. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;basic.&#x200b;password.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace** (required) | string | Namespace containing the Secret with the referenced value. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;basic.&#x200b;user** (required) | object | User contains the basic auth username or a Secret reference. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;basic.&#x200b;user.&#x200b;value**  | string | Value as plain text. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;basic.&#x200b;user.&#x200b;valueFrom**  | object | ValueFrom is the value as a reference to a resource. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;basic.&#x200b;user.&#x200b;valueFrom.&#x200b;secretKeyRef** (required) | object | SecretKeyRef refers to the value of a specific key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;basic.&#x200b;user.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;key** (required) | string | Key defines the name of the attribute of the Secret holding the referenced value. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;basic.&#x200b;user.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;name** (required) | string | Name of the Secret containing the referenced value. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;basic.&#x200b;user.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace** (required) | string | Namespace containing the Secret with the referenced value. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;oauth2**  | object | OAuth2 activates `OAuth2` authentication for the destination providing relevant Secrets. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;oauth2.&#x200b;clientID** (required) | object | ClientID contains the OAuth2 client ID or a Secret reference. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;oauth2.&#x200b;clientID.&#x200b;value**  | string | Value as plain text. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;oauth2.&#x200b;clientID.&#x200b;valueFrom**  | object | ValueFrom is the value as a reference to a resource. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;oauth2.&#x200b;clientID.&#x200b;valueFrom.&#x200b;secretKeyRef** (required) | object | SecretKeyRef refers to the value of a specific key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;oauth2.&#x200b;clientID.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;key** (required) | string | Key defines the name of the attribute of the Secret holding the referenced value. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;oauth2.&#x200b;clientID.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;name** (required) | string | Name of the Secret containing the referenced value. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;oauth2.&#x200b;clientID.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace** (required) | string | Namespace containing the Secret with the referenced value. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;oauth2.&#x200b;clientSecret** (required) | object | ClientSecret contains the OAuth2 client secret or a Secret reference. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;oauth2.&#x200b;clientSecret.&#x200b;value**  | string | Value as plain text. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;oauth2.&#x200b;clientSecret.&#x200b;valueFrom**  | object | ValueFrom is the value as a reference to a resource. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;oauth2.&#x200b;clientSecret.&#x200b;valueFrom.&#x200b;secretKeyRef** (required) | object | SecretKeyRef refers to the value of a specific key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;oauth2.&#x200b;clientSecret.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;key** (required) | string | Key defines the name of the attribute of the Secret holding the referenced value. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;oauth2.&#x200b;clientSecret.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;name** (required) | string | Name of the Secret containing the referenced value. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;oauth2.&#x200b;clientSecret.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace** (required) | string | Namespace containing the Secret with the referenced value. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;oauth2.&#x200b;params**  | map\[string\]string | Params contains optional additional OAuth2 parameters that are sent to the token endpoint. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;oauth2.&#x200b;scopes**  | \[\]string | Scopes contains optional OAuth2 scopes. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;oauth2.&#x200b;tokenURL** (required) | object | TokenURL contains the OAuth2 token endpoint URL or a Secret reference. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;oauth2.&#x200b;tokenURL.&#x200b;value**  | string | Value as plain text. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;oauth2.&#x200b;tokenURL.&#x200b;valueFrom**  | object | ValueFrom is the value as a reference to a resource. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;oauth2.&#x200b;tokenURL.&#x200b;valueFrom.&#x200b;secretKeyRef** (required) | object | SecretKeyRef refers to the value of a specific key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;oauth2.&#x200b;tokenURL.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;key** (required) | string | Key defines the name of the attribute of the Secret holding the referenced value. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;oauth2.&#x200b;tokenURL.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;name** (required) | string | Name of the Secret containing the referenced value. |
+| **output.&#x200b;otlp.&#x200b;authentication.&#x200b;oauth2.&#x200b;tokenURL.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace** (required) | string | Namespace containing the Secret with the referenced value. |
+| **output.&#x200b;otlp.&#x200b;endpoint** (required) | object | Endpoint defines the host and port (`<host>:<port>`) of an OTLP endpoint. |
+| **output.&#x200b;otlp.&#x200b;endpoint.&#x200b;value**  | string | Value as plain text. |
+| **output.&#x200b;otlp.&#x200b;endpoint.&#x200b;valueFrom**  | object | ValueFrom is the value as a reference to a resource. |
+| **output.&#x200b;otlp.&#x200b;endpoint.&#x200b;valueFrom.&#x200b;secretKeyRef** (required) | object | SecretKeyRef refers to the value of a specific key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`. |
+| **output.&#x200b;otlp.&#x200b;endpoint.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;key** (required) | string | Key defines the name of the attribute of the Secret holding the referenced value. |
+| **output.&#x200b;otlp.&#x200b;endpoint.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;name** (required) | string | Name of the Secret containing the referenced value. |
+| **output.&#x200b;otlp.&#x200b;endpoint.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace** (required) | string | Namespace containing the Secret with the referenced value. |
+| **output.&#x200b;otlp.&#x200b;headers**  | \[\]object | Headers defines custom headers to be added to outgoing HTTP or gRPC requests. |
+| **output.&#x200b;otlp.&#x200b;headers.&#x200b;name** (required) | string | Name defines the header name. |
+| **output.&#x200b;otlp.&#x200b;headers.&#x200b;prefix**  | string | Prefix defines an optional header value prefix. The prefix is separated from the value by a space character. |
+| **output.&#x200b;otlp.&#x200b;headers.&#x200b;value**  | string | Value as plain text. |
+| **output.&#x200b;otlp.&#x200b;headers.&#x200b;valueFrom**  | object | ValueFrom is the value as a reference to a resource. |
+| **output.&#x200b;otlp.&#x200b;headers.&#x200b;valueFrom.&#x200b;secretKeyRef** (required) | object | SecretKeyRef refers to the value of a specific key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`. |
+| **output.&#x200b;otlp.&#x200b;headers.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;key** (required) | string | Key defines the name of the attribute of the Secret holding the referenced value. |
+| **output.&#x200b;otlp.&#x200b;headers.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;name** (required) | string | Name of the Secret containing the referenced value. |
+| **output.&#x200b;otlp.&#x200b;headers.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace** (required) | string | Namespace containing the Secret with the referenced value. |
+| **output.&#x200b;otlp.&#x200b;path**  | string | Path defines OTLP export URL path (only for the HTTP protocol). This value overrides auto-appended paths `/v1/logs`, `/v1/metrics`, and `/v1/traces` |
+| **output.&#x200b;otlp.&#x200b;protocol**  | string | Protocol defines the OTLP protocol (`http` or `grpc`). Default is `grpc`. |
+| **output.&#x200b;otlp.&#x200b;tls**  | object | TLS defines TLS options for the OTLP output. |
+| **output.&#x200b;otlp.&#x200b;tls.&#x200b;ca**  | object | Defines an optional CA certificate for server certificate verification when using TLS. The certificate must be provided in PEM format. |
+| **output.&#x200b;otlp.&#x200b;tls.&#x200b;ca.&#x200b;value**  | string | Value as plain text. |
+| **output.&#x200b;otlp.&#x200b;tls.&#x200b;ca.&#x200b;valueFrom**  | object | ValueFrom is the value as a reference to a resource. |
+| **output.&#x200b;otlp.&#x200b;tls.&#x200b;ca.&#x200b;valueFrom.&#x200b;secretKeyRef** (required) | object | SecretKeyRef refers to the value of a specific key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`. |
+| **output.&#x200b;otlp.&#x200b;tls.&#x200b;ca.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;key** (required) | string | Key defines the name of the attribute of the Secret holding the referenced value. |
+| **output.&#x200b;otlp.&#x200b;tls.&#x200b;ca.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;name** (required) | string | Name of the Secret containing the referenced value. |
+| **output.&#x200b;otlp.&#x200b;tls.&#x200b;ca.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace** (required) | string | Namespace containing the Secret with the referenced value. |
+| **output.&#x200b;otlp.&#x200b;tls.&#x200b;cert**  | object | Defines a client certificate to use when using TLS. The certificate must be provided in PEM format. |
+| **output.&#x200b;otlp.&#x200b;tls.&#x200b;cert.&#x200b;value**  | string | Value as plain text. |
+| **output.&#x200b;otlp.&#x200b;tls.&#x200b;cert.&#x200b;valueFrom**  | object | ValueFrom is the value as a reference to a resource. |
+| **output.&#x200b;otlp.&#x200b;tls.&#x200b;cert.&#x200b;valueFrom.&#x200b;secretKeyRef** (required) | object | SecretKeyRef refers to the value of a specific key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`. |
+| **output.&#x200b;otlp.&#x200b;tls.&#x200b;cert.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;key** (required) | string | Key defines the name of the attribute of the Secret holding the referenced value. |
+| **output.&#x200b;otlp.&#x200b;tls.&#x200b;cert.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;name** (required) | string | Name of the Secret containing the referenced value. |
+| **output.&#x200b;otlp.&#x200b;tls.&#x200b;cert.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace** (required) | string | Namespace containing the Secret with the referenced value. |
+| **output.&#x200b;otlp.&#x200b;tls.&#x200b;insecure**  | boolean | Insecure defines whether to send requests using plaintext instead of TLS. |
+| **output.&#x200b;otlp.&#x200b;tls.&#x200b;insecureSkipVerify**  | boolean | InsecureSkipVerify defines whether to skip server certificate verification when using TLS. |
+| **output.&#x200b;otlp.&#x200b;tls.&#x200b;key**  | object | Defines the client key to use when using TLS. The key must be provided in PEM format. |
+| **output.&#x200b;otlp.&#x200b;tls.&#x200b;key.&#x200b;value**  | string | Value as plain text. |
+| **output.&#x200b;otlp.&#x200b;tls.&#x200b;key.&#x200b;valueFrom**  | object | ValueFrom is the value as a reference to a resource. |
+| **output.&#x200b;otlp.&#x200b;tls.&#x200b;key.&#x200b;valueFrom.&#x200b;secretKeyRef** (required) | object | SecretKeyRef refers to the value of a specific key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`. |
+| **output.&#x200b;otlp.&#x200b;tls.&#x200b;key.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;key** (required) | string | Key defines the name of the attribute of the Secret holding the referenced value. |
+| **output.&#x200b;otlp.&#x200b;tls.&#x200b;key.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;name** (required) | string | Name of the Secret containing the referenced value. |
+| **output.&#x200b;otlp.&#x200b;tls.&#x200b;key.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace** (required) | string | Namespace containing the Secret with the referenced value. |
+| **transform**  | \[\]object | Transforms specify a list of transformations to apply to telemetry data. |
+| **transform.&#x200b;conditions**  | \[\]string | Conditions specify a list of multiple where clauses, which will be processed as global conditions for the accompanying set of statements. The conditions are ORed together, which means only one condition needs to evaluate to true in order for the statements (including their individual where clauses) to be executed. |
+| **transform.&#x200b;statements**  | \[\]string | Statements specify a list of OTTL statements to perform the transformation. |
+| **variables**  | \[\]object | Deprecated: The field is based on the Fluent Bit-based technology stack. Use the OpenTelemetry-based stack instead, see https://kyma-project.io/external-content/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html. FluentBitVariables is a list of mappings from Kubernetes Secret keys to environment variables. Mapped keys are mounted as environment variables, so that they are available as [FluentBitVariables](https://docs.fluentbit.io/manual/administration/configuring-fluent-bit/classic-mode/variables) in the `custom` filters and a `custom` output. Only available when using an output of type `http` and `custom`. |
+| **variables.&#x200b;name** (required) | string | Name of the variable to map. |
+| **variables.&#x200b;valueFrom** (required) | object | ValueFrom specifies the secret and key to select the value to map. |
+| **variables.&#x200b;valueFrom.&#x200b;secretKeyRef** (required) | object | SecretKeyRef refers to the value of a specific key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`. |
+| **variables.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;key** (required) | string | Key defines the name of the attribute of the Secret holding the referenced value. |
+| **variables.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;name** (required) | string | Name of the Secret containing the referenced value. |
+| **variables.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace** (required) | string | Namespace containing the Secret with the referenced value. |
+
+**Status:**
+
+| Parameter | Type | Description |
+| ---- | ----------- | ---- |
+| **conditions**  | \[\]object | An array of conditions describing the status of the pipeline. |
+| **conditions.&#x200b;lastTransitionTime** (required) | string | lastTransitionTime is the last time the condition transitioned from one status to another. This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable. |
+| **conditions.&#x200b;message** (required) | string | message is a human readable message indicating details about the transition. This may be an empty string. |
+| **conditions.&#x200b;observedGeneration**  | integer | observedGeneration represents the .metadata.generation that the condition was set based upon. For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date with respect to the current state of the instance. |
+| **conditions.&#x200b;reason** (required) | string | reason contains a programmatic identifier indicating the reason for the condition's last transition. Producers of specific condition types may define expected values and meanings for this field, and whether the values are considered a guaranteed API. The value should be a CamelCase string. This field may not be empty. |
+| **conditions.&#x200b;status** (required) | string | status of the condition, one of True, False, Unknown. |
+| **conditions.&#x200b;type** (required) | string | type of condition in CamelCase or in foo.example.com/CamelCase. |
+| **unsupportedMode**  | boolean | Is active when the LogPipeline uses a `custom` output or filter; see [unsupported mode](https://github.com/kyma-project/telemetry-manager/blob/main/docs/user/02-logs.md#unsupported-mode). |
+
 ### LogPipeline.telemetry.kyma-project.io/v1alpha1
 
 **Spec:**
@@ -123,14 +313,14 @@ For details, see the [LogPipeline specification file](https://github.com/kyma-pr
 | **input.&#x200b;application.&#x200b;namespaces.&#x200b;exclude**  | \[\]string | Exclude specifies the list of namespace names to exclude when collecting container logs. By default, logs from all namespaces are collected, except system namespaces. You cannot specify an exclude list together with an include list. |
 | **input.&#x200b;application.&#x200b;namespaces.&#x200b;include**  | \[\]string | Include specifies the list of namespace names to include when collecting container logs. By default, logs from all namespaces are collected, except system namespaces. You cannot specify an include list together with an exclude list. |
 | **input.&#x200b;application.&#x200b;namespaces.&#x200b;system**  | boolean | System specifies whether to collect logs from system namespaces. If set to `true`, you collect logs from all namespaces including system namespaces, such as like kube-system, istio-system, and kyma-system. The default is `false`. |
-| **input.&#x200b;otlp**  | object | OTLP input configures the push endpoint to receive logs from a OTLP source. |
+| **input.&#x200b;otlp**  | object | OTLP input configures the push endpoint to receive logs from an OTLP source. |
 | **input.&#x200b;otlp.&#x200b;disabled**  | boolean | Disabled specifies if the 'otlp' input is deactivated. If set to `true`, no push-based OTLP signals are collected. The default is `false`. |
 | **input.&#x200b;otlp.&#x200b;namespaces**  | object | Namespaces describes whether push-based OTLP signals from specific namespaces are selected. System namespaces are enabled by default. |
 | **input.&#x200b;otlp.&#x200b;namespaces.&#x200b;exclude**  | \[\]string | Exclude telemetry data from the specified namespace names only. By default, all namespaces (depending on input type: except system namespaces) are collected. You cannot specify an exclude list together with an include list. |
 | **input.&#x200b;otlp.&#x200b;namespaces.&#x200b;include**  | \[\]string | Include telemetry data from the specified namespace names only. By default, all namespaces (depending on input type: except system namespaces) are included. You cannot specify an include list together with an exclude list. |
 | **output** (required) | object | Output configures the backend to which logs are sent. You must specify exactly one output per pipeline. |
 | **output.&#x200b;custom**  | string | Deprecated: The field is based on the Fluent Bit-based technology stack. Use the OpenTelemetry-based stack instead, see https://kyma-project.io/external-content/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html. FluentBitCustom defines a custom output in the [Fluent Bit syntax](https://docs.fluentbit.io/manual/pipeline/outputs) where you want to push the logs. If you use a `custom` output, you put the LogPipeline in unsupported mode. Only available when using an output of type `http` and `custom`. |
-| **output.&#x200b;http**  | object | Deprecated: The field is based on the Fluent Bit-based technology stack. Use the OpenTelemetry-based stack instead, see https://kyma-project.io/external-content/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html. FluentBitHTTP configures an FluentBitHTTP-based output compatible with the Fluent Bit FluentBitHTTP output plugin. |
+| **output.&#x200b;http**  | object | Deprecated: The field is based on the Fluent Bit-based technology stack. Use the OpenTelemetry-based stack instead, see https://kyma-project.io/external-content/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html. FluentBitHTTP configures a FluentBitHTTP-based output compatible with the Fluent Bit FluentBitHTTP output plugin. |
 | **output.&#x200b;http.&#x200b;compress**  | string | Compress defines the compression algorithm to use. Either `none` or `gzip`. Default is `none`. |
 | **output.&#x200b;http.&#x200b;dedot**  | boolean | Dedot enables de-dotting of Kubernetes labels and annotations. For compatibility with OpenSearch-based backends, dots (.) are replaced by underscores (_). Default is `false`. |
 | **output.&#x200b;http.&#x200b;format**  | string | Format is the data format to be used in the HTTP request body. Either `gelf`, `json`, `json_stream`, `json_lines`, or `msgpack`. Default is `json`. |
@@ -238,7 +428,7 @@ For details, see the [LogPipeline specification file](https://github.com/kyma-pr
 | **output.&#x200b;otlp.&#x200b;headers.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;key** (required) | string | Key defines the name of the attribute of the Secret holding the referenced value. |
 | **output.&#x200b;otlp.&#x200b;headers.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;name** (required) | string | Name of the Secret containing the referenced value. |
 | **output.&#x200b;otlp.&#x200b;headers.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace** (required) | string | Namespace containing the Secret with the referenced value. |
-| **output.&#x200b;otlp.&#x200b;path**  | string | Path defines OTLP export URL path (only for the HTTP protocol). This value overrides auto-appended paths `/v1/metrics` and `/v1/traces` |
+| **output.&#x200b;otlp.&#x200b;path**  | string | Path defines OTLP export URL path (only for the HTTP protocol). This value overrides auto-appended paths `/v1/logs`, `/v1/metrics`, and `/v1/traces` |
 | **output.&#x200b;otlp.&#x200b;protocol**  | string | Protocol defines the OTLP protocol (`http` or `grpc`). Default is `grpc`. |
 | **output.&#x200b;otlp.&#x200b;tls**  | object | TLS defines TLS options for the OTLP output. |
 | **output.&#x200b;otlp.&#x200b;tls.&#x200b;ca**  | object | Defines an optional CA certificate for server certificate verification when using TLS. The certificate must be provided in PEM format. |

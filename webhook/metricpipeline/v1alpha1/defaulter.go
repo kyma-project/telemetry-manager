@@ -8,7 +8,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	metricpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/metricpipeline"
 )
 
 // +kubebuilder:object:generate=false
@@ -45,7 +44,7 @@ func (md defaulter) Default(ctx context.Context, obj runtime.Object) error {
 }
 
 func (md defaulter) applyDefaults(pipeline *telemetryv1alpha1.MetricPipeline) {
-	if metricpipelineutils.IsPrometheusInputEnabled(pipeline.Spec.Input) {
+	if prometheusInputEnabled(&pipeline.Spec.Input) {
 		if pipeline.Spec.Input.Prometheus.Namespaces == nil {
 			pipeline.Spec.Input.Prometheus.Namespaces = &telemetryv1alpha1.NamespaceSelector{
 				Exclude: md.ExcludeNamespaces,
@@ -59,7 +58,7 @@ func (md defaulter) applyDefaults(pipeline *telemetryv1alpha1.MetricPipeline) {
 		}
 	}
 
-	if metricpipelineutils.IsIstioInputEnabled(pipeline.Spec.Input) {
+	if istioInputEnabled(&pipeline.Spec.Input) {
 		if pipeline.Spec.Input.Istio.Namespaces == nil {
 			pipeline.Spec.Input.Istio.Namespaces = &telemetryv1alpha1.NamespaceSelector{
 				Exclude: md.ExcludeNamespaces,
@@ -79,7 +78,7 @@ func (md defaulter) applyDefaults(pipeline *telemetryv1alpha1.MetricPipeline) {
 		}
 	}
 
-	if metricpipelineutils.IsRuntimeInputEnabled(pipeline.Spec.Input) {
+	if runtimeInputEnabled(&pipeline.Spec.Input) {
 		md.applyRuntimeInputResourceDefaults(pipeline)
 
 		if pipeline.Spec.Input.Runtime.Namespaces == nil {
@@ -154,4 +153,16 @@ func (md defaulter) applyRuntimeInputResourceDefaults(pipeline *telemetryv1alpha
 			Enabled: &md.RuntimeInputResources.Job,
 		}
 	}
+}
+
+func prometheusInputEnabled(input *telemetryv1alpha1.MetricPipelineInput) bool {
+	return input.Prometheus != nil && input.Prometheus.Enabled != nil && *input.Prometheus.Enabled
+}
+
+func istioInputEnabled(input *telemetryv1alpha1.MetricPipelineInput) bool {
+	return input.Istio != nil && input.Istio.Enabled != nil && *input.Istio.Enabled
+}
+
+func runtimeInputEnabled(input *telemetryv1alpha1.MetricPipelineInput) bool {
+	return input.Runtime != nil && input.Runtime.Enabled != nil && *input.Runtime.Enabled
 }

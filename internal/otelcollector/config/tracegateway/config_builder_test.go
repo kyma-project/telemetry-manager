@@ -9,7 +9,7 @@ import (
 	"gopkg.in/yaml.v3"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
@@ -20,12 +20,12 @@ func TestBuildConfig(t *testing.T) {
 
 	tests := []struct {
 		name           string
-		pipelines      []telemetryv1alpha1.TracePipeline
+		pipelines      []telemetryv1beta1.TracePipeline
 		goldenFileName string
 	}{
 		{
 			name: "single pipeline",
-			pipelines: []telemetryv1alpha1.TracePipeline{
+			pipelines: []telemetryv1beta1.TracePipeline{
 				testutils.NewTracePipelineBuilder().WithName("test").Build(),
 			},
 			goldenFileName: "single-pipeline.yaml",
@@ -33,7 +33,7 @@ func TestBuildConfig(t *testing.T) {
 		{
 			name:           "pipeline using http protocol WITH custom 'Path' field",
 			goldenFileName: "http-protocol-with-custom-path.yaml",
-			pipelines: []telemetryv1alpha1.TracePipeline{
+			pipelines: []telemetryv1beta1.TracePipeline{
 				testutils.NewTracePipelineBuilder().
 					WithName("test").
 					WithOTLPOutput(
@@ -45,7 +45,7 @@ func TestBuildConfig(t *testing.T) {
 		{
 			name:           "pipeline using http protocol WITHOUT custom 'Path' field",
 			goldenFileName: "http-protocol-without-custom-path.yaml",
-			pipelines: []telemetryv1alpha1.TracePipeline{
+			pipelines: []telemetryv1beta1.TracePipeline{
 				testutils.NewTracePipelineBuilder().
 					WithName("test").
 					WithOTLPOutput(
@@ -55,10 +55,10 @@ func TestBuildConfig(t *testing.T) {
 		},
 		{
 			name: "two pipelines with user-defined transforms",
-			pipelines: []telemetryv1alpha1.TracePipeline{
+			pipelines: []telemetryv1beta1.TracePipeline{
 				testutils.NewTracePipelineBuilder().
 					WithName("test1").
-					WithTransform(telemetryv1alpha1.TransformSpec{
+					WithTransform(telemetryv1beta1.TransformSpec{
 						Conditions: []string{"IsMatch(body, \".*error.*\")"},
 						Statements: []string{
 							"set(attributes[\"trace.status_code\"], \"error\")",
@@ -67,7 +67,7 @@ func TestBuildConfig(t *testing.T) {
 					}).Build(),
 				testutils.NewTracePipelineBuilder().
 					WithName("test2").
-					WithTransform(telemetryv1alpha1.TransformSpec{
+					WithTransform(telemetryv1beta1.TransformSpec{
 						Conditions: []string{"IsMatch(body, \".*error.*\")"},
 						Statements: []string{
 							"set(attributes[\"trace.status_code\"], \"error\")",
@@ -79,15 +79,15 @@ func TestBuildConfig(t *testing.T) {
 		},
 		{
 			name: "pipeline with user-defined filters",
-			pipelines: []telemetryv1alpha1.TracePipeline{
+			pipelines: []telemetryv1beta1.TracePipeline{
 				testutils.NewTracePipelineBuilder().
 					WithName("test1").
-					WithFilter(telemetryv1alpha1.FilterSpec{
+					WithFilter(telemetryv1beta1.FilterSpec{
 						Conditions: []string{"IsMatch(span.name, \".*grpc.*\")"},
 					}).Build(),
 				testutils.NewTracePipelineBuilder().
 					WithName("test2").
-					WithFilter(telemetryv1alpha1.FilterSpec{
+					WithFilter(telemetryv1beta1.FilterSpec{
 						Conditions: []string{"IsMatch(spanevent.attributes[\"foo\"], \".*bar.*\")"},
 					}).Build(),
 			},
@@ -95,13 +95,13 @@ func TestBuildConfig(t *testing.T) {
 		},
 		{
 			name: "pipeline with user-defined transform and filters",
-			pipelines: []telemetryv1alpha1.TracePipeline{
+			pipelines: []telemetryv1beta1.TracePipeline{
 				testutils.NewTracePipelineBuilder().
 					WithName("test1").
-					WithFilter(telemetryv1alpha1.FilterSpec{
+					WithFilter(telemetryv1beta1.FilterSpec{
 						Conditions: []string{"IsMatch(span.name, \".*grpc.*\")"},
 					}).
-					WithTransform(telemetryv1alpha1.TransformSpec{
+					WithTransform(telemetryv1beta1.TransformSpec{
 						Conditions: []string{"IsMatch(body, \".*error.*\")"},
 						Statements: []string{
 							"set(attributes[\"trace.status_code\"], \"error\")",
@@ -113,7 +113,7 @@ func TestBuildConfig(t *testing.T) {
 		},
 		{
 			name: "pipeline using OAuth2 authentication",
-			pipelines: []telemetryv1alpha1.TracePipeline{
+			pipelines: []telemetryv1beta1.TracePipeline{
 				testutils.NewTracePipelineBuilder().
 					WithName("test").
 					WithOTLPOutput(

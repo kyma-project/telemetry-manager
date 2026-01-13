@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"strings"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
@@ -64,7 +64,7 @@ func NewValidator(opts ...ValidatorOption) *Validator {
 	return v
 }
 
-func (v *Validator) Validate(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error {
+func (v *Validator) Validate(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) error {
 	if err := v.PipelineLock.TryAcquireLock(ctx, pipeline); err != nil {
 		return err
 	}
@@ -114,7 +114,7 @@ func (v *Validator) Validate(ctx context.Context, pipeline *telemetryv1alpha1.Lo
 	return nil
 }
 
-func tlsValidationRequired(pipeline *telemetryv1alpha1.LogPipeline) bool {
+func tlsValidationRequired(pipeline *telemetryv1beta1.LogPipeline) bool {
 	http := pipeline.Spec.Output.FluentBitHTTP
 	if http == nil {
 		return false
@@ -128,7 +128,7 @@ func isValidHostname(host string) bool {
 	return validHostNamePattern.MatchString(host)
 }
 
-func validateFileNames(logpipeline *telemetryv1alpha1.LogPipeline) error {
+func validateFileNames(logpipeline *telemetryv1beta1.LogPipeline) error {
 	files := logpipeline.Spec.FluentBitFiles
 	uniqFileMap := make(map[string]bool)
 
@@ -143,7 +143,7 @@ func validateFileNames(logpipeline *telemetryv1alpha1.LogPipeline) error {
 	return nil
 }
 
-func validateFilters(lp *telemetryv1alpha1.LogPipeline) error {
+func validateFilters(lp *telemetryv1beta1.LogPipeline) error {
 	for _, filterPlugin := range lp.Spec.FluentBitFilters {
 		if err := validateCustomFilter(filterPlugin.Custom); err != nil {
 			return err

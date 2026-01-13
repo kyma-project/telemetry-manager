@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config"
 )
 
@@ -13,7 +13,7 @@ const (
 	nonMultilineFilter = "non-multiline"
 )
 
-func createCustomFilters(pipeline *telemetryv1alpha1.LogPipeline, filterType string) string {
+func createCustomFilters(pipeline *telemetryv1beta1.LogPipeline, filterType string) string {
 	var filters []string
 
 	for _, filter := range pipeline.Spec.FluentBitFilters {

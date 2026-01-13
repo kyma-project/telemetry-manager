@@ -32,7 +32,7 @@
 //	    result := reconcileAndGet(t, fakeClient, reconciler, pipeline.Name)
 //	    require.NoError(t, result.err)
 //
-//	    var updatedPipeline telemetryv1alpha1.TracePipeline
+//	    var updatedPipeline telemetryv1beta1telemetryv1beta1.TracePipeline
 //	    _ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 //	    assertCondition(t, updatedPipeline, conditions.TypeGatewayHealthy,
 //	        metav1.ConditionFalse, conditions.ReasonGatewayNotReady, "Failed to get Deployment")
@@ -74,7 +74,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
@@ -88,7 +88,7 @@ import (
 // reconcileAndGetResult holds the result of a reconciliation operation for test assertions.
 type reconcileAndGetResult struct {
 	result   ctrl.Result
-	pipeline telemetryv1alpha1.TracePipeline
+	pipeline telemetryv1beta1.TracePipeline
 	err      error
 }
 
@@ -129,7 +129,7 @@ type testReconciler struct {
 func newTestClient(t *testing.T, objs ...client.Object) client.Client {
 	scheme := runtime.NewScheme()
 	require.NoError(t, clientgoscheme.AddToScheme(scheme))
-	require.NoError(t, telemetryv1alpha1.AddToScheme(scheme))
+	require.NoError(t, telemetryv1beta1.AddToScheme(scheme))
 
 	kubeSystemNamespace := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
@@ -146,14 +146,14 @@ func newTestClient(t *testing.T, objs ...client.Object) client.Client {
 // It's a helper to reduce boilerplate in tests.
 // To assert mocks, use the assertMocks function returned from newTestReconciler.
 func reconcileAndGet(t *testing.T, client client.Client, reconciler *testReconciler, pipelineName string) reconcileAndGetResult {
-	var pl telemetryv1alpha1.TracePipeline
+	var pl telemetryv1beta1.TracePipeline
 	require.NoError(t, client.Get(t.Context(), types.NamespacedName{Name: pipelineName}, &pl))
 
 	res, recErr := reconciler.Reconcile(t.Context(), ctrl.Request{
 		NamespacedName: types.NamespacedName{Name: pipelineName},
 	})
 
-	var updatedPipeline telemetryv1alpha1.TracePipeline
+	var updatedPipeline telemetryv1beta1.TracePipeline
 	require.NoError(t, client.Get(t.Context(), types.NamespacedName{Name: pipelineName}, &updatedPipeline))
 
 	return reconcileAndGetResult{
@@ -163,7 +163,7 @@ func reconcileAndGet(t *testing.T, client client.Client, reconciler *testReconci
 	}
 }
 
-func requireHasStatusCondition(t *testing.T, pipeline telemetryv1alpha1.TracePipeline, condType string, status metav1.ConditionStatus, reason, message string) {
+func requireHasStatusCondition(t *testing.T, pipeline telemetryv1beta1.TracePipeline, condType string, status metav1.ConditionStatus, reason, message string) {
 	cond := meta.FindStatusCondition(pipeline.Status.Conditions, condType)
 	require.NotNil(t, cond, "could not find condition of type %s", condType)
 	require.Equal(t, status, cond.Status)
@@ -173,8 +173,8 @@ func requireHasStatusCondition(t *testing.T, pipeline telemetryv1alpha1.TracePip
 	require.NotEmpty(t, cond.LastTransitionTime)
 }
 
-func containsPipeline(p telemetryv1alpha1.TracePipeline) any {
-	return mock.MatchedBy(func(pipelines []telemetryv1alpha1.TracePipeline) bool {
+func containsPipeline(p telemetryv1beta1.TracePipeline) any {
+	return mock.MatchedBy(func(pipelines []telemetryv1beta1.TracePipeline) bool {
 		return len(pipelines) == 1 && pipelines[0].Name == p.Name
 	})
 }

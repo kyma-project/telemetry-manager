@@ -6,7 +6,7 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
 
 // =============================================================================
@@ -15,12 +15,12 @@ import (
 
 type OAuth2ExtensionConfigBuilder struct {
 	reader        client.Reader
-	oauth2Options *telemetryv1alpha1.OAuth2Options
+	oauth2Options *telemetryv1beta1.OAuth2Options
 	pipelineName  string
 	signalType    string
 }
 
-func NewOAuth2ExtensionConfigBuilder(reader client.Reader, oauth2Options *telemetryv1alpha1.OAuth2Options, pipelineName string, signalType string) *OAuth2ExtensionConfigBuilder {
+func NewOAuth2ExtensionConfigBuilder(reader client.Reader, oauth2Options *telemetryv1beta1.OAuth2Options, pipelineName string, signalType string) *OAuth2ExtensionConfigBuilder {
 	return &OAuth2ExtensionConfigBuilder{
 		reader:        reader,
 		oauth2Options: oauth2Options,
@@ -40,7 +40,7 @@ func (cb *OAuth2ExtensionConfigBuilder) OAuth2ExtensionConfig(ctx context.Contex
 	return extensionsConfig, envVars, nil
 }
 
-func makeExtensionConfig(oauth2Options *telemetryv1alpha1.OAuth2Options, pipelineName string) *OAuth2Extension {
+func makeExtensionConfig(oauth2Options *telemetryv1beta1.OAuth2Options, pipelineName string) *OAuth2Extension {
 	return &OAuth2Extension{
 		TokenURL:     fmt.Sprintf("${%s}", formatEnvVarKey(oauth2TokenURLVariablePrefix, pipelineName)),
 		ClientID:     fmt.Sprintf("${%s}", formatEnvVarKey(oauth2ClientIDVariablePrefix, pipelineName)),

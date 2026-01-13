@@ -12,7 +12,7 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 
 	_ "crypto"
@@ -37,9 +37,9 @@ var (
 )
 
 type TLSValidationParams struct {
-	Cert *telemetryv1alpha1.ValueType
-	Key  *telemetryv1alpha1.ValueType
-	CA   *telemetryv1alpha1.ValueType
+	Cert *telemetryv1beta1.ValueType
+	Key  *telemetryv1beta1.ValueType
+	CA   *telemetryv1beta1.ValueType
 }
 
 const twoWeeks = time.Hour * 24 * 7 * 2
@@ -274,7 +274,7 @@ func resolveValues(ctx context.Context, c client.Reader, tls TLSValidationParams
 	return certPEM, keyPEM, caPEM, nil
 }
 
-func resolveValue(ctx context.Context, c client.Reader, value telemetryv1alpha1.ValueType) ([]byte, error) {
+func resolveValue(ctx context.Context, c client.Reader, value telemetryv1beta1.ValueType) ([]byte, error) {
 	if value.Value != "" {
 		return []byte(value.Value), nil
 	}

@@ -13,7 +13,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/ottlfuncs"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
 
 type FilterSpecValidator struct {
@@ -35,7 +35,7 @@ func NewFilterSpecValidator(signalType SignalType) (*FilterSpecValidator, error)
 	return &FilterSpecValidator{parserCollection: parserCollection}, nil
 }
 
-func (v *FilterSpecValidator) Validate(filters []telemetryv1alpha1.FilterSpec) error {
+func (v *FilterSpecValidator) Validate(filters []telemetryv1beta1.FilterSpec) error {
 	for _, fs := range filters {
 		if err := v.ValidateConditions(fs.Conditions); err != nil {
 			return err

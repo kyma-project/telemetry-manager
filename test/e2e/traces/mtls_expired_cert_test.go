@@ -7,7 +7,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
+	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
@@ -63,7 +63,7 @@ func TestMTLSExpiredCert(t *testing.T) {
 		Reason: conditions.ReasonSelfMonConfigNotGenerated,
 	})
 
-	assert.TelemetryHasState(t, operatorv1alpha1.StateWarning)
+	assert.TelemetryHasState(t, operatorv1beta1.StateWarning)
 	assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
 		Type:   conditions.TypeTraceComponentsHealthy,
 		Status: metav1.ConditionFalse,

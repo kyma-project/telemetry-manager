@@ -14,7 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
@@ -30,7 +30,7 @@ func newTestClient(t *testing.T, objs ...client.Object) client.Client {
 
 	scheme := runtime.NewScheme()
 	require.NoError(t, clientgoscheme.AddToScheme(scheme))
-	require.NoError(t, telemetryv1alpha1.AddToScheme(scheme))
+	require.NoError(t, telemetryv1beta1.AddToScheme(scheme))
 
 	// Create kube-system namespace required by reconciler for cluster UID
 	kubeSystemNs := &corev1.Namespace{
@@ -50,7 +50,7 @@ func newTestClient(t *testing.T, objs ...client.Object) client.Client {
 }
 
 // requireHasStatusCondition asserts that a LogPipeline has a specific status condition.
-func requireHasStatusCondition(t *testing.T, pipeline telemetryv1alpha1.LogPipeline, condType string, status metav1.ConditionStatus, reason, message string) {
+func requireHasStatusCondition(t *testing.T, pipeline telemetryv1beta1.LogPipeline, condType string, status metav1.ConditionStatus, reason, message string) {
 	t.Helper()
 
 	cond := meta.FindStatusCondition(pipeline.Status.Conditions, condType)
@@ -62,7 +62,7 @@ func requireHasStatusCondition(t *testing.T, pipeline telemetryv1alpha1.LogPipel
 	require.NotEmpty(t, cond.LastTransitionTime)
 }
 
-func requireHasStatusConditionObject(t *testing.T, pipeline telemetryv1alpha1.LogPipeline, expectedCond metav1.Condition) {
+func requireHasStatusConditionObject(t *testing.T, pipeline telemetryv1beta1.LogPipeline, expectedCond metav1.Condition) {
 	t.Helper()
 
 	requireHasStatusCondition(t, pipeline, expectedCond.Type, expectedCond.Status, expectedCond.Reason, expectedCond.Message)
@@ -70,19 +70,19 @@ func requireHasStatusConditionObject(t *testing.T, pipeline telemetryv1alpha1.Lo
 
 // reconcileResult holds the result of a reconciliation operation for test assertions.
 type reconcileResult struct {
-	pipeline telemetryv1alpha1.LogPipeline
+	pipeline telemetryv1beta1.LogPipeline
 	err      error
 }
 
 // reconcileAndGet performs a reconciliation and returns the updated pipeline and any error.
 // It's a helper to reduce boilerplate in tests.
 func reconcileAndGet(t *testing.T, client client.Client, reconciler *Reconciler, pipelineName string) reconcileResult {
-	var pl telemetryv1alpha1.LogPipeline
+	var pl telemetryv1beta1.LogPipeline
 	require.NoError(t, client.Get(t.Context(), types.NamespacedName{Name: pipelineName}, &pl))
 
 	err := reconciler.Reconcile(t.Context(), &pl)
 
-	var updatedPipeline telemetryv1alpha1.LogPipeline
+	var updatedPipeline telemetryv1beta1.LogPipeline
 	require.NoError(t, client.Get(t.Context(), types.NamespacedName{Name: pipelineName}, &updatedPipeline))
 
 	return reconcileResult{pipeline: updatedPipeline, err: err}
