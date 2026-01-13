@@ -549,6 +549,8 @@ func createWebhookConfig(globals config.Global) webhookcert.Config {
 	)
 }
 
+// secretCacheTransform removes the Data, StringData, Annotations, and Labels fields from the Secret object before caching it.
+// This is done to reduce memory usage and anyway the client cache is disabled for Secrets which means read requests will always go to the API server.
 func secretCacheTransform(object any) (any, error) {
 	secret, ok := object.(*corev1.Secret)
 	if !ok {
