@@ -17,7 +17,7 @@ In your Telemetry pipeline resources, see if one of the following breaking chang
 
 | Pipeline                    | v1alpha1 Field                                 | v1beta1 Field                           | Migration Action                                                     |
 |-----------------------------|------------------------------------------------|-----------------------------------------|----------------------------------------------------------------------|
-| LogPipeline                 | spec.input.application                         | spec.input.runtime                      | Rename the field.                                                    | LogPipeline                 | spec.output.http.tls.disabled                  | spec.output.http.tls.insecure           | Rename the field.                                                    |
+| LogPipeline                 | spec.input.application                         | spec.input.runtime                      | Rename the field.                  |                                  | LogPipeline                 | spec.output.http.tls.disabled                  | spec.output.http.tls.insecure           | Rename the field.                                                    |
 | LogPipeline                 | spec.output.http.tls.skipCertificateValidation | spec.output.http.tls.insecureSkipVerify | Rename the field.                                                    |
 | LogPipeline, MetricPipeline | spec.input.otlp.disabled                       | spec.input.otlp.enabled                 | Rename the field and invert the boolean value (e.g., false -> true). |
 | LogPipeline                 | spec.input.application.namespaces.system       | (Removed)                               | To include system namespaces, use spec.input.runtime.namespaces: {}. |
@@ -43,7 +43,7 @@ In your Telemetry pipeline resources, see if one of the following breaking chang
       - In the http output, **spec.output.http.tls.skipCertificateValidation** becomes **spec.output.http.tls.insecureSkipVerify**.
 
 3.  For LogPipeline resources, if you want to include system namespaces for application logs, update the system namespace selection.
-   By default, system namespaces are excluded (as in v1alpha1), but v1beta1 removes the **spec.input.application.namespaces.system** field. To include application logs from system namespaces (like `kyma-system`), you must now provide an empty object `({})` for the **namespaces** selector. For details, see [Filter Application Logs by Namespace](https://kyma-project.io/external-content/telemetry-manager/docs/user/filter-and-process/filter-logs.html#filter-application-logs-by-namespace).
+   By default, system namespaces are excluded (as in v1alpha1), but v1beta1 removes the **spec.input.application.namespaces.system** field. To include application logs from system namespaces (like `kyma-system`), you must now provide an empty object (`{}`) for the **namespaces** selector. For details, see [Filter Application Logs by Namespace](https://kyma-project.io/external-content/telemetry-manager/docs/user/filter-and-process/filter-logs.html#filter-application-logs-by-namespace).
    ```yaml
    spec:
     input:
