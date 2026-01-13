@@ -59,39 +59,3 @@ In your Telemetry pipeline resources, see if one of the following breaking chang
 Your pipelines are now updated to the v1beta1 API. The Telemetry module begins using the new configuration.
 
 To confirm the migration was successful, check the status conditions of your new pipelines. A healthy pipeline shows `True` for all conditions.
-
-### System Namespace Exclusion in LogPipeline
-
-In v1alpha1 LogPipeline, the `spec.application.namespaces.system` field allowed users to include or exclude system namespaces from log collection by providing a boolean value. With v1beta1, this field has been removed to simplify namespace exclusion. Instead, if neither an exclusion list nor an inclusion list is provided, system namespaces are excluded by default. To include system namespaces, you must now provide an empty object to the exclusion list.
-
-The following examples illustrate the new behavior:
-
-```yaml
-spec:
-  input:
-    runtime:
-      enabled: true
-      namespaces:
-        exclude: []  # This will include system namespaces
-```
-
-An empty exclude list includes system namespaces in log collection.
-
-```yaml
-spec:
-  input:
-    runtime: # if neither exclude nor include is provided, system namespaces are excluded by default
-      enabled: true
-```
-
-Omitting the namespace configuration completely excludes system namespaces.
-
-```yaml
-spec:
-  input:
-    runtime: # if neither exclude nor include is provided, system namespaces are excluded by default
-      enabled: true
-      namespaces: {}
-```
-
-An empty namespaces object excludes system namespaces by default.
