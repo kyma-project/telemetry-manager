@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"k8s.io/utils/ptr"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
@@ -23,12 +23,12 @@ func TestReceiverCreator(t *testing.T) {
 
 	tt := []struct {
 		name              string
-		pipeline          telemetryv1alpha1.LogPipeline
+		pipeline          telemetryv1beta1.LogPipeline
 		expectedOperators []Operator
 	}{
 		{
 			name:     "should create receiver with keepOriginalBody true",
-			pipeline: testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithKeepOriginalBody(true).Build(),
+			pipeline: testutils.NewLogPipelineBuilder().WithRuntimeInput(true).WithKeepOriginalBody(true).Build(),
 			expectedOperators: []Operator{
 				makeContainerParser(),
 				makeMoveToLogStream(),
@@ -54,7 +54,7 @@ func TestReceiverCreator(t *testing.T) {
 		},
 		{
 			name:     "should create receiver with keepOriginalBody false",
-			pipeline: testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithKeepOriginalBody(false).Build(),
+			pipeline: testutils.NewLogPipelineBuilder().WithRuntimeInput(true).WithKeepOriginalBody(false).Build(),
 			expectedOperators: []Operator{
 				makeContainerParser(),
 				makeMoveToLogStream(),
@@ -94,13 +94,13 @@ func TestReceiverCreator(t *testing.T) {
 
 func TestMakeContainerParser(t *testing.T) {
 	cp := makeContainerParser()
-	expectedConainerParser := Operator{
+	expectedContainerParser := Operator{
 		ID:                      "containerd-parser",
 		Type:                    "container",
 		AddMetadataFromFilePath: ptr.To(true),
 		Format:                  "containerd",
 	}
-	assert.Equal(t, expectedConainerParser, cp)
+	assert.Equal(t, expectedContainerParser, cp)
 }
 
 func TestMakeMoveToLogStream(t *testing.T) {
@@ -212,34 +212,34 @@ func TestMakeSeverityParser(t *testing.T) {
 func TestExcludePath(t *testing.T) {
 	tt := []struct {
 		name     string
-		pipeline telemetryv1alpha1.LogPipeline
+		pipeline telemetryv1beta1.LogPipeline
 		expected []string
 	}{
 		{
 			name:     "should return excluded path if namespace is present",
-			pipeline: testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithExcludeNamespaces("foo", "bar").Build(),
+			pipeline: testutils.NewLogPipelineBuilder().WithRuntimeInput(true).WithExcludeNamespaces("foo", "bar").Build(),
 			expected: getExcludePaths(systemNamespacesExcluded, "/var/log/pods/foo_*/*/*.log", "/var/log/pods/bar_*/*/*.log"),
 		},
 		{
 			name:     "should return default excluded path if namespace is not present",
-			pipeline: testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithKeepOriginalBody(false).Build(),
+			pipeline: testutils.NewLogPipelineBuilder().WithRuntimeInput(true).WithKeepOriginalBody(false).Build(),
 			expected: getExcludePaths(systemNamespacesIncluded),
 		},
 		{
 			name:     "Should include excluded container if present",
-			pipeline: testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithExcludeContainers("foo", "bar").Build(),
+			pipeline: testutils.NewLogPipelineBuilder().WithRuntimeInput(true).WithExcludeContainers("foo", "bar").Build(),
 			expected: getExcludePaths(systemNamespacesIncluded, "/var/log/pods/*_*/foo/*.log", "/var/log/pods/*_*/bar/*.log"),
 		},
 		{
-			name:     "Should exclude system path if system is true",
-			pipeline: testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithSystemNamespaces(true).Build(),
+			name:     "Should include system namespaces when empty namespace selector is provided",
+			pipeline: testutils.NewLogPipelineBuilder().WithRuntimeInput(true).WithExcludeNamespaces().Build(),
 			expected: getExcludePaths(systemNamespacesExcluded),
 		},
 	}
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			excludePaths := createExcludePath(tc.pipeline.Spec.Input.Application, false)
+			excludePaths := createExcludePath(tc.pipeline.Spec.Input.Runtime, false)
 			require.Equal(t, tc.expected, excludePaths)
 		})
 	}
@@ -248,12 +248,12 @@ func TestExcludePath(t *testing.T) {
 func TestIncludePath(t *testing.T) {
 	tt := []struct {
 		name     string
-		pipeline telemetryv1alpha1.LogPipeline
+		pipeline telemetryv1beta1.LogPipeline
 		expected []string
 	}{
 		{
 			name:     "should return included path if namespace is present",
-			pipeline: testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithKeepOriginalBody(true).WithIncludeNamespaces("foo", "bar").Build(),
+			pipeline: testutils.NewLogPipelineBuilder().WithRuntimeInput(true).WithKeepOriginalBody(true).WithIncludeNamespaces("foo", "bar").Build(),
 			expected: []string{
 				"/var/log/pods/foo_*/*/*.log",
 				"/var/log/pods/bar_*/*/*.log",
@@ -261,19 +261,14 @@ func TestIncludePath(t *testing.T) {
 		},
 		{
 			name:     "should return default included path if namespace is not present",
-			pipeline: testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithKeepOriginalBody(false).Build(),
-			expected: []string{"/var/log/pods/*_*/*/*.log"},
-		},
-		{
-			name:     "should return system namespaces included path if system is true",
-			pipeline: testutils.NewLogPipelineBuilder().WithApplicationInput(true).WithKeepOriginalBody(false).WithSystemNamespaces(true).Build(),
+			pipeline: testutils.NewLogPipelineBuilder().WithRuntimeInput(true).WithKeepOriginalBody(false).Build(),
 			expected: []string{"/var/log/pods/*_*/*/*.log"},
 		},
 	}
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			includePaths := createIncludePath(tc.pipeline.Spec.Input.Application)
+			includePaths := createIncludePath(tc.pipeline.Spec.Input.Runtime)
 			require.Equal(t, tc.expected, includePaths)
 		})
 	}

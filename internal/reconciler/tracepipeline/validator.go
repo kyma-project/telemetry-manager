@@ -3,7 +3,7 @@ package tracepipeline
 import (
 	"context"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
@@ -74,13 +74,13 @@ func NewValidator(opts ...ValidatorOption) *Validator {
 	return v
 }
 
-func (v *Validator) validate(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) error {
+func (v *Validator) validate(ctx context.Context, pipeline *telemetryv1beta1.TracePipeline) error {
 	if err := v.SecretRefValidator.ValidateTracePipeline(ctx, pipeline); err != nil {
 		return err
 	}
 
 	if pipeline.Spec.Output.OTLP != nil {
-		var oauth2 *telemetryv1alpha1.OAuth2Options = nil
+		var oauth2 *telemetryv1beta1.OAuth2Options = nil
 		if pipeline.Spec.Output.OTLP.Authentication != nil {
 			oauth2 = pipeline.Spec.Output.OTLP.Authentication.OAuth2
 		}
@@ -88,7 +88,7 @@ func (v *Validator) validate(ctx context.Context, pipeline *telemetryv1alpha1.Tr
 		if err := v.EndpointValidator.Validate(ctx, endpoint.EndpointValidationParams{
 			Endpoint:   &pipeline.Spec.Output.OTLP.Endpoint,
 			Protocol:   pipeline.Spec.Output.OTLP.Protocol,
-			OTLPTLS:    pipeline.Spec.Output.OTLP.TLS,
+			OutputTLS:  pipeline.Spec.Output.OTLP.TLS,
 			OTLPOAuth2: oauth2,
 		}); err != nil {
 			return err
@@ -122,7 +122,7 @@ func (v *Validator) validate(ctx context.Context, pipeline *telemetryv1alpha1.Tr
 	return nil
 }
 
-func tlsValidationRequired(pipeline *telemetryv1alpha1.TracePipeline) bool {
+func tlsValidationRequired(pipeline *telemetryv1beta1.TracePipeline) bool {
 	otlp := pipeline.Spec.Output.OTLP
 	if otlp == nil {
 		return false

@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
@@ -49,7 +49,7 @@ func TestPrometheusReceiver(t *testing.T) {
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
+				collectorConfig, _, err := sut.Build(ctx, []telemetryv1beta1.MetricPipeline{
 					testutils.NewMetricPipelineBuilder().WithPrometheusInput(true).Build(),
 				}, BuildOptions{
 					IstioActive: tt.istioEnabled,
@@ -79,7 +79,7 @@ func TestPrometheusReceiver(t *testing.T) {
 	})
 
 	t.Run("istio input enabled", func(t *testing.T) {
-		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
+		collectorConfig, _, err := sut.Build(ctx, []telemetryv1beta1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().WithIstioInput(true).Build(),
 		}, BuildOptions{
 			IstioActive: true,
@@ -95,7 +95,7 @@ func TestPrometheusReceiver(t *testing.T) {
 	})
 
 	t.Run("istio input envoy metrics enabled", func(t *testing.T) {
-		collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
+		collectorConfig, _, err := sut.Build(ctx, []telemetryv1beta1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().WithIstioInput(true).WithIstioInputEnvoyMetrics(true).Build(),
 		}, BuildOptions{
 			IstioActive: true,

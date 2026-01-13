@@ -88,7 +88,7 @@ func TestMetricsIstioInput(t *testing.T) {
 
 	logPipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
-		WithApplicationInput(false).
+		WithRuntimeInput(false).
 		WithOTLPOutput(testutils.OTLPEndpoint(logBackend.EndpointHTTP())).
 		Build()
 

@@ -50,7 +50,7 @@ type OTLPOutput struct {
 	// Endpoint defines the host and port (`<host>:<port>`) of an OTLP endpoint.
 	// +kubebuilder:validation:Required
 	Endpoint ValueType `json:"endpoint"`
-	// Path defines OTLP export URL path (only for the HTTP protocol). This value overrides auto-appended paths `/v1/metrics` and `/v1/traces`
+	// Path defines OTLP export URL path (only for the HTTP protocol). This value overrides auto-appended paths `/v1/logs`, `/v1/metrics`, and `/v1/traces`
 	// +kubebuilder:validation:Optional
 	Path string `json:"path,omitempty"`
 	// Authentication defines authentication options for the OTLP output

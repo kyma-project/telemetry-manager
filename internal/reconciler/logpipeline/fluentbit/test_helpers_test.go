@@ -13,7 +13,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
@@ -26,7 +26,7 @@ import (
 
 // reconcileResult holds the result of a reconciliation operation for test assertions.
 type reconcileResult struct {
-	pipeline telemetryv1alpha1.LogPipeline
+	pipeline telemetryv1beta1.LogPipeline
 	err      error
 }
 
@@ -43,7 +43,7 @@ type conditionCheck struct {
 func newTestClient(t *testing.T, objs ...client.Object) client.Client {
 	scheme := runtime.NewScheme()
 	require.NoError(t, clientgoscheme.AddToScheme(scheme))
-	require.NoError(t, telemetryv1alpha1.AddToScheme(scheme))
+	require.NoError(t, telemetryv1beta1.AddToScheme(scheme))
 
 	return fake.NewClientBuilder().WithScheme(scheme).WithObjects(objs...).WithStatusSubresource(objs...).Build()
 }
@@ -57,19 +57,19 @@ func newTestClientWithObjs(t *testing.T, objs ...client.Object) client.Client {
 // reconcileAndGet performs a reconciliation and returns the updated pipeline and any error.
 // It's a helper to reduce boilerplate in tests.
 func reconcileAndGet(t *testing.T, client client.Client, reconciler *Reconciler, pipelineName string) reconcileResult {
-	var pl telemetryv1alpha1.LogPipeline
+	var pl telemetryv1beta1.LogPipeline
 	require.NoError(t, client.Get(t.Context(), types.NamespacedName{Name: pipelineName}, &pl))
 
 	err := reconciler.Reconcile(t.Context(), &pl)
 
-	var updatedPipeline telemetryv1alpha1.LogPipeline
+	var updatedPipeline telemetryv1beta1.LogPipeline
 	require.NoError(t, client.Get(t.Context(), types.NamespacedName{Name: pipelineName}, &updatedPipeline))
 
 	return reconcileResult{pipeline: updatedPipeline, err: err}
 }
 
 // assertCondition verifies that a pipeline has a specific condition with expected values.
-func assertCondition(t *testing.T, pipeline telemetryv1alpha1.LogPipeline, condType string, status metav1.ConditionStatus, reason, message string) {
+func assertCondition(t *testing.T, pipeline telemetryv1beta1.LogPipeline, condType string, status metav1.ConditionStatus, reason, message string) {
 	cond := meta.FindStatusCondition(pipeline.Status.Conditions, condType)
 	require.NotNil(t, cond, "condition %s not found", condType)
 	require.Equal(t, status, cond.Status, "condition %s has wrong status", condType)

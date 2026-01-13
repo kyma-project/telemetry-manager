@@ -7,7 +7,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
@@ -26,12 +26,12 @@ import (
 func TestMultiPipelineBroken(t *testing.T) {
 	tests := []struct {
 		label            string
-		inputBuilder     func(includeNs string) telemetryv1alpha1.MetricPipelineInput
+		inputBuilder     func(includeNs string) telemetryv1beta1.MetricPipelineInput
 		generatorBuilder func(ns string) []client.Object
 	}{
 		{
 			label: suite.LabelMetricAgentSetC,
-			inputBuilder: func(includeNs string) telemetryv1alpha1.MetricPipelineInput {
+			inputBuilder: func(includeNs string) telemetryv1beta1.MetricPipelineInput {
 				return testutils.BuildMetricPipelineRuntimeInput(testutils.IncludeNamespaces(includeNs))
 			},
 			generatorBuilder: func(ns string) []client.Object {
@@ -45,7 +45,7 @@ func TestMultiPipelineBroken(t *testing.T) {
 		},
 		{
 			label: suite.LabelMetricGatewaySetB,
-			inputBuilder: func(includeNs string) telemetryv1alpha1.MetricPipelineInput {
+			inputBuilder: func(includeNs string) telemetryv1beta1.MetricPipelineInput {
 				return testutils.BuildMetricPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
 			},
 			generatorBuilder: func(ns string) []client.Object {

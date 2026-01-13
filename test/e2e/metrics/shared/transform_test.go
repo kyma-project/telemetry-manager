@@ -7,7 +7,7 @@ import (
 	"github.com/onsi/gomega/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -25,16 +25,16 @@ func TestTransform(t *testing.T) {
 	tests := []struct {
 		label            string
 		name             string
-		inputBuilder     func(includeNs string) telemetryv1alpha1.MetricPipelineInput
+		inputBuilder     func(includeNs string) telemetryv1beta1.MetricPipelineInput
 		generatorBuilder func(ns string) []client.Object
-		transformSpec    telemetryv1alpha1.TransformSpec
+		transformSpec    telemetryv1beta1.TransformSpec
 		assertion        types.GomegaMatcher
 		expectAgent      bool
 	}{
 		{
 			label: suite.LabelMetricAgentSetC,
 			name:  "with-where",
-			inputBuilder: func(includeNs string) telemetryv1alpha1.MetricPipelineInput {
+			inputBuilder: func(includeNs string) telemetryv1beta1.MetricPipelineInput {
 				return testutils.BuildMetricPipelineRuntimeInput(testutils.IncludeNamespaces(includeNs))
 			},
 			generatorBuilder: func(ns string) []client.Object {
@@ -44,7 +44,7 @@ func TestTransform(t *testing.T) {
 					generator.Pod().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
 				}
 			},
-			transformSpec: telemetryv1alpha1.TransformSpec{
+			transformSpec: telemetryv1beta1.TransformSpec{
 				Statements: []string{"set(datapoint.attributes[\"system\"], \"false\") where not IsMatch(resource.attributes[\"k8s.namespace.name\"], \".*-system\")"},
 			},
 			assertion: metric.HaveFlatMetrics(ContainElement(SatisfyAll(
@@ -56,7 +56,7 @@ func TestTransform(t *testing.T) {
 		{
 			label: suite.LabelMetricAgentSetC,
 			name:  "cond-and-stmts",
-			inputBuilder: func(includeNs string) telemetryv1alpha1.MetricPipelineInput {
+			inputBuilder: func(includeNs string) telemetryv1beta1.MetricPipelineInput {
 				return testutils.BuildMetricPipelineRuntimeInput(testutils.IncludeNamespaces(includeNs))
 			},
 			generatorBuilder: func(ns string) []client.Object {
@@ -66,7 +66,7 @@ func TestTransform(t *testing.T) {
 					generator.Pod().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
 				}
 			},
-			transformSpec: telemetryv1alpha1.TransformSpec{
+			transformSpec: telemetryv1beta1.TransformSpec{
 				Conditions: []string{"metric.type != \"\""},
 				Statements: []string{"set(metric.description, \"FooMetric\")"},
 			},
@@ -78,7 +78,7 @@ func TestTransform(t *testing.T) {
 		{
 			label: suite.LabelMetricAgentSetC,
 			name:  "infer-context",
-			inputBuilder: func(includeNs string) telemetryv1alpha1.MetricPipelineInput {
+			inputBuilder: func(includeNs string) telemetryv1beta1.MetricPipelineInput {
 				return testutils.BuildMetricPipelineRuntimeInput(testutils.IncludeNamespaces(includeNs))
 			},
 			generatorBuilder: func(ns string) []client.Object {
@@ -88,7 +88,7 @@ func TestTransform(t *testing.T) {
 					generator.Pod().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
 				}
 			},
-			transformSpec: telemetryv1alpha1.TransformSpec{
+			transformSpec: telemetryv1beta1.TransformSpec{
 				Statements: []string{"set(resource.attributes[\"test\"], \"passed\")",
 					"set(metric.description, \"test passed\")",
 				},
@@ -102,7 +102,7 @@ func TestTransform(t *testing.T) {
 		{
 			label: suite.LabelMetricGatewaySetC,
 			name:  "with-where",
-			inputBuilder: func(includeNs string) telemetryv1alpha1.MetricPipelineInput {
+			inputBuilder: func(includeNs string) telemetryv1beta1.MetricPipelineInput {
 				return testutils.BuildMetricPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
 			},
 			generatorBuilder: func(ns string) []client.Object {
@@ -110,7 +110,7 @@ func TestTransform(t *testing.T) {
 					telemetrygen.NewPod(ns, telemetrygen.SignalTypeMetrics).K8sObject(),
 				}
 			},
-			transformSpec: telemetryv1alpha1.TransformSpec{
+			transformSpec: telemetryv1beta1.TransformSpec{
 				Statements: []string{"set(datapoint.attributes[\"system\"], \"false\") where not IsMatch(resource.attributes[\"k8s.namespace.name\"], \".*-system\")"},
 			},
 			assertion: metric.HaveFlatMetrics(ContainElement(SatisfyAll(
@@ -121,7 +121,7 @@ func TestTransform(t *testing.T) {
 		{
 			label: suite.LabelMetricGatewaySetC,
 			name:  "cond-and-stmts",
-			inputBuilder: func(includeNs string) telemetryv1alpha1.MetricPipelineInput {
+			inputBuilder: func(includeNs string) telemetryv1beta1.MetricPipelineInput {
 				return testutils.BuildMetricPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
 			},
 			generatorBuilder: func(ns string) []client.Object {
@@ -129,7 +129,7 @@ func TestTransform(t *testing.T) {
 					telemetrygen.NewPod(ns, telemetrygen.SignalTypeMetrics).K8sObject(),
 				}
 			},
-			transformSpec: telemetryv1alpha1.TransformSpec{
+			transformSpec: telemetryv1beta1.TransformSpec{
 				Conditions: []string{"metric.type != \"\""},
 				Statements: []string{"set(metric.description, \"FooMetric\")"},
 			},
@@ -140,7 +140,7 @@ func TestTransform(t *testing.T) {
 		{
 			label: suite.LabelMetricGatewaySetC,
 			name:  "infer-context",
-			inputBuilder: func(includeNs string) telemetryv1alpha1.MetricPipelineInput {
+			inputBuilder: func(includeNs string) telemetryv1beta1.MetricPipelineInput {
 				return testutils.BuildMetricPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
 			},
 			generatorBuilder: func(ns string) []client.Object {
@@ -148,7 +148,7 @@ func TestTransform(t *testing.T) {
 					telemetrygen.NewPod(ns, telemetrygen.SignalTypeMetrics).K8sObject(),
 				}
 			},
-			transformSpec: telemetryv1alpha1.TransformSpec{
+			transformSpec: telemetryv1beta1.TransformSpec{
 				Statements: []string{"set(resource.attributes[\"test\"], \"passed\")",
 					"set(metric.description, \"test passed\")",
 				},

@@ -32,8 +32,8 @@ func TestInstrumentationScope(t *testing.T) {
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel)
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
-		WithApplicationInput(true,
-			[]testutils.ExtendedNamespaceSelectorOptions{testutils.ExtIncludeNamespaces(genNs)}...).
+		WithRuntimeInput(true,
+			testutils.IncludeNamespaces(genNs)).
 		WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 		Build()
 
