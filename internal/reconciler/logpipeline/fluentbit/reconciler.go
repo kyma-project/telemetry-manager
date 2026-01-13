@@ -17,6 +17,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
+	sharedtypesutils "github.com/kyma-project/telemetry-manager/internal/utils/sharedtypes"
 	telemetryutils "github.com/kyma-project/telemetry-manager/internal/utils/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
@@ -220,7 +221,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 		return nil
 	}
 
-	r.trackFeaturesUsage(reconcilablePipelines)
+	r.trackFeaturesUsage(ctx, reconcilablePipelines)
 
 	shootInfo := k8sutils.GetGardenerShootInfo(ctx, r.Client)
 	clusterName := r.getClusterNameFromTelemetry(ctx, shootInfo.ClusterName)
@@ -295,33 +296,54 @@ func getFluentBitPorts() []int32 {
 	}
 }
 
-func (r *Reconciler) trackFeaturesUsage(pipelines []telemetryv1beta1.LogPipeline) {
+func (r *Reconciler) trackFeaturesUsage(ctx context.Context, pipelines []telemetryv1beta1.LogPipeline) {
 	for i := range pipelines {
+		pipeline := &pipelines[i]
+
 		// General features
-		if logpipelineutils.IsRuntimeInputEnabled(&pipelines[i].Spec.Input) {
-			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureInputRuntime, pipelines[i].Name)
+		if logpipelineutils.IsRuntimeInputEnabled(&pipeline.Spec.Input) {
+			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureInputRuntime, pipeline.Name)
 		}
 
 		// FluentBit features
 
-		if logpipelineutils.IsCustomFilterDefined(pipelines[i].Spec.FluentBitFilters) {
-			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureFilters, pipelines[i].Name)
+		if logpipelineutils.IsCustomFilterDefined(pipeline.Spec.FluentBitFilters) {
+			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureFilters, pipeline.Name)
 		}
 
-		if logpipelineutils.IsCustomOutputDefined(&pipelines[i].Spec.Output) {
-			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureOutputCustom, pipelines[i].Name)
+		if logpipelineutils.IsCustomOutputDefined(&pipeline.Spec.Output) {
+			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureOutputCustom, pipeline.Name)
 		}
 
-		if logpipelineutils.IsHTTPOutputDefined(&pipelines[i].Spec.Output) {
-			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureOutputHTTP, pipelines[i].Name)
+		if logpipelineutils.IsHTTPOutputDefined(&pipeline.Spec.Output) {
+			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureOutputHTTP, pipeline.Name)
 		}
 
-		if logpipelineutils.IsVariablesDefined(pipelines[i].Spec.FluentBitVariables) {
-			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureVariables, pipelines[i].Name)
+		if logpipelineutils.IsVariablesDefined(pipeline.Spec.FluentBitVariables) {
+			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureVariables, pipeline.Name)
 		}
 
-		if logpipelineutils.IsFilesDefined(pipelines[i].Spec.FluentBitFiles) {
-			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureFiles, pipelines[i].Name)
+		if logpipelineutils.IsFilesDefined(pipeline.Spec.FluentBitFiles) {
+			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureFiles, pipeline.Name)
 		}
+
+		// Backends
+		r.trackBackendUsage(ctx, pipeline)
+	}
+}
+
+func (r *Reconciler) trackBackendUsage(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) {
+	if pipeline.Spec.Output.FluentBitHTTP == nil {
+		return
+	}
+
+	endpointBytes, err := sharedtypesutils.ResolveValue(ctx, r.Client, pipeline.Spec.Output.FluentBitHTTP.Host)
+	if err != nil {
+		return
+	}
+
+	backend := metrics.DetectBackend(string(endpointBytes))
+	if backend != "" {
+		metrics.RecordLogPipelineFeatureUsage(backend, pipeline.Name)
 	}
 }

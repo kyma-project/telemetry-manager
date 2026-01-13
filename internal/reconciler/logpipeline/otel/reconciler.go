@@ -202,7 +202,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 		return fmt.Errorf("failed to fetch deployable log pipelines: %w", err)
 	}
 
-	r.trackFeaturesUsage(reconcilablePipelines)
+	r.trackFeaturesUsage(ctx, reconcilablePipelines)
 
 	var reconcilablePipelinesRequiringAgents = r.getPipelinesRequiringAgents(reconcilablePipelines)
 
@@ -450,23 +450,29 @@ func isLogAgentRequired(pipeline *telemetryv1beta1.LogPipeline) bool {
 	return input.Runtime != nil && input.Runtime.Enabled != nil && *input.Runtime.Enabled
 }
 
-func (r *Reconciler) trackFeaturesUsage(pipelines []telemetryv1beta1.LogPipeline) {
+func (r *Reconciler) trackFeaturesUsage(ctx context.Context, pipelines []telemetryv1beta1.LogPipeline) {
 	for i := range pipelines {
+		pipeline := &pipelines[i]
 		// General features
-		if sharedtypesutils.IsOTLPInputEnabled(pipelines[i].Spec.Input.OTLP) {
-			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureInputOTLP, pipelines[i].Name)
+		if sharedtypesutils.IsOTLPInputEnabled(pipeline.Spec.Input.OTLP) {
+			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureInputOTLP, pipeline.Name)
 		}
 
-		if sharedtypesutils.IsTransformDefined(pipelines[i].Spec.Transforms) {
-			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureTransform, pipelines[i].Name)
+		if sharedtypesutils.IsTransformDefined(pipeline.Spec.Transforms) {
+			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureTransform, pipeline.Name)
 		}
 
-		if sharedtypesutils.IsFilterDefined(pipelines[i].Spec.Filters) {
-			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureFilter, pipelines[i].Name)
+		if sharedtypesutils.IsFilterDefined(pipeline.Spec.Filters) {
+			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureFilter, pipeline.Name)
 		}
 
-		if logpipelineutils.IsRuntimeInputEnabled(&pipelines[i].Spec.Input) {
-			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureInputRuntime, pipelines[i].Name)
+		if logpipelineutils.IsRuntimeInputEnabled(&pipeline.Spec.Input) {
+			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureInputRuntime, pipeline.Name)
+		}
+
+		// Backends
+		if pipeline.Spec.Output.OTLP != nil {
+			metrics.DetectAndTrackOTLPBackend(ctx, r.Client, pipeline.Spec.Output.OTLP.Endpoint, pipeline.Name, metrics.RecordLogPipelineFeatureUsage)
 		}
 	}
 }

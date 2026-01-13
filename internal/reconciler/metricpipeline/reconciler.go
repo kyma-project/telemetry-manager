@@ -239,7 +239,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 		return fmt.Errorf("failed to fetch deployable metric pipelines: %w", err)
 	}
 
-	r.trackOTTLFeaturesUsage(reconcilablePipelines)
+	r.trackOTTLFeaturesUsage(ctx, reconcilablePipelines)
 
 	var reconcilablePipelinesRequiringAgents = r.getPipelinesRequiringAgents(reconcilablePipelines)
 
@@ -495,33 +495,40 @@ func (r *Reconciler) getK8sClusterUID(ctx context.Context) (string, error) {
 	return string(kubeSystem.UID), nil
 }
 
-func (r *Reconciler) trackOTTLFeaturesUsage(pipelines []telemetryv1beta1.MetricPipeline) {
+func (r *Reconciler) trackOTTLFeaturesUsage(ctx context.Context, pipelines []telemetryv1beta1.MetricPipeline) {
 	for i := range pipelines {
+		pipeline := pipelines[i]
+
 		// General features
-		if sharedtypesutils.IsOTLPInputEnabled(pipelines[i].Spec.Input.OTLP) {
-			metrics.RecordMetricPipelineFeatureUsage(metrics.FeatureInputOTLP, pipelines[i].Name)
+		if sharedtypesutils.IsOTLPInputEnabled(pipeline.Spec.Input.OTLP) {
+			metrics.RecordMetricPipelineFeatureUsage(metrics.FeatureInputOTLP, pipeline.Name)
 		}
 
-		if sharedtypesutils.IsTransformDefined(pipelines[i].Spec.Transforms) {
-			metrics.RecordMetricPipelineFeatureUsage(metrics.FeatureTransform, pipelines[i].Name)
+		if sharedtypesutils.IsTransformDefined(pipeline.Spec.Transforms) {
+			metrics.RecordMetricPipelineFeatureUsage(metrics.FeatureTransform, pipeline.Name)
 		}
 
-		if sharedtypesutils.IsFilterDefined(pipelines[i].Spec.Filters) {
-			metrics.RecordMetricPipelineFeatureUsage(metrics.FeatureFilter, pipelines[i].Name)
+		if sharedtypesutils.IsFilterDefined(pipeline.Spec.Filters) {
+			metrics.RecordMetricPipelineFeatureUsage(metrics.FeatureFilter, pipeline.Name)
 		}
 
 		// MetricPipeline features
 
-		if metricpipelineutils.IsRuntimeInputEnabled(pipelines[i].Spec.Input) {
-			metrics.RecordMetricPipelineFeatureUsage(metrics.FeatureInputRuntime, pipelines[i].Name)
+		if metricpipelineutils.IsRuntimeInputEnabled(pipeline.Spec.Input) {
+			metrics.RecordMetricPipelineFeatureUsage(metrics.FeatureInputRuntime, pipeline.Name)
 		}
 
-		if metricpipelineutils.IsPrometheusInputEnabled(pipelines[i].Spec.Input) {
-			metrics.RecordMetricPipelineFeatureUsage(metrics.FeatureInputPrometheus, pipelines[i].Name)
+		if metricpipelineutils.IsPrometheusInputEnabled(pipeline.Spec.Input) {
+			metrics.RecordMetricPipelineFeatureUsage(metrics.FeatureInputPrometheus, pipeline.Name)
 		}
 
-		if metricpipelineutils.IsIstioInputEnabled(pipelines[i].Spec.Input) {
-			metrics.RecordMetricPipelineFeatureUsage(metrics.FeatureInputIstio, pipelines[i].Name)
+		if metricpipelineutils.IsIstioInputEnabled(pipeline.Spec.Input) {
+			metrics.RecordMetricPipelineFeatureUsage(metrics.FeatureInputIstio, pipeline.Name)
+		}
+
+		// Backends
+		if pipeline.Spec.Output.OTLP != nil {
+			metrics.DetectAndTrackOTLPBackend(ctx, r.Client, pipeline.Spec.Output.OTLP.Endpoint, pipeline.Name, metrics.RecordMetricPipelineFeatureUsage)
 		}
 	}
 }

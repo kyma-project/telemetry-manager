@@ -1,11 +1,17 @@
 package metrics
 
 import (
+	"context"
+	"strings"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
 
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/build"
+	sharedtypesutils "github.com/kyma-project/telemetry-manager/internal/utils/sharedtypes"
 )
 
 const (
@@ -37,7 +43,28 @@ const (
 	FeatureFiles        = "files"
 	FeatureVariables    = "variables"
 	FeatureFilters      = "filters-custom"
+
+	// Backends
+
+	FeatureBackendCloudLogging = "backend-cloud-logging"
+	FeatureBackendDynatrace    = "backend-dynatrace"
+	FeatureBackendLoki         = "backend-loki"
+	FeatureBackendElastic      = "backend-elastic"
+	FeatureBackendOpenSearch   = "backend-opensearch"
+	FeatureBackendSplunk       = "backend-splunk"
+	FeatureBackendCloudWatch   = "backend-cloudwatch"
 )
+
+// backendPatterns maps backend feature names to their detection patterns
+var backendPatterns = map[string][]string{
+
+	FeatureBackendCloudLogging: {"cloud.logs.services.sap.hana.ondemand.com"},
+	FeatureBackendDynatrace:    {"dynatrace", "apm.services.cloud.sap"},
+	FeatureBackendLoki:         {"loki"},
+	FeatureBackendElastic:      {"elastic"},
+	FeatureBackendOpenSearch:   {"opensearch"},
+	FeatureBackendSplunk:       {"splunk", "log.cdd.net.sap"},
+}
 
 var (
 	AllFeatures = []string{
@@ -50,6 +77,13 @@ var (
 		FeatureOutputHTTP,
 		FeatureVariables,
 		FeatureFiles,
+		FeatureBackendLoki,
+		FeatureBackendCloudLogging,
+		FeatureBackendDynatrace,
+		FeatureBackendElastic,
+		FeatureBackendOpenSearch,
+		FeatureBackendSplunk,
+		FeatureBackendCloudWatch,
 	}
 
 	registry = metrics.Registry
@@ -150,4 +184,35 @@ func RecordTracePipelineFeatureUsage(feature, pipelineName string) {
 
 func recordFeatureUsage(metric *prometheus.GaugeVec, feature, pipelineName string) {
 	metric.WithLabelValues(feature, pipelineName).Set(float64(1))
+}
+
+// DetectAndTrackOTLPBackend resolves the OTLP endpoint, detects the backend based on URL patterns,
+// and records the backend feature usage metric using the provided callback function.
+func DetectAndTrackOTLPBackend(ctx context.Context, c client.Client, endpoint telemetryv1beta1.ValueType, pipelineName string, recordMetric func(feature, pipelineName string)) {
+	endpointBytes, err := sharedtypesutils.ResolveValue(ctx, c, endpoint)
+	if err != nil {
+		return
+	}
+
+	backend := DetectBackend(string(endpointBytes))
+	if backend != "" {
+		recordMetric(backend, pipelineName)
+	}
+}
+
+// DetectBackend identifies the backend type from an endpoint URL by matching against known patterns.
+// It performs case-insensitive pattern matching and returns the backend feature name if detected,
+// or an empty string if no backend matches.
+func DetectBackend(endpoint string) string {
+	endpointLower := strings.ToLower(endpoint)
+
+	for backend, patterns := range backendPatterns {
+		for _, pattern := range patterns {
+			if strings.Contains(endpointLower, pattern) {
+				return backend
+			}
+		}
+	}
+
+	return ""
 }

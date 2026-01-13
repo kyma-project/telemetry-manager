@@ -734,6 +734,7 @@ func TestUsageTracking(t *testing.T) {
 	tests := []struct {
 		name                 string
 		pipeline             telemetryv1beta1.TracePipeline
+		secret               *corev1.Secret
 		expectedFeatureUsage map[string]float64
 	}{
 		{
@@ -781,22 +782,97 @@ func TestUsageTracking(t *testing.T) {
 				metrics.FeatureFilter:    1,
 			},
 		},
+		{
+			name: "loki backend from secret",
+			pipeline: testutils.NewTracePipelineBuilder().
+				WithName("pipeline-loki-secret").
+				WithOTLPOutput(testutils.OTLPEndpointFromSecret("loki-secret", "default", "host")).
+				Build(),
+			secret: &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "loki-secret",
+					Namespace: "default",
+				},
+				Data: map[string][]byte{
+					"host": []byte("loki.example.com"),
+				},
+			},
+			expectedFeatureUsage: map[string]float64{
+				metrics.FeatureBackendLoki: 1,
+			},
+		},
+		{
+			name: "loki backend",
+			pipeline: testutils.NewTracePipelineBuilder().
+				WithName("pipeline-loki").
+				WithOTLPOutput(testutils.OTLPEndpoint("loki.example.com")).
+				Build(),
+			expectedFeatureUsage: map[string]float64{
+				metrics.FeatureBackendLoki: 1,
+			},
+		},
+		{
+			name: "cloud logging backend",
+			pipeline: testutils.NewTracePipelineBuilder().
+				WithName("pipeline-cloud-logging").
+				WithOTLPOutput(testutils.OTLPEndpoint("ingest-sf-a0f6688a-adae-4afc-837f-663c45ec69af.cls-04.cloud.logs.services.sap.hana.ondemand.com")).
+				Build(),
+			expectedFeatureUsage: map[string]float64{
+				metrics.FeatureBackendCloudLogging: 1,
+			},
+		},
+		{
+			name: "elastic backend",
+			pipeline: testutils.NewTracePipelineBuilder().
+				WithName("pipeline-elastic").
+				WithOTLPOutput(testutils.OTLPEndpoint("elastic.example.com")).
+				Build(),
+			expectedFeatureUsage: map[string]float64{
+				metrics.FeatureBackendElastic: 1,
+			},
+		},
+		{
+			name: "opensearch backend",
+			pipeline: testutils.NewTracePipelineBuilder().
+				WithName("pipeline-opensearch").
+				WithOTLPOutput(testutils.OTLPEndpoint("opensearch.example.com")).
+				Build(),
+			expectedFeatureUsage: map[string]float64{
+				metrics.FeatureBackendOpenSearch: 1,
+			},
+		},
+		{
+			name: "splunk backend",
+			pipeline: testutils.NewTracePipelineBuilder().
+				WithName("pipeline-splunk").
+				WithOTLPOutput(testutils.OTLPEndpoint("splunk.example.com")).
+				Build(),
+			expectedFeatureUsage: map[string]float64{
+				metrics.FeatureBackendSplunk: 1,
+			},
+		},
+		{
+			name: "dynatrace backend",
+			pipeline: testutils.NewTracePipelineBuilder().
+				WithName("pipeline-dynatrace").
+				WithOTLPOutput(testutils.OTLPEndpoint("dynatrace.example.com")).
+				Build(),
+			expectedFeatureUsage: map[string]float64{
+				metrics.FeatureBackendDynatrace: 1,
+			},
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// All possible features that can be tracked
-			allFeatures := []string{
-				metrics.FeatureTransform,
-				metrics.FeatureFilter,
+			var objs []client.Object
+
+			objs = append(objs, &tt.pipeline)
+			if tt.secret != nil {
+				objs = append(objs, tt.secret)
 			}
 
-			oldFeatureUsage := map[string]float64{}
-			for _, feature := range allFeatures {
-				oldFeatureUsage[feature] = testutil.ToFloat64(metrics.TracePipelineFeatureUsage.WithLabelValues(feature, tt.pipeline.Name))
-			}
-
-			fakeClient := newTestClient(t, &tt.pipeline)
+			fakeClient := newTestClient(t, objs...)
 
 			sut, assertAll := newTestReconciler(fakeClient)
 
@@ -804,12 +880,10 @@ func TestUsageTracking(t *testing.T) {
 			require.NoError(t, result.err)
 
 			// Verify feature usage metrics for all features (default expected value is 0)
-			for _, feature := range allFeatures {
-				expectedValue := tt.expectedFeatureUsage[feature] // defaults to 0 if not in map
-				newMetricValue := testutil.ToFloat64(metrics.TracePipelineFeatureUsage.WithLabelValues(feature, tt.pipeline.Name))
-				oldMetricValue := oldFeatureUsage[feature]
-				metricValue := newMetricValue - oldMetricValue
-				require.Equal(t, expectedValue, metricValue, "feature usage metric should match for pipeline `%s` and feature `%s`", tt.pipeline.Name, feature)
+			for _, feature := range metrics.AllFeatures {
+				expectedValue := tt.expectedFeatureUsage[feature]
+				metricValue := testutil.ToFloat64(metrics.TracePipelineFeatureUsage.WithLabelValues(feature, tt.pipeline.Name))
+				require.Equal(t, expectedValue, metricValue, "feature usage metric should match for pipeline `%s`and feature `%s`", tt.pipeline.Name, feature)
 			}
 
 			assertAll(t)

@@ -653,6 +653,7 @@ func TestFeatureUsageTracking(t *testing.T) {
 	tests := []struct {
 		name                 string
 		pipeline             telemetryv1beta1.LogPipeline
+		secret               *corev1.Secret
 		expectedFeatureUsage map[string]float64
 	}{
 		{
@@ -763,11 +764,104 @@ func TestFeatureUsageTracking(t *testing.T) {
 				metrics.FeatureInputRuntime: 1,
 			},
 		},
+		{
+			name: "loki backend from secret",
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("pipeline-loki-secret").
+				WithHTTPOutput(testutils.HTTPHostFromSecret("loki-secret", "default", "host")).
+				Build(),
+			secret: &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "loki-secret",
+					Namespace: "default",
+				},
+				Data: map[string][]byte{
+					"host": []byte("loki.example.com"),
+				},
+			},
+			expectedFeatureUsage: map[string]float64{
+				metrics.FeatureBackendLoki: 1,
+				metrics.FeatureOutputHTTP:  1,
+			},
+		},
+		{
+			name: "loki backend",
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("pipeline-loki").
+				WithHTTPOutput(testutils.HTTPHost("loki.example.com")).
+				Build(),
+			expectedFeatureUsage: map[string]float64{
+				metrics.FeatureBackendLoki: 1,
+				metrics.FeatureOutputHTTP:  1,
+			},
+		},
+		{
+			name: "cloud logging backend",
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("pipeline-cloud-logging").
+				WithHTTPOutput(testutils.HTTPHost("ingest-sf-a0f6688a-adae-4afc-837f-663c45ec69af.cls-04.cloud.logs.services.sap.hana.ondemand.com")).
+				Build(),
+			expectedFeatureUsage: map[string]float64{
+				metrics.FeatureBackendCloudLogging: 1,
+				metrics.FeatureOutputHTTP:          1,
+			},
+		},
+		{
+			name: "elastic backend",
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("pipeline-elastic").
+				WithHTTPOutput(testutils.HTTPHost("elastic.example.com")).
+				Build(),
+			expectedFeatureUsage: map[string]float64{
+				metrics.FeatureBackendElastic: 1,
+				metrics.FeatureOutputHTTP:     1,
+			},
+		},
+		{
+			name: "opensearch backend",
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("pipeline-opensearch").
+				WithHTTPOutput(testutils.HTTPHost("opensearch.example.com")).
+				Build(),
+			expectedFeatureUsage: map[string]float64{
+				metrics.FeatureBackendOpenSearch: 1,
+				metrics.FeatureOutputHTTP:        1,
+			},
+		},
+		{
+			name: "splunk backend",
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("pipeline-splunk").
+				WithHTTPOutput(testutils.HTTPHost("splunk.example.com")).
+				Build(),
+			expectedFeatureUsage: map[string]float64{
+				metrics.FeatureBackendSplunk: 1,
+				metrics.FeatureOutputHTTP:    1,
+			},
+		},
+		{
+			name: "dynatrace backend",
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("pipeline-dynatrace").
+				WithHTTPOutput(testutils.HTTPHost("dynatrace.example.com")).
+				Build(),
+			expectedFeatureUsage: map[string]float64{
+				metrics.FeatureBackendDynatrace: 1,
+				metrics.FeatureOutputHTTP:       1,
+			},
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fakeClient := newTestClient(t, &tt.pipeline)
+			var objs []client.Object
+
+			objs = append(objs, &tt.pipeline)
+			if tt.secret != nil {
+				objs = append(objs, tt.secret)
+			}
+
+			fakeClient := newTestClient(t, objs...)
 
 			sut := newTestReconciler(fakeClient)
 
