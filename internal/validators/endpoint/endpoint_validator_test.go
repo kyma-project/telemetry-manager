@@ -64,7 +64,7 @@ var testScenarios = []struct {
 		errMsgFluentdHTTP: "",
 	},
 	{
-		name:     "with IPv6: valid IPv6 endpoint with port and path",
+		name:     "with IPv6: valid IPv6 endpoint with path and port",
 		endpoint: "https://[2001:0db8:85a3:0000:0000:8a2e:0370:7334]:4317/foo/bar",
 
 		errOTLPGRPC:    nil,
