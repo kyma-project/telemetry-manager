@@ -28,7 +28,6 @@ import (
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlbuilder "sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -204,7 +203,7 @@ func (r *MetricPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		Watches(
 			&corev1.Secret{},
 			handler.EnqueueRequestsFromMapFunc(r.mapSecretChanges),
-			builder.WithPredicates(predicateutils.CreateOrUpdateOrDelete()),
+			ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete()),
 		).Complete(r)
 }
 
@@ -244,6 +243,7 @@ func (r *MetricPipelineController) createRequestsForAllPipelines(ctx context.Con
 
 func (r *MetricPipelineController) mapSecretChanges(ctx context.Context, object client.Object) []reconcile.Request {
 	var pipelines telemetryv1beta1.MetricPipelineList
+
 	var requests []reconcile.Request
 
 	err := r.List(ctx, &pipelines)
