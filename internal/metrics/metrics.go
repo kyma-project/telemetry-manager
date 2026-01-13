@@ -52,7 +52,6 @@ const (
 	FeatureBackendElastic      = "backend-elastic"
 	FeatureBackendOpenSearch   = "backend-opensearch"
 	FeatureBackendSplunk       = "backend-splunk"
-	FeatureBackendCloudWatch   = "backend-cloudwatch"
 )
 
 // backendPatterns maps backend feature names to their detection patterns
@@ -83,7 +82,6 @@ var (
 		FeatureBackendElastic,
 		FeatureBackendOpenSearch,
 		FeatureBackendSplunk,
-		FeatureBackendCloudWatch,
 	}
 
 	registry = metrics.Registry
