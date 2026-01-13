@@ -7,8 +7,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
@@ -27,12 +27,12 @@ import (
 func TestMTLSAboutToExpireCert(t *testing.T) {
 	tests := []struct {
 		label            string
-		inputBuilder     func(includeNs string) telemetryv1alpha1.MetricPipelineInput
+		inputBuilder     func(includeNs string) telemetryv1beta1.MetricPipelineInput
 		generatorBuilder func(ns string) []client.Object
 	}{
 		{
 			label: suite.LabelMetricAgentSetA,
-			inputBuilder: func(includeNs string) telemetryv1alpha1.MetricPipelineInput {
+			inputBuilder: func(includeNs string) telemetryv1beta1.MetricPipelineInput {
 				return testutils.BuildMetricPipelineRuntimeInput(testutils.IncludeNamespaces(includeNs))
 			},
 			generatorBuilder: func(ns string) []client.Object {
@@ -46,7 +46,7 @@ func TestMTLSAboutToExpireCert(t *testing.T) {
 		},
 		{
 			label: suite.LabelMetricGatewaySetA,
-			inputBuilder: func(includeNs string) telemetryv1alpha1.MetricPipelineInput {
+			inputBuilder: func(includeNs string) telemetryv1beta1.MetricPipelineInput {
 				return testutils.BuildMetricPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
 			},
 			generatorBuilder: func(ns string) []client.Object {
@@ -113,7 +113,7 @@ func TestMTLSAboutToExpireCert(t *testing.T) {
 				Reason: conditions.ReasonTLSCertificateAboutToExpire,
 			})
 
-			assert.TelemetryHasState(t, operatorv1alpha1.StateWarning)
+			assert.TelemetryHasState(t, operatorv1beta1.StateWarning)
 			assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
 				Type:   conditions.TypeMetricComponentsHealthy,
 				Status: metav1.ConditionTrue,

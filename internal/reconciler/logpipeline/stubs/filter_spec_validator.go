@@ -1,7 +1,7 @@
 package stubs
 
 import (
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
 
 type FilterSpecValidator struct {
@@ -14,6 +14,6 @@ func NewFilterSpecValidator(err error) *FilterSpecValidator {
 	}
 }
 
-func (o *FilterSpecValidator) Validate(transforms []telemetryv1alpha1.FilterSpec) error {
+func (o *FilterSpecValidator) Validate(transforms []telemetryv1beta1.FilterSpec) error {
 	return o.err
 }

@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
@@ -35,7 +35,7 @@ func TestKubeletStatsReceiver(t *testing.T) {
 
 		tests := []struct {
 			name                  string
-			pipeline              telemetryv1alpha1.MetricPipeline
+			pipeline              telemetryv1beta1.MetricPipeline
 			expectedMetricsToDrop K8sClusterMetricsToDrop
 		}{
 			{
@@ -93,7 +93,7 @@ func TestKubeletStatsReceiver(t *testing.T) {
 			},
 		}
 		for _, test := range tests {
-			collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
+			collectorConfig, _, err := sut.Build(ctx, []telemetryv1beta1.MetricPipeline{
 				test.pipeline,
 			}, BuildOptions{
 				AgentNamespace: agentNamespace,
@@ -115,7 +115,7 @@ func TestKubeletStatsReceiver(t *testing.T) {
 	t.Run("runtime input enabled verify kubeletStatsReceiver", func(t *testing.T) {
 		tests := []struct {
 			name                 string
-			pipeline             telemetryv1alpha1.MetricPipeline
+			pipeline             telemetryv1beta1.MetricPipeline
 			expectedMetricGroups []MetricGroupType
 		}{
 			{
@@ -158,7 +158,7 @@ func TestKubeletStatsReceiver(t *testing.T) {
 		}
 
 		for _, test := range tests {
-			collectorConfig, _, err := sut.Build(ctx, []telemetryv1alpha1.MetricPipeline{
+			collectorConfig, _, err := sut.Build(ctx, []telemetryv1beta1.MetricPipeline{
 				test.pipeline,
 			}, BuildOptions{})
 			require.NoError(t, err)

@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
 
 type transformTestCase struct {
@@ -45,7 +45,7 @@ func runTransformValidatorTestCases(t *testing.T, context string, signalType Sig
 				validator, err := NewTransformSpecValidator(signalType)
 				require.NoError(t, err)
 
-				transforms := []telemetryv1alpha1.TransformSpec{{
+				transforms := []telemetryv1beta1.TransformSpec{{
 					Conditions: test.conditions,
 					Statements: test.statements,
 				}}

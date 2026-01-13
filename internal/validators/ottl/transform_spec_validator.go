@@ -14,7 +14,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/ottlfuncs"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
 
 type TransformSpecValidator struct {
@@ -36,7 +36,7 @@ func NewTransformSpecValidator(signalType SignalType) (*TransformSpecValidator, 
 	return &TransformSpecValidator{parserCollection: parserCollection}, nil
 }
 
-func (v *TransformSpecValidator) Validate(transforms []telemetryv1alpha1.TransformSpec) error {
+func (v *TransformSpecValidator) Validate(transforms []telemetryv1beta1.TransformSpec) error {
 	for _, ts := range transforms {
 		if err := v.ValidateStatementsAndConditions(ts.Statements, ts.Conditions); err != nil {
 			return err
