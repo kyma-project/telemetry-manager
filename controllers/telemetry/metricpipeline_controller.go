@@ -254,7 +254,7 @@ func (r *MetricPipelineController) mapSecretChanges(ctx context.Context, object 
 
 	secret, ok := object.(*corev1.Secret)
 	if !ok {
-		logf.FromContext(ctx).Error(nil, "Unexpected type: expected Secret")
+		logf.FromContext(ctx).Error(nil, fmt.Sprintf("expected Secret object but got: %T", object))
 		return requests
 	}
 
