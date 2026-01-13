@@ -199,7 +199,8 @@ func (r *MetricPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 	return b.Watches(
 		&operatorv1alpha1.Telemetry{},
 		handler.EnqueueRequestsFromMapFunc(r.mapTelemetryChanges),
-		ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete())).
+		ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete()),
+	).
 		Watches(
 			&corev1.Secret{},
 			handler.EnqueueRequestsFromMapFunc(r.mapSecretChanges),
@@ -261,7 +262,7 @@ func (r *MetricPipelineController) mapSecretChanges(ctx context.Context, object 
 	for i := range pipelines.Items {
 		var pipeline = pipelines.Items[i]
 
-		if referencesSecret(secret.Name, secret.Namespace, &pipeline) {
+		if r.referencesSecret(secret.Name, secret.Namespace, &pipeline) {
 			requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		}
 	}
@@ -269,7 +270,7 @@ func (r *MetricPipelineController) mapSecretChanges(ctx context.Context, object 
 	return requests
 }
 
-func referencesSecret(secretName, secretNamespace string, pipeline *telemetryv1beta1.MetricPipeline) bool {
+func (r *MetricPipelineController) referencesSecret(secretName, secretNamespace string, pipeline *telemetryv1beta1.MetricPipeline) bool {
 	refs := secretref.GetMetricPipelineRefs(pipeline)
 	for _, ref := range refs {
 		if ref.Name == secretName && ref.Namespace == secretNamespace {
