@@ -15,19 +15,17 @@ on:
       - "OWNERS"
       - "CODEOWNERS"
       - "external-images.yaml"
-    types: [opened, synchronize, reopened, labeled, unlabeled]
+    types: [opened, synchronize, reopened]
   workflow_dispatch:
 
 jobs:
   unit-tests:
-    if: >-
-      ${{ 
-        (github.event_name == 'pull_request' || 
-         github.event_name == 'pull_request_target') && 
-        !contains(github.event.pull_request.labels.*.name, 'ci-pause')
-      }}
+    if: ${{ github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     steps:
+      - name: Validate CI labels
+        uses: ./.github/actions/validate-ci-labels
+
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
@@ -38,12 +36,8 @@ jobs:
         run: make test
 
   lint:
-    if: >-
-      ${{ 
-        (github.event_name == 'pull_request' || 
-         github.event_name == 'pull_request_target') && 
-        !contains(github.event.pull_request.labels.*.name, 'ci-pause')
-      }}
+    needs: validate-labels
+    if: ${{ always() && needs.validate-labels.result == 'success' || github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -56,12 +50,8 @@ jobs:
         run: make --debug lint
 
   coverage:
-    if: >-
-      ${{ 
-        (github.event_name == 'pull_request' || 
-         github.event_name == 'pull_request_target') && 
-        !contains(github.event.pull_request.labels.*.name, 'ci-pause')
-      }}
+    needs: validate-labels
+    if: ${{ always() && needs.validate-labels.result == 'success' || github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -74,12 +64,8 @@ jobs:
         run: make check-coverage
 
   verify-code-generated:
-    if: >-
-      ${{ 
-        (github.event_name == 'pull_request' || 
-         github.event_name == 'pull_request_target') && 
-        !contains(github.event.pull_request.labels.*.name, 'ci-pause')
-      }}
+    needs: validate-labels
+    if: ${{ always() && needs.validate-labels.result == 'success' || github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -92,12 +78,8 @@ jobs:
         run: make check-clean
 
   test-renovate:
-    if: >-
-      ${{ 
-        (github.event_name == 'pull_request' || 
-         github.event_name == 'pull_request_target') && 
-        !contains(github.event.pull_request.labels.*.name, 'ci-pause')
-      }}
+    needs: validate-labels
+    if: ${{ always() && needs.validate-labels.result == 'success' || github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code

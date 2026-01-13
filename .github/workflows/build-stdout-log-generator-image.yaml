@@ -7,7 +7,7 @@ on:
   pull_request_target:
     paths:
       - "dependencies/stdout-log-generator/**"
-    types: [opened, edited, synchronize, reopened, labeled, unlabeled]
+    types: [opened, edited, synchronize, reopened]
   push:
     branches:
       - main
@@ -17,19 +17,15 @@ on:
 
 jobs:
   envs:
-    if: >-
-      ${{ 
-        (github.event_name == 'pull_request' || 
-         github.event_name == 'pull_request_target') && 
-        !contains(github.event.pull_request.labels.*.name, 'ci-pause') ||
-        github.event_name == 'push' ||
-        github.event_name == 'workflow_dispatch'
-      }}
+    if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     outputs:
       tags: ${{ steps.create-tags.outputs.tags }}
 
     steps:
+      - name: Validate CI labels
+        uses: ./.github/actions/validate-ci-labels
+
       - name: Create tags
         id: create-tags
         run: |
@@ -59,7 +55,7 @@ jobs:
       platforms: "linux/amd64,linux/arm64"
 
   notify-on-failure:
-    if: ${{ always() && (needs.build-image.result == 'failure') && (github.event_name == 'push') && !contains(github.event.pull_request.labels.*.name, 'ci-pause') }}
+    if: ${{ always() && (needs.build-image.result == 'failure') && (github.event_name == 'push') }}
     needs: build-image
     runs-on: ubuntu-latest
     steps:

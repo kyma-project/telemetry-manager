@@ -7,7 +7,7 @@ on:
   pull_request_target:
     paths:
       - "dependencies/telemetry-self-monitor/**"
-    types: [opened, edited, synchronize, reopened, labeled, unlabeled]
+    types: [opened, edited, synchronize, reopened]
   push:
     branches:
       - main
@@ -17,20 +17,16 @@ on:
 
 jobs:
   envs:
-    if: >-
-      ${{ 
-        (github.event_name == 'pull_request' || 
-         github.event_name == 'pull_request_target') && 
-        !contains(github.event.pull_request.labels.*.name, 'ci-pause') ||
-        github.event_name == 'push' ||
-        github.event_name == 'workflow_dispatch'
-      }}
+    if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     outputs:
       build-args: ${{ steps.prepare-envs.outputs.build-args }}
       build-tag: ${{ steps.build-tag.outputs.build-tag || '' }}
 
     steps:
+      - name: Validate CI labels
+        uses: ./.github/actions/validate-ci-labels
+
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
@@ -84,7 +80,7 @@ jobs:
   notify-on-failure:
     needs: build-image
     runs-on: ubuntu-latest
-    if: ${{ always() && (needs.build-image.result == 'failure') && (github.event_name == 'push') && !contains(github.event.pull_request.labels.*.name, 'ci-pause') }}
+    if: ${{ always() && (needs.build-image.result == 'failure') && (github.event_name == 'push') }}
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2

@@ -13,8 +13,6 @@ on:
       - reopened
       - edited
       - synchronize
-      - labeled
-      - unlabeled
       - milestoned
   workflow_dispatch:
 
@@ -28,17 +26,15 @@ env:
 
 jobs:
   pr-milestone-project-check:
-    if: >-
-      ${{ 
-        (github.event_name == 'pull_request' || 
-         github.event_name == 'pull_request_target') && 
-        !contains(github.event.pull_request.labels.*.name, 'ci-pause')
-      }}
+    if: ${{ github.event_name == 'workflow_dispatch' }}
     permissions:
       pull-requests: write # Required for setting the milestone
       contents: read
     runs-on: ubuntu-latest
     steps:
+      - name: Validate CI labels
+        uses: ./.github/actions/validate-ci-labels
+
       - name: Set milestone to latest open milestone
         if: github.event.pull_request.milestone == null
         run: |
@@ -55,12 +51,7 @@ jobs:
           gh pr edit ${{ github.event.number }} --milestone "${latest_milestone}"
 
   pr-label-check:
-    if: >-
-      ${{ 
-        (github.event_name == 'pull_request' || 
-         github.event_name == 'pull_request_target') && 
-        !contains(github.event.pull_request.labels.*.name, 'ci-pause')
-      }}
+    if: ${{ github.event_name == 'workflow_dispatch' }}
     permissions:
       pull-requests: write # Required for setting the labels
       contents: read
@@ -116,12 +107,7 @@ jobs:
           NUMBER: ${{ github.event.number }}
 
   pr-title-check:
-    if: >-
-      ${{ 
-        (github.event_name == 'pull_request' || 
-         github.event_name == 'pull_request_target') && 
-        !contains(github.event.pull_request.labels.*.name, 'ci-pause')
-      }}
+    if: ${{ github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     steps:
       - name: Validate title

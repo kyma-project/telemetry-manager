@@ -1,0 +1,15 @@
+name: Validate CI Labels
+description: Check for ci-pause label and fail if present on pull requests
+
+runs:
+  using: composite
+  steps:
+    - name: Check for ci-pause label on pull requests
+      if: ${{ github.event_name == 'pull_request' || github.event_name == 'pull_request_target' }}
+      shell: bash
+      run: |
+        if [[ "${{ contains(github.event.pull_request.labels.*.name, 'ci-pause') }}" == "true" ]]; then
+          echo "::error::CI is paused due to 'ci-pause' label. Remove the label to re-enable CI."
+          exit 1
+        fi
+
