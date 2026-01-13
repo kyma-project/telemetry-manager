@@ -9,6 +9,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+	"github.com/kyma-project/telemetry-manager/internal/secretref"
 )
 
 func TestValidate(t *testing.T) {
@@ -31,7 +32,7 @@ func TestValidate(t *testing.T) {
 				{Name: "my-secret1", Namespace: "default", Key: "myKey1"},
 				{Name: "notExistent", Namespace: "default", Key: "myKey2"},
 			},
-			expectError: ErrSecretRefNotFound,
+			expectError: secretref.ErrSecretRefNotFound,
 		},
 		{
 			name: "SecretNamespaceNotPresent",
@@ -39,7 +40,7 @@ func TestValidate(t *testing.T) {
 				{Name: "my-secret1", Namespace: "default", Key: "myKey1"},
 				{Name: "my-secret2", Namespace: "notExistent", Key: "myKey2"},
 			},
-			expectError: ErrSecretRefNotFound,
+			expectError: secretref.ErrSecretRefNotFound,
 		},
 		{
 			name: "SecretKeyNotPresent",
@@ -47,7 +48,7 @@ func TestValidate(t *testing.T) {
 				{Name: "my-secret1", Namespace: "default", Key: "myKey1"},
 				{Name: "my-secret2", Namespace: "default", Key: "notExistent"},
 			},
-			expectError: ErrSecretKeyNotFound,
+			expectError: secretref.ErrSecretKeyNotFound,
 		},
 	}
 
