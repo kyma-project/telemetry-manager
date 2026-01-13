@@ -11,7 +11,7 @@ kubectl get crd metricpipeline.telemetry.kyma-project.io -o yaml
 The following MetricPipeline object defines a pipeline that integrates into an OTLP backend. Additionally, it filters out metrics with type histogram and adds a `system` attribute to all metrics originating from system namespaces:
 
 ```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
+apiVersion: telemetry.kyma-project.io/v1beta1
 kind: MetricPipeline
 metadata:
   name: otlp
@@ -62,7 +62,7 @@ For further examples, see the [samples](https://github.com/kyma-project/telemetr
 
 ## Custom Resource Parameters
 
-For details, see the [MetricPipeline specification file](https://github.com/kyma-project/telemetry-manager/blob/main/apis/telemetry/v1alpha1/metricpipeline_types.go).
+For details, see the [MetricPipeline specification file](https://github.com/kyma-project/telemetry-manager/blob/main/apis/telemetry/v1beta1/metricpipeline_types.go).
 
 <!-- The table below was generated automatically -->
 <!-- Some special tags (html comments) are at the end of lines due to markdown requirements. -->

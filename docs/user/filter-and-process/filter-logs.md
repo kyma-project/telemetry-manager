@@ -57,7 +57,7 @@ You can control which namespaces to collect logs from using `include`, `exclude`
     ```yaml
       ...
       input:
-        application:
+        runtime:
           namespaces:
             include:
               - namespaceA
@@ -69,7 +69,7 @@ You can control which namespaces to collect logs from using `include`, `exclude`
     ```yaml
       ...
       input:
-        application:
+        runtime:
           namespaces:
             exclude:
               - namespaceC
@@ -83,7 +83,7 @@ By default, application logs from `kube-system`, `istio-system`, and
 ```yaml
   ...
   input:
-    application:
+    runtime:
       enabled: true
         namespaces:
           system: true
@@ -100,7 +100,7 @@ The following pipeline collects input from all namespaces excluding `kyma-system
 ```yaml
 ...
 input:
-  application:
+  runtime:
     enabled: true
     namespaces:
       exclude:
