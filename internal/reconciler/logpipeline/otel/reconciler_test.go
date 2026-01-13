@@ -478,34 +478,37 @@ func TestGetPipelinesRequiringAgents(t *testing.T) {
 	})
 }
 
-func TestFeatureUsageTracking(t *testing.T) {
+func TestPipelineInfoTracking(t *testing.T) {
 	tests := []struct {
 		name                 string
 		pipeline             telemetryv1beta1.LogPipeline
 		secret               *corev1.Secret
-		expectedFeatureUsage map[string]float64
+		expectedEndpoint     string
+		expectedFeatureUsage []string
 	}{
 		{
 			name: "pipeline without features",
 			pipeline: testutils.NewLogPipelineBuilder().
 				WithName("pipeline-1").
 				WithOTLPInput(false).
-				WithOTLPOutput().
+				WithOTLPOutput(testutils.OTLPEndpoint("test")).
 				Build(),
-			expectedFeatureUsage: map[string]float64{},
+			expectedEndpoint:     "test",
+			expectedFeatureUsage: []string{},
 		},
 		{
 			name: "pipeline with transform",
 			pipeline: testutils.NewLogPipelineBuilder().
 				WithName("pipeline-2").
 				WithOTLPInput(false).
-				WithOTLPOutput().
+				WithOTLPOutput(testutils.OTLPEndpoint("test")).
 				WithTransform(telemetryv1beta1.TransformSpec{
 					Statements: []string{"set(attributes[\"test\"], \"value\")"},
 				}).
 				Build(),
-			expectedFeatureUsage: map[string]float64{
-				metrics.FeatureTransform: 1,
+			expectedEndpoint: "test",
+			expectedFeatureUsage: []string{
+				metrics.FeatureTransform,
 			},
 		},
 		{
@@ -513,13 +516,14 @@ func TestFeatureUsageTracking(t *testing.T) {
 			pipeline: testutils.NewLogPipelineBuilder().
 				WithName("pipeline-3").
 				WithOTLPInput(false).
-				WithOTLPOutput().
+				WithOTLPOutput(testutils.OTLPEndpoint("test")).
 				WithFilter(telemetryv1beta1.FilterSpec{
 					Conditions: []string{"attributes[\"test\"] == \"value\""},
 				}).
 				Build(),
-			expectedFeatureUsage: map[string]float64{
-				metrics.FeatureFilter: 1,
+			expectedEndpoint: "test",
+			expectedFeatureUsage: []string{
+				metrics.FeatureFilter,
 			},
 		},
 		{
@@ -527,7 +531,7 @@ func TestFeatureUsageTracking(t *testing.T) {
 			pipeline: testutils.NewLogPipelineBuilder().
 				WithName("pipeline-4").
 				WithOTLPInput(false).
-				WithOTLPOutput().
+				WithOTLPOutput(testutils.OTLPEndpoint("test")).
 				WithTransform(telemetryv1beta1.TransformSpec{
 					Statements: []string{"set(attributes[\"test\"], \"value\")"},
 				}).
@@ -535,41 +539,43 @@ func TestFeatureUsageTracking(t *testing.T) {
 					Conditions: []string{"attributes[\"test\"] == \"value\""},
 				}).
 				Build(),
-			expectedFeatureUsage: map[string]float64{
-				metrics.FeatureTransform: 1,
-				metrics.FeatureFilter:    1,
+			expectedEndpoint: "test",
+			expectedFeatureUsage: []string{
+				metrics.FeatureTransform,
+				metrics.FeatureFilter,
 			},
 		},
 		{
 			name: "pipeline with OTLP input",
 			pipeline: testutils.NewLogPipelineBuilder().
 				WithName("pipeline-5").
-				WithOTLPOutput().
+				WithOTLPOutput(testutils.OTLPEndpoint("test")).
 				WithOTLPInput(true).
 				Build(),
-			expectedFeatureUsage: map[string]float64{
-				metrics.FeatureInputOTLP: 1,
+			expectedEndpoint: "test",
+			expectedFeatureUsage: []string{
+				metrics.FeatureInputOTLP,
 			},
 		},
 		{
-			name: "pipeline with runtime and otlp input",
+			name: "pipeline with runtime and OTLP input",
 			pipeline: testutils.NewLogPipelineBuilder().
 				WithName("pipeline-6").
 				WithOTLPInput(true).
 				WithRuntimeInput(true).
-				WithOTLPOutput().
-				WithRuntimeInput(true).
+				WithOTLPOutput(testutils.OTLPEndpoint("test")).
 				Build(),
-			expectedFeatureUsage: map[string]float64{
-				metrics.FeatureInputRuntime: 1,
-				metrics.FeatureInputOTLP:    1,
+			expectedEndpoint: "test",
+			expectedFeatureUsage: []string{
+				metrics.FeatureInputRuntime,
+				metrics.FeatureInputOTLP,
 			},
 		},
 		{
 			name: "pipeline with all OTLP features",
 			pipeline: testutils.NewLogPipelineBuilder().
 				WithName("pipeline-12").
-				WithOTLPOutput().
+				WithOTLPOutput(testutils.OTLPEndpoint("test")).
 				WithOTLPInput(true).
 				WithRuntimeInput(true).
 				WithTransform(telemetryv1beta1.TransformSpec{
@@ -579,123 +585,83 @@ func TestFeatureUsageTracking(t *testing.T) {
 					Conditions: []string{"attributes[\"test\"] == \"value\""},
 				}).
 				Build(),
-			expectedFeatureUsage: map[string]float64{
-				metrics.FeatureTransform:    1,
-				metrics.FeatureFilter:       1,
-				metrics.FeatureInputOTLP:    1,
-				metrics.FeatureInputRuntime: 1,
+			expectedEndpoint: "test",
+			expectedFeatureUsage: []string{
+				metrics.FeatureTransform,
+				metrics.FeatureFilter,
+				metrics.FeatureInputOTLP,
+				metrics.FeatureInputRuntime,
 			},
 		},
 		{
-			name: "loki backend from secret",
+			name: "endpoint from secret",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("pipeline-loki-secret").
+				WithName("pipeline-endpoint-secret").
 				WithOTLPInput(false).
-				WithOTLPOutput(testutils.OTLPEndpointFromSecret("loki-secret", "default", "host")).
+				WithOTLPOutput(testutils.OTLPEndpointFromSecret("endpoint-secret", "default", "host")).
 				Build(),
 			secret: &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "loki-secret",
+					Name:      "endpoint-secret",
 					Namespace: "default",
 				},
 				Data: map[string][]byte{
 					"host": []byte("loki.example.com"),
 				},
 			},
-			expectedFeatureUsage: map[string]float64{
-				metrics.FeatureBackendLoki: 1,
-			},
+			expectedEndpoint:     "loki.example.com",
+			expectedFeatureUsage: []string{},
 		},
 		{
-			name: "loki backend",
+			name: "endpoint plain",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("pipeline-loki").
+				WithName("pipeline-endpoint-plain").
 				WithOTLPInput(false).
-				WithOTLPOutput(testutils.OTLPEndpoint("loki.example.com")).
+				WithOTLPOutput(testutils.OTLPEndpoint("endpoint.example.com")).
 				Build(),
-			expectedFeatureUsage: map[string]float64{
-				metrics.FeatureBackendLoki: 1,
-			},
-		},
-		{
-			name: "cloud logging backend",
-			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("pipeline-cloud-logging").
-				WithOTLPInput(false).
-				WithOTLPOutput(testutils.OTLPEndpoint("ingest-sf-a0f6688a-adae-4afc-837f-663c45ec69af.cls-04.cloud.logs.services.sap.hana.ondemand.com")).
-				Build(),
-			expectedFeatureUsage: map[string]float64{
-				metrics.FeatureBackendCloudLogging: 1,
-			},
-		},
-		{
-			name: "elastic backend",
-			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("pipeline-elastic").
-				WithOTLPInput(false).
-				WithOTLPOutput(testutils.OTLPEndpoint("elastic.example.com")).
-				Build(),
-			expectedFeatureUsage: map[string]float64{
-				metrics.FeatureBackendElastic: 1,
-			},
-		},
-		{
-			name: "opensearch backend",
-			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("pipeline-opensearch").
-				WithOTLPInput(false).
-				WithOTLPOutput(testutils.OTLPEndpoint("opensearch.example.com")).
-				Build(),
-			expectedFeatureUsage: map[string]float64{
-				metrics.FeatureBackendOpenSearch: 1,
-			},
-		},
-		{
-			name: "splunk backend",
-			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("pipeline-splunk").
-				WithOTLPInput(false).
-				WithOTLPOutput(testutils.OTLPEndpoint("splunk.example.com")).
-				Build(),
-			expectedFeatureUsage: map[string]float64{
-				metrics.FeatureBackendSplunk: 1,
-			},
-		},
-		{
-			name: "dynatrace backend",
-			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("pipeline-dynatrace").
-				WithOTLPInput(false).
-				WithOTLPOutput(testutils.OTLPEndpoint("dynatrace.example.com")).
-				Build(),
-			expectedFeatureUsage: map[string]float64{
-				metrics.FeatureBackendDynatrace: 1,
-			},
+			expectedEndpoint:     "endpoint.example.com",
+			expectedFeatureUsage: []string{},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var objs []client.Object
-
-			objs = append(objs, &tt.pipeline)
+			objs := []client.Object{&tt.pipeline}
 			if tt.secret != nil {
 				objs = append(objs, tt.secret)
 			}
 
 			fakeClient := newTestClient(t, objs...)
-
 			sut := newTestReconciler(fakeClient)
 
 			result := reconcileAndGet(t, fakeClient, sut, tt.pipeline.Name)
 			require.NoError(t, result.err)
 
-			// Verify feature usage metrics for all features (default expected value is 0)
-			for _, feature := range metrics.AllFeatures {
-				expectedValue := tt.expectedFeatureUsage[feature] // defaults to 0 if not in map
-				metricValue := testutil.ToFloat64(metrics.LogPipelineFeatureUsage.WithLabelValues(feature, tt.pipeline.Name))
-				require.Equal(t, expectedValue, metricValue, "feature usage metric should match for pipeline `%s` and feature `%s`", tt.pipeline.Name, feature)
-			}
+			// Build expected label values
+			labelValues := buildLabelValues(tt.pipeline.Name, tt.expectedEndpoint, tt.expectedFeatureUsage)
+
+			metricValue := testutil.ToFloat64(metrics.LogPipelineInfo.WithLabelValues(labelValues...))
+			require.Equal(t, float64(1), metricValue, "pipeline info metric should match for pipeline %q with endpoint %q and features %v", tt.pipeline.Name, tt.expectedEndpoint, tt.expectedFeatureUsage)
 		})
 	}
+}
+
+func buildLabelValues(pipelineName, endpoint string, enabledFeatures []string) []string {
+	// Create a set of enabled features for quick lookup
+	featuresSet := make(map[string]bool, len(enabledFeatures))
+	for _, feature := range enabledFeatures {
+		featuresSet[feature] = true
+	}
+
+	labelValues := []string{pipelineName, endpoint}
+
+	for _, feature := range metrics.LogPipelineFeatures {
+		if featuresSet[feature] {
+			labelValues = append(labelValues, "true")
+		} else {
+			labelValues = append(labelValues, "false")
+		}
+	}
+
+	return labelValues
 }

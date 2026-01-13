@@ -649,231 +649,175 @@ func TestFIPSMode(t *testing.T) {
 	}
 }
 
-func TestFeatureUsageTracking(t *testing.T) {
+func TestPipelineInfoTracking(t *testing.T) {
 	tests := []struct {
 		name                 string
 		pipeline             telemetryv1beta1.LogPipeline
 		secret               *corev1.Secret
-		expectedFeatureUsage map[string]float64
+		expectedEndpoint     string
+		expectedFeatureUsage []string
 	}{
 		{
-			name: "pipeline without features",
+			name: "basic HTTP output with runtime input",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("pipeline-1").
-				WithHTTPOutput().
+				WithName("pipeline-basic").
+				WithHTTPOutput(testutils.HTTPHost("test")).
 				WithRuntimeInput(true).
 				Build(),
-			expectedFeatureUsage: map[string]float64{
-				metrics.FeatureInputRuntime: 1,
-				metrics.FeatureOutputHTTP:   1,
+			expectedEndpoint: "test",
+			expectedFeatureUsage: []string{
+				metrics.FeatureInputRuntime,
+				metrics.FeatureOutputHTTP,
 			},
 		},
 		{
-			name: "pipeline with runtime input",
+			name: "custom output",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("pipeline-6").
-				WithHTTPOutput().
-				WithRuntimeInput(true).
-				Build(),
-			expectedFeatureUsage: map[string]float64{
-				metrics.FeatureInputRuntime: 1,
-				metrics.FeatureOutputHTTP:   1,
-			},
-		},
-		{
-			name: "pipeline with HTTP output",
-			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("pipeline-7").
-				WithHTTPOutput().
-				WithRuntimeInput(true).
-				Build(),
-			expectedFeatureUsage: map[string]float64{
-				metrics.FeatureOutputHTTP:   1,
-				metrics.FeatureInputRuntime: 1,
-			},
-		},
-		{
-			name: "pipeline with custom output",
-			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("pipeline-8").
+				WithName("pipeline-custom-output").
 				WithCustomOutput("Name stdout").
 				WithRuntimeInput(true).
 				Build(),
-			expectedFeatureUsage: map[string]float64{
-				metrics.FeatureOutputCustom: 1,
-				metrics.FeatureInputRuntime: 1,
+			expectedEndpoint: "",
+			expectedFeatureUsage: []string{
+				metrics.FeatureOutputCustom,
+				metrics.FeatureInputRuntime,
 			},
 		},
 		{
-			name: "pipeline with custom filters",
+			name: "custom filters",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("pipeline-9").
-				WithHTTPOutput().
+				WithName("pipeline-custom-filters").
+				WithHTTPOutput(testutils.HTTPHost("test")).
 				WithCustomFilter("Name grep").
 				WithRuntimeInput(true).
 				Build(),
-			expectedFeatureUsage: map[string]float64{
-				metrics.FeatureFilters:      1,
-				metrics.FeatureOutputHTTP:   1,
-				metrics.FeatureInputRuntime: 1,
+			expectedEndpoint: "test",
+			expectedFeatureUsage: []string{
+				metrics.FeatureFilters,
+				metrics.FeatureOutputHTTP,
+				metrics.FeatureInputRuntime,
 			},
 		},
 		{
-			name: "pipeline with variables",
+			name: "variables",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("pipeline-10").
-				WithHTTPOutput().
+				WithName("pipeline-variables").
+				WithHTTPOutput(testutils.HTTPHost("test")).
 				WithVariable("var1", "secret1", "default", "key1").
 				WithRuntimeInput(true).
 				Build(),
-			expectedFeatureUsage: map[string]float64{
-				metrics.FeatureVariables:    1,
-				metrics.FeatureOutputHTTP:   1,
-				metrics.FeatureInputRuntime: 1,
+			expectedEndpoint: "test",
+			expectedFeatureUsage: []string{
+				metrics.FeatureVariables,
+				metrics.FeatureOutputHTTP,
+				metrics.FeatureInputRuntime,
 			},
 		},
 		{
-			name: "pipeline with files",
+			name: "files",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("pipeline-11").
-				WithHTTPOutput().
+				WithName("pipeline-files").
+				WithHTTPOutput(testutils.HTTPHost("test")).
 				WithFile("file1", "content1").
 				WithRuntimeInput(true).
 				Build(),
-			expectedFeatureUsage: map[string]float64{
-				metrics.FeatureFiles:        1,
-				metrics.FeatureOutputHTTP:   1,
-				metrics.FeatureInputRuntime: 1,
+			expectedEndpoint: "test",
+			expectedFeatureUsage: []string{
+				metrics.FeatureFiles,
+				metrics.FeatureOutputHTTP,
+				metrics.FeatureInputRuntime,
 			},
 		},
 		{
-			name: "pipeline with all FluentBit features",
+			name: "all FluentBit features",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("pipeline-13").
-				WithHTTPOutput().
+				WithName("pipeline-all-features").
+				WithHTTPOutput(testutils.HTTPHost("test")).
 				WithCustomFilter("Name grep").
 				WithVariable("var1", "secret1", "default", "key1").
 				WithFile("file1", "content1").
 				WithRuntimeInput(true).
 				Build(),
-			expectedFeatureUsage: map[string]float64{
-				metrics.FeatureOutputHTTP:   1,
-				metrics.FeatureFilters:      1,
-				metrics.FeatureVariables:    1,
-				metrics.FeatureFiles:        1,
-				metrics.FeatureInputRuntime: 1,
+			expectedEndpoint: "test",
+			expectedFeatureUsage: []string{
+				metrics.FeatureOutputHTTP,
+				metrics.FeatureFilters,
+				metrics.FeatureVariables,
+				metrics.FeatureFiles,
+				metrics.FeatureInputRuntime,
 			},
 		},
 		{
-			name: "loki backend from secret",
+			name: "endpoint from secret",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("pipeline-loki-secret").
-				WithHTTPOutput(testutils.HTTPHostFromSecret("loki-secret", "default", "host")).
+				WithName("pipeline-endpoint-secret").
+				WithHTTPOutput(testutils.HTTPHostFromSecret("endpoint-secret", "default", "host")).
 				Build(),
 			secret: &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "loki-secret",
+					Name:      "endpoint-secret",
 					Namespace: "default",
 				},
 				Data: map[string][]byte{
-					"host": []byte("loki.example.com"),
+					"host": []byte("endpoint.example.com"),
 				},
 			},
-			expectedFeatureUsage: map[string]float64{
-				metrics.FeatureBackendLoki: 1,
-				metrics.FeatureOutputHTTP:  1,
+			expectedEndpoint: "endpoint.example.com",
+			expectedFeatureUsage: []string{
+				metrics.FeatureOutputHTTP,
 			},
 		},
 		{
-			name: "loki backend",
+			name: "endpoint plain",
 			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("pipeline-loki").
-				WithHTTPOutput(testutils.HTTPHost("loki.example.com")).
+				WithName("pipeline-endpoint-plain").
+				WithHTTPOutput(testutils.HTTPHost("endpoint.example.com")).
 				Build(),
-			expectedFeatureUsage: map[string]float64{
-				metrics.FeatureBackendLoki: 1,
-				metrics.FeatureOutputHTTP:  1,
-			},
-		},
-		{
-			name: "cloud logging backend",
-			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("pipeline-cloud-logging").
-				WithHTTPOutput(testutils.HTTPHost("ingest-sf-a0f6688a-adae-4afc-837f-663c45ec69af.cls-04.cloud.logs.services.sap.hana.ondemand.com")).
-				Build(),
-			expectedFeatureUsage: map[string]float64{
-				metrics.FeatureBackendCloudLogging: 1,
-				metrics.FeatureOutputHTTP:          1,
-			},
-		},
-		{
-			name: "elastic backend",
-			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("pipeline-elastic").
-				WithHTTPOutput(testutils.HTTPHost("elastic.example.com")).
-				Build(),
-			expectedFeatureUsage: map[string]float64{
-				metrics.FeatureBackendElastic: 1,
-				metrics.FeatureOutputHTTP:     1,
-			},
-		},
-		{
-			name: "opensearch backend",
-			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("pipeline-opensearch").
-				WithHTTPOutput(testutils.HTTPHost("opensearch.example.com")).
-				Build(),
-			expectedFeatureUsage: map[string]float64{
-				metrics.FeatureBackendOpenSearch: 1,
-				metrics.FeatureOutputHTTP:        1,
-			},
-		},
-		{
-			name: "splunk backend",
-			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("pipeline-splunk").
-				WithHTTPOutput(testutils.HTTPHost("splunk.example.com")).
-				Build(),
-			expectedFeatureUsage: map[string]float64{
-				metrics.FeatureBackendSplunk: 1,
-				metrics.FeatureOutputHTTP:    1,
-			},
-		},
-		{
-			name: "dynatrace backend",
-			pipeline: testutils.NewLogPipelineBuilder().
-				WithName("pipeline-dynatrace").
-				WithHTTPOutput(testutils.HTTPHost("dynatrace.example.com")).
-				Build(),
-			expectedFeatureUsage: map[string]float64{
-				metrics.FeatureBackendDynatrace: 1,
-				metrics.FeatureOutputHTTP:       1,
+			expectedEndpoint: "endpoint.example.com",
+			expectedFeatureUsage: []string{
+				metrics.FeatureOutputHTTP,
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var objs []client.Object
-
-			objs = append(objs, &tt.pipeline)
+			objs := []client.Object{&tt.pipeline}
 			if tt.secret != nil {
 				objs = append(objs, tt.secret)
 			}
 
 			fakeClient := newTestClient(t, objs...)
-
 			sut := newTestReconciler(fakeClient)
 
 			result := reconcileAndGet(t, fakeClient, sut, tt.pipeline.Name)
 			require.NoError(t, result.err)
 
-			// Verify feature usage metrics for all features (default expected value is 0)
-			for _, feature := range metrics.AllFeatures {
-				expectedValue := tt.expectedFeatureUsage[feature] // defaults to 0 if not in map
-				metricValue := testutil.ToFloat64(metrics.LogPipelineFeatureUsage.WithLabelValues(feature, tt.pipeline.Name))
-				require.Equal(t, expectedValue, metricValue, "feature usage metric should match for pipeline `%s` and feature `%s`", tt.pipeline.Name, feature)
-			}
+			// Build expected label values
+			labelValues := buildLabelValues(tt.pipeline.Name, tt.expectedEndpoint, tt.expectedFeatureUsage)
+
+			metricValue := testutil.ToFloat64(metrics.LogPipelineInfo.WithLabelValues(labelValues...))
+			require.Equal(t, float64(1), metricValue, "pipeline info metric should match for pipeline %q with endpoint %q and features %v", tt.pipeline.Name, tt.expectedEndpoint, tt.expectedFeatureUsage)
 		})
 	}
+}
+
+func buildLabelValues(pipelineName, endpoint string, enabledFeatures []string) []string {
+	// Create a set of enabled features for quick lookup
+	featuresSet := make(map[string]bool, len(enabledFeatures))
+	for _, feature := range enabledFeatures {
+		featuresSet[feature] = true
+	}
+
+	labelValues := []string{pipelineName, endpoint}
+
+	for _, feature := range metrics.LogPipelineFeatures {
+		if featuresSet[feature] {
+			labelValues = append(labelValues, "true")
+		} else {
+			labelValues = append(labelValues, "false")
+		}
+	}
+
+	return labelValues
 }

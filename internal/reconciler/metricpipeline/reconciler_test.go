@@ -989,15 +989,18 @@ func TestUsageTracking(t *testing.T) {
 		name                 string
 		pipeline             telemetryv1beta1.MetricPipeline
 		secret               *corev1.Secret
-		expectedFeatureUsage map[string]float64
+		expectedEndpoint     string
+		expectedFeatureUsage []string
 	}{
 		{
 			name: "pipeline without features",
 			pipeline: testutils.NewMetricPipelineBuilder().
 				WithName("pipeline-1").
 				WithOTLPInput(false).
+				WithOTLPOutput(testutils.OTLPEndpoint("test")).
 				Build(),
-			expectedFeatureUsage: map[string]float64{},
+			expectedEndpoint:     "test",
+			expectedFeatureUsage: []string{},
 		},
 		{
 			name: "pipeline with transform",
@@ -1007,9 +1010,11 @@ func TestUsageTracking(t *testing.T) {
 				WithTransform(telemetryv1beta1.TransformSpec{
 					Statements: []string{"set(attributes[\"test\"], \"value\")"},
 				}).
+				WithOTLPOutput(testutils.OTLPEndpoint("test")).
 				Build(),
-			expectedFeatureUsage: map[string]float64{
-				metrics.FeatureTransform: 1,
+			expectedEndpoint: "test",
+			expectedFeatureUsage: []string{
+				metrics.FeatureTransform,
 			},
 		},
 		{
@@ -1020,9 +1025,11 @@ func TestUsageTracking(t *testing.T) {
 				WithFilter(telemetryv1beta1.FilterSpec{
 					Conditions: []string{"resource.attributes[\"test\"] == \"value\""},
 				}).
+				WithOTLPOutput(testutils.OTLPEndpoint("test")).
 				Build(),
-			expectedFeatureUsage: map[string]float64{
-				metrics.FeatureFilter: 1,
+			expectedEndpoint: "test",
+			expectedFeatureUsage: []string{
+				metrics.FeatureFilter,
 			},
 		},
 		{
@@ -1036,10 +1043,12 @@ func TestUsageTracking(t *testing.T) {
 				WithFilter(telemetryv1beta1.FilterSpec{
 					Conditions: []string{"resource.attributes[\"test\"] == \"value\""},
 				}).
+				WithOTLPOutput(testutils.OTLPEndpoint("test")).
 				Build(),
-			expectedFeatureUsage: map[string]float64{
-				metrics.FeatureTransform: 1,
-				metrics.FeatureFilter:    1,
+			expectedEndpoint: "test",
+			expectedFeatureUsage: []string{
+				metrics.FeatureTransform,
+				metrics.FeatureFilter,
 			},
 		},
 		{
@@ -1047,9 +1056,11 @@ func TestUsageTracking(t *testing.T) {
 			pipeline: testutils.NewMetricPipelineBuilder().
 				WithName("pipeline-5").
 				WithOTLPInput(true).
+				WithOTLPOutput(testutils.OTLPEndpoint("test")).
 				Build(),
-			expectedFeatureUsage: map[string]float64{
-				metrics.FeatureInputOTLP: 1,
+			expectedEndpoint: "test",
+			expectedFeatureUsage: []string{
+				metrics.FeatureInputOTLP,
 			},
 		},
 		{
@@ -1058,9 +1069,11 @@ func TestUsageTracking(t *testing.T) {
 				WithName("pipeline-6").
 				WithOTLPInput(false).
 				WithRuntimeInput(true).
+				WithOTLPOutput(testutils.OTLPEndpoint("test")).
 				Build(),
-			expectedFeatureUsage: map[string]float64{
-				metrics.FeatureInputRuntime: 1,
+			expectedEndpoint: "test",
+			expectedFeatureUsage: []string{
+				metrics.FeatureInputRuntime,
 			},
 		},
 		{
@@ -1069,9 +1082,11 @@ func TestUsageTracking(t *testing.T) {
 				WithName("pipeline-7").
 				WithOTLPInput(false).
 				WithPrometheusInput(true).
+				WithOTLPOutput(testutils.OTLPEndpoint("test")).
 				Build(),
-			expectedFeatureUsage: map[string]float64{
-				metrics.FeatureInputPrometheus: 1,
+			expectedEndpoint: "test",
+			expectedFeatureUsage: []string{
+				metrics.FeatureInputPrometheus,
 			},
 		},
 		{
@@ -1080,9 +1095,11 @@ func TestUsageTracking(t *testing.T) {
 				WithName("pipeline-8").
 				WithOTLPInput(false).
 				WithIstioInput(true).
+				WithOTLPOutput(testutils.OTLPEndpoint("test")).
 				Build(),
-			expectedFeatureUsage: map[string]float64{
-				metrics.FeatureInputIstio: 1,
+			expectedEndpoint: "test",
+			expectedFeatureUsage: []string{
+				metrics.FeatureInputIstio,
 			},
 		},
 		{
@@ -1093,12 +1110,14 @@ func TestUsageTracking(t *testing.T) {
 				WithPrometheusInput(true).
 				WithIstioInput(true).
 				WithOTLPInput(true).
+				WithOTLPOutput(testutils.OTLPEndpoint("test")).
 				Build(),
-			expectedFeatureUsage: map[string]float64{
-				metrics.FeatureInputOTLP:       1,
-				metrics.FeatureInputRuntime:    1,
-				metrics.FeatureInputPrometheus: 1,
-				metrics.FeatureInputIstio:      1,
+			expectedEndpoint: "test",
+			expectedFeatureUsage: []string{
+				metrics.FeatureInputOTLP,
+				metrics.FeatureInputRuntime,
+				metrics.FeatureInputPrometheus,
+				metrics.FeatureInputIstio,
 			},
 		},
 		{
@@ -1115,104 +1134,48 @@ func TestUsageTracking(t *testing.T) {
 				WithPrometheusInput(true).
 				WithIstioInput(true).
 				WithOTLPInput(true).
+				WithOTLPOutput(testutils.OTLPEndpoint("test")).
 				Build(),
-			expectedFeatureUsage: map[string]float64{
-				metrics.FeatureTransform:       1,
-				metrics.FeatureFilter:          1,
-				metrics.FeatureInputOTLP:       1,
-				metrics.FeatureInputRuntime:    1,
-				metrics.FeatureInputPrometheus: 1,
-				metrics.FeatureInputIstio:      1,
+			expectedEndpoint: "test",
+			expectedFeatureUsage: []string{
+				metrics.FeatureTransform,
+				metrics.FeatureFilter,
+				metrics.FeatureInputOTLP,
+				metrics.FeatureInputRuntime,
+				metrics.FeatureInputPrometheus,
+				metrics.FeatureInputIstio,
 			},
 		},
 		{
-			name: "loki backend from secret",
+			name: "endpoint from secret",
 			pipeline: testutils.NewMetricPipelineBuilder().
-				WithName("pipeline-loki-secret").
+				WithName("pipeline-endpoint-secret").
 				WithOTLPInput(false).
-				WithOTLPOutput(testutils.OTLPEndpointFromSecret("loki-secret", "default", "host")).
+				WithOTLPOutput(testutils.OTLPEndpointFromSecret("endpoint-secret", "default", "host")).
 				Build(),
 			secret: &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "loki-secret",
+					Name:      "endpoint-secret",
 					Namespace: "default",
 				},
 				Data: map[string][]byte{
-					"host": []byte("loki.example.com"),
+					"host": []byte("endpoint.example.com"),
 				},
 			},
-			expectedFeatureUsage: map[string]float64{
-				metrics.FeatureBackendLoki: 1,
-			},
+			expectedEndpoint:     "endpoint.example.com",
+			expectedFeatureUsage: []string{},
 		},
 		{
-			name: "loki backend",
+			name: "endpoint plain",
 			pipeline: testutils.NewMetricPipelineBuilder().
-				WithName("pipeline-loki").
+				WithName("pipeline-endpoint").
 				WithOTLPInput(false).
-				WithOTLPOutput(testutils.OTLPEndpoint("loki.example.com")).
+				WithOTLPOutput(testutils.OTLPEndpoint("endpoint.example.com")).
 				Build(),
-			expectedFeatureUsage: map[string]float64{
-				metrics.FeatureBackendLoki: 1,
-			},
-		},
-		{
-			name: "cloud logging backend",
-			pipeline: testutils.NewMetricPipelineBuilder().
-				WithName("pipeline-cloud-logging").
-				WithOTLPInput(false).
-				WithOTLPOutput(testutils.OTLPEndpoint("ingest-sf-a0f6688a-adae-4afc-837f-663c45ec69af.cls-04.cloud.logs.services.sap.hana.ondemand.com")).
-				Build(),
-			expectedFeatureUsage: map[string]float64{
-				metrics.FeatureBackendCloudLogging: 1,
-			},
-		},
-		{
-			name: "elastic backend",
-			pipeline: testutils.NewMetricPipelineBuilder().
-				WithName("pipeline-elastic").
-				WithOTLPInput(false).
-				WithOTLPOutput(testutils.OTLPEndpoint("elastic.example.com")).
-				Build(),
-			expectedFeatureUsage: map[string]float64{
-				metrics.FeatureBackendElastic: 1,
-			},
-		},
-		{
-			name: "opensearch backend",
-			pipeline: testutils.NewMetricPipelineBuilder().
-				WithName("pipeline-opensearch").
-				WithOTLPInput(false).
-				WithOTLPOutput(testutils.OTLPEndpoint("opensearch.example.com")).
-				Build(),
-			expectedFeatureUsage: map[string]float64{
-				metrics.FeatureBackendOpenSearch: 1,
-			},
-		},
-		{
-			name: "splunk backend",
-			pipeline: testutils.NewMetricPipelineBuilder().
-				WithName("pipeline-splunk").
-				WithOTLPInput(false).
-				WithOTLPOutput(testutils.OTLPEndpoint("splunk.example.com")).
-				Build(),
-			expectedFeatureUsage: map[string]float64{
-				metrics.FeatureBackendSplunk: 1,
-			},
-		},
-		{
-			name: "dynatrace backend",
-			pipeline: testutils.NewMetricPipelineBuilder().
-				WithName("pipeline-dynatrace").
-				WithOTLPInput(false).
-				WithOTLPOutput(testutils.OTLPEndpoint("dynatrace.example.com")).
-				Build(),
-			expectedFeatureUsage: map[string]float64{
-				metrics.FeatureBackendDynatrace: 1,
-			},
+			expectedEndpoint:     "endpoint.example.com",
+			expectedFeatureUsage: []string{},
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var objs []client.Object
@@ -1229,14 +1192,33 @@ func TestUsageTracking(t *testing.T) {
 			result := reconcileAndGet(t, fakeClient, sut, tt.pipeline.Name)
 			require.NoError(t, result.err, "reconciliation should succeed but got error %v", result.err)
 
-			// Verify feature usage metrics for all features (default expected value is 0)
-			for _, feature := range metrics.AllFeatures {
-				expectedValue := tt.expectedFeatureUsage[feature]
-				metricValue := testutil.ToFloat64(metrics.MetricPipelineFeatureUsage.WithLabelValues(feature, tt.pipeline.Name))
-				require.Equal(t, expectedValue, metricValue, "feature usage metric should match for pipeline `%s`and feature `%s`", tt.pipeline.Name, feature)
-			}
+			// Build expected label values
+			labelValues := buildMetricPipelineLabelValues(tt.pipeline.Name, tt.expectedEndpoint, tt.expectedFeatureUsage)
+
+			metricValue := testutil.ToFloat64(metrics.MetricPipelineInfo.WithLabelValues(labelValues...))
+			require.Equal(t, float64(1), metricValue, "pipeline info metric should match for pipeline %q with endpoint %q and features %v", tt.pipeline.Name, tt.expectedEndpoint, tt.expectedFeatureUsage)
 
 			assertAll(t)
 		})
 	}
+}
+
+func buildMetricPipelineLabelValues(pipelineName, endpoint string, enabledFeatures []string) []string {
+	// Create a set of enabled features for quick lookup
+	featuresSet := make(map[string]bool, len(enabledFeatures))
+	for _, feature := range enabledFeatures {
+		featuresSet[feature] = true
+	}
+
+	labelValues := []string{pipelineName, endpoint}
+
+	for _, feature := range metrics.MetricPipelineFeatures {
+		if featuresSet[feature] {
+			labelValues = append(labelValues, "true")
+		} else {
+			labelValues = append(labelValues, "false")
+		}
+	}
+
+	return labelValues
 }

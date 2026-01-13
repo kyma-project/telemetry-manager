@@ -239,7 +239,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 		return fmt.Errorf("failed to fetch deployable metric pipelines: %w", err)
 	}
 
-	r.trackOTTLFeaturesUsage(ctx, reconcilablePipelines)
+	r.trackPipelineInfoMetric(ctx, reconcilablePipelines)
 
 	var reconcilablePipelinesRequiringAgents = r.getPipelinesRequiringAgents(reconcilablePipelines)
 
@@ -495,40 +495,56 @@ func (r *Reconciler) getK8sClusterUID(ctx context.Context) (string, error) {
 	return string(kubeSystem.UID), nil
 }
 
-func (r *Reconciler) trackOTTLFeaturesUsage(ctx context.Context, pipelines []telemetryv1beta1.MetricPipeline) {
+func (r *Reconciler) trackPipelineInfoMetric(ctx context.Context, pipelines []telemetryv1beta1.MetricPipeline) {
 	for i := range pipelines {
-		pipeline := pipelines[i]
+		pipeline := &pipelines[i]
+
+		var features []string
 
 		// General features
 		if sharedtypesutils.IsOTLPInputEnabled(pipeline.Spec.Input.OTLP) {
-			metrics.RecordMetricPipelineFeatureUsage(metrics.FeatureInputOTLP, pipeline.Name)
+			features = append(features, metrics.FeatureInputOTLP)
 		}
 
 		if sharedtypesutils.IsTransformDefined(pipeline.Spec.Transforms) {
-			metrics.RecordMetricPipelineFeatureUsage(metrics.FeatureTransform, pipeline.Name)
+			features = append(features, metrics.FeatureTransform)
 		}
 
 		if sharedtypesutils.IsFilterDefined(pipeline.Spec.Filters) {
-			metrics.RecordMetricPipelineFeatureUsage(metrics.FeatureFilter, pipeline.Name)
+			features = append(features, metrics.FeatureFilter)
 		}
 
 		// MetricPipeline features
 
 		if metricpipelineutils.IsRuntimeInputEnabled(pipeline.Spec.Input) {
-			metrics.RecordMetricPipelineFeatureUsage(metrics.FeatureInputRuntime, pipeline.Name)
+			features = append(features, metrics.FeatureInputRuntime)
 		}
 
 		if metricpipelineutils.IsPrometheusInputEnabled(pipeline.Spec.Input) {
-			metrics.RecordMetricPipelineFeatureUsage(metrics.FeatureInputPrometheus, pipeline.Name)
+			features = append(features, metrics.FeatureInputPrometheus)
 		}
 
 		if metricpipelineutils.IsIstioInputEnabled(pipeline.Spec.Input) {
-			metrics.RecordMetricPipelineFeatureUsage(metrics.FeatureInputIstio, pipeline.Name)
+			features = append(features, metrics.FeatureInputIstio)
 		}
 
-		// Backends
-		if pipeline.Spec.Output.OTLP != nil {
-			metrics.DetectAndTrackOTLPBackend(ctx, r.Client, pipeline.Spec.Output.OTLP.Endpoint, pipeline.Name, metrics.RecordMetricPipelineFeatureUsage)
-		}
+		// Get endpoint
+		endpoint := r.getEndpoint(ctx, pipeline)
+
+		// Record info metric
+		metrics.RecordMetricPipelineInfo(pipeline.Name, endpoint, features...)
 	}
+}
+
+func (r *Reconciler) getEndpoint(ctx context.Context, pipeline *telemetryv1beta1.MetricPipeline) string {
+	if pipeline.Spec.Output.OTLP == nil {
+		return ""
+	}
+
+	endpointBytes, err := sharedtypesutils.ResolveValue(ctx, r.Client, pipeline.Spec.Output.OTLP.Endpoint)
+	if err != nil {
+		return ""
+	}
+
+	return string(endpointBytes)
 }

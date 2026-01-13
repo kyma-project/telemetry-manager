@@ -202,7 +202,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 		return fmt.Errorf("failed to fetch deployable log pipelines: %w", err)
 	}
 
-	r.trackFeaturesUsage(ctx, reconcilablePipelines)
+	r.trackPipelineInfoMetric(ctx, reconcilablePipelines)
 
 	var reconcilablePipelinesRequiringAgents = r.getPipelinesRequiringAgents(reconcilablePipelines)
 
@@ -450,29 +450,46 @@ func isLogAgentRequired(pipeline *telemetryv1beta1.LogPipeline) bool {
 	return input.Runtime != nil && input.Runtime.Enabled != nil && *input.Runtime.Enabled
 }
 
-func (r *Reconciler) trackFeaturesUsage(ctx context.Context, pipelines []telemetryv1beta1.LogPipeline) {
+func (r *Reconciler) trackPipelineInfoMetric(ctx context.Context, pipelines []telemetryv1beta1.LogPipeline) {
 	for i := range pipelines {
 		pipeline := &pipelines[i]
+
+		var features []string
+
 		// General features
 		if sharedtypesutils.IsOTLPInputEnabled(pipeline.Spec.Input.OTLP) {
-			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureInputOTLP, pipeline.Name)
+			features = append(features, metrics.FeatureInputOTLP)
 		}
 
 		if sharedtypesutils.IsTransformDefined(pipeline.Spec.Transforms) {
-			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureTransform, pipeline.Name)
+			features = append(features, metrics.FeatureTransform)
 		}
 
 		if sharedtypesutils.IsFilterDefined(pipeline.Spec.Filters) {
-			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureFilter, pipeline.Name)
+			features = append(features, metrics.FeatureFilter)
 		}
 
 		if logpipelineutils.IsRuntimeInputEnabled(&pipeline.Spec.Input) {
-			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureInputRuntime, pipeline.Name)
+			features = append(features, metrics.FeatureInputRuntime)
 		}
 
-		// Backends
-		if pipeline.Spec.Output.OTLP != nil {
-			metrics.DetectAndTrackOTLPBackend(ctx, r.Client, pipeline.Spec.Output.OTLP.Endpoint, pipeline.Name, metrics.RecordLogPipelineFeatureUsage)
-		}
+		// Get endpoint
+		endpoint := r.getEndpoint(ctx, pipeline)
+
+		// Record info metric
+		metrics.RecordLogPipelineInfo(pipeline.Name, endpoint, features...)
 	}
+}
+
+func (r *Reconciler) getEndpoint(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) string {
+	if pipeline.Spec.Output.OTLP == nil {
+		return ""
+	}
+
+	endpointBytes, err := sharedtypesutils.ResolveValue(ctx, r.Client, pipeline.Spec.Output.OTLP.Endpoint)
+	if err != nil {
+		return ""
+	}
+
+	return string(endpointBytes)
 }
