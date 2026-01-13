@@ -28,6 +28,7 @@ import (
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlbuilder "sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -198,8 +199,12 @@ func (r *MetricPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 	return b.Watches(
 		&operatorv1alpha1.Telemetry{},
 		handler.EnqueueRequestsFromMapFunc(r.mapTelemetryChanges),
-		ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete()),
-	).Complete(r)
+		ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete())).
+		Watches(
+			&corev1.Secret{},
+			handler.EnqueueRequestsFromMapFunc(r.mapSecretChanges),
+			builder.WithPredicates(predicateutils.CreateOrUpdateOrDelete()),
+		).Complete(r)
 }
 
 func (r *MetricPipelineController) mapTelemetryChanges(ctx context.Context, object client.Object) []reconcile.Request {
@@ -234,4 +239,83 @@ func (r *MetricPipelineController) createRequestsForAllPipelines(ctx context.Con
 	}
 
 	return requests, nil
+}
+
+func (r *MetricPipelineController) mapSecretChanges(ctx context.Context, object client.Object) []reconcile.Request {
+	var pipelines telemetryv1alpha1.MetricPipelineList
+	var requests []reconcile.Request
+
+	err := r.List(ctx, &pipelines)
+	if err != nil {
+		logf.FromContext(ctx).Error(err, "failed to list MetricPipelines")
+		return requests
+	}
+
+	secret, ok := object.(*corev1.Secret)
+	if !ok {
+		logf.FromContext(ctx).Error(nil, "Unexpected type: expected Secret")
+		return requests
+	}
+
+	for i := range pipelines.Items {
+		var pipeline = pipelines.Items[i]
+
+		if referencesSecret(secret.Name, secret.Namespace, &pipeline) {
+			requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+		}
+	}
+
+	return requests
+}
+
+func referencesSecret(secretName, secretNamespace string, pipeline *telemetryv1alpha1.MetricPipeline) bool {
+	refs := getSecretRefsMetricPipeline(pipeline)
+	for _, ref := range refs {
+		if ref.Name == secretName && ref.Namespace == secretNamespace {
+			return true
+		}
+	}
+
+	return false
+}
+
+func getSecretRefsMetricPipeline(mp *telemetryv1alpha1.MetricPipeline) []telemetryv1alpha1.SecretKeyRef {
+	return getSecretRefsInOTLPOutput(mp.Spec.Output.OTLP)
+}
+
+func getSecretRefsInOTLPOutput(otlpOut *telemetryv1alpha1.OTLPOutput) []telemetryv1alpha1.SecretKeyRef {
+	var refs []telemetryv1alpha1.SecretKeyRef
+
+	refs = appendIfSecretRef(refs, &otlpOut.Endpoint)
+
+	if otlpOut.Authentication != nil && otlpOut.Authentication.Basic != nil {
+		refs = appendIfSecretRef(refs, &otlpOut.Authentication.Basic.User)
+		refs = appendIfSecretRef(refs, &otlpOut.Authentication.Basic.Password)
+	}
+
+	if otlpOut.Authentication != nil && otlpOut.Authentication.OAuth2 != nil {
+		refs = appendIfSecretRef(refs, &otlpOut.Authentication.OAuth2.TokenURL)
+		refs = appendIfSecretRef(refs, &otlpOut.Authentication.OAuth2.ClientID)
+		refs = appendIfSecretRef(refs, &otlpOut.Authentication.OAuth2.ClientSecret)
+	}
+
+	for _, header := range otlpOut.Headers {
+		refs = appendIfSecretRef(refs, &header.ValueType)
+	}
+
+	if otlpOut.TLS != nil && !otlpOut.TLS.Insecure {
+		refs = appendIfSecretRef(refs, otlpOut.TLS.CA)
+		refs = appendIfSecretRef(refs, otlpOut.TLS.Cert)
+		refs = appendIfSecretRef(refs, otlpOut.TLS.Key)
+	}
+
+	return refs
+}
+
+func appendIfSecretRef(secretKeyRefs []telemetryv1alpha1.SecretKeyRef, valueType *telemetryv1alpha1.ValueType) []telemetryv1alpha1.SecretKeyRef {
+	if valueType != nil && valueType.Value == "" && valueType.ValueFrom != nil && valueType.ValueFrom.SecretKeyRef != nil {
+		secretKeyRefs = append(secretKeyRefs, *valueType.ValueFrom.SecretKeyRef)
+	}
+
+	return secretKeyRefs
 }

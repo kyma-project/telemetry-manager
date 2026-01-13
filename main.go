@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"time"
 
 	"github.com/caarlos0/env/v11"
 	"github.com/go-logr/zapr"
@@ -38,7 +37,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -89,7 +87,6 @@ var (
 )
 
 const (
-	cacheSyncPeriod    = 1 * time.Minute
 	webhookServiceName = "telemetry-manager-webhook"
 
 	healthProbePort = 8081
@@ -280,8 +277,6 @@ func setupManager(globals config.Global) (manager.Manager, error) {
 			CertDir: certDir,
 		}),
 		Cache: cache.Options{
-			SyncPeriod: ptr.To(cacheSyncPeriod),
-
 			// The operator handles various resource that are namespace-scoped, and additionally some resources that are cluster-scoped (clusterroles, clusterrolebindings, etc.).
 			// For namespace-scoped resources we want to restrict the operator permissions to only fetch resources from a given namespace.
 			ByObject: map[client.Object]cache.ByObject{
@@ -292,7 +287,7 @@ func setupManager(globals config.Global) (manager.Manager, error) {
 				&corev1.ServiceAccount{}:      {Field: setNamespaceFieldSelector(globals)},
 				&corev1.Service{}:             {Field: setNamespaceFieldSelector(globals)},
 				&networkingv1.NetworkPolicy{}: {Field: setNamespaceFieldSelector(globals)},
-				&corev1.Secret{}:              {Field: setNamespaceFieldSelector(globals)},
+				&corev1.Secret{}:              {Transform: secretCacheTransform},
 				&operatorv1alpha1.Telemetry{}: {Field: setNamespaceFieldSelector(globals)},
 			},
 		},
@@ -562,4 +557,18 @@ func createWebhookConfig(globals config.Global) webhookcert.Config {
 			},
 		},
 	)
+}
+
+func secretCacheTransform(object any) (any, error) {
+	secret, ok := object.(*corev1.Secret)
+	if !ok {
+		return nil, fmt.Errorf("expected Secret object but got: %T", object)
+	}
+
+	secret.Data = nil
+	secret.StringData = nil
+	secret.Annotations = nil
+	secret.Labels = nil
+
+	return secret, nil
 }
