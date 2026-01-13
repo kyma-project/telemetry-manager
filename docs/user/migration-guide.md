@@ -13,7 +13,15 @@ The migration from v1alpha1 and v1beta1 mostly affects LogPipeline and MetricPip
 ![LogPipeline Migration Changes](./assets/logpipeline-migration.png)
 ![MetricPipeline Migration Changes](./assets/metricpipeline-migration.png)
 
-The following sections provide details on the most important changes in the pipeline API.
+In your Telemetry pipeline resources, see if one of the following breaking changes between v1alpha1 and v1beta1 affects you:
+
+| Pipeline                    | v1alpha1 Field                                 | v1beta1 Field                           | Migration Action                                                     |
+|-----------------------------|------------------------------------------------|-----------------------------------------|----------------------------------------------------------------------|
+| LogPipeline                 | spec.input.application                         | spec.input.runtime                      | Rename the field.                                                    | LogPipeline                 | spec.output.http.tls.disabled                  | spec.output.http.tls.insecure           | Rename the field.                                                    |
+| LogPipeline                 | spec.output.http.tls.skipCertificateValidation | spec.output.http.tls.insecureSkipVerify | Rename the field.                                                    |
+| LogPipeline, MetricPipeline | spec.input.otlp.disabled                       | spec.input.otlp.enabled                 | Rename the field and invert the boolean value (e.g., false -> true). |
+| LogPipeline                 | spec.input.application.namespaces.system       | (Removed)                               | To include system namespaces, use spec.input.runtime.namespaces: {}. |
+
 
 ## Prerequisites
 
