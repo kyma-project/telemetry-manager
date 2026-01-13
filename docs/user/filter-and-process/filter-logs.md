@@ -78,7 +78,15 @@ You can control which namespaces to collect logs from using `include`, `exclude`
 ## Collect Application Logs from System Namespaces
 
 By default, application logs from `kube-system`, `istio-system`, and
-`kyma-system` are excluded. To override this and collect logs from them, set the **system** attribute to true:
+`kyma-system` are excluded. To override this and collect logs from them, set the **namespaces** attribute to an empty object or the **exclude** attribute to an empty list:
+
+```yaml
+  ...
+  input:
+    runtime:
+      enabled: true
+        namespaces: {}
+```
 
 ```yaml
   ...
@@ -86,7 +94,7 @@ By default, application logs from `kube-system`, `istio-system`, and
     runtime:
       enabled: true
         namespaces:
-          system: true
+          exclude: []
 ```
 
 ## Filter Application Logs by Container
