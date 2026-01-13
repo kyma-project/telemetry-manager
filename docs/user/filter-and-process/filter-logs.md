@@ -49,8 +49,7 @@ The `include` and `exclude` filters are mutually exclusive.
 
 ## Filter Application Logs by Namespace
 
-You can control which namespaces to collect logs from using `include`, `exclude`, and `system` filters. The
-`include` and `exclude` filters are mutually exclusive.
+You can control which namespaces to collect logs from using `include` and `exclude` filters. The filters are mutually exclusive.
 
 - To collect logs from specific namespaces, use the `include` filter:
 
