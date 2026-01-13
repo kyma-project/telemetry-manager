@@ -1,21 +1,57 @@
 # Migrate Your Pipelines from v1alpha1 to v1beta1
 
-Telemetry module v1beta1 introduces a number of changes to the Telemetry pipeline API, including some breaking changes.
+Migrate your Telemetry pipeline resources to the stable v1beta1 API version. The v1beta1 API is more consistent, clear, and aligned with industry standards.
 
-This guide outlines the key changes and steps required to migrate your Telemetry pipelines from version v1alpha1 to v1beta1. The new version introduces several renamed fields and modifications to improve API functionality and usability.
+This migration involves breaking changes. You must update the **apiVersion**, rename several fields, and, for LogPipeline resources, adjust how you configure namespace selection.
 
 
 
-## Key Changes
+## Context
 
-The diagram below summarizes the main changes between v1alpha1 and v1beta1 of the Telemetry pipeline API.
+The migration from v1alpha1 and v1beta1 mostly affects LogPipeline and MetricPipeline resources. For TracePipeline resources, you only have to change the **apiVersion**.
 
 ![LogPipeline Migration Changes](./assets/logpipeline-migration.png)
 ![MetricPipeline Migration Changes](./assets/metricpipeline-migration.png)
 
 The following sections provide details on the most important changes in the pipeline API.
 
-### Renamed Fields
+## Prerequisites
+
+-You have an active Kyma cluster with the Telemetry module added.
+- You have one or more Telemetry pipeline resources that use the `telemetry.kyma-project.io/v1alpha1` API.
+
+## Procedure
+
+1. In each of your LogPipeline, MetricPipeline, and TracePipeline YAML files, change the **apiVersion** to `telemetry.kyma-project.io/v1beta1`.
+
+2. For LogPipeline and MetricPipeline resources, find and replace the fields that were renamed in v1beta1.
+   1. Update the OTLP input field:
+      - **spec.input.otlp.disabled** becomes **spec.input.otlp.enabled**.
+      - You must also invert the boolean value (for example, `disabled: false` becomes `enabled: true`).
+
+   2. For LogPipeline resources, also update the following fields:
+      - **spec.input.application** becomes **spec.input.runtime**.
+      - In the http output, **spec.output.http.tls.disabled** becomes **spec.output.http.tls.insecure**.
+      - In the http output, **spec.output.http.tls.skipCertificateValidation** becomes **spec.output.http.tls.insecureSkipVerify**.
+
+3.  For LogPipeline resources, if you want to include system namespaces for application logs, update the system namespace selection.
+   By default, system namespaces are excluded (as in v1alpha1), but v1beta1 removes the **spec.input.application.namespaces.system** field. To include application logs from system namespaces (like `kyma-system`), you must now provide an empty object `({})` for the **namespaces** selector. For details, see [Filter Application Logs by Namespace](https://kyma-project.io/external-content/telemetry-manager/docs/user/filter-and-process/filter-logs.html#filter-application-logs-by-namespace).
+   ```yaml
+   spec:
+  input:
+    runtime:
+      enabled: true
+      namespaces:
+        exclude: []  # This includes system namespaces
+   ``
+
+4. Validate and apply your updated configuration with kubectl.
+
+## Result
+Your pipelines are now updated to the v1beta1 API. The Telemetry module begins using the new configuration.
+
+To confirm the migration was successful, check the status conditions of your new pipelines. A healthy pipeline shows `True` for all conditions.
+
 
 The following fields are renamed in v1beta1 compared to v1alpha1. Most fields are renamed to align with common conventions or to improve clarity, while some fields have their logic inverted (e.g., changing from `disabled` to `enabled`).
 
