@@ -468,7 +468,7 @@ spec:
                       path:
                         description: Path defines OTLP export URL path (only for the
                           HTTP protocol). This value overrides auto-appended paths
-                          `/v1/metrics` and `/v1/traces`
+                          `/v1/logs`, `/v1/metrics`, and `/v1/traces`
                         type: string
                       protocol:
                         description: Protocol defines the OTLP protocol (`http` or
@@ -1172,7 +1172,7 @@ spec:
                       path:
                         description: Path defines OTLP export URL path (only for the
                           HTTP protocol). This value overrides auto-appended paths
-                          `/v1/metrics` and `/v1/traces`
+                          `/v1/logs`, `/v1/metrics`, and `/v1/traces`
                         type: string
                       protocol:
                         description: Protocol defines the OTLP protocol (`http` or

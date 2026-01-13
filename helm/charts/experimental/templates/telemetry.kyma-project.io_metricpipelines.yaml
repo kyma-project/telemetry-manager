@@ -754,7 +754,7 @@ spec:
                       path:
                         description: Path defines OTLP export URL path (only for the
                           HTTP protocol). This value overrides auto-appended paths
-                          `/v1/metrics` and `/v1/traces`
+                          `/v1/logs`, `/v1/metrics`, and `/v1/traces`
                         type: string
                       protocol:
                         description: Protocol defines the OTLP protocol (`http` or
@@ -1155,7 +1155,7 @@ spec:
                       namespaces:
                         description: Namespaces describe whether push-based OTLP signals
                           from specific namespaces are selected. By default, all namespaces
-                          excluding system namespaces are enabled. To enable all namespaces
+                          except system namespaces are enabled. To enable all namespaces
                           including system namespaces, use an empty struct notation.
                         properties:
                           exclude:
@@ -1745,7 +1745,7 @@ spec:
                       path:
                         description: Path defines OTLP export URL path (only for the
                           HTTP protocol). This value overrides auto-appended paths
-                          `/v1/metrics` and `/v1/traces`
+                          `/v1/logs`, `/v1/metrics`, and `/v1/traces`
                         type: string
                       protocol:
                         description: Protocol defines the OTLP protocol (`http` or

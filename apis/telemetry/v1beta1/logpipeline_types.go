@@ -90,7 +90,7 @@ type LogPipelineInput struct {
 	// Runtime input configures the log collection from application containers stdout/stderr by tailing the log files of the underlying container runtime.
 	// +kubebuilder:validation:Optional
 	Runtime *LogPipelineRuntimeInput `json:"runtime,omitempty"`
-	// OTLP input configures the push endpoint to receive logs from a OTLP source.
+	// OTLP input configures the push endpoint to receive logs from an OTLP source.
 	// +kubebuilder:validation:Optional
 	OTLP *OTLPInput `json:"otlp,omitempty"`
 }
@@ -139,7 +139,7 @@ type LogPipelineOutput struct {
 	// +kubebuilder:validation:Optional
 	FluentBitCustom string `json:"custom,omitempty"`
 	// Deprecated: The field is based on the Fluent Bit-based technology stack. Use the OpenTelemetry-based stack instead, see https://kyma-project.io/external-content/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
-	// FluentBitHTTP configures an FluentBitHTTP-based output compatible with the Fluent Bit FluentBitHTTP output plugin.
+	// FluentBitHTTP configures a FluentBitHTTP-based output compatible with the Fluent Bit FluentBitHTTP output plugin.
 	// +kubebuilder:validation:Optional
 	FluentBitHTTP *FluentBitHTTPOutput `json:"http,omitempty"`
 	// OTLP defines an output using the OpenTelemetry protocol.
