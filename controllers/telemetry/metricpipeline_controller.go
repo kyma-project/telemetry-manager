@@ -39,6 +39,7 @@ import (
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
@@ -242,7 +243,7 @@ func (r *MetricPipelineController) createRequestsForAllPipelines(ctx context.Con
 }
 
 func (r *MetricPipelineController) mapSecretChanges(ctx context.Context, object client.Object) []reconcile.Request {
-	var pipelines telemetryv1alpha1.MetricPipelineList
+	var pipelines telemetryv1beta1.MetricPipelineList
 	var requests []reconcile.Request
 
 	err := r.List(ctx, &pipelines)
@@ -268,8 +269,8 @@ func (r *MetricPipelineController) mapSecretChanges(ctx context.Context, object 
 	return requests
 }
 
-func referencesSecret(secretName, secretNamespace string, pipeline *telemetryv1alpha1.MetricPipeline) bool {
-	refs := getSecretRefsMetricPipeline(pipeline)
+func referencesSecret(secretName, secretNamespace string, pipeline *telemetryv1beta1.MetricPipeline) bool {
+	refs := secretref.GetMetricPipelineRefs(pipeline)
 	for _, ref := range refs {
 		if ref.Name == secretName && ref.Namespace == secretNamespace {
 			return true
@@ -277,45 +278,4 @@ func referencesSecret(secretName, secretNamespace string, pipeline *telemetryv1a
 	}
 
 	return false
-}
-
-func getSecretRefsMetricPipeline(mp *telemetryv1alpha1.MetricPipeline) []telemetryv1alpha1.SecretKeyRef {
-	return getSecretRefsInOTLPOutput(mp.Spec.Output.OTLP)
-}
-
-func getSecretRefsInOTLPOutput(otlpOut *telemetryv1alpha1.OTLPOutput) []telemetryv1alpha1.SecretKeyRef {
-	var refs []telemetryv1alpha1.SecretKeyRef
-
-	refs = appendIfSecretRef(refs, &otlpOut.Endpoint)
-
-	if otlpOut.Authentication != nil && otlpOut.Authentication.Basic != nil {
-		refs = appendIfSecretRef(refs, &otlpOut.Authentication.Basic.User)
-		refs = appendIfSecretRef(refs, &otlpOut.Authentication.Basic.Password)
-	}
-
-	if otlpOut.Authentication != nil && otlpOut.Authentication.OAuth2 != nil {
-		refs = appendIfSecretRef(refs, &otlpOut.Authentication.OAuth2.TokenURL)
-		refs = appendIfSecretRef(refs, &otlpOut.Authentication.OAuth2.ClientID)
-		refs = appendIfSecretRef(refs, &otlpOut.Authentication.OAuth2.ClientSecret)
-	}
-
-	for _, header := range otlpOut.Headers {
-		refs = appendIfSecretRef(refs, &header.ValueType)
-	}
-
-	if otlpOut.TLS != nil && !otlpOut.TLS.Insecure {
-		refs = appendIfSecretRef(refs, otlpOut.TLS.CA)
-		refs = appendIfSecretRef(refs, otlpOut.TLS.Cert)
-		refs = appendIfSecretRef(refs, otlpOut.TLS.Key)
-	}
-
-	return refs
-}
-
-func appendIfSecretRef(secretKeyRefs []telemetryv1alpha1.SecretKeyRef, valueType *telemetryv1alpha1.ValueType) []telemetryv1alpha1.SecretKeyRef {
-	if valueType != nil && valueType.Value == "" && valueType.ValueFrom != nil && valueType.ValueFrom.SecretKeyRef != nil {
-		secretKeyRefs = append(secretKeyRefs, *valueType.ValueFrom.SecretKeyRef)
-	}
-
-	return secretKeyRefs
 }
