@@ -161,5 +161,4 @@ func TestSinglePipelineV1Alpha1_FluentBit(t *testing.T) {
 	assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
 	assert.FluentBitLogPipelineHealthy(t, pipelineName)
 	assert.LogPipelineUnsupportedMode(t, pipelineName, false)
-
 }
