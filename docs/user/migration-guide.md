@@ -50,8 +50,7 @@ In your Telemetry pipeline resources, see if one of the following breaking chang
     input:
       runtime:
         enabled: true
-        namespaces:
-          exclude: []  # This includes system namespaces
+        namespaces: {}  # This includes system namespaces
    ```
 
 4. Validate and apply your updated configuration with kubectl.
