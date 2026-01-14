@@ -39,7 +39,7 @@ There is the option of enabling the [environment resource detector in Istio's me
 
 #### Option 2: Using Istio-Specific Attributes
 
-This approach uses Istio's already set attributes in order to identify its spans. An example of an Istio-generated trace span's attributes is the following:
+This approach uses Istio's already set attributes to identify its spans. See the following example of an Istio-generated trace span's attributes:
 ```yaml
 Attributes:
       -> node_id: STRING(sidecar~10.244.0.8~productpage-v1-564d4686f-t6s4m.default~default.svc.cluster.local)
