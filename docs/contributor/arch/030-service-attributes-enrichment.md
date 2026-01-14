@@ -100,7 +100,7 @@ This mechanism manages the transition at the cluster level, uniformly affecting 
 
 #### Phase 1: Introduction with Opt-In (Suggested Feature)
 
-In this initial phase, the annotation is introduced and automatically set to `k8sattributes` for newly created Telemetry resources. Existing Telemetry resources have the annotation unset, defaulting to the legacy `servicenameenrichment` processor to ensure no breaking changes.
+In this initial phase, we introduce the annotation, automatically set to `k8sattributes` for new Telemetry resources. Existing Telemetry resources have the annotation unset, defaulting to the legacy `servicenameenrichment` processor to ensure no breaking changes.
 
 **Default Behavior:**
 - **New Telemetry resources**: Annotation set to `k8sattributes` (uses new processor)
