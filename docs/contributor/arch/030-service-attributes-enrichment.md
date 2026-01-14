@@ -171,7 +171,7 @@ This phase marks the completion of the migration to standards-compliant OTel att
 
 #### Monitoring Adoption Rates
 
-To track the adoption of the new processor during Phase 1 and Phase 2, a new metric could be exported by the telemetry-manager operator:
+To track the adoption of the new processor during phase 1 and phase 2, the Telemetry Manager must export a new metric:
 
 ```go
 ServiceEnrichmentProcessorUsage = promauto.With(registry).NewGaugeVec(
