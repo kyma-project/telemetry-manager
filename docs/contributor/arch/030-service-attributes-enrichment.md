@@ -65,7 +65,7 @@ Attributes:
       -> istio.cluster_id: STRING(Kubernetes)
 ```
 
-We are already using the `component` attribute in order to identify Istio trace spans in the `istionoisefilter` processor:
+We are already using the `component` attribute to identify Istio trace spans in the `istionoisefilter` processor:
 ```go
 // component must be "proxy" to be considered an Istio proxy span.
 isIstioProxy := attrs.component == "proxy"
