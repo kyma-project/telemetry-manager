@@ -184,7 +184,9 @@ ServiceEnrichmentProcessorUsage = promauto.With(registry).NewGaugeVec(
 )
 ```
 
-This metric enables monitoring adoption progress. Example queries:
+With this metric, we can monitor adoption progress and identify clusters that need support during the transition. 
+
+We can use dashboards to visualize the data, and run queries such as the following:
 
 ```promql
 # Count Telemetry resources using a specific processor type
