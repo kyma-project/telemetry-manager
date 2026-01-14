@@ -157,7 +157,7 @@ spec:
 ```
 
 **Status Condition:**
-If annotation is set to `servicenameenrichment`, then the Telemetry CR will include a warning condition notifying users that the `servicenameenrichment` processor is deprecated and will be removed in the future.
+If the annotation is set to `servicenameenrichment`, then the Telemetry CR includes a warning condition notifying users that the `servicenameenrichment` processor is deprecated and will be removed in the future.
 
 #### Phase 3: Complete Migration
 
