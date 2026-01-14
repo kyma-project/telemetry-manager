@@ -10,7 +10,7 @@ date: 2026-01-12
 
 The OTel Collector recently introduced proper service attributes (`service.namespace`, `service.name`, `service.version`, `service.instance.id`) enrichment as part of the `k8sattributes` processor (https://github.com/open-telemetry/opentelemetry-collector-contrib/pull/39335/files).
 
-The conventions and enrichment fallback chains that are implemented are documented here: https://opentelemetry.io/docs/specs/semconv/non-normative/k8s-attributes/#service-attributes
+For the conventions and enrichment fallback chains see [OpenTelemetry: Service attributes](https://opentelemetry.io/docs/specs/semconv/non-normative/k8s-attributes/#service-attributes).
 
 Currently, we are performing the enrichment in a custom way by using our custom `servicenameenrichment` processor. Therefore, we should aim to use the upstream feature and eliminate the custom logic.
 
