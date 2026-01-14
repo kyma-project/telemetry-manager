@@ -15,17 +15,17 @@ The conventions and enrichment fallback chains that are implemented are document
 Currently, we are performing the enrichment in a custom way by using our custom `servicenameenrichment` processor. Therefore, we should aim to use the upstream feature and eliminate the custom logic.
 
 A first challenge is that the Istio trace spans are enriched with the service name attribute by Istio, following custom Istio logic. In our case, this logic is configured in the [MeshConfig of the Kyma Istio module](https://github.com/kyma-project/istio/blob/6295e154b3992cf42c44d40eed3c2ec488f990bf/internal/istiooperator/istio-operator.yaml#L237), setting the `TracingServiceName` field to `CANONICAL_NAME_ONLY` (https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/#ProxyConfig-TracingServiceName). This, in turn, enriches the `service.name` attribute of Istio-generated trace spans with the canonical name for a workload, which results in the following fallback chain enrichment logic (in order):
-- `service.istio.io/canonical-name` label (https://github.com/istio/istio/blob/master/pkg/model/proxy.go#L492)
-- `app.kubernetes.io/name` label
-- `app` label
-- `"istio-proxy"`
+1. `service.istio.io/canonical-name` label (https://github.com/istio/istio/blob/master/pkg/model/proxy.go#L492)
+2. `app.kubernetes.io/name` label
+3. `app` label
+4. `"istio-proxy"`
 
 As a second challenge, this would be a breaking change for our current users, because currently enriched telemetry data does not follow the same OTel convention (fallback logic) for setting the service attributes.
 
 ## Proposal
 
 ### First Challenge: Overwriting Istio Trace Spans
-As we actively enrich Istio data, we should overwrite the Istio enrichment (as a documented feature) to make that enrichment consistent across everything.
+Since Telemetry Manager actively enriches Istio data, we should overwrite the default Istio service attributes enrichment (as a documented feature) to ensure a uniform enrichment logic across every telemetry data, according to the OTel conventions.
 
 To identify Istio-generated trace spans, we have the following options:
 1. Adding a custom attribute to the span (from Istio's side)
@@ -110,11 +110,14 @@ In this initial phase, we introduce the annotation, automatically set to `k8satt
 > [!NOTE]
 > The Kyma Lifecycle Manager (KLM) applies the default Telemetry CR only once during module enablement. Subsequent module upgrades do not overwrite existing Telemetry resources, preserving custom configurations and annotations. As an edge case, if users manually delete the Telemetry CR, KLM reapplies the default configuration on the next reconciliation. This behavior will be addressed in future improvements.
 
+**Status Condition:**
+The Telemetry CR will include a warning condition similar to `CertAboutToExpire` indicating the deprecation status and recommending adoption of the new processor.
+
 **User Action (Optional):**
 If users want to adopt the new processor proactively, they can set the annotation manually, which also removes the warning condition in the Telemetry CR status:
 
 ```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
+apiVersion: telemetry.kyma-project.io/v1beat1
 kind: Telemetry
 metadata:
   name: sample
@@ -130,9 +133,6 @@ spec:
   # ...
 ```
 
-**Status Condition:**
-The Telemetry CR will include a warning condition similar to `CertAboutToExpire` indicating the deprecation status and recommending adoption of the new processor.
-
 #### Phase 2: Deprecation with Backward Compatibility
 
 In this phase, the default behavior changes: Resources with unset annotations now use the `k8sattributes` processor. However, users that need more time for migration can still explicitly choose the legacy `servicenameenrichment` processor.
@@ -141,11 +141,14 @@ In this phase, the default behavior changes: Resources with unset annotations no
 - **All Telemetry resources**: Use `k8sattributes` processor by default
 - **Enhanced warnings**: Telemetry CRs with the legacy processor explicitly set will show stronger deprecation warnings
 
+**Status Condition:**
+If the annotation is set to `servicenameenrichment`, then the Telemetry CR includes a warning condition notifying users that the `servicenameenrichment` processor is deprecated and will be removed in the future.
+
 **User Action (Optional):**
 Users that need more time for migration can temporarily revert to the legacy processor with the following annotation:
 
 ```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
+apiVersion: telemetry.kyma-project.io/v1beat1
 kind: Telemetry
 metadata:
   name: sample
@@ -155,9 +158,6 @@ metadata:
 spec:
   # ...
 ```
-
-**Status Condition:**
-If the annotation is set to `servicenameenrichment`, then the Telemetry CR includes a warning condition notifying users that the `servicenameenrichment` processor is deprecated and will be removed in the future.
 
 #### Phase 3: Complete Migration
 
