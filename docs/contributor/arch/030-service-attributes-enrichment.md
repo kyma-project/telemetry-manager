@@ -96,7 +96,7 @@ On the Telemetry CR, we introduce a custom annotation `kyma-project.io/telemetry
 - **`k8sattributes`**: Explicitly use the standard OTel `k8sattributes` processor
 - **`servicenameenrichment`**: Explicitly use the legacy custom `servicenameenrichment` processor
 
-This mechanism provides a consistent way to manage the transition at the cluster level, affecting all telemetry pipelines uniformly, while preserving backward compatibility for existing deployments.
+This mechanism manages the transition at the cluster level, uniformly affecting all telemetry pipelines and preserving backward compatibility for existing deployments.
 
 #### Phase 1: Introduction with Opt-In (Suggested Feature)
 
