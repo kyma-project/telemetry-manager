@@ -135,7 +135,7 @@ The Telemetry CR will include a warning condition similar to `CertAboutToExpire`
 
 #### Phase 2: Deprecation with Backward Compatibility
 
-In this phase, the default behavior changes: resources with unset annotations now use the `k8sattributes` processor. However, users can still explicitly opt into the legacy `servicenameenrichment` processor if additional migration time is needed.
+In this phase, the default behavior changes: Resources with unset annotations now use the `k8sattributes` processor. However, users that need more time for migration can still explicitly choose the legacy `servicenameenrichment` processor.
 
 **Default Behavior (Annotation Unset):**
 - **All Telemetry resources**: Use `k8sattributes` processor by default
