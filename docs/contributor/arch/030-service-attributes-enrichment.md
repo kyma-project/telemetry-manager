@@ -171,7 +171,7 @@ This phase marks the completion of the migration to standards-compliant OTel att
 
 #### Monitoring Adoption Rates
 
-To track the adoption of the new processor during Phase 1 and Phase 2, a new metric will be exported by the telemetry-manager operator:
+To track the adoption of the new processor during Phase 1 and Phase 2, a new metric could be exported by the telemetry-manager operator:
 
 ```go
 ServiceEnrichmentProcessorUsage = promauto.With(registry).NewGaugeVec(
@@ -184,16 +184,12 @@ ServiceEnrichmentProcessorUsage = promauto.With(registry).NewGaugeVec(
 )
 ```
 
-This metric enables monitoring adoption progress with the following PromQL queries:
+This metric enables monitoring adoption progress. Example queries:
 
 ```promql
-# Count Telemetry resources using k8sattributes processor
+# Count Telemetry resources using a specific processor type
 count(telemetry_service_enrichment_processor_usage{processor_type="k8sattributes"})
-
-# Count Telemetry resources using legacy servicenameenrichment processor
 count(telemetry_service_enrichment_processor_usage{processor_type="servicenameenrichment"})
-
-# Count Telemetry resources with unset annotation (using phase default)
 count(telemetry_service_enrichment_processor_usage{processor_type="unset"})
 ```
 
