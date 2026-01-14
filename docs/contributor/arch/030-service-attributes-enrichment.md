@@ -89,7 +89,7 @@ To minimize disruption to existing users, we roll out the migration from the cus
 
 On the Telemetry CR, we introduce a custom annotation `kyma-project.io/telemetry-service-enrichment` to control which service enrichment processor is applied across all telemetry types and pipelines (traces, metrics, and logs). This annotation accepts the following values:
 
-- **Unset**: The annotation remains unset only for existing Telemetry resources. Newly created Telemetry CRs will have this annotation automatically set to `k8sattributes`. When unset, the default processor behavior depends on the migration phase:
+- **Unset**: For existing Telemetry resources, the annotation is unset. New Telemetry CRs will have this annotation automatically set to `k8sattributes`. When unset, the default processor behavior depends on the migration phase:
   - **Phase 1**: Uses `servicenameenrichment` processor (legacy behavior)
   - **Phase 2**: Uses `k8sattributes` processor (new behavior)
   - **Phase 3**: Annotation support removed; always uses `k8sattributes` processor
