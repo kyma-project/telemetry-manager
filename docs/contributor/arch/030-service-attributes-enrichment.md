@@ -193,7 +193,6 @@ count(telemetry_service_enrichment_processor_usage{processor_type="servicenameen
 count(telemetry_service_enrichment_processor_usage{processor_type="unset"})
 ```
 
-These metrics can be visualized in dashboards to track migration progress and identify clusters that may need additional support during the transition.
 
 ## Decision
 
