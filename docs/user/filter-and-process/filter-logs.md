@@ -7,11 +7,11 @@ Filter logs from the OTLP, application, and Istio input to control which data yo
 > [!TIP]
 > The following settings filter data by source. For advanced, content-based filtering and transformation, use the OpenTelemetry Transformation Language (OTTL). For details, see [Transform and Filter with OTTL](./ottl-transform-and-filter/README.md).
 
-| Source         | Granularity                                                         | Behavior without 'namespaces' Block | Collect from All Namespaces                              | Collect from Specific Namespaces                            |
-|:---------------| :------------------------------------------------------------------ |:------------------------------------|:---------------------------------------------------------|:------------------------------------------------------------|
-| OTLP (default) | Namespace                                                           | **excludes** system namespaces      | Set the **namespaces** attribute to an empty object `{}` |  Use the `include` or `exclude` filter                      |
-| Runtime        | Namespace, Container\*                                              | **excludes** system namespaces      | Set the **namespaces** attribute to an empty object `{}` | Use the `include` or `exclude` filter                       |
-| Istio          | Namespace, Workload (`selector`), Log content (`filter.expression`) | n/a                                 | Apply the Istio `Telemetry` resource mesh-wide           | Apply the Istio `Telemetry` resource to specific namespaces |
+| Source         | Granularity                                                         | Behavior without 'namespaces' Block | Collect from All Namespaces                         | Collect from Specific Namespaces                            |
+|:---------------| :------------------------------------------------------------------ |:------------------------------------|:----------------------------------------------------|:------------------------------------------------------------|
+| OTLP (default) | Namespace                                                           | excludes system namespaces          | Add `namespaces: {}` to the input's configuration   |  Use the `include` or `exclude` filter                      |
+| Runtime        | Namespace, Container\*                                              | excludes system namespaces          | Add `namespaces: {}` to the input's configuration   | Use the `include` or `exclude` filter                       |
+| Istio          | Namespace, Workload (`selector`), Log content (`filter.expression`) | n/a                                 | Apply the Istio `Telemetry` resource mesh-wide      | Apply the Istio `Telemetry` resource to specific namespaces |
 
 \* The **application** input provides an additional **containers** selector that behaves the same way as the **namespaces** selector.
 
@@ -77,23 +77,14 @@ You can control which namespaces to collect logs from using `include` and `exclu
 ## Collect Application Logs from System Namespaces
 
 By default, application logs from `kube-system`, `istio-system`, and
-`kyma-system` are excluded. To override this and collect logs from them, set the **namespaces** attribute to an empty object or the **exclude** attribute to an empty list:
+`kyma-system` are excluded. To override this and collect logs from them, set the **namespaces** attribute to an empty object:
 
 ```yaml
   ...
   input:
     runtime:
       enabled: true
-        namespaces: {}
-```
-
-```yaml
-  ...
-  input:
-    runtime:
-      enabled: true
-        namespaces:
-          exclude: []
+      namespaces: {}
 ```
 
 ## Filter Application Logs by Container
