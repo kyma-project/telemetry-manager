@@ -161,7 +161,7 @@ If the annotation is set to `servicenameenrichment`, then the Telemetry CR inclu
 
 #### Phase 3: Complete Migration
 
-In the final phase, the annotation-based selection mechanism is removed entirely, and all resources use the standard OTel `k8sattributes` processor.
+In the final phase, we remove the annotation-based selection mechanism, and all resources use the standard OTel `k8sattributes` processor.
 
 **Default Behavior:**
 - **All Telemetry resources**: Use OTel's `k8sattributes` processor exclusively
