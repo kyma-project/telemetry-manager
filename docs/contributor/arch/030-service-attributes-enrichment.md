@@ -142,7 +142,7 @@ In this phase, the default behavior changes: Resources with unset annotations no
 - **Enhanced warnings**: Telemetry CRs with the legacy processor explicitly set will show stronger deprecation warnings
 
 **User Action (Optional):**
-Users requiring additional time for migration can temporarily revert to the legacy processor using the annotation:
+Users that need more time for migration can temporarily revert to the legacy processor with the following annotation:
 
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
