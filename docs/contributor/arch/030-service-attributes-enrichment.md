@@ -108,7 +108,7 @@ In this initial phase, we introduce the annotation, automatically set to `k8satt
 - **Warning condition**: Added to the Telemetry CR status for existing resources, recommending migration to the new processor
 
 > [!NOTE]
-> The Kyma lifecycle-manager applies the default Telemetry CR only once during module enablement. Subsequent module upgrades do not overwrite existing Telemetry resources, preserving custom configurations and annotations. An edge case exists when users manually delete the Telemetry CR, causing the lifecycle-manager to reapply the default configuration on the next reconciliation. This behavior will be addressed in future improvements.
+> The Kyma Lifecycle Manager (KLM) applies the default Telemetry CR only once during module enablement. Subsequent module upgrades do not overwrite existing Telemetry resources, preserving custom configurations and annotations. As an edge case, if users manually delete the Telemetry CR, KLM reapplies the default configuration on the next reconciliation. This behavior will be addressed in future improvements.
 
 **User Action (Optional):**
 Users can proactively adopt the new processor by setting the annotation. The warning condition in the Telemetry CR status will be cleared once the annotation is explicitly set:
