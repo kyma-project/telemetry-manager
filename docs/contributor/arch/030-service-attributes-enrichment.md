@@ -27,7 +27,7 @@ As a second challenge, this would be a breaking change for our current users, be
 ### First Challenge: Overwriting Istio Trace Spans
 As we actively enrich Istio data, we should overwrite the Istio enrichment (as a documented feature) to make that enrichment consistent across everything.
 
-In order to correctly identify Istio-generated trace spans, there are mainly two options:
+To identify Istio-generated trace spans, we have the following options:
 1. Adding a custom attribute to the span (from Istio's side)
 2. Using Istio-specific attributes that are already set on the span
 
