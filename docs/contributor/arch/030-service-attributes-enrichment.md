@@ -83,7 +83,7 @@ processors:
 
 ### Second Challenge: Incrementally Introducing This Breaking Change
 
-To minimize disruption to existing users, the migration from the custom `servicenameenrichment` processor to the standard OTel `k8sattributes` processor will be rolled out in three phases. This approach ensures backward compatibility while providing users with sufficient time to adapt to the new behavior.
+To minimize disruption to existing users, we roll out the migration from the custom `servicenameenrichment` processor to the standard OTel `k8sattributes` processor in three phases. This approach ensures backward compatibility and gives users time to adapt to the new behavior.
 
 #### Annotation-Based Processor Selection
 
