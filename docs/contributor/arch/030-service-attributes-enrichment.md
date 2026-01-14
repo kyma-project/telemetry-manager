@@ -111,7 +111,7 @@ In this initial phase, we introduce the annotation, automatically set to `k8satt
 > The Kyma Lifecycle Manager (KLM) applies the default Telemetry CR only once during module enablement. Subsequent module upgrades do not overwrite existing Telemetry resources, preserving custom configurations and annotations. As an edge case, if users manually delete the Telemetry CR, KLM reapplies the default configuration on the next reconciliation. This behavior will be addressed in future improvements.
 
 **User Action (Optional):**
-Users can proactively adopt the new processor by setting the annotation. The warning condition in the Telemetry CR status will be cleared once the annotation is explicitly set:
+If users want to adopt the new processor proactively, they can set the annotation manually, which also removes the warning condition in the Telemetry CR status:
 
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
