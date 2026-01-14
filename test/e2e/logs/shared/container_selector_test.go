@@ -96,14 +96,14 @@ func TestContainerSelector_FluentBit(t *testing.T) {
 
 	includePipeline := testutils.NewLogPipelineBuilder().
 		WithName(includePipelineName).
-		WithApplicationInput(true).
+		WithRuntimeInput(true).
 		WithIncludeContainers(container1).
 		WithHTTPOutput(testutils.HTTPHost(backend1.Host()), testutils.HTTPPort(backend1.Port())).
 		Build()
 
 	excludePipeline := testutils.NewLogPipelineBuilder().
 		WithName(excludePipelineName).
-		WithApplicationInput(true).
+		WithRuntimeInput(true).
 		WithExcludeContainers(container1).
 		WithHTTPOutput(testutils.HTTPHost(backend2.Host()), testutils.HTTPPort(backend2.Port())).
 		Build()

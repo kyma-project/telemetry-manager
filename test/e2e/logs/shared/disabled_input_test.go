@@ -35,7 +35,7 @@ func TestDisabledInput_OTel(t *testing.T) {
 
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
-		WithApplicationInput(false).
+		WithRuntimeInput(false).
 		WithOTLPInput(false).
 		WithOTLPOutput(
 			testutils.OTLPEndpoint(backend.EndpointHTTP()),
@@ -57,7 +57,7 @@ func TestDisabledInput_OTel(t *testing.T) {
 	assert.DeploymentReady(t, kitkyma.LogGatewayName)
 	assert.OTelLogPipelineHealthy(t, pipelineName)
 
-	// If Application input is disabled, THEN the log agent must not be deployed
+	// If Runtime input is disabled, THEN the log agent must not be deployed
 	Eventually(func(g Gomega) {
 		var daemonSet appsv1.DaemonSet
 
@@ -84,7 +84,7 @@ func TestDisabledInput_FluentBit(t *testing.T) {
 
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
-		WithApplicationInput(false).
+		WithRuntimeInput(false).
 		WithHTTPOutput(
 			testutils.HTTPHost(endpointAddress),
 			testutils.HTTPPort(endpointPort),
