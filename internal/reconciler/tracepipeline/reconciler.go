@@ -226,7 +226,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 		return fmt.Errorf("failed to fetch deployable trace pipelines: %w", err)
 	}
 
-	r.trackOTTLFeaturesUsage(reconcilablePipelines)
+	r.trackPipelineInfoMetric(ctx, reconcilablePipelines)
 
 	if len(reconcilablePipelines) == 0 {
 		logf.FromContext(ctx).V(1).Info("cleaning up trace pipeline resources: all trace pipelines are non-reconcilable")
@@ -397,15 +397,38 @@ func (r *Reconciler) getK8sClusterUID(ctx context.Context) (string, error) {
 	return string(kubeSystem.UID), nil
 }
 
-func (r *Reconciler) trackOTTLFeaturesUsage(pipelines []telemetryv1beta1.TracePipeline) {
+func (r *Reconciler) trackPipelineInfoMetric(ctx context.Context, pipelines []telemetryv1beta1.TracePipeline) {
 	for i := range pipelines {
+		pipeline := &pipelines[i]
+
+		var features []string
+
 		// General features
-		if sharedtypesutils.IsTransformDefined(pipelines[i].Spec.Transforms) {
-			metrics.RecordTracePipelineFeatureUsage(metrics.FeatureTransform, pipelines[i].Name)
+		if sharedtypesutils.IsTransformDefined(pipeline.Spec.Transforms) {
+			features = append(features, metrics.FeatureTransform)
 		}
 
-		if sharedtypesutils.IsFilterDefined(pipelines[i].Spec.Filters) {
-			metrics.RecordTracePipelineFeatureUsage(metrics.FeatureFilter, pipelines[i].Name)
+		if sharedtypesutils.IsFilterDefined(pipeline.Spec.Filters) {
+			features = append(features, metrics.FeatureFilter)
 		}
+
+		// Get endpoint
+		endpoint := r.getEndpoint(ctx, pipeline)
+
+		// Record info metric
+		metrics.RecordTracePipelineInfo(pipeline.Name, endpoint, features...)
 	}
+}
+
+func (r *Reconciler) getEndpoint(ctx context.Context, pipeline *telemetryv1beta1.TracePipeline) string {
+	if pipeline.Spec.Output.OTLP == nil {
+		return ""
+	}
+
+	endpointBytes, err := sharedtypesutils.ResolveValue(ctx, r.Client, pipeline.Spec.Output.OTLP.Endpoint)
+	if err != nil {
+		return ""
+	}
+
+	return string(endpointBytes)
 }
