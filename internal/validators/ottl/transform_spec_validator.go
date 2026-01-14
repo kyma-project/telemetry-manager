@@ -68,35 +68,35 @@ func newTransformParserCollectionOpts(signalType SignalType) []genericParserColl
 	case SignalTypeLog:
 		opts = []genericParserCollectionOption{
 			withLogParser(
-				ottl.CreateFactoryMap(transformprocessor.DefaultLogFunctions()...),
-				ottl.WithStatementConverter(nopStatementConverter[ottllog.TransformContext]),
-				ottl.WithConditionConverter(nopConditionConverter[ottllog.TransformContext]),
+				ottl.CreateFactoryMap(transformprocessor.DefaultLogFunctionsNew()...),
+				ottl.WithStatementConverter(nopStatementConverter[*ottllog.TransformContext]),
+				ottl.WithConditionConverter(nopConditionConverter[*ottllog.TransformContext]),
 			),
 		}
 	case SignalTypeMetric:
 		opts = []genericParserCollectionOption{
 			withMetricParser(
-				ottl.CreateFactoryMap(transformprocessor.DefaultMetricFunctions()...),
-				ottl.WithStatementConverter(nopStatementConverter[ottlmetric.TransformContext]),
-				ottl.WithConditionConverter(nopConditionConverter[ottlmetric.TransformContext]),
+				ottl.CreateFactoryMap(transformprocessor.DefaultMetricFunctionsNew()...),
+				ottl.WithStatementConverter(nopStatementConverter[*ottlmetric.TransformContext]),
+				ottl.WithConditionConverter(nopConditionConverter[*ottlmetric.TransformContext]),
 			),
 			withDataPointParser(
-				ottl.CreateFactoryMap(transformprocessor.DefaultDataPointFunctions()...),
-				ottl.WithStatementConverter(nopStatementConverter[ottldatapoint.TransformContext]),
-				ottl.WithConditionConverter(nopConditionConverter[ottldatapoint.TransformContext]),
+				ottl.CreateFactoryMap(transformprocessor.DefaultDataPointFunctionsNew()...),
+				ottl.WithStatementConverter(nopStatementConverter[*ottldatapoint.TransformContext]),
+				ottl.WithConditionConverter(nopConditionConverter[*ottldatapoint.TransformContext]),
 			),
 		}
 	case SignalTypeTrace:
 		opts = []genericParserCollectionOption{
 			withSpanParser(
-				ottl.CreateFactoryMap(transformprocessor.DefaultSpanFunctions()...),
-				ottl.WithStatementConverter(nopStatementConverter[ottlspan.TransformContext]),
-				ottl.WithConditionConverter(nopConditionConverter[ottlspan.TransformContext]),
+				ottl.CreateFactoryMap(transformprocessor.DefaultSpanFunctionsNew()...),
+				ottl.WithStatementConverter(nopStatementConverter[*ottlspan.TransformContext]),
+				ottl.WithConditionConverter(nopConditionConverter[*ottlspan.TransformContext]),
 			),
 			withSpanEventParser(
-				ottl.CreateFactoryMap(transformprocessor.DefaultSpanEventFunctions()...),
-				ottl.WithStatementConverter(nopStatementConverter[ottlspanevent.TransformContext]),
-				ottl.WithConditionConverter(nopConditionConverter[ottlspanevent.TransformContext]),
+				ottl.CreateFactoryMap(transformprocessor.DefaultSpanEventFunctionsNew()...),
+				ottl.WithStatementConverter(nopStatementConverter[*ottlspanevent.TransformContext]),
+				ottl.WithConditionConverter(nopConditionConverter[*ottlspanevent.TransformContext]),
 			),
 		}
 	}
@@ -105,15 +105,15 @@ func newTransformParserCollectionOpts(signalType SignalType) []genericParserColl
 	opts = append(opts,
 		withResourceParser(
 			// Include all standard OTTL functions (editors and converters) for resource context
-			ottlfuncs.StandardFuncs[ottlresource.TransformContext](),
-			ottl.WithStatementConverter(nopStatementConverter[ottlresource.TransformContext]),
-			ottl.WithConditionConverter(nopConditionConverter[ottlresource.TransformContext]),
+			ottlfuncs.StandardFuncs[*ottlresource.TransformContext](),
+			ottl.WithStatementConverter(nopStatementConverter[*ottlresource.TransformContext]),
+			ottl.WithConditionConverter(nopConditionConverter[*ottlresource.TransformContext]),
 		),
 		withScopeParser(
 			// Include all standard OTTL functions (editors and converters) for scope context
-			ottlfuncs.StandardFuncs[ottlscope.TransformContext](),
-			ottl.WithStatementConverter(nopStatementConverter[ottlscope.TransformContext]),
-			ottl.WithConditionConverter(nopConditionConverter[ottlscope.TransformContext]),
+			ottlfuncs.StandardFuncs[*ottlscope.TransformContext](),
+			ottl.WithStatementConverter(nopStatementConverter[*ottlscope.TransformContext]),
+			ottl.WithConditionConverter(nopConditionConverter[*ottlscope.TransformContext]),
 		),
 	)
 
