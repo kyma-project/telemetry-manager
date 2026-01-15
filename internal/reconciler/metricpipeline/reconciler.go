@@ -207,16 +207,17 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, err
 	}
 
-	err = r.doReconcile(ctx, &metricPipeline)
-	if statusErr := r.updateStatus(ctx, metricPipeline.Name); statusErr != nil {
-		if err != nil {
-			err = fmt.Errorf("failed while updating status: %w: %w", statusErr, err)
-		} else {
-			err = fmt.Errorf("failed to update status: %w", statusErr)
-		}
+	var allErrors error = nil
+
+	if err := r.doReconcile(ctx, &metricPipeline); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to reconcile: %w", err))
 	}
 
-	return ctrl.Result{}, err
+	if err := r.updateStatus(ctx, metricPipeline.Name); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to update status: %w", err))
+	}
+
+	return ctrl.Result{}, allErrors
 }
 
 func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1.MetricPipeline) error {

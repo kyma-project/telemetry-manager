@@ -166,16 +166,17 @@ func New(opts ...Option) *Reconciler {
 func (r *Reconciler) Reconcile(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) error {
 	logf.FromContext(ctx).V(1).Info("Reconciling LogPipeline")
 
-	err := r.doReconcile(ctx, pipeline)
-	if statusErr := r.updateStatus(ctx, pipeline.Name); statusErr != nil {
-		if err != nil {
-			err = fmt.Errorf("failed while updating status: %w: %w", statusErr, err)
-		} else {
-			err = fmt.Errorf("failed to update status: %w", statusErr)
-		}
+	var allErrors error = nil
+
+	if err := r.doReconcile(ctx, pipeline); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to reconcile: %w", err))
 	}
 
-	return err
+	if err := r.updateStatus(ctx, pipeline.Name); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to update status: %w", err))
+	}
+
+	return allErrors
 }
 
 func (r *Reconciler) SupportedOutput() logpipelineutils.Mode {
