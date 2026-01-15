@@ -1,5 +1,9 @@
 export default [
-  { text: 'Telemetry Pipeline API', link: './pipelines' },
+  {
+      text: 'Telemetry Pipeline API', link: './pipelines', collapsed: true, items: [
+          {text: 'Sync Pipeline Manifests with the New v1beta1 API', link: './migration-guide.md'},
+      ]
+  },
   { text: 'Set Up the OTLP Input', link: './otlp-input' },
   {
     text: 'Collecting Logs', link: './collecting-logs/README', collapsed: true, items: [
@@ -38,7 +42,6 @@ export default [
     ]
   },
   { text: 'Monitor Pipeline Health', link: './monitor-pipeline-health' },
-  {text: 'Migrate Your Pipelines from v1alpha1 to v1beta1', link: './migration-guide.md'},
   { text: 'Troubleshooting the Telemetry Module', link: './troubleshooting' },
   {
     text: 'Architecture',
