@@ -512,7 +512,12 @@ func TestFlowHealthCondition(t *testing.T) {
 			reconciler := newTestReconciler(testClient, WithFlowHealthProber(flowHealthProber))
 
 			result := reconcileAndGet(t, testClient, reconciler, pipeline.Name)
-			require.NoError(t, result.err)
+
+			if tt.probeErr != nil {
+				require.Error(t, result.err)
+			} else {
+				require.NoError(t, result.err)
+			}
 
 			cond := meta.FindStatusCondition(result.pipeline.Status.Conditions, conditions.TypeFlowHealthy)
 			require.Equal(t, tt.expectedStatus, cond.Status)
