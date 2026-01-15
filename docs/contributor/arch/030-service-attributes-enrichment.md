@@ -35,7 +35,7 @@ To identify Istio-generated trace spans, we have the following options:
 
 Although this approach is more consistent with our current way of handling Istio access logs, Istio currently offers no configuration options to set a custom attribute for OTel tracing.
 
-There is the option of enabling the [environment resource detector in Istio's mesh config](https://istio.io/latest/docs/tasks/observability/distributed-tracing/opentelemetry/#exporting-via-grpc), and thus setting custom attributes based on the `OTEL_RESOURCE_ATTRIBUTES` environment variable, but this requires access to the user's application deployment, which is not feasible in this case.
+Istio provides a way to set custom attributes with the `OTEL_RESOURCE_ATTRIBUTES` environment variable (see [Istio: Exporting via gRPC](https://istio.io/latest/docs/tasks/observability/distributed-tracing/opentelemetry/#exporting-via-grpc)), but this requires modifying the user's application deployment. This approach is not feasible because it would require manual configuration from the user for each application.
 
 #### Option 2: Using Istio-Specific Attributes
 
