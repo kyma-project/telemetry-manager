@@ -123,6 +123,7 @@ func GetLogPipelineRefs(lp *telemetryv1beta1.LogPipeline) []telemetryv1beta1.Sec
 	}
 
 	refs = append(refs, getSecretRefsInHTTPOutput(lp.Spec.Output.FluentBitHTTP)...)
+	refs = append(refs, getSecretRefsInOTLPOutput(lp.Spec.Output.OTLP)...)
 
 	return refs
 }
