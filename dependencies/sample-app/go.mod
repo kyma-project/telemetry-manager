@@ -1,6 +1,6 @@
 module github.com/kyma-project/telemetry-manager/dependencies/sample-app
 
-go 1.25.5
+go 1.25.6
 
 require (
 	github.com/prometheus/client_golang v1.23.2
@@ -38,7 +38,7 @@ require (
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp v1.38.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.38.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.38.0
-	go.opentelemetry.io/otel/trace v1.39.0 // indirect
+	go.opentelemetry.io/otel/trace v1.39.0
 	go.opentelemetry.io/proto/otlp v1.8.0 // indirect
 	golang.org/x/net v0.46.0 // indirect
 	golang.org/x/sys v0.39.0 // indirect
