@@ -20,7 +20,7 @@ A first challenge is that the Istio trace spans are enriched with the service na
 3. `app` label
 4. `"istio-proxy"`
 
-As a second challenge, this would be a breaking change for our current users, because currently enriched telemetry data does not follow the same OTel convention (fallback logic) for setting the service attributes.
+As a second challenge, this is a breaking change for our users, because the new OTel convention for setting service attributes differs from our current implementation.
 
 ## Proposal
 
