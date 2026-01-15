@@ -72,7 +72,7 @@ isIstioProxy := attrs.component == "proxy"
 ```
 > Source: https://github.com/TeodorSAP/opentelemetry-collector-components/blob/test/empty-service-name/processor/istionoisefilter/internal/rules/span.go#L12
 
-Once identified, these trace spans can be easily dropped, by using an OTel transform processor before the `k8sattributes` processor, which will then enrich them properly. See example below:
+Once identified, we can use an OTel transform processor to drop the **service.name** attribute from these spans. This processor runs before the `k8sattributes` processor, which then correctly enriches the spans. See example below:
 ```yaml
 # ...
 processors:
