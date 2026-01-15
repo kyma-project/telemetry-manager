@@ -131,24 +131,30 @@ func GetLogPipelineRefs(lp *telemetryv1beta1.LogPipeline) []telemetryv1beta1.Sec
 func getSecretRefsInHTTPOutput(httpOutput *telemetryv1beta1.FluentBitHTTPOutput) []telemetryv1beta1.SecretKeyRef {
 	var refs []telemetryv1beta1.SecretKeyRef
 
-	if httpOutput != nil {
-		refs = appendIfSecretRef(refs, &httpOutput.Host)
-		refs = appendIfSecretRef(refs, httpOutput.User)
-		refs = appendIfSecretRef(refs, httpOutput.Password)
-
-		tlsConfig := httpOutput.TLS
-		refs = appendIfSecretRef(refs, tlsConfig.CA)
-
-		refs = appendIfSecretRef(refs, tlsConfig.Cert)
-
-		refs = appendIfSecretRef(refs, tlsConfig.Key)
+	if httpOutput == nil {
+		return refs
 	}
+
+	refs = appendIfSecretRef(refs, &httpOutput.Host)
+	refs = appendIfSecretRef(refs, httpOutput.User)
+	refs = appendIfSecretRef(refs, httpOutput.Password)
+
+	tlsConfig := httpOutput.TLS
+	refs = appendIfSecretRef(refs, tlsConfig.CA)
+
+	refs = appendIfSecretRef(refs, tlsConfig.Cert)
+
+	refs = appendIfSecretRef(refs, tlsConfig.Key)
 
 	return refs
 }
 
 func getSecretRefsInOTLPOutput(otlpOut *telemetryv1beta1.OTLPOutput) []telemetryv1beta1.SecretKeyRef {
 	var refs []telemetryv1beta1.SecretKeyRef
+
+	if otlpOut == nil {
+		return refs
+	}
 
 	refs = appendIfSecretRef(refs, &otlpOut.Endpoint)
 
