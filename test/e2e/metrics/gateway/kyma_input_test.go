@@ -46,7 +46,7 @@ func TestKymaInput(t *testing.T) {
 	// one pipeline with Kyma input and additional namespace included. Here we expect metrics from generatorNs
 	pipelineWithKymaAndOtlp := testutils.NewMetricPipelineBuilder().
 		WithName(pipelineNameKymaAndOtlp).
-		WithOTLPInput(true, testutils.IncludeNamespaces(generatorNs)).
+		WithOTLPInput(true, testutils.IncludeNamespaces(generatorNs, kitkyma.SystemNamespaceName)).
 		WithOTLPOutput(testutils.OTLPEndpoint(backendKymaAndOtlp.EndpointHTTP())).
 		Build()
 
