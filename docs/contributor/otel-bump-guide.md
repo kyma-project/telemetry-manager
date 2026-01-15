@@ -13,6 +13,8 @@ As a maintainer or contributor, follow these steps to update the `opentelemetry-
     - [4. Check Internal Metrics](#4-check-internal-metrics)
     - [5. Identify and Plan for Breaking Changes](#5-identify-and-plan-for-breaking-changes)
   - [Implementation](#implementation)
+    - [opentelemetry-collector-components](#opentelemetry-collector-components)
+    - [telemetry-manager](#telemetry-manager)
   - [Post-Bump Verification](#post-bump-verification)
 
 ## Preparation
@@ -89,7 +91,28 @@ Breaking changes are typically introduced behind feature gates, so you must chec
 
 ## Implementation
 
-After you complete your review and create a plan to address any required changes, update the dependency versions.
+After you complete your review and create a plan to address any required changes, update the dependency versions in both `opentelemetry-collector-components` and `telemetry-manager`.
+
+### opentelemetry-collector-components
+
+1. Update all the `go.opentelemetry.io/collector` and the `github.com/open-telemetry/opentelemetry-collector-contrib` dependencies versions in the following files:
+   - `otel-collector/builder-config.yaml`
+   - `otel-collector/envs`
+   - `cmd/otelkymacol/builder-config.yaml`
+2. Run `make generate`
+3. Run `make gotidy`
+4. Merge PR and reference it in the `telemetry-manager` bump PR.
+
+### telemetry-manager
+
+1. Update all the `go.opentelemetry.io/collector` and the `github.com/open-telemetry/opentelemetry-collector-contrib` dependencies versions in the following files:
+   - `.env`
+   - `go.mod`
+   - `test/testkit/images.go`
+   - `sec-scanners-config.yaml`
+   - `helm/values.yaml`
+2. Run `go mod tidy`
+3. Run `make generate`
 
 ## Post-Bump Verification
 
