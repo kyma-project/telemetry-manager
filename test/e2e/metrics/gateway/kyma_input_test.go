@@ -23,7 +23,7 @@ import (
 )
 
 func TestKymaInput(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelMetricGatewaySetA)
+	suite.RegisterTestCase(t, suite.LabelMetricsMisc)
 
 	var (
 		uniquePrefix            = unique.Prefix()
@@ -46,7 +46,7 @@ func TestKymaInput(t *testing.T) {
 	// one pipeline with Kyma input and additional namespace included. Here we expect metrics from generatorNs
 	pipelineWithKymaAndOtlp := testutils.NewMetricPipelineBuilder().
 		WithName(pipelineNameKymaAndOtlp).
-		WithOTLPInput(true, testutils.IncludeNamespaces(generatorNs, kitkyma.SystemNamespaceName)).
+		WithOTLPInput(true, testutils.IncludeNamespaces(generatorNs)).
 		WithOTLPOutput(testutils.OTLPEndpoint(backendKymaAndOtlp.EndpointHTTP())).
 		Build()
 
@@ -78,7 +78,7 @@ func TestKymaInput(t *testing.T) {
 	assert.MetricPipelineHealthy(t, pipelineNameKymaAndOtlp)
 
 	// Verify that metrics are delivered to both backends
-	//assert.MetricsFromNamespaceDelivered(t, backendKymaAndOtlp, kitkyma.SystemNamespaceName, []string{"kyma.resource.status.state"})
+	assert.MetricsFromNamespaceDelivered(t, backendKymaAndOtlp, kitkyma.SystemNamespaceName, []string{"kyma.resource.status.state"})
 	assert.MetricsFromNamespaceDelivered(t, backendKymaOnly, kitkyma.SystemNamespaceName, []string{"kyma.resource.status.state"})
 
 	// Verify that namespace specific metrics are only delivered to the kyma-and-otlp backend
