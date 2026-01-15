@@ -47,6 +47,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) erro
 
 	r.setAgentHealthyCondition(ctx, &pipeline)
 	r.setFluentBitConfigGeneratedCondition(ctx, &pipeline)
+
 	if err := r.setFlowHealthCondition(ctx, &pipeline); err != nil {
 		allErrors = errors.Join(allErrors, err)
 	}

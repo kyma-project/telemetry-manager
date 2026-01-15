@@ -43,6 +43,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) erro
 
 	r.setGatewayHealthyCondition(ctx, &pipeline)
 	r.setGatewayConfigGeneratedCondition(ctx, &pipeline)
+
 	if err := r.setFlowHealthCondition(ctx, &pipeline); err != nil {
 		allErrors = errors.Join(allErrors, err)
 	}
