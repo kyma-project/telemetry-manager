@@ -91,7 +91,7 @@ Breaking changes are typically introduced behind feature gates, so you must chec
 
 ## Implementation
 
-After you complete your review and create a plan to address any required changes, update the dependency versions in both `opentelemetry-collector-components` and `telemetry-manager`.
+After you complete your review and create a plan to address any required changes, update the dependencies versions in both `opentelemetry-collector-components` and `telemetry-manager`.
 
 ### opentelemetry-collector-components
 
@@ -99,8 +99,8 @@ After you complete your review and create a plan to address any required changes
    - `otel-collector/builder-config.yaml`
    - `otel-collector/envs`
    - `cmd/otelkymacol/builder-config.yaml`
-2. Run `make generate`
-3. Run `make gotidy`
+2. Run `make gotidy`
+3. Run `make generate`
 4. Merge PR and reference it in the `telemetry-manager` bump PR.
 
 ### telemetry-manager
