@@ -5,8 +5,9 @@ FROM --platform=$BUILDPLATFORM node:alpine${ALPINE_VERSION} AS builder
 ARG TARGETOS
 ARG TARGETARCH
 ARG PROMETHEUS_VERSION
+ARG GOLANG_VERSION
 
-RUN apk add --no-cache git make musl-dev go curl bash
+RUN apk add --no-cache git make musl-dev "go~=${GOLANG_VERSION}" curl bash
 RUN apk --no-cache upgrade
 
 # Configure Go
