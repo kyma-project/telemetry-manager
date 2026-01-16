@@ -72,7 +72,7 @@ func TestKymaInput(t *testing.T) {
 			kitk8sobjects.NewConfigMap(kitkyma.MetricGatewayBaseName, kitkyma.SystemNamespaceName).K8sObject(),
 		}
 		Expect(kitk8s.ObjectsToFile(t, objects...)).To(Succeed())
-	}q
+	}
 
 	assert.MetricPipelineHealthy(t, pipelineNameKymaOnly)
 	assert.MetricPipelineHealthy(t, pipelineNameKymaAndOtlp)
