@@ -121,6 +121,6 @@ After you complete your review and create a plan to address any required changes
 
 After you updated the dependencies, perform the following verification checks:
 
-- [ ] All tests pass
-- [ ] Run load test and document performance in [benchmark documentation](./benchmarks/results)
+- [ ] Ensure all tests pass
+- [ ] Run load test by manually triggering the "PR Load Test" GitHub workflow and document performance results in [benchmark documentation](./benchmarks/results)
 - [ ] Filter processor restrictions working correctly
