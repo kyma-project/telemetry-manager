@@ -113,6 +113,7 @@ After you complete your review and create a plan to address any required changes
    - `helm/values.yaml`
 2. Run `go mod tidy`
 3. Run `make generate`
+4. Create and merge a bump PR referencing the `opentelemetry-collector-components` bump PR.
 
 ## Post-Bump Verification
 
