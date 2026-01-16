@@ -1,5 +1,5 @@
 # Build the app binary
-FROM --platform=$BUILDPLATFORM golang:1.25.5-alpine3.23 AS builder
+FROM --platform=$BUILDPLATFORM golang:1.25.6-alpine3.23 AS builder
 
 ARG TARGETOS
 ARG TARGETARCH
