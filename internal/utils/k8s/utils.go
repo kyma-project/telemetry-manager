@@ -18,6 +18,8 @@ import (
 
 func CreateOrUpdateClusterRoleBinding(ctx context.Context, c client.Client, desired *rbacv1.ClusterRoleBinding) error {
 	desired.SetGroupVersionKind(rbacv1.SchemeGroupVersion.WithKind("ClusterRoleBinding"))
+	desired.ManagedFields = nil
+
 	return c.Patch(ctx, desired, client.Apply, &client.PatchOptions{
 		FieldManager: "telemetry-manager",
 		Force:        pointer.Bool(true),
@@ -26,6 +28,7 @@ func CreateOrUpdateClusterRoleBinding(ctx context.Context, c client.Client, desi
 
 func CreateOrUpdateClusterRole(ctx context.Context, c client.Client, desired *rbacv1.ClusterRole) error {
 	desired.SetGroupVersionKind(rbacv1.SchemeGroupVersion.WithKind("ClusterRole"))
+	desired.ManagedFields = nil
 
 	return c.Patch(ctx, desired, client.Apply, &client.PatchOptions{
 		FieldManager: "telemetry-manager",
@@ -35,6 +38,7 @@ func CreateOrUpdateClusterRole(ctx context.Context, c client.Client, desired *rb
 
 func CreateOrUpdateRoleBinding(ctx context.Context, c client.Client, desired *rbacv1.RoleBinding) error {
 	desired.SetGroupVersionKind(rbacv1.SchemeGroupVersion.WithKind("RoleBinding"))
+	desired.ManagedFields = nil
 
 	return c.Patch(ctx, desired, client.Apply, &client.PatchOptions{
 		FieldManager: "telemetry-manager",
@@ -44,6 +48,7 @@ func CreateOrUpdateRoleBinding(ctx context.Context, c client.Client, desired *rb
 
 func CreateOrUpdateRole(ctx context.Context, c client.Client, desired *rbacv1.Role) error {
 	desired.SetGroupVersionKind(rbacv1.SchemeGroupVersion.WithKind("Role"))
+	desired.ManagedFields = nil
 
 	return c.Patch(ctx, desired, client.Apply, &client.PatchOptions{
 		FieldManager: "telemetry-manager",
@@ -53,6 +58,7 @@ func CreateOrUpdateRole(ctx context.Context, c client.Client, desired *rbacv1.Ro
 
 func CreateOrUpdateServiceAccount(ctx context.Context, c client.Client, desired *corev1.ServiceAccount) error {
 	desired.SetGroupVersionKind(corev1.SchemeGroupVersion.WithKind("ServiceAccount"))
+	desired.ManagedFields = nil
 
 	return c.Patch(ctx, desired, client.Apply, &client.PatchOptions{
 		FieldManager: "telemetry-manager",
@@ -62,6 +68,7 @@ func CreateOrUpdateServiceAccount(ctx context.Context, c client.Client, desired 
 
 func CreateOrUpdateConfigMap(ctx context.Context, c client.Client, desired *corev1.ConfigMap) error {
 	desired.SetGroupVersionKind(corev1.SchemeGroupVersion.WithKind("ConfigMap"))
+	desired.ManagedFields = nil
 
 	return c.Patch(ctx, desired, client.Apply, &client.PatchOptions{
 		FieldManager: "telemetry-manager",
@@ -71,6 +78,7 @@ func CreateOrUpdateConfigMap(ctx context.Context, c client.Client, desired *core
 
 func CreateOrUpdateNetworkPolicy(ctx context.Context, c client.Client, desired *networkingv1.NetworkPolicy) error {
 	desired.SetGroupVersionKind(networkingv1.SchemeGroupVersion.WithKind("NetworkPolicy"))
+	desired.ManagedFields = nil
 
 	return c.Patch(ctx, desired, client.Apply, &client.PatchOptions{
 		FieldManager: "telemetry-manager",
@@ -80,6 +88,7 @@ func CreateOrUpdateNetworkPolicy(ctx context.Context, c client.Client, desired *
 
 func CreateOrUpdateSecret(ctx context.Context, c client.Client, desired *corev1.Secret) error {
 	desired.SetGroupVersionKind(corev1.SchemeGroupVersion.WithKind("Secret"))
+	desired.ManagedFields = nil
 
 	return c.Patch(ctx, desired, client.Apply, &client.PatchOptions{
 		FieldManager: "telemetry-manager",
@@ -89,6 +98,7 @@ func CreateOrUpdateSecret(ctx context.Context, c client.Client, desired *corev1.
 
 func CreateOrUpdateDeployment(ctx context.Context, c client.Client, desired *appsv1.Deployment) error {
 	desired.SetGroupVersionKind(appsv1.SchemeGroupVersion.WithKind("Deployment"))
+	desired.ManagedFields = nil
 
 	return c.Patch(ctx, desired, client.Apply, &client.PatchOptions{
 		FieldManager: "telemetry-manager",
@@ -98,6 +108,7 @@ func CreateOrUpdateDeployment(ctx context.Context, c client.Client, desired *app
 
 func CreateOrUpdateDaemonSet(ctx context.Context, c client.Client, desired *appsv1.DaemonSet) error {
 	desired.SetGroupVersionKind(appsv1.SchemeGroupVersion.WithKind("DaemonSet"))
+	desired.ManagedFields = nil
 
 	return c.Patch(ctx, desired, client.Apply, &client.PatchOptions{
 		FieldManager: "telemetry-manager",
@@ -107,6 +118,7 @@ func CreateOrUpdateDaemonSet(ctx context.Context, c client.Client, desired *apps
 
 func CreateOrUpdateService(ctx context.Context, c client.Client, desired *corev1.Service) error {
 	desired.SetGroupVersionKind(corev1.SchemeGroupVersion.WithKind("Service"))
+	desired.ManagedFields = nil
 
 	return c.Patch(ctx, desired, client.Apply, &client.PatchOptions{
 		FieldManager: "telemetry-manager",
@@ -116,6 +128,7 @@ func CreateOrUpdateService(ctx context.Context, c client.Client, desired *corev1
 
 func CreateOrUpdatePeerAuthentication(ctx context.Context, c client.Client, desired *istiosecurityclientv1.PeerAuthentication) error {
 	desired.SetGroupVersionKind(istiosecurityclientv1.SchemeGroupVersion.WithKind("PeerAuthentication"))
+	desired.ManagedFields = nil
 
 	return c.Patch(ctx, desired, client.Apply, &client.PatchOptions{
 		FieldManager: "telemetry-manager",
@@ -125,6 +138,7 @@ func CreateOrUpdatePeerAuthentication(ctx context.Context, c client.Client, desi
 
 func CreateOrUpdateValidatingWebhookConfiguration(ctx context.Context, c client.Client, desired *admissionregistrationv1.ValidatingWebhookConfiguration) error {
 	desired.SetGroupVersionKind(admissionregistrationv1.SchemeGroupVersion.WithKind("ValidatingWebhookConfiguration"))
+	desired.ManagedFields = nil
 
 	return c.Patch(ctx, desired, client.Apply, &client.PatchOptions{
 		FieldManager: "telemetry-manager",
