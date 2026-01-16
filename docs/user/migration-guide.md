@@ -6,11 +6,6 @@ The Telemetry module now uses the stable v1beta1 API for pipeline resources. In 
 
 If your pipelines are already running in the cluster and you don't store their manifests, you don't have to take any action. The Telemetry module automatically migrates existing your pipeline resources to v1beta1.
 
-If you manage your Telemetry pipeline resources declaratively, you must manually adjust them; for example, in the following cases:
-- Use GitOps, CI/CD, or tools like Argo CD to deploy your pipelines
-- Store pipeline manifests in a Git repository that you re-apply
-- Plan to create new pipelines and want to use the v1beta1 API
-
 > **Tip:** If you're unsure what your existing pipeline looks like in `v1beta1`, you can fetch the converted resource directly from your cluster:
 > the converted resource directly from your cluster:
 > ```bash
@@ -18,6 +13,12 @@ If you manage your Telemetry pipeline resources declaratively, you must manually
 > kubectl get metricpipeline <name> -o yaml
 > kubectl get tracepipeline <name> -o yaml
 > ```
+
+
+If you manage your Telemetry pipeline resources declaratively, you must manually adjust them; for example, in the following cases:
+- Use GitOps, CI/CD, or tools like Argo CD to deploy your pipelines
+- Store pipeline manifests in a Git repository that you re-apply
+- Plan to create new pipelines and want to use the v1beta1 API
 
 ## Context
 
