@@ -60,7 +60,7 @@ func TestKymaInput(t *testing.T) {
 	resources = append(resources, backendKymaOnly.K8sObjects()...)
 	resources = append(resources, backendKymaAndOtlp.K8sObjects()...)
 
-	Expect(kitk8s.CreateObjectsWithoutAutomaticCleanup(t, resources...)).To(Succeed())
+	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.BackendReachable(t, backendKymaOnly)
 	assert.BackendReachable(t, backendKymaAndOtlp)
