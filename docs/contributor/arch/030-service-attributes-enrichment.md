@@ -12,7 +12,7 @@ With [PR 39335](https://github.com/open-telemetry/opentelemetry-collector-contri
 
 For the conventions and enrichment fallback chains, see [OpenTelemetry: Service attributes](https://opentelemetry.io/docs/specs/semconv/non-normative/k8s-attributes/#service-attributes).
 
-Currently, we use our custom `servicenameenrichment` processor for this enrichment. We should use the standard `k8sattributes` processor to eliminate our custom logic.
+Currently, we use our custom `servicenameenrichment` processor for this enrichment. We should use the standard `k8sattributes` processor to act according to the official OTel conventions and eliminate our custom logic in the process.
 
 A first challenge is that Istio enriches trace spans with the **service.name** attribute using its own custom logic. In our case, this logic is configured in the [MeshConfig of the Kyma Istio module](https://github.com/kyma-project/istio/blob/6295e154b3992cf42c44d40eed3c2ec488f990bf/internal/istiooperator/istio-operator.yaml#L237), setting the `TracingServiceName` field to `CANONICAL_NAME_ONLY` (https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/#ProxyConfig-TracingServiceName). This, in turn, enriches the `service.name` attribute of Istio-generated trace spans with the canonical name for a workload, which uses the following fallback chain for enrichment:
 1. `service.istio.io/canonical-name` label (https://github.com/istio/istio/blob/master/pkg/model/proxy.go#L492)
@@ -25,7 +25,7 @@ As a second challenge, this is a breaking change for our users, because the new 
 ## Proposal
 
 ### First Challenge: Overwriting Istio Trace Spans
-Since Telemetry Manager actively enriches Istio data, we should overwrite the default Istio service attributes enrichment (as a documented feature) to ensure a uniform enrichment logic across every telemetry data, according to the OTel conventions.
+Ideally, Istio would follow the OTel conventions natively or provide configuration options to do so. Since this is not the case, we need to compensate by actively modifying the data. Our OTel Collector configuration is the best place for this compensation, as it already processes Istio spans and access logs. Thus, we should modify the default Istio service attributes enrichment to ensure uniform enrichment logic across all telemetry data, according to OTel conventions.
 
 To identify Istio-generated trace spans, we have the following options:
 1. Adding a custom attribute to the span (from Istio's side)
@@ -87,23 +87,23 @@ To minimize disruption to existing users, we roll out the migration from the cus
 
 #### Annotation-Based Processor Selection
 
-On the Telemetry CR, we introduce a custom annotation `kyma-project.io/telemetry-service-enrichment` to control which service enrichment processor is applied across all telemetry types and pipelines (traces, metrics, and logs). This annotation accepts the following values:
+On the Telemetry CR, we introduce a custom annotation `telemetry.kyma-project.io/service-enrichment` to control which service enrichment processor is applied across all telemetry types and pipelines (traces, metrics, and logs). This annotation accepts the following values:
 
-- **Unset**: For existing Telemetry resources, the annotation is unset. New Telemetry CRs will have this annotation automatically set to `k8sattributes`. When unset, the default processor behavior depends on the migration phase:
+- **Unset**: For existing Telemetry resources, the annotation is unset. New Telemetry CRs will have this annotation automatically set to `otel`. When unset, the default processor behavior depends on the migration phase:
   - **Phase 1**: Uses `servicenameenrichment` processor (legacy behavior)
   - **Phase 2**: Uses `k8sattributes` processor (new behavior)
   - **Phase 3**: Annotation support removed; always uses `k8sattributes` processor
-- **`k8sattributes`**: Explicitly use the standard OTel `k8sattributes` processor
-- **`servicenameenrichment`**: Explicitly use the legacy custom `servicenameenrichment` processor
+- **`otel`**: Explicitly use the standard OTel `k8sattributes` processor
+- **`kyma-legacy`**: Explicitly use our legacy custom `servicenameenrichment` processor
 
 This mechanism manages the transition at the cluster level, uniformly affecting all telemetry pipelines and preserving backward compatibility for existing deployments.
 
 #### Phase 1: Introduction with Opt-In (Suggested Feature)
 
-In this initial phase, we introduce the annotation, automatically set to `k8sattributes` for new Telemetry resources. Existing Telemetry resources have the annotation unset, defaulting to the legacy `servicenameenrichment` processor to ensure no breaking changes.
+In this initial phase, we introduce the annotation, automatically set to `otel` for new Telemetry resources. Existing Telemetry resources have the annotation unset, defaulting to the legacy `servicenameenrichment` processor to ensure no breaking changes.
 
 **Default Behavior:**
-- **New Telemetry resources**: Annotation set to `k8sattributes` (uses new processor)
+- **New Telemetry resources**: Annotation set to `otel` (uses new processor)
 - **Existing Telemetry resources (annotation unset)**: Use `servicenameenrichment` processor (preserves existing behavior)
 - **Warning condition**: Added to the Telemetry CR status for existing resources, recommending migration to the new processor
 
@@ -123,10 +123,10 @@ metadata:
   name: sample
   annotations:
     # Recommended: Adopt the new processor early
-    kyma-project.io/telemetry-service-enrichment: k8sattributes
+    telemetry.kyma-project.io/service-enrichment: otel
     
     # Alternative: Explicitly maintain legacy behavior (not recommended)
-    # kyma-project.io/telemetry-service-enrichment: servicenameenrichment
+    # telemetry.kyma-project.io/service-enrichment: kyma-legacy
     
     # Default: Leave unset to continue using servicenameenrichment processor
 spec:
@@ -142,7 +142,7 @@ In this phase, the default behavior changes: Resources with unset annotations no
 - **Enhanced warnings**: Telemetry CRs with the legacy processor explicitly set will show stronger deprecation warnings
 
 **Status Condition:**
-If the annotation is set to `servicenameenrichment`, then the Telemetry CR includes a warning condition notifying users that the `servicenameenrichment` processor is deprecated and will be removed in the future.
+If the annotation is set to `kyma-legacy`, then the Telemetry CR includes a warning condition notifying users that the `servicenameenrichment` processor is deprecated and will be removed in the future.
 
 **User Action (Optional):**
 Users that need more time for migration can temporarily revert to the legacy processor with the following annotation:
@@ -154,18 +154,18 @@ metadata:
   name: sample
   annotations:
     # Temporarily opt back into legacy processor
-    kyma-project.io/telemetry-service-enrichment: servicenameenrichment
+    telemetry.kyma-project.io/service-enrichment: kyma-legacy
 spec:
   # ...
 ```
 
 #### Phase 3: Complete Migration
 
-In the final phase, we remove the annotation-based selection mechanism, and all resources use the standard OTel `k8sattributes` processor.
+In the final phase, we remove the annotation-based selection mechanism, and all resources use the standard OTel `k8sattributes` processor. This will require a 3 month deletion note upfront to inform users of the upcoming change.
 
 **Default Behavior:**
 - **All Telemetry resources**: Use OTel's `k8sattributes` processor exclusively
-- **Annotation removal**: The `kyma-project.io/telemetry-service-enrichment` annotation is no longer supported
+- **Annotation removal**: The `telemetry.kyma-project.io/service-enrichment` annotation is no longer supported
 
 This phase marks the completion of the migration to standards-compliant OTel attribute enrichment.
 
@@ -190,15 +190,15 @@ We can use dashboards to visualize the data, and run queries such as the followi
 
 ```promql
 # Count Telemetry resources using a specific processor type
-count(telemetry_service_enrichment_processor_usage{processor_type="k8sattributes"})
-count(telemetry_service_enrichment_processor_usage{processor_type="servicenameenrichment"})
+count(telemetry_service_enrichment_processor_usage{processor_type="otel"})
+count(telemetry_service_enrichment_processor_usage{processor_type="kyma-legacy"})
 count(telemetry_service_enrichment_processor_usage{processor_type="unset"})
 ```
 
 
 ## Decision
 
-We will migrate from the custom `servicenameenrichment` processor to the OTel-native `k8sattributes` processor to align with OpenTelemetry conventions for service attribute enrichment across all telemetry types (traces, metrics, and logs). To handle Istio-generated trace spans that are pre-enriched by Istio's MeshConfig, we will use an OTel transform processor to remove the `service.name` attribute from spans identified by `component="proxy"` before applying the `k8sattributes` processor, ensuring consistent enrichment logic. We execute the migration in three phases controlled by the `kyma-project.io/telemetry-service-enrichment` annotation on the Telemetry CR:
-- **Phase 1** introduces the annotation, automatically setting it to `k8sattributes` for new resources while leaving existing resources unset (defaulting to legacy `servicenameenrichment` processor) with warning conditions encouraging migration.
+We will migrate from the custom `servicenameenrichment` processor to the OTel-native `k8sattributes` processor to align with OpenTelemetry conventions for service attribute enrichment across all telemetry types (traces, metrics, and logs). To handle Istio-generated trace spans that are pre-enriched by Istio's MeshConfig, we will use an OTel transform processor to remove the `service.name` attribute from spans identified by `component="proxy"` before applying the `k8sattributes` processor, ensuring consistent enrichment logic. We execute the migration in three phases controlled by the `telemetry.kyma-project.io/service-enrichment` annotation on the Telemetry CR:
+- **Phase 1** introduces the annotation, automatically setting it to `otel` (uses the `k8sattributes` processor) for new resources while leaving existing resources unset (defaulting to legacy `servicenameenrichment` processor) with warning conditions encouraging migration.
 - **Phase 2** changes the default behavior so unset annotations use `k8sattributes`, while still allowing explicit fallback to the legacy processor.
 - **Phase 3** removes annotation support entirely, enforcing the `k8sattributes` processor universally. Throughout the migration, we use operator-exported metrics (`telemetry_service_enrichment_processor_usage`) to monitor adoption rates across clusters and provide targeted support where needed.
