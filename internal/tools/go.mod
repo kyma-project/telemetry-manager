@@ -1,6 +1,6 @@
 module github.com/kyma-project/telemetry-manager/internal/tools
 
-go 1.25.5
+go 1.25.6
 
 require (
 	github.com/g4s8/envdoc v1.8.1
