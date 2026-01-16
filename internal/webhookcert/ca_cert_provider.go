@@ -119,7 +119,7 @@ func (p *caCertProviderImpl) fetchCACertAndKey(caSecret *corev1.Secret) ([]byte,
 
 func makeCASecret(certificate []byte, key []byte, name types.NamespacedName) corev1.Secret {
 	return corev1.Secret{
-		//TypeMeta: metav1.TypeMeta{},
+		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
 			Namespace: name.Namespace,
