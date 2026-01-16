@@ -95,13 +95,15 @@ After you complete your review and create a plan to address any required changes
 
 ### opentelemetry-collector-components
 
-1. Update all the `go.opentelemetry.io/collector` and the `github.com/open-telemetry/opentelemetry-collector-contrib` dependencies versions in the following files:
+1. Check-out the automatically-generated renovate branch for updating opentelemetry.
+2. Update all the `go.opentelemetry.io/collector` and the `github.com/open-telemetry/opentelemetry-collector-contrib` dependencies versions in the following files:
    - `otel-collector/builder-config.yaml`
    - `otel-collector/envs`
    - `cmd/otelkymacol/builder-config.yaml`
-2. Run `make gotidy`
-3. Run `make generate`
-4. Merge PR and reference it in the `telemetry-manager` bump PR.
+3. Run `make gotidy`
+4. Run `make generate`
+5. Update and merge the PR
+6. Wait for the image build GitHub action to complete and the new image tag to be available
 
 ### telemetry-manager
 
@@ -113,7 +115,7 @@ After you complete your review and create a plan to address any required changes
    - `helm/values.yaml`
 2. Run `go mod tidy`
 3. Run `make generate`
-4. Create and merge a bump PR referencing the `opentelemetry-collector-components` bump PR.
+4. Create and merge a bump PR referencing the previously-merged `opentelemetry-collector-components` PR
 
 ## Post-Bump Verification
 
