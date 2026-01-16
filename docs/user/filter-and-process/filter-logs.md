@@ -7,11 +7,11 @@ Filter logs from the OTLP, application, and Istio input to control which data yo
 > [!TIP]
 > The following settings filter data by source. For advanced, content-based filtering and transformation, use the OpenTelemetry Transformation Language (OTTL). For details, see [Transform and Filter with OTTL](./ottl-transform-and-filter/README.md).
 
-| Source         | Granularity                                                         | Behavior without 'namespaces' Block | Collect from All Namespaces                         | Collect from Specific Namespaces                            |
-|:---------------| :------------------------------------------------------------------ |:------------------------------------|:----------------------------------------------------|:------------------------------------------------------------|
-| OTLP (default) | Namespace                                                           | excludes system namespaces          | Add `namespaces: {}` to the input's configuration   |  Use the `include` or `exclude` filter                      |
-| Runtime        | Namespace, Container\*                                              | excludes system namespaces          | Add `namespaces: {}` to the input's configuration   | Use the `include` or `exclude` filter                       |
-| Istio          | Namespace, Workload (`selector`), Log content (`filter.expression`) | n/a                                 | Apply the Istio `Telemetry` resource mesh-wide      | Apply the Istio `Telemetry` resource to specific namespaces |
+| Source         | Granularity                                                         | Behavior without 'namespaces' Block    | Collect from All Namespaces                       | Collect from Specific Namespaces                            |
+|:---------------| :------------------------------------------------------------------ |:---------------------------------------|:--------------------------------------------------|:------------------------------------------------------------|
+| OTLP (default) | Namespace                                                           | **includes** system namespaces         | **includes** system namespaces                    |  Use the `include` or `exclude` filter                      |
+| Runtime        | Namespace, Container\*                                              | excludes system namespaces             | Add `namespaces: {}` to the input's configuration | Use the `include` or `exclude` filter                       |
+| Istio          | Namespace, Workload (`selector`), Log content (`filter.expression`) | n/a                                    | Apply the Istio `Telemetry` resource mesh-wide    | Apply the Istio `Telemetry` resource to specific namespaces |
 
 \* The **application** input provides an additional **containers** selector that behaves the same way as the **namespaces** selector.
 
