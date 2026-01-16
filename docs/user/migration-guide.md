@@ -22,12 +22,12 @@ If you manage your Telemetry pipeline resources declaratively, you must manually
 
 ## Context
 
-This migration involves breaking changes. To align your pipeline manifests with the new version, you must update the **apiVersion**, rename several fields, and, for LogPipeline resources, adjust how you configure namespace selection. The migration from v1alpha1 and v1beta1 mostly affects LogPipeline and MetricPipeline resources. For TracePipeline resources, only the **apiVersion** changes.
+This migration involves breaking changes. To align your pipeline manifests with the new version, you must update the **apiVersion**, rename several fields, and, for LogPipeline, adjust how you configure namespace selection. The migration from v1alpha1 and v1beta1 mostly affects LogPipeline and MetricPipeline. For TracePipeline, only the **apiVersion** changes.
 
 ![LogPipeline Migration Changes](./assets/logpipeline-migration.png)
 ![MetricPipeline Migration Changes](./assets/metricpipeline-migration.png)
 
-In your Telemetry pipeline resources, see if one of the following breaking changes between v1alpha1 and v1beta1 affects you:
+To identify the required updates for your manifests, review the breaking changes in the following table:
 
 | Pipeline                    | v1alpha1 Field                                 | v1beta1 Field                           | Migration Action                                                     |
 |-----------------------------|------------------------------------------------|-----------------------------------------|----------------------------------------------------------------------|
@@ -41,7 +41,7 @@ In your Telemetry pipeline resources, see if one of the following breaking chang
 ## Prerequisites
 
 - You have an active Kyma cluster with the Telemetry module added.
-- You have one or more Telemetry pipeline resources that use the `telemetry.kyma-project.io/v1alpha1` API.
+- You have one or more Telemetry pipeline that use the `telemetry.kyma-project.io/v1alpha1` API.
 
 ## Procedure
 
