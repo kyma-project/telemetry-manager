@@ -5,10 +5,10 @@ import (
 	"net/http"
 	"testing"
 
-	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
