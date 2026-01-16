@@ -1,18 +1,17 @@
-# Sync Pipeline Manifests with the New v1beta1 API
+# Migrate Telemetry Pipelines to v1beta1
 
-The Telemetry module now uses the stable v1beta1 API for pipeline resources. This guide explains what changed and whether you need to take any action.
+The Telemetry module now uses the stable v1beta1 API for pipeline resources. In some cases, you must update your pipeline manifests to use the new API version.
 
-## Do I Need to Take Action?
+## Context
 
-**No action required** if your pipelines are already deployed in your cluster.
-Existing pipelines are automatically migrated to v1beta1 by the Telemetry module.
+If your pipelines are already running in the cluster and you don't store their manifests, you don't have to take any action. The Telemetry module automatically migrates existing your pipeline resources to v1beta1.
 
-**Action required** if you:
+If you manage your Telemetry pipeline resources declaratively, you must manually adjust them; for example, in the following cases:
 - Use GitOps, CI/CD, or tools like Argo CD to deploy your pipelines
 - Store pipeline manifests in a Git repository that you re-apply
 - Plan to create new pipelines and want to use the v1beta1 API
 
-> **Tip:** If you're unsure how your existing pipeline looks in v1beta1, you can fetch
+> **Tip:** If you're unsure what your existing pipeline looks like in `v1beta1`, you can fetch the converted resource directly from your cluster:
 > the converted resource directly from your cluster:
 > ```bash
 > kubectl get logpipeline <name> -o yaml
@@ -22,7 +21,7 @@ Existing pipelines are automatically migrated to v1beta1 by the Telemetry module
 
 ## Context
 
-This migration involves breaking changes. You must update the **apiVersion**, rename several fields, and, for LogPipeline resources, adjust how you configure namespace selection. The migration from v1alpha1 and v1beta1 mostly affects LogPipeline and MetricPipeline resources. For TracePipeline resources, you only have to change the **apiVersion**.
+This migration involves breaking changes. To align your pipeline manifests with the new version, you must update the **apiVersion**, rename several fields, and, for LogPipeline resources, adjust how you configure namespace selection. The migration from v1alpha1 and v1beta1 mostly affects LogPipeline and MetricPipeline resources. For TracePipeline resources, only the **apiVersion** changes.
 
 ![LogPipeline Migration Changes](./assets/logpipeline-migration.png)
 ![MetricPipeline Migration Changes](./assets/metricpipeline-migration.png)
