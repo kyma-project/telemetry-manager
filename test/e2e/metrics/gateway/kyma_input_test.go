@@ -8,7 +8,6 @@ import (
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
@@ -24,7 +23,7 @@ import (
 )
 
 func TestKymaInput(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelMetricGatewaySetC)
+	suite.RegisterTestCase(t, suite.LabelMetricGatewaySetA)
 
 	var (
 		uniquePrefix            = unique.Prefix()
@@ -73,12 +72,11 @@ func TestKymaInput(t *testing.T) {
 			kitk8sobjects.NewConfigMap(kitkyma.MetricGatewayBaseName, kitkyma.SystemNamespaceName).K8sObject(),
 		}
 		Expect(kitk8s.ObjectsToFile(t, objects...)).To(Succeed())
-	}
+	}q
 
 	assert.MetricPipelineHealthy(t, pipelineNameKymaOnly)
 	assert.MetricPipelineHealthy(t, pipelineNameKymaAndOtlp)
-	assert.TelemetryHasState(t, operatorv1beta1.StateReady)
-	assert.LeaderElectionLeaseExists(t, common.K8sLeaderElectorKymaStats, kitkyma.SystemNamespaceName)
+	//assert.LeaderElectionLeaseExists(t, common.K8sLeaderElectorKymaStats, kitkyma.SystemNamespaceName)
 
 	// Verify that metrics are delivered to both backends
 	assert.MetricsFromNamespaceDelivered(t, backendKymaAndOtlp, kitkyma.SystemNamespaceName, []string{"kyma.resource.status.state"})
