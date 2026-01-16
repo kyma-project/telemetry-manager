@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"testing"
 
+	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -76,6 +77,8 @@ func TestKymaInput(t *testing.T) {
 
 	assert.MetricPipelineHealthy(t, pipelineNameKymaOnly)
 	assert.MetricPipelineHealthy(t, pipelineNameKymaAndOtlp)
+	assert.TelemetryHasState(t, operatorv1beta1.StateReady)
+	assert.LeaderElectionLeaseExists(t, kitkyma.MetricGatewayBaseName, kitkyma.SystemNamespaceName)
 
 	// Verify that metrics are delivered to both backends
 	assert.MetricsFromNamespaceDelivered(t, backendKymaAndOtlp, kitkyma.SystemNamespaceName, []string{"kyma.resource.status.state"})

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	. "github.com/onsi/gomega"
+	v1 "k8s.io/api/coordination/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -125,6 +126,14 @@ func MetricPipelineConditionReasonsTransition(t *testing.T, pipelineName, condTy
 
 		t.Logf("Transitioned to [%s]%s\n", currCond.Status, currCond.Reason)
 	}
+}
+
+func LeaderElectionLeaseExists(t *testing.T, leaseName, leaseNamespace string) {
+	Eventually(func(g Gomega) {
+		var lease v1.Lease
+		g.Expect(suite.K8sClient.Get(t.Context(), types.NamespacedName{Name: leaseName, Namespace: leaseNamespace}, &lease)).To(Succeed())
+		g.Expect(lease.Spec.HolderIdentity).NotTo(BeNil())
+	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed(), "kymastats receiver not ready (leader election or Telemetry CR unstable)")
 }
 
 //nolint:dupl // TODO: Find a generic approach to merge this helper function with the other ones for the other telemetry types
