@@ -19,6 +19,7 @@ mend:
     - dependencies/sample-app/**
     - dependencies/stdout-log-generator/**
     - internal/tools/**
+    - apis/telemetry/v1alpha1/zz_generated.conversion.go
 checkmarx-one:
   preset: go-default
   exclude:
