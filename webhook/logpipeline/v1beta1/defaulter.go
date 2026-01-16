@@ -69,9 +69,7 @@ func (ld defaulter) applyDefaults(pipeline *telemetryv1beta1.LogPipeline) {
 		}
 
 		if ptr.Deref(pipeline.Spec.Input.OTLP.Enabled, false) && pipeline.Spec.Input.OTLP.Namespaces == nil {
-			pipeline.Spec.Input.OTLP.Namespaces = &telemetryv1beta1.NamespaceSelector{
-				Exclude: ld.ExcludeNamespaces,
-			}
+			pipeline.Spec.Input.OTLP.Namespaces = &telemetryv1beta1.NamespaceSelector{}
 		}
 	}
 }
