@@ -81,7 +81,7 @@ var (
 		admissionregistrationv1.Update,
 	}
 	apiGroups                      = []string{"telemetry.kyma-project.io"}
-	apiVersions                    = []string{"v1alpha1"}
+	apiVersions                    = []string{"v1beta1"}
 	scope                          = admissionregistrationv1.AllScopes
 	servicePort                    = int32(443)
 	timeout                        = int32(15)
@@ -98,7 +98,7 @@ var (
 						Name:      webhookService.Name,
 						Namespace: webhookService.Namespace,
 						Port:      &servicePort,
-						Path:      ptr.To("/validate-telemetry-kyma-project-io-v1alpha1-logpipeline"),
+						Path:      ptr.To("/validate-telemetry-kyma-project-io-v1beta1-logpipeline"),
 					},
 				},
 				FailurePolicy:  &failurePolicy,
@@ -134,12 +134,12 @@ var (
 						Name:      webhookService.Name,
 						Namespace: webhookService.Namespace,
 						Port:      &servicePort,
-						Path:      ptr.To("/mutate-telemetry-kyma-project-io-v1alpha1-metricpipeline"),
+						Path:      ptr.To("/mutate-telemetry-kyma-project-io-v1beta1-metricpipeline"),
 					},
 				},
 				FailurePolicy:  &failurePolicy,
 				MatchPolicy:    &matchPolicy,
-				Name:           "mutating.v1alpha1.metricpipelines.telemetry.kyma-project.io",
+				Name:           "mutating.v1beta1.metricpipelines.telemetry.kyma-project.io",
 				SideEffects:    &sideEffects,
 				TimeoutSeconds: &timeout,
 				Rules: []admissionregistrationv1.RuleWithOperations{
@@ -161,12 +161,12 @@ var (
 						Name:      webhookService.Name,
 						Namespace: webhookService.Namespace,
 						Port:      &servicePort,
-						Path:      ptr.To("/mutate-telemetry-kyma-project-io-v1alpha1-tracepipeline"),
+						Path:      ptr.To("/mutate-telemetry-kyma-project-io-v1beta1-tracepipeline"),
 					},
 				},
 				FailurePolicy:  &failurePolicy,
 				MatchPolicy:    &matchPolicy,
-				Name:           "mutating.v1alpha1.tracepipelines.telemetry.kyma-project.io",
+				Name:           "mutating.v1beta1.tracepipelines.telemetry.kyma-project.io",
 				SideEffects:    &sideEffects,
 				TimeoutSeconds: &timeout,
 				Rules: []admissionregistrationv1.RuleWithOperations{
@@ -188,12 +188,12 @@ var (
 						Name:      webhookService.Name,
 						Namespace: webhookService.Namespace,
 						Port:      &servicePort,
-						Path:      ptr.To("/mutate-telemetry-kyma-project-io-v1alpha1-logpipeline"),
+						Path:      ptr.To("/mutate-telemetry-kyma-project-io-v1beta1-logpipeline"),
 					},
 				},
 				FailurePolicy:  &failurePolicy,
 				MatchPolicy:    &matchPolicy,
-				Name:           "mutating.v1alpha1.logpipelines.telemetry.kyma-project.io",
+				Name:           "mutating.v1beta1.logpipelines.telemetry.kyma-project.io",
 				SideEffects:    &sideEffects,
 				TimeoutSeconds: &timeout,
 				Rules: []admissionregistrationv1.RuleWithOperations{

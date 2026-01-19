@@ -16,7 +16,7 @@ import (
 )
 
 func TestVersionConversion(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelExperimental)
+	suite.RegisterTestCase(t, suite.LabelLogsMisc)
 
 	var (
 		uniquePrefix         = unique.Prefix()
