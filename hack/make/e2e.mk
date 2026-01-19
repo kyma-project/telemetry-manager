@@ -30,7 +30,7 @@ setup-e2e-custom-labels-annotations-no-fips: provision-k3d deploy-custom-labels-
 
 .PHONY: deploy-test-prerequisites
 deploy-test-prerequisites: ## Deploy common test prerequisites (telemetry config, network policy, shoot info)
-	kubectl apply -f test/fixtures/operator_v1alpha1_telemetry.yaml -n kyma-system; \
+	kubectl apply -f test/fixtures/operator_v1beta1_telemetry.yaml -n kyma-system; \
 	kubectl apply -f test/fixtures/networkpolicy-deny-all.yaml -n kyma-system; \
 	kubectl apply -f test/fixtures/shoot_info_cm.yaml
 
