@@ -171,9 +171,9 @@ details: |-
           widget: Panel
           visibility: $exists(spec.input.otlp)
           children:
-            - name: Disabled
-              visibility: $exists(spec.input.otlp.disabled)
-              source: spec.input.otlp.disabled
+            - name: Enabled
+              visibility: $exists(spec.input.otlp.enabled)
+              source: spec.input.otlp.enabled
             - name: Include Namespaces
               widget: JoinedArray
               visibility: $exists(spec.input.otlp.namespaces.include)
@@ -537,8 +537,8 @@ form: |
         widget: FormGroup
         simple: true
         children:
-          - name: Disabled
-            path: disabled
+          - name: Enabled
+            path: enabled
             simple: true
           - name: Include Namespaces
             widget: SimpleList
@@ -852,7 +852,7 @@ general: |-
   resource:
     kind: MetricPipeline
     group: telemetry.kyma-project.io
-    version: v1alpha1
+    version: v1beta1
   name: Metric Pipelines
   category: Telemetry
   urlPath: metricpipelines
