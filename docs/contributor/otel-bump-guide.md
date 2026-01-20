@@ -100,7 +100,7 @@ After you complete the preparation steps, update the dependency versions in the 
    - `otel-collector/builder-config.yaml`
    - `otel-collector/envs`
    - `cmd/otelkymacol/builder-config.yaml`
-3. Run `make gotidy`
+3. Run `make gotidy`.
 4. Run `make generate`
 5. Update and merge the PR
 6. Wait for the image build GitHub action to complete and the new image tag to be available
