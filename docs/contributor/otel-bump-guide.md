@@ -91,7 +91,7 @@ Breaking changes are typically introduced behind feature gates, so you must chec
 
 ## Implementation
 
-After you complete your review and create a plan to address any required changes, update the dependencies versions in both `opentelemetry-collector-components` and `telemetry-manager`.
+After you complete the preparation steps, update the dependency versions in the `opentelemetry-collector-components` and `telemetry-manager` repositories.
 
 ### opentelemetry-collector-components
 
