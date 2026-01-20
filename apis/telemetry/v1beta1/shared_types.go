@@ -143,7 +143,7 @@ type OTLPInput struct {
 	// Enabled specifies if the 'otlp' input is enabled. If enabled, then push-based OTLP signals are collected. The default is `true`.
 	// +kubebuilder:validation:Optional
 	Enabled *bool `json:"enabled,omitempty"`
-	// Namespaces describes whether push-based OTLP signals from specific namespaces are selected. System namespaces are enabled by default.
+	// Namespaces describe whether push-based OTLP signals from specific namespaces are selected. System namespaces are enabled by default.
 	// +kubebuilder:validation:Optional
 	Namespaces *NamespaceSelector `json:"namespaces,omitempty"`
 }

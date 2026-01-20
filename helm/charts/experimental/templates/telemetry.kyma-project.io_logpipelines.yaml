@@ -1423,8 +1423,8 @@ spec:
                           The default is `true`.
                         type: boolean
                       namespaces:
-                        description: Namespaces describes whether push-based OTLP
-                          signals from specific namespaces are selected. System namespaces
+                        description: Namespaces describe whether push-based OTLP signals
+                          from specific namespaces are selected. System namespaces
                           are enabled by default.
                         properties:
                           exclude:
