@@ -95,7 +95,7 @@ After you complete the preparation steps, update the dependency versions in the 
 
 ### opentelemetry-collector-components
 
-1. Check-out the automatically-generated renovate branch for updating opentelemetry.
+1. In the `opentelemetry-collector-components` repository, check out the OpenTelemetry update branch that Renovate automatically generates.
 2. Update all the `go.opentelemetry.io/collector` and the `github.com/open-telemetry/opentelemetry-collector-contrib` dependencies versions in the following files:
    - `otel-collector/builder-config.yaml`
    - `otel-collector/envs`
