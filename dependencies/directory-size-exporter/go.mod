@@ -1,6 +1,6 @@
 module github.com/kyma-project/telemetry-manager/dependencies/directory-size-exporter
 
-go 1.25.5
+go 1.25.6
 
 require (
 	github.com/prometheus/client_golang v1.23.2

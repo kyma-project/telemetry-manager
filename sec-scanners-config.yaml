@@ -2,10 +2,10 @@ module-name: telemetry
 kind: kyma
 bdba:
   - europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:main
-  - europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20251210-3d7f23ad
+  - europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20260116-88440ede
   - europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluent-bit:4.2.2
-  - europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.141.0-main
-  - europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:3.9.1-df41af5
+  - europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.143.0-main
+  - europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:3.9.1-0877cc3
   - europe-docker.pkg.dev/kyma-project/prod/external/library/alpine:3.23.2
 mend:
   language: golang-mod
@@ -19,6 +19,7 @@ mend:
     - dependencies/sample-app/**
     - dependencies/stdout-log-generator/**
     - internal/tools/**
+    - apis/telemetry/v1alpha1/zz_generated.conversion.go
 checkmarx-one:
   preset: go-default
   exclude:
@@ -31,3 +32,4 @@ checkmarx-one:
     - dependencies/sample-app/**
     - dependencies/stdout-log-generator/**
     - internal/tools/**
+    - apis/telemetry/v1alpha1/zz_generated.conversion.go

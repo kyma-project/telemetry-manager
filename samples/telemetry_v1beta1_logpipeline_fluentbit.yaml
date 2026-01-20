@@ -80,13 +80,13 @@ spec:
         - -f=json
         - -l
 ---
-apiVersion: telemetry.kyma-project.io/v1alpha1
+apiVersion: telemetry.kyma-project.io/v1beta1
 kind: LogPipeline
 metadata:
   name: sample-fluentbit
 spec:
   input:
-    application:
+    runtime:
       namespaces:
         include:
         - log-gen-fluentbit
@@ -99,5 +99,5 @@ spec:
       uri: /
       format: json
       tls:
-        disabled: true
-        skipCertificateValidation: true
+        insecure: true
+        insecureSkipVerify: true

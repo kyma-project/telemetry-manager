@@ -66,15 +66,15 @@ func newFilterParserCollectionOpts(signalType SignalType) []genericParserCollect
 			// we set the context to span as the minimum required context.
 			// Span event context is not supported.
 			withSpanParser(
-				ottl.CreateFactoryMap(filterprocessor.DefaultSpanFunctions()...),
-				ottl.WithConditionConverter(nopConditionConverter[ottlspan.TransformContext]),
+				ottl.CreateFactoryMap(filterprocessor.DefaultSpanFunctionsNew()...),
+				ottl.WithConditionConverter(nopConditionConverter[*ottlspan.TransformContext]),
 			),
 		)
 	case SignalTypeLog:
 		opts = append(opts,
 			withLogParser(
-				ottl.CreateFactoryMap(filterprocessor.DefaultLogFunctions()...),
-				ottl.WithConditionConverter(nopConditionConverter[ottllog.TransformContext]),
+				ottl.CreateFactoryMap(filterprocessor.DefaultLogFunctionsNew()...),
+				ottl.WithConditionConverter(nopConditionConverter[*ottllog.TransformContext]),
 			),
 		)
 	case SignalTypeMetric:
@@ -84,12 +84,12 @@ func newFilterParserCollectionOpts(signalType SignalType) []genericParserCollect
 			// That is why metric-context-only functions (like HasAttrKeyOnDatapoint or HasAttrOnDatapoint) are not supported here
 			// and only standard converters are included.
 			withMetricParser(
-				ottlfuncs.StandardConverters[ottlmetric.TransformContext](),
-				ottl.WithConditionConverter(nopConditionConverter[ottlmetric.TransformContext]),
+				ottlfuncs.StandardConverters[*ottlmetric.TransformContext](),
+				ottl.WithConditionConverter(nopConditionConverter[*ottlmetric.TransformContext]),
 			),
 			withDataPointParser(
-				ottl.CreateFactoryMap(filterprocessor.DefaultDataPointFunctions()...),
-				ottl.WithConditionConverter(nopConditionConverter[ottldatapoint.TransformContext]),
+				ottl.CreateFactoryMap(filterprocessor.DefaultDataPointFunctionsNew()...),
+				ottl.WithConditionConverter(nopConditionConverter[*ottldatapoint.TransformContext]),
 			),
 		)
 	}
@@ -98,13 +98,13 @@ func newFilterParserCollectionOpts(signalType SignalType) []genericParserCollect
 	opts = append(opts,
 		withResourceParser(
 			// Include all standard OTTL converters (NO editors) for resource context
-			ottlfuncs.StandardConverters[ottlresource.TransformContext](),
-			ottl.WithConditionConverter(nopConditionConverter[ottlresource.TransformContext]),
+			ottlfuncs.StandardConverters[*ottlresource.TransformContext](),
+			ottl.WithConditionConverter(nopConditionConverter[*ottlresource.TransformContext]),
 		),
 		withScopeParser(
 			// Include all standard OTTL converters (NO editors) for scope context
-			ottlfuncs.StandardConverters[ottlscope.TransformContext](),
-			ottl.WithConditionConverter(nopConditionConverter[ottlscope.TransformContext]),
+			ottlfuncs.StandardConverters[*ottlscope.TransformContext](),
+			ottl.WithConditionConverter(nopConditionConverter[*ottlscope.TransformContext]),
 		),
 	)
 
