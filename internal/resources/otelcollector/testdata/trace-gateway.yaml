@@ -96,12 +96,15 @@ metadata:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  annotations:
+    test-anno-key: test-anno-value
   labels:
     app.kubernetes.io/component: gateway
     app.kubernetes.io/managed-by: telemetry-manager
     app.kubernetes.io/name: telemetry-trace-gateway
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
+    test-label-key: test-label-value
   name: telemetry-trace-gateway
   namespace: kyma-system
 spec:
@@ -114,6 +117,7 @@ spec:
     metadata:
       annotations:
         checksum/config: 1d8e9f768e6b24485bbdd6b9aa417d37fec897a7dafc8321355abc0d45259c9e
+        test-anno-key: test-anno-value
       labels:
         app.kubernetes.io/component: gateway
         app.kubernetes.io/managed-by: telemetry-manager
@@ -123,6 +127,7 @@ spec:
         sidecar.istio.io/inject: "true"
         telemetry.kyma-project.io/trace-export: "true"
         telemetry.kyma-project.io/trace-ingest: "true"
+        test-label-key: test-label-value
     spec:
       affinity:
         podAntiAffinity:
@@ -191,6 +196,11 @@ spec:
         volumeMounts:
         - mountPath: /conf
           name: config
+        - mountPath: /etc/ssl/certs
+          name: custom-ca-bundle
+          readOnly: true
+      imagePullSecrets:
+      - name: mySecret
       priorityClassName: normal
       securityContext:
         runAsNonRoot: true
@@ -205,6 +215,12 @@ spec:
             path: relay.conf
           name: telemetry-trace-gateway
         name: config
+      - name: custom-ca-bundle
+        projected:
+          sources:
+          - clusterTrustBundle:
+              name: trustBundle
+              path: ca-certificates.crt
 status: {}
 ---
 apiVersion: networking.k8s.io/v1
