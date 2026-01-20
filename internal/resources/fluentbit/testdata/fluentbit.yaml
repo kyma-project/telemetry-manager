@@ -212,6 +212,8 @@ metadata:
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
+  annotations:
+    test-anno-key: test-anno-value
   labels:
     app.kubernetes.io/component: agent
     app.kubernetes.io/instance: telemetry
@@ -219,6 +221,7 @@ metadata:
     app.kubernetes.io/name: fluent-bit
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
+    test-label-key: test-label-value
   name: telemetry-fluent-bit
   namespace: kyma-system
 spec:
@@ -230,6 +233,7 @@ spec:
     metadata:
       annotations:
         checksum/config: 91ba0ed4b08d1118be17c56fb8debd2751c946b444b77ae142a9483b119834e2
+        test-anno-key: test-anno-value
         traffic.sidecar.istio.io/excludeInboundPorts: 2020,2021
       labels:
         app.kubernetes.io/component: agent
@@ -240,6 +244,7 @@ spec:
         kyma-project.io/module: telemetry
         sidecar.istio.io/inject: "true"
         telemetry.kyma-project.io/log-export: "true"
+        test-label-key: test-label-value
     spec:
       containers:
       - envFrom:
@@ -303,6 +308,9 @@ spec:
         - mountPath: /fluent-bit/etc/output-tls-config/
           name: output-tls-config
           readOnly: true
+        - mountPath: /etc/ssl/certs
+          name: custom-ca-bundle
+          readOnly: true
       - args:
         - --storage-path=/data/flb-storage/
         - --metric-name=telemetry_fsbuffer_usage_bytes
@@ -330,6 +338,8 @@ spec:
         volumeMounts:
         - mountPath: /data
           name: varfluentbit
+      imagePullSecrets:
+      - name: mySecret
       initContainers:
       - command:
         - chown
@@ -401,6 +411,12 @@ spec:
       - name: output-tls-config
         secret:
           secretName: telemetry-fluent-bit-output-tls-config
+      - name: custom-ca-bundle
+        projected:
+          sources:
+          - clusterTrustBundle:
+              name: trustBundle
+              path: ca-certificates.crt
   updateStrategy: {}
 status:
   currentNumberScheduled: 0
