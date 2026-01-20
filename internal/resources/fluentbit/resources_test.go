@@ -22,7 +22,12 @@ import (
 )
 
 func TestAgent_ApplyResources(t *testing.T) {
-	globals := config.NewGlobal(config.WithTargetNamespace("kyma-system"))
+	globals := config.NewGlobal(
+		config.WithTargetNamespace("kyma-system"),
+		config.WithImagePullSecretName("mySecret"),
+		config.WithAdditionalLabels(map[string]string{"test-label-key": "test-label-value"}),
+		config.WithAdditionalAnnotations(map[string]string{"test-anno-key": "test-anno-value"}),
+	)
 	image := "foo-fluentbit"
 	exporterImage := "foo-exporter"
 	initContainerImage := "alpine"
