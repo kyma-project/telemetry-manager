@@ -198,6 +198,9 @@ spec:
         volumeMounts:
         - mountPath: /conf
           name: config
+        - mountPath: /etc/ssl/certs
+          name: custom-ca-bundle
+          readOnly: true
       imagePullSecrets:
       - name: mySecret
       priorityClassName: normal
@@ -214,6 +217,12 @@ spec:
             path: relay.conf
           name: telemetry-metric-gateway
         name: config
+      - name: custom-ca-bundle
+        projected:
+          sources:
+          - clusterTrustBundle:
+              name: trustBundle
+              path: ca-certificates.crt
 status: {}
 ---
 apiVersion: networking.k8s.io/v1

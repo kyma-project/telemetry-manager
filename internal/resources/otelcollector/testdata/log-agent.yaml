@@ -151,6 +151,9 @@ spec:
           readOnly: true
         - mountPath: /tmp
           name: tmp
+        - mountPath: /etc/ssl/certs
+          name: custom-ca-bundle
+          readOnly: true
       imagePullSecrets:
       - name: mySecret
       priorityClassName: normal
@@ -179,6 +182,12 @@ spec:
           path: /tmp
           type: DirectoryOrCreate
         name: tmp
+      - name: custom-ca-bundle
+        projected:
+          sources:
+          - clusterTrustBundle:
+              name: trustBundle
+              path: ca-certificates.crt
   updateStrategy: {}
 status:
   currentNumberScheduled: 0

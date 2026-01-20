@@ -308,6 +308,9 @@ spec:
         - mountPath: /fluent-bit/etc/output-tls-config/
           name: output-tls-config
           readOnly: true
+        - mountPath: /etc/ssl/certs
+          name: custom-ca-bundle
+          readOnly: true
       - args:
         - --storage-path=/data/flb-storage/
         - --metric-name=telemetry_fsbuffer_usage_bytes
@@ -408,6 +411,12 @@ spec:
       - name: output-tls-config
         secret:
           secretName: telemetry-fluent-bit-output-tls-config
+      - name: custom-ca-bundle
+        projected:
+          sources:
+          - clusterTrustBundle:
+              name: trustBundle
+              path: ca-certificates.crt
   updateStrategy: {}
 status:
   currentNumberScheduled: 0

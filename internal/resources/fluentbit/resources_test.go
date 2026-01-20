@@ -27,6 +27,7 @@ func TestAgent_ApplyResources(t *testing.T) {
 		config.WithImagePullSecretName("mySecret"),
 		config.WithAdditionalLabels(map[string]string{"test-label-key": "test-label-value"}),
 		config.WithAdditionalAnnotations(map[string]string{"test-anno-key": "test-anno-value"}),
+		config.WithClusterTrustBundleName("trustBundle"),
 	)
 	image := "foo-fluentbit"
 	exporterImage := "foo-exporter"

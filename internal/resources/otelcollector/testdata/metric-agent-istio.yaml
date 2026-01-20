@@ -150,6 +150,9 @@ spec:
         - mountPath: /etc/istio-output-certs
           name: istio-certs
           readOnly: true
+        - mountPath: /etc/ssl/certs
+          name: custom-ca-bundle
+          readOnly: true
       imagePullSecrets:
       - name: mySecret
       priorityClassName: normal
@@ -173,6 +176,12 @@ spec:
         name: config
       - emptyDir: {}
         name: istio-certs
+      - name: custom-ca-bundle
+        projected:
+          sources:
+          - clusterTrustBundle:
+              name: trustBundle
+              path: ca-certificates.crt
   updateStrategy: {}
 status:
   currentNumberScheduled: 0
