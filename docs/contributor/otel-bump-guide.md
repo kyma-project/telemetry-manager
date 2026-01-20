@@ -102,12 +102,12 @@ After you complete the preparation steps, update the dependency versions in the 
    - `cmd/otelkymacol/builder-config.yaml`
 3. Run `make gotidy`.
 4. Run `make generate`.
-5. Update and merge the PR
-6. Wait for the image build GitHub action to complete and the new image tag to be available
+5. Update and merge the PR.
+6. After the image build GitHub Action completes, confirm that the new image tag is available.
 
-### telemetry-manager
+### Telemetry Manager
 
-1. Update all the `go.opentelemetry.io/collector` and the `github.com/open-telemetry/opentelemetry-collector-contrib` dependencies versions in the following files:
+1. In the `telemetry-manager` repository, update the dependency versions for `go.opentelemetry.io/collector` and `github.com/open-telemetry/opentelemetry-collector-contrib` in the following files:
    - `.env`
    - `go.mod`
    - `test/testkit/images.go`
@@ -122,5 +122,5 @@ After you complete the preparation steps, update the dependency versions in the 
 After you updated the dependencies, perform the following verification checks:
 
 - [ ] Verify that all tests pass.
-- [ ] Run load test by manually triggering the "PR Load Test" GitHub workflow and document performance results in [benchmark documentation](./benchmarks/results)
+- [ ] Manually trigger the "PR Load Test" GitHub workflow, and document the performance results of the load test in the [benchmark documentation](./benchmarks/results).
 - [ ] Filter processor restrictions working correctly
