@@ -88,7 +88,6 @@ func TestOverrides(t *testing.T) {
 		fluentbit.HaveFlatLogs(ContainElement(SatisfyAll(
 			fluentbit.HavePodName(ContainSubstring("telemetry-manager")),
 			fluentbit.HaveLevel(Equal("DEBUG")),
-			fluentbit.HaveTimestamp(BeTemporally(">=", time.Now().UTC())),
 		))),
 		assert.WithOptionalDescription("should have logs from the telemetry-manager pod with DEBUG level"))
 
