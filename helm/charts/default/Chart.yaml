@@ -1,4 +1,4 @@
 apiVersion: v2
 name: default
 description: Telemetry Manager Default CRDs
-version: 1.56.0
+version: 1.56.1
