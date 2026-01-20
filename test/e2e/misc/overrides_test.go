@@ -79,6 +79,7 @@ func TestOverrides(t *testing.T) {
 		assert.WithOptionalDescription("should NOT have logs from the telemetry-manager pod with DEBUG level"))
 
 	// Verify that after overrides config we have DEBUG logs
+	timeBeforeCreatingOverrides := time.Now().UTC().Truncate(time.Second)
 	overrides = kitk8sobjects.NewOverrides().WithLogLevel(kitk8sobjects.DEBUG).K8sObject()
 	Expect(kitk8s.CreateObjects(t, overrides)).Should(Succeed())
 
@@ -88,6 +89,7 @@ func TestOverrides(t *testing.T) {
 		fluentbit.HaveFlatLogs(ContainElement(SatisfyAll(
 			fluentbit.HavePodName(ContainSubstring("telemetry-manager")),
 			fluentbit.HaveLevel(Equal("DEBUG")),
+			fluentbit.HaveTimestamp(BeTemporally(">=", timeBeforeCreatingOverrides)),
 		))),
 		assert.WithOptionalDescription("should have logs from the telemetry-manager pod with DEBUG level"))
 
