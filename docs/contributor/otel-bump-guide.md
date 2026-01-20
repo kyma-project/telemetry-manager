@@ -93,7 +93,7 @@ Breaking changes are typically introduced behind feature gates, so you must chec
 
 After you complete the preparation steps, update the dependency versions in the `opentelemetry-collector-components` and `telemetry-manager` repositories.
 
-### opentelemetry-collector-components
+### OTel Collector Components
 
 1. In the `opentelemetry-collector-components` repository, check out the OpenTelemetry update branch that Renovate automatically generates.
 2. Update the dependency versions for `go.opentelemetry.io/collector` and `github.com/open-telemetry/opentelemetry-collector-contrib` in the following files:
