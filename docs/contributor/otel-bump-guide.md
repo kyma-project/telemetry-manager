@@ -114,7 +114,7 @@ After you complete the preparation steps, update the dependency versions in the 
    - `sec-scanners-config.yaml`
    - `helm/values.yaml`
 2. Run `go mod tidy`.
-3. Run `make generate`
+3. Run `make generate`.
 4. Create and merge a bump PR referencing the previously-merged `opentelemetry-collector-components` PR
 
 ## Post-Bump Verification
