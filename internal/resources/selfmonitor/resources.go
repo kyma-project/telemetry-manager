@@ -260,6 +260,7 @@ func (ad *ApplierDeleter) makeDeployment(configChecksum, configPath, configFile 
 	selectorLabels := commonresources.MakeDefaultSelectorLabels(baseName)
 
 	defaultLabels := commonresources.MakeDefaultLabels(baseName, commonresources.LabelValueK8sComponentMonitor)
+
 	maps.Copy(resourceLabels, ad.Config.AdditionalLabels())
 	maps.Copy(resourceLabels, defaultLabels)
 
