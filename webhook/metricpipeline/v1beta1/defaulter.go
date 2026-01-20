@@ -100,9 +100,7 @@ func (md defaulter) applyDefaults(pipeline *telemetryv1beta1.MetricPipeline) {
 	}
 
 	if ptr.Deref(pipeline.Spec.Input.OTLP.Enabled, false) && pipeline.Spec.Input.OTLP.Namespaces == nil {
-		pipeline.Spec.Input.OTLP.Namespaces = &telemetryv1beta1.NamespaceSelector{
-			Exclude: md.ExcludeNamespaces,
-		}
+		pipeline.Spec.Input.OTLP.Namespaces = &telemetryv1beta1.NamespaceSelector{}
 	}
 
 	if pipeline.Spec.Output.OTLP != nil && pipeline.Spec.Output.OTLP.Protocol == "" {

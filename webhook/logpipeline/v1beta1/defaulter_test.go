@@ -155,10 +155,8 @@ func TestDefault(t *testing.T) {
 							},
 						},
 						OTLP: &telemetryv1beta1.OTLPInput{
-							Enabled: ptr.To(true),
-							Namespaces: &telemetryv1beta1.NamespaceSelector{
-								Exclude: namespaces.System(),
-							},
+							Enabled:    ptr.To(true),
+							Namespaces: &telemetryv1beta1.NamespaceSelector{},
 						},
 					},
 					Output: telemetryv1beta1.LogPipelineOutput{
