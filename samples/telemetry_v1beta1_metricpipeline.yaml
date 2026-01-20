@@ -2,13 +2,13 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: trace-sink
+  name: metric-sink
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: trace-sink-config
-  namespace: trace-sink
+  name: metric-sink-config
+  namespace: metric-sink
 data:
   config.yaml: |
     receivers:
@@ -23,7 +23,7 @@ data:
         verbosity: detailed
     service:
       pipelines:
-        traces:
+        metrics:
           receivers:
             - otlp
           exporters:
@@ -32,23 +32,23 @@ data:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: trace-sink
-  namespace: trace-sink
+  name: metric-sink
+  namespace: metric-sink
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: trace-sink
+      app: metric-sink
   strategy: {}
   template:
     metadata:
       labels:
-        app: trace-sink
+        app: metric-sink
     spec:
       volumes:
       - name: config
         configMap:
-          name: trace-sink-config
+          name: metric-sink-config
       securityContext:
         fsGroup: 101
       containers:
@@ -63,8 +63,8 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: trace-sink
-  namespace: trace-sink
+  name: metric-sink
+  namespace: metric-sink
 spec:
   ports:
   - name: grpc-otlp
@@ -76,50 +76,74 @@ spec:
     protocol: TCP
     targetPort: 4318
   selector:
-    app: trace-sink
+    app: metric-sink
 ---
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: trace-gen
+  name: metric-gen
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: trace-gen
-  namespace: trace-gen
+  name: metric-gen
+  namespace: metric-gen
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: trace-gen
-  strategy: {}
+      app: metric-gen
   template:
     metadata:
       labels:
-        app: trace-gen
+        app: metric-gen
     spec:
       containers:
-      - command:
-        - /telemetrygen
-        - traces
-        - --otlp-endpoint
-        - telemetry-otlp-traces.kyma-system:4317
-        - --otlp-insecure
-        - --duration
-        - 1h
-        - --rate
-        - "10"
-        image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:latest
-        name: telemetrygen
+      - image: europe-docker.pkg.dev/kyma-project/prod/samples/telemetry-sample-app:latest
+        imagePullPolicy: IfNotPresent
+        name: metric-gen
+        ports:
+        - containerPort: 8080
+          name: http-metrics
+          protocol: TCP
+        resources:
+          limits:
+            memory: 100Mi
+          requests:
+            memory: 32Mi
 ---
-apiVersion: telemetry.kyma-project.io/v1alpha1
-kind: TracePipeline
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    prometheus.io/path: "/metrics"
+    prometheus.io/port: "8080"
+    prometheus.io/scrape: "true"
+  name: metric-gen-metrics
+  namespace: metric-gen
+spec:
+  ports:
+  - name: http-metrics
+    port: 8080
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: metric-gen
+  type: ClusterIP
+---
+apiVersion: telemetry.kyma-project.io/v1beta1
+kind: MetricPipeline
 metadata:
   name: sample
 spec:
+  input:
+    runtime:
+      enabled: true
+    prometheus:
+      enabled: true
+    istio:
+      enabled: true
   output:
     otlp:
       endpoint:
-        value: http://trace-sink.trace-sink:4317
-
+        value: http://metric-sink.metric-sink:4317

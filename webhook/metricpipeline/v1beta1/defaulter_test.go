@@ -45,10 +45,8 @@ func TestDefault(t *testing.T) {
 				Spec: telemetryv1beta1.MetricPipelineSpec{
 					Input: telemetryv1beta1.MetricPipelineInput{
 						OTLP: &telemetryv1beta1.OTLPInput{
-							Enabled: ptr.To(true),
-							Namespaces: &telemetryv1beta1.NamespaceSelector{
-								Exclude: namespaces.System(),
-							},
+							Enabled:    ptr.To(true),
+							Namespaces: &telemetryv1beta1.NamespaceSelector{},
 						},
 					},
 					Output: telemetryv1beta1.MetricPipelineOutput{
@@ -326,10 +324,8 @@ func TestDefault(t *testing.T) {
 				Spec: telemetryv1beta1.MetricPipelineSpec{
 					Input: telemetryv1beta1.MetricPipelineInput{
 						OTLP: &telemetryv1beta1.OTLPInput{
-							Enabled: ptr.To(true),
-							Namespaces: &telemetryv1beta1.NamespaceSelector{
-								Exclude: namespaces.System(),
-							},
+							Enabled:    ptr.To(true),
+							Namespaces: &telemetryv1beta1.NamespaceSelector{},
 						},
 					},
 				},
