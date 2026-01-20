@@ -35,8 +35,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
-	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
@@ -143,7 +143,7 @@ func (r *LogPipelineController) Reconcile(ctx context.Context, req ctrl.Request)
 }
 
 func (r *LogPipelineController) SetupWithManager(mgr ctrl.Manager) error {
-	b := ctrl.NewControllerManagedBy(mgr).For(&telemetryv1alpha1.LogPipeline{})
+	b := ctrl.NewControllerManagedBy(mgr).For(&telemetryv1beta1.LogPipeline{})
 
 	b.WatchesRawSource(
 		source.Channel(r.reconcileTriggerChan, &handler.EnqueueRequestForObject{}),
@@ -165,21 +165,21 @@ func (r *LogPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 			resource,
 			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(),
 				mgr.GetRESTMapper(),
-				&telemetryv1alpha1.LogPipeline{},
+				&telemetryv1beta1.LogPipeline{},
 			),
 			ctrlbuilder.WithPredicates(predicateutils.OwnedResourceChanged()),
 		)
 	}
 
 	return b.Watches(
-		&operatorv1alpha1.Telemetry{},
+		&operatorv1beta1.Telemetry{},
 		handler.EnqueueRequestsFromMapFunc(r.mapTelemetryChanges),
 		ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete()),
 	).Complete(r)
 }
 
 func (r *LogPipelineController) mapTelemetryChanges(ctx context.Context, object client.Object) []reconcile.Request {
-	_, ok := object.(*operatorv1alpha1.Telemetry)
+	_, ok := object.(*operatorv1beta1.Telemetry)
 	if !ok {
 		logf.FromContext(ctx).V(1).Error(nil, "Unexpected type: expected Telemetry")
 		return nil
@@ -300,7 +300,7 @@ func configureOTelReconciler(config LogPipelineControllerConfig, client client.C
 }
 
 func (r *LogPipelineController) createRequestsForAllPipelines(ctx context.Context) ([]reconcile.Request, error) {
-	var pipelines telemetryv1alpha1.LogPipelineList
+	var pipelines telemetryv1beta1.LogPipelineList
 
 	var requests []reconcile.Request
 

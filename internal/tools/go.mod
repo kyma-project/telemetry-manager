@@ -1,9 +1,9 @@
 module github.com/kyma-project/telemetry-manager/internal/tools
 
-go 1.25.5
+go 1.25.6
 
 require (
-	github.com/g4s8/envdoc v1.8.1
+	github.com/g4s8/envdoc v1.9.1
 	github.com/golangci/golangci-lint/v2 v2.8.0
 	github.com/google/yamlfmt v0.21.0
 	github.com/hairyhenderson/gomplate/v4 v4.3.3
@@ -11,7 +11,7 @@ require (
 	github.com/k3d-io/k3d/v5 v5.8.3
 	github.com/kyma-project/kyma/hack/table-gen v0.0.0-20250404123224-5afb7a10791b
 	github.com/mikefarah/yq/v4 v4.50.1
-	github.com/vektra/mockery/v3 v3.6.2
+	github.com/vektra/mockery/v3 v3.6.3
 	github.com/vladopajic/go-test-coverage/v2 v2.18.3
 	github.com/yeya24/promlinter v0.3.0
 	golang.org/x/tools v0.41.0
