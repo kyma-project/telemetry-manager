@@ -104,6 +104,8 @@ linters:
           alias: prommodel
         - pkg: go.opentelemetry.io/otel/sdk/trace
           alias: tracesdk
+        - pkg: go.opentelemetry.io/otel/sdk/metric
+          alias: metricsdk
         - pkg: istio.io/api/networking/v1
           alias: istionetworkingv1
         - pkg: istio.io/client-go/pkg/apis/networking/v1

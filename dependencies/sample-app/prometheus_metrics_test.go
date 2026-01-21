@@ -11,13 +11,13 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
-	otelmetric "go.opentelemetry.io/otel/metric"
-	"go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/metric"
+	metricsdk "go.opentelemetry.io/otel/sdk/metric"
 )
 
 // setupTestEnvironment sets up the OTel SDK with Prometheus exporter for testing,
 // reusing all production setup functions from main.
-func setupTestEnvironment(t *testing.T) (context.Context, *metric.MeterProvider) {
+func setupTestEnvironment(t *testing.T) (context.Context, *metricsdk.MeterProvider) {
 	t.Helper()
 
 	ctx := context.Background()
@@ -39,6 +39,7 @@ func setupTestEnvironment(t *testing.T) (context.Context, *metric.MeterProvider)
 
 	// Create meter provider using the same setup as main
 	meterProvider := newMeterProvider(reader, res)
+
 	t.Cleanup(func() {
 		if err := meterProvider.Shutdown(ctx); err != nil {
 			t.Errorf("failed to shutdown meter provider: %v", err)
@@ -61,25 +62,37 @@ func TestPrometheusMetricNames(t *testing.T) {
 	ctx, _ := setupTestEnvironment(t)
 
 	// Record some metric values using the global metrics
-	hdErrorsMeter.Add(ctx, 5, otelmetric.WithAttributes(attribute.String("device", "/dev/sda")))
-	cpuEnergyMeter.Record(ctx, 45.7, otelmetric.WithAttributes(attribute.String("core", "0")))
+	hdErrorsMeter.Add(ctx, 5, metric.WithAttributes(attribute.String("device", "/dev/sda")))
+	cpuEnergyMeter.Record(ctx, 45.7, metric.WithAttributes(attribute.String("core", "0")))
 
 	// Create a test HTTP server using the same handler setup as main
 	server := httptest.NewServer(newURLParamCounterMiddleware(promhttp.Handler()))
 	defer server.Close()
 
 	// Make a request with URL parameters to trigger the promhttp metric
-	resp, err := http.Get(server.URL + "?foo=bar")
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, server.URL+"?foo=bar", nil)
 	if err != nil {
-		t.Fatalf("failed to fetch metrics: %v", err)
+		t.Fatalf("failed to create metrics trigger request: %v", err)
 	}
-	resp.Body.Close()
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("failed to perform metrics trigger request: %v", err)
+	}
+
+	defer resp.Body.Close()
 
 	// Now fetch the metrics
-	resp, err = http.Get(server.URL)
+	req, err = http.NewRequestWithContext(ctx, http.MethodGet, server.URL, nil)
 	if err != nil {
-		t.Fatalf("failed to fetch metrics: %v", err)
+		t.Fatalf("failed to create metrics fetch request: %v", err)
 	}
+
+	resp, err = http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("failed to perform metrics fetch request: %v", err)
+	}
+
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
