@@ -75,7 +75,7 @@ To ship application logs to a new output, create a resource of the kind `LogPipe
 
 ```yaml
 kind: LogPipeline
-apiVersion: telemetry.kyma-project.io/v1alpha1
+apiVersion: telemetry.kyma-project.io/v1beta1
 metadata:
   name: http-backend
 spec:
@@ -128,12 +128,12 @@ The following example collects input from all namespaces excluding `kyma-system`
 
 ```yaml
 kind: LogPipeline
-apiVersion: telemetry.kyma-project.io/v1alpha1
+apiVersion: telemetry.kyma-project.io/v1beta1
 metadata:
   name: http-backend
 spec:
   input:
-    application:
+    runtime:
       namespaces:
         exclude:
           - kyma-system
@@ -159,7 +159,7 @@ The following example uses the filter types [grep](https://docs.fluentbit.io/man
 
 ```yaml
 kind: LogPipeline
-apiVersion: telemetry.kyma-project.io/v1alpha1
+apiVersion: telemetry.kyma-project.io/v1beta1
 metadata:
   name: http-backend
 spec:
@@ -199,7 +199,7 @@ Using the **http** output definition and the **valueFrom** attribute, you can ma
 #### **mTLS**
 
 ```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
+apiVersion: telemetry.kyma-project.io/v1beta1
 kind: LogPipeline
 metadata:
   name: http-backend
@@ -237,7 +237,7 @@ spec:
 #### **Basic Authentication**
 
 ```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
+apiVersion: telemetry.kyma-project.io/v1beta1
 kind: LogPipeline
 metadata:
   name: http-backend
@@ -293,7 +293,7 @@ To use data provided by the Kubernetes Secrets in a `custom` output definition, 
 
 ```yaml
 kind: LogPipeline
-apiVersion: telemetry.kyma-project.io/v1alpha1
+apiVersion: telemetry.kyma-project.io/v1beta1
 metadata:
   name: http-backend
 spec:

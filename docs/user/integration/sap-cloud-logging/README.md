@@ -60,13 +60,13 @@ You can set up ingestion of logs from applications and the Istio service mesh to
 
       ```bash
       kubectl apply -f - <<EOF
-      apiVersion: telemetry.kyma-project.io/v1alpha1
+      apiVersion: telemetry.kyma-project.io/v1beta1
       kind: LogPipeline
       metadata:
         name: sap-cloud-logging
       spec:
         input:
-          application:
+          runtime:
             enabled: true
         output:
           otlp:
@@ -124,7 +124,7 @@ You can set up ingestion of distributed traces from applications and the Istio s
 
     ```bash
     kubectl apply -f - <<EOF
-    apiVersion: telemetry.kyma-project.io/v1alpha1
+    apiVersion: telemetry.kyma-project.io/v1beta1
     kind: TracePipeline
     metadata:
       name: sap-cloud-logging
@@ -182,7 +182,7 @@ You can set up ingestion of metrics from applications and the Istio service mesh
 
     ```bash
     kubectl apply -f - <<EOF
-    apiVersion: telemetry.kyma-project.io/v1alpha1
+    apiVersion: telemetry.kyma-project.io/v1beta1
     kind: MetricPipeline
     metadata:
       name: sap-cloud-logging
