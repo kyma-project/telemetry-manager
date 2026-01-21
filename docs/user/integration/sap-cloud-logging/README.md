@@ -232,11 +232,7 @@ For the available options, see [Configure Metrics Collection](./../../collecting
 
 ## Set Up Kyma Dashboard Integration
 
-To add direct links from Kyma dashboard to SAP Cloud Logging, apply the ConfigMap that corresponds to your chosen log shipping method.
-
-### Context
-
-Depending on the output you use in your LogPipeline, apply the ConfigMap. If your Secret has a different name or namespace, then download the file first and adjust the namespace and name accordingly in the dataSources section of the file.
+You can add direct links from Kyma dashboard to SAP Cloud Logging.
 
 ### Procedure
 
