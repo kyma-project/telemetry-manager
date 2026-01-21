@@ -55,12 +55,15 @@ metadata:
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
+  annotations:
+    test-anno-key: test-anno-value
   labels:
     app.kubernetes.io/component: agent
     app.kubernetes.io/managed-by: telemetry-manager
     app.kubernetes.io/name: telemetry-metric-agent
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
+    test-label-key: test-label-value
   name: telemetry-metric-agent
   namespace: kyma-system
 spec:
@@ -71,6 +74,7 @@ spec:
     metadata:
       annotations:
         checksum/config: 6a334c19c8f1698c843d1c40ef9c228c222b0c04f9945a359a3e932c2aa11ac7
+        test-anno-key: test-anno-value
       labels:
         app.kubernetes.io/component: agent
         app.kubernetes.io/managed-by: telemetry-manager
@@ -81,6 +85,7 @@ spec:
         sidecar.istio.io/inject: "true"
         telemetry.kyma-project.io/metric-export: "true"
         telemetry.kyma-project.io/metric-scrape: "true"
+        test-label-key: test-label-value
     spec:
       containers:
       - args:
@@ -137,6 +142,11 @@ spec:
         - mountPath: /etc/istio-output-certs
           name: istio-certs
           readOnly: true
+        - mountPath: /etc/ssl/certs
+          name: custom-ca-bundle
+          readOnly: true
+      imagePullSecrets:
+      - name: mySecret
       priorityClassName: normal
       securityContext:
         runAsNonRoot: true
@@ -158,6 +168,12 @@ spec:
         name: config
       - emptyDir: {}
         name: istio-certs
+      - name: custom-ca-bundle
+        projected:
+          sources:
+          - clusterTrustBundle:
+              name: trustBundle
+              path: ca-certificates.crt
   updateStrategy: {}
 status:
   currentNumberScheduled: 0

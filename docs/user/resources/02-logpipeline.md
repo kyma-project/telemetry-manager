@@ -113,7 +113,7 @@ For details, see the [LogPipeline specification file](https://github.com/kyma-pr
 | **input**  | object | Input configures additional inputs for log collection. |
 | **input.&#x200b;otlp**  | object | OTLP input configures the push endpoint to receive logs from an OTLP source. |
 | **input.&#x200b;otlp.&#x200b;enabled**  | boolean | Enabled specifies if the 'otlp' input is enabled. If enabled, then push-based OTLP signals are collected. The default is `true`. |
-| **input.&#x200b;otlp.&#x200b;namespaces**  | object | Namespaces describe whether push-based OTLP signals from specific namespaces are selected. By default, all namespaces except system namespaces are enabled. To enable all namespaces including system namespaces, use an empty struct notation. |
+| **input.&#x200b;otlp.&#x200b;namespaces**  | object | Namespaces describe whether push-based OTLP signals from specific namespaces are selected. System namespaces are enabled by default. |
 | **input.&#x200b;otlp.&#x200b;namespaces.&#x200b;exclude**  | \[\]string | Exclude telemetry data from the specified namespace names only. By default, all namespaces (depending on input type: except system namespaces) are collected. You cannot specify an exclude list together with an include list. |
 | **input.&#x200b;otlp.&#x200b;namespaces.&#x200b;include**  | \[\]string | Include telemetry data from the specified namespace names only. By default, all namespaces (depending on input type: except system namespaces) are included. You cannot specify an include list together with an exclude list. |
 | **input.&#x200b;runtime**  | object | Runtime input configures the log collection from application containers stdout/stderr by tailing the log files of the underlying container runtime. |

@@ -20,7 +20,13 @@ import (
 )
 
 func TestGateway_ApplyResources(t *testing.T) {
-	globals := config.NewGlobal(config.WithTargetNamespace("kyma-system"))
+	globals := config.NewGlobal(
+		config.WithTargetNamespace("kyma-system"),
+		config.WithImagePullSecretName("mySecret"),
+		config.WithAdditionalLabels(map[string]string{"test-label-key": "test-label-value"}),
+		config.WithAdditionalAnnotations(map[string]string{"test-anno-key": "test-anno-value"}),
+		config.WithClusterTrustBundleName("trustBundle"),
+	)
 	globalsWithFIPS := config.NewGlobal(
 		config.WithTargetNamespace("kyma-system"),
 		config.WithOperateInFIPSMode(true),
