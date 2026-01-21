@@ -13,8 +13,8 @@ As a maintainer or contributor, follow these steps to update the `opentelemetry-
     - [4. Check Internal Metrics](#4-check-internal-metrics)
     - [5. Identify and Plan for Breaking Changes](#5-identify-and-plan-for-breaking-changes)
   - [Implementation](#implementation)
-    - [opentelemetry-collector-components](#opentelemetry-collector-components)
-    - [telemetry-manager](#telemetry-manager)
+    - [OTel Collector Components](#otel-collector-components)
+    - [Telemetry Manager](#telemetry-manager)
   - [Post-Bump Verification](#post-bump-verification)
 
 ## Preparation
