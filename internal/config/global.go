@@ -41,6 +41,7 @@ type Experimental struct {
 
 type Global struct {
 	Experimental
+
 	managerNamespace       string
 	targetNamespace        string
 	operateInFIPSMode      bool
@@ -103,7 +104,7 @@ func WithAdditionalAnnotations(annotations map[string]string) Option {
 
 func WithUseDaemonSetForGateway(enable bool) Option {
 	return func(g *Global) {
-		g.Experimental.useDaemonSetForGateway = enable
+		g.useDaemonSetForGateway = enable
 	}
 }
 
@@ -161,7 +162,7 @@ func (g *Global) Version() string {
 }
 
 func (g *Global) UseDaemonSetForGateway() bool {
-	return g.Experimental.useDaemonSetForGateway
+	return g.useDaemonSetForGateway
 }
 
 func (g *Global) ImagePullSecretName() string {

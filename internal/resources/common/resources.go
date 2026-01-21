@@ -136,6 +136,7 @@ func MakeResourceMetadata(globals interface {
 	// Prepare resource and pod labels
 	resourceLabels := make(map[string]string)
 	podLabels := make(map[string]string)
+
 	maps.Copy(resourceLabels, globals.AdditionalLabels())
 	maps.Copy(podLabels, globals.AdditionalLabels())
 	maps.Copy(resourceLabels, baseLabels)

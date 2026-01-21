@@ -349,6 +349,7 @@ func (gad *GatewayApplierDeleter) makeGatewayDaemonSet(configChecksum string, op
 func (gad *GatewayApplierDeleter) makeGatewayMetadata(configChecksum string, opts GatewayApplyOptions) commonresources.ResourceMetadata {
 	labels := commonresources.MakeDefaultLabels(gad.baseName, commonresources.LabelValueK8sComponentGateway)
 	annotations := gad.makeAnnotations(configChecksum, opts)
+
 	return commonresources.MakeResourceMetadata(&gad.globals, labels, gad.extraPodLabels, annotations)
 }
 
