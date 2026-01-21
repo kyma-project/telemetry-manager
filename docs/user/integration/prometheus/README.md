@@ -116,7 +116,7 @@ The provided `values.yaml` covers the following adjustments:
     ```yaml
     SERVICE=$(kubectl -n ${K8S_PROM_NAMESPACE} get service -l app=kube-prometheus-stack-prometheus -ojsonpath='{.items[*].metadata.name}')
     kubectl apply -f - <<EOF
-    apiVersion: telemetry.kyma-project.io/v1alpha1
+    apiVersion: telemetry.kyma-project.io/v1beta1
     kind: MetricPipeline
     metadata:
         name: prometheus
