@@ -72,7 +72,7 @@ To configure the Kyma trace gateway with the deployed Jaeger instance as the bac
 
 ```bash
 cat <<EOF | kubectl -n $K8S_NAMESPACE apply -f -
-apiVersion: telemetry.kyma-project.io/v1alpha1
+apiVersion: telemetry.kyma-project.io/v1beta1
 kind: TracePipeline
 metadata:
   name: jaeger

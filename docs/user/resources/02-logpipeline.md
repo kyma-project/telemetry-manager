@@ -11,7 +11,7 @@ kubectl get crd logpipeline.telemetry.kyma-project.io -o yaml
 The following LogPipeline object defines a pipeline integrating with the otlp output. It uses mTLS taking connection details from a Secret, excludes OTLP logs from "namespaceA" and includes application logs emitted in "namespaceB". Additionally, it filters out logs with severity level lower than the WARN level and adds an `alert` attribute for logs with severity level higher than WARN level and coming from the `prod` environment.
 
 ```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
+apiVersion: telemetry.kyma-project.io/v1beta1
 kind: LogPipeline
 metadata:
   name: backend
@@ -21,7 +21,7 @@ spec:
       namespaces:
         exclude:
         - namespaceA
-    application:
+    runtime:
       namespaces:
         include:
         - namespaceB
@@ -90,7 +90,7 @@ For further examples, see the [samples](https://github.com/kyma-project/telemetr
 
 ## Custom Resource Parameters
 
-For details, see the [LogPipeline specification file](https://github.com/kyma-project/telemetry-manager/blob/main/apis/telemetry/v1alpha1/logpipeline_types.go).
+For details, see the [LogPipeline specification file](https://github.com/kyma-project/telemetry-manager/blob/main/apis/telemetry/v1beta1/logpipeline_types.go).
 
 <!-- The table below was generated automatically -->
 <!-- Some special tags (html comments) are at the end of lines due to markdown requirements. -->
@@ -113,7 +113,7 @@ For details, see the [LogPipeline specification file](https://github.com/kyma-pr
 | **input**  | object | Input configures additional inputs for log collection. |
 | **input.&#x200b;otlp**  | object | OTLP input configures the push endpoint to receive logs from an OTLP source. |
 | **input.&#x200b;otlp.&#x200b;enabled**  | boolean | Enabled specifies if the 'otlp' input is enabled. If enabled, then push-based OTLP signals are collected. The default is `true`. |
-| **input.&#x200b;otlp.&#x200b;namespaces**  | object | Namespaces describe whether push-based OTLP signals from specific namespaces are selected. By default, all namespaces except system namespaces are enabled. To enable all namespaces including system namespaces, use an empty struct notation. |
+| **input.&#x200b;otlp.&#x200b;namespaces**  | object | Namespaces describe whether push-based OTLP signals from specific namespaces are selected. System namespaces are enabled by default. |
 | **input.&#x200b;otlp.&#x200b;namespaces.&#x200b;exclude**  | \[\]string | Exclude telemetry data from the specified namespace names only. By default, all namespaces (depending on input type: except system namespaces) are collected. You cannot specify an exclude list together with an include list. |
 | **input.&#x200b;otlp.&#x200b;namespaces.&#x200b;include**  | \[\]string | Include telemetry data from the specified namespace names only. By default, all namespaces (depending on input type: except system namespaces) are included. You cannot specify an include list together with an exclude list. |
 | **input.&#x200b;runtime**  | object | Runtime input configures the log collection from application containers stdout/stderr by tailing the log files of the underlying container runtime. |
