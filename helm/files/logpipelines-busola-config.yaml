@@ -546,18 +546,18 @@ form: |
             children:
               - path: '[]'
                 widget: Resource
-                  resource:
-                    kind: Namespace
-                    version: v1
+                resource:
+                  kind: Namespace
+                  version: v1
           - name: Exclude Namespaces
             widget: SimpleList
             path: namespaces.exclude
             children:
               - path: '[]'
                 widget: Resource
-                  resource:
-                    kind: Namespace
-                    version: v1
+                resource:
+                  kind: Namespace
+                  version: v1
   - name: Filters
     widget: GenericList
     path: spec.filters

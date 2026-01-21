@@ -254,20 +254,35 @@ func (ad *ApplierDeleter) makeConfigMap(prometheusConfigFileName, prometheusConf
 func (ad *ApplierDeleter) makeDeployment(configChecksum, configPath, configFile string) *appsv1.Deployment {
 	var replicas int32 = 1
 
-	labels := commonresources.MakeDefaultLabels(baseName, commonresources.LabelValueK8sComponentMonitor)
-	selectorLabels := commonresources.MakeDefaultSelectorLabels(baseName)
+	// Create final labels for the DaemonSet and Pods with additional labels
+	resourceLabels := make(map[string]string)
 	podLabels := make(map[string]string)
-	maps.Copy(podLabels, labels)
-	podLabels[commonresources.LabelKeyIstioInject] = commonresources.LabelValueFalse
+	selectorLabels := commonresources.MakeDefaultSelectorLabels(baseName)
 
-	annotations := map[string]string{commonresources.AnnotationKeyChecksumConfig: configChecksum}
+	defaultLabels := commonresources.MakeDefaultLabels(baseName, commonresources.LabelValueK8sComponentMonitor)
+
+	maps.Copy(resourceLabels, ad.Config.AdditionalLabels())
+	maps.Copy(resourceLabels, defaultLabels)
+
+	maps.Copy(podLabels, ad.Config.AdditionalLabels())
+	podLabels[commonresources.LabelKeyIstioInject] = commonresources.LabelValueFalse
+	maps.Copy(podLabels, defaultLabels)
+
+	podAnnotations := make(map[string]string)
+	resourceAnnotations := make(map[string]string)
+	// Copy global additional annotations
+	maps.Copy(resourceAnnotations, ad.Config.AdditionalAnnotations())
+	maps.Copy(podAnnotations, ad.Config.AdditionalAnnotations())
+	podAnnotations[commonresources.AnnotationKeyChecksumConfig] = configChecksum
+
 	podSpec := ad.makePodSpec(baseName, ad.Config.Image, configPath, configFile)
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      baseName,
-			Namespace: ad.Config.TargetNamespace(),
-			Labels:    labels,
+			Name:        baseName,
+			Namespace:   ad.Config.TargetNamespace(),
+			Labels:      resourceLabels,
+			Annotations: resourceAnnotations,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: ptr.To(replicas),
@@ -277,7 +292,7 @@ func (ad *ApplierDeleter) makeDeployment(configChecksum, configPath, configFile 
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels:      podLabels,
-					Annotations: annotations,
+					Annotations: podAnnotations,
 				},
 				Spec: podSpec,
 			},
@@ -360,6 +375,7 @@ func (ad *ApplierDeleter) makePodSpec(baseName, image, configPath, configFile st
 		commonresources.WithPodRunAsUser(commonresources.UserDefault),
 		commonresources.WithPriorityClass(ad.Config.PriorityClassName),
 		commonresources.WithTerminationGracePeriodSeconds(300), //nolint:mnd // 300 seconds
+		commonresources.WithImagePullSecretName(ad.Config.ImagePullSecretName()),
 
 		commonresources.WithContainer("self-monitor", image,
 			commonresources.WithArgs(args),

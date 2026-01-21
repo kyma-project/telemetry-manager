@@ -29,8 +29,8 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
@@ -87,25 +87,25 @@ func (r *TelemetryController) Reconcile(ctx context.Context, req ctrl.Request) (
 
 func (r *TelemetryController) SetupWithManager(mgr ctrl.Manager) error {
 	b := ctrl.NewControllerManagedBy(mgr).
-		For(&operatorv1alpha1.Telemetry{}).
+		For(&operatorv1beta1.Telemetry{}).
 		Watches(
 			&corev1.Secret{},
-			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &operatorv1alpha1.Telemetry{}),
+			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &operatorv1beta1.Telemetry{}),
 			ctrlbuilder.WithPredicates(predicateutils.OwnedResourceChanged())).
 		Watches(
 			&admissionregistrationv1.ValidatingWebhookConfiguration{},
 			handler.EnqueueRequestsFromMapFunc(r.mapWebhook),
 			ctrlbuilder.WithPredicates(predicateutils.UpdateOrDelete())).
 		Watches(
-			&telemetryv1alpha1.LogPipeline{},
+			&telemetryv1beta1.LogPipeline{},
 			handler.EnqueueRequestsFromMapFunc(r.mapLogPipeline),
 			ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete())).
 		Watches(
-			&telemetryv1alpha1.TracePipeline{},
+			&telemetryv1beta1.TracePipeline{},
 			handler.EnqueueRequestsFromMapFunc(r.mapTracePipeline),
 			ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete())).
 		Watches(
-			&telemetryv1alpha1.MetricPipeline{},
+			&telemetryv1beta1.MetricPipeline{},
 			handler.EnqueueRequestsFromMapFunc(r.mapMetricPipeline),
 			ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete()))
 
@@ -127,7 +127,7 @@ func (r *TelemetryController) mapWebhook(ctx context.Context, object client.Obje
 }
 
 func (r *TelemetryController) mapLogPipeline(ctx context.Context, object client.Object) []reconcile.Request {
-	logPipeline, ok := object.(*telemetryv1alpha1.LogPipeline)
+	logPipeline, ok := object.(*telemetryv1beta1.LogPipeline)
 	if !ok {
 		logf.FromContext(ctx).Error(nil, "Unable to cast object to LogPipeline")
 		return nil
@@ -141,7 +141,7 @@ func (r *TelemetryController) mapLogPipeline(ctx context.Context, object client.
 }
 
 func (r *TelemetryController) mapTracePipeline(ctx context.Context, object client.Object) []reconcile.Request {
-	tracePipeline, ok := object.(*telemetryv1alpha1.TracePipeline)
+	tracePipeline, ok := object.(*telemetryv1beta1.TracePipeline)
 	if !ok {
 		logf.FromContext(ctx).Error(nil, "Unable to cast object to TracePipeline")
 		return nil
@@ -155,7 +155,7 @@ func (r *TelemetryController) mapTracePipeline(ctx context.Context, object clien
 }
 
 func (r *TelemetryController) mapMetricPipeline(ctx context.Context, object client.Object) []reconcile.Request {
-	metricPipeline, ok := object.(*telemetryv1alpha1.MetricPipeline)
+	metricPipeline, ok := object.(*telemetryv1beta1.MetricPipeline)
 	if !ok {
 		logf.FromContext(ctx).Error(nil, "Unable to cast object to MetricPipeline")
 		return nil
@@ -169,7 +169,7 @@ func (r *TelemetryController) mapMetricPipeline(ctx context.Context, object clie
 }
 
 func (r *TelemetryController) createTelemetryRequests(ctx context.Context) []reconcile.Request {
-	var telemetries operatorv1alpha1.TelemetryList
+	var telemetries operatorv1beta1.TelemetryList
 
 	err := r.List(ctx, &telemetries)
 	if err != nil {

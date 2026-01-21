@@ -112,6 +112,7 @@ func generateSecScanConfig(data map[string]string) error {
 		"dependencies/sample-app/**",
 		"dependencies/stdout-log-generator/**",
 		"internal/tools/**",
+		"apis/telemetry/v1alpha1/zz_generated.conversion.go",
 	}
 
 	secScanCfg := secScanConfig{
