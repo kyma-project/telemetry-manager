@@ -46,7 +46,7 @@ SAP Cloud Logging is an instance-based and environment-agnostic observability se
 
 ## Ship Logs to SAP Cloud Logging
 
-You can set up parsing of application logs from stdout and you can set up ingestion of OTLP logs from applications and the Istio service mesh to the OTLP endpoint of the SAP Cloud Logging service instance. Cloud Logging provides prepared Dashboards to introdpect the collected log datas.
+You can set up ingestion of logs from applications and the Istio service mesh to the OTLP endpoint of the SAP Cloud Logging service instance.
 
 ### Procedure
 
@@ -265,7 +265,7 @@ You can import predefined alerts for SAP Cloud Logging to monitor the health of 
    | SAP Cloud Logging | [alert-health.json](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-health.json) | Monitors the health of the underlying OpenSearch cluster in SAP Cloud Logging using the [cluster health API](https://opensearch.org/docs/1.3/api-reference/cluster-api/cluster-health). Triggers if the cluster status becomes `red`. |
    | SAP Cloud Logging | [alert-rejection-in-progress.json](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-rejection-in-progress.json) | Monitors the `cls-rejected-*` index for new data. Triggers if new rejected data is observed. |
    | Kyma Telemetry Integration | [alert-telemetry-status.json](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-app-log-ingestion.json) | Monitors the status of the Telemetry module. Triggers if the module reports a non-ready state. |
-   | Kyma Telemetry Integration | [alert-log-ingestion.json](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-log-ingestion.json) | Monitors the single LogPipeline used in the OTLP method. Triggers if log data stops flowing. |
+   | Kyma Telemetry Integration | [alert-log-ingestion.json](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-log-ingestion.json) | Monitors the LogPipeline. Triggers if log data stops flowing to SAP Cloud Logging. |
    | Kyma Telemetry Integration | [alert-trace-ingestion.json](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-trace-ingestion.json) | Monitors the TracePipeline. Triggers if trace data stops flowing to SAP Cloud Logging. |
    | Kyma Telemetry Integration | [alert-metric-ingestion.json](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-metric-ingestion.json) | Monitors the MetricPipeline. Triggers if metric data stops flowing to SAP Cloud Logging. |
 
