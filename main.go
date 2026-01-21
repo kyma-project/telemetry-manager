@@ -79,13 +79,14 @@ var (
 	setupLog = ctrl.Log.WithName("setup")
 
 	// Operator flags
-	certDir                 string
-	highPriorityClassName   string
-	normalPriorityClassName string
-	clusterTrustBundleName  string
-	imagePullSecretName     string
-	additionalLabels        cliflags.Map
-	additionalAnnotations   cliflags.Map
+	certDir                   string
+	highPriorityClassName     string
+	normalPriorityClassName   string
+	clusterTrustBundleName    string
+	imagePullSecretName       string
+	additionalLabels          cliflags.Map
+	additionalAnnotations     cliflags.Map
+	enableDaemonSetForGateway bool
 )
 
 const (
@@ -168,6 +169,7 @@ func run() error {
 		config.WithClusterTrustBundleName(clusterTrustBundleName),
 		config.WithAdditionalLabels(additionalLabels),
 		config.WithAdditionalAnnotations(additionalAnnotations),
+		config.WithUseDaemonSetForGateway(featureflags.IsEnabled(featureflags.EnableDaemonSetForGateway)),
 	)
 
 	if err := globals.Validate(); err != nil {
@@ -324,7 +326,10 @@ func logBuildAndProcessInfo() {
 	}
 }
 
-func initializeFeatureFlags() {} // Placeholder for future feature flag initializations.
+func initializeFeatureFlags() {
+	// Placeholder for future feature flag initializations.
+	featureflags.Set(featureflags.EnableDaemonSetForGateway, enableDaemonSetForGateway)
+}
 
 func parseFlags() {
 	flag.StringVar(&certDir, "cert-dir", ".", "Webhook TLS certificate directory")
@@ -335,6 +340,8 @@ func parseFlags() {
 	flag.StringVar(&imagePullSecretName, "image-pull-secret-name", "", "The image pull secret name to use for pulling images of all created workloads (agents, gateways, self-monitor)")
 	flag.Var(&additionalLabels, "additional-label", "Additional label to add to all created resources in key=value format")
 	flag.Var(&additionalAnnotations, "additional-annotation", "Additional annotation to add to all created resources in key=value format")
+
+	flag.BoolVar(&enableDaemonSetForGateway, "enable-daemonset-for-gateway", false, "Enable deploying gateway components as DaemonSets instead of Deployments")
 
 	flag.Parse()
 }

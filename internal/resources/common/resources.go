@@ -1,6 +1,8 @@
 package common
 
 import (
+	"maps"
+
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -103,4 +105,46 @@ func makeNetworkPolicyPorts(ports []int32) []networkingv1.NetworkPolicyPort {
 	}
 
 	return networkPolicyPorts
+}
+
+// ResourceMetadata holds labels and annotations for Kubernetes resources and their pods
+type ResourceMetadata struct {
+	ResourceLabels      map[string]string
+	PodLabels           map[string]string
+	ResourceAnnotations map[string]string
+	PodAnnotations      map[string]string
+}
+
+// MakeResourceMetadata prepares labels and annotations for a Kubernetes resource and its pod template.
+// It combines the provided baseLabels, extraPodLabels, baseAnnotations with global additional labels/annotations.
+func MakeResourceMetadata(globals interface {
+	AdditionalLabels() map[string]string
+	AdditionalAnnotations() map[string]string
+}, baseLabels, extraPodLabels, baseAnnotations map[string]string) ResourceMetadata {
+	// Prepare annotations
+	podAnnotations := make(map[string]string)
+	resourceAnnotations := make(map[string]string)
+	maps.Copy(resourceAnnotations, globals.AdditionalAnnotations())
+	maps.Copy(podAnnotations, globals.AdditionalAnnotations())
+	maps.Copy(podAnnotations, baseAnnotations)
+
+	// Prepare pod labels
+	defaultPodLabels := make(map[string]string)
+	maps.Copy(defaultPodLabels, baseLabels)
+	maps.Copy(defaultPodLabels, extraPodLabels)
+
+	// Prepare resource and pod labels
+	resourceLabels := make(map[string]string)
+	podLabels := make(map[string]string)
+	maps.Copy(resourceLabels, globals.AdditionalLabels())
+	maps.Copy(podLabels, globals.AdditionalLabels())
+	maps.Copy(resourceLabels, baseLabels)
+	maps.Copy(podLabels, defaultPodLabels)
+
+	return ResourceMetadata{
+		ResourceLabels:      resourceLabels,
+		PodLabels:           podLabels,
+		ResourceAnnotations: resourceAnnotations,
+		PodAnnotations:      podAnnotations,
+	}
 }

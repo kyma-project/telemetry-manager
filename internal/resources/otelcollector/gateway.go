@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"maps"
 	"slices"
 
 	istiosecurityv1 "istio.io/api/security/v1"
@@ -91,6 +90,8 @@ type GatewayApplyOptions struct {
 	// This value is multiplied with a base resource requirement to calculate the actual CPU and memory limits.
 	// A value of 1 applies the base limits; values greater than 1 increase those limits proportionally.
 	ResourceRequirementsMultiplier int
+	// Experimental feature to deploy gateways as DaemonSets instead of Deployments.
+	UseDaemonSetForGateway bool
 }
 
 //nolint:dupl // repeating the code as we have three different signals
@@ -215,8 +216,15 @@ func (gad *GatewayApplierDeleter) ApplyResources(ctx context.Context, c client.C
 	}
 
 	configChecksum := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, []corev1.Secret{*secret})
-	if err := k8sutils.CreateOrUpdateDeployment(ctx, c, gad.makeGatewayDeployment(configChecksum, opts)); err != nil {
-		return fmt.Errorf("failed to create deployment: %w", err)
+
+	if opts.UseDaemonSetForGateway {
+		if err := k8sutils.CreateOrUpdateDaemonSet(ctx, c, gad.makeGatewayDaemonSet(configChecksum, opts)); err != nil {
+			return fmt.Errorf("failed to create daemonset: %w", err)
+		}
+	} else {
+		if err := k8sutils.CreateOrUpdateDeployment(ctx, c, gad.makeGatewayDeployment(configChecksum, opts)); err != nil {
+			return fmt.Errorf("failed to create deployment: %w", err)
+		}
 	}
 
 	if err := k8sutils.CreateOrUpdateService(ctx, c, gad.makeOTLPService()); err != nil {
@@ -256,9 +264,15 @@ func (gad *GatewayApplierDeleter) DeleteResources(ctx context.Context, c client.
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete configmap: %w", err))
 	}
 
+	// Try to delete both Deployment and DaemonSet (one will exist depending on the current configuration)
 	deployment := appsv1.Deployment{ObjectMeta: objectMeta}
-	if err := k8sutils.DeleteObject(ctx, c, &deployment); err != nil {
+	if err := k8sutils.DeleteObject(ctx, c, &deployment); err != nil && !errors.Is(err, client.IgnoreNotFound(err)) {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete deployment: %w", err))
+	}
+
+	daemonSet := appsv1.DaemonSet{ObjectMeta: objectMeta}
+	if err := k8sutils.DeleteObject(ctx, c, &daemonSet); err != nil && !errors.Is(err, client.IgnoreNotFound(err)) {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete daemonset: %w", err))
 	}
 
 	OTLPService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: gad.otlpServiceName, Namespace: gad.globals.TargetNamespace()}}
@@ -277,31 +291,69 @@ func (gad *GatewayApplierDeleter) DeleteResources(ctx context.Context, c client.
 }
 
 func (gad *GatewayApplierDeleter) makeGatewayDeployment(configChecksum string, opts GatewayApplyOptions) *appsv1.Deployment {
-	labels := commonresources.MakeDefaultLabels(gad.baseName, commonresources.LabelValueK8sComponentGateway)
 	selectorLabels := commonresources.MakeDefaultSelectorLabels(gad.baseName)
+	podSpec := gad.makeGatewayPodSpec(opts)
+	metadata := gad.makeGatewayMetadata(configChecksum, opts)
+
+	return &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        gad.baseName,
+			Namespace:   gad.globals.TargetNamespace(),
+			Labels:      metadata.ResourceLabels,
+			Annotations: metadata.ResourceAnnotations,
+		},
+		Spec: appsv1.DeploymentSpec{
+			Replicas: ptr.To(opts.Replicas),
+			Selector: &metav1.LabelSelector{
+				MatchLabels: selectorLabels,
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels:      metadata.PodLabels,
+					Annotations: metadata.PodAnnotations,
+				},
+				Spec: podSpec,
+			},
+		},
+	}
+}
+
+func (gad *GatewayApplierDeleter) makeGatewayDaemonSet(configChecksum string, opts GatewayApplyOptions) *appsv1.DaemonSet {
+	selectorLabels := commonresources.MakeDefaultSelectorLabels(gad.baseName)
+	podSpec := gad.makeGatewayPodSpec(opts)
+	metadata := gad.makeGatewayMetadata(configChecksum, opts)
+
+	return &appsv1.DaemonSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        gad.baseName,
+			Namespace:   gad.globals.TargetNamespace(),
+			Labels:      metadata.ResourceLabels,
+			Annotations: metadata.ResourceAnnotations,
+		},
+		Spec: appsv1.DaemonSetSpec{
+			Selector: &metav1.LabelSelector{
+				MatchLabels: selectorLabels,
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels:      metadata.PodLabels,
+					Annotations: metadata.PodAnnotations,
+				},
+				Spec: podSpec,
+			},
+		},
+	}
+}
+
+// makeGatewayMetadata prepares labels and annotations for gateway resources
+func (gad *GatewayApplierDeleter) makeGatewayMetadata(configChecksum string, opts GatewayApplyOptions) commonresources.ResourceMetadata {
+	labels := commonresources.MakeDefaultLabels(gad.baseName, commonresources.LabelValueK8sComponentGateway)
 	annotations := gad.makeAnnotations(configChecksum, opts)
+	return commonresources.MakeResourceMetadata(&gad.globals, labels, gad.extraPodLabels, annotations)
+}
 
-	// Create final annotations for the DaemonSet and Pods with additional annotations
-	podAnnotations := make(map[string]string)
-	resourceAnnotations := make(map[string]string)
-
-	maps.Copy(resourceAnnotations, gad.globals.AdditionalAnnotations())
-	maps.Copy(podAnnotations, gad.globals.AdditionalAnnotations())
-	maps.Copy(podAnnotations, annotations)
-
-	defaultPodLabels := make(map[string]string)
-	maps.Copy(defaultPodLabels, labels)
-	maps.Copy(defaultPodLabels, gad.extraPodLabels)
-
-	// Create final labels for the DaemonSet and Pods with additional labels
-	resourceLabels := make(map[string]string)
-	podLabels := make(map[string]string)
-
-	maps.Copy(resourceLabels, gad.globals.AdditionalLabels())
-	maps.Copy(podLabels, gad.globals.AdditionalLabels())
-	maps.Copy(resourceLabels, labels)
-	maps.Copy(podLabels, defaultPodLabels)
-
+// makeGatewayPodSpec creates the pod spec for gateway (Deployment or DaemonSet)
+func (gad *GatewayApplierDeleter) makeGatewayPodSpec(opts GatewayApplyOptions) corev1.PodSpec {
 	resources := gad.makeGatewayResourceRequirements(opts)
 
 	containerOpts := slices.Clone(gad.containerOpts)
@@ -317,34 +369,12 @@ func (gad *GatewayApplierDeleter) makeGatewayDeployment(configChecksum string, o
 		commonresources.WithClusterTrustBundleVolume(gad.globals.ClusterTrustBundleName()),
 	)
 
-	podSpec := makePodSpec(
+	return makePodSpec(
 		gad.baseName,
 		gad.image,
 		podOptions,
 		containerOpts,
 	)
-
-	return &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        gad.baseName,
-			Namespace:   gad.globals.TargetNamespace(),
-			Labels:      resourceLabels,
-			Annotations: resourceAnnotations,
-		},
-		Spec: appsv1.DeploymentSpec{
-			Replicas: ptr.To(opts.Replicas),
-			Selector: &metav1.LabelSelector{
-				MatchLabels: selectorLabels,
-			},
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels:      podLabels,
-					Annotations: podAnnotations,
-				},
-				Spec: podSpec,
-			},
-		},
-	}
 }
 
 func (gad *GatewayApplierDeleter) makeGatewayResourceRequirements(opts GatewayApplyOptions) corev1.ResourceRequirements {
