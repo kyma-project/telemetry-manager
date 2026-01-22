@@ -20,22 +20,18 @@ import (
 func setupTestEnvironment(t *testing.T) (context.Context, *metricsdk.MeterProvider) {
 	t.Helper()
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// Use Prometheus exporter for this test
 	t.Setenv("OTEL_METRICS_EXPORTER", "prometheus")
 
 	// Create resources using the same setup as main
 	res, err := newOtelResource()
-	if err != nil {
-		t.Fatalf("failed to create resource: %v", err)
-	}
+	require.NoError(t,err)
 
 	// Create metric reader using the same setup as main
 	reader, err := newMetricReader(ctx)
-	if err != nil {
-		t.Fatalf("failed to create metric reader: %v", err)
-	}
+	require.NoError(t,err)
 
 	// Create meter provider using the same setup as main
 	meterProvider := newMeterProvider(reader, res)
