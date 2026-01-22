@@ -11,7 +11,7 @@ import (
 // KUBERNETES ATTRIBUTES PROCESSOR BUILDERS
 // =============================================================================
 
-func K8sAttributesProcessorConfig(enrichments *operatorv1beta1.EnrichmentSpec) *K8sAttributesProcessor {
+func K8sAttributesProcessorConfig(enrichments *operatorv1beta1.EnrichmentSpec, includeServiceEnrichment bool) *K8sAttributesProcessor {
 	k8sAttributes := []string{
 		"k8s.pod.name",
 		"k8s.node.name",
@@ -21,6 +21,10 @@ func K8sAttributesProcessorConfig(enrichments *operatorv1beta1.EnrichmentSpec) *
 		"k8s.daemonset.name",
 		"k8s.cronjob.name",
 		"k8s.job.name",
+	}
+
+	if includeServiceEnrichment {
+		k8sAttributes = append(k8sAttributes, "service.namespace", "service.name", "service.version", "service.instance.id")
 	}
 
 	podAssociations := []PodAssociations{

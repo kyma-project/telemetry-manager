@@ -37,6 +37,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/tracegateway"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 	sharedtypesutils "github.com/kyma-project/telemetry-manager/internal/utils/sharedtypes"
@@ -50,7 +51,7 @@ const defaultReplicaCount int32 = 2
 type Reconciler struct {
 	client.Client
 
-	config config.Global
+	globals config.Global
 
 	// Dependencies
 	flowHealthProber      FlowHealthProber
@@ -68,10 +69,10 @@ type Reconciler struct {
 // Option configures the Reconciler during initialization.
 type Option func(*Reconciler)
 
-// WithGlobal sets the global configuration for the Reconciler.
-func WithGlobal(cfg config.Global) Option {
+// WithGlobals sets the global configuration.
+func WithGlobals(globals config.Global) Option {
 	return func(r *Reconciler) {
-		r.config = cfg
+		r.globals = globals
 	}
 }
 
@@ -301,7 +302,7 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 
 	var enrichments *operatorv1beta1.EnrichmentSpec
 
-	t, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.config.DefaultTelemetryNamespace())
+	t, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
 	if err == nil {
 		enrichments = t.Spec.Enrichments
 	}
@@ -312,7 +313,8 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 			ClusterUID:    clusterUID,
 			CloudProvider: shootInfo.CloudProvider,
 		},
-		Enrichments: enrichments,
+		Enrichments:       enrichments,
+		ServiceEnrichment: r.getServiceEnrichmentFromTelemetryOrDefault(ctx),
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create collector config: %w", err)
@@ -347,7 +349,7 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 // getReplicaCountFromTelemetry retrieves the desired number of trace gateway replicas from the Telemetry CR.
 // It returns the configured replica count if static scaling is configured, otherwise returns the default replica count.
 func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
-	telemetry, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.config.DefaultTelemetryNamespace())
+	telemetry, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
 	if err != nil {
 		logf.FromContext(ctx).V(1).Error(err, "Failed to get telemetry: using default scaling")
 		return defaultReplicaCount
@@ -366,7 +368,7 @@ func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
 // getClusterNameFromTelemetry retrieves the cluster name from the Telemetry CR enrichment configuration.
 // If no custom cluster name is configured, it returns the provided default name.
 func (r *Reconciler) getClusterNameFromTelemetry(ctx context.Context, defaultName string) string {
-	telemetry, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.config.DefaultTelemetryNamespace())
+	telemetry, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
 	if err != nil {
 		logf.FromContext(ctx).V(1).Error(err, "Failed to get telemetry: using default shoot name as cluster name")
 		return defaultName
@@ -379,6 +381,27 @@ func (r *Reconciler) getClusterNameFromTelemetry(ctx context.Context, defaultNam
 	}
 
 	return defaultName
+}
+
+// getServiceEnrichmentFromTelemetry retrieves the service enrichment strategy from the Telemetry CR service-enrichment annotation.
+// If no valid annotation is found, it returns the provided default service enrichment strategy.
+func (r *Reconciler) getServiceEnrichmentFromTelemetryOrDefault(ctx context.Context) string {
+	telemetry, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
+	if err != nil {
+		logf.FromContext(ctx).V(1).Error(err, "Failed to get telemetry: default service enrichment strategy will be used")
+		return commonresources.AnnotationValueTelemetryServiceEnrichmentDefault
+	}
+
+	if telemetry.Annotations != nil {
+		if value, ok := telemetry.Annotations[commonresources.AnnotationKeyTelemetryServiceEnrichment]; ok {
+			if value == commonresources.AnnotationValueTelemetryServiceEnrichmentKymaLegacy ||
+				value == commonresources.AnnotationValueTelemetryServiceEnrichmentOtel {
+				return value
+			}
+		}
+	}
+
+	return commonresources.AnnotationValueTelemetryServiceEnrichmentDefault
 }
 
 // getK8sClusterUID retrieves the unique identifier of the Kubernetes cluster by fetching the UID of the kube-system namespace.

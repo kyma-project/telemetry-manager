@@ -52,7 +52,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) erro
 
 func (r *Reconciler) setGatewayHealthyCondition(ctx context.Context, pipeline *telemetryv1beta1.TracePipeline) {
 	condition := commonstatus.GetGatewayHealthyCondition(ctx,
-		r.gatewayProber, types.NamespacedName{Name: otelcollector.TraceGatewayName, Namespace: r.config.TargetNamespace()},
+		r.gatewayProber, types.NamespacedName{Name: otelcollector.TraceGatewayName, Namespace: r.globals.TargetNamespace()},
 		r.errToMsgConverter,
 		commonstatus.SignalTypeTraces)
 	condition.ObservedGeneration = pipeline.Generation

@@ -194,6 +194,10 @@ func TestK8sAttributesProcessorConfig(t *testing.T) {
 		"k8s.daemonset.name",
 		"k8s.cronjob.name",
 		"k8s.job.name",
+		"service.namespace",
+		"service.name",
+		"service.version",
+		"service.instance.id",
 	}
 	expectedExtractLabels := []ExtractLabel{
 		{
@@ -243,7 +247,7 @@ func TestK8sAttributesProcessorConfig(t *testing.T) {
 			{Key: "", KeyPrefix: "app.kubernetes.io/name"},
 			{Key: "app", KeyPrefix: ""},
 		},
-	})
+	}, true)
 
 	require.Equal("serviceAccount", config.AuthType)
 	require.Equal(false, config.Passthrough)

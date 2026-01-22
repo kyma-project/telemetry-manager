@@ -158,6 +158,10 @@ const (
 	ComponentIDSetInstrumentationScopeIstioProcessor       = "transform/set-instrumentation-scope-istio"
 	ComponentIDInsertSkipEnrichmentAttributeProcessor      = "transform/insert-skip-enrichment-attribute"
 
+	// Trace-Specific Processors
+
+	ComponentIDDropIstioServiceEnrichmentProcessor = "transform/drop-istio-service-enrichment"
+
 	// ================================================================================
 	// EXPORTERS
 	// ================================================================================

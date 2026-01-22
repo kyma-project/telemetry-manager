@@ -20,6 +20,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/logagent"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/loggateway"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
@@ -300,8 +301,9 @@ func (r *Reconciler) reconcileLogGateway(ctx context.Context, pipeline *telemetr
 			ClusterUID:    clusterUID,
 			CloudProvider: shootInfo.CloudProvider,
 		},
-		Enrichments:   enrichments,
-		ModuleVersion: r.globals.Version(),
+		Enrichments:       enrichments,
+		ModuleVersion:     r.globals.Version(),
+		ServiceEnrichment: r.getServiceEnrichmentFromTelemetryOrDefault(ctx),
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create collector config: %w", err)
@@ -357,7 +359,8 @@ func (r *Reconciler) reconcileLogAgent(ctx context.Context, pipeline *telemetryv
 			ClusterUID:    clusterUID,
 			CloudProvider: shootInfo.CloudProvider,
 		},
-		Enrichments: enrichments,
+		Enrichments:       enrichments,
+		ServiceEnrichment: r.getServiceEnrichmentFromTelemetryOrDefault(ctx),
 	})
 	if err != nil {
 		return fmt.Errorf("failed to build agent config: %w", err)
@@ -415,6 +418,27 @@ func (r *Reconciler) getClusterNameFromTelemetry(ctx context.Context, defaultNam
 	}
 
 	return defaultName
+}
+
+// getServiceEnrichmentFromTelemetry retrieves the service enrichment strategy from the Telemetry CR service-enrichment annotation.
+// If no valid annotation is found, it returns the provided default service enrichment strategy.
+func (r *Reconciler) getServiceEnrichmentFromTelemetryOrDefault(ctx context.Context) string {
+	telemetry, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
+	if err != nil {
+		logf.FromContext(ctx).V(1).Error(err, "Failed to get telemetry: default service enrichment strategy will be used")
+		return commonresources.AnnotationValueTelemetryServiceEnrichmentDefault
+	}
+
+	if telemetry.Annotations != nil {
+		if value, ok := telemetry.Annotations[commonresources.AnnotationKeyTelemetryServiceEnrichment]; ok {
+			if value == commonresources.AnnotationValueTelemetryServiceEnrichmentKymaLegacy ||
+				value == commonresources.AnnotationValueTelemetryServiceEnrichmentOtel {
+				return value
+			}
+		}
+	}
+
+	return commonresources.AnnotationValueTelemetryServiceEnrichmentDefault
 }
 
 func (r *Reconciler) getK8sClusterUID(ctx context.Context) (string, error) {

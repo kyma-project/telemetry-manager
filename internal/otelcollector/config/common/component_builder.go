@@ -53,6 +53,11 @@ func (cb *ComponentBuilder[T]) AddServicePipeline(ctx context.Context, pipeline 
 	cb.Config.Service.Pipelines[pipelineID] = Pipeline{}
 
 	for _, f := range fs {
+		if f == nil {
+			// Skip nil component functions - allows conditional component addition
+			continue
+		}
+
 		if err := f(ctx, pipeline, pipelineID); err != nil {
 			return fmt.Errorf("failed to add component: %w", err)
 		}

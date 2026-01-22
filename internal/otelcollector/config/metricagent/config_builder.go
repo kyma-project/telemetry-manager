@@ -11,6 +11,7 @@ import (
 	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	metricpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/metricpipeline"
 )
 
@@ -35,6 +36,8 @@ type BuildOptions struct {
 	InstrumentationScopeVersion string
 	AgentNamespace              string
 	Enrichments                 *operatorv1beta1.EnrichmentSpec
+	// ServiceEnrichment specifies the service enrichment strategy to be used (temporary)
+	ServiceEnrichment string
 }
 
 // inputSources represents the enabled input sources for the telemetry metric agent.
@@ -155,7 +158,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1beta1.Metric
 		b.addReceiverForInputRouter(common.ComponentIDPrometheusInputRoutingConnector, pipelinesWithPrometheusInput, inputs.prometheus),
 		b.addReceiverForInputRouter(common.ComponentIDIstioInputRoutingConnector, pipelinesWithIstioInput, inputs.istio),
 		b.addK8sAttributesProcessor(opts),
-		b.addServiceEnrichmentProcessor(),
+		b.addServiceEnrichmentProcessor(opts),
 		b.addExporterForEnrichmentRouter(pipelinesWithRuntimeInput, pipelinesWithPrometheusInput, pipelinesWithIstioInput),
 	); err != nil {
 		return nil, nil, fmt.Errorf("failed to add enrichment service pipeline: %w", err)
@@ -380,12 +383,18 @@ func (b *Builder) addK8sAttributesProcessor(opts BuildOptions) buildComponentFun
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDK8sAttributesProcessor),
 		func(mp *telemetryv1beta1.MetricPipeline) any {
-			return common.K8sAttributesProcessorConfig(opts.Enrichments)
+			includeServiceEnrichment := opts.ServiceEnrichment == commonresources.AnnotationValueTelemetryServiceEnrichmentOtel
+			return common.K8sAttributesProcessorConfig(opts.Enrichments, includeServiceEnrichment)
 		},
 	)
 }
 
-func (b *Builder) addServiceEnrichmentProcessor() buildComponentFunc {
+func (b *Builder) addServiceEnrichmentProcessor(opts BuildOptions) buildComponentFunc {
+	// Skip adding the processor if Otel service enrichment strategy is selected (part of the deprecation process)
+	if opts.ServiceEnrichment == commonresources.AnnotationValueTelemetryServiceEnrichmentOtel {
+		return nil
+	}
+
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDServiceEnrichmentProcessor),
 		func(mp *telemetryv1beta1.MetricPipeline) any {

@@ -10,6 +10,7 @@ import (
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	sharedtypesutils "github.com/kyma-project/telemetry-manager/internal/utils/sharedtypes"
 )
 
@@ -25,6 +26,8 @@ type BuildOptions struct {
 	Cluster       common.ClusterOptions
 	Enrichments   *operatorv1beta1.EnrichmentSpec
 	ModuleVersion string
+	// ServiceEnrichment specifies the service enrichment strategy to be used (temporary)
+	ServiceEnrichment string
 }
 
 func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1beta1.LogPipeline, opts BuildOptions) (*common.Config, common.EnvVars, error) {
@@ -52,7 +55,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1beta1.LogPip
 			b.addDropIfInputSourceOTLPProcessor(),
 			b.addNamespaceFilterProcessor(),
 			b.addInsertClusterAttributesProcessor(opts),
-			b.addServiceEnrichmentProcessor(),
+			b.addServiceEnrichmentProcessor(opts),
 			// Kyma attributes are dropped before user-defined transform and filter processors
 			// to prevent user access to internal attributes.
 			b.addDropKymaAttributesProcessor(),
@@ -117,7 +120,8 @@ func (b *Builder) addK8sAttributesProcessor(opts BuildOptions) buildComponentFun
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDK8sAttributesProcessor),
 		func(lp *telemetryv1beta1.LogPipeline) any {
-			return common.K8sAttributesProcessorConfig(opts.Enrichments)
+			includeServiceEnrichment := opts.ServiceEnrichment == commonresources.AnnotationValueTelemetryServiceEnrichmentOtel
+			return common.K8sAttributesProcessorConfig(opts.Enrichments, includeServiceEnrichment)
 		},
 	)
 }
@@ -168,7 +172,12 @@ func (b *Builder) addInsertClusterAttributesProcessor(opts BuildOptions) buildCo
 	)
 }
 
-func (b *Builder) addServiceEnrichmentProcessor() buildComponentFunc {
+func (b *Builder) addServiceEnrichmentProcessor(opts BuildOptions) buildComponentFunc {
+	// Skip adding the processor if Otel service enrichment strategy is selected (part of the deprecation process)
+	if opts.ServiceEnrichment == commonresources.AnnotationValueTelemetryServiceEnrichmentOtel {
+		return nil
+	}
+
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDServiceEnrichmentProcessor),
 		func(lp *telemetryv1beta1.LogPipeline) any {
