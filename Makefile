@@ -363,6 +363,7 @@ deploy-experimental-no-fips: manifests-experimental $(HELM) ## Deploy telemetry 
 		--set manager.container.image.repository=${MANAGER_IMAGE} \
 		--set manager.container.image.pullPolicy="Always" \
 		--set manager.container.env.operateInFipsMode=false \
+		--set manager.container.args.enable-daemonset-for-gateway=true \
 		--namespace kyma-system \
 	| kubectl apply -f -
 
@@ -377,19 +378,6 @@ deploy-custom-labels-annotations-no-fips: manifests-experimental $(HELM) ## Depl
 		--set manager.container.env.operateInFipsMode=false \
 		--set additionalMetadata.labels.my-meta-label="foo" \
 		--set additionalMetadata.annotations.my-meta-annotation="bar" \
-		--namespace kyma-system \
-	| kubectl apply -f -
-
-.PHONY: deploy-daemonset-gateway-no-fips
-deploy-daemonset-gateway-no-fips: manifests-experimental $(HELM) ## Deploy telemetry manager with experimental features, daemonset gateway enabled, and FIPS mode disabled
-	$(HELM) template telemetry helm \
-		--set experimental.enabled=true \
-		--set default.enabled=false \
-		--set nameOverride=telemetry \
-		--set manager.container.image.repository=${MANAGER_IMAGE} \
-		--set manager.container.image.pullPolicy="Always" \
-		--set manager.container.env.operateInFipsMode=false \
-		--set manager.container.args.enable-daemonset-for-gateway=true \
 		--namespace kyma-system \
 	| kubectl apply -f -
 

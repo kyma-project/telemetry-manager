@@ -178,6 +178,13 @@ jobs:
             type: e2e
             use-fips: true
             install-istio: false
+          - name: e2e-log-gateway-experimental
+            labels: log-gateway and experimental
+            mode: release
+            type: e2e
+            use-fips: true
+            install-istio: false
+            experimental: true
           - name: e2e-logs-max-pipeline
             labels: logs-max-pipeline
             mode: release
