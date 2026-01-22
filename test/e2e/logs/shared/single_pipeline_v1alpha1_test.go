@@ -123,7 +123,7 @@ func TestSinglePipelineV1Alpha1_OTel(t *testing.T) {
 			assert.OTelLogPipelineHealthy(t, pipelineName)
 			assert.BackendReachable(t, backend)
 
-			if suite.IsExperimentalTest() {
+			if suite.HasExperimentalLabel() {
 				assert.DaemonSetReady(t, kitkyma.LogGatewayName)
 			} else {
 				assert.DeploymentReady(t, kitkyma.LogGatewayName)

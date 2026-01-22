@@ -106,7 +106,7 @@ func TestSecretRotation_OTel(t *testing.T) {
 
 			assert.BackendReachable(t, backend)
 
-			if suite.IsExperimentalTest() {
+			if suite.HasExperimentalLabel() {
 				assert.DaemonSetReady(t, kitkyma.LogGatewayName)
 			} else {
 				assert.DeploymentReady(t, kitkyma.LogGatewayName)
@@ -123,7 +123,7 @@ func TestSecretRotation_OTel(t *testing.T) {
 			secret.UpdateSecret(kitk8sobjects.WithStringData(endpointKey, backend.EndpointHTTP()))
 			Expect(kitk8s.UpdateObjects(t, secret.K8sObject())).To(Succeed())
 
-			if suite.IsExperimentalTest() {
+			if suite.HasExperimentalLabel() {
 				assert.DaemonSetReady(t, kitkyma.LogGatewayName)
 			} else {
 				assert.DeploymentReady(t, kitkyma.LogGatewayName)

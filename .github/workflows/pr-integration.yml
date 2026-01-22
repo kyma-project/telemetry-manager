@@ -173,7 +173,7 @@ jobs:
             use-fips: true
             install-istio: false
           - name: e2e-log-gateway
-            labels: log-gateway
+            labels: log-gateway and not experimental
             mode: release
             type: e2e
             use-fips: true

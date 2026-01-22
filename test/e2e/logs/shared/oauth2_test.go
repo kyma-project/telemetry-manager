@@ -113,7 +113,7 @@ func TestOAuth2(t *testing.T) {
 			assert.DeploymentReady(t, oauth2server.NamespacedName())
 			assert.BackendReachable(t, backend)
 
-			if suite.IsExperimentalTest() {
+			if suite.HasExperimentalLabel() {
 				assert.DaemonSetReady(t, kitkyma.LogGatewayName)
 			} else {
 				assert.DeploymentReady(t, kitkyma.LogGatewayName)

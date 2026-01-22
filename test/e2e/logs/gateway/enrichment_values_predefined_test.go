@@ -72,7 +72,7 @@ func TestEnrichmentValuesPredefined(t *testing.T) {
 
 	assert.BackendReachable(t, backend)
 
-	if suite.IsExperimentalTest() {
+	if suite.HasExperimentalLabel() {
 		assert.DaemonSetReady(t, kitkyma.LogAgentName)
 	} else {
 		assert.DeploymentReady(t, kitkyma.LogGatewayName)

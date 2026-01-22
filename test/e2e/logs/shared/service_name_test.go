@@ -129,7 +129,7 @@ func TestServiceName_OTel(t *testing.T) {
 
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
-			if suite.IsExperimentalTest() {
+			if suite.HasExperimentalLabel() {
 				assert.DaemonSetReady(t, kitkyma.LogGatewayName)
 			} else {
 				assert.DeploymentReady(t, kitkyma.LogGatewayName)

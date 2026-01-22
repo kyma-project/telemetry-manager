@@ -150,7 +150,7 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 			assert.BackendReachable(t, backend1)
 			assert.BackendReachable(t, backend2)
 
-			if suite.IsExperimentalTest() {
+			if suite.HasExperimentalLabel() {
 				assert.DaemonSetReady(t, kitkyma.LogGatewayName)
 			} else {
 				assert.DeploymentReady(t, kitkyma.LogGatewayName)
