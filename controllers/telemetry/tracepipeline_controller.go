@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 
+	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -164,6 +165,7 @@ func (r *TracePipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		&rbacv1.ClusterRole{},
 		&rbacv1.ClusterRoleBinding{},
 		&networkingv1.NetworkPolicy{},
+		&istiosecurityclientv1.PeerAuthentication{},
 	}
 
 	for _, resource := range ownedResourceTypesToWatch {

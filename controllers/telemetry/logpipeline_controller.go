@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 
+	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -158,6 +159,7 @@ func (r *LogPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		&corev1.ServiceAccount{},
 		&rbacv1.ClusterRole{},
 		&rbacv1.ClusterRoleBinding{},
+		&istiosecurityclientv1.PeerAuthentication{},
 	}
 
 	for _, resource := range ownedResourceTypesToWatch {

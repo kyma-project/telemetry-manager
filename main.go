@@ -282,15 +282,16 @@ func setupManager(globals config.Global) (manager.Manager, error) {
 			// The operator handles various resource that are namespace-scoped, and additionally some resources that are cluster-scoped (clusterroles, clusterrolebindings, etc.).
 			// For namespace-scoped resources we want to restrict the operator permissions to only fetch resources from a given namespace.
 			ByObject: map[client.Object]cache.ByObject{
-				&appsv1.Deployment{}:          {Field: setNamespaceFieldSelector(globals)},
-				&appsv1.ReplicaSet{}:          {Field: setNamespaceFieldSelector(globals)},
-				&appsv1.DaemonSet{}:           {Field: setNamespaceFieldSelector(globals)},
-				&corev1.ConfigMap{}:           {Namespaces: setConfigMapNamespaceFieldSelector(globals)},
-				&corev1.ServiceAccount{}:      {Field: setNamespaceFieldSelector(globals)},
-				&corev1.Service{}:             {Field: setNamespaceFieldSelector(globals)},
-				&networkingv1.NetworkPolicy{}: {Field: setNamespaceFieldSelector(globals)},
-				&corev1.Secret{}:              {Transform: secretCacheTransform},
-				&operatorv1beta1.Telemetry{}:  {Field: setNamespaceFieldSelector(globals)},
+				&appsv1.Deployment{}:                        {Field: setNamespaceFieldSelector(globals)},
+				&appsv1.ReplicaSet{}:                        {Field: setNamespaceFieldSelector(globals)},
+				&appsv1.DaemonSet{}:                         {Field: setNamespaceFieldSelector(globals)},
+				&corev1.ConfigMap{}:                         {Namespaces: setConfigMapNamespaceFieldSelector(globals)},
+				&corev1.ServiceAccount{}:                    {Field: setNamespaceFieldSelector(globals)},
+				&corev1.Service{}:                           {Field: setNamespaceFieldSelector(globals)},
+				&networkingv1.NetworkPolicy{}:               {Field: setNamespaceFieldSelector(globals)},
+				&corev1.Secret{}:                            {Transform: secretCacheTransform},
+				&operatorv1beta1.Telemetry{}:                {Field: setNamespaceFieldSelector(globals)},
+				&istiosecurityclientv1.PeerAuthentication{}: {Field: setNamespaceFieldSelector(globals)},
 			},
 		},
 		Client: client.Options{
