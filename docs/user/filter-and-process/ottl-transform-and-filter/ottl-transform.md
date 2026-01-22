@@ -62,7 +62,7 @@ If your application writes logs to stdout in a custom format, you can use a seri
 # In your LogPipeline spec
 spec:
   input:
-    application:
+    runtime:
       enabled: true
   output:
     otlp:
