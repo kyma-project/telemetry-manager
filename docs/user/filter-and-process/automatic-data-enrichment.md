@@ -19,6 +19,10 @@ The gateway determines the service name based on the following hierarchy of labe
 4. Pod name
 5. If none of the above is available, the value is `unknown_service`
 
+> [!WARNING]
+> The behavior described above for enriching unspecified or unknown service names will be deprecated; enable the new OTel-consistent service enrichment strategy by setting the `telemetry.kyma-project.io/service-enrichment` annotation in the Telemetry CR to `otel`, which enriches `service.namespace`, `service.name`, `service.version`, and `service.instance.id` according to the [OTel semantic convention](https://opentelemetry.io/docs/specs/semconv/non-normative/k8s-attributes/#service-attributes).
+> By default, the legacy strategy is currently used, but this behavior will change in future releases, with the new OTel strategy becoming the default. If you, for any reason, want to continue using the legacy strategy, you can do that for a limited amount of time during the deprecation process by explicitly setting the annotation to `kyma-legacy`.
+
 ## Kubernetes Metadata
 
 `k8s.*` attributes encapsulate various pieces of Kubernetes metadata associated with the Pod, such as:
