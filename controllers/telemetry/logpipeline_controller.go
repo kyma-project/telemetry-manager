@@ -265,6 +265,13 @@ func configureOTelReconciler(config LogPipelineControllerConfig, client client.C
 		Reader: client,
 	}
 
+	var prober logpipelineotel.Prober
+	if config.Global.UseDaemonSetForGateway() {
+		prober = &workloadstatus.DaemonSetProber{Client: client}
+	} else {
+		prober = &workloadstatus.DeploymentProber{Client: client}
+	}
+
 	agentApplierDeleter := otelcollector.NewLogAgentApplierDeleter(
 		config.Global,
 		config.OTelCollectorImage,
@@ -289,7 +296,7 @@ func configureOTelReconciler(config LogPipelineControllerConfig, client client.C
 		logpipelineotel.WithGatewayApplierDeleter(gatewayAppliedDeleter),
 		logpipelineotel.WithGatewayConfigBuilder(&loggateway.Builder{Reader: client}),
 		logpipelineotel.WithGatewayFlowHealthProber(gatewayFlowHealthProber),
-		logpipelineotel.WithGatewayProber(&workloadstatus.DeploymentProber{Client: client}),
+		logpipelineotel.WithGatewayProber(prober),
 
 		logpipelineotel.WithIstioStatusChecker(istiostatus.NewChecker(discoveryClient)),
 		logpipelineotel.WithPipelineLock(pipelineLock),
