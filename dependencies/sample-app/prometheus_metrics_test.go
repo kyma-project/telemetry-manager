@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
@@ -27,11 +28,11 @@ func setupTestEnvironment(t *testing.T) (context.Context, *metricsdk.MeterProvid
 
 	// Create resources using the same setup as main
 	res, err := newOtelResource()
-	require.NoError(t,err)
+	require.NoError(t, err)
 
 	// Create metric reader using the same setup as main
 	reader, err := newMetricReader(ctx)
-	require.NoError(t,err)
+	require.NoError(t, err)
 
 	// Create meter provider using the same setup as main
 	meterProvider := newMeterProvider(reader, res)
