@@ -11,6 +11,7 @@ import (
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
@@ -20,8 +21,8 @@ func TestBuildConfig(t *testing.T) {
 
 	tests := []struct {
 		name           string
-		pipelines      []telemetryv1beta1.MetricPipeline
 		goldenFileName string
+		pipelines      []telemetryv1beta1.MetricPipeline
 	}{
 		{
 			name:           "simple single pipeline setup",
@@ -188,7 +189,8 @@ func TestBuildConfig(t *testing.T) {
 			},
 		},
 		{
-			name: "pipeline using OAuth2 authentication",
+			name:           "pipeline using OAuth2 authentication",
+			goldenFileName: "oauth2-authentication.yaml",
 			pipelines: []telemetryv1beta1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
 					WithName("test").
@@ -203,7 +205,6 @@ func TestBuildConfig(t *testing.T) {
 						testutils.OAuth2Scopes([]string{"metrics"}),
 					).Build(),
 			},
-			goldenFileName: "oauth2-authentication.yaml",
 		},
 	}
 
@@ -234,4 +235,46 @@ func TestBuildConfig(t *testing.T) {
 			require.Equal(t, string(goldenFile), string(configYAML))
 		})
 	}
+}
+
+// TestBuildConfigWithOtelServiceEnrichment verifies that the Metric Gateway config is built correctly
+// when pipelines use OTel service enrichment strategy
+// (temporary - will be removed after deprecation of legacy enrichment strategy since this will become default).
+func TestBuildConfigWithOtelServiceEnrichment(t *testing.T) {
+	fakeClient := fake.NewClientBuilder().Build()
+	sut := Builder{Reader: fakeClient}
+
+	goldenFileName := "service-enrichment-otel.yaml"
+
+	pipelines := []telemetryv1beta1.MetricPipeline{
+		testutils.NewMetricPipelineBuilder().
+			WithName("test").
+			WithOTLPInput(true).
+			WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+	}
+
+	buildOptions := BuildOptions{
+		Cluster: common.ClusterOptions{
+			ClusterName:   "${KUBERNETES_SERVICE_HOST}",
+			CloudProvider: "test-cloud-provider",
+		},
+		ServiceEnrichment: commonresources.AnnotationValueTelemetryServiceEnrichmentOtel,
+	}
+
+	config, _, err := sut.Build(t.Context(), pipelines, buildOptions)
+	require.NoError(t, err)
+	configYAML, err := yaml.Marshal(config)
+	require.NoError(t, err, "failed to marshal config")
+
+	goldenFilePath := filepath.Join("testdata", goldenFileName)
+	if testutils.ShouldUpdateGoldenFiles() {
+		testutils.UpdateGoldenFileYAML(t, goldenFilePath, configYAML)
+		return
+	}
+
+	goldenFile, err := os.ReadFile(goldenFilePath)
+	require.NoError(t, err, "failed to load golden file")
+
+	require.NoError(t, err)
+	require.Equal(t, string(goldenFile), string(configYAML))
 }

@@ -10,6 +10,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
@@ -20,10 +21,9 @@ func TestBuildConfig(t *testing.T) {
 	}
 
 	tests := []struct {
-		name                string
-		goldenFileName      string
-		overwriteGoldenFile bool
-		pipelines           []telemetryv1beta1.MetricPipeline
+		name           string
+		goldenFileName string
+		pipelines      []telemetryv1beta1.MetricPipeline
 
 		// istioActive indicates if the "cluster" has an active istio installation or not. Not to be confused with the IstioInput in a pipeline
 		istioActive bool
@@ -401,7 +401,8 @@ func TestBuildConfig(t *testing.T) {
 			},
 		},
 		{
-			name: "pipeline using OAuth2 authentication",
+			name:           "pipeline using OAuth2 authentication",
+			goldenFileName: "oauth2-authentication.yaml",
 			pipelines: []telemetryv1beta1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
 					WithName("test").
@@ -416,7 +417,6 @@ func TestBuildConfig(t *testing.T) {
 						testutils.OAuth2Scopes([]string{"metrics"}),
 					).Build(),
 			},
-			goldenFileName: "oauth2-authentication.yaml",
 		},
 	}
 
@@ -501,4 +501,45 @@ func TestBuildConfigShuffled(t *testing.T) {
 	require.Equal(t, string(config1YAML), string(config2YAML), "config1 and config2 should be equal regardless of pipeline order")
 	require.Equal(t, string(config2YAML), string(config3YAML), "config2 and config3 should be equal regardless of pipeline order")
 	require.Equal(t, string(config1YAML), string(config3YAML), "config1 and config3 should be equal regardless of pipeline order")
+}
+
+// TestBuildConfigWithOtelServiceEnrichment verifies that the Metric Agent config is built correctly
+// when pipelines use OTel service enrichment strategy
+// (temporary - will be removed after deprecation of legacy enrichment strategy since this will become default).
+func TestBuildConfigWithOtelServiceEnrichment(t *testing.T) {
+	fakeClient := fake.NewClientBuilder().Build()
+	sut := Builder{Reader: fakeClient}
+
+	goldenFileName := "service-enrichment-otel.yaml"
+
+	pipelines := []telemetryv1beta1.MetricPipeline{
+		testutils.NewMetricPipelineBuilder().
+			WithName("test").
+			WithRuntimeInput(true).
+			WithOTLPOutput().
+			Build(),
+	}
+
+	buildOptions := BuildOptions{
+		IstioCertPath:               "/etc/istio-output-certs",
+		InstrumentationScopeVersion: "main",
+		ServiceEnrichment:           commonresources.AnnotationValueTelemetryServiceEnrichmentOtel,
+	}
+
+	config, _, err := sut.Build(t.Context(), pipelines, buildOptions)
+	require.NoError(t, err)
+	configYAML, err := yaml.Marshal(config)
+	require.NoError(t, err, "failed to marshal config")
+
+	goldenFilePath := filepath.Join("testdata", goldenFileName)
+	if testutils.ShouldUpdateGoldenFiles() {
+		testutils.UpdateGoldenFileYAML(t, goldenFilePath, configYAML)
+		return
+	}
+
+	goldenFile, err := os.ReadFile(goldenFilePath)
+	require.NoError(t, err, "failed to load golden file")
+
+	require.NoError(t, err)
+	require.Equal(t, string(goldenFile), string(configYAML))
 }
