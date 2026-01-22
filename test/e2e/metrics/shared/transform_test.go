@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/types"
+	gomegatypes "github.com/onsi/gomega/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
@@ -28,7 +28,7 @@ func TestTransform(t *testing.T) {
 		inputBuilder     func(includeNs string) telemetryv1beta1.MetricPipelineInput
 		generatorBuilder func(ns string) []client.Object
 		transformSpec    telemetryv1beta1.TransformSpec
-		assertion        types.GomegaMatcher
+		assertion        gomegatypes.GomegaMatcher
 		expectAgent      bool
 	}{
 		{

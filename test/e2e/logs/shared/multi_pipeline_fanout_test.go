@@ -25,7 +25,6 @@ func TestMultiPipelineFanout_OTel(t *testing.T) {
 		labels              []string
 		inputBuilder        func(includeNs string) telemetryv1beta1.LogPipelineInput
 		logGeneratorBuilder func(ns string) client.Object
-		expectAgent         bool
 	}{
 		{
 			name:   suite.LabelLogAgent,
@@ -36,7 +35,6 @@ func TestMultiPipelineFanout_OTel(t *testing.T) {
 			logGeneratorBuilder: func(ns string) client.Object {
 				return stdoutloggen.NewDeployment(ns).K8sObject()
 			},
-			expectAgent: true,
 		},
 		{
 			name:   suite.LabelLogGateway,

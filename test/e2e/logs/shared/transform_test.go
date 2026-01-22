@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	types2 "github.com/onsi/gomega/types"
-	k8stypes "k8s.io/apimachinery/pkg/types"
+	gomegatypes "github.com/onsi/gomega/types"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
@@ -31,9 +31,9 @@ func TestTransform_OTel(t *testing.T) {
 		input               telemetryv1beta1.LogPipelineInput
 		logGeneratorBuilder func(ns string) client.Object
 		transformSpec       telemetryv1beta1.TransformSpec
-		assertion          types2.GomegaMatcher
-		resourceName        k8stypes.NamespacedName
-		readinessCheckFunc  func(t *testing.T, name k8stypes.NamespacedName)
+		assertion           gomegatypes.GomegaMatcher
+		resourceName        types.NamespacedName
+		readinessCheckFunc  func(t *testing.T, name types.NamespacedName)
 	}{
 		{
 			testName: suite.LabelLogAgent,
