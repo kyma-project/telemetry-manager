@@ -1,6 +1,7 @@
 package shared
 
 import (
+	"fmt"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -21,13 +22,15 @@ import (
 
 func TestResources_OTel(t *testing.T) {
 	tests := []struct {
-		label     string
+		name      string
+		labels    []string
 		input     telemetryv1beta1.LogPipelineInput
 		resources []assert.Resource
 	}{
 		{
-			label: suite.LabelLogAgent,
-			input: testutils.BuildLogPipelineRuntimeInput(),
+			name:   suite.LabelLogAgent,
+			labels: []string{suite.LabelLogAgent},
+			input:  testutils.BuildLogPipelineRuntimeInput(),
 			resources: []assert.Resource{
 				assert.NewResource(&appsv1.DaemonSet{}, kitkyma.LogAgentName),
 				assert.NewResource(&corev1.ServiceAccount{}, kitkyma.LogAgentServiceAccount),
@@ -40,8 +43,9 @@ func TestResources_OTel(t *testing.T) {
 			},
 		},
 		{
-			label: suite.LabelLogGateway,
-			input: testutils.BuildLogPipelineOTLPInput(),
+			name:   suite.LabelLogGateway,
+			labels: []string{suite.LabelLogGateway},
+			input:  testutils.BuildLogPipelineOTLPInput(),
 			resources: []assert.Resource{
 				assert.NewResource(&appsv1.Deployment{}, kitkyma.LogGatewayName),
 				assert.NewResource(&corev1.Service{}, kitkyma.LogGatewayMetricsService),
@@ -54,10 +58,26 @@ func TestResources_OTel(t *testing.T) {
 				assert.NewResource(&corev1.Service{}, kitkyma.LogGatewayOTLPService),
 			},
 		},
+		{
+			name:   fmt.Sprintf("%s-%s", suite.LabelLogGateway, suite.LabelExperimental),
+			labels: []string{suite.LabelLogGateway, suite.LabelExperimental},
+			input:  testutils.BuildLogPipelineOTLPInput(),
+			resources: []assert.Resource{
+				assert.NewResource(&appsv1.DaemonSet{}, kitkyma.LogGatewayName),
+				assert.NewResource(&corev1.Service{}, kitkyma.LogGatewayMetricsService),
+				assert.NewResource(&corev1.ServiceAccount{}, kitkyma.LogGatewayServiceAccount),
+				assert.NewResource(&rbacv1.ClusterRole{}, kitkyma.LogGatewayClusterRole),
+				assert.NewResource(&rbacv1.ClusterRoleBinding{}, kitkyma.LogGatewayClusterRoleBinding),
+				assert.NewResource(&networkingv1.NetworkPolicy{}, kitkyma.LogGatewayNetworkPolicy),
+				assert.NewResource(&corev1.Secret{}, kitkyma.LogGatewaySecretName),
+				assert.NewResource(&corev1.ConfigMap{}, kitkyma.LogGatewayConfigMap),
+				assert.NewResource(&corev1.Service{}, kitkyma.LogGatewayOTLPService),
+			},
+		},
 	}
 	for _, tc := range tests {
-		t.Run(tc.label, func(t *testing.T) {
-			suite.RegisterTestCase(t, tc.label)
+		t.Run(tc.name, func(t *testing.T) {
+			suite.RegisterTestCase(t, tc.labels...)
 
 			const (
 				endpointKey   = "endpoint"
@@ -65,7 +85,7 @@ func TestResources_OTel(t *testing.T) {
 			)
 
 			var (
-				uniquePrefix = unique.Prefix(tc.label)
+				uniquePrefix = unique.Prefix(tc.name)
 				pipelineName = uniquePrefix()
 				secretName   = uniquePrefix()
 			)

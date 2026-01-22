@@ -1,6 +1,7 @@
 package shared
 
 import (
+	"fmt"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -22,13 +23,15 @@ import (
 
 func TestNamespaceSelector_OTel(t *testing.T) {
 	tests := []struct {
-		label               string
+		name                string
+		labels              []string
 		inputBuilder        func(includeNss, excludeNss []string) telemetryv1beta1.LogPipelineInput
 		logGeneratorBuilder func(ns string) client.Object
 		expectAgent         bool
 	}{
 		{
-			label: suite.LabelLogAgent,
+			name:   suite.LabelLogAgent,
+			labels: []string{suite.LabelLogAgent},
 			inputBuilder: func(includeNss, excludeNss []string) telemetryv1beta1.LogPipelineInput {
 				var opts []testutils.NamespaceSelectorOptions
 				if len(includeNss) > 0 {
@@ -47,7 +50,27 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 			expectAgent: true,
 		},
 		{
-			label: suite.LabelLogGateway,
+			name:   suite.LabelLogGateway,
+			labels: []string{suite.LabelLogGateway},
+			inputBuilder: func(includeNss, excludeNss []string) telemetryv1beta1.LogPipelineInput {
+				var opts []testutils.NamespaceSelectorOptions
+				if len(includeNss) > 0 {
+					opts = append(opts, testutils.IncludeNamespaces(includeNss...))
+				}
+
+				if len(excludeNss) > 0 {
+					opts = append(opts, testutils.ExcludeNamespaces(excludeNss...))
+				}
+
+				return testutils.BuildLogPipelineOTLPInput(opts...)
+			},
+			logGeneratorBuilder: func(ns string) client.Object {
+				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeLogs).K8sObject()
+			},
+		},
+		{
+			name:   fmt.Sprintf("%s-%s", suite.LabelLogGateway, suite.LabelExperimental),
+			labels: []string{suite.LabelLogGateway, suite.LabelExperimental},
 			inputBuilder: func(includeNss, excludeNss []string) telemetryv1beta1.LogPipelineInput {
 				var opts []testutils.NamespaceSelectorOptions
 				if len(includeNss) > 0 {
@@ -67,11 +90,11 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		t.Run(tc.label, func(t *testing.T) {
-			suite.RegisterTestCase(t, tc.label)
+		t.Run(tc.name, func(t *testing.T) {
+			suite.RegisterTestCase(t, tc.labels...)
 
 			var (
-				uniquePrefix        = unique.Prefix(tc.label)
+				uniquePrefix        = unique.Prefix(tc.name)
 				gen1Ns              = uniquePrefix("gen-1")
 				includePipelineName = uniquePrefix("include")
 				gen2Ns              = uniquePrefix("gen-2")
@@ -126,7 +149,12 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 
 			assert.BackendReachable(t, backend1)
 			assert.BackendReachable(t, backend2)
-			assert.DeploymentReady(t, kitkyma.LogGatewayName)
+
+			if suite.IsExperimentalTest() {
+				assert.DaemonSetReady(t, kitkyma.LogGatewayName)
+			} else {
+				assert.DeploymentReady(t, kitkyma.LogGatewayName)
+			}
 
 			if tc.expectAgent {
 				assert.DaemonSetReady(t, kitkyma.LogAgentName)

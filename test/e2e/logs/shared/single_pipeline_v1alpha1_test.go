@@ -1,6 +1,7 @@
 package shared
 
 import (
+	"fmt"
 	"strconv"
 	"testing"
 
@@ -23,13 +24,15 @@ import (
 
 func TestSinglePipelineV1Alpha1_OTel(t *testing.T) {
 	tests := []struct {
-		label               string
+		name                string
+		labels              []string
 		input               telemetryv1alpha1.LogPipelineInput
 		logGeneratorBuilder func(ns string) client.Object
 		expectAgent         bool
 	}{
 		{
-			label: suite.LabelLogAgent,
+			name:   suite.LabelLogAgent,
+			labels: []string{suite.LabelLogAgent},
 			input: telemetryv1alpha1.LogPipelineInput{
 				Application: &telemetryv1alpha1.LogPipelineApplicationInput{
 					Enabled: ptr.To(true),
@@ -41,7 +44,23 @@ func TestSinglePipelineV1Alpha1_OTel(t *testing.T) {
 			expectAgent: true,
 		},
 		{
-			label: suite.LabelLogGateway,
+			name:   suite.LabelLogGateway,
+			labels: []string{suite.LabelLogGateway},
+			input: telemetryv1alpha1.LogPipelineInput{
+				Application: &telemetryv1alpha1.LogPipelineApplicationInput{
+					Enabled: ptr.To(false),
+				},
+				OTLP: &telemetryv1alpha1.OTLPInput{
+					Disabled: false,
+				},
+			},
+			logGeneratorBuilder: func(ns string) client.Object {
+				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeLogs).K8sObject()
+			},
+		},
+		{
+			name:   fmt.Sprintf("%s-%s", suite.LabelLogGateway, suite.LabelExperimental),
+			labels: []string{suite.LabelLogGateway, suite.LabelExperimental},
 			input: telemetryv1alpha1.LogPipelineInput{
 				Application: &telemetryv1alpha1.LogPipelineApplicationInput{
 					Enabled: ptr.To(false),
@@ -57,11 +76,11 @@ func TestSinglePipelineV1Alpha1_OTel(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		t.Run(tc.label, func(t *testing.T) {
-			suite.RegisterTestCase(t, tc.label)
+		t.Run(tc.name, func(t *testing.T) {
+			suite.RegisterTestCase(t, tc.labels...)
 
 			var (
-				uniquePrefix = unique.Prefix(tc.label)
+				uniquePrefix = unique.Prefix(tc.name)
 				pipelineName = uniquePrefix("pipeline")
 				genNs        = uniquePrefix("gen")
 				backendNs    = uniquePrefix("backend")
@@ -103,7 +122,12 @@ func TestSinglePipelineV1Alpha1_OTel(t *testing.T) {
 
 			assert.OTelLogPipelineHealthy(t, pipelineName)
 			assert.BackendReachable(t, backend)
-			assert.DeploymentReady(t, kitkyma.LogGatewayName)
+
+			if suite.IsExperimentalTest() {
+				assert.DaemonSetReady(t, kitkyma.LogGatewayName)
+			} else {
+				assert.DeploymentReady(t, kitkyma.LogGatewayName)
+			}
 
 			if tc.expectAgent {
 				assert.DaemonSetReady(t, kitkyma.LogAgentName)
