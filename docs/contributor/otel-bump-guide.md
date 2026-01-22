@@ -13,6 +13,8 @@ As a maintainer or contributor, follow these steps to update the `opentelemetry-
     - [4. Check Internal Metrics](#4-check-internal-metrics)
     - [5. Identify and Plan for Breaking Changes](#5-identify-and-plan-for-breaking-changes)
   - [Implementation](#implementation)
+    - [OTel Collector Components](#otel-collector-components)
+    - [Telemetry Manager](#telemetry-manager)
   - [Post-Bump Verification](#post-bump-verification)
 
 ## Preparation
@@ -89,12 +91,36 @@ Breaking changes are typically introduced behind feature gates, so you must chec
 
 ## Implementation
 
-After you complete your review and create a plan to address any required changes, update the dependency versions.
+After you complete the preparation steps, update the dependency versions in the `opentelemetry-collector-components` and `telemetry-manager` repositories.
+
+### OTel Collector Components
+
+1. In the `opentelemetry-collector-components` repository, check out the OpenTelemetry update branch that Renovate automatically generates.
+2. Update the dependency versions for `go.opentelemetry.io/collector` and `github.com/open-telemetry/opentelemetry-collector-contrib` in the following files:
+   - `otel-collector/builder-config.yaml`
+   - `otel-collector/envs`
+   - `cmd/otelkymacol/builder-config.yaml`
+3. Run `make gotidy`.
+4. Run `make generate`.
+5. Update and merge the PR.
+6. After the image build GitHub Action completes, confirm that the new image tag is available.
+
+### Telemetry Manager
+
+1. In the `telemetry-manager` repository, update the dependency versions for `go.opentelemetry.io/collector` and `github.com/open-telemetry/opentelemetry-collector-contrib` in the following files:
+   - `.env`
+   - `go.mod`
+   - `test/testkit/images.go`
+   - `sec-scanners-config.yaml`
+   - `helm/values.yaml`
+2. Run `go mod tidy`.
+3. Run `make generate`.
+4. Create and merge a bump PR that references the merged `opentelemetry-collector-components` PR.
 
 ## Post-Bump Verification
 
 After you updated the dependencies, perform the following verification checks:
 
-- [ ] All tests pass
-- [ ] Run load test and document performance in [benchmark documentation](./benchmarks/results)
+- [ ] Verify that all tests pass.
+- [ ] Manually trigger the "PR Load Test" GitHub workflow, and document the performance results of the load test in the [benchmark documentation](./benchmarks/results).
 - [ ] Filter processor restrictions working correctly
