@@ -9,8 +9,8 @@ run-e2e-log-agent: ## Run log-agent e2e tests
 	$(MAKE) run-e2e TEST_ID=e2e-log-agent TEST_PATH="./test/e2e/..." TEST_LABELS="log-agent"
 
 .PHONY: run-e2e-log-gateway
-run-e2e-log-gateway: ## Run log-gateway e2e tests
-	$(MAKE) run-e2e TEST_ID=e2e-log-gateway TEST_PATH="./test/e2e/..." TEST_LABELS="log-gateway"
+run-e2e-log-gateway: ## Run log-gateway and not experimental e2e tests
+	$(MAKE) run-e2e TEST_ID=e2e-log-gateway TEST_PATH="./test/e2e/..." TEST_LABELS="log-gateway and not experimental"
 
 .PHONY: run-e2e-log-gateway-experimental
 run-e2e-log-gateway-experimental: ## Run log-gateway and experimental e2e tests

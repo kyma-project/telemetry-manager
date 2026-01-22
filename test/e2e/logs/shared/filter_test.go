@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
@@ -21,9 +22,11 @@ import (
 
 func TestFilter_OTel(t *testing.T) {
 	tests := []struct {
-		name         string
-		labels       []string
-		inputBuilder func(includeNs string) telemetryv1beta1.LogPipelineInput
+		name               string
+		labels             []string
+		inputBuilder       func(includeNs string) telemetryv1beta1.LogPipelineInput
+		resourceName       types.NamespacedName
+		readinessCheckFunc func(t *testing.T, name types.NamespacedName)
 	}{
 		{
 			name:   suite.LabelLogAgent,
@@ -31,6 +34,8 @@ func TestFilter_OTel(t *testing.T) {
 			inputBuilder: func(includeNs string) telemetryv1beta1.LogPipelineInput {
 				return testutils.BuildLogPipelineRuntimeInput(testutils.IncludeNamespaces(includeNs))
 			},
+			resourceName:       kitkyma.LogAgentName,
+			readinessCheckFunc: assert.DaemonSetReady,
 		},
 		{
 			name:   suite.LabelLogGateway,
@@ -38,6 +43,8 @@ func TestFilter_OTel(t *testing.T) {
 			inputBuilder: func(includeNs string) telemetryv1beta1.LogPipelineInput {
 				return testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
 			},
+			resourceName:       kitkyma.LogGatewayName,
+			readinessCheckFunc: assert.DeploymentReady,
 		},
 		{
 			name:   fmt.Sprintf("%s-%s", suite.LabelLogGateway, suite.LabelExperimental),
@@ -45,6 +52,8 @@ func TestFilter_OTel(t *testing.T) {
 			inputBuilder: func(includeNs string) telemetryv1beta1.LogPipelineInput {
 				return testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
 			},
+			resourceName:       kitkyma.LogGatewayName,
+			readinessCheckFunc: assert.DaemonSetReady,
 		},
 	}
 
@@ -84,15 +93,7 @@ func TestFilter_OTel(t *testing.T) {
 
 			assert.BackendReachable(t, backend)
 
-			if suite.HasExperimentalLabel() {
-				assert.DaemonSetReady(t, kitkyma.LogGatewayName)
-			} else {
-				assert.DeploymentReady(t, kitkyma.LogGatewayName)
-			}
-
-			if suite.ExpectAgent(tc.labels[0]) {
-				assert.DaemonSetReady(t, kitkyma.LogAgentName)
-			}
+			tc.readinessCheckFunc(t, tc.resourceName)
 
 			assert.OTelLogPipelineHealthy(t, pipelineName)
 

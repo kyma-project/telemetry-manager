@@ -5,7 +5,8 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/types"
+	types2 "github.com/onsi/gomega/types"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
@@ -30,8 +31,9 @@ func TestTransform_OTel(t *testing.T) {
 		input               telemetryv1beta1.LogPipelineInput
 		logGeneratorBuilder func(ns string) client.Object
 		transformSpec       telemetryv1beta1.TransformSpec
-		assertion           types.GomegaMatcher
-		expectAgent         bool
+		assertions          types2.GomegaMatcher
+		resourceName        types.NamespacedName
+		readinessCheckFunc  func(t *testing.T, name types.NamespacedName)
 	}{
 		{
 			testName: suite.LabelLogAgent,
@@ -48,7 +50,8 @@ func TestTransform_OTel(t *testing.T) {
 				HaveResourceAttributes(Not(HaveKeyWithValue("k8s.namespace.name", "kyma-system"))),
 				HaveAttributes(HaveKeyWithValue("system", "false")),
 			))),
-			expectAgent: true,
+			resourceName:       kitkyma.LogAgentName,
+			readinessCheckFunc: assert.DaemonSetReady,
 		},
 		{
 			testName: suite.LabelLogAgent,
@@ -61,7 +64,6 @@ func TestTransform_OTel(t *testing.T) {
 					"level":    "info",
 				})).K8sObject()
 			},
-			expectAgent: true,
 			transformSpec: telemetryv1beta1.TransformSpec{
 				Statements: []string{"set(resource.attributes[\"test\"], \"passed\")",
 					"set(log.attributes[\"name\"], \"InfoLogs\")",
@@ -71,6 +73,8 @@ func TestTransform_OTel(t *testing.T) {
 				HaveResourceAttributes(HaveKeyWithValue("test", "passed")),
 				HaveAttributes(HaveKeyWithValue("name", "InfoLogs")),
 			))),
+			resourceName:       kitkyma.LogAgentName,
+			readinessCheckFunc: assert.DaemonSetReady,
 		}, {
 			testName: suite.LabelLogAgent,
 			labels:   []string{suite.LabelLogAgent},
@@ -82,7 +86,6 @@ func TestTransform_OTel(t *testing.T) {
 					"level":    "info",
 				})).K8sObject()
 			},
-			expectAgent: true,
 			transformSpec: telemetryv1beta1.TransformSpec{
 				Conditions: []string{"log.severity_text == \"info\" or log.severity_text == \"Info\""},
 				Statements: []string{"set(log.severity_text, ToUpperCase(log.severity_text))"},
@@ -90,6 +93,8 @@ func TestTransform_OTel(t *testing.T) {
 			assertion: HaveFlatLogs(ContainElement(SatisfyAll(
 				HaveSeverityText(Equal("INFO")),
 			))),
+			resourceName:       kitkyma.LogAgentName,
+			readinessCheckFunc: assert.DaemonSetReady,
 		},
 		{
 			testName: suite.LabelLogGateway,
@@ -106,6 +111,8 @@ func TestTransform_OTel(t *testing.T) {
 				HaveResourceAttributes(Not(HaveKeyWithValue("k8s.namespace.name", "kyma-system"))),
 				HaveAttributes(HaveKeyWithValue("system", "false")),
 			))),
+			resourceName:       kitkyma.LogGatewayName,
+			readinessCheckFunc: assert.DeploymentReady,
 		}, {
 			testName: suite.LabelLogGateway,
 			labels:   []string{suite.LabelLogGateway},
@@ -123,6 +130,8 @@ func TestTransform_OTel(t *testing.T) {
 				HaveResourceAttributes(HaveKeyWithValue("test", "passed")),
 				HaveAttributes(HaveKeyWithValue("name", "InfoLogs")),
 			))),
+			resourceName:       kitkyma.LogGatewayName,
+			readinessCheckFunc: assert.DeploymentReady,
 		}, {
 			testName: suite.LabelLogGateway,
 			labels:   []string{suite.LabelLogGateway},
@@ -138,6 +147,8 @@ func TestTransform_OTel(t *testing.T) {
 			assertion: HaveFlatLogs(ContainElement(SatisfyAll(
 				HaveSeverityText(Equal("INFO")),
 			))),
+			resourceName:       kitkyma.LogGatewayName,
+			readinessCheckFunc: assert.DeploymentReady,
 		},
 		{
 			testName: fmt.Sprintf("%s-%s", suite.LabelLogGateway, suite.LabelExperimental),
@@ -154,6 +165,8 @@ func TestTransform_OTel(t *testing.T) {
 				HaveResourceAttributes(Not(HaveKeyWithValue("k8s.namespace.name", "kyma-system"))),
 				HaveAttributes(HaveKeyWithValue("system", "false")),
 			))),
+			resourceName:       kitkyma.LogGatewayName,
+			readinessCheckFunc: assert.DaemonSetReady,
 		}, {
 			testName: fmt.Sprintf("%s-%s", suite.LabelLogGateway, suite.LabelExperimental),
 			labels:   []string{suite.LabelLogGateway, suite.LabelExperimental},
@@ -171,6 +184,8 @@ func TestTransform_OTel(t *testing.T) {
 				HaveResourceAttributes(HaveKeyWithValue("test", "passed")),
 				HaveAttributes(HaveKeyWithValue("name", "InfoLogs")),
 			))),
+			resourceName:       kitkyma.LogGatewayName,
+			readinessCheckFunc: assert.DaemonSetReady,
 		}, {
 			testName: fmt.Sprintf("%s-%s", suite.LabelLogGateway, suite.LabelExperimental),
 			labels:   []string{suite.LabelLogGateway, suite.LabelExperimental},
@@ -186,6 +201,8 @@ func TestTransform_OTel(t *testing.T) {
 			assertion: HaveFlatLogs(ContainElement(SatisfyAll(
 				HaveSeverityText(Equal("INFO")),
 			))),
+			resourceName:       kitkyma.LogGatewayName,
+			readinessCheckFunc: assert.DaemonSetReady,
 		},
 	}
 
@@ -222,15 +239,7 @@ func TestTransform_OTel(t *testing.T) {
 
 			assert.BackendReachable(t, backend)
 
-			if suite.HasExperimentalLabel() {
-				assert.DaemonSetReady(t, kitkyma.LogGatewayName)
-			} else {
-				assert.DeploymentReady(t, kitkyma.LogGatewayName)
-			}
-
-			if tc.expectAgent {
-				assert.DaemonSetReady(t, kitkyma.LogAgentName)
-			}
+			tc.readinessCheckFunc(t, tc.resourceName)
 
 			assert.OTelLogPipelineHealthy(t, pipelineNameValue)
 
