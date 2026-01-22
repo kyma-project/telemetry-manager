@@ -1,6 +1,7 @@
 package shared
 
 import (
+	"fmt"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -22,29 +23,44 @@ import (
 
 func TestServiceName_OTel(t *testing.T) {
 	tests := []struct {
-		label        string
+		name         string
+		labels       []string
 		inputBuilder func(includeNs string) telemetryv1beta1.LogPipelineInput
 		expectAgent  bool
+		experimental bool
 	}{
 		{
-			label: suite.LabelLogAgent,
+			name:   suite.LabelLogAgent,
+			labels: []string{suite.LabelLogAgent},
 			inputBuilder: func(includeNs string) telemetryv1beta1.LogPipelineInput {
 				return testutils.BuildLogPipelineRuntimeInput(testutils.IncludeNamespaces(includeNs))
 			},
-			expectAgent: true,
+			expectAgent:  true,
+			experimental: false,
 		},
 		{
-			label: suite.LabelLogGateway,
+			name:   suite.LabelLogGateway,
+			labels: []string{suite.LabelLogGateway},
 			inputBuilder: func(includeNs string) telemetryv1beta1.LogPipelineInput {
 				return testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
 			},
-			expectAgent: false,
+			expectAgent:  false,
+			experimental: false,
+		},
+		{
+			name:   fmt.Sprintf("%s-%s", suite.LabelLogGateway, suite.LabelExperimental),
+			labels: []string{suite.LabelLogGateway, suite.LabelExperimental},
+			inputBuilder: func(includeNs string) telemetryv1beta1.LogPipelineInput {
+				return testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
+			},
+			expectAgent:  false,
+			experimental: true,
 		},
 	}
 
 	for _, tc := range tests {
-		t.Run(tc.label, func(t *testing.T) {
-			suite.RegisterTestCase(t, tc.label)
+		t.Run(tc.name, func(t *testing.T) {
+			suite.RegisterTestCase(t, tc.labels...)
 
 			const (
 				jobName               = "job"
@@ -60,7 +76,7 @@ func TestServiceName_OTel(t *testing.T) {
 			)
 
 			var (
-				uniquePrefix    = unique.Prefix(tc.label)
+				uniquePrefix    = unique.Prefix(tc.name)
 				pipelineName    = uniquePrefix()
 				deploymentName  = uniquePrefix()
 				statefulSetName = uniquePrefix()
@@ -116,7 +132,11 @@ func TestServiceName_OTel(t *testing.T) {
 
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
-			assert.DeploymentReady(t, kitkyma.LogGatewayName)
+			if tc.experimental {
+				assert.DaemonSetReady(t, kitkyma.LogGatewayName)
+			} else {
+				assert.DeploymentReady(t, kitkyma.LogGatewayName)
+			}
 
 			if tc.expectAgent {
 				assert.DaemonSetReady(t, kitkyma.LogAgentName)

@@ -71,7 +71,13 @@ func TestEnrichmentValuesPredefined(t *testing.T) {
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.BackendReachable(t, backend)
-	assert.DeploymentReady(t, kitkyma.LogGatewayName)
+
+	if suite.IsExperimentalTest() {
+		assert.DaemonSetReady(t, kitkyma.LogAgentName)
+	} else {
+		assert.DeploymentReady(t, kitkyma.LogGatewayName)
+	}
+
 	assert.OTelLogPipelineHealthy(t, pipelineName)
 	assert.OTelLogsFromNamespaceDelivered(t, backend, genNs)
 

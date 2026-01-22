@@ -272,3 +272,8 @@ func toSet(labels []string) map[string]struct{} {
 
 	return set
 }
+
+func IsExperimentalTest() bool {
+	labelExpressions := findLabelFilterExpression()
+	return strings.Contains(labelExpressions, LabelExperimental)
+}
