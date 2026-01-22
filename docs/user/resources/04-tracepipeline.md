@@ -11,7 +11,7 @@ kubectl get crd tracepipeline.telemetry.kyma-project.io -o yaml
 The following TracePipeline object defines a pipeline that integrates into the local Jaeger instance. Additionally, it filters out successful spans and adds a `region` attribute to spans from the `frontend` service:
 
 ```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
+apiVersion: telemetry.kyma-project.io/v1beta1
 kind: TracePipeline
 metadata:
   name: jaeger
@@ -49,7 +49,7 @@ For further examples, see the [samples](https://github.com/kyma-project/telemetr
 
 ## Custom Resource Parameters
 
-For details, see the [TracePipeline specification file](https://github.com/kyma-project/telemetry-manager/blob/main/apis/telemetry/v1alpha1/tracepipeline_types.go).
+For details, see the [TracePipeline specification file](https://github.com/kyma-project/telemetry-manager/blob/main/apis/telemetry/v1beta1/tracepipeline_types.go).
 
 <!-- The table below was generated automatically -->
 <!-- Some special tags (html comments) are at the end of lines due to markdown requirements. -->

@@ -11,7 +11,7 @@ import (
 	_ "github.com/g4s8/envdoc"
 	_ "github.com/golangci/golangci-lint/v2/cmd/golangci-lint"
 	_ "github.com/google/yamlfmt/cmd/yamlfmt"
-	_ "github.com/hairyhenderson/gomplate/v4/cmd/gomplate"
+	_ "github.com/hairyhenderson/gomplate/v5/cmd/gomplate"
 	_ "github.com/itchyny/gojq/cmd/gojq"
 	_ "github.com/k3d-io/k3d/v5"
 	_ "github.com/kyma-project/kyma/hack/table-gen"

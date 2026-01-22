@@ -11,7 +11,7 @@ kubectl get crd logpipeline.telemetry.kyma-project.io -o yaml
 The following LogPipeline object defines a pipeline integrating with the otlp output. It uses mTLS taking connection details from a Secret, excludes OTLP logs from "namespaceA" and includes application logs emitted in "namespaceB". Additionally, it filters out logs with severity level lower than the WARN level and adds an `alert` attribute for logs with severity level higher than WARN level and coming from the `prod` environment.
 
 ```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
+apiVersion: telemetry.kyma-project.io/v1beta1
 kind: LogPipeline
 metadata:
   name: backend
@@ -21,7 +21,7 @@ spec:
       namespaces:
         exclude:
         - namespaceA
-    application:
+    runtime:
       namespaces:
         include:
         - namespaceB
@@ -90,7 +90,7 @@ For further examples, see the [samples](https://github.com/kyma-project/telemetr
 
 ## Custom Resource Parameters
 
-For details, see the [LogPipeline specification file](https://github.com/kyma-project/telemetry-manager/blob/main/apis/telemetry/v1alpha1/logpipeline_types.go).
+For details, see the [LogPipeline specification file](https://github.com/kyma-project/telemetry-manager/blob/main/apis/telemetry/v1beta1/logpipeline_types.go).
 
 <!-- The table below was generated automatically -->
 <!-- Some special tags (html comments) are at the end of lines due to markdown requirements. -->
