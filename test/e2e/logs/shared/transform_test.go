@@ -31,7 +31,7 @@ func TestTransform_OTel(t *testing.T) {
 		input               telemetryv1beta1.LogPipelineInput
 		logGeneratorBuilder func(ns string) client.Object
 		transformSpec       telemetryv1beta1.TransformSpec
-		assertions          types2.GomegaMatcher
+		assertion          types2.GomegaMatcher
 		resourceName        types.NamespacedName
 		readinessCheckFunc  func(t *testing.T, name types.NamespacedName)
 	}{
