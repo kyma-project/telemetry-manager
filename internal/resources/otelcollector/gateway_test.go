@@ -31,6 +31,14 @@ func TestGateway_ApplyResources(t *testing.T) {
 		config.WithTargetNamespace("kyma-system"),
 		config.WithOperateInFIPSMode(true),
 	)
+	globalsWithDaemonSet := config.NewGlobal(
+		config.WithTargetNamespace("kyma-system"),
+		config.WithImagePullSecretName("mySecret"),
+		config.WithAdditionalLabels(map[string]string{"test-label-key": "test-label-value"}),
+		config.WithAdditionalAnnotations(map[string]string{"test-anno-key": "test-anno-value"}),
+		config.WithClusterTrustBundleName("trustBundle"),
+		config.WithUseDaemonSetForGateway(true),
+	)
 	image := "opentelemetry/collector:dummy"
 	priorityClassName := "normal"
 
@@ -38,6 +46,7 @@ func TestGateway_ApplyResources(t *testing.T) {
 		name           string
 		sut            *GatewayApplierDeleter
 		istioEnabled   bool
+		useDaemonSet   bool
 		goldenFilePath string
 	}{
 		{
@@ -88,6 +97,19 @@ func TestGateway_ApplyResources(t *testing.T) {
 			sut:            NewLogGatewayApplierDeleter(globalsWithFIPS, image, priorityClassName),
 			goldenFilePath: "testdata/log-gateway-fips-enabled.yaml",
 		},
+		{
+			name:           "log gateway as daemonset",
+			sut:            NewLogGatewayApplierDeleter(globalsWithDaemonSet, image, priorityClassName),
+			useDaemonSet:   true,
+			goldenFilePath: "testdata/log-gateway-daemonset.yaml",
+		},
+		{
+			name:           "log gateway as daemonset with istio",
+			sut:            NewLogGatewayApplierDeleter(globalsWithDaemonSet, image, priorityClassName),
+			istioEnabled:   true,
+			useDaemonSet:   true,
+			goldenFilePath: "testdata/log-gateway-daemonset-istio.yaml",
+		},
 	}
 
 	for _, tt := range tests {
@@ -98,7 +120,7 @@ func TestGateway_ApplyResources(t *testing.T) {
 			utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 			utilruntime.Must(istiosecurityclientv1.AddToScheme(scheme))
 
-			client := fake.NewClientBuilder().WithScheme(scheme).WithInterceptorFuncs(interceptor.Funcs{
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithInterceptorFuncs(interceptor.Funcs{
 				Create: func(_ context.Context, c client.WithWatch, obj client.Object, _ ...client.CreateOption) error {
 					objects = append(objects, obj)
 					// Nothing has to be created, just add created object to the list
@@ -106,13 +128,14 @@ func TestGateway_ApplyResources(t *testing.T) {
 				},
 			}).Build()
 
-			err := tt.sut.ApplyResources(t.Context(), client, GatewayApplyOptions{
+			err := tt.sut.ApplyResources(t.Context(), fakeClient, GatewayApplyOptions{
 				CollectorConfigYAML: "dummy",
 				CollectorEnvVars: map[string][]byte{
 					"DUMMY_ENV_VAR": []byte("foo"),
 				},
-				IstioEnabled: tt.istioEnabled,
-				Replicas:     2,
+				IstioEnabled:           tt.istioEnabled,
+				Replicas:               2,
+				UseDaemonSetForGateway: tt.useDaemonSet,
 			})
 			require.NoError(t, err)
 
@@ -134,6 +157,10 @@ func TestGateway_ApplyResources(t *testing.T) {
 
 func TestGateway_DeleteResources(t *testing.T) {
 	globals := config.NewGlobal(config.WithTargetNamespace("kyma-system"))
+	globalsWithDaemonSet := config.NewGlobal(
+		config.WithTargetNamespace("kyma-system"),
+		config.WithUseDaemonSetForGateway(true),
+	)
 	image := "opentelemetry/collector:dummy"
 	priorityClassName := "normal"
 
@@ -141,6 +168,7 @@ func TestGateway_DeleteResources(t *testing.T) {
 		name         string
 		sut          *GatewayApplierDeleter
 		istioEnabled bool
+		useDaemonSet bool
 	}{
 		{
 			name: "metric gateway",
@@ -169,6 +197,17 @@ func TestGateway_DeleteResources(t *testing.T) {
 			sut:          NewLogGatewayApplierDeleter(globals, image, priorityClassName),
 			istioEnabled: true,
 		},
+		{
+			name:         "log gateway as daemonset",
+			sut:          NewLogGatewayApplierDeleter(globalsWithDaemonSet, image, priorityClassName),
+			useDaemonSet: true,
+		},
+		{
+			name:         "log gateway as daemonset with istio",
+			sut:          NewLogGatewayApplierDeleter(globalsWithDaemonSet, image, priorityClassName),
+			istioEnabled: true,
+			useDaemonSet: true,
+		},
 	}
 
 	for _, tt := range tests {
@@ -187,7 +226,8 @@ func TestGateway_DeleteResources(t *testing.T) {
 			}).Build()
 
 			err := tt.sut.ApplyResources(t.Context(), fakeClient, GatewayApplyOptions{
-				IstioEnabled: tt.istioEnabled,
+				IstioEnabled:           tt.istioEnabled,
+				UseDaemonSetForGateway: tt.useDaemonSet,
 			})
 			require.NoError(t, err)
 
@@ -198,6 +238,83 @@ func TestGateway_DeleteResources(t *testing.T) {
 				// an update operation on a non-existent object should return a NotFound error
 				err = fakeClient.Get(t.Context(), client.ObjectKeyFromObject(created[i]), created[i])
 				require.True(t, apierrors.IsNotFound(err), "want not found, got %v: %#v", err, created[i])
+			}
+		})
+	}
+}
+
+func TestGateway_Annotations(t *testing.T) {
+	globalsWithDaemonSet := config.NewGlobal(
+		config.WithTargetNamespace("kyma-system"),
+		config.WithUseDaemonSetForGateway(true),
+	)
+	image := "opentelemetry/collector:dummy"
+	priorityClassName := "normal"
+
+	tests := []struct {
+		name                        string
+		sut                         *GatewayApplierDeleter
+		opts                        GatewayApplyOptions
+		expectedExcludeInboundPorts string
+		shouldHaveInterceptionMode  bool
+	}{
+		{
+			name: "deployment without istio",
+			sut:  NewMetricGatewayApplierDeleter(config.NewGlobal(config.WithTargetNamespace("kyma-system")), image, priorityClassName),
+			opts: GatewayApplyOptions{
+				IstioEnabled:           false,
+				UseDaemonSetForGateway: false,
+			},
+			shouldHaveInterceptionMode: false,
+		},
+		{
+			name: "deployment with istio - only metrics port excluded",
+			sut:  NewMetricGatewayApplierDeleter(config.NewGlobal(config.WithTargetNamespace("kyma-system")), image, priorityClassName),
+			opts: GatewayApplyOptions{
+				IstioEnabled:           true,
+				UseDaemonSetForGateway: false,
+			},
+			expectedExcludeInboundPorts: "8888",
+			shouldHaveInterceptionMode:  true,
+		},
+		{
+			name: "daemonset without istio",
+			sut:  NewMetricGatewayApplierDeleter(globalsWithDaemonSet, image, priorityClassName),
+			opts: GatewayApplyOptions{
+				IstioEnabled:           false,
+				UseDaemonSetForGateway: true,
+			},
+			shouldHaveInterceptionMode: false,
+		},
+		{
+			name: "daemonset with istio - metrics, grpc, and http ports excluded",
+			sut:  NewMetricGatewayApplierDeleter(globalsWithDaemonSet, image, priorityClassName),
+			opts: GatewayApplyOptions{
+				IstioEnabled:           true,
+				UseDaemonSetForGateway: true,
+			},
+			expectedExcludeInboundPorts: "8888,4317,4318",
+			shouldHaveInterceptionMode:  true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			annotations := tt.sut.makeAnnotations("dummy-checksum", tt.opts)
+
+			if !tt.opts.IstioEnabled {
+				require.NotContains(t, annotations, "traffic.sidecar.istio.io/excludeInboundPorts")
+				require.NotContains(t, annotations, "sidecar.istio.io/interceptionMode")
+
+				return
+			}
+
+			require.Equal(t, tt.expectedExcludeInboundPorts, annotations["traffic.sidecar.istio.io/excludeInboundPorts"])
+
+			if tt.shouldHaveInterceptionMode {
+				require.Equal(t, "TPROXY", annotations["sidecar.istio.io/interceptionMode"])
+			} else {
+				require.NotContains(t, annotations, "sidecar.istio.io/interceptionMode")
 			}
 		})
 	}

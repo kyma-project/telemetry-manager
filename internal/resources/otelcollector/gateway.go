@@ -227,7 +227,7 @@ func (gad *GatewayApplierDeleter) ApplyResources(ctx context.Context, c client.C
 		}
 	}
 
-	if err := k8sutils.CreateOrUpdateService(ctx, c, gad.makeOTLPService()); err != nil {
+	if err := k8sutils.CreateOrUpdateService(ctx, c, gad.makeOTLPService(opts.UseDaemonSetForGateway)); err != nil {
 		return fmt.Errorf("failed to create otlp service: %w", err)
 	}
 
@@ -341,6 +341,13 @@ func (gad *GatewayApplierDeleter) makeGatewayDaemonSet(configChecksum string, op
 				},
 				Spec: podSpec,
 			},
+			UpdateStrategy: appsv1.DaemonSetUpdateStrategy{
+				Type: appsv1.RollingUpdateDaemonSetStrategyType,
+				RollingUpdate: &appsv1.RollingUpdateDaemonSet{
+					MaxUnavailable: ptr.To[intstr.IntOrString](intstr.FromInt32(0)),
+					MaxSurge:       ptr.To[intstr.IntOrString](intstr.FromInt32(1)),
+				},
+			},
 		},
 	}
 }
@@ -429,11 +436,11 @@ func makePodAffinity(labels map[string]string) corev1.Affinity {
 	}
 }
 
-func (gad *GatewayApplierDeleter) makeOTLPService() *corev1.Service {
+func (gad *GatewayApplierDeleter) makeOTLPService(useDaemonSet bool) *corev1.Service {
 	commonLabels := commonresources.MakeDefaultLabels(gad.baseName, commonresources.LabelValueK8sComponentGateway)
 	selectorLabels := commonresources.MakeDefaultSelectorLabels(gad.baseName)
 
-	return &corev1.Service{
+	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      gad.otlpServiceName,
 			Namespace: gad.globals.TargetNamespace(),
@@ -458,6 +465,11 @@ func (gad *GatewayApplierDeleter) makeOTLPService() *corev1.Service {
 			Type:     corev1.ServiceTypeClusterIP,
 		},
 	}
+	if useDaemonSet {
+		service.Spec.InternalTrafficPolicy = ptr.To(corev1.ServiceInternalTrafficPolicyLocal)
+	}
+
+	return service
 }
 
 func (gad *GatewayApplierDeleter) makePeerAuthentication() *istiosecurityclientv1.PeerAuthentication {
@@ -481,7 +493,13 @@ func (gad *GatewayApplierDeleter) makeAnnotations(configChecksum string, opts Ga
 	annotations := map[string]string{commonresources.AnnotationKeyChecksumConfig: configChecksum}
 
 	if opts.IstioEnabled {
-		annotations[commonresources.AnnotationKeyIstioExcludeInboundPorts] = fmt.Sprintf("%d", ports.Metrics)
+		excludedPorts := fmt.Sprintf("%d", ports.Metrics)
+		// If we use daemonset for gateway, we need to exclude OTLP ports from istio sidecar
+		if opts.UseDaemonSetForGateway {
+			excludedPorts = fmt.Sprintf("%d,%d,%d", ports.Metrics, ports.OTLPGRPC, ports.OTLPHTTP)
+		}
+
+		annotations[commonresources.AnnotationKeyIstioExcludeInboundPorts] = excludedPorts
 		// When a workload is outside the istio mesh and communicates with pod in service mesh, the envoy proxy does not
 		// preserve the source IP and destination IP. To preserve source/destination IP we need TPROXY interception mode.
 		// More info: https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/#ProxyConfig-InboundInterceptionMode
