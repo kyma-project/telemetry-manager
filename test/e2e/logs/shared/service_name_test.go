@@ -36,7 +36,6 @@ func TestServiceName_OTel(t *testing.T) {
 				return testutils.BuildLogPipelineRuntimeInput(testutils.IncludeNamespaces(includeNs))
 			},
 			expectAgent:  true,
-			experimental: false,
 		},
 		{
 			name:   suite.LabelLogGateway,
@@ -45,7 +44,6 @@ func TestServiceName_OTel(t *testing.T) {
 				return testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
 			},
 			expectAgent:  false,
-			experimental: false,
 		},
 		{
 			name:   fmt.Sprintf("%s-%s", suite.LabelLogGateway, suite.LabelExperimental),
@@ -54,7 +52,6 @@ func TestServiceName_OTel(t *testing.T) {
 				return testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
 			},
 			expectAgent:  false,
-			experimental: true,
 		},
 	}
 
@@ -132,7 +129,7 @@ func TestServiceName_OTel(t *testing.T) {
 
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
-			if tc.experimental {
+			if suite.IsExperimentalTest() {
 				assert.DaemonSetReady(t, kitkyma.LogGatewayName)
 			} else {
 				assert.DeploymentReady(t, kitkyma.LogGatewayName)
