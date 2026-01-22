@@ -35,7 +35,7 @@ func TestServiceName_OTel(t *testing.T) {
 			inputBuilder: func(includeNs string) telemetryv1beta1.LogPipelineInput {
 				return testutils.BuildLogPipelineRuntimeInput(testutils.IncludeNamespaces(includeNs))
 			},
-			expectAgent:  true,
+			expectAgent: true,
 		},
 		{
 			name:   suite.LabelLogGateway,
@@ -43,7 +43,7 @@ func TestServiceName_OTel(t *testing.T) {
 			inputBuilder: func(includeNs string) telemetryv1beta1.LogPipelineInput {
 				return testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
 			},
-			expectAgent:  false,
+			expectAgent: false,
 		},
 		{
 			name:   fmt.Sprintf("%s-%s", suite.LabelLogGateway, suite.LabelExperimental),
@@ -51,7 +51,7 @@ func TestServiceName_OTel(t *testing.T) {
 			inputBuilder: func(includeNs string) telemetryv1beta1.LogPipelineInput {
 				return testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
 			},
-			expectAgent:  false,
+			expectAgent: false,
 		},
 	}
 

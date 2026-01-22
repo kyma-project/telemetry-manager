@@ -1,6 +1,7 @@
 package shared
 
 import (
+	"fmt"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -23,22 +24,33 @@ import (
 
 func TestMetricsEndpoint_OTel(t *testing.T) {
 	tests := []struct {
-		label               string
+		name                string
+		labels              []string
 		input               telemetryv1beta1.LogPipelineInput
 		logGeneratorBuilder func(namespace string) client.Object
 		expectAgent         bool
 	}{
 		{
-			label: suite.LabelLogAgent,
-			input: testutils.BuildLogPipelineRuntimeInput(),
+			name:   suite.LabelLogAgent,
+			labels: []string{suite.LabelLogAgent},
+			input:  testutils.BuildLogPipelineRuntimeInput(),
 			logGeneratorBuilder: func(namespace string) client.Object {
 				return stdoutloggen.NewDeployment(namespace).K8sObject()
 			},
 			expectAgent: true,
 		},
 		{
-			label: suite.LabelLogGateway,
-			input: testutils.BuildLogPipelineOTLPInput(),
+			name:   suite.LabelLogGateway,
+			labels: []string{suite.LabelLogGateway},
+			input:  testutils.BuildLogPipelineOTLPInput(),
+			logGeneratorBuilder: func(namespace string) client.Object {
+				return telemetrygen.NewDeployment(namespace, telemetrygen.SignalTypeLogs).K8sObject()
+			},
+		},
+		{
+			name:   fmt.Sprintf("%s-%s", suite.LabelLogGateway, suite.LabelExperimental),
+			labels: []string{suite.LabelLogGateway, suite.LabelExperimental},
+			input:  testutils.BuildLogPipelineOTLPInput(),
 			logGeneratorBuilder: func(namespace string) client.Object {
 				return telemetrygen.NewDeployment(namespace, telemetrygen.SignalTypeLogs).K8sObject()
 			},
@@ -46,11 +58,11 @@ func TestMetricsEndpoint_OTel(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		t.Run(tc.label, func(t *testing.T) {
-			suite.RegisterTestCase(t, tc.label)
+		t.Run(tc.name, func(t *testing.T) {
+			suite.RegisterTestCase(t, tc.labels...)
 
 			var (
-				uniquePrefix = unique.Prefix(tc.label)
+				uniquePrefix = unique.Prefix(tc.name)
 				pipelineName = uniquePrefix()
 				backendNs    = uniquePrefix("backend")
 				genNs        = uniquePrefix("gen")
@@ -73,7 +85,11 @@ func TestMetricsEndpoint_OTel(t *testing.T) {
 
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
-			assert.DeploymentReady(t, kitkyma.LogGatewayName)
+			if suite.IsExperimentalTest() {
+				assert.DaemonSetReady(t, kitkyma.LogGatewayName)
+			} else {
+				assert.DeploymentReady(t, kitkyma.LogGatewayName)
+			}
 
 			if tc.expectAgent {
 				assert.DaemonSetReady(t, kitkyma.LogAgentName)
