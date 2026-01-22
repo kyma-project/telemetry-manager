@@ -100,13 +100,13 @@ Use the Kyma Telemetry module to enable ingestion of the signals from your workl
 
     ```bash
     kubectl apply -f - <<EOF
-    apiVersion: telemetry.kyma-project.io/v1alpha1
+    apiVersion: telemetry.kyma-project.io/v1beta1
     kind: LogPipeline
     metadata:
       name: aws
     spec:
       input:
-        application:
+        runtime:
           enabled: true
       output:
         otlp:
@@ -120,7 +120,7 @@ Use the Kyma Telemetry module to enable ingestion of the signals from your workl
 
    ```bash
    kubectl apply -f - <<EOF
-   apiVersion: telemetry.kyma-project.io/v1alpha1
+   apiVersion: telemetry.kyma-project.io/v1beta1
    kind: TracePipeline
    metadata:
      name: aws
@@ -136,7 +136,7 @@ Use the Kyma Telemetry module to enable ingestion of the signals from your workl
 
    ```bash
    kubectl apply -f - <<EOF
-   apiVersion: telemetry.kyma-project.io/v1alpha1
+   apiVersion: telemetry.kyma-project.io/v1beta1
    kind: MetricPipeline
    metadata:
      name: awsh

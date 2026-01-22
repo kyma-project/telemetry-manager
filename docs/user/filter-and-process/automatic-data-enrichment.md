@@ -44,7 +44,7 @@ The following example configuration enriches the telemetry data with Pod labels 
 - `k8s.pod.label.app.kubernetes.io.*`: All labels that start with the prefix `app.kubernetes.io` from the Pod, where `*` is replaced by the actual label key.
 
 ```yaml
-apiVersion: operator.kyma-project.io/v1alpha1
+apiVersion: operator.kyma-project.io/v1beta1
 kind: Telemetry
 metadata:
   name: default
