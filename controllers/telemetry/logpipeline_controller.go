@@ -269,6 +269,7 @@ func configureOTelReconciler(config LogPipelineControllerConfig, client client.C
 		if config.UseDaemonSetForGateway() {
 			return &workloadstatus.DaemonSetProber{Client: client}
 		}
+
 		return &workloadstatus.DeploymentProber{Client: client}
 	}()
 
