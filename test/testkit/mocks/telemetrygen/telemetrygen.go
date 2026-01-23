@@ -2,6 +2,7 @@ package telemetrygen
 
 import (
 	"fmt"
+	"strings"
 
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	corev1 "k8s.io/api/core/v1"
@@ -41,6 +42,18 @@ type Option func(*corev1.PodSpec)
 
 func WithServiceName(serviceName string) Option {
 	return WithResourceAttribute("service.name", serviceName)
+}
+
+func WithServiceNamespace(serviceNamespace string) Option {
+	return WithResourceAttribute("service.namespace", serviceNamespace)
+}
+
+func WithServiceVersion(serviceVersion string) Option {
+	return WithResourceAttribute("service.version", serviceVersion)
+}
+
+func WithServiceInstanceID(serviceInstanceID string) Option {
+	return WithResourceAttribute("service.instance.id", serviceInstanceID)
 }
 
 func WithResourceAttribute(key, value string) Option {
@@ -100,6 +113,18 @@ func WithInterval(duration string) Option {
 		spec.Containers[0].Args = append(spec.Containers[0].Args, fmt.Sprintf("%v", duration))
 	}
 }
+
+// GetVersion extracts the version of the telemetrygen image
+// 
+// Example: "v0.143.0" extracted from "ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.143.0"
+func GetVersion() string {
+	parts := strings.Split(testkit.DefaultTelemetryGenImage, ":")
+	if len(parts) < 2 {
+		return ""
+	}
+	return parts[len(parts)-1]
+}
+
 func NewPod(namespace string, signalType SignalType, opts ...Option) *kitk8sobjects.Pod {
 	return kitk8sobjects.NewPod(DefaultName, namespace).WithPodSpec(PodSpec(signalType, opts...)).WithLabel("app.kubernetes.io/name", DefaultName)
 }
