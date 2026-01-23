@@ -165,7 +165,7 @@ func TestTransform_OTel(t *testing.T) {
 				HaveResourceAttributes(Not(HaveKeyWithValue("k8s.namespace.name", "kyma-system"))),
 				HaveAttributes(HaveKeyWithValue("system", "false")),
 			))),
-			resourceName:       kitkyma.LogGatewayName,
+			resourceName:       kitkyma.TelemetryOTLPGatewayName,
 			readinessCheckFunc: assert.DaemonSetReady,
 		}, {
 			testName: fmt.Sprintf("%s-%s", suite.LabelLogGateway, suite.LabelExperimental),
@@ -184,7 +184,7 @@ func TestTransform_OTel(t *testing.T) {
 				HaveResourceAttributes(HaveKeyWithValue("test", "passed")),
 				HaveAttributes(HaveKeyWithValue("name", "InfoLogs")),
 			))),
-			resourceName:       kitkyma.LogGatewayName,
+			resourceName:       kitkyma.TelemetryOTLPGatewayName,
 			readinessCheckFunc: assert.DaemonSetReady,
 		}, {
 			testName: fmt.Sprintf("%s-%s", suite.LabelLogGateway, suite.LabelExperimental),
@@ -201,7 +201,7 @@ func TestTransform_OTel(t *testing.T) {
 			assertion: HaveFlatLogs(ContainElement(SatisfyAll(
 				HaveSeverityText(Equal("INFO")),
 			))),
-			resourceName:       kitkyma.LogGatewayName,
+			resourceName:       kitkyma.TelemetryOTLPGatewayName,
 			readinessCheckFunc: assert.DaemonSetReady,
 		},
 	}

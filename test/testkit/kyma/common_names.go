@@ -20,6 +20,7 @@ const (
 	SelfMonitorBaseName   = "telemetry-self-monitor"
 	DefaultTelemetryName  = "default"
 	ValidatingWebhookName = "telemetry-validating-webhook.kyma-project.io"
+	TelemetryOTLPGatewayBaseName    = "telemetry-otlp-gateway"
 
 	MetricGatewayServiceName = "telemetry-otlp-metrics"
 	TraceGatewayServiceName  = "telemetry-otlp-traces"
@@ -97,4 +98,6 @@ var (
 	TelemetryName = types.NamespacedName{Name: DefaultTelemetryName, Namespace: SystemNamespaceName}
 
 	WebhookCertSecret = types.NamespacedName{Name: "telemetry-webhook-cert", Namespace: SystemNamespaceName}
+
+	TelemetryOTLPGatewayName               = types.NamespacedName{Name: TelemetryOTLPGatewayBaseName, Namespace: SystemNamespaceName}
 )

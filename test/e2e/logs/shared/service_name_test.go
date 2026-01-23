@@ -58,7 +58,7 @@ func TestServiceName_OTel(t *testing.T) {
 				return testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
 			},
 			expectAgent:        false,
-			resourceName:       kitkyma.LogGatewayName,
+			resourceName:       kitkyma.TelemetryOTLPGatewayName,
 			readinessCheckFunc: assert.DaemonSetReady,
 		},
 	}
