@@ -265,12 +265,12 @@ func configureOTelReconciler(config LogPipelineControllerConfig, client client.C
 		Reader: client,
 	}
 
-	var prober logpipelineotel.Prober
-	if config.UseDaemonSetForGateway() {
-		prober = &workloadstatus.DaemonSetProber{Client: client}
-	} else {
-		prober = &workloadstatus.DeploymentProber{Client: client}
-	}
+	prober := func() logpipelineotel.Prober {
+		if config.UseDaemonSetForGateway() {
+			return &workloadstatus.DaemonSetProber{Client: client}
+		}
+		return &workloadstatus.DeploymentProber{Client: client}
+	}()
 
 	agentApplierDeleter := otelcollector.NewLogAgentApplierDeleter(
 		config.Global,
