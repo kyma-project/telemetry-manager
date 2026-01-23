@@ -34,6 +34,9 @@ const (
 	MetricOTLPServiceName = "telemetry-otlp-metrics"
 	TraceOTLPServiceName  = "telemetry-otlp-traces"
 	LogOTLPServiceName    = "telemetry-otlp-logs"
+
+	OTLPGatewayName = "telemetry-otlp-gateway"
+	OTLPServiceName = "telemetry-otlp-gateway"
 )
 
 var (
@@ -102,13 +105,21 @@ func NewLogGatewayApplierDeleter(globals config.Global, image, priorityClassName
 		commonresources.LabelKeyIstioInject:        commonresources.LabelValueTrue, // inject istio sidecar
 	}
 
+	baseName := LogGatewayName
+	serviceName := LogOTLPServiceName
+
+	if globals.UseDaemonSetForGateway() {
+		baseName = OTLPGatewayName
+		serviceName = OTLPServiceName
+	}
+
 	return &GatewayApplierDeleter{
 		globals:              globals,
-		baseName:             LogGatewayName,
+		baseName:             baseName,
 		extraPodLabels:       extraLabels,
 		image:                image,
-		otlpServiceName:      LogOTLPServiceName,
-		rbac:                 makeLogGatewayRBAC(globals.TargetNamespace()),
+		otlpServiceName:      serviceName,
+		rbac:                 makeOTLPGatewayRBAC(baseName, globals.TargetNamespace()),
 		baseMemoryLimit:      logGatewayBaseMemoryLimit,
 		dynamicMemoryLimit:   logGatewayDynamicMemoryLimit,
 		baseCPURequest:       logGatewayBaseCPURequest,
@@ -117,7 +128,7 @@ func NewLogGatewayApplierDeleter(globals config.Global, image, priorityClassName
 		dynamicMemoryRequest: logGatewayDynamicMemoryRequest,
 		podOpts: []commonresources.PodSpecOption{
 			commonresources.WithPriorityClass(priorityClassName),
-			commonresources.WithAffinity(makePodAffinity(commonresources.MakeDefaultSelectorLabels(LogGatewayName))),
+			commonresources.WithAffinity(makePodAffinity(commonresources.MakeDefaultSelectorLabels(baseName))),
 		},
 		containerOpts: []commonresources.ContainerOption{
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentPodIP, fieldPathPodIP),
@@ -236,7 +247,6 @@ func (gad *GatewayApplierDeleter) ApplyResources(ctx context.Context, c client.C
 			return fmt.Errorf("failed to create peerauthentication: %w", err)
 		}
 	}
-
 	return nil
 }
 

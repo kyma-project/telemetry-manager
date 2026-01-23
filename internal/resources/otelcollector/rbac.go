@@ -146,9 +146,9 @@ func makeLogAgentRBAC(namespace string) rbac {
 		withClusterRoleBinding(),
 	)
 }
-func makeLogGatewayRBAC(namespace string) rbac {
+func makeOTLPGatewayRBAC(name, namespace string) rbac {
 	return *newRBAC(
-		types.NamespacedName{Name: LogGatewayName, Namespace: namespace},
+		types.NamespacedName{Name: name, Namespace: namespace},
 		commonresources.LabelValueK8sComponentGateway,
 		withClusterRole(withK8sAttributeRules()),
 		withClusterRoleBinding(),
