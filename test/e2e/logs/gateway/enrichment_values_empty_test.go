@@ -24,20 +24,17 @@ func TestEnrichmentValuesEmpty(t *testing.T) {
 	tests := []struct {
 		name               string
 		labels             []string
-		resourceName       types.NamespacedName
 		readinessCheckFunc func(t *testing.T, name types.NamespacedName)
 	}{
 
 		{
 			name:               suite.LabelLogGateway,
 			labels:             []string{suite.LabelLogGateway},
-			resourceName:       kitkyma.LogGatewayName,
 			readinessCheckFunc: assert.DeploymentReady,
 		},
 		{
 			name:               fmt.Sprintf("%s-%s", suite.LabelLogGateway, suite.LabelExperimental),
 			labels:             []string{suite.LabelLogGateway, suite.LabelExperimental},
-			resourceName:       kitkyma.LogGatewayName,
 			readinessCheckFunc: assert.DaemonSetReady,
 		},
 	}
@@ -97,7 +94,7 @@ func TestEnrichmentValuesEmpty(t *testing.T) {
 
 			assert.BackendReachable(t, backend)
 
-			tc.readinessCheckFunc(t, tc.resourceName)
+			tc.readinessCheckFunc(t, kitkyma.LogGatewayName)
 
 			assert.OTelLogPipelineHealthy(t, pipelineName)
 			assert.OTelLogsFromNamespaceDelivered(t, backend, genNs)
