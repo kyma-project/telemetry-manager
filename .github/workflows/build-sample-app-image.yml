@@ -15,7 +15,7 @@ on:
       - "dependencies/sample-app/**"
   workflow_dispatch:
 
-jobs:
+jobs:  
   envs:
     runs-on: ubuntu-latest
     outputs:
