@@ -10,7 +10,7 @@ image:
 
 config:
   exporters:
-    otlphttp/logs:
+    otlp_http/logs:
       compression: gzip
       logs_endpoint: https://logs.${AWS_REGION}.amazonaws.com/v1/logs
       headers: 
@@ -19,7 +19,7 @@ config:
       auth:
         authenticator: sigv4auth/logs
         
-    otlphttp/traces:
+    otlp_http/traces:
       compression: gzip
       traces_endpoint: https://xray.${AWS_REGION}.amazonaws.com/v1/traces
       auth:
@@ -55,7 +55,7 @@ config:
           - memory_limiter
           - batch
         exporters:
-          - otlphttp/logs
+          - otlp_http/logs
           - debug
       traces:
         receivers:
@@ -64,7 +64,7 @@ config:
           - memory_limiter
           - batch
         exporters:
-          - otlphttp/traces
+          - otlp_http/traces
           - debug
       metrics:
         receivers:
