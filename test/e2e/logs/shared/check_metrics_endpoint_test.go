@@ -32,6 +32,7 @@ func TestMetricsEndpoint_OTel(t *testing.T) {
 		expectAgent         bool
 		resourceName        types.NamespacedName
 		readinessCheckFunc  func(t *testing.T, name types.NamespacedName)
+		metricsService      types.NamespacedName
 	}{
 		{
 			name:   suite.LabelLogAgent,
@@ -40,9 +41,9 @@ func TestMetricsEndpoint_OTel(t *testing.T) {
 			logGeneratorBuilder: func(namespace string) client.Object {
 				return stdoutloggen.NewDeployment(namespace).K8sObject()
 			},
-			expectAgent:        true,
 			resourceName:       kitkyma.LogAgentName,
 			readinessCheckFunc: assert.DaemonSetReady,
+			metricsService:     kitkyma.LogAgentMetricsService,
 		},
 		{
 			name:   suite.LabelLogGateway,
@@ -53,6 +54,7 @@ func TestMetricsEndpoint_OTel(t *testing.T) {
 			},
 			resourceName:       kitkyma.LogGatewayName,
 			readinessCheckFunc: assert.DeploymentReady,
+			metricsService:     kitkyma.LogGatewayMetricsService,
 		},
 		{
 			name:   fmt.Sprintf("%s-%s", suite.LabelLogGateway, suite.LabelExperimental),
@@ -63,6 +65,7 @@ func TestMetricsEndpoint_OTel(t *testing.T) {
 			},
 			resourceName:       kitkyma.TelemetryOTLPGatewayName,
 			readinessCheckFunc: assert.DaemonSetReady,
+			metricsService:     kitkyma.TelemetryOTLPMetricsService,
 		},
 	}
 
@@ -96,13 +99,8 @@ func TestMetricsEndpoint_OTel(t *testing.T) {
 
 			tc.readinessCheckFunc(t, tc.resourceName)
 
-			if tc.expectAgent {
-				agentMetricsURL := suite.ProxyClient.ProxyURLForService(kitkyma.LogAgentMetricsService.Namespace, kitkyma.LogAgentMetricsService.Name, "metrics", ports.Metrics)
-				assert.EmitsOTelCollectorMetrics(t, agentMetricsURL)
-			}
-
-			gatewayMetricsURL := suite.ProxyClient.ProxyURLForService(kitkyma.LogGatewayMetricsService.Namespace, kitkyma.LogGatewayMetricsService.Name, "metrics", ports.Metrics)
-			assert.EmitsOTelCollectorMetrics(t, gatewayMetricsURL)
+			metricsURL := suite.ProxyClient.ProxyURLForService(tc.metricsService.Namespace, tc.metricsService.Name, "metrics", ports.Metrics)
+			assert.EmitsOTelCollectorMetrics(t, metricsURL)
 		})
 	}
 }
