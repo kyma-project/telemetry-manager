@@ -247,6 +247,7 @@ func (gad *GatewayApplierDeleter) ApplyResources(ctx context.Context, c client.C
 			return fmt.Errorf("failed to create peerauthentication: %w", err)
 		}
 	}
+
 	return nil
 }
 
