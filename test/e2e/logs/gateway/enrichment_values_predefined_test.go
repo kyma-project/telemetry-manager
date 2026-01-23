@@ -26,6 +26,7 @@ func TestEnrichmentValuesPredefined(t *testing.T) {
 		labels             []string
 		resourceName       types.NamespacedName
 		readinessCheckFunc func(t *testing.T, name types.NamespacedName)
+		genSignalType      telemetrygen.SignalType
 	}{
 
 		{
@@ -33,12 +34,14 @@ func TestEnrichmentValuesPredefined(t *testing.T) {
 			labels:             []string{suite.LabelLogGateway},
 			resourceName:       kitkyma.LogGatewayName,
 			readinessCheckFunc: assert.DeploymentReady,
+			genSignalType:      telemetrygen.SignalTypeLogs,
 		},
 		{
 			name:               fmt.Sprintf("%s-%s", suite.LabelLogGateway, suite.LabelExperimental),
 			labels:             []string{suite.LabelLogGateway, suite.LabelExperimental},
 			resourceName:       kitkyma.TelemetryOTLPGatewayName,
 			readinessCheckFunc: assert.DaemonSetReady,
+			genSignalType:      telemetrygen.SignalTypeOTLP,
 		},
 	}
 
@@ -63,7 +66,7 @@ func TestEnrichmentValuesPredefined(t *testing.T) {
 			// All attributes in the enrichment flow are set to predefined values
 			generator := telemetrygen.NewPod(
 				genNs,
-				telemetrygen.SignalTypeLogs,
+				tc.genSignalType,
 				telemetrygen.WithResourceAttribute("cloud.availability_zone", "predefined-availability-zone"),
 				telemetrygen.WithResourceAttribute("cloud.provider", "predefined-provider"),
 				telemetrygen.WithResourceAttribute("cloud.region", "predefined-region"),

@@ -30,6 +30,7 @@ func TestServiceName_OTel(t *testing.T) {
 		expectAgent        bool
 		resourceName       types.NamespacedName
 		readinessCheckFunc func(t *testing.T, name types.NamespacedName)
+		genSignalType      telemetrygen.SignalType
 	}{
 		{
 			name:   suite.LabelLogAgent,
@@ -50,6 +51,7 @@ func TestServiceName_OTel(t *testing.T) {
 			expectAgent:        false,
 			resourceName:       kitkyma.LogGatewayName,
 			readinessCheckFunc: assert.DeploymentReady,
+			genSignalType:      telemetrygen.SignalTypeLogs,
 		},
 		{
 			name:   fmt.Sprintf("%s-%s", suite.LabelLogGateway, suite.LabelExperimental),
@@ -60,6 +62,7 @@ func TestServiceName_OTel(t *testing.T) {
 			expectAgent:        false,
 			resourceName:       kitkyma.TelemetryOTLPGatewayName,
 			readinessCheckFunc: assert.DaemonSetReady,
+			genSignalType:      telemetrygen.SignalTypeOTLP,
 		},
 	}
 
@@ -124,7 +127,7 @@ func TestServiceName_OTel(t *testing.T) {
 					kitk8sobjects.NewPod(podWithNoLabelsName, genNs).WithPodSpec(podSpecLogs).K8sObject(),
 				)
 			} else {
-				podSpecWithUndefinedService := telemetrygen.PodSpec(telemetrygen.SignalTypeLogs, telemetrygen.WithServiceName(""))
+				podSpecWithUndefinedService := telemetrygen.PodSpec(tc.genSignalType, telemetrygen.WithServiceName(""))
 				resources = append(resources,
 					kitk8sobjects.NewPod(podWithAppLabelName, genNs).
 						WithLabel(appLabelKey, appLabelValue).

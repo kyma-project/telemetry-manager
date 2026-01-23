@@ -156,7 +156,7 @@ func TestTransform_OTel(t *testing.T) {
 			name:     "with-where",
 			input:    testutils.BuildLogPipelineOTLPInput(),
 			logGeneratorBuilder: func(ns string) client.Object {
-				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeLogs).K8sObject()
+				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeOTLP).K8sObject()
 			},
 			transformSpec: telemetryv1beta1.TransformSpec{
 				Statements: []string{"set(log.attributes[\"system\"], \"false\") where not IsMatch(resource.attributes[\"k8s.namespace.name\"], \".*-system\")"},
@@ -173,7 +173,7 @@ func TestTransform_OTel(t *testing.T) {
 			name:     "infer-context",
 			input:    testutils.BuildLogPipelineOTLPInput(),
 			logGeneratorBuilder: func(ns string) client.Object {
-				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeLogs).K8sObject()
+				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeOTLP).K8sObject()
 			},
 			transformSpec: telemetryv1beta1.TransformSpec{
 				Statements: []string{"set(resource.attributes[\"test\"], \"passed\")",
@@ -192,7 +192,7 @@ func TestTransform_OTel(t *testing.T) {
 			name:     "cond-and-stmts",
 			input:    testutils.BuildLogPipelineOTLPInput(),
 			logGeneratorBuilder: func(ns string) client.Object {
-				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeLogs).K8sObject()
+				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeOTLP).K8sObject()
 			},
 			transformSpec: telemetryv1beta1.TransformSpec{
 				Conditions: []string{"log.severity_text == \"info\" or log.severity_text == \"Info\""},

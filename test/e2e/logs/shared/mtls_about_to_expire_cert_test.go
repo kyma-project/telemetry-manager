@@ -64,7 +64,7 @@ func TestMTLSAboutToExpireCert_OTel(t *testing.T) {
 				return testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
 			},
 			logGeneratorBuilder: func(ns string) client.Object {
-				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeLogs).K8sObject()
+				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeOTLP).K8sObject()
 			},
 			resourceName:       kitkyma.TelemetryOTLPGatewayName,
 			readinessCheckFunc: assert.DaemonSetReady,

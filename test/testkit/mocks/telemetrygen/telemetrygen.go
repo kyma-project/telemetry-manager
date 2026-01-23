@@ -35,6 +35,7 @@ const (
 	SignalTypeMetrics = "metrics"
 	SignalTypeLogs    = "logs"
 	DefaultName       = "telemetrygen"
+	SignalTypeOTLP    = "otlp"
 )
 
 type Option func(*corev1.PodSpec)
@@ -118,6 +119,8 @@ func PodSpec(signalType SignalType, opts ...Option) corev1.PodSpec {
 		gatewayPushURL = "telemetry-otlp-metrics.kyma-system:4317"
 	case SignalTypeLogs:
 		gatewayPushURL = "telemetry-otlp-logs.kyma-system:4317"
+	case SignalTypeOTLP:
+		gatewayPushURL = "telemetry-otlp-gateway.kyma-system:4317"
 	}
 
 	spec := corev1.PodSpec{
