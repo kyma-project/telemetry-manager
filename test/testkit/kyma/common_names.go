@@ -11,16 +11,16 @@ const (
 
 	TelemetryManagerMetricsPort = 8080
 
-	MetricGatewayBaseName = "telemetry-metric-gateway"
-	MetricAgentBaseName   = "telemetry-metric-agent"
-	TraceGatewayBaseName  = "telemetry-trace-gateway"
-	LogAgentBaseName      = "telemetry-log-agent"
-	LogGatewayBaseName    = "telemetry-log-gateway"
-	FluentBitBaseName     = "telemetry-fluent-bit"
-	SelfMonitorBaseName   = "telemetry-self-monitor"
-	DefaultTelemetryName  = "default"
-	ValidatingWebhookName = "telemetry-validating-webhook.kyma-project.io"
-	TelemetryOTLPGatewayBaseName    = "telemetry-otlp-gateway"
+	MetricGatewayBaseName        = "telemetry-metric-gateway"
+	MetricAgentBaseName          = "telemetry-metric-agent"
+	TraceGatewayBaseName         = "telemetry-trace-gateway"
+	LogAgentBaseName             = "telemetry-log-agent"
+	LogGatewayBaseName           = "telemetry-log-gateway"
+	FluentBitBaseName            = "telemetry-fluent-bit"
+	SelfMonitorBaseName          = "telemetry-self-monitor"
+	DefaultTelemetryName         = "default"
+	ValidatingWebhookName        = "telemetry-validating-webhook.kyma-project.io"
+	TelemetryOTLPGatewayBaseName = "telemetry-otlp-gateway"
 
 	MetricGatewayServiceName = "telemetry-otlp-metrics"
 	TraceGatewayServiceName  = "telemetry-otlp-traces"
@@ -99,5 +99,5 @@ var (
 
 	WebhookCertSecret = types.NamespacedName{Name: "telemetry-webhook-cert", Namespace: SystemNamespaceName}
 
-	TelemetryOTLPGatewayName               = types.NamespacedName{Name: TelemetryOTLPGatewayBaseName, Namespace: SystemNamespaceName}
+	TelemetryOTLPGatewayName = types.NamespacedName{Name: TelemetryOTLPGatewayBaseName, Namespace: SystemNamespaceName}
 )

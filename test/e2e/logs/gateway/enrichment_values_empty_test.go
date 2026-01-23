@@ -97,7 +97,7 @@ func TestEnrichmentValuesEmpty(t *testing.T) {
 
 			assert.BackendReachable(t, backend)
 
-			tc.readinessCheckFunc(t, kitkyma.LogGatewayName)
+			tc.readinessCheckFunc(t, tc.resourceName)
 
 			assert.OTelLogPipelineHealthy(t, pipelineName)
 			assert.OTelLogsFromNamespaceDelivered(t, backend, genNs)
