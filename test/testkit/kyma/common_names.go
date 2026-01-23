@@ -99,6 +99,13 @@ var (
 
 	WebhookCertSecret = types.NamespacedName{Name: "telemetry-webhook-cert", Namespace: SystemNamespaceName}
 
-	TelemetryOTLPGatewayName    = types.NamespacedName{Name: TelemetryOTLPGatewayBaseName, Namespace: SystemNamespaceName}
-	TelemetryOTLPMetricsService = types.NamespacedName{Name: TelemetryOTLPGatewayBaseName + "-metrics", Namespace: SystemNamespaceName}
+	TelemetryOTLPGatewayName        = types.NamespacedName{Name: TelemetryOTLPGatewayBaseName, Namespace: SystemNamespaceName}
+	TelemetryOTLPMetricsService     = types.NamespacedName{Name: TelemetryOTLPGatewayBaseName + "-metrics", Namespace: SystemNamespaceName}
+	TelemetryOTLPServiceAccount     = types.NamespacedName{Name: TelemetryOTLPGatewayBaseName, Namespace: SystemNamespaceName}
+	TelemetryOTLPClusterRole        = types.NamespacedName{Name: TelemetryOTLPGatewayBaseName, Namespace: SystemNamespaceName}
+	TelemetryOTLPClusterRoleBinding = types.NamespacedName{Name: TelemetryOTLPGatewayBaseName, Namespace: SystemNamespaceName}
+	TelemetryOTLPNetworkPolicy      = types.NamespacedName{Name: TelemetryOTLPGatewayBaseName, Namespace: SystemNamespaceName}
+	TelemetryOTLPSecretName         = types.NamespacedName{Name: TelemetryOTLPGatewayBaseName, Namespace: SystemNamespaceName}
+	TelemetryOTLPConfigMap          = types.NamespacedName{Name: TelemetryOTLPGatewayBaseName, Namespace: SystemNamespaceName}
+	TelemetryOTLPOTLPService        = types.NamespacedName{Name: TelemetryOTLPGatewayBaseName, Namespace: SystemNamespaceName}
 )
