@@ -162,8 +162,8 @@ const (
 	// EXPORTERS
 	// ================================================================================
 
-	ComponentIDOTLPHTTPExporter = "otlphttp/%s" // dynamically filled with pipeline name
-	ComponentIDOTLPGRPCExporter = "otlp/%s"     // dynamically filled with pipeline name
+	ComponentIDOTLPHTTPExporter = "otlp_http/%s" // dynamically filled with pipeline name
+	ComponentIDOTLPGRPCExporter = "otlp_grpc/%s"     // dynamically filled with pipeline name
 	ComponentIDOTLPExporter     = "otlp"        // static OTLP exporter
 
 	// ================================================================================
