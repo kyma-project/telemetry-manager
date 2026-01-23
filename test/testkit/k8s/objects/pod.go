@@ -8,20 +8,33 @@ import (
 )
 
 type Pod struct {
-	name       string
-	namespace  string
-	persistent bool
-	labels     map[string]string
-	podSpec    corev1.PodSpec
+	name        string
+	namespace   string
+	persistent  bool
+	annotations map[string]string
+	labels      map[string]string
+	podSpec     corev1.PodSpec
 }
 
 func NewPod(name, namespace string) *Pod {
 	return &Pod{
-		name:      name,
-		namespace: namespace,
-		labels:    make(map[string]string),
-		podSpec:   SleeperPodSpec(),
+		name:        name,
+		namespace:   namespace,
+		annotations: make(map[string]string),
+		labels:      make(map[string]string),
+		podSpec:     SleeperPodSpec(),
 	}
+}
+
+func (p *Pod) WithAnnotation(key, value string) *Pod {
+	p.annotations[key] = value
+	return p
+}
+
+func (p *Pod) WithAnnotations(annotations map[string]string) *Pod {
+	maps.Copy(p.annotations, annotations)
+
+	return p
 }
 
 func (p *Pod) WithLabel(key, value string) *Pod {
@@ -56,9 +69,10 @@ func (p *Pod) K8sObject() *corev1.Pod {
 
 	return &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      p.name,
-			Namespace: p.namespace,
-			Labels:    labels,
+			Name:        p.name,
+			Namespace:   p.namespace,
+			Labels:      labels,
+			Annotations: p.annotations,
 		},
 		Spec: podSpec,
 	}

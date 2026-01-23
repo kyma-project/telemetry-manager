@@ -114,7 +114,7 @@ func WithInterval(duration string) Option {
 	}
 }
 
-// GetVersion extracts the version of the telemetrygen image
+// GetVersion extracts and returns the version of the telemetrygen image
 // 
 // Example: "v0.143.0" extracted from "ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.143.0"
 func GetVersion() string {
