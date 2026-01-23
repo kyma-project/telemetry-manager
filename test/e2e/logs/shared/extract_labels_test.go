@@ -65,7 +65,7 @@ func TestExtractLabels_OTel(t *testing.T) {
 				return testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
 			},
 			logGeneratorBuilder: func(ns string, labels map[string]string) client.Object {
-				return telemetrygen.NewPod(ns, telemetrygen.SignalTypeOTLP).WithLabels(labels).K8sObject()
+				return telemetrygen.NewPod(ns, telemetrygen.SignalTypeCentralLogs).WithLabels(labels).K8sObject()
 			},
 			resourceName:       kitkyma.TelemetryOTLPGatewayName,
 			readinessCheckFunc: assert.DaemonSetReady,

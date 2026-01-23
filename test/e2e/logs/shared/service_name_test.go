@@ -62,7 +62,7 @@ func TestServiceName_OTel(t *testing.T) {
 			expectAgent:        false,
 			resourceName:       kitkyma.TelemetryOTLPGatewayName,
 			readinessCheckFunc: assert.DaemonSetReady,
-			genSignalType:      telemetrygen.SignalTypeOTLP,
+			genSignalType:      telemetrygen.SignalTypeCentralLogs,
 		},
 	}
 

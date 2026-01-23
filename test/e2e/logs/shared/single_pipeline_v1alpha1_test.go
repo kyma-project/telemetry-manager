@@ -75,7 +75,7 @@ func TestSinglePipelineV1Alpha1_OTel(t *testing.T) {
 				},
 			},
 			logGeneratorBuilder: func(ns string) client.Object {
-				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeOTLP).K8sObject()
+				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeCentralLogs).K8sObject()
 			},
 			resourceName:       kitkyma.TelemetryOTLPGatewayName,
 			readinessCheckFunc: assert.DaemonSetReady,

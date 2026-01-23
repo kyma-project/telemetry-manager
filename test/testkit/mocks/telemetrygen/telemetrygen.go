@@ -31,11 +31,11 @@ var (
 )
 
 const (
-	SignalTypeTraces  = "traces"
-	SignalTypeMetrics = "metrics"
-	SignalTypeLogs    = "logs"
-	DefaultName       = "telemetrygen"
-	SignalTypeOTLP    = "otlp"
+	SignalTypeTraces      = "traces"
+	SignalTypeMetrics     = "metrics"
+	SignalTypeLogs        = "logs"
+	DefaultName           = "telemetrygen"
+	SignalTypeCentralLogs = "central-logs"
 )
 
 type Option func(*corev1.PodSpec)
@@ -110,7 +110,10 @@ func NewDeployment(namespace string, signalType SignalType, opts ...Option) *kit
 }
 
 func PodSpec(signalType SignalType, opts ...Option) corev1.PodSpec {
-	var gatewayPushURL string
+	var (
+		gatewayPushURL string
+		signal         string
+	)
 
 	switch signalType {
 	case SignalTypeTraces:
@@ -119,8 +122,17 @@ func PodSpec(signalType SignalType, opts ...Option) corev1.PodSpec {
 		gatewayPushURL = "telemetry-otlp-metrics.kyma-system:4317"
 	case SignalTypeLogs:
 		gatewayPushURL = "telemetry-otlp-logs.kyma-system:4317"
-	case SignalTypeOTLP:
+	case SignalTypeCentralLogs:
 		gatewayPushURL = "telemetry-otlp-gateway.kyma-system:4317"
+	}
+
+	switch signalType {
+	case SignalTypeTraces:
+		signal = "traces"
+	case SignalTypeMetrics:
+		signal = "metrics"
+	case SignalTypeLogs, SignalTypeCentralLogs:
+		signal = "logs"
 	}
 
 	spec := corev1.PodSpec{
@@ -130,7 +142,7 @@ func PodSpec(signalType SignalType, opts ...Option) corev1.PodSpec {
 				Name:  "telemetrygen",
 				Image: testkit.DefaultTelemetryGenImage,
 				Args: []string{
-					string(signalType),
+					signal,
 					"--rate",
 					"10",
 					"--duration",

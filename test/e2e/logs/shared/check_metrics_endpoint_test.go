@@ -59,7 +59,7 @@ func TestMetricsEndpoint_OTel(t *testing.T) {
 			labels: []string{suite.LabelLogGateway, suite.LabelExperimental},
 			input:  testutils.BuildLogPipelineOTLPInput(),
 			logGeneratorBuilder: func(namespace string) client.Object {
-				return telemetrygen.NewDeployment(namespace, telemetrygen.SignalTypeOTLP).K8sObject()
+				return telemetrygen.NewDeployment(namespace, telemetrygen.SignalTypeCentralLogs).K8sObject()
 			},
 			resourceName:       kitkyma.TelemetryOTLPGatewayName,
 			readinessCheckFunc: assert.DaemonSetReady,

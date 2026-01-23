@@ -41,7 +41,7 @@ func TestEnrichmentValuesEmpty(t *testing.T) {
 			labels:             []string{suite.LabelLogGateway, suite.LabelExperimental},
 			resourceName:       kitkyma.TelemetryOTLPGatewayName,
 			readinessCheckFunc: assert.DaemonSetReady,
-			genSignalType:      telemetrygen.SignalTypeOTLP,
+			genSignalType:      telemetrygen.SignalTypeCentralLogs,
 		},
 	}
 
