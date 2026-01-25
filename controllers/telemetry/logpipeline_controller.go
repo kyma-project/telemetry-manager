@@ -159,7 +159,17 @@ func (r *LogPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		&corev1.ServiceAccount{},
 		&rbacv1.ClusterRole{},
 		&rbacv1.ClusterRoleBinding{},
-		&istiosecurityclientv1.PeerAuthentication{},
+	}
+
+	discoveryClient, err := discovery.NewDiscoveryClientForConfig(mgr.GetConfig())
+	if err != nil {
+		return fmt.Errorf("failed to create discovery client: %w", err)
+	}
+
+	isIstioActive := istiostatus.NewChecker(discoveryClient).IsIstioActive(context.Background())
+
+	if isIstioActive {
+		ownedResourceTypesToWatch = append(ownedResourceTypesToWatch, &istiosecurityclientv1.PeerAuthentication{})
 	}
 
 	for _, resource := range ownedResourceTypesToWatch {
