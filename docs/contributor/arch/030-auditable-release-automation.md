@@ -39,4 +39,4 @@ Implement deterministic Docker builds to ensure PR and release images produce id
 
 ### 1. Release Workflow
 
-![arch](./../assets/auditable-release.drawio.svg)
+![Workflow](./../assets/auditable-release.drawio.svg)
