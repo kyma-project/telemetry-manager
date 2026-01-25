@@ -13,8 +13,7 @@ For auditing purposes, each release must provide successful test result artifact
 - Test execution reports (unit and e2e tests)
 - Docker images used for testing and release
 - Gardener tests execution reports
-- Release manifest with audit metadata
-- Image digest verification records
+- Image digest verification
 
 ### Test Execution Reports
 
