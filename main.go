@@ -269,6 +269,7 @@ func setupControllersAndWebhooks(mgr manager.Manager, globals config.Global, env
 
 func setupManager(globals config.Global) (manager.Manager, error) {
 	restConfig := ctrl.GetConfigOrDie()
+
 	discoveryClient, err := discovery.NewDiscoveryClientForConfig(restConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create discovery client: %w", err)
