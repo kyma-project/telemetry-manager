@@ -74,8 +74,6 @@ var (
 	exporterContainerMemoryLimit   = resource.MustParse("50Mi")
 )
 
-// AgentApplyOptions expects a syncerClient which is a client with no ownerReference setter since it handles its
-// own resource deletion with finalizers and will be removed once the ConfigBuilder implementation is done.
 type AgentApplyOptions struct {
 	AllowedPorts    []int32
 	FluentBitConfig *builder.FluentBitConfig

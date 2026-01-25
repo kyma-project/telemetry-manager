@@ -144,7 +144,6 @@ func TestTLSCertificateValidation(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			pipeline := testutils.NewLogPipelineBuilder().
-				WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").
 				WithHTTPOutput(testutils.HTTPClientTLSFromString("ca", "fooCert", "fooKey")).
 				Build()
 			testClient := newTestClient(t, &pipeline)
@@ -214,7 +213,7 @@ func TestPodErrorConditionReporting(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			pipeline := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").Build()
+			pipeline := testutils.NewLogPipelineBuilder().Build()
 			testClient := newTestClient(t, &pipeline)
 
 			reconciler := newTestReconciler(testClient,
@@ -252,7 +251,7 @@ func TestUnsupportedMode(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			pipelineBuilder := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP")
+			pipelineBuilder := testutils.NewLogPipelineBuilder()
 			if tt.hasCustom {
 				pipelineBuilder = pipelineBuilder.WithCustomFilter("Name grep")
 			}
@@ -280,7 +279,7 @@ func TestSecretReferenceValidation(t *testing.T) {
 		{
 			name: "API request failed",
 			setupObjs: func() (telemetryv1beta1.LogPipeline, []client.Object) {
-				p := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").Build()
+				p := testutils.NewLogPipelineBuilder().Build()
 				return p, []client.Object{&p}
 			},
 			secretErr: &errortypes.APIRequestFailedError{Err: errors.New("server error")},
@@ -293,7 +292,7 @@ func TestSecretReferenceValidation(t *testing.T) {
 		{
 			name: "secret missing",
 			setupObjs: func() (telemetryv1beta1.LogPipeline, []client.Object) {
-				p := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").Build()
+				p := testutils.NewLogPipelineBuilder().Build()
 				return p, []client.Object{&p}
 			},
 			secretErr: fmt.Errorf("%w: Secret 'some-secret' of Namespace 'some-namespace'", secretref.ErrSecretRefNotFound),
@@ -313,7 +312,6 @@ func TestSecretReferenceValidation(t *testing.T) {
 					Data: map[string][]byte{"host": nil},
 				}
 				p := testutils.NewLogPipelineBuilder().
-					WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").
 					WithHTTPOutput(testutils.HTTPHostFromSecret("some-secret", "some-namespace", "host")).
 					Build()
 
@@ -387,7 +385,7 @@ func TestAgentHealthCondition(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			pipeline := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").Build()
+			pipeline := testutils.NewLogPipelineBuilder().Build()
 			testClient := newTestClient(t, &pipeline)
 
 			reconciler := newTestReconciler(testClient,
@@ -503,7 +501,7 @@ func TestFlowHealthCondition(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			pipeline := testutils.NewLogPipelineBuilder().WithFinalizer("FLUENT_BIT_SECTIONS_CONFIG_MAP").Build()
+			pipeline := testutils.NewLogPipelineBuilder().Build()
 			testClient := newTestClient(t, &pipeline)
 
 			flowHealthProber := &logpipelinemocks.FlowHealthProber{}

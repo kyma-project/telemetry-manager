@@ -198,11 +198,6 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 		return err
 	}
 
-	err = ensureFinalizers(ctx, r.Client, pipeline)
-	if err != nil {
-		return err
-	}
-
 	reconcilablePipelines, err := r.getReconcilablePipelines(ctx, allPipelines)
 	if err != nil {
 		return fmt.Errorf("failed to fetch reconcilable log pipelines: %w", err)
@@ -215,7 +210,8 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 			return fmt.Errorf("failed to delete log pipeline resources: %w", err)
 		}
 
-		if err = cleanupFinalizersIfNeeded(ctx, r.Client, pipeline); err != nil {
+		// TODO: remove cleanup code after rollout telemetry 1.57.0
+		if err = cleanupFinalizers(ctx, r.Client, pipeline); err != nil {
 			return err
 		}
 
@@ -248,7 +244,8 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 		return err
 	}
 
-	if err = cleanupFinalizersIfNeeded(ctx, r.Client, pipeline); err != nil {
+	// TODO: remove cleanup code after rollout telemetry 1.57.0
+	if err = cleanupFinalizers(ctx, r.Client, pipeline); err != nil {
 		return err
 	}
 
