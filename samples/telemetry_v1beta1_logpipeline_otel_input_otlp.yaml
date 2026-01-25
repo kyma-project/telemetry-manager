@@ -113,13 +113,13 @@ spec:
         image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.111.0
         name: telemetrygen
 ---
-apiVersion: telemetry.kyma-project.io/v1alpha1
+apiVersion: telemetry.kyma-project.io/v1beta1
 kind: LogPipeline
 metadata:
   name: sample-otel
 spec:
   input:
-    application:
+    runtime:
       enabled: false
   output:
     otlp:

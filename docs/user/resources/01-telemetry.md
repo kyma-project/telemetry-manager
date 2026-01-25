@@ -11,7 +11,7 @@ kubectl get crd telemetry.operator.kyma-project.io -o yaml
 The following Telemetry object defines a module:
 
 ```yaml
-apiVersion: operator.kyma-project.io/v1alpha1
+apiVersion: operator.kyma-project.io/v1beta1
 kind: Telemetry
 metadata:
   name: default
@@ -73,7 +73,7 @@ For further examples, see the [samples](https://github.com/kyma-project/telemetr
 
 ## Custom Resource Parameters
 
-For details, see the [Telemetry specification file](https://github.com/kyma-project/telemetry-manager/blob/main/apis/operator/v1alpha1/telemetry_types.go).
+For details, see the [Telemetry specification file](https://github.com/kyma-project/telemetry-manager/blob/main/apis/operator/v1beta1/telemetry_types.go).
 
 <!-- The table below was generated automatically -->
 <!-- Some special tags (html comments) are at the end of lines due to markdown requirements. -->

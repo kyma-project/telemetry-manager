@@ -303,7 +303,7 @@ install: manifests $(HELM) ## Install CRDs into the K8s cluster
 .PHONY: install-with-telemetry
 install-with-telemetry: install ## Install CRDs and create sample telemetry resource
 	kubectl get ns kyma-system || kubectl create ns kyma-system
-	kubectl apply -f samples/operator_v1alpha1_telemetry.yaml -n kyma-system
+	kubectl apply -f samples/operator_v1beta1_telemetry.yaml -n kyma-system
 
 .PHONY: uninstall
 uninstall: manifests $(HELM) ## Uninstall CRDs from the K8s cluster (use ignore-not-found=true to ignore missing resources)

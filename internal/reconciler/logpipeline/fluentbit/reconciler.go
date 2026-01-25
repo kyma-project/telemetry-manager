@@ -17,6 +17,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
+	sharedtypesutils "github.com/kyma-project/telemetry-manager/internal/utils/sharedtypes"
 	telemetryutils "github.com/kyma-project/telemetry-manager/internal/utils/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
@@ -196,11 +197,6 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 		return err
 	}
 
-	err = ensureFinalizers(ctx, r.Client, pipeline)
-	if err != nil {
-		return err
-	}
-
 	reconcilablePipelines, err := r.getReconcilablePipelines(ctx, allPipelines)
 	if err != nil {
 		return fmt.Errorf("failed to fetch reconcilable log pipelines: %w", err)
@@ -213,14 +209,15 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 			return fmt.Errorf("failed to delete log pipeline resources: %w", err)
 		}
 
-		if err = cleanupFinalizersIfNeeded(ctx, r.Client, pipeline); err != nil {
+		// TODO: remove cleanup code after rollout telemetry 1.57.0
+		if err = cleanupFinalizers(ctx, r.Client, pipeline); err != nil {
 			return err
 		}
 
 		return nil
 	}
 
-	r.trackFeaturesUsage(reconcilablePipelines)
+	r.trackPipelineInfoMetric(ctx, reconcilablePipelines)
 
 	shootInfo := k8sutils.GetGardenerShootInfo(ctx, r.Client)
 	clusterName := r.getClusterNameFromTelemetry(ctx, shootInfo.ClusterName)
@@ -246,7 +243,8 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 		return err
 	}
 
-	if err = cleanupFinalizersIfNeeded(ctx, r.Client, pipeline); err != nil {
+	// TODO: remove cleanup code after rollout telemetry 1.57.0
+	if err = cleanupFinalizers(ctx, r.Client, pipeline); err != nil {
 		return err
 	}
 
@@ -295,33 +293,56 @@ func getFluentBitPorts() []int32 {
 	}
 }
 
-func (r *Reconciler) trackFeaturesUsage(pipelines []telemetryv1beta1.LogPipeline) {
+func (r *Reconciler) trackPipelineInfoMetric(ctx context.Context, pipelines []telemetryv1beta1.LogPipeline) {
 	for i := range pipelines {
+		pipeline := &pipelines[i]
+
+		var features []string
+
 		// General features
-		if logpipelineutils.IsRuntimeInputEnabled(&pipelines[i].Spec.Input) {
-			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureInputRuntime, pipelines[i].Name)
+		if logpipelineutils.IsRuntimeInputEnabled(&pipeline.Spec.Input) {
+			features = append(features, metrics.FeatureInputRuntime)
 		}
 
 		// FluentBit features
 
-		if logpipelineutils.IsCustomFilterDefined(pipelines[i].Spec.FluentBitFilters) {
-			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureFilters, pipelines[i].Name)
+		if logpipelineutils.IsCustomFilterDefined(pipeline.Spec.FluentBitFilters) {
+			features = append(features, metrics.FeatureFilters)
 		}
 
-		if logpipelineutils.IsCustomOutputDefined(&pipelines[i].Spec.Output) {
-			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureOutputCustom, pipelines[i].Name)
+		if logpipelineutils.IsCustomOutputDefined(&pipeline.Spec.Output) {
+			features = append(features, metrics.FeatureOutputCustom)
 		}
 
-		if logpipelineutils.IsHTTPOutputDefined(&pipelines[i].Spec.Output) {
-			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureOutputHTTP, pipelines[i].Name)
+		if logpipelineutils.IsHTTPOutputDefined(&pipeline.Spec.Output) {
+			features = append(features, metrics.FeatureOutputHTTP)
 		}
 
-		if logpipelineutils.IsVariablesDefined(pipelines[i].Spec.FluentBitVariables) {
-			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureVariables, pipelines[i].Name)
+		if logpipelineutils.IsVariablesDefined(pipeline.Spec.FluentBitVariables) {
+			features = append(features, metrics.FeatureVariables)
 		}
 
-		if logpipelineutils.IsFilesDefined(pipelines[i].Spec.FluentBitFiles) {
-			metrics.RecordLogPipelineFeatureUsage(metrics.FeatureFiles, pipelines[i].Name)
+		if logpipelineutils.IsFilesDefined(pipeline.Spec.FluentBitFiles) {
+			features = append(features, metrics.FeatureFiles)
 		}
+
+		// Get endpoint
+		endpoint := r.getEndpoint(ctx, pipeline)
+
+		// Record info metric
+		metrics.RecordLogPipelineInfo(pipeline.Name, endpoint, features...)
 	}
+}
+
+func (r *Reconciler) getEndpoint(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) string {
+	if pipeline.Spec.Output.FluentBitHTTP == nil {
+		return ""
+	}
+
+	endpointBytes, err := sharedtypesutils.ResolveValue(ctx, r.Client, pipeline.Spec.Output.FluentBitHTTP.Host)
+	if err != nil {
+		return ""
+	}
+
+	return string(endpointBytes)
 }

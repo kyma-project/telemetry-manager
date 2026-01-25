@@ -22,8 +22,8 @@ See the following mapping of deprecated fields to their new OTLP-based counterpa
 | spec.output.http or spec.output.custom | Required. Replace with spec.output.otlp. |
 | spec.filters                           | Rewrite the custom Fluent Bit filters using transform or filter expressions.|
 | spec.variables and spec.files          | These fields were used by custom filters. This functionality is now handled by transform or filter expressions.|
-| spec.input.application.dropLabels      | This field is no longer used. Configure label enrichment in the central Telemetry resource.|
-| spec.input.application.keepAnnotations | This functionality is not supported with the OTLP output and cannot be migrated.|
+| spec.input.runtime.dropLabels      | This field is no longer used. Configure label enrichment in the central Telemetry resource.|
+| spec.input.runtime.keepAnnotations | This functionality is not supported with the OTLP output and cannot be migrated.|
 
 ## Procedure
 
@@ -32,13 +32,13 @@ See the following mapping of deprecated fields to their new OTLP-based counterpa
    If your LogPipeline uses the `http` or `custom` output, you must migrate it to the OTLP stack and replace the deprecated fields:
 
     ```yaml
-    apiVersion: telemetry.kyma-project.io/v1alpha1
+    apiVersion: telemetry.kyma-project.io/v1beta1
     kind: LogPipeline
     metadata:
       name: my-http-pipeline
     spec:
       input:
-        application:             # OTLP supports the application input, but you must replace the dropLabels and keepAnnotation flags
+        runtime:             # OTLP supports the runtime input, but you must replace the dropLabels and keepAnnotation flags
           dropLabels: true       # Configure label enrichment centrally
           keepAnnotations: true  # no longer supported
       filters:
@@ -68,7 +68,7 @@ See the following mapping of deprecated fields to their new OTLP-based counterpa
     * Authentication: The OTLP endpoint often uses different credentials or API permissions than your previous log ingestion endpoint. Verify that your credentials have the necessary permissions for OTLP log ingestion.
 
     ```yaml
-    apiVersion: telemetry.kyma-project.io/v1alpha1
+    apiVersion: telemetry.kyma-project.io/v1beta1
     kind: LogPipeline
     metadata:
       name: my-otlp-pipeline
@@ -84,7 +84,7 @@ See the following mapping of deprecated fields to their new OTLP-based counterpa
    Example: You want to replace a legacy Fluent Bit filter that dropped health checks and added a **tenant** attribute:
 
    ```yaml
-   apiVersion: telemetry.kyma-project.io/v1alpha1
+   apiVersion: telemetry.kyma-project.io/v1beta1
    kind: LogPipeline
    metadata:
      name: my-http-pipeline
@@ -104,7 +104,7 @@ See the following mapping of deprecated fields to their new OTLP-based counterpa
    In your new OTLP pipeline, use the `filter` and `transform` sections with OTTL expressions:
 
    ```yaml
-   apiVersion: telemetry.kyma-project.io/v1alpha1
+   apiVersion: telemetry.kyma-project.io/v1beta1
    kind: LogPipeline
    metadata:
      name: my-otlp-pipeline

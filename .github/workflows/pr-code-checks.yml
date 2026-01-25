@@ -30,6 +30,10 @@ jobs:
       - name: Run tests
         run: make test
 
+      - name: Run tests sample-app
+        working-directory: dependencies/sample-app
+        run: make test
+
   lint:
     runs-on: ubuntu-latest
     steps:
@@ -72,7 +76,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Test Renovate config
-        uses: renovatebot/github-action@66387ab8c2464d575b933fa44e9e5a86b2822809 # v44.2.4
+        uses: renovatebot/github-action@8cb0d4a6ab7d8bb90460a005f7bd33b80dd07ca8 # v44.2.5
         with:
           configurationFile: renovate.json
           token: ${{ secrets.GITHUB_TOKEN }}
