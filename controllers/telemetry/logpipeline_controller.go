@@ -152,6 +152,7 @@ func (r *LogPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 
 	ownedResourceTypesToWatch := []client.Object{
 		&appsv1.DaemonSet{},
+		&appsv1.Deployment{},
 		&corev1.ConfigMap{},
 		&corev1.Pod{},
 		&corev1.Secret{},
