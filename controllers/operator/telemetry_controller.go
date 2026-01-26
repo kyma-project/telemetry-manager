@@ -21,6 +21,7 @@ import (
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlbuilder "sigs.k8s.io/controller-runtime/pkg/builder"
@@ -86,16 +87,26 @@ func (r *TelemetryController) Reconcile(ctx context.Context, req ctrl.Request) (
 }
 
 func (r *TelemetryController) SetupWithManager(mgr ctrl.Manager) error {
-	b := ctrl.NewControllerManagedBy(mgr).
-		For(&operatorv1beta1.Telemetry{}).
-		Watches(
-			&corev1.Secret{},
+	b := ctrl.NewControllerManagedBy(mgr).For(&operatorv1beta1.Telemetry{})
+
+	ownedResourceTypesToWatch := []client.Object{
+		&corev1.Secret{},
+		&rbacv1.Role{},
+		&rbacv1.RoleBinding{},
+	}
+
+	for _, resource := range ownedResourceTypesToWatch {
+		b = b.Watches(
+			resource,
 			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &operatorv1beta1.Telemetry{}),
-			ctrlbuilder.WithPredicates(predicateutils.OwnedResourceChanged())).
-		Watches(
-			&admissionregistrationv1.ValidatingWebhookConfiguration{},
-			handler.EnqueueRequestsFromMapFunc(r.mapWebhook),
-			ctrlbuilder.WithPredicates(predicateutils.UpdateOrDelete())).
+			ctrlbuilder.WithPredicates(predicateutils.OwnedResourceChanged()),
+		)
+	}
+
+	b = b.Watches(
+		&admissionregistrationv1.ValidatingWebhookConfiguration{},
+		handler.EnqueueRequestsFromMapFunc(r.mapWebhook),
+		ctrlbuilder.WithPredicates(predicateutils.UpdateOrDelete())).
 		Watches(
 			&telemetryv1beta1.LogPipeline{},
 			handler.EnqueueRequestsFromMapFunc(r.mapLogPipeline),

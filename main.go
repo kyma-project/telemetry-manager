@@ -31,6 +31,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -289,6 +290,8 @@ func setupManager(globals config.Global) (manager.Manager, error) {
 		&networkingv1.NetworkPolicy{}: {Field: setNamespaceFieldSelector(globals)},
 		&corev1.Secret{}:              {Transform: secretCacheTransform},
 		&operatorv1beta1.Telemetry{}:  {Field: setNamespaceFieldSelector(globals)},
+		&rbacv1.Role{}:                {Field: setNamespaceFieldSelector(globals)},
+		&rbacv1.RoleBinding{}:         {Field: setNamespaceFieldSelector(globals)},
 	}
 
 	if isIstioActive {
