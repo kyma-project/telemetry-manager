@@ -54,6 +54,8 @@ func TestResources(t *testing.T) {
 
 	assert.ResourcesExist(t, gatewayResources...)
 
+	assert.ResourcesReconciled(t, gatewayResources...)
+
 	t.Log("When TracePipeline becomes non-reconcilable, resources should be cleaned up")
 	Expect(suite.K8sClient.Delete(t.Context(), secret.K8sObject())).To(Succeed())
 	assert.ResourcesNotExist(t, gatewayResources...)
