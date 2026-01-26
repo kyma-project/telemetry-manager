@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 
+	istionetworkingclientv1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
 	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -271,6 +272,22 @@ func CreateOrUpdatePeerAuthentication(ctx context.Context, c client.Client, desi
 	return c.Update(ctx, desired)
 }
 
+func CreateOrUpdateDestinationRule(ctx context.Context, c client.Client, desired *istionetworkingclientv1alpha3.DestinationRule) error {
+	var existing istionetworkingclientv1alpha3.DestinationRule
+
+	err := c.Get(ctx, types.NamespacedName{Name: desired.Name, Namespace: desired.Namespace}, &existing)
+	if err != nil {
+		if !apierrors.IsNotFound(err) {
+			return err
+		}
+		return c.Create(ctx, desired)
+	}
+
+	mergeMetadata(&desired.ObjectMeta, existing.ObjectMeta)
+
+	return c.Update(ctx, desired)
+
+}
 func CreateOrUpdateValidatingWebhookConfiguration(ctx context.Context, c client.Client, desired *admissionregistrationv1.ValidatingWebhookConfiguration) error {
 	var existing admissionregistrationv1.ValidatingWebhookConfiguration
 

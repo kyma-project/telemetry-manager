@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"slices"
 
+	istionetworkingv1alpha3 "istio.io/api/networking/v1alpha3"
 	istiosecurityv1 "istio.io/api/security/v1"
 	istiotypev1beta1 "istio.io/api/type/v1beta1"
+	istionetworkingclientv1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
 	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -243,8 +245,8 @@ func (gad *GatewayApplierDeleter) ApplyResources(ctx context.Context, c client.C
 	}
 
 	if opts.IstioEnabled {
-		if err := k8sutils.CreateOrUpdatePeerAuthentication(ctx, c, gad.makePeerAuthentication()); err != nil {
-			return fmt.Errorf("failed to create peerauthentication: %w", err)
+		if err := gad.applyIstioResources(ctx, c, opts.UseDaemonSetForGateway); err != nil {
+			return fmt.Errorf("failed to create istio resources: %w", err)
 		}
 	}
 
@@ -299,6 +301,20 @@ func (gad *GatewayApplierDeleter) DeleteResources(ctx context.Context, c client.
 	}
 
 	return allErrors
+}
+
+func (gad *GatewayApplierDeleter) applyIstioResources(ctx context.Context, c client.Client, useDaemonSet bool) error {
+	if useDaemonSet {
+		if err := k8sutils.CreateOrUpdateDestinationRule(ctx, c, gad.makeDestinationRule()); err != nil {
+			return fmt.Errorf("failed to create destinationrule: %w", err)
+		}
+		return nil
+	}
+	if err := k8sutils.CreateOrUpdatePeerAuthentication(ctx, c, gad.makePeerAuthentication()); err != nil {
+		return fmt.Errorf("failed to create peerauthentication: %w", err)
+	}
+	return nil
+
 }
 
 func (gad *GatewayApplierDeleter) makeGatewayDeployment(configChecksum string, opts GatewayApplyOptions) *appsv1.Deployment {
@@ -496,6 +512,24 @@ func (gad *GatewayApplierDeleter) makePeerAuthentication() *istiosecurityclientv
 		Spec: istiosecurityv1.PeerAuthentication{
 			Selector: &istiotypev1beta1.WorkloadSelector{MatchLabels: selectorLabels},
 			Mtls:     &istiosecurityv1.PeerAuthentication_MutualTLS{Mode: istiosecurityv1.PeerAuthentication_MutualTLS_PERMISSIVE},
+		},
+	}
+}
+
+func (gad *GatewayApplierDeleter) makeDestinationRule() *istionetworkingclientv1alpha3.DestinationRule {
+	commonLabels := commonresources.MakeDefaultLabels(gad.baseName, commonresources.LabelValueK8sComponentGateway)
+
+	return &istionetworkingclientv1alpha3.DestinationRule{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      gad.baseName,
+			Namespace: gad.globals.TargetNamespace(),
+			Labels:    commonLabels,
+		},
+		Spec: istionetworkingv1alpha3.DestinationRule{
+			Host: gad.otlpServiceName,
+			TrafficPolicy: &istionetworkingv1alpha3.TrafficPolicy{
+				Tls: &istionetworkingv1alpha3.ClientTLSSettings{Mode: istionetworkingv1alpha3.ClientTLSSettings_DISABLE},
+			},
 		},
 	}
 }
