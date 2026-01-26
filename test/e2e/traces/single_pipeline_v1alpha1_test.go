@@ -7,7 +7,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -19,8 +19,8 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-func TestSinglePipelineV1Beta1(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelExperimental)
+func TestSinglePipelineV1Alpha1(t *testing.T) {
+	suite.RegisterTestCase(t, suite.LabelTraces)
 
 	var (
 		uniquePrefix = unique.Prefix("traces")
@@ -30,14 +30,14 @@ func TestSinglePipelineV1Beta1(t *testing.T) {
 	)
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeTraces)
-	pipeline := telemetryv1beta1.TracePipeline{
+	pipeline := telemetryv1alpha1.TracePipeline{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: pipelineName,
 		},
-		Spec: telemetryv1beta1.TracePipelineSpec{
-			Output: telemetryv1beta1.TracePipelineOutput{
-				OTLP: &telemetryv1beta1.OTLPOutput{
-					Endpoint: telemetryv1beta1.ValueType{
+		Spec: telemetryv1alpha1.TracePipelineSpec{
+			Output: telemetryv1alpha1.TracePipelineOutput{
+				OTLP: &telemetryv1alpha1.OTLPOutput{
+					Endpoint: telemetryv1alpha1.ValueType{
 						Value: backend.EndpointHTTP(),
 					},
 				},

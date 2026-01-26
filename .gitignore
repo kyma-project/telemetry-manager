@@ -46,3 +46,4 @@ telemetry-manager.yaml
 telemetry-manager-experimental.yaml
 # The default Telemetry CR which is installed by the lifecycle-manager
 telemetry-default-cr.yaml
+dependencies/sample-app/vendor

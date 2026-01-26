@@ -15,6 +15,11 @@ const (
 )
 
 const (
+	// General Labels
+
+	LabelEndpoint     = "endpoint"
+	LabelPipelineName = "name"
+
 	// General features
 
 	FeatureTransform = "transform"
@@ -40,7 +45,20 @@ const (
 )
 
 var (
-	AllFeatures = []string{
+	GeneralPipelineLabels = []string{
+		LabelPipelineName,
+		LabelEndpoint,
+	}
+	MetricPipelineFeatures = []string{
+		FeatureTransform,
+		FeatureFilter,
+		FeatureInputOTLP,
+		FeatureInputRuntime,
+		FeatureInputPrometheus,
+		FeatureInputIstio,
+	}
+
+	LogPipelineFeatures = []string{
 		FeatureTransform,
 		FeatureFilter,
 		FeatureInputOTLP,
@@ -50,6 +68,11 @@ var (
 		FeatureOutputHTTP,
 		FeatureVariables,
 		FeatureFiles,
+	}
+
+	TracePipelineFeatures = []string{
+		FeatureTransform,
+		FeatureFilter,
 	}
 
 	registry = metrics.Registry
@@ -75,34 +98,34 @@ var (
 		[]string{"flag"},
 	)
 
-	MetricPipelineFeatureUsage = promauto.With(registry).NewGaugeVec(
+	MetricPipelineInfo = promauto.With(registry).NewGaugeVec(
 		prometheus.GaugeOpts{
 			Namespace: defaultNamespace,
 			Subsystem: subsystemPipelines,
-			Name:      "metric_pipeline_feature_usage",
-			Help:      "Number of MetricPipelines using specific features",
+			Name:      "metric_pipeline_info",
+			Help:      "Feature and endpoint information of MetricPipelines",
 		},
-		[]string{"feature", "pipeline_name"},
+		append(GeneralPipelineLabels, MetricPipelineFeatures...),
 	)
 
-	LogPipelineFeatureUsage = promauto.With(registry).NewGaugeVec(
+	LogPipelineInfo = promauto.With(registry).NewGaugeVec(
 		prometheus.GaugeOpts{
 			Namespace: defaultNamespace,
 			Subsystem: subsystemPipelines,
-			Name:      "log_pipeline_feature_usage",
-			Help:      "Number of LogPipelines using specific features",
+			Name:      "log_pipeline_info",
+			Help:      "Feature and endpoint information of LogPipelines",
 		},
-		[]string{"feature", "pipeline_name"},
+		append(GeneralPipelineLabels, LogPipelineFeatures...),
 	)
 
-	TracePipelineFeatureUsage = promauto.With(registry).NewGaugeVec(
+	TracePipelineInfo = promauto.With(registry).NewGaugeVec(
 		prometheus.GaugeOpts{
 			Namespace: defaultNamespace,
 			Subsystem: subsystemPipelines,
-			Name:      "trace_pipeline_feature_usage",
-			Help:      "Number of TracePipelines using specific features",
+			Name:      "trace_pipeline_info",
+			Help:      "Feature and endpoint information of TracePipelines",
 		},
-		[]string{"feature", "pipeline_name"},
+		append(GeneralPipelineLabels, TracePipelineFeatures...),
 	)
 
 	SelfMonitorProberRequestsInFlight = promauto.With(registry).NewGauge(
@@ -136,18 +159,34 @@ var (
 	)
 )
 
-func RecordMetricPipelineFeatureUsage(feature, pipelineName string) {
-	recordFeatureUsage(MetricPipelineFeatureUsage, feature, pipelineName)
+func RecordMetricPipelineInfo(pipelineName string, endpoint string, features ...string) {
+	recordPipelineInfo(MetricPipelineInfo, MetricPipelineFeatures, pipelineName, endpoint, features...)
 }
 
-func RecordLogPipelineFeatureUsage(feature, pipelineName string) {
-	recordFeatureUsage(LogPipelineFeatureUsage, feature, pipelineName)
+func RecordLogPipelineInfo(pipelineName string, endpoint string, features ...string) {
+	recordPipelineInfo(LogPipelineInfo, LogPipelineFeatures, pipelineName, endpoint, features...)
 }
 
-func RecordTracePipelineFeatureUsage(feature, pipelineName string) {
-	recordFeatureUsage(TracePipelineFeatureUsage, feature, pipelineName)
+func RecordTracePipelineInfo(pipelineName string, endpoint string, features ...string) {
+	recordPipelineInfo(TracePipelineInfo, TracePipelineFeatures, pipelineName, endpoint, features...)
 }
 
-func recordFeatureUsage(metric *prometheus.GaugeVec, feature, pipelineName string) {
-	metric.WithLabelValues(feature, pipelineName).Set(float64(1))
+func recordPipelineInfo(metric *prometheus.GaugeVec, allFeatures []string, pipelineName string, endpoint string, features ...string) {
+	// Create a map of enabled features
+	enabledFeatures := make(map[string]bool)
+	for _, feature := range features {
+		enabledFeatures[feature] = true
+	}
+
+	labelValues := []string{pipelineName, endpoint}
+
+	for _, feature := range allFeatures {
+		if enabledFeatures[feature] {
+			labelValues = append(labelValues, "true")
+		} else {
+			labelValues = append(labelValues, "false")
+		}
+	}
+
+	metric.WithLabelValues(labelValues...).Set(1)
 }

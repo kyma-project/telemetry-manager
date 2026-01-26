@@ -8,7 +8,7 @@ import (
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -22,16 +22,16 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-func TestSinglePipelineV1Beta1(t *testing.T) {
+func TestSinglePipelineV1Alpha1(t *testing.T) {
 	tests := []struct {
 		label            string
-		input            telemetryv1beta1.MetricPipelineInput
+		input            telemetryv1alpha1.MetricPipelineInput
 		generatorBuilder func(ns string) []client.Object
 	}{
 		{
 			label: suite.LabelMetricAgentSetC,
-			input: telemetryv1beta1.MetricPipelineInput{
-				Runtime: &telemetryv1beta1.MetricPipelineRuntimeInput{
+			input: telemetryv1alpha1.MetricPipelineInput{
+				Runtime: &telemetryv1alpha1.MetricPipelineRuntimeInput{
 					Enabled: ptr.To(true),
 				},
 			},
@@ -46,8 +46,8 @@ func TestSinglePipelineV1Beta1(t *testing.T) {
 		},
 		{
 			label: suite.LabelMetricGatewaySetC,
-			input: telemetryv1beta1.MetricPipelineInput{
-				OTLP: &telemetryv1beta1.OTLPInput{},
+			input: telemetryv1alpha1.MetricPipelineInput{
+				OTLP: &telemetryv1alpha1.OTLPInput{},
 			},
 			generatorBuilder: func(ns string) []client.Object {
 				return []client.Object{
@@ -59,7 +59,7 @@ func TestSinglePipelineV1Beta1(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.label, func(t *testing.T) {
-			suite.RegisterTestCase(t, suite.LabelExperimental)
+			suite.RegisterTestCase(t, tc.label)
 
 			var (
 				uniquePrefix = unique.Prefix(tc.label)
@@ -69,15 +69,15 @@ func TestSinglePipelineV1Beta1(t *testing.T) {
 			)
 
 			backend := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics)
-			pipeline := telemetryv1beta1.MetricPipeline{
+			pipeline := telemetryv1alpha1.MetricPipeline{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: pipelineName,
 				},
-				Spec: telemetryv1beta1.MetricPipelineSpec{
+				Spec: telemetryv1alpha1.MetricPipelineSpec{
 					Input: tc.input,
-					Output: telemetryv1beta1.MetricPipelineOutput{
-						OTLP: &telemetryv1beta1.OTLPOutput{
-							Endpoint: telemetryv1beta1.ValueType{
+					Output: telemetryv1alpha1.MetricPipelineOutput{
+						OTLP: &telemetryv1alpha1.OTLPOutput{
+							Endpoint: telemetryv1alpha1.ValueType{
 								Value: backend.EndpointHTTP(),
 							},
 						},

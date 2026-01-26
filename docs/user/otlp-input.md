@@ -58,13 +58,13 @@ For logs and metrics: If you have multiple pipelines sending data to different b
 > [!TIP]
 > For more granular control, you can also filter incoming OTLP data by namespace. For details, see [Filter Logs](./filter-and-process/filter-logs.md) and [Filter Metrics](./filter-and-process/filter-metrics.md).
 
-For example, if you want to analyze **otlp** input data in one backend and only data from the log-specific **application** input in another backend, then disable the **otlp** input for the second backend. By default, **otlp** input is enabled.
+For example, if you want to analyze **otlp** input data in one backend and only data from the log-specific **runtime** input in another backend, then disable the **otlp** input for the second backend. By default, **otlp** input is enabled.
 
 ```yaml
 ...
   input:
-    application:
+    runtime:
       enabled: true
     otlp:
-      disabled: true
+      enabled: false
 ```

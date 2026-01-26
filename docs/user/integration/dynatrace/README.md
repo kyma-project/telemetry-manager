@@ -165,7 +165,7 @@ We recommend direct integration with the Dynatrace server. This approach reduces
 
     ```bash
     cat <<EOF | kubectl apply -f -
-    apiVersion: telemetry.kyma-project.io/v1alpha1
+    apiVersion: telemetry.kyma-project.io/v1beta1
     kind: TracePipeline
     metadata:
         name: dynatrace
@@ -255,7 +255,7 @@ Depending on your metrics source and temporality, choose one of the following me
 
         ```bash
         cat <<EOF | kubectl apply -f -
-        apiVersion: telemetry.kyma-project.io/v1alpha1
+        apiVersion: telemetry.kyma-project.io/v1beta1
         kind: MetricPipeline
         metadata:
             name: dynatrace
@@ -280,7 +280,7 @@ Depending on your metrics source and temporality, choose one of the following me
 
         ```bash
         cat <<EOF | kubectl apply -f -
-        apiVersion: telemetry.kyma-project.io/v1alpha1
+        apiVersion: telemetry.kyma-project.io/v1beta1
         kind: MetricPipeline
         metadata:
             name: dynatrace

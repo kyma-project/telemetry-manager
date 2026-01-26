@@ -6,7 +6,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
 
 const (
@@ -14,37 +14,8 @@ const (
 	filesFinalizer    = "FLUENT_BIT_FILES"
 )
 
-func ensureFinalizers(ctx context.Context, client client.Client, pipeline *telemetryv1alpha1.LogPipeline) error {
-	if !pipeline.DeletionTimestamp.IsZero() {
-		return nil
-	}
-
-	var changed bool
-
-	if !controllerutil.ContainsFinalizer(pipeline, sectionsFinalizer) {
-		controllerutil.AddFinalizer(pipeline, sectionsFinalizer)
-
-		changed = true
-	}
-
-	if len(pipeline.Spec.FluentBitFiles) > 0 && !controllerutil.ContainsFinalizer(pipeline, filesFinalizer) {
-		controllerutil.AddFinalizer(pipeline, filesFinalizer)
-
-		changed = true
-	}
-
-	if !changed {
-		return nil
-	}
-
-	return client.Update(ctx, pipeline)
-}
-
-func cleanupFinalizersIfNeeded(ctx context.Context, client client.Client, pipeline *telemetryv1alpha1.LogPipeline) error {
-	if pipeline.DeletionTimestamp.IsZero() {
-		return nil
-	}
-
+// TODO: remove cleanup code after rollout telemetry 1.57.0
+func cleanupFinalizers(ctx context.Context, client client.Client, pipeline *telemetryv1beta1.LogPipeline) error {
 	var changed bool
 
 	if controllerutil.ContainsFinalizer(pipeline, sectionsFinalizer) {

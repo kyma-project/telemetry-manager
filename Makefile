@@ -173,10 +173,8 @@ generate: $(CONTROLLER_GEN) $(MOCKERY) $(STRINGER) $(YQ) $(YAMLFMT) $(POPULATE_I
 	$(POPULATE_IMAGES)
 
 .PHONY: manifests
-manifests: $(CONTROLLER_GEN) $(YQ) $(YAMLFMT) ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition for v1alpha1
-	$(CONTROLLER_GEN) rbac:roleName=manager-role webhook paths="./..."
-	$(CONTROLLER_GEN) crd paths="./apis/operator/v1alpha1" output:crd:artifacts:config=helm/charts/default/templates
-	$(CONTROLLER_GEN) crd paths="./apis/telemetry/v1alpha1" output:crd:artifacts:config=helm/charts/default/templates
+manifests: $(CONTROLLER_GEN) $(YQ) $(YAMLFMT) ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition for v1alpha1 and v1beta1
+	$(CONTROLLER_GEN) rbac:roleName=manager-role webhook crd paths="./..." output:crd:artifacts:config=helm/charts/default/templates
 	$(YAMLFMT)
 
 .PHONY: manifests-experimental
@@ -305,7 +303,7 @@ install: manifests $(HELM) ## Install CRDs into the K8s cluster
 .PHONY: install-with-telemetry
 install-with-telemetry: install ## Install CRDs and create sample telemetry resource
 	kubectl get ns kyma-system || kubectl create ns kyma-system
-	kubectl apply -f samples/operator_v1alpha1_telemetry.yaml -n kyma-system
+	kubectl apply -f samples/operator_v1beta1_telemetry.yaml -n kyma-system
 
 .PHONY: uninstall
 uninstall: manifests $(HELM) ## Uninstall CRDs from the K8s cluster (use ignore-not-found=true to ignore missing resources)

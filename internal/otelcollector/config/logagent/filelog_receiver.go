@@ -5,7 +5,7 @@ import (
 
 	"k8s.io/utils/ptr"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/namespaces"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
@@ -33,10 +33,10 @@ const (
 	operatorNoop = "noop"
 )
 
-func fileLogReceiverConfig(lp *telemetryv1alpha1.LogPipeline, collectAgentLogs bool) *FileLogReceiver {
-	excludePath := createExcludePath(lp.Spec.Input.Application, collectAgentLogs)
+func fileLogReceiverConfig(lp *telemetryv1beta1.LogPipeline, collectAgentLogs bool) *FileLogReceiver {
+	excludePath := createExcludePath(lp.Spec.Input.Runtime, collectAgentLogs)
 
-	includePath := createIncludePath(lp.Spec.Input.Application)
+	includePath := createIncludePath(lp.Spec.Input.Runtime)
 
 	return &FileLogReceiver{
 		Exclude:         excludePath,
@@ -55,19 +55,19 @@ func fileLogReceiverConfig(lp *telemetryv1alpha1.LogPipeline, collectAgentLogs b
 	}
 }
 
-func createIncludePath(application *telemetryv1alpha1.LogPipelineApplicationInput) []string {
+func createIncludePath(runtime *telemetryv1beta1.LogPipelineRuntimeInput) []string {
 	var includePath []string
 
 	includeNamespaces := []string{"*"}
 	includeContainers := []string{"*"}
 
-	if application != nil {
-		if len(application.Namespaces.Include) > 0 {
-			includeNamespaces = application.Namespaces.Include
+	if runtime != nil {
+		if runtime.Namespaces != nil && len(runtime.Namespaces.Include) > 0 {
+			includeNamespaces = runtime.Namespaces.Include
 		}
 
-		if len(application.Containers.Include) > 0 {
-			includeContainers = application.Containers.Include
+		if runtime.Containers != nil && len(runtime.Containers.Include) > 0 {
+			includeContainers = runtime.Containers.Include
 		}
 	}
 
@@ -80,7 +80,7 @@ func createIncludePath(application *telemetryv1alpha1.LogPipelineApplicationInpu
 	return includePath
 }
 
-func createExcludePath(application *telemetryv1alpha1.LogPipelineApplicationInput, collectAgentLogs bool) []string {
+func createExcludePath(runtime *telemetryv1beta1.LogPipelineRuntimeInput, collectAgentLogs bool) []string {
 	var excludePath, excludeContainers []string
 
 	if !collectAgentLogs {
@@ -95,12 +95,17 @@ func createExcludePath(application *telemetryv1alpha1.LogPipelineApplicationInpu
 
 	var excludeNamespaces []string
 
-	if application != nil {
-		excludeNamespaces = append(excludeNamespaces, application.Namespaces.Exclude...)
-		excludeContainers = append(excludeContainers, application.Containers.Exclude...)
+	if runtime != nil {
+		if runtime.Namespaces != nil {
+			excludeNamespaces = append(excludeNamespaces, runtime.Namespaces.Exclude...)
+		}
+
+		if runtime.Containers != nil {
+			excludeContainers = append(excludeContainers, runtime.Containers.Exclude...)
+		}
 	}
 
-	if application == nil || (!application.Namespaces.System && len(application.Namespaces.Include) == 0 && len(application.Namespaces.Exclude) == 0) {
+	if runtime == nil || runtime.Namespaces == nil {
 		excludeNamespaces = namespaces.System()
 	}
 
@@ -120,8 +125,8 @@ func makePath(namespace, pod, container string) string {
 	return fmt.Sprintf(pathPattern, namespace, pod, container)
 }
 
-func makeOperators(lp *telemetryv1alpha1.LogPipeline) []Operator {
-	keepOriginalBody := *lp.Spec.Input.Application.KeepOriginalBody
+func makeOperators(lp *telemetryv1beta1.LogPipeline) []Operator {
+	keepOriginalBody := *lp.Spec.Input.Runtime.KeepOriginalBody
 
 	operators := []Operator{
 		makeContainerParser(),

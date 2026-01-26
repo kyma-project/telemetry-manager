@@ -9,7 +9,7 @@ import (
 	"gopkg.in/yaml.v3"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
@@ -23,7 +23,7 @@ func TestBuildConfig(t *testing.T) {
 		name                string
 		goldenFileName      string
 		overwriteGoldenFile bool
-		pipelines           []telemetryv1alpha1.MetricPipeline
+		pipelines           []telemetryv1beta1.MetricPipeline
 
 		// istioActive indicates if the "cluster" has an active istio installation or not. Not to be confused with the IstioInput in a pipeline
 		istioActive bool
@@ -31,7 +31,7 @@ func TestBuildConfig(t *testing.T) {
 		{
 			name:           "pipeline with istio input only",
 			goldenFileName: "istio-only.yaml",
-			pipelines: []telemetryv1alpha1.MetricPipeline{
+			pipelines: []telemetryv1beta1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
 					WithName("test").
 					WithRuntimeInput(false).
@@ -43,7 +43,7 @@ func TestBuildConfig(t *testing.T) {
 		{
 			name:           "pipeline with prometheus input only",
 			goldenFileName: "prometheus-only.yaml",
-			pipelines: []telemetryv1alpha1.MetricPipeline{
+			pipelines: []telemetryv1beta1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
 					WithName("test").
 					WithRuntimeInput(false).
@@ -55,7 +55,7 @@ func TestBuildConfig(t *testing.T) {
 		{
 			name:           "pipeline with runtime input only",
 			goldenFileName: "runtime-only.yaml",
-			pipelines: []telemetryv1alpha1.MetricPipeline{
+			pipelines: []telemetryv1beta1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
 					WithName("test").
 					WithRuntimeInput(true).
@@ -67,7 +67,7 @@ func TestBuildConfig(t *testing.T) {
 		{
 			name:           "istio installed on cluster and istio input disabled",
 			goldenFileName: "istio-installed-and-disabled.yaml",
-			pipelines: []telemetryv1alpha1.MetricPipeline{
+			pipelines: []telemetryv1beta1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
 					WithName("test").
 					WithRuntimeInput(true).
@@ -81,7 +81,7 @@ func TestBuildConfig(t *testing.T) {
 		{
 			name:           "istio installed on cluster and istio input enabled",
 			goldenFileName: "istio-installed-and-enabled.yaml",
-			pipelines: []telemetryv1alpha1.MetricPipeline{
+			pipelines: []telemetryv1beta1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
 					WithName("test").
 					WithRuntimeInput(true).
@@ -95,7 +95,7 @@ func TestBuildConfig(t *testing.T) {
 		{
 			name:           "istio not installed on cluster and istio input disabled",
 			goldenFileName: "istio-not-installed-and-disabled.yaml",
-			pipelines: []telemetryv1alpha1.MetricPipeline{
+			pipelines: []telemetryv1beta1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
 					WithName("test").
 					WithRuntimeInput(true).
@@ -109,7 +109,7 @@ func TestBuildConfig(t *testing.T) {
 		{
 			name:           "istio not installed on cluster and istio input enabled",
 			goldenFileName: "istio-not-installed-and-enabled.yaml",
-			pipelines: []telemetryv1alpha1.MetricPipeline{
+			pipelines: []telemetryv1beta1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
 					WithName("test").
 					WithRuntimeInput(true).
@@ -123,7 +123,7 @@ func TestBuildConfig(t *testing.T) {
 		{
 			name:           "pipeline with istio envoy metrics enabled",
 			goldenFileName: "istio-envoy.yaml",
-			pipelines: []telemetryv1alpha1.MetricPipeline{
+			pipelines: []telemetryv1beta1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
 					WithName("test").
 					WithRuntimeInput(false).
@@ -136,7 +136,7 @@ func TestBuildConfig(t *testing.T) {
 		{
 			name:           "pipeline with istio diagnostic metrics",
 			goldenFileName: "istio-diagnostic.yaml",
-			pipelines: []telemetryv1alpha1.MetricPipeline{
+			pipelines: []telemetryv1beta1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
 					WithName("test").
 					WithIstioInput(true).
@@ -147,7 +147,7 @@ func TestBuildConfig(t *testing.T) {
 		{
 			name:           "pipeline with prometheus diagnostic metrics",
 			goldenFileName: "prometheus-diagnostic.yaml",
-			pipelines: []telemetryv1alpha1.MetricPipeline{
+			pipelines: []telemetryv1beta1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
 					WithName("test").
 					WithPrometheusInput(true).
@@ -158,7 +158,7 @@ func TestBuildConfig(t *testing.T) {
 		{
 			name:           "pipeline with all runtime input resources enabled",
 			goldenFileName: "runtime-resources-all-enabled.yaml",
-			pipelines: []telemetryv1alpha1.MetricPipeline{
+			pipelines: []telemetryv1beta1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
 					WithName("test").
 					WithRuntimeInput(true).
@@ -178,7 +178,7 @@ func TestBuildConfig(t *testing.T) {
 		{
 			name:           "pipeline with all runtime input resources disabled",
 			goldenFileName: "runtime-resources-all-disabled.yaml",
-			pipelines: []telemetryv1alpha1.MetricPipeline{
+			pipelines: []telemetryv1beta1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
 					WithName("test").
 					WithRuntimeInput(true).
@@ -196,7 +196,7 @@ func TestBuildConfig(t *testing.T) {
 		{
 			name:           "pipeline with some runtime input resources disabled",
 			goldenFileName: "runtime-resources-some-disabled.yaml",
-			pipelines: []telemetryv1alpha1.MetricPipeline{
+			pipelines: []telemetryv1beta1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
 					WithName("test").
 					WithRuntimeInput(true).
@@ -216,7 +216,7 @@ func TestBuildConfig(t *testing.T) {
 		{
 			name:           "pipeline using HTTP WITH custom 'Path' field",
 			goldenFileName: "http-with-custom-path.yaml",
-			pipelines: []telemetryv1alpha1.MetricPipeline{
+			pipelines: []telemetryv1beta1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
 					WithName("test").
 					WithRuntimeInput(true).
@@ -229,7 +229,7 @@ func TestBuildConfig(t *testing.T) {
 		{
 			name:           "pipeline using HTTP WITHOUT custom 'Path' field",
 			goldenFileName: "http-without-custom-path.yaml",
-			pipelines: []telemetryv1alpha1.MetricPipeline{
+			pipelines: []telemetryv1beta1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
 					WithName("test").
 					WithRuntimeInput(true).
@@ -241,7 +241,7 @@ func TestBuildConfig(t *testing.T) {
 		{
 			name:           "complex pipeline with comprehensive configuration",
 			goldenFileName: "setup-comprehensive.yaml",
-			pipelines: []telemetryv1alpha1.MetricPipeline{
+			pipelines: []telemetryv1beta1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
 					WithName("test").
 					WithRuntimeInput(true, testutils.IncludeNamespaces("production", "staging")).
@@ -254,7 +254,7 @@ func TestBuildConfig(t *testing.T) {
 					WithIstioInputEnvoyMetrics(true).
 					WithOTLPInput(true, testutils.IncludeNamespaces("apps")).
 					WithOTLPOutput(testutils.OTLPEndpoint("https://backend.example.com")).
-					WithTransform(telemetryv1alpha1.TransformSpec{
+					WithTransform(telemetryv1beta1.TransformSpec{
 						Conditions: []string{"resource.attributes[\"k8s.namespace.name\"] == \"production\""},
 						Statements: []string{"set(attributes[\"environment\"], \"prod\")"},
 					}).Build(),
@@ -263,7 +263,7 @@ func TestBuildConfig(t *testing.T) {
 		{
 			name:           "pipeline with runtime input and namespace filters",
 			goldenFileName: "runtime-namespace-filters.yaml",
-			pipelines: []telemetryv1alpha1.MetricPipeline{
+			pipelines: []telemetryv1beta1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
 					WithName("test").
 					WithRuntimeInput(true,
@@ -276,7 +276,7 @@ func TestBuildConfig(t *testing.T) {
 		{
 			name:           "pipeline with prometheus input and namespace filters",
 			goldenFileName: "prometheus-namespace-filters.yaml",
-			pipelines: []telemetryv1alpha1.MetricPipeline{
+			pipelines: []telemetryv1beta1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
 					WithName("test").
 					WithPrometheusInput(true,
@@ -289,7 +289,7 @@ func TestBuildConfig(t *testing.T) {
 		{
 			name:           "pipeline with istio input and namespace filters",
 			goldenFileName: "istio-namespace-filters.yaml",
-			pipelines: []telemetryv1alpha1.MetricPipeline{
+			pipelines: []telemetryv1beta1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
 					WithName("test").
 					WithIstioInput(true,
@@ -298,10 +298,21 @@ func TestBuildConfig(t *testing.T) {
 					).
 					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
 			},
-		}, {
+		},
+		{
+			name:           "pipeline with istio input and no namespace filters",
+			goldenFileName: "istio-namespace-no-filters.yaml",
+			pipelines: []telemetryv1beta1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().
+					WithName("test").
+					WithIstioInput(true).
+					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+			},
+		},
+		{
 			name:           "three pipelines with multiple input types and mixed configurations",
 			goldenFileName: "multiple-inputs-mixed.yaml",
-			pipelines: []telemetryv1alpha1.MetricPipeline{
+			pipelines: []telemetryv1beta1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
 					WithName("test1").
 					WithRuntimeInput(true, testutils.IncludeNamespaces("default")).
@@ -325,12 +336,12 @@ func TestBuildConfig(t *testing.T) {
 		{
 			name:           "two pipelines with user-defined transforms",
 			goldenFileName: "user-defined-transforms.yaml",
-			pipelines: []telemetryv1alpha1.MetricPipeline{
+			pipelines: []telemetryv1beta1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
 					WithName("test1").
 					WithRuntimeInput(true).
 					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).
-					WithTransform(telemetryv1alpha1.TransformSpec{
+					WithTransform(telemetryv1beta1.TransformSpec{
 						Conditions: []string{"IsMatch(body, \".*error.*\")"},
 						Statements: []string{
 							"set(attributes[\"log.level\"], \"error\")",
@@ -341,7 +352,7 @@ func TestBuildConfig(t *testing.T) {
 					WithName("test2").
 					WithRuntimeInput(true).
 					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).
-					WithTransform(telemetryv1alpha1.TransformSpec{
+					WithTransform(telemetryv1beta1.TransformSpec{
 						Conditions: []string{"IsMatch(body, \".*error.*\")"},
 						Statements: []string{
 							"set(attributes[\"log.level\"], \"error\")",
@@ -353,19 +364,19 @@ func TestBuildConfig(t *testing.T) {
 		{
 			name:           "two pipelines with user-defined filter",
 			goldenFileName: "user-defined-filters.yaml",
-			pipelines: []telemetryv1alpha1.MetricPipeline{
+			pipelines: []telemetryv1beta1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
 					WithName("test1").
 					WithRuntimeInput(true).
 					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).
-					WithFilter(telemetryv1alpha1.FilterSpec{
+					WithFilter(telemetryv1beta1.FilterSpec{
 						Conditions: []string{"metric.type == METRIC_DATA_TYPE_SUMMARY"},
 					}).Build(),
 				testutils.NewMetricPipelineBuilder().
 					WithName("test2").
 					WithRuntimeInput(true).
 					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).
-					WithFilter(telemetryv1alpha1.FilterSpec{
+					WithFilter(telemetryv1beta1.FilterSpec{
 						Conditions: []string{"metric.type == METRIC_DATA_TYPE_GAUGE"},
 					}).Build(),
 			},
@@ -373,14 +384,14 @@ func TestBuildConfig(t *testing.T) {
 		{
 			name:           "pipeline with user-defined transform and filter",
 			goldenFileName: "user-defined-transform-filter.yaml",
-			pipelines: []telemetryv1alpha1.MetricPipeline{
+			pipelines: []telemetryv1beta1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
 					WithName("test1").
 					WithRuntimeInput(true).
 					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).
-					WithFilter(telemetryv1alpha1.FilterSpec{
+					WithFilter(telemetryv1beta1.FilterSpec{
 						Conditions: []string{"metric.type == METRIC_DATA_TYPE_SUMMARY"},
-					}).WithTransform(telemetryv1alpha1.TransformSpec{
+					}).WithTransform(telemetryv1beta1.TransformSpec{
 					Conditions: []string{"IsMatch(body, \".*error.*\")"},
 					Statements: []string{
 						"set(attributes[\"log.level\"], \"error\")",
@@ -391,7 +402,7 @@ func TestBuildConfig(t *testing.T) {
 		},
 		{
 			name: "pipeline using OAuth2 authentication",
-			pipelines: []telemetryv1alpha1.MetricPipeline{
+			pipelines: []telemetryv1beta1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
 					WithName("test").
 					WithOTLPInput(true).
@@ -448,7 +459,7 @@ func TestBuildConfigShuffled(t *testing.T) {
 		InstrumentationScopeVersion: "main",
 	}
 
-	pipelines := []telemetryv1alpha1.MetricPipeline{
+	pipelines := []telemetryv1beta1.MetricPipeline{
 		testutils.NewMetricPipelineBuilder().
 			WithName("test1").
 			WithRuntimeInput(true, testutils.IncludeNamespaces("default")).
@@ -469,13 +480,13 @@ func TestBuildConfigShuffled(t *testing.T) {
 			WithOTLPOutput(testutils.OTLPEndpoint("https://bar")).Build(),
 	}
 
-	config1, _, err := sut.Build(t.Context(), []telemetryv1alpha1.MetricPipeline{pipelines[0], pipelines[1], pipelines[2]}, buildOptions)
+	config1, _, err := sut.Build(t.Context(), []telemetryv1beta1.MetricPipeline{pipelines[0], pipelines[1], pipelines[2]}, buildOptions)
 	require.NoError(t, err)
 
-	config2, _, err := sut.Build(t.Context(), []telemetryv1alpha1.MetricPipeline{pipelines[1], pipelines[0], pipelines[2]}, buildOptions)
+	config2, _, err := sut.Build(t.Context(), []telemetryv1beta1.MetricPipeline{pipelines[1], pipelines[0], pipelines[2]}, buildOptions)
 	require.NoError(t, err)
 
-	config3, _, err := sut.Build(t.Context(), []telemetryv1alpha1.MetricPipeline{pipelines[2], pipelines[1], pipelines[0]}, buildOptions)
+	config3, _, err := sut.Build(t.Context(), []telemetryv1beta1.MetricPipeline{pipelines[2], pipelines[1], pipelines[0]}, buildOptions)
 	require.NoError(t, err)
 
 	config1YAML, err := yaml.Marshal(config1)

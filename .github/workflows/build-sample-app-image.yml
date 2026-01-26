@@ -15,7 +15,7 @@ on:
       - "dependencies/sample-app/**"
   workflow_dispatch:
 
-jobs:
+jobs:  
   envs:
     if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest

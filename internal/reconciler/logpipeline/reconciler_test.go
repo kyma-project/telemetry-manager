@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/stubs"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry/mocks"
@@ -19,7 +19,7 @@ import (
 func TestGetOutputType(t *testing.T) {
 	tests := []struct {
 		name     string
-		pipeline telemetryv1alpha1.LogPipeline
+		pipeline telemetryv1beta1.LogPipeline
 		want     logpipelineutils.Mode
 	}{
 		{
@@ -56,11 +56,11 @@ func TestGetPipelinesForType(t *testing.T) {
 
 	got, err := logpipelineutils.GetPipelinesForType(t.Context(), fakeClient, logpipelineutils.OTel)
 	require.NoError(t, err)
-	require.ElementsMatch(t, got, []telemetryv1alpha1.LogPipeline{otelPipeline})
+	require.ElementsMatch(t, got, []telemetryv1beta1.LogPipeline{otelPipeline})
 
 	got, err = logpipelineutils.GetPipelinesForType(t.Context(), fakeClient, logpipelineutils.FluentBit)
 	require.NoError(t, err)
-	require.ElementsMatch(t, got, []telemetryv1alpha1.LogPipeline{fluentbitPipeline1, fluentbitPipeline2})
+	require.ElementsMatch(t, got, []telemetryv1beta1.LogPipeline{fluentbitPipeline1, fluentbitPipeline2})
 }
 
 var _ LogPipelineReconciler = &stubs.ReconcilerStub{}

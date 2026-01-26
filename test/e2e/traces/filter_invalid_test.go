@@ -5,7 +5,7 @@ import (
 
 	. "github.com/onsi/gomega"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -13,7 +13,7 @@ import (
 )
 
 func TestFilterInvalid(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelTraces, suite.LabelExperimental)
+	suite.RegisterTestCase(t, suite.LabelTraces)
 
 	var (
 		uniquePrefix = unique.Prefix()
@@ -22,7 +22,7 @@ func TestFilterInvalid(t *testing.T) {
 
 	pipeline := testutils.NewTracePipelineBuilder().
 		WithName(pipelineName).
-		WithFilter(telemetryv1alpha1.FilterSpec{
+		WithFilter(telemetryv1beta1.FilterSpec{
 			Conditions: []string{
 				`Len(resource.attributes["k8s.namespace.name"]) > 0`, // perfectly valid condition with context prefix
 				`attributes["foo"] == "bar"`,                         // invalid condition (missing context prefix)

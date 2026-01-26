@@ -9,7 +9,7 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
@@ -20,9 +20,9 @@ func TestTraceComponentsCheck(t *testing.T) {
 
 	tests := []struct {
 		name                string
-		pipelines           []telemetryv1alpha1.TracePipeline
-		metricPipelines     []telemetryv1alpha1.MetricPipeline
-		logPipelines        []telemetryv1alpha1.LogPipeline
+		pipelines           []telemetryv1beta1.TracePipeline
+		metricPipelines     []telemetryv1beta1.MetricPipeline
+		logPipelines        []telemetryv1beta1.LogPipeline
 		telemetryInDeletion bool
 		expectedCondition   *metav1.Condition
 	}{
@@ -38,7 +38,7 @@ func TestTraceComponentsCheck(t *testing.T) {
 		},
 		{
 			name: "should be healthy if all pipelines running",
-			pipelines: []telemetryv1alpha1.TracePipeline{
+			pipelines: []telemetryv1beta1.TracePipeline{
 				testutils.NewTracePipelineBuilder().
 					WithStatusCondition(healthyGatewayCond).
 					WithStatusCondition(configGeneratedCond).
@@ -58,7 +58,7 @@ func TestTraceComponentsCheck(t *testing.T) {
 		},
 		{
 			name: "should not be healthy if one pipeline refs missing secret",
-			pipelines: []telemetryv1alpha1.TracePipeline{
+			pipelines: []telemetryv1beta1.TracePipeline{
 				testutils.NewTracePipelineBuilder().
 					WithStatusCondition(healthyGatewayCond).
 					WithStatusCondition(metav1.Condition{
@@ -82,7 +82,7 @@ func TestTraceComponentsCheck(t *testing.T) {
 		},
 		{
 			name: "should not be healthy if one pipeline waiting for gateway",
-			pipelines: []telemetryv1alpha1.TracePipeline{
+			pipelines: []telemetryv1beta1.TracePipeline{
 				testutils.NewTracePipelineBuilder().
 					WithStatusCondition(healthyGatewayCond).
 					WithStatusCondition(configGeneratedCond).
@@ -107,7 +107,7 @@ func TestTraceComponentsCheck(t *testing.T) {
 		},
 		{
 			name: "should not be healthy if max pipelines exceeded",
-			pipelines: []telemetryv1alpha1.TracePipeline{
+			pipelines: []telemetryv1beta1.TracePipeline{
 				testutils.NewTracePipelineBuilder().
 					WithStatusCondition(healthyGatewayCond).
 					WithStatusCondition(metav1.Condition{
@@ -131,7 +131,7 @@ func TestTraceComponentsCheck(t *testing.T) {
 		},
 		{
 			name: "should prioritize ConfigGenerated reason over GatewayHealthy reason",
-			pipelines: []telemetryv1alpha1.TracePipeline{
+			pipelines: []telemetryv1beta1.TracePipeline{
 				testutils.NewTracePipelineBuilder().
 					WithStatusCondition(metav1.Condition{
 						Type:   conditions.TypeGatewayHealthy,
@@ -160,7 +160,7 @@ func TestTraceComponentsCheck(t *testing.T) {
 		},
 		{
 			name: "should block deletion if there are existing trace pipelines",
-			pipelines: []telemetryv1alpha1.TracePipeline{
+			pipelines: []telemetryv1beta1.TracePipeline{
 				testutils.NewTracePipelineBuilder().WithName("foo").Build(),
 				testutils.NewTracePipelineBuilder().WithName("bar").Build(),
 			},
@@ -174,7 +174,7 @@ func TestTraceComponentsCheck(t *testing.T) {
 		},
 		{
 			name: "should not block deletion if there are existing metric pipelines",
-			metricPipelines: []telemetryv1alpha1.MetricPipeline{
+			metricPipelines: []telemetryv1beta1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().WithName("foo").Build(),
 			},
 			telemetryInDeletion: true,
@@ -187,7 +187,7 @@ func TestTraceComponentsCheck(t *testing.T) {
 		},
 		{
 			name: "should not block deletion if there are existing log pipelines",
-			logPipelines: []telemetryv1alpha1.LogPipeline{
+			logPipelines: []telemetryv1beta1.LogPipeline{
 				testutils.NewLogPipelineBuilder().WithName("foo").Build(),
 			},
 			telemetryInDeletion: true,
@@ -200,7 +200,7 @@ func TestTraceComponentsCheck(t *testing.T) {
 		},
 		{
 			name: "should be healthy if telemetry flow probing enabled and healthy",
-			pipelines: []telemetryv1alpha1.TracePipeline{
+			pipelines: []telemetryv1beta1.TracePipeline{
 				testutils.NewTracePipelineBuilder().
 					WithStatusCondition(healthyGatewayCond).
 					WithStatusCondition(metav1.Condition{
@@ -219,7 +219,7 @@ func TestTraceComponentsCheck(t *testing.T) {
 		},
 		{
 			name: "should not be healthy if telemetry flow probing enabled and not healthy",
-			pipelines: []telemetryv1alpha1.TracePipeline{
+			pipelines: []telemetryv1beta1.TracePipeline{
 				testutils.NewTracePipelineBuilder().
 					WithStatusCondition(healthyGatewayCond).
 					WithStatusCondition(metav1.Condition{
@@ -239,7 +239,7 @@ func TestTraceComponentsCheck(t *testing.T) {
 		},
 		{
 			name: "should show tlsCertExpert if one pipeline has invalid tls cert and the other pipeline has an about to expire cert",
-			pipelines: []telemetryv1alpha1.TracePipeline{
+			pipelines: []telemetryv1beta1.TracePipeline{
 				testutils.NewTracePipelineBuilder().
 					WithStatusCondition(healthyGatewayCond).
 					WithStatusCondition(configGeneratedCond).
@@ -269,7 +269,7 @@ func TestTraceComponentsCheck(t *testing.T) {
 		},
 		{
 			name: "should show tlsCert is about to expire if one of the pipelines has tls cert which is about to expire",
-			pipelines: []telemetryv1alpha1.TracePipeline{
+			pipelines: []telemetryv1beta1.TracePipeline{
 				testutils.NewTracePipelineBuilder().
 					WithStatusCondition(healthyGatewayCond).
 					WithStatusCondition(configGeneratedCond).
@@ -292,7 +292,7 @@ func TestTraceComponentsCheck(t *testing.T) {
 		},
 		{
 			name: "should not be healthy of one pipeline has a failed request to the Kubernetes API server during validation",
-			pipelines: []telemetryv1alpha1.TracePipeline{
+			pipelines: []telemetryv1beta1.TracePipeline{
 				testutils.NewTracePipelineBuilder().
 					WithStatusCondition(healthyGatewayCond).
 					WithStatusCondition(configGeneratedCond).
@@ -320,7 +320,7 @@ func TestTraceComponentsCheck(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			scheme := runtime.NewScheme()
 			_ = clientgoscheme.AddToScheme(scheme)
-			_ = telemetryv1alpha1.AddToScheme(scheme)
+			_ = telemetryv1beta1.AddToScheme(scheme)
 
 			b := fake.NewClientBuilder().WithScheme(scheme)
 			for i := range test.pipelines {

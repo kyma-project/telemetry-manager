@@ -11,7 +11,7 @@ import (
 	_ "github.com/g4s8/envdoc"
 	_ "github.com/golangci/golangci-lint/v2/cmd/golangci-lint"
 	_ "github.com/google/yamlfmt/cmd/yamlfmt"
-	_ "github.com/hairyhenderson/gomplate/v4/cmd/gomplate"
+	_ "github.com/hairyhenderson/gomplate/v5/cmd/gomplate"
 	_ "github.com/itchyny/gojq/cmd/gojq"
 	_ "github.com/k3d-io/k3d/v5"
 	_ "github.com/kyma-project/kyma/hack/table-gen"
@@ -21,7 +21,7 @@ import (
 	_ "github.com/yeya24/promlinter/cmd/promlinter"
 	_ "golang.org/x/tools/cmd/stringer"
 	_ "gotest.tools/gotestsum"
-	_ "helm.sh/helm/v3/cmd/helm"
+	_ "helm.sh/helm/v4/cmd/helm"
 	_ "k8s.io/code-generator/cmd/conversion-gen"
 	_ "sigs.k8s.io/controller-tools/cmd/controller-gen"
 )

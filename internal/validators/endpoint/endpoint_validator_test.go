@@ -10,7 +10,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
 
 const (
@@ -39,7 +39,33 @@ var testScenarios = []struct {
 }{
 	{
 		name:     "with scheme: valid endpoint with path and port",
-		endpoint: "https://foo.bar/foo/bar:4317",
+		endpoint: "https://foo.bar:4317/foo/bar",
+
+		errOTLPGRPC:    nil,
+		errMsgOTLPGRPC: "",
+
+		errOTLPHTTP:    nil,
+		errMsgOTLPHTTP: "",
+
+		errFluentdHTTP:    nil,
+		errMsgFluentdHTTP: "",
+	},
+	{
+		name:     "with IPv4: valid IPv4 endpoint with path and port",
+		endpoint: "https://10.108.183.198:4317/foo/bar",
+
+		errOTLPGRPC:    nil,
+		errMsgOTLPGRPC: "",
+
+		errOTLPHTTP:    nil,
+		errMsgOTLPHTTP: "",
+
+		errFluentdHTTP:    nil,
+		errMsgFluentdHTTP: "",
+	},
+	{
+		name:     "with IPv6: valid IPv6 endpoint with path and port",
+		endpoint: "https://[2001:0db8:85a3:0000:0000:8a2e:0370:7334]:4317/foo/bar",
 
 		errOTLPGRPC:    nil,
 		errMsgOTLPGRPC: "",
@@ -362,7 +388,7 @@ func TestOTLPGRPCEndpoints(t *testing.T) {
 			err := validator.Validate(
 				t.Context(),
 				EndpointValidationParams{
-					Endpoint: &telemetryv1alpha1.ValueType{Value: test.endpoint},
+					Endpoint: &telemetryv1beta1.ValueType{Value: test.endpoint},
 					Protocol: OTLPProtocolGRPC,
 				})
 
@@ -391,7 +417,7 @@ func TestOTLPHttpEndpoints(t *testing.T) {
 			err := validator.Validate(
 				t.Context(),
 				EndpointValidationParams{
-					Endpoint: &telemetryv1alpha1.ValueType{Value: test.endpoint},
+					Endpoint: &telemetryv1beta1.ValueType{Value: test.endpoint},
 					Protocol: OTLPProtocolHTTP,
 				})
 
@@ -421,7 +447,7 @@ func TestFluentdHttpEndpoints(t *testing.T) {
 			err := validator.Validate(
 				t.Context(),
 				EndpointValidationParams{
-					Endpoint: &telemetryv1alpha1.ValueType{Value: test.endpoint},
+					Endpoint: &telemetryv1beta1.ValueType{Value: test.endpoint},
 					Protocol: FluentdProtocolHTTP,
 				})
 
@@ -447,7 +473,7 @@ func TestMissingEndpoint(t *testing.T) {
 	}
 
 	errNil := validator.Validate(t.Context(), EndpointValidationParams{Endpoint: nil, Protocol: OTLPProtocolGRPC})
-	errNoValue := validator.Validate(t.Context(), EndpointValidationParams{Endpoint: &telemetryv1alpha1.ValueType{}, Protocol: OTLPProtocolGRPC})
+	errNoValue := validator.Validate(t.Context(), EndpointValidationParams{Endpoint: &telemetryv1beta1.ValueType{}, Protocol: OTLPProtocolGRPC})
 
 	require.True(t, errors.Is(errNil, ErrValueResolveFailed))
 	require.EqualError(t, errNil, errMsgEndpointResolveFailed)
@@ -472,20 +498,20 @@ func TestEndpointValueFromValid(t *testing.T) {
 		Client: fakeClient,
 	}
 
-	errGRPC := validator.Validate(t.Context(), EndpointValidationParams{Endpoint: &telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{
-		SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+	errGRPC := validator.Validate(t.Context(), EndpointValidationParams{Endpoint: &telemetryv1beta1.ValueType{ValueFrom: &telemetryv1beta1.ValueFromSource{
+		SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 			Name:      "test",
 			Namespace: "default",
 			Key:       "endpoint",
 		}}}, Protocol: OTLPProtocolGRPC})
-	errHTTP := validator.Validate(t.Context(), EndpointValidationParams{Endpoint: &telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{
-		SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+	errHTTP := validator.Validate(t.Context(), EndpointValidationParams{Endpoint: &telemetryv1beta1.ValueType{ValueFrom: &telemetryv1beta1.ValueFromSource{
+		SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 			Name:      "test",
 			Namespace: "default",
 			Key:       "endpoint",
 		}}}, Protocol: OTLPProtocolHTTP})
-	errFluentd := validator.Validate(t.Context(), EndpointValidationParams{Endpoint: &telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{
-		SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+	errFluentd := validator.Validate(t.Context(), EndpointValidationParams{Endpoint: &telemetryv1beta1.ValueType{ValueFrom: &telemetryv1beta1.ValueFromSource{
+		SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 			Name:      "test",
 			Namespace: "default",
 			Key:       "endpoint",
@@ -513,20 +539,20 @@ func TestEndpointValueFromInvalid(t *testing.T) {
 		Client: fakeClient,
 	}
 
-	errGRPC := validator.Validate(t.Context(), EndpointValidationParams{Endpoint: &telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{
-		SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+	errGRPC := validator.Validate(t.Context(), EndpointValidationParams{Endpoint: &telemetryv1beta1.ValueType{ValueFrom: &telemetryv1beta1.ValueFromSource{
+		SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 			Name:      "test",
 			Namespace: "default",
 			Key:       "endpoint",
 		}}}, Protocol: OTLPProtocolGRPC})
-	errHTTP := validator.Validate(t.Context(), EndpointValidationParams{Endpoint: &telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{
-		SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+	errHTTP := validator.Validate(t.Context(), EndpointValidationParams{Endpoint: &telemetryv1beta1.ValueType{ValueFrom: &telemetryv1beta1.ValueFromSource{
+		SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 			Name:      "test",
 			Namespace: "default",
 			Key:       "endpoint",
 		}}}, Protocol: OTLPProtocolGRPC})
-	errFluentd := validator.Validate(t.Context(), EndpointValidationParams{Endpoint: &telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{
-		SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+	errFluentd := validator.Validate(t.Context(), EndpointValidationParams{Endpoint: &telemetryv1beta1.ValueType{ValueFrom: &telemetryv1beta1.ValueFromSource{
+		SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 			Name:      "test",
 			Namespace: "default",
 			Key:       "endpoint",
@@ -557,20 +583,20 @@ func TestEndpointValueFromMissing(t *testing.T) {
 		Client: fakeClient,
 	}
 
-	errGRPC := validator.Validate(t.Context(), EndpointValidationParams{Endpoint: &telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{
-		SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+	errGRPC := validator.Validate(t.Context(), EndpointValidationParams{Endpoint: &telemetryv1beta1.ValueType{ValueFrom: &telemetryv1beta1.ValueFromSource{
+		SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 			Name:      "unknown",
 			Namespace: "default",
 			Key:       "endpoint",
 		}}}, Protocol: OTLPProtocolGRPC})
-	errHTTP := validator.Validate(t.Context(), EndpointValidationParams{Endpoint: &telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{
-		SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+	errHTTP := validator.Validate(t.Context(), EndpointValidationParams{Endpoint: &telemetryv1beta1.ValueType{ValueFrom: &telemetryv1beta1.ValueFromSource{
+		SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 			Name:      "unknown",
 			Namespace: "default",
 			Key:       "endpoint",
 		}}}, Protocol: OTLPProtocolHTTP})
-	errFluentd := validator.Validate(t.Context(), EndpointValidationParams{Endpoint: &telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{
-		SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+	errFluentd := validator.Validate(t.Context(), EndpointValidationParams{Endpoint: &telemetryv1beta1.ValueType{ValueFrom: &telemetryv1beta1.ValueFromSource{
+		SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 			Name:      "unknown",
 			Namespace: "default",
 			Key:       "endpoint",
@@ -587,7 +613,7 @@ func TestEndpointValueFromMissing(t *testing.T) {
 var testScenariosWithOAuth2 = []struct {
 	name     string
 	endpoint string
-	tls      *telemetryv1alpha1.OTLPTLS
+	tls      *telemetryv1beta1.OutputTLS
 
 	errMsgOTLPGRPC string
 	errMsgOTLPHTTP string
@@ -619,8 +645,8 @@ var testScenariosWithOAuth2 = []struct {
 	{
 		name:     "http scheme with TLS",
 		endpoint: "http://example.com:8080",
-		tls: &telemetryv1alpha1.OTLPTLS{
-			CA: &telemetryv1alpha1.ValueType{Value: "ca-data"},
+		tls: &telemetryv1beta1.OutputTLS{
+			CA: &telemetryv1beta1.ValueType{Value: "ca-data"},
 		},
 		errMsgOTLPGRPC: errMsgGRPCOAuth2NoTLS + ": HTTP scheme not allowed",
 		errMsgOTLPHTTP: errMsgHTTPWithTLS,
@@ -628,8 +654,8 @@ var testScenariosWithOAuth2 = []struct {
 	{
 		name:     "https scheme with TLS",
 		endpoint: "https://example.com:8080",
-		tls: &telemetryv1alpha1.OTLPTLS{
-			CA: &telemetryv1alpha1.ValueType{Value: "ca-data"},
+		tls: &telemetryv1beta1.OutputTLS{
+			CA: &telemetryv1beta1.ValueType{Value: "ca-data"},
 		},
 		errMsgOTLPGRPC: "",
 		errMsgOTLPHTTP: "",
@@ -637,8 +663,8 @@ var testScenariosWithOAuth2 = []struct {
 	{
 		name:     "no scheme with TLS",
 		endpoint: "example.com:8080",
-		tls: &telemetryv1alpha1.OTLPTLS{
-			CA: &telemetryv1alpha1.ValueType{Value: "ca-data"},
+		tls: &telemetryv1beta1.OutputTLS{
+			CA: &telemetryv1beta1.ValueType{Value: "ca-data"},
 		},
 		errMsgOTLPGRPC: "",
 		errMsgOTLPHTTP: errMsgUnsupportedScheme,
@@ -648,7 +674,7 @@ var testScenariosWithOAuth2 = []struct {
 	{
 		name:     "http scheme with TLS insecureSkipVerify",
 		endpoint: "http://example.com:8080",
-		tls: &telemetryv1alpha1.OTLPTLS{
+		tls: &telemetryv1beta1.OutputTLS{
 			InsecureSkipVerify: true,
 		},
 		errMsgOTLPGRPC: errMsgGRPCOAuth2NoTLS + ": HTTP scheme not allowed",
@@ -657,7 +683,7 @@ var testScenariosWithOAuth2 = []struct {
 	{
 		name:     "https scheme with TLS insecureSkipVerify",
 		endpoint: "https://example.com:8080",
-		tls: &telemetryv1alpha1.OTLPTLS{
+		tls: &telemetryv1beta1.OutputTLS{
 			InsecureSkipVerify: true,
 		},
 		errMsgOTLPGRPC: "",
@@ -666,7 +692,7 @@ var testScenariosWithOAuth2 = []struct {
 	{
 		name:     "no scheme with TLS insecureSkipVerify",
 		endpoint: "example.com:8080",
-		tls: &telemetryv1alpha1.OTLPTLS{
+		tls: &telemetryv1beta1.OutputTLS{
 			InsecureSkipVerify: true,
 		},
 		errMsgOTLPGRPC: "",
@@ -677,7 +703,7 @@ var testScenariosWithOAuth2 = []struct {
 	{
 		name:     "http scheme with TLS insecure",
 		endpoint: "http://example.com:8080",
-		tls: &telemetryv1alpha1.OTLPTLS{
+		tls: &telemetryv1beta1.OutputTLS{
 			Insecure: true,
 		},
 		errMsgOTLPGRPC: errMsgGRPCOAuth2NoTLS,
@@ -686,7 +712,7 @@ var testScenariosWithOAuth2 = []struct {
 	{
 		name:     "https scheme with TLS insecure",
 		endpoint: "https://example.com:8080",
-		tls: &telemetryv1alpha1.OTLPTLS{
+		tls: &telemetryv1beta1.OutputTLS{
 			Insecure: true,
 		},
 		errMsgOTLPGRPC: errMsgGRPCOAuth2NoTLS,
@@ -695,7 +721,7 @@ var testScenariosWithOAuth2 = []struct {
 	{
 		name:     "no scheme with TLS insecure",
 		endpoint: "example.com:8080",
-		tls: &telemetryv1alpha1.OTLPTLS{
+		tls: &telemetryv1beta1.OutputTLS{
 			Insecure: true,
 		},
 		errMsgOTLPGRPC: errMsgGRPCOAuth2NoTLS,
@@ -714,10 +740,10 @@ func TestOTLPGRPCEndpointsWithOAuth2(t *testing.T) {
 			err := validator.Validate(
 				t.Context(),
 				EndpointValidationParams{
-					Endpoint:   &telemetryv1alpha1.ValueType{Value: test.endpoint},
+					Endpoint:   &telemetryv1beta1.ValueType{Value: test.endpoint},
 					Protocol:   OTLPProtocolGRPC,
-					OTLPOAuth2: &telemetryv1alpha1.OAuth2Options{},
-					OTLPTLS:    test.tls,
+					OTLPOAuth2: &telemetryv1beta1.OAuth2Options{},
+					OutputTLS:  test.tls,
 				})
 
 			if test.errMsgOTLPGRPC != "" {
@@ -741,10 +767,10 @@ func TestOTLPHTTPEndpointsWithOAuth2(t *testing.T) {
 			err := validator.Validate(
 				t.Context(),
 				EndpointValidationParams{
-					Endpoint:   &telemetryv1alpha1.ValueType{Value: test.endpoint},
+					Endpoint:   &telemetryv1beta1.ValueType{Value: test.endpoint},
 					Protocol:   OTLPProtocolHTTP,
-					OTLPOAuth2: &telemetryv1alpha1.OAuth2Options{},
-					OTLPTLS:    test.tls,
+					OTLPOAuth2: &telemetryv1beta1.OAuth2Options{},
+					OutputTLS:  test.tls,
 				})
 
 			if test.errMsgOTLPHTTP != "" {

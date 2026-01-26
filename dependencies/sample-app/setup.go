@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	"github.com/prometheus/otlptranslator"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
@@ -17,7 +18,7 @@ import (
 	"go.opentelemetry.io/otel/exporters/prometheus"
 	"go.opentelemetry.io/otel/exporters/stdout/stdoutmetric"
 	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
-	"go.opentelemetry.io/otel/sdk/metric"
+	metricsdk "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
 	tracesdk "go.opentelemetry.io/otel/sdk/trace"
 )
@@ -140,21 +141,21 @@ func newOTLPTraceExporter(ctx context.Context) (tracesdk.SpanExporter, error) {
 	}
 }
 
-func newMeterProvider(exp metric.Reader, res *resource.Resource) *metric.MeterProvider {
-	meterProvider := metric.NewMeterProvider(
-		metric.WithResource(res),
-		metric.WithReader(exp),
+func newMeterProvider(exp metricsdk.Reader, res *resource.Resource) *metricsdk.MeterProvider {
+	meterProvider := metricsdk.NewMeterProvider(
+		metricsdk.WithResource(res),
+		metricsdk.WithReader(exp),
 	)
 
 	return meterProvider
 }
 
-func newMetricReader(ctx context.Context) (metric.Reader, error) {
+func newMetricReader(ctx context.Context) (metricsdk.Reader, error) {
 	exporterEnv := os.Getenv("OTEL_METRICS_EXPORTER")
 	endpointEnv := os.Getenv("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT")
 
 	if exporterEnv == "prometheus" {
-		reader, err := prometheus.New()
+		reader, err := prometheus.New(prometheus.WithTranslationStrategy(otlptranslator.NoUTF8EscapingWithSuffixes))
 		if err != nil {
 			return nil, fmt.Errorf("creating prometheus metric reader: %w", err)
 		}
@@ -170,7 +171,7 @@ func newMetricReader(ctx context.Context) (metric.Reader, error) {
 			return nil, err
 		}
 
-		return metric.NewPeriodicReader(otlpExporter, metric.WithInterval(readerInterval)), nil
+		return metricsdk.NewPeriodicReader(otlpExporter, metricsdk.WithInterval(readerInterval)), nil
 	}
 
 	exporter, err := stdoutmetric.New()
@@ -180,13 +181,13 @@ func newMetricReader(ctx context.Context) (metric.Reader, error) {
 
 	logger.InfoContext(ctx, "Using console metric exporter")
 
-	return metric.NewPeriodicReader(exporter,
+	return metricsdk.NewPeriodicReader(exporter,
 		// Default is 1m. Set to 10s for demonstrative purposes.
-		metric.WithInterval(readerInterval)), nil
+		metricsdk.WithInterval(readerInterval)), nil
 }
 
 //nolint:dupl // no duplicate code, this is a separate function for OTLP metric exporter
-func newOTLPMetricExporter(ctx context.Context) (metric.Exporter, error) {
+func newOTLPMetricExporter(ctx context.Context) (metricsdk.Exporter, error) {
 	protocol := resolveOTLPProtocol()
 	switch protocol {
 	case "http/protobuf":

@@ -30,7 +30,7 @@ jobs:
     strategy:
       fail-fast: false # if one version is not working, continue tests on other versions
       matrix:
-        k8s_version: [1.33]
+        k8s_version: [1.33,1.34]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -108,7 +108,7 @@ jobs:
 
       - name: Create Telemetry CR
         shell: bash
-        run: kubectl apply -f test/fixtures/operator_v1alpha1_telemetry.yaml -n kyma-system
+        run: kubectl apply -f test/fixtures/operator_v1beta1_telemetry.yaml -n kyma-system
 
       # Deploying  a deny-all Network Policy to simulate a typical setup on a Kyma cluster
       - name: Create Network Policy

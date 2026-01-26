@@ -3,7 +3,7 @@ package metricpipeline
 import (
 	"context"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
@@ -74,13 +74,13 @@ func NewValidator(opts ...ValidatorOption) *Validator {
 	return v
 }
 
-func (v *Validator) validate(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) error {
+func (v *Validator) validate(ctx context.Context, pipeline *telemetryv1beta1.MetricPipeline) error {
 	if err := v.SecretRefValidator.ValidateMetricPipeline(ctx, pipeline); err != nil {
 		return err
 	}
 
 	if pipeline.Spec.Output.OTLP != nil {
-		var oauth2 *telemetryv1alpha1.OAuth2Options = nil
+		var oauth2 *telemetryv1beta1.OAuth2Options = nil
 		if pipeline.Spec.Output.OTLP.Authentication != nil {
 			oauth2 = pipeline.Spec.Output.OTLP.Authentication.OAuth2
 		}
@@ -89,7 +89,7 @@ func (v *Validator) validate(ctx context.Context, pipeline *telemetryv1alpha1.Me
 			Endpoint:   &pipeline.Spec.Output.OTLP.Endpoint,
 			Protocol:   pipeline.Spec.Output.OTLP.Protocol,
 			OTLPOAuth2: oauth2,
-			OTLPTLS:    pipeline.Spec.Output.OTLP.TLS,
+			OutputTLS:  pipeline.Spec.Output.OTLP.TLS,
 		}); err != nil {
 			return err
 		}
@@ -124,7 +124,7 @@ func (v *Validator) validate(ctx context.Context, pipeline *telemetryv1alpha1.Me
 
 // tlsValidationRequired checks if TLS validation is required for the pipeline.
 // Returns true if the pipeline has OTLP output with TLS configuration containing cert, key, or CA.
-func tlsValidationRequired(pipeline *telemetryv1alpha1.MetricPipeline) bool {
+func tlsValidationRequired(pipeline *telemetryv1beta1.MetricPipeline) bool {
 	otlp := pipeline.Spec.Output.OTLP
 	if otlp == nil {
 		return false

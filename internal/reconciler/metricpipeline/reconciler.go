@@ -12,8 +12,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	"github.com/kyma-project/telemetry-manager/internal/metrics"
@@ -193,7 +193,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, nil
 	}
 
-	var metricPipeline telemetryv1alpha1.MetricPipeline
+	var metricPipeline telemetryv1beta1.MetricPipeline
 	if err := r.Get(ctx, req.NamespacedName, &metricPipeline); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
@@ -219,7 +219,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	return ctrl.Result{}, err
 }
 
-func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) error {
+func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1.MetricPipeline) error {
 	if err := r.pipelineLock.TryAcquireLock(ctx, pipeline); err != nil {
 		if errors.Is(err, resourcelock.ErrMaxPipelinesExceeded) {
 			logf.FromContext(ctx).V(1).Info("Skipping reconciliation: maximum pipeline count limit exceeded")
@@ -229,7 +229,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		return err
 	}
 
-	var allPipelinesList telemetryv1alpha1.MetricPipelineList
+	var allPipelinesList telemetryv1beta1.MetricPipelineList
 	if err := r.List(ctx, &allPipelinesList); err != nil {
 		return fmt.Errorf("failed to list metric pipelines: %w", err)
 	}
@@ -239,7 +239,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		return fmt.Errorf("failed to fetch deployable metric pipelines: %w", err)
 	}
 
-	r.trackOTTLFeaturesUsage(reconcilablePipelines)
+	r.trackPipelineInfoMetric(ctx, reconcilablePipelines)
 
 	var reconcilablePipelinesRequiringAgents = r.getPipelinesRequiringAgents(reconcilablePipelines)
 
@@ -275,8 +275,8 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 }
 
 // getReconcilablePipelines returns the list of metric pipelines that are ready to be rendered into the otel collector configuration. A pipeline is deployable if it is not being deleted, all secret references exist, and is not above the pipeline limit.
-func (r *Reconciler) getReconcilablePipelines(ctx context.Context, allPipelines []telemetryv1alpha1.MetricPipeline) ([]telemetryv1alpha1.MetricPipeline, error) {
-	var reconcilablePipelines []telemetryv1alpha1.MetricPipeline
+func (r *Reconciler) getReconcilablePipelines(ctx context.Context, allPipelines []telemetryv1beta1.MetricPipeline) ([]telemetryv1beta1.MetricPipeline, error) {
+	var reconcilablePipelines []telemetryv1beta1.MetricPipeline
 
 	for i := range allPipelines {
 		isReconcilable, err := r.isReconcilable(ctx, &allPipelines[i])
@@ -292,7 +292,7 @@ func (r *Reconciler) getReconcilablePipelines(ctx context.Context, allPipelines 
 	return reconcilablePipelines, nil
 }
 
-func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) (bool, error) {
+func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1beta1.MetricPipeline) (bool, error) {
 	if !pipeline.GetDeletionTimestamp().IsZero() {
 		return false, nil
 	}
@@ -314,8 +314,8 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1al
 	return false, nil
 }
 
-func (r *Reconciler) getPipelinesRequiringAgents(allPipelines []telemetryv1alpha1.MetricPipeline) []telemetryv1alpha1.MetricPipeline {
-	var pipelinesRequiringAgents []telemetryv1alpha1.MetricPipeline
+func (r *Reconciler) getPipelinesRequiringAgents(allPipelines []telemetryv1beta1.MetricPipeline) []telemetryv1beta1.MetricPipeline {
+	var pipelinesRequiringAgents []telemetryv1beta1.MetricPipeline
 
 	for i := range allPipelines {
 		if isMetricAgentRequired(&allPipelines[i]) {
@@ -326,13 +326,13 @@ func (r *Reconciler) getPipelinesRequiringAgents(allPipelines []telemetryv1alpha
 	return pipelinesRequiringAgents
 }
 
-func isMetricAgentRequired(pipeline *telemetryv1alpha1.MetricPipeline) bool {
+func isMetricAgentRequired(pipeline *telemetryv1beta1.MetricPipeline) bool {
 	input := pipeline.Spec.Input
 
 	return metricpipelineutils.IsRuntimeInputEnabled(input) || metricpipelineutils.IsPrometheusInputEnabled(input) || metricpipelineutils.IsIstioInputEnabled(input)
 }
 
-func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, allPipelines []telemetryv1alpha1.MetricPipeline) error {
+func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telemetryv1beta1.MetricPipeline, allPipelines []telemetryv1beta1.MetricPipeline) error {
 	shootInfo := k8sutils.GetGardenerShootInfo(ctx, r.Client)
 	clusterName := r.getClusterNameFromTelemetry(ctx, shootInfo.ClusterName)
 
@@ -341,7 +341,7 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 		return fmt.Errorf("failed to get kube-system namespace for cluster UID: %w", err)
 	}
 
-	var enrichments *operatorv1alpha1.EnrichmentSpec
+	var enrichments *operatorv1beta1.EnrichmentSpec
 
 	t, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
 	if err == nil {
@@ -388,7 +388,7 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 	return nil
 }
 
-func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, allPipelines []telemetryv1alpha1.MetricPipeline) error {
+func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *telemetryv1beta1.MetricPipeline, allPipelines []telemetryv1beta1.MetricPipeline) error {
 	isIstioActive := r.istioStatusChecker.IsIstioActive(ctx)
 	shootInfo := k8sutils.GetGardenerShootInfo(ctx, r.Client)
 	clusterName := r.getClusterNameFromTelemetry(ctx, shootInfo.ClusterName)
@@ -398,7 +398,7 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 		return fmt.Errorf("failed to get kube-system namespace for cluster UID: %w", err)
 	}
 
-	var enrichments *operatorv1alpha1.EnrichmentSpec
+	var enrichments *operatorv1beta1.EnrichmentSpec
 
 	t, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
 	if err == nil {
@@ -455,7 +455,7 @@ func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
 	}
 
 	if telemetry.Spec.Metric != nil &&
-		telemetry.Spec.Metric.Gateway.Scaling.Type == operatorv1alpha1.StaticScalingStrategyType &&
+		telemetry.Spec.Metric.Gateway.Scaling.Type == operatorv1beta1.StaticScalingStrategyType &&
 		telemetry.Spec.Metric.Gateway.Scaling.Static != nil &&
 		telemetry.Spec.Metric.Gateway.Scaling.Static.Replicas > 0 {
 		return telemetry.Spec.Metric.Gateway.Scaling.Static.Replicas
@@ -495,33 +495,56 @@ func (r *Reconciler) getK8sClusterUID(ctx context.Context) (string, error) {
 	return string(kubeSystem.UID), nil
 }
 
-func (r *Reconciler) trackOTTLFeaturesUsage(pipelines []telemetryv1alpha1.MetricPipeline) {
+func (r *Reconciler) trackPipelineInfoMetric(ctx context.Context, pipelines []telemetryv1beta1.MetricPipeline) {
 	for i := range pipelines {
+		pipeline := &pipelines[i]
+
+		var features []string
+
 		// General features
-		if sharedtypesutils.IsOTLPInputEnabled(pipelines[i].Spec.Input.OTLP) {
-			metrics.RecordMetricPipelineFeatureUsage(metrics.FeatureInputOTLP, pipelines[i].Name)
+		if sharedtypesutils.IsOTLPInputEnabled(pipeline.Spec.Input.OTLP) {
+			features = append(features, metrics.FeatureInputOTLP)
 		}
 
-		if sharedtypesutils.IsTransformDefined(pipelines[i].Spec.Transforms) {
-			metrics.RecordMetricPipelineFeatureUsage(metrics.FeatureTransform, pipelines[i].Name)
+		if sharedtypesutils.IsTransformDefined(pipeline.Spec.Transforms) {
+			features = append(features, metrics.FeatureTransform)
 		}
 
-		if sharedtypesutils.IsFilterDefined(pipelines[i].Spec.Filters) {
-			metrics.RecordMetricPipelineFeatureUsage(metrics.FeatureFilter, pipelines[i].Name)
+		if sharedtypesutils.IsFilterDefined(pipeline.Spec.Filters) {
+			features = append(features, metrics.FeatureFilter)
 		}
 
 		// MetricPipeline features
 
-		if metricpipelineutils.IsRuntimeInputEnabled(pipelines[i].Spec.Input) {
-			metrics.RecordMetricPipelineFeatureUsage(metrics.FeatureInputRuntime, pipelines[i].Name)
+		if metricpipelineutils.IsRuntimeInputEnabled(pipeline.Spec.Input) {
+			features = append(features, metrics.FeatureInputRuntime)
 		}
 
-		if metricpipelineutils.IsPrometheusInputEnabled(pipelines[i].Spec.Input) {
-			metrics.RecordMetricPipelineFeatureUsage(metrics.FeatureInputPrometheus, pipelines[i].Name)
+		if metricpipelineutils.IsPrometheusInputEnabled(pipeline.Spec.Input) {
+			features = append(features, metrics.FeatureInputPrometheus)
 		}
 
-		if metricpipelineutils.IsIstioInputEnabled(pipelines[i].Spec.Input) {
-			metrics.RecordMetricPipelineFeatureUsage(metrics.FeatureInputIstio, pipelines[i].Name)
+		if metricpipelineutils.IsIstioInputEnabled(pipeline.Spec.Input) {
+			features = append(features, metrics.FeatureInputIstio)
 		}
+
+		// Get endpoint
+		endpoint := r.getEndpoint(ctx, pipeline)
+
+		// Record info metric
+		metrics.RecordMetricPipelineInfo(pipeline.Name, endpoint, features...)
 	}
+}
+
+func (r *Reconciler) getEndpoint(ctx context.Context, pipeline *telemetryv1beta1.MetricPipeline) string {
+	if pipeline.Spec.Output.OTLP == nil {
+		return ""
+	}
+
+	endpointBytes, err := sharedtypesutils.ResolveValue(ctx, r.Client, pipeline.Spec.Output.OTLP.Endpoint)
+	if err != nil {
+		return ""
+	}
+
+	return string(endpointBytes)
 }

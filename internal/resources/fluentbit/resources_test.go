@@ -15,14 +15,20 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
 func TestAgent_ApplyResources(t *testing.T) {
-	globals := config.NewGlobal(config.WithTargetNamespace("kyma-system"))
+	globals := config.NewGlobal(
+		config.WithTargetNamespace("kyma-system"),
+		config.WithImagePullSecretName("mySecret"),
+		config.WithAdditionalLabels(map[string]string{"test-label-key": "test-label-value"}),
+		config.WithAdditionalAnnotations(map[string]string{"test-anno-key": "test-anno-value"}),
+		config.WithClusterTrustBundleName("trustBundle"),
+	)
 	image := "foo-fluentbit"
 	exporterImage := "foo-exporter"
 	initContainerImage := "alpine"
@@ -47,7 +53,7 @@ func TestAgent_ApplyResources(t *testing.T) {
 		scheme := runtime.NewScheme()
 		utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 		utilruntime.Must(istiosecurityclientv1.AddToScheme(scheme))
-		utilruntime.Must(telemetryv1alpha1.AddToScheme(scheme))
+		utilruntime.Must(telemetryv1beta1.AddToScheme(scheme))
 
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithInterceptorFuncs(interceptor.Funcs{
 			Create: func(_ context.Context, c client.WithWatch, obj client.Object, _ ...client.CreateOption) error {
