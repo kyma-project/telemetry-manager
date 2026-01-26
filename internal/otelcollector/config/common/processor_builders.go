@@ -11,7 +11,7 @@ import (
 // KUBERNETES ATTRIBUTES PROCESSOR BUILDERS
 // =============================================================================
 
-func K8sAttributesProcessorConfig(enrichments *operatorv1beta1.EnrichmentSpec, includeServiceEnrichment bool) *K8sAttributesProcessor {
+func K8sAttributesProcessorConfig(enrichments *operatorv1beta1.EnrichmentSpec, useOTelServiceEnrichment bool) *K8sAttributesProcessor {
 	k8sAttributes := []string{
 		"k8s.pod.name",
 		"k8s.node.name",
@@ -23,7 +23,8 @@ func K8sAttributesProcessorConfig(enrichments *operatorv1beta1.EnrichmentSpec, i
 		"k8s.job.name",
 	}
 
-	if includeServiceEnrichment {
+	// TODO(TeodorSAP): Move this to the slice above when old service enrichment strategy is fully deprecated
+	if useOTelServiceEnrichment {
 		k8sAttributes = append(k8sAttributes, "service.namespace", "service.name", "service.version", "service.instance.id")
 	}
 
@@ -44,24 +45,14 @@ func K8sAttributesProcessorConfig(enrichments *operatorv1beta1.EnrichmentSpec, i
 		Passthrough: false,
 		Extract: ExtractK8sMetadata{
 			Metadata: k8sAttributes,
-			Labels:   append(extractLabels(), extractPodLabels(enrichments)...),
+			Labels:   append(extractLabels(useOTelServiceEnrichment), extractPodLabels(enrichments)...),
 		},
 		PodAssociation: podAssociations,
 	}
 }
 
-func extractLabels() []ExtractLabel {
-	return []ExtractLabel{
-		{
-			From:    "pod",
-			Key:     "app.kubernetes.io/name",
-			TagName: kymaK8sIOAppName,
-		},
-		{
-			From:    "pod",
-			Key:     "app",
-			TagName: kymaAppName,
-		},
+func extractLabels(useOTelServiceEnrichment bool) []ExtractLabel {
+	extractLabels := []ExtractLabel{
 		{
 			From:    "node",
 			Key:     "topology.kubernetes.io/region",
@@ -83,6 +74,25 @@ func extractLabels() []ExtractLabel {
 			TagName: "host.arch",
 		},
 	}
+
+	// old enrichment strategy (will be deprecated)
+	if !useOTelServiceEnrichment {
+		extractLabels = append(
+			[]ExtractLabel{
+				{
+					From:    "pod",
+					Key:     "app.kubernetes.io/name",
+					TagName: kymaK8sIOAppName,
+				},
+				{
+					From:    "pod",
+					Key:     "app",
+					TagName: kymaAppName,
+				},
+			}, extractLabels...)
+	}
+
+	return extractLabels
 }
 
 func extractPodLabels(enrichments *operatorv1beta1.EnrichmentSpec) []ExtractLabel {
@@ -264,6 +274,15 @@ func DropKymaAttributesProcessorStatements() []TransformProcessorStatements {
 	return []TransformProcessorStatements{{
 		Statements: []string{
 			"delete_matching_keys(resource.attributes, \"kyma.*\")",
+		},
+	}}
+}
+
+// DropUnknownServiceNameProcessorStatements creates processor statements for the transform processor that drops unknown service names
+func DropUnknownServiceNameProcessorStatements() []TransformProcessorStatements {
+	return []TransformProcessorStatements{{
+		Statements: []string{
+			"delete_key(resource.attributes, \"service.name\") where HasPrefix(resource.attributes[\"service.name\"], \"unknown_service\")",
 		},
 	}}
 }

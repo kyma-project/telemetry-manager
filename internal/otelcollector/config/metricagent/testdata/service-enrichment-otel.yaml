@@ -12,6 +12,7 @@ service:
             receivers:
                 - routing/runtime-input
             processors:
+                - transform/drop-unknown-service-name
                 - k8sattributes
             exporters:
                 - routing/enrichment
@@ -162,12 +163,6 @@ processors:
                 - service.version
                 - service.instance.id
             labels:
-                - from: pod
-                  key: app.kubernetes.io/name
-                  tag_name: kyma.kubernetes_io_app_name
-                - from: pod
-                  key: app
-                  tag_name: kyma.app_name
                 - from: node
                   key: topology.kubernetes.io/region
                   tag_name: cloud.region
@@ -208,6 +203,11 @@ processors:
         metric_statements:
             - statements:
                 - delete_key(resource.attributes, "io.kyma-project.telemetry.skip_enrichment")
+    transform/drop-unknown-service-name:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - delete_key(resource.attributes, "service.name") where HasPrefix(resource.attributes["service.name"], "unknown_service")
     transform/insert-cluster-attributes:
         error_mode: ignore
         metric_statements:

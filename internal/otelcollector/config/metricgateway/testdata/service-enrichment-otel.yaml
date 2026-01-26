@@ -14,6 +14,7 @@ service:
             processors:
                 - memory_limiter
                 - transform/set-instrumentation-scope-kyma
+                - transform/drop-unknown-service-name
                 - k8sattributes
                 - transform/insert-cluster-attributes
             exporters:
@@ -102,12 +103,6 @@ processors:
                 - service.version
                 - service.instance.id
             labels:
-                - from: pod
-                  key: app.kubernetes.io/name
-                  tag_name: kyma.kubernetes_io_app_name
-                - from: pod
-                  key: app
-                  tag_name: kyma.app_name
                 - from: node
                   key: topology.kubernetes.io/region
                   tag_name: cloud.region
@@ -138,6 +133,11 @@ processors:
         metric_statements:
             - statements:
                 - delete_matching_keys(resource.attributes, "kyma.*")
+    transform/drop-unknown-service-name:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - delete_key(resource.attributes, "service.name") where HasPrefix(resource.attributes["service.name"], "unknown_service")
     transform/insert-cluster-attributes:
         error_mode: ignore
         metric_statements:

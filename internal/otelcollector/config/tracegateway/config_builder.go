@@ -48,6 +48,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1beta1.TraceP
 			b.addOTLPReceiver(),
 			b.addMemoryLimiterProcessor(),
 			b.addDropIstioServiceEnrichmentProcessor(opts),
+			b.addDropUnknownServiceNameProcessor(opts),
 			b.addK8sAttributesProcessor(opts),
 			b.addIstioNoiseFilterProcessor(),
 			b.addInsertClusterAttributesProcessor(opts),
@@ -100,7 +101,8 @@ func (b *Builder) addMemoryLimiterProcessor() buildComponentFunc {
 }
 
 func (b *Builder) addDropIstioServiceEnrichmentProcessor(opts BuildOptions) buildComponentFunc {
-	// Add the processor if Otel service enrichment strategy is selected (temporary measure for dropping Istio trace spans enrichment)
+	// Add the processor if OTel service enrichment strategy is selected
+	// (temporary measure for dropping Istio trace spans enrichment)
 	if opts.ServiceEnrichment == commonresources.AnnotationValueTelemetryServiceEnrichmentOtel {
 		return b.AddProcessor(
 			b.StaticComponentID(common.ComponentIDDropIstioServiceEnrichmentProcessor),
@@ -119,12 +121,25 @@ func (b *Builder) addDropIstioServiceEnrichmentProcessor(opts BuildOptions) buil
 	return nil
 }
 
+func (b *Builder) addDropUnknownServiceNameProcessor(opts BuildOptions) buildComponentFunc {
+	if opts.ServiceEnrichment == commonresources.AnnotationValueTelemetryServiceEnrichmentOtel {
+		return b.AddProcessor(
+			b.StaticComponentID(common.ComponentIDDropUnknownServiceNameProcessor),
+			func(tp *telemetryv1beta1.TracePipeline) any {
+				return common.TraceTransformProcessorConfig(common.DropUnknownServiceNameProcessorStatements())
+			},
+		)
+	}
+
+	return nil
+}
+
 func (b *Builder) addK8sAttributesProcessor(opts BuildOptions) buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDK8sAttributesProcessor),
 		func(tp *telemetryv1beta1.TracePipeline) any {
-			includeServiceEnrichment := opts.ServiceEnrichment == commonresources.AnnotationValueTelemetryServiceEnrichmentOtel
-			return common.K8sAttributesProcessorConfig(opts.Enrichments, includeServiceEnrichment)
+			useOTelServiceEnrichment := opts.ServiceEnrichment == commonresources.AnnotationValueTelemetryServiceEnrichmentOtel
+			return common.K8sAttributesProcessorConfig(opts.Enrichments, useOTelServiceEnrichment)
 		},
 	)
 }
@@ -149,7 +164,7 @@ func (b *Builder) addInsertClusterAttributesProcessor(opts BuildOptions) buildCo
 }
 
 func (b *Builder) addServiceEnrichmentProcessor(opts BuildOptions) buildComponentFunc {
-	// Skip adding the processor if Otel service enrichment strategy is selected (part of the deprecation process)
+	// Skip adding the processor if OTel service enrichment strategy is selected (part of the deprecation process)
 	if opts.ServiceEnrichment == commonresources.AnnotationValueTelemetryServiceEnrichmentOtel {
 		return nil
 	}

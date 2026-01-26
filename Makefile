@@ -210,12 +210,8 @@ check-coverage: $(GO_TEST_COVERAGE) ## Check test coverage against thresholds
 
 .PHONY: update-golden-files
 update-golden-files: ## Update all golden files for config builder tests
-	@echo "Updating golden files for otelcollector config builder tests..."
-	go test ./internal/otelcollector/config/... -v -- -update-golden-files || true
-	@echo "Updating golden files for selfmonitor tests..."
-	go test ./internal/selfmonitor/config -v -- -update-golden-files || true
-	@echo "Updating golden files for resource tests..."
-	go test ./internal/resources/... -v -- -update-golden-files || true
+	@echo "Updating all golden files in the project..."
+	go test $$(go list ./... | grep -v /test/) -- -update-golden-files || true
 	@echo "All golden files updated successfully"
 
 ##@ Build

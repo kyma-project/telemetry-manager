@@ -119,6 +119,7 @@ const (
 	ComponentIDUserDefinedTransformProcessor           = "transform/user-defined-%s" // dynamically filled with pipeline name
 	ComponentIDInsertClusterAttributesProcessor        = "transform/insert-cluster-attributes"
 	ComponentIDDropKymaAttributesProcessor             = "transform/drop-kyma-attributes"
+	ComponentIDDropUnknownServiceNameProcessor         = "transform/drop-unknown-service-name"
 
 	ComponentIDSetKymaInputNameRuntimeProcessor    ComponentID = "transform/set-kyma-input-name-runtime"
 	ComponentIDSetKymaInputNameIstioProcessor      ComponentID = "transform/set-kyma-input-name-istio"

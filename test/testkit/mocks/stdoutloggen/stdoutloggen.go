@@ -65,13 +65,14 @@ func WithText(text string) Option {
 }
 
 // GetVersion extracts and returns the version of the stdout log generator image
-// 
+//
 // Example: "latest" extracted from "europe-docker.pkg.dev/kyma-project/prod/stdout-log-generator:latest"
 func GetVersion() string {
 	parts := strings.Split(DefaultImageName, ":")
 	if len(parts) < 2 {
 		return ""
 	}
+
 	return parts[len(parts)-1]
 }
 

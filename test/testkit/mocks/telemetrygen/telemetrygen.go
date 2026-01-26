@@ -115,13 +115,14 @@ func WithInterval(duration string) Option {
 }
 
 // GetVersion extracts and returns the version of the telemetrygen image
-// 
+//
 // Example: "v0.143.0" extracted from "ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.143.0"
 func GetVersion() string {
 	parts := strings.Split(testkit.DefaultTelemetryGenImage, ":")
 	if len(parts) < 2 {
 		return ""
 	}
+
 	return parts[len(parts)-1]
 }
 

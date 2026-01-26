@@ -58,6 +58,7 @@ func TestServiceEnrichment(t *testing.T) {
 		WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 		Build()
 
+	// Configure generator pods
 	podSpecWithEmptyServiceAttributes := telemetrygen.PodSpec(telemetrygen.SignalTypeTraces,
 		telemetrygen.WithServiceName(""),
 		telemetrygen.WithServiceNamespace(""),
@@ -109,13 +110,15 @@ func TestServiceEnrichment(t *testing.T) {
 		ServiceVersion:    telemetrygen.GetVersion(),
 		ServiceInstanceID: fmt.Sprintf("%s.%s.telemetrygen", genNs, podWithEmptyServiceAttributesName),
 	})
-	// Unknown service names should be preserved
+
+	// Unknown service names should be enriched
 	verifyServiceAttributes(t, backend, podWithUnknownServiceName, ServiceAttributes{
-		ServiceName: unknownService,
+		ServiceName: podWithUnknownServiceName,
 	})
 	verifyServiceAttributes(t, backend, podWithUnknownServicePatternName, ServiceAttributes{
-		ServiceName: unknownServicePattern,
+		ServiceName: podWithUnknownServicePatternName,
 	})
+
 	// Custom attributes should be preserved
 	verifyServiceAttributes(t, backend, podWithCustomServiceAttributesName, ServiceAttributes{
 		ServiceName:       customServiceName,
@@ -124,6 +127,7 @@ func TestServiceEnrichment(t *testing.T) {
 		ServiceInstanceID: customServiceInstanceID,
 	})
 
+	// Verify that temporary kyma resource attributes are removed from the spans
 	assert.BackendDataEventuallyMatches(t, backend,
 		HaveFlatTraces(
 			Not(ContainElement(HaveResourceAttributes(HaveKey(ContainSubstring("kyma"))))),
@@ -148,12 +152,15 @@ func verifyServiceAttributes(t *testing.T, backend *kitbackend.Backend, givenPod
 	if expectedAttributes.ServiceName != "" {
 		matchers = append(matchers, HaveResourceAttributes(HaveKeyWithValue("service.name", expectedAttributes.ServiceName)))
 	}
+
 	if expectedAttributes.ServiceNamespace != "" {
 		matchers = append(matchers, HaveResourceAttributes(HaveKeyWithValue("service.namespace", expectedAttributes.ServiceNamespace)))
 	}
+
 	if expectedAttributes.ServiceVersion != "" {
 		matchers = append(matchers, HaveResourceAttributes(HaveKeyWithValue("service.version", expectedAttributes.ServiceVersion)))
 	}
+
 	if expectedAttributes.ServiceInstanceID != "" {
 		matchers = append(matchers, HaveResourceAttributes(HaveKeyWithValue("service.instance.id", expectedAttributes.ServiceInstanceID)))
 	}

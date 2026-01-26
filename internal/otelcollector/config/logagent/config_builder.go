@@ -55,6 +55,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1beta1.LogPip
 			b.addFileLogReceiver(),
 			b.addMemoryLimiterProcessor(),
 			b.addSetInstrumentationScopeToRuntimeProcessor(opts),
+			b.addDropUnknownServiceNameProcessor(opts),
 			b.addK8sAttributesProcessor(opts),
 			b.addInsertClusterAttributesProcessor(opts),
 			b.addServiceEnrichmentProcessor(opts),
@@ -109,12 +110,25 @@ func (b *Builder) addSetInstrumentationScopeToRuntimeProcessor(opts BuildOptions
 	)
 }
 
+func (b *Builder) addDropUnknownServiceNameProcessor(opts BuildOptions) buildComponentFunc {
+	if opts.ServiceEnrichment == commonresources.AnnotationValueTelemetryServiceEnrichmentOtel {
+		return b.AddProcessor(
+			b.StaticComponentID(common.ComponentIDDropUnknownServiceNameProcessor),
+			func(tp *telemetryv1beta1.LogPipeline) any {
+				return common.LogTransformProcessorConfig(common.DropUnknownServiceNameProcessorStatements())
+			},
+		)
+	}
+
+	return nil
+}
+
 func (b *Builder) addK8sAttributesProcessor(opts BuildOptions) buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDK8sAttributesProcessor),
 		func(lp *telemetryv1beta1.LogPipeline) any {
-			includeServiceEnrichment := opts.ServiceEnrichment == commonresources.AnnotationValueTelemetryServiceEnrichmentOtel
-			return common.K8sAttributesProcessorConfig(opts.Enrichments, includeServiceEnrichment)
+			useOTelServiceEnrichment := opts.ServiceEnrichment == commonresources.AnnotationValueTelemetryServiceEnrichmentOtel
+			return common.K8sAttributesProcessorConfig(opts.Enrichments, useOTelServiceEnrichment)
 		},
 	)
 }
@@ -130,7 +144,7 @@ func (b *Builder) addInsertClusterAttributesProcessor(opts BuildOptions) buildCo
 }
 
 func (b *Builder) addServiceEnrichmentProcessor(opts BuildOptions) buildComponentFunc {
-	// Skip adding the processor if Otel service enrichment strategy is selected (part of the deprecation process)
+	// Skip adding the processor if OTel service enrichment strategy is selected (part of the deprecation process)
 	if opts.ServiceEnrichment == commonresources.AnnotationValueTelemetryServiceEnrichmentOtel {
 		return nil
 	}
