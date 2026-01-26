@@ -24,6 +24,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlbuilder "sigs.k8s.io/controller-runtime/pkg/builder"
@@ -113,11 +114,15 @@ func (r *TelemetryController) SetupWithManager(mgr ctrl.Manager) error {
 	b = b.Watches(
 		&admissionregistrationv1.ValidatingWebhookConfiguration{},
 		handler.EnqueueRequestsFromMapFunc(r.mapValidatingWebhook),
-		ctrlbuilder.WithPredicates(predicateutils.UpdateOrDelete())).
+		ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete())).
 		Watches(
 			&admissionregistrationv1.MutatingWebhookConfiguration{},
 			handler.EnqueueRequestsFromMapFunc(r.mapMutatingWebhook),
-			ctrlbuilder.WithPredicates(predicateutils.UpdateOrDelete())).
+			ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete())).
+		Watches(
+			&apiextensionsv1.CustomResourceDefinition{},
+			handler.EnqueueRequestsFromMapFunc(r.mapPipelineCRD),
+			ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete())).
 		Watches(
 			&telemetryv1beta1.LogPipeline{},
 			handler.EnqueueRequestsFromMapFunc(r.mapLogPipeline),
@@ -156,6 +161,21 @@ func (r *TelemetryController) mapMutatingWebhook(ctx context.Context, object cli
 	}
 
 	if webhook.Name != r.config.WebhookCert.MutatingWebhookName.Name {
+		return nil
+	}
+
+	return r.createTelemetryRequests(ctx)
+}
+
+func (r *TelemetryController) mapPipelineCRD(ctx context.Context, object client.Object) []reconcile.Request {
+	crd, ok := object.(*apiextensionsv1.CustomResourceDefinition)
+	if !ok {
+		logf.FromContext(ctx).Error(nil, "Unable to cast object to CustomResourceDefinition")
+		return nil
+	}
+
+	// Telemetry controller only patches LogPipeline and MetricPipeline CRDs with conversion webhook configuration
+	if crd.Name != "logpipelines.telemetry.kyma-project.io" && crd.Name != "metricpipelines.telemetry.kyma-project.io" {
 		return nil
 	}
 
