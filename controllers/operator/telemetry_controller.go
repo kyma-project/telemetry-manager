@@ -20,7 +20,9 @@ import (
 	"context"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -91,8 +93,13 @@ func (r *TelemetryController) SetupWithManager(mgr ctrl.Manager) error {
 
 	ownedResourceTypesToWatch := []client.Object{
 		&corev1.Secret{},
+		&corev1.ServiceAccount{},
 		&rbacv1.Role{},
 		&rbacv1.RoleBinding{},
+		&networkingv1.NetworkPolicy{},
+		&corev1.ConfigMap{},
+		&appsv1.Deployment{},
+		&corev1.Service{},
 	}
 
 	for _, resource := range ownedResourceTypesToWatch {
