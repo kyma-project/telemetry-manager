@@ -6,8 +6,6 @@ import (
 	"fmt"
 
 	"gopkg.in/yaml.v3"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -22,7 +20,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metricgateway"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
-	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 	metricpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/metricpipeline"
@@ -336,9 +333,16 @@ func isMetricAgentRequired(pipeline *telemetryv1beta1.MetricPipeline) bool {
 
 func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telemetryv1beta1.MetricPipeline, allPipelines []telemetryv1beta1.MetricPipeline) error {
 	shootInfo := k8sutils.GetGardenerShootInfo(ctx, r.Client)
-	clusterName := r.getClusterNameFromTelemetry(ctx, shootInfo.ClusterName)
+	telemetryOptions := telemetryutils.Options{
+		SignalType:         common.SignalTypeMetric,
+		Client:             r.Client,
+		Globals:            r.globals,
+		DefaultClusterName: shootInfo.ClusterName,
+		DefaultReplicas:    defaultReplicaCount,
+	}
+	clusterName := telemetryutils.GetClusterNameFromTelemetry(ctx, telemetryOptions)
 
-	clusterUID, err := r.getK8sClusterUID(ctx)
+	clusterUID, err := k8sutils.GetClusterUID(ctx, r.Client)
 	if err != nil {
 		return fmt.Errorf("failed to get kube-system namespace for cluster UID: %w", err)
 	}
@@ -359,7 +363,7 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 			CloudProvider: shootInfo.CloudProvider,
 		},
 		Enrichments:       enrichments,
-		ServiceEnrichment: r.getServiceEnrichmentFromTelemetryOrDefault(ctx),
+		ServiceEnrichment: telemetryutils.GetServiceEnrichmentFromTelemetryOrDefault(ctx, telemetryOptions),
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create collector config: %w", err)
@@ -376,7 +380,7 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 		CollectorConfigYAML:            string(collectorConfigYAML),
 		CollectorEnvVars:               collectorEnvVars,
 		IstioEnabled:                   isIstioActive,
-		Replicas:                       r.getReplicaCountFromTelemetry(ctx),
+		Replicas:                       telemetryutils.GetReplicaCountFromTelemetry(ctx, telemetryOptions),
 		ResourceRequirementsMultiplier: len(allPipelines),
 	}
 
@@ -394,9 +398,16 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *telemetryv1beta1.MetricPipeline, allPipelines []telemetryv1beta1.MetricPipeline) error {
 	isIstioActive := r.istioStatusChecker.IsIstioActive(ctx)
 	shootInfo := k8sutils.GetGardenerShootInfo(ctx, r.Client)
-	clusterName := r.getClusterNameFromTelemetry(ctx, shootInfo.ClusterName)
+	telemetryOptions := telemetryutils.Options{
+		SignalType:         common.SignalTypeMetric,
+		Client:             r.Client,
+		Globals:            r.globals,
+		DefaultClusterName: shootInfo.ClusterName,
+		DefaultReplicas:    defaultReplicaCount,
+	}
+	clusterName := telemetryutils.GetClusterNameFromTelemetry(ctx, telemetryOptions)
 
-	clusterUID, err := r.getK8sClusterUID(ctx)
+	clusterUID, err := k8sutils.GetClusterUID(ctx, r.Client)
 	if err != nil {
 		return fmt.Errorf("failed to get kube-system namespace for cluster UID: %w", err)
 	}
@@ -419,7 +430,7 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 			CloudProvider: shootInfo.CloudProvider,
 		},
 		Enrichments:       enrichments,
-		ServiceEnrichment: r.getServiceEnrichmentFromTelemetryOrDefault(ctx),
+		ServiceEnrichment: telemetryutils.GetServiceEnrichmentFromTelemetryOrDefault(ctx, telemetryOptions),
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create collector config: %w", err)
@@ -449,75 +460,6 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 	}
 
 	return nil
-}
-
-func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
-	telemetry, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
-	if err != nil {
-		logf.FromContext(ctx).V(1).Error(err, "Failed to get telemetry: using default scaling")
-		return defaultReplicaCount
-	}
-
-	if telemetry.Spec.Metric != nil &&
-		telemetry.Spec.Metric.Gateway.Scaling.Type == operatorv1beta1.StaticScalingStrategyType &&
-		telemetry.Spec.Metric.Gateway.Scaling.Static != nil &&
-		telemetry.Spec.Metric.Gateway.Scaling.Static.Replicas > 0 {
-		return telemetry.Spec.Metric.Gateway.Scaling.Static.Replicas
-	}
-
-	return defaultReplicaCount
-}
-
-func (r *Reconciler) getClusterNameFromTelemetry(ctx context.Context, defaultName string) string {
-	telemetry, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
-	if err != nil {
-		logf.FromContext(ctx).V(1).Error(err, "Failed to get telemetry: using default shoot name as cluster name")
-		return defaultName
-	}
-
-	if telemetry.Spec.Enrichments != nil &&
-		telemetry.Spec.Enrichments.Cluster != nil &&
-		telemetry.Spec.Enrichments.Cluster.Name != "" {
-		return telemetry.Spec.Enrichments.Cluster.Name
-	}
-
-	return defaultName
-}
-
-// getServiceEnrichmentFromTelemetry retrieves the service enrichment strategy from the Telemetry CR service-enrichment annotation.
-// If no valid annotation is found, it returns the provided default service enrichment strategy.
-func (r *Reconciler) getServiceEnrichmentFromTelemetryOrDefault(ctx context.Context) string {
-	telemetry, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
-	if err != nil {
-		logf.FromContext(ctx).V(1).Error(err, "Failed to get telemetry: default service enrichment strategy will be used")
-		return commonresources.AnnotationValueTelemetryServiceEnrichmentDefault
-	}
-
-	if telemetry.Annotations != nil {
-		if value, ok := telemetry.Annotations[commonresources.AnnotationKeyTelemetryServiceEnrichment]; ok {
-			if value == commonresources.AnnotationValueTelemetryServiceEnrichmentKymaLegacy ||
-				value == commonresources.AnnotationValueTelemetryServiceEnrichmentOtel {
-				return value
-			}
-		}
-	}
-
-	return commonresources.AnnotationValueTelemetryServiceEnrichmentDefault
-}
-
-func (r *Reconciler) getK8sClusterUID(ctx context.Context) (string, error) {
-	var kubeSystem corev1.Namespace
-
-	kubeSystemNs := types.NamespacedName{
-		Name: "kube-system",
-	}
-
-	err := r.Get(ctx, kubeSystemNs, &kubeSystem)
-	if err != nil {
-		return "", err
-	}
-
-	return string(kubeSystem.UID), nil
 }
 
 func (r *Reconciler) trackPipelineInfoMetric(ctx context.Context, pipelines []telemetryv1beta1.MetricPipeline) {

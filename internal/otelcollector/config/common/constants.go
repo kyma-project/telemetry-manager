@@ -7,10 +7,12 @@ const (
 	EnvVarGoDebug         = "GODEBUG"
 )
 
+type SignalType string
+
 const (
-	SignalTypeMetric = "metric"
-	SignalTypeTrace  = "trace"
-	SignalTypeLog    = "log"
+	SignalTypeMetric SignalType = "metric"
+	SignalTypeTrace  SignalType = "trace"
+	SignalTypeLog    SignalType = "log"
 )
 
 const (
