@@ -1,3 +1,9 @@
+---
+title: Auditable Release Automation
+status: Proposed
+date: 2026-01-20
+---
+
 # Auditable Release Automation
 
 ## Context
