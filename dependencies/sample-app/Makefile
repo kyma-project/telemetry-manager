@@ -13,3 +13,6 @@ image:
 
 clean:
 	rm -f ./bin/app
+
+test:
+	go test -v ./...

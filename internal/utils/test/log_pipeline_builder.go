@@ -93,11 +93,6 @@ func (b *LogPipelineBuilder) WithLabels(labels map[string]string) *LogPipelineBu
 	return b
 }
 
-func (b *LogPipelineBuilder) WithFinalizer(finalizer string) *LogPipelineBuilder {
-	b.finalizers = append(b.finalizers, finalizer)
-	return b
-}
-
 func (b *LogPipelineBuilder) WithInput(input telemetryv1beta1.LogPipelineInput) *LogPipelineBuilder {
 	b.input = input
 	return b

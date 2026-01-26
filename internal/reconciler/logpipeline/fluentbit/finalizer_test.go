@@ -13,53 +13,7 @@ import (
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
 
-func TestEnsureFinalizers(t *testing.T) {
-	t.Run("without files", func(t *testing.T) {
-		scheme := runtime.NewScheme()
-		_ = telemetryv1beta1.AddToScheme(scheme)
-		pipeline := &telemetryv1beta1.LogPipeline{ObjectMeta: metav1.ObjectMeta{Name: "pipeline"}}
-		client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).Build()
-
-		err := ensureFinalizers(t.Context(), client, pipeline)
-		require.NoError(t, err)
-
-		var updatedPipeline telemetryv1beta1.LogPipeline
-
-		_ = client.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
-
-		require.True(t, controllerutil.ContainsFinalizer(&updatedPipeline, sectionsFinalizer))
-		require.False(t, controllerutil.ContainsFinalizer(&updatedPipeline, filesFinalizer))
-	})
-
-	t.Run("with files", func(t *testing.T) {
-		pipeline := &telemetryv1beta1.LogPipeline{
-			ObjectMeta: metav1.ObjectMeta{Name: "pipeline"},
-			Spec: telemetryv1beta1.LogPipelineSpec{
-				FluentBitFiles: []telemetryv1beta1.FluentBitFile{
-					{
-						Name:    "script.js",
-						Content: "",
-					},
-				},
-			},
-		}
-
-		scheme := runtime.NewScheme()
-		_ = telemetryv1beta1.AddToScheme(scheme)
-		client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).Build()
-
-		err := ensureFinalizers(t.Context(), client, pipeline)
-		require.NoError(t, err)
-
-		var updatedPipeline telemetryv1beta1.LogPipeline
-
-		_ = client.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
-
-		require.True(t, controllerutil.ContainsFinalizer(&updatedPipeline, sectionsFinalizer))
-		require.True(t, controllerutil.ContainsFinalizer(&updatedPipeline, filesFinalizer))
-	})
-}
-
+// TODO: remove tests after rollout telemetry 1.57.0
 func TestCleanupFinalizers(t *testing.T) {
 	t.Run("without files", func(t *testing.T) {
 		ts := metav1.Now()
@@ -75,7 +29,7 @@ func TestCleanupFinalizers(t *testing.T) {
 		_ = telemetryv1beta1.AddToScheme(scheme)
 		client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).Build()
 
-		err := cleanupFinalizersIfNeeded(t.Context(), client, pipeline)
+		err := cleanupFinalizers(t.Context(), client, pipeline)
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1beta1.LogPipeline
@@ -99,7 +53,7 @@ func TestCleanupFinalizers(t *testing.T) {
 		_ = telemetryv1beta1.AddToScheme(scheme)
 		client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).Build()
 
-		err := cleanupFinalizersIfNeeded(t.Context(), client, pipeline)
+		err := cleanupFinalizers(t.Context(), client, pipeline)
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1beta1.LogPipeline
