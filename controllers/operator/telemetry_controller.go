@@ -112,8 +112,12 @@ func (r *TelemetryController) SetupWithManager(mgr ctrl.Manager) error {
 
 	b = b.Watches(
 		&admissionregistrationv1.ValidatingWebhookConfiguration{},
-		handler.EnqueueRequestsFromMapFunc(r.mapWebhook),
+		handler.EnqueueRequestsFromMapFunc(r.mapValidatingWebhook),
 		ctrlbuilder.WithPredicates(predicateutils.UpdateOrDelete())).
+		Watches(
+			&admissionregistrationv1.MutatingWebhookConfiguration{},
+			handler.EnqueueRequestsFromMapFunc(r.mapMutatingWebhook),
+			ctrlbuilder.WithPredicates(predicateutils.UpdateOrDelete())).
 		Watches(
 			&telemetryv1beta1.LogPipeline{},
 			handler.EnqueueRequestsFromMapFunc(r.mapLogPipeline),
@@ -130,7 +134,7 @@ func (r *TelemetryController) SetupWithManager(mgr ctrl.Manager) error {
 	return b.Complete(r)
 }
 
-func (r *TelemetryController) mapWebhook(ctx context.Context, object client.Object) []reconcile.Request {
+func (r *TelemetryController) mapValidatingWebhook(ctx context.Context, object client.Object) []reconcile.Request {
 	webhook, ok := object.(*admissionregistrationv1.ValidatingWebhookConfiguration)
 	if !ok {
 		logf.FromContext(ctx).Error(nil, "Unable to cast object to ValidatingWebhookConfiguration")
@@ -138,6 +142,20 @@ func (r *TelemetryController) mapWebhook(ctx context.Context, object client.Obje
 	}
 
 	if webhook.Name != r.config.WebhookCert.ValidatingWebhookName.Name {
+		return nil
+	}
+
+	return r.createTelemetryRequests(ctx)
+}
+
+func (r *TelemetryController) mapMutatingWebhook(ctx context.Context, object client.Object) []reconcile.Request {
+	webhook, ok := object.(*admissionregistrationv1.MutatingWebhookConfiguration)
+	if !ok {
+		logf.FromContext(ctx).Error(nil, "Unable to cast object to MutatingWebhookConfiguration")
+		return nil
+	}
+
+	if webhook.Name != r.config.WebhookCert.MutatingWebhookName.Name {
 		return nil
 	}
 
