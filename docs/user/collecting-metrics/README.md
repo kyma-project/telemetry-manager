@@ -28,7 +28,7 @@ For instrumentation, use an SDK, such as the Prometheus client libraries or the 
 For a minimal setup, you only need to create a MetricPipeline that specifies your backend destination (see [Integrate With Your OTLP Backend](./../integrate-otlp-backend/README.md)):
 
 ```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
+apiVersion: telemetry.kyma-project.io/v1beta1
 kind: MetricPipeline
 metadata:
   name: backend

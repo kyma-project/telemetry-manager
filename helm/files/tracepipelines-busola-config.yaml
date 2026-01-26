@@ -574,7 +574,7 @@ general: |-
   resource:
     kind: TracePipeline
     group: telemetry.kyma-project.io
-    version: v1alpha1
+    version: v1beta1
   name: Trace Pipelines
   category: Telemetry
   urlPath: tracepipelines

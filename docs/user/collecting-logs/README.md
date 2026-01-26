@@ -26,7 +26,7 @@ Log collection is optional. If you don't create a LogPipeline, the log collectio
 For a minimal setup, you only need to create a LogPipeline that specifies your backend destination (see [Integrate With Your OTLP Backend](./../integrate-otlp-backend/README.md)):
 
 ```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
+apiVersion: telemetry.kyma-project.io/v1beta1
 kind: LogPipeline
 metadata:
   name: backend
@@ -47,7 +47,7 @@ By default, this minimal pipeline enables the following types of log collection:
 
 You can customize your LogPipeline using the available parameters and attributes (see [LogPipeline: Custom Resource Parameters](https://kyma-project.io/#/telemetry-manager/user/resources/02-logpipeline?id=custom-resource-parameters)):
 
-- Configure or disable the collection of application logs from the `stdout`/`stderr` channel (see [Configure Application Logs](../collecting-logs/application-input.md)).
+- Configure or disable the collection of application logs from the `stdout`/`stderr` channel (see [Configure Application Logs](../collecting-logs/runtime-input.md)).
 - Set up the collection of Istio access logs (see [Configure Istio Access Logs](../collecting-logs/istio-support.md)).
 - Choose from which specific namespaces you want to include or exclude logs (see [Filter Logs](../filter-and-process/filter-logs.md)).
 - If you have more than one backend, specify which **input** source sends logs to which backend (see [Route Specific Inputs to Different Backends](../otlp-input.md#route-specific-inputs-to-different-backends)).
