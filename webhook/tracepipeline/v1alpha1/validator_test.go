@@ -55,7 +55,7 @@ func TestTracePipelineValidator_ValidateCreate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			validator := &TracePipelineValidator{}
+			validator := &validator{}
 
 			_, err := validator.ValidateCreate(t.Context(), tt.pipeline)
 
@@ -115,7 +115,7 @@ func TestTracePipelineValidator_ValidateUpdate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			validator := &TracePipelineValidator{}
+			validator := &validator{}
 
 			_, err := validator.ValidateUpdate(t.Context(), tt.oldPipeline, tt.newPipeline)
 
@@ -129,24 +129,12 @@ func TestTracePipelineValidator_ValidateUpdate(t *testing.T) {
 }
 
 func TestTracePipelineValidator_ValidateDelete(t *testing.T) {
-	validator := &TracePipelineValidator{}
+	validator := &validator{}
 
-	pipeline := &telemetryv1alpha1.LogPipeline{}
+	pipeline := &telemetryv1alpha1.TracePipeline{}
 
 	warnings, err := validator.ValidateDelete(t.Context(), pipeline)
 
 	assert.NoError(t, err)
-	assert.Empty(t, warnings)
-}
-
-func TestTracePipelineValidator_WrongType(t *testing.T) {
-	validator := &TracePipelineValidator{}
-
-	// Pass wrong type
-	wrongObject := &telemetryv1alpha1.LogPipeline{}
-
-	warnings, err := validator.ValidateCreate(t.Context(), wrongObject)
-
-	assert.ErrorContains(t, err, "expected a TracePipeline but got")
 	assert.Empty(t, warnings)
 }
