@@ -2,7 +2,6 @@ name: Gardener Integration
 
 permissions:
   contents: read
-  pull-requests: read
 
 on:
   push:
@@ -35,10 +34,9 @@ jobs:
       - name: Prepare environment variables
         run: |
           GIT_COMMIT_SHA=$(git rev-parse --short=8 HEAD)
-          GIT_COMMIT_DATE=$(git show -s --format=%cd --date=format:'v%Y%m%d' $GIT_COMMIT_SHA)
+          GIT_COMMIT_DATE=$(git show -s --format=%cd --date=format:'v%Y%m%d' $(GIT_COMMIT_SHA))
           TAG="$GIT_COMMIT_DATE-$GIT_COMMIT_SHA"
           MANAGER_IMAGE="europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:$TAG"
-          echo "Using prod image: $MANAGER_IMAGE"
 
           echo "TAG=$TAG" >> $GITHUB_ENV
           echo "MANAGER_IMAGE=$MANAGER_IMAGE" >> $GITHUB_ENV
@@ -48,7 +46,9 @@ jobs:
         run: "./hack/await_image.sh"
         env:
           IMAGE_REPO: "europe-docker.pkg.dev/kyma-project/prod/telemetry-manager"
-          IMAGE_TAG: "${{ env.TAG }}"
+          # sets trigger to SHA if used in merge_group, but to env.TAG if used in push
+          # even if env.TAG is available in merge_group event, it will be neglected
+          IMAGE_TAG: "${{ github.event.merge_group.head_sha || env.TAG }}"
           QUERY_INTERVAL: 30
 
       # save gardener kubeconfig to a temp file in order to pass it to the command
