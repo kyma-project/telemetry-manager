@@ -19,8 +19,16 @@ on:
   workflow_dispatch:
 
 jobs:
+  validate-labels:
+    name: Validate CI labels
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate CI labels
+        id: validate-labels
+        uses: ./.github/actions/validate-ci-labels
+
   unit-tests:
-    if: ${{ github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch' }}
+    needs: validate-labels
     runs-on: ubuntu-latest
     steps:
       - name: Validate CI labels
@@ -41,7 +49,6 @@ jobs:
 
   lint:
     needs: validate-labels
-    if: ${{ always() && needs.validate-labels.result == 'success' || github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -55,7 +62,6 @@ jobs:
 
   coverage:
     needs: validate-labels
-    if: ${{ always() && needs.validate-labels.result == 'success' || github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -69,7 +75,6 @@ jobs:
 
   verify-code-generated:
     needs: validate-labels
-    if: ${{ always() && needs.validate-labels.result == 'success' || github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -83,7 +88,6 @@ jobs:
 
   test-renovate:
     needs: validate-labels
-    if: ${{ always() && needs.validate-labels.result == 'success' || github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
