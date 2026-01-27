@@ -271,10 +271,7 @@ func (ad *ApplierDeleter) makeDeployment(configChecksum, configPath, configFile 
 	maps.Copy(podAnnotations, ad.Config.AdditionalAnnotations())
 	podAnnotations[commonresources.AnnotationKeyChecksumConfig] = configChecksum
 
-	podSpec := func() corev1.PodSpec {
-		var image = ad.Config.Image
-		return ad.makePodSpec(image, configPath, configFile)
-	}()
+	podSpec := ad.makePodSpec(ad.Config.Image, configPath, configFile)
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
