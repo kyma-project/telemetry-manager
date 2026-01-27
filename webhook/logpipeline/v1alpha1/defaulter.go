@@ -2,16 +2,14 @@ package v1alpha1
 
 import (
 	"context"
-	"fmt"
 
-	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
 
 // +kubebuilder:object:generate=false
-var _ webhook.CustomDefaulter = &defaulter{}
+var _ admission.Defaulter[*telemetryv1alpha1.LogPipeline] = &defaulter{}
 
 type defaulter struct {
 	ApplicationInputEnabled          bool
@@ -19,18 +17,7 @@ type defaulter struct {
 	DefaultOTLPProtocol              string
 }
 
-func (ld defaulter) Default(ctx context.Context, obj runtime.Object) error {
-	pipeline, ok := obj.(*telemetryv1alpha1.LogPipeline)
-	if !ok {
-		return fmt.Errorf("expected an LogPipeline object but got %T", obj)
-	}
-
-	ld.applyDefaults(pipeline)
-
-	return nil
-}
-
-func (ld defaulter) applyDefaults(pipeline *telemetryv1alpha1.LogPipeline) {
+func (ld defaulter) Default(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error {
 	if pipeline.Spec.Input.Application == nil {
 		pipeline.Spec.Input.Application = &telemetryv1alpha1.LogPipelineApplicationInput{
 			Enabled:          &ld.ApplicationInputEnabled,
@@ -59,6 +46,8 @@ func (ld defaulter) applyDefaults(pipeline *telemetryv1alpha1.LogPipeline) {
 	if pipeline.Spec.Output.OTLP != nil && pipeline.Spec.Output.OTLP.Protocol == "" {
 		pipeline.Spec.Output.OTLP.Protocol = ld.DefaultOTLPProtocol
 	}
+
+	return nil
 }
 
 func isOTLPPipeline(pipeline *telemetryv1alpha1.LogPipeline) bool {
