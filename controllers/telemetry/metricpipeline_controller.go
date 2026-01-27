@@ -46,6 +46,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
@@ -88,7 +89,7 @@ func NewMetricPipelineController(config MetricPipelineControllerConfig, client c
 	pipelineLock := resourcelock.NewLocker(
 		client,
 		types.NamespacedName{
-			Name:      "telemetry-metricpipeline-lock",
+			Name:      names.MetricPipelineLock,
 			Namespace: config.TargetNamespace(),
 		},
 		MaxPipelineCount,
@@ -97,7 +98,7 @@ func NewMetricPipelineController(config MetricPipelineControllerConfig, client c
 	pipelineSync := resourcelock.NewSyncer(
 		client,
 		types.NamespacedName{
-			Name:      "telemetry-metricpipeline-sync",
+			Name:      names.MetricPipelineSync,
 			Namespace: config.TargetNamespace(),
 		},
 	)

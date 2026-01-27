@@ -17,12 +17,13 @@ import (
 
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/ports"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 )
 
 const (
-	baseName            = "telemetry-self-monitor"
+	baseName            = names.SelfMonitor
 	retentionTime       = "2h"
 	retentionSize       = "50MB"
 	logFormat           = "json"

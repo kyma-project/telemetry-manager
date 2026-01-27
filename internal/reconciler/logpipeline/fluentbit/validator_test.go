@@ -11,6 +11,7 @@ import (
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
@@ -153,7 +154,7 @@ func TestValidateLogPipelineSpec(t *testing.T) {
 				PipelineLock: resourcelock.NewLocker(
 					fakeClient,
 					types.NamespacedName{
-						Name:      "telemetry-logpipeline-lock",
+						Name:      names.LogPipelineLock,
 						Namespace: "test",
 					},
 					3,

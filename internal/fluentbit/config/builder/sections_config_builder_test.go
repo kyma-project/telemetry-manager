@@ -10,6 +10,7 @@ import (
 	"k8s.io/utils/ptr"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 )
 
 func TestCreateRecordModifierFilter(t *testing.T) {
@@ -110,10 +111,10 @@ func TestCreateTimestampModifyFilter(t *testing.T) {
 
 func TestMergeSectionsConfig(t *testing.T) {
 	excludePath := strings.Join([]string{
-		"/var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log",
+		"/var/log/containers/" + names.FluentBitAgent + "-*_kyma-system_fluent-bit-*.log",
 		"/var/log/containers/*system-logs-agent-*_kyma-system_collector-*.log",
 		"/var/log/containers/*system-logs-collector-*_kyma-system_collector-*.log",
-		"/var/log/containers/telemetry-log-agent-*_kyma-system_collector-*.log",
+		"/var/log/containers/" + names.LogAgent + "-*_kyma-system_collector-*.log",
 		"/var/log/containers/*_*_container1-*.log",
 		"/var/log/containers/*_*_container2-*.log",
 	}, ",")

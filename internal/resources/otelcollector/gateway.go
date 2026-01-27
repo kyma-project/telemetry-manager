@@ -24,17 +24,18 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 )
 
 const (
-	LogGatewayName    = "telemetry-log-gateway"
-	MetricGatewayName = "telemetry-metric-gateway"
-	TraceGatewayName  = "telemetry-trace-gateway"
+	LogGatewayName    = names.LogGateway
+	MetricGatewayName = names.MetricGateway
+	TraceGatewayName  = names.TraceGateway
 
-	MetricOTLPServiceName = "telemetry-otlp-metrics"
-	TraceOTLPServiceName  = "telemetry-otlp-traces"
-	LogOTLPServiceName    = "telemetry-otlp-logs"
+	MetricOTLPServiceName = names.OTLPMetricsService
+	TraceOTLPServiceName  = names.OTLPTracesService
+	LogOTLPServiceName    = names.OTLPLogsService
 )
 
 var (

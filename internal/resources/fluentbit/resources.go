@@ -24,18 +24,19 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	fbports "github.com/kyma-project/telemetry-manager/internal/fluentbit/ports"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 )
 
 const (
-	LogAgentName              = "telemetry-fluent-bit"
-	fbSectionsConfigMapName   = LogAgentName + "-sections"
-	fbFilesConfigMapName      = LogAgentName + "-files"
-	fbLuaConfigMapName        = LogAgentName + "-luascripts"
-	fbParsersConfigMapName    = LogAgentName + "-parsers"
-	fbEnvConfigSecretName     = LogAgentName + "-env"
-	fbTLSFileConfigSecretName = LogAgentName + "-output-tls-config"
-	fbDaemonSetName           = LogAgentName
+	LogAgentName              = names.FluentBitAgent
+	fbSectionsConfigMapName   = names.FluentBitSectionsConfigMap
+	fbFilesConfigMapName      = names.FluentBitFilesConfigMap
+	fbLuaConfigMapName        = names.FluentBitLuaScriptsConfigMap
+	fbParsersConfigMapName    = names.FluentBitParsersConfigMap
+	fbEnvConfigSecretName     = names.FluentBitEnvSecret
+	fbTLSFileConfigSecretName = names.FluentBitTLSConfigSecret
+	fbDaemonSetName           = names.FluentBitAgent
 
 	exporterContainerName  = "exporter"
 	chownInitContainerName = "checkpoint-dir-ownership-modifier"

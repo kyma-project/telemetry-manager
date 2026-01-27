@@ -8,16 +8,17 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 )
 
 func TestCreateInput(t *testing.T) {
 	includePath := "/var/log/containers/*.log"
-	exlucdePath := "/var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log"
+	exlucdePath := "/var/log/containers/" + names.FluentBitAgent + "-*_kyma-system_fluent-bit-*.log"
 	expected := `[INPUT]
     name             tail
     alias            test-logpipeline
     db               /data/flb_test-logpipeline.db
-    exclude_path     /var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log
+    exclude_path     /var/log/containers/` + names.FluentBitAgent + `-*_kyma-system_fluent-bit-*.log
     mem_buf_limit    5MB
     multiline.parser cri
     path             /var/log/containers/*.log
@@ -56,10 +57,10 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 				"/var/log/containers/*_*_*-*.log",
 			},
 			[]string{
-				"/var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log",
+				"/var/log/containers/" + names.FluentBitAgent + "-*_kyma-system_fluent-bit-*.log",
 				"/var/log/containers/*system-logs-agent-*_kyma-system_collector-*.log",
 				"/var/log/containers/*system-logs-collector-*_kyma-system_collector-*.log",
-				"/var/log/containers/telemetry-log-agent-*_kyma-system_collector-*.log",
+				"/var/log/containers/" + names.LogAgent + "-*_kyma-system_collector-*.log",
 				"/var/log/containers/*_kyma-system_*-*.log",
 				"/var/log/containers/*_kube-system_*-*.log",
 				"/var/log/containers/*_istio-system_*-*.log",
@@ -103,10 +104,10 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 				"/var/log/containers/*_foo_*-*.log",
 			},
 			[]string{
-				"/var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log",
+				"/var/log/containers/" + names.FluentBitAgent + "-*_kyma-system_fluent-bit-*.log",
 				"/var/log/containers/*system-logs-agent-*_kyma-system_collector-*.log",
 				"/var/log/containers/*system-logs-collector-*_kyma-system_collector-*.log",
-				"/var/log/containers/telemetry-log-agent-*_kyma-system_collector-*.log",
+				"/var/log/containers/" + names.LogAgent + "-*_kyma-system_collector-*.log",
 			},
 		},
 		{
@@ -129,10 +130,10 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 				"/var/log/containers/*_*_foo-*.log",
 			},
 			[]string{
-				"/var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log",
+				"/var/log/containers/" + names.FluentBitAgent + "-*_kyma-system_fluent-bit-*.log",
 				"/var/log/containers/*system-logs-agent-*_kyma-system_collector-*.log",
 				"/var/log/containers/*system-logs-collector-*_kyma-system_collector-*.log",
-				"/var/log/containers/telemetry-log-agent-*_kyma-system_collector-*.log",
+				"/var/log/containers/" + names.LogAgent + "-*_kyma-system_collector-*.log",
 				"/var/log/containers/*_kyma-system_*-*.log",
 				"/var/log/containers/*_kube-system_*-*.log",
 				"/var/log/containers/*_istio-system_*-*.log",
@@ -163,10 +164,10 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 				"/var/log/containers/*_foo_bar-*.log",
 			},
 			[]string{
-				"/var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log",
+				"/var/log/containers/" + names.FluentBitAgent + "-*_kyma-system_fluent-bit-*.log",
 				"/var/log/containers/*system-logs-agent-*_kyma-system_collector-*.log",
 				"/var/log/containers/*system-logs-collector-*_kyma-system_collector-*.log",
-				"/var/log/containers/telemetry-log-agent-*_kyma-system_collector-*.log",
+				"/var/log/containers/" + names.LogAgent + "-*_kyma-system_collector-*.log",
 			},
 		},
 		{
@@ -196,10 +197,10 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 				"/var/log/containers/*_bar_istio-proxy-*.log",
 			},
 			[]string{
-				"/var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log",
+				"/var/log/containers/" + names.FluentBitAgent + "-*_kyma-system_fluent-bit-*.log",
 				"/var/log/containers/*system-logs-agent-*_kyma-system_collector-*.log",
 				"/var/log/containers/*system-logs-collector-*_kyma-system_collector-*.log",
-				"/var/log/containers/telemetry-log-agent-*_kyma-system_collector-*.log",
+				"/var/log/containers/" + names.LogAgent + "-*_kyma-system_collector-*.log",
 			},
 		},
 
@@ -223,10 +224,10 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 				"/var/log/containers/*_*_*-*.log",
 			},
 			[]string{
-				"/var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log",
+				"/var/log/containers/" + names.FluentBitAgent + "-*_kyma-system_fluent-bit-*.log",
 				"/var/log/containers/*system-logs-agent-*_kyma-system_collector-*.log",
 				"/var/log/containers/*system-logs-collector-*_kyma-system_collector-*.log",
-				"/var/log/containers/telemetry-log-agent-*_kyma-system_collector-*.log",
+				"/var/log/containers/" + names.LogAgent + "-*_kyma-system_collector-*.log",
 				"/var/log/containers/*_foo_*-*.log",
 			},
 		},
@@ -250,10 +251,10 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 				"/var/log/containers/*_*_*-*.log",
 			},
 			[]string{
-				"/var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log",
+				"/var/log/containers/" + names.FluentBitAgent + "-*_kyma-system_fluent-bit-*.log",
 				"/var/log/containers/*system-logs-agent-*_kyma-system_collector-*.log",
 				"/var/log/containers/*system-logs-collector-*_kyma-system_collector-*.log",
-				"/var/log/containers/telemetry-log-agent-*_kyma-system_collector-*.log",
+				"/var/log/containers/" + names.LogAgent + "-*_kyma-system_collector-*.log",
 				"/var/log/containers/*_kyma-system_*-*.log",
 				"/var/log/containers/*_kube-system_*-*.log",
 				"/var/log/containers/*_istio-system_*-*.log",
@@ -285,10 +286,10 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 				"/var/log/containers/*_*_*-*.log",
 			},
 			[]string{
-				"/var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log",
+				"/var/log/containers/" + names.FluentBitAgent + "-*_kyma-system_fluent-bit-*.log",
 				"/var/log/containers/*system-logs-agent-*_kyma-system_collector-*.log",
 				"/var/log/containers/*system-logs-collector-*_kyma-system_collector-*.log",
-				"/var/log/containers/telemetry-log-agent-*_kyma-system_collector-*.log",
+				"/var/log/containers/" + names.LogAgent + "-*_kyma-system_collector-*.log",
 				"/var/log/containers/*_foo_*-*.log",
 				"/var/log/containers/*_*_bar-*.log",
 			},
@@ -319,10 +320,10 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 				"/var/log/containers/*_foo_*-*.log",
 			},
 			[]string{
-				"/var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log",
+				"/var/log/containers/" + names.FluentBitAgent + "-*_kyma-system_fluent-bit-*.log",
 				"/var/log/containers/*system-logs-agent-*_kyma-system_collector-*.log",
 				"/var/log/containers/*system-logs-collector-*_kyma-system_collector-*.log",
-				"/var/log/containers/telemetry-log-agent-*_kyma-system_collector-*.log",
+				"/var/log/containers/" + names.LogAgent + "-*_kyma-system_collector-*.log",
 			},
 		},
 		{
@@ -344,10 +345,10 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 				"/var/log/containers/*_*_*-*.log", // should fall back to wildcard
 			},
 			[]string{
-				"/var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log",
+				"/var/log/containers/" + names.FluentBitAgent + "-*_kyma-system_fluent-bit-*.log",
 				"/var/log/containers/*system-logs-agent-*_kyma-system_collector-*.log",
 				"/var/log/containers/*system-logs-collector-*_kyma-system_collector-*.log",
-				"/var/log/containers/telemetry-log-agent-*_kyma-system_collector-*.log",
+				"/var/log/containers/" + names.LogAgent + "-*_kyma-system_collector-*.log",
 			},
 		},
 		{
@@ -369,10 +370,10 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 				"/var/log/containers/*_*_*-*.log", // should fall back to wildcard
 			},
 			[]string{
-				"/var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log",
+				"/var/log/containers/" + names.FluentBitAgent + "-*_kyma-system_fluent-bit-*.log",
 				"/var/log/containers/*system-logs-agent-*_kyma-system_collector-*.log",
 				"/var/log/containers/*system-logs-collector-*_kyma-system_collector-*.log",
-				"/var/log/containers/telemetry-log-agent-*_kyma-system_collector-*.log",
+				"/var/log/containers/" + names.LogAgent + "-*_kyma-system_collector-*.log",
 				"/var/log/containers/*_kyma-system_*-*.log",
 				"/var/log/containers/*_kube-system_*-*.log",
 				"/var/log/containers/*_istio-system_*-*.log",
@@ -398,10 +399,10 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 			},
 			[]string{
 				// Only agent exclusions, NO system namespace exclusions
-				"/var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log",
+				"/var/log/containers/" + names.FluentBitAgent + "-*_kyma-system_fluent-bit-*.log",
 				"/var/log/containers/*system-logs-agent-*_kyma-system_collector-*.log",
 				"/var/log/containers/*system-logs-collector-*_kyma-system_collector-*.log",
-				"/var/log/containers/telemetry-log-agent-*_kyma-system_collector-*.log",
+				"/var/log/containers/" + names.LogAgent + "-*_kyma-system_collector-*.log",
 			},
 		},
 		{
@@ -424,10 +425,10 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 			},
 			[]string{
 				// System namespaces still excluded (default behavior)
-				"/var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log",
+				"/var/log/containers/" + names.FluentBitAgent + "-*_kyma-system_fluent-bit-*.log",
 				"/var/log/containers/*system-logs-agent-*_kyma-system_collector-*.log",
 				"/var/log/containers/*system-logs-collector-*_kyma-system_collector-*.log",
-				"/var/log/containers/telemetry-log-agent-*_kyma-system_collector-*.log",
+				"/var/log/containers/" + names.LogAgent + "-*_kyma-system_collector-*.log",
 				"/var/log/containers/*_kyma-system_*-*.log",
 				"/var/log/containers/*_kube-system_*-*.log",
 				"/var/log/containers/*_istio-system_*-*.log",

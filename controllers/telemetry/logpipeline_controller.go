@@ -49,6 +49,7 @@ import (
 	logpipelineotel "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/otel"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
@@ -85,7 +86,7 @@ func NewLogPipelineController(config LogPipelineControllerConfig, client client.
 	pipelineLock := resourcelock.NewLocker(
 		client,
 		types.NamespacedName{
-			Name:      "telemetry-logpipeline-lock",
+			Name:      names.LogPipelineLock,
 			Namespace: config.TargetNamespace(),
 		},
 		MaxPipelineCount,
@@ -94,7 +95,7 @@ func NewLogPipelineController(config LogPipelineControllerConfig, client client.
 	pipelineSyncer := resourcelock.NewSyncer(
 		client,
 		types.NamespacedName{
-			Name:      "telemetry-logpipeline-sync",
+			Name:      names.LogPipelineSync,
 			Namespace: config.TargetNamespace(),
 		},
 	)
