@@ -12,8 +12,6 @@ const (
 	IstioSystemNamespaceName = "istio-system"
 
 	TelemetryManagerMetricsPort = 8080
-
-	DefaultTelemetryName = "default"
 )
 
 var (
@@ -84,7 +82,7 @@ var (
 	SelfMonitorName          = types.NamespacedName{Name: names.SelfMonitor, Namespace: SystemNamespaceName}
 	SelfMonitorNetworkPolicy = types.NamespacedName{Name: names.SelfMonitor, Namespace: SystemNamespaceName}
 
-	TelemetryName = types.NamespacedName{Name: DefaultTelemetryName, Namespace: SystemNamespaceName}
+	TelemetryName = types.NamespacedName{Name: names.DefaultTelemetry, Namespace: SystemNamespaceName}
 
 	WebhookCertSecret = types.NamespacedName{Name: names.ManagerWebhookCertSecret, Namespace: SystemNamespaceName}
 )
