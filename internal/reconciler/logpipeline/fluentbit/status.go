@@ -69,7 +69,7 @@ func (r *Reconciler) updateStatusUnsupportedMode(ctx context.Context, pipeline *
 func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) {
 	condition := commonstatus.GetAgentHealthyCondition(ctx,
 		r.agentProber,
-		types.NamespacedName{Name: names.LogAgent, Namespace: r.globals.TargetNamespace()},
+		types.NamespacedName{Name: names.FluentBit, Namespace: r.globals.TargetNamespace()},
 		r.errToMsgConverter,
 		commonstatus.SignalTypeLogs)
 	meta.SetStatusCondition(&pipeline.Status.Conditions, *condition)
