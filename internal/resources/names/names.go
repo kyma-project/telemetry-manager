@@ -1,83 +1,85 @@
 package names
 
+const telemetryPrefix = "telemetry-"
+
 // Agent names
 const (
-	LogAgent    = "telemetry-log-agent"
-	MetricAgent = "telemetry-metric-agent"
+	LogAgent    = telemetryPrefix + "log-agent"
+	MetricAgent = telemetryPrefix + "metric-agent"
 )
 
 // Gateway names
 const (
-	LogGateway    = "telemetry-log-gateway"
-	MetricGateway = "telemetry-metric-gateway"
-	TraceGateway  = "telemetry-trace-gateway"
+	LogGateway    = telemetryPrefix + "log-gateway"
+	MetricGateway = telemetryPrefix + "metric-gateway"
+	TraceGateway  = telemetryPrefix + "trace-gateway"
 )
 
 // Fluent Bit resource names
 const (
-	FluentBitAgent               = "telemetry-fluent-bit"
-	FluentBitSectionsConfigMap   = "telemetry-fluent-bit-sections"
-	FluentBitFilesConfigMap      = "telemetry-fluent-bit-files"
-	FluentBitLuaScriptsConfigMap = "telemetry-fluent-bit-luascripts"
-	FluentBitParsersConfigMap    = "telemetry-fluent-bit-parsers"
-	FluentBitEnvSecret           = "telemetry-fluent-bit-env"
-	FluentBitTLSConfigSecret     = "telemetry-fluent-bit-output-tls-config"
+	FluentBitAgent               = telemetryPrefix + "fluent-bit"
+	FluentBitSectionsConfigMap   = telemetryPrefix + "fluent-bit-sections"
+	FluentBitFilesConfigMap      = telemetryPrefix + "fluent-bit-files"
+	FluentBitLuaScriptsConfigMap = telemetryPrefix + "fluent-bit-luascripts"
+	FluentBitParsersConfigMap    = telemetryPrefix + "fluent-bit-parsers"
+	FluentBitEnvSecret           = telemetryPrefix + "fluent-bit-env"
+	FluentBitTLSConfigSecret     = telemetryPrefix + "fluent-bit-output-tls-config"
 )
 
 // OTLP Service names
 const (
-	OTLPMetricsService = "telemetry-otlp-metrics"
-	OTLPTracesService  = "telemetry-otlp-traces"
-	OTLPLogsService    = "telemetry-otlp-logs"
+	OTLPMetricsService = telemetryPrefix + "otlp-metrics"
+	OTLPTracesService  = telemetryPrefix + "otlp-traces"
+	OTLPLogsService    = telemetryPrefix + "otlp-logs"
 )
 
 // Self-monitoring resource names
 const (
-	SelfMonitor = "telemetry-self-monitor"
+	SelfMonitor = telemetryPrefix + "self-monitor"
 )
 
 // Pipeline lock and sync names
 const (
-	LogPipelineLock = "telemetry-logpipeline-lock"
-	LogPipelineSync = "telemetry-logpipeline-sync"
+	LogPipelineLock = telemetryPrefix + "logpipeline-lock"
+	LogPipelineSync = telemetryPrefix + "logpipeline-sync"
 
-	MetricPipelineLock = "telemetry-metricpipeline-lock"
-	MetricPipelineSync = "telemetry-metricpipeline-sync"
+	MetricPipelineLock = telemetryPrefix + "metricpipeline-lock"
+	MetricPipelineSync = telemetryPrefix + "metricpipeline-sync"
 
-	TracePipelineLock = "telemetry-tracepipeline-lock"
-	TracePipelineSync = "telemetry-tracepipeline-sync"
+	TracePipelineLock = telemetryPrefix + "tracepipeline-lock"
+	TracePipelineSync = telemetryPrefix + "tracepipeline-sync"
 )
 
 // Webhook resource names
 const (
-	WebhookService        = "telemetry-manager-webhook"
-	WebhookCertSecret     = "telemetry-webhook-cert"
-	ValidatingWebhookName = "telemetry-validating-webhook.kyma-project.io"
-	MutatingWebhookName   = "telemetry-mutating-webhook.kyma-project.io"
+	WebhookService        = telemetryPrefix + "manager-webhook"
+	WebhookCertSecret     = telemetryPrefix + "webhook-cert"
+	ValidatingWebhookName = telemetryPrefix + "validating-webhook.kyma-project.io"
+	MutatingWebhookName   = telemetryPrefix + "mutating-webhook.kyma-project.io"
 )
 
 // Manager resource names
 const (
-	Manager        = "telemetry-manager"
-	ManagerMetrics = "telemetry-manager-metrics"
+	Manager        = telemetryPrefix + "manager"
+	ManagerMetrics = telemetryPrefix + "manager-metrics"
 )
 
 // Configuration ConfigMaps
 const (
-	MetricPipelinesConfig = "telemetry-metricpipelines"
-	LogPipelinesConfig    = "telemetry-logpipelines"
-	TracePipelinesConfig  = "telemetry-tracepipelines"
-	ModuleConfig          = "telemetry-module"
-	OverrideConfig        = "telemetry-override-config"
+	MetricPipelinesConfig = telemetryPrefix + "metricpipelines"
+	LogPipelinesConfig    = telemetryPrefix + "logpipelines"
+	TracePipelinesConfig  = telemetryPrefix + "tracepipelines"
+	ModuleConfig          = telemetryPrefix + "module"
+	OverrideConfig        = telemetryPrefix + "override-config"
 )
 
 // Priority classes
 const (
-	PriorityClass     = "telemetry-priority-class"
-	PriorityClassHigh = "telemetry-priority-class-high"
+	PriorityClass     = telemetryPrefix + "priority-class"
+	PriorityClassHigh = telemetryPrefix + "priority-class-high"
 )
 
 // Network policy names
 const (
-	ManagerNetworkPolicy = "telemetry-manager"
+	ManagerNetworkPolicy = telemetryPrefix + "manager"
 )

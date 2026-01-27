@@ -27,9 +27,6 @@ import (
 )
 
 const (
-	MetricAgentName = names.MetricAgent
-	LogAgentName    = names.LogAgent
-
 	IstioCertPath       = "/etc/istio-output-certs"
 	istioCertVolumeName = "istio-certs"
 

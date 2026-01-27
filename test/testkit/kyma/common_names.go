@@ -13,19 +13,7 @@ const (
 
 	TelemetryManagerMetricsPort = 8080
 
-	MetricGatewayBaseName = names.MetricGateway
-	MetricAgentBaseName   = names.MetricAgent
-	TraceGatewayBaseName  = names.TraceGateway
-	LogAgentBaseName      = names.LogAgent
-	LogGatewayBaseName    = names.LogGateway
-	FluentBitBaseName     = names.FluentBitAgent
-	SelfMonitorBaseName   = names.SelfMonitor
-	DefaultTelemetryName  = "default"
-	ValidatingWebhookName = names.ValidatingWebhookName
-
-	MetricGatewayServiceName = names.OTLPMetricsService
-	TraceGatewayServiceName  = names.OTLPTracesService
-	LogGatewayServiceName    = names.OTLPLogsService
+	DefaultTelemetryName = "default"
 )
 
 var (

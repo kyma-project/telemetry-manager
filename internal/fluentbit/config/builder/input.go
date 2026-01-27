@@ -8,7 +8,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/namespaces"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
-	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 )
 
 func createInputSection(pipeline *telemetryv1beta1.LogPipeline, includePath, excludePath string) string {
@@ -61,7 +60,7 @@ func createExcludePath(pipeline *telemetryv1beta1.LogPipeline, collectAgentLogs 
 
 	excludeSytemLogAgentPath := makeLogPath("kyma-system", fmt.Sprintf("*%s-*", commonresources.SystemLogAgentName), "collector")
 	excludeSytemLogCollectorPath := makeLogPath("kyma-system", fmt.Sprintf("*%s-*", commonresources.SystemLogCollectorName), "collector")
-	excludeOtlpLogAgentPath := makeLogPath("kyma-system", fmt.Sprintf("%s-*", otelcollector.LogAgentName), "collector")
+	excludeOtlpLogAgentPath := makeLogPath("kyma-system", fmt.Sprintf("%s-*", names.LogAgent), "collector")
 
 	excludePath = append(excludePath, excludeSytemLogAgentPath, excludeSytemLogCollectorPath, excludeOtlpLogAgentPath)
 

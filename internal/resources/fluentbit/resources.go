@@ -29,7 +29,6 @@ import (
 )
 
 const (
-	LogAgentName              = names.FluentBitAgent
 	fbSectionsConfigMapName   = names.FluentBitSectionsConfigMap
 	fbFilesConfigMapName      = names.FluentBitFilesConfigMap
 	fbLuaConfigMapName        = names.FluentBitLuaScriptsConfigMap
@@ -334,7 +333,7 @@ func (aad *AgentApplierDeleter) makeDaemonSet(namespace string, checksum string)
 	ds := &appsv1.DaemonSet{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        LogAgentName,
+			Name:        names.LogAgent,
 			Namespace:   namespace,
 			Labels:      resourceLabels,
 			Annotations: resourceAnnotations,
@@ -348,14 +347,14 @@ func (aad *AgentApplierDeleter) makeDaemonSet(namespace string, checksum string)
 					Annotations: podAnnotations,
 					Labels:      podLabels,
 				},
-				Spec: commonresources.MakePodSpec(LogAgentName,
+				Spec: commonresources.MakePodSpec(names.LogAgent,
 					commonresources.WithPriorityClass(aad.priorityClassName),
 					commonresources.WithTolerations(commonresources.CriticalDaemonSetTolerations),
 					commonresources.WithVolumes(aad.fluentBitVolumes()),
 					commonresources.WithClusterTrustBundleVolume(aad.globals.ClusterTrustBundleName()),
 					commonresources.WithImagePullSecretName(aad.globals.ImagePullSecretName()),
 					commonresources.WithContainer("fluent-bit", aad.fluentBitImage,
-						commonresources.WithEnvVarsFromSecret(fmt.Sprintf("%s-env", LogAgentName)),
+						commonresources.WithEnvVarsFromSecret(fmt.Sprintf("%s-env", names.LogAgent)),
 						commonresources.WithRunAsGroup(commonresources.GroupRoot),
 						commonresources.WithRunAsUser(commonresources.UserDefault),
 						commonresources.WithPort("http", fbports.HTTP),
@@ -440,7 +439,7 @@ func (aad *AgentApplierDeleter) fluentBitVolumes() []corev1.Volume {
 			Name: configVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{Name: LogAgentName},
+					LocalObjectReference: corev1.LocalObjectReference{Name: names.LogAgent},
 				},
 			},
 		},
@@ -448,7 +447,7 @@ func (aad *AgentApplierDeleter) fluentBitVolumes() []corev1.Volume {
 			Name: luaScriptsVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{Name: fmt.Sprintf("%s-luascripts", LogAgentName)},
+					LocalObjectReference: corev1.LocalObjectReference{Name: fmt.Sprintf("%s-luascripts", names.LogAgent)},
 				},
 			},
 		},
@@ -468,7 +467,7 @@ func (aad *AgentApplierDeleter) fluentBitVolumes() []corev1.Volume {
 			Name: dynamicConfigVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{Name: fmt.Sprintf("%s-sections", LogAgentName)},
+					LocalObjectReference: corev1.LocalObjectReference{Name: fmt.Sprintf("%s-sections", names.LogAgent)},
 					Optional:             ptr.To(true),
 				},
 			},
@@ -477,7 +476,7 @@ func (aad *AgentApplierDeleter) fluentBitVolumes() []corev1.Volume {
 			Name: dynamicParsersConfigVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{Name: fmt.Sprintf("%s-parsers", LogAgentName)},
+					LocalObjectReference: corev1.LocalObjectReference{Name: fmt.Sprintf("%s-parsers", names.LogAgent)},
 					Optional:             ptr.To(true),
 				},
 			},
@@ -486,7 +485,7 @@ func (aad *AgentApplierDeleter) fluentBitVolumes() []corev1.Volume {
 			Name: dynamicFilesVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{Name: fmt.Sprintf("%s-files", LogAgentName)},
+					LocalObjectReference: corev1.LocalObjectReference{Name: fmt.Sprintf("%s-files", names.LogAgent)},
 					Optional:             ptr.To(true),
 				},
 			},
@@ -494,14 +493,14 @@ func (aad *AgentApplierDeleter) fluentBitVolumes() []corev1.Volume {
 		{
 			Name: varFluentBitVolumeName,
 			VolumeSource: corev1.VolumeSource{
-				HostPath: &corev1.HostPathVolumeSource{Path: fmt.Sprintf("/var/%s", LogAgentName)},
+				HostPath: &corev1.HostPathVolumeSource{Path: fmt.Sprintf("/var/%s", names.LogAgent)},
 			},
 		},
 		{
 			Name: outputTLSConfigVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: fmt.Sprintf("%s-output-tls-config", LogAgentName),
+					SecretName: fmt.Sprintf("%s-output-tls-config", names.LogAgent),
 				},
 			},
 		},

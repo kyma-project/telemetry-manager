@@ -7,6 +7,7 @@ import (
 
 	"github.com/prometheus/common/model"
 
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 )
 
@@ -79,7 +80,7 @@ func MakeRules() RuleGroups {
 
 	metricAgentRuleBuilder := otelCollectorRuleBuilder{
 		dataType:    ruleDataType(typeMetricPipeline),
-		serviceName: otelcollector.MetricAgentName + "-metrics",
+		serviceName: names.MetricAgent + "-metrics",
 		namePrefix:  ruleNamePrefix(typeMetricPipeline),
 	}
 	rules = append(rules, metricAgentRuleBuilder.agentRules()...)
@@ -101,7 +102,7 @@ func MakeRules() RuleGroups {
 
 	logAgentRuleBuilder := otelCollectorRuleBuilder{
 		dataType:    ruleDataType(typeLogPipeline),
-		serviceName: otelcollector.LogAgentName + "-metrics",
+		serviceName: names.LogAgent + "-metrics",
 		namePrefix:  ruleNamePrefix(typeLogPipeline),
 	}
 
