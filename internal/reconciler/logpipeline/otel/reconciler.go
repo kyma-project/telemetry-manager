@@ -320,7 +320,6 @@ func (r *Reconciler) reconcileLogGateway(ctx context.Context, pipeline *telemetr
 		IstioEnabled:                   isIstioActive,
 		Replicas:                       r.getReplicaCountFromTelemetry(ctx),
 		ResourceRequirementsMultiplier: len(allPipelines),
-		UseDaemonSetForGateway:         r.globals.UseDaemonSetForGateway(),
 	}
 
 	if err := r.gatewayApplierDeleter.ApplyResources(

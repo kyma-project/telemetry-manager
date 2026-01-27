@@ -137,9 +137,8 @@ func TestGateway_ApplyResources(t *testing.T) {
 				CollectorEnvVars: map[string][]byte{
 					"DUMMY_ENV_VAR": []byte("foo"),
 				},
-				IstioEnabled:           tt.istioEnabled,
-				Replicas:               2,
-				UseDaemonSetForGateway: tt.useDaemonSet,
+				IstioEnabled: tt.istioEnabled,
+				Replicas:     2,
 			})
 			require.NoError(t, err)
 
@@ -221,6 +220,7 @@ func TestGateway_DeleteResources(t *testing.T) {
 			scheme := runtime.NewScheme()
 			utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 			utilruntime.Must(istiosecurityclientv1.AddToScheme(scheme))
+			utilruntime.Must(istionetworkingclientv1.AddToScheme(scheme))
 
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithInterceptorFuncs(interceptor.Funcs{
 				Create: func(ctx context.Context, c client.WithWatch, obj client.Object, _ ...client.CreateOption) error {
@@ -230,8 +230,7 @@ func TestGateway_DeleteResources(t *testing.T) {
 			}).Build()
 
 			err := tt.sut.ApplyResources(t.Context(), fakeClient, GatewayApplyOptions{
-				IstioEnabled:           tt.istioEnabled,
-				UseDaemonSetForGateway: tt.useDaemonSet,
+				IstioEnabled: tt.istioEnabled,
 			})
 			require.NoError(t, err)
 
@@ -239,7 +238,7 @@ func TestGateway_DeleteResources(t *testing.T) {
 			require.NoError(t, err)
 
 			for i := range created {
-				// an update operation on a non-existent object should return a NotFound error
+				// All objects should be deleted
 				err = fakeClient.Get(t.Context(), client.ObjectKeyFromObject(created[i]), created[i])
 				require.True(t, apierrors.IsNotFound(err), "want not found, got %v: %#v", err, created[i])
 			}
@@ -266,8 +265,7 @@ func TestGateway_Annotations(t *testing.T) {
 			name: "deployment without istio",
 			sut:  NewMetricGatewayApplierDeleter(config.NewGlobal(config.WithTargetNamespace("kyma-system")), image, priorityClassName),
 			opts: GatewayApplyOptions{
-				IstioEnabled:           false,
-				UseDaemonSetForGateway: false,
+				IstioEnabled: false,
 			},
 			shouldHaveInterceptionMode: false,
 		},
@@ -275,27 +273,24 @@ func TestGateway_Annotations(t *testing.T) {
 			name: "deployment with istio - only metrics port excluded",
 			sut:  NewMetricGatewayApplierDeleter(config.NewGlobal(config.WithTargetNamespace("kyma-system")), image, priorityClassName),
 			opts: GatewayApplyOptions{
-				IstioEnabled:           true,
-				UseDaemonSetForGateway: false,
+				IstioEnabled: true,
 			},
 			expectedExcludeInboundPorts: "8888",
 			shouldHaveInterceptionMode:  true,
 		},
 		{
 			name: "daemonset without istio",
-			sut:  NewMetricGatewayApplierDeleter(globalsWithDaemonSet, image, priorityClassName),
+			sut:  NewLogGatewayApplierDeleter(globalsWithDaemonSet, image, priorityClassName),
 			opts: GatewayApplyOptions{
-				IstioEnabled:           false,
-				UseDaemonSetForGateway: true,
+				IstioEnabled: false,
 			},
 			shouldHaveInterceptionMode: false,
 		},
 		{
 			name: "daemonset with istio - metrics, grpc, and http ports excluded",
-			sut:  NewMetricGatewayApplierDeleter(globalsWithDaemonSet, image, priorityClassName),
+			sut:  NewLogGatewayApplierDeleter(globalsWithDaemonSet, image, priorityClassName),
 			opts: GatewayApplyOptions{
-				IstioEnabled:           true,
-				UseDaemonSetForGateway: true,
+				IstioEnabled: true,
 			},
 			expectedExcludeInboundPorts: "8888,4317,4318",
 			shouldHaveInterceptionMode:  true,

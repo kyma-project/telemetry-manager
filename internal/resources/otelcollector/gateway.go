@@ -73,6 +73,9 @@ type GatewayApplierDeleter struct {
 	image           string
 	otlpServiceName string
 	rbac            rbac
+	// useDaemonSet indicates whether to deploy this gateway as a DaemonSet instead of a Deployment.
+	// This is determined at construction time based on the feature flag and doesn't change during runtime.
+	useDaemonSet bool
 
 	baseMemoryLimit      resource.Quantity
 	dynamicMemoryLimit   resource.Quantity
@@ -95,8 +98,6 @@ type GatewayApplyOptions struct {
 	// This value is multiplied with a base resource requirement to calculate the actual CPU and memory limits.
 	// A value of 1 applies the base limits; values greater than 1 increase those limits proportionally.
 	ResourceRequirementsMultiplier int
-	// Experimental feature to deploy gateways as DaemonSets instead of Deployments.
-	UseDaemonSetForGateway bool
 }
 
 //nolint:dupl // repeating the code as we have three different signals
@@ -109,8 +110,9 @@ func NewLogGatewayApplierDeleter(globals config.Global, image, priorityClassName
 
 	baseName := LogGatewayName
 	serviceName := LogOTLPServiceName
+	useDaemonSet := globals.UseDaemonSetForGateway()
 
-	if globals.UseDaemonSetForGateway() {
+	if useDaemonSet {
 		baseName = OTLPGatewayName
 		serviceName = OTLPServiceName
 	}
@@ -122,6 +124,7 @@ func NewLogGatewayApplierDeleter(globals config.Global, image, priorityClassName
 		image:                image,
 		otlpServiceName:      serviceName,
 		rbac:                 makeOTLPGatewayRBAC(baseName, globals.TargetNamespace()),
+		useDaemonSet:         useDaemonSet,
 		baseMemoryLimit:      logGatewayBaseMemoryLimit,
 		dynamicMemoryLimit:   logGatewayDynamicMemoryLimit,
 		baseCPURequest:       logGatewayBaseCPURequest,
@@ -155,6 +158,7 @@ func NewMetricGatewayApplierDeleter(globals config.Global, image, priorityClassN
 		image:                image,
 		otlpServiceName:      MetricOTLPServiceName,
 		rbac:                 makeMetricGatewayRBAC(globals.TargetNamespace()),
+		useDaemonSet:         false,
 		baseMemoryLimit:      metricGatewayBaseMemoryLimit,
 		dynamicMemoryLimit:   metricGatewayDynamicMemoryLimit,
 		baseCPURequest:       metricGatewayBaseCPURequest,
@@ -188,6 +192,7 @@ func NewTraceGatewayApplierDeleter(globals config.Global, image, priorityClassNa
 		image:                image,
 		otlpServiceName:      TraceOTLPServiceName,
 		rbac:                 makeTraceGatewayRBAC(globals.TargetNamespace()),
+		useDaemonSet:         false,
 		baseMemoryLimit:      traceGatewayBaseMemoryLimit,
 		dynamicMemoryLimit:   traceGatewayDynamicMemoryLimit,
 		baseCPURequest:       traceGatewayBaseCPURequest,
@@ -230,7 +235,7 @@ func (gad *GatewayApplierDeleter) ApplyResources(ctx context.Context, c client.C
 
 	configChecksum := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, []corev1.Secret{*secret})
 
-	if opts.UseDaemonSetForGateway {
+	if gad.useDaemonSet {
 		if err := k8sutils.CreateOrUpdateDaemonSet(ctx, c, gad.makeGatewayDaemonSet(configChecksum, opts)); err != nil {
 			return fmt.Errorf("failed to create daemonset: %w", err)
 		}
@@ -240,12 +245,20 @@ func (gad *GatewayApplierDeleter) ApplyResources(ctx context.Context, c client.C
 		}
 	}
 
-	if err := k8sutils.CreateOrUpdateService(ctx, c, gad.makeOTLPService(opts.UseDaemonSetForGateway)); err != nil {
+	if err := k8sutils.CreateOrUpdateService(ctx, c, gad.makeOTLPService(gad.useDaemonSet)); err != nil {
 		return fmt.Errorf("failed to create otlp service: %w", err)
 	}
 
+	// When using DaemonSet mode with the unified OTLP gateway, create legacy service names
+	// that point to the new gateway for backward compatibility
+	if gad.useDaemonSet && gad.baseName == OTLPGatewayName {
+		if err := k8sutils.CreateOrUpdateService(ctx, c, gad.makeLegacyOTLPService(LogOTLPServiceName)); err != nil {
+			return fmt.Errorf("failed to create legacy log otlp service: %w", err)
+		}
+	}
+
 	if opts.IstioEnabled {
-		if err := gad.applyIstioResources(ctx, c, opts.UseDaemonSetForGateway); err != nil {
+		if err := gad.applyIstioResources(ctx, c, gad.useDaemonSet); err != nil {
 			return fmt.Errorf("failed to create istio resources: %w", err)
 		}
 	}
@@ -277,26 +290,50 @@ func (gad *GatewayApplierDeleter) DeleteResources(ctx context.Context, c client.
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete configmap: %w", err))
 	}
 
-	// Try to delete both Deployment and DaemonSet (one will exist depending on the current configuration)
-	deployment := appsv1.Deployment{ObjectMeta: objectMeta}
-	if err := k8sutils.DeleteObject(ctx, c, &deployment); err != nil && !errors.Is(err, client.IgnoreNotFound(err)) {
-		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete deployment: %w", err))
+	// Delete the workload based on current mode
+	if gad.useDaemonSet {
+		daemonSet := appsv1.DaemonSet{ObjectMeta: objectMeta}
+		if err := k8sutils.DeleteObject(ctx, c, &daemonSet); err != nil {
+			allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete daemonset: %w", err))
+		}
+
+		// When using DaemonSet mode (unified gateway), also clean up legacy deployment if it exists
+		// This handles the migration case from deployment to daemonset
+		if gad.baseName == OTLPGatewayName {
+			legacyDeployment := appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{
+				Name:      LogGatewayName,
+				Namespace: gad.globals.TargetNamespace(),
+			}}
+			if err := k8sutils.DeleteObject(ctx, c, &legacyDeployment); err != nil && !errors.Is(err, client.IgnoreNotFound(err)) {
+				allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete legacy deployment: %w", err))
+			}
+		}
+	} else {
+		deployment := appsv1.Deployment{ObjectMeta: objectMeta}
+		if err := k8sutils.DeleteObject(ctx, c, &deployment); err != nil {
+			allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete deployment: %w", err))
+		}
 	}
 
-	daemonSet := appsv1.DaemonSet{ObjectMeta: objectMeta}
-	if err := k8sutils.DeleteObject(ctx, c, &daemonSet); err != nil && !errors.Is(err, client.IgnoreNotFound(err)) {
-		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete daemonset: %w", err))
-	}
-
+	// Delete the OTLP service
 	OTLPService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: gad.otlpServiceName, Namespace: gad.globals.TargetNamespace()}}
 	if err := k8sutils.DeleteObject(ctx, c, &OTLPService); err != nil {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete otlp service: %w", err))
 	}
 
+	// When using DaemonSet mode (unified gateway), also delete the legacy service
+	// because we created it for backward compatibility and need to clean it up
+	if gad.useDaemonSet && gad.baseName == OTLPGatewayName {
+		legacyLogService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: LogOTLPServiceName, Namespace: gad.globals.TargetNamespace()}}
+		if err := k8sutils.DeleteObject(ctx, c, &legacyLogService); err != nil {
+			allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete legacy log otlp service: %w", err))
+		}
+	}
+
 	if isIstioActive {
-		peerAuthentication := istiosecurityclientv1.PeerAuthentication{ObjectMeta: objectMeta}
-		if err := k8sutils.DeleteObject(ctx, c, &peerAuthentication); err != nil {
-			allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete peerauthentication: %w", err))
+		err := gad.deleteIstioResources(ctx, c)
+		if err != nil {
+			allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete istio resources: %w", err))
 		}
 	}
 
@@ -319,74 +356,78 @@ func (gad *GatewayApplierDeleter) applyIstioResources(ctx context.Context, c cli
 	return nil
 }
 
+func (gad *GatewayApplierDeleter) deleteIstioResources(ctx context.Context, c client.Client) error {
+	var allErrors error
+
+	objectMeta := metav1.ObjectMeta{
+		Name:      gad.baseName,
+		Namespace: gad.globals.TargetNamespace(),
+	}
+
+	// Always try to delete both PeerAuthentication and DestinationRule to handle migration scenarios
+	// When migrating from Deployment to DaemonSet, we need to clean up the old PeerAuthentication
+	// When using DaemonSet, we use DestinationRule instead of PeerAuthentication
+	peerAuthentication := istiosecurityclientv1.PeerAuthentication{ObjectMeta: objectMeta}
+	if err := k8sutils.DeleteObject(ctx, c, &peerAuthentication); err != nil && !errors.Is(err, client.IgnoreNotFound(err)) {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete peerauthentication: %w", err))
+	}
+
+	destinationRule := istionetworkingclientv1.DestinationRule{ObjectMeta: objectMeta}
+	if err := k8sutils.DeleteObject(ctx, c, &destinationRule); err != nil && !errors.Is(err, client.IgnoreNotFound(err)) {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete destinationrule: %w", err))
+	}
+
+	// When using DaemonSet mode (unified gateway), also clean up legacy PeerAuthentication if it exists
+	// This handles the migration case from deployment to daemonset
+	if gad.useDaemonSet && gad.baseName == OTLPGatewayName {
+		legacyPeerAuth := istiosecurityclientv1.PeerAuthentication{ObjectMeta: metav1.ObjectMeta{
+			Name:      LogGatewayName,
+			Namespace: gad.globals.TargetNamespace(),
+		}}
+		if err := k8sutils.DeleteObject(ctx, c, &legacyPeerAuth); err != nil && !errors.Is(err, client.IgnoreNotFound(err)) {
+			allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete legacy peerauthentication: %w", err))
+		}
+	}
+
+	return allErrors
+}
+
 func (gad *GatewayApplierDeleter) makeGatewayDeployment(configChecksum string, opts GatewayApplyOptions) *appsv1.Deployment {
-	selectorLabels := commonresources.MakeDefaultSelectorLabels(gad.baseName)
 	podSpec := gad.makeGatewayPodSpec(opts)
 	metadata := gad.makeGatewayMetadata(configChecksum, opts)
 
-	return &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        gad.baseName,
-			Namespace:   gad.globals.TargetNamespace(),
-			Labels:      metadata.ResourceLabels,
-			Annotations: metadata.ResourceAnnotations,
-		},
-		Spec: appsv1.DeploymentSpec{
-			Replicas: ptr.To(opts.Replicas),
-			Selector: &metav1.LabelSelector{
-				MatchLabels: selectorLabels,
-			},
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels:      metadata.PodLabels,
-					Annotations: metadata.PodAnnotations,
-				},
-				Spec: podSpec,
-			},
-		},
-	}
+	return MakeDeployment(
+		gad.baseName,
+		gad.globals.TargetNamespace(),
+		opts.Replicas,
+		metadata,
+		podSpec,
+	)
 }
 
 func (gad *GatewayApplierDeleter) makeGatewayDaemonSet(configChecksum string, opts GatewayApplyOptions) *appsv1.DaemonSet {
-	selectorLabels := commonresources.MakeDefaultSelectorLabels(gad.baseName)
 	podSpec := gad.makeGatewayPodSpec(opts)
 	metadata := gad.makeGatewayMetadata(configChecksum, opts)
 
-	return &appsv1.DaemonSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        gad.baseName,
-			Namespace:   gad.globals.TargetNamespace(),
-			Labels:      metadata.ResourceLabels,
-			Annotations: metadata.ResourceAnnotations,
-		},
-		Spec: appsv1.DaemonSetSpec{
-			Selector: &metav1.LabelSelector{
-				MatchLabels: selectorLabels,
-			},
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels:      metadata.PodLabels,
-					Annotations: metadata.PodAnnotations,
-				},
-				Spec: podSpec,
-			},
-			UpdateStrategy: appsv1.DaemonSetUpdateStrategy{
-				Type: appsv1.RollingUpdateDaemonSetStrategyType,
-				RollingUpdate: &appsv1.RollingUpdateDaemonSet{
-					MaxUnavailable: ptr.To[intstr.IntOrString](intstr.FromInt32(0)),
-					MaxSurge:       ptr.To[intstr.IntOrString](intstr.FromInt32(1)),
-				},
-			},
-		},
-	}
+	return MakeGatewayDaemonSet(
+		gad.baseName,
+		gad.globals.TargetNamespace(),
+		metadata,
+		podSpec,
+	)
 }
 
 // makeGatewayMetadata prepares labels and annotations for gateway resources
-func (gad *GatewayApplierDeleter) makeGatewayMetadata(configChecksum string, opts GatewayApplyOptions) commonresources.ResourceMetadata {
-	labels := commonresources.MakeDefaultLabels(gad.baseName, commonresources.LabelValueK8sComponentGateway)
+func (gad *GatewayApplierDeleter) makeGatewayMetadata(configChecksum string, opts GatewayApplyOptions) WorkloadMetadata {
 	annotations := gad.makeAnnotations(configChecksum, opts)
 
-	return commonresources.MakeResourceMetadata(&gad.globals, labels, gad.extraPodLabels, annotations)
+	return MakeWorkloadMetadata(
+		&gad.globals,
+		gad.baseName,
+		commonresources.LabelValueK8sComponentGateway,
+		gad.extraPodLabels,
+		annotations,
+	)
 }
 
 // makeGatewayPodSpec creates the pod spec for gateway (Deployment or DaemonSet)
@@ -501,6 +542,39 @@ func (gad *GatewayApplierDeleter) makeOTLPService(useDaemonSet bool) *corev1.Ser
 	return service
 }
 
+// makeLegacyOTLPService creates a service with a legacy name that points to the unified OTLP gateway
+func (gad *GatewayApplierDeleter) makeLegacyOTLPService(legacyServiceName string) *corev1.Service {
+	commonLabels := commonresources.MakeDefaultLabels(gad.baseName, commonresources.LabelValueK8sComponentGateway)
+	selectorLabels := commonresources.MakeDefaultSelectorLabels(gad.baseName)
+
+	return &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      legacyServiceName,
+			Namespace: gad.globals.TargetNamespace(),
+			Labels:    commonLabels,
+		},
+		Spec: corev1.ServiceSpec{
+			Ports: []corev1.ServicePort{
+				{
+					Name:       "grpc-collector",
+					Protocol:   corev1.ProtocolTCP,
+					Port:       ports.OTLPGRPC,
+					TargetPort: intstr.FromInt32(ports.OTLPGRPC),
+				},
+				{
+					Name:       "http-collector",
+					Protocol:   corev1.ProtocolTCP,
+					Port:       ports.OTLPHTTP,
+					TargetPort: intstr.FromInt32(ports.OTLPHTTP),
+				},
+			},
+			Selector:              selectorLabels,
+			Type:                  corev1.ServiceTypeClusterIP,
+			InternalTrafficPolicy: ptr.To(corev1.ServiceInternalTrafficPolicyLocal),
+		},
+	}
+}
+
 func (gad *GatewayApplierDeleter) makePeerAuthentication() *istiosecurityclientv1.PeerAuthentication {
 	commonLabels := commonresources.MakeDefaultLabels(gad.baseName, commonresources.LabelValueK8sComponentGateway)
 	selectorLabels := commonresources.MakeDefaultSelectorLabels(gad.baseName)
@@ -542,7 +616,7 @@ func (gad *GatewayApplierDeleter) makeAnnotations(configChecksum string, opts Ga
 	if opts.IstioEnabled {
 		excludedPorts := fmt.Sprintf("%d", ports.Metrics)
 		// If we use daemonset for gateway, we need to exclude OTLP ports from istio sidecar
-		if opts.UseDaemonSetForGateway {
+		if gad.useDaemonSet {
 			excludedPorts = fmt.Sprintf("%d,%d,%d", ports.Metrics, ports.OTLPGRPC, ports.OTLPHTTP)
 		}
 

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"maps"
 	"slices"
 	"strconv"
 	"strings"
@@ -214,18 +213,9 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string, opts AgentApplyOptions) *appsv1.DaemonSet {
 	annotations := aad.makeAnnotationsFunc(configChecksum, opts)
 
-	// Create final annotations for the DaemonSet and Pods with additional annotations
-	podAnnotations := make(map[string]string)
-	resourceAnnotations := make(map[string]string)
-
-	maps.Copy(resourceAnnotations, aad.globals.AdditionalAnnotations())
-	maps.Copy(podAnnotations, aad.globals.AdditionalAnnotations())
-	maps.Copy(podAnnotations, annotations)
-
 	// Add pod options shared between all agents
 	podOpts := slices.Clone(aad.podOpts)
 	podOpts = append(podOpts, commonresources.WithTolerations(commonresources.CriticalDaemonSetTolerations))
-	// Add image pull secret if defined
 	podOpts = append(podOpts, commonresources.WithImagePullSecretName(aad.globals.ImagePullSecretName()))
 	podOpts = append(podOpts, commonresources.WithClusterTrustBundleVolume(aad.globals.ClusterTrustBundleName()))
 
@@ -234,41 +224,20 @@ func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string, opts A
 
 	podSpec := makePodSpec(aad.baseName, aad.image, podOpts, containerOpts)
 
-	selectorLabels := commonresources.MakeDefaultSelectorLabels(aad.baseName)
-	labels := commonresources.MakeDefaultLabels(aad.baseName, commonresources.LabelValueK8sComponentAgent)
-	defaultPodLabels := make(map[string]string)
-	maps.Copy(defaultPodLabels, labels)
-	maps.Copy(defaultPodLabels, aad.extraPodLabel)
+	metadata := MakeWorkloadMetadata(
+		&aad.globals,
+		aad.baseName,
+		commonresources.LabelValueK8sComponentAgent,
+		aad.extraPodLabel,
+		annotations,
+	)
 
-	// Create final labels for the DaemonSet and Pods with additional labels
-	resourceLabels := make(map[string]string)
-	podLabels := make(map[string]string)
-
-	maps.Copy(resourceLabels, aad.globals.AdditionalLabels())
-	maps.Copy(podLabels, aad.globals.AdditionalLabels())
-	maps.Copy(resourceLabels, labels)
-	maps.Copy(podLabels, defaultPodLabels)
-
-	return &appsv1.DaemonSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        aad.baseName,
-			Namespace:   aad.globals.TargetNamespace(),
-			Labels:      resourceLabels,
-			Annotations: resourceAnnotations,
-		},
-		Spec: appsv1.DaemonSetSpec{
-			Selector: &metav1.LabelSelector{
-				MatchLabels: selectorLabels,
-			},
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels:      podLabels,
-					Annotations: podAnnotations,
-				},
-				Spec: podSpec,
-			},
-		},
-	}
+	return MakeDaemonSet(
+		aad.baseName,
+		aad.globals.TargetNamespace(),
+		metadata,
+		podSpec,
+	)
 }
 
 func makeLogAgentAnnotations(configChecksum string, opts AgentApplyOptions) map[string]string {
