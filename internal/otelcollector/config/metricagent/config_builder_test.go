@@ -455,7 +455,6 @@ func TestBuildConfig(t *testing.T) {
 
 			goldenFile, err := os.ReadFile(goldenFilePath)
 			require.NoError(t, err, "failed to load golden file")
-
 			require.Equal(t, string(goldenFile), string(configYAML))
 		})
 	}
