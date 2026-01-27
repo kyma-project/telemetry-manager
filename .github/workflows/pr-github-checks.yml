@@ -13,6 +13,8 @@ on:
       - reopened
       - edited
       - synchronize
+      - labeled
+      - unlabeled
       - milestoned
   workflow_dispatch:
 
@@ -31,9 +33,6 @@ jobs:
       contents: read
     runs-on: ubuntu-latest
     steps:
-      - name: Validate CI labels
-        uses: ./.github/actions/validate-ci-labels
-
       - name: Set milestone to latest open milestone
         if: github.event.pull_request.milestone == null
         run: |
@@ -128,8 +127,8 @@ jobs:
           requireScope: false
 
   pr-prevent-kustomization:
-    if: ${{ github.event.pull_request.base.ref == 'main' }}
     runs-on: ubuntu-latest
+    if: ${{ github.event.pull_request.base.ref == 'main' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
