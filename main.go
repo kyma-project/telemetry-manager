@@ -91,7 +91,7 @@ var (
 
 const (
 	cacheSyncPeriod    = 1 * time.Minute
-	webhookServiceName = names.WebhookService
+	webhookServiceName = names.ManagerWebhookService
 
 	healthProbePort = 8081
 	metricsPort     = 8080
@@ -277,7 +277,7 @@ func setupManager(globals config.Global) (manager.Manager, error) {
 		PprofBindAddress:        fmt.Sprintf(":%d", pprofPort),
 		LeaderElection:          true,
 		LeaderElectionNamespace: globals.TargetNamespace(),
-		LeaderElectionID:        "cdd7ef0b.kyma-project.io",
+		LeaderElectionID:        names.ManagerLeaseName,
 		WebhookServer: webhook.NewServer(webhook.Options{
 			Port:    webhookPort,
 			CertDir: certDir,
@@ -534,14 +534,14 @@ func createWebhookConfig(globals config.Global) webhookcert.Config {
 				Namespace: globals.ManagerNamespace(),
 			},
 			CASecretName: types.NamespacedName{
-				Name:      names.WebhookCertSecret,
+				Name:      names.ManagerWebhookCertSecret,
 				Namespace: globals.TargetNamespace(),
 			},
 			ValidatingWebhookName: types.NamespacedName{
-				Name: names.ValidatingWebhookName,
+				Name: names.ValidatingWebhookConfig,
 			},
 			MutatingWebhookName: types.NamespacedName{
-				Name: names.MutatingWebhookName,
+				Name: names.MutatingWebhookConfig,
 			},
 		},
 	)

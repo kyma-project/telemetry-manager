@@ -83,7 +83,7 @@ func createExcludePath(runtime *telemetryv1beta1.LogPipelineRuntimeInput, collec
 	var excludePath, excludeContainers []string
 
 	if !collectAgentLogs {
-		excludePath = append(excludePath, makePath("kyma-system", fmt.Sprintf("%s-*", names.FluentBitAgent), "fluent-bit"))
+		excludePath = append(excludePath, makePath("kyma-system", fmt.Sprintf("%s-*", names.FluentBit), "fluent-bit"))
 		excludePath = append(excludePath, makePath("kyma-system", fmt.Sprintf("%s-*", names.LogAgent), "collector"))
 	}
 

@@ -97,7 +97,7 @@ func TestOverrides(t *testing.T) {
 	assertPipelineReconciliationDisabled(suite.Ctx, suite.K8sClient, kitkyma.FluentBitConfigMap, appNameLabelKey)
 	assertPipelineReconciliationDisabled(suite.Ctx, suite.K8sClient, kitkyma.MetricGatewayConfigMap, appNameLabelKey)
 	assertPipelineReconciliationDisabled(suite.Ctx, suite.K8sClient, kitkyma.TraceGatewayConfigMap, appNameLabelKey)
-	assertTelemetryReconciliationDisabled(suite.Ctx, suite.K8sClient, names.ValidatingWebhookName)
+	assertTelemetryReconciliationDisabled(suite.Ctx, suite.K8sClient, names.ValidatingWebhookConfig)
 
 	// Delete the overrides configmap at the end of the test
 	Expect(kitk8s.DeleteObjects(overrides)).Should(Succeed())

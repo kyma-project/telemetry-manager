@@ -71,8 +71,9 @@ func MakeRules() RuleGroups {
 	var rules []Rule
 
 	metricGatewayRuleBuilder := otelCollectorRuleBuilder{
-		dataType:   ruleDataType(typeMetricPipeline),
-		namePrefix: ruleNamePrefix(typeMetricPipeline),
+		dataType:    ruleDataType(typeMetricPipeline),
+		serviceName: names.MetricGatewayMetricsService,
+		namePrefix:  ruleNamePrefix(typeMetricPipeline),
 	}
 	rules = append(rules, metricGatewayRuleBuilder.gatewayRules()...)
 

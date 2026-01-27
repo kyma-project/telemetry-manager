@@ -18,7 +18,7 @@ const (
 
 var (
 	TelemetryManagerMetricsServiceName = types.NamespacedName{Name: names.ManagerMetrics, Namespace: SystemNamespaceName}
-	TelemetryManagerWebhookServiceName = types.NamespacedName{Name: names.WebhookService, Namespace: SystemNamespaceName}
+	TelemetryManagerWebhookServiceName = types.NamespacedName{Name: names.ManagerWebhookService, Namespace: SystemNamespaceName}
 
 	MetricGatewayName               = types.NamespacedName{Name: names.MetricGateway, Namespace: SystemNamespaceName}
 	MetricGatewayMetricsService     = types.NamespacedName{Name: names.MetricGatewayMetricsService, Namespace: SystemNamespaceName}
@@ -68,23 +68,23 @@ var (
 	LogGatewayClusterRoleBinding = types.NamespacedName{Name: names.LogGateway, Namespace: SystemNamespaceName}
 	LogGatewayConfigMap          = types.NamespacedName{Name: names.LogGateway, Namespace: SystemNamespaceName}
 
-	FluentBitDaemonSetName          = types.NamespacedName{Name: names.FluentBitAgent, Namespace: SystemNamespaceName}
-	FluentBitServiceAccount         = types.NamespacedName{Name: names.FluentBitAgent, Namespace: SystemNamespaceName}
-	FluentBitClusterRole            = types.NamespacedName{Name: names.FluentBitAgent, Namespace: SystemNamespaceName}
-	FluentBitClusterRoleBinding     = types.NamespacedName{Name: names.FluentBitAgent, Namespace: SystemNamespaceName}
+	FluentBitDaemonSetName          = types.NamespacedName{Name: names.FluentBit, Namespace: SystemNamespaceName}
+	FluentBitServiceAccount         = types.NamespacedName{Name: names.FluentBit, Namespace: SystemNamespaceName}
+	FluentBitClusterRole            = types.NamespacedName{Name: names.FluentBit, Namespace: SystemNamespaceName}
+	FluentBitClusterRoleBinding     = types.NamespacedName{Name: names.FluentBit, Namespace: SystemNamespaceName}
 	FluentBitExporterMetricsService = types.NamespacedName{Name: names.FluentBitExporterMetricsService, Namespace: SystemNamespaceName}
 	FluentBitMetricsService         = types.NamespacedName{Name: names.FluentBitMetricsService, Namespace: SystemNamespaceName}
-	FluentBitConfigMap              = types.NamespacedName{Name: names.FluentBitAgent, Namespace: SystemNamespaceName}
+	FluentBitConfigMap              = types.NamespacedName{Name: names.FluentBit, Namespace: SystemNamespaceName}
 	FluentBitSectionsConfigMap      = types.NamespacedName{Name: names.FluentBitSectionsConfigMap, Namespace: SystemNamespaceName}
 	FluentBitLuaConfigMap           = types.NamespacedName{Name: names.FluentBitLuaScriptsConfigMap, Namespace: SystemNamespaceName}
 	FluentBitParserConfigMap        = types.NamespacedName{Name: names.FluentBitParsersConfigMap, Namespace: SystemNamespaceName}
 	FluentBitFilesConfigMap         = types.NamespacedName{Name: names.FluentBitFilesConfigMap, Namespace: SystemNamespaceName}
-	FluentBitNetworkPolicy          = types.NamespacedName{Name: names.FluentBitAgent, Namespace: SystemNamespaceName}
+	FluentBitNetworkPolicy          = types.NamespacedName{Name: names.FluentBit, Namespace: SystemNamespaceName}
 
 	SelfMonitorName          = types.NamespacedName{Name: names.SelfMonitor, Namespace: SystemNamespaceName}
 	SelfMonitorNetworkPolicy = types.NamespacedName{Name: names.SelfMonitor, Namespace: SystemNamespaceName}
 
 	TelemetryName = types.NamespacedName{Name: DefaultTelemetryName, Namespace: SystemNamespaceName}
 
-	WebhookCertSecret = types.NamespacedName{Name: names.WebhookCertSecret, Namespace: SystemNamespaceName}
+	WebhookCertSecret = types.NamespacedName{Name: names.ManagerWebhookCertSecret, Namespace: SystemNamespaceName}
 )

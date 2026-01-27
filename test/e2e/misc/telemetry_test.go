@@ -162,7 +162,7 @@ func TestTelemetryDeletionBlocking(t *testing.T) {
 func assertValidatingWebhookConfiguration() {
 	Eventually(func(g Gomega) {
 		var validatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
-		g.Expect(suite.K8sClient.Get(suite.Ctx, client.ObjectKey{Name: names.ValidatingWebhookName}, &validatingWebhookConfiguration)).Should(Succeed())
+		g.Expect(suite.K8sClient.Get(suite.Ctx, client.ObjectKey{Name: names.ValidatingWebhookConfig}, &validatingWebhookConfiguration)).Should(Succeed())
 
 		g.Expect(validatingWebhookConfiguration.Webhooks).Should(HaveLen(6))
 
