@@ -8,7 +8,7 @@ import (
 )
 
 func SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).For(&telemetryv1alpha1.MetricPipeline{}).
+	return ctrl.NewWebhookManagedBy(mgr, &telemetryv1alpha1.MetricPipeline{}).
 		WithDefaulter(&defaulter{
 			ExcludeNamespaces: namespaces.System(),
 			RuntimeInputResources: runtimeInputResourceDefaults{
@@ -25,6 +25,6 @@ func SetupWithManager(mgr ctrl.Manager) error {
 			DiagnosticMetricsEnabled:  false,
 			EnvoyMetricsEnabled:       false,
 		}).
-		WithValidator(&MetricPipelineValidator{}).
+		WithValidator(&validator{}).
 		Complete()
 }

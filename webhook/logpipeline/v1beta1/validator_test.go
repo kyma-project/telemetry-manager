@@ -88,7 +88,7 @@ func TestLogPipelineValidator_ValidateCreate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			validator := &LogPipelineValidator{}
+			validator := &validator{}
 
 			warnings, err := validator.ValidateCreate(t.Context(), tt.pipeline)
 
@@ -174,7 +174,7 @@ func TestLogPipelineValidator_ValidateUpdate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			validator := &LogPipelineValidator{}
+			validator := &validator{}
 
 			warnings, err := validator.ValidateUpdate(t.Context(), tt.oldPipeline, tt.newPipeline)
 
@@ -196,24 +196,12 @@ func TestLogPipelineValidator_ValidateUpdate(t *testing.T) {
 }
 
 func TestLogPipelineValidator_ValidateDelete(t *testing.T) {
-	validator := &LogPipelineValidator{}
+	validator := &validator{}
 
 	pipeline := &telemetryv1beta1.LogPipeline{}
 
 	warnings, err := validator.ValidateDelete(t.Context(), pipeline)
 
 	assert.NoError(t, err)
-	assert.Empty(t, warnings)
-}
-
-func TestLogPipelineValidator_WrongType(t *testing.T) {
-	validator := &LogPipelineValidator{}
-
-	// Pass wrong type
-	wrongObject := &telemetryv1beta1.MetricPipeline{}
-
-	warnings, err := validator.ValidateCreate(t.Context(), wrongObject)
-
-	assert.ErrorContains(t, err, "expected a LogPipeline but got")
 	assert.Empty(t, warnings)
 }
