@@ -118,29 +118,16 @@ func TestServiceEnrichment_OTel(t *testing.T) {
 				resources = append(resources,
 					kitk8sobjects.NewPod(podWithNoAnnotationsName, genNs).WithPodSpec(podSpecLogs).K8sObject(),
 					kitk8sobjects.NewPod(podWithEmptyServiceAttributesName, genNs).
-						// k8sattributes does not enrich empty string value in this case as expected, see https://github.com/open-telemetry/opentelemetry-operator/issues/4228#issuecomment-3800176794
-						// WithLabel("app.kubernetes.io/name", "").
-						WithLabel("app.kubernetes.io/version", "").
-						// These annotations do not currently work as expected, see https://github.com/open-telemetry/opentelemetry-operator/issues/4228#issuecomment-3799850330
-						// WithAnnotation(annotationServiceName, "").
-						// WithAnnotation(annotationServiceNamespace, "").
-						// WithAnnotation(annotationServiceVersion, "").
-						// WithAnnotation(annotationServiceInstanceID, "").
-						WithPodSpec(podSpecLogs).K8sObject(),
-					kitk8sobjects.NewPod(podWithUnknownServiceName, genNs).
-						WithAnnotation(annotationServiceName, unknownService).
-						WithPodSpec(podSpecLogs).K8sObject(),
-					kitk8sobjects.NewPod(podWithUnknownServicePatternName, genNs).
-						WithAnnotation(annotationServiceName, unknownServicePattern).
+						WithAnnotation(annotationServiceName, "").
+						WithAnnotation(annotationServiceNamespace, "").
+						WithAnnotation(annotationServiceVersion, "").
+						WithAnnotation(annotationServiceInstanceID, "").
 						WithPodSpec(podSpecLogs).K8sObject(),
 					kitk8sobjects.NewPod(podWithCustomServiceAttributesName, genNs).
-						WithLabel("app.kubernetes.io/name", customServiceName).
-						WithLabel("app.kubernetes.io/version", customServiceVersion).
-						// These annotations do not currently work as expected, see https://github.com/open-telemetry/opentelemetry-operator/issues/4228#issuecomment-3799850330
-						// WithAnnotation(annotationServiceName, customServiceName).
-						// WithAnnotation(annotationServiceNamespace, customServiceNamespace).
-						// WithAnnotation(annotationServiceVersion, customServiceVersion).
-						// WithAnnotation(annotationServiceInstanceID, customServiceInstanceID).
+						WithAnnotation(annotationServiceName, customServiceName).
+						WithAnnotation(annotationServiceNamespace, customServiceNamespace).
+						WithAnnotation(annotationServiceVersion, customServiceVersion).
+						WithAnnotation(annotationServiceInstanceID, customServiceInstanceID).
 						WithPodSpec(podSpecLogs).K8sObject(),
 				)
 			} else {
@@ -210,30 +197,23 @@ func TestServiceEnrichment_OTel(t *testing.T) {
 				ServiceInstanceID: fmt.Sprintf("%s.%s.%s", genNs, podWithEmptyServiceAttributesName, serviceInstanceIDSuffix),
 			})
 
-			// Unknown service names should be enriched
-			verifyServiceAttributes(t, backend, podWithUnknownServiceName, ServiceAttributes{
-				ServiceName: podWithUnknownServiceName,
-			})
-			verifyServiceAttributes(t, backend, podWithUnknownServicePatternName, ServiceAttributes{
-				ServiceName: podWithUnknownServicePatternName,
-			})
-
-			// Custom attributes should be preserved
-			if suite.ExpectAgent(tc.label) {
-				verifyServiceAttributes(t, backend, podWithCustomServiceAttributesName, ServiceAttributes{
-					ServiceName:       customServiceName,
-					ServiceNamespace:  genNs,
-					ServiceVersion:    customServiceVersion,
-					ServiceInstanceID: fmt.Sprintf("%s.%s.%s", genNs, podWithCustomServiceAttributesName, stdoutloggen.DefaultContainerName),
+			// Unknown service names should be enriched (gateway only)
+			if !suite.ExpectAgent(tc.label) {
+				verifyServiceAttributes(t, backend, podWithUnknownServiceName, ServiceAttributes{
+					ServiceName: podWithUnknownServiceName,
 				})
-			} else {
-				verifyServiceAttributes(t, backend, podWithCustomServiceAttributesName, ServiceAttributes{
-					ServiceName:       customServiceName,
-					ServiceNamespace:  customServiceNamespace,
-					ServiceVersion:    customServiceVersion,
-					ServiceInstanceID: customServiceInstanceID,
+				verifyServiceAttributes(t, backend, podWithUnknownServicePatternName, ServiceAttributes{
+					ServiceName: podWithUnknownServicePatternName,
 				})
 			}
+
+			// Custom attributes should be preserved
+			verifyServiceAttributes(t, backend, podWithCustomServiceAttributesName, ServiceAttributes{
+				ServiceName:       customServiceName,
+				ServiceNamespace:  customServiceNamespace,
+				ServiceVersion:    customServiceVersion,
+				ServiceInstanceID: customServiceInstanceID,
+			})
 
 			// Verify that temporary kyma resource attributes are removed from the logs
 			assert.BackendDataConsistentlyMatches(t, backend,

@@ -118,16 +118,16 @@ func (b *Builder) addSetObsTimeIfZeroProcessor() buildComponentFunc {
 }
 
 func (b *Builder) addDropUnknownServiceNameProcessor(opts BuildOptions) buildComponentFunc {
-	if opts.ServiceEnrichment == commonresources.AnnotationValueTelemetryServiceEnrichmentOtel {
-		return b.AddProcessor(
-			b.StaticComponentID(common.ComponentIDDropUnknownServiceNameProcessor),
-			func(tp *telemetryv1beta1.LogPipeline) any {
-				return common.LogTransformProcessorConfig(common.DropUnknownServiceNameProcessorStatements())
-			},
-		)
-	}
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDDropUnknownServiceNameProcessor),
+		func(tp *telemetryv1beta1.LogPipeline) any {
+			if opts.ServiceEnrichment != commonresources.AnnotationValueTelemetryServiceEnrichmentOtel {
+				return nil // Kyma legacy enrichment selected, skip this processor
+			}
 
-	return nil
+			return common.LogTransformProcessorConfig(common.DropUnknownServiceNameProcessorStatements())
+		},
+	)
 }
 
 func (b *Builder) addK8sAttributesProcessor(opts BuildOptions) buildComponentFunc {
@@ -187,14 +187,13 @@ func (b *Builder) addInsertClusterAttributesProcessor(opts BuildOptions) buildCo
 }
 
 func (b *Builder) addServiceEnrichmentProcessor(opts BuildOptions) buildComponentFunc {
-	// Skip adding the processor if OTel service enrichment strategy is selected (part of the deprecation process)
-	if opts.ServiceEnrichment == commonresources.AnnotationValueTelemetryServiceEnrichmentOtel {
-		return nil
-	}
-
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDServiceEnrichmentProcessor),
 		func(lp *telemetryv1beta1.LogPipeline) any {
+			if opts.ServiceEnrichment == commonresources.AnnotationValueTelemetryServiceEnrichmentOtel {
+				return nil // OTel service enrichment selected, skip this processor
+			}
+
 			return common.ResolveServiceNameConfig()
 		},
 	)

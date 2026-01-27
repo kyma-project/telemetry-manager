@@ -79,6 +79,8 @@ processors:
                 - from: node
                   key: kubernetes.io/arch
                   tag_name: host.arch
+            otel_annotations: true
+            deployment_name_from_replicaset: true
         pod_association:
             - sources:
                 - from: resource_attribute

@@ -7,7 +7,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
@@ -19,13 +18,27 @@ func TestBuildConfig(t *testing.T) {
 	sut := Builder{}
 
 	tests := []struct {
-		name           string
-		goldenFileName string
-		pipelines      []telemetryv1beta1.LogPipeline
+		name              string
+		goldenFileName    string
+		pipelines         []telemetryv1beta1.LogPipeline
+		serviceEnrichment string
 	}{
 		{
 			name:           "single pipeline",
 			goldenFileName: "single-pipeline.yaml",
+			pipelines: []telemetryv1beta1.LogPipeline{
+				testutils.NewLogPipelineBuilder().
+					WithName("test").
+					WithRuntimeInput(true).
+					WithKeepOriginalBody(true).
+					WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).
+					Build(),
+			},
+		},
+		{
+			name:              "single pipeline with otel service enrichment",
+			goldenFileName:    "service-enrichment-otel.yaml",
+			serviceEnrichment: commonresources.AnnotationValueTelemetryServiceEnrichmentOtel,
 			pipelines: []telemetryv1beta1.LogPipeline{
 				testutils.NewLogPipelineBuilder().
 					WithName("test").
@@ -164,17 +177,18 @@ func TestBuildConfig(t *testing.T) {
 		},
 	}
 
-	buildOptions := BuildOptions{
-		Cluster: common.ClusterOptions{
-			ClusterName:   "test-cluster",
-			CloudProvider: "azure",
-		},
-		InstrumentationScopeVersion: "main",
-		AgentNamespace:              "kyma-system",
-	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			buildOptions := BuildOptions{
+				Cluster: common.ClusterOptions{
+					ClusterName:   "test-cluster",
+					CloudProvider: "azure",
+				},
+				InstrumentationScopeVersion: "main",
+				AgentNamespace:              "kyma-system",
+				ServiceEnrichment:           tt.serviceEnrichment,
+			}
+
 			collectorConfig, _, err := sut.Build(t.Context(), tt.pipelines, buildOptions)
 			require.NoError(t, err)
 			configYAML, err := yaml.Marshal(collectorConfig)
@@ -192,50 +206,4 @@ func TestBuildConfig(t *testing.T) {
 			require.Equal(t, string(goldenFile), string(configYAML))
 		})
 	}
-}
-
-// TestBuildConfigWithOtelServiceEnrichment verifies that the Log Agent config is built correctly
-// when pipelines use OTel service enrichment strategy
-// (temporary - will be removed after deprecation of legacy enrichment strategy since this will become default).
-func TestBuildConfigWithOtelServiceEnrichment(t *testing.T) {
-	fakeClient := fake.NewClientBuilder().Build()
-	sut := Builder{Reader: fakeClient}
-
-	goldenFileName := "service-enrichment-otel.yaml"
-
-	pipelines := []telemetryv1beta1.LogPipeline{
-		testutils.NewLogPipelineBuilder().
-			WithName("test").
-			WithRuntimeInput(true).
-			WithKeepOriginalBody(true).
-			WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).
-			Build(),
-	}
-
-	buildOptions := BuildOptions{
-		Cluster: common.ClusterOptions{
-			ClusterName:   "test-cluster",
-			CloudProvider: "azure",
-		},
-		InstrumentationScopeVersion: "main",
-		AgentNamespace:              "kyma-system",
-		ServiceEnrichment:           commonresources.AnnotationValueTelemetryServiceEnrichmentOtel,
-	}
-
-	config, _, err := sut.Build(t.Context(), pipelines, buildOptions)
-	require.NoError(t, err)
-	configYAML, err := yaml.Marshal(config)
-	require.NoError(t, err, "failed to marshal config")
-
-	goldenFilePath := filepath.Join("testdata", goldenFileName)
-	if testutils.ShouldUpdateGoldenFiles() {
-		testutils.UpdateGoldenFileYAML(t, goldenFilePath, configYAML)
-		return
-	}
-
-	goldenFile, err := os.ReadFile(goldenFilePath)
-	require.NoError(t, err, "failed to load golden file")
-
-	require.NoError(t, err)
-	require.Equal(t, string(goldenFile), string(configYAML))
 }

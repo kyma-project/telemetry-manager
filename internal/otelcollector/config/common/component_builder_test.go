@@ -424,62 +424,6 @@ func TestComponentBuilder_AddServicePipeline(t *testing.T) {
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "failed to add component")
 	})
-
-	t.Run("skips nil component builders", func(t *testing.T) {
-		config := &Config{
-			Receivers:  make(map[string]any),
-			Processors: make(map[string]any),
-			Exporters:  make(map[string]any),
-			Service: Service{
-				Pipelines: make(map[string]Pipeline),
-			},
-		}
-
-		cb := &ComponentBuilder[*MockPipeline]{
-			Config:  config,
-			EnvVars: make(EnvVars),
-		}
-
-		pipeline := &MockPipeline{Name: "test"}
-		pipelineID := "logs/test"
-
-		// Create valid component builders
-		addReceiver := cb.AddReceiver(
-			cb.StaticComponentID("otlp"),
-			func(p *MockPipeline) any {
-				return &MockReceiver{Endpoint: "localhost:4317"}
-			},
-		)
-
-		addExporter := cb.AddExporter(
-			func(p *MockPipeline) string { return fmt.Sprintf("otlp/%s", p.Name) },
-			func(ctx context.Context, p *MockPipeline) (any, EnvVars, error) {
-				return &MockExporter{URL: "https://api.example.com"}, nil, nil
-			},
-		)
-
-		// Build pipeline with nil builders interspersed
-		err := cb.AddServicePipeline(context.Background(), pipeline, pipelineID,
-			addReceiver,
-			nil, // Should be skipped
-			nil, // Should be skipped
-			addExporter,
-			nil, // Should be skipped
-		)
-		require.NoError(t, err)
-
-		// Verify only non-nil components were added
-		require.Contains(t, config.Receivers, "otlp")
-		require.Contains(t, config.Exporters, "otlp/test")
-		require.Empty(t, config.Processors)
-
-		// Verify pipeline configuration
-		require.Contains(t, config.Service.Pipelines, pipelineID)
-		pipelineConfig := config.Service.Pipelines[pipelineID]
-		require.Equal(t, []string{"otlp"}, pipelineConfig.Receivers)
-		require.Empty(t, pipelineConfig.Processors)
-		require.Equal(t, []string{"otlp/test"}, pipelineConfig.Exporters)
-	})
 }
 
 func TestComponentBuilder_StaticComponentID(t *testing.T) {

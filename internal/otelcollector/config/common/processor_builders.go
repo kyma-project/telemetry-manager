@@ -44,8 +44,10 @@ func K8sAttributesProcessorConfig(enrichments *operatorv1beta1.EnrichmentSpec, u
 		AuthType:    "serviceAccount",
 		Passthrough: false,
 		Extract: ExtractK8sMetadata{
-			Metadata: k8sAttributes,
-			Labels:   append(extractLabels(useOTelServiceEnrichment), extractPodLabels(enrichments)...),
+			Metadata:                     k8sAttributes,
+			Labels:                       append(extractLabels(useOTelServiceEnrichment), extractPodLabels(enrichments)...),
+			OTelAnnotations:              useOTelServiceEnrichment,
+			DeploymentNameFromReplicaset: useOTelServiceEnrichment,
 		},
 		PodAssociation: podAssociations,
 	}

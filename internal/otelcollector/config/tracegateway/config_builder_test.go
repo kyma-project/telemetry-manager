@@ -20,15 +20,27 @@ func TestBuildConfig(t *testing.T) {
 	sut := Builder{Reader: fakeClient}
 
 	tests := []struct {
-		name           string
-		goldenFileName string
-		pipelines      []telemetryv1beta1.TracePipeline
+		name              string
+		goldenFileName    string
+		pipelines         []telemetryv1beta1.TracePipeline
+		serviceEnrichment string
 	}{
 		{
 			name:           "single pipeline",
 			goldenFileName: "single-pipeline.yaml",
 			pipelines: []telemetryv1beta1.TracePipeline{
 				testutils.NewTracePipelineBuilder().WithName("test").Build(),
+			},
+		},
+		{
+			name:              "single pipeline with otel service enrichment",
+			goldenFileName:    "service-enrichment-otel.yaml",
+			serviceEnrichment: commonresources.AnnotationValueTelemetryServiceEnrichmentOtel,
+			pipelines: []telemetryv1beta1.TracePipeline{
+				testutils.NewTracePipelineBuilder().
+					WithName("test").
+					WithOTLPOutput().
+					Build(),
 			},
 		},
 		{
@@ -131,15 +143,16 @@ func TestBuildConfig(t *testing.T) {
 		},
 	}
 
-	buildOptions := BuildOptions{
-		Cluster: common.ClusterOptions{
-			ClusterName:   "${KUBERNETES_SERVICE_HOST}",
-			CloudProvider: "test-cloud-provider",
-		},
-	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			buildOptions := BuildOptions{
+				Cluster: common.ClusterOptions{
+					ClusterName:   "${KUBERNETES_SERVICE_HOST}",
+					CloudProvider: "test-cloud-provider",
+				},
+				ServiceEnrichment: tt.serviceEnrichment,
+			}
+
 			config, _, err := sut.Build(t.Context(), tt.pipelines, buildOptions)
 			require.NoError(t, err)
 			configYAML, err := yaml.Marshal(config)
@@ -158,46 +171,4 @@ func TestBuildConfig(t *testing.T) {
 			require.Equal(t, string(goldenFile), string(configYAML))
 		})
 	}
-}
-
-// TestBuildConfigWithOtelServiceEnrichment verifies that the Trace Gateway config is built correctly
-// when pipelines use OTel service enrichment strategy
-// (temporary - will be removed after deprecation of legacy enrichment strategy since this will become default).
-func TestBuildConfigWithOtelServiceEnrichment(t *testing.T) {
-	fakeClient := fake.NewClientBuilder().Build()
-	sut := Builder{Reader: fakeClient}
-
-	goldenFileName := "service-enrichment-otel.yaml"
-
-	pipelines := []telemetryv1beta1.TracePipeline{
-		testutils.NewTracePipelineBuilder().
-			WithName("test").
-			WithOTLPOutput().
-			Build(),
-	}
-
-	buildOptions := BuildOptions{
-		Cluster: common.ClusterOptions{
-			ClusterName:   "${KUBERNETES_SERVICE_HOST}",
-			CloudProvider: "test-cloud-provider",
-		},
-		ServiceEnrichment: commonresources.AnnotationValueTelemetryServiceEnrichmentOtel,
-	}
-
-	config, _, err := sut.Build(t.Context(), pipelines, buildOptions)
-	require.NoError(t, err)
-	configYAML, err := yaml.Marshal(config)
-	require.NoError(t, err, "failed to marshal config")
-
-	goldenFilePath := filepath.Join("testdata", goldenFileName)
-	if testutils.ShouldUpdateGoldenFiles() {
-		testutils.UpdateGoldenFileYAML(t, goldenFilePath, configYAML)
-		return
-	}
-
-	goldenFile, err := os.ReadFile(goldenFilePath)
-	require.NoError(t, err, "failed to load golden file")
-
-	require.NoError(t, err)
-	require.Equal(t, string(goldenFile), string(configYAML))
 }
