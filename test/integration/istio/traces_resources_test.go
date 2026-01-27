@@ -1,4 +1,4 @@
-package traces
+package istio
 
 import (
 	"testing"
@@ -20,7 +20,6 @@ import (
 )
 
 func TestResources(t *testing.T) {
-	// In order to test the PeerAuthentication creation and reconciliation, we need to run this test in istio-installed clusters
 	suite.RegisterTestCase(t, suite.LabelIstio)
 
 	const (
