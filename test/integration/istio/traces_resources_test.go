@@ -19,7 +19,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-func TestResources(t *testing.T) {
+func TestTracesResources(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelIstio)
 
 	const (

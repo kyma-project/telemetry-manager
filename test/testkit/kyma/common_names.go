@@ -41,10 +41,12 @@ var (
 	MetricGatewayConfigMap          = types.NamespacedName{Name: MetricGatewayBaseName, Namespace: SystemNamespaceName}
 	MetricGatewayRole               = types.NamespacedName{Name: MetricGatewayBaseName, Namespace: SystemNamespaceName}
 	MetricGatewayRoleBinding        = types.NamespacedName{Name: MetricGatewayBaseName, Namespace: SystemNamespaceName}
+	MetricGatewayPeerAuthentication = types.NamespacedName{Name: MetricGatewayBaseName, Namespace: SystemNamespaceName}
 
 	MetricAgentName               = types.NamespacedName{Name: MetricAgentBaseName, Namespace: SystemNamespaceName}
 	MetricAgentMetricsService     = types.NamespacedName{Name: MetricAgentBaseName + "-metrics", Namespace: SystemNamespaceName}
 	MetricAgentNetworkPolicy      = types.NamespacedName{Name: MetricAgentBaseName, Namespace: SystemNamespaceName}
+	MetricAgentSecretName         = types.NamespacedName{Name: MetricAgentBaseName, Namespace: SystemNamespaceName}
 	MetricAgentServiceAccount     = types.NamespacedName{Name: MetricAgentBaseName, Namespace: SystemNamespaceName}
 	MetricAgentClusterRole        = types.NamespacedName{Name: MetricAgentBaseName, Namespace: SystemNamespaceName}
 	MetricAgentClusterRoleBinding = types.NamespacedName{Name: MetricAgentBaseName, Namespace: SystemNamespaceName}
