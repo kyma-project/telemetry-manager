@@ -9,7 +9,6 @@ import (
 	"k8s.io/utils/ptr"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
-	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
@@ -435,8 +434,8 @@ func TestMakeRemoveLevel(t *testing.T) {
 
 func getExcludePaths(system bool, paths ...string) []string {
 	var defaultExcludePaths = []string{
-		"/var/log/pods/kyma-system_" + names.FluentBitAgent + "-*/fluent-bit/*.log",
-		"/var/log/pods/kyma-system_" + names.LogAgent + "-*/collector/*.log",
+		"/var/log/pods/kyma-system_telemetry-fluent-bit-*/fluent-bit/*.log",
+		"/var/log/pods/kyma-system_telemetry-log-agent-*/collector/*.log",
 		"/var/log/pods/kyma-system_*system-logs-agent-*/collector/*.log",
 		"/var/log/pods/kyma-system_*system-logs-collector-*/collector/*.log",
 	}
