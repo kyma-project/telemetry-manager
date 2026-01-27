@@ -92,6 +92,11 @@ const (
 	ManagerNetworkPolicy = telemetryPrefix + "manager"
 )
 
+// Override configuration names
+const (
+	OverrideConfigMap = telemetryPrefix + "override-config"
+)
+
 // MetricsServiceName returns the metrics service name for a given component name
 func MetricsServiceName(componentName string) string {
 	return componentName + metricsSuffix
