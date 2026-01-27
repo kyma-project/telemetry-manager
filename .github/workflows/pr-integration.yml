@@ -42,16 +42,13 @@ on:
 
 jobs:
   setup:
-    if: >-
-      ${{ 
-        (github.event_name == 'pull_request' || 
-         github.event_name == 'pull_request_target') && 
-        !contains(github.event.pull_request.labels.*.name, 'ci-pause')
-      }}
     runs-on: ubuntu-latest
     outputs:
       manager-image: ${{ steps.set-env.outputs.image-repo }}:${{ steps.set-env.outputs.image-tag }}
     steps:
+      - name: Validate CI labels
+        uses: ./.github/actions/validate-ci-labels
+
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
