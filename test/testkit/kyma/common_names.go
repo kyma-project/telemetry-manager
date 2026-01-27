@@ -59,6 +59,7 @@ var (
 	TraceGatewayClusterRole        = types.NamespacedName{Name: TraceGatewayBaseName, Namespace: SystemNamespaceName}
 	TraceGatewayClusterRoleBinding = types.NamespacedName{Name: TraceGatewayBaseName, Namespace: SystemNamespaceName}
 	TraceGatewayConfigMap          = types.NamespacedName{Name: TraceGatewayBaseName, Namespace: SystemNamespaceName}
+	TraceGatewayPeerAuthentication = types.NamespacedName{Name: TraceGatewayBaseName, Namespace: SystemNamespaceName}
 
 	LogAgentName               = types.NamespacedName{Name: LogAgentBaseName, Namespace: SystemNamespaceName}
 	LogAgentMetricsService     = types.NamespacedName{Name: LogAgentBaseName + "-metrics", Namespace: SystemNamespaceName}

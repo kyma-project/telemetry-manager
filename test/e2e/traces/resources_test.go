@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
+	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -19,7 +20,8 @@ import (
 )
 
 func TestResources(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelTraces)
+	// In order to test the PeerAuthentication creation and reconciliation, we need to run this test in istio-installed clusters
+	suite.RegisterTestCase(t, suite.LabelIstio)
 
 	const (
 		endpointKey   = "traces-endpoint"
@@ -41,6 +43,7 @@ func TestResources(t *testing.T) {
 			assert.NewResource(&corev1.Secret{}, kitkyma.TraceGatewaySecretName),
 			assert.NewResource(&corev1.ConfigMap{}, kitkyma.TraceGatewayConfigMap),
 			assert.NewResource(&corev1.Service{}, kitkyma.TraceGatewayOTLPService),
+			assert.NewResource(&istiosecurityclientv1.PeerAuthentication{}, kitkyma.TraceGatewayPeerAuthentication),
 		}
 	)
 
