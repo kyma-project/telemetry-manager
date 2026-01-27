@@ -17,7 +17,6 @@ on:
 
 jobs:
   envs:
-    if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     outputs:
       tags: ${{ steps.create-tags.outputs.tags }}
