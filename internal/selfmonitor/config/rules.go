@@ -78,21 +78,21 @@ func MakeRules() RuleGroups {
 
 	metricAgentRuleBuilder := otelCollectorRuleBuilder{
 		dataType:    ruleDataType(typeMetricPipeline),
-		serviceName: names.MetricAgent + "-metrics",
+		serviceName: names.MetricAgentMetricsService,
 		namePrefix:  ruleNamePrefix(typeMetricPipeline),
 	}
 	rules = append(rules, metricAgentRuleBuilder.agentRules()...)
 
 	traceGatewayRuleBuilder := otelCollectorRuleBuilder{
 		dataType:    ruleDataType(typeTracePipeline),
-		serviceName: names.TraceGateway + "-metrics",
+		serviceName: names.TraceGatewayMetricsService,
 		namePrefix:  ruleNamePrefix(typeTracePipeline),
 	}
 	rules = append(rules, traceGatewayRuleBuilder.gatewayRules()...)
 
 	logGatewayRuleBuilder := otelCollectorRuleBuilder{
 		dataType:    ruleDataType(typeLogPipeline),
-		serviceName: names.LogGateway + "-metrics",
+		serviceName: names.LogGatewayMetricsService,
 		namePrefix:  ruleNamePrefix(typeLogPipeline),
 	}
 
@@ -100,7 +100,7 @@ func MakeRules() RuleGroups {
 
 	logAgentRuleBuilder := otelCollectorRuleBuilder{
 		dataType:    ruleDataType(typeLogPipeline),
-		serviceName: names.LogAgent + "-metrics",
+		serviceName: names.LogAgentMetricsService,
 		namePrefix:  ruleNamePrefix(typeLogPipeline),
 	}
 

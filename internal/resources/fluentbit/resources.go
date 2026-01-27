@@ -216,12 +216,12 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete clusterolebinding: %w", err))
 	}
 
-	exporterMetricsService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: fmt.Sprintf("%s-exporter-metrics", names.FluentBitAgent), Namespace: aad.namespace}}
+	exporterMetricsService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: names.FluentBitExporterMetricsService, Namespace: aad.namespace}}
 	if err := k8sutils.DeleteObject(ctx, c, &exporterMetricsService); err != nil {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete exporter metric service: %w", err))
 	}
 
-	metricsService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: fmt.Sprintf("%s-metrics", names.FluentBitAgent), Namespace: aad.namespace}}
+	metricsService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: names.FluentBitMetricsService, Namespace: aad.namespace}}
 	if err := k8sutils.DeleteObject(ctx, c, &metricsService); err != nil {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete metric service: %w", err))
 	}
@@ -524,7 +524,7 @@ func makeMetricsService(name types.NamespacedName) *corev1.Service {
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-metrics", name.Name),
+			Name:      names.MetricsServiceName(name.Name),
 			Namespace: name.Namespace,
 			Labels:    serviceLabels,
 			Annotations: map[string]string{
@@ -554,7 +554,7 @@ func makeExporterMetricsService(name types.NamespacedName) *corev1.Service {
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-exporter-metrics", name.Name),
+			Name:      names.FluentBitExporterMetricsService,
 			Namespace: name.Namespace,
 			Labels:    serviceLabels,
 			Annotations: map[string]string{

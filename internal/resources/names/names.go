@@ -1,6 +1,10 @@
 package names
 
-const telemetryPrefix = "telemetry-"
+const (
+	telemetryPrefix       = "telemetry-"
+	metricsSuffix         = "-metrics"
+	exporterMetricsSuffix = "-exporter-metrics" // used for Fluent Bit directory-size exporter
+)
 
 // Agent names
 const (
@@ -24,6 +28,17 @@ const (
 	FluentBitParsersConfigMap    = telemetryPrefix + "fluent-bit-parsers"
 	FluentBitEnvSecret           = telemetryPrefix + "fluent-bit-env"
 	FluentBitTLSConfigSecret     = telemetryPrefix + "fluent-bit-output-tls-config"
+)
+
+// Metrics Service names (for Prometheus scraping)
+const (
+	LogAgentMetricsService          = LogAgent + metricsSuffix
+	MetricAgentMetricsService       = MetricAgent + metricsSuffix
+	TraceGatewayMetricsService      = TraceGateway + metricsSuffix
+	LogGatewayMetricsService        = LogGateway + metricsSuffix
+	MetricGatewayMetricsService     = MetricGateway + metricsSuffix
+	FluentBitMetricsService         = FluentBitAgent + metricsSuffix
+	FluentBitExporterMetricsService = FluentBitAgent + exporterMetricsSuffix
 )
 
 // OTLP Service names
@@ -76,3 +91,8 @@ const (
 const (
 	ManagerNetworkPolicy = telemetryPrefix + "manager"
 )
+
+// MetricsServiceName returns the metrics service name for a given component name
+func MetricsServiceName(componentName string) string {
+	return componentName + metricsSuffix
+}

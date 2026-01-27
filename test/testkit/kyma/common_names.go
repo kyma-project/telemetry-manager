@@ -21,7 +21,7 @@ var (
 	TelemetryManagerWebhookServiceName = types.NamespacedName{Name: names.WebhookService, Namespace: SystemNamespaceName}
 
 	MetricGatewayName               = types.NamespacedName{Name: names.MetricGateway, Namespace: SystemNamespaceName}
-	MetricGatewayMetricsService     = types.NamespacedName{Name: names.MetricGateway + "-metrics", Namespace: SystemNamespaceName}
+	MetricGatewayMetricsService     = types.NamespacedName{Name: names.MetricGatewayMetricsService, Namespace: SystemNamespaceName}
 	MetricGatewayNetworkPolicy      = types.NamespacedName{Name: names.MetricGateway, Namespace: SystemNamespaceName}
 	MetricGatewaySecretName         = types.NamespacedName{Name: names.MetricGateway, Namespace: SystemNamespaceName}
 	MetricGatewayOTLPService        = types.NamespacedName{Name: names.OTLPMetricsService, Namespace: SystemNamespaceName}
@@ -33,7 +33,7 @@ var (
 	MetricGatewayRoleBinding        = types.NamespacedName{Name: names.MetricGateway, Namespace: SystemNamespaceName}
 
 	MetricAgentName               = types.NamespacedName{Name: names.MetricAgent, Namespace: SystemNamespaceName}
-	MetricAgentMetricsService     = types.NamespacedName{Name: names.MetricAgent + "-metrics", Namespace: SystemNamespaceName}
+	MetricAgentMetricsService     = types.NamespacedName{Name: names.MetricAgentMetricsService, Namespace: SystemNamespaceName}
 	MetricAgentNetworkPolicy      = types.NamespacedName{Name: names.MetricAgent, Namespace: SystemNamespaceName}
 	MetricAgentServiceAccount     = types.NamespacedName{Name: names.MetricAgent, Namespace: SystemNamespaceName}
 	MetricAgentClusterRole        = types.NamespacedName{Name: names.MetricAgent, Namespace: SystemNamespaceName}
@@ -41,7 +41,7 @@ var (
 	MetricAgentConfigMap          = types.NamespacedName{Name: names.MetricAgent, Namespace: SystemNamespaceName}
 
 	TraceGatewayName               = types.NamespacedName{Name: names.TraceGateway, Namespace: SystemNamespaceName}
-	TraceGatewayMetricsService     = types.NamespacedName{Name: names.TraceGateway + "-metrics", Namespace: SystemNamespaceName}
+	TraceGatewayMetricsService     = types.NamespacedName{Name: names.TraceGatewayMetricsService, Namespace: SystemNamespaceName}
 	TraceGatewayNetworkPolicy      = types.NamespacedName{Name: names.TraceGateway, Namespace: SystemNamespaceName}
 	TraceGatewaySecretName         = types.NamespacedName{Name: names.TraceGateway, Namespace: SystemNamespaceName}
 	TraceGatewayOTLPService        = types.NamespacedName{Name: names.OTLPTracesService, Namespace: SystemNamespaceName}
@@ -51,7 +51,7 @@ var (
 	TraceGatewayConfigMap          = types.NamespacedName{Name: names.TraceGateway, Namespace: SystemNamespaceName}
 
 	LogAgentName               = types.NamespacedName{Name: names.LogAgent, Namespace: SystemNamespaceName}
-	LogAgentMetricsService     = types.NamespacedName{Name: names.LogAgent + "-metrics", Namespace: SystemNamespaceName}
+	LogAgentMetricsService     = types.NamespacedName{Name: names.LogAgentMetricsService, Namespace: SystemNamespaceName}
 	LogAgentServiceAccount     = types.NamespacedName{Name: names.LogAgent, Namespace: SystemNamespaceName}
 	LogAgentClusterRole        = types.NamespacedName{Name: names.LogAgent, Namespace: SystemNamespaceName}
 	LogAgentClusterRoleBinding = types.NamespacedName{Name: names.LogAgent, Namespace: SystemNamespaceName}
@@ -59,7 +59,7 @@ var (
 	LogAgentConfigMap          = types.NamespacedName{Name: names.LogAgent, Namespace: SystemNamespaceName}
 
 	LogGatewayName               = types.NamespacedName{Name: names.LogGateway, Namespace: SystemNamespaceName}
-	LogGatewayMetricsService     = types.NamespacedName{Name: names.LogGateway + "-metrics", Namespace: SystemNamespaceName}
+	LogGatewayMetricsService     = types.NamespacedName{Name: names.LogGatewayMetricsService, Namespace: SystemNamespaceName}
 	LogGatewayNetworkPolicy      = types.NamespacedName{Name: names.LogGateway, Namespace: SystemNamespaceName}
 	LogGatewaySecretName         = types.NamespacedName{Name: names.LogGateway, Namespace: SystemNamespaceName}
 	LogGatewayOTLPService        = types.NamespacedName{Name: names.OTLPLogsService, Namespace: SystemNamespaceName}
@@ -72,8 +72,8 @@ var (
 	FluentBitServiceAccount         = types.NamespacedName{Name: names.FluentBitAgent, Namespace: SystemNamespaceName}
 	FluentBitClusterRole            = types.NamespacedName{Name: names.FluentBitAgent, Namespace: SystemNamespaceName}
 	FluentBitClusterRoleBinding     = types.NamespacedName{Name: names.FluentBitAgent, Namespace: SystemNamespaceName}
-	FluentBitExporterMetricsService = types.NamespacedName{Name: names.FluentBitAgent + "-exporter-metrics", Namespace: SystemNamespaceName}
-	FluentBitMetricsService         = types.NamespacedName{Name: names.FluentBitAgent + "-metrics", Namespace: SystemNamespaceName}
+	FluentBitExporterMetricsService = types.NamespacedName{Name: names.FluentBitExporterMetricsService, Namespace: SystemNamespaceName}
+	FluentBitMetricsService         = types.NamespacedName{Name: names.FluentBitMetricsService, Namespace: SystemNamespaceName}
 	FluentBitConfigMap              = types.NamespacedName{Name: names.FluentBitAgent, Namespace: SystemNamespaceName}
 	FluentBitSectionsConfigMap      = types.NamespacedName{Name: names.FluentBitSectionsConfigMap, Namespace: SystemNamespaceName}
 	FluentBitLuaConfigMap           = types.NamespacedName{Name: names.FluentBitLuaScriptsConfigMap, Namespace: SystemNamespaceName}
