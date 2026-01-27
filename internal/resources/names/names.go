@@ -48,6 +48,7 @@ const (
 	TracePipelineSync  = telemetryPrefix + "tracepipeline-sync"
 
 	OverrideConfigMap = telemetryPrefix + "override-config"
+	DefaultTelemetry  = "default" // default module resource must be named "default"
 )
 
 // MetricsServiceName returns the metrics service name for a given component name
