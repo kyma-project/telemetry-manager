@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"slices"
 
-	istionetworkingv1alpha3 "istio.io/api/networking/v1alpha3"
+	"istio.io/api/networking/v1alpha3"
 	istiosecurityv1 "istio.io/api/security/v1"
 	istiotypev1beta1 "istio.io/api/type/v1beta1"
 	istionetworkingclientv1 "istio.io/client-go/pkg/apis/networking/v1"
@@ -308,13 +308,15 @@ func (gad *GatewayApplierDeleter) applyIstioResources(ctx context.Context, c cli
 		if err := k8sutils.CreateOrUpdateDestinationRule(ctx, c, gad.makeDestinationRule()); err != nil {
 			return fmt.Errorf("failed to create destinationrule: %w", err)
 		}
+
 		return nil
 	}
+
 	if err := k8sutils.CreateOrUpdatePeerAuthentication(ctx, c, gad.makePeerAuthentication()); err != nil {
 		return fmt.Errorf("failed to create peerauthentication: %w", err)
 	}
-	return nil
 
+	return nil
 }
 
 func (gad *GatewayApplierDeleter) makeGatewayDeployment(configChecksum string, opts GatewayApplyOptions) *appsv1.Deployment {
@@ -525,10 +527,10 @@ func (gad *GatewayApplierDeleter) makeDestinationRule() *istionetworkingclientv1
 			Namespace: gad.globals.TargetNamespace(),
 			Labels:    commonLabels,
 		},
-		Spec: istionetworkingv1alpha3.DestinationRule{
+		Spec: v1alpha3.DestinationRule{
 			Host: fmt.Sprintf("%s.%s.svc.cluster.local", gad.otlpServiceName, gad.globals.TargetNamespace()),
-			TrafficPolicy: &istionetworkingv1alpha3.TrafficPolicy{
-				Tls: &istionetworkingv1alpha3.ClientTLSSettings{Mode: istionetworkingv1alpha3.ClientTLSSettings_DISABLE},
+			TrafficPolicy: &v1alpha3.TrafficPolicy{
+				Tls: &v1alpha3.ClientTLSSettings{Mode: v1alpha3.ClientTLSSettings_DISABLE},
 			},
 		},
 	}

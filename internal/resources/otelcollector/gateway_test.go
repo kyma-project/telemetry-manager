@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	istionetworkingclientv1 "istio.io/client-go/pkg/apis/networking/v1"
-	istionetworkingapiv1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
+	"istio.io/client-go/pkg/apis/networking/v1alpha3"
 	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -122,7 +122,7 @@ func TestGateway_ApplyResources(t *testing.T) {
 			utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 			utilruntime.Must(istiosecurityclientv1.AddToScheme(scheme))
 			utilruntime.Must(istionetworkingclientv1.AddToScheme(scheme))
-			utilruntime.Must(istionetworkingapiv1alpha3.AddToScheme(scheme))
+			utilruntime.Must(v1alpha3.AddToScheme(scheme))
 
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithInterceptorFuncs(interceptor.Funcs{
 				Create: func(_ context.Context, c client.WithWatch, obj client.Object, _ ...client.CreateOption) error {

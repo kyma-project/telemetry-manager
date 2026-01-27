@@ -280,13 +280,13 @@ func CreateOrUpdateDestinationRule(ctx context.Context, c client.Client, desired
 		if !apierrors.IsNotFound(err) {
 			return err
 		}
+
 		return c.Create(ctx, desired)
 	}
 
 	mergeMetadata(&desired.ObjectMeta, existing.ObjectMeta)
 
 	return c.Update(ctx, desired)
-
 }
 func CreateOrUpdateValidatingWebhookConfiguration(ctx context.Context, c client.Client, desired *admissionregistrationv1.ValidatingWebhookConfiguration) error {
 	var existing admissionregistrationv1.ValidatingWebhookConfiguration
