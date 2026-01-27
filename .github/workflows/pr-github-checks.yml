@@ -26,7 +26,6 @@ env:
 
 jobs:
   pr-milestone-project-check:
-    if: ${{ github.event_name == 'workflow_dispatch' }}
     permissions:
       pull-requests: write # Required for setting the milestone
       contents: read
@@ -51,7 +50,6 @@ jobs:
           gh pr edit ${{ github.event.number }} --milestone "${latest_milestone}"
 
   pr-label-check:
-    if: ${{ github.event_name == 'workflow_dispatch' }}
     permissions:
       pull-requests: write # Required for setting the labels
       contents: read
@@ -107,7 +105,6 @@ jobs:
           NUMBER: ${{ github.event.number }}
 
   pr-title-check:
-    if: ${{ github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     steps:
       - name: Validate title
