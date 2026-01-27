@@ -15,7 +15,7 @@ const (
 )
 
 var (
-	TelemetryManagerMetricsServiceName = types.NamespacedName{Name: names.ManagerMetrics, Namespace: SystemNamespaceName}
+	TelemetryManagerMetricsServiceName = types.NamespacedName{Name: names.ManagerMetricsService, Namespace: SystemNamespaceName}
 	TelemetryManagerWebhookServiceName = types.NamespacedName{Name: names.ManagerWebhookService, Namespace: SystemNamespaceName}
 
 	MetricGatewayName               = types.NamespacedName{Name: names.MetricGateway, Namespace: SystemNamespaceName}
