@@ -28,7 +28,7 @@ import (
 	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	istionetworkingclientv1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
+	istionetworkingclientv1 "istio.io/client-go/pkg/apis/networking/v1"
 	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -130,7 +130,7 @@ func init() {
 	utilruntime.Must(telemetryv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(operatorv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(istiosecurityclientv1.AddToScheme(scheme))
-	utilruntime.Must(istionetworkingclientv1alpha3.AddToScheme(scheme))
+	utilruntime.Must(istionetworkingclientv1.AddToScheme(scheme))
 	utilruntime.Must(telemetryv1beta1.AddToScheme(scheme))
 	utilruntime.Must(operatorv1beta1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
