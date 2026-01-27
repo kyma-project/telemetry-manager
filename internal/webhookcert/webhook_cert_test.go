@@ -15,26 +15,24 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-
-	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 )
 
 var (
 	systemNamespace = "kyma-system"
 	webhookService  = types.NamespacedName{
-		Name:      names.ManagerWebhookService,
+		Name:      "telemetry-manager-webhook",
 		Namespace: systemNamespace,
 	}
 	caBundleSecret = types.NamespacedName{
-		Name:      names.ManagerWebhookCertSecret,
+		Name:      "telemetry-webhook-cert",
 		Namespace: systemNamespace,
 	}
-	validatingWebhookName           = names.ValidatingWebhookConfig
+	validatingWebhookName           = "telemetry-validating-webhook.kyma-project.io"
 	validatingWebhookNamespacedName = types.NamespacedName{
 		Name: validatingWebhookName,
 	}
 
-	mutatingWebhookName           = names.MutatingWebhookConfig
+	mutatingWebhookName           = "telemetry-mutating-webhook.kyma-project.io"
 	mutatingWebhookNamespacedName = types.NamespacedName{
 		Name: mutatingWebhookName,
 	}
