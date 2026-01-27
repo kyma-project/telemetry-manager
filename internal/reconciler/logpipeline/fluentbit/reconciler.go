@@ -219,11 +219,8 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 
 	r.trackPipelineInfoMetric(ctx, reconcilablePipelines)
 
-	shootInfo := k8sutils.GetGardenerShootInfo(ctx, r.Client)
 	telemetryOptions := telemetryutils.Options{
-		Client:             r.Client,
-		Globals:            r.globals,
-		DefaultClusterName: shootInfo.ClusterName,
+		Client: r.Client,
 	}
 	clusterName := telemetryutils.GetClusterNameFromTelemetry(ctx, telemetryOptions)
 

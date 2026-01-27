@@ -291,11 +291,10 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1be
 func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *telemetryv1beta1.TracePipeline, allPipelines []telemetryv1beta1.TracePipeline) error {
 	shootInfo := k8sutils.GetGardenerShootInfo(ctx, r.Client)
 	telemetryOptions := telemetryutils.Options{
-		SignalType:         common.SignalTypeTrace,
-		Client:             r.Client,
-		Globals:            r.globals,
-		DefaultClusterName: shootInfo.ClusterName,
-		DefaultReplicas:    defaultReplicaCount,
+		SignalType:                common.SignalTypeTrace,
+		Client:                    r.Client,
+		DefaultReplicas:           defaultReplicaCount,
+		DefaultTelemetryNamespace: r.globals.DefaultTelemetryNamespace(),
 	}
 	clusterName := telemetryutils.GetClusterNameFromTelemetry(ctx, telemetryOptions)
 

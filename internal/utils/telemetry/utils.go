@@ -8,9 +8,9 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
-	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
+	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 )
 
 func GetDefaultTelemetryInstance(ctx context.Context, client client.Client, namespace string) (operatorv1beta1.Telemetry, error) {
@@ -29,18 +29,17 @@ func GetDefaultTelemetryInstance(ctx context.Context, client client.Client, name
 }
 
 type Options struct {
-	SignalType         common.SignalType
-	Client             client.Client
-	Globals            config.Global
-	DefaultReplicas    int32
-	DefaultClusterName string
+	SignalType                common.SignalType
+	Client                    client.Client
+	DefaultReplicas           int32
+	DefaultTelemetryNamespace string
 }
 
 // GetReplicaCountFromTelemetry retrieves the desired number of gateway replicas from the Telemetry CR
 // for the specified signal type (traces, logs, or metrics).
 // It returns the configured replica count if static scaling is configured, otherwise returns the default replica count.
 func GetReplicaCountFromTelemetry(ctx context.Context, opts Options) int32 {
-	telemetry, err := GetDefaultTelemetryInstance(ctx, opts.Client, opts.Globals.DefaultTelemetryNamespace())
+	telemetry, err := GetDefaultTelemetryInstance(ctx, opts.Client, opts.DefaultTelemetryNamespace)
 	if err != nil {
 		logf.FromContext(ctx).V(1).Error(err, "Failed to get telemetry: using default scaling")
 		return opts.DefaultReplicas
@@ -80,10 +79,13 @@ func getGatewaySpec(spec operatorv1beta1.TelemetrySpec, signalType common.Signal
 // GetClusterNameFromTelemetry retrieves the cluster name from the Telemetry CR enrichment configuration.
 // If no custom cluster name is configured, it returns the provided default name.
 func GetClusterNameFromTelemetry(ctx context.Context, opts Options) string {
-	telemetry, err := GetDefaultTelemetryInstance(ctx, opts.Client, opts.Globals.DefaultTelemetryNamespace())
+	shootInfo := k8sutils.GetGardenerShootInfo(ctx, opts.Client)
+	defaultClusterName := shootInfo.ClusterName
+
+	telemetry, err := GetDefaultTelemetryInstance(ctx, opts.Client, opts.DefaultTelemetryNamespace)
 	if err != nil {
 		logf.FromContext(ctx).V(1).Error(err, "Failed to get telemetry: using default shoot name as cluster name")
-		return opts.DefaultClusterName
+		return defaultClusterName
 	}
 
 	if telemetry.Spec.Enrichments != nil &&
@@ -92,13 +94,13 @@ func GetClusterNameFromTelemetry(ctx context.Context, opts Options) string {
 		return telemetry.Spec.Enrichments.Cluster.Name
 	}
 
-	return opts.DefaultClusterName
+	return defaultClusterName
 }
 
 // GetServiceEnrichmentFromTelemetryOrDefault retrieves the service enrichment strategy from the Telemetry CR service-enrichment annotation.
 // If no valid annotation is found, it returns the provided default service enrichment strategy.
 func GetServiceEnrichmentFromTelemetryOrDefault(ctx context.Context, opts Options) string {
-	telemetry, err := GetDefaultTelemetryInstance(ctx, opts.Client, opts.Globals.DefaultTelemetryNamespace())
+	telemetry, err := GetDefaultTelemetryInstance(ctx, opts.Client, opts.DefaultTelemetryNamespace)
 	if err != nil {
 		logf.FromContext(ctx).V(1).Error(err, "Failed to get telemetry: default service enrichment strategy will be used")
 		return commonresources.AnnotationValueTelemetryServiceEnrichmentDefault

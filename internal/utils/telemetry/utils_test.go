@@ -10,7 +10,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
-	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 )
@@ -47,12 +46,6 @@ func TestGetReplicaCountFromTelemetry(t *testing.T) {
 
 	scheme := runtime.NewScheme()
 	_ = operatorv1beta1.AddToScheme(scheme)
-
-	globals := config.NewGlobal(
-		config.WithTargetNamespace(testNamespace),
-		config.WithManagerNamespace(testNamespace),
-		config.WithVersion("1.0.0"),
-	)
 
 	tests := []struct {
 		name           string
@@ -224,10 +217,10 @@ func TestGetReplicaCountFromTelemetry(t *testing.T) {
 			fakeClient := clientBuilder.Build()
 
 			opts := Options{
-				SignalType:      tt.signalType,
-				Client:          fakeClient,
-				Globals:         globals,
-				DefaultReplicas: defaultReplicas,
+				SignalType:                tt.signalType,
+				Client:                    fakeClient,
+				DefaultTelemetryNamespace: testNamespace,
+				DefaultReplicas:           defaultReplicas,
 			}
 
 			result := GetReplicaCountFromTelemetry(ctx, opts)
@@ -239,17 +232,11 @@ func TestGetReplicaCountFromTelemetry(t *testing.T) {
 func TestGetClusterNameFromTelemetry(t *testing.T) {
 	const (
 		testNamespace      = "kyma-system"
-		defaultClusterName = "default-cluster"
+		defaultClusterName = "${KUBERNETES_SERVICE_HOST}" // fallback from k8sutils.GetGardenerShootInfo
 	)
 
 	scheme := runtime.NewScheme()
 	_ = operatorv1beta1.AddToScheme(scheme)
-
-	globals := config.NewGlobal(
-		config.WithTargetNamespace(testNamespace),
-		config.WithManagerNamespace(testNamespace),
-		config.WithVersion("1.0.0"),
-	)
 
 	tests := []struct {
 		name           string
@@ -257,12 +244,12 @@ func TestGetClusterNameFromTelemetry(t *testing.T) {
 		expectedResult string
 	}{
 		{
-			name:           "telemetry not found returns default",
+			name:           "telemetry not found returns default cluster name from shoot info",
 			telemetry:      nil,
 			expectedResult: defaultClusterName,
 		},
 		{
-			name: "enrichments nil returns default",
+			name: "enrichments nil returns default cluster name from shoot info",
 			telemetry: &operatorv1beta1.Telemetry{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "default",
@@ -273,7 +260,7 @@ func TestGetClusterNameFromTelemetry(t *testing.T) {
 			expectedResult: defaultClusterName,
 		},
 		{
-			name: "cluster nil returns default",
+			name: "cluster nil returns default cluster name from shoot info",
 			telemetry: &operatorv1beta1.Telemetry{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "default",
@@ -286,7 +273,7 @@ func TestGetClusterNameFromTelemetry(t *testing.T) {
 			expectedResult: defaultClusterName,
 		},
 		{
-			name: "cluster name empty returns default",
+			name: "cluster name empty returns default cluster name from shoot info",
 			telemetry: &operatorv1beta1.Telemetry{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "default",
@@ -333,9 +320,8 @@ func TestGetClusterNameFromTelemetry(t *testing.T) {
 			fakeClient := clientBuilder.Build()
 
 			opts := Options{
-				Client:             fakeClient,
-				Globals:            globals,
-				DefaultClusterName: defaultClusterName,
+				Client:                    fakeClient,
+				DefaultTelemetryNamespace: testNamespace,
 			}
 
 			result := GetClusterNameFromTelemetry(ctx, opts)
@@ -349,12 +335,6 @@ func TestGetServiceEnrichmentFromTelemetryOrDefault(t *testing.T) {
 
 	scheme := runtime.NewScheme()
 	_ = operatorv1beta1.AddToScheme(scheme)
-
-	globals := config.NewGlobal(
-		config.WithTargetNamespace(testNamespace),
-		config.WithManagerNamespace(testNamespace),
-		config.WithVersion("1.0.0"),
-	)
 
 	tests := []struct {
 		name           string
@@ -442,8 +422,8 @@ func TestGetServiceEnrichmentFromTelemetryOrDefault(t *testing.T) {
 			fakeClient := clientBuilder.Build()
 
 			opts := Options{
-				Client:  fakeClient,
-				Globals: globals,
+				Client:                    fakeClient,
+				DefaultTelemetryNamespace: testNamespace,
 			}
 
 			result := GetServiceEnrichmentFromTelemetryOrDefault(ctx, opts)

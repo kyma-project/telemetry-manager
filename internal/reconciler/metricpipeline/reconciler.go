@@ -334,11 +334,10 @@ func isMetricAgentRequired(pipeline *telemetryv1beta1.MetricPipeline) bool {
 func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telemetryv1beta1.MetricPipeline, allPipelines []telemetryv1beta1.MetricPipeline) error {
 	shootInfo := k8sutils.GetGardenerShootInfo(ctx, r.Client)
 	telemetryOptions := telemetryutils.Options{
-		SignalType:         common.SignalTypeMetric,
-		Client:             r.Client,
-		Globals:            r.globals,
-		DefaultClusterName: shootInfo.ClusterName,
-		DefaultReplicas:    defaultReplicaCount,
+		SignalType:                common.SignalTypeMetric,
+		Client:                    r.Client,
+		DefaultReplicas:           defaultReplicaCount,
+		DefaultTelemetryNamespace: r.globals.DefaultTelemetryNamespace(),
 	}
 	clusterName := telemetryutils.GetClusterNameFromTelemetry(ctx, telemetryOptions)
 
@@ -399,11 +398,10 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 	isIstioActive := r.istioStatusChecker.IsIstioActive(ctx)
 	shootInfo := k8sutils.GetGardenerShootInfo(ctx, r.Client)
 	telemetryOptions := telemetryutils.Options{
-		SignalType:         common.SignalTypeMetric,
-		Client:             r.Client,
-		Globals:            r.globals,
-		DefaultClusterName: shootInfo.ClusterName,
-		DefaultReplicas:    defaultReplicaCount,
+		SignalType:                common.SignalTypeMetric,
+		Client:                    r.Client,
+		DefaultReplicas:           defaultReplicaCount,
+		DefaultTelemetryNamespace: r.globals.DefaultTelemetryNamespace(),
 	}
 	clusterName := telemetryutils.GetClusterNameFromTelemetry(ctx, telemetryOptions)
 

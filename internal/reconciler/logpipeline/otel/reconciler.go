@@ -279,11 +279,10 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1be
 func (r *Reconciler) reconcileLogGateway(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline, allPipelines []telemetryv1beta1.LogPipeline) error {
 	shootInfo := k8sutils.GetGardenerShootInfo(ctx, r.Client)
 	telemetryOptions := telemetryutils.Options{
-		SignalType:         common.SignalTypeLog,
-		Client:             r.Client,
-		Globals:            r.globals,
-		DefaultClusterName: shootInfo.ClusterName,
-		DefaultReplicas:    defaultReplicaCount,
+		SignalType:                common.SignalTypeLog,
+		Client:                    r.Client,
+		DefaultReplicas:           defaultReplicaCount,
+		DefaultTelemetryNamespace: r.globals.DefaultTelemetryNamespace(),
 	}
 	clusterName := telemetryutils.GetClusterNameFromTelemetry(ctx, telemetryOptions)
 
@@ -349,11 +348,10 @@ func (r *Reconciler) reconcileLogAgent(ctx context.Context, pipeline *telemetryv
 
 	shootInfo := k8sutils.GetGardenerShootInfo(ctx, r.Client)
 	telemetryOptions := telemetryutils.Options{
-		SignalType:         common.SignalTypeLog,
-		Client:             r.Client,
-		Globals:            r.globals,
-		DefaultClusterName: shootInfo.ClusterName,
-		DefaultReplicas:    defaultReplicaCount,
+		SignalType:                common.SignalTypeLog,
+		Client:                    r.Client,
+		DefaultReplicas:           defaultReplicaCount,
+		DefaultTelemetryNamespace: r.globals.DefaultTelemetryNamespace(),
 	}
 	clusterName := telemetryutils.GetClusterNameFromTelemetry(ctx, telemetryOptions)
 
