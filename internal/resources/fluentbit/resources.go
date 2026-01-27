@@ -29,14 +29,6 @@ import (
 )
 
 const (
-	fbSectionsConfigMapName   = names.FluentBitSectionsConfigMap
-	fbFilesConfigMapName      = names.FluentBitFilesConfigMap
-	fbLuaConfigMapName        = names.FluentBitLuaScriptsConfigMap
-	fbParsersConfigMapName    = names.FluentBitParsersConfigMap
-	fbEnvConfigSecretName     = names.FluentBitEnvSecret
-	fbTLSFileConfigSecretName = names.FluentBitTLSConfigSecret
-	fbDaemonSetName           = names.FluentBitAgent
-
 	exporterContainerName  = "exporter"
 	chownInitContainerName = "checkpoint-dir-ownership-modifier"
 
@@ -110,13 +102,13 @@ func NewFluentBitApplierDeleter(global config.Global, namespace, fbImage, export
 		chownInitContainerImage: chownInitContainerImage,
 		priorityClassName:       priorityClassName,
 
-		daemonSetName:           types.NamespacedName{Name: fbDaemonSetName, Namespace: namespace},
-		luaConfigMapName:        types.NamespacedName{Name: fbLuaConfigMapName, Namespace: namespace},
-		parsersConfigMapName:    types.NamespacedName{Name: fbParsersConfigMapName, Namespace: namespace},
-		filesConfigMapName:      types.NamespacedName{Name: fbFilesConfigMapName, Namespace: namespace},
-		sectionsConfigMapName:   types.NamespacedName{Name: fbSectionsConfigMapName, Namespace: namespace},
-		envConfigSecretName:     types.NamespacedName{Name: fbEnvConfigSecretName, Namespace: namespace},
-		tlsFileConfigSecretName: types.NamespacedName{Name: fbTLSFileConfigSecretName, Namespace: namespace},
+		daemonSetName:           types.NamespacedName{Name: names.FluentBitAgent, Namespace: namespace},
+		luaConfigMapName:        types.NamespacedName{Name: names.FluentBitLuaScriptsConfigMap, Namespace: namespace},
+		parsersConfigMapName:    types.NamespacedName{Name: names.FluentBitParsersConfigMap, Namespace: namespace},
+		filesConfigMapName:      types.NamespacedName{Name: names.FluentBitFilesConfigMap, Namespace: namespace},
+		sectionsConfigMapName:   types.NamespacedName{Name: names.FluentBitSectionsConfigMap, Namespace: namespace},
+		envConfigSecretName:     types.NamespacedName{Name: names.FluentBitEnvSecret, Namespace: namespace},
+		tlsFileConfigSecretName: types.NamespacedName{Name: names.FluentBitTLSConfigSecret, Namespace: namespace},
 	}
 }
 
@@ -190,7 +182,7 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 
 	//TODO: remove parser configmap creation after logparser removal is rolled out
 	parserCm := corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{
-		Name:      fbParsersConfigMapName,
+		Name:      names.FluentBitParsersConfigMap,
 		Namespace: aad.namespace,
 	}}
 	if err := k8sutils.DeleteObject(ctx, c, &parserCm); err != nil {
@@ -205,7 +197,7 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 	var allErrors error = nil
 
 	objectMeta := metav1.ObjectMeta{
-		Name:      fbDaemonSetName,
+		Name:      names.FluentBitAgent,
 		Namespace: aad.namespace,
 	}
 
@@ -224,12 +216,12 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete clusterolebinding: %w", err))
 	}
 
-	exporterMetricsService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: fmt.Sprintf("%s-exporter-metrics", fbDaemonSetName), Namespace: aad.namespace}}
+	exporterMetricsService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: fmt.Sprintf("%s-exporter-metrics", names.FluentBitAgent), Namespace: aad.namespace}}
 	if err := k8sutils.DeleteObject(ctx, c, &exporterMetricsService); err != nil {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete exporter metric service: %w", err))
 	}
 
-	metricsService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: fmt.Sprintf("%s-metrics", fbDaemonSetName), Namespace: aad.namespace}}
+	metricsService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: fmt.Sprintf("%s-metrics", names.FluentBitAgent), Namespace: aad.namespace}}
 	if err := k8sutils.DeleteObject(ctx, c, &metricsService); err != nil {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete metric service: %w", err))
 	}
@@ -240,7 +232,7 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 	}
 
 	luaCm := corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{
-		Name:      fbLuaConfigMapName,
+		Name:      names.FluentBitLuaScriptsConfigMap,
 		Namespace: aad.namespace,
 	}}
 	if err := k8sutils.DeleteObject(ctx, c, &luaCm); err != nil {
@@ -248,7 +240,7 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 	}
 
 	sectionCm := corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{
-		Name:      fbSectionsConfigMapName,
+		Name:      names.FluentBitSectionsConfigMap,
 		Namespace: aad.namespace,
 	}}
 	if err := k8sutils.DeleteObject(ctx, c, &sectionCm); err != nil {
@@ -256,7 +248,7 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 	}
 
 	filesCm := corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{
-		Name:      fbFilesConfigMapName,
+		Name:      names.FluentBitFilesConfigMap,
 		Namespace: aad.namespace,
 	}}
 	if err := k8sutils.DeleteObject(ctx, c, &filesCm); err != nil {
@@ -274,7 +266,7 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 	}
 
 	envSecret := corev1.Secret{ObjectMeta: metav1.ObjectMeta{
-		Name:      fbEnvConfigSecretName,
+		Name:      names.FluentBitEnvSecret,
 		Namespace: aad.namespace,
 	}}
 	if err := k8sutils.DeleteObject(ctx, c, &envSecret); err != nil {
@@ -282,7 +274,7 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 	}
 
 	tlsSecret := corev1.Secret{ObjectMeta: metav1.ObjectMeta{
-		Name:      fbTLSFileConfigSecretName,
+		Name:      names.FluentBitTLSConfigSecret,
 		Namespace: aad.namespace,
 	}}
 	if err := k8sutils.DeleteObject(ctx, c, &tlsSecret); err != nil {

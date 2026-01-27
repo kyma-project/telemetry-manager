@@ -8,7 +8,6 @@ import (
 	"github.com/prometheus/common/model"
 
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
-	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 )
 
 const (
@@ -72,9 +71,8 @@ func MakeRules() RuleGroups {
 	var rules []Rule
 
 	metricGatewayRuleBuilder := otelCollectorRuleBuilder{
-		dataType:    ruleDataType(typeMetricPipeline),
-		serviceName: otelcollector.MetricGatewayName + "-metrics",
-		namePrefix:  ruleNamePrefix(typeMetricPipeline),
+		dataType:   ruleDataType(typeMetricPipeline),
+		namePrefix: ruleNamePrefix(typeMetricPipeline),
 	}
 	rules = append(rules, metricGatewayRuleBuilder.gatewayRules()...)
 
@@ -87,14 +85,14 @@ func MakeRules() RuleGroups {
 
 	traceGatewayRuleBuilder := otelCollectorRuleBuilder{
 		dataType:    ruleDataType(typeTracePipeline),
-		serviceName: otelcollector.TraceGatewayName + "-metrics",
+		serviceName: names.TraceGateway + "-metrics",
 		namePrefix:  ruleNamePrefix(typeTracePipeline),
 	}
 	rules = append(rules, traceGatewayRuleBuilder.gatewayRules()...)
 
 	logGatewayRuleBuilder := otelCollectorRuleBuilder{
 		dataType:    ruleDataType(typeLogPipeline),
-		serviceName: otelcollector.LogGatewayName + "-metrics",
+		serviceName: names.LogGateway + "-metrics",
 		namePrefix:  ruleNamePrefix(typeLogPipeline),
 	}
 

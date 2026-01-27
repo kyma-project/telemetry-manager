@@ -52,25 +52,18 @@ const (
 
 // Webhook resource names
 const (
+	WebhookCertSecret = telemetryPrefix + "webhook-cert"
+
+	// The following resources are not deployed by the telemetry-manager, but patched by it
+
 	WebhookService        = telemetryPrefix + "manager-webhook"
-	WebhookCertSecret     = telemetryPrefix + "webhook-cert"
 	ValidatingWebhookName = telemetryPrefix + "validating-webhook.kyma-project.io"
 	MutatingWebhookName   = telemetryPrefix + "mutating-webhook.kyma-project.io"
 )
 
 // Manager resource names
 const (
-	Manager        = telemetryPrefix + "manager"
 	ManagerMetrics = telemetryPrefix + "manager-metrics"
-)
-
-// Configuration ConfigMaps
-const (
-	MetricPipelinesConfig = telemetryPrefix + "metricpipelines"
-	LogPipelinesConfig    = telemetryPrefix + "logpipelines"
-	TracePipelinesConfig  = telemetryPrefix + "tracepipelines"
-	ModuleConfig          = telemetryPrefix + "module"
-	OverrideConfig        = telemetryPrefix + "override-config"
 )
 
 // Priority classes
