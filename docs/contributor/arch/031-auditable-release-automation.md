@@ -42,7 +42,7 @@ Implement deterministic Docker builds to ensure PR and release images produce id
 
 ## Implementing Auditable Release Automation
 
-### Download Test Reports
+### Download and Store Test Reports
 
 The test reports from unit tests, E2E tests, and Gardener tests should be downloaded from the respective GitHub Actions workflows and stored as artifacts for audit purposes. For this pupose, a new re-usable workflow created to download and store test reports based on workflow run ID and job name.
 The new workflow can be called from the release PR workflow after test jobs are completed successfully and upload to the pre-configured GCP bucket for audit retention as desccribed [here](https://github.tools.sap/kyma/backlog/issues/8419).
