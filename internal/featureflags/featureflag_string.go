@@ -12,9 +12,9 @@ func _() {
 	_ = x[DeployOTLPGateway-1]
 }
 
-const _FeatureFlag_name = "placeholderEnableDaemonSetForGateway"
+const _FeatureFlag_name = "placeholderDeployOTLPGateway"
 
-var _FeatureFlag_index = [...]uint8{0, 11, 36}
+var _FeatureFlag_index = [...]uint8{0, 11, 28}
 
 func (i FeatureFlag) String() string {
 	idx := int(i) - 0
