@@ -22,13 +22,7 @@ type WorkloadMetadata struct {
 }
 
 // MakeWorkloadMetadata creates metadata for workloads (Deployment or DaemonSet)
-func MakeWorkloadMetadata(
-	globals *config.Global,
-	baseName string,
-	componentType string,
-	extraPodLabels map[string]string,
-	annotations map[string]string,
-) WorkloadMetadata {
+func MakeWorkloadMetadata(globals *config.Global, baseName string, componentType string, extraPodLabels map[string]string, annotations map[string]string) WorkloadMetadata {
 	defaultLabels := commonresources.MakeDefaultLabels(baseName, componentType)
 
 	// Create final labels with additional labels from globals
@@ -58,12 +52,7 @@ func MakeWorkloadMetadata(
 }
 
 // MakeDaemonSet creates a DaemonSet with the given configuration (for agents)
-func MakeDaemonSet(
-	baseName string,
-	namespace string,
-	metadata WorkloadMetadata,
-	podSpec corev1.PodSpec,
-) *appsv1.DaemonSet {
+func MakeDaemonSet(baseName string, namespace string, metadata WorkloadMetadata, podSpec corev1.PodSpec) *appsv1.DaemonSet {
 	selectorLabels := commonresources.MakeDefaultSelectorLabels(baseName)
 
 	return &appsv1.DaemonSet{
@@ -89,12 +78,7 @@ func MakeDaemonSet(
 }
 
 // MakeGatewayDaemonSet creates a DaemonSet with UpdateStrategy for gateways
-func MakeGatewayDaemonSet(
-	baseName string,
-	namespace string,
-	metadata WorkloadMetadata,
-	podSpec corev1.PodSpec,
-) *appsv1.DaemonSet {
+func MakeGatewayDaemonSet(baseName string, namespace string, metadata WorkloadMetadata, podSpec corev1.PodSpec) *appsv1.DaemonSet {
 	selectorLabels := commonresources.MakeDefaultSelectorLabels(baseName)
 
 	return &appsv1.DaemonSet{
@@ -127,13 +111,7 @@ func MakeGatewayDaemonSet(
 }
 
 // MakeDeployment creates a Deployment with the given configuration
-func MakeDeployment(
-	baseName string,
-	namespace string,
-	replicas int32,
-	metadata WorkloadMetadata,
-	podSpec corev1.PodSpec,
-) *appsv1.Deployment {
+func MakeDeployment(baseName string, namespace string, replicas int32, metadata WorkloadMetadata, podSpec corev1.PodSpec) *appsv1.Deployment {
 	selectorLabels := commonresources.MakeDefaultSelectorLabels(baseName)
 
 	return &appsv1.Deployment{
