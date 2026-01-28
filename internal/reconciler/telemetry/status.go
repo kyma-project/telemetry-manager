@@ -16,7 +16,7 @@ import (
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
-	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 )
 
 type ComponentHealthChecker interface {
@@ -113,7 +113,7 @@ func (r *Reconciler) updateGatewayEndpoints(ctx context.Context, telemetry *oper
 
 func (r *Reconciler) logEndpoints(ctx context.Context, config Config) (*operatorv1beta1.OTLPEndpoints, error) {
 	pushEndpoint := types.NamespacedName{
-		Name:      otelcollector.LogOTLPServiceName,
+		Name:      names.OTLPLogsService,
 		Namespace: config.TargetNamespace(),
 	}
 
@@ -132,7 +132,7 @@ func (r *Reconciler) logEndpoints(ctx context.Context, config Config) (*operator
 
 func (r *Reconciler) traceEndpoints(ctx context.Context, config Config) (*operatorv1beta1.OTLPEndpoints, error) {
 	pushEndpoint := types.NamespacedName{
-		Name:      otelcollector.TraceOTLPServiceName,
+		Name:      names.OTLPTracesService,
 		Namespace: config.TargetNamespace(),
 	}
 
@@ -151,7 +151,7 @@ func (r *Reconciler) traceEndpoints(ctx context.Context, config Config) (*operat
 
 func (r *Reconciler) metricEndpoints(ctx context.Context, config Config) (*operatorv1beta1.OTLPEndpoints, error) {
 	pushEndpoint := types.NamespacedName{
-		Name:      otelcollector.MetricOTLPServiceName,
+		Name:      names.OTLPMetricsService,
 		Namespace: config.TargetNamespace(),
 	}
 
