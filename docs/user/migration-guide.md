@@ -70,4 +70,4 @@ To identify the required updates for your manifests, review the breaking changes
 ## Result
 Your pipelines are now updated to the `v1beta1` API. The Telemetry module begins using the new configuration.
 
-To confirm the migration was successful, check that your new pipelines are healthy (see [Check Pipeline Status](.monitor-pipeline-health.md)).
+To confirm the migration was successful, check that your new pipelines are healthy (see [Check Pipeline Status](monitor-pipeline-health.md)).
