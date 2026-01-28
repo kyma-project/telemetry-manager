@@ -78,6 +78,7 @@ func TestServiceEnrichment(t *testing.T) {
 
 	// Enable OTel service enrichment strategy
 	// TODO(TeodorSAP): Remove this block after deprecation period ends and OTel strategy becomes default enrichment strategy
+	kitk8s.PreserveAndScheduleRestoreOfTelemetryResource(t, kitkyma.TelemetryName)
 	Eventually(func(g Gomega) {
 		g.Expect(suite.K8sClient.Get(t.Context(), kitkyma.TelemetryName, &telemetry)).NotTo(HaveOccurred())
 		telemetry.Annotations = map[string]string{
@@ -133,16 +134,6 @@ func TestServiceEnrichment(t *testing.T) {
 			Not(ContainElement(HaveResourceAttributes(HaveKey(ContainSubstring("kyma"))))),
 		), assert.WithOptionalDescription("Should have no kyma resource attributes"),
 	)
-
-	// Disable OTel service enrichment strategy
-	// TODO(TeodorSAP): Remove this block after deprecation period ends and OTel strategy becomes default enrichment strategy
-	Eventually(func(g Gomega) {
-		g.Expect(suite.K8sClient.Get(t.Context(), kitkyma.TelemetryName, &telemetry)).NotTo(HaveOccurred())
-		telemetry.Annotations = map[string]string{
-			commonresources.AnnotationKeyTelemetryServiceEnrichment: commonresources.AnnotationValueTelemetryServiceEnrichmentKymaLegacy,
-		}
-		g.Expect(suite.K8sClient.Update(t.Context(), &telemetry)).NotTo(HaveOccurred(), "should update Telemetry resource with service enrichment annotation")
-	}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
 
 type ServiceAttributes struct {
