@@ -19,11 +19,11 @@ For auditing purposes, each release must provide successful test result artifact
 - Test execution reports (unit and e2e tests)
 - Docker images used for testing and release
 - Gardener tests execution reports
-- Image digest verification
+- Docker Image digest verification
 
 ### Test Execution Reports
 
-Test execution reports should be downloaded for both unit tests and end-to-end (E2E) tests from corresponding GitHub Workflow executions and retained for audit purposes.
+Test execution reports should be downloaded for unit tests, end-to-end (E2E) tests, and Gardener Integration tests from corresponding GitHub Workflow executions and retained for audit purposes.
 
 ### Docker Images
 
@@ -41,6 +41,17 @@ Implement deterministic Docker builds to ensure PR and release images produce id
 
 
 ## Implementing Auditable Release Automation
+
+### Download Test Reports
+
+The test reports from unit tests, E2E tests, and Gardener tests should be downloaded from the respective GitHub Actions workflows and stored as artifacts for audit purposes. For this pupose, a new re-usable workflow created to download and store test reports based on workflow run ID and job name.
+The new workflow can be called from the release PR workflow after test jobs are completed successfully and upload to the pre-configured GCP bucket for audit retention as desccribed [here](https://github.tools.sap/kyma/backlog/issues/8419).
+
+### Deterministic Docker Builds
+To achieve deterministic Docker builds, the following strategies can be employed:
+
+- **Reproducible Build Tools**: Utilize tools and techniques that support reproducible builds, such as Docker's BuildKit option, which have to be implemented by the `Image-Builder`.
+- **Copy Release PR Image**: As an alternative to reproducible builds, the release process can be modified to copy the Docker image built during the release PR directly to the production registry with the release tag. This approach ensures that the same image used for testing is released, maintaining identical digests.
 
 ### 1. Release Workflow
 
