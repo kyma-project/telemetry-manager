@@ -344,6 +344,7 @@ func (r *Reconciler) reconcileGateway(ctx context.Context, pipeline *telemetryv1
 		if err := r.gatewayApplierDeleter.DeleteResources(ctx, r.Client, r.istioStatusChecker.IsIstioActive(ctx)); err != nil {
 			return fmt.Errorf("failed to delete legacy gateway resources: %w", err)
 		}
+
 		if err := r.otlpGatewayApplierDeleter.ApplyResources(
 			ctx,
 			k8sutils.NewOwnerReferenceSetter(r.Client, pipeline),
