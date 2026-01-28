@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"slices"
 
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	"istio.io/api/networking/v1alpha3"
 	istionetworkingclientv1 "istio.io/client-go/pkg/apis/networking/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -57,11 +58,11 @@ func NewOTLPGatewayApplierDeleter(globals config.Global, image, priorityClassNam
 
 	return &OTLPGatewayApplierDeleter{
 		globals:              globals,
-		baseName:             OTLPGatewayName,
+		baseName:             names.OTLPGateway,
 		extraPodLabels:       extraLabels,
 		image:                image,
-		otlpServiceName:      OTLPServiceName,
-		rbac:                 makeOTLPGatewayRBAC(OTLPGatewayName, globals.TargetNamespace()),
+		otlpServiceName:      names.OTLPService,
+		rbac:                 makeOTLPGatewayRBAC(names.OTLPGateway, globals.TargetNamespace()),
 		baseMemoryLimit:      logGatewayBaseMemoryLimit,
 		dynamicMemoryLimit:   logGatewayDynamicMemoryLimit,
 		baseCPURequest:       logGatewayBaseCPURequest,
@@ -70,7 +71,7 @@ func NewOTLPGatewayApplierDeleter(globals config.Global, image, priorityClassNam
 		dynamicMemoryRequest: logGatewayDynamicMemoryRequest,
 		podOpts: []commonresources.PodSpecOption{
 			commonresources.WithPriorityClass(priorityClassName),
-			commonresources.WithAffinity(makePodAffinity(commonresources.MakeDefaultSelectorLabels(OTLPGatewayName))),
+			commonresources.WithAffinity(makePodAffinity(commonresources.MakeDefaultSelectorLabels(names.OTLPGateway))),
 		},
 		containerOpts: []commonresources.ContainerOption{
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentPodIP, fieldPathPodIP),
@@ -121,7 +122,7 @@ func (o *OTLPGatewayApplierDeleter) ApplyResources(ctx context.Context, c client
 
 	// Create the legacy service for backward compatibility
 	// This service uses the old name (telemetry-otlp-logs) but points to the new DaemonSet
-	legacyService := o.makeLegacyOTLPService(LogOTLPServiceName)
+	legacyService := o.makeLegacyOTLPService(names.OTLPLogsService)
 	if err := k8sutils.CreateOrUpdateService(ctx, c, legacyService); err != nil {
 		return fmt.Errorf("failed to create legacy log otlp service: %w", err)
 	}
@@ -165,7 +166,7 @@ func (o *OTLPGatewayApplierDeleter) DeleteResources(ctx context.Context, c clien
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete otlp service: %w", err))
 	}
 
-	legacyLogService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: LogOTLPServiceName, Namespace: o.globals.TargetNamespace()}}
+	legacyLogService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: names.OTLPLogsService, Namespace: o.globals.TargetNamespace()}}
 	if err := k8sutils.DeleteObject(ctx, c, &legacyLogService); err != nil {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete legacy log otlp service: %w", err))
 	}

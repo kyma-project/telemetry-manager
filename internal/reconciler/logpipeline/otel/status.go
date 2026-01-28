@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -139,10 +138,10 @@ func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *tel
 func (r *Reconciler) setGatewayHealthyCondition(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) {
 	resourceName := func() string {
 		if r.globals.DeployOTLPGateway() {
-			return otelcollector.OTLPGatewayName
+			return names.OTLPGateway
 		}
 
-		return otelcollector.LogGatewayName
+		return names.LogGateway
 	}()
 
 	condition := commonstatus.GetGatewayHealthyCondition(ctx,
