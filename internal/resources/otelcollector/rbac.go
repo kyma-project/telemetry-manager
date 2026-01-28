@@ -157,7 +157,7 @@ func makeLogGatewayRBAC(namespace string) rbac {
 	)
 }
 
-func makeOTLPGatewayRBAC(name, namespace string) rbac {
+func makeOTLPGatewayRBAC(namespace string) rbac {
 	return *newRBAC(
 		types.NamespacedName{Name: names.OTLPGateway, Namespace: namespace},
 		commonresources.LabelValueK8sComponentGateway,

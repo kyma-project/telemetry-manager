@@ -295,6 +295,8 @@ func (gad *GatewayApplierDeleter) makeGatewayMetadata(configChecksum string, opt
 }
 
 // makeGatewayPodSpec creates the pod spec for gateway (Deployment or DaemonSet)
+//
+//nolint:dupl // repeating the code as we this would be deleted when we implement all signals in OTLP gateway
 func (gad *GatewayApplierDeleter) makeGatewayPodSpec(opts GatewayApplyOptions) corev1.PodSpec {
 	resources := gad.makeGatewayResourceRequirements(opts)
 

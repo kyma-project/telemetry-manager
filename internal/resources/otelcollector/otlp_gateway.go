@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	"istio.io/api/networking/v1alpha3"
 	istionetworkingclientv1 "istio.io/client-go/pkg/apis/networking/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -23,6 +22,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 )
 
@@ -49,6 +49,8 @@ type OTLPGatewayApplierDeleter struct {
 }
 
 // NewOTLPGatewayApplierDeleter creates a new OTLPGatewayApplierDeleter that manages the OTLP gateway DaemonSet.
+//
+//nolint:dupl // repeating the code as we this would be deleted when we implement all signals in OTLP gateway
 func NewOTLPGatewayApplierDeleter(globals config.Global, image, priorityClassName string) *OTLPGatewayApplierDeleter {
 	extraLabels := map[string]string{
 		commonresources.LabelKeyTelemetryLogIngest: commonresources.LabelValueTrue,
@@ -62,7 +64,7 @@ func NewOTLPGatewayApplierDeleter(globals config.Global, image, priorityClassNam
 		extraPodLabels:       extraLabels,
 		image:                image,
 		otlpServiceName:      names.OTLPService,
-		rbac:                 makeOTLPGatewayRBAC(names.OTLPGateway, globals.TargetNamespace()),
+		rbac:                 makeOTLPGatewayRBAC(globals.TargetNamespace()),
 		baseMemoryLimit:      logGatewayBaseMemoryLimit,
 		dynamicMemoryLimit:   logGatewayDynamicMemoryLimit,
 		baseCPURequest:       logGatewayBaseCPURequest,
@@ -279,6 +281,8 @@ func (o *OTLPGatewayApplierDeleter) makeGatewayDaemonSet(configChecksum string, 
 }
 
 // makeGatewayPodSpec creates the pod spec for gateway (Deployment or DaemonSet)
+//
+//nolint:dupl // repeating the code as we this would be deleted when we implement all signals in OTLP gateway
 func (o *OTLPGatewayApplierDeleter) makeGatewayPodSpec(opts GatewayApplyOptions) corev1.PodSpec {
 	resources := o.makeGatewayResourceRequirements(opts)
 
