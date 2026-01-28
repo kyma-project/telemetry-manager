@@ -64,7 +64,6 @@ spec:
           - "10000000"
           - --interval
           - "30s"
-          - --batch=false
           - --telemetry-attributes
           - "key1=\"SimSimulates a client generating metrics. (Stability level: Development)\""
           - --telemetry-attributes
