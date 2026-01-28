@@ -17,6 +17,7 @@ import (
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 )
 
@@ -105,8 +106,8 @@ func deleteCommonResources(ctx context.Context, c client.Client, name types.Name
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete service account: %w", err))
 	}
 
-	metricsService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: name.Name + "-metrics", Namespace: name.Namespace}}
-	if err := k8sutils.DeleteObject(ctx, c, &metricsService); err != nil && !apierrors.IsNotFound(err) {
+	metricsService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: names.MetricsServiceName(name.Name), Namespace: name.Namespace}}
+	if err := k8sutils.DeleteObject(ctx, c, &metricsService); err != nil {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete metrics service: %w", err))
 	}
 
@@ -162,7 +163,7 @@ func makeMetricsService(name types.NamespacedName, componentType string) *corev1
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name.Name + "-metrics",
+			Name:      names.MetricsServiceName(name.Name),
 			Namespace: name.Namespace,
 			Labels:    labels,
 			Annotations: map[string]string{

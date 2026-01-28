@@ -14,11 +14,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/config"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 )
 
 const (
-	// name of the configmap where the overrides config is stored, the namespace is provided using HandlerConfig
-	configMapName = "telemetry-override-config"
 	// config key in the overrides configmap
 	configKey = "override-config"
 )
@@ -106,7 +105,7 @@ func (h *Handler) readConfigMapOrEmpty(ctx context.Context) (string, error) {
 	var cm corev1.ConfigMap
 
 	cmName := types.NamespacedName{
-		Name:      configMapName,
+		Name:      names.OverrideConfigMap,
 		Namespace: h.globals.TargetNamespace(),
 	}
 	if err := h.client.Get(ctx, cmName, &cm); err != nil {

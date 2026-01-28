@@ -7,6 +7,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 )
 
 func GetDefaultTelemetryInstance(ctx context.Context, client client.Client, namespace string) (operatorv1beta1.Telemetry, error) {
@@ -14,7 +15,7 @@ func GetDefaultTelemetryInstance(ctx context.Context, client client.Client, name
 
 	telemetryName := types.NamespacedName{
 		Namespace: namespace,
-		Name:      "default",
+		Name:      names.DefaultTelemetry,
 	}
 
 	if err := client.Get(ctx, telemetryName, &telemetry); err != nil {
