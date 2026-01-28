@@ -220,7 +220,8 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 	r.trackPipelineInfoMetric(ctx, reconcilablePipelines)
 
 	telemetryOptions := telemetryutils.Options{
-		Client: r.Client,
+		Client:                    r.Client,
+		DefaultTelemetryNamespace: r.globals.DefaultTelemetryNamespace(),
 	}
 	clusterName := telemetryutils.GetClusterNameFromTelemetry(ctx, telemetryOptions)
 
