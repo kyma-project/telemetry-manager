@@ -20,6 +20,7 @@ import (
 )
 
 func TestTracesResources(t *testing.T) {
+	// This test need to run with istio installed in the cluster to be able to test the creation and reconciliation of PeerAuthentication
 	suite.RegisterTestCase(t, suite.LabelIstio)
 
 	const (
@@ -28,10 +29,9 @@ func TestTracesResources(t *testing.T) {
 	)
 
 	var (
-		uniquePrefix = unique.Prefix()
-		pipelineName = uniquePrefix()
-		secretName   = uniquePrefix()
-
+		uniquePrefix     = unique.Prefix()
+		pipelineName     = uniquePrefix()
+		secretName       = uniquePrefix()
 		gatewayResources = []assert.Resource{
 			assert.NewResource(&appsv1.Deployment{}, kitkyma.TraceGatewayName),
 			assert.NewResource(&corev1.Service{}, kitkyma.TraceGatewayMetricsService),

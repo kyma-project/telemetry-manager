@@ -65,6 +65,7 @@ var (
 
 	LogAgentName               = types.NamespacedName{Name: LogAgentBaseName, Namespace: SystemNamespaceName}
 	LogAgentMetricsService     = types.NamespacedName{Name: LogAgentBaseName + "-metrics", Namespace: SystemNamespaceName}
+	LogAgentSecretName         = types.NamespacedName{Name: LogAgentBaseName, Namespace: SystemNamespaceName}
 	LogAgentServiceAccount     = types.NamespacedName{Name: LogAgentBaseName, Namespace: SystemNamespaceName}
 	LogAgentClusterRole        = types.NamespacedName{Name: LogAgentBaseName, Namespace: SystemNamespaceName}
 	LogAgentClusterRoleBinding = types.NamespacedName{Name: LogAgentBaseName, Namespace: SystemNamespaceName}
@@ -80,6 +81,7 @@ var (
 	LogGatewayClusterRole        = types.NamespacedName{Name: LogGatewayBaseName, Namespace: SystemNamespaceName}
 	LogGatewayClusterRoleBinding = types.NamespacedName{Name: LogGatewayBaseName, Namespace: SystemNamespaceName}
 	LogGatewayConfigMap          = types.NamespacedName{Name: LogGatewayBaseName, Namespace: SystemNamespaceName}
+	LogGatewayPeerAuthentication = types.NamespacedName{Name: LogGatewayBaseName, Namespace: SystemNamespaceName}
 
 	FluentBitDaemonSetName          = types.NamespacedName{Name: FluentBitBaseName, Namespace: SystemNamespaceName}
 	FluentBitServiceAccount         = types.NamespacedName{Name: FluentBitBaseName, Namespace: SystemNamespaceName}
@@ -93,6 +95,8 @@ var (
 	FluentBitParserConfigMap        = types.NamespacedName{Name: FluentBitBaseName + "-parsers", Namespace: SystemNamespaceName}
 	FluentBitFilesConfigMap         = types.NamespacedName{Name: FluentBitBaseName + "-files", Namespace: SystemNamespaceName}
 	FluentBitNetworkPolicy          = types.NamespacedName{Name: FluentBitBaseName, Namespace: SystemNamespaceName}
+	FluentBitEnvSecret              = types.NamespacedName{Name: FluentBitBaseName + "-env", Namespace: SystemNamespaceName}
+	FluentBitTLSConfigSecret        = types.NamespacedName{Name: FluentBitBaseName + "-output-tls-config", Namespace: SystemNamespaceName}
 
 	SelfMonitorName          = types.NamespacedName{Name: SelfMonitorBaseName, Namespace: SystemNamespaceName}
 	SelfMonitorNetworkPolicy = types.NamespacedName{Name: SelfMonitorBaseName, Namespace: SystemNamespaceName}

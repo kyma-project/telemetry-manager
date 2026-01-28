@@ -20,6 +20,7 @@ import (
 )
 
 func TestMetricsResources(t *testing.T) {
+	// This test need to run with istio installed in the cluster to be able to test the creation and reconciliation of PeerAuthentication
 	suite.RegisterTestCase(t, suite.LabelIstio)
 
 	const (
@@ -31,8 +32,7 @@ func TestMetricsResources(t *testing.T) {
 		uniquePrefix = unique.Prefix()
 		pipelineName = uniquePrefix()
 		secretName   = uniquePrefix()
-
-		resources = []assert.Resource{
+		resources    = []assert.Resource{
 			// Agent resources
 			assert.NewResource(&appsv1.DaemonSet{}, kitkyma.MetricAgentName),
 			assert.NewResource(&corev1.Service{}, kitkyma.MetricAgentMetricsService),
