@@ -86,8 +86,13 @@ var (
 	FluentBitEnvSecret              = types.NamespacedName{Name: names.FluentBit + "-env", Namespace: SystemNamespaceName}
 	FluentBitTLSConfigSecret        = types.NamespacedName{Name: names.FluentBit + "-output-tls-config", Namespace: SystemNamespaceName}
 
-	SelfMonitorName          = types.NamespacedName{Name: names.SelfMonitor, Namespace: SystemNamespaceName}
-	SelfMonitorNetworkPolicy = types.NamespacedName{Name: names.SelfMonitor, Namespace: SystemNamespaceName}
+	SelfMonitorName           = types.NamespacedName{Name: names.SelfMonitor, Namespace: SystemNamespaceName}
+	SelfMonitorNetworkPolicy  = types.NamespacedName{Name: names.SelfMonitor, Namespace: SystemNamespaceName}
+	SelfMonitorServiceAccount = types.NamespacedName{Name: names.SelfMonitor, Namespace: SystemNamespaceName}
+	SelfMonitorRole           = types.NamespacedName{Name: names.SelfMonitor, Namespace: SystemNamespaceName}
+	SelfMonitorRoleBinding    = types.NamespacedName{Name: names.SelfMonitor, Namespace: SystemNamespaceName}
+	SelfMonitorConfigMap      = types.NamespacedName{Name: names.SelfMonitor, Namespace: SystemNamespaceName}
+	SelfMonitorService        = types.NamespacedName{Name: names.SelfMonitor, Namespace: SystemNamespaceName}
 
 	TelemetryName = types.NamespacedName{Name: names.DefaultTelemetry, Namespace: SystemNamespaceName}
 
