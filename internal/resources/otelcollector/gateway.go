@@ -6,13 +6,12 @@ import (
 	"fmt"
 	"slices"
 
-	"istio.io/api/networking/v1alpha3"
 	istiosecurityv1 "istio.io/api/security/v1"
 	istiotypev1beta1 "istio.io/api/type/v1beta1"
-	istionetworkingclientv1 "istio.io/client-go/pkg/apis/networking/v1"
 	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -235,31 +234,17 @@ func (gad *GatewayApplierDeleter) ApplyResources(ctx context.Context, c client.C
 
 	configChecksum := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, []corev1.Secret{*secret})
 
-	if gad.useDaemonSet {
-		if err := k8sutils.CreateOrUpdateDaemonSet(ctx, c, gad.makeGatewayDaemonSet(configChecksum, opts)); err != nil {
-			return fmt.Errorf("failed to create daemonset: %w", err)
-		}
-	} else {
-		if err := k8sutils.CreateOrUpdateDeployment(ctx, c, gad.makeGatewayDeployment(configChecksum, opts)); err != nil {
-			return fmt.Errorf("failed to create deployment: %w", err)
-		}
+	if err := k8sutils.CreateOrUpdateDeployment(ctx, c, gad.makeGatewayDeployment(configChecksum, opts)); err != nil {
+		return fmt.Errorf("failed to create deployment: %w", err)
 	}
 
 	if err := k8sutils.CreateOrUpdateService(ctx, c, gad.makeOTLPService(gad.useDaemonSet)); err != nil {
 		return fmt.Errorf("failed to create otlp service: %w", err)
 	}
 
-	// When using DaemonSet mode with the unified OTLP gateway, create legacy service names
-	// that point to the new gateway for backward compatibility
-	if gad.useDaemonSet && gad.baseName == OTLPGatewayName {
-		if err := k8sutils.CreateOrUpdateService(ctx, c, gad.makeLegacyOTLPService(LogOTLPServiceName)); err != nil {
-			return fmt.Errorf("failed to create legacy log otlp service: %w", err)
-		}
-	}
-
 	if opts.IstioEnabled {
-		if err := gad.applyIstioResources(ctx, c, gad.useDaemonSet); err != nil {
-			return fmt.Errorf("failed to create istio resources: %w", err)
+		if err := k8sutils.CreateOrUpdatePeerAuthentication(ctx, c, gad.makePeerAuthentication()); err != nil {
+			return fmt.Errorf("failed to create peerauthentication: %w", err)
 		}
 	}
 
@@ -271,7 +256,7 @@ func (gad *GatewayApplierDeleter) DeleteResources(ctx context.Context, c client.
 	var allErrors error = nil
 
 	name := types.NamespacedName{Name: gad.baseName, Namespace: gad.globals.TargetNamespace()}
-	if err := deleteCommonResources(ctx, c, name); err != nil {
+	if err := deleteCommonResources(ctx, c, name); err != nil && !apierrors.IsNotFound(err) {
 		allErrors = errors.Join(allErrors, err)
 	}
 
@@ -281,111 +266,30 @@ func (gad *GatewayApplierDeleter) DeleteResources(ctx context.Context, c client.
 	}
 
 	secret := corev1.Secret{ObjectMeta: objectMeta}
-	if err := k8sutils.DeleteObject(ctx, c, &secret); err != nil {
+	if err := k8sutils.DeleteObject(ctx, c, &secret); err != nil && !apierrors.IsNotFound(err) {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete env secret: %w", err))
 	}
 
 	configMap := corev1.ConfigMap{ObjectMeta: objectMeta}
-	if err := k8sutils.DeleteObject(ctx, c, &configMap); err != nil {
+	if err := k8sutils.DeleteObject(ctx, c, &configMap); err != nil && !apierrors.IsNotFound(err) {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete configmap: %w", err))
 	}
 
-	// Delete the workload based on current mode
-	if gad.useDaemonSet {
-		daemonSet := appsv1.DaemonSet{ObjectMeta: objectMeta}
-		if err := k8sutils.DeleteObject(ctx, c, &daemonSet); err != nil {
-			allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete daemonset: %w", err))
-		}
-
-		// When using DaemonSet mode (unified gateway), also clean up legacy deployment if it exists
-		// This handles the migration case from deployment to daemonset
-		if gad.baseName == OTLPGatewayName {
-			legacyDeployment := appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{
-				Name:      LogGatewayName,
-				Namespace: gad.globals.TargetNamespace(),
-			}}
-			if err := k8sutils.DeleteObject(ctx, c, &legacyDeployment); err != nil && !errors.Is(err, client.IgnoreNotFound(err)) {
-				allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete legacy deployment: %w", err))
-			}
-		}
-	} else {
-		deployment := appsv1.Deployment{ObjectMeta: objectMeta}
-		if err := k8sutils.DeleteObject(ctx, c, &deployment); err != nil {
-			allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete deployment: %w", err))
-		}
+	deployment := appsv1.Deployment{ObjectMeta: objectMeta}
+	if err := k8sutils.DeleteObject(ctx, c, &deployment); err != nil && !apierrors.IsNotFound(err) {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete deployment: %w", err))
 	}
 
 	// Delete the OTLP service
 	OTLPService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: gad.otlpServiceName, Namespace: gad.globals.TargetNamespace()}}
-	if err := k8sutils.DeleteObject(ctx, c, &OTLPService); err != nil {
+	if err := k8sutils.DeleteObject(ctx, c, &OTLPService); err != nil && !apierrors.IsNotFound(err) {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete otlp service: %w", err))
 	}
 
-	// When using DaemonSet mode (unified gateway), also delete the legacy service
-	// because we created it for backward compatibility and need to clean it up
-	if gad.useDaemonSet && gad.baseName == OTLPGatewayName {
-		legacyLogService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: LogOTLPServiceName, Namespace: gad.globals.TargetNamespace()}}
-		if err := k8sutils.DeleteObject(ctx, c, &legacyLogService); err != nil {
-			allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete legacy log otlp service: %w", err))
-		}
-	}
-
 	if isIstioActive {
-		err := gad.deleteIstioResources(ctx, c)
-		if err != nil {
-			allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete istio resources: %w", err))
-		}
-	}
-
-	return allErrors
-}
-
-func (gad *GatewayApplierDeleter) applyIstioResources(ctx context.Context, c client.Client, useDaemonSet bool) error {
-	if useDaemonSet {
-		if err := k8sutils.CreateOrUpdateDestinationRule(ctx, c, gad.makeDestinationRule()); err != nil {
-			return fmt.Errorf("failed to create destinationrule: %w", err)
-		}
-
-		return nil
-	}
-
-	if err := k8sutils.CreateOrUpdatePeerAuthentication(ctx, c, gad.makePeerAuthentication()); err != nil {
-		return fmt.Errorf("failed to create peerauthentication: %w", err)
-	}
-
-	return nil
-}
-
-func (gad *GatewayApplierDeleter) deleteIstioResources(ctx context.Context, c client.Client) error {
-	var allErrors error
-
-	objectMeta := metav1.ObjectMeta{
-		Name:      gad.baseName,
-		Namespace: gad.globals.TargetNamespace(),
-	}
-
-	// Always try to delete both PeerAuthentication and DestinationRule to handle migration scenarios
-	// When migrating from Deployment to DaemonSet, we need to clean up the old PeerAuthentication
-	// When using DaemonSet, we use DestinationRule instead of PeerAuthentication
-	peerAuthentication := istiosecurityclientv1.PeerAuthentication{ObjectMeta: objectMeta}
-	if err := k8sutils.DeleteObject(ctx, c, &peerAuthentication); err != nil && !errors.Is(err, client.IgnoreNotFound(err)) {
-		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete peerauthentication: %w", err))
-	}
-
-	destinationRule := istionetworkingclientv1.DestinationRule{ObjectMeta: objectMeta}
-	if err := k8sutils.DeleteObject(ctx, c, &destinationRule); err != nil && !errors.Is(err, client.IgnoreNotFound(err)) {
-		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete destinationrule: %w", err))
-	}
-
-	// When using DaemonSet mode (unified gateway), also clean up legacy PeerAuthentication if it exists
-	// This handles the migration case from deployment to daemonset
-	if gad.useDaemonSet && gad.baseName == OTLPGatewayName {
-		legacyPeerAuth := istiosecurityclientv1.PeerAuthentication{ObjectMeta: metav1.ObjectMeta{
-			Name:      LogGatewayName,
-			Namespace: gad.globals.TargetNamespace(),
-		}}
-		if err := k8sutils.DeleteObject(ctx, c, &legacyPeerAuth); err != nil && !errors.Is(err, client.IgnoreNotFound(err)) {
-			allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete legacy peerauthentication: %w", err))
+		peerAuthentication := istiosecurityclientv1.PeerAuthentication{ObjectMeta: objectMeta}
+		if err := k8sutils.DeleteObject(ctx, c, &peerAuthentication); err != nil && !apierrors.IsNotFound(err) {
+			allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete peerauthentication: %w", err))
 		}
 	}
 
@@ -400,18 +304,6 @@ func (gad *GatewayApplierDeleter) makeGatewayDeployment(configChecksum string, o
 		gad.baseName,
 		gad.globals.TargetNamespace(),
 		opts.Replicas,
-		metadata,
-		podSpec,
-	)
-}
-
-func (gad *GatewayApplierDeleter) makeGatewayDaemonSet(configChecksum string, opts GatewayApplyOptions) *appsv1.DaemonSet {
-	podSpec := gad.makeGatewayPodSpec(opts)
-	metadata := gad.makeGatewayMetadata(configChecksum, opts)
-
-	return MakeGatewayDaemonSet(
-		gad.baseName,
-		gad.globals.TargetNamespace(),
 		metadata,
 		podSpec,
 	)
@@ -542,39 +434,6 @@ func (gad *GatewayApplierDeleter) makeOTLPService(useDaemonSet bool) *corev1.Ser
 	return service
 }
 
-// makeLegacyOTLPService creates a service with a legacy name that points to the unified OTLP gateway
-func (gad *GatewayApplierDeleter) makeLegacyOTLPService(legacyServiceName string) *corev1.Service {
-	commonLabels := commonresources.MakeDefaultLabels(gad.baseName, commonresources.LabelValueK8sComponentGateway)
-	selectorLabels := commonresources.MakeDefaultSelectorLabels(gad.baseName)
-
-	return &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      legacyServiceName,
-			Namespace: gad.globals.TargetNamespace(),
-			Labels:    commonLabels,
-		},
-		Spec: corev1.ServiceSpec{
-			Ports: []corev1.ServicePort{
-				{
-					Name:       "grpc-collector",
-					Protocol:   corev1.ProtocolTCP,
-					Port:       ports.OTLPGRPC,
-					TargetPort: intstr.FromInt32(ports.OTLPGRPC),
-				},
-				{
-					Name:       "http-collector",
-					Protocol:   corev1.ProtocolTCP,
-					Port:       ports.OTLPHTTP,
-					TargetPort: intstr.FromInt32(ports.OTLPHTTP),
-				},
-			},
-			Selector:              selectorLabels,
-			Type:                  corev1.ServiceTypeClusterIP,
-			InternalTrafficPolicy: ptr.To(corev1.ServiceInternalTrafficPolicyLocal),
-		},
-	}
-}
-
 func (gad *GatewayApplierDeleter) makePeerAuthentication() *istiosecurityclientv1.PeerAuthentication {
 	commonLabels := commonresources.MakeDefaultLabels(gad.baseName, commonresources.LabelValueK8sComponentGateway)
 	selectorLabels := commonresources.MakeDefaultSelectorLabels(gad.baseName)
@@ -592,35 +451,12 @@ func (gad *GatewayApplierDeleter) makePeerAuthentication() *istiosecurityclientv
 	}
 }
 
-func (gad *GatewayApplierDeleter) makeDestinationRule() *istionetworkingclientv1.DestinationRule {
-	commonLabels := commonresources.MakeDefaultLabels(gad.baseName, commonresources.LabelValueK8sComponentGateway)
-
-	return &istionetworkingclientv1.DestinationRule{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      gad.baseName,
-			Namespace: gad.globals.TargetNamespace(),
-			Labels:    commonLabels,
-		},
-		Spec: v1alpha3.DestinationRule{
-			Host: fmt.Sprintf("%s.%s.svc.cluster.local", gad.otlpServiceName, gad.globals.TargetNamespace()),
-			TrafficPolicy: &v1alpha3.TrafficPolicy{
-				Tls: &v1alpha3.ClientTLSSettings{Mode: v1alpha3.ClientTLSSettings_DISABLE},
-			},
-		},
-	}
-}
-
 func (gad *GatewayApplierDeleter) makeAnnotations(configChecksum string, opts GatewayApplyOptions) map[string]string {
 	annotations := map[string]string{commonresources.AnnotationKeyChecksumConfig: configChecksum}
 
 	if opts.IstioEnabled {
-		excludedPorts := fmt.Sprintf("%d", ports.Metrics)
-		// If we use daemonset for gateway, we need to exclude OTLP ports from istio sidecar
-		if gad.useDaemonSet {
-			excludedPorts = fmt.Sprintf("%d,%d,%d", ports.Metrics, ports.OTLPGRPC, ports.OTLPHTTP)
-		}
 
-		annotations[commonresources.AnnotationKeyIstioExcludeInboundPorts] = excludedPorts
+		annotations[commonresources.AnnotationKeyIstioExcludeInboundPorts] = fmt.Sprintf("%d", ports.Metrics)
 		// When a workload is outside the istio mesh and communicates with pod in service mesh, the envoy proxy does not
 		// preserve the source IP and destination IP. To preserve source/destination IP we need TPROXY interception mode.
 		// More info: https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/#ProxyConfig-InboundInterceptionMode

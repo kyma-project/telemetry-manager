@@ -71,14 +71,15 @@ type LogPipelineController struct {
 type LogPipelineControllerConfig struct {
 	config.Global
 
-	ExporterImage               string
-	FluentBitImage              string
-	OTelCollectorImage          string
-	ChownInitContainerImage     string
-	FluentBitPriorityClassName  string
-	LogGatewayPriorityClassName string
-	LogAgentPriorityClassName   string
-	RestConfig                  *rest.Config
+	ExporterImage                string
+	FluentBitImage               string
+	OTelCollectorImage           string
+	ChownInitContainerImage      string
+	FluentBitPriorityClassName   string
+	LogGatewayPriorityClassName  string
+	LogAgentPriorityClassName    string
+	OTLPGatewayPriorityClassName string
+	RestConfig                   *rest.Config
 }
 
 func NewLogPipelineController(config LogPipelineControllerConfig, client client.Client, reconcileTriggerChan <-chan event.GenericEvent) (*LogPipelineController, error) {
@@ -283,6 +284,12 @@ func configureOTelReconciler(config LogPipelineControllerConfig, client client.C
 		config.OTelCollectorImage,
 		config.LogGatewayPriorityClassName)
 
+	// Create OTLP gateway applier deleter for DaemonSet mode
+	otlpGatewayApplierDeleter := otelcollector.NewOTLPGatewayApplierDeleter(
+		config.Global,
+		config.OTelCollectorImage,
+		config.OTLPGatewayPriorityClassName)
+
 	otelReconciler := logpipelineotel.New(
 		logpipelineotel.WithClient(client),
 		logpipelineotel.WithGlobals(config.Global),
@@ -295,6 +302,7 @@ func configureOTelReconciler(config LogPipelineControllerConfig, client client.C
 		logpipelineotel.WithErrorToMessageConverter(&conditions.ErrorToMessageConverter{}),
 
 		logpipelineotel.WithGatewayApplierDeleter(gatewayAppliedDeleter),
+		logpipelineotel.WithOTLPGatewayApplierDeleter(otlpGatewayApplierDeleter),
 		logpipelineotel.WithGatewayConfigBuilder(&loggateway.Builder{Reader: client}),
 		logpipelineotel.WithGatewayFlowHealthProber(gatewayFlowHealthProber),
 		logpipelineotel.WithGatewayProber(prober),

@@ -9,6 +9,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -80,37 +81,37 @@ func deleteCommonResources(ctx context.Context, c client.Client, name types.Name
 	var allErrors error = nil
 
 	clusterRoleBinding := rbacv1.ClusterRoleBinding{ObjectMeta: objectMeta}
-	if err := k8sutils.DeleteObject(ctx, c, &clusterRoleBinding); err != nil {
+	if err := k8sutils.DeleteObject(ctx, c, &clusterRoleBinding); err != nil && !apierrors.IsNotFound(err) {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete cluster role binding: %w", err))
 	}
 
 	clusterRole := rbacv1.ClusterRole{ObjectMeta: objectMeta}
-	if err := k8sutils.DeleteObject(ctx, c, &clusterRole); err != nil {
+	if err := k8sutils.DeleteObject(ctx, c, &clusterRole); err != nil && !apierrors.IsNotFound(err) {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete cluster role: %w", err))
 	}
 
 	roleBinding := rbacv1.RoleBinding{ObjectMeta: objectMeta}
-	if err := k8sutils.DeleteObject(ctx, c, &roleBinding); err != nil {
+	if err := k8sutils.DeleteObject(ctx, c, &roleBinding); err != nil && !apierrors.IsNotFound(err) {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete role binding: %w", err))
 	}
 
 	role := rbacv1.Role{ObjectMeta: objectMeta}
-	if err := k8sutils.DeleteObject(ctx, c, &role); err != nil {
+	if err := k8sutils.DeleteObject(ctx, c, &role); err != nil && !apierrors.IsNotFound(err) {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete role: %w", err))
 	}
 
 	serviceAccount := corev1.ServiceAccount{ObjectMeta: objectMeta}
-	if err := k8sutils.DeleteObject(ctx, c, &serviceAccount); err != nil {
+	if err := k8sutils.DeleteObject(ctx, c, &serviceAccount); err != nil && !apierrors.IsNotFound(err) {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete service account: %w", err))
 	}
 
 	metricsService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: name.Name + "-metrics", Namespace: name.Namespace}}
-	if err := k8sutils.DeleteObject(ctx, c, &metricsService); err != nil {
+	if err := k8sutils.DeleteObject(ctx, c, &metricsService); err != nil && !apierrors.IsNotFound(err) {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete metrics service: %w", err))
 	}
 
 	networkPolicy := networkingv1.NetworkPolicy{ObjectMeta: objectMeta}
-	if err := k8sutils.DeleteObject(ctx, c, &networkPolicy); err != nil {
+	if err := k8sutils.DeleteObject(ctx, c, &networkPolicy); err != nil && !apierrors.IsNotFound(err) {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete network policy: %w", err))
 	}
 
