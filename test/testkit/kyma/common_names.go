@@ -53,7 +53,7 @@ var (
 
 	LogAgentName               = types.NamespacedName{Name: names.LogAgent, Namespace: SystemNamespaceName}
 	LogAgentMetricsService     = types.NamespacedName{Name: names.LogAgentMetricsService, Namespace: SystemNamespaceName}
-	LogAgentSecretName         = types.NamespacedName{Name: names.LogAgentMetricsService, Namespace: SystemNamespaceName}
+	LogAgentSecretName         = types.NamespacedName{Name: names.LogAgent, Namespace: SystemNamespaceName}
 	LogAgentServiceAccount     = types.NamespacedName{Name: names.LogAgent, Namespace: SystemNamespaceName}
 	LogAgentClusterRole        = types.NamespacedName{Name: names.LogAgent, Namespace: SystemNamespaceName}
 	LogAgentClusterRoleBinding = types.NamespacedName{Name: names.LogAgent, Namespace: SystemNamespaceName}
