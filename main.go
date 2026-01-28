@@ -88,7 +88,7 @@ var (
 	imagePullSecretName     string
 	additionalLabels        cliflags.Map
 	additionalAnnotations   cliflags.Map
-	DeployOTLPGateway       bool
+	deployOTLPGateway       bool
 )
 
 const (
@@ -331,7 +331,7 @@ func logBuildAndProcessInfo() {
 
 func initializeFeatureFlags() {
 	// Placeholder for future feature flag initializations.
-	featureflags.Set(featureflags.DeployOTLPGateway, DeployOTLPGateway)
+	featureflags.Set(featureflags.DeployOTLPGateway, deployOTLPGateway)
 }
 
 func parseFlags() {
@@ -344,7 +344,7 @@ func parseFlags() {
 	flag.Var(&additionalLabels, "additional-label", "Additional label to add to all created resources in key=value format")
 	flag.Var(&additionalAnnotations, "additional-annotation", "Additional annotation to add to all created resources in key=value format")
 
-	flag.BoolVar(&DeployOTLPGateway, "deploy-otlp-gateway", false, "Enable deploying unified OTLP gateway")
+	flag.BoolVar(&deployOTLPGateway, "deploy-otlp-gateway", false, "Enable deploying unified OTLP gateway")
 
 	flag.Parse()
 }
