@@ -22,15 +22,13 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 )
 
 const (
 	IstioCertPath       = "/etc/istio-output-certs"
 	istioCertVolumeName = "istio-certs"
-
-	MetricAgentName = "telemetry-metric-agent"
-	LogAgentName    = "telemetry-log-agent"
 
 	checkpointVolumeName = "tmp"
 	CheckpointVolumePath = "/tmp"
@@ -93,7 +91,7 @@ func NewLogAgentApplierDeleter(globals config.Global, collectorImage, priorityCl
 
 	return &AgentApplierDeleter{
 		globals:             globals,
-		baseName:            LogAgentName,
+		baseName:            names.LogAgent,
 		extraPodLabel:       extraLabels,
 		makeAnnotationsFunc: makeLogAgentAnnotations,
 		image:               collectorImage,
@@ -124,7 +122,7 @@ func NewMetricAgentApplierDeleter(globals config.Global, image, priorityClassNam
 
 	return &AgentApplierDeleter{
 		globals:             globals,
-		baseName:            MetricAgentName,
+		baseName:            names.MetricAgent,
 		extraPodLabel:       extraLabels,
 		makeAnnotationsFunc: makeMetricAgentAnnotations,
 		image:               image,

@@ -59,6 +59,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/featureflags"
 	"github.com/kyma-project/telemetry-manager/internal/metrics"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	selfmonitorwebhook "github.com/kyma-project/telemetry-manager/internal/selfmonitor/webhook"
 	loggerutils "github.com/kyma-project/telemetry-manager/internal/utils/logger"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
@@ -90,7 +91,7 @@ var (
 
 const (
 	cacheSyncPeriod    = 1 * time.Minute
-	webhookServiceName = "telemetry-manager-webhook"
+	webhookServiceName = names.ManagerWebhookService
 
 	healthProbePort = 8081
 	metricsPort     = 8080
@@ -276,7 +277,7 @@ func setupManager(globals config.Global) (manager.Manager, error) {
 		PprofBindAddress:        fmt.Sprintf(":%d", pprofPort),
 		LeaderElection:          true,
 		LeaderElectionNamespace: globals.TargetNamespace(),
-		LeaderElectionID:        "cdd7ef0b.kyma-project.io",
+		LeaderElectionID:        names.ManagerLeaseName,
 		WebhookServer: webhook.NewServer(webhook.Options{
 			Port:    webhookPort,
 			CertDir: certDir,
@@ -533,14 +534,14 @@ func createWebhookConfig(globals config.Global) webhookcert.Config {
 				Namespace: globals.ManagerNamespace(),
 			},
 			CASecretName: types.NamespacedName{
-				Name:      "telemetry-webhook-cert",
+				Name:      names.ManagerWebhookCertSecret,
 				Namespace: globals.TargetNamespace(),
 			},
 			ValidatingWebhookName: types.NamespacedName{
-				Name: "telemetry-validating-webhook.kyma-project.io",
+				Name: names.ValidatingWebhookConfig,
 			},
 			MutatingWebhookName: types.NamespacedName{
-				Name: "telemetry-mutating-webhook.kyma-project.io",
+				Name: names.MutatingWebhookConfig,
 			},
 		},
 	)
