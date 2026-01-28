@@ -2,17 +2,15 @@ package v1beta1
 
 import (
 	"context"
-	"fmt"
 
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
 
 // +kubebuilder:object:generate=false
-var _ webhook.CustomDefaulter = &defaulter{}
+var _ admission.Defaulter[*telemetryv1beta1.LogPipeline] = &defaulter{}
 
 type defaulter struct {
 	ExcludeNamespaces            []string
@@ -22,18 +20,7 @@ type defaulter struct {
 	OTLPInputEnabled             bool
 }
 
-func (ld defaulter) Default(ctx context.Context, obj runtime.Object) error {
-	pipeline, ok := obj.(*telemetryv1beta1.LogPipeline)
-	if !ok {
-		return fmt.Errorf("expected an LogPipeline object but got %T", obj)
-	}
-
-	ld.applyDefaults(pipeline)
-
-	return nil
-}
-
-func (ld defaulter) applyDefaults(pipeline *telemetryv1beta1.LogPipeline) {
+func (ld defaulter) Default(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) error {
 	if pipeline.Spec.Input.Runtime == nil {
 		pipeline.Spec.Input.Runtime = &telemetryv1beta1.LogPipelineRuntimeInput{
 			Enabled:          &ld.RuntimeInputEnabled,
@@ -72,6 +59,8 @@ func (ld defaulter) applyDefaults(pipeline *telemetryv1beta1.LogPipeline) {
 			pipeline.Spec.Input.OTLP.Namespaces = &telemetryv1beta1.NamespaceSelector{}
 		}
 	}
+
+	return nil
 }
 
 func isOTLPPipeline(pipeline *telemetryv1beta1.LogPipeline) bool {
