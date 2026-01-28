@@ -10,6 +10,7 @@ import (
 
 	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -133,13 +134,13 @@ func TestServiceEnrichment(t *testing.T) {
 
 	assert.BackendDataEventuallyMatches(t, backend,
 		HaveFlatMetrics(
-			ContainElement(HaveResourceAttributes(HaveKeyWithValue("service.name", kitkyma.MetricGatewayBaseName))),
+			ContainElement(HaveResourceAttributes(HaveKeyWithValue("service.name", names.MetricGateway))),
 		), assert.WithOptionalDescription("Should have metrics with service.name set to telemetry-metric-gateway"),
 	)
 
 	assert.BackendDataEventuallyMatches(t, backend,
 		HaveFlatMetrics(
-			ContainElement(HaveResourceAttributes(HaveKeyWithValue("service.name", kitkyma.MetricAgentBaseName))),
+			ContainElement(HaveResourceAttributes(HaveKeyWithValue("service.name", names.MetricAgent))),
 		), assert.WithOptionalDescription("Should have metrics with service.name set to telemetry-metric-agent"),
 	)
 

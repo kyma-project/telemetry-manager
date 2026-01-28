@@ -24,6 +24,12 @@ The gateway determines the service name based on the following hierarchy of labe
 > 
 > If you'd like to use that, manually set the `telemetry.kyma-project.io/service-enrichment` annotation in the Telemetry CR to `otel`. If you want to return to the previous method, set the annotation back to `kyma-legacy`.
 
+> [!NOTE]
+> If you choose to use the OTel enrichment strategy, be aware of the following edge cases:
+> - **Pods managed by a ReplicaSet without a Deployment**: The `k8s.deployment.name` attribute may be set incorrectly. For example, a ReplicaSet named `opentelemetry-collector-6c45f8d6f6` will result in `k8s.deployment.name` being set to `opentelemetry-collector`, even though no Deployment exists.
+> - **Long Deployment names**: Kubernetes may truncate the Deployment name in the ReplicaSet name to fit the DNS subdomain limit (253 characters). In such cases, `k8s.deployment.name` will contain the truncated form, not the original full name.
+
+
 ## Kubernetes Metadata
 
 `k8s.*` attributes encapsulate various pieces of Kubernetes metadata associated with the Pod, such as:
