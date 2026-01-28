@@ -12,6 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -97,7 +98,7 @@ func TestOverrides(t *testing.T) {
 	assertPipelineReconciliationDisabled(suite.Ctx, suite.K8sClient, kitkyma.FluentBitConfigMap, appNameLabelKey)
 	assertPipelineReconciliationDisabled(suite.Ctx, suite.K8sClient, kitkyma.MetricGatewayConfigMap, appNameLabelKey)
 	assertPipelineReconciliationDisabled(suite.Ctx, suite.K8sClient, kitkyma.TraceGatewayConfigMap, appNameLabelKey)
-	assertTelemetryReconciliationDisabled(suite.Ctx, suite.K8sClient, kitkyma.ValidatingWebhookName)
+	assertTelemetryReconciliationDisabled(suite.Ctx, suite.K8sClient, names.ValidatingWebhookConfig)
 
 	// Delete the overrides configmap at the end of the test
 	Expect(kitk8s.DeleteObjects(overrides)).Should(Succeed())

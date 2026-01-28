@@ -2,11 +2,11 @@ package config
 
 import (
 	"time"
+
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 )
 
 const (
-	fluentBitMetricsServiceName = "telemetry-fluent-bit-metrics"
-
 	// Fluent Bit metrics
 	fluentBitOutputProcBytesTotal      = "fluentbit_output_proc_bytes_total"
 	fluentBitInputBytesTotal           = "fluentbit_input_bytes_total"
@@ -43,7 +43,7 @@ func (rb fluentBitRuleBuilder) someDataDroppedExpr() string {
 
 // Checks if the exporter drop rate is greater than 0.
 func (rb fluentBitRuleBuilder) exporterDroppedExpr() string {
-	return rate(fluentBitOutputDroppedRecordsTotal, selectService(fluentBitMetricsServiceName)).
+	return rate(fluentBitOutputDroppedRecordsTotal, selectService(names.FluentBitMetricsService)).
 		sumBy(labelPipelineName).
 		greaterThan(0).
 		build()
@@ -51,7 +51,7 @@ func (rb fluentBitRuleBuilder) exporterDroppedExpr() string {
 
 // Check if the exporter send rate is greater than 0.
 func (rb fluentBitRuleBuilder) exporterSentExpr() string {
-	return rate(fluentBitOutputProcBytesTotal, selectService(fluentBitMetricsServiceName)).
+	return rate(fluentBitOutputProcBytesTotal, selectService(names.FluentBitMetricsService)).
 		sumBy(labelPipelineName).
 		greaterThan(0).
 		build()
@@ -59,7 +59,7 @@ func (rb fluentBitRuleBuilder) exporterSentExpr() string {
 
 // Check if the buffer usage is significant.
 func (rb fluentBitRuleBuilder) bufferInUseExpr() string {
-	return instant(fluentBitInputStorageChunksDown, selectService(fluentBitMetricsServiceName)).
+	return instant(fluentBitInputStorageChunksDown, selectService(names.FluentBitMetricsService)).
 		maxBy(labelPipelineName).
 		greaterThan(inputStorageChunksDown300Chunks).
 		build()
@@ -67,12 +67,12 @@ func (rb fluentBitRuleBuilder) bufferInUseExpr() string {
 
 // Checks if logs are read but not sent by the exporter.
 func (rb fluentBitRuleBuilder) noLogsDeliveredExpr() string {
-	receiverReadExpr := rate(fluentBitInputBytesTotal, selectService(fluentBitMetricsServiceName)).
+	receiverReadExpr := rate(fluentBitInputBytesTotal, selectService(names.FluentBitMetricsService)).
 		sumBy(labelPipelineName).
 		greaterThan(0).
 		build()
 
-	exporterNotSentExpr := rate(fluentBitOutputProcBytesTotal, selectService(fluentBitMetricsServiceName)).
+	exporterNotSentExpr := rate(fluentBitOutputProcBytesTotal, selectService(names.FluentBitMetricsService)).
 		sumBy(labelPipelineName).
 		equal(0).
 		build()

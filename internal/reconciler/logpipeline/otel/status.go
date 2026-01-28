@@ -16,7 +16,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
-	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
 	"github.com/kyma-project/telemetry-manager/internal/validators/ottl"
@@ -130,7 +130,7 @@ func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *tel
 	if isLogAgentRequired(pipeline) {
 		condition = commonstatus.GetAgentHealthyCondition(ctx,
 			r.agentProber,
-			types.NamespacedName{Name: otelcollector.LogAgentName, Namespace: r.globals.TargetNamespace()},
+			types.NamespacedName{Name: names.LogAgent, Namespace: r.globals.TargetNamespace()},
 			r.errToMessageConverter,
 			commonstatus.SignalTypeOtelLogs)
 	}
@@ -141,7 +141,7 @@ func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *tel
 
 func (r *Reconciler) setGatewayHealthyCondition(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) {
 	condition := commonstatus.GetGatewayHealthyCondition(ctx,
-		r.gatewayProber, types.NamespacedName{Name: otelcollector.LogGatewayName, Namespace: r.globals.TargetNamespace()},
+		r.gatewayProber, types.NamespacedName{Name: names.LogGateway, Namespace: r.globals.TargetNamespace()},
 		r.errToMessageConverter,
 		commonstatus.SignalTypeOtelLogs)
 	condition.ObservedGeneration = pipeline.Generation

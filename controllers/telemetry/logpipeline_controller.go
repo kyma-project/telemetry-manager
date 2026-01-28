@@ -51,8 +51,8 @@ import (
 	logpipelineotel "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/otel"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
-	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	predicateutils "github.com/kyma-project/telemetry-manager/internal/utils/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
@@ -87,7 +87,7 @@ func NewLogPipelineController(config LogPipelineControllerConfig, client client.
 	pipelineLock := resourcelock.NewLocker(
 		client,
 		types.NamespacedName{
-			Name:      "telemetry-logpipeline-lock",
+			Name:      names.LogPipelineLock,
 			Namespace: config.TargetNamespace(),
 		},
 		MaxPipelineCount,
@@ -96,22 +96,22 @@ func NewLogPipelineController(config LogPipelineControllerConfig, client client.
 	pipelineSyncer := resourcelock.NewSyncer(
 		client,
 		types.NamespacedName{
-			Name:      "telemetry-logpipeline-sync",
+			Name:      names.LogPipelineSync,
 			Namespace: config.TargetNamespace(),
 		},
 	)
 
-	fluentBitFlowHealthProber, err := prober.NewFluentBitProber(types.NamespacedName{Name: selfmonitor.ServiceName, Namespace: config.TargetNamespace()})
+	fluentBitFlowHealthProber, err := prober.NewFluentBitProber(types.NamespacedName{Name: names.SelfMonitor, Namespace: config.TargetNamespace()})
 	if err != nil {
 		return nil, err
 	}
 
-	otelGatewayFlowHealthProber, err := prober.NewOTelLogGatewayProber(types.NamespacedName{Name: selfmonitor.ServiceName, Namespace: config.TargetNamespace()})
+	gatewayFlowHealthProber, err := prober.NewOTelLogGatewayProber(types.NamespacedName{Name: names.SelfMonitor, Namespace: config.TargetNamespace()})
 	if err != nil {
 		return nil, err
 	}
 
-	otelAgentFlowHealthProber, err := prober.NewOTelLogAgentProber(types.NamespacedName{Name: selfmonitor.ServiceName, Namespace: config.TargetNamespace()})
+	agentFlowHealthProber, err := prober.NewOTelLogAgentProber(types.NamespacedName{Name: names.SelfMonitor, Namespace: config.TargetNamespace()})
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +121,7 @@ func NewLogPipelineController(config LogPipelineControllerConfig, client client.
 		return nil, err
 	}
 
-	otelReconciler, err := configureOTelReconciler(config, client, pipelineLock, otelGatewayFlowHealthProber, otelAgentFlowHealthProber)
+	otelReconciler, err := configureOTelReconciler(config, client, pipelineLock, gatewayFlowHealthProber, agentFlowHealthProber)
 	if err != nil {
 		return nil, err
 	}
