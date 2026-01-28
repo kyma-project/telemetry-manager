@@ -42,20 +42,17 @@ func TestOTLPGateway_ApplyResources(t *testing.T) {
 		name           string
 		sut            gatewayApplierDeleter
 		istioEnabled   bool
-		useDaemonSet   bool
 		goldenFilePath string
 	}{
 		{
 			name:           "OTLP gateway",
 			sut:            NewOTLPGatewayApplierDeleter(globals, image, priorityClassName),
-			useDaemonSet:   true,
 			goldenFilePath: "testdata/otlp-gateway.yaml",
 		},
 		{
 			name:           "OTLP gateway with istio",
 			sut:            NewOTLPGatewayApplierDeleter(globals, image, priorityClassName),
 			istioEnabled:   true,
-			useDaemonSet:   true,
 			goldenFilePath: "testdata/otlp-gateway-istio.yaml",
 		},
 	}
@@ -118,19 +115,16 @@ func TestOTLPGateway_DeleteResources(t *testing.T) {
 		name         string
 		sut          gatewayApplierDeleter
 		istioEnabled bool
-		useDaemonSet bool
 	}{
 
 		{
-			name:         "OTLP Gateway",
-			sut:          NewOTLPGatewayApplierDeleter(globals, image, priorityClassName),
-			useDaemonSet: true,
+			name: "OTLP Gateway",
+			sut:  NewOTLPGatewayApplierDeleter(globals, image, priorityClassName),
 		},
 		{
 			name:         "OTLP gateway  with istio",
 			sut:          NewOTLPGatewayApplierDeleter(globals, image, priorityClassName),
 			istioEnabled: true,
-			useDaemonSet: true,
 		},
 	}
 

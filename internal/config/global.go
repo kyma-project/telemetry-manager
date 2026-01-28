@@ -36,7 +36,7 @@ func IsValidationError(err error) bool {
 }
 
 type Experimental struct {
-	useDaemonSetForGateway bool
+	deployOTLPGateway bool
 }
 
 type Global struct {
@@ -102,9 +102,9 @@ func WithAdditionalAnnotations(annotations map[string]string) Option {
 	}
 }
 
-func WithUseDaemonSetForGateway(enable bool) Option {
+func WithDeployOTLPGateway(enable bool) Option {
 	return func(g *Global) {
-		g.useDaemonSetForGateway = enable
+		g.deployOTLPGateway = enable
 	}
 }
 
@@ -161,8 +161,8 @@ func (g *Global) Version() string {
 	return g.version
 }
 
-func (g *Global) UseDaemonSetForGateway() bool {
-	return g.useDaemonSetForGateway
+func (g *Global) DeployOTLPGateway() bool {
+	return g.deployOTLPGateway
 }
 
 func (g *Global) ImagePullSecretName() string {

@@ -4,8 +4,8 @@ type FeatureFlag int
 
 const (
 	// keeping the code with a placeholder feature flag to make introducing feature flags in the future easier
-	placeholder               FeatureFlag = iota // placeholder feature flag for testing purposes and make sure the codegen works correctly
-	EnableDaemonSetForGateway FeatureFlag = iota // placeholder feature flag for testing purposes and make sure the codegen works correctly
+	placeholder       FeatureFlag = iota // placeholder feature flag for testing purposes and make sure the codegen works correctly
+	DeployOTLPGateway FeatureFlag = iota // placeholder feature flag for testing purposes and make sure the codegen works correctly
 
 )
 

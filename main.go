@@ -80,14 +80,14 @@ var (
 	setupLog = ctrl.Log.WithName("setup")
 
 	// Operator flags
-	certDir                   string
-	highPriorityClassName     string
-	normalPriorityClassName   string
-	clusterTrustBundleName    string
-	imagePullSecretName       string
-	additionalLabels          cliflags.Map
-	additionalAnnotations     cliflags.Map
-	enableDaemonSetForGateway bool
+	certDir                 string
+	highPriorityClassName   string
+	normalPriorityClassName string
+	clusterTrustBundleName  string
+	imagePullSecretName     string
+	additionalLabels        cliflags.Map
+	additionalAnnotations   cliflags.Map
+	DeployOTLPGateway       bool
 )
 
 const (
@@ -171,7 +171,7 @@ func run() error {
 		config.WithClusterTrustBundleName(clusterTrustBundleName),
 		config.WithAdditionalLabels(additionalLabels),
 		config.WithAdditionalAnnotations(additionalAnnotations),
-		config.WithUseDaemonSetForGateway(featureflags.IsEnabled(featureflags.EnableDaemonSetForGateway)),
+		config.WithDeployOTLPGateway(featureflags.IsEnabled(featureflags.DeployOTLPGateway)),
 	)
 
 	if err := globals.Validate(); err != nil {
@@ -330,7 +330,7 @@ func logBuildAndProcessInfo() {
 
 func initializeFeatureFlags() {
 	// Placeholder for future feature flag initializations.
-	featureflags.Set(featureflags.EnableDaemonSetForGateway, enableDaemonSetForGateway)
+	featureflags.Set(featureflags.DeployOTLPGateway, DeployOTLPGateway)
 }
 
 func parseFlags() {
@@ -343,7 +343,7 @@ func parseFlags() {
 	flag.Var(&additionalLabels, "additional-label", "Additional label to add to all created resources in key=value format")
 	flag.Var(&additionalAnnotations, "additional-annotation", "Additional annotation to add to all created resources in key=value format")
 
-	flag.BoolVar(&enableDaemonSetForGateway, "enable-daemonset-for-gateway", false, "Enable deploying gateway components as DaemonSets instead of Deployments")
+	flag.BoolVar(&DeployOTLPGateway, "deploy-otlp-gateway", false, "Enable deploying unified OTLP gateway")
 
 	flag.Parse()
 }

@@ -9,7 +9,7 @@ func _() {
 	// Re-run the stringer command to generate them again.
 	var x [1]struct{}
 	_ = x[placeholder-0]
-	_ = x[EnableDaemonSetForGateway-1]
+	_ = x[DeployOTLPGateway-1]
 }
 
 const _FeatureFlag_name = "placeholderEnableDaemonSetForGateway"

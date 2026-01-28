@@ -226,7 +226,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 		logf.FromContext(ctx).V(1).Info("cleaning up log pipeline resources: all log pipelines are non-reconcilable")
 
 		// Use the appropriate applier deleter based on whether we're using DaemonSet mode
-		if r.globals.UseDaemonSetForGateway() && r.otlpGatewayApplierDeleter != nil {
+		if r.globals.DeployOTLPGateway() {
 			if err = r.otlpGatewayApplierDeleter.DeleteResources(ctx, r.Client, r.istioStatusChecker.IsIstioActive(ctx)); err != nil {
 				return fmt.Errorf("failed to delete OTLP gateway resources: %w", err)
 			}
@@ -239,8 +239,6 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 		return nil
 	}
 
-	// When useDaemonSet is true: Deploy OTLP gateway (DaemonSet), cleanup old log gateway
-	// When useDaemonSet is false: Deploy log gateway (Deployment)
 	if err := r.reconcileGateway(ctx, pipeline, reconcilablePipelines); err != nil {
 		return fmt.Errorf("failed to reconcile gateway: %w", err)
 	}
@@ -340,7 +338,7 @@ func (r *Reconciler) reconcileGateway(ctx context.Context, pipeline *telemetryv1
 	}
 
 	// Use OTLP gateway applier deleter when in DaemonSet mode, otherwise use regular gateway applier deleter
-	if r.globals.UseDaemonSetForGateway() && r.otlpGatewayApplierDeleter != nil {
+	if r.globals.DeployOTLPGateway() && r.otlpGatewayApplierDeleter != nil {
 		if err := r.gatewayApplierDeleter.DeleteResources(ctx, r.Client, r.istioStatusChecker.IsIstioActive(ctx)); err != nil {
 			return fmt.Errorf("failed to delete legacy gateway resources: %w", err)
 		}

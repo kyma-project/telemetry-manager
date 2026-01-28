@@ -267,7 +267,7 @@ func configureOTelReconciler(config LogPipelineControllerConfig, client client.C
 	}
 
 	prober := func() logpipelineotel.Prober {
-		if config.UseDaemonSetForGateway() {
+		if config.DeployOTLPGateway() {
 			return &workloadstatus.DaemonSetProber{Client: client}
 		}
 

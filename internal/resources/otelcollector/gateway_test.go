@@ -46,7 +46,6 @@ func TestGateway_ApplyResources(t *testing.T) {
 		name           string
 		sut            gatewayApplierDeleter
 		istioEnabled   bool
-		useDaemonSet   bool
 		goldenFilePath string
 	}{
 		{
@@ -158,7 +157,6 @@ func TestGateway_DeleteResources(t *testing.T) {
 		name         string
 		sut          gatewayApplierDeleter
 		istioEnabled bool
-		useDaemonSet bool
 	}{
 		{
 			name: "metric gateway",

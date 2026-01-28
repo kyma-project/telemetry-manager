@@ -16,7 +16,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/config"
@@ -72,9 +71,6 @@ type GatewayApplierDeleter struct {
 	image           string
 	otlpServiceName string
 	rbac            rbac
-	// useDaemonSet indicates whether to deploy this gateway as a DaemonSet instead of a Deployment.
-	// This is determined at construction time based on the feature flag and doesn't change during runtime.
-	useDaemonSet bool
 
 	baseMemoryLimit      resource.Quantity
 	dynamicMemoryLimit   resource.Quantity
@@ -107,23 +103,13 @@ func NewLogGatewayApplierDeleter(globals config.Global, image, priorityClassName
 		commonresources.LabelKeyIstioInject:        commonresources.LabelValueTrue, // inject istio sidecar
 	}
 
-	baseName := LogGatewayName
-	serviceName := LogOTLPServiceName
-	useDaemonSet := globals.UseDaemonSetForGateway()
-
-	if useDaemonSet {
-		baseName = OTLPGatewayName
-		serviceName = OTLPServiceName
-	}
-
 	return &GatewayApplierDeleter{
 		globals:              globals,
-		baseName:             baseName,
+		baseName:             LogGatewayName,
 		extraPodLabels:       extraLabels,
 		image:                image,
-		otlpServiceName:      serviceName,
-		rbac:                 makeOTLPGatewayRBAC(baseName, globals.TargetNamespace()),
-		useDaemonSet:         useDaemonSet,
+		otlpServiceName:      LogOTLPServiceName,
+		rbac:                 makeOTLPGatewayRBAC(LogGatewayName, globals.TargetNamespace()),
 		baseMemoryLimit:      logGatewayBaseMemoryLimit,
 		dynamicMemoryLimit:   logGatewayDynamicMemoryLimit,
 		baseCPURequest:       logGatewayBaseCPURequest,
@@ -132,7 +118,7 @@ func NewLogGatewayApplierDeleter(globals config.Global, image, priorityClassName
 		dynamicMemoryRequest: logGatewayDynamicMemoryRequest,
 		podOpts: []commonresources.PodSpecOption{
 			commonresources.WithPriorityClass(priorityClassName),
-			commonresources.WithAffinity(makePodAffinity(commonresources.MakeDefaultSelectorLabels(baseName))),
+			commonresources.WithAffinity(makePodAffinity(commonresources.MakeDefaultSelectorLabels(LogGatewayName))),
 		},
 		containerOpts: []commonresources.ContainerOption{
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentPodIP, fieldPathPodIP),
@@ -157,7 +143,6 @@ func NewMetricGatewayApplierDeleter(globals config.Global, image, priorityClassN
 		image:                image,
 		otlpServiceName:      MetricOTLPServiceName,
 		rbac:                 makeMetricGatewayRBAC(globals.TargetNamespace()),
-		useDaemonSet:         false,
 		baseMemoryLimit:      metricGatewayBaseMemoryLimit,
 		dynamicMemoryLimit:   metricGatewayDynamicMemoryLimit,
 		baseCPURequest:       metricGatewayBaseCPURequest,
@@ -191,7 +176,6 @@ func NewTraceGatewayApplierDeleter(globals config.Global, image, priorityClassNa
 		image:                image,
 		otlpServiceName:      TraceOTLPServiceName,
 		rbac:                 makeTraceGatewayRBAC(globals.TargetNamespace()),
-		useDaemonSet:         false,
 		baseMemoryLimit:      traceGatewayBaseMemoryLimit,
 		dynamicMemoryLimit:   traceGatewayDynamicMemoryLimit,
 		baseCPURequest:       traceGatewayBaseCPURequest,
@@ -238,7 +222,7 @@ func (gad *GatewayApplierDeleter) ApplyResources(ctx context.Context, c client.C
 		return fmt.Errorf("failed to create deployment: %w", err)
 	}
 
-	if err := k8sutils.CreateOrUpdateService(ctx, c, gad.makeOTLPService(gad.useDaemonSet)); err != nil {
+	if err := k8sutils.CreateOrUpdateService(ctx, c, gad.makeOTLPService()); err != nil {
 		return fmt.Errorf("failed to create otlp service: %w", err)
 	}
 
@@ -398,7 +382,7 @@ func makePodAffinity(labels map[string]string) corev1.Affinity {
 	}
 }
 
-func (gad *GatewayApplierDeleter) makeOTLPService(useDaemonSet bool) *corev1.Service {
+func (gad *GatewayApplierDeleter) makeOTLPService() *corev1.Service {
 	commonLabels := commonresources.MakeDefaultLabels(gad.baseName, commonresources.LabelValueK8sComponentGateway)
 	selectorLabels := commonresources.MakeDefaultSelectorLabels(gad.baseName)
 
@@ -426,9 +410,6 @@ func (gad *GatewayApplierDeleter) makeOTLPService(useDaemonSet bool) *corev1.Ser
 			Selector: selectorLabels,
 			Type:     corev1.ServiceTypeClusterIP,
 		},
-	}
-	if useDaemonSet {
-		service.Spec.InternalTrafficPolicy = ptr.To(corev1.ServiceInternalTrafficPolicyLocal)
 	}
 
 	return service
