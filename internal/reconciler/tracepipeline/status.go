@@ -16,7 +16,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
-	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
 	"github.com/kyma-project/telemetry-manager/internal/validators/ottl"
@@ -52,7 +52,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) erro
 
 func (r *Reconciler) setGatewayHealthyCondition(ctx context.Context, pipeline *telemetryv1beta1.TracePipeline) {
 	condition := commonstatus.GetGatewayHealthyCondition(ctx,
-		r.gatewayProber, types.NamespacedName{Name: otelcollector.TraceGatewayName, Namespace: r.globals.TargetNamespace()},
+		r.gatewayProber, types.NamespacedName{Name: names.TraceGateway, Namespace: r.globals.TargetNamespace()},
 		r.errToMsgConverter,
 		commonstatus.SignalTypeTraces)
 	condition.ObservedGeneration = pipeline.Generation

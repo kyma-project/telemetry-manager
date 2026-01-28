@@ -10,6 +10,7 @@ import (
 	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 )
 
@@ -18,7 +19,7 @@ func GetDefaultTelemetryInstance(ctx context.Context, client client.Client, name
 
 	telemetryName := types.NamespacedName{
 		Namespace: namespace,
-		Name:      "default",
+		Name:      names.DefaultTelemetry,
 	}
 
 	if err := client.Get(ctx, telemetryName, &telemetry); err != nil {

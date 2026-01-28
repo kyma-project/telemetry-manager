@@ -24,17 +24,8 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
-)
-
-const (
-	LogGatewayName    = "telemetry-log-gateway"
-	MetricGatewayName = "telemetry-metric-gateway"
-	TraceGatewayName  = "telemetry-trace-gateway"
-
-	MetricOTLPServiceName = "telemetry-otlp-metrics"
-	TraceOTLPServiceName  = "telemetry-otlp-traces"
-	LogOTLPServiceName    = "telemetry-otlp-logs"
 )
 
 var (
@@ -103,10 +94,10 @@ func NewLogGatewayApplierDeleter(globals config.Global, image, priorityClassName
 
 	return &GatewayApplierDeleter{
 		globals:              globals,
-		baseName:             LogGatewayName,
+		baseName:             names.LogGateway,
 		extraPodLabels:       extraLabels,
 		image:                image,
-		otlpServiceName:      LogOTLPServiceName,
+		otlpServiceName:      names.OTLPLogsService,
 		rbac:                 makeLogGatewayRBAC(globals.TargetNamespace()),
 		baseMemoryLimit:      logGatewayBaseMemoryLimit,
 		dynamicMemoryLimit:   logGatewayDynamicMemoryLimit,
@@ -116,7 +107,7 @@ func NewLogGatewayApplierDeleter(globals config.Global, image, priorityClassName
 		dynamicMemoryRequest: logGatewayDynamicMemoryRequest,
 		podOpts: []commonresources.PodSpecOption{
 			commonresources.WithPriorityClass(priorityClassName),
-			commonresources.WithAffinity(makePodAffinity(commonresources.MakeDefaultSelectorLabels(LogGatewayName))),
+			commonresources.WithAffinity(makePodAffinity(commonresources.MakeDefaultSelectorLabels(names.LogGateway))),
 		},
 		containerOpts: []commonresources.ContainerOption{
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentPodIP, fieldPathPodIP),
@@ -136,10 +127,10 @@ func NewMetricGatewayApplierDeleter(globals config.Global, image, priorityClassN
 
 	return &GatewayApplierDeleter{
 		globals:              globals,
-		baseName:             MetricGatewayName,
+		baseName:             names.MetricGateway,
 		extraPodLabels:       extraLabels,
 		image:                image,
-		otlpServiceName:      MetricOTLPServiceName,
+		otlpServiceName:      names.OTLPMetricsService,
 		rbac:                 makeMetricGatewayRBAC(globals.TargetNamespace()),
 		baseMemoryLimit:      metricGatewayBaseMemoryLimit,
 		dynamicMemoryLimit:   metricGatewayDynamicMemoryLimit,
@@ -149,7 +140,7 @@ func NewMetricGatewayApplierDeleter(globals config.Global, image, priorityClassN
 		dynamicMemoryRequest: metricGatewayDynamicMemoryRequest,
 		podOpts: []commonresources.PodSpecOption{
 			commonresources.WithPriorityClass(priorityClassName),
-			commonresources.WithAffinity(makePodAffinity(commonresources.MakeDefaultSelectorLabels(MetricGatewayName))),
+			commonresources.WithAffinity(makePodAffinity(commonresources.MakeDefaultSelectorLabels(names.MetricGateway))),
 		},
 		containerOpts: []commonresources.ContainerOption{
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentPodIP, fieldPathPodIP),
@@ -169,10 +160,10 @@ func NewTraceGatewayApplierDeleter(globals config.Global, image, priorityClassNa
 
 	return &GatewayApplierDeleter{
 		globals:              globals,
-		baseName:             TraceGatewayName,
+		baseName:             names.TraceGateway,
 		extraPodLabels:       extraLabels,
 		image:                image,
-		otlpServiceName:      TraceOTLPServiceName,
+		otlpServiceName:      names.OTLPTracesService,
 		rbac:                 makeTraceGatewayRBAC(globals.TargetNamespace()),
 		baseMemoryLimit:      traceGatewayBaseMemoryLimit,
 		dynamicMemoryLimit:   traceGatewayDynamicMemoryLimit,
@@ -182,7 +173,7 @@ func NewTraceGatewayApplierDeleter(globals config.Global, image, priorityClassNa
 		dynamicMemoryRequest: traceGatewayDynamicMemoryRequest,
 		podOpts: []commonresources.PodSpecOption{
 			commonresources.WithPriorityClass(priorityClassName),
-			commonresources.WithAffinity(makePodAffinity(commonresources.MakeDefaultSelectorLabels(TraceGatewayName))),
+			commonresources.WithAffinity(makePodAffinity(commonresources.MakeDefaultSelectorLabels(names.TraceGateway))),
 		},
 		containerOpts: []commonresources.ContainerOption{
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentPodIP, fieldPathPodIP),
