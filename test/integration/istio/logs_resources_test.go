@@ -79,7 +79,7 @@ func TestLogsResources_OTel(t *testing.T) {
 }
 
 func TestLogsResources_FluentBit(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelIstio)
+	suite.RegisterTestCase(t, suite.LabelIstio, suite.LabelFluentBit)
 
 	const hostKey = "host"
 
