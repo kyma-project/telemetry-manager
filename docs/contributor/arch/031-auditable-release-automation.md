@@ -44,4 +44,11 @@ Implement deterministic Docker builds to ensure PR and release images produce id
 
 ### 1. Release Workflow
 
+1- Reproduce Docker image on release using the same Dockerfile and source code as in the PR build to ensure identical digest.
+
 ![Workflow](./../assets/auditable-release.drawio.svg)
+
+
+2- Copy PR Image to Release Registry
+
+![Workflow](./../assets/auditable-release-alternative.drawio.svg)
