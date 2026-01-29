@@ -29,7 +29,6 @@ func TestTransform_OTel(t *testing.T) {
 		logGeneratorBuilder func(ns string) client.Object
 		transformSpec       telemetryv1beta1.TransformSpec
 		assertion           types.GomegaMatcher
-		expectAgent         bool
 	}{
 		{
 			label: suite.LabelLogAgent,
@@ -45,7 +44,6 @@ func TestTransform_OTel(t *testing.T) {
 				HaveResourceAttributes(Not(HaveKeyWithValue("k8s.namespace.name", "kyma-system"))),
 				HaveAttributes(HaveKeyWithValue("system", "false")),
 			))),
-			expectAgent: true,
 		},
 		{
 			label: suite.LabelLogAgent,
@@ -57,7 +55,6 @@ func TestTransform_OTel(t *testing.T) {
 					"level":    "info",
 				})).K8sObject()
 			},
-			expectAgent: true,
 			transformSpec: telemetryv1beta1.TransformSpec{
 				Statements: []string{"set(resource.attributes[\"test\"], \"passed\")",
 					"set(log.attributes[\"name\"], \"InfoLogs\")",
@@ -77,7 +74,6 @@ func TestTransform_OTel(t *testing.T) {
 					"level":    "info",
 				})).K8sObject()
 			},
-			expectAgent: true,
 			transformSpec: telemetryv1beta1.TransformSpec{
 				Conditions: []string{"log.severity_text == \"info\" or log.severity_text == \"Info\""},
 				Statements: []string{"set(log.severity_text, ToUpperCase(log.severity_text))"},
@@ -167,7 +163,7 @@ func TestTransform_OTel(t *testing.T) {
 			assert.BackendReachable(t, backend)
 			assert.DeploymentReady(t, kitkyma.LogGatewayName)
 
-			if tc.expectAgent {
+			if suite.ExpectAgent(tc.label) {
 				assert.DaemonSetReady(t, kitkyma.LogAgentName)
 			}
 

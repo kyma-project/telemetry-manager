@@ -24,7 +24,6 @@ func TestSecretRotation_OTel(t *testing.T) {
 		label               string
 		inputBuilder        func(includeNs string) telemetryv1beta1.LogPipelineInput
 		logGeneratorBuilder func(ns string) client.Object
-		expectAgent         bool
 	}{
 		{
 			label: suite.LabelLogAgent,
@@ -34,7 +33,6 @@ func TestSecretRotation_OTel(t *testing.T) {
 			logGeneratorBuilder: func(ns string) client.Object {
 				return stdoutloggen.NewDeployment(ns).K8sObject()
 			},
-			expectAgent: true,
 		},
 		{
 			label: suite.LabelLogGateway,
@@ -93,7 +91,7 @@ func TestSecretRotation_OTel(t *testing.T) {
 			assert.BackendReachable(t, backend)
 			assert.DeploymentReady(t, kitkyma.LogGatewayName)
 
-			if tc.expectAgent {
+			if suite.ExpectAgent(tc.label) {
 				assert.DaemonSetReady(t, kitkyma.LogAgentName)
 			}
 
@@ -106,7 +104,7 @@ func TestSecretRotation_OTel(t *testing.T) {
 
 			assert.DeploymentReady(t, kitkyma.LogGatewayName)
 
-			if tc.expectAgent {
+			if suite.ExpectAgent(tc.label) {
 				assert.DaemonSetReady(t, kitkyma.LogAgentName)
 			}
 

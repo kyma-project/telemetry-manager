@@ -20,12 +20,12 @@ type OTLPExporterConfigBuilder struct {
 	otlpOutput   *telemetryv1beta1.OTLPOutput
 	pipelineName string
 	queueSize    int
-	signalType   string
+	signalType   SignalType
 }
 
 type EnvVars map[string][]byte
 
-func NewOTLPExporterConfigBuilder(reader client.Reader, otlpOutput *telemetryv1beta1.OTLPOutput, pipelineName string, queueSize int, signalType string) *OTLPExporterConfigBuilder {
+func NewOTLPExporterConfigBuilder(reader client.Reader, otlpOutput *telemetryv1beta1.OTLPOutput, pipelineName string, queueSize int, signalType SignalType) *OTLPExporterConfigBuilder {
 	return &OTLPExporterConfigBuilder{
 		reader:       reader,
 		otlpOutput:   otlpOutput,
@@ -46,7 +46,7 @@ func (cb *OTLPExporterConfigBuilder) OTLPExporterConfig(ctx context.Context) (*O
 	return exportersConfig, envVars, nil
 }
 
-func makeExporterConfig(otlpOutput *telemetryv1beta1.OTLPOutput, pipelineName string, envVars map[string][]byte, queueSize int, signalType string) *OTLPExporter {
+func makeExporterConfig(otlpOutput *telemetryv1beta1.OTLPOutput, pipelineName string, envVars map[string][]byte, queueSize int, signalType SignalType) *OTLPExporter {
 	headers := makeHeaders(otlpOutput, pipelineName)
 	otlpEndpointVariable := formatEnvVarKey(otlpEndpointVariablePrefix, pipelineName)
 	otlpEndpointValue := string(envVars[otlpEndpointVariable])

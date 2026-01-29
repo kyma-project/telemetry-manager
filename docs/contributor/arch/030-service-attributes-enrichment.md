@@ -8,7 +8,7 @@ date: 2026-01-12
 
 ## Context
 
-With [PR 39335](https://github.com/open-telemetry/opentelemetry-collector-contrib/pull/39335/files), the Otel Collector `k8sattributes` processor introduced enrichment with service attributes (`service.namespace`, `service.name`, `service.version`, `service.instance.id`).
+With [PR 39335](https://github.com/open-telemetry/opentelemetry-collector-contrib/pull/39335/files), the OTel Collector `k8sattributes` processor introduced enrichment with service attributes (`service.namespace`, `service.name`, `service.version`, `service.instance.id`).
 
 For the conventions and enrichment fallback chains, see [OpenTelemetry: Service attributes](https://opentelemetry.io/docs/specs/semconv/non-normative/k8s-attributes/#service-attributes).
 

@@ -28,7 +28,6 @@ func TestExtractLabels_OTel(t *testing.T) {
 		label               string
 		inputBuilder        func(includeNs string) telemetryv1beta1.LogPipelineInput
 		logGeneratorBuilder func(ns string, labels map[string]string) client.Object
-		expectAgent         bool
 	}{
 		{
 			label: suite.LabelLogAgent,
@@ -38,7 +37,6 @@ func TestExtractLabels_OTel(t *testing.T) {
 			logGeneratorBuilder: func(ns string, labels map[string]string) client.Object {
 				return stdoutloggen.NewDeployment(ns).WithLabels(labels).K8sObject()
 			},
-			expectAgent: true,
 		},
 		{
 			label: suite.LabelLogGateway,
@@ -116,7 +114,7 @@ func TestExtractLabels_OTel(t *testing.T) {
 
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
-			if tc.expectAgent {
+			if suite.ExpectAgent(tc.label) {
 				assert.DaemonSetReady(t, kitkyma.LogAgentName)
 			}
 

@@ -17,10 +17,10 @@ type OAuth2ExtensionConfigBuilder struct {
 	reader        client.Reader
 	oauth2Options *telemetryv1beta1.OAuth2Options
 	pipelineName  string
-	signalType    string
+	signalType    SignalType
 }
 
-func NewOAuth2ExtensionConfigBuilder(reader client.Reader, oauth2Options *telemetryv1beta1.OAuth2Options, pipelineName string, signalType string) *OAuth2ExtensionConfigBuilder {
+func NewOAuth2ExtensionConfigBuilder(reader client.Reader, oauth2Options *telemetryv1beta1.OAuth2Options, pipelineName string, signalType SignalType) *OAuth2ExtensionConfigBuilder {
 	return &OAuth2ExtensionConfigBuilder{
 		reader:        reader,
 		oauth2Options: oauth2Options,

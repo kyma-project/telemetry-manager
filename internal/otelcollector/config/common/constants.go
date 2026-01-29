@@ -7,10 +7,12 @@ const (
 	EnvVarGoDebug         = "GODEBUG"
 )
 
+type SignalType string
+
 const (
-	SignalTypeMetric = "metric"
-	SignalTypeTrace  = "trace"
-	SignalTypeLog    = "log"
+	SignalTypeMetric SignalType = "metric"
+	SignalTypeTrace  SignalType = "trace"
+	SignalTypeLog    SignalType = "log"
 )
 
 const (
@@ -119,6 +121,7 @@ const (
 	ComponentIDUserDefinedTransformProcessor           = "transform/user-defined-%s" // dynamically filled with pipeline name
 	ComponentIDInsertClusterAttributesProcessor        = "transform/insert-cluster-attributes"
 	ComponentIDDropKymaAttributesProcessor             = "transform/drop-kyma-attributes"
+	ComponentIDDropUnknownServiceNameProcessor         = "transform/drop-unknown-service-name"
 
 	ComponentIDSetKymaInputNameRuntimeProcessor    ComponentID = "transform/set-kyma-input-name-runtime"
 	ComponentIDSetKymaInputNameIstioProcessor      ComponentID = "transform/set-kyma-input-name-istio"
@@ -157,6 +160,10 @@ const (
 	ComponentIDSetInstrumentationScopePrometheusProcessor  = "transform/set-instrumentation-scope-prometheus"
 	ComponentIDSetInstrumentationScopeIstioProcessor       = "transform/set-instrumentation-scope-istio"
 	ComponentIDInsertSkipEnrichmentAttributeProcessor      = "transform/insert-skip-enrichment-attribute"
+
+	// Trace-Specific Processors
+
+	ComponentIDDropIstioServiceEnrichmentProcessor = "transform/drop-istio-service-enrichment"
 
 	// ================================================================================
 	// EXPORTERS

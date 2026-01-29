@@ -26,7 +26,6 @@ func TestMetricsEndpoint_OTel(t *testing.T) {
 		label               string
 		input               telemetryv1beta1.LogPipelineInput
 		logGeneratorBuilder func(namespace string) client.Object
-		expectAgent         bool
 	}{
 		{
 			label: suite.LabelLogAgent,
@@ -34,7 +33,6 @@ func TestMetricsEndpoint_OTel(t *testing.T) {
 			logGeneratorBuilder: func(namespace string) client.Object {
 				return stdoutloggen.NewDeployment(namespace).K8sObject()
 			},
-			expectAgent: true,
 		},
 		{
 			label: suite.LabelLogGateway,
@@ -75,7 +73,7 @@ func TestMetricsEndpoint_OTel(t *testing.T) {
 
 			assert.DeploymentReady(t, kitkyma.LogGatewayName)
 
-			if tc.expectAgent {
+			if suite.ExpectAgent(tc.label) {
 				assert.DaemonSetReady(t, kitkyma.LogAgentName)
 
 				agentMetricsURL := suite.ProxyClient.ProxyURLForService(kitkyma.LogAgentMetricsService.Namespace, kitkyma.LogAgentMetricsService.Name, "metrics", ports.Metrics)
