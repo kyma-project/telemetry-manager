@@ -122,7 +122,7 @@ func NewTracePipelineController(config TracePipelineControllerConfig, client cli
 
 	reconciler := tracepipeline.New(
 		tracepipeline.WithClient(client),
-		tracepipeline.WithGlobal(config.Global),
+		tracepipeline.WithGlobals(config.Global),
 
 		tracepipeline.WithGatewayApplierDeleter(otelcollector.NewTraceGatewayApplierDeleter(config.Global, config.OTelCollectorImage, config.TraceGatewayPriorityClassName)),
 		tracepipeline.WithGatewayConfigBuilder(&tracegateway.Builder{Reader: client}),

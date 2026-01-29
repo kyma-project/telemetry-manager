@@ -147,7 +147,7 @@ const (
 	LabelMTLS = "mtls"
 )
 
-func ExpectAgent(label string) bool { // TODO(TeodorSAP): Use this for log e2e tests as well
+func ExpectAgent(label string) bool {
 	return label == LabelMetricAgentSetA ||
 		label == LabelMetricAgentSetB ||
 		label == LabelMetricAgentSetC ||

@@ -23,8 +23,6 @@ import (
 	"time"
 
 	"gopkg.in/yaml.v3"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -51,7 +49,7 @@ const defaultReplicaCount int32 = 2
 type Reconciler struct {
 	client.Client
 
-	config config.Global
+	globals config.Global
 
 	// Dependencies
 	flowHealthProber      FlowHealthProber
@@ -69,10 +67,10 @@ type Reconciler struct {
 // Option configures the Reconciler during initialization.
 type Option func(*Reconciler)
 
-// WithGlobal sets the global configuration for the Reconciler.
-func WithGlobal(cfg config.Global) Option {
+// WithGlobals sets the global configuration.
+func WithGlobals(globals config.Global) Option {
 	return func(r *Reconciler) {
-		r.config = cfg
+		r.globals = globals
 	}
 }
 
@@ -304,16 +302,22 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1be
 // It gathers cluster information, builds the collector configuration from all reconcilable pipelines, and applies the gateway resources.
 func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *telemetryv1beta1.TracePipeline, allPipelines []telemetryv1beta1.TracePipeline) error {
 	shootInfo := k8sutils.GetGardenerShootInfo(ctx, r.Client)
-	clusterName := r.getClusterNameFromTelemetry(ctx, shootInfo.ClusterName)
+	telemetryOptions := telemetryutils.Options{
+		SignalType:                common.SignalTypeTrace,
+		Client:                    r.Client,
+		DefaultReplicas:           defaultReplicaCount,
+		DefaultTelemetryNamespace: r.globals.DefaultTelemetryNamespace(),
+	}
+	clusterName := telemetryutils.GetClusterNameFromTelemetry(ctx, telemetryOptions)
 
-	clusterUID, err := r.getK8sClusterUID(ctx)
+	clusterUID, err := k8sutils.GetClusterUID(ctx, r.Client)
 	if err != nil {
 		return fmt.Errorf("failed to get kube-system namespace for cluster UID: %w", err)
 	}
 
 	var enrichments *operatorv1beta1.EnrichmentSpec
 
-	t, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.config.DefaultTelemetryNamespace())
+	t, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
 	if err == nil {
 		enrichments = t.Spec.Enrichments
 	}
@@ -324,7 +328,8 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 			ClusterUID:    clusterUID,
 			CloudProvider: shootInfo.CloudProvider,
 		},
-		Enrichments: enrichments,
+		Enrichments:       enrichments,
+		ServiceEnrichment: telemetryutils.GetServiceEnrichmentFromTelemetryOrDefault(ctx, telemetryOptions),
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create collector config: %w", err)
@@ -341,7 +346,7 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 		CollectorConfigYAML:            string(collectorConfigYAML),
 		CollectorEnvVars:               collectorEnvVars,
 		IstioEnabled:                   isIstioActive,
-		Replicas:                       r.getReplicaCountFromTelemetry(ctx),
+		Replicas:                       telemetryutils.GetReplicaCountFromTelemetry(ctx, telemetryOptions),
 		ResourceRequirementsMultiplier: len(allPipelines),
 	}
 
@@ -354,59 +359,6 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 	}
 
 	return nil
-}
-
-// getReplicaCountFromTelemetry retrieves the desired number of trace gateway replicas from the Telemetry CR.
-// It returns the configured replica count if static scaling is configured, otherwise returns the default replica count.
-func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
-	telemetry, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.config.DefaultTelemetryNamespace())
-	if err != nil {
-		logf.FromContext(ctx).V(1).Error(err, "Failed to get telemetry: using default scaling")
-		return defaultReplicaCount
-	}
-
-	if telemetry.Spec.Trace != nil &&
-		telemetry.Spec.Trace.Gateway.Scaling.Type == operatorv1beta1.StaticScalingStrategyType &&
-		telemetry.Spec.Trace.Gateway.Scaling.Static != nil &&
-		telemetry.Spec.Trace.Gateway.Scaling.Static.Replicas > 0 {
-		return telemetry.Spec.Trace.Gateway.Scaling.Static.Replicas
-	}
-
-	return defaultReplicaCount
-}
-
-// getClusterNameFromTelemetry retrieves the cluster name from the Telemetry CR enrichment configuration.
-// If no custom cluster name is configured, it returns the provided default name.
-func (r *Reconciler) getClusterNameFromTelemetry(ctx context.Context, defaultName string) string {
-	telemetry, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.config.DefaultTelemetryNamespace())
-	if err != nil {
-		logf.FromContext(ctx).V(1).Error(err, "Failed to get telemetry: using default shoot name as cluster name")
-		return defaultName
-	}
-
-	if telemetry.Spec.Enrichments != nil &&
-		telemetry.Spec.Enrichments.Cluster != nil &&
-		telemetry.Spec.Enrichments.Cluster.Name != "" {
-		return telemetry.Spec.Enrichments.Cluster.Name
-	}
-
-	return defaultName
-}
-
-// getK8sClusterUID retrieves the unique identifier of the Kubernetes cluster by fetching the UID of the kube-system namespace.
-func (r *Reconciler) getK8sClusterUID(ctx context.Context) (string, error) {
-	var kubeSystem corev1.Namespace
-
-	kubeSystemNs := types.NamespacedName{
-		Name: "kube-system",
-	}
-
-	err := r.Get(ctx, kubeSystemNs, &kubeSystem)
-	if err != nil {
-		return "", err
-	}
-
-	return string(kubeSystem.UID), nil
 }
 
 func (r *Reconciler) trackPipelineInfoMetric(ctx context.Context, pipelines []telemetryv1beta1.TracePipeline) {
