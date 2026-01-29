@@ -129,7 +129,6 @@ func (o *OTLPGatewayApplierDeleter) ApplyResources(ctx context.Context, c client
 				return fmt.Errorf("failed to create destinationrule: %w", err)
 			}
 		}
-
 	}
 
 	return nil
@@ -179,6 +178,7 @@ func (o *OTLPGatewayApplierDeleter) DeleteResources(ctx context.Context, c clien
 	if isIstioActive {
 		for _, svcName := range []string{names.OTLPLogsService, names.OTLPService} {
 			destinationRuleMeta := metav1.ObjectMeta{Namespace: o.globals.TargetNamespace(), Name: svcName}
+
 			destinationRule := istionetworkingclientv1.DestinationRule{ObjectMeta: destinationRuleMeta}
 			if err := k8sutils.DeleteObject(ctx, c, &destinationRule); err != nil {
 				allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete destinationrule: %w", err))
@@ -354,8 +354,8 @@ func (o *OTLPGatewayApplierDeleter) makeAnnotations(configChecksum string, opts 
 	annotations := map[string]string{commonresources.AnnotationKeyChecksumConfig: configChecksum}
 
 	if opts.IstioEnabled {
-		excludedPorts := fmt.Sprintf("%d,%d,%d", ports.Metrics, ports.OTLPGRPC, ports.OTLPHTTP)
-		annotations[commonresources.AnnotationKeyIstioExcludeInboundPorts] = excludedPorts
+		// exclude all inbound ports from service mesh
+		annotations[commonresources.AnnotationKeyIstioIncludeInboundPorts] = ""
 		// When a workload is outside the istio mesh and communicates with pod in service mesh, the envoy proxy does not
 		// preserve the source IP and destination IP. To preserve source/destination IP we need TPROXY interception mode.
 		// More info: https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/#ProxyConfig-InboundInterceptionMode

@@ -146,7 +146,7 @@ spec:
         checksum/config: 1d8e9f768e6b24485bbdd6b9aa417d37fec897a7dafc8321355abc0d45259c9e
         sidecar.istio.io/interceptionMode: TPROXY
         test-anno-key: test-anno-value
-        traffic.sidecar.istio.io/excludeInboundPorts: 8888,4317,4318
+        traffic.sidecar.istio.io/includeInboundPorts: ""
       labels:
         app.kubernetes.io/component: gateway
         app.kubernetes.io/managed-by: telemetry-manager
