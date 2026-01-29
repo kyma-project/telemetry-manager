@@ -104,6 +104,10 @@ run-integration-istio-otel: ## Run istio and not fluent-bit integration tests
 run-integration-istio-fluent-bit: ## Run istio and fluent-bit integration tests
 	$(MAKE) run-e2e TEST_ID=integration-istio-fluent-bit TEST_PATH="./test/integration/..." TEST_LABELS="istio and fluent-bit"
 
+.PHONY: run-integration-istio-otel-experimental
+run-integration-istio-otel-experimental: ## Run istio and experimental integration tests
+	$(MAKE) run-e2e TEST_ID=integration-istio-otel-experimental TEST_PATH="./test/integration/..." TEST_LABELS="istio and experimental"
+
 
 .PHONY: run-all-e2e-logs
 run-all-e2e-logs: run-e2e-fluent-bit run-e2e-log-agent run-e2e-log-gateway run-e2e-log-gateway-experimental run-e2e-logs-max-pipeline run-e2e-fluent-bit-max-pipeline run-e2e-logs-misc ## Run all log-related E2E tests
