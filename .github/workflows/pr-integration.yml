@@ -36,6 +36,7 @@ on:
       - ".env"
       - ".k3d-kyma.yaml"
       - "Makefile"
+    types: [opened, synchronize, reopened, labeled, unlabeled]
 
   workflow_dispatch:
 
@@ -45,6 +46,9 @@ jobs:
     outputs:
       manager-image: ${{ steps.set-env.outputs.image-repo }}:${{ steps.set-env.outputs.image-tag }}
     steps:
+      - name: Validate CI labels
+        uses: ./.github/actions/validate-ci-labels
+
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 

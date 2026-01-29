@@ -7,7 +7,7 @@ on:
   pull_request_target:
     paths:
       - "dependencies/telemetry-self-monitor/**"
-    types: [opened, edited, synchronize, reopened, ready_for_review]
+    types: [opened, edited, synchronize, reopened]
   push:
     branches:
       - main
@@ -23,6 +23,9 @@ jobs:
       build-tag: ${{ steps.build-tag.outputs.build-tag || '' }}
 
     steps:
+      - name: Validate CI labels
+        uses: ./.github/actions/validate-ci-labels
+
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
@@ -59,6 +62,7 @@ jobs:
         run: echo "build-tag=${{ steps.load-envs.outputs.PROMETHEUS_VERSION }}-${{ steps.get-short-sha.outputs.short-sha }}" >> $GITHUB_OUTPUT
 
   build-image:
+    if: ${{ needs.envs.result == 'success' }}
     permissions:
       id-token: write # Required for requesting the JWT token
       contents: read
@@ -75,7 +79,7 @@ jobs:
   notify-on-failure:
     needs: build-image
     runs-on: ubuntu-latest
-    if: ${{ always() && (needs.build-image.result == 'failure') && github.event_name == 'push' }}
+    if: ${{ always() && (needs.build-image.result == 'failure') && (github.event_name == 'push') }}
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2

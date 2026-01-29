@@ -15,10 +15,20 @@ on:
       - "OWNERS"
       - "CODEOWNERS"
       - "external-images.yaml"
+    types: [opened, synchronize, reopened]
   workflow_dispatch:
 
 jobs:
+  validate-labels:
+    name: Validate CI labels
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate CI labels
+        id: validate-labels
+        uses: ./.github/actions/validate-ci-labels
+
   unit-tests:
+    needs: validate-labels
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -35,6 +45,7 @@ jobs:
         run: make test
 
   lint:
+    needs: validate-labels
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -47,6 +58,7 @@ jobs:
         run: make --debug lint
 
   coverage:
+    needs: validate-labels
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -59,6 +71,7 @@ jobs:
         run: make check-coverage
 
   verify-code-generated:
+    needs: validate-labels
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -71,6 +84,7 @@ jobs:
         run: make check-clean
 
   test-renovate:
+    needs: validate-labels
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code

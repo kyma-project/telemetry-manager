@@ -7,7 +7,7 @@ on:
   pull_request_target:
     paths:
       - "dependencies/sample-app/**"
-    types: [opened, edited, synchronize, reopened, ready_for_review]
+    types: [opened, edited, synchronize, reopened]
   push:
     branches:
       - main
@@ -22,6 +22,9 @@ jobs:
       tags: ${{ steps.create-tags.outputs.tags }}
 
     steps:
+      - name: Validate CI labels
+        uses: ./.github/actions/validate-ci-labels
+
       - name: Create tags
         id: create-tags
         run: |
@@ -37,6 +40,7 @@ jobs:
           fi
 
   build-image:
+    if: ${{ needs.envs.result == 'success' }}
     permissions:
       id-token: write # Required for requesting the JWT token
       contents: read
@@ -52,7 +56,7 @@ jobs:
   notify-on-failure:
     needs: build-image
     runs-on: ubuntu-latest
-    if: ${{ always() && (needs.build-image.result == 'failure') && github.event_name == 'push' }}
+    if: ${{ always() && (needs.build-image.result == 'failure') && (github.event_name == 'push') }}
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
