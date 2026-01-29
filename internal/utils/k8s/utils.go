@@ -13,6 +13,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -370,4 +371,34 @@ func mergeMapsByPrefix(newMap map[string]string, oldMap map[string]string, prefi
 func DeleteObject(ctx context.Context, c client.Client, obj client.Object) error {
 	err := c.Delete(ctx, obj)
 	return client.IgnoreNotFound(err)
+}
+
+func DeleteObjectsByLabelSelector(ctx context.Context, c client.Client, objList client.ObjectList, labelSelector map[string]string) error {
+	listOptions := []client.ListOption{
+		client.MatchingLabels(labelSelector),
+	}
+
+	err := c.List(ctx, objList, listOptions...)
+	if err != nil {
+		return client.IgnoreNotFound(err)
+	}
+
+	items, err := meta.ExtractList(objList)
+	if err != nil {
+		return err
+	}
+
+	for _, item := range items {
+		obj, ok := item.(client.Object)
+		if !ok {
+			continue
+		}
+
+		err = c.Delete(ctx, obj)
+		if err != nil {
+			return client.IgnoreNotFound(err)
+		}
+	}
+
+	return nil
 }

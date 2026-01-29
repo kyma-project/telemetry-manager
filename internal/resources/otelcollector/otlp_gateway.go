@@ -175,7 +175,7 @@ func (o *OTLPGatewayApplierDeleter) DeleteResources(ctx context.Context, c clien
 
 	if isIstioActive {
 		destinationRule := istionetworkingclientv1.DestinationRule{ObjectMeta: objectMeta}
-		if err := k8sutils.DeleteObject(ctx, c, &destinationRule); err != nil && !errors.Is(err, client.IgnoreNotFound(err)) {
+		if err := k8sutils.DeleteObject(ctx, c, &destinationRule); err != nil {
 			allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete destinationrule: %w", err))
 		}
 	}
