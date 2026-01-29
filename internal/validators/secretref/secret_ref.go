@@ -40,10 +40,6 @@ func (v *Validator) ValidateMetricPipeline(ctx context.Context, pipeline *teleme
 // ValidateLogPipeline validates the secret references in a LogPipeline, ensuring that the references are valid,
 // and the referenced Secrets exist and contain the required keys. It returns an error otherwise.
 func (v *Validator) ValidateLogPipeline(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) error {
-	if pipeline.Spec.Output.OTLP != nil {
-		return v.validate(ctx, getSecretRefsInOTLPOutput(pipeline.Spec.Output.OTLP))
-	}
-
 	return v.validate(ctx, GetLogPipelineRefs(pipeline))
 }
 
