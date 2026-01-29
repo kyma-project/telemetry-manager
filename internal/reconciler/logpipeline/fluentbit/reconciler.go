@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
@@ -129,8 +131,8 @@ func New(opts ...Option) *Reconciler {
 	return r
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) error {
-	logf.FromContext(ctx).V(1).Info("Reconciling LogPipeline")
+func (r *Reconciler) Reconcile(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) (ctrl.Result, error) {
+	logf.FromContext(ctx).V(1).Info("Reconciling FluentBit LogPipeline")
 
 	var allErrors error = nil
 
@@ -142,7 +144,17 @@ func (r *Reconciler) Reconcile(ctx context.Context, pipeline *telemetryv1beta1.L
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to update status: %w", err))
 	}
 
-	return allErrors
+	if allErrors != nil {
+		return ctrl.Result{}, allErrors
+	}
+
+	requeueAfter := r.calculateRequeueAfterDuration(ctx, pipeline)
+	if requeueAfter != nil {
+		logf.FromContext(ctx).V(1).Info("Requeuing reconciliation due to certificate about to expire", "RequeueAfter", requeueAfter.String())
+		return ctrl.Result{RequeueAfter: *requeueAfter}, nil
+	}
+
+	return ctrl.Result{}, nil
 }
 
 func (r *Reconciler) IsReconcilable(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) (bool, error) {
@@ -346,4 +358,16 @@ func (r *Reconciler) getEndpoint(ctx context.Context, pipeline *telemetryv1beta1
 	}
 
 	return string(endpointBytes)
+}
+
+func (r *Reconciler) calculateRequeueAfterDuration(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) *time.Duration {
+	err := r.pipelineValidator.Validate(ctx, pipeline)
+
+	var errCertAboutToExpire *tlscert.CertAboutToExpireError
+	if errors.As(err, &errCertAboutToExpire) {
+		duration := time.Until(errCertAboutToExpire.Expiry)
+		return &duration
+	}
+
+	return nil
 }
