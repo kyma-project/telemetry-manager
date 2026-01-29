@@ -3,10 +3,10 @@ package stubs
 import (
 	"context"
 
+	ctrl "sigs.k8s.io/controller-runtime"
+
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
-
-	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 // ReconcilerStub is a stub implementation of LogPipelineReconciler for testing.
