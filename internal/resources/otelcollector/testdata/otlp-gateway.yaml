@@ -1,0 +1,352 @@
+apiVersion: v1
+data:
+  relay.conf: dummy
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/component: gateway
+    app.kubernetes.io/managed-by: telemetry-manager
+    app.kubernetes.io/name: telemetry-otlp-gateway
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
+  name: telemetry-otlp-gateway
+  namespace: kyma-system
+---
+apiVersion: v1
+data:
+  DUMMY_ENV_VAR: Zm9v
+kind: Secret
+metadata:
+  labels:
+    app.kubernetes.io/component: gateway
+    app.kubernetes.io/managed-by: telemetry-manager
+    app.kubernetes.io/name: telemetry-otlp-gateway
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
+  name: telemetry-otlp-gateway
+  namespace: kyma-system
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: gateway
+    app.kubernetes.io/managed-by: telemetry-manager
+    app.kubernetes.io/name: telemetry-otlp-gateway
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
+  name: telemetry-otlp-gateway
+  namespace: kyma-system
+spec:
+  internalTrafficPolicy: Local
+  ports:
+  - name: grpc-collector
+    port: 4317
+    protocol: TCP
+    targetPort: 4317
+  - name: http-collector
+    port: 4318
+    protocol: TCP
+    targetPort: 4318
+  selector:
+    app.kubernetes.io/name: telemetry-otlp-gateway
+  type: ClusterIP
+status:
+  loadBalancer: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    prometheus.io/port: "8888"
+    prometheus.io/scheme: http
+    prometheus.io/scrape: "true"
+  labels:
+    app.kubernetes.io/component: gateway
+    app.kubernetes.io/managed-by: telemetry-manager
+    app.kubernetes.io/name: telemetry-otlp-gateway
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
+    telemetry.kyma-project.io/self-monitor: enabled
+  name: telemetry-otlp-gateway-metrics
+  namespace: kyma-system
+spec:
+  ports:
+  - name: http-metrics
+    port: 8888
+    protocol: TCP
+    targetPort: 8888
+  selector:
+    app.kubernetes.io/name: telemetry-otlp-gateway
+  type: ClusterIP
+status:
+  loadBalancer: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: gateway
+    app.kubernetes.io/managed-by: telemetry-manager
+    app.kubernetes.io/name: telemetry-otlp-gateway
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
+  name: telemetry-otlp-logs
+  namespace: kyma-system
+spec:
+  internalTrafficPolicy: Local
+  ports:
+  - name: grpc-collector
+    port: 4317
+    protocol: TCP
+    targetPort: 4317
+  - name: http-collector
+    port: 4318
+    protocol: TCP
+    targetPort: 4318
+  selector:
+    app.kubernetes.io/name: telemetry-otlp-gateway
+  type: ClusterIP
+status:
+  loadBalancer: {}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/component: gateway
+    app.kubernetes.io/managed-by: telemetry-manager
+    app.kubernetes.io/name: telemetry-otlp-gateway
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
+  name: telemetry-otlp-gateway
+  namespace: kyma-system
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  annotations:
+    test-anno-key: test-anno-value
+  labels:
+    app.kubernetes.io/component: gateway
+    app.kubernetes.io/managed-by: telemetry-manager
+    app.kubernetes.io/name: telemetry-otlp-gateway
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
+    test-label-key: test-label-value
+  name: telemetry-otlp-gateway
+  namespace: kyma-system
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: telemetry-otlp-gateway
+  template:
+    metadata:
+      annotations:
+        checksum/config: 1d8e9f768e6b24485bbdd6b9aa417d37fec897a7dafc8321355abc0d45259c9e
+        test-anno-key: test-anno-value
+      labels:
+        app.kubernetes.io/component: gateway
+        app.kubernetes.io/managed-by: telemetry-manager
+        app.kubernetes.io/name: telemetry-otlp-gateway
+        app.kubernetes.io/part-of: telemetry
+        kyma-project.io/module: telemetry
+        sidecar.istio.io/inject: "true"
+        telemetry.kyma-project.io/log-export: "true"
+        telemetry.kyma-project.io/log-ingest: "true"
+        test-label-key: test-label-value
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: telemetry-otlp-gateway
+              topologyKey: kubernetes.io/hostname
+            weight: 100
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: telemetry-otlp-gateway
+              topologyKey: topology.kubernetes.io/zone
+            weight: 100
+      containers:
+      - args:
+        - --config=/conf/relay.conf
+        env:
+        - name: MY_POD_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        - name: MY_NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        - name: GODEBUG
+          value: fips140=off
+        - name: GOMEMLIMIT
+          value: "419430400"
+        envFrom:
+        - secretRef:
+            name: telemetry-otlp-gateway
+            optional: true
+        image: opentelemetry/collector:dummy
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 13133
+        name: collector
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 13133
+        resources:
+          limits:
+            memory: 500Mi
+          requests:
+            cpu: 100m
+            memory: 32Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 10001
+          seccompProfile:
+            type: RuntimeDefault
+        volumeMounts:
+        - mountPath: /conf
+          name: config
+        - mountPath: /etc/ssl/certs
+          name: custom-ca-bundle
+          readOnly: true
+      imagePullSecrets:
+      - name: mySecret
+      priorityClassName: normal
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: telemetry-otlp-gateway
+      volumes:
+      - configMap:
+          items:
+          - key: relay.conf
+            path: relay.conf
+          name: telemetry-otlp-gateway
+        name: config
+      - name: custom-ca-bundle
+        projected:
+          sources:
+          - clusterTrustBundle:
+              name: trustBundle
+              path: ca-certificates.crt
+  updateStrategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+status:
+  currentNumberScheduled: 0
+  desiredNumberScheduled: 0
+  numberMisscheduled: 0
+  numberReady: 0
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  labels:
+    app.kubernetes.io/component: gateway
+    app.kubernetes.io/managed-by: telemetry-manager
+    app.kubernetes.io/name: telemetry-otlp-gateway
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
+  name: telemetry-otlp-gateway
+  namespace: kyma-system
+spec:
+  egress:
+  - to:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+    - ipBlock:
+        cidr: ::/0
+  ingress:
+  - from:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+    - ipBlock:
+        cidr: ::/0
+    ports:
+    - port: 8888
+      protocol: TCP
+    - port: 13133
+      protocol: TCP
+    - port: 4318
+      protocol: TCP
+    - port: 4317
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: telemetry-otlp-gateway
+  policyTypes:
+  - Ingress
+  - Egress
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/component: gateway
+    app.kubernetes.io/managed-by: telemetry-manager
+    app.kubernetes.io/name: telemetry-otlp-gateway
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
+  name: telemetry-otlp-gateway
+  namespace: kyma-system
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  - pods
+  - nodes
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
+  - list
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/component: gateway
+    app.kubernetes.io/managed-by: telemetry-manager
+    app.kubernetes.io/name: telemetry-otlp-gateway
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
+  name: telemetry-otlp-gateway
+  namespace: kyma-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: telemetry-otlp-gateway
+subjects:
+- kind: ServiceAccount
+  name: telemetry-otlp-gateway
+  namespace: kyma-system
+---

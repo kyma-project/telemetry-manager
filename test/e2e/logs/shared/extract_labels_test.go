@@ -1,9 +1,11 @@
 package shared
 
 import (
+	"fmt"
 	"testing"
 
 	. "github.com/onsi/gomega"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
@@ -25,35 +27,54 @@ import (
 
 func TestExtractLabels_OTel(t *testing.T) {
 	tests := []struct {
-		label               string
+		name                string
+		labels              []string
 		inputBuilder        func(includeNs string) telemetryv1beta1.LogPipelineInput
 		logGeneratorBuilder func(ns string, labels map[string]string) client.Object
-		expectAgent         bool
+		resourceName        types.NamespacedName
+		readinessCheckFunc  func(t *testing.T, name types.NamespacedName)
 	}{
 		{
-			label: suite.LabelLogAgent,
+			name:   suite.LabelLogAgent,
+			labels: []string{suite.LabelLogAgent},
 			inputBuilder: func(includeNs string) telemetryv1beta1.LogPipelineInput {
 				return testutils.BuildLogPipelineRuntimeInput(testutils.IncludeNamespaces(includeNs))
 			},
 			logGeneratorBuilder: func(ns string, labels map[string]string) client.Object {
 				return stdoutloggen.NewDeployment(ns).WithLabels(labels).K8sObject()
 			},
-			expectAgent: true,
+			resourceName:       kitkyma.LogAgentName,
+			readinessCheckFunc: assert.DaemonSetReady,
 		},
 		{
-			label: suite.LabelLogGateway,
+			name:   suite.LabelLogGateway,
+			labels: []string{suite.LabelLogGateway},
 			inputBuilder: func(includeNs string) telemetryv1beta1.LogPipelineInput {
 				return testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
 			},
 			logGeneratorBuilder: func(ns string, labels map[string]string) client.Object {
 				return telemetrygen.NewPod(ns, telemetrygen.SignalTypeLogs).WithLabels(labels).K8sObject()
 			},
+			resourceName:       kitkyma.LogGatewayName,
+			readinessCheckFunc: assert.DeploymentReady,
+		},
+		{
+			name:   fmt.Sprintf("%s-%s", suite.LabelLogGateway, suite.LabelExperimental),
+			labels: []string{suite.LabelLogGateway, suite.LabelExperimental},
+			inputBuilder: func(includeNs string) telemetryv1beta1.LogPipelineInput {
+				return testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
+			},
+			logGeneratorBuilder: func(ns string, labels map[string]string) client.Object {
+				return telemetrygen.NewPod(ns, telemetrygen.SignalTypeCentralLogs).WithLabels(labels).K8sObject()
+			},
+			resourceName:       kitkyma.TelemetryOTLPGatewayName,
+			readinessCheckFunc: assert.DaemonSetReady,
 		},
 	}
 
 	for _, tc := range tests {
-		t.Run(tc.label, func(t *testing.T) {
-			suite.RegisterTestCase(t, tc.label)
+		t.Run(tc.name, func(t *testing.T) {
+			suite.RegisterTestCase(t, tc.labels...)
 
 			const (
 				k8sLabelKeyPrefix = "k8s.pod.label"
@@ -71,7 +92,7 @@ func TestExtractLabels_OTel(t *testing.T) {
 			)
 
 			var (
-				uniquePrefix = unique.Prefix(tc.label)
+				uniquePrefix = unique.Prefix(tc.name)
 				pipelineName = uniquePrefix()
 				backendNs    = uniquePrefix("backend")
 				genNs        = uniquePrefix("gen")
@@ -116,12 +137,9 @@ func TestExtractLabels_OTel(t *testing.T) {
 
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
-			if tc.expectAgent {
-				assert.DaemonSetReady(t, kitkyma.LogAgentName)
-			}
+			tc.readinessCheckFunc(t, tc.resourceName)
 
 			assert.BackendReachable(t, backend)
-			assert.DeploymentReady(t, kitkyma.LogGatewayName)
 			assert.OTelLogPipelineHealthy(t, pipelineName)
 			assert.OTelLogsFromNamespaceDelivered(t, backend, genNs)
 
