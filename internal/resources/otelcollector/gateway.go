@@ -11,7 +11,6 @@ import (
 	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -228,7 +227,7 @@ func (gad *GatewayApplierDeleter) DeleteResources(ctx context.Context, c client.
 	var allErrors error = nil
 
 	name := types.NamespacedName{Name: gad.baseName, Namespace: gad.globals.TargetNamespace()}
-	if err := deleteCommonResources(ctx, c, name); err != nil && !apierrors.IsNotFound(err) {
+	if err := deleteCommonResources(ctx, c, name); err != nil {
 		allErrors = errors.Join(allErrors, err)
 	}
 
@@ -237,30 +236,31 @@ func (gad *GatewayApplierDeleter) DeleteResources(ctx context.Context, c client.
 		Namespace: gad.globals.TargetNamespace(),
 	}
 
+	// Deleting using objectMeta and recreating it (in otlp_gateway.go) with same name causes reconcile loop. So delete the service using label selector
+	// Delete the OTLP service
+	serviceSelector := map[string]string{commonresources.LabelKeyK8sName: gad.baseName}
+	if err := k8sutils.DeleteObjectsByLabelSelector(ctx, c, &corev1.ServiceList{}, serviceSelector); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete otlp service: %w", err))
+	}
+
 	secret := corev1.Secret{ObjectMeta: objectMeta}
-	if err := k8sutils.DeleteObject(ctx, c, &secret); err != nil && !apierrors.IsNotFound(err) {
+	if err := k8sutils.DeleteObject(ctx, c, &secret); err != nil {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete env secret: %w", err))
 	}
 
 	configMap := corev1.ConfigMap{ObjectMeta: objectMeta}
-	if err := k8sutils.DeleteObject(ctx, c, &configMap); err != nil && !apierrors.IsNotFound(err) {
+	if err := k8sutils.DeleteObject(ctx, c, &configMap); err != nil {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete configmap: %w", err))
 	}
 
 	deployment := appsv1.Deployment{ObjectMeta: objectMeta}
-	if err := k8sutils.DeleteObject(ctx, c, &deployment); err != nil && !apierrors.IsNotFound(err) {
+	if err := k8sutils.DeleteObject(ctx, c, &deployment); err != nil {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete deployment: %w", err))
-	}
-
-	// Delete the OTLP service
-	OTLPService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: gad.otlpServiceName, Namespace: gad.globals.TargetNamespace()}}
-	if err := k8sutils.DeleteObject(ctx, c, &OTLPService); err != nil && !apierrors.IsNotFound(err) {
-		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete otlp service: %w", err))
 	}
 
 	if isIstioActive {
 		peerAuthentication := istiosecurityclientv1.PeerAuthentication{ObjectMeta: objectMeta}
-		if err := k8sutils.DeleteObject(ctx, c, &peerAuthentication); err != nil && !apierrors.IsNotFound(err) {
+		if err := k8sutils.DeleteObject(ctx, c, &peerAuthentication); err != nil {
 			allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete peerauthentication: %w", err))
 		}
 	}

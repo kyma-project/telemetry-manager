@@ -116,17 +116,19 @@ func (o *OTLPGatewayApplierDeleter) ApplyResources(ctx context.Context, c client
 		return fmt.Errorf("failed to create otlp service: %w", err)
 	}
 
-	if opts.IstioEnabled {
-		if err := k8sutils.CreateOrUpdateDestinationRule(ctx, c, o.makeDestinationRule()); err != nil {
-			return fmt.Errorf("failed to create destinationrule: %w", err)
-		}
-	}
-
 	// Create the legacy service for backward compatibility
 	// This service uses the old name (telemetry-otlp-logs) but points to the new DaemonSet
 	legacyService := o.makeLegacyOTLPService(names.OTLPLogsService)
 	if err := k8sutils.CreateOrUpdateService(ctx, c, legacyService); err != nil {
 		return fmt.Errorf("failed to create legacy log otlp service: %w", err)
+	}
+
+	if opts.IstioEnabled {
+		for _, svcName := range []string{names.OTLPLogsService, names.OTLPService} {
+			if err := k8sutils.CreateOrUpdateDestinationRule(ctx, c, o.makeDestinationRule(svcName)); err != nil {
+				return fmt.Errorf("failed to create destinationrule: %w", err)
+			}
+		}
 	}
 
 	return nil
@@ -174,26 +176,30 @@ func (o *OTLPGatewayApplierDeleter) DeleteResources(ctx context.Context, c clien
 	}
 
 	if isIstioActive {
-		destinationRule := istionetworkingclientv1.DestinationRule{ObjectMeta: objectMeta}
-		if err := k8sutils.DeleteObject(ctx, c, &destinationRule); err != nil && !errors.Is(err, client.IgnoreNotFound(err)) {
-			allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete destinationrule: %w", err))
+		for _, svcName := range []string{names.OTLPLogsService, names.OTLPService} {
+			destinationRuleMeta := metav1.ObjectMeta{Namespace: o.globals.TargetNamespace(), Name: svcName}
+
+			destinationRule := istionetworkingclientv1.DestinationRule{ObjectMeta: destinationRuleMeta}
+			if err := k8sutils.DeleteObject(ctx, c, &destinationRule); err != nil {
+				allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete destinationrule: %w", err))
+			}
 		}
 	}
 
 	return allErrors
 }
 
-func (o *OTLPGatewayApplierDeleter) makeDestinationRule() *istionetworkingclientv1.DestinationRule {
+func (o *OTLPGatewayApplierDeleter) makeDestinationRule(name string) *istionetworkingclientv1.DestinationRule {
 	commonLabels := commonresources.MakeDefaultLabels(o.baseName, commonresources.LabelValueK8sComponentGateway)
 
 	return &istionetworkingclientv1.DestinationRule{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      o.baseName,
+			Name:      name,
 			Namespace: o.globals.TargetNamespace(),
 			Labels:    commonLabels,
 		},
 		Spec: v1alpha3.DestinationRule{
-			Host: fmt.Sprintf("%s.%s.svc.cluster.local", o.otlpServiceName, o.globals.TargetNamespace()),
+			Host: fmt.Sprintf("%s.%s.svc.cluster.local", name, o.globals.TargetNamespace()),
 			TrafficPolicy: &v1alpha3.TrafficPolicy{
 				Tls: &v1alpha3.ClientTLSSettings{Mode: v1alpha3.ClientTLSSettings_DISABLE},
 			},
@@ -348,8 +354,8 @@ func (o *OTLPGatewayApplierDeleter) makeAnnotations(configChecksum string, opts 
 	annotations := map[string]string{commonresources.AnnotationKeyChecksumConfig: configChecksum}
 
 	if opts.IstioEnabled {
-		excludedPorts := fmt.Sprintf("%d,%d,%d", ports.Metrics, ports.OTLPGRPC, ports.OTLPHTTP)
-		annotations[commonresources.AnnotationKeyIstioExcludeInboundPorts] = excludedPorts
+		// exclude all inbound ports from service mesh
+		annotations[commonresources.AnnotationKeyIstioIncludeInboundPorts] = ""
 		// When a workload is outside the istio mesh and communicates with pod in service mesh, the envoy proxy does not
 		// preserve the source IP and destination IP. To preserve source/destination IP we need TPROXY interception mode.
 		// More info: https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/#ProxyConfig-InboundInterceptionMode

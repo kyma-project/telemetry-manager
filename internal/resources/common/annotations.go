@@ -3,6 +3,7 @@ package common
 const (
 	AnnotationKeyChecksumConfig = "checksum/config"
 
+	AnnotationKeyIstioIncludeInboundPorts      = "traffic.sidecar.istio.io/includeInboundPorts"
 	AnnotationKeyIstioExcludeInboundPorts      = "traffic.sidecar.istio.io/excludeInboundPorts"
 	AnnotationKeyIstioIncludeOutboundPorts     = "traffic.sidecar.istio.io/includeOutboundPorts"
 	AnnotationKeyIstioIncludeOutboundIPRanges  = "traffic.sidecar.istio.io/includeOutboundIPRanges"
