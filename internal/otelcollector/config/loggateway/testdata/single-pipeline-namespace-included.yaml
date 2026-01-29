@@ -20,7 +20,7 @@ service:
                 - istio_enrichment
                 - batch
             exporters:
-                - otlp/test
+                - otlp_grpc/test
     telemetry:
         metrics:
             readers:
@@ -123,7 +123,7 @@ processors:
               conditions:
                 - log.observed_time_unix_nano == 0
 exporters:
-    otlp/test:
+    otlp_grpc/test:
         endpoint: ${OTLP_ENDPOINT_TEST}
         sending_queue:
             enabled: true

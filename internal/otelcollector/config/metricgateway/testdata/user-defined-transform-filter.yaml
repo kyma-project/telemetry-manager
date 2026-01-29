@@ -17,7 +17,7 @@ service:
                 - filter/user-defined-cls
                 - batch
             exporters:
-                - otlp/cls
+                - otlp_grpc/cls
         metrics/enrichment:
             receivers:
                 - forward/input
@@ -178,7 +178,7 @@ processors:
               conditions:
                 - IsMatch(body, ".*error.*")
 exporters:
-    otlp/cls:
+    otlp_grpc/cls:
         endpoint: ${OTLP_ENDPOINT_CLS}
         sending_queue:
             enabled: true

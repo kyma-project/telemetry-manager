@@ -18,7 +18,7 @@ service:
                 - filter/user-defined-test1
                 - batch
             exporters:
-                - otlp/test1
+                - otlp_grpc/test1
         traces/test2:
             receivers:
                 - otlp
@@ -32,7 +32,7 @@ service:
                 - filter/user-defined-test2
                 - batch
             exporters:
-                - otlp/test2
+                - otlp_grpc/test2
     telemetry:
         metrics:
             readers:
@@ -132,7 +132,7 @@ processors:
                 - set(resource.attributes["k8s.cluster.uid"], "") where resource.attributes["k8s.cluster.uid"] == nil or resource.attributes["k8s.cluster.uid"] == ""
                 - set(resource.attributes["cloud.provider"], "test-cloud-provider") where resource.attributes["cloud.provider"] == nil or resource.attributes["cloud.provider"] == ""
 exporters:
-    otlp/test1:
+    otlp_grpc/test1:
         endpoint: ${OTLP_ENDPOINT_TEST1}
         sending_queue:
             enabled: true
@@ -142,7 +142,7 @@ exporters:
             initial_interval: 5s
             max_interval: 30s
             max_elapsed_time: 300s
-    otlp/test2:
+    otlp_grpc/test2:
         endpoint: ${OTLP_ENDPOINT_TEST2}
         sending_queue:
             enabled: true

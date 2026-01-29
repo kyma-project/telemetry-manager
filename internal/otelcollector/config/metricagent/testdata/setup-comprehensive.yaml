@@ -70,7 +70,7 @@ service:
                 - transform/user-defined-test
                 - batch
             exporters:
-                - otlp/test
+                - otlp_grpc/test
     telemetry:
         metrics:
             readers:
@@ -436,7 +436,7 @@ processors:
               conditions:
                 - resource.attributes["k8s.namespace.name"] == "production"
 exporters:
-    otlp/test:
+    otlp_grpc/test:
         endpoint: ${OTLP_ENDPOINT_TEST}
         sending_queue:
             enabled: true

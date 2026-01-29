@@ -42,7 +42,7 @@ service:
                 - filter/user-defined-test1
                 - batch
             exporters:
-                - otlp/test1
+                - otlp_grpc/test1
         metrics/output-test2:
             receivers:
                 - routing/enrichment
@@ -55,7 +55,7 @@ service:
                 - filter/user-defined-test2
                 - batch
             exporters:
-                - otlp/test2
+                - otlp_grpc/test2
     telemetry:
         metrics:
             readers:
@@ -264,7 +264,7 @@ processors:
             - statements:
                 - set(resource.attributes["kyma.input.name"], "runtime")
 exporters:
-    otlp/test1:
+    otlp_grpc/test1:
         endpoint: ${OTLP_ENDPOINT_TEST1}
         sending_queue:
             enabled: true
@@ -274,7 +274,7 @@ exporters:
             initial_interval: 5s
             max_interval: 30s
             max_elapsed_time: 300s
-    otlp/test2:
+    otlp_grpc/test2:
         endpoint: ${OTLP_ENDPOINT_TEST2}
         sending_queue:
             enabled: true

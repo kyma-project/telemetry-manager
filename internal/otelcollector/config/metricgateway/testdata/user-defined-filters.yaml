@@ -16,7 +16,7 @@ service:
                 - filter/user-defined-cls
                 - batch
             exporters:
-                - otlp/cls
+                - otlp_grpc/cls
         metrics/dynatrace-output:
             receivers:
                 - forward/enrichment
@@ -25,7 +25,7 @@ service:
                 - filter/user-defined-dynatrace
                 - batch
             exporters:
-                - otlp/dynatrace
+                - otlp_grpc/dynatrace
         metrics/enrichment:
             receivers:
                 - forward/input
@@ -183,7 +183,7 @@ processors:
             - statements:
                 - set(resource.attributes["kyma.input.name"], "otlp")
 exporters:
-    otlp/cls:
+    otlp_grpc/cls:
         endpoint: ${OTLP_ENDPOINT_CLS}
         sending_queue:
             enabled: true
@@ -193,7 +193,7 @@ exporters:
             initial_interval: 5s
             max_interval: 30s
             max_elapsed_time: 300s
-    otlp/dynatrace:
+    otlp_grpc/dynatrace:
         endpoint: ${OTLP_ENDPOINT_DYNATRACE}
         sending_queue:
             enabled: true

@@ -40,7 +40,7 @@ service:
                 - transform/drop-kyma-attributes
                 - batch
             exporters:
-                - otlphttp/test
+                - otlp_http/test
     telemetry:
         metrics:
             readers:
@@ -163,7 +163,7 @@ processors:
             - statements:
                 - set(resource.attributes["kyma.input.name"], "otlp")
 exporters:
-    otlphttp/test:
+    otlp_http/test:
         endpoint: ${OTLP_ENDPOINT_TEST}
         tls:
             insecure: true
