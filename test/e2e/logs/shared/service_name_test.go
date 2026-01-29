@@ -20,25 +20,23 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
+// TODO(TeodorSAP): Remove this test in favor of service_enrichment_test.go once legacy service enrichment strategy is fully deprecated.
 func TestServiceName_OTel(t *testing.T) {
 	tests := []struct {
 		label        string
 		inputBuilder func(includeNs string) telemetryv1beta1.LogPipelineInput
-		expectAgent  bool
 	}{
 		{
 			label: suite.LabelLogAgent,
 			inputBuilder: func(includeNs string) telemetryv1beta1.LogPipelineInput {
 				return testutils.BuildLogPipelineRuntimeInput(testutils.IncludeNamespaces(includeNs))
 			},
-			expectAgent: true,
 		},
 		{
 			label: suite.LabelLogGateway,
 			inputBuilder: func(includeNs string) telemetryv1beta1.LogPipelineInput {
 				return testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
 			},
-			expectAgent: false,
 		},
 	}
 
@@ -74,7 +72,7 @@ func TestServiceName_OTel(t *testing.T) {
 			pipeline := testutils.NewLogPipelineBuilder().
 				WithName(pipelineName).
 				WithInput(tc.inputBuilder(genNs)).
-				WithKeepOriginalBody(tc.expectAgent).
+				WithKeepOriginalBody(suite.ExpectAgent(tc.label)).
 				WithOTLPOutput(
 					testutils.OTLPEndpointFromSecret(
 						hostSecretRef.Name,
@@ -91,7 +89,7 @@ func TestServiceName_OTel(t *testing.T) {
 			}
 			resources = append(resources, backend.K8sObjects()...)
 
-			if tc.expectAgent {
+			if suite.ExpectAgent(tc.label) {
 				podSpecLogs := stdoutloggen.PodSpec()
 				resources = append(resources,
 					kitk8sobjects.NewPod(podWithBothLabelsName, genNs).
@@ -118,7 +116,7 @@ func TestServiceName_OTel(t *testing.T) {
 
 			assert.DeploymentReady(t, kitkyma.LogGatewayName)
 
-			if tc.expectAgent {
+			if suite.ExpectAgent(tc.label) {
 				assert.DaemonSetReady(t, kitkyma.LogAgentName)
 			}
 
@@ -136,7 +134,7 @@ func TestServiceName_OTel(t *testing.T) {
 				)
 			}
 
-			if tc.expectAgent {
+			if suite.ExpectAgent(tc.label) {
 				verifyServiceNameAttr(podWithBothLabelsName, kubeAppLabelValue)
 				verifyServiceNameAttr(jobName, jobName)
 				verifyServiceNameAttr(podWithNoLabelsName, podWithNoLabelsName)

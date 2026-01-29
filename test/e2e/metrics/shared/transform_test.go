@@ -29,7 +29,6 @@ func TestTransform(t *testing.T) {
 		generatorBuilder func(ns string) []client.Object
 		transformSpec    telemetryv1beta1.TransformSpec
 		assertion        types.GomegaMatcher
-		expectAgent      bool
 	}{
 		{
 			label: suite.LabelMetricAgentSetC,
@@ -51,7 +50,6 @@ func TestTransform(t *testing.T) {
 				metric.HaveResourceAttributes(Not(HaveKeyWithValue("k8s.namespace.name", "kyma-system"))),
 				metric.HaveMetricAttributes(HaveKeyWithValue("system", "false")),
 			))),
-			expectAgent: true,
 		},
 		{
 			label: suite.LabelMetricAgentSetC,
@@ -73,7 +71,6 @@ func TestTransform(t *testing.T) {
 			assertion: metric.HaveFlatMetrics(ContainElement(SatisfyAll(
 				metric.HaveDescription(Equal("FooMetric")),
 			))),
-			expectAgent: true,
 		},
 		{
 			label: suite.LabelMetricAgentSetC,
@@ -97,7 +94,6 @@ func TestTransform(t *testing.T) {
 				metric.HaveResourceAttributes(HaveKeyWithValue("test", "passed")),
 				metric.HaveDescription(Equal("test passed")),
 			))),
-			expectAgent: true,
 		},
 		{
 			label: suite.LabelMetricGatewaySetC,
@@ -192,7 +188,7 @@ func TestTransform(t *testing.T) {
 			assert.BackendReachable(t, backend)
 			assert.DeploymentReady(t, kitkyma.MetricGatewayName)
 
-			if tc.expectAgent {
+			if suite.ExpectAgent(tc.label) {
 				assert.DaemonSetReady(t, kitkyma.MetricAgentName)
 			}
 

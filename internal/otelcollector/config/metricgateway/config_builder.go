@@ -10,6 +10,7 @@ import (
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	sharedtypesutils "github.com/kyma-project/telemetry-manager/internal/utils/sharedtypes"
 )
 
@@ -26,6 +27,8 @@ type BuildOptions struct {
 	GatewayNamespace            string
 	InstrumentationScopeVersion string
 	Enrichments                 *operatorv1beta1.EnrichmentSpec
+	// ServiceEnrichment specifies the service enrichment strategy to be used (temporary)
+	ServiceEnrichment string
 }
 
 func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1beta1.MetricPipeline, opts BuildOptions) (*common.Config, common.EnvVars, error) {
@@ -63,8 +66,9 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1beta1.Metric
 		b.addReceiverForInputForwarder(),
 		b.addMemoryLimiterProcessor(),
 		b.addSetInstrumentationScopeToKymaProcessor(opts),
+		b.addDropUnknownServiceNameProcessor(opts),
 		b.addK8sAttributesProcessor(opts),
-		b.addServiceEnrichmentProcessor(),
+		b.addServiceEnrichmentProcessor(opts),
 		b.addInsertClusterAttributesProcessor(opts),
 		b.addExporterForEnrichmentForwarder(),
 	); err != nil {
@@ -177,19 +181,37 @@ func (b *Builder) addSetInstrumentationScopeToKymaProcessor(opts BuildOptions) b
 	)
 }
 
-func (b *Builder) addK8sAttributesProcessor(opts BuildOptions) buildComponentFunc {
+func (b *Builder) addDropUnknownServiceNameProcessor(opts BuildOptions) buildComponentFunc {
 	return b.AddProcessor(
-		b.StaticComponentID(common.ComponentIDK8sAttributesProcessor),
-		func(mp *telemetryv1beta1.MetricPipeline) any {
-			return common.K8sAttributesProcessorConfig(opts.Enrichments)
+		b.StaticComponentID(common.ComponentIDDropUnknownServiceNameProcessor),
+		func(tp *telemetryv1beta1.MetricPipeline) any {
+			if opts.ServiceEnrichment != commonresources.AnnotationValueTelemetryServiceEnrichmentOtel {
+				return nil // Kyma legacy enrichment selected, skip this processor
+			}
+
+			return common.MetricTransformProcessorConfig(common.DropUnknownServiceNameProcessorStatements())
 		},
 	)
 }
 
-func (b *Builder) addServiceEnrichmentProcessor() buildComponentFunc {
+func (b *Builder) addK8sAttributesProcessor(opts BuildOptions) buildComponentFunc {
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDK8sAttributesProcessor),
+		func(mp *telemetryv1beta1.MetricPipeline) any {
+			useOTelServiceEnrichment := opts.ServiceEnrichment == commonresources.AnnotationValueTelemetryServiceEnrichmentOtel
+			return common.K8sAttributesProcessorConfig(opts.Enrichments, useOTelServiceEnrichment)
+		},
+	)
+}
+
+func (b *Builder) addServiceEnrichmentProcessor(opts BuildOptions) buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDServiceEnrichmentProcessor),
 		func(mp *telemetryv1beta1.MetricPipeline) any {
+			if opts.ServiceEnrichment == commonresources.AnnotationValueTelemetryServiceEnrichmentOtel {
+				return nil // OTel service enrichment selected, skip this processor
+			}
+
 			return common.ResolveServiceNameConfig()
 		},
 	)

@@ -11,6 +11,7 @@ import (
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
@@ -20,9 +21,10 @@ func TestBuildConfig(t *testing.T) {
 	sut := Builder{Reader: fakeClient}
 
 	tests := []struct {
-		name           string
-		pipelines      []telemetryv1beta1.LogPipeline
-		goldenFileName string
+		name              string
+		goldenFileName    string
+		pipelines         []telemetryv1beta1.LogPipeline
+		serviceEnrichment string
 	}{
 		{
 			name: "single pipeline",
@@ -33,6 +35,17 @@ func TestBuildConfig(t *testing.T) {
 					Build(),
 			},
 			goldenFileName: "single-pipeline.yaml",
+		},
+		{
+			name:              "single pipeline with otel service enrichment",
+			goldenFileName:    "service-enrichment-otel.yaml",
+			serviceEnrichment: commonresources.AnnotationValueTelemetryServiceEnrichmentOtel,
+			pipelines: []telemetryv1beta1.LogPipeline{
+				testutils.NewLogPipelineBuilder().
+					WithName("test").
+					WithOTLPOutput().
+					Build(),
+			},
 		},
 		{
 			name:           "pipeline using http protocol WITH custom 'Path' field",
@@ -58,37 +71,38 @@ func TestBuildConfig(t *testing.T) {
 			},
 		},
 		{
-			name: "single pipeline with OTLP disabled",
+			name:           "single pipeline with OTLP disabled",
+			goldenFileName: "single-pipeline-otlp-disabled.yaml",
 			pipelines: []telemetryv1beta1.LogPipeline{
 				testutils.NewLogPipelineBuilder().
 					WithName("test").
 					WithOTLPInput(false).
 					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
 			},
-			goldenFileName: "single-pipeline-otlp-disabled.yaml",
 		},
 		{
-			name: "single pipeline with namespace included",
+			name:           "single pipeline with namespace included",
+			goldenFileName: "single-pipeline-namespace-included.yaml",
 			pipelines: []telemetryv1beta1.LogPipeline{
 				testutils.NewLogPipelineBuilder().
 					WithName("test").
 					WithOTLPInput(true, testutils.IncludeNamespaces("kyma-system", "default")).
 					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
 			},
-			goldenFileName: "single-pipeline-namespace-included.yaml",
 		},
 		{
-			name: "single pipeline with namespace excluded",
+			name:           "single pipeline with namespace excluded",
+			goldenFileName: "single-pipeline-namespace-excluded.yaml",
 			pipelines: []telemetryv1beta1.LogPipeline{
 				testutils.NewLogPipelineBuilder().
 					WithName("test").
 					WithOTLPInput(true, testutils.ExcludeNamespaces("kyma-system", "default")).
 					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
 			},
-			goldenFileName: "single-pipeline-namespace-excluded.yaml",
 		},
 		{
-			name: "two pipelines with user-defined transforms",
+			name:           "two pipelines with user-defined transforms",
+			goldenFileName: "user-defined-transforms.yaml",
 			pipelines: []telemetryv1beta1.LogPipeline{
 				testutils.NewLogPipelineBuilder().
 					WithName("test1").
@@ -107,10 +121,10 @@ func TestBuildConfig(t *testing.T) {
 					}).
 					Build(),
 			},
-			goldenFileName: "user-defined-transforms.yaml",
 		},
 		{
-			name: "two pipelines with user-defined filter",
+			name:           "two pipelines with user-defined filter",
+			goldenFileName: "user-defined-filters.yaml",
 			pipelines: []telemetryv1beta1.LogPipeline{
 				testutils.NewLogPipelineBuilder().
 					WithName("test1").
@@ -127,10 +141,10 @@ func TestBuildConfig(t *testing.T) {
 					}).
 					Build(),
 			},
-			goldenFileName: "user-defined-filters.yaml",
 		},
 		{
-			name: "pipeline with user-defined transform and filter",
+			name:           "pipeline with user-defined transform and filter",
+			goldenFileName: "user-defined-transform-filter.yaml",
 			pipelines: []telemetryv1beta1.LogPipeline{
 				testutils.NewLogPipelineBuilder().
 					WithName("test1").
@@ -143,10 +157,10 @@ func TestBuildConfig(t *testing.T) {
 						Conditions: []string{"IsMatch(log.attributes[\"foo\"], \".*bar.*\")"},
 					}).Build(),
 			},
-			goldenFileName: "user-defined-transform-filter.yaml",
 		},
 		{
-			name: "pipeline using OAuth2 authentication",
+			name:           "pipeline using OAuth2 authentication",
+			goldenFileName: "oauth2-authentication.yaml",
 			pipelines: []telemetryv1beta1.LogPipeline{
 				testutils.NewLogPipelineBuilder().
 					WithName("test").
@@ -161,20 +175,20 @@ func TestBuildConfig(t *testing.T) {
 						testutils.OAuth2Scopes([]string{"logs"}),
 					).Build(),
 			},
-			goldenFileName: "oauth2-authentication.yaml",
 		},
-	}
-
-	buildOptions := BuildOptions{
-		Cluster: common.ClusterOptions{
-			ClusterName:   "${KUBERNETES_SERVICE_HOST}",
-			CloudProvider: "test-cloud-provider",
-		},
-		ModuleVersion: "1.0.0",
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			buildOptions := BuildOptions{
+				Cluster: common.ClusterOptions{
+					ClusterName:   "${KUBERNETES_SERVICE_HOST}",
+					CloudProvider: "test-cloud-provider",
+				},
+				ModuleVersion:     "1.0.0",
+				ServiceEnrichment: tt.serviceEnrichment,
+			}
+
 			collectorConfig, _, err := sut.Build(ctx, tt.pipelines, buildOptions)
 			require.NoError(t, err)
 			configYAML, err := yaml.Marshal(collectorConfig)
@@ -188,7 +202,6 @@ func TestBuildConfig(t *testing.T) {
 
 			goldenFile, err := os.ReadFile(goldenFilePath)
 			require.NoError(t, err, "failed to load golden file")
-
 			require.Equal(t, string(goldenFile), string(configYAML))
 		})
 	}

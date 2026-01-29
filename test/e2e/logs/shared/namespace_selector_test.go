@@ -25,7 +25,6 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 		label               string
 		inputBuilder        func(includeNss, excludeNss []string) telemetryv1beta1.LogPipelineInput
 		logGeneratorBuilder func(ns string) client.Object
-		expectAgent         bool
 	}{
 		{
 			label: suite.LabelLogAgent,
@@ -44,7 +43,6 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 			logGeneratorBuilder: func(ns string) client.Object {
 				return stdoutloggen.NewDeployment(ns).K8sObject()
 			},
-			expectAgent: true,
 		},
 		{
 			label: suite.LabelLogGateway,
@@ -128,7 +126,7 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 			assert.BackendReachable(t, backend2)
 			assert.DeploymentReady(t, kitkyma.LogGatewayName)
 
-			if tc.expectAgent {
+			if suite.ExpectAgent(tc.label) {
 				assert.DaemonSetReady(t, kitkyma.LogAgentName)
 			}
 

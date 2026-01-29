@@ -11,6 +11,7 @@ import (
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
@@ -19,13 +20,25 @@ func TestBuildConfig(t *testing.T) {
 	sut := Builder{Reader: fakeClient}
 
 	tests := []struct {
-		name           string
-		pipelines      []telemetryv1beta1.MetricPipeline
-		goldenFileName string
+		name              string
+		goldenFileName    string
+		pipelines         []telemetryv1beta1.MetricPipeline
+		serviceEnrichment string
 	}{
 		{
 			name:           "simple single pipeline setup",
 			goldenFileName: "setup-simple.yaml",
+			pipelines: []telemetryv1beta1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().
+					WithName("test").
+					WithOTLPInput(true).
+					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+			},
+		},
+		{
+			name:              "simple single pipeline setup with otel service enrichment",
+			goldenFileName:    "service-enrichment-otel.yaml",
+			serviceEnrichment: commonresources.AnnotationValueTelemetryServiceEnrichmentOtel,
 			pipelines: []telemetryv1beta1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
 					WithName("test").
@@ -188,7 +201,8 @@ func TestBuildConfig(t *testing.T) {
 			},
 		},
 		{
-			name: "pipeline using OAuth2 authentication",
+			name:           "pipeline using OAuth2 authentication",
+			goldenFileName: "oauth2-authentication.yaml",
 			pipelines: []telemetryv1beta1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
 					WithName("test").
@@ -203,19 +217,19 @@ func TestBuildConfig(t *testing.T) {
 						testutils.OAuth2Scopes([]string{"metrics"}),
 					).Build(),
 			},
-			goldenFileName: "oauth2-authentication.yaml",
-		},
-	}
-
-	buildOptions := BuildOptions{
-		Cluster: common.ClusterOptions{
-			ClusterName:   "${KUBERNETES_SERVICE_HOST}",
-			CloudProvider: "test-cloud-provider",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			buildOptions := BuildOptions{
+				Cluster: common.ClusterOptions{
+					ClusterName:   "${KUBERNETES_SERVICE_HOST}",
+					CloudProvider: "test-cloud-provider",
+				},
+				ServiceEnrichment: tt.serviceEnrichment,
+			}
+
 			config, _, err := sut.Build(t.Context(), tt.pipelines, buildOptions)
 			require.NoError(t, err)
 			configYAML, err := yaml.Marshal(config)
@@ -229,8 +243,6 @@ func TestBuildConfig(t *testing.T) {
 
 			goldenFile, err := os.ReadFile(goldenFilePath)
 			require.NoError(t, err, "failed to load golden file")
-
-			require.NoError(t, err)
 			require.Equal(t, string(goldenFile), string(configYAML))
 		})
 	}
