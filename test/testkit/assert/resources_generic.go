@@ -60,6 +60,6 @@ func ResourcesReconciled(t *testing.T, resources ...Resource) {
 
 		// Wait to ensure that the current reconciliation loop is finished
 		// This prevents the race condition where current reconciliation could accidentally recreate an unwatched resource while testing the next one.
-		time.Sleep(5 * time.Second)
+		time.Sleep(4 * time.Second)
 	}
 }
