@@ -97,8 +97,8 @@ run-e2e-experimental-fluent-bit: ## Run experimental and fluent-bit e2e tests
 	$(MAKE) run-e2e TEST_ID=e2e-experimental-fluent-bit TEST_PATH="./test/e2e/..." TEST_LABELS="experimental and fluent-bit"
 
 .PHONY: run-integration-istio-otel
-run-integration-istio-otel: ## Run istio and not fluent-bit integration tests
-	$(MAKE) run-e2e TEST_ID=integration-istio-otel TEST_PATH="./test/integration/..." TEST_LABELS="istio and not fluent-bit"
+run-integration-istio-otel: ## Run istio and not fluent-bit and not experimental integration tests
+	$(MAKE) run-e2e TEST_ID=integration-istio-otel TEST_PATH="./test/integration/..." TEST_LABELS="istio and not fluent-bit and not experimental"
 
 .PHONY: run-integration-istio-fluent-bit
 run-integration-istio-fluent-bit: ## Run istio and fluent-bit integration tests

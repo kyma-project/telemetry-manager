@@ -311,7 +311,7 @@ jobs:
             install-istio: false
           # INTEGRATION
           - name: integration-istio-otel
-            labels: istio and not fluent-bit
+            labels: istio and not fluent-bit and not experimental
             mode: release
             type: integration
             use-fips: true
