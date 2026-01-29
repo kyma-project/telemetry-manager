@@ -170,7 +170,7 @@ func TestOTLPGateway_Annotations(t *testing.T) {
 		name                        string
 		sut                         *OTLPGatewayApplierDeleter
 		opts                        GatewayApplyOptions
-		expectedExcludeInboundPorts string
+		expectedIncludeInboundPorts string
 		shouldHaveInterceptionMode  bool
 	}{
 		{
@@ -187,7 +187,7 @@ func TestOTLPGateway_Annotations(t *testing.T) {
 			opts: GatewayApplyOptions{
 				IstioEnabled: true,
 			},
-			expectedExcludeInboundPorts: "8888,4317,4318",
+			expectedIncludeInboundPorts: "",
 			shouldHaveInterceptionMode:  true,
 		},
 	}
@@ -197,13 +197,13 @@ func TestOTLPGateway_Annotations(t *testing.T) {
 			annotations := tt.sut.makeAnnotations("dummy-checksum", tt.opts)
 
 			if !tt.opts.IstioEnabled {
-				require.NotContains(t, annotations, "traffic.sidecar.istio.io/excludeInboundPorts")
+				require.NotContains(t, annotations, "traffic.sidecar.istio.io/includeInboundPorts")
 				require.NotContains(t, annotations, "sidecar.istio.io/interceptionMode")
 
 				return
 			}
 
-			require.Equal(t, tt.expectedExcludeInboundPorts, annotations["traffic.sidecar.istio.io/excludeInboundPorts"])
+			require.Equal(t, tt.expectedIncludeInboundPorts, annotations["traffic.sidecar.istio.io/includeInboundPorts"])
 
 			if tt.shouldHaveInterceptionMode {
 				require.Equal(t, "TPROXY", annotations["sidecar.istio.io/interceptionMode"])
