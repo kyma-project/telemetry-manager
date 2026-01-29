@@ -62,6 +62,7 @@ spec:
           - "2000"
           - --duration
           - "20m"
+          - --batch-size=512
           - --telemetry-attributes
           - "key1=\"Simulates a client generating traces. (Stability level: Alpha)\""
           - --telemetry-attributes
