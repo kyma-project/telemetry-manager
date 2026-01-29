@@ -237,6 +237,12 @@ func (gad *GatewayApplierDeleter) DeleteResources(ctx context.Context, c client.
 		Namespace: gad.globals.TargetNamespace(),
 	}
 
+	// Delete the OTLP service
+	OTLPService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: gad.otlpServiceName, Namespace: gad.globals.TargetNamespace()}}
+	if err := k8sutils.DeleteObject(ctx, c, &OTLPService); err != nil && !apierrors.IsNotFound(err) {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete otlp service: %w", err))
+	}
+
 	secret := corev1.Secret{ObjectMeta: objectMeta}
 	if err := k8sutils.DeleteObject(ctx, c, &secret); err != nil && !apierrors.IsNotFound(err) {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete env secret: %w", err))
@@ -250,12 +256,6 @@ func (gad *GatewayApplierDeleter) DeleteResources(ctx context.Context, c client.
 	deployment := appsv1.Deployment{ObjectMeta: objectMeta}
 	if err := k8sutils.DeleteObject(ctx, c, &deployment); err != nil && !apierrors.IsNotFound(err) {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete deployment: %w", err))
-	}
-
-	// Delete the OTLP service
-	OTLPService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: gad.otlpServiceName, Namespace: gad.globals.TargetNamespace()}}
-	if err := k8sutils.DeleteObject(ctx, c, &OTLPService); err != nil && !apierrors.IsNotFound(err) {
-		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete otlp service: %w", err))
 	}
 
 	if isIstioActive {

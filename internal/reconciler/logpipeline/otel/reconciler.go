@@ -339,23 +339,14 @@ func (r *Reconciler) reconcileGateway(ctx context.Context, pipeline *telemetryv1
 
 	// Use OTLP gateway applier deleter when in DaemonSet mode, otherwise use regular gateway applier deleter
 	if r.globals.DeployOTLPGateway() && r.otlpGatewayApplierDeleter != nil {
-		if err := r.gatewayApplierDeleter.DeleteResources(ctx, r.Client, r.istioStatusChecker.IsIstioActive(ctx)); err != nil {
+		if err = r.gatewayApplierDeleter.DeleteResources(ctx, r.Client, r.istioStatusChecker.IsIstioActive(ctx)); err != nil {
 			return fmt.Errorf("failed to delete legacy gateway resources: %w", err)
 		}
-
-		if err := r.otlpGatewayApplierDeleter.ApplyResources(
-			ctx,
-			k8sutils.NewOwnerReferenceSetter(r.Client, pipeline),
-			opts,
-		); err != nil {
+		if err = r.otlpGatewayApplierDeleter.ApplyResources(ctx, k8sutils.NewOwnerReferenceSetter(r.Client, pipeline), opts); err != nil {
 			return fmt.Errorf("failed to apply OTLP gateway resources: %w", err)
 		}
 	} else {
-		if err := r.gatewayApplierDeleter.ApplyResources(
-			ctx,
-			k8sutils.NewOwnerReferenceSetter(r.Client, pipeline),
-			opts,
-		); err != nil {
+		if err = r.gatewayApplierDeleter.ApplyResources(ctx, k8sutils.NewOwnerReferenceSetter(r.Client, pipeline), opts); err != nil {
 			return fmt.Errorf("failed to apply gateway resources: %w", err)
 		}
 	}
