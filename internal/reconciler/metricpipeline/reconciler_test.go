@@ -269,6 +269,7 @@ func TestMaxPipelineLimit(t *testing.T) {
 	)
 	assertAll(t)
 }
+
 func TestGatewayFlowHealthCondition(t *testing.T) {
 	tests := []struct {
 		name            string
@@ -368,7 +369,12 @@ func TestGatewayFlowHealthCondition(t *testing.T) {
 				WithGatewayApplierDeleter(gatewayApplierDeleterMock),
 			)
 			result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
-			require.NoError(t, result.err)
+
+			if tt.probeErr != nil {
+				require.Error(t, result.err)
+			} else {
+				require.NoError(t, result.err)
+			}
 
 			requireHasStatusCondition(t, result.pipeline,
 				conditions.TypeFlowHealthy,
@@ -381,6 +387,7 @@ func TestGatewayFlowHealthCondition(t *testing.T) {
 		})
 	}
 }
+
 func TestAgentFlowHealthCondition(t *testing.T) {
 	tests := []struct {
 		name            string
@@ -456,7 +463,12 @@ func TestAgentFlowHealthCondition(t *testing.T) {
 				withGatewayConfigBuilderAssert(gatewayConfigBuilderMock),
 			)
 			result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
-			require.NoError(t, result.err)
+
+			if tt.probeErr != nil {
+				require.Error(t, result.err)
+			} else {
+				require.NoError(t, result.err)
+			}
 
 			requireHasStatusCondition(t, result.pipeline,
 				conditions.TypeFlowHealthy,

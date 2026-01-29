@@ -20,8 +20,10 @@ import (
 	"context"
 	"fmt"
 
+	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/discovery"
@@ -151,6 +153,7 @@ func (r *LogPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 
 	ownedResourceTypesToWatch := []client.Object{
 		&appsv1.DaemonSet{},
+		&appsv1.Deployment{},
 		&corev1.ConfigMap{},
 		&corev1.Pod{},
 		&corev1.Secret{},
@@ -158,6 +161,18 @@ func (r *LogPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		&corev1.ServiceAccount{},
 		&rbacv1.ClusterRole{},
 		&rbacv1.ClusterRoleBinding{},
+		&networkingv1.NetworkPolicy{},
+	}
+
+	discoveryClient, err := discovery.NewDiscoveryClientForConfig(mgr.GetConfig())
+	if err != nil {
+		return fmt.Errorf("failed to create discovery client: %w", err)
+	}
+
+	isIstioActive := istiostatus.NewChecker(discoveryClient).IsIstioActive(context.Background())
+
+	if isIstioActive {
+		ownedResourceTypesToWatch = append(ownedResourceTypesToWatch, &istiosecurityclientv1.PeerAuthentication{})
 	}
 
 	for _, resource := range ownedResourceTypesToWatch {
@@ -175,7 +190,12 @@ func (r *LogPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		&operatorv1beta1.Telemetry{},
 		handler.EnqueueRequestsFromMapFunc(r.mapTelemetryChanges),
 		ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete()),
-	).Complete(r)
+	).
+		Watches(
+			&corev1.Secret{},
+			handler.EnqueueRequestsFromMapFunc(r.mapSecretChanges),
+			ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete()),
+		).Complete(r)
 }
 
 func (r *LogPipelineController) mapTelemetryChanges(ctx context.Context, object client.Object) []reconcile.Request {
@@ -316,4 +336,43 @@ func (r *LogPipelineController) createRequestsForAllPipelines(ctx context.Contex
 	}
 
 	return requests, nil
+}
+
+func (r *LogPipelineController) mapSecretChanges(ctx context.Context, object client.Object) []reconcile.Request {
+	var pipelines telemetryv1beta1.LogPipelineList
+
+	var requests []reconcile.Request
+
+	err := r.List(ctx, &pipelines)
+	if err != nil {
+		logf.FromContext(ctx).Error(err, "failed to list LogPipelines")
+		return requests
+	}
+
+	secret, ok := object.(*corev1.Secret)
+	if !ok {
+		logf.FromContext(ctx).Error(nil, fmt.Sprintf("expected Secret object but got: %T", object))
+		return requests
+	}
+
+	for i := range pipelines.Items {
+		var pipeline = pipelines.Items[i]
+
+		if r.referencesSecret(secret.Name, secret.Namespace, &pipeline) {
+			requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+		}
+	}
+
+	return requests
+}
+
+func (r *LogPipelineController) referencesSecret(secretName, secretNamespace string, pipeline *telemetryv1beta1.LogPipeline) bool {
+	refs := secretref.GetLogPipelineRefs(pipeline)
+	for _, ref := range refs {
+		if ref.Name == secretName && ref.Namespace == secretNamespace {
+			return true
+		}
+	}
+
+	return false
 }
