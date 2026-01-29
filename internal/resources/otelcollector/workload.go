@@ -51,8 +51,8 @@ func MakeWorkloadMetadata(globals *config.Global, baseName string, componentType
 	}
 }
 
-// MakeDaemonSet creates a DaemonSet with the given configuration (for agents)
-func MakeDaemonSet(baseName string, namespace string, metadata WorkloadMetadata, podSpec corev1.PodSpec) *appsv1.DaemonSet {
+// makeDaemonSet creates a DaemonSet with the given configuration (for agents)
+func makeDaemonSet(baseName string, namespace string, metadata WorkloadMetadata, podSpec corev1.PodSpec) *appsv1.DaemonSet {
 	selectorLabels := commonresources.MakeDefaultSelectorLabels(baseName)
 
 	return &appsv1.DaemonSet{
@@ -77,8 +77,8 @@ func MakeDaemonSet(baseName string, namespace string, metadata WorkloadMetadata,
 	}
 }
 
-// MakeGatewayDaemonSet creates a DaemonSet with UpdateStrategy for gateways
-func MakeGatewayDaemonSet(baseName string, namespace string, metadata WorkloadMetadata, podSpec corev1.PodSpec) *appsv1.DaemonSet {
+// makeGatewayDaemonSet creates a DaemonSet with UpdateStrategy for gateways
+func makeGatewayDaemonSet(baseName string, namespace string, metadata WorkloadMetadata, podSpec corev1.PodSpec) *appsv1.DaemonSet {
 	selectorLabels := commonresources.MakeDefaultSelectorLabels(baseName)
 
 	return &appsv1.DaemonSet{
@@ -102,16 +102,16 @@ func MakeGatewayDaemonSet(baseName string, namespace string, metadata WorkloadMe
 			UpdateStrategy: appsv1.DaemonSetUpdateStrategy{
 				Type: appsv1.RollingUpdateDaemonSetStrategyType,
 				RollingUpdate: &appsv1.RollingUpdateDaemonSet{
-					MaxUnavailable: ptr.To[intstr.IntOrString](intstr.FromInt32(0)),
-					MaxSurge:       ptr.To[intstr.IntOrString](intstr.FromInt32(1)),
+					MaxUnavailable: ptr.To(intstr.FromInt32(0)),
+					MaxSurge:       ptr.To(intstr.FromInt32(1)),
 				},
 			},
 		},
 	}
 }
 
-// MakeDeployment creates a Deployment with the given configuration
-func MakeDeployment(baseName string, namespace string, replicas int32, metadata WorkloadMetadata, podSpec corev1.PodSpec) *appsv1.Deployment {
+// makeDeployment creates a Deployment with the given configuration
+func makeDeployment(baseName string, namespace string, replicas int32, metadata WorkloadMetadata, podSpec corev1.PodSpec) *appsv1.Deployment {
 	selectorLabels := commonresources.MakeDefaultSelectorLabels(baseName)
 
 	return &appsv1.Deployment{

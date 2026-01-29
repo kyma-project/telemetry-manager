@@ -230,7 +230,7 @@ func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string, opts A
 		annotations,
 	)
 
-	return MakeDaemonSet(
+	return makeDaemonSet(
 		aad.baseName,
 		aad.globals.TargetNamespace(),
 		metadata,

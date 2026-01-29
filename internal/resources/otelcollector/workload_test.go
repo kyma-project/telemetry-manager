@@ -78,7 +78,7 @@ func TestMakeDaemonSet(t *testing.T) {
 		},
 	}
 
-	ds := MakeDaemonSet(baseName, namespace, metadata, podSpec)
+	ds := makeDaemonSet(baseName, namespace, metadata, podSpec)
 
 	require.NotNil(t, ds)
 	require.Equal(t, baseName, ds.Name)
@@ -112,7 +112,7 @@ func TestMakeGatewayDaemonSet(t *testing.T) {
 		},
 	}
 
-	ds := MakeGatewayDaemonSet(baseName, namespace, metadata, podSpec)
+	ds := makeGatewayDaemonSet(baseName, namespace, metadata, podSpec)
 
 	require.NotNil(t, ds)
 	require.Equal(t, baseName, ds.Name)
@@ -143,7 +143,7 @@ func TestMakeDaemonSet_SelectorLabels(t *testing.T) {
 
 	podSpec := corev1.PodSpec{}
 
-	ds := MakeDaemonSet(baseName, namespace, metadata, podSpec)
+	ds := makeDaemonSet(baseName, namespace, metadata, podSpec)
 
 	// Selector should only contain the default selector labels, not all pod labels
 	require.Contains(t, ds.Spec.Selector.MatchLabels, "app.kubernetes.io/name")
@@ -163,7 +163,7 @@ func TestMakeDeployment_SelectorLabels(t *testing.T) {
 
 	podSpec := corev1.PodSpec{}
 
-	deployment := MakeDeployment(baseName, namespace, 1, metadata, podSpec)
+	deployment := makeDeployment(baseName, namespace, 1, metadata, podSpec)
 
 	// Selector should only contain the default selector labels, not all pod labels
 	require.Contains(t, deployment.Spec.Selector.MatchLabels, "app.kubernetes.io/name")

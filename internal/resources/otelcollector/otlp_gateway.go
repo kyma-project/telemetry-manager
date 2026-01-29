@@ -278,7 +278,7 @@ func (o *OTLPGatewayApplierDeleter) makeGatewayDaemonSet(configChecksum string, 
 	podSpec := o.makeGatewayPodSpec(opts)
 	metadata := o.makeGatewayMetadata(configChecksum, opts)
 
-	return MakeGatewayDaemonSet(
+	return makeGatewayDaemonSet(
 		o.baseName,
 		o.globals.TargetNamespace(),
 		metadata,

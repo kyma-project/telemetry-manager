@@ -272,7 +272,7 @@ func (gad *GatewayApplierDeleter) makeGatewayDeployment(configChecksum string, o
 	podSpec := gad.makeGatewayPodSpec(opts)
 	metadata := gad.makeGatewayMetadata(configChecksum, opts)
 
-	return MakeDeployment(
+	return makeDeployment(
 		gad.baseName,
 		gad.globals.TargetNamespace(),
 		opts.Replicas,
