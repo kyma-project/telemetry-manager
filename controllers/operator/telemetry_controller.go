@@ -38,6 +38,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
 	predicateutils "github.com/kyma-project/telemetry-manager/internal/utils/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
@@ -175,7 +176,7 @@ func (r *TelemetryController) mapPipelineCRD(ctx context.Context, object client.
 	}
 
 	// Telemetry controller only patches LogPipeline and MetricPipeline CRDs with conversion webhook configuration
-	if crd.Name != "logpipelines.telemetry.kyma-project.io" && crd.Name != "metricpipelines.telemetry.kyma-project.io" {
+	if crd.Name != names.LogPipelineCRD && crd.Name != names.MetricPipelineCRD {
 		return nil
 	}
 
