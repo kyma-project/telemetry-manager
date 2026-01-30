@@ -26,7 +26,6 @@ func TestSinglePipelineV1Alpha1_OTel(t *testing.T) {
 		label               string
 		input               telemetryv1alpha1.LogPipelineInput
 		logGeneratorBuilder func(ns string) client.Object
-		expectAgent         bool
 	}{
 		{
 			label: suite.LabelLogAgent,
@@ -38,7 +37,6 @@ func TestSinglePipelineV1Alpha1_OTel(t *testing.T) {
 			logGeneratorBuilder: func(ns string) client.Object {
 				return stdoutloggen.NewDeployment(ns).K8sObject()
 			},
-			expectAgent: true,
 		},
 		{
 			label: suite.LabelLogGateway,
@@ -105,7 +103,7 @@ func TestSinglePipelineV1Alpha1_OTel(t *testing.T) {
 			assert.BackendReachable(t, backend)
 			assert.DeploymentReady(t, kitkyma.LogGatewayName)
 
-			if tc.expectAgent {
+			if suite.ExpectAgent(tc.label) {
 				assert.DaemonSetReady(t, kitkyma.LogAgentName)
 			}
 
