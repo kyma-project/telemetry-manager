@@ -1020,7 +1020,7 @@ func TestUsageTracking(t *testing.T) {
 				WithName("pipeline-2").
 				WithOTLPInput(false).
 				WithTransform(telemetryv1beta1.TransformSpec{
-					Statements: []string{"set(attributes[\"test\"], \"value\")"},
+					Statements: []string{"set(resource.attributes[\"test\"], \"value\")"},
 				}).
 				WithOTLPOutput(testutils.OTLPEndpoint("test")).
 				Build(),
@@ -1050,7 +1050,7 @@ func TestUsageTracking(t *testing.T) {
 				WithName("pipeline-4").
 				WithOTLPInput(false).
 				WithTransform(telemetryv1beta1.TransformSpec{
-					Statements: []string{"set(attributes[\"test\"], \"value\")"},
+					Statements: []string{"set(resource.attributes[\"test\"], \"value\")"},
 				}).
 				WithFilter(telemetryv1beta1.FilterSpec{
 					Conditions: []string{"resource.attributes[\"test\"] == \"value\""},
@@ -1137,7 +1137,7 @@ func TestUsageTracking(t *testing.T) {
 			pipeline: testutils.NewMetricPipelineBuilder().
 				WithName("pipeline-10").
 				WithTransform(telemetryv1beta1.TransformSpec{
-					Statements: []string{"set(attributes[\"test\"], \"value\")"},
+					Statements: []string{"set(resource.attributes[\"test\"], \"value\")"},
 				}).
 				WithFilter(telemetryv1beta1.FilterSpec{
 					Conditions: []string{"resource.attributes[\"test\"] == \"value\""},
@@ -1187,6 +1187,21 @@ func TestUsageTracking(t *testing.T) {
 			expectedEndpoint:     "endpoint.example.com",
 			expectedFeatureUsage: []string{},
 		},
+		{
+			name: "non-reconcilable pipeline with invalid transform",
+			pipeline: testutils.NewMetricPipelineBuilder().
+				WithName("pipeline-non-reconcilable").
+				WithOTLPInput(false).
+				WithOTLPOutput(testutils.OTLPEndpoint("endpoint.example.com")).
+				WithTransform(telemetryv1beta1.TransformSpec{
+					Statements: []string{"invalid syntax"},
+				}).
+				Build(),
+			expectedEndpoint: "endpoint.example.com",
+			expectedFeatureUsage: []string{
+				metrics.FeatureTransform,
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -1198,8 +1213,8 @@ func TestUsageTracking(t *testing.T) {
 			}
 
 			fakeClient := newTestClient(t, objs...)
-
-			sut, assertAll := newTestReconciler(fakeClient)
+			validator, _ := ottl.NewTransformSpecValidator(ottl.SignalTypeMetric)
+			sut, assertAll := newTestReconciler(fakeClient, WithPipelineValidator(newTestValidator(WithTransformSpecValidator(validator))))
 
 			result := reconcileAndGet(t, fakeClient, sut, tt.pipeline.Name)
 			require.NoError(t, result.err, "reconciliation should succeed but got error %v", result.err)

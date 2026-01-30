@@ -781,6 +781,18 @@ func TestPipelineInfoTracking(t *testing.T) {
 				metrics.FeatureOutputHTTP,
 			},
 		},
+		{
+			name: "non-reconcilable pipeline with disabled runtime input",
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("pipeline-non-reconcilable").
+				WithHTTPOutput(testutils.HTTPHost("endpoint.example.com")).
+				WithRuntimeInput(false).
+				Build(),
+			expectedEndpoint: "endpoint.example.com",
+			expectedFeatureUsage: []string{
+				metrics.FeatureOutputHTTP,
+			},
+		},
 	}
 
 	for _, tt := range tests {

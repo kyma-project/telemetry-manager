@@ -514,7 +514,7 @@ func TestPipelineInfoTracking(t *testing.T) {
 				WithOTLPInput(false).
 				WithOTLPOutput(testutils.OTLPEndpoint("test")).
 				WithTransform(telemetryv1beta1.TransformSpec{
-					Statements: []string{"set(attributes[\"test\"], \"value\")"},
+					Statements: []string{"set(resource.attributes[\"test\"], \"value\")"},
 				}).
 				Build(),
 			expectedEndpoint: "test",
@@ -529,7 +529,7 @@ func TestPipelineInfoTracking(t *testing.T) {
 				WithOTLPInput(false).
 				WithOTLPOutput(testutils.OTLPEndpoint("test")).
 				WithFilter(telemetryv1beta1.FilterSpec{
-					Conditions: []string{"attributes[\"test\"] == \"value\""},
+					Conditions: []string{"resource.attributes[\"test\"] == \"value\""},
 				}).
 				Build(),
 			expectedEndpoint: "test",
@@ -544,10 +544,10 @@ func TestPipelineInfoTracking(t *testing.T) {
 				WithOTLPInput(false).
 				WithOTLPOutput(testutils.OTLPEndpoint("test")).
 				WithTransform(telemetryv1beta1.TransformSpec{
-					Statements: []string{"set(attributes[\"test\"], \"value\")"},
+					Statements: []string{"set(resource.attributes[\"test\"], \"value\")"},
 				}).
 				WithFilter(telemetryv1beta1.FilterSpec{
-					Conditions: []string{"attributes[\"test\"] == \"value\""},
+					Conditions: []string{"resource.attributes[\"test\"] == \"value\""},
 				}).
 				Build(),
 			expectedEndpoint: "test",
@@ -590,10 +590,10 @@ func TestPipelineInfoTracking(t *testing.T) {
 				WithOTLPInput(true).
 				WithRuntimeInput(true).
 				WithTransform(telemetryv1beta1.TransformSpec{
-					Statements: []string{"set(attributes[\"test\"], \"value\")"},
+					Statements: []string{"set(resource.attributes[\"test\"], \"value\")"},
 				}).
 				WithFilter(telemetryv1beta1.FilterSpec{
-					Conditions: []string{"attributes[\"test\"] == \"value\""},
+					Conditions: []string{"resource.attributes[\"test\"] == \"value\""},
 				}).
 				Build(),
 			expectedEndpoint: "test",
@@ -633,6 +633,21 @@ func TestPipelineInfoTracking(t *testing.T) {
 			expectedEndpoint:     "endpoint.example.com",
 			expectedFeatureUsage: []string{},
 		},
+		{
+			name: "non-reconcilable pipeline with invalid transform",
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("pipeline-non-reconcilable").
+				WithOTLPInput(false).
+				WithOTLPOutput(testutils.OTLPEndpoint("endpoint.example.com")).
+				WithTransform(telemetryv1beta1.TransformSpec{
+					Statements: []string{"invalid syntax"},
+				}).
+				Build(),
+			expectedEndpoint: "endpoint.example.com",
+			expectedFeatureUsage: []string{
+				metrics.FeatureTransform,
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -643,7 +658,8 @@ func TestPipelineInfoTracking(t *testing.T) {
 			}
 
 			fakeClient := newTestClient(t, objs...)
-			sut := newTestReconciler(fakeClient)
+			validator, _ := ottl.NewTransformSpecValidator(ottl.SignalTypeLog)
+			sut := newTestReconciler(fakeClient, WithPipelineValidator(newTestValidator(WithTransformSpecValidator(validator))))
 
 			result := reconcileAndGet(t, fakeClient, sut, tt.pipeline.Name)
 			require.NoError(t, result.err)
