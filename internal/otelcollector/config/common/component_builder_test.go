@@ -205,7 +205,7 @@ func TestComponentBuilder_AddExporter(t *testing.T) {
 	}{
 		{
 			name:        "adds regular exporter with env vars",
-			componentID: "otlp/test",
+			componentID: "otlp_grpc/test",
 			config: &MockExporter{
 				URL:    "https://api.example.com",
 				APIKey: "${API_KEY}",
@@ -235,14 +235,14 @@ func TestComponentBuilder_AddExporter(t *testing.T) {
 		},
 		{
 			name:        "skips when config is nil",
-			componentID: "otlp/test",
+			componentID: "otlp_grpc/test",
 			config:      nil,
 			envVars:     make(EnvVars),
 			expectSkip:  true,
 		},
 		{
 			name:        "handles config function error",
-			componentID: "otlp/test",
+			componentID: "otlp_grpc/test",
 			expectError: true,
 		},
 	}
