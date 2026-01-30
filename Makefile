@@ -339,6 +339,7 @@ deploy-experimental: manifests-experimental $(HELM) ## Deploy telemetry manager 
 		--set manager.container.image.repository=${MANAGER_IMAGE} \
 		--set manager.container.image.pullPolicy="Always" \
 		--set manager.container.env.operateInFipsMode=true \
+		--set manager.container.args.deploy-otlp-gateway=true \
 		--namespace kyma-system \
 	| kubectl apply -f -
 
@@ -351,6 +352,7 @@ deploy-experimental-no-fips: manifests-experimental $(HELM) ## Deploy telemetry 
 		--set manager.container.image.repository=${MANAGER_IMAGE} \
 		--set manager.container.image.pullPolicy="Always" \
 		--set manager.container.env.operateInFipsMode=false \
+		--set manager.container.args.deploy-otlp-gateway=true \
 		--namespace kyma-system \
 	| kubectl apply -f -
 

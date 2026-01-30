@@ -1,6 +1,7 @@
 package shared
 
 import (
+	"fmt"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -21,22 +22,30 @@ import (
 
 func TestSecretMissing_OTel(t *testing.T) {
 	tests := []struct {
-		label string
-		input telemetryv1beta1.LogPipelineInput
+		name   string
+		labels []string
+		input  telemetryv1beta1.LogPipelineInput
 	}{
 		{
-			label: suite.LabelLogAgent,
-			input: testutils.BuildLogPipelineRuntimeInput(),
+			name:   suite.LabelLogAgent,
+			labels: []string{suite.LabelLogAgent},
+			input:  testutils.BuildLogPipelineRuntimeInput(),
 		},
 		{
-			label: suite.LabelLogGateway,
-			input: testutils.BuildLogPipelineOTLPInput(),
+			name:   suite.LabelLogGateway,
+			labels: []string{suite.LabelLogGateway},
+			input:  testutils.BuildLogPipelineOTLPInput(),
+		},
+		{
+			name:   fmt.Sprintf("%s-%s", suite.LabelLogGateway, suite.LabelExperimental),
+			labels: []string{suite.LabelLogGateway, suite.LabelExperimental},
+			input:  testutils.BuildLogPipelineOTLPInput(),
 		},
 	}
 
 	for _, tc := range tests {
-		t.Run(tc.label, func(t *testing.T) {
-			suite.RegisterTestCase(t, tc.label)
+		t.Run(tc.name, func(t *testing.T) {
+			suite.RegisterTestCase(t, tc.labels...)
 
 			const (
 				endpointKey   = "logs-endpoint"
@@ -44,7 +53,7 @@ func TestSecretMissing_OTel(t *testing.T) {
 			)
 
 			var (
-				uniquePrefix = unique.Prefix(tc.label)
+				uniquePrefix = unique.Prefix(tc.name)
 				pipelineName = uniquePrefix()
 				secretName   = uniquePrefix()
 			)

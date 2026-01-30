@@ -36,18 +36,19 @@ type Reconciler struct {
 	globals config.Global
 
 	// Dependencies
-	gatewayFlowHealthProber GatewayFlowHealthProber
-	agentFlowHealthProber   AgentFlowHealthProber
-	agentConfigBuilder      AgentConfigBuilder
-	agentProber             Prober
-	agentApplierDeleter     AgentApplierDeleter
-	gatewayApplierDeleter   GatewayApplierDeleter
-	gatewayConfigBuilder    GatewayConfigBuilder
-	gatewayProber           Prober
-	istioStatusChecker      IstioStatusChecker
-	pipelineLock            PipelineLock
-	pipelineValidator       *Validator
-	errToMessageConverter   ErrorToMessageConverter
+	gatewayFlowHealthProber   GatewayFlowHealthProber
+	agentFlowHealthProber     AgentFlowHealthProber
+	agentConfigBuilder        AgentConfigBuilder
+	agentProber               Prober
+	agentApplierDeleter       AgentApplierDeleter
+	gatewayApplierDeleter     GatewayApplierDeleter
+	otlpGatewayApplierDeleter OTLPGatewayApplierDeleter
+	gatewayConfigBuilder      GatewayConfigBuilder
+	gatewayProber             Prober
+	istioStatusChecker        IstioStatusChecker
+	pipelineLock              PipelineLock
+	pipelineValidator         *Validator
+	errToMessageConverter     ErrorToMessageConverter
 }
 
 // Option is a functional option for configuring a Reconciler.
@@ -99,6 +100,13 @@ func WithAgentApplierDeleter(applierDeleter AgentApplierDeleter) Option {
 func WithGatewayApplierDeleter(applierDeleter GatewayApplierDeleter) Option {
 	return func(r *Reconciler) {
 		r.gatewayApplierDeleter = applierDeleter
+	}
+}
+
+// WithOTLPGatewayApplierDeleter sets the OTLP gateway applier/deleter (for DaemonSet mode).
+func WithOTLPGatewayApplierDeleter(applierDeleter OTLPGatewayApplierDeleter) Option {
+	return func(r *Reconciler) {
+		r.otlpGatewayApplierDeleter = applierDeleter
 	}
 }
 
@@ -228,15 +236,22 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 	if len(reconcilablePipelines) == 0 {
 		logf.FromContext(ctx).V(1).Info("cleaning up log pipeline resources: all log pipelines are non-reconcilable")
 
-		if err = r.gatewayApplierDeleter.DeleteResources(ctx, r.Client, r.istioStatusChecker.IsIstioActive(ctx)); err != nil {
-			return fmt.Errorf("failed to delete gateway resources: %w", err)
+		// Use the appropriate applier deleter based on whether we're using DaemonSet mode
+		if r.globals.DeployOTLPGateway() {
+			if err = r.otlpGatewayApplierDeleter.DeleteResources(ctx, r.Client, r.istioStatusChecker.IsIstioActive(ctx)); err != nil {
+				return fmt.Errorf("failed to delete OTLP gateway resources: %w", err)
+			}
+		} else {
+			if err = r.gatewayApplierDeleter.DeleteResources(ctx, r.Client, r.istioStatusChecker.IsIstioActive(ctx)); err != nil {
+				return fmt.Errorf("failed to delete gateway resources: %w", err)
+			}
 		}
 
 		return nil
 	}
 
-	if err := r.reconcileLogGateway(ctx, pipeline, reconcilablePipelines); err != nil {
-		return fmt.Errorf("failed to reconcile log gateway: %w", err)
+	if err := r.reconcileGateway(ctx, pipeline, reconcilablePipelines); err != nil {
+		return fmt.Errorf("failed to reconcile gateway: %w", err)
 	}
 
 	if len(reconcilablePipelinesRequiringAgents) > 0 {
@@ -289,7 +304,7 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1be
 	return false, nil
 }
 
-func (r *Reconciler) reconcileLogGateway(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline, allPipelines []telemetryv1beta1.LogPipeline) error {
+func (r *Reconciler) reconcileGateway(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline, allPipelines []telemetryv1beta1.LogPipeline) error {
 	shootInfo := k8sutils.GetGardenerShootInfo(ctx, r.Client)
 	telemetryOptions := telemetryutils.Options{
 		SignalType:                common.SignalTypeLog,
@@ -340,12 +355,19 @@ func (r *Reconciler) reconcileLogGateway(ctx context.Context, pipeline *telemetr
 		ResourceRequirementsMultiplier: len(allPipelines),
 	}
 
-	if err := r.gatewayApplierDeleter.ApplyResources(
-		ctx,
-		k8sutils.NewOwnerReferenceSetter(r.Client, pipeline),
-		opts,
-	); err != nil {
-		return fmt.Errorf("failed to apply gateway resources: %w", err)
+	// Use OTLP gateway applier deleter when in DaemonSet mode, otherwise use regular gateway applier deleter
+	if r.globals.DeployOTLPGateway() && r.otlpGatewayApplierDeleter != nil {
+		if err = r.gatewayApplierDeleter.DeleteResources(ctx, r.Client, r.istioStatusChecker.IsIstioActive(ctx)); err != nil {
+			return fmt.Errorf("failed to delete legacy gateway resources: %w", err)
+		}
+
+		if err = r.otlpGatewayApplierDeleter.ApplyResources(ctx, k8sutils.NewOwnerReferenceSetter(r.Client, pipeline), opts); err != nil {
+			return fmt.Errorf("failed to apply OTLP gateway resources: %w", err)
+		}
+	} else {
+		if err = r.gatewayApplierDeleter.ApplyResources(ctx, k8sutils.NewOwnerReferenceSetter(r.Client, pipeline), opts); err != nil {
+			return fmt.Errorf("failed to apply gateway resources: %w", err)
+		}
 	}
 
 	return nil

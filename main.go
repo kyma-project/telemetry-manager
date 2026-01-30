@@ -27,6 +27,7 @@ import (
 	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	istionetworkingclientv1 "istio.io/client-go/pkg/apis/networking/v1"
 	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -88,6 +89,7 @@ var (
 	imagePullSecretName     string
 	additionalLabels        cliflags.Map
 	additionalAnnotations   cliflags.Map
+	deployOTLPGateway       bool
 )
 
 const (
@@ -129,6 +131,7 @@ func init() {
 	utilruntime.Must(telemetryv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(operatorv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(istiosecurityclientv1.AddToScheme(scheme))
+	utilruntime.Must(istionetworkingclientv1.AddToScheme(scheme))
 	utilruntime.Must(telemetryv1beta1.AddToScheme(scheme))
 	utilruntime.Must(operatorv1beta1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
@@ -169,6 +172,7 @@ func run() error {
 		config.WithClusterTrustBundleName(clusterTrustBundleName),
 		config.WithAdditionalLabels(additionalLabels),
 		config.WithAdditionalAnnotations(additionalAnnotations),
+		config.WithDeployOTLPGateway(featureflags.IsEnabled(featureflags.DeployOTLPGateway)),
 	)
 
 	if err := globals.Validate(); err != nil {
@@ -340,7 +344,10 @@ func logBuildAndProcessInfo() {
 	}
 }
 
-func initializeFeatureFlags() {} // Placeholder for future feature flag initializations.
+func initializeFeatureFlags() {
+	// Placeholder for future feature flag initializations.
+	featureflags.Set(featureflags.DeployOTLPGateway, deployOTLPGateway)
+}
 
 func parseFlags() {
 	flag.StringVar(&certDir, "cert-dir", ".", "Webhook TLS certificate directory")
@@ -351,6 +358,8 @@ func parseFlags() {
 	flag.StringVar(&imagePullSecretName, "image-pull-secret-name", "", "The image pull secret name to use for pulling images of all created workloads (agents, gateways, self-monitor)")
 	flag.Var(&additionalLabels, "additional-label", "Additional label to add to all created resources in key=value format")
 	flag.Var(&additionalAnnotations, "additional-annotation", "Additional annotation to add to all created resources in key=value format")
+
+	flag.BoolVar(&deployOTLPGateway, "deploy-otlp-gateway", false, "Enable deploying unified OTLP gateway")
 
 	flag.Parse()
 }
@@ -410,15 +419,16 @@ func setupLogPipelineController(globals config.Global, cfg envConfig, mgr manage
 
 	logPipelineController, err := telemetrycontrollers.NewLogPipelineController(
 		telemetrycontrollers.LogPipelineControllerConfig{
-			Global:                      globals,
-			ExporterImage:               cfg.FluentBitExporterImage,
-			FluentBitImage:              cfg.FluentBitImage,
-			ChownInitContainerImage:     cfg.AlpineImage,
-			OTelCollectorImage:          cfg.OTelCollectorImage,
-			FluentBitPriorityClassName:  highPriorityClassName,
-			LogGatewayPriorityClassName: normalPriorityClassName,
-			LogAgentPriorityClassName:   highPriorityClassName,
-			RestConfig:                  mgr.GetConfig(),
+			Global:                       globals,
+			ExporterImage:                cfg.FluentBitExporterImage,
+			FluentBitImage:               cfg.FluentBitImage,
+			ChownInitContainerImage:      cfg.AlpineImage,
+			OTelCollectorImage:           cfg.OTelCollectorImage,
+			FluentBitPriorityClassName:   highPriorityClassName,
+			LogGatewayPriorityClassName:  normalPriorityClassName,
+			LogAgentPriorityClassName:    highPriorityClassName,
+			OTLPGatewayPriorityClassName: normalPriorityClassName,
+			RestConfig:                   mgr.GetConfig(),
 		},
 		mgr.GetClient(),
 		reconcileTriggerChan,

@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/types"
+	gomegatypes "github.com/onsi/gomega/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
@@ -236,7 +236,7 @@ type ServiceAttributes struct {
 func verifyServiceAttributes(t *testing.T, backend *kitbackend.Backend, givenPodPrefix string, expectedAttributes ServiceAttributes) {
 	t.Helper()
 
-	var matchers []types.GomegaMatcher
+	var matchers []gomegatypes.GomegaMatcher
 
 	matchers = append(matchers, HaveResourceAttributes(HaveKeyWithValue("k8s.pod.name", ContainSubstring(givenPodPrefix))))
 
