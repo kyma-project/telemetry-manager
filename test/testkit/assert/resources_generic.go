@@ -2,6 +2,7 @@ package assert
 
 import (
 	"testing"
+	"time"
 
 	. "github.com/onsi/gomega"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -24,6 +25,7 @@ func NewResource(object client.Object, name types.NamespacedName) Resource {
 	}
 }
 
+// ResourcesExist asserts that the given resources exist in the cluster.
 func ResourcesExist(t *testing.T, resources ...Resource) {
 	t.Helper()
 
@@ -34,6 +36,7 @@ func ResourcesExist(t *testing.T, resources ...Resource) {
 	}
 }
 
+// ResourcesNotExist asserts that the given resources do not exist in the cluster.
 func ResourcesNotExist(t *testing.T, resources ...Resource) {
 	t.Helper()
 
@@ -42,5 +45,21 @@ func ResourcesNotExist(t *testing.T, resources ...Resource) {
 			err := suite.K8sClient.Get(t.Context(), resource.Name, resource.Object)
 			return apierrors.IsNotFound(err)
 		}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue(), "resource %s of type %T still exists", resource.Name, resource.Object)
+	}
+}
+
+// ResourcesReconciled deletes each resource and asserts that it gets recreated by the controller.
+func ResourcesReconciled(t *testing.T, resources ...Resource) {
+	t.Helper()
+
+	for _, resource := range resources {
+		err := suite.K8sClient.Delete(t.Context(), resource.Object)
+		Expect(err).To(Succeed(), "failed to delete resource %s of type %T", resource.Name, resource.Object)
+
+		ResourcesExist(t, resource)
+
+		// Wait to ensure that the current reconciliation loop is finished
+		// This prevents the race condition where current reconciliation could accidentally recreate an unwatched resource while testing the next one.
+		time.Sleep(4 * time.Second)
 	}
 }

@@ -9,6 +9,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 )
 
 const (
@@ -30,11 +32,11 @@ func applyWebhookConfigResources(ctx context.Context, c client.Client, caBundle 
 	}
 
 	conversionWebhookConfig := makeConversionWebhookConfig(caBundle, config)
-	if err := updatePipelineCRDWithConversionWebhookConfig(ctx, c, types.NamespacedName{Name: "logpipelines.telemetry.kyma-project.io"}, conversionWebhookConfig); err != nil {
+	if err := updatePipelineCRDWithConversionWebhookConfig(ctx, c, types.NamespacedName{Name: names.LogPipelineCRD}, conversionWebhookConfig); err != nil {
 		return fmt.Errorf("failed to update LogPipeline CRD with conversion webhook configuration: %w", err)
 	}
 
-	if err := updatePipelineCRDWithConversionWebhookConfig(ctx, c, types.NamespacedName{Name: "metricpipelines.telemetry.kyma-project.io"}, conversionWebhookConfig); err != nil {
+	if err := updatePipelineCRDWithConversionWebhookConfig(ctx, c, types.NamespacedName{Name: names.MetricPipelineCRD}, conversionWebhookConfig); err != nil {
 		return fmt.Errorf("failed to update MetricPipeline CRD with conversion webhook configuration: %w", err)
 	}
 

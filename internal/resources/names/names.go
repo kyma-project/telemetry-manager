@@ -10,6 +10,7 @@ const (
 	LogGateway    = telemetryPrefix + "log-gateway"
 	MetricGateway = telemetryPrefix + "metric-gateway"
 	TraceGateway  = telemetryPrefix + "trace-gateway"
+	OTLPGateway   = telemetryPrefix + "otlp-gateway"
 
 	LogAgentMetricsService      = LogAgent + metricsSuffix
 	MetricAgentMetricsService   = MetricAgent + metricsSuffix
@@ -30,6 +31,7 @@ const (
 	OTLPMetricsService = telemetryPrefix + "otlp-metrics"
 	OTLPTracesService  = telemetryPrefix + "otlp-traces"
 	OTLPLogsService    = telemetryPrefix + "otlp-logs"
+	OTLPService        = telemetryPrefix + "otlp-gateway"
 
 	SelfMonitor = telemetryPrefix + "self-monitor"
 
@@ -49,6 +51,9 @@ const (
 
 	OverrideConfigMap = telemetryPrefix + "override-config"
 	DefaultTelemetry  = "default" // default module resource must be named "default"
+
+	LogPipelineCRD    = "logpipelines.telemetry.kyma-project.io"
+	MetricPipelineCRD = "metricpipelines.telemetry.kyma-project.io"
 )
 
 // MetricsServiceName returns the metrics service name for a given component name

@@ -147,9 +147,19 @@ func makeLogAgentRBAC(namespace string) rbac {
 		withClusterRoleBinding(),
 	)
 }
+
 func makeLogGatewayRBAC(namespace string) rbac {
 	return *newRBAC(
 		types.NamespacedName{Name: names.LogGateway, Namespace: namespace},
+		commonresources.LabelValueK8sComponentGateway,
+		withClusterRole(withK8sAttributeRules()),
+		withClusterRoleBinding(),
+	)
+}
+
+func makeOTLPGatewayRBAC(namespace string) rbac {
+	return *newRBAC(
+		types.NamespacedName{Name: names.OTLPGateway, Namespace: namespace},
 		commonresources.LabelValueK8sComponentGateway,
 		withClusterRole(withK8sAttributeRules()),
 		withClusterRoleBinding(),

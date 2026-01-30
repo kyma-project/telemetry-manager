@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"gopkg.in/yaml.v3"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
@@ -34,18 +36,19 @@ type Reconciler struct {
 	globals config.Global
 
 	// Dependencies
-	gatewayFlowHealthProber GatewayFlowHealthProber
-	agentFlowHealthProber   AgentFlowHealthProber
-	agentConfigBuilder      AgentConfigBuilder
-	agentProber             Prober
-	agentApplierDeleter     AgentApplierDeleter
-	gatewayApplierDeleter   GatewayApplierDeleter
-	gatewayConfigBuilder    GatewayConfigBuilder
-	gatewayProber           Prober
-	istioStatusChecker      IstioStatusChecker
-	pipelineLock            PipelineLock
-	pipelineValidator       *Validator
-	errToMessageConverter   ErrorToMessageConverter
+	gatewayFlowHealthProber   GatewayFlowHealthProber
+	agentFlowHealthProber     AgentFlowHealthProber
+	agentConfigBuilder        AgentConfigBuilder
+	agentProber               Prober
+	agentApplierDeleter       AgentApplierDeleter
+	gatewayApplierDeleter     GatewayApplierDeleter
+	otlpGatewayApplierDeleter OTLPGatewayApplierDeleter
+	gatewayConfigBuilder      GatewayConfigBuilder
+	gatewayProber             Prober
+	istioStatusChecker        IstioStatusChecker
+	pipelineLock              PipelineLock
+	pipelineValidator         *Validator
+	errToMessageConverter     ErrorToMessageConverter
 }
 
 // Option is a functional option for configuring a Reconciler.
@@ -97,6 +100,13 @@ func WithAgentApplierDeleter(applierDeleter AgentApplierDeleter) Option {
 func WithGatewayApplierDeleter(applierDeleter GatewayApplierDeleter) Option {
 	return func(r *Reconciler) {
 		r.gatewayApplierDeleter = applierDeleter
+	}
+}
+
+// WithOTLPGatewayApplierDeleter sets the OTLP gateway applier/deleter (for DaemonSet mode).
+func WithOTLPGatewayApplierDeleter(applierDeleter OTLPGatewayApplierDeleter) Option {
+	return func(r *Reconciler) {
+		r.otlpGatewayApplierDeleter = applierDeleter
 	}
 }
 
@@ -161,19 +171,30 @@ func New(opts ...Option) *Reconciler {
 	return r
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) error {
-	logf.FromContext(ctx).V(1).Info("Reconciling LogPipeline")
+func (r *Reconciler) Reconcile(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) (ctrl.Result, error) {
+	logf.FromContext(ctx).V(1).Info("Reconciling OTel LogPipeline")
 
-	err := r.doReconcile(ctx, pipeline)
-	if statusErr := r.updateStatus(ctx, pipeline.Name); statusErr != nil {
-		if err != nil {
-			err = fmt.Errorf("failed while updating status: %w: %w", statusErr, err)
-		} else {
-			err = fmt.Errorf("failed to update status: %w", statusErr)
-		}
+	var allErrors error = nil
+
+	if err := r.doReconcile(ctx, pipeline); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to reconcile: %w", err))
 	}
 
-	return err
+	if err := r.updateStatus(ctx, pipeline.Name); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to update status: %w", err))
+	}
+
+	if allErrors != nil {
+		return ctrl.Result{}, allErrors
+	}
+
+	requeueAfter := r.calculateRequeueAfterDuration(ctx, pipeline)
+	if requeueAfter != nil {
+		logf.FromContext(ctx).V(1).Info("Requeuing reconciliation due to certificate about to expire", "RequeueAfter", requeueAfter.String())
+		return ctrl.Result{RequeueAfter: *requeueAfter}, nil
+	}
+
+	return ctrl.Result{}, nil
 }
 
 func (r *Reconciler) SupportedOutput() logpipelineutils.Mode {
@@ -215,15 +236,22 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 	if len(reconcilablePipelines) == 0 {
 		logf.FromContext(ctx).V(1).Info("cleaning up log pipeline resources: all log pipelines are non-reconcilable")
 
-		if err = r.gatewayApplierDeleter.DeleteResources(ctx, r.Client, r.istioStatusChecker.IsIstioActive(ctx)); err != nil {
-			return fmt.Errorf("failed to delete gateway resources: %w", err)
+		// Use the appropriate applier deleter based on whether we're using DaemonSet mode
+		if r.globals.DeployOTLPGateway() {
+			if err = r.otlpGatewayApplierDeleter.DeleteResources(ctx, r.Client, r.istioStatusChecker.IsIstioActive(ctx)); err != nil {
+				return fmt.Errorf("failed to delete OTLP gateway resources: %w", err)
+			}
+		} else {
+			if err = r.gatewayApplierDeleter.DeleteResources(ctx, r.Client, r.istioStatusChecker.IsIstioActive(ctx)); err != nil {
+				return fmt.Errorf("failed to delete gateway resources: %w", err)
+			}
 		}
 
 		return nil
 	}
 
-	if err := r.reconcileLogGateway(ctx, pipeline, reconcilablePipelines); err != nil {
-		return fmt.Errorf("failed to reconcile log gateway: %w", err)
+	if err := r.reconcileGateway(ctx, pipeline, reconcilablePipelines); err != nil {
+		return fmt.Errorf("failed to reconcile gateway: %w", err)
 	}
 
 	if len(reconcilablePipelinesRequiringAgents) > 0 {
@@ -276,7 +304,7 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1be
 	return false, nil
 }
 
-func (r *Reconciler) reconcileLogGateway(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline, allPipelines []telemetryv1beta1.LogPipeline) error {
+func (r *Reconciler) reconcileGateway(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline, allPipelines []telemetryv1beta1.LogPipeline) error {
 	shootInfo := k8sutils.GetGardenerShootInfo(ctx, r.Client)
 	telemetryOptions := telemetryutils.Options{
 		SignalType:                common.SignalTypeLog,
@@ -327,12 +355,19 @@ func (r *Reconciler) reconcileLogGateway(ctx context.Context, pipeline *telemetr
 		ResourceRequirementsMultiplier: len(allPipelines),
 	}
 
-	if err := r.gatewayApplierDeleter.ApplyResources(
-		ctx,
-		k8sutils.NewOwnerReferenceSetter(r.Client, pipeline),
-		opts,
-	); err != nil {
-		return fmt.Errorf("failed to apply gateway resources: %w", err)
+	// Use OTLP gateway applier deleter when in DaemonSet mode, otherwise use regular gateway applier deleter
+	if r.globals.DeployOTLPGateway() && r.otlpGatewayApplierDeleter != nil {
+		if err = r.gatewayApplierDeleter.DeleteResources(ctx, r.Client, r.istioStatusChecker.IsIstioActive(ctx)); err != nil {
+			return fmt.Errorf("failed to delete legacy gateway resources: %w", err)
+		}
+
+		if err = r.otlpGatewayApplierDeleter.ApplyResources(ctx, k8sutils.NewOwnerReferenceSetter(r.Client, pipeline), opts); err != nil {
+			return fmt.Errorf("failed to apply OTLP gateway resources: %w", err)
+		}
+	} else {
+		if err = r.gatewayApplierDeleter.ApplyResources(ctx, k8sutils.NewOwnerReferenceSetter(r.Client, pipeline), opts); err != nil {
+			return fmt.Errorf("failed to apply gateway resources: %w", err)
+		}
 	}
 
 	return nil
@@ -457,4 +492,16 @@ func (r *Reconciler) getEndpoint(ctx context.Context, pipeline *telemetryv1beta1
 	}
 
 	return string(endpointBytes)
+}
+
+func (r *Reconciler) calculateRequeueAfterDuration(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) *time.Duration {
+	err := r.pipelineValidator.Validate(ctx, pipeline)
+
+	var errCertAboutToExpire *tlscert.CertAboutToExpireError
+	if errors.As(err, &errCertAboutToExpire) {
+		duration := time.Until(errCertAboutToExpire.Expiry)
+		return &duration
+	}
+
+	return nil
 }
