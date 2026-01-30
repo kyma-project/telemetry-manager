@@ -25,7 +25,7 @@ import (
 )
 
 func TestServiceEnrichment(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelMetricAgentSetA)
+	suite.RegisterTestCase(t, suite.LabelMetricAgentSetB)
 
 	const (
 		// pod names
