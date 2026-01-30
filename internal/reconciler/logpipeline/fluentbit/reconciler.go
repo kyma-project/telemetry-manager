@@ -197,6 +197,8 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 		return err
 	}
 
+	r.trackPipelineInfoMetric(ctx, allPipelines)
+
 	reconcilablePipelines, err := r.getReconcilablePipelines(ctx, allPipelines)
 	if err != nil {
 		return fmt.Errorf("failed to fetch reconcilable log pipelines: %w", err)
@@ -216,8 +218,6 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 
 		return nil
 	}
-
-	r.trackPipelineInfoMetric(ctx, reconcilablePipelines)
 
 	telemetryOptions := telemetryutils.Options{
 		Client:                    r.Client,

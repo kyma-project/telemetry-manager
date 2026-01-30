@@ -195,12 +195,12 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 		return err
 	}
 
+	r.trackPipelineInfoMetric(ctx, allPipelines)
+
 	reconcilablePipelines, err := r.getReconcilablePipelines(ctx, allPipelines)
 	if err != nil {
 		return fmt.Errorf("failed to fetch deployable log pipelines: %w", err)
 	}
-
-	r.trackPipelineInfoMetric(ctx, reconcilablePipelines)
 
 	var reconcilablePipelinesRequiringAgents = r.getPipelinesRequiringAgents(reconcilablePipelines)
 
