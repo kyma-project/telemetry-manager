@@ -14,9 +14,9 @@ service:
             processors:
                 - memory_limiter
                 - transform/set-instrumentation-scope-runtime
+                - transform/drop-unknown-service-name
                 - k8sattributes
                 - transform/insert-cluster-attributes
-                - service_enrichment
                 - transform/drop-kyma-attributes
             exporters:
                 - otlp_grpc/test
@@ -42,9 +42,11 @@ receivers:
             - /var/log/pods/kyma-system_telemetry-log-agent-*/collector/*.log
             - /var/log/pods/kyma-system_*system-logs-agent-*/collector/*.log
             - /var/log/pods/kyma-system_*system-logs-collector-*/collector/*.log
-        include:
             - /var/log/pods/kyma-system_*/*/*.log
-            - /var/log/pods/default_*/*/*.log
+            - /var/log/pods/kube-system_*/*/*.log
+            - /var/log/pods/istio-system_*/*/*.log
+        include:
+            - /var/log/pods/*_*/*/*.log
         include_file_name: false
         include_file_path: true
         start_at: beginning
@@ -77,9 +79,10 @@ receivers:
               type: json_parser
               parse_from: body
               parse_to: attributes
-            - id: remove-body
-              type: remove
-              field: body
+            - id: move-body-to-attributes-log-original
+              type: move
+              from: body
+              to: attributes["log.original"]
             - id: move-message-to-body
               type: move
               from: attributes["message"]
@@ -166,13 +169,11 @@ processors:
                 - k8s.daemonset.name
                 - k8s.cronjob.name
                 - k8s.job.name
+                - service.namespace
+                - service.name
+                - service.version
+                - service.instance.id
             labels:
-                - from: pod
-                  key: app.kubernetes.io/name
-                  tag_name: kyma.kubernetes_io_app_name
-                - from: pod
-                  key: app
-                  tag_name: kyma.app_name
                 - from: node
                   key: topology.kubernetes.io/region
                   tag_name: cloud.region
@@ -185,6 +186,8 @@ processors:
                 - from: node
                   key: kubernetes.io/arch
                   tag_name: host.arch
+            otel_annotations: true
+            deployment_name_from_replicaset: true
         pod_association:
             - sources:
                 - from: resource_attribute
@@ -198,15 +201,16 @@ processors:
         check_interval: 5s
         limit_percentage: 80
         spike_limit_percentage: 25
-    service_enrichment:
-        resource_attributes:
-            - kyma.kubernetes_io_app_name
-            - kyma.app_name
     transform/drop-kyma-attributes:
         error_mode: ignore
         log_statements:
             - statements:
                 - delete_matching_keys(resource.attributes, "kyma.*")
+    transform/drop-unknown-service-name:
+        error_mode: ignore
+        log_statements:
+            - statements:
+                - delete_key(resource.attributes, "service.name") where HasPrefix(resource.attributes["service.name"], "unknown_service")
     transform/insert-cluster-attributes:
         error_mode: ignore
         log_statements:
@@ -223,6 +227,8 @@ processors:
 exporters:
     otlp_grpc/test:
         endpoint: ${OTLP_ENDPOINT_TEST}
+        tls:
+            insecure: true
         retry_on_failure:
             enabled: true
             initial_interval: 5s

@@ -12,8 +12,8 @@ service:
             receivers:
                 - routing/runtime-input
             processors:
+                - transform/drop-unknown-service-name
                 - k8sattributes
-                - service_enrichment
             exporters:
                 - routing/enrichment
         metrics/input-runtime:
@@ -36,7 +36,6 @@ service:
                 - routing/runtime-input
             processors:
                 - filter/drop-envoy-metrics-if-disabled
-                - filter/test-filter-by-namespace-runtime-input
                 - transform/insert-cluster-attributes
                 - transform/drop-skip-enrichment-attribute
                 - transform/drop-kyma-attributes
@@ -146,12 +145,6 @@ processors:
         metrics:
             datapoint:
                 - IsMatch(metric.name, "^k8s.node.network.*") and not(IsMatch(attributes["interface"], "^(eth|en).*"))
-    filter/test-filter-by-namespace-runtime-input:
-        error_mode: ignore
-        metrics:
-            metric:
-                - resource.attributes["kyma.input.name"] == "runtime" and (resource.attributes["k8s.namespace.name"] == "kube-system" or resource.attributes["k8s.namespace.name"] == "istio-system")
-                - resource.attributes["kyma.input.name"] == "runtime" and resource.attributes["k8s.namespace.name"] != nil and not(resource.attributes["k8s.namespace.name"] == "monitoring" or resource.attributes["k8s.namespace.name"] == "observability")
     k8sattributes:
         auth_type: serviceAccount
         passthrough: false
@@ -165,13 +158,11 @@ processors:
                 - k8s.daemonset.name
                 - k8s.cronjob.name
                 - k8s.job.name
+                - service.namespace
+                - service.name
+                - service.version
+                - service.instance.id
             labels:
-                - from: pod
-                  key: app.kubernetes.io/name
-                  tag_name: kyma.kubernetes_io_app_name
-                - from: pod
-                  key: app
-                  tag_name: kyma.app_name
                 - from: node
                   key: topology.kubernetes.io/region
                   tag_name: cloud.region
@@ -184,6 +175,8 @@ processors:
                 - from: node
                   key: kubernetes.io/arch
                   tag_name: host.arch
+            otel_annotations: true
+            deployment_name_from_replicaset: true
         pod_association:
             - sources:
                 - from: resource_attribute
@@ -197,10 +190,6 @@ processors:
         check_interval: 1s
         limit_percentage: 75
         spike_limit_percentage: 15
-    service_enrichment:
-        resource_attributes:
-            - kyma.kubernetes_io_app_name
-            - kyma.app_name
     transform/drop-kyma-attributes:
         error_mode: ignore
         metric_statements:
@@ -216,6 +205,11 @@ processors:
         metric_statements:
             - statements:
                 - delete_key(resource.attributes, "io.kyma-project.telemetry.skip_enrichment")
+    transform/drop-unknown-service-name:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - delete_key(resource.attributes, "service.name") where HasPrefix(resource.attributes["service.name"], "unknown_service")
     transform/insert-cluster-attributes:
         error_mode: ignore
         metric_statements:
@@ -249,6 +243,8 @@ processors:
 exporters:
     otlp_grpc/test:
         endpoint: ${OTLP_ENDPOINT_TEST}
+        tls:
+            insecure: true
         sending_queue:
             enabled: true
             queue_size: 256

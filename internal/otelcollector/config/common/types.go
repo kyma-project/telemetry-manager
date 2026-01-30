@@ -171,8 +171,10 @@ type K8sAttributesProcessor struct {
 }
 
 type ExtractK8sMetadata struct {
-	Metadata []string       `yaml:"metadata"`
-	Labels   []ExtractLabel `yaml:"labels"`
+	Metadata                     []string       `yaml:"metadata"`
+	Labels                       []ExtractLabel `yaml:"labels"`
+	OTelAnnotations              bool           `yaml:"otel_annotations,omitempty"`
+	DeploymentNameFromReplicaset bool           `yaml:"deployment_name_from_replicaset,omitempty"`
 }
 
 type ExtractLabel struct {

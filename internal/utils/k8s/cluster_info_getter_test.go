@@ -51,3 +51,30 @@ func TestClusterInfoGetter(t *testing.T) {
 		require.Equal(t, clusterInfo.CloudProvider, "")
 	})
 }
+
+func TestGetClusterUID(t *testing.T) {
+	t.Run("returns kube-system namespace UID", func(t *testing.T) {
+		kubeSystemNs := &corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "kube-system",
+				UID:  "test-cluster-uid-12345",
+			},
+		}
+
+		fakeClient := fake.NewClientBuilder().WithObjects(kubeSystemNs).Build()
+
+		uid, err := GetClusterUID(t.Context(), fakeClient)
+
+		require.NoError(t, err)
+		require.Equal(t, "test-cluster-uid-12345", uid)
+	})
+
+	t.Run("returns error when kube-system namespace not found", func(t *testing.T) {
+		fakeClient := fake.NewClientBuilder().Build()
+
+		uid, err := GetClusterUID(t.Context(), fakeClient)
+
+		require.Error(t, err)
+		require.Empty(t, uid)
+	})
+}
