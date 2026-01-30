@@ -39,7 +39,7 @@ service:
                 - transform/drop-kyma-attributes
                 - batch
             exporters:
-                - otlp/test
+                - otlp_grpc/test
     telemetry:
         metrics:
             readers:
@@ -183,7 +183,7 @@ processors:
             - statements:
                 - set(resource.attributes["kyma.input.name"], "istio")
 exporters:
-    otlp/test:
+    otlp_grpc/test:
         endpoint: ${OTLP_ENDPOINT_TEST}
         tls:
             insecure: true

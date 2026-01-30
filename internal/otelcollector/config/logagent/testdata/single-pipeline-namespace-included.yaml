@@ -19,7 +19,7 @@ service:
                 - service_enrichment
                 - transform/drop-kyma-attributes
             exporters:
-                - otlp/test
+                - otlp_grpc/test
     telemetry:
         metrics:
             readers:
@@ -221,7 +221,7 @@ processors:
                 - set(scope.version, "main")
                 - set(scope.name, "io.kyma-project.telemetry/runtime")
 exporters:
-    otlp/test:
+    otlp_grpc/test:
         endpoint: ${OTLP_ENDPOINT_TEST}
         retry_on_failure:
             enabled: true
