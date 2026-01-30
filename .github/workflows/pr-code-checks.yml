@@ -76,7 +76,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Test Renovate config
-        uses: renovatebot/github-action@5d135bbcab142c127d2ac8936b22db8cca182fe3 # v45.0.2
+        uses: renovatebot/github-action@98c8f1b0835e163b9fdfc7c86dff40dadc7162ee # v45.0.3
         with:
           configurationFile: renovate.json
           token: ${{ secrets.GITHUB_TOKEN }}
