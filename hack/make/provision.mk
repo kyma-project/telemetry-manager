@@ -45,8 +45,12 @@ provision-gardener: $(JQ) ## Provision gardener cluster with latest k8s version
 	cat /tmp/shoot.yaml | kubectl --kubeconfig "${GARDENER_SA_PATH}" apply -f -
 
 	echo "waiting fo cluster to be ready..."
-	kubectl wait --kubeconfig "${GARDENER_SA_PATH}" --for=condition=EveryNodeReady shoot/${GARDENER_CLUSTER_NAME} --timeout=17m
-
+	kubectl wait --kubeconfig "${GARDENER_SA_PATH}" \
+        --for=condition=APIServerAvailable \
+        --for=condition=ControlPlaneHealthy \
+        --for=condition=SystemComponentsHealthy \
+        --for=condition=EveryNodeReady \
+        shoot/${GARDENER_CLUSTER_NAME} --timeout=17m
 	# create kubeconfig request, that creates a kubeconfig which is valid for one day
 	kubectl --kubeconfig "${GARDENER_SA_PATH}" create \
 		-f <(printf '{"spec":{"expirationSeconds":86400}}') \
