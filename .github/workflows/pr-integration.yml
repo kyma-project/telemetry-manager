@@ -5,8 +5,8 @@ permissions:
 
 on:
   schedule:
-    # Run every hour on main branch
-    - cron: "0 * * * *"
+    # Run every 3 hours on main branch
+    - cron: "0 */3 * * *"
   merge_group:
   pull_request:
     branches:
