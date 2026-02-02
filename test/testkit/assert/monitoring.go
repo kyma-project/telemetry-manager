@@ -6,7 +6,7 @@ import (
 	"time"
 
 	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/types"
+	gomegatypes "github.com/onsi/gomega/types"
 
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/prometheus"
@@ -30,7 +30,7 @@ func EmitsOTelCollectorMetrics(t *testing.T, metricsURL string) {
 	))
 }
 
-func EmitsManagerMetrics(t *testing.T, matchers ...types.GomegaMatcher) {
+func EmitsManagerMetrics(t *testing.T, matchers ...gomegatypes.GomegaMatcher) {
 	t.Helper()
 
 	Eventually(func(g Gomega) {

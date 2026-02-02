@@ -73,14 +73,15 @@ type LogPipelineController struct {
 type LogPipelineControllerConfig struct {
 	config.Global
 
-	ExporterImage               string
-	FluentBitImage              string
-	OTelCollectorImage          string
-	ChownInitContainerImage     string
-	FluentBitPriorityClassName  string
-	LogGatewayPriorityClassName string
-	LogAgentPriorityClassName   string
-	RestConfig                  *rest.Config
+	ExporterImage                string
+	FluentBitImage               string
+	OTelCollectorImage           string
+	ChownInitContainerImage      string
+	FluentBitPriorityClassName   string
+	LogGatewayPriorityClassName  string
+	LogAgentPriorityClassName    string
+	OTLPGatewayPriorityClassName string
+	RestConfig                   *rest.Config
 }
 
 func NewLogPipelineController(config LogPipelineControllerConfig, client client.Client, reconcileTriggerChan <-chan event.GenericEvent) (*LogPipelineController, error) {
@@ -285,6 +286,14 @@ func configureOTelReconciler(config LogPipelineControllerConfig, client client.C
 		Reader: client,
 	}
 
+	prober := func() logpipelineotel.Prober {
+		if config.DeployOTLPGateway() {
+			return &workloadstatus.DaemonSetProber{Client: client}
+		}
+
+		return &workloadstatus.DeploymentProber{Client: client}
+	}()
+
 	agentApplierDeleter := otelcollector.NewLogAgentApplierDeleter(
 		config.Global,
 		config.OTelCollectorImage,
@@ -294,6 +303,12 @@ func configureOTelReconciler(config LogPipelineControllerConfig, client client.C
 		config.Global,
 		config.OTelCollectorImage,
 		config.LogGatewayPriorityClassName)
+
+	// Create OTLP gateway applier deleter for DaemonSet mode
+	otlpGatewayApplierDeleter := otelcollector.NewOTLPGatewayApplierDeleter(
+		config.Global,
+		config.OTelCollectorImage,
+		config.OTLPGatewayPriorityClassName)
 
 	otelReconciler := logpipelineotel.New(
 		logpipelineotel.WithClient(client),
@@ -307,9 +322,10 @@ func configureOTelReconciler(config LogPipelineControllerConfig, client client.C
 		logpipelineotel.WithErrorToMessageConverter(&conditions.ErrorToMessageConverter{}),
 
 		logpipelineotel.WithGatewayApplierDeleter(gatewayAppliedDeleter),
+		logpipelineotel.WithOTLPGatewayApplierDeleter(otlpGatewayApplierDeleter),
 		logpipelineotel.WithGatewayConfigBuilder(&loggateway.Builder{Reader: client}),
 		logpipelineotel.WithGatewayFlowHealthProber(gatewayFlowHealthProber),
-		logpipelineotel.WithGatewayProber(&workloadstatus.DeploymentProber{Client: client}),
+		logpipelineotel.WithGatewayProber(prober),
 
 		logpipelineotel.WithIstioStatusChecker(istiostatus.NewChecker(discoveryClient)),
 		logpipelineotel.WithPipelineLock(pipelineLock),

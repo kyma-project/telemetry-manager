@@ -21,17 +21,13 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
-func TestGateway_ApplyResources(t *testing.T) {
+func TestOTLPGateway_ApplyResources(t *testing.T) {
 	globals := config.NewGlobal(
 		config.WithTargetNamespace("kyma-system"),
 		config.WithImagePullSecretName("mySecret"),
 		config.WithAdditionalLabels(map[string]string{"test-label-key": "test-label-value"}),
 		config.WithAdditionalAnnotations(map[string]string{"test-anno-key": "test-anno-value"}),
 		config.WithClusterTrustBundleName("trustBundle"),
-	)
-	globalsWithFIPS := config.NewGlobal(
-		config.WithTargetNamespace("kyma-system"),
-		config.WithOperateInFIPSMode(true),
 	)
 	image := "opentelemetry/collector:dummy"
 	priorityClassName := "normal"
@@ -49,52 +45,15 @@ func TestGateway_ApplyResources(t *testing.T) {
 		goldenFilePath string
 	}{
 		{
-			name:           "metric gateway",
-			sut:            NewMetricGatewayApplierDeleter(globals, image, priorityClassName),
-			goldenFilePath: "testdata/metric-gateway.yaml",
+			name:           "OTLP gateway",
+			sut:            NewOTLPGatewayApplierDeleter(globals, image, priorityClassName),
+			goldenFilePath: "testdata/otlp-gateway.yaml",
 		},
 		{
-			name:           "metric gateway with istio",
-			sut:            NewMetricGatewayApplierDeleter(globals, image, priorityClassName),
+			name:           "OTLP gateway with istio",
+			sut:            NewOTLPGatewayApplierDeleter(globals, image, priorityClassName),
 			istioEnabled:   true,
-			goldenFilePath: "testdata/metric-gateway-istio.yaml",
-		},
-		{
-			name:           "metric gateway with FIPS mode enabled",
-			sut:            NewMetricGatewayApplierDeleter(globalsWithFIPS, image, priorityClassName),
-			goldenFilePath: "testdata/metric-gateway-fips-enabled.yaml",
-		},
-		{
-			name:           "trace gateway",
-			sut:            NewTraceGatewayApplierDeleter(globals, image, priorityClassName),
-			goldenFilePath: "testdata/trace-gateway.yaml",
-		},
-		{
-			name:           "trace gateway with istio",
-			sut:            NewTraceGatewayApplierDeleter(globals, image, priorityClassName),
-			istioEnabled:   true,
-			goldenFilePath: "testdata/trace-gateway-istio.yaml",
-		},
-		{
-			name:           "trace gateway with FIPS mode enabled",
-			sut:            NewTraceGatewayApplierDeleter(globalsWithFIPS, image, priorityClassName),
-			goldenFilePath: "testdata/trace-gateway-fips-enabled.yaml",
-		},
-		{
-			name:           "log gateway",
-			sut:            NewLogGatewayApplierDeleter(globals, image, priorityClassName),
-			goldenFilePath: "testdata/log-gateway.yaml",
-		},
-		{
-			name:           "log gateway with istio",
-			sut:            NewLogGatewayApplierDeleter(globals, image, priorityClassName),
-			istioEnabled:   true,
-			goldenFilePath: "testdata/log-gateway-istio.yaml",
-		},
-		{
-			name:           "log gateway with FIPS mode enabled",
-			sut:            NewLogGatewayApplierDeleter(globalsWithFIPS, image, priorityClassName),
-			goldenFilePath: "testdata/log-gateway-fips-enabled.yaml",
+			goldenFilePath: "testdata/otlp-gateway-istio.yaml",
 		},
 	}
 
@@ -104,7 +63,6 @@ func TestGateway_ApplyResources(t *testing.T) {
 
 			scheme := runtime.NewScheme()
 			utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-			utilruntime.Must(istiosecurityclientv1.AddToScheme(scheme))
 			utilruntime.Must(istionetworkingclientv1.AddToScheme(scheme))
 			utilruntime.Must(v1alpha3.AddToScheme(scheme))
 
@@ -142,7 +100,7 @@ func TestGateway_ApplyResources(t *testing.T) {
 	}
 }
 
-func TestGateway_DeleteResources(t *testing.T) {
+func TestOTLPGateway_DeleteResources(t *testing.T) {
 	globals := config.NewGlobal(config.WithTargetNamespace("kyma-system"))
 	image := "opentelemetry/collector:dummy"
 	priorityClassName := "normal"
@@ -158,31 +116,14 @@ func TestGateway_DeleteResources(t *testing.T) {
 		sut          gatewayApplierDeleter
 		istioEnabled bool
 	}{
+
 		{
-			name: "metric gateway",
-			sut:  NewMetricGatewayApplierDeleter(globals, image, priorityClassName),
+			name: "OTLP Gateway",
+			sut:  NewOTLPGatewayApplierDeleter(globals, image, priorityClassName),
 		},
 		{
-			name:         "metric gateway with istio",
-			sut:          NewMetricGatewayApplierDeleter(globals, image, priorityClassName),
-			istioEnabled: true,
-		},
-		{
-			name: "trace gateway",
-			sut:  NewTraceGatewayApplierDeleter(globals, image, priorityClassName),
-		},
-		{
-			name:         "trace gateway with istio",
-			sut:          NewTraceGatewayApplierDeleter(globals, image, priorityClassName),
-			istioEnabled: true,
-		},
-		{
-			name: "log gateway",
-			sut:  NewLogGatewayApplierDeleter(globals, image, priorityClassName),
-		},
-		{
-			name:         "log gateway with istio",
-			sut:          NewLogGatewayApplierDeleter(globals, image, priorityClassName),
+			name:         "OTLP gateway  with istio",
+			sut:          NewOTLPGatewayApplierDeleter(globals, image, priorityClassName),
 			istioEnabled: true,
 		},
 	}
@@ -220,32 +161,33 @@ func TestGateway_DeleteResources(t *testing.T) {
 	}
 }
 
-func TestGateway_Annotations(t *testing.T) {
+func TestOTLPGateway_Annotations(t *testing.T) {
+	globals := config.NewGlobal(config.WithTargetNamespace("kyma-system"))
 	image := "opentelemetry/collector:dummy"
 	priorityClassName := "normal"
 
 	tests := []struct {
 		name                        string
-		sut                         *GatewayApplierDeleter
+		sut                         *OTLPGatewayApplierDeleter
 		opts                        GatewayApplyOptions
-		expectedExcludeInboundPorts string
+		expectedIncludeInboundPorts string
 		shouldHaveInterceptionMode  bool
 	}{
 		{
-			name: "deployment without istio",
-			sut:  NewMetricGatewayApplierDeleter(config.NewGlobal(config.WithTargetNamespace("kyma-system")), image, priorityClassName),
+			name: "OTLP Gateway without istio",
+			sut:  NewOTLPGatewayApplierDeleter(globals, image, priorityClassName),
 			opts: GatewayApplyOptions{
 				IstioEnabled: false,
 			},
 			shouldHaveInterceptionMode: false,
 		},
 		{
-			name: "deployment with istio - only metrics port excluded",
-			sut:  NewMetricGatewayApplierDeleter(config.NewGlobal(config.WithTargetNamespace("kyma-system")), image, priorityClassName),
+			name: "OTLP Gateway with istio - metrics, grpc, and http ports excluded",
+			sut:  NewOTLPGatewayApplierDeleter(globals, image, priorityClassName),
 			opts: GatewayApplyOptions{
 				IstioEnabled: true,
 			},
-			expectedExcludeInboundPorts: "8888",
+			expectedIncludeInboundPorts: "",
 			shouldHaveInterceptionMode:  true,
 		},
 	}
@@ -255,13 +197,13 @@ func TestGateway_Annotations(t *testing.T) {
 			annotations := tt.sut.makeAnnotations("dummy-checksum", tt.opts)
 
 			if !tt.opts.IstioEnabled {
-				require.NotContains(t, annotations, "traffic.sidecar.istio.io/excludeInboundPorts")
+				require.NotContains(t, annotations, "traffic.sidecar.istio.io/includeInboundPorts")
 				require.NotContains(t, annotations, "sidecar.istio.io/interceptionMode")
 
 				return
 			}
 
-			require.Equal(t, tt.expectedExcludeInboundPorts, annotations["traffic.sidecar.istio.io/excludeInboundPorts"])
+			require.Equal(t, tt.expectedIncludeInboundPorts, annotations["traffic.sidecar.istio.io/includeInboundPorts"])
 
 			if tt.shouldHaveInterceptionMode {
 				require.Equal(t, "TPROXY", annotations["sidecar.istio.io/interceptionMode"])

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"maps"
 	"slices"
 
 	istiosecurityv1 "istio.io/api/security/v1"
@@ -16,7 +15,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/config"
@@ -206,6 +204,7 @@ func (gad *GatewayApplierDeleter) ApplyResources(ctx context.Context, c client.C
 	}
 
 	configChecksum := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, []corev1.Secret{*secret})
+
 	if err := k8sutils.CreateOrUpdateDeployment(ctx, c, gad.makeGatewayDeployment(configChecksum, opts)); err != nil {
 		return fmt.Errorf("failed to create deployment: %w", err)
 	}
@@ -237,6 +236,13 @@ func (gad *GatewayApplierDeleter) DeleteResources(ctx context.Context, c client.
 		Namespace: gad.globals.TargetNamespace(),
 	}
 
+	// Deleting using objectMeta and recreating it (in otlp_gateway.go) with same name causes reconcile loop. So delete the service using label selector
+	// Delete the OTLP service
+	serviceSelector := map[string]string{commonresources.LabelKeyK8sName: gad.baseName}
+	if err := k8sutils.DeleteObjectsByLabelSelector(ctx, c, &corev1.ServiceList{}, serviceSelector); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete otlp service: %w", err))
+	}
+
 	secret := corev1.Secret{ObjectMeta: objectMeta}
 	if err := k8sutils.DeleteObject(ctx, c, &secret); err != nil {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete env secret: %w", err))
@@ -252,11 +258,6 @@ func (gad *GatewayApplierDeleter) DeleteResources(ctx context.Context, c client.
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete deployment: %w", err))
 	}
 
-	OTLPService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: gad.otlpServiceName, Namespace: gad.globals.TargetNamespace()}}
-	if err := k8sutils.DeleteObject(ctx, c, &OTLPService); err != nil {
-		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete otlp service: %w", err))
-	}
-
 	if isIstioActive {
 		peerAuthentication := istiosecurityclientv1.PeerAuthentication{ObjectMeta: objectMeta}
 		if err := k8sutils.DeleteObject(ctx, c, &peerAuthentication); err != nil {
@@ -268,31 +269,35 @@ func (gad *GatewayApplierDeleter) DeleteResources(ctx context.Context, c client.
 }
 
 func (gad *GatewayApplierDeleter) makeGatewayDeployment(configChecksum string, opts GatewayApplyOptions) *appsv1.Deployment {
-	labels := commonresources.MakeDefaultLabels(gad.baseName, commonresources.LabelValueK8sComponentGateway)
-	selectorLabels := commonresources.MakeDefaultSelectorLabels(gad.baseName)
+	podSpec := gad.makeGatewayPodSpec(opts)
+	metadata := gad.makeGatewayMetadata(configChecksum, opts)
+
+	return makeDeployment(
+		gad.baseName,
+		gad.globals.TargetNamespace(),
+		opts.Replicas,
+		metadata,
+		podSpec,
+	)
+}
+
+// makeGatewayMetadata prepares labels and annotations for gateway resources
+func (gad *GatewayApplierDeleter) makeGatewayMetadata(configChecksum string, opts GatewayApplyOptions) WorkloadMetadata {
 	annotations := gad.makeAnnotations(configChecksum, opts)
 
-	// Create final annotations for the DaemonSet and Pods with additional annotations
-	podAnnotations := make(map[string]string)
-	resourceAnnotations := make(map[string]string)
+	return MakeWorkloadMetadata(
+		&gad.globals,
+		gad.baseName,
+		commonresources.LabelValueK8sComponentGateway,
+		gad.extraPodLabels,
+		annotations,
+	)
+}
 
-	maps.Copy(resourceAnnotations, gad.globals.AdditionalAnnotations())
-	maps.Copy(podAnnotations, gad.globals.AdditionalAnnotations())
-	maps.Copy(podAnnotations, annotations)
-
-	defaultPodLabels := make(map[string]string)
-	maps.Copy(defaultPodLabels, labels)
-	maps.Copy(defaultPodLabels, gad.extraPodLabels)
-
-	// Create final labels for the DaemonSet and Pods with additional labels
-	resourceLabels := make(map[string]string)
-	podLabels := make(map[string]string)
-
-	maps.Copy(resourceLabels, gad.globals.AdditionalLabels())
-	maps.Copy(podLabels, gad.globals.AdditionalLabels())
-	maps.Copy(resourceLabels, labels)
-	maps.Copy(podLabels, defaultPodLabels)
-
+// makeGatewayPodSpec creates the pod spec for gateway (Deployment or DaemonSet)
+//
+//nolint:dupl // repeating the code as we this would be deleted when we implement all signals in OTLP gateway
+func (gad *GatewayApplierDeleter) makeGatewayPodSpec(opts GatewayApplyOptions) corev1.PodSpec {
 	resources := gad.makeGatewayResourceRequirements(opts)
 
 	containerOpts := slices.Clone(gad.containerOpts)
@@ -308,34 +313,12 @@ func (gad *GatewayApplierDeleter) makeGatewayDeployment(configChecksum string, o
 		commonresources.WithClusterTrustBundleVolume(gad.globals.ClusterTrustBundleName()),
 	)
 
-	podSpec := makePodSpec(
+	return makePodSpec(
 		gad.baseName,
 		gad.image,
 		podOptions,
 		containerOpts,
 	)
-
-	return &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        gad.baseName,
-			Namespace:   gad.globals.TargetNamespace(),
-			Labels:      resourceLabels,
-			Annotations: resourceAnnotations,
-		},
-		Spec: appsv1.DeploymentSpec{
-			Replicas: ptr.To(opts.Replicas),
-			Selector: &metav1.LabelSelector{
-				MatchLabels: selectorLabels,
-			},
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels:      podLabels,
-					Annotations: podAnnotations,
-				},
-				Spec: podSpec,
-			},
-		},
-	}
 }
 
 func (gad *GatewayApplierDeleter) makeGatewayResourceRequirements(opts GatewayApplyOptions) corev1.ResourceRequirements {
@@ -393,7 +376,7 @@ func (gad *GatewayApplierDeleter) makeOTLPService() *corev1.Service {
 	commonLabels := commonresources.MakeDefaultLabels(gad.baseName, commonresources.LabelValueK8sComponentGateway)
 	selectorLabels := commonresources.MakeDefaultSelectorLabels(gad.baseName)
 
-	return &corev1.Service{
+	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      gad.otlpServiceName,
 			Namespace: gad.globals.TargetNamespace(),
@@ -418,6 +401,8 @@ func (gad *GatewayApplierDeleter) makeOTLPService() *corev1.Service {
 			Type:     corev1.ServiceTypeClusterIP,
 		},
 	}
+
+	return service
 }
 
 func (gad *GatewayApplierDeleter) makePeerAuthentication() *istiosecurityclientv1.PeerAuthentication {

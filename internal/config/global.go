@@ -35,7 +35,13 @@ func IsValidationError(err error) bool {
 	return errors.As(err, &validationErr)
 }
 
+type Experimental struct {
+	deployOTLPGateway bool
+}
+
 type Global struct {
+	Experimental
+
 	managerNamespace       string
 	targetNamespace        string
 	operateInFIPSMode      bool
@@ -96,6 +102,12 @@ func WithAdditionalAnnotations(annotations map[string]string) Option {
 	}
 }
 
+func WithDeployOTLPGateway(enable bool) Option {
+	return func(g *Global) {
+		g.deployOTLPGateway = enable
+	}
+}
+
 func NewGlobal(opts ...Option) Global {
 	g := Global{}
 	for _, opt := range opts {
@@ -147,6 +159,10 @@ func (g *Global) OperateInFIPSMode() bool {
 // Version returns the version of the Telemetry Manager.
 func (g *Global) Version() string {
 	return g.version
+}
+
+func (g *Global) DeployOTLPGateway() bool {
+	return g.deployOTLPGateway
 }
 
 func (g *Global) ImagePullSecretName() string {

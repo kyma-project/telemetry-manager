@@ -1,9 +1,11 @@
 package shared
 
 import (
+	"fmt"
 	"testing"
 
 	. "github.com/onsi/gomega"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
@@ -20,29 +22,53 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-// TODO(TeodorSAP): Remove this test in favor of service_enrichment_test.go once legacy service enrichment strategy is fully deprecated.
 func TestServiceName_OTel(t *testing.T) {
 	tests := []struct {
-		label        string
-		inputBuilder func(includeNs string) telemetryv1beta1.LogPipelineInput
+		name               string
+		labels             []string
+		inputBuilder       func(includeNs string) telemetryv1beta1.LogPipelineInput
+		expectAgent        bool
+		resourceName       types.NamespacedName
+		readinessCheckFunc func(t *testing.T, name types.NamespacedName)
+		genSignalType      telemetrygen.SignalType
 	}{
 		{
-			label: suite.LabelLogAgent,
+			name:   suite.LabelLogAgent,
+			labels: []string{suite.LabelLogAgent},
 			inputBuilder: func(includeNs string) telemetryv1beta1.LogPipelineInput {
 				return testutils.BuildLogPipelineRuntimeInput(testutils.IncludeNamespaces(includeNs))
 			},
+			expectAgent:        true,
+			resourceName:       kitkyma.LogAgentName,
+			readinessCheckFunc: assert.DaemonSetReady,
 		},
 		{
-			label: suite.LabelLogGateway,
+			name:   suite.LabelLogGateway,
+			labels: []string{suite.LabelLogGateway},
 			inputBuilder: func(includeNs string) telemetryv1beta1.LogPipelineInput {
 				return testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
 			},
+			expectAgent:        false,
+			resourceName:       kitkyma.LogGatewayName,
+			readinessCheckFunc: assert.DeploymentReady,
+			genSignalType:      telemetrygen.SignalTypeLogs,
+		},
+		{
+			name:   fmt.Sprintf("%s-%s", suite.LabelLogGateway, suite.LabelExperimental),
+			labels: []string{suite.LabelLogGateway, suite.LabelExperimental},
+			inputBuilder: func(includeNs string) telemetryv1beta1.LogPipelineInput {
+				return testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
+			},
+			expectAgent:        false,
+			resourceName:       kitkyma.TelemetryOTLPGatewayName,
+			readinessCheckFunc: assert.DaemonSetReady,
+			genSignalType:      telemetrygen.SignalTypeCentralLogs,
 		},
 	}
 
 	for _, tc := range tests {
-		t.Run(tc.label, func(t *testing.T) {
-			suite.RegisterTestCase(t, tc.label)
+		t.Run(tc.name, func(t *testing.T) {
+			suite.RegisterTestCase(t, tc.labels...)
 
 			const (
 				jobName               = "job"
@@ -58,7 +84,7 @@ func TestServiceName_OTel(t *testing.T) {
 			)
 
 			var (
-				uniquePrefix    = unique.Prefix(tc.label)
+				uniquePrefix    = unique.Prefix(tc.name)
 				pipelineName    = uniquePrefix()
 				deploymentName  = uniquePrefix()
 				statefulSetName = uniquePrefix()
@@ -72,7 +98,7 @@ func TestServiceName_OTel(t *testing.T) {
 			pipeline := testutils.NewLogPipelineBuilder().
 				WithName(pipelineName).
 				WithInput(tc.inputBuilder(genNs)).
-				WithKeepOriginalBody(suite.ExpectAgent(tc.label)).
+				WithKeepOriginalBody(tc.expectAgent).
 				WithOTLPOutput(
 					testutils.OTLPEndpointFromSecret(
 						hostSecretRef.Name,
@@ -89,7 +115,7 @@ func TestServiceName_OTel(t *testing.T) {
 			}
 			resources = append(resources, backend.K8sObjects()...)
 
-			if suite.ExpectAgent(tc.label) {
+			if tc.expectAgent {
 				podSpecLogs := stdoutloggen.PodSpec()
 				resources = append(resources,
 					kitk8sobjects.NewPod(podWithBothLabelsName, genNs).
@@ -101,7 +127,7 @@ func TestServiceName_OTel(t *testing.T) {
 					kitk8sobjects.NewPod(podWithNoLabelsName, genNs).WithPodSpec(podSpecLogs).K8sObject(),
 				)
 			} else {
-				podSpecWithUndefinedService := telemetrygen.PodSpec(telemetrygen.SignalTypeLogs, telemetrygen.WithServiceName(""))
+				podSpecWithUndefinedService := telemetrygen.PodSpec(tc.genSignalType, telemetrygen.WithServiceName(""))
 				resources = append(resources,
 					kitk8sobjects.NewPod(podWithAppLabelName, genNs).
 						WithLabel(appLabelKey, appLabelValue).
@@ -114,14 +140,9 @@ func TestServiceName_OTel(t *testing.T) {
 
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
-			assert.DeploymentReady(t, kitkyma.LogGatewayName)
-
-			if suite.ExpectAgent(tc.label) {
-				assert.DaemonSetReady(t, kitkyma.LogAgentName)
-			}
+			tc.readinessCheckFunc(t, tc.resourceName)
 
 			assert.BackendReachable(t, backend)
-			assert.DeploymentReady(t, kitkyma.LogGatewayName)
 			assert.OTelLogPipelineHealthy(t, pipelineName)
 			assert.OTelLogsFromNamespaceDelivered(t, backend, genNs)
 
@@ -134,7 +155,7 @@ func TestServiceName_OTel(t *testing.T) {
 				)
 			}
 
-			if suite.ExpectAgent(tc.label) {
+			if tc.expectAgent {
 				verifyServiceNameAttr(podWithBothLabelsName, kubeAppLabelValue)
 				verifyServiceNameAttr(jobName, jobName)
 				verifyServiceNameAttr(podWithNoLabelsName, podWithNoLabelsName)

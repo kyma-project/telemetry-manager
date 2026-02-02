@@ -25,14 +25,31 @@ type GatewayConfigBuilder interface {
 	Build(ctx context.Context, pipelines []telemetryv1beta1.LogPipeline, opts loggateway.BuildOptions) (*common.Config, common.EnvVars, error)
 }
 
-// GatewayApplierDeleter manages the lifecycle of log gateway Kubernetes resources.
+// GatewayApplierDeleter manages the lifecycle of gateway Kubernetes resources.
 // It handles both creation/updates and cleanup of gateway deployments, services, and related resources.
+//
+//nolint:dupl,iface // GatewayApplierDeleter will be removed when all signals use OTLP gateway
 type GatewayApplierDeleter interface {
+	//nolint:dupl // GatewayApplierDeleter will be removed when all signals use OTLP gateway
 	// ApplyResources creates or updates all gateway resources using the provided configuration.
 	ApplyResources(ctx context.Context, c client.Client, opts otelcollector.GatewayApplyOptions) error
 
 	// DeleteResources removes all gateway resources. The isIstioActive flag determines
 	// whether Istio-specific resources should be cleaned up.
+	DeleteResources(ctx context.Context, c client.Client, isIstioActive bool) error
+}
+
+// OTLPGatewayApplierDeleter manages the lifecycle of OTLP gateway Kubernetes resources.
+// It handles both creation/updates and cleanup of gateway deployments, services, and related resources.
+//
+//nolint:dupl,iface // GatewayApplierDeleter will be removed when all signals use OTLP gateway
+type OTLPGatewayApplierDeleter interface {
+	// ApplyResources creates or updates the OTLP gateway (DaemonSet) and cleans up old log gateway resources if they exist.
+	// This handles the upgrade scenario from deployment-based log gateway to DaemonSet-based OTLP gateway.
+	ApplyResources(ctx context.Context, c client.Client, opts otelcollector.GatewayApplyOptions) error
+
+	// DeleteResources removes all OTLP gateway resources including the legacy compatibility service.
+	// The isIstioActive flag determines whether Istio-specific resources should be cleaned up.
 	DeleteResources(ctx context.Context, c client.Client, isIstioActive bool) error
 }
 
