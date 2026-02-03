@@ -322,7 +322,9 @@ func NamespaceReady(t *testing.T, namespace string) {
 	t.Helper()
 	Eventually(func(g Gomega) {
 		t.Helper()
+
 		var sa corev1.ServiceAccount
+
 		err := suite.K8sClient.Get(t.Context(), types.NamespacedName{
 			Name:      "default",
 			Namespace: namespace,
