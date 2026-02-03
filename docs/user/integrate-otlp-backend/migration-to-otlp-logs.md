@@ -16,6 +16,35 @@ When you want to migrate to the `otlp` output, create a new LogPipeline. To prev
 
 You can't modify an existing LogPipeline to change its output type. You must create a new resource.
 
+In the following sample LogPipeline, see the fields that you must change or remove for the migration:
+```yaml
+apiVersion: telemetry.kyma-project.io/v1beta1
+kind: LogPipeline
+metadata:
+  name: my-http-pipeline
+spec:
+  input:
+    runtime:             # OTLP supports the runtime input, but you must replace the dropLabels and keepAnnotation flags
+      dropLabels: true       # Configure label enrichment centrally
+      keepAnnotations: true  # No longer supported
+  filters:
+    custom: |                # Replace with a transform or filter expression
+      ...
+  variables:                 # Used for custom filters, replace with a transform or filter expression
+    - name: myVar
+      value: myValue
+  files:                     # Used for custom filters, replace with transform or filter expressions
+    - name: myFile
+      value: |
+        ...
+  output:
+    http:                    # Switch to OTLP
+      endpoint:
+        value: "my-backend:4317"
+    custom: |                # Switch to OTLP
+      ...
+```
+
 See how the deprecated fields map to their new OTLP-based counterparts:
 
 | Deprecated Field | Migration Action |
@@ -27,38 +56,6 @@ See how the deprecated fields map to their new OTLP-based counterparts:
 | **spec.input.runtime.keepAnnotations** | Remove this functionality, it's not supported with the `otlp` output. |
 
 ## Procedure
-
-1. Identify deprecated fields in your LogPipeline.
-
-   If your LogPipeline uses the `http` or `custom` output, you must migrate it to the OTLP stack and replace the deprecated fields:
-
-    ```yaml
-    apiVersion: telemetry.kyma-project.io/v1beta1
-    kind: LogPipeline
-    metadata:
-      name: my-http-pipeline
-    spec:
-      input:
-        runtime:             # OTLP supports the runtime input, but you must replace the dropLabels and keepAnnotation flags
-          dropLabels: true       # Configure label enrichment centrally
-          keepAnnotations: true  # No longer supported
-      filters:
-        custom: |                # Replace with a transform or filter expression
-          ...
-      variables:                 # Used for custom filters, replace with a transform or filter expression
-        - name: myVar
-          value: myValue
-      files:                     # Used for custom filters, replace with transform or filter expressions
-        - name: myFile
-          value: |
-            ...
-      output:
-        http:                    # Switch to OTLP
-          endpoint:
-            value: "my-backend:4317"
-        custom: |                # Switch to OTLP
-          ...
-    ```
 
 1. Create a new LogPipeline that uses the `otlp` output.
 
