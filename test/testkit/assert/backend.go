@@ -7,7 +7,7 @@ import (
 	"time"
 
 	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/types"
+	gomegatypes "github.com/onsi/gomega/types"
 
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
@@ -79,7 +79,7 @@ func BackendReachable(t *testing.T, backend *kitbackend.Backend) {
 	}, periodic.EventuallyTimeout, queryInterval).Should(Succeed(), "Backend should be reachable at %s", queryURL)
 }
 
-func BackendDataEventuallyMatches(t *testing.T, backend *kitbackend.Backend, httpBodyMatcher types.GomegaMatcher, assertionOptions ...BackendAssertionOption) {
+func BackendDataEventuallyMatches(t *testing.T, backend *kitbackend.Backend, httpBodyMatcher gomegatypes.GomegaMatcher, assertionOptions ...BackendAssertionOption) {
 	t.Helper()
 
 	t.Logf("Asserting that backend %s/%s data eventually matches the expected condition", backend.Namespace(), backend.Name())
@@ -89,7 +89,7 @@ func BackendDataEventuallyMatches(t *testing.T, backend *kitbackend.Backend, htt
 	HTTPResponseEventuallyMatches(t, queryURL, httpBodyMatcher, assertionOptions...)
 }
 
-func BackendDataConsistentlyMatches(t *testing.T, backend *kitbackend.Backend, httpBodyMatcher types.GomegaMatcher, assertionOptions ...BackendAssertionOption) {
+func BackendDataConsistentlyMatches(t *testing.T, backend *kitbackend.Backend, httpBodyMatcher gomegatypes.GomegaMatcher, assertionOptions ...BackendAssertionOption) {
 	t.Helper()
 
 	assertionOptions = append(assertionOptions, WithOptionalDescription(fmt.Sprintf("Backend data did not match the expected condition. Backend: %s/%s", backend.Namespace(), backend.Name())))
@@ -99,7 +99,7 @@ func BackendDataConsistentlyMatches(t *testing.T, backend *kitbackend.Backend, h
 }
 
 //nolint:dupl // This function is similar to BackendDataEventuallyMatches but uses Eventually instead of Consistently.
-func HTTPResponseEventuallyMatches(t *testing.T, queryURL string, httpBodyMatcher types.GomegaMatcher, assertionOptions ...BackendAssertionOption) {
+func HTTPResponseEventuallyMatches(t *testing.T, queryURL string, httpBodyMatcher gomegatypes.GomegaMatcher, assertionOptions ...BackendAssertionOption) {
 	t.Helper()
 
 	backendAssertion := newBackendAssertion(false, assertionOptions...)
@@ -116,7 +116,7 @@ func HTTPResponseEventuallyMatches(t *testing.T, queryURL string, httpBodyMatche
 }
 
 //nolint:dupl // This function is similar to HTTPResponseEventuallyMatches but uses Consistently instead of Eventually.
-func HTTPResponseConsistentlyMatches(t *testing.T, queryURL string, httpBodyMatcher types.GomegaMatcher, assertionOptions ...BackendAssertionOption) {
+func HTTPResponseConsistentlyMatches(t *testing.T, queryURL string, httpBodyMatcher gomegatypes.GomegaMatcher, assertionOptions ...BackendAssertionOption) {
 	t.Helper()
 
 	backendAssertion := newBackendAssertion(true, assertionOptions...)

@@ -30,7 +30,7 @@ service:
                 - transform/drop-kyma-attributes
                 - batch
             exporters:
-                - otlphttp/test
+                - otlp_http/test
     telemetry:
         metrics:
             readers:
@@ -120,7 +120,7 @@ processors:
                 - set(resource.attributes["k8s.cluster.name"], "") where resource.attributes["k8s.cluster.name"] == nil or resource.attributes["k8s.cluster.name"] == ""
                 - set(resource.attributes["k8s.cluster.uid"], "") where resource.attributes["k8s.cluster.uid"] == nil or resource.attributes["k8s.cluster.uid"] == ""
 exporters:
-    otlphttp/test:
+    otlp_http/test:
         endpoint: ${OTLP_ENDPOINT_TEST}
         tls:
             insecure: true

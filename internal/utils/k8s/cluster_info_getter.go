@@ -51,3 +51,19 @@ func GetGardenerShootInfo(ctx context.Context, client client.Client) ClusterInfo
 		ClusterName:   defaultClusterName,
 	}
 }
+
+// GetClusterUID retrieves the unique identifier of the Kubernetes cluster by fetching the UID of the kube-system namespace.
+func GetClusterUID(ctx context.Context, client client.Client) (string, error) {
+	var kubeSystem corev1.Namespace
+
+	kubeSystemNs := types.NamespacedName{
+		Name: "kube-system",
+	}
+
+	err := client.Get(ctx, kubeSystemNs, &kubeSystem)
+	if err != nil {
+		return "", err
+	}
+
+	return string(kubeSystem.UID), nil
+}

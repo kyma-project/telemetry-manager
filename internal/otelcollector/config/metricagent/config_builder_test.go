@@ -10,6 +10,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
@@ -20,14 +21,26 @@ func TestBuildConfig(t *testing.T) {
 	}
 
 	tests := []struct {
-		name                string
-		goldenFileName      string
-		overwriteGoldenFile bool
-		pipelines           []telemetryv1beta1.MetricPipeline
+		name              string
+		goldenFileName    string
+		pipelines         []telemetryv1beta1.MetricPipeline
+		serviceEnrichment string
 
 		// istioActive indicates if the "cluster" has an active istio installation or not. Not to be confused with the IstioInput in a pipeline
 		istioActive bool
 	}{
+		{
+			name:              "pipeline with runtime input only and otel service enrichment",
+			goldenFileName:    "service-enrichment-otel.yaml",
+			serviceEnrichment: commonresources.AnnotationValueTelemetryServiceEnrichmentOtel,
+			pipelines: []telemetryv1beta1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().
+					WithName("test").
+					WithRuntimeInput(true).
+					WithOTLPOutput().
+					Build(),
+			},
+		},
 		{
 			name:           "pipeline with istio input only",
 			goldenFileName: "istio-only.yaml",
@@ -401,7 +414,8 @@ func TestBuildConfig(t *testing.T) {
 			},
 		},
 		{
-			name: "pipeline using OAuth2 authentication",
+			name:           "pipeline using OAuth2 authentication",
+			goldenFileName: "oauth2-authentication.yaml",
 			pipelines: []telemetryv1beta1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
 					WithName("test").
@@ -416,7 +430,6 @@ func TestBuildConfig(t *testing.T) {
 						testutils.OAuth2Scopes([]string{"metrics"}),
 					).Build(),
 			},
-			goldenFileName: "oauth2-authentication.yaml",
 		},
 	}
 
@@ -426,6 +439,7 @@ func TestBuildConfig(t *testing.T) {
 				IstioCertPath:               "/etc/istio-output-certs",
 				InstrumentationScopeVersion: "main",
 				IstioActive:                 tt.istioActive,
+				ServiceEnrichment:           tt.serviceEnrichment,
 			}
 			config, _, err := sut.Build(t.Context(), tt.pipelines, buildOptions)
 			require.NoError(t, err)
@@ -441,7 +455,6 @@ func TestBuildConfig(t *testing.T) {
 
 			goldenFile, err := os.ReadFile(goldenFilePath)
 			require.NoError(t, err, "failed to load golden file")
-
 			require.Equal(t, string(goldenFile), string(configYAML))
 		})
 	}

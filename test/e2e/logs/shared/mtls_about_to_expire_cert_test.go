@@ -1,10 +1,12 @@
 package shared
 
 import (
+	"fmt"
 	"testing"
 
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
@@ -24,37 +26,56 @@ import (
 
 func TestMTLSAboutToExpireCert_OTel(t *testing.T) {
 	tests := []struct {
-		label               string
+		name                string
+		labels              []string
 		inputBuilder        func(includeNs string) telemetryv1beta1.LogPipelineInput
 		logGeneratorBuilder func(ns string) client.Object
-		expectAgent         bool
+		resourceName        types.NamespacedName
+		readinessCheckFunc  func(t *testing.T, name types.NamespacedName)
 	}{
 		{
-			label: suite.LabelLogAgent,
+			name:   suite.LabelLogAgent,
+			labels: []string{suite.LabelLogAgent, suite.LabelMTLS},
 			inputBuilder: func(includeNs string) telemetryv1beta1.LogPipelineInput {
 				return testutils.BuildLogPipelineRuntimeInput(testutils.IncludeNamespaces(includeNs))
 			},
 			logGeneratorBuilder: func(ns string) client.Object {
 				return stdoutloggen.NewDeployment(ns).K8sObject()
 			},
-			expectAgent: true,
+			resourceName:       kitkyma.LogAgentName,
+			readinessCheckFunc: assert.DaemonSetReady,
 		},
 		{
-			label: suite.LabelLogGateway,
+			name:   suite.LabelLogGateway,
+			labels: []string{suite.LabelLogGateway, suite.LabelMTLS},
 			inputBuilder: func(includeNs string) telemetryv1beta1.LogPipelineInput {
 				return testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
 			},
 			logGeneratorBuilder: func(ns string) client.Object {
 				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeLogs).K8sObject()
 			},
+			resourceName:       kitkyma.LogGatewayName,
+			readinessCheckFunc: assert.DeploymentReady,
+		},
+		{
+			name:   fmt.Sprintf("%s-%s", suite.LabelLogGateway, suite.LabelExperimental),
+			labels: []string{suite.LabelLogGateway, suite.LabelExperimental, suite.LabelMTLS},
+			inputBuilder: func(includeNs string) telemetryv1beta1.LogPipelineInput {
+				return testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
+			},
+			logGeneratorBuilder: func(ns string) client.Object {
+				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeCentralLogs).K8sObject()
+			},
+			resourceName:       kitkyma.TelemetryOTLPGatewayName,
+			readinessCheckFunc: assert.DaemonSetReady,
 		},
 	}
 	for _, tc := range tests {
-		t.Run(tc.label, func(t *testing.T) {
-			suite.RegisterTestCase(t, tc.label, suite.LabelMTLS)
+		t.Run(tc.name, func(t *testing.T) {
+			suite.RegisterTestCase(t, tc.labels...)
 
 			var (
-				uniquePrefix = unique.Prefix(tc.label)
+				uniquePrefix = unique.Prefix(tc.name)
 				pipelineName = uniquePrefix()
 				backendNs    = uniquePrefix("backend")
 				genNs        = uniquePrefix("gen")
@@ -90,11 +111,8 @@ func TestMTLSAboutToExpireCert_OTel(t *testing.T) {
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 			assert.BackendReachable(t, backend)
-			assert.DeploymentReady(t, kitkyma.LogGatewayName)
 
-			if tc.expectAgent {
-				assert.DaemonSetReady(t, kitkyma.LogAgentName)
-			}
+			tc.readinessCheckFunc(t, tc.resourceName)
 
 			assert.FluentBitLogPipelineHealthy(t, pipelineName)
 			assert.LogPipelineHasCondition(t, pipelineName, metav1.Condition{

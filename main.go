@@ -22,23 +22,24 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"time"
 
 	"github.com/caarlos0/env/v11"
 	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	istionetworkingclientv1 "istio.io/client-go/pkg/apis/networking/v1"
 	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/discovery"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -57,8 +58,10 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/cliflags"
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/featureflags"
+	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
 	"github.com/kyma-project/telemetry-manager/internal/metrics"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	selfmonitorwebhook "github.com/kyma-project/telemetry-manager/internal/selfmonitor/webhook"
 	loggerutils "github.com/kyma-project/telemetry-manager/internal/utils/logger"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
@@ -86,11 +89,11 @@ var (
 	imagePullSecretName     string
 	additionalLabels        cliflags.Map
 	additionalAnnotations   cliflags.Map
+	deployOTLPGateway       bool
 )
 
 const (
-	cacheSyncPeriod    = 1 * time.Minute
-	webhookServiceName = "telemetry-manager-webhook"
+	webhookServiceName = names.ManagerWebhookService
 
 	healthProbePort = 8081
 	metricsPort     = 8080
@@ -128,6 +131,7 @@ func init() {
 	utilruntime.Must(telemetryv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(operatorv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(istiosecurityclientv1.AddToScheme(scheme))
+	utilruntime.Must(istionetworkingclientv1.AddToScheme(scheme))
 	utilruntime.Must(telemetryv1beta1.AddToScheme(scheme))
 	utilruntime.Must(operatorv1beta1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
@@ -168,6 +172,7 @@ func run() error {
 		config.WithClusterTrustBundleName(clusterTrustBundleName),
 		config.WithAdditionalLabels(additionalLabels),
 		config.WithAdditionalAnnotations(additionalAnnotations),
+		config.WithDeployOTLPGateway(featureflags.IsEnabled(featureflags.DeployOTLPGateway)),
 	)
 
 	if err := globals.Validate(); err != nil {
@@ -269,34 +274,49 @@ func setupControllersAndWebhooks(mgr manager.Manager, globals config.Global, env
 }
 
 func setupManager(globals config.Global) (manager.Manager, error) {
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+	restConfig := ctrl.GetConfigOrDie()
+
+	discoveryClient, err := discovery.NewDiscoveryClientForConfig(restConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create discovery client: %w", err)
+	}
+
+	isIstioActive := istiostatus.NewChecker(discoveryClient).IsIstioActive(context.Background())
+
+	// The operator handles various resource that are namespace-scoped, and additionally some resources that are cluster-scoped (clusterroles, clusterrolebindings, etc.).
+	// For namespace-scoped resources we want to restrict the operator permissions to only fetch resources from a given namespace.
+	cacheOptions := map[client.Object]cache.ByObject{
+		&appsv1.Deployment{}:          {Field: setNamespaceFieldSelector(globals)},
+		&appsv1.ReplicaSet{}:          {Field: setNamespaceFieldSelector(globals)},
+		&appsv1.DaemonSet{}:           {Field: setNamespaceFieldSelector(globals)},
+		&corev1.ConfigMap{}:           {Namespaces: setConfigMapNamespaceFieldSelector(globals)},
+		&corev1.ServiceAccount{}:      {Field: setNamespaceFieldSelector(globals)},
+		&corev1.Service{}:             {Field: setNamespaceFieldSelector(globals)},
+		&networkingv1.NetworkPolicy{}: {Field: setNamespaceFieldSelector(globals)},
+		&corev1.Secret{}:              {Transform: secretCacheTransform},
+		&operatorv1beta1.Telemetry{}:  {Field: setNamespaceFieldSelector(globals)},
+		&rbacv1.Role{}:                {Field: setNamespaceFieldSelector(globals)},
+		&rbacv1.RoleBinding{}:         {Field: setNamespaceFieldSelector(globals)},
+	}
+
+	if isIstioActive {
+		cacheOptions[&istiosecurityclientv1.PeerAuthentication{}] = cache.ByObject{Field: setNamespaceFieldSelector(globals)}
+	}
+
+	mgr, err := ctrl.NewManager(restConfig, ctrl.Options{
 		Scheme:                  scheme,
 		Metrics:                 metricsserver.Options{BindAddress: fmt.Sprintf(":%d", metricsPort)},
 		HealthProbeBindAddress:  fmt.Sprintf(":%d", healthProbePort),
 		PprofBindAddress:        fmt.Sprintf(":%d", pprofPort),
 		LeaderElection:          true,
 		LeaderElectionNamespace: globals.TargetNamespace(),
-		LeaderElectionID:        "cdd7ef0b.kyma-project.io",
+		LeaderElectionID:        names.ManagerLeaseName,
 		WebhookServer: webhook.NewServer(webhook.Options{
 			Port:    webhookPort,
 			CertDir: certDir,
 		}),
 		Cache: cache.Options{
-			SyncPeriod: ptr.To(cacheSyncPeriod),
-
-			// The operator handles various resource that are namespace-scoped, and additionally some resources that are cluster-scoped (clusterroles, clusterrolebindings, etc.).
-			// For namespace-scoped resources we want to restrict the operator permissions to only fetch resources from a given namespace.
-			ByObject: map[client.Object]cache.ByObject{
-				&appsv1.Deployment{}:          {Field: setNamespaceFieldSelector(globals)},
-				&appsv1.ReplicaSet{}:          {Field: setNamespaceFieldSelector(globals)},
-				&appsv1.DaemonSet{}:           {Field: setNamespaceFieldSelector(globals)},
-				&corev1.ConfigMap{}:           {Namespaces: setConfigMapNamespaceFieldSelector(globals)},
-				&corev1.ServiceAccount{}:      {Field: setNamespaceFieldSelector(globals)},
-				&corev1.Service{}:             {Field: setNamespaceFieldSelector(globals)},
-				&networkingv1.NetworkPolicy{}: {Field: setNamespaceFieldSelector(globals)},
-				&corev1.Secret{}:              {Field: setNamespaceFieldSelector(globals)},
-				&operatorv1beta1.Telemetry{}:  {Field: setNamespaceFieldSelector(globals)},
-			},
+			ByObject: cacheOptions,
 		},
 		Client: client.Options{
 			Cache: &client.CacheOptions{
@@ -324,7 +344,10 @@ func logBuildAndProcessInfo() {
 	}
 }
 
-func initializeFeatureFlags() {} // Placeholder for future feature flag initializations.
+func initializeFeatureFlags() {
+	// Placeholder for future feature flag initializations.
+	featureflags.Set(featureflags.DeployOTLPGateway, deployOTLPGateway)
+}
 
 func parseFlags() {
 	flag.StringVar(&certDir, "cert-dir", ".", "Webhook TLS certificate directory")
@@ -335,6 +358,8 @@ func parseFlags() {
 	flag.StringVar(&imagePullSecretName, "image-pull-secret-name", "", "The image pull secret name to use for pulling images of all created workloads (agents, gateways, self-monitor)")
 	flag.Var(&additionalLabels, "additional-label", "Additional label to add to all created resources in key=value format")
 	flag.Var(&additionalAnnotations, "additional-annotation", "Additional annotation to add to all created resources in key=value format")
+
+	flag.BoolVar(&deployOTLPGateway, "deploy-otlp-gateway", false, "Enable deploying unified OTLP gateway")
 
 	flag.Parse()
 }
@@ -394,15 +419,16 @@ func setupLogPipelineController(globals config.Global, cfg envConfig, mgr manage
 
 	logPipelineController, err := telemetrycontrollers.NewLogPipelineController(
 		telemetrycontrollers.LogPipelineControllerConfig{
-			Global:                      globals,
-			ExporterImage:               cfg.FluentBitExporterImage,
-			FluentBitImage:              cfg.FluentBitImage,
-			ChownInitContainerImage:     cfg.AlpineImage,
-			OTelCollectorImage:          cfg.OTelCollectorImage,
-			FluentBitPriorityClassName:  highPriorityClassName,
-			LogGatewayPriorityClassName: normalPriorityClassName,
-			LogAgentPriorityClassName:   highPriorityClassName,
-			RestConfig:                  mgr.GetConfig(),
+			Global:                       globals,
+			ExporterImage:                cfg.FluentBitExporterImage,
+			FluentBitImage:               cfg.FluentBitImage,
+			ChownInitContainerImage:      cfg.AlpineImage,
+			OTelCollectorImage:           cfg.OTelCollectorImage,
+			FluentBitPriorityClassName:   highPriorityClassName,
+			LogGatewayPriorityClassName:  normalPriorityClassName,
+			LogAgentPriorityClassName:    highPriorityClassName,
+			OTLPGatewayPriorityClassName: normalPriorityClassName,
+			RestConfig:                   mgr.GetConfig(),
 		},
 		mgr.GetClient(),
 		reconcileTriggerChan,
@@ -470,29 +496,21 @@ func setupMetricPipelineController(globals config.Global, cfg envConfig, mgr man
 func setupConversionWebhooks(mgr manager.Manager) error {
 	setupLog.Info("Registering conversion webhooks for LogPipelines")
 
-	if err := ctrl.NewWebhookManagedBy(mgr).
-		For(&telemetryv1alpha1.LogPipeline{}).
-		Complete(); err != nil {
+	if err := ctrl.NewWebhookManagedBy(mgr, &telemetryv1alpha1.LogPipeline{}).Complete(); err != nil {
 		return fmt.Errorf("failed to create v1alpha1 conversion webhook: %w", err)
 	}
 
-	if err := ctrl.NewWebhookManagedBy(mgr).
-		For(&telemetryv1beta1.LogPipeline{}).
-		Complete(); err != nil {
+	if err := ctrl.NewWebhookManagedBy(mgr, &telemetryv1beta1.LogPipeline{}).Complete(); err != nil {
 		return fmt.Errorf("failed to create v1beta1 conversion webhook: %w", err)
 	}
 
 	setupLog.Info("Registering conversion webhooks for MetricPipelines")
 
-	if err := ctrl.NewWebhookManagedBy(mgr).
-		For(&telemetryv1alpha1.MetricPipeline{}).
-		Complete(); err != nil {
+	if err := ctrl.NewWebhookManagedBy(mgr, &telemetryv1alpha1.MetricPipeline{}).Complete(); err != nil {
 		return fmt.Errorf("failed to create v1alpha1 conversion webhook: %w", err)
 	}
 
-	if err := ctrl.NewWebhookManagedBy(mgr).
-		For(&telemetryv1beta1.MetricPipeline{}).
-		Complete(); err != nil {
+	if err := ctrl.NewWebhookManagedBy(mgr, &telemetryv1beta1.MetricPipeline{}).Complete(); err != nil {
 		return fmt.Errorf("failed to create v1beta1 conversion webhook: %w", err)
 	}
 
@@ -541,15 +559,31 @@ func createWebhookConfig(globals config.Global) webhookcert.Config {
 				Namespace: globals.ManagerNamespace(),
 			},
 			CASecretName: types.NamespacedName{
-				Name:      "telemetry-webhook-cert",
+				Name:      names.ManagerWebhookCertSecret,
 				Namespace: globals.TargetNamespace(),
 			},
 			ValidatingWebhookName: types.NamespacedName{
-				Name: "telemetry-validating-webhook.kyma-project.io",
+				Name: names.ValidatingWebhookConfig,
 			},
 			MutatingWebhookName: types.NamespacedName{
-				Name: "telemetry-mutating-webhook.kyma-project.io",
+				Name: names.MutatingWebhookConfig,
 			},
 		},
 	)
+}
+
+// secretCacheTransform removes the Data, StringData, Annotations, and Labels fields from the Secret object before caching it.
+// This is done to reduce memory usage and anyway the client cache is disabled for Secrets which means read requests will always go to the API server.
+func secretCacheTransform(object any) (any, error) {
+	secret, ok := object.(*corev1.Secret)
+	if !ok {
+		return nil, fmt.Errorf("expected Secret object but got: %T", object)
+	}
+
+	secret.Data = nil
+	secret.StringData = nil
+	secret.Annotations = nil
+	secret.Labels = nil
+
+	return secret, nil
 }

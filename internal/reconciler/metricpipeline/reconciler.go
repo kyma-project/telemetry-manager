@@ -4,10 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"gopkg.in/yaml.v3"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -30,6 +29,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
 
+// defaultReplicaCount is the default number of metric gateway replicas when no custom scaling configuration is provided.
 const defaultReplicaCount int32 = 2
 
 type Reconciler struct {
@@ -181,7 +181,7 @@ func New(opts ...Option) *Reconciler {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logf.FromContext(ctx).V(1).Info("Reconciling")
+	logf.FromContext(ctx).V(1).Info("Reconciling MetricPipeline")
 
 	overrideConfig, err := r.overridesHandler.LoadOverrides(ctx)
 	if err != nil {
@@ -207,16 +207,27 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, err
 	}
 
-	err = r.doReconcile(ctx, &metricPipeline)
-	if statusErr := r.updateStatus(ctx, metricPipeline.Name); statusErr != nil {
-		if err != nil {
-			err = fmt.Errorf("failed while updating status: %w: %w", statusErr, err)
-		} else {
-			err = fmt.Errorf("failed to update status: %w", statusErr)
-		}
+	var allErrors error = nil
+
+	if err := r.doReconcile(ctx, &metricPipeline); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to reconcile: %w", err))
 	}
 
-	return ctrl.Result{}, err
+	if err := r.updateStatus(ctx, metricPipeline.Name); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to update status: %w", err))
+	}
+
+	if allErrors != nil {
+		return ctrl.Result{}, allErrors
+	}
+
+	requeueAfter := r.calculateRequeueAfterDuration(ctx, &metricPipeline)
+	if requeueAfter != nil {
+		logf.FromContext(ctx).V(1).Info("Requeuing reconciliation due to certificate about to expire", "RequeueAfter", requeueAfter.String())
+		return ctrl.Result{RequeueAfter: *requeueAfter}, nil
+	}
+
+	return ctrl.Result{}, nil
 }
 
 func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1.MetricPipeline) error {
@@ -234,12 +245,12 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 		return fmt.Errorf("failed to list metric pipelines: %w", err)
 	}
 
+	r.trackPipelineInfoMetric(ctx, allPipelinesList.Items)
+
 	reconcilablePipelines, err := r.getReconcilablePipelines(ctx, allPipelinesList.Items)
 	if err != nil {
 		return fmt.Errorf("failed to fetch deployable metric pipelines: %w", err)
 	}
-
-	r.trackPipelineInfoMetric(ctx, reconcilablePipelines)
 
 	var reconcilablePipelinesRequiringAgents = r.getPipelinesRequiringAgents(reconcilablePipelines)
 
@@ -334,9 +345,15 @@ func isMetricAgentRequired(pipeline *telemetryv1beta1.MetricPipeline) bool {
 
 func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telemetryv1beta1.MetricPipeline, allPipelines []telemetryv1beta1.MetricPipeline) error {
 	shootInfo := k8sutils.GetGardenerShootInfo(ctx, r.Client)
-	clusterName := r.getClusterNameFromTelemetry(ctx, shootInfo.ClusterName)
+	telemetryOptions := telemetryutils.Options{
+		SignalType:                common.SignalTypeMetric,
+		Client:                    r.Client,
+		DefaultReplicas:           defaultReplicaCount,
+		DefaultTelemetryNamespace: r.globals.DefaultTelemetryNamespace(),
+	}
+	clusterName := telemetryutils.GetClusterNameFromTelemetry(ctx, telemetryOptions)
 
-	clusterUID, err := r.getK8sClusterUID(ctx)
+	clusterUID, err := k8sutils.GetClusterUID(ctx, r.Client)
 	if err != nil {
 		return fmt.Errorf("failed to get kube-system namespace for cluster UID: %w", err)
 	}
@@ -356,7 +373,8 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 			ClusterUID:    clusterUID,
 			CloudProvider: shootInfo.CloudProvider,
 		},
-		Enrichments: enrichments,
+		Enrichments:       enrichments,
+		ServiceEnrichment: telemetryutils.GetServiceEnrichmentFromTelemetryOrDefault(ctx, telemetryOptions),
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create collector config: %w", err)
@@ -373,7 +391,7 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 		CollectorConfigYAML:            string(collectorConfigYAML),
 		CollectorEnvVars:               collectorEnvVars,
 		IstioEnabled:                   isIstioActive,
-		Replicas:                       r.getReplicaCountFromTelemetry(ctx),
+		Replicas:                       telemetryutils.GetReplicaCountFromTelemetry(ctx, telemetryOptions),
 		ResourceRequirementsMultiplier: len(allPipelines),
 	}
 
@@ -391,9 +409,15 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *telemetryv1beta1.MetricPipeline, allPipelines []telemetryv1beta1.MetricPipeline) error {
 	isIstioActive := r.istioStatusChecker.IsIstioActive(ctx)
 	shootInfo := k8sutils.GetGardenerShootInfo(ctx, r.Client)
-	clusterName := r.getClusterNameFromTelemetry(ctx, shootInfo.ClusterName)
+	telemetryOptions := telemetryutils.Options{
+		SignalType:                common.SignalTypeMetric,
+		Client:                    r.Client,
+		DefaultReplicas:           defaultReplicaCount,
+		DefaultTelemetryNamespace: r.globals.DefaultTelemetryNamespace(),
+	}
+	clusterName := telemetryutils.GetClusterNameFromTelemetry(ctx, telemetryOptions)
 
-	clusterUID, err := r.getK8sClusterUID(ctx)
+	clusterUID, err := k8sutils.GetClusterUID(ctx, r.Client)
 	if err != nil {
 		return fmt.Errorf("failed to get kube-system namespace for cluster UID: %w", err)
 	}
@@ -415,7 +439,8 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 			ClusterUID:    clusterUID,
 			CloudProvider: shootInfo.CloudProvider,
 		},
-		Enrichments: enrichments,
+		Enrichments:       enrichments,
+		ServiceEnrichment: telemetryutils.GetServiceEnrichmentFromTelemetryOrDefault(ctx, telemetryOptions),
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create collector config: %w", err)
@@ -445,54 +470,6 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 	}
 
 	return nil
-}
-
-func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
-	telemetry, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
-	if err != nil {
-		logf.FromContext(ctx).V(1).Error(err, "Failed to get telemetry: using default scaling")
-		return defaultReplicaCount
-	}
-
-	if telemetry.Spec.Metric != nil &&
-		telemetry.Spec.Metric.Gateway.Scaling.Type == operatorv1beta1.StaticScalingStrategyType &&
-		telemetry.Spec.Metric.Gateway.Scaling.Static != nil &&
-		telemetry.Spec.Metric.Gateway.Scaling.Static.Replicas > 0 {
-		return telemetry.Spec.Metric.Gateway.Scaling.Static.Replicas
-	}
-
-	return defaultReplicaCount
-}
-
-func (r *Reconciler) getClusterNameFromTelemetry(ctx context.Context, defaultName string) string {
-	telemetry, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
-	if err != nil {
-		logf.FromContext(ctx).V(1).Error(err, "Failed to get telemetry: using default shoot name as cluster name")
-		return defaultName
-	}
-
-	if telemetry.Spec.Enrichments != nil &&
-		telemetry.Spec.Enrichments.Cluster != nil &&
-		telemetry.Spec.Enrichments.Cluster.Name != "" {
-		return telemetry.Spec.Enrichments.Cluster.Name
-	}
-
-	return defaultName
-}
-
-func (r *Reconciler) getK8sClusterUID(ctx context.Context) (string, error) {
-	var kubeSystem corev1.Namespace
-
-	kubeSystemNs := types.NamespacedName{
-		Name: "kube-system",
-	}
-
-	err := r.Get(ctx, kubeSystemNs, &kubeSystem)
-	if err != nil {
-		return "", err
-	}
-
-	return string(kubeSystem.UID), nil
 }
 
 func (r *Reconciler) trackPipelineInfoMetric(ctx context.Context, pipelines []telemetryv1beta1.MetricPipeline) {
@@ -547,4 +524,16 @@ func (r *Reconciler) getEndpoint(ctx context.Context, pipeline *telemetryv1beta1
 	}
 
 	return string(endpointBytes)
+}
+
+func (r *Reconciler) calculateRequeueAfterDuration(ctx context.Context, pipeline *telemetryv1beta1.MetricPipeline) *time.Duration {
+	err := r.pipelineValidator.validate(ctx, pipeline)
+
+	var errCertAboutToExpire *tlscert.CertAboutToExpireError
+	if errors.As(err, &errCertAboutToExpire) {
+		duration := time.Until(errCertAboutToExpire.Expiry)
+		return &duration
+	}
+
+	return nil
 }

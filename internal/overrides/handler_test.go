@@ -12,6 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	"github.com/kyma-project/telemetry-manager/internal/config"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 )
 
 func TestLoadOverrides(t *testing.T) {
@@ -87,7 +88,7 @@ tracing:
 			if tt.configMapData != nil {
 				configMap := &corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      configMapName,
+						Name:      names.OverrideConfigMap,
 						Namespace: "test-namespace",
 					},
 					Data: tt.configMapData,
@@ -117,7 +118,7 @@ func TestLoadOverridesResetsLogLevelIfNoConfigMapFound(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().Build()
 	configMap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      configMapName,
+			Name:      names.OverrideConfigMap,
 			Namespace: "test-namespace",
 		},
 		Data: map[string]string{

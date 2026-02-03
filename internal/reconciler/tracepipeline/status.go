@@ -16,7 +16,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
-	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
 	"github.com/kyma-project/telemetry-manager/internal/validators/ottl"
@@ -39,20 +39,25 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) erro
 		return nil
 	}
 
+	var allErrors error = nil
+
 	r.setGatewayHealthyCondition(ctx, &pipeline)
 	r.setGatewayConfigGeneratedCondition(ctx, &pipeline)
-	r.setFlowHealthCondition(ctx, &pipeline)
 
-	if err := r.Status().Update(ctx, &pipeline); err != nil {
-		return fmt.Errorf("failed to update TracePipeline status: %w", err)
+	if err := r.setFlowHealthCondition(ctx, &pipeline); err != nil {
+		allErrors = errors.Join(allErrors, err)
 	}
 
-	return nil
+	if err := r.Status().Update(ctx, &pipeline); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to update TracePipeline status: %w", err))
+	}
+
+	return allErrors
 }
 
 func (r *Reconciler) setGatewayHealthyCondition(ctx context.Context, pipeline *telemetryv1beta1.TracePipeline) {
 	condition := commonstatus.GetGatewayHealthyCondition(ctx,
-		r.gatewayProber, types.NamespacedName{Name: otelcollector.TraceGatewayName, Namespace: r.config.TargetNamespace()},
+		r.gatewayProber, types.NamespacedName{Name: names.TraceGateway, Namespace: r.globals.TargetNamespace()},
 		r.errToMsgConverter,
 		commonstatus.SignalTypeTraces)
 	condition.ObservedGeneration = pipeline.Generation
@@ -107,8 +112,8 @@ func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipel
 	return conditions.EvaluateTLSCertCondition(err)
 }
 
-func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telemetryv1beta1.TracePipeline) {
-	status, reason := r.evaluateFlowHealthCondition(ctx, pipeline)
+func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telemetryv1beta1.TracePipeline) error {
+	status, reason, err := r.evaluateFlowHealthCondition(ctx, pipeline)
 
 	condition := metav1.Condition{
 		Type:               conditions.TypeFlowHealthy,
@@ -119,28 +124,29 @@ func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telem
 	}
 
 	meta.SetStatusCondition(&pipeline.Status.Conditions, condition)
+
+	return err
 }
 
-func (r *Reconciler) evaluateFlowHealthCondition(ctx context.Context, pipeline *telemetryv1beta1.TracePipeline) (metav1.ConditionStatus, string) {
+func (r *Reconciler) evaluateFlowHealthCondition(ctx context.Context, pipeline *telemetryv1beta1.TracePipeline) (metav1.ConditionStatus, string, error) {
 	configGeneratedStatus, _, _ := r.evaluateConfigGeneratedCondition(ctx, pipeline)
 	if configGeneratedStatus == metav1.ConditionFalse {
-		return metav1.ConditionFalse, conditions.ReasonSelfMonConfigNotGenerated
+		return metav1.ConditionFalse, conditions.ReasonSelfMonConfigNotGenerated, nil
 	}
 
 	probeResult, err := r.flowHealthProber.Probe(ctx, pipeline.Name)
 	if err != nil {
-		logf.FromContext(ctx).Error(err, "Failed to probe flow health")
-		return metav1.ConditionUnknown, conditions.ReasonSelfMonGatewayProbingFailed
+		return metav1.ConditionUnknown, conditions.ReasonSelfMonGatewayProbingFailed, fmt.Errorf("failed to probe flow health: %w", err)
 	}
 
 	logf.FromContext(ctx).V(1).Info("Probed flow health", "result", probeResult)
 
 	reason := flowHealthReasonFor(probeResult)
 	if probeResult.Healthy {
-		return metav1.ConditionTrue, reason
+		return metav1.ConditionTrue, reason, nil
 	}
 
-	return metav1.ConditionFalse, reason
+	return metav1.ConditionFalse, reason, nil
 }
 
 func flowHealthReasonFor(probeResult prober.OTelGatewayProbeResult) string {

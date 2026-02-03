@@ -1,0 +1,126 @@
+extensions:
+    health_check:
+        endpoint: ${MY_POD_IP}:13133
+    pprof:
+        endpoint: 127.0.0.1:1777
+service:
+    pipelines:
+        traces/test:
+            receivers:
+                - otlp
+            processors:
+                - memory_limiter
+                - transform/drop-istio-service-enrichment
+                - transform/drop-unknown-service-name
+                - k8sattributes
+                - istio_noise_filter
+                - transform/insert-cluster-attributes
+                - transform/drop-kyma-attributes
+                - batch
+            exporters:
+                - otlp_grpc/test
+    telemetry:
+        metrics:
+            readers:
+                - pull:
+                    exporter:
+                        prometheus:
+                            host: ${MY_POD_IP}
+                            port: 8888
+        logs:
+            level: info
+            encoding: json
+    extensions:
+        - health_check
+        - pprof
+receivers:
+    otlp:
+        protocols:
+            http:
+                endpoint: ${MY_POD_IP}:4318
+            grpc:
+                endpoint: ${MY_POD_IP}:4317
+processors:
+    batch:
+        send_batch_size: 512
+        timeout: 10s
+        send_batch_max_size: 512
+    istio_noise_filter: {}
+    k8sattributes:
+        auth_type: serviceAccount
+        passthrough: false
+        extract:
+            metadata:
+                - k8s.pod.name
+                - k8s.node.name
+                - k8s.namespace.name
+                - k8s.deployment.name
+                - k8s.statefulset.name
+                - k8s.daemonset.name
+                - k8s.cronjob.name
+                - k8s.job.name
+                - service.namespace
+                - service.name
+                - service.version
+                - service.instance.id
+            labels:
+                - from: node
+                  key: topology.kubernetes.io/region
+                  tag_name: cloud.region
+                - from: node
+                  key: topology.kubernetes.io/zone
+                  tag_name: cloud.availability_zone
+                - from: node
+                  key: node.kubernetes.io/instance-type
+                  tag_name: host.type
+                - from: node
+                  key: kubernetes.io/arch
+                  tag_name: host.arch
+            otel_annotations: true
+            deployment_name_from_replicaset: true
+        pod_association:
+            - sources:
+                - from: resource_attribute
+                  name: k8s.pod.ip
+            - sources:
+                - from: resource_attribute
+                  name: k8s.pod.uid
+            - sources:
+                - from: connection
+    memory_limiter:
+        check_interval: 1s
+        limit_percentage: 75
+        spike_limit_percentage: 15
+    transform/drop-istio-service-enrichment:
+        error_mode: ignore
+        trace_statements:
+            - statements:
+                - delete_matching_keys(resource.attributes, "service.*") where span.attributes["component"] == "proxy"
+    transform/drop-kyma-attributes:
+        error_mode: ignore
+        trace_statements:
+            - statements:
+                - delete_matching_keys(resource.attributes, "kyma.*")
+    transform/drop-unknown-service-name:
+        error_mode: ignore
+        trace_statements:
+            - statements:
+                - delete_key(resource.attributes, "service.name") where HasPrefix(resource.attributes["service.name"], "unknown_service")
+    transform/insert-cluster-attributes:
+        error_mode: ignore
+        trace_statements:
+            - statements:
+                - set(resource.attributes["k8s.cluster.name"], "${KUBERNETES_SERVICE_HOST}") where resource.attributes["k8s.cluster.name"] == nil or resource.attributes["k8s.cluster.name"] == ""
+                - set(resource.attributes["k8s.cluster.uid"], "") where resource.attributes["k8s.cluster.uid"] == nil or resource.attributes["k8s.cluster.uid"] == ""
+                - set(resource.attributes["cloud.provider"], "test-cloud-provider") where resource.attributes["cloud.provider"] == nil or resource.attributes["cloud.provider"] == ""
+exporters:
+    otlp_grpc/test:
+        endpoint: ${OTLP_ENDPOINT_TEST}
+        sending_queue:
+            enabled: true
+            queue_size: 256
+        retry_on_failure:
+            enabled: true
+            initial_interval: 5s
+            max_interval: 30s
+            max_elapsed_time: 300s

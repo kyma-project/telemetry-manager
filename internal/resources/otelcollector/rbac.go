@@ -6,6 +6,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 )
 
 type rbac struct {
@@ -109,7 +110,7 @@ func withRoleBinding() RBACOption {
 
 func makeTraceGatewayRBAC(namespace string) rbac {
 	return *newRBAC(
-		types.NamespacedName{Name: TraceGatewayName, Namespace: namespace},
+		types.NamespacedName{Name: names.TraceGateway, Namespace: namespace},
 		commonresources.LabelValueK8sComponentGateway,
 		withClusterRole(withK8sAttributeRules()),
 		withClusterRoleBinding(),
@@ -118,7 +119,7 @@ func makeTraceGatewayRBAC(namespace string) rbac {
 
 func makeMetricAgentRBAC(namespace string) rbac {
 	return *newRBAC(
-		types.NamespacedName{Name: MetricAgentName, Namespace: namespace},
+		types.NamespacedName{Name: names.MetricAgent, Namespace: namespace},
 		commonresources.LabelValueK8sComponentAgent,
 		withClusterRole(withKubeletStatsRules(), withPrometheusRules(), withK8sClusterRules()),
 		withClusterRoleBinding(),
@@ -129,7 +130,7 @@ func makeMetricAgentRBAC(namespace string) rbac {
 
 func makeMetricGatewayRBAC(namespace string) rbac {
 	return *newRBAC(
-		types.NamespacedName{Name: MetricGatewayName, Namespace: namespace},
+		types.NamespacedName{Name: names.MetricGateway, Namespace: namespace},
 		commonresources.LabelValueK8sComponentGateway,
 		withClusterRole(withK8sAttributeRules(), withKymaStatsRules()),
 		withClusterRoleBinding(),
@@ -140,15 +141,25 @@ func makeMetricGatewayRBAC(namespace string) rbac {
 
 func makeLogAgentRBAC(namespace string) rbac {
 	return *newRBAC(
-		types.NamespacedName{Name: LogAgentName, Namespace: namespace},
+		types.NamespacedName{Name: names.LogAgent, Namespace: namespace},
 		commonresources.LabelValueK8sComponentAgent,
 		withClusterRole(withK8sAttributeRules()),
 		withClusterRoleBinding(),
 	)
 }
+
 func makeLogGatewayRBAC(namespace string) rbac {
 	return *newRBAC(
-		types.NamespacedName{Name: LogGatewayName, Namespace: namespace},
+		types.NamespacedName{Name: names.LogGateway, Namespace: namespace},
+		commonresources.LabelValueK8sComponentGateway,
+		withClusterRole(withK8sAttributeRules()),
+		withClusterRoleBinding(),
+	)
+}
+
+func makeOTLPGatewayRBAC(namespace string) rbac {
+	return *newRBAC(
+		types.NamespacedName{Name: names.OTLPGateway, Namespace: namespace},
 		commonresources.LabelValueK8sComponentGateway,
 		withClusterRole(withK8sAttributeRules()),
 		withClusterRoleBinding(),

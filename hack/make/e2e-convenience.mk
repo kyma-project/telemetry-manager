@@ -9,8 +9,12 @@ run-e2e-log-agent: ## Run log-agent e2e tests
 	$(MAKE) run-e2e TEST_ID=e2e-log-agent TEST_PATH="./test/e2e/..." TEST_LABELS="log-agent"
 
 .PHONY: run-e2e-log-gateway
-run-e2e-log-gateway: ## Run log-gateway e2e tests
-	$(MAKE) run-e2e TEST_ID=e2e-log-gateway TEST_PATH="./test/e2e/..." TEST_LABELS="log-gateway"
+run-e2e-log-gateway: ## Run log-gateway and not experimental e2e tests
+	$(MAKE) run-e2e TEST_ID=e2e-log-gateway TEST_PATH="./test/e2e/..." TEST_LABELS="log-gateway and not experimental"
+
+.PHONY: run-e2e-log-gateway-experimental
+run-e2e-log-gateway-experimental: ## Run log-gateway and experimental e2e tests
+	$(MAKE) run-e2e TEST_ID=e2e-log-gateway-experimental TEST_PATH="./test/e2e/..." TEST_LABELS="log-gateway and experimental"
 
 .PHONY: run-e2e-logs-max-pipeline
 run-e2e-logs-max-pipeline: ## Run logs-max-pipeline e2e tests
@@ -93,16 +97,20 @@ run-e2e-experimental-fluent-bit: ## Run experimental and fluent-bit e2e tests
 	$(MAKE) run-e2e TEST_ID=e2e-experimental-fluent-bit TEST_PATH="./test/e2e/..." TEST_LABELS="experimental and fluent-bit"
 
 .PHONY: run-integration-istio-otel
-run-integration-istio-otel: ## Run istio and not fluent-bit integration tests
-	$(MAKE) run-e2e TEST_ID=integration-istio-otel TEST_PATH="./test/integration/..." TEST_LABELS="istio and not fluent-bit"
+run-integration-istio-otel: ## Run istio and not fluent-bit and not experimental integration tests
+	$(MAKE) run-e2e TEST_ID=integration-istio-otel TEST_PATH="./test/integration/..." TEST_LABELS="istio and not fluent-bit and not experimental"
 
 .PHONY: run-integration-istio-fluent-bit
 run-integration-istio-fluent-bit: ## Run istio and fluent-bit integration tests
 	$(MAKE) run-e2e TEST_ID=integration-istio-fluent-bit TEST_PATH="./test/integration/..." TEST_LABELS="istio and fluent-bit"
 
+.PHONY: run-integration-istio-otel-experimental
+run-integration-istio-otel-experimental: ## Run istio and experimental integration tests
+	$(MAKE) run-e2e TEST_ID=integration-istio-otel-experimental TEST_PATH="./test/integration/..." TEST_LABELS="istio and experimental"
+
 
 .PHONY: run-all-e2e-logs
-run-all-e2e-logs: run-e2e-fluent-bit run-e2e-log-agent run-e2e-log-gateway run-e2e-logs-max-pipeline run-e2e-fluent-bit-max-pipeline run-e2e-logs-misc ## Run all log-related E2E tests
+run-all-e2e-logs: run-e2e-fluent-bit run-e2e-log-agent run-e2e-log-gateway run-e2e-log-gateway-experimental run-e2e-logs-max-pipeline run-e2e-fluent-bit-max-pipeline run-e2e-logs-misc ## Run all log-related E2E tests
 
 .PHONY: run-all-e2e-metrics
 run-all-e2e-metrics: run-e2e-metrics-misc run-e2e-metrics-max-pipeline ## Run all metrics-related E2E tests

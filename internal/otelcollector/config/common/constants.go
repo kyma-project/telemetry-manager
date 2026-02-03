@@ -7,10 +7,12 @@ const (
 	EnvVarGoDebug         = "GODEBUG"
 )
 
+type SignalType string
+
 const (
-	SignalTypeMetric = "metric"
-	SignalTypeTrace  = "trace"
-	SignalTypeLog    = "log"
+	SignalTypeMetric SignalType = "metric"
+	SignalTypeTrace  SignalType = "trace"
+	SignalTypeLog    SignalType = "log"
 )
 
 const (
@@ -119,6 +121,7 @@ const (
 	ComponentIDUserDefinedTransformProcessor           = "transform/user-defined-%s" // dynamically filled with pipeline name
 	ComponentIDInsertClusterAttributesProcessor        = "transform/insert-cluster-attributes"
 	ComponentIDDropKymaAttributesProcessor             = "transform/drop-kyma-attributes"
+	ComponentIDDropUnknownServiceNameProcessor         = "transform/drop-unknown-service-name"
 
 	ComponentIDSetKymaInputNameRuntimeProcessor    ComponentID = "transform/set-kyma-input-name-runtime"
 	ComponentIDSetKymaInputNameIstioProcessor      ComponentID = "transform/set-kyma-input-name-istio"
@@ -158,13 +161,17 @@ const (
 	ComponentIDSetInstrumentationScopeIstioProcessor       = "transform/set-instrumentation-scope-istio"
 	ComponentIDInsertSkipEnrichmentAttributeProcessor      = "transform/insert-skip-enrichment-attribute"
 
+	// Trace-Specific Processors
+
+	ComponentIDDropIstioServiceEnrichmentProcessor = "transform/drop-istio-service-enrichment"
+
 	// ================================================================================
 	// EXPORTERS
 	// ================================================================================
 
-	ComponentIDOTLPHTTPExporter = "otlphttp/%s" // dynamically filled with pipeline name
-	ComponentIDOTLPGRPCExporter = "otlp/%s"     // dynamically filled with pipeline name
-	ComponentIDOTLPExporter     = "otlp"        // static OTLP exporter
+	ComponentIDOTLPHTTPExporter = "otlp_http/%s" // dynamically filled with pipeline name
+	ComponentIDOTLPGRPCExporter = "otlp_grpc/%s" // dynamically filled with pipeline name
+	ComponentIDOTLPExporter     = "otlp"         // static OTLP exporter
 
 	// ================================================================================
 	// CONNECTORS

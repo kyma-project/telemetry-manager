@@ -9,8 +9,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/namespaces"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
-	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
-	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 )
 
 const (
@@ -84,8 +83,8 @@ func createExcludePath(runtime *telemetryv1beta1.LogPipelineRuntimeInput, collec
 	var excludePath, excludeContainers []string
 
 	if !collectAgentLogs {
-		excludePath = append(excludePath, makePath("kyma-system", fmt.Sprintf("%s-*", fluentbit.LogAgentName), "fluent-bit"))
-		excludePath = append(excludePath, makePath("kyma-system", fmt.Sprintf("%s-*", otelcollector.LogAgentName), "collector"))
+		excludePath = append(excludePath, makePath("kyma-system", fmt.Sprintf("%s-*", names.FluentBit), "fluent-bit"))
+		excludePath = append(excludePath, makePath("kyma-system", fmt.Sprintf("%s-*", names.LogAgent), "collector"))
 	}
 
 	excludeSystemLogAgentPath := makePath("kyma-system", fmt.Sprintf("*%s-*", commonresources.SystemLogAgentName), "collector")

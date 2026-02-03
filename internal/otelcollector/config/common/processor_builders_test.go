@@ -66,6 +66,20 @@ func TestDropKymaAttributesProcessorStatements(t *testing.T) {
 	require.ElementsMatch(expectedProcessorStatements, processorStatements, "Attributes should match")
 }
 
+func TestDropUnknownServiceNameProcessorStatements(t *testing.T) {
+	require := require.New(t)
+
+	expectedProcessorStatements := []TransformProcessorStatements{{
+		Statements: []string{
+			"delete_key(resource.attributes, \"service.name\") where HasPrefix(resource.attributes[\"service.name\"], \"unknown_service\")",
+		},
+	}}
+
+	processorStatements := DropUnknownServiceNameProcessorStatements()
+
+	require.ElementsMatch(expectedProcessorStatements, processorStatements, "Attributes should match")
+}
+
 func TestTransformedInstrumentationScope(t *testing.T) {
 	instrumentationScopeVersion := "main"
 	tests := []struct {
@@ -172,8 +186,6 @@ func compareTransformProcessor(got, want *TransformProcessor) bool {
 }
 
 func TestK8sAttributesProcessorConfig(t *testing.T) {
-	require := require.New(t)
-
 	expectedPodAssociations := []PodAssociations{
 		{
 			Sources: []PodAssociation{{From: "resource_attribute", Name: "k8s.pod.ip"}},
@@ -185,72 +197,138 @@ func TestK8sAttributesProcessorConfig(t *testing.T) {
 			Sources: []PodAssociation{{From: "connection"}},
 		},
 	}
-	expectedK8sAttributes := []string{
-		"k8s.pod.name",
-		"k8s.node.name",
-		"k8s.namespace.name",
-		"k8s.deployment.name",
-		"k8s.statefulset.name",
-		"k8s.daemonset.name",
-		"k8s.cronjob.name",
-		"k8s.job.name",
+
+	tests := []struct {
+		name                  string
+		isOTel                bool
+		expectedK8sAttributes []string
+		expectedExtractLabels []ExtractLabel
+	}{
+		{
+			name:   "kyma-legacy",
+			isOTel: false,
+			expectedK8sAttributes: []string{
+				"k8s.pod.name",
+				"k8s.node.name",
+				"k8s.namespace.name",
+				"k8s.deployment.name",
+				"k8s.statefulset.name",
+				"k8s.daemonset.name",
+				"k8s.cronjob.name",
+				"k8s.job.name",
+			},
+			expectedExtractLabels: []ExtractLabel{
+				{
+					From:    "pod",
+					Key:     "app.kubernetes.io/name",
+					TagName: "kyma.kubernetes_io_app_name",
+				},
+				{
+					From:    "pod",
+					Key:     "app",
+					TagName: "kyma.app_name",
+				},
+				{
+					From:    "node",
+					Key:     "topology.kubernetes.io/region",
+					TagName: "cloud.region",
+				},
+				{
+					From:    "node",
+					Key:     "topology.kubernetes.io/zone",
+					TagName: "cloud.availability_zone",
+				},
+				{
+					From:    "node",
+					Key:     "node.kubernetes.io/instance-type",
+					TagName: "host.type",
+				},
+				{
+					From:    "node",
+					Key:     "kubernetes.io/arch",
+					TagName: "host.arch",
+				},
+				{
+					From:     "pod",
+					KeyRegex: "(app.kubernetes.io/name.*)",
+					TagName:  "k8s.pod.label.$0",
+				},
+				{
+					From:     "pod",
+					KeyRegex: "(^app$)",
+					TagName:  "k8s.pod.label.$0",
+				},
+			},
+		},
+		{
+			name:   "otel",
+			isOTel: true,
+			expectedK8sAttributes: []string{
+				"k8s.pod.name",
+				"k8s.node.name",
+				"k8s.namespace.name",
+				"k8s.deployment.name",
+				"k8s.statefulset.name",
+				"k8s.daemonset.name",
+				"k8s.cronjob.name",
+				"k8s.job.name",
+				"service.namespace",
+				"service.name",
+				"service.version",
+				"service.instance.id",
+			},
+			expectedExtractLabels: []ExtractLabel{
+				{
+					From:    "node",
+					Key:     "topology.kubernetes.io/region",
+					TagName: "cloud.region",
+				},
+				{
+					From:    "node",
+					Key:     "topology.kubernetes.io/zone",
+					TagName: "cloud.availability_zone",
+				},
+				{
+					From:    "node",
+					Key:     "node.kubernetes.io/instance-type",
+					TagName: "host.type",
+				},
+				{
+					From:    "node",
+					Key:     "kubernetes.io/arch",
+					TagName: "host.arch",
+				},
+				{
+					From:     "pod",
+					KeyRegex: "(app.kubernetes.io/name.*)",
+					TagName:  "k8s.pod.label.$0",
+				},
+				{
+					From:     "pod",
+					KeyRegex: "(^app$)",
+					TagName:  "k8s.pod.label.$0",
+				},
+			},
+		},
 	}
-	expectedExtractLabels := []ExtractLabel{
-		{
-			From:    "pod",
-			Key:     "app.kubernetes.io/name",
-			TagName: "kyma.kubernetes_io_app_name",
-		},
-		{
-			From:    "pod",
-			Key:     "app",
-			TagName: "kyma.app_name",
-		},
-		{
-			From:    "node",
-			Key:     "topology.kubernetes.io/region",
-			TagName: "cloud.region",
-		},
-		{
-			From:    "node",
-			Key:     "topology.kubernetes.io/zone",
-			TagName: "cloud.availability_zone",
-		},
-		{
-			From:    "node",
-			Key:     "node.kubernetes.io/instance-type",
-			TagName: "host.type",
-		},
-		{
-			From:    "node",
-			Key:     "kubernetes.io/arch",
-			TagName: "host.arch",
-		},
-		{
-			From:     "pod",
-			KeyRegex: "(app.kubernetes.io/name.*)",
-			TagName:  "k8s.pod.label.$0",
-		},
-		{
-			From:     "pod",
-			KeyRegex: "(^app$)",
-			TagName:  "k8s.pod.label.$0",
-		},
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			config := K8sAttributesProcessorConfig(&operatorv1beta1.EnrichmentSpec{
+				ExtractPodLabels: []operatorv1beta1.PodLabel{
+					{Key: "", KeyPrefix: "app.kubernetes.io/name"},
+					{Key: "app", KeyPrefix: ""},
+				},
+			}, tt.isOTel)
+
+			require.Equal(t, "serviceAccount", config.AuthType)
+			require.Equal(t, false, config.Passthrough)
+			require.Equal(t, expectedPodAssociations, config.PodAssociation, "PodAssociation should match")
+
+			require.ElementsMatch(t, tt.expectedK8sAttributes, config.Extract.Metadata, "Metadata should match")
+			require.ElementsMatch(t, tt.expectedExtractLabels, config.Extract.Labels, "Labels should match")
+		})
 	}
-
-	config := K8sAttributesProcessorConfig(&operatorv1beta1.EnrichmentSpec{
-		ExtractPodLabels: []operatorv1beta1.PodLabel{
-			{Key: "", KeyPrefix: "app.kubernetes.io/name"},
-			{Key: "app", KeyPrefix: ""},
-		},
-	})
-
-	require.Equal("serviceAccount", config.AuthType)
-	require.Equal(false, config.Passthrough)
-	require.Equal(expectedPodAssociations, config.PodAssociation, "PodAssociation should match")
-
-	require.ElementsMatch(expectedK8sAttributes, config.Extract.Metadata, "Metadata should match")
-	require.ElementsMatch(expectedExtractLabels, config.Extract.Labels, "Labels should match")
 }
 
 func TestBuildPodLabelEnrichments(t *testing.T) {

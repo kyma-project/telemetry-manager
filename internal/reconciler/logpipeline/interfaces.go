@@ -4,6 +4,7 @@ import (
 	"context"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
@@ -24,7 +25,7 @@ type FlowHealthProber interface {
 type LogPipelineReconciler interface {
 	// Reconcile processes a LogPipeline and ensures the desired state is achieved.
 	// This includes deploying necessary resources, updating configurations, and managing the pipeline lifecycle.
-	Reconcile(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) error
+	Reconcile(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) (ctrl.Result, error)
 
 	// SupportedOutput returns the output mode that this reconciler supports (e.g., FluentBit or OTel).
 	SupportedOutput() logpipelineutils.Mode

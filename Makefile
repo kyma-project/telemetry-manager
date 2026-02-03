@@ -210,20 +210,8 @@ check-coverage: $(GO_TEST_COVERAGE) ## Check test coverage against thresholds
 
 .PHONY: update-golden-files
 update-golden-files: ## Update all golden files for config builder tests
-	@echo "Updating golden files for otelcollector config builder tests..."
-	@go test ./internal/otelcollector/config/tracegateway -v -run TestBuildConfig -- -update-golden-files || true
-	@go test ./internal/otelcollector/config/metricgateway -v -run TestBuildConfig -- -update-golden-files || true
-	@go test ./internal/otelcollector/config/loggateway -v -run TestBuildConfig -- -update-golden-files || true
-	@go test ./internal/otelcollector/config/logagent -v -run TestBuildConfig -- -update-golden-files || true
-	@go test ./internal/otelcollector/config/metricagent -v -run TestBuildConfig -- -update-golden-files || true
-	@echo "Updating golden files for selfmonitor tests..."
-	@go test ./internal/selfmonitor/config -v -run TestMakeConfigMarshalling -- -update-golden-files || true
-	@go test ./internal/selfmonitor/config -v -run TestMakeRules -- -update-golden-files || true
-	@echo "Updating golden files for resource tests..."
-	@go test ./internal/resources/fluentbit -v -run TestAgent_ApplyResources -- -update-golden-files || true
-	@go test ./internal/resources/otelcollector -v -run TestAgent_ApplyResources -- -update-golden-files || true
-	@go test ./internal/resources/otelcollector -v -run TestGateway_ApplyResources -- -update-golden-files || true
-	@go test ./internal/resources/selfmonitor -v -run TestApplySelfMonitorResources -- -update-golden-files || true
+	@echo "Updating all golden files in the project..."
+	go test $$(go list ./... | grep -v /test/) -- -update-golden-files || true
 	@echo "All golden files updated successfully"
 
 ##@ Build
@@ -351,6 +339,7 @@ deploy-experimental: manifests-experimental $(HELM) ## Deploy telemetry manager 
 		--set manager.container.image.repository=${MANAGER_IMAGE} \
 		--set manager.container.image.pullPolicy="Always" \
 		--set manager.container.env.operateInFipsMode=true \
+		--set manager.container.args.deploy-otlp-gateway=true \
 		--namespace kyma-system \
 	| kubectl apply -f -
 
@@ -363,6 +352,7 @@ deploy-experimental-no-fips: manifests-experimental $(HELM) ## Deploy telemetry 
 		--set manager.container.image.repository=${MANAGER_IMAGE} \
 		--set manager.container.image.pullPolicy="Always" \
 		--set manager.container.env.operateInFipsMode=false \
+		--set manager.container.args.deploy-otlp-gateway=true \
 		--namespace kyma-system \
 	| kubectl apply -f -
 

@@ -510,7 +510,12 @@ func TestFlowHealthCondition(t *testing.T) {
 			reconciler := newTestReconciler(testClient, WithFlowHealthProber(flowHealthProber))
 
 			result := reconcileAndGet(t, testClient, reconciler, pipeline.Name)
-			require.NoError(t, result.err)
+
+			if tt.probeErr != nil {
+				require.Error(t, result.err)
+			} else {
+				require.NoError(t, result.err)
+			}
 
 			cond := meta.FindStatusCondition(result.pipeline.Status.Conditions, conditions.TypeFlowHealthy)
 			require.Equal(t, tt.expectedStatus, cond.Status)
@@ -770,6 +775,18 @@ func TestPipelineInfoTracking(t *testing.T) {
 			pipeline: testutils.NewLogPipelineBuilder().
 				WithName("pipeline-endpoint-plain").
 				WithHTTPOutput(testutils.HTTPHost("endpoint.example.com")).
+				Build(),
+			expectedEndpoint: "endpoint.example.com",
+			expectedFeatureUsage: []string{
+				metrics.FeatureOutputHTTP,
+			},
+		},
+		{
+			name: "non-reconcilable pipeline with disabled runtime input",
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("pipeline-non-reconcilable").
+				WithHTTPOutput(testutils.HTTPHost("endpoint.example.com")).
+				WithRuntimeInput(false).
 				Build(),
 			expectedEndpoint: "endpoint.example.com",
 			expectedFeatureUsage: []string{
