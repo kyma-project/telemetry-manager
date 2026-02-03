@@ -5,9 +5,10 @@ To use the OpenTelemetry Protocol (OTLP) for sending logs, you must migrate your
 ## Prerequisites
 
 * You have an active Kyma cluster with the Telemetry module added.
-* You have one or more LogPipeline resources that use the `http` or `custom` output.
 * Your observability backend has an OTLP ingestion endpoint.
   If your backend doesn't support OTLP natively, you must run a custom OTel Collector as gateway between the Telemetry module and the target backend.
+* You have one or more LogPipeline resources that use the `http` or `custom` output.
+* If your LogPipeline still uses the `v1alpha1` API, migrate it to `v1beta1`. For details, see [Migrate Telemetry Pipelines to v1beta1](../migration-guide.md).
 
 ## Context
 
@@ -15,15 +16,15 @@ When you want to migrate to the `otlp` output, create a new LogPipeline. To prev
 
 You can't modify an existing LogPipeline to change its output type. You must create a new resource.
 
-See the following mapping of deprecated fields to their new OTLP-based counterparts:
+See how the deprecated fields map to their new OTLP-based counterparts:
 
 | Deprecated Field | Migration Action |
 |:--:|:--:|
-| spec.output.http or spec.output.custom | Required. Replace with spec.output.otlp. |
-| spec.filters                           | Rewrite the custom Fluent Bit filters using transform or filter expressions.|
-| spec.variables and spec.files          | These fields were used by custom filters. This functionality is now handled by transform or filter expressions.|
-| spec.input.runtime.dropLabels      | This field is no longer used. Configure label enrichment in the central Telemetry resource.|
-| spec.input.runtime.keepAnnotations | This functionality is not supported with the OTLP output and cannot be migrated.|
+| **spec.output.http** or **spec.output.custom** | Replace with **spec.output.otlp**. |
+| **spec.filters**                           | Rewrite custom Fluent Bit filters as OTTL transform or filter expressions.|
+| **spec.variables** and **spec.files**          | Incorporate the logic of your custom filters into your new OTTL transform or filter expressions. |
+| **spec.input.runtime.dropLabels**      | Configure label enrichment in the central Telemetry resource instead.|
+| **spec.input.runtime.keepAnnotations** | Remove this functionality, it's not supported with the `otlp` output. |
 
 ## Procedure
 
@@ -40,7 +41,7 @@ See the following mapping of deprecated fields to their new OTLP-based counterpa
       input:
         runtime:             # OTLP supports the runtime input, but you must replace the dropLabels and keepAnnotation flags
           dropLabels: true       # Configure label enrichment centrally
-          keepAnnotations: true  # no longer supported
+          keepAnnotations: true  # No longer supported
       filters:
         custom: |                # Replace with a transform or filter expression
           ...
