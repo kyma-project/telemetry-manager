@@ -49,18 +49,28 @@ func CreateObjectsWithoutAutomaticCleanup(t *testing.T, resources ...client.Obje
 func createObjects(t *testing.T, resources ...client.Object) error {
 	t.Helper()
 
-	mixed, pipelines := sortObjects(resources)
+	namespaces, others, pipelines := sortObjects(resources)
 
-	for _, resource := range mixed {
+	// First: create namespaces and wait for them to be ready
+	for _, namespace := range namespaces {
+		err := createObject(t, namespace)
+		if err != nil {
+			return err
+		}
+		// Wait for namespace to be ready (default service account created)
+		assert.NamespaceReady(t, namespace.(*corev1.Namespace).Name)
+	}
+
+	// Second: create all other resources
+	for _, resource := range others {
 		err := createObject(t, resource)
 		if err != nil {
 			return err
 		}
 	}
 
-	// wait for all deployments, daemonsets, statefulsets, pods to be ready before applying pipelines
-	for _, resource := range mixed {
-		// assert object readiness
+	// Third: wait for workloads to be ready before applying pipelines
+	for _, resource := range others {
 		switch r := resource.(type) {
 		case *appsv1.Deployment:
 			assert.DeploymentReady(t, types.NamespacedName{Name: r.Name, Namespace: r.Namespace})
@@ -70,12 +80,10 @@ func createObjects(t *testing.T, resources ...client.Object) error {
 			assert.StatefulSetReady(t, types.NamespacedName{Name: r.Name, Namespace: r.Namespace})
 		case *corev1.Pod:
 			assert.PodReady(t, types.NamespacedName{Name: r.Name, Namespace: r.Namespace})
-		case *corev1.Namespace:
-			assert.NamespaceReady(t, r.Name)
 		}
 	}
 
-	// apply pipeline objects
+	// Finally: apply pipeline objects
 	for _, resource := range pipelines {
 		err := createObject(t, resource)
 		if err != nil {
@@ -126,8 +134,8 @@ func allObjectsDeleted(resources ...client.Object) error {
 	return nil
 }
 
-func sortObjects(resources []client.Object) ([]client.Object, []client.Object) {
-	// Split sorted resources into three slices: namespaces, pipelines, others
+func sortObjects(resources []client.Object) ([]client.Object, []client.Object, []client.Object) {
+	// Split resources into three slices: namespaces, pipelines, others
 	var (
 		namespaces []client.Object
 		pipelines  []client.Object
@@ -146,7 +154,7 @@ func sortObjects(resources []client.Object) ([]client.Object, []client.Object) {
 		}
 	}
 
-	return append(namespaces, others...), pipelines
+	return namespaces, others, pipelines
 }
 
 // DeleteObjects deletes k8s objects passed as a slice.
