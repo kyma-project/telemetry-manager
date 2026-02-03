@@ -39,27 +39,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: '1.56.1'  # latest tag before the current changes
 
-      - name: Checkout latest release
-        id: latest-tag
-        shell: bash
-        run: |
-          # Get the latest release tag from GitHub
-          LATEST_TAG=$(curl -s https://api.github.com/repos/kyma-project/telemetry-manager/releases/latest | jq -r '.tag_name')
-          echo "Latest release tag: ${LATEST_TAG}"
-          
-          MANAGER_IMAGE=europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:${LATEST_TAG}
-          echo "Deploying Manager using image ${MANAGER_IMAGE}"
-          echo "manager-image=${MANAGER_IMAGE}" >> $GITHUB_OUTPUT
-          
-          # Extract major.minor version from tag (e.g., 1.54.0 -> 1.54)
-          RELEASE_BRANCH=$(echo ${LATEST_TAG} | sed -E 's/^v?([0-9]+\.[0-9]+)\.[0-9]+$/release-\1/')
-          echo "Checking out release branch: ${RELEASE_BRANCH}"
-          
-          # Checkout the corresponding release branch for tests
-          git fetch origin ${RELEASE_BRANCH}
-          git checkout ${RELEASE_BRANCH}
-          echo "release-branch=${RELEASE_BRANCH}" >> $GITHUB_OUTPUT
 
       - name: Setup test environment
         uses: "./.github/template/test-setup"
@@ -69,7 +51,7 @@ jobs:
           manager-image: ${{ steps.latest-tag.outputs.manager-image }}
         env:
           #TODO: Remove after 1.54.0 release
-          MANAGER_IMAGE: ${{ steps.latest-tag.outputs.manager-image }}
+          MANAGER_IMAGE: 1.56.1
 
       - name: Run tests on latest tag
         shell: bash
