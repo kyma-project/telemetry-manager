@@ -70,6 +70,8 @@ func createObjects(t *testing.T, resources ...client.Object) error {
 			assert.StatefulSetReady(t, types.NamespacedName{Name: r.Name, Namespace: r.Namespace})
 		case *corev1.Pod:
 			assert.PodReady(t, types.NamespacedName{Name: r.Name, Namespace: r.Namespace})
+		case *corev1.Namespace:
+			assert.NamespaceReady(t, r.Name)
 		}
 	}
 
