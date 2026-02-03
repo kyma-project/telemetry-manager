@@ -8,7 +8,7 @@ To use the OpenTelemetry Protocol (OTLP) for sending logs, you must migrate your
 * Your observability backend has an OTLP ingestion endpoint.
   If your backend doesn't support OTLP natively, you must run a custom OTel Collector as gateway between the Telemetry module and the target backend.
 * You have one or more LogPipeline resources that use the `http` or `custom` output.
-* If your LogPipeline still uses the `v1alpha1` API, migrate it to `v1beta1`. For details, see [Migrate Telemetry Pipelines to v1beta1](../migration-to-v1beta1-api.md).
+  > **TIP:** If your LogPipeline still uses the `v1alpha1` API, migrate it to `v1beta1`. For details, see [Migrate Telemetry Pipelines to v1beta1](../migration-to-v1beta1-api.md).
 
 ## Context
 
