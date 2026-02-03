@@ -3,6 +3,7 @@ package k8s
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"os"
 	"reflect"
 	"strings"
@@ -58,7 +59,12 @@ func createObjects(t *testing.T, resources ...client.Object) error {
 			return err
 		}
 		// Wait for namespace to be ready (default service account created)
-		assert.NamespaceReady(t, namespace.(*corev1.Namespace).Name)
+		ns, ok := namespace.(*corev1.Namespace)
+		if !ok {
+			return fmt.Errorf("expected namespace object but got %T", namespace)
+		}
+
+		assert.NamespaceReady(t, ns.Name)
 	}
 
 	// Second: create all other resources
