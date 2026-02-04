@@ -54,6 +54,9 @@ spec:
         {{- if .Values.global.caBundle.enabled }}
         - --cluster-trust-bundle-name={{ .Values.global.caBundle.name }}
         {{- end }}
+        {{- if .Values.experimental.enabled }}
+        - --deploy-otlp-gateway=true
+        {{- end }}
         command:
         - /manager
         env:
