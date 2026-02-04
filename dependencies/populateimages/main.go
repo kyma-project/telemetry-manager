@@ -99,6 +99,7 @@ func generateSecScanConfig(data map[string]string) error {
 		data["ENV_FLUENTBIT_IMAGE"],
 		data["ENV_OTEL_COLLECTOR_IMAGE"],
 		data["ENV_SELFMONITOR_IMAGE"],
+		data["ENV_SELFMONITOR_FIPS_IMAGE"],
 		data["ENV_ALPINE_IMAGE"],
 	}
 

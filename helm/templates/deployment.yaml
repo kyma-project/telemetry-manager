@@ -77,6 +77,8 @@ spec:
           value: {{ quote .Values.manager.container.env.otelCollectorImage }}
         - name: SELF_MONITOR_IMAGE
           value: {{ quote .Values.manager.container.env.selfMonitorImage }}
+        - name: SELF_MONITOR_FIPS_IMAGE
+          value: {{ quote .Values.manager.container.env.selfMonitorFIPSImage }}
         - name: ALPINE_IMAGE
           value: {{ quote .Values.manager.container.env.alpineImage }}
         {{- if .Values.manager.container.env.operateInFipsMode }}
