@@ -88,6 +88,7 @@ jobs:
       - name: Run tests on current revision
         shell: bash
         run: |
+          sleep 60 # wait for first reconciliation
           go test -v -count=1 -timeout=10m -run="^(TestLogsFluentBitUpgrade|TestLogsUpgrade|TestMetricsUpgrade|TestTracesUpgrade)/after_upgrade$" ./test/e2e/upgrade/...
 
       - name: Cleanup test environment
