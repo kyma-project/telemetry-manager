@@ -33,6 +33,46 @@ func TestOttlExprFunctions(t *testing.T) {
 			expected: `resource.attributes["key"] != nil`,
 		},
 		{
+			name:     "ResourceAttributeIsNilOrEmpty",
+			actual:   ResourceAttributeIsNilOrEmpty("key"),
+			expected: `resource.attributes["key"] == nil or resource.attributes["key"] == ""`,
+		},
+		{
+			name:     "ResourceAttributeHasPrefix",
+			actual:   ResourceAttributeHasPrefix("key", "prefix"),
+			expected: `HasPrefix(resource.attributes["key"], "prefix")`,
+		},
+		{
+			name:     "ResourceAttribute",
+			actual:   ResourceAttribute("my.key"),
+			expected: `resource.attributes["my.key"]`,
+		},
+		{
+			name:     "Attribute",
+			actual:   Attribute("my.key"),
+			expected: `attributes["my.key"]`,
+		},
+		{
+			name:     "AttributeIsNotNil",
+			actual:   AttributeIsNotNil("my.key"),
+			expected: `attributes["my.key"] != nil`,
+		},
+		{
+			name:     "AttributeIsNil",
+			actual:   AttributeIsNil("my.key"),
+			expected: `attributes["my.key"] == nil`,
+		},
+		{
+			name:     "IsNotNil",
+			actual:   IsNotNil("some.field"),
+			expected: `some.field != nil`,
+		},
+		{
+			name:     "IsNil",
+			actual:   IsNil("some.field"),
+			expected: `some.field == nil`,
+		},
+		{
 			name:     "NameAttributeEquals",
 			actual:   NameAttributeEquals("my-service"),
 			expected: `name == "my-service"`,
@@ -51,6 +91,11 @@ func TestOttlExprFunctions(t *testing.T) {
 			name:     "JoinWithAnd",
 			actual:   JoinWithAnd("a", "b", "c"),
 			expected: "a and b and c",
+		},
+		{
+			name:     "JoinWithWhere",
+			actual:   JoinWithWhere("delete_key(attributes, \"key\")", "attributes[\"key\"] != nil"),
+			expected: `delete_key(attributes, "key") where attributes["key"] != nil`,
 		},
 		{
 			name:     "IsMatch",
@@ -73,9 +118,14 @@ func TestOttlExprFunctions(t *testing.T) {
 			expected: `not(a)`,
 		},
 		{
-			name:     "NotWithParentheses",
+			name:     "Not with parentheses",
 			actual:   Not("(a)"),
 			expected: `not(a)`,
+		},
+		{
+			name:     "DeleteResourceAttribute",
+			actual:   DeleteResourceAttribute("key"),
+			expected: `delete_key(resource.attributes, "key")`,
 		},
 	}
 
