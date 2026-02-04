@@ -46,14 +46,14 @@ func TestLogsUpgrade(t *testing.T) {
 	t.Run("before upgrade", func(t *testing.T) {
 		Expect(kitk8s.CreateObjectsWithoutAutomaticCleanup(t, resources...)).To(Succeed())
 
-		assert.DeploymentReady(t, kitkyma.LogGatewayName)
+		assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
 		assert.OTelLogPipelineHealthy(t, pipelineName)
 		assert.BackendReachable(t, backend)
 		assert.OTelLogsFromNamespaceDelivered(t, backend, genNs)
 	})
 
 	t.Run("after upgrade", func(t *testing.T) {
-		assert.DeploymentReady(t, kitkyma.LogGatewayName)
+		assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
 		assert.OTelLogPipelineHealthy(t, pipelineName)
 		assert.BackendReachable(t, backend)
 		assert.OTelLogsFromNamespaceDelivered(t, backend, genNs)
