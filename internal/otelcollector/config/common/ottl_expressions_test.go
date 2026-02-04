@@ -122,6 +122,11 @@ func TestOttlExprFunctions(t *testing.T) {
 			actual:   Not("(a)"),
 			expected: `not(a)`,
 		},
+		{
+			name:     "DeleteResourceAttribute",
+			actual:   DeleteResourceAttribute("key"),
+			expected: `delete_key(resource.attributes, "key")`,
+		},
 	}
 
 	for _, test := range tests {
