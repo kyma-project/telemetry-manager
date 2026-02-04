@@ -31,6 +31,11 @@ func ResourceAttributeIsNilOrEmpty(key string) string {
 	return fmt.Sprintf("%s == nil or %s == \"\"", ResourceAttribute(key), ResourceAttribute(key))
 }
 
+// ResourceAttributeHasPrefix returns an OTel expression that checks if the resource attribute has the specified prefix
+func ResourceAttributeHasPrefix(key, prefix string) string {
+	return fmt.Sprintf("HasPrefix(resource.attributes[\"%s\"], \"%s\")", key, prefix)
+}
+
 func ResourceAttribute(key string) string {
 	return fmt.Sprintf("resource.attributes[\"%s\"]", key)
 }

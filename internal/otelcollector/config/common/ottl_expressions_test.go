@@ -33,6 +33,46 @@ func TestOttlExprFunctions(t *testing.T) {
 			expected: `resource.attributes["key"] != nil`,
 		},
 		{
+			name:     "ResourceAttributeIsNilOrEmpty",
+			actual:   ResourceAttributeIsNilOrEmpty("key"),
+			expected: `resource.attributes["key"] == nil or resource.attributes["key"] == ""`,
+		},
+		{
+			name:     "ResourceAttributeHasPrefix",
+			actual:   ResourceAttributeHasPrefix("key", "prefix"),
+			expected: `HasPrefix(resource.attributes["key"], "prefix")`,
+		},
+		{
+			name:     "ResourceAttribute",
+			actual:   ResourceAttribute("my.key"),
+			expected: `resource.attributes["my.key"]`,
+		},
+		{
+			name:     "Attribute",
+			actual:   Attribute("my.key"),
+			expected: `attributes["my.key"]`,
+		},
+		{
+			name:     "AttributeIsNotNil",
+			actual:   AttributeIsNotNil("my.key"),
+			expected: `attributes["my.key"] != nil`,
+		},
+		{
+			name:     "AttributeIsNil",
+			actual:   AttributeIsNil("my.key"),
+			expected: `attributes["my.key"] == nil`,
+		},
+		{
+			name:     "IsNotNil",
+			actual:   IsNotNil("some.field"),
+			expected: `some.field != nil`,
+		},
+		{
+			name:     "IsNil",
+			actual:   IsNil("some.field"),
+			expected: `some.field == nil`,
+		},
+		{
 			name:     "NameAttributeEquals",
 			actual:   NameAttributeEquals("my-service"),
 			expected: `name == "my-service"`,
@@ -43,6 +83,11 @@ func TestOttlExprFunctions(t *testing.T) {
 			expected: "(a or b or c)",
 		},
 		{
+			name:     "JoinWithOr single element",
+			actual:   JoinWithOr("a"),
+			expected: "(a)",
+		},
+		{
 			name:     "JoinWithRegExpOr",
 			actual:   JoinWithRegExpOr("a", "b", "c"),
 			expected: "(a|b|c)",
@@ -51,6 +96,16 @@ func TestOttlExprFunctions(t *testing.T) {
 			name:     "JoinWithAnd",
 			actual:   JoinWithAnd("a", "b", "c"),
 			expected: "a and b and c",
+		},
+		{
+			name:     "JoinWithAnd single element",
+			actual:   JoinWithAnd("a"),
+			expected: "a",
+		},
+		{
+			name:     "JoinWithWhere",
+			actual:   JoinWithWhere("delete_key(attributes, \"key\")", "attributes[\"key\"] != nil"),
+			expected: `delete_key(attributes, "key") where attributes["key"] != nil`,
 		},
 		{
 			name:     "IsMatch",
@@ -76,6 +131,16 @@ func TestOttlExprFunctions(t *testing.T) {
 			name:     "NotWithParentheses",
 			actual:   Not("(a)"),
 			expected: `not(a)`,
+		},
+		{
+			name:     "Not with complex expression",
+			actual:   Not("a == b"),
+			expected: `not(a == b)`,
+		},
+		{
+			name:     "Not with parenthesized complex expression",
+			actual:   Not("(a == b or c == d)"),
+			expected: `not(a == b or c == d)`,
 		},
 	}
 

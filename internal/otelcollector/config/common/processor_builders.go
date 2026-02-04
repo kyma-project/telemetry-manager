@@ -284,7 +284,10 @@ func DropKymaAttributesProcessorStatements() []TransformProcessorStatements {
 func DropUnknownServiceNameProcessorStatements() []TransformProcessorStatements {
 	return []TransformProcessorStatements{{
 		Statements: []string{
-			"delete_key(resource.attributes, \"service.name\") where resource.attributes[\"service.name\"] != nil and HasPrefix(resource.attributes[\"service.name\"], \"unknown_service\")",
+			JoinWithWhere(
+				"delete_key(resource.attributes, \"service.name\")",
+				JoinWithAnd(ResourceAttributeIsNotNil("service.name"), ResourceAttributeHasPrefix("service.name", "unknown_service")),
+			),
 		},
 	}}
 }
