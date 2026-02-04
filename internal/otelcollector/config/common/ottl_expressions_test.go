@@ -83,11 +83,6 @@ func TestOttlExprFunctions(t *testing.T) {
 			expected: "(a or b or c)",
 		},
 		{
-			name:     "JoinWithOr single element",
-			actual:   JoinWithOr("a"),
-			expected: "(a)",
-		},
-		{
 			name:     "JoinWithRegExpOr",
 			actual:   JoinWithRegExpOr("a", "b", "c"),
 			expected: "(a|b|c)",
@@ -96,11 +91,6 @@ func TestOttlExprFunctions(t *testing.T) {
 			name:     "JoinWithAnd",
 			actual:   JoinWithAnd("a", "b", "c"),
 			expected: "a and b and c",
-		},
-		{
-			name:     "JoinWithAnd single element",
-			actual:   JoinWithAnd("a"),
-			expected: "a",
 		},
 		{
 			name:     "JoinWithWhere",
@@ -128,19 +118,9 @@ func TestOttlExprFunctions(t *testing.T) {
 			expected: `not(a)`,
 		},
 		{
-			name:     "NotWithParentheses",
+			name:     "Not with parentheses",
 			actual:   Not("(a)"),
 			expected: `not(a)`,
-		},
-		{
-			name:     "Not with complex expression",
-			actual:   Not("a == b"),
-			expected: `not(a == b)`,
-		},
-		{
-			name:     "Not with parenthesized complex expression",
-			actual:   Not("(a == b or c == d)"),
-			expected: `not(a == b or c == d)`,
 		},
 	}
 

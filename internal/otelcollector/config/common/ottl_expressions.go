@@ -100,6 +100,11 @@ func Not(expression string) string {
 	return fmt.Sprintf("not(%s)", expression)
 }
 
+// DeleteResourceAttribute returns an OTel expression that deletes the specified resource attribute key
+func DeleteResourceAttribute(key string) string {
+	return fmt.Sprintf("delete_key(resource.attributes, \"%s\")", key)
+}
+
 func isWrappedInParentheses(expression string) bool {
 	return strings.HasPrefix(expression, "(") && strings.HasSuffix(expression, ")")
 }

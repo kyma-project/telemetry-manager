@@ -285,7 +285,7 @@ func DropUnknownServiceNameProcessorStatements() []TransformProcessorStatements 
 	return []TransformProcessorStatements{{
 		Statements: []string{
 			JoinWithWhere(
-				"delete_key(resource.attributes, \"service.name\")",
+				DeleteResourceAttribute("service.name"),
 				JoinWithAnd(ResourceAttributeIsNotNil("service.name"), ResourceAttributeHasPrefix("service.name", "unknown_service")),
 			),
 		},
