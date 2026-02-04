@@ -357,7 +357,7 @@ deploy-experimental-no-fips: manifests-experimental $(HELM) ## Deploy telemetry 
 .PHONY: deploy-custom-labels-annotations-no-fips
 deploy-custom-labels-annotations-no-fips: manifests-experimental $(HELM) ## Deploy telemetry manager with experimental features, custom labels and annotations, and FIPS mode disabled
 	$(HELM) template telemetry helm \
-		--set experimental.enabled=true \
+		--set experimental.enabled=false \
 		--set default.enabled=false \
 		--set nameOverride=telemetry \
 		--set manager.container.image.repository=${MANAGER_IMAGE} \
