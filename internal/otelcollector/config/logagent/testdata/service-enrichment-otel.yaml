@@ -210,7 +210,7 @@ processors:
         error_mode: ignore
         log_statements:
             - statements:
-                - delete_key(resource.attributes, "service.name") where HasPrefix(resource.attributes["service.name"], "unknown_service")
+                - delete_key(resource.attributes, "service.name") where resource.attributes["service.name"] != nil and HasPrefix(resource.attributes["service.name"], "unknown_service")
     transform/insert-cluster-attributes:
         error_mode: ignore
         log_statements:
