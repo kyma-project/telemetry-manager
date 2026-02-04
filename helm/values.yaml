@@ -25,7 +25,7 @@ manager:
       selfMonitorImage: europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:3.9.1-0877cc3
       operateInFipsMode: false
     image:
-      repository: europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:1.57.0
+      repository: europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:1.57.1
       pullPolicy: "IfNotPresent"
     resources:
       limits:
