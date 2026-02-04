@@ -25,7 +25,7 @@ on:
       - "config/**"
       - "!**_test.go"
       - "!docs/**"
-      - "test/e2e/*.go"
+      - "test/e2e/**.go"
       - "test/integration/istio/*.go"
       - ".github/workflows/pr-upgrade.yml"
       - ".github/template/**"
