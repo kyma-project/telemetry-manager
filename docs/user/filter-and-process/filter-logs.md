@@ -10,10 +10,10 @@ Filter logs from the OTLP, application, and Istio input to control which data yo
 | Source         | Granularity                                                         | Behavior without 'namespaces' Block    | Collect from All Namespaces                       | Collect from Specific Namespaces                            |
 |:---------------| :------------------------------------------------------------------ |:---------------------------------------|:--------------------------------------------------|:------------------------------------------------------------|
 | OTLP (default) | Namespace                                                           | **includes** system namespaces         | This is the default, no action needed.                    |  Use the `include` or `exclude` filter                      |
-| Runtime        | Namespace, Container\*                                              | excludes system namespaces             | Add `namespaces: {}` to the input's configuration | Use the `include` or `exclude` filter                       |
+| Application        | Namespace, Container\*                                              | excludes system namespaces             | Add `namespaces: {}` to the input's configuration | Use the `include` or `exclude` filter                       |
 | Istio          | Namespace, Workload (`selector`), Log content (`filter.expression`) | n/a                                    | Apply the Istio `Telemetry` resource mesh-wide    | Apply the Istio `Telemetry` resource to specific namespaces |
 
-\* The **application** input provides an additional **containers** selector that behaves the same way as the **namespaces** selector.
+\* The **runtime** input provides an additional **containers** selector that behaves the same way as the **namespaces** selector.
 
 ## Filter OTLP Logs by Namespaces
 
@@ -49,7 +49,8 @@ The `include` and `exclude` filters are mutually exclusive.
 
 ## Filter Application Logs by Namespace
 
-You can control which namespaces to collect logs from using `include` and `exclude` filters. The filters are mutually exclusive.
+You can filter incoming application logs by namespace. The `include` and `exclude` filters are mutually exclusive.
+
 
 - To collect logs from specific namespaces, use the `include` filter:
 
