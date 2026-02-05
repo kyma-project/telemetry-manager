@@ -224,11 +224,6 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 			return fmt.Errorf("failed to delete log pipeline resources: %w", err)
 		}
 
-		// TODO: remove cleanup code after rollout telemetry 1.57.0
-		if err = cleanupFinalizers(ctx, r.Client, pipeline); err != nil {
-			return err
-		}
-
 		return nil
 	}
 
@@ -256,11 +251,6 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 			AllowedPorts:    allowedPorts,
 		},
 	); err != nil {
-		return err
-	}
-
-	// TODO: remove cleanup code after rollout telemetry 1.57.0
-	if err = cleanupFinalizers(ctx, r.Client, pipeline); err != nil {
 		return err
 	}
 
