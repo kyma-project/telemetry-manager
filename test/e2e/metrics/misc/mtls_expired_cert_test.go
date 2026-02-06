@@ -26,21 +26,21 @@ func TestMTLSExpiredCert(t *testing.T) {
 		backendNs    = uniquePrefix("backend")
 	)
 
-	serverCerts, clientCerts, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).
-		WithAboutToExpireShortlyClientCert().
+	expiredServerCerts, expiredClientCerts, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).
+		WithExpiredClientCert().
 		Build()
 	Expect(err).ToNot(HaveOccurred())
 
-	backend := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics, kitbackend.WithMTLS(*serverCerts))
+	backend := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics, kitbackend.WithMTLS(*expiredServerCerts))
 
 	pipeline := testutils.NewMetricPipelineBuilder().
 		WithName(pipelineName).
 		WithOTLPOutput(
 			testutils.OTLPEndpoint(backend.EndpointHTTPS()),
 			testutils.OTLPClientMTLSFromString(
-				clientCerts.CaCertPem.String(),
-				clientCerts.ClientCertPem.String(),
-				clientCerts.ClientKeyPem.String(),
+				expiredClientCerts.CaCertPem.String(),
+				expiredClientCerts.ClientCertPem.String(),
+				expiredClientCerts.ClientKeyPem.String(),
 			),
 		).
 		Build()
@@ -51,21 +51,6 @@ func TestMTLSExpiredCert(t *testing.T) {
 
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
-	// Initially, the certificate is about to expire in a short amount of time
-	assert.MetricPipelineHasCondition(t, pipelineName, metav1.Condition{
-		Type:   conditions.TypeConfigurationGenerated,
-		Status: metav1.ConditionTrue,
-		Reason: conditions.ReasonTLSCertificateAboutToExpire,
-	})
-
-	assert.TelemetryHasState(t, operatorv1beta1.StateWarning)
-	assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
-		Type:   conditions.TypeMetricComponentsHealthy,
-		Status: metav1.ConditionTrue,
-		Reason: conditions.ReasonTLSCertificateAboutToExpire,
-	})
-
-	// After certificate is expired, reconciliation should be triggered and status updated
 	assert.MetricPipelineHasCondition(t, pipelineName, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionFalse,

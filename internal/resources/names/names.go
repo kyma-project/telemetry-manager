@@ -51,9 +51,6 @@ const (
 
 	OverrideConfigMap = telemetryPrefix + "override-config"
 	DefaultTelemetry  = "default" // default module resource must be named "default"
-
-	LogPipelineCRD    = "logpipelines.telemetry.kyma-project.io"
-	MetricPipelineCRD = "metricpipelines.telemetry.kyma-project.io"
 )
 
 // MetricsServiceName returns the metrics service name for a given component name
