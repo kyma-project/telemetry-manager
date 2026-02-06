@@ -11,6 +11,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -100,7 +101,12 @@ func (ad *ApplierDeleter) ApplyResources(ctx context.Context, c client.Client, o
 		return fmt.Errorf("failed to create self-monitor role binding: %w", err)
 	}
 
-	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, ad.makeNetworkPolicy()); err != nil {
+	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, commonresources.MakeNetworkPolicy(
+		types.NamespacedName{Namespace: ad.Config.TargetNamespace(), Name: names.SelfMonitor},
+		[]int32{ports.PrometheusPort},
+		commonresources.MakeDefaultLabels(names.SelfMonitor, commonresources.LabelValueK8sComponentMonitor),
+		commonresources.MakeDefaultSelectorLabels(names.SelfMonitor),
+	)); err != nil {
 		return fmt.Errorf("failed to create self-monitor network policy: %w", err)
 	}
 
@@ -168,68 +174,6 @@ func (ad *ApplierDeleter) makeRoleBinding() *rbacv1.RoleBinding {
 	}
 
 	return &roleBinding
-}
-
-func (ad *ApplierDeleter) makeNetworkPolicy() *networkingv1.NetworkPolicy {
-	allowedPorts := []int32{ports.PrometheusPort}
-
-	return &networkingv1.NetworkPolicy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.SelfMonitor,
-			Namespace: ad.Config.TargetNamespace(),
-			Labels:    commonresources.MakeDefaultLabels(names.SelfMonitor, commonresources.LabelValueK8sComponentMonitor),
-		},
-		Spec: networkingv1.NetworkPolicySpec{
-			PodSelector: metav1.LabelSelector{
-				MatchLabels: commonresources.MakeDefaultSelectorLabels(names.SelfMonitor),
-			},
-			PolicyTypes: []networkingv1.PolicyType{
-				networkingv1.PolicyTypeIngress,
-				networkingv1.PolicyTypeEgress,
-			},
-			Ingress: []networkingv1.NetworkPolicyIngressRule{
-				{
-					From: []networkingv1.NetworkPolicyPeer{
-						{
-							IPBlock: &networkingv1.IPBlock{CIDR: "0.0.0.0/0"},
-						},
-						{
-							IPBlock: &networkingv1.IPBlock{CIDR: "::/0"},
-						},
-					},
-					Ports: ad.makeNetworkPolicyPorts(allowedPorts),
-				},
-			},
-			Egress: []networkingv1.NetworkPolicyEgressRule{
-				{
-					To: []networkingv1.NetworkPolicyPeer{
-						{
-							IPBlock: &networkingv1.IPBlock{CIDR: "0.0.0.0/0"},
-						},
-						{
-							IPBlock: &networkingv1.IPBlock{CIDR: "::/0"},
-						},
-					},
-				},
-			},
-		},
-	}
-}
-
-func (ad *ApplierDeleter) makeNetworkPolicyPorts(ports []int32) []networkingv1.NetworkPolicyPort {
-	var networkPolicyPorts []networkingv1.NetworkPolicyPort
-
-	tcpProtocol := corev1.ProtocolTCP
-
-	for idx := range ports {
-		port := intstr.FromInt32(ports[idx])
-		networkPolicyPorts = append(networkPolicyPorts, networkingv1.NetworkPolicyPort{
-			Protocol: &tcpProtocol,
-			Port:     &port,
-		})
-	}
-
-	return networkPolicyPorts
 }
 
 func (ad *ApplierDeleter) makeConfigMap(prometheusConfigFileName, prometheusConfigYAML, alertRulesFileName, alertRulesYAML string) *corev1.ConfigMap {
