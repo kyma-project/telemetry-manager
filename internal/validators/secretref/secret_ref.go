@@ -28,19 +28,23 @@ var (
 // ValidateTracePipeline validates the secret references in a TracePipeline, ensuring that the references are valid,
 // and the referenced Secrets exist and contain the required keys. It returns an error otherwise.
 func (v *Validator) ValidateTracePipeline(ctx context.Context, pipeline *telemetryv1beta1.TracePipeline) error {
-	return v.validate(ctx, GetTracePipelineRefs(pipeline))
+	return v.validate(ctx, getSecretRefsTracePipeline(pipeline))
 }
 
 // ValidateMetricPipeline validates the secret references in a MetricPipeline, ensuring that the references are valid,
 // and the referenced Secrets exist and contain the required keys. It returns an error otherwise.
 func (v *Validator) ValidateMetricPipeline(ctx context.Context, pipeline *telemetryv1beta1.MetricPipeline) error {
-	return v.validate(ctx, GetMetricPipelineRefs(pipeline))
+	return v.validate(ctx, getSecretRefsMetricPipeline(pipeline))
 }
 
 // ValidateLogPipeline validates the secret references in a LogPipeline, ensuring that the references are valid,
 // and the referenced Secrets exist and contain the required keys. It returns an error otherwise.
 func (v *Validator) ValidateLogPipeline(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) error {
-	return v.validate(ctx, GetLogPipelineRefs(pipeline))
+	if pipeline.Spec.Output.OTLP != nil {
+		return v.validate(ctx, getSecretRefsInOTLPOutput(pipeline.Spec.Output.OTLP))
+	}
+
+	return v.validate(ctx, getSecretRefsLogPipeline(pipeline))
 }
 
 func (v *Validator) validate(ctx context.Context, refs []telemetryv1beta1.SecretKeyRef) error {
@@ -98,18 +102,15 @@ func checkForMissingFields(ref telemetryv1beta1.SecretKeyRef) error {
 	return nil
 }
 
-// GetTracePipelineRefs retrieves all SecretKeyRef references from the given TracePipeline
-func GetTracePipelineRefs(tp *telemetryv1beta1.TracePipeline) []telemetryv1beta1.SecretKeyRef {
+func getSecretRefsTracePipeline(tp *telemetryv1beta1.TracePipeline) []telemetryv1beta1.SecretKeyRef {
 	return getSecretRefsInOTLPOutput(tp.Spec.Output.OTLP)
 }
 
-// GetMetricPipelineRefs retrieves all SecretKeyRef references from the given MetricPipeline
-func GetMetricPipelineRefs(mp *telemetryv1beta1.MetricPipeline) []telemetryv1beta1.SecretKeyRef {
+func getSecretRefsMetricPipeline(mp *telemetryv1beta1.MetricPipeline) []telemetryv1beta1.SecretKeyRef {
 	return getSecretRefsInOTLPOutput(mp.Spec.Output.OTLP)
 }
 
-// GetLogPipelineRefs retrieves all SecretKeyRef references from the given LogPipeline
-func GetLogPipelineRefs(lp *telemetryv1beta1.LogPipeline) []telemetryv1beta1.SecretKeyRef {
+func getSecretRefsLogPipeline(lp *telemetryv1beta1.LogPipeline) []telemetryv1beta1.SecretKeyRef {
 	var refs []telemetryv1beta1.SecretKeyRef
 
 	for _, v := range lp.Spec.FluentBitVariables {
@@ -119,7 +120,6 @@ func GetLogPipelineRefs(lp *telemetryv1beta1.LogPipeline) []telemetryv1beta1.Sec
 	}
 
 	refs = append(refs, getSecretRefsInHTTPOutput(lp.Spec.Output.FluentBitHTTP)...)
-	refs = append(refs, getSecretRefsInOTLPOutput(lp.Spec.Output.OTLP)...)
 
 	return refs
 }
@@ -127,30 +127,24 @@ func GetLogPipelineRefs(lp *telemetryv1beta1.LogPipeline) []telemetryv1beta1.Sec
 func getSecretRefsInHTTPOutput(httpOutput *telemetryv1beta1.FluentBitHTTPOutput) []telemetryv1beta1.SecretKeyRef {
 	var refs []telemetryv1beta1.SecretKeyRef
 
-	if httpOutput == nil {
-		return refs
+	if httpOutput != nil {
+		refs = appendIfSecretRef(refs, &httpOutput.Host)
+		refs = appendIfSecretRef(refs, httpOutput.User)
+		refs = appendIfSecretRef(refs, httpOutput.Password)
+
+		tlsConfig := httpOutput.TLS
+		refs = appendIfSecretRef(refs, tlsConfig.CA)
+
+		refs = appendIfSecretRef(refs, tlsConfig.Cert)
+
+		refs = appendIfSecretRef(refs, tlsConfig.Key)
 	}
-
-	refs = appendIfSecretRef(refs, &httpOutput.Host)
-	refs = appendIfSecretRef(refs, httpOutput.User)
-	refs = appendIfSecretRef(refs, httpOutput.Password)
-
-	tlsConfig := httpOutput.TLS
-	refs = appendIfSecretRef(refs, tlsConfig.CA)
-
-	refs = appendIfSecretRef(refs, tlsConfig.Cert)
-
-	refs = appendIfSecretRef(refs, tlsConfig.Key)
 
 	return refs
 }
 
 func getSecretRefsInOTLPOutput(otlpOut *telemetryv1beta1.OTLPOutput) []telemetryv1beta1.SecretKeyRef {
 	var refs []telemetryv1beta1.SecretKeyRef
-
-	if otlpOut == nil {
-		return refs
-	}
 
 	refs = appendIfSecretRef(refs, &otlpOut.Endpoint)
 
