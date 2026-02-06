@@ -68,3 +68,12 @@ Both approaches ensure that the Docker image used for testing is the same as the
 However, the reproducible build approach is currently not available and have to be implemented by the `Image-Builder` team, therefore the recommended approach for now, repeat all test in the release branch with release Docker Image.
 
 ![Release Workflow](./../assets/auditable-release-final.drawio.svg)
+
+## Conclusion
+
+Implementing auditable release automation is essential for maintaining the integrity and compliance of the SAP BTP, Kyma runtime product. 
+By ensuring that test reports are retained and that Docker images are reproducible, we can create a transparent and reliable release process that meets auditing requirements and enhances overall software quality.
+
+The proposed strategies for deterministic Docker builds and the structured release workflow provide a clear path forward for achieving auditable release automation in the Kyma runtime product environment.
+
+Currently, the recommended approach is to repeat all tests in the release branch using the release Docker image, ensuring that the same image is used for both testing and release, thus maintaining identical digests and providing a clear audit trail.
