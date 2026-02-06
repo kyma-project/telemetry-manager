@@ -63,3 +63,8 @@ To achieve deterministic Docker builds, the following strategies can be employed
 2- Copy PR Image to Release Registry
 
 ![Workflow](./../assets/auditable-release-alternative.drawio.svg)
+
+Both approaches ensure that the Docker image used for testing is the same as the one released, providing a clear audit trail and maintaining software integrity throughout the release process. 
+However, the reproducible build approach is currently not available and have to be implemented by the `Image-Builder` team, therefore the recommended approach for now, repeat all test in the release branch with release Docker Image.
+
+![Release Workflow](./../assets/auditable-release-final.drawio.svg)
