@@ -329,6 +329,5 @@ func makeFileLogCheckPointVolumeMount() corev1.VolumeMount {
 func agentIngressAllowedPorts() []int32 {
 	return []int32{
 		ports.Metrics,
-		ports.HealthCheck,
 	}
 }
