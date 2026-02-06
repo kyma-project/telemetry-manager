@@ -10,6 +10,7 @@ import (
 )
 
 const (
+	NetworkPolicyPrefix          = "kyma-project.io--"
 	SystemLogCollectorName       = "system-logs-collector"
 	SystemLogAgentName           = "system-logs-agent"
 	ClusterTrustBundleVolumeName = "custom-ca-bundle"
@@ -48,7 +49,7 @@ func MakeClusterRoleBinding(name types.NamespacedName) *rbacv1.ClusterRoleBindin
 func MakeNetworkPolicy(name types.NamespacedName, ingressAllowedPorts []int32, labels map[string]string, selectorLabels map[string]string) *networkingv1.NetworkPolicy {
 	return &networkingv1.NetworkPolicy{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name.Name,
+			Name:      NetworkPolicyPrefix + name.Name,
 			Namespace: name.Namespace,
 			Labels:    labels,
 		},
