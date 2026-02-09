@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       build-args: ${{ steps.prepare-envs.outputs.build-args }}
-      build-tag: ${{ steps.build-tag.outputs.build-tag || '' }}
+      tags: ${{ steps.create-tags.outputs.tags }}
 
     steps:
       - name: Checkout code
@@ -53,11 +53,25 @@ jobs:
         id: get-short-sha
         run: echo "short-sha=$(git rev-parse --short $GITHUB_SHA)" >> $GITHUB_OUTPUT
 
-      - name: Build image tag
-        if: github.event_name == 'push'
-        id: build-tag
-        run: echo "build-tag=${{ steps.load-envs.outputs.PROMETHEUS_VERSION }}-${{ steps.get-short-sha.outputs.short-sha }}" >> $GITHUB_OUTPUT
-
+      - name: Create tags
+        id: create-tags
+        run: |
+          if [[ $GITHUB_EVENT_NAME == 'push' || $GITHUB_EVENT_NAME == 'merge_group' ]]; then
+            {
+              echo "tags<<EOTAGS"
+              echo "${{ github.ref_name }}"
+              echo "${{ steps.load-envs.outputs.PROMETHEUS_VERSION }}-${{ steps.get-short-sha.outputs.short-sha }}"
+              echo "EOTAGS"
+            } >> "$GITHUB_OUTPUT"
+          else
+            {
+              echo "tags<<EOTAGS"
+              echo "PR-${{ github.event.pull_request.number }}"
+              echo "${{ github.event.pull_request.head.sha }}"
+              echo "EOTAGS"
+            } >> "$GITHUB_OUTPUT"
+          fi
+       
   build-image:
     permissions:
       id-token: write # Required for requesting the JWT token
@@ -69,7 +83,7 @@ jobs:
       dockerfile: Dockerfile
       context: dependencies/telemetry-self-monitor
       build-args: ${{ needs.envs.outputs.build-args }}
-      tags: ${{ needs.envs.outputs.build-tag }}
+      tags: ${{ needs.envs.outputs.tags }}
       platforms: "linux/amd64,linux/arm64"
 
   notify-on-failure:
