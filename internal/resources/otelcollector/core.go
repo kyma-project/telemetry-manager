@@ -116,7 +116,7 @@ func deleteCommonResources(ctx context.Context, c client.Client, name types.Name
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete metrics service: %w", err))
 	}
 
-	networkPolicy := networkingv1.NetworkPolicy{ObjectMeta: objectMeta}
+	networkPolicy := networkingv1.NetworkPolicy{ObjectMeta: metav1.ObjectMeta{Name: commonresources.NetworkPolicyPrefix + name.Name, Namespace: name.Namespace}}
 	if err := k8sutils.DeleteObject(ctx, c, &networkPolicy); err != nil && !apierrors.IsNotFound(err) {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete network policy: %w", err))
 	}

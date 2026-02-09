@@ -425,7 +425,7 @@ metadata:
     app.kubernetes.io/name: fluent-bit
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
-  name: telemetry-fluent-bit
+  name: kyma-project.io--telemetry-fluent-bit
   namespace: kyma-system
 spec:
   egress:

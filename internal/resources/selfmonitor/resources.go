@@ -64,7 +64,10 @@ func (ad *ApplierDeleter) DeleteResources(ctx context.Context, c client.Client) 
 		return err
 	}
 
-	if err := k8sutils.DeleteObject(ctx, c, &networkingv1.NetworkPolicy{ObjectMeta: objectMeta}); err != nil {
+	if err := k8sutils.DeleteObject(ctx, c, &networkingv1.NetworkPolicy{ObjectMeta: metav1.ObjectMeta{
+		Name:      commonresources.NetworkPolicyPrefix + names.SelfMonitor,
+		Namespace: ad.Config.TargetNamespace(),
+	}}); err != nil {
 		return err
 	}
 
