@@ -494,16 +494,19 @@ func cleanupOldManagerNetworkPolicy(k8sClient client.Client, globals config.Glob
 			Namespace: globals.ManagerNamespace(),
 		},
 	}
+
 	setupLog.Info("Cleaning up old manager network policy")
 
 	if err := k8sClient.Delete(ctx, managerNetPol); err != nil {
 		if client.IgnoreNotFound(err) != nil {
 			return fmt.Errorf("failed to delete old manager network policy: %w", err)
 		}
+
 		setupLog.Info("Old manager network policy not found, skipping cleanup")
 	} else {
 		setupLog.Info("Successfully cleaned up old manager network policy", "name", managerNetPol.Name)
 	}
+
 	return nil
 }
 

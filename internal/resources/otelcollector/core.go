@@ -207,6 +207,7 @@ func cleanupOldNetworkPolicy(ctx context.Context, c client.Client, name types.Na
 			// Already deleted, ignore
 			return nil
 		}
+
 		return err
 	}
 
