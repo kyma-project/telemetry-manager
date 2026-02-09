@@ -1,7 +1,7 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: {{ include "telemetry-manager.fullname" . }}-manager
+  name: kyma-project.io--{{ include "telemetry-manager.fullname" . }}-manager
   namespace: {{ .Release.Namespace }}
   labels:
     app.kubernetes.io/component: controller
@@ -37,3 +37,60 @@ spec:
   policyTypes:
   - Ingress
   - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: kyma-project.io--{{ include "telemetry-manager.fullname" . }}-allow-to-dns
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
+  {{- include "telemetry-manager.labels" . | indent 4 }}
+spec:
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - port: 53
+          protocol: TCP
+        - port: 53
+          protocol: UDP
+        - port: 8053
+          protocol: TCP
+        - port: 8053
+          protocol: UDP
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/part-of: telemetry
+      kyma-project.io/module: telemetry
+  policyTypes:
+    - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: kyma-project.io--{{ include "telemetry-manager.fullname" . }}-allow-to-apiserver
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
+  {{- include "telemetry-manager.labels" . | indent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/part-of: telemetry
+      kyma-project.io/module: telemetry
+  egress:
+    - ports:
+        - port: 443
+          protocol: TCP
+  policyTypes:
+    - Egress
