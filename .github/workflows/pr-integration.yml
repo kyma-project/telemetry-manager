@@ -8,7 +8,7 @@ on:
     # Run every 3 hours on main branch
     - cron: "0 */3 * * *"
   merge_group:
-  pull_request:
+  pull_request_target:
     branches:
       - "main"
       - "release-*"
