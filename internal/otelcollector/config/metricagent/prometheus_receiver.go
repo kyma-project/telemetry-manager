@@ -27,6 +27,7 @@ const (
 const (
 	scrapeInterval           = 30 * time.Second
 	sampleLimit              = 50000
+	bodySizeLimit            = "20MB"
 	appPodsJobName           = "app-pods"
 	appServicesJobName       = "app-services"
 	appServicesSecureJobName = "app-services-secure"
@@ -39,6 +40,7 @@ func prometheusPodsReceiverConfig() *PrometheusReceiver {
 	scrapeConfig := ScrapeConfig{
 		ScrapeInterval:             scrapeInterval,
 		SampleLimit:                sampleLimit,
+		BodySizeLimit:              bodySizeLimit,
 		KubernetesDiscoveryConfigs: discoveryConfigWithNodeSelector(RolePod),
 		JobName:                    appPodsJobName,
 		RelabelConfigs:             prometheusPodsRelabelConfigs(),
