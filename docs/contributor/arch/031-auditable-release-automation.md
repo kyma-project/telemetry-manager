@@ -76,4 +76,9 @@ By ensuring that test reports are retained and that Docker images are reproducib
 
 The proposed strategies for deterministic Docker builds and the structured release workflow provide a clear path forward for achieving auditable release automation in the Kyma runtime product environment.
 
-Currently, the recommended approach is to repeat all tests in the release branch using the release Docker image, ensuring that the same image is used for both testing and release, thus maintaining identical digests and providing a clear audit trail.
+Currently, the recommended approach is to run all tests in the release branch using the release Docker image, ensuring that the same image is used for both testing and release, thus maintaining identical digests and providing a clear audit trail.
+
+We can skip the PR tests and run them only in the release branch, so we can automate release process without waiting for the PR tests to complete, and still ensure that the released image is tested and has the same digest as the one built in the PR. 
+A new GitHub Action, ca be implemeted to trigger the release branch workflow once the release master enter the release version and OpenTelemetry Collector Components version for the release.
+
+The release artifacts and GitHub release will be created once the release tests are successful and the release report uploaded successfully to the GCP bucket for audit retention.
