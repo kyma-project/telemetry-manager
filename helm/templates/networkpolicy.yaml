@@ -62,7 +62,6 @@ spec:
           protocol: UDP
   podSelector:
     matchLabels:
-      app.kubernetes.io/part-of: telemetry
       kyma-project.io/module: telemetry
   policyTypes:
     - Egress
@@ -80,7 +79,6 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/part-of: telemetry
       kyma-project.io/module: telemetry
   egress:
     - ports:
