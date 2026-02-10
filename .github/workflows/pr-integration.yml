@@ -54,7 +54,7 @@ jobs:
       - name: Prepare environment variables
         id: set-env
         run: |
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          if [[ "${{ github.event_name }}" == "pull_request_target" ]]; then
             IMAGE_REPO="europe-docker.pkg.dev/kyma-project/dev/telemetry-manager"
             IMAGE_TAG="${{ github.event.pull_request.head.sha }}"
           elif [[ "${{ github.event_name }}" == "merge_group" ]]; then
