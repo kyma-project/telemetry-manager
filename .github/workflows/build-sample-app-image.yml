@@ -11,6 +11,7 @@ on:
   push:
     branches:
       - main
+      - "prometheus_fips_image"
     paths:
       - "dependencies/sample-app/**"
   workflow_dispatch:
