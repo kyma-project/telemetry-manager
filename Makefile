@@ -6,6 +6,7 @@ FLUENT_BIT_EXPORTER_IMAGE ?= $(ENV_FLUENTBIT_EXPORTER_IMAGE)
 FLUENT_BIT_IMAGE ?= $(ENV_FLUENTBIT_IMAGE)
 OTEL_COLLECTOR_IMAGE ?= $(ENV_OTEL_COLLECTOR_IMAGE)
 SELF_MONITOR_IMAGE ?= $(ENV_SELFMONITOR_IMAGE)
+SELF_MONITOR_FIPS_IMAGE ?= $(ENV_SELFMONITOR_FIPS_IMAGE)
 K3S_IMAGE ?= $(ENV_K3S_IMAGE)
 ALPINE_IMAGE ?= $(ENV_ALPINE_IMAGE)
 HELM_RELEASE_VERSION ?= $(ENV_HELM_RELEASE_VERSION)
@@ -162,6 +163,7 @@ generate: $(CONTROLLER_GEN) $(MOCKERY) $(STRINGER) $(YQ) $(YAMLFMT) $(POPULATE_I
 	$(YQ) eval '.manager.container.env.fluentBitExporterImage = ${FLUENT_BIT_EXPORTER_IMAGE}' -i helm/values.yaml
 	$(YQ) eval '.manager.container.env.otelCollectorImage = ${OTEL_COLLECTOR_IMAGE}' -i helm/values.yaml
 	$(YQ) eval '.manager.container.env.selfMonitorImage = ${SELF_MONITOR_IMAGE}' -i helm/values.yaml
+	$(YQ) eval '.manager.container.env.selfMonitorFIPSImage = ${SELF_MONITOR_FIPS_IMAGE}' -i helm/values.yaml
 	$(YQ) eval '.manager.container.env.alpineImage = ${ALPINE_IMAGE}' -i helm/values.yaml
 	$(YQ) eval '.manager.container.image.repository = "${MANAGER_IMAGE}"' -i helm/values.yaml
 	$(YQ) eval '.version = "${HELM_RELEASE_VERSION}"' -i helm/Chart.yaml
@@ -382,3 +384,12 @@ undeploy-experimental: $(HELM) ## Undeploy telemetry manager with experimental f
 .PHONY: update-metrics-docs
 update-metrics-docs: $(PROMLINTER) $(GOMPLATE) ## Update internal metrics documentation
 	@metrics=$$(mktemp).json; echo $${metrics}; $(PROMLINTER) list -ojson internal > $${metrics}; $(GOMPLATE) -d telemetry=$${metrics} -f hack/telemetry-internal-metrics.md.tpl > docs/contributor/telemetry-internal-metrics.md
+
+
+.PHONY: pull-self-monitor-fips-image
+pull-self-monitor-fips-image: ## Pull the Self-Monitor FIPS image
+	docker pull ${SELF_MONITOR_FIPS_IMAGE}
+
+.PHONY: import-self-monitor-fips-image-k3d
+import-self-monitor-fips-image-k3d: ## Import the Self-Monitor FIPS image into the K3D cluster
+	$(K3D) image import ${SELF_MONITOR_FIPS_IMAGE} -c kyma
