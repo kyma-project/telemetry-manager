@@ -11,7 +11,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
+	otelports "github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	sharedtypesutils "github.com/kyma-project/telemetry-manager/internal/utils/sharedtypes"
 )
 
@@ -154,7 +154,7 @@ func extractPort(endpoint string, protocol telemetryv1beta1.OTLPProtocol) string
 	}
 	// OTLP exporter accepts a URL without a port when protocol is OTLP/HTTP
 	if endpointURL.Port() == "" && protocol == telemetryv1beta1.OTLPProtocolHTTP {
-		return strconv.Itoa(int(ports.OTLPHTTP))
+		return strconv.Itoa(int(otelports.OTLPHTTP))
 	}
 
 	return endpointURL.Port()

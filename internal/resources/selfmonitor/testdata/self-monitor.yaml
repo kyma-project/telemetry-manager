@@ -166,17 +166,34 @@ metadata:
   namespace: my-namespace
 spec:
   egress:
-  - to:
-    - ipBlock:
-        cidr: 0.0.0.0/0
-    - ipBlock:
-        cidr: ::/0
+  - ports:
+    - port: 2020
+      protocol: TCP
+    - port: 2021
+      protocol: TCP
+    to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: fluent-bit
+  - ports:
+    - port: 8888
+      protocol: TCP
+    to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/component: agent
+  - ports:
+    - port: 8888
+      protocol: TCP
+    to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/component: gateway
   ingress:
   - from:
-    - ipBlock:
-        cidr: 0.0.0.0/0
-    - ipBlock:
-        cidr: ::/0
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: manager
     ports:
     - port: 9090
       protocol: TCP

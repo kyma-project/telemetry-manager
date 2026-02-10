@@ -12,7 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
+	otelports "github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -136,7 +136,7 @@ func TestRuntimeInput(t *testing.T) {
 	assert.JobReady(t, types.NamespacedName{Name: jobName, Namespace: genNs})
 	assert.PodReady(t, types.NamespacedName{Name: podMountingPVCName, Namespace: genNs})
 	assert.PodReady(t, types.NamespacedName{Name: podMountingEmptyDirName, Namespace: genNs})
-	agentMetricsURL := suite.ProxyClient.ProxyURLForService(kitkyma.MetricAgentMetricsService.Namespace, kitkyma.MetricAgentMetricsService.Name, "metrics", ports.Metrics)
+	agentMetricsURL := suite.ProxyClient.ProxyURLForService(kitkyma.MetricAgentMetricsService.Namespace, kitkyma.MetricAgentMetricsService.Name, "metrics", otelports.Metrics)
 	assert.EmitsOTelCollectorMetrics(t, agentMetricsURL)
 
 	t.Log("Pipeline A should deliver pod, container, volume and node metrics")

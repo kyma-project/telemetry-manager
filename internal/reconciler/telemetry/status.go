@@ -15,7 +15,7 @@ import (
 	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
+	otelports "github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 )
 
@@ -186,8 +186,8 @@ func (r *Reconciler) checkServiceExists(ctx context.Context, svcName types.Names
 
 func makeOTLPEndpoints(serviceName, namespace string) *operatorv1beta1.OTLPEndpoints {
 	return &operatorv1beta1.OTLPEndpoints{
-		HTTP: fmt.Sprintf("http://%s.%s:%d", serviceName, namespace, ports.OTLPHTTP),
-		GRPC: fmt.Sprintf("http://%s.%s:%d", serviceName, namespace, ports.OTLPGRPC),
+		HTTP: fmt.Sprintf("http://%s.%s:%d", serviceName, namespace, otelports.OTLPHTTP),
+		GRPC: fmt.Sprintf("http://%s.%s:%d", serviceName, namespace, otelports.OTLPGRPC),
 	}
 }
 

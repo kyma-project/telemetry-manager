@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
+	otelports "github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 )
 
 func TestNewConfig(t *testing.T) {
@@ -59,7 +59,7 @@ func TestServiceConfig(t *testing.T) {
 
 		prometheus := reader.Pull.Exporter.Prometheus
 		require.Equal(t, "${MY_POD_IP}", prometheus.Host, "prometheus should use MY_POD_IP environment variable")
-		require.Equal(t, ports.Metrics, prometheus.Port, "prometheus should use correct metrics port")
+		require.Equal(t, otelports.Metrics, prometheus.Port, "prometheus should use correct metrics port")
 
 		require.NotNil(t, service.Telemetry.Logs, "logs config should be initialized")
 		require.Equal(t, "info", service.Telemetry.Logs.Level, "logs should use info level by default")

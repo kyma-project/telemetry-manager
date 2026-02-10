@@ -9,7 +9,7 @@ import (
 	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
+	otelports "github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	sharedtypesutils "github.com/kyma-project/telemetry-manager/internal/utils/sharedtypes"
 )
@@ -80,10 +80,10 @@ func (b *Builder) addOTLPReceiver() buildComponentFunc {
 			return &common.OTLPReceiver{
 				Protocols: common.ReceiverProtocols{
 					HTTP: common.Endpoint{
-						Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, ports.OTLPHTTP),
+						Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, otelports.OTLPHTTP),
 					},
 					GRPC: common.Endpoint{
-						Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, ports.OTLPGRPC),
+						Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, otelports.OTLPGRPC),
 					},
 				},
 			}

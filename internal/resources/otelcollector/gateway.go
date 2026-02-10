@@ -20,7 +20,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
+	otelports "github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
@@ -186,7 +186,7 @@ func (gad *GatewayApplierDeleter) ApplyResources(ctx context.Context, c client.C
 
 	ingressAllowedPorts := gatewayIngressAllowedPorts()
 	if opts.IstioEnabled {
-		ingressAllowedPorts = append(ingressAllowedPorts, ports.IstioEnvoy)
+		ingressAllowedPorts = append(ingressAllowedPorts, otelports.IstioEnvoy)
 	}
 
 	if err := applyCommonResources(ctx, c, name, commonresources.LabelValueK8sComponentGateway, gad.rbac, ingressAllowedPorts); err != nil {
@@ -387,14 +387,14 @@ func (gad *GatewayApplierDeleter) makeOTLPService() *corev1.Service {
 				{
 					Name:       "grpc-collector",
 					Protocol:   corev1.ProtocolTCP,
-					Port:       ports.OTLPGRPC,
-					TargetPort: intstr.FromInt32(ports.OTLPGRPC),
+					Port:       otelports.OTLPGRPC,
+					TargetPort: intstr.FromInt32(otelports.OTLPGRPC),
 				},
 				{
 					Name:       "http-collector",
 					Protocol:   corev1.ProtocolTCP,
-					Port:       ports.OTLPHTTP,
-					TargetPort: intstr.FromInt32(ports.OTLPHTTP),
+					Port:       otelports.OTLPHTTP,
+					TargetPort: intstr.FromInt32(otelports.OTLPHTTP),
 				},
 			},
 			Selector: selectorLabels,
@@ -426,7 +426,7 @@ func (gad *GatewayApplierDeleter) makeAnnotations(configChecksum string, opts Ga
 	annotations := map[string]string{commonresources.AnnotationKeyChecksumConfig: configChecksum}
 
 	if opts.IstioEnabled {
-		annotations[commonresources.AnnotationKeyIstioExcludeInboundPorts] = fmt.Sprintf("%d", ports.Metrics)
+		annotations[commonresources.AnnotationKeyIstioExcludeInboundPorts] = fmt.Sprintf("%d", otelports.Metrics)
 		// When a workload is outside the istio mesh and communicates with pod in service mesh, the envoy proxy does not
 		// preserve the source IP and destination IP. To preserve source/destination IP we need TPROXY interception mode.
 		// More info: https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/#ProxyConfig-InboundInterceptionMode
@@ -438,8 +438,8 @@ func (gad *GatewayApplierDeleter) makeAnnotations(configChecksum string, opts Ga
 
 func gatewayIngressAllowedPorts() []int32 {
 	return []int32{
-		ports.Metrics,
-		ports.OTLPHTTP,
-		ports.OTLPGRPC,
+		otelports.Metrics,
+		otelports.OTLPHTTP,
+		otelports.OTLPGRPC,
 	}
 }
