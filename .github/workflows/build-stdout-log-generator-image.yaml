@@ -11,6 +11,7 @@ on:
   push:
     branches:
       - main
+      - "prometheus_fips_image"
     paths:
       - "dependencies/stdout-log-generator/**"
   workflow_dispatch:

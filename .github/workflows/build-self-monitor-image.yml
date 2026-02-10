@@ -11,6 +11,7 @@ on:
   push:
     branches:
       - main
+      - "prometheus_fips_image"
     paths:
       - "dependencies/telemetry-self-monitor/**"
   workflow_dispatch:
