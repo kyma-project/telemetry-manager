@@ -386,7 +386,7 @@ jobs:
           for pod in $(kubectl get pods -n kyma-system -o name); do echo "=== $pod ==="; kubectl logs -n kyma-system $pod; done || true
 
   summary:
-    needs: [e2e-selfmonitor, e2e]
+    needs: [e2e-selfmonitor, e2e, e2e-custom-labels-annotations-no-fips]
     runs-on: ubuntu-latest
     if: always()
     steps:
