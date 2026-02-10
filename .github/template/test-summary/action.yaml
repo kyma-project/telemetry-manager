@@ -11,7 +11,11 @@ runs:
   using: "composite"
 
   steps:
-    - name: Install xmlstarlet
+    - name: Summarize images
+      shell: bash
+      run: ./hack/summarize-images.sh
+
+    - name: Install xmlstartar
       shell: bash
       run: |
         if ! command -v xmlstarlet &> /dev/null; then
