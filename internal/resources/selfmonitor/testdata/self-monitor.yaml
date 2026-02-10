@@ -189,6 +189,13 @@ spec:
     - podSelector:
         matchLabels:
           app.kubernetes.io/component: gateway
+  - ports:
+    - port: 9443
+      protocol: TCP
+    to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: manager
   ingress:
   - from:
     - podSelector:
