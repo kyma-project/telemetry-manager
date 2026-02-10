@@ -17,10 +17,10 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
 	fbports "github.com/kyma-project/telemetry-manager/internal/fluentbit/ports"
 	mgrports "github.com/kyma-project/telemetry-manager/internal/manager/ports"
-	otelports "github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
-	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/ports"
+	selfmonports "github.com/kyma-project/telemetry-manager/internal/selfmonitor/ports"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 )
 
@@ -120,7 +120,7 @@ func (ad *ApplierDeleter) ApplyResources(ctx context.Context, c client.Client, o
 		return fmt.Errorf("failed to create sel-monitor deployment: %w", err)
 	}
 
-	if err := k8sutils.CreateOrUpdateService(ctx, c, ad.makeService(ports.PrometheusPort)); err != nil {
+	if err := k8sutils.CreateOrUpdateService(ctx, c, ad.makeService(selfmonports.PrometheusPort)); err != nil {
 		return fmt.Errorf("failed to create self-monitor service: %w", err)
 	}
 
@@ -281,7 +281,7 @@ func (ad *ApplierDeleter) makePodSpec(image, configPath, configFile string) core
 		ProbeHandler: corev1.ProbeHandler{
 			HTTPGet: &corev1.HTTPGetAction{
 				Path: "/-/healthy",
-				Port: intstr.IntOrString{IntVal: ports.PrometheusPort},
+				Port: intstr.IntOrString{IntVal: selfmonports.PrometheusPort},
 			},
 		},
 		FailureThreshold: 5, //nolint:mnd // 5 failures
@@ -294,7 +294,7 @@ func (ad *ApplierDeleter) makePodSpec(image, configPath, configFile string) core
 		ProbeHandler: corev1.ProbeHandler{
 			HTTPGet: &corev1.HTTPGetAction{
 				Path: "/-/ready",
-				Port: intstr.IntOrString{IntVal: ports.PrometheusPort},
+				Port: intstr.IntOrString{IntVal: selfmonports.PrometheusPort},
 			},
 		},
 		FailureThreshold: 3, //nolint:mnd // 5 failures
@@ -318,7 +318,7 @@ func (ad *ApplierDeleter) makePodSpec(image, configPath, configFile string) core
 
 		commonresources.WithContainer("self-monitor", image,
 			commonresources.WithArgs(args),
-			commonresources.WithPort("http-web", ports.PrometheusPort),
+			commonresources.WithPort("http-web", selfmonports.PrometheusPort),
 			commonresources.WithVolumeMounts(volumeMounts),
 			commonresources.WithProbes(liveness, readiness),
 			commonresources.WithResources(resources),
@@ -354,8 +354,8 @@ func (ad *ApplierDeleter) makeService(port int32) *corev1.Service {
 
 func (ad *ApplierDeleter) makeNetworkPolicy() *networkingv1.NetworkPolicy {
 	tcpProtocol := corev1.ProtocolTCP
-	prometheusPort := intstr.FromInt32(ports.PrometheusPort)
-	otelMetricsPort := intstr.FromInt32(otelports.Metrics)
+	prometheusPort := intstr.FromInt32(selfmonports.PrometheusPort)
+	otelMetricsPort := intstr.FromInt32(ports.Metrics)
 	fbPortHTTP := intstr.FromInt32(fbports.HTTP)
 	fbPortExporterMetrics := intstr.FromInt32(fbports.ExporterMetrics)
 	managerWebhookPort := intstr.FromInt32(mgrports.Webhook)

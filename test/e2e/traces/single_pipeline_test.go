@@ -6,7 +6,7 @@ import (
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	otelports "github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -49,6 +49,6 @@ func TestSinglePipeline(t *testing.T) {
 	assert.TracePipelineHealthy(t, pipelineName)
 	assert.TracesFromNamespaceDelivered(t, backend, genNs)
 
-	gatewayMetricsURL := suite.ProxyClient.ProxyURLForService(kitkyma.TraceGatewayMetricsService.Namespace, kitkyma.TraceGatewayMetricsService.Name, "metrics", otelports.Metrics)
+	gatewayMetricsURL := suite.ProxyClient.ProxyURLForService(kitkyma.TraceGatewayMetricsService.Namespace, kitkyma.TraceGatewayMetricsService.Name, "metrics", ports.Metrics)
 	assert.EmitsOTelCollectorMetrics(t, gatewayMetricsURL)
 }

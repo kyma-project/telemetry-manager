@@ -19,7 +19,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
-	otelports "github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
@@ -150,7 +150,7 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 
 	ingressAllowedPorts := agentIngressAllowedPorts()
 	if opts.IstioEnabled {
-		ingressAllowedPorts = append(ingressAllowedPorts, otelports.IstioEnvoy)
+		ingressAllowedPorts = append(ingressAllowedPorts, ports.IstioEnvoy)
 	}
 
 	if err := applyCommonResources(ctx, c, name, commonresources.LabelValueK8sComponentAgent, aad.rbac, ingressAllowedPorts); err != nil {
@@ -242,7 +242,7 @@ func makeLogAgentAnnotations(configChecksum string, opts AgentApplyOptions) map[
 	annotations := map[string]string{commonresources.AnnotationKeyChecksumConfig: configChecksum}
 
 	if opts.IstioEnabled {
-		annotations[commonresources.AnnotationKeyIstioExcludeInboundPorts] = strconv.Itoa(int(otelports.Metrics))
+		annotations[commonresources.AnnotationKeyIstioExcludeInboundPorts] = strconv.Itoa(int(ports.Metrics))
 	}
 
 	return annotations
@@ -252,7 +252,7 @@ func makeMetricAgentAnnotations(configChecksum string, opts AgentApplyOptions) m
 	annotations := map[string]string{commonresources.AnnotationKeyChecksumConfig: configChecksum}
 
 	if opts.IstioEnabled {
-		annotations[commonresources.AnnotationKeyIstioExcludeInboundPorts] = strconv.Itoa(int(otelports.Metrics))
+		annotations[commonresources.AnnotationKeyIstioExcludeInboundPorts] = strconv.Itoa(int(ports.Metrics))
 		// Provision Istio certificates for Prometheus Receiver running as a part of MetricAgent by injecting a sidecar which will rotate SDS certificates and output them to a volume.
 		annotations[commonresources.AnnotationKeyIstioProxyConfig] = fmt.Sprintf(`# configure an env variable OUTPUT_CERTS to write certificates to the given folder
 proxyMetadata:
@@ -328,6 +328,6 @@ func makeFileLogCheckPointVolumeMount() corev1.VolumeMount {
 
 func agentIngressAllowedPorts() []int32 {
 	return []int32{
-		otelports.Metrics,
+		ports.Metrics,
 	}
 }

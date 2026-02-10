@@ -3,7 +3,7 @@ package common
 import (
 	"fmt"
 
-	otelports "github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 )
 
 func NewConfig() *Config {
@@ -28,7 +28,7 @@ func serviceConfig() Service {
 						Exporter: MetricExporter{
 							Prometheus: PrometheusMetricExporter{
 								Host: fmt.Sprintf("${%s}", EnvVarCurrentPodIP),
-								Port: otelports.Metrics,
+								Port: ports.Metrics,
 							},
 						},
 					},
@@ -51,10 +51,10 @@ func serviceConfig() Service {
 func extensionsConfig() map[string]any {
 	return map[string]any{
 		ComponentIDHealthCheckExtension: Endpoint{
-			Endpoint: fmt.Sprintf("${%s}:%d", EnvVarCurrentPodIP, otelports.HealthCheck),
+			Endpoint: fmt.Sprintf("${%s}:%d", EnvVarCurrentPodIP, ports.HealthCheck),
 		},
 		ComponentIDPprofExtension: Endpoint{
-			Endpoint: fmt.Sprintf("127.0.0.1:%d", otelports.Pprof),
+			Endpoint: fmt.Sprintf("127.0.0.1:%d", ports.Pprof),
 		},
 	}
 }

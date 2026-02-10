@@ -15,7 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	otelports "github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
@@ -173,7 +173,7 @@ func makeMetricsService(name types.NamespacedName, componentType string) *corev1
 			Labels:    labels,
 			Annotations: map[string]string{
 				commonresources.AnnotationKeyPrometheusScrape: "true",
-				commonresources.AnnotationKeyPrometheusPort:   strconv.Itoa(int(otelports.Metrics)),
+				commonresources.AnnotationKeyPrometheusPort:   strconv.Itoa(int(ports.Metrics)),
 				commonresources.AnnotationKeyPrometheusScheme: "http",
 			},
 		},
@@ -182,8 +182,8 @@ func makeMetricsService(name types.NamespacedName, componentType string) *corev1
 				{
 					Name:       "http-metrics",
 					Protocol:   corev1.ProtocolTCP,
-					Port:       otelports.Metrics,
-					TargetPort: intstr.FromInt32(otelports.Metrics),
+					Port:       ports.Metrics,
+					TargetPort: intstr.FromInt32(ports.Metrics),
 				},
 			},
 			Selector: selectorLabels,

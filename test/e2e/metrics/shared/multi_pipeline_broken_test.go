@@ -9,7 +9,7 @@ import (
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
-	otelports "github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -111,12 +111,12 @@ func TestMultiPipelineBroken(t *testing.T) {
 			if suite.ExpectAgent(tc.label) {
 				assert.MetricsFromNamespaceDelivered(t, backend, genNs, runtime.DefaultMetricsNames)
 
-				agentMetricsURL := suite.ProxyClient.ProxyURLForService(kitkyma.MetricAgentMetricsService.Namespace, kitkyma.MetricAgentMetricsService.Name, "metrics", otelports.Metrics)
+				agentMetricsURL := suite.ProxyClient.ProxyURLForService(kitkyma.MetricAgentMetricsService.Namespace, kitkyma.MetricAgentMetricsService.Name, "metrics", ports.Metrics)
 				assert.EmitsOTelCollectorMetrics(t, agentMetricsURL)
 			} else {
 				assert.MetricsFromNamespaceDelivered(t, backend, genNs, telemetrygen.MetricNames)
 
-				gatewayMetricsURL := suite.ProxyClient.ProxyURLForService(kitkyma.MetricGatewayMetricsService.Namespace, kitkyma.MetricGatewayMetricsService.Name, "metrics", otelports.Metrics)
+				gatewayMetricsURL := suite.ProxyClient.ProxyURLForService(kitkyma.MetricGatewayMetricsService.Namespace, kitkyma.MetricGatewayMetricsService.Name, "metrics", ports.Metrics)
 				assert.EmitsOTelCollectorMetrics(t, gatewayMetricsURL)
 			}
 		})

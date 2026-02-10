@@ -20,7 +20,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
-	otelports "github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
@@ -89,7 +89,7 @@ func (o *OTLPGatewayApplierDeleter) ApplyResources(ctx context.Context, c client
 
 	ingressAllowedPorts := gatewayIngressAllowedPorts()
 	if opts.IstioEnabled {
-		ingressAllowedPorts = append(ingressAllowedPorts, otelports.IstioEnvoy)
+		ingressAllowedPorts = append(ingressAllowedPorts, ports.IstioEnvoy)
 	}
 
 	if err := applyCommonResources(ctx, c, name, commonresources.LabelValueK8sComponentGateway, o.rbac, ingressAllowedPorts); err != nil {
@@ -222,14 +222,14 @@ func (o *OTLPGatewayApplierDeleter) makeOTLPService() *corev1.Service {
 				{
 					Name:       "grpc-collector",
 					Protocol:   corev1.ProtocolTCP,
-					Port:       otelports.OTLPGRPC,
-					TargetPort: intstr.FromInt32(otelports.OTLPGRPC),
+					Port:       ports.OTLPGRPC,
+					TargetPort: intstr.FromInt32(ports.OTLPGRPC),
 				},
 				{
 					Name:       "http-collector",
 					Protocol:   corev1.ProtocolTCP,
-					Port:       otelports.OTLPHTTP,
-					TargetPort: intstr.FromInt32(otelports.OTLPHTTP),
+					Port:       ports.OTLPHTTP,
+					TargetPort: intstr.FromInt32(ports.OTLPHTTP),
 				},
 			},
 			Selector:              selectorLabels,
@@ -257,14 +257,14 @@ func (o *OTLPGatewayApplierDeleter) makeLegacyOTLPService(legacyServiceName stri
 				{
 					Name:       "grpc-collector",
 					Protocol:   corev1.ProtocolTCP,
-					Port:       otelports.OTLPGRPC,
-					TargetPort: intstr.FromInt32(otelports.OTLPGRPC),
+					Port:       ports.OTLPGRPC,
+					TargetPort: intstr.FromInt32(ports.OTLPGRPC),
 				},
 				{
 					Name:       "http-collector",
 					Protocol:   corev1.ProtocolTCP,
-					Port:       otelports.OTLPHTTP,
-					TargetPort: intstr.FromInt32(otelports.OTLPHTTP),
+					Port:       ports.OTLPHTTP,
+					TargetPort: intstr.FromInt32(ports.OTLPHTTP),
 				},
 			},
 			Selector:              selectorLabels,

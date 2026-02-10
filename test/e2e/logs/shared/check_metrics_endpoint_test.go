@@ -10,7 +10,7 @@ import (
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	fbports "github.com/kyma-project/telemetry-manager/internal/fluentbit/ports"
-	otelports "github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -99,7 +99,7 @@ func TestMetricsEndpoint_OTel(t *testing.T) {
 
 			tc.readinessCheckFunc(t, tc.resourceName)
 
-			metricsURL := suite.ProxyClient.ProxyURLForService(tc.metricsService.Namespace, tc.metricsService.Name, "metrics", otelports.Metrics)
+			metricsURL := suite.ProxyClient.ProxyURLForService(tc.metricsService.Namespace, tc.metricsService.Name, "metrics", ports.Metrics)
 			assert.EmitsOTelCollectorMetrics(t, metricsURL)
 		})
 	}

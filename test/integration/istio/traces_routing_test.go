@@ -8,7 +8,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	otelports "github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -57,9 +57,9 @@ func TestTracesRouting(t *testing.T) {
 		Build()
 
 	traceGatewayExternalService := kitk8sobjects.NewService("telemetry-otlp-traces-external", kitkyma.SystemNamespaceName).
-		WithPort("grpc-otlp", otelports.OTLPGRPC).
-		WithPort("http-metrics", otelports.Metrics)
-	metricServiceURL := suite.ProxyClient.ProxyURLForService(kitkyma.SystemNamespaceName, "telemetry-otlp-traces-external", "metrics", otelports.Metrics)
+		WithPort("grpc-otlp", ports.OTLPGRPC).
+		WithPort("http-metrics", ports.Metrics)
+	metricServiceURL := suite.ProxyClient.ProxyURLForService(kitkyma.SystemNamespaceName, "telemetry-otlp-traces-external", "metrics", ports.Metrics)
 
 	app := prommetricgen.New(appNs, prommetricgen.WithName(appName))
 	appURL := app.PodURL(suite.ProxyClient)
