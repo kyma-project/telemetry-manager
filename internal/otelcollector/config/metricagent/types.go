@@ -136,6 +136,7 @@ type PrometheusConfig struct {
 type ScrapeConfig struct {
 	JobName              string          `yaml:"job_name"`
 	SampleLimit          int             `yaml:"sample_limit,omitempty"`
+	BodySizeLimit        string          `yaml:"body_size_limit,omitempty"`
 	ScrapeInterval       time.Duration   `yaml:"scrape_interval,omitempty"`
 	MetricsPath          string          `yaml:"metrics_path,omitempty"`
 	RelabelConfigs       []RelabelConfig `yaml:"relabel_configs,omitempty"`
