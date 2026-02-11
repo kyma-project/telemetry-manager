@@ -144,6 +144,31 @@ Similar to Option 2, but instead of introducing new CRD types, pipeline controll
 
 **Istio Pilot**: Uses ConfigMaps and Secrets as intermediate storage for aggregated xDS configuration before pushing to Envoy sidecars. This demonstrates that ConfigMaps can serve as effective aggregation points without requiring custom CRDs.
 
+
+### Option 5: Use Pipeline ConfigMaps (Alternative mentioned in Option 4)
+
+This options draw inspiration from alternative approach in Option 4 and use multiple pipeline ConfigMaps to depict different pipelines based on signals.
+
+![Option 5 Architecture](../assets/031-arch-option5.svg)
+
+A typical Pipeline ConfigMap would contain following info
+```yaml
+LogPipeline:
+- name: myNewPipeline1
+  generation: 0013
+```
+
+`Generation` would be used as it represents the current version of `spec`. When the `spec` for pipeline is updated the generation would also be updated.
+The `fluentbit controller` would fetch and read the `fluentbit configmap` thus each controller know exactly which pipelines they must fetch the spec from.
+
+#### Advantages
+
+| Category          | Benefit                                                                            |
+| ----------------- | ---------------------------------------------------------------------------------- |
+| No New APIs       | Avoids additional CRD types and API versioning overhead                            |
+| Separation        | Each pipeline controller owns its ConfigMap; no concurrent writes to same resource |
+| Kubernetes Native | ConfigMaps are well-understood primitives; no custom resource learning curve       |
+
 ---
 
 ## Optimistic Locking on ConfigMaps
@@ -175,20 +200,18 @@ if errors.IsConflict(err) {
 
 ## Comparison Matrix
 
-| Criterion                  | Option 1: Direct Multi-Watch | Option 2: Internal CRs | Option 3: Unified Controller | Option 4: Intermediate ConfigMaps |
-| -------------------------- | ---------------------------- | ---------------------- | ---------------------------- | --------------------------------- |
-| New CRDs Required          | No                           | Yes                    | No                           | No                                |
-| Concurrent Write Conflicts | No                           | No                     | No                           | No (if alternative is used)       |
-| Reconciliation Cycles      | 1                            | 2                      | 1-2                          | 2                                 |
-| Testability                | Medium                       | High                   | Medium                       | High                              |
-| Migration Complexity       | Low                          | High                   | Medium                       | Medium                            |
-| Observability              | Low                          | High                   | Medium                       | Medium                            |
+| Criterion                  | Option 1: Direct Multi-Watch | Option 2: Internal CRs | Option 3: Unified Controller | Option 4: Intermediate ConfigMaps | Option 5: Intermediate Pipeline ConfigMap|
+| -------------------------- | ---------------------------- | ---------------------- | ---------------------------- | --------------------------------- |------------------------------------------|
+| New CRDs Required          | No                           | Yes                    | No                           | No                                |No                                        |
+| Concurrent Write Conflicts | No                           | No                     | No                           | No (if alternative is used)       |No                                        |
+| Reconciliation Cycles      | 1                            | 2                      | 1-2                          | 2                                 |2                                         |
+| Testability                | Medium                       | High                   | Medium                       | High                              |High                                      |
+| Migration Complexity       | Low                          | High                   | Medium                       | Medium                            |Medium                                    |
+| Observability              | Low                          | High                   | Medium                       | Medium                            |Medium                                    |
 
 ---
 
 ## Conclusion
-
-<!-- TODO: Still to be discussed and agreed with the team -->
 
 Each option presents valid trade-offs:
 
@@ -196,6 +219,7 @@ Each option presents valid trade-offs:
 - **Option 2** provides the cleanest separation but adds API complexity.
 - **Option 3** offers strong coordination but creates a bottleneck.
 - **Option 4** balances separation and simplicity without new CRDs.
+- **Option 5** improves on the idea of `option 4` to provide a simple solution.
 
 The decision should consider:
 1. Potential complexity overhead.
@@ -206,8 +230,13 @@ The decision should consider:
 
 ## Open Questions
 
-<!-- TODO: Address these during implementation -->
-
 - How should potential intermediate ConfigMaps/CRs be structured and what data should they contain?
+  > Configmaps would be used with pipelineName and generation.
 - How would Gardener Extension integration affect this architecture?
+  > When we implement the gardener extension we can revisit this and update the intermediary ConfigMaps with the new schema as per requirement.
 - What is the acceptable latency for configuration propagation across the two-cycle options?
+  > There should not be latency as the all controllers would run in parallel. When the pipeline ConfigMap is populated with valid pipelines the respective controller would deploy the DaemonSets
+
+
+## Decision
+Architecture diagram from `Option 5` will be implemented.
