@@ -69,6 +69,40 @@ However, the reproducible build approach is currently not available and have to 
 
 ![Release Workflow](./../assets/auditable-release-final.drawio.svg)
 
+## Release Workflow Step-by-Step Execution
+
+Based on the release state machine diagram, the auditable release automation workflow follows these sequential and parallel execution steps:
+
+**Project Manager Action**: Close the current development milestone to signify the boundary between development and release phases. This marks the completion of all planned features for the current release.
+
+**Release Master Action**: The release master initiates the release process by entering the release version and OpenTelemetry Collector Components (OCC) version for the release. This action triggers the release workflow and sets the stage for subsequent steps.
+
+**System Decision Point**: The system evaluates whether this is a patch release or a new minor version release:
+- **Patch Release**: If the release involves only bug fixes (patch release), skip release branch creation.
+- **New Version Release**: If this is a new feature release (non-patch), create a dedicated release branch following the `release-x.y` naming convention (e.g., `release-1.0`).
+- Commits these changes to the release branch
+- Creates a release tag marking the version point
+**Source Control Action**: Push the committed version-bumped artifacts and the release tag to the release branch. This officially marks the release version in the repository.
+- Run Unit Tests and Release Image creation in parallel.
+
+**Simultaneous Test Runs**: Three independent test suites are triggered in parallel against the release branch after Docker image created:
+- **E2E (End-to-End) Tests**: Full system behavior verification
+- **Gardener Integration Tests**: Compatibility validation with Gardener infrastructure platform
+- **Upgrade Tests**: Validation of upgrade paths from previous versions to the new release
+
+All tests execute against the same release Docker image to ensure reproducibility and consistency. Tests run in parallel to minimize total release cycle time.
+
+**Completion Action**: Upon successful completion of all test suites, the system:
+- Aggregates all test reports from the test workflows
+- Downloads test execution logs and artifacts
+- Uploads the complete test results to a pre-configured Google Cloud Storage (GCP) bucket
+
+**Release Publication**:
+- Create an official GitHub release entry for the release tag
+- Attach release artifacts and binaries
+
+**Release Bump PR Creation**: Upon successful release creation, automatically create release bump pull requests across multiple channels and environments:
+
 ## Conclusion
 
 Implementing auditable release automation is essential for maintaining the integrity and compliance of the SAP BTP, Kyma runtime product. 
