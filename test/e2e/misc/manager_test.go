@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	discoveryv1 "k8s.io/api/discovery/v1"
@@ -39,7 +40,7 @@ func TestManager(t *testing.T) {
 		assert.NewResource(&corev1.ConfigMap{}, types.NamespacedName{Name: "telemetry-logpipelines", Namespace: kitkyma.SystemNamespaceName}),
 		assert.NewResource(&corev1.ConfigMap{}, types.NamespacedName{Name: "telemetry-tracepipelines", Namespace: kitkyma.SystemNamespaceName}),
 		assert.NewResource(&corev1.ConfigMap{}, types.NamespacedName{Name: "telemetry-module", Namespace: kitkyma.SystemNamespaceName}),
-		assert.NewResource(&networkingv1.NetworkPolicy{}, types.NamespacedName{Name: "telemetry-manager", Namespace: kitkyma.SystemNamespaceName}),
+		assert.NewResource(&networkingv1.NetworkPolicy{}, types.NamespacedName{Name: commonresources.NetworkPolicyPrefix + "telemetry-manager", Namespace: kitkyma.SystemNamespaceName}),
 		assert.NewResource(&schedulingv1.PriorityClass{}, types.NamespacedName{Name: "telemetry-priority-class", Namespace: kitkyma.SystemNamespaceName}),
 		assert.NewResource(&schedulingv1.PriorityClass{}, types.NamespacedName{Name: "telemetry-priority-class-high", Namespace: kitkyma.SystemNamespaceName}),
 	}
