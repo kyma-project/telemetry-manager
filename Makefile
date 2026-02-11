@@ -262,6 +262,14 @@ docker-build-selfmonitor: ## Build docker image for telemetry self-monitor
 docker-push-selfmonitor: ## Push docker image for telemetry self-monitor
 	docker push ${SELF_MONITOR_IMAGE}
 
+.PHONY: docker-pull-self-monitor-fips-image
+docker-pull-self-monitor-fips-image: ## Pull the Self-Monitor FIPS image
+	docker pull ${SELF_MONITOR_FIPS_IMAGE}
+
+.PHONY: k3d-import-self-monitor-fips-image
+k3d-import-self-monitor-fips-image: ## Import the Self-Monitor FIPS image into the K3D cluster
+	$(K3D) image import ${SELF_MONITOR_FIPS_IMAGE} -c kyma
+
 ##@ Development
 
 .PHONY: run
@@ -300,7 +308,7 @@ uninstall: manifests $(HELM) ## Uninstall CRDs from the K8s cluster (use ignore-
 	$(HELM) template helm/charts/default | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
 .PHONY: deploy
-deploy: manifests $(HELM) ## Deploy telemetry manager with default/release configuration
+deploy: manifests $(HELM) docker-pull-self-monitor-fips-image k3d-import-self-monitor-fips-image ## Deploy telemetry manager with default/release configuration
 	$(HELM) template telemetry helm \
 		--set experimental.enabled=false \
 		--set default.enabled=true \
@@ -333,7 +341,7 @@ undeploy: $(HELM) ## Undeploy telemetry manager with default/release configurati
 	| kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
 .PHONY: deploy-experimental
-deploy-experimental: manifests-experimental $(HELM) ## Deploy telemetry manager with experimental features enabled
+deploy-experimental: manifests-experimental $(HELM) docker-pull-self-monitor-fips-image k3d-import-self-monitor-fips-image ## Deploy telemetry manager with experimental features enabled
 	$(HELM) template telemetry helm \
 		--set experimental.enabled=true \
 		--set default.enabled=false \
@@ -384,12 +392,3 @@ undeploy-experimental: $(HELM) ## Undeploy telemetry manager with experimental f
 .PHONY: update-metrics-docs
 update-metrics-docs: $(PROMLINTER) $(GOMPLATE) ## Update internal metrics documentation
 	@metrics=$$(mktemp).json; echo $${metrics}; $(PROMLINTER) list -ojson internal > $${metrics}; $(GOMPLATE) -d telemetry=$${metrics} -f hack/telemetry-internal-metrics.md.tpl > docs/contributor/telemetry-internal-metrics.md
-
-
-.PHONY: pull-self-monitor-fips-image
-pull-self-monitor-fips-image: ## Pull the Self-Monitor FIPS image
-	docker pull ${SELF_MONITOR_FIPS_IMAGE}
-
-.PHONY: import-self-monitor-fips-image-k3d
-import-self-monitor-fips-image-k3d: ## Import the Self-Monitor FIPS image into the K3D cluster
-	$(K3D) image import ${SELF_MONITOR_FIPS_IMAGE} -c kyma
