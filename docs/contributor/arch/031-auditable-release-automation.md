@@ -19,6 +19,7 @@ For auditing purposes, each release must provide successful test result artifact
 - Test execution reports (unit and e2e tests)
 - Docker images used for testing and release
 - Gardener tests execution reports
+- Upgrade tests execution reports
 - Docker Image digest verification
 
 ### Test Execution Reports
@@ -53,17 +54,6 @@ To achieve deterministic Docker builds, the following strategies can be employed
 - **Reproducible Build Tools**: Utilize tools and techniques that support reproducible builds, such as Docker's BuildKit option, which have to be implemented by the `Image-Builder`.
 - **Copy Release PR Image**: As an alternative to reproducible builds, the release process can be modified to copy the Docker image built during the release PR directly to the production registry with the release tag. This approach ensures that the same image used for testing is released, maintaining identical digests.
 
-### 1. Release Workflow
-
-1- Reproduce Docker image on release using the same Dockerfile and source code as in the PR build to ensure identical digest.
-
-![Workflow](./../assets/auditable-release.drawio.svg)
-
-
-2- Copy PR Image to Release Registry
-
-![Workflow](./../assets/auditable-release-alternative.drawio.svg)
-
 Both approaches ensure that the Docker image used for testing is the same as the one released, providing a clear audit trail and maintaining software integrity throughout the release process. 
 However, the reproducible build approach is currently not available and have to be implemented by the `Image-Builder` team, therefore the recommended approach for now, repeat all test in the release branch with release Docker Image.
 
@@ -71,9 +61,7 @@ However, the reproducible build approach is currently not available and have to 
 
 ## Release Workflow Step-by-Step Execution
 
-Based on the release state machine diagram, the auditable release automation workflow follows these sequential and parallel execution steps:
-
-**Project Manager Action**: Close the current development milestone to signify the boundary between development and release phases. This marks the completion of all planned features for the current release.
+**Project Master Action**: Close the current development milestone to signify the boundary between development and release phases. This marks the completion of all planned features for the current release.
 
 **Release Master Action**: The release master initiates the release process by entering the release version and OpenTelemetry Collector Components (OCC) version for the release. This action triggers the release workflow and sets the stage for subsequent steps.
 
