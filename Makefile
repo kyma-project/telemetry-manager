@@ -308,7 +308,7 @@ uninstall: manifests $(HELM) ## Uninstall CRDs from the K8s cluster (use ignore-
 	$(HELM) template helm/charts/default | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
 .PHONY: deploy
-deploy: manifests $(HELM) docker-pull-self-monitor-fips-image k3d-import-self-monitor-fips-image ## Deploy telemetry manager with default/release configuration
+deploy: manifests $(HELM) ## Deploy telemetry manager with default/release configuration
 	$(HELM) template telemetry helm \
 		--set experimental.enabled=false \
 		--set default.enabled=true \
@@ -341,7 +341,7 @@ undeploy: $(HELM) ## Undeploy telemetry manager with default/release configurati
 	| kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
 .PHONY: deploy-experimental
-deploy-experimental: manifests-experimental $(HELM) docker-pull-self-monitor-fips-image k3d-import-self-monitor-fips-image ## Deploy telemetry manager with experimental features enabled
+deploy-experimental: manifests-experimental $(HELM) ## Deploy telemetry manager with experimental features enabled
 	$(HELM) template telemetry helm \
 		--set experimental.enabled=true \
 		--set default.enabled=false \
