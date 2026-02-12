@@ -19,7 +19,6 @@ on:
   workflow_run:
     branches-ignore:
       - main
-      - "prometheus_fips_image"
     workflows: ["PR Integration"]
     types:
       - completed
