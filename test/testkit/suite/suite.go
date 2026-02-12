@@ -2,6 +2,7 @@ package suite
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"os"
 	"path"
@@ -16,13 +17,26 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
+	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 )
 
 var (
 	Ctx         context.Context
 	K8sClient   client.Client
 	ProxyClient *apiserverproxy.Client
+
+	// ClusterPrepConfig enables dynamic cluster configuration
+	// Set this before calling BeforeSuiteFunc() to prepare cluster
+	ClusterPrepConfig *kubeprep.Config
 )
+
+// init registers the -labels flag with the flag package so go test doesn't error.
+// The actual parsing is done by findLabelFilterExpression() which reads os.Args directly.
+func init() {
+	// Register the flag to prevent "flag provided but not defined" error
+	// The value is ignored - we use the existing findLabelFilterExpression() instead
+	flag.String("labels", "", "Label filter expression (e.g., 'log-agent and istio')")
+}
 
 // BeforeSuiteFunc is designed to return an error instead of relying on Gomega matchers.
 // This function is intended for use in a vanilla TestMain function within new e2e test suites.
@@ -46,6 +60,30 @@ func BeforeSuiteFunc() error {
 	ProxyClient, err = apiserverproxy.NewClient(restConfig)
 	if err != nil {
 		return fmt.Errorf("failed to create apiserver proxy client: %w", err)
+	}
+
+	// Prepare cluster if config is provided
+	if ClusterPrepConfig != nil {
+		fmt.Printf("Preparing cluster with config: %+v\n", *ClusterPrepConfig) //nolint:forbidigo // using fmt for setup output
+		if err := kubeprep.PrepareCluster(Ctx, K8sClient, *ClusterPrepConfig); err != nil {
+			return fmt.Errorf("failed to prepare cluster: %w", err)
+		}
+		fmt.Println("Cluster preparation complete") //nolint:forbidigo // using fmt for setup output
+	}
+
+	return nil
+}
+
+// AfterSuiteFunc cleans up cluster resources after tests complete.
+// This function should be called in TestMain after m.Run() to restore cluster to previous state.
+func AfterSuiteFunc() error {
+	// Clean up cluster if config was provided
+	if ClusterPrepConfig != nil {
+		fmt.Println("Cleaning up cluster resources...") //nolint:forbidigo // using fmt for cleanup output
+		if err := kubeprep.CleanupCluster(Ctx, K8sClient, *ClusterPrepConfig); err != nil {
+			return fmt.Errorf("failed to cleanup cluster: %w", err)
+		}
+		fmt.Println("Cluster cleanup complete") //nolint:forbidigo // using fmt for cleanup output
 	}
 
 	return nil

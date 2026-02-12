@@ -24,3 +24,8 @@ runs:
         TEST_ID: ${{ inputs.id }}
         TEST_PATH: ${{ inputs.path }}
         TEST_LABELS: ${{ inputs.labels }}
+        MANAGER_IMAGE: ${{ env.MANAGER_IMAGE }}
+        INSTALL_ISTIO: ${{ env.INSTALL_ISTIO }}
+        ENABLE_EXPERIMENTAL: ${{ env.ENABLE_EXPERIMENTAL }}
+        OPERATE_IN_FIPS_MODE: ${{ env.OPERATE_IN_FIPS_MODE }}
+        CUSTOM_LABELS_ANNOTATIONS: ${{ env.CUSTOM_LABELS_ANNOTATIONS }}
