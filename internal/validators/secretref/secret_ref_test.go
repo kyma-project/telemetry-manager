@@ -336,7 +336,7 @@ func TestTracePipeline_GetSecretRefs(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			sut := telemetryv1beta1.TracePipeline{ObjectMeta: metav1.ObjectMeta{Name: test.pipelineName}, Spec: telemetryv1beta1.TracePipelineSpec{Output: telemetryv1beta1.TracePipelineOutput{OTLP: test.given}}}
-			actual := getSecretRefsTracePipeline(&sut)
+			actual := GetSecretRefsTracePipeline(&sut)
 			require.ElementsMatch(t, test.expected, actual)
 		})
 	}

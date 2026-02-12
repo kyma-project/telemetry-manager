@@ -36,9 +36,11 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
+	"github.com/kyma-project/telemetry-manager/internal/secretwatch"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 	sharedtypesutils "github.com/kyma-project/telemetry-manager/internal/utils/sharedtypes"
 	telemetryutils "github.com/kyma-project/telemetry-manager/internal/utils/telemetry"
+	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
 
@@ -61,6 +63,7 @@ type Reconciler struct {
 	pipelineSync          PipelineSyncer
 	pipelineValidator     *Validator
 	errToMsgConverter     commonstatus.ErrorToMessageConverter
+	secretWatcher         SecretWatcher
 }
 
 // Option configures the Reconciler during initialization.
@@ -150,6 +153,12 @@ func WithClient(client client.Client) Option {
 	}
 }
 
+func WithSecretWatcher(watcher *secretwatch.Client) Option {
+	return func(r *Reconciler) {
+		r.secretWatcher = watcher
+	}
+}
+
 // New creates a new Reconciler with the provided options.
 func New(opts ...Option) *Reconciler {
 	r := &Reconciler{}
@@ -221,6 +230,8 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 
 	r.trackPipelineInfoMetric(ctx, allPipelinesList.Items)
 
+	r.syncWatchedSecrets(ctx, pipeline)
+
 	reconcilablePipelines, err := r.getReconcilablePipelines(ctx, allPipelinesList.Items)
 	if err != nil {
 		return fmt.Errorf("failed to fetch deployable trace pipelines: %w", err)
@@ -239,6 +250,22 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 	if err = r.reconcileTraceGateway(ctx, pipeline, reconcilablePipelines); err != nil {
 		return fmt.Errorf("failed to reconcile trace gateway: %w", err)
 	}
+
+	return nil
+}
+
+func (r *Reconciler) syncWatchedSecrets(ctx context.Context, pipeline *telemetryv1beta1.TracePipeline) error {
+	secretRefs := secretref.GetSecretRefsTracePipeline(pipeline)
+
+	var secretNames []client.ObjectKey
+	for _, ref := range secretRefs {
+		secretNames = append(secretNames, client.ObjectKey{
+			Namespace: ref.Namespace,
+			Name:      ref.Name,
+		})
+	}
+
+	r.secretWatcher.SyncWatchedSecrets(ctx, pipeline.Name, secretNames)
 
 	return nil
 }

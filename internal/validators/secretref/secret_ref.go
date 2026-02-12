@@ -28,7 +28,7 @@ var (
 // ValidateTracePipeline validates the secret references in a TracePipeline, ensuring that the references are valid,
 // and the referenced Secrets exist and contain the required keys. It returns an error otherwise.
 func (v *Validator) ValidateTracePipeline(ctx context.Context, pipeline *telemetryv1beta1.TracePipeline) error {
-	return v.validate(ctx, getSecretRefsTracePipeline(pipeline))
+	return v.validate(ctx, GetSecretRefsTracePipeline(pipeline))
 }
 
 // ValidateMetricPipeline validates the secret references in a MetricPipeline, ensuring that the references are valid,
@@ -102,7 +102,7 @@ func checkForMissingFields(ref telemetryv1beta1.SecretKeyRef) error {
 	return nil
 }
 
-func getSecretRefsTracePipeline(tp *telemetryv1beta1.TracePipeline) []telemetryv1beta1.SecretKeyRef {
+func GetSecretRefsTracePipeline(tp *telemetryv1beta1.TracePipeline) []telemetryv1beta1.SecretKeyRef {
 	return getSecretRefsInOTLPOutput(tp.Spec.Output.OTLP)
 }
 

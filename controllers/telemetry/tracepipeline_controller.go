@@ -47,6 +47,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
+	"github.com/kyma-project/telemetry-manager/internal/secretwatch"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	predicateutils "github.com/kyma-project/telemetry-manager/internal/utils/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
@@ -60,7 +61,7 @@ import (
 type TracePipelineController struct {
 	client.Client
 
-	reconcileTriggerChan <-chan event.GenericEvent
+	reconcileTriggerChan chan event.GenericEvent
 	reconciler           *tracepipeline.Reconciler
 }
 
@@ -72,7 +73,7 @@ type TracePipelineControllerConfig struct {
 	TraceGatewayPriorityClassName string
 }
 
-func NewTracePipelineController(config TracePipelineControllerConfig, client client.Client, reconcileTriggerChan <-chan event.GenericEvent) (*TracePipelineController, error) {
+func NewTracePipelineController(config TracePipelineControllerConfig, client client.Client, reconcileTriggerChan chan event.GenericEvent) (*TracePipelineController, error) {
 	flowHealthProber, err := prober.NewOTelTraceGatewayProber(types.NamespacedName{Name: names.SelfMonitor, Namespace: config.TargetNamespace()})
 	if err != nil {
 		return nil, err
@@ -119,6 +120,11 @@ func NewTracePipelineController(config TracePipelineControllerConfig, client cli
 		return nil, err
 	}
 
+	secretWatcher, err := secretwatch.NewClient(config.RestConfig, reconcileTriggerChan)
+	if err != nil {
+		return nil, err
+	}
+
 	reconciler := tracepipeline.New(
 		tracepipeline.WithClient(client),
 		tracepipeline.WithGlobals(config.Global),
@@ -131,10 +137,10 @@ func NewTracePipelineController(config TracePipelineControllerConfig, client cli
 		tracepipeline.WithIstioStatusChecker(istiostatus.NewChecker(discoveryClient)),
 		tracepipeline.WithOverridesHandler(overrides.New(config.Global, client)),
 		tracepipeline.WithErrorToMessageConverter(&conditions.ErrorToMessageConverter{}),
-
 		tracepipeline.WithPipelineLock(pipelineLock),
 		tracepipeline.WithPipelineSyncer(pipelineSync),
 		tracepipeline.WithPipelineValidator(pipelineValidator),
+		tracepipeline.WithSecretWatcher(secretWatcher),
 	)
 
 	return &TracePipelineController{

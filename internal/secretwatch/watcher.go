@@ -13,7 +13,10 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
 	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
 
 // watcher monitors a single Kubernetes secret and tracks which pipelines depend on it.
@@ -23,18 +26,17 @@ type watcher struct {
 	linkedPipelines []string
 	mu              sync.RWMutex
 	client          typedcorev1.SecretInterface
-	eventHandler    EventHandler
+	eventChan       chan<- event.GenericEvent
 }
 
 // newWatcher creates a new watcher for the specified secret.
 // It initializes the watcher with the given linked pipelines and a Kubernetes client
 // for the secret's namespace.
-func newWatcher(secret types.NamespacedName, linkedPipelines []string, clientset kubernetes.Interface, eventHandler EventHandler) *watcher {
+func newWatcher(secret types.NamespacedName, linkedPipelines []string, clientset kubernetes.Interface, eventChan chan<- event.GenericEvent) *watcher {
 	return &watcher{
 		secret:          secret,
 		linkedPipelines: linkedPipelines,
 		client:          clientset.CoreV1().Secrets(secret.Namespace),
-		eventHandler:    eventHandler,
 	}
 }
 
@@ -136,19 +138,19 @@ func (w *watcher) Start(ctx context.Context) {
 
 		log.V(1).Info("Watcher established successfully", "secret", w.secret.String())
 
-		for event := range watcher.ResultChan() {
-			if event.Type == watch.Error {
+		for watchEvent := range watcher.ResultChan() {
+			if watchEvent.Type == watch.Error {
 				log.V(1).Info("Watch error received",
 					"secret", w.secret.String(),
-					"object", event.Object)
+					"object", watchEvent.Object)
 				break
 			}
 
-			secret, ok := event.Object.(*corev1.Secret)
+			secret, ok := watchEvent.Object.(*corev1.Secret)
 			if !ok {
 				log.Info("Unexpected object type",
 					"secret", w.secret.String(),
-					"type", fmt.Sprintf("%T", event.Object))
+					"type", fmt.Sprintf("%T", watchEvent.Object))
 				continue
 			}
 
@@ -156,7 +158,7 @@ func (w *watcher) Start(ctx context.Context) {
 			linkedPipelines := w.getLinkedPipelines()
 
 			// Log the event
-			switch event.Type {
+			switch watchEvent.Type {
 			case watch.Added:
 				log.Info("Secret added",
 					"secret", secret.Name,
@@ -177,17 +179,25 @@ func (w *watcher) Start(ctx context.Context) {
 					"linkedPipelines", linkedPipelines)
 			default:
 				log.Info("Secret event",
-					"eventType", event.Type,
+					"eventType", watchEvent.Type,
 					"secret", secret.Name,
 					"namespace", secret.Namespace,
 					"resourceVersion", secret.ResourceVersion,
 					"linkedPipelines", linkedPipelines)
 			}
 
-			// Call event handler if provided
-			if w.eventHandler != nil {
-				w.eventHandler(w.secret, event.Type, linkedPipelines)
+			// Send a generic event to trigger reconciliation for linked pipelines
+			for _, pipelineName := range linkedPipelines {
+				e := event.GenericEvent{
+					Object: &telemetryv1beta1.TracePipeline{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: pipelineName,
+						},
+					},
+				}
+				w.eventChan <- e
 			}
+
 		}
 
 		log.V(1).Info("Watcher channel closed. Reconnecting in 5 seconds...",

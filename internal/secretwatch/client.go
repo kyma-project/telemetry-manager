@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -18,13 +18,6 @@ const (
 	// DefaultShutdownTimeout is the default timeout for graceful shutdown
 	DefaultShutdownTimeout = 30 * time.Second
 )
-
-// EventType represents the type of secret event
-type EventType = watch.EventType
-
-// EventHandler is called when a watched secret changes.
-// It receives the secret name, event type, and list of pipelines that depend on this secret.
-type EventHandler func(secretName types.NamespacedName, eventType EventType, linkedPipelines []string)
 
 type watcherEntry struct {
 	watcher *watcher
@@ -37,27 +30,27 @@ type watcherEntry struct {
 // for each unique secret being monitored.
 // Client is safe for concurrent use.
 type Client struct {
-	clientset    kubernetes.Interface
-	watchers     map[types.NamespacedName]*watcherEntry
-	mu           sync.RWMutex
-	eventHandler EventHandler
-	wg           sync.WaitGroup
+	clientset kubernetes.Interface
+	watchers  map[types.NamespacedName]*watcherEntry
+	eventChan chan<- event.GenericEvent
+	mu        sync.RWMutex
+	wg        sync.WaitGroup
 }
 
 // NewClient creates a new Client for watching Kubernetes secrets.
 // It initializes the Kubernetes clientset using the provided REST configuration.
 // The eventHandler will be called whenever a watched secret changes.
 // If eventHandler is nil, events will only be logged.
-func NewClient(cfg *rest.Config, eventHandler EventHandler) (*Client, error) {
+func NewClient(cfg *rest.Config, eventChan chan<- event.GenericEvent) (*Client, error) {
 	clientset, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create clientset: %w", err)
 	}
 
 	return &Client{
-		clientset:    clientset,
-		watchers:     make(map[types.NamespacedName]*watcherEntry),
-		eventHandler: eventHandler,
+		clientset: clientset,
+		watchers:  make(map[types.NamespacedName]*watcherEntry),
+		eventChan: eventChan,
 	}, nil
 }
 
@@ -109,6 +102,8 @@ func (c *Client) StopWithTimeout(timeout time.Duration) {
 // This method is idempotent and declarative - it synchronizes to the desired state.
 // New watchers are started immediately, and removed watchers are stopped immediately.
 func (c *Client) SyncWatchedSecrets(ctx context.Context, pipelineName string, secrets []types.NamespacedName) {
+	logf.FromContext(ctx).V(1).Info("Syncing watched secrets for pipeline")
+
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -119,7 +114,7 @@ func (c *Client) SyncWatchedSecrets(ctx context.Context, pipelineName string, se
 			entry.watcher.addPipeline(pipelineName)
 		} else {
 			// Create new watcher and start it immediately
-			w := newWatcher(secret, []string{pipelineName}, c.clientset, c.eventHandler)
+			w := newWatcher(secret, []string{pipelineName}, c.clientset, c.eventChan)
 
 			watcherCtx, cancel := context.WithCancel(ctx)
 			entry := &watcherEntry{
@@ -155,10 +150,4 @@ func (c *Client) SyncWatchedSecrets(ctx context.Context, pipelineName string, se
 			}
 		}
 	}
-}
-
-// RemovePipeline removes all secret watches for the specified pipeline.
-// This is a convenience method equivalent to calling SyncWatchedSecrets with an empty secret list.
-func (c *Client) RemovePipeline(ctx context.Context, pipelineName string) {
-	c.SyncWatchedSecrets(ctx, pipelineName, nil)
 }
