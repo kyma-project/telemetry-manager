@@ -9,8 +9,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
-	telemetrycontrollers "github.com/kyma-project/telemetry-manager/controllers/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -23,7 +23,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-const maxNumberOfLogPipelines = telemetrycontrollers.MaxPipelineCount
+const maxNumberOfLogPipelines = resourcelock.MaxPipelineCount
 
 func TestMultiPipelineMaxPipeline(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelLogsMaxPipeline)
