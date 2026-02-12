@@ -23,6 +23,12 @@ wait_for_containerd() {
   return 1
 }
 
+ensure_image_complete() {
+  echo "Ensuring image layers are fully materialized..."
+  docker image inspect "$IMAGE" >/dev/null 2>&1
+  docker save "$IMAGE" | docker load >/dev/null
+}
+
 import_image() {
   local output
   output=$("$K3D_BIN" image import "$IMAGE" -c "$CLUSTER" 2>&1 || true)
@@ -34,6 +40,7 @@ import_image() {
 }
 
 wait_for_containerd
+ensure_image_complete
 
 for ((i=1; i<=MAX_RETRIES; i++)); do
   echo "Import attempt $i/$MAX_RETRIES"
