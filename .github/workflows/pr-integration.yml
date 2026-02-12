@@ -9,7 +9,7 @@ on:
     - cron: "0 */3 * * *"
   merge_group:
   pull_request_target:
-    types: [labeled, opened, synchronize, reopened]
+    types: [opened, edited, synchronize, reopened, ready_for_review]
     branches:
       - "main"
       - "release-*"
