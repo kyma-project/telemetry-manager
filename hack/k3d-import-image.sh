@@ -2,9 +2,6 @@
 set -euo pipefail
 
 IMAGE="${1:?image required}"
-# Strip surrounding quotes if present
-IMAGE="${IMAGE%\"}"
-IMAGE="${IMAGE#\"}"
 CLUSTER="${2:-kyma}"
 MAX_RETRIES="${3:-20}"
 K3D_BIN="${K3D:?K3D env var required}"
