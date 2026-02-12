@@ -271,7 +271,7 @@ docker-pull-self-monitor-image: ## Pull the Self-Monitor image
 	docker pull ${SELF_MONITOR_IMAGE}
 
 .PHONY: docker-tag-self-monitor-image-as-fips
-docker-tag-self-monitor-image-as-fips: docker-pull-self-monitor-image ## Tag the Self-Monitor image with the same tag as the Self-Monitor FIPS image
+docker-tag-self-monitor-image-as-fips: ## Tag the Self-Monitor image with the same tag as the Self-Monitor FIPS image
 	docker tag ${SELF_MONITOR_IMAGE} ${SELF_MONITOR_FIPS_IMAGE}
 
 .PHONY: k3d-import-self-monitor-fips-image
