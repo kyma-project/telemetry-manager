@@ -24,8 +24,6 @@ spec:
     - ipBlock:
         cidr: ::/0
     ports:
-    - port: 8080
-      protocol: TCP
     - port: 9443
       protocol: TCP
   podSelector:
@@ -86,3 +84,33 @@ spec:
           protocol: TCP
   policyTypes:
     - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: kyma-project.io--allow-{{ include "telemetry-manager.fullname" . }}-metrics
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
+    purpose: metrics
+  {{- include "telemetry-manager.labels" . | indent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: manager
+      kyma-project.io/module: telemetry
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ .Release.Namespace }}
+          podSelector:
+            matchLabels:
+              networking.kyma-project.io/metrics-scraping: allowed
+      ports:
+        - port: 8080
+          protocol: TCP
+  policyTypes:
+    - Ingress
