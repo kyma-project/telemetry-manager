@@ -411,9 +411,8 @@ func TestAgentFlowHealthCondition(t *testing.T) {
 			probe: prober.OTelAgentProbeResult{
 				PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
 			},
-			expectedStatus: metav1.ConditionFalse,
-			expectedReason: conditions.ReasonSelfMonAgentSomeDataDropped,
-			// TODO: Fix the documentation text in the link
+			expectedStatus:  metav1.ConditionFalse,
+			expectedReason:  conditions.ReasonSelfMonAgentSomeDataDropped,
 			expectedMessage: "Backend is reachable, but rejecting metrics. Some metrics are dropped. See troubleshooting: " + conditions.LinkNotAllDataArriveAtBackend,
 		},
 		{
