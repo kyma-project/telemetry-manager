@@ -6,7 +6,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/utils/ptr"
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 )
@@ -18,10 +17,10 @@ const (
 
 var (
 	hardenedSecurityContext = corev1.SecurityContext{
-		Privileged:               ptr.To(false),
-		RunAsNonRoot:             ptr.To(true),
-		ReadOnlyRootFilesystem:   ptr.To(true),
-		AllowPrivilegeEscalation: ptr.To(false),
+		Privileged:               new(false),
+		RunAsNonRoot:             new(true),
+		ReadOnlyRootFilesystem:   new(true),
+		AllowPrivilegeEscalation: new(false),
 		SeccompProfile: &corev1.SeccompProfile{
 			Type: corev1.SeccompProfileTypeRuntimeDefault,
 		},
@@ -31,7 +30,7 @@ var (
 	}
 
 	hardenedPodSecurityContext = corev1.PodSecurityContext{
-		RunAsNonRoot: ptr.To(true),
+		RunAsNonRoot: new(true),
 		SeccompProfile: &corev1.SeccompProfile{
 			Type: corev1.SeccompProfileTypeRuntimeDefault,
 		},
@@ -103,7 +102,7 @@ func WithVolumes(volumes []corev1.Volume) PodSpecOption {
 
 func WithPodRunAsUser(userID int64) PodSpecOption {
 	return func(pod *corev1.PodSpec) {
-		pod.SecurityContext.RunAsUser = ptr.To(userID)
+		pod.SecurityContext.RunAsUser = new(userID)
 	}
 }
 
@@ -175,7 +174,7 @@ func WithEnvVarsFromSecret(secretName string) ContainerOption {
 				LocalObjectReference: corev1.LocalObjectReference{
 					Name: secretName,
 				},
-				Optional: ptr.To(true),
+				Optional: new(true),
 			},
 		})
 	}
@@ -235,19 +234,19 @@ func WithProbes(liveness, readiness *corev1.Probe) ContainerOption {
 
 func WithRunAsRoot() ContainerOption {
 	return func(c *corev1.Container) {
-		c.SecurityContext.RunAsNonRoot = ptr.To(false)
+		c.SecurityContext.RunAsNonRoot = new(false)
 	}
 }
 
 func WithRunAsGroup(groupID int64) ContainerOption {
 	return func(c *corev1.Container) {
-		c.SecurityContext.RunAsGroup = ptr.To(groupID)
+		c.SecurityContext.RunAsGroup = new(groupID)
 	}
 }
 
 func WithRunAsUser(userID int64) ContainerOption {
 	return func(c *corev1.Container) {
-		c.SecurityContext.RunAsUser = ptr.To(userID)
+		c.SecurityContext.RunAsUser = new(userID)
 	}
 }
 
@@ -311,7 +310,7 @@ func WithClusterTrustBundleVolume(clusterTrustBundleName string) PodSpecOption {
 						Sources: []corev1.VolumeProjection{
 							{
 								ClusterTrustBundle: &corev1.ClusterTrustBundleProjection{
-									Name: ptr.To(clusterTrustBundleName),
+									Name: new(clusterTrustBundleName),
 									Path: ClusterTrustBundleFileName,
 								},
 							},

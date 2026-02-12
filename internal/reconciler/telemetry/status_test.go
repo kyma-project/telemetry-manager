@@ -48,9 +48,9 @@ func TestUpdateStatus(t *testing.T) {
 			metricsCheckerReturn: &metav1.Condition{Type: conditions.TypeMetricComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			tracesCheckerReturn:  &metav1.Condition{Type: conditions.TypeTraceComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			resources: []client.Object{
-				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPLogsService).Build()),
-				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPTracesService).Build()),
-				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPMetricsService).Build()),
+				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPLogsService).Build()),
+				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPTracesService).Build()),
+				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPMetricsService).Build()),
 			},
 			expectedState: operatorv1beta1.StateReady,
 			expectedConditions: []metav1.Condition{
@@ -84,9 +84,9 @@ func TestUpdateStatus(t *testing.T) {
 			tracesCheckerReturn:  &metav1.Condition{Type: conditions.TypeTraceComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			expectedState:        operatorv1beta1.StateWarning,
 			resources: []client.Object{
-				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPLogsService).Build()),
-				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPTracesService).Build()),
-				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPMetricsService).Build()),
+				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPLogsService).Build()),
+				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPTracesService).Build()),
+				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPMetricsService).Build()),
 			},
 			expectedConditions: []metav1.Condition{
 				{Type: conditions.TypeLogComponentsHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonAgentNotReady},
@@ -118,9 +118,9 @@ func TestUpdateStatus(t *testing.T) {
 			metricsCheckerReturn: &metav1.Condition{Type: conditions.TypeMetricComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			tracesCheckerReturn:  &metav1.Condition{Type: conditions.TypeTraceComponentsHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonGatewayNotReady},
 			resources: []client.Object{
-				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPLogsService).Build()),
-				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPTracesService).Build()),
-				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPMetricsService).Build()),
+				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPLogsService).Build()),
+				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPTracesService).Build()),
+				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPMetricsService).Build()),
 			},
 			expectedState: operatorv1beta1.StateWarning,
 			expectedConditions: []metav1.Condition{
@@ -153,9 +153,9 @@ func TestUpdateStatus(t *testing.T) {
 			metricsCheckerReturn: &metav1.Condition{Type: conditions.TypeMetricComponentsHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonGatewayNotReady},
 			tracesCheckerReturn:  &metav1.Condition{Type: conditions.TypeTraceComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			resources: []client.Object{
-				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPLogsService).Build()),
-				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPTracesService).Build()),
-				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPMetricsService).Build()),
+				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPLogsService).Build()),
+				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPTracesService).Build()),
+				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPMetricsService).Build()),
 			},
 			expectedState: operatorv1beta1.StateWarning,
 			expectedConditions: []metav1.Condition{
@@ -217,7 +217,7 @@ func TestUpdateStatus(t *testing.T) {
 			telemetry: &operatorv1beta1.Telemetry{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:              "default",
-					DeletionTimestamp: pointerFrom(metav1.Now()),
+					DeletionTimestamp: new(metav1.Now()),
 					Finalizers:        []string{"telemetry.kyma-project.io/finalizer"},
 				},
 			},
@@ -225,9 +225,9 @@ func TestUpdateStatus(t *testing.T) {
 			metricsCheckerReturn: &metav1.Condition{Type: conditions.TypeMetricComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			tracesCheckerReturn:  &metav1.Condition{Type: conditions.TypeTraceComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			resources: []client.Object{
-				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPLogsService).Build()),
-				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPTracesService).Build()),
-				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPMetricsService).Build()),
+				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPLogsService).Build()),
+				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPTracesService).Build()),
+				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPMetricsService).Build()),
 			},
 			expectedState: operatorv1beta1.StateDeleting,
 			expectedConditions: []metav1.Condition{
@@ -258,7 +258,7 @@ func TestUpdateStatus(t *testing.T) {
 			telemetry: &operatorv1beta1.Telemetry{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:              "default",
-					DeletionTimestamp: pointerFrom(metav1.Now()),
+					DeletionTimestamp: new(metav1.Now()),
 					Finalizers:        []string{"telemetry.kyma-project.io/finalizer"},
 				},
 			},
@@ -267,8 +267,8 @@ func TestUpdateStatus(t *testing.T) {
 			tracesCheckerReturn:  &metav1.Condition{Type: conditions.TypeTraceComponentsHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonComponentsRunning},
 
 			resources: []client.Object{
-				pointerFrom(testutils.NewTracePipelineBuilder().Build()),
-				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPMetricsService).Build()),
+				new(testutils.NewTracePipelineBuilder().Build()),
+				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPMetricsService).Build()),
 			},
 			expectedState: operatorv1beta1.StateWarning,
 			expectedConditions: []metav1.Condition{
@@ -292,9 +292,9 @@ func TestUpdateStatus(t *testing.T) {
 			metricsCheckerReturn: &metav1.Condition{Type: conditions.TypeMetricComponentsHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonAgentNotReady},
 			tracesCheckerReturn:  &metav1.Condition{Type: conditions.TypeTraceComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			resources: []client.Object{
-				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPLogsService).Build()),
-				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPTracesService).Build()),
-				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPMetricsService).Build()),
+				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPLogsService).Build()),
+				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPTracesService).Build()),
+				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPMetricsService).Build()),
 			},
 			expectedState: operatorv1beta1.StateWarning,
 			expectedConditions: []metav1.Condition{
@@ -327,8 +327,8 @@ func TestUpdateStatus(t *testing.T) {
 			metricsCheckerReturn: &metav1.Condition{Type: conditions.TypeMetricComponentsHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonAgentNotReady},
 			tracesCheckerReturn:  &metav1.Condition{Type: conditions.TypeTraceComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			resources: []client.Object{
-				pointerFrom(testutils.NewMetricPipelineBuilder().Build()),
-				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPMetricsService).Build()),
+				new(testutils.NewMetricPipelineBuilder().Build()),
+				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPMetricsService).Build()),
 			},
 			expectedState: operatorv1beta1.StateWarning,
 			expectedConditions: []metav1.Condition{
@@ -406,6 +406,7 @@ func TestUpdateStatus(t *testing.T) {
 	}
 }
 
+//go:fix inline
 func pointerFrom[T any](value T) *T {
-	return &value
+	return new(value)
 }

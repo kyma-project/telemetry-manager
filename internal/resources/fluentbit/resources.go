@@ -16,7 +16,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/config"
@@ -460,7 +459,7 @@ func (aad *AgentApplierDeleter) fluentBitVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{Name: names.FluentBitSectionsConfigMap},
-					Optional:             ptr.To(true),
+					Optional:             new(true),
 				},
 			},
 		},
@@ -469,7 +468,7 @@ func (aad *AgentApplierDeleter) fluentBitVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{Name: names.FluentBitParsersConfigMap},
-					Optional:             ptr.To(true),
+					Optional:             new(true),
 				},
 			},
 		},
@@ -478,7 +477,7 @@ func (aad *AgentApplierDeleter) fluentBitVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{Name: names.FluentBitFilesConfigMap},
-					Optional:             ptr.To(true),
+					Optional:             new(true),
 				},
 			},
 		},

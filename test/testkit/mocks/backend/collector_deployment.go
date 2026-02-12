@@ -60,7 +60,7 @@ func (d *collectorDeploymentBuilder) K8sObject(opts ...testkit.OptFunc) *appsv1.
 			Labels:    labels,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: ptr.To(d.replicas),
+			Replicas: new(d.replicas),
 			Selector: &metav1.LabelSelector{MatchLabels: labels},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
