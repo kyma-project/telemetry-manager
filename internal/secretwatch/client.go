@@ -110,18 +110,7 @@ func (c *Client) SyncWatchedSecrets(ctx context.Context, pipeline client.Object,
 			w.linkPipeline(pipeline)
 		} else {
 			// Create new watcher and start it immediately
-			w := newWatcher(secret, c.clientset, c.eventChan)
-			w.linkPipeline(pipeline)
-			watcherCtx, cancel := context.WithCancel(ctx)
-			w.cancel = cancel
-			c.wg.Add(1)
-
-			go func(watcher *watcher) {
-				defer c.wg.Done()
-
-				watcher.start(watcherCtx)
-			}(w)
-
+			w := newStartedWatcher(ctx, secret, pipeline, c.clientset, c.eventChan, &c.wg)
 			c.watchers[secret] = w
 		}
 	}

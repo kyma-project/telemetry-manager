@@ -29,19 +29,33 @@ type watcher struct {
 	cancel    context.CancelFunc
 }
 
-// newWatcher creates a new watcher for the specified secret.
-// It initializes the watcher with the given linked pipelines and a Kubernetes client
-// for the secret's namespace.
-func newWatcher(
+// newStartedWatcher creates a new watcher for the specified secret with the initial pipeline,
+// starts watching in a background goroutine, and returns the fully initialized watcher.
+// The watcher will run until the context is canceled.
+// The wg.Done() will be called automatically when the watcher stops.
+func newStartedWatcher(
+	ctx context.Context,
 	secret types.NamespacedName,
+	pipeline client.Object,
 	clientset kubernetes.Interface,
 	eventChan chan<- event.GenericEvent,
+	wg *sync.WaitGroup,
 ) *watcher {
-	return &watcher{
+	watcherCtx, cancel := context.WithCancel(ctx)
+
+	w := &watcher{
 		secret:    secret,
 		client:    clientset.CoreV1().Secrets(secret.Namespace),
 		eventChan: eventChan,
+		cancel:    cancel,
+		linked:    []client.Object{pipeline},
 	}
+
+	wg.Go(func() {
+		w.start(watcherCtx)
+	})
+
+	return w
 }
 
 // linkedPipelines returns a copy of the linked pipelines for thread-safe access.
