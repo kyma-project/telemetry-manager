@@ -24,7 +24,6 @@ const (
 	FluentBitSectionsConfigMap      = FluentBit + "-sections"
 	FluentBitFilesConfigMap         = FluentBit + "-files"
 	FluentBitLuaScriptsConfigMap    = FluentBit + "-luascripts"
-	FluentBitParsersConfigMap       = FluentBit + "-parsers"
 	FluentBitEnvSecret              = FluentBit + "-env"
 	FluentBitTLSConfigSecret        = FluentBit + "-output-tls-config"
 

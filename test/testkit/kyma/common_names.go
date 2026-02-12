@@ -90,7 +90,6 @@ var (
 	FluentBitConfigMap              = types.NamespacedName{Name: names.FluentBit, Namespace: SystemNamespaceName}
 	FluentBitSectionsConfigMap      = types.NamespacedName{Name: names.FluentBitSectionsConfigMap, Namespace: SystemNamespaceName}
 	FluentBitLuaConfigMap           = types.NamespacedName{Name: names.FluentBitLuaScriptsConfigMap, Namespace: SystemNamespaceName}
-	FluentBitParserConfigMap        = types.NamespacedName{Name: names.FluentBitParsersConfigMap, Namespace: SystemNamespaceName}
 	FluentBitFilesConfigMap         = types.NamespacedName{Name: names.FluentBitFilesConfigMap, Namespace: SystemNamespaceName}
 	FluentBitNetworkPolicy          = types.NamespacedName{Name: names.FluentBit, Namespace: SystemNamespaceName}
 
