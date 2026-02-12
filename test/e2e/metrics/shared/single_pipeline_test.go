@@ -58,6 +58,8 @@ func TestSinglePipeline(t *testing.T) {
 		t.Run(tc.label, func(t *testing.T) {
 			suite.RegisterTestCase(t, tc.label)
 
+			t.Fatal("intentionally failing this test")
+
 			var (
 				uniquePrefix = unique.Prefix(tc.label)
 				pipelineName = uniquePrefix()

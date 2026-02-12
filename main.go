@@ -534,15 +534,6 @@ func setNamespaceFieldSelector(globals config.Global) fields.Selector {
 	return fields.SelectorFromSet(fields.Set{"metadata.namespace": globals.TargetNamespace()})
 }
 
-func setConfigMapNamespaceFieldSelector(globals config.Global) map[string]cache.Config {
-	return map[string]cache.Config{
-		"kube-system": {
-			FieldSelector: fields.SelectorFromSet(fields.Set{"metadata.name": "shoot-info"}),
-		},
-		globals.TargetNamespace(): {},
-	}
-}
-
 func createWebhookConfig(globals config.Global) webhookcert.Config {
 	return webhookcert.NewWebhookCertConfig(
 		webhookcert.ConfigOptions{
@@ -563,4 +554,13 @@ func createWebhookConfig(globals config.Global) webhookcert.Config {
 			},
 		},
 	)
+}
+
+func setConfigMapNamespaceFieldSelector(globals config.Global) map[string]cache.Config {
+	return map[string]cache.Config{
+		"kube-system": {
+			FieldSelector: fields.SelectorFromSet(fields.Set{"metadata.name": "shoot-info"}),
+		},
+		globals.TargetNamespace(): {},
+	}
 }
