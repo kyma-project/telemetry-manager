@@ -39,7 +39,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -289,7 +288,7 @@ func setupManager(globals config.Global) (manager.Manager, error) {
 			CertDir: certDir,
 		}),
 		Cache: cache.Options{
-			SyncPeriod: ptr.To(cacheSyncPeriod),
+			SyncPeriod: new(cacheSyncPeriod),
 
 			// The operator handles various resource that are namespace-scoped, and additionally some resources that are cluster-scoped (clusterroles, clusterrolebindings, etc.).
 			// For namespace-scoped resources we want to restrict the operator permissions to only fetch resources from a given namespace.

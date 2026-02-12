@@ -5,7 +5,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
@@ -29,7 +28,7 @@ func TestCreateKubernetesFilterKeepAnnotations(t *testing.T) {
 		Spec: telemetryv1beta1.LogPipelineSpec{
 			Input: telemetryv1beta1.LogPipelineInput{
 				Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
-					FluentBitKeepAnnotations: ptr.To(true),
+					FluentBitKeepAnnotations: new(true),
 				}}}}
 
 	actual := createKubernetesFilter(logPipeline)
@@ -55,7 +54,7 @@ func TestCreateKubernetesFilterDropLabels(t *testing.T) {
 		Spec: telemetryv1beta1.LogPipelineSpec{
 			Input: telemetryv1beta1.LogPipelineInput{
 				Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
-					FluentBitDropLabels: ptr.To(true),
+					FluentBitDropLabels: new(true),
 				}}}}
 
 	actual := createKubernetesFilter(logPipeline)
@@ -81,7 +80,7 @@ func TestCreateKubernetesFilterKeepOriginalBodyTrue(t *testing.T) {
 		Spec: telemetryv1beta1.LogPipelineSpec{
 			Input: telemetryv1beta1.LogPipelineInput{
 				Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
-					KeepOriginalBody: ptr.To(true),
+					KeepOriginalBody: new(true),
 				}}}}
 
 	actual := createKubernetesFilter(logPipeline)
@@ -107,7 +106,7 @@ func TestCreateKubernetesFilterKeepOriginalBodyFalse(t *testing.T) {
 		Spec: telemetryv1beta1.LogPipelineSpec{
 			Input: telemetryv1beta1.LogPipelineInput{
 				Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
-					KeepOriginalBody: ptr.To(false),
+					KeepOriginalBody: new(false),
 				}}}}
 
 	actual := createKubernetesFilter(logPipeline)
