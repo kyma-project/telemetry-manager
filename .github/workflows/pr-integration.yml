@@ -9,10 +9,6 @@ on:
     - cron: "0 */3 * * *"
   merge_group:
   pull_request_target:
-    branches:
-      - "main"
-      - "release-*"
-      - "prometheus_fips_image"
     # only include PRs that change:
     # go files
     # go mod files
