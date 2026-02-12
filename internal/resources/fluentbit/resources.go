@@ -180,15 +180,6 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 		return fmt.Errorf("failed to create fluent bit network policy: %w", err)
 	}
 
-	//TODO: remove parser configmap creation after logparser removal is rolled out
-	parserCm := corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{
-		Name:      names.FluentBitParsersConfigMap,
-		Namespace: aad.namespace,
-	}}
-	if err := k8sutils.DeleteObject(ctx, c, &parserCm); err != nil {
-		return fmt.Errorf("failed to delete parser configmap: %w", err)
-	}
-
 	return nil
 }
 
