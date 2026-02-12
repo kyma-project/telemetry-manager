@@ -172,47 +172,17 @@ func (w *watcher) start(ctx context.Context) {
 
 			secret, ok := watchEvent.Object.(*corev1.Secret)
 			if !ok {
-				log.Info("Unexpected object type",
-					"secret", w.secret.String(),
-					"type", fmt.Sprintf("%T", watchEvent.Object))
-
 				continue
 			}
 
-			// Get current linked pipelines for this event
-			linkedPipelines := w.linkedPipelines()
-
-			// Log the event
-			switch watchEvent.Type {
-			case watch.Added:
-				log.Info("Secret added",
-					"secret", secret.Name,
-					"namespace", secret.Namespace,
-					"resourceVersion", secret.ResourceVersion,
-					"linkedPipelines", linkedPipelines)
-			case watch.Modified:
-				log.Info("Secret modified",
-					"secret", secret.Name,
-					"namespace", secret.Namespace,
-					"resourceVersion", secret.ResourceVersion,
-					"linkedPipelines", linkedPipelines)
-			case watch.Deleted:
-				log.Info("Secret deleted",
-					"secret", secret.Name,
-					"namespace", secret.Namespace,
-					"resourceVersion", secret.ResourceVersion,
-					"linkedPipelines", linkedPipelines)
-			default:
-				log.Info("Secret event",
-					"eventType", watchEvent.Type,
-					"secret", secret.Name,
-					"namespace", secret.Namespace,
-					"resourceVersion", secret.ResourceVersion,
-					"linkedPipelines", linkedPipelines)
-			}
+			log.Info("Secret watch event received",
+				"secret", w.secret.String(),
+				"eventType", watchEvent.Type,
+				"resourceVersion", secret.ResourceVersion,
+			)
 
 			// Send a generic event to trigger reconciliation for linked pipelines
-			for _, pipeline := range linkedPipelines {
+			for _, pipeline := range w.linked {
 				w.eventChan <- event.GenericEvent{
 					Object: pipeline,
 				}
