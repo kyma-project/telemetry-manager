@@ -45,6 +45,7 @@ metadata:
     app.kubernetes.io/component: controller
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
+    purpose: dns
   {{- include "telemetry-manager.labels" . | indent 4 }}
 spec:
   egress:
@@ -73,6 +74,7 @@ metadata:
     app.kubernetes.io/component: controller
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
+    purpose: apiserver
   {{- include "telemetry-manager.labels" . | indent 4 }}
 spec:
   podSelector:
