@@ -130,6 +130,7 @@ func TestTryAcquireLock_UnlimitedPipelines(t *testing.T) {
 
 	// Verify that the lock ConfigMap was not created since unlimited pipelines bypass locking
 	var lock corev1.ConfigMap
+
 	err = fakeClient.Get(ctx, types.NamespacedName{Name: lockName.Name + "-lock", Namespace: lockName.Namespace}, &lock)
 	require.Error(t, err, "Lock ConfigMap should not be created when unlimited pipelines is enabled")
 }
