@@ -109,21 +109,24 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-
+       
       - name: Check if FIPS mode should be enabled
         id: check-fips-mode
         run: echo "use-fips=${{ matrix.kind != 'fluent-bit' && 'true' || 'false' }}" >> $GITHUB_OUTPUT
-
+        
+      # This step is needed if FIPS mode is enabled to be able to pull the FIPS-compliant Self-Monitor image
       - name: Authenticate to Google Cloud
         if: steps.check-fips-mode.outputs.use-fips == 'true'
         uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
         with:
           credentials_json: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
 
+      # This step is needed if FIPS mode is enabled to be able to pull the FIPS-compliant Self-Monitor image
       - name: Setup Google Cloud SDK
         if: steps.check-fips-mode.outputs.use-fips == 'true'
         uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
-
+      
+      # This step is needed if FIPS mode is enabled to be able to pull the FIPS-compliant Self-Monitor image
       - name: Configure Docker for Google Artifact Registry
         if: steps.check-fips-mode.outputs.use-fips == 'true'
         run: gcloud auth configure-docker europe-docker.pkg.dev --quiet
@@ -360,17 +363,20 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-
+      
+      # This step is needed if FIPS mode is enabled to be able to pull the FIPS-compliant Self-Monitor image
       - name: Authenticate to Google Cloud
         if: matrix.testcase.use-fips
         uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
         with:
           credentials_json: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
 
+      # This step is needed if FIPS mode is enabled to be able to pull the FIPS-compliant Self-Monitor image
       - name: Setup Google Cloud SDK
         if: matrix.testcase.use-fips
         uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
 
+      # This step is needed if FIPS mode is enabled to be able to pull the FIPS-compliant Self-Monitor image
       - name: Configure Docker for Google Artifact Registry
         if: matrix.testcase.use-fips
         run: gcloud auth configure-docker europe-docker.pkg.dev --quiet
