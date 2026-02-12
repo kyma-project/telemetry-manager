@@ -12,108 +12,115 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
-	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-
-	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
 
 // watcher monitors a single Kubernetes secret and tracks which pipelines depend on it.
 // It automatically reconnects on errors and handles resource version updates.
 type watcher struct {
-	secret          types.NamespacedName
-	linkedPipelines []string
-	mu              sync.RWMutex
-	client          typedcorev1.SecretInterface
-	eventChan       chan<- event.GenericEvent
+	secret    types.NamespacedName
+	linked    []client.Object
+	mu        sync.RWMutex
+	client    v1.SecretInterface
+	eventChan chan<- event.GenericEvent
+	cancel    context.CancelFunc
 }
 
 // newWatcher creates a new watcher for the specified secret.
 // It initializes the watcher with the given linked pipelines and a Kubernetes client
 // for the secret's namespace.
-func newWatcher(secret types.NamespacedName, linkedPipelines []string, clientset kubernetes.Interface, eventChan chan<- event.GenericEvent) *watcher {
+func newWatcher(
+	secret types.NamespacedName,
+	clientset kubernetes.Interface,
+	eventChan chan<- event.GenericEvent,
+) *watcher {
 	return &watcher{
-		secret:          secret,
-		linkedPipelines: linkedPipelines,
-		client:          clientset.CoreV1().Secrets(secret.Namespace),
+		secret:    secret,
+		client:    clientset.CoreV1().Secrets(secret.Namespace),
+		eventChan: eventChan,
 	}
 }
 
-// getLinkedPipelines returns a copy of the linked pipelines for thread-safe access.
-func (w *watcher) getLinkedPipelines() []string {
+// linkedPipelines returns a copy of the linked pipelines for thread-safe access.
+func (w *watcher) linkedPipelines() []client.Object {
 	w.mu.RLock()
 	defer w.mu.RUnlock()
 
-	pipelines := make([]string, len(w.linkedPipelines))
-	copy(pipelines, w.linkedPipelines)
+	pipelines := make([]client.Object, len(w.linked))
+	copy(pipelines, w.linked)
+
 	return pipelines
 }
 
-// addPipeline adds a pipeline to the linked pipelines list if not already present.
-// It is thread-safe and can be called concurrently.
-func (w *watcher) addPipeline(pipelineName string) {
+func (w *watcher) linkPipeline(pipeline client.Object) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
-	if slices.Contains(w.linkedPipelines, pipelineName) {
+	if slices.ContainsFunc(w.linked, func(p client.Object) bool {
+		return p.GetName() == pipeline.GetName()
+	}) {
 		return
 	}
 
-	w.linkedPipelines = append(w.linkedPipelines, pipelineName)
+	w.linked = append(w.linked, pipeline)
 }
 
-// removePipeline removes a pipeline from the linked pipelines list.
-// It returns true if any pipelines remain after removal.
-// It is thread-safe and can be called concurrently.
-func (w *watcher) removePipeline(pipelineName string) bool {
+func (w *watcher) unlinkPipeline(pipeline client.Object) bool {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
-	filtered := make([]string, 0, len(w.linkedPipelines))
-	for _, p := range w.linkedPipelines {
-		if p != pipelineName {
+	filtered := make([]client.Object, 0, len(w.linked))
+	for _, p := range w.linked {
+		if p.GetName() != pipeline.GetName() {
 			filtered = append(filtered, p)
 		}
 	}
-	w.linkedPipelines = filtered
-	return len(w.linkedPipelines) > 0
+
+	w.linked = filtered
+
+	return len(w.linked) > 0
 }
 
-// hasPipeline checks if a pipeline is in the linked pipelines list.
-// It is thread-safe and can be called concurrently.
-func (w *watcher) hasPipeline(pipelineName string) bool {
+func (w *watcher) isPipelineLinked(pipeline client.Object) bool {
 	w.mu.RLock()
 	defer w.mu.RUnlock()
 
-	return slices.Contains(w.linkedPipelines, pipelineName)
+	return slices.ContainsFunc(w.linked, func(p client.Object) bool {
+		return p.GetName() == pipeline.GetName()
+	})
 }
 
-// Start begins watching the secret for changes. It runs in an infinite loop,
+// start begins watching the secret for changes. It runs in an infinite loop,
 // automatically reconnecting on errors or connection loss.
-// The watcher stops when the context is cancelled.
-func (w *watcher) Start(ctx context.Context) {
-	log := logf.FromContext(ctx)
+// The watcher stops when the context is canceled.
+func (w *watcher) start(ctx context.Context) {
+	log := logf.FromContext(ctx).V(1)
 
 	for {
 		select {
 		case <-ctx.Done():
-			log.V(1).Info("Context cancelled, stopping watcher", "secret", w.secret.String())
+			log.Info("Context canceled, stopping watcher", "secret", w.secret.String())
 			return
 		default:
 		}
 
 		// Get the current resource version to start watching from
 		secret, err := w.client.Get(ctx, w.secret.Name, metav1.GetOptions{})
+
 		var resourceVersion string
+
 		if err != nil {
-			log.V(1).Info("Could not get initial secret (it may not exist yet)",
+			log.Info("Could not get initial secret (it may not exist yet)",
 				"secret", w.secret.String(),
 				"error", err)
+
 			resourceVersion = ""
 		} else {
 			resourceVersion = secret.ResourceVersion
-			log.V(1).Info("Initial secret found",
+			log.Info("Initial secret found",
 				"secret", w.secret.String(),
 				"resourceVersion", resourceVersion)
 		}
@@ -127,12 +134,14 @@ func (w *watcher) Start(ctx context.Context) {
 			log.V(1).Info("Error creating watcher. Retrying in 5 seconds...",
 				"secret", w.secret.String(),
 				"error", err)
+
 			select {
 			case <-time.After(5 * time.Second):
 			case <-ctx.Done():
-				log.V(1).Info("Context cancelled, stopping watcher", "secret", w.secret.String())
+				log.V(1).Info("Context canceled, stopping watcher", "secret", w.secret.String())
 				return
 			}
+
 			continue
 		}
 
@@ -143,6 +152,7 @@ func (w *watcher) Start(ctx context.Context) {
 				log.V(1).Info("Watch error received",
 					"secret", w.secret.String(),
 					"object", watchEvent.Object)
+
 				break
 			}
 
@@ -151,11 +161,12 @@ func (w *watcher) Start(ctx context.Context) {
 				log.Info("Unexpected object type",
 					"secret", w.secret.String(),
 					"type", fmt.Sprintf("%T", watchEvent.Object))
+
 				continue
 			}
 
 			// Get current linked pipelines for this event
-			linkedPipelines := w.getLinkedPipelines()
+			linkedPipelines := w.linkedPipelines()
 
 			// Log the event
 			switch watchEvent.Type {
@@ -187,25 +198,20 @@ func (w *watcher) Start(ctx context.Context) {
 			}
 
 			// Send a generic event to trigger reconciliation for linked pipelines
-			for _, pipelineName := range linkedPipelines {
-				e := event.GenericEvent{
-					Object: &telemetryv1beta1.TracePipeline{
-						ObjectMeta: metav1.ObjectMeta{
-							Name: pipelineName,
-						},
-					},
+			for _, pipeline := range linkedPipelines {
+				w.eventChan <- event.GenericEvent{
+					Object: pipeline,
 				}
-				w.eventChan <- e
 			}
-
 		}
 
 		log.V(1).Info("Watcher channel closed. Reconnecting in 5 seconds...",
 			"secret", w.secret.String())
+
 		select {
 		case <-time.After(5 * time.Second):
 		case <-ctx.Done():
-			log.V(1).Info("Context cancelled, stopping watcher", "secret", w.secret.String())
+			log.V(1).Info("Context canceled, stopping watcher", "secret", w.secret.String())
 			return
 		}
 	}

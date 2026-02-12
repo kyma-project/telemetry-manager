@@ -10,6 +10,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -19,19 +20,13 @@ const (
 	DefaultShutdownTimeout = 30 * time.Second
 )
 
-type watcherEntry struct {
-	watcher *watcher
-	cancel  context.CancelFunc
-	ctx     context.Context
-}
-
 // Client watches Kubernetes secrets and manages watchers for multiple pipelines.
 // It tracks which pipelines depend on which secrets and maintains individual watchers
 // for each unique secret being monitored.
 // Client is safe for concurrent use.
 type Client struct {
 	clientset kubernetes.Interface
-	watchers  map[types.NamespacedName]*watcherEntry
+	watchers  map[types.NamespacedName]*watcher
 	eventChan chan<- event.GenericEvent
 	mu        sync.RWMutex
 	wg        sync.WaitGroup
@@ -49,7 +44,7 @@ func NewClient(cfg *rest.Config, eventChan chan<- event.GenericEvent) (*Client, 
 
 	return &Client{
 		clientset: clientset,
-		watchers:  make(map[types.NamespacedName]*watcherEntry),
+		watchers:  make(map[types.NamespacedName]*watcher),
 		eventChan: eventChan,
 	}, nil
 }
@@ -80,6 +75,7 @@ func (c *Client) StopWithTimeout(timeout time.Duration) {
 
 	// Wait for all watchers to finish with timeout
 	done := make(chan struct{})
+
 	go func() {
 		c.wg.Wait()
 		close(done)
@@ -101,7 +97,7 @@ func (c *Client) StopWithTimeout(timeout time.Duration) {
 // and cleans up watchers that have no remaining linked pipelines.
 // This method is idempotent and declarative - it synchronizes to the desired state.
 // New watchers are started immediately, and removed watchers are stopped immediately.
-func (c *Client) SyncWatchedSecrets(ctx context.Context, pipelineName string, secrets []types.NamespacedName) {
+func (c *Client) SyncWatchedSecrets(ctx context.Context, pipeline client.Object, secrets []types.NamespacedName) {
 	logf.FromContext(ctx).V(1).Info("Syncing watched secrets for pipeline")
 
 	c.mu.Lock()
@@ -109,43 +105,38 @@ func (c *Client) SyncWatchedSecrets(ctx context.Context, pipelineName string, se
 
 	// Add or update watchers for the given secrets
 	for _, secret := range secrets {
-		if entry, exists := c.watchers[secret]; exists {
-			// Watcher exists, add pipeline if not already linked (thread-safe)
-			entry.watcher.addPipeline(pipelineName)
+		if w, exists := c.watchers[secret]; exists {
+			// Watcher exists, link pipeline if not already linked (thread-safe)
+			w.linkPipeline(pipeline)
 		} else {
 			// Create new watcher and start it immediately
-			w := newWatcher(secret, []string{pipelineName}, c.clientset, c.eventChan)
-
+			w := newWatcher(secret, c.clientset, c.eventChan)
+			w.linkPipeline(pipeline)
 			watcherCtx, cancel := context.WithCancel(ctx)
-			entry := &watcherEntry{
-				watcher: w,
-				cancel:  cancel,
-				ctx:     watcherCtx,
-			}
-
+			w.cancel = cancel
 			c.wg.Add(1)
+
 			go func(watcher *watcher) {
 				defer c.wg.Done()
-				watcher.Start(watcherCtx)
+
+				watcher.start(watcherCtx)
 			}(w)
 
-			c.watchers[secret] = entry
+			c.watchers[secret] = w
 		}
 	}
 
 	// Remove pipeline from watchers not in the current set
-	for watchedSecret, entry := range c.watchers {
+	for watchedSecret, w := range c.watchers {
 		secretFound := slices.Contains(secrets, watchedSecret)
-		if !secretFound && entry.watcher.hasPipeline(pipelineName) {
+		if !secretFound && w.isPipelineLinked(pipeline) {
 			// Remove this pipeline from the watcher's linked pipelines (thread-safe)
-			hasPipelines := entry.watcher.removePipeline(pipelineName)
+			hasPipelines := w.unlinkPipeline(pipeline)
 
 			// If no pipelines are linked anymore, stop and delete the watcher
 			if !hasPipelines {
-				if entry.cancel != nil {
-					entry.cancel()
-					// Note: wg.Done() will be called by the watcher's goroutine defer
-				}
+				w.cancel()
+				// Note: wg.Done() will be called by the watcher's goroutine defer
 				delete(c.watchers, watchedSecret)
 			}
 		}

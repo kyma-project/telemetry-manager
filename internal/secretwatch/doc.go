@@ -31,7 +31,7 @@
 //	)
 //
 //	// Create a client with an event handler
-//	handler := func(secretName types.NamespacedName, eventType secretwatch.EventType, pipelines []string) {
+//	:= func(secretName types.NamespacedName, eventType secretwatch.EventType, pipelines []string)
 //		fmt.Printf("Secret %s changed (type: %s), affects pipelines: %v\n",
 //			secretName, eventType, pipelines)
 //	}
@@ -103,7 +103,7 @@
 //
 // The Stop() and StopWithTimeout() methods implement graceful shutdown:
 //
-//  1. All watcher contexts are cancelled (signals them to stop)
+//  1. All watcher contexts are canceled (signals them to stop)
 //  2. The client waits for all watcher goroutines to finish
 //  3. If the timeout is exceeded, a warning is logged but the method returns
 //

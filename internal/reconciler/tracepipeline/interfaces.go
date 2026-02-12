@@ -95,5 +95,5 @@ type FilterSpecValidator interface {
 }
 
 type SecretWatcher interface {
-	SyncWatchedSecrets(ctx context.Context, pipelineName string, secrets []types.NamespacedName)
+	SyncWatchedSecrets(ctx context.Context, pipeline client.Object, secrets []types.NamespacedName)
 }

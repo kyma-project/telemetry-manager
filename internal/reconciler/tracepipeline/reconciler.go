@@ -36,7 +36,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
-	"github.com/kyma-project/telemetry-manager/internal/secretwatch"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 	sharedtypesutils "github.com/kyma-project/telemetry-manager/internal/utils/sharedtypes"
 	telemetryutils "github.com/kyma-project/telemetry-manager/internal/utils/telemetry"
@@ -153,7 +152,7 @@ func WithClient(client client.Client) Option {
 	}
 }
 
-func WithSecretWatcher(watcher *secretwatch.Client) Option {
+func WithSecretWatcher(watcher SecretWatcher) Option {
 	return func(r *Reconciler) {
 		r.secretWatcher = watcher
 	}
@@ -265,7 +264,7 @@ func (r *Reconciler) syncWatchedSecrets(ctx context.Context, pipeline *telemetry
 		})
 	}
 
-	r.secretWatcher.SyncWatchedSecrets(ctx, pipeline.Name, secretNames)
+	r.secretWatcher.SyncWatchedSecrets(ctx, pipeline, secretNames)
 
 	return nil
 }
