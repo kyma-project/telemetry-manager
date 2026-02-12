@@ -36,6 +36,25 @@ on:
       - ".env"
       - ".k3d-kyma.yaml"
       - "Makefile"
+  # Trigger the workflow on push events to run the tests with prometheus-fips image which needs access to Github secrets for pulling the image
+  push:
+    branches:
+      - "main"
+      - "release-*"
+    paths:
+      - "**/go.mod"
+      - "**/go.sum"
+      - "**.go"
+      - "config/**"
+      - "!config/busola/**"
+      - "!**_test.go"
+      - "!docs/**"
+      - "test/**.go"
+      - ".github/workflows/pr-integration.yml"
+      - ".github/template/**"
+      - ".env"
+      - ".k3d-kyma.yaml"
+      - "Makefile"
 
   workflow_dispatch:
 
@@ -112,6 +131,31 @@ jobs:
           install-istio: ${{ matrix.scenario != 'healthy' }}
           manager-image: ${{ needs.setup.outputs.manager-image }}
           operate-in-fips-mode: ${{ matrix.kind != 'fluent-bit' && 'true' || 'false' }}
+      
+      - name: Authenticate to Google Cloud
+        if: github.event_name != 'pull_request'
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          credentials_json: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
+
+      - name: Setup Google Cloud SDK
+        if: github.event_name != 'pull_request'
+        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
+      
+      - name: Configure Docker for Google Artifact Registry
+        if: github.event_name != 'pull_request'
+        run: gcloud auth configure-docker europe-docker.pkg.dev --quiet
+
+      - name: Tag the Self-Monitor image with the same tag as the Self-Monitor FIPS image
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          make docker-tag-self-monitor-image-as-fips
+      
+      - name: Import the Self-Monitor FIPS image into the K3D cluster
+        shell: bash
+        run: |
+          make k3d-import-self-monitor-fips-image
 
       - name: Execute tests
         uses: "./.github/template/test-execute"
@@ -342,6 +386,31 @@ jobs:
           install-istio: ${{ matrix.testcase.install-istio }}
           manager-image: ${{ needs.setup.outputs.manager-image }}
           operate-in-fips-mode: ${{ matrix.testcase.use-fips }}
+
+      - name: Authenticate to Google Cloud
+        if: github.event_name != 'pull_request'
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          credentials_json: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
+
+      - name: Setup Google Cloud SDK
+        if: github.event_name != 'pull_request'
+        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
+      
+      - name: Configure Docker for Google Artifact Registry
+        if: github.event_name != 'pull_request'
+        run: gcloud auth configure-docker europe-docker.pkg.dev --quiet
+
+      - name: Tag the Self-Monitor image with the same tag as the Self-Monitor FIPS image
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          make docker-tag-self-monitor-image-as-fips
+      
+      - name: Import the Self-Monitor FIPS image into the K3D cluster
+        shell: bash
+        run: |
+          make k3d-import-self-monitor-fips-image
 
       - name: Execute tests
         uses: "./.github/template/test-execute"
