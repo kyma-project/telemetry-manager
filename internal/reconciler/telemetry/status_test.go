@@ -405,8 +405,3 @@ func TestUpdateStatus(t *testing.T) {
 		})
 	}
 }
-
-//go:fix inline
-func pointerFrom[T any](value T) *T {
-	return new(value)
-}
