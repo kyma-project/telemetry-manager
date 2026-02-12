@@ -4,14 +4,39 @@ permissions:
   contents: read
 
 on:
-  pull_request_target:
-    paths:
-      - "dependencies/sample-app/**"
-    types: [opened, edited, synchronize, reopened, ready_for_review]
   schedule:
     # Run every 3 hours on main branch
     - cron: "0 */3 * * *"
   merge_group:
+  pull_request:
+    branches:
+      - "main"
+      - "release-*"
+    # only include PRs that change:
+    # go files
+    # go mod files
+    # test files in the test/e2e directory
+    # test files in the istio directory
+    # exclude go files that end with _test.go
+    # exclude (go) files in the doc folder
+    # include the workflow definition itself
+    # include dependencies of the workflow definition
+    # exclude busola configmap files
+    paths:
+      - "**/go.mod"
+      - "**/go.sum"
+      - "**.go"
+      - "config/**"
+      - "!config/busola/**"
+      - "!**_test.go"
+      - "!docs/**"
+      - "test/**.go"
+      - ".github/workflows/pr-integration.yml"
+      - ".github/template/**"
+      - ".env"
+      - ".k3d-kyma.yaml"
+      - "Makefile"
+
   workflow_dispatch:
 
 jobs:
@@ -22,8 +47,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Setup Golang
         uses: ./.github/template/setup-golang
@@ -31,7 +54,7 @@ jobs:
       - name: Prepare environment variables
         id: set-env
         run: |
-          if [[ "${{ github.event_name }}" == "pull_request_target" ]]; then
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
             IMAGE_REPO="europe-docker.pkg.dev/kyma-project/dev/telemetry-manager"
             IMAGE_TAG="${{ github.event.pull_request.head.sha }}"
           elif [[ "${{ github.event_name }}" == "merge_group" ]]; then
@@ -81,29 +104,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-       
-      - name: Check if FIPS mode should be enabled
-        id: check-fips-mode
-        run: echo "use-fips=${{ matrix.kind != 'fluent-bit' && 'true' || 'false' }}" >> $GITHUB_OUTPUT
-        
-      # This step is needed if FIPS mode is enabled to be able to pull the FIPS-compliant Self-Monitor image
-      - name: Authenticate to Google Cloud
-        if: steps.check-fips-mode.outputs.use-fips == 'true'
-        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
-        with:
-          credentials_json: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
-
-      # This step is needed if FIPS mode is enabled to be able to pull the FIPS-compliant Self-Monitor image
-      - name: Setup Google Cloud SDK
-        if: steps.check-fips-mode.outputs.use-fips == 'true'
-        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
-      
-      # This step is needed if FIPS mode is enabled to be able to pull the FIPS-compliant Self-Monitor image
-      - name: Configure Docker for Google Artifact Registry
-        if: steps.check-fips-mode.outputs.use-fips == 'true'
-        run: gcloud auth configure-docker europe-docker.pkg.dev --quiet
 
       - name: Setup test environment
         uses: "./.github/template/test-setup"
@@ -111,8 +111,8 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           install-istio: ${{ matrix.scenario != 'healthy' }}
           manager-image: ${{ needs.setup.outputs.manager-image }}
-          operate-in-fips-mode: ${{ steps.check-fips-mode.outputs.use-fips }}
-      
+          operate-in-fips-mode: ${{ matrix.kind != 'fluent-bit' && 'true' || 'false' }}
+
       - name: Execute tests
         uses: "./.github/template/test-execute"
         with:
@@ -134,8 +134,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Setup test environment
         uses: "./.github/template/test-setup"
@@ -335,25 +333,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      
-      # This step is needed if FIPS mode is enabled to be able to pull the FIPS-compliant Self-Monitor image
-      - name: Authenticate to Google Cloud
-        if: matrix.testcase.use-fips
-        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
-        with:
-          credentials_json: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
-
-      # This step is needed if FIPS mode is enabled to be able to pull the FIPS-compliant Self-Monitor image
-      - name: Setup Google Cloud SDK
-        if: matrix.testcase.use-fips
-        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
-
-      # This step is needed if FIPS mode is enabled to be able to pull the FIPS-compliant Self-Monitor image
-      - name: Configure Docker for Google Artifact Registry
-        if: matrix.testcase.use-fips
-        run: gcloud auth configure-docker europe-docker.pkg.dev --quiet
 
       - name: Setup test environment
         uses: "./.github/template/test-setup"
@@ -384,14 +363,12 @@ jobs:
           for pod in $(kubectl get pods -n kyma-system -o name); do echo "=== $pod ==="; kubectl logs -n kyma-system $pod; done || true
 
   summary:
-    needs: [e2e-selfmonitor, e2e, e2e-custom-labels-annotations-no-fips]
+    needs: [e2e-selfmonitor, e2e]
     runs-on: ubuntu-latest
     if: always()
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Generate test summary
         uses: "./.github/template/test-summary"
