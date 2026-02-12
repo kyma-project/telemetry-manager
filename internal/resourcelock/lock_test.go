@@ -93,6 +93,47 @@ func TestIsLockHolder(t *testing.T) {
 	require.Equal(t, ErrMaxPipelinesExceeded, err)
 }
 
+func TestTryAcquireLock_UnlimitedPipelines(t *testing.T) {
+	owner1 := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "owner1",
+			Namespace: "default",
+		},
+	}
+	owner2 := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "owner2",
+			Namespace: "default",
+		},
+	}
+	owner3 := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "owner3",
+			Namespace: "default",
+		},
+	}
+
+	ctx := t.Context()
+	fakeClient := fake.NewClientBuilder().Build()
+	// Create a locker with UnlimitedPipelineCount (-1) to allow unlimited pipelines
+	l := NewLocker(fakeClient, lockName, UnlimitedPipelineCount)
+
+	// All owners should be able to acquire the lock without any errors
+	err := l.TryAcquireLock(ctx, owner1)
+	require.NoError(t, err)
+
+	err = l.TryAcquireLock(ctx, owner2)
+	require.NoError(t, err)
+
+	err = l.TryAcquireLock(ctx, owner3)
+	require.NoError(t, err)
+
+	// Verify that the lock ConfigMap was not created since unlimited pipelines bypass locking
+	var lock corev1.ConfigMap
+	err = fakeClient.Get(ctx, types.NamespacedName{Name: lockName.Name + "-lock", Namespace: lockName.Namespace}, &lock)
+	require.Error(t, err, "Lock ConfigMap should not be created when unlimited pipelines is enabled")
+}
+
 func Test_new(t *testing.T) {
 	type args struct {
 		client    client.Client
