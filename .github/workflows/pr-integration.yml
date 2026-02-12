@@ -145,8 +145,14 @@ jobs:
       - name: Configure Docker for Google Artifact Registry
         if: github.event_name != 'pull_request'
         run: gcloud auth configure-docker europe-docker.pkg.dev --quiet
+      
+      - name: Pull the Self-Monitor FIPS image
+        if: github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          make docker-pull-self-monitor-fips-image
 
-      - name: Tag the Self-Monitor image with the same tag as the Self-Monitor FIPS image
+      - name: Pull the Self-Monitor image and tag it with the same name as the Self-Monitor FIPS image
         if: github.event_name == 'pull_request'
         shell: bash
         run: |
@@ -401,7 +407,13 @@ jobs:
         if: github.event_name != 'pull_request'
         run: gcloud auth configure-docker europe-docker.pkg.dev --quiet
 
-      - name: Tag the Self-Monitor image with the same tag as the Self-Monitor FIPS image
+      - name: Pull the Self-Monitor FIPS image
+        if: github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          make docker-pull-self-monitor-fips-image
+
+      - name: Pull the Self-Monitor image and tag it with the same name as the Self-Monitor FIPS image
         if: github.event_name == 'pull_request'
         shell: bash
         run: |
