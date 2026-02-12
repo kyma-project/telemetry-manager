@@ -38,19 +38,16 @@ const (
 	varLogVolumeName                = "varlog"
 	sharedFluentBitConfigVolumeName = "shared-fluent-bit-config"
 	dynamicConfigVolumeName         = "dynamic-config"
-	dynamicParsersConfigVolumeName  = "dynamic-parsers-config"
 	dynamicFilesVolumeName          = "dynamic-files"
 	varFluentBitVolumeName          = "varfluentbit"
 	outputTLSConfigVolumeName       = "output-tls-config"
 
 	// Volume mount paths
 	configVolumeFluentBitMountPath       = "/fluent-bit/etc/fluent-bit.conf"
-	configVolumeCustomParsersMountPath   = "/fluent-bit/etc/custom_parsers.conf"
 	luaScriptsVolumeMountPath            = "/fluent-bit/scripts/filter-script.lua"
 	varLogVolumeMountPath                = "/var/log"
 	sharedFluentBitConfigVolumeMountPath = "/fluent-bit/etc"
 	dynamicConfigVolumeMountPath         = "/fluent-bit/etc/dynamic/"
-	dynamicParsersConfigVolumeMountPath  = "/fluent-bit/etc/dynamic-parsers/"
 	dynamicFilesVolumeMountPath          = "/files"
 	varFluentBitVolumeMountPath          = "/data"
 	outputTLSConfigVolumeMountPath       = "/fluent-bit/etc/output-tls-config/"
@@ -81,7 +78,6 @@ type AgentApplierDeleter struct {
 
 	daemonSetName           types.NamespacedName
 	luaConfigMapName        types.NamespacedName
-	parsersConfigMapName    types.NamespacedName
 	filesConfigMapName      types.NamespacedName
 	sectionsConfigMapName   types.NamespacedName
 	envConfigSecretName     types.NamespacedName
@@ -104,7 +100,6 @@ func NewFluentBitApplierDeleter(global config.Global, namespace, fbImage, export
 
 		daemonSetName:           types.NamespacedName{Name: names.FluentBit, Namespace: namespace},
 		luaConfigMapName:        types.NamespacedName{Name: names.FluentBitLuaScriptsConfigMap, Namespace: namespace},
-		parsersConfigMapName:    types.NamespacedName{Name: names.FluentBitParsersConfigMap, Namespace: namespace},
 		filesConfigMapName:      types.NamespacedName{Name: names.FluentBitFilesConfigMap, Namespace: namespace},
 		sectionsConfigMapName:   types.NamespacedName{Name: names.FluentBitSectionsConfigMap, Namespace: namespace},
 		envConfigSecretName:     types.NamespacedName{Name: names.FluentBitEnvSecret, Namespace: namespace},
@@ -394,8 +389,6 @@ func (aad *AgentApplierDeleter) fluentBitVolumeMounts() []corev1.VolumeMount {
 		{MountPath: sharedFluentBitConfigVolumeMountPath, Name: sharedFluentBitConfigVolumeName},
 		{MountPath: configVolumeFluentBitMountPath, Name: configVolumeName, SubPath: "fluent-bit.conf"},
 		{MountPath: dynamicConfigVolumeMountPath, Name: dynamicConfigVolumeName},
-		{MountPath: dynamicParsersConfigVolumeMountPath, Name: dynamicParsersConfigVolumeName},
-		{MountPath: configVolumeCustomParsersMountPath, Name: configVolumeName, SubPath: "custom_parsers.conf"},
 		{MountPath: luaScriptsVolumeMountPath, Name: luaScriptsVolumeName, SubPath: "filter-script.lua"},
 		{MountPath: varLogVolumeMountPath, Name: varLogVolumeName, ReadOnly: true},
 		{MountPath: varFluentBitVolumeMountPath, Name: varFluentBitVolumeName},
@@ -451,15 +444,6 @@ func (aad *AgentApplierDeleter) fluentBitVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{Name: names.FluentBitSectionsConfigMap},
-					Optional:             ptr.To(true),
-				},
-			},
-		},
-		{
-			Name: dynamicParsersConfigVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{Name: names.FluentBitParsersConfigMap},
 					Optional:             ptr.To(true),
 				},
 			},
