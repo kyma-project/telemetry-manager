@@ -286,7 +286,7 @@ func waitForIstioResourcesDeletion(ctx context.Context, k8sClient client.Client)
 				version = crd.Versions[0]
 			}
 
-			count, err := countResourcesByGVR(ctx, k8sClient, crd.Group, version, crd.Plural)
+			count, err := countResourcesByGVRK(ctx, k8sClient, crd.Group, version, crd.Plural, crd.Kind)
 			if err != nil {
 				log.Printf("Warning: failed to count %s.%s: %v", crd.Plural, crd.Group, err)
 				continue
@@ -313,7 +313,8 @@ func waitForIstioCRDeletion(ctx context.Context, k8sClient client.Client) error 
 
 	for attempt := 1; attempt <= maxAttempts; attempt++ {
 		// Check if any Istio CRs exist
-		count, err := countResourcesByGVR(ctx, k8sClient, "operator.kyma-project.io", "v1alpha2", "istios")
+		// Kind for istios is "Istio" (singular, capitalized)
+		count, err := countResourcesByGVRK(ctx, k8sClient, "operator.kyma-project.io", "v1alpha2", "istios", "Istio")
 		if err != nil {
 			// CRD might not exist anymore, which is fine
 			if isNotFoundError(err) {
@@ -366,7 +367,7 @@ func deleteIstioResources(ctx context.Context, k8sClient client.Client) error {
 		}
 
 		log.Printf("Deleting %s.%s resources...", crd.Plural, crd.Group)
-		if err := deleteAllResourcesByGVR(ctx, k8sClient, crd.Group, version, crd.Plural); err != nil {
+		if err := deleteAllResourcesByGVRK(ctx, k8sClient, crd.Group, version, crd.Plural, crd.Kind); err != nil {
 			log.Printf("Warning: failed to delete %s.%s: %v", crd.Plural, crd.Group, err)
 			// Continue with other resources
 		}
@@ -381,6 +382,7 @@ type IstioCRD struct {
 	Group    string
 	Versions []string
 	Plural   string
+	Kind     string // Add Kind field
 }
 
 // getIstioCRDs queries the API server for all CRDs with "istio.io" in the group
@@ -414,6 +416,7 @@ func getIstioCRDs(ctx context.Context, k8sClient client.Client) ([]IstioCRD, err
 		// Extract CRD info
 		name, _, _ := unstructured.NestedString(item.Object, "metadata", "name")
 		plural, _, _ := unstructured.NestedString(item.Object, "spec", "names", "plural")
+		kind, _, _ := unstructured.NestedString(item.Object, "spec", "names", "kind")
 
 		// Extract versions
 		versionsRaw, found, err := unstructured.NestedSlice(item.Object, "spec", "versions")
@@ -442,9 +445,10 @@ func getIstioCRDs(ctx context.Context, k8sClient client.Client) ([]IstioCRD, err
 			Group:    group,
 			Versions: versions,
 			Plural:   plural,
+			Kind:     kind,
 		})
 
-		log.Printf("Found Istio CRD: %s (%s.%s)", name, plural, group)
+		log.Printf("Found Istio CRD: %s (%s.%s, kind=%s)", name, plural, group, kind)
 	}
 
 	return istioCRDs, nil

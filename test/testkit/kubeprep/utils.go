@@ -179,13 +179,13 @@ func deleteNamespace(ctx context.Context, k8sClient client.Client, name string) 
 	return nil
 }
 
-// deleteAllResourcesByGVR deletes all resources of a given GroupVersionResource across all namespaces
-func deleteAllResourcesByGVR(ctx context.Context, k8sClient client.Client, group, version, resource string) error {
+// deleteAllResourcesByGVRK deletes all resources of a given GroupVersionResourceKind across all namespaces
+func deleteAllResourcesByGVRK(ctx context.Context, k8sClient client.Client, group, version, resource, kind string) error {
 	list := &unstructured.UnstructuredList{}
 	list.SetGroupVersionKind(schema.GroupVersionKind{
 		Group:   group,
 		Version: version,
-		Kind:    strings.TrimSuffix(resource, "s") + "List",
+		Kind:    kind + "List",
 	})
 
 	// List all resources (across all namespaces)
@@ -209,13 +209,13 @@ func deleteAllResourcesByGVR(ctx context.Context, k8sClient client.Client, group
 	return nil
 }
 
-// countResourcesByGVR counts all resources of a given GroupVersionResource
-func countResourcesByGVR(ctx context.Context, k8sClient client.Client, group, version, resource string) (int, error) {
+// countResourcesByGVRK counts all resources of a given GroupVersionResourceKind
+func countResourcesByGVRK(ctx context.Context, k8sClient client.Client, group, version, resource, kind string) (int, error) {
 	list := &unstructured.UnstructuredList{}
 	list.SetGroupVersionKind(schema.GroupVersionKind{
 		Group:   group,
 		Version: version,
-		Kind:    strings.TrimSuffix(resource, "s") + "List",
+		Kind:    kind + "List",
 	})
 
 	// List all resources (across all namespaces)
@@ -228,6 +228,22 @@ func countResourcesByGVR(ctx context.Context, k8sClient client.Client, group, ve
 	}
 
 	return len(list.Items), nil
+}
+
+// deleteAllResourcesByGVR deletes all resources of a given GroupVersionResource across all namespaces
+// Deprecated: Use deleteAllResourcesByGVRK instead, which uses the correct Kind
+func deleteAllResourcesByGVR(ctx context.Context, k8sClient client.Client, group, version, resource string) error {
+	// Try to guess the Kind from the resource name (may not work for all cases)
+	kind := strings.TrimSuffix(resource, "s")
+	return deleteAllResourcesByGVRK(ctx, k8sClient, group, version, resource, kind)
+}
+
+// countResourcesByGVR counts all resources of a given GroupVersionResource
+// Deprecated: Use countResourcesByGVRK instead, which uses the correct Kind
+func countResourcesByGVR(ctx context.Context, k8sClient client.Client, group, version, resource string) (int, error) {
+	// Try to guess the Kind from the resource name (may not work for all cases)
+	kind := strings.TrimSuffix(resource, "s")
+	return countResourcesByGVRK(ctx, k8sClient, group, version, resource, kind)
 }
 
 // isNotFoundError checks if an error is a NotFound error
