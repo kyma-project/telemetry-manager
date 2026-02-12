@@ -40,8 +40,8 @@ var (
 	cpuEnergyAttribute0  = attribute.String("core", "0")
 	cpuEnergyAttribute1  = attribute.String("core", "1")
 
-	tracer = otel.Tracer("")
 	meter  = otel.Meter("")
+	tracer = otel.Tracer("")
 
 	terminateEndpoint string
 )
