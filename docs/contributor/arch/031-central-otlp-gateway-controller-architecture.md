@@ -56,8 +56,7 @@ are handled by `Metric Agent Controller` and `OTLP Gateway Controller` respectiv
 
 Since multiple controllers would be updating the same ConfigMap `otlp-gateway-config` locking mechanism is required. `controller-runtime` provides out of box `optimistic locking` mechanism which can be used to handle the concurrent updates to the same ConfigMap.
 
----
-## Optimistic Locking on ConfigMaps
+#### Optimistic Locking on ConfigMaps
 
 When multiple controllers write to shared ConfigMaps, Kubernetes provides **optimistic concurrency control** via the `resourceVersion` field. Each ConfigMap has a `resourceVersion` that changes on every update. When a controller attempts to update a ConfigMap:
 
@@ -77,7 +76,7 @@ if errors.IsConflict(err) {
 }
 ```
 
-### References
+#### References
 
 - [Kubernetes API Conventions: Concurrency Control](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency)
 - [controller-runtime: Handling Conflicts](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/client#example-Client-Update)
