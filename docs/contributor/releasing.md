@@ -27,6 +27,8 @@ Together with the module release, prepare a new release of the [opentelemetry-co
       - Update the `ENV_MANAGER_IMAGE` variable, update the tag of the `telemetry-manager` image with the new module version following the `x.y.z` pattern. For example, `ENV_MANAGER_IMAGE=europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:1.0.0`.
       - Update the `ENV_OTEL_COLLECTOR_IMAGE` variable, and update the tag of the `kyma-otel-collector` image with the new version released from the [opentelemetry-collector-components](https://github.com/kyma-project/opentelemetry-collector-components) repository. For example, `ENV_OTEL_COLLECTOR_IMAGE=europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.100.0-1.0.0`.
       - Update the `ENV_HELM_RELEASE_VERSION` variable, update the Helm chart version with the new module version following the `x.y.z` pattern. For example, `ENV_HELM_RELEASE_VERSION=1.0.0`.
+      - Update the `ENV_FLUENTBIT_EXPORTER_IMAGE` variable with the corresponding tag for the main image from `europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:main`
+      - Update the `ENV_SELFMONITOR_IMAGE` variable with the corresponding tag for the main image from `europe-docker.pkg.dev/kyma-project/prod/telemetry-self-monitor:main`
    - `make generate`
       - Run `make generate` to update the images in the `sec-scanners-config.yaml` and other files.
 
