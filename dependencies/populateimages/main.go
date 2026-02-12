@@ -21,6 +21,8 @@ const (
 	DefaultTelemetryGenImage         = "{{ .ENV_TEST_TELEMETRYGEN_IMAGE }}"
 	DefaultOTelCollectorContribImage = "{{ .ENV_OTEL_COLLECTOR_CONTRIB_IMAGE }}"
 	DefaultOTelCollectorImage        = "{{ .ENV_OTEL_COLLECTOR_IMAGE }}"
+	SelfMonitorImage                 = "{{ .ENV_SELFMONITOR_IMAGE }}"
+	SelfMonitorFIPSImage             = "{{ .ENV_SELFMONITOR_FIPS_IMAGE }}"
 )
 `,
 }
