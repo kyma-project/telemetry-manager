@@ -100,15 +100,15 @@ run_tests() {
 
     cd "$PROJECT_ROOT"
 
-    # Build test arguments
-    local test_args="-timeout 30m"
-    [ "$TEST_VERBOSE" = "true" ] && test_args="$test_args -v"
-    [ -n "$TEST_LABELS" ] && test_args="$test_args -labels=\"$TEST_LABELS\""
+    # Build test arguments array
+    local test_args=("-timeout" "30m")
+    [ "$TEST_VERBOSE" = "true" ] && test_args+=("-v")
+    [ -n "$TEST_LABELS" ] && test_args+=("-labels" "$TEST_LABELS")
 
-    echo "Running: go test $TEST_PATH $test_args"
+    echo "Running: go test $TEST_PATH ${test_args[*]}"
     echo ""
 
-    if go test "$TEST_PATH" $test_args; then
+    if go test "$TEST_PATH" "${test_args[@]}"; then
         echo ""
         echo "Tests passed successfully"
         return 0
@@ -130,6 +130,7 @@ OPTIONS:
     -h, --help                  Show this help message
     -i, --image IMAGE           Manager image to use (default: latest)
     --build                     Build manager image locally with timestamped tag
+    --use-local                 Use local telemetry-manager:latest without building
     --istio                     Install Istio before tests
     --no-fips                   Disable FIPS mode
     --experimental              Enable experimental mode
@@ -143,6 +144,9 @@ OPTIONS:
 EXAMPLES:
     # Build image locally and run default tests
     $0 --build
+
+    # Use existing local image without rebuilding
+    $0 --use-local -p "./test/integration/istio/..." -l "istio" --skip-provision
 
     # Build and run specific tests with Istio
     $0 --build --istio -p "./test/e2e/logs/gateway/..." -l "log-gateway and istio"
@@ -196,6 +200,10 @@ parse_args() {
                 ;;
             --build|--build-image)
                 BUILD_IMAGE=true
+                shift
+                ;;
+            --use-local)
+                MANAGER_IMAGE="telemetry-manager:latest"
                 shift
                 ;;
             --istio)

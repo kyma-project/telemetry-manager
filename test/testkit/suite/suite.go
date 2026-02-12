@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"log"
 	"os"
 	"path"
 	"runtime"
@@ -30,12 +31,11 @@ var (
 	ClusterPrepConfig *kubeprep.Config
 )
 
-// init registers the -labels flag with the flag package so go test doesn't error.
-// The actual parsing is done by findLabelFilterExpression() which reads os.Args directly.
+var labelFilterFlag string
+
+// init registers the -labels flag with the flag package.
 func init() {
-	// Register the flag to prevent "flag provided but not defined" error
-	// The value is ignored - we use the existing findLabelFilterExpression() instead
-	flag.String("labels", "", "Label filter expression (e.g., 'log-agent and istio')")
+	flag.StringVar(&labelFilterFlag, "labels", "", "Label filter expression (e.g., 'log-agent and istio')")
 }
 
 // BeforeSuiteFunc is designed to return an error instead of relying on Gomega matchers.
@@ -199,6 +199,7 @@ func DebugObjectsEnabled() bool {
 
 func RegisterTestCase(t *testing.T, labels ...string) {
 	RegisterTestingT(t)
+	log.Printf("Registering labels: %v", labels)
 
 	labelSet := toSet(labels)
 
@@ -208,7 +209,9 @@ func RegisterTestCase(t *testing.T, labels ...string) {
 	}
 
 	labelFilterExpr := findLabelFilterExpression()
+	log.Printf("labelFilterExpr: %v", labelFilterExpr)
 	doNotExecute := findDoNotExecuteFlag()
+	log.Printf("doNotExecute: %v", doNotExecute)
 
 	// If no filter is specified, run all tests (unless do-not-execute is set)
 	if labelFilterExpr == "" {
@@ -221,6 +224,7 @@ func RegisterTestCase(t *testing.T, labels ...string) {
 	}
 
 	shouldRun, err := evaluateLabelExpression(labels, labelFilterExpr)
+	log.Printf("shouldRun: %v", shouldRun)
 	if err != nil {
 		t.Fatalf("Invalid label filter: %v", err)
 	}
@@ -276,26 +280,11 @@ func printTestInfo(t *testing.T, labels []string, action string) {
 }
 
 func findLabelFilterExpression() string {
-	const prefix = "-labels="
-
-	var labelsArg string
-
-	for _, arg := range os.Args {
-		if strings.HasPrefix(arg, prefix) {
-			labelsArg = arg
-		}
+	// Ensure flags are parsed
+	if !flag.Parsed() {
+		flag.Parse()
 	}
-
-	if labelsArg == "" {
-		return ""
-	}
-
-	labelsKV := strings.SplitN(labelsArg, "=", 2)
-	if len(labelsKV) != 2 {
-		return ""
-	}
-
-	return labelsKV[1]
+	return labelFilterFlag
 }
 
 func toSet(labels []string) map[string]struct{} {
