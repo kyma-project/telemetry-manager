@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -13,8 +14,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-
-	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 )
 
 var ErrMaxPipelinesExceeded = errors.New("maximum pipeline count limit exceeded")
@@ -51,11 +50,6 @@ func NewSyncer(client client.Client, lockName types.NamespacedName) *Checker {
 }
 
 func (c *Checker) TryAcquireLock(ctx context.Context, owner metav1.Object) error {
-	if c.maxOwners == UnlimitedPipelineCount {
-		logf.FromContext(ctx, "Unlimited Pipeline count configured, skipping lock acquisition")
-		return nil
-	}
-
 	var lock corev1.ConfigMap
 	if err := c.client.Get(ctx, c.lockName, &lock); err != nil {
 		if apierrors.IsNotFound(err) {
@@ -63,6 +57,11 @@ func (c *Checker) TryAcquireLock(ctx context.Context, owner metav1.Object) error
 		}
 
 		return fmt.Errorf("failed to get lock: %w", err)
+	}
+
+	if c.maxOwners == UnlimitedPipelineCount {
+		logf.FromContext(ctx, "Unlimited Pipeline count configured, skipping lock acquisition")
+		return nil
 	}
 
 	for _, ref := range lock.GetOwnerReferences() {
