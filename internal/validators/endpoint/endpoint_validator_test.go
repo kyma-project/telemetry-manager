@@ -14,14 +14,13 @@ import (
 )
 
 const (
-	errMsgEndpointInvalid         = "parse \"%s\": first path segment in URL cannot contain colon"
-	errMsgEndpointResolveFailed   = "failed to resolve value"
-	errMsgPortInvalidAlphanumeric = "parse \"%s\": invalid port \":%s\" after host"
-	errMsgPortInvalidSegmented    = "address %s: too many colons in address"
-	errMsgPortMissing             = "missing port"
-	errMsgUnsupportedScheme       = "missing or unsupported protocol scheme"
-	errMsgGRPCOAuth2NoTLS         = "OAuth2 requires TLS when using gRPC protocol"
-	errMsgHTTPWithTLS             = "HTTP scheme with TLS not allowed"
+	errMsgEndpointInvalid       = "parse \"%s\": first path segment in URL cannot contain colon"
+	errMsgEndpointResolveFailed = "failed to resolve value"
+	errMsgPortInvalid           = "parse \"%s\": invalid port \":%s\" after host"
+	errMsgPortMissing           = "missing port"
+	errMsgUnsupportedScheme     = "missing or unsupported protocol scheme"
+	errMsgGRPCOAuth2NoTLS       = "OAuth2 requires TLS when using gRPC protocol"
+	errMsgHTTPWithTLS           = "HTTP scheme with TLS not allowed"
 )
 
 var testScenarios = []struct {
@@ -250,52 +249,52 @@ var testScenarios = []struct {
 		endpoint: "example.com:8o8o",
 
 		errOTLPGRPC:    nil,
-		errMsgOTLPGRPC: fmt.Sprintf(errMsgPortInvalidAlphanumeric, "example.com:8o8o", "8o8o"),
+		errMsgOTLPGRPC: fmt.Sprintf(errMsgPortInvalid, "example.com:8o8o", "8o8o"),
 
 		errOTLPHTTP:    nil,
-		errMsgOTLPHTTP: fmt.Sprintf(errMsgPortInvalidAlphanumeric, "example.com:8o8o", "8o8o"),
+		errMsgOTLPHTTP: fmt.Sprintf(errMsgPortInvalid, "example.com:8o8o", "8o8o"),
 
 		errFluentdHTTP:    nil,
-		errMsgFluentdHTTP: fmt.Sprintf(errMsgPortInvalidAlphanumeric, "example.com:8o8o", "8o8o"),
+		errMsgFluentdHTTP: fmt.Sprintf(errMsgPortInvalid, "example.com:8o8o", "8o8o"),
 	},
 	{
 		name:     "with scheme: invalid alphanumeric port",
 		endpoint: "http://example.com:8o8o",
 
 		errOTLPGRPC:    nil,
-		errMsgOTLPGRPC: fmt.Sprintf(errMsgPortInvalidAlphanumeric, "http://example.com:8o8o", "8o8o"),
+		errMsgOTLPGRPC: fmt.Sprintf(errMsgPortInvalid, "http://example.com:8o8o", "8o8o"),
 
 		errOTLPHTTP:    nil,
-		errMsgOTLPHTTP: fmt.Sprintf(errMsgPortInvalidAlphanumeric, "http://example.com:8o8o", "8o8o"),
+		errMsgOTLPHTTP: fmt.Sprintf(errMsgPortInvalid, "http://example.com:8o8o", "8o8o"),
 
 		errFluentdHTTP:    nil,
-		errMsgFluentdHTTP: fmt.Sprintf(errMsgPortInvalidAlphanumeric, "http://example.com:8o8o", "8o8o"),
+		errMsgFluentdHTTP: fmt.Sprintf(errMsgPortInvalid, "http://example.com:8o8o", "8o8o"),
 	},
 	{
 		name:     "no scheme: invalid segmented port",
 		endpoint: "example.com:80:80",
 
 		errOTLPGRPC:    nil,
-		errMsgOTLPGRPC: fmt.Sprintf(errMsgPortInvalidSegmented, "example.com:80:80"),
+		errMsgOTLPGRPC: fmt.Sprintf(errMsgPortInvalid, "example.com:80:80", "80:80"),
 
 		errOTLPHTTP:    nil,
-		errMsgOTLPHTTP: fmt.Sprintf(errMsgPortInvalidSegmented, "example.com:80:80"),
+		errMsgOTLPHTTP: fmt.Sprintf(errMsgPortInvalid, "example.com:80:80", "80:80"),
 
 		errFluentdHTTP:    nil,
-		errMsgFluentdHTTP: "",
+		errMsgFluentdHTTP: fmt.Sprintf(errMsgPortInvalid, "example.com:80:80", "80:80"),
 	},
 	{
 		name:     "with scheme: invalid segmented port",
 		endpoint: "http://example.com:80:80",
 
 		errOTLPGRPC:    nil,
-		errMsgOTLPGRPC: fmt.Sprintf(errMsgPortInvalidSegmented, "example.com:80:80"),
+		errMsgOTLPGRPC: fmt.Sprintf(errMsgPortInvalid, "http://example.com:80:80", "80:80"),
 
 		errOTLPHTTP:    nil,
-		errMsgOTLPHTTP: fmt.Sprintf(errMsgPortInvalidSegmented, "example.com:80:80"),
+		errMsgOTLPHTTP: fmt.Sprintf(errMsgPortInvalid, "http://example.com:80:80", "80:80"),
 
 		errFluentdHTTP:    nil,
-		errMsgFluentdHTTP: "",
+		errMsgFluentdHTTP: fmt.Sprintf(errMsgPortInvalid, "http://example.com:80:80", "80:80"),
 	},
 	{
 		name:     "https scheme: with port",
