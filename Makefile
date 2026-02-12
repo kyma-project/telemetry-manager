@@ -276,7 +276,17 @@ docker-tag-self-monitor-image-as-fips: docker-pull-self-monitor-image ## Tag the
 
 .PHONY: k3d-import-self-monitor-fips-image
 k3d-import-self-monitor-fips-image: ## Import the Self-Monitor FIPS image into the K3D cluster
-	$(K3D) image import ${SELF_MONITOR_FIPS_IMAGE} -c kyma
+	@max_retries=5; \
+	retry_count=0; \
+	until $(K3D) image import "$(SELF_MONITOR_FIPS_IMAGE)" -c kyma; do \
+		retry_count=$$((retry_count + 1)); \
+		if [ $$retry_count -ge $$max_retries ]; then \
+			echo "Failed to import image after $$max_retries attempts"; \
+			exit 1; \
+		fi; \
+		echo "Image import failed (attempt $$retry_count/$$max_retries), retrying in 5 seconds..."; \
+		sleep 5; \
+    done
 
 ##@ Development
 
