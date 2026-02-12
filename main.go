@@ -190,7 +190,7 @@ func run() error {
 	// TODO: remove after rollout 1.58.0
 	// Clean up old network policies created before migration to prefixed naming
 	if err := cleanupOldManagerNetworkPolicy(mgr.GetClient(), globals); err != nil {
-		setupLog.Error(err, "Failed to cleanup old network policies")
+		setupLog.Error(err, "Failed to cleanup old manager network policy")
 	}
 
 	err = setupControllersAndWebhooks(mgr, globals, envCfg)
