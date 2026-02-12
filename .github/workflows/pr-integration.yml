@@ -9,6 +9,10 @@ on:
     - cron: "0 */3 * * *"
   merge_group:
   pull_request_target:
+    branches:
+      - "main"
+      - "release-*"
+      - "prometheus_fips_image"
     # only include PRs that change:
     # go files
     # go mod files
@@ -19,20 +23,6 @@ on:
     # include the workflow definition itself
     # include dependencies of the workflow definition
     # exclude busola configmap files
-    paths:
-      - "**/go.mod"
-      - "**/go.sum"
-      - "**.go"
-      - "config/**"
-      - "!config/busola/**"
-      - "!**_test.go"
-      - "!docs/**"
-      - "test/**.go"
-      - ".github/workflows/pr-integration.yml"
-      - ".github/template/**"
-      - ".env"
-      - ".k3d-kyma.yaml"
-      - "Makefile"
 
   workflow_dispatch:
 
