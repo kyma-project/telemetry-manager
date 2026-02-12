@@ -276,7 +276,7 @@ docker-tag-self-monitor-image-as-fips: ## Tag the Self-Monitor image with the sa
 
 .PHONY: k3d-import-self-monitor-fips-image
 k3d-import-self-monitor-fips-image: ## Import the Self-Monitor FIPS image into the K3D cluster
-	$(K3D) image import ${SELF_MONITOR_FIPS_IMAGE} -c kyma
+	K3D="$(K3D)" ./hack/k3d-import-image.sh "$(SELF_MONITOR_FIPS_IMAGE)" kyma 5
 
 ##@ Development
 
