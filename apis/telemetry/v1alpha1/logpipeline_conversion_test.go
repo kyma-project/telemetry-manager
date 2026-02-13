@@ -5,7 +5,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/namespaces"
@@ -18,7 +17,7 @@ var v1alpha1LogPipeline = &LogPipeline{
 	Spec: LogPipelineSpec{
 		Input: LogPipelineInput{
 			Application: &LogPipelineApplicationInput{
-				Enabled: ptr.To(true),
+				Enabled: new(true),
 				Namespaces: LogPipelineNamespaceSelector{
 					Include: []string{"default", "kube-system"},
 					Exclude: []string{"kube-public"},
@@ -28,9 +27,9 @@ var v1alpha1LogPipeline = &LogPipeline{
 					Include: []string{"nginx", "app"},
 					Exclude: []string{"sidecar"},
 				},
-				FluentBitKeepAnnotations: ptr.To(true),
-				FluentBitDropLabels:      ptr.To(true),
-				KeepOriginalBody:         ptr.To(true),
+				FluentBitKeepAnnotations: new(true),
+				FluentBitDropLabels:      new(true),
+				KeepOriginalBody:         new(true),
 			},
 			OTLP: &OTLPInput{
 				Disabled: true,
@@ -151,7 +150,7 @@ var v1alpha1LogPipeline = &LogPipeline{
 				Message: "FluentBit is and collecting logs",
 			},
 		},
-		UnsupportedMode: ptr.To(true),
+		UnsupportedMode: new(true),
 	},
 }
 
@@ -162,7 +161,7 @@ var v1beta1LogPipeline = &telemetryv1beta1.LogPipeline{
 	Spec: telemetryv1beta1.LogPipelineSpec{
 		Input: telemetryv1beta1.LogPipelineInput{
 			Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
-				Enabled: ptr.To(true),
+				Enabled: new(true),
 				Namespaces: &telemetryv1beta1.NamespaceSelector{
 					Include: []string{"default", "kube-system"},
 					Exclude: []string{"kube-public"},
@@ -171,12 +170,12 @@ var v1beta1LogPipeline = &telemetryv1beta1.LogPipeline{
 					Include: []string{"nginx", "app"},
 					Exclude: []string{"sidecar"},
 				},
-				FluentBitKeepAnnotations: ptr.To(true),
-				FluentBitDropLabels:      ptr.To(true),
-				KeepOriginalBody:         ptr.To(true),
+				FluentBitKeepAnnotations: new(true),
+				FluentBitDropLabels:      new(true),
+				KeepOriginalBody:         new(true),
 			},
 			OTLP: &telemetryv1beta1.OTLPInput{
-				Enabled: ptr.To(false),
+				Enabled: new(false),
 				Namespaces: &telemetryv1beta1.NamespaceSelector{
 					Include: []string{"include", "include2"},
 					Exclude: []string{"exclude", "exclude2"},
@@ -284,7 +283,7 @@ var v1beta1LogPipeline = &telemetryv1beta1.LogPipeline{
 				Message: "FluentBit is and collecting logs",
 			},
 		},
-		UnsupportedMode: ptr.To(true),
+		UnsupportedMode: new(true),
 	},
 }
 
@@ -312,7 +311,7 @@ func TestLogPipelineConvertTo(t *testing.T) {
 				Spec: telemetryv1beta1.LogPipelineSpec{
 					Input: telemetryv1beta1.LogPipelineInput{
 						OTLP: &telemetryv1beta1.OTLPInput{
-							Enabled: ptr.To(true),
+							Enabled: new(true),
 							Namespaces: &telemetryv1beta1.NamespaceSelector{
 								Include: []string{"valid-ns", "another-valid-ns"},
 								Exclude: []string{"valid-excluded", "another-valid-excluded"},

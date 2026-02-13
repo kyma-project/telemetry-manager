@@ -8,7 +8,6 @@ import (
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -37,7 +36,7 @@ func TestSinglePipelineV1Alpha1_OTel(t *testing.T) {
 			labels: []string{suite.LabelLogAgent},
 			input: telemetryv1alpha1.LogPipelineInput{
 				Application: &telemetryv1alpha1.LogPipelineApplicationInput{
-					Enabled: ptr.To(true),
+					Enabled: new(true),
 				},
 			},
 			logGeneratorBuilder: func(ns string) client.Object {
@@ -51,7 +50,7 @@ func TestSinglePipelineV1Alpha1_OTel(t *testing.T) {
 			labels: []string{suite.LabelLogGateway},
 			input: telemetryv1alpha1.LogPipelineInput{
 				Application: &telemetryv1alpha1.LogPipelineApplicationInput{
-					Enabled: ptr.To(false),
+					Enabled: new(false),
 				},
 				OTLP: &telemetryv1alpha1.OTLPInput{
 					Disabled: false,
@@ -68,7 +67,7 @@ func TestSinglePipelineV1Alpha1_OTel(t *testing.T) {
 			labels: []string{suite.LabelLogGateway, suite.LabelExperimental},
 			input: telemetryv1alpha1.LogPipelineInput{
 				Application: &telemetryv1alpha1.LogPipelineApplicationInput{
-					Enabled: ptr.To(false),
+					Enabled: new(false),
 				},
 				OTLP: &telemetryv1alpha1.OTLPInput{
 					Disabled: false,

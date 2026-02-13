@@ -1,9 +1,9 @@
 module github.com/kyma-project/telemetry-manager/internal/tools
 
-go 1.25.7
+go 1.26.0
 
 require (
-	github.com/g4s8/envdoc v1.9.1
+	github.com/g4s8/envdoc v1.10.0
 	github.com/golangci/golangci-lint/v2 v2.9.0
 	github.com/google/yamlfmt v0.21.0
 	github.com/hairyhenderson/gomplate/v5 v5.0.0
@@ -17,7 +17,7 @@ require (
 	golang.org/x/tools v0.42.0
 	gotest.tools/gotestsum v1.13.0
 	helm.sh/helm/v4 v4.1.1
-	k8s.io/code-generator v0.35.0
+	k8s.io/code-generator v0.35.1
 	sigs.k8s.io/controller-tools v0.20.0
 )
 
@@ -505,7 +505,7 @@ require (
 	honnef.co/go/tools v0.6.1 // indirect
 	k8s.io/api v0.35.0 // indirect
 	k8s.io/apiextensions-apiserver v0.35.0 // indirect
-	k8s.io/apimachinery v0.35.0 // indirect
+	k8s.io/apimachinery v0.35.1 // indirect
 	k8s.io/apiserver v0.35.0 // indirect
 	k8s.io/cli-runtime v0.35.0 // indirect
 	k8s.io/client-go v0.35.0 // indirect
