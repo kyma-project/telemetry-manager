@@ -266,14 +266,6 @@ docker-push-selfmonitor: ## Push docker image for telemetry self-monitor
 docker-pull-self-monitor-fips-image: ## Pull the Self-Monitor FIPS image
 	docker pull ${SELF_MONITOR_FIPS_IMAGE}
 
-.PHONY: docker-pull-self-monitor-image
-docker-pull-self-monitor-image: ## Pull the Self-Monitor image
-	docker pull ${SELF_MONITOR_IMAGE}
-
-.PHONY: docker-tag-self-monitor-image-as-fips
-docker-tag-self-monitor-image-as-fips: ## Tag the Self-Monitor image with the same tag as the Self-Monitor FIPS image
-	docker tag ${SELF_MONITOR_IMAGE} ${SELF_MONITOR_FIPS_IMAGE}
-
 .PHONY: k3d-import-self-monitor-fips-image
 k3d-import-self-monitor-fips-image: ## Import the Self-Monitor FIPS image into the K3D cluster
 	K3D="$(K3D)" ./hack/k3d-import-image.sh ${SELF_MONITOR_FIPS_IMAGE} kyma 20
