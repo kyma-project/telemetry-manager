@@ -64,6 +64,12 @@ However, the reproducible build approach is currently not available and have to 
 The module release publishing workflow
 
 ![Module Release Workflow](./../assets/auditable-release-module-release.drawio.svg)
+
+
+The Management Plane Chart release workflow
+
+![Management Plane Chart Release Workflow](./../assets/auditable-release-mpc-release.drawio.drawio.svg)
+
 ## Release Workflow Step-by-Step Execution
 
 **Project Master Action**: Close the current development milestone to signify the boundary between development and release phases. This marks the completion of all planned features for the current release.
