@@ -29,7 +29,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: kyma-project.io--{{ include "telemetry-manager.fullname" . }}-allow-webhooks
+  name: kyma-project.io--allow-{{ include "telemetry-manager.fullname" . }}-webhooks
   namespace: {{ .Release.Namespace }}
   labels:
     app.kubernetes.io/part-of: telemetry
@@ -56,7 +56,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: kyma-project.io--{{ include "telemetry-manager.fullname" . }}-to-dns
+  name: kyma-project.io--allow-{{ include "telemetry-manager.fullname" . }}-to-dns
   namespace: {{ .Release.Namespace }}
   labels:
     app.kubernetes.io/part-of: telemetry
@@ -106,7 +106,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: kyma-project.io--{{ include "telemetry-manager.fullname" . }}-allow-to-apiserver
+  name: kyma-project.io--allow-{{ include "telemetry-manager.fullname" . }}-to-apiserver
   namespace: {{ .Release.Namespace }}
   labels:
     app.kubernetes.io/part-of: telemetry
