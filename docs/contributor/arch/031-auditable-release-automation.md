@@ -33,7 +33,7 @@ The Docker image used for testing must be the exact same image that is used for 
 **Current Flow:**
 Our current release pipeline builds two separate images:
 - The release preparation workflow builds a Docker image from a PR and pushes it to the Kyma dev registry with a unique PR tag and digest SHA. This image is used to run unit and E2E tests.
-- After successful tests, the release workflow builds a new image from the  same Dockerfile and source code, tags it with the release version and pushes it to the production registry.
+- After successful tests, the release workflow builds a new image from the same Dockerfile and source code, tags it with the release version and pushes it to the production registry.
 
 **Current Challenge:**
 Both images currently receive different digests due to different build environments and timestamps, despite having identical content and application binary. This behavior is not acceptable for auditable release automation.
@@ -46,17 +46,23 @@ We must implement deterministic Docker builds. An image built from a PR must hav
 
 ### Download and Store Test Reports
 
-The test reports from unit tests, E2E tests, and Gardener tests have to be downloaded from the respective GitHub Actions workflows and stored as artifacts for audit purposes. For this pupose, a new re-usable workflow created to download and store test reports from workflow.
-After test jobs are completed successfully, the test exwcution result will be uplodaed to the GCP bucket (see [Archive Test Logs for 12-Month Auditing via Release Assets #8419](https://github.tools.sap/kyma/backlog/issues/8419).
+The test reports from unit tests, E2E tests, Gardener tests, and upgrade tests have to be downloaded from the respective GitHub Actions workflows and stored as artifacts for audit purposes. For this purpose, a new re-usable workflow will be created to download and store test reports from the workflow runs.
+After test jobs are completed successfully, the test execution results will be uploaded to the GCP bucket (see [Archive Test Logs for 12-Month Auditing via Release Assets #8419](https://github.tools.sap/kyma/backlog/issues/8419).
 
 ### Deterministic Docker Builds
-To achieve deterministic Docker builds, we consider the following strategies:
+To achieve deterministic Docker builds and ensure audit compliance, we considered the following strategies:
 
-- **Reproducible Build Tools**: Utilize tools and techniques that support reproducible builds, such as Docker's BuildKit option, which must be implemented by the `Image-Builder`.
-- **Copy Release PR Image**: As an alternative to reproducible builds, we can modify the release process to copy the Docker image built during the release PR directly to the production registry with the release tag. This approach ensures that the same image used for testing is released, maintaining identical digests.
+- **Reproducible Build Tools**: Utilize tools and techniques that support reproducible builds, such as Docker's BuildKit with deterministic settings. This approach would require implementation support from the `Image-Builder` team and is not currently available.
+- **Copy Release PR Image**: Modify the release process to copy the Docker image built during the PR directly to the production registry with the release tag. This approach ensures that the exact same image used for testing is released, maintaining identical digests.
 
-Both approaches ensure that the Docker image used for testing is the same as the one released, providing a clear audit trail and maintaining software integrity throughout the release process. 
-However, the reproducible build approach is currently not available and have to be implemented by the `Image-Builder` team, therefore the recommended approach for now, repeat all test in the release branch with release Docker Image.
+**Recommended Approach:**
+
+Due to the current unavailability of reproducible build tools, the recommended approach is, all tests (unit, E2E, Gardener, and upgrade tests) will be executed in the release branch using the release image before final release publication.
+
+This approach provides:
+- Solid image digests proof for testing and release (audit compliance)
+- Comprehensive test coverage in the release context
+- Clear traceability for release audits
 
 ![Release Workflow](./../assets/auditable-release-final.drawio.svg)
 
@@ -70,9 +76,9 @@ A separate GitHub workflow will be responsible for publishing the module release
 
 ### The Management Plane Chart Release Workflow
 
-A separate GitHub workflow will be responsible for bumping Managemene Plane Charts. This workflow will be triggered by the release master once the release version and the target chart. The workflow will handle the chart release process for `chart/telemetry` and `chart/runtime-monitoring-operator` Helm charts.
+A separate GitHub workflow will be responsible for bumping Management Plane Charts. This workflow will be triggered by the release master once the release version and the target chart are specified. The workflow will handle the chart release process for `chart/telemetry` and `chart/runtime-monitoring-operator` Helm charts.
 
-![Management Plane Chart Release Workflow](./../assets/auditable-release-mpc-release.drawio.drawio.svg)
+![Management Plane Chart Release Workflow](./../assets/auditable-release-mpc-release.drawio.svg)
 
 ## Release Workflow Step-by-Step Execution
 
@@ -83,8 +89,8 @@ A separate GitHub workflow will be responsible for bumping Managemene Plane Char
 **System Decision Point**: The system evaluates whether this is a patch release or a new minor version release:
 - **Patch Release**: If the release involves only bug fixes (patch release), skip release branch creation.
 - **New Version Release**: If this is a new feature release (non-patch), create a dedicated release branch following the `release-x.y` naming convention (e.g., `release-1.0`).
-- Commits these changes to the release branch
-- Creates a release tag marking the version point
+- Commit these changes to the release branch
+- Create a release tag marking the version point
 **Source Control Action**: Push the committed version-bumped artifacts and the release tag to the release branch. This officially marks the release version in the repository.
 - Run Unit Tests and Release Image creation in parallel.
 
@@ -115,7 +121,7 @@ The proposed strategies for deterministic Docker builds and the structured relea
 
 Currently, the recommended approach is to run all tests in the release branch using the release Docker image, ensuring that the same image is used for both testing and release, thus maintaining identical digests and providing a clear audit trail.
 
-We can skip the PR tests and run them only in the release branch, so we can automate release process without waiting for the PR tests to complete, and still ensure that the released image is tested and has the same digest as the one built in the PR. 
-A new GitHub Action, ca be implemeted to trigger the release branch workflow once the release master enter the release version and OpenTelemetry Collector Components version for the release.
+We can skip the PR tests and run them only in the release branch, so we can automate the release process without waiting for the PR tests to complete, and still ensure that the released image is tested and has the same digest as the one built in the PR.
+A new GitHub Action can be implemented to trigger the release branch workflow once the release master enters the release version and OpenTelemetry Collector Components version for the release.
 
-The release artifacts and GitHub release will be created once the release tests are successful and the release report uploaded successfully to the GCP bucket for audit retention.
+The release artifacts and GitHub release will be created once the release tests are successful and the release report is uploaded to the GCP bucket for audit retention.
