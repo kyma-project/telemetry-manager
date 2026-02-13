@@ -257,6 +257,12 @@ jobs:
             type: e2e
             use-fips: true
             install-istio: false
+          - name: e2e-metrics-max-pipeline
+            labels: metrics-max-pipeline
+            mode: experimental
+            type: e2e
+            use-fips: true
+            install-istio: false
           # TRACES
           - name: e2e-traces
             labels: traces
@@ -267,6 +273,12 @@ jobs:
           - name: e2e-traces-max-pipeline
             labels: traces-max-pipeline
             mode: release
+            type: e2e
+            use-fips: true
+            install-istio: false
+          - name: e2e-traces-max-pipeline
+            labels: traces-max-pipeline
+            mode: experimental
             type: e2e
             use-fips: true
             install-istio: false

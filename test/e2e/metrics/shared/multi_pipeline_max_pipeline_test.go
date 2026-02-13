@@ -22,7 +22,7 @@ import (
 )
 
 func TestMultiPipelineMaxPipeline(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelMetricsMaxPipeline)
+	suite.RegisterTestCase(t, suite.LabelMetricsMaxPipeline, suite.LabelExperimental)
 
 	const maxNumberOfMetricPipelines = resourcelock.MaxPipelineCount
 
@@ -76,6 +76,26 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 
 	t.Log("Attempting to create a pipeline that exceeds the maximum allowed number of pipelines")
 	Expect(kitk8s.CreateObjects(t, &additionalPipeline)).To(Succeed())
+
+	// Check if experimental label is set - if so, unlimited pipelines are enabled
+	if suite.IsLabelSet(suite.LabelExperimental) {
+		testUnlimitedPipelines(t, additionalPipelineName, backend, genNs)
+		return
+	}
+
+	testMaxPipelineLimit(t, additionalPipelineName, pipelines, backend, genNs)
+
+}
+
+func testUnlimitedPipelines(t *testing.T, additionalPipelineName string, backend *kitbackend.Backend, genNs string) {
+	t.Log("Verifying metrics are delivered for valid pipelines")
+	assert.MetricsFromNamespaceDelivered(t, backend, genNs, telemetrygen.MetricNames)
+	assert.MetricPipelineHealthy(t, additionalPipelineName)
+
+}
+
+func testMaxPipelineLimit(t *testing.T, additionalPipelineName string, pipelines []client.Object, backend *kitbackend.Backend, genNs string) {
+
 	assert.MetricPipelineHasCondition(t, additionalPipelineName, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionFalse,
@@ -87,12 +107,12 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 		Reason: conditions.ReasonSelfMonConfigNotGenerated,
 	})
 
-	t.Log("Verifying logs are delivered for valid pipelines")
+	t.Log("Verifying metrics are delivered for valid pipelines")
 	assert.MetricsFromNamespaceDelivered(t, backend, genNs, telemetrygen.MetricNames)
 
 	t.Log("Deleting one previously healthy pipeline and expecting the additional pipeline to be healthy")
 
 	deletePipeline := pipelines[0]
 	Expect(kitk8s.DeleteObjects(deletePipeline)).To(Succeed())
-	assert.MetricPipelineHealthy(t, additionalPipeline.GetName())
+	assert.MetricPipelineHealthy(t, additionalPipelineName)
 }
