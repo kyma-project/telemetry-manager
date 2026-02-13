@@ -169,7 +169,13 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 		return err
 	}
 
-	networkPolicy := commonresources.MakeNetworkPolicy(aad.daemonSetName, opts.AllowedPorts, makeLabels(), selectorLabels())
+	networkPolicy := commonresources.MakeNetworkPolicy(
+		aad.daemonSetName,
+		makeLabels(),
+		selectorLabels(),
+		commonresources.WithIngressFromAny(opts.AllowedPorts...),
+		commonresources.WithEgressToAny(),
+	)
 	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, networkPolicy); err != nil {
 		return fmt.Errorf("failed to create fluent bit network policy: %w", err)
 	}

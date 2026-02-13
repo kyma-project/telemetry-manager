@@ -70,7 +70,13 @@ func applyCommonResources(ctx context.Context, c client.Client, name types.Names
 		return fmt.Errorf("failed to cleanup old network policy: %w", err)
 	}
 
-	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, commonresources.MakeNetworkPolicy(name, ingressAllowedPorts, commonresources.MakeDefaultLabels(name.Name, componentType), commonresources.MakeDefaultSelectorLabels(name.Name))); err != nil {
+	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, commonresources.MakeNetworkPolicy(
+		name,
+		commonresources.MakeDefaultLabels(name.Name, componentType),
+		commonresources.MakeDefaultSelectorLabels(name.Name),
+		commonresources.WithIngressFromAny(ingressAllowedPorts...),
+		commonresources.WithEgressToAny(),
+	)); err != nil {
 		return fmt.Errorf("failed to create network policy: %w", err)
 	}
 

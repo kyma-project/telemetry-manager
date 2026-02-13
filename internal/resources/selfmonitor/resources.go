@@ -11,6 +11,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -353,122 +354,36 @@ func (ad *ApplierDeleter) makeService(port int32) *corev1.Service {
 }
 
 func (ad *ApplierDeleter) makeNetworkPolicy() *networkingv1.NetworkPolicy {
-	tcpProtocol := corev1.ProtocolTCP
-	prometheusPort := intstr.FromInt32(selfmonports.PrometheusPort)
-	otelMetricsPort := intstr.FromInt32(ports.Metrics)
-	fbPortHTTP := intstr.FromInt32(fbports.HTTP)
-	fbPortExporterMetrics := intstr.FromInt32(fbports.ExporterMetrics)
-	managerWebhookPort := intstr.FromInt32(mgrports.Webhook)
+	return commonresources.MakeNetworkPolicy(
+		ad.selfMonitorName(),
+		commonresources.MakeDefaultLabels(names.SelfMonitor, commonresources.LabelValueK8sComponentMonitor),
+		commonresources.MakeDefaultSelectorLabels(names.SelfMonitor),
+		// Allow ingress from telemetry-manager pods only on Prometheus port
+		commonresources.WithIngressFromPods(map[string]string{
+			commonresources.LabelKeyK8sName: "manager",
+		}, selfmonports.PrometheusPort),
+		// Allow egress to FluentBit for scraping metrics
+		commonresources.WithEgressToPods(map[string]string{
+			commonresources.LabelKeyK8sName: "fluent-bit",
+		}, fbports.HTTP, fbports.ExporterMetrics),
+		// Allow egress to OTel agents for scraping metrics
+		commonresources.WithEgressToPods(map[string]string{
+			commonresources.LabelKeyK8sComponent: commonresources.LabelValueK8sComponentAgent,
+		}, ports.Metrics),
+		// Allow egress to OTel gateways for scraping metrics
+		commonresources.WithEgressToPods(map[string]string{
+			commonresources.LabelKeyK8sComponent: commonresources.LabelValueK8sComponentGateway,
+		}, ports.Metrics),
+		// Allow egress to telemetry-manager for webhook
+		commonresources.WithEgressToPods(map[string]string{
+			commonresources.LabelKeyK8sName: "manager",
+		}, mgrports.Webhook),
+	)
+}
 
-	return &networkingv1.NetworkPolicy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      commonresources.NetworkPolicyPrefix + names.SelfMonitor,
-			Namespace: ad.Config.TargetNamespace(),
-			Labels:    commonresources.MakeDefaultLabels(names.SelfMonitor, commonresources.LabelValueK8sComponentMonitor),
-		},
-		Spec: networkingv1.NetworkPolicySpec{
-			PodSelector: metav1.LabelSelector{
-				MatchLabels: commonresources.MakeDefaultSelectorLabels(names.SelfMonitor),
-			},
-			PolicyTypes: []networkingv1.PolicyType{
-				networkingv1.PolicyTypeIngress,
-				networkingv1.PolicyTypeEgress,
-			},
-			Ingress: []networkingv1.NetworkPolicyIngressRule{
-				{
-					// Allow ingress from telemetry-manager pods only on Prometheus port
-					From: []networkingv1.NetworkPolicyPeer{
-						{
-							PodSelector: &metav1.LabelSelector{
-								MatchLabels: map[string]string{
-									commonresources.LabelKeyK8sName: "manager",
-								},
-							},
-						},
-					},
-					Ports: []networkingv1.NetworkPolicyPort{
-						{
-							Protocol: &tcpProtocol,
-							Port:     &prometheusPort,
-						},
-					},
-				},
-			},
-			Egress: []networkingv1.NetworkPolicyEgressRule{
-				{
-					// Allow egress to FluentBit for scraping metrics
-					To: []networkingv1.NetworkPolicyPeer{
-						{
-							PodSelector: &metav1.LabelSelector{
-								MatchLabels: map[string]string{
-									commonresources.LabelKeyK8sName: "fluent-bit",
-								},
-							},
-						},
-					},
-					Ports: []networkingv1.NetworkPolicyPort{
-						{
-							Protocol: &tcpProtocol,
-							Port:     &fbPortHTTP,
-						},
-						{
-							Protocol: &tcpProtocol,
-							Port:     &fbPortExporterMetrics,
-						},
-					},
-				},
-				{
-					To: []networkingv1.NetworkPolicyPeer{
-						{
-							PodSelector: &metav1.LabelSelector{
-								MatchLabels: map[string]string{
-									commonresources.LabelKeyK8sComponent: commonresources.LabelValueK8sComponentAgent,
-								},
-							},
-						},
-					},
-					Ports: []networkingv1.NetworkPolicyPort{
-						{
-							Protocol: &tcpProtocol,
-							Port:     &otelMetricsPort,
-						},
-					},
-				},
-				{
-					To: []networkingv1.NetworkPolicyPeer{
-						{
-							PodSelector: &metav1.LabelSelector{
-								MatchLabels: map[string]string{
-									commonresources.LabelKeyK8sComponent: commonresources.LabelValueK8sComponentGateway,
-								},
-							},
-						},
-					},
-					Ports: []networkingv1.NetworkPolicyPort{
-						{
-							Protocol: &tcpProtocol,
-							Port:     &otelMetricsPort,
-						},
-					},
-				},
-				{
-					To: []networkingv1.NetworkPolicyPeer{
-						{
-							PodSelector: &metav1.LabelSelector{
-								MatchLabels: map[string]string{
-									commonresources.LabelKeyK8sName: "manager",
-								},
-							},
-						},
-					},
-					Ports: []networkingv1.NetworkPolicyPort{
-						{
-							Protocol: &tcpProtocol,
-							Port:     &managerWebhookPort,
-						},
-					},
-				},
-			},
-		},
+func (ad *ApplierDeleter) selfMonitorName() types.NamespacedName {
+	return types.NamespacedName{
+		Name:      names.SelfMonitor,
+		Namespace: ad.Config.TargetNamespace(),
 	}
 }
