@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	istionetworkingclientv1 "istio.io/client-go/pkg/apis/networking/v1"
+	"istio.io/client-go/pkg/apis/networking/v1alpha3"
 	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -34,9 +36,15 @@ func TestGateway_ApplyResources(t *testing.T) {
 	image := "opentelemetry/collector:dummy"
 	priorityClassName := "normal"
 
+	// Interface for testing both gateway types
+	type gatewayApplierDeleter interface {
+		ApplyResources(ctx context.Context, c client.Client, opts GatewayApplyOptions) error
+		DeleteResources(ctx context.Context, c client.Client, isIstioActive bool) error
+	}
+
 	tests := []struct {
 		name           string
-		sut            *GatewayApplierDeleter
+		sut            gatewayApplierDeleter
 		istioEnabled   bool
 		goldenFilePath string
 	}{
@@ -97,8 +105,10 @@ func TestGateway_ApplyResources(t *testing.T) {
 			scheme := runtime.NewScheme()
 			utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 			utilruntime.Must(istiosecurityclientv1.AddToScheme(scheme))
+			utilruntime.Must(istionetworkingclientv1.AddToScheme(scheme))
+			utilruntime.Must(v1alpha3.AddToScheme(scheme))
 
-			client := fake.NewClientBuilder().WithScheme(scheme).WithInterceptorFuncs(interceptor.Funcs{
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithInterceptorFuncs(interceptor.Funcs{
 				Create: func(_ context.Context, c client.WithWatch, obj client.Object, _ ...client.CreateOption) error {
 					objects = append(objects, obj)
 					// Nothing has to be created, just add created object to the list
@@ -106,7 +116,7 @@ func TestGateway_ApplyResources(t *testing.T) {
 				},
 			}).Build()
 
-			err := tt.sut.ApplyResources(t.Context(), client, GatewayApplyOptions{
+			err := tt.sut.ApplyResources(t.Context(), fakeClient, GatewayApplyOptions{
 				CollectorConfigYAML: "dummy",
 				CollectorEnvVars: map[string][]byte{
 					"DUMMY_ENV_VAR": []byte("foo"),
@@ -137,9 +147,15 @@ func TestGateway_DeleteResources(t *testing.T) {
 	image := "opentelemetry/collector:dummy"
 	priorityClassName := "normal"
 
+	// Interface for testing both gateway types
+	type gatewayApplierDeleter interface {
+		ApplyResources(ctx context.Context, c client.Client, opts GatewayApplyOptions) error
+		DeleteResources(ctx context.Context, c client.Client, isIstioActive bool) error
+	}
+
 	tests := []struct {
 		name         string
-		sut          *GatewayApplierDeleter
+		sut          gatewayApplierDeleter
 		istioEnabled bool
 	}{
 		{
@@ -178,6 +194,7 @@ func TestGateway_DeleteResources(t *testing.T) {
 			scheme := runtime.NewScheme()
 			utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 			utilruntime.Must(istiosecurityclientv1.AddToScheme(scheme))
+			utilruntime.Must(istionetworkingclientv1.AddToScheme(scheme))
 
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithInterceptorFuncs(interceptor.Funcs{
 				Create: func(ctx context.Context, c client.WithWatch, obj client.Object, _ ...client.CreateOption) error {
@@ -195,9 +212,61 @@ func TestGateway_DeleteResources(t *testing.T) {
 			require.NoError(t, err)
 
 			for i := range created {
-				// an update operation on a non-existent object should return a NotFound error
+				// All objects should be deleted
 				err = fakeClient.Get(t.Context(), client.ObjectKeyFromObject(created[i]), created[i])
 				require.True(t, apierrors.IsNotFound(err), "want not found, got %v: %#v", err, created[i])
+			}
+		})
+	}
+}
+
+func TestGateway_Annotations(t *testing.T) {
+	image := "opentelemetry/collector:dummy"
+	priorityClassName := "normal"
+
+	tests := []struct {
+		name                        string
+		sut                         *GatewayApplierDeleter
+		opts                        GatewayApplyOptions
+		expectedExcludeInboundPorts string
+		shouldHaveInterceptionMode  bool
+	}{
+		{
+			name: "deployment without istio",
+			sut:  NewMetricGatewayApplierDeleter(config.NewGlobal(config.WithTargetNamespace("kyma-system")), image, priorityClassName),
+			opts: GatewayApplyOptions{
+				IstioEnabled: false,
+			},
+			shouldHaveInterceptionMode: false,
+		},
+		{
+			name: "deployment with istio - only metrics port excluded",
+			sut:  NewMetricGatewayApplierDeleter(config.NewGlobal(config.WithTargetNamespace("kyma-system")), image, priorityClassName),
+			opts: GatewayApplyOptions{
+				IstioEnabled: true,
+			},
+			expectedExcludeInboundPorts: "8888",
+			shouldHaveInterceptionMode:  true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			annotations := tt.sut.makeAnnotations("dummy-checksum", tt.opts)
+
+			if !tt.opts.IstioEnabled {
+				require.NotContains(t, annotations, "traffic.sidecar.istio.io/excludeInboundPorts")
+				require.NotContains(t, annotations, "sidecar.istio.io/interceptionMode")
+
+				return
+			}
+
+			require.Equal(t, tt.expectedExcludeInboundPorts, annotations["traffic.sidecar.istio.io/excludeInboundPorts"])
+
+			if tt.shouldHaveInterceptionMode {
+				require.Equal(t, "TPROXY", annotations["sidecar.istio.io/interceptionMode"])
+			} else {
+				require.NotContains(t, annotations, "sidecar.istio.io/interceptionMode")
 			}
 		})
 	}

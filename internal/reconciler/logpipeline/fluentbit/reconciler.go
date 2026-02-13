@@ -197,6 +197,8 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 		return err
 	}
 
+	r.trackPipelineInfoMetric(ctx, allPipelines)
+
 	reconcilablePipelines, err := r.getReconcilablePipelines(ctx, allPipelines)
 	if err != nil {
 		return fmt.Errorf("failed to fetch reconcilable log pipelines: %w", err)
@@ -209,18 +211,14 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 			return fmt.Errorf("failed to delete log pipeline resources: %w", err)
 		}
 
-		// TODO: remove cleanup code after rollout telemetry 1.57.0
-		if err = cleanupFinalizers(ctx, r.Client, pipeline); err != nil {
-			return err
-		}
-
 		return nil
 	}
 
-	r.trackPipelineInfoMetric(ctx, reconcilablePipelines)
-
-	shootInfo := k8sutils.GetGardenerShootInfo(ctx, r.Client)
-	clusterName := r.getClusterNameFromTelemetry(ctx, shootInfo.ClusterName)
+	telemetryOptions := telemetryutils.Options{
+		Client:                    r.Client,
+		DefaultTelemetryNamespace: r.globals.DefaultTelemetryNamespace(),
+	}
+	clusterName := telemetryutils.GetClusterNameFromTelemetry(ctx, telemetryOptions)
 
 	config, err := r.agentConfigBuilder.Build(ctx, reconcilablePipelines, clusterName)
 	if err != nil {
@@ -243,28 +241,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 		return err
 	}
 
-	// TODO: remove cleanup code after rollout telemetry 1.57.0
-	if err = cleanupFinalizers(ctx, r.Client, pipeline); err != nil {
-		return err
-	}
-
 	return nil
-}
-
-func (r *Reconciler) getClusterNameFromTelemetry(ctx context.Context, defaultName string) string {
-	telemetry, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
-	if err != nil {
-		logf.FromContext(ctx).V(1).Error(err, "Failed to get telemetry: using default shoot name as cluster name")
-		return defaultName
-	}
-
-	if telemetry.Spec.Enrichments != nil &&
-		telemetry.Spec.Enrichments.Cluster != nil &&
-		telemetry.Spec.Enrichments.Cluster.Name != "" {
-		return telemetry.Spec.Enrichments.Cluster.Name
-	}
-
-	return defaultName
 }
 
 // getReconcilablePipelines returns the list of log pipelines that are ready to be rendered into the Fluent Bit configuration.

@@ -42,19 +42,23 @@ jobs:
         run: |
           if [[ $GITHUB_EVENT_NAME == 'push' ]]; then
             {
-              echo "TAGS<<EOTAGS"
+              echo "tags<<EOTAGS"
               echo "${{ github.ref_name }}"
               echo "${{ github.ref_name }}-experimental"
               echo "EOTAGS"
             } >> "$GITHUB_OUTPUT"
           elif [[ $GITHUB_EVENT_NAME == 'merge_group' ]]; then
-              echo 'TAGS=${{ github.event.merge_group.head_sha }}' >> "$GITHUB_OUTPUT"
+            {
+              echo "tags<<EOTAGS"
+              echo "${{ github.event.merge_group.head_sha }}"
+              echo "EOTAGS"
+            } >> "$GITHUB_OUTPUT"
           else
             {
-              echo 'tags<<TAGS'
-              echo 'PR-${{ github.event.pull_request.number }}'
-              echo '${{ github.event.pull_request.head.sha }}'
-              echo 'TAGS'
+              echo "tags<<EOTAGS"
+              echo "PR-${{ github.event.pull_request.number }}"
+              echo "${{ github.event.pull_request.head.sha }}"
+              echo "EOTAGS"
             } >> "$GITHUB_OUTPUT"
           fi
 

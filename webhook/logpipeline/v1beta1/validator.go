@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
@@ -19,62 +17,56 @@ const (
 	migrationGuideLink = "https://kyma-project.io/#/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html"
 )
 
-type LogPipelineValidator struct {
+type validator struct {
 }
 
-var _ webhook.CustomValidator = &LogPipelineValidator{}
+var _ admission.Validator[*telemetryv1beta1.LogPipeline] = &validator{}
 
-func (v *LogPipelineValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	return validate(ctx, obj)
+func (v *validator) ValidateCreate(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) (admission.Warnings, error) {
+	return validate(ctx, pipeline)
 }
 
-func (v *LogPipelineValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
-	return validate(ctx, newObj)
+func (v *validator) ValidateUpdate(ctx context.Context, _, newPipeline *telemetryv1beta1.LogPipeline) (admission.Warnings, error) {
+	return validate(ctx, newPipeline)
 }
 
-func (v *LogPipelineValidator) ValidateDelete(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (v *validator) ValidateDelete(_ context.Context, _ *telemetryv1beta1.LogPipeline) (admission.Warnings, error) {
 	return nil, nil
 }
 
-func validate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func validate(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) (admission.Warnings, error) {
 	var warnings admission.Warnings
 
-	logPipeline, ok := obj.(*telemetryv1beta1.LogPipeline)
-
-	if !ok {
-		return nil, fmt.Errorf("expected a LogPipeline but got %T", obj)
-	}
-
-	if err := validateFilterTransform(ctx, logPipeline.Spec.Filters, logPipeline.Spec.Transforms); err != nil {
+	if err := validateFilterTransform(ctx, pipeline.Spec.Filters, pipeline.Spec.Transforms); err != nil {
 		return nil, err
 	}
 
-	if logpipelineutils.IsCustomFilterDefined(logPipeline.Spec.FluentBitFilters) {
-		warnings = append(warnings, renderDeprecationWarning(logPipeline.Name, "filters"))
+	if logpipelineutils.IsCustomFilterDefined(pipeline.Spec.FluentBitFilters) {
+		warnings = append(warnings, renderDeprecationWarning(pipeline.Name, "filters"))
 	}
 
-	if logpipelineutils.IsCustomOutputDefined(&logPipeline.Spec.Output) {
-		warnings = append(warnings, renderDeprecationWarning(logPipeline.Name, "output.custom"))
+	if logpipelineutils.IsCustomOutputDefined(&pipeline.Spec.Output) {
+		warnings = append(warnings, renderDeprecationWarning(pipeline.Name, "output.custom"))
 	}
 
-	if logpipelineutils.IsHTTPOutputDefined(&logPipeline.Spec.Output) {
-		warnings = append(warnings, renderDeprecationWarning(logPipeline.Name, "output.http"))
+	if logpipelineutils.IsHTTPOutputDefined(&pipeline.Spec.Output) {
+		warnings = append(warnings, renderDeprecationWarning(pipeline.Name, "output.http"))
 	}
 
-	if logpipelineutils.IsVariablesDefined(logPipeline.Spec.FluentBitVariables) {
-		warnings = append(warnings, renderDeprecationWarning(logPipeline.Name, "variables"))
+	if logpipelineutils.IsVariablesDefined(pipeline.Spec.FluentBitVariables) {
+		warnings = append(warnings, renderDeprecationWarning(pipeline.Name, "variables"))
 	}
 
-	if logpipelineutils.IsFilesDefined(logPipeline.Spec.FluentBitFiles) {
-		warnings = append(warnings, renderDeprecationWarning(logPipeline.Name, "files"))
+	if logpipelineutils.IsFilesDefined(pipeline.Spec.FluentBitFiles) {
+		warnings = append(warnings, renderDeprecationWarning(pipeline.Name, "files"))
 	}
 
-	if logpipelineutils.IsRuntimeInputEnabled(&logPipeline.Spec.Input) && logPipeline.Spec.Input.Runtime.FluentBitDropLabels != nil {
-		warnings = append(warnings, renderDeprecationWarning(logPipeline.Name, "input.runtime.dropLabels"))
+	if logpipelineutils.IsRuntimeInputEnabled(&pipeline.Spec.Input) && pipeline.Spec.Input.Runtime.FluentBitDropLabels != nil {
+		warnings = append(warnings, renderDeprecationWarning(pipeline.Name, "input.runtime.dropLabels"))
 	}
 
-	if logpipelineutils.IsRuntimeInputEnabled(&logPipeline.Spec.Input) && logPipeline.Spec.Input.Runtime.FluentBitKeepAnnotations != nil {
-		warnings = append(warnings, renderDeprecationWarning(logPipeline.Name, "input.runtime.keepAnnotations"))
+	if logpipelineutils.IsRuntimeInputEnabled(&pipeline.Spec.Input) && pipeline.Spec.Input.Runtime.FluentBitKeepAnnotations != nil {
+		warnings = append(warnings, renderDeprecationWarning(pipeline.Name, "input.runtime.keepAnnotations"))
 	}
 
 	return warnings, nil

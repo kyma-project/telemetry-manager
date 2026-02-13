@@ -19,7 +19,7 @@ service:
                 - filter/user-defined-test1
                 - batch
             exporters:
-                - otlp/test1
+                - otlp_grpc/test1
     telemetry:
         metrics:
             readers:
@@ -122,7 +122,7 @@ processors:
               conditions:
                 - IsMatch(body, ".*error.*")
 exporters:
-    otlp/test1:
+    otlp_grpc/test1:
         endpoint: ${OTLP_ENDPOINT_TEST1}
         sending_queue:
             enabled: true

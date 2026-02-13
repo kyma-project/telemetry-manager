@@ -23,7 +23,7 @@ service:
                 - transform/drop-kyma-attributes
                 - batch
             exporters:
-                - otlphttp/test
+                - otlp_http/test
     telemetry:
         metrics:
             readers:
@@ -114,7 +114,7 @@ processors:
                 - set(resource.attributes["k8s.cluster.uid"], "") where resource.attributes["k8s.cluster.uid"] == nil or resource.attributes["k8s.cluster.uid"] == ""
                 - set(resource.attributes["cloud.provider"], "test-cloud-provider") where resource.attributes["cloud.provider"] == nil or resource.attributes["cloud.provider"] == ""
 exporters:
-    otlphttp/test:
+    otlp_http/test:
         endpoint: ${OTLP_ENDPOINT_TEST}
         sending_queue:
             enabled: true

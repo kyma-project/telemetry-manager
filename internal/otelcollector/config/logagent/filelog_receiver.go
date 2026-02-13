@@ -3,14 +3,11 @@ package logagent
 import (
 	"fmt"
 
-	"k8s.io/utils/ptr"
-
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/namespaces"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
-	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
-	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 )
 
 const (
@@ -41,8 +38,8 @@ func fileLogReceiverConfig(lp *telemetryv1beta1.LogPipeline, collectAgentLogs bo
 	return &FileLogReceiver{
 		Exclude:         excludePath,
 		Include:         includePath,
-		IncludeFileName: ptr.To(false),
-		IncludeFilePath: ptr.To(true),
+		IncludeFileName: new(false),
+		IncludeFilePath: new(true),
 		StartAt:         "beginning",
 		Storage:         "file_storage",
 		RetryOnFailure: common.RetryOnFailure{
@@ -84,8 +81,8 @@ func createExcludePath(runtime *telemetryv1beta1.LogPipelineRuntimeInput, collec
 	var excludePath, excludeContainers []string
 
 	if !collectAgentLogs {
-		excludePath = append(excludePath, makePath("kyma-system", fmt.Sprintf("%s-*", fluentbit.LogAgentName), "fluent-bit"))
-		excludePath = append(excludePath, makePath("kyma-system", fmt.Sprintf("%s-*", otelcollector.LogAgentName), "collector"))
+		excludePath = append(excludePath, makePath("kyma-system", fmt.Sprintf("%s-*", names.FluentBit), "fluent-bit"))
+		excludePath = append(excludePath, makePath("kyma-system", fmt.Sprintf("%s-*", names.LogAgent), "collector"))
 	}
 
 	excludeSystemLogAgentPath := makePath("kyma-system", fmt.Sprintf("*%s-*", commonresources.SystemLogAgentName), "collector")
@@ -166,7 +163,7 @@ func makeContainerParser() Operator {
 	return Operator{
 		ID:                      "containerd-parser",
 		Type:                    Container,
-		AddMetadataFromFilePath: ptr.To(true),
+		AddMetadataFromFilePath: new(true),
 		Format:                  "containerd",
 	}
 }

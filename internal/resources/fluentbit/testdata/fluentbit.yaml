@@ -290,11 +290,6 @@ spec:
           subPath: fluent-bit.conf
         - mountPath: /fluent-bit/etc/dynamic/
           name: dynamic-config
-        - mountPath: /fluent-bit/etc/dynamic-parsers/
-          name: dynamic-parsers-config
-        - mountPath: /fluent-bit/etc/custom_parsers.conf
-          name: config
-          subPath: custom_parsers.conf
         - mountPath: /fluent-bit/scripts/filter-script.lua
           name: luascripts
           subPath: filter-script.lua
@@ -397,10 +392,6 @@ spec:
           name: telemetry-fluent-bit-sections
           optional: true
         name: dynamic-config
-      - configMap:
-          name: telemetry-fluent-bit-parsers
-          optional: true
-        name: dynamic-parsers-config
       - configMap:
           name: telemetry-fluent-bit-files
           optional: true

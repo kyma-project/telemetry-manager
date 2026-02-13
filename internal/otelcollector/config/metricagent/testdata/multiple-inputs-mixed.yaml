@@ -69,7 +69,7 @@ service:
                 - transform/drop-kyma-attributes
                 - batch
             exporters:
-                - otlp/test1
+                - otlp_grpc/test1
         metrics/output-test2:
             receivers:
                 - routing/enrichment
@@ -82,7 +82,7 @@ service:
                 - transform/drop-kyma-attributes
                 - batch
             exporters:
-                - otlp/test2
+                - otlp_grpc/test2
         metrics/output-test3:
             receivers:
                 - routing/enrichment
@@ -94,7 +94,7 @@ service:
                 - transform/drop-kyma-attributes
                 - batch
             exporters:
-                - otlp/test3
+                - otlp_grpc/test3
     telemetry:
         metrics:
             readers:
@@ -183,6 +183,7 @@ receivers:
             scrape_configs:
                 - job_name: app-pods
                   sample_limit: 50000
+                  body_size_limit: 20MB
                   scrape_interval: 30s
                   relabel_configs:
                     - source_labels: [__meta_kubernetes_pod_node_name]
@@ -463,7 +464,7 @@ processors:
             - statements:
                 - set(resource.attributes["kyma.input.name"], "runtime")
 exporters:
-    otlp/test1:
+    otlp_grpc/test1:
         endpoint: ${OTLP_ENDPOINT_TEST1}
         sending_queue:
             enabled: true
@@ -473,7 +474,7 @@ exporters:
             initial_interval: 5s
             max_interval: 30s
             max_elapsed_time: 300s
-    otlp/test2:
+    otlp_grpc/test2:
         endpoint: ${OTLP_ENDPOINT_TEST2}
         sending_queue:
             enabled: true
@@ -483,7 +484,7 @@ exporters:
             initial_interval: 5s
             max_interval: 30s
             max_elapsed_time: 300s
-    otlp/test3:
+    otlp_grpc/test3:
         endpoint: ${OTLP_ENDPOINT_TEST3}
         sending_queue:
             enabled: true

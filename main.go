@@ -28,6 +28,7 @@ import (
 	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	istionetworkingclientv1 "istio.io/client-go/pkg/apis/networking/v1"
 	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -38,7 +39,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -59,6 +59,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/featureflags"
 	"github.com/kyma-project/telemetry-manager/internal/metrics"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	selfmonitorwebhook "github.com/kyma-project/telemetry-manager/internal/selfmonitor/webhook"
 	loggerutils "github.com/kyma-project/telemetry-manager/internal/utils/logger"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
@@ -86,11 +87,12 @@ var (
 	imagePullSecretName     string
 	additionalLabels        cliflags.Map
 	additionalAnnotations   cliflags.Map
+	deployOTLPGateway       bool
 )
 
 const (
 	cacheSyncPeriod    = 1 * time.Minute
-	webhookServiceName = "telemetry-manager-webhook"
+	webhookServiceName = names.ManagerWebhookService
 
 	healthProbePort = 8081
 	metricsPort     = 8080
@@ -128,6 +130,7 @@ func init() {
 	utilruntime.Must(telemetryv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(operatorv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(istiosecurityclientv1.AddToScheme(scheme))
+	utilruntime.Must(istionetworkingclientv1.AddToScheme(scheme))
 	utilruntime.Must(telemetryv1beta1.AddToScheme(scheme))
 	utilruntime.Must(operatorv1beta1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
@@ -168,6 +171,7 @@ func run() error {
 		config.WithClusterTrustBundleName(clusterTrustBundleName),
 		config.WithAdditionalLabels(additionalLabels),
 		config.WithAdditionalAnnotations(additionalAnnotations),
+		config.WithDeployOTLPGateway(featureflags.IsEnabled(featureflags.DeployOTLPGateway)),
 	)
 
 	if err := globals.Validate(); err != nil {
@@ -276,13 +280,13 @@ func setupManager(globals config.Global) (manager.Manager, error) {
 		PprofBindAddress:        fmt.Sprintf(":%d", pprofPort),
 		LeaderElection:          true,
 		LeaderElectionNamespace: globals.TargetNamespace(),
-		LeaderElectionID:        "cdd7ef0b.kyma-project.io",
+		LeaderElectionID:        names.ManagerLeaseName,
 		WebhookServer: webhook.NewServer(webhook.Options{
 			Port:    webhookPort,
 			CertDir: certDir,
 		}),
 		Cache: cache.Options{
-			SyncPeriod: ptr.To(cacheSyncPeriod),
+			SyncPeriod: new(cacheSyncPeriod),
 
 			// The operator handles various resource that are namespace-scoped, and additionally some resources that are cluster-scoped (clusterroles, clusterrolebindings, etc.).
 			// For namespace-scoped resources we want to restrict the operator permissions to only fetch resources from a given namespace.
@@ -324,7 +328,10 @@ func logBuildAndProcessInfo() {
 	}
 }
 
-func initializeFeatureFlags() {} // Placeholder for future feature flag initializations.
+func initializeFeatureFlags() {
+	// Placeholder for future feature flag initializations.
+	featureflags.Set(featureflags.DeployOTLPGateway, deployOTLPGateway)
+}
 
 func parseFlags() {
 	flag.StringVar(&certDir, "cert-dir", ".", "Webhook TLS certificate directory")
@@ -335,6 +342,8 @@ func parseFlags() {
 	flag.StringVar(&imagePullSecretName, "image-pull-secret-name", "", "The image pull secret name to use for pulling images of all created workloads (agents, gateways, self-monitor)")
 	flag.Var(&additionalLabels, "additional-label", "Additional label to add to all created resources in key=value format")
 	flag.Var(&additionalAnnotations, "additional-annotation", "Additional annotation to add to all created resources in key=value format")
+
+	flag.BoolVar(&deployOTLPGateway, "deploy-otlp-gateway", false, "Enable deploying unified OTLP gateway")
 
 	flag.Parse()
 }
@@ -394,15 +403,16 @@ func setupLogPipelineController(globals config.Global, cfg envConfig, mgr manage
 
 	logPipelineController, err := telemetrycontrollers.NewLogPipelineController(
 		telemetrycontrollers.LogPipelineControllerConfig{
-			Global:                      globals,
-			ExporterImage:               cfg.FluentBitExporterImage,
-			FluentBitImage:              cfg.FluentBitImage,
-			ChownInitContainerImage:     cfg.AlpineImage,
-			OTelCollectorImage:          cfg.OTelCollectorImage,
-			FluentBitPriorityClassName:  highPriorityClassName,
-			LogGatewayPriorityClassName: normalPriorityClassName,
-			LogAgentPriorityClassName:   highPriorityClassName,
-			RestConfig:                  mgr.GetConfig(),
+			Global:                       globals,
+			ExporterImage:                cfg.FluentBitExporterImage,
+			FluentBitImage:               cfg.FluentBitImage,
+			ChownInitContainerImage:      cfg.AlpineImage,
+			OTelCollectorImage:           cfg.OTelCollectorImage,
+			FluentBitPriorityClassName:   highPriorityClassName,
+			LogGatewayPriorityClassName:  normalPriorityClassName,
+			LogAgentPriorityClassName:    highPriorityClassName,
+			OTLPGatewayPriorityClassName: normalPriorityClassName,
+			RestConfig:                   mgr.GetConfig(),
 		},
 		mgr.GetClient(),
 		reconcileTriggerChan,
@@ -470,29 +480,21 @@ func setupMetricPipelineController(globals config.Global, cfg envConfig, mgr man
 func setupConversionWebhooks(mgr manager.Manager) error {
 	setupLog.Info("Registering conversion webhooks for LogPipelines")
 
-	if err := ctrl.NewWebhookManagedBy(mgr).
-		For(&telemetryv1alpha1.LogPipeline{}).
-		Complete(); err != nil {
+	if err := ctrl.NewWebhookManagedBy(mgr, &telemetryv1alpha1.LogPipeline{}).Complete(); err != nil {
 		return fmt.Errorf("failed to create v1alpha1 conversion webhook: %w", err)
 	}
 
-	if err := ctrl.NewWebhookManagedBy(mgr).
-		For(&telemetryv1beta1.LogPipeline{}).
-		Complete(); err != nil {
+	if err := ctrl.NewWebhookManagedBy(mgr, &telemetryv1beta1.LogPipeline{}).Complete(); err != nil {
 		return fmt.Errorf("failed to create v1beta1 conversion webhook: %w", err)
 	}
 
 	setupLog.Info("Registering conversion webhooks for MetricPipelines")
 
-	if err := ctrl.NewWebhookManagedBy(mgr).
-		For(&telemetryv1alpha1.MetricPipeline{}).
-		Complete(); err != nil {
+	if err := ctrl.NewWebhookManagedBy(mgr, &telemetryv1alpha1.MetricPipeline{}).Complete(); err != nil {
 		return fmt.Errorf("failed to create v1alpha1 conversion webhook: %w", err)
 	}
 
-	if err := ctrl.NewWebhookManagedBy(mgr).
-		For(&telemetryv1beta1.MetricPipeline{}).
-		Complete(); err != nil {
+	if err := ctrl.NewWebhookManagedBy(mgr, &telemetryv1beta1.MetricPipeline{}).Complete(); err != nil {
 		return fmt.Errorf("failed to create v1beta1 conversion webhook: %w", err)
 	}
 
@@ -541,14 +543,14 @@ func createWebhookConfig(globals config.Global) webhookcert.Config {
 				Namespace: globals.ManagerNamespace(),
 			},
 			CASecretName: types.NamespacedName{
-				Name:      "telemetry-webhook-cert",
+				Name:      names.ManagerWebhookCertSecret,
 				Namespace: globals.TargetNamespace(),
 			},
 			ValidatingWebhookName: types.NamespacedName{
-				Name: "telemetry-validating-webhook.kyma-project.io",
+				Name: names.ValidatingWebhookConfig,
 			},
 			MutatingWebhookName: types.NamespacedName{
-				Name: "telemetry-mutating-webhook.kyma-project.io",
+				Name: names.MutatingWebhookConfig,
 			},
 		},
 	)

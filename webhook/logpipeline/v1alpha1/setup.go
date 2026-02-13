@@ -7,12 +7,12 @@ import (
 )
 
 func SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).For(&telemetryv1alpha1.LogPipeline{}).
+	return ctrl.NewWebhookManagedBy(mgr, &telemetryv1alpha1.LogPipeline{}).
 		WithDefaulter(&defaulter{
 			ApplicationInputEnabled:          true,
 			ApplicationInputKeepOriginalBody: true,
 			DefaultOTLPProtocol:              telemetryv1alpha1.OTLPProtocolGRPC,
 		}).
-		WithValidator(&LogPipelineValidator{}).
+		WithValidator(&validator{}).
 		Complete()
 }

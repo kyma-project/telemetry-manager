@@ -5,8 +5,8 @@ permissions:
 
 on:
   schedule:
-    # Run every hour on main branch
-    - cron: "0 * * * *"
+    # Run every 3 hours on main branch
+    - cron: "0 */3 * * *"
   merge_group:
   pull_request:
     branches:
@@ -173,8 +173,14 @@ jobs:
             use-fips: true
             install-istio: false
           - name: e2e-log-gateway
-            labels: log-gateway
+            labels: log-gateway and not experimental
             mode: release
+            type: e2e
+            use-fips: true
+            install-istio: false
+          - name: e2e-log-gateway-experimental
+            labels: log-gateway and experimental
+            mode: experimental
             type: e2e
             use-fips: true
             install-istio: false
@@ -305,7 +311,7 @@ jobs:
             install-istio: false
           # INTEGRATION
           - name: integration-istio-otel
-            labels: istio and not fluent-bit
+            labels: istio and not fluent-bit and not experimental
             mode: release
             type: integration
             use-fips: true
@@ -315,6 +321,12 @@ jobs:
             mode: release
             type: integration
             use-fips: false
+            install-istio: true
+          - name: integration-istio-otel-experimental
+            labels: istio and experimental
+            mode: experimental
+            type: integration
+            use-fips: true
             install-istio: true
     name: "${{ matrix.testcase.name }}"
     runs-on: ubuntu-latest

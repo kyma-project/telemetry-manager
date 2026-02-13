@@ -4,9 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -20,40 +18,25 @@ const (
 	migrationGuideLink = "https://kyma-project.io/#/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html"
 )
 
-type LogPipelineValidator struct {
+type validator struct {
 }
 
-var _ webhook.CustomValidator = &LogPipelineValidator{}
+var _ admission.Validator[*telemetryv1alpha1.LogPipeline] = &validator{}
 
-func (v *LogPipelineValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	return validate(ctx, obj)
+func (v *validator) ValidateCreate(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) (admission.Warnings, error) {
+	return validate(ctx, pipeline)
 }
 
-func (v *LogPipelineValidator) ValidateUpdate(ctx context.Context, _, newObj runtime.Object) (admission.Warnings, error) {
-	return validate(ctx, newObj)
+func (v *validator) ValidateUpdate(ctx context.Context, _, newPipeline *telemetryv1alpha1.LogPipeline) (admission.Warnings, error) {
+	return validate(ctx, newPipeline)
 }
 
-func (v *LogPipelineValidator) ValidateDelete(_ context.Context, _ runtime.Object) (admission.Warnings, error) {
+func (v *validator) ValidateDelete(_ context.Context, _ *telemetryv1alpha1.LogPipeline) (admission.Warnings, error) {
 	return nil, nil
 }
 
-func validateFilterTransform(ctx context.Context, filterSpec []telemetryv1beta1.FilterSpec, transformSpec []telemetryv1beta1.TransformSpec) error {
-	err := webhookutils.ValidateFilterTransform(ctx, ottl.SignalTypeLog, filterSpec, transformSpec)
-	if err != nil {
-		return fmt.Errorf(conditions.MessageForOtelLogPipeline(conditions.ReasonOTTLSpecInvalid), err.Error())
-	}
-
-	return nil
-}
-
-func validate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	pipeline, ok := obj.(*telemetryv1alpha1.LogPipeline)
-
+func validate(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) (admission.Warnings, error) {
 	var warnings admission.Warnings
-
-	if !ok {
-		return nil, fmt.Errorf("expected a LogPipeline but got %T", obj)
-	}
 
 	filterSpec, transformSpec, err := webhookutils.ConvertFilterTransformToBeta(pipeline.Spec.Filters, pipeline.Spec.Transforms)
 	if err != nil {
@@ -93,6 +76,15 @@ func validate(ctx context.Context, obj runtime.Object) (admission.Warnings, erro
 	}
 
 	return warnings, nil
+}
+
+func validateFilterTransform(ctx context.Context, filterSpec []telemetryv1beta1.FilterSpec, transformSpec []telemetryv1beta1.TransformSpec) error {
+	err := webhookutils.ValidateFilterTransform(ctx, ottl.SignalTypeLog, filterSpec, transformSpec)
+	if err != nil {
+		return fmt.Errorf(conditions.MessageForOtelLogPipeline(conditions.ReasonOTTLSpecInvalid), err.Error())
+	}
+
+	return nil
 }
 
 func renderDeprecationWarning(pipelineName string, attribute string) string {
