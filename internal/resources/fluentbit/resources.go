@@ -169,7 +169,13 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 		return err
 	}
 
-	networkPolicy := commonresources.MakeNetworkPolicy(aad.daemonSetName, opts.AllowedPorts, makeLabels(), selectorLabels())
+	networkPolicy := commonresources.MakeNetworkPolicy(
+		aad.daemonSetName,
+		makeLabels(),
+		selectorLabels(),
+		commonresources.WithIngressFromAny(opts.AllowedPorts...),
+		commonresources.WithEgressToAny(),
+	)
 	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, networkPolicy); err != nil {
 		return fmt.Errorf("failed to create fluent bit network policy: %w", err)
 	}
@@ -245,7 +251,7 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete daemonset: %w", err))
 	}
 
-	networkPolicy := networkingv1.NetworkPolicy{ObjectMeta: objectMeta}
+	networkPolicy := networkingv1.NetworkPolicy{ObjectMeta: metav1.ObjectMeta{Name: commonresources.NetworkPolicyPrefix + names.FluentBit, Namespace: aad.namespace}}
 	if err := k8sutils.DeleteObject(ctx, c, &networkPolicy); err != nil {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete networkpolicy: %w", err))
 	}

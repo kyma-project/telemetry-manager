@@ -439,7 +439,6 @@ func (gad *GatewayApplierDeleter) makeAnnotations(configChecksum string, opts Ga
 func gatewayIngressAllowedPorts() []int32 {
 	return []int32{
 		ports.Metrics,
-		ports.HealthCheck,
 		ports.OTLPHTTP,
 		ports.OTLPGRPC,
 	}

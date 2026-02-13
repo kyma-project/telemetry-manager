@@ -174,7 +174,7 @@ metadata:
     app.kubernetes.io/name: telemetry-metric-agent
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
-  name: telemetry-metric-agent
+  name: kyma-project.io--telemetry-metric-agent
   namespace: kyma-system
 spec:
   egress:
@@ -191,8 +191,6 @@ spec:
         cidr: ::/0
     ports:
     - port: 8888
-      protocol: TCP
-    - port: 13133
       protocol: TCP
   podSelector:
     matchLabels:

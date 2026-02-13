@@ -216,7 +216,7 @@ metadata:
     app.kubernetes.io/name: telemetry-trace-gateway
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
-  name: telemetry-trace-gateway
+  name: kyma-project.io--telemetry-trace-gateway
   namespace: kyma-system
 spec:
   egress:
@@ -233,8 +233,6 @@ spec:
         cidr: ::/0
     ports:
     - port: 8888
-      protocol: TCP
-    - port: 13133
       protocol: TCP
     - port: 4318
       protocol: TCP
