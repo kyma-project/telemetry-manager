@@ -66,8 +66,10 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 
 	assert.BackendReachable(t, backend)
 
-	t.Log("Asserting all pipelines are healthy")
+	assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+	assert.DaemonSetReady(t, kitkyma.MetricAgentName)
 
+	t.Log("Asserting all pipelines are healthy")
 	for _, pipeline := range pipelines {
 		assert.MetricPipelineHealthy(t, pipeline.GetName())
 	}
@@ -82,23 +84,16 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 	}
 
 	testMaxPipelineLimit(t, additionalPipelineName, pipelines, backend, genNs)
-
 }
 
 func testUnlimitedPipelines(t *testing.T, additionalPipelineName string, backend *kitbackend.Backend, genNs string) {
-	assert.DaemonSetReady(t, kitkyma.MetricAgentName)
-	assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
 
 	t.Log("Verifying metrics are delivered for valid pipelines")
 	assert.MetricsFromNamespaceDelivered(t, backend, genNs, telemetrygen.MetricNames)
 	assert.MetricPipelineHealthy(t, additionalPipelineName)
-
 }
 
 func testMaxPipelineLimit(t *testing.T, additionalPipelineName string, pipelines []client.Object, backend *kitbackend.Backend, genNs string) {
-
-	assert.DeploymentReady(t, kitkyma.MetricGatewayName)
-	assert.DaemonSetReady(t, kitkyma.MetricAgentName)
 
 	assert.MetricPipelineHasCondition(t, additionalPipelineName, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,

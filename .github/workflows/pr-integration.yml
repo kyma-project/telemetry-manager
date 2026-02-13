@@ -204,7 +204,7 @@ jobs:
             install-istio: false
           - name: e2e-otel-max-pipeline-experimental
             labels: otel-max-pipeline and experimental
-            mode: release
+            mode: experimental
             type: e2e
             use-fips: true
             install-istio: false

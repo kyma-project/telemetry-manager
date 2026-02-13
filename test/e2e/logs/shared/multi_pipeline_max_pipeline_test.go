@@ -197,6 +197,7 @@ func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 		testUnlimitedPipelines(t, additionalPipelineName, backend, genNs)
 		return
 	}
+
 	testMaxPipelineLimit(t, additionalPipelineName, pipelines, backend, genNs)
 }
 
