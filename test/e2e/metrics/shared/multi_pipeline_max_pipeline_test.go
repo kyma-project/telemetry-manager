@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -15,6 +14,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -70,6 +70,7 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 	assert.DaemonSetReady(t, kitkyma.MetricAgentName)
 
 	t.Log("Asserting all pipelines are healthy")
+
 	for _, pipeline := range pipelines {
 		assert.MetricPipelineHealthy(t, pipeline.GetName())
 	}
@@ -87,14 +88,12 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 }
 
 func testUnlimitedPipelines(t *testing.T, additionalPipelineName string, backend *kitbackend.Backend, genNs string) {
-
 	t.Log("Verifying metrics are delivered for valid pipelines")
 	assert.MetricsFromNamespaceDelivered(t, backend, genNs, telemetrygen.MetricNames)
 	assert.MetricPipelineHealthy(t, additionalPipelineName)
 }
 
 func testMaxPipelineLimit(t *testing.T, additionalPipelineName string, pipelines []client.Object, backend *kitbackend.Backend, genNs string) {
-
 	assert.MetricPipelineHasCondition(t, additionalPipelineName, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionFalse,
