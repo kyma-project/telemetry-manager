@@ -54,10 +54,13 @@ func DeploymentHasImage(t *testing.T, name types.NamespacedName, containerName s
 	Expect(err).NotTo(HaveOccurred())
 
 	found := false
+
 	for _, container := range deployment.Spec.Template.Spec.Containers {
 		if container.Name == containerName {
 			Expect(container.Image).To(Equal(expectedImage), "Container %s in Deployment %s has an unexpected image", containerName, name.String())
+
 			found = true
+
 			break
 		}
 	}
