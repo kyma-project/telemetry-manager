@@ -122,5 +122,6 @@ func canAddOwner(ctx context.Context, numOwners, maxOwners int) bool {
 		logf.FromContext(ctx, "Unlimited Pipeline count configured, skipping owner add check")
 		return true
 	}
+
 	return numOwners < maxOwners
 }

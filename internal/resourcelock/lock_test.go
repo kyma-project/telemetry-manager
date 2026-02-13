@@ -121,6 +121,7 @@ func TestTryAcquireLock_UnlimitedPipelines(t *testing.T) {
 
 	err := fakeClient.Get(ctx, types.NamespacedName{Name: lockName.Name + "-lock", Namespace: lockName.Namespace}, &lock)
 	require.NoError(t, err, "Lock ConfigMap should be created when unlimited pipelines is enabled")
+
 	getOwners := lock.GetOwnerReferences()
 	require.Len(t, getOwners, 6)
 }
