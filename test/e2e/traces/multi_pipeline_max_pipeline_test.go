@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -14,7 +15,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
-	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -63,7 +63,6 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 	Expect(kitk8s.CreateObjects(t, pipelines...)).To(Succeed())
 
 	assert.BackendReachable(t, backend)
-	assert.DeploymentReady(t, kitkyma.TraceGatewayName)
 
 	t.Log("Asserting all pipelines are healthy")
 	for _, pipeline := range pipelines {
@@ -83,6 +82,7 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 }
 
 func testUnlimitedPipelines(t *testing.T, additionalPipelineName string, backend *kitbackend.Backend, genNs string) {
+	assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
 	t.Log("Experimental mode: unlimited pipelines enabled, additional pipeline should be healthy")
 	assert.TracePipelineHealthy(t, additionalPipelineName)
 
@@ -91,6 +91,8 @@ func testUnlimitedPipelines(t *testing.T, additionalPipelineName string, backend
 }
 
 func testMaxPipelineLimit(t *testing.T, additionalPipelineName string, pipelines []client.Object, additionalPipeline client.Object, backend *kitbackend.Backend, genNs string) {
+	assert.DeploymentReady(t, kitkyma.TraceGatewayName)
+
 	t.Log("Normal mode: verifying max pipeline limit is enforced")
 	assert.TracePipelineHasCondition(t, additionalPipelineName, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
