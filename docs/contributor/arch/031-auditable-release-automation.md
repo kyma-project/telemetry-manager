@@ -60,6 +60,10 @@ However, the reproducible build approach is currently not available and have to 
 
 ![Release Workflow](./../assets/auditable-release-final.drawio.svg)
 
+
+The module release publishing workflow
+
+![Module Release Workflow](./../assets/auditable-release-module-release.drawio.svg)
 ## Release Workflow Step-by-Step Execution
 
 **Project Master Action**: Close the current development milestone to signify the boundary between development and release phases. This marks the completion of all planned features for the current release.
@@ -90,7 +94,7 @@ All tests execute against the same release Docker image to ensure reproducibilit
 - Create an official GitHub release entry for the release tag
 - Attach release artifacts and binaries
 
-**Release Bump PR Creation**: Upon successful release creation, automatically create release bump pull requests across multiple channels and environments:
+**Release Bump PR Creation**: Upon successful release creation, automatically create release bump pull requests for `experimental` and `fast` channels.
 
 ## Conclusion
 
