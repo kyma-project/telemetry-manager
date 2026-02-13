@@ -61,12 +61,16 @@ However, the reproducible build approach is currently not available and have to 
 ![Release Workflow](./../assets/auditable-release-final.drawio.svg)
 
 
-The module release publishing workflow
+### The Module Release Publishing Workflow
+
+A separate GitHub workflow will be responsible for publishing the module release. This workflow will be triggered by the release master once the release version and release channel are entered. The workflow will handle the module config creation and channel assignment, and will be responsible for creating the release PRs for the `experimental`, `fast`, and `regular` channels.
 
 ![Module Release Workflow](./../assets/auditable-release-module-release.drawio.svg)
 
 
-The Management Plane Chart release workflow
+### The Management Plane Chart Release Workflow
+
+A separate GitHub workflow will be responsible for bumping Managemene Plane Charts. This workflow will be triggered by the release master once the release version and the target chart. The workflow will handle the chart release process for `chart/telemetry` and `chart/runtime-monitoring-operator` Helm charts.
 
 ![Management Plane Chart Release Workflow](./../assets/auditable-release-mpc-release.drawio.drawio.svg)
 
