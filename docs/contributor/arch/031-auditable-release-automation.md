@@ -8,13 +8,13 @@ date: 2026-01-20
 
 ## Context
 
-In the context of the SAP BTP, Kyma runtime product, ensuring a reliable and auditable release process is crucial for maintaining software quality and compliance. An automated release pipeline not only streamlines the deployment process but also provides a clear audit trail of changes, approvals, and deployments.
+To ensure the quality and compliance of the SAP BTP, Kyma runtime product, we must have a reliable and auditable release process. Our current process lacks a clear audit trail.
 
-This document outlines the principles and practices for implementing auditable release automation within the Kyma runtime product environment.
+This document proposes a new, automated release process that produces the required audit artifacts for changes, approvals, and deployments.
 
-## Principles of Auditable Release Automation
+## Audit Requirements
 
-For auditing purposes, each release must provide successful test result artifacts. This includes:
+To pass an audit, the release process must produce the following artifacts:
 
 - Test execution reports (unit and e2e tests)
 - Docker images used for testing and release
@@ -24,21 +24,22 @@ For auditing purposes, each release must provide successful test result artifact
 
 ### Test Execution Reports
 
-Test execution reports should be downloaded for unit tests, end-to-end (E2E) tests, and Gardener Integration tests from corresponding GitHub Workflow executions and retained for audit purposes.
+Test execution reports should be downloaded for unit tests, end-to-end (E2E) tests, and Gardener integration tests from corresponding GitHub Workflow executions and retained for audit purposes.
 
 ### Docker Images
 
-The Docker image used for testing and release should be reproducible and traceable. The current release pipeline builds two Docker images: first for testing and second for release.
+The Docker image used for testing must be the exact same image that is used for the release. Our release process must produce reproducible and traceable images.
 
 **Current Flow:**
-- First Docker image is built during release preparation PR and pushed to the Kyma dev registry with a unique PR tag and digest SHA. This image is used for running unit and E2E tests.
-- After successful tests, the second image is built for release using the same Dockerfile and source code, but tagged with release version and pushed to the production registry.
+Our current release pipeline builds two separate images:
+- The release preparation workflow builds a Docker image from a PR and pushes it to the Kyma dev registry with a unique PR tag and digest SHA. This image is used to run unit and E2E tests.
+- After successful tests, the release workflow builds a new image from the  same Dockerfile and source code, tags it with the release version and pushes it to the production registry.
 
 **Current Challenge:**
 Both images currently receive different digests due to different build environments and timestamps, despite having identical content and application binary. This behavior is not acceptable for auditable release automation.
 
 **Resolution:**
-Implement deterministic Docker builds to ensure PR and release images produce identical digests when built from the same source code.
+We must implement deterministic Docker builds. An image built from a PR must have the identical digest as the final release image built from the same source code. This makes the build process auditable.
 
 
 ## Implementing Auditable Release Automation
@@ -46,13 +47,13 @@ Implement deterministic Docker builds to ensure PR and release images produce id
 ### Download and Store Test Reports
 
 The test reports from unit tests, E2E tests, and Gardener tests should be downloaded from the respective GitHub Actions workflows and stored as artifacts for audit purposes. For this pupose, a new re-usable workflow created to download and store test reports based on workflow run ID and job name.
-The new workflow can be called from the release PR workflow after test jobs are completed successfully and upload to the pre-configured GCP bucket for audit retention as desccribed [here](https://github.tools.sap/kyma/backlog/issues/8419).
+After test jobs are completed successfully, the new workflow is called from the release PR workflow and uploaded to the pre-configured GCP bucket for audit retention (see [Archive Test Logs for 12-Month Auditing via Release Assets #8419](https://github.tools.sap/kyma/backlog/issues/8419).
 
 ### Deterministic Docker Builds
-To achieve deterministic Docker builds, the following strategies can be employed:
+To achieve deterministic Docker builds, we consider the following strategies:
 
-- **Reproducible Build Tools**: Utilize tools and techniques that support reproducible builds, such as Docker's BuildKit option, which have to be implemented by the `Image-Builder`.
-- **Copy Release PR Image**: As an alternative to reproducible builds, the release process can be modified to copy the Docker image built during the release PR directly to the production registry with the release tag. This approach ensures that the same image used for testing is released, maintaining identical digests.
+- **Reproducible Build Tools**: Utilize tools and techniques that support reproducible builds, such as Docker's BuildKit option, which must be implemented by the `Image-Builder`.
+- **Copy Release PR Image**: As an alternative to reproducible builds, we can modify the release process to copy the Docker image built during the release PR directly to the production registry with the release tag. This approach ensures that the same image used for testing is released, maintaining identical digests.
 
 Both approaches ensure that the Docker image used for testing is the same as the one released, providing a clear audit trail and maintaining software integrity throughout the release process. 
 However, the reproducible build approach is currently not available and have to be implemented by the `Image-Builder` team, therefore the recommended approach for now, repeat all test in the release branch with release Docker Image.
