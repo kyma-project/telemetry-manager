@@ -24,7 +24,7 @@ To pass an audit, the release process must produce the following artifacts:
 
 ### Test Execution Reports
 
-Test execution reports should be downloaded for unit tests, end-to-end (E2E) tests, and Gardener integration tests from corresponding GitHub Workflow executions and retained for audit purposes.
+The release workflow must download and retain the execution reports for all unit and end-to-end (E2E) tests from their corresponding GitHub workflow runs.
 
 ### Docker Images
 
@@ -46,8 +46,8 @@ We must implement deterministic Docker builds. An image built from a PR must hav
 
 ### Download and Store Test Reports
 
-The test reports from unit tests, E2E tests, and Gardener tests should be downloaded from the respective GitHub Actions workflows and stored as artifacts for audit purposes. For this pupose, a new re-usable workflow created to download and store test reports based on workflow run ID and job name.
-After test jobs are completed successfully, the new workflow is called from the release PR workflow and uploaded to the pre-configured GCP bucket for audit retention (see [Archive Test Logs for 12-Month Auditing via Release Assets #8419](https://github.tools.sap/kyma/backlog/issues/8419).
+The test reports from unit tests, E2E tests, and Gardener tests have to be downloaded from the respective GitHub Actions workflows and stored as artifacts for audit purposes. For this pupose, a new re-usable workflow created to download and store test reports from workflow.
+After test jobs are completed successfully, the test exwcution result will be uplodaed to the GCP bucket (see [Archive Test Logs for 12-Month Auditing via Release Assets #8419](https://github.tools.sap/kyma/backlog/issues/8419).
 
 ### Deterministic Docker Builds
 To achieve deterministic Docker builds, we consider the following strategies:
