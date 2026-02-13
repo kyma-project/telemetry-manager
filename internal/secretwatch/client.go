@@ -107,7 +107,7 @@ func (c *Client) SyncWatchedSecrets(ctx context.Context, pipeline client.Object,
 	for _, secret := range secrets {
 		if w, exists := c.watchers[secret]; exists {
 			// Watcher exists, link pipeline if not already linked (thread-safe)
-			w.linkPipeline(pipeline)
+			w.link(pipeline)
 		} else {
 			// Create new watcher and start it immediately
 			w := newStartedWatcher(ctx, secret, pipeline, c.clientset, c.eventChan, &c.wg)
@@ -118,9 +118,9 @@ func (c *Client) SyncWatchedSecrets(ctx context.Context, pipeline client.Object,
 	// Remove pipeline from watchers not in the current set
 	for watchedSecret, w := range c.watchers {
 		secretFound := slices.Contains(secrets, watchedSecret)
-		if !secretFound && w.isPipelineLinked(pipeline) {
+		if !secretFound && w.isLinked(pipeline) {
 			// Remove this pipeline from the watcher's linked pipelines (thread-safe)
-			hasPipelines := w.unlinkPipeline(pipeline)
+			hasPipelines := w.unlink(pipeline)
 
 			// If no pipelines are linked anymore, stop and delete the watcher
 			if !hasPipelines {

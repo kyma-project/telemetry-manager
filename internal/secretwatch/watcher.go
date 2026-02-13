@@ -58,18 +58,7 @@ func newStartedWatcher(
 	return w
 }
 
-// linkedPipelines returns a copy of the linked pipelines for thread-safe access.
-func (w *watcher) linkedPipelines() []client.Object {
-	w.mu.RLock()
-	defer w.mu.RUnlock()
-
-	pipelines := make([]client.Object, len(w.linked))
-	copy(pipelines, w.linked)
-
-	return pipelines
-}
-
-func (w *watcher) linkPipeline(pipeline client.Object) {
+func (w *watcher) link(pipeline client.Object) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
@@ -82,7 +71,7 @@ func (w *watcher) linkPipeline(pipeline client.Object) {
 	w.linked = append(w.linked, pipeline)
 }
 
-func (w *watcher) unlinkPipeline(pipeline client.Object) bool {
+func (w *watcher) unlink(pipeline client.Object) bool {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
@@ -98,7 +87,7 @@ func (w *watcher) unlinkPipeline(pipeline client.Object) bool {
 	return len(w.linked) > 0
 }
 
-func (w *watcher) isPipelineLinked(pipeline client.Object) bool {
+func (w *watcher) isLinked(pipeline client.Object) bool {
 	w.mu.RLock()
 	defer w.mu.RUnlock()
 
