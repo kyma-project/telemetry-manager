@@ -73,9 +73,10 @@ type TracePipelineControllerConfig struct {
 }
 
 func NewTracePipelineController(config TracePipelineControllerConfig, client client.Client, reconcileTriggerChan <-chan event.GenericEvent) (*TracePipelineController, error) {
-	flowHealthProber, err := prober.NewOTelTraceGatewayProber(types.NamespacedName{Name: names.SelfMonitor, Namespace: config.TargetNamespace()})
-	if err != nil {
-		return nil, err
+	pipelineCount := resourcelock.MaxPipelineCount
+
+	if config.UnlimitedPipelines() {
+		pipelineCount = resourcelock.UnlimitedPipelineCount
 	}
 
 	pipelineLock := resourcelock.NewLocker(
@@ -84,7 +85,7 @@ func NewTracePipelineController(config TracePipelineControllerConfig, client cli
 			Name:      names.TracePipelineLock,
 			Namespace: config.TargetNamespace(),
 		},
-		MaxPipelineCount,
+		pipelineCount,
 	)
 
 	pipelineSync := resourcelock.NewSyncer(
@@ -94,6 +95,11 @@ func NewTracePipelineController(config TracePipelineControllerConfig, client cli
 			Namespace: config.TargetNamespace(),
 		},
 	)
+
+	flowHealthProber, err := prober.NewOTelTraceGatewayProber(types.NamespacedName{Name: names.SelfMonitor, Namespace: config.TargetNamespace()})
+	if err != nil {
+		return nil, err
+	}
 
 	transformSpecValidator, err := ottl.NewTransformSpecValidator(ottl.SignalTypeTrace)
 	if err != nil {

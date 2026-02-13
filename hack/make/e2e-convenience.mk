@@ -28,6 +28,10 @@ run-e2e-fluent-bit-max-pipeline: ## Run fluent-bit-max-pipeline e2e tests
 run-e2e-otel-max-pipeline: ## Run otel-max-pipeline e2e tests
 	$(MAKE) run-e2e TEST_ID=e2e-otel-max-pipeline TEST_PATH="./test/e2e/..." TEST_LABELS="otel-max-pipeline"
 
+.PHONY: run-e2e-otel-max-pipeline-experimental
+run-e2e-otel-max-pipeline-experimental: ## Run otel-max-pipeline and experimental e2e tests
+	$(MAKE) run-e2e TEST_ID=e2e-otel-max-pipeline-experimental TEST_PATH="./test/e2e/..." TEST_LABELS="otel-max-pipeline and experimental"
+
 .PHONY: run-e2e-logs-misc
 run-e2e-logs-misc: ## Run logs-misc e2e tests
 	$(MAKE) run-e2e TEST_ID=e2e-logs-misc TEST_PATH="./test/e2e/..." TEST_LABELS="logs-misc"
@@ -64,6 +68,10 @@ run-e2e-metrics-misc: ## Run metrics-misc e2e tests
 run-e2e-metrics-max-pipeline: ## Run metrics-max-pipeline e2e tests
 	$(MAKE) run-e2e TEST_ID=e2e-metrics-max-pipeline TEST_PATH="./test/e2e/..." TEST_LABELS="metrics-max-pipeline"
 
+.PHONY: run-e2e-metrics-max-pipeline-experimental
+run-e2e-metrics-max-pipeline-experimental: ## Run metrics-max-pipeline and experimental e2e tests
+	$(MAKE) run-e2e TEST_ID=e2e-metrics-max-pipeline-experimental TEST_PATH="./test/e2e/..." TEST_LABELS="metrics-max-pipeline and experimental"
+
 .PHONY: run-e2e-traces
 run-e2e-traces: ## Run traces e2e tests
 	$(MAKE) run-e2e TEST_ID=e2e-traces TEST_PATH="./test/e2e/..." TEST_LABELS="traces"
@@ -71,6 +79,10 @@ run-e2e-traces: ## Run traces e2e tests
 .PHONY: run-e2e-traces-max-pipeline
 run-e2e-traces-max-pipeline: ## Run traces-max-pipeline e2e tests
 	$(MAKE) run-e2e TEST_ID=e2e-traces-max-pipeline TEST_PATH="./test/e2e/..." TEST_LABELS="traces-max-pipeline"
+
+.PHONY: run-e2e-traces-max-pipeline-experimental
+run-e2e-traces-max-pipeline-experimental: ## Run traces-max-pipeline and experimental e2e tests
+	$(MAKE) run-e2e TEST_ID=e2e-traces-max-pipeline-experimental TEST_PATH="./test/e2e/..." TEST_LABELS="traces-max-pipeline and experimental"
 
 .PHONY: run-e2e-telemetry-otel
 run-e2e-telemetry-otel: ## Run telemetry and not fluent-bit e2e tests
@@ -113,8 +125,8 @@ run-integration-istio-otel-experimental: ## Run istio and experimental integrati
 run-all-e2e-logs: run-e2e-fluent-bit run-e2e-log-agent run-e2e-log-gateway run-e2e-log-gateway-experimental run-e2e-logs-max-pipeline run-e2e-fluent-bit-max-pipeline run-e2e-logs-misc ## Run all log-related E2E tests
 
 .PHONY: run-all-e2e-metrics
-run-all-e2e-metrics: run-e2e-metrics-misc run-e2e-metrics-max-pipeline ## Run all metrics-related E2E tests
+run-all-e2e-metrics: run-e2e-metrics-misc run-e2e-metrics-max-pipeline run-e2e-metrics-max-pipeline-experimental ## Run all metrics-related E2E tests
 
 .PHONY: run-all-e2e-traces
-run-all-e2e-traces: run-e2e-traces run-e2e-traces-max-pipeline ## Run all trace-related E2E tests
+run-all-e2e-traces: run-e2e-traces run-e2e-traces-max-pipeline run-e2e-traces-max-pipeline-experimental ## Run all trace-related E2E tests
 

@@ -8,8 +8,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	telemetrycontrollers "github.com/kyma-project/telemetry-manager/controllers/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -22,9 +22,9 @@ import (
 )
 
 func TestMultiPipelineMaxPipeline(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelTracesMaxPipeline)
+	suite.RegisterTestCase(t, suite.LabelTracesMaxPipeline, suite.LabelExperimental)
 
-	const maxNumberOfTracePipelines = telemetrycontrollers.MaxPipelineCount
+	const maxNumberOfTracePipelines = resourcelock.MaxPipelineCount
 
 	var (
 		uniquePrefix = unique.Prefix("traces")
@@ -73,6 +73,26 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 
 	t.Log("Attempting to create a pipeline that exceeds the maximum allowed number of pipelines")
 	Expect(kitk8s.CreateObjects(t, &additionalPipeline)).To(Succeed())
+
+	// Check if experimental label is set - if so, unlimited pipelines are enabled
+	if suite.IsLabelSet(suite.LabelExperimental) {
+		testUnlimitedPipelines(t, additionalPipelineName, backend, genNs)
+		return
+	}
+
+	testMaxPipelineLimit(t, additionalPipelineName, pipelines, &additionalPipeline, backend, genNs)
+}
+
+func testUnlimitedPipelines(t *testing.T, additionalPipelineName string, backend *kitbackend.Backend, genNs string) {
+	t.Log("Experimental mode: unlimited pipelines enabled, additional pipeline should be healthy")
+	assert.TracePipelineHealthy(t, additionalPipelineName)
+
+	t.Log("Verifying traces are delivered for all pipelines")
+	assert.TracesFromNamespaceDelivered(t, backend, genNs)
+}
+
+func testMaxPipelineLimit(t *testing.T, additionalPipelineName string, pipelines []client.Object, additionalPipeline client.Object, backend *kitbackend.Backend, genNs string) {
+	t.Log("Normal mode: verifying max pipeline limit is enforced")
 	assert.TracePipelineHasCondition(t, additionalPipelineName, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionFalse,
@@ -87,7 +107,7 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 	t.Log("Verifying traces are delivered for valid pipelines")
 	assert.TracesFromNamespaceDelivered(t, backend, genNs)
 
-	t.Log("Deleting one previously healthy pipeline and expecting the additional pipeline to be healthy")
+	t.Log("Deleting one pipeline to free up a slot for the additional pipeline")
 
 	deletePipeline := pipelines[0]
 	Expect(kitk8s.DeleteObjects(deletePipeline)).To(Succeed())
