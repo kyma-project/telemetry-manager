@@ -49,8 +49,8 @@ import (
 	logpipelineotel "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/otel"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
-	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	predicateutils "github.com/kyma-project/telemetry-manager/internal/utils/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
@@ -71,21 +71,22 @@ type LogPipelineController struct {
 type LogPipelineControllerConfig struct {
 	config.Global
 
-	ExporterImage               string
-	FluentBitImage              string
-	OTelCollectorImage          string
-	ChownInitContainerImage     string
-	FluentBitPriorityClassName  string
-	LogGatewayPriorityClassName string
-	LogAgentPriorityClassName   string
-	RestConfig                  *rest.Config
+	ExporterImage                string
+	FluentBitImage               string
+	OTelCollectorImage           string
+	ChownInitContainerImage      string
+	FluentBitPriorityClassName   string
+	LogGatewayPriorityClassName  string
+	LogAgentPriorityClassName    string
+	OTLPGatewayPriorityClassName string
+	RestConfig                   *rest.Config
 }
 
 func NewLogPipelineController(config LogPipelineControllerConfig, client client.Client, reconcileTriggerChan <-chan event.GenericEvent) (*LogPipelineController, error) {
 	pipelineLock := resourcelock.NewLocker(
 		client,
 		types.NamespacedName{
-			Name:      "telemetry-logpipeline-lock",
+			Name:      names.LogPipelineLock,
 			Namespace: config.TargetNamespace(),
 		},
 		MaxPipelineCount,
@@ -94,22 +95,22 @@ func NewLogPipelineController(config LogPipelineControllerConfig, client client.
 	pipelineSyncer := resourcelock.NewSyncer(
 		client,
 		types.NamespacedName{
-			Name:      "telemetry-logpipeline-sync",
+			Name:      names.LogPipelineSync,
 			Namespace: config.TargetNamespace(),
 		},
 	)
 
-	fluentBitFlowHealthProber, err := prober.NewFluentBitProber(types.NamespacedName{Name: selfmonitor.ServiceName, Namespace: config.TargetNamespace()})
+	fluentBitFlowHealthProber, err := prober.NewFluentBitProber(types.NamespacedName{Name: names.SelfMonitor, Namespace: config.TargetNamespace()})
 	if err != nil {
 		return nil, err
 	}
 
-	otelGatewayFlowHealthProber, err := prober.NewOTelLogGatewayProber(types.NamespacedName{Name: selfmonitor.ServiceName, Namespace: config.TargetNamespace()})
+	gatewayFlowHealthProber, err := prober.NewOTelLogGatewayProber(types.NamespacedName{Name: names.SelfMonitor, Namespace: config.TargetNamespace()})
 	if err != nil {
 		return nil, err
 	}
 
-	otelAgentFlowHealthProber, err := prober.NewOTelLogAgentProber(types.NamespacedName{Name: selfmonitor.ServiceName, Namespace: config.TargetNamespace()})
+	agentFlowHealthProber, err := prober.NewOTelLogAgentProber(types.NamespacedName{Name: names.SelfMonitor, Namespace: config.TargetNamespace()})
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +120,7 @@ func NewLogPipelineController(config LogPipelineControllerConfig, client client.
 		return nil, err
 	}
 
-	otelReconciler, err := configureOTelReconciler(config, client, pipelineLock, otelGatewayFlowHealthProber, otelAgentFlowHealthProber)
+	otelReconciler, err := configureOTelReconciler(config, client, pipelineLock, gatewayFlowHealthProber, agentFlowHealthProber)
 	if err != nil {
 		return nil, err
 	}
@@ -265,6 +266,14 @@ func configureOTelReconciler(config LogPipelineControllerConfig, client client.C
 		Reader: client,
 	}
 
+	prober := func() logpipelineotel.Prober {
+		if config.DeployOTLPGateway() {
+			return &workloadstatus.DaemonSetProber{Client: client}
+		}
+
+		return &workloadstatus.DeploymentProber{Client: client}
+	}()
+
 	agentApplierDeleter := otelcollector.NewLogAgentApplierDeleter(
 		config.Global,
 		config.OTelCollectorImage,
@@ -274,6 +283,12 @@ func configureOTelReconciler(config LogPipelineControllerConfig, client client.C
 		config.Global,
 		config.OTelCollectorImage,
 		config.LogGatewayPriorityClassName)
+
+	// Create OTLP gateway applier deleter for DaemonSet mode
+	otlpGatewayApplierDeleter := otelcollector.NewOTLPGatewayApplierDeleter(
+		config.Global,
+		config.OTelCollectorImage,
+		config.OTLPGatewayPriorityClassName)
 
 	otelReconciler := logpipelineotel.New(
 		logpipelineotel.WithClient(client),
@@ -287,9 +302,10 @@ func configureOTelReconciler(config LogPipelineControllerConfig, client client.C
 		logpipelineotel.WithErrorToMessageConverter(&conditions.ErrorToMessageConverter{}),
 
 		logpipelineotel.WithGatewayApplierDeleter(gatewayAppliedDeleter),
+		logpipelineotel.WithOTLPGatewayApplierDeleter(otlpGatewayApplierDeleter),
 		logpipelineotel.WithGatewayConfigBuilder(&loggateway.Builder{Reader: client}),
 		logpipelineotel.WithGatewayFlowHealthProber(gatewayFlowHealthProber),
-		logpipelineotel.WithGatewayProber(&workloadstatus.DeploymentProber{Client: client}),
+		logpipelineotel.WithGatewayProber(prober),
 
 		logpipelineotel.WithIstioStatusChecker(istiostatus.NewChecker(discoveryClient)),
 		logpipelineotel.WithPipelineLock(pipelineLock),

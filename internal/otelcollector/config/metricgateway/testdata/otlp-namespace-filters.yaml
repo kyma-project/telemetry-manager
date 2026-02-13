@@ -16,7 +16,7 @@ service:
                 - transform/drop-kyma-attributes
                 - batch
             exporters:
-                - otlp/cls
+                - otlp_grpc/cls
         metrics/enrichment:
             receivers:
                 - forward/input
@@ -170,7 +170,7 @@ processors:
             - statements:
                 - set(resource.attributes["kyma.input.name"], "otlp")
 exporters:
-    otlp/cls:
+    otlp_grpc/cls:
         endpoint: ${OTLP_ENDPOINT_CLS}
         sending_queue:
             enabled: true

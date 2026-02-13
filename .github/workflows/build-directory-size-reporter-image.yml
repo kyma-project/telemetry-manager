@@ -28,13 +28,18 @@ jobs:
         id: create-tags
         run: |
           if [[ $GITHUB_EVENT_NAME == 'push' || $GITHUB_EVENT_NAME == 'merge_group' ]]; then
-            echo "TAGS=$(git rev-parse --short $GITHUB_SHA)" >> "$GITHUB_OUTPUT"
+            {
+              echo "tags<<EOTAGS"
+              echo "${{ github.ref_name }}"
+              echo "$(git rev-parse --short $GITHUB_SHA)"
+              echo "EOTAGS"
+            } >> "$GITHUB_OUTPUT"
           else
             {
-              echo 'tags<<TAGS'
-              echo 'PR-${{ github.event.pull_request.number }}'
-              echo '${{ github.event.pull_request.head.sha }}'
-              echo 'TAGS'
+              echo "tags<<EOTAGS"
+              echo "PR-${{ github.event.pull_request.number }}"
+              echo "${{ github.event.pull_request.head.sha }}"
+              echo "EOTAGS"
             } >> "$GITHUB_OUTPUT"
           fi
 

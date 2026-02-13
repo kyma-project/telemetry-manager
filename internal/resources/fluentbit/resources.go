@@ -16,7 +16,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/config"
@@ -24,19 +23,11 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	fbports "github.com/kyma-project/telemetry-manager/internal/fluentbit/ports"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 )
 
 const (
-	LogAgentName              = "telemetry-fluent-bit"
-	fbSectionsConfigMapName   = LogAgentName + "-sections"
-	fbFilesConfigMapName      = LogAgentName + "-files"
-	fbLuaConfigMapName        = LogAgentName + "-luascripts"
-	fbParsersConfigMapName    = LogAgentName + "-parsers"
-	fbEnvConfigSecretName     = LogAgentName + "-env"
-	fbTLSFileConfigSecretName = LogAgentName + "-output-tls-config"
-	fbDaemonSetName           = LogAgentName
-
 	exporterContainerName  = "exporter"
 	chownInitContainerName = "checkpoint-dir-ownership-modifier"
 
@@ -46,19 +37,16 @@ const (
 	varLogVolumeName                = "varlog"
 	sharedFluentBitConfigVolumeName = "shared-fluent-bit-config"
 	dynamicConfigVolumeName         = "dynamic-config"
-	dynamicParsersConfigVolumeName  = "dynamic-parsers-config"
 	dynamicFilesVolumeName          = "dynamic-files"
 	varFluentBitVolumeName          = "varfluentbit"
 	outputTLSConfigVolumeName       = "output-tls-config"
 
 	// Volume mount paths
 	configVolumeFluentBitMountPath       = "/fluent-bit/etc/fluent-bit.conf"
-	configVolumeCustomParsersMountPath   = "/fluent-bit/etc/custom_parsers.conf"
 	luaScriptsVolumeMountPath            = "/fluent-bit/scripts/filter-script.lua"
 	varLogVolumeMountPath                = "/var/log"
 	sharedFluentBitConfigVolumeMountPath = "/fluent-bit/etc"
 	dynamicConfigVolumeMountPath         = "/fluent-bit/etc/dynamic/"
-	dynamicParsersConfigVolumeMountPath  = "/fluent-bit/etc/dynamic-parsers/"
 	dynamicFilesVolumeMountPath          = "/files"
 	varFluentBitVolumeMountPath          = "/data"
 	outputTLSConfigVolumeMountPath       = "/fluent-bit/etc/output-tls-config/"
@@ -89,7 +77,6 @@ type AgentApplierDeleter struct {
 
 	daemonSetName           types.NamespacedName
 	luaConfigMapName        types.NamespacedName
-	parsersConfigMapName    types.NamespacedName
 	filesConfigMapName      types.NamespacedName
 	sectionsConfigMapName   types.NamespacedName
 	envConfigSecretName     types.NamespacedName
@@ -110,13 +97,12 @@ func NewFluentBitApplierDeleter(global config.Global, namespace, fbImage, export
 		chownInitContainerImage: chownInitContainerImage,
 		priorityClassName:       priorityClassName,
 
-		daemonSetName:           types.NamespacedName{Name: fbDaemonSetName, Namespace: namespace},
-		luaConfigMapName:        types.NamespacedName{Name: fbLuaConfigMapName, Namespace: namespace},
-		parsersConfigMapName:    types.NamespacedName{Name: fbParsersConfigMapName, Namespace: namespace},
-		filesConfigMapName:      types.NamespacedName{Name: fbFilesConfigMapName, Namespace: namespace},
-		sectionsConfigMapName:   types.NamespacedName{Name: fbSectionsConfigMapName, Namespace: namespace},
-		envConfigSecretName:     types.NamespacedName{Name: fbEnvConfigSecretName, Namespace: namespace},
-		tlsFileConfigSecretName: types.NamespacedName{Name: fbTLSFileConfigSecretName, Namespace: namespace},
+		daemonSetName:           types.NamespacedName{Name: names.FluentBit, Namespace: namespace},
+		luaConfigMapName:        types.NamespacedName{Name: names.FluentBitLuaScriptsConfigMap, Namespace: namespace},
+		filesConfigMapName:      types.NamespacedName{Name: names.FluentBitFilesConfigMap, Namespace: namespace},
+		sectionsConfigMapName:   types.NamespacedName{Name: names.FluentBitSectionsConfigMap, Namespace: namespace},
+		envConfigSecretName:     types.NamespacedName{Name: names.FluentBitEnvSecret, Namespace: namespace},
+		tlsFileConfigSecretName: types.NamespacedName{Name: names.FluentBitTLSConfigSecret, Namespace: namespace},
 	}
 }
 
@@ -188,15 +174,6 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 		return fmt.Errorf("failed to create fluent bit network policy: %w", err)
 	}
 
-	//TODO: remove parser configmap creation after logparser removal is rolled out
-	parserCm := corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{
-		Name:      fbParsersConfigMapName,
-		Namespace: aad.namespace,
-	}}
-	if err := k8sutils.DeleteObject(ctx, c, &parserCm); err != nil {
-		return fmt.Errorf("failed to delete parser configmap: %w", err)
-	}
-
 	return nil
 }
 
@@ -205,7 +182,7 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 	var allErrors error = nil
 
 	objectMeta := metav1.ObjectMeta{
-		Name:      fbDaemonSetName,
+		Name:      names.FluentBit,
 		Namespace: aad.namespace,
 	}
 
@@ -224,12 +201,12 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete clusterolebinding: %w", err))
 	}
 
-	exporterMetricsService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: fmt.Sprintf("%s-exporter-metrics", fbDaemonSetName), Namespace: aad.namespace}}
+	exporterMetricsService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: names.FluentBitExporterMetricsService, Namespace: aad.namespace}}
 	if err := k8sutils.DeleteObject(ctx, c, &exporterMetricsService); err != nil {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete exporter metric service: %w", err))
 	}
 
-	metricsService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: fmt.Sprintf("%s-metrics", fbDaemonSetName), Namespace: aad.namespace}}
+	metricsService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: names.FluentBitMetricsService, Namespace: aad.namespace}}
 	if err := k8sutils.DeleteObject(ctx, c, &metricsService); err != nil {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete metric service: %w", err))
 	}
@@ -240,7 +217,7 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 	}
 
 	luaCm := corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{
-		Name:      fbLuaConfigMapName,
+		Name:      names.FluentBitLuaScriptsConfigMap,
 		Namespace: aad.namespace,
 	}}
 	if err := k8sutils.DeleteObject(ctx, c, &luaCm); err != nil {
@@ -248,7 +225,7 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 	}
 
 	sectionCm := corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{
-		Name:      fbSectionsConfigMapName,
+		Name:      names.FluentBitSectionsConfigMap,
 		Namespace: aad.namespace,
 	}}
 	if err := k8sutils.DeleteObject(ctx, c, &sectionCm); err != nil {
@@ -256,7 +233,7 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 	}
 
 	filesCm := corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{
-		Name:      fbFilesConfigMapName,
+		Name:      names.FluentBitFilesConfigMap,
 		Namespace: aad.namespace,
 	}}
 	if err := k8sutils.DeleteObject(ctx, c, &filesCm); err != nil {
@@ -274,7 +251,7 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 	}
 
 	envSecret := corev1.Secret{ObjectMeta: metav1.ObjectMeta{
-		Name:      fbEnvConfigSecretName,
+		Name:      names.FluentBitEnvSecret,
 		Namespace: aad.namespace,
 	}}
 	if err := k8sutils.DeleteObject(ctx, c, &envSecret); err != nil {
@@ -282,7 +259,7 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 	}
 
 	tlsSecret := corev1.Secret{ObjectMeta: metav1.ObjectMeta{
-		Name:      fbTLSFileConfigSecretName,
+		Name:      names.FluentBitTLSConfigSecret,
 		Namespace: aad.namespace,
 	}}
 	if err := k8sutils.DeleteObject(ctx, c, &tlsSecret); err != nil {
@@ -333,7 +310,7 @@ func (aad *AgentApplierDeleter) makeDaemonSet(namespace string, checksum string)
 	ds := &appsv1.DaemonSet{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        LogAgentName,
+			Name:        names.FluentBit,
 			Namespace:   namespace,
 			Labels:      resourceLabels,
 			Annotations: resourceAnnotations,
@@ -347,14 +324,14 @@ func (aad *AgentApplierDeleter) makeDaemonSet(namespace string, checksum string)
 					Annotations: podAnnotations,
 					Labels:      podLabels,
 				},
-				Spec: commonresources.MakePodSpec(LogAgentName,
+				Spec: commonresources.MakePodSpec(names.FluentBit,
 					commonresources.WithPriorityClass(aad.priorityClassName),
 					commonresources.WithTolerations(commonresources.CriticalDaemonSetTolerations),
 					commonresources.WithVolumes(aad.fluentBitVolumes()),
 					commonresources.WithClusterTrustBundleVolume(aad.globals.ClusterTrustBundleName()),
 					commonresources.WithImagePullSecretName(aad.globals.ImagePullSecretName()),
 					commonresources.WithContainer("fluent-bit", aad.fluentBitImage,
-						commonresources.WithEnvVarsFromSecret(fmt.Sprintf("%s-env", LogAgentName)),
+						commonresources.WithEnvVarsFromSecret(names.FluentBitEnvSecret),
 						commonresources.WithRunAsGroup(commonresources.GroupRoot),
 						commonresources.WithRunAsUser(commonresources.UserDefault),
 						commonresources.WithPort("http", fbports.HTTP),
@@ -411,8 +388,6 @@ func (aad *AgentApplierDeleter) fluentBitVolumeMounts() []corev1.VolumeMount {
 		{MountPath: sharedFluentBitConfigVolumeMountPath, Name: sharedFluentBitConfigVolumeName},
 		{MountPath: configVolumeFluentBitMountPath, Name: configVolumeName, SubPath: "fluent-bit.conf"},
 		{MountPath: dynamicConfigVolumeMountPath, Name: dynamicConfigVolumeName},
-		{MountPath: dynamicParsersConfigVolumeMountPath, Name: dynamicParsersConfigVolumeName},
-		{MountPath: configVolumeCustomParsersMountPath, Name: configVolumeName, SubPath: "custom_parsers.conf"},
 		{MountPath: luaScriptsVolumeMountPath, Name: luaScriptsVolumeName, SubPath: "filter-script.lua"},
 		{MountPath: varLogVolumeMountPath, Name: varLogVolumeName, ReadOnly: true},
 		{MountPath: varFluentBitVolumeMountPath, Name: varFluentBitVolumeName},
@@ -439,7 +414,7 @@ func (aad *AgentApplierDeleter) fluentBitVolumes() []corev1.Volume {
 			Name: configVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{Name: LogAgentName},
+					LocalObjectReference: corev1.LocalObjectReference{Name: names.FluentBit},
 				},
 			},
 		},
@@ -447,7 +422,7 @@ func (aad *AgentApplierDeleter) fluentBitVolumes() []corev1.Volume {
 			Name: luaScriptsVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{Name: fmt.Sprintf("%s-luascripts", LogAgentName)},
+					LocalObjectReference: corev1.LocalObjectReference{Name: names.FluentBitLuaScriptsConfigMap},
 				},
 			},
 		},
@@ -467,17 +442,8 @@ func (aad *AgentApplierDeleter) fluentBitVolumes() []corev1.Volume {
 			Name: dynamicConfigVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{Name: fmt.Sprintf("%s-sections", LogAgentName)},
-					Optional:             ptr.To(true),
-				},
-			},
-		},
-		{
-			Name: dynamicParsersConfigVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{Name: fmt.Sprintf("%s-parsers", LogAgentName)},
-					Optional:             ptr.To(true),
+					LocalObjectReference: corev1.LocalObjectReference{Name: names.FluentBitSectionsConfigMap},
+					Optional:             new(true),
 				},
 			},
 		},
@@ -485,22 +451,22 @@ func (aad *AgentApplierDeleter) fluentBitVolumes() []corev1.Volume {
 			Name: dynamicFilesVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{Name: fmt.Sprintf("%s-files", LogAgentName)},
-					Optional:             ptr.To(true),
+					LocalObjectReference: corev1.LocalObjectReference{Name: names.FluentBitFilesConfigMap},
+					Optional:             new(true),
 				},
 			},
 		},
 		{
 			Name: varFluentBitVolumeName,
 			VolumeSource: corev1.VolumeSource{
-				HostPath: &corev1.HostPathVolumeSource{Path: fmt.Sprintf("/var/%s", LogAgentName)},
+				HostPath: &corev1.HostPathVolumeSource{Path: fmt.Sprintf("/var/%s", names.FluentBit)},
 			},
 		},
 		{
 			Name: outputTLSConfigVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: fmt.Sprintf("%s-output-tls-config", LogAgentName),
+					SecretName: names.FluentBitTLSConfigSecret,
 				},
 			},
 		},
@@ -532,7 +498,7 @@ func makeMetricsService(name types.NamespacedName) *corev1.Service {
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-metrics", name.Name),
+			Name:      names.MetricsServiceName(name.Name),
 			Namespace: name.Namespace,
 			Labels:    serviceLabels,
 			Annotations: map[string]string{
@@ -562,7 +528,7 @@ func makeExporterMetricsService(name types.NamespacedName) *corev1.Service {
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-exporter-metrics", name.Name),
+			Name:      names.FluentBitExporterMetricsService,
 			Namespace: name.Namespace,
 			Labels:    serviceLabels,
 			Annotations: map[string]string{

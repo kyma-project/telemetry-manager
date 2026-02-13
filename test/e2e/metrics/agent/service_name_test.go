@@ -6,6 +6,7 @@ import (
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -18,6 +19,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
+// TODO(TeodorSAP): Remove this test in favor of service_enrichment_test.go once legacy service enrichment strategy is fully deprecated.
 func TestServiceName(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelMetricAgentSetB)
 
@@ -97,13 +99,13 @@ func TestServiceName(t *testing.T) {
 
 	assert.BackendDataEventuallyMatches(t, backend,
 		HaveFlatMetrics(
-			ContainElement(HaveResourceAttributes(HaveKeyWithValue("service.name", kitkyma.MetricGatewayBaseName))),
+			ContainElement(HaveResourceAttributes(HaveKeyWithValue("service.name", names.MetricGateway))),
 		), assert.WithOptionalDescription("Should have metrics with service.name set to telemetry-metric-gateway"),
 	)
 
 	assert.BackendDataEventuallyMatches(t, backend,
 		HaveFlatMetrics(
-			ContainElement(HaveResourceAttributes(HaveKeyWithValue("service.name", kitkyma.MetricAgentBaseName))),
+			ContainElement(HaveResourceAttributes(HaveKeyWithValue("service.name", names.MetricAgent))),
 		), assert.WithOptionalDescription("Should have metrics with service.name set to telemetry-metric-agent"),
 	)
 }

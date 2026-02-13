@@ -68,7 +68,7 @@ service:
                 - transform/drop-kyma-attributes
                 - batch
             exporters:
-                - otlp/test
+                - otlp_grpc/test
     telemetry:
         metrics:
             readers:
@@ -157,6 +157,7 @@ receivers:
             scrape_configs:
                 - job_name: app-pods
                   sample_limit: 50000
+                  body_size_limit: 20MB
                   scrape_interval: 30s
                   relabel_configs:
                     - source_labels: [__meta_kubernetes_pod_node_name]
@@ -422,7 +423,7 @@ processors:
             - statements:
                 - set(resource.attributes["kyma.input.name"], "runtime")
 exporters:
-    otlp/test:
+    otlp_grpc/test:
         endpoint: ${OTLP_ENDPOINT_TEST}
         tls:
             insecure: true

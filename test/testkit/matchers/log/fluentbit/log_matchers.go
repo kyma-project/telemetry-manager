@@ -5,14 +5,14 @@ import (
 	"time"
 
 	"github.com/onsi/gomega"
-	"github.com/onsi/gomega/types"
+	gomegatypes "github.com/onsi/gomega/types"
 )
 
 const iso8601 = "2006-01-02T15:04:05.999Z"
 
 // HaveFlatLogs unmarshals OTLP logs from a JSON file, converts them to FlatLogs and applies the matcher to them.
 // Even though FluentBit does not use OTLP, the logs are still in OTLP format, so we can use the e2e test setup as for other telemetry types.
-func HaveFlatLogs(matcher types.GomegaMatcher) types.GomegaMatcher {
+func HaveFlatLogs(matcher gomegatypes.GomegaMatcher) gomegatypes.GomegaMatcher {
 	return gomega.WithTransform(func(jsonLogs []byte) ([]FlatLog, error) {
 		lds, err := unmarshalLogs(jsonLogs)
 		if err != nil {
@@ -25,37 +25,37 @@ func HaveFlatLogs(matcher types.GomegaMatcher) types.GomegaMatcher {
 	}, matcher)
 }
 
-func HaveContainerName(matcher types.GomegaMatcher) types.GomegaMatcher {
+func HaveContainerName(matcher gomegatypes.GomegaMatcher) gomegatypes.GomegaMatcher {
 	return gomega.WithTransform(func(fl FlatLog) string {
 		return fl.KubernetesAttributes["container_name"]
 	}, matcher)
 }
 
-func HaveNamespace(matcher types.GomegaMatcher) types.GomegaMatcher {
+func HaveNamespace(matcher gomegatypes.GomegaMatcher) gomegatypes.GomegaMatcher {
 	return gomega.WithTransform(func(fl FlatLog) string {
 		return fl.KubernetesAttributes["namespace_name"]
 	}, matcher)
 }
 
-func HavePodName(matcher types.GomegaMatcher) types.GomegaMatcher {
+func HavePodName(matcher gomegatypes.GomegaMatcher) gomegatypes.GomegaMatcher {
 	return gomega.WithTransform(func(fl FlatLog) string {
 		return fl.KubernetesAttributes["pod_name"]
 	}, matcher)
 }
 
-func HaveKubernetesAttributes(matcher types.GomegaMatcher) types.GomegaMatcher {
+func HaveKubernetesAttributes(matcher gomegatypes.GomegaMatcher) gomegatypes.GomegaMatcher {
 	return gomega.WithTransform(func(fl FlatLog) map[string]string {
 		return fl.KubernetesAttributes
 	}, matcher)
 }
 
-func HaveAttributes(matcher types.GomegaMatcher) types.GomegaMatcher {
+func HaveAttributes(matcher gomegatypes.GomegaMatcher) gomegatypes.GomegaMatcher {
 	return gomega.WithTransform(func(fl FlatLog) map[string]string {
 		return fl.Attributes
 	}, matcher)
 }
 
-func HaveTimestamp(matcher types.GomegaMatcher) types.GomegaMatcher {
+func HaveTimestamp(matcher gomegatypes.GomegaMatcher) gomegatypes.GomegaMatcher {
 	return gomega.WithTransform(func(fl FlatLog) time.Time {
 		ts := fl.Attributes["timestamp"]
 
@@ -68,29 +68,29 @@ func HaveTimestamp(matcher types.GomegaMatcher) types.GomegaMatcher {
 	}, matcher)
 }
 
-func HaveLevel(matcher types.GomegaMatcher) types.GomegaMatcher {
+func HaveLevel(matcher gomegatypes.GomegaMatcher) gomegatypes.GomegaMatcher {
 	return gomega.WithTransform(func(fl FlatLog) string {
 		return fl.Attributes["level"]
 	}, matcher)
 }
 
-func HaveKubernetesAnnotations(matcher types.GomegaMatcher) types.GomegaMatcher {
+func HaveKubernetesAnnotations(matcher gomegatypes.GomegaMatcher) gomegatypes.GomegaMatcher {
 	return gomega.WithTransform(func(fl FlatLog) map[string]any {
 		return fl.KubernetesAnnotationAttributes
 	}, matcher)
 }
 
-func HaveKubernetesLabels(matcher types.GomegaMatcher) types.GomegaMatcher {
+func HaveKubernetesLabels(matcher gomegatypes.GomegaMatcher) gomegatypes.GomegaMatcher {
 	return gomega.WithTransform(func(fl FlatLog) map[string]any {
 		return fl.KubernetesLabelAttributes
 	}, matcher)
 }
 
-func HaveLogBody(matcher types.GomegaMatcher) types.GomegaMatcher {
+func HaveLogBody(matcher gomegatypes.GomegaMatcher) gomegatypes.GomegaMatcher {
 	return gomega.WithTransform(func(fl FlatLog) string { return fl.LogBody }, matcher)
 }
 
-func HaveDateISO8601Format(matcher types.GomegaMatcher) types.GomegaMatcher {
+func HaveDateISO8601Format(matcher gomegatypes.GomegaMatcher) gomegatypes.GomegaMatcher {
 	return gomega.WithTransform(func(fl FlatLog) bool {
 		date := fl.Attributes["date"]
 		_, err := time.Parse(iso8601, date)

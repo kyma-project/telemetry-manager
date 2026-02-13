@@ -1,10 +1,12 @@
 package shared
 
 import (
+	"fmt"
 	"testing"
 
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
@@ -22,13 +24,16 @@ import (
 
 func TestNamespaceSelector_OTel(t *testing.T) {
 	tests := []struct {
-		label               string
+		name                string
+		labels              []string
 		inputBuilder        func(includeNss, excludeNss []string) telemetryv1beta1.LogPipelineInput
 		logGeneratorBuilder func(ns string) client.Object
-		expectAgent         bool
+		resourceName        types.NamespacedName
+		readinessCheckFunc  func(t *testing.T, name types.NamespacedName)
 	}{
 		{
-			label: suite.LabelLogAgent,
+			name:   suite.LabelLogAgent,
+			labels: []string{suite.LabelLogAgent},
 			inputBuilder: func(includeNss, excludeNss []string) telemetryv1beta1.LogPipelineInput {
 				var opts []testutils.NamespaceSelectorOptions
 				if len(includeNss) > 0 {
@@ -44,10 +49,12 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 			logGeneratorBuilder: func(ns string) client.Object {
 				return stdoutloggen.NewDeployment(ns).K8sObject()
 			},
-			expectAgent: true,
+			resourceName:       kitkyma.LogAgentName,
+			readinessCheckFunc: assert.DaemonSetReady,
 		},
 		{
-			label: suite.LabelLogGateway,
+			name:   suite.LabelLogGateway,
+			labels: []string{suite.LabelLogGateway},
 			inputBuilder: func(includeNss, excludeNss []string) telemetryv1beta1.LogPipelineInput {
 				var opts []testutils.NamespaceSelectorOptions
 				if len(includeNss) > 0 {
@@ -63,15 +70,38 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 			logGeneratorBuilder: func(ns string) client.Object {
 				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeLogs).K8sObject()
 			},
+			resourceName:       kitkyma.LogGatewayName,
+			readinessCheckFunc: assert.DeploymentReady,
+		},
+		{
+			name:   fmt.Sprintf("%s-%s", suite.LabelLogGateway, suite.LabelExperimental),
+			labels: []string{suite.LabelLogGateway, suite.LabelExperimental},
+			inputBuilder: func(includeNss, excludeNss []string) telemetryv1beta1.LogPipelineInput {
+				var opts []testutils.NamespaceSelectorOptions
+				if len(includeNss) > 0 {
+					opts = append(opts, testutils.IncludeNamespaces(includeNss...))
+				}
+
+				if len(excludeNss) > 0 {
+					opts = append(opts, testutils.ExcludeNamespaces(excludeNss...))
+				}
+
+				return testutils.BuildLogPipelineOTLPInput(opts...)
+			},
+			logGeneratorBuilder: func(ns string) client.Object {
+				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeCentralLogs).K8sObject()
+			},
+			resourceName:       kitkyma.TelemetryOTLPGatewayName,
+			readinessCheckFunc: assert.DaemonSetReady,
 		},
 	}
 
 	for _, tc := range tests {
-		t.Run(tc.label, func(t *testing.T) {
-			suite.RegisterTestCase(t, tc.label)
+		t.Run(tc.name, func(t *testing.T) {
+			suite.RegisterTestCase(t, tc.labels...)
 
 			var (
-				uniquePrefix        = unique.Prefix(tc.label)
+				uniquePrefix        = unique.Prefix(tc.name)
 				gen1Ns              = uniquePrefix("gen-1")
 				includePipelineName = uniquePrefix("include")
 				gen2Ns              = uniquePrefix("gen-2")
@@ -126,11 +156,8 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 
 			assert.BackendReachable(t, backend1)
 			assert.BackendReachable(t, backend2)
-			assert.DeploymentReady(t, kitkyma.LogGatewayName)
 
-			if tc.expectAgent {
-				assert.DaemonSetReady(t, kitkyma.LogAgentName)
-			}
+			tc.readinessCheckFunc(t, tc.resourceName)
 
 			assert.OTelLogPipelineHealthy(t, includePipelineName)
 			assert.OTelLogPipelineHealthy(t, excludePipelineName)

@@ -12,6 +12,7 @@ import (
 
 	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -161,7 +162,7 @@ func TestTelemetryDeletionBlocking(t *testing.T) {
 func assertValidatingWebhookConfiguration() {
 	Eventually(func(g Gomega) {
 		var validatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
-		g.Expect(suite.K8sClient.Get(suite.Ctx, client.ObjectKey{Name: kitkyma.ValidatingWebhookName}, &validatingWebhookConfiguration)).Should(Succeed())
+		g.Expect(suite.K8sClient.Get(suite.Ctx, client.ObjectKey{Name: names.ValidatingWebhookConfig}, &validatingWebhookConfiguration)).Should(Succeed())
 
 		g.Expect(validatingWebhookConfiguration.Webhooks).Should(HaveLen(6))
 

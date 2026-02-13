@@ -2,6 +2,7 @@ package telemetrygen
 
 import (
 	"fmt"
+	"strings"
 
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	corev1 "k8s.io/api/core/v1"
@@ -31,16 +32,29 @@ var (
 )
 
 const (
-	SignalTypeTraces  = "traces"
-	SignalTypeMetrics = "metrics"
-	SignalTypeLogs    = "logs"
-	DefaultName       = "telemetrygen"
+	SignalTypeTraces      = "traces"
+	SignalTypeMetrics     = "metrics"
+	SignalTypeLogs        = "logs"
+	DefaultName           = "telemetrygen"
+	SignalTypeCentralLogs = "central-logs"
 )
 
 type Option func(*corev1.PodSpec)
 
 func WithServiceName(serviceName string) Option {
 	return WithResourceAttribute("service.name", serviceName)
+}
+
+func WithServiceNamespace(serviceNamespace string) Option {
+	return WithResourceAttribute("service.namespace", serviceNamespace)
+}
+
+func WithServiceVersion(serviceVersion string) Option {
+	return WithResourceAttribute("service.version", serviceVersion)
+}
+
+func WithServiceInstanceID(serviceInstanceID string) Option {
+	return WithResourceAttribute("service.instance.id", serviceInstanceID)
 }
 
 func WithResourceAttribute(key, value string) Option {
@@ -100,6 +114,19 @@ func WithInterval(duration string) Option {
 		spec.Containers[0].Args = append(spec.Containers[0].Args, fmt.Sprintf("%v", duration))
 	}
 }
+
+// GetVersion extracts and returns the version of the telemetrygen image
+//
+// Example: "v0.143.0" extracted from "ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.143.0"
+func GetVersion() string {
+	parts := strings.Split(testkit.DefaultTelemetryGenImage, ":")
+	if len(parts) < 2 {
+		return ""
+	}
+
+	return parts[len(parts)-1]
+}
+
 func NewPod(namespace string, signalType SignalType, opts ...Option) *kitk8sobjects.Pod {
 	return kitk8sobjects.NewPod(DefaultName, namespace).WithPodSpec(PodSpec(signalType, opts...)).WithLabel("app.kubernetes.io/name", DefaultName)
 }
@@ -109,7 +136,10 @@ func NewDeployment(namespace string, signalType SignalType, opts ...Option) *kit
 }
 
 func PodSpec(signalType SignalType, opts ...Option) corev1.PodSpec {
-	var gatewayPushURL string
+	var (
+		gatewayPushURL string
+		signal         string
+	)
 
 	switch signalType {
 	case SignalTypeTraces:
@@ -118,6 +148,17 @@ func PodSpec(signalType SignalType, opts ...Option) corev1.PodSpec {
 		gatewayPushURL = "telemetry-otlp-metrics.kyma-system:4317"
 	case SignalTypeLogs:
 		gatewayPushURL = "telemetry-otlp-logs.kyma-system:4317"
+	case SignalTypeCentralLogs:
+		gatewayPushURL = "telemetry-otlp-gateway.kyma-system:4317"
+	}
+
+	switch signalType {
+	case SignalTypeTraces:
+		signal = "traces"
+	case SignalTypeMetrics:
+		signal = "metrics"
+	case SignalTypeLogs, SignalTypeCentralLogs:
+		signal = "logs"
 	}
 
 	spec := corev1.PodSpec{
@@ -127,7 +168,7 @@ func PodSpec(signalType SignalType, opts ...Option) corev1.PodSpec {
 				Name:  "telemetrygen",
 				Image: testkit.DefaultTelemetryGenImage,
 				Args: []string{
-					string(signalType),
+					signal,
 					"--rate",
 					"10",
 					"--duration",

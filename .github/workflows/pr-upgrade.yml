@@ -25,12 +25,13 @@ on:
       - "config/**"
       - "!**_test.go"
       - "!docs/**"
-      - "test/e2e/*.go"
+      - "test/e2e/**.go"
       - "test/integration/istio/*.go"
       - ".github/workflows/pr-upgrade.yml"
       - ".github/template/**"
       - ".env"
       - ".k3d-kyma.yaml"
+      - "helm/**"
   workflow_dispatch:
 
 jobs:
@@ -65,11 +66,8 @@ jobs:
         uses: "./.github/template/test-setup"
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          experimental: true
+          experimental: false
           manager-image: ${{ steps.latest-tag.outputs.manager-image }}
-        env:
-          #TODO: Remove after 1.54.0 release
-          MANAGER_IMAGE: ${{ steps.latest-tag.outputs.manager-image }}
 
       - name: Run tests on latest tag
         shell: bash
@@ -97,7 +95,7 @@ jobs:
           # add the tag PR-<number> to the image if it is a PR, if the trigger is merge_group, then add the sha as the tag
           # it is important to use deploy-experimental-no-fips to match the setup done before
           TAG="${{ github.event_name == 'pull_request' && 'PR-' || '' }}${{ github.event.number || github.event.merge_group.head_sha }}"
-          MANAGER_IMAGE=europe-docker.pkg.dev/kyma-project/dev/telemetry-manager:${TAG} make deploy-experimental-no-fips
+          MANAGER_IMAGE=europe-docker.pkg.dev/kyma-project/dev/telemetry-manager:${TAG} make deploy-no-fips
 
       - name: Wait for manager readiness
         shell: bash
@@ -106,6 +104,7 @@ jobs:
       - name: Run tests on current revision
         shell: bash
         run: |
+          sleep 60 # wait for reconciliation to happen before testing 
           go test -v -count=1 -timeout=10m -run="^(TestLogsFluentBitUpgrade|TestLogsUpgrade|TestMetricsUpgrade|TestTracesUpgrade)/after_upgrade$" ./test/e2e/upgrade/...
 
       - name: Cleanup test environment

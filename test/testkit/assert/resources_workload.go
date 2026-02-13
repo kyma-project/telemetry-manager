@@ -314,3 +314,21 @@ func generateContainerError(podName string, containerStatus corev1.ContainerStat
 
 	return fmt.Errorf("pod %s has a container %s that is not running. Additional info: %s", podName, containerStatus.Name, additionalInfo)
 }
+
+// NamespaceReady waits for the namespace to be ready, specifically ensuring the default service account exists.
+// This is important when creating resources in a newly created namespace, as Kubernetes needs time
+// to automatically create the default service account.
+func NamespaceReady(t *testing.T, namespace string) {
+	t.Helper()
+	Eventually(func(g Gomega) {
+		t.Helper()
+
+		var sa corev1.ServiceAccount
+
+		err := suite.K8sClient.Get(t.Context(), types.NamespacedName{
+			Name:      "default",
+			Namespace: namespace,
+		}, &sa)
+		g.Expect(err).NotTo(HaveOccurred(), "default service account should exist in namespace %s", namespace)
+	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+}
