@@ -1,6 +1,7 @@
 package resourcelock
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -94,23 +95,14 @@ func TestIsLockHolder(t *testing.T) {
 }
 
 func TestTryAcquireLock_UnlimitedPipelines(t *testing.T) {
-	owner1 := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "owner1",
-			Namespace: "default",
-		},
-	}
-	owner2 := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "owner2",
-			Namespace: "default",
-		},
-	}
-	owner3 := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "owner3",
-			Namespace: "default",
-		},
+	owners := make([]*corev1.ConfigMap, 6)
+	for i := range owners {
+		owners[i] = &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      fmt.Sprintf("owner%d", i+1),
+				Namespace: "default",
+			},
+		}
 	}
 
 	ctx := t.Context()
@@ -119,21 +111,18 @@ func TestTryAcquireLock_UnlimitedPipelines(t *testing.T) {
 	l := NewLocker(fakeClient, lockName, UnlimitedPipelineCount)
 
 	// All owners should be able to acquire the lock without any errors
-	err := l.TryAcquireLock(ctx, owner1)
-	require.NoError(t, err)
-
-	err = l.TryAcquireLock(ctx, owner2)
-	require.NoError(t, err)
-
-	err = l.TryAcquireLock(ctx, owner3)
-	require.NoError(t, err)
+	for _, owner := range owners {
+		err := l.TryAcquireLock(ctx, owner)
+		require.NoError(t, err)
+	}
 
 	// Verify that the lock ConfigMap was not created since unlimited pipelines bypass locking
 	var lock corev1.ConfigMap
 
-	err = fakeClient.Get(ctx, types.NamespacedName{Name: lockName.Name + "-lock", Namespace: lockName.Namespace}, &lock)
+	err := fakeClient.Get(ctx, types.NamespacedName{Name: lockName.Name + "-lock", Namespace: lockName.Namespace}, &lock)
 	require.NoError(t, err, "Lock ConfigMap should be created when unlimited pipelines is enabled")
-
+	getOwners := lock.GetOwnerReferences()
+	require.Len(t, getOwners, 6)
 }
 
 func Test_new(t *testing.T) {

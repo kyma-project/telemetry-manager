@@ -60,18 +60,13 @@ func (c *Checker) TryAcquireLock(ctx context.Context, owner metav1.Object) error
 		return fmt.Errorf("failed to get lock: %w", err)
 	}
 
-	if c.maxOwners == UnlimitedPipelineCount {
-		logf.FromContext(ctx, "Unlimited Pipeline count configured, skipping lock acquisition")
-		return nil
-	}
-
 	for _, ref := range lock.GetOwnerReferences() {
 		if ref.Name == owner.GetName() && ref.UID == owner.GetUID() {
 			return nil
 		}
 	}
 
-	if c.maxOwners == 0 || len(lock.GetOwnerReferences()) < c.maxOwners {
+	if c.maxOwners == 0 || canAddOwner(ctx, len(lock.GetOwnerReferences()), c.maxOwners) {
 		if err := controllerutil.SetOwnerReference(owner, &lock, c.client.Scheme()); err != nil {
 			return fmt.Errorf("failed to set owner reference: %w", err)
 		}
@@ -120,4 +115,12 @@ func (c *Checker) createLock(ctx context.Context, owner metav1.Object) error {
 	}
 
 	return nil
+}
+
+func canAddOwner(ctx context.Context, numOwners, maxOwners int) bool {
+	if maxOwners == UnlimitedPipelineCount {
+		logf.FromContext(ctx, "Unlimited Pipeline count configured, skipping owner add check")
+		return true
+	}
+	return numOwners < maxOwners
 }
