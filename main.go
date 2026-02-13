@@ -187,12 +187,6 @@ func run() error {
 		return err
 	}
 
-	// TODO: remove after rollout 1.58.0
-	// Clean up old network policies created before migration to prefixed naming
-	if err := cleanupOldManagerNetworkPolicy(mgr.GetClient(), globals); err != nil {
-		setupLog.Error(err, "Failed to cleanup old manager network policy")
-	}
-
 	err = setupControllersAndWebhooks(mgr, globals, envCfg)
 	if err != nil {
 		return err
@@ -475,32 +469,6 @@ func setupMetricPipelineController(globals config.Global, cfg envConfig, mgr man
 
 	if err := metricPipelineController.SetupWithManager(mgr); err != nil {
 		return fmt.Errorf("failed to setup metricpipeline controller: %w", err)
-	}
-
-	return nil
-}
-
-// TODO: remove after rollout 1.58.0
-
-func cleanupOldManagerNetworkPolicy(k8sClient client.Client, globals config.Global) error {
-	ctx := context.Background()
-	managerNetPol := &networkingv1.NetworkPolicy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "telemetry-manager",
-			Namespace: globals.ManagerNamespace(),
-		},
-	}
-
-	setupLog.Info("Cleaning up old manager network policy")
-
-	if err := k8sClient.Delete(ctx, managerNetPol); err != nil {
-		if client.IgnoreNotFound(err) != nil {
-			return fmt.Errorf("failed to delete old manager network policy: %w", err)
-		}
-
-		setupLog.Info("Old manager network policy not found, skipping cleanup")
-	} else {
-		setupLog.Info("Successfully cleaned up old manager network policy", "name", managerNetPol.Name)
 	}
 
 	return nil
