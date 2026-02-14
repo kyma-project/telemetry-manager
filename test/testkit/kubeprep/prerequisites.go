@@ -1,9 +1,7 @@
 package kubeprep
 
 import (
-	"context"
 	"fmt"
-	"log"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -50,48 +48,54 @@ metadata:
 
 // deployTestPrerequisites deploys test fixtures required for e2e tests
 // Must be called AFTER manager deployment (needs Telemetry CRD)
-func deployTestPrerequisites(ctx context.Context, k8sClient client.Client) error {
-	log.Println("Deploying test prerequisites...")
+func deployTestPrerequisites(t TestingT, k8sClient client.Client) error {
+	t.Helper()
+	ctx := t.Context()
+
+	t.Log("Deploying test prerequisites...")
 
 	// Apply telemetry CR (requires Telemetry CRD from manager)
-	log.Println("Applying default Telemetry CR...")
-	if err := applyYAML(ctx, k8sClient, telemetryCRYAML); err != nil {
+	t.Log("Applying default Telemetry CR...")
+	if err := applyYAML(ctx, k8sClient, t, telemetryCRYAML); err != nil {
 		return fmt.Errorf("failed to apply Telemetry CR: %w", err)
 	}
 
 	// Apply network policy
-	log.Println("Applying network policy...")
-	if err := applyYAML(ctx, k8sClient, networkPolicyYAML); err != nil {
+	t.Log("Applying network policy...")
+	if err := applyYAML(ctx, k8sClient, t, networkPolicyYAML); err != nil {
 		return fmt.Errorf("failed to apply network policy: %w", err)
 	}
 
 	// Apply shoot-info ConfigMap
-	log.Println("Applying shoot-info ConfigMap...")
-	if err := applyYAML(ctx, k8sClient, shootInfoConfigMapYAML); err != nil {
+	t.Log("Applying shoot-info ConfigMap...")
+	if err := applyYAML(ctx, k8sClient, t, shootInfoConfigMapYAML); err != nil {
 		return fmt.Errorf("failed to apply shoot-info ConfigMap: %w", err)
 	}
 
-	log.Println("Test prerequisites deployed successfully")
+	t.Log("Test prerequisites deployed successfully")
 	return nil
 }
 
 // cleanupPrerequisites removes test fixtures
-func cleanupPrerequisites(ctx context.Context, k8sClient client.Client) error {
-	log.Println("Cleaning up test prerequisites...")
+func cleanupPrerequisites(t TestingT, k8sClient client.Client) error {
+	t.Helper()
+	ctx := t.Context()
+
+	t.Log("Cleaning up test prerequisites...")
 
 	// Delete in reverse order (best effort)
 	if err := deleteYAML(ctx, k8sClient, shootInfoConfigMapYAML); err != nil {
-		log.Printf("Warning: failed to delete shoot-info ConfigMap: %v", err)
+		t.Logf("Warning: failed to delete shoot-info ConfigMap: %v", err)
 	}
 
 	if err := deleteYAML(ctx, k8sClient, networkPolicyYAML); err != nil {
-		log.Printf("Warning: failed to delete network policy: %v", err)
+		t.Logf("Warning: failed to delete network policy: %v", err)
 	}
 
 	if err := deleteYAML(ctx, k8sClient, telemetryCRYAML); err != nil {
-		log.Printf("Warning: failed to delete Telemetry CR: %v", err)
+		t.Logf("Warning: failed to delete Telemetry CR: %v", err)
 	}
 
-	log.Println("Test prerequisites cleanup complete")
+	t.Log("Test prerequisites cleanup complete")
 	return nil
 }

@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -58,7 +57,9 @@ func loadEnvFile(path string) (map[string]string, error) {
 }
 
 // applyFromURL fetches YAML content from a URL and applies it to the cluster
-func applyFromURL(ctx context.Context, k8sClient client.Client, url string) error {
+func applyFromURL(ctx context.Context, k8sClient client.Client, t TestingT, url string) error {
+	t.Helper()
+
 	resp, err := http.Get(url)
 	if err != nil {
 		return fmt.Errorf("failed to fetch YAML from %s: %w", url, err)
@@ -74,11 +75,15 @@ func applyFromURL(ctx context.Context, k8sClient client.Client, url string) erro
 		return fmt.Errorf("failed to read response body: %w", err)
 	}
 
-	return applyYAML(ctx, k8sClient, string(body))
+	return applyYAML(ctx, k8sClient, t, string(body))
 }
 
 // applyYAML parses YAML content and applies each object to the cluster
-func applyYAML(ctx context.Context, k8sClient client.Client, yamlContent string) error {
+// For resources that already exist, this function will skip them (not update)
+// This is intentional - for manager redeployment, we delete first then recreate
+func applyYAML(ctx context.Context, k8sClient client.Client, t TestingT, yamlContent string) error {
+	t.Helper()
+
 	decoder := yaml.NewYAMLOrJSONDecoder(strings.NewReader(yamlContent), 4096)
 
 	for {
@@ -96,20 +101,18 @@ func applyYAML(ctx context.Context, k8sClient client.Client, yamlContent string)
 			continue
 		}
 
-		// Try to create, if already exists, update
+		// Create the object (skip if already exists)
 		err = k8sClient.Create(ctx, obj)
 		if err != nil {
 			if apierrors.IsAlreadyExists(err) {
-				// Update the existing object
-				err = k8sClient.Update(ctx, obj)
-				if err != nil {
-					return fmt.Errorf("failed to update %s %s/%s: %w",
-						obj.GetKind(), obj.GetNamespace(), obj.GetName(), err)
-				}
-			} else {
-				return fmt.Errorf("failed to create %s %s/%s: %w",
-					obj.GetKind(), obj.GetNamespace(), obj.GetName(), err)
+				// Resource already exists - skip it
+				// This is fine because we delete before redeploying
+				t.Logf("Skipping %s %s/%s (already exists)",
+					obj.GetKind(), obj.GetNamespace(), obj.GetName())
+				continue
 			}
+			return fmt.Errorf("failed to create %s %s/%s: %w",
+				obj.GetKind(), obj.GetNamespace(), obj.GetName(), err)
 		}
 	}
 
@@ -180,7 +183,9 @@ func deleteNamespace(ctx context.Context, k8sClient client.Client, name string) 
 }
 
 // deleteAllResourcesByGVRK deletes all resources of a given GroupVersionResourceKind across all namespaces
-func deleteAllResourcesByGVRK(ctx context.Context, k8sClient client.Client, group, version, resource, kind string) error {
+func deleteAllResourcesByGVRK(ctx context.Context, k8sClient client.Client, t TestingT, group, version, resource, kind string) error {
+	t.Helper()
+
 	list := &unstructured.UnstructuredList{}
 	list.SetGroupVersionKind(schema.GroupVersionKind{
 		Group:   group,
@@ -200,9 +205,9 @@ func deleteAllResourcesByGVRK(ctx context.Context, k8sClient client.Client, grou
 	// Delete each resource
 	for _, item := range list.Items {
 		obj := item.DeepCopy()
-		log.Printf("Deleting %s.%s: %s/%s", resource, group, obj.GetNamespace(), obj.GetName())
+		t.Logf("Deleting %s.%s: %s/%s", resource, group, obj.GetNamespace(), obj.GetName())
 		if err := k8sClient.Delete(ctx, obj); err != nil && !apierrors.IsNotFound(err) {
-			log.Printf("Warning: failed to delete %s.%s %s/%s: %v", resource, group, obj.GetNamespace(), obj.GetName(), err)
+			t.Logf("Warning: failed to delete %s.%s %s/%s: %v", resource, group, obj.GetNamespace(), obj.GetName(), err)
 		}
 	}
 
@@ -232,10 +237,11 @@ func countResourcesByGVRK(ctx context.Context, k8sClient client.Client, group, v
 
 // deleteAllResourcesByGVR deletes all resources of a given GroupVersionResource across all namespaces
 // Deprecated: Use deleteAllResourcesByGVRK instead, which uses the correct Kind
-func deleteAllResourcesByGVR(ctx context.Context, k8sClient client.Client, group, version, resource string) error {
+func deleteAllResourcesByGVR(ctx context.Context, k8sClient client.Client, t TestingT, group, version, resource string) error {
+	t.Helper()
 	// Try to guess the Kind from the resource name (may not work for all cases)
 	kind := strings.TrimSuffix(resource, "s")
-	return deleteAllResourcesByGVRK(ctx, k8sClient, group, version, resource, kind)
+	return deleteAllResourcesByGVRK(ctx, k8sClient, t, group, version, resource, kind)
 }
 
 // countResourcesByGVR counts all resources of a given GroupVersionResource
@@ -329,8 +335,8 @@ func retryWithBackoff(ctx context.Context, maxAttempts int, delay time.Duration,
 	return fmt.Errorf("max attempts (%d) exceeded: %w", maxAttempts, lastErr)
 }
 
-// ensureNamespace creates a namespace if it doesn't exist
-func ensureNamespace(ctx context.Context, k8sClient client.Client, name string, labels map[string]string) error {
+// ensureNamespaceInternal creates a namespace if it doesn't exist (internal implementation)
+func ensureNamespaceInternal(ctx context.Context, k8sClient client.Client, name string, labels map[string]string) error {
 	ns := &corev1.Namespace{}
 	err := k8sClient.Get(ctx, types.NamespacedName{Name: name}, ns)
 	if err == nil {

@@ -18,6 +18,7 @@ type Config struct {
 	CustomLabelsAnnotations bool   // Enable custom labels/annotations
 	SkipManagerDeployment   bool   // For upgrade tests
 	SkipPrerequisites       bool   // For custom test setups
+	NeedsReinstall          bool   // Manager state is unknown, needs reinstallation
 }
 
 // ConfigFromEnv loads cluster preparation configuration from environment variables
@@ -116,4 +117,9 @@ func isLocalImage(image string) bool {
 	}
 
 	return true
+}
+
+// IsLocalImage is a public wrapper for isLocalImage
+func IsLocalImage(image string) bool {
+	return isLocalImage(image)
 }

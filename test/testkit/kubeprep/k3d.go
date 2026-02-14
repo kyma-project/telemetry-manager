@@ -3,14 +3,15 @@ package kubeprep
 import (
 	"context"
 	"fmt"
-	"log"
 	"os/exec"
 	"strings"
 )
 
 // importImageToK3D imports a local Docker image into the k3d cluster
-func importImageToK3D(ctx context.Context, image, clusterName string) error {
-	log.Printf("Importing local image %s into k3d cluster %s...", image, clusterName)
+func importImageToK3D(ctx context.Context, t TestingT, image, clusterName string) error {
+	t.Helper()
+
+	t.Logf("Importing local image %s into k3d cluster %s...", image, clusterName)
 
 	// First check if the image exists in the local Docker runtime
 	checkCmd := exec.CommandContext(ctx, "docker", "image", "inspect", image)
@@ -24,7 +25,7 @@ func importImageToK3D(ctx context.Context, image, clusterName string) error {
 		return fmt.Errorf("failed to import image: %w\noutput: %s", err, output)
 	}
 
-	log.Printf("Successfully imported image to k3d")
+	t.Log("Successfully imported image to k3d")
 	return nil
 }
 

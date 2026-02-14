@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"time"
 
+	appsv1 "k8s.io/api/apps/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -18,7 +19,33 @@ const (
 	telemetryManagerName     = "telemetry-manager"
 	telemetryReleaseName     = "telemetry"
 	telemetryManagerReplicas = 1
+
+	// LabelExperimentalEnabled is used to mark the manager deployment when experimental features are enabled.
+	// This label is used for cluster state detection during test reconfiguration.
+	LabelExperimentalEnabled = "telemetry.kyma-project.io/experimental-enabled"
 )
+
+// addLabelToDeployment adds a label to an existing deployment
+func addLabelToDeployment(ctx context.Context, k8sClient client.Client, t TestingT, name, namespace, labelKey, labelValue string) error {
+	t.Helper()
+
+	deployment := &appsv1.Deployment{}
+	if err := k8sClient.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, deployment); err != nil {
+		return fmt.Errorf("failed to get deployment %s/%s: %w", namespace, name, err)
+	}
+
+	if deployment.Labels == nil {
+		deployment.Labels = make(map[string]string)
+	}
+	deployment.Labels[labelKey] = labelValue
+
+	if err := k8sClient.Update(ctx, deployment); err != nil {
+		return fmt.Errorf("failed to update deployment %s/%s: %w", namespace, name, err)
+	}
+
+	t.Logf("Added label %s=%s to deployment %s/%s", labelKey, labelValue, namespace, name)
+	return nil
+}
 
 // getHelmChartPath returns the absolute path to the helm chart
 func getHelmChartPath() (string, error) {
@@ -54,16 +81,19 @@ func getHelmChartPath() (string, error) {
 }
 
 // deployManager deploys the telemetry manager using helm template
-func deployManager(ctx context.Context, k8sClient client.Client, cfg Config) error {
-	log.Println("Deploying telemetry manager...")
+func deployManager(t TestingT, k8sClient client.Client, cfg Config) error {
+	t.Helper()
+	ctx := t.Context()
+
+	t.Log("Deploying telemetry manager...")
 
 	// Import local image to k3d if needed
 	if cfg.LocalImage {
 		clusterName, err := detectK3DCluster(ctx)
 		if err != nil {
-			log.Printf("Warning: Could not detect k3d cluster: %v", err)
+			t.Logf("Warning: Could not detect k3d cluster: %v", err)
 		} else {
-			if err := importImageToK3D(ctx, cfg.ManagerImage, clusterName); err != nil {
+			if err := importImageToK3D(ctx, t, cfg.ManagerImage, clusterName); err != nil {
 				return fmt.Errorf("failed to import local image: %w", err)
 			}
 		}
@@ -79,7 +109,7 @@ func deployManager(ctx context.Context, k8sClient client.Client, cfg Config) err
 	if err != nil {
 		return fmt.Errorf("failed to locate helm chart: %w", err)
 	}
-	log.Printf("Using helm chart at: %s", helmChartPath)
+	t.Logf("Using helm chart at: %s", helmChartPath)
 
 	// Determine pull policy based on image type
 	pullPolicy := "Always"
@@ -117,7 +147,7 @@ func deployManager(ctx context.Context, k8sClient client.Client, cfg Config) err
 		)
 	}
 
-	log.Printf("Running: helm %v", args)
+	t.Logf("Running: helm %v", args)
 
 	// Run helm template command
 	cmd := exec.CommandContext(ctx, "helm", args...)
@@ -131,17 +161,28 @@ func deployManager(ctx context.Context, k8sClient client.Client, cfg Config) err
 
 	// Apply the generated YAML
 	manifestYAML := stdout.String()
-	if err := applyYAML(ctx, k8sClient, manifestYAML); err != nil {
+	if err := applyYAML(ctx, k8sClient, t, manifestYAML); err != nil {
 		return fmt.Errorf("failed to apply telemetry manager manifest: %w", err)
 	}
 
 	// Wait for telemetry manager deployment to be ready
-	log.Println("Waiting for telemetry manager to be ready...")
+	t.Log("Waiting for telemetry manager to be ready...")
 	if err := waitForManagerReady(ctx, k8sClient); err != nil {
 		return fmt.Errorf("telemetry manager not ready: %w", err)
 	}
 
-	log.Println("Telemetry manager deployed successfully")
+	// Add experimental label to deployment for cluster state detection (test-only marker)
+	// This label is used by DetectClusterState to determine if experimental mode is enabled
+	// We add it via patch because the helm chart doesn't support custom deployment labels
+	experimentalLabelValue := "false"
+	if cfg.EnableExperimental {
+		experimentalLabelValue = "true"
+	}
+	if err := addLabelToDeployment(ctx, k8sClient, t, telemetryManagerName, kymaSystemNamespace, LabelExperimentalEnabled, experimentalLabelValue); err != nil {
+		return fmt.Errorf("failed to add experimental label to deployment: %w", err)
+	}
+
+	t.Log("Telemetry manager deployed successfully")
 	return nil
 }
 
@@ -151,13 +192,16 @@ func waitForManagerReady(ctx context.Context, k8sClient client.Client) error {
 }
 
 // undeployManager removes the telemetry manager deployment
-func undeployManager(ctx context.Context, k8sClient client.Client, cfg Config) error {
-	log.Println("Undeploying telemetry manager...")
+func undeployManager(t TestingT, k8sClient client.Client, cfg Config) error {
+	t.Helper()
+	ctx := t.Context()
+
+	t.Log("Undeploying telemetry manager...")
 
 	// Get helm chart path
 	helmChartPath, err := getHelmChartPath()
 	if err != nil {
-		log.Printf("Warning: failed to locate helm chart: %v", err)
+		t.Logf("Warning: failed to locate helm chart: %v", err)
 		return nil // Best effort
 	}
 
@@ -195,17 +239,17 @@ func undeployManager(ctx context.Context, k8sClient client.Client, cfg Config) e
 	cmd.Stderr = &stderr
 
 	if err := cmd.Run(); err != nil {
-		log.Printf("Warning: helm template failed during undeploy: %v\nstderr: %s", err, stderr.String())
+		t.Logf("Warning: helm template failed during undeploy: %v\nstderr: %s", err, stderr.String())
 		return nil // Best effort
 	}
 
 	// Delete the generated YAML
 	manifestYAML := stdout.String()
 	if err := deleteYAML(ctx, k8sClient, manifestYAML); err != nil {
-		log.Printf("Warning: failed to delete telemetry manager manifest: %v", err)
+		t.Logf("Warning: failed to delete telemetry manager manifest: %v", err)
 		return nil // Best effort
 	}
 
-	log.Println("Telemetry manager undeployed")
+	t.Log("Telemetry manager undeployed")
 	return nil
 }
