@@ -21,6 +21,12 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 )
 
+const (
+	// DefaultLocalImage is used when MANAGER_IMAGE is not set.
+	// This allows local development without setting environment variables.
+	DefaultLocalImage = "telemetry-manager:latest"
+)
+
 var (
 	Ctx         context.Context
 	K8sClient   client.Client
@@ -35,11 +41,24 @@ var (
 	CurrentClusterState *kubeprep.Config
 )
 
-var labelFilterFlag string
+var (
+	labelFilterFlag  string
+	doNotExecuteFlag bool
+	printLabelsFlag  bool
+)
 
-// init registers the -labels flag with the flag package.
+// Environment-affecting labels - these determine cluster setup
+var environmentLabels = map[string]bool{
+	LabelIstio:        true,
+	LabelExperimental: true,
+	LabelNoFIPS:       true,
+}
+
+// init registers test flags with the flag package.
 func init() {
 	flag.StringVar(&labelFilterFlag, "labels", "", "Label filter expression (e.g., 'log-agent and istio')")
+	flag.BoolVar(&doNotExecuteFlag, "do-not-execute", false, "Dry-run mode: print test info without executing")
+	flag.BoolVar(&printLabelsFlag, "print-labels", false, "Print test labels in structured format (pipe-separated)")
 }
 
 // BeforeSuiteFunc is designed to return an error instead of relying on Gomega matchers.
@@ -160,10 +179,17 @@ const (
 	// LabelIstio defines the label for Istio Integration tests
 	LabelIstio = "istio"
 
+	// LabelNoFIPS defines the label for tests that should NOT run in FIPS mode.
+	// By default, all tests run with FIPS enabled. Use this label to disable FIPS
+	// for specific tests (e.g., fluent-bit tests which don't support FIPS).
+	LabelNoFIPS = "no-fips"
+
 	// LabelGardener defines the label for Gardener Integration tests
 	LabelGardener = "gardener"
 
-	// LabelUpgrade defines the label for Upgrade tests, which preserve K8s objects between test runs.
+	// LabelUpgrade defines the label for Upgrade tests. These tests start with an older
+	// version of the telemetry module (deployed from UPGRADE_FROM_CHART) and then upgrade
+	// to the current version mid-test using UpgradeToTargetVersion().
 	LabelUpgrade = "upgrade"
 
 	// LabelOAuth2 defines the label for OAuth2 related tests.
@@ -184,7 +210,12 @@ func DebugObjectsEnabled() bool {
 	return debugEnv == "1" || strings.ToLower(debugEnv) == "true"
 }
 
-func RegisterTestCase(t *testing.T, labels ...string) {
+// SetupTest prepares the test environment based on test labels.
+// It registers Gomega matchers, evaluates label filters, and ensures the cluster
+// is configured correctly for the test (e.g., Istio installed, experimental features enabled).
+//
+// This function should be called at the beginning of every test function.
+func SetupTest(t *testing.T, labels ...string) {
 	RegisterTestingT(t)
 
 	labelSet := toSet(labels)
@@ -198,6 +229,7 @@ func RegisterTestCase(t *testing.T, labels ...string) {
 	// This avoids unnecessary cluster reconfiguration for tests that won't run
 	labelFilterExpr := findLabelFilterExpression()
 	doNotExecute := findDoNotExecuteFlag()
+	printLabels := findPrintLabelsFlag()
 
 	// Determine if this test should run based on label filter
 	shouldRun := true
@@ -205,6 +237,16 @@ func RegisterTestCase(t *testing.T, labels ...string) {
 		var err error
 		shouldRun, err = evaluateLabelExpression(labels, labelFilterExpr)
 		require.NoError(t, err)
+	}
+
+	// Handle print-labels mode - print structured label info and skip
+	if printLabels {
+		// Only print if test would run (respects label filter)
+		if shouldRun {
+			printLabelsInfo(t, labels)
+		}
+		t.Skip()
+		return
 	}
 
 	// Handle dry-run mode
@@ -235,14 +277,97 @@ func RegisterTestCase(t *testing.T, labels ...string) {
 	require.NoError(t, ensureClusterState(t, requiredConfig))
 }
 
+// RegisterTestCase is an alias for SetupTest for backward compatibility.
+// Deprecated: Use SetupTest instead.
+func RegisterTestCase(t *testing.T, labels ...string) {
+	SetupTest(t, labels...)
+}
+
 func findDoNotExecuteFlag() bool {
-	for _, arg := range os.Args {
-		if arg == "-do-not-execute" || arg == "--do-not-execute" {
+	// Ensure flags are parsed
+	if !flag.Parsed() {
+		flag.Parse()
+	}
+	return doNotExecuteFlag
+}
+
+func findPrintLabelsFlag() bool {
+	// Ensure flags are parsed
+	if !flag.Parsed() {
+		flag.Parse()
+	}
+	return printLabelsFlag
+}
+
+// classifyLabels separates labels into environment-affecting and other labels
+func classifyLabels(labels []string) (envLabels, otherLabels []string) {
+	for _, label := range labels {
+		if environmentLabels[label] {
+			envLabels = append(envLabels, label)
+		} else {
+			otherLabels = append(otherLabels, label)
+		}
+	}
+	return envLabels, otherLabels
+}
+
+// hasLabel checks if a specific label is present in the labels slice
+func hasLabel(labels []string, target string) bool {
+	for _, label := range labels {
+		if label == target {
 			return true
 		}
 	}
-
 	return false
+}
+
+// printLabelsInfo prints test labels in a structured pipe-separated format
+// Format: testcase | istio | experimental | fips | env_labels | other_labels
+func printLabelsInfo(t *testing.T, labels []string) {
+	t.Helper()
+	testName := t.Name()
+
+	if testName == "" {
+		if pc, _, _, ok := runtime.Caller(2); ok {
+			if fn := runtime.FuncForPC(pc); fn != nil {
+				testName = fn.Name()
+				if parts := strings.Split(testName, "."); len(parts) > 0 {
+					testName = parts[len(parts)-1]
+				}
+			}
+		}
+		if testName == "" {
+			testName = "<unknown>"
+		}
+	}
+
+	// Determine yes/no for environment labels
+	istio := "no"
+	if hasLabel(labels, LabelIstio) {
+		istio = "yes"
+	}
+
+	experimental := "no"
+	if hasLabel(labels, LabelExperimental) {
+		experimental = "yes"
+	}
+
+	fips := "yes"
+	if hasLabel(labels, LabelNoFIPS) {
+		fips = "no"
+	}
+
+	// Classify labels
+	envLabels, otherLabels := classifyLabels(labels)
+
+	// Print in pipe-separated format
+	fmt.Printf("%s | %s | %s | %s | %s | %s\n", //nolint:forbidigo // structured output for tooling
+		testName,
+		istio,
+		experimental,
+		fips,
+		strings.Join(envLabels, ","),
+		strings.Join(otherLabels, ","))
 }
 
 func printTestInfo(t *testing.T, labels []string, action string) {
@@ -293,22 +418,23 @@ func toSet(labels []string) map[string]struct{} {
 // ensureClusterState reconfigures cluster if current state doesn't match required state.
 // This function is called for every test to ensure the cluster is in the correct state
 // before the test runs. It always detects the current cluster state to handle drift.
+//
+// For upgrade tests (IsUpgradeTest=true with UpgradeFromChart set), this function
+// deploys from the remote helm chart instead of the local one.
 func ensureClusterState(t *testing.T, requiredConfig kubeprep.Config) error {
+	// Special handling for upgrade tests with UPGRADE_FROM_CHART
+	if requiredConfig.IsUpgradeTest && requiredConfig.UpgradeFromChart != "" {
+		return ensureUpgradeTestState(t, requiredConfig)
+	}
+
 	// Always detect current cluster state to handle drift between tests
-	// This is important because the actual cluster state might differ from our in-memory tracking
-	// (e.g., if a previous test run crashed or was interrupted)
-	t.Log("Detecting current cluster state...")
 	detectedState, err := kubeprep.DetectClusterState(t, K8sClient)
 	if err != nil {
 		return fmt.Errorf("failed to detect cluster state: %w", err)
 	}
 	CurrentClusterState = detectedState
 
-	t.Logf("Detected state: NeedsReinstall=%t, EnableExperimental=%t, SkipManagerDeployment=%t",
-		CurrentClusterState.NeedsReinstall, CurrentClusterState.EnableExperimental, CurrentClusterState.SkipManagerDeployment)
-
 	// Copy immutable fields from current state (these don't change during reconfigurations)
-	// ManagerImage and LocalImage are preserved from the current state
 	requiredConfig.ManagerImage = CurrentClusterState.ManagerImage
 	requiredConfig.LocalImage = CurrentClusterState.LocalImage
 
@@ -316,41 +442,111 @@ func ensureClusterState(t *testing.T, requiredConfig kubeprep.Config) error {
 	if requiredConfig.ManagerImage == "" {
 		managerImage := os.Getenv("MANAGER_IMAGE")
 		if managerImage == "" {
-			managerImage = "telemetry-manager:latest"
+			managerImage = DefaultLocalImage
 		}
 		requiredConfig.ManagerImage = managerImage
 		requiredConfig.LocalImage = kubeprep.IsLocalImage(managerImage)
 
-		// Update current state with the image info
 		CurrentClusterState.ManagerImage = managerImage
 		CurrentClusterState.LocalImage = requiredConfig.LocalImage
 	}
 
-	t.Logf("Required state: NeedsReinstall=%t, EnableExperimental=%t, SkipManagerDeployment=%t",
-		requiredConfig.NeedsReinstall, requiredConfig.EnableExperimental, requiredConfig.SkipManagerDeployment)
-
 	// Check if reconfiguration is needed
 	if configsEqual(*CurrentClusterState, requiredConfig) {
-		t.Log("Cluster state matches requirements, no reconfiguration needed")
 		return nil
 	}
 
-	t.Log("Cluster state mismatch, reconfiguring...")
-	t.Logf("  Current: InstallIstio=%t, OperateInFIPSMode=%t, EnableExperimental=%t, CustomLabelsAnnotations=%t, NeedsReinstall=%t",
-		CurrentClusterState.InstallIstio, CurrentClusterState.OperateInFIPSMode,
-		CurrentClusterState.EnableExperimental, CurrentClusterState.CustomLabelsAnnotations, CurrentClusterState.NeedsReinstall)
-	t.Logf("  Required: InstallIstio=%t, OperateInFIPSMode=%t, EnableExperimental=%t, CustomLabelsAnnotations=%t, NeedsReinstall=%t",
-		requiredConfig.InstallIstio, requiredConfig.OperateInFIPSMode,
-		requiredConfig.EnableExperimental, requiredConfig.CustomLabelsAnnotations, requiredConfig.NeedsReinstall)
+	t.Logf("Reconfiguring cluster:\ncurrent=%+v\nrequired=%+v", *CurrentClusterState, requiredConfig)
 
-	// Apply reconfiguration using t directly (implements kubeprep.TestingT)
 	if err := kubeprep.ReconfigureCluster(t, K8sClient, *CurrentClusterState, requiredConfig); err != nil {
 		return fmt.Errorf("reconfiguration failed: %w", err)
 	}
 
-	// Update current state to reflect the reconfiguration
 	*CurrentClusterState = requiredConfig
-	t.Log("Cluster reconfigured successfully")
+	return nil
+}
+
+// ensureUpgradeTestState handles cluster setup for upgrade tests.
+// It deploys the manager from a remote helm chart (the old version) when UPGRADE_FROM_CHART is set.
+func ensureUpgradeTestState(t *testing.T, requiredConfig kubeprep.Config) error {
+	t.Logf("Setting up upgrade test from chart: %s", requiredConfig.UpgradeFromChart)
+
+	// Detect current state to see if manager is already deployed
+	detectedState, err := kubeprep.DetectClusterState(t, K8sClient)
+	if err != nil {
+		return fmt.Errorf("failed to detect cluster state: %w", err)
+	}
+
+	// If manager is already deployed, we need to undeploy it first
+	// (upgrade tests need a clean slate with the old version)
+	// SkipManagerDeployment=false means manager IS deployed
+	if !detectedState.SkipManagerDeployment {
+		t.Log("Manager already deployed, undeploying before upgrade test setup...")
+		if err := kubeprep.ReconfigureCluster(t, K8sClient, *detectedState, kubeprep.Config{
+			SkipManagerDeployment: true,
+			SkipPrerequisites:     true,
+			NeedsReinstall:        true,
+		}); err != nil {
+			return fmt.Errorf("failed to undeploy existing manager: %w", err)
+		}
+	}
+
+	// Deploy from the remote chart (old version) with the required settings
+	if err := kubeprep.DeployManagerFromChart(t, K8sClient, requiredConfig.UpgradeFromChart, requiredConfig); err != nil {
+		return fmt.Errorf("failed to deploy manager from chart: %w", err)
+	}
+
+	// Deploy test prerequisites
+	if err := kubeprep.DeployTestPrerequisitesPublic(t, K8sClient); err != nil {
+		return fmt.Errorf("failed to deploy test prerequisites: %w", err)
+	}
+
+	// Update current state to reflect what we deployed
+	// Store the config so UpgradeToTargetVersion can use the same settings
+	CurrentClusterState = &kubeprep.Config{
+		IsUpgradeTest:           true,
+		UpgradeFromChart:        requiredConfig.UpgradeFromChart,
+		OperateInFIPSMode:       requiredConfig.OperateInFIPSMode,
+		EnableExperimental:      requiredConfig.EnableExperimental,
+		CustomLabelsAnnotations: requiredConfig.CustomLabelsAnnotations,
+	}
+
+	return nil
+}
+
+// UpgradeToTargetVersion upgrades the manager from the old version (deployed via UPGRADE_FROM_CHART)
+// to the target version (specified by MANAGER_IMAGE, or local image if not set).
+// This function is called mid-test in upgrade tests after validating the old version works.
+//
+// It uses the same FIPS, experimental, and custom labels/annotations settings that were
+// used for the old version to ensure consistency during upgrade.
+func UpgradeToTargetVersion(t *testing.T) error {
+	targetImage := os.Getenv("MANAGER_IMAGE")
+	if targetImage == "" {
+		// Default to local image when MANAGER_IMAGE is not set
+		targetImage = DefaultLocalImage
+	}
+
+	// Get the config settings from the current state (set during old version deployment)
+	cfg := kubeprep.Config{}
+	if CurrentClusterState != nil {
+		cfg = *CurrentClusterState
+	}
+
+	t.Logf("Upgrading manager to target version: %s (fips=%t, experimental=%t)",
+		targetImage, cfg.OperateInFIPSMode, cfg.EnableExperimental)
+
+	if err := kubeprep.UpgradeManagerInPlace(t, K8sClient, targetImage, cfg); err != nil {
+		return fmt.Errorf("failed to upgrade manager: %w", err)
+	}
+
+	// Update current state
+	if CurrentClusterState != nil {
+		CurrentClusterState.ManagerImage = targetImage
+		CurrentClusterState.LocalImage = kubeprep.IsLocalImage(targetImage)
+		CurrentClusterState.IsUpgradeTest = false // No longer in "old version" state
+		CurrentClusterState.UpgradeFromChart = ""
+	}
 
 	return nil
 }

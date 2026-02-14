@@ -71,7 +71,7 @@ func TestMTLSInvalidCA_OTel(t *testing.T) {
 }
 
 func TestMTLSInvalidCA_FluentBit(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelFluentBit)
+	suite.RegisterTestCase(t, suite.LabelFluentBit, suite.LabelNoFIPS)
 
 	var (
 		uniquePrefix = unique.Prefix()

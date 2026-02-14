@@ -10,44 +10,127 @@ import (
 	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
-	kymaSystemNamespace      = "kyma-system"
-	telemetryManagerName     = "telemetry-manager"
-	telemetryReleaseName     = "telemetry"
-	telemetryManagerReplicas = 1
+	kymaSystemNamespace  = "kyma-system"
+	telemetryReleaseName = "telemetry"
 
-	// LabelExperimentalEnabled is used to mark the manager deployment when experimental features are enabled.
-	// This label is used for cluster state detection during test reconfiguration.
+	// telemetryManagerName is the name of the telemetry manager deployment
+	telemetryManagerName = "telemetry-manager"
+
+	// LabelExperimentalEnabled is used to detect if experimental features are enabled.
+	// This custom label is added during deployment to allow reliable detection
+	// regardless of how experimental features are implemented in the manager.
 	LabelExperimentalEnabled = "telemetry.kyma-project.io/experimental-enabled"
+
+	// reconcileDelay is the time to wait after upgrade for the manager to reconcile resources
+	reconcileDelay = 30 * time.Second
 )
 
-// addLabelToDeployment adds a label to an existing deployment
-func addLabelToDeployment(ctx context.Context, k8sClient client.Client, t TestingT, name, namespace, labelKey, labelValue string) error {
-	t.Helper()
-
+// labelDeployment adds a label to the manager deployment for state detection
+func labelDeployment(ctx context.Context, k8sClient client.Client, key, value string) error {
 	deployment := &appsv1.Deployment{}
-	if err := k8sClient.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, deployment); err != nil {
-		return fmt.Errorf("failed to get deployment %s/%s: %w", namespace, name, err)
+	if err := k8sClient.Get(ctx, types.NamespacedName{
+		Name:      telemetryManagerName,
+		Namespace: kymaSystemNamespace,
+	}, deployment); err != nil {
+		return fmt.Errorf("failed to get deployment: %w", err)
 	}
 
 	if deployment.Labels == nil {
 		deployment.Labels = make(map[string]string)
 	}
-	deployment.Labels[labelKey] = labelValue
+	deployment.Labels[key] = value
 
 	if err := k8sClient.Update(ctx, deployment); err != nil {
-		return fmt.Errorf("failed to update deployment %s/%s: %w", namespace, name, err)
+		return fmt.Errorf("failed to update deployment labels: %w", err)
 	}
 
-	t.Logf("Added label %s=%s to deployment %s/%s", labelKey, labelValue, namespace, name)
 	return nil
 }
 
-// getHelmChartPath returns the absolute path to the helm chart
+// waitForRolloutComplete waits until the deployment rollout is complete,
+// meaning only the new replica is running and no old replicas remain.
+func waitForRolloutComplete(ctx context.Context, k8sClient client.Client, t TestingT, timeout time.Duration) error {
+	deadline := time.Now().Add(timeout)
+
+	for time.Now().Before(deadline) {
+		deployment := &appsv1.Deployment{}
+		if err := k8sClient.Get(ctx, types.NamespacedName{
+			Name:      telemetryManagerName,
+			Namespace: kymaSystemNamespace,
+		}, deployment); err != nil {
+			return fmt.Errorf("failed to get deployment: %w", err)
+		}
+
+		// Check rollout status:
+		// - UpdatedReplicas equals desired replicas (new pods created)
+		// - ReadyReplicas equals desired replicas (all pods ready)
+		// - AvailableReplicas equals desired replicas (all pods available)
+		// - No old replicas remaining (Replicas == UpdatedReplicas)
+		desired := int32(1)
+		if deployment.Spec.Replicas != nil {
+			desired = *deployment.Spec.Replicas
+		}
+
+		if deployment.Status.UpdatedReplicas == desired &&
+			deployment.Status.ReadyReplicas == desired &&
+			deployment.Status.AvailableReplicas == desired &&
+			deployment.Status.Replicas == desired {
+			t.Log("Deployment rollout complete")
+			return nil
+		}
+
+		t.Logf("Waiting for rollout: updated=%d, ready=%d, available=%d, total=%d (desired=%d)",
+			deployment.Status.UpdatedReplicas,
+			deployment.Status.ReadyReplicas,
+			deployment.Status.AvailableReplicas,
+			deployment.Status.Replicas,
+			desired)
+
+		time.Sleep(5 * time.Second)
+	}
+
+	return fmt.Errorf("timeout waiting for deployment rollout to complete")
+}
+
+// waitForSinglePod waits until exactly one pod with the given label is running
+func waitForSinglePod(ctx context.Context, k8sClient client.Client, t TestingT, timeout time.Duration) error {
+	deadline := time.Now().Add(timeout)
+
+	for time.Now().Before(deadline) {
+		pods := &corev1.PodList{}
+		if err := k8sClient.List(ctx, pods,
+			client.InNamespace(kymaSystemNamespace),
+			client.MatchingLabels{"control-plane": "telemetry-manager"},
+		); err != nil {
+			return fmt.Errorf("failed to list pods: %w", err)
+		}
+
+		runningCount := 0
+		for _, pod := range pods.Items {
+			if pod.Status.Phase == corev1.PodRunning && pod.DeletionTimestamp == nil {
+				runningCount++
+			}
+		}
+
+		if runningCount == 1 {
+			t.Log("Single manager pod running")
+			return nil
+		}
+
+		t.Logf("Waiting for single pod: %d running pods found", runningCount)
+		time.Sleep(5 * time.Second)
+	}
+
+	return fmt.Errorf("timeout waiting for single manager pod")
+}
+
+// getHelmChartPath returns the absolute path to the local helm chart
 func getHelmChartPath() (string, error) {
 	// Try to find go.mod to determine project root
 	cwd, err := os.Getwd()
@@ -80,21 +163,17 @@ func getHelmChartPath() (string, error) {
 	return "", fmt.Errorf("could not find project root (go.mod)")
 }
 
-// deployManager deploys the telemetry manager using helm template
-func deployManager(t TestingT, k8sClient client.Client, cfg Config) error {
-	t.Helper()
+// deployManagerFromChartSource deploys the telemetry manager from a helm chart using helm upgrade --install.
+// The chartSource can be either a local file path or a remote URL.
+// If imageOverride is non-empty, it overrides the image in the chart.
+func deployManagerFromChartSource(t TestingT, k8sClient client.Client, chartSource string, imageOverride string, cfg Config) error {
 	ctx := t.Context()
 
-	t.Log("Deploying telemetry manager...")
-
 	// Import local image to k3d if needed
-	if cfg.LocalImage {
-		clusterName, err := detectK3DCluster(ctx)
-		if err != nil {
-			t.Logf("Warning: Could not detect k3d cluster: %v", err)
-		} else {
-			if err := importImageToK3D(ctx, t, cfg.ManagerImage, clusterName); err != nil {
-				return fmt.Errorf("failed to import local image: %w", err)
+	if imageOverride != "" && IsLocalImage(imageOverride) {
+		if clusterName, err := detectK3DCluster(ctx); err == nil {
+			if err := importImageToK3D(ctx, t, imageOverride, clusterName); err != nil {
+				t.Logf("Warning: failed to import image to k3d: %v", err)
 			}
 		}
 	}
@@ -104,37 +183,30 @@ func deployManager(t TestingT, k8sClient client.Client, cfg Config) error {
 		return fmt.Errorf("failed to ensure kyma-system namespace: %w", err)
 	}
 
-	// Get helm chart path
-	helmChartPath, err := getHelmChartPath()
-	if err != nil {
-		return fmt.Errorf("failed to locate helm chart: %w", err)
-	}
-	t.Logf("Using helm chart at: %s", helmChartPath)
-
-	// Determine pull policy based on image type
-	pullPolicy := "Always"
-	if cfg.LocalImage {
-		pullPolicy = "IfNotPresent"
-	}
-
-	// Build helm template command
-	// NOTE: The helm chart expects the full image (including tag) in the repository field
-	// The deployment template uses: image: {{ .Values.manager.container.image.repository }}
-	//
-	// IMPORTANT: Set nameOverride=telemetry to match the GitHub workflow deployment.
-	// This ensures the fullname template resolves to "telemetry" instead of "telemetry-telemetry-manager".
-	// The fullname is used for PriorityClass, webhook configurations, and other resource names.
+	// Build helm upgrade --install command
 	args := []string{
-		"template",
+		"upgrade", "--install",
 		telemetryReleaseName,
-		helmChartPath,
+		chartSource,
 		"--namespace", kymaSystemNamespace,
 		"--set", fmt.Sprintf("experimental.enabled=%t", cfg.EnableExperimental),
 		"--set", "default.enabled=true",
 		"--set", "nameOverride=telemetry",
-		"--set", fmt.Sprintf("manager.container.image.repository=%s", cfg.ManagerImage),
-		"--set", fmt.Sprintf("manager.container.image.pullPolicy=%s", pullPolicy),
 		"--set", fmt.Sprintf("manager.container.env.operateInFipsMode=%t", cfg.OperateInFIPSMode),
+		"--wait",
+		"--timeout", "5m",
+	}
+
+	// Override image if specified
+	if imageOverride != "" {
+		pullPolicy := "Always"
+		if IsLocalImage(imageOverride) {
+			pullPolicy = "IfNotPresent"
+		}
+		args = append(args,
+			"--set", fmt.Sprintf("manager.container.image.repository=%s", imageOverride),
+			"--set", fmt.Sprintf("manager.container.image.pullPolicy=%s", pullPolicy),
+		)
 	}
 
 	// Add custom labels/annotations if enabled
@@ -147,109 +219,217 @@ func deployManager(t TestingT, k8sClient client.Client, cfg Config) error {
 		)
 	}
 
+	// Run helm upgrade --install command
 	t.Logf("Running: helm %v", args)
-
-	// Run helm template command
 	cmd := exec.CommandContext(ctx, "helm", args...)
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("helm template failed: %w\nstderr: %s", err, stderr.String())
+		return fmt.Errorf("helm upgrade --install failed: %w\nstderr: %s", err, stderr.String())
 	}
 
-	// Apply the generated YAML
-	manifestYAML := stdout.String()
-	if err := applyYAML(ctx, k8sClient, t, manifestYAML); err != nil {
-		return fmt.Errorf("failed to apply telemetry manager manifest: %w", err)
-	}
-
-	// Wait for telemetry manager deployment to be ready
-	t.Log("Waiting for telemetry manager to be ready...")
-	if err := waitForManagerReady(ctx, k8sClient); err != nil {
-		return fmt.Errorf("telemetry manager not ready: %w", err)
-	}
-
-	// Add experimental label to deployment for cluster state detection (test-only marker)
-	// This label is used by DetectClusterState to determine if experimental mode is enabled
-	// We add it via patch because the helm chart doesn't support custom deployment labels
-	experimentalLabelValue := "false"
+	// Add experimental label for cluster state detection
+	experimentalValue := "false"
 	if cfg.EnableExperimental {
-		experimentalLabelValue = "true"
+		experimentalValue = "true"
 	}
-	if err := addLabelToDeployment(ctx, k8sClient, t, telemetryManagerName, kymaSystemNamespace, LabelExperimentalEnabled, experimentalLabelValue); err != nil {
-		return fmt.Errorf("failed to add experimental label to deployment: %w", err)
+	if err := labelDeployment(ctx, k8sClient, LabelExperimentalEnabled, experimentalValue); err != nil {
+		return fmt.Errorf("failed to label deployment: %w", err)
 	}
 
-	t.Log("Telemetry manager deployed successfully")
 	return nil
 }
 
-// waitForManagerReady waits for the telemetry manager deployment to be ready
-func waitForManagerReady(ctx context.Context, k8sClient client.Client) error {
-	return waitForDeployment(ctx, k8sClient, telemetryManagerName, kymaSystemNamespace, 5*time.Minute)
+// deployManager deploys the telemetry manager from the local helm chart
+func deployManager(t TestingT, k8sClient client.Client, cfg Config) error {
+	t.Log("Deploying telemetry manager...")
+
+	helmChartPath, err := getHelmChartPath()
+	if err != nil {
+		return fmt.Errorf("failed to locate helm chart: %w", err)
+	}
+
+	if err := deployManagerFromChartSource(t, k8sClient, helmChartPath, cfg.ManagerImage, cfg); err != nil {
+		return err
+	}
+
+	t.Log("Telemetry manager deployed")
+	return nil
 }
 
-// undeployManager removes the telemetry manager deployment
+// undeployManager removes the telemetry manager following the proper cleanup order:
+// 1. Delete all pipeline resources (LogPipeline, TracePipeline, MetricPipeline)
+// 2. Delete the Telemetry operator CR
+// 3. Wait for resources to be deleted
+// 4. Uninstall the helm chart
 func undeployManager(t TestingT, k8sClient client.Client, cfg Config) error {
-	t.Helper()
 	ctx := t.Context()
 
 	t.Log("Undeploying telemetry manager...")
 
-	// Get helm chart path
-	helmChartPath, err := getHelmChartPath()
-	if err != nil {
-		t.Logf("Warning: failed to locate helm chart: %v", err)
-		return nil // Best effort
-	}
+	// Step 1: Delete all pipeline resources
+	t.Log("Deleting all pipeline resources...")
+	_ = deleteTelemetryPipelines(ctx, k8sClient)
 
-	// Build helm template command (same as deploy)
-	// NOTE: The helm chart expects the full image (including tag) in the repository field
-	// The deployment template uses: image: {{ .Values.manager.container.image.repository }}
-	//
-	// IMPORTANT: Set nameOverride=telemetry to match the GitHub workflow deployment.
+	// Wait for pipelines to be deleted
+	_ = waitForPipelinesDeletion(ctx, k8sClient, t)
+
+	// Step 2: Delete the Telemetry CR
+	t.Log("Deleting Telemetry CR...")
+	_ = deleteTelemetryCR(ctx, k8sClient)
+
+	// Wait for Telemetry CR to be deleted
+	_ = waitForTelemetryCRDeletion(ctx, k8sClient, t)
+
+	// Step 3: Uninstall the helm chart
+	t.Log("Uninstalling helm release...")
 	args := []string{
-		"template",
+		"uninstall",
 		telemetryReleaseName,
-		helmChartPath,
 		"--namespace", kymaSystemNamespace,
-		"--set", fmt.Sprintf("experimental.enabled=%t", cfg.EnableExperimental),
-		"--set", "default.enabled=true",
-		"--set", "nameOverride=telemetry",
-		"--set", fmt.Sprintf("manager.container.image.repository=%s", cfg.ManagerImage),
-		"--set", "manager.container.image.pullPolicy=Always",
-		"--set", fmt.Sprintf("manager.container.env.operateInFipsMode=%t", cfg.OperateInFIPSMode),
+		"--wait",
+		"--timeout", "2m",
 	}
 
-	if cfg.CustomLabelsAnnotations {
-		args = append(args,
-			"--set", "manager.podAnnotations.sidecar\\.istio\\.io/inject=false",
-			"--set", "manager.podLabels.custom-pod-label=custom-pod-label-value",
-			"--set", "manager.labels.custom-label=custom-label-value",
-			"--set", "manager.annotations.custom-annotation=custom-annotation-value",
-		)
-	}
-
-	// Run helm template command
 	cmd := exec.CommandContext(ctx, "helm", args...)
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
+	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 
 	if err := cmd.Run(); err != nil {
-		t.Logf("Warning: helm template failed during undeploy: %v\nstderr: %s", err, stderr.String())
-		return nil // Best effort
-	}
-
-	// Delete the generated YAML
-	manifestYAML := stdout.String()
-	if err := deleteYAML(ctx, k8sClient, manifestYAML); err != nil {
-		t.Logf("Warning: failed to delete telemetry manager manifest: %v", err)
-		return nil // Best effort
+		// Ignore errors - release might not exist
+		t.Logf("Warning: helm uninstall failed (release may not exist): %v", err)
 	}
 
 	t.Log("Telemetry manager undeployed")
+	return nil
+}
+
+// deleteTelemetryPipelines deletes all LogPipeline, TracePipeline, and MetricPipeline resources
+func deleteTelemetryPipelines(ctx context.Context, k8sClient client.Client) error {
+	// Delete LogPipelines
+	_ = deleteAllResourcesByGVRK(ctx, k8sClient, "telemetry.kyma-project.io", "v1alpha1", "logpipelines", "LogPipeline")
+
+	// Delete TracePipelines
+	_ = deleteAllResourcesByGVRK(ctx, k8sClient, "telemetry.kyma-project.io", "v1alpha1", "tracepipelines", "TracePipeline")
+
+	// Delete MetricPipelines
+	_ = deleteAllResourcesByGVRK(ctx, k8sClient, "telemetry.kyma-project.io", "v1alpha1", "metricpipelines", "MetricPipeline")
+
+	return nil
+}
+
+// deleteTelemetryCR deletes the Telemetry operator CR
+func deleteTelemetryCR(ctx context.Context, k8sClient client.Client) error {
+	return deleteAllResourcesByGVRK(ctx, k8sClient, "operator.kyma-project.io", "v1beta1", "telemetries", "Telemetry")
+}
+
+// waitForPipelinesDeletion waits for all pipeline resources to be deleted
+func waitForPipelinesDeletion(ctx context.Context, k8sClient client.Client, t TestingT) error {
+	maxAttempts := 30
+	delay := 2 * time.Second
+
+	for attempt := 1; attempt <= maxAttempts; attempt++ {
+		totalCount := 0
+
+		// Count LogPipelines
+		count, _ := countResourcesByGVRK(ctx, k8sClient, "telemetry.kyma-project.io", "v1alpha1", "logpipelines", "LogPipeline")
+		totalCount += count
+
+		// Count TracePipelines
+		count, _ = countResourcesByGVRK(ctx, k8sClient, "telemetry.kyma-project.io", "v1alpha1", "tracepipelines", "TracePipeline")
+		totalCount += count
+
+		// Count MetricPipelines
+		count, _ = countResourcesByGVRK(ctx, k8sClient, "telemetry.kyma-project.io", "v1alpha1", "metricpipelines", "MetricPipeline")
+		totalCount += count
+
+		if totalCount == 0 {
+			t.Log("All pipeline resources deleted")
+			return nil
+		}
+
+		t.Logf("Waiting for pipeline deletion: %d resources remaining", totalCount)
+		time.Sleep(delay)
+	}
+
+	return fmt.Errorf("timeout: pipeline resources still exist after %d attempts", maxAttempts)
+}
+
+// waitForTelemetryCRDeletion waits for the Telemetry CR to be deleted
+func waitForTelemetryCRDeletion(ctx context.Context, k8sClient client.Client, t TestingT) error {
+	maxAttempts := 60
+	delay := 2 * time.Second
+
+	for attempt := 1; attempt <= maxAttempts; attempt++ {
+		count, err := countResourcesByGVRK(ctx, k8sClient, "operator.kyma-project.io", "v1beta1", "telemetries", "Telemetry")
+		if err != nil {
+			if isNotFoundError(err) {
+				t.Log("Telemetry CR deleted")
+				return nil
+			}
+		}
+
+		if count == 0 {
+			t.Log("Telemetry CR deleted")
+			return nil
+		}
+
+		t.Logf("Waiting for Telemetry CR deletion: %d resources remaining", count)
+		time.Sleep(delay)
+	}
+
+	return fmt.Errorf("timeout: Telemetry CR still exists after %d attempts", maxAttempts)
+}
+
+// DeployManagerFromChart deploys the telemetry manager from a helm chart source.
+// The chartSource can be a local file path or a remote URL (e.g., from GitHub releases).
+// If no image override is needed (use whatever is in the chart), pass empty string for imageOverride.
+func DeployManagerFromChart(t TestingT, k8sClient client.Client, chartSource string, cfg Config) error {
+	t.Logf("Deploying manager from chart: %s (fips=%t, experimental=%t)", chartSource, cfg.OperateInFIPSMode, cfg.EnableExperimental)
+
+	// No image override - use what's baked into the chart
+	return deployManagerFromChartSource(t, k8sClient, chartSource, "", cfg)
+}
+
+// UpgradeManagerInPlace upgrades the manager using the local helm chart with a new image.
+// It preserves CRDs and existing pipeline resources.
+//
+// The cfg parameter should contain the same settings (FIPS, experimental, etc.) that
+// were used for the old version to ensure consistency during upgrade.
+//
+// After the helm upgrade completes, this function:
+// 1. Waits for the deployment rollout to complete (only new pod running)
+// 2. Waits for a reconciliation period to let the manager process resources
+func UpgradeManagerInPlace(t TestingT, k8sClient client.Client, newImage string, cfg Config) error {
+	ctx := t.Context()
+	t.Logf("Upgrading manager to: %s (fips=%t, experimental=%t)", newImage, cfg.OperateInFIPSMode, cfg.EnableExperimental)
+
+	helmChartPath, err := getHelmChartPath()
+	if err != nil {
+		return fmt.Errorf("failed to locate helm chart: %w", err)
+	}
+
+	if err := deployManagerFromChartSource(t, k8sClient, helmChartPath, newImage, cfg); err != nil {
+		return fmt.Errorf("failed to apply upgrade: %w", err)
+	}
+
+	// Wait for rollout to complete - ensures old pod is terminated
+	t.Log("Waiting for deployment rollout to complete...")
+	if err := waitForRolloutComplete(ctx, k8sClient, t, 3*time.Minute); err != nil {
+		return fmt.Errorf("rollout did not complete: %w", err)
+	}
+
+	// Double-check only one pod is running
+	if err := waitForSinglePod(ctx, k8sClient, t, 1*time.Minute); err != nil {
+		return fmt.Errorf("multiple pods still running: %w", err)
+	}
+
+	// Give the new manager time to reconcile resources
+	t.Logf("Waiting %s for manager to reconcile resources...", reconcileDelay)
+	time.Sleep(reconcileDelay)
+
+	t.Log("Manager upgrade complete")
 	return nil
 }

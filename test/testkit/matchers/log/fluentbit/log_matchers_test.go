@@ -7,7 +7,6 @@ import (
 	. "github.com/onsi/gomega"
 	"go.opentelemetry.io/collector/pdata/plog"
 
-	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
 var testTime = time.Date(2023, 12, 07, 9, 36, 38, 0, time.UTC)
@@ -31,7 +30,7 @@ var flsFluentBit = []FlatLog{
 }
 
 func TestFluentBitMatchers_VerifyInput(t *testing.T) {
-	suite.RegisterTestCase(t)
+	RegisterTestingT(t)
 
 	ld := plog.NewLogs()
 	Expect(mustMarshalFluentBitLogs(ld)).Should(HaveFlatLogs(ContainElements()), "Should apply matcher to transform valid log data")
@@ -48,7 +47,7 @@ func TestFluentBitMatchers_VerifyInput(t *testing.T) {
 }
 
 func TestFluentBit_FlatLogStruct(t *testing.T) {
-	suite.RegisterTestCase(t)
+	RegisterTestingT(t)
 
 	ld := plog.NewLogs()
 
@@ -79,7 +78,7 @@ func TestFluentBit_FlatLogStruct(t *testing.T) {
 }
 
 func TestFluentBitMatchers(t *testing.T) {
-	suite.RegisterTestCase(t)
+	RegisterTestingT(t)
 	Expect(flsFluentBit).Should(ContainElement(HaveContainerName(Equal("test-container"))), "Container name should match")
 	Expect(flsFluentBit).Should(ContainElement(HaveNamespace(Equal("test-namespace"))), "Namespace should match")
 	Expect(flsFluentBit).Should(ContainElement(HavePodName(Equal("test-pod"))), "Pod name should match")
@@ -104,7 +103,7 @@ func TestFluentBitMatchers(t *testing.T) {
 }
 
 func TestFluentBit_DateFormat(t *testing.T) {
-	suite.RegisterTestCase(t)
+	RegisterTestingT(t)
 
 	fl := FlatLog{
 		Attributes: map[string]string{

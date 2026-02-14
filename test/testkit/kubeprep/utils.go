@@ -58,8 +58,6 @@ func loadEnvFile(path string) (map[string]string, error) {
 
 // applyFromURL fetches YAML content from a URL and applies it to the cluster
 func applyFromURL(ctx context.Context, k8sClient client.Client, t TestingT, url string) error {
-	t.Helper()
-
 	resp, err := http.Get(url)
 	if err != nil {
 		return fmt.Errorf("failed to fetch YAML from %s: %w", url, err)
@@ -78,12 +76,9 @@ func applyFromURL(ctx context.Context, k8sClient client.Client, t TestingT, url 
 	return applyYAML(ctx, k8sClient, t, string(body))
 }
 
-// applyYAML parses YAML content and applies each object to the cluster
-// For resources that already exist, this function will skip them (not update)
-// This is intentional - for manager redeployment, we delete first then recreate
+// applyYAML parses YAML content and applies each object to the cluster using server-side apply.
+// This creates new resources or updates existing ones.
 func applyYAML(ctx context.Context, k8sClient client.Client, t TestingT, yamlContent string) error {
-	t.Helper()
-
 	decoder := yaml.NewYAMLOrJSONDecoder(strings.NewReader(yamlContent), 4096)
 
 	for {
@@ -101,17 +96,10 @@ func applyYAML(ctx context.Context, k8sClient client.Client, t TestingT, yamlCon
 			continue
 		}
 
-		// Create the object (skip if already exists)
-		err = k8sClient.Create(ctx, obj)
+		// Use server-side apply to create or update the object
+		err = k8sClient.Patch(ctx, obj, client.Apply, client.FieldOwner("kubeprep"), client.ForceOwnership)
 		if err != nil {
-			if apierrors.IsAlreadyExists(err) {
-				// Resource already exists - skip it
-				// This is fine because we delete before redeploying
-				t.Logf("Skipping %s %s/%s (already exists)",
-					obj.GetKind(), obj.GetNamespace(), obj.GetName())
-				continue
-			}
-			return fmt.Errorf("failed to create %s %s/%s: %w",
+			return fmt.Errorf("failed to apply %s %s/%s: %w",
 				obj.GetKind(), obj.GetNamespace(), obj.GetName(), err)
 		}
 	}
@@ -183,9 +171,7 @@ func deleteNamespace(ctx context.Context, k8sClient client.Client, name string) 
 }
 
 // deleteAllResourcesByGVRK deletes all resources of a given GroupVersionResourceKind across all namespaces
-func deleteAllResourcesByGVRK(ctx context.Context, k8sClient client.Client, t TestingT, group, version, resource, kind string) error {
-	t.Helper()
-
+func deleteAllResourcesByGVRK(ctx context.Context, k8sClient client.Client, group, version, resource, kind string) error {
 	list := &unstructured.UnstructuredList{}
 	list.SetGroupVersionKind(schema.GroupVersionKind{
 		Group:   group,
@@ -196,7 +182,6 @@ func deleteAllResourcesByGVRK(ctx context.Context, k8sClient client.Client, t Te
 	// List all resources (across all namespaces)
 	if err := k8sClient.List(ctx, list); err != nil {
 		if apierrors.IsNotFound(err) || apierrors.IsMethodNotSupported(err) {
-			// CRD might not exist or not be installed
 			return nil
 		}
 		return fmt.Errorf("failed to list %s.%s: %w", resource, group, err)
@@ -205,10 +190,7 @@ func deleteAllResourcesByGVRK(ctx context.Context, k8sClient client.Client, t Te
 	// Delete each resource
 	for _, item := range list.Items {
 		obj := item.DeepCopy()
-		t.Logf("Deleting %s.%s: %s/%s", resource, group, obj.GetNamespace(), obj.GetName())
-		if err := k8sClient.Delete(ctx, obj); err != nil && !apierrors.IsNotFound(err) {
-			t.Logf("Warning: failed to delete %s.%s %s/%s: %v", resource, group, obj.GetNamespace(), obj.GetName(), err)
-		}
+		_ = k8sClient.Delete(ctx, obj)
 	}
 
 	return nil
@@ -237,11 +219,9 @@ func countResourcesByGVRK(ctx context.Context, k8sClient client.Client, group, v
 
 // deleteAllResourcesByGVR deletes all resources of a given GroupVersionResource across all namespaces
 // Deprecated: Use deleteAllResourcesByGVRK instead, which uses the correct Kind
-func deleteAllResourcesByGVR(ctx context.Context, k8sClient client.Client, t TestingT, group, version, resource string) error {
-	t.Helper()
-	// Try to guess the Kind from the resource name (may not work for all cases)
+func deleteAllResourcesByGVR(ctx context.Context, k8sClient client.Client, group, version, resource string) error {
 	kind := strings.TrimSuffix(resource, "s")
-	return deleteAllResourcesByGVRK(ctx, k8sClient, t, group, version, resource, kind)
+	return deleteAllResourcesByGVRK(ctx, k8sClient, group, version, resource, kind)
 }
 
 // countResourcesByGVR counts all resources of a given GroupVersionResource

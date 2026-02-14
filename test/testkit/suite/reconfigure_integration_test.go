@@ -158,7 +158,8 @@ func TestEnsureClusterState_NoReconfiguration(t *testing.T) {
 	}
 
 	// Infer requirements from labels that match current state
-	requiredConfig := InferRequirementsFromLabels([]string{LabelLogAgent})
+	// Use LabelNoFIPS to disable FIPS (matching the current state with OperateInFIPSMode: false)
+	requiredConfig := InferRequirementsFromLabels([]string{LabelLogAgent, LabelNoFIPS})
 
 	// This should not trigger any reconfiguration
 	// We can't actually call ensureClusterState here because it requires a real K8s client

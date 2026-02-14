@@ -9,14 +9,10 @@ import (
 
 // importImageToK3D imports a local Docker image into the k3d cluster
 func importImageToK3D(ctx context.Context, t TestingT, image, clusterName string) error {
-	t.Helper()
-
-	t.Logf("Importing local image %s into k3d cluster %s...", image, clusterName)
-
 	// First check if the image exists in the local Docker runtime
 	checkCmd := exec.CommandContext(ctx, "docker", "image", "inspect", image)
 	if err := checkCmd.Run(); err != nil {
-		return fmt.Errorf("image %s not found in local Docker runtime - please build it first (e.g., make docker-build IMG=%s)", image, image)
+		return fmt.Errorf("image %s not found in local Docker runtime", image)
 	}
 
 	cmd := exec.CommandContext(ctx, "k3d", "image", "import", image, "-c", clusterName)
@@ -25,7 +21,7 @@ func importImageToK3D(ctx context.Context, t TestingT, image, clusterName string
 		return fmt.Errorf("failed to import image: %w\noutput: %s", err, output)
 	}
 
-	t.Log("Successfully imported image to k3d")
+	t.Logf("Imported image %s to k3d cluster %s", image, clusterName)
 	return nil
 }
 

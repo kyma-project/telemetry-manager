@@ -1,7 +1,6 @@
 package selfmonitor
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"testing"
@@ -25,8 +24,29 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func label(selfMonitorLabelPrefix, selfMonitorLabelSuffix string) string {
-	return fmt.Sprintf("%s-%s", selfMonitorLabelPrefix, selfMonitorLabelSuffix)
+// labelsForSelfMonitor returns the appropriate labels for a selfmonitor test.
+// It includes:
+// - The combined selfmonitor label (e.g., "selfmonitor-log-agent-healthy")
+// - istio label for backpressure/outage scenarios (they need Istio for traffic simulation)
+// - no-fips label for fluent-bit tests (fluent-bit doesn't support FIPS)
+func labelsForSelfMonitor(selfMonitorLabelPrefix, selfMonitorLabelSuffix string) []string {
+	// Build the combined label (e.g., "selfmonitor-log-agent-healthy")
+	combinedLabel := selfMonitorLabelPrefix + "-" + selfMonitorLabelSuffix
+
+	labels := []string{combinedLabel}
+
+	// Backpressure and outage tests need Istio for traffic simulation
+	if selfMonitorLabelSuffix == suite.LabelSelfMonitorBackpressureSuffix ||
+		selfMonitorLabelSuffix == suite.LabelSelfMonitorOutageSuffix {
+		labels = append(labels, suite.LabelIstio)
+	}
+
+	// Fluent-bit tests don't support FIPS
+	if selfMonitorLabelPrefix == suite.LabelSelfMonitorFluentBitPrefix {
+		labels = append(labels, suite.LabelNoFIPS)
+	}
+
+	return labels
 }
 
 func signalType(labelPrefix string) kitbackend.SignalType {

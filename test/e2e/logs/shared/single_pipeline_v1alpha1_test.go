@@ -138,7 +138,7 @@ func TestSinglePipelineV1Alpha1_OTel(t *testing.T) {
 }
 
 func TestSinglePipelineV1Alpha1_FluentBit(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelFluentBit)
+	suite.RegisterTestCase(t, suite.LabelFluentBit, suite.LabelNoFIPS)
 
 	var (
 		uniquePrefix = unique.Prefix("logs")

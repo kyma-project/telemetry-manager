@@ -19,6 +19,8 @@ type Config struct {
 	SkipManagerDeployment   bool   // For upgrade tests
 	SkipPrerequisites       bool   // For custom test setups
 	NeedsReinstall          bool   // Manager state is unknown, needs reinstallation
+	UpgradeFromChart        string // Helm chart URL for old version (upgrade tests only)
+	IsUpgradeTest           bool   // Test is an upgrade test (affects initial deployment)
 }
 
 // ConfigFromEnv loads cluster preparation configuration from environment variables
@@ -45,6 +47,7 @@ func ConfigFromEnv() (*Config, error) {
 		CustomLabelsAnnotations: parseBool(os.Getenv("CUSTOM_LABELS_ANNOTATIONS"), false),
 		SkipManagerDeployment:   parseBool(os.Getenv("SKIP_MANAGER_DEPLOYMENT"), false),
 		SkipPrerequisites:       parseBool(os.Getenv("SKIP_PREREQUISITES"), false),
+		UpgradeFromChart:        os.Getenv("UPGRADE_FROM_CHART"),
 	}
 
 	log.Printf("Detected image type: local=%t for image=%s", cfg.LocalImage, cfg.ManagerImage)
@@ -73,12 +76,13 @@ func ConfigWithDefaults() *Config {
 	cfg := &Config{
 		ManagerImage:            managerImage,
 		LocalImage:              localImage,
-		InstallIstio:            parseBool(os.Getenv("INSTALL_ISTIO"), false), // No Istio by default
+		InstallIstio:            parseBool(os.Getenv("INSTALL_ISTIO"), false),        // No Istio by default
 		OperateInFIPSMode:       parseBool(os.Getenv("OPERATE_IN_FIPS_MODE"), false), // No FIPS by default
 		EnableExperimental:      parseBool(os.Getenv("ENABLE_EXPERIMENTAL"), false),
 		CustomLabelsAnnotations: parseBool(os.Getenv("CUSTOM_LABELS_ANNOTATIONS"), false),
 		SkipManagerDeployment:   parseBool(os.Getenv("SKIP_MANAGER_DEPLOYMENT"), false),
 		SkipPrerequisites:       parseBool(os.Getenv("SKIP_PREREQUISITES"), false),
+		UpgradeFromChart:        os.Getenv("UPGRADE_FROM_CHART"),
 	}
 
 	log.Printf("Using default configuration: image=%s, local=%t, istio=%t, fips=%t",

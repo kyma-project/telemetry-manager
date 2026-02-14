@@ -24,9 +24,7 @@ import (
 //
 // This function is idempotent and safe to call multiple times with the same config.
 func ReconfigureCluster(t TestingT, k8sClient client.Client, current, desired Config) error {
-	t.Helper()
-
-	t.Logf("Reconfiguring cluster from current=%+v to desired=%+v", current, desired)
+	t.Logf("Reconfiguring cluster: current=%+v -> desired=%+v", current, desired)
 
 	// Calculate what changed
 	diff := calculateDiff(current, desired)
@@ -35,16 +33,13 @@ func ReconfigureCluster(t TestingT, k8sClient client.Client, current, desired Co
 	needsManagerReinstall := diff.NeedsIstioChange || diff.NeedsManagerRedeploy
 
 	// Step 1: Remove manager FIRST if Istio or manager config is changing
-	// This prevents conflicts when Istio is removed/installed
 	if needsManagerReinstall && !current.SkipManagerDeployment {
 		t.Log("Removing manager before reconfiguration...")
 		if err := undeployManager(t, k8sClient, current); err != nil {
 			return fmt.Errorf("failed to remove manager: %w", err)
 		}
 
-		// Wait for CRDs to be fully deleted before proceeding
-		// This is critical - CRDs take time to terminate and will block new deployments
-		t.Log("Waiting for CRDs to be fully deleted...")
+		// Wait for CRDs to be fully deleted
 		if err := waitForCRDsDeletion(t, k8sClient); err != nil {
 			return fmt.Errorf("failed waiting for CRDs deletion: %w", err)
 		}
@@ -59,14 +54,13 @@ func ReconfigureCluster(t TestingT, k8sClient client.Client, current, desired Co
 
 	// Step 3: Reinstall manager with new configuration (if it was removed)
 	if needsManagerReinstall && !desired.SkipManagerDeployment {
-		t.Log("Reinstalling manager with new configuration...")
+		t.Log("Reinstalling manager...")
 		if err := deployManager(t, k8sClient, desired); err != nil {
 			return fmt.Errorf("failed to reinstall manager: %w", err)
 		}
 	}
 
 	// Step 4: Prerequisites - ALWAYS needed after manager reinstall (Telemetry CR gets deleted with CRDs)
-	// Also needed if prerequisites config explicitly changed
 	needsPrerequisites := (needsManagerReinstall && !desired.SkipManagerDeployment && !desired.SkipPrerequisites) ||
 		diff.NeedsPrerequisitesUpdate
 	if needsPrerequisites {
@@ -75,9 +69,7 @@ func ReconfigureCluster(t TestingT, k8sClient client.Client, current, desired Co
 		}
 	}
 
-	if !needsManagerReinstall && !diff.NeedsPrerequisitesUpdate {
-		t.Log("No reconfiguration needed - cluster already in desired state")
-	} else {
+	if needsManagerReinstall || diff.NeedsPrerequisitesUpdate {
 		t.Log("Cluster reconfiguration complete")
 	}
 
@@ -115,57 +107,39 @@ func calculateDiff(current, desired Config) ConfigDiff {
 
 // reconfigureIstio handles Istio installation or uninstallation
 func reconfigureIstio(t TestingT, k8sClient client.Client, currentInstalled, desiredInstalled bool) error {
-	t.Helper()
-
 	if !currentInstalled && desiredInstalled {
-		// Install Istio
-		t.Log("Installing Istio (requirement change: false -> true)...")
+		t.Log("Installing Istio...")
 		return installIstio(t, k8sClient)
 	}
 
 	if currentInstalled && !desiredInstalled {
-		// Uninstall Istio
-		t.Log("Uninstalling Istio (requirement change: true -> false)...")
+		t.Log("Uninstalling Istio...")
 		return uninstallIstio(t, k8sClient)
 	}
 
-	// No change needed
 	return nil
 }
 
 // updatePrerequisites updates test prerequisites (Telemetry CR, network policies, etc.)
 func updatePrerequisites(t TestingT, k8sClient client.Client, desired Config) error {
-	t.Helper()
-
-	t.Log("Updating test prerequisites...")
-
-	// If prerequisites should be skipped, clean them up
 	if desired.SkipPrerequisites {
-		t.Log("Removing test prerequisites (SKIP_PREREQUISITES=true)...")
 		return cleanupPrerequisites(t, k8sClient)
 	}
 
-	// If manager is not deployed, we can't deploy prerequisites (needs CRDs)
 	if desired.SkipManagerDeployment {
-		t.Log("Skipping prerequisites update (manager not deployed, CRDs unavailable)")
-		return nil
+		return nil // Can't deploy prerequisites without CRDs
 	}
 
-	// Deploy/update prerequisites
-	t.Log("Deploying/updating test prerequisites...")
 	return deployTestPrerequisites(t, k8sClient)
 }
 
 // waitForCRDsDeletion waits for telemetry CRDs to be fully deleted
 func waitForCRDsDeletion(t TestingT, k8sClient client.Client) error {
-	t.Helper()
-
 	telemetryCRDs := []string{
 		"logpipelines.telemetry.kyma-project.io",
 		"tracepipelines.telemetry.kyma-project.io",
 		"metricpipelines.telemetry.kyma-project.io",
 		"telemetries.operator.kyma-project.io",
-		// Experimental CRDs
 		"logparsers.telemetry.kyma-project.io",
 	}
 
@@ -184,13 +158,11 @@ func waitForCRDsDeletion(t TestingT, k8sClient client.Client) error {
 			}
 			if exists {
 				allDeleted = false
-				t.Logf("Waiting for CRD %s to be deleted...", crdName)
 				break
 			}
 		}
 
 		if allDeleted {
-			t.Log("All telemetry CRDs deleted")
 			return nil
 		}
 

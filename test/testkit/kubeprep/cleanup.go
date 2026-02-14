@@ -15,7 +15,6 @@ import (
 // CleanupCluster removes test resources to prepare for the next test scenario
 // This is a best-effort cleanup that logs warnings but doesn't fail
 func CleanupCluster(t TestingT, k8sClient client.Client, cfg Config) error {
-	t.Helper()
 	ctx := t.Context()
 
 	t.Log("Cleaning up cluster resources...")
@@ -35,36 +34,27 @@ func CleanupCluster(t TestingT, k8sClient client.Client, cfg Config) error {
 	}
 
 	// 3. Delete all pipeline CRs
-	if err := deletePipelines(ctx, k8sClient, t); err != nil {
+	if err := deletePipelines(ctx, k8sClient); err != nil {
 		t.Logf("Warning: failed to delete pipelines: %v", err)
 	}
 
 	// 4. Delete test namespaces
-	if err := deleteTestNamespaces(ctx, k8sClient, t); err != nil {
+	if err := deleteTestNamespaces(ctx, k8sClient); err != nil {
 		t.Logf("Warning: failed to delete test namespaces: %v", err)
 	}
 
-	// 5. Remove Istio if installed (regardless of configuration)
-	// This ensures the cluster is as close to a fresh k3d cluster as possible
+	// 5. Remove Istio if installed
 	if isIstioInstalled(ctx, k8sClient) {
-		t.Log("Istio detected in cluster, removing...")
 		if err := uninstallIstio(t, k8sClient); err != nil {
 			t.Logf("Warning: failed to uninstall Istio: %v", err)
 		}
-	} else {
-		t.Log("Istio not detected, skipping Istio cleanup")
 	}
 
-	t.Log("Cluster cleanup complete")
 	return nil
 }
 
 // deletePipelines deletes all LogPipeline, MetricPipeline, and TracePipeline resources
-func deletePipelines(ctx context.Context, k8sClient client.Client, t TestingT) error {
-	t.Helper()
-
-	t.Log("Deleting pipeline resources...")
-
+func deletePipelines(ctx context.Context, k8sClient client.Client) error {
 	pipelineTypes := []schema.GroupVersionResource{
 		{Group: "telemetry.kyma-project.io", Version: "v1alpha1", Resource: "logpipelines"},
 		{Group: "telemetry.kyma-project.io", Version: "v1alpha1", Resource: "metricpipelines"},
@@ -72,18 +62,14 @@ func deletePipelines(ctx context.Context, k8sClient client.Client, t TestingT) e
 	}
 
 	for _, gvr := range pipelineTypes {
-		if err := deleteAllResources(ctx, k8sClient, t, gvr); err != nil {
-			t.Logf("Warning: failed to delete %s: %v", gvr.Resource, err)
-		}
+		_ = deleteAllResources(ctx, k8sClient, gvr)
 	}
 
 	return nil
 }
 
 // deleteAllResources deletes all resources of a given type
-func deleteAllResources(ctx context.Context, k8sClient client.Client, t TestingT, gvr schema.GroupVersionResource) error {
-	t.Helper()
-
+func deleteAllResources(ctx context.Context, k8sClient client.Client, gvr schema.GroupVersionResource) error {
 	list := &unstructured.UnstructuredList{}
 	list.SetGroupVersionKind(schema.GroupVersionKind{
 		Group:   gvr.Group,
@@ -99,20 +85,14 @@ func deleteAllResources(ctx context.Context, k8sClient client.Client, t TestingT
 	}
 
 	for _, item := range list.Items {
-		if err := k8sClient.Delete(ctx, &item); err != nil && !apierrors.IsNotFound(err) {
-			t.Logf("Warning: failed to delete %s %s: %v", gvr.Resource, item.GetName(), err)
-		}
+		_ = k8sClient.Delete(ctx, &item)
 	}
 
 	return nil
 }
 
 // deleteTestNamespaces deletes namespaces created by tests
-func deleteTestNamespaces(ctx context.Context, k8sClient client.Client, t TestingT) error {
-	t.Helper()
-
-	t.Log("Deleting test namespaces...")
-
+func deleteTestNamespaces(ctx context.Context, k8sClient client.Client) error {
 	namespaces := &corev1.NamespaceList{}
 	if err := k8sClient.List(ctx, namespaces); err != nil {
 		return fmt.Errorf("failed to list namespaces: %w", err)
@@ -130,7 +110,6 @@ func deleteTestNamespaces(ctx context.Context, k8sClient client.Client, t Testin
 	}
 
 	for _, ns := range namespaces.Items {
-		// Skip preserved namespaces
 		if preserveNamespaces[ns.Name] {
 			continue
 		}
@@ -139,12 +118,9 @@ func deleteTestNamespaces(ctx context.Context, k8sClient client.Client, t Testin
 		if strings.HasPrefix(ns.Name, "test-") ||
 			strings.HasPrefix(ns.Name, "backend-") ||
 			strings.HasPrefix(ns.Name, "kyma-integration-") {
-			t.Logf("Deleting namespace: %s", ns.Name)
-			if err := k8sClient.Delete(ctx, &ns, &client.DeleteOptions{
-				GracePeriodSeconds: new(int64), // 0 for immediate deletion
-			}); err != nil && !apierrors.IsNotFound(err) {
-				t.Logf("Warning: failed to delete namespace %s: %v", ns.Name, err)
-			}
+			_ = k8sClient.Delete(ctx, &ns, &client.DeleteOptions{
+				GracePeriodSeconds: new(int64),
+			})
 		}
 	}
 
@@ -153,7 +129,6 @@ func deleteTestNamespaces(ctx context.Context, k8sClient client.Client, t Testin
 
 // ForceDeleteNamespace forcefully deletes a namespace by removing finalizers if needed
 func ForceDeleteNamespace(t TestingT, k8sClient client.Client, name string) error {
-	t.Helper()
 	ctx := t.Context()
 
 	ns := &corev1.Namespace{}
@@ -171,7 +146,6 @@ func ForceDeleteNamespace(t TestingT, k8sClient client.Client, name string) erro
 	// If namespace is stuck, remove finalizers
 	if err := k8sClient.Get(ctx, client.ObjectKey{Name: name}, ns); err == nil {
 		if ns.Status.Phase == corev1.NamespaceTerminating && len(ns.Finalizers) > 0 {
-			t.Logf("Removing finalizers from namespace %s", name)
 			ns.Finalizers = []string{}
 			if err := k8sClient.Update(ctx, ns); err != nil {
 				return fmt.Errorf("failed to remove finalizers from namespace %s: %w", name, err)

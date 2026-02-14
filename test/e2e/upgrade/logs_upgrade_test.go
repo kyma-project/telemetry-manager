@@ -17,9 +17,16 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-// LogPipeline upgrade test flow
+// TestLogsUpgrade validates that LogPipeline resources (OTel) survive a manager upgrade.
+//
+// Test flow:
+// 1. RegisterTestCase deploys the OLD version from UPGRADE_FROM_CHART
+// 2. Create pipeline, backend, and generator resources
+// 3. Validate everything works with old version
+// 4. Call UpgradeToTargetVersion() to upgrade to MANAGER_IMAGE
+// 5. Validate everything still works after upgrade
 func TestLogsUpgrade(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelUpgrade)
+	suite.SetupTest(t, suite.LabelUpgrade)
 
 	var (
 		uniquePrefix = unique.Prefix()
@@ -43,19 +50,24 @@ func TestLogsUpgrade(t *testing.T) {
 	}
 	resources = append(resources, backend.K8sObjects()...)
 
-	t.Run("before upgrade", func(t *testing.T) {
-		Expect(kitk8s.CreateObjectsWithoutAutomaticCleanup(t, resources...)).To(Succeed())
+	// Create resources (without automatic cleanup - upgrade tests preserve resources)
+	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
-		assert.DeploymentReady(t, kitkyma.LogGatewayName)
-		assert.OTelLogPipelineHealthy(t, pipelineName)
-		assert.BackendReachable(t, backend)
-		assert.OTelLogsFromNamespaceDelivered(t, backend, genNs)
-	})
+	// === VALIDATE OLD VERSION ===
+	t.Log("Validating log pipeline with old version...")
+	assert.DeploymentReady(t, kitkyma.LogGatewayName)
+	assert.OTelLogPipelineHealthy(t, pipelineName)
+	assert.BackendReachable(t, backend)
+	assert.OTelLogsFromNamespaceDelivered(t, backend, genNs)
 
-	t.Run("after upgrade", func(t *testing.T) {
-		assert.DeploymentReady(t, kitkyma.LogGatewayName)
-		assert.OTelLogPipelineHealthy(t, pipelineName)
-		assert.BackendReachable(t, backend)
-		assert.OTelLogsFromNamespaceDelivered(t, backend, genNs)
-	})
+	// === UPGRADE TO NEW VERSION ===
+	t.Log("Upgrading manager to target version...")
+	Expect(suite.UpgradeToTargetVersion(t)).To(Succeed())
+
+	// === VALIDATE AFTER UPGRADE ===
+	t.Log("Validating log pipeline after upgrade...")
+	assert.DeploymentReady(t, kitkyma.LogGatewayName)
+	assert.OTelLogPipelineHealthy(t, pipelineName)
+	assert.BackendReachable(t, backend)
+	assert.OTelLogsFromNamespaceDelivered(t, backend, genNs)
 }

@@ -1,6 +1,7 @@
 package kubeprep
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -56,7 +57,7 @@ func TestDetectIstioInstalled(t *testing.T) {
 				WithObjects(tt.objects...).
 				Build()
 
-			actual := detectIstioInstalled(t, client)
+			actual := detectIstioInstalled(context.Background(), client)
 			require.Equal(t, tt.expected, actual)
 		})
 	}
@@ -72,8 +73,8 @@ func TestDetectFIPSMode(t *testing.T) {
 			name: "fips mode enabled",
 			objects: []client.Object{
 				createManagerDeployment(map[string]string{
-					"OPERATE_IN_FIPS_MODE": "true",
-				}),
+					"KYMA_FIPS_MODE_ENABLED": "true",
+				}, nil),
 			},
 			expected: true,
 		},
@@ -81,15 +82,15 @@ func TestDetectFIPSMode(t *testing.T) {
 			name: "fips mode disabled",
 			objects: []client.Object{
 				createManagerDeployment(map[string]string{
-					"OPERATE_IN_FIPS_MODE": "false",
-				}),
+					"KYMA_FIPS_MODE_ENABLED": "false",
+				}, nil),
 			},
 			expected: false,
 		},
 		{
 			name: "fips env var not set",
 			objects: []client.Object{
-				createManagerDeployment(map[string]string{}),
+				createManagerDeployment(map[string]string{}, nil),
 			},
 			expected: false,
 		},
@@ -110,7 +111,7 @@ func TestDetectFIPSMode(t *testing.T) {
 				WithObjects(tt.objects...).
 				Build()
 
-			actual := detectFIPSMode(t, client)
+			actual := detectFIPSMode(context.Background(), client)
 			require.Equal(t, tt.expected, actual)
 		})
 	}
@@ -118,44 +119,39 @@ func TestDetectFIPSMode(t *testing.T) {
 
 func TestDetectExperimentalEnabled(t *testing.T) {
 	tests := []struct {
-		name             string
-		objects          []client.Object
-		expectedEnabled  bool
-		expectedHasLabel bool
+		name     string
+		objects  []client.Object
+		expected bool
 	}{
 		{
 			name: "experimental enabled - label true",
 			objects: []client.Object{
-				createManagerDeploymentWithLabels(nil, map[string]string{
+				createManagerDeploymentWithLabel(nil, map[string]string{
 					LabelExperimentalEnabled: "true",
 				}),
 			},
-			expectedEnabled:  true,
-			expectedHasLabel: true,
+			expected: true,
 		},
 		{
 			name: "experimental disabled - label false",
 			objects: []client.Object{
-				createManagerDeploymentWithLabels(nil, map[string]string{
+				createManagerDeploymentWithLabel(nil, map[string]string{
 					LabelExperimentalEnabled: "false",
 				}),
 			},
-			expectedEnabled:  false,
-			expectedHasLabel: true,
+			expected: false,
 		},
 		{
-			name: "label missing - state unknown",
+			name: "experimental disabled - no label",
 			objects: []client.Object{
-				createManagerDeploymentWithLabels(nil, map[string]string{}),
+				createManagerDeployment(nil, nil),
 			},
-			expectedEnabled:  false,
-			expectedHasLabel: false,
+			expected: false,
 		},
 		{
-			name:             "manager not deployed",
-			objects:          []client.Object{},
-			expectedEnabled:  false,
-			expectedHasLabel: false,
+			name:     "manager not deployed",
+			objects:  []client.Object{},
+			expected: false,
 		},
 	}
 
@@ -169,9 +165,8 @@ func TestDetectExperimentalEnabled(t *testing.T) {
 				WithObjects(tt.objects...).
 				Build()
 
-			actualEnabled, actualHasLabel := detectExperimentalEnabled(t, client)
-			require.Equal(t, tt.expectedEnabled, actualEnabled, "experimental enabled mismatch")
-			require.Equal(t, tt.expectedHasLabel, actualHasLabel, "has label mismatch")
+			actual := detectExperimentalEnabled(context.Background(), client)
+			require.Equal(t, tt.expected, actual)
 		})
 	}
 }
@@ -185,7 +180,7 @@ func TestDetectManagerDeployed(t *testing.T) {
 		{
 			name: "manager deployed",
 			objects: []client.Object{
-				createManagerDeployment(map[string]string{}),
+				createManagerDeployment(map[string]string{}, nil),
 			},
 			expected: true,
 		},
@@ -206,7 +201,7 @@ func TestDetectManagerDeployed(t *testing.T) {
 				WithObjects(tt.objects...).
 				Build()
 
-			actual := detectManagerDeployed(t, client)
+			actual := detectManagerDeployed(context.Background(), client)
 			require.Equal(t, tt.expected, actual)
 		})
 	}
@@ -232,16 +227,12 @@ func TestDetectClusterState(t *testing.T) {
 				CustomLabelsAnnotations: false,
 				SkipManagerDeployment:   true, // Manager not deployed
 				SkipPrerequisites:       false,
-				NeedsReinstall:          false, // No manager, no reinstall needed
 			},
 		},
 		{
-			name: "manager deployed with label - no reinstall needed",
+			name: "manager deployed - basic setup",
 			objects: []client.Object{
-				createManagerDeploymentWithLabels(
-					map[string]string{"OPERATE_IN_FIPS_MODE": "false"},
-					map[string]string{LabelExperimentalEnabled: "false"},
-				),
+				createManagerDeployment(nil, nil),
 			},
 			expected: Config{
 				ManagerImage:            "",
@@ -252,14 +243,49 @@ func TestDetectClusterState(t *testing.T) {
 				CustomLabelsAnnotations: false,
 				SkipManagerDeployment:   false, // Manager is deployed
 				SkipPrerequisites:       false,
-				NeedsReinstall:          false, // Label exists
 			},
 		},
 		{
-			name: "manager deployed without label - needs reinstall",
+			name: "istio installed",
 			objects: []client.Object{
-				createManagerDeployment(map[string]string{
-					"OPERATE_IN_FIPS_MODE": "false",
+				createIstioCR("default", "kyma-system"),
+				createManagerDeployment(nil, nil),
+			},
+			expected: Config{
+				ManagerImage:            "",
+				LocalImage:              false,
+				InstallIstio:            true,
+				OperateInFIPSMode:       false,
+				EnableExperimental:      false,
+				CustomLabelsAnnotations: false,
+				SkipManagerDeployment:   false,
+				SkipPrerequisites:       false,
+			},
+		},
+		{
+			name: "fips mode enabled",
+			objects: []client.Object{
+				createManagerDeployment(
+					map[string]string{"KYMA_FIPS_MODE_ENABLED": "true"},
+					nil,
+				),
+			},
+			expected: Config{
+				ManagerImage:            "",
+				LocalImage:              false,
+				InstallIstio:            false,
+				OperateInFIPSMode:       true,
+				EnableExperimental:      false,
+				CustomLabelsAnnotations: false,
+				SkipManagerDeployment:   false,
+				SkipPrerequisites:       false,
+			},
+		},
+		{
+			name: "experimental features enabled",
+			objects: []client.Object{
+				createManagerDeploymentWithLabel(nil, map[string]string{
+					LabelExperimentalEnabled: "true",
 				}),
 			},
 			expected: Config{
@@ -267,80 +293,18 @@ func TestDetectClusterState(t *testing.T) {
 				LocalImage:              false,
 				InstallIstio:            false,
 				OperateInFIPSMode:       false,
-				EnableExperimental:      false,
-				CustomLabelsAnnotations: false,
-				SkipManagerDeployment:   false, // Manager is deployed
-				SkipPrerequisites:       false,
-				NeedsReinstall:          true, // Label missing
-			},
-		},
-		{
-			name: "istio installed",
-			objects: []client.Object{
-				createIstioCR("default", "kyma-system"),
-				createManagerDeploymentWithLabels(
-					map[string]string{"OPERATE_IN_FIPS_MODE": "false"},
-					map[string]string{LabelExperimentalEnabled: "false"},
-				),
-			},
-			expected: Config{
-				ManagerImage:            "",
-				LocalImage:              false,
-				InstallIstio:            true,
-				OperateInFIPSMode:       false,
-				EnableExperimental:      false,
-				CustomLabelsAnnotations: false,
-				SkipManagerDeployment:   false,
-				SkipPrerequisites:       false,
-				NeedsReinstall:          false,
-			},
-		},
-		{
-			name: "fips mode enabled",
-			objects: []client.Object{
-				createManagerDeploymentWithLabels(
-					map[string]string{"OPERATE_IN_FIPS_MODE": "true"},
-					map[string]string{LabelExperimentalEnabled: "false"},
-				),
-			},
-			expected: Config{
-				ManagerImage:            "",
-				LocalImage:              false,
-				InstallIstio:            false,
-				OperateInFIPSMode:       true,
-				EnableExperimental:      false,
-				CustomLabelsAnnotations: false,
-				SkipManagerDeployment:   false,
-				SkipPrerequisites:       false,
-				NeedsReinstall:          false,
-			},
-		},
-		{
-			name: "experimental features enabled",
-			objects: []client.Object{
-				createManagerDeploymentWithLabels(
-					map[string]string{"OPERATE_IN_FIPS_MODE": "false"},
-					map[string]string{LabelExperimentalEnabled: "true"},
-				),
-			},
-			expected: Config{
-				ManagerImage:            "",
-				LocalImage:              false,
-				InstallIstio:            false,
-				OperateInFIPSMode:       false,
 				EnableExperimental:      true,
 				CustomLabelsAnnotations: false,
 				SkipManagerDeployment:   false,
 				SkipPrerequisites:       false,
-				NeedsReinstall:          false,
 			},
 		},
 		{
 			name: "full setup - istio, fips, experimental",
 			objects: []client.Object{
 				createIstioCR("default", "kyma-system"),
-				createManagerDeploymentWithLabels(
-					map[string]string{"OPERATE_IN_FIPS_MODE": "true"},
+				createManagerDeploymentWithLabel(
+					map[string]string{"KYMA_FIPS_MODE_ENABLED": "true"},
 					map[string]string{LabelExperimentalEnabled: "true"},
 				),
 			},
@@ -353,7 +317,6 @@ func TestDetectClusterState(t *testing.T) {
 				CustomLabelsAnnotations: false,
 				SkipManagerDeployment:   false,
 				SkipPrerequisites:       false,
-				NeedsReinstall:          false,
 			},
 		},
 	}
@@ -392,14 +355,14 @@ func TestDetectOrUseProvidedConfig(t *testing.T) {
 		require.Equal(t, providedConfig, result)
 	})
 
-	t.Run("detects cluster state when no config provided - with label", func(t *testing.T) {
+	t.Run("detects cluster state when no config provided", func(t *testing.T) {
 		scheme := runtime.NewScheme()
 		_ = appsv1.AddToScheme(scheme)
 
 		objects := []client.Object{
-			createManagerDeploymentWithLabels(
-				map[string]string{"OPERATE_IN_FIPS_MODE": "true"},
-				map[string]string{LabelExperimentalEnabled: "false"},
+			createManagerDeployment(
+				map[string]string{"KYMA_FIPS_MODE_ENABLED": "true"},
+				nil,
 			),
 		}
 
@@ -413,30 +376,6 @@ func TestDetectOrUseProvidedConfig(t *testing.T) {
 		require.NotNil(t, result)
 		require.True(t, result.OperateInFIPSMode)
 		require.False(t, result.SkipManagerDeployment)
-		require.False(t, result.NeedsReinstall) // Label exists
-	})
-
-	t.Run("detects cluster state when no config provided - without label", func(t *testing.T) {
-		scheme := runtime.NewScheme()
-		_ = appsv1.AddToScheme(scheme)
-
-		objects := []client.Object{
-			createManagerDeployment(map[string]string{
-				"OPERATE_IN_FIPS_MODE": "true",
-			}),
-		}
-
-		client := fake.NewClientBuilder().
-			WithScheme(scheme).
-			WithObjects(objects...).
-			Build()
-
-		result, err := DetectOrUseProvidedConfig(t, client, nil)
-		require.NoError(t, err)
-		require.NotNil(t, result)
-		require.True(t, result.OperateInFIPSMode)
-		require.False(t, result.SkipManagerDeployment)
-		require.True(t, result.NeedsReinstall) // Label missing
 	})
 }
 
@@ -454,11 +393,11 @@ func createIstioCR(name, namespace string) *unstructured.Unstructured {
 	return cr
 }
 
-func createManagerDeployment(envVars map[string]string) *appsv1.Deployment {
-	return createManagerDeploymentWithLabels(envVars, nil)
+func createManagerDeployment(envVars map[string]string, args []string) *appsv1.Deployment {
+	return createManagerDeploymentWithLabel(envVars, nil)
 }
 
-func createManagerDeploymentWithLabels(envVars map[string]string, labels map[string]string) *appsv1.Deployment {
+func createManagerDeploymentWithLabel(envVars map[string]string, labels map[string]string) *appsv1.Deployment {
 	env := []corev1.EnvVar{}
 	for k, v := range envVars {
 		env = append(env, corev1.EnvVar{Name: k, Value: v})
@@ -483,17 +422,6 @@ func createManagerDeploymentWithLabels(envVars map[string]string, labels map[str
 			},
 		},
 	}
-}
-
-func createCRD(name string) *unstructured.Unstructured {
-	crd := &unstructured.Unstructured{}
-	crd.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   "apiextensions.k8s.io",
-		Version: "v1",
-		Kind:    "CustomResourceDefinition",
-	})
-	crd.SetName(name)
-	return crd
 }
 
 // TestDetectClusterState_ErrorHandling tests error cases

@@ -70,7 +70,7 @@ func TestDisabledInput_OTel(t *testing.T) {
 }
 
 func TestDisabledInput_FluentBit(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelFluentBit)
+	suite.RegisterTestCase(t, suite.LabelFluentBit, suite.LabelNoFIPS)
 
 	const (
 		endpointAddress = "localhost"

@@ -21,7 +21,7 @@ import (
 )
 
 func TestCustomFilterDenied(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelFluentBit)
+	suite.RegisterTestCase(t, suite.LabelFluentBit, suite.LabelNoFIPS)
 
 	var (
 		uniquePrefix = unique.Prefix()
@@ -55,7 +55,7 @@ func TestCustomFilterDenied(t *testing.T) {
 }
 
 func TestCustomOutputDenied(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelFluentBit)
+	suite.RegisterTestCase(t, suite.LabelFluentBit, suite.LabelNoFIPS)
 
 	var (
 		uniquePrefix = unique.Prefix()
@@ -88,7 +88,7 @@ func TestCustomOutputDenied(t *testing.T) {
 }
 
 func TestCustomFilterAllowed(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelFluentBit)
+	suite.RegisterTestCase(t, suite.LabelFluentBit, suite.LabelNoFIPS)
 
 	var (
 		uniquePrefix = unique.Prefix()

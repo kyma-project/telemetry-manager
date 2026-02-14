@@ -11,10 +11,10 @@ import (
 // This function orchestrates the installation of Istio, deployment of telemetry manager,
 // and setup of test prerequisites in the same order as the GitHub workflow
 func PrepareCluster(t TestingT, k8sClient client.Client, cfg Config) error {
-	t.Helper()
 	ctx := t.Context()
 
-	t.Logf("Preparing cluster with configuration: %+v", cfg)
+	t.Logf("Preparing cluster: image=%s, istio=%t, fips=%t, experimental=%t",
+		cfg.ManagerImage, cfg.InstallIstio, cfg.OperateInFIPSMode, cfg.EnableExperimental)
 
 	// 1. Validate configuration
 	if err := validateConfig(cfg); err != nil {
@@ -22,7 +22,6 @@ func PrepareCluster(t TestingT, k8sClient client.Client, cfg Config) error {
 	}
 
 	// 2. Ensure kyma-system namespace exists
-	t.Log("Ensuring kyma-system namespace exists...")
 	if err := ensureNamespace(ctx, k8sClient, kymaSystemNamespace, nil); err != nil {
 		return fmt.Errorf("failed to ensure kyma-system namespace: %w", err)
 	}
@@ -32,8 +31,6 @@ func PrepareCluster(t TestingT, k8sClient client.Client, cfg Config) error {
 		if err := installIstio(t, k8sClient); err != nil {
 			return fmt.Errorf("failed to install Istio: %w", err)
 		}
-	} else {
-		t.Log("Skipping Istio installation (INSTALL_ISTIO=false)")
 	}
 
 	// 4. Deploy telemetry manager (includes CRDs and PriorityClass from helm chart)
@@ -41,8 +38,6 @@ func PrepareCluster(t TestingT, k8sClient client.Client, cfg Config) error {
 		if err := deployManager(t, k8sClient, cfg); err != nil {
 			return fmt.Errorf("failed to deploy telemetry manager: %w", err)
 		}
-	} else {
-		t.Log("Skipping telemetry manager deployment (SKIP_MANAGER_DEPLOYMENT=true)")
 	}
 
 	// 5. Deploy test prerequisites (AFTER manager - needs CRDs)
@@ -50,8 +45,6 @@ func PrepareCluster(t TestingT, k8sClient client.Client, cfg Config) error {
 		if err := deployTestPrerequisites(t, k8sClient); err != nil {
 			return fmt.Errorf("failed to deploy test prerequisites: %w", err)
 		}
-	} else if cfg.SkipPrerequisites {
-		t.Log("Skipping test prerequisites deployment (SKIP_PREREQUISITES=true)")
 	}
 
 	t.Log("Cluster preparation complete")

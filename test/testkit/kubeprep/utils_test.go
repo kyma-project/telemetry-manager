@@ -23,7 +23,7 @@ func (m *mockTestingT) Context() context.Context {
 	return m.ctx
 }
 
-func TestApplyYAML_SkipsExistingResources(t *testing.T) {
+func TestApplyYAML_UpdatesExistingResources(t *testing.T) {
 	// Create a fake client with an existing ConfigMap
 	scheme := runtime.NewScheme()
 	_ = corev1.AddToScheme(scheme)
@@ -55,12 +55,12 @@ data:
   new-key: new-value
 `
 
-	// Apply the YAML (should skip the existing ConfigMap)
+	// Apply the YAML (should update the existing ConfigMap via server-side apply)
 	ctx := context.Background()
 	err := applyYAML(ctx, client, t, yamlContent)
-	require.NoError(t, err, "applyYAML should succeed and skip existing resource")
+	require.NoError(t, err, "applyYAML should succeed and update existing resource")
 
-	// Verify the ConfigMap was NOT updated (original data preserved)
+	// Verify the ConfigMap was updated
 	cm := &corev1.ConfigMap{}
 	err = client.Get(ctx, types.NamespacedName{
 		Name:      "test-cm",
@@ -68,10 +68,9 @@ data:
 	}, cm)
 	require.NoError(t, err)
 
-	// Verify old data is still there (resource was skipped, not updated)
-	require.Contains(t, cm.Data, "old-key")
-	require.Equal(t, "old-value", cm.Data["old-key"])
-	require.NotContains(t, cm.Data, "new-key", "should not have new key - resource was skipped")
+	// Server-side apply replaces the data with the new value
+	require.Contains(t, cm.Data, "new-key", "should have new key after update")
+	require.Equal(t, "new-value", cm.Data["new-key"])
 }
 
 func TestApplyYAML_CreateNewResource(t *testing.T) {
