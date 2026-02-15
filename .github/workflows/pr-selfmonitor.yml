@@ -95,35 +95,7 @@ jobs:
         run: docker load < manager-image.tar
 
       - name: Provision K3D cluster
-        run: |
-          k3d cluster create --config .k3d-kyma.yaml
-          kubectl create ns kyma-system
-
-      - name: Import manager image to K3D
-        run: k3d image import ${{ env.MANAGER_IMAGE }} -c kyma
-
-      - name: Install Istio
-        if: matrix.scenario != 'healthy'
-        run: hack/deploy-istio.sh
-
-      - name: Deploy manager
-        run: |
-          if [[ "${{ matrix.kind }}" == "fluent-bit" ]]; then
-            make deploy-no-fips MANAGER_IMAGE=${{ env.MANAGER_IMAGE }}
-          else
-            make deploy MANAGER_IMAGE=${{ env.MANAGER_IMAGE }}
-          fi
-
-      - name: Deploy test prerequisites
-        run: |
-          kubectl apply -f test/fixtures/operator_v1beta1_telemetry.yaml -n kyma-system
-          kubectl apply -f test/fixtures/networkpolicy-deny-all.yaml -n kyma-system
-          kubectl apply -f test/fixtures/shoot_info_cm.yaml
-
-      - name: Wait for manager to be ready
-        run: |
-          kubectl -n kyma-system rollout status deployment telemetry-manager --timeout=90s
-          kubectl -n kyma-system wait pods -l app.kubernetes.io/instance=telemetry,app.kubernetes.io/name=manager --for=condition=Ready=true --timeout=90s
+        run: k3d cluster create --config .k3d-kyma.yaml
 
       - name: Run self-monitor tests
         run: |
