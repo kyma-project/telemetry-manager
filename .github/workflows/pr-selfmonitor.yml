@@ -102,8 +102,7 @@ jobs:
       - name: Run self-monitor tests
         run: |
           gotestsum --format standard-verbose --junitfile junit-report-selfmonitor-${{ matrix.kind }}-${{ matrix.scenario }}.xml \
-            -- -timeout=20m ./test/selfmonitor/... \
-            -- -labels="selfmonitor-${{ matrix.kind }}-${{ matrix.scenario }}"
+            ./test/selfmonitor/... -timeout 15m -labels "selfmonitor-${{ matrix.kind }}-${{ matrix.scenario }}"
 
       - name: Upload test report
         uses: actions/upload-artifact@v4
