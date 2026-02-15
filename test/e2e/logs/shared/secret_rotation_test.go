@@ -131,7 +131,7 @@ func TestSecretRotation_OTel(t *testing.T) {
 }
 
 func TestSecretRotation_FluentBit(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelFluentBit)
+	suite.RegisterTestCase(t, suite.LabelFluentBit, suite.LabelNoFIPS)
 
 	const (
 		hostKey   = "logs-host"

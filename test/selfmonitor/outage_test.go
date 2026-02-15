@@ -107,7 +107,7 @@ func TestOutage(t *testing.T) {
 				return &p
 			},
 			generator: func(ns string) []client.Object {
-				return []client.Object{stdoutloggen.NewDeployment(ns, stdoutloggen.WithRate(5000)).K8sObject()}
+				return []client.Object{stdoutloggen.NewDeployment(ns, stdoutloggen.WithRate(5_000)).K8sObject()}
 			},
 			assert: func(t *testing.T, pipelineName string) {
 				assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
@@ -238,7 +238,7 @@ func TestOutage(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.labelPrefix, func(t *testing.T) {
-			suite.RegisterTestCase(t, label(tc.labelPrefix, suite.LabelSelfMonitorOutageSuffix))
+			suite.RegisterTestCase(t, labelsForSelfMonitor(tc.labelPrefix, suite.LabelSelfMonitorOutageSuffix)...)
 
 			var (
 				uniquePrefix = unique.Prefix(tc.labelPrefix)

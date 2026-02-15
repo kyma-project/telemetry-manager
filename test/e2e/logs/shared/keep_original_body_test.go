@@ -190,7 +190,7 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 }
 
 func TestKeepOriginalBody_FluentBit(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelFluentBit)
+	suite.RegisterTestCase(t, suite.LabelFluentBit, suite.LabelNoFIPS)
 
 	var (
 		uniquePrefix         = unique.Prefix()

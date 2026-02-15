@@ -213,18 +213,18 @@ func TestLabelExpressionParsing(t *testing.T) {
 
 		// Edge cases
 		{
-			name:        "multiple_nots",
+			name:        "not_with_matching_label",
 			expression:  "not fips",
-			description: "Double negation: not fips - should be equivalent to 'fips'",
-			testLabels:  []string{"fips"},
-			expected:    true,
-		},
-		{
-			name:        "triple_not",
-			expression:  "not fips",
-			description: "Triple negation: not fips - should be equivalent to 'not fips'",
+			description: "NOT with matching label: 'not fips' with test having fips label should be false",
 			testLabels:  []string{"fips"},
 			expected:    false,
+		},
+		{
+			name:        "not_without_matching_label",
+			expression:  "not fips",
+			description: "NOT without matching label: 'not fips' with test not having fips label should be true",
+			testLabels:  []string{"logs"},
+			expected:    true,
 		},
 		{
 			name:        "nested_parentheses",

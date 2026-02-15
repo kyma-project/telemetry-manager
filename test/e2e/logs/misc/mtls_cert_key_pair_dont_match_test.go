@@ -74,7 +74,7 @@ func TestMTLSCertKeyDontMatch_OTel(t *testing.T) {
 }
 
 func TestMTLSCertKeyDontMatch_FluentBit(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelFluentBit)
+	suite.RegisterTestCase(t, suite.LabelFluentBit, suite.LabelNoFIPS)
 
 	var (
 		uniquePrefix = unique.Prefix()

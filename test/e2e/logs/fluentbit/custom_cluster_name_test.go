@@ -22,7 +22,7 @@ import (
 )
 
 func TestCustomClusterName(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelFluentBit)
+	suite.RegisterTestCase(t, suite.LabelFluentBit, suite.LabelNoFIPS)
 
 	var (
 		uniquePrefix = unique.Prefix()

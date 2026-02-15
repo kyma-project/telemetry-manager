@@ -185,7 +185,7 @@ func TestLabelAnnotation(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(string(tc.labelPrefix), func(t *testing.T) {
-			suite.RegisterTestCase(t, suite.LabelCustomLabelAnnotation)
+			suite.RegisterTestCase(t, suite.LabelCustomLabelAnnotation, suite.LabelNoFIPS)
 
 			var (
 				uniquePrefix = unique.Prefix(string(tc.labelPrefix))
