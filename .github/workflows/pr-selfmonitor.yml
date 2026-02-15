@@ -101,7 +101,7 @@ jobs:
 
       - name: Run self-monitor tests
         run: |
-          gotestsum --format pkgname --junitfile junit-report-selfmonitor-${{ matrix.kind }}-${{ matrix.scenario }}.xml \
+          gotestsum --format standard-verbose --junitfile junit-report-selfmonitor-${{ matrix.kind }}-${{ matrix.scenario }}.xml \
             -- -timeout=20m ./test/selfmonitor/... \
             -- -labels="selfmonitor-${{ matrix.kind }}-${{ matrix.scenario }}"
 
