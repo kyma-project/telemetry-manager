@@ -202,6 +202,7 @@ func TestHealthy(t *testing.T) {
 
 			FIPSModeEnabled, err := isFIPSModeEnabled(t)
 			Expect(err).ToNot(HaveOccurred())
+
 			if FIPSModeEnabled {
 				// assert that the Self-Monitor image is the prometheus-fips image when FIPS mode is enabled
 				assert.DeploymentHasImage(t, kitkyma.SelfMonitorName, names.SelfMonitorContainerName, testkit.SelfMonitorFIPSImage)
@@ -216,8 +217,10 @@ func TestHealthy(t *testing.T) {
 }
 
 func isFIPSModeEnabled(t *testing.T) (bool, error) {
-	const managerContainerName = "manager"
-	const fipsEnvVarName = "KYMA_FIPS_MODE_ENABLED"
+	const (
+		managerContainerName = "manager"
+		fipsEnvVarName       = "KYMA_FIPS_MODE_ENABLED"
+	)
 
 	var deployment appsv1.Deployment
 
