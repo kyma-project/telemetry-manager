@@ -24,32 +24,8 @@ on:
       - ".k3d-kyma.yaml"
       - "Makefile"
 
-  workflow_dispatch:
-    inputs:
-      kind:
-        description: "Signal type to test (leave empty for all)"
-        required: false
-        type: choice
-        options:
-          - ""
-          - fluent-bit
-          - log-agent
-          - log-gateway
-          - metric-gateway
-          - metric-agent
-          - traces
-      scenario:
-        description: "Scenario to test (leave empty for all)"
-        required: false
-        type: choice
-        options:
-          - ""
-          - healthy
-          - backpressure
-          - outage
-
 env:
-  MANAGER_IMAGE: telemetry-manager:pr-${{ github.event.pull_request.number || github.run_id }}
+  MANAGER_IMAGE: telemetry-manager:pr-${{ github.event.pull_request.number }}
 
 jobs:
   build:
@@ -96,11 +72,6 @@ jobs:
           - outage
     name: "${{ matrix.kind }}-${{ matrix.scenario }}"
     runs-on: ubuntu-latest
-    # Skip if workflow_dispatch specified a different kind/scenario
-    if: |
-      (github.event_name != 'workflow_dispatch') ||
-      (github.event.inputs.kind == '' || github.event.inputs.kind == matrix.kind) &&
-      (github.event.inputs.scenario == '' || github.event.inputs.scenario == matrix.scenario)
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -112,9 +83,7 @@ jobs:
 
       - name: Install tools
         run: |
-          # Install k3d
           curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
-          # Install gotestsum
           go install gotest.tools/gotestsum@latest
 
       - name: Download manager image artifact
@@ -123,8 +92,7 @@ jobs:
           name: manager-image
 
       - name: Load manager image
-        run: |
-          docker load < manager-image.tar
+        run: docker load < manager-image.tar
 
       - name: Provision K3D cluster
         run: |
@@ -132,13 +100,11 @@ jobs:
           kubectl create ns kyma-system
 
       - name: Import manager image to K3D
-        run: |
-          k3d image import ${{ env.MANAGER_IMAGE }} -c kyma
+        run: k3d image import ${{ env.MANAGER_IMAGE }} -c kyma
 
       - name: Install Istio
-        if: ${{ matrix.scenario != 'healthy' }}
-        run: |
-          hack/deploy-istio.sh
+        if: matrix.scenario != 'healthy'
+        run: hack/deploy-istio.sh
 
       - name: Deploy manager
         run: |
@@ -173,7 +139,7 @@ jobs:
           path: junit-report*.xml
 
       - name: Collect failure diagnostics
-        if: ${{ failure() }}
+        if: failure()
         run: |
           echo "=== Manager Pod Description ==="
           kubectl -n kyma-system describe pod -l "app.kubernetes.io/instance=telemetry,app.kubernetes.io/name=manager" || true
