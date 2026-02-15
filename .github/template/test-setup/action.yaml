@@ -1,11 +1,10 @@
 name: Test Setup
-description: Sets up the test environment and provisions a basic k3d cluster
+description: Sets up the test environment and deploys necessary components
 
 inputs:
   experimental:
     description: Deploy manager in experimental mode
     required: false
-    default: "false"
   github-token:
     description: Github token to use for github access
     required: true
@@ -19,7 +18,7 @@ inputs:
   operate-in-fips-mode:
     description: Whether components should be deployed in FIPS 140-2 compliant way.
     required: true
-    default: "true"
+    default: "false"
   custom-labels-annotations-no-fips:
     description: Whether to add custom labels and annotations to the components using helm in non-FIPS mode.
     required: false
@@ -32,22 +31,49 @@ runs:
     - name: Setup Golang
       uses: "./.github/template/setup-golang"
 
-    - name: Provision basic K3D cluster
+    - name: Provision K3D cluster${{ inputs.experimental == 'true' && ' in experimental mode' || '' }}${{ inputs.install-istio == 'true' && ' with Istio' || '' }}
       shell: bash
+      env:
+        #TODO: Remove after 1.54.0 release
+        MANAGER_IMAGE: ${{ env.MANAGER_IMAGE}}
       run: |
-        echo "::notice title=K3D Cluster::Provisioning basic K3D cluster"
-        make provision-k3d
+        echo "::notice title=K3D Cluster::Provisioning K3D Cluster (Experimental: ${{ inputs.experimental }}, Install Istio: ${{ inputs.install-istio }}, FIPS Mode: ${{ inputs.operate-in-fips-mode }})"
 
-    - name: Set environment variables for tests
+        mode=""
+        if [[ "${{ inputs.experimental }}" == "true" ]]; then
+          mode="$mode-experimental"
+        fi
+        if [[ "${{ inputs.install-istio }}" == "true" ]]; then
+          mode="$mode-istio"
+        fi
+        
+          if [[ "${{ inputs.custom-labels-annotations-no-fips }}" == "true" ]]; then
+          mode="$mode-custom-labels-annotations"
+        fi
+
+        if [[ "${{ inputs.operate-in-fips-mode }}" == "false" ]]; then
+          mode="$mode-no-fips"
+        fi
+
+        if [[ -n "${{ inputs.manager-image }}" ]]; then
+          export MANAGER_IMAGE="${{ inputs.manager-image }}"
+        fi
+        
+
+        echo "::notice title=Manager Image::Manager Image to be used: $MANAGER_IMAGE"
+
+        make setup-e2e$mode
+
+    - name: Wait for manager deployment to roll out
+      shell: bash
+      run: kubectl -n kyma-system rollout status deployment telemetry-manager --timeout=90s
+
+    - name: Wait for manager to be ready
+      shell: bash
+      run: kubectl -n kyma-system wait pods -l app.kubernetes.io/instance=telemetry,app.kubernetes.io/name=manager --for=condition=Ready=true --timeout=90s
+
+    - name: Print cluster info
       shell: bash
       run: |
-        echo "MANAGER_IMAGE=${{ inputs.manager-image }}" >> $GITHUB_ENV
-        echo "INSTALL_ISTIO=${{ inputs.install-istio }}" >> $GITHUB_ENV
-        echo "ENABLE_EXPERIMENTAL=${{ inputs.experimental }}" >> $GITHUB_ENV
-        echo "OPERATE_IN_FIPS_MODE=${{ inputs.operate-in-fips-mode }}" >> $GITHUB_ENV
-        echo "CUSTOM_LABELS_ANNOTATIONS=${{ inputs.custom-labels-annotations-no-fips }}" >> $GITHUB_ENV
-        echo "::notice title=Test Configuration::Manager Image: ${{ inputs.manager-image }}"
-        echo "::notice title=Test Configuration::Install Istio: ${{ inputs.install-istio }}"
-        echo "::notice title=Test Configuration::Experimental: ${{ inputs.experimental }}"
-        echo "::notice title=Test Configuration::FIPS Mode: ${{ inputs.operate-in-fips-mode }}"
-        echo "::notice title=Test Configuration::Custom Labels/Annotations: ${{ inputs.custom-labels-annotations-no-fips }}"
+        kubectl cluster-info
+        kubectl -n kyma-system get po
