@@ -29,6 +29,11 @@ func installIstio(t TestingT, k8sClient client.Client) error {
 
 	t.Log("Installing Istio...")
 
+	// Ensure kyma-system namespace exists (Istio manager uses it)
+	if err := ensureNamespaceInternal(ctx, k8sClient, kymaSystemNamespace, nil); err != nil {
+		return fmt.Errorf("failed to ensure kyma-system namespace: %w", err)
+	}
+
 	// Try to read Istio version from .env file
 	version := istioVersion
 	envFile := filepath.Join(".", ".env")
