@@ -49,11 +49,12 @@ on:
           - backpressure
           - outage
 
+env:
+  MANAGER_IMAGE: telemetry-manager:pr-${{ github.event.pull_request.number || github.run_id }}
+
 jobs:
-  setup:
+  build:
     runs-on: ubuntu-latest
-    outputs:
-      manager-image: ${{ steps.set-env.outputs.image-repo }}:${{ steps.set-env.outputs.image-tag }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -61,34 +62,23 @@ jobs:
       - name: Setup Golang
         uses: ./.github/template/setup-golang
 
-      - name: Prepare environment variables
-        id: set-env
+      - name: Build manager image
         run: |
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            IMAGE_REPO="europe-docker.pkg.dev/kyma-project/dev/telemetry-manager"
-            IMAGE_TAG="${{ github.event.pull_request.head.sha }}"
-          else
-            IMAGE_REPO="europe-docker.pkg.dev/kyma-project/prod/telemetry-manager"
-            GIT_COMMIT_SHA=$(git rev-parse --short=8 HEAD)
-            GIT_COMMIT_DATE=$(git show -s --format=%cd --date=format:'v%Y%m%d' $GIT_COMMIT_SHA)
-            IMAGE_TAG="$GIT_COMMIT_DATE-$GIT_COMMIT_SHA"
-          fi
+          docker build -t ${{ env.MANAGER_IMAGE }} .
 
-          echo "IMAGE_REPO=$IMAGE_REPO" >> $GITHUB_ENV
-          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
-          echo "image-repo=$IMAGE_REPO" >> $GITHUB_OUTPUT
-          echo "image-tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
+      - name: Save manager image
+        run: |
+          docker save ${{ env.MANAGER_IMAGE }} > manager-image.tar
 
-      - name: Wait for image to be built
-        shell: bash
-        run: make wait-for-image
-        env:
-          IMAGE_TAG: "${{ env.IMAGE_TAG }}"
-          IMAGE_REPO: "${{ env.IMAGE_REPO }}"
-          QUERY_INTERVAL: 30
+      - name: Upload manager image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: manager-image
+          path: manager-image.tar
+          retention-days: 1
 
   selfmonitor:
-    needs: setup
+    needs: build
     strategy:
       fail-fast: false
       matrix:
@@ -114,24 +104,77 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup test environment
-        uses: "./.github/template/test-setup"
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          install-istio: ${{ matrix.scenario != 'healthy' }}
-          manager-image: ${{ needs.setup.outputs.manager-image }}
-          operate-in-fips-mode: ${{ matrix.kind != 'fluent-bit' && 'true' || 'false' }}
+      - name: Setup Golang
+        uses: ./.github/template/setup-golang
 
-      - name: Execute tests
-        uses: "./.github/template/test-execute"
+      - name: Download manager image artifact
+        uses: actions/download-artifact@v4
         with:
-          id: selfmonitor-${{ matrix.kind }}-${{ matrix.scenario }}
-          path: ./test/selfmonitor/...
-          labels: "selfmonitor-${{ matrix.kind }}-${{ matrix.scenario }}"
+          name: manager-image
 
-      - name: Cleanup test environment
-        uses: "./.github/template/test-cleanup"
+      - name: Load manager image
+        run: |
+          docker load < manager-image.tar
+
+      - name: Provision K3D cluster
+        run: |
+          make provision-k3d
+
+      - name: Import manager image to K3D
+        run: |
+          k3d image import ${{ env.MANAGER_IMAGE }} -c kyma
+
+      - name: Install Istio
+        if: ${{ matrix.scenario != 'healthy' }}
+        run: |
+          hack/deploy-istio.sh
+
+      - name: Deploy manager
+        run: |
+          DEPLOY_TARGET="deploy"
+          if [[ "${{ matrix.kind }}" == "fluent-bit" ]]; then
+            DEPLOY_TARGET="deploy-no-fips"
+          fi
+          make $DEPLOY_TARGET MANAGER_IMAGE=${{ env.MANAGER_IMAGE }}
+
+      - name: Deploy test prerequisites
+        run: |
+          make deploy-test-prerequisites
+
+      - name: Wait for manager to be ready
+        run: |
+          kubectl -n kyma-system rollout status deployment telemetry-manager --timeout=90s
+          kubectl -n kyma-system wait pods -l app.kubernetes.io/instance=telemetry,app.kubernetes.io/name=manager --for=condition=Ready=true --timeout=90s
+
+      - name: Run self-monitor tests
+        run: |
+          make run-e2e
+        env:
+          TEST_ID: selfmonitor-${{ matrix.kind }}-${{ matrix.scenario }}
+          TEST_PATH: ./test/selfmonitor/...
+          TEST_LABELS: "selfmonitor-${{ matrix.kind }}-${{ matrix.scenario }}"
+
+      - name: Upload test report
+        uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
-          id: selfmonitor-${{ matrix.kind }}-${{ matrix.scenario }}
-          failure: failure()
+          name: selfmonitor-${{ matrix.kind }}-${{ matrix.scenario }}-report
+          path: junit-report*.xml
+
+      - name: Collect failure diagnostics
+        if: ${{ failure() }}
+        run: |
+          echo "=== Manager Pod Description ==="
+          kubectl -n kyma-system describe pod -l "app.kubernetes.io/instance=telemetry,app.kubernetes.io/name=manager" || true
+          echo ""
+          echo "=== Manager Logs ==="
+          kubectl -n kyma-system logs -l "app.kubernetes.io/instance=telemetry,app.kubernetes.io/name=manager" --tail=100 || true
+          echo ""
+          echo "=== Self-Monitor Logs ==="
+          kubectl -n kyma-system logs -l "app.kubernetes.io/name=telemetry-self-monitor" --tail=100 || true
+          echo ""
+          echo "=== Fluent Bit Logs ==="
+          kubectl -n kyma-system logs -l "app.kubernetes.io/name=fluent-bit" --tail=100 || true
+          echo ""
+          echo "=== All Pods ==="
+          kubectl get pods -A
