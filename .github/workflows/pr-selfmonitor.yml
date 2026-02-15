@@ -1,0 +1,137 @@
+name: PR Self-Monitor Tests
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+    branches:
+      - "main"
+      - "release-*"
+    paths:
+      - "**/go.mod"
+      - "**/go.sum"
+      - "**.go"
+      - "!**_test.go"
+      - "!docs/**"
+      - "test/selfmonitor/**.go"
+      - "test/testkit/**.go"
+      - "internal/selfmonitor/**"
+      - "internal/reconciler/**/status.go"
+      - "dependencies/telemetry-self-monitor/**"
+      - ".github/workflows/pr-selfmonitor.yml"
+      - ".github/template/**"
+      - ".env"
+      - ".k3d-kyma.yaml"
+      - "Makefile"
+
+  workflow_dispatch:
+    inputs:
+      kind:
+        description: "Signal type to test (leave empty for all)"
+        required: false
+        type: choice
+        options:
+          - ""
+          - fluent-bit
+          - log-agent
+          - log-gateway
+          - metric-gateway
+          - metric-agent
+          - traces
+      scenario:
+        description: "Scenario to test (leave empty for all)"
+        required: false
+        type: choice
+        options:
+          - ""
+          - healthy
+          - backpressure
+          - outage
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      manager-image: ${{ steps.set-env.outputs.image-repo }}:${{ steps.set-env.outputs.image-tag }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Golang
+        uses: ./.github/template/setup-golang
+
+      - name: Prepare environment variables
+        id: set-env
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            IMAGE_REPO="europe-docker.pkg.dev/kyma-project/dev/telemetry-manager"
+            IMAGE_TAG="${{ github.event.pull_request.head.sha }}"
+          else
+            IMAGE_REPO="europe-docker.pkg.dev/kyma-project/prod/telemetry-manager"
+            GIT_COMMIT_SHA=$(git rev-parse --short=8 HEAD)
+            GIT_COMMIT_DATE=$(git show -s --format=%cd --date=format:'v%Y%m%d' $GIT_COMMIT_SHA)
+            IMAGE_TAG="$GIT_COMMIT_DATE-$GIT_COMMIT_SHA"
+          fi
+
+          echo "IMAGE_REPO=$IMAGE_REPO" >> $GITHUB_ENV
+          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+          echo "image-repo=$IMAGE_REPO" >> $GITHUB_OUTPUT
+          echo "image-tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Wait for image to be built
+        shell: bash
+        run: make wait-for-image
+        env:
+          IMAGE_TAG: "${{ env.IMAGE_TAG }}"
+          IMAGE_REPO: "${{ env.IMAGE_REPO }}"
+          QUERY_INTERVAL: 30
+
+  selfmonitor:
+    needs: setup
+    strategy:
+      fail-fast: false
+      matrix:
+        kind:
+          - fluent-bit
+          - log-agent
+          - log-gateway
+          - metric-gateway
+          - metric-agent
+          - traces
+        scenario:
+          - healthy
+          - backpressure
+          - outage
+    name: "${{ matrix.kind }}-${{ matrix.scenario }}"
+    runs-on: ubuntu-latest
+    # Skip if workflow_dispatch specified a different kind/scenario
+    if: |
+      (github.event_name != 'workflow_dispatch') ||
+      (github.event.inputs.kind == '' || github.event.inputs.kind == matrix.kind) &&
+      (github.event.inputs.scenario == '' || github.event.inputs.scenario == matrix.scenario)
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup test environment
+        uses: "./.github/template/test-setup"
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          install-istio: ${{ matrix.scenario != 'healthy' }}
+          manager-image: ${{ needs.setup.outputs.manager-image }}
+          operate-in-fips-mode: ${{ matrix.kind != 'fluent-bit' && 'true' || 'false' }}
+
+      - name: Execute tests
+        uses: "./.github/template/test-execute"
+        with:
+          id: selfmonitor-${{ matrix.kind }}-${{ matrix.scenario }}
+          path: ./test/selfmonitor/...
+          labels: "selfmonitor-${{ matrix.kind }}-${{ matrix.scenario }}"
+
+      - name: Cleanup test environment
+        uses: "./.github/template/test-cleanup"
+        if: ${{ !cancelled() }}
+        with:
+          id: selfmonitor-${{ matrix.kind }}-${{ matrix.scenario }}
+          failure: failure()
