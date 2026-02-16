@@ -253,7 +253,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 	return nil
 }
 
-func (r *Reconciler) syncWatchedSecrets(ctx context.Context, pipeline *telemetryv1beta1.TracePipeline) error {
+func (r *Reconciler) syncWatchedSecrets(ctx context.Context, pipeline *telemetryv1beta1.TracePipeline) {
 	secretRefs := secretref.GetSecretRefsTracePipeline(pipeline)
 
 	var secretNames []client.ObjectKey
@@ -265,8 +265,6 @@ func (r *Reconciler) syncWatchedSecrets(ctx context.Context, pipeline *telemetry
 	}
 
 	r.secretWatcher.SyncWatchedSecrets(ctx, pipeline, secretNames)
-
-	return nil
 }
 
 // getReconcilablePipelines returns the list of trace pipelines that are ready to be rendered into the otel collector configuration. A pipeline is deployable if it is not being deleted, all secret references exist, and is not above the pipeline limit.
