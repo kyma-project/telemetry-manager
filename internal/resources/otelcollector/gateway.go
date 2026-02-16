@@ -186,12 +186,8 @@ func (gad *GatewayApplierDeleter) ApplyResources(ctx context.Context, c client.C
 	var (
 		name         = types.NamespacedName{Namespace: gad.globals.TargetNamespace(), Name: gad.baseName}
 		otlpPorts    = gatewayIngressOTLPPorts()
-		metricsPorts = gatewayIngressMetricsPorts()
+		metricsPorts = gatewayIngressMetricsPorts(opts.IstioEnabled)
 	)
-
-	if opts.IstioEnabled {
-		metricsPorts = append(metricsPorts, ports.IstioEnvoyTelemetry)
-	}
 
 	if err := applyCommonResources(ctx, c, name, commonresources.LabelValueK8sComponentGateway, gad.rbac); err != nil {
 		return fmt.Errorf("failed to create common resource: %w", err)
@@ -485,8 +481,11 @@ func gatewayIngressOTLPPorts() []int32 {
 	}
 }
 
-func gatewayIngressMetricsPorts() []int32 {
-	return []int32{
-		ports.Metrics,
+func gatewayIngressMetricsPorts(istioEnabled bool) []int32 {
+	metricsPorts := []int32{ports.Metrics}
+	if istioEnabled {
+		metricsPorts = append(metricsPorts, ports.IstioEnvoyTelemetry)
 	}
+
+	return metricsPorts
 }

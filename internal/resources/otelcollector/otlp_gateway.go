@@ -89,12 +89,8 @@ func (o *OTLPGatewayApplierDeleter) ApplyResources(ctx context.Context, c client
 	var (
 		name         = types.NamespacedName{Namespace: o.globals.TargetNamespace(), Name: o.baseName}
 		otlpPorts    = gatewayIngressOTLPPorts()
-		metricsPorts = gatewayIngressMetricsPorts()
+		metricsPorts = gatewayIngressMetricsPorts(opts.IstioEnabled)
 	)
-
-	if opts.IstioEnabled {
-		metricsPorts = append(metricsPorts, ports.IstioEnvoyTelemetry)
-	}
 
 	if err := applyCommonResources(ctx, c, name, commonresources.LabelValueK8sComponentGateway, o.rbac); err != nil {
 		return fmt.Errorf("failed to create common resource: %w", err)

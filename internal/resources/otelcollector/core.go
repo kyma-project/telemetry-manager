@@ -7,7 +7,6 @@ import (
 	"strconv"
 
 	corev1 "k8s.io/api/core/v1"
-	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -66,7 +65,7 @@ func applyCommonResources(ctx context.Context, c client.Client, name types.Names
 	}
 
 	// TODO: Remove after rollout 1.58.0
-	if err := cleanupOldNetworkPolicy(ctx, c, name); err != nil {
+	if err := commonresources.CleanupOldNetworkPolicy(ctx, c, name); err != nil {
 		return fmt.Errorf("failed to cleanup old network policy: %w", err)
 	}
 
@@ -181,26 +180,4 @@ func makeMetricsService(name types.NamespacedName, componentType string) *corev1
 			Type:     corev1.ServiceTypeClusterIP,
 		},
 	}
-}
-
-// TODO: Remove after rollout 1.58.0
-
-func cleanupOldNetworkPolicy(ctx context.Context, c client.Client, name types.NamespacedName) error {
-	oldNetworkPolicy := &networkingv1.NetworkPolicy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name.Name,
-			Namespace: name.Namespace,
-		},
-	}
-
-	if err := c.Delete(ctx, oldNetworkPolicy); err != nil {
-		if apierrors.IsNotFound(err) {
-			// Already deleted, ignore
-			return nil
-		}
-
-		return err
-	}
-
-	return nil
 }

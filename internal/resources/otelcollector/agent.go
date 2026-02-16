@@ -148,11 +148,7 @@ func NewMetricAgentApplierDeleter(globals config.Global, image, priorityClassNam
 
 func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Client, opts AgentApplyOptions) error {
 	name := types.NamespacedName{Namespace: aad.globals.TargetNamespace(), Name: aad.baseName}
-	ingressMetricsPorts := agentIngressMetricsPorts()
-
-	if opts.IstioEnabled {
-		ingressMetricsPorts = append(ingressMetricsPorts, ports.IstioEnvoyTelemetry)
-	}
+	ingressMetricsPorts := agentIngressMetricsPorts(opts.IstioEnabled)
 
 	if err := applyCommonResources(ctx, c, name, commonresources.LabelValueK8sComponentAgent, aad.rbac); err != nil {
 		return fmt.Errorf("failed to create common resource: %w", err)
@@ -363,8 +359,12 @@ func makeFileLogCheckPointVolumeMount() corev1.VolumeMount {
 	}
 }
 
-func agentIngressMetricsPorts() []int32 {
-	return []int32{
-		ports.Metrics,
+func agentIngressMetricsPorts(istioEnabled bool) []int32 {
+	metricsPorts := []int32{ports.Metrics}
+
+	if istioEnabled {
+		metricsPorts = append(metricsPorts, ports.IstioEnvoyTelemetry)
 	}
+
+	return metricsPorts
 }

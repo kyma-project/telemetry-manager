@@ -1,11 +1,15 @@
 package common
 
 import (
+	"context"
+
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type NetworkPolicyOption func(*networkingv1.NetworkPolicy)
@@ -182,4 +186,26 @@ func makeNetworkPolicyPorts(ports []int32) []networkingv1.NetworkPolicyPort {
 	}
 
 	return networkPolicyPorts
+}
+
+// TODO: Remove after rollout 1.58.0
+
+func CleanupOldNetworkPolicy(ctx context.Context, c client.Client, name types.NamespacedName) error {
+	oldNetworkPolicy := &networkingv1.NetworkPolicy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name.Name,
+			Namespace: name.Namespace,
+		},
+	}
+
+	if err := c.Delete(ctx, oldNetworkPolicy); err != nil {
+		if apierrors.IsNotFound(err) {
+			// Already deleted, ignore
+			return nil
+		}
+
+		return err
+	}
+
+	return nil
 }
