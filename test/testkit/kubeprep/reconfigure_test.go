@@ -16,20 +16,18 @@ func TestCalculateDiff(t *testing.T) {
 		{
 			name: "no changes",
 			current: Config{
-				InstallIstio:            false,
-				OperateInFIPSMode:       false,
-				EnableExperimental:      false,
-				CustomLabelsAnnotations: false,
-				SkipManagerDeployment:   false,
-				SkipPrerequisites:       false,
+				InstallIstio:          false,
+				OperateInFIPSMode:     false,
+				EnableExperimental:    false,
+				SkipManagerDeployment: false,
+				SkipPrerequisites:     false,
 			},
 			desired: Config{
-				InstallIstio:            false,
-				OperateInFIPSMode:       false,
-				EnableExperimental:      false,
-				CustomLabelsAnnotations: false,
-				SkipManagerDeployment:   false,
-				SkipPrerequisites:       false,
+				InstallIstio:          false,
+				OperateInFIPSMode:     false,
+				EnableExperimental:    false,
+				SkipManagerDeployment: false,
+				SkipPrerequisites:     false,
 			},
 			expected: ConfigDiff{
 				NeedsIstioChange:         false,
@@ -94,17 +92,31 @@ func TestCalculateDiff(t *testing.T) {
 			},
 		},
 		{
-			name: "custom labels annotations change",
+			name: "helm values change - triggers redeploy",
 			current: Config{
-				CustomLabelsAnnotations: false,
+				HelmValues: nil,
 			},
 			desired: Config{
-				CustomLabelsAnnotations: true,
+				HelmValues: []string{"foo=bar"},
 			},
 			expected: ConfigDiff{
 				NeedsIstioChange:         false,
 				NeedsManagerRedeploy:     true,
-				NeedsPrerequisitesUpdate: true,
+				NeedsPrerequisitesUpdate: false,
+			},
+		},
+		{
+			name: "helm values same - no redeploy",
+			current: Config{
+				HelmValues: []string{"foo=bar", "baz=qux"},
+			},
+			desired: Config{
+				HelmValues: []string{"baz=qux", "foo=bar"}, // Different order but same values
+			},
+			expected: ConfigDiff{
+				NeedsIstioChange:         false,
+				NeedsManagerRedeploy:     false,
+				NeedsPrerequisitesUpdate: false,
 			},
 		},
 		{
@@ -152,38 +164,38 @@ func TestCalculateDiff(t *testing.T) {
 			},
 		},
 		{
-			name: "multiple changes - experimental and custom labels",
+			name: "multiple changes - experimental and helm values",
 			current: Config{
-				EnableExperimental:      false,
-				CustomLabelsAnnotations: false,
+				EnableExperimental: false,
+				HelmValues:         nil,
 			},
 			desired: Config{
-				EnableExperimental:      true,
-				CustomLabelsAnnotations: true,
+				EnableExperimental: true,
+				HelmValues:         []string{"foo=bar"},
 			},
 			expected: ConfigDiff{
 				NeedsIstioChange:         false,
 				NeedsManagerRedeploy:     true,
-				NeedsPrerequisitesUpdate: true,
+				NeedsPrerequisitesUpdate: false,
 			},
 		},
 		{
 			name: "all changes at once",
 			current: Config{
-				InstallIstio:            false,
-				OperateInFIPSMode:       false,
-				EnableExperimental:      false,
-				CustomLabelsAnnotations: false,
-				SkipManagerDeployment:   false,
-				SkipPrerequisites:       false,
+				InstallIstio:          false,
+				OperateInFIPSMode:     false,
+				EnableExperimental:    false,
+				HelmValues:            nil,
+				SkipManagerDeployment: false,
+				SkipPrerequisites:     false,
 			},
 			desired: Config{
-				InstallIstio:            true,
-				OperateInFIPSMode:       true,
-				EnableExperimental:      true,
-				CustomLabelsAnnotations: true,
-				SkipManagerDeployment:   false,
-				SkipPrerequisites:       false,
+				InstallIstio:          true,
+				OperateInFIPSMode:     true,
+				EnableExperimental:    true,
+				HelmValues:            []string{"foo=bar"},
+				SkipManagerDeployment: false,
+				SkipPrerequisites:     true,
 			},
 			expected: ConfigDiff{
 				NeedsIstioChange:         true,
@@ -228,6 +240,71 @@ func TestCalculateDiff(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			actual := calculateDiff(tt.current, tt.desired)
+			require.Equal(t, tt.expected, actual)
+		})
+	}
+}
+
+func TestHelmValuesEqual(t *testing.T) {
+	tests := []struct {
+		name     string
+		a        []string
+		b        []string
+		expected bool
+	}{
+		{
+			name:     "both nil",
+			a:        nil,
+			b:        nil,
+			expected: true,
+		},
+		{
+			name:     "both empty",
+			a:        []string{},
+			b:        []string{},
+			expected: true,
+		},
+		{
+			name:     "nil vs empty - equal",
+			a:        nil,
+			b:        []string{},
+			expected: true,
+		},
+		{
+			name:     "same values same order",
+			a:        []string{"foo=bar", "baz=qux"},
+			b:        []string{"foo=bar", "baz=qux"},
+			expected: true,
+		},
+		{
+			name:     "same values different order",
+			a:        []string{"foo=bar", "baz=qux"},
+			b:        []string{"baz=qux", "foo=bar"},
+			expected: true,
+		},
+		{
+			name:     "different lengths",
+			a:        []string{"foo=bar"},
+			b:        []string{"foo=bar", "baz=qux"},
+			expected: false,
+		},
+		{
+			name:     "different values",
+			a:        []string{"foo=bar"},
+			b:        []string{"foo=baz"},
+			expected: false,
+		},
+		{
+			name:     "one nil one with values",
+			a:        nil,
+			b:        []string{"foo=bar"},
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			actual := helmValuesEqual(tt.a, tt.b)
 			require.Equal(t, tt.expected, actual)
 		})
 	}

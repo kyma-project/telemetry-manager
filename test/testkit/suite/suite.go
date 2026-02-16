@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 	"runtime"
+	"sort"
 	"strings"
 	"testing"
 
@@ -49,10 +50,9 @@ var (
 
 // Environment-affecting labels - these determine cluster setup
 var environmentLabels = map[string]bool{
-	LabelIstio:                 true,
-	LabelExperimental:          true,
-	LabelNoFIPS:                true,
-	LabelCustomLabelAnnotation: true,
+	LabelIstio:        true,
+	LabelExperimental: true,
+	LabelNoFIPS:       true,
 }
 
 // init registers test flags with the flag package.
@@ -278,6 +278,73 @@ func SetupTest(t *testing.T, labels ...string) {
 
 	// Reconfigure cluster if needed
 	// Note: Prerequisite validation is no longer needed - reconfiguration handles it automatically
+	require.NoError(t, ensureClusterState(t, requiredConfig))
+}
+
+// SetupTestWithHelmValues is like SetupTest but allows custom helm values.
+// The manager will be marked as customized, and the next SetupTest will
+// reinstall to restore a clean state.
+//
+// Example:
+//
+//	suite.SetupTestWithHelmValues(t,
+//	    []string{"additionalMetadata.labels.my-label=foo", "additionalMetadata.annotations.my-annotation=bar"},
+//	    suite.LabelNoFIPS)
+func SetupTestWithHelmValues(t *testing.T, helmValues []string, labels ...string) {
+	RegisterTestingT(t)
+
+	labelSet := toSet(labels)
+
+	// Skip test if it contains "skipped" label
+	if _, exists := labelSet[LabelSkip]; exists {
+		t.Skip()
+	}
+
+	// Evaluate skip/execute decision BEFORE cluster configuration
+	labelFilterExpr := findLabelFilterExpression()
+	doNotExecute := findDoNotExecuteFlag()
+	printLabels := findPrintLabelsFlag()
+
+	// Determine if this test should run based on label filter
+	shouldRun := true
+	if labelFilterExpr != "" {
+		var err error
+		shouldRun, err = evaluateLabelExpression(labels, labelFilterExpr)
+		require.NoError(t, err)
+	}
+
+	// Handle print-labels mode
+	if printLabels {
+		if shouldRun {
+			printLabelsInfo(t, labels)
+		}
+		t.Skip()
+		return
+	}
+
+	// Handle dry-run mode
+	if doNotExecute {
+		if labelFilterExpr == "" {
+			printTestInfo(t, labels, "would execute (no filter)")
+		} else if shouldRun {
+			printTestInfo(t, labels, fmt.Sprintf("would execute (matches filter: %s)", labelFilterExpr))
+		} else {
+			printTestInfo(t, labels, fmt.Sprintf("would skip (doesn't match filter: %s)", labelFilterExpr))
+		}
+		t.Skip()
+		return
+	}
+
+	// Skip test if label filter doesn't match
+	if !shouldRun {
+		t.Skipf("Test skipped: label filter '%s' not satisfied", labelFilterExpr)
+		return
+	}
+
+	// Test will execute - infer configuration and add custom helm values
+	requiredConfig := InferRequirementsFromLabels(labels)
+	requiredConfig.HelmValues = helmValues
+
 	require.NoError(t, ensureClusterState(t, requiredConfig))
 }
 
@@ -508,11 +575,11 @@ func ensureUpgradeTestState(t *testing.T, requiredConfig kubeprep.Config) error 
 	// Update current state to reflect what we deployed
 	// Store the config so UpgradeToTargetVersion can use the same settings
 	CurrentClusterState = &kubeprep.Config{
-		IsUpgradeTest:           true,
-		UpgradeFromChart:        requiredConfig.UpgradeFromChart,
-		OperateInFIPSMode:       requiredConfig.OperateInFIPSMode,
-		EnableExperimental:      requiredConfig.EnableExperimental,
-		CustomLabelsAnnotations: requiredConfig.CustomLabelsAnnotations,
+		IsUpgradeTest:      true,
+		UpgradeFromChart:   requiredConfig.UpgradeFromChart,
+		OperateInFIPSMode:  requiredConfig.OperateInFIPSMode,
+		EnableExperimental: requiredConfig.EnableExperimental,
+		HelmValues:         requiredConfig.HelmValues,
 	}
 
 	return nil
@@ -567,7 +634,27 @@ func configsEqual(a, b kubeprep.Config) bool {
 	return a.InstallIstio == b.InstallIstio &&
 		a.OperateInFIPSMode == b.OperateInFIPSMode &&
 		a.EnableExperimental == b.EnableExperimental &&
-		a.CustomLabelsAnnotations == b.CustomLabelsAnnotations &&
+		helmValuesEqual(a.HelmValues, b.HelmValues) &&
 		a.SkipManagerDeployment == b.SkipManagerDeployment &&
 		a.SkipPrerequisites == b.SkipPrerequisites
+}
+
+// helmValuesEqual compares two slices of helm values
+func helmValuesEqual(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	// Sort and compare for order-independent comparison
+	aSorted := make([]string, len(a))
+	bSorted := make([]string, len(b))
+	copy(aSorted, a)
+	copy(bSorted, b)
+	sort.Strings(aSorted)
+	sort.Strings(bSorted)
+	for i := range aSorted {
+		if aSorted[i] != bSorted[i] {
+			return false
+		}
+	}
+	return true
 }

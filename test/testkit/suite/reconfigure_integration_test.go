@@ -19,24 +19,22 @@ func TestConfigsEqual(t *testing.T) {
 		{
 			name: "identical configs are equal",
 			a: kubeprep.Config{
-				ManagerImage:            "manager:v1",
-				LocalImage:              true,
-				InstallIstio:            false,
-				OperateInFIPSMode:       false,
-				EnableExperimental:      false,
-				CustomLabelsAnnotations: false,
-				SkipManagerDeployment:   false,
-				SkipPrerequisites:       false,
+				ManagerImage:          "manager:v1",
+				LocalImage:            true,
+				InstallIstio:          false,
+				OperateInFIPSMode:     false,
+				EnableExperimental:    false,
+				SkipManagerDeployment: false,
+				SkipPrerequisites:     false,
 			},
 			b: kubeprep.Config{
-				ManagerImage:            "manager:v1",
-				LocalImage:              true,
-				InstallIstio:            false,
-				OperateInFIPSMode:       false,
-				EnableExperimental:      false,
-				CustomLabelsAnnotations: false,
-				SkipManagerDeployment:   false,
-				SkipPrerequisites:       false,
+				ManagerImage:          "manager:v1",
+				LocalImage:            true,
+				InstallIstio:          false,
+				OperateInFIPSMode:     false,
+				EnableExperimental:    false,
+				SkipManagerDeployment: false,
+				SkipPrerequisites:     false,
 			},
 			expected: true,
 		},
@@ -83,14 +81,24 @@ func TestConfigsEqual(t *testing.T) {
 			expected: false,
 		},
 		{
-			name: "custom labels difference is detected",
+			name: "helm values difference is detected",
 			a: kubeprep.Config{
-				CustomLabelsAnnotations: false,
+				HelmValues: nil,
 			},
 			b: kubeprep.Config{
-				CustomLabelsAnnotations: true,
+				HelmValues: []string{"foo=bar"},
 			},
 			expected: false,
+		},
+		{
+			name: "helm values same order-independent",
+			a: kubeprep.Config{
+				HelmValues: []string{"foo=bar", "baz=qux"},
+			},
+			b: kubeprep.Config{
+				HelmValues: []string{"baz=qux", "foo=bar"},
+			},
+			expected: true,
 		},
 		{
 			name: "skip manager deployment difference is detected",
@@ -135,26 +143,24 @@ func TestEnsureClusterState_NoReconfiguration(t *testing.T) {
 
 	// Set up initial state
 	initialConfig := &kubeprep.Config{
-		ManagerImage:            "manager:v1",
-		LocalImage:              true,
-		InstallIstio:            false,
-		OperateInFIPSMode:       false,
-		EnableExperimental:      false,
-		CustomLabelsAnnotations: false,
-		SkipManagerDeployment:   false,
-		SkipPrerequisites:       false,
+		ManagerImage:          "manager:v1",
+		LocalImage:            true,
+		InstallIstio:          false,
+		OperateInFIPSMode:     false,
+		EnableExperimental:    false,
+		SkipManagerDeployment: false,
+		SkipPrerequisites:     false,
 	}
 
 	ClusterPrepConfig = initialConfig
 	CurrentClusterState = &kubeprep.Config{
-		ManagerImage:            "manager:v1",
-		LocalImage:              true,
-		InstallIstio:            false,
-		OperateInFIPSMode:       false,
-		EnableExperimental:      false,
-		CustomLabelsAnnotations: false,
-		SkipManagerDeployment:   false,
-		SkipPrerequisites:       false,
+		ManagerImage:          "manager:v1",
+		LocalImage:            true,
+		InstallIstio:          false,
+		OperateInFIPSMode:     false,
+		EnableExperimental:    false,
+		SkipManagerDeployment: false,
+		SkipPrerequisites:     false,
 	}
 
 	// Infer requirements from labels that match current state
@@ -184,26 +190,24 @@ func TestEnsureClusterState_RequiresReconfiguration(t *testing.T) {
 
 	// Set up initial state (no Istio)
 	initialConfig := &kubeprep.Config{
-		ManagerImage:            "manager:v1",
-		LocalImage:              true,
-		InstallIstio:            false,
-		OperateInFIPSMode:       false,
-		EnableExperimental:      false,
-		CustomLabelsAnnotations: false,
-		SkipManagerDeployment:   false,
-		SkipPrerequisites:       false,
+		ManagerImage:          "manager:v1",
+		LocalImage:            true,
+		InstallIstio:          false,
+		OperateInFIPSMode:     false,
+		EnableExperimental:    false,
+		SkipManagerDeployment: false,
+		SkipPrerequisites:     false,
 	}
 
 	ClusterPrepConfig = initialConfig
 	CurrentClusterState = &kubeprep.Config{
-		ManagerImage:            "manager:v1",
-		LocalImage:              true,
-		InstallIstio:            false,
-		OperateInFIPSMode:       false,
-		EnableExperimental:      false,
-		CustomLabelsAnnotations: false,
-		SkipManagerDeployment:   false,
-		SkipPrerequisites:       false,
+		ManagerImage:          "manager:v1",
+		LocalImage:            true,
+		InstallIstio:          false,
+		OperateInFIPSMode:     false,
+		EnableExperimental:    false,
+		SkipManagerDeployment: false,
+		SkipPrerequisites:     false,
 	}
 
 	// Infer requirements from Istio label (requires Istio)

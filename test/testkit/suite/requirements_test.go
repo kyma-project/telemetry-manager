@@ -18,134 +18,112 @@ func TestInferRequirementsFromLabels(t *testing.T) {
 			name:   "no labels - defaults (FIPS enabled)",
 			labels: []string{},
 			expected: kubeprep.Config{
-				InstallIstio:            false,
-				OperateInFIPSMode:       true, // FIPS enabled by default
-				EnableExperimental:      false,
-				CustomLabelsAnnotations: false,
-				SkipManagerDeployment:   false,
-				SkipPrerequisites:       false,
+				InstallIstio:          false,
+				OperateInFIPSMode:     true, // FIPS enabled by default
+				EnableExperimental:    false,
+				SkipManagerDeployment: false,
+				SkipPrerequisites:     false,
 			},
 		},
 		{
 			name:   "istio label",
 			labels: []string{LabelIstio},
 			expected: kubeprep.Config{
-				InstallIstio:            true,
-				OperateInFIPSMode:       true, // FIPS enabled by default
-				EnableExperimental:      false,
-				CustomLabelsAnnotations: false,
-				SkipManagerDeployment:   false,
-				SkipPrerequisites:       false,
+				InstallIstio:          true,
+				OperateInFIPSMode:     true, // FIPS enabled by default
+				EnableExperimental:    false,
+				SkipManagerDeployment: false,
+				SkipPrerequisites:     false,
 			},
 		},
 		{
 			name:   "experimental label",
 			labels: []string{LabelExperimental},
 			expected: kubeprep.Config{
-				InstallIstio:            false,
-				OperateInFIPSMode:       true, // FIPS enabled by default
-				EnableExperimental:      true,
-				CustomLabelsAnnotations: false,
-				SkipManagerDeployment:   false,
-				SkipPrerequisites:       false,
+				InstallIstio:          false,
+				OperateInFIPSMode:     true, // FIPS enabled by default
+				EnableExperimental:    true,
+				SkipManagerDeployment: false,
+				SkipPrerequisites:     false,
 			},
 		},
 		{
 			name:   "no-fips label disables FIPS",
 			labels: []string{LabelNoFIPS},
 			expected: kubeprep.Config{
-				InstallIstio:            false,
-				OperateInFIPSMode:       false, // Disabled by no-fips label
-				EnableExperimental:      false,
-				CustomLabelsAnnotations: false,
-				SkipManagerDeployment:   false,
-				SkipPrerequisites:       false,
+				InstallIstio:          false,
+				OperateInFIPSMode:     false, // Disabled by no-fips label
+				EnableExperimental:    false,
+				SkipManagerDeployment: false,
+				SkipPrerequisites:     false,
 			},
 		},
 		{
 			name:   "istio and experimental",
 			labels: []string{LabelIstio, LabelExperimental},
 			expected: kubeprep.Config{
-				InstallIstio:            true,
-				OperateInFIPSMode:       true, // FIPS enabled by default
-				EnableExperimental:      true,
-				CustomLabelsAnnotations: false,
-				SkipManagerDeployment:   false,
-				SkipPrerequisites:       false,
+				InstallIstio:          true,
+				OperateInFIPSMode:     true, // FIPS enabled by default
+				EnableExperimental:    true,
+				SkipManagerDeployment: false,
+				SkipPrerequisites:     false,
 			},
 		},
 		{
 			name:   "istio, experimental and no-fips",
 			labels: []string{LabelIstio, LabelExperimental, LabelNoFIPS},
 			expected: kubeprep.Config{
-				InstallIstio:            true,
-				OperateInFIPSMode:       false, // Disabled by no-fips label
-				EnableExperimental:      true,
-				CustomLabelsAnnotations: false,
-				SkipManagerDeployment:   false,
-				SkipPrerequisites:       false,
+				InstallIstio:          true,
+				OperateInFIPSMode:     false, // Disabled by no-fips label
+				EnableExperimental:    true,
+				SkipManagerDeployment: false,
+				SkipPrerequisites:     false,
 			},
 		},
 		{
 			name:   "unknown labels ignored",
 			labels: []string{"unknown-label", "another-unknown"},
 			expected: kubeprep.Config{
-				InstallIstio:            false,
-				OperateInFIPSMode:       true, // FIPS enabled by default
-				EnableExperimental:      false,
-				CustomLabelsAnnotations: false,
-				SkipManagerDeployment:   false,
-				SkipPrerequisites:       false,
+				InstallIstio:          false,
+				OperateInFIPSMode:     true, // FIPS enabled by default
+				EnableExperimental:    false,
+				SkipManagerDeployment: false,
+				SkipPrerequisites:     false,
 			},
 		},
 		{
 			name:   "mixed known and unknown labels",
 			labels: []string{"unknown", LabelIstio, "another-unknown", LabelExperimental},
 			expected: kubeprep.Config{
-				InstallIstio:            true,
-				OperateInFIPSMode:       true, // FIPS enabled by default
-				EnableExperimental:      true,
-				CustomLabelsAnnotations: false,
-				SkipManagerDeployment:   false,
-				SkipPrerequisites:       false,
+				InstallIstio:          true,
+				OperateInFIPSMode:     true, // FIPS enabled by default
+				EnableExperimental:    true,
+				SkipManagerDeployment: false,
+				SkipPrerequisites:     false,
 			},
 		},
 		{
 			name:   "other labels don't affect config",
 			labels: []string{LabelLogAgent, LabelFluentBit},
 			expected: kubeprep.Config{
-				InstallIstio:            false,
-				OperateInFIPSMode:       true, // FIPS enabled by default
-				EnableExperimental:      false,
-				CustomLabelsAnnotations: false,
-				SkipManagerDeployment:   false,
-				SkipPrerequisites:       false,
-			},
-		},
-		{
-			name:   "custom-label-annotation label enables custom labels/annotations",
-			labels: []string{LabelCustomLabelAnnotation},
-			expected: kubeprep.Config{
-				InstallIstio:            false,
-				OperateInFIPSMode:       true, // FIPS enabled by default
-				EnableExperimental:      false,
-				CustomLabelsAnnotations: true, // Enabled by custom-label-annotation label
-				SkipManagerDeployment:   false,
-				SkipPrerequisites:       false,
+				InstallIstio:          false,
+				OperateInFIPSMode:     true, // FIPS enabled by default
+				EnableExperimental:    false,
+				SkipManagerDeployment: false,
+				SkipPrerequisites:     false,
 			},
 		},
 		{
 			name:   "upgrade label uses default chart when env var not set",
 			labels: []string{LabelUpgrade},
 			expected: kubeprep.Config{
-				InstallIstio:            false,
-				OperateInFIPSMode:       true, // FIPS enabled by default
-				EnableExperimental:      false,
-				CustomLabelsAnnotations: false,
-				SkipManagerDeployment:   false,
-				SkipPrerequisites:       false,
-				IsUpgradeTest:           true,
-				UpgradeFromChart:        DefaultUpgradeFromChartURL, // Uses default when env var not set
+				InstallIstio:          false,
+				OperateInFIPSMode:     true, // FIPS enabled by default
+				EnableExperimental:    false,
+				SkipManagerDeployment: false,
+				SkipPrerequisites:     false,
+				IsUpgradeTest:         true,
+				UpgradeFromChart:      DefaultUpgradeFromChartURL, // Uses default when env var not set
 			},
 		},
 	}
@@ -168,14 +146,13 @@ func TestInferRequirementsFromLabels_UpgradeWithEnvVar(t *testing.T) {
 	actual := InferRequirementsFromLabels([]string{LabelUpgrade})
 
 	expected := kubeprep.Config{
-		InstallIstio:            false,
-		OperateInFIPSMode:       true, // FIPS enabled by default
-		EnableExperimental:      false,
-		CustomLabelsAnnotations: false,
-		SkipManagerDeployment:   false,
-		SkipPrerequisites:       false,
-		IsUpgradeTest:           true,
-		UpgradeFromChart:        customChartURL, // Uses env var override
+		InstallIstio:          false,
+		OperateInFIPSMode:     true, // FIPS enabled by default
+		EnableExperimental:    false,
+		SkipManagerDeployment: false,
+		SkipPrerequisites:     false,
+		IsUpgradeTest:         true,
+		UpgradeFromChart:      customChartURL, // Uses env var override
 	}
 
 	require.Equal(t, expected, actual)
@@ -188,14 +165,13 @@ func TestInferRequirementsFromLabels_UpgradeWithExperimental(t *testing.T) {
 	actual := InferRequirementsFromLabels([]string{LabelUpgrade, LabelExperimental})
 
 	expected := kubeprep.Config{
-		InstallIstio:            false,
-		OperateInFIPSMode:       true, // FIPS enabled by default
-		EnableExperimental:      true, // From LabelExperimental
-		CustomLabelsAnnotations: false,
-		SkipManagerDeployment:   false,
-		SkipPrerequisites:       false,
-		IsUpgradeTest:           true,
-		UpgradeFromChart:        DefaultUpgradeFromChartURL,
+		InstallIstio:          false,
+		OperateInFIPSMode:     true, // FIPS enabled by default
+		EnableExperimental:    true, // From LabelExperimental
+		SkipManagerDeployment: false,
+		SkipPrerequisites:     false,
+		IsUpgradeTest:         true,
+		UpgradeFromChart:      DefaultUpgradeFromChartURL,
 	}
 
 	require.Equal(t, expected, actual)

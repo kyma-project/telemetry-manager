@@ -27,6 +27,10 @@ const (
 	// regardless of how experimental features are implemented in the manager.
 	LabelExperimentalEnabled = "telemetry.kyma-project.io/experimental-enabled"
 
+	// LabelHelmCustomized marks that the manager was deployed with custom helm values.
+	// When this label is "true", the next SetupTest will reinstall to restore clean state.
+	LabelHelmCustomized = "telemetry.kyma-project.io/helm-customized"
+
 	// reconcileDelay is the time to wait after upgrade for the manager to reconcile resources
 	reconcileDelay = 30 * time.Second
 )
@@ -209,13 +213,9 @@ func deployManagerFromChartSource(t TestingT, k8sClient client.Client, chartSour
 		)
 	}
 
-	// Add custom labels/annotations if enabled
-	// These are passed as command-line args to the manager and applied to all resources it creates
-	if cfg.CustomLabelsAnnotations {
-		args = append(args,
-			"--set", "additionalMetadata.labels.my-meta-label=foo",
-			"--set", "additionalMetadata.annotations.my-meta-annotation=bar",
-		)
+	// Add custom helm values if provided
+	for _, helmValue := range cfg.HelmValues {
+		args = append(args, "--set", helmValue)
 	}
 
 	// Run helm upgrade --install command
@@ -227,6 +227,15 @@ func deployManagerFromChartSource(t TestingT, k8sClient client.Client, chartSour
 
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("helm upgrade --install failed: %w\nstderr: %s", err, stderr.String())
+	}
+
+	// Mark deployment as customized if custom helm values were used
+	customizedValue := "false"
+	if len(cfg.HelmValues) > 0 {
+		customizedValue = "true"
+	}
+	if err := labelDeployment(ctx, k8sClient, LabelHelmCustomized, customizedValue); err != nil {
+		return fmt.Errorf("failed to label deployment as customized: %w", err)
 	}
 
 	// Add experimental label for cluster state detection

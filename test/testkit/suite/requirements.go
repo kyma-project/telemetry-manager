@@ -33,12 +33,11 @@ const (
 func InferRequirementsFromLabels(labels []string) kubeprep.Config {
 	cfg := kubeprep.Config{
 		// Defaults - most common case for tests
-		InstallIstio:            false,
-		OperateInFIPSMode:       true, // FIPS enabled by default
-		EnableExperimental:      false,
-		CustomLabelsAnnotations: false,
-		SkipManagerDeployment:   false,
-		SkipPrerequisites:       false,
+		InstallIstio:          false,
+		OperateInFIPSMode:     true, // FIPS enabled by default
+		EnableExperimental:    false,
+		SkipManagerDeployment: false,
+		SkipPrerequisites:     false,
 	}
 
 	// Scan labels and enable features as needed
@@ -50,8 +49,6 @@ func InferRequirementsFromLabels(labels []string) kubeprep.Config {
 			cfg.EnableExperimental = true
 		case LabelNoFIPS:
 			cfg.OperateInFIPSMode = false
-		case LabelCustomLabelAnnotation:
-			cfg.CustomLabelsAnnotations = true
 		case LabelUpgrade:
 			// For upgrade tests, use UPGRADE_FROM_CHART if set, otherwise use default
 			cfg.UpgradeFromChart = os.Getenv("UPGRADE_FROM_CHART")

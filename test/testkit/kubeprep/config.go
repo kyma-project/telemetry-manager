@@ -10,17 +10,17 @@ import (
 
 // Config contains cluster preparation configuration
 type Config struct {
-	ManagerImage            string // Required: telemetry manager container image
-	LocalImage              bool   // Image is local (for k3d import and pull policy)
-	InstallIstio            bool   // Install Istio before tests
-	OperateInFIPSMode       bool   // Deploy manager in FIPS mode
-	EnableExperimental      bool   // Enable experimental CRDs
-	CustomLabelsAnnotations bool   // Enable custom labels/annotations
-	SkipManagerDeployment   bool   // For upgrade tests
-	SkipPrerequisites       bool   // For custom test setups
-	NeedsReinstall          bool   // Manager state is unknown, needs reinstallation
-	UpgradeFromChart        string // Helm chart URL for old version (upgrade tests only)
-	IsUpgradeTest           bool   // Test is an upgrade test (affects initial deployment)
+	ManagerImage          string   // Required: telemetry manager container image
+	LocalImage            bool     // Image is local (for k3d import and pull policy)
+	InstallIstio          bool     // Install Istio before tests
+	OperateInFIPSMode     bool     // Deploy manager in FIPS mode
+	EnableExperimental    bool     // Enable experimental CRDs
+	HelmValues            []string // Custom helm --set values (e.g., "additionalMetadata.labels.foo=bar")
+	SkipManagerDeployment bool     // For upgrade tests
+	SkipPrerequisites     bool     // For custom test setups
+	NeedsReinstall        bool     // Manager state is unknown, needs reinstallation
+	UpgradeFromChart      string   // Helm chart URL for old version (upgrade tests only)
+	IsUpgradeTest         bool     // Test is an upgrade test (affects initial deployment)
 }
 
 // ConfigFromEnv loads cluster preparation configuration from environment variables
@@ -39,15 +39,14 @@ func ConfigFromEnv() (*Config, error) {
 	}
 
 	cfg := &Config{
-		ManagerImage:            managerImage,
-		LocalImage:              localImage,
-		InstallIstio:            parseBool(os.Getenv("INSTALL_ISTIO"), false),
-		OperateInFIPSMode:       parseBool(os.Getenv("OPERATE_IN_FIPS_MODE"), true),
-		EnableExperimental:      parseBool(os.Getenv("ENABLE_EXPERIMENTAL"), false),
-		CustomLabelsAnnotations: parseBool(os.Getenv("CUSTOM_LABELS_ANNOTATIONS"), false),
-		SkipManagerDeployment:   parseBool(os.Getenv("SKIP_MANAGER_DEPLOYMENT"), false),
-		SkipPrerequisites:       parseBool(os.Getenv("SKIP_PREREQUISITES"), false),
-		UpgradeFromChart:        os.Getenv("UPGRADE_FROM_CHART"),
+		ManagerImage:          managerImage,
+		LocalImage:            localImage,
+		InstallIstio:          parseBool(os.Getenv("INSTALL_ISTIO"), false),
+		OperateInFIPSMode:     parseBool(os.Getenv("OPERATE_IN_FIPS_MODE"), true),
+		EnableExperimental:    parseBool(os.Getenv("ENABLE_EXPERIMENTAL"), false),
+		SkipManagerDeployment: parseBool(os.Getenv("SKIP_MANAGER_DEPLOYMENT"), false),
+		SkipPrerequisites:     parseBool(os.Getenv("SKIP_PREREQUISITES"), false),
+		UpgradeFromChart:      os.Getenv("UPGRADE_FROM_CHART"),
 	}
 
 	log.Printf("Detected image type: local=%t for image=%s", cfg.LocalImage, cfg.ManagerImage)
@@ -74,15 +73,14 @@ func ConfigWithDefaults() *Config {
 	}
 
 	cfg := &Config{
-		ManagerImage:            managerImage,
-		LocalImage:              localImage,
-		InstallIstio:            parseBool(os.Getenv("INSTALL_ISTIO"), false),        // No Istio by default
-		OperateInFIPSMode:       parseBool(os.Getenv("OPERATE_IN_FIPS_MODE"), false), // No FIPS by default
-		EnableExperimental:      parseBool(os.Getenv("ENABLE_EXPERIMENTAL"), false),
-		CustomLabelsAnnotations: parseBool(os.Getenv("CUSTOM_LABELS_ANNOTATIONS"), false),
-		SkipManagerDeployment:   parseBool(os.Getenv("SKIP_MANAGER_DEPLOYMENT"), false),
-		SkipPrerequisites:       parseBool(os.Getenv("SKIP_PREREQUISITES"), false),
-		UpgradeFromChart:        os.Getenv("UPGRADE_FROM_CHART"),
+		ManagerImage:          managerImage,
+		LocalImage:            localImage,
+		InstallIstio:          parseBool(os.Getenv("INSTALL_ISTIO"), false),        // No Istio by default
+		OperateInFIPSMode:     parseBool(os.Getenv("OPERATE_IN_FIPS_MODE"), false), // No FIPS by default
+		EnableExperimental:    parseBool(os.Getenv("ENABLE_EXPERIMENTAL"), false),
+		SkipManagerDeployment: parseBool(os.Getenv("SKIP_MANAGER_DEPLOYMENT"), false),
+		SkipPrerequisites:     parseBool(os.Getenv("SKIP_PREREQUISITES"), false),
+		UpgradeFromChart:      os.Getenv("UPGRADE_FROM_CHART"),
 	}
 
 	log.Printf("Using default configuration: image=%s, local=%t, istio=%t, fips=%t",

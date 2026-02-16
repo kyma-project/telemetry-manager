@@ -3,6 +3,7 @@ package kubeprep
 import (
 	"context"
 	"fmt"
+	"sort"
 	"time"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -90,19 +91,38 @@ func calculateDiff(current, desired Config) ConfigDiff {
 		NeedsIstioChange: current.InstallIstio != desired.InstallIstio,
 
 		// Manager redeploy needed if:
-		// - Current state is unknown (NeedsReinstall flag set)
+		// - Current state is unknown or customized (NeedsReinstall flag set)
 		// - Any manager-affecting config differs
+		// - HelmValues changed (any customization triggers redeploy)
 		NeedsManagerRedeploy: current.NeedsReinstall ||
 			current.OperateInFIPSMode != desired.OperateInFIPSMode ||
 			current.EnableExperimental != desired.EnableExperimental ||
-			current.CustomLabelsAnnotations != desired.CustomLabelsAnnotations ||
+			!helmValuesEqual(current.HelmValues, desired.HelmValues) ||
 			current.SkipManagerDeployment != desired.SkipManagerDeployment,
 
-		// Prerequisites update needed if custom labels/annotations change
-		// (Telemetry CR might need updates)
-		NeedsPrerequisitesUpdate: (current.CustomLabelsAnnotations != desired.CustomLabelsAnnotations ||
-			current.SkipPrerequisites != desired.SkipPrerequisites),
+		// Prerequisites update needed if skip prerequisites changes
+		NeedsPrerequisitesUpdate: current.SkipPrerequisites != desired.SkipPrerequisites,
 	}
+}
+
+// helmValuesEqual compares two slices of helm values
+func helmValuesEqual(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	// Sort and compare for order-independent comparison
+	aSorted := make([]string, len(a))
+	bSorted := make([]string, len(b))
+	copy(aSorted, a)
+	copy(bSorted, b)
+	sort.Strings(aSorted)
+	sort.Strings(bSorted)
+	for i := range aSorted {
+		if aSorted[i] != bSorted[i] {
+			return false
+		}
+	}
+	return true
 }
 
 // reconfigureIstio handles Istio installation or uninstallation

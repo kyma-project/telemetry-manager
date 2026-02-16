@@ -185,7 +185,13 @@ func TestLabelAnnotation(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(string(tc.labelPrefix), func(t *testing.T) {
-			suite.RegisterTestCase(t, suite.LabelCustomLabelAnnotation, suite.LabelNoFIPS)
+			// Use SetupTestWithHelmValues with custom labels/annotations
+			suite.SetupTestWithHelmValues(t,
+				[]string{
+					"additionalMetadata.labels.my-meta-label=foo",
+					"additionalMetadata.annotations.my-meta-annotation=bar",
+				},
+				suite.LabelNoFIPS, suite.LabelCustomLabelAnnotation)
 
 			var (
 				uniquePrefix = unique.Prefix(string(tc.labelPrefix))
