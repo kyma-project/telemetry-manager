@@ -174,7 +174,11 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 		aad.daemonSetName,
 		makeLabels(),
 		selectorLabels(),
-		commonresources.WithIngressFromAny(makeFluentBitMetricsPorts(opts.IstioEnabled)),
+		commonresources.WithIngressFromPods(
+			map[string]string{
+				commonresources.LabelKeyTelemetryMetricsScraping: commonresources.LabelValueTelemetryMetricsScraping,
+			},
+			makeFluentBitMetricsPorts(opts.IstioEnabled)),
 	)
 
 	fluentbitNetworkPolicy := commonresources.MakeNetworkPolicy(
