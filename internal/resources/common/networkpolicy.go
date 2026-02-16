@@ -35,6 +35,7 @@ func MakeNetworkPolicy(
 	if len(spec.Ingress) > 0 {
 		spec.PolicyTypes = append(spec.PolicyTypes, networkingv1.PolicyTypeIngress)
 	}
+
 	if len(spec.Egress) > 0 {
 		spec.PolicyTypes = append(spec.PolicyTypes, networkingv1.PolicyTypeEgress)
 	}
