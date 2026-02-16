@@ -83,13 +83,28 @@ type LogPipelineControllerConfig struct {
 }
 
 func NewLogPipelineController(config LogPipelineControllerConfig, client client.Client, reconcileTriggerChan <-chan event.GenericEvent) (*LogPipelineController, error) {
+	pipelineCount := resourcelock.MaxPipelineCount
+
+	if config.UnlimitedPipelines() {
+		pipelineCount = resourcelock.UnlimitedPipelineCount
+	}
+
+	pipelineLockOTEL := resourcelock.NewLocker(
+		client,
+		types.NamespacedName{
+			Name:      names.LogPipelineLock,
+			Namespace: config.TargetNamespace(),
+		},
+		pipelineCount,
+	)
+
 	pipelineLock := resourcelock.NewLocker(
 		client,
 		types.NamespacedName{
 			Name:      names.LogPipelineLock,
 			Namespace: config.TargetNamespace(),
 		},
-		MaxPipelineCount,
+		resourcelock.MaxPipelineCount,
 	)
 
 	pipelineSyncer := resourcelock.NewSyncer(
@@ -120,7 +135,7 @@ func NewLogPipelineController(config LogPipelineControllerConfig, client client.
 		return nil, err
 	}
 
-	otelReconciler, err := configureOTelReconciler(config, client, pipelineLock, gatewayFlowHealthProber, agentFlowHealthProber)
+	otelReconciler, err := configureOTelReconciler(config, client, pipelineLockOTEL, gatewayFlowHealthProber, agentFlowHealthProber)
 	if err != nil {
 		return nil, err
 	}

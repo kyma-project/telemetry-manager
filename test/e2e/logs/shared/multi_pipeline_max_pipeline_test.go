@@ -9,8 +9,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
-	telemetrycontrollers "github.com/kyma-project/telemetry-manager/controllers/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -23,7 +23,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-const maxNumberOfLogPipelines = telemetrycontrollers.MaxPipelineCount
+const maxNumberOfLogPipelines = resourcelock.MaxPipelineCount
 
 func TestMultiPipelineMaxPipeline(t *testing.T) {
 	suite.RegisterTestCase(t, suite.LabelLogsMaxPipeline)
@@ -142,7 +142,7 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 }
 
 func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelOTelMaxPipeline)
+	suite.RegisterTestCase(t, suite.LabelOTelMaxPipeline, suite.LabelExperimental)
 
 	var (
 		uniquePrefix = unique.Prefix()
@@ -166,7 +166,7 @@ func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 		pipelines = append(pipelines, &pipeline)
 	}
 
-	additionalPipeline := testutils.NewLogPipelineBuilder().
+	var additionalPipeline = testutils.NewLogPipelineBuilder().
 		WithName(additionalPipelineName).
 		WithInput(testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(genNs))).
 		WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
@@ -183,7 +183,6 @@ func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 	Expect(kitk8s.CreateObjects(t, pipelines...)).To(Succeed())
 
 	assert.BackendReachable(t, backend)
-	assert.DeploymentReady(t, kitkyma.LogGatewayName)
 
 	t.Log("Asserting all pipelines are healthy")
 
@@ -193,12 +192,32 @@ func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 
 	t.Log("Attempting to create a pipeline that exceeds the maximum allowed number of pipelines")
 	Expect(kitk8s.CreateObjects(t, &additionalPipeline)).To(Succeed())
-	assert.LogPipelineHasCondition(t, additionalPipeline.GetName(), metav1.Condition{
+
+	if suite.IsLabelSet(suite.LabelExperimental) {
+		testUnlimitedPipelines(t, additionalPipelineName, backend, genNs)
+		return
+	}
+
+	testMaxPipelineLimit(t, additionalPipelineName, pipelines, backend, genNs)
+}
+
+func testUnlimitedPipelines(t *testing.T, additionalPipelineName string, backend *kitbackend.Backend, genNs string) {
+	assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
+
+	t.Log("Verifying logs are delivered for valid pipelines")
+	assert.OTelLogsFromNamespaceDelivered(t, backend, genNs)
+
+	assert.OTelLogPipelineHealthy(t, additionalPipelineName)
+}
+
+func testMaxPipelineLimit(t *testing.T, additionalPipelineName string, pipelines []client.Object, backend *kitbackend.Backend, genNs string) {
+	assert.DeploymentReady(t, kitkyma.LogGatewayName)
+	assert.LogPipelineHasCondition(t, additionalPipelineName, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionFalse,
 		Reason: conditions.ReasonMaxPipelinesExceeded,
 	})
-	assert.LogPipelineHasCondition(t, additionalPipeline.GetName(), metav1.Condition{
+	assert.LogPipelineHasCondition(t, additionalPipelineName, metav1.Condition{
 		Type:   conditions.TypeFlowHealthy,
 		Status: metav1.ConditionFalse,
 		Reason: conditions.ReasonSelfMonConfigNotGenerated,
@@ -211,7 +230,7 @@ func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 
 	deletePipeline := pipelines[0]
 	Expect(kitk8s.DeleteObjects(deletePipeline)).To(Succeed())
-	assert.OTelLogPipelineHealthy(t, additionalPipeline.GetName())
+	assert.OTelLogPipelineHealthy(t, additionalPipelineName)
 }
 
 func TestMultiPipelineMaxPipeline_FluentBit(t *testing.T) {
