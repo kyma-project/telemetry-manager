@@ -241,6 +241,7 @@ func TestDetectClusterState(t *testing.T) {
 				EnableExperimental:    false,
 				SkipManagerDeployment: false, // Manager is deployed
 				SkipPrerequisites:     false,
+				PrerequisitesMissing:  true, // No Telemetry CR
 			},
 		},
 		{
@@ -257,6 +258,7 @@ func TestDetectClusterState(t *testing.T) {
 				EnableExperimental:    false,
 				SkipManagerDeployment: false,
 				SkipPrerequisites:     false,
+				PrerequisitesMissing:  true, // No Telemetry CR
 			},
 		},
 		{
@@ -275,6 +277,7 @@ func TestDetectClusterState(t *testing.T) {
 				EnableExperimental:    false,
 				SkipManagerDeployment: false,
 				SkipPrerequisites:     false,
+				PrerequisitesMissing:  true, // No Telemetry CR
 			},
 		},
 		{
@@ -292,6 +295,7 @@ func TestDetectClusterState(t *testing.T) {
 				EnableExperimental:    true,
 				SkipManagerDeployment: false,
 				SkipPrerequisites:     false,
+				PrerequisitesMissing:  true, // No Telemetry CR
 			},
 		},
 		{
@@ -311,6 +315,7 @@ func TestDetectClusterState(t *testing.T) {
 				EnableExperimental:    true,
 				SkipManagerDeployment: false,
 				SkipPrerequisites:     false,
+				PrerequisitesMissing:  true, // No Telemetry CR
 			},
 		},
 		{
@@ -329,6 +334,7 @@ func TestDetectClusterState(t *testing.T) {
 				SkipManagerDeployment: false,
 				SkipPrerequisites:     false,
 				NeedsReinstall:        true, // Set because helm-customized=true
+				PrerequisitesMissing:  true, // No Telemetry CR
 			},
 		},
 	}

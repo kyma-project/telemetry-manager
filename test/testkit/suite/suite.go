@@ -10,7 +10,6 @@ import (
 	"slices"
 	"sort"
 	"strings"
-	"sync"
 	"testing"
 
 	"github.com/go-logr/logr"
@@ -48,7 +47,6 @@ var (
 	labelFilterFlag  string
 	doNotExecuteFlag bool
 	printLabelsFlag  bool
-	flagsOnce        sync.Once
 )
 
 // Environment-affecting labels - these determine cluster setup
@@ -56,15 +54,6 @@ var environmentLabels = map[string]bool{
 	LabelIstio:        true,
 	LabelExperimental: true,
 	LabelNoFIPS:       true,
-}
-
-// registerFlags registers test flags with the flag package (called lazily via sync.Once).
-func registerFlags() {
-	flagsOnce.Do(func() {
-		flag.StringVar(&labelFilterFlag, "labels", "", "Label filter expression (e.g., 'log-agent and istio')")
-		flag.BoolVar(&doNotExecuteFlag, "do-not-execute", false, "Dry-run mode: print test info without executing")
-		flag.BoolVar(&printLabelsFlag, "print-labels", false, "Print test labels in structured format (pipe-separated)")
-	})
 }
 
 // BeforeSuiteFunc is designed to return an error instead of relying on Gomega matchers.
@@ -375,9 +364,7 @@ func RegisterTestCase(t *testing.T, labels ...string) {
 }
 
 func findDoNotExecuteFlag() bool {
-	// Ensure flags are registered and parsed
-	registerFlags()
-
+	// Ensure flags are parsed
 	if !flag.Parsed() {
 		flag.Parse()
 	}
@@ -386,9 +373,7 @@ func findDoNotExecuteFlag() bool {
 }
 
 func findPrintLabelsFlag() bool {
-	// Ensure flags are registered and parsed
-	registerFlags()
-
+	// Ensure flags are parsed
 	if !flag.Parsed() {
 		flag.Parse()
 	}
@@ -489,9 +474,7 @@ func printTestInfo(t *testing.T, labels []string, action string) {
 }
 
 func findLabelFilterExpression() string {
-	// Ensure flags are registered and parsed
-	registerFlags()
-
+	// Ensure flags are parsed
 	if !flag.Parsed() {
 		flag.Parse()
 	}
@@ -656,8 +639,8 @@ func UpgradeToTargetVersion(t *testing.T) error {
 // which are immutable during test execution.
 // If NeedsReinstall is true on either config, they are considered NOT equal to force reconfiguration.
 func configsEqual(a, b kubeprep.Config) bool {
-	// If either config needs reinstall, always reconfigure
-	if a.NeedsReinstall || b.NeedsReinstall {
+	// If either config needs reinstall or has missing prerequisites, always reconfigure
+	if a.NeedsReinstall || b.NeedsReinstall || a.PrerequisitesMissing || b.PrerequisitesMissing {
 		return false
 	}
 

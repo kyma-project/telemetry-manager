@@ -15,6 +15,7 @@ type Config struct {
 	SkipManagerDeployment bool     // For upgrade tests
 	SkipPrerequisites     bool     // For custom test setups
 	NeedsReinstall        bool     // Manager state is unknown, needs reinstallation
+	PrerequisitesMissing  bool     // Telemetry CR or other prerequisites are missing
 	UpgradeFromChart      string   // Helm chart URL for old version (upgrade tests only)
 	IsUpgradeTest         bool     // Test is an upgrade test (affects initial deployment)
 }

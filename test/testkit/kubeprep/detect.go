@@ -63,8 +63,15 @@ func DetectClusterState(t TestingT, k8sClient client.Client) (*Config, error) {
 		t.Log("Detected customized manager deployment - will reinstall to restore clean state")
 	}
 
-	t.Logf("Detected: istio=%t, fips=%t, experimental=%t, manager=%t, customized=%t",
-		cfg.InstallIstio, cfg.OperateInFIPSMode, cfg.EnableExperimental, managerDeployed, cfg.NeedsReinstall)
+	// If manager is deployed but Telemetry CR is missing, prerequisites need to be deployed
+	if managerDeployed && !detectTelemetryCRExists(ctx, k8sClient) {
+		cfg.PrerequisitesMissing = true
+
+		t.Log("Detected missing Telemetry CR - will deploy prerequisites")
+	}
+
+	t.Logf("Detected: istio=%t, fips=%t, experimental=%t, manager=%t, customized=%t, prereqMissing=%t",
+		cfg.InstallIstio, cfg.OperateInFIPSMode, cfg.EnableExperimental, managerDeployed, cfg.NeedsReinstall, cfg.PrerequisitesMissing)
 
 	return cfg, nil
 }
@@ -167,6 +174,23 @@ func detectHelmCustomized(ctx context.Context, k8sClient client.Client) bool {
 	}
 
 	return false
+}
+
+// detectTelemetryCRExists checks if the Telemetry CR exists
+func detectTelemetryCRExists(ctx context.Context, k8sClient client.Client) bool {
+	telemetryCR := &unstructured.Unstructured{}
+	telemetryCR.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "operator.kyma-project.io",
+		Version: "v1beta1",
+		Kind:    "Telemetry",
+	})
+
+	err := k8sClient.Get(ctx, types.NamespacedName{
+		Name:      "default",
+		Namespace: kymaSystemNamespace,
+	}, telemetryCR)
+
+	return err == nil
 }
 
 // DetectOrUseProvidedConfig returns the provided config if available, otherwise detects cluster state.

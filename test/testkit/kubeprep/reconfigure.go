@@ -44,8 +44,9 @@ func ReconfigureCluster(t TestingT, k8sClient client.Client, current, desired Co
 
 	// Handle prerequisites:
 	// - If NeedsReinstall was set (customized deployment detected), ensure prerequisites exist
+	// - If PrerequisitesMissing was set (Telemetry CR missing), ensure prerequisites exist
 	// - If prerequisites update is explicitly needed
-	needsPrerequisites := (current.NeedsReinstall && !desired.SkipManagerDeployment && !desired.SkipPrerequisites) ||
+	needsPrerequisites := ((current.NeedsReinstall || current.PrerequisitesMissing) && !desired.SkipManagerDeployment && !desired.SkipPrerequisites) ||
 		diff.NeedsPrerequisitesUpdate
 	if needsPrerequisites {
 		if err := updatePrerequisites(t, k8sClient, desired); err != nil {
