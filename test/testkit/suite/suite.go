@@ -49,9 +49,10 @@ var (
 
 // Environment-affecting labels - these determine cluster setup
 var environmentLabels = map[string]bool{
-	LabelIstio:        true,
-	LabelExperimental: true,
-	LabelNoFIPS:       true,
+	LabelIstio:                 true,
+	LabelExperimental:          true,
+	LabelNoFIPS:                true,
+	LabelCustomLabelAnnotation: true,
 }
 
 // init registers test flags with the flag package.

@@ -210,12 +210,11 @@ func deployManagerFromChartSource(t TestingT, k8sClient client.Client, chartSour
 	}
 
 	// Add custom labels/annotations if enabled
+	// These are passed as command-line args to the manager and applied to all resources it creates
 	if cfg.CustomLabelsAnnotations {
 		args = append(args,
-			"--set", "manager.podAnnotations.sidecar\\.istio\\.io/inject=false",
-			"--set", "manager.podLabels.custom-pod-label=custom-pod-label-value",
-			"--set", "manager.labels.custom-label=custom-label-value",
-			"--set", "manager.annotations.custom-annotation=custom-annotation-value",
+			"--set", "additionalMetadata.labels.my-meta-label=foo",
+			"--set", "additionalMetadata.annotations.my-meta-annotation=bar",
 		)
 	}
 

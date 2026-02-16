@@ -123,6 +123,18 @@ func TestInferRequirementsFromLabels(t *testing.T) {
 			},
 		},
 		{
+			name:   "custom-label-annotation label enables custom labels/annotations",
+			labels: []string{LabelCustomLabelAnnotation},
+			expected: kubeprep.Config{
+				InstallIstio:            false,
+				OperateInFIPSMode:       true, // FIPS enabled by default
+				EnableExperimental:      false,
+				CustomLabelsAnnotations: true, // Enabled by custom-label-annotation label
+				SkipManagerDeployment:   false,
+				SkipPrerequisites:       false,
+			},
+		},
+		{
 			name:   "upgrade label uses default chart when env var not set",
 			labels: []string{LabelUpgrade},
 			expected: kubeprep.Config{

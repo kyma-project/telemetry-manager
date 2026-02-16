@@ -50,6 +50,8 @@ func InferRequirementsFromLabels(labels []string) kubeprep.Config {
 			cfg.EnableExperimental = true
 		case LabelNoFIPS:
 			cfg.OperateInFIPSMode = false
+		case LabelCustomLabelAnnotation:
+			cfg.CustomLabelsAnnotations = true
 		case LabelUpgrade:
 			// For upgrade tests, use UPGRADE_FROM_CHART if set, otherwise use default
 			cfg.UpgradeFromChart = os.Getenv("UPGRADE_FROM_CHART")
