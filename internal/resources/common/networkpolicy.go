@@ -8,8 +8,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-// NetworkPolicyOption is a functional option for configuring a NetworkPolicy
-type NetworkPolicyOption func(*networkingv1.NetworkPolicySpec)
+type NetworkPolicyOption func(*networkingv1.NetworkPolicy)
 
 // MakeNetworkPolicy creates a NetworkPolicy with the given name, labels, pod selector, and options.
 // PolicyTypes are automatically derived based on which rules are present:
@@ -21,39 +20,45 @@ func MakeNetworkPolicy(
 	selectorLabels map[string]string,
 	opts ...NetworkPolicyOption,
 ) *networkingv1.NetworkPolicy {
-	spec := networkingv1.NetworkPolicySpec{
-		PodSelector: metav1.LabelSelector{
-			MatchLabels: selectorLabels,
-		},
-	}
-
-	for _, opt := range opts {
-		opt(&spec)
-	}
-
-	// Derive PolicyTypes from rules present
-	if len(spec.Ingress) > 0 {
-		spec.PolicyTypes = append(spec.PolicyTypes, networkingv1.PolicyTypeIngress)
-	}
-
-	if len(spec.Egress) > 0 {
-		spec.PolicyTypes = append(spec.PolicyTypes, networkingv1.PolicyTypeEgress)
-	}
-
-	return &networkingv1.NetworkPolicy{
+	networkPolicy := &networkingv1.NetworkPolicy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      NetworkPolicyPrefix + name.Name,
 			Namespace: name.Namespace,
 			Labels:    labels,
 		},
-		Spec: spec,
+		Spec: networkingv1.NetworkPolicySpec{
+			PodSelector: metav1.LabelSelector{
+				MatchLabels: selectorLabels,
+			},
+		},
+	}
+
+	for _, opt := range opts {
+		opt(networkPolicy)
+	}
+
+	// Derive PolicyTypes from rules present
+	if len(networkPolicy.Spec.Ingress) > 0 {
+		networkPolicy.Spec.PolicyTypes = append(networkPolicy.Spec.PolicyTypes, networkingv1.PolicyTypeIngress)
+	}
+
+	if len(networkPolicy.Spec.Egress) > 0 {
+		networkPolicy.Spec.PolicyTypes = append(networkPolicy.Spec.PolicyTypes, networkingv1.PolicyTypeEgress)
+	}
+
+	return networkPolicy
+}
+
+func WithNameSuffix(suffix string) func(spec *networkingv1.NetworkPolicy) {
+	return func(np *networkingv1.NetworkPolicy) {
+		np.Name = np.Name + "-" + suffix
 	}
 }
 
 // WithIngressFromAny allows ingress traffic from any IP (0.0.0.0/0 and ::/0) on the specified TCP ports
-func WithIngressFromAny(ports ...int32) NetworkPolicyOption {
-	return func(spec *networkingv1.NetworkPolicySpec) {
-		spec.Ingress = append(spec.Ingress, networkingv1.NetworkPolicyIngressRule{
+func WithIngressFromAny(ports []int32) NetworkPolicyOption {
+	return func(netpol *networkingv1.NetworkPolicy) {
+		netpol.Spec.Ingress = append(netpol.Spec.Ingress, networkingv1.NetworkPolicyIngressRule{
 			From: []networkingv1.NetworkPolicyPeer{
 				{IPBlock: &networkingv1.IPBlock{CIDR: "0.0.0.0/0"}},
 				{IPBlock: &networkingv1.IPBlock{CIDR: "::/0"}},
@@ -64,9 +69,9 @@ func WithIngressFromAny(ports ...int32) NetworkPolicyOption {
 }
 
 // WithIngressFromPods allows ingress traffic from pods matching the selector in the same namespace on the given TCP ports.
-func WithIngressFromPods(selector map[string]string, ports ...int32) NetworkPolicyOption {
-	return func(spec *networkingv1.NetworkPolicySpec) {
-		spec.Ingress = append(spec.Ingress, networkingv1.NetworkPolicyIngressRule{
+func WithIngressFromPods(selector map[string]string, ports []int32) NetworkPolicyOption {
+	return func(netpol *networkingv1.NetworkPolicy) {
+		netpol.Spec.Ingress = append(netpol.Spec.Ingress, networkingv1.NetworkPolicyIngressRule{
 			From: []networkingv1.NetworkPolicyPeer{
 				{
 					PodSelector: &metav1.LabelSelector{
@@ -80,9 +85,9 @@ func WithIngressFromPods(selector map[string]string, ports ...int32) NetworkPoli
 }
 
 // WithIngressFromPodsInNamespace allows ingress traffic from pods matching the selector in a specific namespace on the given TCP ports.
-func WithIngressFromPodsInNamespace(namespace string, selector map[string]string, ports ...int32) NetworkPolicyOption {
-	return func(spec *networkingv1.NetworkPolicySpec) {
-		spec.Ingress = append(spec.Ingress, networkingv1.NetworkPolicyIngressRule{
+func WithIngressFromPodsInNamespace(namespace string, selector map[string]string, ports []int32) NetworkPolicyOption {
+	return func(netpol *networkingv1.NetworkPolicy) {
+		netpol.Spec.Ingress = append(netpol.Spec.Ingress, networkingv1.NetworkPolicyIngressRule{
 			From: []networkingv1.NetworkPolicyPeer{
 				{
 					PodSelector: &metav1.LabelSelector{
@@ -102,8 +107,8 @@ func WithIngressFromPodsInNamespace(namespace string, selector map[string]string
 
 // WithEgressToAny allows egress traffic to any IP (0.0.0.0/0 and ::/0)
 func WithEgressToAny() NetworkPolicyOption {
-	return func(spec *networkingv1.NetworkPolicySpec) {
-		spec.Egress = append(spec.Egress, networkingv1.NetworkPolicyEgressRule{
+	return func(netpol *networkingv1.NetworkPolicy) {
+		netpol.Spec.Egress = append(netpol.Spec.Egress, networkingv1.NetworkPolicyEgressRule{
 			To: []networkingv1.NetworkPolicyPeer{
 				{IPBlock: &networkingv1.IPBlock{CIDR: "0.0.0.0/0"}},
 				{IPBlock: &networkingv1.IPBlock{CIDR: "::/0"}},
@@ -113,9 +118,9 @@ func WithEgressToAny() NetworkPolicyOption {
 }
 
 // WithEgressToPods allows egress traffic to pods matching the selector in the same namespace on the given TCP ports.
-func WithEgressToPods(selector map[string]string, ports ...int32) NetworkPolicyOption {
-	return func(spec *networkingv1.NetworkPolicySpec) {
-		spec.Egress = append(spec.Egress, networkingv1.NetworkPolicyEgressRule{
+func WithEgressToPods(selector map[string]string, ports []int32) NetworkPolicyOption {
+	return func(netpol *networkingv1.NetworkPolicy) {
+		netpol.Spec.Egress = append(netpol.Spec.Egress, networkingv1.NetworkPolicyEgressRule{
 			To: []networkingv1.NetworkPolicyPeer{
 				{
 					PodSelector: &metav1.LabelSelector{
@@ -130,8 +135,8 @@ func WithEgressToPods(selector map[string]string, ports ...int32) NetworkPolicyO
 
 // WithEgressToPodsInNamespace allows egress traffic to pods matching the selector in a specific namespace on the given TCP ports.
 func WithEgressToPodsInNamespace(namespace string, selector map[string]string, ports ...int32) NetworkPolicyOption {
-	return func(spec *networkingv1.NetworkPolicySpec) {
-		spec.Egress = append(spec.Egress, networkingv1.NetworkPolicyEgressRule{
+	return func(netpol *networkingv1.NetworkPolicy) {
+		netpol.Spec.Egress = append(netpol.Spec.Egress, networkingv1.NetworkPolicyEgressRule{
 			To: []networkingv1.NetworkPolicyPeer{
 				{
 					PodSelector: &metav1.LabelSelector{
@@ -151,15 +156,15 @@ func WithEgressToPodsInNamespace(namespace string, selector map[string]string, p
 
 // WithIngressRule adds a raw NetworkPolicyIngressRule for advanced use cases
 func WithIngressRule(rule networkingv1.NetworkPolicyIngressRule) NetworkPolicyOption {
-	return func(spec *networkingv1.NetworkPolicySpec) {
-		spec.Ingress = append(spec.Ingress, rule)
+	return func(netpol *networkingv1.NetworkPolicy) {
+		netpol.Spec.Ingress = append(netpol.Spec.Ingress, rule)
 	}
 }
 
 // WithEgressRule adds a raw NetworkPolicyEgressRule for advanced use cases
 func WithEgressRule(rule networkingv1.NetworkPolicyEgressRule) NetworkPolicyOption {
-	return func(spec *networkingv1.NetworkPolicySpec) {
-		spec.Egress = append(spec.Egress, rule)
+	return func(netpol *networkingv1.NetworkPolicy) {
+		netpol.Spec.Egress = append(netpol.Spec.Egress, rule)
 	}
 }
 

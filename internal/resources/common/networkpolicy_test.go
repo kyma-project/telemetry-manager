@@ -26,7 +26,7 @@ func TestMakeNetworkPolicy(t *testing.T) {
 
 	t.Run("derives ingress policy type only when ingress rules present", func(t *testing.T) {
 		np := MakeNetworkPolicy(name, labels, selectorLabels,
-			WithIngressFromAny(8080),
+			WithIngressFromAny([]int32{8080}),
 		)
 
 		require.Len(t, np.Spec.PolicyTypes, 1)
@@ -44,7 +44,7 @@ func TestMakeNetworkPolicy(t *testing.T) {
 
 	t.Run("derives both policy types when both rules present", func(t *testing.T) {
 		np := MakeNetworkPolicy(name, labels, selectorLabels,
-			WithIngressFromAny(8080),
+			WithIngressFromAny([]int32{8080}),
 			WithEgressToAny(),
 		)
 
@@ -65,7 +65,7 @@ func TestWithIngressFromAny(t *testing.T) {
 
 	t.Run("creates ingress rule allowing from any IP", func(t *testing.T) {
 		np := MakeNetworkPolicy(name, nil, nil,
-			WithIngressFromAny(8080, 9090),
+			WithIngressFromAny([]int32{8080, 9090}),
 		)
 
 		require.Len(t, np.Spec.Ingress, 1)
@@ -88,7 +88,7 @@ func TestWithIngressFromPods(t *testing.T) {
 	t.Run("creates ingress rule with pod selector in same namespace", func(t *testing.T) {
 		selector := map[string]string{"app": "source"}
 		np := MakeNetworkPolicy(name, nil, nil,
-			WithIngressFromPods(selector, 8080),
+			WithIngressFromPods(selector, []int32{8080}),
 		)
 
 		require.Len(t, np.Spec.Ingress, 1)
@@ -105,7 +105,7 @@ func TestWithIngressFromPods(t *testing.T) {
 	t.Run("creates ingress rule with pod selector in specific namespace", func(t *testing.T) {
 		selector := map[string]string{"app": "source"}
 		np := MakeNetworkPolicy(name, nil, nil,
-			WithIngressFromPodsInNamespace("other-ns", selector, 8080),
+			WithIngressFromPodsInNamespace("other-ns", selector, []int32{8080}),
 		)
 
 		require.Len(t, np.Spec.Ingress, 1)
@@ -143,7 +143,7 @@ func TestWithEgressToPods(t *testing.T) {
 	t.Run("creates egress rule with pod selector in same namespace", func(t *testing.T) {
 		selector := map[string]string{"app": "target"}
 		np := MakeNetworkPolicy(name, nil, nil,
-			WithEgressToPods(selector, 8080, 9090),
+			WithEgressToPods(selector, []int32{8080, 9090}),
 		)
 
 		require.Len(t, np.Spec.Egress, 1)
@@ -217,10 +217,10 @@ func TestMultipleRules(t *testing.T) {
 
 	t.Run("combines multiple ingress and egress rules", func(t *testing.T) {
 		np := MakeNetworkPolicy(name, nil, nil,
-			WithIngressFromAny(8080),
-			WithIngressFromPods(map[string]string{"app": "source"}, 9090),
+			WithIngressFromAny([]int32{8080}),
+			WithIngressFromPods(map[string]string{"app": "source"}, []int32{9090}),
 			WithEgressToAny(),
-			WithEgressToPods(map[string]string{"app": "target"}, 3000),
+			WithEgressToPods(map[string]string{"app": "target"}, []int32{3000}),
 		)
 
 		require.Len(t, np.Spec.Ingress, 2)
