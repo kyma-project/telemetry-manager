@@ -63,7 +63,7 @@ var (
 )
 
 type AgentApplyOptions struct {
-	AllowedPorts    []int32
+	IstioEnabled    bool
 	FluentBitConfig *builder.FluentBitConfig
 }
 
@@ -107,6 +107,7 @@ func NewFluentBitApplierDeleter(global config.Global, namespace, fbImage, export
 }
 
 func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Client, opts AgentApplyOptions) error {
+
 	serviceAccount := commonresources.MakeServiceAccount(aad.daemonSetName)
 	if err := k8sutils.CreateOrUpdateServiceAccount(ctx, c, serviceAccount); err != nil {
 		return fmt.Errorf("failed to create fluent bit service account: %w", err)
@@ -169,15 +170,30 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 		return err
 	}
 
-	networkPolicy := commonresources.MakeNetworkPolicy(
+	metricsNetworkPolicy := commonresources.MakeNetworkPolicy(
 		aad.daemonSetName,
 		makeLabels(),
 		selectorLabels(),
-		commonresources.WithIngressFromAny(opts.AllowedPorts),
+		commonresources.WithIngressFromAny(makeFluentBitMetricsPorts(opts.IstioEnabled)),
+	)
+
+	fluentbitNetworkPolicy := commonresources.MakeNetworkPolicy(
+		aad.daemonSetName,
+		makeLabels(),
+		selectorLabels(),
+		commonresources.WithIngressFromAny([]int32{fbports.HTTP}),
 		commonresources.WithEgressToAny(),
 	)
-	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, networkPolicy); err != nil {
-		return fmt.Errorf("failed to create fluent bit network policy: %w", err)
+	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, metricsNetworkPolicy); err != nil {
+		return fmt.Errorf("failed to create fluentbit metrics network policy: %w", err)
+	}
+	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, fluentbitNetworkPolicy); err != nil {
+		return fmt.Errorf("failed to create fluentbit network policy: %w", err)
+	}
+
+	// TODO: Remove after 1.58.0 rollout
+	if err := commonresources.CleanupOldNetworkPolicy(ctx, c, aad.daemonSetName); err != nil {
+		return fmt.Errorf("failed to cleanup old fluentbit network policy: %w", err)
 	}
 
 	return nil
@@ -251,8 +267,11 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete daemonset: %w", err))
 	}
 
-	networkPolicy := networkingv1.NetworkPolicy{ObjectMeta: metav1.ObjectMeta{Name: commonresources.NetworkPolicyPrefix + names.FluentBit, Namespace: aad.namespace}}
-	if err := k8sutils.DeleteObject(ctx, c, &networkPolicy); err != nil {
+	networkPolicySelector := map[string]string{
+		commonresources.LabelKeyK8sName: "fluent-bit",
+	}
+
+	if err := k8sutils.DeleteObjectsByLabelSelector(ctx, c, &networkingv1.NetworkPolicyList{}, networkPolicySelector); err != nil {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete networkpolicy: %w", err))
 	}
 
@@ -699,4 +718,13 @@ func selectorLabels() map[string]string {
 	result[commonresources.LabelKeyK8sInstance] = commonresources.LabelValueK8sInstance
 
 	return result
+}
+
+func makeFluentBitMetricsPorts(istioEnabled bool) []int32 {
+	metricsPorts := []int32{fbports.ExporterMetrics}
+	if istioEnabled {
+		metricsPorts = append(metricsPorts, fbports.IstioEnvoyTelemetry)
+	}
+
+	return metricsPorts
 }
