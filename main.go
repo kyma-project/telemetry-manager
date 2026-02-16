@@ -88,6 +88,7 @@ var (
 	additionalLabels        cliflags.Map
 	additionalAnnotations   cliflags.Map
 	deployOTLPGateway       bool
+	unlimitedPipelines      bool
 )
 
 const (
@@ -172,6 +173,7 @@ func run() error {
 		config.WithAdditionalLabels(additionalLabels),
 		config.WithAdditionalAnnotations(additionalAnnotations),
 		config.WithDeployOTLPGateway(featureflags.IsEnabled(featureflags.DeployOTLPGateway)),
+		config.WithUnlimitedPipelines(featureflags.IsEnabled(featureflags.UnlimitedPipelineCount)),
 	)
 
 	if err := globals.Validate(); err != nil {
@@ -331,6 +333,7 @@ func logBuildAndProcessInfo() {
 func initializeFeatureFlags() {
 	// Placeholder for future feature flag initializations.
 	featureflags.Set(featureflags.DeployOTLPGateway, deployOTLPGateway)
+	featureflags.Set(featureflags.UnlimitedPipelineCount, unlimitedPipelines)
 }
 
 func parseFlags() {
@@ -344,6 +347,7 @@ func parseFlags() {
 	flag.Var(&additionalAnnotations, "additional-annotation", "Additional annotation to add to all created resources in key=value format")
 
 	flag.BoolVar(&deployOTLPGateway, "deploy-otlp-gateway", false, "Enable deploying unified OTLP gateway")
+	flag.BoolVar(&unlimitedPipelines, "unlimited-pipelines", false, "Allow unlimited number of OTEL pipelines")
 
 	flag.Parse()
 }
