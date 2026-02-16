@@ -213,12 +213,29 @@ spec:
         cidr: 0.0.0.0/0
     - ipBlock:
         cidr: ::/0
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: telemetry-log-agent
+  policyTypes:
+  - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  labels:
+    app.kubernetes.io/component: agent
+    app.kubernetes.io/managed-by: telemetry-manager
+    app.kubernetes.io/name: telemetry-log-agent
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
+  name: kyma-project.io--telemetry-log-agent-metrics
+  namespace: kyma-system
+spec:
   ingress:
   - from:
-    - ipBlock:
-        cidr: 0.0.0.0/0
-    - ipBlock:
-        cidr: ::/0
+    - podSelector:
+        matchLabels:
+          networking.kyma-project.io/metrics-scraping: "true"
     ports:
     - port: 8888
       protocol: TCP
@@ -227,7 +244,6 @@ spec:
       app.kubernetes.io/name: telemetry-log-agent
   policyTypes:
   - Ingress
-  - Egress
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole

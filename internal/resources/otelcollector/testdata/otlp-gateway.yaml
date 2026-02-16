@@ -284,8 +284,6 @@ spec:
     - ipBlock:
         cidr: ::/0
     ports:
-    - port: 8888
-      protocol: TCP
     - port: 4318
       protocol: TCP
     - port: 4317
@@ -296,6 +294,32 @@ spec:
   policyTypes:
   - Ingress
   - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  labels:
+    app.kubernetes.io/component: gateway
+    app.kubernetes.io/managed-by: telemetry-manager
+    app.kubernetes.io/name: telemetry-otlp-gateway
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
+  name: kyma-project.io--telemetry-otlp-gateway-metrics
+  namespace: kyma-system
+spec:
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          networking.kyma-project.io/metrics-scraping: allowed
+    ports:
+    - port: 8888
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: telemetry-otlp-gateway
+  policyTypes:
+  - Ingress
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole

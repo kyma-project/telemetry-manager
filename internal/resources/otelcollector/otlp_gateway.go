@@ -10,6 +10,7 @@ import (
 	istionetworkingclientv1 "istio.io/client-go/pkg/apis/networking/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -189,6 +190,14 @@ func (o *OTLPGatewayApplierDeleter) DeleteResources(ctx context.Context, c clien
 	configMap := corev1.ConfigMap{ObjectMeta: objectMeta}
 	if err := k8sutils.DeleteObject(ctx, c, &configMap); err != nil {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete configmap: %w", err))
+	}
+
+	networkPolicySelector := map[string]string{
+		commonresources.LabelKeyK8sName: name.Name,
+	}
+
+	if err := k8sutils.DeleteObjectsByLabelSelector(ctx, c, &networkingv1.NetworkPolicyList{}, networkPolicySelector); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete network policy: %w", err))
 	}
 
 	daemonSet := appsv1.DaemonSet{ObjectMeta: objectMeta}
