@@ -6,7 +6,6 @@ import (
 
 	. "github.com/onsi/gomega"
 	"go.opentelemetry.io/collector/pdata/plog"
-
 )
 
 var testTime = time.Date(2023, 12, 07, 9, 36, 38, 0, time.UTC)

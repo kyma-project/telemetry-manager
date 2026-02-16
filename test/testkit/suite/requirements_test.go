@@ -161,7 +161,6 @@ func TestInferRequirementsFromLabels_UpgradeWithEnvVar(t *testing.T) {
 func TestInferRequirementsFromLabels_UpgradeWithExperimental(t *testing.T) {
 	// Test upgrade with experimental label - experimental should be enabled
 	// Uses default chart URL since env var is not set
-
 	actual := InferRequirementsFromLabels([]string{LabelUpgrade, LabelExperimental})
 
 	expected := kubeprep.Config{

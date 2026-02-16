@@ -42,7 +42,7 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			suite.RegisterTestCase(t, tc.labels...)
+			suite.SetupTest(t, tc.labels...)
 
 			var (
 				uniquePrefix = unique.Prefix("logs")
@@ -160,7 +160,7 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 }
 
 func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelOTelMaxPipeline)
+	suite.SetupTest(t, suite.LabelOTelMaxPipeline)
 
 	var (
 		uniquePrefix = unique.Prefix()
@@ -233,7 +233,7 @@ func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 }
 
 func TestMultiPipelineMaxPipeline_FluentBit(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelFluentBitMaxPipeline, suite.LabelNoFIPS)
+	suite.SetupTest(t, suite.LabelFluentBitMaxPipeline, suite.LabelNoFIPS)
 
 	var (
 		uniquePrefix = unique.Prefix()

@@ -29,12 +29,12 @@ Real-world examples:
 
 In test files, register tests with labels:
   func TestMyFeature(t *testing.T) {
-      suite.RegisterTestCase(t, "fips", "logs", "integration")
+      suite.SetupTest(t, "fips", "logs", "integration")
       // ... test implementation
   }
 
   func TestAnotherFeature(t *testing.T) {
-      suite.RegisterTestCase(t, "metrics", "unit")
+      suite.SetupTest(t, "metrics", "unit")
       // ... test implementation
   }
 

@@ -5,7 +5,6 @@ import (
 
 	. "github.com/onsi/gomega"
 	"go.opentelemetry.io/collector/pdata/ptrace"
-
 )
 
 var fts = []FlatTrace{
@@ -56,6 +55,7 @@ func TestFlatTracesMatchers_VerifyInputs(t *testing.T) {
 
 func TestFlatTraces_FlatTraceStruct(t *testing.T) {
 	RegisterTestingT(t)
+
 	td := ptrace.NewTraces()
 	// set resource attributes
 	rt := td.ResourceSpans().AppendEmpty()

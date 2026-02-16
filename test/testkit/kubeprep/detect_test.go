@@ -214,7 +214,7 @@ func TestDetectClusterState(t *testing.T) {
 		expected Config
 	}{
 		{
-			name: "fresh cluster - nothing installed",
+			name:    "fresh cluster - nothing installed",
 			objects: []client.Object{
 				// Empty cluster
 			},
@@ -402,10 +402,11 @@ func createIstioCR(name, namespace string) *unstructured.Unstructured {
 	})
 	cr.SetName(name)
 	cr.SetNamespace(namespace)
+
 	return cr
 }
 
-func createManagerDeployment(envVars map[string]string, args []string) *appsv1.Deployment {
+func createManagerDeployment(envVars map[string]string, _ []string) *appsv1.Deployment {
 	return createManagerDeploymentWithLabel(envVars, nil)
 }
 

@@ -230,7 +230,7 @@ func TestBackpressure(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.labelPrefix, func(t *testing.T) {
-			suite.RegisterTestCase(t, labelsForSelfMonitor(tc.labelPrefix, suite.LabelSelfMonitorBackpressureSuffix)...)
+			suite.SetupTest(t, labelsForSelfMonitor(tc.labelPrefix, suite.LabelSelfMonitorBackpressureSuffix)...)
 
 			var (
 				uniquePrefix = unique.Prefix(tc.labelPrefix)

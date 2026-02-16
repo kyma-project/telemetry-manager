@@ -72,7 +72,7 @@ func TestMultiPipelineBroken_OTel(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			suite.RegisterTestCase(t, tc.labels...)
+			suite.SetupTest(t, tc.labels...)
 
 			var (
 				uniquePrefix        = unique.Prefix(tc.name)
@@ -124,7 +124,7 @@ func TestMultiPipelineBroken_OTel(t *testing.T) {
 }
 
 func TestMultiPipelineBroken_FluentBit(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelFluentBit, suite.LabelNoFIPS)
+	suite.SetupTest(t, suite.LabelFluentBit, suite.LabelNoFIPS)
 
 	var (
 		uniquePrefix        = unique.Prefix()

@@ -2,8 +2,10 @@ package kubeprep
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"net/http"
 	"strings"
 	"time"
@@ -19,8 +21,8 @@ import (
 )
 
 // applyFromURL fetches YAML content from a URL and applies it to the cluster
-func applyFromURL(ctx context.Context, k8sClient client.Client, t TestingT, url string) error {
-	resp, err := http.Get(url)
+func applyFromURL(ctx context.Context, k8sClient client.Client, url string) error {
+	resp, err := http.Get(url) //nolint:gosec,noctx // URL is from trusted sources (Istio/Kyma repos)
 	if err != nil {
 		return fmt.Errorf("failed to fetch YAML from %s: %w", url, err)
 	}
@@ -35,31 +37,33 @@ func applyFromURL(ctx context.Context, k8sClient client.Client, t TestingT, url 
 		return fmt.Errorf("failed to read response body: %w", err)
 	}
 
-	return applyYAML(ctx, k8sClient, t, string(body))
+	return applyYAML(ctx, k8sClient, string(body))
 }
 
 // applyYAML parses YAML content and applies each object to the cluster using server-side apply.
 // This creates new resources or updates existing ones.
-func applyYAML(ctx context.Context, k8sClient client.Client, t TestingT, yamlContent string) error {
+func applyYAML(ctx context.Context, k8sClient client.Client, yamlContent string) error {
 	decoder := yaml.NewYAMLOrJSONDecoder(strings.NewReader(yamlContent), 4096)
 
 	for {
 		obj := &unstructured.Unstructured{}
+
 		err := decoder.Decode(obj)
 		if err != nil {
-			if err == io.EOF {
+			if errors.Is(err, io.EOF) {
 				break
 			}
+
 			return fmt.Errorf("failed to decode YAML: %w", err)
 		}
 
 		// Skip empty objects
-		if obj.Object == nil || len(obj.Object) == 0 {
+		if len(obj.Object) == 0 {
 			continue
 		}
 
 		// Use server-side apply to create or update the object
-		err = k8sClient.Patch(ctx, obj, client.Apply, client.FieldOwner("kubeprep"), client.ForceOwnership)
+		err = k8sClient.Patch(ctx, obj, client.Apply, client.FieldOwner("kubeprep"), client.ForceOwnership) //nolint:staticcheck // client.Apply is the standard way for server-side apply
 		if err != nil {
 			return fmt.Errorf("failed to apply %s %s/%s: %w",
 				obj.GetKind(), obj.GetNamespace(), obj.GetName(), err)
@@ -75,16 +79,18 @@ func deleteYAML(ctx context.Context, k8sClient client.Client, yamlContent string
 
 	for {
 		obj := &unstructured.Unstructured{}
+
 		err := decoder.Decode(obj)
 		if err != nil {
-			if err == io.EOF {
+			if errors.Is(err, io.EOF) {
 				break
 			}
+
 			return fmt.Errorf("failed to decode YAML: %w", err)
 		}
 
 		// Skip empty objects
-		if obj.Object == nil || len(obj.Object) == 0 {
+		if len(obj.Object) == 0 {
 			continue
 		}
 
@@ -101,7 +107,7 @@ func deleteYAML(ctx context.Context, k8sClient client.Client, yamlContent string
 
 // deleteFromURL fetches YAML content from a URL and deletes it from the cluster
 func deleteFromURL(ctx context.Context, k8sClient client.Client, url string) error {
-	resp, err := http.Get(url)
+	resp, err := http.Get(url) //nolint:gosec,noctx // URL is from trusted sources (Istio/Kyma repos)
 	if err != nil {
 		return fmt.Errorf("failed to fetch YAML from %s: %w", url, err)
 	}
@@ -146,6 +152,7 @@ func deleteAllResourcesByGVRK(ctx context.Context, k8sClient client.Client, grou
 		if apierrors.IsNotFound(err) || apierrors.IsMethodNotSupported(err) {
 			return nil
 		}
+
 		return fmt.Errorf("failed to list %s.%s: %w", resource, group, err)
 	}
 
@@ -175,6 +182,7 @@ func countResourcesByGVRK(ctx context.Context, k8sClient client.Client, group, v
 			// CRD might not exist or not be installed
 			return 0, nil
 		}
+
 		return 0, fmt.Errorf("failed to list %s.%s: %w", resource, group, err)
 	}
 
@@ -192,16 +200,17 @@ func waitForDeployment(ctx context.Context, k8sClient client.Client, name, names
 
 	for time.Now().Before(deadline) {
 		deployment := &appsv1.Deployment{}
+
 		err := k8sClient.Get(ctx, types.NamespacedName{
 			Name:      name,
 			Namespace: namespace,
 		}, deployment)
-
 		if err != nil {
 			if apierrors.IsNotFound(err) {
 				time.Sleep(5 * time.Second)
 				continue
 			}
+
 			return fmt.Errorf("failed to get deployment %s/%s: %w", namespace, name, err)
 		}
 
@@ -221,6 +230,7 @@ func waitForDeployment(ctx context.Context, k8sClient client.Client, name, names
 // ensureNamespaceInternal creates a namespace if it doesn't exist (internal implementation)
 func ensureNamespaceInternal(ctx context.Context, k8sClient client.Client, name string, labels map[string]string) error {
 	ns := &corev1.Namespace{}
+
 	err := k8sClient.Get(ctx, types.NamespacedName{Name: name}, ns)
 	if err == nil {
 		// Namespace exists, update labels if needed
@@ -228,11 +238,12 @@ func ensureNamespaceInternal(ctx context.Context, k8sClient client.Client, name 
 			if ns.Labels == nil {
 				ns.Labels = make(map[string]string)
 			}
-			for k, v := range labels {
-				ns.Labels[k] = v
-			}
+
+			maps.Copy(ns.Labels, labels)
+
 			return k8sClient.Update(ctx, ns)
 		}
+
 		return nil
 	}
 
@@ -244,6 +255,7 @@ func ensureNamespaceInternal(ctx context.Context, k8sClient client.Client, name 
 	ns = &corev1.Namespace{}
 	ns.Name = name
 	ns.Labels = labels
+
 	err = k8sClient.Create(ctx, ns)
 	if err != nil && !apierrors.IsAlreadyExists(err) {
 		return fmt.Errorf("failed to create namespace %s: %w", name, err)

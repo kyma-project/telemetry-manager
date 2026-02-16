@@ -171,7 +171,7 @@ func TestHealthy(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.labelPrefix, func(t *testing.T) {
-			suite.RegisterTestCase(t, labelsForSelfMonitor(tc.labelPrefix, suite.LabelSelfMonitorHealthySuffix)...)
+			suite.SetupTest(t, labelsForSelfMonitor(tc.labelPrefix, suite.LabelSelfMonitorHealthySuffix)...)
 
 			var (
 				uniquePrefix = unique.Prefix(tc.labelPrefix)

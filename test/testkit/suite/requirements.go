@@ -55,6 +55,7 @@ func InferRequirementsFromLabels(labels []string) kubeprep.Config {
 			if cfg.UpgradeFromChart == "" {
 				cfg.UpgradeFromChart = DefaultUpgradeFromChartURL
 			}
+
 			cfg.IsUpgradeTest = true
 		}
 	}

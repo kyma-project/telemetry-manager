@@ -46,7 +46,7 @@ data:
 
 	// Apply the YAML (should update the existing ConfigMap via server-side apply)
 	ctx := context.Background()
-	err := applyYAML(ctx, client, t, yamlContent)
+	err := applyYAML(ctx, client, yamlContent)
 	require.NoError(t, err, "applyYAML should succeed and update existing resource")
 
 	// Verify the ConfigMap was updated
@@ -84,7 +84,7 @@ data:
 
 	// Apply the YAML (should create a new ConfigMap)
 	ctx := context.Background()
-	err := applyYAML(ctx, client, t, yamlContent)
+	err := applyYAML(ctx, client, yamlContent)
 	require.NoError(t, err, "applyYAML should succeed when creating new resource")
 
 	// Verify the ConfigMap was created
@@ -130,7 +130,7 @@ data:
 
 	// Apply the YAML
 	ctx := context.Background()
-	err := applyYAML(ctx, client, t, yamlContent)
+	err := applyYAML(ctx, client, yamlContent)
 	require.NoError(t, err, "applyYAML should succeed with multiple resources")
 
 	// Verify both ConfigMaps were created
@@ -176,7 +176,7 @@ data:
 
 	// Apply the YAML (should skip empty objects)
 	ctx := context.Background()
-	err := applyYAML(ctx, client, t, yamlContent)
+	err := applyYAML(ctx, client, yamlContent)
 	require.NoError(t, err, "applyYAML should skip empty objects")
 
 	// Verify the ConfigMap was created

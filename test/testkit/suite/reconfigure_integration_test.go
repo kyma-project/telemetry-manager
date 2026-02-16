@@ -136,6 +136,7 @@ func TestEnsureClusterState_NoReconfiguration(t *testing.T) {
 	// Save original state
 	origConfig := ClusterPrepConfig
 	origState := CurrentClusterState
+
 	defer func() {
 		ClusterPrepConfig = origConfig
 		CurrentClusterState = origState
@@ -183,6 +184,7 @@ func TestEnsureClusterState_RequiresReconfiguration(t *testing.T) {
 	// Save original state
 	origConfig := ClusterPrepConfig
 	origState := CurrentClusterState
+
 	defer func() {
 		ClusterPrepConfig = origConfig
 		CurrentClusterState = origState

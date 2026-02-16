@@ -26,6 +26,7 @@ func DetectClusterState(t TestingT, k8sClient client.Client) (*Config, error) {
 	// Handle nil client gracefully - return default config
 	if k8sClient == nil {
 		t.Logf("No k8s client available, returning default cluster state")
+
 		return &Config{
 			ManagerImage:          "",
 			LocalImage:            false,
@@ -58,6 +59,7 @@ func DetectClusterState(t TestingT, k8sClient client.Client) (*Config, error) {
 	// If deployment has customization marker, set NeedsReinstall to force clean state
 	if detectHelmCustomized(ctx, k8sClient) {
 		cfg.NeedsReinstall = true
+
 		t.Log("Detected customized manager deployment - will reinstall to restore clean state")
 	}
 
@@ -89,11 +91,11 @@ func detectIstioInstalled(ctx context.Context, k8sClient client.Client) bool {
 // detectFIPSMode checks if telemetry manager is running in FIPS mode
 func detectFIPSMode(ctx context.Context, k8sClient client.Client) bool {
 	deployment := &appsv1.Deployment{}
+
 	err := k8sClient.Get(ctx, types.NamespacedName{
 		Name:      telemetryManagerName,
 		Namespace: kymaSystemNamespace,
 	}, deployment)
-
 	if err != nil {
 		return false
 	}
@@ -116,11 +118,11 @@ func detectFIPSMode(ctx context.Context, k8sClient client.Client) bool {
 // by looking for the custom label on the manager deployment.
 func detectExperimentalEnabled(ctx context.Context, k8sClient client.Client) bool {
 	deployment := &appsv1.Deployment{}
+
 	err := k8sClient.Get(ctx, types.NamespacedName{
 		Name:      telemetryManagerName,
 		Namespace: kymaSystemNamespace,
 	}, deployment)
-
 	if err != nil {
 		return false
 	}
@@ -149,11 +151,11 @@ func detectManagerDeployed(ctx context.Context, k8sClient client.Client) bool {
 // detectHelmCustomized checks if manager was deployed with custom helm values
 func detectHelmCustomized(ctx context.Context, k8sClient client.Client) bool {
 	deployment := &appsv1.Deployment{}
+
 	err := k8sClient.Get(ctx, types.NamespacedName{
 		Name:      telemetryManagerName,
 		Namespace: kymaSystemNamespace,
 	}, deployment)
-
 	if err != nil {
 		return false
 	}

@@ -53,15 +53,15 @@ func deployTestPrerequisites(t TestingT, k8sClient client.Client) error {
 
 	t.Log("Deploying test prerequisites...")
 
-	if err := applyYAML(ctx, k8sClient, t, telemetryCRYAML); err != nil {
+	if err := applyYAML(ctx, k8sClient, telemetryCRYAML); err != nil {
 		return fmt.Errorf("failed to apply Telemetry CR: %w", err)
 	}
 
-	if err := applyYAML(ctx, k8sClient, t, networkPolicyYAML); err != nil {
+	if err := applyYAML(ctx, k8sClient, networkPolicyYAML); err != nil {
 		return fmt.Errorf("failed to apply network policy: %w", err)
 	}
 
-	if err := applyYAML(ctx, k8sClient, t, shootInfoConfigMapYAML); err != nil {
+	if err := applyYAML(ctx, k8sClient, shootInfoConfigMapYAML); err != nil {
 		return fmt.Errorf("failed to apply shoot-info ConfigMap: %w", err)
 	}
 

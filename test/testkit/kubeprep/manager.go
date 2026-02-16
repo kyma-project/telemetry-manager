@@ -48,6 +48,7 @@ func labelDeployment(ctx context.Context, k8sClient client.Client, key, value st
 	if deployment.Labels == nil {
 		deployment.Labels = make(map[string]string)
 	}
+
 	deployment.Labels[key] = value
 
 	if err := k8sClient.Update(ctx, deployment); err != nil {
@@ -116,6 +117,7 @@ func waitForSinglePod(ctx context.Context, k8sClient client.Client, t TestingT, 
 		}
 
 		runningCount := 0
+
 		for _, pod := range pods.Items {
 			if pod.Status.Phase == corev1.PodRunning && pod.DeletionTimestamp == nil {
 				runningCount++
@@ -152,6 +154,7 @@ func getHelmChartPath() (string, error) {
 			if _, err := os.Stat(helmPath); err == nil {
 				return helmPath, nil
 			}
+
 			return "", fmt.Errorf("helm chart not found at %s", helmPath)
 		}
 
@@ -161,6 +164,7 @@ func getHelmChartPath() (string, error) {
 			// Reached root without finding go.mod
 			break
 		}
+
 		dir = parent
 	}
 
@@ -207,6 +211,7 @@ func deployManagerFromChartSource(t TestingT, k8sClient client.Client, chartSour
 		if IsLocalImage(imageOverride) {
 			pullPolicy = "IfNotPresent"
 		}
+
 		args = append(args,
 			"--set", fmt.Sprintf("manager.container.image.repository=%s", imageOverride),
 			"--set", fmt.Sprintf("manager.container.image.pullPolicy=%s", pullPolicy),
@@ -221,7 +226,9 @@ func deployManagerFromChartSource(t TestingT, k8sClient client.Client, chartSour
 	// Run helm upgrade --install command
 	t.Logf("Running: helm %v", args)
 	cmd := exec.CommandContext(ctx, "helm", args...)
+
 	var stdout, stderr bytes.Buffer
+
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 
@@ -234,6 +241,7 @@ func deployManagerFromChartSource(t TestingT, k8sClient client.Client, chartSour
 	if len(cfg.HelmValues) > 0 {
 		customizedValue = "true"
 	}
+
 	if err := labelDeployment(ctx, k8sClient, LabelHelmCustomized, customizedValue); err != nil {
 		return fmt.Errorf("failed to label deployment as customized: %w", err)
 	}
@@ -243,6 +251,7 @@ func deployManagerFromChartSource(t TestingT, k8sClient client.Client, chartSour
 	if cfg.EnableExperimental {
 		experimentalValue = "true"
 	}
+
 	if err := labelDeployment(ctx, k8sClient, LabelExperimentalEnabled, experimentalValue); err != nil {
 		return fmt.Errorf("failed to label deployment: %w", err)
 	}
@@ -264,6 +273,7 @@ func deployManager(t TestingT, k8sClient client.Client, cfg Config) error {
 	}
 
 	t.Log("Telemetry manager deployed")
+
 	return nil
 }
 
@@ -272,13 +282,14 @@ func deployManager(t TestingT, k8sClient client.Client, cfg Config) error {
 // 2. Delete the Telemetry operator CR
 // 3. Wait for resources to be deleted
 // 4. Uninstall the helm chart
-func undeployManager(t TestingT, k8sClient client.Client, cfg Config) error {
+func undeployManager(t TestingT, k8sClient client.Client, _ Config) error {
 	ctx := t.Context()
 
 	t.Log("Undeploying telemetry manager...")
 
 	// Step 1: Delete all pipeline resources
 	t.Log("Deleting all pipeline resources...")
+
 	if err := deleteTelemetryPipelines(ctx, k8sClient); err != nil {
 		return fmt.Errorf("failed to delete telemetry pipelines: %w", err)
 	}
@@ -290,6 +301,7 @@ func undeployManager(t TestingT, k8sClient client.Client, cfg Config) error {
 
 	// Step 2: Delete the Telemetry CR
 	t.Log("Deleting Telemetry CR...")
+
 	if err := deleteTelemetryCR(ctx, k8sClient); err != nil {
 		return fmt.Errorf("failed to delete Telemetry CR: %w", err)
 	}
@@ -301,6 +313,7 @@ func undeployManager(t TestingT, k8sClient client.Client, cfg Config) error {
 
 	// Step 3: Uninstall the helm chart
 	t.Log("Uninstalling helm release...")
+
 	args := []string{
 		"uninstall",
 		telemetryReleaseName,
@@ -310,7 +323,9 @@ func undeployManager(t TestingT, k8sClient client.Client, cfg Config) error {
 	}
 
 	cmd := exec.CommandContext(ctx, "helm", args...)
+
 	var stderr bytes.Buffer
+
 	cmd.Stderr = &stderr
 
 	if err := cmd.Run(); err != nil {
@@ -319,6 +334,7 @@ func undeployManager(t TestingT, k8sClient client.Client, cfg Config) error {
 	}
 
 	t.Log("Telemetry manager undeployed")
+
 	return nil
 }
 
@@ -360,6 +376,7 @@ func waitForPipelinesDeletion(ctx context.Context, k8sClient client.Client, t Te
 		if err != nil {
 			return fmt.Errorf("failed to count LogPipelines: %w", err)
 		}
+
 		totalCount += count
 
 		// Count TracePipelines
@@ -367,6 +384,7 @@ func waitForPipelinesDeletion(ctx context.Context, k8sClient client.Client, t Te
 		if err != nil {
 			return fmt.Errorf("failed to count TracePipelines: %w", err)
 		}
+
 		totalCount += count
 
 		// Count MetricPipelines
@@ -374,6 +392,7 @@ func waitForPipelinesDeletion(ctx context.Context, k8sClient client.Client, t Te
 		if err != nil {
 			return fmt.Errorf("failed to count MetricPipelines: %w", err)
 		}
+
 		totalCount += count
 
 		if totalCount == 0 {
@@ -448,6 +467,7 @@ func UpgradeManagerInPlace(t TestingT, k8sClient client.Client, newImage string,
 
 	// Wait for rollout to complete - ensures old pod is terminated
 	t.Log("Waiting for deployment rollout to complete...")
+
 	if err := waitForRolloutComplete(ctx, k8sClient, t, 3*time.Minute); err != nil {
 		return fmt.Errorf("rollout did not complete: %w", err)
 	}
@@ -462,5 +482,6 @@ func UpgradeManagerInPlace(t TestingT, k8sClient client.Client, newImage string,
 	time.Sleep(reconcileDelay)
 
 	t.Log("Manager upgrade complete")
+
 	return nil
 }

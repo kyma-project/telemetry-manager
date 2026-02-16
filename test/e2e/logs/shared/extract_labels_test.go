@@ -74,7 +74,7 @@ func TestExtractLabels_OTel(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			suite.RegisterTestCase(t, tc.labels...)
+			suite.SetupTest(t, tc.labels...)
 
 			const (
 				k8sLabelKeyPrefix = "k8s.pod.label"
@@ -161,7 +161,7 @@ func TestExtractLabels_OTel(t *testing.T) {
 }
 
 func TestExtractLabels_FluentBit(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelFluentBit, suite.LabelNoFIPS)
+	suite.SetupTest(t, suite.LabelFluentBit, suite.LabelNoFIPS)
 
 	var (
 		uniquePrefix           = unique.Prefix()

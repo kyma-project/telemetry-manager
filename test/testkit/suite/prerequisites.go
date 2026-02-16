@@ -55,5 +55,6 @@ func (pc *PrerequisiteChecker) ValidateLabels(labels []string) error {
 			continue
 		}
 	}
+
 	return nil
 }

@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-
 )
 
 func TestPrometheusMetricMatchers_VerifyInputs(t *testing.T) {

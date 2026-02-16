@@ -57,7 +57,7 @@ func TestResources_OTel(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.label, func(t *testing.T) {
-			suite.RegisterTestCase(t, tc.label)
+			suite.SetupTest(t, tc.label)
 
 			const (
 				endpointKey   = "endpoint"
@@ -89,7 +89,7 @@ func TestResources_OTel(t *testing.T) {
 }
 
 func TestResources_FluentBit(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelFluentBit, suite.LabelNoFIPS)
+	suite.SetupTest(t, suite.LabelFluentBit, suite.LabelNoFIPS)
 
 	const hostKey = "host"
 

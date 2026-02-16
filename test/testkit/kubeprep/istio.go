@@ -9,7 +9,7 @@ import (
 
 	"github.com/onsi/gomega"
 	"github.com/stretchr/testify/require"
-	admissionv1 "k8s.io/api/admissionregistration/v1"
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -30,6 +30,7 @@ func getIstioVersion() string {
 	if v := os.Getenv("ISTIO_VERSION"); v != "" {
 		return v
 	}
+
 	return defaultIstioVersion
 }
 
@@ -47,11 +48,11 @@ func installIstio(t TestingT, k8sClient client.Client) {
 
 	// 1. Apply istio-manager.yaml
 	managerURL := fmt.Sprintf(istioManagerReleaseURLTmpl, version)
-	require.NoError(t, applyFromURL(ctx, k8sClient, t, managerURL), "failed to apply Istio manager")
+	require.NoError(t, applyFromURL(ctx, k8sClient, managerURL), "failed to apply Istio manager")
 
 	// 2. Apply istio-default-cr.yaml
 	crURL := fmt.Sprintf(istioCRReleaseURLTmpl, version)
-	require.NoError(t, applyFromURL(ctx, k8sClient, t, crURL), "failed to apply Istio default CR")
+	require.NoError(t, applyFromURL(ctx, k8sClient, crURL), "failed to apply Istio default CR")
 
 	// 3. Wait for istiod deployment
 	t.Log("Waiting for istiod deployment...")
@@ -61,13 +62,16 @@ func installIstio(t TestingT, k8sClient client.Client) {
 
 	// 4. Wait for webhook configuration
 	t.Log("Waiting for Istio webhook...")
-	webhook := &admissionv1.MutatingWebhookConfiguration{}
+
+	webhook := &admissionregistrationv1.MutatingWebhookConfiguration{}
+
 	g.Eventually(func() error {
 		return k8sClient.Get(ctx, types.NamespacedName{Name: "istio-sidecar-injector"}, webhook)
 	}, 2*time.Minute, 5*time.Second).Should(gomega.Succeed(), "Istio webhook not ready")
 
 	// 5. Apply Istio Telemetry CR
 	t.Log("Applying Istio Telemetry CR...")
+
 	telemetryYAML := `apiVersion: telemetry.istio.io/v1
 kind: Telemetry
 metadata:
@@ -83,12 +87,14 @@ spec:
         - name: kyma-traces
       randomSamplingPercentage: 100.00
 `
+
 	g.Eventually(func() error {
-		return applyYAML(ctx, k8sClient, t, telemetryYAML)
+		return applyYAML(ctx, k8sClient, telemetryYAML)
 	}, 2*time.Minute, 5*time.Second).Should(gomega.Succeed(), "failed to apply Istio Telemetry CR")
 
 	// 6. Apply PeerAuthentication for istio-system (STRICT mTLS)
 	t.Log("Applying PeerAuthentication for istio-system...")
+
 	peerAuthIstioYAML := `apiVersion: security.istio.io/v1
 kind: PeerAuthentication
 metadata:
@@ -98,8 +104,9 @@ spec:
   mtls:
     mode: STRICT
 `
+
 	g.Eventually(func() error {
-		return applyYAML(ctx, k8sClient, t, peerAuthIstioYAML)
+		return applyYAML(ctx, k8sClient, peerAuthIstioYAML)
 	}, 2*time.Minute, 5*time.Second).Should(gomega.Succeed(), "failed to apply PeerAuthentication for istio-system")
 
 	// 7. Create istio-permissive-mtls namespace with istio-injection label
@@ -116,6 +123,7 @@ spec:
 
 	// 9. Apply PeerAuthentication for istio-permissive-mtls (PERMISSIVE mTLS)
 	t.Log("Applying PeerAuthentication for istio-permissive-mtls...")
+
 	peerAuthPermissiveYAML := `apiVersion: security.istio.io/v1
 kind: PeerAuthentication
 metadata:
@@ -125,8 +133,9 @@ spec:
   mtls:
     mode: PERMISSIVE
 `
+
 	g.Eventually(func() error {
-		return applyYAML(ctx, k8sClient, t, peerAuthPermissiveYAML)
+		return applyYAML(ctx, k8sClient, peerAuthPermissiveYAML)
 	}, 2*time.Minute, 5*time.Second).Should(gomega.Succeed(), "failed to apply PeerAuthentication for istio-permissive-mtls")
 
 	t.Log("Istio installed")
@@ -155,13 +164,21 @@ func uninstallIstio(t TestingT, k8sClient client.Client) error {
 		}
 
 		totalResources := 0
+
 		for _, crd := range istioCRDs {
 			if len(crd.Versions) == 0 {
 				continue
 			}
-			count, _ := countResourcesByGVRK(ctx, k8sClient, crd.Group, crd.Versions[0], crd.Plural, crd.Kind)
+
+			count, err := countResourcesByGVRK(ctx, k8sClient, crd.Group, crd.Versions[0], crd.Plural, crd.Kind)
+			if err != nil {
+				t.Logf("Error counting resources for %s.%s: %v", crd.Plural, crd.Group, err)
+				continue
+			}
+
 			totalResources += count
 		}
+
 		return totalResources == 0
 	}, 2*time.Minute, 2*time.Second).Should(gomega.BeTrue(), "Istio resources still exist")
 
@@ -193,6 +210,7 @@ func uninstallIstio(t TestingT, k8sClient client.Client) error {
 	}
 
 	t.Log("Istio uninstalled")
+
 	return nil
 }
 
@@ -212,6 +230,7 @@ func deleteIstioResources(ctx context.Context, k8sClient client.Client) error {
 		if len(crd.Versions) > 0 {
 			version = crd.Versions[0]
 		}
+
 		if version == "" {
 			continue
 		}
@@ -258,9 +277,20 @@ func getIstioCRDs(ctx context.Context, k8sClient client.Client) ([]IstioCRD, err
 			continue
 		}
 
-		name, _, _ := unstructured.NestedString(item.Object, "metadata", "name")
-		plural, _, _ := unstructured.NestedString(item.Object, "spec", "names", "plural")
-		kind, _, _ := unstructured.NestedString(item.Object, "spec", "names", "kind")
+		name, _, err := unstructured.NestedString(item.Object, "metadata", "name")
+		if err != nil {
+			continue
+		}
+
+		plural, _, err := unstructured.NestedString(item.Object, "spec", "names", "plural")
+		if err != nil {
+			continue
+		}
+
+		kind, _, err := unstructured.NestedString(item.Object, "spec", "names", "kind")
+		if err != nil {
+			continue
+		}
 
 		versionsRaw, found, err := unstructured.NestedSlice(item.Object, "spec", "versions")
 		if err != nil || !found {
@@ -268,11 +298,13 @@ func getIstioCRDs(ctx context.Context, k8sClient client.Client) ([]IstioCRD, err
 		}
 
 		var versions []string
+
 		for _, v := range versionsRaw {
-			vMap, ok := v.(map[string]interface{})
+			vMap, ok := v.(map[string]any)
 			if !ok {
 				continue
 			}
+
 			versionName, ok := vMap["name"].(string)
 			if ok {
 				versions = append(versions, versionName)
@@ -294,4 +326,3 @@ func getIstioCRDs(ctx context.Context, k8sClient client.Client) ([]IstioCRD, err
 
 	return istioCRDs, nil
 }
-

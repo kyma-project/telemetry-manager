@@ -238,7 +238,7 @@ func TestOutage(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.labelPrefix, func(t *testing.T) {
-			suite.RegisterTestCase(t, labelsForSelfMonitor(tc.labelPrefix, suite.LabelSelfMonitorOutageSuffix)...)
+			suite.SetupTest(t, labelsForSelfMonitor(tc.labelPrefix, suite.LabelSelfMonitorOutageSuffix)...)
 
 			var (
 				uniquePrefix = unique.Prefix(tc.labelPrefix)

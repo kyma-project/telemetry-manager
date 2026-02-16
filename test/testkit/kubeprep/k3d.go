@@ -16,12 +16,14 @@ func importImageToK3D(ctx context.Context, t TestingT, image, clusterName string
 	}
 
 	cmd := exec.CommandContext(ctx, "k3d", "image", "import", image, "-c", clusterName)
+
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("failed to import image: %w\noutput: %s", err, output)
 	}
 
 	t.Logf("Imported image %s to k3d cluster %s", image, clusterName)
+
 	return nil
 }
 
@@ -29,6 +31,7 @@ func importImageToK3D(ctx context.Context, t TestingT, image, clusterName string
 func detectK3DCluster(ctx context.Context) (string, error) {
 	// Get current kubectl context
 	cmd := exec.CommandContext(ctx, "kubectl", "config", "current-context")
+
 	output, err := cmd.Output()
 	if err != nil {
 		return "", fmt.Errorf("failed to get current context: %w", err)
@@ -37,8 +40,8 @@ func detectK3DCluster(ctx context.Context) (string, error) {
 	contextName := strings.TrimSpace(string(output))
 
 	// k3d clusters typically have context like "k3d-<cluster-name>"
-	if strings.HasPrefix(contextName, "k3d-") {
-		return strings.TrimPrefix(contextName, "k3d-"), nil
+	if after, ok := strings.CutPrefix(contextName, "k3d-"); ok {
+		return after, nil
 	}
 
 	return "", fmt.Errorf("not a k3d cluster context: %s", contextName)

@@ -30,6 +30,7 @@ func TestPrerequisiteChecker_ValidateLabels_IstioLabel(t *testing.T) {
 		err := checker.ValidateLabels([]string{LabelIstio})
 
 		require.Error(t, err)
+
 		var prereqErr *PrerequisiteError
 		require.ErrorAs(t, err, &prereqErr)
 		assert.Equal(t, LabelIstio, prereqErr.Label)
@@ -59,6 +60,7 @@ func TestPrerequisiteChecker_ValidateLabels_ExperimentalLabel(t *testing.T) {
 		err := checker.ValidateLabels([]string{LabelExperimental})
 
 		require.Error(t, err)
+
 		var prereqErr *PrerequisiteError
 		require.ErrorAs(t, err, &prereqErr)
 		assert.Equal(t, LabelExperimental, prereqErr.Label)
@@ -90,6 +92,7 @@ func TestPrerequisiteChecker_ValidateLabels_MultipleLabels(t *testing.T) {
 		err := checker.ValidateLabels([]string{LabelIstio, LabelExperimental})
 
 		require.Error(t, err)
+
 		var prereqErr *PrerequisiteError
 		require.ErrorAs(t, err, &prereqErr)
 		assert.Equal(t, LabelIstio, prereqErr.Label)
@@ -177,6 +180,7 @@ func TestPrerequisiteChecker_ValidateLabels_EdgeCases(t *testing.T) {
 		err := checker.ValidateLabels([]string{LabelIstio, LabelIstio})
 
 		require.Error(t, err)
+
 		var prereqErr *PrerequisiteError
 		require.ErrorAs(t, err, &prereqErr)
 		assert.Equal(t, LabelIstio, prereqErr.Label)

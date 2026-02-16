@@ -44,7 +44,7 @@ var (
 )
 
 func TestKeepOriginalBody_OTel(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelLogAgent)
+	suite.SetupTest(t, suite.LabelLogAgent)
 
 	var (
 		uniquePrefix         = unique.Prefix()
@@ -190,7 +190,7 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 }
 
 func TestKeepOriginalBody_FluentBit(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelFluentBit, suite.LabelNoFIPS)
+	suite.SetupTest(t, suite.LabelFluentBit, suite.LabelNoFIPS)
 
 	var (
 		uniquePrefix         = unique.Prefix()

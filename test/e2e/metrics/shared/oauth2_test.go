@@ -57,7 +57,7 @@ func TestOAuth2(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.label, func(t *testing.T) {
-			suite.RegisterTestCase(t, tc.label, suite.LabelOAuth2)
+			suite.SetupTest(t, tc.label, suite.LabelOAuth2)
 
 			var (
 				uniquePrefix = unique.Prefix(tc.label, suite.LabelOAuth2)

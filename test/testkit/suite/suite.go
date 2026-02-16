@@ -7,8 +7,10 @@ import (
 	"os"
 	"path"
 	"runtime"
+	"slices"
 	"sort"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/go-logr/logr"
@@ -46,6 +48,7 @@ var (
 	labelFilterFlag  string
 	doNotExecuteFlag bool
 	printLabelsFlag  bool
+	flagsOnce        sync.Once
 )
 
 // Environment-affecting labels - these determine cluster setup
@@ -55,11 +58,13 @@ var environmentLabels = map[string]bool{
 	LabelNoFIPS:       true,
 }
 
-// init registers test flags with the flag package.
-func init() {
-	flag.StringVar(&labelFilterFlag, "labels", "", "Label filter expression (e.g., 'log-agent and istio')")
-	flag.BoolVar(&doNotExecuteFlag, "do-not-execute", false, "Dry-run mode: print test info without executing")
-	flag.BoolVar(&printLabelsFlag, "print-labels", false, "Print test labels in structured format (pipe-separated)")
+// registerFlags registers test flags with the flag package (called lazily via sync.Once).
+func registerFlags() {
+	flagsOnce.Do(func() {
+		flag.StringVar(&labelFilterFlag, "labels", "", "Label filter expression (e.g., 'log-agent and istio')")
+		flag.BoolVar(&doNotExecuteFlag, "do-not-execute", false, "Dry-run mode: print test info without executing")
+		flag.BoolVar(&printLabelsFlag, "print-labels", false, "Print test labels in structured format (pipe-separated)")
+	})
 }
 
 // BeforeSuiteFunc is designed to return an error instead of relying on Gomega matchers.
@@ -237,8 +242,10 @@ func SetupTest(t *testing.T, labels ...string) {
 
 	// Determine if this test should run based on label filter
 	shouldRun := true
+
 	if labelFilterExpr != "" {
 		var err error
+
 		shouldRun, err = evaluateLabelExpression(labels, labelFilterExpr)
 		require.NoError(t, err)
 	}
@@ -249,20 +256,25 @@ func SetupTest(t *testing.T, labels ...string) {
 		if shouldRun {
 			printLabelsInfo(t, labels)
 		}
+
 		t.Skip()
+
 		return
 	}
 
 	// Handle dry-run mode
 	if doNotExecute {
-		if labelFilterExpr == "" {
+		switch {
+		case labelFilterExpr == "":
 			printTestInfo(t, labels, "would execute (no filter)")
-		} else if shouldRun {
+		case shouldRun:
 			printTestInfo(t, labels, fmt.Sprintf("would execute (matches filter: %s)", labelFilterExpr))
-		} else {
+		default:
 			printTestInfo(t, labels, fmt.Sprintf("would skip (doesn't match filter: %s)", labelFilterExpr))
 		}
+
 		t.Skip()
+
 		return
 	}
 
@@ -307,8 +319,10 @@ func SetupTestWithHelmValues(t *testing.T, helmValues []string, labels ...string
 
 	// Determine if this test should run based on label filter
 	shouldRun := true
+
 	if labelFilterExpr != "" {
 		var err error
+
 		shouldRun, err = evaluateLabelExpression(labels, labelFilterExpr)
 		require.NoError(t, err)
 	}
@@ -318,20 +332,25 @@ func SetupTestWithHelmValues(t *testing.T, helmValues []string, labels ...string
 		if shouldRun {
 			printLabelsInfo(t, labels)
 		}
+
 		t.Skip()
+
 		return
 	}
 
 	// Handle dry-run mode
 	if doNotExecute {
-		if labelFilterExpr == "" {
+		switch {
+		case labelFilterExpr == "":
 			printTestInfo(t, labels, "would execute (no filter)")
-		} else if shouldRun {
+		case shouldRun:
 			printTestInfo(t, labels, fmt.Sprintf("would execute (matches filter: %s)", labelFilterExpr))
-		} else {
+		default:
 			printTestInfo(t, labels, fmt.Sprintf("would skip (doesn't match filter: %s)", labelFilterExpr))
 		}
+
 		t.Skip()
+
 		return
 	}
 
@@ -349,24 +368,31 @@ func SetupTestWithHelmValues(t *testing.T, helmValues []string, labels ...string
 }
 
 // RegisterTestCase is an alias for SetupTest for backward compatibility.
+//
 // Deprecated: Use SetupTest instead.
 func RegisterTestCase(t *testing.T, labels ...string) {
 	SetupTest(t, labels...)
 }
 
 func findDoNotExecuteFlag() bool {
-	// Ensure flags are parsed
+	// Ensure flags are registered and parsed
+	registerFlags()
+
 	if !flag.Parsed() {
 		flag.Parse()
 	}
+
 	return doNotExecuteFlag
 }
 
 func findPrintLabelsFlag() bool {
-	// Ensure flags are parsed
+	// Ensure flags are registered and parsed
+	registerFlags()
+
 	if !flag.Parsed() {
 		flag.Parse()
 	}
+
 	return printLabelsFlag
 }
 
@@ -379,17 +405,13 @@ func classifyLabels(labels []string) (envLabels, otherLabels []string) {
 			otherLabels = append(otherLabels, label)
 		}
 	}
+
 	return envLabels, otherLabels
 }
 
 // hasLabel checks if a specific label is present in the labels slice
 func hasLabel(labels []string, target string) bool {
-	for _, label := range labels {
-		if label == target {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(labels, target)
 }
 
 // printLabelsInfo prints test labels in a structured pipe-separated format
@@ -407,6 +429,7 @@ func printLabelsInfo(t *testing.T, labels []string) {
 				}
 			}
 		}
+
 		if testName == "" {
 			testName = "<unknown>"
 		}
@@ -466,10 +489,13 @@ func printTestInfo(t *testing.T, labels []string, action string) {
 }
 
 func findLabelFilterExpression() string {
-	// Ensure flags are parsed
+	// Ensure flags are registered and parsed
+	registerFlags()
+
 	if !flag.Parsed() {
 		flag.Parse()
 	}
+
 	return labelFilterFlag
 }
 
@@ -503,6 +529,7 @@ func ensureClusterState(t *testing.T, requiredConfig kubeprep.Config) error {
 	if err != nil {
 		return fmt.Errorf("failed to detect cluster state: %w", err)
 	}
+
 	CurrentClusterState = detectedState
 
 	// Copy immutable fields from current state (these don't change during reconfigurations)
@@ -515,6 +542,7 @@ func ensureClusterState(t *testing.T, requiredConfig kubeprep.Config) error {
 		if managerImage == "" {
 			managerImage = DefaultLocalImage
 		}
+
 		requiredConfig.ManagerImage = managerImage
 		requiredConfig.LocalImage = kubeprep.IsLocalImage(managerImage)
 
@@ -534,6 +562,7 @@ func ensureClusterState(t *testing.T, requiredConfig kubeprep.Config) error {
 	}
 
 	*CurrentClusterState = requiredConfig
+
 	return nil
 }
 
@@ -553,6 +582,7 @@ func ensureUpgradeTestState(t *testing.T, requiredConfig kubeprep.Config) error 
 	// SkipManagerDeployment=false means manager IS deployed
 	if !detectedState.SkipManagerDeployment {
 		t.Log("Manager already deployed, undeploying before upgrade test setup...")
+
 		if err := kubeprep.ReconfigureCluster(t, K8sClient, *detectedState, kubeprep.Config{
 			SkipManagerDeployment: true,
 			SkipPrerequisites:     true,
@@ -647,14 +677,17 @@ func helmValuesEqual(a, b []string) bool {
 	// Sort and compare for order-independent comparison
 	aSorted := make([]string, len(a))
 	bSorted := make([]string, len(b))
+
 	copy(aSorted, a)
 	copy(bSorted, b)
 	sort.Strings(aSorted)
 	sort.Strings(bSorted)
+
 	for i := range aSorted {
 		if aSorted[i] != bSorted[i] {
 			return false
 		}
 	}
+
 	return true
 }

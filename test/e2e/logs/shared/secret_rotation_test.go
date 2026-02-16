@@ -70,7 +70,7 @@ func TestSecretRotation_OTel(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			suite.RegisterTestCase(t, tc.labels...)
+			suite.SetupTest(t, tc.labels...)
 
 			const (
 				endpointKey   = "logs-endpoint"
@@ -131,7 +131,7 @@ func TestSecretRotation_OTel(t *testing.T) {
 }
 
 func TestSecretRotation_FluentBit(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelFluentBit, suite.LabelNoFIPS)
+	suite.SetupTest(t, suite.LabelFluentBit, suite.LabelNoFIPS)
 
 	const (
 		hostKey   = "logs-host"

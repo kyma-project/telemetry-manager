@@ -1,6 +1,7 @@
 package suite_test
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
@@ -20,14 +21,15 @@ func TestPrerequisiteValidationDemo(t *testing.T) {
 		// This simulates what happens when a test with istio label runs
 		// In real scenario, this would be called from RegisterTestCase
 		checker := suite.NewPrerequisiteChecker(suite.ClusterPrepConfig)
-		err := checker.ValidateLabels([]string{suite.LabelIstio})
 
+		err := checker.ValidateLabels([]string{suite.LabelIstio})
 		if err == nil {
 			t.Fatal("Expected prerequisite validation to fail when Istio is not installed")
 		}
 
 		// Verify error message is helpful
-		if prereqErr, ok := err.(*suite.PrerequisiteError); ok {
+		prereqErr := &suite.PrerequisiteError{}
+		if errors.As(err, &prereqErr) {
 			t.Logf("Got expected error: %s", prereqErr.Error())
 			t.Logf("Suggestion: %s", prereqErr.Suggestion)
 		} else {
@@ -43,14 +45,15 @@ func TestPrerequisiteValidationDemo(t *testing.T) {
 		}
 
 		checker := suite.NewPrerequisiteChecker(suite.ClusterPrepConfig)
-		err := checker.ValidateLabels([]string{suite.LabelExperimental})
 
+		err := checker.ValidateLabels([]string{suite.LabelExperimental})
 		if err == nil {
 			t.Fatal("Expected prerequisite validation to fail when experimental features are not enabled")
 		}
 
 		// Verify error message is helpful
-		if prereqErr, ok := err.(*suite.PrerequisiteError); ok {
+		prereqErr := &suite.PrerequisiteError{}
+		if errors.As(err, &prereqErr) {
 			t.Logf("Got expected error: %s", prereqErr.Error())
 			t.Logf("Suggestion: %s", prereqErr.Suggestion)
 		} else {
