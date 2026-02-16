@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -82,7 +81,7 @@ func TestHandler(t *testing.T) {
 			requestMethod: http.MethodPost,
 			requestBody:   bytes.NewBuffer([]byte(`[{"labels":{"alertname":"MetricGatewayExporterDroppedData","pipeline_name":"cls"}}]`)),
 			resources: []client.Object{
-				ptr.To(testutils.NewMetricPipelineBuilder().WithName("cls").Build()),
+				new(testutils.NewMetricPipelineBuilder().WithName("cls").Build()),
 			},
 			expectedStatus:             http.StatusOK,
 			metricPipelinesToReconcile: []string{"cls"},
@@ -92,7 +91,7 @@ func TestHandler(t *testing.T) {
 			requestMethod: http.MethodPost,
 			requestBody:   bytes.NewBuffer([]byte(`[{"labels":{"alertname":"TraceGatewayExporterDroppedData","pipeline_name":"cls"}}]`)),
 			resources: []client.Object{
-				ptr.To(testutils.NewTracePipelineBuilder().WithName("cls").Build()),
+				new(testutils.NewTracePipelineBuilder().WithName("cls").Build()),
 			},
 			expectedStatus:            http.StatusOK,
 			tracePipelinesToReconcile: []string{"cls"},
@@ -102,7 +101,7 @@ func TestHandler(t *testing.T) {
 			requestMethod: http.MethodPost,
 			requestBody:   bytes.NewBuffer([]byte(`[{"labels":{"alertname":"LogAgentExporterDroppedLogs","pipeline_name":"cls"}}]`)),
 			resources: []client.Object{
-				ptr.To(testutils.NewLogPipelineBuilder().WithName("cls").Build()),
+				new(testutils.NewLogPipelineBuilder().WithName("cls").Build()),
 			},
 			expectedStatus:          http.StatusOK,
 			logPipelinesToReconcile: []string{"cls"},
@@ -112,7 +111,7 @@ func TestHandler(t *testing.T) {
 			requestMethod: http.MethodPost,
 			requestBody:   bytes.NewBuffer([]byte(`[{"labels":{"alertname":"MetricGatewayExporterDroppedData","pipeline_name":"dynatrace"}}]`)),
 			resources: []client.Object{
-				ptr.To(testutils.NewTracePipelineBuilder().WithName("cls").Build()),
+				new(testutils.NewTracePipelineBuilder().WithName("cls").Build()),
 			},
 			expectedStatus: http.StatusOK,
 		},
@@ -121,7 +120,7 @@ func TestHandler(t *testing.T) {
 			requestMethod: http.MethodPost,
 			requestBody:   bytes.NewBuffer([]byte(`[{"labels":{"alertname":"MetricGatewayExporterDroppedData","pipeline_name":"cls"}}]`)),
 			resources: []client.Object{
-				ptr.To(testutils.NewTracePipelineBuilder().WithName("cls").Build()),
+				new(testutils.NewTracePipelineBuilder().WithName("cls").Build()),
 			},
 			expectedStatus: http.StatusOK,
 		},
@@ -130,8 +129,8 @@ func TestHandler(t *testing.T) {
 			requestMethod: http.MethodPost,
 			requestBody:   bytes.NewBuffer([]byte(`[{"labels":{"alertname":"MetricGatewayThrottling"}}]`)),
 			resources: []client.Object{
-				ptr.To(testutils.NewMetricPipelineBuilder().WithName("cls").Build()),
-				ptr.To(testutils.NewMetricPipelineBuilder().WithName("dynatrace").Build()),
+				new(testutils.NewMetricPipelineBuilder().WithName("cls").Build()),
+				new(testutils.NewMetricPipelineBuilder().WithName("dynatrace").Build()),
 			},
 			expectedStatus:             http.StatusOK,
 			metricPipelinesToReconcile: []string{"cls", "dynatrace"},
@@ -141,8 +140,8 @@ func TestHandler(t *testing.T) {
 			requestMethod: http.MethodPost,
 			requestBody:   bytes.NewBuffer([]byte(`[{"labels":{"alertname":"TraceGatewayThrottling"}}]`)),
 			resources: []client.Object{
-				ptr.To(testutils.NewTracePipelineBuilder().WithName("cls").Build()),
-				ptr.To(testutils.NewTracePipelineBuilder().WithName("dynatrace").Build()),
+				new(testutils.NewTracePipelineBuilder().WithName("cls").Build()),
+				new(testutils.NewTracePipelineBuilder().WithName("dynatrace").Build()),
 			},
 			expectedStatus:            http.StatusOK,
 			tracePipelinesToReconcile: []string{"cls", "dynatrace"},
@@ -152,8 +151,8 @@ func TestHandler(t *testing.T) {
 			requestMethod: http.MethodPost,
 			requestBody:   bytes.NewBuffer([]byte(`[{"labels":{"alertname":"LogGatewayThrottling"}}]`)),
 			resources: []client.Object{
-				ptr.To(testutils.NewLogPipelineBuilder().WithName("cls").Build()),
-				ptr.To(testutils.NewLogPipelineBuilder().WithName("dynatrace").Build()),
+				new(testutils.NewLogPipelineBuilder().WithName("cls").Build()),
+				new(testutils.NewLogPipelineBuilder().WithName("dynatrace").Build()),
 			},
 			expectedStatus:          http.StatusOK,
 			logPipelinesToReconcile: []string{"cls", "dynatrace"},

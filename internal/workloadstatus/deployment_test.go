@@ -8,7 +8,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
@@ -24,7 +23,7 @@ func TestDeploymentProber_WithStaticErrors(t *testing.T) {
 	}{
 		{
 			summary:          "all scheduled, all ready",
-			desiredScheduled: ptr.To(int32(2)),
+			desiredScheduled: new(int32(2)),
 			numberReady:      2,
 			pods: []corev1.Pod{
 				testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithRunningStatus().Build(),
@@ -74,7 +73,7 @@ func TestDeployment_WithErrorAssert(t *testing.T) {
 		{
 			summary:          "all scheduled, zero ready but no problem",
 			numberReady:      0,
-			desiredScheduled: ptr.To(int32(2)),
+			desiredScheduled: new(int32(2)),
 			expectedError:    IsPodIsPendingError,
 			pods: []corev1.Pod{
 				testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithPendingStatus().Build(),
@@ -83,7 +82,7 @@ func TestDeployment_WithErrorAssert(t *testing.T) {
 		},
 		{
 			summary:          "all scheduled, 1 ready, 1 evicted",
-			desiredScheduled: ptr.To(int32(2)),
+			desiredScheduled: new(int32(2)),
 			numberReady:      1,
 			expectedError:    IsPodFailedError,
 			pods: []corev1.Pod{
@@ -93,7 +92,7 @@ func TestDeployment_WithErrorAssert(t *testing.T) {
 		},
 		{
 			summary:          "all scheduled, 1 ready, 1 pending",
-			desiredScheduled: ptr.To(int32(2)),
+			desiredScheduled: new(int32(2)),
 			numberReady:      1,
 			expectedError:    IsPodIsPendingError,
 			pods: []corev1.Pod{
@@ -103,7 +102,7 @@ func TestDeployment_WithErrorAssert(t *testing.T) {
 		},
 		{
 			summary:          "all scheduled, 1 ready, 1 container not ready",
-			desiredScheduled: ptr.To(int32(2)),
+			desiredScheduled: new(int32(2)),
 			numberReady:      1,
 			expectedError:    IsPodIsPendingError,
 			pods: []corev1.Pod{
@@ -113,7 +112,7 @@ func TestDeployment_WithErrorAssert(t *testing.T) {
 		},
 		{
 			summary:          "all scheduled, 1 ready, 1 process exited",
-			desiredScheduled: ptr.To(int32(2)),
+			desiredScheduled: new(int32(2)),
 			numberReady:      1,
 			expectedError:    IsPodIsPendingError,
 			pods: []corev1.Pod{
@@ -123,7 +122,7 @@ func TestDeployment_WithErrorAssert(t *testing.T) {
 		},
 		{
 			summary:          "all scheduled one ready, OOM: 1 with expired threshold",
-			desiredScheduled: ptr.To(int32(2)),
+			desiredScheduled: new(int32(2)),
 			numberReady:      1,
 			pods: []corev1.Pod{
 				testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithRunningStatus().Build(),
@@ -133,7 +132,7 @@ func TestDeployment_WithErrorAssert(t *testing.T) {
 		},
 		{
 			summary:          "all scheduled, 0 ready, crashloop: 1, OOM: 1 with expired threshold",
-			desiredScheduled: ptr.To(int32(2)),
+			desiredScheduled: new(int32(2)),
 			numberReady:      0,
 			pods: []corev1.Pod{
 				testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithCrashBackOffStatus().Build(),
@@ -210,8 +209,8 @@ func createReplicaSet(desiredScheduled *int32, numberReady int32, dep appsv1.Dep
 }
 
 func TestDeploymentSetRollout(t *testing.T) {
-	deployment := createDeployment(ptr.To(int32(2)), 1)
-	replicaSet := createReplicaSet(ptr.To(int32(2)), 1, *deployment)
+	deployment := createDeployment(new(int32(2)), 1)
+	replicaSet := createReplicaSet(new(int32(2)), 1, *deployment)
 
 	pods := []corev1.Pod{
 		testutils.NewPodBuilder("pod-0", "telemetry-system").WithLabels(map[string]string{"app": "foo"}).WithRunningStatus().Build(),
@@ -243,7 +242,7 @@ func TestDeploymentSetRollout(t *testing.T) {
 }
 
 func TestReplicaSetNotFound(t *testing.T) {
-	deployment := createDeployment(ptr.To(int32(2)), 1)
+	deployment := createDeployment(new(int32(2)), 1)
 
 	fakeClient := fake.NewClientBuilder().WithObjects(deployment).Build()
 	sut := DeploymentProber{fakeClient}

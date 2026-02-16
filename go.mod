@@ -1,6 +1,6 @@
 module github.com/kyma-project/telemetry-manager
 
-go 1.25.7
+go 1.26.0
 
 require (
 	github.com/caarlos0/env/v11 v11.3.1
@@ -24,10 +24,10 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 	istio.io/api v1.28.3
 	istio.io/client-go v1.28.3
-	k8s.io/api v0.35.0
-	k8s.io/apiextensions-apiserver v0.35.0
-	k8s.io/apimachinery v0.35.0
-	k8s.io/client-go v0.35.0
+	k8s.io/api v0.35.1
+	k8s.io/apiextensions-apiserver v0.35.1
+	k8s.io/apimachinery v0.35.1
+	k8s.io/client-go v0.35.1
 	k8s.io/klog/v2 v2.130.1
 	k8s.io/utils v0.0.0-20251002143259-bc988d571ff4
 	sigs.k8s.io/controller-runtime v0.23.1

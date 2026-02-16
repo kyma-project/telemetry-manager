@@ -36,6 +36,26 @@ on:
       - ".env"
       - ".k3d-kyma.yaml"
       - "Makefile"
+  # Trigger the workflow on "push" events to run the tests with prometheus-fips image
+  # Workflow needs access to Github secrets for pulling the prometheus-fips image and that acceess is not granted for "pull_request" events
+  push:
+    branches:
+      - "main"
+      - "release-*"
+    paths:
+      - "**/go.mod"
+      - "**/go.sum"
+      - "**.go"
+      - "config/**"
+      - "!config/busola/**"
+      - "!**_test.go"
+      - "!docs/**"
+      - "test/**.go"
+      - ".github/workflows/pr-integration.yml"
+      - ".github/template/**"
+      - ".env"
+      - ".k3d-kyma.yaml"
+      - "Makefile"
 
   workflow_dispatch:
 
@@ -105,13 +125,30 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
+      - name: Authenticate to Google Cloud
+        if: github.event_name != 'pull_request'
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          credentials_json: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
+
+      - name: Setup Google Cloud SDK
+        if: github.event_name != 'pull_request'
+        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
+
+      - name: Configure Docker for Google Artifact Registry
+        if: github.event_name != 'pull_request'
+        run: gcloud auth configure-docker europe-docker.pkg.dev --quiet
+
       - name: Setup test environment
         uses: "./.github/template/test-setup"
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           install-istio: ${{ matrix.scenario != 'healthy' }}
           manager-image: ${{ needs.setup.outputs.manager-image }}
-          operate-in-fips-mode: ${{ matrix.kind != 'fluent-bit' && 'true' || 'false' }}
+          # Operate in FIPS mode only if both conditions are satisfied:
+          # 1. Trigger event is not a pull_request (to have access to secrets to be able to pull the prometheus-fips image)
+          # 2. The test kind is not fluent-bit (as fluent-bit is not supported when FIPS mode is enabled)
+          operate-in-fips-mode: ${{ github.event_name != 'pull_request' && matrix.kind != 'fluent-bit' && 'true' || 'false' }}
 
       - name: Execute tests
         uses: "./.github/template/test-execute"
@@ -202,6 +239,12 @@ jobs:
             type: e2e
             use-fips: true
             install-istio: false
+          - name: e2e-otel-max-pipeline-experimental
+            labels: otel-max-pipeline and experimental
+            mode: experimental
+            type: e2e
+            use-fips: true
+            install-istio: false
           - name: e2e-logs-misc
             labels: logs-misc
             mode: release
@@ -257,6 +300,12 @@ jobs:
             type: e2e
             use-fips: true
             install-istio: false
+          - name: e2e-metrics-max-pipeline-experimental
+            labels: metrics-max-pipeline and experimental
+            mode: experimental
+            type: e2e
+            use-fips: true
+            install-istio: false
           # TRACES
           - name: e2e-traces
             labels: traces
@@ -267,6 +316,12 @@ jobs:
           - name: e2e-traces-max-pipeline
             labels: traces-max-pipeline
             mode: release
+            type: e2e
+            use-fips: true
+            install-istio: false
+          - name: e2e-traces-max-pipeline-experimental
+            labels: traces-max-pipeline and experimental
+            mode: experimental
             type: e2e
             use-fips: true
             install-istio: false
@@ -334,6 +389,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
+      - name: Authenticate to Google Cloud
+        if: github.event_name != 'pull_request'
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          credentials_json: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
+
+      - name: Setup Google Cloud SDK
+        if: github.event_name != 'pull_request'
+        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
+
+      - name: Configure Docker for Google Artifact Registry
+        if: github.event_name != 'pull_request'
+        run: gcloud auth configure-docker europe-docker.pkg.dev --quiet
+
       - name: Setup test environment
         uses: "./.github/template/test-setup"
         with:
@@ -341,7 +410,10 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           install-istio: ${{ matrix.testcase.install-istio }}
           manager-image: ${{ needs.setup.outputs.manager-image }}
-          operate-in-fips-mode: ${{ matrix.testcase.use-fips }}
+          # Operate in FIPS mode only if both conditions are satisfied:
+          # 1. Trigger event is not a pull_request (to have access to secrets to be able to pull the prometheus-fips image)
+          # 2. The test case is marked to use FIPS (as some test cases, e.g. those using fluent-bit, are not compatible with FIPS mode)
+          operate-in-fips-mode: ${{ github.event_name != 'pull_request' && matrix.testcase.use-fips && 'true' || 'false' }}
 
       - name: Execute tests
         uses: "./.github/template/test-execute"
@@ -363,7 +435,7 @@ jobs:
           for pod in $(kubectl get pods -n kyma-system -o name); do echo "=== $pod ==="; kubectl logs -n kyma-system $pod; done || true
 
   summary:
-    needs: [e2e-selfmonitor, e2e]
+    needs: [e2e-selfmonitor, e2e, e2e-custom-labels-annotations-no-fips]
     runs-on: ubuntu-latest
     if: always()
     steps:

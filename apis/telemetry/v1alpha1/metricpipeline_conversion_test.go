@@ -5,7 +5,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
@@ -18,59 +17,59 @@ var v1alpha1MetricPipeline = &MetricPipeline{
 	Spec: MetricPipelineSpec{
 		Input: MetricPipelineInput{
 			Runtime: &MetricPipelineRuntimeInput{
-				Enabled: ptr.To(true),
+				Enabled: new(true),
 				Namespaces: &NamespaceSelector{
 					Include: []string{"ns-1", "ns-2"},
 					Exclude: []string{"ns-3"},
 				},
 				Resources: &MetricPipelineRuntimeInputResources{
 					Pod: &MetricPipelineRuntimeInputResource{
-						Enabled: ptr.To(false),
+						Enabled: new(false),
 					},
 					Container: &MetricPipelineRuntimeInputResource{
-						Enabled: ptr.To(false),
+						Enabled: new(false),
 					},
 					Node: &MetricPipelineRuntimeInputResource{
-						Enabled: ptr.To(false),
+						Enabled: new(false),
 					},
 					Volume: &MetricPipelineRuntimeInputResource{
-						Enabled: ptr.To(false),
+						Enabled: new(false),
 					},
 					Deployment: &MetricPipelineRuntimeInputResource{
-						Enabled: ptr.To(false),
+						Enabled: new(false),
 					},
 					DaemonSet: &MetricPipelineRuntimeInputResource{
-						Enabled: ptr.To(false),
+						Enabled: new(false),
 					},
 					StatefulSet: &MetricPipelineRuntimeInputResource{
-						Enabled: ptr.To(false),
+						Enabled: new(false),
 					},
 					Job: &MetricPipelineRuntimeInputResource{
-						Enabled: ptr.To(false),
+						Enabled: new(false),
 					},
 				},
 			},
 			Istio: &MetricPipelineIstioInput{
-				Enabled: ptr.To(false),
+				Enabled: new(false),
 				Namespaces: &NamespaceSelector{
 					Include: []string{"app-ns-1"},
 					Exclude: []string{"app-ns-2"},
 				},
 				DiagnosticMetrics: &MetricPipelineIstioInputDiagnosticMetrics{
-					Enabled: ptr.To(true),
+					Enabled: new(true),
 				},
 				EnvoyMetrics: &EnvoyMetrics{
-					Enabled: ptr.To(true),
+					Enabled: new(true),
 				},
 			},
 			Prometheus: &MetricPipelinePrometheusInput{
-				Enabled: ptr.To(true),
+				Enabled: new(true),
 				Namespaces: &NamespaceSelector{
 					Include: []string{"prom-ns-1"},
 					Exclude: []string{"prom-ns-2"},
 				},
 				DiagnosticMetrics: &MetricPipelineIstioInputDiagnosticMetrics{
-					Enabled: ptr.To(true),
+					Enabled: new(true),
 				},
 			},
 			OTLP: &OTLPInput{
@@ -119,63 +118,63 @@ var v1beta1MetricPipeline = &telemetryv1beta1.MetricPipeline{
 	Spec: telemetryv1beta1.MetricPipelineSpec{
 		Input: telemetryv1beta1.MetricPipelineInput{
 			Runtime: &telemetryv1beta1.MetricPipelineRuntimeInput{
-				Enabled: ptr.To(true),
+				Enabled: new(true),
 				Namespaces: &telemetryv1beta1.NamespaceSelector{
 					Include: []string{"ns-1", "ns-2"},
 					Exclude: []string{"ns-3"},
 				},
 				Resources: &telemetryv1beta1.MetricPipelineRuntimeInputResources{
 					Pod: &telemetryv1beta1.MetricPipelineRuntimeInputResource{
-						Enabled: ptr.To(false),
+						Enabled: new(false),
 					},
 					Container: &telemetryv1beta1.MetricPipelineRuntimeInputResource{
-						Enabled: ptr.To(false),
+						Enabled: new(false),
 					},
 					Node: &telemetryv1beta1.MetricPipelineRuntimeInputResource{
-						Enabled: ptr.To(false),
+						Enabled: new(false),
 					},
 					Volume: &telemetryv1beta1.MetricPipelineRuntimeInputResource{
-						Enabled: ptr.To(false),
+						Enabled: new(false),
 					},
 					Deployment: &telemetryv1beta1.MetricPipelineRuntimeInputResource{
-						Enabled: ptr.To(false),
+						Enabled: new(false),
 					},
 					DaemonSet: &telemetryv1beta1.MetricPipelineRuntimeInputResource{
-						Enabled: ptr.To(false),
+						Enabled: new(false),
 					},
 					StatefulSet: &telemetryv1beta1.MetricPipelineRuntimeInputResource{
-						Enabled: ptr.To(false),
+						Enabled: new(false),
 					},
 					Job: &telemetryv1beta1.MetricPipelineRuntimeInputResource{
-						Enabled: ptr.To(false),
+						Enabled: new(false),
 					},
 				},
 			},
 			Istio: &telemetryv1beta1.MetricPipelineIstioInput{
-				Enabled: ptr.To(false),
+				Enabled: new(false),
 				Namespaces: &telemetryv1beta1.NamespaceSelector{
 					Include: []string{"app-ns-1"},
 					Exclude: []string{"app-ns-2"},
 				},
 				DiagnosticMetrics: &telemetryv1beta1.MetricPipelineIstioInputDiagnosticMetrics{
-					Enabled: ptr.To(true),
+					Enabled: new(true),
 				},
 				EnvoyMetrics: &telemetryv1beta1.EnvoyMetrics{
-					Enabled: ptr.To(true),
+					Enabled: new(true),
 				},
 			},
 			Prometheus: &telemetryv1beta1.MetricPipelinePrometheusInput{
-				Enabled: ptr.To(true),
+				Enabled: new(true),
 				Namespaces: &telemetryv1beta1.NamespaceSelector{
 					Include: []string{"prom-ns-1"},
 					Exclude: []string{"prom-ns-2"},
 				},
 				DiagnosticMetrics: &telemetryv1beta1.MetricPipelineIstioInputDiagnosticMetrics{
-					Enabled: ptr.To(true),
+					Enabled: new(true),
 				},
 			},
 			OTLP: &telemetryv1beta1.OTLPInput{
-				Enabled: ptr.To(false),
+				Enabled: new(false),
 				Namespaces: &telemetryv1beta1.NamespaceSelector{
 					Include: []string{"otlp-ns-1"},
 					Exclude: []string{"otlp-ns-2"},
