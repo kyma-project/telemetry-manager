@@ -317,7 +317,7 @@ func (ad *ApplierDeleter) makePodSpec(image, configPath, configFile string) core
 		commonresources.WithTerminationGracePeriodSeconds(300), //nolint:mnd // 300 seconds
 		commonresources.WithImagePullSecretName(ad.Config.ImagePullSecretName()),
 
-		commonresources.WithContainer("self-monitor", image,
+		commonresources.WithContainer(names.SelfMonitorContainerName, image,
 			commonresources.WithArgs(args),
 			commonresources.WithPort("http-web", selfmonports.PrometheusPort),
 			commonresources.WithVolumeMounts(volumeMounts),
