@@ -72,7 +72,7 @@ The controller must then re-read the ConfigMap and retry the update.
 err := r.Client.Update(ctx, configMap)
 if errors.IsConflict(err) {
     // Re-fetch and retry
-    return ctrl.Result{Requeue: true}, nil
+    return ctrl.Result{}, err
 }
 ```
 
