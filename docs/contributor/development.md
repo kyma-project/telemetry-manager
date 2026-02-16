@@ -58,19 +58,8 @@ For development, use the following commands:
   make docker-build
   make docker-push
   kubectl create ns kyma-system
-  make deploy-no-fips
+  make deploy-experimental
   ```
-
-- If you want to deploy the manager without FIPS mode enabled, use `deploy-no-fips` or `deploy-experimental-no-fips` targets. If you want to deploy the manager with FIPS mode enabled, use `deploy` or `deploy-experimental` targets. Note that before using `deploy` or `deploy-experimental` targets, you need to configure your local environment to access the restricted registry using the Google Cloud identity:
-  ```bash
-  # Authenticate with Google Cloud
-  gcloud auth login
-
-  # Configure Docker to use Google Artifact Registry
-  gcloud auth configure-docker europe-docker.pkg.dev
-  ```
-
-  > **NOTE:** This is needed to be able pull the FIPS-compliant Self-Monitor image and only internal contributors have access rights to pull this image. If you are an external contributor, then use `deploy-no-fips` or `deploy-experimental-no-fips` targets.
 
 - Clean up everything
 
