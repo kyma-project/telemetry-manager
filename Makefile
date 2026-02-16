@@ -268,7 +268,7 @@ docker-pull-self-monitor-fips-image: ## Pull the Self-Monitor FIPS image
 
 .PHONY: k3d-import-self-monitor-fips-image
 k3d-import-self-monitor-fips-image: ## Import the Self-Monitor FIPS image into the K3D cluster
-	K3D="$(K3D)" ./hack/k3d-import-image.sh ${SELF_MONITOR_FIPS_IMAGE} kyma 20
+	./hack/k3d-import-image.sh ${SELF_MONITOR_FIPS_IMAGE}
 
 ##@ Development
 
