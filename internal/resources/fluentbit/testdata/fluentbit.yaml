@@ -428,34 +428,6 @@ metadata:
   name: kyma-project.io--telemetry-fluent-bit
   namespace: kyma-system
 spec:
-  ingress:
-  - from:
-    - podSelector:
-        matchLabels:
-          networking.kyma-project.io/metrics-scraping: allowed
-    ports:
-    - port: 2021
-      protocol: TCP
-  podSelector:
-    matchLabels:
-      app.kubernetes.io/instance: telemetry
-      app.kubernetes.io/name: fluent-bit
-  policyTypes:
-  - Ingress
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  labels:
-    app.kubernetes.io/component: agent
-    app.kubernetes.io/instance: telemetry
-    app.kubernetes.io/managed-by: telemetry-manager
-    app.kubernetes.io/name: fluent-bit
-    app.kubernetes.io/part-of: telemetry
-    kyma-project.io/module: telemetry
-  name: kyma-project.io--telemetry-fluent-bit
-  namespace: kyma-system
-spec:
   egress:
   - to:
     - ipBlock:
@@ -478,6 +450,34 @@ spec:
   policyTypes:
   - Ingress
   - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  labels:
+    app.kubernetes.io/component: agent
+    app.kubernetes.io/instance: telemetry
+    app.kubernetes.io/managed-by: telemetry-manager
+    app.kubernetes.io/name: fluent-bit
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
+  name: kyma-project.io--telemetry-fluent-bit-metrics
+  namespace: kyma-system
+spec:
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          networking.kyma-project.io/metrics-scraping: allowed
+    ports:
+    - port: 2021
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: telemetry
+      app.kubernetes.io/name: fluent-bit
+  policyTypes:
+  - Ingress
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole

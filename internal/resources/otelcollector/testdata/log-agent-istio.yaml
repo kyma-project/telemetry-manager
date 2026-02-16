@@ -236,7 +236,7 @@ spec:
   - from:
     - podSelector:
         matchLabels:
-          networking.kyma-project.io/metrics-scraping: "true"
+          networking.kyma-project.io/metrics-scraping: allowed
     ports:
     - port: 8888
       protocol: TCP

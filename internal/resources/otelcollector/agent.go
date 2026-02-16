@@ -179,7 +179,7 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 		commonresources.WithNameSuffix("metrics"),
 		commonresources.WithIngressFromPods(
 			map[string]string{
-				commonresources.LabelKeyTelemetryMetricsScraping: commonresources.LabelValueTrue,
+				commonresources.LabelKeyTelemetryMetricsScraping: commonresources.LabelValueTelemetryMetricsScraping,
 			},
 			ingressMetricsPorts),
 	)
