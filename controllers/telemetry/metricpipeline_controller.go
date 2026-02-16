@@ -75,14 +75,10 @@ type MetricPipelineControllerConfig struct {
 }
 
 func NewMetricPipelineController(config MetricPipelineControllerConfig, client client.Client, reconcileTriggerChan <-chan event.GenericEvent) (*MetricPipelineController, error) {
-	gatewayFlowHealthProber, err := prober.NewOTelMetricGatewayProber(types.NamespacedName{Name: names.SelfMonitor, Namespace: config.TargetNamespace()})
-	if err != nil {
-		return nil, err
-	}
+	pipelineCount := resourcelock.MaxPipelineCount
 
-	agentFlowHealthProber, err := prober.NewOTelMetricAgentProber(types.NamespacedName{Name: names.SelfMonitor, Namespace: config.TargetNamespace()})
-	if err != nil {
-		return nil, err
+	if config.UnlimitedPipelines() {
+		pipelineCount = resourcelock.UnlimitedPipelineCount
 	}
 
 	pipelineLock := resourcelock.NewLocker(
@@ -91,7 +87,7 @@ func NewMetricPipelineController(config MetricPipelineControllerConfig, client c
 			Name:      names.MetricPipelineLock,
 			Namespace: config.TargetNamespace(),
 		},
-		MaxPipelineCount,
+		pipelineCount,
 	)
 
 	pipelineSync := resourcelock.NewSyncer(
@@ -101,6 +97,16 @@ func NewMetricPipelineController(config MetricPipelineControllerConfig, client c
 			Namespace: config.TargetNamespace(),
 		},
 	)
+
+	gatewayFlowHealthProber, err := prober.NewOTelMetricGatewayProber(types.NamespacedName{Name: names.SelfMonitor, Namespace: config.TargetNamespace()})
+	if err != nil {
+		return nil, err
+	}
+
+	agentFlowHealthProber, err := prober.NewOTelMetricAgentProber(types.NamespacedName{Name: names.SelfMonitor, Namespace: config.TargetNamespace()})
+	if err != nil {
+		return nil, err
+	}
 
 	transformSpecValidator, err := ottl.NewTransformSpecValidator(ottl.SignalTypeMetric)
 	if err != nil {
