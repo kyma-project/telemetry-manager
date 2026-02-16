@@ -111,6 +111,8 @@ type envConfig struct {
 	OTelCollectorImage string `env:"OTEL_COLLECTOR_IMAGE"`
 	// SelfMonitorImage is the image used for the self-monitoring deployment. This is a customized Prometheus image.
 	SelfMonitorImage string `env:"SELF_MONITOR_IMAGE"`
+	// SelfMonitorFIPSImage is the image used for the self-monitoring deployment in FIPS mode. This is a Prometheus FIPS 140-2 compliant image.
+	SelfMonitorFIPSImage string `env:"SELF_MONITOR_FIPS_IMAGE"`
 	// AlpineImage is the image used for the chown init containers.
 	AlpineImage string `env:"ALPINE_IMAGE"`
 	// ImagePullSecret is the name of the image pull secret to use for pulling images of all created workloads (agents, gateways, self-monitor).
@@ -383,11 +385,17 @@ func setupAdmissionsWebhooks(mgr manager.Manager) error {
 func setupTelemetryController(globals config.Global, cfg envConfig, webhookCertConfig webhookcert.Config, mgr manager.Manager) error {
 	setupLog.Info("Setting up telemetry controller")
 
+	selectedSelfMonitorImage := cfg.SelfMonitorImage
+	if globals.OperateInFIPSMode() {
+		selectedSelfMonitorImage = cfg.SelfMonitorFIPSImage
+		setupLog.Info("Operating in FIPS mode, therefore a FIPS compliant self-monitor image is used", "image", selectedSelfMonitorImage)
+	}
+
 	telemetryController := operator.NewTelemetryController(
 		operator.TelemetryControllerConfig{
 			Global:                            globals,
 			SelfMonitorAlertmanagerWebhookURL: fmt.Sprintf("%s.%s.svc", webhookServiceName, globals.ManagerNamespace()),
-			SelfMonitorImage:                  cfg.SelfMonitorImage,
+			SelfMonitorImage:                  selectedSelfMonitorImage,
 			SelfMonitorPriorityClassName:      normalPriorityClassName,
 			WebhookCert:                       webhookCertConfig,
 		},

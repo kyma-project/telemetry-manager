@@ -6,6 +6,7 @@ bdba:
   - europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluent-bit:4.2.2
   - europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.144.0-main
   - europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:3.9.1-0877cc3
+  - europe-docker.pkg.dev/kyma-project/restricted-prod/sap.com/prometheus-fips:3.9.1
   - europe-docker.pkg.dev/kyma-project/prod/external/library/alpine:3.23.2
 mend:
   language: golang-mod
