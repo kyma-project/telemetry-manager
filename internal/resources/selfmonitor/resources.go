@@ -361,23 +361,23 @@ func (ad *ApplierDeleter) makeNetworkPolicy() *networkingv1.NetworkPolicy {
 		// Allow ingress from telemetry-manager pods only on Prometheus port
 		commonresources.WithIngressFromPods(map[string]string{
 			commonresources.LabelKeyK8sName: "manager",
-		}, selfmonports.PrometheusPort),
+		}, []int32{selfmonports.PrometheusPort}),
 		// Allow egress to FluentBit for scraping metrics
 		commonresources.WithEgressToPods(map[string]string{
 			commonresources.LabelKeyK8sName: "fluent-bit",
-		}, fbports.HTTP, fbports.ExporterMetrics),
+		}, []int32{fbports.HTTP, fbports.ExporterMetrics}),
 		// Allow egress to OTel agents for scraping metrics
 		commonresources.WithEgressToPods(map[string]string{
 			commonresources.LabelKeyK8sComponent: commonresources.LabelValueK8sComponentAgent,
-		}, ports.Metrics),
+		}, []int32{ports.Metrics}),
 		// Allow egress to OTel gateways for scraping metrics
 		commonresources.WithEgressToPods(map[string]string{
 			commonresources.LabelKeyK8sComponent: commonresources.LabelValueK8sComponentGateway,
-		}, ports.Metrics),
+		}, []int32{ports.Metrics}),
 		// Allow egress to telemetry-manager for webhook
 		commonresources.WithEgressToPods(map[string]string{
 			commonresources.LabelKeyK8sName: "manager",
-		}, mgrports.Webhook),
+		}, []int32{mgrports.Webhook}),
 	)
 }
 

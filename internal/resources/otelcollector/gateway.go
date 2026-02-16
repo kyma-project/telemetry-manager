@@ -11,6 +11,7 @@ import (
 	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -182,14 +183,17 @@ func NewTraceGatewayApplierDeleter(globals config.Global, image, priorityClassNa
 }
 
 func (gad *GatewayApplierDeleter) ApplyResources(ctx context.Context, c client.Client, opts GatewayApplyOptions) error {
-	name := types.NamespacedName{Namespace: gad.globals.TargetNamespace(), Name: gad.baseName}
+	var (
+		name         = types.NamespacedName{Namespace: gad.globals.TargetNamespace(), Name: gad.baseName}
+		otlpPorts    = gatewayIngressOTLPPorts()
+		metricsPorts = gatewayIngressMetricsPorts()
+	)
 
-	ingressAllowedPorts := gatewayIngressAllowedPorts()
 	if opts.IstioEnabled {
-		ingressAllowedPorts = append(ingressAllowedPorts, ports.IstioEnvoy)
+		metricsPorts = append(metricsPorts, ports.IstioEnvoyTelemetry)
 	}
 
-	if err := applyCommonResources(ctx, c, name, commonresources.LabelValueK8sComponentGateway, gad.rbac, ingressAllowedPorts); err != nil {
+	if err := applyCommonResources(ctx, c, name, commonresources.LabelValueK8sComponentGateway, gad.rbac); err != nil {
 		return fmt.Errorf("failed to create common resource: %w", err)
 	}
 
@@ -204,6 +208,35 @@ func (gad *GatewayApplierDeleter) ApplyResources(ctx context.Context, c client.C
 	}
 
 	configChecksum := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, []corev1.Secret{*secret})
+
+	metricsNetworkPolicy := commonresources.MakeNetworkPolicy(
+		name,
+		commonresources.MakeDefaultLabels(name.Name, commonresources.LabelValueK8sComponentGateway),
+		commonresources.MakeDefaultSelectorLabels(name.Name),
+		commonresources.WithNameSuffix("metrics"),
+		commonresources.WithIngressFromPods(
+			map[string]string{
+				commonresources.LabelKeyTelemetryMetricsScraping: commonresources.LabelValueTelemetryMetricsScraping,
+			},
+			metricsPorts,
+		),
+	)
+
+	gatewayNetworkPolicy := commonresources.MakeNetworkPolicy(
+		name,
+		commonresources.MakeDefaultLabels(name.Name, commonresources.LabelValueK8sComponentGateway),
+		commonresources.MakeDefaultSelectorLabels(name.Name),
+		commonresources.WithIngressFromAny(otlpPorts),
+		commonresources.WithEgressToAny(),
+	)
+
+	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, metricsNetworkPolicy); err != nil {
+		return fmt.Errorf("failed to create metrics network policy: %w", err)
+	}
+
+	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, gatewayNetworkPolicy); err != nil {
+		return fmt.Errorf("failed to create gateway network policy: %w", err)
+	}
 
 	if err := k8sutils.CreateOrUpdateDeployment(ctx, c, gad.makeGatewayDeployment(configChecksum, opts)); err != nil {
 		return fmt.Errorf("failed to create deployment: %w", err)
@@ -251,6 +284,14 @@ func (gad *GatewayApplierDeleter) DeleteResources(ctx context.Context, c client.
 	configMap := corev1.ConfigMap{ObjectMeta: objectMeta}
 	if err := k8sutils.DeleteObject(ctx, c, &configMap); err != nil {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete configmap: %w", err))
+	}
+
+	networkPolicySelector := map[string]string{
+		commonresources.LabelKeyK8sName: name.Name,
+	}
+
+	if err := k8sutils.DeleteObjectsByLabelSelector(ctx, c, &networkingv1.NetworkPolicyList{}, networkPolicySelector); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete network policy: %w", err))
 	}
 
 	deployment := appsv1.Deployment{ObjectMeta: objectMeta}
@@ -427,6 +468,7 @@ func (gad *GatewayApplierDeleter) makeAnnotations(configChecksum string, opts Ga
 
 	if opts.IstioEnabled {
 		annotations[commonresources.AnnotationKeyIstioExcludeInboundPorts] = fmt.Sprintf("%d", ports.Metrics)
+		annotations[commonresources.AnnotationKeyIstioExcludeInboundPorts] = fmt.Sprintf("%d", ports.Metrics)
 		// When a workload is outside the istio mesh and communicates with pod in service mesh, the envoy proxy does not
 		// preserve the source IP and destination IP. To preserve source/destination IP we need TPROXY interception mode.
 		// More info: https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/#ProxyConfig-InboundInterceptionMode
@@ -436,10 +478,15 @@ func (gad *GatewayApplierDeleter) makeAnnotations(configChecksum string, opts Ga
 	return annotations
 }
 
-func gatewayIngressAllowedPorts() []int32 {
+func gatewayIngressOTLPPorts() []int32 {
 	return []int32{
-		ports.Metrics,
 		ports.OTLPHTTP,
 		ports.OTLPGRPC,
+	}
+}
+
+func gatewayIngressMetricsPorts() []int32 {
+	return []int32{
+		ports.Metrics,
 	}
 }

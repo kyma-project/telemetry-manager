@@ -22,7 +22,7 @@ import (
 )
 
 // applyCommonResources applies resources to gateway and agent deployment node
-func applyCommonResources(ctx context.Context, c client.Client, name types.NamespacedName, componentType string, rbac rbac, ingressAllowedPorts []int32) error {
+func applyCommonResources(ctx context.Context, c client.Client, name types.NamespacedName, componentType string, rbac rbac) error {
 	// Create service account before RBAC resources
 	if err := k8sutils.CreateOrUpdateServiceAccount(ctx, c, makeServiceAccount(name, componentType)); err != nil {
 		return fmt.Errorf("failed to create service account: %w", err)
@@ -70,16 +70,6 @@ func applyCommonResources(ctx context.Context, c client.Client, name types.Names
 		return fmt.Errorf("failed to cleanup old network policy: %w", err)
 	}
 
-	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, commonresources.MakeNetworkPolicy(
-		name,
-		commonresources.MakeDefaultLabels(name.Name, componentType),
-		commonresources.MakeDefaultSelectorLabels(name.Name),
-		commonresources.WithIngressFromAny(ingressAllowedPorts...),
-		commonresources.WithEgressToAny(),
-	)); err != nil {
-		return fmt.Errorf("failed to create network policy: %w", err)
-	}
-
 	return nil
 }
 
@@ -120,11 +110,6 @@ func deleteCommonResources(ctx context.Context, c client.Client, name types.Name
 	metricsService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: names.MetricsServiceName(name.Name), Namespace: name.Namespace}}
 	if err := k8sutils.DeleteObject(ctx, c, &metricsService); err != nil {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete metrics service: %w", err))
-	}
-
-	networkPolicy := networkingv1.NetworkPolicy{ObjectMeta: metav1.ObjectMeta{Name: commonresources.NetworkPolicyPrefix + name.Name, Namespace: name.Namespace}}
-	if err := k8sutils.DeleteObject(ctx, c, &networkPolicy); err != nil && !apierrors.IsNotFound(err) {
-		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete network policy: %w", err))
 	}
 
 	return allErrors

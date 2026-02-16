@@ -85,14 +85,17 @@ func NewOTLPGatewayApplierDeleter(globals config.Global, image, priorityClassNam
 
 // ApplyResources creates or updates the OTLP gateway DaemonSet and Legacy otlp logs service.
 func (o *OTLPGatewayApplierDeleter) ApplyResources(ctx context.Context, c client.Client, opts GatewayApplyOptions) error {
-	name := types.NamespacedName{Namespace: o.globals.TargetNamespace(), Name: o.baseName}
+	var (
+		name         = types.NamespacedName{Namespace: o.globals.TargetNamespace(), Name: o.baseName}
+		otlpPorts    = gatewayIngressOTLPPorts()
+		metricsPorts = gatewayIngressMetricsPorts()
+	)
 
-	ingressAllowedPorts := gatewayIngressAllowedPorts()
 	if opts.IstioEnabled {
-		ingressAllowedPorts = append(ingressAllowedPorts, ports.IstioEnvoy)
+		metricsPorts = append(metricsPorts, ports.IstioEnvoyTelemetry)
 	}
 
-	if err := applyCommonResources(ctx, c, name, commonresources.LabelValueK8sComponentGateway, o.rbac, ingressAllowedPorts); err != nil {
+	if err := applyCommonResources(ctx, c, name, commonresources.LabelValueK8sComponentGateway, o.rbac); err != nil {
 		return fmt.Errorf("failed to create common resource: %w", err)
 	}
 
@@ -107,6 +110,35 @@ func (o *OTLPGatewayApplierDeleter) ApplyResources(ctx context.Context, c client
 	}
 
 	configChecksum := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, []corev1.Secret{*secret})
+
+	metricsNetworkPolicy := commonresources.MakeNetworkPolicy(
+		name,
+		commonresources.MakeDefaultLabels(name.Name, commonresources.LabelValueK8sComponentGateway),
+		commonresources.MakeDefaultSelectorLabels(name.Name),
+		commonresources.WithNameSuffix("metrics"),
+		commonresources.WithIngressFromPods(
+			map[string]string{
+				commonresources.LabelKeyTelemetryMetricsScraping: commonresources.LabelValueTelemetryMetricsScraping,
+			},
+			metricsPorts,
+		),
+	)
+
+	gatewayNetworkPolicy := commonresources.MakeNetworkPolicy(
+		name,
+		commonresources.MakeDefaultLabels(name.Name, commonresources.LabelValueK8sComponentGateway),
+		commonresources.MakeDefaultSelectorLabels(name.Name),
+		commonresources.WithIngressFromAny(otlpPorts),
+		commonresources.WithEgressToAny(),
+	)
+
+	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, metricsNetworkPolicy); err != nil {
+		return fmt.Errorf("failed to create metrics network policy: %w", err)
+	}
+
+	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, gatewayNetworkPolicy); err != nil {
+		return fmt.Errorf("failed to create gateway network policy: %w", err)
+	}
 
 	if err := k8sutils.CreateOrUpdateDaemonSet(ctx, c, o.makeGatewayDaemonSet(configChecksum, opts)); err != nil {
 		return fmt.Errorf("failed to create daemonset: %w", err)

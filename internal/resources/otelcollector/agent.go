@@ -10,6 +10,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -147,13 +148,13 @@ func NewMetricAgentApplierDeleter(globals config.Global, image, priorityClassNam
 
 func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Client, opts AgentApplyOptions) error {
 	name := types.NamespacedName{Namespace: aad.globals.TargetNamespace(), Name: aad.baseName}
+	ingressMetricsPorts := agentIngressMetricsPorts()
 
-	ingressAllowedPorts := agentIngressAllowedPorts()
 	if opts.IstioEnabled {
-		ingressAllowedPorts = append(ingressAllowedPorts, ports.IstioEnvoy)
+		ingressMetricsPorts = append(ingressMetricsPorts, ports.IstioEnvoyTelemetry)
 	}
 
-	if err := applyCommonResources(ctx, c, name, commonresources.LabelValueK8sComponentAgent, aad.rbac, ingressAllowedPorts); err != nil {
+	if err := applyCommonResources(ctx, c, name, commonresources.LabelValueK8sComponentAgent, aad.rbac); err != nil {
 		return fmt.Errorf("failed to create common resource: %w", err)
 	}
 
@@ -174,6 +175,34 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 	}
 
 	configChecksum := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, secretsInChecksum)
+
+	metricsNetworkPolicy := commonresources.MakeNetworkPolicy(
+		name,
+		commonresources.MakeDefaultLabels(name.Name, commonresources.LabelValueK8sComponentAgent),
+		commonresources.MakeDefaultSelectorLabels(name.Name),
+		commonresources.WithNameSuffix("metrics"),
+		commonresources.WithIngressFromPods(
+			map[string]string{
+				commonresources.LabelKeyTelemetryMetricsScraping: commonresources.LabelValueTrue,
+			},
+			ingressMetricsPorts),
+	)
+
+	agentNetworkPolicy := commonresources.MakeNetworkPolicy(
+		name,
+		commonresources.MakeDefaultLabels(name.Name, commonresources.LabelValueK8sComponentAgent),
+		commonresources.MakeDefaultSelectorLabels(name.Name),
+		commonresources.WithEgressToAny(),
+	)
+
+	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, metricsNetworkPolicy); err != nil {
+		return fmt.Errorf("failed to create metrics network policy: %w", err)
+	}
+
+	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, agentNetworkPolicy); err != nil {
+		return fmt.Errorf("failed to create agent network policy: %w", err)
+	}
+
 	if err := k8sutils.CreateOrUpdateDaemonSet(ctx, c, aad.makeAgentDaemonSet(configChecksum, opts)); err != nil {
 		return fmt.Errorf("failed to create daemonset: %w", err)
 	}
@@ -193,6 +222,14 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 	objectMeta := metav1.ObjectMeta{
 		Name:      aad.baseName,
 		Namespace: aad.globals.TargetNamespace(),
+	}
+
+	networkPolicySelector := map[string]string{
+		commonresources.LabelKeyK8sName: name.Name,
+	}
+
+	if err := k8sutils.DeleteObjectsByLabelSelector(ctx, c, &networkingv1.NetworkPolicyList{}, networkPolicySelector); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete network policy: %w", err))
 	}
 
 	configMap := corev1.ConfigMap{ObjectMeta: objectMeta}
@@ -326,7 +363,7 @@ func makeFileLogCheckPointVolumeMount() corev1.VolumeMount {
 	}
 }
 
-func agentIngressAllowedPorts() []int32 {
+func agentIngressMetricsPorts() []int32 {
 	return []int32{
 		ports.Metrics,
 	}

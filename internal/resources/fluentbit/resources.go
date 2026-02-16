@@ -173,7 +173,7 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 		aad.daemonSetName,
 		makeLabels(),
 		selectorLabels(),
-		commonresources.WithIngressFromAny(opts.AllowedPorts...),
+		commonresources.WithIngressFromAny(opts.AllowedPorts),
 		commonresources.WithEgressToAny(),
 	)
 	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, networkPolicy); err != nil {
