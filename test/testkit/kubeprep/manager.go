@@ -271,17 +271,25 @@ func undeployManager(t TestingT, k8sClient client.Client, cfg Config) error {
 
 	// Step 1: Delete all pipeline resources
 	t.Log("Deleting all pipeline resources...")
-	_ = deleteTelemetryPipelines(ctx, k8sClient)
+	if err := deleteTelemetryPipelines(ctx, k8sClient); err != nil {
+		return fmt.Errorf("failed to delete telemetry pipelines: %w", err)
+	}
 
 	// Wait for pipelines to be deleted
-	_ = waitForPipelinesDeletion(ctx, k8sClient, t)
+	if err := waitForPipelinesDeletion(ctx, k8sClient, t); err != nil {
+		return fmt.Errorf("failed waiting for pipelines deletion: %w", err)
+	}
 
 	// Step 2: Delete the Telemetry CR
 	t.Log("Deleting Telemetry CR...")
-	_ = deleteTelemetryCR(ctx, k8sClient)
+	if err := deleteTelemetryCR(ctx, k8sClient); err != nil {
+		return fmt.Errorf("failed to delete Telemetry CR: %w", err)
+	}
 
 	// Wait for Telemetry CR to be deleted
-	_ = waitForTelemetryCRDeletion(ctx, k8sClient, t)
+	if err := waitForTelemetryCRDeletion(ctx, k8sClient, t); err != nil {
+		return fmt.Errorf("failed waiting for Telemetry CR deletion: %w", err)
+	}
 
 	// Step 3: Uninstall the helm chart
 	t.Log("Uninstalling helm release...")
@@ -309,13 +317,19 @@ func undeployManager(t TestingT, k8sClient client.Client, cfg Config) error {
 // deleteTelemetryPipelines deletes all LogPipeline, TracePipeline, and MetricPipeline resources
 func deleteTelemetryPipelines(ctx context.Context, k8sClient client.Client) error {
 	// Delete LogPipelines
-	_ = deleteAllResourcesByGVRK(ctx, k8sClient, "telemetry.kyma-project.io", "v1alpha1", "logpipelines", "LogPipeline")
+	if err := deleteAllResourcesByGVRK(ctx, k8sClient, "telemetry.kyma-project.io", "v1alpha1", "logpipelines", "LogPipeline"); err != nil {
+		return fmt.Errorf("failed to delete LogPipelines: %w", err)
+	}
 
 	// Delete TracePipelines
-	_ = deleteAllResourcesByGVRK(ctx, k8sClient, "telemetry.kyma-project.io", "v1alpha1", "tracepipelines", "TracePipeline")
+	if err := deleteAllResourcesByGVRK(ctx, k8sClient, "telemetry.kyma-project.io", "v1alpha1", "tracepipelines", "TracePipeline"); err != nil {
+		return fmt.Errorf("failed to delete TracePipelines: %w", err)
+	}
 
 	// Delete MetricPipelines
-	_ = deleteAllResourcesByGVRK(ctx, k8sClient, "telemetry.kyma-project.io", "v1alpha1", "metricpipelines", "MetricPipeline")
+	if err := deleteAllResourcesByGVRK(ctx, k8sClient, "telemetry.kyma-project.io", "v1alpha1", "metricpipelines", "MetricPipeline"); err != nil {
+		return fmt.Errorf("failed to delete MetricPipelines: %w", err)
+	}
 
 	return nil
 }
@@ -334,15 +348,24 @@ func waitForPipelinesDeletion(ctx context.Context, k8sClient client.Client, t Te
 		totalCount := 0
 
 		// Count LogPipelines
-		count, _ := countResourcesByGVRK(ctx, k8sClient, "telemetry.kyma-project.io", "v1alpha1", "logpipelines", "LogPipeline")
+		count, err := countResourcesByGVRK(ctx, k8sClient, "telemetry.kyma-project.io", "v1alpha1", "logpipelines", "LogPipeline")
+		if err != nil {
+			return fmt.Errorf("failed to count LogPipelines: %w", err)
+		}
 		totalCount += count
 
 		// Count TracePipelines
-		count, _ = countResourcesByGVRK(ctx, k8sClient, "telemetry.kyma-project.io", "v1alpha1", "tracepipelines", "TracePipeline")
+		count, err = countResourcesByGVRK(ctx, k8sClient, "telemetry.kyma-project.io", "v1alpha1", "tracepipelines", "TracePipeline")
+		if err != nil {
+			return fmt.Errorf("failed to count TracePipelines: %w", err)
+		}
 		totalCount += count
 
 		// Count MetricPipelines
-		count, _ = countResourcesByGVRK(ctx, k8sClient, "telemetry.kyma-project.io", "v1alpha1", "metricpipelines", "MetricPipeline")
+		count, err = countResourcesByGVRK(ctx, k8sClient, "telemetry.kyma-project.io", "v1alpha1", "metricpipelines", "MetricPipeline")
+		if err != nil {
+			return fmt.Errorf("failed to count MetricPipelines: %w", err)
+		}
 		totalCount += count
 
 		if totalCount == 0 {

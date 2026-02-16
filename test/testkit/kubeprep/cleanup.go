@@ -62,7 +62,9 @@ func deletePipelines(ctx context.Context, k8sClient client.Client) error {
 	}
 
 	for _, gvr := range pipelineTypes {
-		_ = deleteAllResources(ctx, k8sClient, gvr)
+		if err := deleteAllResources(ctx, k8sClient, gvr); err != nil {
+			return fmt.Errorf("failed to delete %s: %w", gvr.Resource, err)
+		}
 	}
 
 	return nil
@@ -85,7 +87,9 @@ func deleteAllResources(ctx context.Context, k8sClient client.Client, gvr schema
 	}
 
 	for _, item := range list.Items {
-		_ = k8sClient.Delete(ctx, &item)
+		if err := k8sClient.Delete(ctx, &item); err != nil && !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to delete %s/%s: %w", item.GetNamespace(), item.GetName(), err)
+		}
 	}
 
 	return nil
@@ -118,9 +122,11 @@ func deleteTestNamespaces(ctx context.Context, k8sClient client.Client) error {
 		if strings.HasPrefix(ns.Name, "test-") ||
 			strings.HasPrefix(ns.Name, "backend-") ||
 			strings.HasPrefix(ns.Name, "kyma-integration-") {
-			_ = k8sClient.Delete(ctx, &ns, &client.DeleteOptions{
+			if err := k8sClient.Delete(ctx, &ns, &client.DeleteOptions{
 				GracePeriodSeconds: new(int64),
-			})
+			}); err != nil && !apierrors.IsNotFound(err) {
+				return fmt.Errorf("failed to delete namespace %s: %w", ns.Name, err)
+			}
 		}
 	}
 

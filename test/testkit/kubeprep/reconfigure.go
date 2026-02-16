@@ -109,7 +109,8 @@ func calculateDiff(current, desired Config) ConfigDiff {
 func reconfigureIstio(t TestingT, k8sClient client.Client, currentInstalled, desiredInstalled bool) error {
 	if !currentInstalled && desiredInstalled {
 		t.Log("Installing Istio...")
-		return installIstio(t, k8sClient)
+		installIstio(t, k8sClient) // Fails test on error via require.NoError
+		return nil
 	}
 
 	if currentInstalled && !desiredInstalled {

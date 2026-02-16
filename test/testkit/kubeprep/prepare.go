@@ -28,9 +28,7 @@ func PrepareCluster(t TestingT, k8sClient client.Client, cfg Config) error {
 
 	// 3. Install Istio if requested (BEFORE manager)
 	if cfg.InstallIstio {
-		if err := installIstio(t, k8sClient); err != nil {
-			return fmt.Errorf("failed to install Istio: %w", err)
-		}
+		installIstio(t, k8sClient)
 	}
 
 	// 4. Deploy telemetry manager (includes CRDs and PriorityClass from helm chart)

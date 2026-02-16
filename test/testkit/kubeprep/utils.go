@@ -1,12 +1,10 @@
 package kubeprep
 
 import (
-	"bufio"
 	"context"
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
@@ -20,41 +18,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-// loadEnvFile reads a .env file and returns a map of key-value pairs
-func loadEnvFile(path string) (map[string]string, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open .env file: %w", err)
-	}
-	defer file.Close()
-
-	env := make(map[string]string)
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		// Skip empty lines and comments
-		if line == "" || strings.HasPrefix(line, "#") {
-			continue
-		}
-
-		// Parse KEY=VALUE
-		parts := strings.SplitN(line, "=", 2)
-		if len(parts) == 2 {
-			key := strings.TrimSpace(parts[0])
-			value := strings.TrimSpace(parts[1])
-			// Remove quotes if present
-			value = strings.Trim(value, "\"'")
-			env[key] = value
-		}
-	}
-
-	if err := scanner.Err(); err != nil {
-		return nil, fmt.Errorf("error reading .env file: %w", err)
-	}
-
-	return env, nil
-}
 
 // applyFromURL fetches YAML content from a URL and applies it to the cluster
 func applyFromURL(ctx context.Context, k8sClient client.Client, t TestingT, url string) error {
@@ -190,7 +153,9 @@ func deleteAllResourcesByGVRK(ctx context.Context, k8sClient client.Client, grou
 	// Delete each resource
 	for _, item := range list.Items {
 		obj := item.DeepCopy()
-		_ = k8sClient.Delete(ctx, obj)
+		if err := k8sClient.Delete(ctx, obj); err != nil && !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to delete %s/%s: %w", obj.GetNamespace(), obj.GetName(), err)
+		}
 	}
 
 	return nil
@@ -267,52 +232,6 @@ func waitForDeployment(ctx context.Context, k8sClient client.Client, name, names
 	}
 
 	return fmt.Errorf("timeout waiting for deployment %s/%s to be ready", namespace, name)
-}
-
-// waitForServiceAccount waits for a service account to exist
-func waitForServiceAccount(ctx context.Context, k8sClient client.Client, name, namespace string, timeout time.Duration) error {
-	deadline := time.Now().Add(timeout)
-
-	for time.Now().Before(deadline) {
-		sa := &corev1.ServiceAccount{}
-		err := k8sClient.Get(ctx, types.NamespacedName{
-			Name:      name,
-			Namespace: namespace,
-		}, sa)
-
-		if err == nil {
-			return nil
-		}
-
-		if !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to get service account %s/%s: %w", namespace, name, err)
-		}
-
-		time.Sleep(2 * time.Second)
-	}
-
-	return fmt.Errorf("timeout waiting for service account %s/%s", namespace, name)
-}
-
-// retryWithBackoff retries a function with exponential backoff
-func retryWithBackoff(ctx context.Context, maxAttempts int, delay time.Duration, fn func() error) error {
-	var lastErr error
-	for attempt := 1; attempt <= maxAttempts; attempt++ {
-		lastErr = fn()
-		if lastErr == nil {
-			return nil
-		}
-
-		if attempt < maxAttempts {
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-			case <-time.After(delay):
-				// Continue to next attempt
-			}
-		}
-	}
-	return fmt.Errorf("max attempts (%d) exceeded: %w", maxAttempts, lastErr)
 }
 
 // ensureNamespaceInternal creates a namespace if it doesn't exist (internal implementation)

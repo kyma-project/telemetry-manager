@@ -72,10 +72,18 @@ func deployTestPrerequisites(t TestingT, k8sClient client.Client) error {
 func cleanupPrerequisites(t TestingT, k8sClient client.Client) error {
 	ctx := t.Context()
 
-	// Delete in reverse order (best effort)
-	_ = deleteYAML(ctx, k8sClient, shootInfoConfigMapYAML)
-	_ = deleteYAML(ctx, k8sClient, networkPolicyYAML)
-	_ = deleteYAML(ctx, k8sClient, telemetryCRYAML)
+	// Delete in reverse order
+	if err := deleteYAML(ctx, k8sClient, shootInfoConfigMapYAML); err != nil {
+		return fmt.Errorf("failed to delete shoot-info ConfigMap: %w", err)
+	}
+
+	if err := deleteYAML(ctx, k8sClient, networkPolicyYAML); err != nil {
+		return fmt.Errorf("failed to delete network policy: %w", err)
+	}
+
+	if err := deleteYAML(ctx, k8sClient, telemetryCRYAML); err != nil {
+		return fmt.Errorf("failed to delete Telemetry CR: %w", err)
+	}
 
 	return nil
 }
