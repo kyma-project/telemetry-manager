@@ -295,9 +295,3 @@ func getIstioCRDs(ctx context.Context, k8sClient client.Client) ([]IstioCRD, err
 	return istioCRDs, nil
 }
 
-// isIstioInstalled checks if Istio is installed in the cluster
-func isIstioInstalled(ctx context.Context, k8sClient client.Client) bool {
-	ns := &corev1.Namespace{}
-	err := k8sClient.Get(ctx, types.NamespacedName{Name: istioNamespace}, ns)
-	return err == nil
-}

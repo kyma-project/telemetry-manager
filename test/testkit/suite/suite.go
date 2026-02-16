@@ -118,16 +118,19 @@ func sanitizeSpecID(filePath string) string {
 const (
 	// Logs labels
 
+	LabelLogs                 = "logs"
 	LabelLogsMisc             = "logs-misc"
 	LabelLogAgent             = "log-agent"
 	LabelLogGateway           = "log-gateway"
 	LabelFluentBit            = "fluent-bit"
+	LabelOtel                 = "otel"
 	LabelOTelMaxPipeline      = "otel-max-pipeline"
 	LabelFluentBitMaxPipeline = "fluent-bit-max-pipeline"
 	LabelLogsMaxPipeline      = "logs-max-pipeline"
 
 	// Metrics labels
 
+	LabelMetrics            = "metrics"
 	LabelMetricsMisc        = "metrics-misc"
 	LabelMetricsMaxPipeline = "metrics-max-pipeline"
 	LabelMetricAgentSetA    = "metric-agent-a"

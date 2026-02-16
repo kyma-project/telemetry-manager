@@ -12,17 +12,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-// mockTestingT is a mock implementation of TestingT for tests that need to pass
-// a context that doesn't come from t.Context() (e.g., for testing with specific contexts)
-type mockTestingT struct {
-	*testing.T
-	ctx context.Context
-}
-
-func (m *mockTestingT) Context() context.Context {
-	return m.ctx
-}
-
 func TestApplyYAML_UpdatesExistingResources(t *testing.T) {
 	// Create a fake client with an existing ConfigMap
 	scheme := runtime.NewScheme()

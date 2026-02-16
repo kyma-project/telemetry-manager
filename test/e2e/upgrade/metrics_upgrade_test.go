@@ -26,7 +26,7 @@ import (
 // 4. Call UpgradeToTargetVersion() to upgrade to MANAGER_IMAGE
 // 5. Validate everything still works after upgrade
 func TestMetricsUpgrade(t *testing.T) {
-	suite.SetupTest(t, suite.LabelUpgrade)
+	suite.SetupTest(t, suite.LabelUpgrade, suite.LabelMetrics, suite.LabelOtel)
 
 	var (
 		uniquePrefix = unique.Prefix()

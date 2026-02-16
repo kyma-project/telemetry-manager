@@ -12,7 +12,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/yaml"
@@ -182,21 +181,6 @@ func countResourcesByGVRK(ctx context.Context, k8sClient client.Client, group, v
 	return len(list.Items), nil
 }
 
-// deleteAllResourcesByGVR deletes all resources of a given GroupVersionResource across all namespaces
-// Deprecated: Use deleteAllResourcesByGVRK instead, which uses the correct Kind
-func deleteAllResourcesByGVR(ctx context.Context, k8sClient client.Client, group, version, resource string) error {
-	kind := strings.TrimSuffix(resource, "s")
-	return deleteAllResourcesByGVRK(ctx, k8sClient, group, version, resource, kind)
-}
-
-// countResourcesByGVR counts all resources of a given GroupVersionResource
-// Deprecated: Use countResourcesByGVRK instead, which uses the correct Kind
-func countResourcesByGVR(ctx context.Context, k8sClient client.Client, group, version, resource string) (int, error) {
-	// Try to guess the Kind from the resource name (may not work for all cases)
-	kind := strings.TrimSuffix(resource, "s")
-	return countResourcesByGVRK(ctx, k8sClient, group, version, resource, kind)
-}
-
 // isNotFoundError checks if an error is a NotFound error
 func isNotFoundError(err error) bool {
 	return apierrors.IsNotFound(err) || apierrors.IsMethodNotSupported(err)
@@ -266,9 +250,4 @@ func ensureNamespaceInternal(ctx context.Context, k8sClient client.Client, name 
 	}
 
 	return nil
-}
-
-// convertToTyped converts an unstructured object to a typed object
-func convertToTyped(obj *unstructured.Unstructured, typedObj runtime.Object) error {
-	return runtime.DefaultUnstructuredConverter.FromUnstructured(obj.Object, typedObj)
 }
