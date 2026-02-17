@@ -114,7 +114,7 @@ All tests execute against the same release Docker image to ensure reproducibilit
 ## Conclusion
 
 Implementing auditable release automation is essential for maintaining the integrity and compliance of the SAP BTP, Kyma runtime product. 
-By ensuring that test reports are retained and that Docker images are reproducible, we can create a transparent and reliable release process that meets auditing requirements and enhances overall software quality.
+By retaining test reports and ensuring Docker images are reproducible, we create a transparent and reliable release process that meets audit requirements.
 
 The proposed strategies for deterministic Docker builds and the structured release workflow provide a clear path forward for achieving auditable release automation in the Kyma runtime product environment.
 
