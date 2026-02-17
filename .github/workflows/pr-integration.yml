@@ -94,8 +94,6 @@ jobs:
             path: ./test/e2e/misc/...
           - name: e2e-upgrade
             path: ./test/e2e/upgrade/...
-          - name: selfmonitor
-            path: ./test/selfmonitor/...
           - name: integration
             path: ./test/integration/...
     name: ${{ matrix.suite.name }}
@@ -133,8 +131,58 @@ jobs:
             kubectl logs -n kyma-system $pod --all-containers 2>/dev/null || true
           done
 
+  # Selfmonitor tests run in separate jobs as they take a long time
+  selfmonitor:
+    needs: setup
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        test:
+          - name: selfmonitor-healthy
+            run: TestHealthy
+          - name: selfmonitor-backpressure
+            run: TestBackpressure
+          - name: selfmonitor-outage
+            run: TestOutage
+    name: ${{ matrix.test.name }}
+    env:
+      MANAGER_IMAGE: ${{ needs.setup.outputs.manager-image }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Golang
+        uses: ./.github/template/setup-golang
+
+      - name: Provision K3D cluster
+        run: make provision-k3d
+
+      - name: Run ${{ matrix.test.name }} tests
+        run: |
+          make e2e-test \
+            E2E_TEST_PATH="./test/selfmonitor/..." \
+            E2E_TEST_ID="${{ matrix.test.name }}" \
+            E2E_TEST_RUN="${{ matrix.test.run }}"
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.test.name }}-results
+          path: junit-report-*.xml
+
+      - name: Print pods on failure
+        if: failure()
+        run: |
+          kubectl get pods -A
+          for pod in $(kubectl get pods -n kyma-system -o name 2>/dev/null); do
+            echo "=== $pod ==="
+            kubectl logs -n kyma-system $pod --all-containers 2>/dev/null || true
+          done
+
   summary:
-    needs: [e2e]
+    needs: [e2e, selfmonitor]
     runs-on: ubuntu-latest
     if: always()
     steps:

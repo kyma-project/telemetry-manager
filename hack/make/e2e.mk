@@ -10,6 +10,7 @@ E2E_TEST_LABELS ?=
 E2E_TEST_PATH ?= ./test/e2e/...
 E2E_TEST_ID ?= e2e
 E2E_TEST_TIMEOUT ?= 60m
+E2E_TEST_RUN ?=
 
 .PHONY: wait-for-image
 wait-for-image: ## Wait for the manager image to be available in the registry
@@ -17,13 +18,15 @@ wait-for-image: ## Wait for the manager image to be available in the registry
 
 # Main e2e test target
 # Usage: make e2e-test E2E_TEST_PATH=./test/e2e/logs/... E2E_TEST_LABELS="logs"
+# To run specific test function: make e2e-test E2E_TEST_PATH=./test/selfmonitor/... E2E_TEST_RUN="TestHealthy"
 .PHONY: e2e-test
-e2e-test: $(GOTESTSUM) ## Run E2E tests (use E2E_TEST_PATH, E2E_TEST_LABELS, E2E_TEST_ID)
+e2e-test: $(GOTESTSUM) ## Run E2E tests (use E2E_TEST_PATH, E2E_TEST_LABELS, E2E_TEST_ID, E2E_TEST_RUN)
 	@echo "Running e2e tests..."
 	@echo "  Path: $(E2E_TEST_PATH)"
 	@echo "  Labels: $(E2E_TEST_LABELS)"
 	@echo "  Test ID: $(E2E_TEST_ID)"
 	@echo "  Timeout: $(E2E_TEST_TIMEOUT)"
+	@echo "  Run filter: $(E2E_TEST_RUN)"
 	$(GOTESTSUM) \
 		--format pkgname \
 		--hide-summary=skipped \
@@ -31,6 +34,7 @@ e2e-test: $(GOTESTSUM) ## Run E2E tests (use E2E_TEST_PATH, E2E_TEST_LABELS, E2E
 		-- \
 		-p 1 \
 		-timeout $(E2E_TEST_TIMEOUT) \
+		$(if $(E2E_TEST_RUN),-run "$(E2E_TEST_RUN)",) \
 		$(E2E_TEST_PATH) \
 		$(if $(E2E_TEST_LABELS),-- -labels="$(E2E_TEST_LABELS)",)
 
@@ -40,12 +44,14 @@ e2e-test-local: $(GOTESTSUM) ## Run E2E tests locally without JUnit output
 	@echo "Running e2e tests locally..."
 	@echo "  Path: $(E2E_TEST_PATH)"
 	@echo "  Labels: $(E2E_TEST_LABELS)"
+	@echo "  Run filter: $(E2E_TEST_RUN)"
 	$(GOTESTSUM) \
 		--format pkgname \
 		--hide-summary=skipped \
 		-- \
 		-p 1 \
 		-timeout $(E2E_TEST_TIMEOUT) \
+		$(if $(E2E_TEST_RUN),-run "$(E2E_TEST_RUN)",) \
 		$(E2E_TEST_PATH) \
 		$(if $(E2E_TEST_LABELS),-- -labels="$(E2E_TEST_LABELS)",)
 
