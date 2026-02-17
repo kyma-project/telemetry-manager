@@ -233,7 +233,8 @@ metadata:
 spec:
   ingress:
   - from:
-    - podSelector:
+    - namespaceSelector: {}
+      podSelector:
         matchLabels:
           networking.kyma-project.io/metrics-scraping: allowed
     ports:

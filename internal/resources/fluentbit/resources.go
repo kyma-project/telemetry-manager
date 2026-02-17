@@ -174,7 +174,7 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 		makeLabels(),
 		selectorLabels(),
 		commonresources.WithNameSuffix("metrics"),
-		commonresources.WithIngressFromPods(
+		commonresources.WithIngressFromPodsInAllNamespaces(
 			map[string]string{
 				commonresources.LabelKeyTelemetryMetricsScraping: commonresources.LabelValueTelemetryMetricsScraping,
 			},

@@ -113,7 +113,7 @@ func (o *OTLPGatewayApplierDeleter) ApplyResources(ctx context.Context, c client
 		commonresources.MakeDefaultLabels(name.Name, commonresources.LabelValueK8sComponentGateway),
 		commonresources.MakeDefaultSelectorLabels(name.Name),
 		commonresources.WithNameSuffix("metrics"),
-		commonresources.WithIngressFromPods(
+		commonresources.WithIngressFromPodsInAllNamespaces(
 			map[string]string{
 				commonresources.LabelKeyTelemetryMetricsScraping: commonresources.LabelValueTelemetryMetricsScraping,
 			},
