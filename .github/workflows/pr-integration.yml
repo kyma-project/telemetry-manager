@@ -131,7 +131,7 @@ jobs:
             kubectl logs -n kyma-system $pod --all-containers 2>/dev/null || true
           done
 
-  # Selfmonitor tests run in separate jobs as they take a long time
+  # Selfmonitor tests
   selfmonitor:
     needs: setup
     runs-on: ubuntu-latest
@@ -155,15 +155,31 @@ jobs:
       - name: Setup Golang
         uses: ./.github/template/setup-golang
 
+      - name: Setup Google Cloud SDK
+        if: github.event_name != 'pull_request'
+        uses: google-github-actions/setup-gcloud@77e7a554d41e2ee56fc945c52dfd3f33d12def9a # v2.1.4
+
+      - name: Configure Docker for Google Artifact Registry
+        if: github.event_name != 'pull_request'
+        run: gcloud auth configure-docker europe-docker.pkg.dev --quiet
+
       - name: Provision K3D cluster
         run: make provision-k3d
 
       - name: Run ${{ matrix.test.name }} tests
         run: |
+          # For PR events, only run no-fips tests since we can't pull the prometheus-fips image
+          # For push events, run fips tests (not no-fips) since we have access to the restricted registry
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            LABELS="no-fips"
+          else
+            LABELS="not no-fips"
+          fi
           make e2e-test \
             E2E_TEST_PATH="./test/selfmonitor/..." \
             E2E_TEST_ID="${{ matrix.test.name }}" \
-            E2E_TEST_RUN="${{ matrix.test.run }}"
+            E2E_TEST_RUN="${{ matrix.test.run }}" \
+            E2E_TEST_LABELS="$LABELS"
 
       - name: Upload test results
         if: always()

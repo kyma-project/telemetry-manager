@@ -12,6 +12,9 @@ E2E_TEST_ID ?= e2e
 E2E_TEST_TIMEOUT ?= 60m
 E2E_TEST_RUN ?=
 
+# Use github-actions format when running in CI, otherwise use pkgname
+GOTESTSUM_FORMAT ?= $(if $(GITHUB_ACTIONS),github-actions,pkgname)
+
 .PHONY: wait-for-image
 wait-for-image: ## Wait for the manager image to be available in the registry
 	@hack/await_image.sh
@@ -28,7 +31,7 @@ e2e-test: $(GOTESTSUM) ## Run E2E tests (use E2E_TEST_PATH, E2E_TEST_LABELS, E2E
 	@echo "  Timeout: $(E2E_TEST_TIMEOUT)"
 	@echo "  Run filter: $(E2E_TEST_RUN)"
 	$(GOTESTSUM) \
-		--format pkgname \
+		--format $(GOTESTSUM_FORMAT) \
 		--hide-summary=skipped \
 		--junitfile junit-report-$(E2E_TEST_ID).xml \
 		-- \

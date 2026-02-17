@@ -291,13 +291,13 @@ func RegisterTestCase(t *testing.T, labels ...string) {
 
 // buildConfig creates a Config from labels and applies options
 func buildConfig(labels []string, opts ...kubeprep.Option) kubeprep.Config {
+	// FIPS mode is enabled by default unless LabelNoFIPS is present in labels
+	fipsEnabled := !hasLabel(labels, LabelNoFIPS)
+
 	cfg := kubeprep.Config{
-		// Default: FIPS enabled unless LabelNoFIPS is present
-		OperateInFIPSMode: !hasLabel(labels, LabelNoFIPS),
-		// Enable experimental if label present
+		OperateInFIPSMode:  fipsEnabled,
 		EnableExperimental: hasLabel(labels, LabelExperimental),
-		// Install Istio if label present
-		InstallIstio: hasLabel(labels, LabelIstio),
+		InstallIstio:       hasLabel(labels, LabelIstio),
 	}
 
 	// Get manager image from environment or default
