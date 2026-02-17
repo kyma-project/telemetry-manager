@@ -44,6 +44,30 @@ func DeploymentHasLabel(t *testing.T, name types.NamespacedName, label map[strin
 	checkLabels(t, deployment.Labels, label, "Deployment", name)
 }
 
+// DeploymentHasImage checks if the specified container in the Deployment has the expected image.
+func DeploymentHasImage(t *testing.T, name types.NamespacedName, containerName string, expectedImage string) {
+	t.Helper()
+
+	var deployment appsv1.Deployment
+
+	err := suite.K8sClient.Get(t.Context(), name, &deployment)
+	Expect(err).NotTo(HaveOccurred())
+
+	found := false
+
+	for _, container := range deployment.Spec.Template.Spec.Containers {
+		if container.Name == containerName {
+			Expect(container.Image).To(Equal(expectedImage), "Container %s in Deployment %s has an unexpected image", containerName, name.String())
+
+			found = true
+
+			break
+		}
+	}
+
+	Expect(found).To(BeTrue(), "Container %s not found in Deployment %s", containerName, name.String())
+}
+
 func checkAnnotations(t *testing.T, resourceAnnotations map[string]string, expected map[string]string, resourceType string, name types.NamespacedName) {
 	t.Helper()
 

@@ -6,7 +6,6 @@ import (
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
@@ -50,7 +49,7 @@ func buildMetricPipelineInput(
 
 	if enablePrometheus {
 		input.Prometheus = &telemetryv1beta1.MetricPipelinePrometheusInput{
-			Enabled:    ptr.To(true),
+			Enabled:    new(true),
 			Namespaces: &telemetryv1beta1.NamespaceSelector{},
 		}
 		for _, opt := range prometheusOpts {
@@ -58,13 +57,13 @@ func buildMetricPipelineInput(
 		}
 	} else {
 		input.Prometheus = &telemetryv1beta1.MetricPipelinePrometheusInput{
-			Enabled: ptr.To(false),
+			Enabled: new(false),
 		}
 	}
 
 	if enableRuntime {
 		input.Runtime = &telemetryv1beta1.MetricPipelineRuntimeInput{
-			Enabled:    ptr.To(true),
+			Enabled:    new(true),
 			Namespaces: &telemetryv1beta1.NamespaceSelector{},
 		}
 		for _, opt := range runtimeOpts {
@@ -72,13 +71,13 @@ func buildMetricPipelineInput(
 		}
 	} else {
 		input.Runtime = &telemetryv1beta1.MetricPipelineRuntimeInput{
-			Enabled: ptr.To(false),
+			Enabled: new(false),
 		}
 	}
 
 	if enableIstio {
 		input.Istio = &telemetryv1beta1.MetricPipelineIstioInput{
-			Enabled:    ptr.To(true),
+			Enabled:    new(true),
 			Namespaces: &telemetryv1beta1.NamespaceSelector{},
 		}
 		for _, opt := range istioOpts {
@@ -86,13 +85,13 @@ func buildMetricPipelineInput(
 		}
 	} else {
 		input.Istio = &telemetryv1beta1.MetricPipelineIstioInput{
-			Enabled: ptr.To(false),
+			Enabled: new(false),
 		}
 	}
 
 	if enableOTLP {
 		input.OTLP = &telemetryv1beta1.OTLPInput{
-			Enabled:    ptr.To(true),
+			Enabled:    new(true),
 			Namespaces: &telemetryv1beta1.NamespaceSelector{},
 		}
 		for _, opt := range otlpOpts {
@@ -100,7 +99,7 @@ func buildMetricPipelineInput(
 		}
 	} else {
 		input.OTLP = &telemetryv1beta1.OTLPInput{
-			Enabled: ptr.To(false),
+			Enabled: new(false),
 		}
 	}
 
@@ -240,7 +239,7 @@ func (b *MetricPipelineBuilder) WithOTLPInput(enable bool, opts ...NamespaceSele
 		b.inOTLP = &telemetryv1beta1.OTLPInput{}
 	}
 
-	b.inOTLP.Enabled = ptr.To(enable)
+	b.inOTLP.Enabled = new(enable)
 
 	if len(opts) == 0 {
 		return b

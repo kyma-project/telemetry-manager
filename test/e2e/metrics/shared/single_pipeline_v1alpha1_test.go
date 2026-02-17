@@ -5,7 +5,6 @@ import (
 
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -32,7 +31,7 @@ func TestSinglePipelineV1Alpha1(t *testing.T) {
 			label: suite.LabelMetricAgentSetC,
 			input: telemetryv1alpha1.MetricPipelineInput{
 				Runtime: &telemetryv1alpha1.MetricPipelineRuntimeInput{
-					Enabled: ptr.To(true),
+					Enabled: new(true),
 				},
 			},
 			generatorBuilder: func(ns string) []client.Object {

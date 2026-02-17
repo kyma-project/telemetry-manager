@@ -6,7 +6,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"k8s.io/utils/ptr"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
@@ -85,8 +84,8 @@ func TestReceiverCreator(t *testing.T) {
 			fileLogReceiver := fileLogReceiverConfig(&tc.pipeline, false)
 			require.Equal(t, expectedExcludePaths, fileLogReceiver.Exclude)
 			require.Equal(t, expectedIncludePaths, fileLogReceiver.Include)
-			require.Equal(t, ptr.To(false), fileLogReceiver.IncludeFileName)
-			require.Equal(t, ptr.To(true), fileLogReceiver.IncludeFilePath)
+			require.Equal(t, new(false), fileLogReceiver.IncludeFileName)
+			require.Equal(t, new(true), fileLogReceiver.IncludeFilePath)
 			require.Equal(t, tc.expectedOperators, fileLogReceiver.Operators)
 		})
 	}
@@ -97,7 +96,7 @@ func TestMakeContainerParser(t *testing.T) {
 	expectedContainerParser := Operator{
 		ID:                      "containerd-parser",
 		Type:                    "container",
-		AddMetadataFromFilePath: ptr.To(true),
+		AddMetadataFromFilePath: new(true),
 		Format:                  "containerd",
 	}
 	assert.Equal(t, expectedContainerParser, cp)

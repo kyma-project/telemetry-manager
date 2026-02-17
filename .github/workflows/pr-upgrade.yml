@@ -68,9 +68,6 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           experimental: false
           manager-image: ${{ steps.latest-tag.outputs.manager-image }}
-        env:
-          #TODO: Remove after 1.54.0 release
-          MANAGER_IMAGE: ${{ steps.latest-tag.outputs.manager-image }}
 
       - name: Run tests on latest tag
         shell: bash
