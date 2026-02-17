@@ -41,7 +41,7 @@ Different pipeline controllers write to separate ConfigMaps (e.g., `fluentbit-pi
 We use intermediary ConfigMaps instead of CRs to prevent exposing additional user-facing APIs, reducing potential confusion.
 ![Option 2 Architecture](../assets/031-arch-option2.svg)
 
-A typical Pipeline ConfigMap would contain following info
+A typical Pipeline ConfigMap would contain the following info:
 ```yaml
 LogPipeline:
 - name: myNewPipeline1
