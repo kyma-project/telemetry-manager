@@ -90,7 +90,6 @@ After specifying the release version and a target chart, the release master trig
    - For a new minor version, it creates a dedicated `release-x.y` branch.
    - For a patch, it skips release branch creation.
 4. The system commits the version bump and creates a release tag.
-- Create a release tag marking the version point
 **Source Control Action**: Push the committed version-bumped artifacts and the release tag to the release branch. This officially marks the release version in the repository.
 6. The system builds the release Docker image and runs unit tests in parallel.
 
