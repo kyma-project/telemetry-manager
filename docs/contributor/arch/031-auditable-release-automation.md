@@ -118,7 +118,7 @@ By retaining test reports and ensuring Docker images are reproducible, we create
 
 The proposed strategies for deterministic builds and the structured release workflow provide a clear path to achieving this goal.
 
-Currently, the recommended approach is to run all tests in the release branch using the release Docker image, ensuring that the same image is used for both testing and release, thus maintaining identical digests and providing a clear audit trail.
+The recommended approach of running all tests against a single release image in the release branch provides a solid audit trail and comprehensive test coverage.
 
 We can skip the PR tests and run them only in the release branch, so we can automate the release process without waiting for the PR tests to complete, and still ensure that the released image is tested and has the same digest as the one built in the PR.
 A new GitHub Action can be implemented to trigger the release branch workflow once the release master enters the release version and OpenTelemetry Collector Components version for the release.
