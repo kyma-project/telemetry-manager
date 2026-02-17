@@ -48,13 +48,13 @@ LogPipeline:
   generation: 0013
 ```
 
-`Generation` would be used as it represents the current version of `spec`. When the `spec` for pipeline is updated the generation would also be updated.
-The `fluentbit controller` would fetch and read the `fluentbit configmap` thus each controller know exactly which pipelines they must fetch the spec from.
+`Generation` would be used as it represents the current version of `spec`. When the `spec` for the pipeline is updated, the generation would also be updated.
+The `fluentbit controller` fetches and reads the `fluentbit configmap`, thus each controller knows exactly which pipelines they must fetch the spec from.
 
-The status of pipelines would be handled by two different controllers; e.g. for MetricPipeline `status`, `metric pipeline controller` would be responsible for updating the `config generated` and `flow healthy` conditions. The `Agent Healthy` and `Gateway Healthy` conditions
-are handled by `Metric Agent Controller` and `OTLP Gateway Controller` respectively. This way the `Metric Pipeline Controller` would not have knowledge about the workloads thus separating the concerns.
+Two different controllers would handle the status of pipelines; e.g., for the MetricPipeline status, `metric pipeline controller` would be responsible for updating the `config generated` and `flow healthy` conditions. The `Agent Healthy` and `Gateway Healthy` conditions
+are handled by `Metric Agent Controller` and `OTLP Gateway Controller` respectively. This way, the `Metric Pipeline Controller` would not know about the workloads, thus separating the concerns.
 
-Since multiple controllers would be updating the same ConfigMap `otlp-gateway-config` locking mechanism is required. `controller-runtime` provides out of box `optimistic locking` mechanism which can be used to handle the concurrent updates to the same ConfigMap.
+Since multiple controllers would be updating the same ConfigMap `otlp-gateway-config`, a locking mechanism is required. `controller-runtime` provides an out-of-the-box `optimistic locking` mechanism that can be used to handle concurrent updates to the same ConfigMap.
 
 #### Optimistic Locking on ConfigMaps
 
