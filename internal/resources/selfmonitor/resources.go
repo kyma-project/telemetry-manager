@@ -211,6 +211,7 @@ func (ad *ApplierDeleter) makeDeployment(configChecksum, configPath, configFile 
 
 	maps.Copy(podLabels, ad.Config.AdditionalLabels())
 	podLabels[commonresources.LabelKeyIstioInject] = commonresources.LabelValueFalse
+	podLabels[commonresources.LabelKeyTelemetryMetricsScraping] = commonresources.LabelValueTelemetryMetricsScraping
 	maps.Copy(podLabels, defaultLabels)
 
 	podAnnotations := make(map[string]string)
