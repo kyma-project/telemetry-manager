@@ -160,13 +160,14 @@ func deployManagerFromChartSource(t TestingT, k8sClient client.Client, chartSour
 	}
 
 	// Build helm upgrade --install command
+	// Note: experimental and default are mutually exclusive subcharts
 	args := []string{
 		"upgrade", "--install",
 		telemetryReleaseName,
 		chartSource,
 		"--namespace", kymaSystemNamespace,
 		"--set", fmt.Sprintf("experimental.enabled=%t", cfg.EnableExperimental),
-		"--set", "default.enabled=true",
+		"--set", fmt.Sprintf("default.enabled=%t", !cfg.EnableExperimental),
 		"--set", "nameOverride=telemetry",
 		"--set", fmt.Sprintf("manager.container.env.operateInFipsMode=%t", cfg.OperateInFIPSMode),
 		"--wait",
