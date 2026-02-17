@@ -121,6 +121,6 @@ The proposed strategies for deterministic builds and the structured release work
 The recommended approach of running all tests against a single release image in the release branch provides a solid audit trail and comprehensive test coverage.
 
 We can skip the PR tests and run them only in the release branch, so we can automate the release process without waiting for the PR tests to complete, and still ensure that the released image is tested and has the same digest as the one built in the PR.
-A new GitHub Action can be implemented to trigger the release branch workflow once the release master enters the release version and OpenTelemetry Collector Components version for the release.
+We implement a new GitHub Action that triggers the release branch workflow when the release master enters the release version and OpenTelemetry Collector Components version for the release.
 
 The release artifacts and GitHub release will be created once the release tests are successful and the release report is uploaded to the GCP bucket for audit retention.
