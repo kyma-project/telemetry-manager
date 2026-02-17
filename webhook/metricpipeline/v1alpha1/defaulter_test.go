@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"k8s.io/utils/ptr"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/namespaces"
@@ -95,7 +94,7 @@ func TestDefault(t *testing.T) {
 							Namespaces: &telemetryv1alpha1.NamespaceSelector{},
 						},
 						Prometheus: &telemetryv1alpha1.MetricPipelinePrometheusInput{
-							Enabled: ptr.To(true),
+							Enabled: new(true),
 						},
 					},
 				},
@@ -107,11 +106,11 @@ func TestDefault(t *testing.T) {
 							Namespaces: &telemetryv1alpha1.NamespaceSelector{},
 						},
 						Prometheus: &telemetryv1alpha1.MetricPipelinePrometheusInput{
-							Enabled: ptr.To(true),
+							Enabled: new(true),
 							Namespaces: &telemetryv1alpha1.NamespaceSelector{
 								Exclude: namespaces.System(),
 							},
-							DiagnosticMetrics: &telemetryv1alpha1.MetricPipelineIstioInputDiagnosticMetrics{Enabled: ptr.To(false)},
+							DiagnosticMetrics: &telemetryv1alpha1.MetricPipelineIstioInputDiagnosticMetrics{Enabled: new(false)},
 						},
 					},
 				},
@@ -126,7 +125,7 @@ func TestDefault(t *testing.T) {
 							Namespaces: &telemetryv1alpha1.NamespaceSelector{},
 						},
 						Istio: &telemetryv1alpha1.MetricPipelineIstioInput{
-							Enabled: ptr.To(true),
+							Enabled: new(true),
 						},
 					},
 				},
@@ -138,12 +137,12 @@ func TestDefault(t *testing.T) {
 							Namespaces: &telemetryv1alpha1.NamespaceSelector{},
 						},
 						Istio: &telemetryv1alpha1.MetricPipelineIstioInput{
-							Enabled: ptr.To(true),
+							Enabled: new(true),
 							Namespaces: &telemetryv1alpha1.NamespaceSelector{
 								Exclude: namespaces.System(),
 							},
-							DiagnosticMetrics: &telemetryv1alpha1.MetricPipelineIstioInputDiagnosticMetrics{Enabled: ptr.To(false)},
-							EnvoyMetrics:      &telemetryv1alpha1.EnvoyMetrics{Enabled: ptr.To(false)},
+							DiagnosticMetrics: &telemetryv1alpha1.MetricPipelineIstioInputDiagnosticMetrics{Enabled: new(false)},
+							EnvoyMetrics:      &telemetryv1alpha1.EnvoyMetrics{Enabled: new(false)},
 						},
 					},
 				},
@@ -159,7 +158,7 @@ func TestDefault(t *testing.T) {
 							Namespaces: &telemetryv1alpha1.NamespaceSelector{},
 						},
 						Runtime: &telemetryv1alpha1.MetricPipelineRuntimeInput{
-							Enabled: ptr.To(true),
+							Enabled: new(true),
 						},
 					},
 				},
@@ -171,41 +170,41 @@ func TestDefault(t *testing.T) {
 							Namespaces: &telemetryv1alpha1.NamespaceSelector{},
 						},
 						Runtime: &telemetryv1alpha1.MetricPipelineRuntimeInput{
-							Enabled: ptr.To(true),
+							Enabled: new(true),
 							Namespaces: &telemetryv1alpha1.NamespaceSelector{
 								Exclude: namespaces.System(),
 							},
 							Resources: &telemetryv1alpha1.MetricPipelineRuntimeInputResources{
 								Pod: &telemetryv1alpha1.MetricPipelineRuntimeInputResource{
-									Enabled: ptr.To(true),
+									Enabled: new(true),
 								},
 
 								Container: &telemetryv1alpha1.MetricPipelineRuntimeInputResource{
-									Enabled: ptr.To(true),
+									Enabled: new(true),
 								},
 
 								Node: &telemetryv1alpha1.MetricPipelineRuntimeInputResource{
-									Enabled: ptr.To(true),
+									Enabled: new(true),
 								},
 
 								Volume: &telemetryv1alpha1.MetricPipelineRuntimeInputResource{
-									Enabled: ptr.To(true),
+									Enabled: new(true),
 								},
 
 								Deployment: &telemetryv1alpha1.MetricPipelineRuntimeInputResource{
-									Enabled: ptr.To(true),
+									Enabled: new(true),
 								},
 
 								Job: &telemetryv1alpha1.MetricPipelineRuntimeInputResource{
-									Enabled: ptr.To(true),
+									Enabled: new(true),
 								},
 
 								StatefulSet: &telemetryv1alpha1.MetricPipelineRuntimeInputResource{
-									Enabled: ptr.To(true),
+									Enabled: new(true),
 								},
 
 								DaemonSet: &telemetryv1alpha1.MetricPipelineRuntimeInputResource{
-									Enabled: ptr.To(true),
+									Enabled: new(true),
 								},
 							},
 						},
@@ -223,10 +222,10 @@ func TestDefault(t *testing.T) {
 							Namespaces: &telemetryv1alpha1.NamespaceSelector{},
 						},
 						Runtime: &telemetryv1alpha1.MetricPipelineRuntimeInput{
-							Enabled: ptr.To(true),
+							Enabled: new(true),
 							Resources: &telemetryv1alpha1.MetricPipelineRuntimeInputResources{
 								Pod: &telemetryv1alpha1.MetricPipelineRuntimeInputResource{
-									Enabled: ptr.To(false),
+									Enabled: new(false),
 								},
 							},
 						},
@@ -240,41 +239,41 @@ func TestDefault(t *testing.T) {
 							Namespaces: &telemetryv1alpha1.NamespaceSelector{},
 						},
 						Runtime: &telemetryv1alpha1.MetricPipelineRuntimeInput{
-							Enabled: ptr.To(true),
+							Enabled: new(true),
 							Namespaces: &telemetryv1alpha1.NamespaceSelector{
 								Exclude: namespaces.System(),
 							},
 							Resources: &telemetryv1alpha1.MetricPipelineRuntimeInputResources{
 								Pod: &telemetryv1alpha1.MetricPipelineRuntimeInputResource{
-									Enabled: ptr.To(false),
+									Enabled: new(false),
 								},
 
 								Container: &telemetryv1alpha1.MetricPipelineRuntimeInputResource{
-									Enabled: ptr.To(true),
+									Enabled: new(true),
 								},
 
 								Node: &telemetryv1alpha1.MetricPipelineRuntimeInputResource{
-									Enabled: ptr.To(true),
+									Enabled: new(true),
 								},
 
 								Volume: &telemetryv1alpha1.MetricPipelineRuntimeInputResource{
-									Enabled: ptr.To(true),
+									Enabled: new(true),
 								},
 
 								Deployment: &telemetryv1alpha1.MetricPipelineRuntimeInputResource{
-									Enabled: ptr.To(true),
+									Enabled: new(true),
 								},
 
 								Job: &telemetryv1alpha1.MetricPipelineRuntimeInputResource{
-									Enabled: ptr.To(true),
+									Enabled: new(true),
 								},
 
 								StatefulSet: &telemetryv1alpha1.MetricPipelineRuntimeInputResource{
-									Enabled: ptr.To(true),
+									Enabled: new(true),
 								},
 
 								DaemonSet: &telemetryv1alpha1.MetricPipelineRuntimeInputResource{
-									Enabled: ptr.To(true),
+									Enabled: new(true),
 								},
 							},
 						},
@@ -291,7 +290,7 @@ func TestDefault(t *testing.T) {
 							Namespaces: &telemetryv1alpha1.NamespaceSelector{},
 						},
 						Prometheus: &telemetryv1alpha1.MetricPipelinePrometheusInput{
-							Enabled: ptr.To(false),
+							Enabled: new(false),
 						},
 					},
 				},
@@ -303,7 +302,7 @@ func TestDefault(t *testing.T) {
 							Namespaces: &telemetryv1alpha1.NamespaceSelector{},
 						},
 						Prometheus: &telemetryv1alpha1.MetricPipelinePrometheusInput{
-							Enabled: ptr.To(false),
+							Enabled: new(false),
 						},
 					},
 				},
@@ -315,7 +314,7 @@ func TestDefault(t *testing.T) {
 				Spec: telemetryv1alpha1.MetricPipelineSpec{
 					Input: telemetryv1alpha1.MetricPipelineInput{
 						Istio: &telemetryv1alpha1.MetricPipelineIstioInput{
-							Enabled: ptr.To(false),
+							Enabled: new(false),
 						},
 					},
 				},
@@ -327,7 +326,7 @@ func TestDefault(t *testing.T) {
 							Namespaces: &telemetryv1alpha1.NamespaceSelector{},
 						},
 						Istio: &telemetryv1alpha1.MetricPipelineIstioInput{
-							Enabled: ptr.To(false),
+							Enabled: new(false),
 						},
 					},
 				},
@@ -342,7 +341,7 @@ func TestDefault(t *testing.T) {
 							Namespaces: &telemetryv1alpha1.NamespaceSelector{},
 						},
 						Runtime: &telemetryv1alpha1.MetricPipelineRuntimeInput{
-							Enabled: ptr.To(false),
+							Enabled: new(false),
 						},
 					},
 				},
@@ -354,7 +353,7 @@ func TestDefault(t *testing.T) {
 							Namespaces: &telemetryv1alpha1.NamespaceSelector{},
 						},
 						Runtime: &telemetryv1alpha1.MetricPipelineRuntimeInput{
-							Enabled: ptr.To(false),
+							Enabled: new(false),
 						},
 					},
 				},
@@ -370,7 +369,7 @@ func TestDefault(t *testing.T) {
 							Namespaces: &telemetryv1alpha1.NamespaceSelector{},
 						},
 						Istio: &telemetryv1alpha1.MetricPipelineIstioInput{
-							Enabled: ptr.To(true),
+							Enabled: new(true),
 						},
 					},
 				},
@@ -382,12 +381,12 @@ func TestDefault(t *testing.T) {
 							Namespaces: &telemetryv1alpha1.NamespaceSelector{},
 						},
 						Istio: &telemetryv1alpha1.MetricPipelineIstioInput{
-							Enabled: ptr.To(true),
+							Enabled: new(true),
 							Namespaces: &telemetryv1alpha1.NamespaceSelector{
 								Exclude: namespaces.System(),
 							},
-							DiagnosticMetrics: &telemetryv1alpha1.MetricPipelineIstioInputDiagnosticMetrics{Enabled: ptr.To(false)},
-							EnvoyMetrics:      &telemetryv1alpha1.EnvoyMetrics{Enabled: ptr.To(false)},
+							DiagnosticMetrics: &telemetryv1alpha1.MetricPipelineIstioInputDiagnosticMetrics{Enabled: new(false)},
+							EnvoyMetrics:      &telemetryv1alpha1.EnvoyMetrics{Enabled: new(false)},
 						},
 					},
 				},
@@ -402,7 +401,7 @@ func TestDefault(t *testing.T) {
 							Namespaces: &telemetryv1alpha1.NamespaceSelector{},
 						},
 						Istio: &telemetryv1alpha1.MetricPipelineIstioInput{
-							Enabled: ptr.To(true),
+							Enabled: new(true),
 						},
 					},
 				},
@@ -414,12 +413,12 @@ func TestDefault(t *testing.T) {
 							Namespaces: &telemetryv1alpha1.NamespaceSelector{},
 						},
 						Istio: &telemetryv1alpha1.MetricPipelineIstioInput{
-							Enabled: ptr.To(true),
+							Enabled: new(true),
 							Namespaces: &telemetryv1alpha1.NamespaceSelector{
 								Exclude: namespaces.System(),
 							},
-							DiagnosticMetrics: &telemetryv1alpha1.MetricPipelineIstioInputDiagnosticMetrics{Enabled: ptr.To(false)},
-							EnvoyMetrics:      &telemetryv1alpha1.EnvoyMetrics{Enabled: ptr.To(false)},
+							DiagnosticMetrics: &telemetryv1alpha1.MetricPipelineIstioInputDiagnosticMetrics{Enabled: new(false)},
+							EnvoyMetrics:      &telemetryv1alpha1.EnvoyMetrics{Enabled: new(false)},
 						},
 					},
 				},
@@ -434,8 +433,8 @@ func TestDefault(t *testing.T) {
 							Namespaces: &telemetryv1alpha1.NamespaceSelector{},
 						},
 						Istio: &telemetryv1alpha1.MetricPipelineIstioInput{
-							Enabled:      ptr.To(true),
-							EnvoyMetrics: &telemetryv1alpha1.EnvoyMetrics{Enabled: ptr.To(true)},
+							Enabled:      new(true),
+							EnvoyMetrics: &telemetryv1alpha1.EnvoyMetrics{Enabled: new(true)},
 						},
 					},
 				},
@@ -447,12 +446,12 @@ func TestDefault(t *testing.T) {
 							Namespaces: &telemetryv1alpha1.NamespaceSelector{},
 						},
 						Istio: &telemetryv1alpha1.MetricPipelineIstioInput{
-							Enabled: ptr.To(true),
+							Enabled: new(true),
 							Namespaces: &telemetryv1alpha1.NamespaceSelector{
 								Exclude: namespaces.System(),
 							},
-							DiagnosticMetrics: &telemetryv1alpha1.MetricPipelineIstioInputDiagnosticMetrics{Enabled: ptr.To(false)},
-							EnvoyMetrics:      &telemetryv1alpha1.EnvoyMetrics{Enabled: ptr.To(true)},
+							DiagnosticMetrics: &telemetryv1alpha1.MetricPipelineIstioInputDiagnosticMetrics{Enabled: new(false)},
+							EnvoyMetrics:      &telemetryv1alpha1.EnvoyMetrics{Enabled: new(true)},
 						},
 					},
 				},
@@ -467,7 +466,7 @@ func TestDefault(t *testing.T) {
 							Namespaces: &telemetryv1alpha1.NamespaceSelector{},
 						},
 						Prometheus: &telemetryv1alpha1.MetricPipelinePrometheusInput{
-							Enabled: ptr.To(true),
+							Enabled: new(true),
 						},
 					},
 				},
@@ -479,11 +478,11 @@ func TestDefault(t *testing.T) {
 							Namespaces: &telemetryv1alpha1.NamespaceSelector{},
 						},
 						Prometheus: &telemetryv1alpha1.MetricPipelinePrometheusInput{
-							Enabled: ptr.To(true),
+							Enabled: new(true),
 							Namespaces: &telemetryv1alpha1.NamespaceSelector{
 								Exclude: namespaces.System(),
 							},
-							DiagnosticMetrics: &telemetryv1alpha1.MetricPipelineIstioInputDiagnosticMetrics{Enabled: ptr.To(false)},
+							DiagnosticMetrics: &telemetryv1alpha1.MetricPipelineIstioInputDiagnosticMetrics{Enabled: new(false)},
 						},
 					},
 				},
@@ -498,8 +497,8 @@ func TestDefault(t *testing.T) {
 							Namespaces: &telemetryv1alpha1.NamespaceSelector{},
 						},
 						Prometheus: &telemetryv1alpha1.MetricPipelinePrometheusInput{
-							Enabled:           ptr.To(true),
-							DiagnosticMetrics: &telemetryv1alpha1.MetricPipelineIstioInputDiagnosticMetrics{Enabled: ptr.To(true)},
+							Enabled:           new(true),
+							DiagnosticMetrics: &telemetryv1alpha1.MetricPipelineIstioInputDiagnosticMetrics{Enabled: new(true)},
 						},
 					},
 				},
@@ -511,11 +510,11 @@ func TestDefault(t *testing.T) {
 							Namespaces: &telemetryv1alpha1.NamespaceSelector{},
 						},
 						Prometheus: &telemetryv1alpha1.MetricPipelinePrometheusInput{
-							Enabled: ptr.To(true),
+							Enabled: new(true),
 							Namespaces: &telemetryv1alpha1.NamespaceSelector{
 								Exclude: namespaces.System(),
 							},
-							DiagnosticMetrics: &telemetryv1alpha1.MetricPipelineIstioInputDiagnosticMetrics{Enabled: ptr.To(true)},
+							DiagnosticMetrics: &telemetryv1alpha1.MetricPipelineIstioInputDiagnosticMetrics{Enabled: new(true)},
 						},
 					},
 				},

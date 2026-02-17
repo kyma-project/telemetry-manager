@@ -24,6 +24,7 @@ manager:
       otelCollectorImage: europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:main
       selfMonitorImage: europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:main
       operateInFipsMode: false
+      selfMonitorFIPSImage: europe-docker.pkg.dev/kyma-project/restricted-prod/sap.com/prometheus-fips:3.9.1
     image:
       repository: europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:main
       pullPolicy: "IfNotPresent"

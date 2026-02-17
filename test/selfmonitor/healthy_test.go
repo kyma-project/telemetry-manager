@@ -1,12 +1,16 @@
 package selfmonitor
 
 import (
+	"fmt"
 	"testing"
 
 	. "github.com/onsi/gomega"
+	appsv1 "k8s.io/api/apps/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
+	"github.com/kyma-project/telemetry-manager/test/testkit"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
@@ -196,7 +200,46 @@ func TestHealthy(t *testing.T) {
 			assert.BackendReachable(t, backend)
 			assert.DeploymentReady(t, kitkyma.SelfMonitorName)
 
+			FIPSModeEnabled, err := isFIPSModeEnabled(t)
+			Expect(err).ToNot(HaveOccurred())
+
+			if FIPSModeEnabled {
+				// assert that the Self-Monitor image is the prometheus-fips image when FIPS mode is enabled
+				assert.DeploymentHasImage(t, kitkyma.SelfMonitorName, names.SelfMonitorContainerName, testkit.SelfMonitorFIPSImage)
+			} else {
+				// assert that the Self-Monitor image is the regular telemetry-self-monitor image when FIPS mode is not enabled
+				assert.DeploymentHasImage(t, kitkyma.SelfMonitorName, names.SelfMonitorContainerName, testkit.SelfMonitorImage)
+			}
+
 			tc.assert(t, genNs, backend, pipeline.GetName())
 		})
 	}
+}
+
+func isFIPSModeEnabled(t *testing.T) (bool, error) {
+	const (
+		managerContainerName = "manager"
+		fipsEnvVarName       = "KYMA_FIPS_MODE_ENABLED"
+	)
+
+	var deployment appsv1.Deployment
+
+	err := suite.K8sClient.Get(t.Context(), kitkyma.TelemetryManagerName, &deployment)
+	if err != nil {
+		return false, fmt.Errorf("failed to get manager deployment: %w", err)
+	}
+
+	for _, container := range deployment.Spec.Template.Spec.Containers {
+		if container.Name == managerContainerName {
+			for _, env := range container.Env {
+				if env.Name == fipsEnvVarName && env.Value == "true" {
+					return true, nil
+				}
+			}
+
+			return false, nil
+		}
+	}
+
+	return false, fmt.Errorf("manager container not found in manager deployment")
 }
