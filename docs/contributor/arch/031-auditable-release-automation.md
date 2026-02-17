@@ -39,25 +39,25 @@ Our current release pipeline builds two separate images:
 Both images currently receive different digests due to different build environments and timestamps, despite having identical content and application binary. This behavior is not acceptable for auditable release automation.
 
 **Resolution:**
-We must implement deterministic Docker builds. An image built from a PR must have the identical digest as the final release image built from the same source code. This makes the build process auditable.
+We must implement deterministic Docker builds. An image built from a PR must have the same digest as the final release image built from the same source code. This makes the build process auditable.
 
 
 ## Implementing Auditable Release Automation
 
 ### Download and Store Test Reports
 
-The test reports from unit tests, E2E tests, Gardener tests, and upgrade tests have to be downloaded from the respective GitHub Actions workflows and stored as artifacts for audit purposes. For this purpose, a new re-usable workflow will be created to download and store test reports from the workflow runs.
-After test jobs are completed successfully, the test execution results will be uploaded to the GCP bucket (see [Archive Test Logs for 12-Month Auditing via Release Assets #8419](https://github.tools.sap/kyma/backlog/issues/8419).
+The test reports from unit tests, E2E tests, Gardener tests, and upgrade tests must be downloaded from the respective GitHub Actions workflows and stored as artifacts for audit purposes. For this purpose, we create a new reusable workflow that downloads and stores test reports from the workflow runs.
+After the test jobs complete, the workflow uploads the test execution results to the specified GCP bucket (see [Archive Test Logs for 12-Month Auditing via Release Assets #8419](https://github.tools.sap/kyma/backlog/issues/8419).
 
 ### Deterministic Docker Builds
 To achieve deterministic Docker builds and ensure audit compliance, we considered the following strategies:
 
-- **Reproducible Build Tools**: Utilize tools and techniques that support reproducible builds, such as Docker's BuildKit with deterministic settings. This approach would require implementation support from the `Image-Builder` team and is not currently available.
+- **Reproducible Build Tools**: Use tools and techniques that support reproducible builds, such as Docker's BuildKit with deterministic settings. This approach requires implementation support from the `Image-Builder` team and is not currently available.
 - **Copy Release PR Image**: Modify the release process to copy the Docker image built during the PR directly to the production registry with the release tag. This approach ensures that the exact same image used for testing is released, maintaining identical digests.
 
 **Recommended Approach:**
 
-Due to the current unavailability of reproducible build tools, the recommended approach is, all tests (unit, E2E, Gardener, and upgrade tests) will be executed in the release branch using the release image before final release publication.
+Because reproducible build tools are not yet available, the recommended approach is to run all tests (unit, E2E, Gardener, and upgrade) in the release branch using the release image before the final release publication.
 
 This approach provides:
 - Solid image digests proof for testing and release (audit compliance)
@@ -67,32 +67,32 @@ This approach provides:
 ![Release Workflow](./../assets/auditable-release-final.drawio.svg)
 
 
-### The Module Release Publishing Workflow
+### Module Release Workflow
 
-A separate GitHub workflow will be responsible for publishing the module release. This workflow will be triggered by the release master once the release version and release channel are entered. The workflow will handle the module config creation and channel assignment, and will be responsible for creating the release PRs for the `experimental`, `fast`, and `regular` channels.
+After entering the release version and channel, the release master triggers a dedicated GitHub workflow to publish the module release. The workflow then creates the module configuration, assigns the release channel, and opens pull requests to update the \experimental`, `fast`, and `regular` channels.`
 
 ![Module Release Workflow](./../assets/auditable-release-module-release.drawio.svg)
 
 
-### The Management Plane Chart Release Workflow
+### Management Plane Chart Update Workflow
 
-A separate GitHub workflow will be responsible for bumping Management Plane Charts. This workflow will be triggered by the release master once the release version and the target chart are specified. The workflow will handle the chart release process for `chart/telemetry` and `chart/runtime-monitoring-operator` Helm charts.
+After specifying the release version and a target chart, the release master triggers a dedicated GitHub workflow to bump Management Plane Charts. This workflow automates the release of charts such as \chart/telemetry` and `chart/runtime-monitoring-operator`.`
 
 ![Management Plane Chart Release Workflow](./../assets/auditable-release-mpc-release.drawio.svg)
 
-## Release Workflow Step-by-Step Execution
+## Release Workflow Steps
 
-**Project Master Action**: Close the current development milestone to signify the boundary between development and release phases. This marks the completion of all planned features for the current release.
+1. The Project Master closes the current development milestone to mark the end of the development phase for the release.
 
-**Release Master Action**: The release master initiates the release process by entering the release version and OpenTelemetry Collector Components (OCC) version for the release. This action triggers the release workflow and sets the stage for subsequent steps.
+2. The Release Master triggers the release workflow by entering the release version and the OpenTelemetry Collector Components (OCC) version.
 
-**System Decision Point**: The system evaluates whether this is a patch release or a new minor version release:
-- **Patch Release**: If the release involves only bug fixes (patch release), skip release branch creation.
-- **New Version Release**: If this is a new feature release (non-patch), create a dedicated release branch following the `release-x.y` naming convention (e.g., `release-1.0`).
-- Commit these changes to the release branch
+3. The system evaluates if the release is a patch or a new minor version: 
+   - For a new minor version, it creates a dedicated `release-x.y` branch.
+   - For a patch, it skips release branch creation.
+4. The system commits the version bump and creates a release tag.
 - Create a release tag marking the version point
 **Source Control Action**: Push the committed version-bumped artifacts and the release tag to the release branch. This officially marks the release version in the repository.
-- Run Unit Tests and Release Image creation in parallel.
+6. The system builds the release Docker image and runs unit tests in parallel.
 
 **Simultaneous Test Runs**: Three independent test suites are triggered in parallel against the release branch after Docker image created:
 - **E2E (End-to-End) Tests**: Full system behavior verification
