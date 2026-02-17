@@ -243,6 +243,7 @@ func deployManager(t TestingT, k8sClient client.Client, cfg Config) error {
 // 2. Delete the Telemetry operator CR
 // 3. Wait for resources to be deleted
 // 4. Uninstall the helm chart
+// 5. Wait for manager deployment to be deleted
 func undeployManager(t TestingT, k8sClient client.Client) error {
 	ctx := t.Context()
 
@@ -292,6 +293,13 @@ func undeployManager(t TestingT, k8sClient client.Client) error {
 	if err := cmd.Run(); err != nil {
 		// Ignore errors - release might not exist
 		t.Logf("Warning: helm uninstall failed (release may not exist): %v", err)
+	}
+
+	// Step 4: Wait for manager deployment to be fully deleted
+	t.Log("Waiting for manager deployment to be deleted...")
+
+	if err := waitForDeploymentDeletion(ctx, k8sClient, t, telemetryManagerName, kymaSystemNamespace, 2*time.Minute); err != nil {
+		t.Logf("Warning: failed waiting for manager deployment deletion: %v", err)
 	}
 
 	t.Log("Telemetry manager undeployed")

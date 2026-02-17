@@ -241,6 +241,32 @@ func waitForDeployment(ctx context.Context, k8sClient client.Client, name, names
 	return fmt.Errorf("timeout waiting for deployment %s/%s to be ready", namespace, name)
 }
 
+// waitForDeploymentDeletion waits for a deployment to be fully deleted
+func waitForDeploymentDeletion(ctx context.Context, k8sClient client.Client, t TestingT, name, namespace string, timeout time.Duration) error {
+	deadline := time.Now().Add(timeout)
+
+	for time.Now().Before(deadline) {
+		deployment := &appsv1.Deployment{}
+
+		err := k8sClient.Get(ctx, types.NamespacedName{
+			Name:      name,
+			Namespace: namespace,
+		}, deployment)
+		if err != nil {
+			if apierrors.IsNotFound(err) {
+				return nil
+			}
+
+			return fmt.Errorf("failed to get deployment %s/%s: %w", namespace, name, err)
+		}
+
+		t.Logf("Waiting for deployment %s/%s to be deleted...", namespace, name)
+		time.Sleep(5 * time.Second)
+	}
+
+	return fmt.Errorf("timeout waiting for deployment %s/%s to be deleted", namespace, name)
+}
+
 // ensureNamespaceInternal creates a namespace if it doesn't exist (internal implementation)
 func ensureNamespaceInternal(ctx context.Context, k8sClient client.Client, name string, labels map[string]string) error {
 	ns := &corev1.Namespace{}
