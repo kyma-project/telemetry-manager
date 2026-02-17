@@ -434,21 +434,11 @@ spec:
         cidr: 0.0.0.0/0
     - ipBlock:
         cidr: ::/0
-  ingress:
-  - from:
-    - ipBlock:
-        cidr: 0.0.0.0/0
-    - ipBlock:
-        cidr: ::/0
-    ports:
-    - port: 2020
-      protocol: TCP
   podSelector:
     matchLabels:
       app.kubernetes.io/instance: telemetry
       app.kubernetes.io/name: fluent-bit
   policyTypes:
-  - Ingress
   - Egress
 ---
 apiVersion: networking.k8s.io/v1
@@ -470,6 +460,8 @@ spec:
         matchLabels:
           networking.kyma-project.io/metrics-scraping: allowed
     ports:
+    - port: 2020
+      protocol: TCP
     - port: 2021
       protocol: TCP
   podSelector:

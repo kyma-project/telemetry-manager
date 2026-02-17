@@ -185,7 +185,6 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 		aad.daemonSetName,
 		makeLabels(),
 		selectorLabels(),
-		commonresources.WithIngressFromAny([]int32{fbports.HTTP}),
 		commonresources.WithEgressToAny(),
 	)
 
@@ -727,7 +726,7 @@ func selectorLabels() map[string]string {
 }
 
 func makeFluentBitMetricsPorts(istioEnabled bool) []int32 {
-	metricsPorts := []int32{fbports.ExporterMetrics}
+	metricsPorts := []int32{fbports.HTTP, fbports.ExporterMetrics}
 	if istioEnabled {
 		metricsPorts = append(metricsPorts, fbports.IstioEnvoyTelemetry)
 	}
