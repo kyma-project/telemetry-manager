@@ -107,7 +107,6 @@ func NewFluentBitApplierDeleter(global config.Global, namespace, fbImage, export
 }
 
 func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Client, opts AgentApplyOptions) error {
-
 	serviceAccount := commonresources.MakeServiceAccount(aad.daemonSetName)
 	if err := k8sutils.CreateOrUpdateServiceAccount(ctx, c, serviceAccount); err != nil {
 		return fmt.Errorf("failed to create fluent bit service account: %w", err)
@@ -189,9 +188,11 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 		commonresources.WithIngressFromAny([]int32{fbports.HTTP}),
 		commonresources.WithEgressToAny(),
 	)
+
 	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, metricsNetworkPolicy); err != nil {
 		return fmt.Errorf("failed to create fluentbit metrics network policy: %w", err)
 	}
+
 	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, fluentbitNetworkPolicy); err != nil {
 		return fmt.Errorf("failed to create fluentbit network policy: %w", err)
 	}
