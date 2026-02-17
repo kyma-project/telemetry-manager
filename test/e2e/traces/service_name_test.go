@@ -20,7 +20,7 @@ import (
 
 // TODO(TeodorSAP): Remove this test in favor of service_enrichment_test.go once legacy service enrichment strategy is fully deprecated.
 func TestServiceName(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelTraces)
+	suite.SetupTest(t, suite.LabelTraces)
 
 	const (
 		podWithNoLabelsName              = "pod-with-no-labels"

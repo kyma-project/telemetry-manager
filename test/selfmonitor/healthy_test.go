@@ -173,46 +173,63 @@ func TestHealthy(t *testing.T) {
 		},
 	}
 
+	// Run each test case with both FIPS and no-FIPS modes
+	// - no-fips: for PR events without access to restricted FIPS images
+	// - fips: for push events with access to restricted FIPS images
 	for _, tc := range tests {
-		t.Run(tc.labelPrefix, func(t *testing.T) {
-			suite.RegisterTestCase(t, label(tc.labelPrefix, suite.LabelSelfMonitorHealthySuffix))
-
-			var (
-				uniquePrefix = unique.Prefix(tc.labelPrefix)
-				backendNs    = uniquePrefix("backend")
-				genNs        = uniquePrefix("gen")
-			)
-
-			backend := kitbackend.New(backendNs, signalType(tc.labelPrefix))
-			pipeline := tc.pipeline(genNs, backend)
-			generator := tc.generator(genNs)
-
-			resources := []client.Object{
-				kitk8sobjects.NewNamespace(backendNs).K8sObject(),
-				kitk8sobjects.NewNamespace(genNs).K8sObject(),
-				pipeline,
+		for _, noFips := range []bool{true, false} {
+			// fluent-bit only supports no-fips mode
+			if tc.labelPrefix == suite.LabelSelfMonitorFluentBitPrefix && !noFips {
+				continue
 			}
-			resources = append(resources, generator...)
-			resources = append(resources, backend.K8sObjects()...)
 
-			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
-
-			assert.BackendReachable(t, backend)
-			assert.DeploymentReady(t, kitkyma.SelfMonitorName)
-
-			FIPSModeEnabled, err := isFIPSModeEnabled(t)
-			Expect(err).ToNot(HaveOccurred())
-
-			if FIPSModeEnabled {
-				// assert that the Self-Monitor image is the prometheus-fips image when FIPS mode is enabled
-				assert.DeploymentHasImage(t, kitkyma.SelfMonitorName, names.SelfMonitorContainerName, testkit.SelfMonitorFIPSImage)
+			name := tc.labelPrefix
+			if noFips {
+				name += "-no-fips"
 			} else {
-				// assert that the Self-Monitor image is the regular telemetry-self-monitor image when FIPS mode is not enabled
-				assert.DeploymentHasImage(t, kitkyma.SelfMonitorName, names.SelfMonitorContainerName, testkit.SelfMonitorImage)
+				name += "-fips"
 			}
 
-			tc.assert(t, genNs, backend, pipeline.GetName())
-		})
+			t.Run(name, func(t *testing.T) {
+				suite.SetupTest(t, labelsForSelfMonitor(tc.labelPrefix, suite.LabelSelfMonitorHealthySuffix, noFips)...)
+
+				var (
+					uniquePrefix = unique.Prefix(tc.labelPrefix)
+					backendNs    = uniquePrefix("backend")
+					genNs        = uniquePrefix("gen")
+				)
+
+				backend := kitbackend.New(backendNs, signalType(tc.labelPrefix))
+				pipeline := tc.pipeline(genNs, backend)
+				generator := tc.generator(genNs)
+
+				resources := []client.Object{
+					kitk8sobjects.NewNamespace(backendNs).K8sObject(),
+					kitk8sobjects.NewNamespace(genNs).K8sObject(),
+					pipeline,
+				}
+				resources = append(resources, generator...)
+				resources = append(resources, backend.K8sObjects()...)
+
+				Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
+
+				assert.BackendReachable(t, backend)
+				assert.DeploymentReady(t, kitkyma.SelfMonitorName)
+
+				FIPSModeEnabled, err := isFIPSModeEnabled(t)
+				Expect(err).ToNot(HaveOccurred())
+
+				if FIPSModeEnabled {
+					// assert that the Self-Monitor image is the prometheus-fips image when FIPS mode is enabled
+					assert.DeploymentHasImage(t, kitkyma.SelfMonitorName, names.SelfMonitorContainerName, testkit.SelfMonitorFIPSImage)
+				} else {
+					// assert that the Self-Monitor image is the regular telemetry-self-monitor image when FIPS mode is not enabled
+					assert.DeploymentHasImage(t, kitkyma.SelfMonitorName, names.SelfMonitorContainerName, testkit.SelfMonitorImage)
+				}
+
+				tc.assert(t, genNs, backend, pipeline.GetName())
+			})
+		}
 	}
 }
 

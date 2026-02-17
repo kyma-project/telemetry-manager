@@ -161,7 +161,7 @@ func TestTransform(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		suite.RegisterTestCase(t, tc.label)
+		suite.SetupTest(t, tc.label)
 
 		t.Run(tc.label, func(t *testing.T) {
 			var (

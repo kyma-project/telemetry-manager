@@ -56,7 +56,7 @@ func TestCloudProviderAttributes(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.label, func(t *testing.T) {
-			suite.RegisterTestCase(t, suite.LabelGardener, tc.label)
+			suite.SetupTest(t, suite.LabelGardener, tc.label)
 
 			var (
 				uniquePrefix = unique.Prefix(tc.label)

@@ -56,7 +56,7 @@ func TestSinglePipeline(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.label, func(t *testing.T) {
-			suite.RegisterTestCase(t, tc.label)
+			suite.SetupTest(t, tc.label)
 
 			var (
 				uniquePrefix = unique.Prefix(tc.label)
