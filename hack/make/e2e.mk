@@ -39,7 +39,7 @@ e2e-test: $(GOTESTSUM) ## Run E2E tests (use E2E_TEST_PATH, E2E_TEST_LABELS, E2E
 		-timeout $(E2E_TEST_TIMEOUT) \
 		$(if $(E2E_TEST_RUN),-run "$(E2E_TEST_RUN)",) \
 		$(E2E_TEST_PATH) \
-		$(if $(E2E_TEST_LABELS),-- -labels="$(E2E_TEST_LABELS)",)
+		$(if $(E2E_TEST_LABELS),-args -labels="$(E2E_TEST_LABELS)",)
 
 # Run e2e tests without JUnit output (for local development)
 .PHONY: e2e-test-local
@@ -56,7 +56,7 @@ e2e-test-local: $(GOTESTSUM) ## Run E2E tests locally without JUnit output
 		-timeout $(E2E_TEST_TIMEOUT) \
 		$(if $(E2E_TEST_RUN),-run "$(E2E_TEST_RUN)",) \
 		$(E2E_TEST_PATH) \
-		$(if $(E2E_TEST_LABELS),-- -labels="$(E2E_TEST_LABELS)",)
+		$(if $(E2E_TEST_LABELS),-args -labels="$(E2E_TEST_LABELS)",)
 
 # Convenience targets for running tests by directory
 .PHONY: e2e-logs

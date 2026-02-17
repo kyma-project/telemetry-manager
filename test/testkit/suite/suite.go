@@ -231,6 +231,11 @@ func SetupTestWithOptions(t *testing.T, labels []string, opts ...kubeprep.Option
 	doNotExecute := findDoNotExecuteFlag()
 	printLabels := findPrintLabelsFlag()
 
+	// Debug log the label filter expression
+	if labelFilterExpr != "" {
+		t.Logf("Label filter expression: %q, test labels: %v", labelFilterExpr, labels)
+	}
+
 	// Determine if this test should run based on label filter
 	shouldRun := true
 
