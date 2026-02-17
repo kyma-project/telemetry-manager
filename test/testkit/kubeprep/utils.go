@@ -149,7 +149,11 @@ func deleteAllResourcesByGVRK(ctx context.Context, k8sClient client.Client, grou
 
 	// List all resources (across all namespaces)
 	if err := k8sClient.List(ctx, list); err != nil {
-		if apierrors.IsNotFound(err) || apierrors.IsMethodNotSupported(err) {
+		// CRD may not exist - handle various "not found" error types:
+		// - IsNotFound: resource not found
+		// - IsMethodNotSupported: method not supported
+		// - "no matches for kind": CRD not registered in scheme/discovery
+		if apierrors.IsNotFound(err) || apierrors.IsMethodNotSupported(err) || isNoKindMatchError(err) {
 			return nil
 		}
 
@@ -178,8 +182,8 @@ func countResourcesByGVRK(ctx context.Context, k8sClient client.Client, group, v
 
 	// List all resources (across all namespaces)
 	if err := k8sClient.List(ctx, list); err != nil {
-		if apierrors.IsNotFound(err) || apierrors.IsMethodNotSupported(err) {
-			// CRD might not exist or not be installed
+		// CRD may not exist - handle various "not found" error types
+		if apierrors.IsNotFound(err) || apierrors.IsMethodNotSupported(err) || isNoKindMatchError(err) {
 			return 0, nil
 		}
 
@@ -192,6 +196,16 @@ func countResourcesByGVRK(ctx context.Context, k8sClient client.Client, group, v
 // isNotFoundError checks if an error is a NotFound error
 func isNotFoundError(err error) bool {
 	return apierrors.IsNotFound(err) || apierrors.IsMethodNotSupported(err)
+}
+
+// isNoKindMatchError checks if an error is a "no matches for kind" error.
+// This occurs when the CRD is not registered in the cluster.
+func isNoKindMatchError(err error) bool {
+	if err == nil {
+		return false
+	}
+	// The error message contains "no matches for kind" when the CRD doesn't exist
+	return strings.Contains(err.Error(), "no matches for kind")
 }
 
 // waitForDeployment waits for a deployment to be ready
@@ -262,4 +276,25 @@ func ensureNamespaceInternal(ctx context.Context, k8sClient client.Client, name 
 	}
 
 	return nil
+}
+
+// crdExists checks if a CRD exists in the cluster
+func crdExists(ctx context.Context, k8sClient client.Client, name string) (bool, error) {
+	crd := &unstructured.Unstructured{}
+	crd.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "apiextensions.k8s.io",
+		Version: "v1",
+		Kind:    "CustomResourceDefinition",
+	})
+
+	err := k8sClient.Get(ctx, types.NamespacedName{Name: name}, crd)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return false, nil
+		}
+
+		return false, err
+	}
+
+	return true, nil
 }

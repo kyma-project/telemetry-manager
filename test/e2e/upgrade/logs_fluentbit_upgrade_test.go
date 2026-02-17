@@ -1,6 +1,7 @@
 package upgrade
 
 import (
+	"os"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -10,6 +11,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdoutloggen"
@@ -20,13 +22,16 @@ import (
 // TestLogsFluentBitUpgrade validates that LogPipeline resources (FluentBit) survive a manager upgrade.
 //
 // Test flow:
-// 1. RegisterTestCase deploys the OLD version from UPGRADE_FROM_CHART
+// 1. SetupTest deploys the OLD version (from UPGRADE_FROM_CHART env var, or latest release if not set)
 // 2. Create pipeline, backend, and generator resources
 // 3. Validate everything works with old version
 // 4. Call UpgradeToTargetVersion() to upgrade to MANAGER_IMAGE
 // 5. Validate everything still works after upgrade
 func TestLogsFluentBitUpgrade(t *testing.T) {
-	suite.SetupTest(t, suite.LabelUpgrade, suite.LabelFluentBit, suite.LabelLogs, suite.LabelNoFIPS)
+	labels := []string{suite.LabelUpgrade, suite.LabelFluentBit, suite.LabelLogs, suite.LabelNoFIPS}
+
+	// Deploy old version (defaults to latest release if UPGRADE_FROM_CHART not set)
+	suite.SetupTestWithOptions(t, labels, kubeprep.WithChartVersion(os.Getenv("UPGRADE_FROM_CHART")))
 
 	var (
 		uniquePrefix = unique.Prefix()
@@ -62,7 +67,7 @@ func TestLogsFluentBitUpgrade(t *testing.T) {
 
 	// === UPGRADE TO NEW VERSION ===
 	t.Log("Upgrading manager to target version...")
-	Expect(suite.UpgradeToTargetVersion(t)).To(Succeed())
+	Expect(suite.UpgradeToTargetVersion(t, labels)).To(Succeed())
 
 	// === VALIDATE AFTER UPGRADE ===
 	t.Log("Validating FluentBit log pipeline after upgrade...")

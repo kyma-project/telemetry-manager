@@ -68,26 +68,6 @@ func deployTestPrerequisites(t TestingT, k8sClient client.Client) error {
 	return nil
 }
 
-// cleanupPrerequisites removes test fixtures
-func cleanupPrerequisites(t TestingT, k8sClient client.Client) error {
-	ctx := t.Context()
-
-	// Delete in reverse order
-	if err := deleteYAML(ctx, k8sClient, shootInfoConfigMapYAML); err != nil {
-		return fmt.Errorf("failed to delete shoot-info ConfigMap: %w", err)
-	}
-
-	if err := deleteYAML(ctx, k8sClient, networkPolicyYAML); err != nil {
-		return fmt.Errorf("failed to delete network policy: %w", err)
-	}
-
-	if err := deleteYAML(ctx, k8sClient, telemetryCRYAML); err != nil {
-		return fmt.Errorf("failed to delete Telemetry CR: %w", err)
-	}
-
-	return nil
-}
-
 // DeployTestPrerequisitesPublic is a public wrapper for deployTestPrerequisites.
 // It deploys test fixtures required for e2e tests (Telemetry CR, network policy, shoot-info ConfigMap).
 // Must be called AFTER manager deployment (needs Telemetry CRD).

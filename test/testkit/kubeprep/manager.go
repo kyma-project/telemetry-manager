@@ -22,41 +22,9 @@ const (
 	// telemetryManagerName is the name of the telemetry manager deployment
 	telemetryManagerName = "telemetry-manager"
 
-	// LabelExperimentalEnabled is used to detect if experimental features are enabled.
-	// This custom label is added during deployment to allow reliable detection
-	// regardless of how experimental features are implemented in the manager.
-	LabelExperimentalEnabled = "telemetry.kyma-project.io/experimental-enabled"
-
-	// LabelHelmCustomized marks that the manager was deployed with custom helm values.
-	// When this label is "true", the next SetupTest will reinstall to restore clean state.
-	LabelHelmCustomized = "telemetry.kyma-project.io/helm-customized"
-
 	// reconcileDelay is the time to wait after upgrade for the manager to reconcile resources
 	reconcileDelay = 30 * time.Second
 )
-
-// labelDeployment adds a label to the manager deployment for state detection
-func labelDeployment(ctx context.Context, k8sClient client.Client, key, value string) error {
-	deployment := &appsv1.Deployment{}
-	if err := k8sClient.Get(ctx, types.NamespacedName{
-		Name:      telemetryManagerName,
-		Namespace: kymaSystemNamespace,
-	}, deployment); err != nil {
-		return fmt.Errorf("failed to get deployment: %w", err)
-	}
-
-	if deployment.Labels == nil {
-		deployment.Labels = make(map[string]string)
-	}
-
-	deployment.Labels[key] = value
-
-	if err := k8sClient.Update(ctx, deployment); err != nil {
-		return fmt.Errorf("failed to update deployment labels: %w", err)
-	}
-
-	return nil
-}
 
 // waitForRolloutComplete waits until the deployment rollout is complete,
 // meaning only the new replica is running and no old replicas remain.
@@ -236,39 +204,32 @@ func deployManagerFromChartSource(t TestingT, k8sClient client.Client, chartSour
 		return fmt.Errorf("helm upgrade --install failed: %w\nstderr: %s", err, stderr.String())
 	}
 
-	// Mark deployment as customized if custom helm values were used
-	customizedValue := "false"
-	if len(cfg.HelmValues) > 0 {
-		customizedValue = "true"
-	}
-
-	if err := labelDeployment(ctx, k8sClient, LabelHelmCustomized, customizedValue); err != nil {
-		return fmt.Errorf("failed to label deployment as customized: %w", err)
-	}
-
-	// Add experimental label for cluster state detection
-	experimentalValue := "false"
-	if cfg.EnableExperimental {
-		experimentalValue = "true"
-	}
-
-	if err := labelDeployment(ctx, k8sClient, LabelExperimentalEnabled, experimentalValue); err != nil {
-		return fmt.Errorf("failed to label deployment: %w", err)
-	}
-
 	return nil
 }
 
-// deployManager deploys the telemetry manager from the local helm chart
+// deployManager deploys the telemetry manager using helm upgrade --install.
+// If cfg.ChartPath is set, uses that chart with its baked-in image (for deploying released versions).
+// Otherwise, uses the local helm chart with cfg.ManagerImage override.
 func deployManager(t TestingT, k8sClient client.Client, cfg Config) error {
-	t.Log("Deploying telemetry manager...")
+	chartSource := cfg.ChartPath
+	imageOverride := cfg.ManagerImage
 
-	helmChartPath, err := getHelmChartPath()
-	if err != nil {
-		return fmt.Errorf("failed to locate helm chart: %w", err)
+	if chartSource == "" {
+		// Using local chart - need to override with target image
+		var err error
+
+		chartSource, err = getHelmChartPath()
+		if err != nil {
+			return fmt.Errorf("failed to locate helm chart: %w", err)
+		}
+	} else {
+		// Using released chart - use the image baked into the chart
+		imageOverride = ""
 	}
 
-	if err := deployManagerFromChartSource(t, k8sClient, helmChartPath, cfg.ManagerImage, cfg); err != nil {
+	t.Logf("Deploying telemetry manager from: %s (imageOverride=%s)", chartSource, imageOverride)
+
+	if err := deployManagerFromChartSource(t, k8sClient, chartSource, imageOverride, cfg); err != nil {
 		return err
 	}
 
@@ -282,7 +243,7 @@ func deployManager(t TestingT, k8sClient client.Client, cfg Config) error {
 // 2. Delete the Telemetry operator CR
 // 3. Wait for resources to be deleted
 // 4. Uninstall the helm chart
-func undeployManager(t TestingT, k8sClient client.Client, _ Config) error {
+func undeployManager(t TestingT, k8sClient client.Client) error {
 	ctx := t.Context()
 
 	t.Log("Undeploying telemetry manager...")
