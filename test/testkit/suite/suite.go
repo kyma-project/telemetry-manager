@@ -2,20 +2,30 @@ package suite
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"os"
 	"path"
 	"runtime"
+	"slices"
 	"strings"
 	"testing"
 
 	"github.com/go-logr/logr"
 	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
+	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
+)
+
+const (
+	// DefaultLocalImage is used when MANAGER_IMAGE is not set.
+	// This allows local development without setting environment variables.
+	DefaultLocalImage = "telemetry-manager:latest"
 )
 
 var (
@@ -24,9 +34,25 @@ var (
 	ProxyClient *apiserverproxy.Client
 )
 
+var (
+	labelFilterFlag  string
+	doNotExecuteFlag bool
+	printLabelsFlag  bool
+)
+
+// Environment-affecting labels - these determine cluster setup
+var environmentLabels = map[string]bool{
+	LabelIstio:        true,
+	LabelExperimental: true,
+	LabelNoFIPS:       true,
+}
+
 // BeforeSuiteFunc is designed to return an error instead of relying on Gomega matchers.
 // This function is intended for use in a vanilla TestMain function within new e2e test suites.
 // Note that Gomega matchers cannot be utilized in the TestMain function.
+//
+// This function only initializes the K8s client and context. Cluster preparation
+// is handled dynamically by SetupTest based on test labels.
 func BeforeSuiteFunc() error {
 	Ctx = context.Background() //nolint:fatcontext // context is used in tests
 
@@ -48,6 +74,10 @@ func BeforeSuiteFunc() error {
 		return fmt.Errorf("failed to create apiserver proxy client: %w", err)
 	}
 
+	return nil
+}
+
+func AfterSuiteFunc() error {
 	return nil
 }
 
@@ -74,16 +104,19 @@ func sanitizeSpecID(filePath string) string {
 const (
 	// Logs labels
 
+	LabelLogs                 = "logs"
 	LabelLogsMisc             = "logs-misc"
 	LabelLogAgent             = "log-agent"
 	LabelLogGateway           = "log-gateway"
 	LabelFluentBit            = "fluent-bit"
+	LabelOtel                 = "otel"
 	LabelOTelMaxPipeline      = "otel-max-pipeline"
 	LabelFluentBitMaxPipeline = "fluent-bit-max-pipeline"
 	LabelLogsMaxPipeline      = "logs-max-pipeline"
 
 	// Metrics labels
 
+	LabelMetrics            = "metrics"
 	LabelMetricsMisc        = "metrics-misc"
 	LabelMetricsMaxPipeline = "metrics-max-pipeline"
 	LabelMetricAgentSetA    = "metric-agent-a"
@@ -135,10 +168,17 @@ const (
 	// LabelIstio defines the label for Istio Integration tests
 	LabelIstio = "istio"
 
+	// LabelNoFIPS defines the label for tests that should NOT run in FIPS mode.
+	// By default, all tests run with FIPS enabled. Use this label to disable FIPS
+	// for specific tests (e.g., fluent-bit tests which don't support FIPS).
+	LabelNoFIPS = "no-fips"
+
 	// LabelGardener defines the label for Gardener Integration tests
 	LabelGardener = "gardener"
 
-	// LabelUpgrade defines the label for Upgrade tests, which preserve K8s objects between test runs.
+	// LabelUpgrade defines the label for Upgrade tests. These tests start with an older
+	// version of the telemetry module (deployed from UPGRADE_FROM_CHART) and then upgrade
+	// to the current version mid-test using UpgradeToTargetVersion().
 	LabelUpgrade = "upgrade"
 
 	// LabelOAuth2 defines the label for OAuth2 related tests.
@@ -159,7 +199,23 @@ func DebugObjectsEnabled() bool {
 	return debugEnv == "1" || strings.ToLower(debugEnv) == "true"
 }
 
-func RegisterTestCase(t *testing.T, labels ...string) {
+// SetupTest prepares the test environment based on test labels.
+// It registers Gomega matchers, evaluates label filters, and ensures the cluster
+// is configured correctly for the test (e.g., Istio installed, experimental features enabled).
+//
+// This function should be called at the beginning of every test function.
+// It always runs helm upgrade --install (idempotent) and deploys prerequisites.
+//
+// For options like custom helm values or chart version, use SetupTestWithOptions.
+func SetupTest(t *testing.T, labels ...string) {
+	SetupTestWithOptions(t, labels)
+}
+
+// SetupTestWithOptions prepares the test environment with additional options.
+// Options can be passed to customize the setup:
+//   - kubeprep.WithHelmValues("key=value") - adds custom helm values
+//   - kubeprep.WithChartVersion("url") - uses a specific chart version (for upgrade tests)
+func SetupTestWithOptions(t *testing.T, labels []string, opts ...kubeprep.Option) {
 	RegisterTestingT(t)
 
 	labelSet := toSet(labels)
@@ -169,28 +225,42 @@ func RegisterTestCase(t *testing.T, labels ...string) {
 		t.Skip()
 	}
 
+	// Evaluate skip/execute decision BEFORE cluster configuration
+	// This avoids unnecessary cluster reconfiguration for tests that won't run
 	labelFilterExpr := findLabelFilterExpression()
 	doNotExecute := findDoNotExecuteFlag()
+	printLabels := findPrintLabelsFlag()
 
-	// If no filter is specified, run all tests (unless do-not-execute is set)
-	if labelFilterExpr == "" {
-		if doNotExecute {
-			printTestInfo(t, labels, "would execute (no filter)")
-			t.Skip()
+	// Determine if this test should run based on label filter
+	shouldRun := true
+
+	if labelFilterExpr != "" {
+		var err error
+
+		shouldRun, err = evaluateLabelExpression(labels, labelFilterExpr)
+		require.NoError(t, err)
+	}
+
+	// Handle print-labels mode - print structured label info and skip
+	if printLabels {
+		// Only print if test would run (respects label filter)
+		if shouldRun {
+			printLabelsInfo(t, labels)
 		}
+
+		t.Skip()
 
 		return
 	}
 
-	shouldRun, err := evaluateLabelExpression(labels, labelFilterExpr)
-	if err != nil {
-		t.Fatalf("Invalid label filter: %v", err)
-	}
-
+	// Handle dry-run mode
 	if doNotExecute {
-		if shouldRun {
+		switch {
+		case labelFilterExpr == "":
+			printTestInfo(t, labels, "would execute (no filter)")
+		case shouldRun:
 			printTestInfo(t, labels, fmt.Sprintf("would execute (matches filter: %s)", labelFilterExpr))
-		} else {
+		default:
 			printTestInfo(t, labels, fmt.Sprintf("would skip (doesn't match filter: %s)", labelFilterExpr))
 		}
 
@@ -199,22 +269,165 @@ func RegisterTestCase(t *testing.T, labels ...string) {
 		return
 	}
 
+	// Skip test if label filter doesn't match
 	if !shouldRun {
 		t.Skipf("Test skipped: label filter '%s' not satisfied", labelFilterExpr)
+		return
 	}
+
+	// Test will execute - build configuration from labels and options
+	cfg := buildConfig(labels, opts...)
+
+	// Setup cluster (idempotent: always runs helm upgrade + prerequisites)
+	require.NoError(t, kubeprep.SetupCluster(t, K8sClient, cfg))
+}
+
+// RegisterTestCase is an alias for SetupTest for backward compatibility.
+//
+// Deprecated: Use SetupTest instead.
+func RegisterTestCase(t *testing.T, labels ...string) {
+	SetupTest(t, labels...)
+}
+
+// buildConfig creates a Config from labels and applies options
+func buildConfig(labels []string, opts ...kubeprep.Option) kubeprep.Config {
+	// FIPS mode is enabled by default unless LabelNoFIPS is present in labels
+	fipsEnabled := !hasLabel(labels, LabelNoFIPS)
+
+	cfg := kubeprep.Config{
+		OperateInFIPSMode:  fipsEnabled,
+		EnableExperimental: hasLabel(labels, LabelExperimental),
+		InstallIstio:       hasLabel(labels, LabelIstio),
+	}
+
+	// Get manager image from environment or default
+	managerImage := os.Getenv("MANAGER_IMAGE")
+	if managerImage == "" {
+		managerImage = DefaultLocalImage
+	}
+
+	cfg.ManagerImage = managerImage
+	cfg.LocalImage = kubeprep.IsLocalImage(managerImage)
+
+	// Apply options
+	for _, opt := range opts {
+		opt(&cfg)
+	}
+
+	return cfg
+}
+
+// UpgradeToTargetVersion upgrades the manager from a previously deployed version
+// to the target version (specified by MANAGER_IMAGE, or local image if not set).
+//
+// This function is called mid-test in upgrade tests after validating the old version works.
+// It preserves existing pipeline resources and CRDs.
+func UpgradeToTargetVersion(t *testing.T, labels []string) error {
+	targetImage := os.Getenv("MANAGER_IMAGE")
+	if targetImage == "" {
+		targetImage = DefaultLocalImage
+	}
+
+	// Build config from labels (same settings as initial setup)
+	cfg := buildConfig(labels)
+	cfg.ManagerImage = targetImage
+	cfg.LocalImage = kubeprep.IsLocalImage(targetImage)
+	cfg.ChartPath = "" // Use local chart for upgrade
+
+	t.Logf("Upgrading manager to target version: %s (fips=%t, experimental=%t)",
+		targetImage, cfg.OperateInFIPSMode, cfg.EnableExperimental)
+
+	return kubeprep.UpgradeManagerInPlace(t, K8sClient, targetImage, cfg)
 }
 
 func findDoNotExecuteFlag() bool {
-	for _, arg := range os.Args {
-		if arg == "-do-not-execute" || arg == "--do-not-execute" {
-			return true
+	// Ensure flags are parsed
+	if !flag.Parsed() {
+		flag.Parse()
+	}
+
+	return doNotExecuteFlag
+}
+
+func findPrintLabelsFlag() bool {
+	// Ensure flags are parsed
+	if !flag.Parsed() {
+		flag.Parse()
+	}
+
+	return printLabelsFlag
+}
+
+// classifyLabels separates labels into environment-affecting and other labels
+func classifyLabels(labels []string) (envLabels, otherLabels []string) {
+	for _, label := range labels {
+		if environmentLabels[label] {
+			envLabels = append(envLabels, label)
+		} else {
+			otherLabels = append(otherLabels, label)
 		}
 	}
 
-	return false
+	return envLabels, otherLabels
+}
+
+// hasLabel checks if a specific label is present in the labels slice
+func hasLabel(labels []string, target string) bool {
+	return slices.Contains(labels, target)
+}
+
+// printLabelsInfo prints test labels in a structured pipe-separated format
+// Format: testcase | istio | experimental | fips | env_labels | other_labels
+func printLabelsInfo(t *testing.T, labels []string) {
+	t.Helper()
+	testName := t.Name()
+
+	if testName == "" {
+		if pc, _, _, ok := runtime.Caller(2); ok {
+			if fn := runtime.FuncForPC(pc); fn != nil {
+				testName = fn.Name()
+				if parts := strings.Split(testName, "."); len(parts) > 0 {
+					testName = parts[len(parts)-1]
+				}
+			}
+		}
+
+		if testName == "" {
+			testName = "<unknown>"
+		}
+	}
+
+	// Determine yes/no for environment labels
+	istio := "no"
+	if hasLabel(labels, LabelIstio) {
+		istio = "yes"
+	}
+
+	experimental := "no"
+	if hasLabel(labels, LabelExperimental) {
+		experimental = "yes"
+	}
+
+	fips := "yes"
+	if hasLabel(labels, LabelNoFIPS) {
+		fips = "no"
+	}
+
+	// Classify labels
+	envLabels, otherLabels := classifyLabels(labels)
+
+	// Print in pipe-separated format
+	fmt.Printf("%s | %s | %s | %s | %s | %s\n", //nolint:forbidigo // structured output for tooling
+		testName,
+		istio,
+		experimental,
+		fips,
+		strings.Join(envLabels, ","),
+		strings.Join(otherLabels, ","))
 }
 
 func printTestInfo(t *testing.T, labels []string, action string) {
+	t.Helper()
 	testName := t.Name()
 
 	if testName == "" {
@@ -238,26 +451,12 @@ func printTestInfo(t *testing.T, labels []string, action string) {
 }
 
 func findLabelFilterExpression() string {
-	const prefix = "-labels="
-
-	var labelsArg string
-
-	for _, arg := range os.Args {
-		if strings.HasPrefix(arg, prefix) {
-			labelsArg = arg
-		}
+	// Ensure flags are parsed
+	if !flag.Parsed() {
+		flag.Parse()
 	}
 
-	if labelsArg == "" {
-		return ""
-	}
-
-	labelsKV := strings.SplitN(labelsArg, "=", 2)
-	if len(labelsKV) != 2 {
-		return ""
-	}
-
-	return labelsKV[1]
+	return labelFilterFlag
 }
 
 func toSet(labels []string) map[string]struct{} {
@@ -271,18 +470,4 @@ func toSet(labels []string) map[string]struct{} {
 	}
 
 	return set
-}
-
-// IsLabelSet checks if a specific label is present in the label filter expression
-// This is useful for conditionally executing test logic based on labels
-func IsLabelSet(label string) bool {
-	labelFilterExpr := findLabelFilterExpression()
-
-	// If no filter is specified, the label is not explicitly set
-	if labelFilterExpr == "" {
-		return false
-	}
-
-	// Check if the label appears in the filter expression
-	return strings.Contains(labelFilterExpr, label)
 }
