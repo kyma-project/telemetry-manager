@@ -471,17 +471,3 @@ func toSet(labels []string) map[string]struct{} {
 
 	return set
 }
-
-// IsLabelSet checks if a specific label is present in the label filter expression
-// This is useful for conditionally executing test logic based on labels
-func IsLabelSet(label string) bool {
-	labelFilterExpr := findLabelFilterExpression()
-
-	// If no filter is specified, the label is not explicitly set
-	if labelFilterExpr == "" {
-		return false
-	}
-
-	// Check if the label appears in the filter expression
-	return strings.Contains(labelFilterExpr, label)
-}
