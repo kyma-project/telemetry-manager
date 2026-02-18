@@ -15,8 +15,6 @@ import (
 )
 
 // updateGatewayHealthyConditions updates the GatewayHealthy condition on all referenced TracePipeline CRs.
-// It computes the condition once based on the DaemonSet health and applies it to all pipelines.
-// If any status update fails, it logs the error but continues with other pipelines to avoid blocking reconciliation.
 func (r *Reconciler) updateGatewayHealthyConditions(ctx context.Context, pipelineNames []string) error {
 	if len(pipelineNames) == 0 {
 		return nil
@@ -31,8 +29,7 @@ func (r *Reconciler) updateGatewayHealthyConditions(ctx context.Context, pipelin
 	var lastError error
 	for _, name := range pipelineNames {
 		if err := r.updatePipelineCondition(ctx, name, condition); err != nil {
-			// Log error but continue with other pipelines
-			log.Error(err, "Failed to update GatewayHealthy condition", "pipeline", name)
+			log.Error(err, "failed to update gateway healthy condition", "pipeline", name)
 			lastError = err
 		}
 	}
@@ -45,29 +42,22 @@ func (r *Reconciler) updatePipelineCondition(ctx context.Context, pipelineName s
 	var pipeline telemetryv1beta1.TracePipeline
 	if err := r.Get(ctx, types.NamespacedName{Name: pipelineName}, &pipeline); err != nil {
 		if apierrors.IsNotFound(err) {
-			// Pipeline was deleted, skip silently
 			return nil
 		}
-		return fmt.Errorf("failed to get TracePipeline: %w", err)
+		return fmt.Errorf("failed to get pipeline: %w", err)
 	}
 
-	// Skip if pipeline is being deleted
 	if pipeline.DeletionTimestamp != nil {
-		logf.FromContext(ctx).V(1).Info("Skipping status update for TracePipeline - marked for deletion", "pipeline", pipelineName)
+		logf.FromContext(ctx).V(1).Info("skipping status update for pipeline marked for deletion", "pipeline", pipelineName)
 		return nil
 	}
 
-	// Set observed generation
 	condition.ObservedGeneration = pipeline.Generation
-
-	// Update condition
 	meta.SetStatusCondition(&pipeline.Status.Conditions, *condition)
 
-	// Write status
 	if err := r.Status().Update(ctx, &pipeline); err != nil {
 		if apierrors.IsConflict(err) {
-			// Conflict: will be retried by controller-runtime
-			logf.FromContext(ctx).V(1).Info("Status update conflict, will be retried", "pipeline", pipelineName)
+			logf.FromContext(ctx).V(1).Info("status update conflict, will be retried", "pipeline", pipelineName)
 			return nil
 		}
 		return fmt.Errorf("failed to update status: %w", err)

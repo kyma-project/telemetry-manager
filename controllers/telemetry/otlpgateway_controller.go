@@ -161,19 +161,16 @@ func (r *OTLPGatewayController) SetupWithManager(mgr ctrl.Manager) error {
 func (r *OTLPGatewayController) mapPipelineToConfigMap(ctx context.Context, object client.Object) []reconcile.Request {
 	pipeline, ok := object.(*telemetryv1beta1.TracePipeline)
 	if !ok {
-		logf.FromContext(ctx).V(1).Error(nil, "Unexpected type: expected TracePipeline")
+		logf.FromContext(ctx).V(1).Error(nil, "unexpected type: expected TracePipeline")
 		return nil
 	}
 
-	// Get the namespace from globals (assuming kyma-system)
-	// In a real implementation, you'd access r.reconciler.globals.TargetNamespace()
-	// For now, we'll use a reasonable default
 	namespace := "kyma-system"
 	if r.reconciler != nil {
 		namespace = r.reconciler.Globals().TargetNamespace()
 	}
 
-	logf.FromContext(ctx).V(1).Info("TracePipeline changed, triggering OTLP Gateway reconciliation", "pipeline", pipeline.Name)
+	logf.FromContext(ctx).V(1).Info("pipeline changed, triggering OTLP gateway reconciliation", "pipeline", pipeline.Name)
 
 	return []reconcile.Request{
 		{
@@ -187,10 +184,9 @@ func (r *OTLPGatewayController) mapPipelineToConfigMap(ctx context.Context, obje
 
 // mapOwnedResourceToConfigMap maps owned resource changes to reconcile requests for the ConfigMap.
 func (r *OTLPGatewayController) mapOwnedResourceToConfigMap(ctx context.Context, object client.Object) []reconcile.Request {
-	// Get the namespace from globals
 	namespace := object.GetNamespace()
 
-	logf.FromContext(ctx).V(1).Info("Owned resource changed, triggering OTLP Gateway reconciliation", "resource", object.GetName())
+	logf.FromContext(ctx).V(1).Info("owned resource changed, triggering OTLP gateway reconciliation", "resource", object.GetName())
 
 	return []reconcile.Request{
 		{

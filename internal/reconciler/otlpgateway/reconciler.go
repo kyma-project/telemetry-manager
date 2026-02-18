@@ -120,14 +120,12 @@ func (r *Reconciler) Globals() *config.Global {
 
 // Reconcile reconciles the OTLP Gateway DaemonSet based on the coordination ConfigMap.
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logf.FromContext(ctx).V(1).Info("Reconciling OTLP Gateway")
+	logf.FromContext(ctx).V(1).Info("reconciling OTLP gateway")
 
-	// Ensure ConfigMap exists
 	if err := r.ensureConfigMapExists(ctx); err != nil {
 		return ctrl.Result{}, err
 	}
 
-	// Reconcile the gateway
 	if err := r.doReconcile(ctx); err != nil {
 		return ctrl.Result{}, err
 	}
@@ -144,14 +142,13 @@ func (r *Reconciler) ensureConfigMapExists(ctx context.Context) error {
 	}, &cm)
 
 	if err == nil {
-		return nil // Already exists
+		return nil
 	}
 
 	if !apierrors.IsNotFound(err) {
-		return fmt.Errorf("failed to get OTLP Gateway ConfigMap: %w", err)
+		return fmt.Errorf("failed to get configmap: %w", err)
 	}
 
-	// Create initial ConfigMap
 	cm = corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      otelcollector.OTLPGatewayConfigMapName,
@@ -163,7 +160,7 @@ func (r *Reconciler) ensureConfigMapExists(ctx context.Context) error {
 	}
 
 	if err := r.Create(ctx, &cm); err != nil && !apierrors.IsAlreadyExists(err) {
-		return fmt.Errorf("failed to create OTLP Gateway ConfigMap: %w", err)
+		return fmt.Errorf("failed to create configmap: %w", err)
 	}
 
 	return nil
@@ -173,93 +170,77 @@ func (r *Reconciler) ensureConfigMapExists(ctx context.Context) error {
 func (r *Reconciler) doReconcile(ctx context.Context) error {
 	log := logf.FromContext(ctx)
 
-	// Read coordination ConfigMap
 	config, err := otelcollector.ReadOTLPGatewayConfig(ctx, r.Client, r.globals.TargetNamespace())
 	if err != nil {
-		return fmt.Errorf("failed to read OTLP Gateway ConfigMap: %w", err)
+		return fmt.Errorf("failed to read configmap: %w", err)
 	}
 
-	// Fetch TracePipeline CRs
 	tracePipelines, err := r.fetchTracePipelines(ctx, config.TracePipeline)
 	if err != nil {
-		return fmt.Errorf("failed to fetch TracePipeline CRs: %w", err)
+		return fmt.Errorf("failed to fetch pipelines: %w", err)
 	}
 
-	// Extract pipeline names for status updates
-	pipelineNames := make([]string, 0, len(tracePipelines))
+		pipelineNames := make([]string, 0, len(tracePipelines))
 	for _, pipeline := range tracePipelines {
 		pipelineNames = append(pipelineNames, pipeline.Name)
 	}
 
-	// If no valid pipelines, delete gateway resources
 	if len(tracePipelines) == 0 {
-		log.V(1).Info("No valid pipelines found, deleting OTLP Gateway resources")
+		log.V(1).Info("no valid pipelines, deleting gateway resources")
 
 		if err := r.gatewayApplierDeleter.DeleteResources(ctx, r.Client, r.istioStatusChecker.IsIstioActive(ctx)); err != nil {
-			return fmt.Errorf("failed to delete gateway resources: %w", err)
+			return fmt.Errorf("failed to delete gateway: %w", err)
 		}
 
-		// Update status on all referenced pipelines (from ConfigMap)
 		allReferencedNames := make([]string, 0, len(config.TracePipeline))
 		for _, ref := range config.TracePipeline {
 			allReferencedNames = append(allReferencedNames, ref.Name)
 		}
 		if err := r.updateGatewayHealthyConditions(ctx, allReferencedNames); err != nil {
-			log.Error(err, "Failed to update GatewayHealthy conditions after deletion")
+			log.Error(err, "failed to update status after deletion")
 		}
 
-		// Clean up legacy trace gateway Deployment
 		if err := r.cleanupLegacyResources(ctx); err != nil {
-			log.Error(err, "Failed to cleanup legacy resources")
-			// Don't fail reconciliation on cleanup errors
+			log.Error(err, "failed to cleanup legacy resources")
 		}
 
 		return nil
 	}
 
-	// Build OTel Collector configuration
 	collectorConfig, collectorEnvVars, err := r.buildCollectorConfig(ctx, tracePipelines)
 	if err != nil {
-		return fmt.Errorf("failed to build collector config: %w", err)
+		return fmt.Errorf("failed to build config: %w", err)
 	}
 
-	// Marshal config to YAML
 	collectorConfigYAML, err := yaml.Marshal(collectorConfig)
 	if err != nil {
-		return fmt.Errorf("failed to marshal collector config: %w", err)
+		return fmt.Errorf("failed to marshal config: %w", err)
 	}
 
-	// Deploy/update DaemonSet
 	isIstioActive := r.istioStatusChecker.IsIstioActive(ctx)
 	opts := otelcollector.GatewayApplyOptions{
-		CollectorConfigYAML: string(collectorConfigYAML),
-		CollectorEnvVars:    collectorEnvVars,
-		IstioEnabled:        isIstioActive,
-		// Note: Replicas field is ignored for DaemonSet
+		CollectorConfigYAML:            string(collectorConfigYAML),
+		CollectorEnvVars:               collectorEnvVars,
+		IstioEnabled:                   isIstioActive,
 		ResourceRequirementsMultiplier: len(tracePipelines),
 	}
 
 	if err := r.gatewayApplierDeleter.ApplyResources(ctx, r.Client, opts); err != nil {
-		return fmt.Errorf("failed to apply gateway resources: %w", err)
+		return fmt.Errorf("failed to apply gateway: %w", err)
 	}
 
-	// Clean up legacy trace gateway Deployment
 	if err := r.cleanupLegacyResources(ctx); err != nil {
-		log.Error(err, "Failed to cleanup legacy resources")
-		// Don't fail reconciliation on cleanup errors
+		log.Error(err, "failed to cleanup legacy resources")
 	}
 
-	// Update GatewayHealthy status on all TracePipelines
 	if err := r.updateGatewayHealthyConditions(ctx, pipelineNames); err != nil {
-		log.Error(err, "Failed to update GatewayHealthy conditions")
-		// Don't fail reconciliation on status update errors
+		log.Error(err, "failed to update status")
 	}
 
 	return nil
 }
 
-// fetchTracePipelines fetches TracePipeline CRs based on references from the ConfigMap.
-// It validates that the generation matches and skips stale or missing pipelines.
+// fetchTracePipelines fetches TracePipeline CRs from references.
 func (r *Reconciler) fetchTracePipelines(ctx context.Context, refs []otelcollector.PipelineReference) ([]telemetryv1beta1.TracePipeline, error) {
 	log := logf.FromContext(ctx)
 	pipelines := make([]telemetryv1beta1.TracePipeline, 0, len(refs))
@@ -268,21 +249,19 @@ func (r *Reconciler) fetchTracePipelines(ctx context.Context, refs []otelcollect
 		var pipeline telemetryv1beta1.TracePipeline
 		if err := r.Get(ctx, types.NamespacedName{Name: ref.Name}, &pipeline); err != nil {
 			if apierrors.IsNotFound(err) {
-				log.V(1).Info("TracePipeline not found, skipping", "pipeline", ref.Name)
+				log.V(1).Info("pipeline not found, skipping", "pipeline", ref.Name)
 				continue
 			}
-			return nil, fmt.Errorf("failed to get TracePipeline %s: %w", ref.Name, err)
+			return nil, fmt.Errorf("failed to get pipeline %s: %w", ref.Name, err)
 		}
 
-		// Skip pipelines being deleted
 		if pipeline.DeletionTimestamp != nil {
-			log.V(1).Info("TracePipeline is being deleted, skipping", "pipeline", ref.Name)
+			log.V(1).Info("pipeline being deleted, skipping", "pipeline", ref.Name)
 			continue
 		}
 
-		// Check generation matches (skip stale references)
 		if pipeline.Generation != ref.Generation {
-			log.V(1).Info("TracePipeline generation mismatch, skipping", "pipeline", ref.Name, "configGeneration", ref.Generation, "actualGeneration", pipeline.Generation)
+			log.V(1).Info("pipeline generation mismatch, skipping", "pipeline", ref.Name, "configGeneration", ref.Generation, "actualGeneration", pipeline.Generation)
 			continue
 		}
 
@@ -292,9 +271,8 @@ func (r *Reconciler) fetchTracePipelines(ctx context.Context, refs []otelcollect
 	return pipelines, nil
 }
 
-// buildCollectorConfig builds the OpenTelemetry Collector configuration from TracePipeline CRs.
+// buildCollectorConfig builds OTel Collector configuration from TracePipeline CRs.
 func (r *Reconciler) buildCollectorConfig(ctx context.Context, pipelines []telemetryv1beta1.TracePipeline) (*common.Config, common.EnvVars, error) {
-	// Gather cluster information
 	shootInfo := k8sutils.GetGardenerShootInfo(ctx, r.Client)
 	telemetryOptions := telemetryutils.Options{
 		SignalType:                common.SignalTypeTrace,
@@ -305,17 +283,15 @@ func (r *Reconciler) buildCollectorConfig(ctx context.Context, pipelines []telem
 
 	clusterUID, err := k8sutils.GetClusterUID(ctx, r.Client)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to get cluster UID: %w", err)
+		return nil, nil, fmt.Errorf("failed to get cluster uid: %w", err)
 	}
 
-	// Get enrichment configuration
 	var enrichments *operatorv1beta1.EnrichmentSpec
 	t, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
 	if err == nil {
 		enrichments = t.Spec.Enrichments
 	}
 
-	// Build configuration
 	return r.traceConfigBuilder.Build(ctx, pipelines, tracegateway.BuildOptions{
 		Cluster: common.ClusterOptions{
 			ClusterName:   clusterName,
@@ -327,11 +303,10 @@ func (r *Reconciler) buildCollectorConfig(ctx context.Context, pipelines []telem
 	})
 }
 
-// cleanupLegacyResources removes the old trace gateway Deployment from the previous architecture.
+// cleanupLegacyResources removes the old trace gateway Deployment.
 func (r *Reconciler) cleanupLegacyResources(ctx context.Context) error {
 	log := logf.FromContext(ctx)
 
-	// Delete old trace gateway Deployment
 	deployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      names.TraceGateway,
@@ -340,11 +315,11 @@ func (r *Reconciler) cleanupLegacyResources(ctx context.Context) error {
 	}
 
 	if err := r.Delete(ctx, deployment); err != nil && !apierrors.IsNotFound(err) {
-		return fmt.Errorf("failed to delete legacy trace gateway Deployment: %w", err)
+		return fmt.Errorf("failed to delete legacy deployment: %w", err)
 	}
 
 	if err := client.IgnoreNotFound(r.Delete(ctx, deployment)); err == nil {
-		log.Info("Cleaned up legacy trace gateway Deployment")
+		log.Info("cleaned up legacy trace gateway deployment")
 	}
 
 	return nil

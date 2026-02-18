@@ -11,7 +11,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// TraceGatewayConfigBuilder builds OpenTelemetry Collector configuration for trace pipelines.
+// TraceGatewayConfigBuilder builds OTel Collector configuration for trace pipelines.
 type TraceGatewayConfigBuilder interface {
 	Build(ctx context.Context, pipelines []telemetryv1beta1.TracePipeline, opts tracegateway.BuildOptions) (*common.Config, common.EnvVars, error)
 }
@@ -23,7 +23,6 @@ type GatewayApplierDeleter interface {
 }
 
 // Prober checks the health and readiness of gateway workloads.
-// This matches the commonstatus.Prober interface.
 type Prober interface {
 	IsReady(ctx context.Context, name types.NamespacedName) error
 }

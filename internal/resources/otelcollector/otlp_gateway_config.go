@@ -39,8 +39,8 @@ type PipelineReference struct {
 	Generation int64  `yaml:"generation"`
 }
 
-// ReadOTLPGatewayConfig reads and parses the OTLP Gateway ConfigMap from the cluster.
-// If the ConfigMap doesn't exist, it returns an empty configuration.
+// ReadOTLPGatewayConfig reads and parses the OTLP Gateway ConfigMap.
+// Returns an empty configuration if the ConfigMap doesn't exist.
 func ReadOTLPGatewayConfig(ctx context.Context, c client.Client, namespace string) (*OTLPGatewayConfigMap, error) {
 	var cm corev1.ConfigMap
 	err := c.Get(ctx, types.NamespacedName{
@@ -50,29 +50,26 @@ func ReadOTLPGatewayConfig(ctx context.Context, c client.Client, namespace strin
 
 	if err != nil {
 		if apierrors.IsNotFound(err) {
-			// ConfigMap doesn't exist yet, return empty config
 			return &OTLPGatewayConfigMap{}, nil
 		}
-		return nil, fmt.Errorf("failed to get OTLP Gateway ConfigMap: %w", err)
+		return nil, fmt.Errorf("failed to get otlp gateway configmap: %w", err)
 	}
 
-	// Parse the YAML data
 	yamlData, ok := cm.Data[ConfigMapDataKey]
 	if !ok || yamlData == "" {
-		// No data in ConfigMap, return empty config
 		return &OTLPGatewayConfigMap{}, nil
 	}
 
 	var config OTLPGatewayConfigMap
 	if err := yaml.Unmarshal([]byte(yamlData), &config); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal OTLP Gateway ConfigMap data: %w", err)
+		return nil, fmt.Errorf("failed to unmarshal configmap data: %w", err)
 	}
 
 	return &config, nil
 }
 
-// WriteTracePipelineReference adds or updates a TracePipeline reference in the OTLP Gateway ConfigMap.
-// It uses optimistic locking with retry to handle concurrent updates safely.
+// WriteTracePipelineReference adds or updates a TracePipeline reference.
+// Uses optimistic locking with retry to handle concurrent updates safely.
 func WriteTracePipelineReference(ctx context.Context, c client.Client, namespace, name string, generation int64) error {
 	return updateConfigMapWithRetry(ctx, c, namespace, func(config *OTLPGatewayConfigMap) error {
 		// Find existing reference
@@ -94,9 +91,8 @@ func WriteTracePipelineReference(ctx context.Context, c client.Client, namespace
 	})
 }
 
-// RemoveTracePipelineReference removes a TracePipeline reference from the OTLP Gateway ConfigMap.
-// It uses optimistic locking with retry to handle concurrent updates safely.
-// This operation is idempotent - if the reference doesn't exist, no error is returned.
+// RemoveTracePipelineReference removes a TracePipeline reference.
+// Uses optimistic locking with retry. Idempotent operation.
 func RemoveTracePipelineReference(ctx context.Context, c client.Client, namespace, name string) error {
 	return updateConfigMapWithRetry(ctx, c, namespace, func(config *OTLPGatewayConfigMap) error {
 		// Filter out the reference
@@ -112,9 +108,8 @@ func RemoveTracePipelineReference(ctx context.Context, c client.Client, namespac
 	})
 }
 
-// updateConfigMapWithRetry implements optimistic locking with retry for ConfigMap updates.
-// It reads the current ConfigMap, applies the update function, and writes back.
-// If a conflict occurs (409), it retries with fresh data.
+// updateConfigMapWithRetry implements optimistic locking with retry.
+// Retries on 409 Conflict errors with fresh data.
 func updateConfigMapWithRetry(ctx context.Context, c client.Client, namespace string, updateFn func(*OTLPGatewayConfigMap) error) error {
 	log := logf.FromContext(ctx)
 
@@ -129,7 +124,7 @@ func updateConfigMapWithRetry(ctx context.Context, c client.Client, namespace st
 		configMapExists := true
 		if err != nil {
 			if !apierrors.IsNotFound(err) {
-				return fmt.Errorf("failed to get OTLP Gateway ConfigMap: %w", err)
+				return fmt.Errorf("failed to get configmap: %w", err)
 			}
 			configMapExists = false
 		}
@@ -140,25 +135,21 @@ func updateConfigMapWithRetry(ctx context.Context, c client.Client, namespace st
 			yamlData, ok := cm.Data[ConfigMapDataKey]
 			if ok && yamlData != "" {
 				if err := yaml.Unmarshal([]byte(yamlData), &config); err != nil {
-					return fmt.Errorf("failed to unmarshal ConfigMap data: %w", err)
+					return fmt.Errorf("failed to unmarshal configmap: %w", err)
 				}
 			}
 		}
 
-		// Apply update function
 		if err := updateFn(&config); err != nil {
 			return fmt.Errorf("update function failed: %w", err)
 		}
 
-		// Marshal back to YAML
 		yamlData, err := yaml.Marshal(&config)
 		if err != nil {
-			return fmt.Errorf("failed to marshal ConfigMap data: %w", err)
+			return fmt.Errorf("failed to marshal config: %w", err)
 		}
 
-		// Create or update ConfigMap
 		if !configMapExists {
-			// Create new ConfigMap
 			cm = corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      OTLPGatewayConfigMapName,
@@ -171,17 +162,15 @@ func updateConfigMapWithRetry(ctx context.Context, c client.Client, namespace st
 
 			if err := c.Create(ctx, &cm); err != nil {
 				if apierrors.IsAlreadyExists(err) {
-					// Race condition: another controller created it, retry
-					log.V(1).Info("ConfigMap was created by another controller, retrying", "attempt", attempt+1)
+					log.V(1).Info("configmap created by another controller, retrying", "attempt", attempt+1)
 					continue
 				}
-				return fmt.Errorf("failed to create ConfigMap: %w", err)
+				return fmt.Errorf("failed to create configmap: %w", err)
 			}
 
 			return nil
 		}
 
-		// Update existing ConfigMap
 		if cm.Data == nil {
 			cm.Data = make(map[string]string)
 		}
@@ -189,15 +178,14 @@ func updateConfigMapWithRetry(ctx context.Context, c client.Client, namespace st
 
 		if err := c.Update(ctx, &cm); err != nil {
 			if apierrors.IsConflict(err) {
-				// Conflict: another controller updated it, retry with fresh data
-				log.V(1).Info("ConfigMap update conflict, retrying", "attempt", attempt+1)
+				log.V(1).Info("configmap update conflict, retrying", "attempt", attempt+1)
 				continue
 			}
-			return fmt.Errorf("failed to update ConfigMap: %w", err)
+			return fmt.Errorf("failed to update configmap: %w", err)
 		}
 
 		return nil
 	}
 
-	return fmt.Errorf("failed to update OTLP Gateway ConfigMap after %d attempts", maxRetries)
+	return fmt.Errorf("failed to update configmap after %d attempts", maxRetries)
 }
