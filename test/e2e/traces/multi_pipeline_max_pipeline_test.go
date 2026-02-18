@@ -29,12 +29,12 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 	}{
 		{
 			name:         "max-pipeline-limit",
-			labels:       []string{suite.LabelTracesMaxPipeline},
+			labels:       []string{suite.LabelTracesMaxPipeline, suite.LabelMaxPipeline, suite.LabelTraces},
 			experimental: false,
 		},
 		{
 			name:         "unlimited-pipelines-experimental",
-			labels:       []string{suite.LabelTracesMaxPipeline, suite.LabelExperimental},
+			labels:       []string{suite.LabelTracesMaxPipeline, suite.LabelMaxPipeline, suite.LabelTraces, suite.LabelExperimental},
 			experimental: true,
 		},
 	}

@@ -187,6 +187,11 @@ const (
 	LabelOAuth2 = "oauth2"
 	// LabelMTLS defines the label for mTLS related tests.
 	LabelMTLS = "mtls"
+
+	LabelMaxPipeline
+	LabelSetA = "set-a"
+	LabelSetB = "set-b"
+	LabelSetC = "set-c"
 )
 
 func ExpectAgent(label string) bool {

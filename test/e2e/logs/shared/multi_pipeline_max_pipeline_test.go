@@ -151,12 +151,12 @@ func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 	}{
 		{
 			name:         "max-pipeline-limit",
-			labels:       []string{suite.LabelOTelMaxPipeline},
+			labels:       []string{suite.LabelOTelMaxPipeline, suite.LabelLogs, suite.LabelOtel, suite.LabelMaxPipeline},
 			experimental: false,
 		},
 		{
 			name:         "unlimited-pipelines-experimental",
-			labels:       []string{suite.LabelOTelMaxPipeline, suite.LabelExperimental},
+			labels:       []string{suite.LabelOTelMaxPipeline, suite.LabelExperimental, suite.LabelLogs, suite.LabelOtel, suite.LabelMaxPipeline},
 			experimental: true,
 		},
 	}
@@ -251,7 +251,7 @@ func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 }
 
 func TestMultiPipelineMaxPipeline_FluentBit(t *testing.T) {
-	suite.SetupTest(t, suite.LabelFluentBitMaxPipeline, suite.LabelNoFIPS)
+	suite.SetupTest(t, suite.LabelFluentBitMaxPipeline, suite.LabelFluentBit, suite.LabelLogs, suite.LabelMaxPipeline, suite.LabelNoFIPS)
 
 	var (
 		uniquePrefix = unique.Prefix()
