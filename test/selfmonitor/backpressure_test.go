@@ -24,14 +24,14 @@ import (
 
 func TestBackpressure(t *testing.T) {
 	tests := []struct {
-	labelPrefix      string
-	pipeline         func(includeNs string, backend *kitbackend.Backend) client.Object
-	generator        func(ns string) []client.Object
-	assertions       func(t *testing.T, pipelineName string)
-	additionalLabels []string
-}{
+		labelPrefix      string
+		pipeline         func(includeNs string, backend *kitbackend.Backend) client.Object
+		generator        func(ns string) []client.Object
+		assertions       func(t *testing.T, pipelineName string)
+		additionalLabels []string
+	}{
 		{
-			labelPrefix: suite.LabelSelfMonitorLogAgentPrefix,
+			labelPrefix:      suite.LabelSelfMonitorLogAgentPrefix,
 			additionalLabels: []string{suite.LabelLogAgent},
 			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewLogPipelineBuilder().
@@ -64,7 +64,7 @@ func TestBackpressure(t *testing.T) {
 			},
 		},
 		{
-			labelPrefix: suite.LabelSelfMonitorLogGatewayPrefix,
+			labelPrefix:      suite.LabelSelfMonitorLogGatewayPrefix,
 			additionalLabels: []string{suite.LabelLogGateway},
 			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewLogPipelineBuilder().
@@ -99,7 +99,7 @@ func TestBackpressure(t *testing.T) {
 			},
 		},
 		{
-			labelPrefix: suite.LabelSelfMonitorFluentBitPrefix,
+			labelPrefix:      suite.LabelSelfMonitorFluentBitPrefix,
 			additionalLabels: []string{suite.LabelFluentBit},
 			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewLogPipelineBuilder().
@@ -130,7 +130,7 @@ func TestBackpressure(t *testing.T) {
 			},
 		},
 		{
-			labelPrefix: suite.LabelSelfMonitorMetricGatewayPrefix,
+			labelPrefix:      suite.LabelSelfMonitorMetricGatewayPrefix,
 			additionalLabels: []string{suite.LabelMetricGateway},
 			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewMetricPipelineBuilder().
@@ -164,7 +164,7 @@ func TestBackpressure(t *testing.T) {
 			},
 		},
 		{
-			labelPrefix: suite.LabelSelfMonitorMetricAgentPrefix,
+			labelPrefix:      suite.LabelSelfMonitorMetricAgentPrefix,
 			additionalLabels: []string{suite.LabelMetricAgent},
 			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewMetricPipelineBuilder().
@@ -200,7 +200,7 @@ func TestBackpressure(t *testing.T) {
 			},
 		},
 		{
-			labelPrefix: suite.LabelSelfMonitorTracesPrefix,
+			labelPrefix:      suite.LabelSelfMonitorTracesPrefix,
 			additionalLabels: []string{suite.LabelTraces},
 			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewTracePipelineBuilder().
@@ -254,7 +254,8 @@ func TestBackpressure(t *testing.T) {
 
 			t.Run(name, func(t *testing.T) {
 				var labels []string
-				labels = append(labels, labelsForSelfMonitor(tc.labelPrefix, suite.LabelSelfMonitorBackpressureSuffix, noFips)...)
+				labels = append(labels, suite.LabelBackpressure)
+				labels = append(labels, labelsForSelfMonitor(tc.labelPrefix, suite.LabelBackpressure, noFips)...)
 				labels = append(labels, tc.additionalLabels...)
 				suite.SetupTest(t, labels...)
 

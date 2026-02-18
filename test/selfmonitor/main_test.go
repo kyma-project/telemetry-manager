@@ -35,8 +35,8 @@ func labelsForSelfMonitor(selfMonitorLabelPrefix, selfMonitorLabelSuffix string,
 	labels := []string{combinedLabel}
 
 	// Backpressure and outage tests need Istio for traffic simulation
-	if selfMonitorLabelSuffix == suite.LabelSelfMonitorBackpressureSuffix ||
-		selfMonitorLabelSuffix == suite.LabelSelfMonitorOutageSuffix {
+	if selfMonitorLabelSuffix == suite.LabelBackpressure ||
+		selfMonitorLabelSuffix == suite.LabelOutage {
 		labels = append(labels, suite.LabelIstio)
 	}
 

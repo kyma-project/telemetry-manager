@@ -159,9 +159,9 @@ const (
 
 	// Suffixes (representing different scenarios) for self-monitor test labels
 
-	LabelSelfMonitorHealthySuffix      = "healthy"
-	LabelSelfMonitorBackpressureSuffix = "backpressure"
-	LabelSelfMonitorOutageSuffix       = "outage"
+	LabelHealthy      = "healthy"
+	LabelBackpressure = "backpressure"
+	LabelOutage       = "outage"
 
 	// LabelMisc defines the label for miscellaneous tests (for edge-cases and unrelated tests)
 	// [please avoid adding tests to this category if it already fits in a more specific one]

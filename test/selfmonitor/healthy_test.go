@@ -199,7 +199,8 @@ func TestHealthy(t *testing.T) {
 
 			t.Run(name, func(t *testing.T) {
 				var labels []string
-				labels = append(labels, labelsForSelfMonitor(tc.labelPrefix, suite.LabelSelfMonitorHealthySuffix, noFips)...)
+				labels = append(labels, suite.LabelHealthy)
+				labels = append(labels, labelsForSelfMonitor(tc.labelPrefix, suite.LabelHealthy, noFips)...)
 				labels = append(labels, tc.additionalLabels...)
 				suite.SetupTest(t, labels...)
 
