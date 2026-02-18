@@ -61,6 +61,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	selfmonitorwebhook "github.com/kyma-project/telemetry-manager/internal/selfmonitor/webhook"
+	"github.com/kyma-project/telemetry-manager/internal/storagemigration"
 	loggerutils "github.com/kyma-project/telemetry-manager/internal/utils/logger"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
 	logpipelinewebhookv1alpha1 "github.com/kyma-project/telemetry-manager/webhook/logpipeline/v1alpha1"
@@ -197,6 +198,14 @@ func run() error {
 	err = setupControllersAndWebhooks(mgr, globals, envCfg)
 	if err != nil {
 		return err
+	}
+
+	// Perform storage version migration before starting the manager.
+	// This migrates CRs from v1alpha1 storage format to v1beta1 and cleans up storedVersions.
+	// Uses a direct client since manager cache is not started yet.
+	if err := runStorageMigration(mgr); err != nil {
+		// Log error but continue - conversion webhooks still handle on-the-fly conversion
+		setupLog.Error(err, "Storage migration failed, will retry on next restart")
 	}
 
 	// +kubebuilder:scaffold:builder
@@ -566,4 +575,15 @@ func createWebhookConfig(globals config.Global) webhookcert.Config {
 			},
 		},
 	)
+}
+
+func runStorageMigration(mgr manager.Manager) error {
+	// Create direct client since manager cache is not started yet
+	migrationClient, err := client.New(mgr.GetConfig(), client.Options{Scheme: scheme})
+	if err != nil {
+		return fmt.Errorf("failed to create migration client: %w", err)
+	}
+
+	migrator := storagemigration.New(migrationClient, setupLog)
+	return migrator.MigrateIfNeeded(context.Background())
 }
