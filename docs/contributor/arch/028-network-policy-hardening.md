@@ -244,7 +244,7 @@ We must test the network policies using our E2E tests to ensure they function as
 # Phase 2: Introduce Zero-trust Network Policies
 
 - Introduce a new label `networking.kyma-project.io/telemetry-otlp: allowed` for customer workloads that want to send OTLP data to telemetry gateways. This label will be used in network policies to allow incoming traffic from customer workloads to telemetry gateways on OTLP ports (4318, 4317).
-- Implement a feature toggle in the Telemetry CR to enable/disable extra rules that harden customer-to-telemetry communication as well as RMA, cross-Kyma module communication. Because the Telemetry module already has basic network policies in place, it's illogical to use the toggle name  **enableNetworkPolicies** (because we'll still have network policies even if it's set to `false`). However, we will maintain this toggle for consistency with other Kyma modules.
+- Implement a feature toggle in the Telemetry CR to enable/disable extra rules that harden customer-to-telemetry communication as well as RMA, cross-Kyma module communication. Because the Telemetry module already has basic network policies in place, it's illogical to use the toggle name  **networkPoliciesEnabled** (because we'll still have network policies even if it's set to `false`). However, we will maintain this toggle for consistency with other Kyma modules.
 - Document the required Pod labels for customer workloads to ensure proper communication with telemetry components.
 
 
