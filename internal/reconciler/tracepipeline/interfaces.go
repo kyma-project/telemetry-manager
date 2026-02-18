@@ -4,31 +4,13 @@ import (
 	"context"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/tracegateway"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
-	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
-
-// GatewayConfigBuilder builds OpenTelemetry Collector configuration for the trace gateway from TracePipeline resources.
-type GatewayConfigBuilder interface {
-	// Build constructs the collector configuration and environment variables from the provided pipelines and build options.
-	Build(ctx context.Context, pipelines []telemetryv1beta1.TracePipeline, opts tracegateway.BuildOptions) (*common.Config, common.EnvVars, error)
-}
-
-// GatewayApplierDeleter manages the lifecycle of trace gateway Kubernetes resources.
-type GatewayApplierDeleter interface {
-	// ApplyResources creates or updates the trace gateway resources in the cluster.
-	ApplyResources(ctx context.Context, c client.Client, opts otelcollector.GatewayApplyOptions) error
-	// DeleteResources removes the trace gateway resources from the cluster.
-	DeleteResources(ctx context.Context, c client.Client, isIstioActive bool) error
-}
 
 // PipelineLock manages exclusive access to pipeline resources to enforce maximum pipeline limits.
 type PipelineLock interface {
@@ -55,12 +37,6 @@ type FlowHealthProber interface {
 type OverridesHandler interface {
 	// LoadOverrides loads the current override configuration from the cluster.
 	LoadOverrides(ctx context.Context) (*overrides.Config, error)
-}
-
-// IstioStatusChecker determines whether Istio service mesh is active in the cluster.
-type IstioStatusChecker interface {
-	// IsIstioActive returns true if Istio is currently active in the cluster.
-	IsIstioActive(ctx context.Context) bool
 }
 
 // EndpointValidator validates trace pipeline endpoint configurations.

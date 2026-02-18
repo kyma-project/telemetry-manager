@@ -20,12 +20,7 @@ import (
 	"context"
 	"fmt"
 
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	networkingv1 "k8s.io/api/networking/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlbuilder "sigs.k8s.io/controller-runtime/pkg/builder"
@@ -40,20 +35,16 @@ import (
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/config"
-	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/tracegateway"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
-	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	predicateutils "github.com/kyma-project/telemetry-manager/internal/utils/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
 	"github.com/kyma-project/telemetry-manager/internal/validators/ottl"
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
-	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
 // TracePipelineController reconciles a TracePipeline object
@@ -120,21 +111,11 @@ func NewTracePipelineController(config TracePipelineControllerConfig, client cli
 		tracepipeline.WithFilterSpecValidator(filterSpecValidator),
 	)
 
-	discoveryClient, err := discovery.NewDiscoveryClientForConfig(config.RestConfig)
-	if err != nil {
-		return nil, err
-	}
-
 	reconciler := tracepipeline.New(
 		tracepipeline.WithClient(client),
 		tracepipeline.WithGlobals(config.Global),
 
-		tracepipeline.WithGatewayApplierDeleter(otelcollector.NewTraceGatewayApplierDeleter(config.Global, config.OTelCollectorImage, config.TraceGatewayPriorityClassName)),
-		tracepipeline.WithGatewayConfigBuilder(&tracegateway.Builder{Reader: client}),
-		tracepipeline.WithGatewayProber(&workloadstatus.DeploymentProber{Client: client}),
-
 		tracepipeline.WithFlowHealthProber(flowHealthProber),
-		tracepipeline.WithIstioStatusChecker(istiostatus.NewChecker(discoveryClient)),
 		tracepipeline.WithOverridesHandler(overrides.New(config.Global, client)),
 		tracepipeline.WithErrorToMessageConverter(&conditions.ErrorToMessageConverter{}),
 
@@ -161,27 +142,7 @@ func (r *TracePipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		source.Channel(r.reconcileTriggerChan, &handler.EnqueueRequestForObject{}),
 	)
 
-	ownedResourceTypesToWatch := []client.Object{
-		&appsv1.Deployment{},
-		&corev1.ConfigMap{},
-		&corev1.Secret{},
-		&corev1.Service{},
-		&corev1.ServiceAccount{},
-		&rbacv1.ClusterRole{},
-		&rbacv1.ClusterRoleBinding{},
-		&networkingv1.NetworkPolicy{},
-	}
-
-	for _, resource := range ownedResourceTypesToWatch {
-		b = b.Watches(
-			resource,
-			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(),
-				mgr.GetRESTMapper(),
-				&telemetryv1beta1.TracePipeline{},
-			),
-			ctrlbuilder.WithPredicates(predicateutils.OwnedResourceChanged()),
-		)
-	}
+	// Note: Gateway-owned resources (Deployment, Service, NetworkPolicy, etc.) are now watched by OTLP Gateway Controller
 
 	return b.Watches(
 		&operatorv1beta1.Telemetry{},
