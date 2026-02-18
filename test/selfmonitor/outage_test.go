@@ -24,13 +24,15 @@ import (
 
 func TestOutage(t *testing.T) {
 	tests := []struct {
-		labelPrefix string
-		pipeline    func(includeNs string, backend *kitbackend.Backend) client.Object
-		generator   func(ns string) []client.Object
-		assertions  func(t *testing.T, pipelineName string)
+		labelPrefix      string
+		pipeline         func(includeNs string, backend *kitbackend.Backend) client.Object
+		generator        func(ns string) []client.Object
+		assertions       func(t *testing.T, pipelineName string)
+		additionalLabels []string
 	}{
 		{
-			labelPrefix: suite.LabelSelfMonitorLogAgentPrefix,
+			labelPrefix:      suite.LabelSelfMonitorLogAgentPrefix,
+			additionalLabels: []string{suite.LabelLogAgent},
 			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewLogPipelineBuilder().
 					WithName(suite.LabelSelfMonitorLogAgentPrefix).
@@ -61,7 +63,8 @@ func TestOutage(t *testing.T) {
 			},
 		},
 		{
-			labelPrefix: suite.LabelSelfMonitorLogGatewayPrefix,
+			labelPrefix:      suite.LabelSelfMonitorLogGatewayPrefix,
+			additionalLabels: []string{suite.LabelLogGateway},
 			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewLogPipelineBuilder().
 					WithName(suite.LabelSelfMonitorLogGatewayPrefix).
@@ -96,7 +99,8 @@ func TestOutage(t *testing.T) {
 			},
 		},
 		{
-			labelPrefix: suite.LabelSelfMonitorFluentBitPrefix,
+			labelPrefix:      suite.LabelSelfMonitorFluentBitPrefix,
+			additionalLabels: []string{suite.LabelFluentBit},
 			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewLogPipelineBuilder().
 					WithName(suite.LabelSelfMonitorFluentBitPrefix).
@@ -127,7 +131,8 @@ func TestOutage(t *testing.T) {
 			},
 		},
 		{
-			labelPrefix: suite.LabelSelfMonitorMetricGatewayPrefix,
+			labelPrefix:      suite.LabelSelfMonitorMetricGatewayPrefix,
+			additionalLabels: []string{suite.LabelMetricGateway},
 			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewMetricPipelineBuilder().
 					WithName(suite.LabelSelfMonitorMetricGatewayPrefix).
@@ -163,7 +168,8 @@ func TestOutage(t *testing.T) {
 			},
 		},
 		{
-			labelPrefix: suite.LabelSelfMonitorMetricAgentPrefix,
+			labelPrefix:      suite.LabelSelfMonitorMetricAgentPrefix,
+			additionalLabels: []string{suite.LabelMetricAgent},
 			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewMetricPipelineBuilder().
 					WithName(suite.LabelSelfMonitorMetricAgentPrefix).
@@ -199,7 +205,8 @@ func TestOutage(t *testing.T) {
 			},
 		},
 		{
-			labelPrefix: suite.LabelSelfMonitorTracesPrefix,
+			labelPrefix:      suite.LabelSelfMonitorTracesPrefix,
+			additionalLabels: []string{suite.LabelTraces},
 			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewTracePipelineBuilder().
 					WithName(suite.LabelSelfMonitorTracesPrefix).
@@ -252,7 +259,10 @@ func TestOutage(t *testing.T) {
 			}
 
 			t.Run(name, func(t *testing.T) {
-				suite.SetupTest(t, labelsForSelfMonitor(tc.labelPrefix, suite.LabelSelfMonitorOutageSuffix, noFips)...)
+				var labels []string
+				labels = append(labels, labelsForSelfMonitor(tc.labelPrefix, suite.LabelSelfMonitorOutageSuffix, noFips)...)
+				labels = append(labels, tc.additionalLabels...)
+				suite.SetupTest(t, labels...)
 
 				var (
 					uniquePrefix = unique.Prefix(tc.labelPrefix)

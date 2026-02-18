@@ -125,7 +125,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.suite.name }}${{ matrix.flavor.name }}-results
+          name: ${{ matrix.suite.name }}${{ matrix.flavor.name }}-report
           path: junit-report-*.xml
 
       - name: Print pods on failure
@@ -172,7 +172,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.suite.name }}-results
+          name: ${{ matrix.suite.name }}-report
           path: junit-report-*.xml
 
       - name: Print pods on failure
@@ -191,14 +191,24 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        test:
-          - name: selfmonitor-healthy
-            run: TestHealthy
-          - name: selfmonitor-backpressure
-            run: TestBackpressure
-          - name: selfmonitor-outage
-            run: TestOutage
-    name: ${{ matrix.test.name }}
+        scenario:
+          - healthy
+          - backpressure
+          - outage
+        component:
+          - name: log-agent
+            label: log-agent
+          - name: log-gateway
+            label: log-gateway
+          - name: fluent-bit
+            label: fluent-bit
+          - name: metric-agent
+            label: metric-agent
+          - name: metric-gateway
+            label: metric-gateway
+          - name: traces
+            label: traces
+    name: selfmonitor-${{ matrix.scenario }}-${{ matrix.component.name }}
     env:
       MANAGER_IMAGE: ${{ needs.setup.outputs.manager-image }}
     steps:
@@ -219,26 +229,25 @@ jobs:
       - name: Provision K3D cluster
         run: make provision-k3d
 
-      - name: Run ${{ matrix.test.name }} tests
+      - name: Run selfmonitor-${{ matrix.scenario }}-${{ matrix.component.name }} tests
         run: |
           # For PR events, only run no-fips tests since we can't pull the prometheus-fips image
           # For push events, run fips tests (not no-fips) since we have access to the restricted registry
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            LABELS="no-fips"
+            FIPS_LABEL="no-fips"
           else
-            LABELS="not no-fips"
+            FIPS_LABEL="not no-fips"
           fi
           make e2e-test \
             E2E_TEST_PATH="./test/selfmonitor/..." \
-            E2E_TEST_ID="${{ matrix.test.name }}" \
-            E2E_TEST_RUN="${{ matrix.test.run }}" \
-            E2E_TEST_LABELS="$LABELS"
+            E2E_TEST_ID="selfmonitor-${{ matrix.scenario }}-${{ matrix.component.name }}" \
+            E2E_TEST_LABELS="$FIPS_LABEL and ${{ matrix.scenario }} and ${{ matrix.component.label }}"
 
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.test.name }}-results
+          name: selfmonitor-${{ matrix.scenario }}-${{ matrix.component.name }}-report
           path: junit-report-*.xml
 
       - name: Print pods on failure
