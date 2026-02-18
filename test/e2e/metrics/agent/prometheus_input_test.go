@@ -24,7 +24,7 @@ import (
 )
 
 func TestPrometheusInput(t *testing.T) {
-	suite.SetupTest(t, suite.LabelMetricAgentSetB)
+	suite.SetupTest(t, suite.LabelMetricAgentSetB, suite.LabelMetricAgent, suite.LabelSetB)
 
 	var (
 		uniquePrefix = unique.Prefix()

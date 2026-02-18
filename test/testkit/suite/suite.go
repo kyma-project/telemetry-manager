@@ -188,17 +188,23 @@ const (
 	// LabelMTLS defines the label for mTLS related tests.
 	LabelMTLS = "mtls"
 
-	LabelMaxPipeline
-	LabelSetA = "set-a"
-	LabelSetB = "set-b"
-	LabelSetC = "set-c"
+	LabelMaxPipeline = "max-pipeline"
+	LabelSetA        = "set-a"
+	LabelSetB        = "set-b"
+	LabelSetC        = "set-c"
 )
 
-func ExpectAgent(label string) bool {
-	return label == LabelMetricAgentSetA ||
-		label == LabelMetricAgentSetB ||
-		label == LabelMetricAgentSetC ||
-		label == LabelLogAgent
+// ExpectAgent returns true if the test labels indicate an agent test.
+// It checks for the presence of agent-related labels.
+func ExpectAgent(labels ...string) bool {
+	for _, label := range labels {
+		switch label {
+		case LabelMetricAgent, LabelLogAgent,
+			LabelMetricAgentSetA, LabelMetricAgentSetB, LabelMetricAgentSetC:
+			return true
+		}
+	}
+	return false
 }
 
 func DebugObjectsEnabled() bool {
