@@ -75,11 +75,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
-	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
-	commonStatusStubs "github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus/stubs"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline/mocks"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline/stubs"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
@@ -281,16 +279,11 @@ func newTestReconciler(client client.Client, opts ...any) (*testReconciler, func
 	reconcilerOpts := []Option{
 		WithClient(client),
 		WithGlobals(config.NewGlobal(config.WithTargetNamespace("default"))),
-		WithGatewayConfigBuilder(gatewayConfigBuilder),
-		WithGatewayApplierDeleter(gatewayApplierDeleter),
-		WithGatewayProber(commonStatusStubs.NewDeploymentSetProber(nil)),
 		WithFlowHealthProber(flowHealthProber),
-		WithIstioStatusChecker(&stubs.IstioStatusChecker{IsActive: false}),
 		WithOverridesHandler(overridesHandler),
 		WithPipelineLock(pipelineLock),
 		WithPipelineSyncer(pipelineSyncer),
 		WithPipelineValidator(newTestValidator()),
-		WithErrorToMessageConverter(&conditions.ErrorToMessageConverter{}),
 	}
 
 	// Process provided options - collect production Options and test options separately
@@ -314,16 +307,6 @@ func newTestReconciler(client client.Client, opts ...any) (*testReconciler, func
 	}
 
 	return tr, tr.assertMocks
-}
-
-// withGatewayConfigBuilderAssert registers a GatewayConfigBuilder mock for auto-assertion using AssertExpectations.
-// Use this when you set up expectations with On().Times(), On().Once(), etc.
-// If you don't set up any On() calls, AssertExpectations will fail (which is correct - you should set expectations).
-func withGatewayConfigBuilderAssert(mockBuilder *mocks.GatewayConfigBuilder) testOption {
-	return testOptionFunc(func(tr *testReconciler) {
-		tr.gatewayConfigBuilder = mockBuilder
-		registerMockForAssertion(tr.mockRegistry, mockBuilder)
-	})
 }
 
 // withFlowHealthProberAssert registers a FlowHealthProber mock for auto-assertion.
