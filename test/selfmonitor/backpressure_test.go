@@ -254,6 +254,7 @@ func TestBackpressure(t *testing.T) {
 
 			t.Run(name, func(t *testing.T) {
 				var labels []string
+
 				labels = append(labels, suite.LabelBackpressure)
 				labels = append(labels, labelsForSelfMonitor(tc.labelPrefix, suite.LabelBackpressure, noFips)...)
 				labels = append(labels, tc.additionalLabels...)

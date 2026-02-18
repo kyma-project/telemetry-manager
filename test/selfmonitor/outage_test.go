@@ -260,6 +260,7 @@ func TestOutage(t *testing.T) {
 
 			t.Run(name, func(t *testing.T) {
 				var labels []string
+
 				labels = append(labels, suite.LabelOutage)
 				labels = append(labels, labelsForSelfMonitor(tc.labelPrefix, suite.LabelOutage, noFips)...)
 				labels = append(labels, tc.additionalLabels...)
