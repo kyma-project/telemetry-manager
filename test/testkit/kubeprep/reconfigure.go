@@ -31,9 +31,10 @@ func SetupCluster(t TestingT, k8sClient client.Client, cfg Config) error {
 	// Check current experimental state and handle changes
 	// Switching between experimental and default subcharts requires uninstall first
 	// because both subcharts contain CRD templates that conflict
-	currentExperimental := detectExperimentalEnabled(ctx, k8sClient)
-	if currentExperimental != cfg.EnableExperimental && releaseExists(ctx, t) {
+	currentExperimental := detectExperimentalEnabled(ctx)
+	if currentExperimental != cfg.EnableExperimental && releaseExists(ctx) {
 		t.Logf("Experimental mode change detected (%t -> %t), removing manager first...", currentExperimental, cfg.EnableExperimental)
+
 		if err := undeployManager(t, k8sClient); err != nil {
 			return fmt.Errorf("failed to remove manager for experimental mode change: %w", err)
 		}
