@@ -84,7 +84,7 @@ After specifying the release version and a target chart, the release master trig
 
 1. The Project Master closes the current development milestone to mark the end of the development phase for the release.
 
-2. The Release Master triggers the release workflow by entering the release version and the OpenTelemetry Collector Components (OCC) version.
+2. The Release Master triggers the release workflow after entering the release version and the OpenTelemetry Collector Components (OCC) version.
 
 3. The system evaluates if the release is a patch or a new minor version: 
    - For a new minor version, it creates a dedicated `release-x.y` branch.
