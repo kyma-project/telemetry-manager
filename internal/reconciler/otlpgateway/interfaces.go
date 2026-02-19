@@ -5,15 +5,15 @@ import (
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	common "github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/tracegateway"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpgateway"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// TraceGatewayConfigBuilder builds OTel Collector configuration for trace pipelines.
-type TraceGatewayConfigBuilder interface {
-	Build(ctx context.Context, pipelines []telemetryv1beta1.TracePipeline, opts tracegateway.BuildOptions) (*common.Config, common.EnvVars, error)
+// OTLPGatewayConfigBuilder builds OTel Collector configuration for the OTLP Gateway.
+type OTLPGatewayConfigBuilder interface {
+	Build(ctx context.Context, tracePipelines []telemetryv1beta1.TracePipeline, opts otlpgateway.BuildOptions) (*common.Config, common.EnvVars, error)
 }
 
 // GatewayApplierDeleter manages the lifecycle of OTLP Gateway resources (DaemonSet, ConfigMap, Secret, etc.).

@@ -34,9 +34,9 @@ import (
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/tracegateway"
-	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpgateway"
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
+	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 	telemetryutils "github.com/kyma-project/telemetry-manager/internal/utils/telemetry"
 )
@@ -49,7 +49,7 @@ type Reconciler struct {
 
 	// Dependencies
 	gatewayApplierDeleter GatewayApplierDeleter
-	traceConfigBuilder    TraceGatewayConfigBuilder
+	configBuilder         OTLPGatewayConfigBuilder
 	gatewayProber         Prober
 	istioStatusChecker    IstioStatusChecker
 	errToMsgConverter     ErrorToMessageConverter
@@ -72,10 +72,10 @@ func WithGatewayApplierDeleter(gad GatewayApplierDeleter) Option {
 	}
 }
 
-// WithTraceConfigBuilder sets the trace configuration builder.
-func WithTraceConfigBuilder(builder TraceGatewayConfigBuilder) Option {
+// WithConfigBuilder sets the OTLP Gateway configuration builder.
+func WithConfigBuilder(builder OTLPGatewayConfigBuilder) Option {
 	return func(r *Reconciler) {
-		r.traceConfigBuilder = builder
+		r.configBuilder = builder
 	}
 }
 
@@ -292,7 +292,7 @@ func (r *Reconciler) buildCollectorConfig(ctx context.Context, pipelines []telem
 		enrichments = t.Spec.Enrichments
 	}
 
-	return r.traceConfigBuilder.Build(ctx, pipelines, tracegateway.BuildOptions{
+	return r.configBuilder.Build(ctx, pipelines, otlpgateway.BuildOptions{
 		Cluster: common.ClusterOptions{
 			ClusterName:   clusterName,
 			ClusterUID:    clusterUID,
