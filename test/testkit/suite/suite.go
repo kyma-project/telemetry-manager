@@ -204,6 +204,7 @@ func ExpectAgent(labels ...string) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -372,6 +373,7 @@ func hasChartPathOption(opts []kubeprep.Option) bool {
 	for _, opt := range opts {
 		opt(&cfg)
 	}
+
 	return cfg.ChartPath != ""
 }
 

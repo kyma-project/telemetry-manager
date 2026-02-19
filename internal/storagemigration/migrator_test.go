@@ -253,7 +253,7 @@ func TestMigrateIfNeeded_NoMigrationNeeded(t *testing.T) {
 
 	migrator := New(fakeClient, logr.Discard())
 
-	err := migrator.MigrateIfNeeded(context.Background())
+	err := migrator.Start(context.Background())
 	require.NoError(t, err)
 
 	// Verify storedVersions unchanged for pipeline CRDs
@@ -290,7 +290,7 @@ func TestMigrateIfNeeded_MigrationPerformed(t *testing.T) {
 
 	migrator := New(fakeClient, logr.Discard())
 
-	err := migrator.MigrateIfNeeded(context.Background())
+	err := migrator.Start(context.Background())
 	require.NoError(t, err)
 
 	// Verify v1alpha1 was removed from storedVersions for pipeline CRDs

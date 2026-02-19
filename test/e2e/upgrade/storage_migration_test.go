@@ -39,7 +39,7 @@ func TestStorageMigration(t *testing.T) {
 
 	telemetry := operatorv1alpha1.Telemetry{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "default",
+			Name:      "default",
 			Namespace: "kyma-system",
 		},
 	}
@@ -63,8 +63,21 @@ func TestStorageMigration(t *testing.T) {
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	verifyStoredVersionsBeforeUpgrade()
+	verifyResourcesExist(&logpipeline)
+	verifyResourcesExist(&metricpipeline)
+	verifyResourcesExist(&tracepipeline)
+
 	Expect(suite.UpgradeToTargetVersion(t, labels)).To(Succeed())
+
 	verifyStoredVersionsAfterUpgrade()
+	verifyResourcesExist(&logpipeline)
+	verifyResourcesExist(&metricpipeline)
+	verifyResourcesExist(&tracepipeline)
+}
+
+func verifyResourcesExist(pipeline client.Object) {
+	Expect(suite.K8sClient.Get(suite.Ctx, client.ObjectKeyFromObject(pipeline), pipeline)).To(Succeed(),
+		"Pipeline %s should exist after upgrade", pipeline.GetName())
 }
 
 // verifyStoredVersionEquals checks that the given CRD's storedVersions contains the specified version.
@@ -73,9 +86,8 @@ func verifyStoredVersionEquals(crdName, expectedVersion string) {
 	Expect(suite.K8sClient.Get(suite.Ctx, types.NamespacedName{Name: crdName}, crd)).To(Succeed())
 
 	var storedVersions []string
-	for _, version := range crd.Status.StoredVersions {
-		storedVersions = append(storedVersions, version)
-	}
+
+	storedVersions = append(storedVersions, crd.Status.StoredVersions...)
 
 	Expect(storedVersions).To(ConsistOf(expectedVersion), "CRD %s should have %s in storedVersions", crdName, expectedVersion)
 }
@@ -107,6 +119,7 @@ func createLogPipelineWithBackend(backendNs, pipelineName string) (*kitbackend.B
 			},
 		},
 	}
+
 	return backend, pipeline
 }
 
@@ -132,6 +145,7 @@ func createMetricPipelineWithBackend(backendNs, pipelineName string) (*kitbacken
 			},
 		},
 	}
+
 	return backend, pipeline
 }
 
@@ -152,6 +166,7 @@ func createTracePipelineWithBackend(backendNs, pipelineName string) (*kitbackend
 			},
 		},
 	}
+
 	return backend, pipeline
 }
 
@@ -168,4 +183,3 @@ func verifyStoredVersionsAfterUpgrade() {
 	verifyStoredVersionEquals("metricpipelines.telemetry.kyma-project.io", "v1beta1")
 	verifyStoredVersionEquals("tracepipelines.telemetry.kyma-project.io", "v1beta1")
 }
-
