@@ -97,14 +97,14 @@ All tests execute against the same release Docker image to ensure reproducibilit
 
 ### Module Release Workflow
 
-After entering the release version and channel, the release master triggers a dedicated GitHub workflow to publish the module release. The workflow then creates the module configuration, assigns the release channel, and opens pull requests to update the \experimental`, `fast`, and `regular` channels.`
+After entering the release version and channel, the release master triggers a dedicated GitHub workflow to publish the module release. The workflow then creates the module configuration, assigns the release channel, and opens pull requests to update the `experimental`, `fast`, and `regular` channels. 
 
 ![Module Release Workflow](./../assets/auditable-release-module-release.drawio.svg)
 
 
 ### Management Plane Chart Update Workflow
 
-After specifying the release version and a target chart, the release master triggers a dedicated GitHub workflow to bump Management Plane Charts. This workflow automates the release of charts such as \chart/telemetry` and `chart/runtime-monitoring-operator`.`
+After specifying the release version and a target chart, the release master triggers a dedicated GitHub workflow to bump Management Plane Charts. This workflow automates the release of charts such as `chart/telemetry` and `chart/runtime-monitoring-operator`. The workflow creates pull requests to update the chart versions and values in the Management Plane repository.
 
 ![Management Plane Chart Release Workflow](./../assets/auditable-release-mpc-release.drawio.svg)
 
