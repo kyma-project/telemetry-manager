@@ -219,12 +219,7 @@ func (r *MetricPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		&operatorv1beta1.Telemetry{},
 		handler.EnqueueRequestsFromMapFunc(r.mapTelemetryChanges),
 		ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete()),
-	).
-		Watches(
-			&corev1.Secret{},
-			handler.EnqueueRequestsFromMapFunc(r.mapSecretChanges),
-			ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete()),
-		).Complete(r)
+	).Complete(r)
 }
 
 func (r *MetricPipelineController) mapTelemetryChanges(ctx context.Context, object client.Object) []reconcile.Request {
@@ -259,34 +254,6 @@ func (r *MetricPipelineController) createRequestsForAllPipelines(ctx context.Con
 	}
 
 	return requests, nil
-}
-
-func (r *MetricPipelineController) mapSecretChanges(ctx context.Context, object client.Object) []reconcile.Request {
-	var pipelines telemetryv1beta1.MetricPipelineList
-
-	var requests []reconcile.Request
-
-	err := r.List(ctx, &pipelines)
-	if err != nil {
-		logf.FromContext(ctx).Error(err, "failed to list MetricPipelines")
-		return requests
-	}
-
-	secret, ok := object.(*corev1.Secret)
-	if !ok {
-		logf.FromContext(ctx).Error(nil, fmt.Sprintf("expected Secret object but got: %T", object))
-		return requests
-	}
-
-	for i := range pipelines.Items {
-		var pipeline = pipelines.Items[i]
-
-		if r.referencesSecret(secret.Name, secret.Namespace, &pipeline) {
-			requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
-		}
-	}
-
-	return requests
 }
 
 func (r *MetricPipelineController) referencesSecret(secretName, secretNamespace string, pipeline *telemetryv1beta1.MetricPipeline) bool {

@@ -206,12 +206,7 @@ func (r *LogPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		&operatorv1beta1.Telemetry{},
 		handler.EnqueueRequestsFromMapFunc(r.mapTelemetryChanges),
 		ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete()),
-	).
-		Watches(
-			&corev1.Secret{},
-			handler.EnqueueRequestsFromMapFunc(r.mapSecretChanges),
-			ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete()),
-		).Complete(r)
+	).Complete(r)
 }
 
 func (r *LogPipelineController) mapTelemetryChanges(ctx context.Context, object client.Object) []reconcile.Request {
@@ -367,34 +362,6 @@ func (r *LogPipelineController) createRequestsForAllPipelines(ctx context.Contex
 	}
 
 	return requests, nil
-}
-
-func (r *LogPipelineController) mapSecretChanges(ctx context.Context, object client.Object) []reconcile.Request {
-	var pipelines telemetryv1beta1.LogPipelineList
-
-	var requests []reconcile.Request
-
-	err := r.List(ctx, &pipelines)
-	if err != nil {
-		logf.FromContext(ctx).Error(err, "failed to list LogPipelines")
-		return requests
-	}
-
-	secret, ok := object.(*corev1.Secret)
-	if !ok {
-		logf.FromContext(ctx).Error(nil, fmt.Sprintf("expected Secret object but got: %T", object))
-		return requests
-	}
-
-	for i := range pipelines.Items {
-		var pipeline = pipelines.Items[i]
-
-		if r.referencesSecret(secret.Name, secret.Namespace, &pipeline) {
-			requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
-		}
-	}
-
-	return requests
 }
 
 func (r *LogPipelineController) referencesSecret(secretName, secretNamespace string, pipeline *telemetryv1beta1.LogPipeline) bool {
