@@ -340,22 +340,39 @@ func buildConfig(labels []string, opts ...kubeprep.Option) kubeprep.Config {
 //
 // This function is called mid-test in upgrade tests after validating the old version works.
 // It preserves existing pipeline resources and CRDs.
-func UpgradeToTargetVersion(t *testing.T, labels []string) error {
+//
+// Options can be used to customize the upgrade behavior:
+//   - kubeprep.WithChartVersion(url) to use a specific chart URL instead of the local chart
+//   - kubeprep.WithHelmValues(values...) to override helm values
+func UpgradeToTargetVersion(t *testing.T, labels []string, opts ...kubeprep.Option) error {
 	targetImage := os.Getenv("MANAGER_IMAGE")
 	if targetImage == "" {
 		targetImage = DefaultLocalImage
 	}
 
 	// Build config from labels (same settings as initial setup)
-	cfg := buildConfig(labels)
+	cfg := buildConfig(labels, opts...)
 	cfg.ManagerImage = targetImage
 	cfg.LocalImage = kubeprep.IsLocalImage(targetImage)
-	cfg.ChartPath = "" // Use local chart for upgrade
 
-	t.Logf("Upgrading manager to target version: %s (fips=%t, experimental=%t)",
-		targetImage, cfg.OperateInFIPSMode, cfg.EnableExperimental)
+	// Only reset ChartPath if no option set it
+	if cfg.ChartPath == "" || !hasChartPathOption(opts) {
+		cfg.ChartPath = "" // Use local chart for upgrade
+	}
+
+	t.Logf("Upgrading manager to target version: %s (fips=%t, experimental=%t, chart=%s)",
+		targetImage, cfg.OperateInFIPSMode, cfg.EnableExperimental, cfg.ChartPath)
 
 	return kubeprep.UpgradeManagerInPlace(t, K8sClient, targetImage, cfg)
+}
+
+// hasChartPathOption checks if any option sets a chart path
+func hasChartPathOption(opts []kubeprep.Option) bool {
+	cfg := kubeprep.Config{}
+	for _, opt := range opts {
+		opt(&cfg)
+	}
+	return cfg.ChartPath != ""
 }
 
 func findDoNotExecuteFlag() bool {

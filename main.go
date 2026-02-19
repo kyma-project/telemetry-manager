@@ -200,16 +200,15 @@ func run() error {
 		return err
 	}
 
-	// Perform storage version migration before starting the manager.
-	// This migrates CRs from v1alpha1 storage format to v1beta1 and cleans up storedVersions.
-	// Uses a direct client since manager cache is not started yet.
-	if err := runStorageMigration(mgr); err != nil {
-		// Log error but continue - conversion webhooks still handle on-the-fly conversion
-		setupLog.Error(err, "Storage migration failed, will retry on next restart")
+	// Add storage version migration as a runnable that executes after manager starts.
+	// This ensures webhooks are available for conversion during migration.
+	if err := mgr.Add(manager.RunnableFunc(func(ctx context.Context) error {
+		return runStorageMigration(mgr)
+	})); err != nil {
+		return fmt.Errorf("failed to add storage migration runnable: %w", err)
 	}
 
 	// +kubebuilder:scaffold:builder
-
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		return fmt.Errorf("failed to start manager: %w", err)
 	}
@@ -579,11 +578,6 @@ func createWebhookConfig(globals config.Global) webhookcert.Config {
 
 func runStorageMigration(mgr manager.Manager) error {
 	// Create direct client since manager cache is not started yet
-	migrationClient, err := client.New(mgr.GetConfig(), client.Options{Scheme: scheme})
-	if err != nil {
-		return fmt.Errorf("failed to create migration client: %w", err)
-	}
-
-	migrator := storagemigration.New(migrationClient, setupLog)
+	migrator := storagemigration.New(mgr.GetClient(), setupLog)
 	return migrator.MigrateIfNeeded(context.Background())
 }
