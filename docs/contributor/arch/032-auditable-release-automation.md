@@ -55,7 +55,7 @@ To achieve deterministic Docker builds and ensure audit compliance, we considere
 - **Reproducible Build Tools**: Use tools and techniques that support reproducible builds, such as Docker's BuildKit with deterministic settings. This approach requires implementation support from the `Image-Builder` team and is not currently available.
 - **Copy Release PR Image**: Modify the release process to copy the Docker image built during the PR directly to the production registry with the release tag. This approach ensures that the exact same image used for testing is released, maintaining identical digests.
 
-**Recommended Approach:**
+### Release Workflow
 
 Because reproducible build tools are not yet available, the recommended approach is to run all tests (unit, E2E, Gardener, and upgrade) in the release branch using the release image before the final release publication.
 
@@ -66,31 +66,15 @@ This approach provides:
 
 ![Release Workflow](./../assets/auditable-release-final.drawio.svg)
 
-
-### Module Release Workflow
-
-After entering the release version and channel, the release master triggers a dedicated GitHub workflow to publish the module release. The workflow then creates the module configuration, assigns the release channel, and opens pull requests to update the \experimental`, `fast`, and `regular` channels.`
-
-![Module Release Workflow](./../assets/auditable-release-module-release.drawio.svg)
-
-
-### Management Plane Chart Update Workflow
-
-After specifying the release version and a target chart, the release master triggers a dedicated GitHub workflow to bump Management Plane Charts. This workflow automates the release of charts such as \chart/telemetry` and `chart/runtime-monitoring-operator`.`
-
-![Management Plane Chart Release Workflow](./../assets/auditable-release-mpc-release.drawio.svg)
-
-## Release Workflow Steps
-
 1. The Project Master closes the current development milestone to mark the end of the development phase for the release.
 
 2. The Release Master triggers the release workflow after entering the release version and the OpenTelemetry Collector Components (OCC) version.
 
-3. The system evaluates if the release is a patch or a new minor version: 
+3. The system evaluates if the release is a patch or a new minor version:
    - For a new minor version, it creates a dedicated `release-x.y` branch.
    - For a patch, it skips release branch creation.
 4. The system commits the version bump and creates a release tag.
-**Source Control Action**: Push the committed version-bumped artifacts and the release tag to the release branch. This officially marks the release version in the repository.
+   **Source Control Action**: Push the committed version-bumped artifacts and the release tag to the release branch. This officially marks the release version in the repository.
 6. The system builds the release Docker image and runs unit tests in parallel.
 
 **Simultaneous Test Runs**: Three independent test suites are triggered in parallel against the release branch after Docker image created:
@@ -109,17 +93,37 @@ All tests execute against the same release Docker image to ensure reproducibilit
 - Create an official GitHub release entry for the release tag
 - Attach release artifacts and binaries
 
-**Release Bump PR Creation**: Upon successful release creation, automatically create release bump pull requests for `experimental` and `fast` channels.
+**Module Release Bump PR Creation**: Upon successful release creation, automatically create release bump pull requests for `experimental` and `fast` channels.
+
+### Module Release Workflow
+
+After entering the release version and channel, the release master triggers a dedicated GitHub workflow to publish the module release. The workflow then creates the module configuration, assigns the release channel, and opens pull requests to update the \experimental`, `fast`, and `regular` channels.`
+
+![Module Release Workflow](./../assets/auditable-release-module-release.drawio.svg)
+
+
+### Management Plane Chart Update Workflow
+
+After specifying the release version and a target chart, the release master triggers a dedicated GitHub workflow to bump Management Plane Charts. This workflow automates the release of charts such as \chart/telemetry` and `chart/runtime-monitoring-operator`.`
+
+![Management Plane Chart Release Workflow](./../assets/auditable-release-mpc-release.drawio.svg)
+
+
 
 ## Conclusion
 
-Implementing auditable release automation is essential for maintaining the integrity and compliance of the SAP BTP, Kyma runtime product. 
-By retaining test reports and ensuring Docker images are reproducible, we create a transparent and reliable release process that meets audit requirements.
+This document proposes an auditable release automation process that addresses the compliance requirements for the SAP BTP, Kyma runtime product by establishing a comprehensive audit trail for all release activities.
 
-The proposed strategies for deterministic builds and the structured release workflow provide a clear path to achieving this goal.
+The proposed solution ensures auditability through three fundamental mechanisms:
 
-The recommended approach of running all tests against a single release image in the release branch provides a solid audit trail and comprehensive test coverage.
+1. Single Source of Truth: By running all test suites (unit, E2E, Gardener, and upgrade) against a single release Docker image built from the release branch, we guarantee that the tested artifact is identical to the deployed artifact, with verifiable image digest matching.
+2. Complete Traceability: All test execution reports are systematically collected and archived to GCP storage with 12-month retention, providing auditors with full visibility into the quality gates that each release has passed.
+3. Automated Governance: The release workflow enforces the required approval gates and milestone closures, while automatically generating release artifacts and propagating changes through experimental, fast, and regular channels via pull requests.
 
-We implement a new GitHub Action that triggers the release branch workflow when the release master enters the release version and OpenTelemetry Collector Components version for the release.
+This approach eliminates the current gap where separate images were built for testing and production, preventing digest mismatches that compromise audit integrity. The parallel execution of test suites minimizes release cycle time while maintaining comprehensive coverage. The automated creation of module
+releases and management plane chart updates ensures consistency across the entire release ecosystem.
 
-The release artifacts and GitHub release will be created once the release tests are successful and the release report is uploaded to the GCP bucket for audit retention.
+The release process will be implemented as a single GitHub Actions workflow triggered by the Release Master with release version and OCC version inputs. This workflow orchestrates all stages—from branch creation through testing to final publication—ensuring that manual intervention points are limited to
+authorization decisions, not mechanical execution steps.
+
+By adopting this auditable release automation, we establish a repeatable, transparent, and compliant release process that satisfies audit requirements while improving release velocity and reliability.
