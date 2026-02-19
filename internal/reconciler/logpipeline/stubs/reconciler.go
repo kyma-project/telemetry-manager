@@ -3,6 +3,8 @@ package stubs
 import (
 	"context"
 
+	ctrl "sigs.k8s.io/controller-runtime"
+
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
 )
@@ -13,8 +15,8 @@ type ReconcilerStub struct {
 	Result     error
 }
 
-func (r *ReconcilerStub) Reconcile(_ context.Context, _ *telemetryv1beta1.LogPipeline) error {
-	return r.Result
+func (r *ReconcilerStub) Reconcile(_ context.Context, _ *telemetryv1beta1.LogPipeline) (ctrl.Result, error) {
+	return ctrl.Result{}, r.Result
 }
 
 func (r *ReconcilerStub) SupportedOutput() logpipelineutils.Mode {
