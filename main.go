@@ -297,7 +297,7 @@ func setupManager(globals config.Global) (manager.Manager, error) {
 		&corev1.ServiceAccount{}:      {Field: setNamespaceFieldSelector(globals)},
 		&corev1.Service{}:             {Field: setNamespaceFieldSelector(globals)},
 		&networkingv1.NetworkPolicy{}: {Field: setNamespaceFieldSelector(globals)},
-		&corev1.Secret{}:              {Transform: secretCacheTransform},
+		&corev1.Secret{}:              {Field: setNamespaceFieldSelector(globals)},
 		&operatorv1beta1.Telemetry{}:  {Field: setNamespaceFieldSelector(globals)},
 		&rbacv1.Role{}:                {Field: setNamespaceFieldSelector(globals)},
 		&rbacv1.RoleBinding{}:         {Field: setNamespaceFieldSelector(globals)},
@@ -582,20 +582,4 @@ func createWebhookConfig(globals config.Global) webhookcert.Config {
 			},
 		},
 	)
-}
-
-// secretCacheTransform removes the Data, StringData, Annotations, and Labels fields from the Secret object before caching it.
-// This is done to reduce memory usage and anyway the client cache is disabled for Secrets which means read requests will always go to the API server.
-func secretCacheTransform(object any) (any, error) {
-	secret, ok := object.(*corev1.Secret)
-	if !ok {
-		return nil, fmt.Errorf("expected Secret object but got: %T", object)
-	}
-
-	secret.Data = nil
-	secret.StringData = nil
-	secret.Annotations = nil
-	secret.Labels = nil
-
-	return secret, nil
 }
