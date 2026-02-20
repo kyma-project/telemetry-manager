@@ -1,0 +1,12 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  labels:
+    app: test
+  name: kyma-project.io--test-component
+  namespace: test-namespace
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: test-component
+---
