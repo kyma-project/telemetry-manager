@@ -20,7 +20,7 @@ import (
 )
 
 func TestSinglePipelineV1Alpha1(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelTraces)
+	suite.SetupTest(t, suite.LabelTraces)
 
 	var (
 		uniquePrefix = unique.Prefix("traces")

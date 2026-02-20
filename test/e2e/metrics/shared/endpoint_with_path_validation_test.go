@@ -15,25 +15,28 @@ import (
 
 func TestEndpointWithPathValidation(t *testing.T) {
 	tests := []struct {
-		label string
-		input telemetryv1beta1.MetricPipelineInput
+		name   string
+		labels []string
+		input  telemetryv1beta1.MetricPipelineInput
 	}{
 		{
-			label: suite.LabelMetricAgentSetA,
-			input: testutils.BuildMetricPipelineRuntimeInput(),
+			name:   "agent",
+			labels: []string{suite.LabelMetricAgentSetA, suite.LabelMetricAgent, suite.LabelSetA},
+			input:  testutils.BuildMetricPipelineRuntimeInput(),
 		},
 		{
-			label: suite.LabelMetricGatewaySetA,
-			input: testutils.BuildMetricPipelineOTLPInput(),
+			name:   "gateway",
+			labels: []string{suite.LabelMetricGatewaySetA, suite.LabelMetricGateway, suite.LabelSetA},
+			input:  testutils.BuildMetricPipelineOTLPInput(),
 		},
 	}
 
 	for _, tc := range tests {
-		t.Run(tc.label, func(t *testing.T) {
-			suite.RegisterTestCase(t, tc.label)
+		t.Run(tc.name, func(t *testing.T) {
+			suite.SetupTest(t, tc.labels...)
 
 			var (
-				uniquePrefix = unique.Prefix(tc.label)
+				uniquePrefix = unique.Prefix(tc.name)
 			)
 
 			metricPipelineWithGRPCAndWithoutPath := testutils.NewMetricPipelineBuilder().

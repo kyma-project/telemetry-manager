@@ -1,103 +1,104 @@
 ##@ E2E Testing
 
-# E2E test environment setup targets
-.PHONY: setup-e2e
-setup-e2e: provision-k3d deploy deploy-test-prerequisites ## Set up complete E2E test environment with k3d
-
-.PHONY: setup-e2e-istio
-setup-e2e-istio: provision-k3d-istio deploy deploy-test-prerequisites ## Set up E2E test environment with k3d and Istio
-
-.PHONY: setup-e2e-experimental
-setup-e2e-experimental: provision-k3d deploy-experimental deploy-test-prerequisites ## Set up E2E test environment with experimental features
-
-.PHONY: setup-e2e-experimental-istio
-setup-e2e-experimental-istio: provision-k3d-istio deploy-experimental deploy-test-prerequisites ## Set up E2E test environment with experimental features and Istio
-
-.PHONY: setup-e2e-no-fips
-setup-e2e-no-fips: provision-k3d deploy-no-fips deploy-test-prerequisites ## Set up complete E2E test environment with k3d (no FIPS)
-
-.PHONY: setup-e2e-istio-no-fips
-setup-e2e-istio-no-fips: provision-k3d-istio deploy-no-fips deploy-test-prerequisites ## Set up E2E test environment with k3d and Istio (no FIPS)
-
-.PHONY: setup-e2e-experimental-no-fips
-setup-e2e-experimental-no-fips: provision-k3d deploy-experimental-no-fips deploy-test-prerequisites ## Set up E2E test environment with experimental features (no FIPS)
-
-.PHONY: setup-e2e-experimental-no-istio-fips
-setup-e2e-experimental-istio-no-fips: provision-k3d-istio deploy-experimental-no-fips deploy-test-prerequisites ## Set up E2E test environment with experimental features and Istio (no FIPS)
-
-.PHONY: setup-e2e-custom-labels-annotations-no-fips
-setup-e2e-custom-labels-annotations-no-fips: provision-k3d deploy-custom-labels-annotations-no-fips deploy-test-prerequisites ## Set up E2E test environment with custom labels and annotations (no FIPS)
-
-.PHONY: deploy-test-prerequisites
-deploy-test-prerequisites: ## Deploy common test prerequisites (telemetry config, network policy, shoot info)
-	kubectl apply -f test/fixtures/operator_v1beta1_telemetry.yaml -n kyma-system; \
-	kubectl apply -f test/fixtures/networkpolicy-deny-all.yaml -n kyma-system; \
-	kubectl apply -f test/fixtures/shoot_info_cm.yaml
-
-# Default values for waiting for image
+# Default values
 TIMEOUT ?= 900
 QUERY_INTERVAL ?= 10
 IMAGE_REPO ?= europe-docker.pkg.dev/kyma-project/dev/telemetry-manager
+
+# Test configuration (can be overridden)
+E2E_TEST_LABELS ?=
+E2E_TEST_PATH ?= ./test/e2e/...
+E2E_TEST_ID ?= e2e
+E2E_TEST_TIMEOUT ?= 60m
+E2E_TEST_RUN ?=
+
+# Use github-actions format when running in CI, otherwise use pkgname
+GOTESTSUM_FORMAT ?= $(if $(GITHUB_ACTIONS),github-actions,pkgname)
 
 .PHONY: wait-for-image
 wait-for-image: ## Wait for the manager image to be available in the registry
 	@hack/await_image.sh
 
-
-# Internal target for common e2e test execution logic
-# Usage: $(call run-e2e-common,JUNIT_FLAGS)
-define run-e2e-common
-	echo "Running e2e tests with TEST_ID='$(TEST_ID)', TEST_PATH='$(TEST_PATH)', TEST_LABELS='$(TEST_LABELS)'"
-	@if [ -z "$(TEST_PATH)" ]; then \
-		echo "Error: TEST_PATH environment variable is required"; \
-		exit 1; \
-	fi
-	@if [ -z "$(TEST_LABELS)" ]; then \
-		echo "Error: TEST_LABELS environment variable is required"; \
-		exit 1; \
-	fi
-	@ALL_LABELS="$(TEST_LABELS)"; \
-	echo "Using combined labels: $$ALL_LABELS"; \
-	echo "Executing: $(GOTESTSUM) --format pkgname --hide-summary=skipped $(1) -- -timeout=20m $(TEST_PATH) -- -labels=\"$$ALL_LABELS\""; \
+# Main e2e test target
+# Usage: make e2e-test E2E_TEST_PATH=./test/e2e/logs/... E2E_TEST_LABELS="logs"
+# To run specific test function: make e2e-test E2E_TEST_PATH=./test/selfmonitor/... E2E_TEST_RUN="TestHealthy"
+.PHONY: e2e-test
+e2e-test: $(GOTESTSUM) ## Run E2E tests (use E2E_TEST_PATH, E2E_TEST_LABELS, E2E_TEST_ID, E2E_TEST_RUN)
+	@echo "Running e2e tests..."
+	@echo "  Path: $(E2E_TEST_PATH)"
+	@echo "  Labels: $(E2E_TEST_LABELS)"
+	@echo "  Test ID: $(E2E_TEST_ID)"
+	@echo "  Timeout: $(E2E_TEST_TIMEOUT)"
+	@echo "  Run filter: $(E2E_TEST_RUN)"
 	$(GOTESTSUM) \
-	--format pkgname \
-	--hide-summary=skipped \
-	$(1) \
-	-- -timeout=20m $(TEST_PATH) \
-	-- -labels="$$ALL_LABELS"
-endef
+		--format $(GOTESTSUM_FORMAT) \
+		--hide-summary=skipped \
+		--junitfile junit-report-$(E2E_TEST_ID).xml \
+		-- \
+		-p 1 \
+		-timeout $(E2E_TEST_TIMEOUT) \
+		$(if $(E2E_TEST_RUN),-run "$(E2E_TEST_RUN)",) \
+		$(E2E_TEST_PATH) \
+		$(if $(E2E_TEST_LABELS),-args -labels="$(E2E_TEST_LABELS)",)
 
+# Run e2e tests without JUnit output (for local development)
+.PHONY: e2e-test-local
+e2e-test-local: $(GOTESTSUM) ## Run E2E tests locally without JUnit output
+	@echo "Running e2e tests locally..."
+	@echo "  Path: $(E2E_TEST_PATH)"
+	@echo "  Labels: $(E2E_TEST_LABELS)"
+	@echo "  Run filter: $(E2E_TEST_RUN)"
+	$(GOTESTSUM) \
+		--format pkgname \
+		--hide-summary=skipped \
+		-- \
+		-p 1 \
+		-timeout $(E2E_TEST_TIMEOUT) \
+		$(if $(E2E_TEST_RUN),-run "$(E2E_TEST_RUN)",) \
+		$(E2E_TEST_PATH) \
+		$(if $(E2E_TEST_LABELS),-args -labels="$(E2E_TEST_LABELS)",)
+
+# Convenience targets for running tests by directory
+.PHONY: e2e-logs
+e2e-logs: ## Run logs E2E tests
+	$(MAKE) e2e-test E2E_TEST_PATH=./test/e2e/logs/... E2E_TEST_ID=e2e-logs
+
+.PHONY: e2e-metrics
+e2e-metrics: ## Run metrics E2E tests
+	$(MAKE) e2e-test E2E_TEST_PATH=./test/e2e/metrics/... E2E_TEST_ID=e2e-metrics
+
+.PHONY: e2e-traces
+e2e-traces: ## Run traces E2E tests
+	$(MAKE) e2e-test E2E_TEST_PATH=./test/e2e/traces/... E2E_TEST_ID=e2e-traces
+
+.PHONY: e2e-misc
+e2e-misc: ## Run misc E2E tests
+	$(MAKE) e2e-test E2E_TEST_PATH=./test/e2e/misc/... E2E_TEST_ID=e2e-misc
+
+.PHONY: e2e-upgrade
+e2e-upgrade: ## Run upgrade E2E tests
+	$(MAKE) e2e-test E2E_TEST_PATH=./test/e2e/upgrade/... E2E_TEST_ID=e2e-upgrade
+
+.PHONY: selfmonitor-test
+selfmonitor-test: ## Run self-monitor tests
+	$(MAKE) e2e-test E2E_TEST_PATH=./test/selfmonitor/... E2E_TEST_ID=selfmonitor
+
+.PHONY: integration-test
+integration-test: ## Run integration tests
+	$(MAKE) e2e-test E2E_TEST_PATH=./test/integration/... E2E_TEST_ID=integration
+
+# Legacy targets for backward compatibility
 .PHONY: run-e2e
-run-e2e: $(GOTESTSUM) ## Run E2E tests (requires TEST_ID, TEST_PATH, and TEST_LABELS env vars)
+run-e2e: $(GOTESTSUM) ## [DEPRECATED] Run E2E tests (use e2e-test instead)
 	@if [ -z "$(TEST_ID)" ]; then \
 		echo "Error: TEST_ID environment variable is required"; \
 		exit 1; \
 	fi
-	$(call run-e2e-common,--junitfile junit-report-$(TEST_ID).xml)
-
-.PHONY: run-e2e-no-junit
-run-e2e-no-junit: $(GOTESTSUM) ## Run E2E tests without JUnit output
-	$(call run-e2e-common,)
-
-.PHONY: generate-e2e-targets
-generate-e2e-targets: .github/workflows/pr-integration.yml ## Generate convenience targets for E2E tests from GitHub workflow matrix
-	@echo '##@ E2E Test Suites' > hack/make/e2e-convenience.mk
-	@echo '' >> hack/make/e2e-convenience.mk
-	@cat .github/workflows/pr-integration.yml| yq -p yaml -o json | jq -r '.jobs.e2e.strategy.matrix.testcase[]| ".PHONY: run-\(.name)\nrun-\(.name): ## Run \(.labels) \(.type) tests\n\t$$(MAKE) run-e2e TEST_ID=\(.name) TEST_PATH=\"./test/\(.type)/...\" TEST_LABELS=\"\(.labels)\"\n"' >> hack/make/e2e-convenience.mk
-
-	@printf "\n.PHONY: run-all-e2e-logs\nrun-all-e2e-logs:" >> hack/make/e2e-convenience.mk
-	@cat <(cat hack/make/e2e-convenience.mk | egrep '^run-e2e-(log|fluent)' | sed 's/:.*//') <(echo "## Run all log-related E2E tests") | xargs | sed 's/^/ /' >> hack/make/e2e-convenience.mk
-	@echo >> hack/make/e2e-convenience.mk
-
-	@printf ".PHONY: run-all-e2e-metrics\nrun-all-e2e-metrics:" >> hack/make/e2e-convenience.mk
-	@cat <(cat hack/make/e2e-convenience.mk | egrep '^run-e2e-(metrics)' | sed 's/:.*//') <(echo "## Run all metrics-related E2E tests")| xargs | sed 's/^/ /' >> hack/make/e2e-convenience.mk
-	@echo >> hack/make/e2e-convenience.mk
-
-	@printf ".PHONY: run-all-e2e-traces\nrun-all-e2e-traces:" >> hack/make/e2e-convenience.mk
-	@cat <(cat hack/make/e2e-convenience.mk | egrep '^run-e2e-(traces)' | sed 's/:.*//') <(echo "## Run all trace-related E2E tests") | xargs | sed 's/^/ /' >> hack/make/e2e-convenience.mk
-	@echo >> hack/make/e2e-convenience.mk
-
-
-
-
--include hack/make/e2e-convenience.mk
+	@if [ -z "$(TEST_PATH)" ]; then \
+		echo "Error: TEST_PATH environment variable is required"; \
+		exit 1; \
+	fi
+	$(MAKE) e2e-test \
+		E2E_TEST_PATH="$(TEST_PATH)" \
+		E2E_TEST_LABELS="$(TEST_LABELS)" \
+		E2E_TEST_ID="$(TEST_ID)"

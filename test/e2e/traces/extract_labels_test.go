@@ -21,7 +21,7 @@ import (
 )
 
 func TestExtractLabels(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelTraces)
+	suite.SetupTest(t, suite.LabelTraces)
 
 	const (
 		k8sLabelKeyPrefix   = "k8s.pod.label"

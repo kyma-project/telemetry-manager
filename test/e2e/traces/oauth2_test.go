@@ -20,7 +20,7 @@ import (
 )
 
 func TestOAuth2(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelTraces, suite.LabelOAuth2)
+	suite.SetupTest(t, suite.LabelTraces, suite.LabelOAuth2)
 
 	var (
 		uniquePrefix = unique.Prefix()

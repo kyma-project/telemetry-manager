@@ -199,7 +199,7 @@ func LogPipelineConditionReasonsTransition(t *testing.T, pipelineName, condType 
 
 	var currCond *metav1.Condition
 
-	for _, expected := range expected {
+	for _, exp := range expected {
 		// Wait for the current condition to match the expected condition
 		Eventually(func(g Gomega) ReasonStatus {
 			var pipeline telemetryv1beta1.LogPipeline
@@ -214,7 +214,7 @@ func LogPipelineConditionReasonsTransition(t *testing.T, pipelineName, condType 
 			}
 
 			return ReasonStatus{Reason: currCond.Reason, Status: currCond.Status}
-		}, 10*time.Minute, periodic.DefaultInterval).Should(Equal(expected), "expected reason %s[%s] of type %s not reached", expected.Reason, expected.Status, condType)
+		}, 10*time.Minute, periodic.DefaultInterval).Should(Equal(exp), "expected reason %s[%s] of type %s not reached", exp.Reason, exp.Status, condType)
 
 		t.Logf("Transitioned to [%s]%s\n", currCond.Status, currCond.Reason)
 	}
