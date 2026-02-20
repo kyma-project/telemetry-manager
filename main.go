@@ -23,6 +23,8 @@ import (
 	"log"
 	"os"
 
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
+
 	"github.com/caarlos0/env/v11"
 	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
@@ -35,6 +37,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -61,6 +64,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
 	"github.com/kyma-project/telemetry-manager/internal/metrics"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	selfmonitorwebhook "github.com/kyma-project/telemetry-manager/internal/selfmonitor/webhook"
 	loggerutils "github.com/kyma-project/telemetry-manager/internal/utils/logger"
@@ -287,20 +291,21 @@ func setupManager(globals config.Global) (manager.Manager, error) {
 
 	isIstioActive := istiostatus.NewChecker(discoveryClient).IsIstioActive(context.Background())
 
-	// The operator handles various resource that are namespace-scoped, and additionally some resources that are cluster-scoped (clusterroles, clusterrolebindings, etc.).
-	// For namespace-scoped resources we want to restrict the operator permissions to only fetch resources from a given namespace.
 	cacheOptions := map[client.Object]cache.ByObject{
-		&appsv1.Deployment{}:          {Field: setNamespaceFieldSelector(globals)},
-		&appsv1.ReplicaSet{}:          {Field: setNamespaceFieldSelector(globals)},
-		&appsv1.DaemonSet{}:           {Field: setNamespaceFieldSelector(globals)},
-		&corev1.ConfigMap{}:           {Namespaces: setConfigMapNamespaceFieldSelector(globals)},
-		&corev1.ServiceAccount{}:      {Field: setNamespaceFieldSelector(globals)},
-		&corev1.Service{}:             {Field: setNamespaceFieldSelector(globals)},
-		&networkingv1.NetworkPolicy{}: {Field: setNamespaceFieldSelector(globals)},
-		&corev1.Secret{}:              {Field: setNamespaceFieldSelector(globals)},
-		&operatorv1beta1.Telemetry{}:  {Field: setNamespaceFieldSelector(globals)},
-		&rbacv1.Role{}:                {Field: setNamespaceFieldSelector(globals)},
-		&rbacv1.RoleBinding{}:         {Field: setNamespaceFieldSelector(globals)},
+		&appsv1.Deployment{}:                        {Field: setNamespaceFieldSelector(globals)},
+		&appsv1.ReplicaSet{}:                        {Field: setNamespaceFieldSelector(globals)},
+		&appsv1.DaemonSet{}:                         {Field: setNamespaceFieldSelector(globals)},
+		&corev1.ConfigMap{}:                         {Namespaces: setConfigMapNamespaceFieldSelector(globals)},
+		&corev1.ServiceAccount{}:                    {Field: setNamespaceFieldSelector(globals)},
+		&corev1.Service{}:                           {Field: setNamespaceFieldSelector(globals)},
+		&networkingv1.NetworkPolicy{}:               {Field: setNamespaceFieldSelector(globals)},
+		&corev1.Secret{}:                            {Field: setNamespaceFieldSelector(globals)},
+		&operatorv1beta1.Telemetry{}:                {Field: setNamespaceFieldSelector(globals)},
+		&rbacv1.Role{}:                              {Field: setNamespaceFieldSelector(globals)},
+		&rbacv1.RoleBinding{}:                       {Field: setNamespaceFieldSelector(globals)},
+		&apiextensionsv1.CustomResourceDefinition{}: {Label: setLabelSelector()},
+		&admissionregistrationv1.ValidatingWebhookConfiguration{}: {Label: setLabelSelector()},
+		&admissionregistrationv1.MutatingWebhookConfiguration{}:   {Label: setLabelSelector()},
 	}
 
 	if isIstioActive {
@@ -551,6 +556,10 @@ func ensureWebhookCert(webhookCertConfig webhookcert.Config, mgr manager.Manager
 
 func setNamespaceFieldSelector(globals config.Global) fields.Selector {
 	return fields.SelectorFromSet(fields.Set{"metadata.namespace": globals.TargetNamespace()})
+}
+
+func setLabelSelector() labels.Selector {
+	return labels.SelectorFromSet(labels.Set{commonresources.LabelKeyKymaModule: commonresources.LabelValueKymaModule})
 }
 
 func setConfigMapNamespaceFieldSelector(globals config.Global) map[string]cache.Config {
