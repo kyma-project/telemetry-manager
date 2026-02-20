@@ -2,6 +2,7 @@ package storagemigration
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/go-logr/logr"
@@ -12,7 +13,9 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 
 	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
@@ -534,4 +537,238 @@ func TestMigrateIfNeeded_NoMigration_MetricsRecorded(t *testing.T) {
 		v1beta1Value := testutil.ToFloat64(metrics.MigratorInfo.WithLabelValues(crdName, "v1beta1"))
 		require.Equal(t, float64(1), v1beta1Value, "v1beta1 metric for %s should be 1", crdName)
 	}
+}
+
+func TestNeedsMigration_CRDNotFound(t *testing.T) {
+	scheme := newTestScheme(t)
+
+	// No CRD exists
+	fakeClient := fake.NewClientBuilder().
+		WithScheme(scheme).
+		Build()
+
+	migrator := New(fakeClient, logr.Discard())
+
+	_, err := migrator.needsMigration(context.Background(), "nonexistent.telemetry.kyma-project.io")
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "failed to get CRD")
+}
+
+func TestClearStoredVersion_CRDNotFound(t *testing.T) {
+	scheme := newTestScheme(t)
+
+	// No CRD exists
+	fakeClient := fake.NewClientBuilder().
+		WithScheme(scheme).
+		Build()
+
+	migrator := New(fakeClient, logr.Discard())
+
+	err := migrator.clearStoredVersion(context.Background(), "nonexistent.telemetry.kyma-project.io")
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "failed to get CRD")
+}
+
+func TestStart_MigrationError_LogsButDoesNotFail(t *testing.T) {
+	scheme := newTestScheme(t)
+
+	// Missing CRDs will cause migration check to fail
+	fakeClient := fake.NewClientBuilder().
+		WithScheme(scheme).
+		Build()
+
+	migrator := New(fakeClient, logr.Discard())
+
+	// Start should not return an error even if migration fails internally
+	err := migrator.Start(context.Background())
+	require.NoError(t, err)
+}
+
+func TestMigrateLogPipelines_ListError(t *testing.T) {
+	scheme := newTestScheme(t)
+
+	listErr := errors.New("list error")
+	fakeClient := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithInterceptorFuncs(interceptor.Funcs{
+			List: func(_ context.Context, _ client.WithWatch, _ client.ObjectList, _ ...client.ListOption) error {
+				return listErr
+			},
+		}).
+		Build()
+
+	migrator := New(fakeClient, logr.Discard())
+
+	err := migrator.migrateLogPipelines(context.Background())
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "failed to list LogPipelines")
+}
+
+func TestMigrateLogPipelines_UpdateError(t *testing.T) {
+	scheme := newTestScheme(t)
+
+	logPipeline := &telemetryv1beta1.LogPipeline{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test-log-pipeline",
+		},
+	}
+
+	updateErr := errors.New("update error")
+	fakeClient := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithObjects(logPipeline).
+		WithInterceptorFuncs(interceptor.Funcs{
+			Update: func(_ context.Context, _ client.WithWatch, _ client.Object, _ ...client.UpdateOption) error {
+				return updateErr
+			},
+		}).
+		Build()
+
+	migrator := New(fakeClient, logr.Discard())
+
+	err := migrator.migrateLogPipelines(context.Background())
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "failed to migrate LogPipeline")
+}
+
+func TestMigrateMetricPipelines_ListError(t *testing.T) {
+	scheme := newTestScheme(t)
+
+	listErr := errors.New("list error")
+	fakeClient := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithInterceptorFuncs(interceptor.Funcs{
+			List: func(_ context.Context, _ client.WithWatch, _ client.ObjectList, _ ...client.ListOption) error {
+				return listErr
+			},
+		}).
+		Build()
+
+	migrator := New(fakeClient, logr.Discard())
+
+	err := migrator.migrateMetricPipelines(context.Background())
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "failed to list MetricPipelines")
+}
+
+func TestMigrateMetricPipelines_UpdateError(t *testing.T) {
+	scheme := newTestScheme(t)
+
+	metricPipeline := &telemetryv1beta1.MetricPipeline{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test-metric-pipeline",
+		},
+	}
+
+	updateErr := errors.New("update error")
+	fakeClient := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithObjects(metricPipeline).
+		WithInterceptorFuncs(interceptor.Funcs{
+			Update: func(_ context.Context, _ client.WithWatch, _ client.Object, _ ...client.UpdateOption) error {
+				return updateErr
+			},
+		}).
+		Build()
+
+	migrator := New(fakeClient, logr.Discard())
+
+	err := migrator.migrateMetricPipelines(context.Background())
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "failed to migrate MetricPipeline")
+}
+
+func TestMigrateTracePipelines_ListError(t *testing.T) {
+	scheme := newTestScheme(t)
+
+	listErr := errors.New("list error")
+	fakeClient := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithInterceptorFuncs(interceptor.Funcs{
+			List: func(_ context.Context, _ client.WithWatch, _ client.ObjectList, _ ...client.ListOption) error {
+				return listErr
+			},
+		}).
+		Build()
+
+	migrator := New(fakeClient, logr.Discard())
+
+	err := migrator.migrateTracePipelines(context.Background())
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "failed to list TracePipelines")
+}
+
+func TestMigrateTracePipelines_UpdateError(t *testing.T) {
+	scheme := newTestScheme(t)
+
+	tracePipeline := &telemetryv1beta1.TracePipeline{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test-trace-pipeline",
+		},
+	}
+
+	updateErr := errors.New("update error")
+	fakeClient := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithObjects(tracePipeline).
+		WithInterceptorFuncs(interceptor.Funcs{
+			Update: func(_ context.Context, _ client.WithWatch, _ client.Object, _ ...client.UpdateOption) error {
+				return updateErr
+			},
+		}).
+		Build()
+
+	migrator := New(fakeClient, logr.Discard())
+
+	err := migrator.migrateTracePipelines(context.Background())
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "failed to migrate TracePipeline")
+}
+
+func TestMigrateTelemetries_ListError(t *testing.T) {
+	scheme := newTestScheme(t)
+
+	listErr := errors.New("list error")
+	fakeClient := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithInterceptorFuncs(interceptor.Funcs{
+			List: func(_ context.Context, _ client.WithWatch, _ client.ObjectList, _ ...client.ListOption) error {
+				return listErr
+			},
+		}).
+		Build()
+
+	migrator := New(fakeClient, logr.Discard())
+
+	err := migrator.migrateTelemetries(context.Background())
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "failed to list Telemetries")
+}
+
+func TestMigrateTelemetries_UpdateError(t *testing.T) {
+	scheme := newTestScheme(t)
+
+	telemetry := &operatorv1beta1.Telemetry{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "default",
+			Namespace: "kyma-system",
+		},
+	}
+
+	updateErr := errors.New("update error")
+	fakeClient := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithObjects(telemetry).
+		WithInterceptorFuncs(interceptor.Funcs{
+			Update: func(_ context.Context, _ client.WithWatch, _ client.Object, _ ...client.UpdateOption) error {
+				return updateErr
+			},
+		}).
+		Build()
+
+	migrator := New(fakeClient, logr.Discard())
+
+	err := migrator.migrateTelemetries(context.Background())
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "failed to migrate Telemetry")
 }
