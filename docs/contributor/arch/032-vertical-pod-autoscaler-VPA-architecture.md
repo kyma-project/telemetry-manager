@@ -189,10 +189,9 @@ Configuration Strategy:
 
 ### Risks and Mitigations
 
-| Risk | Impact | Likelihood | Mitigation |
-|------|--------|------------|------------|
-| VPA recommends excessive resources | High node resource pressure | Medium | Set strict `maxAllowed` limits in VPA policy |
-| Frequent pod restarts | Monitoring gaps | Low | VPA rate limits evictions; configure PDB |
-| VPA bugs cause pod failures | Service disruption | Low | Start with `updateMode: Initial`, then enable `InPlaceOrRecreate` after validation |
-| Request-to-limit ratio issues | Pods exceed node capacity | High | **Critical**: Fix ratio before enabling VPA |
-
+| Risk                               | Impact                      | Likelihood | Mitigation                                                                         |
+|------------------------------------|-----------------------------|------------|------------------------------------------------------------------------------------|
+| VPA recommends excessive resources | High node resource pressure | Medium     | Set strict `maxAllowed` limits in VPA policy                                       |
+| Frequent pod restarts              | Monitoring gaps             | Low        | VPA rate limits evictions; configure PDB                                           |
+| VPA bugs cause pod failures        | Service disruption          | Low        | Start with `updateMode: Initial`, then enable `InPlaceOrRecreate` after validation |
+| Request-to-limit ratio issues      | Pods exceed node capacity   | High       | **Critical**: Fix ratio before enabling VPA                                        |
