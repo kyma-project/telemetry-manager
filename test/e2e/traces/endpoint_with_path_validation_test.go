@@ -12,7 +12,7 @@ import (
 )
 
 func TestEndpointWithPathValidation(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelTraces)
+	suite.SetupTest(t, suite.LabelTraces)
 
 	tracePipelineDefaultGRPCWithPath := testutils.NewTracePipelineBuilder().
 		WithName("tracepipeline-default-reject-with-path").

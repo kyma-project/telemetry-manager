@@ -23,12 +23,14 @@ import (
 
 func TestMTLS(t *testing.T) {
 	tests := []struct {
-		label            string
+		name             string
+		labels           []string
 		inputBuilder     func(includeNs string) telemetryv1beta1.MetricPipelineInput
 		generatorBuilder func(ns string) []client.Object
 	}{
 		{
-			label: suite.LabelMetricAgentSetC,
+			name:   "agent",
+			labels: []string{suite.LabelMetricAgentSetC, suite.LabelMetricAgent, suite.LabelSetC},
 			inputBuilder: func(includeNs string) telemetryv1beta1.MetricPipelineInput {
 				return testutils.BuildMetricPipelineRuntimeInput(testutils.IncludeNamespaces(includeNs))
 			},
@@ -42,7 +44,8 @@ func TestMTLS(t *testing.T) {
 			},
 		},
 		{
-			label: suite.LabelMetricGatewaySetB,
+			name:   "gateway",
+			labels: []string{suite.LabelMetricGatewaySetB, suite.LabelMetricGateway, suite.LabelSetB},
 			inputBuilder: func(includeNs string) telemetryv1beta1.MetricPipelineInput {
 				return testutils.BuildMetricPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
 			},
@@ -55,11 +58,11 @@ func TestMTLS(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		t.Run(tc.label, func(t *testing.T) {
-			suite.RegisterTestCase(t, suite.LabelMTLS, tc.label)
+		t.Run(tc.name, func(t *testing.T) {
+			suite.SetupTest(t, suite.LabelMTLS, tc.labels[0], tc.labels[1], tc.labels[2])
 
 			var (
-				uniquePrefix = unique.Prefix(tc.label)
+				uniquePrefix = unique.Prefix(tc.name)
 				pipelineName = uniquePrefix()
 				backendNs    = uniquePrefix("backend")
 				genNs        = uniquePrefix("gen")
@@ -96,13 +99,13 @@ func TestMTLS(t *testing.T) {
 			assert.BackendReachable(t, backend)
 			assert.DeploymentReady(t, kitkyma.MetricGatewayName)
 
-			if suite.ExpectAgent(tc.label) {
+			if suite.ExpectAgent(tc.labels...) {
 				assert.DaemonSetReady(t, kitkyma.MetricAgentName)
 			}
 
 			assert.MetricPipelineHealthy(t, pipelineName)
 
-			if suite.ExpectAgent(tc.label) {
+			if suite.ExpectAgent(tc.labels...) {
 				assert.MetricsFromNamespaceDelivered(t, backend, genNs, runtime.DefaultMetricsNames)
 
 				agentMetricsURL := suite.ProxyClient.ProxyURLForService(kitkyma.MetricAgentMetricsService.Namespace, kitkyma.MetricAgentMetricsService.Name, "metrics", ports.Metrics)

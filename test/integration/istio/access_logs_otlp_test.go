@@ -2,6 +2,7 @@ package istio
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"testing"
 
@@ -49,7 +50,10 @@ func TestAccessLogsOTLP(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			suite.RegisterTestCase(t, tc.labels...)
+			log.Printf("running test with labels: %v", tc.labels)
+			suite.SetupTest(t, tc.labels...)
+			log.Printf("registered test case with labels: %v", tc.labels)
+			log.Printf("running test with resource: %v", tc.resourceName)
 
 			var (
 				uniquePrefix = unique.Prefix(tc.name)

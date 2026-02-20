@@ -2,6 +2,7 @@ package suite
 
 import (
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/expr-lang/expr"
@@ -74,6 +75,8 @@ func evaluateLabelExpression(testLabels []string, filterExpr string) (bool, erro
 	for _, label := range testLabels {
 		labelSet[strings.ToLower(label)] = true
 	}
+
+	log.Printf("evaluating test labels: %v", testLabels)
 
 	// this is some hack. we replace all labels with hasLabel("label") function calls.
 	// the haslabel function checks if the label is present in the label set

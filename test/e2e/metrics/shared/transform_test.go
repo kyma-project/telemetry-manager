@@ -23,8 +23,8 @@ import (
 
 func TestTransform(t *testing.T) {
 	tests := []struct {
-		label            string
 		name             string
+		labels           []string
 		inputBuilder     func(includeNs string) telemetryv1beta1.MetricPipelineInput
 		generatorBuilder func(ns string) []client.Object
 		transformSpec    telemetryv1beta1.TransformSpec
@@ -32,8 +32,8 @@ func TestTransform(t *testing.T) {
 		expectAgent      bool
 	}{
 		{
-			label: suite.LabelMetricAgentSetC,
-			name:  "with-where",
+			name:   "agent-with-where",
+			labels: []string{suite.LabelMetricAgentSetC, suite.LabelMetricAgent, suite.LabelSetC},
 			inputBuilder: func(includeNs string) telemetryv1beta1.MetricPipelineInput {
 				return testutils.BuildMetricPipelineRuntimeInput(testutils.IncludeNamespaces(includeNs))
 			},
@@ -54,8 +54,8 @@ func TestTransform(t *testing.T) {
 			expectAgent: true,
 		},
 		{
-			label: suite.LabelMetricAgentSetC,
-			name:  "cond-and-stmts",
+			name:   "agent-cond-and-stmts",
+			labels: []string{suite.LabelMetricAgentSetC, suite.LabelMetricAgent, suite.LabelSetC},
 			inputBuilder: func(includeNs string) telemetryv1beta1.MetricPipelineInput {
 				return testutils.BuildMetricPipelineRuntimeInput(testutils.IncludeNamespaces(includeNs))
 			},
@@ -76,8 +76,8 @@ func TestTransform(t *testing.T) {
 			expectAgent: true,
 		},
 		{
-			label: suite.LabelMetricAgentSetC,
-			name:  "infer-context",
+			name:   "agent-infer-context",
+			labels: []string{suite.LabelMetricAgentSetC, suite.LabelMetricAgent, suite.LabelSetC},
 			inputBuilder: func(includeNs string) telemetryv1beta1.MetricPipelineInput {
 				return testutils.BuildMetricPipelineRuntimeInput(testutils.IncludeNamespaces(includeNs))
 			},
@@ -100,8 +100,8 @@ func TestTransform(t *testing.T) {
 			expectAgent: true,
 		},
 		{
-			label: suite.LabelMetricGatewaySetC,
-			name:  "with-where",
+			name:   "gateway-with-where",
+			labels: []string{suite.LabelMetricGatewaySetC, suite.LabelMetricGateway, suite.LabelSetC},
 			inputBuilder: func(includeNs string) telemetryv1beta1.MetricPipelineInput {
 				return testutils.BuildMetricPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
 			},
@@ -119,8 +119,8 @@ func TestTransform(t *testing.T) {
 			))),
 		},
 		{
-			label: suite.LabelMetricGatewaySetC,
-			name:  "cond-and-stmts",
+			name:   "gateway-cond-and-stmts",
+			labels: []string{suite.LabelMetricGatewaySetC, suite.LabelMetricGateway, suite.LabelSetC},
 			inputBuilder: func(includeNs string) telemetryv1beta1.MetricPipelineInput {
 				return testutils.BuildMetricPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
 			},
@@ -138,8 +138,8 @@ func TestTransform(t *testing.T) {
 			))),
 		},
 		{
-			label: suite.LabelMetricGatewaySetC,
-			name:  "infer-context",
+			name:   "gateway-infer-context",
+			labels: []string{suite.LabelMetricGatewaySetC, suite.LabelMetricGateway, suite.LabelSetC},
 			inputBuilder: func(includeNs string) telemetryv1beta1.MetricPipelineInput {
 				return testutils.BuildMetricPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
 			},
@@ -161,11 +161,11 @@ func TestTransform(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		suite.RegisterTestCase(t, tc.label)
+		t.Run(tc.name, func(t *testing.T) {
+			suite.SetupTest(t, tc.labels...)
 
-		t.Run(tc.label, func(t *testing.T) {
 			var (
-				uniquePrefix = unique.Prefix("metrics", tc.name)
+				uniquePrefix = unique.Prefix(tc.name)
 				pipelineName = uniquePrefix()
 				backendNs    = uniquePrefix("backend")
 				genNs        = uniquePrefix("gen")
