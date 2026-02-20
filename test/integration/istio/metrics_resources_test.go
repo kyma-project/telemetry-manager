@@ -21,7 +21,7 @@ import (
 
 func TestMetricsResources(t *testing.T) {
 	// This test need to run with istio installed in the cluster to be able to test the creation and reconciliation of PeerAuthentication
-	suite.RegisterTestCase(t, suite.LabelIstio)
+	suite.SetupTest(t, suite.LabelIstio)
 
 	const (
 		endpointKey   = "metrics-endpoint"

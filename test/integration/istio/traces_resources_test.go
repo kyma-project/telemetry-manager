@@ -21,7 +21,7 @@ import (
 
 func TestTracesResources(t *testing.T) {
 	// This test need to run with istio installed in the cluster to be able to test the creation and reconciliation of PeerAuthentication
-	suite.SetupTest(t, suite.LabelTraces)
+	suite.SetupTest(t, suite.LabelIstio)
 
 	const (
 		endpointKey   = "traces-endpoint"

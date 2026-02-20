@@ -21,7 +21,7 @@ import (
 
 func TestLogsResources_OTel(t *testing.T) {
 	// This test need to run with istio installed in the cluster to be able to test the creation and reconciliation of PeerAuthentication
-	suite.RegisterTestCase(t, suite.LabelIstio)
+	suite.SetupTest(t, suite.LabelIstio)
 
 	const (
 		endpointKey   = "endpoint"
@@ -79,7 +79,7 @@ func TestLogsResources_OTel(t *testing.T) {
 }
 
 func TestLogsResources_FluentBit(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelIstio, suite.LabelFluentBit)
+	suite.SetupTest(t, suite.LabelIstio, suite.LabelNoFIPS)
 
 	const hostKey = "host"
 
