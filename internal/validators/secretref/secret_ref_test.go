@@ -170,7 +170,7 @@ func TestGetValue(t *testing.T) {
 	}
 }
 
-func TestTracePipeline_GetSecretRefs(t *testing.T) {
+func TestGetTracePipelineRefs(t *testing.T) {
 	tests := []struct {
 		name         string
 		given        *telemetryv1beta1.OTLPOutput
@@ -336,13 +336,13 @@ func TestTracePipeline_GetSecretRefs(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			sut := telemetryv1beta1.TracePipeline{ObjectMeta: metav1.ObjectMeta{Name: test.pipelineName}, Spec: telemetryv1beta1.TracePipelineSpec{Output: telemetryv1beta1.TracePipelineOutput{OTLP: test.given}}}
-			actual := getSecretRefsTracePipeline(&sut)
+			actual := GetTracePipelineRefs(&sut)
 			require.ElementsMatch(t, test.expected, actual)
 		})
 	}
 }
 
-func TestMetricPipeline_GetSecretRefs(t *testing.T) {
+func TestGetMetricPipelineRefs(t *testing.T) {
 	tests := []struct {
 		name         string
 		given        *telemetryv1beta1.OTLPOutput
@@ -465,13 +465,13 @@ func TestMetricPipeline_GetSecretRefs(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			sut := telemetryv1beta1.MetricPipeline{ObjectMeta: metav1.ObjectMeta{Name: test.pipelineName}, Spec: telemetryv1beta1.MetricPipelineSpec{Output: telemetryv1beta1.MetricPipelineOutput{OTLP: test.given}}}
-			actual := getSecretRefsMetricPipeline(&sut)
+			actual := GetMetricPipelineRefs(&sut)
 			require.ElementsMatch(t, test.expected, actual)
 		})
 	}
 }
 
-func TestLogPipeline_GetSecretRefs(t *testing.T) {
+func TesGetLogPipelineRefs(t *testing.T) {
 	tests := []struct {
 		name     string
 		given    telemetryv1beta1.LogPipeline
@@ -587,7 +587,7 @@ func TestLogPipeline_GetSecretRefs(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			actual := getSecretRefsLogPipeline(&test.given)
+			actual := GetLogPipelineRefs(&test.given)
 			require.ElementsMatch(t, test.expected, actual)
 		})
 	}
