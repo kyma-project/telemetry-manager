@@ -12,7 +12,7 @@ detailed architecture of VPA.
 ### Option 1: Allow VPA Updater to update the Central OTLP Gateway DaemonSet directly
 The option allows VPA updater to update the resources in the pods. We have to use VPA with `updateMode: "InPlaceOrRecreate"` to allow VPA to update the resources in the pods.
 
-
+![Option 1 VPA Updater updates DaemonSet directly](../assets/032-vpa-updater.svg)
 Pros:
  - Stability as VPA updates the pods taking into account various factors such as: Priority Class, Pod Disruption Budget, etc.
  - The complex logic of making a decision to update the pod resources is handled by VPA.
@@ -24,6 +24,7 @@ Cons:
 ### Option 2: Our reconciler updates the Central OTLP Gateway DaemonSet based on VPA recommendations
 In this option, our reconciler will watch the VerticalPodAutoscaler CR and update the Central OTLP Gateway DaemonSet based on the recommendations provided by VPA.
 
+![Option 2 Reconciler updates DaemonSet based on VPA recommendations](../assets/032-vpa-reconciler.svg)
 Pros:
  - The DaemonSet definition would show the current status of resource usage as the reconciler updates the DaemonSet directly.
 Cons:
