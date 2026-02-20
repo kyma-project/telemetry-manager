@@ -65,7 +65,7 @@ func TestAgent_ApplyResources(t *testing.T) {
 
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.sut.ApplyResources(t.Context(), fakeClient, AgentApplyOptions{
-				AllowedPorts: []int32{5555, 6666},
+				IstioEnabled: false,
 				FluentBitConfig: &builder.FluentBitConfig{
 					SectionsConfig:  map[string]string{"pipeline1.conf": "dummy-sections-content"},
 					FilesConfig:     map[string]string{"file1": "dummy-file-content"},
@@ -124,7 +124,7 @@ func TestAgent_DeleteResources(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			agentApplyOptions := AgentApplyOptions{
-				AllowedPorts:    []int32{5555, 6666},
+				IstioEnabled:    false,
 				FluentBitConfig: &builder.FluentBitConfig{},
 			}
 

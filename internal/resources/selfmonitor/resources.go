@@ -11,13 +11,17 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
+	fbports "github.com/kyma-project/telemetry-manager/internal/fluentbit/ports"
+	mgrports "github.com/kyma-project/telemetry-manager/internal/manager/ports"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
-	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/ports"
+	selfmonports "github.com/kyma-project/telemetry-manager/internal/selfmonitor/ports"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 )
 
@@ -63,7 +67,10 @@ func (ad *ApplierDeleter) DeleteResources(ctx context.Context, c client.Client) 
 		return err
 	}
 
-	if err := k8sutils.DeleteObject(ctx, c, &networkingv1.NetworkPolicy{ObjectMeta: objectMeta}); err != nil {
+	if err := k8sutils.DeleteObject(ctx, c, &networkingv1.NetworkPolicy{ObjectMeta: metav1.ObjectMeta{
+		Name:      commonresources.NetworkPolicyPrefix + names.SelfMonitor,
+		Namespace: ad.Config.TargetNamespace(),
+	}}); err != nil {
 		return err
 	}
 
@@ -114,8 +121,13 @@ func (ad *ApplierDeleter) ApplyResources(ctx context.Context, c client.Client, o
 		return fmt.Errorf("failed to create sel-monitor deployment: %w", err)
 	}
 
-	if err := k8sutils.CreateOrUpdateService(ctx, c, ad.makeService(ports.PrometheusPort)); err != nil {
+	if err := k8sutils.CreateOrUpdateService(ctx, c, ad.makeService(selfmonports.PrometheusPort)); err != nil {
 		return fmt.Errorf("failed to create self-monitor service: %w", err)
+	}
+
+	// TODO: Remove after rollout 1.59.0
+	if err := commonresources.CleanupOldNetworkPolicy(ctx, c, ad.selfMonitorName()); err != nil {
+		return fmt.Errorf("failed to cleanup old network policy: %w", err)
 	}
 
 	return nil
@@ -170,68 +182,6 @@ func (ad *ApplierDeleter) makeRoleBinding() *rbacv1.RoleBinding {
 	return &roleBinding
 }
 
-func (ad *ApplierDeleter) makeNetworkPolicy() *networkingv1.NetworkPolicy {
-	allowedPorts := []int32{ports.PrometheusPort}
-
-	return &networkingv1.NetworkPolicy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.SelfMonitor,
-			Namespace: ad.Config.TargetNamespace(),
-			Labels:    commonresources.MakeDefaultLabels(names.SelfMonitor, commonresources.LabelValueK8sComponentMonitor),
-		},
-		Spec: networkingv1.NetworkPolicySpec{
-			PodSelector: metav1.LabelSelector{
-				MatchLabels: commonresources.MakeDefaultSelectorLabels(names.SelfMonitor),
-			},
-			PolicyTypes: []networkingv1.PolicyType{
-				networkingv1.PolicyTypeIngress,
-				networkingv1.PolicyTypeEgress,
-			},
-			Ingress: []networkingv1.NetworkPolicyIngressRule{
-				{
-					From: []networkingv1.NetworkPolicyPeer{
-						{
-							IPBlock: &networkingv1.IPBlock{CIDR: "0.0.0.0/0"},
-						},
-						{
-							IPBlock: &networkingv1.IPBlock{CIDR: "::/0"},
-						},
-					},
-					Ports: ad.makeNetworkPolicyPorts(allowedPorts),
-				},
-			},
-			Egress: []networkingv1.NetworkPolicyEgressRule{
-				{
-					To: []networkingv1.NetworkPolicyPeer{
-						{
-							IPBlock: &networkingv1.IPBlock{CIDR: "0.0.0.0/0"},
-						},
-						{
-							IPBlock: &networkingv1.IPBlock{CIDR: "::/0"},
-						},
-					},
-				},
-			},
-		},
-	}
-}
-
-func (ad *ApplierDeleter) makeNetworkPolicyPorts(ports []int32) []networkingv1.NetworkPolicyPort {
-	var networkPolicyPorts []networkingv1.NetworkPolicyPort
-
-	tcpProtocol := corev1.ProtocolTCP
-
-	for idx := range ports {
-		port := intstr.FromInt32(ports[idx])
-		networkPolicyPorts = append(networkPolicyPorts, networkingv1.NetworkPolicyPort{
-			Protocol: &tcpProtocol,
-			Port:     &port,
-		})
-	}
-
-	return networkPolicyPorts
-}
-
 func (ad *ApplierDeleter) makeConfigMap(prometheusConfigFileName, prometheusConfigYAML, alertRulesFileName, alertRulesYAML string) *corev1.ConfigMap {
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -261,6 +211,7 @@ func (ad *ApplierDeleter) makeDeployment(configChecksum, configPath, configFile 
 
 	maps.Copy(podLabels, ad.Config.AdditionalLabels())
 	podLabels[commonresources.LabelKeyIstioInject] = commonresources.LabelValueFalse
+	podLabels[commonresources.LabelKeyTelemetryMetricsScraping] = commonresources.LabelValueTelemetryMetricsScraping
 	maps.Copy(podLabels, defaultLabels)
 
 	podAnnotations := make(map[string]string)
@@ -337,7 +288,7 @@ func (ad *ApplierDeleter) makePodSpec(image, configPath, configFile string) core
 		ProbeHandler: corev1.ProbeHandler{
 			HTTPGet: &corev1.HTTPGetAction{
 				Path: "/-/healthy",
-				Port: intstr.IntOrString{IntVal: ports.PrometheusPort},
+				Port: intstr.IntOrString{IntVal: selfmonports.PrometheusPort},
 			},
 		},
 		FailureThreshold: 5, //nolint:mnd // 5 failures
@@ -350,7 +301,7 @@ func (ad *ApplierDeleter) makePodSpec(image, configPath, configFile string) core
 		ProbeHandler: corev1.ProbeHandler{
 			HTTPGet: &corev1.HTTPGetAction{
 				Path: "/-/ready",
-				Port: intstr.IntOrString{IntVal: ports.PrometheusPort},
+				Port: intstr.IntOrString{IntVal: selfmonports.PrometheusPort},
 			},
 		},
 		FailureThreshold: 3, //nolint:mnd // 5 failures
@@ -374,7 +325,7 @@ func (ad *ApplierDeleter) makePodSpec(image, configPath, configFile string) core
 
 		commonresources.WithContainer(names.SelfMonitorContainerName, image,
 			commonresources.WithArgs(args),
-			commonresources.WithPort("http-web", ports.PrometheusPort),
+			commonresources.WithPort("http-web", selfmonports.PrometheusPort),
 			commonresources.WithVolumeMounts(volumeMounts),
 			commonresources.WithProbes(liveness, readiness),
 			commonresources.WithResources(resources),
@@ -405,5 +356,44 @@ func (ad *ApplierDeleter) makeService(port int32) *corev1.Service {
 			Selector: commonresources.MakeDefaultSelectorLabels(names.SelfMonitor),
 			Type:     corev1.ServiceTypeClusterIP,
 		},
+	}
+}
+
+func (ad *ApplierDeleter) makeNetworkPolicy() *networkingv1.NetworkPolicy {
+	return commonresources.MakeNetworkPolicy(
+		ad.selfMonitorName(),
+		commonresources.MakeDefaultLabels(names.SelfMonitor, commonresources.LabelValueK8sComponentMonitor),
+		commonresources.MakeDefaultSelectorLabels(names.SelfMonitor),
+		// Allow ingress from telemetry-manager pods only on Prometheus port
+		commonresources.WithIngressFromPods(map[string]string{
+			commonresources.LabelKeyK8sName: "manager",
+		}, []int32{selfmonports.PrometheusPort}),
+		// Allow egress to FluentBit for scraping metrics
+		commonresources.WithEgressToPods(map[string]string{
+			commonresources.LabelKeyK8sName: "fluent-bit",
+		}, []int32{fbports.HTTP}),
+		// Allow egress to metric agent for scraping metrics
+		commonresources.WithEgressToPods(map[string]string{
+			commonresources.LabelKeyK8sName: "telemetry-metric-agent",
+		}, []int32{ports.Metrics}),
+		// Allow egress to log agent for scraping metrics
+		commonresources.WithEgressToPods(map[string]string{
+			commonresources.LabelKeyK8sName: "telemetry-log-agent",
+		}, []int32{ports.Metrics}),
+		// Allow egress to OTel gateways for scraping metrics
+		commonresources.WithEgressToPods(map[string]string{
+			commonresources.LabelKeyK8sComponent: commonresources.LabelValueK8sComponentGateway,
+		}, []int32{ports.Metrics}),
+		// Allow egress to telemetry-manager for webhook
+		commonresources.WithEgressToPods(map[string]string{
+			commonresources.LabelKeyK8sName: "manager",
+		}, []int32{mgrports.Webhook}),
+	)
+}
+
+func (ad *ApplierDeleter) selfMonitorName() types.NamespacedName {
+	return types.NamespacedName{
+		Name:      names.SelfMonitor,
+		Namespace: ad.Config.TargetNamespace(),
 	}
 }

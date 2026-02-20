@@ -234,7 +234,7 @@ metadata:
     app.kubernetes.io/name: telemetry-trace-gateway
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
-  name: telemetry-trace-gateway
+  name: kyma-project.io--telemetry-trace-gateway
   namespace: kyma-system
 spec:
   egress:
@@ -250,13 +250,37 @@ spec:
     - ipBlock:
         cidr: ::/0
     ports:
-    - port: 8888
-      protocol: TCP
-    - port: 13133
-      protocol: TCP
     - port: 4318
       protocol: TCP
     - port: 4317
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: telemetry-trace-gateway
+  policyTypes:
+  - Ingress
+  - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  labels:
+    app.kubernetes.io/component: gateway
+    app.kubernetes.io/managed-by: telemetry-manager
+    app.kubernetes.io/name: telemetry-trace-gateway
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
+  name: kyma-project.io--telemetry-trace-gateway-metrics
+  namespace: kyma-system
+spec:
+  ingress:
+  - from:
+    - namespaceSelector: {}
+      podSelector:
+        matchLabels:
+          networking.kyma-project.io/metrics-scraping: allowed
+    ports:
+    - port: 8888
       protocol: TCP
     - port: 15090
       protocol: TCP
@@ -265,7 +289,6 @@ spec:
       app.kubernetes.io/name: telemetry-trace-gateway
   policyTypes:
   - Ingress
-  - Egress
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
