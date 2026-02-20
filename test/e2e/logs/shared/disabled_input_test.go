@@ -22,7 +22,7 @@ import (
 )
 
 func TestDisabledInput_OTel(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelLogAgent)
+	suite.SetupTest(t, suite.LabelLogAgent)
 
 	var (
 		uniquePrefix = unique.Prefix()
@@ -70,7 +70,7 @@ func TestDisabledInput_OTel(t *testing.T) {
 }
 
 func TestDisabledInput_FluentBit(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelFluentBit)
+	suite.SetupTest(t, suite.LabelFluentBit, suite.LabelNoFIPS)
 
 	const (
 		endpointAddress = "localhost"

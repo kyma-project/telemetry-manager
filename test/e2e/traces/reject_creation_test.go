@@ -263,7 +263,7 @@ func TestRejectTracePipelineCreation(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			suite.RegisterTestCase(t, suite.LabelMisc)
+			suite.SetupTest(t, suite.LabelMisc)
 
 			tc.pipeline.Name = tc.name
 

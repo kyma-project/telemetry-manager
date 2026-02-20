@@ -18,7 +18,7 @@ import (
 )
 
 func TestEndpointInvalid_OTel(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelLogsMisc)
+	suite.SetupTest(t, suite.LabelLogsMisc)
 
 	const (
 		endpointKey     = "endpoint"
@@ -65,7 +65,7 @@ func TestEndpointInvalid_OTel(t *testing.T) {
 }
 
 func TestEndpointInvalid_FluentBit(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelFluentBit)
+	suite.SetupTest(t, suite.LabelFluentBit, suite.LabelNoFIPS)
 
 	const (
 		hostKey     = "host"

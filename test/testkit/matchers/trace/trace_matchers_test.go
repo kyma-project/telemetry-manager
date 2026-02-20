@@ -5,8 +5,6 @@ import (
 
 	. "github.com/onsi/gomega"
 	"go.opentelemetry.io/collector/pdata/ptrace"
-
-	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
 var fts = []FlatTrace{
@@ -39,7 +37,7 @@ var fts = []FlatTrace{
 }
 
 func TestFlatTracesMatchers_VerifyInputs(t *testing.T) {
-	suite.RegisterTestCase(t)
+	RegisterTestingT(t)
 
 	td := ptrace.NewTraces()
 	Expect(mustMarshalTraces(td)).Should(HaveFlatTraces(ContainElements()), "Should apply matcher to valid trace data")
@@ -56,6 +54,8 @@ func TestFlatTracesMatchers_VerifyInputs(t *testing.T) {
 }
 
 func TestFlatTraces_FlatTraceStruct(t *testing.T) {
+	RegisterTestingT(t)
+
 	td := ptrace.NewTraces()
 	// set resource attributes
 	rt := td.ResourceSpans().AppendEmpty()
@@ -79,6 +79,7 @@ func TestFlatTraces_FlatTraceStruct(t *testing.T) {
 }
 
 func TestFlatTracesMatchers(t *testing.T) {
+	RegisterTestingT(t)
 	Expect(fts).Should(ContainElement(HaveName(Equal("ingress"))), "should have span with name 'ingress'")
 	Expect(fts).Should(ContainElement(HaveResourceAttributes(HaveKey("k8s.deployment.name"))), "should have key in resource attributes")
 	Expect(fts).Should(ContainElement(HaveSpanAttributes(HaveKey("response_size"))), "should have key in span attributes")

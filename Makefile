@@ -192,9 +192,9 @@ crd-docs-gen: $(TABLE_GEN) manifests ## Generate CRD documentation in markdown f
 	$(TABLE_GEN) --crd-filename ./helm/charts/default/templates/telemetry.kyma-project.io_metricpipelines.yaml --md-filename ./docs/user/resources/05-metricpipeline.md
 
 .PHONY: check-clean
-check-clean: generate manifests manifests-experimental crd-docs-gen generate-e2e-targets ## Check if repo is clean and up-to-date after code generation
+check-clean: generate manifests manifests-experimental crd-docs-gen ## Check if repo is clean and up-to-date after code generation
 	@echo "Checking if all generated files are up-to-date"
-	@git diff --name-only --exit-code || (echo "Generated files are not up-to-date. Please run 'make generate manifests manifests-experimental crd-docs-gen generate-e2e-targets' to update them." && exit 1)
+	@git diff --name-only --exit-code || (echo "Generated files are not up-to-date. Please run 'make generate manifests manifests-experimental crd-docs-gen' to update them." && exit 1)
 
 ##@ Testing
 

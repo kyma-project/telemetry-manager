@@ -21,22 +21,25 @@ import (
 
 func TestSecretMissing(t *testing.T) {
 	tests := []struct {
-		label string
-		input telemetryv1beta1.MetricPipelineInput
+		name   string
+		labels []string
+		input  telemetryv1beta1.MetricPipelineInput
 	}{
 		{
-			label: suite.LabelMetricAgentSetC,
-			input: testutils.BuildMetricPipelineRuntimeInput(),
+			name:   "agent",
+			labels: []string{suite.LabelMetricAgentSetC, suite.LabelMetricAgent, suite.LabelSetC},
+			input:  testutils.BuildMetricPipelineRuntimeInput(),
 		},
 		{
-			label: suite.LabelMetricGatewaySetC,
-			input: testutils.BuildMetricPipelineOTLPInput(),
+			name:   "gateway",
+			labels: []string{suite.LabelMetricGatewaySetC, suite.LabelMetricGateway, suite.LabelSetC},
+			input:  testutils.BuildMetricPipelineOTLPInput(),
 		},
 	}
 
 	for _, tc := range tests {
-		t.Run(tc.label, func(t *testing.T) {
-			suite.RegisterTestCase(t, tc.label)
+		t.Run(tc.name, func(t *testing.T) {
+			suite.SetupTest(t, tc.labels...)
 
 			const (
 				endpointKey   = "metrics-endpoint"
@@ -44,7 +47,7 @@ func TestSecretMissing(t *testing.T) {
 			)
 
 			var (
-				uniquePrefix = unique.Prefix(tc.label)
+				uniquePrefix = unique.Prefix(tc.name)
 				pipelineName = uniquePrefix()
 				secretName   = uniquePrefix()
 			)
