@@ -182,7 +182,14 @@ spec:
     to:
     - podSelector:
         matchLabels:
-          app.kubernetes.io/component: agent
+          app.kubernetes.io/name: telemetry-metric-agent
+  - ports:
+    - port: 8888
+      protocol: TCP
+    to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: telemetry-log-agent
   - ports:
     - port: 8888
       protocol: TCP

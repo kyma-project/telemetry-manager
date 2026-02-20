@@ -372,9 +372,13 @@ func (ad *ApplierDeleter) makeNetworkPolicy() *networkingv1.NetworkPolicy {
 		commonresources.WithEgressToPods(map[string]string{
 			commonresources.LabelKeyK8sName: "fluent-bit",
 		}, []int32{fbports.HTTP, fbports.ExporterMetrics}),
-		// Allow egress to OTel agents for scraping metrics
+		// Allow egress to metric agent for scraping metrics
 		commonresources.WithEgressToPods(map[string]string{
-			commonresources.LabelKeyK8sComponent: commonresources.LabelValueK8sComponentAgent,
+			commonresources.LabelKeyK8sName: "telemetry-metric-agent",
+		}, []int32{ports.Metrics}),
+		// Allow egress to log agent for scraping metrics
+		commonresources.WithEgressToPods(map[string]string{
+			commonresources.LabelKeyK8sName: "telemetry-log-agent",
 		}, []int32{ports.Metrics}),
 		// Allow egress to OTel gateways for scraping metrics
 		commonresources.WithEgressToPods(map[string]string{
