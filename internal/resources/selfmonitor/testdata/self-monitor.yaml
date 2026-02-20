@@ -170,8 +170,6 @@ spec:
   - ports:
     - port: 2020
       protocol: TCP
-    - port: 2021
-      protocol: TCP
     to:
     - podSelector:
         matchLabels:

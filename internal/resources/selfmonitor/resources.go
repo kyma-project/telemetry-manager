@@ -371,7 +371,7 @@ func (ad *ApplierDeleter) makeNetworkPolicy() *networkingv1.NetworkPolicy {
 		// Allow egress to FluentBit for scraping metrics
 		commonresources.WithEgressToPods(map[string]string{
 			commonresources.LabelKeyK8sName: "fluent-bit",
-		}, []int32{fbports.HTTP, fbports.ExporterMetrics}),
+		}, []int32{fbports.HTTP}),
 		// Allow egress to metric agent for scraping metrics
 		commonresources.WithEgressToPods(map[string]string{
 			commonresources.LabelKeyK8sName: "telemetry-metric-agent",
