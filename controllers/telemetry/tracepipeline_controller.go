@@ -235,14 +235,3 @@ func (r *TracePipelineController) createRequestsForAllPipelines(ctx context.Cont
 
 	return requests, nil
 }
-
-func (r *TracePipelineController) referencesSecret(secretName, secretNamespace string, pipeline *telemetryv1beta1.TracePipeline) bool {
-	refs := secretref.GetTracePipelineRefs(pipeline)
-	for _, ref := range refs {
-		if ref.Name == secretName && ref.Namespace == secretNamespace {
-			return true
-		}
-	}
-
-	return false
-}

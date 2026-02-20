@@ -255,14 +255,3 @@ func (r *MetricPipelineController) createRequestsForAllPipelines(ctx context.Con
 
 	return requests, nil
 }
-
-func (r *MetricPipelineController) referencesSecret(secretName, secretNamespace string, pipeline *telemetryv1beta1.MetricPipeline) bool {
-	refs := secretref.GetMetricPipelineRefs(pipeline)
-	for _, ref := range refs {
-		if ref.Name == secretName && ref.Namespace == secretNamespace {
-			return true
-		}
-	}
-
-	return false
-}

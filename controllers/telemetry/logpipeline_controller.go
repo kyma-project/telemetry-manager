@@ -363,14 +363,3 @@ func (r *LogPipelineController) createRequestsForAllPipelines(ctx context.Contex
 
 	return requests, nil
 }
-
-func (r *LogPipelineController) referencesSecret(secretName, secretNamespace string, pipeline *telemetryv1beta1.LogPipeline) bool {
-	refs := secretref.GetLogPipelineRefs(pipeline)
-	for _, ref := range refs {
-		if ref.Name == secretName && ref.Namespace == secretNamespace {
-			return true
-		}
-	}
-
-	return false
-}
