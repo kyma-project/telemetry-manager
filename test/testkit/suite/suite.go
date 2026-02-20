@@ -204,6 +204,7 @@ func ExpectAgent(labels ...string) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
