@@ -111,50 +111,19 @@ jobs:
           GARDENER_SA_PATH: /tmp/gardener-sa.yaml
           GARDENER_K8S_VERSION: ${{ matrix.k8s_version }}
 
-      - name: Deploy module release
-        shell: bash
-        run: make --debug deploy-no-fips
-
-      - name: Wait for manager deployment rollout
-        shell: bash
-        run: kubectl -n kyma-system rollout status deployment telemetry-manager --timeout=90s
-
-      - name: Wait for manager to be ready
-        shell: bash
-        run: kubectl -n kyma-system wait pods -l app.kubernetes.io/instance=telemetry,app.kubernetes.io/name=manager --for=condition=Ready=true --timeout=90s
-
-      - name: Print cluster info
-        shell: bash
+      - name: Run gardener e2e tests
         run: |
-          kubectl cluster-info
-          kubectl -n kyma-system get po
+          make e2e-test \
+            E2E_TEST_PATH="./test/e2e/..." \
+            E2E_TEST_ID="gardener-e2e-${{ matrix.k8s_version }}" \
+            E2E_TEST_LABELS="gardener"
 
-      - name: Deploy Istio
-        shell: bash
-        run: hack/deploy-istio.sh
-
-      - name: Create Telemetry CR
-        shell: bash
-        run: kubectl apply -f test/fixtures/operator_v1beta1_telemetry.yaml -n kyma-system
-
-      # Deploying  a deny-all Network Policy to simulate a typical setup on a Kyma cluster
-      - name: Create Network Policy
-        shell: bash
-        run: kubectl apply -f test/fixtures/networkpolicy-deny-all.yaml -n kyma-system
-
-      - name: Execute istio tests subset
-        uses: "./.github/template/test-execute"
-        with:
-          id: gardener-istio
-          path: ./test/integration/...
-          labels: "gardener"
-
-      - name: Execute e2e tests subset
-        uses: "./.github/template/test-execute"
-        with:
-          id: gardener-e2e
-          path: ./test/e2e/...
-          labels: "gardener"
+      - name: Run gardener integration tests
+        run: |
+          make e2e-test \
+            E2E_TEST_PATH="./test/integration/..." \
+            E2E_TEST_ID="gardener-integration-${{ matrix.k8s_version }}" \
+            E2E_TEST_LABELS="gardener"
 
       - name: Deprovision gardener cluster
         shell: bash
@@ -170,6 +139,15 @@ jobs:
         with:
           name: ${{ github.job }}-${{ matrix.k8s_version }}-report
           path: junit-report*.xml
+
+      - name: Print pods on failure
+        if: failure()
+        run: |
+          kubectl get pods -A
+          for pod in $(kubectl get pods -n kyma-system -o name 2>/dev/null); do
+            echo "=== $pod ==="
+            kubectl logs -n kyma-system $pod --all-containers 2>/dev/null || true
+          done
 
       - name: Send slack message on failure
         uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1

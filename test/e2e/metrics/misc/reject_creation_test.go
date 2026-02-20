@@ -16,7 +16,7 @@ import (
 )
 
 func TestRejectPipelineCreation(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelMetricsMisc)
+	suite.SetupTest(t, suite.LabelMetricsMisc)
 
 	const (
 		backendHost = "example.com"
@@ -240,7 +240,7 @@ func TestRejectPipelineCreation(t *testing.T) {
 					),
 				).
 				Build(),
-			errorMsg: "Invalid value: \"object\": no such key: value evaluating rule: 'clientID' missing",
+			errorMsg: "Invalid value: \"object\": Exactly one of 'value' or 'valueFrom' must be set",
 			field:    "spec.output.otlp.authentication.oauth2.clientID",
 		},
 		{
@@ -368,7 +368,7 @@ func TestRejectPipelineCreation(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			suite.RegisterTestCase(t, suite.LabelMisc)
+			suite.SetupTest(t, suite.LabelMisc)
 
 			tc.pipeline.Name = tc.name
 

@@ -24,12 +24,14 @@ import (
 
 func TestNamespaceSelector(t *testing.T) {
 	tests := []struct {
-		label            string
+		name             string
+		labels           []string
 		inputBuilder     func(includeNss, excludeNss []string) telemetryv1beta1.MetricPipelineInput
 		generatorBuilder func(ns1, ns2 string) []client.Object
 	}{
 		{
-			label: suite.LabelMetricAgentSetC,
+			name:   "agent",
+			labels: []string{suite.LabelMetricAgentSetC, suite.LabelMetricAgent, suite.LabelSetC},
 			inputBuilder: func(includeNss, excludeNss []string) telemetryv1beta1.MetricPipelineInput {
 				var opts []testutils.NamespaceSelectorOptions
 				if len(includeNss) > 0 {
@@ -51,7 +53,8 @@ func TestNamespaceSelector(t *testing.T) {
 			},
 		},
 		{
-			label: suite.LabelMetricGatewaySetB,
+			name:   "gateway",
+			labels: []string{suite.LabelMetricGatewaySetB, suite.LabelMetricGateway, suite.LabelSetB},
 			inputBuilder: func(includeNss, excludeNss []string) telemetryv1beta1.MetricPipelineInput {
 				var opts []testutils.NamespaceSelectorOptions
 				if len(includeNss) > 0 {
@@ -75,11 +78,11 @@ func TestNamespaceSelector(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		t.Run(tc.label, func(t *testing.T) {
-			suite.RegisterTestCase(t, tc.label)
+		t.Run(tc.name, func(t *testing.T) {
+			suite.SetupTest(t, tc.labels...)
 
 			var (
-				uniquePrefix        = unique.Prefix(tc.label)
+				uniquePrefix        = unique.Prefix(tc.name)
 				gen1Ns              = uniquePrefix("gen-1")
 				gen2Ns              = uniquePrefix("gen-2")
 				backendNs           = uniquePrefix("backend")
@@ -147,7 +150,7 @@ func TestNamespaceSelector(t *testing.T) {
 				Expect(kitk8s.ObjectsToFile(t, objects...)).To(Succeed())
 			}
 
-			if suite.ExpectAgent(tc.label) {
+			if suite.ExpectAgent(tc.labels...) {
 				assert.DaemonSetReady(t, kitkyma.MetricAgentName)
 				assert.MetricsFromNamespaceDelivered(t, backend1, gen1Ns, runtime.DefaultMetricsNames)
 				assert.MetricsFromNamespaceDelivered(t, backend1, gen1Ns, prommetricgen.CustomMetricNames())
