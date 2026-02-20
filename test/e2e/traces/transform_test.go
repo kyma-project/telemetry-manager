@@ -21,7 +21,7 @@ import (
 )
 
 func TestTransform(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelTraces)
+	suite.SetupTest(t, suite.LabelTraces)
 
 	tests := []struct {
 		name          string

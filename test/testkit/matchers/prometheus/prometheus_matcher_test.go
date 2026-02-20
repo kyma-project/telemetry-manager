@@ -4,12 +4,10 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-
-	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
 func TestPrometheusMetricMatchers_VerifyInputs(t *testing.T) {
-	suite.RegisterTestCase(t)
+	RegisterTestingT(t)
 
 	nilInput, err := HaveFlatMetricFamilies(ContainElement(HaveName(Equal("foo_metric")))).Match(nil)
 	Expect(err).Should(HaveOccurred(), "Should return error for nil input")
@@ -25,7 +23,7 @@ func TestPrometheusMetricMatchers_VerifyInputs(t *testing.T) {
 }
 
 func TestPrometheusMetricMatchers(t *testing.T) {
-	suite.RegisterTestCase(t)
+	RegisterTestingT(t)
 
 	fileBytesHaveName := `
 # HELP fluentbit_uptime Number of seconds that Fluent Bit has been running.
