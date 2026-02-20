@@ -166,6 +166,8 @@ For details, see the [TracePipeline specification file](https://github.com/kyma-
 
 ### TracePipeline.telemetry.kyma-project.io/v1alpha1
 
+>**CAUTION**: telemetry.kyma-project.io/v1alpha1 TracePipeline is deprecated. Use telemetry.kyma-project.io/v1beta1 TracePipeline instead.
+
 **Spec:**
 
 | Parameter | Type | Description |

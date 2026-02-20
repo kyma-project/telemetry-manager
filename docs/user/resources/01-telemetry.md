@@ -136,6 +136,8 @@ For details, see the [Telemetry specification file](https://github.com/kyma-proj
 
 ### Telemetry.operator.kyma-project.io/v1alpha1
 
+>**CAUTION**: operator.kyma-project.io/v1alpha1 Telemetry is deprecated. Use operator.kyma-project.io/v1beta1 Telemetry instead.
+
 **Spec:**
 
 | Parameter | Type | Description |
