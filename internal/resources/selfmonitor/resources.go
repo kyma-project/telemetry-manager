@@ -125,7 +125,7 @@ func (ad *ApplierDeleter) ApplyResources(ctx context.Context, c client.Client, o
 		return fmt.Errorf("failed to create self-monitor service: %w", err)
 	}
 
-	// TODO: Remove after rollout 1.58.0
+	// TODO: Remove after rollout 1.59.0
 	if err := commonresources.CleanupOldNetworkPolicy(ctx, c, ad.selfMonitorName()); err != nil {
 		return fmt.Errorf("failed to cleanup old network policy: %w", err)
 	}

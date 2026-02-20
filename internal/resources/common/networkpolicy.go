@@ -222,7 +222,7 @@ func makeNetworkPolicyPorts(ports []int32) []networkingv1.NetworkPolicyPort {
 	return networkPolicyPorts
 }
 
-// TODO: Remove after rollout 1.58.0
+// TODO: Remove after rollout 1.59.0
 
 func CleanupOldNetworkPolicy(ctx context.Context, c client.Client, name types.NamespacedName) error {
 	oldNetworkPolicy := &networkingv1.NetworkPolicy{

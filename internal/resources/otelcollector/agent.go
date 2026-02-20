@@ -172,31 +172,30 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 
 	configChecksum := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, secretsInChecksum)
 
-	metricsNetworkPolicy := commonresources.MakeNetworkPolicy(
-		name,
-		commonresources.MakeDefaultLabels(name.Name, commonresources.LabelValueK8sComponentAgent),
-		commonresources.MakeDefaultSelectorLabels(name.Name),
-		commonresources.WithNameSuffix("metrics"),
-		commonresources.WithIngressFromPodsInAllNamespaces(
-			map[string]string{
-				commonresources.LabelKeyTelemetryMetricsScraping: commonresources.LabelValueTelemetryMetricsScraping,
-			},
-			ingressMetricsPorts),
-	)
-
-	agentNetworkPolicy := commonresources.MakeNetworkPolicy(
-		name,
-		commonresources.MakeDefaultLabels(name.Name, commonresources.LabelValueK8sComponentAgent),
-		commonresources.MakeDefaultSelectorLabels(name.Name),
-		commonresources.WithEgressToAny(),
-	)
-
-	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, metricsNetworkPolicy); err != nil {
-		return fmt.Errorf("failed to create metrics network policy: %w", err)
+	networkPolicies := []*networkingv1.NetworkPolicy{
+		commonresources.MakeNetworkPolicy(
+			name,
+			commonresources.MakeDefaultLabels(name.Name, commonresources.LabelValueK8sComponentAgent),
+			commonresources.MakeDefaultSelectorLabels(name.Name),
+			commonresources.WithNameSuffix("metrics"),
+			commonresources.WithIngressFromPodsInAllNamespaces(
+				map[string]string{
+					commonresources.LabelKeyTelemetryMetricsScraping: commonresources.LabelValueTelemetryMetricsScraping,
+				},
+				ingressMetricsPorts),
+		),
+		commonresources.MakeNetworkPolicy(
+			name,
+			commonresources.MakeDefaultLabels(name.Name, commonresources.LabelValueK8sComponentAgent),
+			commonresources.MakeDefaultSelectorLabels(name.Name),
+			commonresources.WithEgressToAny(),
+		),
 	}
 
-	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, agentNetworkPolicy); err != nil {
-		return fmt.Errorf("failed to create agent network policy: %w", err)
+	for _, np := range networkPolicies {
+		if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, np); err != nil {
+			return fmt.Errorf("failed to create agent network policies: %w", err)
+		}
 	}
 
 	if err := k8sutils.CreateOrUpdateDaemonSet(ctx, c, aad.makeAgentDaemonSet(configChecksum, opts)); err != nil {

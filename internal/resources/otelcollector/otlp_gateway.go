@@ -108,33 +108,32 @@ func (o *OTLPGatewayApplierDeleter) ApplyResources(ctx context.Context, c client
 
 	configChecksum := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, []corev1.Secret{*secret})
 
-	metricsNetworkPolicy := commonresources.MakeNetworkPolicy(
-		name,
-		commonresources.MakeDefaultLabels(name.Name, commonresources.LabelValueK8sComponentGateway),
-		commonresources.MakeDefaultSelectorLabels(name.Name),
-		commonresources.WithNameSuffix("metrics"),
-		commonresources.WithIngressFromPodsInAllNamespaces(
-			map[string]string{
-				commonresources.LabelKeyTelemetryMetricsScraping: commonresources.LabelValueTelemetryMetricsScraping,
-			},
-			metricsPorts,
+	networkPolicies := []*networkingv1.NetworkPolicy{
+		commonresources.MakeNetworkPolicy(
+			name,
+			commonresources.MakeDefaultLabels(name.Name, commonresources.LabelValueK8sComponentGateway),
+			commonresources.MakeDefaultSelectorLabels(name.Name),
+			commonresources.WithNameSuffix("metrics"),
+			commonresources.WithIngressFromPodsInAllNamespaces(
+				map[string]string{
+					commonresources.LabelKeyTelemetryMetricsScraping: commonresources.LabelValueTelemetryMetricsScraping,
+				},
+				metricsPorts,
+			),
 		),
-	)
-
-	gatewayNetworkPolicy := commonresources.MakeNetworkPolicy(
-		name,
-		commonresources.MakeDefaultLabels(name.Name, commonresources.LabelValueK8sComponentGateway),
-		commonresources.MakeDefaultSelectorLabels(name.Name),
-		commonresources.WithIngressFromAny(otlpPorts),
-		commonresources.WithEgressToAny(),
-	)
-
-	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, metricsNetworkPolicy); err != nil {
-		return fmt.Errorf("failed to create metrics network policy: %w", err)
+		commonresources.MakeNetworkPolicy(
+			name,
+			commonresources.MakeDefaultLabels(name.Name, commonresources.LabelValueK8sComponentGateway),
+			commonresources.MakeDefaultSelectorLabels(name.Name),
+			commonresources.WithIngressFromAny(otlpPorts),
+			commonresources.WithEgressToAny(),
+		),
 	}
 
-	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, gatewayNetworkPolicy); err != nil {
-		return fmt.Errorf("failed to create gateway network policy: %w", err)
+	for _, np := range networkPolicies {
+		if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, np); err != nil {
+			return fmt.Errorf("failed to create agent network policies: %w", err)
+		}
 	}
 
 	if err := k8sutils.CreateOrUpdateDaemonSet(ctx, c, o.makeGatewayDaemonSet(configChecksum, opts)); err != nil {

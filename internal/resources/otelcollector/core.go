@@ -64,7 +64,7 @@ func applyCommonResources(ctx context.Context, c client.Client, name types.Names
 		return fmt.Errorf("failed to create metrics service: %w", err)
 	}
 
-	// TODO: Remove after rollout 1.58.0
+	// TODO: Remove after rollout 1.59.0
 	if err := commonresources.CleanupOldNetworkPolicy(ctx, c, name); err != nil {
 		return fmt.Errorf("failed to cleanup old network policy: %w", err)
 	}

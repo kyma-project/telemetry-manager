@@ -169,34 +169,33 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 		return err
 	}
 
-	metricsNetworkPolicy := commonresources.MakeNetworkPolicy(
-		aad.daemonSetName,
-		makeLabels(),
-		selectorLabels(),
-		commonresources.WithNameSuffix("metrics"),
-		commonresources.WithIngressFromPodsInAllNamespaces(
-			map[string]string{
-				commonresources.LabelKeyTelemetryMetricsScraping: commonresources.LabelValueTelemetryMetricsScraping,
-			},
-			makeFluentBitMetricsPorts(opts.IstioEnabled)),
-	)
-
-	fluentbitNetworkPolicy := commonresources.MakeNetworkPolicy(
-		aad.daemonSetName,
-		makeLabels(),
-		selectorLabels(),
-		commonresources.WithEgressToAny(),
-	)
-
-	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, metricsNetworkPolicy); err != nil {
-		return fmt.Errorf("failed to create fluentbit metrics network policy: %w", err)
+	networkPolicies := []*networkingv1.NetworkPolicy{
+		commonresources.MakeNetworkPolicy(
+			aad.daemonSetName,
+			makeLabels(),
+			selectorLabels(),
+			commonresources.WithNameSuffix("metrics"),
+			commonresources.WithIngressFromPodsInAllNamespaces(
+				map[string]string{
+					commonresources.LabelKeyTelemetryMetricsScraping: commonresources.LabelValueTelemetryMetricsScraping,
+				},
+				makeFluentBitMetricsPorts(opts.IstioEnabled)),
+		),
+		commonresources.MakeNetworkPolicy(
+			aad.daemonSetName,
+			makeLabels(),
+			selectorLabels(),
+			commonresources.WithEgressToAny(),
+		),
 	}
 
-	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, fluentbitNetworkPolicy); err != nil {
-		return fmt.Errorf("failed to create fluentbit network policy: %w", err)
+	for _, np := range networkPolicies {
+		if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, np); err != nil {
+			return fmt.Errorf("failed to create fluent bit network policies: %w", err)
+		}
 	}
 
-	// TODO: Remove after 1.58.0 rollout
+	// TODO: Remove after rollout 1.59.0
 	if err := commonresources.CleanupOldNetworkPolicy(ctx, c, aad.daemonSetName); err != nil {
 		return fmt.Errorf("failed to cleanup old fluentbit network policy: %w", err)
 	}
