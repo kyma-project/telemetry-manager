@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/go-logr/logr"
+	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stretchr/testify/require"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -15,6 +16,7 @@ import (
 
 	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+	"github.com/kyma-project/telemetry-manager/internal/metrics"
 )
 
 func TestNeedsMigration(t *testing.T) {
@@ -351,5 +353,185 @@ func newTestCRD(name string, storedVersions []string) *apiextensionsv1.CustomRes
 		Status: apiextensionsv1.CustomResourceDefinitionStatus{
 			StoredVersions: storedVersions,
 		},
+	}
+}
+
+func TestNeedsMigration_RecordsMetrics(t *testing.T) {
+	tests := []struct {
+		name             string
+		storedVersions   []string
+		expectedV1alpha1 float64
+		expectedV1beta1  float64
+	}{
+		{
+			name:             "records both versions when present",
+			storedVersions:   []string{"v1alpha1", "v1beta1"},
+			expectedV1alpha1: 1,
+			expectedV1beta1:  1,
+		},
+		{
+			name:             "records only v1beta1 when v1alpha1 not present",
+			storedVersions:   []string{"v1beta1"},
+			expectedV1alpha1: 0,
+			expectedV1beta1:  1,
+		},
+		{
+			name:             "records only v1alpha1 when v1beta1 not present",
+			storedVersions:   []string{"v1alpha1"},
+			expectedV1alpha1: 1,
+			expectedV1beta1:  0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Reset metrics before each test
+			metrics.MigratorInfo.Reset()
+
+			scheme := newTestScheme(t)
+			crdName := "logpipelines.telemetry.kyma-project.io"
+			crd := newTestCRD(crdName, tt.storedVersions)
+
+			fakeClient := fake.NewClientBuilder().
+				WithScheme(scheme).
+				WithObjects(crd).
+				Build()
+
+			migrator := New(fakeClient, logr.Discard())
+
+			_, err := migrator.needsMigration(context.Background(), crdName)
+			require.NoError(t, err)
+
+			// Verify metrics for v1alpha1
+			if tt.expectedV1alpha1 > 0 {
+				metricValue := testutil.ToFloat64(metrics.MigratorInfo.WithLabelValues(crdName, "v1alpha1"))
+				require.Equal(t, tt.expectedV1alpha1, metricValue, "v1alpha1 metric should be %v", tt.expectedV1alpha1)
+			}
+
+			// Verify metrics for v1beta1
+			if tt.expectedV1beta1 > 0 {
+				metricValue := testutil.ToFloat64(metrics.MigratorInfo.WithLabelValues(crdName, "v1beta1"))
+				require.Equal(t, tt.expectedV1beta1, metricValue, "v1beta1 metric should be %v", tt.expectedV1beta1)
+			}
+		})
+	}
+}
+
+func TestClearStoredVersion_UpdatesMetrics(t *testing.T) {
+	tests := []struct {
+		name                      string
+		initialStoredVersions     []string
+		expectedV1alpha1AfterClear float64
+		expectedV1beta1AfterClear  float64
+	}{
+		{
+			name:                      "sets v1alpha1 to 0 and v1beta1 to 1 after clearing",
+			initialStoredVersions:     []string{"v1alpha1", "v1beta1"},
+			expectedV1alpha1AfterClear: 0,
+			expectedV1beta1AfterClear:  1,
+		},
+		{
+			name:                      "sets v1alpha1 to 0 when it was the only version",
+			initialStoredVersions:     []string{"v1alpha1"},
+			expectedV1alpha1AfterClear: 0,
+			expectedV1beta1AfterClear:  0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Reset metrics before each test
+			metrics.MigratorInfo.Reset()
+
+			scheme := newTestScheme(t)
+			crdName := "logpipelines.telemetry.kyma-project.io"
+			crd := newTestCRD(crdName, tt.initialStoredVersions)
+
+			fakeClient := fake.NewClientBuilder().
+				WithScheme(scheme).
+				WithObjects(crd).
+				WithStatusSubresource(crd).
+				Build()
+
+			migrator := New(fakeClient, logr.Discard())
+
+			err := migrator.clearStoredVersion(context.Background(), crdName)
+			require.NoError(t, err)
+
+			// Verify v1alpha1 metric is set to 0
+			metricValue := testutil.ToFloat64(metrics.MigratorInfo.WithLabelValues(crdName, "v1alpha1"))
+			require.Equal(t, tt.expectedV1alpha1AfterClear, metricValue, "v1alpha1 metric should be %v after clearing", tt.expectedV1alpha1AfterClear)
+
+			// Verify v1beta1 metric
+			if tt.expectedV1beta1AfterClear > 0 {
+				metricValue = testutil.ToFloat64(metrics.MigratorInfo.WithLabelValues(crdName, "v1beta1"))
+				require.Equal(t, tt.expectedV1beta1AfterClear, metricValue, "v1beta1 metric should be %v after clearing", tt.expectedV1beta1AfterClear)
+			}
+		})
+	}
+}
+
+func TestMigrateIfNeeded_MetricsRecordedForAllCRDs(t *testing.T) {
+	// Reset metrics before test
+	metrics.MigratorInfo.Reset()
+
+	scheme := newTestScheme(t)
+
+	// All CRDs have both v1alpha1 and v1beta1
+	logCRD := newTestCRD("logpipelines.telemetry.kyma-project.io", []string{"v1alpha1", "v1beta1"})
+	metricCRD := newTestCRD("metricpipelines.telemetry.kyma-project.io", []string{"v1alpha1", "v1beta1"})
+	traceCRD := newTestCRD("tracepipelines.telemetry.kyma-project.io", []string{"v1alpha1", "v1beta1"})
+	telemetryCRDObj := newTestCRD(telemetryCRD, []string{"v1alpha1", "v1beta1"})
+
+	fakeClient := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithObjects(logCRD, metricCRD, traceCRD, telemetryCRDObj).
+		WithStatusSubresource(logCRD, metricCRD, traceCRD, telemetryCRDObj).
+		Build()
+
+	migrator := New(fakeClient, logr.Discard())
+
+	err := migrator.Start(context.Background())
+	require.NoError(t, err)
+
+	// Verify metrics for all CRDs - v1alpha1 should be 0, v1beta1 should be 1
+	allCRDs := append(pipelineCRDs, telemetryCRD) //nolint:gocritic // intentional append to new slice
+	for _, crdName := range allCRDs {
+		v1alpha1Value := testutil.ToFloat64(metrics.MigratorInfo.WithLabelValues(crdName, "v1alpha1"))
+		require.Equal(t, float64(0), v1alpha1Value, "v1alpha1 metric for %s should be 0 after migration", crdName)
+
+		v1beta1Value := testutil.ToFloat64(metrics.MigratorInfo.WithLabelValues(crdName, "v1beta1"))
+		require.Equal(t, float64(1), v1beta1Value, "v1beta1 metric for %s should be 1 after migration", crdName)
+	}
+}
+
+func TestMigrateIfNeeded_NoMigration_MetricsRecorded(t *testing.T) {
+	// Reset metrics before test
+	metrics.MigratorInfo.Reset()
+
+	scheme := newTestScheme(t)
+
+	// All CRDs already have only v1beta1
+	logCRD := newTestCRD("logpipelines.telemetry.kyma-project.io", []string{"v1beta1"})
+	metricCRD := newTestCRD("metricpipelines.telemetry.kyma-project.io", []string{"v1beta1"})
+	traceCRD := newTestCRD("tracepipelines.telemetry.kyma-project.io", []string{"v1beta1"})
+	telemetryCRDObj := newTestCRD(telemetryCRD, []string{"v1beta1"})
+
+	fakeClient := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithObjects(logCRD, metricCRD, traceCRD, telemetryCRDObj).
+		WithStatusSubresource(logCRD, metricCRD, traceCRD, telemetryCRDObj).
+		Build()
+
+	migrator := New(fakeClient, logr.Discard())
+
+	err := migrator.Start(context.Background())
+	require.NoError(t, err)
+
+	// Verify metrics for all CRDs - v1beta1 should be 1
+	allCRDs := append(pipelineCRDs, telemetryCRD) //nolint:gocritic // intentional append to new slice
+	for _, crdName := range allCRDs {
+		v1beta1Value := testutil.ToFloat64(metrics.MigratorInfo.WithLabelValues(crdName, "v1beta1"))
+		require.Equal(t, float64(1), v1beta1Value, "v1beta1 metric for %s should be 1", crdName)
 	}
 }
