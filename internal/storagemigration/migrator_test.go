@@ -422,20 +422,20 @@ func TestNeedsMigration_RecordsMetrics(t *testing.T) {
 
 func TestClearStoredVersion_UpdatesMetrics(t *testing.T) {
 	tests := []struct {
-		name                      string
-		initialStoredVersions     []string
+		name                       string
+		initialStoredVersions      []string
 		expectedV1alpha1AfterClear float64
 		expectedV1beta1AfterClear  float64
 	}{
 		{
-			name:                      "sets v1alpha1 to 0 and v1beta1 to 1 after clearing",
-			initialStoredVersions:     []string{"v1alpha1", "v1beta1"},
+			name:                       "sets v1alpha1 to 0 and v1beta1 to 1 after clearing",
+			initialStoredVersions:      []string{"v1alpha1", "v1beta1"},
 			expectedV1alpha1AfterClear: 0,
 			expectedV1beta1AfterClear:  1,
 		},
 		{
-			name:                      "sets v1alpha1 to 0 when it was the only version",
-			initialStoredVersions:     []string{"v1alpha1"},
+			name:                       "sets v1alpha1 to 0 when it was the only version",
+			initialStoredVersions:      []string{"v1alpha1"},
 			expectedV1alpha1AfterClear: 0,
 			expectedV1beta1AfterClear:  0,
 		},
