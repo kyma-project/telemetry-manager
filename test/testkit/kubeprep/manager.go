@@ -170,6 +170,7 @@ func deployManagerFromChartSource(t TestingT, k8sClient client.Client, chartSour
 		"--set", fmt.Sprintf("default.enabled=%t", !cfg.EnableExperimental),
 		"--set", "nameOverride=telemetry",
 		"--set", fmt.Sprintf("manager.container.env.operateInFipsMode=%t", cfg.OperateInFIPSMode),
+		"--set", "manager.container.env.appLogLevel=debug",
 		"--wait",
 		"--timeout", "5m",
 	}

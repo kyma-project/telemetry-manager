@@ -36,6 +36,7 @@ type TelemetryList struct {
 
 // Telemetry is the Schema for the telemetries API
 // +kubebuilder:object:root=true
+// +kubebuilder:deprecatedversion:warning="operator.kyma-project.io/v1alpha1 Telemetry is deprecated. Use operator.kyma-project.io/v1beta1 Telemetry instead."
 // +kubebuilder:resource:scope=Namespaced,categories={kyma-modules,kyma-telemetry}
 // +kubebuilder:metadata:labels={app.kubernetes.io/component=controller,app.kubernetes.io/managed-by=kyma,app.kubernetes.io/name=telemetry-manager,app.kubernetes.io/part-of=telemetry,kyma-project.io/module=telemetry}
 // +kubebuilder:subresource:status

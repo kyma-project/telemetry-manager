@@ -15,8 +15,22 @@ import (
 func SetupCluster(t TestingT, k8sClient client.Client, cfg Config) error {
 	ctx := t.Context()
 
-	t.Logf("Setting up cluster: istio=%t, fips=%t, experimental=%t, helmValues=%v, chart=%s",
-		cfg.InstallIstio, cfg.OperateInFIPSMode, cfg.EnableExperimental, cfg.HelmValues, cfg.ChartPath)
+	t.Logf("Setting up cluster: istio=%t, fips=%t, experimental=%t, forceFresh=%t, helmValues=%v, chart=%s",
+		cfg.InstallIstio, cfg.OperateInFIPSMode, cfg.EnableExperimental, cfg.ForceFreshInstall, cfg.HelmValues, cfg.ChartPath)
+
+	// Handle force fresh install - completely remove telemetry first
+	if cfg.ForceFreshInstall {
+		t.Log("Force fresh install requested, removing existing telemetry installation...")
+
+		if err := undeployManager(t, k8sClient); err != nil {
+			t.Logf("Warning: failed to undeploy manager (may not exist): %v", err)
+		}
+
+		// Wait for CRDs to be fully deleted to ensure clean API server state
+		if err := waitForCRDsDeletion(t, k8sClient); err != nil {
+			t.Logf("Warning: failed waiting for CRDs deletion: %v", err)
+		}
+	}
 
 	// Check current Istio state - only detection needed
 	currentIstioInstalled := DetectIstioInstalled(ctx, k8sClient)
@@ -49,9 +63,11 @@ func SetupCluster(t TestingT, k8sClient client.Client, cfg Config) error {
 		return fmt.Errorf("failed to deploy manager: %w", err)
 	}
 
-	// Deploy prerequisites (server-side apply is idempotent)
-	if err := deployTestPrerequisites(t, k8sClient); err != nil {
-		return fmt.Errorf("failed to deploy prerequisites: %w", err)
+	if !cfg.SkipDeployTestPrerequisites {
+		// Deploy prerequisites (server-side apply is idempotent)
+		if err := deployTestPrerequisites(t, k8sClient); err != nil {
+			return fmt.Errorf("failed to deploy prerequisites: %w", err)
+		}
 	}
 
 	t.Log("Cluster setup complete")

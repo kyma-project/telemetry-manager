@@ -157,6 +157,16 @@ var (
 		},
 		[]string{},
 	)
+
+	MigratorInfo = promauto.With(registry).NewGaugeVec(
+		prometheus.GaugeOpts{
+			Namespace: defaultNamespace,
+			Subsystem: "",
+			Name:      "migrator_info",
+			Help:      "Information about the stored versions of CRDs relevant to storage migration",
+		},
+		[]string{"CRD", "version"},
+	)
 )
 
 func RecordMetricPipelineInfo(pipelineName string, endpoint string, features ...string) {

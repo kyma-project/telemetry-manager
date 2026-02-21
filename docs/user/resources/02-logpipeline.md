@@ -289,6 +289,8 @@ For details, see the [LogPipeline specification file](https://github.com/kyma-pr
 
 ### LogPipeline.telemetry.kyma-project.io/v1alpha1
 
+>**CAUTION**: telemetry.kyma-project.io/v1alpha1 LogPipeline is deprecated. Use telemetry.kyma-project.io/v1beta1 LogPipeline instead.
+
 **Spec:**
 
 | Parameter | Type | Description |

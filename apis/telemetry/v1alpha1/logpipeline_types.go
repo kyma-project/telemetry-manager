@@ -20,6 +20,7 @@ type LogPipelineList struct {
 
 // LogPipeline is the Schema for the logpipelines API
 // +kubebuilder:object:root=true
+// +kubebuilder:deprecatedversion:warning="telemetry.kyma-project.io/v1alpha1 LogPipeline is deprecated. Use telemetry.kyma-project.io/v1beta1 LogPipeline instead."
 // +kubebuilder:resource:scope=Cluster,categories={kyma-telemetry,kyma-telemetry-pipelines}
 // +kubebuilder:metadata:labels={app.kubernetes.io/component=controller,app.kubernetes.io/managed-by=kyma,app.kubernetes.io/name=telemetry-manager,app.kubernetes.io/part-of=telemetry,kyma-project.io/module=telemetry}
 // +kubebuilder:subresource:status

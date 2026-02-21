@@ -36,6 +36,9 @@ spec:
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date
+    deprecated: true
+    deprecationWarning: telemetry.kyma-project.io/v1alpha1 TracePipeline is deprecated.
+      Use telemetry.kyma-project.io/v1beta1 TracePipeline instead.
     name: v1alpha1
     schema:
       openAPIV3Schema:

@@ -223,6 +223,8 @@ For details, see the [MetricPipeline specification file](https://github.com/kyma
 
 ### MetricPipeline.telemetry.kyma-project.io/v1alpha1
 
+>**CAUTION**: telemetry.kyma-project.io/v1alpha1 MetricPipeline is deprecated. Use telemetry.kyma-project.io/v1beta1 MetricPipeline instead.
+
 **Spec:**
 
 | Parameter | Type | Description |

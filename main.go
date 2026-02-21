@@ -61,6 +61,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	selfmonitorwebhook "github.com/kyma-project/telemetry-manager/internal/selfmonitor/webhook"
+	"github.com/kyma-project/telemetry-manager/internal/storagemigration"
 	loggerutils "github.com/kyma-project/telemetry-manager/internal/utils/logger"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
 	logpipelinewebhookv1alpha1 "github.com/kyma-project/telemetry-manager/webhook/logpipeline/v1alpha1"
@@ -199,8 +200,14 @@ func run() error {
 		return err
 	}
 
-	// +kubebuilder:scaffold:builder
+	// Add storage version migration as a runnable that executes after manager starts.
+	// This ensures webhooks are available for conversion during migration.
+	storageMigrator := storagemigration.New(mgr.GetClient(), setupLog)
+	if err := mgr.Add(storageMigrator); err != nil {
+		return fmt.Errorf("failed to add storage migration runnable: %w", err)
+	}
 
+	// +kubebuilder:scaffold:builder
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		return fmt.Errorf("failed to start manager: %w", err)
 	}
