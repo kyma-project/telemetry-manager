@@ -3,7 +3,6 @@ package secretwatch
 import (
 	"context"
 	"fmt"
-	"slices"
 	"sync"
 	"time"
 
@@ -97,14 +96,21 @@ func (c *Client) StopWithTimeout(timeout time.Duration) {
 // and cleans up watchers that have no remaining linked pipelines.
 // This method is idempotent and declarative - it synchronizes to the desired state.
 // New watchers are started immediately, and removed watchers are stopped immediately.
+// Duplicate secrets in the input slice are automatically deduplicated.
 func (c *Client) SyncWatchedSecrets(ctx context.Context, pipeline client.Object, secrets []types.NamespacedName) {
 	logf.FromContext(ctx).V(1).Info("Syncing watched secrets for pipeline")
+
+	// Deduplicate secrets using a set
+	secretSet := make(map[types.NamespacedName]struct{}, len(secrets))
+	for _, s := range secrets {
+		secretSet[s] = struct{}{}
+	}
 
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	// Add or update watchers for the given secrets
-	for _, secret := range secrets {
+	for secret := range secretSet {
 		if w, exists := c.watchers[secret]; exists {
 			// Watcher exists, link pipeline if not already linked (thread-safe)
 			w.link(pipeline)
@@ -117,7 +123,7 @@ func (c *Client) SyncWatchedSecrets(ctx context.Context, pipeline client.Object,
 
 	// Remove pipeline from watchers not in the current set
 	for watchedSecret, w := range c.watchers {
-		secretFound := slices.Contains(secrets, watchedSecret)
+		_, secretFound := secretSet[watchedSecret]
 		if !secretFound && w.isLinked(pipeline) {
 			// Remove this pipeline from the watcher's linked pipelines (thread-safe)
 			hasPipelines := w.unlink(pipeline)

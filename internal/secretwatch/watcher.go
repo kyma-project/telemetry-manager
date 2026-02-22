@@ -31,8 +31,10 @@ type watcher struct {
 
 // newStartedWatcher creates a new watcher for the specified secret with the initial pipeline,
 // starts watching in a background goroutine, and returns the fully initialized watcher.
-// The watcher will run until the context is canceled.
+// The watcher will run until its context is canceled via the cancel function.
 // The wg.Done() will be called automatically when the watcher stops.
+// Note: The watcher uses context.Background() as its parent to ensure it outlives
+// individual reconcile requests. The provided ctx is only used for logging.
 func newStartedWatcher(
 	ctx context.Context,
 	secret types.NamespacedName,
@@ -41,7 +43,11 @@ func newStartedWatcher(
 	eventChan chan<- event.GenericEvent,
 	wg *sync.WaitGroup,
 ) *watcher {
-	watcherCtx, cancel := context.WithCancel(ctx)
+	// Use Background context so the watcher outlives the reconcile request.
+	// Attach the logger from the request context for consistent logging.
+	watcherCtx, cancel := context.WithCancel(
+		logf.IntoContext(context.Background(), logf.FromContext(ctx)),
+	)
 
 	w := &watcher{
 		secret:    secret,
@@ -94,6 +100,15 @@ func (w *watcher) isLinked(pipeline client.Object) bool {
 	return slices.ContainsFunc(w.linked, func(p client.Object) bool {
 		return p.GetName() == pipeline.GetName()
 	})
+}
+
+// getLinkedPipelines returns a copy of the linked pipelines slice.
+// This is safe to iterate over without holding the lock.
+func (w *watcher) getLinkedPipelines() []client.Object {
+	w.mu.RLock()
+	defer w.mu.RUnlock()
+
+	return slices.Clone(w.linked)
 }
 
 // start begins watching the secret for changes. It runs in an infinite loop,
@@ -171,7 +186,7 @@ func (w *watcher) start(ctx context.Context) {
 			)
 
 			// Send a generic event to trigger reconciliation for linked pipelines
-			for _, pipeline := range w.linked {
+			for _, pipeline := range w.getLinkedPipelines() {
 				w.eventChan <- event.GenericEvent{
 					Object: pipeline,
 				}

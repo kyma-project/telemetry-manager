@@ -12,55 +12,52 @@
 //
 //   - Thread-safe concurrent access
 //   - Automatic watcher lifecycle management
-//   - Event callbacks for secret changes
+//   - Generic events for controller-runtime integration
 //   - Declarative secret synchronization
 //   - Automatic reconnection on errors
 //   - Graceful shutdown with timeout support
 //
 // # Usage
 //
-// Basic usage:
+// Basic usage with controller-runtime:
 //
 //	import (
 //		"context"
-//		"fmt"
-//		"time"
 //
 //		"k8s.io/apimachinery/pkg/types"
+//		"sigs.k8s.io/controller-runtime/pkg/event"
 //		"github.com/kyma-project/telemetry-manager/internal/secretwatch"
 //	)
 //
-//	// Create a client with an event handler
-//	:= func(secretName types.NamespacedName, eventType secretwatch.EventType, pipelines []string)
-//		fmt.Printf("Secret %s changed (type: %s), affects pipelines: %v\n",
-//			secretName, eventType, pipelines)
-//	}
+//	// Create an event channel for triggering reconciliation
+//	eventChan := make(chan event.GenericEvent)
 //
-//	client, err := secretwatch.NewClient(cfg, handler)
+//	// Create a client that sends events to the channel
+//	client, err := secretwatch.NewClient(cfg, eventChan)
 //	if err != nil {
 //		log.Fatal(err)
 //	}
 //
 //	ctx := context.Background()
 //
-//	// Configure which secrets each pipeline should watch
+//	// Configure which secrets a pipeline should watch
 //	// Watchers are started automatically
 //	secrets := []types.NamespacedName{
 //		{Namespace: "default", Name: "my-secret"},
 //		{Namespace: "default", Name: "another-secret"},
 //	}
-//	client.SyncWatchedSecrets(ctx, "pipeline-1", secrets)
+//	client.SyncWatchedSecrets(ctx, pipeline, secrets)
 //
 //	// Later: update the watched secrets for a pipeline
 //	// New watchers are started, removed watchers are stopped automatically
 //	newSecrets := []types.NamespacedName{
 //		{Namespace: "default", Name: "my-secret"},
-//		// "another-secret" watcher is stopped automatically
+//		// "another-secret" watcher is stopped automatically if no other pipeline uses it
 //	}
-//	client.SyncWatchedSecrets(ctx, "pipeline-1", newSecrets)
+//	client.SyncWatchedSecrets(ctx, pipeline, newSecrets)
 //
-//	// Remove all watches for a pipeline (stops all its watchers)
-//	client.RemovePipeline(ctx, "pipeline-1")
+//	// Remove all watches for a pipeline by passing an empty slice
+//	client.SyncWatchedSecrets(ctx, pipeline, nil)
 //
 //	// Graceful shutdown (waits for watchers to finish with 30s timeout)
 //	client.Stop()
@@ -68,15 +65,11 @@
 //	// Or use custom timeout
 //	client.StopWithTimeout(10 * time.Second)
 //
-// # Event Handler
+// # Event Channel
 //
-// The EventHandler callback receives three parameters:
-//   - secretName: The namespaced name of the secret that changed
-//   - eventType: The type of change (Added, Modified, Deleted, etc.)
-//   - linkedPipelines: List of pipeline names that reference this secret
-//
-// If no event handler is provided (nil), events will only be logged using
-// controller-runtime's structured logging.
+// When a watched secret changes, the client sends a GenericEvent to the provided
+// channel with the pipeline object that references the secret. This integrates
+// with controller-runtime's event handling to trigger reconciliation.
 //
 // # Thread Safety
 //
@@ -84,9 +77,8 @@
 // locking to ensure that watcher state remains consistent even when
 // SyncWatchedSecrets is called from multiple goroutines.
 //
-// The watcher's linkedPipelines list is also protected by a mutex, and the
-// client uses thread-safe methods (addPipeline, removePipeline, hasPipeline)
-// to modify it.
+// The watcher's linked pipelines list is also protected by a mutex, ensuring
+// thread-safe access when pipelines are added or removed.
 //
 // # Watcher Lifecycle
 //
