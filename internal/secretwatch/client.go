@@ -79,7 +79,8 @@ func (c *Client) SyncWatchedSecrets(ctx context.Context, pipeline client.Object,
 			w.link(pipeline)
 		} else {
 			// Create new watcher and start it immediately
-			w := newStartedWatcher(ctx, secret, pipeline, c.clientset, c.eventChan, &c.wg)
+			w := newWatcher(secret, pipeline, c.clientset, c.eventChan)
+			c.startWatcher(ctx, w)
 			c.watchers[secret] = w
 		}
 	}
@@ -101,6 +102,18 @@ func (c *Client) SyncWatchedSecrets(ctx context.Context, pipeline client.Object,
 	}
 
 	return nil
+}
+
+//nolint:contextcheck // Intentionally using Background() so watcher outlives reconcile request
+func (c *Client) startWatcher(ctx context.Context, w *watcher) {
+	watcherCtx, cancel := context.WithCancel(
+		logf.IntoContext(context.Background(), logf.FromContext(ctx)),
+	)
+	w.cancel = cancel
+
+	c.wg.Go(func() {
+		w.start(watcherCtx)
+	})
 }
 
 // Stop gracefully shuts down all watchers with the default timeout.

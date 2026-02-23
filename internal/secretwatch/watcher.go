@@ -25,47 +25,26 @@ const reconnectDelay = 5 * time.Second
 type watcher struct {
 	secret    types.NamespacedName
 	linked    []client.Object
-	mu        sync.RWMutex
 	client    v1.SecretInterface
 	eventChan chan<- event.GenericEvent
+	mu        sync.RWMutex
 	cancel    context.CancelFunc
 }
 
-// newStartedWatcher creates a new watcher for the specified secret with the initial pipeline,
-// starts watching in a background goroutine, and returns the fully initialized watcher.
-// The watcher will run until its context is canceled via the cancel function.
-// The wg.Done() will be called automatically when the watcher stops.
-// Note: The watcher uses context.Background() as its parent to ensure it outlives
-// individual reconcile requests. The provided ctx is only used for logging.
-//
-//nolint:contextcheck // Intentionally using Background() so watcher outlives reconcile request
-func newStartedWatcher(
-	ctx context.Context,
+// newWatcher creates a new watcher for the specified secret with the initial pipeline.
+// Call start() to begin watching in a background goroutine.
+func newWatcher(
 	secret types.NamespacedName,
 	pipeline client.Object,
 	clientset kubernetes.Interface,
 	eventChan chan<- event.GenericEvent,
-	wg *sync.WaitGroup,
 ) *watcher {
-	// Use Background context so the watcher outlives the reconcile request.
-	// Attach the logger from the request context for consistent logging.
-	watcherCtx, cancel := context.WithCancel(
-		logf.IntoContext(context.Background(), logf.FromContext(ctx)),
-	)
-
-	w := &watcher{
+	return &watcher{
 		secret:    secret,
+		linked:    []client.Object{pipeline},
 		client:    clientset.CoreV1().Secrets(secret.Namespace),
 		eventChan: eventChan,
-		cancel:    cancel,
-		linked:    []client.Object{pipeline},
 	}
-
-	wg.Go(func() {
-		w.start(watcherCtx)
-	})
-
-	return w
 }
 
 func (w *watcher) link(pipeline client.Object) {
@@ -106,8 +85,6 @@ func (w *watcher) isLinked(pipeline client.Object) bool {
 	})
 }
 
-// getLinkedPipelines returns a copy of the linked pipelines slice.
-// This is safe to iterate over without holding the lock.
 func (w *watcher) getLinkedPipelines() []client.Object {
 	w.mu.RLock()
 	defer w.mu.RUnlock()
