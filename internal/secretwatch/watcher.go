@@ -64,14 +64,9 @@ func (w *watcher) unlink(pipeline client.Object) bool {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
-	filtered := make([]client.Object, 0, len(w.linked))
-	for _, p := range w.linked {
-		if p.GetName() != pipeline.GetName() {
-			filtered = append(filtered, p)
-		}
-	}
-
-	w.linked = filtered
+	w.linked = slices.DeleteFunc(w.linked, func(p client.Object) bool {
+		return p.GetName() == pipeline.GetName()
+	})
 
 	return len(w.linked) > 0
 }
