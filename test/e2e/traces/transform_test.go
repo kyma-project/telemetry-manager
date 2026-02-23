@@ -98,7 +98,7 @@ func TestTransform(t *testing.T) {
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 			assert.BackendReachable(t, backend)
-			assert.DeploymentReady(t, kitkyma.TraceGatewayName)
+			assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
 			assert.TracePipelineHealthy(t, pipelineName)
 
 			assert.BackendDataEventuallyMatches(t, backend, tt.assertion)

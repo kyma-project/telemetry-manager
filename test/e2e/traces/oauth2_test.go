@@ -65,7 +65,7 @@ func TestOAuth2(t *testing.T) {
 
 	assert.DeploymentReady(t, oauth2server.NamespacedName())
 	assert.BackendReachable(t, backend)
-	assert.DeploymentReady(t, kitkyma.TraceGatewayName)
+	assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
 	assert.TracePipelineHealthy(t, pipelineName)
 	assert.TracesFromNamespaceDelivered(t, backend, genNs)
 

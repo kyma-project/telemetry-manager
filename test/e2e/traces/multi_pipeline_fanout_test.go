@@ -55,7 +55,7 @@ func TestMultiPipelineFanout(t *testing.T) {
 
 	assert.BackendReachable(t, backend1)
 	assert.BackendReachable(t, backend2)
-	assert.DeploymentReady(t, kitkyma.TraceGatewayName)
+	assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
 	assert.TracePipelineHealthy(t, pipeline1Name)
 	assert.TracePipelineHealthy(t, pipeline2Name)
 
