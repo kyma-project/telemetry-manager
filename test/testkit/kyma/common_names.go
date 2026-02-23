@@ -54,15 +54,16 @@ var (
 	MetricAgentClusterRoleBinding = types.NamespacedName{Name: names.MetricAgent, Namespace: SystemNamespaceName}
 	MetricAgentConfigMap          = types.NamespacedName{Name: names.MetricAgent, Namespace: SystemNamespaceName}
 
-	TraceGatewayName               = types.NamespacedName{Name: names.TraceGateway, Namespace: SystemNamespaceName}
-	TraceGatewayMetricsService     = types.NamespacedName{Name: names.TraceGatewayMetricsService, Namespace: SystemNamespaceName}
-	TraceGatewayNetworkPolicy      = types.NamespacedName{Name: names.TraceGateway, Namespace: SystemNamespaceName}
-	TraceGatewaySecretName         = types.NamespacedName{Name: names.TraceGateway, Namespace: SystemNamespaceName}
+	// Trace resources now handled by OTLP Gateway - these are aliases for backward compatibility
+	TraceGatewayName               = types.NamespacedName{Name: names.OTLPGateway, Namespace: SystemNamespaceName}
+	TraceGatewayMetricsService     = types.NamespacedName{Name: names.OTLPGatewayMetricsService, Namespace: SystemNamespaceName}
+	TraceGatewayNetworkPolicy      = types.NamespacedName{Name: names.OTLPGateway, Namespace: SystemNamespaceName}
+	TraceGatewaySecretName         = types.NamespacedName{Name: names.OTLPGateway, Namespace: SystemNamespaceName}
 	TraceGatewayOTLPService        = types.NamespacedName{Name: names.OTLPTracesService, Namespace: SystemNamespaceName}
-	TraceGatewayServiceAccount     = types.NamespacedName{Name: names.TraceGateway, Namespace: SystemNamespaceName}
-	TraceGatewayClusterRole        = types.NamespacedName{Name: names.TraceGateway, Namespace: SystemNamespaceName}
-	TraceGatewayClusterRoleBinding = types.NamespacedName{Name: names.TraceGateway, Namespace: SystemNamespaceName}
-	TraceGatewayConfigMap          = types.NamespacedName{Name: names.TraceGateway, Namespace: SystemNamespaceName}
+	TraceGatewayServiceAccount     = types.NamespacedName{Name: names.OTLPGateway, Namespace: SystemNamespaceName}
+	TraceGatewayClusterRole        = types.NamespacedName{Name: names.OTLPGateway, Namespace: SystemNamespaceName}
+	TraceGatewayClusterRoleBinding = types.NamespacedName{Name: names.OTLPGateway, Namespace: SystemNamespaceName}
+	TraceGatewayConfigMap          = types.NamespacedName{Name: names.OTLPGateway, Namespace: SystemNamespaceName}
 
 	LogAgentName               = types.NamespacedName{Name: names.LogAgent, Namespace: SystemNamespaceName}
 	LogAgentMetricsService     = types.NamespacedName{Name: names.LogAgentMetricsService, Namespace: SystemNamespaceName}

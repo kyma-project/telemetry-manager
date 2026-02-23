@@ -23,7 +23,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpgateway"
-	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
@@ -338,7 +337,7 @@ func TestReconcile_LegacyDeploymentCleanup(t *testing.T) {
 
 	deployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.TraceGateway,
+			Name:      "telemetry-trace-gateway",
 			Namespace: "kyma-system",
 		},
 	}
@@ -367,7 +366,7 @@ func TestReconcile_LegacyDeploymentCleanup(t *testing.T) {
 	var dep appsv1.Deployment
 
 	err = fakeClient.Get(ctx, types.NamespacedName{
-		Name:      names.TraceGateway,
+		Name:      "telemetry-trace-gateway",
 		Namespace: "kyma-system",
 	}, &dep)
 	require.True(t, apierrors.IsNotFound(err))

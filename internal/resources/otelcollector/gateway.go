@@ -41,13 +41,6 @@ var (
 	metricGatewayDynamicCPURequest    = resource.MustParse("0")
 	metricGatewayBaseMemoryRequest    = resource.MustParse("32Mi")
 	metricGatewayDynamicMemoryRequest = resource.MustParse("0")
-
-	traceGatewayBaseMemoryLimit      = resource.MustParse("500Mi")
-	traceGatewayDynamicMemoryLimit   = resource.MustParse("1500Mi")
-	traceGatewayBaseCPURequest       = resource.MustParse("100m")
-	traceGatewayDynamicCPURequest    = resource.MustParse("100m")
-	traceGatewayBaseMemoryRequest    = resource.MustParse("32Mi")
-	traceGatewayDynamicMemoryRequest = resource.MustParse("0")
 )
 
 type GatewayApplierDeleter struct {
@@ -139,39 +132,6 @@ func NewMetricGatewayApplierDeleter(globals config.Global, image, priorityClassN
 		podOpts: []commonresources.PodSpecOption{
 			commonresources.WithPriorityClass(priorityClassName),
 			commonresources.WithAffinity(makePodAffinity(commonresources.MakeDefaultSelectorLabels(names.MetricGateway))),
-		},
-		containerOpts: []commonresources.ContainerOption{
-			commonresources.WithEnvVarFromField(common.EnvVarCurrentPodIP, fieldPathPodIP),
-			commonresources.WithEnvVarFromField(common.EnvVarCurrentNodeName, fieldPathNodeName),
-			commonresources.WithFIPSGoDebugEnvVar(globals.OperateInFIPSMode()),
-		},
-	}
-}
-
-//nolint:dupl // repeating the code as we have three different signals
-func NewTraceGatewayApplierDeleter(globals config.Global, image, priorityClassName string) *GatewayApplierDeleter {
-	extraLabels := map[string]string{
-		commonresources.LabelKeyTelemetryTraceIngest: commonresources.LabelValueTrue,
-		commonresources.LabelKeyTelemetryTraceExport: commonresources.LabelValueTrue,
-		commonresources.LabelKeyIstioInject:          commonresources.LabelValueTrue, // inject istio sidecar
-	}
-
-	return &GatewayApplierDeleter{
-		globals:              globals,
-		baseName:             names.TraceGateway,
-		extraPodLabels:       extraLabels,
-		image:                image,
-		otlpServiceName:      names.OTLPTracesService,
-		rbac:                 makeTraceGatewayRBAC(globals.TargetNamespace()),
-		baseMemoryLimit:      traceGatewayBaseMemoryLimit,
-		dynamicMemoryLimit:   traceGatewayDynamicMemoryLimit,
-		baseCPURequest:       traceGatewayBaseCPURequest,
-		dynamicCPURequest:    traceGatewayDynamicCPURequest,
-		baseMemoryRequest:    traceGatewayBaseMemoryRequest,
-		dynamicMemoryRequest: traceGatewayDynamicMemoryRequest,
-		podOpts: []commonresources.PodSpecOption{
-			commonresources.WithPriorityClass(priorityClassName),
-			commonresources.WithAffinity(makePodAffinity(commonresources.MakeDefaultSelectorLabels(names.TraceGateway))),
 		},
 		containerOpts: []commonresources.ContainerOption{
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentPodIP, fieldPathPodIP),

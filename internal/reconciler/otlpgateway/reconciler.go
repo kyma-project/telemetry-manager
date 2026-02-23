@@ -312,7 +312,7 @@ func (r *Reconciler) cleanupLegacyResources(ctx context.Context) error {
 
 	deployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.TraceGateway,
+			Name:      names.OTLPGateway,
 			Namespace: r.globals.TargetNamespace(),
 		},
 	}

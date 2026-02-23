@@ -108,15 +108,6 @@ func withRoleBinding() RBACOption {
 	}
 }
 
-func makeTraceGatewayRBAC(namespace string) rbac {
-	return *newRBAC(
-		types.NamespacedName{Name: names.TraceGateway, Namespace: namespace},
-		commonresources.LabelValueK8sComponentGateway,
-		withClusterRole(withK8sAttributeRules()),
-		withClusterRoleBinding(),
-	)
-}
-
 func makeMetricAgentRBAC(namespace string) rbac {
 	return *newRBAC(
 		types.NamespacedName{Name: names.MetricAgent, Namespace: namespace},

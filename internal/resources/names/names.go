@@ -9,14 +9,13 @@ const (
 	MetricAgent   = telemetryPrefix + "metric-agent"
 	LogGateway    = telemetryPrefix + "log-gateway"
 	MetricGateway = telemetryPrefix + "metric-gateway"
-	TraceGateway  = telemetryPrefix + "trace-gateway"
 	OTLPGateway   = telemetryPrefix + "otlp-gateway"
 
 	LogAgentMetricsService      = LogAgent + metricsSuffix
 	MetricAgentMetricsService   = MetricAgent + metricsSuffix
 	LogGatewayMetricsService    = LogGateway + metricsSuffix
 	MetricGatewayMetricsService = MetricGateway + metricsSuffix
-	TraceGatewayMetricsService  = TraceGateway + metricsSuffix
+	OTLPGatewayMetricsService   = OTLPGateway + metricsSuffix
 
 	FluentBit                       = telemetryPrefix + "fluent-bit"
 	FluentBitMetricsService         = FluentBit + metricsSuffix

@@ -20,74 +20,127 @@ func TestBuild(t *testing.T) {
 	sut := Builder{Reader: fakeClient}
 
 	tests := []struct {
-		name           string
-		goldenFileName string
-		tracePipelines []telemetryv1beta1.TracePipeline
+		name              string
+		goldenFileName    string
+		tracePipelines    []telemetryv1beta1.TracePipeline
+		serviceEnrichment string
 	}{
 		{
-			name:           "empty pipelines",
-			goldenFileName: "empty-pipelines.yaml",
-			tracePipelines: []telemetryv1beta1.TracePipeline{},
-		},
-		{
 			name:           "single trace pipeline",
-			goldenFileName: "single-trace-pipeline.yaml",
+			goldenFileName: "trace-single-pipeline.yaml",
 			tracePipelines: []telemetryv1beta1.TracePipeline{
-				testutils.NewTracePipelineBuilder().WithName("test-trace").Build(),
+				testutils.NewTracePipelineBuilder().WithName("test").Build(),
 			},
 		},
 		{
 			name:           "multiple trace pipelines",
-			goldenFileName: "multiple-trace-pipelines.yaml",
+			goldenFileName: "trace-multiple-pipelines.yaml",
 			tracePipelines: []telemetryv1beta1.TracePipeline{
 				testutils.NewTracePipelineBuilder().WithName("test-trace-1").Build(),
 				testutils.NewTracePipelineBuilder().WithName("test-trace-2").WithOTLPOutput().Build(),
 			},
 		},
 		{
-			name:           "trace pipeline with http protocol",
-			goldenFileName: "trace-http-protocol.yaml",
+			name:              "single trace pipeline with otel service enrichment",
+			goldenFileName:    "trace-service-enrichment-otel.yaml",
+			serviceEnrichment: "otel",
 			tracePipelines: []telemetryv1beta1.TracePipeline{
 				testutils.NewTracePipelineBuilder().
-					WithName("test-trace").
+					WithName("test").
+					WithOTLPOutput().
+					Build(),
+			},
+		},
+		{
+			name:           "trace pipeline with http protocol and custom path",
+			goldenFileName: "trace-http-protocol-with-custom-path.yaml",
+			tracePipelines: []telemetryv1beta1.TracePipeline{
+				testutils.NewTracePipelineBuilder().
+					WithName("test").
 					WithOTLPOutput(
 						testutils.OTLPProtocol("http"),
-						testutils.OTLPEndpointPath("v1/traces"),
+						testutils.OTLPEndpointPath("v2/otlp/v1/traces"),
 					).Build(),
 			},
 		},
 		{
-			name:           "trace pipeline with transform",
-			goldenFileName: "trace-transform.yaml",
+			name:           "trace pipeline with http protocol without custom path",
+			goldenFileName: "trace-http-protocol-without-custom-path.yaml",
 			tracePipelines: []telemetryv1beta1.TracePipeline{
 				testutils.NewTracePipelineBuilder().
-					WithName("test-trace").
+					WithName("test").
+					WithOTLPOutput(
+						testutils.OTLPProtocol("http"),
+					).Build(),
+			},
+		},
+		{
+			name:           "multiple trace pipelines with transforms",
+			goldenFileName: "trace-user-defined-transforms.yaml",
+			tracePipelines: []telemetryv1beta1.TracePipeline{
+				testutils.NewTracePipelineBuilder().
+					WithName("test1").
 					WithTransform(telemetryv1beta1.TransformSpec{
 						Conditions: []string{"IsMatch(body, \".*error.*\")"},
 						Statements: []string{
 							"set(attributes[\"trace.status_code\"], \"error\")",
+							"set(body, \"transformed1\")",
+						},
+					}).Build(),
+				testutils.NewTracePipelineBuilder().
+					WithName("test2").
+					WithTransform(telemetryv1beta1.TransformSpec{
+						Conditions: []string{"IsMatch(body, \".*error.*\")"},
+						Statements: []string{
+							"set(attributes[\"trace.status_code\"], \"error\")",
+							"set(body, \"transformed2\")",
 						},
 					}).Build(),
 			},
 		},
 		{
-			name:           "trace pipeline with filter",
-			goldenFileName: "trace-filter.yaml",
+			name:           "multiple trace pipelines with filters",
+			goldenFileName: "trace-user-defined-filters.yaml",
 			tracePipelines: []telemetryv1beta1.TracePipeline{
 				testutils.NewTracePipelineBuilder().
-					WithName("test-trace").
+					WithName("test1").
 					WithFilter(telemetryv1beta1.FilterSpec{
 						Conditions: []string{"IsMatch(span.name, \".*grpc.*\")"},
+					}).Build(),
+				testutils.NewTracePipelineBuilder().
+					WithName("test2").
+					WithFilter(telemetryv1beta1.FilterSpec{
+						Conditions: []string{"IsMatch(spanevent.attributes[\"foo\"], \".*bar.*\")"},
+					}).Build(),
+			},
+		},
+		{
+			name:           "trace pipeline with transform and filter",
+			goldenFileName: "trace-user-defined-transform-filter.yaml",
+			tracePipelines: []telemetryv1beta1.TracePipeline{
+				testutils.NewTracePipelineBuilder().
+					WithName("test1").
+					WithFilter(telemetryv1beta1.FilterSpec{
+						Conditions: []string{"IsMatch(span.name, \".*grpc.*\")"},
+					}).
+					WithTransform(telemetryv1beta1.TransformSpec{
+						Conditions: []string{"IsMatch(body, \".*error.*\")"},
+						Statements: []string{
+							"set(attributes[\"trace.status_code\"], \"error\")",
+							"set(body, \"transformed2\")",
+						},
 					}).Build(),
 			},
 		},
 		{
 			name:           "trace pipeline with OAuth2",
-			goldenFileName: "trace-oauth2.yaml",
+			goldenFileName: "trace-oauth2-authentication.yaml",
 			tracePipelines: []telemetryv1beta1.TracePipeline{
 				testutils.NewTracePipelineBuilder().
-					WithName("test-trace").
-					WithOTLPOutput(testutils.OTLPProtocol("http")).
+					WithName("test").
+					WithOTLPOutput(
+						testutils.OTLPProtocol("http"),
+					).
 					WithOAuth2(
 						testutils.OAuth2ClientID("client-id"),
 						testutils.OAuth2ClientSecret("client-secret"),
@@ -105,6 +158,7 @@ func TestBuild(t *testing.T) {
 					ClusterName:   "${KUBERNETES_SERVICE_HOST}",
 					CloudProvider: "test-cloud-provider",
 				},
+				ServiceEnrichment: tt.serviceEnrichment,
 			}
 
 			config, _, err := sut.Build(context.Background(), tt.tracePipelines, buildOptions)
