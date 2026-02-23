@@ -1,6 +1,8 @@
 package suite
 
 import (
+	"flag"
+
 	istionetworkingclientv1 "istio.io/client-go/pkg/apis/networking/v1"
 	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	istiotelemetryclientv1 "istio.io/client-go/pkg/apis/telemetry/v1"
@@ -31,4 +33,9 @@ func init() {
 	utilruntime.Must(istiosecurityclientv1.AddToScheme(scheme))
 	utilruntime.Must(istionetworkingclientv1.AddToScheme(scheme))
 	utilruntime.Must(istiotelemetryclientv1.AddToScheme(scheme))
+
+	// Register test flags
+	flag.StringVar(&labelFilterFlag, "labels", "", "Label filter expression (e.g., 'log-agent and istio')")
+	flag.BoolVar(&doNotExecuteFlag, "do-not-execute", false, "Dry-run mode: print test info without executing")
+	flag.BoolVar(&printLabelsFlag, "print-labels", false, "Print test labels in structured format (pipe-separated)")
 }

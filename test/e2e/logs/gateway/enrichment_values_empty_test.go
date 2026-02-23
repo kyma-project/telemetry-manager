@@ -47,7 +47,7 @@ func TestEnrichmentValuesEmpty(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			suite.RegisterTestCase(t, tc.labels...)
+			suite.SetupTest(t, tc.labels...)
 
 			var (
 				uniquePrefix = unique.Prefix(tc.name)

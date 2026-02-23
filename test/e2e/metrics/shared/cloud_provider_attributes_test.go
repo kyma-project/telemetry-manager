@@ -23,12 +23,14 @@ import (
 
 func TestCloudProviderAttributes(t *testing.T) {
 	tests := []struct {
-		label            string
+		name             string
+		labels           []string
 		inputBuilder     func(includeNs string) telemetryv1beta1.MetricPipelineInput
 		generatorBuilder func(ns string) []client.Object
 	}{
 		{
-			label: suite.LabelMetricAgentSetA,
+			name:   "agent",
+			labels: []string{suite.LabelMetricAgentSetA, suite.LabelMetricAgent, suite.LabelSetA},
 			inputBuilder: func(includeNs string) telemetryv1beta1.MetricPipelineInput {
 				return testutils.BuildMetricPipelineRuntimeInput(testutils.IncludeNamespaces(includeNs))
 			},
@@ -42,7 +44,8 @@ func TestCloudProviderAttributes(t *testing.T) {
 			},
 		},
 		{
-			label: suite.LabelMetricGatewaySetA,
+			name:   "gateway",
+			labels: []string{suite.LabelMetricGatewaySetA, suite.LabelMetricGateway, suite.LabelSetA},
 			inputBuilder: func(includeNs string) telemetryv1beta1.MetricPipelineInput {
 				return testutils.BuildMetricPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
 			},
@@ -55,11 +58,11 @@ func TestCloudProviderAttributes(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		t.Run(tc.label, func(t *testing.T) {
-			suite.RegisterTestCase(t, suite.LabelGardener, tc.label)
+		t.Run(tc.name, func(t *testing.T) {
+			suite.SetupTest(t, append([]string{suite.LabelGardener}, tc.labels...)...)
 
 			var (
-				uniquePrefix = unique.Prefix(tc.label)
+				uniquePrefix = unique.Prefix(tc.name)
 				pipelineName = uniquePrefix()
 				backendNs    = uniquePrefix("backend")
 				genNs        = uniquePrefix("gen")
@@ -93,13 +96,13 @@ func TestCloudProviderAttributes(t *testing.T) {
 			assert.BackendReachable(t, backend)
 			assert.DeploymentReady(t, kitkyma.MetricGatewayName)
 
-			if suite.ExpectAgent(tc.label) {
+			if suite.ExpectAgent(tc.labels...) {
 				assert.DaemonSetReady(t, kitkyma.MetricAgentName)
 			}
 
 			assert.MetricPipelineHealthy(t, pipelineName)
 
-			if suite.ExpectAgent(tc.label) {
+			if suite.ExpectAgent(tc.labels...) {
 				agentMetricsURL := suite.ProxyClient.ProxyURLForService(kitkyma.MetricAgentMetricsService.Namespace, kitkyma.MetricAgentMetricsService.Name, "metrics", ports.Metrics)
 				assert.EmitsOTelCollectorMetrics(t, agentMetricsURL)
 			}

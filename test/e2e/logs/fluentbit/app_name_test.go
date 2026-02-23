@@ -19,7 +19,7 @@ import (
 )
 
 func TestAppName(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelFluentBit)
+	suite.SetupTest(t, suite.LabelFluentBit, suite.LabelNoFIPS)
 
 	var (
 		uniquePrefix = unique.Prefix()
