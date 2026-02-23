@@ -1,0 +1,48 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  labels:
+    app: test
+  name: kyma-project.io--test-component
+  namespace: test-namespace
+spec:
+  egress:
+  - to:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+    - ipBlock:
+        cidr: ::/0
+  - ports:
+    - port: 3000
+      protocol: TCP
+    to:
+    - podSelector:
+        matchLabels:
+          app: target
+  - ports:
+    - port: 3001
+      protocol: TCP
+    to:
+    - namespaceSelector: {}
+      podSelector:
+        matchLabels:
+          app: global-target
+  - ports:
+    - port: 3002
+      protocol: TCP
+    to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: other-ns
+      podSelector:
+        matchLabels:
+          app: external-target
+  - to:
+    - ipBlock:
+        cidr: 10.0.0.0/8
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: test-component
+  policyTypes:
+  - Egress
+---
