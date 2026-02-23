@@ -223,6 +223,7 @@ func TestSecretWatchTriggersEvent(t *testing.T) {
 	})
 }
 
+//nolint:gocognit // High complexity due to multiple table-driven subtests
 func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 	t.Run("should not trigger events for pipeline that no longer references a secret", func(t *testing.T) {
 		ctx := context.Background()
@@ -409,13 +410,16 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		// Use field selector to route watches to the correct fake watcher
 		clientset.PrependWatchReactor("secrets", func(action clienttesting.Action) (handled bool, ret watch.Interface, err error) {
 			watchAction := action.(clienttesting.WatchAction)
+
 			fieldSelector := watchAction.GetWatchRestrictions().Fields.String()
 			if fieldSelector == "metadata.name=secret-1" {
 				return true, fakeWatcher1, nil
 			}
+
 			if fieldSelector == "metadata.name=secret-2" {
 				return true, fakeWatcher2, nil
 			}
+
 			return false, nil, nil
 		})
 
@@ -510,13 +514,16 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		// Use field selector to route watches to the correct fake watcher
 		clientset.PrependWatchReactor("secrets", func(action clienttesting.Action) (handled bool, ret watch.Interface, err error) {
 			watchAction := action.(clienttesting.WatchAction)
+
 			fieldSelector := watchAction.GetWatchRestrictions().Fields.String()
 			if fieldSelector == "metadata.name=secret-1" {
 				return true, fakeWatcher1, nil
 			}
+
 			if fieldSelector == "metadata.name=secret-2" {
 				return true, fakeWatcher2, nil
 			}
+
 			return false, nil, nil
 		})
 
@@ -595,11 +602,13 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		fakeWatcher2 := watch.NewFake()
 
 		watcherCount := 0
+
 		clientset.PrependWatchReactor("secrets", func(action clienttesting.Action) (handled bool, ret watch.Interface, err error) {
 			watcherCount++
 			if watcherCount == 1 {
 				return true, fakeWatcher1, nil
 			}
+
 			return true, fakeWatcher2, nil
 		})
 
@@ -669,6 +678,7 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 
 		fakeWatcher := watch.NewFake()
 		watcherCreateCount := 0
+
 		clientset.PrependWatchReactor("secrets", func(action clienttesting.Action) (handled bool, ret watch.Interface, err error) {
 			watcherCreateCount++
 			return true, fakeWatcher, nil

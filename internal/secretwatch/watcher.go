@@ -18,6 +18,8 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
+const reconnectDelay = 5 * time.Second
+
 // watcher monitors a single Kubernetes secret and tracks which pipelines depend on it.
 // It automatically reconnects on errors and handles resource version updates.
 type watcher struct {
@@ -35,6 +37,8 @@ type watcher struct {
 // The wg.Done() will be called automatically when the watcher stops.
 // Note: The watcher uses context.Background() as its parent to ensure it outlives
 // individual reconcile requests. The provided ctx is only used for logging.
+//
+//nolint:contextcheck // Intentionally using Background() so watcher outlives reconcile request
 func newStartedWatcher(
 	ctx context.Context,
 	secret types.NamespacedName,
@@ -154,7 +158,7 @@ func (w *watcher) start(ctx context.Context) {
 				"error", err)
 
 			select {
-			case <-time.After(5 * time.Second):
+			case <-time.After(reconnectDelay):
 			case <-ctx.Done():
 				log.V(1).Info("Context canceled, stopping watcher", "secret", w.secret.String())
 				return
@@ -197,7 +201,7 @@ func (w *watcher) start(ctx context.Context) {
 			"secret", w.secret.String())
 
 		select {
-		case <-time.After(5 * time.Second):
+		case <-time.After(reconnectDelay):
 		case <-ctx.Done():
 			log.V(1).Info("Context canceled, stopping watcher", "secret", w.secret.String())
 			return
