@@ -39,7 +39,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -89,6 +88,7 @@ var (
 	additionalLabels        cliflags.Map
 	additionalAnnotations   cliflags.Map
 	deployOTLPGateway       bool
+	unlimitedPipelines      bool
 )
 
 const (
@@ -111,6 +111,8 @@ type envConfig struct {
 	OTelCollectorImage string `env:"OTEL_COLLECTOR_IMAGE"`
 	// SelfMonitorImage is the image used for the self-monitoring deployment. This is a customized Prometheus image.
 	SelfMonitorImage string `env:"SELF_MONITOR_IMAGE"`
+	// SelfMonitorFIPSImage is the image used for the self-monitoring deployment in FIPS mode. This is a Prometheus FIPS 140-2 compliant image.
+	SelfMonitorFIPSImage string `env:"SELF_MONITOR_FIPS_IMAGE"`
 	// AlpineImage is the image used for the chown init containers.
 	AlpineImage string `env:"ALPINE_IMAGE"`
 	// ImagePullSecret is the name of the image pull secret to use for pulling images of all created workloads (agents, gateways, self-monitor).
@@ -173,6 +175,7 @@ func run() error {
 		config.WithAdditionalLabels(additionalLabels),
 		config.WithAdditionalAnnotations(additionalAnnotations),
 		config.WithDeployOTLPGateway(featureflags.IsEnabled(featureflags.DeployOTLPGateway)),
+		config.WithUnlimitedPipelines(featureflags.IsEnabled(featureflags.UnlimitedPipelineCount)),
 	)
 
 	if err := globals.Validate(); err != nil {
@@ -287,7 +290,7 @@ func setupManager(globals config.Global) (manager.Manager, error) {
 			CertDir: certDir,
 		}),
 		Cache: cache.Options{
-			SyncPeriod: ptr.To(cacheSyncPeriod),
+			SyncPeriod: new(cacheSyncPeriod),
 
 			// The operator handles various resource that are namespace-scoped, and additionally some resources that are cluster-scoped (clusterroles, clusterrolebindings, etc.).
 			// For namespace-scoped resources we want to restrict the operator permissions to only fetch resources from a given namespace.
@@ -332,6 +335,7 @@ func logBuildAndProcessInfo() {
 func initializeFeatureFlags() {
 	// Placeholder for future feature flag initializations.
 	featureflags.Set(featureflags.DeployOTLPGateway, deployOTLPGateway)
+	featureflags.Set(featureflags.UnlimitedPipelineCount, unlimitedPipelines)
 }
 
 func parseFlags() {
@@ -345,6 +349,7 @@ func parseFlags() {
 	flag.Var(&additionalAnnotations, "additional-annotation", "Additional annotation to add to all created resources in key=value format")
 
 	flag.BoolVar(&deployOTLPGateway, "deploy-otlp-gateway", false, "Enable deploying unified OTLP gateway")
+	flag.BoolVar(&unlimitedPipelines, "unlimited-pipelines", false, "Allow unlimited number of OTEL pipelines")
 
 	flag.Parse()
 }
@@ -380,11 +385,17 @@ func setupAdmissionsWebhooks(mgr manager.Manager) error {
 func setupTelemetryController(globals config.Global, cfg envConfig, webhookCertConfig webhookcert.Config, mgr manager.Manager) error {
 	setupLog.Info("Setting up telemetry controller")
 
+	selectedSelfMonitorImage := cfg.SelfMonitorImage
+	if globals.OperateInFIPSMode() {
+		selectedSelfMonitorImage = cfg.SelfMonitorFIPSImage
+		setupLog.Info("Operating in FIPS mode, therefore a FIPS compliant self-monitor image is used", "image", selectedSelfMonitorImage)
+	}
+
 	telemetryController := operator.NewTelemetryController(
 		operator.TelemetryControllerConfig{
 			Global:                            globals,
 			SelfMonitorAlertmanagerWebhookURL: fmt.Sprintf("%s.%s.svc", webhookServiceName, globals.ManagerNamespace()),
-			SelfMonitorImage:                  cfg.SelfMonitorImage,
+			SelfMonitorImage:                  selectedSelfMonitorImage,
 			SelfMonitorPriorityClassName:      normalPriorityClassName,
 			WebhookCert:                       webhookCertConfig,
 		},
