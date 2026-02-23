@@ -17,6 +17,12 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
+const (
+	testEventTimeout    = 2 * time.Second
+	testShutdownTimeout = 100 * time.Millisecond
+	testStartupDelay    = 50 * time.Millisecond
+)
+
 func TestSecretWatchTriggersEvent(t *testing.T) {
 	t.Run("should send event when watched secret is modified", func(t *testing.T) {
 		ctx := context.Background()
@@ -46,7 +52,7 @@ func TestSecretWatchTriggersEvent(t *testing.T) {
 		// Ensure cleanup: stop the fake watcher to unblock goroutines, then stop client
 		t.Cleanup(func() {
 			fakeWatcher.Stop()
-			c.stopWithTimeout(100 * time.Millisecond)
+			c.stopWithTimeout(testShutdownTimeout)
 		})
 
 		pipeline := new(testutils.NewLogPipelineBuilder().WithName("my-pipeline").Build())
@@ -56,7 +62,7 @@ func TestSecretWatchTriggersEvent(t *testing.T) {
 		require.NoError(t, c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{secretName}))
 
 		// Give the watcher goroutine time to start
-		time.Sleep(50 * time.Millisecond)
+		time.Sleep(testStartupDelay)
 
 		// Simulate secret modification via the fake watcher
 		fakeWatcher.Modify(secret)
@@ -65,8 +71,8 @@ func TestSecretWatchTriggersEvent(t *testing.T) {
 		select {
 		case evt := <-eventChan:
 			require.Equal(t, "my-pipeline", evt.Object.GetName())
-		case <-time.After(2 * time.Second):
-			t.Fatal("expected event was not received")
+		case <-time.After(testEventTimeout):
+			require.FailNow(t, "expected event was not received")
 		}
 	})
 
@@ -86,7 +92,7 @@ func TestSecretWatchTriggersEvent(t *testing.T) {
 
 		t.Cleanup(func() {
 			fakeWatcher.Stop()
-			c.stopWithTimeout(100 * time.Millisecond)
+			c.stopWithTimeout(testShutdownTimeout)
 		})
 
 		pipeline := new(testutils.NewLogPipelineBuilder().WithName("my-pipeline").Build())
@@ -95,7 +101,7 @@ func TestSecretWatchTriggersEvent(t *testing.T) {
 		// Start watching the secret (it doesn't exist yet)
 		require.NoError(t, c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{secretName}))
 
-		time.Sleep(50 * time.Millisecond)
+		time.Sleep(testStartupDelay)
 
 		// Simulate secret creation via the fake watcher
 		secret := &corev1.Secret{
@@ -109,8 +115,8 @@ func TestSecretWatchTriggersEvent(t *testing.T) {
 		select {
 		case evt := <-eventChan:
 			require.Equal(t, "my-pipeline", evt.Object.GetName())
-		case <-time.After(2 * time.Second):
-			t.Fatal("expected event was not received")
+		case <-time.After(testEventTimeout):
+			require.FailNow(t, "expected event was not received")
 		}
 	})
 
@@ -137,7 +143,7 @@ func TestSecretWatchTriggersEvent(t *testing.T) {
 
 		t.Cleanup(func() {
 			fakeWatcher.Stop()
-			c.stopWithTimeout(100 * time.Millisecond)
+			c.stopWithTimeout(testShutdownTimeout)
 		})
 
 		pipeline1 := new(testutils.NewLogPipelineBuilder().WithName("pipeline-1").Build())
@@ -148,21 +154,21 @@ func TestSecretWatchTriggersEvent(t *testing.T) {
 		require.NoError(t, c.SyncWatchedSecrets(ctx, pipeline1, []types.NamespacedName{secretName}))
 		require.NoError(t, c.SyncWatchedSecrets(ctx, pipeline2, []types.NamespacedName{secretName}))
 
-		time.Sleep(50 * time.Millisecond)
+		time.Sleep(testStartupDelay)
 
 		// Simulate secret modification
 		fakeWatcher.Modify(secret)
 
 		// Collect events
 		receivedPipelines := make(map[string]bool)
-		timeout := time.After(2 * time.Second)
+		timeout := time.After(testEventTimeout)
 
 		for len(receivedPipelines) < 2 {
 			select {
 			case evt := <-eventChan:
 				receivedPipelines[evt.Object.GetName()] = true
 			case <-timeout:
-				t.Fatalf("expected 2 events, got %d", len(receivedPipelines))
+				require.FailNow(t, "expected 2 events", "got %d", len(receivedPipelines))
 			}
 		}
 
@@ -193,7 +199,7 @@ func TestSecretWatchTriggersEvent(t *testing.T) {
 
 		t.Cleanup(func() {
 			fakeWatcher.Stop()
-			c.stopWithTimeout(100 * time.Millisecond)
+			c.stopWithTimeout(testShutdownTimeout)
 		})
 
 		pipeline := new(testutils.NewLogPipelineBuilder().WithName("my-pipeline").Build())
@@ -201,7 +207,7 @@ func TestSecretWatchTriggersEvent(t *testing.T) {
 
 		require.NoError(t, c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{secretName}))
 
-		time.Sleep(50 * time.Millisecond)
+		time.Sleep(testStartupDelay)
 
 		// Simulate secret deletion
 		fakeWatcher.Delete(secret)
@@ -209,8 +215,8 @@ func TestSecretWatchTriggersEvent(t *testing.T) {
 		select {
 		case evt := <-eventChan:
 			require.Equal(t, "my-pipeline", evt.Object.GetName())
-		case <-time.After(2 * time.Second):
-			t.Fatal("expected event was not received")
+		case <-time.After(testEventTimeout):
+			require.FailNow(t, "expected event was not received")
 		}
 	})
 }
@@ -240,7 +246,7 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 
 		t.Cleanup(func() {
 			fakeWatcher.Stop()
-			c.stopWithTimeout(100 * time.Millisecond)
+			c.stopWithTimeout(testShutdownTimeout)
 		})
 
 		pipelineA := new(testutils.NewLogPipelineBuilder().WithName("pipeline-a").Build())
@@ -251,7 +257,7 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		require.NoError(t, c.SyncWatchedSecrets(ctx, pipelineA, []types.NamespacedName{secretName}))
 		require.NoError(t, c.SyncWatchedSecrets(ctx, pipelineB, []types.NamespacedName{secretName}))
 
-		time.Sleep(50 * time.Millisecond)
+		time.Sleep(testStartupDelay)
 
 		// Pipeline A no longer references the secret
 		require.NoError(t, c.SyncWatchedSecrets(ctx, pipelineA, []types.NamespacedName{}))
@@ -264,7 +270,7 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 
 		// Collect events - should only receive event for pipeline-b
 		receivedPipelines := make(map[string]bool)
-		timeout := time.After(500 * time.Millisecond)
+		timeout := time.After(testEventTimeout)
 
 	collectLoop:
 		for {
@@ -303,7 +309,7 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 
 		t.Cleanup(func() {
 			fakeWatcher.Stop()
-			c.stopWithTimeout(100 * time.Millisecond)
+			c.stopWithTimeout(testShutdownTimeout)
 		})
 
 		pipeline := new(testutils.NewLogPipelineBuilder().WithName("my-pipeline").Build())
@@ -312,7 +318,7 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		// Start watching
 		require.NoError(t, c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{secretName}))
 
-		time.Sleep(50 * time.Millisecond)
+		time.Sleep(testStartupDelay)
 
 		// Verify watcher exists
 		c.mu.RLock()
@@ -353,7 +359,7 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 
 		t.Cleanup(func() {
 			fakeWatcher.Stop()
-			c.stopWithTimeout(100 * time.Millisecond)
+			c.stopWithTimeout(testShutdownTimeout)
 		})
 
 		pipelineA := new(testutils.NewLogPipelineBuilder().WithName("pipeline-a").Build())
@@ -364,7 +370,7 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		require.NoError(t, c.SyncWatchedSecrets(ctx, pipelineA, []types.NamespacedName{secretName}))
 		require.NoError(t, c.SyncWatchedSecrets(ctx, pipelineB, []types.NamespacedName{secretName}))
 
-		time.Sleep(50 * time.Millisecond)
+		time.Sleep(testStartupDelay)
 
 		// Pipeline A unsubscribes
 		require.NoError(t, c.SyncWatchedSecrets(ctx, pipelineA, []types.NamespacedName{}))
@@ -424,7 +430,7 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		t.Cleanup(func() {
 			fakeWatcher1.Stop()
 			fakeWatcher2.Stop()
-			c.stopWithTimeout(100 * time.Millisecond)
+			c.stopWithTimeout(testShutdownTimeout)
 		})
 
 		pipeline := new(testutils.NewLogPipelineBuilder().WithName("my-pipeline").Build())
@@ -434,7 +440,7 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		// Initially watch secret-1
 		require.NoError(t, c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{secretName1}))
 
-		time.Sleep(50 * time.Millisecond)
+		time.Sleep(testStartupDelay)
 
 		// Verify watching secret-1
 		c.mu.RLock()
@@ -445,7 +451,7 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		// Switch to watching secret-2 instead
 		require.NoError(t, c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{secretName2}))
 
-		time.Sleep(50 * time.Millisecond)
+		time.Sleep(testStartupDelay)
 
 		// Verify no longer watching secret-1, now watching secret-2
 		c.mu.RLock()
@@ -466,7 +472,7 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 
 		// Should only receive event for secret-2 change
 		receivedPipelines := make(map[string]int)
-		timeout := time.After(500 * time.Millisecond)
+		timeout := time.After(testEventTimeout)
 
 	collectLoop:
 		for {
@@ -528,7 +534,7 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		t.Cleanup(func() {
 			fakeWatcher1.Stop()
 			fakeWatcher2.Stop()
-			c.stopWithTimeout(100 * time.Millisecond)
+			c.stopWithTimeout(testShutdownTimeout)
 		})
 
 		pipeline := new(testutils.NewLogPipelineBuilder().WithName("my-pipeline").Build())
@@ -538,7 +544,7 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		// Watch both secrets
 		require.NoError(t, c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{secretName1, secretName2}))
 
-		time.Sleep(50 * time.Millisecond)
+		time.Sleep(testStartupDelay)
 
 		// Verify watching both secrets
 		c.mu.RLock()
@@ -554,7 +560,7 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		// Now only watch secret-2 (drop secret-1)
 		require.NoError(t, c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{secretName2}))
 
-		time.Sleep(50 * time.Millisecond)
+		time.Sleep(testStartupDelay)
 
 		// Verify secret-1 watcher is removed
 		c.mu.RLock()
@@ -573,8 +579,8 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		select {
 		case evt := <-eventChan:
 			require.Equal(t, "my-pipeline", evt.Object.GetName())
-		case <-time.After(2 * time.Second):
-			t.Fatal("expected event was not received for secret-2")
+		case <-time.After(testEventTimeout):
+			require.FailNow(t, "expected event was not received for secret-2")
 		}
 	})
 
@@ -613,7 +619,7 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		t.Cleanup(func() {
 			fakeWatcher1.Stop()
 			fakeWatcher2.Stop()
-			c.stopWithTimeout(100 * time.Millisecond)
+			c.stopWithTimeout(testShutdownTimeout)
 		})
 
 		pipeline := new(testutils.NewLogPipelineBuilder().WithName("my-pipeline").Build())
@@ -621,7 +627,7 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 
 		// Start watching
 		require.NoError(t, c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{secretName}))
-		time.Sleep(50 * time.Millisecond)
+		time.Sleep(testStartupDelay)
 
 		// Unsubscribe
 		require.NoError(t, c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{}))
@@ -634,7 +640,7 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 
 		// Re-subscribe
 		require.NoError(t, c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{secretName}))
-		time.Sleep(50 * time.Millisecond)
+		time.Sleep(testStartupDelay)
 
 		// Verify new watcher created
 		c.mu.RLock()
@@ -651,8 +657,8 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		select {
 		case evt := <-eventChan:
 			require.Equal(t, "my-pipeline", evt.Object.GetName())
-		case <-time.After(2 * time.Second):
-			t.Fatal("expected event was not received after re-subscribing")
+		case <-time.After(testEventTimeout):
+			require.FailNow(t, "expected event was not received after re-subscribing")
 		}
 	})
 
@@ -684,7 +690,7 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 
 		t.Cleanup(func() {
 			fakeWatcher.Stop()
-			c.stopWithTimeout(100 * time.Millisecond)
+			c.stopWithTimeout(testShutdownTimeout)
 		})
 
 		pipeline := new(testutils.NewLogPipelineBuilder().WithName("my-pipeline").Build())
@@ -695,7 +701,7 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		require.NoError(t, c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{secretName}))
 		require.NoError(t, c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{secretName}))
 
-		time.Sleep(50 * time.Millisecond)
+		time.Sleep(testStartupDelay)
 
 		// Verify only one watcher was created
 		require.Equal(t, 1, watcherCreateCount, "should only create one watcher for repeated calls with same secret")
@@ -729,7 +735,7 @@ func TestSyncWatchedSecretsAfterStop(t *testing.T) {
 		secretName := types.NamespacedName{Namespace: "default", Name: "my-secret"}
 
 		// Stop the client
-		c.stopWithTimeout(100 * time.Millisecond)
+		c.stopWithTimeout(testShutdownTimeout)
 
 		// Try to sync secrets after stop
 		err := c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{secretName})
@@ -753,7 +759,7 @@ func TestSyncWatchedSecretsAfterStop(t *testing.T) {
 
 		t.Cleanup(func() {
 			fakeWatcher.Stop()
-			c.stopWithTimeout(100 * time.Millisecond)
+			c.stopWithTimeout(testShutdownTimeout)
 		})
 
 		pipeline := new(testutils.NewLogPipelineBuilder().WithName("my-pipeline").Build())
