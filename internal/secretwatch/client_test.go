@@ -75,12 +75,8 @@ func TestSecretWatchTriggersEvent(t *testing.T) {
 		fakeWatcher.Modify(secret)
 
 		// Wait for event
-		select {
-		case evt := <-eventChan:
-			require.Equal(t, "my-pipeline", evt.Object.GetName())
-		case <-time.After(testEventTimeout):
-			require.FailNow(t, "expected event was not received")
-		}
+		received := collectEvents(eventChan, testEventTimeout)
+		require.Equal(t, 1, received["my-pipeline"], "expected exactly one event for my-pipeline")
 	})
 
 	t.Run("should send event when watched secret is added", func(t *testing.T) {
@@ -118,12 +114,8 @@ func TestSecretWatchTriggersEvent(t *testing.T) {
 		}
 		fakeWatcher.Add(secret)
 
-		select {
-		case evt := <-eventChan:
-			require.Equal(t, "my-pipeline", evt.Object.GetName())
-		case <-time.After(testEventTimeout):
-			require.FailNow(t, "expected event was not received")
-		}
+		received := collectEvents(eventChan, testEventTimeout)
+		require.Equal(t, 1, received["my-pipeline"], "expected exactly one event for my-pipeline")
 	})
 
 	t.Run("should send event to all linked pipelines", func(t *testing.T) {
@@ -216,12 +208,8 @@ func TestSecretWatchTriggersEvent(t *testing.T) {
 		// Simulate secret deletion
 		fakeWatcher.Delete(secret)
 
-		select {
-		case evt := <-eventChan:
-			require.Equal(t, "my-pipeline", evt.Object.GetName())
-		case <-time.After(testEventTimeout):
-			require.FailNow(t, "expected event was not received")
-		}
+		received := collectEvents(eventChan, testEventTimeout)
+		require.Equal(t, 1, received["my-pipeline"], "expected exactly one event for my-pipeline")
 	})
 }
 
@@ -272,21 +260,10 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		fakeWatcher.Modify(secret)
 
 		// Collect events - should only receive event for pipeline-b
-		receivedPipelines := make(map[string]bool)
-		timeout := time.After(testEventTimeout)
+		receivedPipelines := collectEvents(eventChan, testEventTimeout)
 
-	collectLoop:
-		for {
-			select {
-			case evt := <-eventChan:
-				receivedPipelines[evt.Object.GetName()] = true
-			case <-timeout:
-				break collectLoop
-			}
-		}
-
-		require.False(t, receivedPipelines["pipeline-a"], "pipeline-a should not receive events after unsubscribing")
-		require.True(t, receivedPipelines["pipeline-b"], "pipeline-b should still receive events")
+		require.False(t, receivedPipelines["pipeline-a"] > 0, "pipeline-a should not receive events after unsubscribing")
+		require.True(t, receivedPipelines["pipeline-b"] > 0, "pipeline-b should still receive events")
 	})
 
 	t.Run("should stop watcher when last pipeline unsubscribes", func(t *testing.T) {
@@ -470,18 +447,7 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		fakeWatcher2.Modify(secret2)
 
 		// Should only receive event for secret-2 change
-		receivedPipelines := make(map[string]int)
-		timeout := time.After(testEventTimeout)
-
-	collectLoop:
-		for {
-			select {
-			case evt := <-eventChan:
-				receivedPipelines[evt.Object.GetName()]++
-			case <-timeout:
-				break collectLoop
-			}
-		}
+		receivedPipelines := collectEvents(eventChan, testEventTimeout)
 
 		// Since secret-1 watcher was stopped, we should only get events from secret-2
 		require.Equal(t, 1, receivedPipelines["my-pipeline"], "should receive exactly one event from secret-2")
@@ -573,12 +539,8 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		// Modify secret-2 - should trigger event
 		fakeWatcher2.Modify(secret2)
 
-		select {
-		case evt := <-eventChan:
-			require.Equal(t, "my-pipeline", evt.Object.GetName())
-		case <-time.After(testEventTimeout):
-			require.FailNow(t, "expected event was not received for secret-2")
-		}
+		received := collectEvents(eventChan, testEventTimeout)
+		require.Equal(t, 1, received["my-pipeline"], "expected exactly one event for my-pipeline")
 	})
 
 	t.Run("should handle re-subscribing to a previously unwatched secret", func(t *testing.T) {
@@ -650,12 +612,8 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		// Modify secret via new watcher
 		fakeWatcher2.Modify(secret)
 
-		select {
-		case evt := <-eventChan:
-			require.Equal(t, "my-pipeline", evt.Object.GetName())
-		case <-time.After(testEventTimeout):
-			require.FailNow(t, "expected event was not received after re-subscribing")
-		}
+		received := collectEvents(eventChan, testEventTimeout)
+		require.Equal(t, 1, received["my-pipeline"], "expected exactly one event for my-pipeline")
 	})
 
 	t.Run("should be idempotent when called multiple times with same secrets", func(t *testing.T) {
@@ -745,6 +703,21 @@ func drainEvents(eventChan chan event.GenericEvent) {
 		case <-eventChan:
 		default:
 			return
+		}
+	}
+}
+
+// collectEvents collects events from the channel until timeout and returns a map of pipeline names to event counts
+func collectEvents(eventChan chan event.GenericEvent, timeout time.Duration) map[string]int {
+	received := make(map[string]int)
+	timer := time.After(timeout)
+
+	for {
+		select {
+		case evt := <-eventChan:
+			received[evt.Object.GetName()]++
+		case <-timer:
+			return received
 		}
 	}
 }
