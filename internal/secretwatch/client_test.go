@@ -12,18 +12,10 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes/fake"
 	clienttesting "k8s.io/client-go/testing"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
-)
 
-func newTestPipeline(name string) client.Object {
-	return &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: "default",
-		},
-	}
-}
+	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
+)
 
 func TestSecretWatchTriggersEvent(t *testing.T) {
 	t.Run("should send event when watched secret is modified", func(t *testing.T) {
@@ -57,7 +49,7 @@ func TestSecretWatchTriggersEvent(t *testing.T) {
 			c.stopWithTimeout(100 * time.Millisecond)
 		})
 
-		pipeline := newTestPipeline("my-pipeline")
+		pipeline := new(testutils.NewLogPipelineBuilder().WithName("my-pipeline").Build())
 		secretName := types.NamespacedName{Namespace: "default", Name: "my-secret"}
 
 		// Start watching the secret
@@ -97,7 +89,7 @@ func TestSecretWatchTriggersEvent(t *testing.T) {
 			c.stopWithTimeout(100 * time.Millisecond)
 		})
 
-		pipeline := newTestPipeline("my-pipeline")
+		pipeline := new(testutils.NewLogPipelineBuilder().WithName("my-pipeline").Build())
 		secretName := types.NamespacedName{Namespace: "default", Name: "my-secret"}
 
 		// Start watching the secret (it doesn't exist yet)
@@ -148,8 +140,8 @@ func TestSecretWatchTriggersEvent(t *testing.T) {
 			c.stopWithTimeout(100 * time.Millisecond)
 		})
 
-		pipeline1 := newTestPipeline("pipeline-1")
-		pipeline2 := newTestPipeline("pipeline-2")
+		pipeline1 := new(testutils.NewLogPipelineBuilder().WithName("pipeline-1").Build())
+		pipeline2 := new(testutils.NewLogPipelineBuilder().WithName("pipeline-2").Build())
 		secretName := types.NamespacedName{Namespace: "default", Name: "shared-secret"}
 
 		// Both pipelines watch the same secret
@@ -204,7 +196,7 @@ func TestSecretWatchTriggersEvent(t *testing.T) {
 			c.stopWithTimeout(100 * time.Millisecond)
 		})
 
-		pipeline := newTestPipeline("my-pipeline")
+		pipeline := new(testutils.NewLogPipelineBuilder().WithName("my-pipeline").Build())
 		secretName := types.NamespacedName{Namespace: "default", Name: "my-secret"}
 
 		require.NoError(t, c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{secretName}))
@@ -251,8 +243,8 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 			c.stopWithTimeout(100 * time.Millisecond)
 		})
 
-		pipelineA := newTestPipeline("pipeline-a")
-		pipelineB := newTestPipeline("pipeline-b")
+		pipelineA := new(testutils.NewLogPipelineBuilder().WithName("pipeline-a").Build())
+		pipelineB := new(testutils.NewLogPipelineBuilder().WithName("pipeline-b").Build())
 		secretName := types.NamespacedName{Namespace: "default", Name: "my-secret"}
 
 		// Initially both pipelines watch the secret
@@ -314,7 +306,7 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 			c.stopWithTimeout(100 * time.Millisecond)
 		})
 
-		pipeline := newTestPipeline("my-pipeline")
+		pipeline := new(testutils.NewLogPipelineBuilder().WithName("my-pipeline").Build())
 		secretName := types.NamespacedName{Namespace: "default", Name: "my-secret"}
 
 		// Start watching
@@ -364,8 +356,8 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 			c.stopWithTimeout(100 * time.Millisecond)
 		})
 
-		pipelineA := newTestPipeline("pipeline-a")
-		pipelineB := newTestPipeline("pipeline-b")
+		pipelineA := new(testutils.NewLogPipelineBuilder().WithName("pipeline-a").Build())
+		pipelineB := new(testutils.NewLogPipelineBuilder().WithName("pipeline-b").Build())
 		secretName := types.NamespacedName{Namespace: "default", Name: "my-secret"}
 
 		// Both pipelines watch the secret
@@ -435,7 +427,7 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 			c.stopWithTimeout(100 * time.Millisecond)
 		})
 
-		pipeline := newTestPipeline("my-pipeline")
+		pipeline := new(testutils.NewLogPipelineBuilder().WithName("my-pipeline").Build())
 		secretName1 := types.NamespacedName{Namespace: "default", Name: "secret-1"}
 		secretName2 := types.NamespacedName{Namespace: "default", Name: "secret-2"}
 
@@ -539,7 +531,7 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 			c.stopWithTimeout(100 * time.Millisecond)
 		})
 
-		pipeline := newTestPipeline("my-pipeline")
+		pipeline := new(testutils.NewLogPipelineBuilder().WithName("my-pipeline").Build())
 		secretName1 := types.NamespacedName{Namespace: "default", Name: "secret-1"}
 		secretName2 := types.NamespacedName{Namespace: "default", Name: "secret-2"}
 
@@ -624,7 +616,7 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 			c.stopWithTimeout(100 * time.Millisecond)
 		})
 
-		pipeline := newTestPipeline("my-pipeline")
+		pipeline := new(testutils.NewLogPipelineBuilder().WithName("my-pipeline").Build())
 		secretName := types.NamespacedName{Namespace: "default", Name: "my-secret"}
 
 		// Start watching
@@ -695,7 +687,7 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 			c.stopWithTimeout(100 * time.Millisecond)
 		})
 
-		pipeline := newTestPipeline("my-pipeline")
+		pipeline := new(testutils.NewLogPipelineBuilder().WithName("my-pipeline").Build())
 		secretName := types.NamespacedName{Namespace: "default", Name: "my-secret"}
 
 		// Call SyncWatchedSecrets multiple times with the same secrets
@@ -733,7 +725,7 @@ func TestSyncWatchedSecretsAfterStop(t *testing.T) {
 			eventChan: eventChan,
 		}
 
-		pipeline := newTestPipeline("my-pipeline")
+		pipeline := new(testutils.NewLogPipelineBuilder().WithName("my-pipeline").Build())
 		secretName := types.NamespacedName{Namespace: "default", Name: "my-secret"}
 
 		// Stop the client
@@ -764,7 +756,7 @@ func TestSyncWatchedSecretsAfterStop(t *testing.T) {
 			c.stopWithTimeout(100 * time.Millisecond)
 		})
 
-		pipeline := newTestPipeline("my-pipeline")
+		pipeline := new(testutils.NewLogPipelineBuilder().WithName("my-pipeline").Build())
 		secretName := types.NamespacedName{Namespace: "default", Name: "my-secret"}
 
 		// Sync secrets before stop
