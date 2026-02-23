@@ -29,9 +29,9 @@ type Client struct {
 	clientset kubernetes.Interface
 	watchers  map[types.NamespacedName]*watcher
 	eventChan chan<- event.GenericEvent
+	stopped   bool
 	mu        sync.RWMutex
 	wg        sync.WaitGroup
-	stopped   bool
 }
 
 // NewClient creates a new Client for watching Kubernetes secrets.
@@ -137,10 +137,8 @@ func (c *Client) stopWithTimeout(timeout time.Duration) {
 
 	select {
 	case <-done:
-		// All watchers finished gracefully
 		logf.Log.V(1).Info("All secret watchers stopped gracefully")
 	case <-time.After(timeout):
-		// Timeout exceeded
 		logf.Log.Info("Secret watcher shutdown timeout exceeded, some watchers may still be running",
 			"timeout", timeout)
 	}
