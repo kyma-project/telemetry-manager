@@ -39,7 +39,6 @@ import (
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 	sharedtypesutils "github.com/kyma-project/telemetry-manager/internal/utils/sharedtypes"
 	telemetryutils "github.com/kyma-project/telemetry-manager/internal/utils/telemetry"
-	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
 
@@ -62,7 +61,6 @@ type Reconciler struct {
 	pipelineSync          PipelineSyncer
 	pipelineValidator     *Validator
 	errToMsgConverter     commonstatus.ErrorToMessageConverter
-	secretWatcher         SecretWatcher
 }
 
 // Option configures the Reconciler during initialization.
@@ -152,12 +150,6 @@ func WithClient(client client.Client) Option {
 	}
 }
 
-func WithSecretWatcher(watcher SecretWatcher) Option {
-	return func(r *Reconciler) {
-		r.secretWatcher = watcher
-	}
-}
-
 // New creates a new Reconciler with the provided options.
 func New(opts ...Option) *Reconciler {
 	r := &Reconciler{}
@@ -229,8 +221,6 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 
 	r.trackPipelineInfoMetric(ctx, allPipelinesList.Items)
 
-	r.syncWatchedSecrets(ctx, pipeline)
-
 	reconcilablePipelines, err := r.getReconcilablePipelines(ctx, allPipelinesList.Items)
 	if err != nil {
 		return fmt.Errorf("failed to fetch deployable trace pipelines: %w", err)
@@ -251,20 +241,6 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 	}
 
 	return nil
-}
-
-func (r *Reconciler) syncWatchedSecrets(ctx context.Context, pipeline *telemetryv1beta1.TracePipeline) {
-	secretRefs := secretref.GetSecretRefsTracePipeline(pipeline)
-
-	var secretNames []client.ObjectKey
-	for _, ref := range secretRefs {
-		secretNames = append(secretNames, client.ObjectKey{
-			Namespace: ref.Namespace,
-			Name:      ref.Name,
-		})
-	}
-
-	r.secretWatcher.SyncWatchedSecrets(ctx, pipeline, secretNames)
 }
 
 // getReconcilablePipelines returns the list of trace pipelines that are ready to be rendered into the otel collector configuration. A pipeline is deployable if it is not being deleted, all secret references exist, and is not above the pipeline limit.

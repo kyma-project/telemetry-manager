@@ -4,7 +4,6 @@ import (
 	"context"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
@@ -92,8 +91,4 @@ type TransformSpecValidator interface {
 type FilterSpecValidator interface {
 	// Validate checks if the filter specifications are valid.
 	Validate(filters []telemetryv1beta1.FilterSpec) error
-}
-
-type SecretWatcher interface {
-	SyncWatchedSecrets(ctx context.Context, pipeline client.Object, secrets []types.NamespacedName)
 }

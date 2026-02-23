@@ -47,7 +47,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
-	"github.com/kyma-project/telemetry-manager/internal/secretwatch"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	predicateutils "github.com/kyma-project/telemetry-manager/internal/utils/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
@@ -120,11 +119,6 @@ func NewTracePipelineController(config TracePipelineControllerConfig, client cli
 		return nil, err
 	}
 
-	secretWatcher, err := secretwatch.NewClient(config.RestConfig, reconcileTriggerChan)
-	if err != nil {
-		return nil, err
-	}
-
 	reconciler := tracepipeline.New(
 		tracepipeline.WithClient(client),
 		tracepipeline.WithGlobals(config.Global),
@@ -140,7 +134,6 @@ func NewTracePipelineController(config TracePipelineControllerConfig, client cli
 		tracepipeline.WithPipelineLock(pipelineLock),
 		tracepipeline.WithPipelineSyncer(pipelineSync),
 		tracepipeline.WithPipelineValidator(pipelineValidator),
-		tracepipeline.WithSecretWatcher(secretWatcher),
 	)
 
 	return &TracePipelineController{
