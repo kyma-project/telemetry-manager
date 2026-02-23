@@ -35,7 +35,6 @@ func DetectIstioInstalled(ctx context.Context, k8sClient client.Client) bool {
 		Name:      "default",
 		Namespace: "kyma-system",
 	}, istioCR)
-
 	if err != nil {
 		return false
 	}
@@ -96,7 +95,6 @@ func isIstiodReady(ctx context.Context, k8sClient client.Client) bool {
 		Name:      "istiod",
 		Namespace: istioNamespace,
 	}, deployment)
-
 	if err != nil {
 		return false
 	}
@@ -127,7 +125,6 @@ func DetectIstioPartiallyInstalled(ctx context.Context, k8sClient client.Client)
 		Name:      "default",
 		Namespace: "kyma-system",
 	}, istioCR)
-
 	if err != nil {
 		// CR doesn't exist, so not partially installed
 		return false
@@ -157,7 +154,6 @@ func DetectOrphanedIstioCR(ctx context.Context, k8sClient client.Client) bool {
 		Name:      "default",
 		Namespace: "kyma-system",
 	}, istioCR)
-
 	if err != nil {
 		// CR doesn't exist
 		return false
@@ -175,7 +171,6 @@ func isIstioManagerRunning(ctx context.Context, k8sClient client.Client) bool {
 		Name:      "istio-controller-manager",
 		Namespace: "istio-system",
 	}, deployment)
-
 	if err != nil {
 		return false
 	}

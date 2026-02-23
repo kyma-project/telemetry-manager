@@ -187,7 +187,6 @@ func removeIstioCRFinalizers(t TestingT, k8sClient client.Client) error {
 		Name:      "default",
 		Namespace: "kyma-system",
 	}, istioCR)
-
 	if err != nil {
 		return fmt.Errorf("failed to get Istio CR: %w", err)
 	}
