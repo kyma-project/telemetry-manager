@@ -36,14 +36,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
-	istionetworkingv1 "istio.io/client-go/pkg/apis/networking/v1"
 	istiosecurityv1 "istio.io/client-go/pkg/apis/security/v1"
+	istionetworkingv1 "istio.io/client-go/pkg/apis/networking/v1"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
-	otlpgatewayconfig "github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpgateway"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/tracegateway"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/otlpgateway"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	predicateutils "github.com/kyma-project/telemetry-manager/internal/utils/predicate"
@@ -82,7 +82,7 @@ func NewOTLPGatewayController(config OTLPGatewayControllerConfig, client client.
 				config.OTLPGatewayPriorityClassName,
 			),
 		),
-		otlpgateway.WithConfigBuilder(&otlpgatewayconfig.Builder{Reader: client}),
+		otlpgateway.WithTraceConfigBuilder(&tracegateway.Builder{Reader: client}),
 		otlpgateway.WithGatewayProber(&workloadstatus.DaemonSetProber{Client: client}),
 		otlpgateway.WithIstioStatusChecker(istiostatus.NewChecker(discoveryClient)),
 		otlpgateway.WithErrorToMessageConverter(&conditions.ErrorToMessageConverter{}),
