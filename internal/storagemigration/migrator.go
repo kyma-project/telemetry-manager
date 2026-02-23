@@ -214,9 +214,10 @@ func (m *Migrator) clearStoredVersion(ctx context.Context, crdName string) error
 		return nil
 	}
 
+	originalCRD := crd.DeepCopy()
 	crd.Status.StoredVersions = newStoredVersions
-	if err := m.client.Status().Update(ctx, &crd); err != nil {
-		return fmt.Errorf("failed to update CRD status for %s: %w", crdName, err)
+	if err := m.client.Status().Patch(ctx, &crd, client.MergeFrom(originalCRD)); err != nil {
+		return fmt.Errorf("failed to patch CRD status for %s: %w", crdName, err)
 	}
 
 	metrics.MigratorInfo.WithLabelValues(crdName, oldVersion).Set(0)
