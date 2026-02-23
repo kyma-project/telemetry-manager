@@ -4,14 +4,15 @@ import (
 	"context"
 	"fmt"
 
-	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
-	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 )
 
 // updateGatewayHealthyConditions updates the GatewayHealthy condition on all referenced TracePipeline CRs.
@@ -27,6 +28,7 @@ func (r *Reconciler) updateGatewayHealthyConditions(ctx context.Context, pipelin
 
 	// Update each TracePipeline
 	var lastError error
+
 	for _, name := range pipelineNames {
 		if err := r.updatePipelineCondition(ctx, name, condition); err != nil {
 			log.Error(err, "failed to update gateway healthy condition", "pipeline", name)
@@ -44,6 +46,7 @@ func (r *Reconciler) updatePipelineCondition(ctx context.Context, pipelineName s
 		if apierrors.IsNotFound(err) {
 			return nil
 		}
+
 		return fmt.Errorf("failed to get pipeline: %w", err)
 	}
 
@@ -60,6 +63,7 @@ func (r *Reconciler) updatePipelineCondition(ctx context.Context, pipelineName s
 			logf.FromContext(ctx).V(1).Info("status update conflict, will be retried", "pipeline", pipelineName)
 			return nil
 		}
+
 		return fmt.Errorf("failed to update status: %w", err)
 	}
 

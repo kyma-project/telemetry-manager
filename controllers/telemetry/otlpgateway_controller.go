@@ -20,6 +20,8 @@ import (
 	"context"
 	"fmt"
 
+	istionetworkingclientv1 "istio.io/client-go/pkg/apis/networking/v1"
+	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -36,15 +38,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
-	istiosecurityv1 "istio.io/client-go/pkg/apis/security/v1"
-	istionetworkingv1 "istio.io/client-go/pkg/apis/networking/v1"
-
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/tracegateway"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler/otlpgateway"
+	otlpgatewayconfig "github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpgateway" //nolint:importas // needed to disambiguate from reconciler package
+	otlpgatewayreconciler "github.com/kyma-project/telemetry-manager/internal/reconciler/otlpgateway"       //nolint:importas // needed to disambiguate from config package
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	predicateutils "github.com/kyma-project/telemetry-manager/internal/utils/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
@@ -55,14 +54,14 @@ type OTLPGatewayController struct {
 	client.Client
 
 	reconcileTriggerChan <-chan event.GenericEvent
-	reconciler           *otlpgateway.Reconciler
+	reconciler           *otlpgatewayreconciler.Reconciler
 }
 
 type OTLPGatewayControllerConfig struct {
 	config.Global
 
-	RestConfig                    *rest.Config
-	OTelCollectorImage            string
+	RestConfig                   *rest.Config
+	OTelCollectorImage           string
 	OTLPGatewayPriorityClassName string
 }
 
@@ -72,20 +71,20 @@ func NewOTLPGatewayController(config OTLPGatewayControllerConfig, client client.
 		return nil, fmt.Errorf("failed to create discovery client: %w", err)
 	}
 
-	reconciler := otlpgateway.NewReconciler(
+	reconciler := otlpgatewayreconciler.NewReconciler(
 		client,
-		otlpgateway.WithGlobals(config.Global),
-		otlpgateway.WithGatewayApplierDeleter(
+		otlpgatewayreconciler.WithGlobals(config.Global),
+		otlpgatewayreconciler.WithGatewayApplierDeleter(
 			otelcollector.NewOTLPGatewayApplierDeleter(
 				config.Global,
 				config.OTelCollectorImage,
 				config.OTLPGatewayPriorityClassName,
 			),
 		),
-		otlpgateway.WithTraceConfigBuilder(&tracegateway.Builder{Reader: client}),
-		otlpgateway.WithGatewayProber(&workloadstatus.DaemonSetProber{Client: client}),
-		otlpgateway.WithIstioStatusChecker(istiostatus.NewChecker(discoveryClient)),
-		otlpgateway.WithErrorToMessageConverter(&conditions.ErrorToMessageConverter{}),
+		otlpgatewayreconciler.WithConfigBuilder(&otlpgatewayconfig.Builder{Reader: client}),
+		otlpgatewayreconciler.WithGatewayProber(&workloadstatus.DaemonSetProber{Client: client}),
+		otlpgatewayreconciler.WithIstioStatusChecker(istiostatus.NewChecker(discoveryClient)),
+		otlpgatewayreconciler.WithErrorToMessageConverter(&conditions.ErrorToMessageConverter{}),
 	)
 
 	return &OTLPGatewayController{
@@ -143,12 +142,12 @@ func (r *OTLPGatewayController) SetupWithManager(mgr ctrl.Manager) error {
 	// Watch Istio resources if present
 	if isIstioPresent(mgr.GetClient()) {
 		b = b.Watches(
-			&istiosecurityv1.PeerAuthentication{},
+			&istiosecurityclientv1.PeerAuthentication{},
 			handler.EnqueueRequestsFromMapFunc(r.mapOwnedResourceToConfigMap),
 			ctrlbuilder.WithPredicates(predicateutils.OwnedResourceChanged()),
 		)
 		b = b.Watches(
-			&istionetworkingv1.DestinationRule{},
+			&istionetworkingclientv1.DestinationRule{},
 			handler.EnqueueRequestsFromMapFunc(r.mapOwnedResourceToConfigMap),
 			ctrlbuilder.WithPredicates(predicateutils.OwnedResourceChanged()),
 		)
@@ -201,6 +200,6 @@ func (r *OTLPGatewayController) mapOwnedResourceToConfigMap(ctx context.Context,
 // isIstioPresent checks if Istio CRDs are installed in the cluster.
 func isIstioPresent(c client.Client) bool {
 	// Try to list PeerAuthentication resources - if it fails, Istio is not present
-	var peerAuths istiosecurityv1.PeerAuthenticationList
+	var peerAuths istiosecurityclientv1.PeerAuthenticationList
 	return c.List(context.Background(), &peerAuths) == nil
 }

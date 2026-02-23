@@ -9,8 +9,8 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const (
@@ -43,15 +43,16 @@ type PipelineReference struct {
 // Returns an empty configuration if the ConfigMap doesn't exist.
 func ReadOTLPGatewayConfig(ctx context.Context, c client.Client, namespace string) (*OTLPGatewayConfigMap, error) {
 	var cm corev1.ConfigMap
+
 	err := c.Get(ctx, types.NamespacedName{
 		Name:      OTLPGatewayConfigMapName,
 		Namespace: namespace,
 	}, &cm)
-
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			return &OTLPGatewayConfigMap{}, nil
 		}
+
 		return nil, fmt.Errorf("failed to get otlp gateway configmap: %w", err)
 	}
 
@@ -104,6 +105,7 @@ func RemoveTracePipelineReference(ctx context.Context, c client.Client, namespac
 		}
 
 		config.TracePipeline = filtered
+
 		return nil
 	})
 }
@@ -113,24 +115,28 @@ func RemoveTracePipelineReference(ctx context.Context, c client.Client, namespac
 func updateConfigMapWithRetry(ctx context.Context, c client.Client, namespace string, updateFn func(*OTLPGatewayConfigMap) error) error {
 	log := logf.FromContext(ctx)
 
-	for attempt := 0; attempt < maxRetries; attempt++ {
+	for attempt := range maxRetries {
 		// Read current ConfigMap (or create if doesn't exist)
 		var cm corev1.ConfigMap
+
 		err := c.Get(ctx, types.NamespacedName{
 			Name:      OTLPGatewayConfigMapName,
 			Namespace: namespace,
 		}, &cm)
 
 		configMapExists := true
+
 		if err != nil {
 			if !apierrors.IsNotFound(err) {
 				return fmt.Errorf("failed to get configmap: %w", err)
 			}
+
 			configMapExists = false
 		}
 
 		// Parse current config
 		var config OTLPGatewayConfigMap
+
 		if configMapExists {
 			yamlData, ok := cm.Data[ConfigMapDataKey]
 			if ok && yamlData != "" {
@@ -165,6 +171,7 @@ func updateConfigMapWithRetry(ctx context.Context, c client.Client, namespace st
 					log.V(1).Info("configmap created by another controller, retrying", "attempt", attempt+1)
 					continue
 				}
+
 				return fmt.Errorf("failed to create configmap: %w", err)
 			}
 
@@ -174,6 +181,7 @@ func updateConfigMapWithRetry(ctx context.Context, c client.Client, namespace st
 		if cm.Data == nil {
 			cm.Data = make(map[string]string)
 		}
+
 		cm.Data[ConfigMapDataKey] = string(yamlData)
 
 		if err := c.Update(ctx, &cm); err != nil {
@@ -181,6 +189,7 @@ func updateConfigMapWithRetry(ctx context.Context, c client.Client, namespace st
 				log.V(1).Info("configmap update conflict, retrying", "attempt", attempt+1)
 				continue
 			}
+
 			return fmt.Errorf("failed to update configmap: %w", err)
 		}
 

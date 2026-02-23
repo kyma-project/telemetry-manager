@@ -21,8 +21,8 @@ import (
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/config"
-	common "github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/tracegateway"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpgateway"
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
@@ -30,7 +30,7 @@ import (
 
 type mocks struct {
 	gatewayApplierDeleter *mockGatewayApplierDeleter
-	traceConfigBuilder    *mockTraceConfigBuilder
+	configBuilder         *mockOTLPGatewayConfigBuilder
 	gatewayProber         *mockProber
 	istioStatusChecker    *mockIstioStatusChecker
 	errToMsgConverter     *mockErrorToMessageConverter
@@ -50,15 +50,16 @@ func (m *mockGatewayApplierDeleter) DeleteResources(ctx context.Context, c clien
 	return args.Error(0)
 }
 
-type mockTraceConfigBuilder struct {
+type mockOTLPGatewayConfigBuilder struct {
 	mock.Mock
 }
 
-func (m *mockTraceConfigBuilder) Build(ctx context.Context, pipelines []telemetryv1beta1.TracePipeline, opts tracegateway.BuildOptions) (*common.Config, common.EnvVars, error) {
-	args := m.Called(ctx, pipelines, opts)
+func (m *mockOTLPGatewayConfigBuilder) Build(ctx context.Context, tracePipelines []telemetryv1beta1.TracePipeline, opts otlpgateway.BuildOptions) (*common.Config, common.EnvVars, error) {
+	args := m.Called(ctx, tracePipelines, opts)
 	if args.Get(0) == nil {
 		return nil, nil, args.Error(2)
 	}
+
 	return args.Get(0).(*common.Config), args.Get(1).(common.EnvVars), args.Error(2)
 }
 
@@ -117,7 +118,7 @@ func newTestReconciler(fakeClient client.Client, mocks *mocks) *Reconciler {
 		Client:                fakeClient,
 		globals:               config.NewGlobal(config.WithTargetNamespace("kyma-system")),
 		gatewayApplierDeleter: mocks.gatewayApplierDeleter,
-		traceConfigBuilder:    mocks.traceConfigBuilder,
+		configBuilder:         mocks.configBuilder,
 		gatewayProber:         mocks.gatewayProber,
 		istioStatusChecker:    mocks.istioStatusChecker,
 		errToMsgConverter:     mocks.errToMsgConverter,
@@ -127,7 +128,7 @@ func newTestReconciler(fakeClient client.Client, mocks *mocks) *Reconciler {
 func newDefaultMocks() *mocks {
 	return &mocks{
 		gatewayApplierDeleter: &mockGatewayApplierDeleter{},
-		traceConfigBuilder:    &mockTraceConfigBuilder{},
+		configBuilder:         &mockOTLPGatewayConfigBuilder{},
 		gatewayProber:         &mockProber{},
 		istioStatusChecker:    &mockIstioStatusChecker{},
 		errToMsgConverter:     &mockErrorToMessageConverter{},
@@ -148,6 +149,7 @@ func TestReconcile_ConfigMapCreatedIfNotExists(t *testing.T) {
 	require.NoError(t, err)
 
 	var cm corev1.ConfigMap
+
 	err = fakeClient.Get(ctx, types.NamespacedName{
 		Name:      otelcollector.OTLPGatewayConfigMapName,
 		Namespace: "kyma-system",
@@ -204,7 +206,7 @@ func TestReconcile_SinglePipeline_DeploysGateway(t *testing.T) {
 	mocks := newDefaultMocks()
 
 	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false)
-	mocks.traceConfigBuilder.On("Build", mock.Anything, mock.Anything, mock.Anything).Return(&common.Config{}, common.EnvVars{}, nil)
+	mocks.configBuilder.On("Build", mock.Anything, mock.Anything, mock.Anything).Return(&common.Config{}, common.EnvVars{}, nil)
 	mocks.gatewayApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mocks.gatewayProber.On("IsReady", mock.Anything, mock.Anything).Return(nil)
 	mocks.errToMsgConverter.On("Convert", mock.Anything).Return("")
@@ -214,7 +216,7 @@ func TestReconcile_SinglePipeline_DeploysGateway(t *testing.T) {
 	_, err := sut.Reconcile(ctx, ctrl.Request{})
 	require.NoError(t, err)
 
-	mocks.traceConfigBuilder.AssertCalled(t, "Build", mock.Anything, mock.Anything, mock.Anything)
+	mocks.configBuilder.AssertCalled(t, "Build", mock.Anything, mock.Anything, mock.Anything)
 	mocks.gatewayApplierDeleter.AssertCalled(t, "ApplyResources", mock.Anything, mock.Anything, mock.Anything)
 }
 
@@ -250,7 +252,7 @@ func TestReconcile_GenerationMismatch_SkipsPipeline(t *testing.T) {
 	require.NoError(t, err)
 
 	mocks.gatewayApplierDeleter.AssertCalled(t, "DeleteResources", mock.Anything, mock.Anything, mock.Anything)
-	mocks.traceConfigBuilder.AssertNotCalled(t, "Build", mock.Anything, mock.Anything, mock.Anything)
+	mocks.configBuilder.AssertNotCalled(t, "Build", mock.Anything, mock.Anything, mock.Anything)
 }
 
 func TestReconcile_PipelineDeleted_SkipsPipeline(t *testing.T) {
@@ -314,7 +316,7 @@ func TestReconcile_MultiplePipelines_AggregatesConfig(t *testing.T) {
 	mocks := newDefaultMocks()
 
 	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false)
-	mocks.traceConfigBuilder.On("Build", mock.Anything, mock.MatchedBy(func(pipelines []telemetryv1beta1.TracePipeline) bool {
+	mocks.configBuilder.On("Build", mock.Anything, mock.MatchedBy(func(pipelines []telemetryv1beta1.TracePipeline) bool {
 		return len(pipelines) == 2
 	}), mock.Anything).Return(&common.Config{}, common.EnvVars{}, nil)
 	mocks.gatewayApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -326,7 +328,7 @@ func TestReconcile_MultiplePipelines_AggregatesConfig(t *testing.T) {
 	_, err := sut.Reconcile(ctx, ctrl.Request{})
 	require.NoError(t, err)
 
-	mocks.traceConfigBuilder.AssertCalled(t, "Build", mock.Anything, mock.MatchedBy(func(pipelines []telemetryv1beta1.TracePipeline) bool {
+	mocks.configBuilder.AssertCalled(t, "Build", mock.Anything, mock.MatchedBy(func(pipelines []telemetryv1beta1.TracePipeline) bool {
 		return len(pipelines) == 2
 	}), mock.Anything)
 }
@@ -363,6 +365,7 @@ func TestReconcile_LegacyDeploymentCleanup(t *testing.T) {
 	require.NoError(t, err)
 
 	var dep appsv1.Deployment
+
 	err = fakeClient.Get(ctx, types.NamespacedName{
 		Name:      names.TraceGateway,
 		Namespace: "kyma-system",
@@ -420,7 +423,7 @@ func TestReconcile_IstioEnabled_PassesFlag(t *testing.T) {
 	mocks := newDefaultMocks()
 
 	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(true)
-	mocks.traceConfigBuilder.On("Build", mock.Anything, mock.Anything, mock.Anything).Return(&common.Config{}, common.EnvVars{}, nil)
+	mocks.configBuilder.On("Build", mock.Anything, mock.Anything, mock.Anything).Return(&common.Config{}, common.EnvVars{}, nil)
 	mocks.gatewayApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.MatchedBy(func(opts otelcollector.GatewayApplyOptions) bool {
 		return opts.IstioEnabled == true
 	})).Return(nil)
@@ -542,6 +545,7 @@ func TestFetchTracePipelines_GetError(t *testing.T) {
 
 type errorClient struct {
 	client.Client
+
 	err error
 }
 
@@ -551,5 +555,6 @@ func (c *errorClient) Get(ctx context.Context, key client.ObjectKey, obj client.
 			return c.err
 		}
 	}
+
 	return apierrors.NewNotFound(schema.GroupResource{}, key.Name)
 }

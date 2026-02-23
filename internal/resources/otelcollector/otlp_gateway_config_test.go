@@ -126,24 +126,32 @@ func TestWriteTracePipelineReference_AddToExistingConfigMap(t *testing.T) {
 
 	// Check existing pipeline is preserved
 	found := false
+
 	for _, ref := range config.TracePipeline {
 		if ref.Name == "existing-pipeline" {
 			require.Equal(t, int64(3), ref.Generation)
+
 			found = true
+
 			break
 		}
 	}
+
 	require.True(t, found, "existing pipeline should be preserved")
 
 	// Check new pipeline is added
 	found = false
+
 	for _, ref := range config.TracePipeline {
 		if ref.Name == "new-pipeline" {
 			require.Equal(t, int64(1), ref.Generation)
+
 			found = true
+
 			break
 		}
 	}
+
 	require.True(t, found, "new pipeline should be added")
 }
 

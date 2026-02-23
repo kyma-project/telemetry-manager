@@ -34,9 +34,9 @@ import (
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/tracegateway"
-	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpgateway"
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
+	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 	telemetryutils "github.com/kyma-project/telemetry-manager/internal/utils/telemetry"
 )
@@ -49,7 +49,7 @@ type Reconciler struct {
 
 	// Dependencies
 	gatewayApplierDeleter GatewayApplierDeleter
-	traceConfigBuilder    TraceGatewayConfigBuilder
+	configBuilder         OTLPGatewayConfigBuilder
 	gatewayProber         Prober
 	istioStatusChecker    IstioStatusChecker
 	errToMsgConverter     ErrorToMessageConverter
@@ -72,10 +72,10 @@ func WithGatewayApplierDeleter(gad GatewayApplierDeleter) Option {
 	}
 }
 
-// WithTraceConfigBuilder sets the trace configuration builder.
-func WithTraceConfigBuilder(builder TraceGatewayConfigBuilder) Option {
+// WithConfigBuilder sets the OTLP Gateway configuration builder.
+func WithConfigBuilder(builder OTLPGatewayConfigBuilder) Option {
 	return func(r *Reconciler) {
-		r.traceConfigBuilder = builder
+		r.configBuilder = builder
 	}
 }
 
@@ -136,11 +136,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 // ensureConfigMapExists creates the coordination ConfigMap if it doesn't exist.
 func (r *Reconciler) ensureConfigMapExists(ctx context.Context) error {
 	var cm corev1.ConfigMap
+
 	err := r.Get(ctx, types.NamespacedName{
 		Name:      otelcollector.OTLPGatewayConfigMapName,
 		Namespace: r.globals.TargetNamespace(),
 	}, &cm)
-
 	if err == nil {
 		return nil
 	}
@@ -180,7 +180,7 @@ func (r *Reconciler) doReconcile(ctx context.Context) error {
 		return fmt.Errorf("failed to fetch pipelines: %w", err)
 	}
 
-		pipelineNames := make([]string, 0, len(tracePipelines))
+	pipelineNames := make([]string, 0, len(tracePipelines))
 	for _, pipeline := range tracePipelines {
 		pipelineNames = append(pipelineNames, pipeline.Name)
 	}
@@ -196,6 +196,7 @@ func (r *Reconciler) doReconcile(ctx context.Context) error {
 		for _, ref := range config.TracePipeline {
 			allReferencedNames = append(allReferencedNames, ref.Name)
 		}
+
 		if err := r.updateGatewayHealthyConditions(ctx, allReferencedNames); err != nil {
 			log.Error(err, "failed to update status after deletion")
 		}
@@ -252,6 +253,7 @@ func (r *Reconciler) fetchTracePipelines(ctx context.Context, refs []otelcollect
 				log.V(1).Info("pipeline not found, skipping", "pipeline", ref.Name)
 				continue
 			}
+
 			return nil, fmt.Errorf("failed to get pipeline %s: %w", ref.Name, err)
 		}
 
@@ -287,12 +289,13 @@ func (r *Reconciler) buildCollectorConfig(ctx context.Context, pipelines []telem
 	}
 
 	var enrichments *operatorv1beta1.EnrichmentSpec
+
 	t, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
 	if err == nil {
 		enrichments = t.Spec.Enrichments
 	}
 
-	return r.traceConfigBuilder.Build(ctx, pipelines, tracegateway.BuildOptions{
+	return r.configBuilder.Build(ctx, pipelines, otlpgateway.BuildOptions{
 		Cluster: common.ClusterOptions{
 			ClusterName:   clusterName,
 			ClusterUID:    clusterUID,

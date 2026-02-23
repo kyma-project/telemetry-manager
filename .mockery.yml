@@ -49,11 +49,16 @@ packages:
   github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline:
     interfaces:
       FlowHealthProber:
-      GatewayApplierDeleter:
-      GatewayConfigBuilder:
       OverridesHandler:
       PipelineLock:
       PipelineSyncer:
+  github.com/kyma-project/telemetry-manager/internal/reconciler/otlpgateway:
+    interfaces:
+      OTLPGatewayConfigBuilder:
+      GatewayApplierDeleter:
+      Prober:
+      IstioStatusChecker:
+      ErrorToMessageConverter:
   github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober:
     interfaces:
       alertGetter:

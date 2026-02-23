@@ -46,12 +46,12 @@ type Reconciler struct {
 	globals config.Global
 
 	// Dependencies
-	flowHealthProber   FlowHealthProber
-	overridesHandler   OverridesHandler
-	pipelineLock       PipelineLock
-	pipelineSync       PipelineSyncer
-	pipelineValidator  *Validator
-	errToMsgConverter  commonstatus.ErrorToMessageConverter
+	flowHealthProber  FlowHealthProber
+	overridesHandler  OverridesHandler
+	pipelineLock      PipelineLock
+	pipelineSync      PipelineSyncer
+	pipelineValidator *Validator
+	errToMsgConverter commonstatus.ErrorToMessageConverter
 }
 
 // Option configures the Reconciler during initialization.
@@ -183,6 +183,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 	if err := r.List(ctx, &allPipelinesList); err != nil {
 		return fmt.Errorf("failed to list trace pipelines: %w", err)
 	}
+
 	r.trackPipelineInfoMetric(ctx, allPipelinesList.Items)
 
 	// Validate pipeline
@@ -195,6 +196,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 	if isReconcilable {
 		// Write pipeline reference to OTLP Gateway ConfigMap
 		logf.FromContext(ctx).V(1).Info("Writing pipeline reference to OTLP Gateway ConfigMap", "pipeline", pipeline.Name, "generation", pipeline.Generation)
+
 		if err := otelcollector.WriteTracePipelineReference(
 			ctx,
 			r.Client,
@@ -207,6 +209,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 	} else {
 		// Remove pipeline reference from ConfigMap
 		logf.FromContext(ctx).V(1).Info("Removing pipeline reference from OTLP Gateway ConfigMap", "pipeline", pipeline.Name)
+
 		if err := otelcollector.RemoveTracePipelineReference(
 			ctx,
 			r.Client,
