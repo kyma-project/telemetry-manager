@@ -123,6 +123,8 @@ func (c *Client) stopWithTimeout(timeout time.Duration) {
 		}
 	}
 
+	// Unlock before waiting so that concurrent SyncWatchedSecrets calls
+	// can return ErrClientStopped immediately instead of blocking.
 	c.mu.Unlock()
 
 	// Wait for all watchers to finish with timeout
