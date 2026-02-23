@@ -104,18 +104,6 @@ func (c *Client) SyncWatchedSecrets(ctx context.Context, pipeline client.Object,
 	return nil
 }
 
-//nolint:contextcheck // Intentionally using Background() so watcher outlives reconcile request
-func (c *Client) startWatcher(ctx context.Context, w *watcher) {
-	watcherCtx, cancel := context.WithCancel(
-		logf.IntoContext(context.Background(), logf.FromContext(ctx)),
-	)
-	w.cancel = cancel
-
-	c.wg.Go(func() {
-		w.start(watcherCtx)
-	})
-}
-
 // Stop gracefully shuts down all watchers with the default timeout.
 // It cancels all watcher contexts and waits for them to finish.
 // If watchers don't finish within the default timeout, it returns without waiting further.
@@ -155,4 +143,16 @@ func (c *Client) stopWithTimeout(timeout time.Duration) {
 		logf.Log.Info("Secret watcher shutdown timeout exceeded, some watchers may still be running",
 			"timeout", timeout)
 	}
+}
+
+//nolint:contextcheck // Intentionally using Background() so watcher outlives reconcile request
+func (c *Client) startWatcher(ctx context.Context, w *watcher) {
+	watcherCtx, cancel := context.WithCancel(
+		logf.IntoContext(context.Background(), logf.FromContext(ctx)),
+	)
+	w.cancel = cancel
+
+	c.wg.Go(func() {
+		w.start(watcherCtx)
+	})
 }

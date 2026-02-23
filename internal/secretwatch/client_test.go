@@ -75,7 +75,7 @@ func TestSecretWatchTriggersEvent(t *testing.T) {
 		fakeWatcher.Modify(secret)
 
 		// Wait for event
-		received := collectEvents(eventChan, testEventTimeout)
+		received := collectEvents(eventChan)
 		require.Contains(t, received, pipeline.GetName())
 		require.Equal(t, 1, received[pipeline.GetName()], "expected exactly one event")
 	})
@@ -115,7 +115,7 @@ func TestSecretWatchTriggersEvent(t *testing.T) {
 		}
 		fakeWatcher.Add(secret)
 
-		received := collectEvents(eventChan, testEventTimeout)
+		received := collectEvents(eventChan)
 		require.Contains(t, received, pipeline.GetName())
 		require.Equal(t, 1, received[pipeline.GetName()], "expected exactly one event")
 	})
@@ -210,7 +210,7 @@ func TestSecretWatchTriggersEvent(t *testing.T) {
 		// Simulate secret deletion
 		fakeWatcher.Delete(secret)
 
-		received := collectEvents(eventChan, testEventTimeout)
+		received := collectEvents(eventChan)
 		require.Contains(t, received, pipeline.GetName())
 		require.Equal(t, 1, received[pipeline.GetName()], "expected exactly one event")
 	})
@@ -263,7 +263,7 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		fakeWatcher.Modify(secret)
 
 		// Collect events - should only receive event for pipeline-b
-		receivedPipelines := collectEvents(eventChan, testEventTimeout)
+		receivedPipelines := collectEvents(eventChan)
 
 		require.NotContains(t, receivedPipelines, pipelineA.GetName(), "pipeline-a should not receive events after unsubscribing")
 		require.Contains(t, receivedPipelines, pipelineB.GetName(), "pipeline-b should still receive events")
@@ -450,7 +450,7 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		fakeWatcher2.Modify(secret2)
 
 		// Should only receive event for secret-2 change
-		receivedPipelines := collectEvents(eventChan, testEventTimeout)
+		receivedPipelines := collectEvents(eventChan)
 
 		// Since secret-1 watcher was stopped, we should only get events from secret-2
 		require.Contains(t, receivedPipelines, pipeline.GetName())
@@ -543,7 +543,7 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		// Modify secret-2 - should trigger event
 		fakeWatcher2.Modify(secret2)
 
-		received := collectEvents(eventChan, testEventTimeout)
+		received := collectEvents(eventChan)
 		require.Contains(t, received, pipeline.GetName())
 		require.Equal(t, 1, received[pipeline.GetName()], "expected exactly one event")
 	})
@@ -617,7 +617,7 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		// Modify secret via new watcher
 		fakeWatcher2.Modify(secret)
 
-		received := collectEvents(eventChan, testEventTimeout)
+		received := collectEvents(eventChan)
 		require.Contains(t, received, pipeline.GetName())
 		require.Equal(t, 1, received[pipeline.GetName()], "expected exactly one event")
 	})
@@ -714,9 +714,9 @@ func drainEvents(eventChan chan event.GenericEvent) {
 }
 
 // collectEvents collects events from the channel until timeout and returns a map of pipeline names to event counts
-func collectEvents(eventChan chan event.GenericEvent, timeout time.Duration) map[string]int {
+func collectEvents(eventChan chan event.GenericEvent) map[string]int {
 	received := make(map[string]int)
-	timer := time.After(timeout)
+	timer := time.After(testEventTimeout)
 
 	for {
 		select {

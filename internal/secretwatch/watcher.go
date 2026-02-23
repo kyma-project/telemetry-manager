@@ -12,7 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
-	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	kubecoreev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -25,7 +25,7 @@ const reconnectDelay = 5 * time.Second
 type watcher struct {
 	secret    types.NamespacedName
 	linked    []client.Object
-	client    v1.SecretInterface
+	client    kubecoreev1.SecretInterface
 	eventChan chan<- event.GenericEvent
 	mu        sync.RWMutex
 	cancel    context.CancelFunc
