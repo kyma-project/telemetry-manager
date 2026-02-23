@@ -9,12 +9,7 @@ inputs:
 
 runs:
   using: "composite"
-
   steps:
-    - name: Summarize images
-      shell: bash
-      run: ./hack/summarize-images.sh
-
     - name: Install xmlstartar
       shell: bash
       run: |
