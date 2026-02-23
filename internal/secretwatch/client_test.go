@@ -61,7 +61,7 @@ func TestSecretWatchTriggersEvent(t *testing.T) {
 		secretName := types.NamespacedName{Namespace: "default", Name: "my-secret"}
 
 		// Start watching the secret
-		c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{secretName})
+		require.NoError(t, c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{secretName}))
 
 		// Give the watcher goroutine time to start
 		time.Sleep(50 * time.Millisecond)
@@ -101,7 +101,7 @@ func TestSecretWatchTriggersEvent(t *testing.T) {
 		secretName := types.NamespacedName{Namespace: "default", Name: "my-secret"}
 
 		// Start watching the secret (it doesn't exist yet)
-		c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{secretName})
+		require.NoError(t, c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{secretName}))
 
 		time.Sleep(50 * time.Millisecond)
 
@@ -153,8 +153,8 @@ func TestSecretWatchTriggersEvent(t *testing.T) {
 		secretName := types.NamespacedName{Namespace: "default", Name: "shared-secret"}
 
 		// Both pipelines watch the same secret
-		c.SyncWatchedSecrets(ctx, pipeline1, []types.NamespacedName{secretName})
-		c.SyncWatchedSecrets(ctx, pipeline2, []types.NamespacedName{secretName})
+		require.NoError(t, c.SyncWatchedSecrets(ctx, pipeline1, []types.NamespacedName{secretName}))
+		require.NoError(t, c.SyncWatchedSecrets(ctx, pipeline2, []types.NamespacedName{secretName}))
 
 		time.Sleep(50 * time.Millisecond)
 
@@ -207,7 +207,7 @@ func TestSecretWatchTriggersEvent(t *testing.T) {
 		pipeline := newTestPipeline("my-pipeline")
 		secretName := types.NamespacedName{Namespace: "default", Name: "my-secret"}
 
-		c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{secretName})
+		require.NoError(t, c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{secretName}))
 
 		time.Sleep(50 * time.Millisecond)
 
@@ -256,13 +256,13 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		secretName := types.NamespacedName{Namespace: "default", Name: "my-secret"}
 
 		// Initially both pipelines watch the secret
-		c.SyncWatchedSecrets(ctx, pipelineA, []types.NamespacedName{secretName})
-		c.SyncWatchedSecrets(ctx, pipelineB, []types.NamespacedName{secretName})
+		require.NoError(t, c.SyncWatchedSecrets(ctx, pipelineA, []types.NamespacedName{secretName}))
+		require.NoError(t, c.SyncWatchedSecrets(ctx, pipelineB, []types.NamespacedName{secretName}))
 
 		time.Sleep(50 * time.Millisecond)
 
 		// Pipeline A no longer references the secret
-		c.SyncWatchedSecrets(ctx, pipelineA, []types.NamespacedName{})
+		require.NoError(t, c.SyncWatchedSecrets(ctx, pipelineA, []types.NamespacedName{}))
 
 		// Drain any pending events from previous operations
 		drainEvents(eventChan)
@@ -318,7 +318,7 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		secretName := types.NamespacedName{Namespace: "default", Name: "my-secret"}
 
 		// Start watching
-		c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{secretName})
+		require.NoError(t, c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{secretName}))
 
 		time.Sleep(50 * time.Millisecond)
 
@@ -329,7 +329,7 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		require.True(t, exists, "watcher should exist before unsubscribe")
 
 		// Unsubscribe the only pipeline
-		c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{})
+		require.NoError(t, c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{}))
 
 		// Verify watcher was removed
 		c.mu.RLock()
@@ -369,13 +369,13 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		secretName := types.NamespacedName{Namespace: "default", Name: "my-secret"}
 
 		// Both pipelines watch the secret
-		c.SyncWatchedSecrets(ctx, pipelineA, []types.NamespacedName{secretName})
-		c.SyncWatchedSecrets(ctx, pipelineB, []types.NamespacedName{secretName})
+		require.NoError(t, c.SyncWatchedSecrets(ctx, pipelineA, []types.NamespacedName{secretName}))
+		require.NoError(t, c.SyncWatchedSecrets(ctx, pipelineB, []types.NamespacedName{secretName}))
 
 		time.Sleep(50 * time.Millisecond)
 
 		// Pipeline A unsubscribes
-		c.SyncWatchedSecrets(ctx, pipelineA, []types.NamespacedName{})
+		require.NoError(t, c.SyncWatchedSecrets(ctx, pipelineA, []types.NamespacedName{}))
 
 		// Verify watcher still exists (pipeline B is still subscribed)
 		c.mu.RLock()
@@ -440,7 +440,7 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		secretName2 := types.NamespacedName{Namespace: "default", Name: "secret-2"}
 
 		// Initially watch secret-1
-		c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{secretName1})
+		require.NoError(t, c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{secretName1}))
 
 		time.Sleep(50 * time.Millisecond)
 
@@ -451,7 +451,7 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		require.True(t, exists, "should watch secret-1 initially")
 
 		// Switch to watching secret-2 instead
-		c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{secretName2})
+		require.NoError(t, c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{secretName2}))
 
 		time.Sleep(50 * time.Millisecond)
 
@@ -544,7 +544,7 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		secretName2 := types.NamespacedName{Namespace: "default", Name: "secret-2"}
 
 		// Watch both secrets
-		c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{secretName1, secretName2})
+		require.NoError(t, c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{secretName1, secretName2}))
 
 		time.Sleep(50 * time.Millisecond)
 
@@ -560,7 +560,7 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		drainEvents(eventChan)
 
 		// Now only watch secret-2 (drop secret-1)
-		c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{secretName2})
+		require.NoError(t, c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{secretName2}))
 
 		time.Sleep(50 * time.Millisecond)
 
@@ -628,11 +628,11 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		secretName := types.NamespacedName{Namespace: "default", Name: "my-secret"}
 
 		// Start watching
-		c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{secretName})
+		require.NoError(t, c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{secretName}))
 		time.Sleep(50 * time.Millisecond)
 
 		// Unsubscribe
-		c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{})
+		require.NoError(t, c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{}))
 
 		// Verify watcher removed
 		c.mu.RLock()
@@ -641,7 +641,7 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		require.False(t, exists, "watcher should be removed after unsubscribe")
 
 		// Re-subscribe
-		c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{secretName})
+		require.NoError(t, c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{secretName}))
 		time.Sleep(50 * time.Millisecond)
 
 		// Verify new watcher created
@@ -699,9 +699,9 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		secretName := types.NamespacedName{Namespace: "default", Name: "my-secret"}
 
 		// Call SyncWatchedSecrets multiple times with the same secrets
-		c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{secretName})
-		c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{secretName})
-		c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{secretName})
+		require.NoError(t, c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{secretName}))
+		require.NoError(t, c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{secretName}))
+		require.NoError(t, c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{secretName}))
 
 		time.Sleep(50 * time.Millisecond)
 
@@ -718,6 +718,59 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		// Verify only one linked pipeline (not duplicated)
 		linkedPipelines := w.getLinkedPipelines()
 		require.Len(t, linkedPipelines, 1, "pipeline should not be linked multiple times")
+	})
+}
+
+func TestSyncWatchedSecretsAfterStop(t *testing.T) {
+	t.Run("should return error when called after Stop", func(t *testing.T) {
+		ctx := context.Background()
+		eventChan := make(chan event.GenericEvent, 10)
+		clientset := fake.NewClientset()
+
+		c := &Client{
+			clientset: clientset,
+			watchers:  make(map[types.NamespacedName]*watcher),
+			eventChan: eventChan,
+		}
+
+		pipeline := newTestPipeline("my-pipeline")
+		secretName := types.NamespacedName{Namespace: "default", Name: "my-secret"}
+
+		// Stop the client
+		c.stopWithTimeout(100 * time.Millisecond)
+
+		// Try to sync secrets after stop
+		err := c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{secretName})
+
+		require.ErrorIs(t, err, ErrClientStopped)
+	})
+
+	t.Run("should not return error before Stop is called", func(t *testing.T) {
+		ctx := context.Background()
+		eventChan := make(chan event.GenericEvent, 10)
+		clientset := fake.NewClientset()
+
+		fakeWatcher := watch.NewFake()
+		clientset.PrependWatchReactor("secrets", clienttesting.DefaultWatchReactor(fakeWatcher, nil))
+
+		c := &Client{
+			clientset: clientset,
+			watchers:  make(map[types.NamespacedName]*watcher),
+			eventChan: eventChan,
+		}
+
+		t.Cleanup(func() {
+			fakeWatcher.Stop()
+			c.stopWithTimeout(100 * time.Millisecond)
+		})
+
+		pipeline := newTestPipeline("my-pipeline")
+		secretName := types.NamespacedName{Namespace: "default", Name: "my-secret"}
+
+		// Sync secrets before stop
+		err := c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{secretName})
+
+		require.NoError(t, err)
 	})
 }
 

@@ -46,7 +46,9 @@
 //		{Namespace: "default", Name: "my-secret"},
 //		{Namespace: "default", Name: "another-secret"},
 //	}
-//	client.SyncWatchedSecrets(ctx, pipeline, secrets)
+//	if err := client.SyncWatchedSecrets(ctx, pipeline, secrets); err != nil {
+//		log.Fatal(err)
+//	}
 //
 //	// Later: update the watched secrets for a pipeline
 //	// New watchers are started, removed watchers are stopped automatically
@@ -54,16 +56,17 @@
 //		{Namespace: "default", Name: "my-secret"},
 //		// "another-secret" watcher is stopped automatically if no other pipeline uses it
 //	}
-//	client.SyncWatchedSecrets(ctx, pipeline, newSecrets)
+//	if err := client.SyncWatchedSecrets(ctx, pipeline, newSecrets); err != nil {
+//		log.Fatal(err)
+//	}
 //
 //	// Remove all watches for a pipeline by passing an empty slice
-//	client.SyncWatchedSecrets(ctx, pipeline, nil)
+//	if err := client.SyncWatchedSecrets(ctx, pipeline, nil); err != nil {
+//		log.Fatal(err)
+//	}
 //
 //	// Graceful shutdown (waits for watchers to finish with 30s timeout)
 //	client.Stop()
-//
-//	// Or use custom timeout
-//	client.StopWithTimeout(10 * time.Second)
 //
 // # Event Channel
 //
@@ -93,7 +96,7 @@
 //
 // # Graceful Shutdown
 //
-// The Stop() and StopWithTimeout() methods implement graceful shutdown:
+// The Stop() method implements graceful shutdown:
 //
 //  1. All watcher contexts are canceled (signals them to stop)
 //  2. The client waits for all watcher goroutines to finish
@@ -102,6 +105,9 @@
 // This ensures that no goroutines are leaked and that watchers have a chance
 // to clean up resources. The default timeout is 30 seconds.
 //
+// After Stop() is called, the client cannot be reused. Any subsequent calls to
+// SyncWatchedSecrets will return ErrClientStopped.
+//
 // # Lifecycle
 //
 // The typical lifecycle is:
@@ -109,5 +115,5 @@
 //  1. Create the client with NewClient()
 //  2. Configure watches with SyncWatchedSecrets() - watchers start automatically
 //  3. Update watches as needed with SyncWatchedSecrets() - watchers start/stop automatically
-//  4. Stop all watchers with Stop() or StopWithTimeout()
+//  4. Stop all watchers with Stop()
 package secretwatch

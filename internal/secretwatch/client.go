@@ -2,6 +2,7 @@ package secretwatch
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -18,6 +19,8 @@ const (
 	defaultShutdownTimeout = 30 * time.Second
 )
 
+var ErrClientStopped = errors.New("secret watcher client has been stopped")
+
 // Client watches Kubernetes secrets and manages watchers for multiple pipelines.
 // It tracks which pipelines depend on which secrets and maintains individual watchers
 // for each unique secret being monitored.
@@ -28,6 +31,7 @@ type Client struct {
 	eventChan chan<- event.GenericEvent
 	mu        sync.RWMutex
 	wg        sync.WaitGroup
+	stopped   bool
 }
 
 // NewClient creates a new Client for watching Kubernetes secrets.
@@ -53,9 +57,14 @@ func NewClient(cfg *rest.Config, eventChan chan<- event.GenericEvent) (*Client, 
 // This method is idempotent and declarative - it synchronizes to the desired state.
 // New watchers are started immediately, and removed watchers are stopped immediately.
 // Duplicate secrets in the input slice are automatically deduplicated.
-func (c *Client) SyncWatchedSecrets(ctx context.Context, pipeline client.Object, secrets []types.NamespacedName) {
+// Returns ErrClientStopped if the client has been stopped.
+func (c *Client) SyncWatchedSecrets(ctx context.Context, pipeline client.Object, secrets []types.NamespacedName) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+
+	if c.stopped {
+		return ErrClientStopped
+	}
 
 	// Deduplicate secrets using a set
 	secretSet := make(map[types.NamespacedName]struct{}, len(secrets))
@@ -90,19 +99,22 @@ func (c *Client) SyncWatchedSecrets(ctx context.Context, pipeline client.Object,
 			}
 		}
 	}
+
+	return nil
 }
 
 // Stop gracefully shuts down all watchers with the default timeout.
 // It cancels all watcher contexts and waits for them to finish.
 // If watchers don't finish within the default timeout, it returns without waiting further.
-// After calling Stop, the Client can be restarted by calling Start again.
+// After calling Stop, the Client cannot be reused. Calls to SyncWatchedSecrets will return ErrClientStopped.
 func (c *Client) Stop() {
 	c.stopWithTimeout(defaultShutdownTimeout)
 }
 
 func (c *Client) stopWithTimeout(timeout time.Duration) {
 	c.mu.Lock()
-	defer c.mu.Unlock()
+
+	c.stopped = true
 
 	// Cancel all watchers
 	for _, entry := range c.watchers {
@@ -110,6 +122,8 @@ func (c *Client) stopWithTimeout(timeout time.Duration) {
 			entry.cancel()
 		}
 	}
+
+	c.mu.Unlock()
 
 	// Wait for all watchers to finish with timeout
 	done := make(chan struct{})
