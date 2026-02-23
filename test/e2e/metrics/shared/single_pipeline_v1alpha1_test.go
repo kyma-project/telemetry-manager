@@ -23,12 +23,14 @@ import (
 
 func TestSinglePipelineV1Alpha1(t *testing.T) {
 	tests := []struct {
-		label            string
+		name             string
+		labels           []string
 		input            telemetryv1alpha1.MetricPipelineInput
 		generatorBuilder func(ns string) []client.Object
 	}{
 		{
-			label: suite.LabelMetricAgentSetC,
+			name:   "agent",
+			labels: []string{suite.LabelMetricAgentSetC, suite.LabelMetricAgent, suite.LabelSetC},
 			input: telemetryv1alpha1.MetricPipelineInput{
 				Runtime: &telemetryv1alpha1.MetricPipelineRuntimeInput{
 					Enabled: new(true),
@@ -44,7 +46,8 @@ func TestSinglePipelineV1Alpha1(t *testing.T) {
 			},
 		},
 		{
-			label: suite.LabelMetricGatewaySetC,
+			name:   "gateway",
+			labels: []string{suite.LabelMetricGatewaySetC, suite.LabelMetricGateway, suite.LabelSetC},
 			input: telemetryv1alpha1.MetricPipelineInput{
 				OTLP: &telemetryv1alpha1.OTLPInput{},
 			},
@@ -57,11 +60,11 @@ func TestSinglePipelineV1Alpha1(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		t.Run(tc.label, func(t *testing.T) {
-			suite.RegisterTestCase(t, tc.label)
+		t.Run(tc.name, func(t *testing.T) {
+			suite.SetupTest(t, tc.labels...)
 
 			var (
-				uniquePrefix = unique.Prefix(tc.label)
+				uniquePrefix = unique.Prefix(tc.name)
 				pipelineName = uniquePrefix()
 				backendNs    = uniquePrefix("backend")
 				genNs        = uniquePrefix("gen")
@@ -97,13 +100,13 @@ func TestSinglePipelineV1Alpha1(t *testing.T) {
 			assert.BackendReachable(t, backend)
 			assert.DeploymentReady(t, kitkyma.MetricGatewayName)
 
-			if tc.label == suite.LabelLogAgent {
+			if tc.labels[0] == suite.LabelLogAgent {
 				assert.DaemonSetReady(t, kitkyma.MetricAgentName)
 			}
 
 			assert.MetricPipelineHealthy(t, pipelineName)
 
-			if suite.ExpectAgent(tc.label) {
+			if suite.ExpectAgent(tc.labels...) {
 				assert.MetricsFromNamespaceDelivered(t, backend, genNs, runtime.DefaultMetricsNames)
 
 				agentMetricsURL := suite.ProxyClient.ProxyURLForService(kitkyma.MetricAgentMetricsService.Namespace, kitkyma.MetricAgentMetricsService.Name, "metrics", ports.Metrics)

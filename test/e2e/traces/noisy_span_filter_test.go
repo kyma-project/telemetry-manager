@@ -18,7 +18,7 @@ import (
 )
 
 func TestNoisyFilters(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelTraces)
+	suite.SetupTest(t, suite.LabelTraces)
 
 	const (
 		// regular spans should NOT be filtered

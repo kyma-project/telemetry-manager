@@ -24,13 +24,15 @@ import (
 
 func TestBackpressure(t *testing.T) {
 	tests := []struct {
-		labelPrefix string
-		pipeline    func(includeNs string, backend *kitbackend.Backend) client.Object
-		generator   func(ns string) []client.Object
-		assertions  func(t *testing.T, pipelineName string)
+		labelPrefix      string
+		pipeline         func(includeNs string, backend *kitbackend.Backend) client.Object
+		generator        func(ns string) []client.Object
+		assertions       func(t *testing.T, pipelineName string)
+		additionalLabels []string
 	}{
 		{
-			labelPrefix: suite.LabelSelfMonitorLogAgentPrefix,
+			labelPrefix:      suite.LabelSelfMonitorLogAgentPrefix,
+			additionalLabels: []string{suite.LabelLogAgent},
 			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewLogPipelineBuilder().
 					WithName(suite.LabelSelfMonitorLogAgentPrefix).
@@ -62,7 +64,8 @@ func TestBackpressure(t *testing.T) {
 			},
 		},
 		{
-			labelPrefix: suite.LabelSelfMonitorLogGatewayPrefix,
+			labelPrefix:      suite.LabelSelfMonitorLogGatewayPrefix,
+			additionalLabels: []string{suite.LabelLogGateway},
 			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewLogPipelineBuilder().
 					WithName(suite.LabelSelfMonitorLogGatewayPrefix).
@@ -96,7 +99,8 @@ func TestBackpressure(t *testing.T) {
 			},
 		},
 		{
-			labelPrefix: suite.LabelSelfMonitorFluentBitPrefix,
+			labelPrefix:      suite.LabelSelfMonitorFluentBitPrefix,
+			additionalLabels: []string{suite.LabelFluentBit},
 			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewLogPipelineBuilder().
 					WithName(suite.LabelSelfMonitorFluentBitPrefix).
@@ -126,7 +130,8 @@ func TestBackpressure(t *testing.T) {
 			},
 		},
 		{
-			labelPrefix: suite.LabelSelfMonitorMetricGatewayPrefix,
+			labelPrefix:      suite.LabelSelfMonitorMetricGatewayPrefix,
+			additionalLabels: []string{suite.LabelMetricGateway},
 			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewMetricPipelineBuilder().
 					WithName(suite.LabelSelfMonitorMetricGatewayPrefix).
@@ -159,7 +164,8 @@ func TestBackpressure(t *testing.T) {
 			},
 		},
 		{
-			labelPrefix: suite.LabelSelfMonitorMetricAgentPrefix,
+			labelPrefix:      suite.LabelSelfMonitorMetricAgentPrefix,
+			additionalLabels: []string{suite.LabelMetricAgent},
 			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewMetricPipelineBuilder().
 					WithName(suite.LabelSelfMonitorMetricAgentPrefix).
@@ -194,7 +200,8 @@ func TestBackpressure(t *testing.T) {
 			},
 		},
 		{
-			labelPrefix: suite.LabelSelfMonitorTracesPrefix,
+			labelPrefix:      suite.LabelSelfMonitorTracesPrefix,
+			additionalLabels: []string{suite.LabelTraces},
 			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewTracePipelineBuilder().
 					WithName(suite.LabelSelfMonitorTracesPrefix).
@@ -228,43 +235,65 @@ func TestBackpressure(t *testing.T) {
 		},
 	}
 
+	// Run each test case with both FIPS and no-FIPS modes
+	// - no-fips: for PR events without access to restricted FIPS images
+	// - fips: for push events with access to restricted FIPS images
 	for _, tc := range tests {
-		t.Run(tc.labelPrefix, func(t *testing.T) {
-			suite.RegisterTestCase(t, label(tc.labelPrefix, suite.LabelSelfMonitorBackpressureSuffix))
+		for _, noFips := range []bool{true, false} {
+			// fluent-bit only supports no-fips mode
+			if tc.labelPrefix == suite.LabelSelfMonitorFluentBitPrefix && !noFips {
+				continue
+			}
 
-			var (
-				uniquePrefix = unique.Prefix(tc.labelPrefix)
-				backendNs    = uniquePrefix("backend")
-				genNs        = uniquePrefix("gen")
-				backend      *kitbackend.Backend
-			)
-
-			if tc.labelPrefix == suite.LabelSelfMonitorMetricAgentPrefix {
-				// Metric agent and gateway (using kyma stats receiver) both send data to backend
-				// We want to simulate backpressure only on agent, so block 85% of traffic only from agent.
-				backend = kitbackend.New(backendNs, signalType(tc.labelPrefix), kitbackend.WithAbortFaultInjection(85),
-					kitbackend.WithDropFromSourceLabel(map[string]string{"app.kubernetes.io/name": "telemetry-metric-agent"}))
+			name := tc.labelPrefix
+			if noFips {
+				name += "-no-fips"
 			} else {
-				backend = kitbackend.New(backendNs, signalType(tc.labelPrefix), kitbackend.WithAbortFaultInjection(85))
+				name += "-fips"
 			}
 
-			pipeline := tc.pipeline(genNs, backend)
-			generator := tc.generator(genNs)
+			t.Run(name, func(t *testing.T) {
+				var labels []string
 
-			resources := []client.Object{
-				kitk8sobjects.NewNamespace(backendNs).K8sObject(),
-				kitk8sobjects.NewNamespace(genNs).K8sObject(),
-				pipeline,
-			}
-			resources = append(resources, generator...)
-			resources = append(resources, backend.K8sObjects()...)
+				labels = append(labels, suite.LabelBackpressure)
+				labels = append(labels, labelsForSelfMonitor(tc.labelPrefix, suite.LabelBackpressure, noFips)...)
+				labels = append(labels, tc.additionalLabels...)
+				suite.SetupTest(t, labels...)
 
-			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
+				var (
+					uniquePrefix = unique.Prefix(tc.labelPrefix)
+					backendNs    = uniquePrefix("backend")
+					genNs        = uniquePrefix("gen")
+					backend      *kitbackend.Backend
+				)
 
-			assert.BackendReachable(t, backend)
-			assert.DeploymentReady(t, kitkyma.SelfMonitorName)
+				if tc.labelPrefix == suite.LabelSelfMonitorMetricAgentPrefix {
+					// Metric agent and gateway (using kyma stats receiver) both send data to backend
+					// We want to simulate backpressure only on agent, so block 85% of traffic only from agent.
+					backend = kitbackend.New(backendNs, signalType(tc.labelPrefix), kitbackend.WithAbortFaultInjection(85),
+						kitbackend.WithDropFromSourceLabel(map[string]string{"app.kubernetes.io/name": "telemetry-metric-agent"}))
+				} else {
+					backend = kitbackend.New(backendNs, signalType(tc.labelPrefix), kitbackend.WithAbortFaultInjection(85))
+				}
 
-			tc.assertions(t, pipeline.GetName())
-		})
+				pipeline := tc.pipeline(genNs, backend)
+				generator := tc.generator(genNs)
+
+				resources := []client.Object{
+					kitk8sobjects.NewNamespace(backendNs).K8sObject(),
+					kitk8sobjects.NewNamespace(genNs).K8sObject(),
+					pipeline,
+				}
+				resources = append(resources, generator...)
+				resources = append(resources, backend.K8sObjects()...)
+
+				Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
+
+				assert.BackendReachable(t, backend)
+				assert.DeploymentReady(t, kitkyma.SelfMonitorName)
+
+				tc.assertions(t, pipeline.GetName())
+			})
+		}
 	}
 }

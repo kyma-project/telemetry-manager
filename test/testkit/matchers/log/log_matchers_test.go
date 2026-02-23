@@ -6,8 +6,6 @@ import (
 	. "github.com/onsi/gomega"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/plog"
-
-	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
 var fls = []FlatLog{
@@ -25,7 +23,7 @@ var fls = []FlatLog{
 }
 
 func TestOtelLogsMatchers_VerifyInput(t *testing.T) {
-	suite.RegisterTestCase(t)
+	RegisterTestingT(t)
 
 	td := plog.NewLogs()
 	Expect(mustMarshalOtelLogs(td)).Should(HaveFlatLogs(ContainElements()), "Should apply matcher to valid log data")
@@ -41,7 +39,7 @@ func TestOtelLogsMatchers_VerifyInput(t *testing.T) {
 }
 
 func TestOtelLogs_FlatLogStruct(t *testing.T) {
-	suite.RegisterTestCase(t)
+	RegisterTestingT(t)
 
 	ld := plog.NewLogs()
 	rl := ld.ResourceLogs().AppendEmpty()
@@ -67,7 +65,7 @@ func TestOtelLogs_FlatLogStruct(t *testing.T) {
 }
 
 func TestOtelLogsMatchers(t *testing.T) {
-	suite.RegisterTestCase(t)
+	RegisterTestingT(t)
 	Expect(fls).Should(ContainElement(HaveResourceAttributes(HaveKey("k8s.deployment.name"))), "Should have key in resource attributes")
 }
 

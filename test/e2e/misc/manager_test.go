@@ -21,7 +21,7 @@ import (
 )
 
 func TestManager(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelTelemetry)
+	suite.SetupTest(t, suite.LabelTelemetry)
 
 	assert.DeploymentReady(t, types.NamespacedName{
 		Name:      "telemetry-manager",

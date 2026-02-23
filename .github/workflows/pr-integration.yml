@@ -12,16 +12,6 @@ on:
     branches:
       - "main"
       - "release-*"
-    # only include PRs that change:
-    # go files
-    # go mod files
-    # test files in the test/e2e directory
-    # test files in the istio directory
-    # exclude go files that end with _test.go
-    # exclude (go) files in the doc folder
-    # include the workflow definition itself
-    # include dependencies of the workflow definition
-    # exclude busola configmap files
     paths:
       - "**/go.mod"
       - "**/go.sum"
@@ -36,34 +26,19 @@ on:
       - ".env"
       - ".k3d-kyma.yaml"
       - "Makefile"
-  # Trigger the workflow on "push" events to run the tests with prometheus-fips image
-  # Workflow needs access to Github secrets for pulling the prometheus-fips image and that acceess is not granted for "pull_request" events
-  push:
-    branches:
-      - "main"
-      - "release-*"
-    paths:
-      - "**/go.mod"
-      - "**/go.sum"
-      - "**.go"
-      - "config/**"
-      - "!config/busola/**"
-      - "!**_test.go"
-      - "!docs/**"
-      - "test/**.go"
-      - ".github/workflows/pr-integration.yml"
-      - ".github/template/**"
-      - ".env"
-      - ".k3d-kyma.yaml"
-      - "Makefile"
+      - "hack/make/*.mk"
+      - "helm/**"
 
   workflow_dispatch:
+
+env:
+  E2E_TEST_TIMEOUT: 60m
 
 jobs:
   setup:
     runs-on: ubuntu-latest
     outputs:
-      manager-image: ${{ steps.set-env.outputs.image-repo }}:${{ steps.set-env.outputs.image-tag }}
+      manager-image: ${{ steps.set-env.outputs.manager-image }}
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -88,354 +63,204 @@ jobs:
             IMAGE_TAG="$GIT_COMMIT_DATE-$GIT_COMMIT_SHA"
           fi
 
-          # Write to both GITHUB_ENV (for use in this job) and GITHUB_OUTPUT (for dependent jobs)
-          echo "IMAGE_REPO=$IMAGE_REPO" >> $GITHUB_ENV
-          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+          MANAGER_IMAGE="$IMAGE_REPO:$IMAGE_TAG"
+          echo "manager-image=$MANAGER_IMAGE" >> $GITHUB_OUTPUT
           echo "image-repo=$IMAGE_REPO" >> $GITHUB_OUTPUT
           echo "image-tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
+          echo "Manager image: $MANAGER_IMAGE"
 
       - name: Wait for image to be built
         shell: bash
-        run: |
-          make wait-for-image
+        run: make wait-for-image
         env:
-          IMAGE_TAG: "${{ env.IMAGE_TAG }}"
-          IMAGE_REPO: "${{ env.IMAGE_REPO }}"
+          IMAGE_REPO: "${{ steps.set-env.outputs.image-repo }}"
+          IMAGE_TAG: "${{ steps.set-env.outputs.image-tag }}"
           QUERY_INTERVAL: 30
 
-  e2e-selfmonitor:
+  e2e:
     needs: setup
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        kind:
-          - fluent-bit
-          - log-agent
-          - log-gateway
-          - metric-gateway
-          - metric-agent
-          - traces
+        suite:
+          - name: e2e-logs
+            path: ./test/e2e/logs/...
+          - name: e2e-metrics
+            path: ./test/e2e/metrics/...
+          - name: e2e-traces
+            path: ./test/e2e/traces/...
+          - name: e2e-misc
+            path: ./test/e2e/misc/...
+        flavor:
+          - name: ""
+            labels: "not experimental and not no-fips"
+          - name: "-no-fips"
+            labels: "not experimental and no-fips"
+          - name: "-experimental"
+            labels: "experimental and not no-fips"
+          - name: "-experimental-no-fips"
+            labels: "experimental and no-fips"
+    name: ${{ matrix.suite.name }}${{ matrix.flavor.name }}
+    env:
+      MANAGER_IMAGE: ${{ needs.setup.outputs.manager-image }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Golang
+        uses: ./.github/template/setup-golang
+
+      - name: Provision K3D cluster
+        run: make provision-k3d
+
+      - name: Run ${{ matrix.suite.name }}${{ matrix.flavor.name }} tests
+        run: |
+          make e2e-test \
+            E2E_TEST_PATH="${{ matrix.suite.path }}" \
+            E2E_TEST_ID="${{ matrix.suite.name }}${{ matrix.flavor.name }}" \
+            E2E_TEST_LABELS="${{ matrix.flavor.labels }}"
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.suite.name }}${{ matrix.flavor.name }}-report
+          path: junit-report-*.xml
+
+      - name: Print pods on failure
+        if: failure()
+        run: |
+          kubectl get pods -A
+          for pod in $(kubectl get pods -n kyma-system -o name 2>/dev/null); do
+            echo "=== $pod ==="
+            kubectl logs -n kyma-system $pod --all-containers 2>/dev/null || true
+          done
+
+  # Upgrade and integration tests (no fips/experimental variants)
+  e2e-other:
+    needs: setup
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        suite:
+          - name: e2e-upgrade
+            path: ./test/e2e/upgrade/...
+          - name: integration
+            path: ./test/integration/...
+    name: ${{ matrix.suite.name }}
+    env:
+      MANAGER_IMAGE: ${{ needs.setup.outputs.manager-image }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Golang
+        uses: ./.github/template/setup-golang
+
+      - name: Provision K3D cluster
+        run: make provision-k3d
+
+      - name: Run ${{ matrix.suite.name }} tests
+        run: |
+          make e2e-test \
+            E2E_TEST_PATH="${{ matrix.suite.path }}" \
+            E2E_TEST_ID="${{ matrix.suite.name }}"
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.suite.name }}-report
+          path: junit-report-*.xml
+
+      - name: Print pods on failure
+        if: failure()
+        run: |
+          kubectl get pods -A
+          for pod in $(kubectl get pods -n kyma-system -o name 2>/dev/null); do
+            echo "=== $pod ==="
+            kubectl logs -n kyma-system $pod --all-containers 2>/dev/null || true
+          done
+
+  # Selfmonitor tests
+  selfmonitor:
+    needs: setup
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
         scenario:
           - healthy
           - backpressure
           - outage
-    name: "selfmon: ${{ matrix.kind }}-${{ matrix.scenario }}"
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
-      - name: Authenticate to Google Cloud
-        if: github.event_name != 'pull_request'
-        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
-        with:
-          credentials_json: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
-
-      - name: Setup Google Cloud SDK
-        if: github.event_name != 'pull_request'
-        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
-
-      - name: Configure Docker for Google Artifact Registry
-        if: github.event_name != 'pull_request'
-        run: gcloud auth configure-docker europe-docker.pkg.dev --quiet
-
-      - name: Setup test environment
-        uses: "./.github/template/test-setup"
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          install-istio: ${{ matrix.scenario != 'healthy' }}
-          manager-image: ${{ needs.setup.outputs.manager-image }}
-          # Operate in FIPS mode only if both conditions are satisfied:
-          # 1. Trigger event is not a pull_request (to have access to secrets to be able to pull the prometheus-fips image)
-          # 2. The test kind is not fluent-bit (as fluent-bit is not supported when FIPS mode is enabled)
-          operate-in-fips-mode: ${{ github.event_name != 'pull_request' && matrix.kind != 'fluent-bit' && 'true' || 'false' }}
-
-      - name: Execute tests
-        uses: "./.github/template/test-execute"
-        with:
-          id: ${{ matrix.kind }}-${{ matrix.scenario }}
-          path: ./test/selfmonitor/...
-          labels: "selfmonitor-${{ matrix.kind }}-${{ matrix.scenario }}"
-
-      - name: Cleanup test environment
-        uses: "./.github/template/test-cleanup"
-        if: ${{ !cancelled()  }}
-        with:
-          id: selfmonitor-${{ matrix.kind }}-${{ matrix.scenario }}
-          failure: failure()
-
-  e2e-custom-labels-annotations-no-fips:
-    needs: setup
-    name: "e2e-custom-labels-annotations-no-fips"
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
-      - name: Setup test environment
-        uses: "./.github/template/test-setup"
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          install-istio: false
-          manager-image: ${{ needs.setup.outputs.manager-image }}
-          operate-in-fips-mode: false
-          custom-labels-annotations-no-fips: true
-
-      - name: Execute tests
-        uses: "./.github/template/test-execute"
-        with:
-          id: custom-labels-annotations-no-fips
-          path: ./test/e2e/misc...
-          labels: "custom-label-annotation"
-
-  e2e:
-    needs: setup
+        component:
+          - name: log-agent
+            label: log-agent
+          - name: log-gateway
+            label: log-gateway
+          - name: fluent-bit
+            label: fluent-bit
+          - name: metric-agent
+            label: metric-agent
+          - name: metric-gateway
+            label: metric-gateway
+          - name: traces
+            label: traces
+    name: selfmonitor-${{ matrix.scenario }}-${{ matrix.component.name }}
     env:
       MANAGER_IMAGE: ${{ needs.setup.outputs.manager-image }}
-    strategy:
-      fail-fast: false
-      matrix:
-        testcase:
-          # LOGS
-          - name: e2e-fluent-bit
-            labels: fluent-bit and not experimental
-            mode: release
-            type: e2e
-            use-fips: false
-            install-istio: false
-          - name: e2e-log-agent
-            labels: log-agent
-            mode: release
-            type: e2e
-            use-fips: true
-            install-istio: false
-          - name: e2e-log-gateway
-            labels: log-gateway and not experimental
-            mode: release
-            type: e2e
-            use-fips: true
-            install-istio: false
-          - name: e2e-log-gateway-experimental
-            labels: log-gateway and experimental
-            mode: experimental
-            type: e2e
-            use-fips: true
-            install-istio: false
-          - name: e2e-logs-max-pipeline
-            labels: logs-max-pipeline
-            mode: release
-            type: e2e
-            use-fips: false
-            install-istio: false
-          - name: e2e-fluent-bit-max-pipeline
-            labels: fluent-bit-max-pipeline
-            mode: release
-            type: e2e
-            use-fips: false
-            install-istio: false
-          - name: e2e-otel-max-pipeline
-            labels: otel-max-pipeline
-            mode: release
-            type: e2e
-            use-fips: true
-            install-istio: false
-          - name: e2e-otel-max-pipeline-experimental
-            labels: otel-max-pipeline and experimental
-            mode: experimental
-            type: e2e
-            use-fips: true
-            install-istio: false
-          - name: e2e-logs-misc
-            labels: logs-misc
-            mode: release
-            type: e2e
-            use-fips: true
-            install-istio: false
-          # METRICS
-          - name: e2e-metric-agent-a
-            labels: metric-agent-a
-            mode: release
-            type: e2e
-            use-fips: true
-            install-istio: false
-          - name: e2e-metric-agent-b
-            labels: metric-agent-b
-            mode: release
-            type: e2e
-            use-fips: true
-            install-istio: false
-          - name: e2e-metric-agent-c
-            labels: metric-agent-c
-            mode: release
-            type: e2e
-            use-fips: true
-            install-istio: false
-          - name: e2e-metric-gateway-a
-            labels: metric-gateway-a
-            mode: release
-            type: e2e
-            use-fips: true
-            install-istio: false
-          - name: e2e-metric-gateway-b
-            labels: metric-gateway-b
-            mode: release
-            type: e2e
-            use-fips: true
-            install-istio: false
-          - name: e2e-metric-gateway-c
-            labels: metric-gateway-c
-            mode: release
-            type: e2e
-            use-fips: true
-            install-istio: false
-          - name: e2e-metrics-misc
-            labels: metrics-misc
-            mode: release
-            type: e2e
-            use-fips: true
-            install-istio: false
-          - name: e2e-metrics-max-pipeline
-            labels: metrics-max-pipeline
-            mode: release
-            type: e2e
-            use-fips: true
-            install-istio: false
-          - name: e2e-metrics-max-pipeline-experimental
-            labels: metrics-max-pipeline and experimental
-            mode: experimental
-            type: e2e
-            use-fips: true
-            install-istio: false
-          # TRACES
-          - name: e2e-traces
-            labels: traces
-            mode: release
-            type: e2e
-            use-fips: true
-            install-istio: false
-          - name: e2e-traces-max-pipeline
-            labels: traces-max-pipeline
-            mode: release
-            type: e2e
-            use-fips: true
-            install-istio: false
-          - name: e2e-traces-max-pipeline-experimental
-            labels: traces-max-pipeline and experimental
-            mode: experimental
-            type: e2e
-            use-fips: true
-            install-istio: false
-          # TELEMETRY
-          - name: e2e-telemetry-otel
-            labels: telemetry and not fluent-bit
-            mode: release
-            type: e2e
-            use-fips: true
-            install-istio: false
-          - name: e2e-telemetry-fluent-bit
-            labels: telemetry and fluent-bit
-            mode: release
-            type: e2e
-            use-fips: false
-            install-istio: false
-          # MISC
-          - name: e2e-misc-otel
-            labels: misc and not fluent-bit
-            mode: release
-            type: e2e
-            use-fips: true
-            install-istio: false
-          - name: e2e-misc-fluent-bit
-            labels: misc and fluent-bit
-            mode: release
-            type: e2e
-            use-fips: false
-            install-istio: false
-          # OTHER
-          - name: e2e-experimental-otel
-            labels: experimental and not fluent-bit
-            mode: experimental
-            type: e2e
-            use-fips: true
-            install-istio: false
-          - name: e2e-experimental-fluent-bit
-            labels: experimental and fluent-bit
-            mode: experimental
-            type: e2e
-            use-fips: false
-            install-istio: false
-          # INTEGRATION
-          - name: integration-istio-otel
-            labels: istio and not fluent-bit and not experimental
-            mode: release
-            type: integration
-            use-fips: true
-            install-istio: true
-          - name: integration-istio-fluent-bit
-            labels: istio and fluent-bit
-            mode: release
-            type: integration
-            use-fips: false
-            install-istio: true
-          - name: integration-istio-otel-experimental
-            labels: istio and experimental
-            mode: experimental
-            type: integration
-            use-fips: true
-            install-istio: true
-    name: "${{ matrix.testcase.name }}"
-    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Authenticate to Google Cloud
-        if: github.event_name != 'pull_request'
-        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
-        with:
-          credentials_json: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
+      - name: Setup Golang
+        uses: ./.github/template/setup-golang
 
       - name: Setup Google Cloud SDK
         if: github.event_name != 'pull_request'
-        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
+        uses: google-github-actions/setup-gcloud@77e7a554d41e2ee56fc945c52dfd3f33d12def9a # v2.1.4
 
       - name: Configure Docker for Google Artifact Registry
         if: github.event_name != 'pull_request'
         run: gcloud auth configure-docker europe-docker.pkg.dev --quiet
 
-      - name: Setup test environment
-        uses: "./.github/template/test-setup"
-        with:
-          experimental: ${{ matrix.testcase.mode == 'experimental' }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          install-istio: ${{ matrix.testcase.install-istio }}
-          manager-image: ${{ needs.setup.outputs.manager-image }}
-          # Operate in FIPS mode only if both conditions are satisfied:
-          # 1. Trigger event is not a pull_request (to have access to secrets to be able to pull the prometheus-fips image)
-          # 2. The test case is marked to use FIPS (as some test cases, e.g. those using fluent-bit, are not compatible with FIPS mode)
-          operate-in-fips-mode: ${{ github.event_name != 'pull_request' && matrix.testcase.use-fips && 'true' || 'false' }}
+      - name: Provision K3D cluster
+        run: make provision-k3d
 
-      - name: Execute tests
-        uses: "./.github/template/test-execute"
-        with:
-          id: ${{ matrix.testcase.name }}
-          path: ./test/${{ matrix.testcase.type }}/...
-          labels: ${{ matrix.testcase.labels }}
+      - name: Run selfmonitor-${{ matrix.scenario }}-${{ matrix.component.name }} tests
+        run: |
+          # For PR events, only run no-fips tests since we can't pull the prometheus-fips image
+          # For push events, run fips tests (not no-fips) since we have access to the restricted registry
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            FIPS_LABEL="no-fips"
+          else
+            FIPS_LABEL="not no-fips"
+          fi
+          make e2e-test \
+            E2E_TEST_PATH="./test/selfmonitor/..." \
+            E2E_TEST_ID="selfmonitor-${{ matrix.scenario }}-${{ matrix.component.name }}" \
+            E2E_TEST_LABELS="$FIPS_LABEL and ${{ matrix.scenario }} and ${{ matrix.component.label }}"
 
-      - name: Cleanup test environment
-        uses: "./.github/template/test-cleanup"
-        if: ${{ !cancelled()  }}
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          id: ${{ matrix.testcase.name }}
-          failure: failure()
+          name: selfmonitor-${{ matrix.scenario }}-${{ matrix.component.name }}-report
+          path: junit-report-*.xml
 
-      - name: Print logs from all pods in kyma-system namespace
+      - name: Print pods on failure
         if: failure()
         run: |
-          for pod in $(kubectl get pods -n kyma-system -o name); do echo "=== $pod ==="; kubectl logs -n kyma-system $pod; done || true
+          kubectl get pods -A
+          for pod in $(kubectl get pods -n kyma-system -o name 2>/dev/null); do
+            echo "=== $pod ==="
+            kubectl logs -n kyma-system $pod --all-containers 2>/dev/null || true
+          done
 
   summary:
-    needs: [e2e-selfmonitor, e2e, e2e-custom-labels-annotations-no-fips]
+    needs: [e2e, e2e-other, selfmonitor]
     runs-on: ubuntu-latest
     if: always()
     steps:

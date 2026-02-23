@@ -7,8 +7,6 @@ import (
 	. "github.com/onsi/gomega"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
-
-	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
 var fms = []FlatMetric{
@@ -35,7 +33,7 @@ var fms = []FlatMetric{
 }
 
 func TestMetricMatchers_VerifyInput(t *testing.T) {
-	suite.RegisterTestCase(t)
+	RegisterTestingT(t)
 
 	md := pmetric.NewMetrics()
 	Expect(mustMarshalMetrics(md)).Should(HaveFlatMetrics(ContainElements()), "Should apply matcher to valid metrics data")
@@ -52,7 +50,7 @@ func TestMetricMatchers_VerifyInput(t *testing.T) {
 }
 
 func TestMetric_FlatMetric(t *testing.T) {
-	suite.RegisterTestCase(t)
+	RegisterTestingT(t)
 
 	md := pmetric.NewMetrics()
 
@@ -82,7 +80,7 @@ func TestMetric_FlatMetric(t *testing.T) {
 }
 
 func TestMetricMatchers(t *testing.T) {
-	suite.RegisterTestCase(t)
+	RegisterTestingT(t)
 	Expect(fms).Should(HaveUniqueNames(ConsistOf("container.cpu.time", "container.cpu.usage")), "Should have unique metric names")
 	Expect(fms).Should(ContainElement(HaveResourceAttributes(HaveKey("k8s.cluster.name"))), "Should have key in resource attributes")
 	Expect(fms).Should(ContainElement(HaveName(ContainSubstring("container"))), "Should have name containing 'container'")

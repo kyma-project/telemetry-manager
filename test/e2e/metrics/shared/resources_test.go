@@ -21,13 +21,15 @@ import (
 
 func TestResources(t *testing.T) {
 	tests := []struct {
-		label     string
+		name      string
+		labels    []string
 		input     telemetryv1beta1.MetricPipelineInput
 		resources []assert.Resource
 	}{
 		{
-			label: suite.LabelMetricAgentSetC,
-			input: testutils.BuildMetricPipelineRuntimeInput(),
+			name:   "agent",
+			labels: []string{suite.LabelMetricAgentSetC, suite.LabelMetricAgent, suite.LabelSetC},
+			input:  testutils.BuildMetricPipelineRuntimeInput(),
 			resources: []assert.Resource{
 				assert.NewResource(&appsv1.DaemonSet{}, kitkyma.MetricAgentName),
 				assert.NewResource(&corev1.Service{}, kitkyma.MetricAgentMetricsService),
@@ -39,8 +41,9 @@ func TestResources(t *testing.T) {
 			},
 		},
 		{
-			label: suite.LabelMetricGatewaySetC,
-			input: testutils.BuildMetricPipelineOTLPInput(),
+			name:   "gateway",
+			labels: []string{suite.LabelMetricGatewaySetC, suite.LabelMetricGateway, suite.LabelSetC},
+			input:  testutils.BuildMetricPipelineOTLPInput(),
 			resources: []assert.Resource{
 				assert.NewResource(&appsv1.Deployment{}, kitkyma.MetricGatewayName),
 				assert.NewResource(&corev1.Service{}, kitkyma.MetricGatewayMetricsService),
@@ -58,8 +61,8 @@ func TestResources(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		t.Run(tc.label, func(t *testing.T) {
-			suite.RegisterTestCase(t, tc.label)
+		t.Run(tc.name, func(t *testing.T) {
+			suite.SetupTest(t, tc.labels...)
 
 			const (
 				endpointKey   = "metrics-endpoint"
@@ -67,7 +70,7 @@ func TestResources(t *testing.T) {
 			)
 
 			var (
-				uniquePrefix = unique.Prefix(tc.label)
+				uniquePrefix = unique.Prefix(tc.name)
 				pipelineName = uniquePrefix()
 				secretName   = uniquePrefix()
 			)
