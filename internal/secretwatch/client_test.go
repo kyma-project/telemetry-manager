@@ -54,7 +54,7 @@ func TestSecretWatchTriggersEvent(t *testing.T) {
 		// Ensure cleanup: stop the fake watcher to unblock goroutines, then stop client
 		t.Cleanup(func() {
 			fakeWatcher.Stop()
-			c.StopWithTimeout(100 * time.Millisecond)
+			c.stopWithTimeout(100 * time.Millisecond)
 		})
 
 		pipeline := newTestPipeline("my-pipeline")
@@ -94,7 +94,7 @@ func TestSecretWatchTriggersEvent(t *testing.T) {
 
 		t.Cleanup(func() {
 			fakeWatcher.Stop()
-			c.StopWithTimeout(100 * time.Millisecond)
+			c.stopWithTimeout(100 * time.Millisecond)
 		})
 
 		pipeline := newTestPipeline("my-pipeline")
@@ -145,7 +145,7 @@ func TestSecretWatchTriggersEvent(t *testing.T) {
 
 		t.Cleanup(func() {
 			fakeWatcher.Stop()
-			c.StopWithTimeout(100 * time.Millisecond)
+			c.stopWithTimeout(100 * time.Millisecond)
 		})
 
 		pipeline1 := newTestPipeline("pipeline-1")
@@ -201,7 +201,7 @@ func TestSecretWatchTriggersEvent(t *testing.T) {
 
 		t.Cleanup(func() {
 			fakeWatcher.Stop()
-			c.StopWithTimeout(100 * time.Millisecond)
+			c.stopWithTimeout(100 * time.Millisecond)
 		})
 
 		pipeline := newTestPipeline("my-pipeline")
@@ -247,7 +247,7 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 
 		t.Cleanup(func() {
 			fakeWatcher.Stop()
-			c.StopWithTimeout(100 * time.Millisecond)
+			c.stopWithTimeout(100 * time.Millisecond)
 		})
 
 		pipelineA := newTestPipeline("pipeline-a")
@@ -310,7 +310,7 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 
 		t.Cleanup(func() {
 			fakeWatcher.Stop()
-			c.StopWithTimeout(100 * time.Millisecond)
+			c.stopWithTimeout(100 * time.Millisecond)
 		})
 
 		pipeline := newTestPipeline("my-pipeline")
@@ -360,7 +360,7 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 
 		t.Cleanup(func() {
 			fakeWatcher.Stop()
-			c.StopWithTimeout(100 * time.Millisecond)
+			c.stopWithTimeout(100 * time.Millisecond)
 		})
 
 		pipelineA := newTestPipeline("pipeline-a")
@@ -428,7 +428,7 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		t.Cleanup(func() {
 			fakeWatcher1.Stop()
 			fakeWatcher2.Stop()
-			c.StopWithTimeout(100 * time.Millisecond)
+			c.stopWithTimeout(100 * time.Millisecond)
 		})
 
 		pipeline := newTestPipeline("my-pipeline")
@@ -529,7 +529,7 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		t.Cleanup(func() {
 			fakeWatcher1.Stop()
 			fakeWatcher2.Stop()
-			c.StopWithTimeout(100 * time.Millisecond)
+			c.stopWithTimeout(100 * time.Millisecond)
 		})
 
 		pipeline := newTestPipeline("my-pipeline")
@@ -612,7 +612,7 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		t.Cleanup(func() {
 			fakeWatcher1.Stop()
 			fakeWatcher2.Stop()
-			c.StopWithTimeout(100 * time.Millisecond)
+			c.stopWithTimeout(100 * time.Millisecond)
 		})
 
 		pipeline := newTestPipeline("my-pipeline")
@@ -682,7 +682,7 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 
 		t.Cleanup(func() {
 			fakeWatcher.Stop()
-			c.StopWithTimeout(100 * time.Millisecond)
+			c.stopWithTimeout(100 * time.Millisecond)
 		})
 
 		pipeline := newTestPipeline("my-pipeline")

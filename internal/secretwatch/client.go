@@ -15,8 +15,7 @@ import (
 )
 
 const (
-	// DefaultShutdownTimeout is the default timeout for graceful shutdown
-	DefaultShutdownTimeout = 30 * time.Second
+	defaultShutdownTimeout = 30 * time.Second
 )
 
 // Client watches Kubernetes secrets and manages watchers for multiple pipelines.
@@ -48,49 +47,6 @@ func NewClient(cfg *rest.Config, eventChan chan<- event.GenericEvent) (*Client, 
 	}, nil
 }
 
-// Stop gracefully shuts down all watchers with the default timeout.
-// It cancels all watcher contexts and waits for them to finish.
-// If watchers don't finish within the default timeout, it returns without waiting further.
-// After calling Stop, the Client can be restarted by calling Start again.
-func (c *Client) Stop() {
-	c.StopWithTimeout(DefaultShutdownTimeout)
-}
-
-// StopWithTimeout gracefully shuts down all watchers with a custom timeout.
-// It cancels all watcher contexts and waits for them to finish.
-// If watchers don't finish within the timeout, it logs a warning and returns.
-// After calling StopWithTimeout, the Client can be restarted by calling Start again.
-func (c *Client) StopWithTimeout(timeout time.Duration) {
-	c.mu.Lock()
-
-	// Cancel all watchers
-	for _, entry := range c.watchers {
-		if entry.cancel != nil {
-			entry.cancel()
-		}
-	}
-
-	c.mu.Unlock()
-
-	// Wait for all watchers to finish with timeout
-	done := make(chan struct{})
-
-	go func() {
-		c.wg.Wait()
-		close(done)
-	}()
-
-	select {
-	case <-done:
-		// All watchers finished gracefully
-		logf.Log.V(1).Info("All secret watchers stopped gracefully")
-	case <-time.After(timeout):
-		// Timeout exceeded
-		logf.Log.Info("Secret watcher shutdown timeout exceeded, some watchers may still be running",
-			"timeout", timeout)
-	}
-}
-
 // SyncWatchedSecrets ensures the pipeline watches exactly the given set of secrets.
 // It adds watchers for new secrets, removes the pipeline from secrets no longer needed,
 // and cleans up watchers that have no remaining linked pipelines.
@@ -98,16 +54,14 @@ func (c *Client) StopWithTimeout(timeout time.Duration) {
 // New watchers are started immediately, and removed watchers are stopped immediately.
 // Duplicate secrets in the input slice are automatically deduplicated.
 func (c *Client) SyncWatchedSecrets(ctx context.Context, pipeline client.Object, secrets []types.NamespacedName) {
-	logf.FromContext(ctx).V(1).Info("Syncing watched secrets for pipeline")
+	c.mu.Lock()
+	defer c.mu.Unlock()
 
 	// Deduplicate secrets using a set
 	secretSet := make(map[types.NamespacedName]struct{}, len(secrets))
 	for _, s := range secrets {
 		secretSet[s] = struct{}{}
 	}
-
-	c.mu.Lock()
-	defer c.mu.Unlock()
 
 	// Add or update watchers for the given secrets
 	for secret := range secretSet {
@@ -135,5 +89,43 @@ func (c *Client) SyncWatchedSecrets(ctx context.Context, pipeline client.Object,
 				delete(c.watchers, watchedSecret)
 			}
 		}
+	}
+}
+
+// Stop gracefully shuts down all watchers with the default timeout.
+// It cancels all watcher contexts and waits for them to finish.
+// If watchers don't finish within the default timeout, it returns without waiting further.
+// After calling Stop, the Client can be restarted by calling Start again.
+func (c *Client) Stop() {
+	c.stopWithTimeout(defaultShutdownTimeout)
+}
+
+func (c *Client) stopWithTimeout(timeout time.Duration) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	// Cancel all watchers
+	for _, entry := range c.watchers {
+		if entry.cancel != nil {
+			entry.cancel()
+		}
+	}
+
+	// Wait for all watchers to finish with timeout
+	done := make(chan struct{})
+
+	go func() {
+		c.wg.Wait()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+		// All watchers finished gracefully
+		logf.Log.V(1).Info("All secret watchers stopped gracefully")
+	case <-time.After(timeout):
+		// Timeout exceeded
+		logf.Log.Info("Secret watcher shutdown timeout exceeded, some watchers may still be running",
+			"timeout", timeout)
 	}
 }
