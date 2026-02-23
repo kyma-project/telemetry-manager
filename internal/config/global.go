@@ -50,6 +50,7 @@ type Global struct {
 	clusterTrustBundleName string
 	additionalLabels       map[string]string
 	additionalAnnotations  map[string]string
+	unlimitedPipelines     bool
 }
 
 type Option func(*Global)
@@ -105,6 +106,12 @@ func WithAdditionalAnnotations(annotations map[string]string) Option {
 func WithDeployOTLPGateway(enable bool) Option {
 	return func(g *Global) {
 		g.deployOTLPGateway = enable
+	}
+}
+
+func WithUnlimitedPipelines(enable bool) Option {
+	return func(g *Global) {
+		g.unlimitedPipelines = enable
 	}
 }
 
@@ -180,3 +187,5 @@ func (g *Global) AdditionalLabels() map[string]string {
 func (g *Global) AdditionalAnnotations() map[string]string {
 	return g.additionalAnnotations
 }
+
+func (g *Global) UnlimitedPipelines() bool { return g.unlimitedPipelines }

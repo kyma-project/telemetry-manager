@@ -18,7 +18,7 @@ import (
 )
 
 func TestMTLSExpiredCert(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelTraces, suite.LabelMTLS)
+	suite.SetupTest(t, suite.LabelTraces, suite.LabelMTLS)
 
 	var (
 		uniquePrefix = unique.Prefix()

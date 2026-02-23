@@ -6,7 +6,6 @@ import (
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
@@ -38,7 +37,7 @@ type LogPipelineBuilder struct {
 func BuildLogPipelineRuntimeInput(opts ...NamespaceSelectorOptions) telemetryv1beta1.LogPipelineInput {
 	input := telemetryv1beta1.LogPipelineInput{
 		Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
-			Enabled: ptr.To(true),
+			Enabled: new(true),
 		},
 	}
 
@@ -58,10 +57,10 @@ func BuildLogPipelineRuntimeInput(opts ...NamespaceSelectorOptions) telemetryv1b
 func BuildLogPipelineOTLPInput(opts ...NamespaceSelectorOptions) telemetryv1beta1.LogPipelineInput {
 	input := telemetryv1beta1.LogPipelineInput{
 		Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
-			Enabled: ptr.To(false),
+			Enabled: new(false),
 		},
 		OTLP: &telemetryv1beta1.OTLPInput{
-			Enabled:    ptr.To(true),
+			Enabled:    new(true),
 			Namespaces: &telemetryv1beta1.NamespaceSelector{},
 		},
 	}
@@ -108,15 +107,15 @@ func (b *LogPipelineBuilder) WithOutput(output telemetryv1beta1.LogPipelineOutpu
 
 func (b *LogPipelineBuilder) WithRuntimeInput(enabled bool, opts ...NamespaceSelectorOptions) *LogPipelineBuilder {
 	b.input = BuildLogPipelineRuntimeInput(opts...)
-	b.input.Runtime.Enabled = ptr.To(enabled)
-	b.input.Runtime.KeepOriginalBody = ptr.To(false)
+	b.input.Runtime.Enabled = new(enabled)
+	b.input.Runtime.KeepOriginalBody = new(false)
 
 	return b
 }
 
 func (b *LogPipelineBuilder) WithOTLPInput(enabled bool, opts ...NamespaceSelectorOptions) *LogPipelineBuilder {
 	b.input = BuildLogPipelineOTLPInput(opts...)
-	b.input.OTLP.Enabled = ptr.To(enabled)
+	b.input.OTLP.Enabled = new(enabled)
 
 	return b
 }
@@ -202,7 +201,7 @@ func (b *LogPipelineBuilder) WithKeepOriginalBody(keep bool) *LogPipelineBuilder
 		b.input.Runtime = &telemetryv1beta1.LogPipelineRuntimeInput{}
 	}
 
-	b.input.Runtime.KeepOriginalBody = ptr.To(keep)
+	b.input.Runtime.KeepOriginalBody = new(keep)
 
 	return b
 }

@@ -324,10 +324,14 @@ func TestGettersForOptionalFields(t *testing.T) {
 		WithClusterTrustBundleName("trust-bundle"),
 		WithAdditionalLabels(labels),
 		WithAdditionalAnnotations(annotations),
+		WithDeployOTLPGateway(false),
+		WithUnlimitedPipelines(true),
 	)
 
 	require.Equal(t, "my-secret", g.ImagePullSecretName())
 	require.Equal(t, "trust-bundle", g.ClusterTrustBundleName())
 	require.Equal(t, labels, g.AdditionalLabels())
 	require.Equal(t, annotations, g.AdditionalAnnotations())
+	require.False(t, g.DeployOTLPGateway())
+	require.True(t, g.UnlimitedPipelines())
 }

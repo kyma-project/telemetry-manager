@@ -25,7 +25,7 @@ import (
 )
 
 func TestTelemetry(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelTelemetry)
+	suite.SetupTest(t, suite.LabelTelemetry)
 
 	var (
 		uniquePrefix = unique.Prefix()
@@ -87,7 +87,7 @@ func assertTelemetryCRExistsAndHasCorrectEndpointsInStatus(logGRPCEndpoint strin
 }
 
 func TestTelemetryWarning(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelTelemetry)
+	suite.SetupTest(t, suite.LabelTelemetry)
 
 	var (
 		uniquePrefix = unique.Prefix("warning")
@@ -121,7 +121,7 @@ func TestTelemetryWarning(t *testing.T) {
 
 // Decide how to execute it as we delete the telemetry CR in the end of the test
 func TestTelemetryDeletionBlocking(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelTelemetry)
+	suite.SetupTest(t, suite.LabelTelemetry)
 
 	var (
 		uniquePrefix = unique.Prefix("delete-blocking")

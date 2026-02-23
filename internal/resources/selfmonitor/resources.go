@@ -12,7 +12,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
@@ -281,7 +280,7 @@ func (ad *ApplierDeleter) makeDeployment(configChecksum, configPath, configFile 
 			Annotations: resourceAnnotations,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: ptr.To(replicas),
+			Replicas: new(replicas),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: selectorLabels,
 			},
@@ -373,7 +372,7 @@ func (ad *ApplierDeleter) makePodSpec(image, configPath, configFile string) core
 		commonresources.WithTerminationGracePeriodSeconds(300), //nolint:mnd // 300 seconds
 		commonresources.WithImagePullSecretName(ad.Config.ImagePullSecretName()),
 
-		commonresources.WithContainer("self-monitor", image,
+		commonresources.WithContainer(names.SelfMonitorContainerName, image,
 			commonresources.WithArgs(args),
 			commonresources.WithPort("http-web", ports.PrometheusPort),
 			commonresources.WithVolumeMounts(volumeMounts),

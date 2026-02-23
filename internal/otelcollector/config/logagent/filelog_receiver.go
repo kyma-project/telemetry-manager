@@ -3,8 +3,6 @@ package logagent
 import (
 	"fmt"
 
-	"k8s.io/utils/ptr"
-
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/namespaces"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
@@ -40,8 +38,8 @@ func fileLogReceiverConfig(lp *telemetryv1beta1.LogPipeline, collectAgentLogs bo
 	return &FileLogReceiver{
 		Exclude:         excludePath,
 		Include:         includePath,
-		IncludeFileName: ptr.To(false),
-		IncludeFilePath: ptr.To(true),
+		IncludeFileName: new(false),
+		IncludeFilePath: new(true),
 		StartAt:         "beginning",
 		Storage:         "file_storage",
 		RetryOnFailure: common.RetryOnFailure{
@@ -165,7 +163,7 @@ func makeContainerParser() Operator {
 	return Operator{
 		ID:                      "containerd-parser",
 		Type:                    Container,
-		AddMetadataFromFilePath: ptr.To(true),
+		AddMetadataFromFilePath: new(true),
 		Format:                  "containerd",
 	}
 }

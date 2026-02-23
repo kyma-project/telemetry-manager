@@ -19,7 +19,7 @@ import (
 )
 
 func TestResources(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelTraces)
+	suite.SetupTest(t, suite.LabelTraces)
 
 	const (
 		endpointKey   = "traces-endpoint"

@@ -32,7 +32,7 @@ func Convert_v1alpha1_OTLPInput_To_v1beta1_OTLPInput(in *OTLPInput, out *telemet
 		return err
 	}
 
-	out.Enabled = ptr.To(!in.Disabled)
+	out.Enabled = new(!in.Disabled)
 
 	if in.Namespaces != nil {
 		out.Namespaces = &telemetryv1beta1.NamespaceSelector{

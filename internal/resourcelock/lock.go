@@ -12,11 +12,17 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 )
 
 var ErrMaxPipelinesExceeded = errors.New("maximum pipeline count limit exceeded")
+
+const (
+	MaxPipelineCount       = 5
+	UnlimitedPipelineCount = -1
+)
 
 type Checker struct {
 	client    client.Client
@@ -60,7 +66,7 @@ func (c *Checker) TryAcquireLock(ctx context.Context, owner metav1.Object) error
 		}
 	}
 
-	if c.maxOwners == 0 || len(lock.GetOwnerReferences()) < c.maxOwners {
+	if c.maxOwners == 0 || canAddOwner(ctx, len(lock.GetOwnerReferences()), c.maxOwners) {
 		if err := controllerutil.SetOwnerReference(owner, &lock, c.client.Scheme()); err != nil {
 			return fmt.Errorf("failed to set owner reference: %w", err)
 		}
@@ -109,4 +115,13 @@ func (c *Checker) createLock(ctx context.Context, owner metav1.Object) error {
 	}
 
 	return nil
+}
+
+func canAddOwner(ctx context.Context, numOwners, maxOwners int) bool {
+	if maxOwners == UnlimitedPipelineCount {
+		logf.FromContext(ctx, "Unlimited Pipeline count configured, skipping owner add check")
+		return true
+	}
+
+	return numOwners < maxOwners
 }

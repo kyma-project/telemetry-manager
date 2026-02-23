@@ -54,46 +54,45 @@ You can set up ingestion of logs from applications and the Istio service mesh to
 <!-- using HTML so it's collapsed in GitHub, don't switch to docsify tabs -->
 1. Deploy a [LogPipeline](./../../collecting-logs/README.md) for application logs:
 
-   - For OTLP, run:
-    <div tabs name="logs">
-      <details><summary>Script: Application Logs</summary>
+   <div tabs name="logs">
+     <details><summary>Script: Application Logs</summary>
+ 
+     ```bash
+     kubectl apply -f - <<EOF
+     apiVersion: telemetry.kyma-project.io/v1beta1
+     kind: LogPipeline
+     metadata:
+       name: sap-cloud-logging
+     spec:
+       input:
+         runtime:
+           enabled: true
+       output:
+         otlp:
+           endpoint:
+             valueFrom:
+               secretKeyRef:
+                 name: sap-cloud-logging
+                 namespace: sap-cloud-logging-integration
+                 key: ingest-otlp-endpoint
+           tls:
+             cert:
+               valueFrom:
+                 secretKeyRef:
+                   name: sap-cloud-logging
+                   namespace: sap-cloud-logging-integration
+                   key: ingest-otlp-cert
+             key:
+               valueFrom:
+                 secretKeyRef:
+                   name: sap-cloud-logging
+                   namespace: sap-cloud-logging-integration
+                   key: ingest-otlp-key
+     EOF
+     ```
 
-      ```bash
-      kubectl apply -f - <<EOF
-      apiVersion: telemetry.kyma-project.io/v1beta1
-      kind: LogPipeline
-      metadata:
-        name: sap-cloud-logging
-      spec:
-        input:
-          runtime:
-            enabled: true
-        output:
-          otlp:
-            endpoint:
-              valueFrom:
-                secretKeyRef:
-                  name: sap-cloud-logging
-                  namespace: sap-cloud-logging-integration
-                  key: ingest-otlp-endpoint
-            tls:
-              cert:
-                valueFrom:
-                  secretKeyRef:
-                    name: sap-cloud-logging
-                    namespace: sap-cloud-logging-integration
-                    key: ingest-otlp-cert
-              key:
-                valueFrom:
-                  secretKeyRef:
-                    name: sap-cloud-logging
-                    namespace: sap-cloud-logging-integration
-                    key: ingest-otlp-key
-      EOF
-      ```
-
-      </details>
-    </div>
+     </details>
+   </div>
 
 1. Verify that the LogPipeline is running:
 
@@ -223,7 +222,7 @@ You can set up ingestion of metrics from applications and the Istio service mesh
 
     The default configuration creates a gateway to receive OTLP metrics from your applications.
 1. Optional: To collect additional metrics, such as those from the runtime or Istio, configure the presets in the input section of the MetricPipeline.
-For the available options, see [Configure Metrics Collection](./../../collecting-metrics/README.md).
+For the available options, see [Collecting Metrics](./../../collecting-metrics/README.md).
 1. Verify that the MetricPipeline is running:
 
   ```bash

@@ -7,7 +7,6 @@ import (
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -62,8 +61,8 @@ func makeConversionWebhookConfig(caBundle []byte, config Config) apiextensionsv1
 				Service: &apiextensionsv1.ServiceReference{
 					Namespace: config.ServiceName.Namespace,
 					Name:      config.ServiceName.Name,
-					Path:      ptr.To("/convert"),
-					Port:      ptr.To(webhookServicePort),
+					Path:      new("/convert"),
+					Port:      new(webhookServicePort),
 				},
 				CABundle: caBundle,
 			},
