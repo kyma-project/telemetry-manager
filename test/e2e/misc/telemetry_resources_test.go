@@ -18,7 +18,7 @@ import (
 )
 
 func TestTelemetryResources(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelTelemetry)
+	suite.SetupTest(t, suite.LabelTelemetry)
 
 	var (
 		uniquePrefix = unique.Prefix()
