@@ -29,7 +29,70 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/validators/ottl"
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
+	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
+
+func TestGatewayHealthCondition(t *testing.T) {
+	tests := []struct {
+		name           string
+		proberError    error
+		expectedStatus metav1.ConditionStatus
+		expectedReason string
+		expectedMsg    string
+	}{
+		{
+			name:           "trace gateway probing failed",
+			proberError:    workloadstatus.ErrDeploymentFetching,
+			expectedStatus: metav1.ConditionFalse,
+			expectedReason: conditions.ReasonGatewayNotReady,
+			expectedMsg:    "Failed to get Deployment",
+		},
+		{
+			name:           "trace gateway deployment is not ready",
+			proberError:    &workloadstatus.PodIsPendingError{ContainerName: "foo", Message: "Error"},
+			expectedStatus: metav1.ConditionFalse,
+			expectedReason: conditions.ReasonGatewayNotReady,
+			expectedMsg:    "Pod is in the pending state because container: foo is not running due to: Error. Please check the container: foo logs.",
+		},
+		{
+			name:           "trace gateway deployment is ready",
+			proberError:    nil,
+			expectedStatus: metav1.ConditionTrue,
+			expectedReason: conditions.ReasonGatewayReady,
+			expectedMsg:    "Trace gateway Deployment is ready",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			pipeline := testutils.NewTracePipelineBuilder().WithName("pipeline").Build()
+			fakeClient := newTestClient(t, &pipeline)
+
+			gatewayConfigBuilder := &mocks.GatewayConfigBuilder{}
+			gatewayConfigBuilder.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Once()
+
+			opts := []any{
+				withGatewayConfigBuilderAssert(gatewayConfigBuilder),
+			}
+			if tt.proberError != nil {
+				opts = append(opts, WithGatewayProber(commonStatusStubs.NewDeploymentSetProber(tt.proberError)))
+			}
+
+			sut, assertMocks := newTestReconciler(fakeClient, opts...)
+
+			result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
+			require.NoError(t, result.err)
+
+			requireHasStatusCondition(t, result.pipeline,
+				conditions.TypeGatewayHealthy,
+				tt.expectedStatus,
+				tt.expectedReason,
+				tt.expectedMsg)
+
+			assertMocks(t)
+		})
+	}
+}
 
 func TestSecretReferenceValidation(t *testing.T) {
 	tests := []struct {
