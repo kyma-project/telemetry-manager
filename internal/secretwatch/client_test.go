@@ -2,6 +2,7 @@ package secretwatch
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -690,15 +691,121 @@ func TestSyncWatchedSecretsAfterStop(t *testing.T) {
 			eventChan: eventChan,
 		}
 
-		pipeline := new(testutils.NewLogPipelineBuilder().WithName("my-pipeline").Build())
+		pipeline := testutils.NewLogPipelineBuilder().Build()
 
 		// Stop the client
 		c.stopWithTimeout(testShutdownTimeout)
 
 		// Try to sync secrets after stop
-		err := c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{testSecret1})
+		err := c.SyncWatchedSecrets(ctx, &pipeline, []types.NamespacedName{testSecret1})
 
 		require.ErrorIs(t, err, ErrClientStopped)
+	})
+
+	t.Run("should return error when called after Stop using public method", func(t *testing.T) {
+		ctx := context.Background()
+		eventChan := make(chan event.GenericEvent, 10)
+		clientset := fake.NewClientset()
+
+		c := &Client{
+			clientset: clientset,
+			watchers:  make(map[types.NamespacedName]*watcher),
+			eventChan: eventChan,
+		}
+
+		pipeline := testutils.NewLogPipelineBuilder().Build()
+
+		// Stop the client using the public method
+		c.Stop()
+
+		// Try to sync secrets after stop
+		err := c.SyncWatchedSecrets(ctx, &pipeline, []types.NamespacedName{testSecret1})
+
+		require.ErrorIs(t, err, ErrClientStopped)
+	})
+}
+
+func TestWatcherErrorHandling(t *testing.T) {
+	t.Run("should handle watch error event and continue", func(t *testing.T) {
+		ctx := context.Background()
+		eventChan := make(chan event.GenericEvent, 10)
+
+		secret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testSecretName1,
+				Namespace: testNamespace,
+			},
+		}
+		clientset := fake.NewClientset(secret)
+
+		fakeWatcher := watch.NewFake()
+		clientset.PrependWatchReactor("secrets", clienttesting.DefaultWatchReactor(fakeWatcher, nil))
+
+		c := &Client{
+			clientset: clientset,
+			watchers:  make(map[types.NamespacedName]*watcher),
+			eventChan: eventChan,
+		}
+
+		t.Cleanup(func() {
+			fakeWatcher.Stop()
+			c.stopWithTimeout(testShutdownTimeout)
+		})
+
+		pipeline := testutils.NewLogPipelineBuilder().Build()
+
+		require.NoError(t, c.SyncWatchedSecrets(ctx, &pipeline, []types.NamespacedName{testSecret1}))
+
+		time.Sleep(testStartupDelay)
+
+		// Send a watch error event
+		fakeWatcher.Error(&metav1.Status{
+			Status:  metav1.StatusFailure,
+			Message: "test error",
+		})
+
+		// Give time for the error to be processed
+		time.Sleep(testStartupDelay)
+
+		// The watcher should still exist (it reconnects on error)
+		c.mu.RLock()
+		_, exists := c.watchers[testSecret1]
+		c.mu.RUnlock()
+		require.True(t, exists, "watcher should still exist after error")
+	})
+
+	t.Run("should handle context cancellation during reconnect delay", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		eventChan := make(chan event.GenericEvent, 10)
+
+		clientset := fake.NewClientset()
+
+		// Return an error on watch to trigger reconnect logic
+		clientset.PrependWatchReactor("secrets", func(action clienttesting.Action) (handled bool, ret watch.Interface, err error) {
+			return true, nil, errors.New("simulated watch error")
+		})
+
+		c := &Client{
+			clientset: clientset,
+			watchers:  make(map[types.NamespacedName]*watcher),
+			eventChan: eventChan,
+		}
+
+		pipeline := testutils.NewLogPipelineBuilder().Build()
+
+		require.NoError(t, c.SyncWatchedSecrets(ctx, &pipeline, []types.NamespacedName{testSecret1}))
+
+		// Give time for the watcher to hit the error and enter reconnect delay
+		time.Sleep(testStartupDelay)
+
+		// Cancel the context during the reconnect delay
+		cancel()
+
+		// Give time for the watcher to notice the cancellation
+		time.Sleep(testStartupDelay)
+
+		// Stop client to clean up
+		c.stopWithTimeout(testShutdownTimeout)
 	})
 }
 
