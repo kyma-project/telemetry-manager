@@ -11,7 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/kyma-project/telemetry-manager/internal/metrics"
-	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/ports"
+	selfmonports "github.com/kyma-project/telemetry-manager/internal/selfmonitor/ports"
 )
 
 const (
@@ -20,7 +20,7 @@ const (
 
 func newPrometheusClient(selfMonitorName types.NamespacedName) (promv1.API, error) {
 	client, err := api.NewClient(api.Config{
-		Address: fmt.Sprintf("http://%s.%s:%d", selfMonitorName.Name, selfMonitorName.Namespace, ports.PrometheusPort),
+		Address: fmt.Sprintf("http://%s.%s:%d", selfMonitorName.Name, selfMonitorName.Namespace, selfmonports.PrometheusPort),
 		Client:  newInstrumentedClient(),
 	})
 	if err != nil {
