@@ -24,6 +24,7 @@ spec:
         app.kubernetes.io/name: manager
         control-plane: telemetry-manager
         kyma-project.io/component: controller
+        kyma-project.io/module: telemetry
       {{- include "telemetry-manager.selectorLabels" . | indent 8 }}
       annotations:
         kubectl.kubernetes.io/default-container: manager
