@@ -63,7 +63,7 @@ var (
 )
 
 type AgentApplyOptions struct {
-	AllowedPorts    []int32
+	IstioEnabled    bool
 	FluentBitConfig *builder.FluentBitConfig
 }
 
@@ -169,9 +169,17 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 		return err
 	}
 
-	networkPolicy := commonresources.MakeNetworkPolicy(aad.daemonSetName, opts.AllowedPorts, makeLabels(), selectorLabels())
-	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, networkPolicy); err != nil {
-		return fmt.Errorf("failed to create fluent bit network policy: %w", err)
+	networkPolicies := makeNetworkPolicies(aad.daemonSetName, opts.IstioEnabled)
+
+	for _, np := range networkPolicies {
+		if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, np); err != nil {
+			return fmt.Errorf("failed to create fluent bit network policies: %w", err)
+		}
+	}
+
+	// TODO: Remove after rollout 1.59.0
+	if err := commonresources.CleanupOldNetworkPolicy(ctx, c, aad.daemonSetName); err != nil {
+		return fmt.Errorf("failed to cleanup old fluentbit network policy: %w", err)
 	}
 
 	return nil
@@ -245,8 +253,11 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete daemonset: %w", err))
 	}
 
-	networkPolicy := networkingv1.NetworkPolicy{ObjectMeta: objectMeta}
-	if err := k8sutils.DeleteObject(ctx, c, &networkPolicy); err != nil {
+	networkPolicySelector := map[string]string{
+		commonresources.LabelKeyK8sName: "fluent-bit",
+	}
+
+	if err := k8sutils.DeleteObjectsByLabelSelector(ctx, c, &networkingv1.NetworkPolicyList{}, networkPolicySelector); err != nil {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete networkpolicy: %w", err))
 	}
 
@@ -681,6 +692,29 @@ func makeTLSFileConfigSecret(name types.NamespacedName, tlsFileConfigSecret map[
 	}
 }
 
+func makeNetworkPolicies(name types.NamespacedName, istioEnabled bool) []*networkingv1.NetworkPolicy {
+	metricsNetworkPolicy := commonresources.MakeNetworkPolicy(
+		name,
+		makeLabels(),
+		selectorLabels(),
+		commonresources.WithNameSuffix("metrics"),
+		commonresources.WithIngressFromPodsInAllNamespaces(
+			map[string]string{
+				commonresources.LabelKeyTelemetryMetricsScraping: commonresources.LabelValueTelemetryMetricsScraping,
+			},
+			makeFluentBitMetricsPorts(istioEnabled)),
+	)
+
+	fluentBitNetworkPolicy := commonresources.MakeNetworkPolicy(
+		name,
+		makeLabels(),
+		selectorLabels(),
+		commonresources.WithEgressToAny(),
+	)
+
+	return []*networkingv1.NetworkPolicy{metricsNetworkPolicy, fluentBitNetworkPolicy}
+}
+
 func makeLabels() map[string]string {
 	result := commonresources.MakeDefaultLabels("fluent-bit", commonresources.LabelValueK8sComponentAgent)
 	result[commonresources.LabelKeyK8sInstance] = commonresources.LabelValueK8sInstance
@@ -693,4 +727,13 @@ func selectorLabels() map[string]string {
 	result[commonresources.LabelKeyK8sInstance] = commonresources.LabelValueK8sInstance
 
 	return result
+}
+
+func makeFluentBitMetricsPorts(istioEnabled bool) []int32 {
+	metricsPorts := []int32{fbports.HTTP, fbports.ExporterMetrics}
+	if istioEnabled {
+		metricsPorts = append(metricsPorts, fbports.IstioEnvoyTelemetry)
+	}
+
+	return metricsPorts
 }

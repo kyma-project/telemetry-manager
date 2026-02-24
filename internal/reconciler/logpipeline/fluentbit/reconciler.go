@@ -11,7 +11,6 @@ import (
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
-	fbports "github.com/kyma-project/telemetry-manager/internal/fluentbit/ports"
 	"github.com/kyma-project/telemetry-manager/internal/metrics"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
@@ -225,17 +224,12 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 		return fmt.Errorf("failed to build fluentbit config: %w", err)
 	}
 
-	allowedPorts := getFluentBitPorts()
-	if r.istioStatusChecker.IsIstioActive(ctx) {
-		allowedPorts = append(allowedPorts, fbports.IstioEnvoy)
-	}
-
 	if err = r.agentApplierDeleter.ApplyResources(
 		ctx,
 		k8sutils.NewOwnerReferenceSetter(r.Client, pipeline),
 		fluentbit.AgentApplyOptions{
 			FluentBitConfig: config,
-			AllowedPorts:    allowedPorts,
+			IstioEnabled:    r.istioStatusChecker.IsIstioActive(ctx),
 		},
 	); err != nil {
 		return err
@@ -261,13 +255,6 @@ func (r *Reconciler) getReconcilablePipelines(ctx context.Context, allPipelines 
 	}
 
 	return reconcilableLogPipelines, nil
-}
-
-func getFluentBitPorts() []int32 {
-	return []int32{
-		fbports.ExporterMetrics,
-		fbports.HTTP,
-	}
 }
 
 func (r *Reconciler) trackPipelineInfoMetric(ctx context.Context, pipelines []telemetryv1beta1.LogPipeline) {
