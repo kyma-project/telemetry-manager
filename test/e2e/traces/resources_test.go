@@ -32,7 +32,7 @@ func TestResources(t *testing.T) {
 		secretName   = uniquePrefix()
 
 		gatewayResources = []assert.Resource{
-			assert.NewResource(&appsv1.Deployment{}, kitkyma.TraceGatewayName),
+			assert.NewResource(&appsv1.DaemonSet{}, kitkyma.TelemetryOTLPGatewayName),
 			assert.NewResource(&corev1.Service{}, kitkyma.TraceGatewayMetricsService),
 			assert.NewResource(&corev1.ServiceAccount{}, kitkyma.TraceGatewayServiceAccount),
 			assert.NewResource(&rbacv1.ClusterRole{}, kitkyma.TraceGatewayClusterRole),
