@@ -182,6 +182,10 @@ linters:
           alias: telemetryutils
         - pkg: github.com/kyma-project/telemetry-manager/internal/fluentbit/ports
           alias: fbports
+        - pkg: github.com/kyma-project/telemetry-manager/internal/manager/ports
+          alias: mgrports
+        - pkg: github.com/kyma-project/telemetry-manager/internal/selfmonitor/ports
+          alias: selfmonports
         - pkg: github.com/kyma-project/telemetry-manager/webhook/utils
           alias: webhookutils
         - pkg: github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects

@@ -218,6 +218,12 @@ jobs:
       - name: Setup Golang
         uses: ./.github/template/setup-golang
 
+      - name: Authenticate to Google Cloud
+        if: github.event_name != 'pull_request'
+        uses: google-github-actions/auth@ba79af03959ebeac9769e648f473a284504d9193 # v2.1.10
+        with:
+          credentials_json: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
+
       - name: Setup Google Cloud SDK
         if: github.event_name != 'pull_request'
         uses: google-github-actions/setup-gcloud@77e7a554d41e2ee56fc945c52dfd3f33d12def9a # v2.1.4
@@ -232,7 +238,7 @@ jobs:
       - name: Run selfmonitor-${{ matrix.scenario }}-${{ matrix.component.name }} tests
         run: |
           # For PR events, only run no-fips tests since we can't pull the prometheus-fips image
-          # For push events, run fips tests (not no-fips) since we have access to the restricted registry
+          # For scheduled/other events, run fips tests since we have access to the restricted registry
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
             FIPS_LABEL="no-fips"
           else
