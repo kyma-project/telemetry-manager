@@ -17,6 +17,7 @@ func newTestScheme() *runtime.Scheme {
 	scheme := runtime.NewScheme()
 	_ = clientgoscheme.AddToScheme(scheme)
 	_ = telemetryv1beta1.AddToScheme(scheme)
+
 	return scheme
 }
 

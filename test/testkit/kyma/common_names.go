@@ -41,7 +41,6 @@ var (
 	MetricAgentClusterRoleBinding = types.NamespacedName{Name: names.MetricAgent, Namespace: SystemNamespaceName}
 	MetricAgentConfigMap          = types.NamespacedName{Name: names.MetricAgent, Namespace: SystemNamespaceName}
 
-	// Trace resources now handled by OTLP Gateway - these are aliases for backward compatibility
 	TraceGatewayName               = types.NamespacedName{Name: names.OTLPGateway, Namespace: SystemNamespaceName}
 	TraceGatewayMetricsService     = types.NamespacedName{Name: names.OTLPGatewayMetricsService, Namespace: SystemNamespaceName}
 	TraceGatewayNetworkPolicy      = types.NamespacedName{Name: commonresources.NetworkPolicyPrefix + names.OTLPGateway, Namespace: SystemNamespaceName}

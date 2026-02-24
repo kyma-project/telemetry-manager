@@ -642,6 +642,7 @@ func TestUpdatePipelineCondition_Success(t *testing.T) {
 
 	// Verify the condition was set
 	var updatedPipeline telemetryv1beta1.TracePipeline
+
 	err = fakeClient.Get(ctx, types.NamespacedName{Name: "test-pipeline"}, &updatedPipeline)
 	require.NoError(t, err)
 
@@ -687,11 +688,13 @@ func TestUpdateGatewayHealthyConditions_MultiplePipelines(t *testing.T) {
 
 	// Verify both pipelines were updated
 	var p1 telemetryv1beta1.TracePipeline
+
 	err = fakeClient.Get(ctx, types.NamespacedName{Name: "test-pipeline-1"}, &p1)
 	require.NoError(t, err)
 	assert.NotEmpty(t, p1.Status.Conditions)
 
 	var p2 telemetryv1beta1.TracePipeline
+
 	err = fakeClient.Get(ctx, types.NamespacedName{Name: "test-pipeline-2"}, &p2)
 	require.NoError(t, err)
 	assert.NotEmpty(t, p2.Status.Conditions)

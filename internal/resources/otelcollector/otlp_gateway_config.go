@@ -116,34 +116,14 @@ func updateConfigMapWithRetry(ctx context.Context, c client.Client, namespace st
 	log := logf.FromContext(ctx)
 
 	for attempt := range maxRetries {
-		// Read current ConfigMap (or create if doesn't exist)
-		var cm corev1.ConfigMap
-
-		err := c.Get(ctx, types.NamespacedName{
-			Name:      OTLPGatewayConfigMapName,
-			Namespace: namespace,
-		}, &cm)
-
-		configMapExists := true
-
+		cm, exists, err := getConfigMap(ctx, c, namespace)
 		if err != nil {
-			if !apierrors.IsNotFound(err) {
-				return fmt.Errorf("failed to get configmap: %w", err)
-			}
-
-			configMapExists = false
+			return err
 		}
 
-		// Parse current config
-		var config OTLPGatewayConfigMap
-
-		if configMapExists {
-			yamlData, ok := cm.Data[ConfigMapDataKey]
-			if ok && yamlData != "" {
-				if err := yaml.Unmarshal([]byte(yamlData), &config); err != nil {
-					return fmt.Errorf("failed to unmarshal configmap: %w", err)
-				}
-			}
+		config, err := parseConfig(cm, exists)
+		if err != nil {
+			return err
 		}
 
 		if err := updateFn(&config); err != nil {
@@ -155,46 +135,103 @@ func updateConfigMapWithRetry(ctx context.Context, c client.Client, namespace st
 			return fmt.Errorf("failed to marshal config: %w", err)
 		}
 
-		if !configMapExists {
-			cm = corev1.ConfigMap{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      OTLPGatewayConfigMapName,
-					Namespace: namespace,
-				},
-				Data: map[string]string{
-					ConfigMapDataKey: string(yamlData),
-				},
-			}
-
-			if err := c.Create(ctx, &cm); err != nil {
+		if !exists {
+			if err := createConfigMap(ctx, c, namespace, string(yamlData)); err != nil {
 				if apierrors.IsAlreadyExists(err) {
 					log.V(1).Info("configmap created by another controller, retrying", "attempt", attempt+1)
 					continue
 				}
 
-				return fmt.Errorf("failed to create configmap: %w", err)
+				return err
 			}
 
 			return nil
 		}
 
-		if cm.Data == nil {
-			cm.Data = make(map[string]string)
-		}
-
-		cm.Data[ConfigMapDataKey] = string(yamlData)
-
-		if err := c.Update(ctx, &cm); err != nil {
+		if err := updateConfigMap(ctx, c, cm, string(yamlData)); err != nil {
 			if apierrors.IsConflict(err) {
 				log.V(1).Info("configmap update conflict, retrying", "attempt", attempt+1)
 				continue
 			}
 
-			return fmt.Errorf("failed to update configmap: %w", err)
+			return err
 		}
 
 		return nil
 	}
 
 	return fmt.Errorf("failed to update configmap after %d attempts", maxRetries)
+}
+
+// getConfigMap fetches the ConfigMap and returns whether it exists
+func getConfigMap(ctx context.Context, c client.Client, namespace string) (*corev1.ConfigMap, bool, error) {
+	var cm corev1.ConfigMap
+
+	err := c.Get(ctx, types.NamespacedName{
+		Name:      OTLPGatewayConfigMapName,
+		Namespace: namespace,
+	}, &cm)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil, false, nil
+		}
+
+		return nil, false, fmt.Errorf("failed to get configmap: %w", err)
+	}
+
+	return &cm, true, nil
+}
+
+// parseConfig parses the configuration from a ConfigMap
+func parseConfig(cm *corev1.ConfigMap, exists bool) (OTLPGatewayConfigMap, error) {
+	var config OTLPGatewayConfigMap
+
+	if !exists {
+		return config, nil
+	}
+
+	yamlData, ok := cm.Data[ConfigMapDataKey]
+	if !ok || yamlData == "" {
+		return config, nil
+	}
+
+	if err := yaml.Unmarshal([]byte(yamlData), &config); err != nil {
+		return config, fmt.Errorf("failed to unmarshal configmap: %w", err)
+	}
+
+	return config, nil
+}
+
+// createConfigMap creates a new ConfigMap with the given YAML data
+func createConfigMap(ctx context.Context, c client.Client, namespace, yamlData string) error {
+	cm := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      OTLPGatewayConfigMapName,
+			Namespace: namespace,
+		},
+		Data: map[string]string{
+			ConfigMapDataKey: yamlData,
+		},
+	}
+
+	if err := c.Create(ctx, cm); err != nil {
+		return fmt.Errorf("failed to create configmap: %w", err)
+	}
+
+	return nil
+}
+
+// updateConfigMap updates an existing ConfigMap with new YAML data
+func updateConfigMap(ctx context.Context, c client.Client, cm *corev1.ConfigMap, yamlData string) error {
+	if cm.Data == nil {
+		cm.Data = make(map[string]string)
+	}
+
+	cm.Data[ConfigMapDataKey] = yamlData
+
+	if err := c.Update(ctx, cm); err != nil {
+		return fmt.Errorf("failed to update configmap: %w", err)
+	}
+
+	return nil
 }

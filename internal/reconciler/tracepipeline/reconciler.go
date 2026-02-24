@@ -36,10 +36,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
 
-// defaultReplicaCount is no longer used in the new architecture.
-// The OTLP Gateway Controller manages deployment configuration.
-const defaultReplicaCount int32 = 2
-
 type Reconciler struct {
 	client.Client
 

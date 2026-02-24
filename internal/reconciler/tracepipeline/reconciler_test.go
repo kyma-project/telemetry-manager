@@ -72,6 +72,7 @@ func TestConfigMapUpdate(t *testing.T) {
 
 			// Verify ConfigMap was written
 			var configMap corev1.ConfigMap
+
 			err = fakeClient.Get(context.Background(), types.NamespacedName{
 				Name:      otelcollector.OTLPGatewayConfigMapName,
 				Namespace: "default",
@@ -85,6 +86,7 @@ func TestConfigMapUpdate(t *testing.T) {
 
 			// Verify status conditions
 			var updatedPipeline telemetryv1beta1.TracePipeline
+
 			err = fakeClient.Get(context.Background(), types.NamespacedName{Name: tt.pipeline.Name}, &updatedPipeline)
 			require.NoError(t, err)
 
@@ -157,6 +159,7 @@ func TestSecretReferenceValidation(t *testing.T) {
 			pipeline := tt.setupPipeline()
 
 			var clientObjs []client.Object
+
 			clientObjs = append(clientObjs, &pipeline)
 			if tt.includeSecret {
 				clientObjs = append(clientObjs, tt.setupSecret())
@@ -181,6 +184,7 @@ func TestSecretReferenceValidation(t *testing.T) {
 
 			// Verify ConfigMap state
 			var configMap corev1.ConfigMap
+
 			err = fakeClient.Get(context.Background(), types.NamespacedName{
 				Name:      otelcollector.OTLPGatewayConfigMapName,
 				Namespace: "default",
@@ -189,15 +193,14 @@ func TestSecretReferenceValidation(t *testing.T) {
 			if tt.expectConfigGenerated {
 				require.NoError(t, err, "ConfigMap should exist")
 				require.Contains(t, configMap.Data["pipelines.yaml"], pipeline.Name, "ConfigMap should contain pipeline reference")
-			} else {
+			} else if err == nil {
 				// ConfigMap might exist but shouldn't contain this pipeline
-				if err == nil {
-					require.NotContains(t, configMap.Data["pipelines.yaml"], pipeline.Name, "ConfigMap should not contain invalid pipeline reference")
-				}
+				require.NotContains(t, configMap.Data["pipelines.yaml"], pipeline.Name, "ConfigMap should not contain invalid pipeline reference")
 			}
 
 			// Verify status
 			var updatedPipeline telemetryv1beta1.TracePipeline
+
 			err = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 			require.NoError(t, err)
 
@@ -241,6 +244,7 @@ func TestMaxPipelineLimit(t *testing.T) {
 
 	// Verify ConfigMap doesn't contain this pipeline
 	var configMap corev1.ConfigMap
+
 	err = fakeClient.Get(context.Background(), types.NamespacedName{
 		Name:      otelcollector.OTLPGatewayConfigMapName,
 		Namespace: "default",
@@ -251,6 +255,7 @@ func TestMaxPipelineLimit(t *testing.T) {
 
 	// Verify status
 	var updatedPipeline telemetryv1beta1.TracePipeline
+
 	err = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 	require.NoError(t, err)
 
@@ -341,6 +346,7 @@ func TestFlowHealthCondition(t *testing.T) {
 			require.NoError(t, err)
 
 			var updatedPipeline telemetryv1beta1.TracePipeline
+
 			err = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 			require.NoError(t, err)
 
@@ -410,6 +416,7 @@ func TestTLSCertificateValidation(t *testing.T) {
 
 			// Verify ConfigMap state
 			var configMap corev1.ConfigMap
+
 			err = fakeClient.Get(context.Background(), types.NamespacedName{
 				Name:      otelcollector.OTLPGatewayConfigMapName,
 				Namespace: "default",
@@ -424,6 +431,7 @@ func TestTLSCertificateValidation(t *testing.T) {
 
 			// Verify status
 			var updatedPipeline telemetryv1beta1.TracePipeline
+
 			err = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 			require.NoError(t, err)
 
@@ -490,6 +498,7 @@ func TestOTTLSpecValidation(t *testing.T) {
 
 			// Verify ConfigMap doesn't contain this pipeline
 			var configMap corev1.ConfigMap
+
 			err = fakeClient.Get(context.Background(), types.NamespacedName{
 				Name:      otelcollector.OTLPGatewayConfigMapName,
 				Namespace: "default",
@@ -500,6 +509,7 @@ func TestOTTLSpecValidation(t *testing.T) {
 
 			// Verify status
 			var updatedPipeline telemetryv1beta1.TracePipeline
+
 			err = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 			require.NoError(t, err)
 
@@ -593,6 +603,7 @@ func TestAPIServerFailureHandling(t *testing.T) {
 			require.ErrorIs(t, err, serverErr)
 
 			var updatedPipeline telemetryv1beta1.TracePipeline
+
 			err = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 			require.NoError(t, err)
 
@@ -634,11 +645,11 @@ func TestConfigMapRemoval(t *testing.T) {
 
 	// Verify ConfigMap doesn't contain this pipeline (or doesn't exist)
 	var configMap corev1.ConfigMap
+
 	err = fakeClient.Get(context.Background(), types.NamespacedName{
 		Name:      otelcollector.OTLPGatewayConfigMapName,
 		Namespace: "default",
 	}, &configMap)
-
 	if err == nil {
 		require.NotContains(t, configMap.Data["pipelines.yaml"], pipeline.Name, "ConfigMap should not contain non-reconcilable pipeline")
 	} else {
@@ -718,6 +729,7 @@ func TestPipelineInfoTracking(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var objs []client.Object
+
 			objs = append(objs, &tt.pipeline)
 			if tt.secret != nil {
 				objs = append(objs, tt.secret)
@@ -785,11 +797,11 @@ func TestDeletingPipeline(t *testing.T) {
 
 	// Verify ConfigMap doesn't contain the deleting pipeline
 	var configMap corev1.ConfigMap
+
 	err = fakeClient.Get(context.Background(), types.NamespacedName{
 		Name:      otelcollector.OTLPGatewayConfigMapName,
 		Namespace: "default",
 	}, &configMap)
-
 	if err == nil {
 		if pipelineYaml, ok := configMap.Data["pipelines.yaml"]; ok {
 			require.NotContains(t, pipelineYaml, pipeline.Name, "ConfigMap should not contain deleting pipeline")
@@ -824,7 +836,6 @@ func requireHasStatusCondition(t *testing.T, pipeline *telemetryv1beta1.TracePip
 	status metav1.ConditionStatus,
 	reason string,
 	message string) {
-
 	cond := getCondition(pipeline, condType)
 	require.NotNil(t, cond, "condition %s should exist", condType)
 	require.Equal(t, status, cond.Status, "condition %s status should match", condType)
@@ -838,5 +849,6 @@ func getCondition(pipeline *telemetryv1beta1.TracePipeline, condType string) *me
 			return &pipeline.Status.Conditions[i]
 		}
 	}
+
 	return nil
 }
