@@ -8,6 +8,26 @@ on:
     # Run every 3 hours on main branch
     - cron: "0 */3 * * *"
   merge_group:
+  push:
+    branches:
+      - "main"
+      - "release-*"
+    paths:
+      - "**/go.mod"
+      - "**/go.sum"
+      - "**.go"
+      - "config/**"
+      - "!config/busola/**"
+      - "!**_test.go"
+      - "!docs/**"
+      - "test/**.go"
+      - ".github/workflows/pr-integration.yml"
+      - ".github/template/**"
+      - ".env"
+      - ".k3d-kyma.yaml"
+      - "Makefile"
+      - "hack/make/*.mk"
+      - "helm/**"
   pull_request:
     branches:
       - "main"
