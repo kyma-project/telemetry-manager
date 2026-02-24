@@ -78,12 +78,19 @@ func NewClient(cfg *rest.Config, traceEventChan, metricEventChan, logEventChan c
 // Duplicate secrets in the input slice are automatically deduplicated.
 // Returns ErrClientStopped if the client has been stopped.
 func (c *Client) SyncWatchedSecrets(ctx context.Context, pipeline client.Object, secrets []types.NamespacedName) error {
+	log := logf.FromContext(ctx).V(1)
+
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	if c.stopped {
 		return ErrClientStopped
 	}
+
+	log.Info("Syncing secret watches",
+		"pipeline", pipeline.GetName(),
+		"secretCount", len(secrets),
+		"currentWatcherCount", len(c.watchers))
 
 	// Deduplicate secrets using a set
 	secretSet := make(map[types.NamespacedName]struct{}, len(secrets))
@@ -96,8 +103,14 @@ func (c *Client) SyncWatchedSecrets(ctx context.Context, pipeline client.Object,
 		if w, exists := c.watchers[secret]; exists {
 			// Watcher exists, link pipeline if not already linked (thread-safe)
 			w.link(pipeline)
+			log.Info("Linked pipeline to existing watcher",
+				"pipeline", pipeline.GetName(),
+				"secret", secret.String())
 		} else {
 			// Create new watcher and start it immediately
+			log.Info("Creating new watcher for secret",
+				"pipeline", pipeline.GetName(),
+				"secret", secret.String())
 			w := newWatcher(secret, pipeline, c.clientset, c.eventRouter)
 			c.startWatcher(ctx, w)
 			c.watchers[secret] = w
@@ -110,9 +123,15 @@ func (c *Client) SyncWatchedSecrets(ctx context.Context, pipeline client.Object,
 		if !secretFound && w.isLinked(pipeline) {
 			// Remove this pipeline from the watcher's linked pipelines (thread-safe)
 			hasPipelines := w.unlink(pipeline)
+			log.Info("Unlinked pipeline from watcher",
+				"pipeline", pipeline.GetName(),
+				"secret", watchedSecret.String(),
+				"watcherHasRemainingPipelines", hasPipelines)
 
 			// If no pipelines are linked anymore, stop and delete the watcher
 			if !hasPipelines {
+				log.Info("Stopping watcher with no remaining pipelines",
+					"secret", watchedSecret.String())
 				w.cancel()
 				// Note: wg.Done() will be called by the watcher's goroutine defer
 				delete(c.watchers, watchedSecret)
@@ -135,10 +154,16 @@ func (c *Client) stopWithTimeout(timeout time.Duration) {
 	c.mu.Lock()
 
 	c.stopped = true
+	watcherCount := len(c.watchers)
+
+	logf.Log.V(1).Info("Stopping secret watcher client",
+		"watcherCount", watcherCount,
+		"timeout", timeout)
 
 	// Cancel all watchers
-	for _, entry := range c.watchers {
+	for secret, entry := range c.watchers {
 		if entry.cancel != nil {
+			logf.Log.V(1).Info("Canceling watcher", "secret", secret.String())
 			entry.cancel()
 		}
 	}
@@ -166,6 +191,8 @@ func (c *Client) stopWithTimeout(timeout time.Duration) {
 
 //nolint:contextcheck // Intentionally using Background() so watcher outlives reconcile request
 func (c *Client) startWatcher(ctx context.Context, w *watcher) {
+	logf.FromContext(ctx).V(1).Info("Starting watcher goroutine", "secret", w.secret.String())
+
 	watcherCtx, cancel := context.WithCancel(
 		logf.IntoContext(context.Background(), logf.FromContext(ctx)),
 	)
