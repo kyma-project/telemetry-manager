@@ -262,7 +262,7 @@ jobs:
       - name: Provision K3D cluster
         run: make provision-k3d
 
-      - name: Import FIPS image to K3D
+      - name: Import Self-monitor FIPS image to K3D
         if: github.event_name != 'pull_request'
         run: make k3d-import-self-monitor-fips-image
 
