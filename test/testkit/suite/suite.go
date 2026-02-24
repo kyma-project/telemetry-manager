@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/exec"
 	"path"
 	"runtime"
 	"slices"
@@ -14,12 +15,14 @@ import (
 	"github.com/go-logr/logr"
 	. "github.com/onsi/gomega"
 	"github.com/stretchr/testify/require"
+	appsv1 "k8s.io/api/apps/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
 	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
+	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 )
 
 const (
@@ -235,20 +238,78 @@ func SetupTest(t *testing.T, labels ...string) {
 
 // SetupTestWithOptions prepares the test environment with additional options.
 // Options can be passed to customize the setup:
+//   - kubeprep.WithIstio() - installs Istio and adds LabelIstio for filtering
+//   - kubeprep.WithExperimental() - enables experimental CRDs and adds LabelExperimental for filtering
+//   - kubeprep.WithRequireFIPSImages() - requires FIPS images and adds LabelRequireFIPSImages for filtering
 //   - kubeprep.WithHelmValues("key=value") - adds custom helm values
 //   - kubeprep.WithChartVersion("url") - uses a specific chart version (for upgrade tests)
+//   - kubeprep.WithOverrideFIPSMode(bool) - overrides FIPS mode setting
 func SetupTestWithOptions(t *testing.T, labels []string, opts ...kubeprep.Option) {
 	RegisterTestingT(t)
 
-	labelSet := toSet(labels)
+	// Build initial config with environment defaults
+	cfg := kubeprep.Config{
+		OperateInFIPSMode:   FIPSImagesAvailable(),
+		DeployPrerequisites: true,
+	}
+
+	// Apply options first - options set config values directly
+	for _, opt := range opts {
+		opt(&cfg)
+	}
+
+	// Auto-add labels based on config values (options → labels)
+	labels = addLabelsFromConfig(labels, cfg)
 
 	// Skip test if it contains "skipped" label
-	if _, exists := labelSet[LabelSkip]; exists {
+	if hasLabel(labels, LabelSkip) {
 		t.Skip()
 	}
 
-	// Evaluate skip/execute decision BEFORE cluster configuration
-	// This avoids unnecessary cluster reconfiguration for tests that won't run
+	// Check if test should run based on filters and special modes
+	if handleTestFiltering(t, labels) {
+		return // test was skipped
+	}
+
+	// Validate FIPS image requirements before cluster setup
+	if err := validateFIPSRequirements(labels); err != nil {
+		require.Fail(t, err.Error())
+		return
+	}
+
+	// Test will execute - finalize config with manager image
+	cfg = finalizeConfig(cfg)
+
+	// Log FIPS configuration for clarity
+	logFIPSConfiguration(t, labels, cfg)
+
+	// Setup cluster (idempotent: always runs helm upgrade + prerequisites)
+	require.NoError(t, kubeprep.SetupCluster(t, K8sClient, cfg))
+}
+
+// addLabelsFromConfig auto-adds labels based on config values
+// This ensures label filtering still works when using options
+func addLabelsFromConfig(labels []string, cfg kubeprep.Config) []string {
+	if cfg.InstallIstio && !hasLabel(labels, LabelIstio) {
+		labels = append(labels, LabelIstio)
+	}
+
+	if cfg.EnableExperimental && !hasLabel(labels, LabelExperimental) {
+		labels = append(labels, LabelExperimental)
+	}
+
+	if cfg.RequireFIPSImages && !hasLabel(labels, LabelRequireFIPSImages) {
+		labels = append(labels, LabelRequireFIPSImages)
+	}
+
+	return labels
+}
+
+// handleTestFiltering handles label filtering, dry-run mode, and print-labels mode.
+// Returns true if the test should be skipped (already handled), false if it should proceed.
+func handleTestFiltering(t *testing.T, labels []string) bool {
+	t.Helper()
+
 	labelFilterExpr := findLabelFilterExpression()
 	doNotExecute := findDoNotExecuteFlag()
 	printLabels := findPrintLabelsFlag()
@@ -270,55 +331,54 @@ func SetupTestWithOptions(t *testing.T, labels []string, opts ...kubeprep.Option
 
 	// Handle print-labels mode - print structured label info and skip
 	if printLabels {
-		// Only print if test would run (respects label filter)
 		if shouldRun {
 			printLabelsInfo(t, labels)
 		}
 
 		t.Skip()
 
-		return
+		return true
 	}
 
 	// Handle dry-run mode
 	if doNotExecute {
-		switch {
-		case labelFilterExpr == "":
-			printTestInfo(t, labels, "would execute (no filter)")
-		case shouldRun:
-			printTestInfo(t, labels, fmt.Sprintf("would execute (matches filter: %s)", labelFilterExpr))
-		default:
-			printTestInfo(t, labels, fmt.Sprintf("would skip (doesn't match filter: %s)", labelFilterExpr))
-		}
-
-		t.Skip()
-
-		return
+		handleDryRunMode(t, labels, labelFilterExpr, shouldRun)
+		return true
 	}
 
 	// Skip test if label filter doesn't match
 	if !shouldRun {
 		t.Skipf("Test skipped: label filter '%s' not satisfied", labelFilterExpr)
-		return
+		return true
 	}
 
-	// Validate FIPS image requirements before cluster setup
-	// If test requires FIPS images but they're not available, fail immediately
+	return false
+}
+
+// handleDryRunMode prints test info in dry-run mode
+func handleDryRunMode(t *testing.T, labels []string, labelFilterExpr string, shouldRun bool) {
+	t.Helper()
+
+	switch {
+	case labelFilterExpr == "":
+		printTestInfo(t, labels, "would execute (no filter)")
+	case shouldRun:
+		printTestInfo(t, labels, fmt.Sprintf("would execute (matches filter: %s)", labelFilterExpr))
+	default:
+		printTestInfo(t, labels, fmt.Sprintf("would skip (doesn't match filter: %s)", labelFilterExpr))
+	}
+
+	t.Skip()
+}
+
+// validateFIPSRequirements checks if FIPS image requirements are satisfied
+func validateFIPSRequirements(labels []string) error {
 	if hasLabel(labels, LabelRequireFIPSImages) && !FIPSImagesAvailable() {
-		require.Fail(t, "Test requires FIPS images (has 'require-fips-images' label) but FIPS_IMAGE_AVAILABLE is not set to true. "+
-			"Either run in an environment with FIPS image access, or filter out this test with label filter 'not require-fips-images'.")
-
-		return
+		return fmt.Errorf("test requires FIPS images (has 'require-fips-images' label) but FIPS_IMAGE_AVAILABLE is not set to true. " +
+			"Either run in an environment with FIPS image access, or filter out this test with label filter 'not require-fips-images'")
 	}
 
-	// Test will execute - build configuration from labels and options
-	cfg := buildConfig(labels, opts...)
-
-	// Log FIPS configuration for clarity
-	logFIPSConfiguration(t, labels, cfg)
-
-	// Setup cluster (idempotent: always runs helm upgrade + prerequisites)
-	require.NoError(t, kubeprep.SetupCluster(t, K8sClient, cfg))
+	return nil
 }
 
 // RegisterTestCase is an alias for SetupTest for backward compatibility.
@@ -328,7 +388,25 @@ func RegisterTestCase(t *testing.T, labels ...string) {
 	SetupTest(t, labels...)
 }
 
-// buildConfig creates a Config from labels and applies options
+// finalizeConfig completes the config with manager image information.
+// The config should already have InstallIstio, EnableExperimental, etc. set by options.
+func finalizeConfig(cfg kubeprep.Config) kubeprep.Config {
+	// Get manager image from environment or default
+	managerImage := os.Getenv("MANAGER_IMAGE")
+	if managerImage == "" {
+		managerImage = DefaultLocalImage
+	}
+
+	cfg.ManagerImage = managerImage
+	cfg.LocalImage = kubeprep.IsLocalImage(managerImage)
+
+	return cfg
+}
+
+// buildConfig creates a Config from labels and applies options.
+//
+// Deprecated: Use SetupTestWithOptions with functional options instead of labels.
+// This function is kept for backward compatibility with tests that still use labels directly.
 func buildConfig(labels []string, opts ...kubeprep.Option) kubeprep.Config {
 	// FIPS mode default is determined by environment (FIPS_IMAGE_AVAILABLE).
 	// WithOverrideFIPSMode() option can override this for specific tests.
@@ -341,21 +419,12 @@ func buildConfig(labels []string, opts ...kubeprep.Option) kubeprep.Config {
 		DeployPrerequisites: true, // Default to deploying prerequisites
 	}
 
-	// Get manager image from environment or default
-	managerImage := os.Getenv("MANAGER_IMAGE")
-	if managerImage == "" {
-		managerImage = DefaultLocalImage
-	}
-
-	cfg.ManagerImage = managerImage
-	cfg.LocalImage = kubeprep.IsLocalImage(managerImage)
-
-	// Apply options
+	// Apply options - options can override label-based settings
 	for _, opt := range opts {
 		opt(&cfg)
 	}
 
-	return cfg
+	return finalizeConfig(cfg)
 }
 
 // logFIPSConfiguration logs the FIPS mode configuration for clarity
@@ -518,15 +587,162 @@ func findLabelFilterExpression() string {
 	return labelFilterFlag
 }
 
-func toSet(labels []string) map[string]struct{} {
-	set := make(map[string]struct{}, len(labels))
-	for _, label := range labels {
-		if label == "" {
-			continue
-		}
+// =============================================================================
+// Cluster State Detection Functions
+// =============================================================================
+// These functions query the current cluster state to determine what is installed
+// and how it is configured. They can be used to make runtime decisions based on
+// cluster state rather than test configuration.
 
-		set[label] = struct{}{}
+// ClusterState represents the current state of the test cluster
+type ClusterState struct {
+	IstioInstalled      bool
+	IstioState          kubeprep.IstioState
+	ExperimentalEnabled bool
+	FIPSModeEnabled     bool
+	ManagerDeployed     bool
+}
+
+// GetClusterState returns the current state of the test cluster.
+// This queries the actual cluster to determine what is installed and how it's configured.
+// Returns an error if the cluster cannot be queried.
+func GetClusterState() (ClusterState, error) {
+	if K8sClient == nil {
+		return ClusterState{}, fmt.Errorf("K8sClient not initialized - call BeforeSuiteFunc first")
 	}
 
-	return set
+	state := ClusterState{}
+
+	// Detect Istio state
+	state.IstioState = kubeprep.DetectIstioState(Ctx, K8sClient)
+	state.IstioInstalled = state.IstioState == kubeprep.IstioFullyInstalled
+
+	// Detect if manager is deployed and get its configuration
+	managerDeployed, fipsEnabled, err := detectManagerState(Ctx, K8sClient)
+	if err != nil {
+		// Manager not deployed is not an error, just means it's not there
+		state.ManagerDeployed = false
+		state.FIPSModeEnabled = false
+		state.ExperimentalEnabled = false
+	} else {
+		state.ManagerDeployed = managerDeployed
+		state.FIPSModeEnabled = fipsEnabled
+		// Experimental mode detection via helm
+		state.ExperimentalEnabled = detectExperimentalFromCluster()
+	}
+
+	return state, nil
+}
+
+// GetIstioInstalled returns true if Istio is fully installed and operational in the cluster.
+func GetIstioInstalled() bool {
+	if K8sClient == nil {
+		return false
+	}
+
+	return kubeprep.DetectIstioState(Ctx, K8sClient) == kubeprep.IstioFullyInstalled
+}
+
+// GetIstioState returns the detailed Istio installation state.
+func GetIstioState() kubeprep.IstioState {
+	if K8sClient == nil {
+		return kubeprep.IstioNotInstalled
+	}
+
+	return kubeprep.DetectIstioState(Ctx, K8sClient)
+}
+
+// GetFIPSModeEnabled returns true if the telemetry manager is deployed with FIPS mode enabled.
+// Returns false if the manager is not deployed or if FIPS mode is not enabled.
+func GetFIPSModeEnabled() bool {
+	if K8sClient == nil {
+		return false
+	}
+
+	_, fipsEnabled, err := detectManagerState(Ctx, K8sClient)
+	if err != nil {
+		return false
+	}
+
+	return fipsEnabled
+}
+
+// GetExperimentalEnabled returns true if experimental CRDs are enabled in the current deployment.
+// Returns false if the manager is not deployed or if experimental mode is not enabled.
+func GetExperimentalEnabled() bool {
+	return detectExperimentalFromCluster()
+}
+
+// GetManagerDeployed returns true if the telemetry manager is deployed in the cluster.
+func GetManagerDeployed() bool {
+	if K8sClient == nil {
+		return false
+	}
+
+	deployed, _, err := detectManagerState(Ctx, K8sClient)
+	if err != nil {
+		return false
+	}
+
+	return deployed
+}
+
+// detectManagerState checks if the manager deployment exists and returns its FIPS mode setting.
+func detectManagerState(ctx context.Context, k8sClient client.Client) (deployed bool, fipsEnabled bool, err error) {
+	const (
+		managerContainerName = "manager"
+		fipsEnvVarName       = "KYMA_FIPS_MODE_ENABLED"
+	)
+
+	var deployment appsv1.Deployment
+
+	if err := k8sClient.Get(ctx, kitkyma.TelemetryManagerName, &deployment); err != nil {
+		return false, false, err
+	}
+
+	// Manager is deployed, check FIPS mode
+	for _, container := range deployment.Spec.Template.Spec.Containers {
+		if container.Name == managerContainerName {
+			for _, env := range container.Env {
+				if env.Name == fipsEnvVarName && env.Value == "true" {
+					return true, true, nil
+				}
+			}
+
+			return true, false, nil
+		}
+	}
+
+	// Manager deployed but container not found (unexpected)
+	return true, false, nil
+}
+
+// detectExperimentalFromCluster checks if experimental mode is enabled via helm release values
+func detectExperimentalFromCluster() bool {
+	// Use the kubeprep detection which inspects helm values
+	// We create a context for this call since it's a helper function
+	ctx := context.Background()
+	if Ctx != nil {
+		ctx = Ctx
+	}
+
+	return detectExperimentalFromHelm(ctx)
+}
+
+// detectExperimentalFromHelm checks the helm release to see if experimental is enabled
+func detectExperimentalFromHelm(ctx context.Context) bool {
+	// Check helm release values for experimental.enabled
+	// This duplicates the logic from kubeprep/detect.go to avoid circular dependencies
+	// and to keep the detection logic self-contained in the suite package
+	cmd := exec.CommandContext(ctx, "helm", "get", "values", "telemetry-manager", "-n", "kyma-system", "-o", "json")
+
+	output, err := cmd.Output()
+	if err != nil {
+		return false
+	}
+
+	outputStr := string(output)
+
+	return strings.Contains(outputStr, `"experimental":{"enabled":true}`) ||
+		strings.Contains(outputStr, `"experimental": {"enabled": true}`)
 }

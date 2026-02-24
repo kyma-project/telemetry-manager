@@ -25,7 +25,7 @@ import (
 )
 
 func TestAccessLogsFluentBit(t *testing.T) {
-	suite.SetupTestWithOptions(t, []string{suite.LabelGardener, suite.LabelIstio, suite.LabelFluentBit}, kubeprep.WithOverrideFIPSMode(false))
+	suite.SetupTestWithOptions(t, []string{suite.LabelGardener, suite.LabelFluentBit}, kubeprep.WithIstio(), kubeprep.WithOverrideFIPSMode(false))
 
 	var (
 		uniquePrefix = unique.Prefix()

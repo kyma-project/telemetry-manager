@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
@@ -23,23 +24,25 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-// labelsForSelfMonitor returns the appropriate labels for a selfmonitor test.
+// labelsForSelfMonitor returns the appropriate labels and options for a selfmonitor test.
 // It includes:
 // - The combined selfmonitor label (e.g., "selfmonitor-log-agent-healthy")
-// - istio label for backpressure/outage scenarios (they need Istio for traffic simulation)
-func labelsForSelfMonitor(selfMonitorLabelPrefix, selfMonitorLabelSuffix string) []string {
+// - kubeprep.WithIstio() option for backpressure/outage scenarios (they need Istio for traffic simulation)
+func labelsForSelfMonitor(selfMonitorLabelPrefix, selfMonitorLabelSuffix string) ([]string, []kubeprep.Option) {
 	// Build the combined label (e.g., "selfmonitor-log-agent-healthy")
 	combinedLabel := selfMonitorLabelPrefix + "-" + selfMonitorLabelSuffix
 
 	labels := []string{combinedLabel}
 
+	var opts []kubeprep.Option
+
 	// Backpressure and outage tests need Istio for traffic simulation
 	if selfMonitorLabelSuffix == suite.LabelBackpressure ||
 		selfMonitorLabelSuffix == suite.LabelOutage {
-		labels = append(labels, suite.LabelIstio)
+		opts = append(opts, kubeprep.WithIstio())
 	}
 
-	return labels
+	return labels, opts
 }
 
 // isFluentBitTest returns true if the test is for FluentBit (which doesn't support FIPS mode)

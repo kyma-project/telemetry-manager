@@ -246,14 +246,16 @@ func TestOutage(t *testing.T) {
 	// FluentBit tests always run in no-FIPS mode via WithOverrideFIPSMode(false).
 	for _, tc := range tests {
 		t.Run(tc.labelPrefix, func(t *testing.T) {
+			selfMonLabels, selfMonOpts := labelsForSelfMonitor(tc.labelPrefix, suite.LabelOutage)
+
 			var labels []string
 
 			labels = append(labels, suite.LabelOutage)
-			labels = append(labels, labelsForSelfMonitor(tc.labelPrefix, suite.LabelOutage)...)
+			labels = append(labels, selfMonLabels...)
 			labels = append(labels, tc.additionalLabels...)
 
 			// FluentBit doesn't support FIPS mode
-			var opts []kubeprep.Option
+			opts := selfMonOpts
 			if isFluentBitTest(tc.labelPrefix) {
 				opts = append(opts, kubeprep.WithOverrideFIPSMode(false))
 			}
