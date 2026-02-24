@@ -13,6 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes/fake"
 	clienttesting "k8s.io/client-go/testing"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
@@ -31,6 +32,13 @@ var (
 	testSecret1 = types.NamespacedName{Namespace: testNamespace, Name: testSecretName1}
 	testSecret2 = types.NamespacedName{Namespace: testNamespace, Name: testSecretName2}
 )
+
+// createTestEventRouter creates an event router that sends all events to a single channel for testing
+func createTestEventRouter(eventChan chan<- event.GenericEvent) func(pipeline client.Object) {
+	return func(pipeline client.Object) {
+		eventChan <- event.GenericEvent{Object: pipeline}
+	}
+}
 
 func TestSecretWatchTriggersEvent(t *testing.T) {
 	t.Run("should send event when watched secret is modified", func(t *testing.T) {
@@ -53,9 +61,9 @@ func TestSecretWatchTriggersEvent(t *testing.T) {
 		clientset.PrependWatchReactor("secrets", clienttesting.DefaultWatchReactor(fakeWatcher, nil))
 
 		c := &Client{
-			clientset: clientset,
-			watchers:  make(map[types.NamespacedName]*watcher),
-			eventChan: eventChan,
+			clientset:   clientset,
+			watchers:    make(map[types.NamespacedName]*watcher),
+			eventRouter: createTestEventRouter(eventChan),
 		}
 
 		// Ensure cleanup: stop the fake watcher to unblock goroutines, then stop client
@@ -90,9 +98,9 @@ func TestSecretWatchTriggersEvent(t *testing.T) {
 		clientset.PrependWatchReactor("secrets", clienttesting.DefaultWatchReactor(fakeWatcher, nil))
 
 		c := &Client{
-			clientset: clientset,
-			watchers:  make(map[types.NamespacedName]*watcher),
-			eventChan: eventChan,
+			clientset:   clientset,
+			watchers:    make(map[types.NamespacedName]*watcher),
+			eventRouter: createTestEventRouter(eventChan),
 		}
 
 		t.Cleanup(func() {
@@ -137,9 +145,9 @@ func TestSecretWatchTriggersEvent(t *testing.T) {
 		clientset.PrependWatchReactor("secrets", clienttesting.DefaultWatchReactor(fakeWatcher, nil))
 
 		c := &Client{
-			clientset: clientset,
-			watchers:  make(map[types.NamespacedName]*watcher),
-			eventChan: eventChan,
+			clientset:   clientset,
+			watchers:    make(map[types.NamespacedName]*watcher),
+			eventRouter: createTestEventRouter(eventChan),
 		}
 
 		t.Cleanup(func() {
@@ -192,9 +200,9 @@ func TestSecretWatchTriggersEvent(t *testing.T) {
 		clientset.PrependWatchReactor("secrets", clienttesting.DefaultWatchReactor(fakeWatcher, nil))
 
 		c := &Client{
-			clientset: clientset,
-			watchers:  make(map[types.NamespacedName]*watcher),
-			eventChan: eventChan,
+			clientset:   clientset,
+			watchers:    make(map[types.NamespacedName]*watcher),
+			eventRouter: createTestEventRouter(eventChan),
 		}
 
 		t.Cleanup(func() {
@@ -235,9 +243,9 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		clientset.PrependWatchReactor("secrets", clienttesting.DefaultWatchReactor(fakeWatcher, nil))
 
 		c := &Client{
-			clientset: clientset,
-			watchers:  make(map[types.NamespacedName]*watcher),
-			eventChan: eventChan,
+			clientset:   clientset,
+			watchers:    make(map[types.NamespacedName]*watcher),
+			eventRouter: createTestEventRouter(eventChan),
 		}
 
 		t.Cleanup(func() {
@@ -286,9 +294,9 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		clientset.PrependWatchReactor("secrets", clienttesting.DefaultWatchReactor(fakeWatcher, nil))
 
 		c := &Client{
-			clientset: clientset,
-			watchers:  make(map[types.NamespacedName]*watcher),
-			eventChan: eventChan,
+			clientset:   clientset,
+			watchers:    make(map[types.NamespacedName]*watcher),
+			eventRouter: createTestEventRouter(eventChan),
 		}
 
 		t.Cleanup(func() {
@@ -335,9 +343,9 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		clientset.PrependWatchReactor("secrets", clienttesting.DefaultWatchReactor(fakeWatcher, nil))
 
 		c := &Client{
-			clientset: clientset,
-			watchers:  make(map[types.NamespacedName]*watcher),
-			eventChan: eventChan,
+			clientset:   clientset,
+			watchers:    make(map[types.NamespacedName]*watcher),
+			eventRouter: createTestEventRouter(eventChan),
 		}
 
 		t.Cleanup(func() {
@@ -404,9 +412,9 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		})
 
 		c := &Client{
-			clientset: clientset,
-			watchers:  make(map[types.NamespacedName]*watcher),
-			eventChan: eventChan,
+			clientset:   clientset,
+			watchers:    make(map[types.NamespacedName]*watcher),
+			eventRouter: createTestEventRouter(eventChan),
 		}
 
 		t.Cleanup(func() {
@@ -496,9 +504,9 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		})
 
 		c := &Client{
-			clientset: clientset,
-			watchers:  make(map[types.NamespacedName]*watcher),
-			eventChan: eventChan,
+			clientset:   clientset,
+			watchers:    make(map[types.NamespacedName]*watcher),
+			eventRouter: createTestEventRouter(eventChan),
 		}
 
 		t.Cleanup(func() {
@@ -576,9 +584,9 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		})
 
 		c := &Client{
-			clientset: clientset,
-			watchers:  make(map[types.NamespacedName]*watcher),
-			eventChan: eventChan,
+			clientset:   clientset,
+			watchers:    make(map[types.NamespacedName]*watcher),
+			eventRouter: createTestEventRouter(eventChan),
 		}
 
 		t.Cleanup(func() {
@@ -644,9 +652,9 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		})
 
 		c := &Client{
-			clientset: clientset,
-			watchers:  make(map[types.NamespacedName]*watcher),
-			eventChan: eventChan,
+			clientset:   clientset,
+			watchers:    make(map[types.NamespacedName]*watcher),
+			eventRouter: createTestEventRouter(eventChan),
 		}
 
 		t.Cleanup(func() {
@@ -686,9 +694,9 @@ func TestSyncWatchedSecretsAfterStop(t *testing.T) {
 		clientset := fake.NewClientset()
 
 		c := &Client{
-			clientset: clientset,
-			watchers:  make(map[types.NamespacedName]*watcher),
-			eventChan: eventChan,
+			clientset:   clientset,
+			watchers:    make(map[types.NamespacedName]*watcher),
+			eventRouter: createTestEventRouter(eventChan),
 		}
 
 		pipeline := testutils.NewLogPipelineBuilder().Build()
@@ -708,9 +716,9 @@ func TestSyncWatchedSecretsAfterStop(t *testing.T) {
 		clientset := fake.NewClientset()
 
 		c := &Client{
-			clientset: clientset,
-			watchers:  make(map[types.NamespacedName]*watcher),
-			eventChan: eventChan,
+			clientset:   clientset,
+			watchers:    make(map[types.NamespacedName]*watcher),
+			eventRouter: createTestEventRouter(eventChan),
 		}
 
 		pipeline := testutils.NewLogPipelineBuilder().Build()
@@ -742,9 +750,9 @@ func TestWatcherErrorHandling(t *testing.T) {
 		clientset.PrependWatchReactor("secrets", clienttesting.DefaultWatchReactor(fakeWatcher, nil))
 
 		c := &Client{
-			clientset: clientset,
-			watchers:  make(map[types.NamespacedName]*watcher),
-			eventChan: eventChan,
+			clientset:   clientset,
+			watchers:    make(map[types.NamespacedName]*watcher),
+			eventRouter: createTestEventRouter(eventChan),
 		}
 
 		t.Cleanup(func() {
@@ -786,9 +794,9 @@ func TestWatcherErrorHandling(t *testing.T) {
 		})
 
 		c := &Client{
-			clientset: clientset,
-			watchers:  make(map[types.NamespacedName]*watcher),
-			eventChan: eventChan,
+			clientset:   clientset,
+			watchers:    make(map[types.NamespacedName]*watcher),
+			eventRouter: createTestEventRouter(eventChan),
 		}
 
 		pipeline := testutils.NewLogPipelineBuilder().Build()

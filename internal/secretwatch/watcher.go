@@ -14,7 +14,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	kubecoreev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/event"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -23,12 +22,12 @@ const reconnectDelay = 5 * time.Second
 // watcher monitors a single Kubernetes secret and tracks which pipelines depend on it.
 // It automatically reconnects on errors and handles resource version updates.
 type watcher struct {
-	secret    types.NamespacedName
-	linked    []client.Object
-	client    kubecoreev1.SecretInterface
-	eventChan chan<- event.GenericEvent
-	mu        sync.RWMutex
-	cancel    context.CancelFunc
+	secret      types.NamespacedName
+	linked      []client.Object
+	client      kubecoreev1.SecretInterface
+	eventRouter func(pipeline client.Object)
+	mu          sync.RWMutex
+	cancel      context.CancelFunc
 }
 
 // newWatcher creates a new watcher for the specified secret with the initial pipeline.
@@ -37,13 +36,13 @@ func newWatcher(
 	secret types.NamespacedName,
 	pipeline client.Object,
 	clientset kubernetes.Interface,
-	eventChan chan<- event.GenericEvent,
+	eventRouter func(pipeline client.Object),
 ) *watcher {
 	return &watcher{
-		secret:    secret,
-		linked:    []client.Object{pipeline},
-		client:    clientset.CoreV1().Secrets(secret.Namespace),
-		eventChan: eventChan,
+		secret:      secret,
+		linked:      []client.Object{pipeline},
+		client:      clientset.CoreV1().Secrets(secret.Namespace),
+		eventRouter: eventRouter,
 	}
 }
 
@@ -161,11 +160,9 @@ func (w *watcher) start(ctx context.Context) {
 				"resourceVersion", secret.ResourceVersion,
 			)
 
-			// Send a generic event to trigger reconciliation for linked pipelines
+			// Send events to trigger reconciliation for linked pipelines
 			for _, pipeline := range w.getLinkedPipelines() {
-				w.eventChan <- event.GenericEvent{
-					Object: pipeline,
-				}
+				w.eventRouter(pipeline)
 			}
 		}
 

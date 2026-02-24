@@ -13,6 +13,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
 
 const (
@@ -26,28 +28,45 @@ var ErrClientStopped = errors.New("secret watcher client has been stopped")
 // for each unique secret being monitored.
 // Client is safe for concurrent use.
 type Client struct {
-	clientset kubernetes.Interface
-	watchers  map[types.NamespacedName]*watcher
-	eventChan chan<- event.GenericEvent
-	stopped   bool
-	mu        sync.RWMutex
-	wg        sync.WaitGroup
+	clientset   kubernetes.Interface
+	watchers    map[types.NamespacedName]*watcher
+	eventRouter func(pipeline client.Object)
+	stopped     bool
+	mu          sync.RWMutex
+	wg          sync.WaitGroup
 }
 
 // NewClient creates a new Client for watching Kubernetes secrets.
 // It initializes the Kubernetes clientset using the provided REST configuration.
-// The eventHandler will be called whenever a watched secret changes.
-// If eventHandler is nil, events will only be logged.
-func NewClient(cfg *rest.Config, eventChan chan<- event.GenericEvent) (*Client, error) {
+// Events are routed to the appropriate channel based on pipeline type:
+// - TracePipeline events go to traceEventChan
+// - MetricPipeline events go to metricEventChan
+// - LogPipeline events go to logEventChan
+func NewClient(cfg *rest.Config, traceEventChan, metricEventChan, logEventChan chan<- event.GenericEvent) (*Client, error) {
 	clientset, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create clientset: %w", err)
 	}
 
+	eventRouter := func(pipeline client.Object) {
+		ev := event.GenericEvent{Object: pipeline}
+
+		switch pipeline.(type) {
+		case *telemetryv1beta1.TracePipeline:
+			traceEventChan <- ev
+		case *telemetryv1beta1.MetricPipeline:
+			metricEventChan <- ev
+		case *telemetryv1beta1.LogPipeline:
+			logEventChan <- ev
+		default:
+			logf.Log.Error(nil, "Unknown pipeline type, cannot route event", "pipelineType", fmt.Sprintf("%T", pipeline))
+		}
+	}
+
 	return &Client{
-		clientset: clientset,
-		watchers:  make(map[types.NamespacedName]*watcher),
-		eventChan: eventChan,
+		clientset:   clientset,
+		watchers:    make(map[types.NamespacedName]*watcher),
+		eventRouter: eventRouter,
 	}, nil
 }
 
@@ -79,7 +98,7 @@ func (c *Client) SyncWatchedSecrets(ctx context.Context, pipeline client.Object,
 			w.link(pipeline)
 		} else {
 			// Create new watcher and start it immediately
-			w := newWatcher(secret, pipeline, c.clientset, c.eventChan)
+			w := newWatcher(secret, pipeline, c.clientset, c.eventRouter)
 			c.startWatcher(ctx, w)
 			c.watchers[secret] = w
 		}
