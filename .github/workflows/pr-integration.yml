@@ -255,7 +255,7 @@ jobs:
         if: github.event_name != 'pull_request'
         run: gcloud auth configure-docker europe-docker.pkg.dev --quiet
 
-      - name: Pull FIPS image
+      - name: Pull Self-monitor FIPS image
         if: github.event_name != 'pull_request'
         run: make docker-pull-self-monitor-fips-image
 
