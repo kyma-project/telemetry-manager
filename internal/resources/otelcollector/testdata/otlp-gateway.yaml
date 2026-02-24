@@ -111,6 +111,34 @@ status:
   loadBalancer: {}
 ---
 apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: gateway
+    app.kubernetes.io/managed-by: telemetry-manager
+    app.kubernetes.io/name: telemetry-otlp-gateway
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
+  name: telemetry-otlp-traces
+  namespace: kyma-system
+spec:
+  internalTrafficPolicy: Local
+  ports:
+  - name: grpc-collector
+    port: 4317
+    protocol: TCP
+    targetPort: 4317
+  - name: http-collector
+    port: 4318
+    protocol: TCP
+    targetPort: 4318
+  selector:
+    app.kubernetes.io/name: telemetry-otlp-gateway
+  type: ClusterIP
+status:
+  loadBalancer: {}
+---
+apiVersion: v1
 kind: ServiceAccount
 metadata:
   labels:
@@ -154,6 +182,8 @@ spec:
         sidecar.istio.io/inject: "true"
         telemetry.kyma-project.io/log-export: "true"
         telemetry.kyma-project.io/log-ingest: "true"
+        telemetry.kyma-project.io/trace-export: "true"
+        telemetry.kyma-project.io/trace-ingest: "true"
         test-label-key: test-label-value
     spec:
       affinity:

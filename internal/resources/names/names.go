@@ -9,6 +9,7 @@ const (
 	MetricAgent   = telemetryPrefix + "metric-agent"
 	LogGateway    = telemetryPrefix + "log-gateway"
 	MetricGateway = telemetryPrefix + "metric-gateway"
+	TraceGateway  = telemetryPrefix + "trace-gateway"
 	OTLPGateway   = telemetryPrefix + "otlp-gateway"
 
 	LogAgentMetricsService      = LogAgent + metricsSuffix
