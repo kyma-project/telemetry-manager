@@ -175,6 +175,12 @@ const (
 	// for specific tests (e.g., fluent-bit tests which don't support FIPS).
 	LabelNoFIPS = "no-fips"
 
+	// LabelRequireFIPSImages defines the label for tests that require FIPS images to be available.
+	// Tests with this label will fail if FIPS_IMAGE_AVAILABLE environment variable is not "true".
+	// Use this for tests that assert on FIPS-specific images (e.g., self-monitor FIPS image tests).
+	// CI should filter these tests out when running in PR context where FIPS images are not accessible.
+	LabelRequireFIPSImages = "require-fips-images"
+
 	// LabelGardener defines the label for Gardener Integration tests
 	LabelGardener = "gardener"
 
@@ -211,6 +217,14 @@ func ExpectAgent(labels ...string) bool {
 func DebugObjectsEnabled() bool {
 	debugEnv := os.Getenv("DEBUG_TEST_OBJECTS")
 	return debugEnv == "1" || strings.ToLower(debugEnv) == "true"
+}
+
+// FIPSImagesAvailable returns true if FIPS images are accessible in the current environment.
+// This is determined by the FIPS_IMAGE_AVAILABLE environment variable.
+// In CI: true on push (has registry access), false on PR (no registry access).
+func FIPSImagesAvailable() bool {
+	env := os.Getenv("FIPS_IMAGE_AVAILABLE")
+	return env == "1" || strings.ToLower(env) == "true"
 }
 
 // SetupTest prepares the test environment based on test labels.
@@ -294,6 +308,15 @@ func SetupTestWithOptions(t *testing.T, labels []string, opts ...kubeprep.Option
 		return
 	}
 
+	// Validate FIPS image requirements before cluster setup
+	// If test requires FIPS images but they're not available, fail immediately
+	if hasLabel(labels, LabelRequireFIPSImages) && !FIPSImagesAvailable() {
+		require.Fail(t, "Test requires FIPS images (has 'require-fips-images' label) but FIPS_IMAGE_AVAILABLE is not set to true. "+
+			"Either run in an environment with FIPS image access, or filter out this test with label filter 'not require-fips-images'.")
+
+		return
+	}
+
 	// Test will execute - build configuration from labels and options
 	cfg := buildConfig(labels, opts...)
 
@@ -310,8 +333,13 @@ func RegisterTestCase(t *testing.T, labels ...string) {
 
 // buildConfig creates a Config from labels and applies options
 func buildConfig(labels []string, opts ...kubeprep.Option) kubeprep.Config {
-	// FIPS mode is enabled by default unless LabelNoFIPS is present in labels
-	fipsEnabled := !hasLabel(labels, LabelNoFIPS)
+	// FIPS mode default is determined by environment (FIPS_IMAGE_AVAILABLE).
+	// The LabelNoFIPS label can override this to explicitly disable FIPS for a test.
+	// Note: WithOverrideFIPSMode() option can further override this after initial config.
+	fipsEnabled := FIPSImagesAvailable()
+	if hasLabel(labels, LabelNoFIPS) {
+		fipsEnabled = false
+	}
 
 	cfg := kubeprep.Config{
 		OperateInFIPSMode:   fipsEnabled,
@@ -428,9 +456,10 @@ func printLabelsInfo(t *testing.T, labels []string) {
 		experimental = "yes"
 	}
 
-	fips := "yes"
-	if hasLabel(labels, LabelNoFIPS) {
-		fips = "no"
+	// FIPS is determined by environment default, unless LabelNoFIPS forces it off
+	fips := "no"
+	if FIPSImagesAvailable() && !hasLabel(labels, LabelNoFIPS) {
+		fips = "yes"
 	}
 
 	// Classify labels

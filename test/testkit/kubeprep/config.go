@@ -65,6 +65,15 @@ func WithChartVersion(chartURL string) Option {
 	}
 }
 
+// WithOverrideFIPSMode overrides the FIPS mode setting for the manager.
+// Use this when a test requires a specific FIPS mode regardless of environment default.
+// Note: This only affects manager behavior, not image availability.
+func WithOverrideFIPSMode(enabled bool) Option {
+	return func(c *Config) {
+		c.OperateInFIPSMode = enabled
+	}
+}
+
 // getLatestReleaseChartURL fetches the helm chart URL from the latest GitHub release
 func getLatestReleaseChartURL() (string, error) {
 	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/releases/latest", githubRepoOwner, githubRepoName)

@@ -33,6 +33,8 @@ on:
 
 env:
   E2E_TEST_TIMEOUT: 60m
+  # FIPS images are only available on push/schedule (not on PR due to registry restrictions)
+  FIPS_IMAGE_AVAILABLE: ${{ github.event_name != 'pull_request' }}
 
 jobs:
   setup:
@@ -94,13 +96,9 @@ jobs:
             path: ./test/e2e/misc/...
         flavor:
           - name: ""
-            labels: "not experimental and not no-fips"
-          - name: "-no-fips"
-            labels: "not experimental and no-fips"
+            labels: "not experimental"
           - name: "-experimental"
-            labels: "experimental and not no-fips"
-          - name: "-experimental-no-fips"
-            labels: "experimental and no-fips"
+            labels: "experimental"
     name: ${{ matrix.suite.name }}${{ matrix.flavor.name }}
     env:
       MANAGER_IMAGE: ${{ needs.setup.outputs.manager-image }}
@@ -116,10 +114,15 @@ jobs:
 
       - name: Run ${{ matrix.suite.name }}${{ matrix.flavor.name }} tests
         run: |
+          # Filter out tests requiring FIPS images when not available
+          LABELS="${{ matrix.flavor.labels }}"
+          if [[ "${{ env.FIPS_IMAGE_AVAILABLE }}" != "true" ]]; then
+            LABELS="$LABELS and not require-fips-images"
+          fi
           make e2e-test \
             E2E_TEST_PATH="${{ matrix.suite.path }}" \
             E2E_TEST_ID="${{ matrix.suite.name }}${{ matrix.flavor.name }}" \
-            E2E_TEST_LABELS="${{ matrix.flavor.labels }}"
+            E2E_TEST_LABELS="$LABELS"
 
       - name: Upload test results
         if: always()
@@ -232,22 +235,28 @@ jobs:
         if: github.event_name != 'pull_request'
         run: gcloud auth configure-docker europe-docker.pkg.dev --quiet
 
+      - name: Pull FIPS image
+        if: github.event_name != 'pull_request'
+        run: make docker-pull-self-monitor-fips-image
+
       - name: Provision K3D cluster
         run: make provision-k3d
 
+      - name: Import FIPS image to K3D
+        if: github.event_name != 'pull_request'
+        run: make k3d-import-self-monitor-fips-image
+
       - name: Run selfmonitor-${{ matrix.scenario }}-${{ matrix.component.name }} tests
         run: |
-          # For PR events, only run no-fips tests since we can't pull the prometheus-fips image
-          # For scheduled/other events, run fips tests since we have access to the restricted registry
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            FIPS_LABEL="no-fips"
-          else
-            FIPS_LABEL="not no-fips"
+          # Filter out tests requiring FIPS images when not available
+          LABELS="${{ matrix.scenario }} and ${{ matrix.component.label }}"
+          if [[ "${{ env.FIPS_IMAGE_AVAILABLE }}" != "true" ]]; then
+            LABELS="$LABELS and not require-fips-images"
           fi
           make e2e-test \
             E2E_TEST_PATH="./test/selfmonitor/..." \
             E2E_TEST_ID="selfmonitor-${{ matrix.scenario }}-${{ matrix.component.name }}" \
-            E2E_TEST_LABELS="$FIPS_LABEL and ${{ matrix.scenario }} and ${{ matrix.component.label }}"
+            E2E_TEST_LABELS="$LABELS"
 
       - name: Upload test results
         if: always()
