@@ -44,7 +44,6 @@ var (
 var environmentLabels = map[string]bool{
 	LabelIstio:        true,
 	LabelExperimental: true,
-	LabelNoFIPS:       true,
 }
 
 // BeforeSuiteFunc is designed to return an error instead of relying on Gomega matchers.
@@ -169,11 +168,6 @@ const (
 
 	// LabelIstio defines the label for Istio Integration tests
 	LabelIstio = "istio"
-
-	// LabelNoFIPS defines the label for tests that should NOT run in FIPS mode.
-	// By default, all tests run with FIPS enabled. Use this label to disable FIPS
-	// for specific tests (e.g., fluent-bit tests which don't support FIPS).
-	LabelNoFIPS = "no-fips"
 
 	// LabelRequireFIPSImages defines the label for tests that require FIPS images to be available.
 	// Tests with this label will fail if FIPS_IMAGE_AVAILABLE environment variable is not "true".
@@ -320,6 +314,9 @@ func SetupTestWithOptions(t *testing.T, labels []string, opts ...kubeprep.Option
 	// Test will execute - build configuration from labels and options
 	cfg := buildConfig(labels, opts...)
 
+	// Log FIPS configuration for clarity
+	logFIPSConfiguration(t, labels, cfg)
+
 	// Setup cluster (idempotent: always runs helm upgrade + prerequisites)
 	require.NoError(t, kubeprep.SetupCluster(t, K8sClient, cfg))
 }
@@ -334,12 +331,8 @@ func RegisterTestCase(t *testing.T, labels ...string) {
 // buildConfig creates a Config from labels and applies options
 func buildConfig(labels []string, opts ...kubeprep.Option) kubeprep.Config {
 	// FIPS mode default is determined by environment (FIPS_IMAGE_AVAILABLE).
-	// The LabelNoFIPS label can override this to explicitly disable FIPS for a test.
-	// Note: WithOverrideFIPSMode() option can further override this after initial config.
+	// WithOverrideFIPSMode() option can override this for specific tests.
 	fipsEnabled := FIPSImagesAvailable()
-	if hasLabel(labels, LabelNoFIPS) {
-		fipsEnabled = false
-	}
 
 	cfg := kubeprep.Config{
 		OperateInFIPSMode:   fipsEnabled,
@@ -363,6 +356,23 @@ func buildConfig(labels []string, opts ...kubeprep.Option) kubeprep.Config {
 	}
 
 	return cfg
+}
+
+// logFIPSConfiguration logs the FIPS mode configuration for clarity
+func logFIPSConfiguration(t *testing.T, labels []string, cfg kubeprep.Config) {
+	t.Helper()
+
+	fipsImagesAvailable := FIPSImagesAvailable()
+	requiresFIPSImages := hasLabel(labels, LabelRequireFIPSImages)
+
+	// Determine how FIPS mode was set
+	fipsModeSource := "environment default"
+	if cfg.FIPSModeOverridden {
+		fipsModeSource = "test override (WithOverrideFIPSMode)"
+	}
+
+	t.Logf("FIPS configuration: imagesAvailable=%t, requiresFIPSImages=%t, fipsMode=%t (source: %s)",
+		fipsImagesAvailable, requiresFIPSImages, cfg.OperateInFIPSMode, fipsModeSource)
 }
 
 // UpgradeToTargetVersion upgrades the manager from a previously deployed version
@@ -456,9 +466,9 @@ func printLabelsInfo(t *testing.T, labels []string) {
 		experimental = "yes"
 	}
 
-	// FIPS is determined by environment default, unless LabelNoFIPS forces it off
+	// FIPS is determined by environment default
 	fips := "no"
-	if FIPSImagesAvailable() && !hasLabel(labels, LabelNoFIPS) {
+	if FIPSImagesAvailable() {
 		fips = "yes"
 	}
 

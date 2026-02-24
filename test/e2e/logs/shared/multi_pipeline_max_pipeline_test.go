@@ -15,6 +15,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdoutloggen"
@@ -28,7 +29,7 @@ const maxNumberOfLogPipelines = resourcelock.MaxPipelineCount
 // TestMultiPipelineMaxPipeline tests max pipeline limits with mixed FluentBit and OTel pipelines.
 // This test uses FluentBit pipelines so it only runs in no-fips mode.
 func TestMultiPipelineMaxPipeline(t *testing.T) {
-	suite.SetupTest(t, suite.LabelLogsMaxPipeline, suite.LabelNoFIPS)
+	suite.SetupTestWithOptions(t, []string{suite.LabelLogsMaxPipeline}, kubeprep.WithOverrideFIPSMode(false))
 
 	var (
 		uniquePrefix = unique.Prefix("logs")
@@ -251,7 +252,7 @@ func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 }
 
 func TestMultiPipelineMaxPipeline_FluentBit(t *testing.T) {
-	suite.SetupTest(t, suite.LabelFluentBitMaxPipeline, suite.LabelFluentBit, suite.LabelLogs, suite.LabelMaxPipeline, suite.LabelNoFIPS)
+	suite.SetupTestWithOptions(t, []string{suite.LabelFluentBitMaxPipeline, suite.LabelFluentBit, suite.LabelLogs, suite.LabelMaxPipeline}, kubeprep.WithOverrideFIPSMode(false))
 
 	var (
 		uniquePrefix = unique.Prefix()

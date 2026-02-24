@@ -15,6 +15,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdoutloggen"
@@ -106,7 +107,7 @@ func TestMetricsEndpoint_OTel(t *testing.T) {
 }
 
 func TestMetricsEndpoint_FluentBit(t *testing.T) {
-	suite.SetupTest(t, suite.LabelFluentBit, suite.LabelNoFIPS)
+	suite.SetupTestWithOptions(t, []string{suite.LabelFluentBit}, kubeprep.WithOverrideFIPSMode(false))
 
 	var (
 		uniquePrefix = unique.Prefix()

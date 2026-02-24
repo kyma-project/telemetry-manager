@@ -20,6 +20,7 @@ type Config struct {
 	LocalImage          bool     // Image is local (for k3d import and pull policy)
 	InstallIstio        bool     // Install Istio before tests
 	OperateInFIPSMode   bool     // Deploy manager in FIPS mode
+	FIPSModeOverridden  bool     // True if FIPS mode was explicitly overridden via WithOverrideFIPSMode
 	EnableExperimental  bool     // Enable experimental CRDs
 	HelmValues          []string // Custom helm --set values (e.g., "additionalMetadata.labels.foo=bar")
 	ChartPath           string   // Helm chart path/URL (empty = use local chart)
@@ -71,6 +72,7 @@ func WithChartVersion(chartURL string) Option {
 func WithOverrideFIPSMode(enabled bool) Option {
 	return func(c *Config) {
 		c.OperateInFIPSMode = enabled
+		c.FIPSModeOverridden = true
 	}
 }
 
