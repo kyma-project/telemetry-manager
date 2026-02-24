@@ -820,7 +820,7 @@ func TestPipelineNotFound(t *testing.T) {
 
 	result, err := sut.Reconcile(context.Background(), requestFor("non-existent"))
 	require.NoError(t, err)
-	require.False(t, result.Requeue)
+	require.Zero(t, result.RequeueAfter)
 }
 
 // Helper function to create a reconcile request
