@@ -10,6 +10,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -557,4 +558,141 @@ func (c *errorClient) Get(ctx context.Context, key client.ObjectKey, obj client.
 	}
 
 	return apierrors.NewNotFound(schema.GroupResource{}, key.Name)
+}
+
+func TestNewReconciler_WithOptions(t *testing.T) {
+	fakeClient := newTestClient(t)
+	globals := config.NewGlobal(config.WithTargetNamespace("test-namespace"))
+
+	gad := &mockGatewayApplierDeleter{}
+	cb := &mockOTLPGatewayConfigBuilder{}
+	gp := &mockProber{}
+	isc := &mockIstioStatusChecker{}
+	etmc := &mockErrorToMessageConverter{}
+
+	reconciler := NewReconciler(
+		fakeClient,
+		WithGlobals(globals),
+		WithGatewayApplierDeleter(gad),
+		WithConfigBuilder(cb),
+		WithGatewayProber(gp),
+		WithIstioStatusChecker(isc),
+		WithErrorToMessageConverter(etmc),
+	)
+
+	require.NotNil(t, reconciler)
+	assert.Equal(t, fakeClient, reconciler.Client)
+	assert.Equal(t, "test-namespace", reconciler.globals.TargetNamespace())
+	assert.Equal(t, gad, reconciler.gatewayApplierDeleter)
+	assert.Equal(t, cb, reconciler.configBuilder)
+	assert.Equal(t, gp, reconciler.gatewayProber)
+	assert.Equal(t, isc, reconciler.istioStatusChecker)
+	assert.Equal(t, etmc, reconciler.errToMsgConverter)
+}
+
+func TestGlobals(t *testing.T) {
+	fakeClient := newTestClient(t)
+	globals := config.NewGlobal(config.WithTargetNamespace("test-namespace"))
+
+	reconciler := NewReconciler(fakeClient, WithGlobals(globals))
+
+	globalsPtr := reconciler.Globals()
+	require.NotNil(t, globalsPtr)
+	assert.Equal(t, "test-namespace", globalsPtr.TargetNamespace())
+}
+
+func TestUpdatePipelineCondition_NotFound(t *testing.T) {
+	ctx := context.Background()
+	fakeClient := newTestClient(t)
+	mocks := newDefaultMocks()
+
+	sut := newTestReconciler(fakeClient, mocks)
+
+	condition := &metav1.Condition{
+		Type:   "GatewayHealthy",
+		Status: metav1.ConditionTrue,
+		Reason: "GatewayReady",
+	}
+
+	err := sut.updatePipelineCondition(ctx, "non-existent-pipeline", condition)
+	require.NoError(t, err) // Should not error for not found
+}
+
+func TestUpdatePipelineCondition_Success(t *testing.T) {
+	ctx := context.Background()
+
+	pipeline := testutils.NewTracePipelineBuilder().
+		WithName("test-pipeline").
+		Build()
+	pipeline.Generation = 5
+
+	fakeClient := newTestClient(t, &pipeline)
+	mocks := newDefaultMocks()
+
+	sut := newTestReconciler(fakeClient, mocks)
+
+	condition := &metav1.Condition{
+		Type:   "GatewayHealthy",
+		Status: metav1.ConditionTrue,
+		Reason: "GatewayReady",
+	}
+
+	err := sut.updatePipelineCondition(ctx, "test-pipeline", condition)
+	require.NoError(t, err)
+
+	// Verify the condition was set
+	var updatedPipeline telemetryv1beta1.TracePipeline
+	err = fakeClient.Get(ctx, types.NamespacedName{Name: "test-pipeline"}, &updatedPipeline)
+	require.NoError(t, err)
+
+	cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, "GatewayHealthy")
+	require.NotNil(t, cond)
+	assert.Equal(t, metav1.ConditionTrue, cond.Status)
+	assert.Equal(t, "GatewayReady", cond.Reason)
+	assert.Equal(t, int64(5), cond.ObservedGeneration)
+}
+
+func TestUpdateGatewayHealthyConditions_EmptyList(t *testing.T) {
+	ctx := context.Background()
+	fakeClient := newTestClient(t)
+	mocks := newDefaultMocks()
+
+	sut := newTestReconciler(fakeClient, mocks)
+
+	err := sut.updateGatewayHealthyConditions(ctx, []string{})
+	require.NoError(t, err)
+}
+
+func TestUpdateGatewayHealthyConditions_MultiplePipelines(t *testing.T) {
+	ctx := context.Background()
+
+	pipeline1 := testutils.NewTracePipelineBuilder().
+		WithName("test-pipeline-1").
+		Build()
+
+	pipeline2 := testutils.NewTracePipelineBuilder().
+		WithName("test-pipeline-2").
+		Build()
+
+	fakeClient := newTestClient(t, &pipeline1, &pipeline2)
+	mocks := newDefaultMocks()
+
+	mocks.gatewayProber.On("IsReady", mock.Anything, mock.Anything).Return(nil)
+	mocks.errToMsgConverter.On("Convert", mock.Anything).Return("")
+
+	sut := newTestReconciler(fakeClient, mocks)
+
+	err := sut.updateGatewayHealthyConditions(ctx, []string{"test-pipeline-1", "test-pipeline-2"})
+	require.NoError(t, err)
+
+	// Verify both pipelines were updated
+	var p1 telemetryv1beta1.TracePipeline
+	err = fakeClient.Get(ctx, types.NamespacedName{Name: "test-pipeline-1"}, &p1)
+	require.NoError(t, err)
+	assert.NotEmpty(t, p1.Status.Conditions)
+
+	var p2 telemetryv1beta1.TracePipeline
+	err = fakeClient.Get(ctx, types.NamespacedName{Name: "test-pipeline-2"}, &p2)
+	require.NoError(t, err)
+	assert.NotEmpty(t, p2.Status.Conditions)
 }
