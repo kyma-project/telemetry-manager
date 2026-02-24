@@ -314,9 +314,10 @@ func buildConfig(labels []string, opts ...kubeprep.Option) kubeprep.Config {
 	fipsEnabled := !hasLabel(labels, LabelNoFIPS)
 
 	cfg := kubeprep.Config{
-		OperateInFIPSMode:  fipsEnabled,
-		EnableExperimental: hasLabel(labels, LabelExperimental),
-		InstallIstio:       hasLabel(labels, LabelIstio),
+		OperateInFIPSMode:   fipsEnabled,
+		EnableExperimental:  hasLabel(labels, LabelExperimental),
+		InstallIstio:        hasLabel(labels, LabelIstio),
+		DeployPrerequisites: true, // Default to deploying prerequisites
 	}
 
 	// Get manager image from environment or default

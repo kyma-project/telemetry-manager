@@ -16,46 +16,47 @@ import (
 //
 // This function is idempotent and safe to call multiple times.
 func SetupCluster(t TestingT, k8sClient client.Client, cfg Config) error {
+	t.Logf("Setting up cluster: istio=%t, fips=%t, experimental=%t, prerequisites=%t, helmValues=%v, chart=%s",
+		cfg.InstallIstio, cfg.OperateInFIPSMode, cfg.EnableExperimental, cfg.DeployPrerequisites, cfg.HelmValues, cfg.ChartPath)
+
+	// Ensure Istio is in the desired state
+	if err := ensureIstioState(t, k8sClient, cfg.InstallIstio); err != nil {
+		return fmt.Errorf("failed to ensure Istio state: %w", err)
+	}
+
+	// Deploy/upgrade manager with desired configuration
+	if err := ensureManagerDeployed(t, k8sClient, cfg); err != nil {
+		return fmt.Errorf("failed to ensure manager deployed: %w", err)
+	}
+
+	// Deploy test prerequisites if enabled
+	if err := ensureTestPrerequisites(t, k8sClient, cfg.DeployPrerequisites); err != nil {
+		return fmt.Errorf("failed to ensure test prerequisites: %w", err)
+	}
+
+	t.Log("Cluster setup complete")
+
+	return nil
+}
+
+// ensureTestPrerequisites deploys test prerequisites if enabled.
+// Server-side apply is idempotent, so this is safe to call multiple times.
+func ensureTestPrerequisites(t TestingT, k8sClient client.Client, deploy bool) error {
+	if !deploy {
+		t.Log("Skipping test prerequisites deployment")
+		return nil
+	}
+
+	return deployTestPrerequisites(t, k8sClient)
+}
+
+// ensureManagerDeployed ensures the telemetry manager is deployed with the desired configuration.
+// It handles experimental mode changes which require uninstall before reinstall due to CRD conflicts.
+func ensureManagerDeployed(t TestingT, k8sClient client.Client, cfg Config) error {
 	ctx := t.Context()
 
-	t.Logf("Setting up cluster: istio=%t, fips=%t, experimental=%t, helmValues=%v, chart=%s",
-		cfg.InstallIstio, cfg.OperateInFIPSMode, cfg.EnableExperimental, cfg.HelmValues, cfg.ChartPath)
-
-	// Check current Istio state - only detection needed
-	currentIstioInstalled := DetectIstioInstalled(ctx, k8sClient)
-
-	// Check for orphaned Istio CR (CR exists but no Istio manager running)
-	// This can happen when the Istio manager was removed while the CR had a finalizer
-	if DetectOrphanedIstioCR(ctx, k8sClient) {
-		t.Log("Detected orphaned Istio CR (no manager running), removing finalizers...")
-
-		if err := removeIstioCRFinalizers(t, k8sClient); err != nil {
-			t.Logf("Warning: failed to remove Istio CR finalizers: %v", err)
-		}
-	}
-
-	// Check for partial Istio installation (CR exists but istiod not ready)
-	// This can happen if a previous installation attempt failed/timed out
-	if cfg.InstallIstio && DetectIstioPartiallyInstalled(ctx, k8sClient) {
-		t.Log("Detected partial Istio installation, cleaning up before retry...")
-
-		if err := cleanupPartialIstioInstallation(t, k8sClient); err != nil {
-			t.Logf("Warning: failed to cleanup partial Istio installation: %v", err)
-		}
-
-		// After cleanup, Istio is definitely not installed
-		currentIstioInstalled = false
-	}
-
-	// Handle Istio changes (requires special ordering)
-	if currentIstioInstalled != cfg.InstallIstio {
-		if err := handleIstioChange(t, k8sClient, currentIstioInstalled, cfg.InstallIstio); err != nil {
-			return fmt.Errorf("failed to handle Istio change: %w", err)
-		}
-	}
-
-	// Check current experimental state and handle changes
-	// Switching between experimental and default subcharts requires uninstall first
+	// Check if experimental mode change requires uninstall first
+	// Switching between experimental and default subcharts requires uninstall
 	// because both subcharts contain CRD templates that conflict
 	currentExperimental := detectExperimentalEnabled(ctx)
 	if currentExperimental != cfg.EnableExperimental && releaseExists(ctx) {
@@ -64,7 +65,7 @@ func SetupCluster(t TestingT, k8sClient client.Client, cfg Config) error {
 		if err := undeployManager(t, k8sClient); err != nil {
 			return fmt.Errorf("failed to remove manager for experimental mode change: %w", err)
 		}
-		// Wait for CRDs to be fully deleted before reinstalling
+
 		if err := waitForCRDsDeletion(t, k8sClient); err != nil {
 			t.Logf("Warning: failed waiting for CRDs deletion: %v", err)
 		}
@@ -75,12 +76,36 @@ func SetupCluster(t TestingT, k8sClient client.Client, cfg Config) error {
 		return fmt.Errorf("failed to deploy manager: %w", err)
 	}
 
-	// Deploy prerequisites (server-side apply is idempotent)
-	if err := deployTestPrerequisites(t, k8sClient); err != nil {
-		return fmt.Errorf("failed to deploy prerequisites: %w", err)
+	return nil
+}
+
+// ensureIstioState ensures Istio is in the desired state (installed or not installed).
+// It handles cleanup of problematic states and triggers install/uninstall as needed.
+func ensureIstioState(t TestingT, k8sClient client.Client, desiredInstalled bool) error {
+	ctx := t.Context()
+
+	// Check current Istio state
+	istioState := DetectIstioState(ctx, k8sClient)
+	t.Logf("Detected Istio state: %s", istioState)
+
+	// Handle problematic Istio states that need cleanup before proceeding
+	if istioState.NeedsReinstall() {
+		if err := handleIstioCleanup(t, k8sClient, istioState); err != nil {
+			return fmt.Errorf("failed to cleanup Istio: %w", err)
+		}
+		// After cleanup, Istio is not installed
+		istioState = IstioNotInstalled
 	}
 
-	t.Log("Cluster setup complete")
+	// Determine if Istio state matches desired state
+	currentInstalled := istioState == IstioFullyInstalled
+
+	// Handle Istio changes (requires special ordering)
+	if currentInstalled != desiredInstalled {
+		if err := handleIstioChange(t, k8sClient, currentInstalled, desiredInstalled); err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
@@ -155,18 +180,23 @@ func waitForCRDsDeletion(t TestingT, k8sClient client.Client) error {
 	return fmt.Errorf("timeout waiting for CRDs to be deleted")
 }
 
-// cleanupPartialIstioInstallation removes a partial Istio installation.
-// This is called when the Istio CR exists but istiod is not ready,
-// indicating a failed previous installation attempt.
-func cleanupPartialIstioInstallation(t TestingT, k8sClient client.Client) error {
-	t.Log("Cleaning up partial Istio installation...")
+// handleIstioCleanup handles cleanup for problematic Istio states (orphaned or partially installed).
+func handleIstioCleanup(t TestingT, k8sClient client.Client, state IstioState) error {
+	switch state {
+	case IstioOrphaned:
+		t.Log("Cleaning up orphaned Istio CR (no manager running)...")
+		if err := removeIstioCRFinalizers(t, k8sClient); err != nil {
+			return fmt.Errorf("failed to remove Istio CR finalizers: %w", err)
+		}
 
-	// Use the existing uninstallIstio function which handles proper cleanup order
-	if err := uninstallIstio(t, k8sClient); err != nil {
-		return fmt.Errorf("failed to uninstall partial Istio: %w", err)
+	case IstioPartiallyInstalled:
+		t.Log("Cleaning up partial Istio installation...")
+		if err := uninstallIstio(t, k8sClient); err != nil {
+			return fmt.Errorf("failed to uninstall partial Istio: %w", err)
+		}
 	}
 
-	t.Log("Partial Istio installation cleaned up")
+	t.Log("Istio cleanup complete")
 
 	return nil
 }
