@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"hash/fnv"
 	"os"
 	"os/exec"
 	"path"
@@ -122,13 +123,7 @@ const (
 	LabelMetricsMisc        = "metrics-misc"
 	LabelMetricsMaxPipeline = "metrics-max-pipeline"
 	LabelMetricAgent        = "metric-agent"
-	LabelMetricAgentSetA    = "metric-agent-a"
-	LabelMetricAgentSetB    = "metric-agent-b"
-	LabelMetricAgentSetC    = "metric-agent-c"
 	LabelMetricGateway      = "metric-gateway"
-	LabelMetricGatewaySetA  = "metric-gateway-a"
-	LabelMetricGatewaySetB  = "metric-gateway-b"
-	LabelMetricGatewaySetC  = "metric-gateway-c"
 
 	// Traces labels
 
@@ -195,15 +190,86 @@ const (
 	LabelSetA        = "set-a"
 	LabelSetB        = "set-b"
 	LabelSetC        = "set-c"
+
+	// Number of buckets for auto-distribution
+	numBuckets = 3
 )
+
+// setLabels maps bucket index to set label
+var setLabels = []string{LabelSetA, LabelSetB, LabelSetC}
+
+// computeBucket calculates a deterministic bucket (0, 1, or 2) based on test name, labels, and cluster requirements.
+// Uses FNV-1a hash for good distribution.
+func computeBucket(testName string, labels []string, cfg kubeprep.Config) int {
+	// Filter out existing set labels and sort for determinism
+	filteredLabels := filterOutSetLabels(labels)
+	slices.Sort(filteredLabels)
+
+	// Create a deterministic string representation including cluster state requirements
+	canonical := fmt.Sprintf("%s|%s|istio=%t|exp=%t|fips=%t",
+		testName,
+		strings.Join(filteredLabels, ","),
+		cfg.InstallIstio,
+		cfg.EnableExperimental,
+		cfg.OperateInFIPSMode,
+	)
+
+	// Use FNV-1a hash for good distribution
+	h := fnv.New32a()
+	h.Write([]byte(canonical))
+	hash := h.Sum32()
+
+	return int(hash % numBuckets)
+}
+
+// filterOutSetLabels removes any set labels from the label slice
+func filterOutSetLabels(labels []string) []string {
+	result := make([]string, 0, len(labels))
+
+	for _, label := range labels {
+		if !isSetLabel(label) {
+			result = append(result, label)
+		}
+	}
+
+	return result
+}
+
+// isSetLabel returns true if the label is a set label (set-a, set-b, set-c)
+func isSetLabel(label string) bool {
+	switch label {
+	case LabelSetA, LabelSetB, LabelSetC:
+		return true
+	}
+
+	return false
+}
+
+// addBucketLabels adds the appropriate set label based on the computed bucket.
+// If the test already has a set label (manually assigned), no label is added.
+func addBucketLabels(labels []string, bucket int) []string {
+	if bucket < 0 || bucket >= numBuckets {
+		return labels
+	}
+
+	// Don't add if test already has a set label (manually assigned)
+	if slices.ContainsFunc(labels, isSetLabel) {
+		return labels
+	}
+
+	// Add generic set label
+	setLabel := setLabels[bucket]
+	labels = append(labels, setLabel)
+
+	return labels
+}
 
 // ExpectAgent returns true if the test labels indicate an agent test.
 // It checks for the presence of agent-related labels.
 func ExpectAgent(labels ...string) bool {
 	for _, label := range labels {
 		switch label {
-		case LabelMetricAgent, LabelLogAgent,
-			LabelMetricAgentSetA, LabelMetricAgentSetB, LabelMetricAgentSetC:
+		case LabelMetricAgent, LabelLogAgent:
 			return true
 		}
 	}
@@ -260,6 +326,11 @@ func SetupTestWithOptions(t *testing.T, labels []string, opts ...kubeprep.Option
 
 	// Auto-add labels based on config values (options → labels)
 	labels = addLabelsFromConfig(labels, cfg)
+
+	// Auto-assign bucket labels based on test name, labels, and cluster requirements
+	// This distributes tests evenly across buckets for parallel execution
+	bucket := computeBucket(t.Name(), labels, cfg)
+	labels = addBucketLabels(labels, bucket)
 
 	// Skip test if it contains "skipped" label
 	if hasLabel(labels, LabelSkip) {

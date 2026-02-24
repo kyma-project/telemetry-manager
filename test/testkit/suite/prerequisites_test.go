@@ -106,7 +106,7 @@ func TestPrerequisiteChecker_ValidateLabels_MultipleLabels(t *testing.T) {
 		checker := NewPrerequisiteChecker(config)
 
 		// Mix prerequisite labels with filtering-only labels
-		err := checker.ValidateLabels([]string{LabelIstio, LabelLogAgent, LabelMetricAgentSetA, LabelOAuth2})
+		err := checker.ValidateLabels([]string{LabelIstio, LabelLogAgent, LabelSetA, LabelOAuth2})
 
 		assert.NoError(t, err)
 	})
@@ -123,8 +123,8 @@ func TestPrerequisiteChecker_ValidateLabels_FilteringLabels(t *testing.T) {
 		filteringLabels := []string{
 			LabelLogAgent,
 			LabelLogGateway,
-			LabelMetricAgentSetA,
-			LabelMetricGatewaySetA,
+			LabelMetricAgent,
+			LabelMetricGateway,
 			LabelTraces,
 			LabelOAuth2,
 			LabelMTLS,

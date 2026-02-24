@@ -30,7 +30,7 @@ func TestSinglePipelineV1Alpha1(t *testing.T) {
 	}{
 		{
 			name:   "agent",
-			labels: []string{suite.LabelMetricAgentSetC, suite.LabelMetricAgent, suite.LabelSetC},
+			labels: []string{suite.LabelMetricAgent},
 			input: telemetryv1alpha1.MetricPipelineInput{
 				Runtime: &telemetryv1alpha1.MetricPipelineRuntimeInput{
 					Enabled: new(true),
@@ -47,7 +47,7 @@ func TestSinglePipelineV1Alpha1(t *testing.T) {
 		},
 		{
 			name:   "gateway",
-			labels: []string{suite.LabelMetricGatewaySetC, suite.LabelMetricGateway, suite.LabelSetC},
+			labels: []string{suite.LabelMetricGateway},
 			input: telemetryv1alpha1.MetricPipelineInput{
 				OTLP: &telemetryv1alpha1.OTLPInput{},
 			},
