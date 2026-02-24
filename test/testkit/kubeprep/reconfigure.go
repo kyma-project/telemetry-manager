@@ -185,15 +185,20 @@ func handleIstioCleanup(t TestingT, k8sClient client.Client, state IstioState) e
 	switch state {
 	case IstioOrphaned:
 		t.Log("Cleaning up orphaned Istio CR (no manager running)...")
+
 		if err := removeIstioCRFinalizers(t, k8sClient); err != nil {
 			return fmt.Errorf("failed to remove Istio CR finalizers: %w", err)
 		}
 
 	case IstioPartiallyInstalled:
 		t.Log("Cleaning up partial Istio installation...")
+
 		if err := uninstallIstio(t, k8sClient); err != nil {
 			return fmt.Errorf("failed to uninstall partial Istio: %w", err)
 		}
+
+	case IstioNotInstalled, IstioFullyInstalled:
+		// No cleanup needed for these states
 	}
 
 	t.Log("Istio cleanup complete")
