@@ -16,13 +16,14 @@ const (
 
 // Config contains cluster preparation configuration
 type Config struct {
-	ManagerImage       string   // Required: telemetry manager container image
-	LocalImage         bool     // Image is local (for k3d import and pull policy)
-	InstallIstio       bool     // Install Istio before tests
-	OperateInFIPSMode  bool     // Deploy manager in FIPS mode
-	EnableExperimental bool     // Enable experimental CRDs
-	HelmValues         []string // Custom helm --set values (e.g., "additionalMetadata.labels.foo=bar")
-	ChartPath          string   // Helm chart path/URL (empty = use local chart)
+	ManagerImage        string   // Required: telemetry manager container image
+	LocalImage          bool     // Image is local (for k3d import and pull policy)
+	InstallIstio        bool     // Install Istio before tests
+	OperateInFIPSMode   bool     // Deploy manager in FIPS mode
+	EnableExperimental  bool     // Enable experimental CRDs
+	HelmValues          []string // Custom helm --set values (e.g., "additionalMetadata.labels.foo=bar")
+	ChartPath           string   // Helm chart path/URL (empty = use local chart)
+	DeployPrerequisites bool     // Deploy test prerequisites (default: true)
 }
 
 // Option is a functional option for configuring cluster setup
@@ -32,6 +33,14 @@ type Option func(*Config)
 func WithHelmValues(values ...string) Option {
 	return func(c *Config) {
 		c.HelmValues = append(c.HelmValues, values...)
+	}
+}
+
+// WithSkipDeployTestPrerequisites skips deploying test prerequisites.
+// Use this when prerequisites are not needed or are deployed separately.
+func WithSkipDeployTestPrerequisites() Option {
+	return func(c *Config) {
+		c.DeployPrerequisites = false
 	}
 }
 

@@ -10,6 +10,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -148,12 +149,7 @@ func NewMetricAgentApplierDeleter(globals config.Global, image, priorityClassNam
 func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Client, opts AgentApplyOptions) error {
 	name := types.NamespacedName{Namespace: aad.globals.TargetNamespace(), Name: aad.baseName}
 
-	ingressAllowedPorts := agentIngressAllowedPorts()
-	if opts.IstioEnabled {
-		ingressAllowedPorts = append(ingressAllowedPorts, ports.IstioEnvoy)
-	}
-
-	if err := applyCommonResources(ctx, c, name, commonresources.LabelValueK8sComponentAgent, aad.rbac, ingressAllowedPorts); err != nil {
+	if err := applyCommonResources(ctx, c, name, commonresources.LabelValueK8sComponentAgent, aad.rbac); err != nil {
 		return fmt.Errorf("failed to create common resource: %w", err)
 	}
 
@@ -174,6 +170,15 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 	}
 
 	configChecksum := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, secretsInChecksum)
+
+	networkPolicies := makeAgentNetworkPolicies(name, opts.IstioEnabled)
+
+	for _, np := range networkPolicies {
+		if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, np); err != nil {
+			return fmt.Errorf("failed to create agent network policies: %w", err)
+		}
+	}
+
 	if err := k8sutils.CreateOrUpdateDaemonSet(ctx, c, aad.makeAgentDaemonSet(configChecksum, opts)); err != nil {
 		return fmt.Errorf("failed to create daemonset: %w", err)
 	}
@@ -193,6 +198,14 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 	objectMeta := metav1.ObjectMeta{
 		Name:      aad.baseName,
 		Namespace: aad.globals.TargetNamespace(),
+	}
+
+	networkPolicySelector := map[string]string{
+		commonresources.LabelKeyK8sName: name.Name,
+	}
+
+	if err := k8sutils.DeleteObjectsByLabelSelector(ctx, c, &networkingv1.NetworkPolicyList{}, networkPolicySelector); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete network policy: %w", err))
 	}
 
 	configMap := corev1.ConfigMap{ObjectMeta: objectMeta}
@@ -236,6 +249,28 @@ func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string, opts A
 		metadata,
 		podSpec,
 	)
+}
+
+func makeAgentNetworkPolicies(name types.NamespacedName, istioEnabled bool) []*networkingv1.NetworkPolicy {
+	metricsNetworkPolicy := commonresources.MakeNetworkPolicy(
+		name,
+		commonresources.MakeDefaultLabels(name.Name, commonresources.LabelValueK8sComponentAgent),
+		commonresources.MakeDefaultSelectorLabels(name.Name),
+		commonresources.WithNameSuffix("metrics"),
+		commonresources.WithIngressFromPodsInAllNamespaces(
+			map[string]string{
+				commonresources.LabelKeyTelemetryMetricsScraping: commonresources.LabelValueTelemetryMetricsScraping,
+			},
+			agentIngressMetricsPorts(istioEnabled)),
+	)
+	agentNetworkPolicy := commonresources.MakeNetworkPolicy(
+		name,
+		commonresources.MakeDefaultLabels(name.Name, commonresources.LabelValueK8sComponentAgent),
+		commonresources.MakeDefaultSelectorLabels(name.Name),
+		commonresources.WithEgressToAny(),
+	)
+
+	return []*networkingv1.NetworkPolicy{metricsNetworkPolicy, agentNetworkPolicy}
 }
 
 func makeLogAgentAnnotations(configChecksum string, opts AgentApplyOptions) map[string]string {
@@ -326,9 +361,12 @@ func makeFileLogCheckPointVolumeMount() corev1.VolumeMount {
 	}
 }
 
-func agentIngressAllowedPorts() []int32 {
-	return []int32{
-		ports.Metrics,
-		ports.HealthCheck,
+func agentIngressMetricsPorts(istioEnabled bool) []int32 {
+	metricsPorts := []int32{ports.Metrics}
+
+	if istioEnabled {
+		metricsPorts = append(metricsPorts, ports.IstioEnvoyTelemetry)
 	}
+
+	return metricsPorts
 }
