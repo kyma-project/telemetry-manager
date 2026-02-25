@@ -168,6 +168,44 @@ func TestBuild(t *testing.T) {
 				testutils.NewLogPipelineBuilder().WithName("test-log").WithOTLPOutput().Build(),
 			},
 		},
+		{
+			name:           "log pipeline with OAuth2",
+			goldenFileName: "log-oauth2-authentication.yaml",
+			logPipelines: []telemetryv1beta1.LogPipeline{
+				testutils.NewLogPipelineBuilder().
+					WithName("test-log-oauth2").
+					WithOTLPOutput(testutils.OTLPProtocol("http")).
+					WithOAuth2(
+						testutils.OAuth2ClientID("client-id"),
+						testutils.OAuth2ClientSecret("client-secret"),
+						testutils.OAuth2TokenURL("https://auth.example.com/oauth2/token"),
+					).Build(),
+			},
+		},
+		{
+			name:           "log pipeline with transforms",
+			goldenFileName: "log-user-defined-transforms.yaml",
+			logPipelines: []telemetryv1beta1.LogPipeline{
+				testutils.NewLogPipelineBuilder().
+					WithName("test-log-transform").
+					WithOTLPOutput().
+					WithTransform(telemetryv1beta1.TransformSpec{
+						Statements: []string{"set(body, \"transformed\")"},
+					}).Build(),
+			},
+		},
+		{
+			name:           "log pipeline with filters",
+			goldenFileName: "log-user-defined-filters.yaml",
+			logPipelines: []telemetryv1beta1.LogPipeline{
+				testutils.NewLogPipelineBuilder().
+					WithName("test-log-filter").
+					WithOTLPOutput().
+					WithFilter(telemetryv1beta1.FilterSpec{
+						Conditions: []string{"IsMatch(body, \".*error.*\")"},
+					}).Build(),
+			},
+		},
 	}
 
 	for _, tt := range tests {

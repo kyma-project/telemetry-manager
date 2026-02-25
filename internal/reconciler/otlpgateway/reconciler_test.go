@@ -7,7 +7,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -21,10 +20,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpgateway"
-	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
@@ -334,46 +333,6 @@ func TestReconcile_MultiplePipelines_AggregatesConfig(t *testing.T) {
 	}))
 }
 
-func TestReconcile_LegacyDeploymentCleanup(t *testing.T) {
-	ctx := context.Background()
-
-	deployment := &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.TraceGateway,
-			Namespace: "kyma-system",
-		},
-	}
-
-	cm := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      otelcollector.OTLPGatewayConfigMapName,
-			Namespace: "kyma-system",
-		},
-		Data: map[string]string{
-			otelcollector.ConfigMapDataKey: "TracePipeline: []",
-		},
-	}
-
-	fakeClient := newTestClient(t, deployment, cm)
-	mocks := newDefaultMocks()
-
-	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false)
-	mocks.gatewayApplierDeleter.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
-	sut := newTestReconciler(fakeClient, mocks)
-
-	_, err := sut.Reconcile(ctx, ctrl.Request{})
-	require.NoError(t, err)
-
-	var dep appsv1.Deployment
-
-	err = fakeClient.Get(ctx, types.NamespacedName{
-		Name:      names.TraceGateway,
-		Namespace: "kyma-system",
-	}, &dep)
-	require.True(t, apierrors.IsNotFound(err))
-}
-
 func TestReconcile_MissingPipeline_SkipsGracefully(t *testing.T) {
 	ctx := context.Background()
 
@@ -651,6 +610,59 @@ func TestUpdateTracePipelineCondition_Success(t *testing.T) {
 	assert.Equal(t, metav1.ConditionTrue, cond.Status)
 	assert.Equal(t, "GatewayReady", cond.Reason)
 	assert.Equal(t, int64(5), cond.ObservedGeneration)
+}
+
+func TestUpdateLogPipelineCondition_Success(t *testing.T) {
+	ctx := context.Background()
+
+	pipeline := testutils.NewLogPipelineBuilder().
+		WithName("test-log").
+		WithOTLPOutput().
+		Build()
+
+	fakeClient := newTestClient(t, &pipeline)
+	mocks := newDefaultMocks()
+
+	sut := newTestReconciler(fakeClient, mocks)
+
+	condition := &metav1.Condition{
+		Type:   conditions.TypeGatewayHealthy,
+		Status: metav1.ConditionTrue,
+		Reason: conditions.ReasonGatewayReady,
+	}
+
+	err := sut.updateLogPipelineCondition(ctx, pipeline.Name, condition)
+	require.NoError(t, err)
+
+	// Verify condition was set
+	var updatedPipeline telemetryv1beta1.LogPipeline
+	err = fakeClient.Get(ctx, types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+	require.NoError(t, err)
+
+	cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeGatewayHealthy)
+	require.NotNil(t, cond)
+	assert.Equal(t, metav1.ConditionTrue, cond.Status)
+	assert.Equal(t, conditions.ReasonGatewayReady, cond.Reason)
+	assert.Equal(t, updatedPipeline.Generation, cond.ObservedGeneration)
+}
+
+func TestUpdateLogPipelineCondition_PipelineNotFound(t *testing.T) {
+	ctx := context.Background()
+
+	fakeClient := newTestClient(t)
+	mocks := newDefaultMocks()
+
+	sut := newTestReconciler(fakeClient, mocks)
+
+	condition := &metav1.Condition{
+		Type:   conditions.TypeGatewayHealthy,
+		Status: metav1.ConditionTrue,
+		Reason: conditions.ReasonGatewayReady,
+	}
+
+	// Should not error when pipeline doesn't exist
+	err := sut.updateLogPipelineCondition(ctx, "non-existent", condition)
+	require.NoError(t, err)
 }
 
 func TestUpdateGatewayHealthyConditions_EmptyList(t *testing.T) {

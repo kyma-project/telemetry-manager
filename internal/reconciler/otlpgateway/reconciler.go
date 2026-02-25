@@ -21,7 +21,6 @@ import (
 	"fmt"
 
 	"gopkg.in/yaml.v3"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -35,7 +34,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpgateway"
-	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 	telemetryutils "github.com/kyma-project/telemetry-manager/internal/utils/telemetry"
@@ -247,20 +245,12 @@ func (r *Reconciler) doReconcile(ctx context.Context) error {
 			log.Error(err, "failed to update status after deletion")
 		}
 
-		if err := r.cleanupLegacyResources(ctx); err != nil {
-			log.Error(err, "failed to cleanup legacy resources")
-		}
-
 		return nil
 	}
 
 	// Build and apply resources
 	if err := r.processConfigAndBuildResources(ctx, tracePipelines, logPipelines); err != nil {
 		return err
-	}
-
-	if err := r.cleanupLegacyResources(ctx); err != nil {
-		log.Error(err, "failed to cleanup legacy resources")
 	}
 
 	// Update status for all pipelines
@@ -377,26 +367,4 @@ func (r *Reconciler) buildCollectorConfig(ctx context.Context, tracePipelines []
 		ServiceEnrichment: telemetryutils.GetServiceEnrichmentFromTelemetryOrDefault(ctx, telemetryOptions),
 		ModuleVersion:     r.globals.Version(),
 	})
-}
-
-// cleanupLegacyResources removes the old trace gateway Deployment.
-func (r *Reconciler) cleanupLegacyResources(ctx context.Context) error {
-	log := logf.FromContext(ctx)
-
-	deployment := &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.TraceGateway,
-			Namespace: r.globals.TargetNamespace(),
-		},
-	}
-
-	if err := r.Delete(ctx, deployment); err != nil && !apierrors.IsNotFound(err) {
-		return fmt.Errorf("failed to delete legacy deployment: %w", err)
-	}
-
-	if err := client.IgnoreNotFound(r.Delete(ctx, deployment)); err == nil {
-		log.Info("cleaned up legacy trace gateway deployment")
-	}
-
-	return nil
 }
