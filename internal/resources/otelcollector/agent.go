@@ -171,7 +171,7 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 
 	configChecksum := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, secretsInChecksum)
 
-	networkPolicies := makeAgentNetworkPolicies(name, opts.IstioEnabled)
+	networkPolicies := makeAgentNetworkPolicies(name)
 
 	for _, np := range networkPolicies {
 		if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, np); err != nil {
@@ -251,18 +251,7 @@ func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string, opts A
 	)
 }
 
-func makeAgentNetworkPolicies(name types.NamespacedName, istioEnabled bool) []*networkingv1.NetworkPolicy {
-	metricsNetworkPolicy := commonresources.MakeNetworkPolicy(
-		name,
-		commonresources.MakeDefaultLabels(name.Name, commonresources.LabelValueK8sComponentAgent),
-		commonresources.MakeDefaultSelectorLabels(name.Name),
-		commonresources.WithNameSuffix("metrics"),
-		commonresources.WithIngressFromPodsInAllNamespaces(
-			map[string]string{
-				commonresources.LabelKeyTelemetryMetricsScraping: commonresources.LabelValueTelemetryMetricsScraping,
-			},
-			agentIngressMetricsPorts(istioEnabled)),
-	)
+func makeAgentNetworkPolicies(name types.NamespacedName) []*networkingv1.NetworkPolicy {
 	agentNetworkPolicy := commonresources.MakeNetworkPolicy(
 		name,
 		commonresources.MakeDefaultLabels(name.Name, commonresources.LabelValueK8sComponentAgent),
