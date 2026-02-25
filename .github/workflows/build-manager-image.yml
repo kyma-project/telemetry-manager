@@ -20,6 +20,7 @@ on:
     branches:
       - "main"
       - "release-[0-9]+.[0-9]+"
+      - "feat/new-centralized-arch" # TODO: Remove after merging feature branch
     tags:
       - "[0-9]+.[0-9]+.[0-9]+"
     paths-ignore:
