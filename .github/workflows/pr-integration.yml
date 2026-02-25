@@ -156,15 +156,10 @@ jobs:
 
       - name: Run ${{ matrix.suite.name }}${{ matrix.flavor.name }} tests
         run: |
-          # Filter out tests requiring FIPS images when not available
-          LABELS="${{ matrix.flavor.labels }}"
-          if [[ "${{ env.FIPS_IMAGE_AVAILABLE }}" != "true" ]]; then
-            LABELS="$LABELS and not require-fips-images"
-          fi
           make e2e-test \
             E2E_TEST_PATH="${{ matrix.suite.path }}" \
             E2E_TEST_ID="${{ matrix.suite.name }}${{ matrix.flavor.name }}" \
-            E2E_TEST_LABELS="$LABELS"
+            E2E_TEST_LABELS="${{ matrix.flavor.labels }}"
 
       - name: Upload test results
         if: always()
@@ -312,15 +307,10 @@ jobs:
 
       - name: Run selfmonitor-${{ matrix.scenario }}-${{ matrix.component.name }} tests
         run: |
-          # Filter out tests requiring FIPS images when not available
-          LABELS="${{ matrix.scenario }} and ${{ matrix.component.label }}"
-          if [[ "${{ env.FIPS_IMAGE_AVAILABLE }}" != "true" ]]; then
-            LABELS="$LABELS and not require-fips-images"
-          fi
           make e2e-test \
             E2E_TEST_PATH="./test/selfmonitor/..." \
             E2E_TEST_ID="selfmonitor-${{ matrix.scenario }}-${{ matrix.component.name }}" \
-            E2E_TEST_LABELS="$LABELS"
+            E2E_TEST_LABELS="${{ matrix.scenario }} and ${{ matrix.component.label }}"
 
       - name: Upload test results
         if: always()

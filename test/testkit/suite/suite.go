@@ -172,12 +172,6 @@ const (
 	// LabelIstio defines the label for Istio Integration tests
 	LabelIstio = "istio"
 
-	// LabelRequireFIPSImages defines the label for tests that require FIPS images to be available.
-	// Tests with this label will fail if FIPS_IMAGE_AVAILABLE environment variable is not "true".
-	// Use this for tests that assert on FIPS-specific images (e.g., self-monitor FIPS image tests).
-	// CI should filter these tests out when running in PR context where FIPS images are not accessible.
-	LabelRequireFIPSImages = "require-fips-images"
-
 	// LabelGardener defines the label for Gardener Integration tests
 	LabelGardener = "gardener"
 
@@ -240,7 +234,6 @@ func SetupTest(t *testing.T, labels ...string) {
 // Options can be passed to customize the setup:
 //   - kubeprep.WithIstio() - installs Istio and adds LabelIstio for filtering
 //   - kubeprep.WithExperimental() - enables experimental CRDs and adds LabelExperimental for filtering
-//   - kubeprep.WithRequireFIPSImages() - requires FIPS images and adds LabelRequireFIPSImages for filtering
 //   - kubeprep.WithHelmValues("key=value") - adds custom helm values
 //   - kubeprep.WithChartVersion("url") - uses a specific chart version (for upgrade tests)
 //   - kubeprep.WithOverrideFIPSMode(bool) - overrides FIPS mode setting
@@ -271,17 +264,11 @@ func SetupTestWithOptions(t *testing.T, labels []string, opts ...kubeprep.Option
 		return // test was skipped
 	}
 
-	// Validate FIPS image requirements before cluster setup
-	if err := validateFIPSRequirements(labels); err != nil {
-		require.Fail(t, err.Error())
-		return
-	}
-
 	// Test will execute - finalize config with manager image
 	cfg = finalizeConfig(cfg)
 
 	// Log FIPS configuration for clarity
-	logFIPSConfiguration(t, labels, cfg)
+	logFIPSConfiguration(t, cfg)
 
 	// Setup cluster (idempotent: always runs helm upgrade + prerequisites)
 	require.NoError(t, kubeprep.SetupCluster(t, K8sClient, cfg))
@@ -296,10 +283,6 @@ func addLabelsFromConfig(labels []string, cfg kubeprep.Config) []string {
 
 	if cfg.EnableExperimental && !hasLabel(labels, LabelExperimental) {
 		labels = append(labels, LabelExperimental)
-	}
-
-	if cfg.RequireFIPSImages && !hasLabel(labels, LabelRequireFIPSImages) {
-		labels = append(labels, LabelRequireFIPSImages)
 	}
 
 	return labels
@@ -371,16 +354,6 @@ func handleDryRunMode(t *testing.T, labels []string, labelFilterExpr string, sho
 	t.Skip()
 }
 
-// validateFIPSRequirements checks if FIPS image requirements are satisfied
-func validateFIPSRequirements(labels []string) error {
-	if hasLabel(labels, LabelRequireFIPSImages) && !FIPSImagesAvailable() {
-		return fmt.Errorf("test requires FIPS images (has 'require-fips-images' label) but FIPS_IMAGE_AVAILABLE is not set to true. " +
-			"Either run in an environment with FIPS image access, or filter out this test with label filter 'not require-fips-images'")
-	}
-
-	return nil
-}
-
 // RegisterTestCase is an alias for SetupTest for backward compatibility.
 //
 // Deprecated: Use SetupTest instead.
@@ -428,11 +401,10 @@ func buildConfig(labels []string, opts ...kubeprep.Option) kubeprep.Config {
 }
 
 // logFIPSConfiguration logs the FIPS mode configuration for clarity
-func logFIPSConfiguration(t *testing.T, labels []string, cfg kubeprep.Config) {
+func logFIPSConfiguration(t *testing.T, cfg kubeprep.Config) {
 	t.Helper()
 
 	fipsImagesAvailable := FIPSImagesAvailable()
-	requiresFIPSImages := hasLabel(labels, LabelRequireFIPSImages)
 
 	// Determine how FIPS mode was set
 	fipsModeSource := "environment default"
@@ -440,8 +412,8 @@ func logFIPSConfiguration(t *testing.T, labels []string, cfg kubeprep.Config) {
 		fipsModeSource = "test override (WithOverrideFIPSMode)"
 	}
 
-	t.Logf("FIPS configuration: imagesAvailable=%t, requiresFIPSImages=%t, fipsMode=%t (source: %s)",
-		fipsImagesAvailable, requiresFIPSImages, cfg.OperateInFIPSMode, fipsModeSource)
+	t.Logf("FIPS configuration: imagesAvailable=%t, fipsMode=%t (source: %s)",
+		fipsImagesAvailable, cfg.OperateInFIPSMode, fipsModeSource)
 }
 
 // UpgradeToTargetVersion upgrades the manager from a previously deployed version

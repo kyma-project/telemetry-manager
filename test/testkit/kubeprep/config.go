@@ -22,7 +22,6 @@ type Config struct {
 	OperateInFIPSMode   bool     // Deploy manager in FIPS mode
 	FIPSModeOverridden  bool     // True if FIPS mode was explicitly overridden via WithOverrideFIPSMode
 	EnableExperimental  bool     // Enable experimental CRDs
-	RequireFIPSImages   bool     // Test requires FIPS images to be available
 	HelmValues          []string // Custom helm --set values (e.g., "additionalMetadata.labels.foo=bar")
 	ChartPath           string   // Helm chart path/URL (empty = use local chart)
 	DeployPrerequisites bool     // Deploy test prerequisites (default: true)
@@ -92,14 +91,6 @@ func WithIstio() Option {
 func WithExperimental() Option {
 	return func(c *Config) {
 		c.EnableExperimental = true
-	}
-}
-
-// WithRequireFIPSImages marks the test as requiring FIPS images to be available.
-// Tests with this option will fail if FIPS_IMAGE_AVAILABLE is not set to true.
-func WithRequireFIPSImages() Option {
-	return func(c *Config) {
-		c.RequireFIPSImages = true
 	}
 }
 
