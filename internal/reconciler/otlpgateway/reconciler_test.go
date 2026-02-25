@@ -636,6 +636,7 @@ func TestUpdateLogPipelineCondition_Success(t *testing.T) {
 
 	// Verify condition was set
 	var updatedPipeline telemetryv1beta1.LogPipeline
+
 	err = fakeClient.Get(ctx, types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 	require.NoError(t, err)
 
