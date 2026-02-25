@@ -59,7 +59,7 @@ func TestMTLS(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			suite.SetupTest(t, suite.LabelMTLS, tc.labels[0], tc.labels[1], tc.labels[2])
+			suite.SetupTest(t, append(tc.labels,suite.LabelMTLS)...)
 
 			var (
 				uniquePrefix = unique.Prefix(tc.name)

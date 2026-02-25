@@ -1,6 +1,7 @@
 package shared
 
 import (
+	"slices"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -100,7 +101,7 @@ func TestSinglePipelineV1Alpha1(t *testing.T) {
 			assert.BackendReachable(t, backend)
 			assert.DeploymentReady(t, kitkyma.MetricGatewayName)
 
-			if tc.labels[0] == suite.LabelLogAgent {
+			if slices.Contains(tc.labels, suite.LabelLogAgent) {
 				assert.DaemonSetReady(t, kitkyma.MetricAgentName)
 			}
 
