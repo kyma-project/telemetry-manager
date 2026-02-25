@@ -49,6 +49,8 @@ func (r *Reconciler) updateGatewayHealthyConditions(ctx context.Context, pipelin
 }
 
 // updateTracePipelineCondition updates a single TracePipeline's GatewayHealthy condition.
+//
+//nolint:dupl // Acceptable duplication - generic approach adds complexity without significant benefit
 func (r *Reconciler) updateTracePipelineCondition(ctx context.Context, pipelineName string, condition *metav1.Condition) error {
 	var pipeline telemetryv1beta1.TracePipeline
 	if err := r.Get(ctx, types.NamespacedName{Name: pipelineName}, &pipeline); err != nil {
@@ -81,6 +83,8 @@ func (r *Reconciler) updateTracePipelineCondition(ctx context.Context, pipelineN
 }
 
 // updateLogPipelineCondition updates a single LogPipeline's GatewayHealthy condition.
+//
+//nolint:dupl // Acceptable duplication - generic approach adds complexity without significant benefit
 func (r *Reconciler) updateLogPipelineCondition(ctx context.Context, pipelineName string, condition *metav1.Condition) error {
 	var pipeline telemetryv1beta1.LogPipeline
 	if err := r.Get(ctx, types.NamespacedName{Name: pipelineName}, &pipeline); err != nil {

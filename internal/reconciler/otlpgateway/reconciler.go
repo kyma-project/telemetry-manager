@@ -166,6 +166,43 @@ func (r *Reconciler) ensureConfigMapExists(ctx context.Context) error {
 	return nil
 }
 
+// processConfigAndBuildResources handles config building and resource deployment.
+func (r *Reconciler) processConfigAndBuildResources(ctx context.Context, tracePipelines []telemetryv1beta1.TracePipeline, logPipelines []telemetryv1beta1.LogPipeline) error {
+	collectorConfig, collectorEnvVars, err := r.buildCollectorConfig(ctx, tracePipelines, logPipelines)
+	if err != nil {
+		return fmt.Errorf("failed to build config: %w", err)
+	}
+
+	collectorConfigYAML, err := yaml.Marshal(collectorConfig)
+	if err != nil {
+		return fmt.Errorf("failed to marshal config: %w", err)
+	}
+
+	isIstioActive := r.istioStatusChecker.IsIstioActive(ctx)
+	opts := otelcollector.GatewayApplyOptions{
+		CollectorConfigYAML:            string(collectorConfigYAML),
+		CollectorEnvVars:               collectorEnvVars,
+		IstioEnabled:                   isIstioActive,
+		ResourceRequirementsMultiplier: len(tracePipelines) + len(logPipelines),
+	}
+
+	return r.gatewayApplierDeleter.ApplyResources(ctx, r.Client, opts)
+}
+
+// collectAllReferencedNames extracts all pipeline names from ConfigMap references.
+func collectAllReferencedNames(config *otelcollector.OTLPGatewayConfigMap) []string {
+	allNames := make([]string, 0, len(config.TracePipeline)+len(config.LogPipeline))
+	for _, ref := range config.TracePipeline {
+		allNames = append(allNames, ref.Name)
+	}
+
+	for _, ref := range config.LogPipeline {
+		allNames = append(allNames, ref.Name)
+	}
+
+	return allNames
+}
+
 // doReconcile performs the main reconciliation logic.
 func (r *Reconciler) doReconcile(ctx context.Context) error {
 	log := logf.FromContext(ctx)
@@ -204,16 +241,8 @@ func (r *Reconciler) doReconcile(ctx context.Context) error {
 			return fmt.Errorf("failed to delete gateway: %w", err)
 		}
 
-		// Collect all referenced pipeline names for status update
-		allReferencedNames := make([]string, 0, len(config.TracePipeline)+len(config.LogPipeline))
-		for _, ref := range config.TracePipeline {
-			allReferencedNames = append(allReferencedNames, ref.Name)
-		}
-
-		for _, ref := range config.LogPipeline {
-			allReferencedNames = append(allReferencedNames, ref.Name)
-		}
-
+		// Update status for all referenced pipelines
+		allReferencedNames := collectAllReferencedNames(config)
 		if err := r.updateGatewayHealthyConditions(ctx, allReferencedNames); err != nil {
 			log.Error(err, "failed to update status after deletion")
 		}
@@ -225,26 +254,9 @@ func (r *Reconciler) doReconcile(ctx context.Context) error {
 		return nil
 	}
 
-	collectorConfig, collectorEnvVars, err := r.buildCollectorConfig(ctx, tracePipelines, logPipelines)
-	if err != nil {
-		return fmt.Errorf("failed to build config: %w", err)
-	}
-
-	collectorConfigYAML, err := yaml.Marshal(collectorConfig)
-	if err != nil {
-		return fmt.Errorf("failed to marshal config: %w", err)
-	}
-
-	isIstioActive := r.istioStatusChecker.IsIstioActive(ctx)
-	opts := otelcollector.GatewayApplyOptions{
-		CollectorConfigYAML:            string(collectorConfigYAML),
-		CollectorEnvVars:               collectorEnvVars,
-		IstioEnabled:                   isIstioActive,
-		ResourceRequirementsMultiplier: len(tracePipelines) + len(logPipelines),
-	}
-
-	if err := r.gatewayApplierDeleter.ApplyResources(ctx, r.Client, opts); err != nil {
-		return fmt.Errorf("failed to apply gateway: %w", err)
+	// Build and apply resources
+	if err := r.processConfigAndBuildResources(ctx, tracePipelines, logPipelines); err != nil {
+		return err
 	}
 
 	if err := r.cleanupLegacyResources(ctx); err != nil {
@@ -252,7 +264,10 @@ func (r *Reconciler) doReconcile(ctx context.Context) error {
 	}
 
 	// Update status for all pipelines
-	allPipelineNames := append(tracePipelineNames, logPipelineNames...)
+	allPipelineNames := make([]string, 0, len(tracePipelineNames)+len(logPipelineNames))
+	allPipelineNames = append(allPipelineNames, tracePipelineNames...)
+	allPipelineNames = append(allPipelineNames, logPipelineNames...)
+
 	if err := r.updateGatewayHealthyConditions(ctx, allPipelineNames); err != nil {
 		log.Error(err, "failed to update status")
 	}
@@ -261,6 +276,8 @@ func (r *Reconciler) doReconcile(ctx context.Context) error {
 }
 
 // fetchTracePipelines fetches TracePipeline CRs from references.
+//
+//nolint:dupl // Acceptable duplication - generic approach adds complexity without significant benefit
 func (r *Reconciler) fetchTracePipelines(ctx context.Context, refs []otelcollector.PipelineReference) ([]telemetryv1beta1.TracePipeline, error) {
 	log := logf.FromContext(ctx)
 	pipelines := make([]telemetryv1beta1.TracePipeline, 0, len(refs))
@@ -293,6 +310,8 @@ func (r *Reconciler) fetchTracePipelines(ctx context.Context, refs []otelcollect
 }
 
 // fetchLogPipelines fetches LogPipeline CRs from references.
+//
+//nolint:dupl // Acceptable duplication - generic approach adds complexity without significant benefit
 func (r *Reconciler) fetchLogPipelines(ctx context.Context, refs []otelcollector.PipelineReference) ([]telemetryv1beta1.LogPipeline, error) {
 	log := logf.FromContext(ctx)
 	pipelines := make([]telemetryv1beta1.LogPipeline, 0, len(refs))

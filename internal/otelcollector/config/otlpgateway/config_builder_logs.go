@@ -260,6 +260,7 @@ func (b *Builder) addLogOTLPExporter(builder *common.ComponentBuilder[*telemetry
 	)
 }
 
+//nolint:dupl // Acceptable duplication - trace and log OAuth2 extensions follow same pattern
 func (b *Builder) addLogOAuth2Extension(ctx context.Context, builder *common.ComponentBuilder[*telemetryv1beta1.LogPipeline], pipeline *telemetryv1beta1.LogPipeline) error {
 	oauth2ExtensionID := common.OAuth2ExtensionID(pipeline.Name)
 
