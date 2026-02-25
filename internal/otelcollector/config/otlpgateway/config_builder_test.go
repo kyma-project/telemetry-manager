@@ -12,6 +12,7 @@ import (
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
@@ -28,60 +29,91 @@ func TestBuild(t *testing.T) {
 		moduleVersion     string
 	}{
 		{
-			name:           "single trace pipeline",
+			name:           "single pipeline",
+			goldenFileName: "single-pipeline.yaml",
+			tracePipelines: []telemetryv1beta1.TracePipeline{
+				testutils.NewTracePipelineBuilder().WithName("test-trace").Build(),
+			},
+			logPipelines: []telemetryv1beta1.LogPipeline{
+				testutils.NewLogPipelineBuilder().WithName("test-log").WithOTLPOutput().Build(),
+			},
+		},
+		{
+			name:           "trace-single pipeline only",
 			goldenFileName: "trace-single-pipeline.yaml",
 			tracePipelines: []telemetryv1beta1.TracePipeline{
-				testutils.NewTracePipelineBuilder().WithName("test").Build(),
+				testutils.NewTracePipelineBuilder().WithName("test-trace").Build(),
 			},
 		},
 		{
-			name:           "multiple trace pipelines",
-			goldenFileName: "trace-multiple-pipelines.yaml",
-			tracePipelines: []telemetryv1beta1.TracePipeline{
-				testutils.NewTracePipelineBuilder().WithName("test-trace-1").Build(),
-				testutils.NewTracePipelineBuilder().WithName("test-trace-2").WithOTLPOutput().Build(),
+			name:           "log-single pipeline only",
+			goldenFileName: "log-single-pipeline.yaml",
+			logPipelines: []telemetryv1beta1.LogPipeline{
+				testutils.NewLogPipelineBuilder().WithName("test-log").WithOTLPOutput().Build(),
 			},
 		},
 		{
-			name:              "single trace pipeline with otel service enrichment",
-			goldenFileName:    "trace-service-enrichment-otel.yaml",
-			serviceEnrichment: "otel",
+			name:              "single pipeline with otel service enrichment",
+			goldenFileName:    "service-enrichment-otel.yaml",
+			serviceEnrichment: commonresources.AnnotationValueTelemetryServiceEnrichmentOtel,
 			tracePipelines: []telemetryv1beta1.TracePipeline{
 				testutils.NewTracePipelineBuilder().
-					WithName("test").
+					WithName("test-trace").
+					WithOTLPOutput().
+					Build(),
+			},
+			logPipelines: []telemetryv1beta1.LogPipeline{
+				testutils.NewLogPipelineBuilder().
+					WithName("test-log").
 					WithOTLPOutput().
 					Build(),
 			},
 		},
 		{
-			name:           "trace pipeline with http protocol and custom path",
-			goldenFileName: "trace-http-protocol-with-custom-path.yaml",
+			name:           "pipeline using http protocol WITH custom 'Path' field",
+			goldenFileName: "http-protocol-with-custom-path.yaml",
 			tracePipelines: []telemetryv1beta1.TracePipeline{
 				testutils.NewTracePipelineBuilder().
-					WithName("test").
+					WithName("test-trace").
 					WithOTLPOutput(
 						testutils.OTLPProtocol("http"),
 						testutils.OTLPEndpointPath("v2/otlp/v1/traces"),
 					).Build(),
 			},
+			logPipelines: []telemetryv1beta1.LogPipeline{
+				testutils.NewLogPipelineBuilder().
+					WithName("test-log").
+					WithOTLPOutput(
+						testutils.OTLPProtocol("http"),
+						testutils.OTLPEndpointPath("v2/otlp/v1/logs"),
+					).Build(),
+			},
 		},
 		{
-			name:           "trace pipeline with http protocol without custom path",
-			goldenFileName: "trace-http-protocol-without-custom-path.yaml",
+			name:           "pipeline using http protocol WITHOUT custom 'Path' field",
+			goldenFileName: "http-protocol-without-custom-path.yaml",
 			tracePipelines: []telemetryv1beta1.TracePipeline{
 				testutils.NewTracePipelineBuilder().
-					WithName("test").
+					WithName("test-trace").
+					WithOTLPOutput(
+						testutils.OTLPProtocol("http"),
+					).Build(),
+			},
+			logPipelines: []telemetryv1beta1.LogPipeline{
+				testutils.NewLogPipelineBuilder().
+					WithName("test-log").
 					WithOTLPOutput(
 						testutils.OTLPProtocol("http"),
 					).Build(),
 			},
 		},
 		{
-			name:           "multiple trace pipelines with transforms",
-			goldenFileName: "trace-user-defined-transforms.yaml",
+			name:           "two pipelines with user-defined transforms",
+			goldenFileName: "user-defined-transforms.yaml",
 			tracePipelines: []telemetryv1beta1.TracePipeline{
 				testutils.NewTracePipelineBuilder().
-					WithName("test1").
+					WithName("test-trace-1").
+					WithOTLPOutput().
 					WithTransform(telemetryv1beta1.TransformSpec{
 						Conditions: []string{"IsMatch(body, \".*error.*\")"},
 						Statements: []string{
@@ -90,7 +122,8 @@ func TestBuild(t *testing.T) {
 						},
 					}).Build(),
 				testutils.NewTracePipelineBuilder().
-					WithName("test2").
+					WithName("test-trace-2").
+					WithOTLPOutput().
 					WithTransform(telemetryv1beta1.TransformSpec{
 						Conditions: []string{"IsMatch(body, \".*error.*\")"},
 						Statements: []string{
@@ -99,29 +132,66 @@ func TestBuild(t *testing.T) {
 						},
 					}).Build(),
 			},
+			logPipelines: []telemetryv1beta1.LogPipeline{
+				testutils.NewLogPipelineBuilder().
+					WithName("test-log-1").
+					WithOTLPOutput().
+					WithTransform(telemetryv1beta1.TransformSpec{
+						Conditions: []string{"IsMatch(body, \".*error.*\")"},
+						Statements: []string{"set(attributes[\"log.level\"], \"error\")", "set(body, \"transformed1\")"},
+					}).
+					Build(),
+				testutils.NewLogPipelineBuilder().
+					WithName("test-log-2").
+					WithOTLPOutput().
+					WithTransform(telemetryv1beta1.TransformSpec{
+						Conditions: []string{"IsMatch(body, \".*error.*\")"},
+						Statements: []string{"set(attributes[\"log.level\"], \"error\")", "set(body, \"transformed2\")"},
+					}).
+					Build(),
+			},
 		},
 		{
-			name:           "multiple trace pipelines with filters",
-			goldenFileName: "trace-user-defined-filters.yaml",
+			name:           "two pipelines with user-defined filter",
+			goldenFileName: "user-defined-filters.yaml",
 			tracePipelines: []telemetryv1beta1.TracePipeline{
 				testutils.NewTracePipelineBuilder().
-					WithName("test1").
+					WithName("test-trace-1").
+					WithOTLPOutput().
 					WithFilter(telemetryv1beta1.FilterSpec{
 						Conditions: []string{"IsMatch(span.name, \".*grpc.*\")"},
 					}).Build(),
 				testutils.NewTracePipelineBuilder().
-					WithName("test2").
+					WithName("test-trace-2").
+					WithOTLPOutput().
 					WithFilter(telemetryv1beta1.FilterSpec{
 						Conditions: []string{"IsMatch(spanevent.attributes[\"foo\"], \".*bar.*\")"},
 					}).Build(),
 			},
+			logPipelines: []telemetryv1beta1.LogPipeline{
+				testutils.NewLogPipelineBuilder().
+					WithName("test-log-1").
+					WithOTLPOutput().
+					WithFilter(telemetryv1beta1.FilterSpec{
+						Conditions: []string{"IsMatch(log.attributes[\"foo\"], \".*bar.*\")"},
+					}).
+					Build(),
+				testutils.NewLogPipelineBuilder().
+					WithName("test-log-2").
+					WithOTLPOutput().
+					WithFilter(telemetryv1beta1.FilterSpec{
+						Conditions: []string{"IsMatch(log.body, \".*error.*\")"},
+					}).
+					Build(),
+			},
 		},
 		{
-			name:           "trace pipeline with transform and filter",
-			goldenFileName: "trace-user-defined-transform-filter.yaml",
+			name:           "pipeline with user-defined transform and filter",
+			goldenFileName: "user-defined-transform-filter.yaml",
 			tracePipelines: []telemetryv1beta1.TracePipeline{
 				testutils.NewTracePipelineBuilder().
-					WithName("test1").
+					WithName("test-trace").
+					WithOTLPOutput().
 					WithFilter(telemetryv1beta1.FilterSpec{
 						Conditions: []string{"IsMatch(span.name, \".*grpc.*\")"},
 					}).
@@ -133,13 +203,25 @@ func TestBuild(t *testing.T) {
 						},
 					}).Build(),
 			},
+			logPipelines: []telemetryv1beta1.LogPipeline{
+				testutils.NewLogPipelineBuilder().
+					WithName("test-log").
+					WithOTLPOutput().
+					WithTransform(telemetryv1beta1.TransformSpec{
+						Conditions: []string{"IsMatch(body, \".*error.*\")"},
+						Statements: []string{"set(attributes[\"log.level\"], \"error\")", "set(body, \"transformed2\")"},
+					}).
+					WithFilter(telemetryv1beta1.FilterSpec{
+						Conditions: []string{"IsMatch(log.attributes[\"foo\"], \".*bar.*\")"},
+					}).Build(),
+			},
 		},
 		{
-			name:           "trace pipeline with OAuth2",
-			goldenFileName: "trace-oauth2-authentication.yaml",
+			name:           "pipeline using OAuth2 authentication",
+			goldenFileName: "oauth2-authentication.yaml",
 			tracePipelines: []telemetryv1beta1.TracePipeline{
 				testutils.NewTracePipelineBuilder().
-					WithName("test").
+					WithName("test-trace").
 					WithOTLPOutput(
 						testutils.OTLPProtocol("http"),
 					).
@@ -150,60 +232,48 @@ func TestBuild(t *testing.T) {
 						testutils.OAuth2Scopes([]string{"traces"}),
 					).Build(),
 			},
-		},
-		{
-			name:           "single log pipeline",
-			goldenFileName: "log-single-pipeline.yaml",
-			logPipelines: []telemetryv1beta1.LogPipeline{
-				testutils.NewLogPipelineBuilder().WithName("test-log").WithOTLPOutput().Build(),
-			},
-		},
-		{
-			name:           "trace and log pipelines",
-			goldenFileName: "trace-and-log-pipelines.yaml",
-			tracePipelines: []telemetryv1beta1.TracePipeline{
-				testutils.NewTracePipelineBuilder().WithName("test-trace").Build(),
-			},
-			logPipelines: []telemetryv1beta1.LogPipeline{
-				testutils.NewLogPipelineBuilder().WithName("test-log").WithOTLPOutput().Build(),
-			},
-		},
-		{
-			name:           "log pipeline with OAuth2",
-			goldenFileName: "log-oauth2-authentication.yaml",
 			logPipelines: []telemetryv1beta1.LogPipeline{
 				testutils.NewLogPipelineBuilder().
-					WithName("test-log-oauth2").
-					WithOTLPOutput(testutils.OTLPProtocol("http")).
+					WithName("test-log").
+					WithOTLPOutput(
+						testutils.OTLPProtocol("http"),
+					).
 					WithOAuth2(
 						testutils.OAuth2ClientID("client-id"),
 						testutils.OAuth2ClientSecret("client-secret"),
 						testutils.OAuth2TokenURL("https://auth.example.com/oauth2/token"),
+						testutils.OAuth2Scopes([]string{"logs"}),
 					).Build(),
 			},
 		},
 		{
-			name:           "log pipeline with transforms",
-			goldenFileName: "log-user-defined-transforms.yaml",
+			name:           "log-pipeline with OTLP input disabled",
+			goldenFileName: "log-otlp-input-disabled.yaml",
 			logPipelines: []telemetryv1beta1.LogPipeline{
 				testutils.NewLogPipelineBuilder().
-					WithName("test-log-transform").
-					WithOTLPOutput().
-					WithTransform(telemetryv1beta1.TransformSpec{
-						Statements: []string{"set(body, \"transformed\")"},
-					}).Build(),
+					WithName("test-log").
+					WithOTLPInput(false).
+					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
 			},
 		},
 		{
-			name:           "log pipeline with filters",
-			goldenFileName: "log-user-defined-filters.yaml",
+			name:           "log-pipeline with namespace included",
+			goldenFileName: "log-namespace-included.yaml",
 			logPipelines: []telemetryv1beta1.LogPipeline{
 				testutils.NewLogPipelineBuilder().
-					WithName("test-log-filter").
-					WithOTLPOutput().
-					WithFilter(telemetryv1beta1.FilterSpec{
-						Conditions: []string{"IsMatch(body, \".*error.*\")"},
-					}).Build(),
+					WithName("test-log").
+					WithOTLPInput(true, testutils.IncludeNamespaces("kyma-system", "default")).
+					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+			},
+		},
+		{
+			name:           "log-pipeline with namespace excluded",
+			goldenFileName: "log-namespace-excluded.yaml",
+			logPipelines: []telemetryv1beta1.LogPipeline{
+				testutils.NewLogPipelineBuilder().
+					WithName("test-log").
+					WithOTLPInput(true, testutils.ExcludeNamespaces("kyma-system", "default")).
+					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
 			},
 		},
 	}

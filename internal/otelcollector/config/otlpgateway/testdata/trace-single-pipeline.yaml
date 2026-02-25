@@ -5,7 +5,7 @@ extensions:
         endpoint: 127.0.0.1:1777
 service:
     pipelines:
-        traces/test:
+        traces/test-trace:
             receivers:
                 - otlp
             processors:
@@ -17,7 +17,7 @@ service:
                 - transform/drop-kyma-attributes
                 - batch
             exporters:
-                - otlp_grpc/test
+                - otlp_grpc/test-trace
     telemetry:
         metrics:
             readers:
@@ -107,8 +107,8 @@ processors:
                 - set(resource.attributes["k8s.cluster.uid"], "") where resource.attributes["k8s.cluster.uid"] == nil or resource.attributes["k8s.cluster.uid"] == ""
                 - set(resource.attributes["cloud.provider"], "test-cloud-provider") where resource.attributes["cloud.provider"] == nil or resource.attributes["cloud.provider"] == ""
 exporters:
-    otlp_grpc/test:
-        endpoint: ${OTLP_ENDPOINT_TEST}
+    otlp_grpc/test-trace:
+        endpoint: ${OTLP_ENDPOINT_TEST_TRACE}
         sending_queue:
             enabled: true
             queue_size: 256

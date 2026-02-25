@@ -791,3 +791,186 @@ func TestReconcile_TraceAndLogPipelines_DeploysUnifiedGateway(t *testing.T) {
 		return len(opts.TracePipelines) == 1 && len(opts.LogPipelines) == 1
 	}))
 }
+
+// Tests for log pipeline scenarios
+func TestFetchLogPipelines_NotFound(t *testing.T) {
+	ctx := context.Background()
+	fakeClient := newTestClient(t)
+	mocks := newDefaultMocks()
+	sut := newTestReconciler(fakeClient, mocks)
+
+	refs := []otelcollector.PipelineReference{
+		{Name: "non-existent", Generation: 1},
+	}
+
+	pipelines, err := sut.fetchLogPipelines(ctx, refs)
+	require.NoError(t, err)
+	assert.Empty(t, pipelines)
+}
+
+func TestFetchLogPipelines_GenerationMismatch(t *testing.T) {
+	ctx := context.Background()
+
+	pipeline := testutils.NewLogPipelineBuilder().
+		WithName("test-log").
+		WithOTLPOutput().
+		Build()
+
+	fakeClient := newTestClient(t, &pipeline)
+	mocks := newDefaultMocks()
+	sut := newTestReconciler(fakeClient, mocks)
+
+	refs := []otelcollector.PipelineReference{
+		{Name: pipeline.Name, Generation: pipeline.Generation + 1}, // Different generation
+	}
+
+	pipelines, err := sut.fetchLogPipelines(ctx, refs)
+	require.NoError(t, err)
+	assert.Empty(t, pipelines)
+}
+
+func TestFetchLogPipelines_DeletionTimestamp(t *testing.T) {
+	ctx := context.Background()
+
+	now := metav1.Now()
+	pipeline := testutils.NewLogPipelineBuilder().
+		WithName("test-log").
+		WithOTLPOutput().
+		Build()
+	pipeline.DeletionTimestamp = &now
+	pipeline.Finalizers = []string{"test-finalizer"} // Need finalizer for fake client
+
+	fakeClient := newTestClient(t, &pipeline)
+	mocks := newDefaultMocks()
+	sut := newTestReconciler(fakeClient, mocks)
+
+	refs := []otelcollector.PipelineReference{
+		{Name: pipeline.Name, Generation: pipeline.Generation},
+	}
+
+	pipelines, err := sut.fetchLogPipelines(ctx, refs)
+	require.NoError(t, err)
+	assert.Empty(t, pipelines)
+}
+
+func TestFetchLogPipelines_Success(t *testing.T) {
+	ctx := context.Background()
+
+	pipeline := testutils.NewLogPipelineBuilder().
+		WithName("test-log").
+		WithOTLPOutput().
+		Build()
+
+	fakeClient := newTestClient(t, &pipeline)
+	mocks := newDefaultMocks()
+	sut := newTestReconciler(fakeClient, mocks)
+
+	refs := []otelcollector.PipelineReference{
+		{Name: pipeline.Name, Generation: pipeline.Generation},
+	}
+
+	pipelines, err := sut.fetchLogPipelines(ctx, refs)
+	require.NoError(t, err)
+	require.Len(t, pipelines, 1)
+	assert.Equal(t, pipeline.Name, pipelines[0].Name)
+}
+
+func TestUpdateLogPipelineCondition_PipelineBeingDeleted(t *testing.T) {
+	ctx := context.Background()
+
+	now := metav1.Now()
+	pipeline := testutils.NewLogPipelineBuilder().
+		WithName("test-log").
+		WithOTLPOutput().
+		Build()
+	pipeline.DeletionTimestamp = &now
+	pipeline.Finalizers = []string{"test-finalizer"}
+
+	fakeClient := newTestClient(t, &pipeline)
+	mocks := newDefaultMocks()
+	sut := newTestReconciler(fakeClient, mocks)
+
+	condition := &metav1.Condition{
+		Type:   conditions.TypeGatewayHealthy,
+		Status: metav1.ConditionTrue,
+		Reason: conditions.ReasonGatewayReady,
+	}
+
+	// Should not error when pipeline is being deleted
+	err := sut.updateLogPipelineCondition(ctx, pipeline.Name, condition)
+	require.NoError(t, err)
+}
+
+func TestReconcile_OnlyLogPipelines_DeploysGateway(t *testing.T) {
+	ctx := context.Background()
+
+	logPipeline := testutils.NewLogPipelineBuilder().
+		WithName("test-log").
+		WithOTLPOutput().
+		Build()
+	logPipeline.Generation = 1
+
+	cm := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      otelcollector.OTLPGatewayConfigMapName,
+			Namespace: "kyma-system",
+		},
+		Data: map[string]string{
+			otelcollector.ConfigMapDataKey: "LogPipeline:\n- name: test-log\n  generation: 1",
+		},
+	}
+
+	fakeClient := newTestClient(t, &logPipeline, cm)
+	mocks := newDefaultMocks()
+
+	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false)
+	mocks.configBuilder.On("Build", mock.Anything, mock.Anything).Return(&common.Config{}, common.EnvVars{}, nil)
+	mocks.gatewayApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mocks.gatewayProber.On("IsReady", mock.Anything, mock.Anything).Return(nil)
+	mocks.errToMsgConverter.On("Convert", mock.Anything).Return("")
+
+	sut := newTestReconciler(fakeClient, mocks)
+
+	_, err := sut.Reconcile(ctx, ctrl.Request{})
+	require.NoError(t, err)
+
+	// Verify config was built with only log pipelines
+	mocks.configBuilder.AssertCalled(t, "Build", mock.Anything, mock.MatchedBy(func(opts otlpgateway.BuildOptions) bool {
+		return len(opts.TracePipelines) == 0 && len(opts.LogPipelines) == 1
+	}))
+
+	// Verify gateway resources were applied
+	mocks.gatewayApplierDeleter.AssertCalled(t, "ApplyResources", mock.Anything, mock.Anything, mock.Anything)
+}
+
+func TestCollectAllReferencedNames(t *testing.T) {
+	config := &otelcollector.OTLPGatewayConfigMap{
+		TracePipeline: []otelcollector.PipelineReference{
+			{Name: "trace1", Generation: 1},
+			{Name: "trace2", Generation: 2},
+		},
+		LogPipeline: []otelcollector.PipelineReference{
+			{Name: "log1", Generation: 1},
+			{Name: "log2", Generation: 2},
+		},
+	}
+
+	names := collectAllReferencedNames(config)
+
+	require.Len(t, names, 4)
+	assert.Contains(t, names, "trace1")
+	assert.Contains(t, names, "trace2")
+	assert.Contains(t, names, "log1")
+	assert.Contains(t, names, "log2")
+}
+
+func TestCollectAllReferencedNames_Empty(t *testing.T) {
+	config := &otelcollector.OTLPGatewayConfigMap{
+		TracePipeline: []otelcollector.PipelineReference{},
+		LogPipeline:   []otelcollector.PipelineReference{},
+	}
+
+	names := collectAllReferencedNames(config)
+
+	require.Empty(t, names)
+}

@@ -1,17 +1,28 @@
 extensions:
     health_check:
         endpoint: ${MY_POD_IP}:13133
-    oauth2client/test:
-        token_url: ${OAUTH2_TOKEN_URL_TEST}
-        client_id: ${OAUTH2_CLIENT_ID_TEST}
-        client_secret: ${OAUTH2_CLIENT_SECRET_TEST}
-        scopes:
-            - traces
     pprof:
         endpoint: 127.0.0.1:1777
 service:
     pipelines:
-        traces/test:
+        logs/test-log:
+            receivers:
+                - otlp
+            processors:
+                - memory_limiter
+                - transform/set-observed-time-if-zero
+                - k8sattributes
+                - istio_noise_filter
+                - transform/insert-cluster-attributes
+                - service_enrichment
+                - transform/drop-kyma-attributes
+                - istio_enrichment
+                - transform/user-defined-test-log
+                - filter/user-defined-test-log
+                - batch
+            exporters:
+                - otlp_grpc/test-log
+        traces/test-trace:
             receivers:
                 - otlp
             processors:
@@ -21,9 +32,11 @@ service:
                 - transform/insert-cluster-attributes
                 - service_enrichment
                 - transform/drop-kyma-attributes
+                - transform/user-defined-test-trace
+                - filter/user-defined-test-trace
                 - batch
             exporters:
-                - otlp_http/test
+                - otlp_grpc/test-trace
     telemetry:
         metrics:
             readers:
@@ -38,7 +51,6 @@ service:
     extensions:
         - health_check
         - pprof
-        - oauth2client/test
 receivers:
     otlp:
         protocols:
@@ -51,6 +63,17 @@ processors:
         send_batch_size: 512
         timeout: 10s
         send_batch_max_size: 512
+    filter/user-defined-test-log:
+        error_mode: ignore
+        logs:
+            log_record:
+                - IsMatch(log.attributes["foo"], ".*bar.*")
+    filter/user-defined-test-trace:
+        error_mode: ignore
+        traces:
+            span:
+                - IsMatch(span.name, ".*grpc.*")
+    istio_enrichment: {}
     istio_noise_filter: {}
     k8sattributes:
         auth_type: serviceAccount
@@ -113,9 +136,32 @@ processors:
                 - set(resource.attributes["k8s.cluster.name"], "${KUBERNETES_SERVICE_HOST}") where resource.attributes["k8s.cluster.name"] == nil or resource.attributes["k8s.cluster.name"] == ""
                 - set(resource.attributes["k8s.cluster.uid"], "") where resource.attributes["k8s.cluster.uid"] == nil or resource.attributes["k8s.cluster.uid"] == ""
                 - set(resource.attributes["cloud.provider"], "test-cloud-provider") where resource.attributes["cloud.provider"] == nil or resource.attributes["cloud.provider"] == ""
+    transform/set-observed-time-if-zero:
+        error_mode: ignore
+        log_statements:
+            - statements:
+                - set(log.observed_time, Now())
+              conditions:
+                - log.observed_time_unix_nano == 0
+    transform/user-defined-test-log:
+        error_mode: ignore
+        log_statements:
+            - statements:
+                - set(attributes["log.level"], "error")
+                - set(body, "transformed2")
+              conditions:
+                - IsMatch(body, ".*error.*")
+    transform/user-defined-test-trace:
+        error_mode: ignore
+        trace_statements:
+            - statements:
+                - set(attributes["trace.status_code"], "error")
+                - set(body, "transformed2")
+              conditions:
+                - IsMatch(body, ".*error.*")
 exporters:
-    otlp_http/test:
-        endpoint: ${OTLP_ENDPOINT_TEST}
+    otlp_grpc/test-log:
+        endpoint: ${OTLP_ENDPOINT_TEST_LOG}
         sending_queue:
             enabled: true
             queue_size: 256
@@ -124,5 +170,13 @@ exporters:
             initial_interval: 5s
             max_interval: 30s
             max_elapsed_time: 300s
-        auth:
-            authenticator: oauth2client/test
+    otlp_grpc/test-trace:
+        endpoint: ${OTLP_ENDPOINT_TEST_TRACE}
+        sending_queue:
+            enabled: true
+            queue_size: 256
+        retry_on_failure:
+            enabled: true
+            initial_interval: 5s
+            max_interval: 30s
+            max_elapsed_time: 300s

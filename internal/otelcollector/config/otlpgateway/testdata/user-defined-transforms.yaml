@@ -5,7 +5,39 @@ extensions:
         endpoint: 127.0.0.1:1777
 service:
     pipelines:
-        traces/test1:
+        logs/test-log-1:
+            receivers:
+                - otlp
+            processors:
+                - memory_limiter
+                - transform/set-observed-time-if-zero
+                - k8sattributes
+                - istio_noise_filter
+                - transform/insert-cluster-attributes
+                - service_enrichment
+                - transform/drop-kyma-attributes
+                - istio_enrichment
+                - transform/user-defined-test-log-1
+                - batch
+            exporters:
+                - otlp_grpc/test-log-1
+        logs/test-log-2:
+            receivers:
+                - otlp
+            processors:
+                - memory_limiter
+                - transform/set-observed-time-if-zero
+                - k8sattributes
+                - istio_noise_filter
+                - transform/insert-cluster-attributes
+                - service_enrichment
+                - transform/drop-kyma-attributes
+                - istio_enrichment
+                - transform/user-defined-test-log-2
+                - batch
+            exporters:
+                - otlp_grpc/test-log-2
+        traces/test-trace-1:
             receivers:
                 - otlp
             processors:
@@ -15,11 +47,11 @@ service:
                 - transform/insert-cluster-attributes
                 - service_enrichment
                 - transform/drop-kyma-attributes
-                - transform/user-defined-test1
+                - transform/user-defined-test-trace-1
                 - batch
             exporters:
-                - otlp_grpc/test1
-        traces/test2:
+                - otlp_grpc/test-trace-1
+        traces/test-trace-2:
             receivers:
                 - otlp
             processors:
@@ -29,10 +61,10 @@ service:
                 - transform/insert-cluster-attributes
                 - service_enrichment
                 - transform/drop-kyma-attributes
-                - transform/user-defined-test2
+                - transform/user-defined-test-trace-2
                 - batch
             exporters:
-                - otlp_grpc/test2
+                - otlp_grpc/test-trace-2
     telemetry:
         metrics:
             readers:
@@ -59,6 +91,7 @@ processors:
         send_batch_size: 512
         timeout: 10s
         send_batch_max_size: 512
+    istio_enrichment: {}
     istio_noise_filter: {}
     k8sattributes:
         auth_type: serviceAccount
@@ -121,7 +154,30 @@ processors:
                 - set(resource.attributes["k8s.cluster.name"], "${KUBERNETES_SERVICE_HOST}") where resource.attributes["k8s.cluster.name"] == nil or resource.attributes["k8s.cluster.name"] == ""
                 - set(resource.attributes["k8s.cluster.uid"], "") where resource.attributes["k8s.cluster.uid"] == nil or resource.attributes["k8s.cluster.uid"] == ""
                 - set(resource.attributes["cloud.provider"], "test-cloud-provider") where resource.attributes["cloud.provider"] == nil or resource.attributes["cloud.provider"] == ""
-    transform/user-defined-test1:
+    transform/set-observed-time-if-zero:
+        error_mode: ignore
+        log_statements:
+            - statements:
+                - set(log.observed_time, Now())
+              conditions:
+                - log.observed_time_unix_nano == 0
+    transform/user-defined-test-log-1:
+        error_mode: ignore
+        log_statements:
+            - statements:
+                - set(attributes["log.level"], "error")
+                - set(body, "transformed1")
+              conditions:
+                - IsMatch(body, ".*error.*")
+    transform/user-defined-test-log-2:
+        error_mode: ignore
+        log_statements:
+            - statements:
+                - set(attributes["log.level"], "error")
+                - set(body, "transformed2")
+              conditions:
+                - IsMatch(body, ".*error.*")
+    transform/user-defined-test-trace-1:
         error_mode: ignore
         trace_statements:
             - statements:
@@ -129,7 +185,7 @@ processors:
                 - set(body, "transformed1")
               conditions:
                 - IsMatch(body, ".*error.*")
-    transform/user-defined-test2:
+    transform/user-defined-test-trace-2:
         error_mode: ignore
         trace_statements:
             - statements:
@@ -138,8 +194,8 @@ processors:
               conditions:
                 - IsMatch(body, ".*error.*")
 exporters:
-    otlp_grpc/test1:
-        endpoint: ${OTLP_ENDPOINT_TEST1}
+    otlp_grpc/test-log-1:
+        endpoint: ${OTLP_ENDPOINT_TEST_LOG_1}
         sending_queue:
             enabled: true
             queue_size: 128
@@ -148,8 +204,28 @@ exporters:
             initial_interval: 5s
             max_interval: 30s
             max_elapsed_time: 300s
-    otlp_grpc/test2:
-        endpoint: ${OTLP_ENDPOINT_TEST2}
+    otlp_grpc/test-log-2:
+        endpoint: ${OTLP_ENDPOINT_TEST_LOG_2}
+        sending_queue:
+            enabled: true
+            queue_size: 128
+        retry_on_failure:
+            enabled: true
+            initial_interval: 5s
+            max_interval: 30s
+            max_elapsed_time: 300s
+    otlp_grpc/test-trace-1:
+        endpoint: ${OTLP_ENDPOINT_TEST_TRACE_1}
+        sending_queue:
+            enabled: true
+            queue_size: 128
+        retry_on_failure:
+            enabled: true
+            initial_interval: 5s
+            max_interval: 30s
+            max_elapsed_time: 300s
+    otlp_grpc/test-trace-2:
+        endpoint: ${OTLP_ENDPOINT_TEST_TRACE_2}
         sending_queue:
             enabled: true
             queue_size: 128
