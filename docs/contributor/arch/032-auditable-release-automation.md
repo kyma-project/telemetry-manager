@@ -60,7 +60,7 @@ To achieve deterministic Docker builds and ensure audit compliance, we considere
 Because reproducible build tools are not yet available, the recommended approach is to run all tests (unit, E2E, Gardener, and upgrade) in the release branch using the release image before the final release publication.
 
 This approach provides:
-- Solid image digests proof for testing and release (audit compliance)
+- Solid image digests as proof for testing and release (audit compliance)
 - Comprehensive test coverage in the release context
 - Clear traceability for release audits
 
