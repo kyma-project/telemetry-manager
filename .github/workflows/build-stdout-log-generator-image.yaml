@@ -11,6 +11,7 @@ on:
   push:
     branches:
       - main
+      - feat/new-centralized-arch # TODO: Remove after merging feature branch
     paths:
       - "dependencies/stdout-log-generator/**"
   workflow_dispatch:
