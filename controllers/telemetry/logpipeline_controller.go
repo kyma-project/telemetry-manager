@@ -42,7 +42,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/logagent"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/loggateway"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
 	logpipelinefluentbit "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/fluentbit"
@@ -120,11 +119,6 @@ func NewLogPipelineController(config LogPipelineControllerConfig, client client.
 		return nil, err
 	}
 
-	gatewayFlowHealthProber, err := prober.NewOTelLogGatewayProber(types.NamespacedName{Name: names.SelfMonitor, Namespace: config.TargetNamespace()})
-	if err != nil {
-		return nil, err
-	}
-
 	agentFlowHealthProber, err := prober.NewOTelLogAgentProber(types.NamespacedName{Name: names.SelfMonitor, Namespace: config.TargetNamespace()})
 	if err != nil {
 		return nil, err
@@ -135,7 +129,7 @@ func NewLogPipelineController(config LogPipelineControllerConfig, client client.
 		return nil, err
 	}
 
-	otelReconciler, err := configureOTelReconciler(config, client, pipelineLockOTEL, gatewayFlowHealthProber, agentFlowHealthProber)
+	otelReconciler, err := configureOTelReconciler(config, client, pipelineLockOTEL, agentFlowHealthProber)
 	if err != nil {
 		return nil, err
 	}
@@ -252,7 +246,7 @@ func configureFluentBitReconciler(config LogPipelineControllerConfig, client cli
 }
 
 //nolint:unparam // error is always nil: An error could be returned after implementing the IstioStatusChecker (TODO)
-func configureOTelReconciler(config LogPipelineControllerConfig, client client.Client, pipelineLock logpipelineotel.PipelineLock, gatewayFlowHealthProber *prober.OTelGatewayProber, agentFlowHealthProber *prober.OTelAgentProber) (*logpipelineotel.Reconciler, error) {
+func configureOTelReconciler(config LogPipelineControllerConfig, client client.Client, pipelineLock logpipelineotel.PipelineLock, agentFlowHealthProber *prober.OTelAgentProber) (*logpipelineotel.Reconciler, error) {
 	transformSpecValidator, err := ottl.NewTransformSpecValidator(ottl.SignalTypeLog)
 	if err != nil {
 		return nil, err
@@ -281,29 +275,10 @@ func configureOTelReconciler(config LogPipelineControllerConfig, client client.C
 		Reader: client,
 	}
 
-	prober := func() logpipelineotel.Prober {
-		if config.DeployOTLPGateway() {
-			return &workloadstatus.DaemonSetProber{Client: client}
-		}
-
-		return &workloadstatus.DeploymentProber{Client: client}
-	}()
-
 	agentApplierDeleter := otelcollector.NewLogAgentApplierDeleter(
 		config.Global,
 		config.OTelCollectorImage,
 		config.LogAgentPriorityClassName)
-
-	gatewayAppliedDeleter := otelcollector.NewLogGatewayApplierDeleter(
-		config.Global,
-		config.OTelCollectorImage,
-		config.LogGatewayPriorityClassName)
-
-	// Create OTLP gateway applier deleter for DaemonSet mode
-	otlpGatewayApplierDeleter := otelcollector.NewOTLPGatewayApplierDeleter(
-		config.Global,
-		config.OTelCollectorImage,
-		config.OTLPGatewayPriorityClassName)
 
 	otelReconciler := logpipelineotel.New(
 		logpipelineotel.WithClient(client),
@@ -315,12 +290,6 @@ func configureOTelReconciler(config LogPipelineControllerConfig, client client.C
 		logpipelineotel.WithAgentProber(&workloadstatus.DaemonSetProber{Client: client}),
 
 		logpipelineotel.WithErrorToMessageConverter(&conditions.ErrorToMessageConverter{}),
-
-		logpipelineotel.WithGatewayApplierDeleter(gatewayAppliedDeleter),
-		logpipelineotel.WithOTLPGatewayApplierDeleter(otlpGatewayApplierDeleter),
-		logpipelineotel.WithGatewayConfigBuilder(&loggateway.Builder{Reader: client}),
-		logpipelineotel.WithGatewayFlowHealthProber(gatewayFlowHealthProber),
-		logpipelineotel.WithGatewayProber(prober),
 
 		logpipelineotel.WithIstioStatusChecker(istiostatus.NewChecker(discoveryClient)),
 		logpipelineotel.WithPipelineLock(pipelineLock),

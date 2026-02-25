@@ -15,7 +15,9 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 )
 
-// updateGatewayHealthyConditions updates the GatewayHealthy condition on all referenced TracePipeline CRs.
+// updateGatewayHealthyConditions updates the GatewayHealthy condition on all referenced pipeline CRs.
+// Note: This method now handles both TracePipeline and LogPipeline names mixed together.
+// It attempts to update each as TracePipeline first, then as LogPipeline if not found.
 func (r *Reconciler) updateGatewayHealthyConditions(ctx context.Context, pipelineNames []string) error {
 	if len(pipelineNames) == 0 {
 		return nil
@@ -23,14 +25,21 @@ func (r *Reconciler) updateGatewayHealthyConditions(ctx context.Context, pipelin
 
 	log := logf.FromContext(ctx)
 
-	// Compute condition once (shared across all pipelines)
-	condition := r.computeGatewayHealthyCondition(ctx)
+	// Compute conditions once (shared across all pipelines of the same type)
+	traceCondition := r.computeGatewayHealthyCondition(ctx, commonstatus.SignalTypeTraces)
+	logCondition := r.computeGatewayHealthyCondition(ctx, commonstatus.SignalTypeOtelLogs)
 
-	// Update each TracePipeline
+	// Update each pipeline (try as TracePipeline first, then LogPipeline)
 	var lastError error
 
 	for _, name := range pipelineNames {
-		if err := r.updatePipelineCondition(ctx, name, condition); err != nil {
+		// Try as TracePipeline first
+		if err := r.updateTracePipelineCondition(ctx, name, traceCondition); err == nil {
+			continue
+		}
+
+		// If not found as TracePipeline, try as LogPipeline
+		if err := r.updateLogPipelineCondition(ctx, name, logCondition); err != nil {
 			log.Error(err, "failed to update gateway healthy condition", "pipeline", name)
 			lastError = err
 		}
@@ -39,19 +48,20 @@ func (r *Reconciler) updateGatewayHealthyConditions(ctx context.Context, pipelin
 	return lastError
 }
 
-// updatePipelineCondition updates a single TracePipeline's GatewayHealthy condition.
-func (r *Reconciler) updatePipelineCondition(ctx context.Context, pipelineName string, condition *metav1.Condition) error {
+// updateTracePipelineCondition updates a single TracePipeline's GatewayHealthy condition.
+func (r *Reconciler) updateTracePipelineCondition(ctx context.Context, pipelineName string, condition *metav1.Condition) error {
 	var pipeline telemetryv1beta1.TracePipeline
 	if err := r.Get(ctx, types.NamespacedName{Name: pipelineName}, &pipeline); err != nil {
 		if apierrors.IsNotFound(err) {
+			logf.FromContext(ctx).V(1).Info("trace pipeline not found, skipping status update", "pipeline", pipelineName)
 			return nil
 		}
 
-		return fmt.Errorf("failed to get pipeline: %w", err)
+		return fmt.Errorf("failed to get trace pipeline: %w", err)
 	}
 
 	if pipeline.DeletionTimestamp != nil {
-		logf.FromContext(ctx).V(1).Info("skipping status update for pipeline marked for deletion", "pipeline", pipelineName)
+		logf.FromContext(ctx).V(1).Info("skipping status update for trace pipeline marked for deletion", "pipeline", pipelineName)
 		return nil
 	}
 
@@ -64,14 +74,46 @@ func (r *Reconciler) updatePipelineCondition(ctx context.Context, pipelineName s
 			return nil
 		}
 
-		return fmt.Errorf("failed to update status: %w", err)
+		return fmt.Errorf("failed to update trace pipeline status: %w", err)
+	}
+
+	return nil
+}
+
+// updateLogPipelineCondition updates a single LogPipeline's GatewayHealthy condition.
+func (r *Reconciler) updateLogPipelineCondition(ctx context.Context, pipelineName string, condition *metav1.Condition) error {
+	var pipeline telemetryv1beta1.LogPipeline
+	if err := r.Get(ctx, types.NamespacedName{Name: pipelineName}, &pipeline); err != nil {
+		if apierrors.IsNotFound(err) {
+			logf.FromContext(ctx).V(1).Info("log pipeline not found, skipping status update", "pipeline", pipelineName)
+			return nil
+		}
+
+		return fmt.Errorf("failed to get log pipeline: %w", err)
+	}
+
+	if pipeline.DeletionTimestamp != nil {
+		logf.FromContext(ctx).V(1).Info("skipping status update for log pipeline marked for deletion", "pipeline", pipelineName)
+		return nil
+	}
+
+	condition.ObservedGeneration = pipeline.Generation
+	meta.SetStatusCondition(&pipeline.Status.Conditions, *condition)
+
+	if err := r.Status().Update(ctx, &pipeline); err != nil {
+		if apierrors.IsConflict(err) {
+			logf.FromContext(ctx).V(1).Info("status update conflict, will be retried", "pipeline", pipelineName)
+			return nil
+		}
+
+		return fmt.Errorf("failed to update log pipeline status: %w", err)
 	}
 
 	return nil
 }
 
 // computeGatewayHealthyCondition computes the GatewayHealthy condition based on the DaemonSet health.
-func (r *Reconciler) computeGatewayHealthyCondition(ctx context.Context) *metav1.Condition {
+func (r *Reconciler) computeGatewayHealthyCondition(ctx context.Context, signalType string) *metav1.Condition {
 	return commonstatus.GetGatewayHealthyCondition(
 		ctx,
 		r.gatewayProber,
@@ -80,6 +122,6 @@ func (r *Reconciler) computeGatewayHealthyCondition(ctx context.Context) *metav1
 			Namespace: r.globals.TargetNamespace(),
 		},
 		r.errToMsgConverter,
-		commonstatus.SignalTypeTraces,
+		signalType,
 	)
 }

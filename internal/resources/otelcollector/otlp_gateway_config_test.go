@@ -497,3 +497,223 @@ func (c *errorUpdateClient) Get(ctx context.Context, key types.NamespacedName, o
 func (c *errorUpdateClient) Update(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error {
 	return assert.AnError
 }
+
+func TestWriteLogPipelineReference_CreateNewConfigMap(t *testing.T) {
+	scheme := runtime.NewScheme()
+	_ = corev1.AddToScheme(scheme)
+
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
+
+	err := WriteLogPipelineReference(context.Background(), fakeClient, "kyma-system", "my-log-pipeline", 1)
+	require.NoError(t, err)
+
+	// Verify ConfigMap was created
+	config, err := ReadOTLPGatewayConfig(context.Background(), fakeClient, "kyma-system")
+	require.NoError(t, err)
+	require.Len(t, config.LogPipeline, 1)
+	require.Equal(t, "my-log-pipeline", config.LogPipeline[0].Name)
+	require.Equal(t, int64(1), config.LogPipeline[0].Generation)
+}
+
+func TestWriteLogPipelineReference_AddToExistingConfigMap(t *testing.T) {
+	scheme := runtime.NewScheme()
+	_ = corev1.AddToScheme(scheme)
+
+	yamlData := `LogPipeline:
+- name: existing-log-pipeline
+  generation: 3
+`
+
+	cm := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      OTLPGatewayConfigMapName,
+			Namespace: "kyma-system",
+		},
+		Data: map[string]string{
+			ConfigMapDataKey: yamlData,
+		},
+	}
+
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cm).Build()
+
+	err := WriteLogPipelineReference(context.Background(), fakeClient, "kyma-system", "new-log-pipeline", 1)
+	require.NoError(t, err)
+
+	// Verify both pipelines exist
+	config, err := ReadOTLPGatewayConfig(context.Background(), fakeClient, "kyma-system")
+	require.NoError(t, err)
+	require.Len(t, config.LogPipeline, 2)
+
+	// Check existing pipeline is preserved
+	found := false
+
+	for _, ref := range config.LogPipeline {
+		if ref.Name == "existing-log-pipeline" {
+			require.Equal(t, int64(3), ref.Generation)
+
+			found = true
+
+			break
+		}
+	}
+
+	require.True(t, found, "existing log pipeline should be preserved")
+
+	// Check new pipeline is added
+	found = false
+
+	for _, ref := range config.LogPipeline {
+		if ref.Name == "new-log-pipeline" {
+			require.Equal(t, int64(1), ref.Generation)
+
+			found = true
+
+			break
+		}
+	}
+
+	require.True(t, found, "new log pipeline should be added")
+}
+
+func TestWriteLogPipelineReference_UpdateExisting(t *testing.T) {
+	scheme := runtime.NewScheme()
+	_ = corev1.AddToScheme(scheme)
+
+	yamlData := `LogPipeline:
+- name: my-log-pipeline
+  generation: 5
+`
+
+	cm := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      OTLPGatewayConfigMapName,
+			Namespace: "kyma-system",
+		},
+		Data: map[string]string{
+			ConfigMapDataKey: yamlData,
+		},
+	}
+
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cm).Build()
+
+	// Update generation
+	err := WriteLogPipelineReference(context.Background(), fakeClient, "kyma-system", "my-log-pipeline", 10)
+	require.NoError(t, err)
+
+	// Verify generation was updated
+	config, err := ReadOTLPGatewayConfig(context.Background(), fakeClient, "kyma-system")
+	require.NoError(t, err)
+	require.Len(t, config.LogPipeline, 1)
+	require.Equal(t, "my-log-pipeline", config.LogPipeline[0].Name)
+	require.Equal(t, int64(10), config.LogPipeline[0].Generation)
+}
+
+func TestRemoveLogPipelineReference_RemoveFromExisting(t *testing.T) {
+	scheme := runtime.NewScheme()
+	_ = corev1.AddToScheme(scheme)
+
+	yamlData := `LogPipeline:
+- name: log-pipeline-1
+  generation: 5
+- name: log-pipeline-2
+  generation: 10
+`
+
+	cm := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      OTLPGatewayConfigMapName,
+			Namespace: "kyma-system",
+		},
+		Data: map[string]string{
+			ConfigMapDataKey: yamlData,
+		},
+	}
+
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cm).Build()
+
+	err := RemoveLogPipelineReference(context.Background(), fakeClient, "kyma-system", "log-pipeline-1")
+	require.NoError(t, err)
+
+	// Verify only log-pipeline-2 remains
+	config, err := ReadOTLPGatewayConfig(context.Background(), fakeClient, "kyma-system")
+	require.NoError(t, err)
+	require.Len(t, config.LogPipeline, 1)
+	require.Equal(t, "log-pipeline-2", config.LogPipeline[0].Name)
+	require.Equal(t, int64(10), config.LogPipeline[0].Generation)
+}
+
+func TestRemoveLogPipelineReference_Idempotent(t *testing.T) {
+	scheme := runtime.NewScheme()
+	_ = corev1.AddToScheme(scheme)
+
+	yamlData := `LogPipeline:
+- name: log-pipeline-1
+  generation: 5
+`
+
+	cm := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      OTLPGatewayConfigMapName,
+			Namespace: "kyma-system",
+		},
+		Data: map[string]string{
+			ConfigMapDataKey: yamlData,
+		},
+	}
+
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cm).Build()
+
+	// Remove non-existent pipeline (should not error)
+	err := RemoveLogPipelineReference(context.Background(), fakeClient, "kyma-system", "non-existent")
+	require.NoError(t, err)
+
+	// Verify log-pipeline-1 is still there
+	config, err := ReadOTLPGatewayConfig(context.Background(), fakeClient, "kyma-system")
+	require.NoError(t, err)
+	require.Len(t, config.LogPipeline, 1)
+	require.Equal(t, "log-pipeline-1", config.LogPipeline[0].Name)
+}
+
+func TestMixedTraceAndLogPipelineUpdates(t *testing.T) {
+	scheme := runtime.NewScheme()
+	_ = corev1.AddToScheme(scheme)
+
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
+
+	// Add trace pipeline
+	err := WriteTracePipelineReference(context.Background(), fakeClient, "kyma-system", "trace-1", 1)
+	require.NoError(t, err)
+
+	// Add log pipeline
+	err = WriteLogPipelineReference(context.Background(), fakeClient, "kyma-system", "log-1", 2)
+	require.NoError(t, err)
+
+	// Verify both exist
+	config, err := ReadOTLPGatewayConfig(context.Background(), fakeClient, "kyma-system")
+	require.NoError(t, err)
+	require.Len(t, config.TracePipeline, 1)
+	require.Len(t, config.LogPipeline, 1)
+	require.Equal(t, "trace-1", config.TracePipeline[0].Name)
+	require.Equal(t, "log-1", config.LogPipeline[0].Name)
+
+	// Update trace pipeline
+	err = WriteTracePipelineReference(context.Background(), fakeClient, "kyma-system", "trace-1", 5)
+	require.NoError(t, err)
+
+	// Verify trace updated, log unchanged
+	config, err = ReadOTLPGatewayConfig(context.Background(), fakeClient, "kyma-system")
+	require.NoError(t, err)
+	require.Equal(t, int64(5), config.TracePipeline[0].Generation)
+	require.Equal(t, int64(2), config.LogPipeline[0].Generation)
+
+	// Remove trace pipeline
+	err = RemoveTracePipelineReference(context.Background(), fakeClient, "kyma-system", "trace-1")
+	require.NoError(t, err)
+
+	// Verify trace removed, log unchanged
+	config, err = ReadOTLPGatewayConfig(context.Background(), fakeClient, "kyma-system")
+	require.NoError(t, err)
+	require.Empty(t, config.TracePipeline)
+	require.Len(t, config.LogPipeline, 1)
+	require.Equal(t, "log-1", config.LogPipeline[0].Name)
+}

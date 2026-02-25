@@ -110,6 +110,47 @@ func RemoveTracePipelineReference(ctx context.Context, c client.Client, namespac
 	})
 }
 
+// WriteLogPipelineReference adds or updates a LogPipeline reference.
+// Uses optimistic locking with retry to handle concurrent updates safely.
+func WriteLogPipelineReference(ctx context.Context, c client.Client, namespace, name string, generation int64) error {
+	return updateConfigMapWithRetry(ctx, c, namespace, func(config *OTLPGatewayConfigMap) error {
+		// Find existing reference
+		for i := range config.LogPipeline {
+			if config.LogPipeline[i].Name == name {
+				// Update generation
+				config.LogPipeline[i].Generation = generation
+				return nil
+			}
+		}
+
+		// Add new reference
+		config.LogPipeline = append(config.LogPipeline, PipelineReference{
+			Name:       name,
+			Generation: generation,
+		})
+
+		return nil
+	})
+}
+
+// RemoveLogPipelineReference removes a LogPipeline reference.
+// Uses optimistic locking with retry. Idempotent operation.
+func RemoveLogPipelineReference(ctx context.Context, c client.Client, namespace, name string) error {
+	return updateConfigMapWithRetry(ctx, c, namespace, func(config *OTLPGatewayConfigMap) error {
+		// Filter out the reference
+		filtered := make([]PipelineReference, 0, len(config.LogPipeline))
+		for _, ref := range config.LogPipeline {
+			if ref.Name != name {
+				filtered = append(filtered, ref)
+			}
+		}
+
+		config.LogPipeline = filtered
+
+		return nil
+	})
+}
+
 // updateConfigMapWithRetry implements optimistic locking with retry.
 // Retries on 409 Conflict errors with fresh data.
 func updateConfigMapWithRetry(ctx context.Context, c client.Client, namespace string, updateFn func(*OTLPGatewayConfigMap) error) error {

@@ -7,7 +7,6 @@ package mocks
 import (
 	"context"
 
-	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpgateway"
 	mock "github.com/stretchr/testify/mock"
@@ -41,8 +40,8 @@ func (_m *OTLPGatewayConfigBuilder) EXPECT() *OTLPGatewayConfigBuilder_Expecter 
 }
 
 // Build provides a mock function for the type OTLPGatewayConfigBuilder
-func (_mock *OTLPGatewayConfigBuilder) Build(ctx context.Context, tracePipelines []v1beta1.TracePipeline, opts otlpgateway.BuildOptions) (*common.Config, common.EnvVars, error) {
-	ret := _mock.Called(ctx, tracePipelines, opts)
+func (_mock *OTLPGatewayConfigBuilder) Build(ctx context.Context, opts otlpgateway.BuildOptions) (*common.Config, common.EnvVars, error) {
+	ret := _mock.Called(ctx, opts)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Build")
@@ -51,25 +50,25 @@ func (_mock *OTLPGatewayConfigBuilder) Build(ctx context.Context, tracePipelines
 	var r0 *common.Config
 	var r1 common.EnvVars
 	var r2 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, []v1beta1.TracePipeline, otlpgateway.BuildOptions) (*common.Config, common.EnvVars, error)); ok {
-		return returnFunc(ctx, tracePipelines, opts)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, otlpgateway.BuildOptions) (*common.Config, common.EnvVars, error)); ok {
+		return returnFunc(ctx, opts)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, []v1beta1.TracePipeline, otlpgateway.BuildOptions) *common.Config); ok {
-		r0 = returnFunc(ctx, tracePipelines, opts)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, otlpgateway.BuildOptions) *common.Config); ok {
+		r0 = returnFunc(ctx, opts)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*common.Config)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, []v1beta1.TracePipeline, otlpgateway.BuildOptions) common.EnvVars); ok {
-		r1 = returnFunc(ctx, tracePipelines, opts)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, otlpgateway.BuildOptions) common.EnvVars); ok {
+		r1 = returnFunc(ctx, opts)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(common.EnvVars)
 		}
 	}
-	if returnFunc, ok := ret.Get(2).(func(context.Context, []v1beta1.TracePipeline, otlpgateway.BuildOptions) error); ok {
-		r2 = returnFunc(ctx, tracePipelines, opts)
+	if returnFunc, ok := ret.Get(2).(func(context.Context, otlpgateway.BuildOptions) error); ok {
+		r2 = returnFunc(ctx, opts)
 	} else {
 		r2 = ret.Error(2)
 	}
@@ -83,30 +82,24 @@ type OTLPGatewayConfigBuilder_Build_Call struct {
 
 // Build is a helper method to define mock.On call
 //   - ctx context.Context
-//   - tracePipelines []v1beta1.TracePipeline
 //   - opts otlpgateway.BuildOptions
-func (_e *OTLPGatewayConfigBuilder_Expecter) Build(ctx interface{}, tracePipelines interface{}, opts interface{}) *OTLPGatewayConfigBuilder_Build_Call {
-	return &OTLPGatewayConfigBuilder_Build_Call{Call: _e.mock.On("Build", ctx, tracePipelines, opts)}
+func (_e *OTLPGatewayConfigBuilder_Expecter) Build(ctx interface{}, opts interface{}) *OTLPGatewayConfigBuilder_Build_Call {
+	return &OTLPGatewayConfigBuilder_Build_Call{Call: _e.mock.On("Build", ctx, opts)}
 }
 
-func (_c *OTLPGatewayConfigBuilder_Build_Call) Run(run func(ctx context.Context, tracePipelines []v1beta1.TracePipeline, opts otlpgateway.BuildOptions)) *OTLPGatewayConfigBuilder_Build_Call {
+func (_c *OTLPGatewayConfigBuilder_Build_Call) Run(run func(ctx context.Context, opts otlpgateway.BuildOptions)) *OTLPGatewayConfigBuilder_Build_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 []v1beta1.TracePipeline
+		var arg1 otlpgateway.BuildOptions
 		if args[1] != nil {
-			arg1 = args[1].([]v1beta1.TracePipeline)
-		}
-		var arg2 otlpgateway.BuildOptions
-		if args[2] != nil {
-			arg2 = args[2].(otlpgateway.BuildOptions)
+			arg1 = args[1].(otlpgateway.BuildOptions)
 		}
 		run(
 			arg0,
 			arg1,
-			arg2,
 		)
 	})
 	return _c
@@ -117,7 +110,7 @@ func (_c *OTLPGatewayConfigBuilder_Build_Call) Return(config *common.Config, env
 	return _c
 }
 
-func (_c *OTLPGatewayConfigBuilder_Build_Call) RunAndReturn(run func(ctx context.Context, tracePipelines []v1beta1.TracePipeline, opts otlpgateway.BuildOptions) (*common.Config, common.EnvVars, error)) *OTLPGatewayConfigBuilder_Build_Call {
+func (_c *OTLPGatewayConfigBuilder_Build_Call) RunAndReturn(run func(ctx context.Context, opts otlpgateway.BuildOptions) (*common.Config, common.EnvVars, error)) *OTLPGatewayConfigBuilder_Build_Call {
 	_c.Call.Return(run)
 	return _c
 }

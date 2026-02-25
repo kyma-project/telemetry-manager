@@ -38,7 +38,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
-	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
@@ -106,13 +105,7 @@ func (r *OTLPGatewayController) SetupWithManager(mgr ctrl.Manager) error {
 
 	// Filter to only watch the OTLP Gateway ConfigMap specifically
 	// Note: We watch all ConfigMaps and filter in the reconcile loop to avoid complexity
-
-	// Secondary watch: TracePipeline CRs (to detect spec changes)
-	b = b.Watches(
-		&telemetryv1beta1.TracePipeline{},
-		handler.EnqueueRequestsFromMapFunc(r.mapPipelineToConfigMap),
-		ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete()),
-	)
+	// Pipeline controllers write to the ConfigMap, triggering reconciliation here
 
 	// Watch reconcile trigger channel
 	b.WatchesRawSource(
@@ -154,31 +147,6 @@ func (r *OTLPGatewayController) SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	return b.Complete(r)
-}
-
-// mapPipelineToConfigMap maps TracePipeline changes to reconcile requests for the ConfigMap.
-func (r *OTLPGatewayController) mapPipelineToConfigMap(ctx context.Context, object client.Object) []reconcile.Request {
-	pipeline, ok := object.(*telemetryv1beta1.TracePipeline)
-	if !ok {
-		logf.FromContext(ctx).V(1).Error(nil, "unexpected type: expected TracePipeline")
-		return nil
-	}
-
-	namespace := "kyma-system"
-	if r.reconciler != nil {
-		namespace = r.reconciler.Globals().TargetNamespace()
-	}
-
-	logf.FromContext(ctx).V(1).Info("pipeline changed, triggering OTLP gateway reconciliation", "pipeline", pipeline.Name)
-
-	return []reconcile.Request{
-		{
-			NamespacedName: types.NamespacedName{
-				Name:      otelcollector.OTLPGatewayConfigMapName,
-				Namespace: namespace,
-			},
-		},
-	}
 }
 
 // mapOwnedResourceToConfigMap maps owned resource changes to reconcile requests for the ConfigMap.

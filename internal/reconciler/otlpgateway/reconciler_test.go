@@ -55,8 +55,8 @@ type mockOTLPGatewayConfigBuilder struct {
 	mock.Mock
 }
 
-func (m *mockOTLPGatewayConfigBuilder) Build(ctx context.Context, tracePipelines []telemetryv1beta1.TracePipeline, opts otlpgateway.BuildOptions) (*common.Config, common.EnvVars, error) {
-	args := m.Called(ctx, tracePipelines, opts)
+func (m *mockOTLPGatewayConfigBuilder) Build(ctx context.Context, opts otlpgateway.BuildOptions) (*common.Config, common.EnvVars, error) {
+	args := m.Called(ctx, opts)
 	if args.Get(0) == nil {
 		return nil, nil, args.Error(2)
 	}
@@ -317,9 +317,9 @@ func TestReconcile_MultiplePipelines_AggregatesConfig(t *testing.T) {
 	mocks := newDefaultMocks()
 
 	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false)
-	mocks.configBuilder.On("Build", mock.Anything, mock.MatchedBy(func(pipelines []telemetryv1beta1.TracePipeline) bool {
-		return len(pipelines) == 2
-	}), mock.Anything).Return(&common.Config{}, common.EnvVars{}, nil)
+	mocks.configBuilder.On("Build", mock.Anything, mock.MatchedBy(func(opts otlpgateway.BuildOptions) bool {
+		return len(opts.TracePipelines) == 2
+	})).Return(&common.Config{}, common.EnvVars{}, nil)
 	mocks.gatewayApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mocks.gatewayProber.On("IsReady", mock.Anything, mock.Anything).Return(nil)
 	mocks.errToMsgConverter.On("Convert", mock.Anything).Return("")
@@ -329,9 +329,9 @@ func TestReconcile_MultiplePipelines_AggregatesConfig(t *testing.T) {
 	_, err := sut.Reconcile(ctx, ctrl.Request{})
 	require.NoError(t, err)
 
-	mocks.configBuilder.AssertCalled(t, "Build", mock.Anything, mock.MatchedBy(func(pipelines []telemetryv1beta1.TracePipeline) bool {
-		return len(pipelines) == 2
-	}), mock.Anything)
+	mocks.configBuilder.AssertCalled(t, "Build", mock.Anything, mock.MatchedBy(func(opts otlpgateway.BuildOptions) bool {
+		return len(opts.TracePipelines) == 2
+	}))
 }
 
 func TestReconcile_LegacyDeploymentCleanup(t *testing.T) {
@@ -601,7 +601,7 @@ func TestGlobals(t *testing.T) {
 	assert.Equal(t, "test-namespace", globalsPtr.TargetNamespace())
 }
 
-func TestUpdatePipelineCondition_NotFound(t *testing.T) {
+func TestUpdateTracePipelineCondition_NotFound(t *testing.T) {
 	ctx := context.Background()
 	fakeClient := newTestClient(t)
 	mocks := newDefaultMocks()
@@ -614,11 +614,11 @@ func TestUpdatePipelineCondition_NotFound(t *testing.T) {
 		Reason: "GatewayReady",
 	}
 
-	err := sut.updatePipelineCondition(ctx, "non-existent-pipeline", condition)
+	err := sut.updateTracePipelineCondition(ctx, "non-existent-pipeline", condition)
 	require.NoError(t, err) // Should not error for not found
 }
 
-func TestUpdatePipelineCondition_Success(t *testing.T) {
+func TestUpdateTracePipelineCondition_Success(t *testing.T) {
 	ctx := context.Background()
 
 	pipeline := testutils.NewTracePipelineBuilder().
@@ -637,7 +637,7 @@ func TestUpdatePipelineCondition_Success(t *testing.T) {
 		Reason: "GatewayReady",
 	}
 
-	err := sut.updatePipelineCondition(ctx, "test-pipeline", condition)
+	err := sut.updateTracePipelineCondition(ctx, "test-pipeline", condition)
 	require.NoError(t, err)
 
 	// Verify the condition was set
@@ -698,4 +698,84 @@ func TestUpdateGatewayHealthyConditions_MultiplePipelines(t *testing.T) {
 	err = fakeClient.Get(ctx, types.NamespacedName{Name: "test-pipeline-2"}, &p2)
 	require.NoError(t, err)
 	assert.NotEmpty(t, p2.Status.Conditions)
+}
+
+func TestReconcile_LogPipeline_DeploysGateway(t *testing.T) {
+	ctx := context.Background()
+
+	logPipeline := testutils.NewLogPipelineBuilder().
+		WithName("test-log-pipeline").
+		WithOTLPOutput().
+		Build()
+	logPipeline.Generation = 1
+
+	cm := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      otelcollector.OTLPGatewayConfigMapName,
+			Namespace: "kyma-system",
+		},
+		Data: map[string]string{
+			otelcollector.ConfigMapDataKey: "LogPipeline:\n- name: test-log-pipeline\n  generation: 1",
+		},
+	}
+
+	fakeClient := newTestClient(t, &logPipeline, cm)
+	mocks := newDefaultMocks()
+
+	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false)
+	mocks.configBuilder.On("Build", mock.Anything, mock.Anything).Return(&common.Config{}, common.EnvVars{}, nil)
+	mocks.gatewayApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mocks.gatewayProber.On("IsReady", mock.Anything, mock.Anything).Return(nil)
+	mocks.errToMsgConverter.On("Convert", mock.Anything).Return("")
+
+	sut := newTestReconciler(fakeClient, mocks)
+
+	_, err := sut.Reconcile(ctx, ctrl.Request{})
+	require.NoError(t, err)
+
+	mocks.configBuilder.AssertCalled(t, "Build", mock.Anything, mock.Anything)
+	mocks.gatewayApplierDeleter.AssertCalled(t, "ApplyResources", mock.Anything, mock.Anything, mock.Anything)
+}
+
+func TestReconcile_TraceAndLogPipelines_DeploysUnifiedGateway(t *testing.T) {
+	ctx := context.Background()
+
+	tracePipeline := testutils.NewTracePipelineBuilder().
+		WithName("test-trace-pipeline").
+		Build()
+
+	logPipeline := testutils.NewLogPipelineBuilder().
+		WithName("test-log-pipeline").
+		WithOTLPOutput().
+		Build()
+	logPipeline.Generation = 1
+
+	cm := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      otelcollector.OTLPGatewayConfigMapName,
+			Namespace: "kyma-system",
+		},
+		Data: map[string]string{
+			otelcollector.ConfigMapDataKey: "TracePipeline:\n- name: test-trace-pipeline\n  generation: 1\nLogPipeline:\n- name: test-log-pipeline\n  generation: 1",
+		},
+	}
+
+	fakeClient := newTestClient(t, &tracePipeline, &logPipeline, cm)
+	mocks := newDefaultMocks()
+
+	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false)
+	mocks.configBuilder.On("Build", mock.Anything, mock.Anything).Return(&common.Config{}, common.EnvVars{}, nil)
+	mocks.gatewayApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mocks.gatewayProber.On("IsReady", mock.Anything, mock.Anything).Return(nil)
+	mocks.errToMsgConverter.On("Convert", mock.Anything).Return("")
+
+	sut := newTestReconciler(fakeClient, mocks)
+
+	_, err := sut.Reconcile(ctx, ctrl.Request{})
+	require.NoError(t, err)
+
+	// Verify config was built with both pipelines
+	mocks.configBuilder.AssertCalled(t, "Build", mock.Anything, mock.MatchedBy(func(opts otlpgateway.BuildOptions) bool {
+		return len(opts.TracePipelines) == 1 && len(opts.LogPipelines) == 1
+	}))
 }

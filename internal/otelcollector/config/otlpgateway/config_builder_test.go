@@ -23,7 +23,9 @@ func TestBuild(t *testing.T) {
 		name              string
 		goldenFileName    string
 		tracePipelines    []telemetryv1beta1.TracePipeline
+		logPipelines      []telemetryv1beta1.LogPipeline
 		serviceEnrichment string
+		moduleVersion     string
 	}{
 		{
 			name:           "single trace pipeline",
@@ -149,19 +151,39 @@ func TestBuild(t *testing.T) {
 					).Build(),
 			},
 		},
+		{
+			name:           "single log pipeline",
+			goldenFileName: "log-single-pipeline.yaml",
+			logPipelines: []telemetryv1beta1.LogPipeline{
+				testutils.NewLogPipelineBuilder().WithName("test-log").WithOTLPOutput().Build(),
+			},
+		},
+		{
+			name:           "trace and log pipelines",
+			goldenFileName: "trace-and-log-pipelines.yaml",
+			tracePipelines: []telemetryv1beta1.TracePipeline{
+				testutils.NewTracePipelineBuilder().WithName("test-trace").Build(),
+			},
+			logPipelines: []telemetryv1beta1.LogPipeline{
+				testutils.NewLogPipelineBuilder().WithName("test-log").WithOTLPOutput().Build(),
+			},
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			buildOptions := BuildOptions{
+				TracePipelines: tt.tracePipelines,
+				LogPipelines:   tt.logPipelines,
 				Cluster: common.ClusterOptions{
 					ClusterName:   "${KUBERNETES_SERVICE_HOST}",
 					CloudProvider: "test-cloud-provider",
 				},
 				ServiceEnrichment: tt.serviceEnrichment,
+				ModuleVersion:     tt.moduleVersion,
 			}
 
-			config, _, err := sut.Build(context.Background(), tt.tracePipelines, buildOptions)
+			config, _, err := sut.Build(context.Background(), buildOptions)
 			require.NoError(t, err)
 			configYAML, err := yaml.Marshal(config)
 			require.NoError(t, err, "failed to marshal config")
