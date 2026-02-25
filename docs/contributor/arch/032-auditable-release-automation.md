@@ -32,11 +32,11 @@ The Docker image used for testing must be the exact same image that is used for 
 
 **Current Flow:**
 Our current release pipeline builds two separate images:
-- The release preparation workflow builds a Docker image from a PR and pushes it to the Kyma dev registry with a unique PR tag and digest SHA. This image is used to run unit and E2E tests.
+- The release preparation workflow builds a Docker image from a PR, and pushes it to the Kyma dev registry with a unique PR tag and digest SHA. This image is used to run unit and E2E tests.
 - After successful tests, the release workflow builds a new image from the same Dockerfile and source code, tags it with the release version and pushes it to the production registry.
 
 **Current Challenge:**
-Both images currently receive different digests due to different build environments and timestamps, despite having identical content and application binary. This behavior is not acceptable for auditable release automation.
+Both images currently receive different digests due to different build environments and timestamps, despite having identical content and application binaries. This behavior is not acceptable for auditable release automation.
 
 **Resolution:**
 We must implement deterministic Docker builds. An image built from a PR must have the same digest as the final release image built from the same source code. This makes the build process auditable.
@@ -59,52 +59,43 @@ To achieve deterministic Docker builds and ensure audit compliance, we considere
 
 Because reproducible build tools are not yet available, the recommended approach is to run all tests (unit, E2E, Gardener, and upgrade) in the release branch using the release image before the final release publication.
 
-This approach provides:
-- Solid image digests proof for testing and release (audit compliance)
+This approach provides the following benefits:
+- Solid proof of image digests for testing and release (audit compliance)
 - Comprehensive test coverage in the release context
 - Clear traceability for release audits
 
 ![Release Workflow](./../assets/auditable-release-final.drawio.svg)
 
-1. The Project Master closes the current development milestone to mark the end of the development phase for the release.
+1. The Release Master closes the current development milestone to mark the end of the development phase for the release.
 
-2. The Release Master triggers the release workflow after entering the release version and the OpenTelemetry Collector Components (OCC) version.
+2. After entering the release version and the OpenTelemetry Collector Components (OCC) version, the Release Master triggers the release workflow.
 
 3. The system evaluates if the release is a patch or a new minor version:
    - For a new minor version, it creates a dedicated `release-x.y` branch.
    - For a patch, it skips release branch creation.
-4. The system commits the version bump and creates a release tag.
-   **Source Control Action**: Push the committed version-bumped artifacts and the release tag to the release branch. This officially marks the release version in the repository.
-6. The system builds the release Docker image and runs unit tests in parallel.
+4. The system commits the version bump and creates a release tag. This officially marks the release version in the repository.
 
-**Simultaneous Test Runs**: Three independent test suites are triggered in parallel against the release branch after Docker image created:
-- **E2E (End-to-End) Tests**: Full system behavior verification
-- **Gardener Integration Tests**: Compatibility validation with Gardener infrastructure platform
-- **Upgrade Tests**: Validation of upgrade paths from previous versions to the new release
+5. The system builds the release Docker image and runs the following tests in parallel against the release branch:
+   - **E2E (End-to-End) Tests**: Full system behavior verification
+   - **Gardener Integration Tests**: Compatibility validation with Gardener infrastructure platform
+   - **Upgrade Tests**: Validation of upgrade paths from previous versions to the new release
 
-All tests execute against the same release Docker image to ensure reproducibility and consistency. Tests run in parallel to minimize total release cycle time.
+6. If all test suites complete successfully, the system aggregates all test reports, downloads test execution logs and artifacts, and uploads the complete test results to a preconfigured Google Cloud Storage (GCP) bucket.
 
-**Completion Action**: Upon successful completion of all test suites, the system:
-- Aggregates all test reports from the test workflows
-- Downloads test execution logs and artifacts
-- Uploads the complete test results to a pre-configured Google Cloud Storage (GCP) bucket
+7. The system creates an official GitHub release entry for the release tag and attaches release artifacts and binaries.
 
-**Release Publication**:
-- Create an official GitHub release entry for the release tag
-- Attach release artifacts and binaries
-
-**Module Release Bump PR Creation**: Upon successful release creation, automatically create release bump pull requests for `experimental` and `fast` channels.
+8. After the GitHub release is published, the system automatically creates pull requests to bump the module version in the experimental and fast channels.
 
 ### Module Release Workflow
 
-After entering the release version and channel, the release master triggers a dedicated GitHub workflow to publish the module release. The workflow then creates the module configuration, assigns the release channel, and opens pull requests to update the `experimental`, `fast`, and `regular` channels. 
+After entering the release version and channel, the Release Master triggers a dedicated GitHub workflow to publish the module release. The workflow creates the module configuration, assigns the release channel, and opens pull requests to update the `experimental`, `fast`, and `regular` channels.
 
 ![Module Release Workflow](./../assets/auditable-release-module-release.drawio.svg)
 
 
 ### Management Plane Chart Update Workflow
 
-After specifying the release version and a target chart, the release master triggers a dedicated GitHub workflow to bump Management Plane Charts. This workflow automates the release of charts such as `chart/telemetry` and `chart/runtime-monitoring-operator`. The workflow creates pull requests to update the chart versions and values in the Management Plane repository.
+After specifying the release version and a target chart, the Release Master triggers a dedicated GitHub workflow to bump Management Plane Charts. This workflow releases charts such as `chart/telemetry` and `chart/runtime-monitoring-operator`, and creates pull requests to update the chart versions and values in the Management Plane repository.
 
 ![Management Plane Chart Release Workflow](./../assets/auditable-release-mpc-release.drawio.svg)
 
@@ -114,16 +105,14 @@ After specifying the release version and a target chart, the release master trig
 
 This document proposes an auditable release automation process that addresses the compliance requirements for the SAP BTP, Kyma runtime product by establishing a comprehensive audit trail for all release activities.
 
-The proposed solution ensures auditability through three fundamental mechanisms:
+The proposed solution ensures auditability through the following mechanisms:
 
 1. Single Source of Truth: By running all test suites (unit, E2E, Gardener, and upgrade) against a single release Docker image built from the release branch, we guarantee that the tested artifact is identical to the deployed artifact, with verifiable image digest matching.
-2. Complete Traceability: All test execution reports are systematically collected and archived to GCP storage with 12-month retention, providing auditors with full visibility into the quality gates that each release has passed.
-3. Automated Governance: The release workflow enforces the required approval gates and milestone closures, while automatically generating release artifacts and propagating changes through experimental, fast, and regular channels via pull requests.
+2. Complete Traceability: All test execution reports are collected and archived to GCP storage with 12-month retention, providing a complete audit trail of the quality gates each release has passed.
+3. Automated Governance: Automated Governance: The release workflow enforces the required approval gates and milestone closures, while automatically generating release artifacts and propagating changes through the experimental, fast, and regular channels using pull requests.
 
-This approach eliminates the current gap where separate images were built for testing and production, preventing digest mismatches that compromise audit integrity. The parallel execution of test suites minimizes release cycle time while maintaining comprehensive coverage. The automated creation of module
-releases and management plane chart updates ensures consistency across the entire release ecosystem.
+This approach eliminates the gap where separate images were built for testing and production, preventing digest mismatches that compromise audit integrity. The parallel execution of test suites minimizes release cycle time while maintaining comprehensive coverage. The automated creation of module releases and management plane chart updates ensures consistency across the release ecosystem.
 
-The release process will be implemented as a single GitHub Actions workflow triggered by the Release Master with release version and OCC version inputs. This workflow orchestrates all stages—from branch creation through testing to final publication—ensuring that manual intervention points are limited to
-authorization decisions, not mechanical execution steps.
+The release process will be implemented as a single GitHub Actions workflow triggered by the Release Master with release version and OCC version inputs. This workflow orchestrates all stages from branch creation through testing to final publication, ensuring that manual intervention is limited to authorization decisions, not mechanical execution steps.
 
 By adopting this auditable release automation, we establish a repeatable, transparent, and compliant release process that satisfies audit requirements while improving release velocity and reliability.
