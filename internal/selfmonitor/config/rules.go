@@ -84,21 +84,13 @@ func MakeRules() RuleGroups {
 	}
 	rules = append(rules, metricAgentRuleBuilder.agentRules()...)
 
-	// OTLP Gateway handles traces (and will eventually handle all signals)
+	// OTLP Gateway handles traces and logs
 	otlpGatewayRuleBuilder := otelCollectorRuleBuilder{
 		dataType:    ruleDataType(typeTracePipeline),
 		serviceName: names.OTLPGatewayMetricsService,
 		namePrefix:  ruleNamePrefix(typeTracePipeline),
 	}
 	rules = append(rules, otlpGatewayRuleBuilder.gatewayRules()...)
-
-	logGatewayRuleBuilder := otelCollectorRuleBuilder{
-		dataType:    ruleDataType(typeLogPipeline),
-		serviceName: names.LogGatewayMetricsService,
-		namePrefix:  ruleNamePrefix(typeLogPipeline),
-	}
-
-	rules = append(rules, logGatewayRuleBuilder.gatewayRules()...)
 
 	logAgentRuleBuilder := otelCollectorRuleBuilder{
 		dataType:    ruleDataType(typeLogPipeline),

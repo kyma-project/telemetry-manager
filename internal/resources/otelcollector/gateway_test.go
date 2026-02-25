@@ -64,22 +64,6 @@ func TestGateway_ApplyResources(t *testing.T) {
 			sut:            NewMetricGatewayApplierDeleter(globalsWithFIPS, image, priorityClassName),
 			goldenFilePath: "testdata/metric-gateway-fips-enabled.yaml",
 		},
-		{
-			name:           "log gateway",
-			sut:            NewLogGatewayApplierDeleter(globals, image, priorityClassName),
-			goldenFilePath: "testdata/log-gateway.yaml",
-		},
-		{
-			name:           "log gateway with istio",
-			sut:            NewLogGatewayApplierDeleter(globals, image, priorityClassName),
-			istioEnabled:   true,
-			goldenFilePath: "testdata/log-gateway-istio.yaml",
-		},
-		{
-			name:           "log gateway with FIPS mode enabled",
-			sut:            NewLogGatewayApplierDeleter(globalsWithFIPS, image, priorityClassName),
-			goldenFilePath: "testdata/log-gateway-fips-enabled.yaml",
-		},
 	}
 
 	for _, tt := range tests {
@@ -149,15 +133,6 @@ func TestGateway_DeleteResources(t *testing.T) {
 		{
 			name:         "metric gateway with istio",
 			sut:          NewMetricGatewayApplierDeleter(globals, image, priorityClassName),
-			istioEnabled: true,
-		},
-		{
-			name: "log gateway",
-			sut:  NewLogGatewayApplierDeleter(globals, image, priorityClassName),
-		},
-		{
-			name:         "log gateway with istio",
-			sut:          NewLogGatewayApplierDeleter(globals, image, priorityClassName),
 			istioEnabled: true,
 		},
 	}

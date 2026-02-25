@@ -28,14 +28,6 @@ import (
 )
 
 var (
-	// TODO(skhalash): the resource requirements are copy-pasted from the trace gateway and need to be adjusted
-	logGatewayBaseMemoryLimit      = resource.MustParse("500Mi")
-	logGatewayDynamicMemoryLimit   = resource.MustParse("1500Mi")
-	logGatewayBaseCPURequest       = resource.MustParse("100m")
-	logGatewayDynamicCPURequest    = resource.MustParse("100m")
-	logGatewayBaseMemoryRequest    = resource.MustParse("32Mi")
-	logGatewayDynamicMemoryRequest = resource.MustParse("0")
-
 	metricGatewayBaseMemoryLimit      = resource.MustParse("512Mi")
 	metricGatewayDynamicMemoryLimit   = resource.MustParse("512Mi")
 	metricGatewayBaseCPURequest       = resource.MustParse("25m")
@@ -74,39 +66,6 @@ type GatewayApplyOptions struct {
 	// This value is multiplied with a base resource requirement to calculate the actual CPU and memory limits.
 	// A value of 1 applies the base limits; values greater than 1 increase those limits proportionally.
 	ResourceRequirementsMultiplier int
-}
-
-//nolint:dupl // repeating the code as we have three different signals
-func NewLogGatewayApplierDeleter(globals config.Global, image, priorityClassName string) *GatewayApplierDeleter {
-	extraLabels := map[string]string{
-		commonresources.LabelKeyTelemetryLogIngest: commonresources.LabelValueTrue,
-		commonresources.LabelKeyTelemetryLogExport: commonresources.LabelValueTrue,
-		commonresources.LabelKeyIstioInject:        commonresources.LabelValueTrue, // inject istio sidecar
-	}
-
-	return &GatewayApplierDeleter{
-		globals:              globals,
-		baseName:             names.LogGateway,
-		extraPodLabels:       extraLabels,
-		image:                image,
-		otlpServiceName:      names.OTLPLogsService,
-		rbac:                 makeLogGatewayRBAC(globals.TargetNamespace()),
-		baseMemoryLimit:      logGatewayBaseMemoryLimit,
-		dynamicMemoryLimit:   logGatewayDynamicMemoryLimit,
-		baseCPURequest:       logGatewayBaseCPURequest,
-		dynamicCPURequest:    logGatewayDynamicCPURequest,
-		baseMemoryRequest:    logGatewayBaseMemoryRequest,
-		dynamicMemoryRequest: logGatewayDynamicMemoryRequest,
-		podOpts: []commonresources.PodSpecOption{
-			commonresources.WithPriorityClass(priorityClassName),
-			commonresources.WithAffinity(makePodAffinity(commonresources.MakeDefaultSelectorLabels(names.LogGateway))),
-		},
-		containerOpts: []commonresources.ContainerOption{
-			commonresources.WithEnvVarFromField(common.EnvVarCurrentPodIP, fieldPathPodIP),
-			commonresources.WithEnvVarFromField(common.EnvVarCurrentNodeName, fieldPathNodeName),
-			commonresources.WithFIPSGoDebugEnvVar(globals.OperateInFIPSMode()),
-		},
-	}
 }
 
 //nolint:dupl // repeating the code as we have three different signals

@@ -422,7 +422,6 @@ func setupLogPipelineController(globals config.Global, cfg envConfig, mgr manage
 			ChownInitContainerImage:      cfg.AlpineImage,
 			OTelCollectorImage:           cfg.OTelCollectorImage,
 			FluentBitPriorityClassName:   highPriorityClassName,
-			LogGatewayPriorityClassName:  normalPriorityClassName,
 			LogAgentPriorityClassName:    highPriorityClassName,
 			OTLPGatewayPriorityClassName: normalPriorityClassName,
 			RestConfig:                   mgr.GetConfig(),
@@ -446,10 +445,9 @@ func setupTracePipelineController(globals config.Global, envCfg envConfig, mgr m
 
 	tracePipelineController, err := telemetrycontrollers.NewTracePipelineController(
 		telemetrycontrollers.TracePipelineControllerConfig{
-			Global:                        globals,
-			RestConfig:                    mgr.GetConfig(),
-			OTelCollectorImage:            envCfg.OTelCollectorImage,
-			TraceGatewayPriorityClassName: normalPriorityClassName,
+			Global:             globals,
+			RestConfig:         mgr.GetConfig(),
+			OTelCollectorImage: envCfg.OTelCollectorImage,
 		},
 		mgr.GetClient(),
 		reconcileTriggerChan,

@@ -58,9 +58,8 @@ type TracePipelineController struct {
 type TracePipelineControllerConfig struct {
 	config.Global
 
-	RestConfig                    *rest.Config
-	OTelCollectorImage            string
-	TraceGatewayPriorityClassName string
+	RestConfig         *rest.Config
+	OTelCollectorImage string
 }
 
 func NewTracePipelineController(config TracePipelineControllerConfig, client client.Client, reconcileTriggerChan <-chan event.GenericEvent) (*TracePipelineController, error) {

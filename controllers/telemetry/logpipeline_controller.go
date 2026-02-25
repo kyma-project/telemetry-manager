@@ -75,7 +75,6 @@ type LogPipelineControllerConfig struct {
 	OTelCollectorImage           string
 	ChownInitContainerImage      string
 	FluentBitPriorityClassName   string
-	LogGatewayPriorityClassName  string
 	LogAgentPriorityClassName    string
 	OTLPGatewayPriorityClassName string
 	RestConfig                   *rest.Config
