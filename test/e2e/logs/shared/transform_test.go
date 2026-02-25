@@ -14,6 +14,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
@@ -27,6 +28,7 @@ func TestTransform_OTel(t *testing.T) {
 	tests := []struct {
 		testName            string
 		labels              []string
+		opts                []kubeprep.Option
 		name                string
 		input               telemetryv1beta1.LogPipelineInput
 		logGeneratorBuilder func(ns string) client.Object
@@ -152,7 +154,8 @@ func TestTransform_OTel(t *testing.T) {
 		},
 		{
 			testName: fmt.Sprintf("%s-%s", suite.LabelLogGateway, suite.LabelExperimental),
-			labels:   []string{suite.LabelLogGateway, suite.LabelExperimental},
+			labels:   []string{suite.LabelLogGateway},
+			opts:     []kubeprep.Option{kubeprep.WithExperimental()},
 			name:     "with-where",
 			input:    testutils.BuildLogPipelineOTLPInput(),
 			logGeneratorBuilder: func(ns string) client.Object {
@@ -169,7 +172,8 @@ func TestTransform_OTel(t *testing.T) {
 			readinessCheckFunc: assert.DaemonSetReady,
 		}, {
 			testName: fmt.Sprintf("%s-%s", suite.LabelLogGateway, suite.LabelExperimental),
-			labels:   []string{suite.LabelLogGateway, suite.LabelExperimental},
+			labels:   []string{suite.LabelLogGateway},
+			opts:     []kubeprep.Option{kubeprep.WithExperimental()},
 			name:     "infer-context",
 			input:    testutils.BuildLogPipelineOTLPInput(),
 			logGeneratorBuilder: func(ns string) client.Object {
@@ -188,7 +192,8 @@ func TestTransform_OTel(t *testing.T) {
 			readinessCheckFunc: assert.DaemonSetReady,
 		}, {
 			testName: fmt.Sprintf("%s-%s", suite.LabelLogGateway, suite.LabelExperimental),
-			labels:   []string{suite.LabelLogGateway, suite.LabelExperimental},
+			labels:   []string{suite.LabelLogGateway},
+			opts:     []kubeprep.Option{kubeprep.WithExperimental()},
 			name:     "cond-and-stmts",
 			input:    testutils.BuildLogPipelineOTLPInput(),
 			logGeneratorBuilder: func(ns string) client.Object {
@@ -208,7 +213,7 @@ func TestTransform_OTel(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.testName, func(t *testing.T) {
-			suite.SetupTest(t, tc.labels...)
+			suite.SetupTestWithOptions(t, tc.labels, tc.opts...)
 
 			var (
 				uniquePrefix      = unique.Prefix(tc.testName, tc.name)
