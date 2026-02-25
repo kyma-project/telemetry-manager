@@ -25,6 +25,7 @@ func TestSecretMissing_OTel(t *testing.T) {
 	tests := []struct {
 		name   string
 		labels []string
+		opts   []kubeprep.Option
 		input  telemetryv1beta1.LogPipelineInput
 	}{
 		{
@@ -39,14 +40,15 @@ func TestSecretMissing_OTel(t *testing.T) {
 		},
 		{
 			name:   fmt.Sprintf("%s-%s", suite.LabelLogGateway, suite.LabelExperimental),
-			labels: []string{suite.LabelLogGateway, suite.LabelExperimental},
+			labels: []string{suite.LabelLogGateway},
+			opts:   []kubeprep.Option{kubeprep.WithExperimental()},
 			input:  testutils.BuildLogPipelineOTLPInput(),
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			suite.SetupTest(t, tc.labels...)
+			suite.SetupTestWithOptions(t, tc.labels, tc.opts...)
 
 			const (
 				endpointKey   = "logs-endpoint"

@@ -148,6 +148,7 @@ func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 	tests := []struct {
 		name         string
 		labels       []string
+		opts         []kubeprep.Option
 		experimental bool
 	}{
 		{
@@ -157,14 +158,15 @@ func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 		},
 		{
 			name:         "unlimited-pipelines-experimental",
-			labels:       []string{suite.LabelOTelMaxPipeline, suite.LabelExperimental, suite.LabelLogs, suite.LabelOtel, suite.LabelMaxPipeline},
+			labels:       []string{suite.LabelOTelMaxPipeline, suite.LabelLogs, suite.LabelOtel, suite.LabelMaxPipeline},
+			opts:         []kubeprep.Option{kubeprep.WithExperimental()},
 			experimental: true,
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			suite.SetupTest(t, tc.labels...)
+			suite.SetupTestWithOptions(t, tc.labels, tc.opts...)
 
 			var (
 				uniquePrefix = unique.Prefix()
