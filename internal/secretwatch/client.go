@@ -100,17 +100,15 @@ func (c *Client) SyncWatchedSecrets(ctx context.Context, pipeline client.Object,
 	// Add or update watchers for the given secrets
 	for secret := range secretSet {
 		if w, exists := c.watchers[secret]; exists {
-			// Watcher exists, link pipeline if not already linked (thread-safe)
 			w.link(pipeline)
 			log.Info("Linked pipeline to existing watcher",
 				"secret", secret.String())
 		} else {
-			// Create new watcher and start it immediately
-			log.Info("Creating new watcher for secret",
-				"secret", secret.String())
 			w := newWatcher(secret, pipeline, c.clientset, c.eventRouter)
 			c.startWatcher(ctx, w)
 			c.watchers[secret] = w
+			log.Info("Created new watcher for secret",
+				"secret", secret.String())
 		}
 	}
 
@@ -126,11 +124,11 @@ func (c *Client) SyncWatchedSecrets(ctx context.Context, pipeline client.Object,
 
 			// If no pipelines are linked anymore, stop and delete the watcher
 			if !hasPipelines {
-				log.Info("Stopping watcher with no remaining pipelines",
-					"secret", watchedSecret.String())
 				w.cancel()
 				// Note: wg.Done() will be called by the watcher's goroutine defer
 				delete(c.watchers, watchedSecret)
+				log.Info("Stopped watcher with no remaining pipelines",
+					"secret", watchedSecret.String())
 			}
 		}
 	}
