@@ -87,10 +87,6 @@ func (c *Client) SyncWatchedSecrets(ctx context.Context, pipeline client.Object,
 		return ErrClientStopped
 	}
 
-	log.Info("Syncing secret watchers",
-		"secretCount", len(secrets),
-		"currentWatcherCount", len(c.watchers))
-
 	// Deduplicate secrets using a set
 	secretSet := make(map[types.NamespacedName]struct{}, len(secrets))
 	for _, s := range secrets {
@@ -100,9 +96,10 @@ func (c *Client) SyncWatchedSecrets(ctx context.Context, pipeline client.Object,
 	// Add or update watchers for the given secrets
 	for secret := range secretSet {
 		if w, exists := c.watchers[secret]; exists {
-			w.link(pipeline)
-			log.Info("Linked pipeline to existing watcher",
-				"secret", secret.String())
+			if w.link(pipeline) {
+				log.Info("Linked pipeline to existing watcher",
+					"secret", secret.String())
+			}
 		} else {
 			w := newWatcher(secret, pipeline, c.clientset, c.eventRouter)
 			c.startWatcher(ctx, w)
@@ -114,8 +111,8 @@ func (c *Client) SyncWatchedSecrets(ctx context.Context, pipeline client.Object,
 
 	// Remove pipeline from watchers not in the current set
 	for watchedSecret, w := range c.watchers {
-		_, notInCurrentSet := secretSet[watchedSecret]
-		if !notInCurrentSet && w.isLinked(pipeline) {
+		_, inCurrentSet := secretSet[watchedSecret]
+		if !inCurrentSet && w.isLinked(pipeline) {
 			// Remove this pipeline from the watcher's linked pipelines (thread-safe)
 			hasPipelines := w.unlink(pipeline)
 			log.Info("Unlinked pipeline from watcher",

@@ -54,19 +54,24 @@ func samePipeline(a, b client.Object) bool {
 		a.GetObjectKind().GroupVersionKind() == b.GetObjectKind().GroupVersionKind()
 }
 
-func (w *watcher) link(pipeline client.Object) {
+// link adds a pipeline to the watcher's linked pipelines if it's not already linked.
+// It returns true if the pipeline was added, or false if it was already linked.
+func (w *watcher) link(pipeline client.Object) bool {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
 	if slices.ContainsFunc(w.linked, func(p client.Object) bool {
 		return samePipeline(p, pipeline)
 	}) {
-		return
+		return false
 	}
 
 	w.linked = append(w.linked, pipeline)
+	return true
 }
 
+// unlink removes a pipeline from the watcher's linked pipelines.
+// It returns true if there are still pipelines linked after removal, or false if the list is now empty.
 func (w *watcher) unlink(pipeline client.Object) bool {
 	w.mu.Lock()
 	defer w.mu.Unlock()
