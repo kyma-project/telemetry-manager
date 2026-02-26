@@ -188,7 +188,8 @@ func TestLabelAnnotation(t *testing.T) {
 		t.Run(string(tc.labelPrefix), func(t *testing.T) {
 			// Use SetupTestWithOptions with custom helm values for labels/annotations
 			suite.SetupTestWithOptions(t,
-				[]string{suite.LabelNoFIPS, suite.LabelCustomLabelAnnotation},
+				[]string{suite.LabelCustomLabelAnnotation},
+				kubeprep.WithOverrideFIPSMode(false),
 				kubeprep.WithHelmValues(
 					"additionalMetadata.labels.my-meta-label=foo",
 					"additionalMetadata.annotations.my-meta-annotation=bar",

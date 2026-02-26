@@ -38,7 +38,7 @@ func TestObservedTime_OTel(t *testing.T) {
 			logGeneratorBuilder: func(ns string) client.Object {
 				return stdoutloggen.NewDeployment(ns).K8sObject()
 			},
-			resourceName:       kitkyma.LogAgentName,
+			resourceName: kitkyma.LogAgentName,
 		},
 		{
 			name:   suite.LabelLogGateway,
@@ -49,7 +49,7 @@ func TestObservedTime_OTel(t *testing.T) {
 			logGeneratorBuilder: func(ns string) client.Object {
 				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeLogs).K8sObject()
 			},
-			resourceName:       kitkyma.TelemetryOTLPGatewayName,
+			resourceName: kitkyma.TelemetryOTLPGatewayName,
 		},
 	}
 	for _, tc := range tests {

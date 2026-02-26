@@ -13,6 +13,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/matchers/log/fluentbit"
@@ -41,7 +42,7 @@ func TestExtractLabels_OTel(t *testing.T) {
 			logGeneratorBuilder: func(ns string, labels map[string]string) client.Object {
 				return stdoutloggen.NewDeployment(ns).WithLabels(labels).K8sObject()
 			},
-			resourceName:       kitkyma.LogAgentName,
+			resourceName: kitkyma.LogAgentName,
 		},
 		{
 			name:   suite.LabelLogGateway,
@@ -52,7 +53,7 @@ func TestExtractLabels_OTel(t *testing.T) {
 			logGeneratorBuilder: func(ns string, labels map[string]string) client.Object {
 				return telemetrygen.NewPod(ns, telemetrygen.SignalTypeLogs).WithLabels(labels).K8sObject()
 			},
-			resourceName:       kitkyma.TelemetryOTLPGatewayName,
+			resourceName: kitkyma.TelemetryOTLPGatewayName,
 		},
 	}
 
@@ -144,7 +145,7 @@ func TestExtractLabels_OTel(t *testing.T) {
 }
 
 func TestExtractLabels_FluentBit(t *testing.T) {
-	suite.SetupTest(t, suite.LabelFluentBit, suite.LabelNoFIPS)
+	suite.SetupTestWithOptions(t, []string{suite.LabelFluentBit}, kubeprep.WithOverrideFIPSMode(false))
 
 	var (
 		uniquePrefix           = unique.Prefix()

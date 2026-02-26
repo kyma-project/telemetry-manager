@@ -48,7 +48,7 @@ func TestTransform_OTel(t *testing.T) {
 				HaveResourceAttributes(Not(HaveKeyWithValue("k8s.namespace.name", "kyma-system"))),
 				HaveAttributes(HaveKeyWithValue("system", "false")),
 			))),
-			resourceName:       kitkyma.LogAgentName,
+			resourceName: kitkyma.LogAgentName,
 		},
 		{
 			testName: suite.LabelLogAgent,
@@ -70,7 +70,7 @@ func TestTransform_OTel(t *testing.T) {
 				HaveResourceAttributes(HaveKeyWithValue("test", "passed")),
 				HaveAttributes(HaveKeyWithValue("name", "InfoLogs")),
 			))),
-			resourceName:       kitkyma.LogAgentName,
+			resourceName: kitkyma.LogAgentName,
 		}, {
 			testName: suite.LabelLogAgent,
 			labels:   []string{suite.LabelLogAgent},
@@ -89,7 +89,7 @@ func TestTransform_OTel(t *testing.T) {
 			assertion: HaveFlatLogs(ContainElement(SatisfyAll(
 				HaveSeverityText(Equal("INFO")),
 			))),
-			resourceName:       kitkyma.LogAgentName,
+			resourceName: kitkyma.LogAgentName,
 		},
 		{
 			testName: suite.LabelLogGateway,
@@ -106,7 +106,7 @@ func TestTransform_OTel(t *testing.T) {
 				HaveResourceAttributes(Not(HaveKeyWithValue("k8s.namespace.name", "kyma-system"))),
 				HaveAttributes(HaveKeyWithValue("system", "false")),
 			))),
-			resourceName:       kitkyma.TelemetryOTLPGatewayName,
+			resourceName: kitkyma.TelemetryOTLPGatewayName,
 		}, {
 			testName: suite.LabelLogGateway,
 			labels:   []string{suite.LabelLogGateway},
@@ -124,7 +124,7 @@ func TestTransform_OTel(t *testing.T) {
 				HaveResourceAttributes(HaveKeyWithValue("test", "passed")),
 				HaveAttributes(HaveKeyWithValue("name", "InfoLogs")),
 			))),
-			resourceName:       kitkyma.TelemetryOTLPGatewayName,
+			resourceName: kitkyma.TelemetryOTLPGatewayName,
 		}, {
 			testName: suite.LabelLogGateway,
 			labels:   []string{suite.LabelLogGateway},
@@ -140,7 +140,7 @@ func TestTransform_OTel(t *testing.T) {
 			assertion: HaveFlatLogs(ContainElement(SatisfyAll(
 				HaveSeverityText(Equal("INFO")),
 			))),
-			resourceName:       kitkyma.TelemetryOTLPGatewayName,
+			resourceName: kitkyma.TelemetryOTLPGatewayName,
 		},
 	}
 

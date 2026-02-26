@@ -23,12 +23,12 @@ import (
 
 func TestServiceName_OTel(t *testing.T) {
 	tests := []struct {
-		name               string
-		labels             []string
-		inputBuilder       func(includeNs string) telemetryv1beta1.LogPipelineInput
-		expectAgent        bool
-		resourceName       types.NamespacedName
-		genSignalType      telemetrygen.SignalType
+		name          string
+		labels        []string
+		inputBuilder  func(includeNs string) telemetryv1beta1.LogPipelineInput
+		expectAgent   bool
+		resourceName  types.NamespacedName
+		genSignalType telemetrygen.SignalType
 	}{
 		{
 			name:   suite.LabelLogAgent,
@@ -36,8 +36,8 @@ func TestServiceName_OTel(t *testing.T) {
 			inputBuilder: func(includeNs string) telemetryv1beta1.LogPipelineInput {
 				return testutils.BuildLogPipelineRuntimeInput(testutils.IncludeNamespaces(includeNs))
 			},
-			expectAgent:        true,
-			resourceName:       kitkyma.LogAgentName,
+			expectAgent:  true,
+			resourceName: kitkyma.LogAgentName,
 		},
 		{
 			name:   suite.LabelLogGateway,
@@ -45,9 +45,9 @@ func TestServiceName_OTel(t *testing.T) {
 			inputBuilder: func(includeNs string) telemetryv1beta1.LogPipelineInput {
 				return testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
 			},
-			expectAgent:        false,
-			resourceName:       kitkyma.TelemetryOTLPGatewayName,
-			genSignalType:      telemetrygen.SignalTypeLogs,
+			expectAgent:   false,
+			resourceName:  kitkyma.TelemetryOTLPGatewayName,
+			genSignalType: telemetrygen.SignalTypeLogs,
 		},
 	}
 

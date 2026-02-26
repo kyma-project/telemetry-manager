@@ -14,6 +14,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
@@ -89,7 +90,7 @@ func TestResources_OTel(t *testing.T) {
 }
 
 func TestResources_FluentBit(t *testing.T) {
-	suite.SetupTest(t, suite.LabelFluentBit, suite.LabelNoFIPS)
+	suite.SetupTestWithOptions(t, []string{suite.LabelFluentBit}, kubeprep.WithOverrideFIPSMode(false))
 
 	const hostKey = "host"
 

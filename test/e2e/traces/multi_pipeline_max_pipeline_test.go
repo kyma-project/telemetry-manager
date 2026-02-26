@@ -14,6 +14,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
@@ -25,6 +26,7 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 	tests := []struct {
 		name         string
 		labels       []string
+		opts         []kubeprep.Option
 		experimental bool
 	}{
 		{
@@ -34,14 +36,15 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 		},
 		{
 			name:         "unlimited-pipelines-experimental",
-			labels:       []string{suite.LabelTracesMaxPipeline, suite.LabelMaxPipeline, suite.LabelTraces, suite.LabelExperimental},
+			labels:       []string{suite.LabelTracesMaxPipeline, suite.LabelMaxPipeline, suite.LabelTraces},
+			opts:         []kubeprep.Option{kubeprep.WithExperimental()},
 			experimental: true,
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			suite.SetupTest(t, tc.labels...)
+			suite.SetupTestWithOptions(t, tc.labels, tc.opts...)
 
 			const maxNumberOfTracePipelines = resourcelock.MaxPipelineCount
 

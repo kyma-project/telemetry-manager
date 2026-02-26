@@ -21,10 +21,10 @@ import (
 
 func TestFilter_OTel(t *testing.T) {
 	tests := []struct {
-		name               string
-		labels             []string
-		inputBuilder       func(includeNs string) telemetryv1beta1.LogPipelineInput
-		resourceName       types.NamespacedName
+		name         string
+		labels       []string
+		inputBuilder func(includeNs string) telemetryv1beta1.LogPipelineInput
+		resourceName types.NamespacedName
 	}{
 		{
 			name:   suite.LabelLogAgent,
@@ -32,7 +32,7 @@ func TestFilter_OTel(t *testing.T) {
 			inputBuilder: func(includeNs string) telemetryv1beta1.LogPipelineInput {
 				return testutils.BuildLogPipelineRuntimeInput(testutils.IncludeNamespaces(includeNs))
 			},
-			resourceName:       kitkyma.LogAgentName,
+			resourceName: kitkyma.LogAgentName,
 		},
 		{
 			name:   suite.LabelLogGateway,
@@ -40,7 +40,7 @@ func TestFilter_OTel(t *testing.T) {
 			inputBuilder: func(includeNs string) telemetryv1beta1.LogPipelineInput {
 				return testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
 			},
-			resourceName:       kitkyma.TelemetryOTLPGatewayName,
+			resourceName: kitkyma.TelemetryOTLPGatewayName,
 		},
 	}
 
