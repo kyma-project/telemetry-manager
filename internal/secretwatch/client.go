@@ -184,11 +184,8 @@ func (c *Client) stopWithTimeout(timeout time.Duration) {
 func (c *Client) startWatcher(ctx context.Context, w *watcher) {
 	logf.FromContext(ctx).V(1).Info("Starting watcher goroutine", "secret", w.secret.String())
 
-	watcherCtx, cancel := context.WithCancel(
-		logf.IntoContext(context.Background(), logf.FromContext(ctx)),
-	)
+	watcherCtx, cancel := context.WithCancel(context.Background())
 	w.cancel = cancel
-
 	c.wg.Go(func() {
 		w.start(watcherCtx)
 	})

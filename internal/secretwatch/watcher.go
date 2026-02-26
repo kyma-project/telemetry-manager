@@ -167,10 +167,11 @@ func (w *watcher) start(ctx context.Context) {
 				continue
 			}
 
-			log.Info("Secret watch event received",
+			log.Info("Secret watch event received. Triggering reconciliation for linked pipelines.",
 				"secret", w.secret.String(),
 				"eventType", watchEvent.Type,
 				"resourceVersion", secret.ResourceVersion,
+				"linkedPipelines", len(w.getLinkedPipelines()),
 			)
 
 			// Send events to trigger reconciliation for linked pipelines
