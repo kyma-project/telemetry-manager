@@ -160,11 +160,10 @@ func TestServiceEnrichment_OTel(t *testing.T) {
 
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
-			
 			if suite.ExpectAgent(tc.label) {
 				assert.DaemonSetReady(t, kitkyma.LogAgentName)
 			}
-			
+
 			assert.BackendReachable(t, backend)
 			assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
 			assert.OTelLogPipelineHealthy(t, pipelineName)

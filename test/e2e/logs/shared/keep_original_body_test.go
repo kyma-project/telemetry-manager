@@ -100,7 +100,7 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 	resources = append(resources, backendDropOriginal.K8sObjects()...)
 
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
-	
+
 	assert.BackendReachable(t, backendKeepOriginal)
 	assert.BackendReachable(t, backendDropOriginal)
 	assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
