@@ -17,6 +17,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/istio"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
@@ -30,19 +31,22 @@ func TestAccessLogsOTLP(t *testing.T) {
 	tests := []struct {
 		name               string
 		labels             []string
+		opts               []kubeprep.Option
 		resourceName       types.NamespacedName
 		readinessCheckFunc func(t *testing.T, name types.NamespacedName)
 	}{
 
 		{
 			name:               suite.LabelIstio,
-			labels:             []string{suite.LabelGardener, suite.LabelIstio},
+			labels:             []string{suite.LabelGardener},
+			opts:               []kubeprep.Option{kubeprep.WithIstio()},
 			resourceName:       kitkyma.LogGatewayName,
 			readinessCheckFunc: assert.DeploymentReady,
 		},
 		{
 			name:               fmt.Sprintf("%s-%s", suite.LabelIstio, suite.LabelExperimental),
-			labels:             []string{suite.LabelIstio, suite.LabelExperimental},
+			labels:             []string{},
+			opts:               []kubeprep.Option{kubeprep.WithIstio(), kubeprep.WithExperimental()},
 			resourceName:       kitkyma.TelemetryOTLPGatewayName,
 			readinessCheckFunc: assert.DaemonSetReady,
 		},
@@ -51,7 +55,7 @@ func TestAccessLogsOTLP(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			log.Printf("running test with labels: %v", tc.labels)
-			suite.SetupTest(t, tc.labels...)
+			suite.SetupTestWithOptions(t, tc.labels, tc.opts...)
 			log.Printf("registered test case with labels: %v", tc.labels)
 			log.Printf("running test with resource: %v", tc.resourceName)
 
