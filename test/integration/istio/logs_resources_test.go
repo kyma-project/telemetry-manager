@@ -14,6 +14,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
@@ -21,7 +22,7 @@ import (
 
 func TestLogsResources_OTel(t *testing.T) {
 	// This test need to run with istio installed in the cluster to be able to test the creation and reconciliation of PeerAuthentication
-	suite.SetupTest(t, suite.LabelIstio)
+	suite.SetupTestWithOptions(t, []string{suite.LabelLogs, suite.LabelOtel}, kubeprep.WithIstio())
 
 	const (
 		endpointKey   = "endpoint"
@@ -79,7 +80,7 @@ func TestLogsResources_OTel(t *testing.T) {
 }
 
 func TestLogsResources_FluentBit(t *testing.T) {
-	suite.SetupTest(t, suite.LabelIstio, suite.LabelNoFIPS)
+	suite.SetupTestWithOptions(t, []string{suite.LabelLogs, suite.LabelFluentBit}, kubeprep.WithIstio(), kubeprep.WithOverrideFIPSMode(false))
 
 	const hostKey = "host"
 
