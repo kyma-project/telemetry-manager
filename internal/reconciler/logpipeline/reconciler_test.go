@@ -68,6 +68,7 @@ func pipelineNames(pipelines []telemetryv1beta1.LogPipeline) []string {
 	for i, p := range pipelines {
 		names[i] = p.Name
 	}
+
 	return names
 }
 

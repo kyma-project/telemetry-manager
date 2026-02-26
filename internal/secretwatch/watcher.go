@@ -67,6 +67,7 @@ func (w *watcher) link(pipeline client.Object) bool {
 	}
 
 	w.linked = append(w.linked, pipeline)
+
 	return true
 }
 

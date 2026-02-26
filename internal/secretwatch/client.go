@@ -186,6 +186,7 @@ func (c *Client) startWatcher(ctx context.Context, w *watcher) {
 
 	watcherCtx, cancel := context.WithCancel(context.Background())
 	w.cancel = cancel
+
 	c.wg.Go(func() {
 		w.start(watcherCtx)
 	})
