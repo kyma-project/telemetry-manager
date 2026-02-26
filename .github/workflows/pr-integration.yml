@@ -99,19 +99,19 @@ jobs:
           IMAGE_TAG: "${{ steps.set-env.outputs.image-tag }}"
           QUERY_INTERVAL: 30
 
-  # e2e-logs and e2e-metrics (non-experimental) split by set labels for parallel execution
-  # These are the largest test suites and benefit from 3-way parallelization
-  e2e-split:
+  # e2e-logs split by fluent-bit vs otel AND by set labels for parallel execution
+  # FluentBit tests require FIPS override and have different resource requirements
+  e2e-logs:
     needs: setup
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        suite:
-          - name: e2e-logs
-            path: ./test/e2e/logs/...
-          - name: e2e-metrics
-            path: ./test/e2e/metrics/...
+        variant:
+          - name: "-fluentbit"
+            label: "fluent-bit"
+          - name: "-otel"
+            label: "not fluent-bit"
         set:
           - name: "-a"
             label: "set-a"
@@ -119,7 +119,7 @@ jobs:
             label: "set-b"
           - name: "-c"
             label: "set-c"
-    name: ${{ matrix.suite.name }}${{ matrix.set.name }}
+    name: e2e-logs${{ matrix.variant.name }}${{ matrix.set.name }}
     env:
       MANAGER_IMAGE: ${{ needs.setup.outputs.manager-image }}
     steps:
@@ -154,7 +154,84 @@ jobs:
         if: github.event_name != 'pull_request'
         run: make k3d-import-self-monitor-fips-image
 
-      - name: Run ${{ matrix.suite.name }}${{ matrix.set.name }} tests
+      - name: Run e2e-logs${{ matrix.variant.name }}${{ matrix.set.name }} tests
+        run: |
+          # Filter by variant (fluent-bit vs otel), set, and non-experimental
+          LABELS="not experimental and ${{ matrix.variant.label }} and ${{ matrix.set.label }}"
+          if [[ "${{ env.FIPS_IMAGE_AVAILABLE }}" != "true" ]]; then
+            LABELS="$LABELS and not require-fips-images"
+          fi
+          make e2e-test \
+            E2E_TEST_PATH="./test/e2e/logs/..." \
+            E2E_TEST_ID="e2e-logs${{ matrix.variant.name }}${{ matrix.set.name }}" \
+            E2E_TEST_LABELS="$LABELS"
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-logs${{ matrix.variant.name }}${{ matrix.set.name }}-report
+          path: junit-report-*.xml
+
+      - name: Print pods on failure
+        if: failure()
+        run: |
+          kubectl get pods -A
+          for pod in $(kubectl get pods -n kyma-system -o name 2>/dev/null); do
+            echo "=== $pod ==="
+            kubectl logs -n kyma-system $pod --all-containers 2>/dev/null || true
+          done
+
+  # e2e-metrics split by set labels for parallel execution
+  e2e-metrics:
+    needs: setup
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        set:
+          - name: "-a"
+            label: "set-a"
+          - name: "-b"
+            label: "set-b"
+          - name: "-c"
+            label: "set-c"
+    name: e2e-metrics${{ matrix.set.name }}
+    env:
+      MANAGER_IMAGE: ${{ needs.setup.outputs.manager-image }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Golang
+        uses: ./.github/template/setup-golang
+
+      - name: Authenticate to Google Cloud
+        if: github.event_name != 'pull_request'
+        uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed # v2.1.13
+        with:
+          credentials_json: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
+
+      - name: Setup Google Cloud SDK
+        if: github.event_name != 'pull_request'
+        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f # v2.2.1
+
+      - name: Configure Docker for Google Artifact Registry
+        if: github.event_name != 'pull_request'
+        run: gcloud auth configure-docker europe-docker.pkg.dev --quiet
+
+      - name: Pull Self-monitor FIPS image
+        if: github.event_name != 'pull_request'
+        run: make docker-pull-self-monitor-fips-image
+
+      - name: Provision K3D cluster
+        run: make provision-k3d
+
+      - name: Import Self-monitor FIPS image to K3D
+        if: github.event_name != 'pull_request'
+        run: make k3d-import-self-monitor-fips-image
+
+      - name: Run e2e-metrics${{ matrix.set.name }} tests
         run: |
           # Filter by set and FIPS availability (non-experimental only)
           LABELS="not experimental and ${{ matrix.set.label }}"
@@ -162,15 +239,15 @@ jobs:
             LABELS="$LABELS and not require-fips-images"
           fi
           make e2e-test \
-            E2E_TEST_PATH="${{ matrix.suite.path }}" \
-            E2E_TEST_ID="${{ matrix.suite.name }}${{ matrix.set.name }}" \
+            E2E_TEST_PATH="./test/e2e/metrics/..." \
+            E2E_TEST_ID="e2e-metrics${{ matrix.set.name }}" \
             E2E_TEST_LABELS="$LABELS"
 
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.suite.name }}${{ matrix.set.name }}-report
+          name: e2e-metrics${{ matrix.set.name }}-report
           path: junit-report-*.xml
 
       - name: Print pods on failure
@@ -488,7 +565,7 @@ jobs:
           done
 
   summary:
-    needs: [e2e-split, e2e-experimental, e2e, e2e-other, selfmonitor]
+    needs: [e2e-logs, e2e-metrics, e2e-experimental, e2e, e2e-other, selfmonitor]
     runs-on: ubuntu-latest
     if: always()
     steps:
