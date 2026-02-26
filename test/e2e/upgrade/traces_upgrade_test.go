@@ -75,7 +75,7 @@ func TestTracesUpgrade(t *testing.T) {
 
 	// === VALIDATE AFTER UPGRADE ===
 	t.Log("Validating trace pipeline after upgrade...")
-	assert.DeploymentReady(t, kitkyma.TraceGatewayName)
+	assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
 	assert.TracePipelineHealthy(t, pipelineName)
 	assert.BackendReachable(t, backend)
 	assert.TracesFromNamespaceDelivered(t, backend, genNs)
