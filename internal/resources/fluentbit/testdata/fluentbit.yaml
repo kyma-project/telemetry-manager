@@ -425,7 +425,7 @@ metadata:
     app.kubernetes.io/name: fluent-bit
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
-  name: telemetry-fluent-bit
+  name: kyma-project.io--telemetry-fluent-bit
   namespace: kyma-system
 spec:
   egress:
@@ -434,16 +434,36 @@ spec:
         cidr: 0.0.0.0/0
     - ipBlock:
         cidr: ::/0
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: telemetry
+      app.kubernetes.io/name: fluent-bit
+  policyTypes:
+  - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  labels:
+    app.kubernetes.io/component: agent
+    app.kubernetes.io/instance: telemetry
+    app.kubernetes.io/managed-by: telemetry-manager
+    app.kubernetes.io/name: fluent-bit
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
+  name: kyma-project.io--telemetry-fluent-bit-metrics
+  namespace: kyma-system
+spec:
   ingress:
   - from:
-    - ipBlock:
-        cidr: 0.0.0.0/0
-    - ipBlock:
-        cidr: ::/0
+    - namespaceSelector: {}
+      podSelector:
+        matchLabels:
+          networking.kyma-project.io/metrics-scraping: allowed
     ports:
-    - port: 5555
+    - port: 2020
       protocol: TCP
-    - port: 6666
+    - port: 2021
       protocol: TCP
   podSelector:
     matchLabels:
@@ -451,7 +471,6 @@ spec:
       app.kubernetes.io/name: fluent-bit
   policyTypes:
   - Ingress
-  - Egress
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole

@@ -61,6 +61,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/featureflags"
 	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
+	mgrports "github.com/kyma-project/telemetry-manager/internal/manager/ports"
 	"github.com/kyma-project/telemetry-manager/internal/metrics"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
@@ -98,11 +99,6 @@ var (
 
 const (
 	webhookServiceName = names.ManagerWebhookService
-
-	healthProbePort = 8081
-	metricsPort     = 8080
-	pprofPort       = 6060
-	webhookPort     = 9443
 )
 
 //go:generate bin/envdoc -output docs/config.md -dir . -types=envConfig -files=*.go
@@ -313,14 +309,14 @@ func setupManager(globals config.Global) (manager.Manager, error) {
 
 	mgr, err := ctrl.NewManager(restConfig, ctrl.Options{
 		Scheme:                  scheme,
-		Metrics:                 metricsserver.Options{BindAddress: fmt.Sprintf(":%d", metricsPort)},
-		HealthProbeBindAddress:  fmt.Sprintf(":%d", healthProbePort),
-		PprofBindAddress:        fmt.Sprintf(":%d", pprofPort),
+		Metrics:                 metricsserver.Options{BindAddress: fmt.Sprintf(":%d", mgrports.Metrics)},
+		HealthProbeBindAddress:  fmt.Sprintf(":%d", mgrports.HealthProbe),
+		PprofBindAddress:        fmt.Sprintf(":%d", mgrports.Pprof),
 		LeaderElection:          true,
 		LeaderElectionNamespace: globals.TargetNamespace(),
 		LeaderElectionID:        names.ManagerLeaseName,
 		WebhookServer: webhook.NewServer(webhook.Options{
-			Port:    webhookPort,
+			Port:    mgrports.Webhook,
 			CertDir: certDir,
 		}),
 		Cache: cache.Options{
