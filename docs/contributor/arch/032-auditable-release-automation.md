@@ -47,7 +47,7 @@ We must implement deterministic Docker builds. An image built from a PR must hav
 ### Download and Store Test Reports
 
 The test reports from unit tests, E2E tests, Gardener tests, and upgrade tests must be downloaded from the respective GitHub Actions workflows and stored as artifacts for audit purposes. For this purpose, we create a new reusable workflow that downloads and stores test reports from the workflow runs.
-After the test jobs complete, the workflow uploads the test execution results to the specified GCP bucket (see [Archive Test Logs for 12-Month Auditing via Release Assets #8419](https://github.tools.sap/kyma/backlog/issues/8419).
+After the test jobs complete, the workflow uploads the test execution results to the specified GCP bucket (see [Archive Test Logs for 12-Month Auditing via Release Assets #8419](https://github.tools.sap/kyma/backlog/issues/8419)).
 
 ### Deterministic Docker Builds
 To achieve deterministic Docker builds and ensure audit compliance, we considered the following strategies:
