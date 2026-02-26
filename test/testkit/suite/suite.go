@@ -376,23 +376,20 @@ func finalizeConfig(cfg kubeprep.Config) kubeprep.Config {
 	return cfg
 }
 
-// buildConfig creates a Config from labels and applies options.
-//
-// Deprecated: Use SetupTestWithOptions with functional options instead of labels.
-// This function is kept for backward compatibility with tests that still use labels directly.
-func buildConfig(labels []string, opts ...kubeprep.Option) kubeprep.Config {
+// buildConfig creates a Config from options only.
+// Labels are used solely for test filtering, not for configuration.
+// Configuration must be explicitly set via functional options.
+func buildConfig(opts ...kubeprep.Option) kubeprep.Config {
 	// FIPS mode default is determined by environment (FIPS_IMAGE_AVAILABLE).
 	// WithOverrideFIPSMode() option can override this for specific tests.
 	fipsEnabled := FIPSImagesAvailable()
 
 	cfg := kubeprep.Config{
 		OperateInFIPSMode:   fipsEnabled,
-		EnableExperimental:  hasLabel(labels, LabelExperimental),
-		InstallIstio:        hasLabel(labels, LabelIstio),
 		DeployPrerequisites: true, // Default to deploying prerequisites
 	}
 
-	// Apply options - options can override label-based settings
+	// Apply options to configure the test environment
 	for _, opt := range opts {
 		opt(&cfg)
 	}
@@ -420,23 +417,22 @@ func logFIPSConfiguration(t *testing.T, cfg kubeprep.Config) {
 // to the target version (specified by MANAGER_IMAGE, or local image if not set).
 //
 // This function is called mid-test in upgrade tests after validating the old version works.
-// It preserves existing pipeline resources and CRDs.
-func UpgradeToTargetVersion(t *testing.T, labels []string) error {
-	targetImage := os.Getenv("MANAGER_IMAGE")
-	if targetImage == "" {
-		targetImage = DefaultLocalImage
-	}
+// It preserves existing pipeline resources and CRDs by using SetupCluster with
+// SkipManagerRemoval enabled.
+//
+// Options passed to this function should match those passed to SetupTestWithOptions
+// (e.g., kubeprep.WithOverrideFIPSMode(false)) to ensure consistent configuration.
+func UpgradeToTargetVersion(t *testing.T, opts ...kubeprep.Option) error {
+	// Add SkipManagerRemoval to preserve existing pipelines
+	opts = append(opts, kubeprep.WithSkipManagerRemoval(), kubeprep.WithSkipDeployTestPrerequisites())
 
-	// Build config from labels (same settings as initial setup)
-	cfg := buildConfig(labels)
-	cfg.ManagerImage = targetImage
-	cfg.LocalImage = kubeprep.IsLocalImage(targetImage)
-	cfg.ChartPath = "" // Use local chart for upgrade
+	// Build config from options
+	cfg := buildConfig(opts...)
 
 	t.Logf("Upgrading manager to target version: %s (fips=%t, experimental=%t)",
-		targetImage, cfg.OperateInFIPSMode, cfg.EnableExperimental)
+		cfg.ManagerImage, cfg.OperateInFIPSMode, cfg.EnableExperimental)
 
-	return kubeprep.UpgradeManagerInPlace(t, K8sClient, targetImage, cfg)
+	return kubeprep.SetupCluster(t, K8sClient, cfg)
 }
 
 func findDoNotExecuteFlag() bool {
