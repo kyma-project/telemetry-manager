@@ -102,8 +102,7 @@ spec:
 
 **Cons:**
 - Visibility: DaemonSet spec doesn't reflect actual pod resources (only visible in pod specs)
-- GOMEMLIMIT Sync: `GOMEMLIMIT` won't automatically adjust unless set to a fixed value
-- Monitoring Complexity: Need to monitor both DaemonSet spec and actual pod resources separately
+- GOMEMLIMIT Sync: OpenTelemetry Collector's requires extension `cgrouprumtimeextension` to set `GOMEMLIMIT` based on memory limits, which adds complexity
 
 ### Option 2: Reconciler-Driven Updates
 
@@ -165,9 +164,10 @@ Rationale:
 Configuration Strategy:
 - Use `updateMode: "InPlaceOrRecreate"` for automatic pod updates
 - Use `controlledValues: RequestsAndLimits` to avoid ratio-based limit calculations
-- Set `GOMEMLIMIT` to a fixed value (1.6Gi) in DaemonSet spec
+- Set `GOMEMLIMIT`, [OpenTelemetry Collector provides an extension](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/extension/cgroupruntimeextension) to set `GOMEMLIMIT` in runtime based on available memory, so we can set it to a percentage of the memory limit (e.g., 80%) to ensure it scales with VPA recommendations
 - Configure reasonable `minAllowed` and `maxAllowed` boundaries
 - Document that actual pod resources may differ from DaemonSet spec
+- The VerticalPodAutoscaler resources will be managed by the telemetry-manager Helm chart.
 
 ## Consequences
 
@@ -185,13 +185,27 @@ Configuration Strategy:
 - Documentation Requirement: Need to document that DaemonSet spec doesn't reflect reality
 - Coverage Gaps: DaemonSet pods restart during resource updates (brief monitoring gaps), when cluster doesn't support in-place updates.
 - Scale-Down Delay: Resource reductions take days due to VPA's conservative approach
-- Fixed GOMEMLIMIT: Go memory limit won't adjust with VPA recommendations
 
-### Risks and Mitigations
+### Known Limitations
 
-| Risk                               | Impact                      | Likelihood | Mitigation                                                                         |
-|------------------------------------|-----------------------------|------------|------------------------------------------------------------------------------------|
-| VPA recommends excessive resources | High node resource pressure | Medium     | Set strict `maxAllowed` limits in VPA policy                                       |
-| Frequent pod restarts              | Monitoring gaps             | Low        | VPA rate limits evictions; configure PDB                                           |
-| VPA bugs cause pod failures        | Service disruption          | Low        | Start with `updateMode: Initial`, then enable `InPlaceOrRecreate` after validation |
-| Request-to-limit ratio issues      | Pods exceed node capacity   | High       | **Critical**: Fix ratio before enabling VPA                                        |
+The following limitations are inherent to VPA and should be considered when using it with the Central OTLP Gateway:
+
+1. **Resource Availability**: VPA recommendations may exceed available node resources, causing pods to remain pending. This can be mitigated by using Cluster Autoscaler or configuring appropriate `maxAllowed` limits.
+2. **HPA Incompatibility**: VPA cannot be used with Horizontal Pod Autoscaler (HPA) on the same resource metrics (CPU or memory). This is not a concern for DaemonSets, which don't support HPA.
+3. **Admission Webhook Conflicts**: VPA's admission controller may conflict with other mutating admission webhooks depending on webhook configuration and ordering.
+4. **Out-of-Memory Handling**: While VPA reacts to most OOM events, it cannot handle all out-of-memory scenarios and may not prevent all OOMKills.
+5. **Multiple VPA Resources**: Configuring multiple VPA resources targeting the same pod results in undefined behavior. Ensure only one VPA resource targets the Central OTLP Gateway DaemonSet.
+6. **Recommendations Without Controller**: VPA cannot update resources for standalone pods not managed by a controller (Deployment, DaemonSet, StatefulSet, etc.).
+
+### Some VPA MaxAllowed Strategy
+
+1. Calculate based on node capacity:
+   Configure `maxAllowed` values e.g. %75 of smallest node memory capacity to prevent pending pods due to insufficient resources and leave headroom for burstable workloads. E.g., if we have 5 DaemonSets on a 32Gi node: 32Gi × 0.75 ÷ 5 ≈ 4.8Gi each
+2. Consider workload patterns:
+   Analyze historical usage patterns to set `maxAllowed` values that accommodate typical spikes while preventing excessive resource allocation. The DaemonSets run on every node, one misbehavng DaemonSet can exhaust all nodes.
+3. Set based on Application Architecture:
+   Consider the current application limits, profile application to find the "knee of the curve" where additional resources provide diminishing returns, and set `maxAllowed` values around that point to optimize cost-performance balance. For example, if the current limit is 2Gi and usage rarely exceeds 1Gi, setting `maxAllowed` to 1.5Gi may be appropriate.
+4. Account for QoS and resource ratios:
+   If we are using limit = 2 * request, when VPA recomment 10Gi request, it will set 20Gi limit, which is too high. Consider node capacity based on the limit not request.
+5. Iteratively adjust:
+   Start with conservative `maxAllowed` values and monitor VPA recommendations and pod behavior. Adjust `maxAllowed` as needed based on observed usage patterns and resource availability.
