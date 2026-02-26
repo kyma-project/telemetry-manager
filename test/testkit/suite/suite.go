@@ -104,28 +104,21 @@ func sanitizeSpecID(filePath string) string {
 const (
 	// Logs labels
 
-	LabelLogs                 = "logs"
-	LabelLogsMisc             = "logs-misc"
-	LabelLogAgent             = "log-agent"
-	LabelLogGateway           = "log-gateway"
-	LabelFluentBit            = "fluent-bit"
-	LabelOtel                 = "otel"
-	LabelOTelMaxPipeline      = "otel-max-pipeline"
-	LabelFluentBitMaxPipeline = "fluent-bit-max-pipeline"
-	LabelLogsMaxPipeline      = "logs-max-pipeline"
+	LabelLogs       = "logs"
+	LabelLogAgent   = "log-agent"
+	LabelLogGateway = "log-gateway"
+	LabelFluentBit  = "fluent-bit"
+	LabelOtel       = "otel"
 
 	// Metrics labels
 
-	LabelMetrics            = "metrics"
-	LabelMetricsMisc        = "metrics-misc"
-	LabelMetricsMaxPipeline = "metrics-max-pipeline"
-	LabelMetricAgent        = "metric-agent"
-	LabelMetricGateway      = "metric-gateway"
+	LabelMetrics       = "metrics"
+	LabelMetricAgent   = "metric-agent"
+	LabelMetricGateway = "metric-gateway"
 
 	// Traces labels
 
-	LabelTraces            = "traces"
-	LabelTracesMaxPipeline = "traces-max-pipeline"
+	LabelTraces = "traces"
 
 	// Telemetry labels
 
@@ -138,24 +131,18 @@ const (
 
 	// Selfmonitor test labels
 
-	// Prefixes for self-monitor test labels
+	// LabelSelfMonitor is the base label for all selfmonitor tests
+	LabelSelfMonitor = "selfmonitor"
 
-	LabelSelfMonitorLogAgentPrefix      = "selfmonitor-log-agent"
-	LabelSelfMonitorLogGatewayPrefix    = "selfmonitor-log-gateway"
-	LabelSelfMonitorFluentBitPrefix     = "selfmonitor-fluent-bit"
-	LabelSelfMonitorMetricAgentPrefix   = "selfmonitor-metric-agent"
-	LabelSelfMonitorMetricGatewayPrefix = "selfmonitor-metric-gateway"
-	LabelSelfMonitorTracesPrefix        = "selfmonitor-traces"
-
-	// Prefix custom label/annotation tests
-
-	LabelCustomLabelAnnotation = "custom-label-annotation"
-
-	// Suffixes (representing different scenarios) for self-monitor test labels
-
-	LabelHealthy      = "healthy"
+	// LabelHealthy defines the label for healthy scenario selfmonitor tests
+	LabelHealthy = "healthy"
+	// LabelBackpressure defines the label for backpressure scenario selfmonitor tests
 	LabelBackpressure = "backpressure"
-	LabelOutage       = "outage"
+	// LabelOutage defines the label for outage scenario selfmonitor tests
+	LabelOutage = "outage"
+
+	// LabelCustomLabelAnnotation defines the label for custom label/annotation tests
+	LabelCustomLabelAnnotation = "custom-label-annotation"
 
 	// LabelMisc defines the label for miscellaneous tests (for edge-cases and unrelated tests)
 	// [please avoid adding tests to this category if it already fits in a more specific one]
@@ -177,10 +164,12 @@ const (
 	// LabelMTLS defines the label for mTLS related tests.
 	LabelMTLS = "mtls"
 
+	// LabelMaxPipeline defines the label for max pipeline tests
 	LabelMaxPipeline = "max-pipeline"
-	LabelSetA        = "set-a"
-	LabelSetB        = "set-b"
-	LabelSetC        = "set-c"
+
+	LabelSetA = "set-a"
+	LabelSetB = "set-b"
+	LabelSetC = "set-c"
 
 	// Number of buckets for auto-distribution
 	numBuckets = 3
