@@ -574,7 +574,8 @@ func TestUpdateTracePipelineCondition_NotFound(t *testing.T) {
 	}
 
 	err := sut.updateTracePipelineCondition(ctx, "non-existent-pipeline", condition)
-	require.NoError(t, err) // Should not error for not found
+	require.Error(t, err) // Should return error for not found (to trigger fallback)
+	require.True(t, apierrors.IsNotFound(err))
 }
 
 func TestUpdateTracePipelineCondition_Success(t *testing.T) {
@@ -661,9 +662,10 @@ func TestUpdateLogPipelineCondition_PipelineNotFound(t *testing.T) {
 		Reason: conditions.ReasonGatewayReady,
 	}
 
-	// Should not error when pipeline doesn't exist
+	// Should return error when pipeline doesn't exist (to trigger fallback)
 	err := sut.updateLogPipelineCondition(ctx, "non-existent", condition)
-	require.NoError(t, err)
+	require.Error(t, err)
+	require.True(t, apierrors.IsNotFound(err))
 }
 
 func TestUpdateGatewayHealthyConditions_EmptyList(t *testing.T) {
@@ -673,7 +675,10 @@ func TestUpdateGatewayHealthyConditions_EmptyList(t *testing.T) {
 
 	sut := newTestReconciler(fakeClient, mocks)
 
-	err := sut.updateGatewayHealthyConditions(ctx, []string{})
+	err := sut.updateGatewayHealthyConditions(ctx, PipelineNamesOptions{
+		TracePipelineNames: []string{},
+		LogPipelineNames:   []string{},
+	})
 	require.NoError(t, err)
 }
 
@@ -696,7 +701,10 @@ func TestUpdateGatewayHealthyConditions_MultiplePipelines(t *testing.T) {
 
 	sut := newTestReconciler(fakeClient, mocks)
 
-	err := sut.updateGatewayHealthyConditions(ctx, []string{"test-pipeline-1", "test-pipeline-2"})
+	err := sut.updateGatewayHealthyConditions(ctx, PipelineNamesOptions{
+		TracePipelineNames: []string{"test-pipeline-1", "test-pipeline-2"},
+		LogPipelineNames:   []string{},
+	})
 	require.NoError(t, err)
 
 	// Verify both pipelines were updated
@@ -944,7 +952,7 @@ func TestReconcile_OnlyLogPipelines_DeploysGateway(t *testing.T) {
 	mocks.gatewayApplierDeleter.AssertCalled(t, "ApplyResources", mock.Anything, mock.Anything, mock.Anything)
 }
 
-func TestCollectAllReferencedNames(t *testing.T) {
+func TestCollectReferencedNamesByType(t *testing.T) {
 	config := &otelcollector.OTLPGatewayConfigMap{
 		TracePipeline: []otelcollector.PipelineReference{
 			{Name: "trace1", Generation: 1},
@@ -956,22 +964,25 @@ func TestCollectAllReferencedNames(t *testing.T) {
 		},
 	}
 
-	names := collectAllReferencedNames(config)
+	traceNames, logNames := collectReferencedNamesByType(config)
 
-	require.Len(t, names, 4)
-	assert.Contains(t, names, "trace1")
-	assert.Contains(t, names, "trace2")
-	assert.Contains(t, names, "log1")
-	assert.Contains(t, names, "log2")
+	require.Len(t, traceNames, 2)
+	assert.Contains(t, traceNames, "trace1")
+	assert.Contains(t, traceNames, "trace2")
+
+	require.Len(t, logNames, 2)
+	assert.Contains(t, logNames, "log1")
+	assert.Contains(t, logNames, "log2")
 }
 
-func TestCollectAllReferencedNames_Empty(t *testing.T) {
+func TestCollectReferencedNamesByType_Empty(t *testing.T) {
 	config := &otelcollector.OTLPGatewayConfigMap{
 		TracePipeline: []otelcollector.PipelineReference{},
 		LogPipeline:   []otelcollector.PipelineReference{},
 	}
 
-	names := collectAllReferencedNames(config)
+	traceNames, logNames := collectReferencedNamesByType(config)
 
-	require.Empty(t, names)
+	require.Empty(t, traceNames)
+	require.Empty(t, logNames)
 }

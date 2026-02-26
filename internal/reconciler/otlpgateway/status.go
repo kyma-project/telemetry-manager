@@ -15,11 +15,14 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 )
 
+type PipelineNamesOptions struct {
+	LogPipelineNames   []string
+	TracePipelineNames []string
+}
+
 // updateGatewayHealthyConditions updates the GatewayHealthy condition on all referenced pipeline CRs.
-// Note: This method now handles both TracePipeline and LogPipeline names mixed together.
-// It attempts to update each as TracePipeline first, then as LogPipeline if not found.
-func (r *Reconciler) updateGatewayHealthyConditions(ctx context.Context, pipelineNames []string) error {
-	if len(pipelineNames) == 0 {
+func (r *Reconciler) updateGatewayHealthyConditions(ctx context.Context, opts PipelineNamesOptions) error {
+	if len(opts.TracePipelineNames) == 0 && len(opts.LogPipelineNames) == 0 {
 		return nil
 	}
 
@@ -29,18 +32,20 @@ func (r *Reconciler) updateGatewayHealthyConditions(ctx context.Context, pipelin
 	traceCondition := r.computeGatewayHealthyCondition(ctx, commonstatus.SignalTypeTraces)
 	logCondition := r.computeGatewayHealthyCondition(ctx, commonstatus.SignalTypeOtelLogs)
 
-	// Update each pipeline (try as TracePipeline first, then LogPipeline)
 	var lastError error
 
-	for _, name := range pipelineNames {
-		// Try as TracePipeline first
-		if err := r.updateTracePipelineCondition(ctx, name, traceCondition); err == nil {
-			continue
+	// Update LogPipelines
+	for _, name := range opts.LogPipelineNames {
+		if err := r.updateLogPipelineCondition(ctx, name, logCondition); err != nil && !apierrors.IsNotFound(err) {
+			log.Error(err, "failed to update log pipeline condition", "pipeline", name)
+			lastError = err
 		}
+	}
 
-		// If not found as TracePipeline, try as LogPipeline
-		if err := r.updateLogPipelineCondition(ctx, name, logCondition); err != nil {
-			log.Error(err, "failed to update gateway healthy condition", "pipeline", name)
+	// Update TracePipelines
+	for _, name := range opts.TracePipelineNames {
+		if err := r.updateTracePipelineCondition(ctx, name, traceCondition); err != nil && !apierrors.IsNotFound(err) {
+			log.Error(err, "failed to update trace pipeline condition", "pipeline", name)
 			lastError = err
 		}
 	}
@@ -55,8 +60,7 @@ func (r *Reconciler) updateTracePipelineCondition(ctx context.Context, pipelineN
 	var pipeline telemetryv1beta1.TracePipeline
 	if err := r.Get(ctx, types.NamespacedName{Name: pipelineName}, &pipeline); err != nil {
 		if apierrors.IsNotFound(err) {
-			logf.FromContext(ctx).V(1).Info("trace pipeline not found, skipping status update", "pipeline", pipelineName)
-			return nil
+			return err
 		}
 
 		return fmt.Errorf("failed to get trace pipeline: %w", err)
@@ -89,8 +93,7 @@ func (r *Reconciler) updateLogPipelineCondition(ctx context.Context, pipelineNam
 	var pipeline telemetryv1beta1.LogPipeline
 	if err := r.Get(ctx, types.NamespacedName{Name: pipelineName}, &pipeline); err != nil {
 		if apierrors.IsNotFound(err) {
-			logf.FromContext(ctx).V(1).Info("log pipeline not found, skipping status update", "pipeline", pipelineName)
-			return nil
+			return err
 		}
 
 		return fmt.Errorf("failed to get log pipeline: %w", err)

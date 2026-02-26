@@ -187,18 +187,19 @@ func (r *Reconciler) processConfigAndBuildResources(ctx context.Context, tracePi
 	return r.gatewayApplierDeleter.ApplyResources(ctx, r.Client, opts)
 }
 
-// collectAllReferencedNames extracts all pipeline names from ConfigMap references.
-func collectAllReferencedNames(config *otelcollector.OTLPGatewayConfigMap) []string {
-	allNames := make([]string, 0, len(config.TracePipeline)+len(config.LogPipeline))
+// collectReferencedNamesByType extracts pipeline names from ConfigMap references, grouped by type.
+func collectReferencedNamesByType(config *otelcollector.OTLPGatewayConfigMap) (traceNames []string, logNames []string) {
+	traceNames = make([]string, 0, len(config.TracePipeline))
 	for _, ref := range config.TracePipeline {
-		allNames = append(allNames, ref.Name)
+		traceNames = append(traceNames, ref.Name)
 	}
 
+	logNames = make([]string, 0, len(config.LogPipeline))
 	for _, ref := range config.LogPipeline {
-		allNames = append(allNames, ref.Name)
+		logNames = append(logNames, ref.Name)
 	}
 
-	return allNames
+	return traceNames, logNames
 }
 
 // doReconcile performs the main reconciliation logic.
@@ -240,8 +241,11 @@ func (r *Reconciler) doReconcile(ctx context.Context) error {
 		}
 
 		// Update status for all referenced pipelines
-		allReferencedNames := collectAllReferencedNames(config)
-		if err := r.updateGatewayHealthyConditions(ctx, allReferencedNames); err != nil {
+		traceNames, logNames := collectReferencedNamesByType(config)
+		if err := r.updateGatewayHealthyConditions(ctx, PipelineNamesOptions{
+			TracePipelineNames: traceNames,
+			LogPipelineNames:   logNames,
+		}); err != nil {
 			log.Error(err, "failed to update status after deletion")
 		}
 
@@ -254,11 +258,10 @@ func (r *Reconciler) doReconcile(ctx context.Context) error {
 	}
 
 	// Update status for all pipelines
-	allPipelineNames := make([]string, 0, len(tracePipelineNames)+len(logPipelineNames))
-	allPipelineNames = append(allPipelineNames, tracePipelineNames...)
-	allPipelineNames = append(allPipelineNames, logPipelineNames...)
-
-	if err := r.updateGatewayHealthyConditions(ctx, allPipelineNames); err != nil {
+	if err := r.updateGatewayHealthyConditions(ctx, PipelineNamesOptions{
+		TracePipelineNames: tracePipelineNames,
+		LogPipelineNames:   logPipelineNames,
+	}); err != nil {
 		log.Error(err, "failed to update status")
 	}
 
