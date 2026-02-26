@@ -109,7 +109,7 @@ The proposed solution ensures auditability through the following mechanisms:
 
 1. Single Source of Truth: By running all test suites (unit, E2E, Gardener, and upgrade) against a single release Docker image built from the release branch, we guarantee that the tested artifact is identical to the deployed artifact, with verifiable image digest matching.
 2. Complete Traceability: All test execution reports are collected and archived to GCP storage with 12-month retention, providing a complete audit trail of the quality gates each release has passed.
-3. Automated Governance: Automated Governance: The release workflow enforces the required approval gates and milestone closures, while automatically generating release artifacts and propagating changes through the experimental, fast, and regular channels using pull requests.
+3. Automated Governance: The release workflow enforces the required approval gates and milestone closures, while automatically generating release artifacts and propagating changes through the experimental, fast, and regular channels using pull requests.
 
 This approach eliminates the gap where separate images were built for testing and production, preventing digest mismatches that compromise audit integrity. The parallel execution of test suites minimizes release cycle time while maintaining comprehensive coverage. The automated creation of module releases and management plane chart updates ensures consistency across the release ecosystem.
 
