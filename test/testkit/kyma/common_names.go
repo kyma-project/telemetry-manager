@@ -41,7 +41,8 @@ var (
 	MetricAgentClusterRoleBinding = types.NamespacedName{Name: names.MetricAgent, Namespace: SystemNamespaceName}
 	MetricAgentConfigMap          = types.NamespacedName{Name: names.MetricAgent, Namespace: SystemNamespaceName}
 
-	// TODO: Cleanup these
+	// TODO: Cleanup TraceGateway names
+
 	TraceGatewayName               = types.NamespacedName{Name: names.TraceGateway, Namespace: SystemNamespaceName}
 	TraceGatewayMetricsService     = types.NamespacedName{Name: names.OTLPGatewayMetricsService, Namespace: SystemNamespaceName}
 	TraceGatewayNetworkPolicy      = types.NamespacedName{Name: commonresources.NetworkPolicyPrefix + names.OTLPGateway, Namespace: SystemNamespaceName}
@@ -60,7 +61,8 @@ var (
 	LogAgentNetworkPolicy      = types.NamespacedName{Name: commonresources.NetworkPolicyPrefix + names.LogAgent, Namespace: SystemNamespaceName}
 	LogAgentConfigMap          = types.NamespacedName{Name: names.LogAgent, Namespace: SystemNamespaceName}
 
-	// TODO: Cleanup these
+	// TODO: Cleanup LogGateway names
+
 	LogGatewayName               = types.NamespacedName{Name: names.LogGateway, Namespace: SystemNamespaceName}
 	LogGatewayMetricsService     = types.NamespacedName{Name: names.OTLPGatewayMetricsService, Namespace: SystemNamespaceName}
 	LogGatewayNetworkPolicy      = types.NamespacedName{Name: commonresources.NetworkPolicyPrefix + names.OTLPGateway, Namespace: SystemNamespaceName}
