@@ -182,7 +182,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 
 	r.trackPipelineInfoMetric(ctx, allPipelinesList.Items)
 
-	// Validate pipeline
+	// Validate current pipeline
 	isReconcilable, err := r.isReconcilable(ctx, pipeline)
 	if err != nil {
 		return fmt.Errorf("failed to validate pipeline: %w", err)
@@ -190,7 +190,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 
 	// Update ConfigMap based on validation result
 	if isReconcilable {
-		// Write pipeline reference to OTLP Gateway ConfigMap
+		// Write current pipeline reference to OTLP Gateway ConfigMap
 		logf.FromContext(ctx).V(1).Info("Writing pipeline reference to OTLP Gateway ConfigMap", "pipeline", pipeline.Name, "generation", pipeline.Generation)
 
 		if err := otelcollector.WriteTracePipelineReference(
@@ -203,7 +203,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 			return fmt.Errorf("failed to write pipeline reference to ConfigMap: %w", err)
 		}
 	} else {
-		// Remove pipeline reference from ConfigMap
+		// Remove current pipeline reference from ConfigMap
 		logf.FromContext(ctx).V(1).Info("Removing pipeline reference from OTLP Gateway ConfigMap", "pipeline", pipeline.Name)
 
 		if err := otelcollector.RemoveTracePipelineReference(

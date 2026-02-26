@@ -164,38 +164,44 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 
 	r.trackPipelineInfoMetric(ctx, allPipelines)
 
+	// Validate current pipeline
+	isReconcilable, err := r.isReconcilable(ctx, pipeline)
+	if err != nil {
+		return fmt.Errorf("failed to validate pipeline: %w", err)
+	}
+
+	// Update ConfigMap based on validation result
+	if isReconcilable {
+		// Write current pipeline reference to OTLP Gateway ConfigMap
+		logf.FromContext(ctx).V(1).Info("Writing pipeline reference to OTLP Gateway ConfigMap", "pipeline", pipeline.Name, "generation", pipeline.Generation)
+
+		if err := otelcollector.WriteLogPipelineReference(
+			ctx,
+			r.Client,
+			r.globals.TargetNamespace(),
+			pipeline.Name,
+			pipeline.Generation,
+		); err != nil {
+			return fmt.Errorf("failed to write pipeline reference to ConfigMap: %w", err)
+		}
+	} else {
+		// Remove current pipeline reference from ConfigMap
+		logf.FromContext(ctx).V(1).Info("Removing pipeline reference from OTLP Gateway ConfigMap", "pipeline", pipeline.Name)
+
+		if err := otelcollector.RemoveLogPipelineReference(
+			ctx,
+			r.Client,
+			r.globals.TargetNamespace(),
+			pipeline.Name,
+		); err != nil {
+			return fmt.Errorf("failed to remove pipeline reference from ConfigMap: %w", err)
+		}
+	}
+
+	// Get reconcilable pipelines (for agent deployment)
 	reconcilablePipelines, err := r.getReconcilablePipelines(ctx, allPipelines)
 	if err != nil {
 		return fmt.Errorf("failed to fetch deployable log pipelines: %w", err)
-	}
-
-	// Write/remove ConfigMap references based on pipeline reconcilability
-	for i := range allPipelines {
-		p := &allPipelines[i]
-		isReconcilable := contains(reconcilablePipelines, p)
-
-		if isReconcilable {
-			// Write pipeline reference to OTLP Gateway ConfigMap
-			if err := otelcollector.WriteLogPipelineReference(
-				ctx,
-				r.Client,
-				r.globals.TargetNamespace(),
-				p.Name,
-				p.Generation,
-			); err != nil {
-				return fmt.Errorf("failed to write log pipeline reference to ConfigMap: %w", err)
-			}
-		} else {
-			// Remove pipeline reference from OTLP Gateway ConfigMap
-			if err := otelcollector.RemoveLogPipelineReference(
-				ctx,
-				r.Client,
-				r.globals.TargetNamespace(),
-				p.Name,
-			); err != nil {
-				return fmt.Errorf("failed to remove log pipeline reference from ConfigMap: %w", err)
-			}
-		}
 	}
 
 	var reconcilablePipelinesRequiringAgents = r.getPipelinesRequiringAgents(reconcilablePipelines)
@@ -258,17 +264,6 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1be
 	}
 
 	return false, nil
-}
-
-// contains checks if a pipeline is in the list of reconcilable pipelines.
-func contains(pipelines []telemetryv1beta1.LogPipeline, pipeline *telemetryv1beta1.LogPipeline) bool {
-	for i := range pipelines {
-		if pipelines[i].Name == pipeline.Name {
-			return true
-		}
-	}
-
-	return false
 }
 
 func (r *Reconciler) reconcileLogAgent(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline, allPipelines []telemetryv1beta1.LogPipeline) error {
