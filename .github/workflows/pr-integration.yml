@@ -8,6 +8,26 @@ on:
     # Run every 3 hours on main branch
     - cron: "0 */3 * * *"
   merge_group:
+  push:
+    branches:
+      - "main"
+      - "release-*"
+    paths:
+      - "**/go.mod"
+      - "**/go.sum"
+      - "**.go"
+      - "config/**"
+      - "!config/busola/**"
+      - "!**_test.go"
+      - "!docs/**"
+      - "test/**.go"
+      - ".github/workflows/pr-integration.yml"
+      - ".github/template/**"
+      - ".env"
+      - ".k3d-kyma.yaml"
+      - "Makefile"
+      - "hack/make/*.mk"
+      - "helm/**"
   pull_request:
     branches:
       - "main"
@@ -33,6 +53,8 @@ on:
 
 env:
   E2E_TEST_TIMEOUT: 60m
+  # FIPS images are only available on push/schedule (not on PR due to registry restrictions)
+  FIPS_IMAGE_AVAILABLE: ${{ github.event_name != 'pull_request' }}
 
 jobs:
   setup:
@@ -94,13 +116,9 @@ jobs:
             path: ./test/e2e/misc/...
         flavor:
           - name: ""
-            labels: "not experimental and not no-fips"
-          - name: "-no-fips"
-            labels: "not experimental and no-fips"
+            labels: "not experimental"
           - name: "-experimental"
-            labels: "experimental and not no-fips"
-          - name: "-experimental-no-fips"
-            labels: "experimental and no-fips"
+            labels: "experimental"
     name: ${{ matrix.suite.name }}${{ matrix.flavor.name }}
     env:
       MANAGER_IMAGE: ${{ needs.setup.outputs.manager-image }}
@@ -111,8 +129,30 @@ jobs:
       - name: Setup Golang
         uses: ./.github/template/setup-golang
 
+      - name: Authenticate to Google Cloud
+        if: github.event_name != 'pull_request'
+        uses: google-github-actions/auth@ba79af03959ebeac9769e648f473a284504d9193 # v2.1.10
+        with:
+          credentials_json: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
+
+      - name: Setup Google Cloud SDK
+        if: github.event_name != 'pull_request'
+        uses: google-github-actions/setup-gcloud@77e7a554d41e2ee56fc945c52dfd3f33d12def9a # v2.1.4
+
+      - name: Configure Docker for Google Artifact Registry
+        if: github.event_name != 'pull_request'
+        run: gcloud auth configure-docker europe-docker.pkg.dev --quiet
+
+      - name: Pull Self-monitor FIPS image
+        if: github.event_name != 'pull_request'
+        run: make docker-pull-self-monitor-fips-image
+
       - name: Provision K3D cluster
         run: make provision-k3d
+
+      - name: Import Self-monitor FIPS image to K3D
+        if: github.event_name != 'pull_request'
+        run: make k3d-import-self-monitor-fips-image
 
       - name: Run ${{ matrix.suite.name }}${{ matrix.flavor.name }} tests
         run: |
@@ -159,8 +199,30 @@ jobs:
       - name: Setup Golang
         uses: ./.github/template/setup-golang
 
+      - name: Authenticate to Google Cloud
+        if: github.event_name != 'pull_request'
+        uses: google-github-actions/auth@ba79af03959ebeac9769e648f473a284504d9193 # v2.1.10
+        with:
+          credentials_json: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
+
+      - name: Setup Google Cloud SDK
+        if: github.event_name != 'pull_request'
+        uses: google-github-actions/setup-gcloud@77e7a554d41e2ee56fc945c52dfd3f33d12def9a # v2.1.4
+
+      - name: Configure Docker for Google Artifact Registry
+        if: github.event_name != 'pull_request'
+        run: gcloud auth configure-docker europe-docker.pkg.dev --quiet
+
+      - name: Pull Self-monitor FIPS image
+        if: github.event_name != 'pull_request'
+        run: make docker-pull-self-monitor-fips-image
+
       - name: Provision K3D cluster
         run: make provision-k3d
+
+      - name: Import Self-monitor FIPS image to K3D
+        if: github.event_name != 'pull_request'
+        run: make k3d-import-self-monitor-fips-image
 
       - name: Run ${{ matrix.suite.name }} tests
         run: |
@@ -232,22 +294,23 @@ jobs:
         if: github.event_name != 'pull_request'
         run: gcloud auth configure-docker europe-docker.pkg.dev --quiet
 
+      - name: Pull Self-monitor FIPS image
+        if: github.event_name != 'pull_request'
+        run: make docker-pull-self-monitor-fips-image
+
       - name: Provision K3D cluster
         run: make provision-k3d
 
+      - name: Import Self-monitor FIPS image to K3D
+        if: github.event_name != 'pull_request'
+        run: make k3d-import-self-monitor-fips-image
+
       - name: Run selfmonitor-${{ matrix.scenario }}-${{ matrix.component.name }} tests
         run: |
-          # For PR events, only run no-fips tests since we can't pull the prometheus-fips image
-          # For scheduled/other events, run fips tests since we have access to the restricted registry
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            FIPS_LABEL="no-fips"
-          else
-            FIPS_LABEL="not no-fips"
-          fi
           make e2e-test \
             E2E_TEST_PATH="./test/selfmonitor/..." \
             E2E_TEST_ID="selfmonitor-${{ matrix.scenario }}-${{ matrix.component.name }}" \
-            E2E_TEST_LABELS="$FIPS_LABEL and ${{ matrix.scenario }} and ${{ matrix.component.label }}"
+            E2E_TEST_LABELS="${{ matrix.scenario }} and ${{ matrix.component.label }}"
 
       - name: Upload test results
         if: always()
