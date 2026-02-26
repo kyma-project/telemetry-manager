@@ -195,7 +195,7 @@ The following limitations are inherent to VPA and should be considered when usin
 1. **Resource Availability**: VPA recommendations may exceed available node resources, causing pods to remain pending. This can be mitigated by using Cluster Autoscaler or configuring appropriate `maxAllowed` limits.
 2. **HPA Incompatibility**: VPA cannot be used with Horizontal Pod Autoscaler (HPA) on the same resource metrics (CPU or memory). This is not a concern for DaemonSets, which don't support HPA.
 3. **Admission Webhook Conflicts**: VPA's admission controller may conflict with other mutating admission webhooks depending on webhook configuration and ordering.
-4. **Out-of-Memory Handling**: While VPA reacts to most OOM events, it cannot handle all out-of-memory scenarios and may not prevent all OOMKills.
+4. **Out-of-Memory Handling**: While VPA reacts to most OOM events, it cannot handle all out-of-memory scenarios and may not prevent all OOMKills. To scale Pods that are OOMed its important that pod should run for some time so that metrics can be collected.
 5. **Multiple VPA Resources**: Configuring multiple VPA resources targeting the same pod results in undefined behavior. Ensure only one VPA resource targets the Central OTLP Gateway DaemonSet.
 6. **Recommendations Without Controller**: VPA cannot update resources for standalone pods not managed by a controller (Deployment, DaemonSet, StatefulSet, etc.).
 
