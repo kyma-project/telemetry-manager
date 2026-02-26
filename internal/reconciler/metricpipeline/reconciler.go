@@ -206,7 +206,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	if err := r.syncSecretWatches(ctx, &metricPipeline); err != nil {
+	if err := r.syncWatchedSecrets(ctx, &metricPipeline); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -527,11 +527,7 @@ func (r *Reconciler) getEndpoint(ctx context.Context, pipeline *telemetryv1beta1
 	return string(endpointBytes)
 }
 
-func (r *Reconciler) syncSecretWatches(ctx context.Context, pipeline *telemetryv1beta1.MetricPipeline) error {
-	if r.secretWatcher == nil {
-		return nil
-	}
-
+func (r *Reconciler) syncWatchedSecrets(ctx context.Context, pipeline *telemetryv1beta1.MetricPipeline) error {
 	refs := secretref.GetSecretRefsMetricPipeline(pipeline)
 	secrets := secretref.RefsToSecretNames(refs)
 
