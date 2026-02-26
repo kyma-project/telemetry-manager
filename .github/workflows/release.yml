@@ -1,0 +1,225 @@
+name: Telemetry Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 1.2.3)'
+        required: true
+        type: string
+      occ_image:
+        description: 'OCC Image Version (e.g., 0.1.0-0.2.0)'
+        required: true
+        type: string
+
+run-name: "Release Telemetry version ${{ github.event.inputs.version }} with OCC image ${{ github.event.inputs.occ_image }}"
+
+permissions:
+  contents: write
+  issues: read
+
+jobs:
+  # Job 1: Validate milestone and prepare release branch
+  validate-and-prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      release-branch: ${{ steps.determine-branch.outputs.release-branch }}
+      is-patch: ${{ steps.determine-branch.outputs.is-patch }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check if milestone exists and is closed
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ github.event.inputs.version }}
+        run: |
+          echo "Checking milestone for version ${VERSION}..."
+          MILESTONE=$(gh api "repos/${{ github.repository }}/milestones" --jq ".[] | select(.title == \"${VERSION}\")")
+
+          if [ -z "$MILESTONE" ]; then
+            echo "Milestone ${VERSION} does not exist. Please create it first."
+            exit 1
+          fi
+
+          STATE=$(echo "$MILESTONE" | jq -r '.state')
+          if [ "$STATE" != "closed" ]; then
+            echo "Milestone ${VERSION} is still open. Please close the milestone before releasing."
+            exit 1
+          fi
+
+          OPEN_ISSUES=$(echo "$MILESTONE" | jq -r '.open_issues')
+          if [ "$OPEN_ISSUES" -gt 0 ]; then
+            echo "Milestone ${VERSION} has ${OPEN_ISSUES} open issue(s). Please close all issues before releasing."
+            exit 1
+          fi
+
+          echo "Milestone ${VERSION} exists, is closed, and has no open issues."
+
+      - name: Check if release already exists
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ github.event.inputs.version }}
+        run: |
+          echo "Checking if release ${VERSION} already exists..."
+          if gh release view "${VERSION}" --repo "${{ github.repository }}" > /dev/null 2>&1; then
+            echo "Release ${VERSION} already exists. Please choose a different version."
+            exit 1
+          fi
+          echo "Release ${VERSION} does not exist yet."
+
+      - name: Determine release branch and type
+        id: determine-branch
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+        run: |
+          # Extract major.minor from version
+          RELEASE_BRANCH="release-$(echo ${VERSION} | cut -d. -f1-2)"
+          echo "release-branch=${RELEASE_BRANCH}" >> $GITHUB_OUTPUT
+
+          # Check if patch release (branch already exists)
+          git fetch origin "${RELEASE_BRANCH}" 2>/dev/null || true
+          if git rev-parse --verify "origin/${RELEASE_BRANCH}" > /dev/null 2>&1; then
+            echo "is-patch=true" >> $GITHUB_OUTPUT
+            echo "Patch release detected. Branch ${RELEASE_BRANCH} exists."
+          else
+            echo "is-patch=false" >> $GITHUB_OUTPUT
+            echo "Minor/Major release detected. Branch ${RELEASE_BRANCH} will be created."
+          fi
+
+      - name: Create release branch (if minor/major release)
+        if: steps.determine-branch.outputs.is-patch == 'false'
+        env:
+          RELEASE_BRANCH: ${{ steps.determine-branch.outputs.release-branch }}
+        run: |
+          echo "Creating release branch ${RELEASE_BRANCH} from main..."
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "${RELEASE_BRANCH}"
+          git push origin "${RELEASE_BRANCH}"
+          echo "Created branch ${RELEASE_BRANCH}"
+
+  # Job 2: Bump versions and create release tag
+  prepare-release:
+    needs: validate-and-prepare
+    runs-on: ubuntu-latest
+    outputs:
+      release-tag: ${{ github.event.inputs.version }}
+      release-url: ${{ steps.get-release-url.outputs.url }}
+    steps:
+      - name: Checkout release branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.validate-and-prepare.outputs.release-branch }}
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+
+      - name: Bump version in files
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+          OCC_IMAGE: ${{ github.event.inputs.occ_image }}
+        run: |
+          echo "Bumping version to ${VERSION}..."
+
+          # Update .env file with release version and OCC image
+          if [ -f .env ]; then
+            # Update ENV_HELM_RELEASE_VERSION to release version
+            sed -i.bak "s/ENV_HELM_RELEASE_VERSION=.*/ENV_HELM_RELEASE_VERSION=${VERSION}/" .env && rm .env.bak
+            echo "Updated ENV_HELM_RELEASE_VERSION in .env"
+
+            # Update ENV_MANAGER_IMAGE tag to release version
+            sed -i.bak "s|ENV_MANAGER_IMAGE=\(.*\):.*|ENV_MANAGER_IMAGE=\1:${VERSION}|" .env && rm .env.bak
+            echo "Updated ENV_MANAGER_IMAGE tag in .env"
+
+            # Update ENV_OTEL_COLLECTOR_IMAGE tag to OCC image version
+            sed -i.bak "s|ENV_OTEL_COLLECTOR_IMAGE=\(.*\):.*|ENV_OTEL_COLLECTOR_IMAGE=\1:${OCC_IMAGE}|" .env && rm .env.bak
+            echo "Updated ENV_OTEL_COLLECTOR_IMAGE tag in .env"
+
+            # Run make generate to update generated files
+            make generate
+            echo "Ran make generate"
+          fi
+
+      - name: Commit version bump
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+          RELEASE_BRANCH: ${{ needs.validate-and-prepare.outputs.release-branch }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add .
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Bump version to ${VERSION}"
+            git push origin "${RELEASE_BRANCH}"
+            echo "Committed and pushed version bump"
+          fi
+
+      - name: Create and push release tag
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+        run: |
+          echo "Creating release tag ${VERSION}..."
+          git tag -a "${VERSION}" -m "Release ${VERSION}"
+          git push origin "${VERSION}"
+          echo "Created and pushed tag ${VERSION}"
+          echo "Tag ${VERSION} pushed. This will trigger tag-release.yml workflow."
+
+      - name: Wait for tag-release workflow to complete
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ github.event.inputs.version }}
+        timeout-minutes: 60
+        run: |
+          echo "Waiting for tag-release.yml workflow to be triggered by tag ${VERSION}..."
+          sleep 30 # Give GitHub time to trigger the workflow
+
+          # Find the workflow run triggered by the tag push
+          MAX_ATTEMPTS=20
+          ATTEMPT=0
+
+          while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+            WORKFLOW_ID=$(gh run list \
+              --workflow=tag-release.yml \
+              --json databaseId,headSha,event,status \
+              --jq ".[] | select(.event == \"push\") | .databaseId" \
+              | head -1)
+
+            if [ -n "$WORKFLOW_ID" ]; then
+              echo "Found tag-release workflow run: ${WORKFLOW_ID}"
+              break
+            fi
+
+            echo "Attempt $((ATTEMPT + 1))/${MAX_ATTEMPTS}: Waiting for workflow to start..."
+            sleep 10
+            ATTEMPT=$((ATTEMPT + 1))
+          done
+
+          if [ -z "$WORKFLOW_ID" ]; then
+            echo "::error ::tag-release.yml workflow not found after ${MAX_ATTEMPTS} attempts"
+            exit 1
+          fi
+
+          # Watch the workflow
+          echo "Watching tag-release workflow ${WORKFLOW_ID}..."
+          gh run watch "${WORKFLOW_ID}" --exit-status
+
+      - name: Get release URL
+        id: get-release-url
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ github.event.inputs.version }}
+        run: |
+          RELEASE_URL=$(gh release view "${VERSION}" --json url --jq .url)
+          echo "url=${RELEASE_URL}" >> $GITHUB_OUTPUT
+          echo "Release URL: ${RELEASE_URL}"
+
+
