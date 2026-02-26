@@ -87,8 +87,7 @@ func (c *Client) SyncWatchedSecrets(ctx context.Context, pipeline client.Object,
 		return ErrClientStopped
 	}
 
-	log.Info("Syncing secret watches",
-		"pipeline", pipeline.GetName(),
+	log.Info("Syncing secret watchers",
 		"secretCount", len(secrets),
 		"currentWatcherCount", len(c.watchers))
 
@@ -104,12 +103,10 @@ func (c *Client) SyncWatchedSecrets(ctx context.Context, pipeline client.Object,
 			// Watcher exists, link pipeline if not already linked (thread-safe)
 			w.link(pipeline)
 			log.Info("Linked pipeline to existing watcher",
-				"pipeline", pipeline.GetName(),
 				"secret", secret.String())
 		} else {
 			// Create new watcher and start it immediately
 			log.Info("Creating new watcher for secret",
-				"pipeline", pipeline.GetName(),
 				"secret", secret.String())
 			w := newWatcher(secret, pipeline, c.clientset, c.eventRouter)
 			c.startWatcher(ctx, w)
@@ -124,7 +121,6 @@ func (c *Client) SyncWatchedSecrets(ctx context.Context, pipeline client.Object,
 			// Remove this pipeline from the watcher's linked pipelines (thread-safe)
 			hasPipelines := w.unlink(pipeline)
 			log.Info("Unlinked pipeline from watcher",
-				"pipeline", pipeline.GetName(),
 				"secret", watchedSecret.String(),
 				"watcherHasRemainingPipelines", hasPipelines)
 
