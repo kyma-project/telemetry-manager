@@ -9,7 +9,6 @@ on:
     branches:
       - "main"
       - "release-*"
-      - "feat/new-centralized-arch" # TODO: Remove after merging feature branch
     paths-ignore:
       - "docs/**"
       - "**/*.md"
