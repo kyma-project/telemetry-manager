@@ -52,13 +52,18 @@ func ensureTestPrerequisites(t TestingT, k8sClient client.Client, deploy bool) e
 
 // ensureManagerDeployed ensures the telemetry manager is deployed with the desired configuration.
 // It handles experimental mode changes which require uninstall before reinstall due to CRD conflicts.
+// After any configuration change (FIPS mode, helm values, etc.), it waits for the manager to be stable.
 func ensureManagerDeployed(t TestingT, k8sClient client.Client, cfg Config) error {
 	ctx := t.Context()
+
+	// Detect current configuration to know if we're making changes
+	currentExperimental := detectExperimentalEnabled(ctx)
+	currentFIPS := detectFIPSEnabled(ctx)
+	configChanged := false
 
 	// Check if experimental mode change requires uninstall first
 	// Switching between experimental and default subcharts requires uninstall
 	// because both subcharts contain CRD templates that conflict
-	currentExperimental := detectExperimentalEnabled(ctx)
 	if currentExperimental != cfg.EnableExperimental && releaseExists(ctx) {
 		if cfg.SkipManagerRemoval {
 			return fmt.Errorf("experimental mode change required (%t -> %t) but SkipManagerRemoval is set", currentExperimental, cfg.EnableExperimental)
@@ -73,6 +78,15 @@ func ensureManagerDeployed(t TestingT, k8sClient client.Client, cfg Config) erro
 		if err := waitForCRDsDeletion(t, k8sClient); err != nil {
 			t.Logf("Warning: failed waiting for CRDs deletion: %v", err)
 		}
+
+		configChanged = true
+	}
+
+	// Track FIPS mode change
+	if currentFIPS != cfg.OperateInFIPSMode && releaseExists(ctx) {
+		t.Logf("FIPS mode change detected (%t -> %t)", currentFIPS, cfg.OperateInFIPSMode)
+
+		configChanged = true
 	}
 
 	// Deploy/upgrade manager (helm upgrade --install is idempotent)
@@ -80,8 +94,8 @@ func ensureManagerDeployed(t TestingT, k8sClient client.Client, cfg Config) erro
 		return fmt.Errorf("failed to deploy manager: %w", err)
 	}
 
-	// For upgrade scenarios, wait for rollout to complete and give time for reconciliation
-	if cfg.SkipManagerRemoval {
+	// Wait for stability after configuration changes or for upgrade scenarios
+	if configChanged || cfg.SkipManagerRemoval {
 		t.Log("Waiting for deployment rollout to complete...")
 
 		if err := waitForRolloutComplete(ctx, k8sClient, t, 3*time.Minute); err != nil {
