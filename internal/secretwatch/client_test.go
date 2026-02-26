@@ -733,6 +733,68 @@ func TestSyncWatchedSecretsAfterStop(t *testing.T) {
 	})
 }
 
+func TestPipelinesWithSameNameButDifferentTypes(t *testing.T) {
+	t.Run("should send events to both pipeline types when they have same name", func(t *testing.T) {
+		ctx := context.Background()
+		eventChan := make(chan event.GenericEvent, 10)
+
+		secret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testSecretName1,
+				Namespace: testNamespace,
+			},
+		}
+		clientset := fake.NewClientset(secret)
+
+		fakeWatcher := watch.NewFake()
+		clientset.PrependWatchReactor("secrets", clienttesting.DefaultWatchReactor(fakeWatcher, nil))
+
+		c := &Client{
+			clientset:   clientset,
+			watchers:    make(map[types.NamespacedName]*watcher),
+			eventRouter: createTestEventRouter(eventChan),
+		}
+
+		t.Cleanup(func() {
+			fakeWatcher.Stop()
+			c.stopWithTimeout(testShutdownTimeout)
+		})
+
+		// Create a LogPipeline and a MetricPipeline with the SAME name
+		sameName := "my-pipeline"
+		logPipeline := new(testutils.NewLogPipelineBuilder().WithName(sameName).Build())
+		metricPipeline := new(testutils.NewMetricPipelineBuilder().WithName(sameName).Build())
+
+		// Both pipelines watch the same secret
+		require.NoError(t, c.SyncWatchedSecrets(ctx, logPipeline, []types.NamespacedName{testSecret1}))
+		require.NoError(t, c.SyncWatchedSecrets(ctx, metricPipeline, []types.NamespacedName{testSecret1}))
+
+		time.Sleep(testStartupDelay)
+
+		// Drain any events from setup
+		drainEvents(eventChan)
+
+		// Modify the secret
+		fakeWatcher.Modify(secret)
+
+		// Should receive events for both pipelines (even though they have the same name)
+		// Since the eventRouter uses the same channel, we need to count total events
+		timeout := time.After(testEventTimeout)
+		eventCount := 0
+
+		for eventCount < 2 {
+			select {
+			case <-eventChan:
+				eventCount++
+			case <-timeout:
+				require.FailNow(t, "expected 2 events", "got %d", eventCount)
+			}
+		}
+
+		require.Equal(t, 2, eventCount, "should receive 2 events (one for each pipeline type)")
+	})
+}
+
 func TestWatcherErrorHandling(t *testing.T) {
 	t.Run("should handle watch error event and continue", func(t *testing.T) {
 		ctx := context.Background()

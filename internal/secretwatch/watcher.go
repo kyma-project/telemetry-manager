@@ -46,12 +46,20 @@ func newWatcher(
 	}
 }
 
+// samePipeline checks if two pipelines are the same by comparing both name and GVK.
+// This is necessary because different pipeline types (LogPipeline, MetricPipeline, TracePipeline)
+// can have the same name but are distinct objects.
+func samePipeline(a, b client.Object) bool {
+	return a.GetName() == b.GetName() &&
+		a.GetObjectKind().GroupVersionKind() == b.GetObjectKind().GroupVersionKind()
+}
+
 func (w *watcher) link(pipeline client.Object) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
 	if slices.ContainsFunc(w.linked, func(p client.Object) bool {
-		return p.GetName() == pipeline.GetName()
+		return samePipeline(p, pipeline)
 	}) {
 		return
 	}
@@ -64,7 +72,7 @@ func (w *watcher) unlink(pipeline client.Object) bool {
 	defer w.mu.Unlock()
 
 	w.linked = slices.DeleteFunc(w.linked, func(p client.Object) bool {
-		return p.GetName() == pipeline.GetName()
+		return samePipeline(p, pipeline)
 	})
 
 	return len(w.linked) > 0
@@ -75,7 +83,7 @@ func (w *watcher) isLinked(pipeline client.Object) bool {
 	defer w.mu.RUnlock()
 
 	return slices.ContainsFunc(w.linked, func(p client.Object) bool {
-		return p.GetName() == pipeline.GetName()
+		return samePipeline(p, pipeline)
 	})
 }
 

@@ -114,8 +114,8 @@ func (c *Client) SyncWatchedSecrets(ctx context.Context, pipeline client.Object,
 
 	// Remove pipeline from watchers not in the current set
 	for watchedSecret, w := range c.watchers {
-		_, secretFound := secretSet[watchedSecret]
-		if !secretFound && w.isLinked(pipeline) {
+		_, notInCurrentSet := secretSet[watchedSecret]
+		if !notInCurrentSet && w.isLinked(pipeline) {
 			// Remove this pipeline from the watcher's linked pipelines (thread-safe)
 			hasPipelines := w.unlink(pipeline)
 			log.Info("Unlinked pipeline from watcher",
