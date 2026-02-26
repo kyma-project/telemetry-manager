@@ -1,7 +1,6 @@
 package shared
 
 import (
-	"fmt"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -34,11 +33,6 @@ func TestSecretMissing_OTel(t *testing.T) {
 		{
 			name:   suite.LabelLogGateway,
 			labels: []string{suite.LabelLogGateway},
-			input:  testutils.BuildLogPipelineOTLPInput(),
-		},
-		{
-			name:   fmt.Sprintf("%s-%s", suite.LabelLogGateway, suite.LabelExperimental),
-			labels: []string{suite.LabelLogGateway, suite.LabelExperimental},
 			input:  testutils.BuildLogPipelineOTLPInput(),
 		},
 	}

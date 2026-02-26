@@ -1,7 +1,6 @@
 package shared
 
 import (
-	"fmt"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -31,7 +30,6 @@ func TestMetricsEndpoint_OTel(t *testing.T) {
 		logGeneratorBuilder func(namespace string) client.Object
 		expectAgent         bool
 		resourceName        types.NamespacedName
-		readinessCheckFunc  func(t *testing.T, name types.NamespacedName)
 		metricsService      types.NamespacedName
 	}{
 		{
@@ -42,7 +40,6 @@ func TestMetricsEndpoint_OTel(t *testing.T) {
 				return stdoutloggen.NewDeployment(namespace).K8sObject()
 			},
 			resourceName:       kitkyma.LogAgentName,
-			readinessCheckFunc: assert.DaemonSetReady,
 			metricsService:     kitkyma.LogAgentMetricsService,
 		},
 		{
@@ -52,20 +49,8 @@ func TestMetricsEndpoint_OTel(t *testing.T) {
 			logGeneratorBuilder: func(namespace string) client.Object {
 				return telemetrygen.NewDeployment(namespace, telemetrygen.SignalTypeLogs).K8sObject()
 			},
-			resourceName:       kitkyma.LogGatewayName,
-			readinessCheckFunc: assert.DeploymentReady,
-			metricsService:     kitkyma.LogGatewayMetricsService,
-		},
-		{
-			name:   fmt.Sprintf("%s-%s", suite.LabelLogGateway, suite.LabelExperimental),
-			labels: []string{suite.LabelLogGateway, suite.LabelExperimental},
-			input:  testutils.BuildLogPipelineOTLPInput(),
-			logGeneratorBuilder: func(namespace string) client.Object {
-				return telemetrygen.NewDeployment(namespace, telemetrygen.SignalTypeCentralLogs).K8sObject()
-			},
 			resourceName:       kitkyma.TelemetryOTLPGatewayName,
-			readinessCheckFunc: assert.DaemonSetReady,
-			metricsService:     kitkyma.TelemetryOTLPMetricsService,
+			metricsService:     kitkyma.LogGatewayMetricsService,
 		},
 	}
 
@@ -97,7 +82,7 @@ func TestMetricsEndpoint_OTel(t *testing.T) {
 
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
-			tc.readinessCheckFunc(t, tc.resourceName)
+			assert.DaemonSetReady(t, tc.resourceName)
 
 			metricsURL := suite.ProxyClient.ProxyURLForService(tc.metricsService.Namespace, tc.metricsService.Name, "metrics", ports.Metrics)
 			assert.EmitsOTelCollectorMetrics(t, metricsURL)

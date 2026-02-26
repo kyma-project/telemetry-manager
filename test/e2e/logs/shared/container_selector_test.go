@@ -64,7 +64,7 @@ func TestContainerSelector_OTel(t *testing.T) {
 
 	assert.BackendReachable(t, backend1)
 	assert.BackendReachable(t, backend2)
-	assert.DeploymentReady(t, kitkyma.LogGatewayName)
+	assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
 	assert.DaemonSetReady(t, kitkyma.LogAgentName)
 	assert.OTelLogPipelineHealthy(t, includePipelineName)
 	assert.OTelLogPipelineHealthy(t, excludePipelineName)

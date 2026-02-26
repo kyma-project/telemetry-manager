@@ -43,7 +43,7 @@ func TestResources_OTel(t *testing.T) {
 			label: suite.LabelLogGateway,
 			input: testutils.BuildLogPipelineOTLPInput(),
 			resources: []assert.Resource{
-				assert.NewResource(&appsv1.Deployment{}, kitkyma.LogGatewayName),
+				assert.NewResource(&appsv1.DaemonSet{}, kitkyma.TelemetryOTLPGatewayName),
 				assert.NewResource(&corev1.Service{}, kitkyma.LogGatewayMetricsService),
 				assert.NewResource(&corev1.ServiceAccount{}, kitkyma.LogGatewayServiceAccount),
 				assert.NewResource(&rbacv1.ClusterRole{}, kitkyma.LogGatewayClusterRole),

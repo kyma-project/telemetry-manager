@@ -1,7 +1,6 @@
 package shared
 
 import (
-	"fmt"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -29,7 +28,6 @@ func TestServiceName_OTel(t *testing.T) {
 		inputBuilder       func(includeNs string) telemetryv1beta1.LogPipelineInput
 		expectAgent        bool
 		resourceName       types.NamespacedName
-		readinessCheckFunc func(t *testing.T, name types.NamespacedName)
 		genSignalType      telemetrygen.SignalType
 	}{
 		{
@@ -40,7 +38,6 @@ func TestServiceName_OTel(t *testing.T) {
 			},
 			expectAgent:        true,
 			resourceName:       kitkyma.LogAgentName,
-			readinessCheckFunc: assert.DaemonSetReady,
 		},
 		{
 			name:   suite.LabelLogGateway,
@@ -49,20 +46,8 @@ func TestServiceName_OTel(t *testing.T) {
 				return testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
 			},
 			expectAgent:        false,
-			resourceName:       kitkyma.LogGatewayName,
-			readinessCheckFunc: assert.DeploymentReady,
-			genSignalType:      telemetrygen.SignalTypeLogs,
-		},
-		{
-			name:   fmt.Sprintf("%s-%s", suite.LabelLogGateway, suite.LabelExperimental),
-			labels: []string{suite.LabelLogGateway, suite.LabelExperimental},
-			inputBuilder: func(includeNs string) telemetryv1beta1.LogPipelineInput {
-				return testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
-			},
-			expectAgent:        false,
 			resourceName:       kitkyma.TelemetryOTLPGatewayName,
-			readinessCheckFunc: assert.DaemonSetReady,
-			genSignalType:      telemetrygen.SignalTypeCentralLogs,
+			genSignalType:      telemetrygen.SignalTypeLogs,
 		},
 	}
 
@@ -140,7 +125,7 @@ func TestServiceName_OTel(t *testing.T) {
 
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
-			tc.readinessCheckFunc(t, tc.resourceName)
+			assert.DaemonSetReady(t, tc.resourceName)
 
 			assert.BackendReachable(t, backend)
 			assert.OTelLogPipelineHealthy(t, pipelineName)

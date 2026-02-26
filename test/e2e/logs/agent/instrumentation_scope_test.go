@@ -48,7 +48,7 @@ func TestInstrumentationScope(t *testing.T) {
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.BackendReachable(t, backend)
-	assert.DeploymentReady(t, kitkyma.LogGatewayName)
+	assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
 	assert.DaemonSetReady(t, kitkyma.LogAgentName)
 	assert.OTelLogPipelineHealthy(t, pipelineName)
 

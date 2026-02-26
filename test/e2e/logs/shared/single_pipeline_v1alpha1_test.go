@@ -1,7 +1,6 @@
 package shared
 
 import (
-	"fmt"
 	"strconv"
 	"testing"
 
@@ -29,7 +28,6 @@ func TestSinglePipelineV1Alpha1_OTel(t *testing.T) {
 		input               telemetryv1alpha1.LogPipelineInput
 		logGeneratorBuilder func(ns string) client.Object
 		resourceName        types.NamespacedName
-		readinessCheckFunc  func(t *testing.T, name types.NamespacedName)
 	}{
 		{
 			name:   suite.LabelLogAgent,
@@ -43,7 +41,6 @@ func TestSinglePipelineV1Alpha1_OTel(t *testing.T) {
 				return stdoutloggen.NewDeployment(ns).K8sObject()
 			},
 			resourceName:       kitkyma.LogAgentName,
-			readinessCheckFunc: assert.DaemonSetReady,
 		},
 		{
 			name:   suite.LabelLogGateway,
@@ -59,25 +56,7 @@ func TestSinglePipelineV1Alpha1_OTel(t *testing.T) {
 			logGeneratorBuilder: func(ns string) client.Object {
 				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeLogs).K8sObject()
 			},
-			resourceName:       kitkyma.LogGatewayName,
-			readinessCheckFunc: assert.DeploymentReady,
-		},
-		{
-			name:   fmt.Sprintf("%s-%s", suite.LabelLogGateway, suite.LabelExperimental),
-			labels: []string{suite.LabelLogGateway, suite.LabelExperimental},
-			input: telemetryv1alpha1.LogPipelineInput{
-				Application: &telemetryv1alpha1.LogPipelineApplicationInput{
-					Enabled: new(false),
-				},
-				OTLP: &telemetryv1alpha1.OTLPInput{
-					Disabled: false,
-				},
-			},
-			logGeneratorBuilder: func(ns string) client.Object {
-				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeCentralLogs).K8sObject()
-			},
 			resourceName:       kitkyma.TelemetryOTLPGatewayName,
-			readinessCheckFunc: assert.DaemonSetReady,
 		},
 	}
 
@@ -129,7 +108,7 @@ func TestSinglePipelineV1Alpha1_OTel(t *testing.T) {
 			assert.OTelLogPipelineHealthy(t, pipelineName)
 			assert.BackendReachable(t, backend)
 
-			tc.readinessCheckFunc(t, tc.resourceName)
+			assert.DaemonSetReady(t, tc.resourceName)
 
 			assert.OTelLogsFromNamespaceDelivered(t, backend, genNs)
 		})
