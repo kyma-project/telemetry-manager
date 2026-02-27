@@ -31,12 +31,12 @@ For detailed VPA architecture, see [Kubernetes VPA Documentation](https://github
 
 ### Current State
 
-- Central OTLP Gateway DaemonSet has static resource configuration:
+- The central OTLP Gateway DaemonSet has a static resource configuration:
     - `requests.memory`: 32Mi
     - `limits.memory`: 2000Mi
     - Request-to-limit ratio: 62.5x (2000Mi / 32Mi)
 - `GOMEMLIMIT` is set dynamically based on the memory limit (80% of limit)
-- No automated resource scaling mechanism exists
+- No automated resource scaling mechanism exists.
 
 ## Important Considerations
 
@@ -47,26 +47,28 @@ The current request-to-limit ratio of 62.5 is problematic for VPA. VPA preserves
 - VPA will set `limits.memory` = 62.5 × 64Mi = 4000Mi
 - This exceeds typical node memory capacity
 
-Reduce the request-to-limit ratio to a more reasonable value (e.g., 2-4x) before enabling VPA.
+Before enabling VPA, reduce the request-to-limit ratio to a more reasonable value (for example, 2-4x).
 
 ### VPA Limitations
 
 1. Limits Calculation: VPA's `maxAllowed` constraint applies only to requests, not limits. Limits are calculated from the request-to-limit ratio, which can exceed `maxAllowed` values.
 2. Scale-Down Timing: VPA makes scale-down decisions based on long-term historical data (typically 8+ days), so resource reductions take time.
-3. DaemonSet Updates: VPA requires pod restarts for resource changes, which means temporary gaps in coverage for DaemonSet pods. This only when the cluster doesn't support in-place updates (The feature gate `InPlacePodVerticalScaling` is enabled by default with Kubernetes version v1.35).
+3. DaemonSet Updates: VPA requires Pod restarts for resource changes, which means temporary gaps in coverage for DaemonSet Pods. This applies only to clusters that don't support in-place updates (Kubernetes versions before v1.35 or clusters where the feature gate `InPlacePodVerticalScaling` is disabled).
 
 ### GOMEMLIMIT Strategy
 
-Since Go-based applications use `GOMEMLIMIT` for soft memory limits:
-- Option A: Set `GOMEMLIMIT` to a fixed value (e.g., 1.6Gi = 80% of 2Gi max)
-- Option B: Dynamically calculate `GOMEMLIMIT` based on VPA-recommended limits
+Because Go-based applications use `GOMEMLIMIT` for soft memory limits, we must decide how to set this value when VPA manages Pod resources:
+- Set `GOMEMLIMIT` to a fixed value (for example, 1.6Gi = 80% of 2Gi max). This is recommended for simplicity and predictability.
+- Dynamically calculate `GOMEMLIMIT` based on VPA-recommended limits
 - Recommendation: Use Option A for simplicity and predictability
 
 ## Considered Options
 
+We're evaluating two architectural approaches for implementing VPA with the Central OTLP Gateway. Both options assume a fixed GOMEMLIMIT value (see [GOMEMLIMIT Strategy](#gomemlimit-strategy)).
+
 ### Option 1: VPA Direct Pod Updates (Recommended)
 
-Allow VPA Updater to directly manage pod resources through the VPA Admission Controller.
+In this option, the VPA Updater directly manages Pod resources through the VPA Admission Controller.
 
 **Configuration:**
 ```yaml
@@ -95,18 +97,18 @@ spec:
 ```
 
 **Pros:**
-- Stability: VPA considers Priority Class, Pod Disruption Budget, and eviction rate limits when updating pods
-- Proven Solution: Complex decision logic (when to evict, which pods to evict) is handled by well-tested VPA components
-- No Reconciliation Loops: Pod resources are updated via mutating webhook; DaemonSet spec remains unchanged, preventing unnecessary reconciliations
-- Kubernetes-Native: Leverages standard Kubernetes autoscaling components
+- Stability: VPA considers Priority Class, Pod Disruption Budget, and eviction rate limits when updating Pods
+- Reliability: Uses well-tested VPA components to handle complex decision logic, such as when to evict Pods.
+- No Reconciliation Loops: Pod resources are updated with a mutating webhook; the DaemonSet spec remains unchanged, preventing unnecessary reconciliations
+- Kubernetes-Native: Uses standard Kubernetes autoscaling components
 
 **Cons:**
-- Visibility: DaemonSet spec doesn't reflect actual pod resources (only visible in pod specs)
+- Visibility: DaemonSet spec doesn't reflect actual Pod resources (only visible in Pod specs)
 - GOMEMLIMIT Sync: OpenTelemetry Collector's requires extension `cgrouprumtimeextension` to set `GOMEMLIMIT` based on memory limits, which adds complexity
 
 ### Option 2: Reconciler-Driven Updates
 
-Implement custom logic in the telemetry-manager reconciler to watch VPA recommendations and update the DaemonSet spec accordingly.
+This option implements a custom logic in the telemetry-manager reconciler to watch VPA recommendations and update the DaemonSet spec accordingly.
 
 **Configuration:**
 ```yaml
@@ -133,7 +135,7 @@ spec:
         cpu: "1000m"
 ```
 
-The reconciler would:
+The reconciler handles the following tasks:
 1. Watch VerticalPodAutoscaler CRD status
 2. Compare recommendations with current DaemonSet resources
 3. Update DaemonSet spec when drift exceeds threshold (e.g., >20%)
@@ -148,42 +150,42 @@ The reconciler would:
 - Complexity: Must implement update decision logic (when, how much, under what conditions)
 - Maintenance Burden: Need to maintain and test custom update logic
 - Potential Conflicts: Risk of reconciliation loops if not carefully designed
-- Reinventing the Wheel: Duplicates functionality that VPA already provides
+- Redundant Logic: Duplicates functionality that VPA already provides
 
 ## Decision
 
 We will go with Option 1: VPA Direct Pod Updates
 
 Rationale:
-1. Lower Complexity: Leverages tested VPA components rather than implementing custom logic
+1. Lower Complexity: Uses tested VPA components rather than implementing custom logic
 2. Better Stability: VPA's built-in safeguards (rate limiting, PDB awareness) reduce risk
 3. Faster Implementation: Requires only VPA configuration, not code changes
 4. Standard Solution: Aligns with Kubernetes best practices and community patterns
-5. Acceptable Trade-offs: The visibility limitation is acceptable given monitoring tools can observe actual pod resources
+5. Acceptable Trade-offs: The visibility limitation is acceptable given monitoring tools can observe actual Pod resources
 
 Configuration Strategy:
-- Use `updateMode: "InPlaceOrRecreate"` for automatic pod updates
+- Use `updateMode: "InPlaceOrRecreate"` for automatic Pod updates
 - Use `controlledValues: RequestsAndLimits` to avoid ratio-based limit calculations
 - Set `GOMEMLIMIT`, [OpenTelemetry Collector provides an extension](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/extension/cgroupruntimeextension) to set `GOMEMLIMIT` in runtime based on available memory, so we can set it to a percentage of the memory limit (e.g., 80%) to ensure it scales with VPA recommendations
 - Configure reasonable `minAllowed` and `maxAllowed` boundaries
-- Document that actual pod resources may differ from DaemonSet spec
+- Document that actual Pod resources may differ from DaemonSet spec
 - The VerticalPodAutoscaler resources will be managed by the telemetry-manager Helm chart.
 
 ## Consequences
 
 ### Positive Consequences
 
-- Automated Resource Optimization: Pods automatically sized based on actual usage
+- Automated Resource Optimization: Pods are automatically sized based on actual usage
 - Reduced OOMKills: VPA increases resources before memory pressure occurs
-- Cost Efficiency: Resources reclaimed when usage decreases (with some delay)
+- Cost Efficiency: Resources are reclaimed when usage decreases (with some delay)
 - Operational Simplicity: No manual resource tuning required
 - Production Proven: VPA is widely used in production Kubernetes clusters
 
 ### Negative Consequences
 
-- Monitoring Complexity: Must monitor actual pod resources, not just DaemonSet spec
+- Monitoring Complexity: We must monitor actual Pod resources, not just the DaemonSet spec
 - Documentation Requirement: Need to document that DaemonSet spec doesn't reflect reality
-- Coverage Gaps: DaemonSet pods restart during resource updates (brief monitoring gaps), when cluster doesn't support in-place updates.
+- Coverage Gaps: On clusters without in-place update support, Pod restarts during resource updates can cause brief monitoring gaps
 - Scale-Down Delay: Resource reductions take days due to VPA's conservative approach
 
 ### Known Limitations
