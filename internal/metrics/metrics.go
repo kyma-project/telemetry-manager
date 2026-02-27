@@ -12,6 +12,7 @@ const (
 	defaultNamespace           = "telemetry"
 	subsystemPipelines         = "pipelines"
 	subsystemSelfMonitorProber = "self_monitor_prober"
+	subsystemSecretWatch       = "secret_watch"
 )
 
 const (
@@ -156,6 +157,43 @@ var (
 			Buckets:   prometheus.DefBuckets,
 		},
 		[]string{},
+	)
+
+	SecretWatchersActive = promauto.With(registry).NewGauge(
+		prometheus.GaugeOpts{
+			Namespace: defaultNamespace,
+			Subsystem: subsystemSecretWatch,
+			Name:      "watchers_active",
+			Help:      "The current number of active secret watchers.",
+		},
+	)
+
+	SecretWatchersLinkedPipelines = promauto.With(registry).NewGauge(
+		prometheus.GaugeOpts{
+			Namespace: defaultNamespace,
+			Subsystem: subsystemSecretWatch,
+			Name:      "linked_pipelines",
+			Help:      "The total number of pipelines linked to secret watchers.",
+		},
+	)
+
+	SecretWatchEventsTotal = promauto.With(registry).NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: defaultNamespace,
+			Subsystem: subsystemSecretWatch,
+			Name:      "events_total",
+			Help:      "Total number of secret watch events received.",
+		},
+		[]string{"event_type"},
+	)
+
+	SecretWatcherReconnectsTotal = promauto.With(registry).NewCounter(
+		prometheus.CounterOpts{
+			Namespace: defaultNamespace,
+			Subsystem: subsystemSecretWatch,
+			Name:      "reconnects_total",
+			Help:      "Total number of secret watcher reconnection attempts.",
+		},
 	)
 )
 

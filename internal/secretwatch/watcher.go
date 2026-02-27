@@ -16,6 +16,8 @@ import (
 	kubecoreev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+
+	"github.com/kyma-project/telemetry-manager/internal/metrics"
 )
 
 const reconnectDelay = 5 * time.Second
@@ -169,6 +171,8 @@ func (w *watcher) start(ctx context.Context) {
 				continue
 			}
 
+			metrics.SecretWatchEventsTotal.WithLabelValues(string(watchEvent.Type)).Inc()
+
 			log.Info("Secret watch event received. Triggering reconciliation for linked pipelines.",
 				"secret", w.secret.String(),
 				"eventType", watchEvent.Type,
@@ -184,6 +188,8 @@ func (w *watcher) start(ctx context.Context) {
 
 		log.V(1).Info("Watcher channel closed. Reconnecting in 5 seconds...",
 			"secret", w.secret.String())
+
+		metrics.SecretWatcherReconnectsTotal.Inc()
 
 		select {
 		case <-time.After(reconnectDelay):

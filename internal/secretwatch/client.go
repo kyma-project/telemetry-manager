@@ -16,6 +16,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+	"github.com/kyma-project/telemetry-manager/internal/metrics"
 )
 
 const (
@@ -100,6 +101,7 @@ func (c *Client) SyncWatchers(ctx context.Context, pipeline client.Object, secre
 			if w.link(pipeline) {
 				log.Info("Linked pipeline to existing watcher",
 					"secret", secret.String())
+				metrics.SecretWatchersLinkedPipelines.Inc()
 			}
 		} else {
 			w := newWatcher(secret, pipeline, c.clientset, c.eventRouter)
@@ -107,6 +109,8 @@ func (c *Client) SyncWatchers(ctx context.Context, pipeline client.Object, secre
 			c.watchers[secret] = w
 			log.Info("Created new watcher for secret",
 				"secret", secret.String())
+			metrics.SecretWatchersActive.Inc()
+			metrics.SecretWatchersLinkedPipelines.Inc()
 		}
 	}
 
@@ -174,6 +178,7 @@ func (c *Client) unlinkPipelineFromWatchers(ctx context.Context, name string, gv
 		log.Info("Unlinked pipeline from watcher",
 			"secret", watchedSecret.String(),
 			"watcherHasRemainingPipelines", hasPipelines)
+		metrics.SecretWatchersLinkedPipelines.Dec()
 
 		// If no pipelines are linked anymore, stop and delete the watcher
 		if !hasPipelines {
@@ -181,6 +186,7 @@ func (c *Client) unlinkPipelineFromWatchers(ctx context.Context, name string, gv
 			delete(c.watchers, watchedSecret)
 			log.Info("Stopped watcher with no remaining pipelines",
 				"secret", watchedSecret.String())
+			metrics.SecretWatchersActive.Dec()
 		}
 	}
 }
