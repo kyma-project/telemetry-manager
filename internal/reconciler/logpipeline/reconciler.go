@@ -12,6 +12,7 @@ import (
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
+	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 )
 
 var (
@@ -25,6 +26,7 @@ type Reconciler struct {
 	reconcilers      map[logpipelineutils.Mode]LogPipelineReconciler
 
 	pipelineSyncer PipelineSyncer
+	secretWatcher  SecretWatcher
 }
 
 // Option is a functional option for configuring a Reconciler.
@@ -53,6 +55,13 @@ func WithReconcilers(reconcilers ...LogPipelineReconciler) Option {
 		}
 
 		r.reconcilers = reconcilersMap
+	}
+}
+
+// WithSecretWatcher sets the secret watcher.
+func WithSecretWatcher(watcher SecretWatcher) Option {
+	return func(r *Reconciler) {
+		r.secretWatcher = watcher
 	}
 }
 
@@ -89,6 +98,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
+	if err := r.syncSecretWatches(ctx, &pipeline); err != nil {
+		return ctrl.Result{}, err
+	}
+
 	if err := r.pipelineSyncer.TryAcquireLock(ctx, &pipeline); err != nil {
 		if errors.Is(err, resourcelock.ErrMaxPipelinesExceeded) {
 			logf.FromContext(ctx).V(1).Error(err, "Skipping reconciliation: max pipelines exceeded")
@@ -108,4 +121,15 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	err = reconciler.Reconcile(ctx, &pipeline)
 
 	return ctrl.Result{}, err
+}
+
+func (r *Reconciler) syncSecretWatches(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) error {
+	if r.secretWatcher == nil {
+		return nil
+	}
+
+	refs := secretref.GetSecretRefsLogPipeline(pipeline)
+	secrets := secretref.RefsToSecretNames(refs)
+
+	return r.secretWatcher.SyncWatchedSecrets(ctx, pipeline, secrets)
 }
