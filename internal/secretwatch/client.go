@@ -13,6 +13,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
 
 const (
@@ -26,28 +28,45 @@ var ErrClientStopped = errors.New("secret watcher client has been stopped")
 // for each unique secret being monitored.
 // Client is safe for concurrent use.
 type Client struct {
-	clientset kubernetes.Interface
-	watchers  map[types.NamespacedName]*watcher
-	eventChan chan<- event.GenericEvent
-	stopped   bool
-	mu        sync.RWMutex
-	wg        sync.WaitGroup
+	clientset   kubernetes.Interface
+	watchers    map[types.NamespacedName]*watcher
+	eventRouter func(pipeline client.Object)
+	stopped     bool
+	mu          sync.RWMutex
+	wg          sync.WaitGroup
 }
 
 // NewClient creates a new Client for watching Kubernetes secrets.
 // It initializes the Kubernetes clientset using the provided REST configuration.
-// The eventHandler will be called whenever a watched secret changes.
-// If eventHandler is nil, events will only be logged.
-func NewClient(cfg *rest.Config, eventChan chan<- event.GenericEvent) (*Client, error) {
+// Events are routed to the appropriate channel based on pipeline type:
+// - TracePipeline events go to traceEventChan
+// - MetricPipeline events go to metricEventChan
+// - LogPipeline events go to logEventChan
+func NewClient(cfg *rest.Config, traceEventChan, metricEventChan, logEventChan chan<- event.GenericEvent) (*Client, error) {
 	clientset, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create clientset: %w", err)
 	}
 
+	eventRouter := func(pipeline client.Object) {
+		ev := event.GenericEvent{Object: pipeline}
+
+		switch pipeline.(type) {
+		case *telemetryv1beta1.TracePipeline:
+			traceEventChan <- ev
+		case *telemetryv1beta1.MetricPipeline:
+			metricEventChan <- ev
+		case *telemetryv1beta1.LogPipeline:
+			logEventChan <- ev
+		default:
+			logf.Log.Error(nil, "Unknown pipeline type, cannot route event", "pipelineType", fmt.Sprintf("%T", pipeline))
+		}
+	}
+
 	return &Client{
-		clientset: clientset,
-		watchers:  make(map[types.NamespacedName]*watcher),
-		eventChan: eventChan,
+		clientset:   clientset,
+		watchers:    make(map[types.NamespacedName]*watcher),
+		eventRouter: eventRouter,
 	}, nil
 }
 
@@ -59,6 +78,8 @@ func NewClient(cfg *rest.Config, eventChan chan<- event.GenericEvent) (*Client, 
 // Duplicate secrets in the input slice are automatically deduplicated.
 // Returns ErrClientStopped if the client has been stopped.
 func (c *Client) SyncWatchedSecrets(ctx context.Context, pipeline client.Object, secrets []types.NamespacedName) error {
+	log := logf.FromContext(ctx).V(1)
+
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -75,28 +96,36 @@ func (c *Client) SyncWatchedSecrets(ctx context.Context, pipeline client.Object,
 	// Add or update watchers for the given secrets
 	for secret := range secretSet {
 		if w, exists := c.watchers[secret]; exists {
-			// Watcher exists, link pipeline if not already linked (thread-safe)
-			w.link(pipeline)
+			if w.link(pipeline) {
+				log.Info("Linked pipeline to existing watcher",
+					"secret", secret.String())
+			}
 		} else {
-			// Create new watcher and start it immediately
-			w := newWatcher(secret, pipeline, c.clientset, c.eventChan)
+			w := newWatcher(secret, pipeline, c.clientset, c.eventRouter)
 			c.startWatcher(ctx, w)
 			c.watchers[secret] = w
+			log.Info("Created new watcher for secret",
+				"secret", secret.String())
 		}
 	}
 
 	// Remove pipeline from watchers not in the current set
 	for watchedSecret, w := range c.watchers {
-		_, secretFound := secretSet[watchedSecret]
-		if !secretFound && w.isLinked(pipeline) {
+		_, inCurrentSet := secretSet[watchedSecret]
+		if !inCurrentSet && w.isLinked(pipeline) {
 			// Remove this pipeline from the watcher's linked pipelines (thread-safe)
 			hasPipelines := w.unlink(pipeline)
+			log.Info("Unlinked pipeline from watcher",
+				"secret", watchedSecret.String(),
+				"watcherHasRemainingPipelines", hasPipelines)
 
 			// If no pipelines are linked anymore, stop and delete the watcher
 			if !hasPipelines {
 				w.cancel()
 				// Note: wg.Done() will be called by the watcher's goroutine defer
 				delete(c.watchers, watchedSecret)
+				log.Info("Stopped watcher with no remaining pipelines",
+					"secret", watchedSecret.String())
 			}
 		}
 	}
@@ -116,10 +145,16 @@ func (c *Client) stopWithTimeout(timeout time.Duration) {
 	c.mu.Lock()
 
 	c.stopped = true
+	watcherCount := len(c.watchers)
+
+	logf.Log.V(1).Info("Stopping secret watcher client",
+		"watcherCount", watcherCount,
+		"timeout", timeout)
 
 	// Cancel all watchers
-	for _, entry := range c.watchers {
+	for secret, entry := range c.watchers {
 		if entry.cancel != nil {
+			logf.Log.V(1).Info("Canceling watcher", "secret", secret.String())
 			entry.cancel()
 		}
 	}
@@ -147,9 +182,9 @@ func (c *Client) stopWithTimeout(timeout time.Duration) {
 
 //nolint:contextcheck // Intentionally using Background() so watcher outlives reconcile request
 func (c *Client) startWatcher(ctx context.Context, w *watcher) {
-	watcherCtx, cancel := context.WithCancel(
-		logf.IntoContext(context.Background(), logf.FromContext(ctx)),
-	)
+	logf.FromContext(ctx).V(1).Info("Starting watcher goroutine", "secret", w.secret.String())
+
+	watcherCtx, cancel := context.WithCancel(context.Background())
 	w.cancel = cancel
 
 	c.wg.Go(func() {

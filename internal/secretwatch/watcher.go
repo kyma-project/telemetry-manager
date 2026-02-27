@@ -14,7 +14,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	kubecoreev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/event"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -23,12 +22,12 @@ const reconnectDelay = 5 * time.Second
 // watcher monitors a single Kubernetes secret and tracks which pipelines depend on it.
 // It automatically reconnects on errors and handles resource version updates.
 type watcher struct {
-	secret    types.NamespacedName
-	linked    []client.Object
-	client    kubecoreev1.SecretInterface
-	eventChan chan<- event.GenericEvent
-	mu        sync.RWMutex
-	cancel    context.CancelFunc
+	secret      types.NamespacedName
+	linked      []client.Object
+	client      kubecoreev1.SecretInterface
+	eventRouter func(pipeline client.Object)
+	mu          sync.RWMutex
+	cancel      context.CancelFunc
 }
 
 // newWatcher creates a new watcher for the specified secret with the initial pipeline.
@@ -37,35 +36,49 @@ func newWatcher(
 	secret types.NamespacedName,
 	pipeline client.Object,
 	clientset kubernetes.Interface,
-	eventChan chan<- event.GenericEvent,
+	eventRouter func(pipeline client.Object),
 ) *watcher {
 	return &watcher{
-		secret:    secret,
-		linked:    []client.Object{pipeline},
-		client:    clientset.CoreV1().Secrets(secret.Namespace),
-		eventChan: eventChan,
+		secret:      secret,
+		linked:      []client.Object{pipeline},
+		client:      clientset.CoreV1().Secrets(secret.Namespace),
+		eventRouter: eventRouter,
 	}
 }
 
-func (w *watcher) link(pipeline client.Object) {
+// samePipeline checks if two pipelines are the same by comparing both name and GVK.
+// This is necessary because different pipeline types (LogPipeline, MetricPipeline, TracePipeline)
+// can have the same name but are distinct objects.
+func samePipeline(a, b client.Object) bool {
+	return a.GetName() == b.GetName() &&
+		a.GetObjectKind().GroupVersionKind() == b.GetObjectKind().GroupVersionKind()
+}
+
+// link adds a pipeline to the watcher's linked pipelines if it's not already linked.
+// It returns true if the pipeline was added, or false if it was already linked.
+func (w *watcher) link(pipeline client.Object) bool {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
 	if slices.ContainsFunc(w.linked, func(p client.Object) bool {
-		return p.GetName() == pipeline.GetName()
+		return samePipeline(p, pipeline)
 	}) {
-		return
+		return false
 	}
 
 	w.linked = append(w.linked, pipeline)
+
+	return true
 }
 
+// unlink removes a pipeline from the watcher's linked pipelines.
+// It returns true if there are still pipelines linked after removal, or false if the list is now empty.
 func (w *watcher) unlink(pipeline client.Object) bool {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
 	w.linked = slices.DeleteFunc(w.linked, func(p client.Object) bool {
-		return p.GetName() == pipeline.GetName()
+		return samePipeline(p, pipeline)
 	})
 
 	return len(w.linked) > 0
@@ -76,7 +89,7 @@ func (w *watcher) isLinked(pipeline client.Object) bool {
 	defer w.mu.RUnlock()
 
 	return slices.ContainsFunc(w.linked, func(p client.Object) bool {
-		return p.GetName() == pipeline.GetName()
+		return samePipeline(p, pipeline)
 	})
 }
 
@@ -155,17 +168,16 @@ func (w *watcher) start(ctx context.Context) {
 				continue
 			}
 
-			log.Info("Secret watch event received",
+			log.Info("Secret watch event received. Triggering reconciliation for linked pipelines.",
 				"secret", w.secret.String(),
 				"eventType", watchEvent.Type,
 				"resourceVersion", secret.ResourceVersion,
+				"linkedPipelines", len(w.getLinkedPipelines()),
 			)
 
-			// Send a generic event to trigger reconciliation for linked pipelines
+			// Send events to trigger reconciliation for linked pipelines
 			for _, pipeline := range w.getLinkedPipelines() {
-				w.eventChan <- event.GenericEvent{
-					Object: pipeline,
-				}
+				w.eventRouter(pipeline)
 			}
 		}
 

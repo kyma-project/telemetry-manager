@@ -3,11 +3,11 @@ kind: kyma
 bdba:
   - europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:main
   - europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20260116-88440ede
-  - europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluent-bit:4.2.2
+  - europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluent-bit:4.2.3
   - europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.144.0-main
   - europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:3.9.1-0877cc3
   - europe-docker.pkg.dev/kyma-project/restricted-prod/sap.com/prometheus-fips:3.9.1
-  - europe-docker.pkg.dev/kyma-project/prod/external/library/alpine:3.23.2
+  - europe-docker.pkg.dev/kyma-project/prod/external/library/alpine:3.23.3
 mend:
   language: golang-mod
   exclude:
