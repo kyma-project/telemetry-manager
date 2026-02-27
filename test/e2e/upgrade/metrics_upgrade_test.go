@@ -67,7 +67,7 @@ func TestMetricsUpgrade(t *testing.T) {
 
 	// === UPGRADE TO NEW VERSION ===
 	t.Log("Upgrading manager to target version...")
-	Expect(suite.UpgradeToTargetVersion(t, labels)).To(Succeed())
+	Expect(suite.UpgradeToTargetVersion(t)).To(Succeed())
 
 	// === VALIDATE AFTER UPGRADE ===
 	t.Log("Validating metric pipeline after upgrade...")

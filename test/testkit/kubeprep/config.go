@@ -16,13 +16,16 @@ const (
 
 // Config contains cluster preparation configuration
 type Config struct {
-	ManagerImage       string   // Required: telemetry manager container image
-	LocalImage         bool     // Image is local (for k3d import and pull policy)
-	InstallIstio       bool     // Install Istio before tests
-	OperateInFIPSMode  bool     // Deploy manager in FIPS mode
-	EnableExperimental bool     // Enable experimental CRDs
-	HelmValues         []string // Custom helm --set values (e.g., "additionalMetadata.labels.foo=bar")
-	ChartPath          string   // Helm chart path/URL (empty = use local chart)
+	ManagerImage        string   // Required: telemetry manager container image
+	LocalImage          bool     // Image is local (for k3d import and pull policy)
+	InstallIstio        bool     // Install Istio before tests
+	OperateInFIPSMode   bool     // Deploy manager in FIPS mode
+	FIPSModeOverridden  bool     // True if FIPS mode was explicitly overridden via WithOverrideFIPSMode
+	EnableExperimental  bool     // Enable experimental CRDs
+	HelmValues          []string // Custom helm --set values (e.g., "additionalMetadata.labels.foo=bar")
+	ChartPath           string   // Helm chart path/URL (empty = use local chart)
+	DeployPrerequisites bool     // Deploy test prerequisites (default: true)
+	SkipManagerRemoval  bool     // Skip manager removal during reconfiguration (for upgrade tests)
 }
 
 // Option is a functional option for configuring cluster setup
@@ -32,6 +35,14 @@ type Option func(*Config)
 func WithHelmValues(values ...string) Option {
 	return func(c *Config) {
 		c.HelmValues = append(c.HelmValues, values...)
+	}
+}
+
+// WithSkipDeployTestPrerequisites skips deploying test prerequisites.
+// Use this when prerequisites are not needed or are deployed separately.
+func WithSkipDeployTestPrerequisites() Option {
+	return func(c *Config) {
+		c.DeployPrerequisites = false
 	}
 }
 
@@ -53,6 +64,44 @@ func WithChartVersion(chartURL string) Option {
 		} else {
 			c.ChartPath = chartURL
 		}
+	}
+}
+
+// WithOverrideFIPSMode overrides the FIPS mode setting for the manager.
+// Use this when a test requires a specific FIPS mode regardless of environment default.
+// Note: This only affects manager behavior, not image availability.
+func WithOverrideFIPSMode(enabled bool) Option {
+	return func(c *Config) {
+		c.OperateInFIPSMode = enabled
+		c.FIPSModeOverridden = true
+	}
+}
+
+// WithIstio configures the cluster to install Istio.
+// This is the preferred way to indicate that a test requires Istio,
+// instead of passing LabelIstio directly.
+func WithIstio() Option {
+	return func(c *Config) {
+		c.InstallIstio = true
+	}
+}
+
+// WithExperimental enables experimental CRDs for the test.
+// This is the preferred way to indicate that a test requires experimental features,
+// instead of passing LabelExperimental directly.
+func WithExperimental() Option {
+	return func(c *Config) {
+		c.EnableExperimental = true
+	}
+}
+
+// WithSkipManagerRemoval prevents manager removal during reconfiguration.
+// Use this for upgrade tests where existing pipelines must be preserved.
+// When set, experimental mode changes and Istio changes will fail instead of
+// removing and reinstalling the manager.
+func WithSkipManagerRemoval() Option {
+	return func(c *Config) {
+		c.SkipManagerRemoval = true
 	}
 }
 

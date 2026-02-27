@@ -44,7 +44,6 @@ var (
 var environmentLabels = map[string]bool{
 	LabelIstio:        true,
 	LabelExperimental: true,
-	LabelNoFIPS:       true,
 }
 
 // BeforeSuiteFunc is designed to return an error instead of relying on Gomega matchers.
@@ -170,11 +169,6 @@ const (
 	// LabelIstio defines the label for Istio Integration tests
 	LabelIstio = "istio"
 
-	// LabelNoFIPS defines the label for tests that should NOT run in FIPS mode.
-	// By default, all tests run with FIPS enabled. Use this label to disable FIPS
-	// for specific tests (e.g., fluent-bit tests which don't support FIPS).
-	LabelNoFIPS = "no-fips"
-
 	// LabelGardener defines the label for Gardener Integration tests
 	LabelGardener = "gardener"
 
@@ -213,6 +207,14 @@ func DebugObjectsEnabled() bool {
 	return debugEnv == "1" || strings.ToLower(debugEnv) == "true"
 }
 
+// FIPSImagesAvailable returns true if FIPS images are accessible in the current environment.
+// This is determined by the FIPS_IMAGE_AVAILABLE environment variable.
+// In CI: true on push (has registry access), false on PR (no registry access).
+func FIPSImagesAvailable() bool {
+	env := os.Getenv("FIPS_IMAGE_AVAILABLE")
+	return env == "1" || strings.ToLower(env) == "true"
+}
+
 // SetupTest prepares the test environment based on test labels.
 // It registers Gomega matchers, evaluates label filters, and ensures the cluster
 // is configured correctly for the test (e.g., Istio installed, experimental features enabled).
@@ -227,20 +229,56 @@ func SetupTest(t *testing.T, labels ...string) {
 
 // SetupTestWithOptions prepares the test environment with additional options.
 // Options can be passed to customize the setup:
+//   - kubeprep.WithIstio() - installs Istio and adds LabelIstio for filtering
+//   - kubeprep.WithExperimental() - enables experimental CRDs and adds LabelExperimental for filtering
 //   - kubeprep.WithHelmValues("key=value") - adds custom helm values
 //   - kubeprep.WithChartVersion("url") - uses a specific chart version (for upgrade tests)
+//   - kubeprep.WithOverrideFIPSMode(bool) - overrides FIPS mode setting
 func SetupTestWithOptions(t *testing.T, labels []string, opts ...kubeprep.Option) {
 	RegisterTestingT(t)
 
-	labelSet := toSet(labels)
+	// Build config from options
+	cfg := buildConfig(opts...)
+
+	// Auto-add labels based on config values (options → labels)
+	labels = addLabelsFromConfig(labels, cfg)
 
 	// Skip test if it contains "skipped" label
-	if _, exists := labelSet[LabelSkip]; exists {
+	if hasLabel(labels, LabelSkip) {
 		t.Skip()
 	}
 
-	// Evaluate skip/execute decision BEFORE cluster configuration
-	// This avoids unnecessary cluster reconfiguration for tests that won't run
+	// Check if test should run based on filters and special modes
+	if handleTestFiltering(t, labels) {
+		return // test was skipped
+	}
+
+	// Log FIPS configuration for clarity
+	logFIPSConfiguration(t, cfg)
+
+	// Setup cluster (idempotent: always runs helm upgrade + prerequisites)
+	require.NoError(t, kubeprep.SetupCluster(t, K8sClient, cfg))
+}
+
+// addLabelsFromConfig auto-adds labels based on config values
+// This ensures label filtering still works when using options
+func addLabelsFromConfig(labels []string, cfg kubeprep.Config) []string {
+	if cfg.InstallIstio && !hasLabel(labels, LabelIstio) {
+		labels = append(labels, LabelIstio)
+	}
+
+	if cfg.EnableExperimental && !hasLabel(labels, LabelExperimental) {
+		labels = append(labels, LabelExperimental)
+	}
+
+	return labels
+}
+
+// handleTestFiltering handles label filtering, dry-run mode, and print-labels mode.
+// Returns true if the test should be skipped (already handled), false if it should proceed.
+func handleTestFiltering(t *testing.T, labels []string) bool {
+	t.Helper()
+
 	labelFilterExpr := findLabelFilterExpression()
 	doNotExecute := findDoNotExecuteFlag()
 	printLabels := findPrintLabelsFlag()
@@ -262,63 +300,49 @@ func SetupTestWithOptions(t *testing.T, labels []string, opts ...kubeprep.Option
 
 	// Handle print-labels mode - print structured label info and skip
 	if printLabels {
-		// Only print if test would run (respects label filter)
 		if shouldRun {
 			printLabelsInfo(t, labels)
 		}
 
 		t.Skip()
 
-		return
+		return true
 	}
 
 	// Handle dry-run mode
 	if doNotExecute {
-		switch {
-		case labelFilterExpr == "":
-			printTestInfo(t, labels, "would execute (no filter)")
-		case shouldRun:
-			printTestInfo(t, labels, fmt.Sprintf("would execute (matches filter: %s)", labelFilterExpr))
-		default:
-			printTestInfo(t, labels, fmt.Sprintf("would skip (doesn't match filter: %s)", labelFilterExpr))
-		}
-
-		t.Skip()
-
-		return
+		handleDryRunMode(t, labels, labelFilterExpr, shouldRun)
+		return true
 	}
 
 	// Skip test if label filter doesn't match
 	if !shouldRun {
 		t.Skipf("Test skipped: label filter '%s' not satisfied", labelFilterExpr)
-		return
+		return true
 	}
 
-	// Test will execute - build configuration from labels and options
-	cfg := buildConfig(labels, opts...)
-
-	// Setup cluster (idempotent: always runs helm upgrade + prerequisites)
-	require.NoError(t, kubeprep.SetupCluster(t, K8sClient, cfg))
+	return false
 }
 
-// RegisterTestCase is an alias for SetupTest for backward compatibility.
-//
-// Deprecated: Use SetupTest instead.
-func RegisterTestCase(t *testing.T, labels ...string) {
-	SetupTest(t, labels...)
-}
+// handleDryRunMode prints test info in dry-run mode
+func handleDryRunMode(t *testing.T, labels []string, labelFilterExpr string, shouldRun bool) {
+	t.Helper()
 
-// buildConfig creates a Config from labels and applies options
-func buildConfig(labels []string, opts ...kubeprep.Option) kubeprep.Config {
-	// FIPS mode is enabled by default unless LabelNoFIPS is present in labels
-	fipsEnabled := !hasLabel(labels, LabelNoFIPS)
-
-	cfg := kubeprep.Config{
-		OperateInFIPSMode:  fipsEnabled,
-		EnableExperimental: hasLabel(labels, LabelExperimental),
-		InstallIstio:       hasLabel(labels, LabelIstio),
+	switch {
+	case labelFilterExpr == "":
+		printTestInfo(t, labels, "would execute (no filter)")
+	case shouldRun:
+		printTestInfo(t, labels, fmt.Sprintf("would execute (matches filter: %s)", labelFilterExpr))
+	default:
+		printTestInfo(t, labels, fmt.Sprintf("would skip (doesn't match filter: %s)", labelFilterExpr))
 	}
 
+	t.Skip()
+}
+
+// finalizeConfig completes the config with manager image information.
+// The config should already have InstallIstio, EnableExperimental, etc. set by options.
+func finalizeConfig(cfg kubeprep.Config) kubeprep.Config {
 	// Get manager image from environment or default
 	managerImage := os.Getenv("MANAGER_IMAGE")
 	if managerImage == "" {
@@ -328,35 +352,66 @@ func buildConfig(labels []string, opts ...kubeprep.Option) kubeprep.Config {
 	cfg.ManagerImage = managerImage
 	cfg.LocalImage = kubeprep.IsLocalImage(managerImage)
 
-	// Apply options
+	return cfg
+}
+
+// buildConfig creates a Config from options only.
+// Labels are used solely for test filtering, not for configuration.
+// Configuration must be explicitly set via functional options.
+func buildConfig(opts ...kubeprep.Option) kubeprep.Config {
+	// FIPS mode default is determined by environment (FIPS_IMAGE_AVAILABLE).
+	// WithOverrideFIPSMode() option can override this for specific tests.
+	fipsEnabled := FIPSImagesAvailable()
+
+	cfg := kubeprep.Config{
+		OperateInFIPSMode:   fipsEnabled,
+		DeployPrerequisites: true, // Default to deploying prerequisites
+	}
+
+	// Apply options to configure the test environment
 	for _, opt := range opts {
 		opt(&cfg)
 	}
 
-	return cfg
+	return finalizeConfig(cfg)
+}
+
+// logFIPSConfiguration logs the FIPS mode configuration for clarity
+func logFIPSConfiguration(t *testing.T, cfg kubeprep.Config) {
+	t.Helper()
+
+	fipsImagesAvailable := FIPSImagesAvailable()
+
+	// Determine how FIPS mode was set
+	fipsModeSource := "environment default"
+	if cfg.FIPSModeOverridden {
+		fipsModeSource = "test override (WithOverrideFIPSMode)"
+	}
+
+	t.Logf("FIPS configuration: imagesAvailable=%t, fipsMode=%t (source: %s)",
+		fipsImagesAvailable, cfg.OperateInFIPSMode, fipsModeSource)
 }
 
 // UpgradeToTargetVersion upgrades the manager from a previously deployed version
 // to the target version (specified by MANAGER_IMAGE, or local image if not set).
 //
 // This function is called mid-test in upgrade tests after validating the old version works.
-// It preserves existing pipeline resources and CRDs.
-func UpgradeToTargetVersion(t *testing.T, labels []string) error {
-	targetImage := os.Getenv("MANAGER_IMAGE")
-	if targetImage == "" {
-		targetImage = DefaultLocalImage
-	}
+// It preserves existing pipeline resources and CRDs by using SetupCluster with
+// SkipManagerRemoval enabled.
+//
+// Options passed to this function should match those passed to SetupTestWithOptions
+// (e.g., kubeprep.WithOverrideFIPSMode(false)) to ensure consistent configuration.
+func UpgradeToTargetVersion(t *testing.T, opts ...kubeprep.Option) error {
+	// Add SkipManagerRemoval to preserve existing pipelines
+	opts = append(opts, kubeprep.WithSkipManagerRemoval(), kubeprep.WithSkipDeployTestPrerequisites())
 
-	// Build config from labels (same settings as initial setup)
-	cfg := buildConfig(labels)
-	cfg.ManagerImage = targetImage
-	cfg.LocalImage = kubeprep.IsLocalImage(targetImage)
-	cfg.ChartPath = "" // Use local chart for upgrade
+	// Build config from options
+	cfg := buildConfig(opts...)
 
 	t.Logf("Upgrading manager to target version: %s (fips=%t, experimental=%t)",
-		targetImage, cfg.OperateInFIPSMode, cfg.EnableExperimental)
+		cfg.ManagerImage, cfg.OperateInFIPSMode, cfg.EnableExperimental)
 
-	return kubeprep.UpgradeManagerInPlace(t, K8sClient, targetImage, cfg)
+	return kubeprep.SetupCluster(t, K8sClient, cfg)
 }
 
 func findDoNotExecuteFlag() bool {
@@ -427,9 +482,10 @@ func printLabelsInfo(t *testing.T, labels []string) {
 		experimental = "yes"
 	}
 
-	fips := "yes"
-	if hasLabel(labels, LabelNoFIPS) {
-		fips = "no"
+	// FIPS is determined by environment default
+	fips := "no"
+	if FIPSImagesAvailable() {
+		fips = "yes"
 	}
 
 	// Classify labels
@@ -476,17 +532,4 @@ func findLabelFilterExpression() string {
 	}
 
 	return labelFilterFlag
-}
-
-func toSet(labels []string) map[string]struct{} {
-	set := make(map[string]struct{}, len(labels))
-	for _, label := range labels {
-		if label == "" {
-			continue
-		}
-
-		set[label] = struct{}{}
-	}
-
-	return set
 }

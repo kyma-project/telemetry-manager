@@ -28,23 +28,19 @@ var (
 // ValidateTracePipeline validates the secret references in a TracePipeline, ensuring that the references are valid,
 // and the referenced Secrets exist and contain the required keys. It returns an error otherwise.
 func (v *Validator) ValidateTracePipeline(ctx context.Context, pipeline *telemetryv1beta1.TracePipeline) error {
-	return v.validate(ctx, getSecretRefsTracePipeline(pipeline))
+	return v.validate(ctx, GetSecretRefsTracePipeline(pipeline))
 }
 
 // ValidateMetricPipeline validates the secret references in a MetricPipeline, ensuring that the references are valid,
 // and the referenced Secrets exist and contain the required keys. It returns an error otherwise.
 func (v *Validator) ValidateMetricPipeline(ctx context.Context, pipeline *telemetryv1beta1.MetricPipeline) error {
-	return v.validate(ctx, getSecretRefsMetricPipeline(pipeline))
+	return v.validate(ctx, GetSecretRefsMetricPipeline(pipeline))
 }
 
 // ValidateLogPipeline validates the secret references in a LogPipeline, ensuring that the references are valid,
 // and the referenced Secrets exist and contain the required keys. It returns an error otherwise.
 func (v *Validator) ValidateLogPipeline(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) error {
-	if pipeline.Spec.Output.OTLP != nil {
-		return v.validate(ctx, getSecretRefsInOTLPOutput(pipeline.Spec.Output.OTLP))
-	}
-
-	return v.validate(ctx, getSecretRefsLogPipeline(pipeline))
+	return v.validate(ctx, GetSecretRefsLogPipeline(pipeline))
 }
 
 func (v *Validator) validate(ctx context.Context, refs []telemetryv1beta1.SecretKeyRef) error {
@@ -102,15 +98,23 @@ func checkForMissingFields(ref telemetryv1beta1.SecretKeyRef) error {
 	return nil
 }
 
-func getSecretRefsTracePipeline(tp *telemetryv1beta1.TracePipeline) []telemetryv1beta1.SecretKeyRef {
+func GetSecretRefsTracePipeline(tp *telemetryv1beta1.TracePipeline) []telemetryv1beta1.SecretKeyRef {
 	return getSecretRefsInOTLPOutput(tp.Spec.Output.OTLP)
 }
 
-func getSecretRefsMetricPipeline(mp *telemetryv1beta1.MetricPipeline) []telemetryv1beta1.SecretKeyRef {
+func GetSecretRefsMetricPipeline(mp *telemetryv1beta1.MetricPipeline) []telemetryv1beta1.SecretKeyRef {
 	return getSecretRefsInOTLPOutput(mp.Spec.Output.OTLP)
 }
 
-func getSecretRefsLogPipeline(lp *telemetryv1beta1.LogPipeline) []telemetryv1beta1.SecretKeyRef {
+func GetSecretRefsLogPipeline(lp *telemetryv1beta1.LogPipeline) []telemetryv1beta1.SecretKeyRef {
+	if lp.Spec.Output.OTLP != nil {
+		return getSecretRefsInOTLPOutput(lp.Spec.Output.OTLP)
+	}
+
+	return getSecretRefsFluentBitLogPipeline(lp)
+}
+
+func getSecretRefsFluentBitLogPipeline(lp *telemetryv1beta1.LogPipeline) []telemetryv1beta1.SecretKeyRef {
 	var refs []telemetryv1beta1.SecretKeyRef
 
 	for _, v := range lp.Spec.FluentBitVariables {
@@ -178,4 +182,22 @@ func appendIfSecretRef(secretKeyRefs []telemetryv1beta1.SecretKeyRef, valueType 
 	}
 
 	return secretKeyRefs
+}
+
+// RefsToSecretNames converts a list of SecretKeyRefs to a list of unique NamespacedNames.
+// This is useful for the secret watcher which tracks secrets by their NamespacedName.
+func RefsToSecretNames(refs []telemetryv1beta1.SecretKeyRef) []types.NamespacedName {
+	seen := make(map[types.NamespacedName]struct{})
+
+	var names []types.NamespacedName
+
+	for _, ref := range refs {
+		nn := types.NamespacedName{Name: ref.Name, Namespace: ref.Namespace}
+		if _, exists := seen[nn]; !exists {
+			seen[nn] = struct{}{}
+			names = append(names, nn)
+		}
+	}
+
+	return names
 }
