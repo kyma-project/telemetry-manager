@@ -33,9 +33,6 @@ runs:
 
     - name: Provision K3D cluster${{ inputs.experimental == 'true' && ' in experimental mode' || '' }}${{ inputs.install-istio == 'true' && ' with Istio' || '' }}
       shell: bash
-      env:
-        #TODO: Remove after 1.54.0 release
-        MANAGER_IMAGE: ${{ env.MANAGER_IMAGE}}
       run: |
         echo "::notice title=K3D Cluster::Provisioning K3D Cluster (Experimental: ${{ inputs.experimental }}, Install Istio: ${{ inputs.install-istio }}, FIPS Mode: ${{ inputs.operate-in-fips-mode }})"
 

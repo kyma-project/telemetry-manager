@@ -7,10 +7,7 @@ import (
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 )
 
 const (
@@ -32,11 +29,11 @@ func applyWebhookConfigResources(ctx context.Context, c client.Client, caBundle 
 	}
 
 	conversionWebhookConfig := makeConversionWebhookConfig(caBundle, config)
-	if err := updatePipelineCRDWithConversionWebhookConfig(ctx, c, types.NamespacedName{Name: names.LogPipelineCRD}, conversionWebhookConfig); err != nil {
+	if err := updatePipelineCRDWithConversionWebhookConfig(ctx, c, types.NamespacedName{Name: "logpipelines.telemetry.kyma-project.io"}, conversionWebhookConfig); err != nil {
 		return fmt.Errorf("failed to update LogPipeline CRD with conversion webhook configuration: %w", err)
 	}
 
-	if err := updatePipelineCRDWithConversionWebhookConfig(ctx, c, types.NamespacedName{Name: names.MetricPipelineCRD}, conversionWebhookConfig); err != nil {
+	if err := updatePipelineCRDWithConversionWebhookConfig(ctx, c, types.NamespacedName{Name: "metricpipelines.telemetry.kyma-project.io"}, conversionWebhookConfig); err != nil {
 		return fmt.Errorf("failed to update MetricPipeline CRD with conversion webhook configuration: %w", err)
 	}
 
@@ -64,8 +61,8 @@ func makeConversionWebhookConfig(caBundle []byte, config Config) apiextensionsv1
 				Service: &apiextensionsv1.ServiceReference{
 					Namespace: config.ServiceName.Namespace,
 					Name:      config.ServiceName.Name,
-					Path:      ptr.To("/convert"),
-					Port:      ptr.To(webhookServicePort),
+					Path:      new("/convert"),
+					Port:      new(webhookServicePort),
 				},
 				CABundle: caBundle,
 			},

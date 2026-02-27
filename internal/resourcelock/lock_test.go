@@ -1,6 +1,7 @@
 package resourcelock
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -91,6 +92,38 @@ func TestIsLockHolder(t *testing.T) {
 	require.Equal(t, ErrMaxPipelinesExceeded, err)
 	err = l.IsLockHolder(ctx, owner3)
 	require.Equal(t, ErrMaxPipelinesExceeded, err)
+}
+
+func TestTryAcquireLock_UnlimitedPipelines(t *testing.T) {
+	owners := make([]*corev1.ConfigMap, 6)
+	for i := range owners {
+		owners[i] = &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      fmt.Sprintf("owner%d", i+1),
+				Namespace: "default",
+			},
+		}
+	}
+
+	ctx := t.Context()
+	fakeClient := fake.NewClientBuilder().Build()
+	// Create a locker with UnlimitedPipelineCount (-1) to allow unlimited pipelines
+	l := NewLocker(fakeClient, lockName, UnlimitedPipelineCount)
+
+	// All owners should be able to acquire the lock without any errors
+	for _, owner := range owners {
+		err := l.TryAcquireLock(ctx, owner)
+		require.NoError(t, err)
+	}
+
+	// Verify that the lock ConfigMap was not created since unlimited pipelines bypass locking
+	var lock corev1.ConfigMap
+
+	err := fakeClient.Get(ctx, types.NamespacedName{Name: lockName.Name + "-lock", Namespace: lockName.Namespace}, &lock)
+	require.NoError(t, err, "Lock ConfigMap should be created when unlimited pipelines is enabled")
+
+	getOwners := lock.GetOwnerReferences()
+	require.Len(t, getOwners, 6)
 }
 
 func Test_new(t *testing.T) {

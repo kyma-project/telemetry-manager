@@ -13,7 +13,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -98,7 +97,7 @@ var (
 						Name:      webhookService.Name,
 						Namespace: webhookService.Namespace,
 						Port:      &servicePort,
-						Path:      ptr.To("/validate-telemetry-kyma-project-io-v1beta1-logpipeline"),
+						Path:      new("/validate-telemetry-kyma-project-io-v1beta1-logpipeline"),
 					},
 				},
 				FailurePolicy:  &failurePolicy,
@@ -134,7 +133,7 @@ var (
 						Name:      webhookService.Name,
 						Namespace: webhookService.Namespace,
 						Port:      &servicePort,
-						Path:      ptr.To("/mutate-telemetry-kyma-project-io-v1beta1-metricpipeline"),
+						Path:      new("/mutate-telemetry-kyma-project-io-v1beta1-metricpipeline"),
 					},
 				},
 				FailurePolicy:  &failurePolicy,
@@ -161,7 +160,7 @@ var (
 						Name:      webhookService.Name,
 						Namespace: webhookService.Namespace,
 						Port:      &servicePort,
-						Path:      ptr.To("/mutate-telemetry-kyma-project-io-v1beta1-tracepipeline"),
+						Path:      new("/mutate-telemetry-kyma-project-io-v1beta1-tracepipeline"),
 					},
 				},
 				FailurePolicy:  &failurePolicy,
@@ -188,7 +187,7 @@ var (
 						Name:      webhookService.Name,
 						Namespace: webhookService.Namespace,
 						Port:      &servicePort,
-						Path:      ptr.To("/mutate-telemetry-kyma-project-io-v1beta1-logpipeline"),
+						Path:      new("/mutate-telemetry-kyma-project-io-v1beta1-logpipeline"),
 					},
 				},
 				FailurePolicy:  &failurePolicy,

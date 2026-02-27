@@ -13,7 +13,7 @@ import (
 )
 
 func TestTransformInvalid(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelMetricsMisc)
+	suite.SetupTest(t, suite.LabelMetricsMisc)
 
 	var (
 		uniquePrefix = unique.Prefix()

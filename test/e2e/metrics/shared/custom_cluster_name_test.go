@@ -26,13 +26,15 @@ import (
 
 func TestCustomClusterName(t *testing.T) {
 	tests := []struct {
-		label            string
+		name             string
+		labels           []string
 		input            telemetryv1beta1.MetricPipelineInput
 		generatorBuilder func(ns string) []client.Object
 	}{
 		{
-			label: suite.LabelMetricAgentSetA,
-			input: testutils.BuildMetricPipelineRuntimeInput(),
+			name:   "agent",
+			labels: []string{suite.LabelMetricAgentSetA, suite.LabelMetricAgent, suite.LabelSetA},
+			input:  testutils.BuildMetricPipelineRuntimeInput(),
 			generatorBuilder: func(ns string) []client.Object {
 				generator := prommetricgen.New(ns)
 
@@ -43,8 +45,9 @@ func TestCustomClusterName(t *testing.T) {
 			},
 		},
 		{
-			label: suite.LabelMetricGatewaySetA,
-			input: testutils.BuildMetricPipelineOTLPInput(),
+			name:   "gateway",
+			labels: []string{suite.LabelMetricGatewaySetA, suite.LabelMetricGateway, suite.LabelSetA},
+			input:  testutils.BuildMetricPipelineOTLPInput(),
 			generatorBuilder: func(ns string) []client.Object {
 				return []client.Object{
 					telemetrygen.NewPod(ns, telemetrygen.SignalTypeMetrics).K8sObject(),
@@ -54,11 +57,11 @@ func TestCustomClusterName(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		t.Run(tc.label, func(t *testing.T) {
-			suite.RegisterTestCase(t, tc.label)
+		t.Run(tc.name, func(t *testing.T) {
+			suite.SetupTest(t, tc.labels...)
 
 			var (
-				uniquePrefix = unique.Prefix(tc.label)
+				uniquePrefix = unique.Prefix(tc.name)
 				pipelineName = uniquePrefix()
 				backendNs    = uniquePrefix("backend")
 				genNs        = uniquePrefix("gen")
@@ -104,7 +107,7 @@ func TestCustomClusterName(t *testing.T) {
 			assert.BackendReachable(t, backend)
 			assert.DeploymentReady(t, kitkyma.MetricGatewayName)
 
-			if suite.ExpectAgent(tc.label) {
+			if suite.ExpectAgent(tc.labels...) {
 				assert.DaemonSetReady(t, kitkyma.MetricAgentName)
 			}
 

@@ -20,7 +20,7 @@ import (
 )
 
 func TestInstrumentationScope(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelLogAgent)
+	suite.SetupTest(t, suite.LabelLogAgent)
 
 	var (
 		uniquePrefix = unique.Prefix()

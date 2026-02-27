@@ -15,6 +15,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdoutloggen"
@@ -27,6 +28,7 @@ func TestMetricsEndpoint_OTel(t *testing.T) {
 	tests := []struct {
 		name                string
 		labels              []string
+		opts                []kubeprep.Option
 		input               telemetryv1beta1.LogPipelineInput
 		logGeneratorBuilder func(namespace string) client.Object
 		expectAgent         bool
@@ -58,7 +60,8 @@ func TestMetricsEndpoint_OTel(t *testing.T) {
 		},
 		{
 			name:   fmt.Sprintf("%s-%s", suite.LabelLogGateway, suite.LabelExperimental),
-			labels: []string{suite.LabelLogGateway, suite.LabelExperimental},
+			labels: []string{suite.LabelLogGateway},
+			opts:   []kubeprep.Option{kubeprep.WithExperimental()},
 			input:  testutils.BuildLogPipelineOTLPInput(),
 			logGeneratorBuilder: func(namespace string) client.Object {
 				return telemetrygen.NewDeployment(namespace, telemetrygen.SignalTypeCentralLogs).K8sObject()
@@ -71,7 +74,7 @@ func TestMetricsEndpoint_OTel(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			suite.RegisterTestCase(t, tc.labels...)
+			suite.SetupTestWithOptions(t, tc.labels, tc.opts...)
 
 			var (
 				uniquePrefix = unique.Prefix(tc.name)
@@ -106,7 +109,7 @@ func TestMetricsEndpoint_OTel(t *testing.T) {
 }
 
 func TestMetricsEndpoint_FluentBit(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelFluentBit)
+	suite.SetupTestWithOptions(t, []string{suite.LabelFluentBit}, kubeprep.WithOverrideFIPSMode(false))
 
 	var (
 		uniquePrefix = unique.Prefix()

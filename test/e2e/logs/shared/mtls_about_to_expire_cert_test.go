@@ -16,6 +16,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdoutloggen"
@@ -28,6 +29,7 @@ func TestMTLSAboutToExpireCert_OTel(t *testing.T) {
 	tests := []struct {
 		name                string
 		labels              []string
+		opts                []kubeprep.Option
 		inputBuilder        func(includeNs string) telemetryv1beta1.LogPipelineInput
 		logGeneratorBuilder func(ns string) client.Object
 		resourceName        types.NamespacedName
@@ -59,7 +61,8 @@ func TestMTLSAboutToExpireCert_OTel(t *testing.T) {
 		},
 		{
 			name:   fmt.Sprintf("%s-%s", suite.LabelLogGateway, suite.LabelExperimental),
-			labels: []string{suite.LabelLogGateway, suite.LabelExperimental, suite.LabelMTLS},
+			labels: []string{suite.LabelLogGateway, suite.LabelMTLS},
+			opts:   []kubeprep.Option{kubeprep.WithExperimental()},
 			inputBuilder: func(includeNs string) telemetryv1beta1.LogPipelineInput {
 				return testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
 			},
@@ -72,7 +75,7 @@ func TestMTLSAboutToExpireCert_OTel(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			suite.RegisterTestCase(t, tc.labels...)
+			suite.SetupTestWithOptions(t, tc.labels, tc.opts...)
 
 			var (
 				uniquePrefix = unique.Prefix(tc.name)
@@ -134,7 +137,7 @@ func TestMTLSAboutToExpireCert_OTel(t *testing.T) {
 }
 
 func TestMTLSAboutToExpireCert_FluentBit(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelFluentBit)
+	suite.SetupTestWithOptions(t, []string{suite.LabelFluentBit}, kubeprep.WithOverrideFIPSMode(false))
 
 	var (
 		uniquePrefix = unique.Prefix()

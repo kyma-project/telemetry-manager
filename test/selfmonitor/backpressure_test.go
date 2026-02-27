@@ -13,6 +13,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
@@ -24,13 +25,15 @@ import (
 
 func TestBackpressure(t *testing.T) {
 	tests := []struct {
-		labelPrefix string
-		pipeline    func(includeNs string, backend *kitbackend.Backend) client.Object
-		generator   func(ns string) []client.Object
-		assertions  func(t *testing.T, pipelineName string)
+		labelPrefix      string
+		pipeline         func(includeNs string, backend *kitbackend.Backend) client.Object
+		generator        func(ns string) []client.Object
+		assertions       func(t *testing.T, pipelineName string)
+		additionalLabels []string
 	}{
 		{
-			labelPrefix: suite.LabelSelfMonitorLogAgentPrefix,
+			labelPrefix:      suite.LabelSelfMonitorLogAgentPrefix,
+			additionalLabels: []string{suite.LabelLogAgent},
 			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewLogPipelineBuilder().
 					WithName(suite.LabelSelfMonitorLogAgentPrefix).
@@ -62,7 +65,8 @@ func TestBackpressure(t *testing.T) {
 			},
 		},
 		{
-			labelPrefix: suite.LabelSelfMonitorLogGatewayPrefix,
+			labelPrefix:      suite.LabelSelfMonitorLogGatewayPrefix,
+			additionalLabels: []string{suite.LabelLogGateway},
 			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewLogPipelineBuilder().
 					WithName(suite.LabelSelfMonitorLogGatewayPrefix).
@@ -96,7 +100,8 @@ func TestBackpressure(t *testing.T) {
 			},
 		},
 		{
-			labelPrefix: suite.LabelSelfMonitorFluentBitPrefix,
+			labelPrefix:      suite.LabelSelfMonitorFluentBitPrefix,
+			additionalLabels: []string{suite.LabelFluentBit},
 			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewLogPipelineBuilder().
 					WithName(suite.LabelSelfMonitorFluentBitPrefix).
@@ -126,7 +131,8 @@ func TestBackpressure(t *testing.T) {
 			},
 		},
 		{
-			labelPrefix: suite.LabelSelfMonitorMetricGatewayPrefix,
+			labelPrefix:      suite.LabelSelfMonitorMetricGatewayPrefix,
+			additionalLabels: []string{suite.LabelMetricGateway},
 			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewMetricPipelineBuilder().
 					WithName(suite.LabelSelfMonitorMetricGatewayPrefix).
@@ -159,7 +165,8 @@ func TestBackpressure(t *testing.T) {
 			},
 		},
 		{
-			labelPrefix: suite.LabelSelfMonitorMetricAgentPrefix,
+			labelPrefix:      suite.LabelSelfMonitorMetricAgentPrefix,
+			additionalLabels: []string{suite.LabelMetricAgent},
 			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewMetricPipelineBuilder().
 					WithName(suite.LabelSelfMonitorMetricAgentPrefix).
@@ -194,7 +201,8 @@ func TestBackpressure(t *testing.T) {
 			},
 		},
 		{
-			labelPrefix: suite.LabelSelfMonitorTracesPrefix,
+			labelPrefix:      suite.LabelSelfMonitorTracesPrefix,
+			additionalLabels: []string{suite.LabelTraces},
 			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewTracePipelineBuilder().
 					WithName(suite.LabelSelfMonitorTracesPrefix).
@@ -228,9 +236,25 @@ func TestBackpressure(t *testing.T) {
 		},
 	}
 
+	// Tests run once per test case. FIPS mode is determined by environment (FIPS_IMAGE_AVAILABLE).
+	// FluentBit tests always run in no-FIPS mode via WithOverrideFIPSMode(false).
 	for _, tc := range tests {
 		t.Run(tc.labelPrefix, func(t *testing.T) {
-			suite.RegisterTestCase(t, label(tc.labelPrefix, suite.LabelSelfMonitorBackpressureSuffix))
+			selfMonLabels, selfMonOpts := labelsForSelfMonitor(tc.labelPrefix, suite.LabelBackpressure)
+
+			var labels []string
+
+			labels = append(labels, suite.LabelBackpressure)
+			labels = append(labels, selfMonLabels...)
+			labels = append(labels, tc.additionalLabels...)
+
+			// FluentBit doesn't support FIPS mode
+			opts := selfMonOpts
+			if isFluentBitTest(tc.labelPrefix) {
+				opts = append(opts, kubeprep.WithOverrideFIPSMode(false))
+			}
+
+			suite.SetupTestWithOptions(t, labels, opts...)
 
 			var (
 				uniquePrefix = unique.Prefix(tc.labelPrefix)

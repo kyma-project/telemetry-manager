@@ -16,7 +16,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/config"
@@ -38,19 +37,16 @@ const (
 	varLogVolumeName                = "varlog"
 	sharedFluentBitConfigVolumeName = "shared-fluent-bit-config"
 	dynamicConfigVolumeName         = "dynamic-config"
-	dynamicParsersConfigVolumeName  = "dynamic-parsers-config"
 	dynamicFilesVolumeName          = "dynamic-files"
 	varFluentBitVolumeName          = "varfluentbit"
 	outputTLSConfigVolumeName       = "output-tls-config"
 
 	// Volume mount paths
 	configVolumeFluentBitMountPath       = "/fluent-bit/etc/fluent-bit.conf"
-	configVolumeCustomParsersMountPath   = "/fluent-bit/etc/custom_parsers.conf"
 	luaScriptsVolumeMountPath            = "/fluent-bit/scripts/filter-script.lua"
 	varLogVolumeMountPath                = "/var/log"
 	sharedFluentBitConfigVolumeMountPath = "/fluent-bit/etc"
 	dynamicConfigVolumeMountPath         = "/fluent-bit/etc/dynamic/"
-	dynamicParsersConfigVolumeMountPath  = "/fluent-bit/etc/dynamic-parsers/"
 	dynamicFilesVolumeMountPath          = "/files"
 	varFluentBitVolumeMountPath          = "/data"
 	outputTLSConfigVolumeMountPath       = "/fluent-bit/etc/output-tls-config/"
@@ -67,7 +63,7 @@ var (
 )
 
 type AgentApplyOptions struct {
-	AllowedPorts    []int32
+	IstioEnabled    bool
 	FluentBitConfig *builder.FluentBitConfig
 }
 
@@ -81,7 +77,6 @@ type AgentApplierDeleter struct {
 
 	daemonSetName           types.NamespacedName
 	luaConfigMapName        types.NamespacedName
-	parsersConfigMapName    types.NamespacedName
 	filesConfigMapName      types.NamespacedName
 	sectionsConfigMapName   types.NamespacedName
 	envConfigSecretName     types.NamespacedName
@@ -104,7 +99,6 @@ func NewFluentBitApplierDeleter(global config.Global, namespace, fbImage, export
 
 		daemonSetName:           types.NamespacedName{Name: names.FluentBit, Namespace: namespace},
 		luaConfigMapName:        types.NamespacedName{Name: names.FluentBitLuaScriptsConfigMap, Namespace: namespace},
-		parsersConfigMapName:    types.NamespacedName{Name: names.FluentBitParsersConfigMap, Namespace: namespace},
 		filesConfigMapName:      types.NamespacedName{Name: names.FluentBitFilesConfigMap, Namespace: namespace},
 		sectionsConfigMapName:   types.NamespacedName{Name: names.FluentBitSectionsConfigMap, Namespace: namespace},
 		envConfigSecretName:     types.NamespacedName{Name: names.FluentBitEnvSecret, Namespace: namespace},
@@ -175,18 +169,17 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 		return err
 	}
 
-	networkPolicy := commonresources.MakeNetworkPolicy(aad.daemonSetName, opts.AllowedPorts, makeLabels(), selectorLabels())
-	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, networkPolicy); err != nil {
-		return fmt.Errorf("failed to create fluent bit network policy: %w", err)
+	networkPolicies := makeNetworkPolicies(aad.daemonSetName, opts.IstioEnabled)
+
+	for _, np := range networkPolicies {
+		if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, np); err != nil {
+			return fmt.Errorf("failed to create fluent bit network policies: %w", err)
+		}
 	}
 
-	//TODO: remove parser configmap creation after logparser removal is rolled out
-	parserCm := corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{
-		Name:      names.FluentBitParsersConfigMap,
-		Namespace: aad.namespace,
-	}}
-	if err := k8sutils.DeleteObject(ctx, c, &parserCm); err != nil {
-		return fmt.Errorf("failed to delete parser configmap: %w", err)
+	// TODO: Remove after rollout 1.59.0
+	if err := commonresources.CleanupOldNetworkPolicy(ctx, c, aad.daemonSetName); err != nil {
+		return fmt.Errorf("failed to cleanup old fluentbit network policy: %w", err)
 	}
 
 	return nil
@@ -260,8 +253,11 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete daemonset: %w", err))
 	}
 
-	networkPolicy := networkingv1.NetworkPolicy{ObjectMeta: objectMeta}
-	if err := k8sutils.DeleteObject(ctx, c, &networkPolicy); err != nil {
+	networkPolicySelector := map[string]string{
+		commonresources.LabelKeyK8sName: "fluent-bit",
+	}
+
+	if err := k8sutils.DeleteObjectsByLabelSelector(ctx, c, &networkingv1.NetworkPolicyList{}, networkPolicySelector); err != nil {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete networkpolicy: %w", err))
 	}
 
@@ -403,8 +399,6 @@ func (aad *AgentApplierDeleter) fluentBitVolumeMounts() []corev1.VolumeMount {
 		{MountPath: sharedFluentBitConfigVolumeMountPath, Name: sharedFluentBitConfigVolumeName},
 		{MountPath: configVolumeFluentBitMountPath, Name: configVolumeName, SubPath: "fluent-bit.conf"},
 		{MountPath: dynamicConfigVolumeMountPath, Name: dynamicConfigVolumeName},
-		{MountPath: dynamicParsersConfigVolumeMountPath, Name: dynamicParsersConfigVolumeName},
-		{MountPath: configVolumeCustomParsersMountPath, Name: configVolumeName, SubPath: "custom_parsers.conf"},
 		{MountPath: luaScriptsVolumeMountPath, Name: luaScriptsVolumeName, SubPath: "filter-script.lua"},
 		{MountPath: varLogVolumeMountPath, Name: varLogVolumeName, ReadOnly: true},
 		{MountPath: varFluentBitVolumeMountPath, Name: varFluentBitVolumeName},
@@ -460,16 +454,7 @@ func (aad *AgentApplierDeleter) fluentBitVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{Name: names.FluentBitSectionsConfigMap},
-					Optional:             ptr.To(true),
-				},
-			},
-		},
-		{
-			Name: dynamicParsersConfigVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{Name: names.FluentBitParsersConfigMap},
-					Optional:             ptr.To(true),
+					Optional:             new(true),
 				},
 			},
 		},
@@ -478,7 +463,7 @@ func (aad *AgentApplierDeleter) fluentBitVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{Name: names.FluentBitFilesConfigMap},
-					Optional:             ptr.To(true),
+					Optional:             new(true),
 				},
 			},
 		},
@@ -707,6 +692,29 @@ func makeTLSFileConfigSecret(name types.NamespacedName, tlsFileConfigSecret map[
 	}
 }
 
+func makeNetworkPolicies(name types.NamespacedName, istioEnabled bool) []*networkingv1.NetworkPolicy {
+	metricsNetworkPolicy := commonresources.MakeNetworkPolicy(
+		name,
+		makeLabels(),
+		selectorLabels(),
+		commonresources.WithNameSuffix("metrics"),
+		commonresources.WithIngressFromPodsInAllNamespaces(
+			map[string]string{
+				commonresources.LabelKeyTelemetryMetricsScraping: commonresources.LabelValueTelemetryMetricsScraping,
+			},
+			makeFluentBitMetricsPorts(istioEnabled)),
+	)
+
+	fluentBitNetworkPolicy := commonresources.MakeNetworkPolicy(
+		name,
+		makeLabels(),
+		selectorLabels(),
+		commonresources.WithEgressToAny(),
+	)
+
+	return []*networkingv1.NetworkPolicy{metricsNetworkPolicy, fluentBitNetworkPolicy}
+}
+
 func makeLabels() map[string]string {
 	result := commonresources.MakeDefaultLabels("fluent-bit", commonresources.LabelValueK8sComponentAgent)
 	result[commonresources.LabelKeyK8sInstance] = commonresources.LabelValueK8sInstance
@@ -719,4 +727,13 @@ func selectorLabels() map[string]string {
 	result[commonresources.LabelKeyK8sInstance] = commonresources.LabelValueK8sInstance
 
 	return result
+}
+
+func makeFluentBitMetricsPorts(istioEnabled bool) []int32 {
+	metricsPorts := []int32{fbports.HTTP, fbports.ExporterMetrics}
+	if istioEnabled {
+		metricsPorts = append(metricsPorts, fbports.IstioEnvoyTelemetry)
+	}
+
+	return metricsPorts
 }

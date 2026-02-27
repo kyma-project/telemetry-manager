@@ -269,7 +269,6 @@ func TestMaxPipelineLimit(t *testing.T) {
 	)
 	assertAll(t)
 }
-
 func TestGatewayFlowHealthCondition(t *testing.T) {
 	tests := []struct {
 		name            string
@@ -369,12 +368,7 @@ func TestGatewayFlowHealthCondition(t *testing.T) {
 				WithGatewayApplierDeleter(gatewayApplierDeleterMock),
 			)
 			result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
-
-			if tt.probeErr != nil {
-				require.Error(t, result.err)
-			} else {
-				require.NoError(t, result.err)
-			}
+			require.NoError(t, result.err)
 
 			requireHasStatusCondition(t, result.pipeline,
 				conditions.TypeFlowHealthy,
@@ -387,7 +381,6 @@ func TestGatewayFlowHealthCondition(t *testing.T) {
 		})
 	}
 }
-
 func TestAgentFlowHealthCondition(t *testing.T) {
 	tests := []struct {
 		name            string
@@ -418,9 +411,8 @@ func TestAgentFlowHealthCondition(t *testing.T) {
 			probe: prober.OTelAgentProbeResult{
 				PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
 			},
-			expectedStatus: metav1.ConditionFalse,
-			expectedReason: conditions.ReasonSelfMonAgentSomeDataDropped,
-			// TODO: Fix the documentation text in the link
+			expectedStatus:  metav1.ConditionFalse,
+			expectedReason:  conditions.ReasonSelfMonAgentSomeDataDropped,
 			expectedMessage: "Backend is reachable, but rejecting metrics. Some metrics are dropped. See troubleshooting: " + conditions.LinkNotAllDataArriveAtBackend,
 		},
 		{
@@ -463,12 +455,7 @@ func TestAgentFlowHealthCondition(t *testing.T) {
 				withGatewayConfigBuilderAssert(gatewayConfigBuilderMock),
 			)
 			result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
-
-			if tt.probeErr != nil {
-				require.Error(t, result.err)
-			} else {
-				require.NoError(t, result.err)
-			}
+			require.NoError(t, result.err)
 
 			requireHasStatusCondition(t, result.pipeline,
 				conditions.TypeFlowHealthy,

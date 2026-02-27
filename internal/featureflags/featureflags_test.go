@@ -29,5 +29,5 @@ func TestEnabledFlags(t *testing.T) {
 
 func TestFeatureFlag_String(t *testing.T) {
 	assert.Equal(t, "placeholder", placeholder.String())
-	assert.Equal(t, "FeatureFlag(2)", FeatureFlag(2).String())
+	assert.Equal(t, "FeatureFlag(99)", FeatureFlag(99).String())
 }

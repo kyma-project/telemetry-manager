@@ -7,7 +7,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
@@ -191,9 +190,9 @@ func TestMergeSectionsConfig(t *testing.T) {
 						Exclude: []string{"container1", "container2"},
 					},
 					Namespaces:               &telemetryv1beta1.NamespaceSelector{},
-					FluentBitKeepAnnotations: ptr.To(true),
-					FluentBitDropLabels:      ptr.To(false),
-					KeepOriginalBody:         ptr.To(true),
+					FluentBitKeepAnnotations: new(true),
+					FluentBitDropLabels:      new(false),
+					KeepOriginalBody:         new(true),
 				},
 			},
 			FluentBitFilters: []telemetryv1beta1.FluentBitFilter{
@@ -281,9 +280,9 @@ func TestMergeSectionsConfigCustomOutput(t *testing.T) {
 		Spec: telemetryv1beta1.LogPipelineSpec{
 			Input: telemetryv1beta1.LogPipelineInput{
 				Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
-					FluentBitKeepAnnotations: ptr.To(true),
-					FluentBitDropLabels:      ptr.To(false),
-					KeepOriginalBody:         ptr.To(true),
+					FluentBitKeepAnnotations: new(true),
+					FluentBitDropLabels:      new(false),
+					KeepOriginalBody:         new(true),
 					Namespaces:               &telemetryv1beta1.NamespaceSelector{},
 				},
 			},
