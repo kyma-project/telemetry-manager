@@ -13,6 +13,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
@@ -24,13 +25,15 @@ import (
 
 func TestOutage(t *testing.T) {
 	tests := []struct {
-		labelPrefix string
-		pipeline    func(includeNs string, backend *kitbackend.Backend) client.Object
-		generator   func(ns string) []client.Object
-		assert      func(t *testing.T, pipelineName string)
+		labelPrefix      string
+		pipeline         func(includeNs string, backend *kitbackend.Backend) client.Object
+		generator        func(ns string) []client.Object
+		assertions       func(t *testing.T, pipelineName string)
+		additionalLabels []string
 	}{
 		{
-			labelPrefix: suite.LabelSelfMonitorLogAgentPrefix,
+			labelPrefix:      suite.LabelSelfMonitorLogAgentPrefix,
+			additionalLabels: []string{suite.LabelLogAgent},
 			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewLogPipelineBuilder().
 					WithName(suite.LabelSelfMonitorLogAgentPrefix).
@@ -43,7 +46,7 @@ func TestOutage(t *testing.T) {
 			generator: func(ns string) []client.Object {
 				return []client.Object{stdoutloggen.NewDeployment(ns, stdoutloggen.WithRate(4000)).K8sObject()}
 			},
-			assert: func(t *testing.T, pipelineName string) {
+			assertions: func(t *testing.T, pipelineName string) {
 				assert.DeploymentReady(t, kitkyma.LogGatewayName)
 				assert.DaemonSetReady(t, kitkyma.LogAgentName)
 				assert.OTelLogPipelineHealthy(t, pipelineName)
@@ -61,7 +64,8 @@ func TestOutage(t *testing.T) {
 			},
 		},
 		{
-			labelPrefix: suite.LabelSelfMonitorLogGatewayPrefix,
+			labelPrefix:      suite.LabelSelfMonitorLogGatewayPrefix,
+			additionalLabels: []string{suite.LabelLogGateway},
 			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewLogPipelineBuilder().
 					WithName(suite.LabelSelfMonitorLogGatewayPrefix).
@@ -79,7 +83,7 @@ func TestOutage(t *testing.T) {
 						K8sObject(),
 				}
 			},
-			assert: func(t *testing.T, pipelineName string) {
+			assertions: func(t *testing.T, pipelineName string) {
 				assert.DeploymentReady(t, kitkyma.LogGatewayName)
 				assert.OTelLogPipelineHealthy(t, pipelineName)
 				assert.LogPipelineConditionReasonsTransition(t, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
@@ -96,7 +100,8 @@ func TestOutage(t *testing.T) {
 			},
 		},
 		{
-			labelPrefix: suite.LabelSelfMonitorFluentBitPrefix,
+			labelPrefix:      suite.LabelSelfMonitorFluentBitPrefix,
+			additionalLabels: []string{suite.LabelFluentBit},
 			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewLogPipelineBuilder().
 					WithName(suite.LabelSelfMonitorFluentBitPrefix).
@@ -107,9 +112,9 @@ func TestOutage(t *testing.T) {
 				return &p
 			},
 			generator: func(ns string) []client.Object {
-				return []client.Object{stdoutloggen.NewDeployment(ns, stdoutloggen.WithRate(5000)).K8sObject()}
+				return []client.Object{stdoutloggen.NewDeployment(ns, stdoutloggen.WithRate(5_000)).K8sObject()}
 			},
-			assert: func(t *testing.T, pipelineName string) {
+			assertions: func(t *testing.T, pipelineName string) {
 				assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
 				assert.FluentBitLogPipelineHealthy(t, pipelineName)
 				assert.LogPipelineConditionReasonsTransition(t, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
@@ -126,9 +131,9 @@ func TestOutage(t *testing.T) {
 				})
 			},
 		},
-
 		{
-			labelPrefix: suite.LabelSelfMonitorMetricGatewayPrefix,
+			labelPrefix:      suite.LabelSelfMonitorMetricGatewayPrefix,
+			additionalLabels: []string{suite.LabelMetricGateway},
 			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewMetricPipelineBuilder().
 					WithName(suite.LabelSelfMonitorMetricGatewayPrefix).
@@ -147,7 +152,7 @@ func TestOutage(t *testing.T) {
 						K8sObject(),
 				}
 			},
-			assert: func(t *testing.T, pipelineName string) {
+			assertions: func(t *testing.T, pipelineName string) {
 				assert.DeploymentReady(t, kitkyma.MetricGatewayName)
 				assert.MetricPipelineHealthy(t, pipelineName)
 				assert.MetricPipelineConditionReasonsTransition(t, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
@@ -164,7 +169,8 @@ func TestOutage(t *testing.T) {
 			},
 		},
 		{
-			labelPrefix: suite.LabelSelfMonitorMetricAgentPrefix,
+			labelPrefix:      suite.LabelSelfMonitorMetricAgentPrefix,
+			additionalLabels: []string{suite.LabelMetricAgent},
 			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewMetricPipelineBuilder().
 					WithName(suite.LabelSelfMonitorMetricAgentPrefix).
@@ -182,7 +188,7 @@ func TestOutage(t *testing.T) {
 					metricProducer.Service().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
 				}
 			},
-			assert: func(t *testing.T, pipelineName string) {
+			assertions: func(t *testing.T, pipelineName string) {
 				assert.DeploymentReady(t, kitkyma.MetricGatewayName)
 				assert.DaemonSetReady(t, kitkyma.MetricAgentName)
 				assert.MetricPipelineHealthy(t, pipelineName)
@@ -199,9 +205,9 @@ func TestOutage(t *testing.T) {
 				})
 			},
 		},
-
 		{
-			labelPrefix: suite.LabelSelfMonitorTracesPrefix,
+			labelPrefix:      suite.LabelSelfMonitorTracesPrefix,
+			additionalLabels: []string{suite.LabelTraces},
 			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewTracePipelineBuilder().
 					WithName(suite.LabelSelfMonitorTracesPrefix).
@@ -218,7 +224,7 @@ func TestOutage(t *testing.T) {
 						K8sObject(),
 				}
 			},
-			assert: func(t *testing.T, pipelineName string) {
+			assertions: func(t *testing.T, pipelineName string) {
 				assert.DeploymentReady(t, kitkyma.TraceGatewayName)
 				assert.TracePipelineHealthy(t, pipelineName)
 				assert.TracePipelineConditionReasonsTransition(t, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
@@ -236,9 +242,25 @@ func TestOutage(t *testing.T) {
 		},
 	}
 
+	// Tests run once per test case. FIPS mode is determined by environment (FIPS_IMAGE_AVAILABLE).
+	// FluentBit tests always run in no-FIPS mode via WithOverrideFIPSMode(false).
 	for _, tc := range tests {
 		t.Run(tc.labelPrefix, func(t *testing.T) {
-			suite.RegisterTestCase(t, label(tc.labelPrefix, suite.LabelSelfMonitorOutageSuffix))
+			selfMonLabels, selfMonOpts := labelsForSelfMonitor(tc.labelPrefix, suite.LabelOutage)
+
+			var labels []string
+
+			labels = append(labels, suite.LabelOutage)
+			labels = append(labels, selfMonLabels...)
+			labels = append(labels, tc.additionalLabels...)
+
+			// FluentBit doesn't support FIPS mode
+			opts := selfMonOpts
+			if isFluentBitTest(tc.labelPrefix) {
+				opts = append(opts, kubeprep.WithOverrideFIPSMode(false))
+			}
+
+			suite.SetupTestWithOptions(t, labels, opts...)
 
 			var (
 				uniquePrefix = unique.Prefix(tc.labelPrefix)
@@ -269,7 +291,7 @@ func TestOutage(t *testing.T) {
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 			assert.DeploymentReady(t, kitkyma.SelfMonitorName)
-			tc.assert(t, pipeline.GetName())
+			tc.assertions(t, pipeline.GetName())
 		})
 	}
 }

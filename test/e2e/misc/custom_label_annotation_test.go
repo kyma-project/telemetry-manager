@@ -11,6 +11,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
@@ -185,7 +186,14 @@ func TestLabelAnnotation(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(string(tc.labelPrefix), func(t *testing.T) {
-			suite.RegisterTestCase(t, suite.LabelCustomLabelAnnotation)
+			// Use SetupTestWithOptions with custom helm values for labels/annotations
+			suite.SetupTestWithOptions(t,
+				[]string{suite.LabelCustomLabelAnnotation},
+				kubeprep.WithOverrideFIPSMode(false),
+				kubeprep.WithHelmValues(
+					"additionalMetadata.labels.my-meta-label=foo",
+					"additionalMetadata.annotations.my-meta-annotation=bar",
+				))
 
 			var (
 				uniquePrefix = unique.Prefix(string(tc.labelPrefix))

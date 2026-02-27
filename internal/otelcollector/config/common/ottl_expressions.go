@@ -31,6 +31,11 @@ func ResourceAttributeIsNilOrEmpty(key string) string {
 	return fmt.Sprintf("%s == nil or %s == \"\"", ResourceAttribute(key), ResourceAttribute(key))
 }
 
+// ResourceAttributeHasPrefix returns an OTel expression that checks if the resource attribute has the specified prefix
+func ResourceAttributeHasPrefix(key, prefix string) string {
+	return fmt.Sprintf("HasPrefix(resource.attributes[\"%s\"], \"%s\")", key, prefix)
+}
+
 func ResourceAttribute(key string) string {
 	return fmt.Sprintf("resource.attributes[\"%s\"]", key)
 }
@@ -93,6 +98,11 @@ func Not(expression string) string {
 	}
 
 	return fmt.Sprintf("not(%s)", expression)
+}
+
+// DeleteResourceAttribute returns an OTel expression that deletes the specified resource attribute key
+func DeleteResourceAttribute(key string) string {
+	return fmt.Sprintf("delete_key(resource.attributes, \"%s\")", key)
 }
 
 func isWrappedInParentheses(expression string) bool {

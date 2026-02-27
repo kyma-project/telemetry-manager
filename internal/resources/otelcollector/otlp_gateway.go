@@ -10,6 +10,7 @@ import (
 	istionetworkingclientv1 "istio.io/client-go/pkg/apis/networking/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -85,14 +86,11 @@ func NewOTLPGatewayApplierDeleter(globals config.Global, image, priorityClassNam
 
 // ApplyResources creates or updates the OTLP gateway DaemonSet and Legacy otlp logs service.
 func (o *OTLPGatewayApplierDeleter) ApplyResources(ctx context.Context, c client.Client, opts GatewayApplyOptions) error {
-	name := types.NamespacedName{Namespace: o.globals.TargetNamespace(), Name: o.baseName}
+	var (
+		name = types.NamespacedName{Namespace: o.globals.TargetNamespace(), Name: o.baseName}
+	)
 
-	ingressAllowedPorts := gatewayIngressAllowedPorts()
-	if opts.IstioEnabled {
-		ingressAllowedPorts = append(ingressAllowedPorts, ports.IstioEnvoy)
-	}
-
-	if err := applyCommonResources(ctx, c, name, commonresources.LabelValueK8sComponentGateway, o.rbac, ingressAllowedPorts); err != nil {
+	if err := applyCommonResources(ctx, c, name, commonresources.LabelValueK8sComponentGateway, o.rbac); err != nil {
 		return fmt.Errorf("failed to create common resource: %w", err)
 	}
 
@@ -107,6 +105,14 @@ func (o *OTLPGatewayApplierDeleter) ApplyResources(ctx context.Context, c client
 	}
 
 	configChecksum := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, []corev1.Secret{*secret})
+
+	networkPolicies := makeGatewayNetworkPolicies(name, opts.IstioEnabled)
+
+	for _, np := range networkPolicies {
+		if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, np); err != nil {
+			return fmt.Errorf("failed to create agent network policies: %w", err)
+		}
+	}
 
 	if err := k8sutils.CreateOrUpdateDaemonSet(ctx, c, o.makeGatewayDaemonSet(configChecksum, opts)); err != nil {
 		return fmt.Errorf("failed to create daemonset: %w", err)
@@ -157,6 +163,14 @@ func (o *OTLPGatewayApplierDeleter) DeleteResources(ctx context.Context, c clien
 	configMap := corev1.ConfigMap{ObjectMeta: objectMeta}
 	if err := k8sutils.DeleteObject(ctx, c, &configMap); err != nil {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete configmap: %w", err))
+	}
+
+	networkPolicySelector := map[string]string{
+		commonresources.LabelKeyK8sName: name.Name,
+	}
+
+	if err := k8sutils.DeleteObjectsByLabelSelector(ctx, c, &networkingv1.NetworkPolicyList{}, networkPolicySelector); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete network policy: %w", err))
 	}
 
 	daemonSet := appsv1.DaemonSet{ObjectMeta: objectMeta}

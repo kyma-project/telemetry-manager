@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
@@ -302,21 +301,21 @@ func TestIsOTLPInputEnabled(t *testing.T) {
 		{
 			name: "explicitly enabled",
 			input: &telemetryv1beta1.OTLPInput{
-				Enabled: ptr.To(true),
+				Enabled: new(true),
 			},
 			expected: true,
 		},
 		{
 			name: "explicitly disabled",
 			input: &telemetryv1beta1.OTLPInput{
-				Enabled: ptr.To(false),
+				Enabled: new(false),
 			},
 			expected: false,
 		},
 		{
 			name: "enabled with namespace selector",
 			input: &telemetryv1beta1.OTLPInput{
-				Enabled: ptr.To(true),
+				Enabled: new(true),
 				Namespaces: &telemetryv1beta1.NamespaceSelector{
 					Include: []string{"namespace1"},
 				},
@@ -326,7 +325,7 @@ func TestIsOTLPInputEnabled(t *testing.T) {
 		{
 			name: "disabled with namespace selector",
 			input: &telemetryv1beta1.OTLPInput{
-				Enabled: ptr.To(false),
+				Enabled: new(false),
 				Namespaces: &telemetryv1beta1.NamespaceSelector{
 					Include: []string{"namespace1"},
 				},

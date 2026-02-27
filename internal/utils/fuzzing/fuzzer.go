@@ -14,7 +14,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 	"sigs.k8s.io/randfill"
 )
@@ -60,7 +59,7 @@ func getFuzzer(scheme *runtime.Scheme, funcs ...fuzzer.FuzzerFuncs) *randfill.Fi
 						return
 					}
 
-					*in = ptr.To(intstr.FromInt32(c.Int31n(50))) //nolint:mnd // fuzzing value
+					*in = new(intstr.FromInt32(c.Int31n(50))) //nolint:mnd // fuzzing value
 				},
 			}
 		},

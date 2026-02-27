@@ -7,7 +7,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/ptr"
 
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
@@ -102,8 +101,8 @@ func makeGatewayDaemonSet(baseName string, namespace string, metadata WorkloadMe
 			UpdateStrategy: appsv1.DaemonSetUpdateStrategy{
 				Type: appsv1.RollingUpdateDaemonSetStrategyType,
 				RollingUpdate: &appsv1.RollingUpdateDaemonSet{
-					MaxUnavailable: ptr.To(intstr.FromInt32(0)),
-					MaxSurge:       ptr.To(intstr.FromInt32(1)),
+					MaxUnavailable: new(intstr.FromInt32(0)),
+					MaxSurge:       new(intstr.FromInt32(1)),
 				},
 			},
 		},
@@ -122,7 +121,7 @@ func makeDeployment(baseName string, namespace string, replicas int32, metadata 
 			Annotations: metadata.ResourceAnnotations,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: ptr.To(replicas),
+			Replicas: new(replicas),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: selectorLabels,
 			},

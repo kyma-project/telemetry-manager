@@ -24,6 +24,7 @@ spec:
         app.kubernetes.io/name: manager
         control-plane: telemetry-manager
         kyma-project.io/component: controller
+        kyma-project.io/module: telemetry
       {{- include "telemetry-manager.selectorLabels" . | indent 8 }}
       annotations:
         kubectl.kubernetes.io/default-container: manager
@@ -56,6 +57,7 @@ spec:
         {{- end }}
         {{- if .Values.experimental.enabled }}
         - --deploy-otlp-gateway=true
+        - --unlimited-pipelines=true
         {{- end }}
         command:
         - /manager
@@ -80,6 +82,8 @@ spec:
           value: {{ quote .Values.manager.container.env.otelCollectorImage }}
         - name: SELF_MONITOR_IMAGE
           value: {{ quote .Values.manager.container.env.selfMonitorImage }}
+        - name: SELF_MONITOR_FIPS_IMAGE
+          value: {{ quote .Values.manager.container.env.selfMonitorFIPSImage }}
         - name: ALPINE_IMAGE
           value: {{ quote .Values.manager.container.env.alpineImage }}
         {{- if .Values.manager.container.env.operateInFipsMode }}

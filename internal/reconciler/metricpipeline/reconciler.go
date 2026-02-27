@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"gopkg.in/yaml.v3"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -26,6 +25,7 @@ import (
 	metricpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/metricpipeline"
 	sharedtypesutils "github.com/kyma-project/telemetry-manager/internal/utils/sharedtypes"
 	telemetryutils "github.com/kyma-project/telemetry-manager/internal/utils/telemetry"
+	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
 
@@ -51,6 +51,7 @@ type Reconciler struct {
 	pipelineSync            PipelineSyncer
 	pipelineValidator       *Validator
 	errToMsgConverter       commonstatus.ErrorToMessageConverter
+	secretWatcher           SecretWatcher
 }
 
 // Option is a functional option for configuring a Reconciler.
@@ -168,6 +169,13 @@ func WithClient(client client.Client) Option {
 	}
 }
 
+// WithSecretWatcher sets the secret watcher.
+func WithSecretWatcher(watcher SecretWatcher) Option {
+	return func(r *Reconciler) {
+		r.secretWatcher = watcher
+	}
+}
+
 // New creates a new Reconciler with the provided client and functional options.
 // All dependencies must be provided via functional options.
 func New(opts ...Option) *Reconciler {
@@ -181,7 +189,7 @@ func New(opts ...Option) *Reconciler {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logf.FromContext(ctx).V(1).Info("Reconciling MetricPipeline")
+	logf.FromContext(ctx).V(1).Info("Reconciling")
 
 	overrideConfig, err := r.overridesHandler.LoadOverrides(ctx)
 	if err != nil {
@@ -198,6 +206,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
+	if err := r.syncWatchedSecrets(ctx, &metricPipeline); err != nil {
+		return ctrl.Result{}, err
+	}
+
 	if err := r.pipelineSync.TryAcquireLock(ctx, &metricPipeline); err != nil {
 		if errors.Is(err, resourcelock.ErrMaxPipelinesExceeded) {
 			logf.FromContext(ctx).V(1).Error(err, "Could not register pipeline")
@@ -207,27 +219,16 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, err
 	}
 
-	var allErrors error = nil
-
-	if err := r.doReconcile(ctx, &metricPipeline); err != nil {
-		allErrors = errors.Join(allErrors, fmt.Errorf("failed to reconcile: %w", err))
+	err = r.doReconcile(ctx, &metricPipeline)
+	if statusErr := r.updateStatus(ctx, metricPipeline.Name); statusErr != nil {
+		if err != nil {
+			err = fmt.Errorf("failed while updating status: %w: %w", statusErr, err)
+		} else {
+			err = fmt.Errorf("failed to update status: %w", statusErr)
+		}
 	}
 
-	if err := r.updateStatus(ctx, metricPipeline.Name); err != nil {
-		allErrors = errors.Join(allErrors, fmt.Errorf("failed to update status: %w", err))
-	}
-
-	if allErrors != nil {
-		return ctrl.Result{}, allErrors
-	}
-
-	requeueAfter := r.calculateRequeueAfterDuration(ctx, &metricPipeline)
-	if requeueAfter != nil {
-		logf.FromContext(ctx).V(1).Info("Requeuing reconciliation due to certificate about to expire", "RequeueAfter", requeueAfter.String())
-		return ctrl.Result{RequeueAfter: *requeueAfter}, nil
-	}
-
-	return ctrl.Result{}, nil
+	return ctrl.Result{}, err
 }
 
 func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1.MetricPipeline) error {
@@ -526,14 +527,9 @@ func (r *Reconciler) getEndpoint(ctx context.Context, pipeline *telemetryv1beta1
 	return string(endpointBytes)
 }
 
-func (r *Reconciler) calculateRequeueAfterDuration(ctx context.Context, pipeline *telemetryv1beta1.MetricPipeline) *time.Duration {
-	err := r.pipelineValidator.validate(ctx, pipeline)
+func (r *Reconciler) syncWatchedSecrets(ctx context.Context, pipeline *telemetryv1beta1.MetricPipeline) error {
+	refs := secretref.GetSecretRefsMetricPipeline(pipeline)
+	secrets := secretref.RefsToSecretNames(refs)
 
-	var errCertAboutToExpire *tlscert.CertAboutToExpireError
-	if errors.As(err, &errCertAboutToExpire) {
-		duration := time.Until(errCertAboutToExpire.Expiry)
-		return &duration
-	}
-
-	return nil
+	return r.secretWatcher.SyncWatchedSecrets(ctx, pipeline, secrets)
 }

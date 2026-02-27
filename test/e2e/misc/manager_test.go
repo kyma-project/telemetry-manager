@@ -14,6 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
@@ -21,7 +22,7 @@ import (
 )
 
 func TestManager(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelTelemetry)
+	suite.SetupTest(t, suite.LabelTelemetry)
 
 	assert.DeploymentReady(t, types.NamespacedName{
 		Name:      "telemetry-manager",
@@ -39,7 +40,7 @@ func TestManager(t *testing.T) {
 		assert.NewResource(&corev1.ConfigMap{}, types.NamespacedName{Name: "telemetry-logpipelines", Namespace: kitkyma.SystemNamespaceName}),
 		assert.NewResource(&corev1.ConfigMap{}, types.NamespacedName{Name: "telemetry-tracepipelines", Namespace: kitkyma.SystemNamespaceName}),
 		assert.NewResource(&corev1.ConfigMap{}, types.NamespacedName{Name: "telemetry-module", Namespace: kitkyma.SystemNamespaceName}),
-		assert.NewResource(&networkingv1.NetworkPolicy{}, types.NamespacedName{Name: "telemetry-manager", Namespace: kitkyma.SystemNamespaceName}),
+		assert.NewResource(&networkingv1.NetworkPolicy{}, types.NamespacedName{Name: commonresources.NetworkPolicyPrefix + "telemetry-manager", Namespace: kitkyma.SystemNamespaceName}),
 		assert.NewResource(&schedulingv1.PriorityClass{}, types.NamespacedName{Name: "telemetry-priority-class", Namespace: kitkyma.SystemNamespaceName}),
 		assert.NewResource(&schedulingv1.PriorityClass{}, types.NamespacedName{Name: "telemetry-priority-class-high", Namespace: kitkyma.SystemNamespaceName}),
 	}

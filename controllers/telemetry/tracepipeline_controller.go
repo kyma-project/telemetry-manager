@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 
-	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -48,6 +47,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
+	"github.com/kyma-project/telemetry-manager/internal/secretwatch"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	predicateutils "github.com/kyma-project/telemetry-manager/internal/utils/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
@@ -63,6 +63,7 @@ type TracePipelineController struct {
 
 	reconcileTriggerChan <-chan event.GenericEvent
 	reconciler           *tracepipeline.Reconciler
+	secretWatchClient    *secretwatch.Client
 }
 
 type TracePipelineControllerConfig struct {
@@ -73,10 +74,11 @@ type TracePipelineControllerConfig struct {
 	TraceGatewayPriorityClassName string
 }
 
-func NewTracePipelineController(config TracePipelineControllerConfig, client client.Client, reconcileTriggerChan <-chan event.GenericEvent) (*TracePipelineController, error) {
-	flowHealthProber, err := prober.NewOTelTraceGatewayProber(types.NamespacedName{Name: names.SelfMonitor, Namespace: config.TargetNamespace()})
-	if err != nil {
-		return nil, err
+func NewTracePipelineController(config TracePipelineControllerConfig, client client.Client, reconcileTriggerChan <-chan event.GenericEvent, secretWatchClient *secretwatch.Client) (*TracePipelineController, error) {
+	pipelineCount := resourcelock.MaxPipelineCount
+
+	if config.UnlimitedPipelines() {
+		pipelineCount = resourcelock.UnlimitedPipelineCount
 	}
 
 	pipelineLock := resourcelock.NewLocker(
@@ -85,7 +87,7 @@ func NewTracePipelineController(config TracePipelineControllerConfig, client cli
 			Name:      names.TracePipelineLock,
 			Namespace: config.TargetNamespace(),
 		},
-		MaxPipelineCount,
+		pipelineCount,
 	)
 
 	pipelineSync := resourcelock.NewSyncer(
@@ -95,6 +97,11 @@ func NewTracePipelineController(config TracePipelineControllerConfig, client cli
 			Namespace: config.TargetNamespace(),
 		},
 	)
+
+	flowHealthProber, err := prober.NewOTelTraceGatewayProber(types.NamespacedName{Name: names.SelfMonitor, Namespace: config.TargetNamespace()})
+	if err != nil {
+		return nil, err
+	}
 
 	transformSpecValidator, err := ottl.NewTransformSpecValidator(ottl.SignalTypeTrace)
 	if err != nil {
@@ -136,12 +143,14 @@ func NewTracePipelineController(config TracePipelineControllerConfig, client cli
 		tracepipeline.WithPipelineLock(pipelineLock),
 		tracepipeline.WithPipelineSyncer(pipelineSync),
 		tracepipeline.WithPipelineValidator(pipelineValidator),
+		tracepipeline.WithSecretWatcher(secretWatchClient),
 	)
 
 	return &TracePipelineController{
 		Client:               client,
 		reconcileTriggerChan: reconcileTriggerChan,
 		reconciler:           reconciler,
+		secretWatchClient:    secretWatchClient,
 	}, nil
 }
 
@@ -167,17 +176,6 @@ func (r *TracePipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		&networkingv1.NetworkPolicy{},
 	}
 
-	discoveryClient, err := discovery.NewDiscoveryClientForConfig(mgr.GetConfig())
-	if err != nil {
-		return fmt.Errorf("failed to create discovery client: %w", err)
-	}
-
-	isIstioActive := istiostatus.NewChecker(discoveryClient).IsIstioActive(context.Background())
-
-	if isIstioActive {
-		ownedResourceTypesToWatch = append(ownedResourceTypesToWatch, &istiosecurityclientv1.PeerAuthentication{})
-	}
-
 	for _, resource := range ownedResourceTypesToWatch {
 		b = b.Watches(
 			resource,
@@ -193,12 +191,7 @@ func (r *TracePipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		&operatorv1beta1.Telemetry{},
 		handler.EnqueueRequestsFromMapFunc(r.mapTelemetryChanges),
 		ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete()),
-	).
-		Watches(
-			&corev1.Secret{},
-			handler.EnqueueRequestsFromMapFunc(r.mapSecretChanges),
-			ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete()),
-		).Complete(r)
+	).Complete(r)
 }
 
 func (r *TracePipelineController) mapTelemetryChanges(ctx context.Context, object client.Object) []reconcile.Request {
@@ -233,43 +226,4 @@ func (r *TracePipelineController) createRequestsForAllPipelines(ctx context.Cont
 	}
 
 	return requests, nil
-}
-
-func (r *TracePipelineController) mapSecretChanges(ctx context.Context, object client.Object) []reconcile.Request {
-	var pipelines telemetryv1beta1.TracePipelineList
-
-	var requests []reconcile.Request
-
-	err := r.List(ctx, &pipelines)
-	if err != nil {
-		logf.FromContext(ctx).Error(err, "failed to list TracePipelines")
-		return requests
-	}
-
-	secret, ok := object.(*corev1.Secret)
-	if !ok {
-		logf.FromContext(ctx).Error(nil, fmt.Sprintf("expected Secret object but got: %T", object))
-		return requests
-	}
-
-	for i := range pipelines.Items {
-		var pipeline = pipelines.Items[i]
-
-		if r.referencesSecret(secret.Name, secret.Namespace, &pipeline) {
-			requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
-		}
-	}
-
-	return requests
-}
-
-func (r *TracePipelineController) referencesSecret(secretName, secretNamespace string, pipeline *telemetryv1beta1.TracePipeline) bool {
-	refs := secretref.GetTracePipelineRefs(pipeline)
-	for _, ref := range refs {
-		if ref.Name == secretName && ref.Namespace == secretNamespace {
-			return true
-		}
-	}
-
-	return false
 }

@@ -10,7 +10,6 @@ endif
 SHELL = /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
 
-
 SRC_ROOT := $(shell git rev-parse --show-toplevel)
 TOOLS_MOD_DIR    := $(SRC_ROOT)/internal/tools
 TOOLS_MOD_REGEX  := "\s+_\s+\".*\""

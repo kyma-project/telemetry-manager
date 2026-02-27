@@ -27,7 +27,7 @@ var diagnosticMetrics = []any{
 }
 
 func TestPrometheusInputDiagnosticMetric(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelMetricAgentSetB)
+	suite.SetupTest(t, suite.LabelMetricAgentSetB, suite.LabelMetricAgent, suite.LabelSetB)
 
 	var (
 		uniquePrefix = unique.Prefix()

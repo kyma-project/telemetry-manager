@@ -15,6 +15,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
@@ -24,6 +25,7 @@ func TestSecretMissing_OTel(t *testing.T) {
 	tests := []struct {
 		name   string
 		labels []string
+		opts   []kubeprep.Option
 		input  telemetryv1beta1.LogPipelineInput
 	}{
 		{
@@ -38,14 +40,15 @@ func TestSecretMissing_OTel(t *testing.T) {
 		},
 		{
 			name:   fmt.Sprintf("%s-%s", suite.LabelLogGateway, suite.LabelExperimental),
-			labels: []string{suite.LabelLogGateway, suite.LabelExperimental},
+			labels: []string{suite.LabelLogGateway},
+			opts:   []kubeprep.Option{kubeprep.WithExperimental()},
 			input:  testutils.BuildLogPipelineOTLPInput(),
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			suite.RegisterTestCase(t, tc.labels...)
+			suite.SetupTestWithOptions(t, tc.labels, tc.opts...)
 
 			const (
 				endpointKey   = "logs-endpoint"
@@ -104,7 +107,7 @@ func TestSecretMissing_OTel(t *testing.T) {
 }
 
 func TestSecretMissing_FluentBit(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelFluentBit)
+	suite.SetupTestWithOptions(t, []string{suite.LabelFluentBit}, kubeprep.WithOverrideFIPSMode(false))
 
 	const (
 		hostKey   = "logs-host"

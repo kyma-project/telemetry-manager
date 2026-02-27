@@ -13,6 +13,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/oauth2mock"
@@ -26,6 +27,7 @@ func TestOAuth2(t *testing.T) {
 	tests := []struct {
 		name                string
 		labels              []string
+		opts                []kubeprep.Option
 		inputBuilder        func(includeNs string) telemetryv1beta1.LogPipelineInput
 		logGeneratorBuilder func(ns string) client.Object
 		resourceName        types.NamespacedName
@@ -57,7 +59,8 @@ func TestOAuth2(t *testing.T) {
 		},
 		{
 			name:   fmt.Sprintf("%s-%s", suite.LabelLogAgent, suite.LabelOAuth2),
-			labels: []string{suite.LabelLogGateway, suite.LabelExperimental, suite.LabelOAuth2},
+			labels: []string{suite.LabelLogGateway, suite.LabelOAuth2},
+			opts:   []kubeprep.Option{kubeprep.WithExperimental()},
 			inputBuilder: func(includeNs string) telemetryv1beta1.LogPipelineInput {
 				return testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
 			},
@@ -71,7 +74,7 @@ func TestOAuth2(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			suite.RegisterTestCase(t, tc.labels...)
+			suite.SetupTestWithOptions(t, tc.labels, tc.opts...)
 
 			var (
 				uniquePrefix = unique.Prefix(tc.name)
