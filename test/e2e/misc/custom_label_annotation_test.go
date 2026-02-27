@@ -56,7 +56,7 @@ func TestLabelAnnotation(t *testing.T) {
 				assert.DaemonSetHasAnnotation(t, kitkyma.TelemetryOTLPGatewayName, annotation)
 
 				var gwSelector = client.ListOptions{
-					LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": "telemetry-log-gateway"}),
+					LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": "telemetry-otlp-gateway"}),
 					Namespace:     kitkyma.SystemNamespaceName,
 				}
 				assert.PodsHaveAnnotation(t, gwSelector, annotation)
@@ -175,7 +175,7 @@ func TestLabelAnnotation(t *testing.T) {
 				assert.DaemonSetHasAnnotation(t, kitkyma.TelemetryOTLPGatewayName, annotation)
 
 				var selector = client.ListOptions{
-					LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": "telemetry-trace-gateway"}),
+					LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": "telemetry-otlp-gateway"}),
 					Namespace:     kitkyma.SystemNamespaceName,
 				}
 				assert.PodsHaveAnnotation(t, selector, annotation)

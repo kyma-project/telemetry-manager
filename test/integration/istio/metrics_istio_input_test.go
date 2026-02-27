@@ -149,7 +149,7 @@ func TestMetricsIstioInput(t *testing.T) {
 	assert.MetricsFromNamespaceNotDelivered(t, metricBackend, app2Ns)
 
 	assert.BackendDataConsistentlyMatches(t, metricBackend, HaveFlatMetrics(
-		Not(ContainElement(HaveMetricAttributes(HaveKeyWithValue("destination_workload", "telemetry-log-gateway")))),
+		Not(ContainElement(HaveMetricAttributes(HaveKeyWithValue("destination_workload", "telemetry-otlp-gateway")))),
 	))
 
 	assert.BackendDataConsistentlyMatches(t, metricBackend, HaveFlatMetrics(

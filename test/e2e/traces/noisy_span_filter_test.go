@@ -96,7 +96,7 @@ func TestNoisyFilters(t *testing.T) {
 	).K8sObject()
 	traceGatewaySpansGen := telemetrygen.NewPod(traceGatewaySpansNs, telemetrygen.SignalTypeTraces,
 		telemetrygen.WithTelemetryAttribute("component", "proxy"),
-		telemetrygen.WithTelemetryAttribute("istio.canonical_service", "telemetry-trace-gateway"),
+		telemetrygen.WithTelemetryAttribute("istio.canonical_service", "telemetry-otlp-gateway"),
 		telemetrygen.WithResourceAttribute("k8s.namespace.name", kitkyma.SystemNamespaceName),
 	).K8sObject()
 	traceServiceSpansGen := telemetrygen.NewPod(traceServiceSpansNs, telemetrygen.SignalTypeTraces,
@@ -108,7 +108,7 @@ func TestNoisyFilters(t *testing.T) {
 	).K8sObject()
 	traceServiceInternalSpansGen := telemetrygen.NewPod(traceServiceInternalSpansNs, telemetrygen.SignalTypeTraces,
 		telemetrygen.WithTelemetryAttribute("component", "proxy"),
-		telemetrygen.WithTelemetryAttribute("istio.canonical_service", "telemetry-trace-gateway"),
+		telemetrygen.WithTelemetryAttribute("istio.canonical_service", "telemetry-otlp-gateway"),
 		telemetrygen.WithResourceAttribute("k8s.namespace.name", kitkyma.SystemNamespaceName),
 	).K8sObject()
 

@@ -74,7 +74,7 @@ func TestTracesRouting(t *testing.T) {
 		kitk8sobjects.NewNamespace(appNs).K8sObject(),
 		&istioTracePipeline,
 		&tracePipeline,
-		traceGatewayExternalService.K8sObject(kitk8sobjects.WithLabel("app.kubernetes.io/name", "telemetry-trace-gateway")),
+		traceGatewayExternalService.K8sObject(kitk8sobjects.WithLabel("app.kubernetes.io/name", "telemetry-otlp-gateway")),
 		app.Pod().K8sObject(),
 		istiofiedApp.Pod().K8sObject(),
 	}
