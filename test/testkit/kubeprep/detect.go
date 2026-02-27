@@ -178,7 +178,7 @@ func isIstioManagerRunning(ctx context.Context, k8sClient client.Client) bool {
 
 	err := k8sClient.Get(ctx, types.NamespacedName{
 		Name:      "istio-controller-manager",
-		Namespace: istioNamespace,
+		Namespace: kymaSystemNamespace,
 	}, deployment)
 	if err != nil {
 		return false
