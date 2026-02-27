@@ -67,7 +67,7 @@ func TestLogsFluentBitUpgrade(t *testing.T) {
 
 	// === UPGRADE TO NEW VERSION ===
 	t.Log("Upgrading manager to target version...")
-	Expect(suite.UpgradeToTargetVersion(t, labels)).To(Succeed())
+	Expect(suite.UpgradeToTargetVersion(t, kubeprep.WithOverrideFIPSMode(false))).To(Succeed())
 
 	// === VALIDATE AFTER UPGRADE ===
 	t.Log("Validating FluentBit log pipeline after upgrade...")
