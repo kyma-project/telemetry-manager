@@ -1,4 +1,4 @@
-package istio
+package shared
 
 import (
 	"testing"
@@ -20,7 +20,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-func TestLogsResources_OTel(t *testing.T) {
+func TestResources_OTel(t *testing.T) {
 	// This test need to run with istio installed in the cluster to be able to test the creation and reconciliation of PeerAuthentication
 	suite.SetupTestWithOptions(t, []string{suite.LabelLogs, suite.LabelOtel}, kubeprep.WithIstio())
 
@@ -79,7 +79,7 @@ func TestLogsResources_OTel(t *testing.T) {
 	// assert.ResourcesNotExist(t, tc.resources...)
 }
 
-func TestLogsResources_FluentBit(t *testing.T) {
+func TestResources_FluentBit(t *testing.T) {
 	suite.SetupTestWithOptions(t, []string{suite.LabelLogs, suite.LabelFluentBit}, kubeprep.WithIstio(), kubeprep.WithOverrideFIPSMode(false))
 
 	const hostKey = "host"

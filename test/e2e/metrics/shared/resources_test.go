@@ -1,4 +1,4 @@
-package istio
+package shared
 
 import (
 	"testing"
@@ -20,7 +20,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-func TestMetricsResources(t *testing.T) {
+func TestResources(t *testing.T) {
 	// This test need to run with istio installed in the cluster to be able to test the creation and reconciliation of PeerAuthentication
 	suite.SetupTestWithOptions(t, []string{suite.LabelMetrics}, kubeprep.WithIstio())
 
