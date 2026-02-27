@@ -116,6 +116,27 @@ func detectExperimentalFromHelm(ctx context.Context) bool {
 		strings.Contains(output, `"experimental": {"enabled": true}`)
 }
 
+// detectFIPSEnabled checks if the current deployment has FIPS mode enabled
+// by inspecting the Helm release values.
+// Returns false if the release doesn't exist or detection fails.
+func detectFIPSEnabled(ctx context.Context) bool {
+	cmd := exec.CommandContext(ctx, "helm", "get", "values", telemetryReleaseName, "-n", kymaSystemNamespace, "-o", "json")
+
+	var stdout bytes.Buffer
+
+	cmd.Stdout = &stdout
+
+	if err := cmd.Run(); err != nil {
+		return false
+	}
+
+	// Check for operateInFipsMode in the output
+	output := stdout.String()
+
+	return strings.Contains(output, `"operateInFipsMode":true`) ||
+		strings.Contains(output, `"operateInFipsMode": true`)
+}
+
 // releaseExists checks if the helm release exists
 func releaseExists(ctx context.Context) bool {
 	cmd := exec.CommandContext(ctx, "helm", "status", telemetryReleaseName, "-n", kymaSystemNamespace)

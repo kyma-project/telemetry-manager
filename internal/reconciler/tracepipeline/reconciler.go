@@ -40,6 +40,7 @@ import (
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 	sharedtypesutils "github.com/kyma-project/telemetry-manager/internal/utils/sharedtypes"
 	telemetryutils "github.com/kyma-project/telemetry-manager/internal/utils/telemetry"
+	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
 
@@ -62,6 +63,7 @@ type Reconciler struct {
 	pipelineSync          PipelineSyncer
 	pipelineValidator     *Validator
 	errToMsgConverter     commonstatus.ErrorToMessageConverter
+	secretWatcher         SecretWatcher
 }
 
 // Option configures the Reconciler during initialization.
@@ -151,6 +153,13 @@ func WithClient(client client.Client) Option {
 	}
 }
 
+// WithSecretWatcher sets the secret watcher for the Reconciler.
+func WithSecretWatcher(watcher SecretWatcher) Option {
+	return func(r *Reconciler) {
+		r.secretWatcher = watcher
+	}
+}
+
 // New creates a new Reconciler with the provided options.
 func New(opts ...Option) *Reconciler {
 	r := &Reconciler{}
@@ -180,6 +189,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	var tracePipeline telemetryv1beta1.TracePipeline
 	if err := r.Get(ctx, req.NamespacedName, &tracePipeline); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
+	if err := r.syncSecretWatches(ctx, &tracePipeline); err != nil {
+		return ctrl.Result{}, err
 	}
 
 	if err := r.pipelineSync.TryAcquireLock(ctx, &tracePipeline); err != nil {
@@ -407,4 +420,15 @@ func (r *Reconciler) calculateRequeueAfterDuration(ctx context.Context, pipeline
 	}
 
 	return nil
+}
+
+func (r *Reconciler) syncSecretWatches(ctx context.Context, pipeline *telemetryv1beta1.TracePipeline) error {
+	if r.secretWatcher == nil {
+		return nil
+	}
+
+	refs := secretref.GetSecretRefsTracePipeline(pipeline)
+	secrets := secretref.RefsToSecretNames(refs)
+
+	return r.secretWatcher.SyncWatchedSecrets(ctx, pipeline, secrets)
 }

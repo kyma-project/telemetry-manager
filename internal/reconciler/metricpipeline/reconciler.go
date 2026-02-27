@@ -26,6 +26,7 @@ import (
 	metricpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/metricpipeline"
 	sharedtypesutils "github.com/kyma-project/telemetry-manager/internal/utils/sharedtypes"
 	telemetryutils "github.com/kyma-project/telemetry-manager/internal/utils/telemetry"
+	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
 
@@ -51,6 +52,7 @@ type Reconciler struct {
 	pipelineSync            PipelineSyncer
 	pipelineValidator       *Validator
 	errToMsgConverter       commonstatus.ErrorToMessageConverter
+	secretWatcher           SecretWatcher
 }
 
 // Option is a functional option for configuring a Reconciler.
@@ -168,6 +170,13 @@ func WithClient(client client.Client) Option {
 	}
 }
 
+// WithSecretWatcher sets the secret watcher.
+func WithSecretWatcher(watcher SecretWatcher) Option {
+	return func(r *Reconciler) {
+		r.secretWatcher = watcher
+	}
+}
+
 // New creates a new Reconciler with the provided client and functional options.
 // All dependencies must be provided via functional options.
 func New(opts ...Option) *Reconciler {
@@ -196,6 +205,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	var metricPipeline telemetryv1beta1.MetricPipeline
 	if err := r.Get(ctx, req.NamespacedName, &metricPipeline); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
+	if err := r.syncWatchedSecrets(ctx, &metricPipeline); err != nil {
+		return ctrl.Result{}, err
 	}
 
 	if err := r.pipelineSync.TryAcquireLock(ctx, &metricPipeline); err != nil {
@@ -536,4 +549,11 @@ func (r *Reconciler) calculateRequeueAfterDuration(ctx context.Context, pipeline
 	}
 
 	return nil
+}
+
+func (r *Reconciler) syncWatchedSecrets(ctx context.Context, pipeline *telemetryv1beta1.MetricPipeline) error {
+	refs := secretref.GetSecretRefsMetricPipeline(pipeline)
+	secrets := secretref.RefsToSecretNames(refs)
+
+	return r.secretWatcher.SyncWatchedSecrets(ctx, pipeline, secrets)
 }

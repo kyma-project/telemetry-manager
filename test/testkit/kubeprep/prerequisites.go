@@ -67,10 +67,3 @@ func deployTestPrerequisites(t TestingT, k8sClient client.Client) error {
 
 	return nil
 }
-
-// DeployTestPrerequisitesPublic is a public wrapper for deployTestPrerequisites.
-// It deploys test fixtures required for e2e tests (Telemetry CR, network policy, shoot-info ConfigMap).
-// Must be called AFTER manager deployment (needs Telemetry CRD).
-func DeployTestPrerequisitesPublic(t TestingT, k8sClient client.Client) error {
-	return deployTestPrerequisites(t, k8sClient)
-}

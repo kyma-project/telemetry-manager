@@ -4,7 +4,9 @@ import (
 	"context"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
@@ -45,4 +47,10 @@ type PipelineSyncer interface {
 	// TryAcquireLock attempts to acquire a lock for the given pipeline owner.
 	// Returns an error if the lock cannot be acquired or if another controller holds the lock.
 	TryAcquireLock(ctx context.Context, owner metav1.Object) error
+}
+
+// SecretWatcher manages watches on Kubernetes secrets referenced by pipelines.
+type SecretWatcher interface {
+	// SyncWatchedSecrets ensures the pipeline watches exactly the given set of secrets.
+	SyncWatchedSecrets(ctx context.Context, pipeline client.Object, secrets []types.NamespacedName) error
 }

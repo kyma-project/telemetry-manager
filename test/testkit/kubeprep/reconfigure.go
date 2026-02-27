@@ -20,7 +20,7 @@ func SetupCluster(t TestingT, k8sClient client.Client, cfg Config) error {
 		cfg.InstallIstio, cfg.OperateInFIPSMode, cfg.EnableExperimental, cfg.DeployPrerequisites, cfg.HelmValues, cfg.ChartPath)
 
 	// Ensure Istio is in the desired state
-	if err := ensureIstioState(t, k8sClient, cfg.InstallIstio); err != nil {
+	if err := ensureIstioState(t, k8sClient, cfg); err != nil {
 		return fmt.Errorf("failed to ensure Istio state: %w", err)
 	}
 
@@ -52,14 +52,23 @@ func ensureTestPrerequisites(t TestingT, k8sClient client.Client, deploy bool) e
 
 // ensureManagerDeployed ensures the telemetry manager is deployed with the desired configuration.
 // It handles experimental mode changes which require uninstall before reinstall due to CRD conflicts.
+// After any configuration change (FIPS mode, helm values, etc.), it waits for the manager to be stable.
 func ensureManagerDeployed(t TestingT, k8sClient client.Client, cfg Config) error {
 	ctx := t.Context()
+
+	// Detect current configuration to know if we're making changes
+	currentExperimental := detectExperimentalEnabled(ctx)
+	currentFIPS := detectFIPSEnabled(ctx)
+	configChanged := false
 
 	// Check if experimental mode change requires uninstall first
 	// Switching between experimental and default subcharts requires uninstall
 	// because both subcharts contain CRD templates that conflict
-	currentExperimental := detectExperimentalEnabled(ctx)
 	if currentExperimental != cfg.EnableExperimental && releaseExists(ctx) {
+		if cfg.SkipManagerRemoval {
+			return fmt.Errorf("experimental mode change required (%t -> %t) but SkipManagerRemoval is set", currentExperimental, cfg.EnableExperimental)
+		}
+
 		t.Logf("Experimental mode change detected (%t -> %t), removing manager first...", currentExperimental, cfg.EnableExperimental)
 
 		if err := undeployManager(t, k8sClient); err != nil {
@@ -69,6 +78,15 @@ func ensureManagerDeployed(t TestingT, k8sClient client.Client, cfg Config) erro
 		if err := waitForCRDsDeletion(t, k8sClient); err != nil {
 			t.Logf("Warning: failed waiting for CRDs deletion: %v", err)
 		}
+
+		configChanged = true
+	}
+
+	// Track FIPS mode change
+	if currentFIPS != cfg.OperateInFIPSMode && releaseExists(ctx) {
+		t.Logf("FIPS mode change detected (%t -> %t)", currentFIPS, cfg.OperateInFIPSMode)
+
+		configChanged = true
 	}
 
 	// Deploy/upgrade manager (helm upgrade --install is idempotent)
@@ -76,12 +94,28 @@ func ensureManagerDeployed(t TestingT, k8sClient client.Client, cfg Config) erro
 		return fmt.Errorf("failed to deploy manager: %w", err)
 	}
 
+	// Wait for stability after configuration changes or for upgrade scenarios
+	if configChanged || cfg.SkipManagerRemoval {
+		t.Log("Waiting for deployment rollout to complete...")
+
+		if err := waitForRolloutComplete(ctx, k8sClient, t, 3*time.Minute); err != nil {
+			return fmt.Errorf("rollout did not complete: %w", err)
+		}
+
+		if err := waitForSinglePod(ctx, k8sClient, t, 1*time.Minute); err != nil {
+			return fmt.Errorf("multiple pods still running: %w", err)
+		}
+
+		t.Logf("Waiting %s for manager to reconcile resources...", reconcileDelay)
+		time.Sleep(reconcileDelay)
+	}
+
 	return nil
 }
 
 // ensureIstioState ensures Istio is in the desired state (installed or not installed).
 // It handles cleanup of problematic states and triggers install/uninstall as needed.
-func ensureIstioState(t TestingT, k8sClient client.Client, desiredInstalled bool) error {
+func ensureIstioState(t TestingT, k8sClient client.Client, cfg Config) error {
 	ctx := t.Context()
 
 	// Check current Istio state
@@ -101,8 +135,12 @@ func ensureIstioState(t TestingT, k8sClient client.Client, desiredInstalled bool
 	currentInstalled := istioState == IstioFullyInstalled
 
 	// Handle Istio changes (requires special ordering)
-	if currentInstalled != desiredInstalled {
-		if err := handleIstioChange(t, k8sClient, currentInstalled, desiredInstalled); err != nil {
+	if currentInstalled != cfg.InstallIstio {
+		if cfg.SkipManagerRemoval {
+			return fmt.Errorf("istio state change required (%t -> %t) but SkipManagerRemoval is set", currentInstalled, cfg.InstallIstio)
+		}
+
+		if err := handleIstioChange(t, k8sClient, currentInstalled, cfg.InstallIstio); err != nil {
 			return err
 		}
 	}
