@@ -14,6 +14,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/istio"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log/fluentbit"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
@@ -24,7 +25,7 @@ import (
 )
 
 func TestAccessLogsFluentBit(t *testing.T) {
-	suite.SetupTest(t, suite.LabelGardener, suite.LabelIstio, suite.LabelFluentBit, suite.LabelNoFIPS)
+	suite.SetupTestWithOptions(t, []string{suite.LabelGardener, suite.LabelFluentBit}, kubeprep.WithIstio(), kubeprep.WithOverrideFIPSMode(false))
 
 	var (
 		uniquePrefix = unique.Prefix()

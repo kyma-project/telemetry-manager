@@ -5,6 +5,8 @@ images:
     tag: "v1.33.7-k3s1" # used by k3d - current k8s version
   - source: "rancher/k3s@sha256:71abd3a56f57884c62732e0e0d87606052cb5f8555b7db7e8e33c04570b8175c"
     tag: "v1.34.3-k3s1" # used by k3d - future k8s version
+  - source: "ghcr.io/k3d-io/k3d-tools@sha256:c5ceb2b9e8ff2cf55917b0bee8bc9c54fe1483a16366b734117e2cfac1417bed"
+    tag: "5.8.3"
   - source: "library/registry@sha256:3725021071ec9383eb3d87ddbdff9ed602439b3f7c958c9c2fb941049ea6531d"
     tag: "3" # used by k3d
   - source: "library/alpine@sha256:25109184c71bdad752c8312a8623239686a9a2071e8825f20acb8f2198c3f659"

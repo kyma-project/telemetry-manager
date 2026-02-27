@@ -28,10 +28,10 @@ import (
 // 4. Call UpgradeToTargetVersion() to upgrade to MANAGER_IMAGE
 // 5. Validate everything still works after upgrade
 func TestLogsFluentBitUpgrade(t *testing.T) {
-	labels := []string{suite.LabelUpgrade, suite.LabelFluentBit, suite.LabelLogs, suite.LabelNoFIPS}
+	labels := []string{suite.LabelUpgrade, suite.LabelFluentBit, suite.LabelLogs}
 
 	// Deploy old version (defaults to latest release if UPGRADE_FROM_CHART not set)
-	suite.SetupTestWithOptions(t, labels, kubeprep.WithChartVersion(os.Getenv("UPGRADE_FROM_CHART")))
+	suite.SetupTestWithOptions(t, labels, kubeprep.WithOverrideFIPSMode(false), kubeprep.WithChartVersion(os.Getenv("UPGRADE_FROM_CHART")))
 
 	var (
 		uniquePrefix = unique.Prefix()
@@ -67,7 +67,7 @@ func TestLogsFluentBitUpgrade(t *testing.T) {
 
 	// === UPGRADE TO NEW VERSION ===
 	t.Log("Upgrading manager to target version...")
-	Expect(suite.UpgradeToTargetVersion(t, labels)).To(Succeed())
+	Expect(suite.UpgradeToTargetVersion(t, kubeprep.WithOverrideFIPSMode(false))).To(Succeed())
 
 	// === VALIDATE AFTER UPGRADE ===
 	t.Log("Validating FluentBit log pipeline after upgrade...")

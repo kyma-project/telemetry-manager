@@ -24,8 +24,9 @@ import (
 // only contains v1beta1 (i.e., v1alpha1 has been removed).
 // This test validates the storage version migration functionality.
 func TestStorageMigration(t *testing.T) {
-	labels := []string{suite.LabelMisc, suite.LabelTelemetry, suite.LabelUpgrade, suite.LabelNoFIPS}
+	labels := []string{suite.LabelMisc, suite.LabelTelemetry, suite.LabelUpgrade}
 	suite.SetupTestWithOptions(t, labels,
+		kubeprep.WithOverrideFIPSMode(false),
 		kubeprep.WithForceFreshInstall(),
 		kubeprep.WithSkipDeployTestPrerequisites(),
 		kubeprep.WithChartVersion("https://github.com/kyma-project/telemetry-manager/releases/download/1.55.0/telemetry-manager-1.55.0.tgz"),
@@ -67,7 +68,7 @@ func TestStorageMigration(t *testing.T) {
 	verifyResourcesExist(&metricpipeline)
 	verifyResourcesExist(&tracepipeline)
 
-	Expect(suite.UpgradeToTargetVersion(t, labels)).To(Succeed())
+	Expect(suite.UpgradeToTargetVersion(t, kubeprep.WithOverrideFIPSMode(false))).To(Succeed())
 
 	verifyStoredVersionsAfterUpgrade()
 	verifyResourcesExist(&logpipeline)
