@@ -48,6 +48,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
+	"github.com/kyma-project/telemetry-manager/internal/secretwatch"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	predicateutils "github.com/kyma-project/telemetry-manager/internal/utils/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
@@ -63,6 +64,7 @@ type MetricPipelineController struct {
 
 	reconcileTriggerChan <-chan event.GenericEvent
 	reconciler           *metricpipeline.Reconciler
+	secretWatchClient    *secretwatch.Client
 }
 
 type MetricPipelineControllerConfig struct {
@@ -74,7 +76,7 @@ type MetricPipelineControllerConfig struct {
 	RestConfig                     *rest.Config
 }
 
-func NewMetricPipelineController(config MetricPipelineControllerConfig, client client.Client, reconcileTriggerChan <-chan event.GenericEvent) (*MetricPipelineController, error) {
+func NewMetricPipelineController(config MetricPipelineControllerConfig, client client.Client, reconcileTriggerChan <-chan event.GenericEvent, secretWatchClient *secretwatch.Client) (*MetricPipelineController, error) {
 	pipelineCount := resourcelock.MaxPipelineCount
 
 	if config.UnlimitedPipelines() {
@@ -156,12 +158,14 @@ func NewMetricPipelineController(config MetricPipelineControllerConfig, client c
 
 		metricpipeline.WithPipelineLock(pipelineLock),
 		metricpipeline.WithPipelineSyncer(pipelineSync),
+		metricpipeline.WithSecretWatcher(secretWatchClient),
 	)
 
 	return &MetricPipelineController{
 		Client:               client,
 		reconcileTriggerChan: reconcileTriggerChan,
 		reconciler:           reconciler,
+		secretWatchClient:    secretWatchClient,
 	}, nil
 }
 

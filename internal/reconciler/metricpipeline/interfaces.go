@@ -4,6 +4,7 @@ import (
 	"context"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
@@ -151,4 +152,10 @@ type FilterSpecValidator interface {
 	// It verifies filter syntax, supported operations, and configuration completeness.
 	// Returns an error if any filter is invalid or unsupported.
 	Validate(filters []telemetryv1beta1.FilterSpec) error
+}
+
+// SecretWatcher manages watches on Kubernetes secrets referenced by pipelines.
+type SecretWatcher interface {
+	// SyncWatchedSecrets ensures the pipeline watches exactly the given set of secrets.
+	SyncWatchedSecrets(ctx context.Context, pipeline client.Object, secrets []types.NamespacedName) error
 }

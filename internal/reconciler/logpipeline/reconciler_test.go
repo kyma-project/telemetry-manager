@@ -56,11 +56,20 @@ func TestGetPipelinesForType(t *testing.T) {
 
 	got, err := logpipelineutils.GetPipelinesForType(t.Context(), fakeClient, logpipelineutils.OTel)
 	require.NoError(t, err)
-	require.ElementsMatch(t, got, []telemetryv1beta1.LogPipeline{otelPipeline})
+	require.ElementsMatch(t, pipelineNames(got), []string{otelPipeline.Name})
 
 	got, err = logpipelineutils.GetPipelinesForType(t.Context(), fakeClient, logpipelineutils.FluentBit)
 	require.NoError(t, err)
-	require.ElementsMatch(t, got, []telemetryv1beta1.LogPipeline{fluentbitPipeline1, fluentbitPipeline2})
+	require.ElementsMatch(t, pipelineNames(got), []string{fluentbitPipeline1.Name, fluentbitPipeline2.Name})
+}
+
+func pipelineNames(pipelines []telemetryv1beta1.LogPipeline) []string {
+	names := make([]string, len(pipelines))
+	for i, p := range pipelines {
+		names[i] = p.Name
+	}
+
+	return names
 }
 
 var _ LogPipelineReconciler = &stubs.ReconcilerStub{}
