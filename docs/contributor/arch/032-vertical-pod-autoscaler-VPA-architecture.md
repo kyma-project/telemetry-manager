@@ -166,7 +166,8 @@ Configuration Strategy:
 - Set `GOMEMLIMIT`, [OpenTelemetry Collector provides an extension](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/extension/cgroupruntimeextension) to set `GOMEMLIMIT` in runtime based on available memory, so we can set it to a percentage of the memory limit (e.g., 80%) to ensure it scales with VPA recommendations
 - Configure reasonable `minAllowed` and `maxAllowed` boundaries
 - Document that actual Pod resources may differ from DaemonSet spec
-- The VerticalPodAutoscaler resources will be managed by the telemetry-manager Helm chart.
+- The VerticalPodAutoscaler resources will be managed by the reconciler, the VPA instance will be created when the other resources are created, and deleted when the other resources are deleted. The reconciler will not update the VPA spec after creation, so VPA will be responsible for managing Pod resources based on its recommendations.
+
 
 ## Consequences
 
