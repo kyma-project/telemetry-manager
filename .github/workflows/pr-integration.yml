@@ -100,7 +100,6 @@ jobs:
           QUERY_INTERVAL: 30
 
   # e2e-logs split by fluent-bit vs otel AND by set labels for parallel execution
-  # FluentBit tests require FIPS override and have different resource requirements
   e2e-logs:
     needs: setup
     runs-on: ubuntu-latest
@@ -120,67 +119,19 @@ jobs:
           - name: "-c"
             label: "set-c"
     name: e2e-logs${{ matrix.variant.name }}${{ matrix.set.name }}
-    env:
-      MANAGER_IMAGE: ${{ needs.setup.outputs.manager-image }}
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Setup Golang
-        uses: ./.github/template/setup-golang
-
-      - name: Authenticate to Google Cloud
-        if: github.event_name != 'pull_request'
-        uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed # v2.1.13
+      - name: Run E2E test
+        uses: ./.github/template/run-e2e-test
         with:
-          credentials_json: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
-
-      - name: Setup Google Cloud SDK
-        if: github.event_name != 'pull_request'
-        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f # v2.2.1
-
-      - name: Configure Docker for Google Artifact Registry
-        if: github.event_name != 'pull_request'
-        run: gcloud auth configure-docker europe-docker.pkg.dev --quiet
-
-      - name: Pull Self-monitor FIPS image
-        if: github.event_name != 'pull_request'
-        run: make docker-pull-self-monitor-fips-image
-
-      - name: Provision K3D cluster
-        run: make provision-k3d
-
-      - name: Import Self-monitor FIPS image to K3D
-        if: github.event_name != 'pull_request'
-        run: make k3d-import-self-monitor-fips-image
-
-      - name: Run e2e-logs${{ matrix.variant.name }}${{ matrix.set.name }} tests
-        run: |
-          # Filter by variant (fluent-bit vs otel), set, and non-experimental
-          LABELS="not experimental and ${{ matrix.variant.label }} and ${{ matrix.set.label }}"
-          if [[ "${{ env.FIPS_IMAGE_AVAILABLE }}" != "true" ]]; then
-            LABELS="$LABELS and not require-fips-images"
-          fi
-          make e2e-test \
-            E2E_TEST_PATH="./test/e2e/logs/..." \
-            E2E_TEST_ID="e2e-logs${{ matrix.variant.name }}${{ matrix.set.name }}" \
-            E2E_TEST_LABELS="$LABELS"
-
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: e2e-logs${{ matrix.variant.name }}${{ matrix.set.name }}-report
-          path: junit-report-*.xml
-
-      - name: Print pods on failure
-        if: failure()
-        run: |
-          kubectl get pods -A
-          for pod in $(kubectl get pods -n kyma-system -o name 2>/dev/null); do
-            echo "=== $pod ==="
-            kubectl logs -n kyma-system $pod --all-containers 2>/dev/null || true
-          done
+          test-id: e2e-logs${{ matrix.variant.name }}${{ matrix.set.name }}
+          test-path: ./test/e2e/logs/...
+          test-labels: not experimental and ${{ matrix.variant.label }} and ${{ matrix.set.label }}
+          manager-image: ${{ needs.setup.outputs.manager-image }}
+          fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
+          google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
 
   # e2e-metrics split by set labels for parallel execution
   e2e-metrics:
@@ -197,69 +148,21 @@ jobs:
           - name: "-c"
             label: "set-c"
     name: e2e-metrics${{ matrix.set.name }}
-    env:
-      MANAGER_IMAGE: ${{ needs.setup.outputs.manager-image }}
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Setup Golang
-        uses: ./.github/template/setup-golang
-
-      - name: Authenticate to Google Cloud
-        if: github.event_name != 'pull_request'
-        uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed # v2.1.13
+      - name: Run E2E test
+        uses: ./.github/template/run-e2e-test
         with:
-          credentials_json: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
+          test-id: e2e-metrics${{ matrix.set.name }}
+          test-path: ./test/e2e/metrics/...
+          test-labels: not experimental and ${{ matrix.set.label }}
+          manager-image: ${{ needs.setup.outputs.manager-image }}
+          fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
+          google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
 
-      - name: Setup Google Cloud SDK
-        if: github.event_name != 'pull_request'
-        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f # v2.2.1
-
-      - name: Configure Docker for Google Artifact Registry
-        if: github.event_name != 'pull_request'
-        run: gcloud auth configure-docker europe-docker.pkg.dev --quiet
-
-      - name: Pull Self-monitor FIPS image
-        if: github.event_name != 'pull_request'
-        run: make docker-pull-self-monitor-fips-image
-
-      - name: Provision K3D cluster
-        run: make provision-k3d
-
-      - name: Import Self-monitor FIPS image to K3D
-        if: github.event_name != 'pull_request'
-        run: make k3d-import-self-monitor-fips-image
-
-      - name: Run e2e-metrics${{ matrix.set.name }} tests
-        run: |
-          # Filter by set and FIPS availability (non-experimental only)
-          LABELS="not experimental and ${{ matrix.set.label }}"
-          if [[ "${{ env.FIPS_IMAGE_AVAILABLE }}" != "true" ]]; then
-            LABELS="$LABELS and not require-fips-images"
-          fi
-          make e2e-test \
-            E2E_TEST_PATH="./test/e2e/metrics/..." \
-            E2E_TEST_ID="e2e-metrics${{ matrix.set.name }}" \
-            E2E_TEST_LABELS="$LABELS"
-
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: e2e-metrics${{ matrix.set.name }}-report
-          path: junit-report-*.xml
-
-      - name: Print pods on failure
-        if: failure()
-        run: |
-          kubectl get pods -A
-          for pod in $(kubectl get pods -n kyma-system -o name 2>/dev/null); do
-            echo "=== $pod ==="
-            kubectl logs -n kyma-system $pod --all-containers 2>/dev/null || true
-          done
-
-  # All e2e suites with experimental flavor (smaller, no set splitting needed)
+  # All e2e suites with experimental flavor
   e2e-experimental:
     needs: setup
     runs-on: ubuntu-latest
@@ -276,67 +179,19 @@ jobs:
           - name: e2e-misc
             path: ./test/e2e/misc/...
     name: ${{ matrix.suite.name }}-experimental
-    env:
-      MANAGER_IMAGE: ${{ needs.setup.outputs.manager-image }}
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Setup Golang
-        uses: ./.github/template/setup-golang
-
-      - name: Authenticate to Google Cloud
-        if: github.event_name != 'pull_request'
-        uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed # v2.1.13
+      - name: Run E2E test
+        uses: ./.github/template/run-e2e-test
         with:
-          credentials_json: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
-
-      - name: Setup Google Cloud SDK
-        if: github.event_name != 'pull_request'
-        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f # v2.2.1
-
-      - name: Configure Docker for Google Artifact Registry
-        if: github.event_name != 'pull_request'
-        run: gcloud auth configure-docker europe-docker.pkg.dev --quiet
-
-      - name: Pull Self-monitor FIPS image
-        if: github.event_name != 'pull_request'
-        run: make docker-pull-self-monitor-fips-image
-
-      - name: Provision K3D cluster
-        run: make provision-k3d
-
-      - name: Import Self-monitor FIPS image to K3D
-        if: github.event_name != 'pull_request'
-        run: make k3d-import-self-monitor-fips-image
-
-      - name: Run ${{ matrix.suite.name }}-experimental tests
-        run: |
-          # Filter by experimental and FIPS availability
-          LABELS="experimental"
-          if [[ "${{ env.FIPS_IMAGE_AVAILABLE }}" != "true" ]]; then
-            LABELS="$LABELS and not require-fips-images"
-          fi
-          make e2e-test \
-            E2E_TEST_PATH="${{ matrix.suite.path }}" \
-            E2E_TEST_ID="${{ matrix.suite.name }}-experimental" \
-            E2E_TEST_LABELS="$LABELS"
-
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.suite.name }}-experimental-report
-          path: junit-report-*.xml
-
-      - name: Print pods on failure
-        if: failure()
-        run: |
-          kubectl get pods -A
-          for pod in $(kubectl get pods -n kyma-system -o name 2>/dev/null); do
-            echo "=== $pod ==="
-            kubectl logs -n kyma-system $pod --all-containers 2>/dev/null || true
-          done
+          test-id: ${{ matrix.suite.name }}-experimental
+          test-path: ${{ matrix.suite.path }}
+          test-labels: experimental
+          manager-image: ${{ needs.setup.outputs.manager-image }}
+          fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
+          google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
 
   # e2e-traces and e2e-misc (non-experimental) without set splitting
   e2e:
@@ -351,69 +206,21 @@ jobs:
           - name: e2e-misc
             path: ./test/e2e/misc/...
     name: ${{ matrix.suite.name }}
-    env:
-      MANAGER_IMAGE: ${{ needs.setup.outputs.manager-image }}
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Setup Golang
-        uses: ./.github/template/setup-golang
-
-      - name: Authenticate to Google Cloud
-        if: github.event_name != 'pull_request'
-        uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed # v2.1.13
+      - name: Run E2E test
+        uses: ./.github/template/run-e2e-test
         with:
-          credentials_json: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
+          test-id: ${{ matrix.suite.name }}
+          test-path: ${{ matrix.suite.path }}
+          test-labels: not experimental
+          manager-image: ${{ needs.setup.outputs.manager-image }}
+          fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
+          google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
 
-      - name: Setup Google Cloud SDK
-        if: github.event_name != 'pull_request'
-        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f # v2.2.1
-
-      - name: Configure Docker for Google Artifact Registry
-        if: github.event_name != 'pull_request'
-        run: gcloud auth configure-docker europe-docker.pkg.dev --quiet
-
-      - name: Pull Self-monitor FIPS image
-        if: github.event_name != 'pull_request'
-        run: make docker-pull-self-monitor-fips-image
-
-      - name: Provision K3D cluster
-        run: make provision-k3d
-
-      - name: Import Self-monitor FIPS image to K3D
-        if: github.event_name != 'pull_request'
-        run: make k3d-import-self-monitor-fips-image
-
-      - name: Run ${{ matrix.suite.name }} tests
-        run: |
-          # Filter by non-experimental and FIPS availability
-          LABELS="not experimental"
-          if [[ "${{ env.FIPS_IMAGE_AVAILABLE }}" != "true" ]]; then
-            LABELS="$LABELS and not require-fips-images"
-          fi
-          make e2e-test \
-            E2E_TEST_PATH="${{ matrix.suite.path }}" \
-            E2E_TEST_ID="${{ matrix.suite.name }}" \
-            E2E_TEST_LABELS="$LABELS"
-
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.suite.name }}-report
-          path: junit-report-*.xml
-
-      - name: Print pods on failure
-        if: failure()
-        run: |
-          kubectl get pods -A
-          for pod in $(kubectl get pods -n kyma-system -o name 2>/dev/null); do
-            echo "=== $pod ==="
-            kubectl logs -n kyma-system $pod --all-containers 2>/dev/null || true
-          done
-
-  # Upgrade and integration tests (no fips/experimental variants)
+  # Upgrade and integration tests
   e2e-other:
     needs: setup
     runs-on: ubuntu-latest
@@ -426,61 +233,19 @@ jobs:
           - name: integration
             path: ./test/integration/...
     name: ${{ matrix.suite.name }}
-    env:
-      MANAGER_IMAGE: ${{ needs.setup.outputs.manager-image }}
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Setup Golang
-        uses: ./.github/template/setup-golang
-
-      - name: Authenticate to Google Cloud
-        if: github.event_name != 'pull_request'
-        uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed # v2.1.13
+      - name: Run E2E test
+        uses: ./.github/template/run-e2e-test
         with:
-          credentials_json: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
-
-      - name: Setup Google Cloud SDK
-        if: github.event_name != 'pull_request'
-        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f # v2.2.1
-
-      - name: Configure Docker for Google Artifact Registry
-        if: github.event_name != 'pull_request'
-        run: gcloud auth configure-docker europe-docker.pkg.dev --quiet
-
-      - name: Pull Self-monitor FIPS image
-        if: github.event_name != 'pull_request'
-        run: make docker-pull-self-monitor-fips-image
-
-      - name: Provision K3D cluster
-        run: make provision-k3d
-
-      - name: Import Self-monitor FIPS image to K3D
-        if: github.event_name != 'pull_request'
-        run: make k3d-import-self-monitor-fips-image
-
-      - name: Run ${{ matrix.suite.name }} tests
-        run: |
-          make e2e-test \
-            E2E_TEST_PATH="${{ matrix.suite.path }}" \
-            E2E_TEST_ID="${{ matrix.suite.name }}"
-
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.suite.name }}-report
-          path: junit-report-*.xml
-
-      - name: Print pods on failure
-        if: failure()
-        run: |
-          kubectl get pods -A
-          for pod in $(kubectl get pods -n kyma-system -o name 2>/dev/null); do
-            echo "=== $pod ==="
-            kubectl logs -n kyma-system $pod --all-containers 2>/dev/null || true
-          done
+          test-id: ${{ matrix.suite.name }}
+          test-path: ${{ matrix.suite.path }}
+          test-labels: ""
+          manager-image: ${{ needs.setup.outputs.manager-image }}
+          fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
+          google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
 
   # Selfmonitor tests
   selfmonitor:
@@ -507,62 +272,19 @@ jobs:
           - name: traces
             label: traces
     name: selfmonitor-${{ matrix.scenario }}-${{ matrix.component.name }}
-    env:
-      MANAGER_IMAGE: ${{ needs.setup.outputs.manager-image }}
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Setup Golang
-        uses: ./.github/template/setup-golang
-
-      - name: Authenticate to Google Cloud
-        if: github.event_name != 'pull_request'
-        uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed # v2.1.13
+      - name: Run E2E test
+        uses: ./.github/template/run-e2e-test
         with:
-          credentials_json: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
-
-      - name: Setup Google Cloud SDK
-        if: github.event_name != 'pull_request'
-        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f # v2.2.1
-
-      - name: Configure Docker for Google Artifact Registry
-        if: github.event_name != 'pull_request'
-        run: gcloud auth configure-docker europe-docker.pkg.dev --quiet
-
-      - name: Pull Self-monitor FIPS image
-        if: github.event_name != 'pull_request'
-        run: make docker-pull-self-monitor-fips-image
-
-      - name: Provision K3D cluster
-        run: make provision-k3d
-
-      - name: Import Self-monitor FIPS image to K3D
-        if: github.event_name != 'pull_request'
-        run: make k3d-import-self-monitor-fips-image
-
-      - name: Run selfmonitor-${{ matrix.scenario }}-${{ matrix.component.name }} tests
-        run: |
-          make e2e-test \
-            E2E_TEST_PATH="./test/selfmonitor/..." \
-            E2E_TEST_ID="selfmonitor-${{ matrix.scenario }}-${{ matrix.component.name }}" \
-            E2E_TEST_LABELS="${{ matrix.scenario }} and ${{ matrix.component.label }}"
-
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: selfmonitor-${{ matrix.scenario }}-${{ matrix.component.name }}-report
-          path: junit-report-*.xml
-
-      - name: Print pods on failure
-        if: failure()
-        run: |
-          kubectl get pods -A
-          for pod in $(kubectl get pods -n kyma-system -o name 2>/dev/null); do
-            echo "=== $pod ==="
-            kubectl logs -n kyma-system $pod --all-containers 2>/dev/null || true
-          done
+          test-id: selfmonitor-${{ matrix.scenario }}-${{ matrix.component.name }}
+          test-path: ./test/selfmonitor/...
+          test-labels: ${{ matrix.scenario }} and ${{ matrix.component.label }}
+          manager-image: ${{ needs.setup.outputs.manager-image }}
+          fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
+          google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
 
   summary:
     needs: [e2e-logs, e2e-metrics, e2e-experimental, e2e, e2e-other, selfmonitor]
