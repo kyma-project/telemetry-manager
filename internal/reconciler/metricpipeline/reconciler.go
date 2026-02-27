@@ -203,10 +203,19 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	var metricPipeline telemetryv1beta1.MetricPipeline
 	if err := r.Get(ctx, req.NamespacedName, &metricPipeline); err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		if client.IgnoreNotFound(err) != nil {
+			return ctrl.Result{}, err
+		}
+
+		// Pipeline was deleted, clean up secret watchers
+		if err := r.secretWatcher.RemoveFromWatchers(ctx, req.Name, telemetryv1beta1.GroupVersion.WithKind("MetricPipeline")); err != nil {
+			return ctrl.Result{}, err
+		}
+
+		return ctrl.Result{}, nil
 	}
 
-	if err := r.syncWatchedSecrets(ctx, &metricPipeline); err != nil {
+	if err := r.syncSecretWatchers(ctx, &metricPipeline); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -527,9 +536,9 @@ func (r *Reconciler) getEndpoint(ctx context.Context, pipeline *telemetryv1beta1
 	return string(endpointBytes)
 }
 
-func (r *Reconciler) syncWatchedSecrets(ctx context.Context, pipeline *telemetryv1beta1.MetricPipeline) error {
+func (r *Reconciler) syncSecretWatchers(ctx context.Context, pipeline *telemetryv1beta1.MetricPipeline) error {
 	refs := secretref.GetSecretRefsMetricPipeline(pipeline)
 	secrets := secretref.RefsToSecretNames(refs)
 
-	return r.secretWatcher.SyncWatchedSecrets(ctx, pipeline, secrets)
+	return r.secretWatcher.SyncWatchers(ctx, pipeline, secrets)
 }

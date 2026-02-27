@@ -95,10 +95,19 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	var pipeline telemetryv1beta1.LogPipeline
 	if err := r.Get(ctx, req.NamespacedName, &pipeline); err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		if client.IgnoreNotFound(err) != nil {
+			return ctrl.Result{}, err
+		}
+
+		// Pipeline was deleted, clean up secret watchers
+		if err := r.secretWatcher.RemoveFromWatchers(ctx, req.Name, telemetryv1beta1.GroupVersion.WithKind("LogPipeline")); err != nil {
+			return ctrl.Result{}, err
+		}
+
+		return ctrl.Result{}, nil
 	}
 
-	if err := r.syncSecretWatches(ctx, &pipeline); err != nil {
+	if err := r.syncSecretWatchers(ctx, &pipeline); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -123,7 +132,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	return ctrl.Result{}, err
 }
 
-func (r *Reconciler) syncSecretWatches(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) error {
+func (r *Reconciler) syncSecretWatchers(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) error {
 	if r.secretWatcher == nil {
 		return nil
 	}
@@ -131,5 +140,5 @@ func (r *Reconciler) syncSecretWatches(ctx context.Context, pipeline *telemetryv
 	refs := secretref.GetSecretRefsLogPipeline(pipeline)
 	secrets := secretref.RefsToSecretNames(refs)
 
-	return r.secretWatcher.SyncWatchedSecrets(ctx, pipeline, secrets)
+	return r.secretWatcher.SyncWatchers(ctx, pipeline, secrets)
 }

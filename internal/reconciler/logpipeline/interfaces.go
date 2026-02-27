@@ -4,6 +4,7 @@ import (
 	"context"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -50,6 +51,8 @@ type PipelineSyncer interface {
 
 // SecretWatcher manages watches on Kubernetes secrets referenced by pipelines.
 type SecretWatcher interface {
-	// SyncWatchedSecrets ensures the pipeline watches exactly the given set of secrets.
-	SyncWatchedSecrets(ctx context.Context, pipeline client.Object, secrets []types.NamespacedName) error
+	// SyncWatchers ensures the pipeline watches exactly the given set of secrets.
+	SyncWatchers(ctx context.Context, pipeline client.Object, secrets []types.NamespacedName) error
+	// RemoveFromWatchers removes a pipeline from all watchers by name and GVK.
+	RemoveFromWatchers(ctx context.Context, name string, gvk schema.GroupVersionKind) error
 }

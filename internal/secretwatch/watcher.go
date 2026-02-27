@@ -9,6 +9,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
@@ -71,26 +72,26 @@ func (w *watcher) link(pipeline client.Object) bool {
 	return true
 }
 
-// unlink removes a pipeline from the watcher's linked pipelines.
-// It returns true if there are still pipelines linked after removal, or false if the list is now empty.
-func (w *watcher) unlink(pipeline client.Object) bool {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-
-	w.linked = slices.DeleteFunc(w.linked, func(p client.Object) bool {
-		return samePipeline(p, pipeline)
-	})
-
-	return len(w.linked) > 0
-}
-
-func (w *watcher) isLinked(pipeline client.Object) bool {
+func (w *watcher) isLinked(name string, gvk schema.GroupVersionKind) bool {
 	w.mu.RLock()
 	defer w.mu.RUnlock()
 
 	return slices.ContainsFunc(w.linked, func(p client.Object) bool {
-		return samePipeline(p, pipeline)
+		return p.GetName() == name && p.GetObjectKind().GroupVersionKind() == gvk
 	})
+}
+
+// unlink removes a pipeline from the watcher's linked pipelines by name and GVK.
+// It returns true if there are still pipelines linked after removal, or false if the list is now empty.
+func (w *watcher) unlink(name string, gvk schema.GroupVersionKind) bool {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	w.linked = slices.DeleteFunc(w.linked, func(p client.Object) bool {
+		return p.GetName() == name && p.GetObjectKind().GroupVersionKind() == gvk
+	})
+
+	return len(w.linked) > 0
 }
 
 func (w *watcher) getLinkedPipelines() []client.Object {
