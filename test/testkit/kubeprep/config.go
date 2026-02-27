@@ -25,6 +25,7 @@ type Config struct {
 	HelmValues          []string // Custom helm --set values (e.g., "additionalMetadata.labels.foo=bar")
 	ChartPath           string   // Helm chart path/URL (empty = use local chart)
 	DeployPrerequisites bool     // Deploy test prerequisites (default: true)
+	SkipManagerRemoval  bool     // Skip manager removal during reconfiguration (for upgrade tests)
 }
 
 // Option is a functional option for configuring cluster setup
@@ -91,6 +92,16 @@ func WithIstio() Option {
 func WithExperimental() Option {
 	return func(c *Config) {
 		c.EnableExperimental = true
+	}
+}
+
+// WithSkipManagerRemoval prevents manager removal during reconfiguration.
+// Use this for upgrade tests where existing pipelines must be preserved.
+// When set, experimental mode changes and Istio changes will fail instead of
+// removing and reinstalling the manager.
+func WithSkipManagerRemoval() Option {
+	return func(c *Config) {
+		c.SkipManagerRemoval = true
 	}
 }
 
