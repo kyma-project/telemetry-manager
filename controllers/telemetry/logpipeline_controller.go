@@ -180,6 +180,7 @@ func (r *LogPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		)
 	}
 
+	// TODO: Watching the Telemetry CR should be entirely moved to the OTLP Gateway and Agents Controllers (remove this after the refactoring to LogAgent and FluentBit Controllers is done)
 	return b.Watches(
 		&operatorv1beta1.Telemetry{},
 		handler.EnqueueRequestsFromMapFunc(r.mapTelemetryChanges),

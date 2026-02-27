@@ -38,6 +38,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
+	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
@@ -132,6 +133,13 @@ func (r *OTLPGatewayController) SetupWithManager(mgr ctrl.Manager) error {
 		)
 	}
 
+	// Watch Telemetry CR
+	b.Watches(
+		&operatorv1beta1.Telemetry{},
+		handler.EnqueueRequestsFromMapFunc(r.mapTelemetryToConfigMap),
+		ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete()),
+	)
+
 	// Watch Istio resources if present
 	if isIstioPresent(mgr.GetClient()) {
 		b = b.Watches(
@@ -147,6 +155,26 @@ func (r *OTLPGatewayController) SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	return b.Complete(r)
+}
+
+// mapTelemetryToConfigMap creates a reconcile request for the OTLP Gateway ConfigMap when Telemetry CR changes.
+func (r *OTLPGatewayController) mapTelemetryToConfigMap(ctx context.Context, object client.Object) []reconcile.Request {
+	_, ok := object.(*operatorv1beta1.Telemetry)
+	if !ok {
+		logf.FromContext(ctx).V(1).Error(nil, "Unexpected type: expected Telemetry")
+		return nil
+	}
+
+	namespace := object.GetNamespace()
+
+	return []reconcile.Request{
+		{
+			NamespacedName: types.NamespacedName{
+				Name:      otelcollector.OTLPGatewayConfigMapName,
+				Namespace: namespace,
+			},
+		},
+	}
 }
 
 // mapOwnedResourceToConfigMap maps owned resource changes to reconcile requests for the ConfigMap.

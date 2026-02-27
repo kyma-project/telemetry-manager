@@ -18,20 +18,15 @@ limitations under the License.
 
 import (
 	"context"
-	"fmt"
 
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
-	ctrlbuilder "sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
-	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/config"
@@ -40,7 +35,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
-	predicateutils "github.com/kyma-project/telemetry-manager/internal/utils/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
 	"github.com/kyma-project/telemetry-manager/internal/validators/ottl"
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
@@ -141,45 +135,5 @@ func (r *TracePipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		source.Channel(r.reconcileTriggerChan, &handler.EnqueueRequestForObject{}),
 	)
 
-	// Note: Gateway-owned resources (Deployment, Service, NetworkPolicy, etc.) are now watched by OTLP Gateway Controller
-
-	return b.Watches(
-		&operatorv1beta1.Telemetry{},
-		handler.EnqueueRequestsFromMapFunc(r.mapTelemetryChanges),
-		ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete()),
-	).Complete(r)
-}
-
-func (r *TracePipelineController) mapTelemetryChanges(ctx context.Context, object client.Object) []reconcile.Request {
-	_, ok := object.(*operatorv1beta1.Telemetry)
-	if !ok {
-		logf.FromContext(ctx).V(1).Error(nil, "Unexpected type: expected Telemetry")
-		return nil
-	}
-
-	requests, err := r.createRequestsForAllPipelines(ctx)
-	if err != nil {
-		logf.FromContext(ctx).Error(err, "Unable to create reconcile requests")
-	}
-
-	return requests
-}
-
-func (r *TracePipelineController) createRequestsForAllPipelines(ctx context.Context) ([]reconcile.Request, error) {
-	var pipelines telemetryv1beta1.TracePipelineList
-
-	var requests []reconcile.Request
-
-	err := r.List(ctx, &pipelines)
-	if err != nil {
-		return nil, fmt.Errorf("failed to list TracePipelines: %w", err)
-	}
-
-	for i := range pipelines.Items {
-		var pipeline = pipelines.Items[i]
-
-		requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
-	}
-
-	return requests, nil
+	return b.Complete(r)
 }
