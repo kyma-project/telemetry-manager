@@ -43,24 +43,20 @@ For detailed VPA architecture, see [Kubernetes VPA Documentation](https://github
 ### Request-to-Limit Ratio
 
 The current request-to-limit ratio of 62.5 is problematic because VPA preserves this ratio when it updates resources. For example, if VPA recommends increasing a Pod's memory request to `64Mi`, it also calculates the new limit as `4000Mi` (62.5 × 64Mi). This calculated limit is likely to exceed the memory capacity of a typical node.
-- If VPA recommends `requests.memory` = 64Mi
-- VPA will set `limits.memory` = 62.5 × 64Mi = 4000Mi
-- This exceeds typical node memory capacity
 
 Before enabling VPA, reduce the request-to-limit ratio to a more reasonable value (for example, 2-4x).
 
 ### VPA Limitations
-
-1. Limits Calculation: VPA's `maxAllowed` constraint applies only to requests, not limits. Limits are calculated from the request-to-limit ratio, which can exceed `maxAllowed` values.
-2. Scale-Down Timing: VPA makes scale-down decisions based on long-term historical data (typically 8+ days), so resource reductions take time.
-3. DaemonSet Updates: VPA requires Pod restarts for resource changes, which means temporary gaps in coverage for DaemonSet Pods. This applies only to clusters that don't support in-place updates (Kubernetes versions before v1.35 or clusters where the feature gate `InPlacePodVerticalScaling` is disabled).
+- Limits Calculation: VPA's `maxAllowed` constraint applies only to requests, not limits. Limits are calculated from the request-to-limit ratio, which can exceed `maxAllowed` values. 
+- Scale-Down Timing: VPA makes scale-down decisions based on long-term historical data (typically 8+ days), so resource reductions take time. 
+- DaemonSet Updates: VPA requires Pod restarts for resource changes, which means temporary gaps in coverage for DaemonSet Pods. This applies only to clusters that don't support in-place updates (Kubernetes versions before v1.35 or clusters where the feature gate `InPlacePodVerticalScaling` is disabled).
 
 ### GOMEMLIMIT Strategy
 
 Because Go-based applications use `GOMEMLIMIT` for soft memory limits, we must decide how to set this value when VPA manages Pod resources:
 - Set `GOMEMLIMIT` to a fixed value (for example, 1.6Gi = 80% of 2Gi max). This is recommended for simplicity and predictability.
 - Dynamically calculate `GOMEMLIMIT` based on VPA-recommended limits
-- Recommendation: Use Option A for simplicity and predictability
+
 
 ## Considered Options
 
@@ -139,7 +135,8 @@ The reconciler handles the following tasks:
 1. Watch VerticalPodAutoscaler CRD status
 2. Compare recommendations with current DaemonSet resources
 3. Update DaemonSet spec when drift exceeds threshold (e.g., >20%)
-4. Trigger DaemonSet's built-in rolling update
+4. Update GOMEMLIMIT based on new memory limits
+5.Trigger DaemonSet's built-in rolling update
 
 **Pros:**
 - Visibility: DaemonSet spec always reflects actual pod resources
@@ -154,7 +151,7 @@ The reconciler handles the following tasks:
 
 ## Decision
 
-We will go with Option 1: VPA Direct Pod Updates
+We will go with Option 1: VPA Direct Pod Updates. VPA would be configured by reconciler when the relevant DaemonSet is created.
 
 Rationale:
 1. Lower Complexity: Uses tested VPA components rather than implementing custom logic
