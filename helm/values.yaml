@@ -16,10 +16,10 @@ manager:
       high-priority-class-name: "telemetry-priority-class-high"
       normal-priority-class-name: "telemetry-priority-class"
     env:
-      alpineImage: europe-docker.pkg.dev/kyma-project/prod/external/library/alpine:3.23.2
+      alpineImage: europe-docker.pkg.dev/kyma-project/prod/external/library/alpine:3.23.3
       appLogLevel: info
       fluentBitExporterImage: europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20260116-88440ede
-      fluentBitImage: europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluent-bit:4.2.2
+      fluentBitImage: europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluent-bit:4.2.3
       gomemlimit: 300MiB
       otelCollectorImage: europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.144.0-main
       selfMonitorImage: europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:3.9.1-0877cc3
