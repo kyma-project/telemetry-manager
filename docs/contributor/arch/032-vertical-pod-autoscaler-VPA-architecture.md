@@ -42,7 +42,7 @@ For detailed VPA architecture, see [Kubernetes VPA Documentation](https://github
 
 ### Request-to-Limit Ratio
 
-The current request-to-limit ratio of 62.5 is problematic for VPA. VPA preserves the ratio when updating resources. For example:
+The current request-to-limit ratio of 62.5 is problematic because VPA preserves this ratio when it updates resources. For example, if VPA recommends increasing a Pod's memory request to `64Mi`, it also calculates the new limit as `4000Mi` (62.5 × 64Mi). This calculated limit is likely to exceed the memory capacity of a typical node.
 - If VPA recommends `requests.memory` = 64Mi
 - VPA will set `limits.memory` = 62.5 × 64Mi = 4000Mi
 - This exceeds typical node memory capacity
