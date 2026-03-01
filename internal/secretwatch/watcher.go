@@ -140,7 +140,7 @@ func (w *watcher) start(ctx context.Context) {
 		logf.FromContext(ctx).V(1).Info("Watcher channel closed. Reconnecting in 5 seconds...",
 			"secret", w.secret.String())
 
-		metrics.SecretWatcherReconnectsTotal.Inc()
+		metrics.SecretWatcherReconnectsTotal.WithLabelValues(w.secret.Namespace, w.secret.Name).Inc()
 
 		select {
 		case <-time.After(reconnectDelay):
@@ -191,7 +191,7 @@ func (w *watcher) processEventLoop(ctx context.Context, watcher watch.Interface)
 			continue
 		}
 
-		metrics.SecretWatchEventsTotal.WithLabelValues(string(watchEvent.Type)).Inc()
+		metrics.SecretWatchEventsTotal.WithLabelValues(w.secret.Namespace, w.secret.Name, string(watchEvent.Type)).Inc()
 
 		logf.FromContext(ctx).V(1).Info("Secret watch event received. Triggering reconciliation for linked pipelines.",
 			"secret", w.secret.String(),

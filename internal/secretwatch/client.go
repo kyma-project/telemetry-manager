@@ -94,12 +94,13 @@ func (c *Client) SyncWatchers(ctx context.Context, pipeline client.Object, secre
 	}
 
 	// Add or update watchers for the given secrets
+	pipelineKind := pipeline.GetObjectKind().GroupVersionKind().Kind
 	for secret := range secretSet {
 		if w, exists := c.watchers[secret]; exists {
 			if w.link(pipeline) {
 				logf.FromContext(ctx).V(1).Info("Linked pipeline to existing watcher",
 					"secret", secret.String())
-				metrics.SecretWatchersLinkedPipelines.Inc()
+				metrics.SecretWatchersLinkedPipelines.WithLabelValues(secret.Namespace, secret.Name, pipelineKind).Inc()
 			}
 		} else {
 			w := newWatcher(secret, pipeline, c.clientset, c.eventRouter)
@@ -107,8 +108,8 @@ func (c *Client) SyncWatchers(ctx context.Context, pipeline client.Object, secre
 			c.watchers[secret] = w
 			logf.FromContext(ctx).V(1).Info("Created new watcher for secret",
 				"secret", secret.String())
-			metrics.SecretWatchersActive.Inc()
-			metrics.SecretWatchersLinkedPipelines.Inc()
+			metrics.SecretWatchersActive.WithLabelValues(secret.Namespace, secret.Name).Inc()
+			metrics.SecretWatchersLinkedPipelines.WithLabelValues(secret.Namespace, secret.Name, pipelineKind).Inc()
 		}
 	}
 
@@ -159,6 +160,7 @@ func (c *Client) startWatcher(ctx context.Context, w *watcher) {
 // If excludeSet is nil, the pipeline is removed from all watchers.
 // Watchers with no remaining linked pipelines are stopped and deleted.
 func (c *Client) unlinkPipelineFromWatchers(ctx context.Context, name string, gvk schema.GroupVersionKind, excludeSet map[types.NamespacedName]struct{}) {
+	pipelineKind := gvk.Kind
 	for watchedSecret, w := range c.watchers {
 		if excludeSet != nil {
 			if _, inExcludeSet := excludeSet[watchedSecret]; inExcludeSet {
@@ -174,7 +176,7 @@ func (c *Client) unlinkPipelineFromWatchers(ctx context.Context, name string, gv
 		logf.FromContext(ctx).V(1).Info("Unlinked pipeline from watcher",
 			"secret", watchedSecret.String(),
 			"watcherHasRemainingPipelines", hasPipelines)
-		metrics.SecretWatchersLinkedPipelines.Dec()
+		metrics.SecretWatchersLinkedPipelines.WithLabelValues(watchedSecret.Namespace, watchedSecret.Name, pipelineKind).Dec()
 
 		// If no pipelines are linked anymore, stop and delete the watcher
 		if !hasPipelines {
@@ -182,7 +184,7 @@ func (c *Client) unlinkPipelineFromWatchers(ctx context.Context, name string, gv
 			delete(c.watchers, watchedSecret)
 			logf.FromContext(ctx).V(1).Info("Stopped watcher with no remaining pipelines",
 				"secret", watchedSecret.String())
-			metrics.SecretWatchersActive.Dec()
+			metrics.SecretWatchersActive.WithLabelValues(watchedSecret.Namespace, watchedSecret.Name).Set(0)
 		}
 	}
 }
