@@ -138,34 +138,7 @@ func (w *watcher) start(ctx context.Context) {
 
 		logf.FromContext(ctx).V(1).Info("Watcher established successfully", "secret", w.secret.String())
 
-		for watchEvent := range watcher.ResultChan() {
-			if watchEvent.Type == watch.Error {
-				logf.FromContext(ctx).V(1).Info("Watch error received",
-					"secret", w.secret.String(),
-					"object", watchEvent.Object)
-
-				break
-			}
-
-			secret, ok := watchEvent.Object.(*corev1.Secret)
-			if !ok {
-				continue
-			}
-
-			metrics.SecretWatchEventsTotal.WithLabelValues(string(watchEvent.Type)).Inc()
-
-			logf.FromContext(ctx).V(1).Info("Secret watch event received. Triggering reconciliation for linked pipelines.",
-				"secret", w.secret.String(),
-				"eventType", watchEvent.Type,
-				"resourceVersion", secret.ResourceVersion,
-				"linkedPipelines", len(w.getLinkedPipelines()),
-			)
-
-			// Send events to trigger reconciliation for linked pipelines
-			for _, pipeline := range w.getLinkedPipelines() {
-				w.eventRouter(pipeline)
-			}
-		}
+		w.processEventLoop(ctx, watcher)
 
 		logf.FromContext(ctx).V(1).Info("Watcher channel closed. Reconnecting in 5 seconds...",
 			"secret", w.secret.String())
@@ -202,4 +175,34 @@ func (w *watcher) fetchLatestResourceVersion(ctx context.Context) string {
 		"exists", len(secretList.Items) > 0)
 
 	return secretList.ResourceVersion
+}
+
+// processEventLoop processes watch events until the channel is closed or an error occurs.
+func (w *watcher) processEventLoop(ctx context.Context, watcher watch.Interface) {
+	for watchEvent := range watcher.ResultChan() {
+		if watchEvent.Type == watch.Error {
+			logf.FromContext(ctx).V(1).Info("Watch error received",
+				"secret", w.secret.String(),
+				"object", watchEvent.Object)
+			return
+		}
+
+		secret, ok := watchEvent.Object.(*corev1.Secret)
+		if !ok {
+			continue
+		}
+
+		metrics.SecretWatchEventsTotal.WithLabelValues(string(watchEvent.Type)).Inc()
+
+		logf.FromContext(ctx).V(1).Info("Secret watch event received. Triggering reconciliation for linked pipelines.",
+			"secret", w.secret.String(),
+			"eventType", watchEvent.Type,
+			"resourceVersion", secret.ResourceVersion,
+			"linkedPipelines", len(w.getLinkedPipelines()),
+		)
+
+		for _, pipeline := range w.getLinkedPipelines() {
+			w.eventRouter(pipeline)
+		}
+	}
 }
