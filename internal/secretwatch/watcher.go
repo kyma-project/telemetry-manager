@@ -107,12 +107,10 @@ func (w *watcher) getLinkedPipelines() []client.Object {
 // automatically reconnecting on errors or connection loss.
 // The watcher stops when the context is canceled.
 func (w *watcher) start(ctx context.Context) {
-	log := logf.FromContext(ctx).V(1)
-
 	for {
 		select {
 		case <-ctx.Done():
-			log.Info("Context canceled, stopping watcher", "secret", w.secret.String())
+			logf.FromContext(ctx).V(1).Info("Context canceled, stopping watcher", "secret", w.secret.String())
 			return
 		default:
 		}
@@ -123,14 +121,14 @@ func (w *watcher) start(ctx context.Context) {
 		var resourceVersion string
 
 		if err != nil {
-			log.Info("Could not get initial secret (it may not exist yet)",
+			logf.FromContext(ctx).V(1).Info("Could not get initial secret (it may not exist yet)",
 				"secret", w.secret.String(),
 				"error", err)
 
 			resourceVersion = ""
 		} else {
 			resourceVersion = secret.ResourceVersion
-			log.Info("Initial secret found",
+			logf.FromContext(ctx).V(1).Info("Initial secret found",
 				"secret", w.secret.String(),
 				"resourceVersion", resourceVersion)
 		}
@@ -141,25 +139,25 @@ func (w *watcher) start(ctx context.Context) {
 			ResourceVersion: resourceVersion,
 		})
 		if err != nil {
-			log.V(1).Info("Error creating watcher. Retrying in 5 seconds...",
+			logf.FromContext(ctx).V(1).Info("Error creating watcher. Retrying in 5 seconds...",
 				"secret", w.secret.String(),
 				"error", err)
 
 			select {
 			case <-time.After(reconnectDelay):
 			case <-ctx.Done():
-				log.V(1).Info("Context canceled, stopping watcher", "secret", w.secret.String())
+				logf.FromContext(ctx).V(1).Info("Context canceled, stopping watcher", "secret", w.secret.String())
 				return
 			}
 
 			continue
 		}
 
-		log.V(1).Info("Watcher established successfully", "secret", w.secret.String())
+		logf.FromContext(ctx).V(1).Info("Watcher established successfully", "secret", w.secret.String())
 
 		for watchEvent := range watcher.ResultChan() {
 			if watchEvent.Type == watch.Error {
-				log.V(1).Info("Watch error received",
+				logf.FromContext(ctx).V(1).Info("Watch error received",
 					"secret", w.secret.String(),
 					"object", watchEvent.Object)
 
@@ -173,7 +171,7 @@ func (w *watcher) start(ctx context.Context) {
 
 			metrics.SecretWatchEventsTotal.WithLabelValues(string(watchEvent.Type)).Inc()
 
-			log.Info("Secret watch event received. Triggering reconciliation for linked pipelines.",
+			logf.FromContext(ctx).V(1).Info("Secret watch event received. Triggering reconciliation for linked pipelines.",
 				"secret", w.secret.String(),
 				"eventType", watchEvent.Type,
 				"resourceVersion", secret.ResourceVersion,
@@ -186,7 +184,7 @@ func (w *watcher) start(ctx context.Context) {
 			}
 		}
 
-		log.V(1).Info("Watcher channel closed. Reconnecting in 5 seconds...",
+		logf.FromContext(ctx).V(1).Info("Watcher channel closed. Reconnecting in 5 seconds...",
 			"secret", w.secret.String())
 
 		metrics.SecretWatcherReconnectsTotal.Inc()
@@ -194,7 +192,7 @@ func (w *watcher) start(ctx context.Context) {
 		select {
 		case <-time.After(reconnectDelay):
 		case <-ctx.Done():
-			log.V(1).Info("Context canceled, stopping watcher", "secret", w.secret.String())
+			logf.FromContext(ctx).V(1).Info("Context canceled, stopping watcher", "secret", w.secret.String())
 			return
 		}
 	}

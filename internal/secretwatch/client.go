@@ -80,8 +80,6 @@ func NewClient(cfg *rest.Config, traceEventChan, metricEventChan, logEventChan c
 // Duplicate secrets in the input slice are automatically deduplicated.
 // Returns ErrClientStopped if the client has been stopped.
 func (c *Client) SyncWatchers(ctx context.Context, pipeline client.Object, secrets []types.NamespacedName) error {
-	log := logf.FromContext(ctx).V(1)
-
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -99,7 +97,7 @@ func (c *Client) SyncWatchers(ctx context.Context, pipeline client.Object, secre
 	for secret := range secretSet {
 		if w, exists := c.watchers[secret]; exists {
 			if w.link(pipeline) {
-				log.Info("Linked pipeline to existing watcher",
+				logf.FromContext(ctx).V(1).Info("Linked pipeline to existing watcher",
 					"secret", secret.String())
 				metrics.SecretWatchersLinkedPipelines.Inc()
 			}
@@ -107,7 +105,7 @@ func (c *Client) SyncWatchers(ctx context.Context, pipeline client.Object, secre
 			w := newWatcher(secret, pipeline, c.clientset, c.eventRouter)
 			c.startWatcher(ctx, w)
 			c.watchers[secret] = w
-			log.Info("Created new watcher for secret",
+			logf.FromContext(ctx).V(1).Info("Created new watcher for secret",
 				"secret", secret.String())
 			metrics.SecretWatchersActive.Inc()
 			metrics.SecretWatchersLinkedPipelines.Inc()
@@ -141,8 +139,8 @@ func (c *Client) RemoveFromWatchers(ctx context.Context, name string, gvk schema
 // It cancels all watcher contexts and waits for them to finish.
 // If watchers don't finish within the default timeout, it returns without waiting further.
 // After calling Stop, the Client cannot be reused. Calls to SyncWatchers will return ErrClientStopped.
-func (c *Client) Stop() {
-	c.stopWithTimeout(defaultShutdownTimeout)
+func (c *Client) Stop(ctx context.Context) {
+	c.stopWithTimeout(ctx, defaultShutdownTimeout)
 }
 
 //nolint:contextcheck // Intentionally using Background() so watcher outlives reconcile request
@@ -161,8 +159,6 @@ func (c *Client) startWatcher(ctx context.Context, w *watcher) {
 // If excludeSet is nil, the pipeline is removed from all watchers.
 // Watchers with no remaining linked pipelines are stopped and deleted.
 func (c *Client) unlinkPipelineFromWatchers(ctx context.Context, name string, gvk schema.GroupVersionKind, excludeSet map[types.NamespacedName]struct{}) {
-	log := logf.FromContext(ctx).V(1)
-
 	for watchedSecret, w := range c.watchers {
 		if excludeSet != nil {
 			if _, inExcludeSet := excludeSet[watchedSecret]; inExcludeSet {
@@ -175,7 +171,7 @@ func (c *Client) unlinkPipelineFromWatchers(ctx context.Context, name string, gv
 		}
 
 		hasPipelines := w.unlink(name, gvk)
-		log.Info("Unlinked pipeline from watcher",
+		logf.FromContext(ctx).V(1).Info("Unlinked pipeline from watcher",
 			"secret", watchedSecret.String(),
 			"watcherHasRemainingPipelines", hasPipelines)
 		metrics.SecretWatchersLinkedPipelines.Dec()
@@ -184,27 +180,27 @@ func (c *Client) unlinkPipelineFromWatchers(ctx context.Context, name string, gv
 		if !hasPipelines {
 			w.cancel()
 			delete(c.watchers, watchedSecret)
-			log.Info("Stopped watcher with no remaining pipelines",
+			logf.FromContext(ctx).V(1).Info("Stopped watcher with no remaining pipelines",
 				"secret", watchedSecret.String())
 			metrics.SecretWatchersActive.Dec()
 		}
 	}
 }
 
-func (c *Client) stopWithTimeout(timeout time.Duration) {
+func (c *Client) stopWithTimeout(ctx context.Context, timeout time.Duration) {
 	c.mu.Lock()
 
 	c.stopped = true
 	watcherCount := len(c.watchers)
 
-	logf.Log.V(1).Info("Stopping secret watcher client",
+	logf.FromContext(ctx).V(1).Info("Stopping secret watcher client",
 		"watcherCount", watcherCount,
 		"timeout", timeout)
 
 	// Cancel all watchers
 	for secret, entry := range c.watchers {
 		if entry.cancel != nil {
-			logf.Log.V(1).Info("Canceling watcher", "secret", secret.String())
+			logf.FromContext(ctx).V(1).Info("Canceling watcher", "secret", secret.String())
 			entry.cancel()
 		}
 	}
@@ -223,9 +219,9 @@ func (c *Client) stopWithTimeout(timeout time.Duration) {
 
 	select {
 	case <-done:
-		logf.Log.V(1).Info("All secret watchers stopped gracefully")
+		logf.FromContext(ctx).V(1).Info("All secret watchers stopped gracefully")
 	case <-time.After(timeout):
-		logf.Log.Info("Secret watcher shutdown timeout exceeded, some watchers may still be running",
+		logf.FromContext(ctx).Info("Secret watcher shutdown timeout exceeded, some watchers may still be running",
 			"timeout", timeout)
 	}
 }

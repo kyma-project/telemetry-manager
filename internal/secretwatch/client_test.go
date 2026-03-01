@@ -69,7 +69,7 @@ func TestSecretWatchTriggersEvent(t *testing.T) {
 		// Ensure cleanup: stop the fake watcher to unblock goroutines, then stop client
 		t.Cleanup(func() {
 			fakeWatcher.Stop()
-			c.stopWithTimeout(testShutdownTimeout)
+			c.stopWithTimeout(ctx, testShutdownTimeout)
 		})
 
 		pipeline := new(testutils.NewLogPipelineBuilder().WithName("my-pipeline").Build())
@@ -105,7 +105,7 @@ func TestSecretWatchTriggersEvent(t *testing.T) {
 
 		t.Cleanup(func() {
 			fakeWatcher.Stop()
-			c.stopWithTimeout(testShutdownTimeout)
+			c.stopWithTimeout(ctx, testShutdownTimeout)
 		})
 
 		pipeline := new(testutils.NewLogPipelineBuilder().WithName("my-pipeline").Build())
@@ -152,7 +152,7 @@ func TestSecretWatchTriggersEvent(t *testing.T) {
 
 		t.Cleanup(func() {
 			fakeWatcher.Stop()
-			c.stopWithTimeout(testShutdownTimeout)
+			c.stopWithTimeout(ctx, testShutdownTimeout)
 		})
 
 		pipeline1 := new(testutils.NewLogPipelineBuilder().WithName("pipeline-1").Build())
@@ -207,7 +207,7 @@ func TestSecretWatchTriggersEvent(t *testing.T) {
 
 		t.Cleanup(func() {
 			fakeWatcher.Stop()
-			c.stopWithTimeout(testShutdownTimeout)
+			c.stopWithTimeout(ctx, testShutdownTimeout)
 		})
 
 		pipeline := new(testutils.NewLogPipelineBuilder().WithName("my-pipeline").Build())
@@ -250,7 +250,7 @@ func TestSyncWatchersMultipleCalls(t *testing.T) {
 
 		t.Cleanup(func() {
 			fakeWatcher.Stop()
-			c.stopWithTimeout(testShutdownTimeout)
+			c.stopWithTimeout(ctx, testShutdownTimeout)
 		})
 
 		pipelineA := new(testutils.NewLogPipelineBuilder().WithName("pipeline-a").Build())
@@ -301,7 +301,7 @@ func TestSyncWatchersMultipleCalls(t *testing.T) {
 
 		t.Cleanup(func() {
 			fakeWatcher.Stop()
-			c.stopWithTimeout(testShutdownTimeout)
+			c.stopWithTimeout(ctx, testShutdownTimeout)
 		})
 
 		pipeline := new(testutils.NewLogPipelineBuilder().WithName("my-pipeline").Build())
@@ -350,7 +350,7 @@ func TestSyncWatchersMultipleCalls(t *testing.T) {
 
 		t.Cleanup(func() {
 			fakeWatcher.Stop()
-			c.stopWithTimeout(testShutdownTimeout)
+			c.stopWithTimeout(ctx, testShutdownTimeout)
 		})
 
 		pipelineA := new(testutils.NewLogPipelineBuilder().WithName("pipeline-a").Build())
@@ -420,7 +420,7 @@ func TestSyncWatchersMultipleCalls(t *testing.T) {
 		t.Cleanup(func() {
 			fakeWatcher1.Stop()
 			fakeWatcher2.Stop()
-			c.stopWithTimeout(testShutdownTimeout)
+			c.stopWithTimeout(ctx, testShutdownTimeout)
 		})
 
 		pipeline := new(testutils.NewLogPipelineBuilder().WithName("my-pipeline").Build())
@@ -512,7 +512,7 @@ func TestSyncWatchersMultipleCalls(t *testing.T) {
 		t.Cleanup(func() {
 			fakeWatcher1.Stop()
 			fakeWatcher2.Stop()
-			c.stopWithTimeout(testShutdownTimeout)
+			c.stopWithTimeout(ctx, testShutdownTimeout)
 		})
 
 		pipeline := new(testutils.NewLogPipelineBuilder().WithName("my-pipeline").Build())
@@ -592,7 +592,7 @@ func TestSyncWatchersMultipleCalls(t *testing.T) {
 		t.Cleanup(func() {
 			fakeWatcher1.Stop()
 			fakeWatcher2.Stop()
-			c.stopWithTimeout(testShutdownTimeout)
+			c.stopWithTimeout(ctx, testShutdownTimeout)
 		})
 
 		pipeline := new(testutils.NewLogPipelineBuilder().WithName("my-pipeline").Build())
@@ -659,7 +659,7 @@ func TestSyncWatchersMultipleCalls(t *testing.T) {
 
 		t.Cleanup(func() {
 			fakeWatcher.Stop()
-			c.stopWithTimeout(testShutdownTimeout)
+			c.stopWithTimeout(ctx, testShutdownTimeout)
 		})
 
 		pipeline := new(testutils.NewLogPipelineBuilder().WithName("my-pipeline").Build())
@@ -702,7 +702,7 @@ func TestSyncWatchersAfterStop(t *testing.T) {
 		pipeline := testutils.NewLogPipelineBuilder().Build()
 
 		// Stop the client
-		c.stopWithTimeout(testShutdownTimeout)
+		c.stopWithTimeout(ctx, testShutdownTimeout)
 
 		// Try to sync secrets after stop
 		err := c.SyncWatchers(ctx, &pipeline, []types.NamespacedName{testSecret1})
@@ -724,7 +724,7 @@ func TestSyncWatchersAfterStop(t *testing.T) {
 		pipeline := testutils.NewLogPipelineBuilder().Build()
 
 		// Stop the client using the public method
-		c.Stop()
+		c.Stop(ctx)
 
 		// Try to sync secrets after stop
 		err := c.SyncWatchers(ctx, &pipeline, []types.NamespacedName{testSecret1})
@@ -757,7 +757,7 @@ func TestPipelinesWithSameNameButDifferentTypes(t *testing.T) {
 
 		t.Cleanup(func() {
 			fakeWatcher.Stop()
-			c.stopWithTimeout(testShutdownTimeout)
+			c.stopWithTimeout(ctx, testShutdownTimeout)
 		})
 
 		// Create a LogPipeline and a MetricPipeline with the SAME name
@@ -819,7 +819,7 @@ func TestWatcherErrorHandling(t *testing.T) {
 
 		t.Cleanup(func() {
 			fakeWatcher.Stop()
-			c.stopWithTimeout(testShutdownTimeout)
+			c.stopWithTimeout(ctx, testShutdownTimeout)
 		})
 
 		pipeline := testutils.NewLogPipelineBuilder().Build()
@@ -875,7 +875,7 @@ func TestWatcherErrorHandling(t *testing.T) {
 		time.Sleep(testStartupDelay)
 
 		// Stop client to clean up
-		c.stopWithTimeout(testShutdownTimeout)
+		c.stopWithTimeout(ctx, testShutdownTimeout)
 	})
 }
 
@@ -951,7 +951,7 @@ func TestRemoveFromWatchers(t *testing.T) {
 		t.Cleanup(func() {
 			fakeWatcher1.Stop()
 			fakeWatcher2.Stop()
-			c.stopWithTimeout(testShutdownTimeout)
+			c.stopWithTimeout(ctx, testShutdownTimeout)
 		})
 
 		pipeline := new(testutils.NewLogPipelineBuilder().WithName("my-pipeline").Build())
@@ -1004,7 +1004,7 @@ func TestRemoveFromWatchers(t *testing.T) {
 
 		t.Cleanup(func() {
 			fakeWatcher.Stop()
-			c.stopWithTimeout(testShutdownTimeout)
+			c.stopWithTimeout(ctx, testShutdownTimeout)
 		})
 
 		pipelineA := new(testutils.NewLogPipelineBuilder().WithName("pipeline-a").Build())
@@ -1042,7 +1042,7 @@ func TestRemoveFromWatchers(t *testing.T) {
 		pipeline := testutils.NewLogPipelineBuilder().Build()
 
 		// Stop the client
-		c.stopWithTimeout(testShutdownTimeout)
+		c.stopWithTimeout(ctx, testShutdownTimeout)
 
 		// Try to remove from watchers after stop
 		err := c.RemoveFromWatchers(ctx, pipeline.GetName(), pipeline.GetObjectKind().GroupVersionKind())

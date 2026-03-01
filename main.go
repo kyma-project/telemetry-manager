@@ -584,7 +584,7 @@ type secretWatchStopRunnable struct {
 
 func (r secretWatchStopRunnable) Start(ctx context.Context) error {
 	<-ctx.Done()
-	r.client.Stop()
+	r.client.Stop(ctx)
 
 	return nil
 }
