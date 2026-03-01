@@ -103,6 +103,10 @@ func (w *watcher) getLinkedPipelines() []client.Object {
 	return slices.Clone(w.linked)
 }
 
+func (w *watcher) secretNameFieldSelector() string {
+	return fmt.Sprintf("metadata.name=%s", w.secret.Name)
+}
+
 // start begins watching the secret for changes. It runs in an infinite loop,
 // automatically reconnecting on errors or connection loss.
 // The watcher stops when the context is canceled.
@@ -118,7 +122,7 @@ func (w *watcher) start(ctx context.Context) {
 		resourceVersion := w.fetchLatestResourceVersion(ctx)
 
 		watcher, err := w.client.Watch(ctx, metav1.ListOptions{
-			FieldSelector:   fmt.Sprintf("metadata.name=%s", w.secret.Name),
+			FieldSelector:   w.secretNameFieldSelector(),
 			ResourceVersion: resourceVersion,
 		})
 		if err != nil {
@@ -160,7 +164,7 @@ func (w *watcher) start(ctx context.Context) {
 // Returns an empty string if the list operation fails.
 func (w *watcher) fetchLatestResourceVersion(ctx context.Context) string {
 	secretList, err := w.client.List(ctx, metav1.ListOptions{
-		FieldSelector: fmt.Sprintf("metadata.name=%s", w.secret.Name),
+		FieldSelector: w.secretNameFieldSelector(),
 	})
 	if err != nil {
 		logf.FromContext(ctx).V(1).Info("Could not list secret (it may not exist yet)",
