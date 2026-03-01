@@ -115,25 +115,8 @@ func (w *watcher) start(ctx context.Context) {
 		default:
 		}
 
-		// Get the current resource version to start watching from
-		secret, err := w.client.Get(ctx, w.secret.Name, metav1.GetOptions{})
+		resourceVersion := w.fetchLatestResourceVersion(ctx)
 
-		var resourceVersion string
-
-		if err != nil {
-			logf.FromContext(ctx).V(1).Info("Could not get initial secret (it may not exist yet)",
-				"secret", w.secret.String(),
-				"error", err)
-
-			resourceVersion = ""
-		} else {
-			resourceVersion = secret.ResourceVersion
-			logf.FromContext(ctx).V(1).Info("Initial secret found",
-				"secret", w.secret.String(),
-				"resourceVersion", resourceVersion)
-		}
-
-		// Create a watcher for the specific secret
 		watcher, err := w.client.Watch(ctx, metav1.ListOptions{
 			FieldSelector:   fmt.Sprintf("metadata.name=%s", w.secret.Name),
 			ResourceVersion: resourceVersion,
@@ -196,4 +179,27 @@ func (w *watcher) start(ctx context.Context) {
 			return
 		}
 	}
+}
+
+// fetchLatestResourceVersion retrieves the most recent resource version for the secret.
+// Using List instead of Get ensures we get the latest resourceVersion from the API server,
+// which prevents "410 Gone" errors when starting the watch.
+// Returns an empty string if the list operation fails.
+func (w *watcher) fetchLatestResourceVersion(ctx context.Context) string {
+	secretList, err := w.client.List(ctx, metav1.ListOptions{
+		FieldSelector: fmt.Sprintf("metadata.name=%s", w.secret.Name),
+	})
+	if err != nil {
+		logf.FromContext(ctx).V(1).Info("Could not list secret (it may not exist yet)",
+			"secret", w.secret.String(),
+			"error", err)
+		return ""
+	}
+
+	logf.FromContext(ctx).V(1).Info("Fetched latest resource version for secret",
+		"secret", w.secret.String(),
+		"resourceVersion", secretList.ResourceVersion,
+		"exists", len(secretList.Items) > 0)
+
+	return secretList.ResourceVersion
 }
