@@ -163,6 +163,7 @@ func (w *watcher) fetchLatestResourceVersion(ctx context.Context) string {
 		logf.FromContext(ctx).V(1).Info("Could not list secret (it may not exist yet)",
 			"secret", w.secret.String(),
 			"error", err)
+
 		return ""
 	}
 
@@ -181,6 +182,7 @@ func (w *watcher) processEventLoop(ctx context.Context, watcher watch.Interface)
 			logf.FromContext(ctx).V(1).Info("Watch error received",
 				"secret", w.secret.String(),
 				"object", watchEvent.Object)
+
 			return
 		}
 
