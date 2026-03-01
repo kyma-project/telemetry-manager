@@ -112,13 +112,6 @@ func (w *watcher) secretNameFieldSelector() string {
 // The watcher stops when the context is canceled.
 func (w *watcher) start(ctx context.Context) {
 	for {
-		select {
-		case <-ctx.Done():
-			logf.FromContext(ctx).V(1).Info("Context canceled, stopping watcher", "secret", w.secret.String())
-			return
-		default:
-		}
-
 		resourceVersion := w.fetchLatestResourceVersion(ctx)
 
 		watcher, err := w.client.Watch(ctx, metav1.ListOptions{
