@@ -31,7 +31,7 @@ func TestNamespaceSelector(t *testing.T) {
 	}{
 		{
 			name:   "agent",
-			labels: []string{suite.LabelMetricAgentSetC, suite.LabelMetricAgent, suite.LabelSetC},
+			labels: []string{suite.LabelMetricAgent},
 			inputBuilder: func(includeNss, excludeNss []string) telemetryv1beta1.MetricPipelineInput {
 				var opts []testutils.NamespaceSelectorOptions
 				if len(includeNss) > 0 {
@@ -54,7 +54,7 @@ func TestNamespaceSelector(t *testing.T) {
 		},
 		{
 			name:   "gateway",
-			labels: []string{suite.LabelMetricGatewaySetB, suite.LabelMetricGateway, suite.LabelSetB},
+			labels: []string{suite.LabelMetricGateway},
 			inputBuilder: func(includeNss, excludeNss []string) telemetryv1beta1.MetricPipelineInput {
 				var opts []testutils.NamespaceSelectorOptions
 				if len(includeNss) > 0 {
