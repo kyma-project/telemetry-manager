@@ -9,9 +9,8 @@ inputs:
 
 runs:
   using: "composite"
-
   steps:
-    - name: Install xmlstarlet
+    - name: Install xmlstartar
       shell: bash
       run: |
         if ! command -v xmlstarlet &> /dev/null; then
