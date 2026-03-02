@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
+	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -13,13 +14,15 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
 func TestResources(t *testing.T) {
-	suite.SetupTest(t, suite.LabelTraces)
+	// This test need to run with istio installed in the cluster to be able to test the creation and reconciliation of PeerAuthentication
+	suite.SetupTestWithOptions(t, []string{suite.LabelTraces}, kubeprep.WithIstio())
 
 	const (
 		endpointKey   = "traces-endpoint"
@@ -27,10 +30,9 @@ func TestResources(t *testing.T) {
 	)
 
 	var (
-		uniquePrefix = unique.Prefix()
-		pipelineName = uniquePrefix()
-		secretName   = uniquePrefix()
-
+		uniquePrefix     = unique.Prefix()
+		pipelineName     = uniquePrefix()
+		secretName       = uniquePrefix()
 		gatewayResources = []assert.Resource{
 			assert.NewResource(&appsv1.Deployment{}, kitkyma.TraceGatewayName),
 			assert.NewResource(&corev1.Service{}, kitkyma.TraceGatewayMetricsService),
@@ -41,6 +43,7 @@ func TestResources(t *testing.T) {
 			assert.NewResource(&corev1.Secret{}, kitkyma.TraceGatewaySecretName),
 			assert.NewResource(&corev1.ConfigMap{}, kitkyma.TraceGatewayConfigMap),
 			assert.NewResource(&corev1.Service{}, kitkyma.TraceGatewayOTLPService),
+			assert.NewResource(&istiosecurityclientv1.PeerAuthentication{}, kitkyma.TraceGatewayPeerAuthentication),
 		}
 	)
 
@@ -53,6 +56,8 @@ func TestResources(t *testing.T) {
 	Expect(kitk8s.CreateObjects(t, &pipeline, secret.K8sObject())).To(Succeed())
 
 	assert.ResourcesExist(t, gatewayResources...)
+
+	assert.ResourcesReconciled(t, gatewayResources...)
 
 	t.Log("When TracePipeline becomes non-reconcilable, resources should be cleaned up")
 	Expect(suite.K8sClient.Delete(t.Context(), secret.K8sObject())).To(Succeed())

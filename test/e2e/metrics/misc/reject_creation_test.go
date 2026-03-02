@@ -16,7 +16,7 @@ import (
 )
 
 func TestRejectPipelineCreation(t *testing.T) {
-	suite.SetupTest(t, suite.LabelMetricsMisc)
+	suite.SetupTest(t, suite.LabelMetrics, suite.LabelMisc)
 
 	const (
 		backendHost = "example.com"
