@@ -33,7 +33,7 @@ func TestCustomClusterName(t *testing.T) {
 	}{
 		{
 			name:   "agent",
-			labels: []string{suite.LabelMetricAgentSetA, suite.LabelMetricAgent, suite.LabelSetA},
+			labels: []string{suite.LabelMetricAgent},
 			input:  testutils.BuildMetricPipelineRuntimeInput(),
 			generatorBuilder: func(ns string) []client.Object {
 				generator := prommetricgen.New(ns)
@@ -46,7 +46,7 @@ func TestCustomClusterName(t *testing.T) {
 		},
 		{
 			name:   "gateway",
-			labels: []string{suite.LabelMetricGatewaySetA, suite.LabelMetricGateway, suite.LabelSetA},
+			labels: []string{suite.LabelMetricGateway},
 			input:  testutils.BuildMetricPipelineOTLPInput(),
 			generatorBuilder: func(ns string) []client.Object {
 				return []client.Object{
