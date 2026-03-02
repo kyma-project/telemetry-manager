@@ -19,7 +19,7 @@ import (
 )
 
 func TestEnrichmentValuesPredefined(t *testing.T) {
-	suite.SetupTest(t, suite.LabelMetricGatewaySetC, suite.LabelMetricGateway, suite.LabelSetC)
+	suite.SetupTest(t, suite.LabelMetricGateway)
 
 	var (
 		uniquePrefix = unique.Prefix()
