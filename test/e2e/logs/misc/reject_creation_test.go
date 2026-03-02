@@ -600,7 +600,7 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			suite.SetupTest(t, tc.label, suite.LabelLogsMisc)
+			suite.SetupTest(t, tc.label, suite.LabelLogs, suite.LabelMisc)
 
 			tc.pipeline.Name = tc.name
 
