@@ -95,6 +95,7 @@ func (c *Client) SyncWatchers(ctx context.Context, pipeline client.Object, secre
 
 	// Add or update watchers for the given secrets
 	pipelineKind := pipeline.GetObjectKind().GroupVersionKind().Kind
+
 	for secret := range secretSet {
 		if w, exists := c.watchers[secret]; exists {
 			if w.link(pipeline) {
@@ -161,6 +162,7 @@ func (c *Client) startWatcher(ctx context.Context, w *watcher) {
 // Watchers with no remaining linked pipelines are stopped and deleted.
 func (c *Client) unlinkPipelineFromWatchers(ctx context.Context, name string, gvk schema.GroupVersionKind, excludeSet map[types.NamespacedName]struct{}) {
 	pipelineKind := gvk.Kind
+
 	for watchedSecret, w := range c.watchers {
 		if excludeSet != nil {
 			if _, inExcludeSet := excludeSet[watchedSecret]; inExcludeSet {
