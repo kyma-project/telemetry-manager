@@ -81,7 +81,7 @@ func New(client client.Client, opts ...Option) *Reconciler {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logf.FromContext(ctx).V(1).Info("Reconciling")
+	logf.FromContext(ctx).V(1).Info("Reconciling LogPipeline")
 
 	overrideConfig, err := r.overridesHandler.LoadOverrides(ctx)
 	if err != nil {
@@ -118,9 +118,9 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, fmt.Errorf("%w: %v", ErrUnsupportedOutputType, outputType)
 	}
 
-	err = reconciler.Reconcile(ctx, &pipeline)
+	result, err := reconciler.Reconcile(ctx, &pipeline)
 
-	return ctrl.Result{}, err
+	return result, err
 }
 
 func (r *Reconciler) syncSecretWatches(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) error {
