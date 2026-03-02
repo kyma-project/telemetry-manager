@@ -28,7 +28,7 @@ func TestResources(t *testing.T) {
 	}{
 		{
 			name:   "agent",
-			labels: []string{suite.LabelMetricAgentSetC, suite.LabelMetricAgent, suite.LabelSetC},
+			labels: []string{suite.LabelMetricAgent},
 			input:  testutils.BuildMetricPipelineRuntimeInput(),
 			resources: []assert.Resource{
 				assert.NewResource(&appsv1.DaemonSet{}, kitkyma.MetricAgentName),
@@ -42,7 +42,7 @@ func TestResources(t *testing.T) {
 		},
 		{
 			name:   "gateway",
-			labels: []string{suite.LabelMetricGatewaySetC, suite.LabelMetricGateway, suite.LabelSetC},
+			labels: []string{suite.LabelMetricGateway},
 			input:  testutils.BuildMetricPipelineOTLPInput(),
 			resources: []assert.Resource{
 				assert.NewResource(&appsv1.Deployment{}, kitkyma.MetricGatewayName),
