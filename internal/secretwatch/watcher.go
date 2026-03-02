@@ -119,14 +119,12 @@ func (w *watcher) start(ctx context.Context) {
 			ResourceVersion: resourceVersion,
 		})
 		if err != nil {
-			logf.FromContext(ctx).V(1).Info("Error creating watcher. Retrying in 5 seconds...",
-				"secret", w.secret.String(),
-				"error", err)
+			logf.FromContext(ctx).V(1).Info("Error creating watcher. Retrying...", "secret", w.secret.String(), "error", err)
 
 			select {
 			case <-time.After(reconnectDelay):
 			case <-ctx.Done():
-				logf.FromContext(ctx).V(1).Info("Context canceled, stopping watcher", "secret", w.secret.String())
+				logf.FromContext(ctx).V(1).Info("Stopping watcher after context cancellation", "secret", w.secret.String())
 				return
 			}
 
