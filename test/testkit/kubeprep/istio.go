@@ -58,7 +58,7 @@ func installIstio(t TestingT, k8sClient client.Client) {
 	t.Log("Waiting for istiod deployment...")
 	g.Eventually(func(g gomega.Gomega) {
 		g.Expect(waitForDeployment(ctx, k8sClient, "istiod", istioNamespace, 30*time.Second)).To(gomega.Succeed())
-	}, 10*time.Minute, 10*time.Second).Should(gomega.Succeed(), "istiod deployment not ready")
+	}, 20*time.Minute, 10*time.Second).Should(gomega.Succeed(), "istiod deployment not ready")
 
 	// 4. Wait for webhook configuration
 	t.Log("Waiting for Istio webhook...")
