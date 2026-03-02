@@ -141,6 +141,7 @@ spec:
     matchLabels:
       app.kubernetes.io/name: manager
       kyma-project.io/module: telemetry
+      {{- include "telemetry-manager.labels" . | indent 4 }}
   ingress:
     - from:
         - namespaceSelector: {}
