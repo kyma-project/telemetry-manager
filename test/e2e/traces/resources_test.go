@@ -40,7 +40,7 @@ func TestResources(t *testing.T) {
 			assert.NewResource(&corev1.Secret{}, kitkyma.TraceGatewaySecretName),
 			assert.NewResource(&corev1.ConfigMap{}, kitkyma.TraceGatewayConfigMap),
 			assert.NewResource(&corev1.Service{}, kitkyma.TraceGatewayOTLPService),
-			//TODO(skhalash): Re-enable after fixing the istiod deployment timeout issue in the test
+			// TODO(skhalash): Re-enable after fixing the istiod deployment timeout issue in the test
 			// assert.NewResource(&istiosecurityclientv1.PeerAuthentication{}, kitkyma.TraceGatewayPeerAuthentication),
 		}
 	)

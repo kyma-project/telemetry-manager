@@ -53,7 +53,7 @@ func TestResources_OTel(t *testing.T) {
 			assert.NewResource(&corev1.Secret{}, kitkyma.LogGatewaySecretName),
 			assert.NewResource(&corev1.ConfigMap{}, kitkyma.LogGatewayConfigMap),
 			assert.NewResource(&corev1.Service{}, kitkyma.LogGatewayOTLPService),
-			//TODO(skhalash): Re-enable after fixing the istiod deployment timeout issue in the test
+			// TODO(skhalash): Re-enable after fixing the istiod deployment timeout issue in the test
 			// assert.NewResource(&istiosecurityclientv1.PeerAuthentication{}, kitkyma.LogGatewayPeerAuthentication),
 		}
 	)
