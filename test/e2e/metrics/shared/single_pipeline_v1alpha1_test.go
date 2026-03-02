@@ -1,6 +1,7 @@
 package shared
 
 import (
+	"slices"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -30,7 +31,7 @@ func TestSinglePipelineV1Alpha1(t *testing.T) {
 	}{
 		{
 			name:   "agent",
-			labels: []string{suite.LabelMetricAgentSetC, suite.LabelMetricAgent, suite.LabelSetC},
+			labels: []string{suite.LabelMetricAgent},
 			input: telemetryv1alpha1.MetricPipelineInput{
 				Runtime: &telemetryv1alpha1.MetricPipelineRuntimeInput{
 					Enabled: new(true),
@@ -47,7 +48,7 @@ func TestSinglePipelineV1Alpha1(t *testing.T) {
 		},
 		{
 			name:   "gateway",
-			labels: []string{suite.LabelMetricGatewaySetC, suite.LabelMetricGateway, suite.LabelSetC},
+			labels: []string{suite.LabelMetricGateway},
 			input: telemetryv1alpha1.MetricPipelineInput{
 				OTLP: &telemetryv1alpha1.OTLPInput{},
 			},
@@ -100,7 +101,7 @@ func TestSinglePipelineV1Alpha1(t *testing.T) {
 			assert.BackendReachable(t, backend)
 			assert.DeploymentReady(t, kitkyma.MetricGatewayName)
 
-			if tc.labels[0] == suite.LabelLogAgent {
+			if slices.Contains(tc.labels, suite.LabelLogAgent) {
 				assert.DaemonSetReady(t, kitkyma.MetricAgentName)
 			}
 

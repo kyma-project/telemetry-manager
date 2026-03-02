@@ -31,7 +31,7 @@ func TestExtractLabels(t *testing.T) {
 	}{
 		{
 			name:   "agent",
-			labels: []string{suite.LabelMetricAgentSetA, suite.LabelMetricAgent, suite.LabelSetA},
+			labels: []string{suite.LabelMetricAgent},
 			input:  testutils.BuildMetricPipelineRuntimeInput(),
 			generatorBuilder: func(ns string, labels map[string]string) []client.Object {
 				generator := prommetricgen.New(ns)
@@ -44,7 +44,7 @@ func TestExtractLabels(t *testing.T) {
 		},
 		{
 			name:   "gateway",
-			labels: []string{suite.LabelMetricGatewaySetA, suite.LabelMetricGateway, suite.LabelSetA},
+			labels: []string{suite.LabelMetricGateway},
 			input:  testutils.BuildMetricPipelineOTLPInput(),
 			generatorBuilder: func(ns string, labels map[string]string) []client.Object {
 				return []client.Object{
