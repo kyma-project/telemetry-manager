@@ -137,15 +137,12 @@ func (w *watcher) start(ctx context.Context) {
 
 		w.processEventLoop(ctx, watcher)
 
-		logf.FromContext(ctx).V(1).Info("Watcher channel closed. Reconnecting in 5 seconds...",
-			"secret", w.secret.String())
-
-		metrics.SecretWatcherReconnectsTotal.WithLabelValues(w.secret.Namespace, w.secret.Name).Inc()
-
 		select {
 		case <-time.After(reconnectDelay):
+			logf.FromContext(ctx).V(1).Info("Reconnecting watcher after channel closure", "secret", w.secret.String())
+			metrics.SecretWatcherReconnectsTotal.WithLabelValues(w.secret.Namespace, w.secret.Name).Inc()
 		case <-ctx.Done():
-			logf.FromContext(ctx).V(1).Info("Context canceled, stopping watcher", "secret", w.secret.String())
+			logf.FromContext(ctx).V(1).Info("Stopping watcher after context cancellation", "secret", w.secret.String())
 			return
 		}
 	}
