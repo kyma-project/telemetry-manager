@@ -4,8 +4,7 @@ metadata:
   name: kyma-project.io--{{ include "telemetry-manager.fullname" . }}-manager
   namespace: {{ .Release.Namespace }}
   labels:
-    app.kubernetes.io/component: controller
-    app.kubernetes.io/part-of: telemetry
+    app.kubernetes.io/name: manager
     kyma-project.io/module: telemetry
   {{- include "telemetry-manager.labels" . | indent 4 }}
 spec:
@@ -21,8 +20,6 @@ spec:
     matchLabels:
       app.kubernetes.io/instance: telemetry
       app.kubernetes.io/name: manager
-      control-plane: telemetry-manager
-      kyma-project.io/component: controller
   policyTypes:
   - Egress
 ---
@@ -47,10 +44,8 @@ spec:
           protocol: TCP
   podSelector:
     matchLabels:
-      app.kubernetes.io/instance: telemetry
       app.kubernetes.io/name: manager
-      control-plane: telemetry-manager
-      kyma-project.io/component: controller
+      kyma-project.io/module: telemetry
   policyTypes:
     - Ingress
 ---
@@ -141,7 +136,6 @@ spec:
     matchLabels:
       app.kubernetes.io/name: manager
       kyma-project.io/module: telemetry
-      {{- include "telemetry-manager.labels" . | indent 4 }}
   ingress:
     - from:
         - namespaceSelector: {}
