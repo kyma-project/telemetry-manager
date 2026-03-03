@@ -185,7 +185,7 @@ The following component-specific policies are also implemented in phase 1.
     - **Network Policy Name:** `kyma-project.io--telemetry-log-agent-metrics`
       - **Ingress Rules:**
         - From: Pod label matching `networking.kyma-project.io/metrics-scraping: allowed` in any namespace (empty namespace selector)<br>
-          Ports: 8888, 15090(optional)
+          Ports: 8888, 15090 (optional)
 
 5. OTel Metric Agent
     - **Network Policy Name:** `kyma-project.io--telemetry-metric-agent`
@@ -194,7 +194,7 @@ The following component-specific policies are also implemented in phase 1.
     - **Network Policy Name:** `kyma-project.io--telemetry-metric-agent-metrics`
       - **Ingress Rules:**
         - From: Pod label matching `networking.kyma-project.io/metrics-scraping: allowed` in any namespace (empty namespace selector)<br>
-          Ports: 8888, 15090(optional)
+          Ports: 8888, 15090 (optional)
 
 6. OTel Log Gateway
     - **Network Policy Name:** `kyma-project.io--telemetry-log-gateway`
@@ -206,7 +206,7 @@ The following component-specific policies are also implemented in phase 1.
     - **Network Policy Name:** `kyma-project.io--telemetry-log-gateway-metrics`
       - **Ingress Rules:**
         - From: Pod label matching `networking.kyma-project.io/metrics-scraping: allowed` in any namespace (empty namespace selector)<br>
-          Ports: 8888, 15090(optional)
+          Ports: 8888, 15090 (optional)
 
 7. OTel Metric Gateway
     - **Network Policy Name:** `kyma-project.io--telemetry-metric-gateway`
@@ -218,7 +218,7 @@ The following component-specific policies are also implemented in phase 1.
     - **Network Policy Name:** `kyma-project.io--telemetry-metric-gateway-metrics`
       - **Ingress Rules:**
         - From: Pod label matching `networking.kyma-project.io/metrics-scraping: allowed` in any namespace (empty namespace selector)<br>
-          Ports: 8888, 15090(optional)
+          Ports: 8888, 15090 (optional)
 
 8. OTel Trace Gateway
     - **Network Policy Name:** `kyma-project.io--telemetry-trace-gateway`
@@ -230,7 +230,7 @@ The following component-specific policies are also implemented in phase 1.
     - **Network Policy Name:** `kyma-project.io--telemetry-trace-gateway-metrics`
       - **Ingress Rules:**
         - From: Pod label matching `networking.kyma-project.io/metrics-scraping: allowed` in any namespace (empty namespace selector)<br>
-          Ports: 8888, 15090(optional)
+          Ports: 8888, 15090 (optional)
 
 
 ### Phase 2: Introduce Zero-Trust Network Policies
@@ -243,7 +243,7 @@ The following component-specific policies are also implemented in phase 1.
 
 Phase 1 implements the cross-component policies. Phase 2 focuses on introducing zero-trust policies for customer-to-telemetry, RMA, and cross-Kyma module communication.
 
-This phase restricts all component egress traffic by port number. Previously, we allowed all egress traffic on any port. The highlighted text in the following sections indicates the new rules that further restrict egress traffic.
+This phase restricts all component egress traffic by port number. Previously, we allowed all egress traffic on any port.
 
 Egress rules for the following components are restricted to only the ports used to connect to customer backends. A utility function in `metricpipelineutils` extracts customer backend ports.
 
@@ -251,62 +251,62 @@ Egress rules for the following components are restricted to only the ports used 
    - **Network Policy Name:** `kyma-project.io--telemetry-fluent-bit`
    - **Ingress Rules:**
      - From: Pod label matching `networking.kyma-project.io/metrics-scraping: allowed` in any namespace (empty namespace selector)<br>
-       Ports: 2021, 15090(optional)
+       Ports: 2020, 2021, 15090 (optional)
    - **Egress Rules:**
      - To: Any IP<br>
-       **Ports: A set of ports used to connect to external logging services**
+       [NEW] Ports: A set of ports used to connect to external logging services
 
 2. **OTel Log Agent**
    - **Network Policy Name:** `kyma-project.io--telemetry-log-agent`
    - **Ingress Rules:**
      - From: Pod label matching `networking.kyma-project.io/metrics-scraping: allowed` in any namespace (empty namespace selector)<br>
-       Ports: 8888, 15090(optional)
+       Ports: 8888, 15090 (optional)
    - **Egress Rules:**
      - To: Any IP<br>
-       **Ports: A set of ports used to connect to external logging services**
+       [NEW] Ports: A set of ports used to connect to external logging services
 
 3. **OTel Metric Agent**
    - **Network Policy Name:** `kyma-project.io--telemetry-metric-agent`
    - **Ingress Rules:**
      - From: Pod label matching `networking.kyma-project.io/metrics-scraping: allowed` in any namespace (empty namespace selector)<br>
-       Ports: 8888, 15090(optional)
+       Ports: 8888, 15090 (optional)
    - **Egress Rules:**
      - To: Any IP<br>
-       **Ports: A set of ports used to connect to external metric services**
-     - **To: Any IP<br>**
-       **Ports: 10250 (kubelet)**
-     - **To: Pods matching `networking.kyma-project.io/metrics-scraping: allowed` in any namespace (empty namespace selector)<br>**
-       **Ports: Any**
+       [NEW] Ports: A set of ports used to connect to external metric services
+     - To: Any IP<br>
+       [NEW] Ports: 10250 (kubelet)
+     - [NEW] To: Pods matching `networking.kyma-project.io/metrics-scraping: allowed` in any namespace (empty namespace selector)<br>
+       Ports: Any
 
 4. **OTel Log Gateway**
    - **Network Policy Name:** `kyma-project.io--telemetry-log-gateway`
    - **Ingress Rules:**
      - From: Pod label matching `networking.kyma-project.io/metrics-scraping: allowed` in any namespace (empty namespace selector)<br>
-       Ports: 8888, 15090(optional)
-     - **From: Pod label matching `networking.kyma-project.io/telemetry-otlp: allowed` in any namespace (empty namespace selector)<br>**
-       **Ports: 4318, 4317**
+       Ports: 8888, 15090 (optional)
+     - [NEW] From: Pod label matching `networking.kyma-project.io/telemetry-otlp: allowed` in any namespace (empty namespace selector)<br>
+       Ports: 4318, 4317
    - **Egress Rules:**
      - To: Any IP<br>
-       **Ports: A set of ports used to connect to external logging services**
+       [NEW] Ports: A set of ports used to connect to external logging services
 
 5. **OTel Metric Gateway**
    - **Network Policy Name:** `kyma-project.io--telemetry-metric-gateway`
    - **Ingress Rules:**
      - From: Pod label matching `networking.kyma-project.io/metrics-scraping: allowed` in any namespace (empty namespace selector)<br>
-       Ports: 8888, 15090(optional)
-     - **From: Pod label matching `networking.kyma-project.io/telemetry-otlp: allowed` in any namespace (empty namespace selector)<br>**
-       **Ports: 4318, 4317**
+       Ports: 8888, 15090 (optional)
+     - [NEW] From: Pod label matching `networking.kyma-project.io/telemetry-otlp: allowed` in any namespace (empty namespace selector)<br>
+       Ports: 4318, 4317
    - **Egress Rules:**
      - To: Any IP<br>
-       **Ports: A set of ports used to connect to external metric services**
+       [NEW] Ports: A set of ports used to connect to external metric services
 
 6. **OTel Trace Gateway**
    - **Network Policy Name:** `kyma-project.io--telemetry-trace-gateway`
    - **Ingress Rules:**
      - From: Pod label matching `networking.kyma-project.io/metrics-scraping: allowed` in any namespace (empty namespace selector)<br>
-       Ports: 8888, 15090(optional)
-     - **From: Pod label matching `networking.kyma-project.io/telemetry-otlp: allowed` in any namespace (empty namespace selector)<br>**
-       **Ports: 4318, 4317**
+       Ports: 8888, 15090 (optional)
+     - [NEW] From: Pod label matching `networking.kyma-project.io/telemetry-otlp: allowed` in any namespace (empty namespace selector)<br>
+       Ports: 4318, 4317
    - **Egress Rules:**
      - To: Any IP<br>
-       **Ports: A set of ports used to connect to external tracing services**
+       [NEW] Ports: A set of ports used to connect to external tracing services
