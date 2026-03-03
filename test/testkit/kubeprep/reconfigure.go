@@ -141,9 +141,16 @@ func ensureIstioState(t TestingT, k8sClient client.Client, cfg Config) error {
 }
 
 // handleIstioChange handles Istio installation/uninstallation.
-// The manager must be removed before Istio changes to avoid webhook/sidecar conflicts.
+// The manager and test prerequisites must be removed before Istio changes to avoid webhook/sidecar/network policy conflicts.
 func handleIstioChange(t TestingT, k8sClient client.Client, currentInstalled, desiredInstalled bool) error {
-	// Remove manager FIRST (prevents conflicts during Istio changes)
+	// Remove test prerequisites FIRST (network policies can block Istio installation)
+	t.Log("Removing test prerequisites before Istio change...")
+
+	if err := removeTestPrerequisites(t, k8sClient); err != nil {
+		t.Logf("Warning: failed to remove test prerequisites: %v", err)
+	}
+
+	// Remove manager (prevents conflicts during Istio changes)
 	t.Log("Removing manager before Istio change...")
 
 	if err := undeployManager(t, k8sClient); err != nil {
