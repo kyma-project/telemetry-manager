@@ -156,6 +156,16 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			return ctrl.Result{}, err
 		}
 
+		// Remove pipeline reference from OTLP Gateway ConfigMap
+		if err := otelcollector.RemoveTracePipelineReference(
+			ctx,
+			r.Client,
+			r.globals.TargetNamespace(),
+			req.Name,
+		); err != nil {
+			return ctrl.Result{}, fmt.Errorf("failed to remove pipeline reference from ConfigMap: %w", err)
+		}
+
 		return ctrl.Result{}, nil
 	}
 

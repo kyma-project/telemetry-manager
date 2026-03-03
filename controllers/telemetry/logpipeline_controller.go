@@ -34,6 +34,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	ctrlpredicate "sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
@@ -69,6 +70,7 @@ type LogPipelineController struct {
 	reconcileTriggerChan <-chan event.GenericEvent
 	reconciler           *logpipeline.Reconciler
 	secretWatchClient    *secretwatch.Client
+	pipelineLockName     types.NamespacedName
 }
 
 type LogPipelineControllerConfig struct {
@@ -139,6 +141,7 @@ func NewLogPipelineController(config LogPipelineControllerConfig, client client.
 
 	reconciler := logpipeline.New(
 		client,
+		logpipeline.WithGlobals(config.Global),
 		logpipeline.WithOverridesHandler(overrides.New(config.Global, client)),
 		logpipeline.WithPipelineSyncer(pipelineSyncer),
 		logpipeline.WithReconcilers(fluentBitReconciler, otelReconciler),
@@ -150,6 +153,10 @@ func NewLogPipelineController(config LogPipelineControllerConfig, client client.
 		reconcileTriggerChan: reconcileTriggerChan,
 		reconciler:           reconciler,
 		secretWatchClient:    secretWatchClient,
+		pipelineLockName: types.NamespacedName{
+			Name:      names.LogPipelineLock,
+			Namespace: config.TargetNamespace(),
+		},
 	}, nil
 }
 
@@ -200,11 +207,38 @@ func (r *LogPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	// TODO: Watching the Telemetry CR should be entirely moved to the OTLP Gateway and Agents Controllers (remove this after the refactoring to LogAgent and FluentBit Controllers is done)
-	return b.Watches(
+	b.Watches(
 		&operatorv1beta1.Telemetry{},
 		handler.EnqueueRequestsFromMapFunc(r.mapTelemetryChanges),
 		ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete()),
-	).Complete(r)
+	)
+
+	// Watch the pipeline lock ConfigMap to trigger reconciliation of all pipelines when lock changes
+	// This ensures that when a pipeline is deleted and frees up a slot, waiting pipelines get reconciled
+	b.Watches(
+		&corev1.ConfigMap{},
+		handler.EnqueueRequestsFromMapFunc(r.mapLockConfigMapToAllPipelines),
+		ctrlbuilder.WithPredicates(ctrlpredicate.NewPredicateFuncs(func(object client.Object) bool {
+			return object.GetName() == r.pipelineLockName.Name && object.GetNamespace() == r.pipelineLockName.Namespace
+		})),
+	)
+
+	return b.Complete(r)
+}
+
+// mapLockConfigMapToAllPipelines enqueues reconciliation requests for all LogPipelines
+// when the lock ConfigMap changes. This ensures that pipelines that were previously rejected
+// due to max pipeline limit get a chance to acquire the lock when slots become available.
+func (r *LogPipelineController) mapLockConfigMapToAllPipelines(ctx context.Context, object client.Object) []reconcile.Request {
+	logf.FromContext(ctx).V(1).Info("Pipeline lock ConfigMap changed, triggering reconciliation of all LogPipelines")
+
+	requests, err := r.createRequestsForAllPipelines(ctx)
+	if err != nil {
+		logf.FromContext(ctx).Error(err, "Failed to list LogPipelines")
+		return []reconcile.Request{}
+	}
+
+	return requests
 }
 
 func (r *LogPipelineController) mapTelemetryChanges(ctx context.Context, object client.Object) []reconcile.Request {

@@ -19,12 +19,17 @@ limitations under the License.
 import (
 	"context"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
+	ctrlbuilder "sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	ctrlpredicate "sigs.k8s.io/controller-runtime/pkg/predicate"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
@@ -49,6 +54,7 @@ type TracePipelineController struct {
 	reconcileTriggerChan <-chan event.GenericEvent
 	reconciler           *tracepipeline.Reconciler
 	secretWatchClient    *secretwatch.Client
+	pipelineLockName     types.NamespacedName
 }
 
 type TracePipelineControllerConfig struct {
@@ -125,6 +131,10 @@ func NewTracePipelineController(config TracePipelineControllerConfig, client cli
 		reconcileTriggerChan: reconcileTriggerChan,
 		reconciler:           reconciler,
 		secretWatchClient:    secretWatchClient,
+		pipelineLockName: types.NamespacedName{
+			Name:      names.TracePipelineLock,
+			Namespace: config.TargetNamespace(),
+		},
 	}, nil
 }
 
@@ -139,5 +149,39 @@ func (r *TracePipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		source.Channel(r.reconcileTriggerChan, &handler.EnqueueRequestForObject{}),
 	)
 
+	// Watch the pipeline lock ConfigMap to trigger reconciliation of all pipelines when lock changes
+	// This ensures that when a pipeline is deleted and frees up a slot, waiting pipelines get reconciled
+	b.Watches(
+		&corev1.ConfigMap{},
+		handler.EnqueueRequestsFromMapFunc(r.mapLockConfigMapToAllPipelines),
+		ctrlbuilder.WithPredicates(ctrlpredicate.NewPredicateFuncs(func(object client.Object) bool {
+			return object.GetName() == r.pipelineLockName.Name && object.GetNamespace() == r.pipelineLockName.Namespace
+		})),
+	)
+
 	return b.Complete(r)
+}
+
+// mapLockConfigMapToAllPipelines enqueues reconciliation requests for all TracePipelines
+// when the lock ConfigMap changes. This ensures that pipelines that were previously rejected
+// due to max pipeline limit get a chance to acquire the lock when slots become available.
+func (r *TracePipelineController) mapLockConfigMapToAllPipelines(ctx context.Context, object client.Object) []reconcile.Request {
+	logf.FromContext(ctx).V(1).Info("Pipeline lock ConfigMap changed, triggering reconciliation of all TracePipelines")
+
+	var pipelineList telemetryv1beta1.TracePipelineList
+	if err := r.List(ctx, &pipelineList); err != nil {
+		logf.FromContext(ctx).Error(err, "Failed to list TracePipelines")
+		return []reconcile.Request{}
+	}
+
+	requests := make([]reconcile.Request, len(pipelineList.Items))
+	for i := range pipelineList.Items {
+		requests[i] = reconcile.Request{
+			NamespacedName: types.NamespacedName{
+				Name: pipelineList.Items[i].Name,
+			},
+		}
+	}
+
+	return requests
 }
