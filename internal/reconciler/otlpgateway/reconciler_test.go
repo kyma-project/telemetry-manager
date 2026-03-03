@@ -2,6 +2,7 @@ package otlpgateway
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -24,6 +25,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpgateway"
+	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
@@ -994,4 +996,135 @@ func TestCollectReferencedNamesByType_Empty(t *testing.T) {
 
 	require.Empty(t, traceNames)
 	require.Empty(t, logNames)
+}
+
+// TestOverrideFunctionality verifies that OTLP Gateway respects override configuration
+func TestOverrideFunctionality(t *testing.T) {
+	tests := []struct {
+		name                  string
+		paused                bool
+		overrideError         error
+		expectReconcile       bool
+		expectResourcesDeploy bool
+		expectResourcesDelete bool
+	}{
+		{
+			name:                  "OTLP Gateway not paused - resources deployed",
+			paused:                false,
+			expectReconcile:       true,
+			expectResourcesDeploy: true,
+			expectResourcesDelete: false,
+		},
+		{
+			name:                  "OTLP Gateway paused - resources deleted",
+			paused:                true,
+			expectReconcile:       false,
+			expectResourcesDeploy: false,
+			expectResourcesDelete: false,
+		},
+		{
+			name:                  "Override handler returns error",
+			overrideError:         assert.AnError,
+			expectReconcile:       false,
+			expectResourcesDeploy: false,
+			expectResourcesDelete: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
+
+			pipeline := testutils.NewTracePipelineBuilder().
+				WithName("test-pipeline").
+				Build()
+
+			cm := &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      otelcollector.OTLPGatewayConfigMapName,
+					Namespace: "kyma-system",
+				},
+				Data: map[string]string{
+					otelcollector.ConfigMapDataKey: "TracePipeline:\n- name: test-pipeline\n  generation: 1",
+				},
+			}
+
+			fakeClient := newTestClient(t, &pipeline, cm)
+			mocks := newDefaultMocks()
+
+			mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false)
+
+			if tt.expectReconcile {
+				mocks.configBuilder.On("Build", mock.Anything, mock.Anything).Return(&common.Config{}, common.EnvVars{}, nil)
+				mocks.gatewayApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				mocks.gatewayProber.On("IsReady", mock.Anything, mock.Anything).Return(nil)
+				mocks.errToMsgConverter.On("Convert", mock.Anything).Return("")
+			}
+
+			sut := newTestReconciler(fakeClient, mocks)
+
+			// Create override handler with test client that returns specific override config
+			switch {
+			case tt.overrideError != nil:
+				sut.overridesHandler = overrides.New(sut.globals, &overrideConfigErrorClient{err: tt.overrideError})
+			case tt.paused:
+				sut.overridesHandler = overrides.New(sut.globals, newOverrideConfigClient(t, true))
+			default:
+				sut.overridesHandler = overrides.New(sut.globals, newOverrideConfigClient(t, false))
+			}
+
+			_, err := sut.Reconcile(ctx, newReconcileRequest())
+
+			if tt.overrideError != nil {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
+
+			if tt.expectResourcesDeploy {
+				mocks.gatewayApplierDeleter.AssertCalled(t, "ApplyResources", mock.Anything, mock.Anything, mock.Anything)
+			} else {
+				mocks.gatewayApplierDeleter.AssertNotCalled(t, "ApplyResources", mock.Anything, mock.Anything, mock.Anything)
+			}
+		})
+	}
+}
+
+// newOverrideConfigClient creates a fake client that returns override ConfigMap with specified pause state
+func newOverrideConfigClient(t *testing.T, paused bool) client.Client {
+	pausedStr := "false"
+	if paused {
+		pausedStr = "true"
+	}
+
+	overrideConfig := fmt.Sprintf(`otlpGateway:
+  paused: %s`, pausedStr)
+
+	overridesCM := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "telemetry-override-config",
+			Namespace: "kyma-system",
+		},
+		Data: map[string]string{
+			"override-config": overrideConfig,
+		},
+	}
+
+	return newTestClient(t, overridesCM)
+}
+
+// overrideConfigErrorClient is a client that returns errors when fetching override ConfigMap
+type overrideConfigErrorClient struct {
+	client.Client
+
+	err error
+}
+
+func (c *overrideConfigErrorClient) Get(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+	if cm, ok := obj.(*corev1.ConfigMap); ok && key.Name == "telemetry-override-config" {
+		_ = cm
+		return c.err
+	}
+
+	return apierrors.NewNotFound(schema.GroupResource{}, key.Name)
 }

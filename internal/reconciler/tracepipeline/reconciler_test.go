@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus/testutil"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -289,7 +290,7 @@ func TestFlowHealthCondition(t *testing.T) {
 	}{
 		{
 			name:            "prober fails",
-			probeErr:        errors.New("probe error"),
+			probeErr:        assert.AnError,
 			expectedStatus:  metav1.ConditionUnknown,
 			expectedReason:  conditions.ReasonSelfMonGatewayProbingFailed,
 			expectedMessage: "Could not determine the health of the telemetry flow because the self monitor probing of gateway failed",
@@ -343,7 +344,11 @@ func TestFlowHealthCondition(t *testing.T) {
 			sut := testReconciler(fakeClient, flowHealthProberStub)
 
 			_, err := sut.Reconcile(context.Background(), requestFor(pipeline.Name))
-			require.NoError(t, err)
+			if tt.probeErr != nil {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
 
 			var updatedPipeline telemetryv1beta1.TracePipeline
 
