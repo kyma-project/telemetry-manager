@@ -3,6 +3,7 @@ package stubs
 import (
 	"context"
 
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -17,6 +18,10 @@ func NewSecretWatcher(err error) *SecretWatcher {
 	}
 }
 
-func (s *SecretWatcher) SyncWatchedSecrets(ctx context.Context, pipeline client.Object, secrets []types.NamespacedName) error {
+func (s *SecretWatcher) SyncWatchers(ctx context.Context, pipeline client.Object, secrets []types.NamespacedName) error {
+	return s.err
+}
+
+func (s *SecretWatcher) RemoveFromWatchers(ctx context.Context, name string, gvk schema.GroupVersionKind) error {
 	return s.err
 }
