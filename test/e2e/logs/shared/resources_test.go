@@ -79,7 +79,7 @@ func TestResources_OTel(t *testing.T) {
 }
 
 func TestResources_FluentBit(t *testing.T) {
-	suite.SetupTestWithOptions(t, []string{suite.LabelLogs, suite.LabelFluentBit}, kubeprep.WithIstio(), kubeprep.WithOverrideFIPSMode(false))
+	suite.SetupTestWithOptions(t, []string{suite.LabelLogs, suite.LabelFluentBit}, kubeprep.WithOverrideFIPSMode(false))
 
 	const hostKey = "host"
 
