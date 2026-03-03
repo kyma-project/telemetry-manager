@@ -40,8 +40,9 @@ spec:
       name: Age
       type: date
     deprecated: true
-    deprecationWarning: telemetry.kyma-project.io/v1alpha1 MetricPipeline is deprecated.
-      Use telemetry.kyma-project.io/v1beta1 MetricPipeline instead.
+    deprecationWarning: telemetry.kyma-project.io/v1alpha1 MetricPipeline is deprecated;
+      see https://help.sap.com/docs/btp/sap-business-technology-platform/migrate-telemetry-pipelines-to-v1beta1
+      for instructions to migrate to telemetry.kyma-project.io/v1beta1 MetricPipeline.
     name: v1alpha1
     schema:
       openAPIV3Schema:
