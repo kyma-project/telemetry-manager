@@ -136,7 +136,7 @@ For details, see the [Telemetry specification file](https://github.com/kyma-proj
 
 ### Telemetry.operator.kyma-project.io/v1alpha1
 
->**CAUTION**: operator.kyma-project.io/v1alpha1 Telemetry is deprecated. Use operator.kyma-project.io/v1beta1 Telemetry instead.
+>**CAUTION**: The `operator.kyma-project.io/v1alpha1` version of Telemetry is [deprecated](https://help.sap.com/whats-new/cf0cb2cb149647329b5d02aa96303f56?locale=en-US&Component=Kyma+Runtime&Software_Lifecycle=Deprecated&Valid_as_Of=2026-03-04:2026-03-04). Use `operator.kyma-project.io/v1beta1` Telemetry instead (see [Migrate Telemetry Pipelines to v1beta1](https://help.sap.com/docs/btp/sap-business-technology-platform/migrate-telemetry-pipelines-to-v1beta1?version=Cloud&locale=en-US)).
 
 **Spec:**
 
