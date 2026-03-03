@@ -223,6 +223,8 @@ For details, see the [MetricPipeline specification file](https://github.com/kyma
 
 ### MetricPipeline.telemetry.kyma-project.io/v1alpha1
 
+>**CAUTION**: telemetry.kyma-project.io/v1alpha1 MetricPipeline is deprecated; see https://help.sap.com/docs/btp/sap-business-technology-platform/migrate-telemetry-pipelines-to-v1beta1 for instructions to migrate to telemetry.kyma-project.io/v1beta1 MetricPipeline.
+
 **Spec:**
 
 | Parameter | Type | Description |
