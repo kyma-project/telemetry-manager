@@ -136,7 +136,7 @@ For details, see the [Telemetry specification file](https://github.com/kyma-proj
 
 ### Telemetry.operator.kyma-project.io/v1alpha1
 
->**CAUTION**: telemetry.kyma-project.io/v1alpha1 Telemetry is deprecated; see https://help.sap.com/docs/btp/sap-business-technology-platform/migrate-telemetry-pipelines-to-v1beta1 for instructions to migrate to telemetry.kyma-project.io/v1beta1 Telemetry.// +kubebuilder:resource:scope=Namespaced,categories={kyma-modules,kyma-telemetry}
+>**CAUTION**: telemetry.kyma-project.io/v1alpha1 Telemetry is deprecated; see https://help.sap.com/docs/btp/sap-business-technology-platform/migrate-telemetry-pipelines-to-v1beta1 for instructions to migrate to telemetry.kyma-project.io/v1beta1 Telemetry.
 
 **Spec:**
 

@@ -36,7 +36,8 @@ type TelemetryList struct {
 
 // Telemetry is the Schema for the telemetries API
 // +kubebuilder:object:root=true
-// +kubebuilder:deprecatedversion:warning="telemetry.kyma-project.io/v1alpha1 Telemetry is deprecated; see https://help.sap.com/docs/btp/sap-business-technology-platform/migrate-telemetry-pipelines-to-v1beta1 for instructions to migrate to telemetry.kyma-project.io/v1beta1 Telemetry.// +kubebuilder:resource:scope=Namespaced,categories={kyma-modules,kyma-telemetry}"
+// +kubebuilder:deprecatedversion:warning="telemetry.kyma-project.io/v1alpha1 Telemetry is deprecated; see https://help.sap.com/docs/btp/sap-business-technology-platform/migrate-telemetry-pipelines-to-v1beta1 for instructions to migrate to telemetry.kyma-project.io/v1beta1 Telemetry."
+// +kubebuilder:resource:scope=Namespaced,categories={kyma-modules,kyma-telemetry}
 // +kubebuilder:metadata:labels={app.kubernetes.io/component=controller,app.kubernetes.io/managed-by=kyma,app.kubernetes.io/name=telemetry-manager,app.kubernetes.io/part-of=telemetry,kyma-project.io/module=telemetry}
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="state",type="string",JSONPath=".status.state"

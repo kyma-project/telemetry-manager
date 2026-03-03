@@ -33,8 +33,7 @@ spec:
     deprecated: true
     deprecationWarning: telemetry.kyma-project.io/v1alpha1 Telemetry is deprecated;
       see https://help.sap.com/docs/btp/sap-business-technology-platform/migrate-telemetry-pipelines-to-v1beta1
-      for instructions to migrate to telemetry.kyma-project.io/v1beta1 Telemetry.//
-      +kubebuilder:resource:scope=Namespaced,categories={kyma-modules,kyma-telemetry}
+      for instructions to migrate to telemetry.kyma-project.io/v1beta1 Telemetry.
     name: v1alpha1
     schema:
       openAPIV3Schema:
