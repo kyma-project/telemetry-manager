@@ -129,11 +129,6 @@ func (r *Reconciler) Globals() *config.Global {
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logf.FromContext(ctx).V(1).Info("reconciling OTLP gateway")
 
-	// Only process reconciliation requests for the coordination ConfigMap
-	if req.Name != otelcollector.OTLPGatewayConfigMapName || req.Namespace != r.globals.TargetNamespace() {
-		return ctrl.Result{}, nil
-	}
-
 	// Load overrides and check if OTLP Gateway is paused
 	if r.overridesHandler != nil {
 		overrideConfig, err := r.overridesHandler.LoadOverrides(ctx)
