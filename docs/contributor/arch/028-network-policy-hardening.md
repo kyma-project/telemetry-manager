@@ -28,7 +28,7 @@ date: 2025-09-18
 
 #### Telemetry Manager
 * Ingress: Metric scraping (RMA), health checks, alertmanager webhook, admission and conversion webhooks
-* Egress: Kubernetes API, DNS, self-monitor alert queries
+* Egress: Kubernetes API, DNS, Self Monitor alert queries
 
 ### Current Network Policy Configuration
 
@@ -176,7 +176,7 @@ The following component-specific policies are also implemented in phase 1.
     - **Network Policy Name:** `kyma-project.io--telemetry-fluent-bit-metrics`
       - **Ingress Rules:**
         - From: Pod label matching `networking.kyma-project.io/metrics-scraping: allowed` in any namespace (empty namespace selector)<br>
-          Ports: 2020, 2021, 15090(optional)
+          Ports: 2020, 2021, 15090 (optional)
 
 4. OTel Log Agent
     - **Network Policy Name:** `kyma-project.io--telemetry-log-agent`
