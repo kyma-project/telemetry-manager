@@ -21,12 +21,12 @@ func TestEndpointWithPathValidation(t *testing.T) {
 	}{
 		{
 			name:   "agent",
-			labels: []string{suite.LabelMetricAgentSetA, suite.LabelMetricAgent, suite.LabelSetA},
+			labels: []string{suite.LabelMetricAgent},
 			input:  testutils.BuildMetricPipelineRuntimeInput(),
 		},
 		{
 			name:   "gateway",
-			labels: []string{suite.LabelMetricGatewaySetA, suite.LabelMetricGateway, suite.LabelSetA},
+			labels: []string{suite.LabelMetricGateway},
 			input:  testutils.BuildMetricPipelineOTLPInput(),
 		},
 	}

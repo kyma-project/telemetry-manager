@@ -13,6 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes/fake"
 	clienttesting "k8s.io/client-go/testing"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
@@ -31,6 +32,13 @@ var (
 	testSecret1 = types.NamespacedName{Namespace: testNamespace, Name: testSecretName1}
 	testSecret2 = types.NamespacedName{Namespace: testNamespace, Name: testSecretName2}
 )
+
+// createTestEventRouter creates an event router that sends all events to a single channel for testing
+func createTestEventRouter(eventChan chan<- event.GenericEvent) func(pipeline client.Object) {
+	return func(pipeline client.Object) {
+		eventChan <- event.GenericEvent{Object: pipeline}
+	}
+}
 
 func TestSecretWatchTriggersEvent(t *testing.T) {
 	t.Run("should send event when watched secret is modified", func(t *testing.T) {
@@ -53,21 +61,21 @@ func TestSecretWatchTriggersEvent(t *testing.T) {
 		clientset.PrependWatchReactor("secrets", clienttesting.DefaultWatchReactor(fakeWatcher, nil))
 
 		c := &Client{
-			clientset: clientset,
-			watchers:  make(map[types.NamespacedName]*watcher),
-			eventChan: eventChan,
+			clientset:   clientset,
+			watchers:    make(map[types.NamespacedName]*watcher),
+			eventRouter: createTestEventRouter(eventChan),
 		}
 
 		// Ensure cleanup: stop the fake watcher to unblock goroutines, then stop client
 		t.Cleanup(func() {
 			fakeWatcher.Stop()
-			c.stopWithTimeout(testShutdownTimeout)
+			c.stopWithTimeout(ctx, testShutdownTimeout)
 		})
 
 		pipeline := new(testutils.NewLogPipelineBuilder().WithName("my-pipeline").Build())
 
 		// Start watching the secret
-		require.NoError(t, c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{testSecret1}))
+		require.NoError(t, c.SyncWatchers(ctx, pipeline, []types.NamespacedName{testSecret1}))
 
 		// Give the watcher goroutine time to start
 		time.Sleep(testStartupDelay)
@@ -90,20 +98,20 @@ func TestSecretWatchTriggersEvent(t *testing.T) {
 		clientset.PrependWatchReactor("secrets", clienttesting.DefaultWatchReactor(fakeWatcher, nil))
 
 		c := &Client{
-			clientset: clientset,
-			watchers:  make(map[types.NamespacedName]*watcher),
-			eventChan: eventChan,
+			clientset:   clientset,
+			watchers:    make(map[types.NamespacedName]*watcher),
+			eventRouter: createTestEventRouter(eventChan),
 		}
 
 		t.Cleanup(func() {
 			fakeWatcher.Stop()
-			c.stopWithTimeout(testShutdownTimeout)
+			c.stopWithTimeout(ctx, testShutdownTimeout)
 		})
 
 		pipeline := new(testutils.NewLogPipelineBuilder().WithName("my-pipeline").Build())
 
 		// Start watching the secret (it doesn't exist yet)
-		require.NoError(t, c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{testSecret1}))
+		require.NoError(t, c.SyncWatchers(ctx, pipeline, []types.NamespacedName{testSecret1}))
 
 		time.Sleep(testStartupDelay)
 
@@ -137,22 +145,22 @@ func TestSecretWatchTriggersEvent(t *testing.T) {
 		clientset.PrependWatchReactor("secrets", clienttesting.DefaultWatchReactor(fakeWatcher, nil))
 
 		c := &Client{
-			clientset: clientset,
-			watchers:  make(map[types.NamespacedName]*watcher),
-			eventChan: eventChan,
+			clientset:   clientset,
+			watchers:    make(map[types.NamespacedName]*watcher),
+			eventRouter: createTestEventRouter(eventChan),
 		}
 
 		t.Cleanup(func() {
 			fakeWatcher.Stop()
-			c.stopWithTimeout(testShutdownTimeout)
+			c.stopWithTimeout(ctx, testShutdownTimeout)
 		})
 
 		pipeline1 := new(testutils.NewLogPipelineBuilder().WithName("pipeline-1").Build())
 		pipeline2 := new(testutils.NewLogPipelineBuilder().WithName("pipeline-2").Build())
 
 		// Both pipelines watch the same secret
-		require.NoError(t, c.SyncWatchedSecrets(ctx, pipeline1, []types.NamespacedName{testSecret1}))
-		require.NoError(t, c.SyncWatchedSecrets(ctx, pipeline2, []types.NamespacedName{testSecret1}))
+		require.NoError(t, c.SyncWatchers(ctx, pipeline1, []types.NamespacedName{testSecret1}))
+		require.NoError(t, c.SyncWatchers(ctx, pipeline2, []types.NamespacedName{testSecret1}))
 
 		time.Sleep(testStartupDelay)
 
@@ -192,19 +200,19 @@ func TestSecretWatchTriggersEvent(t *testing.T) {
 		clientset.PrependWatchReactor("secrets", clienttesting.DefaultWatchReactor(fakeWatcher, nil))
 
 		c := &Client{
-			clientset: clientset,
-			watchers:  make(map[types.NamespacedName]*watcher),
-			eventChan: eventChan,
+			clientset:   clientset,
+			watchers:    make(map[types.NamespacedName]*watcher),
+			eventRouter: createTestEventRouter(eventChan),
 		}
 
 		t.Cleanup(func() {
 			fakeWatcher.Stop()
-			c.stopWithTimeout(testShutdownTimeout)
+			c.stopWithTimeout(ctx, testShutdownTimeout)
 		})
 
 		pipeline := new(testutils.NewLogPipelineBuilder().WithName("my-pipeline").Build())
 
-		require.NoError(t, c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{testSecret1}))
+		require.NoError(t, c.SyncWatchers(ctx, pipeline, []types.NamespacedName{testSecret1}))
 
 		time.Sleep(testStartupDelay)
 
@@ -218,7 +226,7 @@ func TestSecretWatchTriggersEvent(t *testing.T) {
 }
 
 //nolint:gocognit // High complexity due to multiple table-driven subtests
-func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
+func TestSyncWatchersMultipleCalls(t *testing.T) {
 	t.Run("should not trigger events for pipeline that no longer references a secret", func(t *testing.T) {
 		ctx := context.Background()
 		eventChan := make(chan event.GenericEvent, 10)
@@ -235,27 +243,27 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		clientset.PrependWatchReactor("secrets", clienttesting.DefaultWatchReactor(fakeWatcher, nil))
 
 		c := &Client{
-			clientset: clientset,
-			watchers:  make(map[types.NamespacedName]*watcher),
-			eventChan: eventChan,
+			clientset:   clientset,
+			watchers:    make(map[types.NamespacedName]*watcher),
+			eventRouter: createTestEventRouter(eventChan),
 		}
 
 		t.Cleanup(func() {
 			fakeWatcher.Stop()
-			c.stopWithTimeout(testShutdownTimeout)
+			c.stopWithTimeout(ctx, testShutdownTimeout)
 		})
 
 		pipelineA := new(testutils.NewLogPipelineBuilder().WithName("pipeline-a").Build())
 		pipelineB := new(testutils.NewLogPipelineBuilder().WithName("pipeline-b").Build())
 
 		// Initially both pipelines watch the secret
-		require.NoError(t, c.SyncWatchedSecrets(ctx, pipelineA, []types.NamespacedName{testSecret1}))
-		require.NoError(t, c.SyncWatchedSecrets(ctx, pipelineB, []types.NamespacedName{testSecret1}))
+		require.NoError(t, c.SyncWatchers(ctx, pipelineA, []types.NamespacedName{testSecret1}))
+		require.NoError(t, c.SyncWatchers(ctx, pipelineB, []types.NamespacedName{testSecret1}))
 
 		time.Sleep(testStartupDelay)
 
 		// Pipeline A no longer references the secret
-		require.NoError(t, c.SyncWatchedSecrets(ctx, pipelineA, []types.NamespacedName{}))
+		require.NoError(t, c.SyncWatchers(ctx, pipelineA, []types.NamespacedName{}))
 
 		// Drain any pending events from previous operations
 		drainEvents(eventChan)
@@ -286,20 +294,20 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		clientset.PrependWatchReactor("secrets", clienttesting.DefaultWatchReactor(fakeWatcher, nil))
 
 		c := &Client{
-			clientset: clientset,
-			watchers:  make(map[types.NamespacedName]*watcher),
-			eventChan: eventChan,
+			clientset:   clientset,
+			watchers:    make(map[types.NamespacedName]*watcher),
+			eventRouter: createTestEventRouter(eventChan),
 		}
 
 		t.Cleanup(func() {
 			fakeWatcher.Stop()
-			c.stopWithTimeout(testShutdownTimeout)
+			c.stopWithTimeout(ctx, testShutdownTimeout)
 		})
 
 		pipeline := new(testutils.NewLogPipelineBuilder().WithName("my-pipeline").Build())
 
 		// Start watching
-		require.NoError(t, c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{testSecret1}))
+		require.NoError(t, c.SyncWatchers(ctx, pipeline, []types.NamespacedName{testSecret1}))
 
 		time.Sleep(testStartupDelay)
 
@@ -310,7 +318,7 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		require.True(t, exists, "watcher should exist before unsubscribe")
 
 		// Unsubscribe the only pipeline
-		require.NoError(t, c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{}))
+		require.NoError(t, c.SyncWatchers(ctx, pipeline, []types.NamespacedName{}))
 
 		// Verify watcher was removed
 		c.mu.RLock()
@@ -335,35 +343,35 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		clientset.PrependWatchReactor("secrets", clienttesting.DefaultWatchReactor(fakeWatcher, nil))
 
 		c := &Client{
-			clientset: clientset,
-			watchers:  make(map[types.NamespacedName]*watcher),
-			eventChan: eventChan,
+			clientset:   clientset,
+			watchers:    make(map[types.NamespacedName]*watcher),
+			eventRouter: createTestEventRouter(eventChan),
 		}
 
 		t.Cleanup(func() {
 			fakeWatcher.Stop()
-			c.stopWithTimeout(testShutdownTimeout)
+			c.stopWithTimeout(ctx, testShutdownTimeout)
 		})
 
 		pipelineA := new(testutils.NewLogPipelineBuilder().WithName("pipeline-a").Build())
 		pipelineB := new(testutils.NewLogPipelineBuilder().WithName("pipeline-b").Build())
 
 		// Both pipelines watch the secret
-		require.NoError(t, c.SyncWatchedSecrets(ctx, pipelineA, []types.NamespacedName{testSecret1}))
-		require.NoError(t, c.SyncWatchedSecrets(ctx, pipelineB, []types.NamespacedName{testSecret1}))
+		require.NoError(t, c.SyncWatchers(ctx, pipelineA, []types.NamespacedName{testSecret1}))
+		require.NoError(t, c.SyncWatchers(ctx, pipelineB, []types.NamespacedName{testSecret1}))
 
 		time.Sleep(testStartupDelay)
 
 		// Pipeline A unsubscribes
-		require.NoError(t, c.SyncWatchedSecrets(ctx, pipelineA, []types.NamespacedName{}))
+		require.NoError(t, c.SyncWatchers(ctx, pipelineA, []types.NamespacedName{}))
 
 		// Verify watcher still exists (pipeline B is still subscribed)
 		c.mu.RLock()
 		w, exists := c.watchers[testSecret1]
 		c.mu.RUnlock()
 		require.True(t, exists, "watcher should still exist when one pipeline remains")
-		require.False(t, w.isLinked(pipelineA), "pipeline-a should not be linked")
-		require.True(t, w.isLinked(pipelineB), "pipeline-b should still be linked")
+		require.False(t, w.isLinked(pipelineA.Name, pipelineA.GroupVersionKind()), "pipeline-a should not be linked")
+		require.True(t, w.isLinked(pipelineB.Name, pipelineB.GroupVersionKind()), "pipeline-b should still be linked")
 	})
 
 	t.Run("should switch pipeline from one secret to another", func(t *testing.T) {
@@ -404,21 +412,21 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		})
 
 		c := &Client{
-			clientset: clientset,
-			watchers:  make(map[types.NamespacedName]*watcher),
-			eventChan: eventChan,
+			clientset:   clientset,
+			watchers:    make(map[types.NamespacedName]*watcher),
+			eventRouter: createTestEventRouter(eventChan),
 		}
 
 		t.Cleanup(func() {
 			fakeWatcher1.Stop()
 			fakeWatcher2.Stop()
-			c.stopWithTimeout(testShutdownTimeout)
+			c.stopWithTimeout(ctx, testShutdownTimeout)
 		})
 
 		pipeline := new(testutils.NewLogPipelineBuilder().WithName("my-pipeline").Build())
 
 		// Initially watch secret-1
-		require.NoError(t, c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{testSecret1}))
+		require.NoError(t, c.SyncWatchers(ctx, pipeline, []types.NamespacedName{testSecret1}))
 
 		time.Sleep(testStartupDelay)
 
@@ -429,7 +437,7 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		require.True(t, exists, "should watch secret-1 initially")
 
 		// Switch to watching secret-2 instead
-		require.NoError(t, c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{testSecret2}))
+		require.NoError(t, c.SyncWatchers(ctx, pipeline, []types.NamespacedName{testSecret2}))
 
 		time.Sleep(testStartupDelay)
 
@@ -496,21 +504,21 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		})
 
 		c := &Client{
-			clientset: clientset,
-			watchers:  make(map[types.NamespacedName]*watcher),
-			eventChan: eventChan,
+			clientset:   clientset,
+			watchers:    make(map[types.NamespacedName]*watcher),
+			eventRouter: createTestEventRouter(eventChan),
 		}
 
 		t.Cleanup(func() {
 			fakeWatcher1.Stop()
 			fakeWatcher2.Stop()
-			c.stopWithTimeout(testShutdownTimeout)
+			c.stopWithTimeout(ctx, testShutdownTimeout)
 		})
 
 		pipeline := new(testutils.NewLogPipelineBuilder().WithName("my-pipeline").Build())
 
 		// Watch both secrets
-		require.NoError(t, c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{testSecret1, testSecret2}))
+		require.NoError(t, c.SyncWatchers(ctx, pipeline, []types.NamespacedName{testSecret1, testSecret2}))
 
 		time.Sleep(testStartupDelay)
 
@@ -526,7 +534,7 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		drainEvents(eventChan)
 
 		// Now only watch secret-2 (drop secret-1)
-		require.NoError(t, c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{testSecret2}))
+		require.NoError(t, c.SyncWatchers(ctx, pipeline, []types.NamespacedName{testSecret2}))
 
 		time.Sleep(testStartupDelay)
 
@@ -576,25 +584,25 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		})
 
 		c := &Client{
-			clientset: clientset,
-			watchers:  make(map[types.NamespacedName]*watcher),
-			eventChan: eventChan,
+			clientset:   clientset,
+			watchers:    make(map[types.NamespacedName]*watcher),
+			eventRouter: createTestEventRouter(eventChan),
 		}
 
 		t.Cleanup(func() {
 			fakeWatcher1.Stop()
 			fakeWatcher2.Stop()
-			c.stopWithTimeout(testShutdownTimeout)
+			c.stopWithTimeout(ctx, testShutdownTimeout)
 		})
 
 		pipeline := new(testutils.NewLogPipelineBuilder().WithName("my-pipeline").Build())
 
 		// Start watching
-		require.NoError(t, c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{testSecret1}))
+		require.NoError(t, c.SyncWatchers(ctx, pipeline, []types.NamespacedName{testSecret1}))
 		time.Sleep(testStartupDelay)
 
 		// Unsubscribe
-		require.NoError(t, c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{}))
+		require.NoError(t, c.SyncWatchers(ctx, pipeline, []types.NamespacedName{}))
 
 		// Verify watcher removed
 		c.mu.RLock()
@@ -603,7 +611,7 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		require.False(t, exists, "watcher should be removed after unsubscribe")
 
 		// Re-subscribe
-		require.NoError(t, c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{testSecret1}))
+		require.NoError(t, c.SyncWatchers(ctx, pipeline, []types.NamespacedName{testSecret1}))
 		time.Sleep(testStartupDelay)
 
 		// Verify new watcher created
@@ -644,22 +652,22 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		})
 
 		c := &Client{
-			clientset: clientset,
-			watchers:  make(map[types.NamespacedName]*watcher),
-			eventChan: eventChan,
+			clientset:   clientset,
+			watchers:    make(map[types.NamespacedName]*watcher),
+			eventRouter: createTestEventRouter(eventChan),
 		}
 
 		t.Cleanup(func() {
 			fakeWatcher.Stop()
-			c.stopWithTimeout(testShutdownTimeout)
+			c.stopWithTimeout(ctx, testShutdownTimeout)
 		})
 
 		pipeline := new(testutils.NewLogPipelineBuilder().WithName("my-pipeline").Build())
 
-		// Call SyncWatchedSecrets multiple times with the same secrets
-		require.NoError(t, c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{testSecret1}))
-		require.NoError(t, c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{testSecret1}))
-		require.NoError(t, c.SyncWatchedSecrets(ctx, pipeline, []types.NamespacedName{testSecret1}))
+		// Call SyncWatchers multiple times with the same secrets
+		require.NoError(t, c.SyncWatchers(ctx, pipeline, []types.NamespacedName{testSecret1}))
+		require.NoError(t, c.SyncWatchers(ctx, pipeline, []types.NamespacedName{testSecret1}))
+		require.NoError(t, c.SyncWatchers(ctx, pipeline, []types.NamespacedName{testSecret1}))
 
 		time.Sleep(testStartupDelay)
 
@@ -671,7 +679,7 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 		w, exists := c.watchers[testSecret1]
 		c.mu.RUnlock()
 		require.True(t, exists)
-		require.True(t, w.isLinked(pipeline))
+		require.True(t, w.isLinked(pipeline.Name, pipeline.GroupVersionKind()))
 
 		// Verify only one linked pipeline (not duplicated)
 		linkedPipelines := w.getLinkedPipelines()
@@ -679,25 +687,25 @@ func TestSyncWatchedSecretsMultipleCalls(t *testing.T) {
 	})
 }
 
-func TestSyncWatchedSecretsAfterStop(t *testing.T) {
+func TestSyncWatchersAfterStop(t *testing.T) {
 	t.Run("should return error when called after Stop", func(t *testing.T) {
 		ctx := context.Background()
 		eventChan := make(chan event.GenericEvent, 10)
 		clientset := fake.NewClientset()
 
 		c := &Client{
-			clientset: clientset,
-			watchers:  make(map[types.NamespacedName]*watcher),
-			eventChan: eventChan,
+			clientset:   clientset,
+			watchers:    make(map[types.NamespacedName]*watcher),
+			eventRouter: createTestEventRouter(eventChan),
 		}
 
 		pipeline := testutils.NewLogPipelineBuilder().Build()
 
 		// Stop the client
-		c.stopWithTimeout(testShutdownTimeout)
+		c.stopWithTimeout(ctx, testShutdownTimeout)
 
 		// Try to sync secrets after stop
-		err := c.SyncWatchedSecrets(ctx, &pipeline, []types.NamespacedName{testSecret1})
+		err := c.SyncWatchers(ctx, &pipeline, []types.NamespacedName{testSecret1})
 
 		require.ErrorIs(t, err, ErrClientStopped)
 	})
@@ -708,20 +716,82 @@ func TestSyncWatchedSecretsAfterStop(t *testing.T) {
 		clientset := fake.NewClientset()
 
 		c := &Client{
-			clientset: clientset,
-			watchers:  make(map[types.NamespacedName]*watcher),
-			eventChan: eventChan,
+			clientset:   clientset,
+			watchers:    make(map[types.NamespacedName]*watcher),
+			eventRouter: createTestEventRouter(eventChan),
 		}
 
 		pipeline := testutils.NewLogPipelineBuilder().Build()
 
 		// Stop the client using the public method
-		c.Stop()
+		c.Stop(ctx)
 
 		// Try to sync secrets after stop
-		err := c.SyncWatchedSecrets(ctx, &pipeline, []types.NamespacedName{testSecret1})
+		err := c.SyncWatchers(ctx, &pipeline, []types.NamespacedName{testSecret1})
 
 		require.ErrorIs(t, err, ErrClientStopped)
+	})
+}
+
+func TestPipelinesWithSameNameButDifferentTypes(t *testing.T) {
+	t.Run("should send events to both pipeline types when they have same name", func(t *testing.T) {
+		ctx := context.Background()
+		eventChan := make(chan event.GenericEvent, 10)
+
+		secret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testSecretName1,
+				Namespace: testNamespace,
+			},
+		}
+		clientset := fake.NewClientset(secret)
+
+		fakeWatcher := watch.NewFake()
+		clientset.PrependWatchReactor("secrets", clienttesting.DefaultWatchReactor(fakeWatcher, nil))
+
+		c := &Client{
+			clientset:   clientset,
+			watchers:    make(map[types.NamespacedName]*watcher),
+			eventRouter: createTestEventRouter(eventChan),
+		}
+
+		t.Cleanup(func() {
+			fakeWatcher.Stop()
+			c.stopWithTimeout(ctx, testShutdownTimeout)
+		})
+
+		// Create a LogPipeline and a MetricPipeline with the SAME name
+		sameName := "my-pipeline"
+		logPipeline := new(testutils.NewLogPipelineBuilder().WithName(sameName).Build())
+		metricPipeline := new(testutils.NewMetricPipelineBuilder().WithName(sameName).Build())
+
+		// Both pipelines watch the same secret
+		require.NoError(t, c.SyncWatchers(ctx, logPipeline, []types.NamespacedName{testSecret1}))
+		require.NoError(t, c.SyncWatchers(ctx, metricPipeline, []types.NamespacedName{testSecret1}))
+
+		time.Sleep(testStartupDelay)
+
+		// Drain any events from setup
+		drainEvents(eventChan)
+
+		// Modify the secret
+		fakeWatcher.Modify(secret)
+
+		// Should receive events for both pipelines (even though they have the same name)
+		// Since the eventRouter uses the same channel, we need to count total events
+		timeout := time.After(testEventTimeout)
+		eventCount := 0
+
+		for eventCount < 2 {
+			select {
+			case <-eventChan:
+				eventCount++
+			case <-timeout:
+				require.FailNow(t, "expected 2 events", "got %d", eventCount)
+			}
+		}
+
+		require.Equal(t, 2, eventCount, "should receive 2 events (one for each pipeline type)")
 	})
 }
 
@@ -742,19 +812,19 @@ func TestWatcherErrorHandling(t *testing.T) {
 		clientset.PrependWatchReactor("secrets", clienttesting.DefaultWatchReactor(fakeWatcher, nil))
 
 		c := &Client{
-			clientset: clientset,
-			watchers:  make(map[types.NamespacedName]*watcher),
-			eventChan: eventChan,
+			clientset:   clientset,
+			watchers:    make(map[types.NamespacedName]*watcher),
+			eventRouter: createTestEventRouter(eventChan),
 		}
 
 		t.Cleanup(func() {
 			fakeWatcher.Stop()
-			c.stopWithTimeout(testShutdownTimeout)
+			c.stopWithTimeout(ctx, testShutdownTimeout)
 		})
 
 		pipeline := testutils.NewLogPipelineBuilder().Build()
 
-		require.NoError(t, c.SyncWatchedSecrets(ctx, &pipeline, []types.NamespacedName{testSecret1}))
+		require.NoError(t, c.SyncWatchers(ctx, &pipeline, []types.NamespacedName{testSecret1}))
 
 		time.Sleep(testStartupDelay)
 
@@ -786,14 +856,14 @@ func TestWatcherErrorHandling(t *testing.T) {
 		})
 
 		c := &Client{
-			clientset: clientset,
-			watchers:  make(map[types.NamespacedName]*watcher),
-			eventChan: eventChan,
+			clientset:   clientset,
+			watchers:    make(map[types.NamespacedName]*watcher),
+			eventRouter: createTestEventRouter(eventChan),
 		}
 
 		pipeline := testutils.NewLogPipelineBuilder().Build()
 
-		require.NoError(t, c.SyncWatchedSecrets(ctx, &pipeline, []types.NamespacedName{testSecret1}))
+		require.NoError(t, c.SyncWatchers(ctx, &pipeline, []types.NamespacedName{testSecret1}))
 
 		// Give time for the watcher to hit the error and enter reconnect delay
 		time.Sleep(testStartupDelay)
@@ -805,7 +875,7 @@ func TestWatcherErrorHandling(t *testing.T) {
 		time.Sleep(testStartupDelay)
 
 		// Stop client to clean up
-		c.stopWithTimeout(testShutdownTimeout)
+		c.stopWithTimeout(ctx, testShutdownTimeout)
 	})
 }
 
@@ -833,4 +903,150 @@ func collectEvents(eventChan chan event.GenericEvent) map[string]int {
 			return received
 		}
 	}
+}
+
+func TestRemoveFromWatchers(t *testing.T) {
+	t.Run("should remove pipeline from all watchers", func(t *testing.T) {
+		ctx := context.Background()
+		eventChan := make(chan event.GenericEvent, 10)
+
+		secret1 := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testSecretName1,
+				Namespace: testNamespace,
+			},
+		}
+		secret2 := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testSecretName2,
+				Namespace: testNamespace,
+			},
+		}
+		clientset := fake.NewClientset(secret1, secret2)
+
+		fakeWatcher1 := watch.NewFake()
+		fakeWatcher2 := watch.NewFake()
+
+		clientset.PrependWatchReactor("secrets", func(action clienttesting.Action) (handled bool, ret watch.Interface, err error) {
+			watchAction := action.(clienttesting.WatchAction)
+
+			fieldSelector := watchAction.GetWatchRestrictions().Fields.String()
+			if fieldSelector == "metadata.name=secret-1" {
+				return true, fakeWatcher1, nil
+			}
+
+			if fieldSelector == "metadata.name=secret-2" {
+				return true, fakeWatcher2, nil
+			}
+
+			return false, nil, nil
+		})
+
+		c := &Client{
+			clientset:   clientset,
+			watchers:    make(map[types.NamespacedName]*watcher),
+			eventRouter: createTestEventRouter(eventChan),
+		}
+
+		t.Cleanup(func() {
+			fakeWatcher1.Stop()
+			fakeWatcher2.Stop()
+			c.stopWithTimeout(ctx, testShutdownTimeout)
+		})
+
+		pipeline := new(testutils.NewLogPipelineBuilder().WithName("my-pipeline").Build())
+
+		// Watch both secrets
+		require.NoError(t, c.SyncWatchers(ctx, pipeline, []types.NamespacedName{testSecret1, testSecret2}))
+
+		time.Sleep(testStartupDelay)
+
+		// Verify watching both secrets
+		c.mu.RLock()
+		_, exists1 := c.watchers[testSecret1]
+		_, exists2 := c.watchers[testSecret2]
+		c.mu.RUnlock()
+		require.True(t, exists1, "should watch secret-1")
+		require.True(t, exists2, "should watch secret-2")
+
+		// Remove pipeline from all watchers (simulating pipeline deletion)
+		require.NoError(t, c.RemoveFromWatchers(ctx, pipeline.GetName(), pipeline.GetObjectKind().GroupVersionKind()))
+
+		// Verify both watchers are removed (since pipeline was the only one linked)
+		c.mu.RLock()
+		_, exists1 = c.watchers[testSecret1]
+		_, exists2 = c.watchers[testSecret2]
+		c.mu.RUnlock()
+		require.False(t, exists1, "watcher for secret-1 should be removed")
+		require.False(t, exists2, "watcher for secret-2 should be removed")
+	})
+
+	t.Run("should keep watcher when other pipelines are still linked", func(t *testing.T) {
+		ctx := context.Background()
+		eventChan := make(chan event.GenericEvent, 10)
+
+		secret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testSecretName1,
+				Namespace: testNamespace,
+			},
+		}
+		clientset := fake.NewClientset(secret)
+
+		fakeWatcher := watch.NewFake()
+		clientset.PrependWatchReactor("secrets", clienttesting.DefaultWatchReactor(fakeWatcher, nil))
+
+		c := &Client{
+			clientset:   clientset,
+			watchers:    make(map[types.NamespacedName]*watcher),
+			eventRouter: createTestEventRouter(eventChan),
+		}
+
+		t.Cleanup(func() {
+			fakeWatcher.Stop()
+			c.stopWithTimeout(ctx, testShutdownTimeout)
+		})
+
+		pipelineA := new(testutils.NewLogPipelineBuilder().WithName("pipeline-a").Build())
+		pipelineB := new(testutils.NewLogPipelineBuilder().WithName("pipeline-b").Build())
+
+		// Both pipelines watch the same secret
+		require.NoError(t, c.SyncWatchers(ctx, pipelineA, []types.NamespacedName{testSecret1}))
+		require.NoError(t, c.SyncWatchers(ctx, pipelineB, []types.NamespacedName{testSecret1}))
+
+		time.Sleep(testStartupDelay)
+
+		// Remove pipeline A from watchers
+		require.NoError(t, c.RemoveFromWatchers(ctx, pipelineA.GetName(), pipelineA.GetObjectKind().GroupVersionKind()))
+
+		// Verify watcher still exists (pipeline B is still linked)
+		c.mu.RLock()
+		w, exists := c.watchers[testSecret1]
+		c.mu.RUnlock()
+		require.True(t, exists, "watcher should still exist when another pipeline remains")
+		require.False(t, w.isLinked(pipelineA.Name, pipelineA.GroupVersionKind()), "pipeline-a should not be linked")
+		require.True(t, w.isLinked(pipelineB.Name, pipelineB.GroupVersionKind()), "pipeline-b should still be linked")
+	})
+
+	t.Run("should return error when called after Stop", func(t *testing.T) {
+		ctx := context.Background()
+		eventChan := make(chan event.GenericEvent, 10)
+		clientset := fake.NewClientset()
+
+		c := &Client{
+			clientset:   clientset,
+			watchers:    make(map[types.NamespacedName]*watcher),
+			eventRouter: createTestEventRouter(eventChan),
+		}
+
+		pipeline := testutils.NewLogPipelineBuilder().Build()
+
+		// Stop the client
+		c.stopWithTimeout(ctx, testShutdownTimeout)
+
+		// Try to remove from watchers after stop
+		err := c.RemoveFromWatchers(ctx, pipeline.GetName(), pipeline.GetObjectKind().GroupVersionKind())
+
+		require.ErrorIs(t, err, ErrClientStopped)
+	})
 }

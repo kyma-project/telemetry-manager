@@ -429,6 +429,10 @@ func (b *MetricPipelineBuilder) Build() telemetryv1beta1.MetricPipeline {
 	}
 
 	pipeline := telemetryv1beta1.MetricPipeline{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: telemetryv1beta1.GroupVersion.String(),
+			Kind:       "MetricPipeline",
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
 			Labels:      b.labels,

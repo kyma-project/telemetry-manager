@@ -15,6 +15,7 @@ import (
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	logpipelinemocks "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/mocks"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/stubs"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry/mocks"
 )
 
@@ -63,6 +64,7 @@ func newTestReconciler(client client.Client, opts ...Option) *Reconciler {
 	allOpts := []Option{
 		WithOverridesHandler(overridesHandler),
 		WithPipelineSyncer(pipelineSync),
+		WithSecretWatcher(stubs.NewSecretWatcher(nil)),
 	}
 
 	// Merge default options with provided options (provided options will override defaults)

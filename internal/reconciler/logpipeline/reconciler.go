@@ -12,6 +12,7 @@ import (
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
+	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 )
 
 var (
@@ -25,6 +26,7 @@ type Reconciler struct {
 	reconcilers      map[logpipelineutils.Mode]LogPipelineReconciler
 
 	pipelineSyncer PipelineSyncer
+	secretWatcher  SecretWatcher
 }
 
 // Option is a functional option for configuring a Reconciler.
@@ -56,6 +58,13 @@ func WithReconcilers(reconcilers ...LogPipelineReconciler) Option {
 	}
 }
 
+// WithSecretWatcher sets the secret watcher.
+func WithSecretWatcher(watcher SecretWatcher) Option {
+	return func(r *Reconciler) {
+		r.secretWatcher = watcher
+	}
+}
+
 // New creates a new Reconciler with the provided client and functional options.
 // All dependencies must be provided via functional options.
 func New(client client.Client, opts ...Option) *Reconciler {
@@ -72,7 +81,7 @@ func New(client client.Client, opts ...Option) *Reconciler {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logf.FromContext(ctx).V(1).Info("Reconciling")
+	logf.FromContext(ctx).V(1).Info("Reconciling LogPipeline")
 
 	overrideConfig, err := r.overridesHandler.LoadOverrides(ctx)
 	if err != nil {
@@ -86,7 +95,20 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	var pipeline telemetryv1beta1.LogPipeline
 	if err := r.Get(ctx, req.NamespacedName, &pipeline); err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		if client.IgnoreNotFound(err) != nil {
+			return ctrl.Result{}, err
+		}
+
+		// Pipeline was deleted, clean up secret watchers
+		if err := r.secretWatcher.RemoveFromWatchers(ctx, req.Name, telemetryv1beta1.GroupVersion.WithKind("LogPipeline")); err != nil {
+			return ctrl.Result{}, err
+		}
+
+		return ctrl.Result{}, nil
+	}
+
+	if err := r.syncSecretWatchers(ctx, &pipeline); err != nil {
+		return ctrl.Result{}, err
 	}
 
 	if err := r.pipelineSyncer.TryAcquireLock(ctx, &pipeline); err != nil {
@@ -105,7 +127,18 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, fmt.Errorf("%w: %v", ErrUnsupportedOutputType, outputType)
 	}
 
-	err = reconciler.Reconcile(ctx, &pipeline)
+	result, err := reconciler.Reconcile(ctx, &pipeline)
 
-	return ctrl.Result{}, err
+	return result, err
+}
+
+func (r *Reconciler) syncSecretWatchers(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) error {
+	if r.secretWatcher == nil {
+		return nil
+	}
+
+	refs := secretref.GetSecretRefsLogPipeline(pipeline)
+	secrets := secretref.RefsToSecretNames(refs)
+
+	return r.secretWatcher.SyncWatchers(ctx, pipeline, secrets)
 }

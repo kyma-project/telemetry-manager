@@ -291,6 +291,7 @@ func newTestReconciler(client client.Client, opts ...any) (*testReconciler, func
 		WithPipelineSyncer(pipelineSyncer),
 		WithPipelineValidator(newTestValidator()),
 		WithErrorToMessageConverter(&conditions.ErrorToMessageConverter{}),
+		WithSecretWatcher(stubs.NewSecretWatcher(nil)),
 	}
 
 	// Process provided options - collect production Options and test options separately
