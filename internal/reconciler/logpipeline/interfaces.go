@@ -4,6 +4,10 @@ import (
 	"context"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
@@ -24,7 +28,7 @@ type FlowHealthProber interface {
 type LogPipelineReconciler interface {
 	// Reconcile processes a LogPipeline and ensures the desired state is achieved.
 	// This includes deploying necessary resources, updating configurations, and managing the pipeline lifecycle.
-	Reconcile(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) error
+	Reconcile(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) (ctrl.Result, error)
 
 	// SupportedOutput returns the output mode that this reconciler supports (e.g., FluentBit or OTel).
 	SupportedOutput() logpipelineutils.Mode
@@ -44,4 +48,12 @@ type PipelineSyncer interface {
 	// TryAcquireLock attempts to acquire a lock for the given pipeline owner.
 	// Returns an error if the lock cannot be acquired or if another controller holds the lock.
 	TryAcquireLock(ctx context.Context, owner metav1.Object) error
+}
+
+// SecretWatcher manages watches on Kubernetes secrets referenced by pipelines.
+type SecretWatcher interface {
+	// SyncWatchers ensures the pipeline watches exactly the given set of secrets.
+	SyncWatchers(ctx context.Context, pipeline client.Object, secrets []types.NamespacedName) error
+	// RemoveFromWatchers removes a pipeline from all watchers by name and GVK.
+	RemoveFromWatchers(ctx context.Context, name string, gvk schema.GroupVersionKind) error
 }

@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -33,6 +34,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	sharedtypesutils "github.com/kyma-project/telemetry-manager/internal/utils/sharedtypes"
+	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
 
@@ -48,6 +50,7 @@ type Reconciler struct {
 	pipelineSync      PipelineSyncer
 	pipelineValidator *Validator
 	errToMsgConverter commonstatus.ErrorToMessageConverter
+	secretWatcher     SecretWatcher
 }
 
 // Option configures the Reconciler during initialization.
@@ -109,6 +112,13 @@ func WithClient(client client.Client) Option {
 	}
 }
 
+// WithSecretWatcher sets the secret watcher for the Reconciler.
+func WithSecretWatcher(watcher SecretWatcher) Option {
+	return func(r *Reconciler) {
+		r.secretWatcher = watcher
+	}
+}
+
 // New creates a new Reconciler with the provided options.
 func New(opts ...Option) *Reconciler {
 	r := &Reconciler{}
@@ -123,7 +133,7 @@ func New(opts ...Option) *Reconciler {
 // Reconcile reconciles a TracePipeline resource by ensuring the trace gateway is properly configured and deployed.
 // It handles pipeline locking, validation, and status updates.
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logf.FromContext(ctx).V(1).Info("Reconciling")
+	logf.FromContext(ctx).V(1).Info("Reconciling TracePipeline")
 
 	overrideConfig, err := r.overridesHandler.LoadOverrides(ctx)
 	if err != nil {
@@ -137,7 +147,20 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	var tracePipeline telemetryv1beta1.TracePipeline
 	if err := r.Get(ctx, req.NamespacedName, &tracePipeline); err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		if client.IgnoreNotFound(err) != nil {
+			return ctrl.Result{}, err
+		}
+
+		// Pipeline was deleted, clean up secret watchers
+		if err := r.secretWatcher.RemoveFromWatchers(ctx, req.Name, telemetryv1beta1.GroupVersion.WithKind("TracePipeline")); err != nil {
+			return ctrl.Result{}, err
+		}
+
+		return ctrl.Result{}, nil
+	}
+
+	if err := r.syncSecretWatchers(ctx, &tracePipeline); err != nil {
+		return ctrl.Result{}, err
 	}
 
 	if err := r.pipelineSync.TryAcquireLock(ctx, &tracePipeline); err != nil {
@@ -149,16 +172,27 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, err
 	}
 
-	err = r.doReconcile(ctx, &tracePipeline)
-	if statusErr := r.updateStatus(ctx, tracePipeline.Name); statusErr != nil {
-		if err != nil {
-			err = fmt.Errorf("failed while updating status: %w: %w", statusErr, err)
-		} else {
-			err = fmt.Errorf("failed to update status: %w", statusErr)
-		}
+	var allErrors error = nil
+
+	if err := r.doReconcile(ctx, &tracePipeline); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to reconcile: %w", err))
 	}
 
-	return ctrl.Result{}, err
+	if err := r.updateStatus(ctx, tracePipeline.Name); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to update status: %w", err))
+	}
+
+	if allErrors != nil {
+		return ctrl.Result{}, allErrors
+	}
+
+	requeueAfter := r.calculateRequeueAfterDuration(ctx, &tracePipeline)
+	if requeueAfter != nil {
+		logf.FromContext(ctx).V(1).Info("Requeuing reconciliation due to certificate about to expire", "RequeueAfter", requeueAfter.String())
+		return ctrl.Result{RequeueAfter: *requeueAfter}, nil
+	}
+
+	return ctrl.Result{}, nil
 }
 
 // doReconcile performs the main reconciliation logic for a TracePipeline.
@@ -278,4 +312,23 @@ func (r *Reconciler) getEndpoint(ctx context.Context, pipeline *telemetryv1beta1
 	}
 
 	return string(endpointBytes)
+}
+
+func (r *Reconciler) calculateRequeueAfterDuration(ctx context.Context, pipeline *telemetryv1beta1.TracePipeline) *time.Duration {
+	err := r.pipelineValidator.validate(ctx, pipeline)
+
+	var errCertAboutToExpire *tlscert.CertAboutToExpireError
+	if errors.As(err, &errCertAboutToExpire) {
+		duration := time.Until(errCertAboutToExpire.Expiry)
+		return &duration
+	}
+
+	return nil
+}
+
+func (r *Reconciler) syncSecretWatchers(ctx context.Context, pipeline *telemetryv1beta1.TracePipeline) error {
+	refs := secretref.GetSecretRefsTracePipeline(pipeline)
+	secrets := secretref.RefsToSecretNames(refs)
+
+	return r.secretWatcher.SyncWatchers(ctx, pipeline, secrets)
 }

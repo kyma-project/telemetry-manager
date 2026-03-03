@@ -4,8 +4,8 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"hash/fnv"
 	"os"
-	"os/exec"
 	"path"
 	"runtime"
 	"slices"
@@ -15,14 +15,12 @@ import (
 	"github.com/go-logr/logr"
 	. "github.com/onsi/gomega"
 	"github.com/stretchr/testify/require"
-	appsv1 "k8s.io/api/apps/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
 	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
-	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 )
 
 const (
@@ -106,34 +104,21 @@ func sanitizeSpecID(filePath string) string {
 const (
 	// Logs labels
 
-	LabelLogs                 = "logs"
-	LabelLogsMisc             = "logs-misc"
-	LabelLogAgent             = "log-agent"
-	LabelLogGateway           = "log-gateway"
-	LabelFluentBit            = "fluent-bit"
-	LabelOtel                 = "otel"
-	LabelOTelMaxPipeline      = "otel-max-pipeline"
-	LabelFluentBitMaxPipeline = "fluent-bit-max-pipeline"
-	LabelLogsMaxPipeline      = "logs-max-pipeline"
+	LabelLogs       = "logs"
+	LabelLogAgent   = "log-agent"
+	LabelLogGateway = "log-gateway"
+	LabelFluentBit  = "fluent-bit"
+	LabelOtel       = "otel"
 
 	// Metrics labels
 
-	LabelMetrics            = "metrics"
-	LabelMetricsMisc        = "metrics-misc"
-	LabelMetricsMaxPipeline = "metrics-max-pipeline"
-	LabelMetricAgent        = "metric-agent"
-	LabelMetricAgentSetA    = "metric-agent-a"
-	LabelMetricAgentSetB    = "metric-agent-b"
-	LabelMetricAgentSetC    = "metric-agent-c"
-	LabelMetricGateway      = "metric-gateway"
-	LabelMetricGatewaySetA  = "metric-gateway-a"
-	LabelMetricGatewaySetB  = "metric-gateway-b"
-	LabelMetricGatewaySetC  = "metric-gateway-c"
+	LabelMetrics       = "metrics"
+	LabelMetricAgent   = "metric-agent"
+	LabelMetricGateway = "metric-gateway"
 
 	// Traces labels
 
-	LabelTraces            = "traces"
-	LabelTracesMaxPipeline = "traces-max-pipeline"
+	LabelTraces = "traces"
 
 	// Telemetry labels
 
@@ -146,24 +131,18 @@ const (
 
 	// Selfmonitor test labels
 
-	// Prefixes for self-monitor test labels
+	// LabelSelfMonitor is the base label for all selfmonitor tests
+	LabelSelfMonitor = "selfmonitor"
 
-	LabelSelfMonitorLogAgentPrefix      = "selfmonitor-log-agent"
-	LabelSelfMonitorLogGatewayPrefix    = "selfmonitor-log-gateway"
-	LabelSelfMonitorFluentBitPrefix     = "selfmonitor-fluent-bit"
-	LabelSelfMonitorMetricAgentPrefix   = "selfmonitor-metric-agent"
-	LabelSelfMonitorMetricGatewayPrefix = "selfmonitor-metric-gateway"
-	LabelSelfMonitorTracesPrefix        = "selfmonitor-traces"
-
-	// Prefix custom label/annotation tests
-
-	LabelCustomLabelAnnotation = "custom-label-annotation"
-
-	// Suffixes (representing different scenarios) for self-monitor test labels
-
-	LabelHealthy      = "healthy"
+	// LabelHealthy defines the label for healthy scenario selfmonitor tests
+	LabelHealthy = "healthy"
+	// LabelBackpressure defines the label for backpressure scenario selfmonitor tests
 	LabelBackpressure = "backpressure"
-	LabelOutage       = "outage"
+	// LabelOutage defines the label for outage scenario selfmonitor tests
+	LabelOutage = "outage"
+
+	// LabelCustomLabelAnnotation defines the label for custom label/annotation tests
+	LabelCustomLabelAnnotation = "custom-label-annotation"
 
 	// LabelMisc defines the label for miscellaneous tests (for edge-cases and unrelated tests)
 	// [please avoid adding tests to this category if it already fits in a more specific one]
@@ -185,19 +164,92 @@ const (
 	// LabelMTLS defines the label for mTLS related tests.
 	LabelMTLS = "mtls"
 
+	// LabelMaxPipeline defines the label for max pipeline tests
 	LabelMaxPipeline = "max-pipeline"
-	LabelSetA        = "set-a"
-	LabelSetB        = "set-b"
-	LabelSetC        = "set-c"
+
+	LabelSetA = "set-a"
+	LabelSetB = "set-b"
+	LabelSetC = "set-c"
+
+	// Number of buckets for auto-distribution
+	numBuckets = 3
 )
+
+// setLabels maps bucket index to set label
+var setLabels = []string{LabelSetA, LabelSetB, LabelSetC}
+
+// computeBucket calculates a deterministic bucket (0, 1, or 2) based on test name, labels, and cluster requirements.
+// Uses FNV-1a hash for good distribution.
+func computeBucket(testName string, labels []string, cfg kubeprep.Config) int {
+	// Filter out existing set labels and sort for determinism
+	filteredLabels := filterOutSetLabels(labels)
+	slices.Sort(filteredLabels)
+
+	// Create a deterministic string representation including cluster state requirements
+	canonical := fmt.Sprintf("%s|%s|istio=%t|exp=%t|fips=%t",
+		testName,
+		strings.Join(filteredLabels, ","),
+		cfg.InstallIstio,
+		cfg.EnableExperimental,
+		cfg.OperateInFIPSMode,
+	)
+
+	// Use FNV-1a hash for good distribution
+	h := fnv.New32a()
+	h.Write([]byte(canonical))
+	hash := h.Sum32()
+
+	return int(hash % numBuckets)
+}
+
+// filterOutSetLabels removes any set labels from the label slice
+func filterOutSetLabels(labels []string) []string {
+	result := make([]string, 0, len(labels))
+
+	for _, label := range labels {
+		if !isSetLabel(label) {
+			result = append(result, label)
+		}
+	}
+
+	return result
+}
+
+// isSetLabel returns true if the label is a set label (set-a, set-b, set-c)
+func isSetLabel(label string) bool {
+	switch label {
+	case LabelSetA, LabelSetB, LabelSetC:
+		return true
+	}
+
+	return false
+}
+
+// addBucketLabels adds the appropriate set label based on the computed bucket.
+// If the test already has a set label (manually assigned), no label is added.
+func addBucketLabels(labels []string, bucket int) []string {
+	if bucket < 0 || bucket >= numBuckets {
+		return labels
+	}
+
+	// Don't add if test already has a set label (manually assigned)
+	if slices.ContainsFunc(labels, isSetLabel) {
+		return labels
+	}
+
+	// Add generic set label
+	setLabel := setLabels[bucket]
+	labels = append(labels, setLabel)
+
+	return labels
+}
 
 // ExpectAgent returns true if the test labels indicate an agent test.
 // It checks for the presence of agent-related labels.
 func ExpectAgent(labels ...string) bool {
 	for _, label := range labels {
 		switch label {
-		case LabelMetricAgent, LabelLogAgent,
-			LabelMetricAgentSetA, LabelMetricAgentSetB, LabelMetricAgentSetC:
+		case LabelMetricAgent, LabelLogAgent:
 			return true
 		}
 	}
@@ -240,19 +292,16 @@ func SetupTest(t *testing.T, labels ...string) {
 func SetupTestWithOptions(t *testing.T, labels []string, opts ...kubeprep.Option) {
 	RegisterTestingT(t)
 
-	// Build initial config with environment defaults
-	cfg := kubeprep.Config{
-		OperateInFIPSMode:   FIPSImagesAvailable(),
-		DeployPrerequisites: true,
-	}
-
-	// Apply options first - options set config values directly
-	for _, opt := range opts {
-		opt(&cfg)
-	}
+	// Build config from options
+	cfg := buildConfig(opts...)
 
 	// Auto-add labels based on config values (options → labels)
 	labels = addLabelsFromConfig(labels, cfg)
+
+	// Auto-assign bucket labels based on test name, labels, and cluster requirements
+	// This distributes tests evenly across buckets for parallel execution
+	bucket := computeBucket(t.Name(), labels, cfg)
+	labels = addBucketLabels(labels, bucket)
 
 	// Skip test if it contains "skipped" label
 	if hasLabel(labels, LabelSkip) {
@@ -263,9 +312,6 @@ func SetupTestWithOptions(t *testing.T, labels []string, opts ...kubeprep.Option
 	if handleTestFiltering(t, labels) {
 		return // test was skipped
 	}
-
-	// Test will execute - finalize config with manager image
-	cfg = finalizeConfig(cfg)
 
 	// Log FIPS configuration for clarity
 	logFIPSConfiguration(t, cfg)
@@ -354,13 +400,6 @@ func handleDryRunMode(t *testing.T, labels []string, labelFilterExpr string, sho
 	t.Skip()
 }
 
-// RegisterTestCase is an alias for SetupTest for backward compatibility.
-//
-// Deprecated: Use SetupTest instead.
-func RegisterTestCase(t *testing.T, labels ...string) {
-	SetupTest(t, labels...)
-}
-
 // finalizeConfig completes the config with manager image information.
 // The config should already have InstallIstio, EnableExperimental, etc. set by options.
 func finalizeConfig(cfg kubeprep.Config) kubeprep.Config {
@@ -376,23 +415,20 @@ func finalizeConfig(cfg kubeprep.Config) kubeprep.Config {
 	return cfg
 }
 
-// buildConfig creates a Config from labels and applies options.
-//
-// Deprecated: Use SetupTestWithOptions with functional options instead of labels.
-// This function is kept for backward compatibility with tests that still use labels directly.
-func buildConfig(labels []string, opts ...kubeprep.Option) kubeprep.Config {
+// buildConfig creates a Config from options only.
+// Labels are used solely for test filtering, not for configuration.
+// Configuration must be explicitly set via functional options.
+func buildConfig(opts ...kubeprep.Option) kubeprep.Config {
 	// FIPS mode default is determined by environment (FIPS_IMAGE_AVAILABLE).
 	// WithOverrideFIPSMode() option can override this for specific tests.
 	fipsEnabled := FIPSImagesAvailable()
 
 	cfg := kubeprep.Config{
 		OperateInFIPSMode:   fipsEnabled,
-		EnableExperimental:  hasLabel(labels, LabelExperimental),
-		InstallIstio:        hasLabel(labels, LabelIstio),
 		DeployPrerequisites: true, // Default to deploying prerequisites
 	}
 
-	// Apply options - options can override label-based settings
+	// Apply options to configure the test environment
 	for _, opt := range opts {
 		opt(&cfg)
 	}
@@ -420,23 +456,22 @@ func logFIPSConfiguration(t *testing.T, cfg kubeprep.Config) {
 // to the target version (specified by MANAGER_IMAGE, or local image if not set).
 //
 // This function is called mid-test in upgrade tests after validating the old version works.
-// It preserves existing pipeline resources and CRDs.
-func UpgradeToTargetVersion(t *testing.T, labels []string) error {
-	targetImage := os.Getenv("MANAGER_IMAGE")
-	if targetImage == "" {
-		targetImage = DefaultLocalImage
-	}
+// It preserves existing pipeline resources and CRDs by using SetupCluster with
+// SkipManagerRemoval enabled.
+//
+// Options passed to this function should match those passed to SetupTestWithOptions
+// (e.g., kubeprep.WithOverrideFIPSMode(false)) to ensure consistent configuration.
+func UpgradeToTargetVersion(t *testing.T, opts ...kubeprep.Option) error {
+	// Add SkipManagerRemoval to preserve existing pipelines
+	opts = append(opts, kubeprep.WithSkipManagerRemoval(), kubeprep.WithSkipDeployTestPrerequisites())
 
-	// Build config from labels (same settings as initial setup)
-	cfg := buildConfig(labels)
-	cfg.ManagerImage = targetImage
-	cfg.LocalImage = kubeprep.IsLocalImage(targetImage)
-	cfg.ChartPath = "" // Use local chart for upgrade
+	// Build config from options
+	cfg := buildConfig(opts...)
 
 	t.Logf("Upgrading manager to target version: %s (fips=%t, experimental=%t)",
-		targetImage, cfg.OperateInFIPSMode, cfg.EnableExperimental)
+		cfg.ManagerImage, cfg.OperateInFIPSMode, cfg.EnableExperimental)
 
-	return kubeprep.UpgradeManagerInPlace(t, K8sClient, targetImage, cfg)
+	return kubeprep.SetupCluster(t, K8sClient, cfg)
 }
 
 func findDoNotExecuteFlag() bool {
@@ -557,164 +592,4 @@ func findLabelFilterExpression() string {
 	}
 
 	return labelFilterFlag
-}
-
-// =============================================================================
-// Cluster State Detection Functions
-// =============================================================================
-// These functions query the current cluster state to determine what is installed
-// and how it is configured. They can be used to make runtime decisions based on
-// cluster state rather than test configuration.
-
-// ClusterState represents the current state of the test cluster
-type ClusterState struct {
-	IstioInstalled      bool
-	IstioState          kubeprep.IstioState
-	ExperimentalEnabled bool
-	FIPSModeEnabled     bool
-	ManagerDeployed     bool
-}
-
-// GetClusterState returns the current state of the test cluster.
-// This queries the actual cluster to determine what is installed and how it's configured.
-// Returns an error if the cluster cannot be queried.
-func GetClusterState() (ClusterState, error) {
-	if K8sClient == nil {
-		return ClusterState{}, fmt.Errorf("K8sClient not initialized - call BeforeSuiteFunc first")
-	}
-
-	state := ClusterState{}
-
-	// Detect Istio state
-	state.IstioState = kubeprep.DetectIstioState(Ctx, K8sClient)
-	state.IstioInstalled = state.IstioState == kubeprep.IstioFullyInstalled
-
-	// Detect if manager is deployed and get its configuration
-	managerDeployed, fipsEnabled, err := detectManagerState(Ctx, K8sClient)
-	if err != nil {
-		// Manager not deployed is not an error, just means it's not there
-		state.ManagerDeployed = false
-		state.FIPSModeEnabled = false
-		state.ExperimentalEnabled = false
-	} else {
-		state.ManagerDeployed = managerDeployed
-		state.FIPSModeEnabled = fipsEnabled
-		// Experimental mode detection via helm
-		state.ExperimentalEnabled = detectExperimentalFromCluster()
-	}
-
-	return state, nil
-}
-
-// GetIstioInstalled returns true if Istio is fully installed and operational in the cluster.
-func GetIstioInstalled() bool {
-	if K8sClient == nil {
-		return false
-	}
-
-	return kubeprep.DetectIstioState(Ctx, K8sClient) == kubeprep.IstioFullyInstalled
-}
-
-// GetIstioState returns the detailed Istio installation state.
-func GetIstioState() kubeprep.IstioState {
-	if K8sClient == nil {
-		return kubeprep.IstioNotInstalled
-	}
-
-	return kubeprep.DetectIstioState(Ctx, K8sClient)
-}
-
-// GetFIPSModeEnabled returns true if the telemetry manager is deployed with FIPS mode enabled.
-// Returns false if the manager is not deployed or if FIPS mode is not enabled.
-func GetFIPSModeEnabled() bool {
-	if K8sClient == nil {
-		return false
-	}
-
-	_, fipsEnabled, err := detectManagerState(Ctx, K8sClient)
-	if err != nil {
-		return false
-	}
-
-	return fipsEnabled
-}
-
-// GetExperimentalEnabled returns true if experimental CRDs are enabled in the current deployment.
-// Returns false if the manager is not deployed or if experimental mode is not enabled.
-func GetExperimentalEnabled() bool {
-	return detectExperimentalFromCluster()
-}
-
-// GetManagerDeployed returns true if the telemetry manager is deployed in the cluster.
-func GetManagerDeployed() bool {
-	if K8sClient == nil {
-		return false
-	}
-
-	deployed, _, err := detectManagerState(Ctx, K8sClient)
-	if err != nil {
-		return false
-	}
-
-	return deployed
-}
-
-// detectManagerState checks if the manager deployment exists and returns its FIPS mode setting.
-func detectManagerState(ctx context.Context, k8sClient client.Client) (deployed bool, fipsEnabled bool, err error) {
-	const (
-		managerContainerName = "manager"
-		fipsEnvVarName       = "KYMA_FIPS_MODE_ENABLED"
-	)
-
-	var deployment appsv1.Deployment
-
-	if err := k8sClient.Get(ctx, kitkyma.TelemetryManagerName, &deployment); err != nil {
-		return false, false, err
-	}
-
-	// Manager is deployed, check FIPS mode
-	for _, container := range deployment.Spec.Template.Spec.Containers {
-		if container.Name == managerContainerName {
-			for _, env := range container.Env {
-				if env.Name == fipsEnvVarName && env.Value == "true" {
-					return true, true, nil
-				}
-			}
-
-			return true, false, nil
-		}
-	}
-
-	// Manager deployed but container not found (unexpected)
-	return true, false, nil
-}
-
-// detectExperimentalFromCluster checks if experimental mode is enabled via helm release values
-func detectExperimentalFromCluster() bool {
-	// Use the kubeprep detection which inspects helm values
-	// We create a context for this call since it's a helper function
-	ctx := context.Background()
-	if Ctx != nil {
-		ctx = Ctx
-	}
-
-	return detectExperimentalFromHelm(ctx)
-}
-
-// detectExperimentalFromHelm checks the helm release to see if experimental is enabled
-func detectExperimentalFromHelm(ctx context.Context) bool {
-	// Check helm release values for experimental.enabled
-	// This duplicates the logic from kubeprep/detect.go to avoid circular dependencies
-	// and to keep the detection logic self-contained in the suite package
-	cmd := exec.CommandContext(ctx, "helm", "get", "values", "telemetry-manager", "-n", "kyma-system", "-o", "json")
-
-	output, err := cmd.Output()
-	if err != nil {
-		return false
-	}
-
-	outputStr := string(output)
-
-	return strings.Contains(outputStr, `"experimental":{"enabled":true}`) ||
-		strings.Contains(outputStr, `"experimental": {"enabled": true}`)
 }

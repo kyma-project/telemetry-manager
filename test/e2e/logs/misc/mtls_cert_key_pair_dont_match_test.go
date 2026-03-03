@@ -20,7 +20,7 @@ import (
 )
 
 func TestMTLSCertKeyDontMatch_OTel(t *testing.T) {
-	suite.SetupTest(t, suite.LabelLogsMisc, suite.LabelMTLS)
+	suite.SetupTest(t, suite.LabelLogs, suite.LabelMisc, suite.LabelMTLS)
 
 	var (
 		uniquePrefix = unique.Prefix()

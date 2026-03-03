@@ -39,6 +39,7 @@ func testReconcilerWithPipelineLock(fakeClient client.Client, flowHealthProber F
 	overridesHandler := &stubs.OverridesHandler{}
 	pipelineSync := &stubs.PipelineSync{}
 	errToMsgConverter := &conditions.ErrorToMessageConverter{}
+	secretWatcher := stubs.NewSecretWatcher(nil)
 
 	return New(
 		WithClient(fakeClient),
@@ -49,6 +50,7 @@ func testReconcilerWithPipelineLock(fakeClient client.Client, flowHealthProber F
 		WithPipelineSyncer(pipelineSync),
 		WithPipelineValidator(validator),
 		WithErrorToMessageConverter(errToMsgConverter),
+		WithSecretWatcher(secretWatcher),
 	)
 }
 

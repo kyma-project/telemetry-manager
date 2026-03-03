@@ -4,6 +4,9 @@ import (
 	"context"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
@@ -67,4 +70,12 @@ type TransformSpecValidator interface {
 type FilterSpecValidator interface {
 	// Validate checks if the filter specifications are valid.
 	Validate(filters []telemetryv1beta1.FilterSpec) error
+}
+
+// SecretWatcher manages watches on Kubernetes secrets referenced by pipelines.
+type SecretWatcher interface {
+	// SyncWatchers ensures the pipeline watches exactly the given set of secrets.
+	SyncWatchers(ctx context.Context, pipeline client.Object, secrets []types.NamespacedName) error
+	// RemoveFromWatchers removes a pipeline from all watchers by name and GVK.
+	RemoveFromWatchers(ctx context.Context, name string, gvk schema.GroupVersionKind) error
 }

@@ -80,7 +80,7 @@ func reconcileAndGet(t *testing.T, client client.Client, reconciler *Reconciler,
 	var pl telemetryv1beta1.LogPipeline
 	require.NoError(t, client.Get(t.Context(), types.NamespacedName{Name: pipelineName}, &pl))
 
-	err := reconciler.Reconcile(t.Context(), &pl)
+	_, err := reconciler.Reconcile(t.Context(), &pl)
 
 	var updatedPipeline telemetryv1beta1.LogPipeline
 	require.NoError(t, client.Get(t.Context(), types.NamespacedName{Name: pipelineName}, &updatedPipeline))

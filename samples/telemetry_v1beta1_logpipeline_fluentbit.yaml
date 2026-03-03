@@ -80,6 +80,15 @@ spec:
         - -f=json
         - -l
 ---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: log-sink-credentials
+  namespace: log-sink-fluentbit
+type: Opaque
+stringData:
+  host: log-sink.log-sink-fluentbit.svc.cluster.local
+---
 apiVersion: telemetry.kyma-project.io/v1beta1
 kind: LogPipeline
 metadata:
@@ -94,7 +103,11 @@ spec:
     http:
       dedot: true
       host:
-        value: log-sink.log-sink-fluentbit.svc.cluster.local
+        valueFrom:
+          secretKeyRef:
+            name: log-sink-credentials
+            namespace: log-sink-fluentbit
+            key: host
       port: "9880"
       uri: /
       format: json

@@ -1,0 +1,89 @@
+name: Run E2E Test
+description: Complete E2E test execution including setup, test run, and cleanup
+
+inputs:
+  test-id:
+    description: Unique identifier for the test run (used for artifacts and reporting)
+    required: true
+  test-path:
+    description: Go test path (e.g., ./test/e2e/logs/...)
+    required: true
+  test-labels:
+    description: Label filter expression for test selection
+    required: false
+    default: ""
+  manager-image:
+    description: Telemetry Manager image to use
+    required: true
+  fips-image-available:
+    description: Whether FIPS images are available (for pulling/importing)
+    required: false
+    default: "false"
+  google-credentials:
+    description: Google Cloud credentials JSON (required when fips-image-available is true)
+    required: false
+    default: ""
+
+runs:
+  using: "composite"
+
+  steps:
+    - name: Setup Golang
+      uses: ./.github/template/setup-golang
+
+    - name: Authenticate to Google Cloud
+      if: inputs.fips-image-available == 'true' && inputs.google-credentials != ''
+      uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed # v2.1.13
+      with:
+        credentials_json: ${{ inputs.google-credentials }}
+
+    - name: Setup Google Cloud SDK
+      if: inputs.fips-image-available == 'true' && inputs.google-credentials != ''
+      uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f # v2.2.1
+
+    - name: Configure Docker for Google Artifact Registry
+      if: inputs.fips-image-available == 'true' && inputs.google-credentials != ''
+      shell: bash
+      run: gcloud auth configure-docker europe-docker.pkg.dev --quiet
+
+    - name: Pull Self-monitor FIPS image
+      if: inputs.fips-image-available == 'true' && inputs.google-credentials != ''
+      shell: bash
+      run: make docker-pull-self-monitor-fips-image
+
+    - name: Provision K3D cluster
+      shell: bash
+      run: make provision-k3d
+
+    - name: Import Self-monitor FIPS image to K3D
+      if: inputs.fips-image-available == 'true' && inputs.google-credentials != ''
+      shell: bash
+      run: make k3d-import-self-monitor-fips-image
+
+    - name: Run tests
+      shell: bash
+      run: |
+        make e2e-test \
+          E2E_TEST_PATH="${{ inputs.test-path }}" \
+          E2E_TEST_ID="${{ inputs.test-id }}" \
+          E2E_TEST_LABELS="${{ inputs.test-labels }}"
+      env:
+        MANAGER_IMAGE: ${{ inputs.manager-image }}
+        FIPS_IMAGE_AVAILABLE: ${{ inputs.fips-image-available }}
+
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.test-id }}-report
+        path: junit-report-*.xml
+
+    - name: Print pods on failure
+      if: failure()
+      shell: bash
+      run: |
+        kubectl get pods -A
+        for pod in $(kubectl get pods -n kyma-system -o name 2>/dev/null); do
+          echo "=== $pod ==="
+          kubectl logs -n kyma-system $pod --all-containers 2>/dev/null || true
+        done
