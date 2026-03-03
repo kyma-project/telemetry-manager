@@ -10,6 +10,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
@@ -18,7 +19,7 @@ import (
 )
 
 func TestMetricsOTLPInput(t *testing.T) {
-	suite.SetupTest(t, suite.LabelGardener, suite.LabelIstio)
+	suite.SetupTestWithOptions(t, []string{suite.LabelGardener}, kubeprep.WithIstio())
 
 	var (
 		uniquePrefix       = unique.Prefix()

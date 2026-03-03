@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"time"
 
 	"github.com/caarlos0/env/v11"
 	"github.com/go-logr/zapr"
@@ -30,14 +29,18 @@ import (
 	"go.uber.org/zap/zapcore"
 	istionetworkingclientv1 "istio.io/client-go/pkg/apis/networking/v1"
 	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/discovery"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
@@ -57,10 +60,13 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/cliflags"
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/featureflags"
+	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
 	mgrports "github.com/kyma-project/telemetry-manager/internal/manager/ports"
 	"github.com/kyma-project/telemetry-manager/internal/metrics"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
+	"github.com/kyma-project/telemetry-manager/internal/secretwatch"
 	selfmonitorwebhook "github.com/kyma-project/telemetry-manager/internal/selfmonitor/webhook"
 	loggerutils "github.com/kyma-project/telemetry-manager/internal/utils/logger"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
@@ -93,7 +99,6 @@ var (
 )
 
 const (
-	cacheSyncPeriod    = 1 * time.Minute
 	webhookServiceName = names.ManagerWebhookService
 )
 
@@ -224,15 +229,24 @@ func setupControllersAndWebhooks(mgr manager.Manager, globals config.Global, env
 		logPipelineReconcileChan    = make(chan event.GenericEvent)
 	)
 
-	if err := setupTracePipelineController(globals, envCfg, mgr, tracePipelineReconcileChan); err != nil {
+	secretWatchClient, err := secretwatch.NewClient(mgr.GetConfig(), tracePipelineReconcileChan, metricPipelineReconcileChan, logPipelineReconcileChan)
+	if err != nil {
+		return fmt.Errorf("failed to create secret watch client: %w", err)
+	}
+
+	if err := mgr.Add(secretWatchStopRunnable{secretWatchClient}); err != nil {
+		return fmt.Errorf("failed to add secret watch stop runnable: %w", err)
+	}
+
+	if err := setupTracePipelineController(globals, envCfg, mgr, tracePipelineReconcileChan, secretWatchClient); err != nil {
 		return fmt.Errorf("failed to enable trace pipeline controller: %w", err)
 	}
 
-	if err := setupMetricPipelineController(globals, envCfg, mgr, metricPipelineReconcileChan); err != nil {
+	if err := setupMetricPipelineController(globals, envCfg, mgr, metricPipelineReconcileChan, secretWatchClient); err != nil {
 		return fmt.Errorf("failed to enable metric pipeline controller: %w", err)
 	}
 
-	if err := setupLogPipelineController(globals, envCfg, mgr, logPipelineReconcileChan); err != nil {
+	if err := setupLogPipelineController(globals, envCfg, mgr, logPipelineReconcileChan, secretWatchClient); err != nil {
 		return fmt.Errorf("failed to enable log pipeline controller: %w", err)
 	}
 
@@ -273,7 +287,37 @@ func setupControllersAndWebhooks(mgr manager.Manager, globals config.Global, env
 }
 
 func setupManager(globals config.Global) (manager.Manager, error) {
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+	restConfig := ctrl.GetConfigOrDie()
+
+	discoveryClient, err := discovery.NewDiscoveryClientForConfig(restConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create discovery client: %w", err)
+	}
+
+	isIstioActive := istiostatus.NewChecker(discoveryClient).IsIstioActive(context.Background())
+
+	cacheOptions := map[client.Object]cache.ByObject{
+		&appsv1.Deployment{}:                        {Field: setNamespaceFieldSelector(globals)},
+		&appsv1.ReplicaSet{}:                        {Field: setNamespaceFieldSelector(globals)},
+		&appsv1.DaemonSet{}:                         {Field: setNamespaceFieldSelector(globals)},
+		&corev1.ConfigMap{}:                         {Namespaces: setConfigMapNamespaceFieldSelector(globals)},
+		&corev1.ServiceAccount{}:                    {Field: setNamespaceFieldSelector(globals)},
+		&corev1.Service{}:                           {Field: setNamespaceFieldSelector(globals)},
+		&networkingv1.NetworkPolicy{}:               {Field: setNamespaceFieldSelector(globals)},
+		&corev1.Secret{}:                            {Field: setNamespaceFieldSelector(globals)},
+		&operatorv1beta1.Telemetry{}:                {Field: setNamespaceFieldSelector(globals)},
+		&rbacv1.Role{}:                              {Field: setNamespaceFieldSelector(globals)},
+		&rbacv1.RoleBinding{}:                       {Field: setNamespaceFieldSelector(globals)},
+		&apiextensionsv1.CustomResourceDefinition{}: {Label: setLabelSelector()},
+		&admissionregistrationv1.ValidatingWebhookConfiguration{}: {Label: setLabelSelector()},
+		&admissionregistrationv1.MutatingWebhookConfiguration{}:   {Label: setLabelSelector()},
+	}
+
+	if isIstioActive {
+		cacheOptions[&istiosecurityclientv1.PeerAuthentication{}] = cache.ByObject{Field: setNamespaceFieldSelector(globals)}
+	}
+
+	mgr, err := ctrl.NewManager(restConfig, ctrl.Options{
 		Scheme:                  scheme,
 		Metrics:                 metricsserver.Options{BindAddress: fmt.Sprintf(":%d", mgrports.Metrics)},
 		HealthProbeBindAddress:  fmt.Sprintf(":%d", mgrports.HealthProbe),
@@ -286,21 +330,7 @@ func setupManager(globals config.Global) (manager.Manager, error) {
 			CertDir: certDir,
 		}),
 		Cache: cache.Options{
-			SyncPeriod: new(cacheSyncPeriod),
-
-			// The operator handles various resource that are namespace-scoped, and additionally some resources that are cluster-scoped (clusterroles, clusterrolebindings, etc.).
-			// For namespace-scoped resources we want to restrict the operator permissions to only fetch resources from a given namespace.
-			ByObject: map[client.Object]cache.ByObject{
-				&appsv1.Deployment{}:          {Field: setNamespaceFieldSelector(globals)},
-				&appsv1.ReplicaSet{}:          {Field: setNamespaceFieldSelector(globals)},
-				&appsv1.DaemonSet{}:           {Field: setNamespaceFieldSelector(globals)},
-				&corev1.ConfigMap{}:           {Namespaces: setConfigMapNamespaceFieldSelector(globals)},
-				&corev1.ServiceAccount{}:      {Field: setNamespaceFieldSelector(globals)},
-				&corev1.Service{}:             {Field: setNamespaceFieldSelector(globals)},
-				&networkingv1.NetworkPolicy{}: {Field: setNamespaceFieldSelector(globals)},
-				&corev1.Secret{}:              {Field: setNamespaceFieldSelector(globals)},
-				&operatorv1beta1.Telemetry{}:  {Field: setNamespaceFieldSelector(globals)},
-			},
+			ByObject: cacheOptions,
 		},
 		Client: client.Options{
 			Cache: &client.CacheOptions{
@@ -406,7 +436,7 @@ func setupTelemetryController(globals config.Global, cfg envConfig, webhookCertC
 	return nil
 }
 
-func setupLogPipelineController(globals config.Global, cfg envConfig, mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent) error {
+func setupLogPipelineController(globals config.Global, cfg envConfig, mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent, secretWatchClient *secretwatch.Client) error {
 	setupLog.Info("Setting up logpipeline controller")
 
 	logPipelineController, err := telemetrycontrollers.NewLogPipelineController(
@@ -424,6 +454,7 @@ func setupLogPipelineController(globals config.Global, cfg envConfig, mgr manage
 		},
 		mgr.GetClient(),
 		reconcileTriggerChan,
+		secretWatchClient,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create logpipeline controller: %w", err)
@@ -436,7 +467,7 @@ func setupLogPipelineController(globals config.Global, cfg envConfig, mgr manage
 	return nil
 }
 
-func setupTracePipelineController(globals config.Global, envCfg envConfig, mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent) error {
+func setupTracePipelineController(globals config.Global, envCfg envConfig, mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent, secretWatchClient *secretwatch.Client) error {
 	setupLog.Info("Setting up tracepipeline controller")
 
 	tracePipelineController, err := telemetrycontrollers.NewTracePipelineController(
@@ -448,6 +479,7 @@ func setupTracePipelineController(globals config.Global, envCfg envConfig, mgr m
 		},
 		mgr.GetClient(),
 		reconcileTriggerChan,
+		secretWatchClient,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create tracepipeline controller: %w", err)
@@ -460,7 +492,7 @@ func setupTracePipelineController(globals config.Global, envCfg envConfig, mgr m
 	return nil
 }
 
-func setupMetricPipelineController(globals config.Global, cfg envConfig, mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent) error {
+func setupMetricPipelineController(globals config.Global, cfg envConfig, mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent, secretWatchClient *secretwatch.Client) error {
 	setupLog.Info("Setting up metricpipeline controller")
 
 	metricPipelineController, err := telemetrycontrollers.NewMetricPipelineController(
@@ -473,6 +505,7 @@ func setupMetricPipelineController(globals config.Global, cfg envConfig, mgr man
 		},
 		mgr.GetClient(),
 		reconcileTriggerChan,
+		secretWatchClient,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create metricpipeline controller: %w", err)
@@ -533,6 +566,10 @@ func setNamespaceFieldSelector(globals config.Global) fields.Selector {
 	return fields.SelectorFromSet(fields.Set{"metadata.namespace": globals.TargetNamespace()})
 }
 
+func setLabelSelector() labels.Selector {
+	return labels.SelectorFromSet(labels.Set{commonresources.LabelKeyKymaModule: commonresources.LabelValueKymaModule})
+}
+
 func setConfigMapNamespaceFieldSelector(globals config.Global) map[string]cache.Config {
 	return map[string]cache.Config{
 		"kube-system": {
@@ -562,4 +599,16 @@ func createWebhookConfig(globals config.Global) webhookcert.Config {
 			},
 		},
 	)
+}
+
+// secretWatchStopRunnable is a manager.Runnable that stops the secret watch client when the manager stops.
+type secretWatchStopRunnable struct {
+	client *secretwatch.Client
+}
+
+func (r secretWatchStopRunnable) Start(ctx context.Context) error {
+	<-ctx.Done()
+	r.client.Stop(ctx)
+
+	return nil
 }

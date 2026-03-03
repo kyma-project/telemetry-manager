@@ -1,6 +1,7 @@
 package selfmonitor
 
 import (
+	"fmt"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -13,6 +14,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
@@ -24,18 +26,18 @@ import (
 
 func TestOutage(t *testing.T) {
 	tests := []struct {
-		labelPrefix      string
-		pipeline         func(includeNs string, backend *kitbackend.Backend) client.Object
-		generator        func(ns string) []client.Object
-		assertions       func(t *testing.T, pipelineName string)
-		additionalLabels []string
+		name       string
+		component  string
+		pipeline   func(pipelineName, includeNs string, backend *kitbackend.Backend) client.Object
+		generator  func(ns string) []client.Object
+		assertions func(t *testing.T, pipelineName string)
 	}{
 		{
-			labelPrefix:      suite.LabelSelfMonitorLogAgentPrefix,
-			additionalLabels: []string{suite.LabelLogAgent},
-			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
+			name:      "log-agent",
+			component: suite.LabelLogAgent,
+			pipeline: func(pipelineName, includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewLogPipelineBuilder().
-					WithName(suite.LabelSelfMonitorLogAgentPrefix).
+					WithName(pipelineName).
 					WithInput(testutils.BuildLogPipelineRuntimeInput(testutils.IncludeNamespaces(includeNs))).
 					WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 					Build()
@@ -63,11 +65,11 @@ func TestOutage(t *testing.T) {
 			},
 		},
 		{
-			labelPrefix:      suite.LabelSelfMonitorLogGatewayPrefix,
-			additionalLabels: []string{suite.LabelLogGateway},
-			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
+			name:      "log-gateway",
+			component: suite.LabelLogGateway,
+			pipeline: func(pipelineName, includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewLogPipelineBuilder().
-					WithName(suite.LabelSelfMonitorLogGatewayPrefix).
+					WithName(pipelineName).
 					WithInput(testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))).
 					WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 					Build()
@@ -99,11 +101,11 @@ func TestOutage(t *testing.T) {
 			},
 		},
 		{
-			labelPrefix:      suite.LabelSelfMonitorFluentBitPrefix,
-			additionalLabels: []string{suite.LabelFluentBit},
-			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
+			name:      "fluent-bit",
+			component: suite.LabelFluentBit,
+			pipeline: func(pipelineName, includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewLogPipelineBuilder().
-					WithName(suite.LabelSelfMonitorFluentBitPrefix).
+					WithName(pipelineName).
 					WithRuntimeInput(true, testutils.IncludeNamespaces(includeNs)).
 					WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
 					Build()
@@ -131,11 +133,11 @@ func TestOutage(t *testing.T) {
 			},
 		},
 		{
-			labelPrefix:      suite.LabelSelfMonitorMetricGatewayPrefix,
-			additionalLabels: []string{suite.LabelMetricGateway},
-			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
+			name:      "metric-gateway",
+			component: suite.LabelMetricGateway,
+			pipeline: func(pipelineName, includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewMetricPipelineBuilder().
-					WithName(suite.LabelSelfMonitorMetricGatewayPrefix).
+					WithName(pipelineName).
 					WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 					Build()
 
@@ -168,11 +170,11 @@ func TestOutage(t *testing.T) {
 			},
 		},
 		{
-			labelPrefix:      suite.LabelSelfMonitorMetricAgentPrefix,
-			additionalLabels: []string{suite.LabelMetricAgent},
-			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
+			name:      "metric-agent",
+			component: suite.LabelMetricAgent,
+			pipeline: func(pipelineName, includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewMetricPipelineBuilder().
-					WithName(suite.LabelSelfMonitorMetricAgentPrefix).
+					WithName(pipelineName).
 					WithPrometheusInput(true, testutils.IncludeNamespaces(includeNs)).
 					WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 					Build()
@@ -205,11 +207,11 @@ func TestOutage(t *testing.T) {
 			},
 		},
 		{
-			labelPrefix:      suite.LabelSelfMonitorTracesPrefix,
-			additionalLabels: []string{suite.LabelTraces},
-			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
+			name:      "traces",
+			component: suite.LabelTraces,
+			pipeline: func(pipelineName, includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewTracePipelineBuilder().
-					WithName(suite.LabelSelfMonitorTracesPrefix).
+					WithName(pipelineName).
 					WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 					Build()
 
@@ -241,62 +243,59 @@ func TestOutage(t *testing.T) {
 		},
 	}
 
-	// Run each test case with both FIPS and no-FIPS modes
-	// - no-fips: for PR events without access to restricted FIPS images
-	// - fips: for push events with access to restricted FIPS images
+	// Tests run once per test case. FIPS mode is determined by environment (FIPS_IMAGE_AVAILABLE).
+	// FluentBit tests always run in no-FIPS mode via WithOverrideFIPSMode(false).
 	for _, tc := range tests {
-		for _, noFips := range []bool{true, false} {
-			// fluent-bit only supports no-fips mode
-			if tc.labelPrefix == suite.LabelSelfMonitorFluentBitPrefix && !noFips {
-				continue
+		t.Run(tc.name, func(t *testing.T) {
+			// Labels: selfmonitor + component + scenario
+			labels := []string{
+				suite.LabelSelfMonitor,
+				tc.component,
+				suite.LabelOutage,
 			}
 
-			name := tc.labelPrefix
-			if noFips {
-				name += "-no-fips"
+			// Outage tests need Istio for traffic simulation
+			opts := []kubeprep.Option{kubeprep.WithIstio()}
+
+			// FluentBit doesn't support FIPS mode
+			if isFluentBit(tc.component) {
+				opts = append(opts, kubeprep.WithOverrideFIPSMode(false))
+			}
+
+			suite.SetupTestWithOptions(t, labels, opts...)
+
+			pipelineName := fmt.Sprintf("selfmonitor-%s", tc.name)
+
+			var (
+				uniquePrefix = unique.Prefix(tc.name)
+				backendNs    = uniquePrefix("backend")
+				genNs        = uniquePrefix("gen")
+				backend      *kitbackend.Backend
+			)
+			if tc.component == suite.LabelMetricAgent {
+				// Metric agent and gateway (using kyma stats receiver) both send data to backend
+				// We want to simulate outage only on agent, so block all traffic only from agent.
+				backend = kitbackend.New(backendNs, signalTypeForComponent(tc.component), kitbackend.WithAbortFaultInjection(100),
+					kitbackend.WithDropFromSourceLabel(map[string]string{"app.kubernetes.io/name": "telemetry-metric-agent"}))
 			} else {
-				name += "-fips"
+				backend = kitbackend.New(backendNs, signalTypeForComponent(tc.component), kitbackend.WithReplicas(0)) // simulate outage
 			}
 
-			t.Run(name, func(t *testing.T) {
-				var labels []string
+			pipeline := tc.pipeline(pipelineName, genNs, backend)
+			generator := tc.generator(genNs)
 
-				labels = append(labels, suite.LabelOutage)
-				labels = append(labels, labelsForSelfMonitor(tc.labelPrefix, suite.LabelOutage, noFips)...)
-				labels = append(labels, tc.additionalLabels...)
-				suite.SetupTest(t, labels...)
+			resources := []client.Object{
+				kitk8sobjects.NewNamespace(backendNs).K8sObject(),
+				kitk8sobjects.NewNamespace(genNs).K8sObject(),
+				pipeline,
+			}
+			resources = append(resources, generator...)
+			resources = append(resources, backend.K8sObjects()...)
 
-				var (
-					uniquePrefix = unique.Prefix(tc.labelPrefix)
-					backendNs    = uniquePrefix("backend")
-					genNs        = uniquePrefix("gen")
-					backend      *kitbackend.Backend
-				)
-				if tc.labelPrefix == suite.LabelSelfMonitorMetricAgentPrefix {
-					// Metric agent and gateway (using kyma stats receiver) both send data to backend
-					// We want to simulate outage only on agent, so block all traffic only from agent.
-					backend = kitbackend.New(backendNs, signalType(tc.labelPrefix), kitbackend.WithAbortFaultInjection(100),
-						kitbackend.WithDropFromSourceLabel(map[string]string{"app.kubernetes.io/name": "telemetry-metric-agent"}))
-				} else {
-					backend = kitbackend.New(backendNs, signalType(tc.labelPrefix), kitbackend.WithReplicas(0)) // simulate outage
-				}
+			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
-				pipeline := tc.pipeline(genNs, backend)
-				generator := tc.generator(genNs)
-
-				resources := []client.Object{
-					kitk8sobjects.NewNamespace(backendNs).K8sObject(),
-					kitk8sobjects.NewNamespace(genNs).K8sObject(),
-					pipeline,
-				}
-				resources = append(resources, generator...)
-				resources = append(resources, backend.K8sObjects()...)
-
-				Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
-
-				assert.DeploymentReady(t, kitkyma.SelfMonitorName)
-				tc.assertions(t, pipeline.GetName())
-			})
-		}
+			assert.DeploymentReady(t, kitkyma.SelfMonitorName)
+			tc.assertions(t, pipeline.GetName())
+		})
 	}
 }

@@ -25,7 +25,7 @@ import (
 )
 
 func TestMultiPipelineFanout_Agent(t *testing.T) {
-	suite.SetupTest(t, suite.LabelMetricAgentSetC, suite.LabelMetricAgent, suite.LabelSetC)
+	suite.SetupTest(t, suite.LabelMetricAgent)
 
 	var (
 		uniquePrefix           = unique.Prefix()
@@ -158,7 +158,7 @@ func TestMultiPipelineFanout_Agent(t *testing.T) {
 }
 
 func TestMultiPipelineFanout_Gateway(t *testing.T) {
-	suite.SetupTest(t, suite.LabelMetricGatewaySetB, suite.LabelMetricGateway, suite.LabelSetB)
+	suite.SetupTest(t, suite.LabelMetricGateway)
 
 	var (
 		uniquePrefix  = unique.Prefix()

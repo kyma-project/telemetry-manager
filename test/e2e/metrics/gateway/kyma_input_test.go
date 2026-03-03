@@ -24,7 +24,7 @@ import (
 )
 
 func TestKymaInput(t *testing.T) {
-	suite.SetupTest(t, suite.LabelMetricGatewaySetA, suite.LabelMetricGateway, suite.LabelSetA)
+	suite.SetupTest(t, suite.LabelMetricGateway)
 
 	var (
 		uniquePrefix            = unique.Prefix()

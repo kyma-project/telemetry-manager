@@ -12,6 +12,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
@@ -24,6 +25,7 @@ func TestEnrichmentValuesEmpty(t *testing.T) {
 	tests := []struct {
 		name               string
 		labels             []string
+		opts               []kubeprep.Option
 		resourceName       types.NamespacedName
 		readinessCheckFunc func(t *testing.T, name types.NamespacedName)
 		genSignalType      telemetrygen.SignalType
@@ -32,13 +34,15 @@ func TestEnrichmentValuesEmpty(t *testing.T) {
 		{
 			name:               suite.LabelLogGateway,
 			labels:             []string{suite.LabelLogGateway},
+			opts:               nil,
 			resourceName:       kitkyma.LogGatewayName,
 			readinessCheckFunc: assert.DeploymentReady,
 			genSignalType:      telemetrygen.SignalTypeLogs,
 		},
 		{
 			name:               fmt.Sprintf("%s-%s", suite.LabelLogGateway, suite.LabelExperimental),
-			labels:             []string{suite.LabelLogGateway, suite.LabelExperimental},
+			labels:             []string{suite.LabelLogGateway},
+			opts:               []kubeprep.Option{kubeprep.WithExperimental()},
 			resourceName:       kitkyma.TelemetryOTLPGatewayName,
 			readinessCheckFunc: assert.DaemonSetReady,
 			genSignalType:      telemetrygen.SignalTypeCentralLogs,
@@ -47,7 +51,7 @@ func TestEnrichmentValuesEmpty(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			suite.SetupTest(t, tc.labels...)
+			suite.SetupTestWithOptions(t, tc.labels, tc.opts...)
 
 			var (
 				uniquePrefix = unique.Prefix(tc.name)

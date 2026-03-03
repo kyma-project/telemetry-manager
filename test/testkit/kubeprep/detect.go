@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"os/exec"
-	"strings"
 
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -90,32 +89,6 @@ func istioCRExists(ctx context.Context, k8sClient client.Client) bool {
 	return err == nil
 }
 
-// detectExperimentalEnabled checks if the current deployment has experimental mode enabled
-// by inspecting the Helm release values.
-// Returns false if the release doesn't exist or detection fails.
-func detectExperimentalEnabled(ctx context.Context) bool {
-	return detectExperimentalFromHelm(ctx)
-}
-
-// detectExperimentalFromHelm checks the helm release to see if experimental is enabled
-func detectExperimentalFromHelm(ctx context.Context) bool {
-	cmd := exec.CommandContext(ctx, "helm", "get", "values", telemetryReleaseName, "-n", kymaSystemNamespace, "-o", "json")
-
-	var stdout bytes.Buffer
-
-	cmd.Stdout = &stdout
-
-	if err := cmd.Run(); err != nil {
-		return false
-	}
-
-	// Simple check: look for experimental.enabled in the output
-	output := stdout.String()
-
-	return strings.Contains(output, `"experimental":{"enabled":true}`) ||
-		strings.Contains(output, `"experimental": {"enabled": true}`)
-}
-
 // releaseExists checks if the helm release exists
 func releaseExists(ctx context.Context) bool {
 	cmd := exec.CommandContext(ctx, "helm", "status", telemetryReleaseName, "-n", kymaSystemNamespace)
@@ -131,6 +104,22 @@ func releaseExists(ctx context.Context) bool {
 	}
 
 	return true
+}
+
+// getReleaseValues returns the current user-supplied values for the helm release as a YAML string.
+// Returns empty string if the release doesn't exist or detection fails.
+func getReleaseValues(ctx context.Context) string {
+	cmd := exec.CommandContext(ctx, "helm", "get", "values", telemetryReleaseName, "-n", kymaSystemNamespace, "-o", "yaml")
+
+	var stdout bytes.Buffer
+
+	cmd.Stdout = &stdout
+
+	if err := cmd.Run(); err != nil {
+		return ""
+	}
+
+	return stdout.String()
 }
 
 // isIstiodReady checks if the istiod deployment exists and is ready
@@ -157,7 +146,7 @@ func isIstioManagerRunning(ctx context.Context, k8sClient client.Client) bool {
 
 	err := k8sClient.Get(ctx, types.NamespacedName{
 		Name:      "istio-controller-manager",
-		Namespace: istioNamespace,
+		Namespace: kymaSystemNamespace,
 	}, deployment)
 	if err != nil {
 		return false
