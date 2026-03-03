@@ -19,8 +19,7 @@ permissions:
   issues: read
 
 jobs:
-  # Job 1: Validate milestone and prepare release branch
-  validate-and-prepare:
+  validate-and-prepare-branch:
     runs-on: ubuntu-latest
     outputs:
       release-branch: ${{ steps.determine-branch.outputs.release-branch }}
@@ -37,7 +36,7 @@ jobs:
           VERSION: ${{ github.event.inputs.version }}
         run: |
           echo "Checking milestone for version ${VERSION}..."
-          MILESTONE=$(gh api "repos/${{ github.repository }}/milestones" --jq ".[] | select(.title == \"${VERSION}\")")
+          MILESTONE=$(gh api "repos/${{ github.repository }}/milestones?state=all" --jq ".[] | select(.title == \"${VERSION}\")")
 
           if [ -z "$MILESTONE" ]; then
             echo "Milestone ${VERSION} does not exist. Please create it first."
@@ -101,30 +100,33 @@ jobs:
           git push origin "${RELEASE_BRANCH}"
           echo "Created branch ${RELEASE_BRANCH}"
 
-  # Job 2: Bump versions and create release tag
   prepare-release:
-    needs: validate-and-prepare
+    needs: validate-and-prepare-branch
     runs-on: ubuntu-latest
     outputs:
       release-tag: ${{ github.event.inputs.version }}
-      release-url: ${{ steps.get-release-url.outputs.url }}
     steps:
       - name: Checkout release branch
         uses: actions/checkout@v4
         with:
-          ref: ${{ needs.validate-and-prepare.outputs.release-branch }}
+          ref: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
           fetch-depth: 0
 
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version-file: 'go.mod'
+      - name: Setup Golang
+        uses: "./.github/template/setup-golang"
 
       - name: Bump version in files
         env:
           VERSION: ${{ github.event.inputs.version }}
           OCC_IMAGE: ${{ github.event.inputs.occ_image }}
+          RELEASE_BRANCH: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
         run: |
+          echo "Working on release branch ${RELEASE_BRANCH}..."                                                                                                                                                                                                                                         
+          
+          # Ensure we're on the correct branch                                                                                                                                                                                                                                                          
+          git checkout "${RELEASE_BRANCH}"
+          git pull origin "${RELEASE_BRANCH}"
+          
           echo "Bumping version to ${VERSION}..."
 
           # Update .env file with release version and OCC image
@@ -138,7 +140,7 @@ jobs:
             echo "Updated ENV_MANAGER_IMAGE tag in .env"
 
             # Update ENV_OTEL_COLLECTOR_IMAGE tag to OCC image version
-            sed -i.bak "s|ENV_OTEL_COLLECTOR_IMAGE=\(.*\):.*|ENV_OTEL_COLLECTOR_IMAGE=\1:${OCC_IMAGE}|" .env && rm .env.bak
+            sed -i.bak "s|ENV_OTEL_COLLECTOR_IMAGE=\(.*\):.*|ENV_OTEL_COLLECTOR_IMAGE=\1:${OCC_IMAGE}\"|" .env && rm .env.bak
             echo "Updated ENV_OTEL_COLLECTOR_IMAGE tag in .env"
 
             # Run make generate to update generated files
@@ -149,7 +151,7 @@ jobs:
       - name: Commit version bump
         env:
           VERSION: ${{ github.event.inputs.version }}
-          RELEASE_BRANCH: ${{ needs.validate-and-prepare.outputs.release-branch }}
+          RELEASE_BRANCH: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -166,60 +168,127 @@ jobs:
       - name: Create and push release tag
         env:
           VERSION: ${{ github.event.inputs.version }}
+          RELEASE_BRANCH: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
         run: |
-          echo "Creating release tag ${VERSION}..."
+          echo "Creating release tag ${VERSION} on release branch ${RELEASE_BRANCH}..."
+
+          # Ensure we have the latest changes from the release branch
+          git fetch origin "${RELEASE_BRANCH}"
+          git checkout "${RELEASE_BRANCH}"
+          git pull origin "${RELEASE_BRANCH}"
+
+          # Create and push the tag from the release branch
           git tag -a "${VERSION}" -m "Release ${VERSION}"
           git push origin "${VERSION}"
-          echo "Created and pushed tag ${VERSION}"
+
+          echo "Created and pushed tag ${VERSION} from ${RELEASE_BRANCH}"
           echo "Tag ${VERSION} pushed. This will trigger tag-release.yml workflow."
 
-      - name: Wait for tag-release workflow to complete
+  build-image:
+    permissions:
+      id-token: write # Required for requesting the JWT token
+      contents: read
+    needs: prepare-release
+    uses: kyma-project/test-infra/.github/workflows/image-builder.yml@main # Usage: kyma-project/test-infra/.github/workflows/image-builder.yml@main
+    with:
+      name: telemetry-manager
+      dockerfile: Dockerfile
+      context: .
+      tags: ${{ needs.prepare-release.outputs.release-tag }}
+      platforms: "linux/amd64,linux/arm64"
+
+  unit-tests:
+    runs-on: ubuntu-latest
+    needs: validate-and-prepare-branch
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
+          fetch-depth: 0
+
+      - name: Setup Golang
+        uses: "./.github/template/setup-golang"
+
+      - name: Run tests
+        run: make test
+
+  run-pr-integration:
+    needs:
+      - build-image
+      - prepare-release
+    uses: ./.github/workflows/pr-integration.yml
+    with:
+      image_tag: ${{ needs.prepare-release.outputs.release-tag }}
+      ref: ${{ needs.prepare-release.outputs.release-tag }}
+    secrets: inherit
+
+  run-gardener-integration:
+    needs:
+      - build-image
+      - prepare-release
+    uses: ./.github/workflows/gardener-integration.yml
+    with:
+      image_tag: ${{ needs.prepare-release.outputs.release-tag }}
+      ref: ${{ needs.prepare-release.outputs.release-tag }}
+    secrets: inherit
+
+  upload-release-report:
+    needs:
+      - run-pr-integration
+      - run-gardener-integration
+      - unit-tests
+    uses: kyma/compliancy/.github/workflows/upload-release-report.yml@main
+    with:
+      release_version: ${{ github.event.inputs.version }}
+    secrets:
+      RELEASE_LOG_UPLOADER_SA: ${{ secrets.RELEASE_LOG_UPLOADER_SA }}
+
+  create-release:
+    needs:
+      - prepare-release
+      - upload-release-report
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    env:
+      KYMA_TELEMETRY_MANAGER_REPO: ${{ github.repository }}
+    steps:
+      - name: Checkout release tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare-release.outputs.release-tag }}
+          fetch-depth: 0
+
+      - name: Install tools
+        shell: bash
+        run: make install-tools
+
+      - name: Release
+        run: hack/release.sh ${{ needs.prepare-release.outputs.release-tag }}
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          GORELEASER_CURRENT_TAG: "${{ needs.prepare-release.outputs.release-tag }}"
+
+      - name: Package Helm chart
+        run: |
+          OUTPUT=$(helm package ./helm -d ./)
+          FILENAME=$(echo $OUTPUT | grep -o '[^ ]*.tgz')
+          echo "HELM_CHART=$FILENAME" >> $GITHUB_ENV
+
+      - name: Upload Helm chart to release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ github.event.inputs.version }}
-        timeout-minutes: 60
         run: |
-          echo "Waiting for tag-release.yml workflow to be triggered by tag ${VERSION}..."
-          sleep 30 # Give GitHub time to trigger the workflow
+          [[ ! -e ${HELM_CHART} ]] && echo "::error ::Packaged Helm chart does not exist" && exit 1
+          gh release upload ${{ needs.prepare-release.outputs.release-tag }} --clobber ${HELM_CHART}
 
-          # Find the workflow run triggered by the tag push
-          MAX_ATTEMPTS=20
-          ATTEMPT=0
-
-          while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
-            WORKFLOW_ID=$(gh run list \
-              --workflow=tag-release.yml \
-              --json databaseId,headSha,event,status \
-              --jq ".[] | select(.event == \"push\") | .databaseId" \
-              | head -1)
-
-            if [ -n "$WORKFLOW_ID" ]; then
-              echo "Found tag-release workflow run: ${WORKFLOW_ID}"
-              break
-            fi
-
-            echo "Attempt $((ATTEMPT + 1))/${MAX_ATTEMPTS}: Waiting for workflow to start..."
-            sleep 10
-            ATTEMPT=$((ATTEMPT + 1))
-          done
-
-          if [ -z "$WORKFLOW_ID" ]; then
-            echo "::error ::tag-release.yml workflow not found after ${MAX_ATTEMPTS} attempts"
-            exit 1
-          fi
-
-          # Watch the workflow
-          echo "Watching tag-release workflow ${WORKFLOW_ID}..."
-          gh run watch "${WORKFLOW_ID}" --exit-status
-
-      - name: Get release URL
-        id: get-release-url
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ github.event.inputs.version }}
+      - name: Commit and push Helm chart metadata
         run: |
-          RELEASE_URL=$(gh release view "${VERSION}" --json url --jq .url)
-          echo "url=${RELEASE_URL}" >> $GITHUB_OUTPUT
-          echo "Release URL: ${RELEASE_URL}"
-
-
+          git config --global user.name "${GITHUB_ACTOR}"
+          git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+          git checkout gh-pages
+          helm repo index --url https://github.com/${{ github.repository }}/releases/download/${{ needs.prepare-release.outputs.release-tag }} --merge ./index.yaml ./
+          git add index.yaml
+          git commit -m "Update Helm chart metadata for ${{ needs.prepare-release.outputs.release-tag }}"
+          git push origin gh-pages
