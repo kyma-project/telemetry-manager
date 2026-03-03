@@ -34,6 +34,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpgateway"
+	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 	telemetryutils "github.com/kyma-project/telemetry-manager/internal/utils/telemetry"
@@ -51,6 +52,7 @@ type Reconciler struct {
 	gatewayProber         Prober
 	istioStatusChecker    IstioStatusChecker
 	errToMsgConverter     ErrorToMessageConverter
+	overridesHandler      *overrides.Handler
 }
 
 // Option configures the Reconciler during initialization.
@@ -98,6 +100,13 @@ func WithErrorToMessageConverter(converter ErrorToMessageConverter) Option {
 	}
 }
 
+// WithOverridesHandler sets the overrides handler.
+func WithOverridesHandler(handler *overrides.Handler) Option {
+	return func(r *Reconciler) {
+		r.overridesHandler = handler
+	}
+}
+
 // NewReconciler creates a new OTLP Gateway Reconciler with the given options.
 func NewReconciler(c client.Client, opts ...Option) *Reconciler {
 	r := &Reconciler{
@@ -119,6 +128,19 @@ func (r *Reconciler) Globals() *config.Global {
 // Reconcile reconciles the OTLP Gateway DaemonSet based on the coordination ConfigMap.
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logf.FromContext(ctx).V(1).Info("reconciling OTLP gateway")
+
+	// Load overrides and check if OTLP Gateway is paused
+	if r.overridesHandler != nil {
+		overrideConfig, err := r.overridesHandler.LoadOverrides(ctx)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+
+		if overrideConfig.OTLPGateway.Paused {
+			logf.FromContext(ctx).V(1).Info("Skipping reconciliation: paused using override config")
+			return ctrl.Result{}, nil
+		}
+	}
 
 	if err := r.ensureConfigMapExists(ctx); err != nil {
 		return ctrl.Result{}, err

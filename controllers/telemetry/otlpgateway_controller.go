@@ -43,7 +43,8 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
 	otlpgatewayconfig "github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpgateway" //nolint:importas // needed to disambiguate from reconciler package
-	otlpgatewayreconciler "github.com/kyma-project/telemetry-manager/internal/reconciler/otlpgateway"       //nolint:importas // needed to disambiguate from config package
+	"github.com/kyma-project/telemetry-manager/internal/overrides"
+	otlpgatewayreconciler "github.com/kyma-project/telemetry-manager/internal/reconciler/otlpgateway" //nolint:importas // needed to disambiguate from config package
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	predicateutils "github.com/kyma-project/telemetry-manager/internal/utils/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
@@ -74,6 +75,7 @@ func NewOTLPGatewayController(config OTLPGatewayControllerConfig, client client.
 	reconciler := otlpgatewayreconciler.NewReconciler(
 		client,
 		otlpgatewayreconciler.WithGlobals(config.Global),
+		otlpgatewayreconciler.WithOverridesHandler(overrides.New(config.Global, client)),
 		otlpgatewayreconciler.WithGatewayApplierDeleter(
 			otelcollector.NewOTLPGatewayApplierDeleter(
 				config.Global,
