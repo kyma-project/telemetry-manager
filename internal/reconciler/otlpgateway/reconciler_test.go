@@ -135,6 +135,15 @@ func newDefaultMocks() *mocks {
 	}
 }
 
+func newReconcileRequest() ctrl.Request {
+	return ctrl.Request{
+		NamespacedName: types.NamespacedName{
+			Name:      otelcollector.OTLPGatewayConfigMapName,
+			Namespace: "kyma-system",
+		},
+	}
+}
+
 func TestReconcile_ConfigMapCreatedIfNotExists(t *testing.T) {
 	ctx := context.Background()
 	fakeClient := newTestClient(t)
@@ -145,7 +154,7 @@ func TestReconcile_ConfigMapCreatedIfNotExists(t *testing.T) {
 
 	sut := newTestReconciler(fakeClient, mocks)
 
-	_, err := sut.Reconcile(ctx, ctrl.Request{})
+	_, err := sut.Reconcile(ctx, newReconcileRequest())
 	require.NoError(t, err)
 
 	var cm corev1.ConfigMap
@@ -179,7 +188,7 @@ func TestReconcile_NoPipelines_DeletesGateway(t *testing.T) {
 
 	sut := newTestReconciler(fakeClient, mocks)
 
-	_, err := sut.Reconcile(ctx, ctrl.Request{})
+	_, err := sut.Reconcile(ctx, newReconcileRequest())
 	require.NoError(t, err)
 
 	mocks.gatewayApplierDeleter.AssertCalled(t, "DeleteResources", mock.Anything, mock.Anything, false)
@@ -213,7 +222,7 @@ func TestReconcile_SinglePipeline_DeploysGateway(t *testing.T) {
 
 	sut := newTestReconciler(fakeClient, mocks)
 
-	_, err := sut.Reconcile(ctx, ctrl.Request{})
+	_, err := sut.Reconcile(ctx, newReconcileRequest())
 	require.NoError(t, err)
 
 	mocks.configBuilder.AssertCalled(t, "Build", mock.Anything, mock.Anything, mock.Anything)
@@ -248,7 +257,7 @@ func TestReconcile_GenerationMismatch_SkipsPipeline(t *testing.T) {
 
 	sut := newTestReconciler(fakeClient, mocks)
 
-	_, err := sut.Reconcile(ctx, ctrl.Request{})
+	_, err := sut.Reconcile(ctx, newReconcileRequest())
 	require.NoError(t, err)
 
 	mocks.gatewayApplierDeleter.AssertCalled(t, "DeleteResources", mock.Anything, mock.Anything, mock.Anything)
@@ -285,7 +294,7 @@ func TestReconcile_PipelineDeleted_SkipsPipeline(t *testing.T) {
 
 	sut := newTestReconciler(fakeClient, mocks)
 
-	_, err := sut.Reconcile(ctx, ctrl.Request{})
+	_, err := sut.Reconcile(ctx, newReconcileRequest())
 	require.NoError(t, err)
 
 	mocks.gatewayApplierDeleter.AssertCalled(t, "DeleteResources", mock.Anything, mock.Anything, mock.Anything)
@@ -325,7 +334,7 @@ func TestReconcile_MultiplePipelines_AggregatesConfig(t *testing.T) {
 
 	sut := newTestReconciler(fakeClient, mocks)
 
-	_, err := sut.Reconcile(ctx, ctrl.Request{})
+	_, err := sut.Reconcile(ctx, newReconcileRequest())
 	require.NoError(t, err)
 
 	mocks.configBuilder.AssertCalled(t, "Build", mock.Anything, mock.MatchedBy(func(opts otlpgateway.BuildOptions) bool {
@@ -356,7 +365,7 @@ func TestReconcile_MissingPipeline_SkipsGracefully(t *testing.T) {
 
 	sut := newTestReconciler(fakeClient, mocks)
 
-	_, err := sut.Reconcile(ctx, ctrl.Request{})
+	_, err := sut.Reconcile(ctx, newReconcileRequest())
 	require.NoError(t, err)
 
 	mocks.gatewayApplierDeleter.AssertCalled(t, "DeleteResources", mock.Anything, mock.Anything, mock.Anything)
@@ -392,7 +401,7 @@ func TestReconcile_IstioEnabled_PassesFlag(t *testing.T) {
 
 	sut := newTestReconciler(fakeClient, mocks)
 
-	_, err := sut.Reconcile(ctx, ctrl.Request{})
+	_, err := sut.Reconcile(ctx, newReconcileRequest())
 	require.NoError(t, err)
 
 	mocks.gatewayApplierDeleter.AssertCalled(t, "ApplyResources", mock.Anything, mock.Anything, mock.MatchedBy(func(opts otelcollector.GatewayApplyOptions) bool {
@@ -751,7 +760,7 @@ func TestReconcile_LogPipeline_DeploysGateway(t *testing.T) {
 
 	sut := newTestReconciler(fakeClient, mocks)
 
-	_, err := sut.Reconcile(ctx, ctrl.Request{})
+	_, err := sut.Reconcile(ctx, newReconcileRequest())
 	require.NoError(t, err)
 
 	mocks.configBuilder.AssertCalled(t, "Build", mock.Anything, mock.Anything)
@@ -792,7 +801,7 @@ func TestReconcile_TraceAndLogPipelines_DeploysUnifiedGateway(t *testing.T) {
 
 	sut := newTestReconciler(fakeClient, mocks)
 
-	_, err := sut.Reconcile(ctx, ctrl.Request{})
+	_, err := sut.Reconcile(ctx, newReconcileRequest())
 	require.NoError(t, err)
 
 	// Verify config was built with both pipelines
@@ -940,7 +949,7 @@ func TestReconcile_OnlyLogPipelines_DeploysGateway(t *testing.T) {
 
 	sut := newTestReconciler(fakeClient, mocks)
 
-	_, err := sut.Reconcile(ctx, ctrl.Request{})
+	_, err := sut.Reconcile(ctx, newReconcileRequest())
 	require.NoError(t, err)
 
 	// Verify config was built with only log pipelines
