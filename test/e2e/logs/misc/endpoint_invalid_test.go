@@ -19,7 +19,7 @@ import (
 )
 
 func TestEndpointInvalid_OTel(t *testing.T) {
-	suite.SetupTest(t, suite.LabelLogsMisc)
+	suite.SetupTest(t, suite.LabelLogs, suite.LabelMisc)
 
 	const (
 		endpointKey     = "endpoint"

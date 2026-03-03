@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"hash/fnv"
 	"os"
 	"path"
 	"runtime"
@@ -103,34 +104,21 @@ func sanitizeSpecID(filePath string) string {
 const (
 	// Logs labels
 
-	LabelLogs                 = "logs"
-	LabelLogsMisc             = "logs-misc"
-	LabelLogAgent             = "log-agent"
-	LabelLogGateway           = "log-gateway"
-	LabelFluentBit            = "fluent-bit"
-	LabelOtel                 = "otel"
-	LabelOTelMaxPipeline      = "otel-max-pipeline"
-	LabelFluentBitMaxPipeline = "fluent-bit-max-pipeline"
-	LabelLogsMaxPipeline      = "logs-max-pipeline"
+	LabelLogs       = "logs"
+	LabelLogAgent   = "log-agent"
+	LabelLogGateway = "log-gateway"
+	LabelFluentBit  = "fluent-bit"
+	LabelOtel       = "otel"
 
 	// Metrics labels
 
-	LabelMetrics            = "metrics"
-	LabelMetricsMisc        = "metrics-misc"
-	LabelMetricsMaxPipeline = "metrics-max-pipeline"
-	LabelMetricAgent        = "metric-agent"
-	LabelMetricAgentSetA    = "metric-agent-a"
-	LabelMetricAgentSetB    = "metric-agent-b"
-	LabelMetricAgentSetC    = "metric-agent-c"
-	LabelMetricGateway      = "metric-gateway"
-	LabelMetricGatewaySetA  = "metric-gateway-a"
-	LabelMetricGatewaySetB  = "metric-gateway-b"
-	LabelMetricGatewaySetC  = "metric-gateway-c"
+	LabelMetrics       = "metrics"
+	LabelMetricAgent   = "metric-agent"
+	LabelMetricGateway = "metric-gateway"
 
 	// Traces labels
 
-	LabelTraces            = "traces"
-	LabelTracesMaxPipeline = "traces-max-pipeline"
+	LabelTraces = "traces"
 
 	// Telemetry labels
 
@@ -143,24 +131,18 @@ const (
 
 	// Selfmonitor test labels
 
-	// Prefixes for self-monitor test labels
+	// LabelSelfMonitor is the base label for all selfmonitor tests
+	LabelSelfMonitor = "selfmonitor"
 
-	LabelSelfMonitorLogAgentPrefix      = "selfmonitor-log-agent"
-	LabelSelfMonitorLogGatewayPrefix    = "selfmonitor-log-gateway"
-	LabelSelfMonitorFluentBitPrefix     = "selfmonitor-fluent-bit"
-	LabelSelfMonitorMetricAgentPrefix   = "selfmonitor-metric-agent"
-	LabelSelfMonitorMetricGatewayPrefix = "selfmonitor-metric-gateway"
-	LabelSelfMonitorTracesPrefix        = "selfmonitor-traces"
-
-	// Prefix custom label/annotation tests
-
-	LabelCustomLabelAnnotation = "custom-label-annotation"
-
-	// Suffixes (representing different scenarios) for self-monitor test labels
-
-	LabelHealthy      = "healthy"
+	// LabelHealthy defines the label for healthy scenario selfmonitor tests
+	LabelHealthy = "healthy"
+	// LabelBackpressure defines the label for backpressure scenario selfmonitor tests
 	LabelBackpressure = "backpressure"
-	LabelOutage       = "outage"
+	// LabelOutage defines the label for outage scenario selfmonitor tests
+	LabelOutage = "outage"
+
+	// LabelCustomLabelAnnotation defines the label for custom label/annotation tests
+	LabelCustomLabelAnnotation = "custom-label-annotation"
 
 	// LabelMisc defines the label for miscellaneous tests (for edge-cases and unrelated tests)
 	// [please avoid adding tests to this category if it already fits in a more specific one]
@@ -182,19 +164,92 @@ const (
 	// LabelMTLS defines the label for mTLS related tests.
 	LabelMTLS = "mtls"
 
+	// LabelMaxPipeline defines the label for max pipeline tests
 	LabelMaxPipeline = "max-pipeline"
-	LabelSetA        = "set-a"
-	LabelSetB        = "set-b"
-	LabelSetC        = "set-c"
+
+	LabelSetA = "set-a"
+	LabelSetB = "set-b"
+	LabelSetC = "set-c"
+
+	// Number of buckets for auto-distribution
+	numBuckets = 3
 )
+
+// setLabels maps bucket index to set label
+var setLabels = []string{LabelSetA, LabelSetB, LabelSetC}
+
+// computeBucket calculates a deterministic bucket (0, 1, or 2) based on test name, labels, and cluster requirements.
+// Uses FNV-1a hash for good distribution.
+func computeBucket(testName string, labels []string, cfg kubeprep.Config) int {
+	// Filter out existing set labels and sort for determinism
+	filteredLabels := filterOutSetLabels(labels)
+	slices.Sort(filteredLabels)
+
+	// Create a deterministic string representation including cluster state requirements
+	canonical := fmt.Sprintf("%s|%s|istio=%t|exp=%t|fips=%t",
+		testName,
+		strings.Join(filteredLabels, ","),
+		cfg.InstallIstio,
+		cfg.EnableExperimental,
+		cfg.OperateInFIPSMode,
+	)
+
+	// Use FNV-1a hash for good distribution
+	h := fnv.New32a()
+	h.Write([]byte(canonical))
+	hash := h.Sum32()
+
+	return int(hash % numBuckets)
+}
+
+// filterOutSetLabels removes any set labels from the label slice
+func filterOutSetLabels(labels []string) []string {
+	result := make([]string, 0, len(labels))
+
+	for _, label := range labels {
+		if !isSetLabel(label) {
+			result = append(result, label)
+		}
+	}
+
+	return result
+}
+
+// isSetLabel returns true if the label is a set label (set-a, set-b, set-c)
+func isSetLabel(label string) bool {
+	switch label {
+	case LabelSetA, LabelSetB, LabelSetC:
+		return true
+	}
+
+	return false
+}
+
+// addBucketLabels adds the appropriate set label based on the computed bucket.
+// If the test already has a set label (manually assigned), no label is added.
+func addBucketLabels(labels []string, bucket int) []string {
+	if bucket < 0 || bucket >= numBuckets {
+		return labels
+	}
+
+	// Don't add if test already has a set label (manually assigned)
+	if slices.ContainsFunc(labels, isSetLabel) {
+		return labels
+	}
+
+	// Add generic set label
+	setLabel := setLabels[bucket]
+	labels = append(labels, setLabel)
+
+	return labels
+}
 
 // ExpectAgent returns true if the test labels indicate an agent test.
 // It checks for the presence of agent-related labels.
 func ExpectAgent(labels ...string) bool {
 	for _, label := range labels {
 		switch label {
-		case LabelMetricAgent, LabelLogAgent,
-			LabelMetricAgentSetA, LabelMetricAgentSetB, LabelMetricAgentSetC:
+		case LabelMetricAgent, LabelLogAgent:
 			return true
 		}
 	}
@@ -242,6 +297,11 @@ func SetupTestWithOptions(t *testing.T, labels []string, opts ...kubeprep.Option
 
 	// Auto-add labels based on config values (options → labels)
 	labels = addLabelsFromConfig(labels, cfg)
+
+	// Auto-assign bucket labels based on test name, labels, and cluster requirements
+	// This distributes tests evenly across buckets for parallel execution
+	bucket := computeBucket(t.Name(), labels, cfg)
+	labels = addBucketLabels(labels, bucket)
 
 	// Skip test if it contains "skipped" label
 	if hasLabel(labels, LabelSkip) {

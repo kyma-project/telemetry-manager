@@ -7,8 +7,11 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
+	"strings"
 	"time"
 
+	"gopkg.in/yaml.v3"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -229,7 +232,7 @@ func deployManager(t TestingT, k8sClient client.Client, cfg Config) error {
 		imageOverride = ""
 	}
 
-	t.Logf("Deploying telemetry manager from: %s (imageOverride=%s)", chartSource, imageOverride)
+	t.Logf("Deploying telemetry manager from: %s", chartSource)
 
 	if err := deployManagerFromChartSource(t, k8sClient, chartSource, imageOverride, cfg); err != nil {
 		return err
@@ -238,6 +241,145 @@ func deployManager(t TestingT, k8sClient client.Client, cfg Config) error {
 	t.Log("Telemetry manager deployed")
 
 	return nil
+}
+
+// buildHelmValues builds a map of helm values that will be applied during deployment.
+func buildHelmValues(cfg Config, imageOverride string) map[string]any {
+	values := map[string]any{
+		"experimental": map[string]any{
+			"enabled": cfg.EnableExperimental,
+		},
+		"default": map[string]any{
+			"enabled": !cfg.EnableExperimental,
+		},
+		"nameOverride": "telemetry",
+		"manager": map[string]any{
+			"container": map[string]any{
+				"env": map[string]any{
+					"operateInFipsMode": cfg.OperateInFIPSMode,
+				},
+			},
+		},
+	}
+
+	// Add image override if specified
+	if imageOverride != "" {
+		pullPolicy := "Always"
+		if IsLocalImage(imageOverride) {
+			pullPolicy = "IfNotPresent"
+		}
+
+		if managerMap, ok := values["manager"].(map[string]any); ok {
+			if containerMap, ok := managerMap["container"].(map[string]any); ok {
+				containerMap["image"] = map[string]any{
+					"repository": imageOverride,
+					"pullPolicy": pullPolicy,
+				}
+			}
+		}
+	}
+
+	// Apply custom helm values (--set key=value format)
+	for _, helmValue := range cfg.HelmValues {
+		applyHelmSetValue(values, helmValue)
+	}
+
+	return values
+}
+
+// applyHelmSetValue applies a single --set key=value to the values map.
+// Supports nested keys like "manager.container.image.repository=foo".
+func applyHelmSetValue(values map[string]any, setValue string) {
+	parts := strings.SplitN(setValue, "=", 2)
+	if len(parts) != 2 {
+		return
+	}
+
+	key, value := parts[0], parts[1]
+	keyParts := strings.Split(key, ".")
+
+	// Navigate to the parent map, creating intermediate maps as needed
+	current := values
+
+	for i := range len(keyParts) - 1 {
+		part := keyParts[i]
+		if next, ok := current[part].(map[string]any); ok {
+			current = next
+		} else {
+			next := make(map[string]any)
+			current[part] = next
+			current = next
+		}
+	}
+
+	// Set the final value (try to preserve type for booleans)
+	finalKey := keyParts[len(keyParts)-1]
+
+	switch value {
+	case "true":
+		current[finalKey] = true
+	case "false":
+		current[finalKey] = false
+	default:
+		current[finalKey] = value
+	}
+}
+
+// valuesEqual compares current helm values (YAML string) with new values (map).
+// Returns true if they represent the same configuration.
+func valuesEqual(currentYAML string, newValues map[string]any) bool {
+	if currentYAML == "" {
+		// No current release, so values are definitely different
+		return false
+	}
+
+	var currentValues map[string]any
+	if err := yaml.Unmarshal([]byte(currentYAML), &currentValues); err != nil {
+		// Can't parse current values, assume different
+		return false
+	}
+
+	// Sort both maps recursively and compare as YAML
+	sortMapRecursively(currentValues)
+	sortMapRecursively(newValues)
+
+	currentSorted, err1 := yaml.Marshal(currentValues)
+	newSorted, err2 := yaml.Marshal(newValues)
+
+	if err1 != nil || err2 != nil {
+		return false
+	}
+
+	return string(currentSorted) == string(newSorted)
+}
+
+// sortMapRecursively sorts all nested maps in place by their keys.
+// This ensures deterministic YAML output for comparison.
+func sortMapRecursively(m map[string]any) {
+	for k, v := range m {
+		if nested, ok := v.(map[string]any); ok {
+			sortMapRecursively(nested)
+			m[k] = sortedMap(nested)
+		}
+	}
+}
+
+// sortedMap returns a new map with keys in sorted order.
+// yaml.v3 preserves insertion order, so we rebuild the map with sorted keys.
+func sortedMap(m map[string]any) map[string]any {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+
+	sort.Strings(keys)
+
+	sorted := make(map[string]any, len(m))
+	for _, k := range keys {
+		sorted[k] = m[k]
+	}
+
+	return sorted
 }
 
 // undeployManager removes the telemetry manager following the proper cleanup order:
