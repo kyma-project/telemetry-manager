@@ -141,7 +141,11 @@ func TestTelemetryDeletionBlocking(t *testing.T) {
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	var telemetry operatorv1beta1.Telemetry
-	Expect(suite.K8sClient.Get(suite.Ctx, kitkyma.TelemetryName, &telemetry)).Should(Succeed())
+	Eventually(func(g Gomega) {
+		g.Expect(suite.K8sClient.Get(suite.Ctx, kitkyma.TelemetryName, &telemetry)).Should(Succeed())
+		g.Expect(telemetry.ObjectMeta.Finalizers).ShouldNot(BeEmpty())
+	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+
 	Expect(kitk8s.ForceDeleteObjects(t, &telemetry)).Should(Succeed())
 
 	assertTelemetryCRDeletionIsBlocked(pipelineName)
