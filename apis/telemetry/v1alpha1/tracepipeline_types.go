@@ -20,7 +20,7 @@ type TracePipelineList struct {
 
 // TracePipeline is the Schema for the tracepipelines API
 // +kubebuilder:object:root=true
-// +kubebuilder:deprecatedversion:warning="The `telemetry.kyma-project.io/v1alpha1` version of TracePipeline is [deprecated](https://help.sap.com/whats-new/cf0cb2cb149647329b5d02aa96303f56?locale=en-US&Component=Kyma+Runtime&Software_Lifecycle=Deprecated&Valid_as_Of=2026-03-04:2026-03-04). Use `telemetry.kyma-project.io/v1beta1` TracePipeline instead (see [Migrate Telemetry Pipelines to v1beta1](https://help.sap.com/docs/btp/sap-business-technology-platform/migrate-telemetry-pipelines-to-v1beta1?version=Cloud&locale=en-US))."
+// +kubebuilder:deprecatedversion:warning="telemetry.kyma-project.io/v1alpha1 TracePipeline is deprecated; see https://help.sap.com/docs/btp/sap-business-technology-platform/migrate-telemetry-pipelines-to-v1beta1 for instructions to migrate to telemetry.kyma-project.io/v1beta1 TracePipeline."
 // +kubebuilder:resource:scope=Cluster,categories={kyma-telemetry,kyma-telemetry-pipelines}
 // +kubebuilder:metadata:labels={app.kubernetes.io/component=controller,app.kubernetes.io/managed-by=kyma,app.kubernetes.io/name=telemetry-manager,app.kubernetes.io/part-of=telemetry,kyma-project.io/module=telemetry}
 // +kubebuilder:subresource:status
