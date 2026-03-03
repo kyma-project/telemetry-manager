@@ -10,14 +10,14 @@ require (
 	github.com/itchyny/gojq v0.12.18
 	github.com/k3d-io/k3d/v5 v5.8.3
 	github.com/kyma-project/kyma/hack/table-gen v0.0.0-20250404123224-5afb7a10791b
-	github.com/mikefarah/yq/v4 v4.52.2
+	github.com/mikefarah/yq/v4 v4.52.4
 	github.com/vektra/mockery/v3 v3.6.4
 	github.com/vladopajic/go-test-coverage/v2 v2.18.3
 	github.com/yeya24/promlinter v0.3.0
 	golang.org/x/tools v0.42.0
 	gotest.tools/gotestsum v1.13.0
 	helm.sh/helm/v4 v4.1.1
-	k8s.io/code-generator v0.35.1
+	k8s.io/code-generator v0.35.2
 	sigs.k8s.io/controller-tools v0.20.0
 )
 
@@ -481,7 +481,7 @@ require (
 	golang.org/x/exp/typeparams v0.0.0-20251125195548-87e1e737ad39 // indirect
 	golang.org/x/image v0.18.0 // indirect
 	golang.org/x/mod v0.33.0 // indirect
-	golang.org/x/net v0.50.0 // indirect
+	golang.org/x/net v0.51.0 // indirect
 	golang.org/x/oauth2 v0.32.0 // indirect
 	golang.org/x/sync v0.19.0 // indirect
 	golang.org/x/sys v0.41.0 // indirect
@@ -505,7 +505,7 @@ require (
 	honnef.co/go/tools v0.6.1 // indirect
 	k8s.io/api v0.35.0 // indirect
 	k8s.io/apiextensions-apiserver v0.35.0 // indirect
-	k8s.io/apimachinery v0.35.1 // indirect
+	k8s.io/apimachinery v0.35.2 // indirect
 	k8s.io/apiserver v0.35.0 // indirect
 	k8s.io/cli-runtime v0.35.0 // indirect
 	k8s.io/client-go v0.35.0 // indirect

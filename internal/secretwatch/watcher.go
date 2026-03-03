@@ -9,12 +9,15 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
 	kubecoreev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+
+	"github.com/kyma-project/telemetry-manager/internal/metrics"
 )
 
 const reconnectDelay = 5 * time.Second
@@ -71,26 +74,26 @@ func (w *watcher) link(pipeline client.Object) bool {
 	return true
 }
 
-// unlink removes a pipeline from the watcher's linked pipelines.
-// It returns true if there are still pipelines linked after removal, or false if the list is now empty.
-func (w *watcher) unlink(pipeline client.Object) bool {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-
-	w.linked = slices.DeleteFunc(w.linked, func(p client.Object) bool {
-		return samePipeline(p, pipeline)
-	})
-
-	return len(w.linked) > 0
-}
-
-func (w *watcher) isLinked(pipeline client.Object) bool {
+func (w *watcher) isLinked(name string, gvk schema.GroupVersionKind) bool {
 	w.mu.RLock()
 	defer w.mu.RUnlock()
 
 	return slices.ContainsFunc(w.linked, func(p client.Object) bool {
-		return samePipeline(p, pipeline)
+		return p.GetName() == name && p.GetObjectKind().GroupVersionKind() == gvk
 	})
+}
+
+// unlink removes a pipeline from the watcher's linked pipelines by name and GVK.
+// It returns true if there are still pipelines linked after removal, or false if the list is now empty.
+func (w *watcher) unlink(name string, gvk schema.GroupVersionKind) bool {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	w.linked = slices.DeleteFunc(w.linked, func(p client.Object) bool {
+		return p.GetName() == name && p.GetObjectKind().GroupVersionKind() == gvk
+	})
+
+	return len(w.linked) > 0
 }
 
 func (w *watcher) getLinkedPipelines() []client.Object {
@@ -100,95 +103,100 @@ func (w *watcher) getLinkedPipelines() []client.Object {
 	return slices.Clone(w.linked)
 }
 
+func (w *watcher) secretNameFieldSelector() string {
+	return fmt.Sprintf("metadata.name=%s", w.secret.Name)
+}
+
 // start begins watching the secret for changes. It runs in an infinite loop,
 // automatically reconnecting on errors or connection loss.
 // The watcher stops when the context is canceled.
 func (w *watcher) start(ctx context.Context) {
-	log := logf.FromContext(ctx).V(1)
-
 	for {
-		select {
-		case <-ctx.Done():
-			log.Info("Context canceled, stopping watcher", "secret", w.secret.String())
-			return
-		default:
-		}
+		resourceVersion := w.fetchLatestResourceVersion(ctx)
 
-		// Get the current resource version to start watching from
-		secret, err := w.client.Get(ctx, w.secret.Name, metav1.GetOptions{})
-
-		var resourceVersion string
-
-		if err != nil {
-			log.Info("Could not get initial secret (it may not exist yet)",
-				"secret", w.secret.String(),
-				"error", err)
-
-			resourceVersion = ""
-		} else {
-			resourceVersion = secret.ResourceVersion
-			log.Info("Initial secret found",
-				"secret", w.secret.String(),
-				"resourceVersion", resourceVersion)
-		}
-
-		// Create a watcher for the specific secret
 		watcher, err := w.client.Watch(ctx, metav1.ListOptions{
-			FieldSelector:   fmt.Sprintf("metadata.name=%s", w.secret.Name),
+			FieldSelector:   w.secretNameFieldSelector(),
 			ResourceVersion: resourceVersion,
 		})
 		if err != nil {
-			log.V(1).Info("Error creating watcher. Retrying in 5 seconds...",
-				"secret", w.secret.String(),
-				"error", err)
+			logf.FromContext(ctx).V(1).Info("Error creating watcher. Retrying...", "secret", w.secret.String(), "error", err)
 
 			select {
 			case <-time.After(reconnectDelay):
 			case <-ctx.Done():
-				log.V(1).Info("Context canceled, stopping watcher", "secret", w.secret.String())
+				logf.FromContext(ctx).V(1).Info("Stopping watcher after context cancellation", "secret", w.secret.String())
 				return
 			}
 
 			continue
 		}
 
-		log.V(1).Info("Watcher established successfully", "secret", w.secret.String())
+		logf.FromContext(ctx).V(1).Info("Watcher established successfully", "secret", w.secret.String())
 
-		for watchEvent := range watcher.ResultChan() {
-			if watchEvent.Type == watch.Error {
-				log.V(1).Info("Watch error received",
-					"secret", w.secret.String(),
-					"object", watchEvent.Object)
-
-				break
-			}
-
-			secret, ok := watchEvent.Object.(*corev1.Secret)
-			if !ok {
-				continue
-			}
-
-			log.Info("Secret watch event received. Triggering reconciliation for linked pipelines.",
-				"secret", w.secret.String(),
-				"eventType", watchEvent.Type,
-				"resourceVersion", secret.ResourceVersion,
-				"linkedPipelines", len(w.getLinkedPipelines()),
-			)
-
-			// Send events to trigger reconciliation for linked pipelines
-			for _, pipeline := range w.getLinkedPipelines() {
-				w.eventRouter(pipeline)
-			}
-		}
-
-		log.V(1).Info("Watcher channel closed. Reconnecting in 5 seconds...",
-			"secret", w.secret.String())
+		w.processEventLoop(ctx, watcher)
 
 		select {
 		case <-time.After(reconnectDelay):
+			logf.FromContext(ctx).V(1).Info("Reconnecting watcher after channel closure", "secret", w.secret.String())
+			metrics.SecretWatcherReconnectsTotal.WithLabelValues(w.secret.Namespace, w.secret.Name).Inc()
 		case <-ctx.Done():
-			log.V(1).Info("Context canceled, stopping watcher", "secret", w.secret.String())
+			logf.FromContext(ctx).V(1).Info("Stopping watcher after context cancellation", "secret", w.secret.String())
 			return
+		}
+	}
+}
+
+// fetchLatestResourceVersion retrieves the most recent resource version for the secret.
+// Using List instead of Get ensures we get the latest resourceVersion from the API server,
+// which prevents "410 Gone" errors when starting the watch.
+// Returns an empty string if the list operation fails.
+func (w *watcher) fetchLatestResourceVersion(ctx context.Context) string {
+	secretList, err := w.client.List(ctx, metav1.ListOptions{
+		FieldSelector: w.secretNameFieldSelector(),
+	})
+	if err != nil {
+		logf.FromContext(ctx).V(1).Info("Could not list secret (it may not exist yet)",
+			"secret", w.secret.String(),
+			"error", err)
+
+		return ""
+	}
+
+	logf.FromContext(ctx).V(1).Info("Fetched latest resource version for secret",
+		"secret", w.secret.String(),
+		"resourceVersion", secretList.ResourceVersion,
+		"exists", len(secretList.Items) > 0)
+
+	return secretList.ResourceVersion
+}
+
+// processEventLoop processes watch events until the channel is closed or an error occurs.
+func (w *watcher) processEventLoop(ctx context.Context, watcher watch.Interface) {
+	for watchEvent := range watcher.ResultChan() {
+		if watchEvent.Type == watch.Error {
+			logf.FromContext(ctx).V(1).Info("Watch error received",
+				"secret", w.secret.String(),
+				"object", watchEvent.Object)
+
+			return
+		}
+
+		secret, ok := watchEvent.Object.(*corev1.Secret)
+		if !ok {
+			continue
+		}
+
+		metrics.SecretWatchEventsTotal.WithLabelValues(w.secret.Namespace, w.secret.Name, string(watchEvent.Type)).Inc()
+
+		logf.FromContext(ctx).V(1).Info("Secret watch event received. Triggering reconciliation for linked pipelines.",
+			"secret", w.secret.String(),
+			"eventType", watchEvent.Type,
+			"resourceVersion", secret.ResourceVersion,
+			"linkedPipelines", len(w.getLinkedPipelines()),
+		)
+
+		for _, pipeline := range w.getLinkedPipelines() {
+			w.eventRouter(pipeline)
 		}
 	}
 }
