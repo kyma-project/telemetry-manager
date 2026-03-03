@@ -20,7 +20,7 @@ import (
 )
 
 func TestDisabledInput(t *testing.T) {
-	suite.SetupTest(t, suite.LabelMetricsMisc)
+	suite.SetupTest(t, suite.LabelMetrics, suite.LabelMisc)
 
 	var (
 		uniquePrefix = unique.Prefix()

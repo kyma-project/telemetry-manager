@@ -20,8 +20,10 @@ import (
 	"context"
 	"fmt"
 
+	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/discovery"
@@ -51,6 +53,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
+	"github.com/kyma-project/telemetry-manager/internal/secretwatch"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	predicateutils "github.com/kyma-project/telemetry-manager/internal/utils/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
@@ -66,6 +69,7 @@ type LogPipelineController struct {
 
 	reconcileTriggerChan <-chan event.GenericEvent
 	reconciler           *logpipeline.Reconciler
+	secretWatchClient    *secretwatch.Client
 }
 
 type LogPipelineControllerConfig struct {
@@ -82,7 +86,7 @@ type LogPipelineControllerConfig struct {
 	RestConfig                   *rest.Config
 }
 
-func NewLogPipelineController(config LogPipelineControllerConfig, client client.Client, reconcileTriggerChan <-chan event.GenericEvent) (*LogPipelineController, error) {
+func NewLogPipelineController(config LogPipelineControllerConfig, client client.Client, reconcileTriggerChan <-chan event.GenericEvent, secretWatchClient *secretwatch.Client) (*LogPipelineController, error) {
 	pipelineCount := resourcelock.MaxPipelineCount
 
 	if config.UnlimitedPipelines() {
@@ -145,12 +149,14 @@ func NewLogPipelineController(config LogPipelineControllerConfig, client client.
 		logpipeline.WithOverridesHandler(overrides.New(config.Global, client)),
 		logpipeline.WithPipelineSyncer(pipelineSyncer),
 		logpipeline.WithReconcilers(fluentBitReconciler, otelReconciler),
+		logpipeline.WithSecretWatcher(secretWatchClient),
 	)
 
 	return &LogPipelineController{
 		Client:               client,
 		reconcileTriggerChan: reconcileTriggerChan,
 		reconciler:           reconciler,
+		secretWatchClient:    secretWatchClient,
 	}, nil
 }
 
@@ -167,6 +173,7 @@ func (r *LogPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 
 	ownedResourceTypesToWatch := []client.Object{
 		&appsv1.DaemonSet{},
+		&appsv1.Deployment{},
 		&corev1.ConfigMap{},
 		&corev1.Pod{},
 		&corev1.Secret{},
@@ -174,6 +181,18 @@ func (r *LogPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		&corev1.ServiceAccount{},
 		&rbacv1.ClusterRole{},
 		&rbacv1.ClusterRoleBinding{},
+		&networkingv1.NetworkPolicy{},
+	}
+
+	discoveryClient, err := discovery.NewDiscoveryClientForConfig(mgr.GetConfig())
+	if err != nil {
+		return fmt.Errorf("failed to create discovery client: %w", err)
+	}
+
+	isIstioActive := istiostatus.NewChecker(discoveryClient).IsIstioActive(context.Background())
+
+	if isIstioActive {
+		ownedResourceTypesToWatch = append(ownedResourceTypesToWatch, &istiosecurityclientv1.PeerAuthentication{})
 	}
 
 	for _, resource := range ownedResourceTypesToWatch {

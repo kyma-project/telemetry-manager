@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 
+	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -47,6 +48,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
+	"github.com/kyma-project/telemetry-manager/internal/secretwatch"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	predicateutils "github.com/kyma-project/telemetry-manager/internal/utils/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
@@ -62,6 +64,7 @@ type TracePipelineController struct {
 
 	reconcileTriggerChan <-chan event.GenericEvent
 	reconciler           *tracepipeline.Reconciler
+	secretWatchClient    *secretwatch.Client
 }
 
 type TracePipelineControllerConfig struct {
@@ -72,7 +75,7 @@ type TracePipelineControllerConfig struct {
 	TraceGatewayPriorityClassName string
 }
 
-func NewTracePipelineController(config TracePipelineControllerConfig, client client.Client, reconcileTriggerChan <-chan event.GenericEvent) (*TracePipelineController, error) {
+func NewTracePipelineController(config TracePipelineControllerConfig, client client.Client, reconcileTriggerChan <-chan event.GenericEvent, secretWatchClient *secretwatch.Client) (*TracePipelineController, error) {
 	pipelineCount := resourcelock.MaxPipelineCount
 
 	if config.UnlimitedPipelines() {
@@ -141,12 +144,14 @@ func NewTracePipelineController(config TracePipelineControllerConfig, client cli
 		tracepipeline.WithPipelineLock(pipelineLock),
 		tracepipeline.WithPipelineSyncer(pipelineSync),
 		tracepipeline.WithPipelineValidator(pipelineValidator),
+		tracepipeline.WithSecretWatcher(secretWatchClient),
 	)
 
 	return &TracePipelineController{
 		Client:               client,
 		reconcileTriggerChan: reconcileTriggerChan,
 		reconciler:           reconciler,
+		secretWatchClient:    secretWatchClient,
 	}, nil
 }
 
@@ -170,6 +175,17 @@ func (r *TracePipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		&rbacv1.ClusterRole{},
 		&rbacv1.ClusterRoleBinding{},
 		&networkingv1.NetworkPolicy{},
+	}
+
+	discoveryClient, err := discovery.NewDiscoveryClientForConfig(mgr.GetConfig())
+	if err != nil {
+		return fmt.Errorf("failed to create discovery client: %w", err)
+	}
+
+	isIstioActive := istiostatus.NewChecker(discoveryClient).IsIstioActive(context.Background())
+
+	if isIstioActive {
+		ownedResourceTypesToWatch = append(ownedResourceTypesToWatch, &istiosecurityclientv1.PeerAuthentication{})
 	}
 
 	for _, resource := range ownedResourceTypesToWatch {

@@ -336,7 +336,7 @@ func TestTracePipeline_GetSecretRefs(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			sut := telemetryv1beta1.TracePipeline{ObjectMeta: metav1.ObjectMeta{Name: test.pipelineName}, Spec: telemetryv1beta1.TracePipelineSpec{Output: telemetryv1beta1.TracePipelineOutput{OTLP: test.given}}}
-			actual := getSecretRefsTracePipeline(&sut)
+			actual := GetSecretRefsTracePipeline(&sut)
 			require.ElementsMatch(t, test.expected, actual)
 		})
 	}
@@ -465,7 +465,7 @@ func TestMetricPipeline_GetSecretRefs(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			sut := telemetryv1beta1.MetricPipeline{ObjectMeta: metav1.ObjectMeta{Name: test.pipelineName}, Spec: telemetryv1beta1.MetricPipelineSpec{Output: telemetryv1beta1.MetricPipelineOutput{OTLP: test.given}}}
-			actual := getSecretRefsMetricPipeline(&sut)
+			actual := GetSecretRefsMetricPipeline(&sut)
 			require.ElementsMatch(t, test.expected, actual)
 		})
 	}
@@ -587,7 +587,7 @@ func TestLogPipeline_GetSecretRefs(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			actual := getSecretRefsLogPipeline(&test.given)
+			actual := GetSecretRefsLogPipeline(&test.given)
 			require.ElementsMatch(t, test.expected, actual)
 		})
 	}

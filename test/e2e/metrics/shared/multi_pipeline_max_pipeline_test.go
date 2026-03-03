@@ -31,12 +31,12 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 	}{
 		{
 			name:         "max-pipeline-limit",
-			labels:       []string{suite.LabelMetricsMaxPipeline, suite.LabelMetrics, suite.LabelMaxPipeline},
+			labels:       []string{suite.LabelMetrics, suite.LabelMaxPipeline},
 			experimental: false,
 		},
 		{
 			name:         "unlimited-pipelines-experimental",
-			labels:       []string{suite.LabelMetricsMaxPipeline, suite.LabelMetrics, suite.LabelMaxPipeline},
+			labels:       []string{suite.LabelMetrics, suite.LabelMaxPipeline},
 			opts:         []kubeprep.Option{kubeprep.WithExperimental()},
 			experimental: true,
 		},
