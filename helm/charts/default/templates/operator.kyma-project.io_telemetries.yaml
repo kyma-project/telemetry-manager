@@ -31,10 +31,10 @@ spec:
       name: age
       type: date
     deprecated: true
-    deprecationWarning: The `operator.kyma-project.io/v1alpha1` version of Telemetry
-      is [deprecated](https://help.sap.com/whats-new/cf0cb2cb149647329b5d02aa96303f56?locale=en-US&Component=Kyma+Runtime&Software_Lifecycle=Deprecated&Valid_as_Of=2026-03-04:2026-03-04).
-      Use `operator.kyma-project.io/v1beta1` Telemetry instead (see [Migrate Telemetry
-      Pipelines to v1beta1](https://help.sap.com/docs/btp/sap-business-technology-platform/migrate-telemetry-pipelines-to-v1beta1?version=Cloud&locale=en-US)).
+    deprecationWarning: telemetry.kyma-project.io/v1alpha1 Telemetry is deprecated;
+      see https://help.sap.com/docs/btp/sap-business-technology-platform/migrate-telemetry-pipelines-to-v1beta1
+      for instructions to migrate to telemetry.kyma-project.io/v1beta1 Telemetry.//
+      +kubebuilder:resource:scope=Namespaced,categories={kyma-modules,kyma-telemetry}
     name: v1alpha1
     schema:
       openAPIV3Schema:
