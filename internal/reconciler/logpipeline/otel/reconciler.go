@@ -35,14 +35,15 @@ type Reconciler struct {
 	globals config.Global
 
 	// Dependencies
-	agentFlowHealthProber AgentFlowHealthProber
-	agentConfigBuilder    AgentConfigBuilder
-	agentProber           Prober
-	agentApplierDeleter   AgentApplierDeleter
-	istioStatusChecker    IstioStatusChecker
-	pipelineLock          PipelineLock
-	pipelineValidator     *Validator
-	errToMessageConverter ErrorToMessageConverter
+	agentFlowHealthProber   AgentFlowHealthProber
+	gatewayFlowHealthProber GatewayFlowHealthProber
+	agentConfigBuilder      AgentConfigBuilder
+	agentProber             Prober
+	agentApplierDeleter     AgentApplierDeleter
+	istioStatusChecker      IstioStatusChecker
+	pipelineLock            PipelineLock
+	pipelineValidator       *Validator
+	errToMessageConverter   ErrorToMessageConverter
 }
 
 // Option is a functional option for configuring a Reconciler.
@@ -59,6 +60,13 @@ func WithGlobals(globals config.Global) Option {
 func WithAgentFlowHealthProber(prober AgentFlowHealthProber) Option {
 	return func(r *Reconciler) {
 		r.agentFlowHealthProber = prober
+	}
+}
+
+// WithGatewayFlowHealthProber sets the gateway flow health prober.
+func WithGatewayFlowHealthProber(prober GatewayFlowHealthProber) Option {
+	return func(r *Reconciler) {
+		r.gatewayFlowHealthProber = prober
 	}
 }
 

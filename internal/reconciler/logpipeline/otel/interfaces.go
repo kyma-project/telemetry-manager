@@ -24,6 +24,14 @@ type AgentFlowHealthProber interface {
 	Probe(ctx context.Context, pipelineName string) (prober.OTelAgentProbeResult, error)
 }
 
+// GatewayFlowHealthProber checks the health of log data flow through the OTLP gateway.
+// It probes whether logs are successfully flowing from the gateway to the backend.
+type GatewayFlowHealthProber interface {
+	// Probe checks if logs are flowing correctly through the gateway for a specific pipeline.
+	// Returns probe results containing health status and metrics.
+	Probe(ctx context.Context, pipelineName string) (prober.OTelGatewayProbeResult, error)
+}
+
 // IstioStatusChecker determines if Istio service mesh is active in the cluster.
 // This affects resource configuration, particularly network policies and sidecars.
 type IstioStatusChecker interface {

@@ -78,21 +78,97 @@ func (r *Reconciler) evaluateFlowHealthCondition(ctx context.Context, pipeline *
 		return metav1.ConditionFalse, conditions.ReasonSelfMonConfigNotGenerated, nil
 	}
 
-	// For now, only probe agent flow health
-	// Gateway flow health is managed by OTLP Gateway Controller
-	agentProbeResult, err := r.agentFlowHealthProber.Probe(ctx, pipeline.Name)
-	if err != nil {
-		return metav1.ConditionUnknown, conditions.ReasonSelfMonAgentProbingFailed, fmt.Errorf("failed to probe agent flow health: %w", err)
+	// Probe agent flow health (if pipeline uses runtime input)
+	var agentReason string
+
+	if requiresAgentProbing(pipeline) && r.agentFlowHealthProber != nil {
+		agentProbeResult, err := r.agentFlowHealthProber.Probe(ctx, pipeline.Name)
+		if err != nil {
+			return metav1.ConditionUnknown, conditions.ReasonSelfMonAgentProbingFailed, fmt.Errorf("failed to probe agent flow health: %w", err)
+		}
+
+		logf.FromContext(ctx).V(1).Info("Probed agent flow health", "result", agentProbeResult)
+		agentReason = agentFlowHealthReasonFor(agentProbeResult)
 	}
 
-	logf.FromContext(ctx).V(1).Info("Probed agent flow health", "result", agentProbeResult)
+	// Probe gateway flow health (if pipeline uses OTLP input)
+	var gatewayReason string
 
-	reason := agentFlowHealthReasonFor(agentProbeResult)
+	if requiresGatewayProbing(pipeline) && r.gatewayFlowHealthProber != nil {
+		gatewayProbeResult, err := r.gatewayFlowHealthProber.Probe(ctx, pipeline.Name)
+		if err != nil {
+			return metav1.ConditionUnknown, conditions.ReasonSelfMonGatewayProbingFailed, fmt.Errorf("failed to probe gateway flow health: %w", err)
+		}
+
+		logf.FromContext(ctx).V(1).Info("Probed gateway flow health", "result", gatewayProbeResult)
+		gatewayReason = gatewayFlowHealthReasonFor(gatewayProbeResult)
+	}
+
+	// Combine results: worst status wins
+	reason := combineFlowHealthReasons(agentReason, gatewayReason)
 	if reason == conditions.ReasonSelfMonFlowHealthy {
 		return metav1.ConditionTrue, reason, nil
 	}
 
 	return metav1.ConditionFalse, reason, nil
+}
+
+// requiresGatewayProbing returns true if the pipeline uses OTLP input
+func requiresGatewayProbing(pipeline *telemetryv1beta1.LogPipeline) bool {
+	return pipeline.Spec.Input.OTLP != nil
+}
+
+// requiresAgentProbing returns true if the pipeline uses runtime input
+func requiresAgentProbing(pipeline *telemetryv1beta1.LogPipeline) bool {
+	return pipeline.Spec.Input.Runtime != nil
+}
+
+// gatewayFlowHealthReasonFor maps gateway probe results to condition reasons
+func gatewayFlowHealthReasonFor(probeResult prober.OTelGatewayProbeResult) string {
+	switch {
+	case probeResult.AllDataDropped:
+		return conditions.ReasonSelfMonGatewayAllDataDropped
+	case probeResult.SomeDataDropped:
+		return conditions.ReasonSelfMonGatewaySomeDataDropped
+	case probeResult.Throttling:
+		return conditions.ReasonSelfMonGatewayThrottling
+	default:
+		return conditions.ReasonSelfMonFlowHealthy
+	}
+}
+
+// combineFlowHealthReasons returns the worst health reason between agent and gateway
+func combineFlowHealthReasons(agentReason, gatewayReason string) string {
+	// Priority: AllDataDropped > SomeDataDropped > BufferFilling > Throttling > Healthy
+	reasons := []string{agentReason, gatewayReason}
+
+	for _, reason := range reasons {
+		if reason == conditions.ReasonSelfMonAgentAllDataDropped ||
+			reason == conditions.ReasonSelfMonGatewayAllDataDropped {
+			return reason
+		}
+	}
+
+	for _, reason := range reasons {
+		if reason == conditions.ReasonSelfMonAgentSomeDataDropped ||
+			reason == conditions.ReasonSelfMonGatewaySomeDataDropped {
+			return reason
+		}
+	}
+
+	for _, reason := range reasons {
+		if reason == conditions.ReasonSelfMonAgentBufferFillingUp {
+			return reason
+		}
+	}
+
+	for _, reason := range reasons {
+		if reason == conditions.ReasonSelfMonGatewayThrottling {
+			return reason
+		}
+	}
+
+	return conditions.ReasonSelfMonFlowHealthy
 }
 
 func agentFlowHealthReasonFor(agentProbeResult prober.OTelAgentProbeResult) string {
