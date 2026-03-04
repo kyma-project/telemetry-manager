@@ -108,7 +108,7 @@ func (ad *ApplierDeleter) ApplyResources(ctx context.Context, c client.Client, o
 		return fmt.Errorf("failed to create self-monitor role binding: %w", err)
 	}
 
-	networkPolicies := ad.makeNetworkPolicy()
+	networkPolicies := ad.makeNetworkPolicies()
 
 	for _, np := range networkPolicies {
 		if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, np); err != nil {
@@ -364,7 +364,7 @@ func (ad *ApplierDeleter) makeService(port int32) *corev1.Service {
 	}
 }
 
-func (ad *ApplierDeleter) makeNetworkPolicy() []*networkingv1.NetworkPolicy {
+func (ad *ApplierDeleter) makeNetworkPolicies() []*networkingv1.NetworkPolicy {
 	selfMonitorNetworkPolicy := commonresources.MakeNetworkPolicy(
 		ad.selfMonitorName(),
 		commonresources.MakeDefaultLabels(names.SelfMonitor, commonresources.LabelValueK8sComponentMonitor),
