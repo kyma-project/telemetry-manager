@@ -6,14 +6,14 @@ date: 2026-02-20
 
 # Vertical Pod Autoscaler (VPA) Architecture
 
-This document proposes integrating Vertical Pod Autoscaler (VPA) with the Central OTLP Gateway to automatically adjust pod resource requests and limits based on actual usage patterns. We evaluate two implementation approaches and recommend a strategy that ensures resource optimization while maintaining system stability.
+This document proposes integrating Vertical Pod Autoscaler (VPA) with the Central OTLP Gateway to automatically adjust Pod resource requests and limits based on actual usage patterns. We evaluate two implementation approaches and recommend a strategy that ensures resource optimization while maintaining system stability.
 
 ## Context and Problem Statement
 
-The Central OTLP Gateway is deployed as a DaemonSet with statically configured resource requests and limits. Because workload patterns vary across different nodes and over time, static resource allocation leads to:
-- Under-provisioning: Pods may experience resource pressure or OOMKills during traffic spikes
-- Over-provisioning: Wasted resources when actual usage is consistently lower than allocated
-- Manual intervention: Operations teams must manually adjust resources based on observed metrics
+The Central OTLP Gateway is deployed as a DaemonSet with statically configured resource requests and limits. Because workload patterns vary across different nodes and over time, static resource allocation leads to the following issues:
+- Under-provisioning: Pods might experience resource pressure or OOMKills during traffic spikes.
+- Over-provisioning: Wasted resources when actual usage is consistently lower than allocated.
+- Manual intervention: Operations teams must manually adjust resources based on observed metrics.
 
 Vertical Pod Autoscaler (VPA) can address these issues by automatically adjusting pod resources based on historical and real-time usage data.
 
@@ -100,7 +100,7 @@ spec:
 
 **Cons:**
 - Visibility: DaemonSet spec doesn't reflect actual Pod resources (only visible in Pod specs)
-- GOMEMLIMIT Sync: OpenTelemetry Collector's requires extension `cgrouprumtimeextension` to set `GOMEMLIMIT` based on memory limits, which adds complexity
+- GOMEMLIMIT Sync: The OpenTelemetry Collector requires the `cgrouprumtimeextension` to set `GOMEMLIMIT` based on memory limits, which adds complexity.
 
 ### Option 2: Reconciler-Driven Updates
 
@@ -151,7 +151,7 @@ The reconciler handles the following tasks:
 
 ## Decision
 
-We will go with Option 1: VPA Direct Pod Updates. VPA would be configured by reconciler when the relevant DaemonSet is created.
+We will go with Option 1: VPA Direct Pod Updates. VPA would be created by reconciler when the relevant DaemonSet is created.
 
 Rationale:
 1. Lower Complexity: Uses tested VPA components rather than implementing custom logic
@@ -181,7 +181,7 @@ Configuration Strategy:
 
 ### Negative Consequences
 
-- Monitoring Complexity: We must monitor actual Pod resources, not just the DaemonSet spec
+- Monitoring Complexity: Need to monitor actual Pod resources, not just DaemonSet spec
 - Documentation Requirement: Need to document that DaemonSet spec doesn't reflect reality
 - Coverage Gaps: On clusters without in-place update support, Pod restarts during resource updates can cause brief monitoring gaps
 - Scale-Down Delay: Resource reductions take days due to VPA's conservative approach
