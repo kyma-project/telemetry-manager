@@ -234,15 +234,25 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 
 	// Update ConfigMap based on validation result
 	if isReconcilable {
+		// Collect secret references and their current versions
+		secretRefs := secretref.GetSecretRefsTracePipeline(pipeline)
+		secretVersions := otelcollector.CollectSecretVersions(ctx, r.Client, secretRefs)
+
 		// Write current pipeline reference to OTLP Gateway ConfigMap
-		logf.FromContext(ctx).V(1).Info("Writing pipeline reference to OTLP Gateway ConfigMap", "pipeline", pipeline.Name, "generation", pipeline.Generation)
+		logf.FromContext(ctx).V(1).Info("Writing pipeline reference to OTLP Gateway ConfigMap",
+			"pipeline", pipeline.Name,
+			"generation", pipeline.Generation,
+			"secretCount", len(secretVersions))
 
 		if err := otelcollector.WriteTracePipelineReference(
 			ctx,
 			r.Client,
 			r.globals.TargetNamespace(),
-			pipeline.Name,
-			pipeline.Generation,
+			otelcollector.PipelineReferenceInput{
+				Name:           pipeline.Name,
+				Generation:     pipeline.Generation,
+				SecretVersions: secretVersions,
+			},
 		); err != nil {
 			return fmt.Errorf("failed to write pipeline reference to ConfigMap: %w", err)
 		}

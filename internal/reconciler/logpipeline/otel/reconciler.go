@@ -24,6 +24,7 @@ import (
 	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
 	sharedtypesutils "github.com/kyma-project/telemetry-manager/internal/utils/sharedtypes"
 	telemetryutils "github.com/kyma-project/telemetry-manager/internal/utils/telemetry"
+	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
 
@@ -193,15 +194,25 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 
 	// Update ConfigMap based on validation result
 	if isReconcilable {
+		// Collect secret references and their current versions
+		secretRefs := secretref.GetSecretRefsLogPipeline(pipeline)
+		secretVersions := otelcollector.CollectSecretVersions(ctx, r.Client, secretRefs)
+
 		// Write current pipeline reference to OTLP Gateway ConfigMap
-		logf.FromContext(ctx).V(1).Info("Writing pipeline reference to OTLP Gateway ConfigMap", "pipeline", pipeline.Name, "generation", pipeline.Generation)
+		logf.FromContext(ctx).V(1).Info("Writing pipeline reference to OTLP Gateway ConfigMap",
+			"pipeline", pipeline.Name,
+			"generation", pipeline.Generation,
+			"secretCount", len(secretVersions))
 
 		if err := otelcollector.WriteLogPipelineReference(
 			ctx,
 			r.Client,
 			r.globals.TargetNamespace(),
-			pipeline.Name,
-			pipeline.Generation,
+			otelcollector.PipelineReferenceInput{
+				Name:           pipeline.Name,
+				Generation:     pipeline.Generation,
+				SecretVersions: secretVersions,
+			},
 		); err != nil {
 			return fmt.Errorf("failed to write pipeline reference to ConfigMap: %w", err)
 		}

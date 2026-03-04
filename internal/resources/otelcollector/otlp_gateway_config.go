@@ -11,6 +11,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
 
 const (
@@ -35,8 +37,16 @@ type OTLPGatewayConfigMap struct {
 // PipelineReference contains minimal information about a pipeline.
 // The controller must fetch the full pipeline spec using the name.
 type PipelineReference struct {
-	Name       string `yaml:"name"`
-	Generation int64  `yaml:"generation"`
+	Name           string            `yaml:"name"`
+	Generation     int64             `yaml:"generation"`
+	SecretVersions map[string]string `yaml:"secretVersions,omitempty"`
+}
+
+// PipelineReferenceInput contains the data needed to write a pipeline reference.
+type PipelineReferenceInput struct {
+	Name           string
+	Generation     int64
+	SecretVersions map[string]string
 }
 
 // ReadOTLPGatewayConfig reads and parses the OTLP Gateway ConfigMap.
@@ -69,24 +79,53 @@ func ReadOTLPGatewayConfig(ctx context.Context, c client.Client, namespace strin
 	return &config, nil
 }
 
+// CollectSecretVersions fetches the resourceVersion for each secret reference.
+// Returns a map of "namespace/name" -> resourceVersion.
+// Missing or inaccessible secrets are omitted from the map.
+func CollectSecretVersions(ctx context.Context, c client.Client, refs []telemetryv1beta1.SecretKeyRef) map[string]string {
+	versions := make(map[string]string)
+	seen := make(map[types.NamespacedName]bool)
+
+	for _, ref := range refs {
+		key := types.NamespacedName{Name: ref.Name, Namespace: ref.Namespace}
+
+		// Skip duplicates
+		if seen[key] {
+			continue
+		}
+
+		seen[key] = true
+
+		var secret corev1.Secret
+		if err := c.Get(ctx, key, &secret); err != nil {
+			// Secret doesn't exist or can't be read - skip it
+			continue
+		}
+
+		mapKey := fmt.Sprintf("%s/%s", ref.Namespace, ref.Name)
+		versions[mapKey] = secret.ResourceVersion
+	}
+
+	return versions
+}
+
 // WriteTracePipelineReference adds or updates a TracePipeline reference.
 // Uses optimistic locking with retry to handle concurrent updates safely.
-func WriteTracePipelineReference(ctx context.Context, c client.Client, namespace, name string, generation int64) error {
+func WriteTracePipelineReference(ctx context.Context, c client.Client, namespace string, input PipelineReferenceInput) error {
 	return updateConfigMapWithRetry(ctx, c, namespace, func(config *OTLPGatewayConfigMap) error {
 		// Find existing reference
 		for i := range config.TracePipeline {
-			if config.TracePipeline[i].Name == name {
-				// Update generation
-				config.TracePipeline[i].Generation = generation
+			if config.TracePipeline[i].Name == input.Name {
+				// Update generation and secret versions
+				config.TracePipeline[i].Generation = input.Generation
+				config.TracePipeline[i].SecretVersions = input.SecretVersions
+
 				return nil
 			}
 		}
 
 		// Add new reference
-		config.TracePipeline = append(config.TracePipeline, PipelineReference{
-			Name:       name,
-			Generation: generation,
-		})
+		config.TracePipeline = append(config.TracePipeline, PipelineReference(input))
 
 		return nil
 	})
@@ -112,22 +151,21 @@ func RemoveTracePipelineReference(ctx context.Context, c client.Client, namespac
 
 // WriteLogPipelineReference adds or updates a LogPipeline reference.
 // Uses optimistic locking with retry to handle concurrent updates safely.
-func WriteLogPipelineReference(ctx context.Context, c client.Client, namespace, name string, generation int64) error {
+func WriteLogPipelineReference(ctx context.Context, c client.Client, namespace string, input PipelineReferenceInput) error {
 	return updateConfigMapWithRetry(ctx, c, namespace, func(config *OTLPGatewayConfigMap) error {
 		// Find existing reference
 		for i := range config.LogPipeline {
-			if config.LogPipeline[i].Name == name {
-				// Update generation
-				config.LogPipeline[i].Generation = generation
+			if config.LogPipeline[i].Name == input.Name {
+				// Update generation and secret versions
+				config.LogPipeline[i].Generation = input.Generation
+				config.LogPipeline[i].SecretVersions = input.SecretVersions
+
 				return nil
 			}
 		}
 
 		// Add new reference
-		config.LogPipeline = append(config.LogPipeline, PipelineReference{
-			Name:       name,
-			Generation: generation,
-		})
+		config.LogPipeline = append(config.LogPipeline, PipelineReference(input))
 
 		return nil
 	})
