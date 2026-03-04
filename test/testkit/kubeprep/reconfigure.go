@@ -16,8 +16,22 @@ import (
 //
 // This function is idempotent and safe to call multiple times.
 func SetupCluster(t TestingT, k8sClient client.Client, cfg Config) error {
-	t.Logf("Setting up cluster: istio=%t, fips=%t, experimental=%t, prerequisites=%t, helmValues=%v, chart=%s",
-		cfg.InstallIstio, cfg.OperateInFIPSMode, cfg.EnableExperimental, cfg.DeployPrerequisites, cfg.HelmValues, cfg.ChartPath)
+	t.Logf("Setting up cluster: istio=%t, fips=%t, experimental=%t, prerequisites=%t, forceFresh=%t, helmValues=%v, chart=%s",
+		cfg.InstallIstio, cfg.OperateInFIPSMode, cfg.EnableExperimental, cfg.DeployPrerequisites, cfg.ForceFreshInstall, cfg.HelmValues, cfg.ChartPath)
+
+	// Handle force fresh install - completely remove telemetry first
+	if cfg.ForceFreshInstall {
+		t.Log("Force fresh install requested, removing existing telemetry installation...")
+
+		if err := undeployManager(t, k8sClient); err != nil {
+			t.Logf("Warning: failed to undeploy manager (may not exist): %v", err)
+		}
+
+		// Wait for CRDs to be fully deleted to ensure clean API server state
+		if err := waitForCRDsDeletion(t, k8sClient); err != nil {
+			t.Logf("Warning: failed waiting for CRDs deletion: %v", err)
+		}
+	}
 
 	// Ensure Istio is in the desired state
 	if err := ensureIstioState(t, k8sClient, cfg); err != nil {
