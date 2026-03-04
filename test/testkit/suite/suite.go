@@ -461,6 +461,9 @@ func logFIPSConfiguration(t *testing.T, cfg kubeprep.Config) {
 //
 // Options passed to this function should match those passed to SetupTestWithOptions
 // (e.g., kubeprep.WithOverrideFIPSMode(false)) to ensure consistent configuration.
+// Additional options can customize the upgrade behavior:
+//   - kubeprep.WithChartVersion(url) to use a specific chart URL instead of the local chart
+//   - kubeprep.WithHelmValues(values...) to override helm values
 func UpgradeToTargetVersion(t *testing.T, opts ...kubeprep.Option) error {
 	// Add SkipManagerRemoval to preserve existing pipelines
 	opts = append(opts, kubeprep.WithSkipManagerRemoval(), kubeprep.WithSkipDeployTestPrerequisites())
@@ -468,8 +471,8 @@ func UpgradeToTargetVersion(t *testing.T, opts ...kubeprep.Option) error {
 	// Build config from options
 	cfg := buildConfig(opts...)
 
-	t.Logf("Upgrading manager to target version: %s (fips=%t, experimental=%t)",
-		cfg.ManagerImage, cfg.OperateInFIPSMode, cfg.EnableExperimental)
+	t.Logf("Upgrading manager to target version: %s (fips=%t, experimental=%t, chart=%s)",
+		cfg.ManagerImage, cfg.OperateInFIPSMode, cfg.EnableExperimental, cfg.ChartPath)
 
 	return kubeprep.SetupCluster(t, K8sClient, cfg)
 }
