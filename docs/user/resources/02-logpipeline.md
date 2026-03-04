@@ -289,6 +289,8 @@ For details, see the [LogPipeline specification file](https://github.com/kyma-pr
 
 ### LogPipeline.telemetry.kyma-project.io/v1alpha1
 
+>**CAUTION**: telemetry.kyma-project.io/v1alpha1 LogPipeline is deprecated; see https://help.sap.com/docs/btp/sap-business-technology-platform/migrate-telemetry-pipelines-to-v1beta1 for instructions to migrate to telemetry.kyma-project.io/v1beta1 LogPipeline.
+
 **Spec:**
 
 | Parameter | Type | Description |

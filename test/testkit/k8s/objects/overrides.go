@@ -69,7 +69,7 @@ func (o *Overrides) K8sObject() *corev1.ConfigMap {
 	config = strings.Replace(config, "{{ AGENT_LOGS }}", strconv.FormatBool(o.collectAgentLogs), 1)
 
 	data := make(map[string]string)
-	data["override-config"] = config
+	data["overrides"] = config
 
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{

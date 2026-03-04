@@ -26,6 +26,7 @@ type Config struct {
 	ChartPath           string   // Helm chart path/URL (empty = use local chart)
 	DeployPrerequisites bool     // Deploy test prerequisites (default: true)
 	SkipManagerRemoval  bool     // Skip manager removal during reconfiguration (for upgrade tests)
+	ForceFreshInstall   bool     // Force complete removal before install (ensures clean API server state)
 }
 
 // Option is a functional option for configuring cluster setup
@@ -102,6 +103,16 @@ func WithExperimental() Option {
 func WithSkipManagerRemoval() Option {
 	return func(c *Config) {
 		c.SkipManagerRemoval = true
+	}
+}
+
+// WithForceFreshInstall forces a complete removal of telemetry before installing.
+// This ensures the API server has no knowledge of any previous installation,
+// useful for testing scenarios like storage version migration where a clean
+// state is required instead of an in-place upgrade.
+func WithForceFreshInstall() Option {
+	return func(c *Config) {
+		c.ForceFreshInstall = true
 	}
 }
 
