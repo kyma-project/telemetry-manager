@@ -359,15 +359,11 @@ func (ad *ApplierDeleter) makeService(port int32) *corev1.Service {
 	}
 }
 
-func (ad *ApplierDeleter) makeNetworkPolicy() *networkingv1.NetworkPolicy {
-	return commonresources.MakeNetworkPolicy(
+func (ad *ApplierDeleter) makeNetworkPolicy() []*networkingv1.NetworkPolicy {
+	selfMonitorNetworkPolicy := commonresources.MakeNetworkPolicy(
 		ad.selfMonitorName(),
 		commonresources.MakeDefaultLabels(names.SelfMonitor, commonresources.LabelValueK8sComponentMonitor),
 		commonresources.MakeDefaultSelectorLabels(names.SelfMonitor),
-		// Allow ingress from telemetry-manager pods only on Prometheus port
-		commonresources.WithIngressFromPods(map[string]string{
-			commonresources.LabelKeyK8sName: "manager",
-		}, []int32{selfmonports.PrometheusPort}),
 		// Allow egress to FluentBit for scraping metrics
 		commonresources.WithEgressToPods(map[string]string{
 			commonresources.LabelKeyK8sName: "fluent-bit",
@@ -389,6 +385,21 @@ func (ad *ApplierDeleter) makeNetworkPolicy() *networkingv1.NetworkPolicy {
 			commonresources.LabelKeyK8sName: "manager",
 		}, []int32{mgrports.Webhook}),
 	)
+	metricsNetworkPolicy := commonresources.MakeNetworkPolicy(
+		ad.selfMonitorName(),
+		commonresources.MakeDefaultLabels(names.SelfMonitor, commonresources.LabelValueK8sComponentMonitor),
+		commonresources.MakeDefaultSelectorLabels(names.SelfMonitor),
+		// Allow ingress from telemetry-manager pods only on Prometheus port
+		commonresources.WithIngressFromPods(map[string]string{
+			commonresources.LabelKeyK8sName: "manager",
+		}, []int32{selfmonports.PrometheusPort}),
+		// Allow ingress from pods with metrics-scraping label
+		commonresources.WithIngressFromPods(map[string]string{
+			commonresources.LabelKeyTelemetryMetricsScraping: commonresources.LabelValueTelemetryMetricsScraping,
+		}, []int32{selfmonports.PrometheusPort}),
+	)
+
+	return []*networkingv1.NetworkPolicy{selfMonitorNetworkPolicy, metricsNetworkPolicy}
 }
 
 func (ad *ApplierDeleter) selfMonitorName() types.NamespacedName {
