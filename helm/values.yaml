@@ -26,7 +26,7 @@ manager:
       operateInFipsMode: false
       selfMonitorFIPSImage: europe-docker.pkg.dev/kyma-project/restricted-prod/sap.com/prometheus-fips:3.9.1
     image:
-      repository: europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:1.59.0
+      repository: europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:1.59.1
       pullPolicy: "IfNotPresent"
     resources:
       limits:
