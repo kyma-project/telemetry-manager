@@ -4,11 +4,13 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stretchr/testify/require"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -569,7 +571,7 @@ func TestClearStoredVersion_CRDNotFound(t *testing.T) {
 	require.Contains(t, err.Error(), "failed to get CRD")
 }
 
-func TestStart_MigrationError_LogsButDoesNotFail(t *testing.T) {
+func TestStart_MigrationError_RetriesUntilContextCancelled(t *testing.T) {
 	scheme := newTestScheme(t)
 
 	// Missing CRDs will cause migration check to fail
@@ -579,9 +581,52 @@ func TestStart_MigrationError_LogsButDoesNotFail(t *testing.T) {
 
 	migrator := New(fakeClient, logr.Discard())
 
-	// Start should not return an error even if migration fails internally
+	// Use a context with cancellation to stop the retry loop
+	ctx, cancel := context.WithCancel(context.Background())
+
+	// Cancel after a short delay to allow at least one retry attempt
+	go func() {
+		time.Sleep(50 * time.Millisecond)
+		cancel()
+	}()
+
+	// Start should return nil when context is canceled (graceful shutdown)
+	err := migrator.Start(ctx)
+	require.NoError(t, err)
+}
+
+func TestStart_MigrationSucceedsAfterRetry(t *testing.T) {
+	scheme := newTestScheme(t)
+
+	// CRDs with v1alpha1 that need migration
+	logCRD := newTestCRD("logpipelines.telemetry.kyma-project.io", []string{"v1alpha1", "v1beta1"})
+	metricCRD := newTestCRD("metricpipelines.telemetry.kyma-project.io", []string{"v1alpha1", "v1beta1"})
+	traceCRD := newTestCRD("tracepipelines.telemetry.kyma-project.io", []string{"v1alpha1", "v1beta1"})
+	telemetryCRDObj := newTestCRD(telemetryCRD, []string{"v1alpha1", "v1beta1"})
+
+	attemptCount := 0
+	fakeClient := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithObjects(logCRD, metricCRD, traceCRD, telemetryCRDObj).
+		WithStatusSubresource(logCRD, metricCRD, traceCRD, telemetryCRDObj).
+		WithInterceptorFuncs(interceptor.Funcs{
+			List: func(ctx context.Context, c client.WithWatch, list client.ObjectList, opts ...client.ListOption) error {
+				attemptCount++
+				// Fail the first attempt, succeed on retry
+				if attemptCount == 1 {
+					return errors.New("transient error")
+				}
+
+				return c.List(ctx, list, opts...)
+			},
+		}).
+		Build()
+
+	migrator := New(fakeClient, logr.Discard())
+
 	err := migrator.Start(context.Background())
 	require.NoError(t, err)
+	require.GreaterOrEqual(t, attemptCount, 2, "Should have retried at least once")
 }
 
 func TestMigrateLogPipelines_ListError(t *testing.T) {
@@ -771,4 +816,33 @@ func TestMigrateTelemetries_UpdateError(t *testing.T) {
 	err := migrator.migrateTelemetries(context.Background())
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "failed to migrate Telemetry")
+}
+
+func TestMigrateLogPipelines_NotFoundError_NoRetry(t *testing.T) {
+	scheme := newTestScheme(t)
+
+	logPipeline := &telemetryv1beta1.LogPipeline{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test-log-pipeline",
+		},
+	}
+
+	callCount := 0
+	fakeClient := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithObjects(logPipeline).
+		WithInterceptorFuncs(interceptor.Funcs{
+			Update: func(_ context.Context, _ client.WithWatch, _ client.Object, _ ...client.UpdateOption) error {
+				callCount++
+				return apierrors.NewNotFound(telemetryv1beta1.GroupVersion.WithResource("logpipelines").GroupResource(), "test-log-pipeline")
+			},
+		}).
+		Build()
+
+	migrator := New(fakeClient, logr.Discard())
+
+	err := migrator.migrateLogPipelines(context.Background())
+	// NotFound error should not be retried, so migration should succeed (resource was deleted)
+	require.NoError(t, err)
+	require.Equal(t, 1, callCount, "Update should only be called once for NotFound errors")
 }
