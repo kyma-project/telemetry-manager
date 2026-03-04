@@ -178,7 +178,7 @@ func TestReconcile_NoPipelines_DeletesGateway(t *testing.T) {
 			Namespace: "kyma-system",
 		},
 		Data: map[string]string{
-			otelcollector.ConfigMapDataKey: "TracePipeline: []",
+			otelcollector.ConfigMapDataKey: "tracePipelines: []",
 		},
 	}
 
@@ -209,7 +209,7 @@ func TestReconcile_SinglePipeline_DeploysGateway(t *testing.T) {
 			Namespace: "kyma-system",
 		},
 		Data: map[string]string{
-			otelcollector.ConfigMapDataKey: "TracePipeline:\n- name: test-pipeline\n  generation: 1",
+			otelcollector.ConfigMapDataKey: "tracePipelines:\n- name: test-pipeline\n  generation: 1",
 		},
 	}
 
@@ -245,7 +245,7 @@ func TestReconcile_GenerationMismatch_SkipsPipeline(t *testing.T) {
 			Namespace: "kyma-system",
 		},
 		Data: map[string]string{
-			otelcollector.ConfigMapDataKey: "TracePipeline:\n- name: test-pipeline\n  generation: 1",
+			otelcollector.ConfigMapDataKey: "tracePipelines:\n- name: test-pipeline\n  generation: 1",
 		},
 	}
 
@@ -282,7 +282,7 @@ func TestReconcile_PipelineDeleted_SkipsPipeline(t *testing.T) {
 			Namespace: "kyma-system",
 		},
 		Data: map[string]string{
-			otelcollector.ConfigMapDataKey: "TracePipeline:\n- name: test-pipeline\n  generation: 1",
+			otelcollector.ConfigMapDataKey: "tracePipelines:\n- name: test-pipeline\n  generation: 1",
 		},
 	}
 
@@ -319,7 +319,7 @@ func TestReconcile_MultiplePipelines_AggregatesConfig(t *testing.T) {
 			Namespace: "kyma-system",
 		},
 		Data: map[string]string{
-			otelcollector.ConfigMapDataKey: "TracePipeline:\n- name: pipeline-1\n  generation: 1\n- name: pipeline-2\n  generation: 1",
+			otelcollector.ConfigMapDataKey: "tracePipelines:\n- name: pipeline-1\n  generation: 1\n- name: pipeline-2\n  generation: 1",
 		},
 	}
 
@@ -353,7 +353,7 @@ func TestReconcile_MissingPipeline_SkipsGracefully(t *testing.T) {
 			Namespace: "kyma-system",
 		},
 		Data: map[string]string{
-			otelcollector.ConfigMapDataKey: "TracePipeline:\n- name: missing-pipeline\n  generation: 1",
+			otelcollector.ConfigMapDataKey: "tracePipelines:\n- name: missing-pipeline\n  generation: 1",
 		},
 	}
 
@@ -386,7 +386,7 @@ func TestReconcile_IstioEnabled_PassesFlag(t *testing.T) {
 			Namespace: "kyma-system",
 		},
 		Data: map[string]string{
-			otelcollector.ConfigMapDataKey: "TracePipeline:\n- name: test-pipeline\n  generation: 1",
+			otelcollector.ConfigMapDataKey: "tracePipelines:\n- name: test-pipeline\n  generation: 1",
 		},
 	}
 
@@ -747,7 +747,7 @@ func TestReconcile_LogPipeline_DeploysGateway(t *testing.T) {
 			Namespace: "kyma-system",
 		},
 		Data: map[string]string{
-			otelcollector.ConfigMapDataKey: "LogPipeline:\n- name: test-log-pipeline\n  generation: 1",
+			otelcollector.ConfigMapDataKey: "logPipelines:\n- name: test-log-pipeline\n  generation: 1",
 		},
 	}
 
@@ -788,7 +788,7 @@ func TestReconcile_TraceAndLogPipelines_DeploysUnifiedGateway(t *testing.T) {
 			Namespace: "kyma-system",
 		},
 		Data: map[string]string{
-			otelcollector.ConfigMapDataKey: "TracePipeline:\n- name: test-trace-pipeline\n  generation: 1\nLogPipeline:\n- name: test-log-pipeline\n  generation: 1",
+			otelcollector.ConfigMapDataKey: "tracePipelines:\n- name: test-trace-pipeline\n  generation: 1\nlogPipelines:\n- name: test-log-pipeline\n  generation: 1",
 		},
 	}
 
@@ -936,7 +936,7 @@ func TestReconcile_OnlyLogPipelines_DeploysGateway(t *testing.T) {
 			Namespace: "kyma-system",
 		},
 		Data: map[string]string{
-			otelcollector.ConfigMapDataKey: "LogPipeline:\n- name: test-log\n  generation: 1",
+			otelcollector.ConfigMapDataKey: "logPipelines:\n- name: test-log\n  generation: 1",
 		},
 	}
 
@@ -965,11 +965,11 @@ func TestReconcile_OnlyLogPipelines_DeploysGateway(t *testing.T) {
 
 func TestCollectReferencedNamesByType(t *testing.T) {
 	config := &otelcollector.OTLPGatewayConfigMap{
-		TracePipeline: []otelcollector.PipelineReference{
+		TracePipelineReferences: []otelcollector.PipelineReference{
 			{Name: "trace1", Generation: 1},
 			{Name: "trace2", Generation: 2},
 		},
-		LogPipeline: []otelcollector.PipelineReference{
+		LogPipelineReferences: []otelcollector.PipelineReference{
 			{Name: "log1", Generation: 1},
 			{Name: "log2", Generation: 2},
 		},
@@ -988,8 +988,8 @@ func TestCollectReferencedNamesByType(t *testing.T) {
 
 func TestCollectReferencedNamesByType_Empty(t *testing.T) {
 	config := &otelcollector.OTLPGatewayConfigMap{
-		TracePipeline: []otelcollector.PipelineReference{},
-		LogPipeline:   []otelcollector.PipelineReference{},
+		TracePipelineReferences: []otelcollector.PipelineReference{},
+		LogPipelineReferences:   []otelcollector.PipelineReference{},
 	}
 
 	traceNames, logNames := collectReferencedNamesByType(config)
@@ -1045,7 +1045,7 @@ func TestOverrideFunctionality(t *testing.T) {
 					Namespace: "kyma-system",
 				},
 				Data: map[string]string{
-					otelcollector.ConfigMapDataKey: "TracePipeline:\n- name: test-pipeline\n  generation: 1",
+					otelcollector.ConfigMapDataKey: "tracePipelines:\n- name: test-pipeline\n  generation: 1",
 				},
 			}
 

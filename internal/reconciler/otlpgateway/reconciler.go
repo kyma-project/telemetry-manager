@@ -211,13 +211,13 @@ func (r *Reconciler) processConfigAndBuildResources(ctx context.Context, tracePi
 
 // collectReferencedNamesByType extracts pipeline names from ConfigMap references, grouped by type.
 func collectReferencedNamesByType(config *otelcollector.OTLPGatewayConfigMap) (traceNames []string, logNames []string) {
-	traceNames = make([]string, 0, len(config.TracePipeline))
-	for _, ref := range config.TracePipeline {
+	traceNames = make([]string, 0, len(config.TracePipelineReferences))
+	for _, ref := range config.TracePipelineReferences {
 		traceNames = append(traceNames, ref.Name)
 	}
 
-	logNames = make([]string, 0, len(config.LogPipeline))
-	for _, ref := range config.LogPipeline {
+	logNames = make([]string, 0, len(config.LogPipelineReferences))
+	for _, ref := range config.LogPipelineReferences {
 		logNames = append(logNames, ref.Name)
 	}
 
@@ -286,12 +286,12 @@ func (r *Reconciler) doReconcile(ctx context.Context) error {
 		return fmt.Errorf("failed to read configmap: %w", err)
 	}
 
-	tracePipelines, err := r.fetchTracePipelines(ctx, config.TracePipeline)
+	tracePipelines, err := r.fetchTracePipelines(ctx, config.TracePipelineReferences)
 	if err != nil {
 		return fmt.Errorf("failed to fetch trace pipelines: %w", err)
 	}
 
-	logPipelines, err := r.fetchLogPipelines(ctx, config.LogPipeline)
+	logPipelines, err := r.fetchLogPipelines(ctx, config.LogPipelineReferences)
 	if err != nil {
 		return fmt.Errorf("failed to fetch log pipelines: %w", err)
 	}

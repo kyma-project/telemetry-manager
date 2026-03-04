@@ -30,6 +30,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	"github.com/kyma-project/telemetry-manager/internal/metrics"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
@@ -157,12 +158,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		}
 
 		// Remove pipeline reference from OTLP Gateway ConfigMap
-		if err := otelcollector.RemoveTracePipelineReference(
-			ctx,
-			r.Client,
-			r.globals.TargetNamespace(),
-			req.Name,
-		); err != nil {
+		if err := otelcollector.RemovePipelineReference(ctx, r.Client, r.globals.TargetNamespace(), common.SignalTypeTrace, req.Name); err != nil {
 			return ctrl.Result{}, fmt.Errorf("failed to remove pipeline reference from ConfigMap: %w", err)
 		}
 
@@ -244,15 +240,11 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 			"generation", pipeline.Generation,
 			"secretCount", len(secretVersions))
 
-		if err := otelcollector.WriteTracePipelineReference(
-			ctx,
-			r.Client,
-			r.globals.TargetNamespace(),
-			otelcollector.PipelineReferenceInput{
-				Name:           pipeline.Name,
-				Generation:     pipeline.Generation,
-				SecretVersions: secretVersions,
-			},
+		if err := otelcollector.WritePipelineReference(ctx, r.Client, r.globals.TargetNamespace(), common.SignalTypeTrace, otelcollector.PipelineReferenceInput{
+			Name:           pipeline.Name,
+			Generation:     pipeline.Generation,
+			SecretVersions: secretVersions,
+		},
 		); err != nil {
 			return fmt.Errorf("failed to write pipeline reference to ConfigMap: %w", err)
 		}
@@ -260,12 +252,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 		// Remove current pipeline reference from ConfigMap
 		logf.FromContext(ctx).V(1).Info("Removing pipeline reference from OTLP Gateway ConfigMap", "pipeline", pipeline.Name)
 
-		if err := otelcollector.RemoveTracePipelineReference(
-			ctx,
-			r.Client,
-			r.globals.TargetNamespace(),
-			pipeline.Name,
-		); err != nil {
+		if err := otelcollector.RemovePipelineReference(ctx, r.Client, r.globals.TargetNamespace(), common.SignalTypeTrace, pipeline.Name); err != nil {
 			return fmt.Errorf("failed to remove pipeline reference from ConfigMap: %w", err)
 		}
 	}

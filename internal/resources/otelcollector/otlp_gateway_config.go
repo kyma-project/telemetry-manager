@@ -13,6 +13,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 )
 
 const (
@@ -29,9 +30,9 @@ const (
 // OTLPGatewayConfigMap represents the structure of the OTLP Gateway coordination ConfigMap.
 // It contains references to pipelines that should be included in the OTLP Gateway configuration.
 type OTLPGatewayConfigMap struct {
-	TracePipeline  []PipelineReference `yaml:"TracePipeline,omitempty"`
-	LogPipeline    []PipelineReference `yaml:"LogPipeline,omitempty"`
-	MetricPipeline []PipelineReference `yaml:"MetricPipeline,omitempty"`
+	TracePipelineReferences  []PipelineReference `yaml:"tracePipelines,omitempty"`
+	LogPipelineReferences    []PipelineReference `yaml:"logPipelines,omitempty"`
+	MetricPipelineReferences []PipelineReference `yaml:"metricPipelines,omitempty"`
 }
 
 // PipelineReference contains minimal information about a pipeline.
@@ -109,84 +110,68 @@ func CollectSecretVersions(ctx context.Context, c client.Client, refs []telemetr
 	return versions
 }
 
-// WriteTracePipelineReference adds or updates a TracePipeline reference.
+// WritePipelineReference adds or updates a pipeline reference of any type.
 // Uses optimistic locking with retry to handle concurrent updates safely.
-func WriteTracePipelineReference(ctx context.Context, c client.Client, namespace string, input PipelineReferenceInput) error {
+func WritePipelineReference(ctx context.Context, c client.Client, namespace string, pipelineType common.SignalType, input PipelineReferenceInput) error {
 	return updateConfigMapWithRetry(ctx, c, namespace, func(config *OTLPGatewayConfigMap) error {
+		pipelineSlice := getPipelineSlice(config, pipelineType)
+		if pipelineSlice == nil {
+			return fmt.Errorf("invalid pipeline type: %s", pipelineType)
+		}
+
 		// Find existing reference
-		for i := range config.TracePipeline {
-			if config.TracePipeline[i].Name == input.Name {
+		for i := range *pipelineSlice {
+			if (*pipelineSlice)[i].Name == input.Name {
 				// Update generation and secret versions
-				config.TracePipeline[i].Generation = input.Generation
-				config.TracePipeline[i].SecretVersions = input.SecretVersions
+				(*pipelineSlice)[i].Generation = input.Generation
+				(*pipelineSlice)[i].SecretVersions = input.SecretVersions
 
 				return nil
 			}
 		}
 
 		// Add new reference
-		config.TracePipeline = append(config.TracePipeline, PipelineReference(input))
+		*pipelineSlice = append(*pipelineSlice, PipelineReference(input))
 
 		return nil
 	})
 }
 
-// RemoveTracePipelineReference removes a TracePipeline reference.
+// RemovePipelineReference removes a pipeline reference of any type.
 // Uses optimistic locking with retry. Idempotent operation.
-func RemoveTracePipelineReference(ctx context.Context, c client.Client, namespace, name string) error {
+func RemovePipelineReference(ctx context.Context, c client.Client, namespace string, pipelineType common.SignalType, name string) error {
 	return updateConfigMapWithRetry(ctx, c, namespace, func(config *OTLPGatewayConfigMap) error {
+		pipelineSlice := getPipelineSlice(config, pipelineType)
+		if pipelineSlice == nil {
+			return fmt.Errorf("invalid pipeline type: %s", pipelineType)
+		}
+
 		// Filter out the reference
-		filtered := make([]PipelineReference, 0, len(config.TracePipeline))
-		for _, ref := range config.TracePipeline {
+		filtered := make([]PipelineReference, 0, len(*pipelineSlice))
+		for _, ref := range *pipelineSlice {
 			if ref.Name != name {
 				filtered = append(filtered, ref)
 			}
 		}
 
-		config.TracePipeline = filtered
+		*pipelineSlice = filtered
 
 		return nil
 	})
 }
 
-// WriteLogPipelineReference adds or updates a LogPipeline reference.
-// Uses optimistic locking with retry to handle concurrent updates safely.
-func WriteLogPipelineReference(ctx context.Context, c client.Client, namespace string, input PipelineReferenceInput) error {
-	return updateConfigMapWithRetry(ctx, c, namespace, func(config *OTLPGatewayConfigMap) error {
-		// Find existing reference
-		for i := range config.LogPipeline {
-			if config.LogPipeline[i].Name == input.Name {
-				// Update generation and secret versions
-				config.LogPipeline[i].Generation = input.Generation
-				config.LogPipeline[i].SecretVersions = input.SecretVersions
-
-				return nil
-			}
-		}
-
-		// Add new reference
-		config.LogPipeline = append(config.LogPipeline, PipelineReference(input))
-
+// getPipelineSlice returns a pointer to the appropriate pipeline slice based on type.
+func getPipelineSlice(config *OTLPGatewayConfigMap, pipelineType common.SignalType) *[]PipelineReference {
+	switch pipelineType {
+	case common.SignalTypeTrace:
+		return &config.TracePipelineReferences
+	case common.SignalTypeLog:
+		return &config.LogPipelineReferences
+	case common.SignalTypeMetric:
+		return &config.MetricPipelineReferences
+	default:
 		return nil
-	})
-}
-
-// RemoveLogPipelineReference removes a LogPipeline reference.
-// Uses optimistic locking with retry. Idempotent operation.
-func RemoveLogPipelineReference(ctx context.Context, c client.Client, namespace, name string) error {
-	return updateConfigMapWithRetry(ctx, c, namespace, func(config *OTLPGatewayConfigMap) error {
-		// Filter out the reference
-		filtered := make([]PipelineReference, 0, len(config.LogPipeline))
-		for _, ref := range config.LogPipeline {
-			if ref.Name != name {
-				filtered = append(filtered, ref)
-			}
-		}
-
-		config.LogPipeline = filtered
-
-		return nil
-	})
+	}
 }
 
 // updateConfigMapWithRetry implements optimistic locking with retry.

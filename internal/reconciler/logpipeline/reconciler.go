@@ -11,6 +11,7 @@ import (
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/config"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
@@ -115,12 +116,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		}
 
 		// Remove pipeline reference from OTLP Gateway ConfigMap
-		if err := otelcollector.RemoveLogPipelineReference(
-			ctx,
-			r.Client,
-			r.globals.TargetNamespace(),
-			req.Name,
-		); err != nil {
+		if err := otelcollector.RemovePipelineReference(ctx, r.Client, r.globals.TargetNamespace(), common.SignalTypeLog, req.Name); err != nil {
 			return ctrl.Result{}, fmt.Errorf("failed to remove pipeline reference from ConfigMap: %w", err)
 		}
 
