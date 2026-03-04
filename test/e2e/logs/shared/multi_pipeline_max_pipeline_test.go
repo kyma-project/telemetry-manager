@@ -29,7 +29,7 @@ const maxNumberOfLogPipelines = resourcelock.MaxPipelineCount
 // TestMultiPipelineMaxPipeline tests max pipeline limits with mixed FluentBit and OTel pipelines.
 // This test uses FluentBit pipelines so it only runs in no-fips mode.
 func TestMultiPipelineMaxPipeline(t *testing.T) {
-	suite.SetupTestWithOptions(t, []string{suite.LabelLogsMaxPipeline}, kubeprep.WithOverrideFIPSMode(false))
+	suite.SetupTestWithOptions(t, []string{suite.LabelLogs, suite.LabelMaxPipeline}, kubeprep.WithOverrideFIPSMode(false))
 
 	var (
 		uniquePrefix = unique.Prefix("logs")
@@ -153,12 +153,12 @@ func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 	}{
 		{
 			name:         "max-pipeline-limit",
-			labels:       []string{suite.LabelOTelMaxPipeline, suite.LabelLogs, suite.LabelOtel, suite.LabelMaxPipeline},
+			labels:       []string{suite.LabelLogs, suite.LabelOtel, suite.LabelMaxPipeline},
 			experimental: false,
 		},
 		{
 			name:         "unlimited-pipelines-experimental",
-			labels:       []string{suite.LabelOTelMaxPipeline, suite.LabelLogs, suite.LabelOtel, suite.LabelMaxPipeline},
+			labels:       []string{suite.LabelLogs, suite.LabelOtel, suite.LabelMaxPipeline},
 			opts:         []kubeprep.Option{kubeprep.WithExperimental()},
 			experimental: true,
 		},
@@ -254,7 +254,7 @@ func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 }
 
 func TestMultiPipelineMaxPipeline_FluentBit(t *testing.T) {
-	suite.SetupTestWithOptions(t, []string{suite.LabelFluentBitMaxPipeline, suite.LabelFluentBit, suite.LabelLogs, suite.LabelMaxPipeline}, kubeprep.WithOverrideFIPSMode(false))
+	suite.SetupTestWithOptions(t, []string{suite.LabelLogs, suite.LabelFluentBit, suite.LabelMaxPipeline}, kubeprep.WithOverrideFIPSMode(false))
 
 	var (
 		uniquePrefix = unique.Prefix()

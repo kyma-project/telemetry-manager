@@ -16,8 +16,22 @@ import (
 //
 // This function is idempotent and safe to call multiple times.
 func SetupCluster(t TestingT, k8sClient client.Client, cfg Config) error {
-	t.Logf("Setting up cluster: istio=%t, fips=%t, experimental=%t, prerequisites=%t, helmValues=%v, chart=%s",
-		cfg.InstallIstio, cfg.OperateInFIPSMode, cfg.EnableExperimental, cfg.DeployPrerequisites, cfg.HelmValues, cfg.ChartPath)
+	t.Logf("Setting up cluster: istio=%t, fips=%t, experimental=%t, prerequisites=%t, forceFresh=%t, helmValues=%v, chart=%s",
+		cfg.InstallIstio, cfg.OperateInFIPSMode, cfg.EnableExperimental, cfg.DeployPrerequisites, cfg.ForceFreshInstall, cfg.HelmValues, cfg.ChartPath)
+
+	// Handle force fresh install - completely remove telemetry first
+	if cfg.ForceFreshInstall {
+		t.Log("Force fresh install requested, removing existing telemetry installation...")
+
+		if err := undeployManager(t, k8sClient); err != nil {
+			t.Logf("Warning: failed to undeploy manager (may not exist): %v", err)
+		}
+
+		// Wait for CRDs to be fully deleted to ensure clean API server state
+		if err := waitForCRDsDeletion(t, k8sClient); err != nil {
+			t.Logf("Warning: failed waiting for CRDs deletion: %v", err)
+		}
+	}
 
 	// Ensure Istio is in the desired state
 	if err := ensureIstioState(t, k8sClient, cfg); err != nil {
@@ -51,51 +65,43 @@ func ensureTestPrerequisites(t TestingT, k8sClient client.Client, deploy bool) e
 }
 
 // ensureManagerDeployed ensures the telemetry manager is deployed with the desired configuration.
-// It handles experimental mode changes which require uninstall before reinstall due to CRD conflicts.
-// After any configuration change (FIPS mode, helm values, etc.), it waits for the manager to be stable.
+// If values changed, it undeploys first and then deploys fresh to ensure a clean state.
+// If SkipManagerRemoval is set, it skips undeploy and does an in-place upgrade (for upgrade tests).
 func ensureManagerDeployed(t TestingT, k8sClient client.Client, cfg Config) error {
 	ctx := t.Context()
 
-	// Detect current configuration to know if we're making changes
-	currentExperimental := detectExperimentalEnabled(ctx)
-	currentFIPS := detectFIPSEnabled(ctx)
-	configChanged := false
+	// Check if values changed compared to current release
+	newValues := buildHelmValues(cfg, cfg.ManagerImage)
+	currentValues := getReleaseValues(ctx)
+	valuesChanged := !valuesEqual(currentValues, newValues)
 
-	// Check if experimental mode change requires uninstall first
-	// Switching between experimental and default subcharts requires uninstall
-	// because both subcharts contain CRD templates that conflict
-	if currentExperimental != cfg.EnableExperimental && releaseExists(ctx) {
+	// If values changed and release exists, decide whether to undeploy first
+	if valuesChanged && releaseExists(ctx) {
 		if cfg.SkipManagerRemoval {
-			return fmt.Errorf("experimental mode change required (%t -> %t) but SkipManagerRemoval is set", currentExperimental, cfg.EnableExperimental)
+			// Upgrade test: skip undeploy, do in-place upgrade
+			t.Log("Configuration changed, performing in-place upgrade (SkipManagerRemoval set)...")
+		} else {
+			// Normal test: undeploy first for clean slate
+			t.Log("Configuration changed, removing manager first...")
+
+			if err := undeployManager(t, k8sClient); err != nil {
+				return fmt.Errorf("failed to remove manager: %w", err)
+			}
+
+			if err := waitForCRDsDeletion(t, k8sClient); err != nil {
+				t.Logf("Warning: failed waiting for CRDs deletion: %v", err)
+			}
 		}
-
-		t.Logf("Experimental mode change detected (%t -> %t), removing manager first...", currentExperimental, cfg.EnableExperimental)
-
-		if err := undeployManager(t, k8sClient); err != nil {
-			return fmt.Errorf("failed to remove manager for experimental mode change: %w", err)
-		}
-
-		if err := waitForCRDsDeletion(t, k8sClient); err != nil {
-			t.Logf("Warning: failed waiting for CRDs deletion: %v", err)
-		}
-
-		configChanged = true
 	}
 
-	// Track FIPS mode change
-	if currentFIPS != cfg.OperateInFIPSMode && releaseExists(ctx) {
-		t.Logf("FIPS mode change detected (%t -> %t)", currentFIPS, cfg.OperateInFIPSMode)
-
-		configChanged = true
-	}
-
-	// Deploy/upgrade manager (helm upgrade --install is idempotent)
+	// Deploy manager
 	if err := deployManager(t, k8sClient, cfg); err != nil {
 		return fmt.Errorf("failed to deploy manager: %w", err)
 	}
 
-	// Wait for stability after configuration changes or for upgrade scenarios
-	if configChanged || cfg.SkipManagerRemoval {
+	// For upgrade tests (SkipManagerRemoval), we need to wait for rollout
+	// since we didn't undeploy first
+	if cfg.SkipManagerRemoval && valuesChanged {
 		t.Log("Waiting for deployment rollout to complete...")
 
 		if err := waitForRolloutComplete(ctx, k8sClient, t, 3*time.Minute); err != nil {
@@ -149,9 +155,16 @@ func ensureIstioState(t TestingT, k8sClient client.Client, cfg Config) error {
 }
 
 // handleIstioChange handles Istio installation/uninstallation.
-// The manager must be removed before Istio changes to avoid webhook/sidecar conflicts.
+// The manager and test prerequisites must be removed before Istio changes to avoid webhook/sidecar/network policy conflicts.
 func handleIstioChange(t TestingT, k8sClient client.Client, currentInstalled, desiredInstalled bool) error {
-	// Remove manager FIRST (prevents conflicts during Istio changes)
+	// Remove test prerequisites FIRST (network policies can block Istio installation)
+	t.Log("Removing test prerequisites before Istio change...")
+
+	if err := removeTestPrerequisites(t, k8sClient); err != nil {
+		t.Logf("Warning: failed to remove test prerequisites: %v", err)
+	}
+
+	// Remove manager (prevents conflicts during Istio changes)
 	t.Log("Removing manager before Istio change...")
 
 	if err := undeployManager(t, k8sClient); err != nil {

@@ -47,7 +47,7 @@ override:
     path: ^internal/validators/secretref$
   - threshold: 75
     path: ^internal/resourcelock$
-  - threshold: 86
+  - threshold: 85
     path: ^internal/secretwatch$
   - threshold: 83
     path: ^internal/webhookcert$
@@ -80,6 +80,7 @@ exclude:
     - ^test # e2e and integration tests
     - ^internal/utils/test # some functions in testutils are being used in e2e tests only
     - ^internal/utils/fuzzing # only used for fuzz tests
+    - ^internal/metrics$ # metrics package only contains metric definitions, no logic to test
 
 # NOTES:
 # - symbol `/` in all path regexps will be replaced by
