@@ -67,11 +67,12 @@ func (ad *ApplierDeleter) DeleteResources(ctx context.Context, c client.Client) 
 		return err
 	}
 
-	if err := k8sutils.DeleteObject(ctx, c, &networkingv1.NetworkPolicy{ObjectMeta: metav1.ObjectMeta{
-		Name:      commonresources.NetworkPolicyPrefix + names.SelfMonitor,
-		Namespace: ad.Config.TargetNamespace(),
-	}}); err != nil {
-		return err
+	networkPolicySelector := map[string]string{
+		commonresources.LabelKeyK8sName: names.SelfMonitor,
+	}
+
+	if err := k8sutils.DeleteObjectsByLabelSelector(ctx, c, &networkingv1.NetworkPolicyList{}, networkPolicySelector); err != nil {
+		return fmt.Errorf("failed to delete network policy: %w", err)
 	}
 
 	if err := k8sutils.DeleteObject(ctx, c, &rbacv1.RoleBinding{ObjectMeta: objectMeta}); err != nil {
@@ -107,8 +108,12 @@ func (ad *ApplierDeleter) ApplyResources(ctx context.Context, c client.Client, o
 		return fmt.Errorf("failed to create self-monitor role binding: %w", err)
 	}
 
-	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, ad.makeNetworkPolicy()); err != nil {
-		return fmt.Errorf("failed to create self-monitor network policy: %w", err)
+	networkPolicies := ad.makeNetworkPolicy()
+
+	for _, np := range networkPolicies {
+		if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, np); err != nil {
+			return fmt.Errorf("failed to create self monitor network policies: %w", err)
+		}
 	}
 
 	configMap := ad.makeConfigMap(opts.PrometheusConfigFileName, opts.PrometheusConfigYAML, opts.AlertRulesFileName, opts.AlertRulesYAML)
@@ -389,6 +394,7 @@ func (ad *ApplierDeleter) makeNetworkPolicy() []*networkingv1.NetworkPolicy {
 		ad.selfMonitorName(),
 		commonresources.MakeDefaultLabels(names.SelfMonitor, commonresources.LabelValueK8sComponentMonitor),
 		commonresources.MakeDefaultSelectorLabels(names.SelfMonitor),
+		commonresources.WithNameSuffix("metrics"),
 		// Allow ingress from telemetry-manager pods only on Prometheus port
 		commonresources.WithIngressFromPods(map[string]string{
 			commonresources.LabelKeyK8sName: "manager",
