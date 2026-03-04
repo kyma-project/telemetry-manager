@@ -10,7 +10,7 @@ This document proposes integrating Vertical Pod Autoscaler (VPA) with the Centra
 
 ## Context and Problem Statement
 
-The Central OTLP Gateway is deployed as a DaemonSet with statically configured resource requests and limits. As workload patterns vary across different nodes and over time, static resource allocation leads to:
+The Central OTLP Gateway is deployed as a DaemonSet with statically configured resource requests and limits. Because workload patterns vary across different nodes and over time, static resource allocation leads to:
 - Under-provisioning: Pods may experience resource pressure or OOMKills during traffic spikes
 - Over-provisioning: Wasted resources when actual usage is consistently lower than allocated
 - Manual intervention: Operations teams must manually adjust resources based on observed metrics
@@ -95,7 +95,7 @@ spec:
 **Pros:**
 - Stability: VPA considers Priority Class, Pod Disruption Budget, and eviction rate limits when updating Pods
 - Reliability: Uses well-tested VPA components to handle complex decision logic, such as when to evict Pods.
-- No Reconciliation Loops: Pod resources are updated with a mutating webhook; the DaemonSet spec remains unchanged, preventing unnecessary reconciliations
+- No Reconciliation Loops: A mutating webhook updates Pod resources, so the DaemonSet spec remains unchanged. This prevents unnecessary reconciliations.
 - Kubernetes-Native: Uses standard Kubernetes autoscaling components
 
 **Cons:**
@@ -134,9 +134,9 @@ spec:
 The reconciler handles the following tasks:
 1. Watch VerticalPodAutoscaler CRD status
 2. Compare recommendations with current DaemonSet resources
-3. Update DaemonSet spec when drift exceeds threshold (e.g., >20%)
+3. Update DaemonSet spec when drift exceeds threshold (for example, more than 20%).
 4. Update GOMEMLIMIT based on new memory limits
-5.Trigger DaemonSet's built-in rolling update
+5. Trigger the DaemonSet's built-in rolling update.
 
 **Pros:**
 - Visibility: DaemonSet spec always reflects actual pod resources
