@@ -224,6 +224,59 @@ func collectReferencedNamesByType(config *otelcollector.OTLPGatewayConfigMap) (t
 	return traceNames, logNames
 }
 
+// updateAllPipelineStatusesAfterDeletion updates GatewayHealthy condition for all pipeline CRs after gateway deletion.
+// This is called when the gateway is deleted, and we need to update all pipelines to indicate the gateway is no longer available.
+func (r *Reconciler) updateAllPipelineStatusesAfterDeletion(ctx context.Context) error {
+	log := logf.FromContext(ctx)
+
+	// List all TracePipelines
+	var tracePipelineList telemetryv1beta1.TracePipelineList
+	if err := r.List(ctx, &tracePipelineList); err != nil {
+		return fmt.Errorf("failed to list trace pipelines: %w", err)
+	}
+
+	// List all LogPipelines
+	var logPipelineList telemetryv1beta1.LogPipelineList
+	if err := r.List(ctx, &logPipelineList); err != nil {
+		return fmt.Errorf("failed to list log pipelines: %w", err)
+	}
+
+	// Extract names
+	traceNames := make([]string, 0, len(tracePipelineList.Items))
+	for i := range tracePipelineList.Items {
+		pipeline := &tracePipelineList.Items[i]
+		// Skip pipelines being deleted
+		if pipeline.DeletionTimestamp != nil {
+			continue
+		}
+
+		traceNames = append(traceNames, pipeline.Name)
+	}
+
+	logNames := make([]string, 0, len(logPipelineList.Items))
+	for i := range logPipelineList.Items {
+		pipeline := &logPipelineList.Items[i]
+		// Skip pipelines being deleted
+		if pipeline.DeletionTimestamp != nil {
+			continue
+		}
+
+		// Only include LogPipelines that use OTLP input (gateway-based)
+		if pipeline.Spec.Input.OTLP != nil {
+			logNames = append(logNames, pipeline.Name)
+		}
+	}
+
+	log.V(1).Info("Updating pipeline statuses after gateway deletion",
+		"traceCount", len(traceNames),
+		"logCount", len(logNames))
+
+	return r.updateGatewayHealthyConditions(ctx, PipelineNamesOptions{
+		TracePipelineNames: traceNames,
+		LogPipelineNames:   logNames,
+	})
+}
+
 // doReconcile performs the main reconciliation logic.
 func (r *Reconciler) doReconcile(ctx context.Context) error {
 	log := logf.FromContext(ctx)
@@ -262,13 +315,10 @@ func (r *Reconciler) doReconcile(ctx context.Context) error {
 			return fmt.Errorf("failed to delete gateway: %w", err)
 		}
 
-		// Update status for all referenced pipelines
-		traceNames, logNames := collectReferencedNamesByType(config)
-		if err := r.updateGatewayHealthyConditions(ctx, PipelineNamesOptions{
-			TracePipelineNames: traceNames,
-			LogPipelineNames:   logNames,
-		}); err != nil {
-			log.Error(err, "failed to update status after deletion")
+		// Update status for ALL pipelines in the cluster (not just ConfigMap refs)
+		// This ensures we catch all pipelines even if ConfigMap is already empty
+		if err := r.updateAllPipelineStatusesAfterDeletion(ctx); err != nil {
+			log.Error(err, "failed to update pipeline statuses after gateway deletion")
 		}
 
 		return nil

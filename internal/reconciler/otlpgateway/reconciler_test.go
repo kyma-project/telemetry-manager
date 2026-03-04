@@ -1128,3 +1128,186 @@ func (c *overrideConfigErrorClient) Get(ctx context.Context, key client.ObjectKe
 
 	return apierrors.NewNotFound(schema.GroupResource{}, key.Name)
 }
+
+func TestUpdateAllPipelineStatusesAfterDeletion_AllTracePipelines(t *testing.T) {
+	ctx := context.Background()
+
+	// Create TracePipelines
+	tracePipeline1 := testutils.NewTracePipelineBuilder().
+		WithName("trace-1").
+		Build()
+	tracePipeline2 := testutils.NewTracePipelineBuilder().
+		WithName("trace-2").
+		Build()
+
+	fakeClient := newTestClient(t, &tracePipeline1, &tracePipeline2)
+
+	mockProber := &mockProber{}
+	mockProber.On("IsReady", mock.Anything, mock.Anything).Return(fmt.Errorf("DaemonSet not found"))
+
+	mockConverter := &mockErrorToMessageConverter{}
+	mockConverter.On("Convert", mock.Anything).Return("Gateway not ready")
+
+	sut := &Reconciler{
+		Client:            fakeClient,
+		globals:           config.Global{},
+		gatewayProber:     mockProber,
+		errToMsgConverter: mockConverter,
+	}
+
+	// Call the function
+	err := sut.updateAllPipelineStatusesAfterDeletion(ctx)
+	require.NoError(t, err)
+
+	// Verify both pipelines were updated
+	var updated1 telemetryv1beta1.TracePipeline
+	require.NoError(t, fakeClient.Get(ctx, types.NamespacedName{Name: "trace-1"}, &updated1))
+
+	condition1 := meta.FindStatusCondition(updated1.Status.Conditions, conditions.TypeGatewayHealthy)
+	require.NotNil(t, condition1)
+	assert.Equal(t, metav1.ConditionFalse, condition1.Status)
+	assert.Equal(t, conditions.ReasonGatewayNotReady, condition1.Reason)
+
+	var updated2 telemetryv1beta1.TracePipeline
+	require.NoError(t, fakeClient.Get(ctx, types.NamespacedName{Name: "trace-2"}, &updated2))
+
+	condition2 := meta.FindStatusCondition(updated2.Status.Conditions, conditions.TypeGatewayHealthy)
+	require.NotNil(t, condition2)
+	assert.Equal(t, metav1.ConditionFalse, condition2.Status)
+	assert.Equal(t, conditions.ReasonGatewayNotReady, condition2.Reason)
+}
+
+func TestUpdateAllPipelineStatusesAfterDeletion_OnlyOTLPLogPipelines(t *testing.T) {
+	ctx := context.Background()
+
+	// Create LogPipelines - one with OTLP input, one with Runtime input
+	otlpLogPipeline := testutils.NewLogPipelineBuilder().
+		WithName("log-otlp").
+		WithOTLPInput(true).
+		WithOTLPOutput().
+		Build()
+	runtimeLogPipeline := testutils.NewLogPipelineBuilder().
+		WithName("log-runtime").
+		WithRuntimeInput(true).
+		WithOTLPOutput().
+		Build()
+
+	fakeClient := newTestClient(t, &otlpLogPipeline, &runtimeLogPipeline)
+
+	mockProber := &mockProber{}
+	mockProber.On("IsReady", mock.Anything, mock.Anything).Return(fmt.Errorf("DaemonSet not found"))
+
+	mockConverter := &mockErrorToMessageConverter{}
+	mockConverter.On("Convert", mock.Anything).Return("Gateway not ready")
+
+	sut := &Reconciler{
+		Client:            fakeClient,
+		globals:           config.Global{},
+		gatewayProber:     mockProber,
+		errToMsgConverter: mockConverter,
+	}
+
+	// Call the function
+	err := sut.updateAllPipelineStatusesAfterDeletion(ctx)
+	require.NoError(t, err)
+
+	// Verify only OTLP pipeline was updated
+	var updatedOTLP telemetryv1beta1.LogPipeline
+	require.NoError(t, fakeClient.Get(ctx, types.NamespacedName{Name: "log-otlp"}, &updatedOTLP))
+
+	conditionOTLP := meta.FindStatusCondition(updatedOTLP.Status.Conditions, conditions.TypeGatewayHealthy)
+	require.NotNil(t, conditionOTLP)
+	assert.Equal(t, metav1.ConditionFalse, conditionOTLP.Status)
+	assert.Equal(t, conditions.ReasonGatewayNotReady, conditionOTLP.Reason)
+
+	// Runtime pipeline should NOT have GatewayHealthy condition
+	var updatedRuntime telemetryv1beta1.LogPipeline
+	require.NoError(t, fakeClient.Get(ctx, types.NamespacedName{Name: "log-runtime"}, &updatedRuntime))
+
+	conditionRuntime := meta.FindStatusCondition(updatedRuntime.Status.Conditions, conditions.TypeGatewayHealthy)
+	assert.Nil(t, conditionRuntime, "Runtime-based LogPipeline should not have GatewayHealthy condition")
+}
+
+func TestUpdateAllPipelineStatusesAfterDeletion_EmptyCluster(t *testing.T) {
+	ctx := context.Background()
+
+	fakeClient := newTestClient(t)
+
+	mockProber := &mockProber{}
+	mockConverter := &mockErrorToMessageConverter{}
+
+	sut := &Reconciler{
+		Client:            fakeClient,
+		globals:           config.Global{},
+		gatewayProber:     mockProber,
+		errToMsgConverter: mockConverter,
+	}
+
+	// Call the function - should not error on empty cluster
+	err := sut.updateAllPipelineStatusesAfterDeletion(ctx)
+	require.NoError(t, err)
+
+	// Verify no calls were made to prober (no pipelines to update)
+	mockProber.AssertNotCalled(t, "IsReady")
+}
+
+func TestUpdateAllPipelineStatusesAfterDeletion_MixedPipelines(t *testing.T) {
+	ctx := context.Background()
+
+	// Create a mix of TracePipelines and LogPipelines
+	tracePipeline := testutils.NewTracePipelineBuilder().
+		WithName("trace-1").
+		Build()
+	otlpLogPipeline := testutils.NewLogPipelineBuilder().
+		WithName("log-otlp").
+		WithOTLPInput(true).
+		WithOTLPOutput().
+		Build()
+	runtimeLogPipeline := testutils.NewLogPipelineBuilder().
+		WithName("log-runtime").
+		WithRuntimeInput(true).
+		WithOTLPOutput().
+		Build()
+
+	fakeClient := newTestClient(t, &tracePipeline, &otlpLogPipeline, &runtimeLogPipeline)
+
+	mockProber := &mockProber{}
+	mockProber.On("IsReady", mock.Anything, mock.Anything).Return(fmt.Errorf("DaemonSet not found"))
+
+	mockConverter := &mockErrorToMessageConverter{}
+	mockConverter.On("Convert", mock.Anything).Return("Gateway not ready")
+
+	sut := &Reconciler{
+		Client:            fakeClient,
+		globals:           config.Global{},
+		gatewayProber:     mockProber,
+		errToMsgConverter: mockConverter,
+	}
+
+	// Call the function
+	err := sut.updateAllPipelineStatusesAfterDeletion(ctx)
+	require.NoError(t, err)
+
+	// Verify TracePipeline was updated
+	var updatedTrace telemetryv1beta1.TracePipeline
+	require.NoError(t, fakeClient.Get(ctx, types.NamespacedName{Name: "trace-1"}, &updatedTrace))
+
+	conditionTrace := meta.FindStatusCondition(updatedTrace.Status.Conditions, conditions.TypeGatewayHealthy)
+	require.NotNil(t, conditionTrace)
+	assert.Equal(t, metav1.ConditionFalse, conditionTrace.Status)
+
+	// Verify OTLP LogPipeline was updated
+	var updatedOTLP telemetryv1beta1.LogPipeline
+	require.NoError(t, fakeClient.Get(ctx, types.NamespacedName{Name: "log-otlp"}, &updatedOTLP))
+
+	conditionOTLP := meta.FindStatusCondition(updatedOTLP.Status.Conditions, conditions.TypeGatewayHealthy)
+	require.NotNil(t, conditionOTLP)
+	assert.Equal(t, metav1.ConditionFalse, conditionOTLP.Status)
+
+	// Verify Runtime LogPipeline was NOT updated
+	var updatedRuntime telemetryv1beta1.LogPipeline
+	require.NoError(t, fakeClient.Get(ctx, types.NamespacedName{Name: "log-runtime"}, &updatedRuntime))
+
+	conditionRuntime := meta.FindStatusCondition(updatedRuntime.Status.Conditions, conditions.TypeGatewayHealthy)
+	assert.Nil(t, conditionRuntime)
+}
