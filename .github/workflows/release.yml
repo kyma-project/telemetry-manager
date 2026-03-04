@@ -11,8 +11,17 @@ on:
         description: 'OCC Image Version (e.g., 0.1.0-0.2.0)'
         required: true
         type: string
-
-run-name: "Release Telemetry version ${{ github.event.inputs.version }} with OCC image ${{ github.event.inputs.occ_image }}"
+      dry_run:
+        description: 'Perform a dry run without creating a release'
+        required: false
+        default: false
+        type: boolean
+      force:
+        description: 'Force release creation (re-create existing release, skip validation checks)'
+        required: false
+        default: false
+        type: boolean
+run-name: "${{ github.event.inputs.dry_run == true && '[DRY RUN] ' || '' }}${{ github.event.inputs.force == true && '[FORCE] ' || '' }}Release Telemetry version ${{ github.event.inputs.version }} with OCC image ${{ github.event.inputs.occ_image }}"
 
 permissions:
   contents: write
@@ -29,7 +38,28 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Validate version format
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+          OCC_IMAGE: ${{ github.event.inputs.occ_image }}
+        run: |
+          echo "Validating version formats..."
 
+          # Validate release version format (X.Y.Z)
+          if ! [[ "${VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Invalid version format: ${VERSION}"
+            echo "Expected format: X.Y.Z (e.g., 1.2.3)"
+            exit 1
+          fi
+          echo "✓ Release version format valid: ${VERSION}"
+
+          # Validate OCC image version format (X.Y.Z-A.B.C)
+          if ! [[ "${OCC_IMAGE}" =~ ^[0-9]+\.[0-9]+\.[0-9]+-[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Invalid OCC image version format: ${OCC_IMAGE}"
+            echo "Expected format: X.Y.Z-A.B.C (e.g., 1.2.3-4.5.6)"
+            exit 1
+          fi
+          echo "✓ OCC image version format valid: ${OCC_IMAGE}"
       - name: Check if milestone exists and is closed
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -58,6 +88,7 @@ jobs:
           echo "Milestone ${VERSION} exists, is closed, and has no open issues."
 
       - name: Check if release already exists
+        if: ${{ github.event.inputs.force != true }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ github.event.inputs.version }}
@@ -68,6 +99,55 @@ jobs:
             exit 1
           fi
           echo "Release ${VERSION} does not exist yet."
+
+      - name: Delete existing release (force mode)
+        if: ${{ github.event.inputs.force == true }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ github.event.inputs.version }}
+        run: |
+          echo "FORCE MODE: Checking for existing release ${VERSION}..."
+          if gh release view "${VERSION}" --repo "${{ github.repository }}" > /dev/null 2>&1; then
+            echo "::warning::Deleting existing release ${VERSION}"
+            gh release delete "${VERSION}" --repo "${{ github.repository }}" --yes
+            echo "✓ Deleted existing release ${VERSION}"
+          else
+            echo "No existing release found for ${VERSION}"
+          fi
+
+      - name: Check if tag already exists
+        if: ${{ github.event.inputs.force != true }}
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+        run: |
+          echo "Checking if tag ${VERSION} already exists..."
+          git fetch --tags
+          if git rev-parse "${VERSION}" >/dev/null 2>&1; then
+            echo "::error::Tag ${VERSION} already exists in the repository."
+            echo "Existing tags:"
+            git tag -l "${VERSION}"
+            echo "Please choose a different version or delete the existing tag first."
+            exit 1
+          fi
+          echo "✓ Tag ${VERSION} does not exist yet."
+
+      - name: Delete existing tag (force mode)
+        if: ${{ github.event.inputs.force == true }}
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+        run: |
+          echo "FORCE MODE: Checking for existing tag ${VERSION}..."
+          git fetch --tags
+          if git rev-parse "${VERSION}" >/dev/null 2>&1; then
+            echo "::warning::Deleting existing tag ${VERSION}"
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git tag -d "${VERSION}"
+            git push origin ":refs/tags/${VERSION}"
+            echo "✓ Deleted existing tag ${VERSION}"
+          else
+            echo "No existing tag found for ${VERSION}"
+          fi
 
       - name: Determine release branch and type
         id: determine-branch
@@ -105,6 +185,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       release-tag: ${{ github.event.inputs.version }}
+      pr-number: ${{ steps.create-pr.outputs.pr-number }}
     steps:
       - name: Checkout release branch
         uses: actions/checkout@v4
@@ -115,18 +196,23 @@ jobs:
       - name: Setup Golang
         uses: "./.github/template/setup-golang"
 
+      - name: Create version bump branch
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+          RELEASE_BRANCH: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
+        run: |
+          BUMP_BRANCH="release-prep-${VERSION}"
+          echo "Creating version bump branch ${BUMP_BRANCH}..."
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "${BUMP_BRANCH}"
+          echo "BUMP_BRANCH=${BUMP_BRANCH}" >> $GITHUB_ENV
+
       - name: Bump version in files
         env:
           VERSION: ${{ github.event.inputs.version }}
           OCC_IMAGE: ${{ github.event.inputs.occ_image }}
-          RELEASE_BRANCH: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
         run: |
-          echo "Working on release branch ${RELEASE_BRANCH}..."                                                                                                                                                                                                                                         
-          
-          # Ensure we're on the correct branch                                                                                                                                                                                                                                                          
-          git checkout "${RELEASE_BRANCH}"
-          git pull origin "${RELEASE_BRANCH}"
-          
           echo "Bumping version to ${VERSION}..."
 
           # Update .env file with release version and OCC image
@@ -148,41 +234,124 @@ jobs:
             echo "Ran make generate"
           fi
 
-      - name: Commit version bump
+      - name: Commit and push version bump
         env:
           VERSION: ${{ github.event.inputs.version }}
-          RELEASE_BRANCH: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
           git add .
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
             git commit -m "Bump version to ${VERSION}"
-            git push origin "${RELEASE_BRANCH}"
-            echo "Committed and pushed version bump"
+            git push origin "${BUMP_BRANCH}"
+            echo "Committed and pushed version bump to ${BUMP_BRANCH}"
           fi
 
-      - name: Create and push release tag
+      - name: Create Pull Request
+        id: create-pr
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ github.event.inputs.version }}
           RELEASE_BRANCH: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
+          OCC_IMAGE: ${{ github.event.inputs.occ_image }}
         run: |
-          echo "Creating release tag ${VERSION} on release branch ${RELEASE_BRANCH}..."
+          PR_BODY="$(cat <<EOF
+          ## Release Preparation for ${VERSION}
 
-          # Ensure we have the latest changes from the release branch
+          This PR prepares the release branch for version **${VERSION}**.
+
+          ### Changes
+          - Updated \`ENV_HELM_RELEASE_VERSION\` to \`${VERSION}\`
+          - Updated \`ENV_MANAGER_IMAGE\` tag to \`${VERSION}\`
+          - Updated \`ENV_OTEL_COLLECTOR_IMAGE\` tag to \`${OCC_IMAGE}\`
+          - Ran \`make generate\` to update generated files
+
+          ### Review Checklist
+          - [ ] Version numbers are correct
+          - [ ] Generated files are up to date
+          - [ ] No unintended changes
+
+          **Merge this PR to continue with the release workflow.**
+          EOF
+          )"
+
+          # Create PR
+          PR_URL=$(gh pr create \
+            --base "${RELEASE_BRANCH}" \
+            --head "${BUMP_BRANCH}" \
+            --title "Release preparation: Bump version to ${VERSION}" \
+            --body "${PR_BODY}")
+
+          # Extract PR number
+          PR_NUMBER=$(echo "${PR_URL}" | grep -o '[0-9]*$')
+          echo "pr-number=${PR_NUMBER}" >> $GITHUB_OUTPUT
+          echo "Created PR #${PR_NUMBER}: ${PR_URL}"
+          echo "PR_NUMBER=${PR_NUMBER}" >> $GITHUB_ENV
+
+      - name: Wait for PR to be merged
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_BRANCH: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
+        timeout-minutes: 60
+        run: |
+          PR_NUMBER="${{ steps.create-pr.outputs.pr-number }}"
+          echo "Waiting for PR #${PR_NUMBER} to be merged (timeout: 60 minutes)..."
+
+          MAX_ATTEMPTS=60  # 60 minutes with 60-second intervals
+          ATTEMPT=0
+
+          while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+            # Check PR status
+            PR_STATE=$(gh pr view "${PR_NUMBER}" --json state --jq .state)
+
+            if [ "$PR_STATE" = "MERGED" ]; then
+              # Verify merged to correct branch
+              MERGED_BRANCH=$(gh pr view "${PR_NUMBER}" --json baseRefName --jq .baseRefName)
+              if [ "$MERGED_BRANCH" != "$RELEASE_BRANCH" ]; then
+                echo "::error::PR was merged to ${MERGED_BRANCH} instead of ${RELEASE_BRANCH}"
+                exit 1
+              fi
+              echo "✓ PR #${PR_NUMBER} has been merged to ${RELEASE_BRANCH}!"
+              break
+            elif [ "$PR_STATE" = "CLOSED" ]; then
+              echo "::error::PR #${PR_NUMBER} was closed without merging"
+              exit 1
+            fi
+
+            echo "Attempt $((ATTEMPT + 1))/${MAX_ATTEMPTS}: PR state is ${PR_STATE}, waiting..."
+            sleep 60
+            ATTEMPT=$((ATTEMPT + 1))
+          done
+
+          if [ $ATTEMPT -ge $MAX_ATTEMPTS ]; then
+            echo "::error::Timeout: PR #${PR_NUMBER} was not merged within 60 minutes"
+            exit 1
+          fi
+
+          # Update local branch to include merged changes
+          echo "Updating local branch with merged changes..."
           git fetch origin "${RELEASE_BRANCH}"
           git checkout "${RELEASE_BRANCH}"
           git pull origin "${RELEASE_BRANCH}"
+          echo "✓ Release branch updated with merged changes"
 
-          # Create and push the tag from the release branch
-          git tag -a "${VERSION}" -m "Release ${VERSION}"
-          git push origin "${VERSION}"
+      - name: Clean up bump branch
+        if: always()
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ github.event.inputs.version }}
+        run: |
+          BUMP_BRANCH="release-prep-${VERSION}"
+          echo "Cleaning up bump branch ${BUMP_BRANCH}..."
 
-          echo "Created and pushed tag ${VERSION} from ${RELEASE_BRANCH}"
-          echo "Tag ${VERSION} pushed. This will trigger tag-release.yml workflow."
+          # Check if branch exists on remote
+          if git ls-remote --heads origin "${BUMP_BRANCH}" | grep -q "${BUMP_BRANCH}"; then
+            git push origin --delete "${BUMP_BRANCH}"
+            echo "✓ Deleted bump branch ${BUMP_BRANCH}"
+          else
+            echo "Bump branch ${BUMP_BRANCH} not found on remote (may already be deleted)"
+          fi
 
   build-image:
     permissions:
@@ -199,7 +368,9 @@ jobs:
 
   unit-tests:
     runs-on: ubuntu-latest
-    needs: validate-and-prepare-branch
+    needs:
+      - prepare-release
+      - validate-and-prepare-branch
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -217,20 +388,22 @@ jobs:
     needs:
       - build-image
       - prepare-release
+      - validate-and-prepare-branch
     uses: ./.github/workflows/pr-integration.yml
     with:
       image_tag: ${{ needs.prepare-release.outputs.release-tag }}
-      ref: ${{ needs.prepare-release.outputs.release-tag }}
+      ref: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
     secrets: inherit
 
   run-gardener-integration:
     needs:
       - build-image
       - prepare-release
+      - validate-and-prepare-branch
     uses: ./.github/workflows/gardener-integration.yml
     with:
       image_tag: ${{ needs.prepare-release.outputs.release-tag }}
-      ref: ${{ needs.prepare-release.outputs.release-tag }}
+      ref: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
     secrets: inherit
 
   upload-release-report:
@@ -246,8 +419,11 @@ jobs:
 
   create-release:
     needs:
+      - validate-and-prepare-branch
       - prepare-release
       - upload-release-report
+      - build-image
+      - unit-tests
     permissions:
       contents: write
     runs-on: ubuntu-latest
@@ -257,18 +433,63 @@ jobs:
       - name: Checkout release tag
         uses: actions/checkout@v4
         with:
-          ref: ${{ needs.prepare-release.outputs.release-tag }}
+          ref: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
           fetch-depth: 0
+      - name: Verify we're on the merged PR commit
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ needs.prepare-release.outputs.pr-number }}
+        run: |
+          # Get the merge commit SHA
+          MERGE_SHA=$(gh pr view "${PR_NUMBER}" --json mergeCommit --jq .mergeCommit.oid)
+          CURRENT_SHA=$(git rev-parse HEAD)
+          
+          if [ "$MERGE_SHA" != "$CURRENT_SHA" ]; then
+            echo "::warning::Expected commit ${MERGE_SHA} but got ${CURRENT_SHA}"
+            echo "Release branch may have additional commits after PR merge"
+          fi
+      - name: Create and push release tag
+        if: ${{ github.event.inputs.dry_run != true }}
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+          RELEASE_BRANCH: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
+        run: |
+          echo "Creating release tag ${VERSION} on release branch ${RELEASE_BRANCH}..."
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Create and push the tag from the release branch
+          git tag -a "${VERSION}" -m "Release ${VERSION}"
+          git push origin "${VERSION}"
+
+          echo "Created and pushed tag ${VERSION} from ${RELEASE_BRANCH}"
+
+      - name: Skip tag creation (dry run)
+        if: ${{ github.event.inputs.dry_run == true }}
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+          RELEASE_BRANCH: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
+        run: |
+          echo "::notice::DRY RUN: Skipping tag creation for ${VERSION} on ${RELEASE_BRANCH}"
+          echo "Would have created and pushed tag: ${VERSION}"
 
       - name: Install tools
         shell: bash
         run: make install-tools
 
       - name: Release
+        if: ${{ github.event.inputs.dry_run != true }}
         run: hack/release.sh ${{ needs.prepare-release.outputs.release-tag }}
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           GORELEASER_CURRENT_TAG: "${{ needs.prepare-release.outputs.release-tag }}"
+
+      - name: Skip GitHub release (dry run)
+        if: ${{ github.event.inputs.dry_run == true }}
+        run: |
+          echo "::notice::DRY RUN: Skipping GitHub release creation"
+          echo "Would have run: hack/release.sh ${{ needs.prepare-release.outputs.release-tag }}"
 
       - name: Package Helm chart
         run: |
@@ -277,13 +498,21 @@ jobs:
           echo "HELM_CHART=$FILENAME" >> $GITHUB_ENV
 
       - name: Upload Helm chart to release
+        if: ${{ github.event.inputs.dry_run != true }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           [[ ! -e ${HELM_CHART} ]] && echo "::error ::Packaged Helm chart does not exist" && exit 1
           gh release upload ${{ needs.prepare-release.outputs.release-tag }} --clobber ${HELM_CHART}
 
+      - name: Skip Helm chart upload (dry run)
+        if: ${{ github.event.inputs.dry_run == true }}
+        run: |
+          echo "::notice::DRY RUN: Skipping Helm chart upload"
+          echo "Would have uploaded: ${HELM_CHART}"
+
       - name: Commit and push Helm chart metadata
+        if: ${{ github.event.inputs.dry_run != true }}
         run: |
           git config --global user.name "${GITHUB_ACTOR}"
           git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
@@ -292,3 +521,67 @@ jobs:
           git add index.yaml
           git commit -m "Update Helm chart metadata for ${{ needs.prepare-release.outputs.release-tag }}"
           git push origin gh-pages
+
+      - name: Skip gh-pages update (dry run)
+        if: ${{ github.event.inputs.dry_run == true }}
+        run: |
+          echo "::notice::DRY RUN: Skipping gh-pages Helm chart metadata update"
+          echo "Would have updated index.yaml on gh-pages branch"
+      - name: Release success summary
+        if: ${{ success() && github.event.inputs.dry_run != true }}
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY <<EOF
+          ##  Release ${{ needs.prepare-release.outputs.release-tag }} Published Successfully!
+          
+          ### Release Information
+          - **Release**: https://github.com/${{ github.repository }}/releases/tag/${{ needs.prepare-release.outputs.release-tag }}
+          - **Version**: ${{ needs.prepare-release.outputs.release-tag }}
+          - **Branch**: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
+          - **PR**: #${{ needs.prepare-release.outputs.pr-number }}
+          - **OCC Image**: ${{ github.event.inputs.occ_image }}
+          - **Helm Chart**: \`${HELM_CHART}\`
+          
+          ### Docker Images
+          \`\`\`
+          europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:${{ needs.prepare-release.outputs.release-tag }}
+          \`\`\`
+          
+          ### What's Next?
+          1. Verify the release at the URL above
+          2. Announce the release to the team
+          3. Update external documentation if needed
+          
+          EOF
+      - name: Dry run summary
+        if: ${{ github.event.inputs.dry_run == true }}
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY <<EOF
+          ## Dry Run Summary
+
+          **Version**: ${{ needs.prepare-release.outputs.release-tag }}
+          **Release Branch**: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
+          **OCC Image**: ${{ github.event.inputs.occ_image }}
+
+          ### Completed (Dry Run)
+          - Version validation
+          - Milestone verification
+          - Release branch preparation
+          - Version bump in .env
+          - make generate
+          - Commit to release branch
+          - Docker image build
+          - Unit tests
+          - PR integration tests
+          - Gardener integration tests
+          - Release report upload
+          - Helm chart packaging
+
+          ### Skipped (Dry Run)
+          - Git tag creation
+          - GitHub release creation
+          - Helm chart upload to release
+          - gh-pages update
+
+          ---
+          **To create the actual release**, re-run this workflow with `dry_run` set to `false`.
+          EOF
