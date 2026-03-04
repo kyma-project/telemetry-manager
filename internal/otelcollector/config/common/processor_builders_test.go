@@ -547,28 +547,24 @@ func TestTraceFilterProcessorConfig(t *testing.T) {
 
 func TestFilterSpecsToLogFilterProcessorConfig(t *testing.T) {
 	tests := []struct {
-		name               string
-		specs              []telemetryv1beta1.FilterSpec
-		expectedConditions []string
+		name  string
+		specs []telemetryv1beta1.FilterSpec
 	}{
 		{
-			name:               "empty specs",
-			specs:              []telemetryv1beta1.FilterSpec{},
-			expectedConditions: nil,
+			name:  "empty specs",
+			specs: []telemetryv1beta1.FilterSpec{},
 		},
 		{
 			name: "single spec with single condition",
 			specs: []telemetryv1beta1.FilterSpec{
 				{Conditions: []string{"body == \"test\""}},
 			},
-			expectedConditions: []string{"body == \"test\""},
 		},
 		{
 			name: "single spec with multiple conditions",
 			specs: []telemetryv1beta1.FilterSpec{
 				{Conditions: []string{"condition1", "condition2"}},
 			},
-			expectedConditions: []string{"condition1", "condition2"},
 		},
 		{
 			name: "multiple specs with conditions",
@@ -576,7 +572,6 @@ func TestFilterSpecsToLogFilterProcessorConfig(t *testing.T) {
 				{Conditions: []string{"condition1"}},
 				{Conditions: []string{"condition2", "condition3"}},
 			},
-			expectedConditions: []string{"condition1", "condition2", "condition3"},
 		},
 	}
 
@@ -588,28 +583,25 @@ func TestFilterSpecsToLogFilterProcessorConfig(t *testing.T) {
 
 			require.NotNil(config)
 			require.Equal("ignore", config.ErrorMode)
-			require.Equal(tt.expectedConditions, config.Logs)
+			require.Equal(tt.specs, config.Logs)
 		})
 	}
 }
 
 func TestFilterSpecsToMetricFilterProcessorConfig(t *testing.T) {
 	tests := []struct {
-		name               string
-		specs              []telemetryv1beta1.FilterSpec
-		expectedConditions []string
+		name  string
+		specs []telemetryv1beta1.FilterSpec
 	}{
 		{
-			name:               "empty specs",
-			specs:              []telemetryv1beta1.FilterSpec{},
-			expectedConditions: nil,
+			name:  "empty specs",
+			specs: []telemetryv1beta1.FilterSpec{},
 		},
 		{
 			name: "single spec with single condition",
 			specs: []telemetryv1beta1.FilterSpec{
 				{Conditions: []string{"metric.name == \"test\""}},
 			},
-			expectedConditions: []string{"metric.name == \"test\""},
 		},
 		{
 			name: "multiple specs with conditions",
@@ -617,7 +609,6 @@ func TestFilterSpecsToMetricFilterProcessorConfig(t *testing.T) {
 				{Conditions: []string{"condition1"}},
 				{Conditions: []string{"condition2"}},
 			},
-			expectedConditions: []string{"condition1", "condition2"},
 		},
 	}
 
@@ -629,28 +620,25 @@ func TestFilterSpecsToMetricFilterProcessorConfig(t *testing.T) {
 
 			require.NotNil(config)
 			require.Equal("ignore", config.ErrorMode)
-			require.Equal(tt.expectedConditions, config.Metrics)
+			require.Equal(tt.specs, config.Metrics)
 		})
 	}
 }
 
 func TestFilterSpecsToTraceFilterProcessorConfig(t *testing.T) {
 	tests := []struct {
-		name               string
-		specs              []telemetryv1beta1.FilterSpec
-		expectedConditions []string
+		name  string
+		specs []telemetryv1beta1.FilterSpec
 	}{
 		{
-			name:               "empty specs",
-			specs:              []telemetryv1beta1.FilterSpec{},
-			expectedConditions: nil,
+			name:  "empty specs",
+			specs: []telemetryv1beta1.FilterSpec{},
 		},
 		{
 			name: "single spec with single condition",
 			specs: []telemetryv1beta1.FilterSpec{
 				{Conditions: []string{"span.name == \"test\""}},
 			},
-			expectedConditions: []string{"span.name == \"test\""},
 		},
 		{
 			name: "multiple specs with conditions",
@@ -658,7 +646,6 @@ func TestFilterSpecsToTraceFilterProcessorConfig(t *testing.T) {
 				{Conditions: []string{"condition1"}},
 				{Conditions: []string{"condition2"}},
 			},
-			expectedConditions: []string{"condition1", "condition2"},
 		},
 	}
 
@@ -670,7 +657,7 @@ func TestFilterSpecsToTraceFilterProcessorConfig(t *testing.T) {
 
 			require.NotNil(config)
 			require.Equal("ignore", config.ErrorMode)
-			require.Equal(tt.expectedConditions, config.Traces)
+			require.Equal(tt.specs, config.Traces)
 		})
 	}
 }
