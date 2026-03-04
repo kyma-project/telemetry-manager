@@ -1,5 +1,7 @@
 package common
 
+import "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+
 // =============================================================================
 // BASE CONFIGURATION TYPES
 // =============================================================================
@@ -213,10 +215,10 @@ type IstioNoiseFilterProcessor struct {
 }
 
 type FilterProcessor struct {
-	ErrorMode string                 `yaml:"error_mode"`
-	Metrics   FilterProcessorMetrics `yaml:"metrics,omitempty"`
-	Logs      FilterProcessorLogs    `yaml:"logs,omitempty"`
-	Traces    FilterProcessorTraces  `yaml:"traces,omitempty"`
+	ErrorMode string               `yaml:"error_mode"`
+	Metrics   []v1beta1.FilterSpec `yaml:"metric_statements,omitempty"`
+	Logs      []v1beta1.FilterSpec `yaml:"log_statements,omitempty"`
+	Traces    []v1beta1.FilterSpec `yaml:"trace_statements,omitempty"`
 }
 
 type FilterProcessorMetrics struct {

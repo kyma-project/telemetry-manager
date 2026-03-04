@@ -476,7 +476,7 @@ func (b *Builder) addUserDefinedFilterProcessor() buildComponentFunc {
 				return nil // No filters, no processor needed
 			}
 
-			return common.FilterSpecsToMetricFilterProcessorConfig(mp.Spec.Filters)
+			return common.LogFilterProcessorConfig(mp.Spec.Filters)
 		},
 	)
 }
@@ -550,8 +550,10 @@ func filterByNamespaceProcessorConfig(namespaceSelector *telemetryv1beta1.Namesp
 		filterExpressions = append(filterExpressions, includeNamespacesExpr)
 	}
 
-	return common.MetricFilterProcessorConfig(common.FilterProcessorMetrics{
-		Metric: filterExpressions,
+	return common.MetricFilterProcessorConfig([]telemetryv1beta1.FilterSpec{
+		{
+			Conditions: filterExpressions,
+		},
 	})
 }
 
@@ -574,11 +576,13 @@ func (b *Builder) addDropRuntimePodMetricsProcessor() buildComponentFunc {
 				return nil
 			}
 
-			return common.MetricFilterProcessorConfig(common.FilterProcessorMetrics{
-				Metric: []string{common.JoinWithAnd(
-					common.KymaInputNameEquals(common.InputSourceRuntime),
-					common.IsMatch("name", "^k8s.pod.*"),
-				)},
+			return common.MetricFilterProcessorConfig([]telemetryv1beta1.FilterSpec{
+				{
+					Conditions: []string{common.JoinWithAnd(
+						common.KymaInputNameEquals(common.InputSourceRuntime),
+						common.IsMatch("name", "^k8s.pod.*"),
+					)},
+				},
 			})
 		},
 	)
@@ -592,12 +596,15 @@ func (b *Builder) addDropRuntimeContainerMetricsProcessor() buildComponentFunc {
 				return nil
 			}
 
-			return common.MetricFilterProcessorConfig(common.FilterProcessorMetrics{
-				Metric: []string{common.JoinWithAnd(
-					common.KymaInputNameEquals(common.InputSourceRuntime),
-					common.IsMatch("name", "(^k8s.container.*)|(^container.*)"),
-				)},
-			})
+			return common.MetricFilterProcessorConfig(
+				[]telemetryv1beta1.FilterSpec{
+					{
+						Conditions: []string{common.JoinWithAnd(
+							common.KymaInputNameEquals(common.InputSourceRuntime),
+							common.IsMatch("name", "(^k8s.container.*)|(^container.*)"),
+						)},
+					},
+				})
 		},
 	)
 }
@@ -610,11 +617,13 @@ func (b *Builder) addDropRuntimeNodeMetricsProcessor() buildComponentFunc {
 				return nil
 			}
 
-			return common.MetricFilterProcessorConfig(common.FilterProcessorMetrics{
-				Metric: []string{common.JoinWithAnd(
-					common.KymaInputNameEquals(common.InputSourceRuntime),
-					common.IsMatch("name", "^k8s.node.*"),
-				)},
+			return common.MetricFilterProcessorConfig([]telemetryv1beta1.FilterSpec{
+				{
+					Conditions: []string{common.JoinWithAnd(
+						common.KymaInputNameEquals(common.InputSourceRuntime),
+						common.IsMatch("name", "^k8s.node.*"),
+					)},
+				},
 			})
 		},
 	)
@@ -628,11 +637,13 @@ func (b *Builder) addDropRuntimeVolumeMetricsProcessor() buildComponentFunc {
 				return nil
 			}
 
-			return common.MetricFilterProcessorConfig(common.FilterProcessorMetrics{
-				Metric: []string{common.JoinWithAnd(
-					common.KymaInputNameEquals(common.InputSourceRuntime),
-					common.IsMatch("name", "^k8s.volume.*"),
-				)},
+			return common.MetricFilterProcessorConfig([]telemetryv1beta1.FilterSpec{
+				{
+					Conditions: []string{common.JoinWithAnd(
+						common.KymaInputNameEquals(common.InputSourceRuntime),
+						common.IsMatch("name", "^k8s.volume.*"),
+					)},
+				},
 			})
 		},
 	)
@@ -646,11 +657,13 @@ func (b *Builder) addDropRuntimeDeploymentMetricsProcessor() buildComponentFunc 
 				return nil
 			}
 
-			return common.MetricFilterProcessorConfig(common.FilterProcessorMetrics{
-				Metric: []string{common.JoinWithAnd(
-					common.KymaInputNameEquals(common.InputSourceRuntime),
-					common.IsMatch("name", "^k8s.deployment.*"),
-				)},
+			return common.MetricFilterProcessorConfig([]telemetryv1beta1.FilterSpec{
+				{
+					Conditions: []string{common.JoinWithAnd(
+						common.KymaInputNameEquals(common.InputSourceRuntime),
+						common.IsMatch("name", "^k8s.deployment.*"),
+					)},
+				},
 			})
 		},
 	)
@@ -664,11 +677,13 @@ func (b *Builder) addDropRuntimeDaemonSetMetricsProcessor() buildComponentFunc {
 				return nil
 			}
 
-			return common.MetricFilterProcessorConfig(common.FilterProcessorMetrics{
-				Metric: []string{common.JoinWithAnd(
-					common.KymaInputNameEquals(common.InputSourceRuntime),
-					common.IsMatch("name", "^k8s.daemonset.*"),
-				)},
+			return common.MetricFilterProcessorConfig([]telemetryv1beta1.FilterSpec{
+				{
+					Conditions: []string{common.JoinWithAnd(
+						common.KymaInputNameEquals(common.InputSourceRuntime),
+						common.IsMatch("name", "^k8s.volume.*"),
+					)},
+				},
 			})
 		},
 	)
@@ -682,11 +697,13 @@ func (b *Builder) addDropRuntimeStatefulSetMetricsProcessor() buildComponentFunc
 				return nil
 			}
 
-			return common.MetricFilterProcessorConfig(common.FilterProcessorMetrics{
-				Metric: []string{common.JoinWithAnd(
-					common.KymaInputNameEquals(common.InputSourceRuntime),
-					common.IsMatch("name", "^k8s.statefulset.*"),
-				)},
+			return common.MetricFilterProcessorConfig([]telemetryv1beta1.FilterSpec{
+				{
+					Conditions: []string{common.JoinWithAnd(
+						common.KymaInputNameEquals(common.InputSourceRuntime),
+						common.IsMatch("name", "^k8s.statefulset.*"),
+					)},
+				},
 			})
 		},
 	)
@@ -700,11 +717,13 @@ func (b *Builder) addDropRuntimeJobMetricsProcessor() buildComponentFunc {
 				return nil
 			}
 
-			return common.MetricFilterProcessorConfig(common.FilterProcessorMetrics{
-				Metric: []string{common.JoinWithAnd(
-					common.KymaInputNameEquals(common.InputSourceRuntime),
-					common.IsMatch("name", "^k8s.job.*"),
-				)},
+			return common.MetricFilterProcessorConfig([]telemetryv1beta1.FilterSpec{
+				{
+					Conditions: []string{common.JoinWithAnd(
+						common.KymaInputNameEquals(common.InputSourceRuntime),
+						common.IsMatch("name", "^k8s.job.*"),
+					)},
+				},
 			})
 		},
 	)
@@ -746,8 +765,10 @@ func dropDiagnosticMetricsFilterProcessorConfig(inputSource common.InputSourceTy
 	excludeScrapeMetricsExpr := common.JoinWithAnd(inputSourceCondition, common.JoinWithOr(metricNameConditions...))
 	filterExpressions = append(filterExpressions, excludeScrapeMetricsExpr)
 
-	return common.MetricFilterProcessorConfig(common.FilterProcessorMetrics{
-		Metric: filterExpressions,
+	return common.MetricFilterProcessorConfig([]telemetryv1beta1.FilterSpec{
+		{
+			Conditions: filterExpressions,
+		},
 	})
 }
 
@@ -770,11 +791,13 @@ func (b *Builder) addDropEnvoyMetricsIfDisabledProcessor() buildComponentFunc {
 				return nil
 			}
 
-			return common.MetricFilterProcessorConfig(common.FilterProcessorMetrics{
-				Metric: []string{common.JoinWithAnd(
-					common.IsMatch("name", "^envoy_.*"),
-					common.KymaInputNameEquals(common.InputSourceIstio),
-				)},
+			return common.MetricFilterProcessorConfig([]telemetryv1beta1.FilterSpec{
+				{
+					Conditions: []string{common.JoinWithAnd(
+						common.IsMatch("name", "^envoy_.*"),
+						common.KymaInputNameEquals(common.InputSourceIstio),
+					)},
+				},
 			})
 		},
 	)
@@ -1156,21 +1179,24 @@ func insertSkipEnrichmentAttributeProcessorConfig() *common.TransformProcessor {
 }
 
 func dropNonPVCVolumesMetricsProcessorConfig() *common.FilterProcessor {
-	return common.MetricFilterProcessorConfig(common.FilterProcessorMetrics{
-		Metric: []string{common.JoinWithAnd(
-			// identify volume metrics by checking existence of "k8s.volume.name" resource attribute
-			common.ResourceAttributeIsNotNil("k8s.volume.name"),
-			common.ResourceAttributeNotEquals("k8s.volume.type", "persistentVolumeClaim"),
-		)},
+	return common.MetricFilterProcessorConfig([]telemetryv1beta1.FilterSpec{
+		{
+			Conditions: []string{common.JoinWithAnd(
+				common.ResourceAttributeIsNotNil("k8s.volume.name"),
+				common.ResourceAttributeNotEquals("k8s.volume.type", "persistentVolumeClaim"),
+			)},
+		},
 	})
 }
 
 func dropVirtualNetworkInterfacesProcessorConfig() *common.FilterProcessor {
-	return common.MetricFilterProcessorConfig(common.FilterProcessorMetrics{
-		Datapoint: []string{common.JoinWithAnd(
-			common.IsMatch("metric.name", "^k8s.node.network.*"),
-			common.Not(common.IsMatch("attributes[\"interface\"]", "^(eth|en).*")),
-		)},
+	return common.MetricFilterProcessorConfig([]telemetryv1beta1.FilterSpec{
+		{
+			Conditions: []string{common.JoinWithAnd(
+				common.IsMatch("metric.name", "^k8s.node.network.*"),
+				common.Not(common.IsMatch("attributes[\"interface\"]", "^(eth|en).*")),
+			)},
+		},
 	})
 }
 
