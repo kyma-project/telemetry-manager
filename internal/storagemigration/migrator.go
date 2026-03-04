@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-logr/logr"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -19,7 +20,7 @@ import (
 const (
 	oldVersion = "v1alpha1"
 
-	migrationTimeout = 5 * time.Minute
+	retryInterval = 10 * time.Second
 )
 
 var pipelineCRDs = []string{
@@ -44,18 +45,25 @@ func New(c client.Client, logger logr.Logger) *Migrator {
 }
 
 func (m *Migrator) Start(ctx context.Context) error {
-	if err := m.migratePipelinesIfNeeded(ctx); err != nil {
-		// Log the error but don't return it, as we don't want to crash the manager if migration fails.
-		m.logger.Error(err, "migration failed")
-	}
+	for {
+		err := m.migratePipelinesIfNeeded(ctx)
+		if err == nil {
+			return nil
+		}
 
-	return nil
+		m.logger.Error(err, "Migration failed, will retry", "retryInterval", retryInterval)
+
+		select {
+		case <-ctx.Done():
+			m.logger.Info("Migration stopped due to context cancellation")
+			return nil
+		case <-time.After(retryInterval):
+			// Continue with retry
+		}
+	}
 }
 
 func (m *Migrator) migratePipelinesIfNeeded(ctx context.Context) error {
-	ctx, cancel := context.WithTimeout(ctx, migrationTimeout)
-	defer cancel()
-
 	m.logger.Info("Checking if storage version migration is needed")
 
 	// Collect all CRDs that need migration
@@ -135,6 +143,11 @@ func (m *Migrator) migrateLogPipelines(ctx context.Context) error {
 
 	for i := range list.Items {
 		if err := m.client.Update(ctx, &list.Items[i]); err != nil {
+			// Ignore NotFound errors - the resource was deleted during migration
+			if apierrors.IsNotFound(err) {
+				continue
+			}
+
 			return fmt.Errorf("failed to migrate LogPipeline %s: %w", list.Items[i].Name, err)
 		}
 	}
@@ -153,6 +166,11 @@ func (m *Migrator) migrateMetricPipelines(ctx context.Context) error {
 
 	for i := range list.Items {
 		if err := m.client.Update(ctx, &list.Items[i]); err != nil {
+			// Ignore NotFound errors - the resource was deleted during migration
+			if apierrors.IsNotFound(err) {
+				continue
+			}
+
 			return fmt.Errorf("failed to migrate MetricPipeline %s: %w", list.Items[i].Name, err)
 		}
 	}
@@ -171,6 +189,11 @@ func (m *Migrator) migrateTracePipelines(ctx context.Context) error {
 
 	for i := range list.Items {
 		if err := m.client.Update(ctx, &list.Items[i]); err != nil {
+			// Ignore NotFound errors - the resource was deleted during migration
+			if apierrors.IsNotFound(err) {
+				continue
+			}
+
 			return fmt.Errorf("failed to migrate TracePipeline %s: %w", list.Items[i].Name, err)
 		}
 	}
@@ -189,6 +212,11 @@ func (m *Migrator) migrateTelemetries(ctx context.Context) error {
 
 	for i := range list.Items {
 		if err := m.client.Update(ctx, &list.Items[i]); err != nil {
+			// Ignore NotFound errors - the resource was deleted during migration
+			if apierrors.IsNotFound(err) {
+				continue
+			}
+
 			return fmt.Errorf("failed to migrate Telemetry %s/%s: %w", list.Items[i].Namespace, list.Items[i].Name, err)
 		}
 	}
