@@ -48,8 +48,8 @@ processors:
         send_batch_max_size: 512
     filter/user-defined-test1:
         error_mode: ignore
-        traces:
-            span:
+        trace_statements:
+            - conditions:
                 - IsMatch(span.name, ".*grpc.*")
     istio_noise_filter: {}
     k8s_attributes:

@@ -142,33 +142,33 @@ processors:
         send_batch_max_size: 1024
     filter/drop-envoy-metrics-if-disabled:
         error_mode: ignore
-        metrics:
-            metric:
+        metric_statements:
+            - conditions:
                 - IsMatch(name, "^envoy_.*") and resource.attributes["kyma.input.name"] == "istio"
     filter/drop-runtime-daemonset-metrics:
         error_mode: ignore
-        metrics:
-            metric:
-                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(name, "^k8s.daemonset.*")
+        metric_statements:
+            - conditions:
+                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(name, "^k8s.volume.*")
     filter/drop-runtime-node-metrics:
         error_mode: ignore
-        metrics:
-            metric:
+        metric_statements:
+            - conditions:
                 - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(name, "^k8s.node.*")
     filter/drop-runtime-pod-metrics:
         error_mode: ignore
-        metrics:
-            metric:
+        metric_statements:
+            - conditions:
                 - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(name, "^k8s.pod.*")
     filter/drop-runtime-volume-metrics:
         error_mode: ignore
-        metrics:
-            metric:
+        metric_statements:
+            - conditions:
                 - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(name, "^k8s.volume.*")
     filter/drop-virtual-network-interfaces:
         error_mode: ignore
-        metrics:
-            datapoint:
+        metric_statements:
+            - conditions:
                 - IsMatch(metric.name, "^k8s.node.network.*") and not(IsMatch(attributes["interface"], "^(eth|en).*"))
     k8s_attributes:
         auth_type: serviceAccount

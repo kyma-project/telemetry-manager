@@ -92,13 +92,13 @@ processors:
         send_batch_max_size: 1024
     filter/drop-diagnostic-metrics-if-input-source-istio:
         error_mode: ignore
-        metrics:
-            metric:
+        metric_statements:
+            - conditions:
                 - resource.attributes["kyma.input.name"] == "istio" and (name == "up" or name == "scrape_duration_seconds" or name == "scrape_samples_scraped" or name == "scrape_samples_post_metric_relabeling" or name == "scrape_series_added")
     filter/drop-envoy-metrics-if-disabled:
         error_mode: ignore
-        metrics:
-            metric:
+        metric_statements:
+            - conditions:
                 - IsMatch(name, "^envoy_.*") and resource.attributes["kyma.input.name"] == "istio"
     istio_noise_filter: {}
     k8s_attributes:

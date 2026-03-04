@@ -493,8 +493,10 @@ func TestResolveServiceNameConfig(t *testing.T) {
 func TestLogFilterProcessorConfig(t *testing.T) {
 	require := require.New(t)
 
-	logs := FilterProcessorLogs{
-		Log: []string{"condition1", "condition2"},
+	logs := []telemetryv1beta1.FilterSpec{
+		{
+			Conditions: []string{"condition1", "condition2"},
+		},
 	}
 
 	config := LogFilterProcessorConfig(logs)
@@ -502,17 +504,18 @@ func TestLogFilterProcessorConfig(t *testing.T) {
 	require.NotNil(config)
 	require.Equal("ignore", config.ErrorMode)
 	require.Equal(logs, config.Logs)
-	require.Empty(config.Metrics.Metric)
-	require.Empty(config.Metrics.Datapoint)
-	require.Empty(config.Traces.Span)
+	require.Empty(config.Metrics)
+	require.Empty(config.Metrics)
+	require.Empty(config.Traces)
 }
 
 func TestMetricFilterProcessorConfig(t *testing.T) {
 	require := require.New(t)
 
-	metrics := FilterProcessorMetrics{
-		Metric:    []string{"metric_condition1"},
-		Datapoint: []string{"datapoint_condition1"},
+	metrics := []telemetryv1beta1.FilterSpec{
+		{
+			Conditions: []string{"metric_condition1", "datapoint_condition1"},
+		},
 	}
 
 	config := MetricFilterProcessorConfig(metrics)
@@ -520,16 +523,17 @@ func TestMetricFilterProcessorConfig(t *testing.T) {
 	require.NotNil(config)
 	require.Equal("ignore", config.ErrorMode)
 	require.Equal(metrics, config.Metrics)
-	require.Empty(config.Logs.Log)
-	require.Empty(config.Traces.Span)
+	require.Empty(config.Logs)
+	require.Empty(config.Traces)
 }
 
 func TestTraceFilterProcessorConfig(t *testing.T) {
 	require := require.New(t)
 
-	traces := FilterProcessorTraces{
-		Span:      []string{"span_condition1"},
-		SpanEvent: []string{"spanevent_condition1"},
+	traces := []telemetryv1beta1.FilterSpec{
+		{
+			Conditions: []string{"span_condition1", "spanevent_condition1"},
+		},
 	}
 
 	config := TraceFilterProcessorConfig(traces)
@@ -537,8 +541,8 @@ func TestTraceFilterProcessorConfig(t *testing.T) {
 	require.NotNil(config)
 	require.Equal("ignore", config.ErrorMode)
 	require.Equal(traces, config.Traces)
-	require.Empty(config.Logs.Log)
-	require.Empty(config.Metrics.Metric)
+	require.Empty(config.Logs)
+	require.Empty(config.Metrics)
 }
 
 func TestFilterSpecsToLogFilterProcessorConfig(t *testing.T) {
@@ -580,11 +584,11 @@ func TestFilterSpecsToLogFilterProcessorConfig(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			require := require.New(t)
 
-			config := FilterSpecsToLogFilterProcessorConfig(tt.specs)
+			config := LogFilterProcessorConfig(tt.specs)
 
 			require.NotNil(config)
 			require.Equal("ignore", config.ErrorMode)
-			require.Equal(tt.expectedConditions, config.Logs.Log)
+			require.Equal(tt.expectedConditions, config.Logs)
 		})
 	}
 }
@@ -621,11 +625,11 @@ func TestFilterSpecsToMetricFilterProcessorConfig(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			require := require.New(t)
 
-			config := FilterSpecsToMetricFilterProcessorConfig(tt.specs)
+			config := MetricFilterProcessorConfig(tt.specs)
 
 			require.NotNil(config)
 			require.Equal("ignore", config.ErrorMode)
-			require.Equal(tt.expectedConditions, config.Metrics.Datapoint)
+			require.Equal(tt.expectedConditions, config.Metrics)
 		})
 	}
 }
@@ -662,11 +666,11 @@ func TestFilterSpecsToTraceFilterProcessorConfig(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			require := require.New(t)
 
-			config := FilterSpecsToTraceFilterProcessorConfig(tt.specs)
+			config := TraceFilterProcessorConfig(tt.specs)
 
 			require.NotNil(config)
 			require.Equal("ignore", config.ErrorMode)
-			require.Equal(tt.expectedConditions, config.Traces.Span)
+			require.Equal(tt.expectedConditions, config.Traces)
 		})
 	}
 }
