@@ -497,14 +497,17 @@ func TestLogFilterProcessorConfig(t *testing.T) {
 		{
 			Conditions: []string{"condition1", "condition2"},
 		},
+		{
+			Conditions: []string{"condition3"},
+		},
 	}
 
 	config := LogFilterProcessorConfig(logs)
 
 	require.NotNil(config)
 	require.Equal("ignore", config.ErrorMode)
+	require.Len(config.Logs, 2)
 	require.Equal(logs, config.Logs)
-	require.Empty(config.Metrics)
 	require.Empty(config.Metrics)
 	require.Empty(config.Traces)
 }
@@ -516,12 +519,16 @@ func TestMetricFilterProcessorConfig(t *testing.T) {
 		{
 			Conditions: []string{"metric_condition1", "datapoint_condition1"},
 		},
+		{
+			Conditions: []string{"metric_condition2"},
+		},
 	}
 
 	config := MetricFilterProcessorConfig(metrics)
 
 	require.NotNil(config)
 	require.Equal("ignore", config.ErrorMode)
+	require.Len(config.Metrics, 2)
 	require.Equal(metrics, config.Metrics)
 	require.Empty(config.Logs)
 	require.Empty(config.Traces)
@@ -534,132 +541,19 @@ func TestTraceFilterProcessorConfig(t *testing.T) {
 		{
 			Conditions: []string{"span_condition1", "spanevent_condition1"},
 		},
+		{
+			Conditions: []string{"span_condition2"},
+		},
 	}
 
 	config := TraceFilterProcessorConfig(traces)
 
 	require.NotNil(config)
 	require.Equal("ignore", config.ErrorMode)
+	require.Len(config.Traces, 2)
 	require.Equal(traces, config.Traces)
 	require.Empty(config.Logs)
 	require.Empty(config.Metrics)
-}
-
-func TestFilterSpecsToLogFilterProcessorConfig(t *testing.T) {
-	tests := []struct {
-		name  string
-		specs []telemetryv1beta1.FilterSpec
-	}{
-		{
-			name:  "empty specs",
-			specs: []telemetryv1beta1.FilterSpec{},
-		},
-		{
-			name: "single spec with single condition",
-			specs: []telemetryv1beta1.FilterSpec{
-				{Conditions: []string{"body == \"test\""}},
-			},
-		},
-		{
-			name: "single spec with multiple conditions",
-			specs: []telemetryv1beta1.FilterSpec{
-				{Conditions: []string{"condition1", "condition2"}},
-			},
-		},
-		{
-			name: "multiple specs with conditions",
-			specs: []telemetryv1beta1.FilterSpec{
-				{Conditions: []string{"condition1"}},
-				{Conditions: []string{"condition2", "condition3"}},
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			require := require.New(t)
-
-			config := LogFilterProcessorConfig(tt.specs)
-
-			require.NotNil(config)
-			require.Equal("ignore", config.ErrorMode)
-			require.Equal(tt.specs, config.Logs)
-		})
-	}
-}
-
-func TestFilterSpecsToMetricFilterProcessorConfig(t *testing.T) {
-	tests := []struct {
-		name  string
-		specs []telemetryv1beta1.FilterSpec
-	}{
-		{
-			name:  "empty specs",
-			specs: []telemetryv1beta1.FilterSpec{},
-		},
-		{
-			name: "single spec with single condition",
-			specs: []telemetryv1beta1.FilterSpec{
-				{Conditions: []string{"metric.name == \"test\""}},
-			},
-		},
-		{
-			name: "multiple specs with conditions",
-			specs: []telemetryv1beta1.FilterSpec{
-				{Conditions: []string{"condition1"}},
-				{Conditions: []string{"condition2"}},
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			require := require.New(t)
-
-			config := MetricFilterProcessorConfig(tt.specs)
-
-			require.NotNil(config)
-			require.Equal("ignore", config.ErrorMode)
-			require.Equal(tt.specs, config.Metrics)
-		})
-	}
-}
-
-func TestFilterSpecsToTraceFilterProcessorConfig(t *testing.T) {
-	tests := []struct {
-		name  string
-		specs []telemetryv1beta1.FilterSpec
-	}{
-		{
-			name:  "empty specs",
-			specs: []telemetryv1beta1.FilterSpec{},
-		},
-		{
-			name: "single spec with single condition",
-			specs: []telemetryv1beta1.FilterSpec{
-				{Conditions: []string{"span.name == \"test\""}},
-			},
-		},
-		{
-			name: "multiple specs with conditions",
-			specs: []telemetryv1beta1.FilterSpec{
-				{Conditions: []string{"condition1"}},
-				{Conditions: []string{"condition2"}},
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			require := require.New(t)
-
-			config := TraceFilterProcessorConfig(tt.specs)
-
-			require.NotNil(config)
-			require.Equal("ignore", config.ErrorMode)
-			require.Equal(tt.specs, config.Traces)
-		})
-	}
 }
 
 func TestLogTransformProcessorConfig(t *testing.T) {
