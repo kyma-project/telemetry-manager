@@ -226,7 +226,7 @@ type removeReferenceErrorClient struct {
 
 func (c *removeReferenceErrorClient) Get(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
 	// Return error for OTLP Gateway ConfigMap to simulate RemoveLogPipelineReference failure
-	if cm, ok := obj.(*corev1.ConfigMap); ok && key.Name == "telemetry-otlp-gateway-config" {
+	if cm, ok := obj.(*corev1.ConfigMap); ok && key.Name == "telemetry-otlp-gateway-pipelines" {
 		_ = cm
 		return c.err
 	}

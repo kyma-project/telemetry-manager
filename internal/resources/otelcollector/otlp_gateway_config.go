@@ -18,7 +18,7 @@ import (
 
 const (
 	// OTLPGatewayConfigMapName is the name of the ConfigMap that coordinates pipeline information
-	OTLPGatewayConfigMapName = "telemetry-otlp-gateway-config"
+	OTLPGatewayConfigMapName = "telemetry-otlp-gateway-pipelines"
 
 	// ConfigMapDataKey is the key in the ConfigMap data that contains the pipeline references
 	ConfigMapDataKey = "pipelines.yaml"
