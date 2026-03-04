@@ -96,3 +96,31 @@ func deployTestPrerequisites(t TestingT, k8sClient client.Client) error {
 
 	return nil
 }
+
+// removeTestPrerequisites removes test fixtures deployed by deployTestPrerequisites.
+// This should be called before Istio installation to avoid network policy conflicts.
+func removeTestPrerequisites(t TestingT, k8sClient client.Client) error {
+	ctx := t.Context()
+
+	t.Log("Removing test prerequisites...")
+
+	if err := deleteYAML(ctx, k8sClient, allowFromGardenerVPNShootNetworkPolicy); err != nil {
+		return fmt.Errorf("failed to delete gardener allow apiserver network policy: %w", err)
+	}
+
+	if err := deleteYAML(ctx, k8sClient, networkPolicyYAML); err != nil {
+		return fmt.Errorf("failed to delete network policy: %w", err)
+	}
+
+	if err := deleteYAML(ctx, k8sClient, shootInfoConfigMapYAML); err != nil {
+		return fmt.Errorf("failed to delete shoot-info ConfigMap: %w", err)
+	}
+
+	if err := deleteYAML(ctx, k8sClient, telemetryCRYAML); err != nil {
+		return fmt.Errorf("failed to delete Telemetry CR: %w", err)
+	}
+
+	t.Log("Test prerequisites removed")
+
+	return nil
+}

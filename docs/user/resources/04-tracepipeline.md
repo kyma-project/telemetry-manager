@@ -166,6 +166,8 @@ For details, see the [TracePipeline specification file](https://github.com/kyma-
 
 ### TracePipeline.telemetry.kyma-project.io/v1alpha1
 
+>**CAUTION**: telemetry.kyma-project.io/v1alpha1 TracePipeline is deprecated; see https://help.sap.com/docs/btp/sap-business-technology-platform/migrate-telemetry-pipelines-to-v1beta1 for instructions to migrate to telemetry.kyma-project.io/v1beta1 TracePipeline.
+
 **Spec:**
 
 | Parameter | Type | Description |
