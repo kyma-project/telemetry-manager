@@ -21,12 +21,12 @@ manager:
       fluentBitExporterImage: europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20260302-bbf32a3b
       fluentBitImage: europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluent-bit:4.2.3
       gomemlimit: 300MiB
-      otelCollectorImage: europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.144.0-1.59.0
+      otelCollectorImage: europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.144.0-1.59.1
       selfMonitorImage: europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:v20260209-5c648bc6
       operateInFipsMode: false
       selfMonitorFIPSImage: europe-docker.pkg.dev/kyma-project/restricted-prod/sap.com/prometheus-fips:3.9.1
     image:
-      repository: europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:1.59.0
+      repository: europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:1.59.1
       pullPolicy: "IfNotPresent"
     resources:
       limits:
