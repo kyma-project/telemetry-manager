@@ -19,6 +19,7 @@ limitations under the License.
 import (
 	"context"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
@@ -45,6 +46,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/validators/ottl"
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
+	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
 // TracePipelineController reconciles a TracePipeline object
@@ -117,6 +119,7 @@ func NewTracePipelineController(config TracePipelineControllerConfig, client cli
 		tracepipeline.WithGlobals(config.Global),
 
 		tracepipeline.WithFlowHealthProber(flowHealthProber),
+		tracepipeline.WithGatewayProber(&workloadstatus.DaemonSetProber{Client: client}),
 		tracepipeline.WithOverridesHandler(overrides.New(config.Global, client)),
 		tracepipeline.WithErrorToMessageConverter(&conditions.ErrorToMessageConverter{}),
 
@@ -149,6 +152,16 @@ func (r *TracePipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		source.Channel(r.reconcileTriggerChan, &handler.EnqueueRequestForObject{}),
 	)
 
+	// Watch OTLP Gateway DaemonSet to update GatewayHealthy condition when gateway status changes
+	b.Watches(
+		&appsv1.DaemonSet{},
+		handler.EnqueueRequestsFromMapFunc(r.mapOTLPGatewayToAllPipelines),
+		ctrlbuilder.WithPredicates(ctrlpredicate.NewPredicateFuncs(func(object client.Object) bool {
+			return object.GetName() == names.OTLPGateway &&
+				object.GetNamespace() == r.pipelineLockName.Namespace
+		})),
+	)
+
 	// Watch the pipeline lock ConfigMap to trigger reconciliation of all pipelines when lock changes
 	// This ensures that when a pipeline is deleted and frees up a slot, waiting pipelines get reconciled
 	b.Watches(
@@ -167,6 +180,30 @@ func (r *TracePipelineController) SetupWithManager(mgr ctrl.Manager) error {
 // due to max pipeline limit get a chance to acquire the lock when slots become available.
 func (r *TracePipelineController) mapLockConfigMapToAllPipelines(ctx context.Context, object client.Object) []reconcile.Request {
 	logf.FromContext(ctx).V(1).Info("Pipeline lock ConfigMap changed, triggering reconciliation of all TracePipelines")
+
+	var pipelineList telemetryv1beta1.TracePipelineList
+	if err := r.List(ctx, &pipelineList); err != nil {
+		logf.FromContext(ctx).Error(err, "Failed to list TracePipelines")
+		return []reconcile.Request{}
+	}
+
+	requests := make([]reconcile.Request, len(pipelineList.Items))
+	for i := range pipelineList.Items {
+		requests[i] = reconcile.Request{
+			NamespacedName: types.NamespacedName{
+				Name: pipelineList.Items[i].Name,
+			},
+		}
+	}
+
+	return requests
+}
+
+// mapOTLPGatewayToAllPipelines enqueues reconciliation requests for all TracePipelines
+// when the OTLP Gateway DaemonSet changes. This ensures that GatewayHealthy status conditions
+// are updated to reflect the current gateway state.
+func (r *TracePipelineController) mapOTLPGatewayToAllPipelines(ctx context.Context, object client.Object) []reconcile.Request {
+	logf.FromContext(ctx).V(1).Info("OTLP Gateway DaemonSet changed, triggering reconciliation of all TracePipelines")
 
 	var pipelineList telemetryv1beta1.TracePipelineList
 	if err := r.List(ctx, &pipelineList); err != nil {

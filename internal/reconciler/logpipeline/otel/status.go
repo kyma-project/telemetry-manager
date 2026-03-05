@@ -41,7 +41,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) erro
 
 	var allErrors error = nil
 
-	// GatewayHealthy condition is managed by OTLP Gateway Controller
+	r.setGatewayHealthyCondition(ctx, &pipeline)
 	r.setGatewayConfigGeneratedCondition(ctx, &pipeline)
 	r.setAgentHealthyCondition(ctx, &pipeline)
 
@@ -54,6 +54,27 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) erro
 	}
 
 	return allErrors
+}
+
+func (r *Reconciler) setGatewayHealthyCondition(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) {
+	// Only set GatewayHealthy condition for OTLP input pipelines
+	if pipeline.Spec.Input.OTLP == nil {
+		// For runtime input, GatewayHealthy is not applicable - remove condition if present
+		meta.RemoveStatusCondition(&pipeline.Status.Conditions, conditions.TypeGatewayHealthy)
+		return
+	}
+
+	condition := commonstatus.GetGatewayHealthyCondition(ctx,
+		r.gatewayProber,
+		types.NamespacedName{
+			Name:      names.OTLPGateway,
+			Namespace: r.globals.TargetNamespace(),
+		},
+		r.errToMessageConverter,
+		commonstatus.SignalTypeOtelLogs)
+
+	condition.ObservedGeneration = pipeline.Generation
+	meta.SetStatusCondition(&pipeline.Status.Conditions, *condition)
 }
 
 func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) error {

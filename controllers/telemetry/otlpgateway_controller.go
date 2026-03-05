@@ -39,7 +39,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
-	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
 	otlpgatewayconfig "github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpgateway" //nolint:importas // needed to disambiguate from reconciler package
@@ -47,7 +46,6 @@ import (
 	otlpgatewayreconciler "github.com/kyma-project/telemetry-manager/internal/reconciler/otlpgateway" //nolint:importas // needed to disambiguate from config package
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	predicateutils "github.com/kyma-project/telemetry-manager/internal/utils/predicate"
-	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
 // OTLPGatewayController reconciles the OTLP Gateway DaemonSet based on pipeline references
@@ -84,9 +82,7 @@ func NewOTLPGatewayController(config OTLPGatewayControllerConfig, client client.
 			),
 		),
 		otlpgatewayreconciler.WithConfigBuilder(&otlpgatewayconfig.Builder{Reader: client}),
-		otlpgatewayreconciler.WithGatewayProber(&workloadstatus.DaemonSetProber{Client: client}),
 		otlpgatewayreconciler.WithIstioStatusChecker(istiostatus.NewChecker(discoveryClient)),
-		otlpgatewayreconciler.WithErrorToMessageConverter(&conditions.ErrorToMessageConverter{}),
 	)
 
 	return &OTLPGatewayController{

@@ -46,6 +46,7 @@ type Reconciler struct {
 
 	// Dependencies
 	flowHealthProber  FlowHealthProber
+	gatewayProber     commonstatus.Prober
 	overridesHandler  OverridesHandler
 	pipelineLock      PipelineLock
 	pipelineSync      PipelineSyncer
@@ -68,6 +69,13 @@ func WithGlobals(globals config.Global) Option {
 func WithFlowHealthProber(prober FlowHealthProber) Option {
 	return func(r *Reconciler) {
 		r.flowHealthProber = prober
+	}
+}
+
+// WithGatewayProber sets the gateway prober for the Reconciler.
+func WithGatewayProber(prober commonstatus.Prober) Option {
+	return func(r *Reconciler) {
+		r.gatewayProber = prober
 	}
 }
 

@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -21,7 +20,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
-	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpgateway"
@@ -33,9 +31,7 @@ import (
 type mocks struct {
 	gatewayApplierDeleter *mockGatewayApplierDeleter
 	configBuilder         *mockOTLPGatewayConfigBuilder
-	gatewayProber         *mockProber
 	istioStatusChecker    *mockIstioStatusChecker
-	errToMsgConverter     *mockErrorToMessageConverter
 }
 
 type mockGatewayApplierDeleter struct {
@@ -65,15 +61,6 @@ func (m *mockOTLPGatewayConfigBuilder) Build(ctx context.Context, opts otlpgatew
 	return args.Get(0).(*common.Config), args.Get(1).(common.EnvVars), args.Error(2)
 }
 
-type mockProber struct {
-	mock.Mock
-}
-
-func (m *mockProber) IsReady(ctx context.Context, name types.NamespacedName) error {
-	args := m.Called(ctx, name)
-	return args.Error(0)
-}
-
 type mockIstioStatusChecker struct {
 	mock.Mock
 }
@@ -81,15 +68,6 @@ type mockIstioStatusChecker struct {
 func (m *mockIstioStatusChecker) IsIstioActive(ctx context.Context) bool {
 	args := m.Called(ctx)
 	return args.Bool(0)
-}
-
-type mockErrorToMessageConverter struct {
-	mock.Mock
-}
-
-func (m *mockErrorToMessageConverter) Convert(err error) string {
-	args := m.Called(err)
-	return args.String(0)
 }
 
 func newTestClient(t *testing.T, objs ...client.Object) client.Client {
@@ -121,9 +99,7 @@ func newTestReconciler(fakeClient client.Client, mocks *mocks) *Reconciler {
 		globals:               config.NewGlobal(config.WithTargetNamespace("kyma-system")),
 		gatewayApplierDeleter: mocks.gatewayApplierDeleter,
 		configBuilder:         mocks.configBuilder,
-		gatewayProber:         mocks.gatewayProber,
 		istioStatusChecker:    mocks.istioStatusChecker,
-		errToMsgConverter:     mocks.errToMsgConverter,
 	}
 }
 
@@ -131,9 +107,7 @@ func newDefaultMocks() *mocks {
 	return &mocks{
 		gatewayApplierDeleter: &mockGatewayApplierDeleter{},
 		configBuilder:         &mockOTLPGatewayConfigBuilder{},
-		gatewayProber:         &mockProber{},
 		istioStatusChecker:    &mockIstioStatusChecker{},
-		errToMsgConverter:     &mockErrorToMessageConverter{},
 	}
 }
 
@@ -219,8 +193,6 @@ func TestReconcile_SinglePipeline_DeploysGateway(t *testing.T) {
 	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false)
 	mocks.configBuilder.On("Build", mock.Anything, mock.Anything, mock.Anything).Return(&common.Config{}, common.EnvVars{}, nil)
 	mocks.gatewayApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	mocks.gatewayProber.On("IsReady", mock.Anything, mock.Anything).Return(nil)
-	mocks.errToMsgConverter.On("Convert", mock.Anything).Return("")
 
 	sut := newTestReconciler(fakeClient, mocks)
 
@@ -254,8 +226,6 @@ func TestReconcile_GenerationMismatch_SkipsPipeline(t *testing.T) {
 
 	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false)
 	mocks.gatewayApplierDeleter.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	mocks.gatewayProber.On("IsReady", mock.Anything, mock.Anything).Return(nil)
-	mocks.errToMsgConverter.On("Convert", mock.Anything).Return("")
 
 	sut := newTestReconciler(fakeClient, mocks)
 
@@ -291,8 +261,6 @@ func TestReconcile_PipelineDeleted_SkipsPipeline(t *testing.T) {
 
 	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false)
 	mocks.gatewayApplierDeleter.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	mocks.gatewayProber.On("IsReady", mock.Anything, mock.Anything).Return(nil)
-	mocks.errToMsgConverter.On("Convert", mock.Anything).Return("")
 
 	sut := newTestReconciler(fakeClient, mocks)
 
@@ -331,8 +299,6 @@ func TestReconcile_MultiplePipelines_AggregatesConfig(t *testing.T) {
 		return len(opts.TracePipelines) == 2
 	})).Return(&common.Config{}, common.EnvVars{}, nil)
 	mocks.gatewayApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	mocks.gatewayProber.On("IsReady", mock.Anything, mock.Anything).Return(nil)
-	mocks.errToMsgConverter.On("Convert", mock.Anything).Return("")
 
 	sut := newTestReconciler(fakeClient, mocks)
 
@@ -362,8 +328,6 @@ func TestReconcile_MissingPipeline_SkipsGracefully(t *testing.T) {
 
 	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false)
 	mocks.gatewayApplierDeleter.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	mocks.gatewayProber.On("IsReady", mock.Anything, mock.Anything).Return(nil)
-	mocks.errToMsgConverter.On("Convert", mock.Anything).Return("")
 
 	sut := newTestReconciler(fakeClient, mocks)
 
@@ -398,8 +362,6 @@ func TestReconcile_IstioEnabled_PassesFlag(t *testing.T) {
 	mocks.gatewayApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.MatchedBy(func(opts otelcollector.GatewayApplyOptions) bool {
 		return opts.IstioEnabled == true
 	})).Return(nil)
-	mocks.gatewayProber.On("IsReady", mock.Anything, mock.Anything).Return(nil)
-	mocks.errToMsgConverter.On("Convert", mock.Anything).Return("")
 
 	sut := newTestReconciler(fakeClient, mocks)
 
@@ -536,18 +498,14 @@ func TestNewReconciler_WithOptions(t *testing.T) {
 
 	gad := &mockGatewayApplierDeleter{}
 	cb := &mockOTLPGatewayConfigBuilder{}
-	gp := &mockProber{}
 	isc := &mockIstioStatusChecker{}
-	etmc := &mockErrorToMessageConverter{}
 
 	reconciler := NewReconciler(
 		fakeClient,
 		WithGlobals(globals),
 		WithGatewayApplierDeleter(gad),
 		WithConfigBuilder(cb),
-		WithGatewayProber(gp),
 		WithIstioStatusChecker(isc),
-		WithErrorToMessageConverter(etmc),
 	)
 
 	require.NotNil(t, reconciler)
@@ -555,9 +513,7 @@ func TestNewReconciler_WithOptions(t *testing.T) {
 	assert.Equal(t, "test-namespace", reconciler.globals.TargetNamespace())
 	assert.Equal(t, gad, reconciler.gatewayApplierDeleter)
 	assert.Equal(t, cb, reconciler.configBuilder)
-	assert.Equal(t, gp, reconciler.gatewayProber)
 	assert.Equal(t, isc, reconciler.istioStatusChecker)
-	assert.Equal(t, etmc, reconciler.errToMsgConverter)
 }
 
 func TestGlobals(t *testing.T) {
@@ -569,167 +525,6 @@ func TestGlobals(t *testing.T) {
 	globalsPtr := reconciler.Globals()
 	require.NotNil(t, globalsPtr)
 	assert.Equal(t, "test-namespace", globalsPtr.TargetNamespace())
-}
-
-func TestUpdateTracePipelineCondition_NotFound(t *testing.T) {
-	ctx := context.Background()
-	fakeClient := newTestClient(t)
-	mocks := newDefaultMocks()
-
-	sut := newTestReconciler(fakeClient, mocks)
-
-	condition := &metav1.Condition{
-		Type:   "GatewayHealthy",
-		Status: metav1.ConditionTrue,
-		Reason: "GatewayReady",
-	}
-
-	err := sut.updateTracePipelineCondition(ctx, "non-existent-pipeline", condition)
-	require.Error(t, err) // Should return error for not found (to trigger fallback)
-	require.True(t, apierrors.IsNotFound(err))
-}
-
-func TestUpdateTracePipelineCondition_Success(t *testing.T) {
-	ctx := context.Background()
-
-	pipeline := testutils.NewTracePipelineBuilder().
-		WithName("test-pipeline").
-		Build()
-	pipeline.Generation = 5
-
-	fakeClient := newTestClient(t, &pipeline)
-	mocks := newDefaultMocks()
-
-	sut := newTestReconciler(fakeClient, mocks)
-
-	condition := &metav1.Condition{
-		Type:   "GatewayHealthy",
-		Status: metav1.ConditionTrue,
-		Reason: "GatewayReady",
-	}
-
-	err := sut.updateTracePipelineCondition(ctx, "test-pipeline", condition)
-	require.NoError(t, err)
-
-	// Verify the condition was set
-	var updatedPipeline telemetryv1beta1.TracePipeline
-
-	err = fakeClient.Get(ctx, types.NamespacedName{Name: "test-pipeline"}, &updatedPipeline)
-	require.NoError(t, err)
-
-	cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, "GatewayHealthy")
-	require.NotNil(t, cond)
-	assert.Equal(t, metav1.ConditionTrue, cond.Status)
-	assert.Equal(t, "GatewayReady", cond.Reason)
-	assert.Equal(t, int64(5), cond.ObservedGeneration)
-}
-
-func TestUpdateLogPipelineCondition_Success(t *testing.T) {
-	ctx := context.Background()
-
-	pipeline := testutils.NewLogPipelineBuilder().
-		WithName("test-log").
-		WithOTLPOutput().
-		Build()
-
-	fakeClient := newTestClient(t, &pipeline)
-	mocks := newDefaultMocks()
-
-	sut := newTestReconciler(fakeClient, mocks)
-
-	condition := &metav1.Condition{
-		Type:   conditions.TypeGatewayHealthy,
-		Status: metav1.ConditionTrue,
-		Reason: conditions.ReasonGatewayReady,
-	}
-
-	err := sut.updateLogPipelineCondition(ctx, pipeline.Name, condition)
-	require.NoError(t, err)
-
-	// Verify condition was set
-	var updatedPipeline telemetryv1beta1.LogPipeline
-
-	err = fakeClient.Get(ctx, types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
-	require.NoError(t, err)
-
-	cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeGatewayHealthy)
-	require.NotNil(t, cond)
-	assert.Equal(t, metav1.ConditionTrue, cond.Status)
-	assert.Equal(t, conditions.ReasonGatewayReady, cond.Reason)
-	assert.Equal(t, updatedPipeline.Generation, cond.ObservedGeneration)
-}
-
-func TestUpdateLogPipelineCondition_PipelineNotFound(t *testing.T) {
-	ctx := context.Background()
-
-	fakeClient := newTestClient(t)
-	mocks := newDefaultMocks()
-
-	sut := newTestReconciler(fakeClient, mocks)
-
-	condition := &metav1.Condition{
-		Type:   conditions.TypeGatewayHealthy,
-		Status: metav1.ConditionTrue,
-		Reason: conditions.ReasonGatewayReady,
-	}
-
-	// Should return error when pipeline doesn't exist (to trigger fallback)
-	err := sut.updateLogPipelineCondition(ctx, "non-existent", condition)
-	require.Error(t, err)
-	require.True(t, apierrors.IsNotFound(err))
-}
-
-func TestUpdateGatewayHealthyConditions_EmptyList(t *testing.T) {
-	ctx := context.Background()
-	fakeClient := newTestClient(t)
-	mocks := newDefaultMocks()
-
-	sut := newTestReconciler(fakeClient, mocks)
-
-	err := sut.updateGatewayHealthyConditions(ctx, PipelineNamesOptions{
-		TracePipelineNames: []string{},
-		LogPipelineNames:   []string{},
-	})
-	require.NoError(t, err)
-}
-
-func TestUpdateGatewayHealthyConditions_MultiplePipelines(t *testing.T) {
-	ctx := context.Background()
-
-	pipeline1 := testutils.NewTracePipelineBuilder().
-		WithName("test-pipeline-1").
-		Build()
-
-	pipeline2 := testutils.NewTracePipelineBuilder().
-		WithName("test-pipeline-2").
-		Build()
-
-	fakeClient := newTestClient(t, &pipeline1, &pipeline2)
-	mocks := newDefaultMocks()
-
-	mocks.gatewayProber.On("IsReady", mock.Anything, mock.Anything).Return(nil)
-	mocks.errToMsgConverter.On("Convert", mock.Anything).Return("")
-
-	sut := newTestReconciler(fakeClient, mocks)
-
-	err := sut.updateGatewayHealthyConditions(ctx, PipelineNamesOptions{
-		TracePipelineNames: []string{"test-pipeline-1", "test-pipeline-2"},
-		LogPipelineNames:   []string{},
-	})
-	require.NoError(t, err)
-
-	// Verify both pipelines were updated
-	var p1 telemetryv1beta1.TracePipeline
-
-	err = fakeClient.Get(ctx, types.NamespacedName{Name: "test-pipeline-1"}, &p1)
-	require.NoError(t, err)
-	assert.NotEmpty(t, p1.Status.Conditions)
-
-	var p2 telemetryv1beta1.TracePipeline
-
-	err = fakeClient.Get(ctx, types.NamespacedName{Name: "test-pipeline-2"}, &p2)
-	require.NoError(t, err)
-	assert.NotEmpty(t, p2.Status.Conditions)
 }
 
 func TestReconcile_LogPipeline_DeploysGateway(t *testing.T) {
@@ -757,8 +552,6 @@ func TestReconcile_LogPipeline_DeploysGateway(t *testing.T) {
 	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false)
 	mocks.configBuilder.On("Build", mock.Anything, mock.Anything).Return(&common.Config{}, common.EnvVars{}, nil)
 	mocks.gatewayApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	mocks.gatewayProber.On("IsReady", mock.Anything, mock.Anything).Return(nil)
-	mocks.errToMsgConverter.On("Convert", mock.Anything).Return("")
 
 	sut := newTestReconciler(fakeClient, mocks)
 
@@ -798,8 +591,6 @@ func TestReconcile_TraceAndLogPipelines_DeploysUnifiedGateway(t *testing.T) {
 	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false)
 	mocks.configBuilder.On("Build", mock.Anything, mock.Anything).Return(&common.Config{}, common.EnvVars{}, nil)
 	mocks.gatewayApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	mocks.gatewayProber.On("IsReady", mock.Anything, mock.Anything).Return(nil)
-	mocks.errToMsgConverter.On("Convert", mock.Anything).Return("")
 
 	sut := newTestReconciler(fakeClient, mocks)
 
@@ -895,32 +686,6 @@ func TestFetchLogPipelines_Success(t *testing.T) {
 	assert.Equal(t, pipeline.Name, pipelines[0].Name)
 }
 
-func TestUpdateLogPipelineCondition_PipelineBeingDeleted(t *testing.T) {
-	ctx := context.Background()
-
-	now := metav1.Now()
-	pipeline := testutils.NewLogPipelineBuilder().
-		WithName("test-log").
-		WithOTLPOutput().
-		Build()
-	pipeline.DeletionTimestamp = &now
-	pipeline.Finalizers = []string{"test-finalizer"}
-
-	fakeClient := newTestClient(t, &pipeline)
-	mocks := newDefaultMocks()
-	sut := newTestReconciler(fakeClient, mocks)
-
-	condition := &metav1.Condition{
-		Type:   conditions.TypeGatewayHealthy,
-		Status: metav1.ConditionTrue,
-		Reason: conditions.ReasonGatewayReady,
-	}
-
-	// Should not error when pipeline is being deleted
-	err := sut.updateLogPipelineCondition(ctx, pipeline.Name, condition)
-	require.NoError(t, err)
-}
-
 func TestReconcile_OnlyLogPipelines_DeploysGateway(t *testing.T) {
 	ctx := context.Background()
 
@@ -946,8 +711,6 @@ func TestReconcile_OnlyLogPipelines_DeploysGateway(t *testing.T) {
 	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false)
 	mocks.configBuilder.On("Build", mock.Anything, mock.Anything).Return(&common.Config{}, common.EnvVars{}, nil)
 	mocks.gatewayApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	mocks.gatewayProber.On("IsReady", mock.Anything, mock.Anything).Return(nil)
-	mocks.errToMsgConverter.On("Convert", mock.Anything).Return("")
 
 	sut := newTestReconciler(fakeClient, mocks)
 
@@ -961,41 +724,6 @@ func TestReconcile_OnlyLogPipelines_DeploysGateway(t *testing.T) {
 
 	// Verify gateway resources were applied
 	mocks.gatewayApplierDeleter.AssertCalled(t, "ApplyResources", mock.Anything, mock.Anything, mock.Anything)
-}
-
-func TestCollectReferencedNamesByType(t *testing.T) {
-	config := &otelcollector.OTLPGatewayConfigMap{
-		TracePipelineReferences: []otelcollector.PipelineReference{
-			{Name: "trace1", Generation: 1},
-			{Name: "trace2", Generation: 2},
-		},
-		LogPipelineReferences: []otelcollector.PipelineReference{
-			{Name: "log1", Generation: 1},
-			{Name: "log2", Generation: 2},
-		},
-	}
-
-	traceNames, logNames := collectReferencedNamesByType(config)
-
-	require.Len(t, traceNames, 2)
-	assert.Contains(t, traceNames, "trace1")
-	assert.Contains(t, traceNames, "trace2")
-
-	require.Len(t, logNames, 2)
-	assert.Contains(t, logNames, "log1")
-	assert.Contains(t, logNames, "log2")
-}
-
-func TestCollectReferencedNamesByType_Empty(t *testing.T) {
-	config := &otelcollector.OTLPGatewayConfigMap{
-		TracePipelineReferences: []otelcollector.PipelineReference{},
-		LogPipelineReferences:   []otelcollector.PipelineReference{},
-	}
-
-	traceNames, logNames := collectReferencedNamesByType(config)
-
-	require.Empty(t, traceNames)
-	require.Empty(t, logNames)
 }
 
 // TestOverrideFunctionality verifies that OTLP Gateway respects override configuration
@@ -1057,8 +785,6 @@ func TestOverrideFunctionality(t *testing.T) {
 			if tt.expectReconcile {
 				mocks.configBuilder.On("Build", mock.Anything, mock.Anything).Return(&common.Config{}, common.EnvVars{}, nil)
 				mocks.gatewayApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-				mocks.gatewayProber.On("IsReady", mock.Anything, mock.Anything).Return(nil)
-				mocks.errToMsgConverter.On("Convert", mock.Anything).Return("")
 			}
 
 			sut := newTestReconciler(fakeClient, mocks)
@@ -1127,187 +853,4 @@ func (c *overrideConfigErrorClient) Get(ctx context.Context, key client.ObjectKe
 	}
 
 	return apierrors.NewNotFound(schema.GroupResource{}, key.Name)
-}
-
-func TestUpdateAllPipelineStatusesAfterDeletion_AllTracePipelines(t *testing.T) {
-	ctx := context.Background()
-
-	// Create TracePipelines
-	tracePipeline1 := testutils.NewTracePipelineBuilder().
-		WithName("trace-1").
-		Build()
-	tracePipeline2 := testutils.NewTracePipelineBuilder().
-		WithName("trace-2").
-		Build()
-
-	fakeClient := newTestClient(t, &tracePipeline1, &tracePipeline2)
-
-	mockProber := &mockProber{}
-	mockProber.On("IsReady", mock.Anything, mock.Anything).Return(fmt.Errorf("DaemonSet not found"))
-
-	mockConverter := &mockErrorToMessageConverter{}
-	mockConverter.On("Convert", mock.Anything).Return("Gateway not ready")
-
-	sut := &Reconciler{
-		Client:            fakeClient,
-		globals:           config.Global{},
-		gatewayProber:     mockProber,
-		errToMsgConverter: mockConverter,
-	}
-
-	// Call the function
-	err := sut.updateAllPipelineStatusesAfterDeletion(ctx)
-	require.NoError(t, err)
-
-	// Verify both pipelines were updated
-	var updated1 telemetryv1beta1.TracePipeline
-	require.NoError(t, fakeClient.Get(ctx, types.NamespacedName{Name: "trace-1"}, &updated1))
-
-	condition1 := meta.FindStatusCondition(updated1.Status.Conditions, conditions.TypeGatewayHealthy)
-	require.NotNil(t, condition1)
-	assert.Equal(t, metav1.ConditionFalse, condition1.Status)
-	assert.Equal(t, conditions.ReasonGatewayNotReady, condition1.Reason)
-
-	var updated2 telemetryv1beta1.TracePipeline
-	require.NoError(t, fakeClient.Get(ctx, types.NamespacedName{Name: "trace-2"}, &updated2))
-
-	condition2 := meta.FindStatusCondition(updated2.Status.Conditions, conditions.TypeGatewayHealthy)
-	require.NotNil(t, condition2)
-	assert.Equal(t, metav1.ConditionFalse, condition2.Status)
-	assert.Equal(t, conditions.ReasonGatewayNotReady, condition2.Reason)
-}
-
-func TestUpdateAllPipelineStatusesAfterDeletion_OnlyOTLPLogPipelines(t *testing.T) {
-	ctx := context.Background()
-
-	// Create LogPipelines - one with OTLP input, one with Runtime input
-	otlpLogPipeline := testutils.NewLogPipelineBuilder().
-		WithName("log-otlp").
-		WithOTLPInput(true).
-		WithOTLPOutput().
-		Build()
-	runtimeLogPipeline := testutils.NewLogPipelineBuilder().
-		WithName("log-runtime").
-		WithRuntimeInput(true).
-		WithOTLPOutput().
-		Build()
-
-	fakeClient := newTestClient(t, &otlpLogPipeline, &runtimeLogPipeline)
-
-	mockProber := &mockProber{}
-	mockProber.On("IsReady", mock.Anything, mock.Anything).Return(fmt.Errorf("DaemonSet not found"))
-
-	mockConverter := &mockErrorToMessageConverter{}
-	mockConverter.On("Convert", mock.Anything).Return("Gateway not ready")
-
-	sut := &Reconciler{
-		Client:            fakeClient,
-		globals:           config.Global{},
-		gatewayProber:     mockProber,
-		errToMsgConverter: mockConverter,
-	}
-
-	// Call the function
-	err := sut.updateAllPipelineStatusesAfterDeletion(ctx)
-	require.NoError(t, err)
-
-	// Verify only OTLP pipeline was updated
-	var updatedOTLP telemetryv1beta1.LogPipeline
-	require.NoError(t, fakeClient.Get(ctx, types.NamespacedName{Name: "log-otlp"}, &updatedOTLP))
-
-	conditionOTLP := meta.FindStatusCondition(updatedOTLP.Status.Conditions, conditions.TypeGatewayHealthy)
-	require.NotNil(t, conditionOTLP)
-	assert.Equal(t, metav1.ConditionFalse, conditionOTLP.Status)
-	assert.Equal(t, conditions.ReasonGatewayNotReady, conditionOTLP.Reason)
-
-	// Runtime pipeline should NOT have GatewayHealthy condition
-	var updatedRuntime telemetryv1beta1.LogPipeline
-	require.NoError(t, fakeClient.Get(ctx, types.NamespacedName{Name: "log-runtime"}, &updatedRuntime))
-
-	conditionRuntime := meta.FindStatusCondition(updatedRuntime.Status.Conditions, conditions.TypeGatewayHealthy)
-	assert.Nil(t, conditionRuntime, "Runtime-based LogPipeline should not have GatewayHealthy condition")
-}
-
-func TestUpdateAllPipelineStatusesAfterDeletion_EmptyCluster(t *testing.T) {
-	ctx := context.Background()
-
-	fakeClient := newTestClient(t)
-
-	mockProber := &mockProber{}
-	mockConverter := &mockErrorToMessageConverter{}
-
-	sut := &Reconciler{
-		Client:            fakeClient,
-		globals:           config.Global{},
-		gatewayProber:     mockProber,
-		errToMsgConverter: mockConverter,
-	}
-
-	// Call the function - should not error on empty cluster
-	err := sut.updateAllPipelineStatusesAfterDeletion(ctx)
-	require.NoError(t, err)
-
-	// Verify no calls were made to prober (no pipelines to update)
-	mockProber.AssertNotCalled(t, "IsReady")
-}
-
-func TestUpdateAllPipelineStatusesAfterDeletion_MixedPipelines(t *testing.T) {
-	ctx := context.Background()
-
-	// Create a mix of TracePipelines and LogPipelines
-	tracePipeline := testutils.NewTracePipelineBuilder().
-		WithName("trace-1").
-		Build()
-	otlpLogPipeline := testutils.NewLogPipelineBuilder().
-		WithName("log-otlp").
-		WithOTLPInput(true).
-		WithOTLPOutput().
-		Build()
-	runtimeLogPipeline := testutils.NewLogPipelineBuilder().
-		WithName("log-runtime").
-		WithRuntimeInput(true).
-		WithOTLPOutput().
-		Build()
-
-	fakeClient := newTestClient(t, &tracePipeline, &otlpLogPipeline, &runtimeLogPipeline)
-
-	mockProber := &mockProber{}
-	mockProber.On("IsReady", mock.Anything, mock.Anything).Return(fmt.Errorf("DaemonSet not found"))
-
-	mockConverter := &mockErrorToMessageConverter{}
-	mockConverter.On("Convert", mock.Anything).Return("Gateway not ready")
-
-	sut := &Reconciler{
-		Client:            fakeClient,
-		globals:           config.Global{},
-		gatewayProber:     mockProber,
-		errToMsgConverter: mockConverter,
-	}
-
-	// Call the function
-	err := sut.updateAllPipelineStatusesAfterDeletion(ctx)
-	require.NoError(t, err)
-
-	// Verify TracePipeline was updated
-	var updatedTrace telemetryv1beta1.TracePipeline
-	require.NoError(t, fakeClient.Get(ctx, types.NamespacedName{Name: "trace-1"}, &updatedTrace))
-
-	conditionTrace := meta.FindStatusCondition(updatedTrace.Status.Conditions, conditions.TypeGatewayHealthy)
-	require.NotNil(t, conditionTrace)
-	assert.Equal(t, metav1.ConditionFalse, conditionTrace.Status)
-
-	// Verify OTLP LogPipeline was updated
-	var updatedOTLP telemetryv1beta1.LogPipeline
-	require.NoError(t, fakeClient.Get(ctx, types.NamespacedName{Name: "log-otlp"}, &updatedOTLP))
-
-	conditionOTLP := meta.FindStatusCondition(updatedOTLP.Status.Conditions, conditions.TypeGatewayHealthy)
-	require.NotNil(t, conditionOTLP)
-	assert.Equal(t, metav1.ConditionFalse, conditionOTLP.Status)
-
-	// Verify Runtime LogPipeline was NOT updated
-	var updatedRuntime telemetryv1beta1.LogPipeline
-	require.NoError(t, fakeClient.Get(ctx, types.NamespacedName{Name: "log-runtime"}, &updatedRuntime))
-
-	conditionRuntime := meta.FindStatusCondition(updatedRuntime.Status.Conditions, conditions.TypeGatewayHealthy)
-	assert.Nil(t, conditionRuntime)
 }

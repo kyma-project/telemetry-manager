@@ -135,7 +135,12 @@ func newTestReconciler(client client.Client, opts ...Option) *Reconciler {
 	agentFlowHealthProberMock.On("Probe", mock.Anything, mock.Anything).
 		Return(prober.OTelAgentProbeResult{}, nil)
 
+	gatewayFlowHealthProberMock := &mocks.GatewayFlowHealthProber{}
+	gatewayFlowHealthProberMock.On("Probe", mock.Anything, mock.Anything).
+		Return(prober.OTelGatewayProbeResult{}, nil)
+
 	agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
+	gatewayProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 	istioStatusCheckerStub := &stubs.IstioStatusChecker{IsActive: false}
 
@@ -154,6 +159,8 @@ func newTestReconciler(client client.Client, opts ...Option) *Reconciler {
 		WithClient(client),
 		WithGlobals(config.NewGlobal(config.WithTargetNamespace("default"), config.WithVersion("1.0.0"))),
 		WithAgentFlowHealthProber(agentFlowHealthProberMock),
+		WithGatewayFlowHealthProber(gatewayFlowHealthProberMock),
+		WithGatewayProber(gatewayProberStub),
 		WithAgentConfigBuilder(agentConfigBuilderMock),
 		WithAgentApplierDeleter(agentApplierDeleterMock),
 		WithAgentProber(agentProberStub),

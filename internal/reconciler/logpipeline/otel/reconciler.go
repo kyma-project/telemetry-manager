@@ -38,6 +38,7 @@ type Reconciler struct {
 	// Dependencies
 	agentFlowHealthProber   AgentFlowHealthProber
 	gatewayFlowHealthProber GatewayFlowHealthProber
+	gatewayProber           Prober
 	agentConfigBuilder      AgentConfigBuilder
 	agentProber             Prober
 	agentApplierDeleter     AgentApplierDeleter
@@ -68,6 +69,13 @@ func WithAgentFlowHealthProber(prober AgentFlowHealthProber) Option {
 func WithGatewayFlowHealthProber(prober GatewayFlowHealthProber) Option {
 	return func(r *Reconciler) {
 		r.gatewayFlowHealthProber = prober
+	}
+}
+
+// WithGatewayProber sets the gateway prober.
+func WithGatewayProber(prober Prober) Option {
+	return func(r *Reconciler) {
+		r.gatewayProber = prober
 	}
 }
 

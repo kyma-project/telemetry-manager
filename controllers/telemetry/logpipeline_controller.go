@@ -218,6 +218,16 @@ func (r *LogPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete()),
 	)
 
+	// Watch OTLP Gateway DaemonSet to update GatewayHealthy condition for OTLP input pipelines
+	b.Watches(
+		&appsv1.DaemonSet{},
+		handler.EnqueueRequestsFromMapFunc(r.mapOTLPGatewayToOTLPPipelines),
+		ctrlbuilder.WithPredicates(ctrlpredicate.NewPredicateFuncs(func(object client.Object) bool {
+			return object.GetName() == names.OTLPGateway &&
+				object.GetNamespace() == r.pipelineLockName.Namespace
+		})),
+	)
+
 	// Watch the pipeline lock ConfigMap to trigger reconciliation of all pipelines when lock changes
 	// This ensures that when a pipeline is deleted and frees up a slot, waiting pipelines get reconciled
 	b.Watches(
@@ -241,6 +251,35 @@ func (r *LogPipelineController) mapLockConfigMapToAllPipelines(ctx context.Conte
 	if err != nil {
 		logf.FromContext(ctx).Error(err, "Failed to list LogPipelines")
 		return []reconcile.Request{}
+	}
+
+	return requests
+}
+
+// mapOTLPGatewayToOTLPPipelines enqueues reconciliation requests for LogPipelines with OTLP input
+// when the OTLP Gateway DaemonSet changes. This ensures that GatewayHealthy status conditions
+// are updated to reflect the current gateway state for pipelines that use the gateway.
+func (r *LogPipelineController) mapOTLPGatewayToOTLPPipelines(ctx context.Context, object client.Object) []reconcile.Request {
+	logf.FromContext(ctx).V(1).Info("OTLP Gateway DaemonSet changed, triggering reconciliation of LogPipelines with OTLP input")
+
+	var pipelineList telemetryv1beta1.LogPipelineList
+	if err := r.List(ctx, &pipelineList); err != nil {
+		logf.FromContext(ctx).Error(err, "Failed to list LogPipelines")
+		return []reconcile.Request{}
+	}
+
+	requests := make([]reconcile.Request, 0)
+
+	for i := range pipelineList.Items {
+		pipeline := &pipelineList.Items[i]
+		// Only reconcile pipelines with OTLP input (gateway-based)
+		if pipeline.Spec.Input.OTLP != nil {
+			requests = append(requests, reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name: pipeline.Name,
+				},
+			})
+		}
 	}
 
 	return requests
@@ -346,6 +385,7 @@ func configureOTelReconciler(config LogPipelineControllerConfig, client client.C
 		logpipelineotel.WithAgentConfigBuilder(agentConfigBuilder),
 		logpipelineotel.WithAgentFlowHealthProber(agentFlowHealthProber),
 		logpipelineotel.WithGatewayFlowHealthProber(gatewayFlowHealthProber),
+		logpipelineotel.WithGatewayProber(&workloadstatus.DaemonSetProber{Client: client}),
 		logpipelineotel.WithAgentProber(&workloadstatus.DaemonSetProber{Client: client}),
 
 		logpipelineotel.WithErrorToMessageConverter(&conditions.ErrorToMessageConverter{}),

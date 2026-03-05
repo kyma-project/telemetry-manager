@@ -8,6 +8,7 @@ import (
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/config"
+	commonStatusStubs "github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus/stubs"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline/stubs"
 )
 
@@ -40,11 +41,13 @@ func testReconcilerWithPipelineLock(fakeClient client.Client, flowHealthProber F
 	pipelineSync := &stubs.PipelineSync{}
 	errToMsgConverter := &conditions.ErrorToMessageConverter{}
 	secretWatcher := stubs.NewSecretWatcher(nil)
+	gatewayProber := commonStatusStubs.NewDaemonSetProber(nil)
 
 	return New(
 		WithClient(fakeClient),
 		WithGlobals(cfg),
 		WithFlowHealthProber(flowHealthProber),
+		WithGatewayProber(gatewayProber),
 		WithOverridesHandler(overridesHandler),
 		WithPipelineLock(pipelineLock),
 		WithPipelineSyncer(pipelineSync),
