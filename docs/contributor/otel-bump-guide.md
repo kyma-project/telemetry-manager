@@ -63,15 +63,11 @@ Identify breaking changes, bug fixes, and enhancements for the following compone
    - Signature changes
    - Function deprecations
 
-2. Check for incompatible OTTL function contexts.
-   The `filterprocessor` may introduce functions that operate on entire metrics (using the `metric` context. However, our MetricPipeline operates on individual data points (a `datapoint` context) and cannot use such [metrics only functions](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/filterprocessor#ottl-functions).
-   If you find new functions using the `metric` context, add them to the user documentation of functions that aren't supported by the filterprocessor.
-
 ### 3. Review Processor Updates
 
-- Filter Processor: Monitor the availability of context inference in `filterprocessor` in this [issue](https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/37904)
+- Filter Processor: Verify any changes related to context inference.
 
-- Transform Processor: Verify any changes related to context inference
+- Transform Processor: Verify any changes related to context inference.
 
 ### 4. Check Internal Metrics
 
@@ -107,7 +103,7 @@ After you complete the preparation steps, update the dependency versions in the 
 
 ### Telemetry Manager
 
-1. In the `telemetry-manager` repository, update the dependency versions for `go.opentelemetry.io/collector` and `github.com/open-telemetry/opentelemetry-collector-contrib` in the following files:
+1. In the `telemetry-manager` repository, update the dependency versions for `telemetrygen` in the following files (other dependencies are using the main tag, so it doesn't need to be updated):
    - `.env`
    - `go.mod`
    - `test/testkit/images.go`
@@ -123,4 +119,3 @@ After you updated the dependencies, perform the following verification checks:
 
 - [ ] Verify that all tests pass.
 - [ ] Manually trigger the "PR Load Test" GitHub workflow, and document the performance results of the load test in the [benchmark documentation](./benchmarks/results).
-- [ ] Filter processor restrictions working correctly
