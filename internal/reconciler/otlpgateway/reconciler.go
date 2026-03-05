@@ -35,6 +35,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpgateway"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 	telemetryutils "github.com/kyma-project/telemetry-manager/internal/utils/telemetry"
@@ -142,7 +143,7 @@ func (r *Reconciler) ensureConfigMapExists(ctx context.Context) error {
 	var cm corev1.ConfigMap
 
 	err := r.Get(ctx, types.NamespacedName{
-		Name:      otelcollector.OTLPGatewayConfigMapName,
+		Name:      names.OTLPGatewayConfigMap,
 		Namespace: r.globals.TargetNamespace(),
 	}, &cm)
 	if err == nil {
@@ -155,7 +156,7 @@ func (r *Reconciler) ensureConfigMapExists(ctx context.Context) error {
 
 	cm = corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      otelcollector.OTLPGatewayConfigMapName,
+			Name:      names.OTLPGatewayConfigMap,
 			Namespace: r.globals.TargetNamespace(),
 		},
 		Data: map[string]string{

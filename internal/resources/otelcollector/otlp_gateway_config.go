@@ -14,12 +14,10 @@ import (
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 )
 
 const (
-	// OTLPGatewayConfigMapName is the name of the ConfigMap that coordinates pipeline information
-	OTLPGatewayConfigMapName = "telemetry-otlp-gateway-pipelines"
-
 	// ConfigMapDataKey is the key in the ConfigMap data that contains the pipeline references
 	ConfigMapDataKey = "pipelines.yaml"
 
@@ -56,7 +54,7 @@ func ReadOTLPGatewayConfig(ctx context.Context, c client.Client, namespace strin
 	var cm corev1.ConfigMap
 
 	err := c.Get(ctx, types.NamespacedName{
-		Name:      OTLPGatewayConfigMapName,
+		Name:      names.OTLPGatewayConfigMap,
 		Namespace: namespace,
 	}, &cm)
 	if err != nil {
@@ -232,7 +230,7 @@ func getConfigMap(ctx context.Context, c client.Client, namespace string) (*core
 	var cm corev1.ConfigMap
 
 	err := c.Get(ctx, types.NamespacedName{
-		Name:      OTLPGatewayConfigMapName,
+		Name:      names.OTLPGatewayConfigMap,
 		Namespace: namespace,
 	}, &cm)
 	if err != nil {
@@ -270,7 +268,7 @@ func parseConfig(cm *corev1.ConfigMap, exists bool) (OTLPGatewayConfigMap, error
 func createConfigMap(ctx context.Context, c client.Client, namespace, yamlData string) error {
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      OTLPGatewayConfigMapName,
+			Name:      names.OTLPGatewayConfigMap,
 			Namespace: namespace,
 		},
 		Data: map[string]string{

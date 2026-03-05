@@ -21,6 +21,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/stubs"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry/mocks"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
@@ -226,7 +227,7 @@ type removeReferenceErrorClient struct {
 
 func (c *removeReferenceErrorClient) Get(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
 	// Return error for OTLP Gateway ConfigMap to simulate RemoveLogPipelineReference failure
-	if cm, ok := obj.(*corev1.ConfigMap); ok && key.Name == "telemetry-otlp-gateway-pipelines" {
+	if cm, ok := obj.(*corev1.ConfigMap); ok && key.Name == names.OTLPGatewayConfigMap {
 		_ = cm
 		return c.err
 	}

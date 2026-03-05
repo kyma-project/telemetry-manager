@@ -35,6 +35,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	ctrlpredicate "sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
@@ -44,6 +45,7 @@ import (
 	otlpgatewayconfig "github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpgateway" //nolint:importas // needed to disambiguate from reconciler package
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	otlpgatewayreconciler "github.com/kyma-project/telemetry-manager/internal/reconciler/otlpgateway" //nolint:importas // needed to disambiguate from config package
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	predicateutils "github.com/kyma-project/telemetry-manager/internal/utils/predicate"
 )
@@ -97,14 +99,15 @@ func (r *OTLPGatewayController) Reconcile(ctx context.Context, req ctrl.Request)
 }
 
 func (r *OTLPGatewayController) SetupWithManager(mgr ctrl.Manager) error {
-	// Primary watch: OTLP Gateway ConfigMap
+	// Primary watch: filter to only the coordination ConfigMap written by pipeline controllers
 	b := ctrl.NewControllerManagedBy(mgr).For(&corev1.ConfigMap{},
-		ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete()),
+		ctrlbuilder.WithPredicates(
+			predicateutils.CreateOrUpdateOrDelete(),
+			ctrlpredicate.NewPredicateFuncs(func(obj client.Object) bool {
+				return obj.GetName() == names.OTLPGatewayConfigMap
+			}),
+		),
 	)
-
-	// Filter to only watch the OTLP Gateway ConfigMap specifically
-	// Note: We watch all ConfigMaps and filter in the reconcile loop to avoid complexity
-	// Pipeline controllers write to the ConfigMap, triggering reconciliation here
 
 	// Watch reconcile trigger channel
 	b.WatchesRawSource(
@@ -179,7 +182,7 @@ func (r *OTLPGatewayController) mapTelemetryToConfigMap(ctx context.Context, obj
 	return []reconcile.Request{
 		{
 			NamespacedName: types.NamespacedName{
-				Name:      otelcollector.OTLPGatewayConfigMapName,
+				Name:      names.OTLPGatewayConfigMap,
 				Namespace: namespace,
 			},
 		},
@@ -195,7 +198,7 @@ func (r *OTLPGatewayController) mapOwnedResourceToConfigMap(ctx context.Context,
 	return []reconcile.Request{
 		{
 			NamespacedName: types.NamespacedName{
-				Name:      otelcollector.OTLPGatewayConfigMapName,
+				Name:      names.OTLPGatewayConfigMap,
 				Namespace: namespace,
 			},
 		},
