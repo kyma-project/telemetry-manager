@@ -1,7 +1,7 @@
 export default [
   {
       text: 'Telemetry Pipeline API', link: './pipelines', collapsed: true, items: [
-          {text: 'Migrate Telemetry Pipelines to v1beta1', link: './migration-guide'},
+          {text: 'Migrate Telemetry Pipelines to v1beta1', link: './migration-to-v1beta1-api'},
       ]
   },
   { text: 'Set Up the OTLP Input', link: './otlp-input' },
