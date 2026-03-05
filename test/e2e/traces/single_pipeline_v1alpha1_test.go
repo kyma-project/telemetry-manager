@@ -60,6 +60,6 @@ func TestSinglePipelineV1Alpha1(t *testing.T) {
 	assert.TracePipelineHealthy(t, pipelineName)
 	assert.TracesFromNamespaceDelivered(t, backend, genNs)
 
-	gatewayMetricsURL := suite.ProxyClient.ProxyURLForService(kitkyma.TraceGatewayMetricsService.Namespace, kitkyma.TraceGatewayMetricsService.Name, "metrics", ports.Metrics)
+	gatewayMetricsURL := suite.ProxyClient.ProxyURLForService(kitkyma.TelemetryOTLPMetricsService.Namespace, kitkyma.TelemetryOTLPMetricsService.Name, "metrics", ports.Metrics)
 	assert.EmitsOTelCollectorMetrics(t, gatewayMetricsURL)
 }

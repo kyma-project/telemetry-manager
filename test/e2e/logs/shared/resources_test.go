@@ -40,21 +40,21 @@ func TestResources_OTel(t *testing.T) {
 			assert.NewResource(&corev1.Service{}, kitkyma.LogAgentMetricsService),
 			assert.NewResource(&networkingv1.NetworkPolicy{}, kitkyma.LogAgentNetworkPolicy),
 			assert.NewResource(&corev1.ConfigMap{}, kitkyma.LogAgentConfigMap),
-			assert.NewResource(&corev1.Service{}, kitkyma.LogGatewayOTLPService),
+			assert.NewResource(&corev1.Service{}, kitkyma.TelemetryOTLPLogService),
 			assert.NewResource(&corev1.Secret{}, kitkyma.LogAgentSecretName),
 
 			// Gateway resources
 			assert.NewResource(&appsv1.DaemonSet{}, kitkyma.TelemetryOTLPGatewayName),
-			assert.NewResource(&corev1.Service{}, kitkyma.LogGatewayMetricsService),
-			assert.NewResource(&corev1.ServiceAccount{}, kitkyma.LogGatewayServiceAccount),
-			assert.NewResource(&rbacv1.ClusterRole{}, kitkyma.LogGatewayClusterRole),
-			assert.NewResource(&rbacv1.ClusterRoleBinding{}, kitkyma.LogGatewayClusterRoleBinding),
-			assert.NewResource(&networkingv1.NetworkPolicy{}, kitkyma.LogGatewayNetworkPolicy),
-			assert.NewResource(&corev1.Secret{}, kitkyma.LogGatewaySecretName),
-			assert.NewResource(&corev1.ConfigMap{}, kitkyma.LogGatewayConfigMap),
-			assert.NewResource(&corev1.Service{}, kitkyma.LogGatewayOTLPService),
+			assert.NewResource(&corev1.Service{}, kitkyma.TelemetryOTLPMetricsService),
+			assert.NewResource(&corev1.ServiceAccount{}, kitkyma.TelemetryOTLPServiceAccount),
+			assert.NewResource(&rbacv1.ClusterRole{}, kitkyma.TelemetryOTLPClusterRole),
+			assert.NewResource(&rbacv1.ClusterRoleBinding{}, kitkyma.TelemetryOTLPClusterRoleBinding),
+			assert.NewResource(&networkingv1.NetworkPolicy{}, kitkyma.TelemetryOTLPNetworkPolicy),
+			assert.NewResource(&corev1.Secret{}, kitkyma.TelemetryOTLPSecretName),
+			assert.NewResource(&corev1.ConfigMap{}, kitkyma.TelemetryOTLPConfigMap),
+			assert.NewResource(&corev1.Service{}, kitkyma.TelemetryOTLPLogService),
 			// TODO(skhalash): Re-enable after fixing the istiod deployment timeout issue in the test
-			// assert.NewResource(&istiosecurityclientv1.PeerAuthentication{}, kitkyma.LogGatewayPeerAuthentication),
+			// assert.NewResource(&istiosecurityclientv1.PeerAuthentication{}, kitkyma.TelemetryOTLPPeerAuthentication),
 		}
 	)
 

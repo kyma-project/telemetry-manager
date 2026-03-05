@@ -42,19 +42,6 @@ var (
 	MetricAgentClusterRoleBinding = types.NamespacedName{Name: names.MetricAgent, Namespace: SystemNamespaceName}
 	MetricAgentConfigMap          = types.NamespacedName{Name: names.MetricAgent, Namespace: SystemNamespaceName}
 
-	// TODO: Cleanup TraceGateway names
-
-	TraceGatewayName               = types.NamespacedName{Name: names.TraceGateway, Namespace: SystemNamespaceName}
-	TraceGatewayMetricsService     = types.NamespacedName{Name: names.OTLPGatewayMetricsService, Namespace: SystemNamespaceName}
-	TraceGatewayNetworkPolicy      = types.NamespacedName{Name: commonresources.NetworkPolicyPrefix + names.OTLPGateway, Namespace: SystemNamespaceName}
-	TraceGatewaySecretName         = types.NamespacedName{Name: names.OTLPGateway, Namespace: SystemNamespaceName}
-	TraceGatewayOTLPService        = types.NamespacedName{Name: names.OTLPTracesService, Namespace: SystemNamespaceName} // legacy name, kept for compatibility
-	TraceGatewayServiceAccount     = types.NamespacedName{Name: names.OTLPGateway, Namespace: SystemNamespaceName}
-	TraceGatewayClusterRole        = types.NamespacedName{Name: names.OTLPGateway, Namespace: SystemNamespaceName}
-	TraceGatewayClusterRoleBinding = types.NamespacedName{Name: names.OTLPGateway, Namespace: SystemNamespaceName}
-	TraceGatewayConfigMap          = types.NamespacedName{Name: names.OTLPGateway, Namespace: SystemNamespaceName}
-	TraceGatewayPeerAuthentication = types.NamespacedName{Name: names.OTLPGateway, Namespace: SystemNamespaceName}
-
 	LogAgentName               = types.NamespacedName{Name: names.LogAgent, Namespace: SystemNamespaceName}
 	LogAgentMetricsService     = types.NamespacedName{Name: names.LogAgentMetricsService, Namespace: SystemNamespaceName}
 	LogAgentSecretName         = types.NamespacedName{Name: names.LogAgent, Namespace: SystemNamespaceName}
@@ -63,19 +50,6 @@ var (
 	LogAgentClusterRoleBinding = types.NamespacedName{Name: names.LogAgent, Namespace: SystemNamespaceName}
 	LogAgentNetworkPolicy      = types.NamespacedName{Name: commonresources.NetworkPolicyPrefix + names.LogAgent, Namespace: SystemNamespaceName}
 	LogAgentConfigMap          = types.NamespacedName{Name: names.LogAgent, Namespace: SystemNamespaceName}
-
-	// TODO: Cleanup LogGateway names
-
-	LogGatewayName               = types.NamespacedName{Name: names.LogGateway, Namespace: SystemNamespaceName}
-	LogGatewayMetricsService     = types.NamespacedName{Name: names.OTLPGatewayMetricsService, Namespace: SystemNamespaceName}
-	LogGatewayNetworkPolicy      = types.NamespacedName{Name: commonresources.NetworkPolicyPrefix + names.OTLPGateway, Namespace: SystemNamespaceName}
-	LogGatewaySecretName         = types.NamespacedName{Name: names.OTLPGateway, Namespace: SystemNamespaceName}
-	LogGatewayOTLPService        = types.NamespacedName{Name: names.OTLPLogsService, Namespace: SystemNamespaceName} // legacy name, kept for compatibility
-	LogGatewayServiceAccount     = types.NamespacedName{Name: names.OTLPGateway, Namespace: SystemNamespaceName}
-	LogGatewayClusterRole        = types.NamespacedName{Name: names.OTLPGateway, Namespace: SystemNamespaceName}
-	LogGatewayClusterRoleBinding = types.NamespacedName{Name: names.OTLPGateway, Namespace: SystemNamespaceName}
-	LogGatewayConfigMap          = types.NamespacedName{Name: names.OTLPGateway, Namespace: SystemNamespaceName}
-	LogGatewayPeerAuthentication = types.NamespacedName{Name: names.OTLPGateway, Namespace: SystemNamespaceName}
 
 	FluentBitDaemonSetName          = types.NamespacedName{Name: names.FluentBit, Namespace: SystemNamespaceName}
 	FluentBitServiceAccount         = types.NamespacedName{Name: names.FluentBit, Namespace: SystemNamespaceName}
@@ -91,6 +65,18 @@ var (
 	FluentBitEnvSecret              = types.NamespacedName{Name: names.FluentBit + "-env", Namespace: SystemNamespaceName}
 	FluentBitTLSConfigSecret        = types.NamespacedName{Name: names.FluentBit + "-output-tls-config", Namespace: SystemNamespaceName}
 
+	TelemetryOTLPGatewayName        = types.NamespacedName{Name: names.OTLPGateway, Namespace: SystemNamespaceName}
+	TelemetryOTLPMetricsService     = types.NamespacedName{Name: names.OTLPGatewayMetricsService, Namespace: SystemNamespaceName}
+	TelemetryOTLPNetworkPolicy      = types.NamespacedName{Name: commonresources.NetworkPolicyPrefix + names.OTLPGateway, Namespace: SystemNamespaceName}
+	TelemetryOTLPSecretName         = types.NamespacedName{Name: names.OTLPGateway, Namespace: SystemNamespaceName}
+	TelemetryOTLPLogService         = types.NamespacedName{Name: names.OTLPLogsService, Namespace: SystemNamespaceName}
+	TelemetryOTLPTraceService       = types.NamespacedName{Name: names.OTLPTracesService, Namespace: SystemNamespaceName}
+	TelemetryOTLPServiceAccount     = types.NamespacedName{Name: names.OTLPGateway, Namespace: SystemNamespaceName}
+	TelemetryOTLPClusterRole        = types.NamespacedName{Name: names.OTLPGateway, Namespace: SystemNamespaceName}
+	TelemetryOTLPClusterRoleBinding = types.NamespacedName{Name: names.OTLPGateway, Namespace: SystemNamespaceName}
+	TelemetryOTLPConfigMap          = types.NamespacedName{Name: names.OTLPGateway, Namespace: SystemNamespaceName}
+	TelemetryOTLPPeerAuthentication = types.NamespacedName{Name: names.OTLPGateway, Namespace: SystemNamespaceName}
+
 	SelfMonitorName           = types.NamespacedName{Name: names.SelfMonitor, Namespace: SystemNamespaceName}
 	SelfMonitorNetworkPolicy  = types.NamespacedName{Name: commonresources.NetworkPolicyPrefix + names.SelfMonitor, Namespace: SystemNamespaceName}
 	SelfMonitorServiceAccount = types.NamespacedName{Name: names.SelfMonitor, Namespace: SystemNamespaceName}
@@ -102,14 +88,4 @@ var (
 	TelemetryName = types.NamespacedName{Name: names.DefaultTelemetry, Namespace: SystemNamespaceName}
 
 	WebhookCertSecret = types.NamespacedName{Name: "telemetry-webhook-cert", Namespace: SystemNamespaceName}
-
-	TelemetryOTLPGatewayName        = types.NamespacedName{Name: names.OTLPGateway, Namespace: SystemNamespaceName}
-	TelemetryOTLPMetricsService     = types.NamespacedName{Name: names.OTLPGateway + "-metrics", Namespace: SystemNamespaceName}
-	TelemetryOTLPServiceAccount     = types.NamespacedName{Name: names.OTLPGateway, Namespace: SystemNamespaceName}
-	TelemetryOTLPClusterRole        = types.NamespacedName{Name: names.OTLPGateway, Namespace: SystemNamespaceName}
-	TelemetryOTLPClusterRoleBinding = types.NamespacedName{Name: names.OTLPGateway, Namespace: SystemNamespaceName}
-	TelemetryOTLPNetworkPolicy      = types.NamespacedName{Name: commonresources.NetworkPolicyPrefix + names.OTLPGateway, Namespace: SystemNamespaceName}
-	TelemetryOTLPSecretName         = types.NamespacedName{Name: names.OTLPGateway, Namespace: SystemNamespaceName}
-	TelemetryOTLPConfigMap          = types.NamespacedName{Name: names.OTLPGateway, Namespace: SystemNamespaceName}
-	TelemetryOTLPOTLPService        = types.NamespacedName{Name: names.OTLPGateway, Namespace: SystemNamespaceName}
 )

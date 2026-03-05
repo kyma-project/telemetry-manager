@@ -14,7 +14,6 @@ const (
 
 	LogAgentMetricsService      = LogAgent + metricsSuffix
 	MetricAgentMetricsService   = MetricAgent + metricsSuffix
-	LogGatewayMetricsService    = LogGateway + metricsSuffix
 	MetricGatewayMetricsService = MetricGateway + metricsSuffix
 	OTLPGatewayMetricsService   = OTLPGateway + metricsSuffix
 

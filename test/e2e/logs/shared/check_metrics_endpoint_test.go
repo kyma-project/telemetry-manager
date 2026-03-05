@@ -51,7 +51,7 @@ func TestMetricsEndpoint_OTel(t *testing.T) {
 				return telemetrygen.NewDeployment(namespace, telemetrygen.SignalTypeLogs).K8sObject()
 			},
 			resourceName:   kitkyma.TelemetryOTLPGatewayName,
-			metricsService: kitkyma.LogGatewayMetricsService,
+			metricsService: kitkyma.TelemetryOTLPMetricsService,
 		},
 	}
 

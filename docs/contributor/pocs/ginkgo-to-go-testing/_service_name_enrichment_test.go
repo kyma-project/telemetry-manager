@@ -119,7 +119,7 @@ func TestOTelLogPipeline_ServiceNameEnrichment(t *testing.T) {
 
 			t.Log("Waiting for resources to be ready")
 
-			assert.DeploymentReady(t.Context(), suite.K8sClient, kitkyma.LogGatewayName)
+			assert.DeploymentReady(t.Context(), suite.K8sClient, kitkyma.TelemetryOTLPGatewayName)
 			assert.LogPipelineOtelHealthy(t.Context(), suite.K8sClient, pipelineName)
 			assert.OtelLogsFromNamespaceDelivered(suite.ProxyClient, backend.ExportURL(suite.ProxyClient), mockNs)
 
