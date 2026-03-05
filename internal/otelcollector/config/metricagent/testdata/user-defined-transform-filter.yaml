@@ -149,7 +149,7 @@ processors:
                 - IsMatch(metric.name, "^k8s.node.network.*") and not(IsMatch(attributes["interface"], "^(eth|en).*"))
     filter/user-defined-test1:
         error_mode: ignore
-        log_statements:
+        metric_statements:
             - conditions:
                 - metric.type == METRIC_DATA_TYPE_SUMMARY
     k8s_attributes:

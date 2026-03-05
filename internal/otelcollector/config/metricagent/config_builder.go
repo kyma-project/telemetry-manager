@@ -476,7 +476,7 @@ func (b *Builder) addUserDefinedFilterProcessor() buildComponentFunc {
 				return nil // No filters, no processor needed
 			}
 
-			return common.LogFilterProcessorConfig(mp.Spec.Filters)
+			return common.MetricFilterProcessorConfig(mp.Spec.Filters)
 		},
 	)
 }
