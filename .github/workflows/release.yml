@@ -279,8 +279,10 @@ jobs:
           PR_URL=$(gh pr create \
             --base "${RELEASE_BRANCH}" \
             --head "${BUMP_BRANCH}" \
-            --title "Release preparation: Bump version to ${VERSION}" \
-            --body "${PR_BODY}")
+            --title "chore: release preparation: Bump version to ${VERSION}" \
+            --body "${PR_BODY}" \
+            --label "area/release" \
+            --label "kind/chore")
 
           # Extract PR number
           PR_NUMBER=$(echo "${PR_URL}" | grep -o '[0-9]*$')
@@ -297,7 +299,7 @@ jobs:
           PR_NUMBER="${{ steps.create-pr.outputs.pr-number }}"
           echo "Waiting for PR #${PR_NUMBER} to be merged (timeout: 60 minutes)..."
 
-          MAX_ATTEMPTS=60  # 60 minutes with 60-second intervals
+          MAX_ATTEMPTS=60  # 120 minutes with 120-second intervals
           ATTEMPT=0
 
           while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
@@ -319,7 +321,7 @@ jobs:
             fi
 
             echo "Attempt $((ATTEMPT + 1))/${MAX_ATTEMPTS}: PR state is ${PR_STATE}, waiting..."
-            sleep 60
+            sleep 120
             ATTEMPT=$((ATTEMPT + 1))
           done
 
