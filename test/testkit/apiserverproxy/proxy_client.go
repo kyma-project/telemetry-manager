@@ -94,5 +94,5 @@ func (a Client) GetWithContext(ctx context.Context, proxyURL string) (*http.Resp
 		req.Header.Set("Authorization", a.bearerToken)
 	}
 
-	return client.Do(req)
+	return client.Do(req) //nolint:gosec // G704: URL is constructed internally from trusted proxy path
 }

@@ -35,7 +35,7 @@ type FileStorageExtension struct {
 type OAuth2Extension struct {
 	TokenURL     string            `yaml:"token_url"`
 	ClientID     string            `yaml:"client_id"`
-	ClientSecret string            `yaml:"client_secret"`
+	ClientSecret string            `yaml:"client_secret"` //nolint:gosec // G117: struct field for OTel config, not a credential
 	Scopes       []string          `yaml:"scopes,omitempty"`
 	Params       map[string]string `yaml:"endpoint_params,omitempty"`
 }
