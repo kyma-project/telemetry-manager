@@ -149,12 +149,12 @@ processors:
         error_mode: ignore
         metric_conditions:
             - conditions:
-                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(name, "^k8s.volume.*")
+                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(metric.name, "^k8s.volume.*")
     filter/drop-runtime-node-metrics:
         error_mode: ignore
         metric_conditions:
             - conditions:
-                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(name, "^k8s.node.*")
+                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(metric.name, "^k8s.node.*")
     filter/drop-runtime-pod-metrics:
         error_mode: ignore
         metric_conditions:
@@ -164,7 +164,7 @@ processors:
         error_mode: ignore
         metric_conditions:
             - conditions:
-                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(name, "^k8s.volume.*")
+                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(metric.name, "^k8s.volume.*")
     filter/drop-virtual-network-interfaces:
         error_mode: ignore
         metric_conditions:

@@ -601,7 +601,7 @@ func (b *Builder) addDropRuntimeContainerMetricsProcessor() buildComponentFunc {
 					{
 						Conditions: []string{common.JoinWithAnd(
 							common.KymaInputNameEquals(common.InputSourceRuntime),
-							common.IsMatch("name", "(^k8s.container.*)|(^container.*)"),
+							common.IsMatch("metric.name", "(^k8s.container.*)|(^container.*)"),
 						)},
 					},
 				})
@@ -621,7 +621,7 @@ func (b *Builder) addDropRuntimeNodeMetricsProcessor() buildComponentFunc {
 				{
 					Conditions: []string{common.JoinWithAnd(
 						common.KymaInputNameEquals(common.InputSourceRuntime),
-						common.IsMatch("name", "^k8s.node.*"),
+						common.IsMatch("metric.name", "^k8s.node.*"),
 					)},
 				},
 			})
@@ -641,7 +641,7 @@ func (b *Builder) addDropRuntimeVolumeMetricsProcessor() buildComponentFunc {
 				{
 					Conditions: []string{common.JoinWithAnd(
 						common.KymaInputNameEquals(common.InputSourceRuntime),
-						common.IsMatch("name", "^k8s.volume.*"),
+						common.IsMatch("metric.name", "^k8s.volume.*"),
 					)},
 				},
 			})
@@ -661,7 +661,7 @@ func (b *Builder) addDropRuntimeDeploymentMetricsProcessor() buildComponentFunc 
 				{
 					Conditions: []string{common.JoinWithAnd(
 						common.KymaInputNameEquals(common.InputSourceRuntime),
-						common.IsMatch("name", "^k8s.deployment.*"),
+						common.IsMatch("metric.name", "^k8s.deployment.*"),
 					)},
 				},
 			})
@@ -681,7 +681,7 @@ func (b *Builder) addDropRuntimeDaemonSetMetricsProcessor() buildComponentFunc {
 				{
 					Conditions: []string{common.JoinWithAnd(
 						common.KymaInputNameEquals(common.InputSourceRuntime),
-						common.IsMatch("name", "^k8s.volume.*"),
+						common.IsMatch("metric.name", "^k8s.volume.*"),
 					)},
 				},
 			})
@@ -701,7 +701,7 @@ func (b *Builder) addDropRuntimeStatefulSetMetricsProcessor() buildComponentFunc
 				{
 					Conditions: []string{common.JoinWithAnd(
 						common.KymaInputNameEquals(common.InputSourceRuntime),
-						common.IsMatch("name", "^k8s.statefulset.*"),
+						common.IsMatch("metric.name", "^k8s.statefulset.*"),
 					)},
 				},
 			})
@@ -721,7 +721,7 @@ func (b *Builder) addDropRuntimeJobMetricsProcessor() buildComponentFunc {
 				{
 					Conditions: []string{common.JoinWithAnd(
 						common.KymaInputNameEquals(common.InputSourceRuntime),
-						common.IsMatch("name", "^k8s.job.*"),
+						common.IsMatch("metric.name", "^k8s.job.*"),
 					)},
 				},
 			})
