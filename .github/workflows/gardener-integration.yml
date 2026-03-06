@@ -20,7 +20,16 @@ on:
   pull_request_target:
     types: [labeled, opened, synchronize, reopened]
   workflow_dispatch:
-
+  workflow_call:
+    inputs:
+      ref:
+        description: "Git reference (branch, tag, or SHA) to checkout"
+        type: string
+        required: false
+      image_tag:
+        description: "Image tag to use for the tests"
+        type: string
+        required: false
 jobs:
   check-trigger:
     runs-on: ubuntu-latest
@@ -62,7 +71,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
+        with:
+          fetch-depth: '0'
+          ref: ${{ inputs.ref || github.ref }}
       - name: Setup Golang
         uses: "./.github/template/setup-golang"
 
