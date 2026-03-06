@@ -65,6 +65,8 @@ var (
 	FluentBitEnvSecret              = types.NamespacedName{Name: names.FluentBit + "-env", Namespace: SystemNamespaceName}
 	FluentBitTLSConfigSecret        = types.NamespacedName{Name: names.FluentBit + "-output-tls-config", Namespace: SystemNamespaceName}
 
+	TraceGatewayName                = types.NamespacedName{Name: names.TraceGateway, Namespace: SystemNamespaceName} // TODO: Still needed for upgrade tests. Remove after first roll-out
+	LogGatewayName                  = types.NamespacedName{Name: names.LogGateway, Namespace: SystemNamespaceName} // TODO: Still needed for upgrade tests. Remove after first roll-out
 	TelemetryOTLPGatewayName        = types.NamespacedName{Name: names.OTLPGateway, Namespace: SystemNamespaceName}
 	TelemetryOTLPMetricsService     = types.NamespacedName{Name: names.OTLPGatewayMetricsService, Namespace: SystemNamespaceName}
 	TelemetryOTLPNetworkPolicy      = types.NamespacedName{Name: commonresources.NetworkPolicyPrefix + names.OTLPGateway, Namespace: SystemNamespaceName}
