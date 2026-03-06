@@ -61,12 +61,12 @@ processors:
         send_batch_max_size: 512
     filter/user-defined-test1:
         error_mode: ignore
-        trace_statements:
+        trace_conditions:
             - conditions:
                 - IsMatch(span.name, ".*grpc.*")
     filter/user-defined-test2:
         error_mode: ignore
-        trace_statements:
+        trace_conditions:
             - conditions:
                 - IsMatch(spanevent.attributes["foo"], ".*bar.*")
     istio_noise_filter: {}

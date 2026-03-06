@@ -163,17 +163,17 @@ processors:
         send_batch_max_size: 1024
     filter/drop-diagnostic-metrics-if-input-source-prometheus:
         error_mode: ignore
-        metric_statements:
+        metric_conditions:
             - conditions:
                 - resource.attributes["kyma.input.name"] == "prometheus" and (name == "up" or name == "scrape_duration_seconds" or name == "scrape_samples_scraped" or name == "scrape_samples_post_metric_relabeling" or name == "scrape_series_added")
     filter/drop-envoy-metrics-if-disabled:
         error_mode: ignore
-        metric_statements:
+        metric_conditions:
             - conditions:
                 - IsMatch(name, "^envoy_.*") and resource.attributes["kyma.input.name"] == "istio"
     filter/test-filter-by-namespace-prometheus-input:
         error_mode: ignore
-        metric_statements:
+        metric_conditions:
             - conditions:
                 - resource.attributes["kyma.input.name"] == "prometheus" and (resource.attributes["k8s.namespace.name"] == "kube-system" or resource.attributes["k8s.namespace.name"] == "istio-system")
                 - resource.attributes["kyma.input.name"] == "prometheus" and resource.attributes["k8s.namespace.name"] != nil and not(resource.attributes["k8s.namespace.name"] == "monitoring" or resource.attributes["k8s.namespace.name"] == "observability")

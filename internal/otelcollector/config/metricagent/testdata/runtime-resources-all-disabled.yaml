@@ -177,52 +177,52 @@ processors:
         send_batch_max_size: 1024
     filter/drop-envoy-metrics-if-disabled:
         error_mode: ignore
-        metric_statements:
+        metric_conditions:
             - conditions:
                 - IsMatch(name, "^envoy_.*") and resource.attributes["kyma.input.name"] == "istio"
     filter/drop-runtime-container-metrics:
         error_mode: ignore
-        metric_statements:
+        metric_conditions:
             - conditions:
                 - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(name, "(^k8s.container.*)|(^container.*)")
     filter/drop-runtime-daemonset-metrics:
         error_mode: ignore
-        metric_statements:
+        metric_conditions:
             - conditions:
                 - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(name, "^k8s.volume.*")
     filter/drop-runtime-deployment-metrics:
         error_mode: ignore
-        metric_statements:
+        metric_conditions:
             - conditions:
                 - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(name, "^k8s.deployment.*")
     filter/drop-runtime-job-metrics:
         error_mode: ignore
-        metric_statements:
+        metric_conditions:
             - conditions:
                 - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(name, "^k8s.job.*")
     filter/drop-runtime-node-metrics:
         error_mode: ignore
-        metric_statements:
+        metric_conditions:
             - conditions:
                 - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(name, "^k8s.node.*")
     filter/drop-runtime-pod-metrics:
         error_mode: ignore
-        metric_statements:
+        metric_conditions:
             - conditions:
                 - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(name, "^k8s.pod.*")
     filter/drop-runtime-statefulset-metrics:
         error_mode: ignore
-        metric_statements:
+        metric_conditions:
             - conditions:
                 - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(name, "^k8s.statefulset.*")
     filter/drop-runtime-volume-metrics:
         error_mode: ignore
-        metric_statements:
+        metric_conditions:
             - conditions:
                 - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(name, "^k8s.volume.*")
     filter/drop-virtual-network-interfaces:
         error_mode: ignore
-        metric_statements:
+        metric_conditions:
             - conditions:
                 - IsMatch(metric.name, "^k8s.node.network.*") and not(IsMatch(attributes["interface"], "^(eth|en).*"))
     k8s_attributes:

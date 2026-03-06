@@ -133,22 +133,22 @@ processors:
         send_batch_max_size: 1024
     filter/drop-envoy-metrics-if-disabled:
         error_mode: ignore
-        metric_statements:
+        metric_conditions:
             - conditions:
                 - IsMatch(name, "^envoy_.*") and resource.attributes["kyma.input.name"] == "istio"
     filter/drop-non-pvc-volumes-metrics:
         error_mode: ignore
-        metric_statements:
+        metric_conditions:
             - conditions:
                 - resource.attributes["k8s.volume.name"] != nil and resource.attributes["k8s.volume.type"] != "persistentVolumeClaim"
     filter/drop-virtual-network-interfaces:
         error_mode: ignore
-        metric_statements:
+        metric_conditions:
             - conditions:
                 - IsMatch(metric.name, "^k8s.node.network.*") and not(IsMatch(attributes["interface"], "^(eth|en).*"))
     filter/test-filter-by-namespace-runtime-input:
         error_mode: ignore
-        metric_statements:
+        metric_conditions:
             - conditions:
                 - resource.attributes["kyma.input.name"] == "runtime" and (resource.attributes["k8s.namespace.name"] == "kube-system" or resource.attributes["k8s.namespace.name"] == "istio-system")
                 - resource.attributes["kyma.input.name"] == "runtime" and resource.attributes["k8s.namespace.name"] != nil and not(resource.attributes["k8s.namespace.name"] == "monitoring" or resource.attributes["k8s.namespace.name"] == "observability")

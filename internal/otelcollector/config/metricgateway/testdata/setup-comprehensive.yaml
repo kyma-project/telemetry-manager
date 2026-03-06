@@ -101,22 +101,22 @@ processors:
         send_batch_max_size: 1024
     filter/cls-filter-by-namespace-otlp-input:
         error_mode: ignore
-        metric_statements:
+        metric_conditions:
             - conditions:
                 - not(resource.attributes["kyma.input.name"] == "kyma") and resource.attributes["k8s.namespace.name"] != nil and not(resource.attributes["k8s.namespace.name"] == "apps-cls")
     filter/dynatrace-filter-by-namespace-otlp-input:
         error_mode: ignore
-        metric_statements:
+        metric_conditions:
             - conditions:
                 - not(resource.attributes["kyma.input.name"] == "kyma") and resource.attributes["k8s.namespace.name"] != nil and not(resource.attributes["k8s.namespace.name"] == "apps-dynatrace")
     filter/user-defined-cls:
         error_mode: ignore
-        metric_statements:
+        metric_conditions:
             - conditions:
                 - metric.type == METRIC_DATA_TYPE_GAUGE
     filter/user-defined-dynatrace:
         error_mode: ignore
-        metric_statements:
+        metric_conditions:
             - conditions:
                 - metric.type == METRIC_DATA_TYPE_SUMMARY
     k8s_attributes:

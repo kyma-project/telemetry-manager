@@ -216,9 +216,9 @@ type IstioNoiseFilterProcessor struct {
 
 type FilterProcessor struct {
 	ErrorMode string                        `yaml:"error_mode"`
-	Metrics   []telemetryv1beta1.FilterSpec `yaml:"metric_statements,omitempty"`
-	Logs      []telemetryv1beta1.FilterSpec `yaml:"log_statements,omitempty"`
-	Traces    []telemetryv1beta1.FilterSpec `yaml:"trace_statements,omitempty"`
+	Metrics   []telemetryv1beta1.FilterSpec `yaml:"metric_conditions,omitempty"`
+	Logs      []telemetryv1beta1.FilterSpec `yaml:"log_conditions,omitempty"`
+	Traces    []telemetryv1beta1.FilterSpec `yaml:"trace_conditions,omitempty"`
 }
 
 type FilterProcessorMetrics struct {
