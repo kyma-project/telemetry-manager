@@ -16,8 +16,22 @@ import (
 //
 // This function is idempotent and safe to call multiple times.
 func SetupCluster(t TestingT, k8sClient client.Client, cfg Config) error {
-	t.Logf("Setting up cluster: istio=%t, fips=%t, experimental=%t, prerequisites=%t, helmValues=%v, chart=%s",
-		cfg.InstallIstio, cfg.OperateInFIPSMode, cfg.EnableExperimental, cfg.DeployPrerequisites, cfg.HelmValues, cfg.ChartPath)
+	t.Logf("Setting up cluster: istio=%t, fips=%t, experimental=%t, prerequisites=%t, forceFresh=%t, helmValues=%v, chart=%s",
+		cfg.InstallIstio, cfg.OperateInFIPSMode, cfg.EnableExperimental, cfg.DeployPrerequisites, cfg.ForceFreshInstall, cfg.HelmValues, cfg.ChartPath)
+
+	// Handle force fresh install - completely remove telemetry first
+	if cfg.ForceFreshInstall {
+		t.Log("Force fresh install requested, removing existing telemetry installation...")
+
+		if err := undeployManager(t, k8sClient); err != nil {
+			t.Logf("Warning: failed to undeploy manager (may not exist): %v", err)
+		}
+
+		// Wait for CRDs to be fully deleted to ensure clean API server state
+		if err := waitForCRDsDeletion(t, k8sClient); err != nil {
+			t.Logf("Warning: failed waiting for CRDs deletion: %v", err)
+		}
+	}
 
 	// Ensure Istio is in the desired state
 	if err := ensureIstioState(t, k8sClient, cfg); err != nil {
@@ -141,9 +155,16 @@ func ensureIstioState(t TestingT, k8sClient client.Client, cfg Config) error {
 }
 
 // handleIstioChange handles Istio installation/uninstallation.
-// The manager must be removed before Istio changes to avoid webhook/sidecar conflicts.
+// The manager and test prerequisites must be removed before Istio changes to avoid webhook/sidecar/network policy conflicts.
 func handleIstioChange(t TestingT, k8sClient client.Client, currentInstalled, desiredInstalled bool) error {
-	// Remove manager FIRST (prevents conflicts during Istio changes)
+	// Remove test prerequisites FIRST (network policies can block Istio installation)
+	t.Log("Removing test prerequisites before Istio change...")
+
+	if err := removeTestPrerequisites(t, k8sClient); err != nil {
+		t.Logf("Warning: failed to remove test prerequisites: %v", err)
+	}
+
+	// Remove manager (prevents conflicts during Istio changes)
 	t.Log("Removing manager before Istio change...")
 
 	if err := undeployManager(t, k8sClient); err != nil {

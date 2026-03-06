@@ -19,7 +19,7 @@ import (
 
 const (
 	// config key in the overrides configmap
-	configKey = "override-config"
+	configKey = "overrides"
 )
 
 var (
