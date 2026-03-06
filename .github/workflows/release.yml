@@ -256,7 +256,6 @@ jobs:
           - Updated \`ENV_HELM_RELEASE_VERSION\` to \`${VERSION}\`
           - Updated \`ENV_MANAGER_IMAGE\` tag to \`${VERSION}\`
           - Updated \`ENV_OTEL_COLLECTOR_IMAGE\` tag to \`${OCC_IMAGE}\`
-          - Ran \`make generate\` to update generated files
 
           ### Review Checklist
           - [ ] Version numbers are correct
