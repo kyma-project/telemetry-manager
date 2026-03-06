@@ -180,6 +180,14 @@ func TestKubeletStatsReceiver(t *testing.T) {
 					K8sNodeMemoryMajorPageFaults: MetricConfig{Enabled: false},
 					K8sNodeMemoryPageFaults:      MetricConfig{Enabled: false},
 				},
+				ResourceAttributes: KubeletStatsResourceAttributesCfg{
+					AWSVolumeID:            MetricConfig{Enabled: false},
+					FSType:                 MetricConfig{Enabled: false},
+					GCEPDName:              MetricConfig{Enabled: false},
+					GlusterFSEndpointsName: MetricConfig{Enabled: false},
+					GlusterFSPath:          MetricConfig{Enabled: false},
+					Partition:              MetricConfig{Enabled: false},
+				},
 				ExtraMetadataLabels: []string{
 					"k8s.volume.type",
 				},
