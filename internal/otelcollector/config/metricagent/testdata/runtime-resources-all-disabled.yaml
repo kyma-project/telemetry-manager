@@ -209,7 +209,7 @@ processors:
         error_mode: ignore
         metric_conditions:
             - conditions:
-                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(name, "^k8s.pod.*")
+                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(datapoint.name, "^k8s.pod.*")
     filter/drop-runtime-statefulset-metrics:
         error_mode: ignore
         metric_conditions:

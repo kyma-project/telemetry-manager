@@ -345,12 +345,12 @@ processors:
         error_mode: ignore
         metric_conditions:
             - conditions:
-                - resource.attributes["kyma.input.name"] == "istio" and (name == "up" or name == "scrape_duration_seconds" or name == "scrape_samples_scraped" or name == "scrape_samples_post_metric_relabeling" or name == "scrape_series_added")
+                - resource.attributes["kyma.input.name"] == "istio" and (datapoint.name == "up" or datapoint.name == "scrape_duration_seconds" or datapoint.name == "scrape_samples_scraped" or datapoint.name == "scrape_samples_post_metric_relabeling" or datapoint.name == "scrape_series_added")
     filter/drop-diagnostic-metrics-if-input-source-prometheus:
         error_mode: ignore
         metric_conditions:
             - conditions:
-                - resource.attributes["kyma.input.name"] == "prometheus" and (name == "up" or name == "scrape_duration_seconds" or name == "scrape_samples_scraped" or name == "scrape_samples_post_metric_relabeling" or name == "scrape_series_added")
+                - resource.attributes["kyma.input.name"] == "prometheus" and (datapoint.name == "up" or datapoint.name == "scrape_duration_seconds" or datapoint.name == "scrape_samples_scraped" or datapoint.name == "scrape_samples_post_metric_relabeling" or datapoint.name == "scrape_series_added")
     filter/drop-non-pvc-volumes-metrics:
         error_mode: ignore
         metric_conditions:

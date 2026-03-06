@@ -580,7 +580,7 @@ func (b *Builder) addDropRuntimePodMetricsProcessor() buildComponentFunc {
 				{
 					Conditions: []string{common.JoinWithAnd(
 						common.KymaInputNameEquals(common.InputSourceRuntime),
-						common.IsMatch("name", "^k8s.pod.*"),
+						common.IsMatch("datapoint.name", "^k8s.pod.*"),
 					)},
 				},
 			})
@@ -775,7 +775,7 @@ func dropDiagnosticMetricsFilterProcessorConfig(inputSource common.InputSourceTy
 func nameConditions(names []string) []string {
 	var nameConditions []string
 	for _, name := range names {
-		nameConditions = append(nameConditions, common.NameAttributeEquals(name))
+		nameConditions = append(nameConditions, common.DatapointNameAttributeEquals(name))
 	}
 
 	return nameConditions
