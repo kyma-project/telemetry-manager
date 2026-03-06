@@ -23,10 +23,6 @@ func (isc *Checker) IsIstioActive(ctx context.Context) bool {
 		logf.FromContext(ctx).Error(err, "error getting group list from server")
 	}
 
-	if groupList == nil {
-		return false
-	}
-
 	for _, group := range groupList.Groups {
 		if strings.Contains(group.Name, ".istio.io") {
 			return true
