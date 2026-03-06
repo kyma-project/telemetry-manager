@@ -794,7 +794,7 @@ func (b *Builder) addDropEnvoyMetricsIfDisabledProcessor() buildComponentFunc {
 			return common.MetricFilterProcessorConfig([]telemetryv1beta1.FilterSpec{
 				{
 					Conditions: []string{common.JoinWithAnd(
-						common.IsMatch("datapoint.name", "^envoy_.*"),
+						common.IsMatch("metric.name", "^envoy_.*"),
 						common.KymaInputNameEquals(common.InputSourceIstio),
 					)},
 				},
@@ -1194,7 +1194,7 @@ func dropVirtualNetworkInterfacesProcessorConfig() *common.FilterProcessor {
 		{
 			Conditions: []string{common.JoinWithAnd(
 				common.IsMatch("metric.name", "^k8s.node.network.*"),
-				common.Not(common.IsMatch("metric.attributes[\"interface\"]", "^(eth|en).*")),
+				common.Not(common.IsMatch("datapoint.attributes[\"interface\"]", "^(eth|en).*")),
 			)},
 		},
 	})

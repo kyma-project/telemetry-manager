@@ -163,7 +163,7 @@ processors:
         error_mode: ignore
         metric_conditions:
             - conditions:
-                - IsMatch(datapoint.name, "^envoy_.*") and resource.attributes["kyma.input.name"] == "istio"
+                - IsMatch(metric.name, "^envoy_.*") and resource.attributes["kyma.input.name"] == "istio"
     k8s_attributes:
         auth_type: serviceAccount
         passthrough: false

@@ -360,7 +360,7 @@ processors:
         error_mode: ignore
         metric_conditions:
             - conditions:
-                - IsMatch(metric.name, "^k8s.node.network.*") and not(IsMatch(metric.attributes["interface"], "^(eth|en).*"))
+                - IsMatch(metric.name, "^k8s.node.network.*") and not(IsMatch(datapoint.attributes["interface"], "^(eth|en).*"))
     istio_noise_filter: {}
     k8s_attributes:
         auth_type: serviceAccount
