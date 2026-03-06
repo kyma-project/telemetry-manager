@@ -681,7 +681,7 @@ func (b *Builder) addDropRuntimeDaemonSetMetricsProcessor() buildComponentFunc {
 				{
 					Conditions: []string{common.JoinWithAnd(
 						common.KymaInputNameEquals(common.InputSourceRuntime),
-						common.IsMatch("metric.name", "^k8s.volume.*"),
+						common.IsMatch("metric.name", "^k8s.daemonset.*"),
 					)},
 				},
 			})

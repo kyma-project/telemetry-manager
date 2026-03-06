@@ -149,7 +149,7 @@ processors:
         error_mode: ignore
         metric_conditions:
             - conditions:
-                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(metric.name, "^k8s.volume.*")
+                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(metric.name, "^k8s.daemonset.*")
     filter/drop-runtime-node-metrics:
         error_mode: ignore
         metric_conditions:
