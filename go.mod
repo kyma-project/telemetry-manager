@@ -3,7 +3,7 @@ module github.com/kyma-project/telemetry-manager
 go 1.26.0
 
 require (
-	github.com/caarlos0/env/v11 v11.3.1
+	github.com/caarlos0/env/v11 v11.4.0
 	github.com/expr-lang/expr v1.17.8
 	github.com/go-logr/logr v1.4.3
 	github.com/go-logr/zapr v1.3.0

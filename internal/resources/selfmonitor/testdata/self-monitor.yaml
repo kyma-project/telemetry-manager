@@ -202,6 +202,24 @@ spec:
     - podSelector:
         matchLabels:
           app.kubernetes.io/name: manager
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: telemetry-self-monitor
+  policyTypes:
+  - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  labels:
+    app.kubernetes.io/component: monitor
+    app.kubernetes.io/managed-by: telemetry-manager
+    app.kubernetes.io/name: telemetry-self-monitor
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
+  name: kyma-project.io--telemetry-self-monitor-metrics
+  namespace: my-namespace
+spec:
   ingress:
   - from:
     - podSelector:
@@ -210,12 +228,18 @@ spec:
     ports:
     - port: 9090
       protocol: TCP
+  - from:
+    - podSelector:
+        matchLabels:
+          networking.kyma-project.io/metrics-scraping: allowed
+    ports:
+    - port: 9090
+      protocol: TCP
   podSelector:
     matchLabels:
       app.kubernetes.io/name: telemetry-self-monitor
   policyTypes:
   - Ingress
-  - Egress
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role

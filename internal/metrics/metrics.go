@@ -159,6 +159,16 @@ var (
 		[]string{},
 	)
 
+	MigratorInfo = promauto.With(registry).NewGaugeVec(
+		prometheus.GaugeOpts{
+			Namespace: defaultNamespace,
+			Subsystem: "",
+			Name:      "migrator_info",
+			Help:      "Information about the stored versions of CRDs relevant to storage migration",
+		},
+		[]string{"CRD", "version"},
+	)
+
 	SecretWatchersActive = promauto.With(registry).NewGaugeVec(
 		prometheus.GaugeOpts{
 			Namespace: defaultNamespace,

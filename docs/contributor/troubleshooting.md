@@ -4,7 +4,7 @@
 
 You must pause reconciliations to be able to debug the pipelines or the Telemetry module. This is also useful to try out a different pipeline configuration or a different OTel configuration. To pause or unpause reconciliations, follow these steps:
 
-1. Create an overriding `telemetry-override-config` ConfigMap in the manager's namespace.
+1. Create an overriding `telemetry-overrides` ConfigMap in the manager's namespace.
 2. Perform debugging operations.
 3. Remove the created ConfigMap.
 4. To reset the debug actions, perform a restart of Telemetry Manager.
@@ -19,9 +19,9 @@ Here is an example of such a ConfigMap:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: telemetry-override-config
+  name: telemetry-overrides
 data:
-  override-config: |
+  overrides: |
     global:
       logLevel: debug
     tracing:
