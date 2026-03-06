@@ -21,11 +21,13 @@ on:
         required: false
         default: false
         type: boolean
-run-name: "${{ github.event.inputs.dry_run == true && '[DRY RUN] ' || '' }}${{ github.event.inputs.force == true && '[FORCE] ' || '' }}Release Telemetry version ${{ github.event.inputs.version }} with OCC image ${{ github.event.inputs.occ_image }}"
+run-name: "Release Telemetry version ${{ github.event.inputs.version }} with OCC image ${{ github.event.inputs.occ_image }}, dry-run: ${{ github.event.inputs.dry_run }}, force mode: ${{ github.event.inputs.force }}"
 
 permissions:
   contents: write
   issues: read
+  actions: read
+  pull-requests: write
 
 jobs:
   validate-and-prepare-branch:
@@ -44,8 +46,7 @@ jobs:
           OCC_IMAGE: ${{ github.event.inputs.occ_image }}
         run: |
           echo "Validating version formats..."
-
-          # Validate release version format (X.Y.Z)
+          
           if ! [[ "${VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "::error::Invalid version format: ${VERSION}"
             echo "Expected format: X.Y.Z (e.g., 1.2.3)"
@@ -53,7 +54,6 @@ jobs:
           fi
           echo "✓ Release version format valid: ${VERSION}"
 
-          # Validate OCC image version format (X.Y.Z-A.B.C)
           if ! [[ "${OCC_IMAGE}" =~ ^[0-9]+\.[0-9]+\.[0-9]+-[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "::error::Invalid OCC image version format: ${OCC_IMAGE}"
             echo "Expected format: X.Y.Z-A.B.C (e.g., 1.2.3-4.5.6)"
@@ -154,11 +154,9 @@ jobs:
         env:
           VERSION: ${{ github.event.inputs.version }}
         run: |
-          # Extract major.minor from version
           RELEASE_BRANCH="release-$(echo ${VERSION} | cut -d. -f1-2)"
           echo "release-branch=${RELEASE_BRANCH}" >> $GITHUB_OUTPUT
 
-          # Check if patch release (branch already exists)
           git fetch origin "${RELEASE_BRANCH}" 2>/dev/null || true
           if git rev-parse --verify "origin/${RELEASE_BRANCH}" > /dev/null 2>&1; then
             echo "is-patch=true" >> $GITHUB_OUTPUT
@@ -215,23 +213,17 @@ jobs:
         run: |
           echo "Bumping version to ${VERSION}..."
 
-          # Update .env file with release version and OCC image
           if [ -f .env ]; then
-            # Update ENV_HELM_RELEASE_VERSION to release version
             sed -i.bak "s/ENV_HELM_RELEASE_VERSION=.*/ENV_HELM_RELEASE_VERSION=${VERSION}/" .env && rm .env.bak
             echo "Updated ENV_HELM_RELEASE_VERSION in .env"
 
-            # Update ENV_MANAGER_IMAGE tag to release version
             sed -i.bak "s|ENV_MANAGER_IMAGE=\(.*\):.*|ENV_MANAGER_IMAGE=\1:${VERSION}|" .env && rm .env.bak
             echo "Updated ENV_MANAGER_IMAGE tag in .env"
 
-            # Update ENV_OTEL_COLLECTOR_IMAGE tag to OCC image version
             sed -i.bak 's|ENV_OTEL_COLLECTOR_IMAGE="\([^:]*\):[^"]*"|ENV_OTEL_COLLECTOR_IMAGE="\1:'"${OCC_IMAGE}"'"|' .env && rm .env.bak
             echo "Updated ENV_OTEL_COLLECTOR_IMAGE tag in .env"
 
-            # Run make generate to update generated files
             make generate
-            echo "Ran make generate"
           fi
 
       - name: Commit and push version bump
@@ -275,7 +267,6 @@ jobs:
           EOF
           )"
 
-          # Create PR
           PR_URL=$(gh pr create \
             --base "${RELEASE_BRANCH}" \
             --head "${BUMP_BRANCH}" \
@@ -284,7 +275,7 @@ jobs:
             --label "area/release" \
             --label "kind/chore")
 
-          # Extract PR number
+
           PR_NUMBER=$(echo "${PR_URL}" | grep -o '[0-9]*$')
           echo "pr-number=${PR_NUMBER}" >> $GITHUB_OUTPUT
           echo "Created PR #${PR_NUMBER}: ${PR_URL}"
@@ -294,20 +285,18 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_BRANCH: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
-        timeout-minutes: 60
+        timeout-minutes: 120
         run: |
           PR_NUMBER="${{ steps.create-pr.outputs.pr-number }}"
-          echo "Waiting for PR #${PR_NUMBER} to be merged (timeout: 60 minutes)..."
+          echo "Waiting for PR #${PR_NUMBER} to be merged (timeout: 120 minutes)..."
 
-          MAX_ATTEMPTS=60  # 120 minutes with 120-second intervals
+          MAX_ATTEMPTS=60 
           ATTEMPT=0
 
           while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
-            # Check PR status
             PR_STATE=$(gh pr view "${PR_NUMBER}" --json state --jq .state)
 
             if [ "$PR_STATE" = "MERGED" ]; then
-              # Verify merged to correct branch
               MERGED_BRANCH=$(gh pr view "${PR_NUMBER}" --json baseRefName --jq .baseRefName)
               if [ "$MERGED_BRANCH" != "$RELEASE_BRANCH" ]; then
                 echo "::error::PR was merged to ${MERGED_BRANCH} instead of ${RELEASE_BRANCH}"
@@ -330,7 +319,6 @@ jobs:
             exit 1
           fi
 
-          # Update local branch to include merged changes
           echo "Updating local branch with merged changes..."
           git fetch origin "${RELEASE_BRANCH}"
           git checkout "${RELEASE_BRANCH}"
@@ -347,7 +335,6 @@ jobs:
           BUMP_BRANCH="release-prep-${VERSION}"
           echo "Cleaning up bump branch ${BUMP_BRANCH}..."
 
-          # Check if branch exists on remote
           if git ls-remote --heads origin "${BUMP_BRANCH}" | grep -q "${BUMP_BRANCH}"; then
             git push origin --delete "${BUMP_BRANCH}"
             echo "✓ Deleted bump branch ${BUMP_BRANCH}"
@@ -413,11 +400,10 @@ jobs:
       - run-pr-integration
       - run-gardener-integration
       - unit-tests
-    uses: kyma/compliancy/.github/workflows/upload-release-report.yml@main
+    uses: kyma-project/compliancy/.github/workflows/notify-release-report.yml@main
     with:
       release_version: ${{ github.event.inputs.version }}
-    secrets:
-      RELEASE_LOG_UPLOADER_SA: ${{ secrets.RELEASE_LOG_UPLOADER_SA }}
+    secrets: inherit
 
   create-release:
     needs:
@@ -442,7 +428,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ needs.prepare-release.outputs.pr-number }}
         run: |
-          # Get the merge commit SHA
           MERGE_SHA=$(gh pr view "${PR_NUMBER}" --json mergeCommit --jq .mergeCommit.oid)
           CURRENT_SHA=$(git rev-parse HEAD)
           
@@ -461,7 +446,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Create and push the tag from the release branch
           git tag -a "${VERSION}" -m "Release ${VERSION}"
           git push origin "${VERSION}"
 
