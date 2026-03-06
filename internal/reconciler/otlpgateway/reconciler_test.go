@@ -829,11 +829,11 @@ func newOverrideConfigClient(t *testing.T, paused bool) client.Client {
 
 	overridesCM := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "telemetry-override-config",
+			Name:      names.OverrideConfigMap,
 			Namespace: "kyma-system",
 		},
 		Data: map[string]string{
-			"override-config": overrideConfig,
+			"overrides": overrideConfig,
 		},
 	}
 
@@ -848,7 +848,7 @@ type overrideConfigErrorClient struct {
 }
 
 func (c *overrideConfigErrorClient) Get(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
-	if cm, ok := obj.(*corev1.ConfigMap); ok && key.Name == "telemetry-override-config" {
+	if cm, ok := obj.(*corev1.ConfigMap); ok && key.Name == names.OverrideConfigMap {
 		_ = cm
 		return c.err
 	}
