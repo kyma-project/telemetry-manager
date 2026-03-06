@@ -60,8 +60,8 @@ func Attribute(key string) string {
 	return fmt.Sprintf("attributes[\"%s\"]", key)
 }
 
-func DatapointNameAttributeEquals(name string) string {
-	return fmt.Sprintf("datapoint.name == \"%s\"", name)
+func MetricNameAttributeEquals(name string) string {
+	return fmt.Sprintf("metric.name == \"%s\"", name)
 }
 
 func JoinWithOr(parts ...string) string {

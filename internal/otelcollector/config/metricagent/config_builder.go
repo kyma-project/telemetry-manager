@@ -580,7 +580,7 @@ func (b *Builder) addDropRuntimePodMetricsProcessor() buildComponentFunc {
 				{
 					Conditions: []string{common.JoinWithAnd(
 						common.KymaInputNameEquals(common.InputSourceRuntime),
-						common.IsMatch("datapoint.name", "^k8s.pod.*"),
+						common.IsMatch("metric.name", "^k8s.pod.*"),
 					)},
 				},
 			})
@@ -775,7 +775,7 @@ func dropDiagnosticMetricsFilterProcessorConfig(inputSource common.InputSourceTy
 func nameConditions(names []string) []string {
 	var nameConditions []string
 	for _, name := range names {
-		nameConditions = append(nameConditions, common.DatapointNameAttributeEquals(name))
+		nameConditions = append(nameConditions, common.MetricNameAttributeEquals(name))
 	}
 
 	return nameConditions
@@ -794,7 +794,7 @@ func (b *Builder) addDropEnvoyMetricsIfDisabledProcessor() buildComponentFunc {
 			return common.MetricFilterProcessorConfig([]telemetryv1beta1.FilterSpec{
 				{
 					Conditions: []string{common.JoinWithAnd(
-						common.IsMatch("name", "^envoy_.*"),
+						common.IsMatch("datapoint.name", "^envoy_.*"),
 						common.KymaInputNameEquals(common.InputSourceIstio),
 					)},
 				},
@@ -1194,7 +1194,7 @@ func dropVirtualNetworkInterfacesProcessorConfig() *common.FilterProcessor {
 		{
 			Conditions: []string{common.JoinWithAnd(
 				common.IsMatch("metric.name", "^k8s.node.network.*"),
-				common.Not(common.IsMatch("attributes[\"interface\"]", "^(eth|en).*")),
+				common.Not(common.IsMatch("metric.attributes[\"interface\"]", "^(eth|en).*")),
 			)},
 		},
 	})
