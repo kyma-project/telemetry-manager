@@ -41,4 +41,4 @@ You must specify the full path for every field. Short-hand references are not su
 
 ### Limited OTTL Functions
 
-The OTTL function `IsRootSpan()` cannot be used as a standalone function since the context inference cannot infer context from a standalone function without any path prefixes. If you need this condition, use `span.parent_span_id == SpanID(0x0000000000000000)` instead.
+The OTTL function `IsRootSpan()` cannot be used as a standalone function since context inference on a standalone function without any path prefixes is not possible. If you need this condition, use `span.parent_span_id == SpanID(0x0000000000000000)` instead.
