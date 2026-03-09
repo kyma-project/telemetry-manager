@@ -1,7 +1,6 @@
 package shared
 
 import (
-	"fmt"
 	"strconv"
 	"testing"
 
@@ -27,11 +26,9 @@ func TestSinglePipelineV1Alpha1_OTel(t *testing.T) {
 	tests := []struct {
 		name                string
 		labels              []string
-		opts                []kubeprep.Option
 		input               telemetryv1alpha1.LogPipelineInput
 		logGeneratorBuilder func(ns string) client.Object
 		resourceName        types.NamespacedName
-		readinessCheckFunc  func(t *testing.T, name types.NamespacedName)
 	}{
 		{
 			name:   suite.LabelLogAgent,
@@ -44,8 +41,7 @@ func TestSinglePipelineV1Alpha1_OTel(t *testing.T) {
 			logGeneratorBuilder: func(ns string) client.Object {
 				return stdoutloggen.NewDeployment(ns).K8sObject()
 			},
-			resourceName:       kitkyma.LogAgentName,
-			readinessCheckFunc: assert.DaemonSetReady,
+			resourceName: kitkyma.LogAgentName,
 		},
 		{
 			name:   suite.LabelLogGateway,
@@ -61,32 +57,13 @@ func TestSinglePipelineV1Alpha1_OTel(t *testing.T) {
 			logGeneratorBuilder: func(ns string) client.Object {
 				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeLogs).K8sObject()
 			},
-			resourceName:       kitkyma.LogGatewayName,
-			readinessCheckFunc: assert.DeploymentReady,
-		},
-		{
-			name:   fmt.Sprintf("%s-%s", suite.LabelLogGateway, suite.LabelExperimental),
-			labels: []string{suite.LabelLogGateway},
-			opts:   []kubeprep.Option{kubeprep.WithExperimental()},
-			input: telemetryv1alpha1.LogPipelineInput{
-				Application: &telemetryv1alpha1.LogPipelineApplicationInput{
-					Enabled: new(false),
-				},
-				OTLP: &telemetryv1alpha1.OTLPInput{
-					Disabled: false,
-				},
-			},
-			logGeneratorBuilder: func(ns string) client.Object {
-				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeCentralLogs).K8sObject()
-			},
-			resourceName:       kitkyma.TelemetryOTLPGatewayName,
-			readinessCheckFunc: assert.DaemonSetReady,
+			resourceName: kitkyma.TelemetryOTLPGatewayName,
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			suite.SetupTestWithOptions(t, tc.labels, tc.opts...)
+			suite.SetupTest(t, tc.labels...)
 
 			var (
 				uniquePrefix = unique.Prefix(tc.name)
@@ -132,7 +109,7 @@ func TestSinglePipelineV1Alpha1_OTel(t *testing.T) {
 			assert.OTelLogPipelineHealthy(t, pipelineName)
 			assert.BackendReachable(t, backend)
 
-			tc.readinessCheckFunc(t, tc.resourceName)
+			assert.DaemonSetReady(t, tc.resourceName)
 
 			assert.OTelLogsFromNamespaceDelivered(t, backend, genNs)
 		})

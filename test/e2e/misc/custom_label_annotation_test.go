@@ -48,15 +48,15 @@ func TestLabelAnnotation(t *testing.T) {
 				}
 			},
 			assert: func(t *testing.T, ns string, backend *kitbackend.Backend, pipelineName string) {
-				assert.DeploymentReady(t, kitkyma.LogGatewayName)
+				assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
 				assert.DaemonSetReady(t, kitkyma.LogAgentName)
 				assert.OTelLogPipelineHealthy(t, pipelineName)
 				assert.OTelLogsFromNamespaceDelivered(t, backend, ns)
-				assert.DeploymentHasLabel(t, kitkyma.LogGatewayName, label)
-				assert.DeploymentHasAnnotation(t, kitkyma.LogGatewayName, annotation)
+				assert.DaemonSetHasLabel(t, kitkyma.TelemetryOTLPGatewayName, label)
+				assert.DaemonSetHasAnnotation(t, kitkyma.TelemetryOTLPGatewayName, annotation)
 
 				var gwSelector = client.ListOptions{
-					LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": "telemetry-log-gateway"}),
+					LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": "telemetry-otlp-gateway"}),
 					Namespace:     kitkyma.SystemNamespaceName,
 				}
 				assert.PodsHaveAnnotation(t, gwSelector, annotation)
@@ -167,15 +167,15 @@ func TestLabelAnnotation(t *testing.T) {
 				}
 			},
 			assert: func(t *testing.T, ns string, backend *kitbackend.Backend, pipelineName string) {
-				assert.DeploymentReady(t, kitkyma.TraceGatewayName)
+				assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
 				assert.TracePipelineHealthy(t, pipelineName)
 				assert.TracesFromNamespaceDelivered(t, backend, ns)
 
-				assert.DeploymentHasLabel(t, kitkyma.TraceGatewayName, label)
-				assert.DeploymentHasAnnotation(t, kitkyma.TraceGatewayName, annotation)
+				assert.DaemonSetHasLabel(t, kitkyma.TelemetryOTLPGatewayName, label)
+				assert.DaemonSetHasAnnotation(t, kitkyma.TelemetryOTLPGatewayName, annotation)
 
 				var selector = client.ListOptions{
-					LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": "telemetry-trace-gateway"}),
+					LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": "telemetry-otlp-gateway"}),
 					Namespace:     kitkyma.SystemNamespaceName,
 				}
 				assert.PodsHaveAnnotation(t, selector, annotation)

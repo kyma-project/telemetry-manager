@@ -28,27 +28,12 @@ import (
 )
 
 var (
-	// TODO(skhalash): the resource requirements are copy-pasted from the trace gateway and need to be adjusted
-	logGatewayBaseMemoryLimit      = resource.MustParse("500Mi")
-	logGatewayDynamicMemoryLimit   = resource.MustParse("1500Mi")
-	logGatewayBaseCPURequest       = resource.MustParse("100m")
-	logGatewayDynamicCPURequest    = resource.MustParse("100m")
-	logGatewayBaseMemoryRequest    = resource.MustParse("32Mi")
-	logGatewayDynamicMemoryRequest = resource.MustParse("0")
-
 	metricGatewayBaseMemoryLimit      = resource.MustParse("512Mi")
 	metricGatewayDynamicMemoryLimit   = resource.MustParse("512Mi")
 	metricGatewayBaseCPURequest       = resource.MustParse("25m")
 	metricGatewayDynamicCPURequest    = resource.MustParse("0")
 	metricGatewayBaseMemoryRequest    = resource.MustParse("32Mi")
 	metricGatewayDynamicMemoryRequest = resource.MustParse("0")
-
-	traceGatewayBaseMemoryLimit      = resource.MustParse("500Mi")
-	traceGatewayDynamicMemoryLimit   = resource.MustParse("1500Mi")
-	traceGatewayBaseCPURequest       = resource.MustParse("100m")
-	traceGatewayDynamicCPURequest    = resource.MustParse("100m")
-	traceGatewayBaseMemoryRequest    = resource.MustParse("32Mi")
-	traceGatewayDynamicMemoryRequest = resource.MustParse("0")
 )
 
 type GatewayApplierDeleter struct {
@@ -84,39 +69,6 @@ type GatewayApplyOptions struct {
 }
 
 //nolint:dupl // repeating the code as we have three different signals
-func NewLogGatewayApplierDeleter(globals config.Global, image, priorityClassName string) *GatewayApplierDeleter {
-	extraLabels := map[string]string{
-		commonresources.LabelKeyTelemetryLogIngest: commonresources.LabelValueTrue,
-		commonresources.LabelKeyTelemetryLogExport: commonresources.LabelValueTrue,
-		commonresources.LabelKeyIstioInject:        commonresources.LabelValueTrue, // inject istio sidecar
-	}
-
-	return &GatewayApplierDeleter{
-		globals:              globals,
-		baseName:             names.LogGateway,
-		extraPodLabels:       extraLabels,
-		image:                image,
-		otlpServiceName:      names.OTLPLogsService,
-		rbac:                 makeLogGatewayRBAC(globals.TargetNamespace()),
-		baseMemoryLimit:      logGatewayBaseMemoryLimit,
-		dynamicMemoryLimit:   logGatewayDynamicMemoryLimit,
-		baseCPURequest:       logGatewayBaseCPURequest,
-		dynamicCPURequest:    logGatewayDynamicCPURequest,
-		baseMemoryRequest:    logGatewayBaseMemoryRequest,
-		dynamicMemoryRequest: logGatewayDynamicMemoryRequest,
-		podOpts: []commonresources.PodSpecOption{
-			commonresources.WithPriorityClass(priorityClassName),
-			commonresources.WithAffinity(makePodAffinity(commonresources.MakeDefaultSelectorLabels(names.LogGateway))),
-		},
-		containerOpts: []commonresources.ContainerOption{
-			commonresources.WithEnvVarFromField(common.EnvVarCurrentPodIP, fieldPathPodIP),
-			commonresources.WithEnvVarFromField(common.EnvVarCurrentNodeName, fieldPathNodeName),
-			commonresources.WithFIPSGoDebugEnvVar(globals.OperateInFIPSMode()),
-		},
-	}
-}
-
-//nolint:dupl // repeating the code as we have three different signals
 func NewMetricGatewayApplierDeleter(globals config.Global, image, priorityClassName string) *GatewayApplierDeleter {
 	extraLabels := map[string]string{
 		commonresources.LabelKeyTelemetryMetricIngest: commonresources.LabelValueTrue,
@@ -140,39 +92,6 @@ func NewMetricGatewayApplierDeleter(globals config.Global, image, priorityClassN
 		podOpts: []commonresources.PodSpecOption{
 			commonresources.WithPriorityClass(priorityClassName),
 			commonresources.WithAffinity(makePodAffinity(commonresources.MakeDefaultSelectorLabels(names.MetricGateway))),
-		},
-		containerOpts: []commonresources.ContainerOption{
-			commonresources.WithEnvVarFromField(common.EnvVarCurrentPodIP, fieldPathPodIP),
-			commonresources.WithEnvVarFromField(common.EnvVarCurrentNodeName, fieldPathNodeName),
-			commonresources.WithFIPSGoDebugEnvVar(globals.OperateInFIPSMode()),
-		},
-	}
-}
-
-//nolint:dupl // repeating the code as we have three different signals
-func NewTraceGatewayApplierDeleter(globals config.Global, image, priorityClassName string) *GatewayApplierDeleter {
-	extraLabels := map[string]string{
-		commonresources.LabelKeyTelemetryTraceIngest: commonresources.LabelValueTrue,
-		commonresources.LabelKeyTelemetryTraceExport: commonresources.LabelValueTrue,
-		commonresources.LabelKeyIstioInject:          commonresources.LabelValueTrue, // inject istio sidecar
-	}
-
-	return &GatewayApplierDeleter{
-		globals:              globals,
-		baseName:             names.TraceGateway,
-		extraPodLabels:       extraLabels,
-		image:                image,
-		otlpServiceName:      names.OTLPTracesService,
-		rbac:                 makeTraceGatewayRBAC(globals.TargetNamespace()),
-		baseMemoryLimit:      traceGatewayBaseMemoryLimit,
-		dynamicMemoryLimit:   traceGatewayDynamicMemoryLimit,
-		baseCPURequest:       traceGatewayBaseCPURequest,
-		dynamicCPURequest:    traceGatewayDynamicCPURequest,
-		baseMemoryRequest:    traceGatewayBaseMemoryRequest,
-		dynamicMemoryRequest: traceGatewayDynamicMemoryRequest,
-		podOpts: []commonresources.PodSpecOption{
-			commonresources.WithPriorityClass(priorityClassName),
-			commonresources.WithAffinity(makePodAffinity(commonresources.MakeDefaultSelectorLabels(names.TraceGateway))),
 		},
 		containerOpts: []commonresources.ContainerOption{
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentPodIP, fieldPathPodIP),

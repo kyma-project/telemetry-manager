@@ -29,6 +29,10 @@ func TestOTLPGateway_ApplyResources(t *testing.T) {
 		config.WithAdditionalAnnotations(map[string]string{"test-anno-key": "test-anno-value"}),
 		config.WithClusterTrustBundleName("trustBundle"),
 	)
+	globalsWithFIPS := config.NewGlobal(
+		config.WithTargetNamespace("kyma-system"),
+		config.WithOperateInFIPSMode(true),
+	)
 	image := "opentelemetry/collector:dummy"
 	priorityClassName := "normal"
 
@@ -54,6 +58,11 @@ func TestOTLPGateway_ApplyResources(t *testing.T) {
 			sut:            NewOTLPGatewayApplierDeleter(globals, image, priorityClassName),
 			istioEnabled:   true,
 			goldenFilePath: "testdata/otlp-gateway-istio.yaml",
+		},
+		{
+			name:           "OTLP gateway with FIPS mode enabled",
+			sut:            NewOTLPGatewayApplierDeleter(globalsWithFIPS, image, priorityClassName),
+			goldenFilePath: "testdata/otlp-gateway-fips-enabled.yaml",
 		},
 	}
 

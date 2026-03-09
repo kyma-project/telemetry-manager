@@ -234,6 +234,7 @@ func setupControllersAndWebhooks(mgr manager.Manager, globals config.Global, env
 		tracePipelineReconcileChan  = make(chan event.GenericEvent)
 		metricPipelineReconcileChan = make(chan event.GenericEvent)
 		logPipelineReconcileChan    = make(chan event.GenericEvent)
+		otlpGatewayReconcileChan    = make(chan event.GenericEvent)
 	)
 
 	secretWatchClient, err := secretwatch.NewClient(mgr.GetConfig(), tracePipelineReconcileChan, metricPipelineReconcileChan, logPipelineReconcileChan)
@@ -247,6 +248,10 @@ func setupControllersAndWebhooks(mgr manager.Manager, globals config.Global, env
 
 	if err := setupTracePipelineController(globals, envCfg, mgr, tracePipelineReconcileChan, secretWatchClient); err != nil {
 		return fmt.Errorf("failed to enable trace pipeline controller: %w", err)
+	}
+
+	if err := setupOTLPGatewayController(globals, envCfg, mgr, otlpGatewayReconcileChan); err != nil {
+		return fmt.Errorf("failed to enable OTLP gateway controller: %w", err)
 	}
 
 	if err := setupMetricPipelineController(globals, envCfg, mgr, metricPipelineReconcileChan, secretWatchClient); err != nil {
@@ -454,7 +459,6 @@ func setupLogPipelineController(globals config.Global, cfg envConfig, mgr manage
 			ChownInitContainerImage:      cfg.AlpineImage,
 			OTelCollectorImage:           cfg.OTelCollectorImage,
 			FluentBitPriorityClassName:   highPriorityClassName,
-			LogGatewayPriorityClassName:  normalPriorityClassName,
 			LogAgentPriorityClassName:    highPriorityClassName,
 			OTLPGatewayPriorityClassName: normalPriorityClassName,
 			RestConfig:                   mgr.GetConfig(),
@@ -479,10 +483,9 @@ func setupTracePipelineController(globals config.Global, envCfg envConfig, mgr m
 
 	tracePipelineController, err := telemetrycontrollers.NewTracePipelineController(
 		telemetrycontrollers.TracePipelineControllerConfig{
-			Global:                        globals,
-			RestConfig:                    mgr.GetConfig(),
-			OTelCollectorImage:            envCfg.OTelCollectorImage,
-			TraceGatewayPriorityClassName: normalPriorityClassName,
+			Global:             globals,
+			RestConfig:         mgr.GetConfig(),
+			OTelCollectorImage: envCfg.OTelCollectorImage,
 		},
 		mgr.GetClient(),
 		reconcileTriggerChan,
@@ -494,6 +497,30 @@ func setupTracePipelineController(globals config.Global, envCfg envConfig, mgr m
 
 	if err := tracePipelineController.SetupWithManager(mgr); err != nil {
 		return fmt.Errorf("failed to setup tracepipeline controller: %w", err)
+	}
+
+	return nil
+}
+
+func setupOTLPGatewayController(globals config.Global, envCfg envConfig, mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent) error {
+	setupLog.Info("Setting up OTLP gateway controller")
+
+	otlpGatewayController, err := telemetrycontrollers.NewOTLPGatewayController(
+		telemetrycontrollers.OTLPGatewayControllerConfig{
+			Global:                       globals,
+			RestConfig:                   mgr.GetConfig(),
+			OTelCollectorImage:           envCfg.OTelCollectorImage,
+			OTLPGatewayPriorityClassName: normalPriorityClassName,
+		},
+		mgr.GetClient(),
+		reconcileTriggerChan,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create OTLP gateway controller: %w", err)
+	}
+
+	if err := otlpGatewayController.SetupWithManager(mgr); err != nil {
+		return fmt.Errorf("failed to setup OTLP gateway controller: %w", err)
 	}
 
 	return nil

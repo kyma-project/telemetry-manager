@@ -18,15 +18,10 @@ limitations under the License.
 
 import (
 	"context"
-	"fmt"
 
-	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	networkingv1 "k8s.io/api/networking/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlbuilder "sigs.k8s.io/controller-runtime/pkg/builder"
@@ -34,23 +29,19 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	ctrlpredicate "sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
-	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/config"
-	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/tracegateway"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
-	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/secretwatch"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
-	predicateutils "github.com/kyma-project/telemetry-manager/internal/utils/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
 	"github.com/kyma-project/telemetry-manager/internal/validators/ottl"
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
@@ -65,14 +56,14 @@ type TracePipelineController struct {
 	reconcileTriggerChan <-chan event.GenericEvent
 	reconciler           *tracepipeline.Reconciler
 	secretWatchClient    *secretwatch.Client
+	pipelineLockName     types.NamespacedName
 }
 
 type TracePipelineControllerConfig struct {
 	config.Global
 
-	RestConfig                    *rest.Config
-	OTelCollectorImage            string
-	TraceGatewayPriorityClassName string
+	RestConfig         *rest.Config
+	OTelCollectorImage string
 }
 
 func NewTracePipelineController(config TracePipelineControllerConfig, client client.Client, reconcileTriggerChan <-chan event.GenericEvent, secretWatchClient *secretwatch.Client) (*TracePipelineController, error) {
@@ -123,21 +114,12 @@ func NewTracePipelineController(config TracePipelineControllerConfig, client cli
 		tracepipeline.WithFilterSpecValidator(filterSpecValidator),
 	)
 
-	discoveryClient, err := discovery.NewDiscoveryClientForConfig(config.RestConfig)
-	if err != nil {
-		return nil, err
-	}
-
 	reconciler := tracepipeline.New(
 		tracepipeline.WithClient(client),
 		tracepipeline.WithGlobals(config.Global),
 
-		tracepipeline.WithGatewayApplierDeleter(otelcollector.NewTraceGatewayApplierDeleter(config.Global, config.OTelCollectorImage, config.TraceGatewayPriorityClassName)),
-		tracepipeline.WithGatewayConfigBuilder(&tracegateway.Builder{Reader: client}),
-		tracepipeline.WithGatewayProber(&workloadstatus.DeploymentProber{Client: client}),
-
 		tracepipeline.WithFlowHealthProber(flowHealthProber),
-		tracepipeline.WithIstioStatusChecker(istiostatus.NewChecker(discoveryClient)),
+		tracepipeline.WithGatewayProber(&workloadstatus.DaemonSetProber{Client: client}),
 		tracepipeline.WithOverridesHandler(overrides.New(config.Global, client)),
 		tracepipeline.WithErrorToMessageConverter(&conditions.ErrorToMessageConverter{}),
 
@@ -152,6 +134,10 @@ func NewTracePipelineController(config TracePipelineControllerConfig, client cli
 		reconcileTriggerChan: reconcileTriggerChan,
 		reconciler:           reconciler,
 		secretWatchClient:    secretWatchClient,
+		pipelineLockName: types.NamespacedName{
+			Name:      names.TracePipelineLock,
+			Namespace: config.TargetNamespace(),
+		},
 	}, nil
 }
 
@@ -166,76 +152,73 @@ func (r *TracePipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		source.Channel(r.reconcileTriggerChan, &handler.EnqueueRequestForObject{}),
 	)
 
-	ownedResourceTypesToWatch := []client.Object{
-		&appsv1.Deployment{},
-		&corev1.ConfigMap{},
-		&corev1.Secret{},
-		&corev1.Service{},
-		&corev1.ServiceAccount{},
-		&rbacv1.ClusterRole{},
-		&rbacv1.ClusterRoleBinding{},
-		&networkingv1.NetworkPolicy{},
-	}
+	// Watch OTLP Gateway DaemonSet to update GatewayHealthy condition when gateway status changes
+	b.Watches(
+		&appsv1.DaemonSet{}, // OTLP Gateway DaemonSet
+		handler.EnqueueRequestsFromMapFunc(r.mapOTLPGatewayToAllPipelines),
+		ctrlbuilder.WithPredicates(ctrlpredicate.NewPredicateFuncs(func(object client.Object) bool {
+			return object.GetName() == names.OTLPGateway &&
+				object.GetNamespace() == r.pipelineLockName.Namespace
+		})),
+	)
 
-	discoveryClient, err := discovery.NewDiscoveryClientForConfig(mgr.GetConfig())
-	if err != nil {
-		return fmt.Errorf("failed to create discovery client: %w", err)
-	}
+	// Watch the pipeline lock ConfigMap to trigger reconciliation of all pipelines when lock changes
+	// This ensures that when a pipeline is deleted and frees up a slot, waiting pipelines get reconciled
+	b.Watches(
+		&corev1.ConfigMap{}, // Pipeline lock ConfigMap
+		handler.EnqueueRequestsFromMapFunc(r.mapLockConfigMapToAllPipelines),
+		ctrlbuilder.WithPredicates(ctrlpredicate.NewPredicateFuncs(func(object client.Object) bool {
+			return object.GetName() == r.pipelineLockName.Name && object.GetNamespace() == r.pipelineLockName.Namespace
+		})),
+	)
 
-	isIstioActive := istiostatus.NewChecker(discoveryClient).IsIstioActive(context.Background())
-
-	if isIstioActive {
-		ownedResourceTypesToWatch = append(ownedResourceTypesToWatch, &istiosecurityclientv1.PeerAuthentication{})
-	}
-
-	for _, resource := range ownedResourceTypesToWatch {
-		b = b.Watches(
-			resource,
-			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(),
-				mgr.GetRESTMapper(),
-				&telemetryv1beta1.TracePipeline{},
-			),
-			ctrlbuilder.WithPredicates(predicateutils.OwnedResourceChanged()),
-		)
-	}
-
-	return b.Watches(
-		&operatorv1beta1.Telemetry{},
-		handler.EnqueueRequestsFromMapFunc(r.mapTelemetryChanges),
-		ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete()),
-	).Complete(r)
+	return b.Complete(r)
 }
 
-func (r *TracePipelineController) mapTelemetryChanges(ctx context.Context, object client.Object) []reconcile.Request {
-	_, ok := object.(*operatorv1beta1.Telemetry)
-	if !ok {
-		logf.FromContext(ctx).V(1).Error(nil, "Unexpected type: expected Telemetry")
-		return nil
+// mapLockConfigMapToAllPipelines enqueues reconciliation requests for all TracePipelines
+// when the lock ConfigMap changes. This ensures that pipelines that were previously rejected
+// due to max pipeline limit get a chance to acquire the lock when slots become available.
+func (r *TracePipelineController) mapLockConfigMapToAllPipelines(ctx context.Context, object client.Object) []reconcile.Request {
+	logf.FromContext(ctx).V(1).Info("Pipeline lock ConfigMap changed, triggering reconciliation of all TracePipelines")
+
+	var pipelineList telemetryv1beta1.TracePipelineList
+	if err := r.List(ctx, &pipelineList); err != nil {
+		logf.FromContext(ctx).Error(err, "Failed to list TracePipelines")
+		return []reconcile.Request{}
 	}
 
-	requests, err := r.createRequestsForAllPipelines(ctx)
-	if err != nil {
-		logf.FromContext(ctx).Error(err, "Unable to create reconcile requests")
+	requests := make([]reconcile.Request, len(pipelineList.Items))
+	for i := range pipelineList.Items {
+		requests[i] = reconcile.Request{
+			NamespacedName: types.NamespacedName{
+				Name: pipelineList.Items[i].Name,
+			},
+		}
 	}
 
 	return requests
 }
 
-func (r *TracePipelineController) createRequestsForAllPipelines(ctx context.Context) ([]reconcile.Request, error) {
-	var pipelines telemetryv1beta1.TracePipelineList
+// mapOTLPGatewayToAllPipelines enqueues reconciliation requests for all TracePipelines
+// when the OTLP Gateway DaemonSet changes. This ensures that GatewayHealthy status conditions
+// are updated to reflect the current gateway state.
+func (r *TracePipelineController) mapOTLPGatewayToAllPipelines(ctx context.Context, object client.Object) []reconcile.Request {
+	logf.FromContext(ctx).V(1).Info("OTLP Gateway DaemonSet changed, triggering reconciliation of all TracePipelines")
 
-	var requests []reconcile.Request
-
-	err := r.List(ctx, &pipelines)
-	if err != nil {
-		return nil, fmt.Errorf("failed to list TracePipelines: %w", err)
+	var pipelineList telemetryv1beta1.TracePipelineList
+	if err := r.List(ctx, &pipelineList); err != nil {
+		logf.FromContext(ctx).Error(err, "Failed to list TracePipelines")
+		return []reconcile.Request{}
 	}
 
-	for i := range pipelines.Items {
-		var pipeline = pipelines.Items[i]
-
-		requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+	requests := make([]reconcile.Request, len(pipelineList.Items))
+	for i := range pipelineList.Items {
+		requests[i] = reconcile.Request{
+			NamespacedName: types.NamespacedName{
+				Name: pipelineList.Items[i].Name,
+			},
+		}
 	}
 
-	return requests, nil
+	return requests
 }

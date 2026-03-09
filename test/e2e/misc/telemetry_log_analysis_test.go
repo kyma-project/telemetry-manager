@@ -118,8 +118,7 @@ func TestTelemetryLogs(t *testing.T) {
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.DeploymentReady(t, kitkyma.MetricGatewayName)
-	assert.DeploymentReady(t, kitkyma.TraceGatewayName)
-	assert.DeploymentReady(t, kitkyma.LogGatewayName)
+	assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
 
 	assert.BackendReachable(t, logBackend)
 	assert.BackendReachable(t, metricBackend)

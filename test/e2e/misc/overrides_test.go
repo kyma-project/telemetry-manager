@@ -2,6 +2,7 @@ package misc
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -96,16 +97,16 @@ func TestOverrides(t *testing.T) {
 		assert.WithOptionalDescription("should have logs from the telemetry-manager pod with DEBUG level"))
 
 	// Verify that Pipeline reconciliation is disabled for all pipelines
-	assertPipelineReconciliationDisabled(suite.Ctx, suite.K8sClient, kitkyma.FluentBitConfigMap, appNameLabelKey)
-	assertPipelineReconciliationDisabled(suite.Ctx, suite.K8sClient, kitkyma.MetricGatewayConfigMap, appNameLabelKey)
-	assertPipelineReconciliationDisabled(suite.Ctx, suite.K8sClient, kitkyma.TraceGatewayConfigMap, appNameLabelKey)
+	assertReconciliationDisabled(suite.Ctx, suite.K8sClient, kitkyma.FluentBitConfigMap, appNameLabelKey)
+	assertReconciliationDisabled(suite.Ctx, suite.K8sClient, kitkyma.MetricGatewayConfigMap, appNameLabelKey)
+	assertReconciliationDisabled(suite.Ctx, suite.K8sClient, kitkyma.TelemetryOTLPConfigMap, appNameLabelKey)
 	assertTelemetryReconciliationDisabled(suite.Ctx, suite.K8sClient, names.ValidatingWebhookConfig)
 
 	// Delete the overrides configmap at the end of the test
 	Expect(kitk8s.DeleteObjects(overrides)).Should(Succeed())
 }
 
-func assertPipelineReconciliationDisabled(ctx context.Context, k8sClient client.Client, configMapNamespacedName types.NamespacedName, labelKey string) {
+func assertReconciliationDisabled(ctx context.Context, k8sClient client.Client, configMapNamespacedName types.NamespacedName, labelKey string) {
 	var configMap corev1.ConfigMap
 	Expect(k8sClient.Get(ctx, configMapNamespacedName, &configMap)).To(Succeed())
 
@@ -116,7 +117,7 @@ func assertPipelineReconciliationDisabled(ctx context.Context, k8sClient client.
 	Consistently(func(g Gomega) {
 		g.Expect(k8sClient.Get(ctx, configMapNamespacedName, &configMap)).To(Succeed())
 		g.Expect(configMap.Labels[labelKey]).To(BeZero())
-	}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(Succeed(), "Pipeline reconciliation should be disabled")
+	}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(Succeed(), fmt.Sprintf("%s reconciliation should be disabled", configMapNamespacedName.Name))
 }
 
 func assertTelemetryReconciliationDisabled(ctx context.Context, k8sClient client.Client, webhookName string) {

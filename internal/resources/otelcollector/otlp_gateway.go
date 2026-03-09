@@ -27,6 +27,15 @@ import (
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 )
 
+var (
+	otlpGatewayBaseMemoryLimit      = resource.MustParse("500Mi")
+	otlpGatewayDynamicMemoryLimit   = resource.MustParse("1500Mi")
+	otlpGatewayBaseCPURequest       = resource.MustParse("100m")
+	otlpGatewayDynamicCPURequest    = resource.MustParse("100m")
+	otlpGatewayBaseMemoryRequest    = resource.MustParse("32Mi")
+	otlpGatewayDynamicMemoryRequest = resource.MustParse("0")
+)
+
 // OTLPGatewayApplierDeleter manages the unified OTLP gateway deployed as a DaemonSet.
 // It wraps a GatewayApplierDeleter and adds logic to handle migration from the old log gateway deployment.
 type OTLPGatewayApplierDeleter struct {
@@ -54,9 +63,11 @@ type OTLPGatewayApplierDeleter struct {
 //nolint:dupl // repeating the code as we this would be deleted when we implement all signals in OTLP gateway
 func NewOTLPGatewayApplierDeleter(globals config.Global, image, priorityClassName string) *OTLPGatewayApplierDeleter {
 	extraLabels := map[string]string{
-		commonresources.LabelKeyTelemetryLogIngest: commonresources.LabelValueTrue,
-		commonresources.LabelKeyTelemetryLogExport: commonresources.LabelValueTrue,
-		commonresources.LabelKeyIstioInject:        commonresources.LabelValueTrue, // inject istio sidecar
+		commonresources.LabelKeyTelemetryTraceIngest: commonresources.LabelValueTrue,
+		commonresources.LabelKeyTelemetryTraceExport: commonresources.LabelValueTrue,
+		commonresources.LabelKeyTelemetryLogIngest:   commonresources.LabelValueTrue,
+		commonresources.LabelKeyTelemetryLogExport:   commonresources.LabelValueTrue,
+		commonresources.LabelKeyIstioInject:          commonresources.LabelValueTrue, // inject istio sidecar
 	}
 
 	return &OTLPGatewayApplierDeleter{
@@ -66,12 +77,12 @@ func NewOTLPGatewayApplierDeleter(globals config.Global, image, priorityClassNam
 		image:                image,
 		otlpServiceName:      names.OTLPService,
 		rbac:                 makeOTLPGatewayRBAC(globals.TargetNamespace()),
-		baseMemoryLimit:      logGatewayBaseMemoryLimit,
-		dynamicMemoryLimit:   logGatewayDynamicMemoryLimit,
-		baseCPURequest:       logGatewayBaseCPURequest,
-		dynamicCPURequest:    logGatewayDynamicCPURequest,
-		baseMemoryRequest:    logGatewayBaseMemoryRequest,
-		dynamicMemoryRequest: logGatewayDynamicMemoryRequest,
+		baseMemoryLimit:      otlpGatewayBaseMemoryLimit,
+		dynamicMemoryLimit:   otlpGatewayDynamicMemoryLimit,
+		baseCPURequest:       otlpGatewayBaseCPURequest,
+		dynamicCPURequest:    otlpGatewayDynamicCPURequest,
+		baseMemoryRequest:    otlpGatewayBaseMemoryRequest,
+		dynamicMemoryRequest: otlpGatewayDynamicMemoryRequest,
 		podOpts: []commonresources.PodSpecOption{
 			commonresources.WithPriorityClass(priorityClassName),
 			commonresources.WithAffinity(makePodAffinity(commonresources.MakeDefaultSelectorLabels(names.OTLPGateway))),
@@ -122,15 +133,20 @@ func (o *OTLPGatewayApplierDeleter) ApplyResources(ctx context.Context, c client
 		return fmt.Errorf("failed to create otlp service: %w", err)
 	}
 
-	// Create the legacy service for backward compatibility
-	// This service uses the old name (telemetry-otlp-logs) but points to the new DaemonSet
-	legacyService := o.makeLegacyOTLPService(names.OTLPLogsService)
-	if err := k8sutils.CreateOrUpdateService(ctx, c, legacyService); err != nil {
+	// Create the legacy services for backward compatibility
+	// These services use the old names but point to the new DaemonSet
+	legacyLogService := o.makeLegacyOTLPService(names.OTLPLogsService)
+	if err := k8sutils.CreateOrUpdateService(ctx, c, legacyLogService); err != nil {
 		return fmt.Errorf("failed to create legacy log otlp service: %w", err)
 	}
 
+	legacyTraceService := o.makeLegacyOTLPService(names.OTLPTracesService)
+	if err := k8sutils.CreateOrUpdateService(ctx, c, legacyTraceService); err != nil {
+		return fmt.Errorf("failed to create legacy trace otlp service: %w", err)
+	}
+
 	if opts.IstioEnabled {
-		for _, svcName := range []string{names.OTLPLogsService, names.OTLPService} {
+		for _, svcName := range []string{names.OTLPLogsService, names.OTLPTracesService, names.OTLPService} {
 			if err := k8sutils.CreateOrUpdateDestinationRule(ctx, c, o.makeDestinationRule(svcName)); err != nil {
 				return fmt.Errorf("failed to create destinationrule: %w", err)
 			}
@@ -189,8 +205,13 @@ func (o *OTLPGatewayApplierDeleter) DeleteResources(ctx context.Context, c clien
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete legacy log otlp service: %w", err))
 	}
 
+	legacyTraceService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: names.OTLPTracesService, Namespace: o.globals.TargetNamespace()}}
+	if err := k8sutils.DeleteObject(ctx, c, &legacyTraceService); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete legacy trace otlp service: %w", err))
+	}
+
 	if isIstioActive {
-		for _, svcName := range []string{names.OTLPLogsService, names.OTLPService} {
+		for _, svcName := range []string{names.OTLPLogsService, names.OTLPTracesService, names.OTLPService} {
 			destinationRuleMeta := metav1.ObjectMeta{Namespace: o.globals.TargetNamespace(), Name: svcName}
 
 			destinationRule := istionetworkingclientv1.DestinationRule{ObjectMeta: destinationRuleMeta}
