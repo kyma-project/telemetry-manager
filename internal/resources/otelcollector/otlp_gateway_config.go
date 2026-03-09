@@ -48,13 +48,13 @@ type PipelineReferenceInput struct {
 	SecretVersions map[string]string
 }
 
-// ReadOTLPGatewayConfig reads and parses the OTLP Gateway ConfigMap.
+// ReadOTLPGatewayConfig reads and parses the OTLP Gateway Pipelines Sync ConfigMap.
 // Returns an empty configuration if the ConfigMap doesn't exist.
 func ReadOTLPGatewayConfig(ctx context.Context, c client.Client, namespace string) (*OTLPGatewayConfigMap, error) {
 	var cm corev1.ConfigMap
 
 	err := c.Get(ctx, types.NamespacedName{
-		Name:      names.OTLPGatewayConfigMap,
+		Name:      names.OTLPGatewayPipelinesSyncConfigMap,
 		Namespace: namespace,
 	}, &cm)
 	if err != nil {
@@ -62,7 +62,7 @@ func ReadOTLPGatewayConfig(ctx context.Context, c client.Client, namespace strin
 			return &OTLPGatewayConfigMap{}, nil
 		}
 
-		return nil, fmt.Errorf("failed to get otlp gateway configmap: %w", err)
+		return nil, fmt.Errorf("failed to get otlp gateway pipelines sync configmap: %w", err)
 	}
 
 	yamlData, ok := cm.Data[ConfigMapDataKey]
@@ -230,7 +230,7 @@ func getConfigMap(ctx context.Context, c client.Client, namespace string) (*core
 	var cm corev1.ConfigMap
 
 	err := c.Get(ctx, types.NamespacedName{
-		Name:      names.OTLPGatewayConfigMap,
+		Name:      names.OTLPGatewayPipelinesSyncConfigMap,
 		Namespace: namespace,
 	}, &cm)
 	if err != nil {
@@ -268,7 +268,7 @@ func parseConfig(cm *corev1.ConfigMap, exists bool) (OTLPGatewayConfigMap, error
 func createConfigMap(ctx context.Context, c client.Client, namespace, yamlData string) error {
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.OTLPGatewayConfigMap,
+			Name:      names.OTLPGatewayPipelinesSyncConfigMap,
 			Namespace: namespace,
 		},
 		Data: map[string]string{

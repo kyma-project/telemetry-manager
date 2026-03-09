@@ -143,7 +143,7 @@ func (r *Reconciler) ensureConfigMapExists(ctx context.Context) error {
 	var cm corev1.ConfigMap
 
 	err := r.Get(ctx, types.NamespacedName{
-		Name:      names.OTLPGatewayConfigMap,
+		Name:      names.OTLPGatewayPipelinesSyncConfigMap,
 		Namespace: r.globals.TargetNamespace(),
 	}, &cm)
 	if err == nil {
@@ -156,7 +156,7 @@ func (r *Reconciler) ensureConfigMapExists(ctx context.Context) error {
 
 	cm = corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.OTLPGatewayConfigMap,
+			Name:      names.OTLPGatewayPipelinesSyncConfigMap,
 			Namespace: r.globals.TargetNamespace(),
 		},
 		Data: map[string]string{

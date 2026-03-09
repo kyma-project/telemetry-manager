@@ -104,7 +104,7 @@ func (r *OTLPGatewayController) SetupWithManager(mgr ctrl.Manager) error {
 		ctrlbuilder.WithPredicates(
 			predicateutils.CreateOrUpdateOrDelete(),
 			ctrlpredicate.NewPredicateFuncs(func(obj client.Object) bool {
-				return obj.GetName() == names.OTLPGatewayConfigMap
+				return obj.GetName() == names.OTLPGatewayPipelinesSyncConfigMap
 			}),
 		),
 	)
@@ -169,7 +169,7 @@ func (r *OTLPGatewayController) SetupWithManager(mgr ctrl.Manager) error {
 	return b.Complete(r)
 }
 
-// mapTelemetryToConfigMap creates a reconcile request for the OTLP Gateway ConfigMap when Telemetry CR changes.
+// mapTelemetryToConfigMap creates a reconcile request for the OTLP Gateway Pipelines Sync ConfigMap when Telemetry CR changes.
 func (r *OTLPGatewayController) mapTelemetryToConfigMap(ctx context.Context, object client.Object) []reconcile.Request {
 	_, ok := object.(*operatorv1beta1.Telemetry)
 	if !ok {
@@ -182,7 +182,7 @@ func (r *OTLPGatewayController) mapTelemetryToConfigMap(ctx context.Context, obj
 	return []reconcile.Request{
 		{
 			NamespacedName: types.NamespacedName{
-				Name:      names.OTLPGatewayConfigMap,
+				Name:      names.OTLPGatewayPipelinesSyncConfigMap,
 				Namespace: namespace,
 			},
 		},
@@ -198,7 +198,7 @@ func (r *OTLPGatewayController) mapOwnedResourceToConfigMap(ctx context.Context,
 	return []reconcile.Request{
 		{
 			NamespacedName: types.NamespacedName{
-				Name:      names.OTLPGatewayConfigMap,
+				Name:      names.OTLPGatewayPipelinesSyncConfigMap,
 				Namespace: namespace,
 			},
 		},

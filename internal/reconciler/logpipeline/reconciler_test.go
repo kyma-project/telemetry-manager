@@ -218,7 +218,7 @@ func TestPipelineDeletionCleanup(t *testing.T) {
 	}
 }
 
-// removeReferenceErrorClient simulates errors when updating OTLP Gateway ConfigMap
+// removeReferenceErrorClient simulates errors when updating OTLP Gateway Pipelines Sync ConfigMap
 type removeReferenceErrorClient struct {
 	client.Client
 
@@ -226,8 +226,8 @@ type removeReferenceErrorClient struct {
 }
 
 func (c *removeReferenceErrorClient) Get(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
-	// Return error for OTLP Gateway ConfigMap to simulate RemoveLogPipelineReference failure
-	if cm, ok := obj.(*corev1.ConfigMap); ok && key.Name == names.OTLPGatewayConfigMap {
+	// Return error for OTLP Gateway Pipelines Sync ConfigMap to simulate RemoveLogPipelineReference failure
+	if cm, ok := obj.(*corev1.ConfigMap); ok && key.Name == names.OTLPGatewayPipelinesSyncConfigMap {
 		_ = cm
 		return c.err
 	}

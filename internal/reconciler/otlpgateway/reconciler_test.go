@@ -115,7 +115,7 @@ func newDefaultMocks() *mocks {
 func newReconcileRequest() ctrl.Request {
 	return ctrl.Request{
 		NamespacedName: types.NamespacedName{
-			Name:      names.OTLPGatewayConfigMap,
+			Name:      names.OTLPGatewayPipelinesSyncConfigMap,
 			Namespace: "kyma-system",
 		},
 	}
@@ -137,7 +137,7 @@ func TestReconcile_ConfigMapCreatedIfNotExists(t *testing.T) {
 	var cm corev1.ConfigMap
 
 	err = fakeClient.Get(ctx, types.NamespacedName{
-		Name:      names.OTLPGatewayConfigMap,
+		Name:      names.OTLPGatewayPipelinesSyncConfigMap,
 		Namespace: "kyma-system",
 	}, &cm)
 	require.NoError(t, err)
@@ -149,7 +149,7 @@ func TestReconcile_NoPipelines_DeletesGateway(t *testing.T) {
 
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.OTLPGatewayConfigMap,
+			Name:      names.OTLPGatewayPipelinesSyncConfigMap,
 			Namespace: "kyma-system",
 		},
 		Data: map[string]string{
@@ -180,7 +180,7 @@ func TestReconcile_SinglePipeline_DeploysGateway(t *testing.T) {
 
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.OTLPGatewayConfigMap,
+			Name:      names.OTLPGatewayPipelinesSyncConfigMap,
 			Namespace: "kyma-system",
 		},
 		Data: map[string]string{
@@ -214,7 +214,7 @@ func TestReconcile_GenerationMismatch_SkipsPipeline(t *testing.T) {
 
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.OTLPGatewayConfigMap,
+			Name:      names.OTLPGatewayPipelinesSyncConfigMap,
 			Namespace: "kyma-system",
 		},
 		Data: map[string]string{
@@ -249,7 +249,7 @@ func TestReconcile_PipelineDeleted_SkipsPipeline(t *testing.T) {
 
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.OTLPGatewayConfigMap,
+			Name:      names.OTLPGatewayPipelinesSyncConfigMap,
 			Namespace: "kyma-system",
 		},
 		Data: map[string]string{
@@ -284,7 +284,7 @@ func TestReconcile_MultiplePipelines_AggregatesConfig(t *testing.T) {
 
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.OTLPGatewayConfigMap,
+			Name:      names.OTLPGatewayPipelinesSyncConfigMap,
 			Namespace: "kyma-system",
 		},
 		Data: map[string]string{
@@ -316,7 +316,7 @@ func TestReconcile_MissingPipeline_SkipsGracefully(t *testing.T) {
 
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.OTLPGatewayConfigMap,
+			Name:      names.OTLPGatewayPipelinesSyncConfigMap,
 			Namespace: "kyma-system",
 		},
 		Data: map[string]string{
@@ -347,7 +347,7 @@ func TestReconcile_IstioEnabled_PassesFlag(t *testing.T) {
 
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.OTLPGatewayConfigMap,
+			Name:      names.OTLPGatewayPipelinesSyncConfigMap,
 			Namespace: "kyma-system",
 		},
 		Data: map[string]string{
@@ -539,7 +539,7 @@ func TestReconcile_LogPipeline_DeploysGateway(t *testing.T) {
 
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.OTLPGatewayConfigMap,
+			Name:      names.OTLPGatewayPipelinesSyncConfigMap,
 			Namespace: "kyma-system",
 		},
 		Data: map[string]string{
@@ -578,7 +578,7 @@ func TestReconcile_TraceAndLogPipelines_DeploysUnifiedGateway(t *testing.T) {
 
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.OTLPGatewayConfigMap,
+			Name:      names.OTLPGatewayPipelinesSyncConfigMap,
 			Namespace: "kyma-system",
 		},
 		Data: map[string]string{
@@ -698,7 +698,7 @@ func TestReconcile_OnlyLogPipelines_DeploysGateway(t *testing.T) {
 
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.OTLPGatewayConfigMap,
+			Name:      names.OTLPGatewayPipelinesSyncConfigMap,
 			Namespace: "kyma-system",
 		},
 		Data: map[string]string{
@@ -770,7 +770,7 @@ func TestOverrideFunctionality(t *testing.T) {
 
 			cm := &corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      names.OTLPGatewayConfigMap,
+					Name:      names.OTLPGatewayPipelinesSyncConfigMap,
 					Namespace: "kyma-system",
 				},
 				Data: map[string]string{
