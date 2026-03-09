@@ -115,3 +115,45 @@ make update-golden-files  # Update golden files for config builder tests
 ## Environment Configuration
 
 The `.env` file contains default image versions and configuration. Key environment variables for the manager are defined in `main.go` (envConfig struct).
+
+## Documentation Guidelines
+
+When writing documentation for this project, follow these rules:
+
+### Templates
+
+Use the document templates from the [kyma-project template repository](https://github.com/kyma-project/template-repository/tree/main/docs/user/assets/templates):
+- **concept.md** - for explaining foundational ideas and principles
+- **task.md** - for step-by-step instructions and how-to guides
+- **troubleshooting.md** - for diagnostic information and solutions to common issues
+- **custom-resource.md** - for documenting custom resource configuration and usage
+
+### Style and Terminology
+
+Follow the [Kyma style and terminology guidelines](https://github.com/kyma-project/community/blob/main/docs/guidelines/content-guidelines/04-style-and-terminology.md):
+- Use **active voice** and **present tense**
+- Use **imperative mood** for instructions (no "please")
+- Address readers as **"you"**, not "we" or "let's"
+- Use **sentence case** for standard text; **Title Case** for component names and headings
+- Use **CamelCase** for Kubernetes resources (e.g., `ConfigMap`, `APIRule`)
+- Always capitalize "Kubernetes"; never abbreviate it
+- Do not capitalize "namespace"
+- Prefer "must" for mandatory requirements and "can" for optional features
+- Use "using" or "with" instead of "via"
+- Use "connect/connection" instead of "integrate/integration"
+- Use American English spelling
+- Avoid parentheses; use lists instead
+- Include serial commas
+
+### Formatting
+
+Follow the [Kyma formatting guidelines](https://github.com/kyma-project/community/blob/main/docs/guidelines/content-guidelines/03-formatting.md):
+- Use **bold** for parameters, HTTP headers, events, roles, UI elements, and variables/placeholders
+- Use `code font` for code examples, values, endpoints, filenames, paths, repository names, status codes, flags, and custom resources
+- Use **ordered lists** for sequential procedures; **unordered lists** for non-sequential items
+- Keep list items consistent in structure (all sentences, all fragments, or all questions — never mixed)
+- Use action verbs and present tense in headings (e.g., "Expose a Service")
+- Avoid gerunds in headings; do not stack headings without intervening body text
+- Use tables for comparisons and structured information
+- Use callout panels: `[!NOTE]` for specific information, `[!WARNING]` for critical alerts, `[!TIP]` for helpful advice
+- Break lengthy paragraphs into lists or tables for readability
