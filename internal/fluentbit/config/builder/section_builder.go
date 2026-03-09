@@ -56,11 +56,11 @@ func (sb *SectionBuilder) Build() string {
 
 	indentation := strings.Repeat(" ", 4) //nolint:mnd // 4 spaces per indentation level
 	for _, p := range sb.params {
-		sb.builder.WriteString(fmt.Sprintf("%s%s%s%s",
+		fmt.Fprintf(&sb.builder, "%s%s%s%s",
 			indentation,
 			p.Key,
 			strings.Repeat(" ", sb.keyLen-len(p.Key)+1),
-			p.Value))
+			p.Value)
 		sb.builder.WriteByte('\n')
 	}
 
