@@ -31,7 +31,7 @@ For detailed VPA architecture, see [Kubernetes VPA Documentation](https://github
 
 ### Current State
 
-- The central OTLP Gateway DaemonSet has a static resource configuration:
+- The central OTLP Gateway and Agents DaemonSet have a static resource configuration:
     - `requests.memory`: 32Mi
     - `limits.memory`: 2000Mi
     - Request-to-limit ratio: 62.5x (2000Mi / 32Mi)
@@ -60,7 +60,7 @@ Because Go-based applications use `GOMEMLIMIT` for soft memory limits, we must d
 
 ## Considered Options
 
-We're evaluating two architectural approaches for implementing VPA with the Central OTLP Gateway. Both options assume a fixed GOMEMLIMIT value (see [GOMEMLIMIT Strategy](#gomemlimit-strategy)).
+We're evaluating two architectural approaches for implementing VPA for Central OTLP Gateway and Agents. Both options assume a fixed GOMEMLIMIT value (see [GOMEMLIMIT Strategy](#gomemlimit-strategy)).
 
 ### Option 1: VPA Direct Pod Updates (Recommended)
 
@@ -188,13 +188,13 @@ Configuration Strategy:
 
 ### Known Limitations
 
-The following limitations are inherent to VPA and should be considered when using it with the Central OTLP Gateway:
+The following limitations are inherent to VPA and should be considered when using it with the Central OTLP Gateway and Agents:
 
 1. **Resource Availability**: VPA recommendations may exceed available node resources, causing pods to remain pending. This can be mitigated by using Cluster Autoscaler or configuring appropriate `maxAllowed` limits.
 2. **HPA Incompatibility**: VPA cannot be used with Horizontal Pod Autoscaler (HPA) on the same resource metrics (CPU or memory). This is not a concern for DaemonSets, which don't support HPA.
 3. **Admission Webhook Conflicts**: VPA's admission controller may conflict with other mutating admission webhooks depending on webhook configuration and ordering.
 4. **Out-of-Memory Handling**: While VPA reacts to most OOM events, it cannot handle all out-of-memory scenarios and may not prevent all OOMKills. To scale Pods that are OOMed its important that pod should run for some time so that metrics can be collected.
-5. **Multiple VPA Resources**: Configuring multiple VPA resources targeting the same pod results in undefined behavior. Ensure only one VPA resource targets the Central OTLP Gateway DaemonSet.
+5. **Multiple VPA Resources**: Configuring multiple VPA resources targeting the same pod results in undefined behavior. Ensure only one VPA resource targets the Central OTLP Gateway and Agent DaemonSet.
 6. **Recommendations Without Controller**: VPA cannot update resources for standalone pods not managed by a controller (Deployment, DaemonSet, StatefulSet, etc.).
 
 ### Some VPA MaxAllowed Strategy
