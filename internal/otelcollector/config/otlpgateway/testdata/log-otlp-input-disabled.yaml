@@ -52,7 +52,8 @@ processors:
         logs:
             log_record:
                 - (log.observed_time != nil or log.time != nil)
-    istio_enrichment: {}
+    istio_enrichment:
+        scope_version: 1.0.0
     istio_noise_filter: {}
     k8sattributes:
         auth_type: serviceAccount

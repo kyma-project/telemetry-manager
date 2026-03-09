@@ -31,6 +31,7 @@ func TestBuild(t *testing.T) {
 		{
 			name:           "single pipeline",
 			goldenFileName: "single-pipeline.yaml",
+			moduleVersion:  "1.0.0",
 			tracePipelines: []telemetryv1beta1.TracePipeline{
 				testutils.NewTracePipelineBuilder().WithName("test-trace").Build(),
 			},
@@ -48,6 +49,7 @@ func TestBuild(t *testing.T) {
 		{
 			name:           "log-single pipeline only",
 			goldenFileName: "log-single-pipeline.yaml",
+			moduleVersion:  "1.0.0",
 			logPipelines: []telemetryv1beta1.LogPipeline{
 				testutils.NewLogPipelineBuilder().WithName("test-log").WithOTLPOutput().Build(),
 			},
@@ -56,6 +58,7 @@ func TestBuild(t *testing.T) {
 			name:              "single pipeline with otel service enrichment",
 			goldenFileName:    "service-enrichment-otel.yaml",
 			serviceEnrichment: commonresources.AnnotationValueTelemetryServiceEnrichmentOtel,
+			moduleVersion:     "1.0.0",
 			tracePipelines: []telemetryv1beta1.TracePipeline{
 				testutils.NewTracePipelineBuilder().
 					WithName("test-trace").
@@ -72,6 +75,7 @@ func TestBuild(t *testing.T) {
 		{
 			name:           "pipeline using http protocol WITH custom 'Path' field",
 			goldenFileName: "http-protocol-with-custom-path.yaml",
+			moduleVersion:  "1.0.0",
 			tracePipelines: []telemetryv1beta1.TracePipeline{
 				testutils.NewTracePipelineBuilder().
 					WithName("test-trace").
@@ -92,6 +96,7 @@ func TestBuild(t *testing.T) {
 		{
 			name:           "pipeline using http protocol WITHOUT custom 'Path' field",
 			goldenFileName: "http-protocol-without-custom-path.yaml",
+			moduleVersion:  "1.0.0",
 			tracePipelines: []telemetryv1beta1.TracePipeline{
 				testutils.NewTracePipelineBuilder().
 					WithName("test-trace").
@@ -110,6 +115,7 @@ func TestBuild(t *testing.T) {
 		{
 			name:           "two pipelines with user-defined transforms",
 			goldenFileName: "user-defined-transforms.yaml",
+			moduleVersion:  "1.0.0",
 			tracePipelines: []telemetryv1beta1.TracePipeline{
 				testutils.NewTracePipelineBuilder().
 					WithName("test-trace-1").
@@ -154,6 +160,7 @@ func TestBuild(t *testing.T) {
 		{
 			name:           "two pipelines with user-defined filter",
 			goldenFileName: "user-defined-filters.yaml",
+			moduleVersion:  "1.0.0",
 			tracePipelines: []telemetryv1beta1.TracePipeline{
 				testutils.NewTracePipelineBuilder().
 					WithName("test-trace-1").
@@ -188,6 +195,7 @@ func TestBuild(t *testing.T) {
 		{
 			name:           "pipeline with user-defined transform and filter",
 			goldenFileName: "user-defined-transform-filter.yaml",
+			moduleVersion:  "1.0.0",
 			tracePipelines: []telemetryv1beta1.TracePipeline{
 				testutils.NewTracePipelineBuilder().
 					WithName("test-trace").
@@ -219,6 +227,7 @@ func TestBuild(t *testing.T) {
 		{
 			name:           "pipeline using OAuth2 authentication",
 			goldenFileName: "oauth2-authentication.yaml",
+			moduleVersion:  "1.0.0",
 			tracePipelines: []telemetryv1beta1.TracePipeline{
 				testutils.NewTracePipelineBuilder().
 					WithName("test-trace").
@@ -249,6 +258,7 @@ func TestBuild(t *testing.T) {
 		{
 			name:           "log-pipeline with OTLP input disabled",
 			goldenFileName: "log-otlp-input-disabled.yaml",
+			moduleVersion:  "1.0.0",
 			logPipelines: []telemetryv1beta1.LogPipeline{
 				testutils.NewLogPipelineBuilder().
 					WithName("test-log").
@@ -259,6 +269,7 @@ func TestBuild(t *testing.T) {
 		{
 			name:           "log-pipeline with namespace included",
 			goldenFileName: "log-namespace-included.yaml",
+			moduleVersion:  "1.0.0",
 			logPipelines: []telemetryv1beta1.LogPipeline{
 				testutils.NewLogPipelineBuilder().
 					WithName("test-log").
@@ -269,6 +280,7 @@ func TestBuild(t *testing.T) {
 		{
 			name:           "log-pipeline with namespace excluded",
 			goldenFileName: "log-namespace-excluded.yaml",
+			moduleVersion:  "1.0.0",
 			logPipelines: []telemetryv1beta1.LogPipeline{
 				testutils.NewLogPipelineBuilder().
 					WithName("test-log").

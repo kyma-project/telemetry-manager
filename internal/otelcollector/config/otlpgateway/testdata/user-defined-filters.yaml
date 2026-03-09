@@ -111,7 +111,8 @@ processors:
         traces:
             span:
                 - IsMatch(spanevent.attributes["foo"], ".*bar.*")
-    istio_enrichment: {}
+    istio_enrichment:
+        scope_version: 1.0.0
     istio_noise_filter: {}
     k8sattributes:
         auth_type: serviceAccount

@@ -59,7 +59,8 @@ processors:
         send_batch_size: 512
         timeout: 10s
         send_batch_max_size: 512
-    istio_enrichment: {}
+    istio_enrichment:
+        scope_version: 1.0.0
     istio_noise_filter: {}
     k8sattributes:
         auth_type: serviceAccount
