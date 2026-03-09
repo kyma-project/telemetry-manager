@@ -288,6 +288,18 @@ func TestBuild(t *testing.T) {
 					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
 			},
 		},
+		{
+			name:           "mixed pipelines",
+			goldenFileName: "mixed-pipelines.yaml",
+			moduleVersion:  "1.0.0",
+			tracePipelines: []telemetryv1beta1.TracePipeline{
+				testutils.NewTracePipelineBuilder().WithName("test-trace").WithOTLPOutput().Build(),
+			},
+			logPipelines: []telemetryv1beta1.LogPipeline{
+				testutils.NewLogPipelineBuilder().WithName("test-log-1").WithOTLPOutput().Build(),
+				testutils.NewLogPipelineBuilder().WithName("test-log-2").WithOTLPOutput().Build(),
+			},
+		},
 	}
 
 	for _, tt := range tests {
