@@ -6,11 +6,11 @@ date: 2026-02-20
 
 # Vertical Pod Autoscaler (VPA) Architecture
 
-This document proposes integrating Vertical Pod Autoscaler (VPA) with the Central OTLP Gateway to automatically adjust Pod resource requests and limits based on actual usage patterns. We evaluate two implementation approaches and recommend a strategy that ensures resource optimization while maintaining system stability.
+This document proposes integrating Vertical Pod Autoscaler (VPA) with the Central OTLP Gateway and Agents to automatically adjust Pod resource requests and limits based on actual usage patterns. We evaluate two implementation approaches and recommend a strategy that ensures resource optimization while maintaining system stability.
 
 ## Context and Problem Statement
 
-The Central OTLP Gateway is deployed as a DaemonSet with statically configured resource requests and limits. Because workload patterns vary across different nodes and over time, static resource allocation leads to the following issues:
+The Central OTLP Gateway and Agents are deployed as a DaemonSet with statically configured resource requests and limits. Because workload patterns vary across different nodes and over time, static resource allocation leads to the following issues:
 - Under-provisioning: Pods might experience resource pressure or OOMKills during traffic spikes.
 - Over-provisioning: Wasted resources when actual usage is consistently lower than allocated.
 - Manual intervention: Operations teams must manually adjust resources based on observed metrics.
