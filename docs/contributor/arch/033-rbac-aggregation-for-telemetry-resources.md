@@ -24,7 +24,9 @@ The Telemetry module directly owns and manages the following **cluster-scoped** 
 - `telemetries.operator.kyma-project.io` - Manage the lifecycle and configuration of the Telemetry module itself
 
 **Namespace-Scoped Resources:**
-- ConfigMap `sap-cloud-logging` in `kube-public` namespace - Used for Busola Dashboard integration
+- ConfigMap `telemetry-logpipelines` in `kyma-system` - Busola UI for configuring log pipelines
+- ConfigMap `telemetry-metricpipelines` in `kyma-system` - Busola UI for configuring metric pipelines
+- ConfigMap `telemetry-tracepipelines` in `kyma-system` - Busola UI for configuring trace pipelines
 
 Each resource includes:
 - Main resource (spec and metadata)
@@ -41,8 +43,8 @@ The following resources are referenced by telemetry pipelines but are managed by
 - `telemetry.istio.io` - Istio Telemetry API for enabling traces and access logs (managed by Istio operator)
 
 **Service Catalog Resources:**
-- `serviceinstances.servicecatalog.k8s.io` - Cloud Logging Service instances (managed by Service Catalog)
-- `servicebindings.servicecatalog.k8s.io` - Bindings to Cloud Logging Service instances (managed by Service Catalog)
+- `serviceinstances.services.cloud.sap.com` - Cloud Logging Service instances (managed by Service Catalog)
+- `servicebindings.services.cloud.sap.com` - Bindings to Cloud Logging Service instances (managed by Service Catalog)
 
 **Secret Resources:**
 - Secrets containing credentials for external backends (managed separately, not granted direct access)
@@ -149,10 +151,10 @@ We will implement **two aggregated ClusterRoles** for telemetry resources, follo
 
 ### Role Definitions
 
-|        Role Name        |  Aggregates To  |                                                                                            Resources                                                                                            |                                       Verbs                                       |                                                                                Rationale                                                                                |
-|:-----------------------:|:---------------:|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|:---------------------------------------------------------------------------------:|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------:|
-| **kyma-telemetry-view** |     `view`      | **Cluster-scoped:**<br/>• `logpipelines`<br/>• `metricpipelines`<br/>• `tracepipelines`<br/>• `telemetries`<br/><br/>**Namespace-scoped:**<br/>• ConfigMap `sap-cloud-logging` in `kube-public` |                              `get`, `list`, `watch`                               |   Read-only access for monitoring, debugging, and observability. Enables SREs, auditors, and developers to view telemetry configurations without modification rights.   |
-| **kyma-telemetry-edit** | `edit`, `admin` | **Cluster-scoped:**<br/>• `logpipelines`<br/>• `metricpipelines`<br/>• `tracepipelines`<br/>• `telemetries`<br/><br/>**Namespace-scoped:**<br/>• ConfigMap `sap-cloud-logging` in `kube-public` | `create`, `delete`, `deletecollection`, `get`, `list`, `patch`, `update`, `watch` | Full CRUD access for platform engineers and DevOps teams managing telemetry infrastructure. Does **not** include direct Secret access (credentials managed separately). |
+|        Role Name        |  Aggregates To  |                                                                                                                           Resources                                                                                                                           |                                       Verbs                                       |                                                                                Rationale                                                                                |
+|:-----------------------:|:---------------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|:---------------------------------------------------------------------------------:|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------:|
+| **kyma-telemetry-view** |     `view`      | **Cluster-scoped:**<br/>• `logpipelines`<br/>• `metricpipelines`<br/>• `tracepipelines`<br/>• `telemetries`<br/><br/>**Namespace-scoped:**<br/>• ConfigMap `telemetry-logpipelines`, `telemetry-tracepipelines`, `telemetry-metricpipelines` in `kyma-system` |                              `get`, `list`, `watch`                               |   Read-only access for monitoring, debugging, and observability. Enables SREs, auditors, and developers to view telemetry configurations without modification rights.   |
+| **kyma-telemetry-edit** | `edit`, `admin` |                                                                       **Cluster-scoped:**<br/>• `logpipelines`<br/>• `metricpipelines`<br/>• `tracepipelines`<br/>• `telemetries`<br/>                                                                        | `create`, `delete`, `deletecollection`, `get`, `list`, `patch`, `update`, `watch` | Full CRUD access for platform engineers and DevOps teams managing telemetry infrastructure. Does **not** include direct Secret access (credentials managed separately). |
 
 **Note:** We do **not** create a separate `kyma-telemetry-admin` role because:
 - The traditional `admin` vs `edit` distinction (managing Roles/RoleBindings) is not applicable to cluster-scoped resources
@@ -162,7 +164,7 @@ We will implement **two aggregated ClusterRoles** for telemetry resources, follo
 ### Binding Requirements
 
 - Since most telemetry resources are **cluster-scoped**, users need **ClusterRoleBindings** to access them:
-- For the namespace-scoped ConfigMap `sap-cloud-logging`, a RoleBinding in the `kube-public` namespace would work.
+- For the namespace-scoped ConfigMap `telemetry-logpipelines`, `telemetry-tracepipelines`, `telemetry-metricpipelines`, a RoleBinding in the `kyma-system` namespace would work.
 
 ### Testing and Validation
 
