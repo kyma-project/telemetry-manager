@@ -229,7 +229,8 @@ spec:
     - port: 9090
       protocol: TCP
   - from:
-    - podSelector:
+    - namespaceSelector: {}
+      podSelector:
         matchLabels:
           networking.kyma-project.io/metrics-scraping: allowed
     ports:
