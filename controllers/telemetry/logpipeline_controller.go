@@ -176,6 +176,7 @@ func (r *LogPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		source.Channel(r.reconcileTriggerChan, &handler.EnqueueRequestForObject{}),
 	)
 
+	// TODO: Mainly for FluentBit and Log Agent reconciliation, should be removed after migrating them as well.
 	ownedResourceTypesToWatch := []client.Object{
 		&appsv1.DaemonSet{},           // FluentBit and OTel Log Agent DaemonSets
 		&corev1.ConfigMap{},           // FluentBit and OTel Collector config
