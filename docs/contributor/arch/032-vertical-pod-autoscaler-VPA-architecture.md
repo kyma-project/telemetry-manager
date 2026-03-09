@@ -162,7 +162,7 @@ Rationale:
 
 Configuration Strategy:
 - Use `updateMode: "InPlaceOrRecreate"` for automatic Pod updates
-- Use `controlledValues: RequestsAndLimits` to avoid ratio-based limit calculations
+- Use `controlledValues: RequestsAndLimits` to set both requests and limits.
 - Set `GOMEMLIMIT`, [OpenTelemetry Collector provides an extension](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/extension/cgroupruntimeextension) to set `GOMEMLIMIT` in runtime based on available memory, so we can set it to a percentage of the memory limit (e.g., 80%) to ensure it scales with VPA recommendations
 - Configure reasonable `minAllowed` and `maxAllowed` boundaries
 - Document that actual Pod resources may differ from DaemonSet spec
