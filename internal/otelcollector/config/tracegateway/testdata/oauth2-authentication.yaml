@@ -1,4 +1,10 @@
 extensions:
+    cgroupruntime:
+        gomaxprocs:
+            enabled: true
+        gomemlimit:
+            enabled: true
+            ratio: 0.8
     health_check:
         endpoint: ${MY_POD_IP}:13133
     oauth2client/test:
@@ -38,6 +44,7 @@ service:
     extensions:
         - health_check
         - pprof
+        - cgroupruntime
         - oauth2client/test
 receivers:
     otlp:

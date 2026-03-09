@@ -44,7 +44,7 @@ func serviceConfig() Service {
 	return Service{
 		Pipelines:  make(map[string]Pipeline),
 		Telemetry:  telemetry,
-		Extensions: []string{ComponentIDHealthCheckExtension, ComponentIDPprofExtension},
+		Extensions: []string{ComponentIDHealthCheckExtension, ComponentIDPprofExtension, ComponentIDCGroupRuntimeExtension},
 	}
 }
 
@@ -55,6 +55,10 @@ func extensionsConfig() map[string]any {
 		},
 		ComponentIDPprofExtension: Endpoint{
 			Endpoint: fmt.Sprintf("127.0.0.1:%d", ports.Pprof),
+		},
+		ComponentIDCGroupRuntimeExtension: CGroupRuntimeExtension{
+			GoMaxProcs: CGroupRuntimeGoMaxProcs{Enabled: true},
+			GoMemLimit: CGroupRuntimeGoMemLimit{Enabled: true, Ratio: 0.8}, //nolint:mnd // 80% of cgroup memory limit
 		},
 	}
 }
