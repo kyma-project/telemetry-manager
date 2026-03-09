@@ -202,7 +202,7 @@ The following limitations are inherent to VPA and should be considered when usin
 1. Calculate based on node capacity:
    Configure `maxAllowed` values e.g. %75 of smallest node memory capacity to prevent pending pods due to insufficient resources and leave headroom for burstable workloads. E.g., if we have 5 DaemonSets on a 32Gi node: 32Gi × 0.75 ÷ 5 ≈ 4.8Gi each
 2. Consider workload patterns:
-   Analyze historical usage patterns to set `maxAllowed` values that accommodate typical spikes while preventing excessive resource allocation. The DaemonSets run on every node, one misbehavng DaemonSet can exhaust all nodes.
+   Analyze historical usage patterns to set `maxAllowed` values that accommodate typical spikes while preventing excessive resource allocation. The DaemonSets run on every node, one misbehaving DaemonSet can exhaust all nodes.
 3. Set based on Application Architecture:
    Consider the current application limits, profile application to find the "knee of the curve" where additional resources provide diminishing returns, and set `maxAllowed` values around that point to optimize cost-performance balance. For example, if the current limit is 2Gi and usage rarely exceeds 1Gi, setting `maxAllowed` to 1.5Gi may be appropriate.
 4. Account for QoS and resource ratios:
