@@ -116,14 +116,14 @@ func (r *OTLPGatewayController) SetupWithManager(mgr ctrl.Manager) error {
 
 	// Watch owned resources (DaemonSet and associated resources)
 	ownedResourceTypesToWatch := []client.Object{
-		&appsv1.DaemonSet{},
-		&corev1.ConfigMap{}, // OTel Collector config
-		&corev1.Secret{},
-		&corev1.Service{},
-		&corev1.ServiceAccount{},
-		&rbacv1.ClusterRole{},
-		&rbacv1.ClusterRoleBinding{},
-		&networkingv1.NetworkPolicy{},
+		&appsv1.DaemonSet{},           // OTLP Gateway DaemonSet
+		&corev1.ConfigMap{},           // OTel Collector config
+		&corev1.Secret{},              // TLS certificates and credentials
+		&corev1.Service{},             // Collector service endpoints
+		&corev1.ServiceAccount{},      // Identity for k8s API access
+		&rbacv1.ClusterRole{},         // Permissions for k8s metadata collection
+		&rbacv1.ClusterRoleBinding{},  // Binds ClusterRole to ServiceAccount
+		&networkingv1.NetworkPolicy{}, // Network access control
 	}
 
 	discoveryClient, err := discovery.NewDiscoveryClientForConfig(mgr.GetConfig())
@@ -134,7 +134,7 @@ func (r *OTLPGatewayController) SetupWithManager(mgr ctrl.Manager) error {
 	isIstioActive := istiostatus.NewChecker(discoveryClient).IsIstioActive(context.Background())
 
 	if isIstioActive {
-		ownedResourceTypesToWatch = append(ownedResourceTypesToWatch, &istiosecurityclientv1.PeerAuthentication{})
+		ownedResourceTypesToWatch = append(ownedResourceTypesToWatch, &istiosecurityclientv1.PeerAuthentication{}) // Istio mTLS policy
 	}
 
 	for _, resource := range ownedResourceTypesToWatch {
@@ -155,12 +155,12 @@ func (r *OTLPGatewayController) SetupWithManager(mgr ctrl.Manager) error {
 	// Watch Istio resources if present
 	if isIstioPresent(mgr.GetClient()) {
 		b = b.Watches(
-			&istiosecurityclientv1.PeerAuthentication{},
+			&istiosecurityclientv1.PeerAuthentication{}, // Istio mTLS policy
 			handler.EnqueueRequestsFromMapFunc(r.mapOwnedResourceToConfigMap),
 			ctrlbuilder.WithPredicates(predicateutils.OwnedResourceChanged()),
 		)
 		b = b.Watches(
-			&istionetworkingclientv1.DestinationRule{},
+			&istionetworkingclientv1.DestinationRule{}, // Istio traffic routing rules
 			handler.EnqueueRequestsFromMapFunc(r.mapOwnedResourceToConfigMap),
 			ctrlbuilder.WithPredicates(predicateutils.OwnedResourceChanged()),
 		)

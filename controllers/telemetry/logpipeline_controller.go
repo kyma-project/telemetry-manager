@@ -177,16 +177,15 @@ func (r *LogPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 	)
 
 	ownedResourceTypesToWatch := []client.Object{
-		&appsv1.DaemonSet{},
-		&appsv1.Deployment{},
-		&corev1.ConfigMap{},
-		&corev1.Pod{},
-		&corev1.Secret{},
-		&corev1.Service{},
-		&corev1.ServiceAccount{},
-		&rbacv1.ClusterRole{},
-		&rbacv1.ClusterRoleBinding{},
-		&networkingv1.NetworkPolicy{},
+		&appsv1.DaemonSet{},           // FluentBit and OTel Log Agent DaemonSets
+		&corev1.ConfigMap{},           // FluentBit and OTel Collector config
+		&corev1.Pod{},                 // Pods for restart and readiness tracking
+		&corev1.Secret{},              // TLS certificates and secret refs
+		&corev1.Service{},             // Collector service endpoints
+		&corev1.ServiceAccount{},      // Identity for k8s API access
+		&rbacv1.ClusterRole{},         // Permissions for k8s metadata collection
+		&rbacv1.ClusterRoleBinding{},  // Binds ClusterRole to ServiceAccount
+		&networkingv1.NetworkPolicy{}, // Network access control
 	}
 
 	discoveryClient, err := discovery.NewDiscoveryClientForConfig(mgr.GetConfig())
@@ -197,7 +196,7 @@ func (r *LogPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 	isIstioActive := istiostatus.NewChecker(discoveryClient).IsIstioActive(context.Background())
 
 	if isIstioActive {
-		ownedResourceTypesToWatch = append(ownedResourceTypesToWatch, &istiosecurityclientv1.PeerAuthentication{})
+		ownedResourceTypesToWatch = append(ownedResourceTypesToWatch, &istiosecurityclientv1.PeerAuthentication{}) // Istio mTLS policy
 	}
 
 	for _, resource := range ownedResourceTypesToWatch {
@@ -220,7 +219,7 @@ func (r *LogPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 
 	// Watch OTLP Gateway DaemonSet to update GatewayHealthy condition for OTLP input pipelines
 	b.Watches(
-		&appsv1.DaemonSet{},
+		&appsv1.DaemonSet{}, // OTLP Gateway DaemonSet
 		handler.EnqueueRequestsFromMapFunc(r.mapOTLPGatewayToOTLPPipelines),
 		ctrlbuilder.WithPredicates(ctrlpredicate.NewPredicateFuncs(func(object client.Object) bool {
 			return object.GetName() == names.OTLPGateway &&
@@ -231,7 +230,7 @@ func (r *LogPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 	// Watch the pipeline lock ConfigMap to trigger reconciliation of all pipelines when lock changes
 	// This ensures that when a pipeline is deleted and frees up a slot, waiting pipelines get reconciled
 	b.Watches(
-		&corev1.ConfigMap{},
+		&corev1.ConfigMap{}, // Pipeline lock ConfigMap
 		handler.EnqueueRequestsFromMapFunc(r.mapLockConfigMapToAllPipelines),
 		ctrlbuilder.WithPredicates(ctrlpredicate.NewPredicateFuncs(func(object client.Object) bool {
 			return object.GetName() == r.pipelineLockName.Name && object.GetNamespace() == r.pipelineLockName.Namespace

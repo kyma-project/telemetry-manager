@@ -40,6 +40,8 @@ func (b *Builder) buildLogPipelines(ctx context.Context, builder *common.Compone
 			b.addNamespaceFilterProcessor(builder),
 			b.addLogInsertClusterAttributesProcessor(builder, opts),
 			b.addLogServiceEnrichmentProcessor(builder, opts),
+			// Kyma attributes are dropped before user-defined transform and filter processors
+			// to prevent user access to internal attributes.
 			b.addLogDropKymaAttributesProcessor(builder),
 			b.addLogIstioAccessLogsEnrichmentProcessor(builder, opts),
 			b.addLogUserDefinedTransformProcessor(builder),
@@ -345,6 +347,8 @@ func namespacesConditions(namespaces []string) []string {
 func dropIfInputSourceOTLPProcessorConfig() *common.FilterProcessor {
 	return common.FilterSpecsToLogFilterProcessorConfig([]telemetryv1beta1.FilterSpec{
 		{Conditions: []string{
+			// Drop all logs; the filter processor requires at least one valid condition expression,
+			// to drop all logs, we use a condition that is always true for any log
 			common.JoinWithOr(common.IsNotNil("log.observed_time"), common.IsNotNil("log.time")),
 		}},
 	})

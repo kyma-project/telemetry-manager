@@ -154,7 +154,7 @@ func (r *TracePipelineController) SetupWithManager(mgr ctrl.Manager) error {
 
 	// Watch OTLP Gateway DaemonSet to update GatewayHealthy condition when gateway status changes
 	b.Watches(
-		&appsv1.DaemonSet{},
+		&appsv1.DaemonSet{}, // OTLP Gateway DaemonSet
 		handler.EnqueueRequestsFromMapFunc(r.mapOTLPGatewayToAllPipelines),
 		ctrlbuilder.WithPredicates(ctrlpredicate.NewPredicateFuncs(func(object client.Object) bool {
 			return object.GetName() == names.OTLPGateway &&
@@ -165,7 +165,7 @@ func (r *TracePipelineController) SetupWithManager(mgr ctrl.Manager) error {
 	// Watch the pipeline lock ConfigMap to trigger reconciliation of all pipelines when lock changes
 	// This ensures that when a pipeline is deleted and frees up a slot, waiting pipelines get reconciled
 	b.Watches(
-		&corev1.ConfigMap{},
+		&corev1.ConfigMap{}, // Pipeline lock ConfigMap
 		handler.EnqueueRequestsFromMapFunc(r.mapLockConfigMapToAllPipelines),
 		ctrlbuilder.WithPredicates(ctrlpredicate.NewPredicateFuncs(func(object client.Object) bool {
 			return object.GetName() == r.pipelineLockName.Name && object.GetNamespace() == r.pipelineLockName.Namespace
