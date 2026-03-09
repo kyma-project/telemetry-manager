@@ -146,7 +146,7 @@ func forwardHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, err := client.Do(req)
+	res, err := client.Do(req) //nolint:gosec // G704: URL comes from query parameter in sample app
 	if err != nil {
 		handleError(ctx, w, span, err, "exception in client call")
 		return

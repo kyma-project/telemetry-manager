@@ -24,7 +24,7 @@ type MockProcessor struct {
 
 type MockExporter struct {
 	URL    string `json:"url"`
-	APIKey string `json:"api_key,omitempty"`
+	APIKey string `json:"api_key,omitempty"` //nolint:gosec // G117: test struct, not a real credential
 }
 
 func TestComponentBuilder_AddReceiver(t *testing.T) {
@@ -206,14 +206,14 @@ func TestComponentBuilder_AddExporter(t *testing.T) {
 		{
 			name:        "adds regular exporter with env vars",
 			componentID: "otlp_grpc/test",
-			config: &MockExporter{
+			config: &MockExporter{ //nolint:gosec // G101: test data, not real credentials
 				URL:    "https://api.example.com",
 				APIKey: "${API_KEY}",
 			},
 			envVars: EnvVars{
 				"API_KEY": []byte("secret-key-123"),
 			},
-			expectedConfig: &MockExporter{
+			expectedConfig: &MockExporter{ //nolint:gosec // G101: test data, not real credentials
 				URL:    "https://api.example.com",
 				APIKey: "${API_KEY}",
 			},
@@ -363,7 +363,7 @@ func TestComponentBuilder_AddServicePipeline(t *testing.T) {
 		addExporter := cb.AddExporter(
 			func(p *MockPipeline) string { return fmt.Sprintf("otlp/%s", p.Name) },
 			func(ctx context.Context, p *MockPipeline) (any, EnvVars, error) {
-				return &MockExporter{
+				return &MockExporter{ //nolint:gosec // G101: test data, not real credentials
 					URL:    "https://api.example.com",
 					APIKey: "${API_KEY}",
 				}, EnvVars{"API_KEY": []byte("secret-123")}, nil
