@@ -33,15 +33,28 @@ func TestTelemetryLogs(t *testing.T) {
 		traceBackendNs           = uniquePrefix("trace-backend")
 		metricBackendNs          = uniquePrefix("metric-backend")
 		logBackendNs             = uniquePrefix("log-backend")
-		fbluentBitLogBackendNs   = uniquePrefix("fluent-bit-log-backend")
+		logAnalysisBackendNs     = uniquePrefix("log-analysis-backend")
 		genTraceNs               = uniquePrefix("trace-gen")
 		genMetricNs              = uniquePrefix("metric-gen")
 		genLogNs                 = uniquePrefix("log-gen")
 		genFBNs                  = uniquePrefix("fluent-bit-gen")
 
-		logLevelsRegexp = "ERROR|error|WARNING|warning|WARN|warn"
+		logLevelsRegexp            = "ERROR|error|WARNING|warning|WARN|warn"
+		deprecationLogLevelsRegexp = "INFO|info|WARNING|warning|WARN|warn"
+
+		// Known flaky/expected warnings to ignore in the introspection backend
+		warningsToIgnore = Or(
+			ContainSubstring("grpc: addrConn.createTransport failed to connect"),
+			ContainSubstring("rpc error: code = Unavailable desc = no healthy upstream"),
+			ContainSubstring("interrupted due to shutdown:"),
+			// TODO(skhalash): Remove after addressing the root cause of the deprecation warnings
+			ContainSubstring("alias is deprecated"),
+			ContainSubstring("This resource_attribute is deprecated and will be removed soon"),
+		)
 	)
 
+	// metric. trace, and log pipelines are needed for respective otel collectors to be deployed
+	// the actual OTLP data is not used for log analysis in this test, but it ensures the collectors are running and generating telemetry logs to be analyzed
 	traceBackend := kitbackend.New(traceBackendNs, kitbackend.SignalTypeTraces)
 	tracePipeline := testutils.NewTracePipelineBuilder().
 		WithName(tracePipelineName).
@@ -58,14 +71,6 @@ func TestTelemetryLogs(t *testing.T) {
 			testutils.OTLPEndpoint(metricBackend.EndpointHTTP()),
 		).Build()
 
-	fluentBitLogBackend := kitbackend.New(fbluentBitLogBackendNs, kitbackend.SignalTypeLogsFluentBit)
-	fluentBitLogPipeline := testutils.NewLogPipelineBuilder().
-		WithName(fluentBitLogPipelineName).
-		WithIncludeNamespaces(kitkyma.SystemNamespaceName).
-		WithIncludeContainers("collector", "fluent-bit", "exporter", "self-monitor").
-		WithHTTPOutput(testutils.HTTPHost(fluentBitLogBackend.Host()), testutils.HTTPPort(fluentBitLogBackend.Port())).
-		Build()
-
 	logBackend := kitbackend.New(logBackendNs, kitbackend.SignalTypeLogsOTel)
 	logPipeline := testutils.NewLogPipelineBuilder().
 		WithName(logPipelineName).
@@ -74,10 +79,20 @@ func TestTelemetryLogs(t *testing.T) {
 		WithOTLPOutput(testutils.OTLPEndpoint(logBackend.EndpointHTTP())).
 		Build()
 
+	// Fluent Bit log pipeline isneeded for Fluent Bit to be deployed AND collect internal logs,
+	// which are then analyzed in this test to ensure that logs with levels ERROR, WARNING or WARN from telemetry pods are not included in the Fluent Bit log backend
+	logAnalysisBackend := kitbackend.New(logAnalysisBackendNs, kitbackend.SignalTypeLogsFluentBit)
+	fluentBitLogPipeline := testutils.NewLogPipelineBuilder().
+		WithName(fluentBitLogPipelineName).
+		WithIncludeNamespaces(kitkyma.SystemNamespaceName).
+		WithIncludeContainers("collector", "fluent-bit", "exporter", "self-monitor").
+		WithHTTPOutput(testutils.HTTPHost(logAnalysisBackend.Host()), testutils.HTTPPort(logAnalysisBackend.Port())).
+		Build()
+
 	resources := []client.Object{
 		kitk8sobjects.NewNamespace(traceBackendNs).K8sObject(),
 		kitk8sobjects.NewNamespace(metricBackendNs).K8sObject(),
-		kitk8sobjects.NewNamespace(fbluentBitLogBackendNs).K8sObject(),
+		kitk8sobjects.NewNamespace(logAnalysisBackendNs).K8sObject(),
 		kitk8sobjects.NewNamespace(logBackendNs).K8sObject(),
 
 		kitk8sobjects.NewNamespace(genTraceNs).K8sObject(),
@@ -91,13 +106,13 @@ func TestTelemetryLogs(t *testing.T) {
 
 		&tracePipeline,
 		&metricPipeline,
-		&fluentBitLogPipeline,
 		&logPipeline,
+		&fluentBitLogPipeline,
 	}
 
 	resources = append(resources, traceBackend.K8sObjects()...)
 	resources = append(resources, metricBackend.K8sObjects()...)
-	resources = append(resources, fluentBitLogBackend.K8sObjects()...)
+	resources = append(resources, logAnalysisBackend.K8sObjects()...)
 	resources = append(resources, logBackend.K8sObjects()...)
 
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
@@ -108,7 +123,7 @@ func TestTelemetryLogs(t *testing.T) {
 	assert.BackendReachable(t, logBackend)
 	assert.BackendReachable(t, metricBackend)
 	assert.BackendReachable(t, traceBackend)
-	assert.BackendReachable(t, fluentBitLogBackend)
+	assert.BackendReachable(t, logAnalysisBackend)
 
 	assert.DaemonSetReady(t, kitkyma.MetricAgentName)
 	assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
@@ -122,23 +137,40 @@ func TestTelemetryLogs(t *testing.T) {
 	assert.MetricsFromNamespaceDelivered(t, metricBackend, genMetricNs, telemetrygen.MetricNames)
 	assert.TracesFromNamespaceDelivered(t, traceBackend, genTraceNs)
 	assert.OTelLogsFromNamespaceDelivered(t, logBackend, genLogNs)
-	assert.FluentBitLogsFromPodDelivered(t, fluentBitLogBackend, "telemetry-")
-	assert.BackendDataConsistentlyMatches(t, fluentBitLogBackend, fluentbit.HaveFlatLogs(Not(ContainElement(SatisfyAll(
-		fluentbit.HavePodName(ContainSubstring("telemetry-")),
-		fluentbit.HaveLevel(MatchRegexp(logLevelsRegexp)),
-		fluentbit.HaveLogBody(Not( // whitelist possible (flaky/expected) errors
-			Or(
-				ContainSubstring("grpc: addrConn.createTransport failed to connect"),
-				ContainSubstring("rpc error: code = Unavailable desc = no healthy upstream"),
-				ContainSubstring("interrupted due to shutdown:"),
-			),
-		)),
-	)))),
-		assert.WithOptionalDescription("log backend should not contain telemetry pod logs with levels ERROR, WARNING or WARN"))
+	assert.FluentBitLogsFromPodDelivered(t, logAnalysisBackend, "telemetry-")
 
-	assert.BackendDataConsistentlyMatches(t, logBackend, HaveFlatLogs(Not(ContainElement(SatisfyAll(
-		HaveSeverityText(MatchRegexp("info|INFO|warning|WARNING")),
-		HaveLogBody(ContainSubstring(StabilityLevelDeprecated.LogMessage())),
-	)))),
-		assert.WithOptionalDescription("log backend should not contain telemetry pod logs with deprecation info logs"))
+	// Analyze Fluent Bit, OTel Collector, and Self-Monitoring logs
+
+	assert.BackendDataConsistentlyMatches(
+		t,
+		logAnalysisBackend,
+		fluentbit.HaveFlatLogs(
+			Not(
+				ContainElement(
+					SatisfyAll(
+						fluentbit.HavePodName(ContainSubstring("telemetry-")),
+						fluentbit.HaveLevel(MatchRegexp(logLevelsRegexp)),
+						fluentbit.HaveLogBody(Not(warningsToIgnore)),
+					),
+				),
+			),
+		),
+		assert.WithOptionalDescription("log analysis backend should not contain telemetry pod logs with levels ERROR, WARNING or WARN"),
+	)
+
+	assert.BackendDataConsistentlyMatches(
+		t,
+		logBackend,
+		HaveFlatLogs(
+			Not(
+				ContainElement(
+					SatisfyAll(
+						HaveSeverityText(MatchRegexp(deprecationLogLevelsRegexp)),
+						HaveLogBody(ContainSubstring(StabilityLevelDeprecated.LogMessage())),
+					),
+				),
+			),
+		),
+		assert.WithOptionalDescription("log analysis backend should not contain deprecation info logs"),
+	)
 }
