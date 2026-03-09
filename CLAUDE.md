@@ -93,7 +93,7 @@ make update-golden-files  # Update golden files for config builder tests
 
 - **test/e2e/**: End-to-end tests organized by signal type (logs/, metrics/, traces/)
 - **test/testkit/**: Shared test utilities, matchers, and k8s helpers
-- **test/integration/**: Integration tests with external components (e.g. Istio)
+- **test/integration/**: Integration tests with external components (for example, Istio)
 - **test/selfmonitor/**: Tests for self-monitoring functionality
 
 ### Helm Charts
@@ -120,6 +120,17 @@ The `.env` file contains default image versions and configuration. Key environme
 
 When writing documentation for this project, follow these rules:
 
+### General Rules
+
+Keep your documentation clear, precise, and easy to read. Use active voice instead of passive voice. Avoid future tense. When a word has multiple meanings in everyday English, prefer the unambiguous technical or plain-English alternative; for example: 
+-	instead of "as" or "since", use "because" (causation), "while" (temporal), or "like" (comparison)
+-	instead of "may not", use "might not" (possibility) or "must not" (prohibition)
+-	instead of "should" (recommendation or requirement), use "we recommend" or "must"
+-	use "can" for ability, "may" for permission
+-	Instead of "once" (temporal vs. conditional), use "after" or "when"
+-	Instead of latin abbreviations such as “i.e.” or “e.g.”, use English phrases such as “that means” or “for example; such as; like”
+Avoid marketing lingo and words such as "allows you to" or "enables you to" (better: "you can") or "leverage, utilize" (better: "use") . Always state the purpose first, then the instruction (“To [purpose], [instruction].). Always state the condition first (“If [condition], [instruction].”), then the instruction or conclusion. Use full sentences to introduce lists. All list items must match a consistent pattern; they can't be parts of a running sentence. 
+
 ### Templates
 
 Use the document templates from the [kyma-project template repository](https://github.com/kyma-project/template-repository/tree/main/docs/user/assets/templates):
@@ -135,7 +146,7 @@ Follow the [Kyma style and terminology guidelines](https://github.com/kyma-proje
 - Use **imperative mood** for instructions (no "please")
 - Address readers as **"you"**, not "we" or "let's"
 - Use **sentence case** for standard text; **Title Case** for component names and headings
-- Use **CamelCase** for Kubernetes resources (e.g., `ConfigMap`, `APIRule`)
+- Use **CamelCase** for Kubernetes resources (for example, `ConfigMap`, `APIRule`)
 - Always capitalize "Kubernetes"; never abbreviate it
 - Do not capitalize "namespace"
 - Prefer "must" for mandatory requirements and "can" for optional features
@@ -152,8 +163,7 @@ Follow the [Kyma formatting guidelines](https://github.com/kyma-project/communit
 - Use `code font` for code examples, values, endpoints, filenames, paths, repository names, status codes, flags, and custom resources
 - Use **ordered lists** for sequential procedures; **unordered lists** for non-sequential items
 - Keep list items consistent in structure (all sentences, all fragments, or all questions — never mixed)
-- Use action verbs and present tense in headings (e.g., "Expose a Service")
-- Avoid gerunds in headings; do not stack headings without intervening body text
+- Use action verbs and present tense in headings (for example, "Expose a Service")
 - Use tables for comparisons and structured information
 - Use callout panels: `[!NOTE]` for specific information, `[!WARNING]` for critical alerts, `[!TIP]` for helpful advice
 - Break lengthy paragraphs into lists or tables for readability
