@@ -21,6 +21,11 @@ on:
         required: false
         default: false
         type: boolean
+      create_pr:
+        description: 'Create PR to prepare module version bump on experimental and fast channels'
+        required: false
+        default: true
+        type: boolean
 run-name: "Release Telemetry version ${{ github.event.inputs.version }} with OCC image ${{ github.event.inputs.occ_image }}, dry-run: ${{ github.event.inputs.dry_run }}, force mode: ${{ github.event.inputs.force }}"
 
 permissions:
