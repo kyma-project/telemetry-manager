@@ -97,7 +97,7 @@ type AgentApplierDeleter interface {
 	ApplyResources(ctx context.Context, c client.Client, opts otelcollector.AgentApplyOptions) error
 
 	// DeleteResources removes all agent resources from the cluster.
-	DeleteResources(ctx context.Context, c client.Client) error
+	DeleteResources(ctx context.Context, c client.Client, vpaCRDExists bool) error
 }
 
 // Prober checks the readiness of Kubernetes workloads (Deployments, DaemonSets).

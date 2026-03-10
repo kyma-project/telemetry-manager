@@ -159,7 +159,7 @@ func TestAgent_DeleteResources(t *testing.T) {
 			err := tt.sut.ApplyResources(t.Context(), fakeClient, AgentApplyOptions{})
 			require.NoError(t, err)
 
-			err = tt.sut.DeleteResources(t.Context(), fakeClient)
+			err = tt.sut.DeleteResources(t.Context(), fakeClient, false)
 			require.NoError(t, err)
 
 			for i := range created {

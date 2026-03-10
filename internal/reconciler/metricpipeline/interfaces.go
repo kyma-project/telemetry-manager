@@ -43,7 +43,7 @@ type AgentApplierDeleter interface {
 	ApplyResources(ctx context.Context, c client.Client, opts otelcollector.AgentApplyOptions) error
 	// DeleteResources removes the metric agent resources from the cluster.
 	// This cleans up all agent-related Kubernetes resources.
-	DeleteResources(ctx context.Context, c client.Client) error
+	DeleteResources(ctx context.Context, c client.Client, vpaCRDExists bool) error
 }
 
 // GatewayApplierDeleter manages the lifecycle of metric gateway Kubernetes resources.

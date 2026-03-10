@@ -210,7 +210,7 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 	return nil
 }
 
-func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Client) error {
+func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Client, vpaCRDExists bool) error {
 	// Attempt to clean up as many resources as possible and avoid early return when one of the deletions fails
 	var allErrors error = nil
 
@@ -240,6 +240,13 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 	daemonSet := appsv1.DaemonSet{ObjectMeta: objectMeta}
 	if err := k8sutils.DeleteObject(ctx, c, &daemonSet); err != nil {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete daemonset: %w", err))
+	}
+
+	if vpaCRDExists {
+		vpa := autoscalingvpav1.VerticalPodAutoscaler{ObjectMeta: objectMeta}
+		if err := k8sutils.DeleteObject(ctx, c, &vpa); err != nil {
+			allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete VPA: %w", err))
+		}
 	}
 
 	return allErrors
