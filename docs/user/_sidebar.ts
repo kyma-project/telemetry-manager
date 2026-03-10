@@ -7,7 +7,7 @@ export default [
   { text: 'Set Up the OTLP Input', link: './otlp-input' },
   {
     text: 'Collecting Logs', link: './collecting-logs/README', collapsed: true, items: [
-      { text: 'Configure Application Logs', link: './collecting-logs/application-input' },
+      { text: 'Configure Application Logs', link: './collecting-logs/runtime-input' },
       { text: 'Configure Istio Access Logs', link: './collecting-logs/istio-support' },
     ]
   },
