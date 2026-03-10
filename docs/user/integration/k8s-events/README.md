@@ -27,7 +27,7 @@ Learn how to collect Kubernetes cluster events and forward them as OTLP  logs to
 ## Prerequisites
 
 - Kyma as the target deployment environment
-- The [Telemetry module](../../README.md) is [added](https://kyma-project.io/#/02-get-started/01-quick-install)
+- The [Telemetry module](../../README.md) is [added](https://kyma-project.io/02-get-started/01-quick-install)
 - You have set up a `LogPipeline` to send logs to a backend, for example, by following the [SAP CLoud Logging guide](./../sap-cloud-logging/) or [Loki](./../loki/)
 - [Kubectl version that is within one minor version (older or newer) of `kube-apiserver`](https://kubernetes.io/releases/version-skew-policy/#kubectl)
 - Helm 3.x
