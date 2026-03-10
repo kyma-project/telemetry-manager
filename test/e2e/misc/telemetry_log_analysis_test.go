@@ -47,9 +47,6 @@ func TestTelemetryLogs(t *testing.T) {
 			ContainSubstring("grpc: addrConn.createTransport failed to connect"),
 			ContainSubstring("rpc error: code = Unavailable desc = no healthy upstream"),
 			ContainSubstring("interrupted due to shutdown:"),
-			// TODO(skhalash): Remove after addressing the root cause of the deprecation warnings
-			ContainSubstring("alias is deprecated"),
-			ContainSubstring("This resource_attribute is deprecated and will be removed soon"),
 		)
 	)
 
