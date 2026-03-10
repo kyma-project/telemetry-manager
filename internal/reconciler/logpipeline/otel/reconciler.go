@@ -436,7 +436,7 @@ func (r *Reconciler) reconcileLogAgent(ctx context.Context, pipeline *telemetryv
 		return fmt.Errorf("failed to check Istio status: %w", err)
 	}
 
-	isVpaActive, err := r.vpaStatusChecker.IsVpaActive(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
+	vpaCRDExists, err := r.vpaStatusChecker.VpaCRDExists(ctx, r.Client)
 	if err != nil {
 		return fmt.Errorf("failed to check VPA status: %w", err)
 	}
@@ -448,7 +448,7 @@ func (r *Reconciler) reconcileLogAgent(ctx context.Context, pipeline *telemetryv
 		k8sutils.NewOwnerReferenceSetter(r.Client, pipeline),
 		otelcollector.AgentApplyOptions{
 			IstioEnabled:        isIstioActive,
-			VpaCRDExists:        isVpaActive,
+			VpaCRDExists:        vpaCRDExists,
 			VpaEnabled:          isVpaEnabled,
 			CollectorConfigYAML: string(agentConfigYAML),
 			CollectorEnvVars:    envVars,

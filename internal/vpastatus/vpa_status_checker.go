@@ -20,8 +20,8 @@ func NewChecker(restConfig *rest.Config) *Checker {
 	return &Checker{restConfig: restConfig}
 }
 
-// IsVpaActive checks if VPA is active based on the existence of the VPA CRD in the cluster
-func (c *Checker) IsVpaActive(ctx context.Context, client client.Client, telemetryNamespace string) (bool, error) {
+// VpaCRDExists checks if the VPA CRD exists in the cluster
+func (c *Checker) VpaCRDExists(ctx context.Context, client client.Client) (bool, error) {
 	discoveryClient, err := discovery.NewDiscoveryClientForConfig(c.restConfig)
 	if err != nil {
 		return false, fmt.Errorf("failed to create discovery client: %w", err)
