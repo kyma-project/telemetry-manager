@@ -299,7 +299,7 @@ jobs:
         uses: ./.github/template/run-e2e-test
         with:
           test-id: rbac
-          test-path: ./test/e2e/misc/rbac_test.go
+          test-path: ./test/e2e/misc
           test-labels: not experimental
           manager-image: ${{ needs.setup.outputs.manager-image }}
           fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
