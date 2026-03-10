@@ -12,7 +12,7 @@ service:
             receivers:
                 - routing/runtime-input
             processors:
-                - k8sattributes
+                - k8s_attributes
                 - service_enrichment
             exporters:
                 - routing/enrichment
@@ -131,6 +131,19 @@ receivers:
                 enabled: false
             k8s.node.memory.page_faults:
                 enabled: false
+        resource_attributes:
+            aws.volume.id:
+                enabled: false
+            fs.type:
+                enabled: false
+            gce.pd.name:
+                enabled: false
+            glusterfs.endpoints.name:
+                enabled: false
+            glusterfs.path:
+                enabled: false
+            partition:
+                enabled: false
         extra_metadata_labels:
             - k8s.volume.type
         collect_all_network_interfaces:
@@ -170,7 +183,7 @@ processors:
         metrics:
             datapoint:
                 - IsMatch(metric.name, "^k8s.node.network.*") and not(IsMatch(attributes["interface"], "^(eth|en).*"))
-    k8sattributes:
+    k8s_attributes:
         auth_type: serviceAccount
         passthrough: false
         extract:
