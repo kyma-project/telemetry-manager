@@ -287,7 +287,12 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 	if len(reconcilablePipelines) == 0 {
 		logf.FromContext(ctx).V(1).Info("cleaning up metric pipeline resources: all metric pipelines are non-reconcilable")
 
-		if err = r.gatewayApplierDeleter.DeleteResources(ctx, r.Client, r.istioStatusChecker.IsIstioActive(ctx)); err != nil {
+		isIstioActive, err := r.istioStatusChecker.IsIstioActive(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to check Istio status: %w", err)
+		}
+
+		if err = r.gatewayApplierDeleter.DeleteResources(ctx, r.Client, isIstioActive); err != nil {
 			return fmt.Errorf("failed to delete gateway resources: %w", err)
 		}
 
@@ -407,7 +412,10 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 		return fmt.Errorf("failed to marshal collector config: %w", err)
 	}
 
-	isIstioActive := r.istioStatusChecker.IsIstioActive(ctx)
+	isIstioActive, err := r.istioStatusChecker.IsIstioActive(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to check Istio status: %w", err)
+	}
 
 	opts := otelcollector.GatewayApplyOptions{
 		CollectorConfigYAML:            string(collectorConfigYAML),
@@ -429,7 +437,11 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 }
 
 func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *telemetryv1beta1.MetricPipeline, allPipelines []telemetryv1beta1.MetricPipeline) error {
-	isIstioActive := r.istioStatusChecker.IsIstioActive(ctx)
+	isIstioActive, err := r.istioStatusChecker.IsIstioActive(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to check Istio status: %w", err)
+	}
+
 	shootInfo := k8sutils.GetGardenerShootInfo(ctx, r.Client)
 	telemetryOptions := telemetryutils.Options{
 		SignalType:                common.SignalTypeMetric,

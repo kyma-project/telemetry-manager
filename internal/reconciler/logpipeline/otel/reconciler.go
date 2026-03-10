@@ -236,13 +236,18 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 	if len(reconcilablePipelines) == 0 {
 		logf.FromContext(ctx).V(1).Info("cleaning up log pipeline resources: all log pipelines are non-reconcilable")
 
+		isIstioActive, err := r.istioStatusChecker.IsIstioActive(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to check Istio status: %w", err)
+		}
+
 		// Use the appropriate applier deleter based on whether we're using DaemonSet mode
 		if r.globals.DeployOTLPGateway() {
-			if err = r.otlpGatewayApplierDeleter.DeleteResources(ctx, r.Client, r.istioStatusChecker.IsIstioActive(ctx)); err != nil {
+			if err = r.otlpGatewayApplierDeleter.DeleteResources(ctx, r.Client, isIstioActive); err != nil {
 				return fmt.Errorf("failed to delete OTLP gateway resources: %w", err)
 			}
 		} else {
-			if err = r.gatewayApplierDeleter.DeleteResources(ctx, r.Client, r.istioStatusChecker.IsIstioActive(ctx)); err != nil {
+			if err = r.gatewayApplierDeleter.DeleteResources(ctx, r.Client, isIstioActive); err != nil {
 				return fmt.Errorf("failed to delete gateway resources: %w", err)
 			}
 		}
@@ -345,7 +350,10 @@ func (r *Reconciler) reconcileGateway(ctx context.Context, pipeline *telemetryv1
 		return fmt.Errorf("failed to marshal collector config: %w", err)
 	}
 
-	isIstioActive := r.istioStatusChecker.IsIstioActive(ctx)
+	isIstioActive, err := r.istioStatusChecker.IsIstioActive(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to check Istio status: %w", err)
+	}
 
 	opts := otelcollector.GatewayApplyOptions{
 		CollectorConfigYAML:            string(collectorConfigYAML),
@@ -357,7 +365,7 @@ func (r *Reconciler) reconcileGateway(ctx context.Context, pipeline *telemetryv1
 
 	// Use OTLP gateway applier deleter when in DaemonSet mode, otherwise use regular gateway applier deleter
 	if r.globals.DeployOTLPGateway() && r.otlpGatewayApplierDeleter != nil {
-		if err = r.gatewayApplierDeleter.DeleteResources(ctx, r.Client, r.istioStatusChecker.IsIstioActive(ctx)); err != nil {
+		if err = r.gatewayApplierDeleter.DeleteResources(ctx, r.Client, isIstioActive); err != nil {
 			return fmt.Errorf("failed to delete legacy gateway resources: %w", err)
 		}
 
@@ -415,7 +423,10 @@ func (r *Reconciler) reconcileLogAgent(ctx context.Context, pipeline *telemetryv
 		return fmt.Errorf("failed to marshal agent config: %w", err)
 	}
 
-	isIstioActive := r.istioStatusChecker.IsIstioActive(ctx)
+	isIstioActive, err := r.istioStatusChecker.IsIstioActive(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to check Istio status: %w", err)
+	}
 
 	if err := r.agentApplierDeleter.ApplyResources(
 		ctx,

@@ -303,7 +303,10 @@ func setupManager(globals config.Global) (manager.Manager, error) {
 		return nil, fmt.Errorf("failed to create discovery client: %w", err)
 	}
 
-	isIstioActive := istiostatus.NewChecker(discoveryClient).IsIstioActive(context.Background())
+	isIstioActive, err := istiostatus.NewChecker(discoveryClient).IsIstioActive(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("failed to check Istio status: %w", err)
+	}
 
 	cacheOptions := map[client.Object]cache.ByObject{
 		&appsv1.Deployment{}:                        {Field: setNamespaceFieldSelector(globals)},
