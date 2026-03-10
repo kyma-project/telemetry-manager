@@ -1,0 +1,99 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kyma-telemetry-view
+  labels:
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
+    rbac.authorization.k8s.io/aggregate-to-view: "true"
+  {{- include "telemetry-manager.labels" . | indent 4 }}
+rules:
+  # Cluster-scoped telemetry resources
+  - apiGroups:
+      - telemetry.kyma-project.io
+    resources:
+      - logpipelines
+      - metricpipelines
+      - tracepipelines
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - operator.kyma-project.io
+    resources:
+      - telemetries
+    verbs:
+      - get
+      - list
+      - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: kyma-telemetry-view
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
+    rbac.authorization.k8s.io/aggregate-to-view: "true"
+  {{- include "telemetry-manager.labels" . | indent 4 }}
+rules:
+  # Namespace-scoped telemetry ConfigMaps
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    resourceNames:
+      - telemetry-logpipelines
+      - telemetry-tracepipelines
+      - telemetry-metricpipelines
+    verbs:
+      - get
+      - list
+      - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kyma-telemetry-edit
+  labels:
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
+    rbac.authorization.k8s.io/aggregate-to-edit: "true"
+    rbac.authorization.k8s.io/aggregate-to-admin: "true"
+  {{- include "telemetry-manager.labels" . | indent 4 }}
+rules:
+  # Cluster-scoped telemetry resources - full CRUD access
+  - apiGroups:
+      - telemetry.kyma-project.io
+    resources:
+      - logpipelines
+      - metricpipelines
+      - tracepipelines
+    verbs:
+      - create
+      - delete
+      - deletecollection
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - operator.kyma-project.io
+    resources:
+      - telemetries
+    verbs:
+      - create
+      - delete
+      - deletecollection
+      - get
+      - list
+      - patch
+      - update
+      - watch
