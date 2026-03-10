@@ -73,7 +73,7 @@ type AgentFlowHealthProber interface {
 // This affects resource configuration, particularly network policies and sidecars.
 type IstioStatusChecker interface {
 	// IsIstioActive returns true if Istio is installed and active in the cluster.
-	IsIstioActive(ctx context.Context) bool
+	IsIstioActive(ctx context.Context) (bool, error)
 }
 
 // AgentConfigBuilder builds the OTel Collector configuration for the log agent.

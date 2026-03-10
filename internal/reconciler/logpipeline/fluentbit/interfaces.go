@@ -40,7 +40,7 @@ type AgentApplierDeleter interface {
 type IstioStatusChecker interface {
 	// IsIstioActive checks if Istio is installed and active in the cluster.
 	// When Istio is active, additional ports (like Envoy) may need to be configured.
-	IsIstioActive(ctx context.Context) bool
+	IsIstioActive(ctx context.Context) (bool, error)
 }
 
 // PipelineValidator validates the configuration of a LogPipeline resource.
