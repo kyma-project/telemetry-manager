@@ -43,7 +43,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
-	"github.com/kyma-project/telemetry-manager/internal/nodewatch"
+	"github.com/kyma-project/telemetry-manager/internal/nodesize"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/logagent"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/loggateway"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
@@ -71,6 +71,7 @@ type LogPipelineController struct {
 	reconcileTriggerChan <-chan event.GenericEvent
 	reconciler           *logpipeline.Reconciler
 	secretWatchClient    *secretwatch.Client
+	nodeSizeTracker      *nodesize.Tracker
 }
 
 type LogPipelineControllerConfig struct {
@@ -87,7 +88,7 @@ type LogPipelineControllerConfig struct {
 	RestConfig                   *rest.Config
 }
 
-func NewLogPipelineController(config LogPipelineControllerConfig, client client.Client, reconcileTriggerChan <-chan event.GenericEvent, secretWatchClient *secretwatch.Client) (*LogPipelineController, error) {
+func NewLogPipelineController(config LogPipelineControllerConfig, client client.Client, reconcileTriggerChan <-chan event.GenericEvent, secretWatchClient *secretwatch.Client, nodeSizeTracker *nodesize.Tracker) (*LogPipelineController, error) {
 	pipelineCount := resourcelock.MaxPipelineCount
 
 	if config.UnlimitedPipelines() {
@@ -158,6 +159,7 @@ func NewLogPipelineController(config LogPipelineControllerConfig, client client.
 		reconcileTriggerChan: reconcileTriggerChan,
 		reconciler:           reconciler,
 		secretWatchClient:    secretWatchClient,
+		nodeSizeTracker:      nodeSizeTracker,
 	}, nil
 }
 
@@ -358,7 +360,7 @@ func configureOTelReconciler(config LogPipelineControllerConfig, client client.C
 }
 
 func (r *LogPipelineController) mapNodeChanges(ctx context.Context, object client.Object) []reconcile.Request {
-	changed, err := nodewatch.UpdateSmallestMemory(ctx)
+	changed, err := r.nodeSizeTracker.UpdateSmallestMemory(ctx)
 	if err != nil {
 		logf.FromContext(ctx).Error(err, "Unable to update smallest node memory")
 		return nil

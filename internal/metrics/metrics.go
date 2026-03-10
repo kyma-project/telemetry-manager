@@ -13,7 +13,7 @@ const (
 	subsystemPipelines         = "pipelines"
 	subsystemSelfMonitorProber = "self_monitor_prober"
 	subsystemSecretWatch       = "secret_watch"
-	subsystemNodeWatch         = "node_watch"
+	subsystemNodeSize          = "node_size"
 )
 
 const (
@@ -213,7 +213,7 @@ var (
 	NodeSmallestMemoryBytes = promauto.With(registry).NewGauge(
 		prometheus.GaugeOpts{
 			Namespace: defaultNamespace,
-			Subsystem: subsystemNodeWatch,
+			Subsystem: subsystemNodeSize,
 			Name:      "smallest_memory_bytes",
 			Help:      "The allocatable memory in bytes of the smallest node in the cluster.",
 		},

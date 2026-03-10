@@ -1,4 +1,4 @@
-package nodewatch
+package nodesize
 
 import (
 	"context"
@@ -13,33 +13,20 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/metrics"
 )
 
-type nodeTracker struct {
+type Tracker struct {
 	mu             sync.RWMutex
 	smallestMemory *resource.Quantity
 	reader         client.Reader
 }
 
-var defaultTracker = &nodeTracker{}
-
-// SetClient sets the client.Reader used to list nodes.
-// Must be called once during startup before UpdateSmallestMemory is used.
-func SetClient(r client.Reader) {
-	defaultTracker.reader = r
+func NewTracker(r client.Reader) *Tracker {
+	return &Tracker{reader: r}
 }
 
 // UpdateSmallestMemory lists all nodes and recalculates the smallest allocatable memory.
 // Returns true if the value changed, false otherwise.
 // It also updates the Prometheus metric when the value changes.
-func UpdateSmallestMemory(ctx context.Context) (bool, error) {
-	return defaultTracker.update(ctx)
-}
-
-// SmallestMemory returns the current smallest allocatable memory.
-func SmallestMemory() resource.Quantity {
-	return defaultTracker.getSmallestMemory()
-}
-
-func (t *nodeTracker) update(ctx context.Context) (bool, error) {
+func (t *Tracker) UpdateSmallestMemory(ctx context.Context) (bool, error) {
 	var nodeList corev1.NodeList
 	if err := t.reader.List(ctx, &nodeList); err != nil {
 		return false, fmt.Errorf("failed to list nodes: %w", err)
@@ -66,7 +53,8 @@ func (t *nodeTracker) update(ctx context.Context) (bool, error) {
 	return true, nil
 }
 
-func (t *nodeTracker) getSmallestMemory() resource.Quantity {
+// SmallestMemory returns the current smallest allocatable memory.
+func (t *Tracker) SmallestMemory() resource.Quantity {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 

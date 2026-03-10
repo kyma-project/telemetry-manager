@@ -42,7 +42,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
-	"github.com/kyma-project/telemetry-manager/internal/nodewatch"
+	"github.com/kyma-project/telemetry-manager/internal/nodesize"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metricagent"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metricgateway"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
@@ -67,6 +67,7 @@ type MetricPipelineController struct {
 	reconcileTriggerChan <-chan event.GenericEvent
 	reconciler           *metricpipeline.Reconciler
 	secretWatchClient    *secretwatch.Client
+	nodeSizeTracker      *nodesize.Tracker
 }
 
 type MetricPipelineControllerConfig struct {
@@ -78,7 +79,7 @@ type MetricPipelineControllerConfig struct {
 	RestConfig                     *rest.Config
 }
 
-func NewMetricPipelineController(config MetricPipelineControllerConfig, client client.Client, reconcileTriggerChan <-chan event.GenericEvent, secretWatchClient *secretwatch.Client) (*MetricPipelineController, error) {
+func NewMetricPipelineController(config MetricPipelineControllerConfig, client client.Client, reconcileTriggerChan <-chan event.GenericEvent, secretWatchClient *secretwatch.Client, nodeSizeTracker *nodesize.Tracker) (*MetricPipelineController, error) {
 	pipelineCount := resourcelock.MaxPipelineCount
 
 	if config.UnlimitedPipelines() {
@@ -168,6 +169,7 @@ func NewMetricPipelineController(config MetricPipelineControllerConfig, client c
 		reconcileTriggerChan: reconcileTriggerChan,
 		reconciler:           reconciler,
 		secretWatchClient:    secretWatchClient,
+		nodeSizeTracker:      nodeSizeTracker,
 	}, nil
 }
 
@@ -250,7 +252,7 @@ func (r *MetricPipelineController) mapTelemetryChanges(ctx context.Context, obje
 }
 
 func (r *MetricPipelineController) mapNodeChanges(ctx context.Context, object client.Object) []reconcile.Request {
-	changed, err := nodewatch.UpdateSmallestMemory(ctx)
+	changed, err := r.nodeSizeTracker.UpdateSmallestMemory(ctx)
 	if err != nil {
 		logf.FromContext(ctx).Error(err, "Unable to update smallest node memory")
 		return nil

@@ -1,4 +1,4 @@
-package nodewatch_test
+package nodesize_test
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	"github.com/kyma-project/telemetry-manager/internal/nodewatch"
+	"github.com/kyma-project/telemetry-manager/internal/nodesize"
 )
 
 func makeNode(name string, memory resource.Quantity) corev1.Node {
@@ -25,58 +25,58 @@ func makeNode(name string, memory resource.Quantity) corev1.Node {
 	}
 }
 
-func setupTracker(nodes ...corev1.Node) {
+func newTracker(nodes ...corev1.Node) *nodesize.Tracker {
 	builder := fake.NewClientBuilder()
 	for i := range nodes {
 		builder = builder.WithObjects(&nodes[i])
 	}
 
-	nodewatch.SetClient(builder.Build())
+	return nodesize.NewTracker(builder.Build())
 }
 
 func TestUpdateSmallestMemory_EmptyNodeList(t *testing.T) {
-	setupTracker()
+	tracker := newTracker()
 
-	changed, err := nodewatch.UpdateSmallestMemory(context.Background())
+	changed, err := tracker.UpdateSmallestMemory(context.Background())
 
 	require.NoError(t, err)
 	assert.True(t, changed)
 
-	mem := nodewatch.SmallestMemory()
+	mem := tracker.SmallestMemory()
 	assert.True(t, mem.IsZero())
 }
 
 func TestUpdateSmallestMemory_SingleNode(t *testing.T) {
-	setupTracker(makeNode("node1", resource.MustParse("4Gi")))
+	tracker := newTracker(makeNode("node1", resource.MustParse("4Gi")))
 
-	changed, err := nodewatch.UpdateSmallestMemory(context.Background())
+	changed, err := tracker.UpdateSmallestMemory(context.Background())
 
 	require.NoError(t, err)
 	assert.True(t, changed)
-	assert.Equal(t, resource.MustParse("4Gi"), nodewatch.SmallestMemory())
+	assert.Equal(t, resource.MustParse("4Gi"), tracker.SmallestMemory())
 }
 
 func TestUpdateSmallestMemory_MultipleNodes_PicksSmallest(t *testing.T) {
-	setupTracker(
+	tracker := newTracker(
 		makeNode("node1", resource.MustParse("8Gi")),
 		makeNode("node2", resource.MustParse("2Gi")),
 		makeNode("node3", resource.MustParse("4Gi")),
 	)
 
-	changed, err := nodewatch.UpdateSmallestMemory(context.Background())
+	changed, err := tracker.UpdateSmallestMemory(context.Background())
 
 	require.NoError(t, err)
 	assert.True(t, changed)
-	assert.Equal(t, resource.MustParse("2Gi"), nodewatch.SmallestMemory())
+	assert.Equal(t, resource.MustParse("2Gi"), tracker.SmallestMemory())
 }
 
 func TestUpdateSmallestMemory_Unchanged_ReturnsFalse(t *testing.T) {
-	setupTracker(makeNode("node1", resource.MustParse("4Gi")))
+	tracker := newTracker(makeNode("node1", resource.MustParse("4Gi")))
 
-	_, err := nodewatch.UpdateSmallestMemory(context.Background())
+	_, err := tracker.UpdateSmallestMemory(context.Background())
 	require.NoError(t, err)
 
-	changed, err := nodewatch.UpdateSmallestMemory(context.Background())
+	changed, err := tracker.UpdateSmallestMemory(context.Background())
 
 	require.NoError(t, err)
 	assert.False(t, changed)
@@ -84,19 +84,21 @@ func TestUpdateSmallestMemory_Unchanged_ReturnsFalse(t *testing.T) {
 
 func TestUpdateSmallestMemory_Changed_ReturnsTrue(t *testing.T) {
 	node1 := makeNode("node1", resource.MustParse("4Gi"))
-	setupTracker(node1)
+	node2 := makeNode("node2", resource.MustParse("2Gi"))
 
-	_, err := nodewatch.UpdateSmallestMemory(context.Background())
+	tracker := newTracker(node1)
+
+	_, err := tracker.UpdateSmallestMemory(context.Background())
 	require.NoError(t, err)
 
-	node2 := makeNode("node2", resource.MustParse("2Gi"))
-	setupTracker(node1, node2)
+	// Recreate tracker with both nodes to simulate a new node appearing
+	tracker = newTracker(node1, node2)
 
-	changed, err := nodewatch.UpdateSmallestMemory(context.Background())
+	changed, err := tracker.UpdateSmallestMemory(context.Background())
 
 	require.NoError(t, err)
 	assert.True(t, changed)
-	assert.Equal(t, resource.MustParse("2Gi"), nodewatch.SmallestMemory())
+	assert.Equal(t, resource.MustParse("2Gi"), tracker.SmallestMemory())
 }
 
 func TestUpdateSmallestMemory_NodeWithoutAllocatableMemory_IsSkipped(t *testing.T) {
@@ -105,11 +107,11 @@ func TestUpdateSmallestMemory_NodeWithoutAllocatableMemory_IsSkipped(t *testing.
 		ObjectMeta: metav1.ObjectMeta{Name: "node2"},
 		Status:     corev1.NodeStatus{Allocatable: corev1.ResourceList{}},
 	}
-	setupTracker(node1, node2)
+	tracker := newTracker(node1, node2)
 
-	changed, err := nodewatch.UpdateSmallestMemory(context.Background())
+	changed, err := tracker.UpdateSmallestMemory(context.Background())
 
 	require.NoError(t, err)
 	assert.True(t, changed)
-	assert.Equal(t, resource.MustParse("4Gi"), nodewatch.SmallestMemory())
+	assert.Equal(t, resource.MustParse("4Gi"), tracker.SmallestMemory())
 }
