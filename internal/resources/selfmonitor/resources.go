@@ -400,7 +400,7 @@ func (ad *ApplierDeleter) makeNetworkPolicies() []*networkingv1.NetworkPolicy {
 			commonresources.LabelKeyK8sName: "manager",
 		}, []int32{selfmonports.PrometheusPort}),
 		// Allow ingress from pods with metrics-scraping label
-		commonresources.WithIngressFromPods(map[string]string{
+		commonresources.WithIngressFromPodsInAllNamespaces(map[string]string{
 			commonresources.LabelKeyTelemetryMetricsScraping: commonresources.LabelValueTelemetryMetricsScraping,
 		}, []int32{selfmonports.PrometheusPort}),
 	)

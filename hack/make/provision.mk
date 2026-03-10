@@ -1,5 +1,7 @@
 ##@ k3d
 
+export K3D_IMAGE_TOOLS ?= $(ENV_K3D_IMAGE_TOOLS)
+
 .PHONY: provision-k3d
 provision-k3d: $(K3D) ## Create k3d cluster with Kyma configuration
 	$(K3D) cluster create --config .k3d-kyma.yaml

@@ -26,7 +26,7 @@ service:
             processors:
                 - memory_limiter
                 - transform/set-instrumentation-scope-runtime
-                - k8sattributes
+                - k8s_attributes
                 - transform/insert-cluster-attributes
                 - service_enrichment
                 - transform/drop-kyma-attributes
@@ -169,7 +169,7 @@ receivers:
             - id: noop
               type: noop
 processors:
-    k8sattributes:
+    k8s_attributes:
         auth_type: serviceAccount
         passthrough: false
         extract:

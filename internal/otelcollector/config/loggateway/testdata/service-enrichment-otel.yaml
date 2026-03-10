@@ -18,7 +18,7 @@ service:
                 - memory_limiter
                 - transform/set-observed-time-if-zero
                 - transform/drop-unknown-service-name
-                - k8sattributes
+                - k8s_attributes
                 - istio_noise_filter
                 - transform/insert-cluster-attributes
                 - transform/drop-kyma-attributes
@@ -56,7 +56,7 @@ processors:
     istio_enrichment:
         scope_version: 1.0.0
     istio_noise_filter: {}
-    k8sattributes:
+    k8s_attributes:
         auth_type: serviceAccount
         passthrough: false
         extract:

@@ -42,7 +42,7 @@ service:
             processors:
                 - memory_limiter
                 - transform/set-instrumentation-scope-kyma
-                - k8sattributes
+                - k8s_attributes
                 - service_enrichment
                 - transform/insert-cluster-attributes
             exporters:
@@ -126,7 +126,7 @@ processors:
         metrics:
             datapoint:
                 - metric.type == METRIC_DATA_TYPE_SUMMARY
-    k8sattributes:
+    k8s_attributes:
         auth_type: serviceAccount
         passthrough: false
         extract:
