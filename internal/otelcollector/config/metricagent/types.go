@@ -5,18 +5,18 @@ import (
 )
 
 type KubeletStatsReceiver struct {
-	CollectionInterval          string                            `yaml:"collection_interval"`
-	AuthType                    string                            `yaml:"auth_type"`
-	Endpoint                    string                            `yaml:"endpoint"`
-	InsecureSkipVerify          bool                              `yaml:"insecure_skip_verify"`
-	MetricGroups                []MetricGroupType                 `yaml:"metric_groups"`
-	Metrics                     KubeletStatsMetricsConfig         `yaml:"metrics"`
-	ResourceAttributes          KubeletStatsResourceAttributesCfg `yaml:"resource_attributes"`
-	ExtraMetadataLabels         []string                          `yaml:"extra_metadata_labels,omitempty"`
-	CollectAllNetworkInterfaces NetworkInterfacesEnablerConfig    `yaml:"collect_all_network_interfaces"`
+	CollectionInterval          string                               `yaml:"collection_interval"`
+	AuthType                    string                               `yaml:"auth_type"`
+	Endpoint                    string                               `yaml:"endpoint"`
+	InsecureSkipVerify          bool                                 `yaml:"insecure_skip_verify"`
+	MetricGroups                []MetricGroupType                    `yaml:"metric_groups"`
+	Metrics                     KubeletStatsMetricsConfig            `yaml:"metrics"`
+	ResourceAttributes          KubeletStatsResourceAttributesConfig `yaml:"resource_attributes"`
+	ExtraMetadataLabels         []string                             `yaml:"extra_metadata_labels,omitempty"`
+	CollectAllNetworkInterfaces NetworkInterfacesEnablerConfig       `yaml:"collect_all_network_interfaces"`
 }
 
-type KubeletStatsResourceAttributesCfg struct {
+type KubeletStatsResourceAttributesConfig struct {
 	AWSVolumeID            MetricConfig `yaml:"aws.volume.id"`
 	FSType                 MetricConfig `yaml:"fs.type"`
 	GCEPDName              MetricConfig `yaml:"gce.pd.name"`

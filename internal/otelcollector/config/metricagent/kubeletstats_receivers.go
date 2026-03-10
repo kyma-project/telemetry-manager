@@ -26,7 +26,10 @@ func kubeletStatsReceiverConfig(runtimeResources runtimeResourceSources) *Kubele
 			K8sNodeMemoryMajorPageFaults: MetricConfig{Enabled: false},
 			K8sNodeMemoryPageFaults:      MetricConfig{Enabled: false},
 		},
-		ResourceAttributes: KubeletStatsResourceAttributesCfg{
+		// These resource attributes have been deprecated by OTel and will be removed in future versions.
+		// The volume types associated with them have already been removed for the K8S versions that we use (v1.28+).
+		// See: https://github.com/open-telemetry/opentelemetry-collector-contrib/pull/45896
+		ResourceAttributes: KubeletStatsResourceAttributesConfig{
 			AWSVolumeID:            MetricConfig{Enabled: false},
 			FSType:                 MetricConfig{Enabled: false},
 			GCEPDName:              MetricConfig{Enabled: false},
