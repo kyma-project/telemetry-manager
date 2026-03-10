@@ -57,7 +57,7 @@ func extensionsConfig() map[string]any {
 			Endpoint: fmt.Sprintf("127.0.0.1:%d", ports.Pprof),
 		},
 		ComponentIDCGroupRuntimeExtension: CGroupRuntimeExtension{
-			GoMaxProcs: CGroupRuntimeGoMaxProcs{Enabled: true},
+			GoMaxProcs: CGroupRuntimeGoMaxProcs{Enabled: false},
 			GoMemLimit: CGroupRuntimeGoMemLimit{Enabled: true, Ratio: 0.8}, //nolint:mnd // 80% of cgroup memory limit
 		},
 	}

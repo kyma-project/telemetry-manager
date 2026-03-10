@@ -1,7 +1,7 @@
 extensions:
     cgroupruntime:
         gomaxprocs:
-            enabled: true
+            enabled: false
         gomemlimit:
             enabled: true
             ratio: 0.8

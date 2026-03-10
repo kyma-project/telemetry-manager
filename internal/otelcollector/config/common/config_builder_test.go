@@ -98,7 +98,7 @@ func TestExtensionsConfig(t *testing.T) {
 
 		cgroupruntimeExt, ok := cgroupruntime.(CGroupRuntimeExtension)
 		require.True(t, ok, "cgroupruntime extension should be a CGroupRuntimeExtension struct")
-		require.True(t, cgroupruntimeExt.GoMaxProcs.Enabled, "gomaxprocs should be enabled")
+		require.False(t, cgroupruntimeExt.GoMaxProcs.Enabled, "gomaxprocs should be not enabled")
 		require.True(t, cgroupruntimeExt.GoMemLimit.Enabled, "gomemlimit should be enabled")
 		require.InDelta(t, 0.8, cgroupruntimeExt.GoMemLimit.Ratio, 0.001, "gomemlimit ratio should be 0.8")
 	})
