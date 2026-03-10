@@ -63,6 +63,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
 	mgrports "github.com/kyma-project/telemetry-manager/internal/manager/ports"
 	"github.com/kyma-project/telemetry-manager/internal/metrics"
+	"github.com/kyma-project/telemetry-manager/internal/nodewatch"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
@@ -195,6 +196,8 @@ func run() error {
 	if err != nil {
 		return err
 	}
+
+	nodewatch.SetClient(mgr.GetClient())
 
 	err = setupControllersAndWebhooks(mgr, globals, envCfg)
 	if err != nil {

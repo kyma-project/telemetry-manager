@@ -230,13 +230,13 @@ func (r *TracePipelineController) mapTelemetryChanges(ctx context.Context, objec
 }
 
 func (r *TracePipelineController) mapNodeChanges(ctx context.Context, object client.Object) []reconcile.Request {
-	var nodeList corev1.NodeList
-	if err := r.List(ctx, &nodeList); err != nil {
-		logf.FromContext(ctx).Error(err, "Unable to list nodes")
+	changed, err := nodewatch.UpdateSmallestMemory(ctx)
+	if err != nil {
+		logf.FromContext(ctx).Error(err, "Unable to update smallest node memory")
 		return nil
 	}
 
-	if !nodewatch.UpdateSmallestMemory(ctx, nodeList.Items) {
+	if !changed {
 		return nil
 	}
 
