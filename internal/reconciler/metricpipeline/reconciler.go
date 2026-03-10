@@ -486,6 +486,8 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 			CollectorConfigYAML: string(agentConfigYAML),
 			CollectorEnvVars:    collectorEnvVars,
 			BackendPorts:        backendPorts,
+			// TODO: set VPAEnabled programmatically based on annotation in Telemetry CR and existence of VPA CRD in cluster
+			VPAEnabled: true,
 		},
 	); err != nil {
 		return fmt.Errorf("failed to apply agent resources: %w", err)
