@@ -127,9 +127,9 @@ Keep your documentation clear, precise, and easy to read. Use active voice inste
 -	instead of "may not", use "might not" (possibility) or "must not" (prohibition)
 -	instead of "should" (recommendation or requirement), use "we recommend" or "must"
 -	use "can" for ability, "may" for permission
--	Instead of "once" (temporal vs. conditional), use "after" or "when"
--	Instead of latin abbreviations such as “i.e.” or “e.g.”, use English phrases such as “that means” or “for example; such as; like”
-Avoid marketing lingo and words such as "allows you to" or "enables you to" (better: "you can") or "leverage, utilize" (better: "use") . Always state the purpose first, then the instruction (“To [purpose], [instruction].). Always state the condition first (“If [condition], [instruction].”), then the instruction or conclusion. Use full sentences to introduce lists. All list items must match a consistent pattern; they can't be parts of a running sentence. 
+-	instead of "once" (temporal vs. conditional), use "after" or "when"
+-	instead of latin abbreviations such as “i.e.” or “e.g.”, use English phrases such as “that means” or “for example; such as; like”
+Avoid marketing lingo and words such as "allows you to" or "enables you to" (better: "you can") or "leverage, utilize" (better: "use") . Always state the purpose first, then the instruction (“To [purpose], [instruction].). Always state the condition first, then the instruction or conclusion (“If [condition], [instruction].”). Use full sentences to introduce lists. All list items must match a consistent pattern; they can't be parts of a running sentence. 
 
 ### Templates
 
