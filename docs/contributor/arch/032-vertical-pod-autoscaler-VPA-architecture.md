@@ -55,7 +55,7 @@ Before enabling VPA, reduce the request-to-limit ratio to a more reasonable valu
 
 We need to have a stratergy to set `GOMEMLIMIT` when VPA manages Pod resources.
 - The value of `GOMEMLIMIT` should be a percentage of memory limit set by VPA (`eg. 80% of memory limit`).
-- The `GOMEMELIMT` calculation should be dynamic, i.e. It should change when every a new memory limit is set by VPA.
+- The `GOMEMELIMT` calculation should be dynamic, i.e. It should change when a new memory limit is set by VPA.
 
 
 ## Considered Options
