@@ -46,6 +46,7 @@ type Reconciler struct {
 	gatewayConfigBuilder      GatewayConfigBuilder
 	gatewayProber             Prober
 	istioStatusChecker        IstioStatusChecker
+	vpaStatusChecker          VpaStatusChecker
 	pipelineLock              PipelineLock
 	pipelineValidator         *Validator
 	errToMessageConverter     ErrorToMessageConverter
@@ -128,6 +129,13 @@ func WithGatewayProber(prober Prober) Option {
 func WithIstioStatusChecker(checker IstioStatusChecker) Option {
 	return func(r *Reconciler) {
 		r.istioStatusChecker = checker
+	}
+}
+
+// WithVpaStatusChecker sets the VPA status checker.
+func WithVpaStatusChecker(checker VpaStatusChecker) Option {
+	return func(r *Reconciler) {
+		r.vpaStatusChecker = checker
 	}
 }
 
@@ -428,15 +436,19 @@ func (r *Reconciler) reconcileLogAgent(ctx context.Context, pipeline *telemetryv
 		return fmt.Errorf("failed to check Istio status: %w", err)
 	}
 
+	isVpaActive, err := r.vpaStatusChecker.IsVpaActive(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
+	if err != nil {
+		return fmt.Errorf("failed to check VPA status: %w", err)
+	}
+
 	if err := r.agentApplierDeleter.ApplyResources(
 		ctx,
 		k8sutils.NewOwnerReferenceSetter(r.Client, pipeline),
 		otelcollector.AgentApplyOptions{
 			IstioEnabled:        isIstioActive,
+			VpaEnabled:          isVpaActive,
 			CollectorConfigYAML: string(agentConfigYAML),
 			CollectorEnvVars:    envVars,
-			// TODO: set VPAEnabled programmatically based on annotation in Telemetry CR and existence of VPA CRD in cluster
-			VPAEnabled: true,
 		},
 	); err != nil {
 		return fmt.Errorf("failed to apply agent resources: %w", err)

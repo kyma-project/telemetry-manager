@@ -60,6 +60,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/validators/ottl"
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
+	"github.com/kyma-project/telemetry-manager/internal/vpastatus"
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
@@ -345,6 +346,7 @@ func configureOTelReconciler(config LogPipelineControllerConfig, client client.C
 		logpipelineotel.WithGatewayProber(prober),
 
 		logpipelineotel.WithIstioStatusChecker(istiostatus.NewChecker(discoveryClient)),
+		logpipelineotel.WithVpaStatusChecker(vpastatus.NewChecker(config.RestConfig)),
 		logpipelineotel.WithPipelineLock(pipelineLock),
 		logpipelineotel.WithPipelineValidator(pipelineValidator),
 	)

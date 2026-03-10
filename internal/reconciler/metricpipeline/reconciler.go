@@ -47,6 +47,7 @@ type Reconciler struct {
 	gatewayConfigBuilder    GatewayConfigBuilder
 	gatewayProber           commonstatus.Prober
 	istioStatusChecker      IstioStatusChecker
+	vpaStatusChecker        VpaStatusChecker
 	overridesHandler        OverridesHandler
 	pipelineLock            PipelineLock
 	pipelineSync            PipelineSyncer
@@ -125,6 +126,13 @@ func WithGatewayProber(prober commonstatus.Prober) Option {
 func WithIstioStatusChecker(checker IstioStatusChecker) Option {
 	return func(r *Reconciler) {
 		r.istioStatusChecker = checker
+	}
+}
+
+// WithVpaStatusChecker sets the VPA status checker.
+func WithVpaStatusChecker(checker VpaStatusChecker) Option {
+	return func(r *Reconciler) {
+		r.vpaStatusChecker = checker
 	}
 }
 
@@ -442,6 +450,11 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 		return fmt.Errorf("failed to check Istio status: %w", err)
 	}
 
+	isVpaActive, err := r.vpaStatusChecker.IsVpaActive(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
+	if err != nil {
+		return fmt.Errorf("failed to check VPA status: %w", err)
+	}
+
 	shootInfo := k8sutils.GetGardenerShootInfo(ctx, r.Client)
 	telemetryOptions := telemetryutils.Options{
 		SignalType:                common.SignalTypeMetric,
@@ -495,11 +508,10 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 		k8sutils.NewOwnerReferenceSetter(r.Client, pipeline),
 		otelcollector.AgentApplyOptions{
 			IstioEnabled:        isIstioActive,
+			VpaEnabled:          isVpaActive,
 			CollectorConfigYAML: string(agentConfigYAML),
 			CollectorEnvVars:    collectorEnvVars,
 			BackendPorts:        backendPorts,
-			// TODO: set VPAEnabled programmatically based on annotation in Telemetry CR and existence of VPA CRD in cluster
-			VPAEnabled: true,
 		},
 	); err != nil {
 		return fmt.Errorf("failed to apply agent resources: %w", err)

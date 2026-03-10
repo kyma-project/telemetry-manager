@@ -110,6 +110,12 @@ type IstioStatusChecker interface {
 	IsIstioActive(ctx context.Context) (bool, error)
 }
 
+// VpaStatusChecker determines whether Vertical Pod Autoscaler (VPA) is active in the cluster.
+type VpaStatusChecker interface {
+	// IsVpaActive returns true if VPA is currently active in the cluster.
+	IsVpaActive(ctx context.Context, client client.Client, telemetryNamespace string) (bool, error)
+}
+
 // EndpointValidator validates metric pipeline endpoint configurations.
 // It checks if the endpoint is reachable, properly formatted, and compatible with the specified protocol.
 type EndpointValidator interface {

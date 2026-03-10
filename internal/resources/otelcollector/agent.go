@@ -63,11 +63,11 @@ type AgentApplierDeleter struct {
 
 type AgentApplyOptions struct {
 	IstioEnabled        bool
+	VpaEnabled          bool
 	CollectorConfigYAML string
 	CollectorEnvVars    map[string][]byte
 	// BackendPorts is needed only for the metric agent to set the value of the annotation "traffic.sidecar.istio.io/includeOutboundPorts"
 	BackendPorts []string
-	VPAEnabled   bool
 }
 
 func NewLogAgentApplierDeleter(globals config.Global, collectorImage, priorityClassName string) *AgentApplierDeleter {
@@ -186,7 +186,7 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 		return fmt.Errorf("failed to create daemonset: %w", err)
 	}
 
-	if opts.VPAEnabled {
+	if opts.VpaEnabled {
 		if err := k8sutils.CreateOrUpdateVPA(ctx, c, makeVPA(name)); err != nil {
 			return fmt.Errorf("failed to create VPA: %w", err)
 		}

@@ -76,6 +76,12 @@ type IstioStatusChecker interface {
 	IsIstioActive(ctx context.Context) (bool, error)
 }
 
+// VpaStatusChecker determines whether Vertical Pod Autoscaler (VPA) is active in the cluster.
+type VpaStatusChecker interface {
+	// IsVpaActive returns true if VPA is currently active in the cluster.
+	IsVpaActive(ctx context.Context, client client.Client, telemetryNamespace string) (bool, error)
+}
+
 // AgentConfigBuilder builds the OTel Collector configuration for the log agent.
 // The agent runs as a DaemonSet and collects logs from application containers.
 type AgentConfigBuilder interface {

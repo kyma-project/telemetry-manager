@@ -56,6 +56,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/validators/ottl"
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
+	"github.com/kyma-project/telemetry-manager/internal/vpastatus"
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
@@ -154,6 +155,7 @@ func NewMetricPipelineController(config MetricPipelineControllerConfig, client c
 
 		metricpipeline.WithErrorToMessageConverter(&conditions.ErrorToMessageConverter{}),
 		metricpipeline.WithIstioStatusChecker(istiostatus.NewChecker(discoveryClient)),
+		metricpipeline.WithVpaStatusChecker(vpastatus.NewChecker(config.RestConfig)),
 		metricpipeline.WithOverridesHandler(overrides.New(config.Global, client)),
 		metricpipeline.WithPipelineValidator(pipelineValidator),
 
