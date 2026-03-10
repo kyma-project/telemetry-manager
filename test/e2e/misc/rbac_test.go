@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
+	. "github.com/onsi/gomega/gstruct"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -20,6 +21,7 @@ func TestRBACRoles(t *testing.T) {
 	assert.ResourcesExist(t, viewClusterRole)
 
 	var viewRole rbacv1.ClusterRole
+
 	err := suite.K8sClient.Get(suite.Ctx, types.NamespacedName{Name: "kyma-telemetry-view"}, &viewRole)
 	Expect(err).NotTo(HaveOccurred())
 
@@ -56,6 +58,7 @@ func TestRBACRoles(t *testing.T) {
 	assert.ResourcesExist(t, viewNamespacedRole)
 
 	var nsViewRole rbacv1.Role
+
 	err = suite.K8sClient.Get(suite.Ctx, types.NamespacedName{Name: "kyma-telemetry-view", Namespace: kitkyma.SystemNamespaceName}, &nsViewRole)
 	Expect(err).NotTo(HaveOccurred())
 
@@ -80,6 +83,7 @@ func TestRBACRoles(t *testing.T) {
 	assert.ResourcesExist(t, editClusterRole)
 
 	var editRole rbacv1.ClusterRole
+
 	err = suite.K8sClient.Get(suite.Ctx, types.NamespacedName{Name: "kyma-telemetry-edit"}, &editRole)
 	Expect(err).NotTo(HaveOccurred())
 
