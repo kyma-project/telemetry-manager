@@ -29,19 +29,19 @@ func NewOAuth2ExtensionConfigBuilder(reader client.Reader, oauth2Options *teleme
 	}
 }
 
-func (cb *OAuth2ExtensionConfigBuilder) OAuth2ExtensionConfig(ctx context.Context) (*OAuth2Extension, EnvVars, error) {
+func (cb *OAuth2ExtensionConfigBuilder) OAuth2Extension(ctx context.Context) (*OAuth2ExtensionConfig, EnvVars, error) {
 	envVars, err := makeOAuth2ExtensionEnvVars(ctx, cb.reader, cb.oauth2Options, cb.pipelineName)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to make env vars: %w", err)
 	}
 
-	extensionsConfig := makeExtensionConfig(cb.oauth2Options, cb.pipelineName)
+	extension := extension(cb.oauth2Options, cb.pipelineName)
 
-	return extensionsConfig, envVars, nil
+	return extension, envVars, nil
 }
 
-func makeExtensionConfig(oauth2Options *telemetryv1beta1.OAuth2Options, pipelineName string) *OAuth2Extension {
-	return &OAuth2Extension{
+func extension(oauth2Options *telemetryv1beta1.OAuth2Options, pipelineName string) *OAuth2ExtensionConfig {
+	return &OAuth2ExtensionConfig{
 		TokenURL:     fmt.Sprintf("${%s}", formatEnvVarKey(oauth2TokenURLVariablePrefix, pipelineName)),
 		ClientID:     fmt.Sprintf("${%s}", formatEnvVarKey(oauth2ClientIDVariablePrefix, pipelineName)),
 		ClientSecret: fmt.Sprintf("${%s}", formatEnvVarKey(oauth2ClientSecretVariablePrefix, pipelineName)),

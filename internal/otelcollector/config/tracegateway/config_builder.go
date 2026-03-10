@@ -29,7 +29,7 @@ type BuildOptions struct {
 }
 
 func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1beta1.TracePipeline, opts BuildOptions) (*common.Config, common.EnvVars, error) {
-	b.Config = common.NewConfig()
+	b.Collector = common.NewConfig()
 	b.EnvVars = make(common.EnvVars)
 
 	// Iterate over each TracePipeline CR and enrich the config with pipeline-specific components
@@ -65,14 +65,14 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1beta1.TraceP
 		}
 	}
 
-	return b.Config, b.EnvVars, nil
+	return b.Collector, b.EnvVars, nil
 }
 
 func (b *Builder) addOTLPReceiver() buildComponentFunc {
 	return b.AddReceiver(
 		b.StaticComponentID(common.ComponentIDOTLPReceiver),
 		func(tp *telemetryv1beta1.TracePipeline) any {
-			return &common.OTLPReceiver{
+			return &common.OTLPReceiverConfig{
 				Protocols: common.ReceiverProtocols{
 					HTTP: common.Endpoint{
 						Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, ports.OTLPHTTP),
@@ -91,7 +91,7 @@ func (b *Builder) addMemoryLimiterProcessor() buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDMemoryLimiterProcessor),
 		func(tp *telemetryv1beta1.TracePipeline) any {
-			return &common.MemoryLimiter{
+			return &common.MemoryLimiterConfig{
 				CheckInterval:        "1s",
 				LimitPercentage:      75,
 				SpikeLimitPercentage: 15,
@@ -116,7 +116,7 @@ func (b *Builder) addDropIstioServiceEnrichmentProcessor(opts BuildOptions) buil
 				},
 			}}
 
-			return common.TraceTransformProcessorConfig(transformStatements)
+			return common.TraceTransformProcessor(transformStatements)
 		},
 	)
 }
@@ -129,7 +129,7 @@ func (b *Builder) addDropUnknownServiceNameProcessor(opts BuildOptions) buildCom
 				return nil // Kyma legacy enrichment selected, skip this processor
 			}
 
-			return common.TraceTransformProcessorConfig(common.DropUnknownServiceNameProcessorStatements())
+			return common.TraceTransformProcessor(common.DropUnknownServiceNameProcessorStatements())
 		},
 	)
 }
@@ -139,7 +139,7 @@ func (b *Builder) addK8sAttributesProcessor(opts BuildOptions) buildComponentFun
 		b.StaticComponentID(common.ComponentIDK8sAttributesProcessor),
 		func(tp *telemetryv1beta1.TracePipeline) any {
 			useOTelServiceEnrichment := opts.ServiceEnrichment == commonresources.AnnotationValueTelemetryServiceEnrichmentOtel
-			return common.K8sAttributesProcessorConfig(opts.Enrichments, useOTelServiceEnrichment)
+			return common.K8sAttributesProcessor(opts.Enrichments, useOTelServiceEnrichment)
 		},
 	)
 }
@@ -148,7 +148,7 @@ func (b *Builder) addIstioNoiseFilterProcessor() buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDIstioNoiseFilterProcessor),
 		func(tp *telemetryv1beta1.TracePipeline) any {
-			return &common.IstioNoiseFilterProcessor{}
+			return &common.IstioNoiseFilterProcessorConfig{}
 		},
 	)
 }
@@ -158,7 +158,7 @@ func (b *Builder) addInsertClusterAttributesProcessor(opts BuildOptions) buildCo
 		b.StaticComponentID(common.ComponentIDInsertClusterAttributesProcessor),
 		func(tp *telemetryv1beta1.TracePipeline) any {
 			transformStatements := common.InsertClusterAttributesProcessorStatements(opts.Cluster)
-			return common.TraceTransformProcessorConfig(transformStatements)
+			return common.TraceTransformProcessor(transformStatements)
 		},
 	)
 }
@@ -171,7 +171,7 @@ func (b *Builder) addServiceEnrichmentProcessor(opts BuildOptions) buildComponen
 				return nil // OTel service enrichment selected, skip this processor
 			}
 
-			return common.ResolveServiceNameConfig()
+			return common.ResolveServiceName()
 		},
 	)
 }
@@ -181,7 +181,7 @@ func (b *Builder) addDropKymaAttributesProcessor() buildComponentFunc {
 		b.StaticComponentID(common.ComponentIDDropKymaAttributesProcessor),
 		func(tp *telemetryv1beta1.TracePipeline) any {
 			transformStatements := common.DropKymaAttributesProcessorStatements()
-			return common.TraceTransformProcessorConfig(transformStatements)
+			return common.TraceTransformProcessor(transformStatements)
 		},
 	)
 }
@@ -197,7 +197,7 @@ func (b *Builder) addUserDefinedTransformProcessor() buildComponentFunc {
 
 			transformStatements := common.TransformSpecsToProcessorStatements(tp.Spec.Transforms)
 
-			return common.TraceTransformProcessorConfig(transformStatements)
+			return common.TraceTransformProcessor(transformStatements)
 		},
 	)
 }
@@ -210,7 +210,7 @@ func (b *Builder) addUserDefinedFilterProcessor() buildComponentFunc {
 				return nil // No filters, no processor needed
 			}
 
-			return common.FilterSpecsToTraceFilterProcessorConfig(tp.Spec.Filters)
+			return common.FilterSpecsToTraceFilterProcessor(tp.Spec.Filters)
 		})
 }
 
@@ -219,7 +219,7 @@ func (b *Builder) addBatchProcessor() buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDBatchProcessor),
 		func(_ *telemetryv1beta1.TracePipeline) any {
-			return &common.BatchProcessor{
+			return &common.BatchProcessorConfig{
 				SendBatchSize:    512,
 				Timeout:          "10s",
 				SendBatchMaxSize: 512,
@@ -240,7 +240,7 @@ func (b *Builder) addOTLPExporter(queueSize int) buildComponentFunc {
 				common.SignalTypeTrace,
 			)
 
-			return otlpExporterBuilder.OTLPExporterConfig(ctx)
+			return otlpExporterBuilder.OTLPExporter(ctx)
 		},
 	)
 }
@@ -253,7 +253,7 @@ func (b *Builder) addOAuth2Extension(ctx context.Context, pipeline *telemetryv1b
 		pipeline.Spec.Output.OTLP.Authentication.OAuth2,
 		pipeline.Name,
 		common.SignalTypeTrace,
-	).OAuth2ExtensionConfig(ctx)
+	).OAuth2Extension(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to build OAuth2 extension for pipeline %s: %w", pipeline.Name, err)
 	}

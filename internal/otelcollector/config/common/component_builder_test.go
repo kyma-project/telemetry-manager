@@ -74,8 +74,8 @@ func TestComponentBuilder_AddReceiver(t *testing.T) {
 			}
 
 			cb := &ComponentBuilder[*MockPipeline]{
-				Config:  config,
-				EnvVars: make(EnvVars),
+				Collector: config,
+				EnvVars:   make(EnvVars),
 			}
 
 			pipeline := &MockPipeline{Name: "test"}
@@ -155,8 +155,8 @@ func TestComponentBuilder_AddProcessor(t *testing.T) {
 			}
 
 			cb := &ComponentBuilder[*MockPipeline]{
-				Config:  config,
-				EnvVars: make(EnvVars),
+				Collector: config,
+				EnvVars:   make(EnvVars),
 			}
 
 			pipeline := &MockPipeline{Name: "test"}
@@ -258,8 +258,8 @@ func TestComponentBuilder_AddExporter(t *testing.T) {
 			}
 
 			cb := &ComponentBuilder[*MockPipeline]{
-				Config:  config,
-				EnvVars: make(EnvVars),
+				Collector: config,
+				EnvVars:   make(EnvVars),
 			}
 
 			pipeline := &MockPipeline{Name: "test"}
@@ -338,8 +338,8 @@ func TestComponentBuilder_AddServicePipeline(t *testing.T) {
 		}
 
 		cb := &ComponentBuilder[*MockPipeline]{
-			Config:  config,
-			EnvVars: make(EnvVars),
+			Collector: config,
+			EnvVars:   make(EnvVars),
 		}
 
 		pipeline := &MockPipeline{Name: "test"}
@@ -402,8 +402,8 @@ func TestComponentBuilder_AddServicePipeline(t *testing.T) {
 		}
 
 		cb := &ComponentBuilder[*MockPipeline]{
-			Config:  config,
-			EnvVars: make(EnvVars),
+			Collector: config,
+			EnvVars:   make(EnvVars),
 		}
 
 		pipeline := &MockPipeline{Name: "test"}
@@ -428,8 +428,8 @@ func TestComponentBuilder_AddServicePipeline(t *testing.T) {
 
 func TestComponentBuilder_StaticComponentID(t *testing.T) {
 	cb := &ComponentBuilder[*MockPipeline]{
-		Config:  &Config{},
-		EnvVars: make(EnvVars),
+		Collector: &Config{},
+		EnvVars:   make(EnvVars),
 	}
 
 	pipeline := &MockPipeline{Name: "test"}
@@ -450,8 +450,8 @@ func TestComponentBuilder_ComponentDeduplication(t *testing.T) {
 		}
 
 		cb := &ComponentBuilder[*MockPipeline]{
-			Config:  config,
-			EnvVars: make(EnvVars),
+			Collector: config,
+			EnvVars:   make(EnvVars),
 		}
 
 		pipeline := &MockPipeline{Name: "test"}
@@ -488,8 +488,8 @@ func TestComponentBuilder_ComponentDeduplication(t *testing.T) {
 		}
 
 		cb := &ComponentBuilder[*MockPipeline]{
-			Config:  config,
-			EnvVars: make(EnvVars),
+			Collector: config,
+			EnvVars:   make(EnvVars),
 		}
 
 		pipeline := &MockPipeline{Name: "test"}

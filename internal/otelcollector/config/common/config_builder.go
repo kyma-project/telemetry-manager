@@ -12,14 +12,14 @@ func NewConfig() *Config {
 		Processors: make(map[string]any),
 		Exporters:  make(map[string]any),
 		Connectors: make(map[string]any),
-		Extensions: extensionsConfig(),
-		Service:    serviceConfig(),
+		Extensions: extensions(),
+		Service:    service(),
 	}
 
 	return config
 }
 
-func serviceConfig() Service {
+func service() Service {
 	telemetry := Telemetry{
 		Metrics: Metrics{
 			Readers: []MetricReader{
@@ -48,7 +48,7 @@ func serviceConfig() Service {
 	}
 }
 
-func extensionsConfig() map[string]any {
+func extensions() map[string]any {
 	return map[string]any{
 		ComponentIDHealthCheckExtension: Endpoint{
 			Endpoint: fmt.Sprintf("${%s}:%d", EnvVarCurrentPodIP, ports.HealthCheck),

@@ -29,8 +29,8 @@ type PipelineIDFunc[T any] func(pipeline T) string
 // ComponentBuilder provides common builder patterns for OpenTelemetry collector configurations.
 // It can be embedded into specific config builders to provide reusable component management.
 type ComponentBuilder[T any] struct {
-	Config  *Config
-	EnvVars EnvVars
+	Collector *Config
+	EnvVars   EnvVars
 }
 
 // AddServicePipeline creates and configures a complete telemetry pipeline by chaining component builders.
@@ -47,10 +47,10 @@ type ComponentBuilder[T any] struct {
 //	    ); err != nil {
 //	        return nil, err
 //	    }
-//	    return b.Config, b.EnvVars, nil
+//	    return b.Collector, b.EnvVars, nil
 //	}
 func (cb *ComponentBuilder[T]) AddServicePipeline(ctx context.Context, pipeline T, pipelineID string, fs ...BuildComponentFunc[T]) error {
-	cb.Config.Service.Pipelines[pipelineID] = Pipeline{}
+	cb.Collector.Service.Pipelines[pipelineID] = Pipeline{}
 
 	for _, f := range fs {
 		if err := f(ctx, pipeline, pipelineID); err != nil {
@@ -71,7 +71,7 @@ func (cb *ComponentBuilder[T]) AddServicePipeline(ctx context.Context, pipeline 
 //	    return b.AddReceiver(
 //	        b.StaticComponentID[*LogPipeline]("otlp"),
 //	        func(lp *LogPipeline) any {
-//	            return &OTLPReceiver{
+//	            return &OTLPReceiverConfig{
 //	                Protocols: ReceiverProtocols{
 //	                    HTTP: Endpoint{Endpoint: fmt.Sprintf("${%s}:4318", EnvVarCurrentPodIP)},
 //	                    GRPC: Endpoint{Endpoint: fmt.Sprintf("${%s}:4317", EnvVarCurrentPodIP)},
@@ -90,18 +90,18 @@ func (cb *ComponentBuilder[T]) AddReceiver(componentIDFunc ComponentIDFunc[T], c
 
 		componentID := componentIDFunc(pipeline)
 
-		receiversOrConnectors := cb.Config.Receivers
+		receiversOrConnectors := cb.Collector.Receivers
 		if isConnector(componentID) {
-			receiversOrConnectors = cb.Config.Connectors
+			receiversOrConnectors = cb.Collector.Connectors
 		}
 
 		if _, found := receiversOrConnectors[componentID]; !found {
 			receiversOrConnectors[componentID] = receiverConfig
 		}
 
-		pipelineConfig := cb.Config.Service.Pipelines[pipelineID]
-		pipelineConfig.Receivers = append(pipelineConfig.Receivers, componentID)
-		cb.Config.Service.Pipelines[pipelineID] = pipelineConfig
+		pipelineCfg := cb.Collector.Service.Pipelines[pipelineID]
+		pipelineCfg.Receivers = append(pipelineCfg.Receivers, componentID)
+		cb.Collector.Service.Pipelines[pipelineID] = pipelineCfg
 
 		return nil
 	}
@@ -117,7 +117,7 @@ func (cb *ComponentBuilder[T]) AddReceiver(componentIDFunc ComponentIDFunc[T], c
 //	    return b.AddProcessor(
 //	        b.StaticComponentID[*LogPipeline]("memory_limiter"),
 //	        func(lp *LogPipeline) any {
-//	            return &MemoryLimiter{
+//	            return &MemoryLimiterConfig{
 //	                CheckInterval:        "1s",
 //	                LimitPercentage:      75,
 //	                SpikeLimitPercentage: 15,
@@ -134,13 +134,13 @@ func (cb *ComponentBuilder[T]) AddProcessor(componentIDFunc ComponentIDFunc[T], 
 		}
 
 		componentID := componentIDFunc(pipeline)
-		if _, found := cb.Config.Processors[componentID]; !found {
-			cb.Config.Processors[componentID] = processorConfig
+		if _, found := cb.Collector.Processors[componentID]; !found {
+			cb.Collector.Processors[componentID] = processorConfig
 		}
 
-		servicePipeline := cb.Config.Service.Pipelines[pipelineID]
+		servicePipeline := cb.Collector.Service.Pipelines[pipelineID]
 		servicePipeline.Processors = append(servicePipeline.Processors, componentID)
-		cb.Config.Service.Pipelines[pipelineID] = servicePipeline
+		cb.Collector.Service.Pipelines[pipelineID] = servicePipeline
 
 		return nil
 	}
@@ -159,7 +159,7 @@ func (cb *ComponentBuilder[T]) AddProcessor(componentIDFunc ComponentIDFunc[T], 
 //	            builder := NewOTLPExporterConfigBuilder(
 //	                b.Reader, lp.Spec.Output.OTLP, lp.Name, queueSize, SignalTypeLog,
 //	            )
-//	            return builder.OTLPExporterConfig(ctx)
+//	            return builder.OTLPExporter(ctx)
 //	        },
 //	    )
 //	}
@@ -177,26 +177,26 @@ func (cb *ComponentBuilder[T]) AddExporter(componentIDFunc ComponentIDFunc[T], c
 
 		componentID := componentIDFunc(pipeline)
 
-		exportersOrConnectors := cb.Config.Exporters
+		exportersOrConnectors := cb.Collector.Exporters
 		if isConnector(componentID) {
-			exportersOrConnectors = cb.Config.Connectors
+			exportersOrConnectors = cb.Collector.Connectors
 		}
 
 		exportersOrConnectors[componentID] = exporterConfig
 
 		maps.Copy(cb.EnvVars, exporterEnvVars)
 
-		servicePipeline := cb.Config.Service.Pipelines[pipelineID]
+		servicePipeline := cb.Collector.Service.Pipelines[pipelineID]
 		servicePipeline.Exporters = append(servicePipeline.Exporters, componentID)
-		cb.Config.Service.Pipelines[pipelineID] = servicePipeline
+		cb.Collector.Service.Pipelines[pipelineID] = servicePipeline
 
 		return nil
 	}
 }
 
 func (cb *ComponentBuilder[T]) AddExtension(componentID string, extensionConfig any, extensionEnvVars EnvVars) {
-	if _, found := cb.Config.Extensions[componentID]; !found {
-		cb.Config.Extensions[componentID] = extensionConfig
+	if _, found := cb.Collector.Extensions[componentID]; !found {
+		cb.Collector.Extensions[componentID] = extensionConfig
 	}
 
 	if extensionEnvVars != nil {
@@ -204,12 +204,12 @@ func (cb *ComponentBuilder[T]) AddExtension(componentID string, extensionConfig 
 	}
 
 	// Ensure the extension is added to the service only once
-	extensions := cb.Config.Service.Extensions
+	extensions := cb.Collector.Service.Extensions
 	if slices.Contains(extensions, componentID) {
 		return
 	}
 
-	cb.Config.Service.Extensions = append(cb.Config.Service.Extensions, componentID)
+	cb.Collector.Service.Extensions = append(cb.Collector.Service.Extensions, componentID)
 }
 
 // StaticComponentID returns a ComponentIDFunc that always returns the same ID.
