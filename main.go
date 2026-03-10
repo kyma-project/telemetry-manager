@@ -313,6 +313,7 @@ func setupManager(globals config.Global) (manager.Manager, error) {
 		&corev1.ConfigMap{}:                         {Namespaces: setConfigMapNamespaceFieldSelector(globals)},
 		&corev1.ServiceAccount{}:                    {Field: setNamespaceFieldSelector(globals)},
 		&corev1.Service{}:                           {Field: setNamespaceFieldSelector(globals)},
+		&corev1.Node{}:                              {},
 		&networkingv1.NetworkPolicy{}:               {Field: setNamespaceFieldSelector(globals)},
 		&corev1.Secret{}:                            {Field: setNamespaceFieldSelector(globals)},
 		&operatorv1beta1.Telemetry{}:                {Field: setNamespaceFieldSelector(globals)},

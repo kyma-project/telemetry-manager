@@ -43,6 +43,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
+	"github.com/kyma-project/telemetry-manager/internal/nodewatch"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/logagent"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/loggateway"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
@@ -213,6 +214,10 @@ func (r *LogPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		&operatorv1beta1.Telemetry{},
 		handler.EnqueueRequestsFromMapFunc(r.mapTelemetryChanges),
 		ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete()),
+	).Watches(
+		&corev1.Node{},
+		handler.EnqueueRequestsFromMapFunc(r.mapNodeChanges),
+		ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete()),
 	).Complete(r)
 }
 
@@ -350,6 +355,25 @@ func configureOTelReconciler(config LogPipelineControllerConfig, client client.C
 	)
 
 	return otelReconciler, nil
+}
+
+func (r *LogPipelineController) mapNodeChanges(ctx context.Context, object client.Object) []reconcile.Request {
+	var nodeList corev1.NodeList
+	if err := r.List(ctx, &nodeList); err != nil {
+		logf.FromContext(ctx).Error(err, "Unable to list nodes")
+		return nil
+	}
+
+	if !nodewatch.UpdateSmallestMemory(ctx, nodeList.Items) {
+		return nil
+	}
+
+	requests, err := r.createRequestsForAllPipelines(ctx)
+	if err != nil {
+		logf.FromContext(ctx).Error(err, "Unable to create reconcile requests")
+	}
+
+	return requests
 }
 
 func (r *LogPipelineController) createRequestsForAllPipelines(ctx context.Context) ([]reconcile.Request, error) {

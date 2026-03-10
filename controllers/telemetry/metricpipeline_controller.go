@@ -42,6 +42,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
+	"github.com/kyma-project/telemetry-manager/internal/nodewatch"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metricagent"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metricgateway"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
@@ -226,6 +227,10 @@ func (r *MetricPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		&operatorv1beta1.Telemetry{},
 		handler.EnqueueRequestsFromMapFunc(r.mapTelemetryChanges),
 		ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete()),
+	).Watches(
+		&corev1.Node{},
+		handler.EnqueueRequestsFromMapFunc(r.mapNodeChanges),
+		ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete()),
 	).Complete(r)
 }
 
@@ -233,6 +238,25 @@ func (r *MetricPipelineController) mapTelemetryChanges(ctx context.Context, obje
 	_, ok := object.(*operatorv1beta1.Telemetry)
 	if !ok {
 		logf.FromContext(ctx).V(1).Error(nil, "Unexpected type: expected Telemetry")
+		return nil
+	}
+
+	requests, err := r.createRequestsForAllPipelines(ctx)
+	if err != nil {
+		logf.FromContext(ctx).Error(err, "Unable to create reconcile requests")
+	}
+
+	return requests
+}
+
+func (r *MetricPipelineController) mapNodeChanges(ctx context.Context, object client.Object) []reconcile.Request {
+	var nodeList corev1.NodeList
+	if err := r.List(ctx, &nodeList); err != nil {
+		logf.FromContext(ctx).Error(err, "Unable to list nodes")
+		return nil
+	}
+
+	if !nodewatch.UpdateSmallestMemory(ctx, nodeList.Items) {
 		return nil
 	}
 
