@@ -85,6 +85,7 @@ func computeSmallestAllocatableMemory(nodes []corev1.Node) resource.Quantity {
 	var smallest *resource.Quantity
 
 	for i := range nodes {
+		// Allocatable represents the resources of a node that are available for scheduling (excluding resources reserved for system components).
 		allocatable, ok := nodes[i].Status.Allocatable[corev1.ResourceMemory]
 		if !ok {
 			continue
