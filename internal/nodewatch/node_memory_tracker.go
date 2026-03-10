@@ -15,8 +15,7 @@ import (
 
 type nodeTracker struct {
 	mu             sync.RWMutex
-	smallestMemory resource.Quantity
-	initialized    bool
+	smallestMemory *resource.Quantity
 	reader         client.Reader
 }
 
@@ -51,17 +50,16 @@ func (t *nodeTracker) update(ctx context.Context) (bool, error) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	if t.initialized && t.smallestMemory.Cmp(newSmallest) == 0 {
+	if t.smallestMemory != nil && t.smallestMemory.Cmp(newSmallest) == 0 {
 		return false, nil
 	}
 
 	logf.FromContext(ctx).Info("Smallest node allocatable memory changed",
-		"previous", t.smallestMemory.String(),
+		"previous", t.smallestMemory,
 		"current", newSmallest.String(),
 	)
 
-	t.smallestMemory = newSmallest
-	t.initialized = true
+	t.smallestMemory = &newSmallest
 
 	metrics.NodeSmallestMemoryBytes.Set(float64(newSmallest.Value()))
 
@@ -71,6 +69,10 @@ func (t *nodeTracker) update(ctx context.Context) (bool, error) {
 func (t *nodeTracker) getSmallestMemory() resource.Quantity {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
+
+	if t.smallestMemory == nil {
+		return resource.Quantity{}
+	}
 
 	return t.smallestMemory.DeepCopy()
 }
