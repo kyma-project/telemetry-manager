@@ -237,12 +237,17 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 		return fmt.Errorf("failed to build fluentbit config: %w", err)
 	}
 
+	isIstioActive, err := r.istioStatusChecker.IsIstioActive(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to check Istio status: %w", err)
+	}
+
 	if err = r.agentApplierDeleter.ApplyResources(
 		ctx,
 		k8sutils.NewOwnerReferenceSetter(r.Client, pipeline),
 		fluentbit.AgentApplyOptions{
 			FluentBitConfig: config,
-			IstioEnabled:    r.istioStatusChecker.IsIstioActive(ctx),
+			IstioEnabled:    isIstioActive,
 		},
 	); err != nil {
 		return err
