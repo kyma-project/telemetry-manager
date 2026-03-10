@@ -33,7 +33,7 @@ func TestMakeNetworkPolicy(t *testing.T) {
 		{
 			name: "ingress options",
 			opts: []NetworkPolicyOption{
-				WithIngressFromAny([]int32{8080}),
+				WithIngressFromAny(8080),
 				WithIngressFromPods(map[string]string{"app": "source"}, []int32{9090}),
 				WithIngressFromPodsInAllNamespaces(map[string]string{"app": "global"}, []int32{9091}),
 				WithIngressFromPodsInNamespace("other-ns", map[string]string{"app": "external"}, []int32{9092}),
@@ -44,6 +44,21 @@ func TestMakeNetworkPolicy(t *testing.T) {
 				}),
 			},
 			goldenFilePath: "testdata/networkpolicy-ingress.yaml",
+		},
+		{
+			name: "ingress from any with no ports",
+			opts: []NetworkPolicyOption{
+				WithIngressFromAny(),
+				WithIngressFromPods(map[string]string{"app": "source"}, []int32{9090}),
+				WithIngressFromPodsInAllNamespaces(map[string]string{"app": "global"}, []int32{9091}),
+				WithIngressFromPodsInNamespace("other-ns", map[string]string{"app": "external"}, []int32{9092}),
+				WithIngressRule(networkingv1.NetworkPolicyIngressRule{
+					From: []networkingv1.NetworkPolicyPeer{
+						{IPBlock: &networkingv1.IPBlock{CIDR: "10.0.0.0/8"}},
+					},
+				}),
+			},
+			goldenFilePath: "testdata/networkpolicy-ingress-any-no-ports.yaml",
 		},
 		{
 			name: "egress options",
@@ -64,7 +79,7 @@ func TestMakeNetworkPolicy(t *testing.T) {
 			name: "with name suffix",
 			opts: []NetworkPolicyOption{
 				WithNameSuffix("custom"),
-				WithIngressFromAny([]int32{8080}),
+				WithIngressFromAny(8080),
 				WithEgressToAny(),
 			},
 			goldenFilePath: "testdata/networkpolicy-with-name-suffix.yaml",

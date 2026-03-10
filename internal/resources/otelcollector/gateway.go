@@ -474,7 +474,7 @@ func makeGatewayNetworkPolicies(name types.NamespacedName, istioEnabled bool) []
 		name,
 		commonresources.MakeDefaultLabels(name.Name, commonresources.LabelValueK8sComponentGateway),
 		commonresources.MakeDefaultSelectorLabels(name.Name),
-		commonresources.WithIngressFromAny(otlpPorts),
+		commonresources.WithIngressFromAny(otlpPorts...),
 		commonresources.WithEgressToAny(),
 	)
 
