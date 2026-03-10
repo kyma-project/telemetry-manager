@@ -455,6 +455,8 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 		return fmt.Errorf("failed to check VPA status: %w", err)
 	}
 
+	isVpaEnabled := telemetryutils.IsVpaEnabledInTelemetry(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
+
 	shootInfo := k8sutils.GetGardenerShootInfo(ctx, r.Client)
 	telemetryOptions := telemetryutils.Options{
 		SignalType:                common.SignalTypeMetric,
@@ -508,7 +510,8 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 		k8sutils.NewOwnerReferenceSetter(r.Client, pipeline),
 		otelcollector.AgentApplyOptions{
 			IstioEnabled:        isIstioActive,
-			VpaEnabled:          isVpaActive,
+			VpaCRDExists:        isVpaActive,
+			VpaEnabled:          isVpaEnabled,
 			CollectorConfigYAML: string(agentConfigYAML),
 			CollectorEnvVars:    collectorEnvVars,
 			BackendPorts:        backendPorts,

@@ -10,7 +10,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
-	telemetryutils "github.com/kyma-project/telemetry-manager/internal/utils/telemetry"
 )
 
 type Checker struct {
@@ -21,9 +20,7 @@ func NewChecker(restConfig *rest.Config) *Checker {
 	return &Checker{restConfig: restConfig}
 }
 
-// IsVpaActive checks if VPA is active. VPA is considered active if the following 2 conditions are satisfied:
-// 1. VPA CRD exists in the cluster
-// 2. The annotation "telemetry.kyma-project.io/enable-vpa" is set to "true" on the Telemetry CR
+// IsVpaActive checks if VPA is active based on the existence of the VPA CRD in the cluster
 func (c *Checker) IsVpaActive(ctx context.Context, client client.Client, telemetryNamespace string) (bool, error) {
 	discoveryClient, err := discovery.NewDiscoveryClientForConfig(c.restConfig)
 	if err != nil {
@@ -39,16 +36,11 @@ func (c *Checker) IsVpaActive(ctx context.Context, client client.Client, telemet
 		return false, fmt.Errorf("failed to get server resources for group version %s: %w", names.VpaGroupVersion, err)
 	}
 
-	vpaCRDExists := false
-
 	for _, r := range apiResourceList.APIResources {
 		if r.Kind == names.VpaKind {
-			vpaCRDExists = true
-			break
+			return true, nil
 		}
 	}
 
-	isVpaEnabled := telemetryutils.IsVpaEnabledInTelemetry(ctx, client, telemetryNamespace)
-
-	return vpaCRDExists && isVpaEnabled, nil
+	return false, nil
 }

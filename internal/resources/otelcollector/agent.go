@@ -63,6 +63,7 @@ type AgentApplierDeleter struct {
 
 type AgentApplyOptions struct {
 	IstioEnabled        bool
+	VpaCRDExists        bool
 	VpaEnabled          bool
 	CollectorConfigYAML string
 	CollectorEnvVars    map[string][]byte
@@ -186,9 +187,23 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 		return fmt.Errorf("failed to create daemonset: %w", err)
 	}
 
-	if opts.VpaEnabled {
-		if err := k8sutils.CreateOrUpdateVPA(ctx, c, makeVPA(name)); err != nil {
-			return fmt.Errorf("failed to create VPA: %w", err)
+	// Create/update/delete VPA CR only if VPA CRD exists in cluster
+	if opts.VpaCRDExists {
+		if opts.VpaEnabled {
+			if err := k8sutils.CreateOrUpdateVPA(ctx, c, makeVPA(name)); err != nil {
+				return fmt.Errorf("failed to create VPA: %w", err)
+			}
+		} else {
+			// If VPA is disabled, ensure that any existing VPA is cleaned up
+			vpa := &autoscalingvpav1.VerticalPodAutoscaler{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      name.Name,
+					Namespace: name.Namespace,
+				},
+			}
+			if err := k8sutils.DeleteObject(ctx, c, vpa); err != nil {
+				return fmt.Errorf("failed to delete VPA: %w", err)
+			}
 		}
 	}
 
