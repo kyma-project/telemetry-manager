@@ -31,7 +31,7 @@ For detailed VPA architecture, see [Kubernetes VPA Documentation](https://github
 
 ### Current State
 
-- The central OTLP Gateway and Agents DaemonSet have a static resource configuration:
+- The central OTLP Gateway and Agents DaemonSet have a static resource configuration. Following is a resource configuration example for gateway:
     - `requests.memory`: 32Mi
     - `limits.memory`: 2000Mi
     - Request-to-limit ratio: 62.5x (2000Mi / 32Mi)
@@ -53,14 +53,14 @@ Before enabling VPA, reduce the request-to-limit ratio to a more reasonable valu
 
 ### GOMEMLIMIT Strategy
 
-Because Go-based applications use `GOMEMLIMIT` for soft memory limits, we must decide how to set this value when VPA manages Pod resources:
-- Set `GOMEMLIMIT` to a fixed value (for example, 1.6Gi = 80% of 2Gi max). This is recommended for simplicity and predictability.
-- Dynamically calculate `GOMEMLIMIT` based on VPA-recommended limits
+We need to have a stratergy to set `GOMEMLIMIT` when VPA manages Pod resources.
+- The value of `GOMEMLIMIT` should be a percentage of memory limit set by VPA (`eg. 80% of memory limit`).
+- The `GOMEMELIMT` calculation should be dynamic, i.e. It should change when every a new memory limit is set by VPA.
 
 
 ## Considered Options
 
-We're evaluating two architectural approaches for implementing VPA for Central OTLP Gateway and Agents. Both options assume a fixed GOMEMLIMIT value (see [GOMEMLIMIT Strategy](#gomemlimit-strategy)).
+We're evaluating two architectural approaches for implementing VPA for Central OTLP Gateway and Agents. Both options assume calculation of GOMEMLIMIT as fixed percentage value (see [GOMEMLIMIT Strategy](#gomemlimit-strategy)).
 
 ### Option 1: VPA Direct Pod Updates (Recommended)
 
