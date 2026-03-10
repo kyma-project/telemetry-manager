@@ -4,11 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/kyma-project/telemetry-manager/internal/resources/names"
-	telemetryutils "github.com/kyma-project/telemetry-manager/internal/utils/telemetry"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
+	telemetryutils "github.com/kyma-project/telemetry-manager/internal/utils/telemetry"
 )
 
 type Checker struct {
@@ -34,6 +35,7 @@ func (c *Checker) IsVpaActive(ctx context.Context, client client.Client, telemet
 	}
 
 	vpaCRDExists := false
+
 	for _, r := range apiResourceList.APIResources {
 		if r.Kind == names.VpaKind {
 			vpaCRDExists = true
