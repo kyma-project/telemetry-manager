@@ -62,7 +62,7 @@ type OverridesHandler interface {
 // IstioStatusChecker determines whether Istio service mesh is active in the cluster.
 type IstioStatusChecker interface {
 	// IsIstioActive returns true if Istio is currently active in the cluster.
-	IsIstioActive(ctx context.Context) bool
+	IsIstioActive(ctx context.Context) (bool, error)
 }
 
 // EndpointValidator validates trace pipeline endpoint configurations.

@@ -263,7 +263,12 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 	if len(reconcilablePipelines) == 0 {
 		logf.FromContext(ctx).V(1).Info("cleaning up trace pipeline resources: all trace pipelines are non-reconcilable")
 
-		if err = r.gatewayApplierDeleter.DeleteResources(ctx, r.Client, r.istioStatusChecker.IsIstioActive(ctx)); err != nil {
+		isIstioActive, err := r.istioStatusChecker.IsIstioActive(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to check Istio status: %w", err)
+		}
+
+		if err = r.gatewayApplierDeleter.DeleteResources(ctx, r.Client, isIstioActive); err != nil {
 			return fmt.Errorf("failed to delete gateway resources: %w", err)
 		}
 
@@ -362,7 +367,10 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 		return fmt.Errorf("failed to marshal collector config: %w", err)
 	}
 
-	isIstioActive := r.istioStatusChecker.IsIstioActive(ctx)
+	isIstioActive, err := r.istioStatusChecker.IsIstioActive(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to check Istio status: %w", err)
+	}
 
 	opts := otelcollector.GatewayApplyOptions{
 		CollectorConfigYAML:            string(collectorConfigYAML),
