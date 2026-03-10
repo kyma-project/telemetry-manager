@@ -309,7 +309,6 @@ func (o *OTLPGatewayApplierDeleter) makeGatewayPodSpec(opts GatewayApplyOptions)
 	containerOpts := slices.Clone(o.containerOpts)
 	containerOpts = append(containerOpts,
 		commonresources.WithResources(resources),
-		commonresources.WithGoMemLimitEnvVar(resources.Limits[corev1.ResourceMemory]),
 		commonresources.WithClusterTrustBundleVolumeMount(o.globals.ClusterTrustBundleName()),
 	)
 

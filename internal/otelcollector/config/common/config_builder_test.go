@@ -25,15 +25,17 @@ func TestNewConfig(t *testing.T) {
 		require.Empty(t, config.Exporters, "exporters map should be empty initially")
 		require.Empty(t, config.Connectors, "connectors map should be empty initially")
 
-		require.Len(t, config.Extensions, 2, "should have exactly 2 extensions configured")
+		require.Len(t, config.Extensions, 3, "should have exactly 3 extensions configured")
 		require.Contains(t, config.Extensions, ComponentIDHealthCheckExtension, "health check extension should be configured")
 		require.Contains(t, config.Extensions, ComponentIDPprofExtension, "pprof extension should be configured")
+		require.Contains(t, config.Extensions, ComponentIDCGroupRuntimeExtension, "cgroupruntime extension should be configured")
 
 		require.NotNil(t, config.Service.Pipelines, "service pipelines should be initialized")
 		require.Empty(t, config.Service.Pipelines, "service pipelines should be empty initially")
-		require.Len(t, config.Service.Extensions, 2, "service should reference exactly 2 extensions")
+		require.Len(t, config.Service.Extensions, 3, "service should reference exactly 3 extensions")
 		require.Contains(t, config.Service.Extensions, ComponentIDHealthCheckExtension, "service should reference health check extension")
 		require.Contains(t, config.Service.Extensions, ComponentIDPprofExtension, "service should reference pprof extension")
+		require.Contains(t, config.Service.Extensions, ComponentIDCGroupRuntimeExtension, "service should reference cgroupruntime extension")
 	})
 }
 
@@ -43,9 +45,10 @@ func TestServiceConfig(t *testing.T) {
 
 		require.NotNil(t, service.Pipelines, "pipelines should be initialized")
 		require.Empty(t, service.Pipelines, "pipelines should be empty initially")
-		require.Len(t, service.Extensions, 2, "should reference exactly 2 extensions")
+		require.Len(t, service.Extensions, 3, "should reference exactly 3 extensions")
 		require.Contains(t, service.Extensions, ComponentIDHealthCheckExtension, "should reference health check extension")
 		require.Contains(t, service.Extensions, ComponentIDPprofExtension, "should reference pprof extension")
+		require.Contains(t, service.Extensions, ComponentIDCGroupRuntimeExtension, "should reference cgroupruntime extension")
 
 		require.NotNil(t, service.Telemetry, "telemetry config should be initialized")
 
@@ -68,12 +71,13 @@ func TestServiceConfig(t *testing.T) {
 }
 
 func TestExtensionsConfig(t *testing.T) {
-	t.Run("creates extensions config with health check and pprof", func(t *testing.T) {
+	t.Run("creates extensions config with health check, pprof, and cgroupruntime", func(t *testing.T) {
 		extensions := extensions()
 
-		require.Len(t, extensions, 2, "should configure exactly 2 extensions")
+		require.Len(t, extensions, 3, "should configure exactly 3 extensions")
 		require.Contains(t, extensions, ComponentIDHealthCheckExtension, "health check extension should be present")
 		require.Contains(t, extensions, ComponentIDPprofExtension, "pprof extension should be present")
+		require.Contains(t, extensions, ComponentIDCGroupRuntimeExtension, "cgroupruntime extension should be present")
 
 		healthCheck, ok := extensions[ComponentIDHealthCheckExtension]
 		require.True(t, ok, "health check extension should exist")
@@ -88,5 +92,14 @@ func TestExtensionsConfig(t *testing.T) {
 		pprofEndpoint, ok := pprof.(Endpoint)
 		require.True(t, ok, "pprof extension should be an Endpoint struct")
 		require.Equal(t, "127.0.0.1:1777", pprofEndpoint.Endpoint, "pprof should use localhost and correct port")
+
+		cgroupruntime, ok := extensions[ComponentIDCGroupRuntimeExtension]
+		require.True(t, ok, "cgroupruntime extension should exist")
+
+		cgroupruntimeExt, ok := cgroupruntime.(CGroupRuntimeExtension)
+		require.True(t, ok, "cgroupruntime extension should be a CGroupRuntimeExtension struct")
+		require.False(t, cgroupruntimeExt.GoMaxProcs.Enabled, "gomaxprocs should be not enabled")
+		require.True(t, cgroupruntimeExt.GoMemLimit.Enabled, "gomemlimit should be enabled")
+		require.InDelta(t, 0.8, cgroupruntimeExt.GoMemLimit.Ratio, 0.001, "gomemlimit ratio should be 0.8")
 	})
 }
