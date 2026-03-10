@@ -11,7 +11,7 @@ service:
             processors:
                 - memory_limiter
                 - transform/set-observed-time-if-zero
-                - k8sattributes
+                - k8s_attributes
                 - istio_noise_filter
                 - filter/drop-if-input-source-otlp
                 - transform/insert-cluster-attributes
@@ -54,7 +54,7 @@ processors:
     istio_enrichment:
         scope_version: 1.0.0
     istio_noise_filter: {}
-    k8sattributes:
+    k8s_attributes:
         auth_type: serviceAccount
         passthrough: false
         extract:
