@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -31,7 +32,11 @@ func (c *Checker) IsVpaActive(ctx context.Context, client client.Client, telemet
 
 	apiResourceList, err := discoveryClient.ServerResourcesForGroupVersion(names.VpaGroupVersion)
 	if err != nil {
-		return false, nil
+		if apierrors.IsNotFound(err) {
+			return false, nil
+		}
+
+		return false, fmt.Errorf("failed to get server resources for group version %s: %w", names.VpaGroupVersion, err)
 	}
 
 	vpaCRDExists := false
