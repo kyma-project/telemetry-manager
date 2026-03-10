@@ -30,7 +30,7 @@ Combined with the Kyma Telemetry module, you can collect custom spans and metric
 ## Prerequisites
 
 - Kyma as the target deployment environment
-- The [Telemetry module](https://kyma-project.io/#/telemetry-manager/user/README) is [added](https://kyma-project.io/#/02-get-started/01-quick-install)
+- The [Telemetry module](https://kyma-project.io/#/telemetry-manager/user/README) is [added](https://kyma-project.io/02-get-started/01-quick-install)
 - Active Dynatrace environment with permissions to create new access tokens
 - Helm 3.x if you want to deploy the [OpenTelemetry sample application](../opentelemetry-demo/README.md)
 
