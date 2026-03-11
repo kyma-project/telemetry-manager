@@ -1,4 +1,10 @@
 extensions:
+    cgroupruntime:
+        gomaxprocs:
+            enabled: false
+        gomemlimit:
+            enabled: true
+            ratio: 0.8
     health_check:
         endpoint: ${MY_POD_IP}:13133
     pprof:
@@ -47,6 +53,7 @@ service:
     extensions:
         - health_check
         - pprof
+        - cgroupruntime
 receivers:
     otlp:
         protocols:

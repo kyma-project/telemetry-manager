@@ -162,8 +162,6 @@ spec:
               fieldPath: spec.nodeName
         - name: GODEBUG
           value: fips140=off
-        - name: GOMEMLIMIT
-          value: "429496720"
         envFrom:
         - secretRef:
             name: telemetry-metric-gateway
