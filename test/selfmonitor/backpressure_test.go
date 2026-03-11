@@ -269,7 +269,7 @@ func TestBackpressure(t *testing.T) {
 
 			if tc.component == suite.LabelMetricAgent {
 				// Metric agent and gateway (using kyma stats receiver) both send data to backend
-				// We want to simulate backpressure only on agent, so block 85% of traffic only from agent.
+				// We want to simulate backpressure only on agent, so block some percentage of traffic only from agent.
 				backend = kitbackend.New(backendNs, signalTypeForComponent(tc.component), kitbackend.WithAbortFaultInjection(95),
 					kitbackend.WithDropFromSourceLabel(map[string]string{"app.kubernetes.io/name": "telemetry-metric-agent"}))
 			} else {
