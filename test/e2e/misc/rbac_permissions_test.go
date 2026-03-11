@@ -23,8 +23,8 @@ import (
 var pipelineTypes = []string{"logpipelines", "metricpipelines", "tracepipelines"}
 
 func TestRBACPermissions(t *testing.T) {
-	//suite.SetupTest(t, suite.LabelTelemetry, suite.LabelMisc)
-	RegisterTestingT(t)
+	suite.SetupTest(t, suite.LabelTelemetry, suite.LabelMisc)
+
 	testNS := suite.IDWithSuffix("rbac-perm")
 
 	// Create test namespace
@@ -285,7 +285,6 @@ func testAdminPermissions(g Gomega, testNS string) {
 	checkCanI(g, user, "patch", "telemetries", "", true, "Admin can patch Telemetries")
 	checkCanI(g, user, "create", "telemetries", "", false, "Admin cannot create Telemetries (Lifecycle Manager-owned)")
 	checkCanI(g, user, "delete", "telemetries", "", false, "Admin cannot delete Telemetries (Lifecycle Manager-owned)")
-
 }
 
 func testTelemetryOnlyEditorPermissions(g Gomega, testNS string) {
@@ -340,6 +339,7 @@ func checkCanI(g Gomega, user, verb, resource, namespace string, expected bool, 
 		g.Expect(err).NotTo(HaveOccurred(),
 			"kubectl auth can-i failed to return yes/no\nTest: %s\nCommand: %s\nOutput: %s",
 			description, commandStr, output)
+
 		return
 	}
 
