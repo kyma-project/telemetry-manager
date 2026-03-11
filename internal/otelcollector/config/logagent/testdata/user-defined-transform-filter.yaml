@@ -166,8 +166,8 @@ receivers:
 processors:
     filter/user-defined-test1:
         error_mode: ignore
-        logs:
-            log_record:
+        log_conditions:
+            - conditions:
                 - IsMatch(log.attributes["foo"], ".*bar.*")
     k8s_attributes:
         auth_type: serviceAccount
