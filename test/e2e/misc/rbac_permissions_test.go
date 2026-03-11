@@ -1,6 +1,7 @@
 package misc
 
 import (
+	"context"
 	"fmt"
 	"os/exec"
 	"strings"
@@ -9,7 +10,7 @@ import (
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -21,6 +22,7 @@ import (
 
 func TestRBACPermissions(t *testing.T) {
 	suite.SetupTest(t, suite.LabelTelemetry, suite.LabelMisc)
+
 	testNS := suite.IDWithSuffix("rbac-perm")
 
 	// Create test namespace
@@ -64,7 +66,6 @@ func TestRBACPermissions(t *testing.T) {
 		// Test custom pipeline creator permissions
 		testPipelineCreatorPermissions(g, testNS)
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
-
 }
 
 func createServiceAccount(namespace, name string) {
@@ -344,7 +345,7 @@ func checkCanI(g Gomega, user, verb, resource, namespace string, expected bool, 
 		args = append(args, "-n", namespace)
 	}
 
-	cmd := exec.Command("kubectl", args...)
+	cmd := exec.CommandContext(context.TODO(), "kubectl", args...)
 	out, err := cmd.CombinedOutput()
 
 	// kubectl auth can-i returns exit code 0 for "yes" and exit code 1 for "no"
@@ -379,8 +380,9 @@ func cleanupRoleBindings(t *testing.T, testNS string) {
 		crb := &rbacv1.ClusterRoleBinding{
 			ObjectMeta: metav1.ObjectMeta{Name: name},
 		}
+
 		err := suite.K8sClient.Delete(suite.Ctx, crb)
-		if err != nil && !errors.IsNotFound(err) {
+		if err != nil && !apierrors.IsNotFound(err) {
 			t.Logf("Failed to delete ClusterRoleBinding %s: %v", name, err)
 		}
 	}
@@ -398,8 +400,9 @@ func cleanupRoleBindings(t *testing.T, testNS string) {
 				Namespace: kitkyma.SystemNamespaceName,
 			},
 		}
+
 		err := suite.K8sClient.Delete(suite.Ctx, rb)
-		if err != nil && !errors.IsNotFound(err) {
+		if err != nil && !apierrors.IsNotFound(err) {
 			t.Logf("Failed to delete RoleBinding %s: %v", name, err)
 		}
 	}
@@ -410,8 +413,9 @@ func cleanupRoleBindings(t *testing.T, testNS string) {
 			Name: fmt.Sprintf("test-pipeline-creator-%s", testNS),
 		},
 	}
+
 	err := suite.K8sClient.Delete(suite.Ctx, cr)
-	if err != nil && !errors.IsNotFound(err) {
+	if err != nil && !apierrors.IsNotFound(err) {
 		t.Logf("Failed to delete ClusterRole: %v", err)
 	}
 }
@@ -419,12 +423,13 @@ func cleanupRoleBindings(t *testing.T, testNS string) {
 // parseKubectlAuthCanIOutput extracts the yes/no result from kubectl auth can-i output,
 // filtering out warnings and other non-result lines.
 func parseKubectlAuthCanIOutput(output string) string {
-	lines := strings.Split(output, "\n")
-	for _, line := range lines {
+	lines := strings.SplitSeq(output, "\n")
+	for line := range lines {
 		line = strings.TrimSpace(line)
 		if line == "yes" || line == "no" {
 			return line
 		}
 	}
+
 	return ""
 }
