@@ -3,7 +3,6 @@ package k8sclients
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -24,7 +23,7 @@ func TestLabeler_Create(t *testing.T) {
 
 		var got corev1.ConfigMap
 		require.NoError(t, inner.Get(t.Context(), types.NamespacedName{Name: "no-labels", Namespace: "default"}, &got))
-		assertCommonLabels(t, got.Labels)
+		requireCommonLabels(t, got.Labels)
 	})
 
 	t.Run("preserves existing labels", func(t *testing.T) {
@@ -37,8 +36,8 @@ func TestLabeler_Create(t *testing.T) {
 
 		var got corev1.ConfigMap
 		require.NoError(t, inner.Get(t.Context(), types.NamespacedName{Name: "with-labels", Namespace: "default"}, &got))
-		assertCommonLabels(t, got.Labels)
-		assert.Equal(t, "value", got.Labels["custom"])
+		requireCommonLabels(t, got.Labels)
+		require.Equal(t, "value", got.Labels["custom"])
 	})
 }
 
@@ -53,7 +52,7 @@ func TestLabeler_Update(t *testing.T) {
 
 	var got corev1.ConfigMap
 	require.NoError(t, inner.Get(t.Context(), types.NamespacedName{Name: "update-test", Namespace: "default"}, &got))
-	assertCommonLabels(t, got.Labels)
+	requireCommonLabels(t, got.Labels)
 }
 
 func TestLabeler_Patch(t *testing.T) {
@@ -68,7 +67,7 @@ func TestLabeler_Patch(t *testing.T) {
 
 	var got corev1.ConfigMap
 	require.NoError(t, inner.Get(t.Context(), types.NamespacedName{Name: "patch-test", Namespace: "default"}, &got))
-	assertCommonLabels(t, got.Labels)
+	requireCommonLabels(t, got.Labels)
 }
 
 func TestLabeler_Get(t *testing.T) {
@@ -80,13 +79,13 @@ func TestLabeler_Get(t *testing.T) {
 
 	var got corev1.ConfigMap
 	require.NoError(t, labeler.Get(t.Context(), types.NamespacedName{Name: "get-test", Namespace: "default"}, &got))
-	assert.Equal(t, "get-test", got.Name)
+	require.Equal(t, "get-test", got.Name)
 }
 
-func assertCommonLabels(t *testing.T, labels map[string]string) {
+func requireCommonLabels(t *testing.T, labels map[string]string) {
 	t.Helper()
 
-	assert.Equal(t, commonresources.LabelValueKymaModule, labels[commonresources.LabelKeyKymaModule])
-	assert.Equal(t, commonresources.LabelValueK8sPartOf, labels[commonresources.LabelKeyK8sPartOf])
-	assert.Equal(t, commonresources.LabelValueK8sManagedBy, labels[commonresources.LabelKeyK8sManagedBy])
+	require.Equal(t, commonresources.LabelValueKymaModule, labels[commonresources.LabelKeyKymaModule])
+	require.Equal(t, commonresources.LabelValueK8sPartOf, labels[commonresources.LabelKeyK8sPartOf])
+	require.Equal(t, commonresources.LabelValueK8sManagedBy, labels[commonresources.LabelKeyK8sManagedBy])
 }
