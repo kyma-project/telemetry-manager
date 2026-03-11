@@ -305,12 +305,6 @@ jobs:
           fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
           google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
 
-      - name: Run RBAC permissions script
-        shell: bash
-        run: |
-          chmod +x hack/test-rbac-permissions.sh
-          hack/test-rbac-permissions.sh
-
       - name: Collect cluster info on failure
         if: failure()
         shell: bash

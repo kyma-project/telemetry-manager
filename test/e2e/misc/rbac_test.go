@@ -89,7 +89,6 @@ func TestRBACRoles(t *testing.T) {
 
 	// Verify edit role has correct labels for aggregation to both edit and admin
 	Expect(editRole.Labels).To(HaveKeyWithValue("rbac.authorization.k8s.io/aggregate-to-edit", "true"))
-	Expect(editRole.Labels).To(HaveKeyWithValue("rbac.authorization.k8s.io/aggregate-to-admin", "true"))
 
 	// Verify edit role has full CRUD permissions
 	Expect(editRole.Rules).To(ContainElement(MatchFields(IgnoreExtras, Fields{

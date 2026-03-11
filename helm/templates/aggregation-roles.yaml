@@ -4,7 +4,6 @@ kind: ClusterRole
 metadata:
   name: kyma-telemetry-view
   labels:
-    app.kubernetes.io/component: rbac
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
     rbac.authorization.k8s.io/aggregate-to-view: "true"
@@ -36,7 +35,6 @@ metadata:
   name: kyma-telemetry-view
   namespace: {{ .Release.Namespace }}
   labels:
-    app.kubernetes.io/component: rbac
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
     rbac.authorization.k8s.io/aggregate-to-view: "true"
@@ -61,11 +59,9 @@ kind: ClusterRole
 metadata:
   name: kyma-telemetry-edit
   labels:
-    app.kubernetes.io/component: rbac
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
     rbac.authorization.k8s.io/aggregate-to-edit: "true"
-    rbac.authorization.k8s.io/aggregate-to-admin: "true"
   {{- include "telemetry-manager.labels" . | indent 4 }}
 rules:
   # Cluster-scoped telemetry resources - full CRUD access
