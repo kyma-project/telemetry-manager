@@ -20,6 +20,7 @@ import (
 
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
+	"github.com/kyma-project/telemetry-manager/internal/k8sclients"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
@@ -90,17 +91,19 @@ func (o *OTLPGatewayApplierDeleter) ApplyResources(ctx context.Context, c client
 		name = types.NamespacedName{Namespace: o.globals.TargetNamespace(), Name: o.baseName}
 	)
 
-	if err := applyCommonResources(ctx, c, name, commonresources.LabelValueK8sComponentGateway, o.rbac); err != nil {
+	labelerClient := k8sclients.NewLabeler(c, o.baseName, commonresources.LabelValueK8sComponentGateway)
+
+	if err := applyCommonResources(ctx, labelerClient, name, o.rbac); err != nil {
 		return fmt.Errorf("failed to create common resource: %w", err)
 	}
 
-	secret := makeSecret(name, commonresources.LabelValueK8sComponentGateway, opts.CollectorEnvVars)
-	if err := k8sutils.CreateOrUpdateSecret(ctx, c, secret); err != nil {
+	secret := makeSecret(name, opts.CollectorEnvVars)
+	if err := k8sutils.CreateOrUpdateSecret(ctx, labelerClient, secret); err != nil {
 		return fmt.Errorf("failed to create env secret: %w", err)
 	}
 
-	configMap := makeConfigMap(name, commonresources.LabelValueK8sComponentGateway, opts.CollectorConfigYAML)
-	if err := k8sutils.CreateOrUpdateConfigMap(ctx, c, configMap); err != nil {
+	configMap := makeConfigMap(name, opts.CollectorConfigYAML)
+	if err := k8sutils.CreateOrUpdateConfigMap(ctx, labelerClient, configMap); err != nil {
 		return fmt.Errorf("failed to create configmap: %w", err)
 	}
 
@@ -109,29 +112,29 @@ func (o *OTLPGatewayApplierDeleter) ApplyResources(ctx context.Context, c client
 	networkPolicies := makeGatewayNetworkPolicies(name, opts.IstioEnabled)
 
 	for _, np := range networkPolicies {
-		if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, np); err != nil {
+		if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, labelerClient, np); err != nil {
 			return fmt.Errorf("failed to create agent network policies: %w", err)
 		}
 	}
 
-	if err := k8sutils.CreateOrUpdateDaemonSet(ctx, c, o.makeGatewayDaemonSet(configChecksum, opts)); err != nil {
+	if err := k8sutils.CreateOrUpdateDaemonSet(ctx, labelerClient, o.makeGatewayDaemonSet(configChecksum, opts)); err != nil {
 		return fmt.Errorf("failed to create daemonset: %w", err)
 	}
 
-	if err := k8sutils.CreateOrUpdateService(ctx, c, o.makeOTLPService()); err != nil {
+	if err := k8sutils.CreateOrUpdateService(ctx, labelerClient, o.makeOTLPService()); err != nil {
 		return fmt.Errorf("failed to create otlp service: %w", err)
 	}
 
 	// Create the legacy service for backward compatibility
 	// This service uses the old name (telemetry-otlp-logs) but points to the new DaemonSet
 	legacyService := o.makeLegacyOTLPService(names.OTLPLogsService)
-	if err := k8sutils.CreateOrUpdateService(ctx, c, legacyService); err != nil {
+	if err := k8sutils.CreateOrUpdateService(ctx, labelerClient, legacyService); err != nil {
 		return fmt.Errorf("failed to create legacy log otlp service: %w", err)
 	}
 
 	if opts.IstioEnabled {
 		for _, svcName := range []string{names.OTLPLogsService, names.OTLPService} {
-			if err := k8sutils.CreateOrUpdateDestinationRule(ctx, c, o.makeDestinationRule(svcName)); err != nil {
+			if err := k8sutils.CreateOrUpdateDestinationRule(ctx, labelerClient, o.makeDestinationRule(svcName)); err != nil {
 				return fmt.Errorf("failed to create destinationrule: %w", err)
 			}
 		}
@@ -204,13 +207,10 @@ func (o *OTLPGatewayApplierDeleter) DeleteResources(ctx context.Context, c clien
 }
 
 func (o *OTLPGatewayApplierDeleter) makeDestinationRule(name string) *istionetworkingclientv1.DestinationRule {
-	commonLabels := commonresources.MakeDefaultLabels(o.baseName, commonresources.LabelValueK8sComponentGateway)
-
 	return &istionetworkingclientv1.DestinationRule{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: o.globals.TargetNamespace(),
-			Labels:    commonLabels,
 		},
 		Spec: v1alpha3.DestinationRule{
 			Host: fmt.Sprintf("%s.%s.svc.cluster.local", name, o.globals.TargetNamespace()),
@@ -222,14 +222,12 @@ func (o *OTLPGatewayApplierDeleter) makeDestinationRule(name string) *istionetwo
 }
 
 func (o *OTLPGatewayApplierDeleter) makeOTLPService() *corev1.Service {
-	commonLabels := commonresources.MakeDefaultLabels(o.baseName, commonresources.LabelValueK8sComponentGateway)
 	selectorLabels := commonresources.MakeDefaultSelectorLabels(o.baseName)
 
 	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      o.otlpServiceName,
 			Namespace: o.globals.TargetNamespace(),
-			Labels:    commonLabels,
 		},
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{
@@ -257,14 +255,12 @@ func (o *OTLPGatewayApplierDeleter) makeOTLPService() *corev1.Service {
 
 // makeLegacyOTLPService creates a service with a legacy name that points to the unified OTLP gateway
 func (o *OTLPGatewayApplierDeleter) makeLegacyOTLPService(legacyServiceName string) *corev1.Service {
-	commonLabels := commonresources.MakeDefaultLabels(o.baseName, commonresources.LabelValueK8sComponentGateway)
 	selectorLabels := commonresources.MakeDefaultSelectorLabels(o.baseName)
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      legacyServiceName,
 			Namespace: o.globals.TargetNamespace(),
-			Labels:    commonLabels,
 		},
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{

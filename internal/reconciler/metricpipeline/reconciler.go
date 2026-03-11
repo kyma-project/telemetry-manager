@@ -428,7 +428,7 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 
 	if err := r.gatewayApplierDeleter.ApplyResources(
 		ctx,
-		k8sclients.NewManagedResourceClient(r.Client, pipeline),
+		k8sclients.NewOwnerReferenceSetter(r.Client, pipeline),
 		opts,
 	); err != nil {
 		return fmt.Errorf("failed to apply gateway resources: %w", err)
@@ -493,7 +493,7 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 
 	if err := r.agentApplierDeleter.ApplyResources(
 		ctx,
-		k8sclients.NewManagedResourceClient(r.Client, pipeline),
+		k8sclients.NewOwnerReferenceSetter(r.Client, pipeline),
 		otelcollector.AgentApplyOptions{
 			IstioEnabled:        isIstioActive,
 			CollectorConfigYAML: string(agentConfigYAML),

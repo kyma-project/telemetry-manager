@@ -370,11 +370,11 @@ func (r *Reconciler) reconcileGateway(ctx context.Context, pipeline *telemetryv1
 			return fmt.Errorf("failed to delete legacy gateway resources: %w", err)
 		}
 
-		if err = r.otlpGatewayApplierDeleter.ApplyResources(ctx, k8sclients.NewManagedResourceClient(r.Client, pipeline), opts); err != nil {
+		if err = r.otlpGatewayApplierDeleter.ApplyResources(ctx, k8sclients.NewOwnerReferenceSetter(r.Client, pipeline), opts); err != nil {
 			return fmt.Errorf("failed to apply OTLP gateway resources: %w", err)
 		}
 	} else {
-		if err = r.gatewayApplierDeleter.ApplyResources(ctx, k8sclients.NewManagedResourceClient(r.Client, pipeline), opts); err != nil {
+		if err = r.gatewayApplierDeleter.ApplyResources(ctx, k8sclients.NewOwnerReferenceSetter(r.Client, pipeline), opts); err != nil {
 			return fmt.Errorf("failed to apply gateway resources: %w", err)
 		}
 	}
@@ -431,7 +431,7 @@ func (r *Reconciler) reconcileLogAgent(ctx context.Context, pipeline *telemetryv
 
 	if err := r.agentApplierDeleter.ApplyResources(
 		ctx,
-		k8sclients.NewManagedResourceClient(r.Client, pipeline),
+		k8sclients.NewOwnerReferenceSetter(r.Client, pipeline),
 		otelcollector.AgentApplyOptions{
 			IstioEnabled:        isIstioActive,
 			CollectorConfigYAML: string(agentConfigYAML),

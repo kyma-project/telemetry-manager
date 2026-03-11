@@ -167,7 +167,7 @@ func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry *operat
 
 	if err := r.selfMonitorApplierDeleter.ApplyResources(
 		ctx,
-		k8sclients.NewManagedResourceClient(r.Client, telemetry),
+		k8sclients.NewOwnerReferenceSetter(r.Client, telemetry),
 		selfmonitor.ApplyOptions{
 			AlertRulesFileName:       selfMonitorAlertRuleFileName,
 			AlertRulesYAML:           string(alertRulesYAML),

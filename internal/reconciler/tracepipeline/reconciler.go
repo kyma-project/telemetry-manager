@@ -383,7 +383,7 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 
 	if err := r.gatewayApplierDeleter.ApplyResources(
 		ctx,
-		k8sclients.NewManagedResourceClient(r.Client, pipeline),
+		k8sclients.NewOwnerReferenceSetter(r.Client, pipeline),
 		opts,
 	); err != nil {
 		return fmt.Errorf("failed to apply gateway resources: %w", err)

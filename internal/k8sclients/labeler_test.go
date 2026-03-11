@@ -13,17 +13,22 @@ import (
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 )
 
+const (
+	testBaseName      = "test-collector"
+	testComponentType = "gateway"
+)
+
 func TestLabeler_Create(t *testing.T) {
 	inner := fake.NewClientBuilder().Build()
-	labeler := NewLabeler(inner)
+	labeler := NewLabeler(inner, testBaseName, testComponentType)
 
-	t.Run("adds common labels to object without labels", func(t *testing.T) {
+	t.Run("adds default labels to object without labels", func(t *testing.T) {
 		obj := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "no-labels", Namespace: "default"}}
 		require.NoError(t, labeler.Create(t.Context(), obj))
 
 		var got corev1.ConfigMap
 		require.NoError(t, inner.Get(t.Context(), types.NamespacedName{Name: "no-labels", Namespace: "default"}, &got))
-		requireCommonLabels(t, got.Labels)
+		requireDefaultLabels(t, got.Labels)
 	})
 
 	t.Run("preserves existing labels", func(t *testing.T) {
@@ -36,14 +41,14 @@ func TestLabeler_Create(t *testing.T) {
 
 		var got corev1.ConfigMap
 		require.NoError(t, inner.Get(t.Context(), types.NamespacedName{Name: "with-labels", Namespace: "default"}, &got))
-		requireCommonLabels(t, got.Labels)
+		requireDefaultLabels(t, got.Labels)
 		require.Equal(t, "value", got.Labels["custom"])
 	})
 }
 
 func TestLabeler_Update(t *testing.T) {
 	inner := fake.NewClientBuilder().Build()
-	labeler := NewLabeler(inner)
+	labeler := NewLabeler(inner, testBaseName, testComponentType)
 
 	obj := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "update-test", Namespace: "default"}}
 	require.NoError(t, inner.Create(t.Context(), obj))
@@ -52,12 +57,12 @@ func TestLabeler_Update(t *testing.T) {
 
 	var got corev1.ConfigMap
 	require.NoError(t, inner.Get(t.Context(), types.NamespacedName{Name: "update-test", Namespace: "default"}, &got))
-	requireCommonLabels(t, got.Labels)
+	requireDefaultLabels(t, got.Labels)
 }
 
 func TestLabeler_Patch(t *testing.T) {
 	inner := fake.NewClientBuilder().Build()
-	labeler := NewLabeler(inner)
+	labeler := NewLabeler(inner, testBaseName, testComponentType)
 
 	obj := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "patch-test", Namespace: "default"}}
 	require.NoError(t, inner.Create(t.Context(), obj))
@@ -67,12 +72,12 @@ func TestLabeler_Patch(t *testing.T) {
 
 	var got corev1.ConfigMap
 	require.NoError(t, inner.Get(t.Context(), types.NamespacedName{Name: "patch-test", Namespace: "default"}, &got))
-	requireCommonLabels(t, got.Labels)
+	requireDefaultLabels(t, got.Labels)
 }
 
 func TestLabeler_Get(t *testing.T) {
 	inner := fake.NewClientBuilder().Build()
-	labeler := NewLabeler(inner)
+	labeler := NewLabeler(inner, testBaseName, testComponentType)
 
 	obj := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "get-test", Namespace: "default"}}
 	require.NoError(t, inner.Create(t.Context(), obj))
@@ -82,10 +87,12 @@ func TestLabeler_Get(t *testing.T) {
 	require.Equal(t, "get-test", got.Name)
 }
 
-func requireCommonLabels(t *testing.T, labels map[string]string) {
+func requireDefaultLabels(t *testing.T, labels map[string]string) {
 	t.Helper()
 
 	require.Equal(t, commonresources.LabelValueKymaModule, labels[commonresources.LabelKeyKymaModule])
 	require.Equal(t, commonresources.LabelValueK8sPartOf, labels[commonresources.LabelKeyK8sPartOf])
 	require.Equal(t, commonresources.LabelValueK8sManagedBy, labels[commonresources.LabelKeyK8sManagedBy])
+	require.Equal(t, testBaseName, labels[commonresources.LabelKeyK8sName])
+	require.Equal(t, testComponentType, labels[commonresources.LabelKeyK8sComponent])
 }

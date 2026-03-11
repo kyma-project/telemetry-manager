@@ -244,7 +244,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 
 	if err = r.agentApplierDeleter.ApplyResources(
 		ctx,
-		k8sclients.NewManagedResourceClient(r.Client, pipeline),
+		k8sclients.NewOwnerReferenceSetter(r.Client, pipeline),
 		fluentbit.AgentApplyOptions{
 			FluentBitConfig: config,
 			IstioEnabled:    isIstioActive,

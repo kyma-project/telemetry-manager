@@ -17,6 +17,7 @@ import (
 
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
 	fbports "github.com/kyma-project/telemetry-manager/internal/fluentbit/ports"
+	"github.com/kyma-project/telemetry-manager/internal/k8sclients"
 	mgrports "github.com/kyma-project/telemetry-manager/internal/manager/ports"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
@@ -95,43 +96,45 @@ func (ad *ApplierDeleter) DeleteResources(ctx context.Context, c client.Client) 
 }
 
 func (ad *ApplierDeleter) ApplyResources(ctx context.Context, c client.Client, opts ApplyOptions) error {
+	labelerClient := k8sclients.NewLabeler(c, names.SelfMonitor, commonresources.LabelValueK8sComponentMonitor)
+
 	// Create RBAC resources in the following order: service account, cluster role, cluster role binding.
-	if err := k8sutils.CreateOrUpdateServiceAccount(ctx, c, ad.makeServiceAccount()); err != nil {
+	if err := k8sutils.CreateOrUpdateServiceAccount(ctx, labelerClient, ad.makeServiceAccount()); err != nil {
 		return fmt.Errorf("failed to create self-monitor service account: %w", err)
 	}
 
-	if err := k8sutils.CreateOrUpdateRole(ctx, c, ad.makeRole()); err != nil {
+	if err := k8sutils.CreateOrUpdateRole(ctx, labelerClient, ad.makeRole()); err != nil {
 		return fmt.Errorf("failed to create self-monitor role: %w", err)
 	}
 
-	if err := k8sutils.CreateOrUpdateRoleBinding(ctx, c, ad.makeRoleBinding()); err != nil {
+	if err := k8sutils.CreateOrUpdateRoleBinding(ctx, labelerClient, ad.makeRoleBinding()); err != nil {
 		return fmt.Errorf("failed to create self-monitor role binding: %w", err)
 	}
 
 	networkPolicies := ad.makeNetworkPolicies()
 
 	for _, np := range networkPolicies {
-		if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, np); err != nil {
+		if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, labelerClient, np); err != nil {
 			return fmt.Errorf("failed to create self monitor network policies: %w", err)
 		}
 	}
 
 	configMap := ad.makeConfigMap(opts.PrometheusConfigFileName, opts.PrometheusConfigYAML, opts.AlertRulesFileName, opts.AlertRulesYAML)
-	if err := k8sutils.CreateOrUpdateConfigMap(ctx, c, configMap); err != nil {
+	if err := k8sutils.CreateOrUpdateConfigMap(ctx, labelerClient, configMap); err != nil {
 		return fmt.Errorf("failed to create self-monitor configmap: %w", err)
 	}
 
 	checksum := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, nil)
-	if err := k8sutils.CreateOrUpdateDeployment(ctx, c, ad.makeDeployment(checksum, opts.PrometheusConfigPath, opts.PrometheusConfigFileName)); err != nil {
+	if err := k8sutils.CreateOrUpdateDeployment(ctx, labelerClient, ad.makeDeployment(checksum, opts.PrometheusConfigPath, opts.PrometheusConfigFileName)); err != nil {
 		return fmt.Errorf("failed to create sel-monitor deployment: %w", err)
 	}
 
-	if err := k8sutils.CreateOrUpdateService(ctx, c, ad.makeService(selfmonports.PrometheusPort)); err != nil {
+	if err := k8sutils.CreateOrUpdateService(ctx, labelerClient, ad.makeService(selfmonports.PrometheusPort)); err != nil {
 		return fmt.Errorf("failed to create self-monitor service: %w", err)
 	}
 
 	// TODO: Remove after rollout 1.59.0
-	if err := commonresources.CleanupOldNetworkPolicy(ctx, c, ad.selfMonitorName()); err != nil {
+	if err := commonresources.CleanupOldNetworkPolicy(ctx, labelerClient, ad.selfMonitorName()); err != nil {
 		return fmt.Errorf("failed to cleanup old network policy: %w", err)
 	}
 
@@ -143,7 +146,6 @@ func (ad *ApplierDeleter) makeServiceAccount() *corev1.ServiceAccount {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      names.SelfMonitor,
 			Namespace: ad.Config.TargetNamespace(),
-			Labels:    commonresources.MakeDefaultLabels(names.SelfMonitor, commonresources.LabelValueK8sComponentMonitor),
 		},
 	}
 
@@ -155,7 +157,6 @@ func (ad *ApplierDeleter) makeRole() *rbacv1.Role {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      names.SelfMonitor,
 			Namespace: ad.Config.TargetNamespace(),
-			Labels:    commonresources.MakeDefaultLabels(names.SelfMonitor, commonresources.LabelValueK8sComponentMonitor),
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -174,7 +175,6 @@ func (ad *ApplierDeleter) makeRoleBinding() *rbacv1.RoleBinding {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      names.SelfMonitor,
 			Namespace: ad.Config.TargetNamespace(),
-			Labels:    commonresources.MakeDefaultLabels(names.SelfMonitor, commonresources.LabelValueK8sComponentMonitor),
 		},
 		Subjects: []rbacv1.Subject{{Name: names.SelfMonitor, Namespace: ad.Config.TargetNamespace(), Kind: rbacv1.ServiceAccountKind}},
 		RoleRef: rbacv1.RoleRef{
@@ -192,7 +192,6 @@ func (ad *ApplierDeleter) makeConfigMap(prometheusConfigFileName, prometheusConf
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      names.SelfMonitor,
 			Namespace: ad.Config.TargetNamespace(),
-			Labels:    commonresources.MakeDefaultLabels(names.SelfMonitor, commonresources.LabelValueK8sComponentMonitor),
 		},
 		Data: map[string]string{
 			prometheusConfigFileName: prometheusConfigYAML,
@@ -204,15 +203,14 @@ func (ad *ApplierDeleter) makeConfigMap(prometheusConfigFileName, prometheusConf
 func (ad *ApplierDeleter) makeDeployment(configChecksum, configPath, configFile string) *appsv1.Deployment {
 	var replicas int32 = 1
 
-	// Create final labels for the DaemonSet and Pods with additional labels
+	// Resource labels: only additional labels from globals; default labels are applied by the labeler
 	resourceLabels := make(map[string]string)
+	maps.Copy(resourceLabels, ad.Config.AdditionalLabels())
+
+	// Pod labels: need default labels explicitly since the labeler only sets top-level object labels
+	defaultLabels := commonresources.MakeDefaultLabels(names.SelfMonitor, commonresources.LabelValueK8sComponentMonitor)
 	podLabels := make(map[string]string)
 	selectorLabels := commonresources.MakeDefaultSelectorLabels(names.SelfMonitor)
-
-	defaultLabels := commonresources.MakeDefaultLabels(names.SelfMonitor, commonresources.LabelValueK8sComponentMonitor)
-
-	maps.Copy(resourceLabels, ad.Config.AdditionalLabels())
-	maps.Copy(resourceLabels, defaultLabels)
 
 	maps.Copy(podLabels, ad.Config.AdditionalLabels())
 	podLabels[commonresources.LabelKeyIstioInject] = commonresources.LabelValueFalse
@@ -347,7 +345,6 @@ func (ad *ApplierDeleter) makeService(port int32) *corev1.Service {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      names.SelfMonitor,
 			Namespace: ad.Config.TargetNamespace(),
-			Labels:    commonresources.MakeDefaultLabels(names.SelfMonitor, commonresources.LabelValueK8sComponentMonitor),
 		},
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{
@@ -367,7 +364,7 @@ func (ad *ApplierDeleter) makeService(port int32) *corev1.Service {
 func (ad *ApplierDeleter) makeNetworkPolicies() []*networkingv1.NetworkPolicy {
 	selfMonitorNetworkPolicy := commonresources.MakeNetworkPolicy(
 		ad.selfMonitorName(),
-		commonresources.MakeDefaultLabels(names.SelfMonitor, commonresources.LabelValueK8sComponentMonitor),
+		nil,
 		commonresources.MakeDefaultSelectorLabels(names.SelfMonitor),
 		// Allow egress to FluentBit for scraping metrics
 		commonresources.WithEgressToPods(map[string]string{
@@ -392,7 +389,7 @@ func (ad *ApplierDeleter) makeNetworkPolicies() []*networkingv1.NetworkPolicy {
 	)
 	metricsNetworkPolicy := commonresources.MakeNetworkPolicy(
 		ad.selfMonitorName(),
-		commonresources.MakeDefaultLabels(names.SelfMonitor, commonresources.LabelValueK8sComponentMonitor),
+		nil,
 		commonresources.MakeDefaultSelectorLabels(names.SelfMonitor),
 		commonresources.WithNameSuffix("metrics"),
 		// Allow ingress from telemetry-manager pods only on Prometheus port

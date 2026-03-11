@@ -10,8 +10,8 @@ import (
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 )
 
-// NewLabeler wraps an existing Kubernetes client to automatically apply common
-// telemetry module labels to every object on Create, Update, and Patch operations.
+// NewLabeler wraps an existing Kubernetes client to automatically apply default
+// telemetry labels to every object on Create, Update, and Patch operations.
 // This ensures all managed resources are uniformly labeled and discoverable, which is
 // required for scoping the informer cache by label selector.
 //
@@ -19,30 +19,34 @@ import (
 //   - kyma-project.io/module: telemetry
 //   - app.kubernetes.io/part-of: telemetry
 //   - app.kubernetes.io/managed-by: telemetry-manager
-func NewLabeler(inner client.Client) client.Client {
+//   - app.kubernetes.io/name: <baseName>
+//   - app.kubernetes.io/component: <componentType>
+func NewLabeler(inner client.Client, baseName, componentType string) client.Client {
+	defaultLabels := commonresources.MakeDefaultLabels(baseName, componentType)
+
 	return interceptor.NewClient(&noopWatchClient{Client: inner}, interceptor.Funcs{
 		Create: func(ctx context.Context, c client.WithWatch, obj client.Object, opts ...client.CreateOption) error {
-			ensureModuleLabels(obj)
+			ensureDefaultLabels(obj, defaultLabels)
 			return c.Create(ctx, obj, opts...)
 		},
 		Update: func(ctx context.Context, c client.WithWatch, obj client.Object, opts ...client.UpdateOption) error {
-			ensureModuleLabels(obj)
+			ensureDefaultLabels(obj, defaultLabels)
 			return c.Update(ctx, obj, opts...)
 		},
 		Patch: func(ctx context.Context, c client.WithWatch, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
-			ensureModuleLabels(obj)
+			ensureDefaultLabels(obj, defaultLabels)
 			return c.Patch(ctx, obj, patch, opts...)
 		},
 	})
 }
 
-func ensureModuleLabels(obj client.Object) {
+func ensureDefaultLabels(obj client.Object, defaultLabels map[string]string) {
 	labels := obj.GetLabels()
 	if labels == nil {
 		labels = make(map[string]string)
 	}
 
-	maps.Copy(labels, commonresources.MakeModuleLabels())
+	maps.Copy(labels, defaultLabels)
 
 	obj.SetLabels(labels)
 }

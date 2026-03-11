@@ -19,6 +19,7 @@ import (
 
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
+	"github.com/kyma-project/telemetry-manager/internal/k8sclients"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
@@ -146,24 +147,25 @@ func NewMetricAgentApplierDeleter(globals config.Global, image, priorityClassNam
 
 func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Client, opts AgentApplyOptions) error {
 	name := types.NamespacedName{Namespace: aad.globals.TargetNamespace(), Name: aad.baseName}
+	labelerClient := k8sclients.NewLabeler(c, aad.baseName, commonresources.LabelValueK8sComponentAgent)
 
-	if err := applyCommonResources(ctx, c, name, commonresources.LabelValueK8sComponentAgent, aad.rbac); err != nil {
+	if err := applyCommonResources(ctx, labelerClient, name, aad.rbac); err != nil {
 		return fmt.Errorf("failed to create common resource: %w", err)
 	}
 
 	secretsInChecksum := []corev1.Secret{}
 
 	if opts.CollectorEnvVars != nil {
-		secret := makeSecret(name, commonresources.LabelValueK8sComponentAgent, opts.CollectorEnvVars)
-		if err := k8sutils.CreateOrUpdateSecret(ctx, c, secret); err != nil {
+		secret := makeSecret(name, opts.CollectorEnvVars)
+		if err := k8sutils.CreateOrUpdateSecret(ctx, labelerClient, secret); err != nil {
 			return fmt.Errorf("failed to create env secret: %w", err)
 		}
 
 		secretsInChecksum = append(secretsInChecksum, *secret)
 	}
 
-	configMap := makeConfigMap(name, commonresources.LabelValueK8sComponentAgent, opts.CollectorConfigYAML)
-	if err := k8sutils.CreateOrUpdateConfigMap(ctx, c, configMap); err != nil {
+	configMap := makeConfigMap(name, opts.CollectorConfigYAML)
+	if err := k8sutils.CreateOrUpdateConfigMap(ctx, labelerClient, configMap); err != nil {
 		return fmt.Errorf("failed to create configmap: %w", err)
 	}
 
@@ -172,12 +174,12 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 	networkPolicies := makeAgentNetworkPolicies(name, opts.IstioEnabled)
 
 	for _, np := range networkPolicies {
-		if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, np); err != nil {
+		if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, labelerClient, np); err != nil {
 			return fmt.Errorf("failed to create agent network policies: %w", err)
 		}
 	}
 
-	if err := k8sutils.CreateOrUpdateDaemonSet(ctx, c, aad.makeAgentDaemonSet(configChecksum, opts)); err != nil {
+	if err := k8sutils.CreateOrUpdateDaemonSet(ctx, labelerClient, aad.makeAgentDaemonSet(configChecksum, opts)); err != nil {
 		return fmt.Errorf("failed to create daemonset: %w", err)
 	}
 
@@ -252,7 +254,7 @@ func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string, opts A
 func makeAgentNetworkPolicies(name types.NamespacedName, istioEnabled bool) []*networkingv1.NetworkPolicy {
 	metricsNetworkPolicy := commonresources.MakeNetworkPolicy(
 		name,
-		commonresources.MakeDefaultLabels(name.Name, commonresources.LabelValueK8sComponentAgent),
+		nil,
 		commonresources.MakeDefaultSelectorLabels(name.Name),
 		commonresources.WithNameSuffix("metrics"),
 		commonresources.WithIngressFromPodsInAllNamespaces(
@@ -263,7 +265,7 @@ func makeAgentNetworkPolicies(name types.NamespacedName, istioEnabled bool) []*n
 	)
 	agentNetworkPolicy := commonresources.MakeNetworkPolicy(
 		name,
-		commonresources.MakeDefaultLabels(name.Name, commonresources.LabelValueK8sComponentAgent),
+		nil,
 		commonresources.MakeDefaultSelectorLabels(name.Name),
 		commonresources.WithEgressToAny(),
 	)

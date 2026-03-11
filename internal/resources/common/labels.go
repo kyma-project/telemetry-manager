@@ -64,14 +64,12 @@ func ModuleLabelSelector() labels.Selector {
 	return labels.SelectorFromSet(MakeModuleLabels())
 }
 
-func MakeDefaultLabels(baseName string, componentLabelValue string) map[string]string {
-	return map[string]string{
-		LabelKeyK8sName:      baseName,
-		LabelKeyKymaModule:   LabelValueKymaModule,
-		LabelKeyK8sPartOf:    LabelValueK8sPartOf,
-		LabelKeyK8sManagedBy: LabelValueK8sManagedBy,
-		LabelKeyK8sComponent: componentLabelValue,
-	}
+func MakeDefaultLabels(componentBaseName string, componentType string) map[string]string {
+	labels := MakeModuleLabels()
+	labels[LabelKeyK8sName] = componentBaseName
+	labels[LabelKeyK8sComponent] = componentType
+
+	return labels
 }
 
 func MakeDefaultSelectorLabels(baseName string) map[string]string {
