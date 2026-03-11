@@ -16,6 +16,7 @@ import (
 	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/config"
+	"github.com/kyma-project/telemetry-manager/internal/k8sclients"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
 	selfmonitorconfig "github.com/kyma-project/telemetry-manager/internal/selfmonitor/config"
@@ -166,7 +167,7 @@ func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry *operat
 
 	if err := r.selfMonitorApplierDeleter.ApplyResources(
 		ctx,
-		k8sutils.NewOwnerReferenceSetter(r.Client, telemetry),
+		k8sclients.NewManagedResourceClient(r.Client, telemetry),
 		selfmonitor.ApplyOptions{
 			AlertRulesFileName:       selfMonitorAlertRuleFileName,
 			AlertRulesYAML:           string(alertRulesYAML),

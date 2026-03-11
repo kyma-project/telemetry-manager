@@ -15,6 +15,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 )
 
 var ErrMaxPipelinesExceeded = errors.New("maximum pipeline count limit exceeded")
@@ -103,6 +104,7 @@ func (c *Checker) createLock(ctx context.Context, owner metav1.Object) error {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      c.lockName.Name,
 			Namespace: c.lockName.Namespace,
+			Labels:    commonresources.MakeModuleLabels(),
 		},
 	}
 

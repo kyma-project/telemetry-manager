@@ -1,5 +1,9 @@
 package common
 
+import (
+	"k8s.io/apimachinery/pkg/labels"
+)
+
 const (
 	// LabelValueTrue can be used in all labels that require "true" as value
 	LabelValueTrue = "true"
@@ -47,6 +51,18 @@ const (
 	LabelKeyTelemetryMetricsScraping   = "networking.kyma-project.io/metrics-scraping"
 	LabelValueTelemetryMetricsScraping = "allowed"
 )
+
+func MakeModuleLabels() map[string]string {
+	return map[string]string{
+		LabelKeyKymaModule:   LabelValueKymaModule,
+		LabelKeyK8sPartOf:    LabelValueK8sPartOf,
+		LabelKeyK8sManagedBy: LabelValueK8sManagedBy,
+	}
+}
+
+func ModuleLabelSelector() labels.Selector {
+	return labels.SelectorFromSet(MakeModuleLabels())
+}
 
 func MakeDefaultLabels(baseName string, componentLabelValue string) map[string]string {
 	return map[string]string{

@@ -15,6 +15,7 @@ import (
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
+	"github.com/kyma-project/telemetry-manager/internal/k8sclients"
 	"github.com/kyma-project/telemetry-manager/internal/metrics"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/logagent"
@@ -369,11 +370,11 @@ func (r *Reconciler) reconcileGateway(ctx context.Context, pipeline *telemetryv1
 			return fmt.Errorf("failed to delete legacy gateway resources: %w", err)
 		}
 
-		if err = r.otlpGatewayApplierDeleter.ApplyResources(ctx, k8sutils.NewOwnerReferenceSetter(r.Client, pipeline), opts); err != nil {
+		if err = r.otlpGatewayApplierDeleter.ApplyResources(ctx, k8sclients.NewManagedResourceClient(r.Client, pipeline), opts); err != nil {
 			return fmt.Errorf("failed to apply OTLP gateway resources: %w", err)
 		}
 	} else {
-		if err = r.gatewayApplierDeleter.ApplyResources(ctx, k8sutils.NewOwnerReferenceSetter(r.Client, pipeline), opts); err != nil {
+		if err = r.gatewayApplierDeleter.ApplyResources(ctx, k8sclients.NewManagedResourceClient(r.Client, pipeline), opts); err != nil {
 			return fmt.Errorf("failed to apply gateway resources: %w", err)
 		}
 	}
@@ -430,7 +431,7 @@ func (r *Reconciler) reconcileLogAgent(ctx context.Context, pipeline *telemetryv
 
 	if err := r.agentApplierDeleter.ApplyResources(
 		ctx,
-		k8sutils.NewOwnerReferenceSetter(r.Client, pipeline),
+		k8sclients.NewManagedResourceClient(r.Client, pipeline),
 		otelcollector.AgentApplyOptions{
 			IstioEnabled:        isIstioActive,
 			CollectorConfigYAML: string(agentConfigYAML),

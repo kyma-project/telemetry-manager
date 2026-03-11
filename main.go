@@ -36,7 +36,6 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/fields"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -307,24 +306,39 @@ func setupManager(globals config.Global) (manager.Manager, error) {
 	}
 
 	cacheOptions := map[client.Object]cache.ByObject{
-		&appsv1.Deployment{}:                        {Field: setNamespaceFieldSelector(globals)},
-		&appsv1.ReplicaSet{}:                        {Field: setNamespaceFieldSelector(globals)},
-		&appsv1.DaemonSet{}:                         {Field: setNamespaceFieldSelector(globals)},
-		&corev1.ConfigMap{}:                         {Namespaces: setConfigMapNamespaceFieldSelector(globals)},
-		&corev1.ServiceAccount{}:                    {Field: setNamespaceFieldSelector(globals)},
-		&corev1.Service{}:                           {Field: setNamespaceFieldSelector(globals)},
-		&networkingv1.NetworkPolicy{}:               {Field: setNamespaceFieldSelector(globals)},
-		&corev1.Secret{}:                            {Field: setNamespaceFieldSelector(globals)},
-		&operatorv1beta1.Telemetry{}:                {Field: setNamespaceFieldSelector(globals)},
-		&rbacv1.Role{}:                              {Field: setNamespaceFieldSelector(globals)},
-		&rbacv1.RoleBinding{}:                       {Field: setNamespaceFieldSelector(globals)},
-		&apiextensionsv1.CustomResourceDefinition{}: {Label: setLabelSelector()},
-		&admissionregistrationv1.ValidatingWebhookConfiguration{}: {Label: setLabelSelector()},
-		&admissionregistrationv1.MutatingWebhookConfiguration{}:   {Label: setLabelSelector()},
+		// Namespace-scoped managed resources: filter by namespace + label
+		&appsv1.Deployment{}:          scopedByNamespaceAndLabels(globals),
+		&appsv1.ReplicaSet{}:          scopedByNamespaceAndLabels(globals),
+		&appsv1.DaemonSet{}:           scopedByNamespaceAndLabels(globals),
+		&corev1.Pod{}:                 scopedByNamespaceAndLabels(globals),
+		&corev1.ServiceAccount{}:      scopedByNamespaceAndLabels(globals),
+		&corev1.Service{}:             scopedByNamespaceAndLabels(globals),
+		&networkingv1.NetworkPolicy{}: scopedByNamespaceAndLabels(globals),
+		&rbacv1.Role{}:                scopedByNamespaceAndLabels(globals),
+		&rbacv1.RoleBinding{}:         scopedByNamespaceAndLabels(globals),
+
+		&corev1.ConfigMap{}: {Namespaces: map[string]cache.Config{
+			"kube-system": {
+				FieldSelector: fields.SelectorFromSet(fields.Set{"metadata.name": "shoot-info"}),
+			},
+			globals.TargetNamespace(): {
+				LabelSelector: commonresources.ModuleLabelSelector(),
+			},
+		}},
+		&corev1.Secret{}:             scopedByNamespace(globals),
+		&operatorv1beta1.Telemetry{}: scopedByNamespace(globals),
+
+		// Cluster-scoped managed resources: filter by label only
+		&rbacv1.ClusterRole{}:                                     scopedByLabel(),
+		&rbacv1.ClusterRoleBinding{}:                              scopedByLabel(),
+		&apiextensionsv1.CustomResourceDefinition{}:               scopedByLabel(),
+		&admissionregistrationv1.ValidatingWebhookConfiguration{}: scopedByLabel(),
+		&admissionregistrationv1.MutatingWebhookConfiguration{}:   scopedByLabel(),
 	}
 
 	if isIstioActive {
-		cacheOptions[&istiosecurityclientv1.PeerAuthentication{}] = cache.ByObject{Field: setNamespaceFieldSelector(globals)}
+		cacheOptions[&istiosecurityclientv1.PeerAuthentication{}] = scopedByNamespaceAndLabels(globals)
+		cacheOptions[&istionetworkingclientv1.DestinationRule{}] = scopedByNamespaceAndLabels(globals)
 	}
 
 	mgr, err := ctrl.NewManager(restConfig, ctrl.Options{
@@ -572,20 +586,22 @@ func ensureWebhookCert(webhookCertConfig webhookcert.Config, mgr manager.Manager
 	return nil
 }
 
-func setNamespaceFieldSelector(globals config.Global) fields.Selector {
-	return fields.SelectorFromSet(fields.Set{"metadata.namespace": globals.TargetNamespace()})
+func scopedByNamespaceAndLabels(globals config.Global) cache.ByObject {
+	return cache.ByObject{
+		Field: fields.SelectorFromSet(fields.Set{"metadata.namespace": globals.TargetNamespace()}),
+		Label: commonresources.ModuleLabelSelector(),
+	}
 }
 
-func setLabelSelector() labels.Selector {
-	return labels.SelectorFromSet(labels.Set{commonresources.LabelKeyKymaModule: commonresources.LabelValueKymaModule})
+func scopedByNamespace(globals config.Global) cache.ByObject {
+	return cache.ByObject{
+		Field: fields.SelectorFromSet(fields.Set{"metadata.namespace": globals.TargetNamespace()}),
+	}
 }
 
-func setConfigMapNamespaceFieldSelector(globals config.Global) map[string]cache.Config {
-	return map[string]cache.Config{
-		"kube-system": {
-			FieldSelector: fields.SelectorFromSet(fields.Set{"metadata.name": "shoot-info"}),
-		},
-		globals.TargetNamespace(): {},
+func scopedByLabel() cache.ByObject {
+	return cache.ByObject{
+		Label: commonresources.ModuleLabelSelector(),
 	}
 }
 
