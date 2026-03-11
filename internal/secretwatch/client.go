@@ -149,7 +149,7 @@ func (c *Client) Stop(ctx context.Context) {
 func (c *Client) startWatcher(ctx context.Context, w *watcher) {
 	logf.FromContext(ctx).V(1).Info("Starting watcher goroutine", "secret", w.secret.String())
 
-	watcherCtx, cancel := context.WithCancel(context.Background())
+	watcherCtx, cancel := context.WithCancel(context.Background()) //nolint:gosec // G118: cancel is stored in w.cancel and called during shutdown
 	w.cancel = cancel
 
 	c.wg.Go(func() {

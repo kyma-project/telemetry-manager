@@ -4,7 +4,7 @@ To monitor traffic in your service mesh, configure Istio to send access logs. Th
 
 ## Prerequisites
 
-- You have the Istio module in your cluster. See [Quick Install](https://kyma-project.io/#/02-get-started/01-quick-install).
+- You have the Istio module in your cluster. See [Quick Install](https://kyma-project.io/02-get-started/01-quick-install).
 - You have access to Kyma dashboard. Alternatively, if you prefer CLI, you need [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl).
 
 ## Context

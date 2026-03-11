@@ -1,4 +1,10 @@
 extensions:
+    cgroupruntime:
+        gomaxprocs:
+            enabled: false
+        gomemlimit:
+            enabled: true
+            ratio: 0.8
     health_check:
         endpoint: ${MY_POD_IP}:13133
     k8s_leader_elector:
@@ -12,7 +18,7 @@ service:
             receivers:
                 - routing/istio-input
             processors:
-                - k8sattributes
+                - k8s_attributes
                 - service_enrichment
             exporters:
                 - routing/enrichment
@@ -55,6 +61,7 @@ service:
     extensions:
         - health_check
         - pprof
+        - cgroupruntime
         - k8s_leader_elector
 receivers:
     prometheus/istio:
@@ -108,7 +115,7 @@ processors:
                 - resource.attributes["kyma.input.name"] == "istio" and (resource.attributes["k8s.namespace.name"] == "kube-system" or resource.attributes["k8s.namespace.name"] == "istio-system")
                 - resource.attributes["kyma.input.name"] == "istio" and resource.attributes["k8s.namespace.name"] != nil and not(resource.attributes["k8s.namespace.name"] == "monitoring" or resource.attributes["k8s.namespace.name"] == "observability")
     istio_noise_filter: {}
-    k8sattributes:
+    k8s_attributes:
         auth_type: serviceAccount
         passthrough: false
         extract:

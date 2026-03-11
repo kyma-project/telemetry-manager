@@ -38,6 +38,20 @@ type OAuth2Extension struct {
 	Params       map[string]string `yaml:"endpoint_params,omitempty"`
 }
 
+type CGroupRuntimeExtension struct {
+	GoMaxProcs CGroupRuntimeGoMaxProcs `yaml:"gomaxprocs"`
+	GoMemLimit CGroupRuntimeGoMemLimit `yaml:"gomemlimit"`
+}
+
+type CGroupRuntimeGoMaxProcs struct {
+	Enabled bool `yaml:"enabled"`
+}
+
+type CGroupRuntimeGoMemLimit struct {
+	Enabled bool    `yaml:"enabled"`
+	Ratio   float64 `yaml:"ratio"`
+}
+
 // =============================================================================
 // SERVICE TYPES
 // =============================================================================
