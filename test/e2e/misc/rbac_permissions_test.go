@@ -258,6 +258,19 @@ func testViewerPermissions(g Gomega, testNS string) {
 	checkCanI(g, user, "create", "logpipelines", "", false, "Viewer cannot create LogPipelines")
 	checkCanI(g, user, "update", "logpipelines", "", false, "Viewer cannot update LogPipelines")
 	checkCanI(g, user, "delete", "logpipelines", "", false, "Viewer cannot delete LogPipelines")
+
+	// Status subresources - viewer can read status
+	checkCanI(g, user, "get", "logpipelines/status", "", true, "Viewer can get LogPipeline status")
+	checkCanI(g, user, "get", "metricpipelines/status", "", true, "Viewer can get MetricPipeline status")
+	checkCanI(g, user, "get", "tracepipelines/status", "", true, "Viewer can get TracePipeline status")
+	checkCanI(g, user, "get", "telemetries/status", "", true, "Viewer can get Telemetry status")
+
+	// But cannot update status (controller-managed)
+	checkCanI(g, user, "update", "logpipelines/status", "", false, "Viewer cannot update LogPipeline status")
+	checkCanI(g, user, "patch", "logpipelines/status", "", false, "Viewer cannot patch LogPipeline status")
+
+	// Finalizers - viewer cannot modify
+	checkCanI(g, user, "update", "logpipelines/finalizers", "", false, "Viewer cannot update LogPipeline finalizers")
 }
 
 func testEditorPermissions(g Gomega, testNS string) {
@@ -279,30 +292,59 @@ func testEditorPermissions(g Gomega, testNS string) {
 	checkCanI(g, user, "create", "tracepipelines", "", true, "Editor can create TracePipelines")
 	checkCanI(g, user, "delete", "tracepipelines", "", true, "Editor can delete TracePipelines")
 
-	checkCanI(g, user, "create", "telemetries", "", true, "Editor can create Telemetries")
-	checkCanI(g, user, "delete", "telemetries", "", true, "Editor can delete Telemetries")
+	// Telemetry CR (operator.kyma-project.io) - can update/patch but NOT create/delete
+	// (Lifecycle Manager owns create/delete operations)
+	checkCanI(g, user, "get", "telemetries", "", true, "Editor can get Telemetries")
+	checkCanI(g, user, "patch", "telemetries", "", true, "Editor can patch Telemetries")
+	checkCanI(g, user, "update", "telemetries", "", true, "Editor can update Telemetries")
+	checkCanI(g, user, "create", "telemetries", "", false, "Editor cannot create Telemetries (Lifecycle Manager-owned)")
+	checkCanI(g, user, "delete", "telemetries", "", false, "Editor cannot delete Telemetries (Lifecycle Manager-owned)")
 
 	// Editor CAN manage Secrets (from base K8s edit role, NOT from kyma-telemetry-edit)
 	checkCanI(g, user, "get", "secrets", kitkyma.SystemNamespaceName, true, "Editor can get Secrets (from base edit role)")
 	checkCanI(g, user, "create", "secrets", kitkyma.SystemNamespaceName, true, "Editor can create Secrets (from base edit role)")
 	checkCanI(g, user, "delete", "secrets", kitkyma.SystemNamespaceName, true, "Editor can delete Secrets (from base edit role)")
+
+	// Status subresources - editor can read but NOT update (controller-managed)
+	checkCanI(g, user, "get", "logpipelines/status", "", true, "Editor can get LogPipeline status")
+	checkCanI(g, user, "update", "logpipelines/status", "", false, "Editor cannot update LogPipeline status (controller-managed)")
+	checkCanI(g, user, "patch", "logpipelines/status", "", false, "Editor cannot patch LogPipeline status (controller-managed)")
+
+	checkCanI(g, user, "get", "telemetries/status", "", true, "Editor can get Telemetry status")
+	checkCanI(g, user, "update", "telemetries/status", "", false, "Editor cannot update Telemetry status (controller-managed)")
+
+	// Finalizers - editor CAN update finalizers (needed for deletion with finalizers)
+	checkCanI(g, user, "update", "logpipelines/finalizers", "", true, "Editor can update LogPipeline finalizers")
+	checkCanI(g, user, "update", "metricpipelines/finalizers", "", true, "Editor can update MetricPipeline finalizers")
+	checkCanI(g, user, "update", "tracepipelines/finalizers", "", true, "Editor can update TracePipeline finalizers")
 }
 
 func testAdminPermissions(g Gomega, testNS string) {
 	user := fmt.Sprintf("system:serviceaccount:%s:admin-sa", testNS)
 
-	// Should have all editor permissions
+	// Should have all editor permissions for pipelines
 	checkCanI(g, user, "get", "logpipelines", "", true, "Admin can get LogPipelines")
 	checkCanI(g, user, "create", "logpipelines", "", true, "Admin can create LogPipelines")
 	checkCanI(g, user, "delete", "logpipelines", "", true, "Admin can delete LogPipelines")
 
 	checkCanI(g, user, "create", "metricpipelines", "", true, "Admin can create MetricPipelines")
 	checkCanI(g, user, "delete", "tracepipelines", "", true, "Admin can delete TracePipelines")
-	checkCanI(g, user, "create", "telemetries", "", true, "Admin can create Telemetries")
+
+	// Telemetry CR - same restrictions as editor (Lifecycle Manager-owned)
+	checkCanI(g, user, "patch", "telemetries", "", true, "Admin can patch Telemetries")
+	checkCanI(g, user, "create", "telemetries", "", false, "Admin cannot create Telemetries (Lifecycle Manager-owned)")
+	checkCanI(g, user, "delete", "telemetries", "", false, "Admin cannot delete Telemetries (Lifecycle Manager-owned)")
 
 	// Admin DOES have Secret access (from base K8s admin role)
 	checkCanI(g, user, "get", "secrets", kitkyma.SystemNamespaceName, true, "Admin can get Secrets (from base admin role)")
 	checkCanI(g, user, "create", "secrets", kitkyma.SystemNamespaceName, true, "Admin can create Secrets (from base admin role)")
+
+	// Status subresources - admin can read but NOT update (controller-managed)
+	checkCanI(g, user, "get", "logpipelines/status", "", true, "Admin can get LogPipeline status")
+	checkCanI(g, user, "update", "logpipelines/status", "", false, "Admin cannot update LogPipeline status (controller-managed)")
+
+	// Finalizers - admin CAN update finalizers
+	checkCanI(g, user, "update", "logpipelines/finalizers", "", true, "Admin can update LogPipeline finalizers")
 }
 
 func testTelemetryOnlyEditorPermissions(g Gomega, testNS string) {
@@ -316,7 +358,12 @@ func testTelemetryOnlyEditorPermissions(g Gomega, testNS string) {
 
 	checkCanI(g, user, "create", "metricpipelines", "", true, "Telemetry-only editor can create MetricPipelines")
 	checkCanI(g, user, "delete", "tracepipelines", "", true, "Telemetry-only editor can delete TracePipelines")
-	checkCanI(g, user, "create", "telemetries", "", true, "Telemetry-only editor can create Telemetries")
+
+	// Telemetry CR - can patch/update but NOT create/delete (Lifecycle Manager-owned)
+	checkCanI(g, user, "get", "telemetries", "", true, "Telemetry-only editor can get Telemetries")
+	checkCanI(g, user, "patch", "telemetries", "", true, "Telemetry-only editor can patch Telemetries")
+	checkCanI(g, user, "create", "telemetries", "", false, "Telemetry-only editor CANNOT create Telemetries")
+	checkCanI(g, user, "delete", "telemetries", "", false, "Telemetry-only editor CANNOT delete Telemetries")
 
 	// CRITICAL TEST: Should NOT have Secret access (kyma-telemetry-edit doesn't grant it)
 	checkCanI(g, user, "get", "secrets", kitkyma.SystemNamespaceName, false, "Telemetry-only editor CANNOT get Secrets")
@@ -324,6 +371,15 @@ func testTelemetryOnlyEditorPermissions(g Gomega, testNS string) {
 	checkCanI(g, user, "create", "secrets", kitkyma.SystemNamespaceName, false, "Telemetry-only editor CANNOT create Secrets")
 	checkCanI(g, user, "update", "secrets", kitkyma.SystemNamespaceName, false, "Telemetry-only editor CANNOT update Secrets")
 	checkCanI(g, user, "delete", "secrets", kitkyma.SystemNamespaceName, false, "Telemetry-only editor CANNOT delete Secrets")
+
+	// Status subresources - can read but NOT update (controller-managed)
+	checkCanI(g, user, "get", "logpipelines/status", "", true, "Telemetry-only editor can get LogPipeline status")
+	checkCanI(g, user, "update", "logpipelines/status", "", false, "Telemetry-only editor CANNOT update LogPipeline status")
+	checkCanI(g, user, "patch", "telemetries/status", "", false, "Telemetry-only editor CANNOT patch Telemetry status")
+
+	// Finalizers - CAN update finalizers (needed for deletion)
+	checkCanI(g, user, "update", "logpipelines/finalizers", "", true, "Telemetry-only editor can update LogPipeline finalizers")
+	checkCanI(g, user, "update", "metricpipelines/finalizers", "", true, "Telemetry-only editor can update MetricPipeline finalizers")
 }
 
 func testPipelineCreatorPermissions(g Gomega, testNS string) {
@@ -337,6 +393,12 @@ func testPipelineCreatorPermissions(g Gomega, testNS string) {
 	// Should NOT be able to update/delete pipelines
 	checkCanI(g, user, "update", "logpipelines", "", false, "Pipeline creator cannot update LogPipelines")
 	checkCanI(g, user, "delete", "logpipelines", "", false, "Pipeline creator cannot delete LogPipelines")
+
+	// Status subresources - can read status
+	checkCanI(g, user, "get", "logpipelines/status", "", true, "Pipeline creator can get LogPipeline status")
+
+	// Finalizers - cannot update finalizers (no delete permission)
+	checkCanI(g, user, "update", "logpipelines/finalizers", "", false, "Pipeline creator cannot update LogPipeline finalizers")
 }
 
 func checkCanI(g Gomega, user, verb, resource, namespace string, expected bool, description string) {

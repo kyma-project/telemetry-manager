@@ -20,10 +20,29 @@ rules:
       - get
       - list
       - watch
+  # Read-only access to status subresource (for monitoring pipeline health)
+  - apiGroups:
+      - telemetry.kyma-project.io
+    resources:
+      - logpipelines/status
+      - metricpipelines/status
+      - tracepipelines/status
+    verbs:
+      - get
+      - list
+      - watch
   - apiGroups:
       - operator.kyma-project.io
     resources:
       - telemetries
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - operator.kyma-project.io
+    resources:
+      - telemetries/status
     verbs:
       - get
       - list
@@ -80,16 +99,46 @@ rules:
       - patch
       - update
       - watch
+  # Read-only access to status subresource
+  # Note: Status is managed by the controller and manual edits would be reverted
+  - apiGroups:
+      - telemetry.kyma-project.io
+    resources:
+      - logpipelines/status
+      - metricpipelines/status
+      - tracepipelines/status
+    verbs:
+      - get
+      - list
+      - watch
+  # Finalizer subresource - needed for deletion of resources with finalizers
+  - apiGroups:
+      - telemetry.kyma-project.io
+    resources:
+      - logpipelines/finalizers
+      - metricpipelines/finalizers
+      - tracepipelines/finalizers
+    verbs:
+      - update
+  # Telemetry CR (operator.kyma-project.io) - limited access
+  # Note: Telemetry CR is managed by Lifecycle Manager, not by end users
+  # - Users can patch/update to configure module settings (e.g., trace collector replicas)
+  # - Users CANNOT create/delete as it would be restored by Lifecycle Manager
   - apiGroups:
       - operator.kyma-project.io
     resources:
       - telemetries
     verbs:
-      - create
-      - delete
-      - deletecollection
       - get
       - list
       - patch
       - update
+      - watch
+  - apiGroups:
+      - operator.kyma-project.io
+    resources:
+      - telemetries/status
+    verbs:
+      - get
+      - list
       - watch
