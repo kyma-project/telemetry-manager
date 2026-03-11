@@ -107,7 +107,7 @@ func NewFluentBitApplierDeleter(global config.Global, namespace, fbImage, export
 }
 
 func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Client, opts AgentApplyOptions) error {
-	serviceAccount := commonresources.MakeServiceAccount(aad.daemonSetName)
+	serviceAccount := commonresources.MakeServiceAccount(aad.daemonSetName, makeLabels())
 	if err := k8sutils.CreateOrUpdateServiceAccount(ctx, c, serviceAccount); err != nil {
 		return fmt.Errorf("failed to create fluent bit service account: %w", err)
 	}
@@ -117,7 +117,7 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 		return fmt.Errorf("failed to create fluent bit cluster role: %w", err)
 	}
 
-	clusterRoleBinding := commonresources.MakeClusterRoleBinding(aad.daemonSetName)
+	clusterRoleBinding := commonresources.MakeClusterRoleBinding(aad.daemonSetName, makeLabels())
 	if err := k8sutils.CreateOrUpdateClusterRoleBinding(ctx, c, clusterRoleBinding); err != nil {
 		return fmt.Errorf("failed to create fluent bit cluster role Binding: %w", err)
 	}

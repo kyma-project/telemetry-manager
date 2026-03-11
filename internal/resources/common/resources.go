@@ -16,22 +16,24 @@ const (
 	ClusterTrustBundleVolumePath = "/etc/ssl/certs"
 )
 
-func MakeServiceAccount(name types.NamespacedName) *corev1.ServiceAccount {
+func MakeServiceAccount(name types.NamespacedName, labels map[string]string) *corev1.ServiceAccount {
 	serviceAccount := corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
 			Namespace: name.Namespace,
+			Labels:    labels,
 		},
 	}
 
 	return &serviceAccount
 }
 
-func MakeClusterRoleBinding(name types.NamespacedName) *rbacv1.ClusterRoleBinding {
+func MakeClusterRoleBinding(name types.NamespacedName, labels map[string]string) *rbacv1.ClusterRoleBinding {
 	clusterRoleBinding := rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
 			Namespace: name.Namespace,
+			Labels:    labels,
 		},
 		Subjects: []rbacv1.Subject{{Name: name.Name, Namespace: name.Namespace, Kind: "ServiceAccount"}},
 		RoleRef: rbacv1.RoleRef{
