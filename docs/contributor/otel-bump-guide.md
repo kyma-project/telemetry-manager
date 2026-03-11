@@ -103,7 +103,7 @@ After you complete the preparation steps, update the dependency versions in the 
 
 ### Telemetry Manager
 
-1. In the `telemetry-manager` repository, update the dependency versions for `telemetrygen` in the following files (other dependencies are using the main tag, so it doesn't need to be updated):
+1. In the `telemetry-manager` repository, update the dependency versions for `telemetrygen` in the following files (other dependencies use the main tag, so they don't need to be updated):
    - `.env`
    - `go.mod`
    - `test/testkit/images.go`
