@@ -286,19 +286,6 @@ jobs:
           fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
           google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
 
-      - name: Collect cluster info on failure
-        if: failure()
-        shell: bash
-        run: |
-          echo "=== Telemetry RBAC Roles ==="
-          kubectl get clusterrole kyma-telemetry-view -o yaml || echo "kyma-telemetry-view not found"
-          kubectl get clusterrole kyma-telemetry-edit -o yaml || echo "kyma-telemetry-edit not found"
-          kubectl get role kyma-telemetry-view -n kyma-system -o yaml || echo "kyma-telemetry-view role not found"
-
-          echo "=== Test Resources ==="
-          kubectl get serviceaccounts -n rbac-test || echo "rbac-test namespace not found"
-          kubectl get clusterrolebinding | grep test-rbac || echo "No test-rbac bindings found"
-
   summary:
     needs: [e2e-logs, e2e-metrics, e2e-experimental, e2e, e2e-other, selfmonitor]
     runs-on: ubuntu-latest
