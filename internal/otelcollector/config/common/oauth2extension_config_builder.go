@@ -35,12 +35,12 @@ func (cb *OAuth2ExtensionConfigBuilder) OAuth2Extension(ctx context.Context) (*O
 		return nil, nil, fmt.Errorf("failed to make env vars: %w", err)
 	}
 
-	extension := extension(cb.oauth2Options, cb.pipelineName)
+	extension := oauth2Extension(cb.oauth2Options, cb.pipelineName)
 
 	return extension, envVars, nil
 }
 
-func extension(oauth2Options *telemetryv1beta1.OAuth2Options, pipelineName string) *OAuth2ExtensionConfig {
+func oauth2Extension(oauth2Options *telemetryv1beta1.OAuth2Options, pipelineName string) *OAuth2ExtensionConfig {
 	return &OAuth2ExtensionConfig{
 		TokenURL:     fmt.Sprintf("${%s}", formatEnvVarKey(oauth2TokenURLVariablePrefix, pipelineName)),
 		ClientID:     fmt.Sprintf("${%s}", formatEnvVarKey(oauth2ClientIDVariablePrefix, pipelineName)),

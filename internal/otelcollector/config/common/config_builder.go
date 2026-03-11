@@ -12,7 +12,7 @@ func NewConfig() *Config {
 		Processors: make(map[string]any),
 		Exporters:  make(map[string]any),
 		Connectors: make(map[string]any),
-		Extensions: extensions(),
+		Extensions: defaultExtensions(),
 		Service:    service(),
 	}
 
@@ -48,7 +48,7 @@ func service() ServiceConfig {
 	}
 }
 
-func extensions() map[string]any {
+func defaultExtensions() map[string]any {
 	return map[string]any{
 		ComponentIDHealthCheckExtension: Endpoint{
 			Endpoint: fmt.Sprintf("${%s}:%d", EnvVarCurrentPodIP, ports.HealthCheck),

@@ -72,7 +72,7 @@ func TestServiceConfig(t *testing.T) {
 
 func TestExtensionsConfig(t *testing.T) {
 	t.Run("creates extensions config with health check, pprof, and cgroupruntime", func(t *testing.T) {
-		extensions := extensions()
+		extensions := defaultExtensions()
 
 		require.Len(t, extensions, 3, "should configure exactly 3 extensions")
 		require.Contains(t, extensions, ComponentIDHealthCheckExtension, "health check extension should be present")

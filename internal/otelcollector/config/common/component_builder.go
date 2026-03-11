@@ -99,9 +99,9 @@ func (cb *ComponentBuilder[T]) AddReceiver(componentIDFunc ComponentIDFunc[T], c
 			receiversOrConnectors[componentID] = receiverConfig
 		}
 
-		pipelineCfg := cb.Config.Service.Pipelines[pipelineID]
-		pipelineCfg.Receivers = append(pipelineCfg.Receivers, componentID)
-		cb.Config.Service.Pipelines[pipelineID] = pipelineCfg
+		pipelineConfig := cb.Config.Service.Pipelines[pipelineID]
+		pipelineConfig.Receivers = append(pipelineConfig.Receivers, componentID)
+		cb.Config.Service.Pipelines[pipelineID] = pipelineConfig
 
 		return nil
 	}
