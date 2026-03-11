@@ -32,7 +32,7 @@ type BuildOptions struct {
 }
 
 func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1beta1.MetricPipeline, opts BuildOptions) (*common.Config, common.EnvVars, error) {
-	b.Collector = common.NewConfig()
+	b.Config = common.NewConfig()
 	b.AddExtension(common.ComponentIDK8sLeaderElectorExtension,
 		common.K8sLeaderElectorExtensionConfig{
 			AuthType:       "serviceAccount",
@@ -105,7 +105,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1beta1.Metric
 		}
 	}
 
-	return b.Collector, b.EnvVars, nil
+	return b.Config, b.EnvVars, nil
 }
 
 // ======================================================

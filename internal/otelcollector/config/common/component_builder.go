@@ -29,8 +29,8 @@ type PipelineIDFunc[T any] func(pipeline T) string
 // ComponentBuilder provides common builder patterns for OpenTelemetry collector configurations.
 // It can be embedded into specific config builders to provide reusable component management.
 type ComponentBuilder[T any] struct {
-	Collector *Config
-	EnvVars   EnvVars
+	Config  *Config
+	EnvVars EnvVars
 }
 
 // AddServicePipeline creates and configures a complete telemetry pipeline by chaining component builders.
@@ -47,10 +47,10 @@ type ComponentBuilder[T any] struct {
 //	    ); err != nil {
 //	        return nil, err
 //	    }
-//	    return b.Collector, b.EnvVars, nil
+//	    return b.Config, b.EnvVars, nil
 //	}
 func (cb *ComponentBuilder[T]) AddServicePipeline(ctx context.Context, pipeline T, pipelineID string, fs ...BuildComponentFunc[T]) error {
-	cb.Collector.Service.Pipelines[pipelineID] = PipelineConfig{}
+	cb.Config.Service.Pipelines[pipelineID] = PipelineConfig{}
 
 	for _, f := range fs {
 		if err := f(ctx, pipeline, pipelineID); err != nil {
@@ -90,18 +90,18 @@ func (cb *ComponentBuilder[T]) AddReceiver(componentIDFunc ComponentIDFunc[T], c
 
 		componentID := componentIDFunc(pipeline)
 
-		receiversOrConnectors := cb.Collector.Receivers
+		receiversOrConnectors := cb.Config.Receivers
 		if isConnector(componentID) {
-			receiversOrConnectors = cb.Collector.Connectors
+			receiversOrConnectors = cb.Config.Connectors
 		}
 
 		if _, found := receiversOrConnectors[componentID]; !found {
 			receiversOrConnectors[componentID] = receiverConfig
 		}
 
-		pipelineCfg := cb.Collector.Service.Pipelines[pipelineID]
+		pipelineCfg := cb.Config.Service.Pipelines[pipelineID]
 		pipelineCfg.Receivers = append(pipelineCfg.Receivers, componentID)
-		cb.Collector.Service.Pipelines[pipelineID] = pipelineCfg
+		cb.Config.Service.Pipelines[pipelineID] = pipelineCfg
 
 		return nil
 	}
@@ -134,13 +134,13 @@ func (cb *ComponentBuilder[T]) AddProcessor(componentIDFunc ComponentIDFunc[T], 
 		}
 
 		componentID := componentIDFunc(pipeline)
-		if _, found := cb.Collector.Processors[componentID]; !found {
-			cb.Collector.Processors[componentID] = processorConfig
+		if _, found := cb.Config.Processors[componentID]; !found {
+			cb.Config.Processors[componentID] = processorConfig
 		}
 
-		servicePipeline := cb.Collector.Service.Pipelines[pipelineID]
+		servicePipeline := cb.Config.Service.Pipelines[pipelineID]
 		servicePipeline.Processors = append(servicePipeline.Processors, componentID)
-		cb.Collector.Service.Pipelines[pipelineID] = servicePipeline
+		cb.Config.Service.Pipelines[pipelineID] = servicePipeline
 
 		return nil
 	}
@@ -177,26 +177,26 @@ func (cb *ComponentBuilder[T]) AddExporter(componentIDFunc ComponentIDFunc[T], c
 
 		componentID := componentIDFunc(pipeline)
 
-		exportersOrConnectors := cb.Collector.Exporters
+		exportersOrConnectors := cb.Config.Exporters
 		if isConnector(componentID) {
-			exportersOrConnectors = cb.Collector.Connectors
+			exportersOrConnectors = cb.Config.Connectors
 		}
 
 		exportersOrConnectors[componentID] = exporterConfig
 
 		maps.Copy(cb.EnvVars, exporterEnvVars)
 
-		servicePipeline := cb.Collector.Service.Pipelines[pipelineID]
+		servicePipeline := cb.Config.Service.Pipelines[pipelineID]
 		servicePipeline.Exporters = append(servicePipeline.Exporters, componentID)
-		cb.Collector.Service.Pipelines[pipelineID] = servicePipeline
+		cb.Config.Service.Pipelines[pipelineID] = servicePipeline
 
 		return nil
 	}
 }
 
 func (cb *ComponentBuilder[T]) AddExtension(componentID string, extensionConfig any, extensionEnvVars EnvVars) {
-	if _, found := cb.Collector.Extensions[componentID]; !found {
-		cb.Collector.Extensions[componentID] = extensionConfig
+	if _, found := cb.Config.Extensions[componentID]; !found {
+		cb.Config.Extensions[componentID] = extensionConfig
 	}
 
 	if extensionEnvVars != nil {
@@ -204,12 +204,12 @@ func (cb *ComponentBuilder[T]) AddExtension(componentID string, extensionConfig 
 	}
 
 	// Ensure the extension is added to the service only once
-	extensions := cb.Collector.Service.Extensions
+	extensions := cb.Config.Service.Extensions
 	if slices.Contains(extensions, componentID) {
 		return
 	}
 
-	cb.Collector.Service.Extensions = append(cb.Collector.Service.Extensions, componentID)
+	cb.Config.Service.Extensions = append(cb.Config.Service.Extensions, componentID)
 }
 
 // StaticComponentID returns a ComponentIDFunc that always returns the same ID.

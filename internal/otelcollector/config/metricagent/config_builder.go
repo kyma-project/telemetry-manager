@@ -67,7 +67,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1beta1.Metric
 		return strings.Compare(a.Name, b.Name)
 	})
 
-	b.Collector = common.NewConfig()
+	b.Config = common.NewConfig()
 	b.AddExtension(common.ComponentIDK8sLeaderElectorExtension,
 		common.K8sLeaderElectorExtensionConfig{
 			AuthType:       "serviceAccount",
@@ -221,7 +221,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1beta1.Metric
 		}
 	}
 
-	return b.Collector, b.EnvVars, nil
+	return b.Config, b.EnvVars, nil
 }
 
 // Receiver builders

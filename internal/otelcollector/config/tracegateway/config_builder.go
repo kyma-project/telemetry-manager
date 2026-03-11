@@ -29,7 +29,7 @@ type BuildOptions struct {
 }
 
 func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1beta1.TracePipeline, opts BuildOptions) (*common.Config, common.EnvVars, error) {
-	b.Collector = common.NewConfig()
+	b.Config = common.NewConfig()
 	b.EnvVars = make(common.EnvVars)
 
 	// Iterate over each TracePipeline CR and enrich the config with pipeline-specific components
@@ -65,7 +65,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1beta1.TraceP
 		}
 	}
 
-	return b.Collector, b.EnvVars, nil
+	return b.Config, b.EnvVars, nil
 }
 
 func (b *Builder) addOTLPReceiver() buildComponentFunc {
