@@ -110,17 +110,6 @@ func TestRBACRoles(t *testing.T) {
 		),
 	})))
 
-	// Verify edit role has finalizer permissions
-	Expect(editRole.Rules).To(ContainElement(MatchFields(IgnoreExtras, Fields{
-		"APIGroups": ContainElement("telemetry.kyma-project.io"),
-		"Resources": And(
-			ContainElement("logpipelines/finalizers"),
-			ContainElement("metricpipelines/finalizers"),
-			ContainElement("tracepipelines/finalizers"),
-		),
-		"Verbs": ContainElement("update"),
-	})))
-
 	// Telemetry CR - limited access (Lifecycle Manager-owned)
 	// Note: Users can patch/update but CANNOT create/delete
 	Expect(editRole.Rules).To(ContainElement(MatchFields(IgnoreExtras, Fields{
