@@ -210,7 +210,7 @@ func (b *Builder) addUserDefinedFilterProcessor() buildComponentFunc {
 				return nil // No filters, no processor needed
 			}
 
-			return common.FilterSpecsToTraceFilterProcessorConfig(tp.Spec.Filters)
+			return common.TraceFilterProcessorConfig(tp.Spec.Filters)
 		})
 }
 

@@ -33,7 +33,7 @@ spec:
       statements:
       - convert_sum_to_gauge() where name == "system.processes.count" and (type == METRIC_DATA_TYPE_SUM or IsMatch(attributes["service.name"], "unknown")
   filter:
-      conditions:
+    - conditions:
       - metric.name == "k8s.pod.phase" and value_int == 4
       - metric.type == METRIC_DATA_TYPE_NONE
   input:

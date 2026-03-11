@@ -307,24 +307,24 @@ processors:
         send_batch_max_size: 1024
     filter/drop-diagnostic-metrics-if-input-source-istio:
         error_mode: ignore
-        metrics:
-            metric:
-                - resource.attributes["kyma.input.name"] == "istio" and (name == "up" or name == "scrape_duration_seconds" or name == "scrape_samples_scraped" or name == "scrape_samples_post_metric_relabeling" or name == "scrape_series_added")
+        metric_conditions:
+            - conditions:
+                - resource.attributes["kyma.input.name"] == "istio" and (metric.name == "up" or metric.name == "scrape_duration_seconds" or metric.name == "scrape_samples_scraped" or metric.name == "scrape_samples_post_metric_relabeling" or metric.name == "scrape_series_added")
     filter/drop-diagnostic-metrics-if-input-source-prometheus:
         error_mode: ignore
-        metrics:
-            metric:
-                - resource.attributes["kyma.input.name"] == "prometheus" and (name == "up" or name == "scrape_duration_seconds" or name == "scrape_samples_scraped" or name == "scrape_samples_post_metric_relabeling" or name == "scrape_series_added")
+        metric_conditions:
+            - conditions:
+                - resource.attributes["kyma.input.name"] == "prometheus" and (metric.name == "up" or metric.name == "scrape_duration_seconds" or metric.name == "scrape_samples_scraped" or metric.name == "scrape_samples_post_metric_relabeling" or metric.name == "scrape_series_added")
     filter/drop-non-pvc-volumes-metrics:
         error_mode: ignore
-        metrics:
-            metric:
+        metric_conditions:
+            - conditions:
                 - resource.attributes["k8s.volume.name"] != nil and resource.attributes["k8s.volume.type"] != "persistentVolumeClaim"
     filter/drop-virtual-network-interfaces:
         error_mode: ignore
-        metrics:
-            datapoint:
-                - IsMatch(metric.name, "^k8s.node.network.*") and not(IsMatch(attributes["interface"], "^(eth|en).*"))
+        metric_conditions:
+            - conditions:
+                - IsMatch(metric.name, "^k8s.node.network.*") and not(IsMatch(datapoint.attributes["interface"], "^(eth|en).*"))
     istio_noise_filter: {}
     k8s_attributes:
         auth_type: serviceAccount
