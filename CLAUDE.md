@@ -93,7 +93,7 @@ make update-golden-files  # Update golden files for config builder tests
 
 - **test/e2e/**: End-to-end tests organized by signal type (logs/, metrics/, traces/)
 - **test/testkit/**: Shared test utilities, matchers, and k8s helpers
-- **test/integration/**: Integration tests with external components (e.g. Istio)
+- **test/integration/**: Integration tests with external components (for example, Istio)
 - **test/selfmonitor/**: Tests for self-monitoring functionality
 
 ### Helm Charts
@@ -115,3 +115,7 @@ make update-golden-files  # Update golden files for config builder tests
 ## Environment Configuration
 
 The `.env` file contains default image versions and configuration. Key environment variables for the manager are defined in `main.go` (envConfig struct).
+
+## Documentation Guidelines
+
+When adding, updating, or removing any documentation inside the `docs/` folder, you must always follow the guidelines in [docs/claude-docs.md](docs/CLAUDE.md).
