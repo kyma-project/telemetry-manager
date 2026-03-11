@@ -1,4 +1,10 @@
 extensions:
+    cgroupruntime:
+        gomaxprocs:
+            enabled: false
+        gomemlimit:
+            enabled: true
+            ratio: 0.8
     file_storage:
         create_directory: true
         directory: /tmp/telemetry-log-agent/file-log-receiver
@@ -14,7 +20,7 @@ service:
             processors:
                 - memory_limiter
                 - transform/set-instrumentation-scope-runtime
-                - k8sattributes
+                - k8s_attributes
                 - transform/insert-cluster-attributes
                 - service_enrichment
                 - transform/drop-kyma-attributes
@@ -27,7 +33,7 @@ service:
             processors:
                 - memory_limiter
                 - transform/set-instrumentation-scope-runtime
-                - k8sattributes
+                - k8s_attributes
                 - transform/insert-cluster-attributes
                 - service_enrichment
                 - transform/drop-kyma-attributes
@@ -48,6 +54,7 @@ service:
     extensions:
         - health_check
         - pprof
+        - cgroupruntime
         - file_storage
 receivers:
     filelog/test1:
@@ -297,7 +304,7 @@ processors:
         logs:
             log_record:
                 - IsMatch(log.body, ".*error.*")
-    k8sattributes:
+    k8s_attributes:
         auth_type: serviceAccount
         passthrough: false
         extract:

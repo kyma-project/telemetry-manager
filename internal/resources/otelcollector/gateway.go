@@ -317,7 +317,6 @@ func (gad *GatewayApplierDeleter) makeGatewayPodSpec(opts GatewayApplyOptions) c
 	containerOpts := slices.Clone(gad.containerOpts)
 	containerOpts = append(containerOpts,
 		commonresources.WithResources(resources),
-		commonresources.WithGoMemLimitEnvVar(resources.Limits[corev1.ResourceMemory]),
 		commonresources.WithClusterTrustBundleVolumeMount(gad.globals.ClusterTrustBundleName()),
 	)
 

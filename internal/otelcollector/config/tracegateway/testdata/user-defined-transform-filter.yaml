@@ -1,4 +1,10 @@
 extensions:
+    cgroupruntime:
+        gomaxprocs:
+            enabled: false
+        gomemlimit:
+            enabled: true
+            ratio: 0.8
     health_check:
         endpoint: ${MY_POD_IP}:13133
     pprof:
@@ -10,7 +16,7 @@ service:
                 - otlp
             processors:
                 - memory_limiter
-                - k8sattributes
+                - k8s_attributes
                 - istio_noise_filter
                 - transform/insert-cluster-attributes
                 - service_enrichment
@@ -34,6 +40,7 @@ service:
     extensions:
         - health_check
         - pprof
+        - cgroupruntime
 receivers:
     otlp:
         protocols:
@@ -52,7 +59,7 @@ processors:
             span:
                 - IsMatch(span.name, ".*grpc.*")
     istio_noise_filter: {}
-    k8sattributes:
+    k8s_attributes:
         auth_type: serviceAccount
         passthrough: false
         extract:
