@@ -531,11 +531,10 @@ func setupMetricPipelineController(globals config.Global, cfg envConfig, mgr man
 
 	metricPipelineController, err := telemetrycontrollers.NewMetricPipelineController(
 		telemetrycontrollers.MetricPipelineControllerConfig{
-			Global:                         globals,
-			MetricAgentPriorityClassName:   highPriorityClassName,
-			MetricGatewayPriorityClassName: normalPriorityClassName,
-			OTelCollectorImage:             cfg.OTelCollectorImage,
-			RestConfig:                     mgr.GetConfig(),
+			Global:                       globals,
+			MetricAgentPriorityClassName: highPriorityClassName,
+			OTelCollectorImage:           cfg.OTelCollectorImage,
+			RestConfig:                   mgr.GetConfig(),
 		},
 		mgr.GetClient(),
 		reconcileTriggerChan,

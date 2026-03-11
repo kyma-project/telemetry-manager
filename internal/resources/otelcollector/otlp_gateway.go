@@ -63,11 +63,13 @@ type OTLPGatewayApplierDeleter struct {
 //nolint:dupl // repeating the code as we this would be deleted when we implement all signals in OTLP gateway
 func NewOTLPGatewayApplierDeleter(globals config.Global, image, priorityClassName string) *OTLPGatewayApplierDeleter {
 	extraLabels := map[string]string{
-		commonresources.LabelKeyTelemetryTraceIngest: commonresources.LabelValueTrue,
-		commonresources.LabelKeyTelemetryTraceExport: commonresources.LabelValueTrue,
-		commonresources.LabelKeyTelemetryLogIngest:   commonresources.LabelValueTrue,
-		commonresources.LabelKeyTelemetryLogExport:   commonresources.LabelValueTrue,
-		commonresources.LabelKeyIstioInject:          commonresources.LabelValueTrue, // inject istio sidecar
+		commonresources.LabelKeyTelemetryTraceIngest:  commonresources.LabelValueTrue,
+		commonresources.LabelKeyTelemetryTraceExport:  commonresources.LabelValueTrue,
+		commonresources.LabelKeyTelemetryLogIngest:    commonresources.LabelValueTrue,
+		commonresources.LabelKeyTelemetryLogExport:    commonresources.LabelValueTrue,
+		commonresources.LabelKeyTelemetryMetricIngest: commonresources.LabelValueTrue,
+		commonresources.LabelKeyTelemetryMetricExport: commonresources.LabelValueTrue,
+		commonresources.LabelKeyIstioInject:           commonresources.LabelValueTrue, // inject istio sidecar
 	}
 
 	return &OTLPGatewayApplierDeleter{
@@ -145,8 +147,13 @@ func (o *OTLPGatewayApplierDeleter) ApplyResources(ctx context.Context, c client
 		return fmt.Errorf("failed to create legacy trace otlp service: %w", err)
 	}
 
+	legacyMetricService := o.makeLegacyOTLPService(names.OTLPMetricsService)
+	if err := k8sutils.CreateOrUpdateService(ctx, c, legacyMetricService); err != nil {
+		return fmt.Errorf("failed to create legacy metric otlp service: %w", err)
+	}
+
 	if opts.IstioEnabled {
-		for _, svcName := range []string{names.OTLPLogsService, names.OTLPTracesService, names.OTLPService} {
+		for _, svcName := range []string{names.OTLPLogsService, names.OTLPTracesService, names.OTLPMetricsService, names.OTLPService} {
 			if err := k8sutils.CreateOrUpdateDestinationRule(ctx, c, o.makeDestinationRule(svcName)); err != nil {
 				return fmt.Errorf("failed to create destinationrule: %w", err)
 			}
@@ -210,8 +217,13 @@ func (o *OTLPGatewayApplierDeleter) DeleteResources(ctx context.Context, c clien
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete legacy trace otlp service: %w", err))
 	}
 
+	legacyMetricService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: names.OTLPMetricsService, Namespace: o.globals.TargetNamespace()}}
+	if err := k8sutils.DeleteObject(ctx, c, &legacyMetricService); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete legacy metric otlp service: %w", err))
+	}
+
 	if isIstioActive {
-		for _, svcName := range []string{names.OTLPLogsService, names.OTLPTracesService, names.OTLPService} {
+		for _, svcName := range []string{names.OTLPLogsService, names.OTLPTracesService, names.OTLPMetricsService, names.OTLPService} {
 			destinationRuleMeta := metav1.ObjectMeta{Namespace: o.globals.TargetNamespace(), Name: svcName}
 
 			destinationRule := istionetworkingclientv1.DestinationRule{ObjectMeta: destinationRuleMeta}
