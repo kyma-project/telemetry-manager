@@ -106,32 +106,32 @@ func ExporterID(protocol telemetryv1beta1.OTLPProtocol, pipelineName string) str
 }
 
 func tls(output *telemetryv1beta1.OTLPOutput, otlpEndpointValue, pipelineName string) TLS {
-	var config TLS
+	var tls TLS
 
-	config.Insecure = isInsecureOutput(otlpEndpointValue)
+	tls.Insecure = isInsecureOutput(otlpEndpointValue)
 
 	if output.TLS == nil {
-		return config
+		return tls
 	}
 
-	if !config.Insecure {
-		config.Insecure = output.TLS.Insecure
+	if !tls.Insecure {
+		tls.Insecure = output.TLS.Insecure
 	}
 
-	config.InsecureSkipVerify = output.TLS.InsecureSkipVerify
+	tls.InsecureSkipVerify = output.TLS.InsecureSkipVerify
 	if sharedtypesutils.IsValid(output.TLS.CA) {
-		config.CAPem = fmt.Sprintf("${%s}", formatEnvVarKey(tlsConfigCaVariablePrefix, pipelineName))
+		tls.CAPem = fmt.Sprintf("${%s}", formatEnvVarKey(tlsConfigCaVariablePrefix, pipelineName))
 	}
 
 	if sharedtypesutils.IsValid(output.TLS.Cert) {
-		config.CertPem = fmt.Sprintf("${%s}", formatEnvVarKey(tlsConfigCertVariablePrefix, pipelineName))
+		tls.CertPem = fmt.Sprintf("${%s}", formatEnvVarKey(tlsConfigCertVariablePrefix, pipelineName))
 	}
 
 	if sharedtypesutils.IsValid(output.TLS.Key) {
-		config.KeyPem = fmt.Sprintf("${%s}", formatEnvVarKey(tlsConfigKeyVariablePrefix, pipelineName))
+		tls.KeyPem = fmt.Sprintf("${%s}", formatEnvVarKey(tlsConfigKeyVariablePrefix, pipelineName))
 	}
 
-	return config
+	return tls
 }
 
 func headers(output *telemetryv1beta1.OTLPOutput, pipelineName string) map[string]string {

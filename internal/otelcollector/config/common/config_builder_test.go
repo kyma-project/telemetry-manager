@@ -41,7 +41,7 @@ func TestNewConfig(t *testing.T) {
 
 func TestServiceConfig(t *testing.T) {
 	t.Run("creates service config with telemetry setup", func(t *testing.T) {
-		service := service()
+		service := defaultService()
 
 		require.NotNil(t, service.Pipelines, "pipelines should be initialized")
 		require.Empty(t, service.Pipelines, "pipelines should be empty initially")

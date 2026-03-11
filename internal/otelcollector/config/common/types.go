@@ -57,9 +57,9 @@ type CGroupRuntimeGoMemLimit struct {
 // =============================================================================
 
 type ServiceConfig struct {
-	Pipelines  map[string]PipelineConfig `yaml:"pipelines,omitempty"`
-	Telemetry  Telemetry                 `yaml:"telemetry,omitempty"`
-	Extensions []string                  `yaml:"extensions,omitempty"`
+	Pipelines  map[string]ServicePipeline `yaml:"pipelines,omitempty"`
+	Telemetry  Telemetry                  `yaml:"telemetry,omitempty"`
+	Extensions []string                   `yaml:"extensions,omitempty"`
 }
 
 type Telemetry struct {
@@ -93,7 +93,7 @@ type Logs struct {
 	Encoding string `yaml:"encoding"`
 }
 
-type PipelineConfig struct {
+type ServicePipeline struct {
 	Receivers  []string `yaml:"receivers"`
 	Processors []string `yaml:"processors"`
 	Exporters  []string `yaml:"exporters"`

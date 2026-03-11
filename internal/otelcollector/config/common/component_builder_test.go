@@ -69,7 +69,7 @@ func TestComponentBuilder_AddReceiver(t *testing.T) {
 				Receivers:  make(map[string]any),
 				Connectors: make(map[string]any),
 				Service: ServiceConfig{
-					Pipelines: make(map[string]PipelineConfig),
+					Pipelines: make(map[string]ServicePipeline),
 				},
 			}
 
@@ -113,8 +113,8 @@ func TestComponentBuilder_AddReceiver(t *testing.T) {
 
 			// Verify pipeline configuration
 			require.Contains(t, config.Service.Pipelines, pipelineID)
-			pipelineConfig := config.Service.Pipelines[pipelineID]
-			require.Contains(t, pipelineConfig.Receivers, tt.componentID)
+			servicePipeline := config.Service.Pipelines[pipelineID]
+			require.Contains(t, servicePipeline.Receivers, tt.componentID)
 		})
 	}
 }
@@ -150,7 +150,7 @@ func TestComponentBuilder_AddProcessor(t *testing.T) {
 			config := &Config{
 				Processors: make(map[string]any),
 				Service: ServiceConfig{
-					Pipelines: make(map[string]PipelineConfig),
+					Pipelines: make(map[string]ServicePipeline),
 				},
 			}
 
@@ -186,8 +186,8 @@ func TestComponentBuilder_AddProcessor(t *testing.T) {
 
 			// Verify pipeline configuration
 			require.Contains(t, config.Service.Pipelines, pipelineID)
-			pipelineConfig := config.Service.Pipelines[pipelineID]
-			require.Contains(t, pipelineConfig.Processors, tt.componentID)
+			servicePipeline := config.Service.Pipelines[pipelineID]
+			require.Contains(t, servicePipeline.Processors, tt.componentID)
 		})
 	}
 }
@@ -253,7 +253,7 @@ func TestComponentBuilder_AddExporter(t *testing.T) {
 				Exporters:  make(map[string]any),
 				Connectors: make(map[string]any),
 				Service: ServiceConfig{
-					Pipelines: make(map[string]PipelineConfig),
+					Pipelines: make(map[string]ServicePipeline),
 				},
 			}
 
@@ -320,8 +320,8 @@ func TestComponentBuilder_AddExporter(t *testing.T) {
 
 			// Verify pipeline configuration
 			require.Contains(t, config.Service.Pipelines, pipelineID)
-			pipelineConfig := config.Service.Pipelines[pipelineID]
-			require.Contains(t, pipelineConfig.Exporters, tt.componentID)
+			servicePipeline := config.Service.Pipelines[pipelineID]
+			require.Contains(t, servicePipeline.Exporters, tt.componentID)
 		})
 	}
 }
@@ -333,7 +333,7 @@ func TestComponentBuilder_AddServicePipeline(t *testing.T) {
 			Processors: make(map[string]any),
 			Exporters:  make(map[string]any),
 			Service: ServiceConfig{
-				Pipelines: make(map[string]PipelineConfig),
+				Pipelines: make(map[string]ServicePipeline),
 			},
 		}
 
@@ -385,10 +385,10 @@ func TestComponentBuilder_AddServicePipeline(t *testing.T) {
 
 		// Verify pipeline configuration
 		require.Contains(t, config.Service.Pipelines, pipelineID)
-		pipelineConfig := config.Service.Pipelines[pipelineID]
-		require.Equal(t, []string{"otlp"}, pipelineConfig.Receivers)
-		require.Equal(t, []string{"batch"}, pipelineConfig.Processors)
-		require.Equal(t, []string{"otlp/test"}, pipelineConfig.Exporters)
+		servicePipeline := config.Service.Pipelines[pipelineID]
+		require.Equal(t, []string{"otlp"}, servicePipeline.Receivers)
+		require.Equal(t, []string{"batch"}, servicePipeline.Processors)
+		require.Equal(t, []string{"otlp/test"}, servicePipeline.Exporters)
 
 		// Verify environment variables
 		require.Equal(t, EnvVars{"API_KEY": []byte("secret-123")}, cb.EnvVars)
@@ -397,7 +397,7 @@ func TestComponentBuilder_AddServicePipeline(t *testing.T) {
 	t.Run("handles component builder error", func(t *testing.T) {
 		config := &Config{
 			Service: ServiceConfig{
-				Pipelines: make(map[string]PipelineConfig),
+				Pipelines: make(map[string]ServicePipeline),
 			},
 		}
 
@@ -445,7 +445,7 @@ func TestComponentBuilder_ComponentDeduplication(t *testing.T) {
 		config := &Config{
 			Receivers: make(map[string]any),
 			Service: ServiceConfig{
-				Pipelines: make(map[string]PipelineConfig),
+				Pipelines: make(map[string]ServicePipeline),
 			},
 		}
 
@@ -483,7 +483,7 @@ func TestComponentBuilder_ComponentDeduplication(t *testing.T) {
 		config := &Config{
 			Processors: make(map[string]any),
 			Service: ServiceConfig{
-				Pipelines: make(map[string]PipelineConfig),
+				Pipelines: make(map[string]ServicePipeline),
 			},
 		}
 
