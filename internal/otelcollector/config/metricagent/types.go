@@ -152,7 +152,6 @@ type Scrape struct {
 	RelabelConfigs       []Relabel     `yaml:"relabel_configs,omitempty"`
 	MetricRelabelConfigs []Relabel     `yaml:"metric_relabel_configs,omitempty"`
 
-	StaticDiscoveryConfigs     []StaticDiscovery     `yaml:"static_configs,omitempty"`
 	KubernetesDiscoveryConfigs []KubernetesDiscovery `yaml:"kubernetes_sd_configs,omitempty"`
 
 	TLS *TLS `yaml:"tls_config,omitempty"`
@@ -163,10 +162,6 @@ type TLS struct {
 	CertFile           string `yaml:"cert_file,omitempty"`
 	KeyFile            string `yaml:"key_file,omitempty"`
 	InsecureSkipVerify bool   `yaml:"insecure_skip_verify"`
-}
-
-type StaticDiscovery struct {
-	Targets []string `yaml:"targets"`
 }
 
 type KubernetesDiscovery struct {

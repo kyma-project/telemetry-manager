@@ -68,8 +68,8 @@ func TestComponentBuilder_AddReceiver(t *testing.T) {
 			config := &Config{
 				Receivers:  make(map[string]any),
 				Connectors: make(map[string]any),
-				Service: Service{
-					Pipelines: make(map[string]Pipeline),
+				Service: ServiceConfig{
+					Pipelines: make(map[string]PipelineConfig),
 				},
 			}
 
@@ -149,8 +149,8 @@ func TestComponentBuilder_AddProcessor(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			config := &Config{
 				Processors: make(map[string]any),
-				Service: Service{
-					Pipelines: make(map[string]Pipeline),
+				Service: ServiceConfig{
+					Pipelines: make(map[string]PipelineConfig),
 				},
 			}
 
@@ -252,8 +252,8 @@ func TestComponentBuilder_AddExporter(t *testing.T) {
 			config := &Config{
 				Exporters:  make(map[string]any),
 				Connectors: make(map[string]any),
-				Service: Service{
-					Pipelines: make(map[string]Pipeline),
+				Service: ServiceConfig{
+					Pipelines: make(map[string]PipelineConfig),
 				},
 			}
 
@@ -332,8 +332,8 @@ func TestComponentBuilder_AddServicePipeline(t *testing.T) {
 			Receivers:  make(map[string]any),
 			Processors: make(map[string]any),
 			Exporters:  make(map[string]any),
-			Service: Service{
-				Pipelines: make(map[string]Pipeline),
+			Service: ServiceConfig{
+				Pipelines: make(map[string]PipelineConfig),
 			},
 		}
 
@@ -396,8 +396,8 @@ func TestComponentBuilder_AddServicePipeline(t *testing.T) {
 
 	t.Run("handles component builder error", func(t *testing.T) {
 		config := &Config{
-			Service: Service{
-				Pipelines: make(map[string]Pipeline),
+			Service: ServiceConfig{
+				Pipelines: make(map[string]PipelineConfig),
 			},
 		}
 
@@ -444,8 +444,8 @@ func TestComponentBuilder_ComponentDeduplication(t *testing.T) {
 	t.Run("does not duplicate receivers", func(t *testing.T) {
 		config := &Config{
 			Receivers: make(map[string]any),
-			Service: Service{
-				Pipelines: make(map[string]Pipeline),
+			Service: ServiceConfig{
+				Pipelines: make(map[string]PipelineConfig),
 			},
 		}
 
@@ -482,8 +482,8 @@ func TestComponentBuilder_ComponentDeduplication(t *testing.T) {
 	t.Run("does not duplicate processors", func(t *testing.T) {
 		config := &Config{
 			Processors: make(map[string]any),
-			Service: Service{
-				Pipelines: make(map[string]Pipeline),
+			Service: ServiceConfig{
+				Pipelines: make(map[string]PipelineConfig),
 			},
 		}
 

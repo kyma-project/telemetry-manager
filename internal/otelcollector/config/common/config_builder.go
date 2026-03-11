@@ -19,10 +19,10 @@ func NewConfig() *Config {
 	return config
 }
 
-func service() Service {
+func service() ServiceConfig {
 	telemetry := Telemetry{
-		Metrics: Metrics{
-			Readers: []MetricReader{
+		Metrics: TelemetryMetrics{
+			Readers: []TelemetryMetricReader{
 				{
 					Pull: PullMetricReader{
 						Exporter: MetricExporter{
@@ -41,8 +41,8 @@ func service() Service {
 		},
 	}
 
-	return Service{
-		Pipelines:  make(map[string]Pipeline),
+	return ServiceConfig{
+		Pipelines:  make(map[string]PipelineConfig),
 		Telemetry:  telemetry,
 		Extensions: []string{ComponentIDHealthCheckExtension, ComponentIDPprofExtension, ComponentIDCGroupRuntimeExtension},
 	}

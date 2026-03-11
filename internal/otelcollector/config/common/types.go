@@ -7,7 +7,7 @@ package common
 // Config represents the root configuration structure for OpenTelemetry Collector
 type Config struct {
 	Extensions map[string]any `yaml:"extensions"`
-	Service    Service        `yaml:"service"`
+	Service    ServiceConfig  `yaml:"service"`
 
 	Receivers  map[string]any `yaml:"receivers"`
 	Processors map[string]any `yaml:"processors"`
@@ -56,22 +56,22 @@ type CGroupRuntimeGoMemLimit struct {
 // SERVICE TYPES
 // =============================================================================
 
-type Service struct {
-	Pipelines  map[string]Pipeline `yaml:"pipelines,omitempty"`
+type ServiceConfig struct {
+	Pipelines  map[string]PipelineConfig `yaml:"pipelines,omitempty"`
 	Telemetry  Telemetry           `yaml:"telemetry,omitempty"`
 	Extensions []string            `yaml:"extensions,omitempty"`
 }
 
 type Telemetry struct {
-	Metrics Metrics `yaml:"metrics"`
-	Logs    Logs    `yaml:"logs"`
+	Metrics TelemetryMetrics `yaml:"metrics"`
+	Logs    Logs             `yaml:"logs"`
 }
 
-type Metrics struct {
-	Readers []MetricReader `yaml:"readers"`
+type TelemetryMetrics struct {
+	Readers []TelemetryMetricReader `yaml:"readers"`
 }
 
-type MetricReader struct {
+type TelemetryMetricReader struct {
 	Pull PullMetricReader `yaml:"pull"`
 }
 
@@ -93,7 +93,7 @@ type Logs struct {
 	Encoding string `yaml:"encoding"`
 }
 
-type Pipeline struct {
+type PipelineConfig struct {
 	Receivers  []string `yaml:"receivers"`
 	Processors []string `yaml:"processors"`
 	Exporters  []string `yaml:"exporters"`
@@ -159,11 +159,6 @@ type Auth struct {
 // =============================================================================
 // PROCESSOR TYPES
 // =============================================================================
-
-type BaseProcessors struct {
-	Batch         *BatchProcessorConfig `yaml:"batch,omitempty"`
-	MemoryLimiter *MemoryLimiterConfig  `yaml:"memory_limiter,omitempty"`
-}
 
 type BatchProcessorConfig struct {
 	SendBatchSize    int    `yaml:"send_batch_size"`

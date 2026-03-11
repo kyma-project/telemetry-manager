@@ -50,7 +50,7 @@ type ComponentBuilder[T any] struct {
 //	    return b.Collector, b.EnvVars, nil
 //	}
 func (cb *ComponentBuilder[T]) AddServicePipeline(ctx context.Context, pipeline T, pipelineID string, fs ...BuildComponentFunc[T]) error {
-	cb.Collector.Service.Pipelines[pipelineID] = Pipeline{}
+	cb.Collector.Service.Pipelines[pipelineID] = PipelineConfig{}
 
 	for _, f := range fs {
 		if err := f(ctx, pipeline, pipelineID); err != nil {
