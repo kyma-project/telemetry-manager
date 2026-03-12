@@ -40,11 +40,11 @@ const (
 
 var (
 	metricAgentCPURequest    = resource.MustParse("15m")
-	metricAgentMemoryRequest = resource.MustParse("50Mi")
+	metricAgentMemoryRequest = resource.MustParse("64Mi")
 	metricAgentMemoryLimit   = resource.MustParse("1200Mi")
 
 	logAgentCPURequest    = resource.MustParse("15m")
-	logAgentMemoryRequest = resource.MustParse("50Mi")
+	logAgentMemoryRequest = resource.MustParse("64Mi")
 	logAgentMemoryLimit   = resource.MustParse("1200Mi")
 )
 
