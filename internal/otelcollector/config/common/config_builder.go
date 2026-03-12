@@ -12,8 +12,8 @@ func NewConfig() *Config {
 		Processors: make(map[string]any),
 		Exporters:  make(map[string]any),
 		Connectors: make(map[string]any),
-		Extensions: extensionsConfig(),
-		Service:    serviceConfig(),
+		Extensions: defaultExtensions(),
+		Service:    defaultService(),
 	}
 
 	return config
@@ -30,10 +30,10 @@ func (c *Config) DisableGoMemLimit() {
 	}
 }
 
-func serviceConfig() Service {
+func defaultService() ServiceConfig {
 	telemetry := Telemetry{
-		Metrics: Metrics{
-			Readers: []MetricReader{
+		Metrics: TelemetryMetrics{
+			Readers: []TelemetryMetricReader{
 				{
 					Pull: PullMetricReader{
 						Exporter: MetricExporter{
@@ -52,14 +52,14 @@ func serviceConfig() Service {
 		},
 	}
 
-	return Service{
-		Pipelines:  make(map[string]Pipeline),
+	return ServiceConfig{
+		Pipelines:  make(map[string]ServicePipeline),
 		Telemetry:  telemetry,
 		Extensions: []string{ComponentIDHealthCheckExtension, ComponentIDPprofExtension, ComponentIDCGroupRuntimeExtension},
 	}
 }
 
-func extensionsConfig() map[string]any {
+func defaultExtensions() map[string]any {
 	return map[string]any{
 		ComponentIDHealthCheckExtension: Endpoint{
 			Endpoint: fmt.Sprintf("${%s}:%d", EnvVarCurrentPodIP, ports.HealthCheck),
