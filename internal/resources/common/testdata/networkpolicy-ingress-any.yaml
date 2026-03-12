@@ -3,19 +3,14 @@ kind: NetworkPolicy
 metadata:
   labels:
     app: test
-  name: kyma-project.io--test-component-custom
+  name: kyma-project.io--test-component
   namespace: test-namespace
 spec:
-  egress:
-  - {}
   ingress:
-  - ports:
-    - port: 8080
-      protocol: TCP
+  - {}
   podSelector:
     matchLabels:
       app.kubernetes.io/name: test-component
   policyTypes:
   - Ingress
-  - Egress
 ---
