@@ -203,15 +203,13 @@ func (ad *ApplierDeleter) makeConfigMap(prometheusConfigFileName, prometheusConf
 func (ad *ApplierDeleter) makeDeployment(configChecksum, configPath, configFile string) *appsv1.Deployment {
 	var replicas int32 = 1
 
-	selectorLabels := commonresources.SelectorLabels(names.SelfMonitor)
-
 	// Resource labels: only additional labels from globals; default labels are applied by the labeler
 	resourceLabels := make(map[string]string)
 	maps.Copy(resourceLabels, ad.Config.AdditionalWorkloadLabels())
 
 	// Pod labels: need default labels explicitly since the labeler only sets top-level object labels
 	podLabels := make(map[string]string)
-	maps.Copy(podLabels, commonresources.DefaultLabels(names.SelfMonitor, commonresources.LabelValueK8sComponentMonitor)
+	maps.Copy(podLabels, commonresources.DefaultLabels(names.SelfMonitor, commonresources.LabelValueK8sComponentMonitor))
 	maps.Copy(podLabels, ad.Config.AdditionalWorkloadLabels())
 	podLabels[commonresources.LabelKeyIstioInject] = commonresources.LabelValueFalse
 	podLabels[commonresources.LabelKeyTelemetryMetricsScraping] = commonresources.LabelValueTelemetryMetricsScraping
@@ -237,7 +235,7 @@ func (ad *ApplierDeleter) makeDeployment(configChecksum, configPath, configFile 
 		Spec: appsv1.DeploymentSpec{
 			Replicas: new(replicas),
 			Selector: &metav1.LabelSelector{
-				MatchLabels: selectorLabels,
+				MatchLabels: commonresources.DefaultSelector(names.SelfMonitor),
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
@@ -356,7 +354,7 @@ func (ad *ApplierDeleter) makeService(port int32) *corev1.Service {
 					TargetPort: intstr.FromInt32(port),
 				},
 			},
-			Selector: commonresources.SelectorLabels(names.SelfMonitor),
+			Selector: commonresources.DefaultSelector(names.SelfMonitor),
 			Type:     corev1.ServiceTypeClusterIP,
 		},
 	}
@@ -365,7 +363,7 @@ func (ad *ApplierDeleter) makeService(port int32) *corev1.Service {
 func (ad *ApplierDeleter) makeNetworkPolicies() []*networkingv1.NetworkPolicy {
 	selfMonitorNetworkPolicy := commonresources.MakeNetworkPolicy(
 		ad.selfMonitorName(),
-		commonresources.SelectorLabels(names.SelfMonitor),
+		commonresources.DefaultSelector(names.SelfMonitor),
 		// Allow egress to FluentBit for scraping metrics
 		commonresources.WithEgressToPods(map[string]string{
 			commonresources.LabelKeyK8sName: "fluent-bit",
@@ -389,7 +387,7 @@ func (ad *ApplierDeleter) makeNetworkPolicies() []*networkingv1.NetworkPolicy {
 	)
 	metricsNetworkPolicy := commonresources.MakeNetworkPolicy(
 		ad.selfMonitorName(),
-		commonresources.SelectorLabels(names.SelfMonitor),
+		commonresources.DefaultSelector(names.SelfMonitor),
 		commonresources.WithNameSuffix("metrics"),
 		// Allow ingress from telemetry-manager pods only on Prometheus port
 		commonresources.WithIngressFromPods(map[string]string{

@@ -107,7 +107,7 @@ func NewLogGatewayApplierDeleter(globals config.Global, image, priorityClassName
 		dynamicMemoryRequest: logGatewayDynamicMemoryRequest,
 		podOpts: []commonresources.PodSpecOption{
 			commonresources.WithPriorityClass(priorityClassName),
-			commonresources.WithAffinity(makePodAffinity(commonresources.SelectorLabels(names.LogGateway))),
+			commonresources.WithAffinity(makePodAffinity(commonresources.DefaultSelector(names.LogGateway))),
 		},
 		containerOpts: []commonresources.ContainerOption{
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentPodIP, fieldPathPodIP),
@@ -140,7 +140,7 @@ func NewMetricGatewayApplierDeleter(globals config.Global, image, priorityClassN
 		dynamicMemoryRequest: metricGatewayDynamicMemoryRequest,
 		podOpts: []commonresources.PodSpecOption{
 			commonresources.WithPriorityClass(priorityClassName),
-			commonresources.WithAffinity(makePodAffinity(commonresources.SelectorLabels(names.MetricGateway))),
+			commonresources.WithAffinity(makePodAffinity(commonresources.DefaultSelector(names.MetricGateway))),
 		},
 		containerOpts: []commonresources.ContainerOption{
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentPodIP, fieldPathPodIP),
@@ -173,7 +173,7 @@ func NewTraceGatewayApplierDeleter(globals config.Global, image, priorityClassNa
 		dynamicMemoryRequest: traceGatewayDynamicMemoryRequest,
 		podOpts: []commonresources.PodSpecOption{
 			commonresources.WithPriorityClass(priorityClassName),
-			commonresources.WithAffinity(makePodAffinity(commonresources.SelectorLabels(names.TraceGateway))),
+			commonresources.WithAffinity(makePodAffinity(commonresources.DefaultSelector(names.TraceGateway))),
 		},
 		containerOpts: []commonresources.ContainerOption{
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentPodIP, fieldPathPodIP),
@@ -389,8 +389,6 @@ func makePodAffinity(labels map[string]string) corev1.Affinity {
 }
 
 func (gad *GatewayApplierDeleter) makeOTLPService() *corev1.Service {
-	selectorLabels := commonresources.SelectorLabels(gad.baseName)
-
 	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      gad.otlpServiceName,
@@ -411,7 +409,7 @@ func (gad *GatewayApplierDeleter) makeOTLPService() *corev1.Service {
 					TargetPort: intstr.FromInt32(ports.OTLPHTTP),
 				},
 			},
-			Selector: selectorLabels,
+			Selector: commonresources.DefaultSelector(gad.baseName),
 			Type:     corev1.ServiceTypeClusterIP,
 		},
 	}
@@ -420,15 +418,13 @@ func (gad *GatewayApplierDeleter) makeOTLPService() *corev1.Service {
 }
 
 func (gad *GatewayApplierDeleter) makePeerAuthentication() *istiosecurityclientv1.PeerAuthentication {
-	selectorLabels := commonresources.SelectorLabels(gad.baseName)
-
 	return &istiosecurityclientv1.PeerAuthentication{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      gad.baseName,
 			Namespace: gad.globals.TargetNamespace(),
 		},
 		Spec: istiosecurityv1.PeerAuthentication{
-			Selector: &istiotypev1beta1.WorkloadSelector{MatchLabels: selectorLabels},
+			Selector: &istiotypev1beta1.WorkloadSelector{MatchLabels: commonresources.DefaultSelector(gad.baseName)},
 			Mtls:     &istiosecurityv1.PeerAuthentication_MutualTLS{Mode: istiosecurityv1.PeerAuthentication_MutualTLS_PERMISSIVE},
 		},
 	}
@@ -457,7 +453,7 @@ func makeGatewayNetworkPolicies(name types.NamespacedName, istioEnabled bool) []
 
 	metricsNetworkPolicy := commonresources.MakeNetworkPolicy(
 		name,
-		commonresources.SelectorLabels(name.Name),
+		commonresources.DefaultSelector(name.Name),
 		commonresources.WithNameSuffix("metrics"),
 		commonresources.WithIngressFromPodsInAllNamespaces(
 			map[string]string{
@@ -469,7 +465,7 @@ func makeGatewayNetworkPolicies(name types.NamespacedName, istioEnabled bool) []
 
 	gatewayNetworkPolicies := commonresources.MakeNetworkPolicy(
 		name,
-		commonresources.SelectorLabels(name.Name),
+		commonresources.DefaultSelector(name.Name),
 		commonresources.WithIngressFromAny(otlpPorts...),
 		commonresources.WithEgressToAny(),
 	)

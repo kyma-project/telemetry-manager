@@ -62,7 +62,7 @@ func makeDaemonSet(baseName string, namespace string, metadata WorkloadMetadata,
 		},
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
-				MatchLabels: commonresources.SelectorLabels(baseName),
+				MatchLabels: commonresources.DefaultSelector(baseName),
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
@@ -86,7 +86,7 @@ func makeGatewayDaemonSet(baseName string, namespace string, metadata WorkloadMe
 		},
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
-				MatchLabels: commonresources.SelectorLabels(baseName),
+				MatchLabels: commonresources.DefaultSelector(baseName),
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
@@ -118,7 +118,7 @@ func makeDeployment(baseName string, namespace string, replicas int32, metadata 
 		Spec: appsv1.DeploymentSpec{
 			Replicas: new(replicas),
 			Selector: &metav1.LabelSelector{
-				MatchLabels: commonresources.SelectorLabels(baseName),
+				MatchLabels: commonresources.DefaultSelector(baseName),
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{

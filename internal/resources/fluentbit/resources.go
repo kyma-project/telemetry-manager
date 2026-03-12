@@ -108,7 +108,7 @@ func NewFluentBitApplierDeleter(global config.Global, namespace, fbImage, export
 }
 
 func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Client, opts AgentApplyOptions) error {
-	labelerClient := k8sclients.NewLabeler(c, makeLabels())
+	labelerClient := k8sclients.NewLabeler(c, defaultFluentBitLabels())
 
 	serviceAccount := commonresources.MakeServiceAccount(aad.daemonSetName)
 	if err := k8sutils.CreateOrUpdateServiceAccount(ctx, labelerClient, serviceAccount); err != nil {
@@ -297,7 +297,7 @@ func (aad *AgentApplierDeleter) makeDaemonSet(namespace string, checksum string)
 	maps.Copy(podAnnotations, aad.globals.AdditionalWorkloadAnnotations())
 	maps.Copy(podAnnotations, annotations)
 
-	defaultPodLabels := makeLabels()
+	defaultPodLabels := defaultFluentBitLabels()
 	maps.Copy(defaultPodLabels, aad.extraPodLabels)
 
 	// Resource labels: only additional labels from globals; default labels are applied by the labeler
@@ -331,7 +331,7 @@ func (aad *AgentApplierDeleter) makeDaemonSet(namespace string, checksum string)
 		},
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
-				MatchLabels: selectorLabels(),
+				MatchLabels: defaultFluentBitSelector(),
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
@@ -531,7 +531,7 @@ func makeMetricsService(name types.NamespacedName) *corev1.Service {
 					TargetPort: intstr.FromString("http"),
 				},
 			},
-			Selector: selectorLabels(),
+			Selector: defaultFluentBitSelector(),
 			Type:     corev1.ServiceTypeClusterIP,
 		},
 	}
@@ -557,7 +557,7 @@ func makeExporterMetricsService(name types.NamespacedName) *corev1.Service {
 					TargetPort: intstr.FromString("http-metrics"),
 				},
 			},
-			Selector: selectorLabels(),
+			Selector: defaultFluentBitSelector(),
 			Type:     corev1.ServiceTypeClusterIP,
 		},
 	}
@@ -689,7 +689,7 @@ func makeTLSFileConfigSecret(name types.NamespacedName, tlsFileConfigSecret map[
 func makeNetworkPolicies(name types.NamespacedName, istioEnabled bool) []*networkingv1.NetworkPolicy {
 	metricsNetworkPolicy := commonresources.MakeNetworkPolicy(
 		name,
-		selectorLabels(),
+		defaultFluentBitSelector(),
 		commonresources.WithNameSuffix("metrics"),
 		commonresources.WithIngressFromPodsInAllNamespaces(
 			map[string]string{
@@ -700,22 +700,25 @@ func makeNetworkPolicies(name types.NamespacedName, istioEnabled bool) []*networ
 
 	fluentBitNetworkPolicy := commonresources.MakeNetworkPolicy(
 		name,
-		selectorLabels(),
+		defaultFluentBitSelector(),
 		commonresources.WithEgressToAny(),
 	)
 
 	return []*networkingv1.NetworkPolicy{metricsNetworkPolicy, fluentBitNetworkPolicy}
 }
 
-func makeLabels() map[string]string {
+// We are using an extra label for FluentBit resources
+// Since it's deprecated, there is no need to harmonize it with OTel Collectors and self-monitoring
+
+func defaultFluentBitLabels() map[string]string {
 	result := commonresources.DefaultLabels("fluent-bit", commonresources.LabelValueK8sComponentAgent)
 	result[commonresources.LabelKeyK8sInstance] = commonresources.LabelValueK8sInstance
 
 	return result
 }
 
-func selectorLabels() map[string]string {
-	result := commonresources.SelectorLabels("fluent-bit")
+func defaultFluentBitSelector() map[string]string {
+	result := maps.Clone(commonresources.DefaultSelector("fluent-bit"))
 	result[commonresources.LabelKeyK8sInstance] = commonresources.LabelValueK8sInstance
 
 	return result

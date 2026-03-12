@@ -75,7 +75,7 @@ func NewOTLPGatewayApplierDeleter(globals config.Global, image, priorityClassNam
 		dynamicMemoryRequest: logGatewayDynamicMemoryRequest,
 		podOpts: []commonresources.PodSpecOption{
 			commonresources.WithPriorityClass(priorityClassName),
-			commonresources.WithAffinity(makePodAffinity(commonresources.SelectorLabels(names.OTLPGateway))),
+			commonresources.WithAffinity(makePodAffinity(commonresources.DefaultSelector(names.OTLPGateway))),
 		},
 		containerOpts: []commonresources.ContainerOption{
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentPodIP, fieldPathPodIP),
@@ -222,8 +222,6 @@ func (o *OTLPGatewayApplierDeleter) makeDestinationRule(name string) *istionetwo
 }
 
 func (o *OTLPGatewayApplierDeleter) makeOTLPService() *corev1.Service {
-	selectorLabels := commonresources.SelectorLabels(o.baseName)
-
 	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      o.otlpServiceName,
@@ -244,7 +242,7 @@ func (o *OTLPGatewayApplierDeleter) makeOTLPService() *corev1.Service {
 					TargetPort: intstr.FromInt32(ports.OTLPHTTP),
 				},
 			},
-			Selector:              selectorLabels,
+			Selector:              commonresources.DefaultSelector(o.baseName),
 			Type:                  corev1.ServiceTypeClusterIP,
 			InternalTrafficPolicy: ptr.To(corev1.ServiceInternalTrafficPolicyLocal),
 		},
@@ -255,8 +253,6 @@ func (o *OTLPGatewayApplierDeleter) makeOTLPService() *corev1.Service {
 
 // makeLegacyOTLPService creates a service with a legacy name that points to the unified OTLP gateway
 func (o *OTLPGatewayApplierDeleter) makeLegacyOTLPService(legacyServiceName string) *corev1.Service {
-	selectorLabels := commonresources.SelectorLabels(o.baseName)
-
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      legacyServiceName,
@@ -277,7 +273,7 @@ func (o *OTLPGatewayApplierDeleter) makeLegacyOTLPService(legacyServiceName stri
 					TargetPort: intstr.FromInt32(ports.OTLPHTTP),
 				},
 			},
-			Selector:              selectorLabels,
+			Selector:              commonresources.DefaultSelector(o.baseName),
 			Type:                  corev1.ServiceTypeClusterIP,
 			InternalTrafficPolicy: ptr.To(corev1.ServiceInternalTrafficPolicyLocal),
 		},

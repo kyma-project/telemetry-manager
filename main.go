@@ -174,8 +174,8 @@ func run() error {
 		config.WithVersion(build.GitTag()),
 		config.WithImagePullSecretName(imagePullSecretName),
 		config.WithClusterTrustBundleName(clusterTrustBundleName),
-		config.WithAdditionalLabels(additionalLabels),
-		config.WithAdditionalAnnotations(additionalAnnotations),
+		config.WithAdditionalWorkloadLabels(additionalLabels),
+		config.WithAdditionalWorkloadAnnotations(additionalAnnotations),
 		config.WithDeployOTLPGateway(featureflags.IsEnabled(featureflags.DeployOTLPGateway)),
 		config.WithUnlimitedPipelines(featureflags.IsEnabled(featureflags.UnlimitedPipelineCount)),
 	)

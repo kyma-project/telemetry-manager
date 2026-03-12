@@ -254,7 +254,7 @@ func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string, opts A
 func makeAgentNetworkPolicies(name types.NamespacedName, istioEnabled bool) []*networkingv1.NetworkPolicy {
 	metricsNetworkPolicy := commonresources.MakeNetworkPolicy(
 		name,
-		commonresources.SelectorLabels(name.Name),
+		commonresources.DefaultSelector(name.Name),
 		commonresources.WithNameSuffix("metrics"),
 		commonresources.WithIngressFromPodsInAllNamespaces(
 			map[string]string{
@@ -264,7 +264,7 @@ func makeAgentNetworkPolicies(name types.NamespacedName, istioEnabled bool) []*n
 	)
 	agentNetworkPolicy := commonresources.MakeNetworkPolicy(
 		name,
-		commonresources.SelectorLabels(name.Name),
+		commonresources.DefaultSelector(name.Name),
 		commonresources.WithEgressToAny(),
 	)
 

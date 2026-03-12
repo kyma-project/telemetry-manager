@@ -1,9 +1,5 @@
 package common
 
-import (
-	"k8s.io/apimachinery/pkg/labels"
-)
-
 const (
 	// LabelValueTrue can be used in all labels that require "true" as value
 	LabelValueTrue = "true"
@@ -72,16 +68,10 @@ func DefaultLabels(componentBaseName string, componentType string) map[string]st
 	return l
 }
 
-// SelectorLabels returns the minimal label set used for pod selectors in Deployments, DaemonSets,
+// DefaultSelector returns the minimal label set used for pod selectors in Deployments, DaemonSets,
 // Services, and NetworkPolicies. This must be a subset of DefaultLabels to ensure selectors match.
-func SelectorLabels(baseName string) map[string]string {
+func DefaultSelector(componentBaseName string) map[string]string {
 	return map[string]string{
-		LabelKeyK8sName: baseName,
+		LabelKeyK8sName: componentBaseName,
 	}
-}
-
-// DefaultSelector returns a label selector matching the default labels for a telemetry component.
-// It can be used to scope informer caches or list watches to resources managed by a specific component.
-func DefaultSelector(baseName string) labels.Selector {
-	return labels.SelectorFromSet(SelectorLabels(baseName))
 }
