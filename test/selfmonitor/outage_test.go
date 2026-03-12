@@ -263,7 +263,6 @@ func TestOutage(t *testing.T) {
 			}
 
 			suite.SetupTestWithOptions(t, labels, opts...)
-			assert.SelfMonitorDebugOnFailure(t)
 
 			pipelineName := fmt.Sprintf("selfmonitor-%s", tc.name)
 
@@ -294,6 +293,9 @@ func TestOutage(t *testing.T) {
 			resources = append(resources, backend.K8sObjects()...)
 
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
+
+			// Register after CreateObjects so LIFO cleanup order ensures diagnostics run before resource deletion
+			assert.SelfMonitorDebugOnFailure(t)
 
 			assert.DeploymentReady(t, kitkyma.SelfMonitorName)
 			tc.assertions(t, pipeline.GetName())
