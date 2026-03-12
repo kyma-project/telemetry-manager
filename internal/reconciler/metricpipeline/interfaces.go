@@ -107,7 +107,7 @@ type OverridesHandler interface {
 type IstioStatusChecker interface {
 	// IsIstioActive returns true if Istio is currently active in the cluster.
 	// This affects whether Istio-specific configurations (like PeerAuthentication) are applied.
-	IsIstioActive(ctx context.Context) bool
+	IsIstioActive(ctx context.Context) (bool, error)
 }
 
 // EndpointValidator validates metric pipeline endpoint configurations.

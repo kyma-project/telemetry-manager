@@ -189,7 +189,10 @@ func (r *LogPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		return fmt.Errorf("failed to create discovery client: %w", err)
 	}
 
-	isIstioActive := istiostatus.NewChecker(discoveryClient).IsIstioActive(context.Background())
+	isIstioActive, err := istiostatus.NewChecker(discoveryClient).IsIstioActive(context.Background())
+	if err != nil {
+		return fmt.Errorf("failed to check Istio status: %w", err)
+	}
 
 	if isIstioActive {
 		ownedResourceTypesToWatch = append(ownedResourceTypesToWatch, &istiosecurityclientv1.PeerAuthentication{})

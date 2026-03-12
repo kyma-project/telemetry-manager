@@ -383,7 +383,10 @@ func TestBuildConfig(t *testing.T) {
 					WithRuntimeInput(true).
 					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).
 					WithFilter(telemetryv1beta1.FilterSpec{
-						Conditions: []string{"metric.type == METRIC_DATA_TYPE_SUMMARY"},
+						Conditions: []string{"HasAttrOnDatapoint(\"http.method\",\"GET\""},
+					}).
+					WithFilter(telemetryv1beta1.FilterSpec{
+						Conditions: []string{"datapoint.flags == kyma"},
 					}).Build(),
 				testutils.NewMetricPipelineBuilder().
 					WithName("test2").

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -74,6 +75,11 @@ func ensureManagerDeployed(t TestingT, k8sClient client.Client, cfg Config) erro
 	newValues := buildHelmValues(cfg, cfg.ManagerImage)
 	currentValues := getReleaseValues(ctx)
 	valuesChanged := !valuesEqual(currentValues, newValues)
+
+	if valuesChanged {
+		newYAML, _ := yaml.Marshal(newValues)
+		t.Logf("Helm values changed.\nCurrent release values:\n%s\nNew values:\n%s", currentValues, string(newYAML))
+	}
 
 	// If values changed and release exists, decide whether to undeploy first
 	if valuesChanged && releaseExists(ctx) {

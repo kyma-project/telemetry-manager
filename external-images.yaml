@@ -1,11 +1,13 @@
 images:
   - source: "fluent/fluent-bit@sha256:906c8ad6e682f72ea3050da8b3e384a07e3b5db8c093173a9ed9adfe0be5c21a"
     tag: "4.2.3" # used by the kyma telemetry module
-  - source: "rancher/k3s@sha256:634920385dc89133d80060b3a3b2b547e734d711ef8c050e6b5c6341800d53fd"
-    tag: "v1.35.1-k3s1" # used by k3d - current k8s version
-  - source: "rancher/k3s@sha256:634920385dc89133d80060b3a3b2b547e734d711ef8c050e6b5c6341800d53fd"
-    tag: "v1.35.1-k3s1" # used by k3d - future k8s version
+  - source: "rancher/k3s@sha256:c3184157c3048112bab0c3e17405991da486cb3413511eba23f7650efd70776b"
+    tag: "v1.35.2-k3s1" # used by k3d - current k8s version
+  - source: "rancher/k3s@sha256:c3184157c3048112bab0c3e17405991da486cb3413511eba23f7650efd70776b"
+    tag: "v1.35.2-k3s1" # used by k3d - future k8s version
   - source: "ghcr.io/k3d-io/k3d-tools@sha256:c5ceb2b9e8ff2cf55917b0bee8bc9c54fe1483a16366b734117e2cfac1417bed"
+    tag: "5.8.3"
+  - source: "ghcr.io/k3d-io/k3d-proxy@sha256:d43e6ffd27c216d0b21815c1226c8aeac2e07086ac5a988eb39bd7e308f6e370"
     tag: "5.8.3"
   - source: "library/registry@sha256:3725021071ec9383eb3d87ddbdff9ed602439b3f7c958c9c2fb941049ea6531d"
     tag: "3" # used by k3d

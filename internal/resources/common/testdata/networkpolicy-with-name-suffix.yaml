@@ -7,18 +7,9 @@ metadata:
   namespace: test-namespace
 spec:
   egress:
-  - to:
-    - ipBlock:
-        cidr: 0.0.0.0/0
-    - ipBlock:
-        cidr: ::/0
+  - {}
   ingress:
-  - from:
-    - ipBlock:
-        cidr: 0.0.0.0/0
-    - ipBlock:
-        cidr: ::/0
-    ports:
+  - ports:
     - port: 8080
       protocol: TCP
   podSelector:

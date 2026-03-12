@@ -1,13 +1,13 @@
 export default [
   {
       text: 'Telemetry Pipeline API', link: './pipelines', collapsed: true, items: [
-          {text: 'Migrate Telemetry Pipelines to v1beta1', link: './migration-guide'},
+          {text: 'Migrate Telemetry Pipelines to v1beta1', link: './migration-to-v1beta1-api'},
       ]
   },
   { text: 'Set Up the OTLP Input', link: './otlp-input' },
   {
     text: 'Collecting Logs', link: './collecting-logs/README', collapsed: true, items: [
-      { text: 'Configure Application Logs', link: './collecting-logs/application-input' },
+      { text: 'Configure Application Logs', link: './collecting-logs/runtime-input' },
       { text: 'Configure Istio Access Logs', link: './collecting-logs/istio-support' },
     ]
   },
