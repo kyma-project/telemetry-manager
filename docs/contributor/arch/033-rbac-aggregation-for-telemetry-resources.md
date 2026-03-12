@@ -33,11 +33,11 @@ Each resource includes:
 - Status subresource (health and configuration state)
 - Finalizers (cleanup coordination)
 
-**Note:** Status read access is implicit with main resource read access. Status write and finalizer access is implicit with main resource update access.
+**Note:** Reading status is implicit in main resource read access. Writing status and managing finalizers are implicit in main resource update access.
 
 ### Indirect Dependencies (Out of Scope)
 
-The following resources are referenced by telemetry pipelines but are managed by other modules or operators:
+Telemetry pipelines reference the following resources, which other modules or operators manage:
 
 **Istio Resources:**
 - `telemetry.istio.io` - Istio Telemetry API for enabling traces and access logs (managed by Istio operator)
@@ -49,7 +49,7 @@ The following resources are referenced by telemetry pipelines but are managed by
 **Secret Resources:**
 - Secrets containing credentials for external backends (managed separately, not granted direct access)
 
-**RBAC for indirect dependencies will be handled by their respective modules.** This ADR focuses only on direct Telemetry module resources.
+**The respective modules handle RBAC for indirect dependencies.** This ADR focuses only on direct Telemetry module resources.
 
 ### Kubernetes RBAC Aggregation
 
@@ -63,7 +63,7 @@ metadata:
     rbac.authorization.k8s.io/aggregate-to-admin: "true"
 ```
 
-This allows modules to integrate with the existing RBAC hierarchy without requiring users to create custom roles.
+With this mechanism, modules integrate with the existing RBAC hierarchy, and users don't need to create custom roles.
 
 #### Standard Kubernetes Roles
 
@@ -114,18 +114,17 @@ Grants `edit` permissions **cluster-wide** (all namespaces + cluster-scoped reso
 
 #### Implications for Telemetry Resources
 
-Since `logpipelines`, `metricpipelines`, `tracepipelines`, and `telemetries` are **cluster-scoped resources**:
+Because `logpipelines`, `metricpipelines`, `tracepipelines`, and `telemetries` are **cluster-scoped resources**, the following constraints apply:
 
--  **RoleBindings cannot grant access** to them (namespace bindings don't apply to cluster resources)
--  **Only ClusterRoleBindings work** for managing these resources
+- To grant access to cluster-scoped telemetry resources, you must use a **ClusterRoleBinding**. A namespace-scoped RoleBinding has no effect.
 - ️ Users need cluster-level permissions, typically granted to platform/SRE teams
--  The ConfigMap `sap-cloud-logging` in `kube-public` **can** be managed via RoleBinding in that namespace
+- The ConfigMap `sap-cloud-logging` in the `kube-public` namespace is an exception. Because it is a namespaced resource, you can manage access to it with a RoleBinding in that namespace.
 
-**Important**: When telemetry resources aggregate into `edit` or `admin` roles, users must still receive **ClusterRoleBindings** to actually use those permissions on cluster-scoped resources.
+**Important**: Even when telemetry resources aggregate into `edit` or `admin` roles, users still need a **ClusterRoleBinding** to apply those permissions to the cluster-scoped resources.
 
 ## Requirements
 
-Based on [Kyma RBAC Decision Record](https://github.com/kyma-project/community/issues/1014) and [Issue #3022](https://github.com/kyma-project/telemetry-manager/issues/3022), the implementation must provide:
+Based on [Kyma RBAC Decision Record](https://github.com/kyma-project/community/issues/1014) and [Issue #3022](https://github.com/kyma-project/telemetry-manager/issues/3022), the implementation must provide the following capabilities:
 
 1. **View Role**: Read-only access for monitoring and observability
 2. **Edit Role**: Full CRUD access for managing telemetry pipelines
@@ -147,7 +146,7 @@ rules:
 
 ## Decision
 
-We will implement **two aggregated ClusterRoles** for telemetry resources, following Kubernetes RBAC best practices:
+We create **two aggregated ClusterRoles** for telemetry resources, following Kubernetes RBAC best practices:
 
 ### Role Definitions
 
@@ -157,17 +156,17 @@ We will implement **two aggregated ClusterRoles** for telemetry resources, follo
 | **kyma-telemetry-edit** | `edit`, `admin` |                                                                       **Cluster-scoped:**<br/>• `logpipelines`<br/>• `metricpipelines`<br/>• `tracepipelines`<br/>• `telemetries`<br/>                                                                        | `create`, `delete`, `deletecollection`, `get`, `list`, `patch`, `update`, `watch` | Full CRUD access for platform engineers and DevOps teams managing telemetry infrastructure. Does **not** include direct Secret access (credentials managed separately). |
 
 **Note:** We do **not** create a separate `kyma-telemetry-admin` role because:
-- The traditional `admin` vs `edit` distinction (managing Roles/RoleBindings) is not applicable to cluster-scoped resources
+- The traditional `admin` vs `edit` distinction (managing Roles/RoleBindings) does not apply to cluster-scoped resources
 - Both would have identical permissions on telemetry resources
-- Secret access is intentionally excluded for security (credentials should be managed through separate RBAC policies)
+- We intentionally exclude Secret access for security. Separate RBAC policies must manage credentials.
 
 ### Binding Requirements
 
-- Since most telemetry resources are **cluster-scoped**, users need **ClusterRoleBindings** to access them:
-- For the namespace-scoped ConfigMap `telemetry-logpipelines`, `telemetry-tracepipelines`, `telemetry-metricpipelines`, a RoleBinding in the `kyma-system` namespace would work.
+- Because most telemetry resources are **cluster-scoped**, users need **ClusterRoleBindings** to access them.
+- For the namespace-scoped ConfigMap `telemetry-logpipelines`, `telemetry-tracepipelines`, `telemetry-metricpipelines`, a RoleBinding in the `kyma-system` namespace is sufficient.
 
 ### Testing and Validation
 
-The roles will be tested using `kubectl auth can-i` to verify permissions for both cluster-scoped and namespace-scoped resources. We will also validate that aggregation works correctly by checking the effective permissions of the standard `view` and `edit` roles after aggregation.
+To verify permissions for both cluster-scoped and namespace-scoped resources, we test the roles using `kubectl auth can-i` . To validate that aggregation works correctly, we check the effective permissions of the standard `view` and `edit` roles after aggregation.
 
 
