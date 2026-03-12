@@ -152,7 +152,7 @@ func makeMetricsService(name types.NamespacedName) *corev1.Service {
 		commonresources.LabelKeyTelemetrySelfMonitor: commonresources.LabelValueTelemetrySelfMonitor,
 	}
 
-	selectorLabels := commonresources.MakeDefaultSelectorLabels(name.Name)
+	selectorLabels := commonresources.SelectorLabels(name.Name)
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{

@@ -13,7 +13,7 @@ import (
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 )
 
-var testLabels = commonresources.MakeDefaultLabels("test-collector", "gateway")
+var testLabels = commonresources.DefaultLabels("test-collector", "gateway")
 
 func TestLabeler_Create(t *testing.T) {
 	inner := fake.NewClientBuilder().Build()

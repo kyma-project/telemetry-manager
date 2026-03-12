@@ -75,7 +75,7 @@ func NewOTLPGatewayApplierDeleter(globals config.Global, image, priorityClassNam
 		dynamicMemoryRequest: logGatewayDynamicMemoryRequest,
 		podOpts: []commonresources.PodSpecOption{
 			commonresources.WithPriorityClass(priorityClassName),
-			commonresources.WithAffinity(makePodAffinity(commonresources.MakeDefaultSelectorLabels(names.OTLPGateway))),
+			commonresources.WithAffinity(makePodAffinity(commonresources.SelectorLabels(names.OTLPGateway))),
 		},
 		containerOpts: []commonresources.ContainerOption{
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentPodIP, fieldPathPodIP),
@@ -91,7 +91,7 @@ func (o *OTLPGatewayApplierDeleter) ApplyResources(ctx context.Context, c client
 		name = types.NamespacedName{Namespace: o.globals.TargetNamespace(), Name: o.baseName}
 	)
 
-	labelerClient := k8sclients.NewLabeler(c, commonresources.MakeDefaultLabels(o.baseName, commonresources.LabelValueK8sComponentGateway))
+	labelerClient := k8sclients.NewLabeler(c, commonresources.DefaultLabels(o.baseName, commonresources.LabelValueK8sComponentGateway))
 
 	if err := applyCommonResources(ctx, labelerClient, name, o.rbac); err != nil {
 		return fmt.Errorf("failed to create common resource: %w", err)
@@ -222,7 +222,7 @@ func (o *OTLPGatewayApplierDeleter) makeDestinationRule(name string) *istionetwo
 }
 
 func (o *OTLPGatewayApplierDeleter) makeOTLPService() *corev1.Service {
-	selectorLabels := commonresources.MakeDefaultSelectorLabels(o.baseName)
+	selectorLabels := commonresources.SelectorLabels(o.baseName)
 
 	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -255,7 +255,7 @@ func (o *OTLPGatewayApplierDeleter) makeOTLPService() *corev1.Service {
 
 // makeLegacyOTLPService creates a service with a legacy name that points to the unified OTLP gateway
 func (o *OTLPGatewayApplierDeleter) makeLegacyOTLPService(legacyServiceName string) *corev1.Service {
-	selectorLabels := commonresources.MakeDefaultSelectorLabels(o.baseName)
+	selectorLabels := commonresources.SelectorLabels(o.baseName)
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{

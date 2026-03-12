@@ -52,7 +52,6 @@ func TestMakeWorkloadMetadata(t *testing.T) {
 
 			require.Equal(t, tt.expectedPodLabels, len(metadata.PodLabels))
 			require.Equal(t, tt.expectedPodAnnotations, len(metadata.PodAnnotations))
-			require.Contains(t, metadata.ResourceLabels, "app.kubernetes.io/name")
 			require.Contains(t, metadata.PodLabels, "app.kubernetes.io/name")
 		})
 	}

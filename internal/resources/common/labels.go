@@ -52,7 +52,9 @@ const (
 	LabelValueTelemetryMetricsScraping = "allowed"
 )
 
-func MakeModuleLabels() map[string]string {
+// ModuleLabels returns the base labels that identify a resource as belonging to the telemetry module.
+// These labels are shared by all telemetry-managed resources regardless of component type.
+func ModuleLabels() map[string]string {
 	return map[string]string{
 		LabelKeyKymaModule:   LabelValueKymaModule,
 		LabelKeyK8sPartOf:    LabelValueK8sPartOf,
@@ -60,20 +62,26 @@ func MakeModuleLabels() map[string]string {
 	}
 }
 
-func ModuleLabelSelector() labels.Selector {
-	return labels.SelectorFromSet(MakeModuleLabels())
+// DefaultLabels returns the standard set of labels for a telemetry component resource.
+// It extends ModuleLabels with the component's base name and type (e.g., "agent", "gateway", "monitor").
+func DefaultLabels(componentBaseName string, componentType string) map[string]string {
+	l := ModuleLabels()
+	l[LabelKeyK8sName] = componentBaseName
+	l[LabelKeyK8sComponent] = componentType
+
+	return l
 }
 
-func MakeDefaultLabels(componentBaseName string, componentType string) map[string]string {
-	labels := MakeModuleLabels()
-	labels[LabelKeyK8sName] = componentBaseName
-	labels[LabelKeyK8sComponent] = componentType
-
-	return labels
-}
-
-func MakeDefaultSelectorLabels(baseName string) map[string]string {
+// SelectorLabels returns the minimal label set used for pod selectors in Deployments, DaemonSets,
+// Services, and NetworkPolicies. This must be a subset of DefaultLabels to ensure selectors match.
+func SelectorLabels(baseName string) map[string]string {
 	return map[string]string{
 		LabelKeyK8sName: baseName,
 	}
+}
+
+// DefaultSelector returns a label selector matching the default labels for a telemetry component.
+// It can be used to scope informer caches or list watches to resources managed by a specific component.
+func DefaultSelector(baseName string) labels.Selector {
+	return labels.SelectorFromSet(SelectorLabels(baseName))
 }

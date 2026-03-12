@@ -689,7 +689,6 @@ func makeTLSFileConfigSecret(name types.NamespacedName, tlsFileConfigSecret map[
 func makeNetworkPolicies(name types.NamespacedName, istioEnabled bool) []*networkingv1.NetworkPolicy {
 	metricsNetworkPolicy := commonresources.MakeNetworkPolicy(
 		name,
-		nil,
 		selectorLabels(),
 		commonresources.WithNameSuffix("metrics"),
 		commonresources.WithIngressFromPodsInAllNamespaces(
@@ -701,7 +700,6 @@ func makeNetworkPolicies(name types.NamespacedName, istioEnabled bool) []*networ
 
 	fluentBitNetworkPolicy := commonresources.MakeNetworkPolicy(
 		name,
-		nil,
 		selectorLabels(),
 		commonresources.WithEgressToAny(),
 	)
@@ -710,14 +708,14 @@ func makeNetworkPolicies(name types.NamespacedName, istioEnabled bool) []*networ
 }
 
 func makeLabels() map[string]string {
-	result := commonresources.MakeDefaultLabels("fluent-bit", commonresources.LabelValueK8sComponentAgent)
+	result := commonresources.DefaultLabels("fluent-bit", commonresources.LabelValueK8sComponentAgent)
 	result[commonresources.LabelKeyK8sInstance] = commonresources.LabelValueK8sInstance
 
 	return result
 }
 
 func selectorLabels() map[string]string {
-	result := commonresources.MakeDefaultSelectorLabels("fluent-bit")
+	result := commonresources.SelectorLabels("fluent-bit")
 	result[commonresources.LabelKeyK8sInstance] = commonresources.LabelValueK8sInstance
 
 	return result

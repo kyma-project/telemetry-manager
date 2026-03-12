@@ -147,7 +147,7 @@ func NewMetricAgentApplierDeleter(globals config.Global, image, priorityClassNam
 
 func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Client, opts AgentApplyOptions) error {
 	name := types.NamespacedName{Namespace: aad.globals.TargetNamespace(), Name: aad.baseName}
-	labelerClient := k8sclients.NewLabeler(c, commonresources.MakeDefaultLabels(aad.baseName, commonresources.LabelValueK8sComponentAgent))
+	labelerClient := k8sclients.NewLabeler(c, commonresources.DefaultLabels(aad.baseName, commonresources.LabelValueK8sComponentAgent))
 
 	if err := applyCommonResources(ctx, labelerClient, name, aad.rbac); err != nil {
 		return fmt.Errorf("failed to create common resource: %w", err)
@@ -254,8 +254,7 @@ func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string, opts A
 func makeAgentNetworkPolicies(name types.NamespacedName, istioEnabled bool) []*networkingv1.NetworkPolicy {
 	metricsNetworkPolicy := commonresources.MakeNetworkPolicy(
 		name,
-		nil,
-		commonresources.MakeDefaultSelectorLabels(name.Name),
+		commonresources.SelectorLabels(name.Name),
 		commonresources.WithNameSuffix("metrics"),
 		commonresources.WithIngressFromPodsInAllNamespaces(
 			map[string]string{
@@ -265,8 +264,7 @@ func makeAgentNetworkPolicies(name types.NamespacedName, istioEnabled bool) []*n
 	)
 	agentNetworkPolicy := commonresources.MakeNetworkPolicy(
 		name,
-		nil,
-		commonresources.MakeDefaultSelectorLabels(name.Name),
+		commonresources.SelectorLabels(name.Name),
 		commonresources.WithEgressToAny(),
 	)
 
