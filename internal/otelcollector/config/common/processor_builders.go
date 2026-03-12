@@ -139,72 +139,26 @@ func ResolveServiceName() *ServiceEnrichmentProcessorConfig {
 // =============================================================================
 
 // LogFilterProcessor creates a FilterProcessorConfig for logs with error_mode set to "ignore"
-func LogFilterProcessor(logs FilterProcessorLogs) *FilterProcessorConfig {
+func LogFilterProcessor(filters []telemetryv1beta1.FilterSpec) *FilterProcessorConfig {
 	return &FilterProcessorConfig{
 		ErrorMode: defaultFilterProcessorErrorMode,
-		Logs:      logs,
+		Logs:      filters,
 	}
 }
 
 // MetricFilterProcessor creates a FilterProcessorConfig for metrics with the default error mode
-func MetricFilterProcessor(metrics FilterProcessorMetrics) *FilterProcessorConfig {
+func MetricFilterProcessor(filters []telemetryv1beta1.FilterSpec) *FilterProcessorConfig {
 	return &FilterProcessorConfig{
 		ErrorMode: defaultFilterProcessorErrorMode,
-		Metrics:   metrics,
+		Metrics:   filters,
 	}
 }
 
 // TraceFilterProcessor creates a FilterProcessorConfig for traces with the default error mode
-func TraceFilterProcessor(traces FilterProcessorTraces) *FilterProcessorConfig {
+func TraceFilterProcessor(filters []telemetryv1beta1.FilterSpec) *FilterProcessorConfig {
 	return &FilterProcessorConfig{
 		ErrorMode: defaultFilterProcessorErrorMode,
-		Traces:    traces,
-	}
-}
-
-func FilterSpecsToLogFilterProcessor(specs []telemetryv1beta1.FilterSpec) *FilterProcessorConfig {
-	var mergedConditions []string
-	for _, spec := range specs {
-		mergedConditions = append(mergedConditions, spec.Conditions...)
-	}
-
-	return &FilterProcessorConfig{
-		ErrorMode: defaultFilterProcessorErrorMode,
-		Logs: FilterProcessorLogs{
-			// Use log context as it is the lowest one and it is always present
-			Log: mergedConditions,
-		},
-	}
-}
-
-func FilterSpecsToMetricFilterProcessor(specs []telemetryv1beta1.FilterSpec) *FilterProcessorConfig {
-	var mergedConditions []string
-	for _, spec := range specs {
-		mergedConditions = append(mergedConditions, spec.Conditions...)
-	}
-
-	return &FilterProcessorConfig{
-		ErrorMode: defaultFilterProcessorErrorMode,
-		Metrics: FilterProcessorMetrics{
-			// Use datapoint context as it is the lowest one and it is always present
-			Datapoint: mergedConditions,
-		},
-	}
-}
-
-func FilterSpecsToTraceFilterProcessor(specs []telemetryv1beta1.FilterSpec) *FilterProcessorConfig {
-	var mergedConditions []string
-	for _, spec := range specs {
-		mergedConditions = append(mergedConditions, spec.Conditions...)
-	}
-
-	return &FilterProcessorConfig{
-		ErrorMode: defaultFilterProcessorErrorMode,
-		Traces: FilterProcessorTraces{
-			// Use span as context instead of spanevents, because while more granular, spanevents aren't always present
-			// span event filtering is not supported by user-defined filter until filter processor supports context inference
-			Span: mergedConditions,
-		},
+		Traces:    filters,
 	}
 }
 

@@ -95,8 +95,8 @@ processors:
         send_batch_max_size: 1024
     filter/drop-if-input-source-otlp:
         error_mode: ignore
-        metrics:
-            metric:
+        metric_conditions:
+            - conditions:
                 - resource.attributes["kyma.input.name"] == "otlp"
     k8s_attributes:
         auth_type: serviceAccount

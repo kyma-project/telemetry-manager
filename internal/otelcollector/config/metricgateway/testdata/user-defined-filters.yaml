@@ -104,13 +104,13 @@ processors:
         send_batch_max_size: 1024
     filter/user-defined-cls:
         error_mode: ignore
-        metrics:
-            datapoint:
+        metric_conditions:
+            - conditions:
                 - metric.type == METRIC_DATA_TYPE_SUMMARY
     filter/user-defined-dynatrace:
         error_mode: ignore
-        metrics:
-            datapoint:
+        metric_conditions:
+            - conditions:
                 - metric.type == METRIC_DATA_TYPE_HISTOGRAM
     k8s_attributes:
         auth_type: serviceAccount
