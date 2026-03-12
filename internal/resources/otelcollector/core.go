@@ -9,6 +9,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -18,6 +19,8 @@ import (
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
+	autoscalingv1 "k8s.io/api/autoscaling/v1"
+	autoscalingvpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 )
 
 // applyCommonResources applies resources to gateway and agent deployment node
@@ -178,6 +181,46 @@ func makeMetricsService(name types.NamespacedName, componentType string) *corev1
 			},
 			Selector: selectorLabels,
 			Type:     corev1.ServiceTypeClusterIP,
+		},
+	}
+}
+
+func makeVPA(name types.NamespacedName, componentType string, targetRefKind string) *autoscalingvpav1.VerticalPodAutoscaler {
+	updateMode := autoscalingvpav1.UpdateModeInPlaceOrRecreate
+	controlledValues := autoscalingvpav1.ContainerControlledValuesRequestsAndLimits
+
+	return &autoscalingvpav1.VerticalPodAutoscaler{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name.Name,
+			Namespace: name.Namespace,
+			Labels:    commonresources.MakeDefaultLabels(name.Name, componentType),
+		},
+		Spec: autoscalingvpav1.VerticalPodAutoscalerSpec{
+			TargetRef: &autoscalingv1.CrossVersionObjectReference{
+				APIVersion: "apps/v1",
+				Kind:       targetRefKind,
+				Name:       name.Name,
+			},
+			UpdatePolicy: &autoscalingvpav1.PodUpdatePolicy{
+				UpdateMode: &updateMode,
+			},
+			ResourcePolicy: &autoscalingvpav1.PodResourcePolicy{
+				ContainerPolicies: []autoscalingvpav1.ContainerResourcePolicy{
+					{
+						ContainerName: containerName,
+						ControlledResources: &[]corev1.ResourceName{
+							corev1.ResourceMemory,
+						},
+						MinAllowed: corev1.ResourceList{
+							corev1.ResourceMemory: resource.MustParse("128Mi"),
+						},
+						MaxAllowed: corev1.ResourceList{
+							corev1.ResourceMemory: resource.MustParse("1Gi"),
+						},
+						ControlledValues: &controlledValues,
+					},
+				},
+			},
 		},
 	}
 }

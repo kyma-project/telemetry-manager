@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	appsv1 "k8s.io/api/apps/v1"
-	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -188,7 +187,8 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 	// Create/update/delete VPA CR only if VPA CRD exists in cluster
 	if opts.VpaCRDExists {
 		if opts.VpaEnabled {
-			if err := k8sutils.CreateOrUpdateVPA(ctx, c, makeVPA(name)); err != nil {
+			vpa := makeVPA(name, commonresources.LabelValueK8sComponentAgent, "DaemonSet")
+			if err := k8sutils.CreateOrUpdateVPA(ctx, c, vpa); err != nil {
 				return fmt.Errorf("failed to create VPA: %w", err)
 			}
 		} else {
@@ -398,46 +398,4 @@ func agentIngressMetricsPorts(istioEnabled bool) []int32 {
 	}
 
 	return metricsPorts
-}
-
-func makeVPA(name types.NamespacedName) *autoscalingvpav1.VerticalPodAutoscaler {
-	updateMode := autoscalingvpav1.UpdateModeInPlaceOrRecreate
-	controlledValues := autoscalingvpav1.ContainerControlledValuesRequestsAndLimits
-
-	return &autoscalingvpav1.VerticalPodAutoscaler{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name.Name,
-			Namespace: name.Namespace,
-		},
-		Spec: autoscalingvpav1.VerticalPodAutoscalerSpec{
-			TargetRef: &autoscalingv1.CrossVersionObjectReference{
-				APIVersion: "apps/v1",
-				Kind:       "DaemonSet",
-				Name:       name.Name,
-			},
-			UpdatePolicy: &autoscalingvpav1.PodUpdatePolicy{
-				UpdateMode: &updateMode,
-			},
-			ResourcePolicy: &autoscalingvpav1.PodResourcePolicy{
-				ContainerPolicies: []autoscalingvpav1.ContainerResourcePolicy{
-					{
-						ContainerName: "collector",
-						ControlledResources: &[]corev1.ResourceName{
-							corev1.ResourceMemory,
-							corev1.ResourceCPU,
-						},
-						MinAllowed: corev1.ResourceList{
-							corev1.ResourceMemory: resource.MustParse("128Mi"),
-							corev1.ResourceCPU:    resource.MustParse("50m"),
-						},
-						MaxAllowed: corev1.ResourceList{
-							corev1.ResourceMemory: resource.MustParse("1Gi"),
-							corev1.ResourceCPU:    resource.MustParse("1000m"),
-						},
-						ControlledValues: &controlledValues,
-					},
-				},
-			},
-		},
-	}
 }
