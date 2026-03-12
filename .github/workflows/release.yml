@@ -21,11 +21,7 @@ on:
         required: false
         default: false
         type: boolean
-      create_pr:
-        description: 'Create PR to prepare module version bump on experimental and fast channels'
-        required: false
-        default: true
-        type: boolean
+
 run-name: "Release Telemetry version ${{ github.event.inputs.version }} with OCC image ${{ github.event.inputs.occ_image }}, dry-run: ${{ github.event.inputs.dry_run }}, force mode: ${{ github.event.inputs.force }}"
 
 permissions:
@@ -504,8 +500,8 @@ jobs:
       - name: Commit and push Helm chart metadata
         if: ${{ github.event.inputs.dry_run != true }}
         run: |
-          git config --global user.name "${GITHUB_ACTOR}"
-          git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git checkout gh-pages
           helm repo index --url https://github.com/${{ github.repository }}/releases/download/${{ needs.prepare-release.outputs.release-tag }} --merge ./index.yaml ./
           git add index.yaml
