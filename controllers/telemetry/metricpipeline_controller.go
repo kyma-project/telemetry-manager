@@ -183,7 +183,7 @@ func (r *MetricPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		source.Channel(r.reconcileTriggerChan, &handler.EnqueueRequestForObject{}),
 	)
 
-	// Watch owned agent resources (DaemonSet, ConfigMap, etc.)
+	// TODO: Mainly for Metric Agent reconciliation, should be removed after migrating it as well.
 	ownedResourceTypesToWatch := []client.Object{
 		&appsv1.DaemonSet{},
 		&corev1.ConfigMap{},

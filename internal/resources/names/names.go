@@ -31,7 +31,7 @@ const (
 	OTLPLogsService    = telemetryPrefix + "otlp-logs"
 	OTLPService        = telemetryPrefix + "otlp-gateway"
 
-	OTLPGatewayPipelinesSyncConfigMap = telemetryPrefix + OTLPGateway + "-pipelines"
+	OTLPGatewayPipelinesSyncConfigMap = OTLPGateway + "-pipelines"
 
 	SelfMonitor              = telemetryPrefix + "self-monitor"
 	SelfMonitorContainerName = "self-monitor"
