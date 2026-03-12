@@ -85,12 +85,12 @@ func TestTransformedInstrumentationScope(t *testing.T) {
 	instrumentationScopeVersion := "main"
 	tests := []struct {
 		name        string
-		want        *TransformProcessor
+		want        *TransformProcessorConfig
 		inputSource InputSourceType
 	}{
 		{
 			name: "InputSourceRuntime",
-			want: &TransformProcessor{
+			want: &TransformProcessorConfig{
 				ErrorMode: "ignore",
 				MetricStatements: []TransformProcessorStatements{{
 					Statements: []string{
@@ -102,7 +102,7 @@ func TestTransformedInstrumentationScope(t *testing.T) {
 			inputSource: InputSourceRuntime,
 		}, {
 			name: "InputSourcePrometheus",
-			want: &TransformProcessor{
+			want: &TransformProcessorConfig{
 				ErrorMode: "ignore",
 				MetricStatements: []TransformProcessorStatements{
 					{
@@ -116,7 +116,7 @@ func TestTransformedInstrumentationScope(t *testing.T) {
 			inputSource: InputSourcePrometheus,
 		}, {
 			name: "InputSourceIstio",
-			want: &TransformProcessor{
+			want: &TransformProcessorConfig{
 				ErrorMode: "ignore",
 				MetricStatements: []TransformProcessorStatements{{
 					Statements: []string{
@@ -128,7 +128,7 @@ func TestTransformedInstrumentationScope(t *testing.T) {
 			inputSource: InputSourceIstio,
 		}, {
 			name: "InputSourceKyma",
-			want: &TransformProcessor{
+			want: &TransformProcessorConfig{
 				ErrorMode: "ignore",
 				MetricStatements: []TransformProcessorStatements{{
 					Statements: []string{
@@ -140,7 +140,7 @@ func TestTransformedInstrumentationScope(t *testing.T) {
 			inputSource: InputSourceKyma,
 		}, {
 			name: "InputSourceK8sCluster",
-			want: &TransformProcessor{
+			want: &TransformProcessorConfig{
 				ErrorMode: "ignore",
 				MetricStatements: []TransformProcessorStatements{{
 					Statements: []string{
@@ -155,14 +155,14 @@ func TestTransformedInstrumentationScope(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := InstrumentationScopeProcessorConfig(instrumentationScopeVersion, tt.inputSource); !compareTransformProcessor(got, tt.want) {
+			if got := InstrumentationScopeProcessor(instrumentationScopeVersion, tt.inputSource); !compareTransformProcessor(got, tt.want) {
 				t.Errorf("makeInstrumentationScopeProcessor() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func compareTransformProcessor(got, want *TransformProcessor) bool {
+func compareTransformProcessor(got, want *TransformProcessorConfig) bool {
 	if got.ErrorMode != want.ErrorMode {
 		return false
 	}
@@ -186,7 +186,7 @@ func compareTransformProcessor(got, want *TransformProcessor) bool {
 	return true
 }
 
-func TestK8sAttributesProcessorConfig(t *testing.T) {
+func TestK8sAttributesProcessor(t *testing.T) {
 	expectedPodAssociations := []PodAssociations{
 		{
 			Sources: []PodAssociation{{From: "resource_attribute", Name: "k8s.pod.ip"}},
@@ -315,7 +315,7 @@ func TestK8sAttributesProcessorConfig(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			config := K8sAttributesProcessorConfig(&operatorv1beta1.EnrichmentSpec{
+			config := K8sAttributesProcessor(&operatorv1beta1.EnrichmentSpec{
 				ExtractPodLabels: []operatorv1beta1.PodLabel{
 					{Key: "", KeyPrefix: "app.kubernetes.io/name"},
 					{Key: "app", KeyPrefix: ""},
@@ -484,13 +484,13 @@ func TestKymaInputNameProcessorStatements(t *testing.T) {
 func TestResolveServiceNameConfig(t *testing.T) {
 	require := require.New(t)
 
-	config := ResolveServiceNameConfig()
+	config := ResolveServiceName()
 
 	require.NotNil(config)
 	require.Equal([]string{"kyma.kubernetes_io_app_name", "kyma.app_name"}, config.ResourceAttributes)
 }
 
-func TestLogFilterProcessorConfig(t *testing.T) {
+func TestLogFilterProcessor(t *testing.T) {
 	require := require.New(t)
 
 	logs := []telemetryv1beta1.FilterSpec{
@@ -502,7 +502,7 @@ func TestLogFilterProcessorConfig(t *testing.T) {
 		},
 	}
 
-	config := LogFilterProcessorConfig(logs)
+	config := LogFilterProcessor(logs)
 
 	require.NotNil(config)
 	require.Equal("ignore", config.ErrorMode)
@@ -512,7 +512,7 @@ func TestLogFilterProcessorConfig(t *testing.T) {
 	require.Empty(config.Traces)
 }
 
-func TestMetricFilterProcessorConfig(t *testing.T) {
+func TestMetricFilterProcessor(t *testing.T) {
 	require := require.New(t)
 
 	metrics := []telemetryv1beta1.FilterSpec{
@@ -524,7 +524,7 @@ func TestMetricFilterProcessorConfig(t *testing.T) {
 		},
 	}
 
-	config := MetricFilterProcessorConfig(metrics)
+	config := MetricFilterProcessor(metrics)
 
 	require.NotNil(config)
 	require.Equal("ignore", config.ErrorMode)
@@ -534,7 +534,7 @@ func TestMetricFilterProcessorConfig(t *testing.T) {
 	require.Empty(config.Traces)
 }
 
-func TestTraceFilterProcessorConfig(t *testing.T) {
+func TestTraceFilterProcessor(t *testing.T) {
 	require := require.New(t)
 
 	traces := []telemetryv1beta1.FilterSpec{
@@ -546,7 +546,7 @@ func TestTraceFilterProcessorConfig(t *testing.T) {
 		},
 	}
 
-	config := TraceFilterProcessorConfig(traces)
+	config := TraceFilterProcessor(traces)
 
 	require.NotNil(config)
 	require.Equal("ignore", config.ErrorMode)
@@ -556,7 +556,7 @@ func TestTraceFilterProcessorConfig(t *testing.T) {
 	require.Empty(config.Metrics)
 }
 
-func TestLogTransformProcessorConfig(t *testing.T) {
+func TestLogTransformProcessor(t *testing.T) {
 	require := require.New(t)
 
 	statements := []TransformProcessorStatements{
@@ -566,7 +566,7 @@ func TestLogTransformProcessorConfig(t *testing.T) {
 		},
 	}
 
-	config := LogTransformProcessorConfig(statements)
+	config := LogTransformProcessor(statements)
 
 	require.NotNil(config)
 	require.Equal("ignore", config.ErrorMode)
@@ -575,7 +575,7 @@ func TestLogTransformProcessorConfig(t *testing.T) {
 	require.Empty(config.TraceStatements)
 }
 
-func TestMetricTransformProcessorConfig(t *testing.T) {
+func TestMetricTransformProcessor(t *testing.T) {
 	require := require.New(t)
 
 	statements := []TransformProcessorStatements{
@@ -584,7 +584,7 @@ func TestMetricTransformProcessorConfig(t *testing.T) {
 		},
 	}
 
-	config := MetricTransformProcessorConfig(statements)
+	config := MetricTransformProcessor(statements)
 
 	require.NotNil(config)
 	require.Equal("ignore", config.ErrorMode)
@@ -593,7 +593,7 @@ func TestMetricTransformProcessorConfig(t *testing.T) {
 	require.Empty(config.TraceStatements)
 }
 
-func TestTraceTransformProcessorConfig(t *testing.T) {
+func TestTraceTransformProcessor(t *testing.T) {
 	require := require.New(t)
 
 	statements := []TransformProcessorStatements{
@@ -602,7 +602,7 @@ func TestTraceTransformProcessorConfig(t *testing.T) {
 		},
 	}
 
-	config := TraceTransformProcessorConfig(statements)
+	config := TraceTransformProcessor(statements)
 
 	require.NotNil(config)
 	require.Equal("ignore", config.ErrorMode)
@@ -691,7 +691,7 @@ func TestInstrumentationScopeProcessorConfigMultipleSources(t *testing.T) {
 	require := require.New(t)
 
 	instrumentationScopeVersion := "v1.0.0"
-	config := InstrumentationScopeProcessorConfig(instrumentationScopeVersion, InputSourceRuntime, InputSourcePrometheus)
+	config := InstrumentationScopeProcessor(instrumentationScopeVersion, InputSourceRuntime, InputSourcePrometheus)
 
 	require.NotNil(config)
 	require.Equal("ignore", config.ErrorMode)
