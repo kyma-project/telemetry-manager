@@ -19,6 +19,17 @@ func NewConfig() *Config {
 	return config
 }
 
+// DisableGoMemLimit disables the GoMemLimit setting in the cgroupruntime extension.
+// This should be called when VPA is active, since VPA dynamically adjusts memory limits
+// and GoMemLimit would interfere with that.
+// TODO: Remove the disabling of GoMemLimit after implementing https://github.com/kyma-project/telemetry-manager/issues/3062
+func (c *Config) DisableGoMemLimit() {
+	c.Extensions[ComponentIDCGroupRuntimeExtension] = CGroupRuntimeExtension{
+		GoMaxProcs: CGroupRuntimeGoMaxProcs{Enabled: false},
+		GoMemLimit: CGroupRuntimeGoMemLimit{Enabled: false},
+	}
+}
+
 func serviceConfig() Service {
 	telemetry := Telemetry{
 		Metrics: Metrics{

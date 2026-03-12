@@ -416,6 +416,13 @@ func (r *Reconciler) reconcileLogAgent(ctx context.Context, pipeline *telemetryv
 		return fmt.Errorf("failed to get kube-system namespace for cluster UID: %w", err)
 	}
 
+	vpaCRDExists, err := r.vpaStatusChecker.VpaCRDExists(ctx, r.Client)
+	if err != nil {
+		return fmt.Errorf("failed to check VPA status: %w", err)
+	}
+
+	isVpaEnabled := telemetryutils.IsVpaEnabledInTelemetry(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
+
 	agentConfig, envVars, err := r.agentConfigBuilder.Build(ctx, allPipelines, logagent.BuildOptions{
 		InstrumentationScopeVersion: r.globals.Version(),
 		AgentNamespace:              r.globals.TargetNamespace(),
@@ -426,6 +433,7 @@ func (r *Reconciler) reconcileLogAgent(ctx context.Context, pipeline *telemetryv
 		},
 		Enrichments:       enrichments,
 		ServiceEnrichment: telemetryutils.GetServiceEnrichmentFromTelemetryOrDefault(ctx, telemetryOptions),
+		VpaActive:         vpaCRDExists && isVpaEnabled,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to build agent config: %w", err)
@@ -440,13 +448,6 @@ func (r *Reconciler) reconcileLogAgent(ctx context.Context, pipeline *telemetryv
 	if err != nil {
 		return fmt.Errorf("failed to check Istio status: %w", err)
 	}
-
-	vpaCRDExists, err := r.vpaStatusChecker.VpaCRDExists(ctx, r.Client)
-	if err != nil {
-		return fmt.Errorf("failed to check VPA status: %w", err)
-	}
-
-	isVpaEnabled := telemetryutils.IsVpaEnabledInTelemetry(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
 
 	vpaMaxAllowedMemory, err := k8sutils.CalculateVpaMaxAllowedMemory(ctx, r.Client)
 	if err != nil {

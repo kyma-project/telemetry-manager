@@ -38,6 +38,8 @@ type BuildOptions struct {
 	Enrichments                 *operatorv1beta1.EnrichmentSpec
 	// ServiceEnrichment specifies the service enrichment strategy to be used (temporary)
 	ServiceEnrichment string
+	// VpaActive indicates whether VPA is active (VPA CRD exists and VPA is enabled via annotation in Telemetry CR).
+	VpaActive bool
 }
 
 // inputSources represents the enabled input sources for the telemetry metric agent.
@@ -68,6 +70,9 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1beta1.Metric
 	})
 
 	b.Config = common.NewConfig()
+	if opts.VpaActive {
+		b.Config.DisableGoMemLimit()
+	}
 	b.AddExtension(common.ComponentIDK8sLeaderElectorExtension,
 		common.K8sLeaderElectorExtension{
 			AuthType:       "serviceAccount",

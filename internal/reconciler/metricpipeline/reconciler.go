@@ -476,6 +476,13 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 		enrichments = t.Spec.Enrichments
 	}
 
+	vpaCRDExists, err := r.vpaStatusChecker.VpaCRDExists(ctx, r.Client)
+	if err != nil {
+		return fmt.Errorf("failed to check VPA status: %w", err)
+	}
+
+	isVpaEnabled := telemetryutils.IsVpaEnabledInTelemetry(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
+
 	agentConfig, collectorEnvVars, err := r.agentConfigBuilder.Build(ctx, allPipelines, metricagent.BuildOptions{
 		IstioActive:                 isIstioActive,
 		IstioCertPath:               otelcollector.IstioCertPath,
@@ -488,6 +495,7 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 		},
 		Enrichments:       enrichments,
 		ServiceEnrichment: telemetryutils.GetServiceEnrichmentFromTelemetryOrDefault(ctx, telemetryOptions),
+		VpaActive:         vpaCRDExists && isVpaEnabled,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create collector config: %w", err)
@@ -502,13 +510,6 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 	if err != nil {
 		return fmt.Errorf("failed to get ports of the backends: %w", err)
 	}
-
-	vpaCRDExists, err := r.vpaStatusChecker.VpaCRDExists(ctx, r.Client)
-	if err != nil {
-		return fmt.Errorf("failed to check VPA status: %w", err)
-	}
-
-	isVpaEnabled := telemetryutils.IsVpaEnabledInTelemetry(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
 
 	vpaMaxAllowedMemory, err := k8sutils.CalculateVpaMaxAllowedMemory(ctx, r.Client)
 	if err != nil {
