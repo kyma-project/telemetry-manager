@@ -1,10 +1,12 @@
 package assert
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
 	"testing"
+	"time"
 
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -47,6 +49,9 @@ func SelfMonitorDebugOnFailure(t *testing.T) {
 func querySelfMonitor(t *testing.T, path string) (string, error) {
 	t.Helper()
 
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
 	url := suite.ProxyClient.ProxyURLForService(
 		kitkyma.SelfMonitorName.Namespace,
 		kitkyma.SelfMonitorName.Name,
@@ -54,7 +59,7 @@ func querySelfMonitor(t *testing.T, path string) (string, error) {
 		9090,
 	)
 
-	resp, err := suite.ProxyClient.GetWithContext(t.Context(), url)
+	resp, err := suite.ProxyClient.GetWithContext(ctx, url)
 	if err != nil {
 		return "", fmt.Errorf("request failed: %w", err)
 	}
