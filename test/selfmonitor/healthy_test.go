@@ -122,7 +122,7 @@ func TestHealthy(t *testing.T) {
 				}
 			},
 			assert: func(t *testing.T, ns string, backend *kitbackend.Backend, pipelineName string) {
-				assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+				assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
 				assert.MetricPipelineHealthy(t, pipelineName)
 				assert.MetricsFromNamespaceDelivered(t, backend, ns, telemetrygen.MetricNames)
 				assert.MetricPipelineSelfMonitorIsHealthy(t, suite.K8sClient, pipelineName)
@@ -149,7 +149,7 @@ func TestHealthy(t *testing.T) {
 				}
 			},
 			assert: func(t *testing.T, ns string, backend *kitbackend.Backend, pipelineName string) {
-				assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+				assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
 				assert.DaemonSetReady(t, kitkyma.MetricAgentName)
 				assert.MetricPipelineHealthy(t, pipelineName)
 				assert.MetricsFromNamespaceDelivered(t, backend, ns, prommetricgen.CustomMetricNames())

@@ -99,7 +99,7 @@ func TestSinglePipelineV1Alpha1(t *testing.T) {
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 			assert.BackendReachable(t, backend)
-			assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+			assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
 
 			if slices.Contains(tc.labels, suite.LabelLogAgent) {
 				assert.DaemonSetReady(t, kitkyma.MetricAgentName)

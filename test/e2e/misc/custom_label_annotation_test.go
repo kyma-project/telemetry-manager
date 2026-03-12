@@ -125,7 +125,7 @@ func TestLabelAnnotation(t *testing.T) {
 				}
 			},
 			assert: func(t *testing.T, ns string, backend *kitbackend.Backend, pipelineName string) {
-				assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+				assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
 				assert.DaemonSetReady(t, kitkyma.MetricAgentName)
 				assert.MetricPipelineHealthy(t, pipelineName)
 				assert.MetricsFromNamespaceDelivered(t, backend, ns, prommetricgen.CustomMetricNames())

@@ -86,7 +86,7 @@ func TestSinglePipeline(t *testing.T) {
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 			assert.BackendReachable(t, backend)
-			assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+			assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
 
 			if suite.ExpectAgent(tc.labels...) {
 				assert.DaemonSetReady(t, kitkyma.MetricAgentName)

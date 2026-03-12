@@ -20,7 +20,7 @@ var (
 	TelemetryManagerMetricsServiceName = types.NamespacedName{Name: names.ManagerMetricsService, Namespace: SystemNamespaceName}
 	TelemetryManagerWebhookServiceName = types.NamespacedName{Name: names.ManagerWebhookService, Namespace: SystemNamespaceName}
 
-	MetricGatewayName               = types.NamespacedName{Name: names.MetricGateway, Namespace: SystemNamespaceName}
+	// TODO: Get rid of these
 	MetricGatewayMetricsService     = types.NamespacedName{Name: names.MetricGatewayMetricsService, Namespace: SystemNamespaceName}
 	MetricGatewayNetworkPolicy      = types.NamespacedName{Name: commonresources.NetworkPolicyPrefix + names.MetricGateway, Namespace: SystemNamespaceName}
 	MetricGatewaySecretName         = types.NamespacedName{Name: names.MetricGateway, Namespace: SystemNamespaceName}
@@ -65,8 +65,9 @@ var (
 	FluentBitEnvSecret              = types.NamespacedName{Name: names.FluentBit + "-env", Namespace: SystemNamespaceName}
 	FluentBitTLSConfigSecret        = types.NamespacedName{Name: names.FluentBit + "-output-tls-config", Namespace: SystemNamespaceName}
 
-	TraceGatewayName                = types.NamespacedName{Name: names.TraceGateway, Namespace: SystemNamespaceName} // TODO: Still needed for upgrade tests. Remove after first roll-out
-	LogGatewayName                  = types.NamespacedName{Name: names.LogGateway, Namespace: SystemNamespaceName}   // TODO: Still needed for upgrade tests. Remove after first roll-out
+	LogGatewayName                  = types.NamespacedName{Name: names.LogGateway, Namespace: SystemNamespaceName}    // TODO: Still needed for upgrade tests. Remove after first roll-out
+	MetricGatewayName               = types.NamespacedName{Name: names.MetricGateway, Namespace: SystemNamespaceName} // TODO: Still needed for upgrade tests. Remove after first roll-out
+	TraceGatewayName                = types.NamespacedName{Name: names.TraceGateway, Namespace: SystemNamespaceName}  // TODO: Still needed for upgrade tests. Remove after first roll-out
 	TelemetryOTLPGatewayName        = types.NamespacedName{Name: names.OTLPGateway, Namespace: SystemNamespaceName}
 	TelemetryOTLPMetricsService     = types.NamespacedName{Name: names.OTLPGatewayMetricsService, Namespace: SystemNamespaceName}
 	TelemetryOTLPNetworkPolicy      = types.NamespacedName{Name: commonresources.NetworkPolicyPrefix + names.OTLPGateway, Namespace: SystemNamespaceName}

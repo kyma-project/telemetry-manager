@@ -73,7 +73,7 @@ func TestServiceName(t *testing.T) {
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.BackendReachable(t, backend)
-	assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+	assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
 	assert.DaemonSetReady(t, kitkyma.MetricAgentName)
 	assert.MetricPipelineHealthy(t, pipelineName)
 	assert.MetricsFromNamespaceDelivered(t, backend, genNs, telemetrygen.MetricNames)
