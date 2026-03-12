@@ -284,30 +284,25 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 }
 
 func (aad *AgentApplierDeleter) makeDaemonSet(namespace string, checksum string) *appsv1.DaemonSet {
-	annotations := make(map[string]string)
-	annotations[commonresources.AnnotationKeyChecksumConfig] = checksum
-	annotations[commonresources.AnnotationKeyIstioExcludeInboundPorts] = fmt.Sprintf("%v,%v", fbports.HTTP, fbports.ExporterMetrics)
-
-	// Create final annotations for the DaemonSet and Pods with additional annotations
-	podAnnotations := make(map[string]string)
-	resourceAnnotations := make(map[string]string)
-
-	// Copy global additional annotations
-	maps.Copy(resourceAnnotations, aad.globals.AdditionalWorkloadAnnotations())
-	maps.Copy(podAnnotations, aad.globals.AdditionalWorkloadAnnotations())
-	maps.Copy(podAnnotations, annotations)
-
-	defaultPodLabels := defaultFluentBitLabels()
-	maps.Copy(defaultPodLabels, aad.extraPodLabels)
-
 	// Resource labels: only additional labels from globals; default labels are applied by the labeler
 	resourceLabels := make(map[string]string)
-	podLabels := make(map[string]string)
-
 	maps.Copy(resourceLabels, aad.globals.AdditionalWorkloadLabels())
-	maps.Copy(podLabels, aad.globals.AdditionalWorkloadLabels())
+
 	// Pod labels need default labels explicitly since the labeler only sets top-level object labels
-	maps.Copy(podLabels, defaultPodLabels)
+	podLabels := make(map[string]string)
+	maps.Copy(podLabels, aad.globals.AdditionalWorkloadLabels())
+	maps.Copy(podLabels, defaultFluentBitLabels())
+	maps.Copy(podLabels, aad.extraPodLabels)
+
+	// Resource annotations: only additional annotations from globals
+	resourceAnnotations := make(map[string]string)
+	maps.Copy(resourceAnnotations, aad.globals.AdditionalWorkloadAnnotations())
+
+	// Pod annotations: additional annotations from globals + checksum and Istio annotations
+	podAnnotations := make(map[string]string)
+	maps.Copy(podAnnotations, aad.globals.AdditionalWorkloadAnnotations())
+	podAnnotations[commonresources.AnnotationKeyChecksumConfig] = checksum
+	podAnnotations[commonresources.AnnotationKeyIstioExcludeInboundPorts] = fmt.Sprintf("%v,%v", fbports.HTTP, fbports.ExporterMetrics)
 
 	fluentBitResources := commonresources.MakeResourceRequirements(
 		fbContainerMemoryLimit,

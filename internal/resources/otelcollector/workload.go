@@ -28,10 +28,10 @@ func MakeWorkloadMetadata(globals *config.Global, baseName string, componentType
 	resourceLabels := make(map[string]string)
 	maps.Copy(resourceLabels, globals.AdditionalWorkloadLabels())
 
-	podLabels := make(map[string]string)
-	maps.Copy(podLabels, globals.AdditionalWorkloadLabels())
 	// Pod labels: need default labels explicitly since the Labeler only sets top-level object labels
+	podLabels := make(map[string]string)
 	maps.Copy(podLabels, commonresources.DefaultLabels(baseName, componentType))
+	maps.Copy(podLabels, globals.AdditionalWorkloadLabels())
 	maps.Copy(podLabels, extraPodLabels)
 
 	// Resource annotations: only additional annotations from globals
