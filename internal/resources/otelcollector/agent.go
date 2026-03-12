@@ -259,6 +259,17 @@ func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string, opts A
 	containerOpts := slices.Clone(aad.containerOpts)
 	containerOpts = append(containerOpts, commonresources.WithClusterTrustBundleVolumeMount(aad.globals.ClusterTrustBundleName()))
 
+	// When VPA is active, override the memory limit to 2x the memory request so the VPA can scale within a tighter range.
+	// This replaces the default high memory limit (agentMemoryLimit) set during construction.
+	// For more details, check the ADR: https://github.com/kyma-project/telemetry-manager/blob/main/docs/contributor/arch/032-vertical-pod-autoscaler-VPA-architecture.md
+	if opts.VpaCRDExists && opts.VpaEnabled {
+		vpaMemoryLimit := agentMemoryRequest.DeepCopy()
+		vpaMemoryLimit.Add(agentMemoryRequest)
+		containerOpts = append(containerOpts, commonresources.WithResources(
+			commonresources.MakeResourceRequirements(vpaMemoryLimit, agentMemoryRequest, agentCPURequest),
+		))
+	}
+
 	podSpec := makePodSpec(aad.baseName, aad.image, podOpts, containerOpts)
 
 	metadata := MakeWorkloadMetadata(
