@@ -1,4 +1,10 @@
 extensions:
+    cgroupruntime:
+        gomaxprocs:
+            enabled: false
+        gomemlimit:
+            enabled: true
+            ratio: 0.8
     file_storage:
         create_directory: true
         directory: /tmp/telemetry-log-agent/file-log-receiver
@@ -36,6 +42,7 @@ service:
     extensions:
         - health_check
         - pprof
+        - cgroupruntime
         - file_storage
 receivers:
     filelog/test1:
@@ -159,8 +166,8 @@ receivers:
 processors:
     filter/user-defined-test1:
         error_mode: ignore
-        logs:
-            log_record:
+        log_conditions:
+            - conditions:
                 - IsMatch(log.attributes["foo"], ".*bar.*")
     k8s_attributes:
         auth_type: serviceAccount

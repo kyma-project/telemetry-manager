@@ -1,4 +1,10 @@
 extensions:
+    cgroupruntime:
+        gomaxprocs:
+            enabled: false
+        gomemlimit:
+            enabled: true
+            ratio: 0.8
     health_check:
         endpoint: ${MY_POD_IP}:13133
     k8s_leader_elector:
@@ -70,6 +76,7 @@ service:
     extensions:
         - health_check
         - pprof
+        - cgroupruntime
         - k8s_leader_elector
 receivers:
     k8s_cluster:
@@ -159,19 +166,19 @@ processors:
         send_batch_max_size: 1024
     filter/drop-envoy-metrics-if-disabled:
         error_mode: ignore
-        metrics:
-            metric:
-                - IsMatch(name, "^envoy_.*") and resource.attributes["kyma.input.name"] == "istio"
+        metric_conditions:
+            - conditions:
+                - IsMatch(metric.name, "^envoy_.*") and resource.attributes["kyma.input.name"] == "istio"
     filter/drop-non-pvc-volumes-metrics:
         error_mode: ignore
-        metrics:
-            metric:
+        metric_conditions:
+            - conditions:
                 - resource.attributes["k8s.volume.name"] != nil and resource.attributes["k8s.volume.type"] != "persistentVolumeClaim"
     filter/drop-virtual-network-interfaces:
         error_mode: ignore
-        metrics:
-            datapoint:
-                - IsMatch(metric.name, "^k8s.node.network.*") and not(IsMatch(attributes["interface"], "^(eth|en).*"))
+        metric_conditions:
+            - conditions:
+                - IsMatch(metric.name, "^k8s.node.network.*") and not(IsMatch(datapoint.attributes["interface"], "^(eth|en).*"))
     k8s_attributes:
         auth_type: serviceAccount
         passthrough: false

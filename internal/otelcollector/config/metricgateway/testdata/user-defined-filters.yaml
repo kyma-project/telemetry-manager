@@ -1,4 +1,10 @@
 extensions:
+    cgroupruntime:
+        gomaxprocs:
+            enabled: false
+        gomemlimit:
+            enabled: true
+            ratio: 0.8
     health_check:
         endpoint: ${MY_POD_IP}:13133
     k8s_leader_elector:
@@ -65,6 +71,7 @@ service:
     extensions:
         - health_check
         - pprof
+        - cgroupruntime
         - k8s_leader_elector
 receivers:
     kymastats:
@@ -97,13 +104,13 @@ processors:
         send_batch_max_size: 1024
     filter/user-defined-cls:
         error_mode: ignore
-        metrics:
-            datapoint:
+        metric_conditions:
+            - conditions:
                 - metric.type == METRIC_DATA_TYPE_SUMMARY
     filter/user-defined-dynatrace:
         error_mode: ignore
-        metrics:
-            datapoint:
+        metric_conditions:
+            - conditions:
                 - metric.type == METRIC_DATA_TYPE_HISTOGRAM
     k8s_attributes:
         auth_type: serviceAccount

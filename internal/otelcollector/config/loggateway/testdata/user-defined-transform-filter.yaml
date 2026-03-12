@@ -1,4 +1,10 @@
 extensions:
+    cgroupruntime:
+        gomaxprocs:
+            enabled: false
+        gomemlimit:
+            enabled: true
+            ratio: 0.8
     health_check:
         endpoint: ${MY_POD_IP}:13133
     pprof:
@@ -36,6 +42,7 @@ service:
     extensions:
         - health_check
         - pprof
+        - cgroupruntime
 receivers:
     otlp:
         protocols:
@@ -50,8 +57,8 @@ processors:
         send_batch_max_size: 512
     filter/user-defined-test1:
         error_mode: ignore
-        logs:
-            log_record:
+        log_conditions:
+            - conditions:
                 - IsMatch(log.attributes["foo"], ".*bar.*")
     istio_enrichment:
         scope_version: 1.0.0

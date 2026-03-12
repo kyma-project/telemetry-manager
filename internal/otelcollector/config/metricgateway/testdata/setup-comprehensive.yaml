@@ -1,4 +1,10 @@
 extensions:
+    cgroupruntime:
+        gomaxprocs:
+            enabled: false
+        gomemlimit:
+            enabled: true
+            ratio: 0.8
     health_check:
         endpoint: ${MY_POD_IP}:13133
     k8s_leader_elector:
@@ -69,6 +75,7 @@ service:
     extensions:
         - health_check
         - pprof
+        - cgroupruntime
         - k8s_leader_elector
 receivers:
     kymastats:
@@ -101,23 +108,23 @@ processors:
         send_batch_max_size: 1024
     filter/cls-filter-by-namespace-otlp-input:
         error_mode: ignore
-        metrics:
-            metric:
+        metric_conditions:
+            - conditions:
                 - not(resource.attributes["kyma.input.name"] == "kyma") and resource.attributes["k8s.namespace.name"] != nil and not(resource.attributes["k8s.namespace.name"] == "apps-cls")
     filter/dynatrace-filter-by-namespace-otlp-input:
         error_mode: ignore
-        metrics:
-            metric:
+        metric_conditions:
+            - conditions:
                 - not(resource.attributes["kyma.input.name"] == "kyma") and resource.attributes["k8s.namespace.name"] != nil and not(resource.attributes["k8s.namespace.name"] == "apps-dynatrace")
     filter/user-defined-cls:
         error_mode: ignore
-        metrics:
-            datapoint:
+        metric_conditions:
+            - conditions:
                 - metric.type == METRIC_DATA_TYPE_GAUGE
     filter/user-defined-dynatrace:
         error_mode: ignore
-        metrics:
-            datapoint:
+        metric_conditions:
+            - conditions:
                 - metric.type == METRIC_DATA_TYPE_SUMMARY
     k8s_attributes:
         auth_type: serviceAccount

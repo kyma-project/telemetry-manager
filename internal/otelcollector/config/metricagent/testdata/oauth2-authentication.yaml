@@ -1,4 +1,10 @@
 extensions:
+    cgroupruntime:
+        gomaxprocs:
+            enabled: false
+        gomemlimit:
+            enabled: true
+            ratio: 0.8
     health_check:
         endpoint: ${MY_POD_IP}:13133
     k8s_leader_elector:
@@ -45,6 +51,7 @@ service:
     extensions:
         - health_check
         - pprof
+        - cgroupruntime
         - k8s_leader_elector
         - oauth2client/test
 receivers: {}
@@ -55,9 +62,9 @@ processors:
         send_batch_max_size: 1024
     filter/drop-envoy-metrics-if-disabled:
         error_mode: ignore
-        metrics:
-            metric:
-                - IsMatch(name, "^envoy_.*") and resource.attributes["kyma.input.name"] == "istio"
+        metric_conditions:
+            - conditions:
+                - IsMatch(metric.name, "^envoy_.*") and resource.attributes["kyma.input.name"] == "istio"
     k8s_attributes:
         auth_type: serviceAccount
         passthrough: false
