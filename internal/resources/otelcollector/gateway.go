@@ -472,7 +472,7 @@ func makeGatewayNetworkPolicies(name types.NamespacedName, istioEnabled bool) []
 		name,
 		nil,
 		commonresources.MakeDefaultSelectorLabels(name.Name),
-		commonresources.WithIngressFromAny(otlpPorts),
+		commonresources.WithIngressFromAny(otlpPorts...),
 		commonresources.WithEgressToAny(),
 	)
 

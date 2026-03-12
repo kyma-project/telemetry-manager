@@ -280,8 +280,8 @@ func (b *Builder) addDropOTLPIfInputDisabledProcessor() buildComponentFunc {
 				return nil
 			}
 
-			return common.MetricFilterProcessorConfig(common.FilterProcessorMetrics{
-				Metric: []string{common.KymaInputNameEquals(common.InputSourceOTLP)},
+			return common.MetricFilterProcessorConfig([]telemetryv1beta1.FilterSpec{
+				{Conditions: []string{common.KymaInputNameEquals(common.InputSourceOTLP)}},
 			})
 		},
 	)
@@ -338,7 +338,7 @@ func (b *Builder) addUserDefinedFilterProcessor() buildComponentFunc {
 				return nil // No filters, no processor needed
 			}
 
-			return common.FilterSpecsToMetricFilterProcessorConfig(mp.Spec.Filters)
+			return common.MetricFilterProcessorConfig(mp.Spec.Filters)
 		},
 	)
 }
@@ -423,8 +423,8 @@ func filterByNamespaceProcessorConfig(namespaceSelector *telemetryv1beta1.Namesp
 		filterExpressions = append(filterExpressions, includeNamespacesExpr)
 	}
 
-	return common.MetricFilterProcessorConfig(common.FilterProcessorMetrics{
-		Metric: filterExpressions,
+	return common.MetricFilterProcessorConfig([]telemetryv1beta1.FilterSpec{
+		{Conditions: filterExpressions},
 	})
 }
 
