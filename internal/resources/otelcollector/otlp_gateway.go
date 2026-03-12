@@ -91,7 +91,7 @@ func (o *OTLPGatewayApplierDeleter) ApplyResources(ctx context.Context, c client
 		name = types.NamespacedName{Namespace: o.globals.TargetNamespace(), Name: o.baseName}
 	)
 
-	labelerClient := k8sclients.NewLabeler(c, o.baseName, commonresources.LabelValueK8sComponentGateway)
+	labelerClient := k8sclients.NewLabeler(c, commonresources.MakeDefaultLabels(o.baseName, commonresources.LabelValueK8sComponentGateway))
 
 	if err := applyCommonResources(ctx, labelerClient, name, o.rbac); err != nil {
 		return fmt.Errorf("failed to create common resource: %w", err)

@@ -188,7 +188,7 @@ func (gad *GatewayApplierDeleter) ApplyResources(ctx context.Context, c client.C
 		name = types.NamespacedName{Namespace: gad.globals.TargetNamespace(), Name: gad.baseName}
 	)
 
-	labelerClient := k8sclients.NewLabeler(c, gad.baseName, commonresources.LabelValueK8sComponentGateway)
+	labelerClient := k8sclients.NewLabeler(c, commonresources.MakeDefaultLabels(gad.baseName, commonresources.LabelValueK8sComponentGateway))
 
 	if err := applyCommonResources(ctx, labelerClient, name, gad.rbac); err != nil {
 		return fmt.Errorf("failed to create common resource: %w", err)

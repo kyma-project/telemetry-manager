@@ -13,14 +13,11 @@ import (
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 )
 
-const (
-	testBaseName      = "test-collector"
-	testComponentType = "gateway"
-)
+var testLabels = commonresources.MakeDefaultLabels("test-collector", "gateway")
 
 func TestLabeler_Create(t *testing.T) {
 	inner := fake.NewClientBuilder().Build()
-	labeler := NewLabeler(inner, testBaseName, testComponentType)
+	labeler := NewLabeler(inner, testLabels)
 
 	t.Run("adds default labels to object without labels", func(t *testing.T) {
 		obj := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "no-labels", Namespace: "default"}}
@@ -48,7 +45,7 @@ func TestLabeler_Create(t *testing.T) {
 
 func TestLabeler_Update(t *testing.T) {
 	inner := fake.NewClientBuilder().Build()
-	labeler := NewLabeler(inner, testBaseName, testComponentType)
+	labeler := NewLabeler(inner, testLabels)
 
 	obj := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "update-test", Namespace: "default"}}
 	require.NoError(t, inner.Create(t.Context(), obj))
@@ -62,7 +59,7 @@ func TestLabeler_Update(t *testing.T) {
 
 func TestLabeler_Patch(t *testing.T) {
 	inner := fake.NewClientBuilder().Build()
-	labeler := NewLabeler(inner, testBaseName, testComponentType)
+	labeler := NewLabeler(inner, testLabels)
 
 	obj := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "patch-test", Namespace: "default"}}
 	require.NoError(t, inner.Create(t.Context(), obj))
@@ -77,7 +74,7 @@ func TestLabeler_Patch(t *testing.T) {
 
 func TestLabeler_Get(t *testing.T) {
 	inner := fake.NewClientBuilder().Build()
-	labeler := NewLabeler(inner, testBaseName, testComponentType)
+	labeler := NewLabeler(inner, testLabels)
 
 	obj := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "get-test", Namespace: "default"}}
 	require.NoError(t, inner.Create(t.Context(), obj))
@@ -93,6 +90,6 @@ func requireDefaultLabels(t *testing.T, labels map[string]string) {
 	require.Equal(t, commonresources.LabelValueKymaModule, labels[commonresources.LabelKeyKymaModule])
 	require.Equal(t, commonresources.LabelValueK8sPartOf, labels[commonresources.LabelKeyK8sPartOf])
 	require.Equal(t, commonresources.LabelValueK8sManagedBy, labels[commonresources.LabelKeyK8sManagedBy])
-	require.Equal(t, testBaseName, labels[commonresources.LabelKeyK8sName])
-	require.Equal(t, testComponentType, labels[commonresources.LabelKeyK8sComponent])
+	require.Equal(t, "test-collector", labels[commonresources.LabelKeyK8sName])
+	require.Equal(t, "gateway", labels[commonresources.LabelKeyK8sComponent])
 }

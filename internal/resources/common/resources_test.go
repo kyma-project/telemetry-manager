@@ -11,20 +11,17 @@ import (
 
 func TestMakeServiceAccount(t *testing.T) {
 	name := types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: "telemetry-system"}
-	labels := map[string]string{"app": "test"}
-	svcAcc := MakeServiceAccount(name, labels)
+	svcAcc := MakeServiceAccount(name)
 
 	require.NotNil(t, svcAcc)
 	require.Equal(t, svcAcc.Name, name.Name)
 	require.Equal(t, svcAcc.Namespace, name.Namespace)
-	require.Equal(t, svcAcc.Labels, labels)
 }
 
 func TestMakeClusterRoleBinding(t *testing.T) {
 	name := types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: "telemetry-system"}
-	labels := map[string]string{"app": "test"}
-	clusterRoleBinding := MakeClusterRoleBinding(name, labels)
-	svcAcc := MakeServiceAccount(name, labels)
+	clusterRoleBinding := MakeClusterRoleBinding(name)
+	svcAcc := MakeServiceAccount(name)
 
 	require.NotNil(t, clusterRoleBinding)
 	require.Equal(t, clusterRoleBinding.Name, name.Name)

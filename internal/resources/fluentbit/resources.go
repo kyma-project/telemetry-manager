@@ -22,6 +22,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	fbports "github.com/kyma-project/telemetry-manager/internal/fluentbit/ports"
+	"github.com/kyma-project/telemetry-manager/internal/k8sclients"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
@@ -107,78 +108,80 @@ func NewFluentBitApplierDeleter(global config.Global, namespace, fbImage, export
 }
 
 func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Client, opts AgentApplyOptions) error {
-	serviceAccount := commonresources.MakeServiceAccount(aad.daemonSetName, makeLabels())
-	if err := k8sutils.CreateOrUpdateServiceAccount(ctx, c, serviceAccount); err != nil {
+	labelerClient := k8sclients.NewLabeler(c, makeLabels())
+
+	serviceAccount := commonresources.MakeServiceAccount(aad.daemonSetName)
+	if err := k8sutils.CreateOrUpdateServiceAccount(ctx, labelerClient, serviceAccount); err != nil {
 		return fmt.Errorf("failed to create fluent bit service account: %w", err)
 	}
 
 	clusterRole := makeClusterRole(aad.daemonSetName)
-	if err := k8sutils.CreateOrUpdateClusterRole(ctx, c, clusterRole); err != nil {
+	if err := k8sutils.CreateOrUpdateClusterRole(ctx, labelerClient, clusterRole); err != nil {
 		return fmt.Errorf("failed to create fluent bit cluster role: %w", err)
 	}
 
-	clusterRoleBinding := commonresources.MakeClusterRoleBinding(aad.daemonSetName, makeLabels())
-	if err := k8sutils.CreateOrUpdateClusterRoleBinding(ctx, c, clusterRoleBinding); err != nil {
+	clusterRoleBinding := commonresources.MakeClusterRoleBinding(aad.daemonSetName)
+	if err := k8sutils.CreateOrUpdateClusterRoleBinding(ctx, labelerClient, clusterRoleBinding); err != nil {
 		return fmt.Errorf("failed to create fluent bit cluster role Binding: %w", err)
 	}
 
 	exporterMetricsService := makeExporterMetricsService(aad.daemonSetName)
-	if err := k8sutils.CreateOrUpdateService(ctx, c, exporterMetricsService); err != nil {
+	if err := k8sutils.CreateOrUpdateService(ctx, labelerClient, exporterMetricsService); err != nil {
 		return fmt.Errorf("failed to reconcile exporter metrics service: %w", err)
 	}
 
 	metricsService := makeMetricsService(aad.daemonSetName)
-	if err := k8sutils.CreateOrUpdateService(ctx, c, metricsService); err != nil {
+	if err := k8sutils.CreateOrUpdateService(ctx, labelerClient, metricsService); err != nil {
 		return fmt.Errorf("failed to reconcile fluent bit metrics service: %w", err)
 	}
 
 	cm := makeConfigMap(aad.daemonSetName)
-	if err := k8sutils.CreateOrUpdateConfigMap(ctx, c, cm); err != nil {
+	if err := k8sutils.CreateOrUpdateConfigMap(ctx, labelerClient, cm); err != nil {
 		return fmt.Errorf("failed to reconcile fluent bit configmap: %w", err)
 	}
 
 	luaCm := makeLuaConfigMap(aad.luaConfigMapName)
-	if err := k8sutils.CreateOrUpdateConfigMap(ctx, c, luaCm); err != nil {
+	if err := k8sutils.CreateOrUpdateConfigMap(ctx, labelerClient, luaCm); err != nil {
 		return fmt.Errorf("failed to reconcile fluent bit lua configmap: %w", err)
 	}
 
 	sectionsCm := makeSectionsConfigMap(aad.sectionsConfigMapName, opts.FluentBitConfig.SectionsConfig)
-	if err := k8sutils.CreateOrUpdateConfigMap(ctx, c, sectionsCm); err != nil {
+	if err := k8sutils.CreateOrUpdateConfigMap(ctx, labelerClient, sectionsCm); err != nil {
 		return fmt.Errorf("failed to reconcile fluent bit sections configmap: %w", err)
 	}
 
 	filesCm := makeFilesConfigMap(aad.filesConfigMapName, opts.FluentBitConfig.FilesConfig)
-	if err := k8sutils.CreateOrUpdateConfigMap(ctx, c, filesCm); err != nil {
+	if err := k8sutils.CreateOrUpdateConfigMap(ctx, labelerClient, filesCm); err != nil {
 		return fmt.Errorf("failed to reconcile fluent bit files configmap: %w", err)
 	}
 
 	envConfigSecret := makeEnvConfigSecret(aad.envConfigSecretName, opts.FluentBitConfig.EnvConfigSecret)
-	if err := k8sutils.CreateOrUpdateSecret(ctx, c, envConfigSecret); err != nil {
+	if err := k8sutils.CreateOrUpdateSecret(ctx, labelerClient, envConfigSecret); err != nil {
 		return fmt.Errorf("failed to reconcile fluent bit env config secret: %w", err)
 	}
 
 	tlsFileConfigSecret := makeTLSFileConfigSecret(aad.tlsFileConfigSecretName, opts.FluentBitConfig.TLSConfigSecret)
-	if err := k8sutils.CreateOrUpdateSecret(ctx, c, tlsFileConfigSecret); err != nil {
+	if err := k8sutils.CreateOrUpdateSecret(ctx, labelerClient, tlsFileConfigSecret); err != nil {
 		return fmt.Errorf("failed to reconcile fluent bit tls config secret: %w", err)
 	}
 
 	checksum := configchecksum.Calculate([]corev1.ConfigMap{*cm, *luaCm, *sectionsCm, *filesCm}, []corev1.Secret{*envConfigSecret, *tlsFileConfigSecret})
 
 	daemonSet := aad.makeDaemonSet(aad.daemonSetName.Namespace, checksum)
-	if err := k8sutils.CreateOrUpdateDaemonSet(ctx, c, daemonSet); err != nil {
+	if err := k8sutils.CreateOrUpdateDaemonSet(ctx, labelerClient, daemonSet); err != nil {
 		return err
 	}
 
 	networkPolicies := makeNetworkPolicies(aad.daemonSetName, opts.IstioEnabled)
 
 	for _, np := range networkPolicies {
-		if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, np); err != nil {
+		if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, labelerClient, np); err != nil {
 			return fmt.Errorf("failed to create fluent bit network policies: %w", err)
 		}
 	}
 
 	// TODO: Remove after rollout 1.59.0
-	if err := commonresources.CleanupOldNetworkPolicy(ctx, c, aad.daemonSetName); err != nil {
+	if err := commonresources.CleanupOldNetworkPolicy(ctx, labelerClient, aad.daemonSetName); err != nil {
 		return fmt.Errorf("failed to cleanup old fluentbit network policy: %w", err)
 	}
 
@@ -297,13 +300,13 @@ func (aad *AgentApplierDeleter) makeDaemonSet(namespace string, checksum string)
 	defaultPodLabels := makeLabels()
 	maps.Copy(defaultPodLabels, aad.extraPodLabels)
 
-	// Create final labels for the DaemonSet and Pods with additional labels
+	// Resource labels: only additional labels from globals; default labels are applied by the labeler
 	resourceLabels := make(map[string]string)
 	podLabels := make(map[string]string)
 
 	maps.Copy(resourceLabels, aad.globals.AdditionalLabels())
 	maps.Copy(podLabels, aad.globals.AdditionalLabels())
-	maps.Copy(resourceLabels, makeLabels())
+	// Pod labels need default labels explicitly since the labeler only sets top-level object labels
 	maps.Copy(podLabels, defaultPodLabels)
 
 	fluentBitResources := commonresources.MakeResourceRequirements(
@@ -489,7 +492,6 @@ func makeClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
 			Namespace: name.Namespace,
-			Labels:    makeLabels(),
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -504,8 +506,9 @@ func makeClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
 }
 
 func makeMetricsService(name types.NamespacedName) *corev1.Service {
-	serviceLabels := makeLabels()
-	serviceLabels[commonresources.LabelKeyTelemetrySelfMonitor] = commonresources.LabelValueTelemetrySelfMonitor
+	serviceLabels := map[string]string{
+		commonresources.LabelKeyTelemetrySelfMonitor: commonresources.LabelValueTelemetrySelfMonitor,
+	}
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -535,13 +538,10 @@ func makeMetricsService(name types.NamespacedName) *corev1.Service {
 }
 
 func makeExporterMetricsService(name types.NamespacedName) *corev1.Service {
-	serviceLabels := makeLabels()
-
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      names.FluentBitExporterMetricsService,
 			Namespace: name.Namespace,
-			Labels:    serviceLabels,
 			Annotations: map[string]string{
 				commonresources.AnnotationKeyPrometheusScrape: "true",
 				commonresources.AnnotationKeyPrometheusPort:   strconv.Itoa(fbports.ExporterMetrics),
@@ -583,7 +583,6 @@ func makeConfigMap(name types.NamespacedName) *corev1.ConfigMap {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
 			Namespace: name.Namespace,
-			Labels:    makeLabels(),
 		},
 		Data: map[string]string{
 			"fluent-bit.conf": fluentBitConfig,
@@ -596,7 +595,6 @@ func makeSectionsConfigMap(name types.NamespacedName, sectionsConfig map[string]
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
 			Namespace: name.Namespace,
-			Labels:    makeLabels(),
 		},
 		Data: sectionsConfig,
 	}
@@ -607,7 +605,6 @@ func makeFilesConfigMap(name types.NamespacedName, filesConfig map[string]string
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
 			Namespace: name.Namespace,
-			Labels:    makeLabels(),
 		},
 		Data: filesConfig,
 	}
@@ -664,7 +661,6 @@ end
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
 			Namespace: name.Namespace,
-			Labels:    makeLabels(),
 		},
 		Data: map[string]string{"filter-script.lua": luaFilter},
 	}
@@ -675,7 +671,6 @@ func makeEnvConfigSecret(name types.NamespacedName, envConfigSecret map[string][
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
 			Namespace: name.Namespace,
-			Labels:    makeLabels(),
 		},
 		Data: envConfigSecret,
 	}
@@ -686,7 +681,6 @@ func makeTLSFileConfigSecret(name types.NamespacedName, tlsFileConfigSecret map[
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
 			Namespace: name.Namespace,
-			Labels:    makeLabels(),
 		},
 		Data: tlsFileConfigSecret,
 	}
@@ -695,7 +689,7 @@ func makeTLSFileConfigSecret(name types.NamespacedName, tlsFileConfigSecret map[
 func makeNetworkPolicies(name types.NamespacedName, istioEnabled bool) []*networkingv1.NetworkPolicy {
 	metricsNetworkPolicy := commonresources.MakeNetworkPolicy(
 		name,
-		makeLabels(),
+		nil,
 		selectorLabels(),
 		commonresources.WithNameSuffix("metrics"),
 		commonresources.WithIngressFromPodsInAllNamespaces(
@@ -707,7 +701,7 @@ func makeNetworkPolicies(name types.NamespacedName, istioEnabled bool) []*networ
 
 	fluentBitNetworkPolicy := commonresources.MakeNetworkPolicy(
 		name,
-		makeLabels(),
+		nil,
 		selectorLabels(),
 		commonresources.WithEgressToAny(),
 	)

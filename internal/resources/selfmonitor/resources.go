@@ -96,7 +96,7 @@ func (ad *ApplierDeleter) DeleteResources(ctx context.Context, c client.Client) 
 }
 
 func (ad *ApplierDeleter) ApplyResources(ctx context.Context, c client.Client, opts ApplyOptions) error {
-	labelerClient := k8sclients.NewLabeler(c, names.SelfMonitor, commonresources.LabelValueK8sComponentMonitor)
+	labelerClient := k8sclients.NewLabeler(c, commonresources.MakeDefaultLabels(names.SelfMonitor, commonresources.LabelValueK8sComponentMonitor))
 
 	// Create RBAC resources in the following order: service account, cluster role, cluster role binding.
 	if err := k8sutils.CreateOrUpdateServiceAccount(ctx, labelerClient, ad.makeServiceAccount()); err != nil {
