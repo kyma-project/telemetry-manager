@@ -125,9 +125,9 @@ Because `logpipelines`, `metricpipelines`, `tracepipelines`, and `telemetries` a
 
 Based on [Kyma RBAC Decision Record](https://github.com/kyma-project/community/issues/1014) and [Issue #3022](https://github.com/kyma-project/telemetry-manager/issues/3022), the implementation must provide the following capabilities:
 
-1. **View Role**: Read-only access for monitoring and observability
-2. **Edit Role**: Full CRUD access for managing telemetry pipelines
-3. **Security**: No direct access to Secrets (credentials managed separately)
+- **View Role**: Read-only access for monitoring and observability
+- **Edit Role**: Full CRUD access for managing telemetry pipelines
+- **Security**: No direct access to Secrets (credentials managed separately)
 
 ## Proposal
 
