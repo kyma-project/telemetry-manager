@@ -22,7 +22,7 @@ on:
         default: false
         type: boolean
 
-run-name: "Release Telemetry version ${{ github.event.inputs.version }} with OCC image ${{ github.event.inputs.occ_image }}, dry-run: ${{ github.event.inputs.dry_run }}, force mode: ${{ github.event.inputs.force }}"
+run-name: "Release Telemetry version ${{ inputs.version }} with OCC image ${{ inputs.occ_image }}, dry-run: ${{ inputs.dry_run }}, force mode: ${{ inputs.force }}"
 
 permissions:
   contents: write
@@ -102,7 +102,7 @@ jobs:
           echo "Milestone ${VERSION} exists, is closed, and has no open issues."
 
       - name: Check if release already exists
-        if: ${{ github.event.inputs.force != true }}
+        if: ${{ inputs.force != true }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ github.event.inputs.version }}
@@ -115,7 +115,7 @@ jobs:
           echo "Release ${VERSION} does not exist yet."
 
       - name: Delete existing release (force mode)
-        if: ${{ github.event.inputs.force == true }}
+        if: ${{ inputs.force == true }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ github.event.inputs.version }}
@@ -130,7 +130,7 @@ jobs:
           fi
 
       - name: Check if tag already exists
-        if: ${{ github.event.inputs.force != true }}
+        if: ${{ inputs.force != true }}
         env:
           VERSION: ${{ github.event.inputs.version }}
         run: |
@@ -146,7 +146,7 @@ jobs:
           echo "✓ Tag ${VERSION} does not exist yet."
 
       - name: Delete existing tag (force mode)
-        if: ${{ github.event.inputs.force == true }}
+        if: ${{ inputs.force == true }}
         env:
           VERSION: ${{ github.event.inputs.version }}
         run: |
@@ -449,7 +449,7 @@ jobs:
             echo "Release branch may have additional commits after PR merge"
           fi
       - name: Create and push release tag
-        if: ${{ github.event.inputs.dry_run != true }}
+        if: ${{ inputs.dry_run != true }}
         env:
           VERSION: ${{ github.event.inputs.version }}
           RELEASE_BRANCH: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
@@ -465,7 +465,7 @@ jobs:
           echo "Created and pushed tag ${VERSION} from ${RELEASE_BRANCH}"
 
       - name: Skip tag creation (dry run)
-        if: ${{ github.event.inputs.dry_run == true }}
+        if: ${{ inputs.dry_run == true }}
         env:
           VERSION: ${{ github.event.inputs.version }}
           RELEASE_BRANCH: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
@@ -478,14 +478,14 @@ jobs:
         run: make install-tools
 
       - name: Release
-        if: ${{ github.event.inputs.dry_run != true }}
+        if: ${{ inputs.dry_run != true }}
         run: hack/release.sh ${{ needs.prepare-release.outputs.release-tag }}
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           GORELEASER_CURRENT_TAG: "${{ needs.prepare-release.outputs.release-tag }}"
 
       - name: Skip GitHub release (dry run)
-        if: ${{ github.event.inputs.dry_run == true }}
+        if: ${{ inputs.dry_run == true }}
         run: |
           echo "::notice::DRY RUN: Skipping GitHub release creation"
           echo "Would have run: hack/release.sh ${{ needs.prepare-release.outputs.release-tag }}"
@@ -497,7 +497,7 @@ jobs:
           echo "HELM_CHART=$FILENAME" >> $GITHUB_ENV
 
       - name: Upload Helm chart to release
-        if: ${{ github.event.inputs.dry_run != true }}
+        if: ${{ inputs.dry_run != true }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -505,13 +505,13 @@ jobs:
           gh release upload ${{ needs.prepare-release.outputs.release-tag }} --clobber ${HELM_CHART}
 
       - name: Skip Helm chart upload (dry run)
-        if: ${{ github.event.inputs.dry_run == true }}
+        if: ${{ inputs.dry_run == true }}
         run: |
           echo "::notice::DRY RUN: Skipping Helm chart upload"
           echo "Would have uploaded: ${HELM_CHART}"
 
       - name: Commit and push Helm chart metadata
-        if: ${{ github.event.inputs.dry_run != true }}
+        if: ${{ inputs.dry_run != true }}
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
@@ -522,12 +522,12 @@ jobs:
           git push origin gh-pages
 
       - name: Skip gh-pages update (dry run)
-        if: ${{ github.event.inputs.dry_run == true }}
+        if: ${{ inputs.dry_run == true }}
         run: |
           echo "::notice::DRY RUN: Skipping gh-pages Helm chart metadata update"
           echo "Would have updated index.yaml on gh-pages branch"
       - name: Release success summary
-        if: ${{ success() && github.event.inputs.dry_run != true }}
+        if: ${{ success() && inputs.dry_run != true }}
         run: |
           cat >> $GITHUB_STEP_SUMMARY <<EOF
           ##  Release ${{ needs.prepare-release.outputs.release-tag }} Published Successfully!
@@ -552,7 +552,7 @@ jobs:
           
           EOF
       - name: Dry run summary
-        if: ${{ github.event.inputs.dry_run == true }}
+        if: ${{ inputs.dry_run == true }}
         run: |
           cat >> $GITHUB_STEP_SUMMARY <<EOF
           ## Dry Run Summary
