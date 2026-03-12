@@ -263,6 +263,7 @@ func TestOutage(t *testing.T) {
 			}
 
 			suite.SetupTestWithOptions(t, labels, opts...)
+			assert.SelfMonitorDebugOnFailure(t)
 
 			pipelineName := fmt.Sprintf("selfmonitor-%s", tc.name)
 
