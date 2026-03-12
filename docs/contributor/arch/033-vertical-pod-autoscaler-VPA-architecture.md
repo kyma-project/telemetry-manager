@@ -209,3 +209,65 @@ Consider the following inherent VPA limitations when you use it with the Central
    If we set the limit to 2× the request and VPA recommends a 10 GiB request, VPA sets a 20 GiB limit, which is too high. Base maxAllowed calculations on the resulting limit, not the request.
 5. Iteratively adjust:
    Start with conservative `maxAllowed` values and monitor VPA recommendations and Pod behavior. Adjust `maxAllowed` based on observed usage patterns and resource availability.
+
+### Telemetry Pipelines Memory Allocation Strategy
+
+This section defines the memory allocation strategy for telemetry pipelines when VPA is enabled. The strategy addresses initial Pod settings, VPA boundaries, and queue sizing for multi-pipeline scenarios.
+
+#### VPA Memory Boundaries
+
+Configure VPA memory boundaries based on the smallest node's memory capacity in the cluster:
+
+- **maxAllowed Memory**: Set to **30%** of the smallest node's memory capacity. For example, if the smallest node has 16Gi of memory, set `maxAllowed` to approximately 4.8Gi (16Gi × 0.3). This ensures that VPA recommendations stay within available resources while allowing burst capacity.
+- **minAllowed Memory**: Set to the initial Pod memory request of `64Mi` to allow VPA to scale down resources when load is low.
+
+#### Initial Pod Memory Settings
+
+Configure the initial Pod memory with the following values:
+
+- **Memory Request**: 64Mi
+- **Memory Limit**: 128Mi
+- **Request-to-Limit Ratio**: 2
+
+This ratio is critical because VPA applies recommendations to Pod memory requests, and calculates limits using the request-to-limit ratio. A ratio of 2 ensures that VPA-recommended requests result in limits within the node's capacity. For example, if VPA recommends a 5Gi request with a ratio of 2, the resulting limit is 10Gi.
+
+#### Queue Sizing Strategy
+
+In multi-pipeline scenarios, each OTLP exporter pipeline maintains its own queue. The default queue size uses a fixed batch count, which causes unpredictable memory usage and can lead to OOMKills when load is high or backends are slow.
+
+To ensure predictable queue memory usage, switch the queue sizing strategy from `request` (batch items) to `bytes` and set the queue size in bytes:
+
+- **Total Queue Size**: 1GB per deployment
+- **Queue Size per Pipeline**: `1GB / Pipeline Count`
+
+For example, with 4 pipelines, each pipeline gets a 256MB queue (1GB / 4). This approach maintains constant total queue memory regardless of pipeline count, preventing OOMKills from excessive queue memory usage.
+
+#### Memory Configuration Overview
+
+The following table shows memory configuration for different pipeline counts, assuming a 16Gi node and a VPA `maxAllowed` of 5Gi (30% of node capacity):
+
+| Pipeline Count | Pod Memory Request (Initial) | Pod Memory Limit (Initial) | VPA Min Allowed | VPA Max Allowed | Max Pod Memory Limit (Ratio 2) | Queue Size per Pipeline |
+|----------------|------------------------------|----------------------------|-----------------|-----------------|--------------------------------|-------------------------|
+| 1              | 64Mi                         | 128Mi                      | 64Mi            | 5Gi             | 10Gi                           | 1.00 GB                 |
+| 2              | 64Mi                         | 128Mi                      | 64Mi            | 5Gi             | 10Gi                           | 0.50 GB                 |
+| 3              | 64Mi                         | 128Mi                      | 64Mi            | 5Gi             | 10Gi                           | 0.33 GB                 |
+| 4              | 64Mi                         | 128Mi                      | 64Mi            | 5Gi             | 10Gi                           | 0.25 GB                 |
+| 5              | 64Mi                         | 128Mi                      | 64Mi            | 5Gi             | 10Gi                           | 0.20 GB                 |
+| 6              | 64Mi                         | 128Mi                      | 64Mi            | 5Gi             | 10Gi                           | 0.17 GB                 |
+| 7              | 64Mi                         | 128Mi                      | 64Mi            | 5Gi             | 10Gi                           | 0.14 GB                 |
+| 8              | 64Mi                         | 128Mi                      | 64Mi            | 5Gi             | 10Gi                           | 0.13 GB                 |
+| 9              | 64Mi                         | 128Mi                      | 64Mi            | 5Gi             | 10Gi                           | 0.11 GB                 |
+| 10             | 64Mi                         | 128Mi                      | 64Mi            | 5Gi             | 10Gi                           | 0.10 GB                 |
+| ...            | ...                          | ...                        | ...             | ...             | ...                            | ...                     |
+
+**Column Definitions:**
+
+- **Pod Memory Request (Initial)**: The starting memory request before VPA adjustments. Set to 64Mi to allow VPA to scale up when load increases.
+- **Pod Memory Limit (Initial)**: The starting memory limit calculated as `Request × 2` (128Mi). This provides a reasonable baseline while allowing VPA to adjust based on usage.
+- **VPA Min Allowed**: The minimum memory request VPA can set (64Mi). The corresponding minimum limit is 128Mi based on the 2:1 ratio.
+- **VPA Max Allowed**: The maximum memory request VPA can set (5Gi based on 30% of 16Gi node capacity). This prevents VPA from exceeding available node resources.
+- **Max Pod Memory Limit (Ratio 2)**: The maximum memory limit when VPA sets the maximum request (10Gi = 5Gi × 2). This is the upper bound for Pod memory consumption.
+- **Queue Size per Pipeline**: The memory allocated for the queue, calculated as `1GB / Pipeline Count`. This ensures total queue memory remains constant.
+
+> [!NOTE]
+> Values in the table are rounded for readability. Actual values may vary slightly based on precise calculations.
