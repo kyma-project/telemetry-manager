@@ -197,20 +197,7 @@ Consider the following inherent VPA limitations when you use it with the Central
 5. **Multiple VPA Resources**: Configuring multiple VPA resources targeting the same pod results in undefined behavior. Ensure only one VPA resource targets the Central OTLP Gateway and Agent DaemonSet.
 6. **Recommendations Without Controller**: VPA cannot update resources for standalone Pods not managed by a controller (Deployment, DaemonSet, StatefulSet, etc.).
 
-### VPA MaxAllowed Strategy
-
-1. Calculate based on node capacity:
-   To prevent pending Pods and leave headroom for burstable workloads, configure `maxAllowed` values based on a percentage of the smallest node's memory capacity, such as 75%. For example, if five DaemonSets run on a 32Gi node, the calculation is: 32Gi × 0.75 ÷ 5 ≈ 4.8Gi per Pod.
-2. Consider workload patterns:
-   Analyze historical usage patterns to set `maxAllowed` values that accommodate typical spikes while preventing excessive resource allocation. The DaemonSets run on every node, one misbehaving DaemonSet can exhaust all nodes.
-3. Set based on Application Architecture:
-   Consider the current application limits, profile application to find the "knee of the curve" where additional resources provide diminishing returns, and set `maxAllowed` values around that point to optimize cost-performance balance. For example, if the current limit is 2Gi and usage rarely exceeds 1Gi, setting `maxAllowed` to 1.5Gi may be appropriate.
-4. Account for QoS and resource ratios:
-   If we set the limit to 2× the request and VPA recommends a 10 GiB request, VPA sets a 20 GiB limit, which is too high. Base maxAllowed calculations on the resulting limit, not the request.
-5. Iteratively adjust:
-   Start with conservative `maxAllowed` values and monitor VPA recommendations and Pod behavior. Adjust `maxAllowed` based on observed usage patterns and resource availability.
-
-### Telemetry Pipelines Memory Allocation Strategy
+### Telemetry Pipelines Memory Allocation Strategy with VPA
 
 This section defines the memory allocation strategy for telemetry pipelines when VPA is enabled. The strategy addresses initial Pod settings, VPA boundaries, and queue sizing for multi-pipeline scenarios.
 
