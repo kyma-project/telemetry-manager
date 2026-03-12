@@ -13,6 +13,8 @@ import (
 // CalculateVpaMaxAllowedMemory returns 30% of the lowest allocatable memory across all nodes in the cluster,
 // rounded down to the nearest KiB. This value is intended to be used as the maxAllowed memory in a VPA resource policy.
 func CalculateVpaMaxAllowedMemory(ctx context.Context, c client.Client) (resource.Quantity, error) {
+	const vpaMaxAllowedMemoryFraction = 0.3
+
 	var nodeList corev1.NodeList
 	if err := c.List(ctx, &nodeList); err != nil {
 		return resource.Quantity{}, fmt.Errorf("failed to list nodes: %w", err)
@@ -27,7 +29,7 @@ func CalculateVpaMaxAllowedMemory(ctx context.Context, c client.Client) (resourc
 		}
 	}
 
-	thirtyPercent := int64(math.Round(float64(minMemory) * 0.3))
+	thirtyPercent := int64(math.Round(float64(minMemory) * vpaMaxAllowedMemoryFraction))
 
 	const kib = 1024
 
