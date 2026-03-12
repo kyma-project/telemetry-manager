@@ -455,13 +455,6 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 		return fmt.Errorf("failed to check Istio status: %w", err)
 	}
 
-	vpaCRDExists, err := r.vpaStatusChecker.VpaCRDExists(ctx, r.Client)
-	if err != nil {
-		return fmt.Errorf("failed to check VPA status: %w", err)
-	}
-
-	isVpaEnabled := telemetryutils.IsVpaEnabledInTelemetry(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
-
 	shootInfo := k8sutils.GetGardenerShootInfo(ctx, r.Client)
 	telemetryOptions := telemetryutils.Options{
 		SignalType:                common.SignalTypeMetric,
@@ -510,6 +503,18 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 		return fmt.Errorf("failed to get ports of the backends: %w", err)
 	}
 
+	vpaCRDExists, err := r.vpaStatusChecker.VpaCRDExists(ctx, r.Client)
+	if err != nil {
+		return fmt.Errorf("failed to check VPA status: %w", err)
+	}
+
+	isVpaEnabled := telemetryutils.IsVpaEnabledInTelemetry(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
+
+	vpaMaxAllowedMemory, err := k8sutils.CalculateVpaMaxAllowedMemory(ctx, r.Client)
+	if err != nil {
+		return fmt.Errorf("failed to calculate VPA max allowed memory: %w", err)
+	}
+
 	if err := r.agentApplierDeleter.ApplyResources(
 		ctx,
 		k8sutils.NewOwnerReferenceSetter(r.Client, pipeline),
@@ -517,6 +522,7 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 			IstioEnabled:        isIstioActive,
 			VpaCRDExists:        vpaCRDExists,
 			VpaEnabled:          isVpaEnabled,
+			VpaMaxAllowedMemory: vpaMaxAllowedMemory,
 			CollectorConfigYAML: string(agentConfigYAML),
 			CollectorEnvVars:    collectorEnvVars,
 			BackendPorts:        backendPorts,

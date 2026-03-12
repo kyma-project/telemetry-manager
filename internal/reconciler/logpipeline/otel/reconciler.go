@@ -448,6 +448,11 @@ func (r *Reconciler) reconcileLogAgent(ctx context.Context, pipeline *telemetryv
 
 	isVpaEnabled := telemetryutils.IsVpaEnabledInTelemetry(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
 
+	vpaMaxAllowedMemory, err := k8sutils.CalculateVpaMaxAllowedMemory(ctx, r.Client)
+	if err != nil {
+		return fmt.Errorf("failed to calculate VPA max allowed memory: %w", err)
+	}
+
 	if err := r.agentApplierDeleter.ApplyResources(
 		ctx,
 		k8sutils.NewOwnerReferenceSetter(r.Client, pipeline),
@@ -455,6 +460,7 @@ func (r *Reconciler) reconcileLogAgent(ctx context.Context, pipeline *telemetryv
 			IstioEnabled:        isIstioActive,
 			VpaCRDExists:        vpaCRDExists,
 			VpaEnabled:          isVpaEnabled,
+			VpaMaxAllowedMemory: vpaMaxAllowedMemory,
 			CollectorConfigYAML: string(agentConfigYAML),
 			CollectorEnvVars:    envVars,
 		},
