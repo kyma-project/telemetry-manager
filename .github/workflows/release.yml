@@ -42,7 +42,7 @@ jobs:
       is-patch: ${{ steps.determine-branch.outputs.is-patch }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
       - name: Validate version format
@@ -114,7 +114,7 @@ jobs:
           echo "FORCE MODE: Checking for existing release ${VERSION}..."
           if gh release view "${VERSION}" --repo "${{ github.repository }}" > /dev/null 2>&1; then
             echo "::warning::Deleting existing release ${VERSION}"
-            gh release delete "${VERSION}" --repo "${{ github.repository }}" --yes
+            gh release delete "${VERSION}" --repo "${{ github.repository }}" --yes --cleanup-tag
             echo "✓ Deleted existing release ${VERSION}"
           else
             echo "No existing release found for ${VERSION}"
@@ -191,7 +191,7 @@ jobs:
       pr-number: ${{ steps.create-pr.outputs.pr-number }}
     steps:
       - name: Checkout release branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
           fetch-depth: 0
@@ -319,7 +319,7 @@ jobs:
           done
 
           if [ $ATTEMPT -ge $MAX_ATTEMPTS ]; then
-            echo "::error::Timeout: PR #${PR_NUMBER} was not merged within 60 minutes"
+            echo "::error::Timeout: PR #${PR_NUMBER} was not merged within 120 minutes"
             exit 1
           fi
 
@@ -423,7 +423,7 @@ jobs:
       KYMA_TELEMETRY_MANAGER_REPO: ${{ github.repository }}
     steps:
       - name: Checkout release tag
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
           fetch-depth: 0
