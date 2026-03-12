@@ -151,7 +151,7 @@ func TestBackpressure(t *testing.T) {
 				}
 			},
 			assertions: func(t *testing.T, pipelineName string) {
-				assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+				assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
 				assert.MetricPipelineHealthy(t, pipelineName)
 				assert.MetricPipelineConditionReasonsTransition(t, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
 					{Reason: conditions.ReasonSelfMonFlowHealthy, Status: metav1.ConditionTrue},
@@ -186,7 +186,7 @@ func TestBackpressure(t *testing.T) {
 				}
 			},
 			assertions: func(t *testing.T, pipelineName string) {
-				assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+				assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
 				assert.DaemonSetReady(t, kitkyma.MetricAgentName)
 				assert.MetricPipelineHealthy(t, pipelineName)
 				assert.MetricPipelineConditionReasonsTransition(t, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{

@@ -63,11 +63,13 @@ type OTLPGatewayApplierDeleter struct {
 //nolint:dupl // repeating the code as we this would be deleted when we implement all signals in OTLP gateway
 func NewOTLPGatewayApplierDeleter(globals config.Global, image, priorityClassName string) *OTLPGatewayApplierDeleter {
 	extraLabels := map[string]string{
-		commonresources.LabelKeyTelemetryTraceIngest: commonresources.LabelValueTrue,
-		commonresources.LabelKeyTelemetryTraceExport: commonresources.LabelValueTrue,
-		commonresources.LabelKeyTelemetryLogIngest:   commonresources.LabelValueTrue,
-		commonresources.LabelKeyTelemetryLogExport:   commonresources.LabelValueTrue,
-		commonresources.LabelKeyIstioInject:          commonresources.LabelValueTrue, // inject istio sidecar
+		commonresources.LabelKeyTelemetryTraceIngest:  commonresources.LabelValueTrue,
+		commonresources.LabelKeyTelemetryTraceExport:  commonresources.LabelValueTrue,
+		commonresources.LabelKeyTelemetryLogIngest:    commonresources.LabelValueTrue,
+		commonresources.LabelKeyTelemetryLogExport:    commonresources.LabelValueTrue,
+		commonresources.LabelKeyTelemetryMetricIngest: commonresources.LabelValueTrue,
+		commonresources.LabelKeyTelemetryMetricExport: commonresources.LabelValueTrue,
+		commonresources.LabelKeyIstioInject:           commonresources.LabelValueTrue, // inject istio sidecar
 	}
 
 	return &OTLPGatewayApplierDeleter{
@@ -145,8 +147,13 @@ func (o *OTLPGatewayApplierDeleter) ApplyResources(ctx context.Context, c client
 		return fmt.Errorf("failed to create legacy trace otlp service: %w", err)
 	}
 
+	legacyMetricService := o.makeLegacyOTLPService(names.OTLPMetricsService)
+	if err := k8sutils.CreateOrUpdateService(ctx, c, legacyMetricService); err != nil {
+		return fmt.Errorf("failed to create legacy metric otlp service: %w", err)
+	}
+
 	if opts.IstioEnabled {
-		for _, svcName := range []string{names.OTLPLogsService, names.OTLPTracesService, names.OTLPService} {
+		for _, svcName := range []string{names.OTLPLogsService, names.OTLPTracesService, names.OTLPMetricsService, names.OTLPService} {
 			if err := k8sutils.CreateOrUpdateDestinationRule(ctx, c, o.makeDestinationRule(svcName)); err != nil {
 				return fmt.Errorf("failed to create destinationrule: %w", err)
 			}
@@ -210,8 +217,13 @@ func (o *OTLPGatewayApplierDeleter) DeleteResources(ctx context.Context, c clien
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete legacy trace otlp service: %w", err))
 	}
 
+	legacyMetricService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: names.OTLPMetricsService, Namespace: o.globals.TargetNamespace()}}
+	if err := k8sutils.DeleteObject(ctx, c, &legacyMetricService); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete legacy metric otlp service: %w", err))
+	}
+
 	if isIstioActive {
-		for _, svcName := range []string{names.OTLPLogsService, names.OTLPTracesService, names.OTLPService} {
+		for _, svcName := range []string{names.OTLPLogsService, names.OTLPTracesService, names.OTLPMetricsService, names.OTLPService} {
 			destinationRuleMeta := metav1.ObjectMeta{Namespace: o.globals.TargetNamespace(), Name: svcName}
 
 			destinationRule := istionetworkingclientv1.DestinationRule{ObjectMeta: destinationRuleMeta}
@@ -398,4 +410,89 @@ func (o *OTLPGatewayApplierDeleter) makeAnnotations(configChecksum string, opts 
 	}
 
 	return annotations
+}
+
+type GatewayApplyOptions struct {
+	CollectorConfigYAML string
+	CollectorEnvVars    map[string][]byte
+	IstioEnabled        bool
+	// Replicas specifies the number of gateway replicas.
+	Replicas int32
+	// ResourceRequirementsMultiplier is a coefficient affecting the CPU and memory resource limits for each replica.
+	// This value is multiplied with a base resource requirement to calculate the actual CPU and memory limits.
+	// A value of 1 applies the base limits; values greater than 1 increase those limits proportionally.
+	ResourceRequirementsMultiplier int
+}
+
+func makePodAffinity(labels map[string]string) corev1.Affinity {
+	return corev1.Affinity{
+		PodAntiAffinity: &corev1.PodAntiAffinity{
+			PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
+				{
+					Weight: 100, //nolint:mnd // 100% weight
+					PodAffinityTerm: corev1.PodAffinityTerm{
+						TopologyKey: commonresources.LabelKeyK8sHostname,
+						LabelSelector: &metav1.LabelSelector{
+							MatchLabels: labels,
+						},
+					},
+				},
+				{
+					Weight: 100, //nolint:mnd // 100% weight
+					PodAffinityTerm: corev1.PodAffinityTerm{
+						TopologyKey: commonresources.LabelKeyK8sZone,
+						LabelSelector: &metav1.LabelSelector{
+							MatchLabels: labels,
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func makeGatewayNetworkPolicies(name types.NamespacedName, istioEnabled bool) []*networkingv1.NetworkPolicy {
+	var (
+		otlpPorts    = gatewayIngressOTLPPorts()
+		metricsPorts = gatewayIngressMetricsPorts(istioEnabled)
+	)
+
+	metricsNetworkPolicy := commonresources.MakeNetworkPolicy(
+		name,
+		commonresources.MakeDefaultLabels(name.Name, commonresources.LabelValueK8sComponentGateway),
+		commonresources.MakeDefaultSelectorLabels(name.Name),
+		commonresources.WithNameSuffix("metrics"),
+		commonresources.WithIngressFromPodsInAllNamespaces(
+			map[string]string{
+				commonresources.LabelKeyTelemetryMetricsScraping: commonresources.LabelValueTelemetryMetricsScraping,
+			},
+			metricsPorts,
+		),
+	)
+
+	gatewayNetworkPolicies := commonresources.MakeNetworkPolicy(
+		name,
+		commonresources.MakeDefaultLabels(name.Name, commonresources.LabelValueK8sComponentGateway),
+		commonresources.MakeDefaultSelectorLabels(name.Name),
+		commonresources.WithIngressFromAny(otlpPorts),
+		commonresources.WithEgressToAny(),
+	)
+
+	return []*networkingv1.NetworkPolicy{metricsNetworkPolicy, gatewayNetworkPolicies}
+}
+
+func gatewayIngressOTLPPorts() []int32 {
+	return []int32{
+		ports.OTLPHTTP,
+		ports.OTLPGRPC,
+	}
+}
+
+func gatewayIngressMetricsPorts(istioEnabled bool) []int32 {
+	metricsPorts := []int32{ports.Metrics}
+	if istioEnabled {
+		metricsPorts = append(metricsPorts, ports.IstioEnvoyTelemetry)
+	}
+
+	return metricsPorts
 }

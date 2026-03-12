@@ -172,8 +172,8 @@ func (r *Reconciler) ensureConfigMapExists(ctx context.Context) error {
 }
 
 // processConfigAndBuildResources handles config building and resource deployment.
-func (r *Reconciler) processConfigAndBuildResources(ctx context.Context, tracePipelines []telemetryv1beta1.TracePipeline, logPipelines []telemetryv1beta1.LogPipeline) error {
-	collectorConfig, collectorEnvVars, err := r.buildCollectorConfig(ctx, tracePipelines, logPipelines)
+func (r *Reconciler) processConfigAndBuildResources(ctx context.Context, tracePipelines []telemetryv1beta1.TracePipeline, logPipelines []telemetryv1beta1.LogPipeline, metricPipelines []telemetryv1beta1.MetricPipeline) error {
+	collectorConfig, collectorEnvVars, err := r.buildCollectorConfig(ctx, tracePipelines, logPipelines, metricPipelines)
 	if err != nil {
 		return fmt.Errorf("failed to build config: %w", err)
 	}
@@ -188,7 +188,7 @@ func (r *Reconciler) processConfigAndBuildResources(ctx context.Context, tracePi
 		CollectorConfigYAML:            string(collectorConfigYAML),
 		CollectorEnvVars:               collectorEnvVars,
 		IstioEnabled:                   isIstioActive,
-		ResourceRequirementsMultiplier: len(tracePipelines) + len(logPipelines),
+		ResourceRequirementsMultiplier: len(tracePipelines) + len(logPipelines) + len(metricPipelines),
 	}
 
 	return r.gatewayApplierDeleter.ApplyResources(ctx, r.Client, opts)
@@ -213,8 +213,13 @@ func (r *Reconciler) doReconcile(ctx context.Context) error {
 		return fmt.Errorf("failed to fetch log pipelines: %w", err)
 	}
 
+	metricPipelines, err := r.fetchMetricPipelines(ctx, config.MetricPipelineReferences)
+	if err != nil {
+		return fmt.Errorf("failed to fetch metric pipelines: %w", err)
+	}
+
 	// If no valid pipelines of any type, clean up
-	if len(tracePipelines) == 0 && len(logPipelines) == 0 {
+	if len(tracePipelines) == 0 && len(logPipelines) == 0 && len(metricPipelines) == 0 {
 		log.V(1).Info("no valid pipelines, deleting gateway resources")
 
 		if err := r.gatewayApplierDeleter.DeleteResources(ctx, r.Client, r.istioStatusChecker.IsIstioActive(ctx)); err != nil {
@@ -227,7 +232,7 @@ func (r *Reconciler) doReconcile(ctx context.Context) error {
 	}
 
 	// Build and apply resources
-	if err := r.processConfigAndBuildResources(ctx, tracePipelines, logPipelines); err != nil {
+	if err := r.processConfigAndBuildResources(ctx, tracePipelines, logPipelines, metricPipelines); err != nil {
 		return err
 	}
 
@@ -304,8 +309,42 @@ func (r *Reconciler) fetchLogPipelines(ctx context.Context, refs []otelcollector
 	return pipelines, nil
 }
 
-// buildCollectorConfig builds OTel Collector configuration from TracePipeline and LogPipeline CRs.
-func (r *Reconciler) buildCollectorConfig(ctx context.Context, tracePipelines []telemetryv1beta1.TracePipeline, logPipelines []telemetryv1beta1.LogPipeline) (*common.Config, common.EnvVars, error) {
+// fetchMetricPipelines fetches MetricPipeline CRs from references.
+//
+//nolint:dupl // Acceptable duplication - generic approach adds complexity without significant benefit
+func (r *Reconciler) fetchMetricPipelines(ctx context.Context, refs []otelcollector.PipelineReference) ([]telemetryv1beta1.MetricPipeline, error) {
+	log := logf.FromContext(ctx)
+	pipelines := make([]telemetryv1beta1.MetricPipeline, 0, len(refs))
+
+	for _, ref := range refs {
+		var pipeline telemetryv1beta1.MetricPipeline
+		if err := r.Get(ctx, types.NamespacedName{Name: ref.Name}, &pipeline); err != nil {
+			if apierrors.IsNotFound(err) {
+				log.V(1).Info("metric pipeline not found, skipping", "pipeline", ref.Name)
+				continue
+			}
+
+			return nil, fmt.Errorf("failed to get metric pipeline %s: %w", ref.Name, err)
+		}
+
+		if pipeline.DeletionTimestamp != nil {
+			log.V(1).Info("metric pipeline being deleted, skipping", "pipeline", ref.Name)
+			continue
+		}
+
+		if pipeline.Generation != ref.Generation {
+			log.V(1).Info("metric pipeline generation mismatch, skipping", "pipeline", ref.Name, "configGeneration", ref.Generation, "actualGeneration", pipeline.Generation)
+			continue
+		}
+
+		pipelines = append(pipelines, pipeline)
+	}
+
+	return pipelines, nil
+}
+
+// buildCollectorConfig builds OTel Collector configuration from TracePipeline, LogPipeline, and MetricPipeline CRs.
+func (r *Reconciler) buildCollectorConfig(ctx context.Context, tracePipelines []telemetryv1beta1.TracePipeline, logPipelines []telemetryv1beta1.LogPipeline, metricPipelines []telemetryv1beta1.MetricPipeline) (*common.Config, common.EnvVars, error) {
 	shootInfo := k8sutils.GetGardenerShootInfo(ctx, r.Client)
 	telemetryOptions := telemetryutils.Options{
 		SignalType:                common.SignalTypeTrace,
@@ -327,8 +366,9 @@ func (r *Reconciler) buildCollectorConfig(ctx context.Context, tracePipelines []
 	}
 
 	return r.configBuilder.Build(ctx, otlpgateway.BuildOptions{
-		LogPipelines:   logPipelines,
-		TracePipelines: tracePipelines,
+		LogPipelines:    logPipelines,
+		TracePipelines:  tracePipelines,
+		MetricPipelines: metricPipelines,
 		Cluster: common.ClusterOptions{
 			ClusterName:   clusterName,
 			ClusterUID:    clusterUID,
@@ -337,5 +377,6 @@ func (r *Reconciler) buildCollectorConfig(ctx context.Context, tracePipelines []
 		Enrichments:       enrichments,
 		ServiceEnrichment: telemetryutils.GetServiceEnrichmentFromTelemetryOrDefault(ctx, telemetryOptions),
 		ModuleVersion:     r.globals.Version(),
+		GatewayNamespace:  r.globals.TargetNamespace(),
 	})
 }

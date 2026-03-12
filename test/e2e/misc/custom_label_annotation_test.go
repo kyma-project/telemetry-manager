@@ -125,16 +125,16 @@ func TestLabelAnnotation(t *testing.T) {
 				}
 			},
 			assert: func(t *testing.T, ns string, backend *kitbackend.Backend, pipelineName string) {
-				assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+				assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
 				assert.DaemonSetReady(t, kitkyma.MetricAgentName)
 				assert.MetricPipelineHealthy(t, pipelineName)
 				assert.MetricsFromNamespaceDelivered(t, backend, ns, prommetricgen.CustomMetricNames())
 
-				assert.DeploymentHasLabel(t, kitkyma.MetricGatewayName, label)
-				assert.DeploymentHasAnnotation(t, kitkyma.MetricGatewayName, annotation)
+				assert.DaemonSetHasLabel(t, kitkyma.TelemetryOTLPGatewayName, label)
+				assert.DaemonSetHasAnnotation(t, kitkyma.TelemetryOTLPGatewayName, annotation)
 
 				var gwSelector = client.ListOptions{
-					LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": "telemetry-metric-gateway"}),
+					LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": "telemetry-otlp-gateway"}),
 					Namespace:     kitkyma.SystemNamespaceName,
 				}
 				assert.PodsHaveAnnotation(t, gwSelector, annotation)

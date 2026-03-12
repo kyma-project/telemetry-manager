@@ -4,20 +4,11 @@ extensions:
     k8s_leader_elector:
         auth_type: serviceAccount
         lease_name: telemetry-metric-gateway-kymastats
+        lease_namespace: kyma-system
     pprof:
         endpoint: 127.0.0.1:1777
 service:
     pipelines:
-        metrics/cls-output:
-            receivers:
-                - forward/enrichment
-            processors:
-                - transform/drop-kyma-attributes
-                - transform/user-defined-cls
-                - filter/user-defined-cls
-                - batch
-            exporters:
-                - otlp_grpc/cls
         metrics/enrichment:
             receivers:
                 - forward/input
@@ -43,6 +34,14 @@ service:
                 - transform/set-kyma-input-name-otlp
             exporters:
                 - forward/input
+        metrics/test-metric-output:
+            receivers:
+                - forward/enrichment
+            processors:
+                - transform/drop-kyma-attributes
+                - batch
+            exporters:
+                - otlp_grpc/test-metric
     telemetry:
         metrics:
             readers:
@@ -87,11 +86,6 @@ processors:
         send_batch_size: 1024
         timeout: 10s
         send_batch_max_size: 1024
-    filter/user-defined-cls:
-        error_mode: ignore
-        metrics:
-            datapoint:
-                - metric.type == METRIC_DATA_TYPE_SUMMARY
     k8sattributes:
         auth_type: serviceAccount
         passthrough: false
@@ -157,7 +151,7 @@ processors:
         error_mode: ignore
         metric_statements:
             - statements:
-                - set(scope.version, "") where scope.name == "github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver"
+                - set(scope.version, "1.0.0") where scope.name == "github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver"
                 - set(scope.name, "io.kyma-project.telemetry/kyma") where scope.name == "github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver"
     transform/set-kyma-input-name-kyma:
         error_mode: ignore
@@ -169,17 +163,9 @@ processors:
         metric_statements:
             - statements:
                 - set(resource.attributes["kyma.input.name"], "otlp")
-    transform/user-defined-cls:
-        error_mode: ignore
-        metric_statements:
-            - statements:
-                - set(attributes["log.level"], "error")
-                - set(body, "transformed2")
-              conditions:
-                - IsMatch(body, ".*error.*")
 exporters:
-    otlp_grpc/cls:
-        endpoint: ${OTLP_ENDPOINT_CLS}
+    otlp_grpc/test-metric:
+        endpoint: ${OTLP_ENDPOINT_TEST_METRIC}
         sending_queue:
             enabled: true
             queue_size: 256

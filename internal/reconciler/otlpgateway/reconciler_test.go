@@ -483,14 +483,8 @@ type errorClient struct {
 	err error
 }
 
-func (c *errorClient) Get(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
-	if c.err != nil {
-		if _, ok := obj.(*telemetryv1beta1.TracePipeline); ok {
-			return c.err
-		}
-	}
-
-	return apierrors.NewNotFound(schema.GroupResource{}, key.Name)
+func (c *errorClient) Get(_ context.Context, _ client.ObjectKey, _ client.Object, _ ...client.GetOption) error {
+	return c.err
 }
 
 func TestNewReconciler_WithOptions(t *testing.T) {
@@ -500,6 +494,7 @@ func TestNewReconciler_WithOptions(t *testing.T) {
 	gad := &mockGatewayApplierDeleter{}
 	cb := &mockOTLPGatewayConfigBuilder{}
 	isc := &mockIstioStatusChecker{}
+	oh := overrides.New(globals, fakeClient)
 
 	reconciler := NewReconciler(
 		fakeClient,
@@ -507,6 +502,7 @@ func TestNewReconciler_WithOptions(t *testing.T) {
 		WithGatewayApplierDeleter(gad),
 		WithConfigBuilder(cb),
 		WithIstioStatusChecker(isc),
+		WithOverridesHandler(oh),
 	)
 
 	require.NotNil(t, reconciler)
@@ -515,6 +511,7 @@ func TestNewReconciler_WithOptions(t *testing.T) {
 	assert.Equal(t, gad, reconciler.gatewayApplierDeleter)
 	assert.Equal(t, cb, reconciler.configBuilder)
 	assert.Equal(t, isc, reconciler.istioStatusChecker)
+	assert.Equal(t, oh, reconciler.overridesHandler)
 }
 
 func TestGlobals(t *testing.T) {
@@ -687,6 +684,22 @@ func TestFetchLogPipelines_Success(t *testing.T) {
 	assert.Equal(t, pipeline.Name, pipelines[0].Name)
 }
 
+func TestFetchLogPipelines_GetError(t *testing.T) {
+	ctx := context.Background()
+	fakeClient := newTestClient(t)
+	mocks := newDefaultMocks()
+	sut := newTestReconciler(fakeClient, mocks)
+
+	sut.Client = &errorClient{err: assert.AnError}
+
+	refs := []otelcollector.PipelineReference{
+		{Name: "test-log", Generation: 1},
+	}
+
+	_, err := sut.fetchLogPipelines(ctx, refs)
+	require.Error(t, err)
+}
+
 func TestReconcile_OnlyLogPipelines_DeploysGateway(t *testing.T) {
 	ctx := context.Background()
 
@@ -854,4 +867,137 @@ func (c *overrideConfigErrorClient) Get(ctx context.Context, key client.ObjectKe
 	}
 
 	return apierrors.NewNotFound(schema.GroupResource{}, key.Name)
+}
+
+// Tests for metric pipeline fetch scenarios
+func TestFetchMetricPipelines_NotFound(t *testing.T) {
+	ctx := context.Background()
+	fakeClient := newTestClient(t)
+	mocks := newDefaultMocks()
+	sut := newTestReconciler(fakeClient, mocks)
+
+	refs := []otelcollector.PipelineReference{
+		{Name: "non-existent", Generation: 1},
+	}
+
+	pipelines, err := sut.fetchMetricPipelines(ctx, refs)
+	require.NoError(t, err)
+	assert.Empty(t, pipelines)
+}
+
+func TestFetchMetricPipelines_GenerationMismatch(t *testing.T) {
+	ctx := context.Background()
+
+	pipeline := testutils.NewMetricPipelineBuilder().
+		WithName("test-metric").
+		Build()
+
+	fakeClient := newTestClient(t, &pipeline)
+	mocks := newDefaultMocks()
+	sut := newTestReconciler(fakeClient, mocks)
+
+	refs := []otelcollector.PipelineReference{
+		{Name: pipeline.Name, Generation: pipeline.Generation + 1},
+	}
+
+	pipelines, err := sut.fetchMetricPipelines(ctx, refs)
+	require.NoError(t, err)
+	assert.Empty(t, pipelines)
+}
+
+func TestFetchMetricPipelines_DeletionTimestamp(t *testing.T) {
+	ctx := context.Background()
+
+	now := metav1.Now()
+	pipeline := testutils.NewMetricPipelineBuilder().
+		WithName("test-metric").
+		Build()
+	pipeline.DeletionTimestamp = &now
+	pipeline.Finalizers = []string{"test-finalizer"}
+
+	fakeClient := newTestClient(t, &pipeline)
+	mocks := newDefaultMocks()
+	sut := newTestReconciler(fakeClient, mocks)
+
+	refs := []otelcollector.PipelineReference{
+		{Name: pipeline.Name, Generation: pipeline.Generation},
+	}
+
+	pipelines, err := sut.fetchMetricPipelines(ctx, refs)
+	require.NoError(t, err)
+	assert.Empty(t, pipelines)
+}
+
+func TestFetchMetricPipelines_Success(t *testing.T) {
+	ctx := context.Background()
+
+	pipeline := testutils.NewMetricPipelineBuilder().
+		WithName("test-metric").
+		Build()
+
+	fakeClient := newTestClient(t, &pipeline)
+	mocks := newDefaultMocks()
+	sut := newTestReconciler(fakeClient, mocks)
+
+	refs := []otelcollector.PipelineReference{
+		{Name: pipeline.Name, Generation: pipeline.Generation},
+	}
+
+	pipelines, err := sut.fetchMetricPipelines(ctx, refs)
+	require.NoError(t, err)
+	require.Len(t, pipelines, 1)
+	assert.Equal(t, pipeline.Name, pipelines[0].Name)
+}
+
+func TestFetchMetricPipelines_GetError(t *testing.T) {
+	ctx := context.Background()
+
+	fakeClient := newTestClient(t)
+	mocks := newDefaultMocks()
+	sut := newTestReconciler(fakeClient, mocks)
+
+	sut.Client = &errorClient{err: assert.AnError}
+
+	refs := []otelcollector.PipelineReference{
+		{Name: "test-metric", Generation: 1},
+	}
+
+	_, err := sut.fetchMetricPipelines(ctx, refs)
+	require.Error(t, err)
+}
+
+func TestReconcile_MetricPipeline_DeploysGateway(t *testing.T) {
+	ctx := context.Background()
+
+	metricPipeline := testutils.NewMetricPipelineBuilder().
+		WithName("test-metric-pipeline").
+		Build()
+	metricPipeline.Generation = 1
+
+	cm := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      names.OTLPGatewayPipelinesSyncConfigMap,
+			Namespace: "kyma-system",
+		},
+		Data: map[string]string{
+			otelcollector.ConfigMapDataKey: "metricPipelines:\n- name: test-metric-pipeline\n  generation: 1",
+		},
+	}
+
+	fakeClient := newTestClient(t, &metricPipeline, cm)
+	mocks := newDefaultMocks()
+
+	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false)
+	mocks.configBuilder.On("Build", mock.Anything, mock.Anything).Return(&common.Config{}, common.EnvVars{}, nil)
+	mocks.gatewayApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	sut := newTestReconciler(fakeClient, mocks)
+
+	_, err := sut.Reconcile(ctx, newReconcileRequest())
+	require.NoError(t, err)
+
+	mocks.configBuilder.AssertCalled(t, "Build", mock.Anything, mock.MatchedBy(func(opts otlpgateway.BuildOptions) bool {
+		return len(opts.MetricPipelines) == 1
+	}))
+	mocks.gatewayApplierDeleter.AssertCalled(t, "ApplyResources", mock.Anything, mock.Anything, mock.Anything)
 }
