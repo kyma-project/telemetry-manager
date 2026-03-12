@@ -4,6 +4,7 @@ extensions:
     k8s_leader_elector:
         auth_type: serviceAccount
         lease_name: telemetry-metric-gateway-kymastats
+        lease_namespace: kyma-system
     pprof:
         endpoint: 127.0.0.1:1777
 service:
@@ -14,9 +15,22 @@ service:
             processors:
                 - filter/cls-filter-by-namespace-otlp-input
                 - transform/drop-kyma-attributes
+                - transform/user-defined-cls
+                - filter/user-defined-cls
                 - batch
             exporters:
                 - otlp_grpc/cls
+        metrics/dynatrace-output:
+            receivers:
+                - forward/enrichment
+            processors:
+                - filter/dynatrace-filter-by-namespace-otlp-input
+                - transform/drop-kyma-attributes
+                - transform/user-defined-dynatrace
+                - filter/user-defined-dynatrace
+                - batch
+            exporters:
+                - otlp_grpc/dynatrace
         metrics/enrichment:
             receivers:
                 - forward/input
@@ -90,8 +104,22 @@ processors:
         error_mode: ignore
         metrics:
             metric:
-                - not(resource.attributes["kyma.input.name"] == "kyma") and (resource.attributes["k8s.namespace.name"] == "kube-system" or resource.attributes["k8s.namespace.name"] == "istio-system")
-                - not(resource.attributes["kyma.input.name"] == "kyma") and resource.attributes["k8s.namespace.name"] != nil and not(resource.attributes["k8s.namespace.name"] == "monitoring" or resource.attributes["k8s.namespace.name"] == "observability")
+                - not(resource.attributes["kyma.input.name"] == "kyma") and resource.attributes["k8s.namespace.name"] != nil and not(resource.attributes["k8s.namespace.name"] == "apps-cls")
+    filter/dynatrace-filter-by-namespace-otlp-input:
+        error_mode: ignore
+        metrics:
+            metric:
+                - not(resource.attributes["kyma.input.name"] == "kyma") and resource.attributes["k8s.namespace.name"] != nil and not(resource.attributes["k8s.namespace.name"] == "apps-dynatrace")
+    filter/user-defined-cls:
+        error_mode: ignore
+        metrics:
+            datapoint:
+                - metric.type == METRIC_DATA_TYPE_SUMMARY
+    filter/user-defined-dynatrace:
+        error_mode: ignore
+        metrics:
+            datapoint:
+                - metric.type == METRIC_DATA_TYPE_HISTOGRAM
     k8sattributes:
         auth_type: serviceAccount
         passthrough: false
@@ -157,7 +185,7 @@ processors:
         error_mode: ignore
         metric_statements:
             - statements:
-                - set(scope.version, "") where scope.name == "github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver"
+                - set(scope.version, "1.0.0") where scope.name == "github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver"
                 - set(scope.name, "io.kyma-project.telemetry/kyma") where scope.name == "github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver"
     transform/set-kyma-input-name-kyma:
         error_mode: ignore
@@ -169,12 +197,38 @@ processors:
         metric_statements:
             - statements:
                 - set(resource.attributes["kyma.input.name"], "otlp")
+    transform/user-defined-cls:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - set(attributes["metric.status"], "error")
+                - set(body, "transformed-cls")
+              conditions:
+                - IsMatch(body, ".*error.*")
+    transform/user-defined-dynatrace:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - set(attributes["metric.status"], "error")
+                - set(body, "transformed-dynatrace")
+              conditions:
+                - IsMatch(body, ".*error.*")
 exporters:
     otlp_grpc/cls:
         endpoint: ${OTLP_ENDPOINT_CLS}
         sending_queue:
             enabled: true
-            queue_size: 256
+            queue_size: 128
+        retry_on_failure:
+            enabled: true
+            initial_interval: 5s
+            max_interval: 30s
+            max_elapsed_time: 300s
+    otlp_grpc/dynatrace:
+        endpoint: ${OTLP_ENDPOINT_DYNATRACE}
+        sending_queue:
+            enabled: true
+            queue_size: 128
         retry_on_failure:
             enabled: true
             initial_interval: 5s

@@ -25,6 +25,7 @@ func TestBuild(t *testing.T) {
 		goldenFileName    string
 		tracePipelines    []telemetryv1beta1.TracePipeline
 		logPipelines      []telemetryv1beta1.LogPipeline
+		metricPipelines   []telemetryv1beta1.MetricPipeline
 		serviceEnrichment string
 		moduleVersion     string
 	}{
@@ -37,6 +38,9 @@ func TestBuild(t *testing.T) {
 			},
 			logPipelines: []telemetryv1beta1.LogPipeline{
 				testutils.NewLogPipelineBuilder().WithName("test-log").WithOTLPOutput().Build(),
+			},
+			metricPipelines: []telemetryv1beta1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().WithName("test-metric").WithOTLPInput(true).WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
 			},
 		},
 		{
@@ -55,6 +59,14 @@ func TestBuild(t *testing.T) {
 			},
 		},
 		{
+			name:           "metric-single pipeline only",
+			goldenFileName: "metric-single-pipeline.yaml",
+			moduleVersion:  "1.0.0",
+			metricPipelines: []telemetryv1beta1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().WithName("test-metric").WithOTLPInput(true).WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+			},
+		},
+		{
 			name:              "single pipeline with otel service enrichment",
 			goldenFileName:    "service-enrichment-otel.yaml",
 			serviceEnrichment: commonresources.AnnotationValueTelemetryServiceEnrichmentOtel,
@@ -69,6 +81,13 @@ func TestBuild(t *testing.T) {
 				testutils.NewLogPipelineBuilder().
 					WithName("test-log").
 					WithOTLPOutput().
+					Build(),
+			},
+			metricPipelines: []telemetryv1beta1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().
+					WithName("test-metric").
+					WithOTLPInput(true).
+					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).
 					Build(),
 			},
 		},
@@ -92,6 +111,15 @@ func TestBuild(t *testing.T) {
 						testutils.OTLPEndpointPath("v2/otlp/v1/logs"),
 					).Build(),
 			},
+			metricPipelines: []telemetryv1beta1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().
+					WithName("test-metric").
+					WithOTLPInput(true).
+					WithOTLPOutput(
+						testutils.OTLPProtocol("http"),
+						testutils.OTLPEndpointPath("v2/otlp/v1/metrics"),
+					).Build(),
+			},
 		},
 		{
 			name:           "pipeline using http protocol WITHOUT custom 'Path' field",
@@ -107,6 +135,14 @@ func TestBuild(t *testing.T) {
 			logPipelines: []telemetryv1beta1.LogPipeline{
 				testutils.NewLogPipelineBuilder().
 					WithName("test-log").
+					WithOTLPOutput(
+						testutils.OTLPProtocol("http"),
+					).Build(),
+			},
+			metricPipelines: []telemetryv1beta1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().
+					WithName("test-metric").
+					WithOTLPInput(true).
 					WithOTLPOutput(
 						testutils.OTLPProtocol("http"),
 					).Build(),
@@ -156,6 +192,30 @@ func TestBuild(t *testing.T) {
 					}).
 					Build(),
 			},
+			metricPipelines: []telemetryv1beta1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().
+					WithName("test-metric-1").
+					WithOTLPInput(true).
+					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).
+					WithTransform(telemetryv1beta1.TransformSpec{
+						Conditions: []string{"IsMatch(body, \".*error.*\")"},
+						Statements: []string{
+							"set(attributes[\"metric.status\"], \"error\")",
+							"set(body, \"transformed1\")",
+						},
+					}).Build(),
+				testutils.NewMetricPipelineBuilder().
+					WithName("test-metric-2").
+					WithOTLPInput(true).
+					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).
+					WithTransform(telemetryv1beta1.TransformSpec{
+						Conditions: []string{"IsMatch(body, \".*error.*\")"},
+						Statements: []string{
+							"set(attributes[\"metric.status\"], \"error\")",
+							"set(body, \"transformed2\")",
+						},
+					}).Build(),
+			},
 		},
 		{
 			name:           "two pipelines with user-defined filter",
@@ -191,6 +251,22 @@ func TestBuild(t *testing.T) {
 					}).
 					Build(),
 			},
+			metricPipelines: []telemetryv1beta1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().
+					WithName("test-metric-1").
+					WithOTLPInput(true).
+					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).
+					WithFilter(telemetryv1beta1.FilterSpec{
+						Conditions: []string{"metric.type == METRIC_DATA_TYPE_SUMMARY"},
+					}).Build(),
+				testutils.NewMetricPipelineBuilder().
+					WithName("test-metric-2").
+					WithOTLPInput(true).
+					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).
+					WithFilter(telemetryv1beta1.FilterSpec{
+						Conditions: []string{"metric.type == METRIC_DATA_TYPE_HISTOGRAM"},
+					}).Build(),
+			},
 		},
 		{
 			name:           "pipeline with user-defined transform and filter",
@@ -223,6 +299,22 @@ func TestBuild(t *testing.T) {
 						Conditions: []string{"IsMatch(log.attributes[\"foo\"], \".*bar.*\")"},
 					}).Build(),
 			},
+			metricPipelines: []telemetryv1beta1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().
+					WithName("test-metric").
+					WithOTLPInput(true).
+					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).
+					WithTransform(telemetryv1beta1.TransformSpec{
+						Conditions: []string{"IsMatch(body, \".*error.*\")"},
+						Statements: []string{
+							"set(attributes[\"metric.status\"], \"error\")",
+							"set(body, \"transformed2\")",
+						},
+					}).
+					WithFilter(telemetryv1beta1.FilterSpec{
+						Conditions: []string{"metric.type == METRIC_DATA_TYPE_SUMMARY"},
+					}).Build(),
+			},
 		},
 		{
 			name:           "pipeline using OAuth2 authentication",
@@ -252,6 +344,20 @@ func TestBuild(t *testing.T) {
 						testutils.OAuth2ClientSecret("client-secret"),
 						testutils.OAuth2TokenURL("https://auth.example.com/oauth2/token"),
 						testutils.OAuth2Scopes([]string{"logs"}),
+					).Build(),
+			},
+			metricPipelines: []telemetryv1beta1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().
+					WithName("test-metric").
+					WithOTLPInput(true).
+					WithOTLPOutput(
+						testutils.OTLPProtocol("http"),
+					).
+					WithOAuth2(
+						testutils.OAuth2ClientID("client-id"),
+						testutils.OAuth2ClientSecret("client-secret"),
+						testutils.OAuth2TokenURL("https://auth.example.com/oauth2/token"),
+						testutils.OAuth2Scopes([]string{"metrics"}),
 					).Build(),
 			},
 		},
@@ -300,19 +406,98 @@ func TestBuild(t *testing.T) {
 				testutils.NewLogPipelineBuilder().WithName("test-log-2").WithOTLPOutput().Build(),
 			},
 		},
+		// Metric-specific test cases
+		{
+			name:           "metric-pipeline with OTLP input disabled",
+			goldenFileName: "metric-otlp-disabled.yaml",
+			moduleVersion:  "1.0.0",
+			metricPipelines: []telemetryv1beta1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().
+					WithName("test-metric").
+					WithOTLPInput(false).
+					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).
+					Build(),
+			},
+		},
+		{
+			name:           "metric-pipeline with namespace filters",
+			goldenFileName: "metric-namespace-filters.yaml",
+			moduleVersion:  "1.0.0",
+			metricPipelines: []telemetryv1beta1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().
+					WithName("test-metric").
+					WithOTLPInput(true, testutils.IncludeNamespaces("monitoring", "observability"), testutils.ExcludeNamespaces("kube-system", "istio-system")).
+					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).
+					Build(),
+			},
+		},
+		{
+			name:           "metric-pipeline with OTLP only input",
+			goldenFileName: "metric-otlp-only.yaml",
+			moduleVersion:  "1.0.0",
+			metricPipelines: []telemetryv1beta1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().
+					WithName("test-metric").
+					WithOTLPInput(true).
+					WithRuntimeInput(false).
+					WithPrometheusInput(false).
+					WithIstioInput(false).
+					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).
+					Build(),
+			},
+		},
+		{
+			name:           "metric-comprehensive setup",
+			goldenFileName: "metric-comprehensive.yaml",
+			moduleVersion:  "1.0.0",
+			metricPipelines: []telemetryv1beta1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().
+					WithName("cls").
+					WithOTLPInput(true, testutils.IncludeNamespaces("apps-cls")).
+					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).
+					WithTransform(telemetryv1beta1.TransformSpec{
+						Conditions: []string{"IsMatch(body, \".*error.*\")"},
+						Statements: []string{
+							"set(attributes[\"metric.status\"], \"error\")",
+							"set(body, \"transformed-cls\")",
+						},
+					}).
+					WithFilter(telemetryv1beta1.FilterSpec{
+						Conditions: []string{"metric.type == METRIC_DATA_TYPE_SUMMARY"},
+					}).
+					Build(),
+				testutils.NewMetricPipelineBuilder().
+					WithName("dynatrace").
+					WithOTLPInput(true, testutils.IncludeNamespaces("apps-dynatrace")).
+					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).
+					WithTransform(telemetryv1beta1.TransformSpec{
+						Conditions: []string{"IsMatch(body, \".*error.*\")"},
+						Statements: []string{
+							"set(attributes[\"metric.status\"], \"error\")",
+							"set(body, \"transformed-dynatrace\")",
+						},
+					}).
+					WithFilter(telemetryv1beta1.FilterSpec{
+						Conditions: []string{"metric.type == METRIC_DATA_TYPE_HISTOGRAM"},
+					}).
+					Build(),
+			},
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			buildOptions := BuildOptions{
-				TracePipelines: tt.tracePipelines,
-				LogPipelines:   tt.logPipelines,
+				TracePipelines:  tt.tracePipelines,
+				LogPipelines:    tt.logPipelines,
+				MetricPipelines: tt.metricPipelines,
 				Cluster: common.ClusterOptions{
 					ClusterName:   "${KUBERNETES_SERVICE_HOST}",
 					CloudProvider: "test-cloud-provider",
 				},
 				ServiceEnrichment: tt.serviceEnrichment,
 				ModuleVersion:     tt.moduleVersion,
+				GatewayNamespace:  "kyma-system",
 			}
 
 			config, _, err := sut.Build(context.Background(), buildOptions)
