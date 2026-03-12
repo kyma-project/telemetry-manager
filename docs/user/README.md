@@ -47,6 +47,8 @@ To support telemetry for your applications, the Telemetry module provides the fo
 
 - **Instrumentation Guidance**: To generate telemetry data, you must instrument your code. Based on [Open Telemetry](https://opentelemetry.io/) (OTel), you get community samples on how to instrument your code using the [Open Telemetry SDKs](https://opentelemetry.io/docs/languages/) in most programming languages.
 
+- **Kubernetes native RBAC Aggregation**: The Telemetry module provides Kubernetes Role-Based Access Control (RBAC) aggregation, which allows you to manage permissions for telemetry resources in a Kubernetes-native way. `kyma-telemetry-view` provides `view` permissions, while `kyma-telemetry-edit` provides `edit` permissions to all the telemetry module resources.
+
 ## Scope
 
 The Telemetry module focuses only on the signals of application logs, distributed traces, and metrics. Other kinds of signals are not considered. Also, audit logs are not in scope.
