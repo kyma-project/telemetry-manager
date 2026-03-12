@@ -19,6 +19,7 @@ func CalculateVpaMaxAllowedMemory(ctx context.Context, c client.Client) (resourc
 	}
 
 	minMemory := int64(math.MaxInt64)
+
 	for i := range nodeList.Items {
 		allocatable := nodeList.Items[i].Status.Allocatable[corev1.ResourceMemory]
 		if val := allocatable.Value(); val < minMemory {
@@ -27,7 +28,9 @@ func CalculateVpaMaxAllowedMemory(ctx context.Context, c client.Client) (resourc
 	}
 
 	thirtyPercent := int64(math.Round(float64(minMemory) * 0.3))
+
 	const kib = 1024
+
 	roundedToKiB := (thirtyPercent / kib) * kib
 
 	return *resource.NewQuantity(roundedToKiB, resource.BinarySI), nil
