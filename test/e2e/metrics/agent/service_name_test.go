@@ -100,7 +100,7 @@ func TestServiceName(t *testing.T) {
 	assert.BackendDataEventuallyMatches(t, backend,
 		HaveFlatMetrics(
 			ContainElement(HaveResourceAttributes(HaveKeyWithValue("service.name", names.OTLPGateway))),
-		), assert.WithOptionalDescription("Should have metrics with service.name set to telemetry-metric-gateway"),
+		), assert.WithOptionalDescription("Should have metrics with service.name set to telemetry-otlp-gateway"),
 	)
 
 	assert.BackendDataEventuallyMatches(t, backend,

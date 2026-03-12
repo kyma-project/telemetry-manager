@@ -84,7 +84,7 @@ func TestNoisyFilters(t *testing.T) {
 	).K8sObject()
 	metricGatewaySpansGen := telemetrygen.NewPod(metricGatewaySpansNs, telemetrygen.SignalTypeTraces,
 		telemetrygen.WithTelemetryAttribute("component", "proxy"),
-		telemetrygen.WithTelemetryAttribute("istio.canonical_service", "telemetry-metric-gateway"),
+		telemetrygen.WithTelemetryAttribute("istio.canonical_service", "telemetry-otlp-gateway"),
 		telemetrygen.WithResourceAttribute("k8s.namespace.name", kitkyma.SystemNamespaceName),
 	).K8sObject()
 	metricServiceSpansGen := telemetrygen.NewPod(metricServiceSpansNs, telemetrygen.SignalTypeTraces,

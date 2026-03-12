@@ -130,8 +130,8 @@ func TestLabelAnnotation(t *testing.T) {
 				assert.MetricPipelineHealthy(t, pipelineName)
 				assert.MetricsFromNamespaceDelivered(t, backend, ns, prommetricgen.CustomMetricNames())
 
-				assert.DeploymentHasLabel(t, kitkyma.MetricGatewayName, label)
-				assert.DeploymentHasAnnotation(t, kitkyma.MetricGatewayName, annotation)
+				assert.DaemonSetHasLabel(t, kitkyma.TelemetryOTLPGatewayName, label)
+				assert.DaemonSetHasAnnotation(t, kitkyma.TelemetryOTLPGatewayName, annotation)
 
 				var gwSelector = client.ListOptions{
 					LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": "telemetry-otlp-gateway"}),
