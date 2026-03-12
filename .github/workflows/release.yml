@@ -60,7 +60,20 @@ jobs:
             echo "Expected format: X.Y.Z-A.B.C (e.g., 1.2.3-4.5.6)"
             exit 1
           fi
-          echo "✓ OCC image version format valid: ${OCC_IMAGE}"
+          echo "OCC image version format valid: ${OCC_IMAGE}"
+          
+          # Check if OCC Docker image exists
+          echo "Checking if OCC Docker image exists..."
+          OCC_IMAGE_REPO="europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector"
+          OCC_IMAGE_FULL="${OCC_IMAGE_REPO}:${OCC_IMAGE}"
+
+          if docker manifest inspect "${OCC_IMAGE_FULL}" > /dev/null 2>&1; then
+            echo "OCC Docker image exists: ${OCC_IMAGE_FULL}"
+          else
+            echo "::error::OCC Docker image does not exist: ${OCC_IMAGE_FULL}"
+            echo "Please verify the image has been built and pushed to the registry"
+            exit 1
+          fi
       - name: Check if milestone exists and is closed
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
