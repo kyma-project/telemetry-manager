@@ -73,6 +73,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1beta1.Metric
 	if opts.VpaActive {
 		b.Config.DisableGoMemLimit()
 	}
+
 	b.AddExtension(common.ComponentIDK8sLeaderElectorExtension,
 		common.K8sLeaderElectorExtensionConfig{
 			AuthType:       "serviceAccount",
