@@ -72,13 +72,13 @@ processors:
         send_batch_max_size: 512
     filter/user-defined-test1:
         error_mode: ignore
-        logs:
-            log_record:
+        log_conditions:
+            - conditions:
                 - IsMatch(log.attributes["foo"], ".*bar.*")
     filter/user-defined-test2:
         error_mode: ignore
-        logs:
-            log_record:
+        log_conditions:
+            - conditions:
                 - IsMatch(log.body, ".*error.*")
     istio_enrichment:
         scope_version: 1.0.0
