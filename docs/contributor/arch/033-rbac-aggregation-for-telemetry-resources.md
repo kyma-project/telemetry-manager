@@ -118,7 +118,6 @@ Because `logpipelines`, `metricpipelines`, `tracepipelines`, and `telemetries` a
 
 - To grant access to cluster-scoped telemetry resources, you must use a **ClusterRoleBinding**. A namespace-scoped RoleBinding has no effect.
 - ️ Users need cluster-level permissions, typically granted to platform/SRE teams
-- The ConfigMap `sap-cloud-logging` in the `kube-public` namespace is an exception. Because it is a namespaced resource, you can manage access to it with a RoleBinding in that namespace.
 
 **Important**: Even when telemetry resources aggregate into `edit` or `admin` roles, users still need a **ClusterRoleBinding** to apply those permissions to the cluster-scoped resources.
 
@@ -153,11 +152,12 @@ We create **two aggregated ClusterRoles** for telemetry resources, following Kub
 |        Role Name        |  Aggregates To  |                                                                                                                           Resources                                                                                                                           |                                       Verbs                                       |                                                                                Rationale                                                                                |
 |:-----------------------:|:---------------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|:---------------------------------------------------------------------------------:|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------:|
 | **kyma-telemetry-view** |     `view`      | **Cluster-scoped:**<br/>• `logpipelines`<br/>• `metricpipelines`<br/>• `tracepipelines`<br/>• `telemetries`<br/><br/>**Namespace-scoped:**<br/>• ConfigMap `telemetry-logpipelines`, `telemetry-tracepipelines`, `telemetry-metricpipelines` in `kyma-system` |                              `get`, `list`, `watch`                               |   Read-only access for monitoring, debugging, and observability. Enables SREs, auditors, and developers to view telemetry configurations without modification rights.   |
-| **kyma-telemetry-edit** | `edit`, `admin` |                                                                       **Cluster-scoped:**<br/>• `logpipelines`<br/>• `metricpipelines`<br/>• `tracepipelines`<br/>• `telemetries`<br/>                                                                        | `create`, `delete`, `deletecollection`, `get`, `list`, `patch`, `update`, `watch` | Full CRUD access for platform engineers and DevOps teams managing telemetry infrastructure. Does **not** include direct Secret access (credentials managed separately). |
+| **kyma-telemetry-edit** | `edit`, `admin` |                                                                       **Cluster-scoped:**<br/>• `logpipelines`<br/>• `metricpipelines`<br/>• `tracepipelines`<br/>• `telemetries`*<br/>                                                                       | `create`, `delete`, `deletecollection`, `get`, `list`, `patch`, `update`, `watch` | Full CRUD access for platform engineers and DevOps teams managing telemetry infrastructure. Does **not** include direct Secret access (credentials managed separately). |
+
+**\*Note on Telemetry CR permissions:** The `telemetries` resource (from `operator.kyma-project.io` API group) has limited permissions - only `get`, `list`, `patch`, `update`, and `watch` are granted. The `create` and `delete` verbs are intentionally excluded because the Telemetry CR lifecycle is managed by the Kyma Lifecycle Manager. Any manual create/delete operations would be automatically reverted by the controller.
 
 **Note:** We do **not** create a separate `kyma-telemetry-admin` role because:
 - The traditional `admin` vs `edit` distinction (managing Roles/RoleBindings) does not apply to cluster-scoped resources
-- Both would have identical permissions on telemetry resources
 - We intentionally exclude Secret access for security. Separate RBAC policies must manage credentials.
 
 ### Binding Requirements
