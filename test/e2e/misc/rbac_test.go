@@ -16,6 +16,12 @@ import (
 func TestRBACRoles(t *testing.T) {
 	suite.SetupTest(t, suite.LabelTelemetry, suite.LabelMisc)
 
+	t.Run("view role", testViewRole)
+	t.Run("view role namespace-scoped", testViewRoleNamespaced)
+	t.Run("edit role", testEditRole)
+}
+
+func testViewRole(t *testing.T) {
 	// Verify kyma-telemetry-view ClusterRole exists
 	viewClusterRole := assert.NewResource(&rbacv1.ClusterRole{}, types.NamespacedName{Name: "kyma-telemetry-view"})
 	assert.ResourcesExist(t, viewClusterRole)
@@ -52,14 +58,16 @@ func TestRBACRoles(t *testing.T) {
 			ContainElement("watch"),
 		),
 	})))
+}
 
+func testViewRoleNamespaced(t *testing.T) {
 	// Verify kyma-telemetry-view Role exists in kyma-system namespace
 	viewNamespacedRole := assert.NewResource(&rbacv1.Role{}, types.NamespacedName{Name: "kyma-telemetry-view", Namespace: kitkyma.SystemNamespaceName})
 	assert.ResourcesExist(t, viewNamespacedRole)
 
 	var nsViewRole rbacv1.Role
 
-	err = suite.K8sClient.Get(suite.Ctx, types.NamespacedName{Name: "kyma-telemetry-view", Namespace: kitkyma.SystemNamespaceName}, &nsViewRole)
+	err := suite.K8sClient.Get(suite.Ctx, types.NamespacedName{Name: "kyma-telemetry-view", Namespace: kitkyma.SystemNamespaceName}, &nsViewRole)
 	Expect(err).NotTo(HaveOccurred())
 
 	// Verify namespace-scoped view role has ConfigMap permissions
@@ -77,14 +85,16 @@ func TestRBACRoles(t *testing.T) {
 			ContainElement("watch"),
 		),
 	})))
+}
 
+func testEditRole(t *testing.T) {
 	// Verify kyma-telemetry-edit ClusterRole exists
 	editClusterRole := assert.NewResource(&rbacv1.ClusterRole{}, types.NamespacedName{Name: "kyma-telemetry-edit"})
 	assert.ResourcesExist(t, editClusterRole)
 
 	var editRole rbacv1.ClusterRole
 
-	err = suite.K8sClient.Get(suite.Ctx, types.NamespacedName{Name: "kyma-telemetry-edit"}, &editRole)
+	err := suite.K8sClient.Get(suite.Ctx, types.NamespacedName{Name: "kyma-telemetry-edit"}, &editRole)
 	Expect(err).NotTo(HaveOccurred())
 
 	// Verify edit role has correct labels for aggregation to both edit and admin

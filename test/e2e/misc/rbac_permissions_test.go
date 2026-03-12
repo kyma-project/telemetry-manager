@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -38,16 +37,15 @@ func TestRBACPermissions(t *testing.T) {
 	}()
 
 	// Create test service accounts
-	createServiceAccount(testNS, "viewer-sa")
-	createServiceAccount(testNS, "editor-sa")
-	createServiceAccount(testNS, "admin-sa")
-	createServiceAccount(testNS, "telemetry-only-editor-sa")
+	Expect(kitk8s.CreateObjects(t,
+		kitk8sobjects.NewServiceAccount("viewer-sa", testNS).K8sObject(),
+		kitk8sobjects.NewServiceAccount("editor-sa", testNS).K8sObject(),
+		kitk8sobjects.NewServiceAccount("admin-sa", testNS).K8sObject(),
+		kitk8sobjects.NewServiceAccount("telemetry-only-editor-sa", testNS).K8sObject(),
+	)).To(Succeed())
 
-	// Create role bindings
-	setupViewerRoleBindings(testNS)
-	setupEditorRoleBindings(testNS)
-	setupAdminRoleBindings(testNS)
-	setupTelemetryOnlyEditorRoleBindings(testNS)
+	// Create all role bindings
+	setupAllRoleBindings(testNS)
 
 	// Wait for RBAC to propagate
 	Eventually(func(g Gomega) {
@@ -65,131 +63,60 @@ func TestRBACPermissions(t *testing.T) {
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
-func createServiceAccount(namespace, name string) {
-	sa := &corev1.ServiceAccount{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-		},
-	}
-	Expect(suite.K8sClient.Create(suite.Ctx, sa)).To(Succeed())
+func clusterRoleBindingName(persona, testNS string) string {
+	return fmt.Sprintf("test-rbac-%s-%s", persona, testNS)
 }
 
-func setupViewerRoleBindings(testNS string) {
-	// Bind view ClusterRole (which aggregates kyma-telemetry-view)
-	viewClusterBinding := &rbacv1.ClusterRoleBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: fmt.Sprintf("test-rbac-viewer-%s", testNS),
-		},
-		Subjects: []rbacv1.Subject{{
-			Kind:      "ServiceAccount",
-			Name:      "viewer-sa",
-			Namespace: testNS,
-		}},
-		RoleRef: rbacv1.RoleRef{
-			APIGroup: "rbac.authorization.k8s.io",
-			Kind:     "ClusterRole",
-			Name:     "view",
-		},
-	}
+func roleBindingName(persona, testNS string) string {
+	return fmt.Sprintf("test-rbac-%s-ns-%s", persona, testNS)
+}
+
+func setupAllRoleBindings(testNS string) {
+	// Viewer bindings
+	viewClusterBinding := kitk8sobjects.NewClusterRoleBinding(
+		clusterRoleBindingName("viewer", testNS),
+		kitk8sobjects.WithClusterRoleRef("view"),
+		kitk8sobjects.WithServiceAccountSubject("viewer-sa", testNS),
+	).K8sObject()
+	viewNSBinding := kitk8sobjects.NewRoleBinding(
+		roleBindingName("viewer", testNS),
+		kitkyma.SystemNamespaceName,
+		kitk8sobjects.WithClusterRoleAsRoleRef("view"),
+		kitk8sobjects.WithServiceAccountSubjectForRole("viewer-sa", testNS),
+	).K8sObject()
+
+	// Editor bindings
+	editClusterBinding := kitk8sobjects.NewClusterRoleBinding(
+		clusterRoleBindingName("editor", testNS),
+		kitk8sobjects.WithClusterRoleRef("edit"),
+		kitk8sobjects.WithServiceAccountSubject("editor-sa", testNS),
+	).K8sObject()
+	editNSBinding := kitk8sobjects.NewRoleBinding(
+		roleBindingName("editor", testNS),
+		kitkyma.SystemNamespaceName,
+		kitk8sobjects.WithClusterRoleAsRoleRef("edit"),
+		kitk8sobjects.WithServiceAccountSubjectForRole("editor-sa", testNS),
+	).K8sObject()
+
+	// Admin bindings
+	adminClusterBinding := kitk8sobjects.NewClusterRoleBinding(
+		clusterRoleBindingName("admin", testNS),
+		kitk8sobjects.WithClusterRoleRef("admin"),
+		kitk8sobjects.WithServiceAccountSubject("admin-sa", testNS),
+	).K8sObject()
+
+	// Telemetry-only editor bindings (ONLY kyma-telemetry-edit, without base edit role)
+	telemetryOnlyBinding := kitk8sobjects.NewClusterRoleBinding(
+		clusterRoleBindingName("telemetry-only", testNS),
+		kitk8sobjects.WithClusterRoleRef("kyma-telemetry-edit"),
+		kitk8sobjects.WithServiceAccountSubject("telemetry-only-editor-sa", testNS),
+	).K8sObject()
+
 	Expect(suite.K8sClient.Create(suite.Ctx, viewClusterBinding)).To(Succeed())
-
-	// Bind view role for namespace-scoped resources
-	viewNSBinding := &rbacv1.RoleBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("test-rbac-viewer-ns-%s", testNS),
-			Namespace: kitkyma.SystemNamespaceName,
-		},
-		Subjects: []rbacv1.Subject{{
-			Kind:      "ServiceAccount",
-			Name:      "viewer-sa",
-			Namespace: testNS,
-		}},
-		RoleRef: rbacv1.RoleRef{
-			APIGroup: "rbac.authorization.k8s.io",
-			Kind:     "ClusterRole",
-			Name:     "view",
-		},
-	}
 	Expect(suite.K8sClient.Create(suite.Ctx, viewNSBinding)).To(Succeed())
-}
-
-func setupEditorRoleBindings(testNS string) {
-	// Bind edit ClusterRole (which aggregates kyma-telemetry-edit)
-	editClusterBinding := &rbacv1.ClusterRoleBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: fmt.Sprintf("test-rbac-editor-%s", testNS),
-		},
-		Subjects: []rbacv1.Subject{{
-			Kind:      "ServiceAccount",
-			Name:      "editor-sa",
-			Namespace: testNS,
-		}},
-		RoleRef: rbacv1.RoleRef{
-			APIGroup: "rbac.authorization.k8s.io",
-			Kind:     "ClusterRole",
-			Name:     "edit",
-		},
-	}
 	Expect(suite.K8sClient.Create(suite.Ctx, editClusterBinding)).To(Succeed())
-
-	// Bind edit role for namespace-scoped resources
-	editNSBinding := &rbacv1.RoleBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("test-rbac-editor-ns-%s", testNS),
-			Namespace: kitkyma.SystemNamespaceName,
-		},
-		Subjects: []rbacv1.Subject{{
-			Kind:      "ServiceAccount",
-			Name:      "editor-sa",
-			Namespace: testNS,
-		}},
-		RoleRef: rbacv1.RoleRef{
-			APIGroup: "rbac.authorization.k8s.io",
-			Kind:     "ClusterRole",
-			Name:     "edit",
-		},
-	}
 	Expect(suite.K8sClient.Create(suite.Ctx, editNSBinding)).To(Succeed())
-}
-
-func setupAdminRoleBindings(testNS string) {
-	adminClusterBinding := &rbacv1.ClusterRoleBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: fmt.Sprintf("test-rbac-admin-%s", testNS),
-		},
-		Subjects: []rbacv1.Subject{{
-			Kind:      "ServiceAccount",
-			Name:      "admin-sa",
-			Namespace: testNS,
-		}},
-		RoleRef: rbacv1.RoleRef{
-			APIGroup: "rbac.authorization.k8s.io",
-			Kind:     "ClusterRole",
-			Name:     "admin",
-		},
-	}
 	Expect(suite.K8sClient.Create(suite.Ctx, adminClusterBinding)).To(Succeed())
-}
-
-func setupTelemetryOnlyEditorRoleBindings(testNS string) {
-	// Bind ONLY kyma-telemetry-edit (without base edit role)
-	// This test verifies kyma-telemetry-edit doesn't grant Secret access
-	telemetryOnlyBinding := &rbacv1.ClusterRoleBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: fmt.Sprintf("test-rbac-telemetry-only-%s", testNS),
-		},
-		Subjects: []rbacv1.Subject{{
-			Kind:      "ServiceAccount",
-			Name:      "telemetry-only-editor-sa",
-			Namespace: testNS,
-		}},
-		RoleRef: rbacv1.RoleRef{
-			APIGroup: "rbac.authorization.k8s.io",
-			Kind:     "ClusterRole",
-			Name:     "kyma-telemetry-edit",
-		},
-	}
 	Expect(suite.K8sClient.Create(suite.Ctx, telemetryOnlyBinding)).To(Succeed())
 }
 
@@ -198,73 +125,52 @@ func testViewerPermissions(g Gomega, testNS string) {
 
 	for _, pipelineType := range pipelineTypes {
 		// Should be able to view pipelines
-		checkCanI(g, user, "get", pipelineType, "", true, fmt.Sprintf("Viewer can get %s", pipelineType))
-		checkCanI(g, user, "list", pipelineType, "", true, fmt.Sprintf("Viewer can list %s", pipelineType))
-		checkCanI(g, user, "watch", pipelineType, "", true, fmt.Sprintf("Viewer can watch %s", pipelineType))
+		checkReadPermissions(g, user, pipelineType, "", "Viewer")
 
 		// Should NOT be able to create/update/delete pipelines
-		checkCanI(g, user, "create", pipelineType, "", false, fmt.Sprintf("Viewer cannot create %s", pipelineType))
-		checkCanI(g, user, "update", pipelineType, "", false, fmt.Sprintf("Viewer cannot update %s", pipelineType))
-		checkCanI(g, user, "delete", pipelineType, "", false, fmt.Sprintf("Viewer cannot delete %s", pipelineType))
+		checkNoWritePermissions(g, user, pipelineType, "", "Viewer")
 
 		// Finalizers - viewer cannot modify (finalizers part of metadata, needs update permission)
-		finalizerResource := pipelineType + "/finalizers"
-		checkCanI(g, user, "update", finalizerResource, "", false, fmt.Sprintf("Viewer cannot update %s finalizers", pipelineType))
+		checkFinalizerPermissions(g, user, pipelineType, "Viewer", false)
 	}
 
 	// Telemetry CR permissions
-	checkCanI(g, user, "get", "telemetries", "", true, "Viewer can get Telemetries")
-	checkCanI(g, user, "list", "telemetries", "", true, "Viewer can list Telemetries")
+	checkReadPermissions(g, user, "telemetries", "", "Viewer")
 
 	// Should be able to view ConfigMaps
-	checkCanI(g, user, "get", "configmaps/telemetry-metricpipelines", kitkyma.SystemNamespaceName, true, "Viewer can get ConfigMaps")
-	checkCanI(g, user, "list", "configmaps/telemetry-metricpipelines", kitkyma.SystemNamespaceName, true, "Viewer can list ConfigMaps")
-	checkCanI(g, user, "get", "configmaps/telemetry-logpipelines", kitkyma.SystemNamespaceName, true, "Viewer can get ConfigMaps")
-	checkCanI(g, user, "list", "configmaps/telemetry-logpipelines", kitkyma.SystemNamespaceName, true, "Viewer can list ConfigMaps")
-	checkCanI(g, user, "get", "configmaps/telemetry-tracepipelines", kitkyma.SystemNamespaceName, true, "Viewer can get ConfigMaps")
-	checkCanI(g, user, "list", "configmaps/telemetry-tracepipelines", kitkyma.SystemNamespaceName, true, "Viewer can list ConfigMaps")
+	checkCanI(g, user, "get", "configmaps/telemetry-metricpipelines", kitkyma.SystemNamespaceName, "Viewer", true)
+	checkCanI(g, user, "list", "configmaps/telemetry-metricpipelines", kitkyma.SystemNamespaceName, "Viewer", true)
+	checkCanI(g, user, "get", "configmaps/telemetry-logpipelines", kitkyma.SystemNamespaceName, "Viewer", true)
+	checkCanI(g, user, "list", "configmaps/telemetry-logpipelines", kitkyma.SystemNamespaceName, "Viewer", true)
+	checkCanI(g, user, "get", "configmaps/telemetry-tracepipelines", kitkyma.SystemNamespaceName, "Viewer", true)
+	checkCanI(g, user, "list", "configmaps/telemetry-tracepipelines", kitkyma.SystemNamespaceName, "Viewer", true)
 
 	// Should NOT be able to view Secrets
-	checkCanI(g, user, "get", "secrets", kitkyma.SystemNamespaceName, false, "Viewer cannot get Secrets")
-	checkCanI(g, user, "list", "secrets", kitkyma.SystemNamespaceName, false, "Viewer cannot list Secrets")
-	checkCanI(g, user, "create", "secrets", kitkyma.SystemNamespaceName, false, "Viewer cannot create Secrets")
+	checkNoSecretAccess(g, user, "Viewer")
 }
 
 func testEditorPermissions(g Gomega, testNS string) {
 	user := fmt.Sprintf("system:serviceaccount:%s:editor-sa", testNS)
 
 	for _, pipelineType := range pipelineTypes {
-		// Should be able to view pipelines
-		checkCanI(g, user, "get", pipelineType, "", true, fmt.Sprintf("Editor can get %s", pipelineType))
-		checkCanI(g, user, "list", pipelineType, "", true, fmt.Sprintf("Editor can list %s", pipelineType))
-
-		// Should be able to create/update/delete pipelines
-		checkCanI(g, user, "create", pipelineType, "", true, fmt.Sprintf("Editor can create %s", pipelineType))
-		checkCanI(g, user, "update", pipelineType, "", true, fmt.Sprintf("Editor can update %s", pipelineType))
-		checkCanI(g, user, "patch", pipelineType, "", true, fmt.Sprintf("Editor can patch %s", pipelineType))
-		checkCanI(g, user, "delete", pipelineType, "", true, fmt.Sprintf("Editor can delete %s", pipelineType))
+		// Should have full CRUD permissions
+		checkFullCRUDPermissions(g, user, pipelineType, "", "Editor")
 
 		// Finalizers - editor CAN update finalizers (finalizers part of metadata, granted by update permission on resource)
-		finalizerResource := pipelineType + "/finalizers"
-		checkCanI(g, user, "update", finalizerResource, "", true, fmt.Sprintf("Editor can update %s finalizers", pipelineType))
+		checkFinalizerPermissions(g, user, pipelineType, "Editor", true)
 	}
 
 	// Telemetry CR (operator.kyma-project.io) - can update/patch but NOT create/delete
 	// (Lifecycle Manager owns create/delete operations)
-	checkCanI(g, user, "get", "telemetries", "", true, "Editor can get Telemetries")
-	checkCanI(g, user, "patch", "telemetries", "", true, "Editor can patch Telemetries")
-	checkCanI(g, user, "update", "telemetries", "", true, "Editor can update Telemetries")
-	checkCanI(g, user, "create", "telemetries", "", false, "Editor cannot create Telemetries (Lifecycle Manager-owned)")
-	checkCanI(g, user, "delete", "telemetries", "", false, "Editor cannot delete Telemetries (Lifecycle Manager-owned)")
+	checkCanI(g, user, "get", "telemetries", "", "Editor", true)
+	checkCanI(g, user, "patch", "telemetries", "", "Editor", true)
+	checkCanI(g, user, "update", "telemetries", "", "Editor", true)
+	checkCanI(g, user, "create", "telemetries", "", "Editor", false)
+	checkCanI(g, user, "delete", "telemetries", "", "Editor", false)
 
-	// Editor CAN manage Secrets (from base K8s edit role, NOT from kyma-telemetry-edit)
-	checkCanI(g, user, "get", "secrets", kitkyma.SystemNamespaceName, true, "Editor can get Secrets (from base edit role)")
-	checkCanI(g, user, "create", "secrets", kitkyma.SystemNamespaceName, true, "Editor can create Secrets (from base edit role)")
-	checkCanI(g, user, "delete", "secrets", kitkyma.SystemNamespaceName, true, "Editor can delete Secrets (from base edit role)")
-
-	// Should not be able to delete or update ConfigMaps in telemetry namespace.
-	checkCanI(g, user, "delete", "configmaps", kitkyma.SystemNamespaceName, true, "Editor can delete ConfigMaps (from base edit role)")
-	checkCanI(g, user, "update", "configmaps", kitkyma.SystemNamespaceName, true, "Editor can update ConfigMaps (from base edit role)")
+	// Should be able to delete or update ConfigMaps in telemetry namespace (from base edit role)
+	checkCanI(g, user, "delete", "configmaps", kitkyma.SystemNamespaceName, "Editor", true)
+	checkCanI(g, user, "update", "configmaps", kitkyma.SystemNamespaceName, "Editor", true)
 }
 
 func testAdminPermissions(g Gomega, testNS string) {
@@ -272,19 +178,18 @@ func testAdminPermissions(g Gomega, testNS string) {
 
 	for _, pipelineType := range pipelineTypes {
 		// Should have all editor permissions for pipelines
-		checkCanI(g, user, "get", pipelineType, "", true, fmt.Sprintf("Admin can get %s", pipelineType))
-		checkCanI(g, user, "create", pipelineType, "", true, fmt.Sprintf("Admin can create %s", pipelineType))
-		checkCanI(g, user, "delete", pipelineType, "", true, fmt.Sprintf("Admin can delete %s", pipelineType))
+		checkCanI(g, user, "get", pipelineType, "", "Admin", true)
+		checkCanI(g, user, "create", pipelineType, "", "Admin", true)
+		checkCanI(g, user, "delete", pipelineType, "", "Admin", true)
 
 		// Finalizers - admin CAN update finalizers
-		finalizerResource := pipelineType + "/finalizers"
-		checkCanI(g, user, "update", finalizerResource, "", true, fmt.Sprintf("Admin can update %s finalizers", pipelineType))
+		checkFinalizerPermissions(g, user, pipelineType, "Admin", true)
 	}
 
 	// Telemetry CR - same restrictions as editor (Lifecycle Manager-owned)
-	checkCanI(g, user, "patch", "telemetries", "", true, "Admin can patch Telemetries")
-	checkCanI(g, user, "create", "telemetries", "", false, "Admin cannot create Telemetries (Lifecycle Manager-owned)")
-	checkCanI(g, user, "delete", "telemetries", "", false, "Admin cannot delete Telemetries (Lifecycle Manager-owned)")
+	checkCanI(g, user, "patch", "telemetries", "", "Admin", true)
+	checkCanI(g, user, "create", "telemetries", "", "Admin", false)
+	checkCanI(g, user, "delete", "telemetries", "", "Admin", false)
 }
 
 func testTelemetryOnlyEditorPermissions(g Gomega, testNS string) {
@@ -292,32 +197,25 @@ func testTelemetryOnlyEditorPermissions(g Gomega, testNS string) {
 
 	for _, pipelineType := range pipelineTypes {
 		// Should be able to manage telemetry pipelines (from kyma-telemetry-edit)
-		checkCanI(g, user, "get", pipelineType, "", true, fmt.Sprintf("Telemetry-only editor can get %s", pipelineType))
-		checkCanI(g, user, "create", pipelineType, "", true, fmt.Sprintf("Telemetry-only editor can create %s", pipelineType))
-		checkCanI(g, user, "update", pipelineType, "", true, fmt.Sprintf("Telemetry-only editor can update %s", pipelineType))
-		checkCanI(g, user, "delete", pipelineType, "", true, fmt.Sprintf("Telemetry-only editor can delete %s", pipelineType))
+		checkFullCRUDPermissions(g, user, pipelineType, "", "Telemetry-only editor")
 
 		// Finalizers - CAN update finalizers (finalizers part of metadata, granted by update permission)
+		checkFinalizerPermissions(g, user, pipelineType, "Telemetry-only editor", true)
 		finalizerResource := pipelineType + "/finalizers"
-		checkCanI(g, user, "update", finalizerResource, "", true, fmt.Sprintf("Telemetry-only editor can update %s finalizers", pipelineType))
-		checkCanI(g, user, "delete", finalizerResource, "", true, fmt.Sprintf("Telemetry-only editor can delete %s finalizers", pipelineType))
+		checkCanI(g, user, "delete", finalizerResource, "", "Telemetry-only editor", true)
 	}
 
 	// Telemetry CR - can patch/update but NOT create/delete (Lifecycle Manager-owned)
-	checkCanI(g, user, "get", "telemetries", "", true, "Telemetry-only editor can get Telemetries")
-	checkCanI(g, user, "patch", "telemetries", "", true, "Telemetry-only editor can patch Telemetries")
-	checkCanI(g, user, "create", "telemetries", "", false, "Telemetry-only editor CANNOT create Telemetries")
-	checkCanI(g, user, "delete", "telemetries", "", false, "Telemetry-only editor CANNOT delete Telemetries")
+	checkCanI(g, user, "get", "telemetries", "", "Telemetry-only editor", true)
+	checkCanI(g, user, "patch", "telemetries", "", "Telemetry-only editor", true)
+	checkCanI(g, user, "create", "telemetries", "", "Telemetry-only editor", false)
+	checkCanI(g, user, "delete", "telemetries", "", "Telemetry-only editor", false)
 
 	// Should NOT have Secret access (kyma-telemetry-edit doesn't grant it)
-	checkCanI(g, user, "get", "secrets", kitkyma.SystemNamespaceName, false, "Telemetry-only editor CANNOT get Secrets")
-	checkCanI(g, user, "list", "secrets", kitkyma.SystemNamespaceName, false, "Telemetry-only editor CANNOT list Secrets")
-	checkCanI(g, user, "create", "secrets", kitkyma.SystemNamespaceName, false, "Telemetry-only editor CANNOT create Secrets")
-	checkCanI(g, user, "update", "secrets", kitkyma.SystemNamespaceName, false, "Telemetry-only editor CANNOT update Secrets")
-	checkCanI(g, user, "delete", "secrets", kitkyma.SystemNamespaceName, false, "Telemetry-only editor CANNOT delete Secrets")
+	checkNoSecretAccess(g, user, "Telemetry-only editor")
 }
 
-func checkCanI(g Gomega, user, verb, resource, namespace string, expected bool, description string) {
+func checkCanI(g Gomega, user, verb, resource, namespace, persona string, expected bool) {
 	args := []string{"auth", "can-i", verb, resource, "--as", user}
 	if namespace != "" {
 		args = append(args, "-n", namespace)
@@ -334,38 +232,48 @@ func checkCanI(g Gomega, user, verb, resource, namespace string, expected bool, 
 	// Build detailed error message
 	commandStr := fmt.Sprintf("kubectl %s", strings.Join(args, " "))
 
-	// Only fail if we couldn't parse yes/no from the output
-	if result == "" {
-		g.Expect(err).NotTo(HaveOccurred(),
-			"kubectl auth can-i failed to return yes/no\nTest: %s\nCommand: %s\nOutput: %s",
-			description, commandStr, output)
-
-		return
-	}
-
-	expectedStr := "no"
+	// Build description based on expected result
+	action := verb
 	if expected {
-		expectedStr = "yes"
-	}
+		description := fmt.Sprintf("%s can %s %s", persona, action, resource)
 
-	if expected {
+		// Only fail if we couldn't parse yes/no from the output
+		if result == "" {
+			g.Expect(err).NotTo(HaveOccurred(),
+				"kubectl auth can-i failed to return yes/no\nTest: %s\nCommand: %s\nOutput: %s",
+				description, commandStr, output)
+
+			return
+		}
+
 		g.Expect(result).To(Equal("yes"),
-			"Permission check failed\nTest: %s\nCommand: %s\nExpected: %s\nActual: %s",
-			description, commandStr, expectedStr, result)
+			"Permission check failed\nTest: %s\nCommand: %s\nExpected: yes\nActual: %s",
+			description, commandStr, result)
 	} else {
+		description := fmt.Sprintf("%s cannot %s %s", persona, action, resource)
+
+		// Only fail if we couldn't parse yes/no from the output
+		if result == "" {
+			g.Expect(err).NotTo(HaveOccurred(),
+				"kubectl auth can-i failed to return yes/no\nTest: %s\nCommand: %s\nOutput: %s",
+				description, commandStr, output)
+
+			return
+		}
+
 		g.Expect(result).To(Equal("no"),
-			"Permission check failed\nTest: %s\nCommand: %s\nExpected: %s\nActual: %s",
-			description, commandStr, expectedStr, result)
+			"Permission check failed\nTest: %s\nCommand: %s\nExpected: no\nActual: %s",
+			description, commandStr, result)
 	}
 }
 
 func cleanupRoleBindings(t *testing.T, testNS string) {
 	// Cleanup ClusterRoleBindings
 	bindings := []string{
-		fmt.Sprintf("test-rbac-viewer-%s", testNS),
-		fmt.Sprintf("test-rbac-editor-%s", testNS),
-		fmt.Sprintf("test-rbac-admin-%s", testNS),
-		fmt.Sprintf("test-rbac-telemetry-only-%s", testNS),
+		clusterRoleBindingName("viewer", testNS),
+		clusterRoleBindingName("editor", testNS),
+		clusterRoleBindingName("admin", testNS),
+		clusterRoleBindingName("telemetry-only", testNS),
 	}
 
 	for _, name := range bindings {
@@ -381,8 +289,8 @@ func cleanupRoleBindings(t *testing.T, testNS string) {
 
 	// Cleanup RoleBindings
 	nsBindings := []string{
-		fmt.Sprintf("test-rbac-viewer-ns-%s", testNS),
-		fmt.Sprintf("test-rbac-editor-ns-%s", testNS),
+		roleBindingName("viewer", testNS),
+		roleBindingName("editor", testNS),
 	}
 
 	for _, name := range nsBindings {
@@ -398,6 +306,41 @@ func cleanupRoleBindings(t *testing.T, testNS string) {
 			t.Logf("Failed to delete RoleBinding %s: %v", name, err)
 		}
 	}
+}
+
+// Common permission check patterns
+func checkReadPermissions(g Gomega, user, resource, namespace, persona string) {
+	checkCanI(g, user, "get", resource, namespace, persona, true)
+	checkCanI(g, user, "list", resource, namespace, persona, true)
+	checkCanI(g, user, "watch", resource, namespace, persona, true)
+}
+
+func checkNoWritePermissions(g Gomega, user, resource, namespace, persona string) {
+	checkCanI(g, user, "create", resource, namespace, persona, false)
+	checkCanI(g, user, "update", resource, namespace, persona, false)
+	checkCanI(g, user, "delete", resource, namespace, persona, false)
+}
+
+func checkFullCRUDPermissions(g Gomega, user, resource, namespace, persona string) {
+	checkCanI(g, user, "get", resource, namespace, persona, true)
+	checkCanI(g, user, "list", resource, namespace, persona, true)
+	checkCanI(g, user, "create", resource, namespace, persona, true)
+	checkCanI(g, user, "update", resource, namespace, persona, true)
+	checkCanI(g, user, "patch", resource, namespace, persona, true)
+	checkCanI(g, user, "delete", resource, namespace, persona, true)
+}
+
+func checkFinalizerPermissions(g Gomega, user, pipelineType, persona string, canUpdate bool) {
+	finalizerResource := pipelineType + "/finalizers"
+	checkCanI(g, user, "update", finalizerResource, "", persona, canUpdate)
+}
+
+func checkNoSecretAccess(g Gomega, user, persona string) {
+	checkCanI(g, user, "get", "secrets", kitkyma.SystemNamespaceName, persona, false)
+	checkCanI(g, user, "list", "secrets", kitkyma.SystemNamespaceName, persona, false)
+	checkCanI(g, user, "create", "secrets", kitkyma.SystemNamespaceName, persona, false)
+	checkCanI(g, user, "update", "secrets", kitkyma.SystemNamespaceName, persona, false)
+	checkCanI(g, user, "delete", "secrets", kitkyma.SystemNamespaceName, persona, false)
 }
 
 // parseKubectlAuthCanIOutput extracts the yes/no result from kubectl auth can-i output,
