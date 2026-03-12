@@ -134,7 +134,7 @@ func TestServiceEnrichment(t *testing.T) {
 
 	assert.BackendDataEventuallyMatches(t, backend,
 		HaveFlatMetrics(
-			ContainElement(HaveResourceAttributes(HaveKeyWithValue("service.name", names.MetricGateway))),
+			ContainElement(HaveResourceAttributes(HaveKeyWithValue("service.name", names.OTLPGateway))),
 		), assert.WithOptionalDescription("Should have metrics with service.name set to telemetry-metric-gateway"),
 	)
 

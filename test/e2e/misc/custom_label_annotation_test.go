@@ -134,7 +134,7 @@ func TestLabelAnnotation(t *testing.T) {
 				assert.DeploymentHasAnnotation(t, kitkyma.MetricGatewayName, annotation)
 
 				var gwSelector = client.ListOptions{
-					LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": "telemetry-metric-gateway"}),
+					LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": "telemetry-otlp-gateway"}),
 					Namespace:     kitkyma.SystemNamespaceName,
 				}
 				assert.PodsHaveAnnotation(t, gwSelector, annotation)
