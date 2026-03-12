@@ -293,8 +293,8 @@ func (aad *AgentApplierDeleter) makeDaemonSet(namespace string, checksum string)
 	resourceAnnotations := make(map[string]string)
 
 	// Copy global additional annotations
-	maps.Copy(resourceAnnotations, aad.globals.AdditionalAnnotations())
-	maps.Copy(podAnnotations, aad.globals.AdditionalAnnotations())
+	maps.Copy(resourceAnnotations, aad.globals.AdditionalWorkloadAnnotations())
+	maps.Copy(podAnnotations, aad.globals.AdditionalWorkloadAnnotations())
 	maps.Copy(podAnnotations, annotations)
 
 	defaultPodLabels := makeLabels()
@@ -304,8 +304,8 @@ func (aad *AgentApplierDeleter) makeDaemonSet(namespace string, checksum string)
 	resourceLabels := make(map[string]string)
 	podLabels := make(map[string]string)
 
-	maps.Copy(resourceLabels, aad.globals.AdditionalLabels())
-	maps.Copy(podLabels, aad.globals.AdditionalLabels())
+	maps.Copy(resourceLabels, aad.globals.AdditionalWorkloadLabels())
+	maps.Copy(podLabels, aad.globals.AdditionalWorkloadLabels())
 	// Pod labels need default labels explicitly since the labeler only sets top-level object labels
 	maps.Copy(podLabels, defaultPodLabels)
 

@@ -203,25 +203,26 @@ func (ad *ApplierDeleter) makeConfigMap(prometheusConfigFileName, prometheusConf
 func (ad *ApplierDeleter) makeDeployment(configChecksum, configPath, configFile string) *appsv1.Deployment {
 	var replicas int32 = 1
 
-	// Resource labels: only additional labels from globals; default labels are applied by the labeler
-	resourceLabels := make(map[string]string)
-	maps.Copy(resourceLabels, ad.Config.AdditionalLabels())
-
-	// Pod labels: need default labels explicitly since the labeler only sets top-level object labels
-	defaultLabels := commonresources.DefaultLabels(names.SelfMonitor, commonresources.LabelValueK8sComponentMonitor)
-	podLabels := make(map[string]string)
 	selectorLabels := commonresources.SelectorLabels(names.SelfMonitor)
 
-	maps.Copy(podLabels, ad.Config.AdditionalLabels())
+	// Resource labels: only additional labels from globals; default labels are applied by the labeler
+	resourceLabels := make(map[string]string)
+	maps.Copy(resourceLabels, ad.Config.AdditionalWorkloadLabels())
+
+	// Pod labels: need default labels explicitly since the labeler only sets top-level object labels
+	podLabels := make(map[string]string)
+	maps.Copy(podLabels, commonresources.DefaultLabels(names.SelfMonitor, commonresources.LabelValueK8sComponentMonitor)
+	maps.Copy(podLabels, ad.Config.AdditionalWorkloadLabels())
 	podLabels[commonresources.LabelKeyIstioInject] = commonresources.LabelValueFalse
 	podLabels[commonresources.LabelKeyTelemetryMetricsScraping] = commonresources.LabelValueTelemetryMetricsScraping
-	maps.Copy(podLabels, defaultLabels)
 
-	podAnnotations := make(map[string]string)
+	// Resource annotations: only additional annotations from globals
 	resourceAnnotations := make(map[string]string)
-	// Copy global additional annotations
-	maps.Copy(resourceAnnotations, ad.Config.AdditionalAnnotations())
-	maps.Copy(podAnnotations, ad.Config.AdditionalAnnotations())
+	maps.Copy(resourceAnnotations, ad.Config.AdditionalWorkloadAnnotations())
+
+	// Pod annotations: additional annotations plus config checksum
+	podAnnotations := make(map[string]string)
+	maps.Copy(podAnnotations, ad.Config.AdditionalWorkloadAnnotations())
 	podAnnotations[commonresources.AnnotationKeyChecksumConfig] = configChecksum
 
 	podSpec := ad.makePodSpec(ad.Config.Image, configPath, configFile)

@@ -51,7 +51,7 @@ type AgentApplierDeleter struct {
 	globals config.Global
 
 	baseName            string
-	extraPodLabel       map[string]string
+	extraPodLabels      map[string]string
 	makeAnnotationsFunc func(configChecksum string, opts AgentApplyOptions) map[string]string
 	image               string
 	rbac                rbac
@@ -93,7 +93,7 @@ func NewLogAgentApplierDeleter(globals config.Global, collectorImage, priorityCl
 	return &AgentApplierDeleter{
 		globals:             globals,
 		baseName:            names.LogAgent,
-		extraPodLabel:       extraLabels,
+		extraPodLabels:      extraLabels,
 		makeAnnotationsFunc: makeLogAgentAnnotations,
 		image:               collectorImage,
 		rbac:                makeLogAgentRBAC(globals.TargetNamespace()),
@@ -123,7 +123,7 @@ func NewMetricAgentApplierDeleter(globals config.Global, image, priorityClassNam
 	return &AgentApplierDeleter{
 		globals:             globals,
 		baseName:            names.MetricAgent,
-		extraPodLabel:       extraLabels,
+		extraPodLabels:      extraLabels,
 		makeAnnotationsFunc: makeMetricAgentAnnotations,
 		image:               image,
 		rbac:                makeMetricAgentRBAC(globals.TargetNamespace()),
@@ -239,7 +239,7 @@ func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string, opts A
 		&aad.globals,
 		aad.baseName,
 		commonresources.LabelValueK8sComponentAgent,
-		aad.extraPodLabel,
+		aad.extraPodLabels,
 		annotations,
 	)
 

@@ -23,27 +23,25 @@ type WorkloadMetadata struct {
 // MakeWorkloadMetadata creates metadata for workloads (Deployment or DaemonSet).
 // Resource labels only contain additional labels from globals; default labels are applied by the Labeler.
 // Pod labels need default labels explicitly since the Labeler only sets top-level object labels.
-func MakeWorkloadMetadata(globals *config.Global, baseName string, componentType string, extraPodLabels map[string]string, annotations map[string]string) WorkloadMetadata {
-	defaultLabels := commonresources.DefaultLabels(baseName, componentType)
-
+func MakeWorkloadMetadata(globals *config.Global, baseName string, componentType string, extraPodLabels map[string]string, extraPodAnnotations map[string]string) WorkloadMetadata {
 	// Resource labels: only additional labels from globals; default labels are applied by the Labeler
 	resourceLabels := make(map[string]string)
-	maps.Copy(resourceLabels, globals.AdditionalLabels())
+	maps.Copy(resourceLabels, globals.AdditionalWorkloadLabels())
 
-	// Pod labels: need default labels explicitly since the Labeler only sets top-level object labels
 	podLabels := make(map[string]string)
-	maps.Copy(podLabels, globals.AdditionalLabels())
-	maps.Copy(podLabels, defaultLabels)
+	maps.Copy(podLabels, globals.AdditionalWorkloadLabels())
+	// Pod labels: need default labels explicitly since the Labeler only sets top-level object labels
+	maps.Copy(podLabels, commonresources.DefaultLabels(baseName, componentType))
 	maps.Copy(podLabels, extraPodLabels)
 
 	// Resource annotations: only additional annotations from globals
 	resourceAnnotations := make(map[string]string)
-	maps.Copy(resourceAnnotations, globals.AdditionalAnnotations())
+	maps.Copy(resourceAnnotations, globals.AdditionalWorkloadAnnotations())
 
 	// Pod annotations: additional annotations from globals + workload-specific annotations
 	podAnnotations := make(map[string]string)
-	maps.Copy(podAnnotations, globals.AdditionalAnnotations())
-	maps.Copy(podAnnotations, annotations)
+	maps.Copy(podAnnotations, globals.AdditionalWorkloadAnnotations())
+	maps.Copy(podAnnotations, extraPodAnnotations)
 
 	return WorkloadMetadata{
 		ResourceLabels:      resourceLabels,
