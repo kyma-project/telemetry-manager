@@ -185,7 +185,7 @@ func makeMetricsService(name types.NamespacedName, componentType string) *corev1
 	}
 }
 
-func makeVPA(name types.NamespacedName, componentType string, targetRefKind string) *autoscalingvpav1.VerticalPodAutoscaler {
+func makeVPA(name types.NamespacedName, componentType string, targetRefKind string, minAllowedMemory, maxAllowedMemory resource.Quantity) *autoscalingvpav1.VerticalPodAutoscaler {
 	updateMode := autoscalingvpav1.UpdateModeInPlaceOrRecreate
 	controlledValues := autoscalingvpav1.ContainerControlledValuesRequestsAndLimits
 
@@ -212,10 +212,10 @@ func makeVPA(name types.NamespacedName, componentType string, targetRefKind stri
 							corev1.ResourceMemory,
 						},
 						MinAllowed: corev1.ResourceList{
-							corev1.ResourceMemory: resource.MustParse("128Mi"),
+							corev1.ResourceMemory: minAllowedMemory,
 						},
 						MaxAllowed: corev1.ResourceList{
-							corev1.ResourceMemory: resource.MustParse("1Gi"),
+							corev1.ResourceMemory: maxAllowedMemory,
 						},
 						ControlledValues: &controlledValues,
 					},

@@ -38,13 +38,9 @@ const (
 )
 
 var (
-	metricAgentCPURequest    = resource.MustParse("15m")
-	metricAgentMemoryRequest = resource.MustParse("64Mi")
-	metricAgentMemoryLimit   = resource.MustParse("1200Mi")
-
-	logAgentCPURequest    = resource.MustParse("15m")
-	logAgentMemoryRequest = resource.MustParse("64Mi")
-	logAgentMemoryLimit   = resource.MustParse("1200Mi")
+	agentCPURequest    = resource.MustParse("15m")
+	agentMemoryRequest = resource.MustParse("64Mi")
+	agentMemoryLimit   = resource.MustParse("1200Mi")
 )
 
 type AgentApplierDeleter struct {
@@ -87,9 +83,9 @@ func NewLogAgentApplierDeleter(globals config.Global, collectorImage, priorityCl
 	}
 
 	collectorResources := commonresources.MakeResourceRequirements(
-		logAgentMemoryLimit,
-		logAgentMemoryRequest,
-		logAgentCPURequest,
+		agentMemoryLimit,
+		agentMemoryRequest,
+		agentCPURequest,
 	)
 
 	return &AgentApplierDeleter{
@@ -138,9 +134,9 @@ func NewMetricAgentApplierDeleter(globals config.Global, image, priorityClassNam
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentNodeName, fieldPathNodeName),
 			commonresources.WithFIPSGoDebugEnvVar(globals.OperateInFIPSMode()),
 			commonresources.WithResources(commonresources.MakeResourceRequirements(
-				metricAgentMemoryLimit,
-				metricAgentMemoryRequest,
-				metricAgentCPURequest,
+				agentMemoryLimit,
+				agentMemoryRequest,
+				agentCPURequest,
 			)),
 			commonresources.WithVolumeMounts([]corev1.VolumeMount{makeIstioCertVolumeMount()}),
 		},
@@ -187,7 +183,7 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 	// Create/update/delete VPA CR only if VPA CRD exists in cluster
 	if opts.VpaCRDExists {
 		if opts.VpaEnabled {
-			vpa := makeVPA(name, commonresources.LabelValueK8sComponentAgent, "DaemonSet")
+			vpa := makeVPA(name, commonresources.LabelValueK8sComponentAgent, "DaemonSet", agentMemoryRequest, agentMemoryLimit)
 			if err := k8sutils.CreateOrUpdateVPA(ctx, c, vpa); err != nil {
 				return fmt.Errorf("failed to create VPA: %w", err)
 			}
