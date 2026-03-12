@@ -12,10 +12,9 @@ const (
 	TraceGateway  = telemetryPrefix + "trace-gateway"
 	OTLPGateway   = telemetryPrefix + "otlp-gateway"
 
-	LogAgentMetricsService      = LogAgent + metricsSuffix
-	MetricAgentMetricsService   = MetricAgent + metricsSuffix
-	MetricGatewayMetricsService = MetricGateway + metricsSuffix
-	OTLPGatewayMetricsService   = OTLPGateway + metricsSuffix
+	LogAgentMetricsService    = LogAgent + metricsSuffix
+	MetricAgentMetricsService = MetricAgent + metricsSuffix
+	OTLPGatewayMetricsService = OTLPGateway + metricsSuffix
 
 	FluentBit                       = telemetryPrefix + "fluent-bit"
 	FluentBitMetricsService         = FluentBit + metricsSuffix

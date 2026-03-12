@@ -411,3 +411,88 @@ func (o *OTLPGatewayApplierDeleter) makeAnnotations(configChecksum string, opts 
 
 	return annotations
 }
+
+type GatewayApplyOptions struct {
+	CollectorConfigYAML string
+	CollectorEnvVars    map[string][]byte
+	IstioEnabled        bool
+	// Replicas specifies the number of gateway replicas.
+	Replicas int32
+	// ResourceRequirementsMultiplier is a coefficient affecting the CPU and memory resource limits for each replica.
+	// This value is multiplied with a base resource requirement to calculate the actual CPU and memory limits.
+	// A value of 1 applies the base limits; values greater than 1 increase those limits proportionally.
+	ResourceRequirementsMultiplier int
+}
+
+func makePodAffinity(labels map[string]string) corev1.Affinity {
+	return corev1.Affinity{
+		PodAntiAffinity: &corev1.PodAntiAffinity{
+			PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
+				{
+					Weight: 100, //nolint:mnd // 100% weight
+					PodAffinityTerm: corev1.PodAffinityTerm{
+						TopologyKey: commonresources.LabelKeyK8sHostname,
+						LabelSelector: &metav1.LabelSelector{
+							MatchLabels: labels,
+						},
+					},
+				},
+				{
+					Weight: 100, //nolint:mnd // 100% weight
+					PodAffinityTerm: corev1.PodAffinityTerm{
+						TopologyKey: commonresources.LabelKeyK8sZone,
+						LabelSelector: &metav1.LabelSelector{
+							MatchLabels: labels,
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func makeGatewayNetworkPolicies(name types.NamespacedName, istioEnabled bool) []*networkingv1.NetworkPolicy {
+	var (
+		otlpPorts    = gatewayIngressOTLPPorts()
+		metricsPorts = gatewayIngressMetricsPorts(istioEnabled)
+	)
+
+	metricsNetworkPolicy := commonresources.MakeNetworkPolicy(
+		name,
+		commonresources.MakeDefaultLabels(name.Name, commonresources.LabelValueK8sComponentGateway),
+		commonresources.MakeDefaultSelectorLabels(name.Name),
+		commonresources.WithNameSuffix("metrics"),
+		commonresources.WithIngressFromPodsInAllNamespaces(
+			map[string]string{
+				commonresources.LabelKeyTelemetryMetricsScraping: commonresources.LabelValueTelemetryMetricsScraping,
+			},
+			metricsPorts,
+		),
+	)
+
+	gatewayNetworkPolicies := commonresources.MakeNetworkPolicy(
+		name,
+		commonresources.MakeDefaultLabels(name.Name, commonresources.LabelValueK8sComponentGateway),
+		commonresources.MakeDefaultSelectorLabels(name.Name),
+		commonresources.WithIngressFromAny(otlpPorts),
+		commonresources.WithEgressToAny(),
+	)
+
+	return []*networkingv1.NetworkPolicy{metricsNetworkPolicy, gatewayNetworkPolicies}
+}
+
+func gatewayIngressOTLPPorts() []int32 {
+	return []int32{
+		ports.OTLPHTTP,
+		ports.OTLPGRPC,
+	}
+}
+
+func gatewayIngressMetricsPorts(istioEnabled bool) []int32 {
+	metricsPorts := []int32{ports.Metrics}
+	if istioEnabled {
+		metricsPorts = append(metricsPorts, ports.IstioEnvoyTelemetry)
+	}
+
+	return metricsPorts
+}
