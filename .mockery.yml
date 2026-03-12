@@ -33,8 +33,6 @@ packages:
       AgentConfigBuilder:
       GatewayFlowHealthProber:
       AgentFlowHealthProber:
-      GatewayApplierDeleter:
-      GatewayConfigBuilder:
       OverridesHandler:
       PipelineLock:
       PipelineSyncer:
