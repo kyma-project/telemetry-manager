@@ -317,7 +317,6 @@ func (gad *GatewayApplierDeleter) makeGatewayPodSpec(opts GatewayApplyOptions) c
 	containerOpts := slices.Clone(gad.containerOpts)
 	containerOpts = append(containerOpts,
 		commonresources.WithResources(resources),
-		commonresources.WithGoMemLimitEnvVar(resources.Limits[corev1.ResourceMemory]),
 		commonresources.WithClusterTrustBundleVolumeMount(gad.globals.ClusterTrustBundleName()),
 	)
 
@@ -474,7 +473,7 @@ func makeGatewayNetworkPolicies(name types.NamespacedName, istioEnabled bool) []
 		name,
 		commonresources.MakeDefaultLabels(name.Name, commonresources.LabelValueK8sComponentGateway),
 		commonresources.MakeDefaultSelectorLabels(name.Name),
-		commonresources.WithIngressFromAny(otlpPorts),
+		commonresources.WithIngressFromAny(otlpPorts...),
 		commonresources.WithEgressToAny(),
 	)
 

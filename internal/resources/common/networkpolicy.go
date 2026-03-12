@@ -59,14 +59,10 @@ func WithNameSuffix(suffix string) func(spec *networkingv1.NetworkPolicy) {
 	}
 }
 
-// WithIngressFromAny allows ingress traffic from any IP (0.0.0.0/0 and ::/0) on the specified TCP ports
-func WithIngressFromAny(ports []int32) NetworkPolicyOption {
+// WithIngressFromAny allows ingress traffic from any source
+func WithIngressFromAny(ports ...int32) NetworkPolicyOption {
 	return func(netpol *networkingv1.NetworkPolicy) {
 		netpol.Spec.Ingress = append(netpol.Spec.Ingress, networkingv1.NetworkPolicyIngressRule{
-			From: []networkingv1.NetworkPolicyPeer{
-				{IPBlock: &networkingv1.IPBlock{CIDR: "0.0.0.0/0"}},
-				{IPBlock: &networkingv1.IPBlock{CIDR: "::/0"}},
-			},
 			Ports: makeNetworkPolicyPorts(ports),
 		})
 	}
@@ -126,15 +122,10 @@ func WithIngressFromPodsInNamespace(namespace string, selector map[string]string
 	}
 }
 
-// WithEgressToAny allows egress traffic to any IP (0.0.0.0/0 and ::/0)
+// WithEgressToAny allows egress traffic to any destination.
 func WithEgressToAny() NetworkPolicyOption {
 	return func(netpol *networkingv1.NetworkPolicy) {
-		netpol.Spec.Egress = append(netpol.Spec.Egress, networkingv1.NetworkPolicyEgressRule{
-			To: []networkingv1.NetworkPolicyPeer{
-				{IPBlock: &networkingv1.IPBlock{CIDR: "0.0.0.0/0"}},
-				{IPBlock: &networkingv1.IPBlock{CIDR: "::/0"}},
-			},
-		})
+		netpol.Spec.Egress = append(netpol.Spec.Egress, networkingv1.NetworkPolicyEgressRule{})
 	}
 }
 

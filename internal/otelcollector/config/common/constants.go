@@ -112,7 +112,7 @@ const (
 
 	ComponentIDBatchProcessor                          = "batch"
 	ComponentIDMemoryLimiterProcessor                  = "memory_limiter"
-	ComponentIDK8sAttributesProcessor                  = "k8sattributes"
+	ComponentIDK8sAttributesProcessor                  = "k8s_attributes"
 	ComponentIDServiceEnrichmentProcessor              = "service_enrichment"
 	ComponentIDIstioNoiseFilterProcessor               = "istio_noise_filter"
 	ComponentIDUserDefinedFilterProcessor              = "filter/user-defined-%s" // dynamically filled with pipeline name
@@ -194,4 +194,5 @@ const (
 	ComponentIDHealthCheckExtension      = "health_check"
 	ComponentIDPprofExtension            = "pprof"
 	ComponentIDOAuth2Extension           = "oauth2client/%s" // dynamically filled with pipeline name
+	ComponentIDCGroupRuntimeExtension    = "cgroupruntime"
 )

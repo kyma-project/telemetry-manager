@@ -1,4 +1,10 @@
 extensions:
+    cgroupruntime:
+        gomaxprocs:
+            enabled: false
+        gomemlimit:
+            enabled: true
+            ratio: 0.8
     health_check:
         endpoint: ${MY_POD_IP}:13133
     pprof:
@@ -12,7 +18,7 @@ service:
                 - memory_limiter
                 - transform/drop-istio-service-enrichment
                 - transform/drop-unknown-service-name
-                - k8sattributes
+                - k8s_attributes
                 - istio_noise_filter
                 - transform/insert-cluster-attributes
                 - transform/drop-kyma-attributes
@@ -33,6 +39,7 @@ service:
     extensions:
         - health_check
         - pprof
+        - cgroupruntime
 receivers:
     otlp:
         protocols:
@@ -46,7 +53,7 @@ processors:
         timeout: 10s
         send_batch_max_size: 512
     istio_noise_filter: {}
-    k8sattributes:
+    k8s_attributes:
         auth_type: serviceAccount
         passthrough: false
         extract:

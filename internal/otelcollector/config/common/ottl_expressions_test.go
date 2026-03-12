@@ -74,8 +74,8 @@ func TestOttlExprFunctions(t *testing.T) {
 		},
 		{
 			name:     "NameAttributeEquals",
-			actual:   NameAttributeEquals("my-service"),
-			expected: `name == "my-service"`,
+			actual:   MetricNameAttributeEquals("my-service"),
+			expected: `metric.name == "my-service"`,
 		},
 		{
 			name:     "JoinWithOr",
