@@ -8,8 +8,10 @@ import (
 	"github.com/stretchr/testify/require"
 	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	autoscalingvpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -35,12 +37,15 @@ func TestAgent_ApplyResources(t *testing.T) {
 	priorityClassName := "normal"
 
 	tests := []struct {
-		name             string
-		sut              *AgentApplierDeleter
-		collectorEnvVars map[string][]byte
-		istioEnabled     bool
-		backendPorts     []string
-		goldenFilePath   string
+		name                string
+		sut                 *AgentApplierDeleter
+		collectorEnvVars    map[string][]byte
+		istioEnabled        bool
+		backendPorts        []string
+		goldenFilePath      string
+		vpaCRDExists        bool
+		vpaEnabled          bool
+		vpaMaxAllowedMemory resource.Quantity
 	}{
 		{
 			name:           "metric agent",
@@ -58,6 +63,14 @@ func TestAgent_ApplyResources(t *testing.T) {
 			name:           "metric agent with FIPS mode enabled",
 			sut:            NewMetricAgentApplierDeleter(globalsWithFIPS, collectorImage, priorityClassName),
 			goldenFilePath: "testdata/metric-agent-fips-enabled.yaml",
+		},
+		{
+			name:                "metric agent with VPA",
+			sut:                 NewMetricAgentApplierDeleter(globals, collectorImage, priorityClassName),
+			goldenFilePath:      "testdata/metric-agent-vpa.yaml",
+			vpaCRDExists:        true,
+			vpaEnabled:          true,
+			vpaMaxAllowedMemory: resource.MustParse("1Gi"),
 		},
 		{
 			name: "log agent",
@@ -84,6 +97,17 @@ func TestAgent_ApplyResources(t *testing.T) {
 			},
 			goldenFilePath: "testdata/log-agent-fips-enabled.yaml",
 		},
+		{
+			name: "log agent with VPA",
+			sut:  NewLogAgentApplierDeleter(globals, collectorImage, priorityClassName),
+			collectorEnvVars: map[string][]byte{
+				"DUMMY_ENV_VAR": []byte("foo"),
+			},
+			goldenFilePath:      "testdata/log-agent-vpa.yaml",
+			vpaCRDExists:        true,
+			vpaEnabled:          true,
+			vpaMaxAllowedMemory: resource.MustParse("1Gi"),
+		},
 	}
 
 	for _, tt := range tests {
@@ -92,8 +116,9 @@ func TestAgent_ApplyResources(t *testing.T) {
 		scheme := runtime.NewScheme()
 		utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 		utilruntime.Must(istiosecurityclientv1.AddToScheme(scheme))
+		utilruntime.Must(autoscalingvpav1.AddToScheme(scheme))
 
-		fakeClient := fake.NewClientBuilder().WithInterceptorFuncs(interceptor.Funcs{
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithInterceptorFuncs(interceptor.Funcs{
 			Create: func(_ context.Context, c client.WithWatch, obj client.Object, _ ...client.CreateOption) error {
 				objects = append(objects, obj)
 				// Nothing has to be created, just add created object to the list
@@ -107,6 +132,9 @@ func TestAgent_ApplyResources(t *testing.T) {
 				CollectorConfigYAML: "dummy",
 				CollectorEnvVars:    tt.collectorEnvVars,
 				BackendPorts:        tt.backendPorts,
+				VpaCRDExists:        tt.vpaCRDExists,
+				VpaEnabled:          tt.vpaEnabled,
+				VpaMaxAllowedMemory: tt.vpaMaxAllowedMemory,
 			})
 			require.NoError(t, err)
 
@@ -133,7 +161,11 @@ func TestAgent_DeleteResources(t *testing.T) {
 
 	var created []client.Object
 
-	fakeClient := fake.NewClientBuilder().WithInterceptorFuncs(interceptor.Funcs{
+	scheme := runtime.NewScheme()
+	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+	utilruntime.Must(autoscalingvpav1.AddToScheme(scheme))
+
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithInterceptorFuncs(interceptor.Funcs{
 		Create: func(ctx context.Context, c client.WithWatch, obj client.Object, _ ...client.CreateOption) error {
 			created = append(created, obj)
 			return c.Create(ctx, obj)
@@ -156,10 +188,13 @@ func TestAgent_DeleteResources(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := tt.sut.ApplyResources(t.Context(), fakeClient, AgentApplyOptions{})
+			err := tt.sut.ApplyResources(t.Context(), fakeClient, AgentApplyOptions{
+				VpaCRDExists: true,
+				VpaEnabled:   true,
+			})
 			require.NoError(t, err)
 
-			err = tt.sut.DeleteResources(t.Context(), fakeClient)
+			err = tt.sut.DeleteResources(t.Context(), fakeClient, true)
 			require.NoError(t, err)
 
 			for i := range created {
