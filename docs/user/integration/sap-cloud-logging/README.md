@@ -19,6 +19,7 @@ Configure the Telemetry module to send logs, metrics, and traces from your clust
 - [Set Up Kyma Dashboard Integration](#set-up-kyma-dashboard-integration)
 - [Use SAP Cloud Logging Alerts](#use-sap-cloud-logging-alerts)
 - [Use SAP Cloud Logging Dashboards](#use-sap-cloud-logging-dashboards)
+- [Debug KCP Log Rejections](#debug-kcp-log-rejections)
 
 ## Prerequisites
 
@@ -390,6 +391,29 @@ You can import predefined alerts for SAP Cloud Logging to monitor the health of 
 5. After importing, edit the monitor to attach your notification channel or destination and adjust thresholds as needed.
 6. Verify that the new monitor definition is listed among the SAP Cloud Logging alerts.
 
+## Debug KCP Log Rejections
+
+When logs from a KCP application are rejected by SAP Cloud Logging, they are written to the `cls-rejected-*` index with the original log payload stored in the `payload` field.
+
+The **KCP Log Rejections** dashboard shows rejections filtered to the `logs-json-kyma` index prefix, broken down by KCP application (`kubernetes.app_name`). Use it to identify which application produces rejected logs and how many.
+
+### Find the Rejection Reason
+
+To get the exact error message from OpenSearch for a rejected log:
+
+1. Open **Dev Tools** in SAP Cloud Logging.
+1. From the **KCP Log Rejections** dashboard, copy the `payload` value of a rejected document.
+1. Post the payload to the `logs-json-kyma` index to reproduce the rejection error:
+
+   ```
+   POST /logs-json-kyma/_doc
+   <paste payload here>
+   ```
+
+   OpenSearch returns a detailed error response explaining why the document was rejected, for example a field type conflict or an unmapped field exceeding the limit.
+
+1. Fix the root cause in your application (for example, ensure field types match the `logs-json-kyma` index template) and redeploy.
+
 ## Use SAP Cloud Logging Dashboards
 
 You can view logs, traces, and metrics in SAP Cloud Logging dashboards. Several dashboards come with SAP Cloud Logging, and you can import additional dashboards as needed.
@@ -406,4 +430,5 @@ The preconfigured `Kyma_*` dashboards in SAP Cloud Logging are compatible only w
 - For traces, use the OpenSearch plugin “Observability”.
 - For runtime metrics, import the file [dashboard-runtime.ndjson](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/dashboard-runtime.ndjson).
 - For Istio Pod metrics, import the file [dashboard-istio.ndjson](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/dashboard-istio.ndjson).
+- For KCP log rejections aggregated by application, import the file [dashboard-kcp-log-rejections.ndjson](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/dashboard-kcp-log-rejections.ndjson). See [Debug KCP Log Rejections](#debug-kcp-log-rejections) for how to investigate rejected payloads.
 <!-- markdown-link-check-enable -->
