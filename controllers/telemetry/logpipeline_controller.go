@@ -44,6 +44,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
+	"github.com/kyma-project/telemetry-manager/internal/nodesize"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/logagent"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/loggateway"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
@@ -74,6 +75,7 @@ type LogPipelineController struct {
 	reconcileTriggerChan <-chan event.GenericEvent
 	reconciler           *logpipeline.Reconciler
 	secretWatchClient    *secretwatch.Client
+	nodeSizeTracker      *nodesize.Tracker
 }
 
 type LogPipelineControllerConfig struct {
@@ -90,7 +92,7 @@ type LogPipelineControllerConfig struct {
 	RestConfig                   *rest.Config
 }
 
-func NewLogPipelineController(config LogPipelineControllerConfig, client client.Client, reconcileTriggerChan <-chan event.GenericEvent, secretWatchClient *secretwatch.Client) (*LogPipelineController, error) {
+func NewLogPipelineController(config LogPipelineControllerConfig, client client.Client, reconcileTriggerChan <-chan event.GenericEvent, secretWatchClient *secretwatch.Client, nodeSizeTracker *nodesize.Tracker) (*LogPipelineController, error) {
 	pipelineCount := resourcelock.MaxPipelineCount
 
 	if config.UnlimitedPipelines() {
@@ -162,6 +164,7 @@ func NewLogPipelineController(config LogPipelineControllerConfig, client client.
 		reconcileTriggerChan: reconcileTriggerChan,
 		reconciler:           reconciler,
 		secretWatchClient:    secretWatchClient,
+		nodeSizeTracker:      nodeSizeTracker,
 	}, nil
 }
 
@@ -234,6 +237,10 @@ func (r *LogPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 	return b.Watches(
 		&operatorv1beta1.Telemetry{},
 		handler.EnqueueRequestsFromMapFunc(r.mapTelemetryChanges),
+		ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete()),
+	).Watches(
+		&corev1.Node{},
+		handler.EnqueueRequestsFromMapFunc(r.mapNodeChanges),
 		ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete()),
 	).Complete(r)
 }
@@ -373,6 +380,25 @@ func configureOTelReconciler(config LogPipelineControllerConfig, client client.C
 	)
 
 	return otelReconciler, nil
+}
+
+func (r *LogPipelineController) mapNodeChanges(ctx context.Context, object client.Object) []reconcile.Request {
+	changed, err := r.nodeSizeTracker.UpdateSmallestMemory(ctx)
+	if err != nil {
+		logf.FromContext(ctx).Error(err, "Unable to update smallest node memory")
+		return nil
+	}
+
+	if !changed {
+		return nil
+	}
+
+	requests, err := r.createRequestsForAllPipelines(ctx)
+	if err != nil {
+		logf.FromContext(ctx).Error(err, "Unable to create reconcile requests")
+	}
+
+	return requests
 }
 
 func (r *LogPipelineController) createRequestsForAllPipelines(ctx context.Context) ([]reconcile.Request, error) {
