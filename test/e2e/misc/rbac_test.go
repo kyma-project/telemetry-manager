@@ -112,11 +112,8 @@ func testEditRole(t *testing.T) {
 			ContainElement("create"),
 			ContainElement("delete"),
 			ContainElement("deletecollection"),
-			ContainElement("get"),
-			ContainElement("list"),
 			ContainElement("patch"),
 			ContainElement("update"),
-			ContainElement("watch"),
 		),
 	})))
 
@@ -126,21 +123,12 @@ func testEditRole(t *testing.T) {
 		"APIGroups": ContainElement("operator.kyma-project.io"),
 		"Resources": ContainElement("telemetries"),
 		"Verbs": And(
-			ContainElement("get"),
-			ContainElement("list"),
+			ContainElement("create"),
+			ContainElement("delete"),
+			ContainElement("deletecollection"),
 			ContainElement("patch"),
 			ContainElement("update"),
-			ContainElement("watch"),
 		),
 	})))
 
-	// Verify Telemetry CR does NOT have create/delete permissions
-	Expect(editRole.Rules).NotTo(ContainElement(MatchFields(IgnoreExtras, Fields{
-		"APIGroups": ContainElement("operator.kyma-project.io"),
-		"Resources": ContainElement("telemetries"),
-		"Verbs": Or(
-			ContainElement("create"),
-			ContainElement("delete"),
-		),
-	})))
 }

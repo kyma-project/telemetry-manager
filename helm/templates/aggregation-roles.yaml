@@ -88,8 +88,8 @@ rules:
     resources:
       - telemetries
     verbs:
-      - get
-      - list
+      - create
+      - delete
+      - deletecollection
       - patch
       - update
-      - watch
