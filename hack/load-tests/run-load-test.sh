@@ -310,6 +310,8 @@ function get_result_and_cleanup_trace() {
   RESULT_CPU=$(curl -fs --data-urlencode "$QUERY_CPU" $PROMAPI | jq -r '.data.result[] | .value[1]' | paste -sd,)
   RESULT_RESTARTS_COLLECTOR=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=telemetry-trace-gateway -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq -s 'add')
 
+  validate_telemetry_results "trace"
+
   if [[ -z "$DOMAIN" ]]; then
     echo -e "Killing port-forward"
     kill %1
@@ -339,6 +341,8 @@ function get_result_and_cleanup_metric() {
     RESULT_MEMORY=$(curl -fs --data-urlencode "$QUERY_MEMORY" $PROMAPI | jq -r '.data.result[] | .value[1]' | paste -sd,)
     RESULT_CPU=$(curl -fs --data-urlencode "$QUERY_CPU" $PROMAPI | jq -r '.data.result[] | .value[1]' | paste -sd,)
     RESULT_RESTARTS_GATEWAY=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=telemetry-metric-gateway -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq -s 'add')
+
+    validate_telemetry_results "metric"
 
     if [[ -z "$DOMAIN" ]]; then
       echo -e "Killing port-forward"
@@ -372,6 +376,8 @@ function get_result_and_cleanup_metricagent() {
     RESULT_RESTARTS_GATEWAY=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=telemetry-metric-gateway -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq -s 'add')
     RESULT_RESTARTS_AGENT=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=telemetry-metric-agent -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq -s 'add')
 
+    validate_telemetry_results "metric-agent"
+
     if [[ -z "$DOMAIN" ]]; then
       echo -e "Killing port-forward"
       kill %1
@@ -398,6 +404,8 @@ function get_result_and_cleanup_log_otel() {
   RESULT_CPU=$(curl -fs --data-urlencode "$QUERY_CPU" $PROMAPI | jq -r '.data.result[] | .value[1]' | paste -sd,)
   RESULT_RESTARTS_GATEWAY=$(kubectl -n log-load-test get pod -l app.kubernetes.io/name=log-gateway -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq -s 'add')
   RESULT_RESTARTS_GENERATOR=$(kubectl -n log-load-test get pod -l app.kubernetes.io/name=log-load-generator -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq -s 'add')
+
+  validate_telemetry_results "otel-logs"
 
   if [[ -z "$DOMAIN" ]]; then
     echo -e "Killing port-forward"
@@ -430,6 +438,8 @@ function get_result_and_cleanup_fluentbit() {
   RESULT_MEMORY=$(curl -fs --data-urlencode "$QUERY_MEMORY" $PROMAPI | jq -r '.data.result[] | .value[1]' | paste -sd,)
   RESULT_CPU=$(curl -fs --data-urlencode "$QUERY_CPU" $PROMAPI | jq -r '.data.result[] | .value[1]' | paste -sd,)
   RESULT_RESTARTS_FLUENTBIT=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=fluent-bit -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq -s 'add')
+
+  validate_telemetry_results "fluent-bit"
 
   if [[ -z "$DOMAIN" ]]; then
     echo -e "Killing port-forward"
@@ -468,6 +478,32 @@ function get_result_and_cleanup_selfmonitor() {
     fi
 
     kubectl delete -f hack/load-tests/self-monitor-test-setup.yaml
+}
+
+
+function validate_telemetry_results() {
+    local test_type=$1
+
+    if [[ -z "$RESULT_RECEIVED" ]]; then
+        echo "ERROR: RESULT_RECEIVED is empty for $test_type test. No data received from Prometheus query."
+        exit 1
+    fi
+
+    if [[ -z "$RESULT_EXPORTED" ]]; then
+        echo "ERROR: RESULT_EXPORTED is empty for $test_type test. No data exported according to Prometheus query."
+        exit 1
+    fi
+
+    # Check if values are numeric zero (using awk for floating point comparison)
+    if awk "BEGIN {exit !($RESULT_RECEIVED == 0)}"; then
+        echo "ERROR: RESULT_RECEIVED is zero for $test_type test. No telemetry data was received during the test period."
+        exit 1
+    fi
+
+    if awk "BEGIN {exit !($RESULT_EXPORTED == 0)}"; then
+        echo "ERROR: RESULT_EXPORTED is zero for $test_type test. No telemetry data was exported during the test period."
+        exit 1
+    fi
 }
 
 # cleanup on exit. cleanup also collects the results and writes them to a file

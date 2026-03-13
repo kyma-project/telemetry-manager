@@ -20,27 +20,28 @@ type WorkloadMetadata struct {
 	PodAnnotations      map[string]string
 }
 
-// MakeWorkloadMetadata creates metadata for workloads (Deployment or DaemonSet)
-func MakeWorkloadMetadata(globals *config.Global, baseName string, componentType string, extraPodLabels map[string]string, annotations map[string]string) WorkloadMetadata {
-	defaultLabels := commonresources.MakeDefaultLabels(baseName, componentType)
-
-	// Create final labels with additional labels from globals
+// MakeWorkloadMetadata creates metadata for workloads (Deployment or DaemonSet).
+// Resource labels only contain additional labels from globals; default labels are applied by the Labeler.
+// Pod labels need default labels explicitly since the Labeler only sets top-level object labels.
+func MakeWorkloadMetadata(globals *config.Global, baseName string, componentType string, extraPodLabels map[string]string, extraPodAnnotations map[string]string) WorkloadMetadata {
+	// Resource labels: only additional labels from globals; default labels are applied by the Labeler
 	resourceLabels := make(map[string]string)
-	podLabels := make(map[string]string)
+	maps.Copy(resourceLabels, globals.AdditionalWorkloadLabels())
 
-	maps.Copy(resourceLabels, globals.AdditionalLabels())
-	maps.Copy(podLabels, globals.AdditionalLabels())
-	maps.Copy(resourceLabels, defaultLabels)
-	maps.Copy(podLabels, defaultLabels)
+	// Pod labels: need default labels explicitly since the Labeler only sets top-level object labels
+	podLabels := make(map[string]string)
+	maps.Copy(podLabels, commonresources.DefaultLabels(baseName, componentType))
+	maps.Copy(podLabels, globals.AdditionalWorkloadLabels())
 	maps.Copy(podLabels, extraPodLabels)
 
-	// Create final annotations with additional annotations from globals
+	// Resource annotations: only additional annotations from globals
 	resourceAnnotations := make(map[string]string)
-	podAnnotations := make(map[string]string)
+	maps.Copy(resourceAnnotations, globals.AdditionalWorkloadAnnotations())
 
-	maps.Copy(resourceAnnotations, globals.AdditionalAnnotations())
-	maps.Copy(podAnnotations, globals.AdditionalAnnotations())
-	maps.Copy(podAnnotations, annotations)
+	// Pod annotations: additional annotations from globals + workload-specific annotations
+	podAnnotations := make(map[string]string)
+	maps.Copy(podAnnotations, globals.AdditionalWorkloadAnnotations())
+	maps.Copy(podAnnotations, extraPodAnnotations)
 
 	return WorkloadMetadata{
 		ResourceLabels:      resourceLabels,
@@ -52,8 +53,6 @@ func MakeWorkloadMetadata(globals *config.Global, baseName string, componentType
 
 // makeDaemonSet creates a DaemonSet with the given configuration (for agents)
 func makeDaemonSet(baseName string, namespace string, metadata WorkloadMetadata, podSpec corev1.PodSpec) *appsv1.DaemonSet {
-	selectorLabels := commonresources.MakeDefaultSelectorLabels(baseName)
-
 	return &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        baseName,
@@ -63,7 +62,7 @@ func makeDaemonSet(baseName string, namespace string, metadata WorkloadMetadata,
 		},
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
-				MatchLabels: selectorLabels,
+				MatchLabels: commonresources.DefaultSelector(baseName),
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
@@ -78,8 +77,6 @@ func makeDaemonSet(baseName string, namespace string, metadata WorkloadMetadata,
 
 // makeGatewayDaemonSet creates a DaemonSet with UpdateStrategy for gateways
 func makeGatewayDaemonSet(baseName string, namespace string, metadata WorkloadMetadata, podSpec corev1.PodSpec) *appsv1.DaemonSet {
-	selectorLabels := commonresources.MakeDefaultSelectorLabels(baseName)
-
 	return &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        baseName,
@@ -89,7 +86,7 @@ func makeGatewayDaemonSet(baseName string, namespace string, metadata WorkloadMe
 		},
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
-				MatchLabels: selectorLabels,
+				MatchLabels: commonresources.DefaultSelector(baseName),
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
@@ -111,8 +108,6 @@ func makeGatewayDaemonSet(baseName string, namespace string, metadata WorkloadMe
 
 // makeDeployment creates a Deployment with the given configuration
 func makeDeployment(baseName string, namespace string, replicas int32, metadata WorkloadMetadata, podSpec corev1.PodSpec) *appsv1.Deployment {
-	selectorLabels := commonresources.MakeDefaultSelectorLabels(baseName)
-
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        baseName,
@@ -123,7 +118,7 @@ func makeDeployment(baseName string, namespace string, replicas int32, metadata 
 		Spec: appsv1.DeploymentSpec{
 			Replicas: new(replicas),
 			Selector: &metav1.LabelSelector{
-				MatchLabels: selectorLabels,
+				MatchLabels: commonresources.DefaultSelector(baseName),
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{

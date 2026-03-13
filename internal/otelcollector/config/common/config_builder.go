@@ -12,17 +12,28 @@ func NewConfig() *Config {
 		Processors: make(map[string]any),
 		Exporters:  make(map[string]any),
 		Connectors: make(map[string]any),
-		Extensions: extensionsConfig(),
-		Service:    serviceConfig(),
+		Extensions: defaultExtensions(),
+		Service:    defaultService(),
 	}
 
 	return config
 }
 
-func serviceConfig() Service {
+// DisableGoMemLimit disables the GoMemLimit setting in the cgroupruntime extension.
+// This should be called when VPA is active, since VPA dynamically adjusts memory limits
+// and GoMemLimit would interfere with that.
+// TODO: Remove the disabling of GoMemLimit after implementing https://github.com/kyma-project/telemetry-manager/issues/3062
+func (c *Config) DisableGoMemLimit() {
+	c.Extensions[ComponentIDCGroupRuntimeExtension] = CGroupRuntimeExtension{
+		GoMaxProcs: CGroupRuntimeGoMaxProcs{Enabled: false},
+		GoMemLimit: CGroupRuntimeGoMemLimit{Enabled: false},
+	}
+}
+
+func defaultService() ServiceConfig {
 	telemetry := Telemetry{
-		Metrics: Metrics{
-			Readers: []MetricReader{
+		Metrics: TelemetryMetrics{
+			Readers: []TelemetryMetricReader{
 				{
 					Pull: PullMetricReader{
 						Exporter: MetricExporter{
@@ -41,20 +52,24 @@ func serviceConfig() Service {
 		},
 	}
 
-	return Service{
-		Pipelines:  make(map[string]Pipeline),
+	return ServiceConfig{
+		Pipelines:  make(map[string]ServicePipeline),
 		Telemetry:  telemetry,
-		Extensions: []string{ComponentIDHealthCheckExtension, ComponentIDPprofExtension},
+		Extensions: []string{ComponentIDHealthCheckExtension, ComponentIDPprofExtension, ComponentIDCGroupRuntimeExtension},
 	}
 }
 
-func extensionsConfig() map[string]any {
+func defaultExtensions() map[string]any {
 	return map[string]any{
 		ComponentIDHealthCheckExtension: Endpoint{
 			Endpoint: fmt.Sprintf("${%s}:%d", EnvVarCurrentPodIP, ports.HealthCheck),
 		},
 		ComponentIDPprofExtension: Endpoint{
 			Endpoint: fmt.Sprintf("127.0.0.1:%d", ports.Pprof),
+		},
+		ComponentIDCGroupRuntimeExtension: CGroupRuntimeExtension{
+			GoMaxProcs: CGroupRuntimeGoMaxProcs{Enabled: false},
+			GoMemLimit: CGroupRuntimeGoMemLimit{Enabled: true, Ratio: 0.8}, //nolint:mnd // 80% of cgroup memory limit
 		},
 	}
 }
