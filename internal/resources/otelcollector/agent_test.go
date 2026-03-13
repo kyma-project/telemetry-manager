@@ -161,7 +161,11 @@ func TestAgent_DeleteResources(t *testing.T) {
 
 	var created []client.Object
 
-	fakeClient := fake.NewClientBuilder().WithInterceptorFuncs(interceptor.Funcs{
+	scheme := runtime.NewScheme()
+	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+	utilruntime.Must(autoscalingvpav1.AddToScheme(scheme))
+
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithInterceptorFuncs(interceptor.Funcs{
 		Create: func(ctx context.Context, c client.WithWatch, obj client.Object, _ ...client.CreateOption) error {
 			created = append(created, obj)
 			return c.Create(ctx, obj)
@@ -184,10 +188,13 @@ func TestAgent_DeleteResources(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := tt.sut.ApplyResources(t.Context(), fakeClient, AgentApplyOptions{})
+			err := tt.sut.ApplyResources(t.Context(), fakeClient, AgentApplyOptions{
+				VpaCRDExists: true,
+				VpaEnabled:   true,
+			})
 			require.NoError(t, err)
 
-			err = tt.sut.DeleteResources(t.Context(), fakeClient, false)
+			err = tt.sut.DeleteResources(t.Context(), fakeClient, true)
 			require.NoError(t, err)
 
 			for i := range created {
