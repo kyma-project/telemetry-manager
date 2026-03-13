@@ -62,7 +62,6 @@ metadata:
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
     rbac.authorization.k8s.io/aggregate-to-edit: "true"
-    rbac.authorization.k8s.io/aggregate-to-admin: "true"
   {{- include "telemetry-manager.labels" . | indent 4 }}
 rules:
   # Cluster-scoped telemetry resources - full CRUD access
@@ -78,11 +77,8 @@ rules:
       - create
       - delete
       - deletecollection
-      - get
-      - list
       - patch
       - update
-      - watch
   # Telemetry CR (operator.kyma-project.io) - limited access
   # Note: Telemetry CR is managed by Lifecycle Manager, not by end users
   # - Users can patch/update to configure module settings (e.g., trace collector replicas)
@@ -92,8 +88,8 @@ rules:
     resources:
       - telemetries
     verbs:
-      - get
-      - list
+      - create
+      - delete
+      - deletecollection
       - patch
       - update
-      - watch
