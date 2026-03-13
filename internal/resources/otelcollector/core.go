@@ -152,8 +152,6 @@ func makeMetricsService(name types.NamespacedName) *corev1.Service {
 		commonresources.LabelKeyTelemetrySelfMonitor: commonresources.LabelValueTelemetrySelfMonitor,
 	}
 
-	selectorLabels := commonresources.DefaultSelector(name.Name)
-
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      names.MetricsServiceName(name.Name),
@@ -174,7 +172,7 @@ func makeMetricsService(name types.NamespacedName) *corev1.Service {
 					TargetPort: intstr.FromInt32(ports.Metrics),
 				},
 			},
-			Selector: selectorLabels,
+			Selector: commonresources.DefaultSelector(name.Name),
 			Type:     corev1.ServiceTypeClusterIP,
 		},
 	}
