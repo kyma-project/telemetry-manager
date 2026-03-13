@@ -39,6 +39,9 @@ func makeAlertConfig(webhookURL string) AlertingConfig {
 				Targets: []string{webhookURL},
 			}},
 			TLSConfig: TLSConfig{
+				// The alert manager is used for reporting the signals for health of pipeline flow. Tampering that
+				// communication cannot cause any availability or confidentiality problems.
+				// Implementing a TLS Certificate would be technically too complex for the gains we get.
 				InsecureSkipVerify: true,
 			},
 		}},

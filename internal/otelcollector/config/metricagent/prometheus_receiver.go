@@ -136,9 +136,14 @@ func tlsConfig(istioCertPath string) *TLS {
 	istioKeyFile := filepath.Join(istioCertPath, "key.pem")
 
 	return &TLS{
-		CAFile:             istioCAFile,
-		CertFile:           istioCertFile,
-		KeyFile:            istioKeyFile,
+		CAFile:   istioCAFile,
+		CertFile: istioCertFile,
+		KeyFile:  istioKeyFile,
+		// The server side validation of the certificate needs to be disabled as there is no simple way
+		// to inject the istio server side certificate. That is a recommendation by istio itself,
+		// see https://istio.io/latest/docs/ops/integrations/prometheus/#tls-settings.
+		// The risk is, that for this internal communication the target cannot be verified and someone could provide a fake target.
+		// However, to be able to do so attacker need to have cluster admin access to the kubernetes cluster, thus attack complexity is high.
 		InsecureSkipVerify: true,
 	}
 }
