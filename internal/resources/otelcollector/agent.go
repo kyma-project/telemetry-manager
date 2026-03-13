@@ -186,8 +186,8 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 	// Create/update/delete VPA CR only if VPA CRD exists in cluster
 	if opts.VpaCRDExists {
 		if opts.VpaEnabled {
-			vpa := makeVPA(name, commonresources.LabelValueK8sComponentAgent, "DaemonSet", agentMemoryRequest, opts.VpaMaxAllowedMemory)
-			if err := k8sutils.CreateOrUpdateVPA(ctx, c, vpa); err != nil {
+			vpa := makeVPA(name, "DaemonSet", agentMemoryRequest, opts.VpaMaxAllowedMemory)
+			if err := k8sutils.CreateOrUpdateVPA(ctx, labelerClient, vpa); err != nil {
 				return fmt.Errorf("failed to create VPA: %w", err)
 			}
 		} else {
