@@ -270,10 +270,10 @@ func TestBackpressure(t *testing.T) {
 			if tc.component == suite.LabelMetricAgent {
 				// Metric agent and gateway (using kyma stats receiver) both send data to backend
 				// We want to simulate backpressure only on agent, so block some percentage of traffic only from agent.
-				backend = kitbackend.New(backendNs, signalTypeForComponent(tc.component), kitbackend.WithAbortFaultInjection(95),
+				backend = kitbackend.New(backendNs, signalTypeForComponent(tc.component), kitbackend.WithAbortFaultInjection(50),
 					kitbackend.WithDropFromSourceLabel(map[string]string{"app.kubernetes.io/name": "telemetry-metric-agent"}))
 			} else {
-				backend = kitbackend.New(backendNs, signalTypeForComponent(tc.component), kitbackend.WithAbortFaultInjection(85))
+				backend = kitbackend.New(backendNs, signalTypeForComponent(tc.component), kitbackend.WithAbortFaultInjection(50))
 			}
 
 			pipeline := tc.pipeline(pipelineName, genNs, backend)
@@ -288,6 +288,9 @@ func TestBackpressure(t *testing.T) {
 			resources = append(resources, backend.K8sObjects()...)
 
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
+
+			// Register after CreateObjects so LIFO cleanup order ensures diagnostics run before resource deletion
+			assert.SelfMonitorDebugOnFailure(t)
 
 			assert.BackendReachable(t, backend)
 			assert.DeploymentReady(t, kitkyma.SelfMonitorName)

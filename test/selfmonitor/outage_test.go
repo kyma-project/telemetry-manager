@@ -294,6 +294,9 @@ func TestOutage(t *testing.T) {
 
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
+			// Register after CreateObjects so LIFO cleanup order ensures diagnostics run before resource deletion
+			assert.SelfMonitorDebugOnFailure(t)
+
 			assert.DeploymentReady(t, kitkyma.SelfMonitorName)
 			tc.assertions(t, pipeline.GetName())
 		})

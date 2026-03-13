@@ -91,7 +91,7 @@ func (s *VirtualService) K8sObject() *istionetworkingclientv1.VirtualService {
 								Value: s.faultAbortPercentage,
 							},
 								ErrorType: &istionetworkingv1.HTTPFaultInjection_Abort_HttpStatus{
-									HttpStatus: http.StatusBadGateway,
+									HttpStatus: http.StatusInternalServerError,
 								},
 							}
 						}(),
