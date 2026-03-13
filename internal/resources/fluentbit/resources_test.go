@@ -15,12 +15,20 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
 func TestAgent_ApplyResources(t *testing.T) {
+	globals := config.NewGlobal(
+		config.WithTargetNamespace("kyma-system"),
+		config.WithImagePullSecretName("mySecret"),
+		config.WithAdditionalWorkloadLabels(map[string]string{"test-label-key": "test-label-value"}),
+		config.WithAdditionalWorkloadAnnotations(map[string]string{"test-anno-key": "test-anno-value"}),
+		config.WithClusterTrustBundleName("trustBundle"),
+	)
 	image := "foo-fluentbit"
 	exporterImage := "foo-exporter"
 	initContainerImage := "alpine"
@@ -31,11 +39,10 @@ func TestAgent_ApplyResources(t *testing.T) {
 		name           string
 		sut            *AgentApplierDeleter
 		goldenFilePath string
-		saveGoldenFile bool
 	}{
 		{
 			name:           "fluentbit",
-			sut:            NewFluentBitApplierDeleter(namespace, image, exporterImage, initContainerImage, priorityClassName),
+			sut:            NewFluentBitApplierDeleter(globals, namespace, image, exporterImage, initContainerImage, priorityClassName),
 			goldenFilePath: "testdata/fluentbit.yaml",
 		},
 	}
@@ -46,7 +53,7 @@ func TestAgent_ApplyResources(t *testing.T) {
 		scheme := runtime.NewScheme()
 		utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 		utilruntime.Must(istiosecurityclientv1.AddToScheme(scheme))
-		utilruntime.Must(telemetryv1alpha1.AddToScheme(scheme))
+		utilruntime.Must(telemetryv1beta1.AddToScheme(scheme))
 
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithInterceptorFuncs(interceptor.Funcs{
 			Create: func(_ context.Context, c client.WithWatch, obj client.Object, _ ...client.CreateOption) error {
@@ -58,7 +65,7 @@ func TestAgent_ApplyResources(t *testing.T) {
 
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.sut.ApplyResources(t.Context(), fakeClient, AgentApplyOptions{
-				AllowedPorts: []int32{5555, 6666},
+				IstioEnabled: false,
 				FluentBitConfig: &builder.FluentBitConfig{
 					SectionsConfig:  map[string]string{"pipeline1.conf": "dummy-sections-content"},
 					FilesConfig:     map[string]string{"file1": "dummy-file-content"},
@@ -68,12 +75,13 @@ func TestAgent_ApplyResources(t *testing.T) {
 			})
 			require.NoError(t, err)
 
-			if tt.saveGoldenFile {
-				testutils.SaveAsYAML(t, scheme, objects, tt.goldenFilePath)
-			}
-
 			bytes, err := testutils.MarshalYAML(scheme, objects)
 			require.NoError(t, err)
+
+			if testutils.ShouldUpdateGoldenFiles() {
+				testutils.UpdateGoldenFileYAML(t, tt.goldenFilePath, bytes)
+				return
+			}
 
 			goldenFileBytes, err := os.ReadFile(tt.goldenFilePath)
 			require.NoError(t, err)
@@ -84,6 +92,7 @@ func TestAgent_ApplyResources(t *testing.T) {
 }
 
 func TestAgent_DeleteResources(t *testing.T) {
+	globals := config.NewGlobal(config.WithTargetNamespace("kyma-system"))
 	image := "foo-fluentbit"
 	exporterImage := "foo-exporter"
 	initContainerImage := "alpine"
@@ -108,14 +117,14 @@ func TestAgent_DeleteResources(t *testing.T) {
 	}{
 		{
 			name: "fluentbit",
-			sut:  NewFluentBitApplierDeleter(namespace, image, exporterImage, initContainerImage, priorityClassName),
+			sut:  NewFluentBitApplierDeleter(globals, namespace, image, exporterImage, initContainerImage, priorityClassName),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			agentApplyOptions := AgentApplyOptions{
-				AllowedPorts:    []int32{5555, 6666},
+				IstioEnabled:    false,
 				FluentBitConfig: &builder.FluentBitConfig{},
 			}
 

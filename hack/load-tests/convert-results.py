@@ -136,7 +136,7 @@ templates['self-monitor'] = (
     "|    Scrape Samples/sec     | Total Series Created | WAL Storage Size/bytes | Head Chunk Storage Size in bytes | Pod Memory Usage(MB) | Pod CPU Usage "
     "|\n"
     "|              "
-    "| {single[results][SCRAPESAMPLES]} | {single[results][SERIESCREATED]} | {single[results][WALSTORAGESIZE]} | {single[results][HEADSTORAGESIZE]} | {single[results][MEMORY]} |{single[results][CPU]}"
+    "| {single[results][SCRAPESAMPLES]} | {single[results][SERIESCREATED]} | {single[results][WALSTORAGESIZE]} | {single[results][HEADSTORAGESIZE]} | {single[results][MEMORY]} | {single[results][CPU]} "
     "|\n"
 )
 templates['metricagent'] = (

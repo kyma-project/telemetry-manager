@@ -7,7 +7,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/matchers"
 )
 
-// FlatLog holds all needed information about a Otel log record.
+// FlatLog holds all needed information about an OTel log record.
 // Gomega doesn't handle deeply nested data structure very well and generates large, unreadable diffs when paired with the deeply nested structure of plogs.
 //
 // Introducing a go struct with a flat data structure by extracting necessary information from different levels of plogs makes accessing the information easier than using plog.

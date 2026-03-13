@@ -24,7 +24,7 @@ Telemetry signals flow through the following stages:
 The Telemetry module focuses on the collection, processing, and shipment stages of the observability workflow. It offers a vendor-neutral approach based on [OpenTelemetry](https://opentelemetry.io/) and doesn't force you into a specific backend. This means you can integrate with your existing observability platforms or choose from a wide range of available backends that best suit your operational needs.
 
 > [!TIP]
-> Build your first telemetry pipeline with the hands-on lesson [Collecting Application Logs and Shipping them to SAP Cloud Logging](https://learning.sap.com/learning-journeys/developing-applications-in-sap-btp-kyma-runtime/collecting-application-logs-and-shipping-to-sap-cloud-logging).
+> Build your first telemetry pipeline with the hands-on lesson [Collecting Application Logs and Shipping them to SAP Cloud Logging](https://learning.sap.com/courses/developing-applications-in-sap-btp-kyma-runtime/collecting-application-logs-and-shipping-to-sap-cloud-logging).
 
 ## Features
 
@@ -46,6 +46,8 @@ To support telemetry for your applications, the Telemetry module provides the fo
 - **Automatic Data Enrichment**: The Telemetry module adds resource attributes as metadata, following OTel semantic conventions. This makes your data more consistent, meaningful, and ready for analysis in your observability backend. For details, see [Automatic Data Enrichment](./filter-and-process/automatic-data-enrichment.md).
 
 - **Instrumentation Guidance**: To generate telemetry data, you must instrument your code. Based on [Open Telemetry](https://opentelemetry.io/) (OTel), you get community samples on how to instrument your code using the [Open Telemetry SDKs](https://opentelemetry.io/docs/languages/) in most programming languages.
+
+- **Simplified Permission Management**: To manage access to telemetry resources, you can use the module's aggregated ClusterRoles. `kyma-telemetry-view` grants read access and `kyma-telemetry-edit` grants write access to all Telemetry module resources.
 
 ## Scope
 

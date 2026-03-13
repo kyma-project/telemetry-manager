@@ -11,6 +11,8 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
@@ -21,7 +23,7 @@ import (
 )
 
 func TestDisabledInput_OTel(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelLogAgent)
+	suite.SetupTest(t, suite.LabelLogAgent)
 
 	var (
 		uniquePrefix = unique.Prefix()
@@ -34,32 +36,29 @@ func TestDisabledInput_OTel(t *testing.T) {
 
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
-		WithApplicationInput(false).
+		WithRuntimeInput(false).
 		WithOTLPInput(false).
 		WithOTLPOutput(
-			testutils.OTLPEndpoint(backend.Endpoint()),
+			testutils.OTLPEndpoint(backend.EndpointHTTP()),
 		).
 		Build()
 
 	resources := []client.Object{
-		kitk8s.NewNamespace(backendNs).K8sObject(),
-		kitk8s.NewNamespace(genNs).K8sObject(),
+		kitk8sobjects.NewNamespace(backendNs).K8sObject(),
+		kitk8sobjects.NewNamespace(genNs).K8sObject(),
 		&pipeline,
 		telemetrygen.NewPod(genNs, telemetrygen.SignalTypeLogs).K8sObject(),
 	}
 
 	resources = append(resources, backend.K8sObjects()...)
 
-	t.Cleanup(func() {
-		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-	})
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.BackendReachable(t, backend)
 	assert.DeploymentReady(t, kitkyma.LogGatewayName)
 	assert.OTelLogPipelineHealthy(t, pipelineName)
 
-	// If Application input is disabled, THEN the log agent must not be deployed
+	// If Runtime input is disabled, THEN the log agent must not be deployed
 	Eventually(func(g Gomega) {
 		var daemonSet appsv1.DaemonSet
 
@@ -72,7 +71,7 @@ func TestDisabledInput_OTel(t *testing.T) {
 }
 
 func TestDisabledInput_FluentBit(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelFluentBit)
+	suite.SetupTestWithOptions(t, []string{suite.LabelFluentBit}, kubeprep.WithOverrideFIPSMode(false))
 
 	const (
 		endpointAddress = "localhost"
@@ -86,7 +85,7 @@ func TestDisabledInput_FluentBit(t *testing.T) {
 
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
-		WithApplicationInput(false).
+		WithRuntimeInput(false).
 		WithHTTPOutput(
 			testutils.HTTPHost(endpointAddress),
 			testutils.HTTPPort(endpointPort),
@@ -97,9 +96,6 @@ func TestDisabledInput_FluentBit(t *testing.T) {
 		&pipeline,
 	}
 
-	t.Cleanup(func() {
-		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-	})
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	Eventually(func(g Gomega) {

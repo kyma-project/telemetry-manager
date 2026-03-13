@@ -6,9 +6,7 @@ import (
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
 
@@ -20,26 +18,26 @@ type LogPipelineBuilder struct {
 	finalizers        []string
 	deletionTimeStamp metav1.Time
 
-	input telemetryv1alpha1.LogPipelineInput
+	input telemetryv1beta1.LogPipelineInput
 
-	httpOutput   *telemetryv1alpha1.LogPipelineHTTPOutput
-	otlpOutput   *telemetryv1alpha1.OTLPOutput
+	httpOutput   *telemetryv1beta1.FluentBitHTTPOutput
+	otlpOutput   *telemetryv1beta1.OTLPOutput
+	oauth2       *telemetryv1beta1.OAuth2Options
 	customOutput string
 
-	fluentBitFilters []telemetryv1alpha1.LogPipelineFilter
-	files            []telemetryv1alpha1.LogPipelineFileMount
-	variables        []telemetryv1alpha1.LogPipelineVariableRef
-	transforms       []telemetryv1alpha1.TransformSpec
-	filters          []telemetryv1alpha1.FilterSpec
+	fluentBitFilters []telemetryv1beta1.FluentBitFilter
+	files            []telemetryv1beta1.FluentBitFile
+	variables        []telemetryv1beta1.FluentBitVariable
+	transforms       []telemetryv1beta1.TransformSpec
+	filters          []telemetryv1beta1.FilterSpec
 
 	statusConditions []metav1.Condition
 }
 
-func BuildLogPipelineApplicationInput(opts ...ExtendedNamespaceSelectorOptions) telemetryv1alpha1.LogPipelineInput {
-	input := telemetryv1alpha1.LogPipelineInput{
-		Application: &telemetryv1alpha1.LogPipelineApplicationInput{
-			Enabled:    ptr.To(true),
-			Namespaces: telemetryv1alpha1.LogPipelineNamespaceSelector{},
+func BuildLogPipelineRuntimeInput(opts ...NamespaceSelectorOptions) telemetryv1beta1.LogPipelineInput {
+	input := telemetryv1beta1.LogPipelineInput{
+		Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
+			Enabled: new(true),
 		},
 	}
 
@@ -47,21 +45,23 @@ func BuildLogPipelineApplicationInput(opts ...ExtendedNamespaceSelectorOptions) 
 		return input
 	}
 
+	input.Runtime.Namespaces = &telemetryv1beta1.NamespaceSelector{}
+
 	for _, opt := range opts {
-		opt(&input.Application.Namespaces)
+		opt(input.Runtime.Namespaces)
 	}
 
 	return input
 }
 
-func BuildLogPipelineOTLPInput(opts ...NamespaceSelectorOptions) telemetryv1alpha1.LogPipelineInput {
-	input := telemetryv1alpha1.LogPipelineInput{
-		Application: &telemetryv1alpha1.LogPipelineApplicationInput{
-			Enabled: ptr.To(false),
+func BuildLogPipelineOTLPInput(opts ...NamespaceSelectorOptions) telemetryv1beta1.LogPipelineInput {
+	input := telemetryv1beta1.LogPipelineInput{
+		Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
+			Enabled: new(false),
 		},
-		OTLP: &telemetryv1alpha1.OTLPInput{
-			Disabled:   false,
-			Namespaces: &telemetryv1alpha1.NamespaceSelector{},
+		OTLP: &telemetryv1beta1.OTLPInput{
+			Enabled:    new(true),
+			Namespaces: &telemetryv1beta1.NamespaceSelector{},
 		},
 	}
 
@@ -71,31 +71,6 @@ func BuildLogPipelineOTLPInput(opts ...NamespaceSelectorOptions) telemetryv1alph
 
 	for _, opt := range opts {
 		opt(input.OTLP.Namespaces)
-	}
-
-	return input
-}
-
-func BuildLogPipelineV1Beta1RuntimeInput() telemetryv1beta1.LogPipelineInput {
-	input := telemetryv1beta1.LogPipelineInput{
-		Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
-			Enabled:    ptr.To(true),
-			Namespaces: &telemetryv1beta1.NamespaceSelector{},
-		},
-	}
-
-	return input
-}
-
-func BuildLogPipelineV1Beta1OTLPInput() telemetryv1beta1.LogPipelineInput {
-	input := telemetryv1beta1.LogPipelineInput{
-		Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
-			Enabled: ptr.To(false),
-		},
-		OTLP: &telemetryv1beta1.OTLPInput{
-			Enabled:    ptr.To(true),
-			Namespaces: &telemetryv1beta1.NamespaceSelector{},
-		},
 	}
 
 	return input
@@ -117,126 +92,127 @@ func (b *LogPipelineBuilder) WithLabels(labels map[string]string) *LogPipelineBu
 	return b
 }
 
-func (b *LogPipelineBuilder) WithFinalizer(finalizer string) *LogPipelineBuilder {
-	b.finalizers = append(b.finalizers, finalizer)
-	return b
-}
-
-func (b *LogPipelineBuilder) WithInput(input telemetryv1alpha1.LogPipelineInput) *LogPipelineBuilder {
+func (b *LogPipelineBuilder) WithInput(input telemetryv1beta1.LogPipelineInput) *LogPipelineBuilder {
 	b.input = input
 	return b
 }
 
-func (b *LogPipelineBuilder) WithOutput(output telemetryv1alpha1.LogPipelineOutput) *LogPipelineBuilder {
-	b.httpOutput = output.HTTP
-	b.customOutput = output.Custom
+func (b *LogPipelineBuilder) WithOutput(output telemetryv1beta1.LogPipelineOutput) *LogPipelineBuilder {
+	b.httpOutput = output.FluentBitHTTP
+	b.customOutput = output.FluentBitCustom
 	b.otlpOutput = output.OTLP
 
 	return b
 }
 
-func (b *LogPipelineBuilder) WithApplicationInput(enabled bool, opts ...ExtendedNamespaceSelectorOptions) *LogPipelineBuilder {
-	b.input = BuildLogPipelineApplicationInput(opts...)
-	b.input.Application.Enabled = ptr.To(enabled)
-	b.input.Application.KeepOriginalBody = ptr.To(false)
+func (b *LogPipelineBuilder) WithRuntimeInput(enabled bool, opts ...NamespaceSelectorOptions) *LogPipelineBuilder {
+	b.input = BuildLogPipelineRuntimeInput(opts...)
+	b.input.Runtime.Enabled = new(enabled)
+	b.input.Runtime.KeepOriginalBody = new(false)
 
 	return b
 }
 
 func (b *LogPipelineBuilder) WithOTLPInput(enabled bool, opts ...NamespaceSelectorOptions) *LogPipelineBuilder {
 	b.input = BuildLogPipelineOTLPInput(opts...)
-	b.input.OTLP.Disabled = !enabled
+	b.input.OTLP.Enabled = new(enabled)
 
 	return b
 }
 
 func (b *LogPipelineBuilder) WithIncludeContainers(containers ...string) *LogPipelineBuilder {
-	if b.input.Application == nil {
-		b.input.Application = &telemetryv1alpha1.LogPipelineApplicationInput{}
+	if b.input.Runtime == nil {
+		b.input.Runtime = &telemetryv1beta1.LogPipelineRuntimeInput{}
 	}
 
-	b.input.Application.Containers.Include = containers
+	if b.input.Runtime.Containers == nil {
+		b.input.Runtime.Containers = &telemetryv1beta1.LogPipelineContainerSelector{}
+	}
+
+	b.input.Runtime.Containers.Include = containers
 
 	return b
 }
 
 func (b *LogPipelineBuilder) WithExcludeContainers(containers ...string) *LogPipelineBuilder {
-	if b.input.Application == nil {
-		b.input.Application = &telemetryv1alpha1.LogPipelineApplicationInput{}
+	if b.input.Runtime == nil {
+		b.input.Runtime = &telemetryv1beta1.LogPipelineRuntimeInput{}
 	}
 
-	b.input.Application.Containers.Exclude = containers
+	if b.input.Runtime.Containers == nil {
+		b.input.Runtime.Containers = &telemetryv1beta1.LogPipelineContainerSelector{}
+	}
+
+	b.input.Runtime.Containers.Exclude = containers
 
 	return b
 }
 
 func (b *LogPipelineBuilder) WithIncludeNamespaces(namespaces ...string) *LogPipelineBuilder {
-	if b.input.Application == nil {
-		b.input.Application = &telemetryv1alpha1.LogPipelineApplicationInput{}
+	if b.input.Runtime == nil {
+		b.input.Runtime = &telemetryv1beta1.LogPipelineRuntimeInput{}
 	}
 
-	b.input.Application.Namespaces.Include = namespaces
+	if b.input.Runtime.Namespaces == nil {
+		b.input.Runtime.Namespaces = &telemetryv1beta1.NamespaceSelector{}
+	}
+
+	b.input.Runtime.Namespaces.Include = namespaces
 
 	return b
 }
 
 func (b *LogPipelineBuilder) WithExcludeNamespaces(namespaces ...string) *LogPipelineBuilder {
-	if b.input.Application == nil {
-		b.input.Application = &telemetryv1alpha1.LogPipelineApplicationInput{}
+	if b.input.Runtime == nil {
+		b.input.Runtime = &telemetryv1beta1.LogPipelineRuntimeInput{}
 	}
 
-	b.input.Application.Namespaces.Exclude = namespaces
-
-	return b
-}
-
-func (b *LogPipelineBuilder) WithSystemNamespaces(enable bool) *LogPipelineBuilder {
-	if b.input.Application == nil {
-		b.input.Application = &telemetryv1alpha1.LogPipelineApplicationInput{}
+	if b.input.Runtime.Namespaces == nil {
+		b.input.Runtime.Namespaces = &telemetryv1beta1.NamespaceSelector{}
 	}
 
-	b.input.Application.Namespaces.System = enable
+	b.input.Runtime.Namespaces.Exclude = namespaces
 
 	return b
 }
 
 func (b *LogPipelineBuilder) WithKeepAnnotations(keep bool) *LogPipelineBuilder {
-	if b.input.Application == nil {
-		b.input.Application = &telemetryv1alpha1.LogPipelineApplicationInput{}
+	if b.input.Runtime == nil {
+		b.input.Runtime = &telemetryv1beta1.LogPipelineRuntimeInput{}
 	}
 
-	b.input.Application.KeepAnnotations = &keep
+	b.input.Runtime.FluentBitKeepAnnotations = &keep
 
 	return b
 }
 
 func (b *LogPipelineBuilder) WithDropLabels(drop bool) *LogPipelineBuilder {
-	if b.input.Application == nil {
-		b.input.Application = &telemetryv1alpha1.LogPipelineApplicationInput{}
+	if b.input.Runtime == nil {
+		b.input.Runtime = &telemetryv1beta1.LogPipelineRuntimeInput{}
 	}
 
-	b.input.Application.DropLabels = &drop
+	b.input.Runtime.FluentBitDropLabels = &drop
 
 	return b
 }
 
 func (b *LogPipelineBuilder) WithKeepOriginalBody(keep bool) *LogPipelineBuilder {
-	if b.input.Application == nil {
-		b.input.Application = &telemetryv1alpha1.LogPipelineApplicationInput{}
+	if b.input.Runtime == nil {
+		b.input.Runtime = &telemetryv1beta1.LogPipelineRuntimeInput{}
 	}
 
-	b.input.Application.KeepOriginalBody = ptr.To(keep)
+	b.input.Runtime.KeepOriginalBody = new(keep)
 
 	return b
 }
 
 func (b *LogPipelineBuilder) WithCustomFilter(filter string) *LogPipelineBuilder {
-	b.fluentBitFilters = append(b.fluentBitFilters, telemetryv1alpha1.LogPipelineFilter{Custom: filter})
+	b.fluentBitFilters = append(b.fluentBitFilters, telemetryv1beta1.FluentBitFilter{Custom: filter})
 	return b
 }
 
 func (b *LogPipelineBuilder) WithFile(name, content string) *LogPipelineBuilder {
-	b.files = append(b.files, telemetryv1alpha1.LogPipelineFileMount{
+	b.files = append(b.files, telemetryv1beta1.FluentBitFile{
 		Name:    name,
 		Content: content,
 	})
@@ -245,10 +221,10 @@ func (b *LogPipelineBuilder) WithFile(name, content string) *LogPipelineBuilder 
 }
 
 func (b *LogPipelineBuilder) WithVariable(name, secretName, secretNamespace, secretKey string) *LogPipelineBuilder {
-	b.variables = append(b.variables, telemetryv1alpha1.LogPipelineVariableRef{
+	b.variables = append(b.variables, telemetryv1beta1.FluentBitVariable{
 		Name: name,
-		ValueFrom: telemetryv1alpha1.ValueFromSource{
-			SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+		ValueFrom: telemetryv1beta1.ValueFromSource{
+			SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 				Name:      secretName,
 				Namespace: secretNamespace,
 				Key:       secretKey,
@@ -277,17 +253,40 @@ func (b *LogPipelineBuilder) WithOTLPOutput(opts ...OTLPOutputOption) *LogPipeli
 	return b
 }
 
+func (b *LogPipelineBuilder) WithOAuth2(opts ...OAuth2Option) *LogPipelineBuilder {
+	if b.oauth2 == nil {
+		b.oauth2 = &telemetryv1beta1.OAuth2Options{}
+	}
+
+	for _, opt := range opts {
+		opt(b.oauth2)
+	}
+
+	// Set OAuth2 on the OTLP output authentication
+	if b.otlpOutput == nil {
+		b.otlpOutput = defaultOTLPOutput()
+	}
+
+	if b.otlpOutput.Authentication == nil {
+		b.otlpOutput.Authentication = &telemetryv1beta1.AuthenticationOptions{}
+	}
+
+	b.otlpOutput.Authentication.OAuth2 = b.oauth2
+
+	return b
+}
+
 func (b *LogPipelineBuilder) WithCustomOutput(custom string) *LogPipelineBuilder {
 	b.customOutput = custom
 	return b
 }
 
-func (b *LogPipelineBuilder) WithTransform(transform telemetryv1alpha1.TransformSpec) *LogPipelineBuilder {
+func (b *LogPipelineBuilder) WithTransform(transform telemetryv1beta1.TransformSpec) *LogPipelineBuilder {
 	b.transforms = append(b.transforms, transform)
 	return b
 }
 
-func (b *LogPipelineBuilder) WithFilter(filter telemetryv1alpha1.FilterSpec) *LogPipelineBuilder {
+func (b *LogPipelineBuilder) WithFilter(filter telemetryv1beta1.FilterSpec) *LogPipelineBuilder {
 	b.filters = append(b.filters, filter)
 	return b
 }
@@ -307,7 +306,7 @@ func (b *LogPipelineBuilder) WithStatusConditions(cond ...metav1.Condition) *Log
 	return b
 }
 
-func (b *LogPipelineBuilder) Build() telemetryv1alpha1.LogPipeline {
+func (b *LogPipelineBuilder) Build() telemetryv1beta1.LogPipeline {
 	if b.name == "" {
 		b.name = fmt.Sprintf("test-%d", b.randSource.Int63())
 	}
@@ -316,26 +315,30 @@ func (b *LogPipelineBuilder) Build() telemetryv1alpha1.LogPipeline {
 		b.httpOutput = defaultHTTPOutput()
 	}
 
-	logPipeline := telemetryv1alpha1.LogPipeline{
+	logPipeline := telemetryv1beta1.LogPipeline{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: telemetryv1beta1.GroupVersion.String(),
+			Kind:       "LogPipeline",
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:       b.name,
 			Labels:     b.labels,
 			Finalizers: b.finalizers,
 		},
-		Spec: telemetryv1alpha1.LogPipelineSpec{
+		Spec: telemetryv1beta1.LogPipelineSpec{
 			Input:            b.input,
 			FluentBitFilters: b.fluentBitFilters,
-			Output: telemetryv1alpha1.LogPipelineOutput{
-				HTTP:   b.httpOutput,
-				Custom: b.customOutput,
-				OTLP:   b.otlpOutput,
+			Output: telemetryv1beta1.LogPipelineOutput{
+				FluentBitHTTP:   b.httpOutput,
+				FluentBitCustom: b.customOutput,
+				OTLP:            b.otlpOutput,
 			},
-			Files:      b.files,
-			Variables:  b.variables,
-			Transforms: b.transforms,
-			Filters:    b.filters,
+			FluentBitFiles:     b.files,
+			FluentBitVariables: b.variables,
+			Transforms:         b.transforms,
+			Filters:            b.filters,
 		},
-		Status: telemetryv1alpha1.LogPipelineStatus{
+		Status: telemetryv1beta1.LogPipelineStatus{
 			Conditions: b.statusConditions,
 		},
 	}
@@ -346,22 +349,22 @@ func (b *LogPipelineBuilder) Build() telemetryv1alpha1.LogPipeline {
 	return logPipeline
 }
 
-func defaultHTTPOutput() *telemetryv1alpha1.LogPipelineHTTPOutput {
-	return &telemetryv1alpha1.LogPipelineHTTPOutput{
-		Host:   telemetryv1alpha1.ValueType{Value: "127.0.0.1"},
+func defaultHTTPOutput() *telemetryv1beta1.FluentBitHTTPOutput {
+	return &telemetryv1beta1.FluentBitHTTPOutput{
+		Host:   telemetryv1beta1.ValueType{Value: "127.0.0.1"},
 		Port:   "8080",
 		URI:    "/",
 		Format: "json",
-		TLS: telemetryv1alpha1.LogPipelineOutputTLS{
-			Disabled:                  true,
-			SkipCertificateValidation: true,
+		TLS: telemetryv1beta1.OutputTLS{
+			Insecure:           true,
+			InsecureSkipVerify: true,
 		},
 	}
 }
 
-func defaultOTLPOutput() *telemetryv1alpha1.OTLPOutput {
-	return &telemetryv1alpha1.OTLPOutput{
-		Endpoint: telemetryv1alpha1.ValueType{Value: "https://localhost:4317"},
-		Protocol: telemetryv1alpha1.OTLPProtocolGRPC,
+func defaultOTLPOutput() *telemetryv1beta1.OTLPOutput {
+	return &telemetryv1beta1.OTLPOutput{
+		Endpoint: telemetryv1beta1.ValueType{Value: "https://localhost:4317"},
+		Protocol: telemetryv1beta1.OTLPProtocolGRPC,
 	}
 }

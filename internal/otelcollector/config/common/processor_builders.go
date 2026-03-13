@@ -3,15 +3,15 @@ package common
 import (
 	"fmt"
 
-	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
 
 // =============================================================================
 // KUBERNETES ATTRIBUTES PROCESSOR BUILDERS
 // =============================================================================
 
-func K8sAttributesProcessorConfig(enrichments *operatorv1alpha1.EnrichmentSpec) *K8sAttributesProcessor {
+func K8sAttributesProcessor(enrichments *operatorv1beta1.EnrichmentSpec, useOTelServiceEnrichment bool) *K8sAttributesProcessorConfig {
 	k8sAttributes := []string{
 		"k8s.pod.name",
 		"k8s.node.name",
@@ -21,6 +21,11 @@ func K8sAttributesProcessorConfig(enrichments *operatorv1alpha1.EnrichmentSpec) 
 		"k8s.daemonset.name",
 		"k8s.cronjob.name",
 		"k8s.job.name",
+	}
+
+	// TODO(TeodorSAP): Move this to the slice above when old service enrichment strategy is fully deprecated
+	if useOTelServiceEnrichment {
+		k8sAttributes = append(k8sAttributes, "service.namespace", "service.name", "service.version", "service.instance.id")
 	}
 
 	podAssociations := []PodAssociations{
@@ -35,29 +40,21 @@ func K8sAttributesProcessorConfig(enrichments *operatorv1alpha1.EnrichmentSpec) 
 		},
 	}
 
-	return &K8sAttributesProcessor{
+	return &K8sAttributesProcessorConfig{
 		AuthType:    "serviceAccount",
 		Passthrough: false,
 		Extract: ExtractK8sMetadata{
-			Metadata: k8sAttributes,
-			Labels:   append(extractLabels(), extractPodLabels(enrichments)...),
+			Metadata:                     k8sAttributes,
+			Labels:                       append(extractLabels(useOTelServiceEnrichment), extractPodLabels(enrichments)...),
+			OTelAnnotations:              useOTelServiceEnrichment,
+			DeploymentNameFromReplicaset: useOTelServiceEnrichment,
 		},
 		PodAssociation: podAssociations,
 	}
 }
 
-func extractLabels() []ExtractLabel {
-	return []ExtractLabel{
-		{
-			From:    "pod",
-			Key:     "app.kubernetes.io/name",
-			TagName: kymaK8sIOAppName,
-		},
-		{
-			From:    "pod",
-			Key:     "app",
-			TagName: kymaAppName,
-		},
+func extractLabels(useOTelServiceEnrichment bool) []ExtractLabel {
+	extractLabels := []ExtractLabel{
 		{
 			From:    "node",
 			Key:     "topology.kubernetes.io/region",
@@ -79,9 +76,28 @@ func extractLabels() []ExtractLabel {
 			TagName: "host.arch",
 		},
 	}
+
+	// old enrichment strategy (will be deprecated)
+	if !useOTelServiceEnrichment {
+		extractLabels = append(
+			[]ExtractLabel{
+				{
+					From:    "pod",
+					Key:     "app.kubernetes.io/name",
+					TagName: kymaK8sIOAppName,
+				},
+				{
+					From:    "pod",
+					Key:     "app",
+					TagName: kymaAppName,
+				},
+			}, extractLabels...)
+	}
+
+	return extractLabels
 }
 
-func extractPodLabels(enrichments *operatorv1alpha1.EnrichmentSpec) []ExtractLabel {
+func extractPodLabels(enrichments *operatorv1beta1.EnrichmentSpec) []ExtractLabel {
 	extractPodLabels := make([]ExtractLabel, 0)
 
 	if enrichments != nil && len(enrichments.ExtractPodLabels) > 0 {
@@ -108,61 +124,9 @@ func extractPodLabels(enrichments *operatorv1alpha1.EnrichmentSpec) []ExtractLab
 // RESOURCE PROCESSOR BUILDERS
 // =============================================================================
 
-// InsertClusterAttributesProcessorConfig creates a resource processor that inserts cluster attributes
-func InsertClusterAttributesProcessorConfig(clusterName, clusterUID, cloudProvider string) *ResourceProcessor {
-	if cloudProvider != "" {
-		return &ResourceProcessor{
-			Attributes: []AttributeAction{
-				{
-					Action: AttributeActionInsert,
-					Key:    "k8s.cluster.name",
-					Value:  clusterName,
-				},
-				{
-					Action: AttributeActionInsert,
-					Key:    "k8s.cluster.uid",
-					Value:  clusterUID,
-				},
-				{
-					Action: AttributeActionInsert,
-					Key:    "cloud.provider",
-					Value:  cloudProvider,
-				},
-			},
-		}
-	}
-
-	return &ResourceProcessor{
-		Attributes: []AttributeAction{
-			{
-				Action: AttributeActionInsert,
-				Key:    "k8s.cluster.name",
-				Value:  clusterName,
-			},
-			{
-				Action: AttributeActionInsert,
-				Key:    "k8s.cluster.uid",
-				Value:  clusterUID,
-			},
-		},
-	}
-}
-
-// DropKymaAttributesProcessorConfig creates a resource processor that drops Kyma attributes
-func DropKymaAttributesProcessorConfig() *ResourceProcessor {
-	return &ResourceProcessor{
-		Attributes: []AttributeAction{
-			{
-				Action:       AttributeActionDelete,
-				RegexPattern: "kyma.*",
-			},
-		},
-	}
-}
-
-// ResolveServiceNameConfig creates a service enrichment processor configuration
-func ResolveServiceNameConfig() *ServiceEnrichmentProcessor {
-	return &ServiceEnrichmentProcessor{
+// ResolveServiceName creates a service enrichment processor configuration
+func ResolveServiceName() *ServiceEnrichmentProcessorConfig {
+	return &ServiceEnrichmentProcessorConfig{
 		ResourceAttributes: []string{
 			kymaK8sIOAppName,
 			kymaAppName,
@@ -174,73 +138,27 @@ func ResolveServiceNameConfig() *ServiceEnrichmentProcessor {
 // FILTER PROCESSOR BUILDERS
 // =============================================================================
 
-// LogFilterProcessorConfig creates a FilterProcessor for logs with error_mode set to "ignore"
-func LogFilterProcessorConfig(logs FilterProcessorLogs) *FilterProcessor {
-	return &FilterProcessor{
+// LogFilterProcessor creates a FilterProcessorConfig for logs with error_mode set to "ignore"
+func LogFilterProcessor(filters []telemetryv1beta1.FilterSpec) *FilterProcessorConfig {
+	return &FilterProcessorConfig{
 		ErrorMode: defaultFilterProcessorErrorMode,
-		Logs:      logs,
+		Logs:      filters,
 	}
 }
 
-// MetricFilterProcessorConfig creates a FilterProcessor for metrics with the default error mode
-func MetricFilterProcessorConfig(metrics FilterProcessorMetrics) *FilterProcessor {
-	return &FilterProcessor{
+// MetricFilterProcessor creates a FilterProcessorConfig for metrics with the default error mode
+func MetricFilterProcessor(filters []telemetryv1beta1.FilterSpec) *FilterProcessorConfig {
+	return &FilterProcessorConfig{
 		ErrorMode: defaultFilterProcessorErrorMode,
-		Metrics:   metrics,
+		Metrics:   filters,
 	}
 }
 
-// TraceFilterProcessorConfig creates a FilterProcessor for traces with the default error mode
-func TraceFilterProcessorConfig(traces FilterProcessorTraces) *FilterProcessor {
-	return &FilterProcessor{
+// TraceFilterProcessor creates a FilterProcessorConfig for traces with the default error mode
+func TraceFilterProcessor(filters []telemetryv1beta1.FilterSpec) *FilterProcessorConfig {
+	return &FilterProcessorConfig{
 		ErrorMode: defaultFilterProcessorErrorMode,
-		Traces:    traces,
-	}
-}
-
-func FilterSpecsToLogFilterProcessorConfig(specs []telemetryv1alpha1.FilterSpec) *FilterProcessor {
-	var mergedConditions []string
-	for _, spec := range specs {
-		mergedConditions = append(mergedConditions, spec.Conditions...)
-	}
-
-	return &FilterProcessor{
-		ErrorMode: defaultFilterProcessorErrorMode,
-		Logs: FilterProcessorLogs{
-			// Use log context as it is the lowest one and it is always present
-			Log: mergedConditions,
-		},
-	}
-}
-
-func FilterSpecsToMetricFilterProcessorConfig(specs []telemetryv1alpha1.FilterSpec) *FilterProcessor {
-	var mergedConditions []string
-	for _, spec := range specs {
-		mergedConditions = append(mergedConditions, spec.Conditions...)
-	}
-
-	return &FilterProcessor{
-		ErrorMode: defaultFilterProcessorErrorMode,
-		Metrics: FilterProcessorMetrics{
-			// Use datapoint context as it is the lowest one and it is always present
-			Datapoint: mergedConditions,
-		},
-	}
-}
-
-func FilterSpecsToTraceFilterProcessorConfig(specs []telemetryv1alpha1.FilterSpec) *FilterProcessor {
-	var mergedConditions []string
-	for _, spec := range specs {
-		mergedConditions = append(mergedConditions, spec.Conditions...)
-	}
-
-	return &FilterProcessor{
-		ErrorMode: defaultFilterProcessorErrorMode,
-		Traces: FilterProcessorTraces{
-			// Use span as context instead of spanevents, because while more granular, spanevents aren't always present
-			// span event filtering is not supported by user-defined filter until filter processor supports context inference
-			Span: mergedConditions,
-		},
+		Traces:    filters,
 	}
 }
 
@@ -248,32 +166,32 @@ func FilterSpecsToTraceFilterProcessorConfig(specs []telemetryv1alpha1.FilterSpe
 // TRANSFORM PROCESSOR BUILDERS
 // =============================================================================
 
-// LogTransformProcessorConfig creates a TransformProcessor for logs with error_mode set to "ignore"
-func LogTransformProcessorConfig(statements []TransformProcessorStatements) *TransformProcessor {
-	return &TransformProcessor{
+// LogTransformProcessor creates a TransformProcessorConfig for logs with error_mode set to "ignore"
+func LogTransformProcessor(statements []TransformProcessorStatements) *TransformProcessorConfig {
+	return &TransformProcessorConfig{
 		ErrorMode:     defaultTransformProcessorErrorMode,
 		LogStatements: statements,
 	}
 }
 
-// MetricTransformProcessorConfig creates a TransformProcessor for metrics with the default error mode
-func MetricTransformProcessorConfig(statements []TransformProcessorStatements) *TransformProcessor {
-	return &TransformProcessor{
+// MetricTransformProcessor creates a TransformProcessorConfig for metrics with the default error mode
+func MetricTransformProcessor(statements []TransformProcessorStatements) *TransformProcessorConfig {
+	return &TransformProcessorConfig{
 		ErrorMode:        defaultTransformProcessorErrorMode,
 		MetricStatements: statements,
 	}
 }
 
-// TraceTransformProcessorConfig creates a TransformProcessor for traces with the default error mode
-func TraceTransformProcessorConfig(statements []TransformProcessorStatements) *TransformProcessor {
-	return &TransformProcessor{
+// TraceTransformProcessor creates a TransformProcessorConfig for traces with the default error mode
+func TraceTransformProcessor(statements []TransformProcessorStatements) *TransformProcessorConfig {
+	return &TransformProcessorConfig{
 		ErrorMode:       defaultTransformProcessorErrorMode,
 		TraceStatements: statements,
 	}
 }
 
 // TransformSpecsToProcessorStatements converts transform specs to processor statements
-func TransformSpecsToProcessorStatements(specs []telemetryv1alpha1.TransformSpec) []TransformProcessorStatements {
+func TransformSpecsToProcessorStatements(specs []telemetryv1beta1.TransformSpec) []TransformProcessorStatements {
 	result := make([]TransformProcessorStatements, 0, len(specs))
 	for _, spec := range specs {
 		result = append(result, TransformProcessorStatements{
@@ -285,8 +203,51 @@ func TransformSpecsToProcessorStatements(specs []telemetryv1alpha1.TransformSpec
 	return result
 }
 
-// InstrumentationScopeProcessorConfig creates a transform processor for instrumentation scope
-func InstrumentationScopeProcessorConfig(instrumentationScopeVersion string, inputSource ...InputSourceType) *TransformProcessor {
+type ClusterOptions struct {
+	ClusterName   string
+	ClusterUID    string
+	CloudProvider string
+}
+
+// InsertClusterAttributesProcessorStatements creates processor statements for the transform processor that inserts cluster attributes
+func InsertClusterAttributesProcessorStatements(cluster ClusterOptions) []TransformProcessorStatements {
+	statements := []string{
+		setIfNilOrEmptyStatement("k8s.cluster.name", cluster.ClusterName),
+		setIfNilOrEmptyStatement("k8s.cluster.uid", cluster.ClusterUID),
+	}
+
+	if cluster.CloudProvider != "" {
+		statements = append(statements, setIfNilOrEmptyStatement("cloud.provider", cluster.CloudProvider))
+	}
+
+	return []TransformProcessorStatements{{
+		Statements: statements,
+	}}
+}
+
+// DropKymaAttributesProcessorStatements creates processor statements for the transform processor that drops Kyma attributes
+func DropKymaAttributesProcessorStatements() []TransformProcessorStatements {
+	return []TransformProcessorStatements{{
+		Statements: []string{
+			"delete_matching_keys(resource.attributes, \"kyma.*\")",
+		},
+	}}
+}
+
+// DropUnknownServiceNameProcessorStatements creates processor statements for the transform processor that drops unknown service names
+func DropUnknownServiceNameProcessorStatements() []TransformProcessorStatements {
+	return []TransformProcessorStatements{{
+		Statements: []string{
+			JoinWithWhere(
+				DeleteResourceAttribute("service.name"),
+				JoinWithAnd(ResourceAttributeIsNotNil("service.name"), ResourceAttributeHasPrefix("service.name", "unknown_service")),
+			),
+		},
+	}}
+}
+
+// InstrumentationScopeProcessor creates a transform processor for instrumentation scope
+func InstrumentationScopeProcessor(instrumentationScopeVersion string, inputSource ...InputSourceType) *TransformProcessorConfig {
 	statements := []string{}
 	transformProcessorStatements := []TransformProcessorStatements{}
 
@@ -298,23 +259,17 @@ func InstrumentationScopeProcessorConfig(instrumentationScopeVersion string, inp
 		Statements: statements,
 	})
 
-	return MetricTransformProcessorConfig(transformProcessorStatements)
+	return MetricTransformProcessor(transformProcessorStatements)
 }
 
-// KymaInputNameProcessorConfig creates a transform processor that sets the custom `kyma.input.name` attribute
+// KymaInputNameProcessorStatements creates processor statements for the transform processor that sets the custom `kyma.input.name` attribute
 // the attribute is mainly used for routing purpose in the metric agent configuration
-func KymaInputNameProcessorConfig(inputSource InputSourceType) *ResourceProcessor {
-	resourceProcessor := ResourceProcessor{
-		Attributes: []AttributeAction{
-			{
-				Action: AttributeActionInsert,
-				Key:    KymaInputNameAttribute,
-				Value:  string(inputSource),
-			},
+func KymaInputNameProcessorStatements(inputSource InputSourceType) []TransformProcessorStatements {
+	return []TransformProcessorStatements{{
+		Statements: []string{
+			fmt.Sprintf("set(resource.attributes[\"%s\"], \"%s\")", KymaInputNameAttribute, string(inputSource)),
 		},
-	}
-
-	return &resourceProcessor
+	}}
 }
 
 func instrumentationStatement(inputSource InputSourceType, instrumentationScopeVersion string) []string {
@@ -322,4 +277,11 @@ func instrumentationStatement(inputSource InputSourceType, instrumentationScopeV
 		fmt.Sprintf("set(scope.version, \"%s\") where scope.name == \"%s\"", instrumentationScopeVersion, upstreamInstrumentationScopeName[inputSource]),
 		fmt.Sprintf("set(scope.name, \"%s\") where scope.name == \"%s\"", InstrumentationScope[inputSource], upstreamInstrumentationScopeName[inputSource]),
 	}
+}
+
+func setIfNilOrEmptyStatement(attributeKey, attributeValue string) string {
+	return JoinWithWhere(
+		fmt.Sprintf("set(resource.attributes[\"%s\"], \"%s\")", attributeKey, attributeValue),
+		ResourceAttributeIsNilOrEmpty(attributeKey),
+	)
 }

@@ -13,7 +13,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -81,7 +80,7 @@ var (
 		admissionregistrationv1.Update,
 	}
 	apiGroups                      = []string{"telemetry.kyma-project.io"}
-	apiVersions                    = []string{"v1alpha1"}
+	apiVersions                    = []string{"v1beta1"}
 	scope                          = admissionregistrationv1.AllScopes
 	servicePort                    = int32(443)
 	timeout                        = int32(15)
@@ -98,7 +97,7 @@ var (
 						Name:      webhookService.Name,
 						Namespace: webhookService.Namespace,
 						Port:      &servicePort,
-						Path:      ptr.To("/validate-logpipeline"),
+						Path:      new("/validate-telemetry-kyma-project-io-v1beta1-logpipeline"),
 					},
 				},
 				FailurePolicy:  &failurePolicy,
@@ -114,33 +113,6 @@ var (
 							APIVersions: apiVersions,
 							Scope:       &scope,
 							Resources:   []string{"logpipelines"},
-						},
-					},
-				},
-			},
-			{
-				AdmissionReviewVersions: []string{"v1beta1", "v1"},
-				ClientConfig: admissionregistrationv1.WebhookClientConfig{
-					Service: &admissionregistrationv1.ServiceReference{
-						Name:      webhookService.Name,
-						Namespace: webhookService.Namespace,
-						Port:      &servicePort,
-						Path:      ptr.To("/validate-logparser"),
-					},
-				},
-				FailurePolicy:  &failurePolicy,
-				MatchPolicy:    &matchPolicy,
-				Name:           "validating-logparsers.kyma-project.io",
-				SideEffects:    &sideEffects,
-				TimeoutSeconds: &timeout,
-				Rules: []admissionregistrationv1.RuleWithOperations{
-					{
-						Operations: operations,
-						Rule: admissionregistrationv1.Rule{
-							APIGroups:   apiGroups,
-							APIVersions: apiVersions,
-							Scope:       &scope,
-							Resources:   []string{"logparsers"},
 						},
 					},
 				},
@@ -161,12 +133,12 @@ var (
 						Name:      webhookService.Name,
 						Namespace: webhookService.Namespace,
 						Port:      &servicePort,
-						Path:      ptr.To("/mutate-telemetry-kyma-project-io-v1alpha1-metricpipeline"),
+						Path:      new("/mutate-telemetry-kyma-project-io-v1beta1-metricpipeline"),
 					},
 				},
 				FailurePolicy:  &failurePolicy,
 				MatchPolicy:    &matchPolicy,
-				Name:           "mutating.v1alpha1.metricpipelines.telemetry.kyma-project.io",
+				Name:           "mutating.v1beta1.metricpipelines.telemetry.kyma-project.io",
 				SideEffects:    &sideEffects,
 				TimeoutSeconds: &timeout,
 				Rules: []admissionregistrationv1.RuleWithOperations{
@@ -188,12 +160,12 @@ var (
 						Name:      webhookService.Name,
 						Namespace: webhookService.Namespace,
 						Port:      &servicePort,
-						Path:      ptr.To("/mutate-telemetry-kyma-project-io-v1alpha1-tracepipeline"),
+						Path:      new("/mutate-telemetry-kyma-project-io-v1beta1-tracepipeline"),
 					},
 				},
 				FailurePolicy:  &failurePolicy,
 				MatchPolicy:    &matchPolicy,
-				Name:           "mutating.v1alpha1.tracepipelines.telemetry.kyma-project.io",
+				Name:           "mutating.v1beta1.tracepipelines.telemetry.kyma-project.io",
 				SideEffects:    &sideEffects,
 				TimeoutSeconds: &timeout,
 				Rules: []admissionregistrationv1.RuleWithOperations{
@@ -215,12 +187,12 @@ var (
 						Name:      webhookService.Name,
 						Namespace: webhookService.Namespace,
 						Port:      &servicePort,
-						Path:      ptr.To("/mutate-telemetry-kyma-project-io-v1alpha1-logpipeline"),
+						Path:      new("/mutate-telemetry-kyma-project-io-v1beta1-logpipeline"),
 					},
 				},
 				FailurePolicy:  &failurePolicy,
 				MatchPolicy:    &matchPolicy,
-				Name:           "mutating.v1alpha1.logpipelines.telemetry.kyma-project.io",
+				Name:           "mutating.v1beta1.logpipelines.telemetry.kyma-project.io",
 				SideEffects:    &sideEffects,
 				TimeoutSeconds: &timeout,
 				Rules: []admissionregistrationv1.RuleWithOperations{
@@ -339,11 +311,9 @@ func TestUpdateWebhookConfig(t *testing.T) {
 
 	var chainChecker certChainCheckerImpl
 
-	certValid, err := chainChecker.checkRoot(t.Context(), newServerCert, updatedValidatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle)
-	require.NoError(t, err)
-	require.True(t, certValid)
+	require.Len(t, updatedValidatingWebhookConfiguration.Webhooks, 1)
 
-	certValid, err = chainChecker.checkRoot(t.Context(), newServerCert, updatedValidatingWebhookConfiguration.Webhooks[1].ClientConfig.CABundle)
+	certValid, err := chainChecker.checkRoot(t.Context(), newServerCert, updatedValidatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle)
 	require.NoError(t, err)
 	require.True(t, certValid)
 
@@ -465,10 +435,10 @@ func TestReuseExistingCertificate(t *testing.T) {
 	err = client.Get(t.Context(), config.ValidatingWebhookName, &updatedValidatingWebhookConfiguration)
 	require.NoError(t, err)
 
+	require.Len(t, updatedValidatingWebhookConfiguration.Webhooks, 1)
+
 	require.Equal(t, newValidatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle,
 		updatedValidatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle)
-	require.Equal(t, newValidatingWebhookConfiguration.Webhooks[1].ClientConfig.CABundle,
-		updatedValidatingWebhookConfiguration.Webhooks[1].ClientConfig.CABundle)
 
 	var updatedMutatingWebhookConfiguration admissionregistrationv1.MutatingWebhookConfiguration
 

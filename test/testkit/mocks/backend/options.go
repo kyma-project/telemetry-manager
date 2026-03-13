@@ -28,8 +28,25 @@ func WithReplicas(replicas int32) Option {
 	}
 }
 
-func WithTLS(certKey testutils.ServerCerts) Option {
+func WithMTLS(certs testutils.ServerCerts) Option {
 	return func(b *Backend) {
-		b.certs = &certKey
+		b.mtls = true
+		b.certs = &certs
+	}
+}
+
+func WithTLS(certs testutils.ServerCerts) Option {
+	return func(b *Backend) {
+		b.mtls = false
+		b.certs = &certs
+	}
+}
+
+func WithOIDCAuth(issuerURL, audience string) Option {
+	return func(b *Backend) {
+		b.oidc = &OIDCConfig{
+			issuerURL: issuerURL,
+			audience:  audience,
+		}
 	}
 }

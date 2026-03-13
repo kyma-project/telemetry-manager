@@ -10,7 +10,6 @@ Configure the Telemetry module to send logs, metrics, and traces from your clust
 
 ## Table of Content
 
-- [Table of Content](#table-of-content)
 - [Prerequisites](#prerequisites)
 - [Context](#context)
 - [Ship Logs to SAP Cloud Logging](#ship-logs-to-sap-cloud-logging)
@@ -23,7 +22,7 @@ Configure the Telemetry module to send logs, metrics, and traces from your clust
 
 ## Prerequisites
 
-- Kyma as the target deployment environment, with the following modules added (see [Quick Install](https://kyma-project.io/#/02-get-started/01-quick-install)):
+- Kyma as the target deployment environment, with the following modules added (see [Quick Install](https://kyma-project.io/02-get-started/01-quick-install)):
   - Telemetry module
   - To collect data from your Istio service mesh: Istio module (default module)
   - SAP BTP Operator module (default module)
@@ -48,14 +47,7 @@ SAP Cloud Logging is an instance-based and environment-agnostic observability se
 
 ## Ship Logs to SAP Cloud Logging
 
-The Telemetry module supports two protocols for shipping logs to your backend. The method you choose determines how you configure your LogPipeline and which SAP Cloud Logging dashboards you can use.
-
-### Context
-
-Choose one of the following methods to configure shipping for application and access logs
-
-- OpenTelemetry (recommended): Use the OTLP-native method for all new configurations. It provides a unified way to send logs, metrics, and traces.
-- Fluent Bit (legacy): Use this method only if you depend on the preconfigured Kyma_* dashboards in SAP Cloud Logging. These dashboards were designed for the HTTP and are not compatible with the OTLP logging output.
+You can set up ingestion of logs from applications and the Istio service mesh to the OTLP endpoint of the SAP Cloud Logging service instance.
 
 ### Procedure
 
@@ -63,91 +55,45 @@ Choose one of the following methods to configure shipping for application and ac
 <!-- using HTML so it's collapsed in GitHub, don't switch to docsify tabs -->
 1. Deploy a [LogPipeline](./../../collecting-logs/README.md) for application logs:
 
-   - For OTLP, run:
-    <div tabs name="logs">
-      <details><summary>Script: Application Logs</summary>
+   <div tabs name="logs">
+     <details><summary>Script: Application Logs</summary>
+ 
+     ```bash
+     kubectl apply -f - <<EOF
+     apiVersion: telemetry.kyma-project.io/v1beta1
+     kind: LogPipeline
+     metadata:
+       name: sap-cloud-logging
+     spec:
+       input:
+         runtime:
+           enabled: true
+       output:
+         otlp:
+           endpoint:
+             valueFrom:
+               secretKeyRef:
+                 name: sap-cloud-logging
+                 namespace: sap-cloud-logging-integration
+                 key: ingest-otlp-endpoint
+           tls:
+             cert:
+               valueFrom:
+                 secretKeyRef:
+                   name: sap-cloud-logging
+                   namespace: sap-cloud-logging-integration
+                   key: ingest-otlp-cert
+             key:
+               valueFrom:
+                 secretKeyRef:
+                   name: sap-cloud-logging
+                   namespace: sap-cloud-logging-integration
+                   key: ingest-otlp-key
+     EOF
+     ```
 
-      ```bash
-      kubectl apply -f - <<EOF
-      apiVersion: telemetry.kyma-project.io/v1alpha1
-      kind: LogPipeline
-      metadata:
-        name: sap-cloud-logging
-      spec:
-        input:
-          application:
-            enabled: true
-        output:
-          otlp:
-            endpoint:
-              valueFrom:
-                secretKeyRef:
-                  name: sap-cloud-logging
-                  namespace: sap-cloud-logging-integration
-                  key: ingest-otlp-endpoint
-            tls:
-              cert:
-                valueFrom:
-                  secretKeyRef:
-                    name: sap-cloud-logging
-                    namespace: sap-cloud-logging-integration
-                    key: ingest-otlp-cert
-              key:
-                valueFrom:
-                  secretKeyRef:
-                    name: sap-cloud-logging
-                    namespace: sap-cloud-logging-integration
-                    key: ingest-otlp-key
-      EOF
-      ```
-
-      </details>
-    </div>
-
-   - For HTTP, run:
-    <div tabs name="logs">
-      <details><summary>Script: Application Logs</summary>
-
-      ```bash
-      kubectl apply -f - <<EOF
-      apiVersion: telemetry.kyma-project.io/v1alpha1
-      kind: LogPipeline
-      metadata:
-        name: sap-cloud-logging-application-logs
-      spec:
-        input:
-          application:
-            containers:
-              exclude:
-                - istio-proxy
-        output:
-          http:
-            dedot: true
-            host:
-              valueFrom:
-                secretKeyRef:
-                  name: sap-cloud-logging
-                  namespace: sap-cloud-logging-integration
-                  key: ingest-mtls-endpoint
-            tls:
-              cert:
-                valueFrom:
-                  secretKeyRef:
-                    name: sap-cloud-logging
-                    namespace: sap-cloud-logging-integration
-                    key: ingest-mtls-cert
-              key:
-                valueFrom:
-                  secretKeyRef:
-                    name: sap-cloud-logging
-                    namespace: sap-cloud-logging-integration
-                    key: ingest-mtls-key
-            uri: /customindex/kyma
-      EOF
-      ```
-
-      </details>
-    </div>
+     </details>
+   </div>
 
 1. Verify that the LogPipeline is running:
 
@@ -161,62 +107,7 @@ By default, Istio sidecar injection and Istio access logs are disabled in Kyma. 
 
 1. Enable Istio sidecar injection for your workload (see [Enabling Istio Sidecar Proxy Injection](https://kyma-project.io/#/istio/user/tutorials/01-40-enable-sidecar-injection)).
 
-1. Depending on your log shipment protocol, configure the [Istio](https://istio.io/latest/docs/reference/config/telemetry/) Telemetry resource (see [Configure Istio Access Logs](./../../collecting-logs/istio-support.md)):
-
-   - For OTLP, set up the Istio Telemetry resource with the OTLP-based kyma-logs extension provider.
-   - For HTTP:
-     1. Set up the Istio Telemetry resource with the `stdout-json` extension provider.
-     1. Deploy a LogPipeline for Istio access logs:
-
-      <div tabs name="accesslogs">
-        <details><summary>Script: Access Logs</summary>
-
-        ```bash
-        kubectl apply -f - <<EOF
-        apiVersion: telemetry.kyma-project.io/v1alpha1
-        kind: LogPipeline
-        metadata:
-          name: sap-cloud-logging-access-logs
-        spec:
-          input:
-            application:
-              containers:
-                include:
-                  - istio-proxy
-          output:
-            http:
-              dedot: true
-              host:
-                valueFrom:
-                  secretKeyRef:
-                    name: sap-cloud-logging
-                    namespace: sap-cloud-logging-integration
-                    key: ingest-mtls-endpoint
-              tls:
-                cert:
-                  valueFrom:
-                    secretKeyRef:
-                      name: sap-cloud-logging
-                      namespace: sap-cloud-logging-integration
-                      key: ingest-mtls-cert
-                key:
-                  valueFrom:
-                    secretKeyRef:
-                      name: sap-cloud-logging
-                      namespace: sap-cloud-logging-integration
-                      key: ingest-mtls-key
-              uri: /customindex/istio-envoy-kyma
-        EOF
-        ```
-
-        </details>
-      </div>
-
-     1. Verify that the LogPipeline for Istio access logs is running:
-
-        ```bash
-        kubectl get logpipelines
-        ```
+1. Configure the [Istio](https://istio.io/latest/docs/reference/config/telemetry/) Telemetry resource (see [Configure Istio Access Logs](./../../collecting-logs/istio-support.md)) with the `kyma-logs` extension provider.
 
 ## Ship Traces to SAP Cloud Logging
 
@@ -233,7 +124,7 @@ You can set up ingestion of distributed traces from applications and the Istio s
 
     ```bash
     kubectl apply -f - <<EOF
-    apiVersion: telemetry.kyma-project.io/v1alpha1
+    apiVersion: telemetry.kyma-project.io/v1beta1
     kind: TracePipeline
     metadata:
       name: sap-cloud-logging
@@ -291,7 +182,7 @@ You can set up ingestion of metrics from applications and the Istio service mesh
 
     ```bash
     kubectl apply -f - <<EOF
-    apiVersion: telemetry.kyma-project.io/v1alpha1
+    apiVersion: telemetry.kyma-project.io/v1beta1
     kind: MetricPipeline
     metadata:
       name: sap-cloud-logging
@@ -332,7 +223,7 @@ You can set up ingestion of metrics from applications and the Istio service mesh
 
     The default configuration creates a gateway to receive OTLP metrics from your applications.
 1. Optional: To collect additional metrics, such as those from the runtime or Istio, configure the presets in the input section of the MetricPipeline.
-For the available options, see [Configure Metrics Collection](./../../collecting-metrics/README.md).
+For the available options, see [Collecting Metrics](./../../collecting-metrics/README.md).
 1. Verify that the MetricPipeline is running:
 
   ```bash
@@ -341,27 +232,16 @@ For the available options, see [Configure Metrics Collection](./../../collecting
 
 ## Set Up Kyma Dashboard Integration
 
-To add direct links from Kyma dashboard to SAP Cloud Logging, apply the ConfigMap that corresponds to your chosen log shipping method.
-
-### Context
-
-Depending on the output you use in your LogPipeline, apply the ConfigMap. If your Secret has a different name or namespace, then download the file first and adjust the namespace and name accordingly in the dataSources section of the file.
+You can add direct links from Kyma dashboard to SAP Cloud Logging.
 
 ### Procedure
 
 1. If your Secret has a name or namespace different from the example, download the file and edit the dataSources section before you apply it.
 1. Apply the ConfigMap:
-   - For OTLP, run:
 
-     ```bash
-     kubectl apply -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/kyma-dashboard-configmap.yaml
-     ```
-
-   - For HTTP, run:
-
-     ```bash
-     kubectl apply -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/kyma-dashboard-http-configmap.yaml
-     ```
+   ```bash
+   kubectl apply -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/kyma-dashboard-configmap.yaml
+   ```
 
 ## Use SAP Cloud Logging Alerts
 
@@ -381,9 +261,7 @@ You can import predefined alerts for SAP Cloud Logging to monitor the health of 
    | SAP Cloud Logging | [alert-health.json](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-health.json) | Monitors the health of the underlying OpenSearch cluster in SAP Cloud Logging using the [cluster health API](https://opensearch.org/docs/1.3/api-reference/cluster-api/cluster-health). Triggers if the cluster status becomes `red`. |
    | SAP Cloud Logging | [alert-rejection-in-progress.json](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-rejection-in-progress.json) | Monitors the `cls-rejected-*` index for new data. Triggers if new rejected data is observed. |
    | Kyma Telemetry Integration | [alert-telemetry-status.json](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-app-log-ingestion.json) | Monitors the status of the Telemetry module. Triggers if the module reports a non-ready state. |
-   | Kyma Telemetry Integration | [alert-log-ingestion.json](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-log-ingestion.json) | For OTLP: Monitors the single LogPipeline used in the OTLP method. Triggers if log data stops flowing. |
-   | Kyma Telemetry Integration | [alert-app-log-ingestion.json](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-access-log-ingestion.json) | For HTTP (legacy): Monitors the application log LogPipeline. Triggers if log data stops flowing. |
-   | Kyma Telemetry Integration | [alert-access-log-ingestion.json](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-access-log-ingestion.json) | For HTTP (legacy): Monitors the Istio access log LogPipeline. Triggers if log data stops flowing. |
+   | Kyma Telemetry Integration | [alert-log-ingestion.json](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-log-ingestion.json) | Monitors the LogPipeline. Triggers if log data stops flowing to SAP Cloud Logging. |
    | Kyma Telemetry Integration | [alert-trace-ingestion.json](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-trace-ingestion.json) | Monitors the TracePipeline. Triggers if trace data stops flowing to SAP Cloud Logging. |
    | Kyma Telemetry Integration | [alert-metric-ingestion.json](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-metric-ingestion.json) | Monitors the MetricPipeline. Triggers if metric data stops flowing to SAP Cloud Logging. |
 
@@ -418,15 +296,11 @@ To get the exact error message from OpenSearch for a rejected log:
 
 You can view logs, traces, and metrics in SAP Cloud Logging dashboards. Several dashboards come with SAP Cloud Logging, and you can import additional dashboards as needed.
 
-### Context
-
-The preconfigured `Kyma_*` dashboards in SAP Cloud Logging are compatible only with the legacy (HTTP) logging method.
-
 ### Procedure
 
 <!-- markdown-link-check-disable -->
 - For the status of the SAP Cloud Logging integration with the Telemetry module, import the file [dashboard-status.ndjson](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/dashboard-status.ndjson).
-- For application logs and Istio access logs using the http output: Use the preconfigured dashboards prefixed with `Kyma_*`.
+- For application logs and Istio access logs: Use the preconfigured dashboard `Overview`.
 - For traces, use the OpenSearch plugin “Observability”.
 - For runtime metrics, import the file [dashboard-runtime.ndjson](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/dashboard-runtime.ndjson).
 - For Istio Pod metrics, import the file [dashboard-istio.ndjson](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/dashboard-istio.ndjson).

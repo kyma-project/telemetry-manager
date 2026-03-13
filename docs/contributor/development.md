@@ -24,7 +24,7 @@ For development, use the following commands:
 - Autofix all automatically-fixable linter complaints
 
   ```bash
-  make lint-autofix
+  make lint-fix
   ```
 
 - Regenerate YAML manifests (CRDs and RBAC)
@@ -86,11 +86,13 @@ For testing, use the following commands:
 - Run e2e tests
 
    ```bash
-   go test  test/e2e/...
+   make run-{test-labels}
    ```
 
   _Example:_
 
    ```bash
-   go test run test/e2e/...
+   make run-all-e2e-logs
+   make run-e2e-fluent-bit
+   make run-e2e-telemetry
    ```

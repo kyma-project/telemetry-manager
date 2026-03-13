@@ -11,8 +11,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/config"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+	selfmonitorconfig "github.com/kyma-project/telemetry-manager/internal/selfmonitor/config"
 )
 
 type Handler struct {
@@ -129,7 +129,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) toMetricPipelineReconcileEvents(ctx context.Context, alerts []Alert) []event.GenericEvent { //nolint:dupl // The functions are similar but not identical
 	var events []event.GenericEvent
 
-	var metricPipelines telemetryv1alpha1.MetricPipelineList
+	var metricPipelines telemetryv1beta1.MetricPipelineList
 	if err := h.c.List(ctx, &metricPipelines); err != nil {
 		return events
 	}
@@ -137,7 +137,7 @@ func (h *Handler) toMetricPipelineReconcileEvents(ctx context.Context, alerts []
 	for i := range metricPipelines.Items {
 		pipelineName := metricPipelines.Items[i].GetName()
 		for _, alert := range alerts {
-			if config.MatchesMetricPipelineRule(alert.Labels, config.RulesAny, pipelineName) {
+			if selfmonitorconfig.MatchesMetricPipelineRule(alert.Labels, selfmonitorconfig.RulesAny, pipelineName) {
 				events = append(events, event.GenericEvent{Object: &metricPipelines.Items[i]})
 			}
 		}
@@ -149,7 +149,7 @@ func (h *Handler) toMetricPipelineReconcileEvents(ctx context.Context, alerts []
 func (h *Handler) toTracePipelineReconcileEvents(ctx context.Context, alerts []Alert) []event.GenericEvent { //nolint:dupl // The functions are similar but not identical
 	var events []event.GenericEvent
 
-	var tracePipelines telemetryv1alpha1.TracePipelineList
+	var tracePipelines telemetryv1beta1.TracePipelineList
 	if err := h.c.List(ctx, &tracePipelines); err != nil {
 		return events
 	}
@@ -157,7 +157,7 @@ func (h *Handler) toTracePipelineReconcileEvents(ctx context.Context, alerts []A
 	for i := range tracePipelines.Items {
 		pipelineName := tracePipelines.Items[i].GetName()
 		for _, alert := range alerts {
-			if config.MatchesTracePipelineRule(alert.Labels, config.RulesAny, pipelineName) {
+			if selfmonitorconfig.MatchesTracePipelineRule(alert.Labels, selfmonitorconfig.RulesAny, pipelineName) {
 				events = append(events, event.GenericEvent{Object: &tracePipelines.Items[i]})
 			}
 		}
@@ -169,7 +169,7 @@ func (h *Handler) toTracePipelineReconcileEvents(ctx context.Context, alerts []A
 func (h *Handler) toLogPipelineReconcileEvents(ctx context.Context, alerts []Alert) []event.GenericEvent { //nolint:dupl // The functions are similar but not identical
 	var events []event.GenericEvent
 
-	var logPipelines telemetryv1alpha1.LogPipelineList
+	var logPipelines telemetryv1beta1.LogPipelineList
 	if err := h.c.List(ctx, &logPipelines); err != nil {
 		return events
 	}
@@ -177,7 +177,7 @@ func (h *Handler) toLogPipelineReconcileEvents(ctx context.Context, alerts []Ale
 	for i := range logPipelines.Items {
 		pipelineName := logPipelines.Items[i].GetName()
 		for _, alert := range alerts {
-			if config.MatchesLogPipelineRule(alert.Labels, config.RulesAny, pipelineName) {
+			if selfmonitorconfig.MatchesLogPipelineRule(alert.Labels, selfmonitorconfig.RulesAny, pipelineName) {
 				events = append(events, event.GenericEvent{Object: &logPipelines.Items[i]})
 			}
 		}

@@ -2,6 +2,8 @@
 
 Troubleshoot problems related to the Telemetry module and its pipelines.
 
+If you can't find a solution, don't hesitate to create a [GitHub issue](https://github.com/kyma-project/telemetry-manager/issues/new/choose).
+
 ## No Data Arrive at the Backend
 
 ### Symptom
@@ -146,7 +148,6 @@ There's a configuration or network issue between the metric agent and your appli
             telemetry.kyma-project.io/metric-scrape: "true"
     policyTypes:
     - Ingress
-
   ```
 
 ## LogPipeline: Log Buffer Filling Up
@@ -185,35 +186,28 @@ This usually happens for one of the following reasons:
 2. Test your regex separately. Simplify complex conditions to a single comparison and re-apply.
 3. To test your rules, temporarily remove all but one rule to confirm it works as expected. Then, add your other rules incrementally and isolate the rule that is causing the issue.
 
-## Generic EOF Error Message When Using OTTL Transform or Filter
+## OTTL Spec Invalid with Unspecific Error Message
 
 ### Symptom
 
-- The pipeline configuration fails with vague error messages mentioning "unexpected token `<EOF>`" or EOF (End of File) parsing errors.
 - In the pipeline status, you see the condition `ConfigurationGenerated` with status `False` and reason `OTTLSpecInvalid`.
+- The pipeline configuration fails with unclear error messages, for example, mentioning "unexpected token `<EOF>`" or EOF (End of File) parsing errors, such as the following example:
+
+```yaml
+'Invalid FilterSpec: condition has invalid syntax: 1:64: unexpected token
+      "<EOF>" (expected <opcomparison> Value)'
+```
 
 ### Cause
 
-This error occurs when there is a syntax error in the used OTTL functions in your transformation or filter rules. If syntax validation cannot diagnose the error precisely, you get a generic EOF error instead of a specific error message.
+If you get a generic EOF error instead of a specific error message, there's usually a syntax error in your OTTL transformation or filter rules. It occurs when the parser cannot diagnose the error precisely.
 
-The following example uses the incorrect function name `isMatch` (it should be `IsMatch`):
+The following example uses the incorrect function name `isMatch` (it should be `IsMatch`, because he parser is case-sensitive):
 ```yaml
 # ...
 filter:
     - conditions:
         - 'isMatch(resource.attributes["k8s.namespace.name"], ".*-system")'
-```
-This mistake produces a generic error message in the `ConfigurationGenerated` status condition of the pipeline, because the parser is case-sensitive and does not recognize the function:
-```yaml
-status:
-  conditions:
-  - lastTransitionTime: "2025-11-11T14:18:19Z"
-    message: 'Invalid FilterSpec: condition has invalid syntax: 1:64: unexpected token
-      "<EOF>" (expected <opcomparison> Value)'
-    observedGeneration: 1
-    reason: OTTLSpecInvalid
-    status: "False"
-    type: ConfigurationGenerated
 ```
 
 ### Solution

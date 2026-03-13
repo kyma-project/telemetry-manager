@@ -10,15 +10,22 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 )
 
 const (
 	FluentdProtocolHTTP = "fluentd-http"
-	OTLPProtocolGRPC    = telemetryv1alpha1.OTLPProtocolGRPC
-	OTLPProtocolHTTP    = telemetryv1alpha1.OTLPProtocolHTTP
+	OTLPProtocolGRPC    = telemetryv1beta1.OTLPProtocolGRPC
+	OTLPProtocolHTTP    = telemetryv1beta1.OTLPProtocolHTTP
 )
+
+type EndpointValidationParams struct {
+	Endpoint   *telemetryv1beta1.ValueType
+	Protocol   telemetryv1beta1.OTLPProtocol
+	OutputTLS  *telemetryv1beta1.OutputTLS
+	OTLPOAuth2 *telemetryv1beta1.OAuth2Options
+}
 
 type Validator struct {
 	Client client.Reader
@@ -28,6 +35,8 @@ var (
 	ErrValueResolveFailed = errors.New("failed to resolve value")
 	ErrPortMissing        = errors.New("missing port")
 	ErrUnsupportedScheme  = errors.New("missing or unsupported protocol scheme")
+	ErrGRPCOAuth2NoTLS    = errors.New("OAuth2 requires TLS when using gRPC protocol")
+	ErrHTTPWithTLS        = errors.New("HTTP scheme with TLS not allowed")
 )
 
 type EndpointInvalidError struct {
@@ -47,12 +56,12 @@ func IsEndpointInvalidError(err error) bool {
 	return errors.As(err, &errEndpointInvalid)
 }
 
-func (v *Validator) Validate(ctx context.Context, endpoint *telemetryv1alpha1.ValueType, protocol string) error {
-	if endpoint == nil {
+func (v *Validator) Validate(ctx context.Context, params EndpointValidationParams) error {
+	if params.Endpoint == nil {
 		return &EndpointInvalidError{Err: ErrValueResolveFailed}
 	}
 
-	endpointValue, err := resolveValue(ctx, v.Client, *endpoint)
+	endpointValue, err := resolveValue(ctx, v.Client, *params.Endpoint)
 	if err != nil {
 		return err
 	}
@@ -63,17 +72,35 @@ func (v *Validator) Validate(ctx context.Context, endpoint *telemetryv1alpha1.Va
 		return err
 	}
 
-	if protocol == FluentdProtocolHTTP {
+	// early return if protocol is Fluentd => further validation is OTLP-exclusive
+	if params.Protocol == FluentdProtocolHTTP {
 		return nil
 	}
 
-	var hostport = u.Host + u.Path
-	if err := validatePort(hostport, protocol == OTLPProtocolHTTP); err != nil {
+	// port validation
+	if err := validatePort(u.Host, params.Protocol == OTLPProtocolHTTP); err != nil {
 		return err
 	}
 
-	if protocol == OTLPProtocolHTTP {
+	// scheme validation
+	if params.Protocol == OTLPProtocolHTTP {
 		if err := validateSchemeHTTP(u.Scheme); err != nil {
+			return err
+		}
+	}
+
+	// OAuth2 validation
+	if params.OTLPOAuth2 != nil {
+		var validationFunc func(string, *telemetryv1beta1.OutputTLS) error
+
+		switch params.Protocol {
+		case OTLPProtocolGRPC:
+			validationFunc = validateGRPCWithOAuth2
+		case OTLPProtocolHTTP:
+			validationFunc = validateHTTPWithOAuth2
+		}
+
+		if err := validationFunc(u.Scheme, params.OutputTLS); err != nil {
 			return err
 		}
 	}
@@ -81,7 +108,7 @@ func (v *Validator) Validate(ctx context.Context, endpoint *telemetryv1alpha1.Va
 	return nil
 }
 
-func resolveValue(ctx context.Context, c client.Reader, value telemetryv1alpha1.ValueType) (string, error) {
+func resolveValue(ctx context.Context, c client.Reader, value telemetryv1beta1.ValueType) (string, error) {
 	if value.Value != "" {
 		return value.Value, nil
 	}
@@ -149,4 +176,35 @@ func validateSchemeHTTP(scheme string) error {
 	}
 
 	return nil
+}
+
+func validateGRPCWithOAuth2(scheme string, tls *telemetryv1beta1.OutputTLS) error {
+	// Insecure TLS config
+	if tls != nil && tls.Insecure {
+		return &EndpointInvalidError{Err: ErrGRPCOAuth2NoTLS}
+	}
+
+	// HTTP scheme: invalid in all cases
+	if scheme == "http" {
+		return &EndpointInvalidError{Err: errors.New(ErrGRPCOAuth2NoTLS.Error() + ": HTTP scheme not allowed")}
+	}
+
+	return nil
+}
+
+func validateHTTPWithOAuth2(scheme string, tls *telemetryv1beta1.OutputTLS) error {
+	// HTTP scheme with TLS
+	if scheme == "http" && isTLSConfigured(tls) {
+		return &EndpointInvalidError{Err: ErrHTTPWithTLS}
+	}
+
+	return nil
+}
+
+func isTLSConfigured(tls *telemetryv1beta1.OutputTLS) bool {
+	if tls == nil || tls.Insecure {
+		return false
+	}
+
+	return tls.CA != nil || tls.Cert != nil || tls.Key != nil
 }

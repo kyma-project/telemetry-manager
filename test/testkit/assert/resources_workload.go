@@ -2,6 +2,7 @@ package assert
 
 import (
 	"fmt"
+	"testing"
 
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
@@ -12,22 +13,92 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/kyma-project/telemetry-manager/test/testkit"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-func DeploymentReady(t testkit.T, name types.NamespacedName) {
+func DeploymentReady(t *testing.T, name types.NamespacedName) {
 	t.Helper()
 	isReady(t, isDeploymentReady, name, "Deployment")
 }
 
-func DaemonSetReady(t testkit.T, name types.NamespacedName) {
+func DeploymentHasAnnotation(t *testing.T, name types.NamespacedName, annotation map[string]string) {
+	t.Helper()
+
+	var deployment appsv1.Deployment
+
+	err := suite.K8sClient.Get(t.Context(), name, &deployment)
+	Expect(err).NotTo(HaveOccurred())
+
+	checkAnnotations(t, deployment.Annotations, annotation, "Deployment", name)
+}
+
+func DeploymentHasLabel(t *testing.T, name types.NamespacedName, label map[string]string) {
+	t.Helper()
+
+	var deployment appsv1.Deployment
+
+	err := suite.K8sClient.Get(t.Context(), name, &deployment)
+	Expect(err).NotTo(HaveOccurred())
+
+	checkLabels(t, deployment.Labels, label, "Deployment", name)
+}
+
+// DeploymentHasImage checks if the specified container in the Deployment has the expected image.
+func DeploymentHasImage(t *testing.T, name types.NamespacedName, containerName string, expectedImage string) {
+	t.Helper()
+
+	var deployment appsv1.Deployment
+
+	err := suite.K8sClient.Get(t.Context(), name, &deployment)
+	Expect(err).NotTo(HaveOccurred())
+
+	found := false
+
+	for _, container := range deployment.Spec.Template.Spec.Containers {
+		if container.Name == containerName {
+			Expect(container.Image).To(Equal(expectedImage), "Container %s in Deployment %s has an unexpected image", containerName, name.String())
+
+			found = true
+
+			break
+		}
+	}
+
+	Expect(found).To(BeTrue(), "Container %s not found in Deployment %s", containerName, name.String())
+}
+
+func checkAnnotations(t *testing.T, resourceAnnotations map[string]string, expected map[string]string, resourceType string, name types.NamespacedName) {
+	t.Helper()
+
+	for key, value := range expected {
+		val, exists := resourceAnnotations[key]
+		Expect(exists).To(BeTrueBecause("Annotation %s not found on %s %s", key, resourceType, name.String()))
+		Expect(val).To(Equal(value), "Annotation %s value mismatch on %s %s", key, resourceType, name.String())
+	}
+}
+
+func checkLabels(t *testing.T, resourceLabels map[string]string, expected map[string]string, resourceType string, name types.NamespacedName) {
+	t.Helper()
+
+	for key, value := range expected {
+		val, exists := resourceLabels[key]
+		Expect(exists).To(BeTrueBecause("Label %s not found on %s %s", key, resourceType, name.String()))
+		Expect(val).To(Equal(value), "Label %s value mismatch on %s %s", key, resourceType, name.String())
+	}
+}
+
+func StatefulSetReady(t *testing.T, name types.NamespacedName) {
+	t.Helper()
+	isReady(t, isStatefulSetReady, name, "StatefulSet")
+}
+
+func DaemonSetReady(t *testing.T, name types.NamespacedName) {
 	t.Helper()
 	isReady(t, isDaemonSetReady, name, "DaemonSet")
 }
 
-func DaemonSetNotFound(t testkit.T, name types.NamespacedName) {
+func DaemonSetNotFound(t *testing.T, name types.NamespacedName) {
 	t.Helper()
 	Eventually(func(g Gomega) {
 		_, err := isDaemonSetReady(t, name)
@@ -36,22 +107,39 @@ func DaemonSetNotFound(t testkit.T, name types.NamespacedName) {
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
-func StatefulSetReady(t testkit.T, name types.NamespacedName) {
+func DaemonSetHasAnnotation(t *testing.T, name types.NamespacedName, annotation map[string]string) {
 	t.Helper()
-	isReady(t, isStatefulSetReady, name, "StatefulSet")
+
+	var daemonSet appsv1.DaemonSet
+
+	err := suite.K8sClient.Get(t.Context(), name, &daemonSet)
+	Expect(err).NotTo(HaveOccurred())
+
+	checkAnnotations(t, daemonSet.Annotations, annotation, "DaemonSet", name)
 }
 
-func JobReady(t testkit.T, name types.NamespacedName) {
+func DaemonSetHasLabel(t *testing.T, name types.NamespacedName, label map[string]string) {
+	t.Helper()
+
+	var daemonSet appsv1.DaemonSet
+
+	err := suite.K8sClient.Get(t.Context(), name, &daemonSet)
+	Expect(err).NotTo(HaveOccurred())
+
+	checkLabels(t, daemonSet.Labels, label, "DaemonSet", name)
+}
+
+func JobReady(t *testing.T, name types.NamespacedName) {
 	t.Helper()
 	isReady(t, isJobSuccessful, name, "Job")
 }
 
-func PodReady(t testkit.T, name types.NamespacedName) {
+func PodReady(t *testing.T, name types.NamespacedName) {
 	t.Helper()
 	isReady(t, isPodReady, name, "Pod")
 }
 
-func PodsReady(t testkit.T, listOptions client.ListOptions) {
+func PodsReady(t *testing.T, listOptions client.ListOptions) {
 	t.Helper()
 	Eventually(func(g Gomega) {
 		ready, err := arePodsReady(t, listOptions)
@@ -60,7 +148,41 @@ func PodsReady(t testkit.T, listOptions client.ListOptions) {
 	}, 2*periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
-func PodsHaveContainer(t testkit.T, listOptions client.ListOptions, containerName string) (bool, error) {
+func PodsHaveAnnotation(t *testing.T, listOptions client.ListOptions, annotation map[string]string) {
+	t.Helper()
+	podsHaveKeyValue(t, listOptions, annotation, func(p corev1.Pod) map[string]string { return p.Annotations }, "annotation")
+}
+
+func PodsHaveLabel(t *testing.T, listOptions client.ListOptions, label map[string]string) {
+	t.Helper()
+	podsHaveKeyValue(t, listOptions, label, func(p corev1.Pod) map[string]string { return p.Labels }, "label")
+}
+
+func podsHaveKeyValue(t *testing.T, listOptions client.ListOptions, expected map[string]string, extractor func(corev1.Pod) map[string]string, kind string) {
+	t.Helper()
+
+	var pods corev1.PodList
+
+	err := suite.K8sClient.List(t.Context(), &pods, &listOptions)
+	Expect(err).NotTo(HaveOccurred())
+
+	for key, want := range expected {
+		found := false
+
+		for _, pod := range pods.Items {
+			if m := extractor(pod); m != nil {
+				if got, ok := m[key]; ok && got == want {
+					found = true
+					break
+				}
+			}
+		}
+
+		Expect(found).To(BeTrue(), fmt.Sprintf("%s %s=%s not found on any Pod", kind, key, want))
+	}
+}
+
+func PodsHaveContainer(t *testing.T, listOptions client.ListOptions, containerName string) (bool, error) {
 	t.Helper()
 
 	var pods corev1.PodList
@@ -87,21 +209,19 @@ func PodsHaveContainer(t testkit.T, listOptions client.ListOptions, containerNam
 	return false, nil
 }
 
-func isReady(
-	t testkit.T,
-	readinessCheck func(t testkit.T, name types.NamespacedName) (bool, error),
-	name types.NamespacedName,
-	resourceName string,
-) {
+type readinessCheckFunc func(t *testing.T, name types.NamespacedName) (bool, error)
+
+func isReady(t *testing.T, readinessCheck readinessCheckFunc, name types.NamespacedName, resourceName string) {
 	t.Helper()
 	Eventually(func(g Gomega) {
+		t.Helper()
 		ready, err := readinessCheck(t, name)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(ready).To(BeTrueBecause("%s not ready: %s", resourceName, name.String()))
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
-func isDeploymentReady(t testkit.T, name types.NamespacedName) (bool, error) {
+func isDeploymentReady(t *testing.T, name types.NamespacedName) (bool, error) {
 	t.Helper()
 
 	var deployment appsv1.Deployment
@@ -119,7 +239,7 @@ func isDeploymentReady(t testkit.T, name types.NamespacedName) (bool, error) {
 	return arePodsReady(t, listOptions)
 }
 
-func isDaemonSetReady(t testkit.T, name types.NamespacedName) (bool, error) {
+func isDaemonSetReady(t *testing.T, name types.NamespacedName) (bool, error) {
 	t.Helper()
 
 	var daemonSet appsv1.DaemonSet
@@ -137,7 +257,7 @@ func isDaemonSetReady(t testkit.T, name types.NamespacedName) (bool, error) {
 	return arePodsReady(t, listOptions)
 }
 
-func isStatefulSetReady(t testkit.T, name types.NamespacedName) (bool, error) {
+func isStatefulSetReady(t *testing.T, name types.NamespacedName) (bool, error) {
 	t.Helper()
 
 	var statefulSet appsv1.StatefulSet
@@ -155,7 +275,7 @@ func isStatefulSetReady(t testkit.T, name types.NamespacedName) (bool, error) {
 	return arePodsReady(t, listOptions)
 }
 
-func isJobSuccessful(t testkit.T, name types.NamespacedName) (bool, error) {
+func isJobSuccessful(t *testing.T, name types.NamespacedName) (bool, error) {
 	t.Helper()
 
 	var job batchv1.Job
@@ -168,7 +288,7 @@ func isJobSuccessful(t testkit.T, name types.NamespacedName) (bool, error) {
 	return job.Status.Active > 0, nil
 }
 
-func isPodReady(t testkit.T, name types.NamespacedName) (bool, error) {
+func isPodReady(t *testing.T, name types.NamespacedName) (bool, error) {
 	t.Helper()
 
 	var pod corev1.Pod
@@ -187,7 +307,7 @@ func isPodReady(t testkit.T, name types.NamespacedName) (bool, error) {
 	return true, nil
 }
 
-func arePodsReady(t testkit.T, listOptions client.ListOptions) (bool, error) {
+func arePodsReady(t *testing.T, listOptions client.ListOptions) (bool, error) {
 	t.Helper()
 
 	var pods corev1.PodList
@@ -217,4 +337,22 @@ func generateContainerError(podName string, containerStatus corev1.ContainerStat
 	}
 
 	return fmt.Errorf("pod %s has a container %s that is not running. Additional info: %s", podName, containerStatus.Name, additionalInfo)
+}
+
+// NamespaceReady waits for the namespace to be ready, specifically ensuring the default service account exists.
+// This is important when creating resources in a newly created namespace, as Kubernetes needs time
+// to automatically create the default service account.
+func NamespaceReady(t *testing.T, namespace string) {
+	t.Helper()
+	Eventually(func(g Gomega) {
+		t.Helper()
+
+		var sa corev1.ServiceAccount
+
+		err := suite.K8sClient.Get(t.Context(), types.NamespacedName{
+			Name:      "default",
+			Namespace: namespace,
+		}, &sa)
+		g.Expect(err).NotTo(HaveOccurred(), "default service account should exist in namespace %s", namespace)
+	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }

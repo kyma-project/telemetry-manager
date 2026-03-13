@@ -298,7 +298,7 @@ EOF
 function get_result_and_cleanup_trace() {
   RESULT_TYPE="span"
   QUERY_RECEIVED='query=round(sum(rate(otelcol_receiver_accepted_spans_total{service="telemetry-trace-gateway-metrics"}[20m])))'
-  QUERY_EXPORTED='query=round(sum(rate(otelcol_exporter_sent_spans_total{exporter=~"otlp/load-test.*"}[20m])))'
+  QUERY_EXPORTED='query=round(sum(rate(otelcol_exporter_sent_spans_total{exporter=~"otlp_grpc/load-test.*"}[20m])))'
   QUERY_QUEUE='query=avg(sum(otelcol_exporter_queue_size{service="telemetry-trace-gateway-metrics"}))'
   QUERY_MEMORY='query=round(sum(avg_over_time(container_memory_working_set_bytes{namespace="kyma-system", container="collector"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-trace-gateway"}[20m])) by (pod) / 1024 / 1024)'
   QUERY_CPU='query=round(sum(avg_over_time(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace="kyma-system"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-trace-gateway"}[20m])) by (pod), 0.1)'
@@ -306,9 +306,11 @@ function get_result_and_cleanup_trace() {
   RESULT_RECEIVED=$(curl -fs --data-urlencode "$QUERY_RECEIVED" $PROMAPI | jq -r '.data.result[] | .value[1]')
   RESULT_EXPORTED=$(curl -fs --data-urlencode "$QUERY_EXPORTED" $PROMAPI | jq -r '.data.result[] | .value[1]')
   RESULT_QUEUE=$(curl -fs --data-urlencode "$QUERY_QUEUE" $PROMAPI | jq -r '.data.result[] | .value[1]')
-  RESULT_MEMORY=$(curl -fs --data-urlencode "$QUERY_MEMORY" $PROMAPI | jq -r '.data.result[] | .value[1]' | tr '\n' ',')
-  RESULT_CPU=$(curl -fs --data-urlencode "$QUERY_CPU" $PROMAPI | jq -r '.data.result[] | .value[1]' | tr '\n' ',')
+  RESULT_MEMORY=$(curl -fs --data-urlencode "$QUERY_MEMORY" $PROMAPI | jq -r '.data.result[] | .value[1]' | paste -sd,)
+  RESULT_CPU=$(curl -fs --data-urlencode "$QUERY_CPU" $PROMAPI | jq -r '.data.result[] | .value[1]' | paste -sd,)
   RESULT_RESTARTS_COLLECTOR=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=telemetry-trace-gateway -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq -s 'add')
+
+  validate_telemetry_results "trace"
 
   if [[ -z "$DOMAIN" ]]; then
     echo -e "Killing port-forward"
@@ -328,7 +330,7 @@ function get_result_and_cleanup_trace() {
 function get_result_and_cleanup_metric() {
     RESULT_TYPE="metric"
     QUERY_RECEIVED='query=round(sum(rate(otelcol_receiver_accepted_metric_points_total{service="telemetry-metric-gateway-metrics"}[20m])))'
-    QUERY_EXPORTED='query=round(sum(rate(otelcol_exporter_sent_metric_points_total{exporter=~"otlp/load-test.*"}[20m])))'
+    QUERY_EXPORTED='query=round(sum(rate(otelcol_exporter_sent_metric_points_total{exporter=~"otlp_grpc/load-test.*"}[20m])))'
     QUERY_QUEUE='query=avg(sum(otelcol_exporter_queue_size{service="telemetry-metric-gateway-metrics"}))'
     QUERY_MEMORY='query=round(sum(avg_over_time(container_memory_working_set_bytes{namespace="kyma-system", container="collector"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-metric-gateway"}[20m])) by (pod) / 1024 / 1024)'
     QUERY_CPU='query=round(sum(avg_over_time(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace="kyma-system"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-metric-gateway"}[20m])) by (pod), 0.1)'
@@ -336,9 +338,11 @@ function get_result_and_cleanup_metric() {
     RESULT_RECEIVED=$(curl -fs --data-urlencode "$QUERY_RECEIVED" $PROMAPI | jq -r '.data.result[] | .value[1]')
     RESULT_EXPORTED=$(curl -fs --data-urlencode "$QUERY_EXPORTED" $PROMAPI | jq -r '.data.result[] | .value[1]')
     RESULT_QUEUE=$(curl -fs --data-urlencode "$QUERY_QUEUE" $PROMAPI | jq -r '.data.result[] | .value[1]')
-    RESULT_MEMORY=$(curl -fs --data-urlencode "$QUERY_MEMORY" $PROMAPI | jq -r '.data.result[] | .value[1]' | tr '\n' ',')
-    RESULT_CPU=$(curl -fs --data-urlencode "$QUERY_CPU" $PROMAPI | jq -r '.data.result[] | .value[1]' | tr '\n' ',')
+    RESULT_MEMORY=$(curl -fs --data-urlencode "$QUERY_MEMORY" $PROMAPI | jq -r '.data.result[] | .value[1]' | paste -sd,)
+    RESULT_CPU=$(curl -fs --data-urlencode "$QUERY_CPU" $PROMAPI | jq -r '.data.result[] | .value[1]' | paste -sd,)
     RESULT_RESTARTS_GATEWAY=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=telemetry-metric-gateway -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq -s 'add')
+
+    validate_telemetry_results "metric"
 
     if [[ -z "$DOMAIN" ]]; then
       echo -e "Killing port-forward"
@@ -359,7 +363,7 @@ function get_result_and_cleanup_metric() {
 function get_result_and_cleanup_metricagent() {
     RESULT_TYPE="metric"
     QUERY_RECEIVED='query=round(sum(rate(otelcol_receiver_accepted_metric_points_total{service="telemetry-metric-agent-metrics"}[20m])))'
-    QUERY_EXPORTED='query=round(sum(rate(otelcol_exporter_sent_metric_points_total{service=~"telemetry-metric-agent-metrics"}[20m])))'
+    QUERY_EXPORTED='query=round(sum(rate(otelcol_exporter_sent_metric_points_total{exporter=~"otlp_grpc/load-test.*"}[20m])))'
     QUERY_QUEUE='query=avg(sum(otelcol_exporter_queue_size{service="telemetry-metric-agent-metrics"}))'
     QUERY_MEMORY='query=round(sum(avg_over_time(container_memory_working_set_bytes{namespace="kyma-system", container="collector"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-metric-agent"}[20m])) by (pod) / 1024 / 1024)'
     QUERY_CPU='query=round(sum(avg_over_time(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace="kyma-system"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-metric-agent"}[20m])) by (pod), 0.1)'
@@ -367,10 +371,12 @@ function get_result_and_cleanup_metricagent() {
     RESULT_RECEIVED=$(curl -fs --data-urlencode "$QUERY_RECEIVED" $PROMAPI | jq -r '.data.result[] | .value[1]')
     RESULT_EXPORTED=$(curl -fs --data-urlencode "$QUERY_EXPORTED" $PROMAPI | jq -r '.data.result[] | .value[1]')
     RESULT_QUEUE=$(curl -fs --data-urlencode "$QUERY_QUEUE" $PROMAPI | jq -r '.data.result[] | .value[1]')
-    RESULT_MEMORY=$(curl -fs --data-urlencode "$QUERY_MEMORY" $PROMAPI | jq -r '.data.result[] | .value[1]' | tr '\n' ',')
-    RESULT_CPU=$(curl -fs --data-urlencode "$QUERY_CPU" $PROMAPI | jq -r '.data.result[] | .value[1]' | tr '\n' ',')
+    RESULT_MEMORY=$(curl -fs --data-urlencode "$QUERY_MEMORY" $PROMAPI | jq -r '.data.result[] | .value[1]' | paste -sd,)
+    RESULT_CPU=$(curl -fs --data-urlencode "$QUERY_CPU" $PROMAPI | jq -r '.data.result[] | .value[1]' | paste -sd,)
     RESULT_RESTARTS_GATEWAY=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=telemetry-metric-gateway -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq -s 'add')
     RESULT_RESTARTS_AGENT=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=telemetry-metric-agent -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq -s 'add')
+
+    validate_telemetry_results "metric-agent"
 
     if [[ -z "$DOMAIN" ]]; then
       echo -e "Killing port-forward"
@@ -394,10 +400,12 @@ function get_result_and_cleanup_log_otel() {
   RESULT_RECEIVED=$(curl -fs --data-urlencode "$QUERY_RECEIVED" $PROMAPI | jq -r '.data.result[] | .value[1]')
   RESULT_EXPORTED=$(curl -fs --data-urlencode "$QUERY_EXPORTED" $PROMAPI | jq -r '.data.result[] | .value[1]')
   RESULT_QUEUE=$(curl -fs --data-urlencode "$QUERY_QUEUE" $PROMAPI | jq -r '.data.result[] | .value[1]')
-  RESULT_MEMORY=$(curl -fs --data-urlencode "$QUERY_MEMORY" $PROMAPI | jq -r '.data.result[] | .value[1]' | tr '\n' ',')
-  RESULT_CPU=$(curl -fs --data-urlencode "$QUERY_CPU" $PROMAPI | jq -r '.data.result[] | .value[1]' | tr '\n' ',')
+  RESULT_MEMORY=$(curl -fs --data-urlencode "$QUERY_MEMORY" $PROMAPI | jq -r '.data.result[] | .value[1]' | paste -sd,)
+  RESULT_CPU=$(curl -fs --data-urlencode "$QUERY_CPU" $PROMAPI | jq -r '.data.result[] | .value[1]' | paste -sd,)
   RESULT_RESTARTS_GATEWAY=$(kubectl -n log-load-test get pod -l app.kubernetes.io/name=log-gateway -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq -s 'add')
   RESULT_RESTARTS_GENERATOR=$(kubectl -n log-load-test get pod -l app.kubernetes.io/name=log-load-generator -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq -s 'add')
+
+  validate_telemetry_results "otel-logs"
 
   if [[ -z "$DOMAIN" ]]; then
     echo -e "Killing port-forward"
@@ -427,9 +435,11 @@ function get_result_and_cleanup_fluentbit() {
   RESULT_RECEIVED_RECORDS=$(curl -fs --data-urlencode "$QUERY_RECEIVED_RECORDS" $PROMAPI | jq -r '.data.result[] | .value[1]')
   RESULT_EXPORTED_RECORDS=$(curl -fs --data-urlencode "$QUERY_EXPORTED_RECORDS" $PROMAPI | jq -r '.data.result[] | .value[1]')
   RESULT_QUEUE=$(curl -fs --data-urlencode "$QUERY_QUEUE" $PROMAPI | jq -r '.data.result[] | .value[1]')
-  RESULT_MEMORY=$(curl -fs --data-urlencode "$QUERY_MEMORY" $PROMAPI | jq -r '.data.result[] | .value[1]'  | tr '\n' ',')
-  RESULT_CPU=$(curl -fs --data-urlencode "$QUERY_CPU" $PROMAPI | jq -r '.data.result[] | .value[1]' | tr '\n' ',')
+  RESULT_MEMORY=$(curl -fs --data-urlencode "$QUERY_MEMORY" $PROMAPI | jq -r '.data.result[] | .value[1]' | paste -sd,)
+  RESULT_CPU=$(curl -fs --data-urlencode "$QUERY_CPU" $PROMAPI | jq -r '.data.result[] | .value[1]' | paste -sd,)
   RESULT_RESTARTS_FLUENTBIT=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=fluent-bit -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq -s 'add')
+
+  validate_telemetry_results "fluent-bit"
 
   if [[ -z "$DOMAIN" ]]; then
     echo -e "Killing port-forward"
@@ -468,6 +478,32 @@ function get_result_and_cleanup_selfmonitor() {
     fi
 
     kubectl delete -f hack/load-tests/self-monitor-test-setup.yaml
+}
+
+
+function validate_telemetry_results() {
+    local test_type=$1
+
+    if [[ -z "$RESULT_RECEIVED" ]]; then
+        echo "ERROR: RESULT_RECEIVED is empty for $test_type test. No data received from Prometheus query."
+        exit 1
+    fi
+
+    if [[ -z "$RESULT_EXPORTED" ]]; then
+        echo "ERROR: RESULT_EXPORTED is empty for $test_type test. No data exported according to Prometheus query."
+        exit 1
+    fi
+
+    # Check if values are numeric zero (using awk for floating point comparison)
+    if awk "BEGIN {exit !($RESULT_RECEIVED == 0)}"; then
+        echo "ERROR: RESULT_RECEIVED is zero for $test_type test. No telemetry data was received during the test period."
+        exit 1
+    fi
+
+    if awk "BEGIN {exit !($RESULT_EXPORTED == 0)}"; then
+        echo "ERROR: RESULT_EXPORTED is zero for $test_type test. No telemetry data was exported during the test period."
+        exit 1
+    fi
 }
 
 # cleanup on exit. cleanup also collects the results and writes them to a file

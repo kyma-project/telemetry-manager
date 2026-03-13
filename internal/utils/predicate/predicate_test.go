@@ -46,23 +46,6 @@ func TestCreateOrUpdateOrDelete(t *testing.T) {
 	})
 }
 
-func TestCreateOrDelete(t *testing.T) {
-	sut := CreateOrDelete()
-
-	t.Run("should return true when create event", func(t *testing.T) {
-		require.True(t, sut.Create(event.CreateEvent{}))
-	})
-
-	t.Run("should return true when delete event", func(t *testing.T) {
-		require.True(t, sut.Delete(event.DeleteEvent{}))
-	})
-
-	t.Run("should return false when update or generic event", func(t *testing.T) {
-		require.False(t, sut.Update(event.UpdateEvent{}), "Update event")
-		require.False(t, sut.Generic(event.GenericEvent{}), "Generic event")
-	})
-}
-
 func TestOwnedResourceChanged(t *testing.T) {
 	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{

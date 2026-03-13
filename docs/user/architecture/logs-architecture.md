@@ -4,8 +4,8 @@ The Telemetry module provides a central Deployment of an [OTel Collector](https:
 
 ![Architecture](./../assets/logs-arch.drawio.svg)
 
-1. Application containers print JSON logs to the `stdout/stderr` channel and are stored by the Kubernetes container runtime under the `var/log` directory and its subdirectories at the related Node. Istio is configured to write access logs to `stdout` as well.
-2. If you choose to use the agent, an OTel Collector runs as a [DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/) (one instance per Node), detects any new log files in the folder, and tails and parses them.
+1. Application containers print JSON logs to the `stdout/stderr` channel and are stored by the Kubernetes container runtime under the `var/log` directory and its subdirectories at the related node. Istio is configured to write access logs to `stdout` as well.
+2. If you choose to use the agent, an OTel Collector runs as a [DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/) (one instance per node), detects any new log files in the folder, and tails and parses them.
 3. An application (exposing logs in OTLP) sends logs to the central log gateway using the `telemetry-otlp-logs` service. Istio is configured to push access logs with OTLP as well.
 4. The gateway and agent discover the metadata and enrich all received data with metadata of the source by communicating with the Kubernetes APIServer. Furthermore, they filter data according to the pipeline configuration.
 5. Telemetry Manager configures the agent and gateway according to the LogPipeline resource specification, including the target backend. Also, it observes the logs flow to the backend and reports problems in the LogPipeline status.

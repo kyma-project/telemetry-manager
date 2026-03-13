@@ -120,7 +120,7 @@ The code duplication linting scenario is problematic for being disabled an a per
    issues:
      exclude-rules:
        - linters: [ dupl ]
-         path: apis/telemetry/v1alpha1/(logparsers|metricpipeline|tracepipeline)_types_test.go
+         path: apis/telemetry/v1alpha1/(metricpipeline|tracepipeline)_types_test.go
    ```
 
 ### Dev Environment Configuration

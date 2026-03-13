@@ -17,13 +17,13 @@ jobs:
       contents: write # Required for creating the release
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
 
       # wait for the build to succeed so that the manager image is available
-      - name: Wait for the image to be available in the registry
+      - name: Wait for image to be available in registry
         run: "./hack/await_image.sh"
         env:
           IMAGE_REPO: "europe-docker.pkg.dev/kyma-project/prod/telemetry-manager"
@@ -46,7 +46,7 @@ jobs:
           FILENAME=$(echo $OUTPUT | grep -o '[^ ]*.tgz')
           echo "HELM_CHART=$FILENAME" >> $GITHUB_ENV
 
-      - name: Upload packaged Helm chart to release
+      - name: Upload Helm chart to release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

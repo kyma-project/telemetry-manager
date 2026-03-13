@@ -1,4 +1,10 @@
 extensions:
+    cgroupruntime:
+        gomaxprocs:
+            enabled: false
+        gomemlimit:
+            enabled: true
+            ratio: 0.8
     health_check:
         endpoint: ${MY_POD_IP}:13133
     k8s_leader_elector:
@@ -14,7 +20,7 @@ service:
                 - routing/prometheus-input
                 - routing/istio-input
             processors:
-                - k8sattributes
+                - k8s_attributes
                 - service_enrichment
             exporters:
                 - routing/enrichment
@@ -23,10 +29,10 @@ service:
                 - prometheus/istio
             processors:
                 - memory_limiter
-                - resource/drop-service-name
+                - transform/drop-service-name
                 - istio_noise_filter
                 - transform/set-instrumentation-scope-istio
-                - resource/set-kyma-input-name-istio
+                - transform/set-kyma-input-name-istio
             exporters:
                 - routing/istio-input
         metrics/input-prometheus:
@@ -35,9 +41,9 @@ service:
                 - prometheus/app-services
             processors:
                 - memory_limiter
-                - resource/drop-service-name
+                - transform/drop-service-name
                 - transform/set-instrumentation-scope-prometheus
-                - resource/set-kyma-input-name-prometheus
+                - transform/set-kyma-input-name-prometheus
             exporters:
                 - routing/prometheus-input
         metrics/input-runtime:
@@ -48,10 +54,10 @@ service:
                 - memory_limiter
                 - filter/drop-non-pvc-volumes-metrics
                 - filter/drop-virtual-network-interfaces
-                - resource/drop-service-name
+                - transform/drop-service-name
                 - transform/insert-skip-enrichment-attribute
                 - transform/set-instrumentation-scope-runtime
-                - resource/set-kyma-input-name-runtime
+                - transform/set-kyma-input-name-runtime
             exporters:
                 - routing/runtime-input
         metrics/output-test:
@@ -63,12 +69,12 @@ service:
             processors:
                 - filter/drop-diagnostic-metrics-if-input-source-prometheus
                 - filter/drop-diagnostic-metrics-if-input-source-istio
-                - resource/insert-cluster-attributes
-                - resource/drop-skip-enrichment-attribute
-                - resource/drop-kyma-attributes
+                - transform/insert-cluster-attributes
+                - transform/drop-skip-enrichment-attribute
+                - transform/drop-kyma-attributes
                 - batch
             exporters:
-                - otlp/test
+                - otlp_grpc/test
     telemetry:
         metrics:
             readers:
@@ -83,6 +89,7 @@ service:
     extensions:
         - health_check
         - pprof
+        - cgroupruntime
         - k8s_leader_elector
 receivers:
     k8s_cluster:
@@ -148,6 +155,19 @@ receivers:
                 enabled: false
             k8s.node.memory.page_faults:
                 enabled: false
+        resource_attributes:
+            aws.volume.id:
+                enabled: false
+            fs.type:
+                enabled: false
+            gce.pd.name:
+                enabled: false
+            glusterfs.endpoints.name:
+                enabled: false
+            glusterfs.path:
+                enabled: false
+            partition:
+                enabled: false
         extra_metadata_labels:
             - k8s.volume.type
         collect_all_network_interfaces:
@@ -157,6 +177,7 @@ receivers:
             scrape_configs:
                 - job_name: app-pods
                   sample_limit: 50000
+                  body_size_limit: 20MB
                   scrape_interval: 30s
                   relabel_configs:
                     - source_labels: [__meta_kubernetes_pod_node_name]
@@ -286,26 +307,26 @@ processors:
         send_batch_max_size: 1024
     filter/drop-diagnostic-metrics-if-input-source-istio:
         error_mode: ignore
-        metrics:
-            metric:
-                - resource.attributes["kyma.input.name"] == "istio" and (name == "up" or name == "scrape_duration_seconds" or name == "scrape_samples_scraped" or name == "scrape_samples_post_metric_relabeling" or name == "scrape_series_added")
+        metric_conditions:
+            - conditions:
+                - resource.attributes["kyma.input.name"] == "istio" and (metric.name == "up" or metric.name == "scrape_duration_seconds" or metric.name == "scrape_samples_scraped" or metric.name == "scrape_samples_post_metric_relabeling" or metric.name == "scrape_series_added")
     filter/drop-diagnostic-metrics-if-input-source-prometheus:
         error_mode: ignore
-        metrics:
-            metric:
-                - resource.attributes["kyma.input.name"] == "prometheus" and (name == "up" or name == "scrape_duration_seconds" or name == "scrape_samples_scraped" or name == "scrape_samples_post_metric_relabeling" or name == "scrape_series_added")
+        metric_conditions:
+            - conditions:
+                - resource.attributes["kyma.input.name"] == "prometheus" and (metric.name == "up" or metric.name == "scrape_duration_seconds" or metric.name == "scrape_samples_scraped" or metric.name == "scrape_samples_post_metric_relabeling" or metric.name == "scrape_series_added")
     filter/drop-non-pvc-volumes-metrics:
         error_mode: ignore
-        metrics:
-            metric:
+        metric_conditions:
+            - conditions:
                 - resource.attributes["k8s.volume.name"] != nil and resource.attributes["k8s.volume.type"] != "persistentVolumeClaim"
     filter/drop-virtual-network-interfaces:
         error_mode: ignore
-        metrics:
-            datapoint:
-                - IsMatch(metric.name, "^k8s.node.network.*") and not(IsMatch(attributes["interface"], "^(eth|en).*"))
+        metric_conditions:
+            - conditions:
+                - IsMatch(metric.name, "^k8s.node.network.*") and not(IsMatch(datapoint.attributes["interface"], "^(eth|en).*"))
     istio_noise_filter: {}
-    k8sattributes:
+    k8s_attributes:
         auth_type: serviceAccount
         passthrough: false
         extract:
@@ -350,43 +371,31 @@ processors:
         check_interval: 1s
         limit_percentage: 75
         spike_limit_percentage: 15
-    resource/drop-kyma-attributes:
-        attributes:
-            - action: delete
-              pattern: kyma.*
-    resource/drop-service-name:
-        attributes:
-            - action: delete
-              key: service.name
-    resource/drop-skip-enrichment-attribute:
-        attributes:
-            - action: delete
-              key: io.kyma-project.telemetry.skip_enrichment
-    resource/insert-cluster-attributes:
-        attributes:
-            - action: insert
-              key: k8s.cluster.name
-            - action: insert
-              key: k8s.cluster.uid
-    resource/set-kyma-input-name-istio:
-        attributes:
-            - action: insert
-              key: kyma.input.name
-              value: istio
-    resource/set-kyma-input-name-prometheus:
-        attributes:
-            - action: insert
-              key: kyma.input.name
-              value: prometheus
-    resource/set-kyma-input-name-runtime:
-        attributes:
-            - action: insert
-              key: kyma.input.name
-              value: runtime
     service_enrichment:
         resource_attributes:
             - kyma.kubernetes_io_app_name
             - kyma.app_name
+    transform/drop-kyma-attributes:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - delete_matching_keys(resource.attributes, "kyma.*")
+    transform/drop-service-name:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - delete_key(resource.attributes, "service.name")
+    transform/drop-skip-enrichment-attribute:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - delete_key(resource.attributes, "io.kyma-project.telemetry.skip_enrichment")
+    transform/insert-cluster-attributes:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - set(resource.attributes["k8s.cluster.name"], "") where resource.attributes["k8s.cluster.name"] == nil or resource.attributes["k8s.cluster.name"] == ""
+                - set(resource.attributes["k8s.cluster.uid"], "") where resource.attributes["k8s.cluster.uid"] == nil or resource.attributes["k8s.cluster.uid"] == ""
     transform/insert-skip-enrichment-attribute:
         error_mode: ignore
         metric_statements:
@@ -418,8 +427,23 @@ processors:
                 - set(scope.name, "io.kyma-project.telemetry/runtime") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver"
                 - set(scope.version, "main") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver"
                 - set(scope.name, "io.kyma-project.telemetry/runtime") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver"
+    transform/set-kyma-input-name-istio:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - set(resource.attributes["kyma.input.name"], "istio")
+    transform/set-kyma-input-name-prometheus:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - set(resource.attributes["kyma.input.name"], "prometheus")
+    transform/set-kyma-input-name-runtime:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - set(resource.attributes["kyma.input.name"], "runtime")
 exporters:
-    otlp/test:
+    otlp_grpc/test:
         endpoint: ${OTLP_ENDPOINT_TEST}
         tls:
             insecure: true

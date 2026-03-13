@@ -4,22 +4,22 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
-	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
 func TestMetricsOTLPInput(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelGardener, suite.LabelIstio)
+	suite.SetupTestWithOptions(t, []string{suite.LabelGardener}, kubeprep.WithIstio())
 
 	var (
 		uniquePrefix       = unique.Prefix()
@@ -34,41 +34,30 @@ func TestMetricsOTLPInput(t *testing.T) {
 
 	metricPipeline := testutils.NewMetricPipelineBuilder().
 		WithName(pipeline1Name).
-		WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+		WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 		Build()
 
 	metricPipelineIstiofiedBackend := testutils.NewMetricPipelineBuilder().
 		WithName(pipeline2Name).
-		WithOTLPOutput(testutils.OTLPEndpoint(istiofiedBackend.Endpoint())).
+		WithOTLPOutput(testutils.OTLPEndpoint(istiofiedBackend.EndpointHTTP())).
 		Build()
 
-	peerAuth := kitk8s.NewPeerAuthentication(kitbackend.DefaultName, istiofiedBackendNs)
+	peerAuth := kitk8sobjects.NewPeerAuthentication(kitbackend.DefaultName, istiofiedBackendNs)
 
 	podSpec := telemetrygen.PodSpec(telemetrygen.SignalTypeMetrics)
 
 	resources := []client.Object{
-		kitk8s.NewNamespace(backendNs).K8sObject(),
-		kitk8s.NewNamespace(istiofiedBackendNs, kitk8s.WithIstioInjection()).K8sObject(),
+		kitk8sobjects.NewNamespace(backendNs).K8sObject(),
+		kitk8sobjects.NewNamespace(istiofiedBackendNs, kitk8sobjects.WithIstioInjection()).K8sObject(),
 		&metricPipeline,
 		&metricPipelineIstiofiedBackend,
-		peerAuth.K8sObject(kitk8s.WithLabel("app", kitbackend.DefaultName)),
-		kitk8s.NewDeployment("metric-producer-1", backendNs).WithPodSpec(podSpec).K8sObject(),
-		kitk8s.NewDeployment("metric-producer-2", istiofiedBackendNs).WithPodSpec(podSpec).K8sObject(),
+		peerAuth.K8sObject(kitk8sobjects.WithLabel("app", kitbackend.DefaultName)),
+		kitk8sobjects.NewDeployment("metric-producer-1", backendNs).WithPodSpec(podSpec).K8sObject(),
+		kitk8sobjects.NewDeployment("metric-producer-2", istiofiedBackendNs).WithPodSpec(podSpec).K8sObject(),
 	}
 	resources = append(resources, backend.K8sObjects()...)
 	resources = append(resources, istiofiedBackend.K8sObjects()...)
 
-	t.Cleanup(func() {
-		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-
-		for _, resource := range resources {
-			Eventually(func(g Gomega) {
-				key := types.NamespacedName{Name: resource.GetName(), Namespace: resource.GetNamespace()}
-				err := suite.K8sClient.Get(suite.Ctx, key, resource)
-				g.Expect(err == nil).To(BeFalse())
-			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
-		}
-	})
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.DeploymentReady(t, kitkyma.MetricGatewayName)

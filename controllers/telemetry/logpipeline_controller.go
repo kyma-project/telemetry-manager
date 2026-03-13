@@ -20,10 +20,13 @@ import (
 	"context"
 	"fmt"
 
+	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/types"
+	autoscalingvpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -35,9 +38,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
-	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/logagent"
@@ -48,13 +52,16 @@ import (
 	logpipelineotel "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/otel"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
+	"github.com/kyma-project/telemetry-manager/internal/secretwatch"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	predicateutils "github.com/kyma-project/telemetry-manager/internal/utils/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
 	"github.com/kyma-project/telemetry-manager/internal/validators/ottl"
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
+	"github.com/kyma-project/telemetry-manager/internal/vpastatus"
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
@@ -62,80 +69,99 @@ import (
 type LogPipelineController struct {
 	client.Client
 
+	globals config.Global
+
 	reconcileTriggerChan <-chan event.GenericEvent
 	reconciler           *logpipeline.Reconciler
+	secretWatchClient    *secretwatch.Client
 }
 
 type LogPipelineControllerConfig struct {
-	ExporterImage               string
-	FluentBitImage              string
-	OTelCollectorImage          string
-	ChownInitContainerImage     string
-	FluentBitPriorityClassName  string
-	LogGatewayPriorityClassName string
-	LogAgentPriorityClassName   string
-	RestConfig                  *rest.Config
-	SelfMonitorName             string
-	TelemetryNamespace          string
-	ModuleVersion               string
-	EnableFIPSMode              bool
+	config.Global
+
+	ExporterImage                string
+	FluentBitImage               string
+	OTelCollectorImage           string
+	ChownInitContainerImage      string
+	FluentBitPriorityClassName   string
+	LogGatewayPriorityClassName  string
+	LogAgentPriorityClassName    string
+	OTLPGatewayPriorityClassName string
+	RestConfig                   *rest.Config
 }
 
-func NewLogPipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, config LogPipelineControllerConfig) (*LogPipelineController, error) {
+func NewLogPipelineController(config LogPipelineControllerConfig, client client.Client, reconcileTriggerChan <-chan event.GenericEvent, secretWatchClient *secretwatch.Client) (*LogPipelineController, error) {
+	pipelineCount := resourcelock.MaxPipelineCount
+
+	if config.UnlimitedPipelines() {
+		pipelineCount = resourcelock.UnlimitedPipelineCount
+	}
+
+	pipelineLockOTEL := resourcelock.NewLocker(
+		client,
+		types.NamespacedName{
+			Name:      names.LogPipelineLock,
+			Namespace: config.TargetNamespace(),
+		},
+		pipelineCount,
+	)
+
 	pipelineLock := resourcelock.NewLocker(
 		client,
 		types.NamespacedName{
-			Name:      "telemetry-logpipeline-lock",
-			Namespace: config.TelemetryNamespace,
+			Name:      names.LogPipelineLock,
+			Namespace: config.TargetNamespace(),
 		},
-		MaxPipelineCount,
+		resourcelock.MaxPipelineCount,
 	)
 
 	pipelineSyncer := resourcelock.NewSyncer(
 		client,
 		types.NamespacedName{
-			Name:      "telemetry-logpipeline-sync",
-			Namespace: config.TelemetryNamespace,
+			Name:      names.LogPipelineSync,
+			Namespace: config.TargetNamespace(),
 		},
 	)
 
-	fluentBitFlowHealthProber, err := prober.NewFluentBitProber(types.NamespacedName{Name: config.SelfMonitorName, Namespace: config.TelemetryNamespace})
+	fluentBitFlowHealthProber, err := prober.NewFluentBitProber(types.NamespacedName{Name: names.SelfMonitor, Namespace: config.TargetNamespace()})
 	if err != nil {
 		return nil, err
 	}
 
-	otelGatewayFlowHealthProber, err := prober.NewOTelLogGatewayProber(types.NamespacedName{Name: config.SelfMonitorName, Namespace: config.TelemetryNamespace})
+	gatewayFlowHealthProber, err := prober.NewOTelLogGatewayProber(types.NamespacedName{Name: names.SelfMonitor, Namespace: config.TargetNamespace()})
 	if err != nil {
 		return nil, err
 	}
 
-	otelAgentFlowHealthProber, err := prober.NewOTelLogAgentProber(types.NamespacedName{Name: config.SelfMonitorName, Namespace: config.TelemetryNamespace})
+	agentFlowHealthProber, err := prober.NewOTelLogAgentProber(types.NamespacedName{Name: names.SelfMonitor, Namespace: config.TargetNamespace()})
 	if err != nil {
 		return nil, err
 	}
 
-	fluentBitReconciler, err := configureFluentBitReconciler(client, config, fluentBitFlowHealthProber, pipelineLock)
+	fluentBitReconciler, err := configureFluentBitReconciler(config, client, fluentBitFlowHealthProber, pipelineLock)
 	if err != nil {
 		return nil, err
 	}
 
-	otelReconciler, err := configureOtelReconciler(client, config, pipelineLock, otelGatewayFlowHealthProber, otelAgentFlowHealthProber)
+	otelReconciler, err := configureOTelReconciler(config, client, pipelineLockOTEL, gatewayFlowHealthProber, agentFlowHealthProber)
 	if err != nil {
 		return nil, err
 	}
 
 	reconciler := logpipeline.New(
 		client,
-		overrides.New(client, overrides.HandlerConfig{SystemNamespace: config.TelemetryNamespace}),
-		pipelineSyncer,
-		fluentBitReconciler,
-		otelReconciler,
+		logpipeline.WithOverridesHandler(overrides.New(config.Global, client)),
+		logpipeline.WithPipelineSyncer(pipelineSyncer),
+		logpipeline.WithReconcilers(fluentBitReconciler, otelReconciler),
+		logpipeline.WithSecretWatcher(secretWatchClient),
 	)
 
 	return &LogPipelineController{
 		Client:               client,
+		globals:              config.Global,
 		reconcileTriggerChan: reconcileTriggerChan,
 		reconciler:           reconciler,
+		secretWatchClient:    secretWatchClient,
 	}, nil
 }
 
@@ -144,7 +170,7 @@ func (r *LogPipelineController) Reconcile(ctx context.Context, req ctrl.Request)
 }
 
 func (r *LogPipelineController) SetupWithManager(mgr ctrl.Manager) error {
-	b := ctrl.NewControllerManagedBy(mgr).For(&telemetryv1alpha1.LogPipeline{})
+	b := ctrl.NewControllerManagedBy(mgr).For(&telemetryv1beta1.LogPipeline{})
 
 	b.WatchesRawSource(
 		source.Channel(r.reconcileTriggerChan, &handler.EnqueueRequestForObject{}),
@@ -152,6 +178,7 @@ func (r *LogPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 
 	ownedResourceTypesToWatch := []client.Object{
 		&appsv1.DaemonSet{},
+		&appsv1.Deployment{},
 		&corev1.ConfigMap{},
 		&corev1.Pod{},
 		&corev1.Secret{},
@@ -159,6 +186,38 @@ func (r *LogPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		&corev1.ServiceAccount{},
 		&rbacv1.ClusterRole{},
 		&rbacv1.ClusterRoleBinding{},
+		&networkingv1.NetworkPolicy{},
+	}
+
+	ctx := context.Background()
+
+	discoveryClient, err := discovery.NewDiscoveryClientForConfig(mgr.GetConfig())
+	if err != nil {
+		return fmt.Errorf("failed to create discovery client: %w", err)
+	}
+
+	isIstioActive, err := istiostatus.NewChecker(discoveryClient).IsIstioActive(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to check Istio status: %w", err)
+	}
+
+	vpaCRDExists, err := vpastatus.NewChecker(mgr.GetConfig()).VpaCRDExists(ctx, r.Client)
+	if err != nil {
+		return fmt.Errorf("failed to check VPA status: %w", err)
+	}
+
+	// Only watch PeerAuthentication CR if Istio is active
+	// otherwise, manager will have errors if the PeerAuthentication CRD is not present in the cluster
+	if isIstioActive {
+		ownedResourceTypesToWatch = append(ownedResourceTypesToWatch, &istiosecurityclientv1.PeerAuthentication{})
+	}
+
+	// Only watch VPA CR if VPA CRD exists in the cluster
+	// otherwise, manager will have errors if the VPA CRD is not present in the cluster
+	// NOTE: controller needs to watch VPA CR even if the annotation to enable VPA is not present in Telemetry CR,
+	// because the annotation can be added later and this function is only called once during the setup of the controller.
+	if vpaCRDExists {
+		ownedResourceTypesToWatch = append(ownedResourceTypesToWatch, &autoscalingvpav1.VerticalPodAutoscaler{})
 	}
 
 	for _, resource := range ownedResourceTypesToWatch {
@@ -166,21 +225,21 @@ func (r *LogPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 			resource,
 			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(),
 				mgr.GetRESTMapper(),
-				&telemetryv1alpha1.LogPipeline{},
+				&telemetryv1beta1.LogPipeline{},
 			),
 			ctrlbuilder.WithPredicates(predicateutils.OwnedResourceChanged()),
 		)
 	}
 
 	return b.Watches(
-		&operatorv1alpha1.Telemetry{},
+		&operatorv1beta1.Telemetry{},
 		handler.EnqueueRequestsFromMapFunc(r.mapTelemetryChanges),
 		ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete()),
 	).Complete(r)
 }
 
 func (r *LogPipelineController) mapTelemetryChanges(ctx context.Context, object client.Object) []reconcile.Request {
-	_, ok := object.(*operatorv1alpha1.Telemetry)
+	_, ok := object.(*operatorv1beta1.Telemetry)
 	if !ok {
 		logf.FromContext(ctx).V(1).Error(nil, "Unexpected type: expected Telemetry")
 		return nil
@@ -194,16 +253,17 @@ func (r *LogPipelineController) mapTelemetryChanges(ctx context.Context, object 
 	return requests
 }
 
-func configureFluentBitReconciler(client client.Client, config LogPipelineControllerConfig, flowHealthProber *prober.FluentBitProber, pipelineLock logpipelinefluentbit.PipelineLock) (*logpipelinefluentbit.Reconciler, error) {
-	pipelineValidator := &logpipelinefluentbit.Validator{
-		EndpointValidator:  &endpoint.Validator{Client: client},
-		TLSCertValidator:   tlscert.New(client),
-		SecretRefValidator: &secretref.Validator{Client: client},
-		PipelineLock:       pipelineLock,
-	}
+func configureFluentBitReconciler(config LogPipelineControllerConfig, client client.Client, flowHealthProber *prober.FluentBitProber, pipelineLock logpipelinefluentbit.PipelineLock) (*logpipelinefluentbit.Reconciler, error) {
+	pipelineValidator := logpipelinefluentbit.NewValidator(
+		logpipelinefluentbit.WithEndpointValidator(&endpoint.Validator{Client: client}),
+		logpipelinefluentbit.WithTLSCertValidator(tlscert.New(client)),
+		logpipelinefluentbit.WithSecretRefValidator(&secretref.Validator{Client: client}),
+		logpipelinefluentbit.WithValidatorPipelineLock(pipelineLock),
+	)
 
 	fluentBitApplierDeleter := fluentbit.NewFluentBitApplierDeleter(
-		config.TelemetryNamespace,
+		config.Global,
+		config.TargetNamespace(),
 		config.FluentBitImage,
 		config.ExporterImage,
 		config.ChownInitContainerImage,
@@ -218,22 +278,25 @@ func configureFluentBitReconciler(client client.Client, config LogPipelineContro
 	}
 
 	fbReconciler := logpipelinefluentbit.New(
-		client,
-		config.TelemetryNamespace,
-		fluentBitConfigBuilder,
-		fluentBitApplierDeleter,
-		&workloadstatus.DaemonSetProber{Client: client},
-		flowHealthProber,
-		istiostatus.NewChecker(discoveryClient),
-		pipelineLock,
-		pipelineValidator,
-		&conditions.ErrorToMessageConverter{})
+		logpipelinefluentbit.WithClient(client),
+		logpipelinefluentbit.WithGlobals(config.Global),
+
+		logpipelinefluentbit.WithAgentApplierDeleter(fluentBitApplierDeleter),
+		logpipelinefluentbit.WithAgentConfigBuilder(fluentBitConfigBuilder),
+		logpipelinefluentbit.WithAgentProber(&workloadstatus.DaemonSetProber{Client: client}),
+
+		logpipelinefluentbit.WithErrorToMessageConverter(&conditions.ErrorToMessageConverter{}),
+		logpipelinefluentbit.WithFlowHealthProber(flowHealthProber),
+		logpipelinefluentbit.WithIstioStatusChecker(istiostatus.NewChecker(discoveryClient)),
+		logpipelinefluentbit.WithPipelineLock(pipelineLock),
+		logpipelinefluentbit.WithPipelineValidator(pipelineValidator),
+	)
 
 	return fbReconciler, nil
 }
 
 //nolint:unparam // error is always nil: An error could be returned after implementing the IstioStatusChecker (TODO)
-func configureOtelReconciler(client client.Client, config LogPipelineControllerConfig, pipelineLock logpipelineotel.PipelineLock, gatewayFlowHealthProber *prober.OTelGatewayProber, agentFlowHealthProber *prober.OTelAgentProber) (*logpipelineotel.Reconciler, error) {
+func configureOTelReconciler(config LogPipelineControllerConfig, client client.Client, pipelineLock logpipelineotel.PipelineLock, gatewayFlowHealthProber *prober.OTelGatewayProber, agentFlowHealthProber *prober.OTelAgentProber) (*logpipelineotel.Reconciler, error) {
 	transformSpecValidator, err := ottl.NewTransformSpecValidator(ottl.SignalTypeLog)
 	if err != nil {
 		return nil, err
@@ -244,14 +307,14 @@ func configureOtelReconciler(client client.Client, config LogPipelineControllerC
 		return nil, err
 	}
 
-	pipelineValidator := &logpipelineotel.Validator{
-		PipelineLock:           pipelineLock,
-		EndpointValidator:      &endpoint.Validator{Client: client},
-		TLSCertValidator:       tlscert.New(client),
-		SecretRefValidator:     &secretref.Validator{Client: client},
-		TransformSpecValidator: transformSpecValidator,
-		FilterSpecValidator:    filterSpecValidator,
-	}
+	pipelineValidator := logpipelineotel.NewValidator(
+		logpipelineotel.WithValidatorPipelineLock(pipelineLock),
+		logpipelineotel.WithEndpointValidator(&endpoint.Validator{Client: client}),
+		logpipelineotel.WithTLSCertValidator(tlscert.New(client)),
+		logpipelineotel.WithSecretRefValidator(&secretref.Validator{Client: client}),
+		logpipelineotel.WithTransformSpecValidator(transformSpecValidator),
+		logpipelineotel.WithFilterSpecValidator(filterSpecValidator),
+	)
 
 	discoveryClient, err := discovery.NewDiscoveryClientForConfig(config.RestConfig)
 	if err != nil {
@@ -262,38 +325,58 @@ func configureOtelReconciler(client client.Client, config LogPipelineControllerC
 		Reader: client,
 	}
 
+	prober := func() logpipelineotel.Prober {
+		if config.DeployOTLPGateway() {
+			return &workloadstatus.DaemonSetProber{Client: client}
+		}
+
+		return &workloadstatus.DeploymentProber{Client: client}
+	}()
+
+	agentApplierDeleter := otelcollector.NewLogAgentApplierDeleter(
+		config.Global,
+		config.OTelCollectorImage,
+		config.LogAgentPriorityClassName)
+
+	gatewayAppliedDeleter := otelcollector.NewLogGatewayApplierDeleter(
+		config.Global,
+		config.OTelCollectorImage,
+		config.LogGatewayPriorityClassName)
+
+	// Create OTLP gateway applier deleter for DaemonSet mode
+	otlpGatewayApplierDeleter := otelcollector.NewOTLPGatewayApplierDeleter(
+		config.Global,
+		config.OTelCollectorImage,
+		config.OTLPGatewayPriorityClassName)
+
 	otelReconciler := logpipelineotel.New(
-		client,
-		config.TelemetryNamespace,
-		config.ModuleVersion,
-		gatewayFlowHealthProber,
-		agentFlowHealthProber,
-		agentConfigBuilder,
-		otelcollector.NewLogAgentApplierDeleter(
-			config.OTelCollectorImage,
-			config.TelemetryNamespace,
-			config.LogAgentPriorityClassName,
-			config.EnableFIPSMode,
-		),
-		&workloadstatus.DaemonSetProber{Client: client},
-		otelcollector.NewLogGatewayApplierDeleter(
-			config.OTelCollectorImage,
-			config.TelemetryNamespace,
-			config.LogGatewayPriorityClassName,
-			config.EnableFIPSMode,
-		),
-		&loggateway.Builder{Reader: client},
-		&workloadstatus.DeploymentProber{Client: client},
-		istiostatus.NewChecker(discoveryClient),
-		pipelineLock,
-		pipelineValidator,
-		&conditions.ErrorToMessageConverter{})
+		logpipelineotel.WithClient(client),
+		logpipelineotel.WithGlobals(config.Global),
+
+		logpipelineotel.WithAgentApplierDeleter(agentApplierDeleter),
+		logpipelineotel.WithAgentConfigBuilder(agentConfigBuilder),
+		logpipelineotel.WithAgentFlowHealthProber(agentFlowHealthProber),
+		logpipelineotel.WithAgentProber(&workloadstatus.DaemonSetProber{Client: client}),
+
+		logpipelineotel.WithErrorToMessageConverter(&conditions.ErrorToMessageConverter{}),
+
+		logpipelineotel.WithGatewayApplierDeleter(gatewayAppliedDeleter),
+		logpipelineotel.WithOTLPGatewayApplierDeleter(otlpGatewayApplierDeleter),
+		logpipelineotel.WithGatewayConfigBuilder(&loggateway.Builder{Reader: client}),
+		logpipelineotel.WithGatewayFlowHealthProber(gatewayFlowHealthProber),
+		logpipelineotel.WithGatewayProber(prober),
+
+		logpipelineotel.WithIstioStatusChecker(istiostatus.NewChecker(discoveryClient)),
+		logpipelineotel.WithVpaStatusChecker(vpastatus.NewChecker(config.RestConfig)),
+		logpipelineotel.WithPipelineLock(pipelineLock),
+		logpipelineotel.WithPipelineValidator(pipelineValidator),
+	)
 
 	return otelReconciler, nil
 }
 
 func (r *LogPipelineController) createRequestsForAllPipelines(ctx context.Context) ([]reconcile.Request, error) {
-	var pipelines telemetryv1alpha1.LogPipelineList
+	var pipelines telemetryv1beta1.LogPipelineList
 
 	var requests []reconcile.Request
 

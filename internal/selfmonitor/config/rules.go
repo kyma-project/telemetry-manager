@@ -7,7 +7,7 @@ import (
 
 	"github.com/prometheus/common/model"
 
-	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 )
 
 const (
@@ -72,28 +72,28 @@ func MakeRules() RuleGroups {
 
 	metricGatewayRuleBuilder := otelCollectorRuleBuilder{
 		dataType:    ruleDataType(typeMetricPipeline),
-		serviceName: otelcollector.MetricGatewayName + "-metrics",
+		serviceName: names.MetricGatewayMetricsService,
 		namePrefix:  ruleNamePrefix(typeMetricPipeline),
 	}
 	rules = append(rules, metricGatewayRuleBuilder.gatewayRules()...)
 
 	metricAgentRuleBuilder := otelCollectorRuleBuilder{
 		dataType:    ruleDataType(typeMetricPipeline),
-		serviceName: otelcollector.MetricAgentName + "-metrics",
+		serviceName: names.MetricAgentMetricsService,
 		namePrefix:  ruleNamePrefix(typeMetricPipeline),
 	}
 	rules = append(rules, metricAgentRuleBuilder.agentRules()...)
 
 	traceGatewayRuleBuilder := otelCollectorRuleBuilder{
 		dataType:    ruleDataType(typeTracePipeline),
-		serviceName: otelcollector.TraceGatewayName + "-metrics",
+		serviceName: names.TraceGatewayMetricsService,
 		namePrefix:  ruleNamePrefix(typeTracePipeline),
 	}
 	rules = append(rules, traceGatewayRuleBuilder.gatewayRules()...)
 
 	logGatewayRuleBuilder := otelCollectorRuleBuilder{
 		dataType:    ruleDataType(typeLogPipeline),
-		serviceName: otelcollector.LogGatewayName + "-metrics",
+		serviceName: names.LogGatewayMetricsService,
 		namePrefix:  ruleNamePrefix(typeLogPipeline),
 	}
 
@@ -101,7 +101,7 @@ func MakeRules() RuleGroups {
 
 	logAgentRuleBuilder := otelCollectorRuleBuilder{
 		dataType:    ruleDataType(typeLogPipeline),
-		serviceName: otelcollector.LogAgentName + "-metrics",
+		serviceName: names.LogAgentMetricsService,
 		namePrefix:  ruleNamePrefix(typeLogPipeline),
 	}
 

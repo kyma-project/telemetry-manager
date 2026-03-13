@@ -1,8 +1,13 @@
 package v1alpha1
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	apiconversion "k8s.io/apimachinery/pkg/conversion"
+	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
@@ -17,10 +22,12 @@ import (
 // - input.runtime namespaces and containers are now pointers in v1beta1, requiring nil checks during conversion.
 // Additionally, changes were done in shared types which are documented in the related file.
 
+// dataAnnotation is the annotation that conversion webhook can use to retain the data in case of down-conversion from the hub
+const dataAnnotation = "telemetry.kyma-project.io/conversion-data"
+
 var errSrcTypeUnsupportedLogPipeline = errors.New("source type is not LogPipeline v1alpha1")
 var errDstTypeUnsupportedLogPipeline = errors.New("destination type is not LogPipeline v1beta1")
 
-// ConvertTo converts this LogPipeline to the Hub version (v1alpha1 -> v1beta1).
 func (lp *LogPipeline) ConvertTo(dstRaw conversion.Hub) error {
 	src := lp
 
@@ -29,125 +36,15 @@ func (lp *LogPipeline) ConvertTo(dstRaw conversion.Hub) error {
 		return errDstTypeUnsupportedLogPipeline
 	}
 
-	// Copy metadata
-	dst.ObjectMeta = src.ObjectMeta
-
-	// Copy Input fields
-	dst.Spec.Input = telemetryv1beta1.LogPipelineInput{}
-	dst.Spec.Input.Runtime = convertApplicationToBeta(src.Spec.Input.Application)
-	dst.Spec.Input.OTLP = convertOTLPInputToBeta(src.Spec.Input.OTLP)
-
-	// Copy Output fields
-	dst.Spec.Output = telemetryv1beta1.LogPipelineOutput{}
-	dst.Spec.Output.HTTP = convertHTTPOutputToBeta(src.Spec.Output.HTTP)
-
-	dst.Spec.Output.OTLP = convertOTLPOutputToBeta(src.Spec.Output.OTLP)
-	if src.Spec.Output.Custom != "" {
-		dst.Spec.Output.Custom = src.Spec.Output.Custom
+	// Call the conversion-gen generated function
+	if err := Convert_v1alpha1_LogPipeline_To_v1beta1_LogPipeline(src, dst, nil); err != nil {
+		return err
 	}
 
-	// Copy everything else
-	for _, f := range src.Spec.Files {
-		dst.Spec.Files = append(dst.Spec.Files, telemetryv1beta1.LogPipelineFileMount(f))
-	}
-
-	for _, f := range src.Spec.FluentBitFilters {
-		dst.Spec.FluentBitFilters = append(dst.Spec.FluentBitFilters, telemetryv1beta1.LogPipelineFilter(f))
-	}
-
-	if src.Spec.Transforms != nil {
-		for _, t := range src.Spec.Transforms {
-			dst.Spec.Transforms = append(dst.Spec.Transforms, convertTransformSpecToBeta(t))
-		}
-	}
-
-	if src.Spec.Filters != nil {
-		for _, t := range src.Spec.Filters {
-			dst.Spec.Filters = append(dst.Spec.Filters, convertFilterSpecToBeta(t))
-		}
-	}
-
-	dst.Status = telemetryv1beta1.LogPipelineStatus(src.Status)
-
-	return nil
+	// It is necessary to store the v1alpha1 LogPipeline object as an annotation in the v1beta1 LogPipeline object, because the "system" field in the NamespaceSelector in v1alpha1 doesn't have a corresponding field in v1beta1
+	return marshalData(src, dst)
 }
 
-func convertHTTPOutputToBeta(output *LogPipelineHTTPOutput) *telemetryv1beta1.LogPipelineHTTPOutput {
-	if output == nil {
-		return nil
-	}
-
-	result := &telemetryv1beta1.LogPipelineHTTPOutput{
-		Host:      convertValueTypeToBeta(output.Host),
-		URI:       output.URI,
-		Port:      output.Port,
-		Compress:  output.Compress,
-		Format:    output.Format,
-		TLSConfig: convertOutputTLSToBeta(output.TLS),
-		Dedot:     output.Dedot,
-	}
-
-	if output.User != nil && (output.User.Value != "" || output.User.ValueFrom != nil) {
-		user := convertValueTypeToBeta(*output.User)
-		result.User = &user
-	}
-
-	if output.Password != nil && (output.Password.Value != "" || output.Password.ValueFrom != nil) {
-		password := convertValueTypeToBeta(*output.Password)
-		result.Password = &password
-	}
-
-	return result
-}
-
-func convertApplicationToBeta(application *LogPipelineApplicationInput) *telemetryv1beta1.LogPipelineRuntimeInput {
-	if application == nil {
-		return nil
-	}
-
-	runtime := &telemetryv1beta1.LogPipelineRuntimeInput{
-		Enabled:          application.Enabled,
-		KeepAnnotations:  application.KeepAnnotations,
-		DropLabels:       application.DropLabels,
-		KeepOriginalBody: application.KeepOriginalBody,
-	}
-
-	var excludes []string
-	if len(application.Namespaces.Include) == 0 && len(application.Namespaces.Exclude) == 0 && !application.Namespaces.System {
-		excludes = namespaces.System()
-	} else {
-		excludes = application.Namespaces.Exclude
-	}
-
-	runtime.Namespaces = &telemetryv1beta1.NamespaceSelector{
-		Include: sanitizeNamespaceNames(application.Namespaces.Include),
-		Exclude: sanitizeNamespaceNames(excludes),
-	}
-
-	if len(application.Containers.Include) > 0 || len(application.Containers.Exclude) > 0 {
-		runtime.Containers =
-			&telemetryv1beta1.LogPipelineContainerSelector{
-				Include: append([]string{}, application.Containers.Include...),
-				Exclude: append([]string{}, application.Containers.Exclude...),
-			}
-	}
-
-	return runtime
-}
-
-func convertOutputTLSToBeta(src LogPipelineOutputTLS) telemetryv1beta1.OutputTLS {
-	var dst telemetryv1beta1.OutputTLS
-
-	dst.CA = convertValueTypeToBetaPtr(src.CA)
-	dst.Cert = convertValueTypeToBetaPtr(src.Cert)
-	dst.Key = convertValueTypeToBetaPtr(src.Key)
-	dst.Insecure = src.Disabled
-	dst.InsecureSkipVerify = src.SkipCertificateValidation
-
-	return dst
-}
-
-// ConvertFrom converts from the Hub version (v1beta1 -> v1alpha1) to this version.
 func (lp *LogPipeline) ConvertFrom(srcRaw conversion.Hub) error {
 	dst := lp
 
@@ -156,116 +53,203 @@ func (lp *LogPipeline) ConvertFrom(srcRaw conversion.Hub) error {
 		return errSrcTypeUnsupportedLogPipeline
 	}
 
-	// Copy metadata
-	dst.ObjectMeta = src.ObjectMeta
-
-	// Copy input fields
-	dst.Spec.Input = LogPipelineInput{}
-	dst.Spec.Input.Application = convertRuntimeToAlpha(src.Spec.Input.Runtime)
-	dst.Spec.Input.OTLP = convertOTLPInputToAlpha(src.Spec.Input.OTLP)
-
-	// Copy output fields
-	dst.Spec.Output = LogPipelineOutput{}
-	dst.Spec.Output.HTTP = convertHTTPOutputToAlpha(src.Spec.Output.HTTP)
-
-	dst.Spec.Output.OTLP = convertOTLPOutputToAlpha(src.Spec.Output.OTLP)
-	if src.Spec.Output.Custom != "" {
-		dst.Spec.Output.Custom = src.Spec.Output.Custom
+	// Call the conversion-gen generated function
+	if err := Convert_v1beta1_LogPipeline_To_v1alpha1_LogPipeline(src, dst, nil); err != nil {
+		return err
 	}
 
-	// Copy everything else
-	for _, f := range src.Spec.Files {
-		dst.Spec.Files = append(dst.Spec.Files, LogPipelineFileMount(f))
+	restoredV1alpha1LogPipeline := &LogPipeline{}
+
+	ok, err := unmarshalData(src, restoredV1alpha1LogPipeline)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal data from annotation: %w", err)
 	}
 
-	for _, f := range src.Spec.FluentBitFilters {
-		dst.Spec.FluentBitFilters = append(dst.Spec.FluentBitFilters, LogPipelineFilter(f))
+	// restore the old LogPipeline spec only if the dataAnnotation exists and there were no changes applied to the LogPipeline (same generation)
+	if ok && restoredV1alpha1LogPipeline.Generation == src.Generation {
+		dst.Spec = restoredV1alpha1LogPipeline.Spec
 	}
-
-	if src.Spec.Transforms != nil {
-		for _, t := range src.Spec.Transforms {
-			dst.Spec.Transforms = append(dst.Spec.Transforms, convertTransformSpecToAlpha(t))
-		}
-	}
-
-	if src.Spec.Filters != nil {
-		for _, t := range src.Spec.Filters {
-			dst.Spec.Filters = append(dst.Spec.Filters, convertFilterSpecToAlpha(t))
-		}
-	}
-
-	dst.Status = LogPipelineStatus(src.Status)
 
 	return nil
 }
 
-func convertHTTPOutputToAlpha(output *telemetryv1beta1.LogPipelineHTTPOutput) *LogPipelineHTTPOutput {
-	if output == nil {
-		return nil
-	}
+func Convert_v1alpha1_FluentBitHTTPOutputTLS_To_v1beta1_OutputTLS(in *FluentBitHTTPOutputTLS, out *telemetryv1beta1.OutputTLS, s apiconversion.Scope) error {
+	out.Insecure = in.Disabled
 
-	result := &LogPipelineHTTPOutput{
-		Host:     convertValueTypeToAlpha(output.Host),
-		URI:      output.URI,
-		Port:     output.Port,
-		Compress: output.Compress,
-		Format:   output.Format,
-		TLS:      convertOutputTLSToAlpha(output.TLSConfig),
-		Dedot:    output.Dedot,
-	}
+	out.InsecureSkipVerify = in.SkipCertificateValidation
 
-	if output.User != nil && (output.User.Value != "" || output.User.ValueFrom != nil) {
-		user := convertValueTypeToAlpha(*output.User)
-		result.User = &user
-	}
-
-	if output.Password != nil && (output.Password.Value != "" || output.Password.ValueFrom != nil) {
-		password := convertValueTypeToAlpha(*output.Password)
-		result.Password = &password
-	}
-
-	return result
-}
-
-func convertRuntimeToAlpha(runtime *telemetryv1beta1.LogPipelineRuntimeInput) *LogPipelineApplicationInput {
-	if runtime == nil {
-		return nil
-	}
-
-	application := &LogPipelineApplicationInput{
-		Enabled:          runtime.Enabled,
-		KeepAnnotations:  runtime.KeepAnnotations,
-		DropLabels:       runtime.DropLabels,
-		KeepOriginalBody: runtime.KeepOriginalBody,
-	}
-
-	if runtime.Namespaces != nil && (len(runtime.Namespaces.Include) > 0 || len(runtime.Namespaces.Exclude) > 0) {
-		application.Namespaces = LogPipelineNamespaceSelector{
-			Include: append([]string{}, runtime.Namespaces.Include...),
-			Exclude: append([]string{}, runtime.Namespaces.Exclude...),
-			System:  false,
+	if in.CA != nil {
+		out.CA = &telemetryv1beta1.ValueType{}
+		if err := autoConvert_v1alpha1_ValueType_To_v1beta1_ValueType(in.CA, out.CA, s); err != nil {
+			return err
 		}
 	}
 
-	if runtime.Containers != nil && (len(runtime.Containers.Include) > 0 || len(runtime.Containers.Exclude) > 0) {
-		application.Containers = LogPipelineContainerSelector{
-			Include: append([]string{}, runtime.Containers.Include...),
-			Exclude: append([]string{}, runtime.Containers.Exclude...),
+	if in.Cert != nil {
+		out.Cert = &telemetryv1beta1.ValueType{}
+		if err := autoConvert_v1alpha1_ValueType_To_v1beta1_ValueType(in.Cert, out.Cert, s); err != nil {
+			return err
 		}
 	}
 
-	return application
+	if in.Key != nil {
+		out.Key = &telemetryv1beta1.ValueType{}
+		if err := autoConvert_v1alpha1_ValueType_To_v1beta1_ValueType(in.Key, out.Key, s); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
-func convertOutputTLSToAlpha(src telemetryv1beta1.OutputTLS) LogPipelineOutputTLS {
-	var dst LogPipelineOutputTLS
+func Convert_v1beta1_OutputTLS_To_v1alpha1_FluentBitHTTPOutputTLS(in *telemetryv1beta1.OutputTLS, out *FluentBitHTTPOutputTLS, s apiconversion.Scope) error {
+	out.Disabled = in.Insecure
 
-	dst.CA = convertValueTypeToAlphaPtr(src.CA)
-	dst.Cert = convertValueTypeToAlphaPtr(src.Cert)
-	dst.Key = convertValueTypeToAlphaPtr(src.Key)
+	out.SkipCertificateValidation = in.InsecureSkipVerify
 
-	dst.Disabled = src.Insecure
-	dst.SkipCertificateValidation = src.InsecureSkipVerify
+	if in.CA != nil {
+		out.CA = &ValueType{}
+		if err := autoConvert_v1beta1_ValueType_To_v1alpha1_ValueType(in.CA, out.CA, s); err != nil {
+			return err
+		}
+	}
 
-	return dst
+	if in.Cert != nil {
+		out.Cert = &ValueType{}
+		if err := autoConvert_v1beta1_ValueType_To_v1alpha1_ValueType(in.Cert, out.Cert, s); err != nil {
+			return err
+		}
+	}
+
+	if in.Key != nil {
+		out.Key = &ValueType{}
+		if err := autoConvert_v1beta1_ValueType_To_v1alpha1_ValueType(in.Key, out.Key, s); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func Convert_v1alpha1_LogPipelineInput_To_v1beta1_LogPipelineInput(in *LogPipelineInput, out *telemetryv1beta1.LogPipelineInput, s apiconversion.Scope) error {
+	if err := autoConvert_v1alpha1_LogPipelineInput_To_v1beta1_LogPipelineInput(in, out, s); err != nil {
+		return err
+	}
+
+	if in.Application == nil {
+		return nil
+	}
+
+	out.Runtime = &telemetryv1beta1.LogPipelineRuntimeInput{
+		Enabled:                  in.Application.Enabled,
+		FluentBitKeepAnnotations: in.Application.FluentBitKeepAnnotations,
+		FluentBitDropLabels:      in.Application.FluentBitDropLabels,
+		KeepOriginalBody:         in.Application.KeepOriginalBody,
+	}
+
+	var excludes []string
+	if len(in.Application.Namespaces.Include) == 0 && len(in.Application.Namespaces.Exclude) == 0 && !in.Application.Namespaces.System {
+		excludes = namespaces.System()
+	} else {
+		excludes = sanitizeNamespaceNames(in.Application.Namespaces.Exclude)
+	}
+
+	out.Runtime.Namespaces = &telemetryv1beta1.NamespaceSelector{
+		Include: sanitizeNamespaceNames(in.Application.Namespaces.Include),
+		Exclude: excludes,
+	}
+
+	if in.Application.Containers.Include != nil || in.Application.Containers.Exclude != nil {
+		out.Runtime.Containers = &telemetryv1beta1.LogPipelineContainerSelector{
+			Include: in.Application.Containers.Include,
+			Exclude: in.Application.Containers.Exclude,
+		}
+	}
+
+	return nil
+}
+
+func Convert_v1beta1_LogPipelineInput_To_v1alpha1_LogPipelineInput(in *telemetryv1beta1.LogPipelineInput, out *LogPipelineInput, s apiconversion.Scope) error {
+	if err := autoConvert_v1beta1_LogPipelineInput_To_v1alpha1_LogPipelineInput(in, out, s); err != nil {
+		return err
+	}
+
+	if in.Runtime == nil {
+		return nil
+	}
+
+	out.Application = &LogPipelineApplicationInput{
+		Enabled:                  in.Runtime.Enabled,
+		FluentBitKeepAnnotations: in.Runtime.FluentBitKeepAnnotations,
+		FluentBitDropLabels:      in.Runtime.FluentBitDropLabels,
+		KeepOriginalBody:         in.Runtime.KeepOriginalBody,
+	}
+
+	if in.Runtime.Namespaces != nil {
+		if len(in.Runtime.Namespaces.Include) == 0 && len(in.Runtime.Namespaces.Exclude) == 0 {
+			out.Application.Namespaces = LogPipelineNamespaceSelector{
+				System: true,
+			}
+		} else {
+			out.Application.Namespaces = LogPipelineNamespaceSelector{
+				Include: in.Runtime.Namespaces.Include,
+				Exclude: in.Runtime.Namespaces.Exclude,
+				System:  false,
+			}
+		}
+	}
+
+	if in.Runtime.Containers != nil {
+		out.Application.Containers = LogPipelineContainerSelector{
+			Include: in.Runtime.Containers.Include,
+			Exclude: in.Runtime.Containers.Exclude,
+		}
+	}
+
+	return nil
+}
+
+// marshalData stores the source object as json data in the destination object annotations map.
+// It ignores the status of the source object, since there is no need to store the current status
+func marshalData(src metav1.Object, dst metav1.Object) error {
+	u, err := runtime.DefaultUnstructuredConverter.ToUnstructured(src)
+	if err != nil {
+		return err
+	}
+
+	delete(u, "status")
+
+	data, err := json.Marshal(u)
+	if err != nil {
+		return err
+	}
+
+	annotations := dst.GetAnnotations()
+	if annotations == nil {
+		annotations = map[string]string{}
+	}
+
+	annotations[dataAnnotation] = string(data)
+	dst.SetAnnotations(annotations)
+
+	return nil
+}
+
+// unmarshalData tries to retrieve the data from the annotation and unmarshals it into the object passed as input.
+func unmarshalData(from metav1.Object, to any) (bool, error) {
+	annotations := from.GetAnnotations()
+
+	data, ok := annotations[dataAnnotation]
+	if !ok {
+		return false, nil
+	}
+
+	if err := json.Unmarshal([]byte(data), to); err != nil {
+		return false, err
+	}
+
+	delete(annotations, dataAnnotation)
+	from.SetAnnotations(annotations)
+
+	return true, nil
 }

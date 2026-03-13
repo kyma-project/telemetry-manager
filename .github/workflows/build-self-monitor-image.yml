@@ -20,11 +20,11 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       build-args: ${{ steps.prepare-envs.outputs.build-args }}
-      build-tag: ${{ steps.build-tag.outputs.build-tag || '' }}
+      tags: ${{ steps.create-tags.outputs.tags }}
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Fetch new env file
         if: github.event_name == 'pull_request_target'
@@ -49,15 +49,29 @@ jobs:
         run: |
           cat dependencies/telemetry-self-monitor/envs >> "$GITHUB_OUTPUT"
 
-      - name: get commit short sha
+      - name: Get commit short SHA
         id: get-short-sha
         run: echo "short-sha=$(git rev-parse --short $GITHUB_SHA)" >> $GITHUB_OUTPUT
 
-      - name: build image tag
-        if: github.event_name == 'push'
-        id: build-tag
-        run: echo "build-tag=${{ steps.load-envs.outputs.PROMETHEUS_VERSION }}-${{ steps.get-short-sha.outputs.short-sha }}" >> $GITHUB_OUTPUT
-
+      - name: Create tags
+        id: create-tags
+        run: |
+          if [[ $GITHUB_EVENT_NAME == 'push' || $GITHUB_EVENT_NAME == 'merge_group' ]]; then
+            {
+              echo "tags<<EOTAGS"
+              echo "${{ github.ref_name }}"
+              echo "${{ steps.load-envs.outputs.PROMETHEUS_VERSION }}-${{ steps.get-short-sha.outputs.short-sha }}"
+              echo "EOTAGS"
+            } >> "$GITHUB_OUTPUT"
+          else
+            {
+              echo "tags<<EOTAGS"
+              echo "PR-${{ github.event.pull_request.number }}"
+              echo "${{ github.event.pull_request.head.sha }}"
+              echo "EOTAGS"
+            } >> "$GITHUB_OUTPUT"
+          fi
+       
   build-image:
     permissions:
       id-token: write # Required for requesting the JWT token
@@ -69,7 +83,7 @@ jobs:
       dockerfile: Dockerfile
       context: dependencies/telemetry-self-monitor
       build-args: ${{ needs.envs.outputs.build-args }}
-      tags: ${{ needs.envs.outputs.build-tag }}
+      tags: ${{ needs.envs.outputs.tags }}
       platforms: "linux/amd64,linux/arm64"
 
   notify-on-failure:
@@ -78,10 +92,10 @@ jobs:
     if: ${{ always() && (needs.build-image.result == 'failure') && github.event_name == 'push' }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Send slack message on failure
-        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
+        uses: slackapi/slack-github-action@af78098f536edbc4de71162a307590698245be95 # v3.0.1
         with:
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
           webhook-type: incoming-webhook

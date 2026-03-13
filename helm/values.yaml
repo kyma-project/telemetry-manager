@@ -1,3 +1,10 @@
+global:
+  caBundle:
+    enabled: false
+    name: "custom-ca-certificates"
+  imagePullSecret:
+    enabled: false
+    name: "oci-registry-pullsecret"
 experimental:
   enabled: true
 default:
@@ -8,15 +15,16 @@ manager:
       cert-dir: "/tmp"
       high-priority-class-name: "telemetry-priority-class-high"
       normal-priority-class-name: "telemetry-priority-class"
-      enable-fips-mode: false
     env:
-      alpineImage: europe-docker.pkg.dev/kyma-project/prod/external/library/alpine:3.22.1
+      alpineImage: europe-docker.pkg.dev/kyma-project/prod/external/library/alpine:3.23.3
       appLogLevel: info
-      fluentBitExporterImage: europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20250910-86122076
-      fluentBitImage: europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluent-bit:4.1.1
+      fluentBitExporterImage: europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:main
+      fluentBitImage: europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluent-bit:4.2.3
       gomemlimit: 300MiB
-      otelCollectorImage: europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.139.0-main
-      selfMonitorImage: europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:3.7.3-f4e3fab
+      otelCollectorImage: europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:main
+      selfMonitorImage: europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:main
+      operateInFipsMode: false
+      selfMonitorFIPSImage: europe-docker.pkg.dev/kyma-project/restricted-prod/sap.com/prometheus-fips:3.10.0
     image:
       repository: europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:main
       pullPolicy: "IfNotPresent"
@@ -48,3 +56,8 @@ managerWebhook:
     - port: 443
       protocol: TCP
       targetPort: 9443
+additionalMetadata:
+  labels:
+  # custom-label: my-value
+  annotations:
+# custom-resource-annotation: my-value

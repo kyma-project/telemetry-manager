@@ -9,6 +9,8 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdoutloggen"
@@ -17,7 +19,7 @@ import (
 )
 
 func TestContainerSelector_OTel(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelLogAgent)
+	suite.SetupTest(t, suite.LabelLogAgent)
 
 	var (
 		uniquePrefix        = unique.Prefix("agent")
@@ -37,7 +39,7 @@ func TestContainerSelector_OTel(t *testing.T) {
 		WithName(includePipelineName).
 		WithIncludeContainers(container1).
 		WithIncludeNamespaces(genNs).
-		WithOTLPOutput(testutils.OTLPEndpoint(backend1.Endpoint())).
+		WithOTLPOutput(testutils.OTLPEndpoint(backend1.EndpointHTTP())).
 		Build()
 
 	// Exclude container1 from namespace genNs
@@ -45,12 +47,12 @@ func TestContainerSelector_OTel(t *testing.T) {
 		WithName(excludePipelineName).
 		WithExcludeContainers(container1).
 		WithIncludeNamespaces(genNs).
-		WithOTLPOutput(testutils.OTLPEndpoint(backend2.Endpoint())).
+		WithOTLPOutput(testutils.OTLPEndpoint(backend2.EndpointHTTP())).
 		Build()
 
 	resources := []client.Object{
-		kitk8s.NewNamespace(backendNs).K8sObject(),
-		kitk8s.NewNamespace(genNs).K8sObject(),
+		kitk8sobjects.NewNamespace(backendNs).K8sObject(),
+		kitk8sobjects.NewNamespace(genNs).K8sObject(),
 		&includePipeline,
 		&excludePipeline,
 		stdoutloggen.NewDeployment(genNs, stdoutloggen.WithContainer(container1)).WithName("gen-1").K8sObject(),
@@ -59,9 +61,6 @@ func TestContainerSelector_OTel(t *testing.T) {
 	resources = append(resources, backend1.K8sObjects()...)
 	resources = append(resources, backend2.K8sObjects()...)
 
-	t.Cleanup(func() {
-		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-	})
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.BackendReachable(t, backend1)
@@ -81,7 +80,7 @@ func TestContainerSelector_OTel(t *testing.T) {
 }
 
 func TestContainerSelector_FluentBit(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelFluentBit)
+	suite.SetupTestWithOptions(t, []string{suite.LabelFluentBit}, kubeprep.WithOverrideFIPSMode(false))
 
 	var (
 		uniquePrefix        = unique.Prefix()
@@ -98,21 +97,21 @@ func TestContainerSelector_FluentBit(t *testing.T) {
 
 	includePipeline := testutils.NewLogPipelineBuilder().
 		WithName(includePipelineName).
-		WithApplicationInput(true).
+		WithRuntimeInput(true).
 		WithIncludeContainers(container1).
 		WithHTTPOutput(testutils.HTTPHost(backend1.Host()), testutils.HTTPPort(backend1.Port())).
 		Build()
 
 	excludePipeline := testutils.NewLogPipelineBuilder().
 		WithName(excludePipelineName).
-		WithApplicationInput(true).
+		WithRuntimeInput(true).
 		WithExcludeContainers(container1).
 		WithHTTPOutput(testutils.HTTPHost(backend2.Host()), testutils.HTTPPort(backend2.Port())).
 		Build()
 
 	resources := []client.Object{
-		kitk8s.NewNamespace(backendNs).K8sObject(),
-		kitk8s.NewNamespace(genNs).K8sObject(),
+		kitk8sobjects.NewNamespace(backendNs).K8sObject(),
+		kitk8sobjects.NewNamespace(genNs).K8sObject(),
 		&includePipeline,
 		&excludePipeline,
 		stdoutloggen.NewDeployment(genNs, stdoutloggen.WithContainer(container1)).WithName("gen-1").K8sObject(),
@@ -121,9 +120,6 @@ func TestContainerSelector_FluentBit(t *testing.T) {
 	resources = append(resources, backend1.K8sObjects()...)
 	resources = append(resources, backend2.K8sObjects()...)
 
-	t.Cleanup(func() {
-		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-	})
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.BackendReachable(t, backend1)

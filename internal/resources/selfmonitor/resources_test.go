@@ -14,13 +14,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 
+	"github.com/kyma-project/telemetry-manager/internal/config"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
 const (
 	namespace            = "my-namespace"
-	name                 = "my-self-monitor"
-	componentType        = "my-monitor"
 	prometheusConfigYAML = "dummy prometheus Config"
 	alertRulesYAML       = "dummy alert rules"
 	configPath           = "/dummy/"
@@ -42,9 +41,12 @@ func TestApplySelfMonitorResources(t *testing.T) {
 	}).Build()
 	sut := ApplierDeleter{
 		Config: Config{
-			BaseName:      name,
-			Namespace:     namespace,
-			ComponentType: componentType,
+			Global: config.NewGlobal(
+				config.WithTargetNamespace(namespace),
+				config.WithImagePullSecretName("mySecret"),
+				config.WithAdditionalWorkloadLabels(map[string]string{"test-label-key": "test-label-value"}),
+				config.WithAdditionalWorkloadAnnotations(map[string]string{"test-anno-key": "test-anno-value"}),
+			),
 		},
 	}
 
@@ -60,11 +62,13 @@ func TestApplySelfMonitorResources(t *testing.T) {
 	err := sut.ApplyResources(ctx, client, opts)
 	require.NoError(t, err)
 
-	// uncomment to re-generate golden file
-	// testutils.SaveAsYAML(t, scheme, objects, "testdata/self-monitor.yaml")
-
 	bytes, err := testutils.MarshalYAML(scheme, objects)
 	require.NoError(t, err)
+
+	if testutils.ShouldUpdateGoldenFiles() {
+		testutils.UpdateGoldenFileYAML(t, "testdata/self-monitor.yaml", bytes)
+		return
+	}
 
 	goldenFileBytes, err := os.ReadFile("testdata/self-monitor.yaml")
 	require.NoError(t, err)
@@ -84,8 +88,7 @@ func TestDeleteSelfMonitorResources(t *testing.T) {
 
 	sut := ApplierDeleter{
 		Config: Config{
-			BaseName:  name,
-			Namespace: namespace,
+			Global: config.NewGlobal(config.WithTargetNamespace(namespace)),
 		},
 	}
 

@@ -155,8 +155,6 @@ spec:
               fieldPath: spec.nodeName
         - name: GODEBUG
           value: fips140=only,tlsmlkem=0
-        - name: GOMEMLIMIT
-          value: "419430400"
         envFrom:
         - secretRef:
             name: telemetry-trace-gateway
@@ -216,26 +214,13 @@ metadata:
     app.kubernetes.io/name: telemetry-trace-gateway
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
-  name: telemetry-trace-gateway
+  name: kyma-project.io--telemetry-trace-gateway
   namespace: kyma-system
 spec:
   egress:
-  - to:
-    - ipBlock:
-        cidr: 0.0.0.0/0
-    - ipBlock:
-        cidr: ::/0
+  - {}
   ingress:
-  - from:
-    - ipBlock:
-        cidr: 0.0.0.0/0
-    - ipBlock:
-        cidr: ::/0
-    ports:
-    - port: 8888
-      protocol: TCP
-    - port: 13133
-      protocol: TCP
+  - ports:
     - port: 4318
       protocol: TCP
     - port: 4317
@@ -246,6 +231,33 @@ spec:
   policyTypes:
   - Ingress
   - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  labels:
+    app.kubernetes.io/component: gateway
+    app.kubernetes.io/managed-by: telemetry-manager
+    app.kubernetes.io/name: telemetry-trace-gateway
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
+  name: kyma-project.io--telemetry-trace-gateway-metrics
+  namespace: kyma-system
+spec:
+  ingress:
+  - from:
+    - namespaceSelector: {}
+      podSelector:
+        matchLabels:
+          networking.kyma-project.io/metrics-scraping: allowed
+    ports:
+    - port: 8888
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: telemetry-trace-gateway
+  policyTypes:
+  - Ingress
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole

@@ -10,13 +10,13 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
 	sharedtypesutils "github.com/kyma-project/telemetry-manager/internal/utils/sharedtypes"
 )
 
 // Copies HTTP-specific attributes and user-provided variables to a secret that is later used for providing environment variables to the Fluent Bit configuration.
-func (b *ConfigBuilder) buildEnvConfigSecret(ctx context.Context, logPipelines []telemetryv1alpha1.LogPipeline) (map[string][]byte, error) {
+func (b *ConfigBuilder) buildEnvConfigSecret(ctx context.Context, logPipelines []telemetryv1beta1.LogPipeline) (map[string][]byte, error) {
 	envConfigSecret := make(map[string][]byte)
 
 	for i := range logPipelines {
@@ -35,16 +35,16 @@ func (b *ConfigBuilder) buildEnvConfigSecret(ctx context.Context, logPipelines [
 
 // Copies TLS-specific attributes to a secret, that is later mounted as a file, and used in the Fluent Bit configuration
 // (since PEM-encoded strings exceed the maximum allowed length of environment variables on some Linux machines).
-func (b *ConfigBuilder) buildTLSFileConfigSecret(ctx context.Context, logPipelines []telemetryv1alpha1.LogPipeline) (map[string][]byte, error) {
+func (b *ConfigBuilder) buildTLSFileConfigSecret(ctx context.Context, logPipelines []telemetryv1beta1.LogPipeline) (map[string][]byte, error) {
 	tlsSecretConfig := make(map[string][]byte)
 
 	for i := range logPipelines {
 		output := logPipelines[i].Spec.Output
-		if !logpipelineutils.IsHTTPDefined(&output) {
+		if !logpipelineutils.IsHTTPOutputDefined(&output) {
 			continue
 		}
 
-		tlsConfig := output.HTTP.TLS
+		tlsConfig := output.FluentBitHTTP.TLS
 		if sharedtypesutils.IsValid(tlsConfig.CA) {
 			targetKey := fmt.Sprintf("%s-ca.crt", logPipelines[i].Name)
 
@@ -84,8 +84,8 @@ func (b *ConfigBuilder) buildTLSFileConfigSecret(ctx context.Context, logPipelin
 }
 
 // extractHTTPSecrets handles the extraction of secrets from HTTP output
-func (b *ConfigBuilder) extractHTTPSecrets(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, envSecretConfig map[string][]byte) error {
-	httpOutput := pipeline.Spec.Output.HTTP
+func (b *ConfigBuilder) extractHTTPSecrets(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline, envSecretConfig map[string][]byte) error {
+	httpOutput := pipeline.Spec.Output.FluentBitHTTP
 	if httpOutput == nil {
 		return nil
 	}
@@ -124,8 +124,8 @@ func (b *ConfigBuilder) extractHTTPSecrets(ctx context.Context, pipeline *teleme
 }
 
 // extractVariableSecrets handles the extraction of secrets from variables
-func (b *ConfigBuilder) extractVariableSecrets(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, envConfigSecret map[string][]byte) error {
-	for _, ref := range pipeline.Spec.Variables {
+func (b *ConfigBuilder) extractVariableSecrets(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline, envConfigSecret map[string][]byte) error {
+	for _, ref := range pipeline.Spec.FluentBitVariables {
 		if ref.ValueFrom.SecretKeyRef == nil {
 			continue
 		}
@@ -141,7 +141,7 @@ func (b *ConfigBuilder) extractVariableSecrets(ctx context.Context, pipeline *te
 	return nil
 }
 
-func getEnvConfigSecret(ctx context.Context, client client.Reader, prefix string, value *telemetryv1alpha1.ValueType) (map[string][]byte, error) {
+func getEnvConfigSecret(ctx context.Context, client client.Reader, prefix string, value *telemetryv1beta1.ValueType) (map[string][]byte, error) {
 	var ref = value.ValueFrom.SecretKeyRef
 
 	targetKey := formatEnvVarName(prefix, ref.Namespace, ref.Name, ref.Key)
@@ -154,7 +154,7 @@ func getEnvConfigSecret(ctx context.Context, client client.Reader, prefix string
 	return secretData, nil
 }
 
-func getFromValueOrSecret(ctx context.Context, client client.Reader, value telemetryv1alpha1.ValueType, targetKey string) (map[string][]byte, error) {
+func getFromValueOrSecret(ctx context.Context, client client.Reader, value telemetryv1beta1.ValueType, targetKey string) (map[string][]byte, error) {
 	if value.Value != "" {
 		return map[string][]byte{
 			targetKey: []byte(value.Value),
@@ -169,7 +169,7 @@ func getFromValueOrSecret(ctx context.Context, client client.Reader, value telem
 	return secretData, nil
 }
 
-func getSecretData(ctx context.Context, client client.Reader, ref telemetryv1alpha1.SecretKeyRef, targetKey string) (map[string][]byte, error) {
+func getSecretData(ctx context.Context, client client.Reader, ref telemetryv1beta1.SecretKeyRef, targetKey string) (map[string][]byte, error) {
 	var source corev1.Secret
 	if err := client.Get(ctx, types.NamespacedName{Name: ref.Name, Namespace: ref.Namespace}, &source); err != nil {
 		return nil, fmt.Errorf("unable to read secret '%s' from namespace '%s': %w", ref.Name, ref.Namespace, err)
@@ -187,7 +187,7 @@ func getSecretData(ctx context.Context, client client.Reader, ref telemetryv1alp
 		ref.Namespace)
 }
 
-func shouldCopySecret(value *telemetryv1alpha1.ValueType) bool {
+func shouldCopySecret(value *telemetryv1beta1.ValueType) bool {
 	return value != nil &&
 		value.Value == "" &&
 		value.ValueFrom != nil &&

@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"k8s.io/utils/ptr"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/namespaces"
@@ -32,7 +31,7 @@ func TestDefault(t *testing.T) {
 						Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{},
 					},
 					Output: telemetryv1beta1.LogPipelineOutput{
-						HTTP: &telemetryv1beta1.LogPipelineHTTPOutput{
+						FluentBitHTTP: &telemetryv1beta1.FluentBitHTTPOutput{
 							Host: telemetryv1beta1.ValueType{
 								Value: "localhost:4317",
 							},
@@ -44,15 +43,15 @@ func TestDefault(t *testing.T) {
 				Spec: telemetryv1beta1.LogPipelineSpec{
 					Input: telemetryv1beta1.LogPipelineInput{
 						Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
-							Enabled:          ptr.To(true),
-							KeepOriginalBody: ptr.To(true),
+							Enabled:          new(true),
+							KeepOriginalBody: new(true),
 							Namespaces: &telemetryv1beta1.NamespaceSelector{
 								Exclude: namespaces.System(),
 							},
 						},
 					},
 					Output: telemetryv1beta1.LogPipelineOutput{
-						HTTP: &telemetryv1beta1.LogPipelineHTTPOutput{
+						FluentBitHTTP: &telemetryv1beta1.FluentBitHTTPOutput{
 							Host: telemetryv1beta1.ValueType{
 								Value: "localhost:4317",
 							},
@@ -67,11 +66,11 @@ func TestDefault(t *testing.T) {
 				Spec: telemetryv1beta1.LogPipelineSpec{
 					Input: telemetryv1beta1.LogPipelineInput{
 						Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
-							KeepOriginalBody: ptr.To(false),
+							KeepOriginalBody: new(false),
 						},
 					},
 					Output: telemetryv1beta1.LogPipelineOutput{
-						HTTP: &telemetryv1beta1.LogPipelineHTTPOutput{
+						FluentBitHTTP: &telemetryv1beta1.FluentBitHTTPOutput{
 							Host: telemetryv1beta1.ValueType{
 								Value: "localhost:4317",
 							},
@@ -83,15 +82,15 @@ func TestDefault(t *testing.T) {
 				Spec: telemetryv1beta1.LogPipelineSpec{
 					Input: telemetryv1beta1.LogPipelineInput{
 						Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
-							Enabled:          ptr.To(true),
-							KeepOriginalBody: ptr.To(false),
+							Enabled:          new(true),
+							KeepOriginalBody: new(false),
 							Namespaces: &telemetryv1beta1.NamespaceSelector{
 								Exclude: namespaces.System(),
 							},
 						},
 					},
 					Output: telemetryv1beta1.LogPipelineOutput{
-						HTTP: &telemetryv1beta1.LogPipelineHTTPOutput{
+						FluentBitHTTP: &telemetryv1beta1.FluentBitHTTPOutput{
 							Host: telemetryv1beta1.ValueType{
 								Value: "localhost:4317",
 							},
@@ -106,11 +105,11 @@ func TestDefault(t *testing.T) {
 				Spec: telemetryv1beta1.LogPipelineSpec{
 					Input: telemetryv1beta1.LogPipelineInput{
 						Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
-							Enabled: ptr.To(false),
+							Enabled: new(false),
 						},
 					},
 					Output: telemetryv1beta1.LogPipelineOutput{
-						HTTP: &telemetryv1beta1.LogPipelineHTTPOutput{
+						FluentBitHTTP: &telemetryv1beta1.FluentBitHTTPOutput{
 							Host: telemetryv1beta1.ValueType{
 								Value: "localhost:4317",
 							},
@@ -122,11 +121,11 @@ func TestDefault(t *testing.T) {
 				Spec: telemetryv1beta1.LogPipelineSpec{
 					Input: telemetryv1beta1.LogPipelineInput{
 						Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
-							Enabled: ptr.To(false),
+							Enabled: new(false),
 						},
 					},
 					Output: telemetryv1beta1.LogPipelineOutput{
-						HTTP: &telemetryv1beta1.LogPipelineHTTPOutput{
+						FluentBitHTTP: &telemetryv1beta1.FluentBitHTTPOutput{
 							Host: telemetryv1beta1.ValueType{
 								Value: "localhost:4317",
 							},
@@ -148,17 +147,15 @@ func TestDefault(t *testing.T) {
 				Spec: telemetryv1beta1.LogPipelineSpec{
 					Input: telemetryv1beta1.LogPipelineInput{
 						Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
-							Enabled:          ptr.To(true),
-							KeepOriginalBody: ptr.To(true),
+							Enabled:          new(true),
+							KeepOriginalBody: new(true),
 							Namespaces: &telemetryv1beta1.NamespaceSelector{
 								Exclude: namespaces.System(),
 							},
 						},
 						OTLP: &telemetryv1beta1.OTLPInput{
-							Enabled: ptr.To(true),
-							Namespaces: &telemetryv1beta1.NamespaceSelector{
-								Exclude: namespaces.System(),
-							},
+							Enabled:    new(true),
+							Namespaces: &telemetryv1beta1.NamespaceSelector{},
 						},
 					},
 					Output: telemetryv1beta1.LogPipelineOutput{
@@ -175,7 +172,7 @@ func TestDefault(t *testing.T) {
 				Spec: telemetryv1beta1.LogPipelineSpec{
 					Input: telemetryv1beta1.LogPipelineInput{
 						Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
-							Enabled: ptr.To(false),
+							Enabled: new(false),
 						},
 						OTLP: &telemetryv1beta1.OTLPInput{
 							Namespaces: &telemetryv1beta1.NamespaceSelector{
@@ -197,10 +194,10 @@ func TestDefault(t *testing.T) {
 				Spec: telemetryv1beta1.LogPipelineSpec{
 					Input: telemetryv1beta1.LogPipelineInput{
 						Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
-							Enabled: ptr.To(false),
+							Enabled: new(false),
 						},
 						OTLP: &telemetryv1beta1.OTLPInput{
-							Enabled: ptr.To(true),
+							Enabled: new(true),
 							Namespaces: &telemetryv1beta1.NamespaceSelector{
 								Exclude: []string{"custom-namespace"},
 							},
@@ -222,7 +219,7 @@ func TestDefault(t *testing.T) {
 			input: &telemetryv1beta1.LogPipeline{
 				Spec: telemetryv1beta1.LogPipelineSpec{
 					Output: telemetryv1beta1.LogPipelineOutput{
-						HTTP: &telemetryv1beta1.LogPipelineHTTPOutput{
+						FluentBitHTTP: &telemetryv1beta1.FluentBitHTTPOutput{
 							Host: telemetryv1beta1.ValueType{
 								Value: "localhost",
 							},
@@ -234,15 +231,15 @@ func TestDefault(t *testing.T) {
 				Spec: telemetryv1beta1.LogPipelineSpec{
 					Input: telemetryv1beta1.LogPipelineInput{
 						Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
-							Enabled:          ptr.To(true),
-							KeepOriginalBody: ptr.To(true),
+							Enabled:          new(true),
+							KeepOriginalBody: new(true),
 							Namespaces: &telemetryv1beta1.NamespaceSelector{
 								Exclude: namespaces.System(),
 							},
 						},
 					},
 					Output: telemetryv1beta1.LogPipelineOutput{
-						HTTP: &telemetryv1beta1.LogPipelineHTTPOutput{
+						FluentBitHTTP: &telemetryv1beta1.FluentBitHTTPOutput{
 							Host: telemetryv1beta1.ValueType{
 								Value: "localhost",
 							},

@@ -1,21 +1,11 @@
 apiVersion: v1
 data:
-  custom_parsers.conf: |2
-
-    [PARSER]
-        Name docker_no_time
-        Format json
-        Time_Keep Off
-        Time_Key time
-        Time_Format %Y-%m-%dT%H:%M:%S.%L
   fluent-bit.conf: |2
 
     [SERVICE]
         Daemon Off
         Flush 1
         Log_Level warn
-        Parsers_File custom_parsers.conf
-        Parsers_File dynamic-parsers/parsers.conf
         HTTP_Server On
         HTTP_Listen 0.0.0.0
         HTTP_Port 2020
@@ -106,21 +96,6 @@ metadata:
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
   name: telemetry-fluent-bit-luascripts
-  namespace: kyma-system
----
-apiVersion: v1
-data:
-  parsers.conf: ""
-kind: ConfigMap
-metadata:
-  labels:
-    app.kubernetes.io/component: agent
-    app.kubernetes.io/instance: telemetry
-    app.kubernetes.io/managed-by: telemetry-manager
-    app.kubernetes.io/name: fluent-bit
-    app.kubernetes.io/part-of: telemetry
-    kyma-project.io/module: telemetry
-  name: telemetry-fluent-bit-parsers
   namespace: kyma-system
 ---
 apiVersion: v1
@@ -231,12 +206,6 @@ status:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: telemetry-fluent-bit
-  namespace: kyma-system
----
-apiVersion: apps/v1
-kind: DaemonSet
-metadata:
   labels:
     app.kubernetes.io/component: agent
     app.kubernetes.io/instance: telemetry
@@ -244,6 +213,22 @@ metadata:
     app.kubernetes.io/name: fluent-bit
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
+  name: telemetry-fluent-bit
+  namespace: kyma-system
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  annotations:
+    test-anno-key: test-anno-value
+  labels:
+    app.kubernetes.io/component: agent
+    app.kubernetes.io/instance: telemetry
+    app.kubernetes.io/managed-by: telemetry-manager
+    app.kubernetes.io/name: fluent-bit
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
+    test-label-key: test-label-value
   name: telemetry-fluent-bit
   namespace: kyma-system
 spec:
@@ -254,7 +239,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 54ef44075035247cd4eba50a8df088d1426f0ea5deccdc0ba7b9f81078bc0226
+        checksum/config: 91ba0ed4b08d1118be17c56fb8debd2751c946b444b77ae142a9483b119834e2
+        test-anno-key: test-anno-value
         traffic.sidecar.istio.io/excludeInboundPorts: 2020,2021
       labels:
         app.kubernetes.io/component: agent
@@ -265,6 +251,7 @@ spec:
         kyma-project.io/module: telemetry
         sidecar.istio.io/inject: "true"
         telemetry.kyma-project.io/log-export: "true"
+        test-label-key: test-label-value
     spec:
       containers:
       - envFrom:
@@ -310,11 +297,6 @@ spec:
           subPath: fluent-bit.conf
         - mountPath: /fluent-bit/etc/dynamic/
           name: dynamic-config
-        - mountPath: /fluent-bit/etc/dynamic-parsers/
-          name: dynamic-parsers-config
-        - mountPath: /fluent-bit/etc/custom_parsers.conf
-          name: config
-          subPath: custom_parsers.conf
         - mountPath: /fluent-bit/scripts/filter-script.lua
           name: luascripts
           subPath: filter-script.lua
@@ -327,6 +309,9 @@ spec:
           name: dynamic-files
         - mountPath: /fluent-bit/etc/output-tls-config/
           name: output-tls-config
+          readOnly: true
+        - mountPath: /etc/ssl/certs
+          name: custom-ca-bundle
           readOnly: true
       - args:
         - --storage-path=/data/flb-storage/
@@ -355,6 +340,8 @@ spec:
         volumeMounts:
         - mountPath: /data
           name: varfluentbit
+      imagePullSecrets:
+      - name: mySecret
       initContainers:
       - command:
         - chown
@@ -413,10 +400,6 @@ spec:
           optional: true
         name: dynamic-config
       - configMap:
-          name: telemetry-fluent-bit-parsers
-          optional: true
-        name: dynamic-parsers-config
-      - configMap:
           name: telemetry-fluent-bit-files
           optional: true
         name: dynamic-files
@@ -426,6 +409,12 @@ spec:
       - name: output-tls-config
         secret:
           secretName: telemetry-fluent-bit-output-tls-config
+      - name: custom-ca-bundle
+        projected:
+          sources:
+          - clusterTrustBundle:
+              name: trustBundle
+              path: ca-certificates.crt
   updateStrategy: {}
 status:
   currentNumberScheduled: 0
@@ -443,25 +432,41 @@ metadata:
     app.kubernetes.io/name: fluent-bit
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
-  name: telemetry-fluent-bit
+  name: kyma-project.io--telemetry-fluent-bit
   namespace: kyma-system
 spec:
   egress:
-  - to:
-    - ipBlock:
-        cidr: 0.0.0.0/0
-    - ipBlock:
-        cidr: ::/0
+  - {}
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: telemetry
+      app.kubernetes.io/name: fluent-bit
+  policyTypes:
+  - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  labels:
+    app.kubernetes.io/component: agent
+    app.kubernetes.io/instance: telemetry
+    app.kubernetes.io/managed-by: telemetry-manager
+    app.kubernetes.io/name: fluent-bit
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
+  name: kyma-project.io--telemetry-fluent-bit-metrics
+  namespace: kyma-system
+spec:
   ingress:
   - from:
-    - ipBlock:
-        cidr: 0.0.0.0/0
-    - ipBlock:
-        cidr: ::/0
+    - namespaceSelector: {}
+      podSelector:
+        matchLabels:
+          networking.kyma-project.io/metrics-scraping: allowed
     ports:
-    - port: 5555
+    - port: 2020
       protocol: TCP
-    - port: 6666
+    - port: 2021
       protocol: TCP
   podSelector:
     matchLabels:
@@ -469,7 +474,6 @@ spec:
       app.kubernetes.io/name: fluent-bit
   policyTypes:
   - Ingress
-  - Egress
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -497,6 +501,13 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
+  labels:
+    app.kubernetes.io/component: agent
+    app.kubernetes.io/instance: telemetry
+    app.kubernetes.io/managed-by: telemetry-manager
+    app.kubernetes.io/name: fluent-bit
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
   name: telemetry-fluent-bit
   namespace: kyma-system
 roleRef:

@@ -13,11 +13,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+	"github.com/kyma-project/telemetry-manager/internal/config"
+	"github.com/kyma-project/telemetry-manager/internal/k8sclients"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
-	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/config"
+	selfmonitorconfig "github.com/kyma-project/telemetry-manager/internal/selfmonitor/config"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
 )
@@ -30,33 +32,10 @@ const (
 )
 
 type Config struct {
-	Logs        LogsConfig
-	Traces      TracesConfig
-	Metrics     MetricsConfig
-	Webhook     WebhookConfig
-	SelfMonitor SelfMonitorConfig
-}
+	config.Global
 
-type LogsConfig struct {
-	Namespace string
-}
-type TracesConfig struct {
-	Namespace string
-}
-
-type MetricsConfig struct {
-	Namespace string
-}
-
-type WebhookConfig struct {
-	CertConfig webhookcert.Config
-}
-
-type SelfMonitorConfig struct {
-	selfmonitor.Config
-
-	WebhookURL    string
-	WebhookScheme string
+	WebhookCert                       webhookcert.Config
+	SelfMonitorAlertmanagerWebhookURL string
 }
 
 type healthCheckers struct {
@@ -75,8 +54,8 @@ type SelfMonitorApplierDeleter interface {
 type Reconciler struct {
 	client.Client
 
-	scheme *runtime.Scheme
 	config Config
+	scheme *runtime.Scheme
 
 	healthCheckers            healthCheckers
 	overridesHandler          OverridesHandler
@@ -84,16 +63,16 @@ type Reconciler struct {
 }
 
 func New(
-	client client.Client,
-	scheme *runtime.Scheme,
 	config Config,
+	scheme *runtime.Scheme,
+	client client.Client,
 	overridesHandler OverridesHandler,
 	selfMonitorApplierDeleter SelfMonitorApplierDeleter,
 ) *Reconciler {
 	return &Reconciler{
-		Client: client,
-		scheme: scheme,
 		config: config,
+		scheme: scheme,
+		Client: client,
 		healthCheckers: healthCheckers{
 			logs:    &logComponentsChecker{client: client},
 			traces:  &traceComponentsChecker{client: client},
@@ -105,7 +84,7 @@ func New(
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logf.FromContext(ctx).V(1).Info("Reconciling")
+	logf.FromContext(ctx).V(1).Info("Reconciling Telemetry")
 
 	overrideConfig, err := r.overridesHandler.LoadOverrides(ctx)
 	if err != nil {
@@ -117,7 +96,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, nil
 	}
 
-	var telemetry operatorv1alpha1.Telemetry
+	var telemetry operatorv1beta1.Telemetry
 	if err := r.Get(ctx, req.NamespacedName, &telemetry); err != nil {
 		logf.FromContext(ctx).Info(req.String() + " got deleted!")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
@@ -132,12 +111,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		}
 	}
 
-	requeue := telemetry.Status.State == operatorv1alpha1.StateWarning
+	requeue := telemetry.Status.State == operatorv1beta1.StateWarning
 
 	return ctrl.Result{Requeue: requeue}, err
 }
 
-func (r *Reconciler) doReconcile(ctx context.Context, telemetry *operatorv1alpha1.Telemetry) error {
+func (r *Reconciler) doReconcile(ctx context.Context, telemetry *operatorv1beta1.Telemetry) error {
 	if err := r.handleFinalizer(ctx, telemetry); err != nil {
 		return fmt.Errorf("failed to manage finalizer: %w", err)
 	}
@@ -153,7 +132,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, telemetry *operatorv1alpha
 	return nil
 }
 
-func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry *operatorv1alpha1.Telemetry) error {
+func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry *operatorv1beta1.Telemetry) error {
 	pipelinesPresent, err := r.checkPipelineExist(ctx)
 	if err != nil {
 		return err
@@ -167,12 +146,11 @@ func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry *operat
 		return nil
 	}
 
-	prometheusConfig := config.MakeConfig(config.BuilderConfig{
-		ScrapeNamespace:   r.config.SelfMonitor.Namespace,
-		WebhookURL:        r.config.SelfMonitor.WebhookURL,
-		WebhookScheme:     r.config.SelfMonitor.WebhookScheme,
-		ConfigPath:        selfMonitorConfigPath,
-		AlertRuleFileName: selfMonitorAlertRuleFileName,
+	prometheusConfig := selfmonitorconfig.MakeConfig(selfmonitorconfig.BuilderConfig{
+		ScrapeNamespace:        r.config.TargetNamespace(),
+		AlertmanagerWebhookURL: r.config.SelfMonitorAlertmanagerWebhookURL,
+		ConfigPath:             selfMonitorConfigPath,
+		AlertRuleFileName:      selfMonitorAlertRuleFileName,
 	})
 
 	prometheusConfigYAML, err := yaml.Marshal(prometheusConfig)
@@ -180,7 +158,7 @@ func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry *operat
 		return fmt.Errorf("failed to marshal selfmonitor config: %w", err)
 	}
 
-	alertRules := config.MakeRules()
+	alertRules := selfmonitorconfig.MakeRules()
 
 	alertRulesYAML, err := yaml.Marshal(alertRules)
 	if err != nil {
@@ -189,7 +167,7 @@ func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry *operat
 
 	if err := r.selfMonitorApplierDeleter.ApplyResources(
 		ctx,
-		k8sutils.NewOwnerReferenceSetter(r.Client, telemetry),
+		k8sclients.NewOwnerReferenceSetter(r.Client, telemetry),
 		selfmonitor.ApplyOptions{
 			AlertRulesFileName:       selfMonitorAlertRuleFileName,
 			AlertRulesYAML:           string(alertRulesYAML),
@@ -205,7 +183,7 @@ func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry *operat
 }
 
 func (r *Reconciler) checkPipelineExist(ctx context.Context) (bool, error) {
-	var allLogPipelines telemetryv1alpha1.LogPipelineList
+	var allLogPipelines telemetryv1beta1.LogPipelineList
 	if err := r.List(ctx, &allLogPipelines); err != nil {
 		return false, fmt.Errorf("failed to get all log pipelines: %w", err)
 	}
@@ -214,7 +192,7 @@ func (r *Reconciler) checkPipelineExist(ctx context.Context) (bool, error) {
 		return true, nil
 	}
 
-	var allTracePipelines telemetryv1alpha1.TracePipelineList
+	var allTracePipelines telemetryv1beta1.TracePipelineList
 	if err := r.List(ctx, &allTracePipelines); err != nil {
 		return false, fmt.Errorf("failed to get all trace pipelines: %w", err)
 	}
@@ -223,7 +201,7 @@ func (r *Reconciler) checkPipelineExist(ctx context.Context) (bool, error) {
 		return true, nil
 	}
 
-	var allMetricPipelines telemetryv1alpha1.MetricPipelineList
+	var allMetricPipelines telemetryv1beta1.MetricPipelineList
 	if err := r.List(ctx, &allMetricPipelines); err != nil {
 		return false, fmt.Errorf("failed to get all metric pipelines: %w", err)
 	}
@@ -235,7 +213,7 @@ func (r *Reconciler) checkPipelineExist(ctx context.Context) (bool, error) {
 	return false, nil
 }
 
-func (r *Reconciler) handleFinalizer(ctx context.Context, telemetry *operatorv1alpha1.Telemetry) error {
+func (r *Reconciler) handleFinalizer(ctx context.Context, telemetry *operatorv1beta1.Telemetry) error {
 	if telemetry.DeletionTimestamp.IsZero() {
 		if !controllerutil.ContainsFinalizer(telemetry, finalizer) {
 			controllerutil.AddFinalizer(telemetry, finalizer)
@@ -251,7 +229,7 @@ func (r *Reconciler) handleFinalizer(ctx context.Context, telemetry *operatorv1a
 	if controllerutil.ContainsFinalizer(telemetry, finalizer) {
 		if r.dependentCRsFound(ctx) {
 			// Block deletion of the resource if there are still some dependent resources
-			logf.FromContext(ctx).Info("Telemetry CR deletion is blocked because one or more dependent CRs (LogPipeline, LogParser, MetricPipeline, TracePipeline) still exist")
+			logf.FromContext(ctx).Info("Telemetry CR deletion is blocked because one or more dependent CRs (LogPipeline, MetricPipeline, TracePipeline) still exist")
 			return nil
 		}
 
@@ -265,18 +243,18 @@ func (r *Reconciler) handleFinalizer(ctx context.Context, telemetry *operatorv1a
 	return nil
 }
 
-func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1alpha1.Telemetry) error {
+func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1beta1.Telemetry) error {
 	// We skip webhook reconciliation only if no pipelines are remaining. This avoids the risk of certificate expiration while waiting for deletion.
 	if !telemetry.DeletionTimestamp.IsZero() && !r.dependentCRsFound(ctx) {
 		return nil
 	}
 
-	if err := webhookcert.EnsureCertificate(ctx, r.Client, r.config.Webhook.CertConfig); err != nil {
+	if err := webhookcert.EnsureCertificate(ctx, r.Client, r.config.WebhookCert); err != nil {
 		return fmt.Errorf("failed to reconcile webhook: %w", err)
 	}
 
 	var secret corev1.Secret
-	if err := r.Get(ctx, r.config.Webhook.CertConfig.CASecretName, &secret); err != nil {
+	if err := r.Get(ctx, r.config.WebhookCert.CASecretName, &secret); err != nil {
 		return fmt.Errorf("failed to get secret: %w", err)
 	}
 
@@ -289,7 +267,7 @@ func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1
 	}
 
 	var webhook admissionregistrationv1.ValidatingWebhookConfiguration
-	if err := r.Get(ctx, r.config.Webhook.CertConfig.ValidatingWebhookName, &webhook); err != nil {
+	if err := r.Get(ctx, r.config.WebhookCert.ValidatingWebhookName, &webhook); err != nil {
 		return fmt.Errorf("failed to get webhook: %w", err)
 	}
 

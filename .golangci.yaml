@@ -72,6 +72,8 @@ linters:
           alias: telemetryv1beta1
         - pkg: github.com/kyma-project/telemetry-manager/controllers/telemetry
           alias: telemetrycontrollers
+        - pkg: github.com/kyma-project/telemetry-manager/internal/selfmonitor/config
+          alias: selfmonitorconfig
         - pkg: github.com/kyma-project/telemetry-manager/internal/selfmonitor/webhook
           alias: selfmonitorwebhook
         - pkg: github.com/kyma-project/telemetry-manager/internal/resources/common
@@ -82,8 +84,6 @@ linters:
           alias: kitk8s
         - pkg: github.com/kyma-project/telemetry-manager/test/testkit/kyma
           alias: kitkyma
-        - pkg: github.com/kyma-project/telemetry-manager/webhook/logparser/v1alpha1
-          alias: logparserwebhookv1alpha1
         - pkg: github.com/kyma-project/telemetry-manager/webhook/logpipeline/v1alpha1
           alias: logpipelinewebhookv1alpha1
         - pkg: github.com/kyma-project/telemetry-manager/webhook/logpipeline/v1beta1
@@ -104,6 +104,8 @@ linters:
           alias: prommodel
         - pkg: go.opentelemetry.io/otel/sdk/trace
           alias: tracesdk
+        - pkg: go.opentelemetry.io/otel/sdk/metric
+          alias: metricsdk
         - pkg: istio.io/api/networking/v1
           alias: istionetworkingv1
         - pkg: istio.io/client-go/pkg/apis/networking/v1
@@ -128,8 +130,12 @@ linters:
           alias: apierrors
         - pkg: k8s.io/apimachinery/pkg/apis/meta/v1
           alias: metav1
+        - pkg: k8s.io/apimachinery/pkg/conversion
+          alias: apiconversion
         - pkg: k8s.io/apimachinery/pkg/util/runtime
           alias: utilruntime
+        - pkg: "k8s.io/apimachinery/pkg/apis/meta/fuzzer"
+          alias: metafuzzer
         - pkg: k8s.io/client-go/kubernetes/scheme
           alias: clientgoscheme
         - pkg: sigs.k8s.io/controller-runtime
@@ -150,8 +156,12 @@ linters:
           alias: commonStatusMocks
         - pkg: k8s.io/client-go/testing
           alias: clienttesting
+        - pkg: k8s.io/client-go/kubernetes/typed/core/v1
+          alias: kubecoreev1
         - pkg: github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/otel
           alias: logpipelineotel
+        - pkg: github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/fluentbit/mocks
+          alias: logpipelinefluentbitmocks
         - pkg: github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/mocks
           alias: logpipelinemocks
         - pkg: github.com/kyma-project/telemetry-manager/internal/utils/k8s
@@ -174,6 +184,20 @@ linters:
           alias: telemetryutils
         - pkg: github.com/kyma-project/telemetry-manager/internal/fluentbit/ports
           alias: fbports
+        - pkg: github.com/kyma-project/telemetry-manager/internal/manager/ports
+          alias: mgrports
+        - pkg: github.com/kyma-project/telemetry-manager/internal/selfmonitor/ports
+          alias: selfmonports
+        - pkg: github.com/kyma-project/telemetry-manager/webhook/utils
+          alias: webhookutils
+        - pkg: github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects
+          alias: kitk8sobjects
+        - pkg: github.com/onsi/gomega/types
+          alias: gomegatypes
+        - pkg: k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1
+          alias: autoscalingvpav1
+        - pkg: k8s.io/api/autoscaling/v1
+          alias: autoscalingv1
       no-unaliased: true
       no-extra-aliases: true
     loggercheck:
@@ -236,7 +260,7 @@ linters:
         text: 'shadow: declaration of "err" shadows declaration at line ([\d]+)'
       - linters:
           - dupl
-        path: controllers/telemetry/(logparser|logpipeline|metricpipeline|tracepipeline)_controller.go
+        path: controllers/telemetry/(logpipeline|metricpipeline|tracepipeline)_controller.go
       - linters:
           - dupl
         path: internal/utils/k8s/utils.go
@@ -258,6 +282,9 @@ linters:
       - linters:
           - importas
         text: has alias "" which is not part of config
+      - linters:
+          - staticcheck
+        text: 'SA1019: .+\.FluentBit.+ is deprecated'
       - path: (.+)\.go$
         text: Using the variable on range scope `tc` in function literal
       - path: (.+)\.go$

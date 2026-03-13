@@ -6,35 +6,46 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 )
 
-func kubeletStatsReceiverConfig(runtimeResources runtimeResourceSources) *KubeletStatsReceiver {
+func kubeletStatsReceiver(runtimeResources runtimeResourceSources) *KubeletStatsReceiverConfig {
 	const (
 		collectionInterval = "30s"
 		portKubelet        = 10250
 	)
 
-	return &KubeletStatsReceiver{
+	return &KubeletStatsReceiverConfig{
 		CollectionInterval: collectionInterval,
 		AuthType:           "serviceAccount",
 		InsecureSkipVerify: true,
 		Endpoint:           fmt.Sprintf("https://${%s}:%d", common.EnvVarCurrentNodeName, portKubelet),
 		MetricGroups:       kubeletStatsMetricGroups(runtimeResources),
-		Metrics: KubeletStatsMetricsConfig{
-			ContainerCPUUsage:            MetricConfig{Enabled: true},
-			K8sPodCPUUsage:               MetricConfig{Enabled: true},
-			K8sNodeCPUUsage:              MetricConfig{Enabled: true},
-			K8sNodeCPUTime:               MetricConfig{Enabled: false},
-			K8sNodeMemoryMajorPageFaults: MetricConfig{Enabled: false},
-			K8sNodeMemoryPageFaults:      MetricConfig{Enabled: false},
+		Metrics: KubeletStatsMetrics{
+			ContainerCPUUsage:            Metric{Enabled: true},
+			K8sPodCPUUsage:               Metric{Enabled: true},
+			K8sNodeCPUUsage:              Metric{Enabled: true},
+			K8sNodeCPUTime:               Metric{Enabled: false},
+			K8sNodeMemoryMajorPageFaults: Metric{Enabled: false},
+			K8sNodeMemoryPageFaults:      Metric{Enabled: false},
+		},
+		// These resource attributes have been deprecated by OTel and will be removed in future versions.
+		// The volume types associated with them have already been removed for the K8S versions that we use (v1.28+).
+		// See: https://github.com/open-telemetry/opentelemetry-collector-contrib/pull/45896
+		ResourceAttributes: KubeletStatsResourceAttributes{
+			AWSVolumeID:            Metric{Enabled: false},
+			FSType:                 Metric{Enabled: false},
+			GCEPDName:              Metric{Enabled: false},
+			GlusterFSEndpointsName: Metric{Enabled: false},
+			GlusterFSPath:          Metric{Enabled: false},
+			Partition:              Metric{Enabled: false},
 		},
 		ExtraMetadataLabels: []string{"k8s.volume.type"},
-		CollectAllNetworkInterfaces: NetworkInterfacesEnablerConfig{
+		CollectAllNetworkInterfaces: NetworkInterfacesEnabler{
 			NodeMetrics: true,
 		},
 	}
 }
 
-func k8sClusterReceiverConfig(runtimeResources runtimeResourceSources) *K8sClusterReceiver {
-	return &K8sClusterReceiver{
+func k8sClusterReceiver(runtimeResources runtimeResourceSources) *K8sClusterReceiverConfig {
+	return &K8sClusterReceiverConfig{
 		AuthType:               "serviceAccount",
 		CollectionInterval:     "30s",
 		NodeConditionsToReport: []string{},
@@ -48,22 +59,22 @@ func k8sClusterMetricsToDrop(runtimeResources runtimeResourceSources) K8sCluster
 
 	//nolint:dupl // repeating the code as we want to test the metrics are disabled correctly
 	metricsToDrop.K8sClusterDefaultMetricsToDrop = &K8sClusterDefaultMetricsToDrop{
-		K8sContainerStorageRequest:          MetricConfig{Enabled: false},
-		K8sContainerStorageLimit:            MetricConfig{Enabled: false},
-		K8sContainerEphemeralStorageRequest: MetricConfig{Enabled: false},
-		K8sContainerEphemeralStorageLimit:   MetricConfig{Enabled: false},
-		K8sContainerReady:                   MetricConfig{Enabled: false},
-		K8sNamespacePhase:                   MetricConfig{Enabled: false},
-		K8sHPACurrentReplicas:               MetricConfig{Enabled: false},
-		K8sHPADesiredReplicas:               MetricConfig{Enabled: false},
-		K8sHPAMinReplicas:                   MetricConfig{Enabled: false},
-		K8sHPAMaxReplicas:                   MetricConfig{Enabled: false},
-		K8sReplicaSetAvailable:              MetricConfig{Enabled: false},
-		K8sReplicaSetDesired:                MetricConfig{Enabled: false},
-		K8sReplicationControllerAvailable:   MetricConfig{Enabled: false},
-		K8sReplicationControllerDesired:     MetricConfig{Enabled: false},
-		K8sResourceQuotaHardLimit:           MetricConfig{Enabled: false},
-		K8sResourceQuotaUsed:                MetricConfig{Enabled: false},
+		K8sContainerStorageRequest:          Metric{Enabled: false},
+		K8sContainerStorageLimit:            Metric{Enabled: false},
+		K8sContainerEphemeralStorageRequest: Metric{Enabled: false},
+		K8sContainerEphemeralStorageLimit:   Metric{Enabled: false},
+		K8sContainerReady:                   Metric{Enabled: false},
+		K8sNamespacePhase:                   Metric{Enabled: false},
+		K8sHPACurrentReplicas:               Metric{Enabled: false},
+		K8sHPADesiredReplicas:               Metric{Enabled: false},
+		K8sHPAMinReplicas:                   Metric{Enabled: false},
+		K8sHPAMaxReplicas:                   Metric{Enabled: false},
+		K8sReplicaSetAvailable:              Metric{Enabled: false},
+		K8sReplicaSetDesired:                Metric{Enabled: false},
+		K8sReplicationControllerAvailable:   Metric{Enabled: false},
+		K8sReplicationControllerDesired:     Metric{Enabled: false},
+		K8sResourceQuotaHardLimit:           Metric{Enabled: false},
+		K8sResourceQuotaUsed:                Metric{Enabled: false},
 	}
 
 	// The following metrics are enabled by default in the K8sClusterReceiver. If we disable these resources in
@@ -71,51 +82,51 @@ func k8sClusterMetricsToDrop(runtimeResources runtimeResourceSources) K8sCluster
 
 	if !runtimeResources.pod {
 		metricsToDrop.K8sClusterPodMetricsToDrop = &K8sClusterPodMetricsToDrop{
-			K8sPodPhase: MetricConfig{false},
+			K8sPodPhase: Metric{false},
 		}
 	}
 
 	if !runtimeResources.container {
 		metricsToDrop.K8sClusterContainerMetricsToDrop = &K8sClusterContainerMetricsToDrop{
-			K8sContainerCPURequest:    MetricConfig{false},
-			K8sContainerCPULimit:      MetricConfig{false},
-			K8sContainerMemoryRequest: MetricConfig{false},
-			K8sContainerMemoryLimit:   MetricConfig{false},
-			K8sContainerRestarts:      MetricConfig{false},
+			K8sContainerCPURequest:    Metric{false},
+			K8sContainerCPULimit:      Metric{false},
+			K8sContainerMemoryRequest: Metric{false},
+			K8sContainerMemoryLimit:   Metric{false},
+			K8sContainerRestarts:      Metric{false},
 		}
 	}
 
 	if !runtimeResources.statefulset {
 		metricsToDrop.K8sClusterStatefulSetMetricsToDrop = &K8sClusterStatefulSetMetricsToDrop{
-			K8sStatefulSetCurrentPods: MetricConfig{false},
-			K8sStatefulSetDesiredPods: MetricConfig{false},
-			K8sStatefulSetReadyPods:   MetricConfig{false},
-			K8sStatefulSetUpdatedPods: MetricConfig{false},
+			K8sStatefulSetCurrentPods: Metric{false},
+			K8sStatefulSetDesiredPods: Metric{false},
+			K8sStatefulSetReadyPods:   Metric{false},
+			K8sStatefulSetUpdatedPods: Metric{false},
 		}
 	}
 
 	if !runtimeResources.job {
 		metricsToDrop.K8sClusterJobMetricsToDrop = &K8sClusterJobMetricsToDrop{
-			K8sJobActivePods:            MetricConfig{false},
-			K8sJobDesiredSuccessfulPods: MetricConfig{false},
-			K8sJobFailedPods:            MetricConfig{false},
-			K8sJobMaxParallelPods:       MetricConfig{false},
+			K8sJobActivePods:            Metric{false},
+			K8sJobDesiredSuccessfulPods: Metric{false},
+			K8sJobFailedPods:            Metric{false},
+			K8sJobMaxParallelPods:       Metric{false},
 		}
 	}
 
 	if !runtimeResources.deployment {
 		metricsToDrop.K8sClusterDeploymentMetricsToDrop = &K8sClusterDeploymentMetricsToDrop{
-			K8sDeploymentAvailable: MetricConfig{false},
-			K8sDeploymentDesired:   MetricConfig{false},
+			K8sDeploymentAvailable: Metric{false},
+			K8sDeploymentDesired:   Metric{false},
 		}
 	}
 
 	if !runtimeResources.daemonset {
 		metricsToDrop.K8sClusterDaemonSetMetricsToDrop = &K8sClusterDaemonSetMetricsToDrop{
-			K8sDaemonSetCurrentScheduledNodes: MetricConfig{false},
-			K8sDaemonSetDesiredScheduledNodes: MetricConfig{false},
-			K8sDaemonSetMisscheduledNodes:     MetricConfig{false},
-			K8sDaemonSetReadyNodes:            MetricConfig{false},
+			K8sDaemonSetCurrentScheduledNodes: Metric{false},
+			K8sDaemonSetDesiredScheduledNodes: Metric{false},
+			K8sDaemonSetMisscheduledNodes:     Metric{false},
+			K8sDaemonSetReadyNodes:            Metric{false},
 		}
 	}
 

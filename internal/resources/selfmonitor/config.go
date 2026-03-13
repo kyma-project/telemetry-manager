@@ -1,14 +1,10 @@
 package selfmonitor
 
+import "github.com/kyma-project/telemetry-manager/internal/config"
+
 type Config struct {
-	BaseName      string
-	Namespace     string
-	ComponentType string
+	config.Global
 
-	Deployment DeploymentConfig
-}
-
-type DeploymentConfig struct {
 	Image             string
 	PriorityClassName string
 }

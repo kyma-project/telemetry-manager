@@ -79,7 +79,7 @@
                   "name": "Inform about module problem",
                   "destination_id": "",
                   "message_template": {
-                     "source": "Monitor {{ctx.monitor.name}} just entered alert status. Please investigate the issue.\n  - Trigger: {{ctx.trigger.name}}\n  - Severity: {{ctx.trigger.severity}}\n  - Period start: {{ctx.periodStart}}\n  - Period end: {{ctx.periodEnd}}\n  - https://dashboards-sf-1502277b-af0e-44ef-b169-a4d004105616.cls-01.cloud.logs.services.sap.hana.ondemand.com/app/alerting",
+                     "source": "Monitor {{ctx.monitor.name}} just entered alert status. Please investigate the issue.\n  - Trigger: {{ctx.trigger.name}}\n  - Severity: {{ctx.trigger.severity}}\n  - Period start: {{ctx.periodStart}}\n  - Period end: {{ctx.periodEnd}}\n  - <link to your instance>/app/alerting",
                      "lang": "mustache"
                   },
                   "throttle_enabled": true,

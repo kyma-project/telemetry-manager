@@ -9,6 +9,8 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/matchers/log/fluentbit"
@@ -43,7 +45,7 @@ var (
 )
 
 func TestKeepOriginalBody_OTel(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelLogAgent)
+	suite.SetupTest(t, suite.LabelLogAgent)
 
 	var (
 		uniquePrefix         = unique.Prefix()
@@ -62,25 +64,25 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 
 	pipelineKeepOriginal := testutils.NewLogPipelineBuilder().
 		WithName(pipelineKeepOriginalName).
-		WithApplicationInput(true,
-			[]testutils.ExtendedNamespaceSelectorOptions{testutils.ExtIncludeNamespaces(sourceNsKeepOriginal)}...).
+		WithRuntimeInput(true,
+			testutils.IncludeNamespaces(sourceNsKeepOriginal)).
 		WithKeepOriginalBody(true).
-		WithOTLPOutput(testutils.OTLPEndpoint(backendKeepOriginal.Endpoint())).
+		WithOTLPOutput(testutils.OTLPEndpoint(backendKeepOriginal.EndpointHTTP())).
 		Build()
 
 	pipelineDropOriginal := testutils.NewLogPipelineBuilder().
 		WithName(pipelineDropOriginalName).
-		WithApplicationInput(true,
-			[]testutils.ExtendedNamespaceSelectorOptions{testutils.ExtIncludeNamespaces(sourceNsDropOriginal)}...).
+		WithRuntimeInput(true,
+			testutils.IncludeNamespaces(sourceNsDropOriginal)).
 		WithKeepOriginalBody(false).
-		WithOTLPOutput(testutils.OTLPEndpoint(backendDropOriginal.Endpoint())).
+		WithOTLPOutput(testutils.OTLPEndpoint(backendDropOriginal.EndpointHTTP())).
 		Build()
 
 	resources := []client.Object{
-		kitk8s.NewNamespace(sourceNsKeepOriginal).K8sObject(),
-		kitk8s.NewNamespace(sourceNsDropOriginal).K8sObject(),
-		kitk8s.NewNamespace(backendNsKeepOriginal).K8sObject(),
-		kitk8s.NewNamespace(backendNsDropOriginal).K8sObject(),
+		kitk8sobjects.NewNamespace(sourceNsKeepOriginal).K8sObject(),
+		kitk8sobjects.NewNamespace(sourceNsDropOriginal).K8sObject(),
+		kitk8sobjects.NewNamespace(backendNsKeepOriginal).K8sObject(),
+		kitk8sobjects.NewNamespace(backendNsDropOriginal).K8sObject(),
 		&pipelineDropOriginal,
 		&pipelineKeepOriginal,
 		// stdout log generators in the "keep-original-body" namespace
@@ -97,9 +99,6 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 	resources = append(resources, backendKeepOriginal.K8sObjects()...)
 	resources = append(resources, backendDropOriginal.K8sObjects()...)
 
-	t.Cleanup(func() {
-		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-	})
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.BackendReachable(t, backendKeepOriginal)
@@ -192,7 +191,7 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 }
 
 func TestKeepOriginalBody_FluentBit(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelFluentBit)
+	suite.SetupTestWithOptions(t, []string{suite.LabelFluentBit}, kubeprep.WithOverrideFIPSMode(false))
 
 	var (
 		uniquePrefix         = unique.Prefix()
@@ -211,7 +210,7 @@ func TestKeepOriginalBody_FluentBit(t *testing.T) {
 
 	pipelineKeepOriginal := testutils.NewLogPipelineBuilder().
 		WithName(pipelineKeepOriginalName).
-		WithApplicationInput(true).
+		WithRuntimeInput(true).
 		WithIncludeNamespaces(sourceNsKeepOriginal).
 		WithKeepOriginalBody(true).
 		WithHTTPOutput(testutils.HTTPHost(backendKeepOriginal.Host()), testutils.HTTPPort(backendKeepOriginal.Port())).
@@ -219,17 +218,17 @@ func TestKeepOriginalBody_FluentBit(t *testing.T) {
 
 	pipelineDropOriginal := testutils.NewLogPipelineBuilder().
 		WithName(pipelineDropOriginalName).
-		WithApplicationInput(true).
+		WithRuntimeInput(true).
 		WithIncludeNamespaces(sourceNsDropOriginal).
 		WithKeepOriginalBody(false).
 		WithHTTPOutput(testutils.HTTPHost(backendDropOriginal.Host()), testutils.HTTPPort(backendDropOriginal.Port())).
 		Build()
 
 	resources := []client.Object{
-		kitk8s.NewNamespace(sourceNsKeepOriginal).K8sObject(),
-		kitk8s.NewNamespace(sourceNsDropOriginal).K8sObject(),
-		kitk8s.NewNamespace(backendNsKeepOriginal).K8sObject(),
-		kitk8s.NewNamespace(backendNsDropOriginal).K8sObject(),
+		kitk8sobjects.NewNamespace(sourceNsKeepOriginal).K8sObject(),
+		kitk8sobjects.NewNamespace(sourceNsDropOriginal).K8sObject(),
+		kitk8sobjects.NewNamespace(backendNsKeepOriginal).K8sObject(),
+		kitk8sobjects.NewNamespace(backendNsDropOriginal).K8sObject(),
 		&pipelineDropOriginal,
 		&pipelineKeepOriginal,
 		// stdout log generators in the "keep-original-body" namespace
@@ -246,9 +245,6 @@ func TestKeepOriginalBody_FluentBit(t *testing.T) {
 	resources = append(resources, backendKeepOriginal.K8sObjects()...)
 	resources = append(resources, backendDropOriginal.K8sObjects()...)
 
-	t.Cleanup(func() {
-		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-	})
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.BackendReachable(t, backendKeepOriginal)

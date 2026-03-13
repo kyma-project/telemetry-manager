@@ -24,7 +24,7 @@ type MockProcessor struct {
 
 type MockExporter struct {
 	URL    string `json:"url"`
-	APIKey string `json:"api_key,omitempty"`
+	APIKey string `json:"api_key,omitempty"` //nolint:gosec // G117: test struct, not a real credential
 }
 
 func TestComponentBuilder_AddReceiver(t *testing.T) {
@@ -68,8 +68,8 @@ func TestComponentBuilder_AddReceiver(t *testing.T) {
 			config := &Config{
 				Receivers:  make(map[string]any),
 				Connectors: make(map[string]any),
-				Service: Service{
-					Pipelines: make(map[string]Pipeline),
+				Service: ServiceConfig{
+					Pipelines: make(map[string]ServicePipeline),
 				},
 			}
 
@@ -113,8 +113,8 @@ func TestComponentBuilder_AddReceiver(t *testing.T) {
 
 			// Verify pipeline configuration
 			require.Contains(t, config.Service.Pipelines, pipelineID)
-			pipelineConfig := config.Service.Pipelines[pipelineID]
-			require.Contains(t, pipelineConfig.Receivers, tt.componentID)
+			servicePipeline := config.Service.Pipelines[pipelineID]
+			require.Contains(t, servicePipeline.Receivers, tt.componentID)
 		})
 	}
 }
@@ -149,8 +149,8 @@ func TestComponentBuilder_AddProcessor(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			config := &Config{
 				Processors: make(map[string]any),
-				Service: Service{
-					Pipelines: make(map[string]Pipeline),
+				Service: ServiceConfig{
+					Pipelines: make(map[string]ServicePipeline),
 				},
 			}
 
@@ -186,8 +186,8 @@ func TestComponentBuilder_AddProcessor(t *testing.T) {
 
 			// Verify pipeline configuration
 			require.Contains(t, config.Service.Pipelines, pipelineID)
-			pipelineConfig := config.Service.Pipelines[pipelineID]
-			require.Contains(t, pipelineConfig.Processors, tt.componentID)
+			servicePipeline := config.Service.Pipelines[pipelineID]
+			require.Contains(t, servicePipeline.Processors, tt.componentID)
 		})
 	}
 }
@@ -205,15 +205,15 @@ func TestComponentBuilder_AddExporter(t *testing.T) {
 	}{
 		{
 			name:        "adds regular exporter with env vars",
-			componentID: "otlp/test",
-			config: &MockExporter{
+			componentID: "otlp_grpc/test",
+			config: &MockExporter{ //nolint:gosec // G101: test data, not real credentials
 				URL:    "https://api.example.com",
 				APIKey: "${API_KEY}",
 			},
 			envVars: EnvVars{
 				"API_KEY": []byte("secret-key-123"),
 			},
-			expectedConfig: &MockExporter{
+			expectedConfig: &MockExporter{ //nolint:gosec // G101: test data, not real credentials
 				URL:    "https://api.example.com",
 				APIKey: "${API_KEY}",
 			},
@@ -235,14 +235,14 @@ func TestComponentBuilder_AddExporter(t *testing.T) {
 		},
 		{
 			name:        "skips when config is nil",
-			componentID: "otlp/test",
+			componentID: "otlp_grpc/test",
 			config:      nil,
 			envVars:     make(EnvVars),
 			expectSkip:  true,
 		},
 		{
 			name:        "handles config function error",
-			componentID: "otlp/test",
+			componentID: "otlp_grpc/test",
 			expectError: true,
 		},
 	}
@@ -252,8 +252,8 @@ func TestComponentBuilder_AddExporter(t *testing.T) {
 			config := &Config{
 				Exporters:  make(map[string]any),
 				Connectors: make(map[string]any),
-				Service: Service{
-					Pipelines: make(map[string]Pipeline),
+				Service: ServiceConfig{
+					Pipelines: make(map[string]ServicePipeline),
 				},
 			}
 
@@ -320,8 +320,8 @@ func TestComponentBuilder_AddExporter(t *testing.T) {
 
 			// Verify pipeline configuration
 			require.Contains(t, config.Service.Pipelines, pipelineID)
-			pipelineConfig := config.Service.Pipelines[pipelineID]
-			require.Contains(t, pipelineConfig.Exporters, tt.componentID)
+			servicePipeline := config.Service.Pipelines[pipelineID]
+			require.Contains(t, servicePipeline.Exporters, tt.componentID)
 		})
 	}
 }
@@ -332,8 +332,8 @@ func TestComponentBuilder_AddServicePipeline(t *testing.T) {
 			Receivers:  make(map[string]any),
 			Processors: make(map[string]any),
 			Exporters:  make(map[string]any),
-			Service: Service{
-				Pipelines: make(map[string]Pipeline),
+			Service: ServiceConfig{
+				Pipelines: make(map[string]ServicePipeline),
 			},
 		}
 
@@ -363,7 +363,7 @@ func TestComponentBuilder_AddServicePipeline(t *testing.T) {
 		addExporter := cb.AddExporter(
 			func(p *MockPipeline) string { return fmt.Sprintf("otlp/%s", p.Name) },
 			func(ctx context.Context, p *MockPipeline) (any, EnvVars, error) {
-				return &MockExporter{
+				return &MockExporter{ //nolint:gosec // G101: test data, not real credentials
 					URL:    "https://api.example.com",
 					APIKey: "${API_KEY}",
 				}, EnvVars{"API_KEY": []byte("secret-123")}, nil
@@ -385,10 +385,10 @@ func TestComponentBuilder_AddServicePipeline(t *testing.T) {
 
 		// Verify pipeline configuration
 		require.Contains(t, config.Service.Pipelines, pipelineID)
-		pipelineConfig := config.Service.Pipelines[pipelineID]
-		require.Equal(t, []string{"otlp"}, pipelineConfig.Receivers)
-		require.Equal(t, []string{"batch"}, pipelineConfig.Processors)
-		require.Equal(t, []string{"otlp/test"}, pipelineConfig.Exporters)
+		servicePipeline := config.Service.Pipelines[pipelineID]
+		require.Equal(t, []string{"otlp"}, servicePipeline.Receivers)
+		require.Equal(t, []string{"batch"}, servicePipeline.Processors)
+		require.Equal(t, []string{"otlp/test"}, servicePipeline.Exporters)
 
 		// Verify environment variables
 		require.Equal(t, EnvVars{"API_KEY": []byte("secret-123")}, cb.EnvVars)
@@ -396,8 +396,8 @@ func TestComponentBuilder_AddServicePipeline(t *testing.T) {
 
 	t.Run("handles component builder error", func(t *testing.T) {
 		config := &Config{
-			Service: Service{
-				Pipelines: make(map[string]Pipeline),
+			Service: ServiceConfig{
+				Pipelines: make(map[string]ServicePipeline),
 			},
 		}
 
@@ -444,8 +444,8 @@ func TestComponentBuilder_ComponentDeduplication(t *testing.T) {
 	t.Run("does not duplicate receivers", func(t *testing.T) {
 		config := &Config{
 			Receivers: make(map[string]any),
-			Service: Service{
-				Pipelines: make(map[string]Pipeline),
+			Service: ServiceConfig{
+				Pipelines: make(map[string]ServicePipeline),
 			},
 		}
 
@@ -482,8 +482,8 @@ func TestComponentBuilder_ComponentDeduplication(t *testing.T) {
 	t.Run("does not duplicate processors", func(t *testing.T) {
 		config := &Config{
 			Processors: make(map[string]any),
-			Service: Service{
-				Pipelines: make(map[string]Pipeline),
+			Service: ServiceConfig{
+				Pipelines: make(map[string]ServicePipeline),
 			},
 		}
 

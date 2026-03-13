@@ -12,7 +12,7 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 
 	_ "crypto"
@@ -36,10 +36,10 @@ var (
 	ErrCertIsNotCA = errors.New("not a CA certificate")
 )
 
-type TLSBundle struct {
-	Cert *telemetryv1alpha1.ValueType
-	Key  *telemetryv1alpha1.ValueType
-	CA   *telemetryv1alpha1.ValueType
+type TLSValidationParams struct {
+	Cert *telemetryv1beta1.ValueType
+	Key  *telemetryv1beta1.ValueType
+	CA   *telemetryv1beta1.ValueType
 }
 
 const twoWeeks = time.Hour * 24 * 7 * 2
@@ -99,7 +99,7 @@ func New(client client.Client) *Validator {
 	}
 }
 
-func (v *Validator) Validate(ctx context.Context, tls TLSBundle) error {
+func (v *Validator) Validate(ctx context.Context, tls TLSValidationParams) error {
 	// 1. Values Resolution
 	if (tls.Cert == nil) != (tls.Key == nil) {
 		return ErrMissingCertKeyPair
@@ -245,7 +245,7 @@ func validateCA(ca *x509.Certificate, now time.Time) error {
 	return nil
 }
 
-func resolveValues(ctx context.Context, c client.Reader, tls TLSBundle) ([]byte, []byte, []byte, error) {
+func resolveValues(ctx context.Context, c client.Reader, tls TLSValidationParams) ([]byte, []byte, []byte, error) {
 	var certPEM, keyPEM, caPEM []byte
 
 	var err error
@@ -274,7 +274,7 @@ func resolveValues(ctx context.Context, c client.Reader, tls TLSBundle) ([]byte,
 	return certPEM, keyPEM, caPEM, nil
 }
 
-func resolveValue(ctx context.Context, c client.Reader, value telemetryv1alpha1.ValueType) ([]byte, error) {
+func resolveValue(ctx context.Context, c client.Reader, value telemetryv1beta1.ValueType) ([]byte, error) {
 	if value.Value != "" {
 		return []byte(value.Value), nil
 	}

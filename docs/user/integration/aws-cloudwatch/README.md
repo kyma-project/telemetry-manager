@@ -16,22 +16,19 @@ Because CloudWatch doesn't support native OTLP ingestion for metrics, and OTLP s
 
 ## Table of Content
 
-- [Integrate Kyma with Amazon CloudWatch](#integrate-kyma-with-amazon-cloudwatch)
-  - [Overview](#overview)
-  - [Table of Content](#table-of-content)
-  - [Prerequisites](#prerequisites)
-  - [Prepare the Namespace](#prepare-the-namespace)
-  - [Set Up AWS Credentials](#set-up-aws-credentials)
-    - [Create AWS IAM User](#create-aws-iam-user)
-    - [Create a Secret with AWS Credentials](#create-a-secret-with-aws-credentials)
-  - [Deploy the Custom Collector](#deploy-the-custom-collector)
-  - [Set Up Kyma Pipelines](#set-up-kyma-pipelines)
-  - [Verify the Results](#verify-the-results)
+- [Prerequisites](#prerequisites)
+- [Prepare the Namespace](#prepare-the-namespace)
+- [Set Up AWS Credentials](#set-up-aws-credentials)
+  - [Create AWS IAM User](#create-aws-iam-user)
+  - [Create a Secret with AWS Credentials](#create-a-secret-with-aws-credentials)
+- [Deploy the Custom Collector](#deploy-the-custom-collector)
+- [Set Up Kyma Pipelines](#set-up-kyma-pipelines)
+- [Verify the Results](#verify-the-results)
 
 ## Prerequisites
 
 - Kyma as the target deployment environment
-- The [Telemetry module](https://kyma-project.io/#/telemetry-manager/user/README) is [added](https://kyma-project.io/#/02-get-started/01-quick-install)
+- The [Telemetry module](https://kyma-project.io/#/telemetry-manager/user/README) is [added](https://kyma-project.io/02-get-started/01-quick-install)
 - [Kubectl version that is within one minor version (older or newer) of `kube-apiserver`](https://kubernetes.io/releases/version-skew-policy/#kubectl)
 - AWS account with permissions to create new users and security policies
 - AWS CloudWatch configured with a [LogGroup and LogStream](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/Working-with-log-groups-and-streams.html)
@@ -103,13 +100,13 @@ Use the Kyma Telemetry module to enable ingestion of the signals from your workl
 
     ```bash
     kubectl apply -f - <<EOF
-    apiVersion: telemetry.kyma-project.io/v1alpha1
+    apiVersion: telemetry.kyma-project.io/v1beta1
     kind: LogPipeline
     metadata:
       name: aws
     spec:
       input:
-        application:
+        runtime:
           enabled: true
       output:
         otlp:
@@ -123,7 +120,7 @@ Use the Kyma Telemetry module to enable ingestion of the signals from your workl
 
    ```bash
    kubectl apply -f - <<EOF
-   apiVersion: telemetry.kyma-project.io/v1alpha1
+   apiVersion: telemetry.kyma-project.io/v1beta1
    kind: TracePipeline
    metadata:
      name: aws
@@ -139,7 +136,7 @@ Use the Kyma Telemetry module to enable ingestion of the signals from your workl
 
    ```bash
    kubectl apply -f - <<EOF
-   apiVersion: telemetry.kyma-project.io/v1alpha1
+   apiVersion: telemetry.kyma-project.io/v1beta1
    kind: MetricPipeline
    metadata:
      name: awsh

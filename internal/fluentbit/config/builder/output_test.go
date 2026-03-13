@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
 
 func TestCreateOutputSectionWithCustomOutput(t *testing.T) {
@@ -18,10 +18,10 @@ func TestCreateOutputSectionWithCustomOutput(t *testing.T) {
     storage.total_limit_size 1G
 
 `
-	logPipeline := &telemetryv1alpha1.LogPipeline{
-		Spec: telemetryv1alpha1.LogPipelineSpec{
-			Output: telemetryv1alpha1.LogPipelineOutput{
-				Custom: `
+	logPipeline := &telemetryv1beta1.LogPipeline{
+		Spec: telemetryv1beta1.LogPipelineSpec{
+			Output: telemetryv1beta1.LogPipelineOutput{
+				FluentBitCustom: `
     name null`,
 			},
 		},
@@ -53,15 +53,15 @@ func TestCreateOutputSectionWithHTTPOutput(t *testing.T) {
     uri                      /customindex/kyma
 
 `
-	logPipeline := &telemetryv1alpha1.LogPipeline{
-		Spec: telemetryv1alpha1.LogPipelineSpec{
-			Output: telemetryv1alpha1.LogPipelineOutput{
-				HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{
+	logPipeline := &telemetryv1beta1.LogPipeline{
+		Spec: telemetryv1beta1.LogPipelineSpec{
+			Output: telemetryv1beta1.LogPipelineOutput{
+				FluentBitHTTP: &telemetryv1beta1.FluentBitHTTPOutput{
 					Dedot:    true,
 					Port:     "1234",
-					Host:     telemetryv1alpha1.ValueType{Value: "localhost"},
-					User:     &telemetryv1alpha1.ValueType{Value: "user"},
-					Password: &telemetryv1alpha1.ValueType{Value: "password"},
+					Host:     telemetryv1beta1.ValueType{Value: "localhost"},
+					User:     &telemetryv1beta1.ValueType{Value: "user"},
+					Password: &telemetryv1beta1.ValueType{Value: "password"},
 					URI:      "/customindex/kyma",
 					Format:   "yaml",
 				},
@@ -95,17 +95,17 @@ func TestCreateOutputSectionWithHTTPOutputWithSecretReference(t *testing.T) {
     uri                      /my-uri
 
 `
-	logPipeline := &telemetryv1alpha1.LogPipeline{
-		Spec: telemetryv1alpha1.LogPipelineSpec{
-			Output: telemetryv1alpha1.LogPipelineOutput{
-				HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{
+	logPipeline := &telemetryv1beta1.LogPipeline{
+		Spec: telemetryv1beta1.LogPipelineSpec{
+			Output: telemetryv1beta1.LogPipelineOutput{
+				FluentBitHTTP: &telemetryv1beta1.FluentBitHTTPOutput{
 					Dedot: true,
 					URI:   "/my-uri",
-					Host:  telemetryv1alpha1.ValueType{Value: "localhost"},
-					User:  &telemetryv1alpha1.ValueType{Value: "user"},
-					Password: &telemetryv1alpha1.ValueType{
-						ValueFrom: &telemetryv1alpha1.ValueFromSource{
-							SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+					Host:  telemetryv1beta1.ValueType{Value: "localhost"},
+					User:  &telemetryv1beta1.ValueType{Value: "user"},
+					Password: &telemetryv1beta1.ValueType{
+						ValueFrom: &telemetryv1beta1.ValueFromSource{
+							SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 								Name:      "secret",
 								Key:       "key",
 								Namespace: "my-namespace",
@@ -144,20 +144,20 @@ func TestCreateOutputSectionWithHTTPOutputWithTLS(t *testing.T) {
     uri                      /my-uri
 
 `
-	logPipeline := &telemetryv1alpha1.LogPipeline{
+	logPipeline := &telemetryv1beta1.LogPipeline{
 		ObjectMeta: metav1.ObjectMeta{Name: "foo"},
-		Spec: telemetryv1alpha1.LogPipelineSpec{
-			Output: telemetryv1alpha1.LogPipelineOutput{
-				HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{
+		Spec: telemetryv1beta1.LogPipelineSpec{
+			Output: telemetryv1beta1.LogPipelineOutput{
+				FluentBitHTTP: &telemetryv1beta1.FluentBitHTTPOutput{
 					Dedot: true,
 					URI:   "/my-uri",
-					Host:  telemetryv1alpha1.ValueType{Value: "localhost"},
-					TLS: telemetryv1alpha1.LogPipelineOutputTLS{
-						Disabled:                  false,
-						SkipCertificateValidation: false,
-						CA:                        &telemetryv1alpha1.ValueType{Value: "fake-ca-value"},
-						Cert:                      &telemetryv1alpha1.ValueType{Value: "fake-cert-value"},
-						Key:                       &telemetryv1alpha1.ValueType{Value: "fake-key-value"},
+					Host:  telemetryv1beta1.ValueType{Value: "localhost"},
+					TLS: telemetryv1beta1.OutputTLS{
+						Insecure:           false,
+						InsecureSkipVerify: false,
+						CA:                 &telemetryv1beta1.ValueType{Value: "fake-ca-value"},
+						Cert:               &telemetryv1beta1.ValueType{Value: "fake-cert-value"},
+						Key:                &telemetryv1beta1.ValueType{Value: "fake-key-value"},
 					},
 				},
 			},
@@ -171,7 +171,7 @@ func TestCreateOutputSectionWithHTTPOutputWithTLS(t *testing.T) {
 }
 
 func TestResolveValueWithValue(t *testing.T) {
-	value := telemetryv1alpha1.ValueType{
+	value := telemetryv1beta1.ValueType{
 		Value: "test",
 	}
 	resolved := resolveValue(value, "pipeline")
@@ -180,9 +180,9 @@ func TestResolveValueWithValue(t *testing.T) {
 }
 
 func TestResolveValueWithSecretKeyRef(t *testing.T) {
-	value := telemetryv1alpha1.ValueType{
-		ValueFrom: &telemetryv1alpha1.ValueFromSource{
-			SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+	value := telemetryv1beta1.ValueType{
+		ValueFrom: &telemetryv1beta1.ValueFromSource{
+			SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 				Name:      "test-name",
 				Key:       "test-key",
 				Namespace: "test-namespace",

@@ -7,10 +7,12 @@ const (
 	EnvVarGoDebug         = "GODEBUG"
 )
 
+type SignalType string
+
 const (
-	SignalTypeMetric = "metric"
-	SignalTypeTrace  = "trace"
-	SignalTypeLog    = "log"
+	SignalTypeMetric SignalType = "metric"
+	SignalTypeTrace  SignalType = "trace"
+	SignalTypeLog    SignalType = "log"
 )
 
 const (
@@ -110,21 +112,22 @@ const (
 
 	ComponentIDBatchProcessor                          = "batch"
 	ComponentIDMemoryLimiterProcessor                  = "memory_limiter"
-	ComponentIDK8sAttributesProcessor                  = "k8sattributes"
+	ComponentIDK8sAttributesProcessor                  = "k8s_attributes"
 	ComponentIDServiceEnrichmentProcessor              = "service_enrichment"
 	ComponentIDIstioNoiseFilterProcessor               = "istio_noise_filter"
 	ComponentIDUserDefinedFilterProcessor              = "filter/user-defined-%s" // dynamically filled with pipeline name
 	ComponentIDSetInstrumentationScopeKymaProcessor    = "transform/set-instrumentation-scope-kyma"
 	ComponentIDSetInstrumentationScopeRuntimeProcessor = "transform/set-instrumentation-scope-runtime"
 	ComponentIDUserDefinedTransformProcessor           = "transform/user-defined-%s" // dynamically filled with pipeline name
-	ComponentIDInsertClusterAttributesProcessor        = "resource/insert-cluster-attributes"
-	ComponentIDDropKymaAttributesProcessor             = "resource/drop-kyma-attributes"
+	ComponentIDInsertClusterAttributesProcessor        = "transform/insert-cluster-attributes"
+	ComponentIDDropKymaAttributesProcessor             = "transform/drop-kyma-attributes"
+	ComponentIDDropUnknownServiceNameProcessor         = "transform/drop-unknown-service-name"
 
-	ComponentIDSetKymaInputNameRuntimeProcessor    ComponentID = "resource/set-kyma-input-name-runtime"
-	ComponentIDSetKymaInputNameIstioProcessor      ComponentID = "resource/set-kyma-input-name-istio"
-	ComponentIDSetKymaInputNamePrometheusProcessor ComponentID = "resource/set-kyma-input-name-prometheus"
-	ComponentIDSetKymaInputNameKymaProcessor       ComponentID = "resource/set-kyma-input-name-kyma"
-	ComponentIDSetKymaInputNameOTLPProcessor       ComponentID = "resource/set-kyma-input-name-otlp"
+	ComponentIDSetKymaInputNameRuntimeProcessor    ComponentID = "transform/set-kyma-input-name-runtime"
+	ComponentIDSetKymaInputNameIstioProcessor      ComponentID = "transform/set-kyma-input-name-istio"
+	ComponentIDSetKymaInputNamePrometheusProcessor ComponentID = "transform/set-kyma-input-name-prometheus"
+	ComponentIDSetKymaInputNameKymaProcessor       ComponentID = "transform/set-kyma-input-name-kyma"
+	ComponentIDSetKymaInputNameOTLPProcessor       ComponentID = "transform/set-kyma-input-name-otlp"
 
 	// Log-Specific Processors
 
@@ -152,19 +155,23 @@ const (
 	ComponentIDDropIstioDiagnosticMetricsProcessor         = "filter/drop-diagnostic-metrics-if-input-source-istio"
 	ComponentIDFilterDropNonPVCVolumesMetricsProcessor     = "filter/drop-non-pvc-volumes-metrics"
 	ComponentIDFilterDropVirtualNetworkInterfacesProcessor = "filter/drop-virtual-network-interfaces"
-	ComponentIDResourceDropServiceNameProcessor            = "resource/drop-service-name"
-	ComponentIDDropSkipEnrichmentAttributeProcessor        = "resource/drop-skip-enrichment-attribute"
+	ComponentIDDropServiceNameProcessor                    = "transform/drop-service-name"
+	ComponentIDDropSkipEnrichmentAttributeProcessor        = "transform/drop-skip-enrichment-attribute"
 	ComponentIDSetInstrumentationScopePrometheusProcessor  = "transform/set-instrumentation-scope-prometheus"
 	ComponentIDSetInstrumentationScopeIstioProcessor       = "transform/set-instrumentation-scope-istio"
 	ComponentIDInsertSkipEnrichmentAttributeProcessor      = "transform/insert-skip-enrichment-attribute"
+
+	// Trace-Specific Processors
+
+	ComponentIDDropIstioServiceEnrichmentProcessor = "transform/drop-istio-service-enrichment"
 
 	// ================================================================================
 	// EXPORTERS
 	// ================================================================================
 
-	ComponentIDOTLPHTTPExporter = "otlphttp/%s" // dynamically filled with pipeline name
-	ComponentIDOTLPGRPCExporter = "otlp/%s"     // dynamically filled with pipeline name
-	ComponentIDOTLPExporter     = "otlp"        // static OTLP exporter
+	ComponentIDOTLPHTTPExporter = "otlp_http/%s" // dynamically filled with pipeline name
+	ComponentIDOTLPGRPCExporter = "otlp_grpc/%s" // dynamically filled with pipeline name
+	ComponentIDOTLPExporter     = "otlp"         // static OTLP exporter
 
 	// ================================================================================
 	// CONNECTORS
@@ -186,4 +193,6 @@ const (
 	ComponentIDFileStorageExtension      = "file_storage"
 	ComponentIDHealthCheckExtension      = "health_check"
 	ComponentIDPprofExtension            = "pprof"
+	ComponentIDOAuth2Extension           = "oauth2client/%s" // dynamically filled with pipeline name
+	ComponentIDCGroupRuntimeExtension    = "cgroupruntime"
 )

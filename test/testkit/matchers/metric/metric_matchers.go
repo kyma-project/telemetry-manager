@@ -6,13 +6,13 @@ import (
 	"slices"
 
 	"github.com/onsi/gomega"
-	"github.com/onsi/gomega/types"
+	gomegatypes "github.com/onsi/gomega/types"
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 )
 
 // HaveFlatMetrics extracts FlatMetrics from JSON and applies the matcher to them.
-func HaveFlatMetrics(matcher types.GomegaMatcher) types.GomegaMatcher {
+func HaveFlatMetrics(matcher gomegatypes.GomegaMatcher) gomegatypes.GomegaMatcher {
 	return gomega.WithTransform(func(jsonMetrics []byte) ([]FlatMetric, error) {
 		mds, err := unmarshalMetrics(jsonMetrics)
 		if err != nil {
@@ -26,7 +26,7 @@ func HaveFlatMetrics(matcher types.GomegaMatcher) types.GomegaMatcher {
 }
 
 // HaveUniqueNames extracts metric names from all FlatMetrics and applies the matcher to them.
-func HaveUniqueNames(matcher types.GomegaMatcher) types.GomegaMatcher {
+func HaveUniqueNames(matcher gomegatypes.GomegaMatcher) gomegatypes.GomegaMatcher {
 	return gomega.WithTransform(func(fm []FlatMetric) []string {
 		names := make(map[string]struct{})
 		for _, m := range fm {
@@ -38,7 +38,7 @@ func HaveUniqueNames(matcher types.GomegaMatcher) types.GomegaMatcher {
 }
 
 // HaveUniqueNamesForRuntimeScope extracts metric names from FlatMetrics with runtime scope and applies the matcher to them.
-func HaveUniqueNamesForRuntimeScope(matcher types.GomegaMatcher) types.GomegaMatcher {
+func HaveUniqueNamesForRuntimeScope(matcher gomegatypes.GomegaMatcher) gomegatypes.GomegaMatcher {
 	return gomega.WithTransform(func(fm []FlatMetric) []string {
 		names := make(map[string]struct{})
 
@@ -55,55 +55,55 @@ func HaveUniqueNamesForRuntimeScope(matcher types.GomegaMatcher) types.GomegaMat
 }
 
 // HaveName extracts name from FlatMetric and applies the matcher to it.
-func HaveName(matcher types.GomegaMatcher) types.GomegaMatcher {
+func HaveName(matcher gomegatypes.GomegaMatcher) gomegatypes.GomegaMatcher {
 	return gomega.WithTransform(func(fm FlatMetric) string {
 		return fm.Name
 	}, matcher)
 }
 
 // HaveScopeName extracts scope name from FlatMetric and applies the matcher to it.
-func HaveScopeName(matcher types.GomegaMatcher) types.GomegaMatcher {
+func HaveScopeName(matcher gomegatypes.GomegaMatcher) gomegatypes.GomegaMatcher {
 	return gomega.WithTransform(func(fm FlatMetric) string {
 		return fm.ScopeName
 	}, matcher)
 }
 
 // HaveScopeVersion extracts scope version from FlatMetric and applies the matcher to it.
-func HaveScopeVersion(matcher types.GomegaMatcher) types.GomegaMatcher {
+func HaveScopeVersion(matcher gomegatypes.GomegaMatcher) gomegatypes.GomegaMatcher {
 	return gomega.WithTransform(func(fm FlatMetric) string {
 		return fm.ScopeVersion
 	}, matcher)
 }
 
 // HaveResourceAttributes extracts resource attributes from FlatMetric and applies the matcher to them.
-func HaveResourceAttributes(matcher types.GomegaMatcher) types.GomegaMatcher {
+func HaveResourceAttributes(matcher gomegatypes.GomegaMatcher) gomegatypes.GomegaMatcher {
 	return gomega.WithTransform(func(fm FlatMetric) map[string]string {
 		return fm.ResourceAttributes
 	}, matcher)
 }
 
 // HaveMetricAttributes extracts metric attributes from FlatMetric and applies the matcher to them.
-func HaveMetricAttributes(matcher types.GomegaMatcher) types.GomegaMatcher {
+func HaveMetricAttributes(matcher gomegatypes.GomegaMatcher) gomegatypes.GomegaMatcher {
 	return gomega.WithTransform(func(fm FlatMetric) map[string]string {
 		return fm.MetricAttributes
 	}, matcher)
 }
 
 // HaveType extracts type from FlatMetric and applies the matcher to it.
-func HaveType(matcher types.GomegaMatcher) types.GomegaMatcher {
+func HaveType(matcher gomegatypes.GomegaMatcher) gomegatypes.GomegaMatcher {
 	return gomega.WithTransform(func(fm FlatMetric) string {
 		return fm.Type
 	}, matcher)
 }
 
 // HaveKeys extracts keys from a map[string][string] and applies the matcher to them.
-func HaveKeys(matcher types.GomegaMatcher) types.GomegaMatcher {
+func HaveKeys(matcher gomegatypes.GomegaMatcher) gomegatypes.GomegaMatcher {
 	return gomega.WithTransform(func(m map[string]string) []string {
 		return slices.Sorted(maps.Keys(m))
 	}, matcher)
 }
 
-func HaveDescription(matcher types.GomegaMatcher) types.GomegaMatcher {
+func HaveDescription(matcher gomegatypes.GomegaMatcher) gomegatypes.GomegaMatcher {
 	return gomega.WithTransform(func(fm FlatMetric) string {
 		return fm.Description
 	}, matcher)

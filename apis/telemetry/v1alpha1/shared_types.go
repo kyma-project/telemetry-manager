@@ -41,6 +41,7 @@ const (
 
 // OTLPOutput OTLP output configuration
 // +kubebuilder:validation:XValidation:rule="(has(self.path) && size(self.path) > 0) ? self.protocol == 'http' : true",message="Path is only available with HTTP protocol"
+// +kubebuilder:validation:XValidation:rule="(has(self.authentication) && has(self.authentication.oauth2) && self.protocol == 'grpc' && has(self.tls)) ? !(has(self.tls.insecure) && self.tls.insecure == true) : true",message="OAuth2 authentication requires TLS when using gRPC protocol"
 type OTLPOutput struct {
 	// Protocol defines the OTLP protocol (`http` or `grpc`). Default is `grpc`.
 	// +kubebuilder:validation:Optional
@@ -49,7 +50,7 @@ type OTLPOutput struct {
 	// Endpoint defines the host and port (`<host>:<port>`) of an OTLP endpoint.
 	// +kubebuilder:validation:Required
 	Endpoint ValueType `json:"endpoint"`
-	// Path defines OTLP export URL path (only for the HTTP protocol). This value overrides auto-appended paths `/v1/metrics` and `/v1/traces`
+	// Path defines OTLP export URL path (only for the HTTP protocol). This value overrides auto-appended paths `/v1/logs`, `/v1/metrics`, and `/v1/traces`
 	// +kubebuilder:validation:Optional
 	Path string `json:"path,omitempty"`
 	// Authentication defines authentication options for the OTLP output
@@ -63,10 +64,15 @@ type OTLPOutput struct {
 	TLS *OTLPTLS `json:"tls,omitempty"`
 }
 
+// AuthenticationOptions OTLP output authentication options
+// +kubebuilder:validation:XValidation:rule="!(has(self.basic) && has(self.oauth2))",message="Only one authentication method can be specified"
 type AuthenticationOptions struct {
 	// Basic activates `Basic` authentication for the destination providing relevant Secrets.
 	// +kubebuilder:validation:Optional
 	Basic *BasicAuthOptions `json:"basic,omitempty"`
+	// OAuth2 activates `OAuth2` authentication for the destination providing relevant Secrets.
+	// +kubebuilder:validation:Optional
+	OAuth2 *OAuth2Options `json:"oauth2,omitempty"`
 }
 
 type BasicAuthOptions struct {
@@ -76,6 +82,26 @@ type BasicAuthOptions struct {
 	// Password contains the basic auth password or a Secret reference.
 	// +kubebuilder:validation:Required
 	Password ValueType `json:"password"`
+}
+
+// OAuth2Options contains OAuth2 authentication options.
+type OAuth2Options struct {
+	// TokenURL contains the OAuth2 token endpoint URL or a Secret reference.
+	// +kubebuilder:validation:XValidation:rule="(self.value != '' ) || (has(self.valueFrom))", message="tokenURL' missing"
+	// +kubebuilder:validation:XValidation:rule="(self.value != '' ) ? (isURL(self.value)) : true", message="'tokenURL' must be a valid URL"
+	TokenURL ValueType `json:"tokenURL"`
+	// ClientID contains the OAuth2 client ID or a Secret reference.
+	// +kubebuilder:validation:XValidation:rule="(self.value != '' ) || (has(self.valueFrom))", message="'clientID' missing"
+	ClientID ValueType `json:"clientID"`
+	// ClientSecret contains the OAuth2 client secret or a Secret reference.
+	// +kubebuilder:validation:XValidation:rule="(self.value != '' ) || (has(self.valueFrom))", message="clientSecret' missing"
+	ClientSecret ValueType `json:"clientSecret"`
+	// Scopes contains optional OAuth2 scopes.
+	// +kubebuilder:validation:Optional
+	Scopes []string `json:"scopes,omitempty"`
+	// Params contains optional additional OAuth2 parameters that are sent to the token endpoint.
+	// +kubebuilder:validation:Optional
+	Params map[string]string `json:"params,omitempty"`
 }
 
 type Header struct {

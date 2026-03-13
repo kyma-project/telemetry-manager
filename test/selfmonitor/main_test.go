@@ -1,7 +1,6 @@
 package selfmonitor
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"testing"
@@ -11,31 +10,36 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	const errorCode = 1
-
+	// No explicit cluster configuration or cleanup needed!
+	// The dynamic reconfiguration system will:
+	// 1. Auto-detect current cluster state (or use defaults if fresh cluster)
+	// 2. Reconfigure per-test based on test labels
+	// 3. Next test run will detect state and reconfigure as needed - no cleanup required!
 	if err := suite.BeforeSuiteFunc(); err != nil {
 		log.Printf("Setup failed: %v", err)
-		os.Exit(errorCode)
+		os.Exit(1)
 	}
 
-	m.Run()
+	os.Exit(m.Run())
 }
 
-func label(selfMonitorLabelPrefix, selfMonitorLabelSuffix string) string {
-	return fmt.Sprintf("%s-%s", selfMonitorLabelPrefix, selfMonitorLabelSuffix)
-}
-
-func signalType(labelPrefix string) kitbackend.SignalType {
-	switch labelPrefix {
-	case suite.LabelSelfMonitorLogAgentPrefix, suite.LabelSelfMonitorLogGatewayPrefix:
+// signalTypeForComponent returns the backend signal type for a component label
+func signalTypeForComponent(component string) kitbackend.SignalType {
+	switch component {
+	case suite.LabelLogAgent, suite.LabelLogGateway:
 		return kitbackend.SignalTypeLogsOTel
-	case suite.LabelSelfMonitorFluentBitPrefix:
+	case suite.LabelFluentBit:
 		return kitbackend.SignalTypeLogsFluentBit
-	case suite.LabelSelfMonitorMetricGatewayPrefix, suite.LabelSelfMonitorMetricAgentPrefix:
+	case suite.LabelMetricAgent, suite.LabelMetricGateway:
 		return kitbackend.SignalTypeMetrics
-	case suite.LabelSelfMonitorTracesPrefix:
+	case suite.LabelTraces:
 		return kitbackend.SignalTypeTraces
 	default:
 		return ""
 	}
+}
+
+// isFluentBit returns true if the component is FluentBit (which doesn't support FIPS mode)
+func isFluentBit(component string) bool {
+	return component == suite.LabelFluentBit
 }

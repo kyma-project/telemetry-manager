@@ -9,9 +9,8 @@ inputs:
 
 runs:
   using: "composite"
-
   steps:
-    - name: Install xmlstarlet
+    - name: Install xmlstartar
       shell: bash
       run: |
         if ! command -v xmlstarlet &> /dev/null; then
@@ -22,16 +21,14 @@ runs:
           echo "xmlstarlet is already installed"
         fi
 
-    - name: Download JUnit reports
-      uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+    - name: Download test reports
+      uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
       with:
         path: "${{ inputs.reports-path }}"
         pattern: "*-report"
         merge-multiple: true
 
-    # Process each JUnit report XML file to remove testcase elements with zero execution time
-    # This removes both skipped tests and tests that didn't actually run
-    - name: Clean-up JUnit reports
+    - name: Cleanup test reports
       shell: bash
       run: |
         for xml_file in ${{ inputs.reports-path }}/*.xml; do
@@ -42,8 +39,8 @@ runs:
           fi
         done
 
-    - name: Publish JUnit reports as GHA Summary
-      uses: mikepenz/action-junit-report@5b7ee5a21e8674b695313d769f3cbdfd5d4d53a4 # v6.0.0
+    - name: Publish test reports to GitHub summary
+      uses: mikepenz/action-junit-report@49b2ca06f62aa7ef83ae6769a2179271e160d8e4 # v6.3.1
       if: always()
       with:
         report_paths: "${{ inputs.reports-path }}/junit-report*.xml"

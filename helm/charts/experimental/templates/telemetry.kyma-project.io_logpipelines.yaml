@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
+    controller-gen.kubebuilder.io/version: v0.20.1
   labels:
     app.kubernetes.io/component: controller
     app.kubernetes.io/managed-by: kyma
@@ -42,6 +42,10 @@ spec:
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date
+    deprecated: true
+    deprecationWarning: telemetry.kyma-project.io/v1alpha1 LogPipeline is deprecated;
+      see https://help.sap.com/docs/btp/sap-business-technology-platform/migrate-telemetry-pipelines-to-v1beta1
+      for instructions to migrate to telemetry.kyma-project.io/v1beta1 LogPipeline.
     name: v1alpha1
     schema:
       openAPIV3Schema:
@@ -68,12 +72,11 @@ spec:
             description: Defines the desired state of LogPipeline
             properties:
               files:
-                description: Files is a list of content snippets that are mounted
-                  as files in the Fluent Bit configuration, which can be linked in
-                  the `custom` filters and a `custom` output. Only available when
-                  using an output of type `http` and `custom`.
+                description: |-
+                  Deprecated: The field is based on the Fluent Bit-based technology stack. Use the OpenTelemetry-based stack instead, see https://kyma-project.io/external-content/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
+                  FluentBitFiles is a list of content snippets that are mounted as files in the Fluent Bit configuration, which can be linked in the `custom` filters and a `custom` output. Only available when using an output of type `http` and `custom`.
                 items:
-                  description: LogPipelineFileMount provides file content to be consumed
+                  description: FluentBitFile provides file content to be consumed
                     by a LogPipeline configuration
                   properties:
                     content:
@@ -107,11 +110,11 @@ spec:
                   type: object
                 type: array
               filters:
-                description: FluentBitFilters configures custom Fluent Bit `filters`
-                  to transform logs. Only available when using an output of type `http`
-                  and `custom`.
+                description: |-
+                  Deprecated: The field is based on the Fluent Bit-based technology stack. Use the OpenTelemetry-based stack instead, see https://kyma-project.io/external-content/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
+                  FluentBitFilters configures custom Fluent Bit `filters` to transform logs. Only available when using an output of type `http` and `custom`.
                 items:
-                  description: LogPipelineFilter configures custom Fluent Bit `filters`
+                  description: FluentBitFilter configures custom Fluent Bit `filters`
                     to transform logs. Only available when using an output of type
                     `http` and `custom`.
                   properties:
@@ -154,11 +157,9 @@ spec:
                         - message: Only one of 'include' or 'exclude' can be defined
                           rule: '!(has(self.include) && has(self.exclude))'
                       dropLabels:
-                        description: DropLabels defines whether to drop all Kubernetes
-                          labels. The default is `false`. Only available when using
-                          an output of type `http` and `custom`. For an `otlp` output,
-                          use the label enrichement feature in the Telemetry resource
-                          instead.
+                        description: |-
+                          Deprecated: The field is based on the Fluent Bit-based technology stack. Use the OpenTelemetry-based stack instead, see https://kyma-project.io/external-content/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
+                          FluentBitDropLabels defines whether to drop all Kubernetes labels. The default is `false`. Only available when using an output of type `http` and `custom`. For an `otlp` output, use the label enrichement feature in the Telemetry resource instead.
                         type: boolean
                       enabled:
                         description: Enabled specifies if the 'application' input
@@ -166,9 +167,9 @@ spec:
                           containers stdout/stderr. The default is `true`.
                         type: boolean
                       keepAnnotations:
-                        description: KeepAnnotations defines whether to keep all Kubernetes
-                          annotations. The default is `false`.  Only available when
-                          using an output of type `http` and `custom`.
+                        description: |-
+                          Deprecated: The field is based on the Fluent Bit-based technology stack. Use the OpenTelemetry-based stack instead, see https://kyma-project.io/external-content/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
+                          FluentBitKeepAnnotations defines whether to keep all Kubernetes annotations. The default is `false`.  Only available when using an output of type `http` and `custom`.
                         type: boolean
                       keepOriginalBody:
                         description: KeepOriginalBody retains the original log data
@@ -221,7 +222,7 @@ spec:
                     type: object
                   otlp:
                     description: OTLP input configures the push endpoint to receive
-                      logs from a OTLP source.
+                      logs from an OTLP source.
                     properties:
                       disabled:
                         description: Disabled specifies if the 'otlp' input is deactivated.
@@ -266,15 +267,14 @@ spec:
                   You must specify exactly one output per pipeline.
                 properties:
                   custom:
-                    description: Custom defines a custom output in the [Fluent Bit
-                      syntax](https://docs.fluentbit.io/manual/pipeline/outputs) where
-                      you want to push the logs. If you use a `custom` output, you
-                      put the LogPipeline in unsupported mode. Only available when
-                      using an output of type `http` and `custom`.
+                    description: |-
+                      Deprecated: The field is based on the Fluent Bit-based technology stack. Use the OpenTelemetry-based stack instead, see https://kyma-project.io/external-content/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
+                      FluentBitCustom defines a custom output in the [Fluent Bit syntax](https://docs.fluentbit.io/manual/pipeline/outputs) where you want to push the logs. If you use a `custom` output, you put the LogPipeline in unsupported mode. Only available when using an output of type `http` and `custom`.
                     type: string
                   http:
-                    description: HTTP configures an HTTP-based output compatible with
-                      the Fluent Bit HTTP output plugin.
+                    description: |-
+                      Deprecated: The field is based on the Fluent Bit-based technology stack. Use the OpenTelemetry-based stack instead, see https://kyma-project.io/external-content/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
+                      FluentBitHTTP configures a FluentBitHTTP-based output compatible with the Fluent Bit FluentBitHTTP output plugin.
                     properties:
                       compress:
                         description: Compress defines the compression algorithm to
@@ -693,7 +693,180 @@ spec:
                             - password
                             - user
                             type: object
+                          oauth2:
+                            description: OAuth2 activates `OAuth2` authentication
+                              for the destination providing relevant Secrets.
+                            properties:
+                              clientID:
+                                description: ClientID contains the OAuth2 client ID
+                                  or a Secret reference.
+                                properties:
+                                  value:
+                                    description: Value as plain text.
+                                    type: string
+                                  valueFrom:
+                                    description: ValueFrom is the value as a reference
+                                      to a resource.
+                                    properties:
+                                      secretKeyRef:
+                                        description: SecretKeyRef refers to the value
+                                          of a specific key in a Secret. You must
+                                          provide `name` and `namespace` of the Secret,
+                                          as well as the name of the `key`.
+                                        properties:
+                                          key:
+                                            description: Key defines the name of the
+                                              attribute of the Secret holding the
+                                              referenced value.
+                                            minLength: 1
+                                            type: string
+                                          name:
+                                            description: Name of the Secret containing
+                                              the referenced value.
+                                            minLength: 1
+                                            type: string
+                                          namespace:
+                                            description: Namespace containing the
+                                              Secret with the referenced value.
+                                            minLength: 1
+                                            type: string
+                                        required:
+                                        - key
+                                        - name
+                                        - namespace
+                                        type: object
+                                    required:
+                                    - secretKeyRef
+                                    type: object
+                                type: object
+                                x-kubernetes-validations:
+                                - message: '''clientID'' missing'
+                                  rule: (self.value != '' ) || (has(self.valueFrom))
+                                - message: Only one of 'value' or 'valueFrom' can
+                                    be set
+                                  rule: '!(has(self.value) && size(self.value) > 0
+                                    && has(self.valueFrom))'
+                              clientSecret:
+                                description: ClientSecret contains the OAuth2 client
+                                  secret or a Secret reference.
+                                properties:
+                                  value:
+                                    description: Value as plain text.
+                                    type: string
+                                  valueFrom:
+                                    description: ValueFrom is the value as a reference
+                                      to a resource.
+                                    properties:
+                                      secretKeyRef:
+                                        description: SecretKeyRef refers to the value
+                                          of a specific key in a Secret. You must
+                                          provide `name` and `namespace` of the Secret,
+                                          as well as the name of the `key`.
+                                        properties:
+                                          key:
+                                            description: Key defines the name of the
+                                              attribute of the Secret holding the
+                                              referenced value.
+                                            minLength: 1
+                                            type: string
+                                          name:
+                                            description: Name of the Secret containing
+                                              the referenced value.
+                                            minLength: 1
+                                            type: string
+                                          namespace:
+                                            description: Namespace containing the
+                                              Secret with the referenced value.
+                                            minLength: 1
+                                            type: string
+                                        required:
+                                        - key
+                                        - name
+                                        - namespace
+                                        type: object
+                                    required:
+                                    - secretKeyRef
+                                    type: object
+                                type: object
+                                x-kubernetes-validations:
+                                - message: clientSecret' missing
+                                  rule: (self.value != '' ) || (has(self.valueFrom))
+                                - message: Only one of 'value' or 'valueFrom' can
+                                    be set
+                                  rule: '!(has(self.value) && size(self.value) > 0
+                                    && has(self.valueFrom))'
+                              params:
+                                additionalProperties:
+                                  type: string
+                                description: Params contains optional additional OAuth2
+                                  parameters that are sent to the token endpoint.
+                                type: object
+                              scopes:
+                                description: Scopes contains optional OAuth2 scopes.
+                                items:
+                                  type: string
+                                type: array
+                              tokenURL:
+                                description: TokenURL contains the OAuth2 token endpoint
+                                  URL or a Secret reference.
+                                properties:
+                                  value:
+                                    description: Value as plain text.
+                                    type: string
+                                  valueFrom:
+                                    description: ValueFrom is the value as a reference
+                                      to a resource.
+                                    properties:
+                                      secretKeyRef:
+                                        description: SecretKeyRef refers to the value
+                                          of a specific key in a Secret. You must
+                                          provide `name` and `namespace` of the Secret,
+                                          as well as the name of the `key`.
+                                        properties:
+                                          key:
+                                            description: Key defines the name of the
+                                              attribute of the Secret holding the
+                                              referenced value.
+                                            minLength: 1
+                                            type: string
+                                          name:
+                                            description: Name of the Secret containing
+                                              the referenced value.
+                                            minLength: 1
+                                            type: string
+                                          namespace:
+                                            description: Namespace containing the
+                                              Secret with the referenced value.
+                                            minLength: 1
+                                            type: string
+                                        required:
+                                        - key
+                                        - name
+                                        - namespace
+                                        type: object
+                                    required:
+                                    - secretKeyRef
+                                    type: object
+                                type: object
+                                x-kubernetes-validations:
+                                - message: tokenURL' missing
+                                  rule: (self.value != '' ) || (has(self.valueFrom))
+                                - message: '''tokenURL'' must be a valid URL'
+                                  rule: '(self.value != '''' ) ? (isURL(self.value))
+                                    : true'
+                                - message: Only one of 'value' or 'valueFrom' can
+                                    be set
+                                  rule: '!(has(self.value) && size(self.value) > 0
+                                    && has(self.valueFrom))'
+                            required:
+                            - clientID
+                            - clientSecret
+                            - tokenURL
+                            type: object
                         type: object
+                        x-kubernetes-validations:
+                        - message: Only one authentication method can be specified
+                          rule: '!(has(self.basic) && has(self.oauth2))'
                       endpoint:
                         description: Endpoint defines the host and port (`<host>:<port>`)
                           of an OTLP endpoint.
@@ -798,7 +971,7 @@ spec:
                       path:
                         description: Path defines OTLP export URL path (only for the
                           HTTP protocol). This value overrides auto-appended paths
-                          `/v1/metrics` and `/v1/traces`
+                          `/v1/logs`, `/v1/metrics`, and `/v1/traces`
                         type: string
                       protocol:
                         description: Protocol defines the OTLP protocol (`http` or
@@ -965,6 +1138,11 @@ spec:
                     - message: Path is only available with HTTP protocol
                       rule: '(has(self.path) && size(self.path) > 0) ? self.protocol
                         == ''http'' : true'
+                    - message: OAuth2 authentication requires TLS when using gRPC
+                        protocol
+                      rule: '(has(self.authentication) && has(self.authentication.oauth2)
+                        && self.protocol == ''grpc'' && has(self.tls)) ? !(has(self.tls.insecure)
+                        && self.tls.insecure == true) : true'
                 type: object
                 x-kubernetes-validations:
                 - message: Switching to or away from OTLP output is not supported.
@@ -1000,14 +1178,12 @@ spec:
                   type: object
                 type: array
               variables:
-                description: Variables is a list of mappings from Kubernetes Secret
-                  keys to environment variables. Mapped keys are mounted as environment
-                  variables, so that they are available as [Variables](https://docs.fluentbit.io/manual/administration/configuring-fluent-bit/classic-mode/variables)
-                  in the `custom` filters and a `custom` output. Only available when
-                  using an output of type `http` and `custom`.
+                description: |-
+                  Deprecated: The field is based on the Fluent Bit-based technology stack. Use the OpenTelemetry-based stack instead, see https://kyma-project.io/external-content/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
+                  FluentBitVariables is a list of mappings from Kubernetes Secret keys to environment variables. Mapped keys are mounted as environment variables, so that they are available as [FluentBitVariables](https://docs.fluentbit.io/manual/administration/configuring-fluent-bit/classic-mode/variables) in the `custom` filters and a `custom` output. Only available when using an output of type `http` and `custom`.
                 items:
-                  description: LogPipelineVariableRef references a Kubernetes secret
-                    that should be provided as environment variable to Fluent Bit
+                  description: FluentBitVariable references a Kubernetes secret that
+                    should be provided as environment variable to Fluent Bit
                   properties:
                     name:
                       description: Name of the variable to map.
@@ -1133,7 +1309,7 @@ spec:
                 type: array
               unsupportedMode:
                 description: Is active when the LogPipeline uses a `custom` output
-                  or filter; see [unsupported mode](https://github.com/kyma-project/telemetry-manager/blob/main/docs/user/02-logs.md#unsupported-mode).
+                  or filter; see [unsupported mode](https://kyma-project.io/external-content/telemetry-manager/docs/user/02-logs.html#unsupported-mode).
                 type: boolean
             type: object
         type: object
@@ -1154,9 +1330,6 @@ spec:
     - jsonPath: .status.conditions[?(@.type=="TelemetryFlowHealthy")].status
       name: Flow Healthy
       type: string
-    - jsonPath: .status.unsupportedMode
-      name: Unsupported Mode
-      type: boolean
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date
@@ -1186,12 +1359,11 @@ spec:
             description: Defines the desired state of LogPipeline
             properties:
               files:
-                description: Files is a list of content snippets that are mounted
-                  as files in the Fluent Bit configuration, which can be linked in
-                  the `custom` filters and a `custom` output. Only available when
-                  using an output of type `http` and `custom`.
+                description: |-
+                  Deprecated: The field is based on the Fluent Bit-based technology stack. Use the OpenTelemetry-based stack instead, see https://kyma-project.io/external-content/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
+                  FluentBitFiles is a list of content snippets that are mounted as files in the Fluent Bit configuration, which can be linked in the `custom` filters and a `custom` output. Only available when using an output of type `http` and `custom`.
                 items:
-                  description: LogPipelineFileMount provides file content to be consumed
+                  description: FluentBitFile provides file content to be consumed
                     by a LogPipeline configuration
                   properties:
                     content:
@@ -1225,11 +1397,11 @@ spec:
                   type: object
                 type: array
               filters:
-                description: FluentBitFilters configures custom Fluent Bit `filters`
-                  to transform logs. Only available when using an output of type `http`
-                  and `custom`.
+                description: |-
+                  Deprecated: The field is based on the Fluent Bit-based technology stack. Use the OpenTelemetry-based stack instead, see https://kyma-project.io/external-content/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
+                  FluentBitFilters configures custom Fluent Bit `filters` to transform logs. Only available when using an output of type `http` and `custom`.
                 items:
-                  description: LogPipelineFilter configures custom Fluent Bit `filters`
+                  description: FluentBitFilter configures custom Fluent Bit `filters`
                     to transform logs. Only available when using an output of type
                     `http` and `custom`.
                   properties:
@@ -1247,7 +1419,7 @@ spec:
                 properties:
                   otlp:
                     description: OTLP input configures the push endpoint to receive
-                      logs from a OTLP source.
+                      logs from an OTLP source.
                     properties:
                       enabled:
                         description: Enabled specifies if the 'otlp' input is enabled.
@@ -1256,9 +1428,8 @@ spec:
                         type: boolean
                       namespaces:
                         description: Namespaces describe whether push-based OTLP signals
-                          from specific namespaces are selected. By default, all namespaces
-                          excluding system namespaces are enabled. To enable all namespaces
-                          including system namespaces, use an empty struct notation.
+                          from specific namespaces are selected. System namespaces
+                          are enabled by default.
                         properties:
                           exclude:
                             description: 'Exclude telemetry data from the specified
@@ -1314,11 +1485,9 @@ spec:
                         - message: Only one of 'include' or 'exclude' can be defined
                           rule: '!(has(self.include) && has(self.exclude))'
                       dropLabels:
-                        description: DropLabels defines whether to drop all Kubernetes
-                          labels. The default is `false`. Only available when using
-                          an output of type `http` and `custom`. For an `otlp` output,
-                          use the label enrichement feature in the Telemetry resource
-                          instead.
+                        description: |-
+                          Deprecated: The field is based on the Fluent Bit-based technology stack. Use the OpenTelemetry-based stack instead, see https://kyma-project.io/external-content/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
+                          FluentBitDropLabels defines whether to drop all Kubernetes labels. The default is `false`. Only available when using an output of type `http` and `custom`. For an `otlp` output, use the label enrichement feature in the Telemetry resource instead.
                         type: boolean
                       enabled:
                         description: Enabled specifies if the 'runtime' input is enabled.
@@ -1326,9 +1495,9 @@ spec:
                           containers stdout/stderr. The default is `true`.
                         type: boolean
                       keepAnnotations:
-                        description: KeepAnnotations defines whether to keep all Kubernetes
-                          annotations. The default is `false`.  Only available when
-                          using an output of type `http` and `custom`.
+                        description: |-
+                          Deprecated: The field is based on the Fluent Bit-based technology stack. Use the OpenTelemetry-based stack instead, see https://kyma-project.io/external-content/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
+                          FluentBitKeepAnnotations defines whether to keep all Kubernetes annotations. The default is `false`.  Only available when using an output of type `http` and `custom`.
                         type: boolean
                       keepOriginalBody:
                         description: KeepOriginalBody retains the original log data
@@ -1376,15 +1545,14 @@ spec:
                   You must specify exactly one output per pipeline.
                 properties:
                   custom:
-                    description: Custom defines a custom output in the [Fluent Bit
-                      syntax](https://docs.fluentbit.io/manual/pipeline/outputs) where
-                      you want to push the logs. If you use a `custom` output, you
-                      put the LogPipeline in unsupported mode. Only available when
-                      using an output of type `http` and `custom`.
+                    description: |-
+                      Deprecated: The field is based on the Fluent Bit-based technology stack. Use the OpenTelemetry-based stack instead, see https://kyma-project.io/external-content/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
+                      FluentBitCustom defines a custom output in the [Fluent Bit syntax](https://docs.fluentbit.io/manual/pipeline/outputs) where you want to push the logs. If you use a `custom` output, you put the LogPipeline in unsupported mode. Only available when using an output of type `http` and `custom`.
                     type: string
                   http:
-                    description: HTTP configures an HTTP-based output compatible with
-                      the Fluent Bit HTTP output plugin.
+                    description: |-
+                      Deprecated: The field is based on the Fluent Bit-based technology stack. Use the OpenTelemetry-based stack instead, see https://kyma-project.io/external-content/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
+                      FluentBitHTTP configures a FluentBitHTTP-based output compatible with the Fluent Bit FluentBitHTTP output plugin.
                     properties:
                       compress:
                         description: Compress defines the compression algorithm to
@@ -1800,7 +1968,171 @@ spec:
                             - password
                             - user
                             type: object
+                          oauth2:
+                            description: OAuth2 activates `OAuth2` authentication
+                              for the destination providing relevant Secrets.
+                            properties:
+                              clientID:
+                                description: ClientID contains the OAuth2 client ID
+                                  or a Secret reference.
+                                properties:
+                                  value:
+                                    description: Value as plain text.
+                                    type: string
+                                  valueFrom:
+                                    description: ValueFrom is the value as a reference
+                                      to a resource.
+                                    properties:
+                                      secretKeyRef:
+                                        description: SecretKeyRef refers to the value
+                                          of a specific key in a Secret. You must
+                                          provide `name` and `namespace` of the Secret,
+                                          as well as the name of the `key`.
+                                        properties:
+                                          key:
+                                            description: Key defines the name of the
+                                              attribute of the Secret holding the
+                                              referenced value.
+                                            minLength: 1
+                                            type: string
+                                          name:
+                                            description: Name of the Secret containing
+                                              the referenced value.
+                                            minLength: 1
+                                            type: string
+                                          namespace:
+                                            description: Namespace containing the
+                                              Secret with the referenced value.
+                                            minLength: 1
+                                            type: string
+                                        required:
+                                        - key
+                                        - name
+                                        - namespace
+                                        type: object
+                                    required:
+                                    - secretKeyRef
+                                    type: object
+                                type: object
+                                x-kubernetes-validations:
+                                - message: Exactly one of 'value' or 'valueFrom' must
+                                    be set
+                                  rule: has(self.value) != has(self.valueFrom)
+                              clientSecret:
+                                description: ClientSecret contains the OAuth2 client
+                                  secret or a Secret reference.
+                                properties:
+                                  value:
+                                    description: Value as plain text.
+                                    type: string
+                                  valueFrom:
+                                    description: ValueFrom is the value as a reference
+                                      to a resource.
+                                    properties:
+                                      secretKeyRef:
+                                        description: SecretKeyRef refers to the value
+                                          of a specific key in a Secret. You must
+                                          provide `name` and `namespace` of the Secret,
+                                          as well as the name of the `key`.
+                                        properties:
+                                          key:
+                                            description: Key defines the name of the
+                                              attribute of the Secret holding the
+                                              referenced value.
+                                            minLength: 1
+                                            type: string
+                                          name:
+                                            description: Name of the Secret containing
+                                              the referenced value.
+                                            minLength: 1
+                                            type: string
+                                          namespace:
+                                            description: Namespace containing the
+                                              Secret with the referenced value.
+                                            minLength: 1
+                                            type: string
+                                        required:
+                                        - key
+                                        - name
+                                        - namespace
+                                        type: object
+                                    required:
+                                    - secretKeyRef
+                                    type: object
+                                type: object
+                                x-kubernetes-validations:
+                                - message: Exactly one of 'value' or 'valueFrom' must
+                                    be set
+                                  rule: has(self.value) != has(self.valueFrom)
+                              params:
+                                additionalProperties:
+                                  type: string
+                                description: Params contains optional additional OAuth2
+                                  parameters that are sent to the token endpoint.
+                                type: object
+                              scopes:
+                                description: Scopes contains optional OAuth2 scopes.
+                                items:
+                                  type: string
+                                type: array
+                              tokenURL:
+                                description: TokenURL contains the OAuth2 token endpoint
+                                  URL or a Secret reference.
+                                properties:
+                                  value:
+                                    description: Value as plain text.
+                                    type: string
+                                  valueFrom:
+                                    description: ValueFrom is the value as a reference
+                                      to a resource.
+                                    properties:
+                                      secretKeyRef:
+                                        description: SecretKeyRef refers to the value
+                                          of a specific key in a Secret. You must
+                                          provide `name` and `namespace` of the Secret,
+                                          as well as the name of the `key`.
+                                        properties:
+                                          key:
+                                            description: Key defines the name of the
+                                              attribute of the Secret holding the
+                                              referenced value.
+                                            minLength: 1
+                                            type: string
+                                          name:
+                                            description: Name of the Secret containing
+                                              the referenced value.
+                                            minLength: 1
+                                            type: string
+                                          namespace:
+                                            description: Namespace containing the
+                                              Secret with the referenced value.
+                                            minLength: 1
+                                            type: string
+                                        required:
+                                        - key
+                                        - name
+                                        - namespace
+                                        type: object
+                                    required:
+                                    - secretKeyRef
+                                    type: object
+                                type: object
+                                x-kubernetes-validations:
+                                - message: '''tokenURL'' must be a valid URL'
+                                  rule: '(self.value != '''' ) ? (isURL(self.value))
+                                    : true'
+                                - message: Exactly one of 'value' or 'valueFrom' must
+                                    be set
+                                  rule: has(self.value) != has(self.valueFrom)
+                            required:
+                            - clientID
+                            - clientSecret
+                            - tokenURL
+                            type: object
                         type: object
+                        x-kubernetes-validations:
+                        - message: Only one authentication method can be specified
+                          rule: '!(has(self.basic) && has(self.oauth2))'
                       endpoint:
                         description: Endpoint defines the host and port (`<host>:<port>`)
                           of an OTLP endpoint.
@@ -1906,7 +2238,7 @@ spec:
                       path:
                         description: Path defines OTLP export URL path (only for the
                           HTTP protocol). This value overrides auto-appended paths
-                          `/v1/metrics` and `/v1/traces`
+                          `/v1/logs`, `/v1/metrics`, and `/v1/traces`
                         type: string
                       protocol:
                         description: Protocol defines the OTLP protocol (`http` or
@@ -2073,6 +2405,11 @@ spec:
                     - message: Path is only available with HTTP protocol
                       rule: '(has(self.path) && size(self.path) > 0) ? self.protocol
                         == ''http'' : true'
+                    - message: OAuth2 authentication requires TLS when using gRPC
+                        protocol
+                      rule: '(has(self.authentication) && has(self.authentication.oauth2)
+                        && self.protocol == ''grpc'' && has(self.tls)) ? !(has(self.tls.insecure)
+                        && self.tls.insecure == true) : true'
                 type: object
                 x-kubernetes-validations:
                 - message: Switching to or away from OTLP output is not supported.
@@ -2108,14 +2445,12 @@ spec:
                   type: object
                 type: array
               variables:
-                description: Variables is a list of mappings from Kubernetes Secret
-                  keys to environment variables. Mapped keys are mounted as environment
-                  variables, so that they are available as [Variables](https://docs.fluentbit.io/manual/administration/configuring-fluent-bit/classic-mode/variables)
-                  in the `custom` filters and a `custom` output. Only available when
-                  using an output of type `http` and `custom`.
+                description: |-
+                  Deprecated: The field is based on the Fluent Bit-based technology stack. Use the OpenTelemetry-based stack instead, see https://kyma-project.io/external-content/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html.
+                  FluentBitVariables is a list of mappings from Kubernetes Secret keys to environment variables. Mapped keys are mounted as environment variables, so that they are available as [FluentBitVariables](https://docs.fluentbit.io/manual/administration/configuring-fluent-bit/classic-mode/variables) in the `custom` filters and a `custom` output. Only available when using an output of type `http` and `custom`.
                 items:
-                  description: LogPipelineVariableRef references a Kubernetes secret
-                    that should be provided as environment variable to Fluent Bit
+                  description: FluentBitVariable references a Kubernetes secret that
+                    should be provided as environment variable to Fluent Bit
                   properties:
                     name:
                       description: Name of the variable to map.

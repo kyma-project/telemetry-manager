@@ -6,9 +6,11 @@ import (
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
@@ -17,8 +19,9 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
+// TODO(TeodorSAP): Remove this test in favor of service_enrichment_test.go once legacy service enrichment strategy is fully deprecated.
 func TestServiceName(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelMetricAgentSetC)
+	suite.SetupTest(t, suite.LabelMetricAgent)
 
 	const (
 		jobName                                           = "job"
@@ -43,7 +46,7 @@ func TestServiceName(t *testing.T) {
 	pipeline := testutils.NewMetricPipelineBuilder().
 		WithName(pipelineName).
 		WithRuntimeInput(true, testutils.IncludeNamespaces(kitkyma.SystemNamespaceName)).
-		WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+		WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 		Build()
 
 	podSpecWithUndefinedService := telemetrygen.PodSpec(telemetrygen.SignalTypeMetrics,
@@ -56,20 +59,17 @@ func TestServiceName(t *testing.T) {
 		telemetrygen.WithServiceName(attrWithMissingProcessForUnknownServicePattern))
 
 	resources := []client.Object{
-		kitk8s.NewNamespace(backendNs).K8sObject(),
-		kitk8s.NewNamespace(genNs).K8sObject(),
+		kitk8sobjects.NewNamespace(backendNs).K8sObject(),
+		kitk8sobjects.NewNamespace(genNs).K8sObject(),
 		&pipeline,
-		kitk8s.NewDaemonSet(daemonSetName, genNs).WithPodSpec(podSpecWithUndefinedService).K8sObject(),
-		kitk8s.NewJob(jobName, genNs).WithPodSpec(podSpecWithUndefinedService).K8sObject(),
-		kitk8s.NewPod(podWithInvalidStartForUnknownServicePatternName, genNs).WithPodSpec(podSpecWithInvalidStartForUnknownServicePattern).K8sObject(),
-		kitk8s.NewPod(podWithInvalidEndForUnknownServicePatternName, genNs).WithPodSpec(podSpecWithInvalidEndForUnknownServicePattern).K8sObject(),
-		kitk8s.NewPod(podWithMissingProcessForUnknownServicePatternName, genNs).WithPodSpec(podSpecWithMissingProcessForUnknownServicePattern).K8sObject(),
+		kitk8sobjects.NewDaemonSet(daemonSetName, genNs).WithPodSpec(podSpecWithUndefinedService).K8sObject(),
+		kitk8sobjects.NewJob(jobName, genNs).WithPodSpec(podSpecWithUndefinedService).K8sObject(),
+		kitk8sobjects.NewPod(podWithInvalidStartForUnknownServicePatternName, genNs).WithPodSpec(podSpecWithInvalidStartForUnknownServicePattern).K8sObject(),
+		kitk8sobjects.NewPod(podWithInvalidEndForUnknownServicePatternName, genNs).WithPodSpec(podSpecWithInvalidEndForUnknownServicePattern).K8sObject(),
+		kitk8sobjects.NewPod(podWithMissingProcessForUnknownServicePatternName, genNs).WithPodSpec(podSpecWithMissingProcessForUnknownServicePattern).K8sObject(),
 	}
 	resources = append(resources, backend.K8sObjects()...)
 
-	t.Cleanup(func() {
-		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-	})
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.BackendReachable(t, backend)
@@ -99,13 +99,13 @@ func TestServiceName(t *testing.T) {
 
 	assert.BackendDataEventuallyMatches(t, backend,
 		HaveFlatMetrics(
-			ContainElement(HaveResourceAttributes(HaveKeyWithValue("service.name", kitkyma.MetricGatewayBaseName))),
+			ContainElement(HaveResourceAttributes(HaveKeyWithValue("service.name", names.MetricGateway))),
 		), assert.WithOptionalDescription("Should have metrics with service.name set to telemetry-metric-gateway"),
 	)
 
 	assert.BackendDataEventuallyMatches(t, backend,
 		HaveFlatMetrics(
-			ContainElement(HaveResourceAttributes(HaveKeyWithValue("service.name", kitkyma.MetricAgentBaseName))),
+			ContainElement(HaveResourceAttributes(HaveKeyWithValue("service.name", names.MetricAgent))),
 		), assert.WithOptionalDescription("Should have metrics with service.name set to telemetry-metric-agent"),
 	)
 }

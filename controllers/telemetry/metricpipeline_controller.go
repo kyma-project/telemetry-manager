@@ -20,11 +20,13 @@ import (
 	"context"
 	"fmt"
 
+	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/types"
+	autoscalingvpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -36,22 +38,26 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
-	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metricagent"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metricgateway"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
+	"github.com/kyma-project/telemetry-manager/internal/secretwatch"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	predicateutils "github.com/kyma-project/telemetry-manager/internal/utils/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
 	"github.com/kyma-project/telemetry-manager/internal/validators/ottl"
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
+	"github.com/kyma-project/telemetry-manager/internal/vpastatus"
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
@@ -59,48 +65,55 @@ import (
 type MetricPipelineController struct {
 	client.Client
 
+	globals config.Global
+
 	reconcileTriggerChan <-chan event.GenericEvent
 	reconciler           *metricpipeline.Reconciler
+	secretWatchClient    *secretwatch.Client
 }
 
 type MetricPipelineControllerConfig struct {
+	config.Global
+
 	MetricAgentPriorityClassName   string
 	MetricGatewayPriorityClassName string
-	ModuleVersion                  string
 	OTelCollectorImage             string
 	RestConfig                     *rest.Config
-	SelfMonitorName                string
-	TelemetryNamespace             string
-	EnableFIPSMode                 bool
 }
 
-func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, config MetricPipelineControllerConfig) (*MetricPipelineController, error) {
-	gatewayFlowHealthProber, err := prober.NewOTelMetricGatewayProber(types.NamespacedName{Name: config.SelfMonitorName, Namespace: config.TelemetryNamespace})
-	if err != nil {
-		return nil, err
-	}
+func NewMetricPipelineController(config MetricPipelineControllerConfig, client client.Client, reconcileTriggerChan <-chan event.GenericEvent, secretWatchClient *secretwatch.Client) (*MetricPipelineController, error) {
+	pipelineCount := resourcelock.MaxPipelineCount
 
-	agentFlowHealthProber, err := prober.NewOTelMetricAgentProber(types.NamespacedName{Name: config.SelfMonitorName, Namespace: config.TelemetryNamespace})
-	if err != nil {
-		return nil, err
+	if config.UnlimitedPipelines() {
+		pipelineCount = resourcelock.UnlimitedPipelineCount
 	}
 
 	pipelineLock := resourcelock.NewLocker(
 		client,
 		types.NamespacedName{
-			Name:      "telemetry-metricpipeline-lock",
-			Namespace: config.TelemetryNamespace,
+			Name:      names.MetricPipelineLock,
+			Namespace: config.TargetNamespace(),
 		},
-		MaxPipelineCount,
+		pipelineCount,
 	)
 
 	pipelineSync := resourcelock.NewSyncer(
 		client,
 		types.NamespacedName{
-			Name:      "telemetry-metricpipeline-sync",
-			Namespace: config.TelemetryNamespace,
+			Name:      names.MetricPipelineSync,
+			Namespace: config.TargetNamespace(),
 		},
 	)
+
+	gatewayFlowHealthProber, err := prober.NewOTelMetricGatewayProber(types.NamespacedName{Name: names.SelfMonitor, Namespace: config.TargetNamespace()})
+	if err != nil {
+		return nil, err
+	}
+
+	agentFlowHealthProber, err := prober.NewOTelMetricAgentProber(types.NamespacedName{Name: names.SelfMonitor, Namespace: config.TargetNamespace()})
+	if err != nil {
+		return nil, err
+	}
 
 	transformSpecValidator, err := ottl.NewTransformSpecValidator(ottl.SignalTypeMetric)
 	if err != nil {
@@ -112,14 +125,14 @@ func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-ch
 		return nil, err
 	}
 
-	pipelineValidator := &metricpipeline.Validator{
-		EndpointValidator:      &endpoint.Validator{Client: client},
-		TLSCertValidator:       tlscert.New(client),
-		SecretRefValidator:     &secretref.Validator{Client: client},
-		PipelineLock:           pipelineLock,
-		TransformSpecValidator: transformSpecValidator,
-		FilterSpecValidator:    filterSpecValidator,
-	}
+	pipelineValidator := metricpipeline.NewValidator(
+		metricpipeline.WithEndpointValidator(&endpoint.Validator{Client: client}),
+		metricpipeline.WithTLSCertValidator(tlscert.New(client)),
+		metricpipeline.WithSecretRefValidator(&secretref.Validator{Client: client}),
+		metricpipeline.WithValidatorPipelineLock(pipelineLock),
+		metricpipeline.WithTransformSpecValidator(transformSpecValidator),
+		metricpipeline.WithFilterSpecValidator(filterSpecValidator),
+	)
 
 	discoveryClient, err := discovery.NewDiscoveryClientForConfig(config.RestConfig)
 	if err != nil {
@@ -130,39 +143,36 @@ func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-ch
 	gatewayConfigBuilder := &metricgateway.Builder{Reader: client}
 
 	reconciler := metricpipeline.New(
-		client,
-		config.TelemetryNamespace,
-		config.ModuleVersion,
-		otelcollector.NewMetricAgentApplierDeleter(
-			config.OTelCollectorImage,
-			config.TelemetryNamespace,
-			config.MetricAgentPriorityClassName,
-			config.EnableFIPSMode,
-		),
-		agentConfigBuilder,
-		&workloadstatus.DaemonSetProber{Client: client},
-		gatewayFlowHealthProber,
-		agentFlowHealthProber,
-		otelcollector.NewMetricGatewayApplierDeleter(
-			config.OTelCollectorImage,
-			config.TelemetryNamespace,
-			config.MetricGatewayPriorityClassName,
-			config.EnableFIPSMode,
-		),
-		gatewayConfigBuilder,
-		&workloadstatus.DeploymentProber{Client: client},
-		istiostatus.NewChecker(discoveryClient),
-		overrides.New(client, overrides.HandlerConfig{SystemNamespace: config.TelemetryNamespace}),
-		pipelineLock,
-		pipelineSync,
-		pipelineValidator,
-		&conditions.ErrorToMessageConverter{},
+		metricpipeline.WithClient(client),
+		metricpipeline.WithGlobals(config.Global),
+
+		metricpipeline.WithAgentApplierDeleter(otelcollector.NewMetricAgentApplierDeleter(config.Global, config.OTelCollectorImage, config.MetricAgentPriorityClassName)),
+		metricpipeline.WithAgentConfigBuilder(agentConfigBuilder),
+		metricpipeline.WithAgentFlowHealthProber(agentFlowHealthProber),
+		metricpipeline.WithAgentProber(&workloadstatus.DaemonSetProber{Client: client}),
+
+		metricpipeline.WithGatewayApplierDeleter(otelcollector.NewMetricGatewayApplierDeleter(config.Global, config.OTelCollectorImage, config.MetricGatewayPriorityClassName)),
+		metricpipeline.WithGatewayConfigBuilder(gatewayConfigBuilder),
+		metricpipeline.WithGatewayFlowHealthProber(gatewayFlowHealthProber),
+		metricpipeline.WithGatewayProber(&workloadstatus.DeploymentProber{Client: client}),
+
+		metricpipeline.WithErrorToMessageConverter(&conditions.ErrorToMessageConverter{}),
+		metricpipeline.WithIstioStatusChecker(istiostatus.NewChecker(discoveryClient)),
+		metricpipeline.WithVpaStatusChecker(vpastatus.NewChecker(config.RestConfig)),
+		metricpipeline.WithOverridesHandler(overrides.New(config.Global, client)),
+		metricpipeline.WithPipelineValidator(pipelineValidator),
+
+		metricpipeline.WithPipelineLock(pipelineLock),
+		metricpipeline.WithPipelineSyncer(pipelineSync),
+		metricpipeline.WithSecretWatcher(secretWatchClient),
 	)
 
 	return &MetricPipelineController{
 		Client:               client,
+		globals:              config.Global,
 		reconcileTriggerChan: reconcileTriggerChan,
 		reconciler:           reconciler,
+		secretWatchClient:    secretWatchClient,
 	}, nil
 }
 
@@ -172,7 +182,7 @@ func (r *MetricPipelineController) Reconcile(ctx context.Context, req ctrl.Reque
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *MetricPipelineController) SetupWithManager(mgr ctrl.Manager) error {
-	b := ctrl.NewControllerManagedBy(mgr).For(&telemetryv1alpha1.MetricPipeline{})
+	b := ctrl.NewControllerManagedBy(mgr).For(&telemetryv1beta1.MetricPipeline{})
 
 	b.WatchesRawSource(
 		source.Channel(r.reconcileTriggerChan, &handler.EnqueueRequestForObject{}),
@@ -188,7 +198,40 @@ func (r *MetricPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		&corev1.ServiceAccount{},
 		&rbacv1.ClusterRole{},
 		&rbacv1.ClusterRoleBinding{},
+		&rbacv1.Role{},
+		&rbacv1.RoleBinding{},
 		&networkingv1.NetworkPolicy{},
+	}
+
+	ctx := context.Background()
+
+	discoveryClient, err := discovery.NewDiscoveryClientForConfig(mgr.GetConfig())
+	if err != nil {
+		return fmt.Errorf("failed to create discovery client: %w", err)
+	}
+
+	isIstioActive, err := istiostatus.NewChecker(discoveryClient).IsIstioActive(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to check Istio status: %w", err)
+	}
+
+	vpaCRDExists, err := vpastatus.NewChecker(mgr.GetConfig()).VpaCRDExists(ctx, r.Client)
+	if err != nil {
+		return fmt.Errorf("failed to check VPA status: %w", err)
+	}
+
+	// Only watch PeerAuthentication CR if Istio is active
+	// otherwise, manager will have errors if the PeerAuthentication CRD is not present in the cluster
+	if isIstioActive {
+		ownedResourceTypesToWatch = append(ownedResourceTypesToWatch, &istiosecurityclientv1.PeerAuthentication{})
+	}
+
+	// Only watch VPA CR if VPA CRD exists in the cluster
+	// otherwise, manager will have errors if the VPA CRD is not present in the cluster
+	// NOTE: controller needs to watch VPA CR even if the annotation to enable VPA is not present in Telemetry CR,
+	// because the annotation can be added later and this function is only called once during the setup of the controller.
+	if vpaCRDExists {
+		ownedResourceTypesToWatch = append(ownedResourceTypesToWatch, &autoscalingvpav1.VerticalPodAutoscaler{})
 	}
 
 	for _, resource := range ownedResourceTypesToWatch {
@@ -196,21 +239,21 @@ func (r *MetricPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 			resource,
 			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(),
 				mgr.GetRESTMapper(),
-				&telemetryv1alpha1.MetricPipeline{},
+				&telemetryv1beta1.MetricPipeline{},
 			),
 			ctrlbuilder.WithPredicates(predicateutils.OwnedResourceChanged()),
 		)
 	}
 
 	return b.Watches(
-		&operatorv1alpha1.Telemetry{},
+		&operatorv1beta1.Telemetry{},
 		handler.EnqueueRequestsFromMapFunc(r.mapTelemetryChanges),
 		ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete()),
 	).Complete(r)
 }
 
 func (r *MetricPipelineController) mapTelemetryChanges(ctx context.Context, object client.Object) []reconcile.Request {
-	_, ok := object.(*operatorv1alpha1.Telemetry)
+	_, ok := object.(*operatorv1beta1.Telemetry)
 	if !ok {
 		logf.FromContext(ctx).V(1).Error(nil, "Unexpected type: expected Telemetry")
 		return nil
@@ -225,7 +268,7 @@ func (r *MetricPipelineController) mapTelemetryChanges(ctx context.Context, obje
 }
 
 func (r *MetricPipelineController) createRequestsForAllPipelines(ctx context.Context) ([]reconcile.Request, error) {
-	var pipelines telemetryv1alpha1.MetricPipelineList
+	var pipelines telemetryv1beta1.MetricPipelineList
 
 	var requests []reconcile.Request
 

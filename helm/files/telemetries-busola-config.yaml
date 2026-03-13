@@ -2,17 +2,17 @@ dataSources: |-
   logPipelines:
     resource:
       group: telemetry.kyma-project.io
-      version: v1alpha1
+      version: v1beta1
       kind: LogPipeline
   metricPipelines:
     resource:
       group: telemetry.kyma-project.io
-      version: v1alpha1
+      version: v1beta1
       kind: MetricPipeline
   tracePipelines:
     resource:
       group: telemetry.kyma-project.io
-      version: v1alpha1
+      version: v1beta1
       kind: TracePipeline
 details: |-
   header:
@@ -295,7 +295,7 @@ general: |
   resource:
     kind: Telemetry
     group: operator.kyma-project.io
-    version: v1alpha1
+    version: v1beta1
   name: Telemetry
   category: Kyma
   urlPath: telemetries

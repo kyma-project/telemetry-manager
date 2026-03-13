@@ -9,9 +9,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
@@ -22,7 +24,7 @@ import (
 )
 
 func TestKymaInput(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelMetricGatewaySetA)
+	suite.SetupTest(t, suite.LabelMetricGateway)
 
 	var (
 		uniquePrefix            = unique.Prefix()
@@ -39,19 +41,19 @@ func TestKymaInput(t *testing.T) {
 	pipelineWithKymaOnly := testutils.NewMetricPipelineBuilder().
 		WithName(pipelineNameKymaOnly).
 		WithOTLPInput(false).
-		WithOTLPOutput(testutils.OTLPEndpoint(backendKymaOnly.Endpoint())).
+		WithOTLPOutput(testutils.OTLPEndpoint(backendKymaOnly.EndpointHTTP())).
 		Build()
 
 	// one pipeline with Kyma input and additional namespace included. Here we expect metrics from generatorNs
 	pipelineWithKymaAndOtlp := testutils.NewMetricPipelineBuilder().
 		WithName(pipelineNameKymaAndOtlp).
 		WithOTLPInput(true, testutils.IncludeNamespaces(generatorNs)).
-		WithOTLPOutput(testutils.OTLPEndpoint(backendKymaAndOtlp.Endpoint())).
+		WithOTLPOutput(testutils.OTLPEndpoint(backendKymaAndOtlp.EndpointHTTP())).
 		Build()
 
 	resources := []client.Object{
-		kitk8s.NewNamespace(backendNs).K8sObject(),
-		kitk8s.NewNamespace(generatorNs).K8sObject(),
+		kitk8sobjects.NewNamespace(backendNs).K8sObject(),
+		kitk8sobjects.NewNamespace(generatorNs).K8sObject(),
 		&pipelineWithKymaOnly,
 		&pipelineWithKymaAndOtlp,
 		telemetrygen.NewPod(generatorNs, telemetrygen.SignalTypeMetrics).K8sObject(),
@@ -59,9 +61,6 @@ func TestKymaInput(t *testing.T) {
 	resources = append(resources, backendKymaOnly.K8sObjects()...)
 	resources = append(resources, backendKymaAndOtlp.K8sObjects()...)
 
-	t.Cleanup(func() {
-		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-	})
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.BackendReachable(t, backendKymaOnly)
@@ -71,7 +70,7 @@ func TestKymaInput(t *testing.T) {
 	if suite.DebugObjectsEnabled() {
 		objects := []client.Object{
 			&pipelineWithKymaOnly,
-			kitk8s.NewConfigMap(kitkyma.MetricGatewayBaseName, kitkyma.SystemNamespaceName).K8sObject(),
+			kitk8sobjects.NewConfigMap(names.MetricGateway, kitkyma.SystemNamespaceName).K8sObject(),
 		}
 		Expect(kitk8s.ObjectsToFile(t, objects...)).To(Succeed())
 	}
@@ -145,7 +144,7 @@ func checkTelemetryModuleMetricState(t *testing.T, g Gomega, body []byte) {
 			HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", kitkyma.SystemNamespaceName)),
 			HaveResourceAttributes(HaveKeyWithValue("k8s.resource.name", "default")),
 			HaveResourceAttributes(HaveKeyWithValue("k8s.resource.group", "operator.kyma-project.io")),
-			HaveResourceAttributes(HaveKeyWithValue("k8s.resource.version", "v1alpha1")),
+			HaveResourceAttributes(HaveKeyWithValue("k8s.resource.version", "v1beta1")),
 			HaveResourceAttributes(HaveKeyWithValue("k8s.resource.kind", "telemetries")),
 			HaveScopeName(Equal(common.InstrumentationScopeKyma)),
 			HaveScopeVersion(SatisfyAny(
@@ -168,7 +167,7 @@ func checkTelemtryModuleMetricsConditions(t *testing.T, g Gomega, body []byte, t
 			HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", kitkyma.SystemNamespaceName)),
 			HaveResourceAttributes(HaveKeyWithValue("k8s.resource.name", "default")),
 			HaveResourceAttributes(HaveKeyWithValue("k8s.resource.group", "operator.kyma-project.io")),
-			HaveResourceAttributes(HaveKeyWithValue("k8s.resource.version", "v1alpha1")),
+			HaveResourceAttributes(HaveKeyWithValue("k8s.resource.version", "v1beta1")),
 			HaveResourceAttributes(HaveKeyWithValue("k8s.resource.kind", "telemetries")),
 			HaveScopeName(Equal(common.InstrumentationScopeKyma)),
 			HaveScopeVersion(SatisfyAny(
@@ -190,7 +189,7 @@ func checkMetricPipelineMetricsConditions(t *testing.T, g Gomega, body []byte, t
 			HaveMetricAttributes(HaveKey("reason")),
 			HaveResourceAttributes(HaveKeyWithValue("k8s.resource.name", pipelineName)),
 			HaveResourceAttributes(HaveKeyWithValue("k8s.resource.group", "telemetry.kyma-project.io")),
-			HaveResourceAttributes(HaveKeyWithValue("k8s.resource.version", "v1alpha1")),
+			HaveResourceAttributes(HaveKeyWithValue("k8s.resource.version", "v1beta1")),
 			HaveResourceAttributes(HaveKeyWithValue("k8s.resource.kind", "metricpipelines")),
 			HaveScopeName(Equal(common.InstrumentationScopeKyma)),
 			HaveScopeVersion(SatisfyAny(

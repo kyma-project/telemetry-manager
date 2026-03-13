@@ -1,4 +1,10 @@
 extensions:
+    cgroupruntime:
+        gomaxprocs:
+            enabled: false
+        gomemlimit:
+            enabled: true
+            ratio: 0.8
     file_storage:
         create_directory: true
         directory: /tmp/telemetry-log-agent/file-log-receiver
@@ -14,12 +20,12 @@ service:
             processors:
                 - memory_limiter
                 - transform/set-instrumentation-scope-runtime
-                - k8sattributes
-                - resource/insert-cluster-attributes
+                - k8s_attributes
+                - transform/insert-cluster-attributes
                 - service_enrichment
-                - resource/drop-kyma-attributes
+                - transform/drop-kyma-attributes
             exporters:
-                - otlp/test
+                - otlp_grpc/test
     telemetry:
         metrics:
             readers:
@@ -34,6 +40,7 @@ service:
     extensions:
         - health_check
         - pprof
+        - cgroupruntime
         - file_storage
 receivers:
     filelog/test:
@@ -156,7 +163,7 @@ receivers:
             - id: noop
               type: noop
 processors:
-    k8sattributes:
+    k8s_attributes:
         auth_type: serviceAccount
         passthrough: false
         extract:
@@ -201,24 +208,22 @@ processors:
         check_interval: 5s
         limit_percentage: 80
         spike_limit_percentage: 25
-    resource/drop-kyma-attributes:
-        attributes:
-            - action: delete
-              pattern: kyma.*
-    resource/insert-cluster-attributes:
-        attributes:
-            - action: insert
-              key: k8s.cluster.name
-              value: test-cluster
-            - action: insert
-              key: k8s.cluster.uid
-            - action: insert
-              key: cloud.provider
-              value: azure
     service_enrichment:
         resource_attributes:
             - kyma.kubernetes_io_app_name
             - kyma.app_name
+    transform/drop-kyma-attributes:
+        error_mode: ignore
+        log_statements:
+            - statements:
+                - delete_matching_keys(resource.attributes, "kyma.*")
+    transform/insert-cluster-attributes:
+        error_mode: ignore
+        log_statements:
+            - statements:
+                - set(resource.attributes["k8s.cluster.name"], "test-cluster") where resource.attributes["k8s.cluster.name"] == nil or resource.attributes["k8s.cluster.name"] == ""
+                - set(resource.attributes["k8s.cluster.uid"], "") where resource.attributes["k8s.cluster.uid"] == nil or resource.attributes["k8s.cluster.uid"] == ""
+                - set(resource.attributes["cloud.provider"], "azure") where resource.attributes["cloud.provider"] == nil or resource.attributes["cloud.provider"] == ""
     transform/set-instrumentation-scope-runtime:
         error_mode: ignore
         log_statements:
@@ -226,7 +231,7 @@ processors:
                 - set(scope.version, "main")
                 - set(scope.name, "io.kyma-project.telemetry/runtime")
 exporters:
-    otlp/test:
+    otlp_grpc/test:
         endpoint: ${OTLP_ENDPOINT_TEST}
         tls:
             insecure: true

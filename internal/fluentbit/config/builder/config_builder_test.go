@@ -8,7 +8,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
@@ -47,7 +47,7 @@ func TestMakeConfig(t *testing.T) {
 	sut := NewFluentBitConfigBuilder(fakeClient)
 
 	t.Run("file config", func(t *testing.T) {
-		pipelines := []telemetryv1alpha1.LogPipeline{
+		pipelines := []telemetryv1beta1.LogPipeline{
 			testutils.NewLogPipelineBuilder().
 				WithName("test-pipeline").
 				WithFile("test-file", "test-filecontent").
@@ -106,7 +106,7 @@ func TestBuildEnvConfigSecret(t *testing.T) {
 	sut := NewFluentBitConfigBuilder(fakeClient)
 
 	t.Run("host from secret", func(t *testing.T) {
-		pipelines := []telemetryv1alpha1.LogPipeline{
+		pipelines := []telemetryv1beta1.LogPipeline{
 			testutils.NewLogPipelineBuilder().
 				WithName("test-pipeline").
 				WithHTTPOutput(
@@ -140,7 +140,7 @@ func TestBuildEnvConfigSecret(t *testing.T) {
 	})
 
 	t.Run("basic auth from secret", func(t *testing.T) {
-		pipelines := []telemetryv1alpha1.LogPipeline{
+		pipelines := []telemetryv1beta1.LogPipeline{
 			testutils.NewLogPipelineBuilder().
 				WithName("test-pipeline").
 				WithHTTPOutput(
@@ -173,7 +173,7 @@ func TestBuildEnvConfigSecret(t *testing.T) {
 	})
 
 	t.Run("multiple log pipelines", func(t *testing.T) {
-		pipelines := []telemetryv1alpha1.LogPipeline{
+		pipelines := []telemetryv1beta1.LogPipeline{
 			testutils.NewLogPipelineBuilder().
 				WithName("test-pipeline").
 				WithFile("test-file", "test-filecontent").
@@ -222,7 +222,7 @@ func TestBuildEnvConfigSecret(t *testing.T) {
 	})
 
 	t.Run("should return error when secret reference is not found", func(t *testing.T) {
-		pipelines := []telemetryv1alpha1.LogPipeline{
+		pipelines := []telemetryv1beta1.LogPipeline{
 			testutils.NewLogPipelineBuilder().
 				WithName("test-pipeline").
 				WithHTTPOutput(
@@ -239,7 +239,7 @@ func TestBuildEnvConfigSecret(t *testing.T) {
 	})
 
 	t.Run("should return error when key is not found in a valid host secret", func(t *testing.T) {
-		pipelines := []telemetryv1alpha1.LogPipeline{
+		pipelines := []telemetryv1beta1.LogPipeline{
 			testutils.NewLogPipelineBuilder().
 				WithName("test-pipeline").
 				WithHTTPOutput(
@@ -273,7 +273,7 @@ func TestBuildTLSConfigSecret(t *testing.T) {
 	sut := NewFluentBitConfigBuilder(fakeClient)
 
 	t.Run("tls from string", func(t *testing.T) {
-		pipelines := []telemetryv1alpha1.LogPipeline{
+		pipelines := []telemetryv1beta1.LogPipeline{
 			testutils.NewLogPipelineBuilder().
 				WithName("test-pipeline").
 				WithHTTPOutput(
@@ -304,28 +304,28 @@ func TestBuildTLSConfigSecret(t *testing.T) {
 	})
 
 	t.Run("tls from secret ref", func(t *testing.T) {
-		pipelines := []telemetryv1alpha1.LogPipeline{
+		pipelines := []telemetryv1beta1.LogPipeline{
 			testutils.NewLogPipelineBuilder().
 				WithName("test-pipeline").
 				WithHTTPOutput(
-					testutils.HTTPClientTLS(telemetryv1alpha1.LogPipelineOutputTLS{
-						CA: &telemetryv1alpha1.ValueType{
-							ValueFrom: &telemetryv1alpha1.ValueFromSource{
-								SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+					testutils.HTTPClientTLS(telemetryv1beta1.OutputTLS{
+						CA: &telemetryv1beta1.ValueType{
+							ValueFrom: &telemetryv1beta1.ValueFromSource{
+								SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 									Key:       ca,
 									Name:      tlsSecretName,
 									Namespace: secretNamespace},
 							}},
-						Cert: &telemetryv1alpha1.ValueType{
-							ValueFrom: &telemetryv1alpha1.ValueFromSource{
-								SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+						Cert: &telemetryv1beta1.ValueType{
+							ValueFrom: &telemetryv1beta1.ValueFromSource{
+								SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 									Key:       cert,
 									Name:      tlsSecretName,
 									Namespace: secretNamespace},
 							}},
-						Key: &telemetryv1alpha1.ValueType{
-							ValueFrom: &telemetryv1alpha1.ValueFromSource{
-								SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+						Key: &telemetryv1beta1.ValueType{
+							ValueFrom: &telemetryv1beta1.ValueFromSource{
+								SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 									Key:       key,
 									Name:      tlsSecretName,
 									Namespace: secretNamespace},
@@ -355,28 +355,28 @@ func TestBuildTLSConfigSecret(t *testing.T) {
 	})
 
 	t.Run("should return error when key is not found in a valid tls secret", func(t *testing.T) {
-		pipelines := []telemetryv1alpha1.LogPipeline{
+		pipelines := []telemetryv1beta1.LogPipeline{
 			testutils.NewLogPipelineBuilder().
 				WithName("test-pipeline").
 				WithHTTPOutput(
-					testutils.HTTPClientTLS(telemetryv1alpha1.LogPipelineOutputTLS{
-						CA: &telemetryv1alpha1.ValueType{
-							ValueFrom: &telemetryv1alpha1.ValueFromSource{
-								SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+					testutils.HTTPClientTLS(telemetryv1beta1.OutputTLS{
+						CA: &telemetryv1beta1.ValueType{
+							ValueFrom: &telemetryv1beta1.ValueFromSource{
+								SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 									Key:       "test-invalid-ca-value",
 									Name:      tlsSecretName,
 									Namespace: secretNamespace},
 							}},
-						Cert: &telemetryv1alpha1.ValueType{
-							ValueFrom: &telemetryv1alpha1.ValueFromSource{
-								SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+						Cert: &telemetryv1beta1.ValueType{
+							ValueFrom: &telemetryv1beta1.ValueFromSource{
+								SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 									Key:       cert,
 									Name:      tlsSecretName,
 									Namespace: secretNamespace},
 							}},
-						Key: &telemetryv1alpha1.ValueType{
-							ValueFrom: &telemetryv1alpha1.ValueFromSource{
-								SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+						Key: &telemetryv1beta1.ValueType{
+							ValueFrom: &telemetryv1beta1.ValueFromSource{
+								SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
 									Key:       key,
 									Name:      tlsSecretName,
 									Namespace: secretNamespace},

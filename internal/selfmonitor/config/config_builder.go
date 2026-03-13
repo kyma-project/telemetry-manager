@@ -8,17 +8,16 @@ import (
 const defaultInterval = 30 * time.Second
 
 type BuilderConfig struct {
-	ScrapeNamespace   string
-	WebhookURL        string
-	WebhookScheme     string
-	ConfigPath        string
-	AlertRuleFileName string
+	ScrapeNamespace        string
+	AlertmanagerWebhookURL string
+	ConfigPath             string
+	AlertRuleFileName      string
 }
 
 func MakeConfig(builderCfg BuilderConfig) Config {
 	promConfig := Config{}
 	promConfig.GlobalConfig = makeGlobalConfig()
-	promConfig.AlertingConfig = makeAlertConfig(builderCfg.WebhookURL, builderCfg.WebhookScheme)
+	promConfig.AlertingConfig = makeAlertConfig(builderCfg.AlertmanagerWebhookURL)
 	promConfig.RuleFiles = []string{builderCfg.ConfigPath + builderCfg.AlertRuleFileName}
 	promConfig.ScrapeConfigs = makeScrapeConfig(builderCfg.ScrapeNamespace)
 
@@ -32,10 +31,10 @@ func makeGlobalConfig() GlobalConfig {
 	}
 }
 
-func makeAlertConfig(webhookURL, webhookScheme string) AlertingConfig {
+func makeAlertConfig(webhookURL string) AlertingConfig {
 	return AlertingConfig{
 		AlertManagers: []AlertManagerConfig{{
-			Scheme: webhookScheme,
+			Scheme: "https",
 			StaticConfigs: []AlertManagerStaticConfig{{
 				Targets: []string{webhookURL},
 			}},
