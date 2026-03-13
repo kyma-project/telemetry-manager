@@ -14,6 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	autoscalingvpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -37,13 +38,9 @@ const (
 )
 
 var (
-	metricAgentCPURequest    = resource.MustParse("15m")
-	metricAgentMemoryRequest = resource.MustParse("50Mi")
-	metricAgentMemoryLimit   = resource.MustParse("1200Mi")
-
-	logAgentCPURequest    = resource.MustParse("15m")
-	logAgentMemoryRequest = resource.MustParse("50Mi")
-	logAgentMemoryLimit   = resource.MustParse("1200Mi")
+	agentCPURequest    = resource.MustParse("15m")
+	agentMemoryRequest = resource.MustParse("64Mi")
+	agentMemoryLimit   = resource.MustParse("1200Mi")
 )
 
 type AgentApplierDeleter struct {
@@ -61,6 +58,9 @@ type AgentApplierDeleter struct {
 
 type AgentApplyOptions struct {
 	IstioEnabled        bool
+	VpaCRDExists        bool
+	VpaEnabled          bool
+	VpaMaxAllowedMemory resource.Quantity
 	CollectorConfigYAML string
 	CollectorEnvVars    map[string][]byte
 	// BackendPorts is needed only for the metric agent to set the value of the annotation "traffic.sidecar.istio.io/includeOutboundPorts"
@@ -84,9 +84,9 @@ func NewLogAgentApplierDeleter(globals config.Global, collectorImage, priorityCl
 	}
 
 	collectorResources := commonresources.MakeResourceRequirements(
-		logAgentMemoryLimit,
-		logAgentMemoryRequest,
-		logAgentCPURequest,
+		agentMemoryLimit,
+		agentMemoryRequest,
+		agentCPURequest,
 	)
 
 	return &AgentApplierDeleter{
@@ -135,9 +135,9 @@ func NewMetricAgentApplierDeleter(globals config.Global, image, priorityClassNam
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentNodeName, fieldPathNodeName),
 			commonresources.WithFIPSGoDebugEnvVar(globals.OperateInFIPSMode()),
 			commonresources.WithResources(commonresources.MakeResourceRequirements(
-				metricAgentMemoryLimit,
-				metricAgentMemoryRequest,
-				metricAgentCPURequest,
+				agentMemoryLimit,
+				agentMemoryRequest,
+				agentCPURequest,
 			)),
 			commonresources.WithVolumeMounts([]corev1.VolumeMount{makeIstioCertVolumeMount()}),
 		},
@@ -181,10 +181,31 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 		return fmt.Errorf("failed to create daemonset: %w", err)
 	}
 
+	// Create/update/delete VPA CR only if VPA CRD exists in cluster
+	if opts.VpaCRDExists {
+		if opts.VpaEnabled {
+			vpa := makeVPA(name, commonresources.LabelValueK8sComponentAgent, "DaemonSet", agentMemoryRequest, opts.VpaMaxAllowedMemory)
+			if err := k8sutils.CreateOrUpdateVPA(ctx, c, vpa); err != nil {
+				return fmt.Errorf("failed to create VPA: %w", err)
+			}
+		} else {
+			// If VPA is disabled, ensure that any existing VPA is cleaned up
+			vpa := &autoscalingvpav1.VerticalPodAutoscaler{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      name.Name,
+					Namespace: name.Namespace,
+				},
+			}
+			if err := k8sutils.DeleteObject(ctx, c, vpa); err != nil {
+				return fmt.Errorf("failed to delete VPA: %w", err)
+			}
+		}
+	}
+
 	return nil
 }
 
-func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Client) error {
+func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Client, vpaCRDExists bool) error {
 	// Attempt to clean up as many resources as possible and avoid early return when one of the deletions fails
 	var allErrors error = nil
 
@@ -216,6 +237,13 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete daemonset: %w", err))
 	}
 
+	if vpaCRDExists {
+		vpa := autoscalingvpav1.VerticalPodAutoscaler{ObjectMeta: objectMeta}
+		if err := k8sutils.DeleteObject(ctx, c, &vpa); err != nil {
+			allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete VPA: %w", err))
+		}
+	}
+
 	return allErrors
 }
 
@@ -230,6 +258,17 @@ func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string, opts A
 
 	containerOpts := slices.Clone(aad.containerOpts)
 	containerOpts = append(containerOpts, commonresources.WithClusterTrustBundleVolumeMount(aad.globals.ClusterTrustBundleName()))
+
+	// When VPA is active, override the memory limit to 2x the memory request so the VPA can scale within a tighter range.
+	// This replaces the default high memory limit (agentMemoryLimit) set during construction.
+	// For more details, check the ADR: https://github.com/kyma-project/telemetry-manager/blob/main/docs/contributor/arch/032-vertical-pod-autoscaler-VPA-architecture.md
+	if opts.VpaCRDExists && opts.VpaEnabled {
+		vpaMemoryLimit := agentMemoryRequest.DeepCopy()
+		vpaMemoryLimit.Add(agentMemoryRequest)
+		containerOpts = append(containerOpts, commonresources.WithResources(
+			commonresources.MakeResourceRequirements(vpaMemoryLimit, agentMemoryRequest, agentCPURequest),
+		))
+	}
 
 	podSpec := makePodSpec(aad.baseName, aad.image, podOpts, containerOpts)
 
