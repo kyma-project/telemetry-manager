@@ -431,3 +431,100 @@ func TestGetServiceEnrichmentFromTelemetryOrDefault(t *testing.T) {
 		})
 	}
 }
+
+func TestIsVpaEnabledInTelemetry(t *testing.T) {
+	const testNamespace = "kyma-system"
+
+	scheme := runtime.NewScheme()
+	_ = operatorv1beta1.AddToScheme(scheme)
+
+	tests := []struct {
+		name      string
+		telemetry *operatorv1beta1.Telemetry
+		expected  bool
+	}{
+		{
+			name:      "telemetry not found returns false",
+			telemetry: nil,
+			expected:  false,
+		},
+		{
+			name: "annotations nil returns false",
+			telemetry: &operatorv1beta1.Telemetry{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "default",
+					Namespace: testNamespace,
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "annotation key not present returns false",
+			telemetry: &operatorv1beta1.Telemetry{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "default",
+					Namespace: testNamespace,
+					Annotations: map[string]string{
+						"other-annotation": "some-value",
+					},
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "annotation value true returns true",
+			telemetry: &operatorv1beta1.Telemetry{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "default",
+					Namespace: testNamespace,
+					Annotations: map[string]string{
+						"telemetry.kyma-project.io/enable-vpa": "true",
+					},
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "annotation value false returns false",
+			telemetry: &operatorv1beta1.Telemetry{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "default",
+					Namespace: testNamespace,
+					Annotations: map[string]string{
+						"telemetry.kyma-project.io/enable-vpa": "false",
+					},
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "annotation value invalid returns false",
+			telemetry: &operatorv1beta1.Telemetry{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "default",
+					Namespace: testNamespace,
+					Annotations: map[string]string{
+						"telemetry.kyma-project.io/enable-vpa": "invalid",
+					},
+				},
+			},
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := t.Context()
+
+			clientBuilder := fake.NewClientBuilder().WithScheme(scheme)
+			if tt.telemetry != nil {
+				clientBuilder = clientBuilder.WithObjects(tt.telemetry)
+			}
+
+			fakeClient := clientBuilder.Build()
+
+			result := IsVpaEnabledInTelemetry(ctx, fakeClient, testNamespace)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
