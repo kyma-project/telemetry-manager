@@ -32,10 +32,16 @@ type BuildOptions struct {
 	Enrichments                 *operatorv1beta1.EnrichmentSpec
 	// ServiceEnrichment specifies the service enrichment strategy to be used (temporary)
 	ServiceEnrichment string
+	// VpaActive indicates whether VPA is active (VPA CRD exists and VPA is enabled via annotation in Telemetry CR).
+	VpaActive bool
 }
 
 func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1beta1.LogPipeline, opts BuildOptions) (*common.Config, common.EnvVars, error) {
 	b.Config = common.NewConfig()
+	if opts.VpaActive {
+		b.Config.DisableGoMemLimit()
+	}
+
 	b.AddExtension(common.ComponentIDFileStorageExtension, &common.FileStorageExtensionConfig{
 		CreateDirectory: true,
 		Directory:       filepath.Join(otelcollector.CheckpointVolumePath, checkpointVolumePathSubdir),

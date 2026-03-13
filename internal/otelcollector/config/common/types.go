@@ -51,7 +51,7 @@ type CGroupRuntimeGoMaxProcs struct {
 
 type CGroupRuntimeGoMemLimit struct {
 	Enabled bool    `yaml:"enabled"`
-	Ratio   float64 `yaml:"ratio"`
+	Ratio   float64 `yaml:"ratio,omitempty"`
 }
 
 // =============================================================================
