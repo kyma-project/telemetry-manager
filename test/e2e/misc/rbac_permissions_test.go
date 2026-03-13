@@ -158,7 +158,6 @@ func testEditorPermissions(g Gomega, testNS string) {
 		// Finalizers - editor CAN update finalizers (finalizers part of metadata, granted by update permission on resource)
 		checkFinalizerPermissions(g, user, resourceType, "Editor", true)
 	}
-
 }
 
 func testAdminPermissions(g Gomega, testNS string) {
@@ -171,7 +170,6 @@ func testAdminPermissions(g Gomega, testNS string) {
 		// Finalizers - admin CAN update finalizers
 		checkFinalizerPermissions(g, user, resourceType, "Admin", true)
 	}
-
 }
 
 func testTelemetryOnlyEditorPermissions(g Gomega, testNS string) {

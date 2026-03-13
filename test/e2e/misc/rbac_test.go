@@ -130,5 +130,4 @@ func testEditRole(t *testing.T) {
 			ContainElement("update"),
 		),
 	})))
-
 }
