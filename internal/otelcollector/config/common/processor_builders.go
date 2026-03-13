@@ -11,7 +11,7 @@ import (
 // KUBERNETES ATTRIBUTES PROCESSOR BUILDERS
 // =============================================================================
 
-func K8sAttributesProcessorConfig(enrichments *operatorv1beta1.EnrichmentSpec, useOTelServiceEnrichment bool) *K8sAttributesProcessor {
+func K8sAttributesProcessor(enrichments *operatorv1beta1.EnrichmentSpec, useOTelServiceEnrichment bool) *K8sAttributesProcessorConfig {
 	k8sAttributes := []string{
 		"k8s.pod.name",
 		"k8s.node.name",
@@ -40,7 +40,7 @@ func K8sAttributesProcessorConfig(enrichments *operatorv1beta1.EnrichmentSpec, u
 		},
 	}
 
-	return &K8sAttributesProcessor{
+	return &K8sAttributesProcessorConfig{
 		AuthType:    "serviceAccount",
 		Passthrough: false,
 		Extract: ExtractK8sMetadata{
@@ -124,9 +124,9 @@ func extractPodLabels(enrichments *operatorv1beta1.EnrichmentSpec) []ExtractLabe
 // RESOURCE PROCESSOR BUILDERS
 // =============================================================================
 
-// ResolveServiceNameConfig creates a service enrichment processor configuration
-func ResolveServiceNameConfig() *ServiceEnrichmentProcessor {
-	return &ServiceEnrichmentProcessor{
+// ResolveServiceName creates a service enrichment processor configuration
+func ResolveServiceName() *ServiceEnrichmentProcessorConfig {
+	return &ServiceEnrichmentProcessorConfig{
 		ResourceAttributes: []string{
 			kymaK8sIOAppName,
 			kymaAppName,
@@ -138,25 +138,25 @@ func ResolveServiceNameConfig() *ServiceEnrichmentProcessor {
 // FILTER PROCESSOR BUILDERS
 // =============================================================================
 
-// LogFilterProcessorConfig creates a FilterProcessor for logs with error_mode set to "ignore"
-func LogFilterProcessorConfig(filters []telemetryv1beta1.FilterSpec) *FilterProcessor {
-	return &FilterProcessor{
+// LogFilterProcessor creates a FilterProcessorConfig for logs with error_mode set to "ignore"
+func LogFilterProcessor(filters []telemetryv1beta1.FilterSpec) *FilterProcessorConfig {
+	return &FilterProcessorConfig{
 		ErrorMode: defaultFilterProcessorErrorMode,
 		Logs:      filters,
 	}
 }
 
-// MetricFilterProcessorConfig creates a FilterProcessor for metrics with the default error mode
-func MetricFilterProcessorConfig(filters []telemetryv1beta1.FilterSpec) *FilterProcessor {
-	return &FilterProcessor{
+// MetricFilterProcessor creates a FilterProcessorConfig for metrics with the default error mode
+func MetricFilterProcessor(filters []telemetryv1beta1.FilterSpec) *FilterProcessorConfig {
+	return &FilterProcessorConfig{
 		ErrorMode: defaultFilterProcessorErrorMode,
 		Metrics:   filters,
 	}
 }
 
-// TraceFilterProcessorConfig creates a FilterProcessor for traces with the default error mode
-func TraceFilterProcessorConfig(filters []telemetryv1beta1.FilterSpec) *FilterProcessor {
-	return &FilterProcessor{
+// TraceFilterProcessor creates a FilterProcessorConfig for traces with the default error mode
+func TraceFilterProcessor(filters []telemetryv1beta1.FilterSpec) *FilterProcessorConfig {
+	return &FilterProcessorConfig{
 		ErrorMode: defaultFilterProcessorErrorMode,
 		Traces:    filters,
 	}
@@ -166,25 +166,25 @@ func TraceFilterProcessorConfig(filters []telemetryv1beta1.FilterSpec) *FilterPr
 // TRANSFORM PROCESSOR BUILDERS
 // =============================================================================
 
-// LogTransformProcessorConfig creates a TransformProcessor for logs with error_mode set to "ignore"
-func LogTransformProcessorConfig(statements []TransformProcessorStatements) *TransformProcessor {
-	return &TransformProcessor{
+// LogTransformProcessor creates a TransformProcessorConfig for logs with error_mode set to "ignore"
+func LogTransformProcessor(statements []TransformProcessorStatements) *TransformProcessorConfig {
+	return &TransformProcessorConfig{
 		ErrorMode:     defaultTransformProcessorErrorMode,
 		LogStatements: statements,
 	}
 }
 
-// MetricTransformProcessorConfig creates a TransformProcessor for metrics with the default error mode
-func MetricTransformProcessorConfig(statements []TransformProcessorStatements) *TransformProcessor {
-	return &TransformProcessor{
+// MetricTransformProcessor creates a TransformProcessorConfig for metrics with the default error mode
+func MetricTransformProcessor(statements []TransformProcessorStatements) *TransformProcessorConfig {
+	return &TransformProcessorConfig{
 		ErrorMode:        defaultTransformProcessorErrorMode,
 		MetricStatements: statements,
 	}
 }
 
-// TraceTransformProcessorConfig creates a TransformProcessor for traces with the default error mode
-func TraceTransformProcessorConfig(statements []TransformProcessorStatements) *TransformProcessor {
-	return &TransformProcessor{
+// TraceTransformProcessor creates a TransformProcessorConfig for traces with the default error mode
+func TraceTransformProcessor(statements []TransformProcessorStatements) *TransformProcessorConfig {
+	return &TransformProcessorConfig{
 		ErrorMode:       defaultTransformProcessorErrorMode,
 		TraceStatements: statements,
 	}
@@ -246,8 +246,8 @@ func DropUnknownServiceNameProcessorStatements() []TransformProcessorStatements 
 	}}
 }
 
-// InstrumentationScopeProcessorConfig creates a transform processor for instrumentation scope
-func InstrumentationScopeProcessorConfig(instrumentationScopeVersion string, inputSource ...InputSourceType) *TransformProcessor {
+// InstrumentationScopeProcessor creates a transform processor for instrumentation scope
+func InstrumentationScopeProcessor(instrumentationScopeVersion string, inputSource ...InputSourceType) *TransformProcessorConfig {
 	statements := []string{}
 	transformProcessorStatements := []TransformProcessorStatements{}
 
@@ -259,7 +259,7 @@ func InstrumentationScopeProcessorConfig(instrumentationScopeVersion string, inp
 		Statements: statements,
 	})
 
-	return MetricTransformProcessorConfig(transformProcessorStatements)
+	return MetricTransformProcessor(transformProcessorStatements)
 }
 
 // KymaInputNameProcessorStatements creates processor statements for the transform processor that sets the custom `kyma.input.name` attribute

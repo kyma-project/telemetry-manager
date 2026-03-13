@@ -4,7 +4,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 )
 
-type FileLogReceiver struct {
+type FileLogReceiverConfig struct {
 	Exclude         []string              `yaml:"exclude,omitempty"`
 	Include         []string              `yaml:"include,omitempty"`
 	IncludeFileName *bool                 `yaml:"include_file_name,omitempty"`
