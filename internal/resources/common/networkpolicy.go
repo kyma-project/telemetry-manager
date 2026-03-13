@@ -21,7 +21,7 @@ type NetworkPolicyOption func(*networkingv1.NetworkPolicy)
 // - Egress type is added only if egress rules exist
 func MakeNetworkPolicy(
 	name types.NamespacedName,
-	selector map[string]string,
+	selectorLabels map[string]string,
 	opts ...NetworkPolicyOption,
 ) *networkingv1.NetworkPolicy {
 	networkPolicy := &networkingv1.NetworkPolicy{
@@ -31,7 +31,7 @@ func MakeNetworkPolicy(
 		},
 		Spec: networkingv1.NetworkPolicySpec{
 			PodSelector: metav1.LabelSelector{
-				MatchLabels: selector,
+				MatchLabels: selectorLabels,
 			},
 		},
 	}
