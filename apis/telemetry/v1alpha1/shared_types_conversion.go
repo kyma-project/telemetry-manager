@@ -59,3 +59,9 @@ func Convert_v1beta1_OTLPInput_To_v1alpha1_OTLPInput(in *telemetryv1beta1.OTLPIn
 
 	return nil
 }
+
+// Convert_v1beta1_OTLPOutput_To_v1alpha1_OTLPOutput converts v1beta1.OTLPOutput to v1alpha1.OTLPOutput.
+// The Compression field is intentionally not converted: it is a v1beta1-only feature not available in v1alpha1.
+func Convert_v1beta1_OTLPOutput_To_v1alpha1_OTLPOutput(in *telemetryv1beta1.OTLPOutput, out *OTLPOutput, s apiconversion.Scope) error {
+	return autoConvert_v1beta1_OTLPOutput_To_v1alpha1_OTLPOutput(in, out, s)
+}

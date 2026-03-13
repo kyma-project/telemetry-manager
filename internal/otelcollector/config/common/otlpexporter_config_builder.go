@@ -64,6 +64,7 @@ func otlpExporter(otlpOutput *telemetryv1beta1.OTLPOutput, pipelineName string, 
 		Endpoint:     fmt.Sprintf("${%s}", otlpEndpointVariable),
 		Headers:      headers,
 		TLS:          tls,
+		Compression:  string(otlpOutput.Compression),
 		SendingQueue: sendingQueue,
 		RetryOnFailure: RetryOnFailure{
 			Enabled:         true,
