@@ -47,6 +47,7 @@ type Reconciler struct {
 	gatewayConfigBuilder      GatewayConfigBuilder
 	gatewayProber             Prober
 	istioStatusChecker        IstioStatusChecker
+	vpaStatusChecker          VpaStatusChecker
 	pipelineLock              PipelineLock
 	pipelineValidator         *Validator
 	errToMessageConverter     ErrorToMessageConverter
@@ -129,6 +130,13 @@ func WithGatewayProber(prober Prober) Option {
 func WithIstioStatusChecker(checker IstioStatusChecker) Option {
 	return func(r *Reconciler) {
 		r.istioStatusChecker = checker
+	}
+}
+
+// WithVpaStatusChecker sets the VPA status checker.
+func WithVpaStatusChecker(checker VpaStatusChecker) Option {
+	return func(r *Reconciler) {
+		r.vpaStatusChecker = checker
 	}
 }
 
@@ -229,7 +237,12 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 	if len(reconcilablePipelinesRequiringAgents) == 0 {
 		logf.FromContext(ctx).V(1).Info("cleaning up log agent resources: no log pipelines require an agent")
 
-		if err = r.agentApplierDeleter.DeleteResources(ctx, r.Client); err != nil {
+		vpaCRDExists, err := r.vpaStatusChecker.VpaCRDExists(ctx, r.Client)
+		if err != nil {
+			return fmt.Errorf("failed to check VPA status: %w", err)
+		}
+
+		if err = r.agentApplierDeleter.DeleteResources(ctx, r.Client, vpaCRDExists); err != nil {
 			return fmt.Errorf("failed to delete agent resources: %w", err)
 		}
 	}
@@ -404,6 +417,13 @@ func (r *Reconciler) reconcileLogAgent(ctx context.Context, pipeline *telemetryv
 		return fmt.Errorf("failed to get kube-system namespace for cluster UID: %w", err)
 	}
 
+	vpaCRDExists, err := r.vpaStatusChecker.VpaCRDExists(ctx, r.Client)
+	if err != nil {
+		return fmt.Errorf("failed to check VPA status: %w", err)
+	}
+
+	isVpaEnabled := telemetryutils.IsVpaEnabledInTelemetry(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
+
 	agentConfig, envVars, err := r.agentConfigBuilder.Build(ctx, allPipelines, logagent.BuildOptions{
 		InstrumentationScopeVersion: r.globals.Version(),
 		AgentNamespace:              r.globals.TargetNamespace(),
@@ -414,6 +434,7 @@ func (r *Reconciler) reconcileLogAgent(ctx context.Context, pipeline *telemetryv
 		},
 		Enrichments:       enrichments,
 		ServiceEnrichment: telemetryutils.GetServiceEnrichmentFromTelemetryOrDefault(ctx, telemetryOptions),
+		VpaActive:         vpaCRDExists && isVpaEnabled,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to build agent config: %w", err)
@@ -429,11 +450,19 @@ func (r *Reconciler) reconcileLogAgent(ctx context.Context, pipeline *telemetryv
 		return fmt.Errorf("failed to check Istio status: %w", err)
 	}
 
+	vpaMaxAllowedMemory, err := k8sutils.CalculateVpaMaxAllowedMemory(ctx, r.Client)
+	if err != nil {
+		return fmt.Errorf("failed to calculate VPA max allowed memory: %w", err)
+	}
+
 	if err := r.agentApplierDeleter.ApplyResources(
 		ctx,
 		k8sclients.NewOwnerReferenceSetter(r.Client, pipeline),
 		otelcollector.AgentApplyOptions{
 			IstioEnabled:        isIstioActive,
+			VpaCRDExists:        vpaCRDExists,
+			VpaEnabled:          isVpaEnabled,
+			VpaMaxAllowedMemory: vpaMaxAllowedMemory,
 			CollectorConfigYAML: string(agentConfigYAML),
 			CollectorEnvVars:    envVars,
 		},

@@ -137,7 +137,7 @@ func newTestReconciler(client client.Client, opts ...Option) *Reconciler {
 
 	agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
 	agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil)
+	agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	gatewayFlowHealthProberMock := &mocks.GatewayFlowHealthProber{}
 	gatewayFlowHealthProberMock.On("Probe", mock.Anything, mock.Anything).
@@ -151,6 +151,8 @@ func newTestReconciler(client client.Client, opts ...Option) *Reconciler {
 	agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 	istioStatusCheckerStub := &stubs.IstioStatusChecker{IsActive: false}
+
+	vpaStatusCheckerStub := &stubs.VpaStatusChecker{CRDExists: false}
 
 	pipelineLock := &mocks.PipelineLock{}
 	pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
@@ -175,6 +177,7 @@ func newTestReconciler(client client.Client, opts ...Option) *Reconciler {
 		WithGatewayConfigBuilder(gatewayConfigBuilderMock),
 		WithGatewayProber(gatewayProberStub),
 		WithIstioStatusChecker(istioStatusCheckerStub),
+		WithVpaStatusChecker(vpaStatusCheckerStub),
 		WithPipelineLock(pipelineLock),
 		WithPipelineValidator(pipelineValidator),
 		WithErrorToMessageConverter(errToMsg),

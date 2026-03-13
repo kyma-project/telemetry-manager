@@ -185,7 +185,7 @@ func newTestReconciler(client client.Client, opts ...any) (*testReconciler, func
 
 	agentApplierDeleter := &mocks.AgentApplierDeleter{}
 	agentApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
-	agentApplierDeleter.On("DeleteResources", mock.Anything, mock.Anything).Return(nil).Maybe()
+	agentApplierDeleter.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
 
 	gatewayConfigBuilder := &mocks.GatewayConfigBuilder{}
 	gatewayConfigBuilder.On("Build", mock.Anything, mock.Anything, mock.Anything).Return(&common.Config{}, nil, nil).Maybe()
@@ -223,6 +223,7 @@ func newTestReconciler(client client.Client, opts ...any) (*testReconciler, func
 		WithGatewayFlowHealthProber(gatewayFlowHealthProber),
 		WithAgentFlowHealthProber(agentFlowHealthProber),
 		WithIstioStatusChecker(&stubs.IstioStatusChecker{IsActive: false}),
+		WithVpaStatusChecker(&stubs.VpaStatusChecker{CRDExists: false}),
 		WithOverridesHandler(overridesHandler),
 		WithPipelineLock(pipelineLock),
 		WithPipelineSyncer(pipelineSync),

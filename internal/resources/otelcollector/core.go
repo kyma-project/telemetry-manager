@@ -6,12 +6,15 @@ import (
 	"fmt"
 	"strconv"
 
+	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	autoscalingvpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
@@ -174,6 +177,46 @@ func makeMetricsService(name types.NamespacedName) *corev1.Service {
 			},
 			Selector: commonresources.DefaultSelector(name.Name),
 			Type:     corev1.ServiceTypeClusterIP,
+		},
+	}
+}
+
+func makeVPA(name types.NamespacedName, componentType string, targetRefKind string, minAllowedMemory, maxAllowedMemory resource.Quantity) *autoscalingvpav1.VerticalPodAutoscaler {
+	updateMode := autoscalingvpav1.UpdateModeInPlaceOrRecreate
+	controlledValues := autoscalingvpav1.ContainerControlledValuesRequestsAndLimits
+
+	return &autoscalingvpav1.VerticalPodAutoscaler{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name.Name,
+			Namespace: name.Namespace,
+			Labels:    commonresources.MakeDefaultLabels(name.Name, componentType),
+		},
+		Spec: autoscalingvpav1.VerticalPodAutoscalerSpec{
+			TargetRef: &autoscalingv1.CrossVersionObjectReference{
+				APIVersion: "apps/v1",
+				Kind:       targetRefKind,
+				Name:       name.Name,
+			},
+			UpdatePolicy: &autoscalingvpav1.PodUpdatePolicy{
+				UpdateMode: &updateMode,
+			},
+			ResourcePolicy: &autoscalingvpav1.PodResourcePolicy{
+				ContainerPolicies: []autoscalingvpav1.ContainerResourcePolicy{
+					{
+						ContainerName: containerName,
+						ControlledResources: &[]corev1.ResourceName{
+							corev1.ResourceMemory,
+						},
+						MinAllowed: corev1.ResourceList{
+							corev1.ResourceMemory: minAllowedMemory,
+						},
+						MaxAllowed: corev1.ResourceList{
+							corev1.ResourceMemory: maxAllowedMemory,
+						},
+						ControlledValues: &controlledValues,
+					},
+				},
+			},
 		},
 	}
 }

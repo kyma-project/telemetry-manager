@@ -121,6 +121,7 @@ func TestAgentHealthCondition(t *testing.T) {
 		})
 	}
 }
+
 func TestGatewayFlowHealthCondition(t *testing.T) {
 	tests := []struct {
 		name            string
@@ -304,6 +305,7 @@ func TestAgentFlowHealthCondition(t *testing.T) {
 		})
 	}
 }
+
 func TestOTTLSpecValidation(t *testing.T) {
 	tests := []struct {
 		name        string

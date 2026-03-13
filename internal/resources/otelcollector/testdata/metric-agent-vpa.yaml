@@ -119,7 +119,7 @@ spec:
             port: 13133
         resources:
           limits:
-            memory: 1200Mi
+            memory: 128Mi
           requests:
             cpu: 15m
             memory: 64Mi
@@ -178,6 +178,36 @@ status:
   desiredNumberScheduled: 0
   numberMisscheduled: 0
   numberReady: 0
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  labels:
+    app.kubernetes.io/component: agent
+    app.kubernetes.io/managed-by: telemetry-manager
+    app.kubernetes.io/name: telemetry-metric-agent
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
+  name: telemetry-metric-agent
+  namespace: kyma-system
+spec:
+  resourcePolicy:
+    containerPolicies:
+    - containerName: collector
+      controlledResources:
+      - memory
+      controlledValues: RequestsAndLimits
+      maxAllowed:
+        memory: 1Gi
+      minAllowed:
+        memory: 64Mi
+  targetRef:
+    apiVersion: apps/v1
+    kind: DaemonSet
+    name: telemetry-metric-agent
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+status: {}
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
