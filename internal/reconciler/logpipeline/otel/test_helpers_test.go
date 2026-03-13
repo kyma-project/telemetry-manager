@@ -152,6 +152,8 @@ func newTestReconciler(client client.Client, opts ...Option) *Reconciler {
 
 	istioStatusCheckerStub := &stubs.IstioStatusChecker{IsActive: false}
 
+	vpaStatusCheckerStub := &stubs.VpaStatusChecker{CRDExists: false}
+
 	pipelineLock := &mocks.PipelineLock{}
 	pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 	pipelineLock.On("ReleaseLock", mock.Anything).Return(nil)
@@ -175,6 +177,7 @@ func newTestReconciler(client client.Client, opts ...Option) *Reconciler {
 		WithGatewayConfigBuilder(gatewayConfigBuilderMock),
 		WithGatewayProber(gatewayProberStub),
 		WithIstioStatusChecker(istioStatusCheckerStub),
+		WithVpaStatusChecker(vpaStatusCheckerStub),
 		WithPipelineLock(pipelineLock),
 		WithPipelineValidator(pipelineValidator),
 		WithErrorToMessageConverter(errToMsg),
