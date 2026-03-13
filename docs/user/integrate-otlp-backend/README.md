@@ -25,7 +25,7 @@ For the minimal pipeline configuration, you only specify an OTLP endpoint; thoug
 
 ## Choose a Protocol
 
-The default protocol for shipping the data to a backend is gRPC. If your backend requires the HTTP protocol instead, set the **protocol** attribute to `http`. Based on this setting, the gateway chooses the exporter: `otlp` for gRPC (the default) or `otlphttp` for HTTP.
+The default protocol for shipping the data to a backend is gRPC. If your backend requires the HTTP protocol instead, set the **protocol** attribute to `http`. Based on this setting, the gateway chooses the exporter: `otlp_grpc` for gRPC (the default) or `otlp_http` for HTTP.
 
 Ensure the port in your endpoint URL is correct for the chosen protocol.
 
@@ -36,6 +36,19 @@ Ensure the port in your endpoint URL is correct for the chosen protocol.
       protocol: http
       endpoint:
         value: https://backend.example.com:4318
+```
+
+## Configure Compression
+
+By default, the OpenTelemetry Collector uses `gzip` compression when exporting data. To use a different compression algorithm, set the **compression** attribute to one of the supported values: `gzip`, `snappy`, `zstd`, or `none` (to disable compression explicitly).
+
+```yaml
+...
+  output:
+    otlp:
+      compression: none
+      endpoint:
+        value: https://backend.example.com:4317
 ```
 
 ## Set Up Authentication

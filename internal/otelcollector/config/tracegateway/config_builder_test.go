@@ -125,6 +125,17 @@ func TestBuildConfig(t *testing.T) {
 			},
 		},
 		{
+			name:           "pipeline with snappy compression",
+			goldenFileName: "compression.yaml",
+			pipelines: []telemetryv1beta1.TracePipeline{
+				testutils.NewTracePipelineBuilder().
+					WithName("test").
+					WithOTLPOutput(
+						testutils.OTLPCompression(telemetryv1beta1.OTLPCompressionSnappy),
+					).Build(),
+			},
+		},
+		{
 			name:           "pipeline using OAuth2 authentication",
 			goldenFileName: "oauth2-authentication.yaml",
 			pipelines: []telemetryv1beta1.TracePipeline{

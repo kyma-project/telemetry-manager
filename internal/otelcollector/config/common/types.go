@@ -129,6 +129,7 @@ type OTLPExporterConfig struct {
 	Endpoint        string            `yaml:"endpoint,omitempty"`
 	Headers         map[string]string `yaml:"headers,omitempty"`
 	TLS             TLS               `yaml:"tls,omitempty"`
+	Compression     string            `yaml:"compression,omitempty"`
 	SendingQueue    SendingQueue      `yaml:"sending_queue,omitempty"`
 	RetryOnFailure  RetryOnFailure    `yaml:"retry_on_failure,omitempty"`
 	Auth            Auth              `yaml:"auth,omitempty"`
