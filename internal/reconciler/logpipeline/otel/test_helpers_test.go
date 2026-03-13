@@ -137,7 +137,7 @@ func newTestReconciler(client client.Client, opts ...Option) *Reconciler {
 
 	agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
 	agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil)
+	agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	gatewayFlowHealthProberMock := &mocks.GatewayFlowHealthProber{}
 	gatewayFlowHealthProberMock.On("Probe", mock.Anything, mock.Anything).
