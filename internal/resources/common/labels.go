@@ -1,30 +1,32 @@
+package common
+
 // Label Architecture
 //
 // Labels are applied to Kubernetes resources through two mechanisms:
 //
-// 1. Labeler interceptor (k8sclients.NewLabeler): Automatically stamps DefaultLabels
-//    on every top-level object metadata during Create/Update/Patch. This covers
-//    Deployments, DaemonSets, Services, ConfigMaps, NetworkPolicies, etc.
+//  1. Labeler interceptor (k8sclients.NewLabeler): Automatically stamps DefaultLabels
+//     on every top-level object metadata during Create/Update/Patch. This covers
+//     Deployments, DaemonSets, Services, ConfigMaps, NetworkPolicies, etc.
 //
-// 2. Explicit assignment in resource builders: Required for labels that the Labeler
-//    cannot reach or that are resource-specific. This includes:
-//    - PodTemplateSpec labels (nested inside workloads, invisible to the Labeler)
-//    - Selector labels (must be set explicitly in spec.selector, service.spec.selector, etc.)
-//    - Functional pod labels (e.g., sidecar.istio.io/inject to control Istio injection)
-//    - Service discovery labels (e.g., telemetry.kyma-project.io/self-monitor on services
-//      to mark them for scraping by the self-monitor)
-//    - NetworkPolicy traffic labels (e.g., telemetry.kyma-project.io/log-ingest on pods
-//      to allow traffic matching in deny-all setups)
-//    - User-provided labels from globals.AdditionalWorkloadLabels()
+//  2. Explicit assignment in resource builders: Required for labels that the Labeler
+//     cannot reach or that are resource-specific. This includes:
+//     - Pod template labels (nested inside workloads, invisible to the Labeler)
+//     - Selector labels (must be set explicitly in spec.selector, service.spec.selector, etc.)
+//     - Functional pod labels (e.g., sidecar.istio.io/inject to control Istio injection)
+//     - Service discovery labels (e.g., telemetry.kyma-project.io/self-monitor on services
+//     to mark them for scraping by the self-monitor)
+//     - NetworkPolicy traffic labels (e.g., telemetry.kyma-project.io/log-ingest on pods
+//     to allow traffic matching in deny-all setups)
+//     - User-provided labels from globals.AdditionalWorkloadLabels()
 //
 // Label hierarchy (each level includes all labels from the level above):
 //
-//	ModuleLabels (3 labels)
+//	ModuleLabels (static)
 //	  kyma-project.io/module: telemetry
 //	  app.kubernetes.io/part-of: telemetry
 //	  app.kubernetes.io/managed-by: telemetry-manager
 //
-//	DefaultLabels (5 labels) = ModuleLabels + name + component
+//	DefaultLabels = ModuleLabels + name + component
 //	  app.kubernetes.io/name: <baseName>
 //	  app.kubernetes.io/component: <agent|gateway|monitor|controller>
 //
@@ -35,11 +37,11 @@
 //
 // Who applies what:
 //
-//	Top-level object labels:  Labeler stamps DefaultLabels automatically
-//	Pod template labels:      Builders set DefaultLabels + functional labels + user labels explicitly
-//	Selector labels:          Builders set DefaultSelector explicitly
-//	Additional user labels:   Builders copy from globals.AdditionalWorkloadLabels()
-package common
+//		Top-level object labels:      Labeler stamps DefaultLabels automatically
+//		Pod template labels:          Builders set DefaultLabels + functional labels + user labels explicitly
+//		Selector labels:              Builders set DefaultSelector explicitly
+//	    Additional resource labels:   Builders set labels explicitly
+//		Additional user labels:       Builders copy from globals.AdditionalWorkloadLabels()
 
 const (
 	// LabelValueTrue can be used in all labels that require "true" as value
