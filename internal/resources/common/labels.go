@@ -1,5 +1,48 @@
 package common
 
+// Label Architecture
+//
+// Labels are applied to Kubernetes resources through two mechanisms:
+//
+//  1. Labeler interceptor (k8sclients.NewLabeler): Automatically stamps DefaultLabels
+//     on every top-level object metadata during Create/Update/Patch. This covers
+//     Deployments, DaemonSets, Services, ConfigMaps, NetworkPolicies, etc.
+//
+//  2. Explicit assignment in resource builders: Required for labels that the Labeler
+//     cannot reach or that are resource-specific. This includes:
+//     - Pod template labels (nested inside workloads, invisible to the Labeler)
+//     - Selector labels (must be set explicitly in spec.selector, service.spec.selector, etc.)
+//     - Functional pod labels (e.g., sidecar.istio.io/inject to control Istio injection)
+//     - Service discovery labels (e.g., telemetry.kyma-project.io/self-monitor on services
+//     to mark them for scraping by the self-monitor)
+//     - NetworkPolicy traffic labels (e.g., telemetry.kyma-project.io/log-ingest on pods
+//     to allow traffic matching in deny-all setups)
+//     - User-provided labels from globals.AdditionalWorkloadLabels()
+//
+// Label hierarchy (each level includes all labels from the level above):
+//
+//	ModuleLabels (static)
+//	  kyma-project.io/module: telemetry
+//	  app.kubernetes.io/part-of: telemetry
+//	  app.kubernetes.io/managed-by: telemetry-manager
+//
+//	DefaultLabels = ModuleLabels + name + component
+//	  app.kubernetes.io/name: <baseName>
+//	  app.kubernetes.io/component: <agent|gateway|monitor|controller>
+//
+//	DefaultSelector (1 label) ⊂ DefaultLabels
+//	  app.kubernetes.io/name: <baseName>
+//	  Used for: spec.selector in Deployments/DaemonSets, spec.selector in Services,
+//	  spec.podSelector in NetworkPolicies, pod anti-affinity, PeerAuthentication
+//
+// Who applies what:
+//
+//		Top-level object labels:      Labeler stamps DefaultLabels automatically
+//		Pod template labels:          Builders set DefaultLabels + functional labels + user labels explicitly
+//		Selector labels:              Builders set DefaultSelector explicitly
+//	    Additional resource labels:   Builders set labels explicitly
+//		Additional user labels:       Builders copy from globals.AdditionalWorkloadLabels()
+
 const (
 	// LabelValueTrue can be used in all labels that require "true" as value
 	LabelValueTrue = "true"
@@ -48,18 +91,30 @@ const (
 	LabelValueTelemetryMetricsScraping = "allowed"
 )
 
-func MakeDefaultLabels(baseName string, componentLabelValue string) map[string]string {
+// ModuleLabels returns the base labels that identify a resource as belonging to the telemetry module.
+// These labels are shared by all telemetry-managed resources regardless of component type.
+func ModuleLabels() map[string]string {
 	return map[string]string{
-		LabelKeyK8sName:      baseName,
 		LabelKeyKymaModule:   LabelValueKymaModule,
 		LabelKeyK8sPartOf:    LabelValueK8sPartOf,
 		LabelKeyK8sManagedBy: LabelValueK8sManagedBy,
-		LabelKeyK8sComponent: componentLabelValue,
 	}
 }
 
-func MakeDefaultSelectorLabels(baseName string) map[string]string {
+// DefaultLabels returns the standard set of labels for a telemetry component resource.
+// It extends ModuleLabels with the component's base name and type (e.g., "agent", "gateway", "monitor").
+func DefaultLabels(componentBaseName string, componentType string) map[string]string {
+	l := ModuleLabels()
+	l[LabelKeyK8sName] = componentBaseName
+	l[LabelKeyK8sComponent] = componentType
+
+	return l
+}
+
+// DefaultSelector returns the minimal label set used for pod selectors in Deployments, DaemonSets,
+// Services, and NetworkPolicies. This must be a subset of DefaultLabels to ensure selectors match.
+func DefaultSelector(componentBaseName string) map[string]string {
 	return map[string]string{
-		LabelKeyK8sName: baseName,
+		LabelKeyK8sName: componentBaseName,
 	}
 }
