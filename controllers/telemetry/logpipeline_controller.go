@@ -56,7 +56,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/secretwatch"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	predicateutils "github.com/kyma-project/telemetry-manager/internal/utils/predicate"
-	telemetryutils "github.com/kyma-project/telemetry-manager/internal/utils/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
 	"github.com/kyma-project/telemetry-manager/internal/validators/ottl"
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
@@ -207,13 +206,17 @@ func (r *LogPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		return fmt.Errorf("failed to check VPA status: %w", err)
 	}
 
-	isVpaEnabled := telemetryutils.IsVpaEnabledInTelemetry(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
-
+	// Only watch PeerAuthentication CR if Istio is active
+	// otherwise, manager will have errors if the PeerAuthentication CRD is not present in the cluster
 	if isIstioActive {
 		ownedResourceTypesToWatch = append(ownedResourceTypesToWatch, &istiosecurityclientv1.PeerAuthentication{})
 	}
 
-	if vpaCRDExists && isVpaEnabled {
+	// Only watch VPA CR if VPA CRD exists in the cluster
+	// otherwise, manager will have errors if the VPA CRD is not present in the cluster
+	// NOTE: controller needs to watch VPA CR even if the annotation to enable VPA is not present in Telemetry CR,
+	// because the annotation can be added later and this function is only called once during the setup of the controller.
+	if vpaCRDExists {
 		ownedResourceTypesToWatch = append(ownedResourceTypesToWatch, &autoscalingvpav1.VerticalPodAutoscaler{})
 	}
 
