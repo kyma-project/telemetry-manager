@@ -343,7 +343,7 @@ func setupManager(globals config.Global) (manager.Manager, error) {
 		&admissionregistrationv1.ValidatingWebhookConfiguration{}: scopedByLabel(),
 		&admissionregistrationv1.MutatingWebhookConfiguration{}:   scopedByLabel(),
 
-		// ConfigMap: mixed scoping (shoot-info by name in kube-system, managed ConfigMaps and overrides by namespace)
+		// configmap: mixed scoping (shoot-info by name in kube-system, managed configmaps and overrides by namespace)
 		// No label filter for target namespace: overrides ConfigMap is user-created without the module label
 		&corev1.ConfigMap{}: {
 			Namespaces: map[string]cache.Config{
