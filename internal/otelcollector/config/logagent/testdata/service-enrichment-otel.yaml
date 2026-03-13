@@ -1,4 +1,10 @@
 extensions:
+    cgroupruntime:
+        gomaxprocs:
+            enabled: false
+        gomemlimit:
+            enabled: true
+            ratio: 0.8
     file_storage:
         create_directory: true
         directory: /tmp/telemetry-log-agent/file-log-receiver
@@ -15,7 +21,7 @@ service:
                 - memory_limiter
                 - transform/set-instrumentation-scope-runtime
                 - transform/drop-unknown-service-name
-                - k8sattributes
+                - k8s_attributes
                 - transform/insert-cluster-attributes
                 - transform/drop-kyma-attributes
             exporters:
@@ -34,6 +40,7 @@ service:
     extensions:
         - health_check
         - pprof
+        - cgroupruntime
         - file_storage
 receivers:
     filelog/test:
@@ -156,7 +163,7 @@ receivers:
             - id: noop
               type: noop
 processors:
-    k8sattributes:
+    k8s_attributes:
         auth_type: serviceAccount
         passthrough: false
         extract:
