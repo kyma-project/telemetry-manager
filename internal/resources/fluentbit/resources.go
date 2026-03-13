@@ -69,7 +69,6 @@ type AgentApplyOptions struct {
 }
 
 type AgentApplierDeleter struct {
-	extraPodLabels          map[string]string
 	fluentBitImage          string
 	exporterImage           string
 	chownInitContainerImage string
@@ -87,12 +86,8 @@ type AgentApplierDeleter struct {
 
 func NewFluentBitApplierDeleter(global config.Global, namespace, fbImage, exporterImage, chownInitContainerImage, priorityClassName string) *AgentApplierDeleter {
 	return &AgentApplierDeleter{
-		globals:   global,
-		namespace: namespace,
-		extraPodLabels: map[string]string{
-			commonresources.LabelKeyIstioInject:        commonresources.LabelValueTrue,
-			commonresources.LabelKeyTelemetryLogExport: commonresources.LabelValueTrue,
-		},
+		globals:                 global,
+		namespace:               namespace,
 		fluentBitImage:          fbImage,
 		exporterImage:           exporterImage,
 		chownInitContainerImage: chownInitContainerImage,
@@ -290,9 +285,10 @@ func (aad *AgentApplierDeleter) makeDaemonSet(namespace string, checksum string)
 
 	// Pod labels need default labels explicitly since the labeler only sets top-level object labels
 	podLabels := make(map[string]string)
-	maps.Copy(podLabels, aad.globals.AdditionalWorkloadLabels())
 	maps.Copy(podLabels, defaultFluentBitLabels())
-	maps.Copy(podLabels, aad.extraPodLabels)
+	maps.Copy(podLabels, aad.globals.AdditionalWorkloadLabels())
+	podLabels[commonresources.LabelKeyIstioInject] = commonresources.LabelValueTrue
+	podLabels[commonresources.LabelKeyTelemetryLogExport] = commonresources.LabelValueTrue
 
 	// Resource annotations: only additional annotations from globals
 	resourceAnnotations := make(map[string]string)
