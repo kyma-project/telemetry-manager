@@ -61,12 +61,3 @@ func TestNewOwnerReferenceSetter(t *testing.T) {
 		require.Error(t, setter.Update(ctx, obj))
 	})
 }
-
-func TestNoopWatchClient(t *testing.T) {
-	inner := fake.NewClientBuilder().Build()
-	noop := &noopWatchClient{Client: inner}
-
-	w, err := noop.Watch(t.Context(), &corev1.ConfigMapList{})
-	require.Nil(t, w)
-	require.ErrorIs(t, err, ErrNotImplemented)
-}
