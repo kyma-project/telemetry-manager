@@ -40,6 +40,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	autoscalingvpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	"k8s.io/client-go/discovery"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -70,6 +71,7 @@ import (
 	selfmonitorwebhook "github.com/kyma-project/telemetry-manager/internal/selfmonitor/webhook"
 	"github.com/kyma-project/telemetry-manager/internal/storagemigration"
 	loggerutils "github.com/kyma-project/telemetry-manager/internal/utils/logger"
+	"github.com/kyma-project/telemetry-manager/internal/vpastatus"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
 	logpipelinewebhookv1alpha1 "github.com/kyma-project/telemetry-manager/webhook/logpipeline/v1alpha1"
 	logpipelinewebhookv1beta1 "github.com/kyma-project/telemetry-manager/webhook/logpipeline/v1beta1"
@@ -138,6 +140,7 @@ func init() {
 	utilruntime.Must(istionetworkingclientv1.AddToScheme(scheme))
 	utilruntime.Must(telemetryv1beta1.AddToScheme(scheme))
 	utilruntime.Must(operatorv1beta1.AddToScheme(scheme))
+	utilruntime.Must(autoscalingvpav1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -174,8 +177,8 @@ func run() error {
 		config.WithVersion(build.GitTag()),
 		config.WithImagePullSecretName(imagePullSecretName),
 		config.WithClusterTrustBundleName(clusterTrustBundleName),
-		config.WithAdditionalLabels(additionalLabels),
-		config.WithAdditionalAnnotations(additionalAnnotations),
+		config.WithAdditionalWorkloadLabels(additionalLabels),
+		config.WithAdditionalWorkloadAnnotations(additionalAnnotations),
 		config.WithDeployOTLPGateway(featureflags.IsEnabled(featureflags.DeployOTLPGateway)),
 		config.WithUnlimitedPipelines(featureflags.IsEnabled(featureflags.UnlimitedPipelineCount)),
 	)
@@ -295,15 +298,26 @@ func setupControllersAndWebhooks(mgr manager.Manager, globals config.Global, env
 
 func setupManager(globals config.Global) (manager.Manager, error) {
 	restConfig := ctrl.GetConfigOrDie()
+	ctx := context.Background()
 
 	discoveryClient, err := discovery.NewDiscoveryClientForConfig(restConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create discovery client: %w", err)
 	}
 
-	isIstioActive, err := istiostatus.NewChecker(discoveryClient).IsIstioActive(context.Background())
+	isIstioActive, err := istiostatus.NewChecker(discoveryClient).IsIstioActive(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check Istio status: %w", err)
+	}
+
+	k8sClient, err := client.New(restConfig, client.Options{Scheme: scheme})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create client: %w", err)
+	}
+
+	vpaCRDExists, err := vpastatus.NewChecker(restConfig).VpaCRDExists(ctx, k8sClient)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check VPA status: %w", err)
 	}
 
 	cacheOptions := map[client.Object]cache.ByObject{
@@ -323,8 +337,16 @@ func setupManager(globals config.Global) (manager.Manager, error) {
 		&admissionregistrationv1.MutatingWebhookConfiguration{}:   {Label: setLabelSelector()},
 	}
 
+	// Only restrict storage of PeerAuthentication CRs in the cache if Istio is active
+	// otherwise, manager will have errors if the PeerAuthentication CRD is not present in the cluster
 	if isIstioActive {
 		cacheOptions[&istiosecurityclientv1.PeerAuthentication{}] = cache.ByObject{Field: setNamespaceFieldSelector(globals)}
+	}
+
+	// Only restrict storage of VPA CRs in the cache if VPA CRD exists in the cluster
+	// otherwise, manager will have errors if the VPA CRD is not present in the cluster
+	if vpaCRDExists {
+		cacheOptions[&autoscalingvpav1.VerticalPodAutoscaler{}] = cache.ByObject{Label: setLabelSelector()}
 	}
 
 	mgr, err := ctrl.NewManager(restConfig, ctrl.Options{

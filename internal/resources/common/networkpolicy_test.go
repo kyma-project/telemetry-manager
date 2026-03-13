@@ -17,7 +17,6 @@ import (
 
 func TestMakeNetworkPolicy(t *testing.T) {
 	name := types.NamespacedName{Name: "test-component", Namespace: "test-namespace"}
-	labels := map[string]string{"app": "test"}
 	selectorLabels := map[string]string{"app.kubernetes.io/name": "test-component"}
 
 	tests := []struct {
@@ -83,7 +82,7 @@ func TestMakeNetworkPolicy(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			np := MakeNetworkPolicy(name, labels, selectorLabels, tt.opts...)
+			np := MakeNetworkPolicy(name, selectorLabels, tt.opts...)
 
 			objects := []client.Object{np}
 			bytes, err := testutils.MarshalYAML(scheme, objects)
