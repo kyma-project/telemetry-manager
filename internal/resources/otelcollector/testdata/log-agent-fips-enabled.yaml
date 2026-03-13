@@ -190,11 +190,7 @@ metadata:
   namespace: kyma-system
 spec:
   egress:
-  - to:
-    - ipBlock:
-        cidr: 0.0.0.0/0
-    - ipBlock:
-        cidr: ::/0
+  - {}
   podSelector:
     matchLabels:
       app.kubernetes.io/name: telemetry-log-agent

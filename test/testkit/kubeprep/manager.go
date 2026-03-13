@@ -257,6 +257,7 @@ func buildHelmValues(cfg Config, imageOverride string) map[string]any {
 			"container": map[string]any{
 				"env": map[string]any{
 					"operateInFipsMode": cfg.OperateInFIPSMode,
+					"appLogLevel":       "debug",
 				},
 			},
 		},
