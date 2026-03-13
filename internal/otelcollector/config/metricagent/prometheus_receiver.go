@@ -27,24 +27,26 @@ const (
 const (
 	scrapeInterval           = 30 * time.Second
 	sampleLimit              = 50000
+	bodySizeLimit            = "20MB"
 	appPodsJobName           = "app-pods"
 	appServicesJobName       = "app-services"
 	appServicesSecureJobName = "app-services-secure"
 )
 
 // prometheusPodsReceiverConfig creates a Prometheus configuration for scraping Pods that are annotated with prometheus.io annotations.
-func prometheusPodsReceiverConfig() *PrometheusReceiver {
-	var config PrometheusReceiver
+func prometheusPodsReceiverConfig() *PrometheusReceiverConfig {
+	var config PrometheusReceiverConfig
 
-	scrapeConfig := ScrapeConfig{
+	scrapeConfig := Scrape{
 		ScrapeInterval:             scrapeInterval,
 		SampleLimit:                sampleLimit,
+		BodySizeLimit:              bodySizeLimit,
 		KubernetesDiscoveryConfigs: discoveryConfigWithNodeSelector(RolePod),
 		JobName:                    appPodsJobName,
 		RelabelConfigs:             prometheusPodsRelabelConfigs(),
 	}
 
-	config.Config.ScrapeConfigs = append(config.Config.ScrapeConfigs, scrapeConfig)
+	config.Prometheus.ScrapeConfigs = append(config.Prometheus.ScrapeConfigs, scrapeConfig)
 
 	return &config
 }
@@ -53,10 +55,10 @@ func prometheusPodsReceiverConfig() *PrometheusReceiver {
 // If Istio is enabled, an additional scrape job config is generated (suffixed with -secure) to scrape annotated Services over HTTPS using Istio certificate.
 // Istio certificate is expected to be mounted at the provided path using the proxy.istio.io/config annotation.
 // See more: https://istio.io/latest/docs/ops/integrations/prometheus/#tls-settings
-func prometheusServicesReceiverConfig(opts BuildOptions) *PrometheusReceiver {
-	var config PrometheusReceiver
+func prometheusServicesReceiverConfig(opts BuildOptions) *PrometheusReceiverConfig {
+	var config PrometheusReceiverConfig
 
-	baseScrapeConfig := ScrapeConfig{
+	baseScrapeConfig := Scrape{
 		ScrapeInterval:             scrapeInterval,
 		SampleLimit:                sampleLimit,
 		KubernetesDiscoveryConfigs: discoveryConfigWithNodeSelector(RoleEndpoints),
@@ -65,15 +67,15 @@ func prometheusServicesReceiverConfig(opts BuildOptions) *PrometheusReceiver {
 	httpScrapeConfig := baseScrapeConfig
 	httpScrapeConfig.JobName = appServicesJobName
 	httpScrapeConfig.RelabelConfigs = prometheusEndpointsRelabelConfigs(false)
-	config.Config.ScrapeConfigs = append(config.Config.ScrapeConfigs, httpScrapeConfig)
+	config.Prometheus.ScrapeConfigs = append(config.Prometheus.ScrapeConfigs, httpScrapeConfig)
 
 	// If Istio is active, generate an additional scrape config for scraping annotated Services over HTTPS
 	if opts.IstioActive {
 		httpsScrapeConfig := baseScrapeConfig
 		httpsScrapeConfig.JobName = appServicesSecureJobName
 		httpsScrapeConfig.RelabelConfigs = prometheusEndpointsRelabelConfigs(true)
-		httpsScrapeConfig.TLSConfig = tlsConfig(opts.IstioCertPath)
-		config.Config.ScrapeConfigs = append(config.Config.ScrapeConfigs, httpsScrapeConfig)
+		httpsScrapeConfig.TLS = tlsConfig(opts.IstioCertPath)
+		config.Prometheus.ScrapeConfigs = append(config.Prometheus.ScrapeConfigs, httpsScrapeConfig)
 	}
 
 	return &config
@@ -84,8 +86,8 @@ func prometheusServicesReceiverConfig(opts BuildOptions) *PrometheusReceiver {
 // See more: https://prometheus.io/docs/prometheus/latest/configuration/configuration/#pod.
 //
 // Only Pods without Istio sidecars are selected.
-func prometheusPodsRelabelConfigs() []RelabelConfig {
-	return []RelabelConfig{
+func prometheusPodsRelabelConfigs() []Relabel {
+	return []Relabel{
 		keepIfRunningOnSameNode(NodeAffiliatedPod),
 		keepIfScrapingEnabled(AnnotatedPod),
 		dropIfPodNotRunning(),
@@ -104,8 +106,8 @@ func prometheusPodsRelabelConfigs() []RelabelConfig {
 //
 // If requireHTTPS is true, only Endpoints backed by Pods with Istio sidecars or those explicitly marked with prometheus.io/scheme=http annotations are selected.
 // If requireHTTPS is false, only Endpoints backed by Pods wuthout Istio sidecars or those marked with prometheus.io/scheme=https annotation are selcted.
-func prometheusEndpointsRelabelConfigs(requireHTTPS bool) []RelabelConfig {
-	relabelConfigs := []RelabelConfig{
+func prometheusEndpointsRelabelConfigs(requireHTTPS bool) []Relabel {
+	relabelConfigs := []Relabel{
 		keepIfRunningOnSameNode(NodeAffiliatedEndpoint),
 		keepIfScrapingEnabled(AnnotatedService),
 		dropIfPodNotRunning(),
@@ -128,12 +130,12 @@ func prometheusEndpointsRelabelConfigs(requireHTTPS bool) []RelabelConfig {
 		inferServiceFromMetaLabel())
 }
 
-func tlsConfig(istioCertPath string) *TLSConfig {
+func tlsConfig(istioCertPath string) *TLS {
 	istioCAFile := filepath.Join(istioCertPath, "root-cert.pem")
 	istioCertFile := filepath.Join(istioCertPath, "cert-chain.pem")
 	istioKeyFile := filepath.Join(istioCertPath, "key.pem")
 
-	return &TLSConfig{
+	return &TLS{
 		CAFile:             istioCAFile,
 		CertFile:           istioCertFile,
 		KeyFile:            istioKeyFile,
@@ -141,28 +143,28 @@ func tlsConfig(istioCertPath string) *TLSConfig {
 	}
 }
 
-func prometheusIstioReceiverConfig(envoyMetricsEnabled bool) *PrometheusReceiver {
+func prometheusIstioReceiverConfig(envoyMetricsEnabled bool) *PrometheusReceiverConfig {
 	metricNames := "istio_.*"
 	if envoyMetricsEnabled {
 		metricNames = strings.Join([]string{"envoy_.*", metricNames}, "|")
 	}
 
-	return &PrometheusReceiver{
-		Config: PrometheusConfig{
-			ScrapeConfigs: []ScrapeConfig{
+	return &PrometheusReceiverConfig{
+		Prometheus: PrometheusScrape{
+			ScrapeConfigs: []Scrape{
 				{
 					JobName:                    "istio-proxy",
 					SampleLimit:                sampleLimit,
 					MetricsPath:                "/stats/prometheus",
 					ScrapeInterval:             scrapeInterval,
 					KubernetesDiscoveryConfigs: discoveryConfigWithNodeSelector(RolePod),
-					RelabelConfigs: []RelabelConfig{
+					RelabelConfigs: []Relabel{
 						keepIfRunningOnSameNode(NodeAffiliatedPod),
 						keepIfIstioProxy(),
 						keepIfContainerWithEnvoyPort(),
 						dropIfPodNotRunning(),
 					},
-					MetricRelabelConfigs: []RelabelConfig{
+					MetricRelabelConfigs: []Relabel{
 						{
 							SourceLabels: []string{"__name__"},
 							Regex:        metricNames,
@@ -175,32 +177,32 @@ func prometheusIstioReceiverConfig(envoyMetricsEnabled bool) *PrometheusReceiver
 	}
 }
 
-func keepIfRunningOnSameNode(nodeAffiliated NodeAffiliatedResource) RelabelConfig {
-	return RelabelConfig{
+func keepIfRunningOnSameNode(nodeAffiliated NodeAffiliatedResource) Relabel {
+	return Relabel{
 		SourceLabels: []string{fmt.Sprintf("__meta_kubernetes_%s_node_name", nodeAffiliated)},
 		Regex:        fmt.Sprintf("${%s}", common.EnvVarCurrentNodeName),
 		Action:       Keep,
 	}
 }
 
-func keepIfScrapingEnabled(annotated AnnotatedResource) RelabelConfig {
-	return RelabelConfig{
+func keepIfScrapingEnabled(annotated AnnotatedResource) Relabel {
+	return Relabel{
 		SourceLabels: []string{fmt.Sprintf("__meta_kubernetes_%s_annotation_prometheus_io_scrape", annotated)},
 		Regex:        "true",
 		Action:       Keep,
 	}
 }
 
-func keepIfIstioProxy() RelabelConfig {
-	return RelabelConfig{
+func keepIfIstioProxy() Relabel {
+	return Relabel{
 		SourceLabels: []string{"__meta_kubernetes_pod_container_name"},
 		Action:       Keep,
 		Regex:        "istio-proxy",
 	}
 }
 
-func keepIfContainerWithEnvoyPort() RelabelConfig {
-	return RelabelConfig{
+func keepIfContainerWithEnvoyPort() Relabel {
+	return Relabel{
 		SourceLabels: []string{"__meta_kubernetes_pod_container_port_name"},
 		Action:       Keep,
 		Regex:        "http-envoy-prom",
@@ -215,8 +217,8 @@ func keepIfContainerWithEnvoyPort() RelabelConfig {
 //
 // Note: The HTTPS scheme can be manually overridden by setting the "prometheus.io/scheme"
 // annotation on the Pod or the Service.
-func inferSchemeFromIstioInjectedLabel() RelabelConfig {
-	return RelabelConfig{
+func inferSchemeFromIstioInjectedLabel() Relabel {
+	return Relabel{
 		SourceLabels: []string{"__meta_kubernetes_pod_label_security_istio_io_tlsMode"},
 		Action:       Replace,
 		TargetLabel:  "__scheme__",
@@ -225,8 +227,8 @@ func inferSchemeFromIstioInjectedLabel() RelabelConfig {
 	}
 }
 
-func inferSchemeFromAnnotation(annotated AnnotatedResource) RelabelConfig {
-	return RelabelConfig{
+func inferSchemeFromAnnotation(annotated AnnotatedResource) Relabel {
+	return Relabel{
 		SourceLabels: []string{fmt.Sprintf("__meta_kubernetes_%s_annotation_prometheus_io_scheme", annotated)},
 		Action:       Replace,
 		Regex:        "(https?)",
@@ -234,8 +236,8 @@ func inferSchemeFromAnnotation(annotated AnnotatedResource) RelabelConfig {
 	}
 }
 
-func inferMetricsPathFromAnnotation(annotated AnnotatedResource) RelabelConfig {
-	return RelabelConfig{
+func inferMetricsPathFromAnnotation(annotated AnnotatedResource) Relabel {
+	return Relabel{
 		SourceLabels: []string{fmt.Sprintf("__meta_kubernetes_%s_annotation_prometheus_io_path", annotated)},
 		Action:       Replace,
 		Regex:        "(.+)",
@@ -243,8 +245,8 @@ func inferMetricsPathFromAnnotation(annotated AnnotatedResource) RelabelConfig {
 	}
 }
 
-func inferAddressFromAnnotation(annotated AnnotatedResource) RelabelConfig {
-	return RelabelConfig{
+func inferAddressFromAnnotation(annotated AnnotatedResource) Relabel {
+	return Relabel{
 		SourceLabels: []string{"__address__", fmt.Sprintf("__meta_kubernetes_%s_annotation_prometheus_io_port", annotated)},
 		Action:       Replace,
 		Regex:        "([^:]+)(?::\\d+)?;(\\d+)",
@@ -253,48 +255,48 @@ func inferAddressFromAnnotation(annotated AnnotatedResource) RelabelConfig {
 	}
 }
 
-func inferServiceFromMetaLabel() RelabelConfig {
-	return RelabelConfig{
+func inferServiceFromMetaLabel() Relabel {
+	return Relabel{
 		SourceLabels: []string{"__meta_kubernetes_service_name"},
 		Action:       Replace,
 		TargetLabel:  "service",
 	}
 }
 
-func dropIfPodNotRunning() RelabelConfig {
-	return RelabelConfig{
+func dropIfPodNotRunning() Relabel {
+	return Relabel{
 		SourceLabels: []string{"__meta_kubernetes_pod_phase"},
 		Action:       Drop,
 		Regex:        "Pending|Succeeded|Failed",
 	}
 }
 
-func dropIfInitContainer() RelabelConfig {
-	return RelabelConfig{
+func dropIfInitContainer() Relabel {
+	return Relabel{
 		SourceLabels: []string{"__meta_kubernetes_pod_container_init"},
 		Action:       Drop,
 		Regex:        "(true)",
 	}
 }
 
-func dropIfIstioProxy() RelabelConfig {
-	return RelabelConfig{
+func dropIfIstioProxy() Relabel {
+	return Relabel{
 		SourceLabels: []string{"__meta_kubernetes_pod_container_name"},
 		Action:       Drop,
 		Regex:        "(istio-proxy)",
 	}
 }
 
-func dropIfSchemeHTTP() RelabelConfig {
-	return RelabelConfig{
+func dropIfSchemeHTTP() Relabel {
+	return Relabel{
 		SourceLabels: []string{"__scheme__"},
 		Action:       Drop,
 		Regex:        "(http)",
 	}
 }
 
-func dropIfSchemeHTTPS() RelabelConfig {
-	return RelabelConfig{
+func dropIfSchemeHTTPS() Relabel {
+	return Relabel{
 		SourceLabels: []string{"__scheme__"},
 		Action:       Drop,
 		Regex:        "(https)",
@@ -303,16 +305,16 @@ func dropIfSchemeHTTPS() RelabelConfig {
 
 // inferURLParamFromAnnotation extracts and configures the URL parameter
 // for scraping based on annotations of the form prometheus.io/param_{name}: {value}.
-func inferURLParamFromAnnotation(annotated AnnotatedResource) RelabelConfig {
-	return RelabelConfig{
+func inferURLParamFromAnnotation(annotated AnnotatedResource) Relabel {
+	return Relabel{
 		Regex:       fmt.Sprintf("__meta_kubernetes_%s_annotation_prometheus_io_param_(.+)", annotated),
 		Action:      LabelMap,
 		Replacement: "__param_$1",
 	}
 }
 
-func discoveryConfigWithNodeSelector(role Role) []KubernetesDiscoveryConfig {
-	return []KubernetesDiscoveryConfig{
+func discoveryConfigWithNodeSelector(role Role) []KubernetesDiscovery {
+	return []KubernetesDiscovery{
 		{
 			Role: role,
 			Selectors: []K8SDiscoverySelector{

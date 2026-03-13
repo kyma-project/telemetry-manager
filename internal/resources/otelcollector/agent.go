@@ -4,32 +4,33 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"maps"
 	"slices"
 	"strconv"
 	"strings"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	autoscalingvpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
+	"github.com/kyma-project/telemetry-manager/internal/k8sclients"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 )
 
 const (
 	IstioCertPath       = "/etc/istio-output-certs"
 	istioCertVolumeName = "istio-certs"
-
-	MetricAgentName = "telemetry-metric-agent"
-	LogAgentName    = "telemetry-log-agent"
 
 	checkpointVolumeName = "tmp"
 	CheckpointVolumePath = "/tmp"
@@ -38,21 +39,18 @@ const (
 )
 
 var (
-	metricAgentCPURequest    = resource.MustParse("15m")
-	metricAgentMemoryRequest = resource.MustParse("50Mi")
-	metricAgentMemoryLimit   = resource.MustParse("1200Mi")
-
-	logAgentCPURequest    = resource.MustParse("15m")
-	logAgentMemoryRequest = resource.MustParse("50Mi")
-	logAgentMemoryLimit   = resource.MustParse("1200Mi")
+	agentCPURequest    = resource.MustParse("15m")
+	agentMemoryRequest = resource.MustParse("64Mi")
+	agentMemoryLimit   = resource.MustParse("1200Mi")
 )
 
 type AgentApplierDeleter struct {
+	globals config.Global
+
 	baseName            string
-	extraPodLabel       map[string]string
+	extraPodLabels      map[string]string
 	makeAnnotationsFunc func(configChecksum string, opts AgentApplyOptions) map[string]string
 	image               string
-	namespace           string
 	rbac                rbac
 
 	podOpts       []commonresources.PodSpecOption
@@ -61,15 +59,18 @@ type AgentApplierDeleter struct {
 
 type AgentApplyOptions struct {
 	IstioEnabled        bool
+	VpaCRDExists        bool
+	VpaEnabled          bool
+	VpaMaxAllowedMemory resource.Quantity
 	CollectorConfigYAML string
 	CollectorEnvVars    map[string][]byte
 	// BackendPorts is needed only for the metric agent to set the value of the annotation "traffic.sidecar.istio.io/includeOutboundPorts"
 	BackendPorts []string
 }
 
-func NewLogAgentApplierDeleter(collectorImage, namespace, priorityClassName string, enableFIPSMode bool) *AgentApplierDeleter {
+func NewLogAgentApplierDeleter(globals config.Global, collectorImage, priorityClassName string) *AgentApplierDeleter {
 	extraLabels := map[string]string{
-		commonresources.LabelKeyIstioInject: "true", // inject Istio sidecar
+		commonresources.LabelKeyIstioInject: commonresources.LabelValueTrue, // inject Istio sidecar
 	}
 
 	volumes := []corev1.Volume{
@@ -84,18 +85,18 @@ func NewLogAgentApplierDeleter(collectorImage, namespace, priorityClassName stri
 	}
 
 	collectorResources := commonresources.MakeResourceRequirements(
-		logAgentMemoryLimit,
-		logAgentMemoryRequest,
-		logAgentCPURequest,
+		agentMemoryLimit,
+		agentMemoryRequest,
+		agentCPURequest,
 	)
 
 	return &AgentApplierDeleter{
-		baseName:            LogAgentName,
-		extraPodLabel:       extraLabels,
+		globals:             globals,
+		baseName:            names.LogAgent,
+		extraPodLabels:      extraLabels,
 		makeAnnotationsFunc: makeLogAgentAnnotations,
 		image:               collectorImage,
-		namespace:           namespace,
-		rbac:                makeLogAgentRBAC(namespace),
+		rbac:                makeLogAgentRBAC(globals.TargetNamespace()),
 		podOpts: []commonresources.PodSpecOption{
 			commonresources.WithPriorityClass(priorityClassName),
 			commonresources.WithVolumes(volumes),
@@ -103,8 +104,7 @@ func NewLogAgentApplierDeleter(collectorImage, namespace, priorityClassName stri
 		containerOpts: []commonresources.ContainerOption{
 			commonresources.WithResources(collectorResources),
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentPodIP, fieldPathPodIP),
-			commonresources.WithGoMemLimitEnvVar(logAgentMemoryLimit),
-			commonresources.WithGoDebugEnvVar(enableFIPSMode),
+			commonresources.WithFIPSGoDebugEnvVar(globals.OperateInFIPSMode()),
 			commonresources.WithVolumeMounts(collectorVolumeMounts),
 			commonresources.WithRunAsGroup(commonresources.GroupRoot),
 			commonresources.WithRunAsUser(commonresources.UserDefault),
@@ -112,20 +112,21 @@ func NewLogAgentApplierDeleter(collectorImage, namespace, priorityClassName stri
 	}
 }
 
-func NewMetricAgentApplierDeleter(image, namespace, priorityClassName string, enableFIPSMode bool) *AgentApplierDeleter {
+func NewMetricAgentApplierDeleter(globals config.Global, image, priorityClassName string) *AgentApplierDeleter {
 	extraLabels := map[string]string{
-		commonresources.LabelKeyTelemetryMetricScrape: "true",
-		commonresources.LabelKeyTelemetryMetricExport: "true",
-		commonresources.LabelKeyIstioInject:           "true", // inject Istio sidecar
+		commonresources.LabelKeyTelemetryMetricScrape:    commonresources.LabelValueTrue,
+		commonresources.LabelKeyTelemetryMetricExport:    commonresources.LabelValueTrue,
+		commonresources.LabelKeyIstioInject:              commonresources.LabelValueTrue, // inject Istio sidecar
+		commonresources.LabelKeyTelemetryMetricsScraping: commonresources.LabelValueTelemetryMetricsScraping,
 	}
 
 	return &AgentApplierDeleter{
-		baseName:            MetricAgentName,
-		extraPodLabel:       extraLabels,
+		globals:             globals,
+		baseName:            names.MetricAgent,
+		extraPodLabels:      extraLabels,
 		makeAnnotationsFunc: makeMetricAgentAnnotations,
 		image:               image,
-		namespace:           namespace,
-		rbac:                makeMetricAgentRBAC(namespace),
+		rbac:                makeMetricAgentRBAC(globals.TargetNamespace()),
 		podOpts: []commonresources.PodSpecOption{
 			commonresources.WithPriorityClass(priorityClassName),
 			commonresources.WithVolumes([]corev1.Volume{makeIstioCertVolume()}),
@@ -133,12 +134,11 @@ func NewMetricAgentApplierDeleter(image, namespace, priorityClassName string, en
 		containerOpts: []commonresources.ContainerOption{
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentPodIP, fieldPathPodIP),
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentNodeName, fieldPathNodeName),
-			commonresources.WithGoMemLimitEnvVar(metricAgentMemoryLimit),
-			commonresources.WithGoDebugEnvVar(enableFIPSMode),
+			commonresources.WithFIPSGoDebugEnvVar(globals.OperateInFIPSMode()),
 			commonresources.WithResources(commonresources.MakeResourceRequirements(
-				metricAgentMemoryLimit,
-				metricAgentMemoryRequest,
-				metricAgentCPURequest,
+				agentMemoryLimit,
+				agentMemoryRequest,
+				agentCPURequest,
 			)),
 			commonresources.WithVolumeMounts([]corev1.VolumeMount{makeIstioCertVolumeMount()}),
 		},
@@ -146,53 +146,87 @@ func NewMetricAgentApplierDeleter(image, namespace, priorityClassName string, en
 }
 
 func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Client, opts AgentApplyOptions) error {
-	name := types.NamespacedName{Namespace: aad.namespace, Name: aad.baseName}
+	name := types.NamespacedName{Namespace: aad.globals.TargetNamespace(), Name: aad.baseName}
+	labelerClient := k8sclients.NewLabeler(c, commonresources.DefaultLabels(aad.baseName, commonresources.LabelValueK8sComponentAgent))
 
-	ingressAllowedPorts := agentIngressAllowedPorts()
-	if opts.IstioEnabled {
-		ingressAllowedPorts = append(ingressAllowedPorts, ports.IstioEnvoy)
-	}
-
-	if err := applyCommonResources(ctx, c, name, commonresources.LabelValueK8sComponentAgent, aad.rbac, ingressAllowedPorts); err != nil {
+	if err := applyCommonResources(ctx, labelerClient, name, aad.rbac); err != nil {
 		return fmt.Errorf("failed to create common resource: %w", err)
 	}
 
 	secretsInChecksum := []corev1.Secret{}
 
 	if opts.CollectorEnvVars != nil {
-		secret := makeSecret(name, commonresources.LabelValueK8sComponentAgent, opts.CollectorEnvVars)
-		if err := k8sutils.CreateOrUpdateSecret(ctx, c, secret); err != nil {
+		secret := makeSecret(name, opts.CollectorEnvVars)
+		if err := k8sutils.CreateOrUpdateSecret(ctx, labelerClient, secret); err != nil {
 			return fmt.Errorf("failed to create env secret: %w", err)
 		}
 
 		secretsInChecksum = append(secretsInChecksum, *secret)
 	}
 
-	configMap := makeConfigMap(name, commonresources.LabelValueK8sComponentAgent, opts.CollectorConfigYAML)
-	if err := k8sutils.CreateOrUpdateConfigMap(ctx, c, configMap); err != nil {
+	configMap := makeConfigMap(name, opts.CollectorConfigYAML)
+	if err := k8sutils.CreateOrUpdateConfigMap(ctx, labelerClient, configMap); err != nil {
 		return fmt.Errorf("failed to create configmap: %w", err)
 	}
 
 	configChecksum := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, secretsInChecksum)
-	if err := k8sutils.CreateOrUpdateDaemonSet(ctx, c, aad.makeAgentDaemonSet(configChecksum, opts)); err != nil {
+
+	networkPolicies := makeAgentNetworkPolicies(name, opts.IstioEnabled)
+
+	for _, np := range networkPolicies {
+		if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, labelerClient, np); err != nil {
+			return fmt.Errorf("failed to create agent network policies: %w", err)
+		}
+	}
+
+	if err := k8sutils.CreateOrUpdateDaemonSet(ctx, labelerClient, aad.makeAgentDaemonSet(configChecksum, opts)); err != nil {
 		return fmt.Errorf("failed to create daemonset: %w", err)
+	}
+
+	// Create/update/delete VPA CR only if VPA CRD exists in cluster
+	if opts.VpaCRDExists {
+		if opts.VpaEnabled {
+			vpa := makeVPA(name, "DaemonSet", agentMemoryRequest, opts.VpaMaxAllowedMemory)
+			if err := k8sutils.CreateOrUpdateVPA(ctx, labelerClient, vpa); err != nil {
+				return fmt.Errorf("failed to create VPA: %w", err)
+			}
+		} else {
+			// If VPA is disabled, ensure that any existing VPA is cleaned up
+			vpa := &autoscalingvpav1.VerticalPodAutoscaler{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      name.Name,
+					Namespace: name.Namespace,
+				},
+			}
+			if err := k8sutils.DeleteObject(ctx, c, vpa); err != nil {
+				return fmt.Errorf("failed to delete VPA: %w", err)
+			}
+		}
 	}
 
 	return nil
 }
 
-func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Client) error {
+func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Client, vpaCRDExists bool) error {
 	// Attempt to clean up as many resources as possible and avoid early return when one of the deletions fails
 	var allErrors error = nil
 
-	name := types.NamespacedName{Name: aad.baseName, Namespace: aad.namespace}
+	name := types.NamespacedName{Name: aad.baseName, Namespace: aad.globals.TargetNamespace()}
 	if err := deleteCommonResources(ctx, c, name); err != nil {
 		allErrors = errors.Join(allErrors, err)
 	}
 
 	objectMeta := metav1.ObjectMeta{
 		Name:      aad.baseName,
-		Namespace: aad.namespace,
+		Namespace: aad.globals.TargetNamespace(),
+	}
+
+	networkPolicySelector := map[string]string{
+		commonresources.LabelKeyK8sName: name.Name,
+	}
+
+	if err := k8sutils.DeleteObjectsByLabelSelector(ctx, c, &networkingv1.NetworkPolicyList{}, networkPolicySelector); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete network policy: %w", err))
 	}
 
 	configMap := corev1.ConfigMap{ObjectMeta: objectMeta}
@@ -205,6 +239,13 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete daemonset: %w", err))
 	}
 
+	if vpaCRDExists {
+		vpa := autoscalingvpav1.VerticalPodAutoscaler{ObjectMeta: objectMeta}
+		if err := k8sutils.DeleteObject(ctx, c, &vpa); err != nil {
+			allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete VPA: %w", err))
+		}
+	}
+
 	return allErrors
 }
 
@@ -214,34 +255,59 @@ func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string, opts A
 	// Add pod options shared between all agents
 	podOpts := slices.Clone(aad.podOpts)
 	podOpts = append(podOpts, commonresources.WithTolerations(commonresources.CriticalDaemonSetTolerations))
+	podOpts = append(podOpts, commonresources.WithImagePullSecretName(aad.globals.ImagePullSecretName()))
+	podOpts = append(podOpts, commonresources.WithClusterTrustBundleVolume(aad.globals.ClusterTrustBundleName()))
 
-	podSpec := makePodSpec(aad.baseName, aad.image, podOpts, aad.containerOpts)
+	containerOpts := slices.Clone(aad.containerOpts)
+	containerOpts = append(containerOpts, commonresources.WithClusterTrustBundleVolumeMount(aad.globals.ClusterTrustBundleName()))
 
-	selectorLabels := commonresources.MakeDefaultSelectorLabels(aad.baseName)
-	labels := commonresources.MakeDefaultLabels(aad.baseName, commonresources.LabelValueK8sComponentAgent)
-	podLabels := make(map[string]string)
-	maps.Copy(podLabels, labels)
-	maps.Copy(podLabels, aad.extraPodLabel)
-
-	return &appsv1.DaemonSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      aad.baseName,
-			Namespace: aad.namespace,
-			Labels:    labels,
-		},
-		Spec: appsv1.DaemonSetSpec{
-			Selector: &metav1.LabelSelector{
-				MatchLabels: selectorLabels,
-			},
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels:      podLabels,
-					Annotations: annotations,
-				},
-				Spec: podSpec,
-			},
-		},
+	// When VPA is active, override the memory limit to 2x the memory request so the VPA can scale within a tighter range.
+	// This replaces the default high memory limit (agentMemoryLimit) set during construction.
+	// For more details, check the ADR: https://github.com/kyma-project/telemetry-manager/blob/main/docs/contributor/arch/032-vertical-pod-autoscaler-VPA-architecture.md
+	if opts.VpaCRDExists && opts.VpaEnabled {
+		vpaMemoryLimit := agentMemoryRequest.DeepCopy()
+		vpaMemoryLimit.Add(agentMemoryRequest)
+		containerOpts = append(containerOpts, commonresources.WithResources(
+			commonresources.MakeResourceRequirements(vpaMemoryLimit, agentMemoryRequest, agentCPURequest),
+		))
 	}
+
+	podSpec := makePodSpec(aad.baseName, aad.image, podOpts, containerOpts)
+
+	metadata := MakeWorkloadMetadata(
+		&aad.globals,
+		aad.baseName,
+		commonresources.LabelValueK8sComponentAgent,
+		aad.extraPodLabels,
+		annotations,
+	)
+
+	return makeDaemonSet(
+		aad.baseName,
+		aad.globals.TargetNamespace(),
+		metadata,
+		podSpec,
+	)
+}
+
+func makeAgentNetworkPolicies(name types.NamespacedName, istioEnabled bool) []*networkingv1.NetworkPolicy {
+	metricsNetworkPolicy := commonresources.MakeNetworkPolicy(
+		name,
+		commonresources.DefaultSelector(name.Name),
+		commonresources.WithNameSuffix("metrics"),
+		commonresources.WithIngressFromPodsInAllNamespaces(
+			map[string]string{
+				commonresources.LabelKeyTelemetryMetricsScraping: commonresources.LabelValueTelemetryMetricsScraping,
+			},
+			agentIngressMetricsPorts(istioEnabled)),
+	)
+	agentNetworkPolicy := commonresources.MakeNetworkPolicy(
+		name,
+		commonresources.DefaultSelector(name.Name),
+		commonresources.WithEgressToAny(),
+	)
+
+	return []*networkingv1.NetworkPolicy{metricsNetworkPolicy, agentNetworkPolicy}
 }
 
 func makeLogAgentAnnotations(configChecksum string, opts AgentApplyOptions) map[string]string {
@@ -332,9 +398,12 @@ func makeFileLogCheckPointVolumeMount() corev1.VolumeMount {
 	}
 }
 
-func agentIngressAllowedPorts() []int32 {
-	return []int32{
-		ports.Metrics,
-		ports.HealthCheck,
+func agentIngressMetricsPorts(istioEnabled bool) []int32 {
+	metricsPorts := []int32{ports.Metrics}
+
+	if istioEnabled {
+		metricsPorts = append(metricsPorts, ports.IstioEnvoyTelemetry)
 	}
+
+	return metricsPorts
 }

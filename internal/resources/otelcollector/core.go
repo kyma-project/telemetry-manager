@@ -6,23 +6,27 @@ import (
 	"fmt"
 	"strconv"
 
+	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	corev1 "k8s.io/api/core/v1"
-	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	autoscalingvpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 )
 
 // applyCommonResources applies resources to gateway and agent deployment node
-func applyCommonResources(ctx context.Context, c client.Client, name types.NamespacedName, componentType string, rbac rbac, ingressAllowedPorts []int32) error {
+func applyCommonResources(ctx context.Context, c client.Client, name types.NamespacedName, rbac rbac) error {
 	// Create service account before RBAC resources
-	if err := k8sutils.CreateOrUpdateServiceAccount(ctx, c, makeServiceAccount(name, componentType)); err != nil {
+	if err := k8sutils.CreateOrUpdateServiceAccount(ctx, c, makeServiceAccount(name)); err != nil {
 		return fmt.Errorf("failed to create service account: %w", err)
 	}
 
@@ -59,12 +63,13 @@ func applyCommonResources(ctx context.Context, c client.Client, name types.Names
 		}
 	}
 
-	if err := k8sutils.CreateOrUpdateService(ctx, c, makeMetricsService(name, componentType)); err != nil {
+	if err := k8sutils.CreateOrUpdateService(ctx, c, makeMetricsService(name)); err != nil {
 		return fmt.Errorf("failed to create metrics service: %w", err)
 	}
 
-	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, commonresources.MakeNetworkPolicy(name, ingressAllowedPorts, commonresources.MakeDefaultLabels(name.Name, componentType), commonresources.MakeDefaultSelectorLabels(name.Name))); err != nil {
-		return fmt.Errorf("failed to create network policy: %w", err)
+	// TODO: Remove after rollout 1.59.0
+	if err := commonresources.CleanupOldNetworkPolicy(ctx, c, name); err != nil {
+		return fmt.Errorf("failed to cleanup old network policy: %w", err)
 	}
 
 	return nil
@@ -80,61 +85,54 @@ func deleteCommonResources(ctx context.Context, c client.Client, name types.Name
 	var allErrors error = nil
 
 	clusterRoleBinding := rbacv1.ClusterRoleBinding{ObjectMeta: objectMeta}
-	if err := k8sutils.DeleteObject(ctx, c, &clusterRoleBinding); err != nil {
+	if err := k8sutils.DeleteObject(ctx, c, &clusterRoleBinding); err != nil && !apierrors.IsNotFound(err) {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete cluster role binding: %w", err))
 	}
 
 	clusterRole := rbacv1.ClusterRole{ObjectMeta: objectMeta}
-	if err := k8sutils.DeleteObject(ctx, c, &clusterRole); err != nil {
+	if err := k8sutils.DeleteObject(ctx, c, &clusterRole); err != nil && !apierrors.IsNotFound(err) {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete cluster role: %w", err))
 	}
 
 	roleBinding := rbacv1.RoleBinding{ObjectMeta: objectMeta}
-	if err := k8sutils.DeleteObject(ctx, c, &roleBinding); err != nil {
+	if err := k8sutils.DeleteObject(ctx, c, &roleBinding); err != nil && !apierrors.IsNotFound(err) {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete role binding: %w", err))
 	}
 
 	role := rbacv1.Role{ObjectMeta: objectMeta}
-	if err := k8sutils.DeleteObject(ctx, c, &role); err != nil {
+	if err := k8sutils.DeleteObject(ctx, c, &role); err != nil && !apierrors.IsNotFound(err) {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete role: %w", err))
 	}
 
 	serviceAccount := corev1.ServiceAccount{ObjectMeta: objectMeta}
-	if err := k8sutils.DeleteObject(ctx, c, &serviceAccount); err != nil {
+	if err := k8sutils.DeleteObject(ctx, c, &serviceAccount); err != nil && !apierrors.IsNotFound(err) {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete service account: %w", err))
 	}
 
-	metricsService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: name.Name + "-metrics", Namespace: name.Namespace}}
+	metricsService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: names.MetricsServiceName(name.Name), Namespace: name.Namespace}}
 	if err := k8sutils.DeleteObject(ctx, c, &metricsService); err != nil {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete metrics service: %w", err))
-	}
-
-	networkPolicy := networkingv1.NetworkPolicy{ObjectMeta: objectMeta}
-	if err := k8sutils.DeleteObject(ctx, c, &networkPolicy); err != nil {
-		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete network policy: %w", err))
 	}
 
 	return allErrors
 }
 
-func makeServiceAccount(name types.NamespacedName, componentType string) *corev1.ServiceAccount {
+func makeServiceAccount(name types.NamespacedName) *corev1.ServiceAccount {
 	serviceAccount := corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
 			Namespace: name.Namespace,
-			Labels:    commonresources.MakeDefaultLabels(name.Name, componentType),
 		},
 	}
 
 	return &serviceAccount
 }
 
-func makeConfigMap(name types.NamespacedName, componentType string, collectorConfigYAML string) *corev1.ConfigMap {
+func makeConfigMap(name types.NamespacedName, collectorConfigYAML string) *corev1.ConfigMap {
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
 			Namespace: name.Namespace,
-			Labels:    commonresources.MakeDefaultLabels(name.Name, componentType),
 		},
 		Data: map[string]string{
 			configFileName: collectorConfigYAML,
@@ -142,26 +140,24 @@ func makeConfigMap(name types.NamespacedName, componentType string, collectorCon
 	}
 }
 
-func makeSecret(name types.NamespacedName, componentType string, secretData map[string][]byte) *corev1.Secret {
+func makeSecret(name types.NamespacedName, secretData map[string][]byte) *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
 			Namespace: name.Namespace,
-			Labels:    commonresources.MakeDefaultLabels(name.Name, componentType),
 		},
 		Data: secretData,
 	}
 }
 
-func makeMetricsService(name types.NamespacedName, componentType string) *corev1.Service {
-	labels := commonresources.MakeDefaultLabels(name.Name, componentType)
-	labels[commonresources.LabelKeyTelemetrySelfMonitor] = commonresources.LabelValueTelemetrySelfMonitor
-
-	selectorLabels := commonresources.MakeDefaultSelectorLabels(name.Name)
+func makeMetricsService(name types.NamespacedName) *corev1.Service {
+	labels := map[string]string{
+		commonresources.LabelKeyTelemetrySelfMonitor: commonresources.LabelValueTelemetrySelfMonitor,
+	}
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name.Name + "-metrics",
+			Name:      names.MetricsServiceName(name.Name),
 			Namespace: name.Namespace,
 			Labels:    labels,
 			Annotations: map[string]string{
@@ -179,8 +175,47 @@ func makeMetricsService(name types.NamespacedName, componentType string) *corev1
 					TargetPort: intstr.FromInt32(ports.Metrics),
 				},
 			},
-			Selector: selectorLabels,
+			Selector: commonresources.DefaultSelector(name.Name),
 			Type:     corev1.ServiceTypeClusterIP,
+		},
+	}
+}
+
+func makeVPA(name types.NamespacedName, targetRefKind string, minAllowedMemory, maxAllowedMemory resource.Quantity) *autoscalingvpav1.VerticalPodAutoscaler {
+	updateMode := autoscalingvpav1.UpdateModeInPlaceOrRecreate
+	controlledValues := autoscalingvpav1.ContainerControlledValuesRequestsAndLimits
+
+	return &autoscalingvpav1.VerticalPodAutoscaler{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name.Name,
+			Namespace: name.Namespace,
+		},
+		Spec: autoscalingvpav1.VerticalPodAutoscalerSpec{
+			TargetRef: &autoscalingv1.CrossVersionObjectReference{
+				APIVersion: "apps/v1",
+				Kind:       targetRefKind,
+				Name:       name.Name,
+			},
+			UpdatePolicy: &autoscalingvpav1.PodUpdatePolicy{
+				UpdateMode: &updateMode,
+			},
+			ResourcePolicy: &autoscalingvpav1.PodResourcePolicy{
+				ContainerPolicies: []autoscalingvpav1.ContainerResourcePolicy{
+					{
+						ContainerName: containerName,
+						ControlledResources: &[]corev1.ResourceName{
+							corev1.ResourceMemory,
+						},
+						MinAllowed: corev1.ResourceList{
+							corev1.ResourceMemory: minAllowedMemory,
+						},
+						MaxAllowed: corev1.ResourceList{
+							corev1.ResourceMemory: maxAllowedMemory,
+						},
+						ControlledValues: &controlledValues,
+					},
+				},
+			},
 		},
 	}
 }

@@ -69,12 +69,15 @@ metadata:
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
+  annotations:
+    test-anno-key: test-anno-value
   labels:
     app.kubernetes.io/component: agent
     app.kubernetes.io/managed-by: telemetry-manager
     app.kubernetes.io/name: telemetry-log-agent
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
+    test-label-key: test-label-value
   name: telemetry-log-agent
   namespace: kyma-system
 spec:
@@ -85,6 +88,7 @@ spec:
     metadata:
       annotations:
         checksum/config: 1d8e9f768e6b24485bbdd6b9aa417d37fec897a7dafc8321355abc0d45259c9e
+        test-anno-key: test-anno-value
       labels:
         app.kubernetes.io/component: agent
         app.kubernetes.io/managed-by: telemetry-manager
@@ -92,6 +96,7 @@ spec:
         app.kubernetes.io/part-of: telemetry
         kyma-project.io/module: telemetry
         sidecar.istio.io/inject: "true"
+        test-label-key: test-label-value
     spec:
       containers:
       - args:
@@ -102,8 +107,6 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.podIP
-        - name: GOMEMLIMIT
-          value: "1006632960"
         - name: GODEBUG
           value: fips140=off
         envFrom:
@@ -125,7 +128,7 @@ spec:
             memory: 1200Mi
           requests:
             cpu: 15m
-            memory: 50Mi
+            memory: 64Mi
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -146,6 +149,11 @@ spec:
           readOnly: true
         - mountPath: /tmp
           name: tmp
+        - mountPath: /etc/ssl/certs
+          name: custom-ca-bundle
+          readOnly: true
+      imagePullSecrets:
+      - name: mySecret
       priorityClassName: normal
       securityContext:
         runAsNonRoot: true
@@ -172,6 +180,12 @@ spec:
           path: /tmp
           type: DirectoryOrCreate
         name: tmp
+      - name: custom-ca-bundle
+        projected:
+          sources:
+          - clusterTrustBundle:
+              name: trustBundle
+              path: ca-certificates.crt
   updateStrategy: {}
 status:
   currentNumberScheduled: 0
@@ -188,32 +202,43 @@ metadata:
     app.kubernetes.io/name: telemetry-log-agent
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
-  name: telemetry-log-agent
+  name: kyma-project.io--telemetry-log-agent
   namespace: kyma-system
 spec:
   egress:
-  - to:
-    - ipBlock:
-        cidr: 0.0.0.0/0
-    - ipBlock:
-        cidr: ::/0
+  - {}
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: telemetry-log-agent
+  policyTypes:
+  - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  labels:
+    app.kubernetes.io/component: agent
+    app.kubernetes.io/managed-by: telemetry-manager
+    app.kubernetes.io/name: telemetry-log-agent
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
+  name: kyma-project.io--telemetry-log-agent-metrics
+  namespace: kyma-system
+spec:
   ingress:
   - from:
-    - ipBlock:
-        cidr: 0.0.0.0/0
-    - ipBlock:
-        cidr: ::/0
+    - namespaceSelector: {}
+      podSelector:
+        matchLabels:
+          networking.kyma-project.io/metrics-scraping: allowed
     ports:
     - port: 8888
-      protocol: TCP
-    - port: 13133
       protocol: TCP
   podSelector:
     matchLabels:
       app.kubernetes.io/name: telemetry-log-agent
   policyTypes:
   - Ingress
-  - Egress
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole

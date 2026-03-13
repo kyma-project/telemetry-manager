@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"maps"
 	"slices"
 
 	istiosecurityv1 "istio.io/api/security/v1"
@@ -12,28 +11,21 @@ import (
 	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
+	"github.com/kyma-project/telemetry-manager/internal/k8sclients"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
-)
-
-const (
-	LogGatewayName    = "telemetry-log-gateway"
-	MetricGatewayName = "telemetry-metric-gateway"
-	TraceGatewayName  = "telemetry-trace-gateway"
-
-	MetricOTLPServiceName = "telemetry-otlp-metrics"
-	TraceOTLPServiceName  = "telemetry-otlp-traces"
-	LogOTLPServiceName    = "telemetry-otlp-logs"
 )
 
 var (
@@ -61,10 +53,11 @@ var (
 )
 
 type GatewayApplierDeleter struct {
+	globals config.Global
+
 	baseName        string
 	extraPodLabels  map[string]string
 	image           string
-	namespace       string
 	otlpServiceName string
 	rbac            rbac
 
@@ -92,20 +85,20 @@ type GatewayApplyOptions struct {
 }
 
 //nolint:dupl // repeating the code as we have three different signals
-func NewLogGatewayApplierDeleter(image, namespace, priorityClassName string, enableFIPSMode bool) *GatewayApplierDeleter {
+func NewLogGatewayApplierDeleter(globals config.Global, image, priorityClassName string) *GatewayApplierDeleter {
 	extraLabels := map[string]string{
-		commonresources.LabelKeyTelemetryLogIngest: "true",
-		commonresources.LabelKeyTelemetryLogExport: "true",
-		commonresources.LabelKeyIstioInject:        "true", // inject istio sidecar
+		commonresources.LabelKeyTelemetryLogIngest: commonresources.LabelValueTrue,
+		commonresources.LabelKeyTelemetryLogExport: commonresources.LabelValueTrue,
+		commonresources.LabelKeyIstioInject:        commonresources.LabelValueTrue, // inject istio sidecar
 	}
 
 	return &GatewayApplierDeleter{
-		baseName:             LogGatewayName,
+		globals:              globals,
+		baseName:             names.LogGateway,
 		extraPodLabels:       extraLabels,
 		image:                image,
-		namespace:            namespace,
-		otlpServiceName:      LogOTLPServiceName,
-		rbac:                 makeLogGatewayRBAC(namespace),
+		otlpServiceName:      names.OTLPLogsService,
+		rbac:                 makeLogGatewayRBAC(globals.TargetNamespace()),
 		baseMemoryLimit:      logGatewayBaseMemoryLimit,
 		dynamicMemoryLimit:   logGatewayDynamicMemoryLimit,
 		baseCPURequest:       logGatewayBaseCPURequest,
@@ -114,31 +107,31 @@ func NewLogGatewayApplierDeleter(image, namespace, priorityClassName string, ena
 		dynamicMemoryRequest: logGatewayDynamicMemoryRequest,
 		podOpts: []commonresources.PodSpecOption{
 			commonresources.WithPriorityClass(priorityClassName),
-			commonresources.WithAffinity(makePodAffinity(commonresources.MakeDefaultSelectorLabels(LogGatewayName))),
+			commonresources.WithAffinity(makePodAffinity(commonresources.DefaultSelector(names.LogGateway))),
 		},
 		containerOpts: []commonresources.ContainerOption{
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentPodIP, fieldPathPodIP),
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentNodeName, fieldPathNodeName),
-			commonresources.WithGoDebugEnvVar(enableFIPSMode),
+			commonresources.WithFIPSGoDebugEnvVar(globals.OperateInFIPSMode()),
 		},
 	}
 }
 
 //nolint:dupl // repeating the code as we have three different signals
-func NewMetricGatewayApplierDeleter(image, namespace, priorityClassName string, enableFIPSMode bool) *GatewayApplierDeleter {
+func NewMetricGatewayApplierDeleter(globals config.Global, image, priorityClassName string) *GatewayApplierDeleter {
 	extraLabels := map[string]string{
-		commonresources.LabelKeyTelemetryMetricIngest: "true",
-		commonresources.LabelKeyTelemetryMetricExport: "true",
-		commonresources.LabelKeyIstioInject:           "true", // inject istio sidecar
+		commonresources.LabelKeyTelemetryMetricIngest: commonresources.LabelValueTrue,
+		commonresources.LabelKeyTelemetryMetricExport: commonresources.LabelValueTrue,
+		commonresources.LabelKeyIstioInject:           commonresources.LabelValueTrue, // inject istio sidecar
 	}
 
 	return &GatewayApplierDeleter{
-		baseName:             MetricGatewayName,
+		globals:              globals,
+		baseName:             names.MetricGateway,
 		extraPodLabels:       extraLabels,
 		image:                image,
-		namespace:            namespace,
-		otlpServiceName:      MetricOTLPServiceName,
-		rbac:                 makeMetricGatewayRBAC(namespace),
+		otlpServiceName:      names.OTLPMetricsService,
+		rbac:                 makeMetricGatewayRBAC(globals.TargetNamespace()),
 		baseMemoryLimit:      metricGatewayBaseMemoryLimit,
 		dynamicMemoryLimit:   metricGatewayDynamicMemoryLimit,
 		baseCPURequest:       metricGatewayBaseCPURequest,
@@ -147,31 +140,31 @@ func NewMetricGatewayApplierDeleter(image, namespace, priorityClassName string, 
 		dynamicMemoryRequest: metricGatewayDynamicMemoryRequest,
 		podOpts: []commonresources.PodSpecOption{
 			commonresources.WithPriorityClass(priorityClassName),
-			commonresources.WithAffinity(makePodAffinity(commonresources.MakeDefaultSelectorLabels(MetricGatewayName))),
+			commonresources.WithAffinity(makePodAffinity(commonresources.DefaultSelector(names.MetricGateway))),
 		},
 		containerOpts: []commonresources.ContainerOption{
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentPodIP, fieldPathPodIP),
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentNodeName, fieldPathNodeName),
-			commonresources.WithGoDebugEnvVar(enableFIPSMode),
+			commonresources.WithFIPSGoDebugEnvVar(globals.OperateInFIPSMode()),
 		},
 	}
 }
 
 //nolint:dupl // repeating the code as we have three different signals
-func NewTraceGatewayApplierDeleter(image, namespace, priorityClassName string, enableFIPSMode bool) *GatewayApplierDeleter {
+func NewTraceGatewayApplierDeleter(globals config.Global, image, priorityClassName string) *GatewayApplierDeleter {
 	extraLabels := map[string]string{
-		commonresources.LabelKeyTelemetryTraceIngest: "true",
-		commonresources.LabelKeyTelemetryTraceExport: "true",
-		commonresources.LabelKeyIstioInject:          "true", // inject istio sidecar
+		commonresources.LabelKeyTelemetryTraceIngest: commonresources.LabelValueTrue,
+		commonresources.LabelKeyTelemetryTraceExport: commonresources.LabelValueTrue,
+		commonresources.LabelKeyIstioInject:          commonresources.LabelValueTrue, // inject istio sidecar
 	}
 
 	return &GatewayApplierDeleter{
-		baseName:             TraceGatewayName,
+		globals:              globals,
+		baseName:             names.TraceGateway,
 		extraPodLabels:       extraLabels,
 		image:                image,
-		namespace:            namespace,
-		otlpServiceName:      TraceOTLPServiceName,
-		rbac:                 makeTraceGatewayRBAC(namespace),
+		otlpServiceName:      names.OTLPTracesService,
+		rbac:                 makeTraceGatewayRBAC(globals.TargetNamespace()),
 		baseMemoryLimit:      traceGatewayBaseMemoryLimit,
 		dynamicMemoryLimit:   traceGatewayDynamicMemoryLimit,
 		baseCPURequest:       traceGatewayBaseCPURequest,
@@ -180,49 +173,57 @@ func NewTraceGatewayApplierDeleter(image, namespace, priorityClassName string, e
 		dynamicMemoryRequest: traceGatewayDynamicMemoryRequest,
 		podOpts: []commonresources.PodSpecOption{
 			commonresources.WithPriorityClass(priorityClassName),
-			commonresources.WithAffinity(makePodAffinity(commonresources.MakeDefaultSelectorLabels(TraceGatewayName))),
+			commonresources.WithAffinity(makePodAffinity(commonresources.DefaultSelector(names.TraceGateway))),
 		},
 		containerOpts: []commonresources.ContainerOption{
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentPodIP, fieldPathPodIP),
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentNodeName, fieldPathNodeName),
-			commonresources.WithGoDebugEnvVar(enableFIPSMode),
+			commonresources.WithFIPSGoDebugEnvVar(globals.OperateInFIPSMode()),
 		},
 	}
 }
 
 func (gad *GatewayApplierDeleter) ApplyResources(ctx context.Context, c client.Client, opts GatewayApplyOptions) error {
-	name := types.NamespacedName{Namespace: gad.namespace, Name: gad.baseName}
+	var (
+		name = types.NamespacedName{Namespace: gad.globals.TargetNamespace(), Name: gad.baseName}
+	)
 
-	ingressAllowedPorts := gatewayIngressAllowedPorts()
-	if opts.IstioEnabled {
-		ingressAllowedPorts = append(ingressAllowedPorts, ports.IstioEnvoy)
-	}
+	labelerClient := k8sclients.NewLabeler(c, commonresources.DefaultLabels(gad.baseName, commonresources.LabelValueK8sComponentGateway))
 
-	if err := applyCommonResources(ctx, c, name, commonresources.LabelValueK8sComponentGateway, gad.rbac, ingressAllowedPorts); err != nil {
+	if err := applyCommonResources(ctx, labelerClient, name, gad.rbac); err != nil {
 		return fmt.Errorf("failed to create common resource: %w", err)
 	}
 
-	secret := makeSecret(name, commonresources.LabelValueK8sComponentGateway, opts.CollectorEnvVars)
-	if err := k8sutils.CreateOrUpdateSecret(ctx, c, secret); err != nil {
+	secret := makeSecret(name, opts.CollectorEnvVars)
+	if err := k8sutils.CreateOrUpdateSecret(ctx, labelerClient, secret); err != nil {
 		return fmt.Errorf("failed to create env secret: %w", err)
 	}
 
-	configMap := makeConfigMap(name, commonresources.LabelValueK8sComponentGateway, opts.CollectorConfigYAML)
-	if err := k8sutils.CreateOrUpdateConfigMap(ctx, c, configMap); err != nil {
+	configMap := makeConfigMap(name, opts.CollectorConfigYAML)
+	if err := k8sutils.CreateOrUpdateConfigMap(ctx, labelerClient, configMap); err != nil {
 		return fmt.Errorf("failed to create configmap: %w", err)
 	}
 
 	configChecksum := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, []corev1.Secret{*secret})
-	if err := k8sutils.CreateOrUpdateDeployment(ctx, c, gad.makeGatewayDeployment(configChecksum, opts)); err != nil {
+
+	networkPolicies := makeGatewayNetworkPolicies(name, opts.IstioEnabled)
+
+	for _, np := range networkPolicies {
+		if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, labelerClient, np); err != nil {
+			return fmt.Errorf("failed to create agent network policies: %w", err)
+		}
+	}
+
+	if err := k8sutils.CreateOrUpdateDeployment(ctx, labelerClient, gad.makeGatewayDeployment(configChecksum, opts)); err != nil {
 		return fmt.Errorf("failed to create deployment: %w", err)
 	}
 
-	if err := k8sutils.CreateOrUpdateService(ctx, c, gad.makeOTLPService()); err != nil {
+	if err := k8sutils.CreateOrUpdateService(ctx, labelerClient, gad.makeOTLPService()); err != nil {
 		return fmt.Errorf("failed to create otlp service: %w", err)
 	}
 
 	if opts.IstioEnabled {
-		if err := k8sutils.CreateOrUpdatePeerAuthentication(ctx, c, gad.makePeerAuthentication()); err != nil {
+		if err := k8sutils.CreateOrUpdatePeerAuthentication(ctx, labelerClient, gad.makePeerAuthentication()); err != nil {
 			return fmt.Errorf("failed to create peerauthentication: %w", err)
 		}
 	}
@@ -234,14 +235,21 @@ func (gad *GatewayApplierDeleter) DeleteResources(ctx context.Context, c client.
 	// Attempt to clean up as many resources as possible and avoid early return when one of the deletions fails
 	var allErrors error = nil
 
-	name := types.NamespacedName{Name: gad.baseName, Namespace: gad.namespace}
+	name := types.NamespacedName{Name: gad.baseName, Namespace: gad.globals.TargetNamespace()}
 	if err := deleteCommonResources(ctx, c, name); err != nil {
 		allErrors = errors.Join(allErrors, err)
 	}
 
 	objectMeta := metav1.ObjectMeta{
 		Name:      gad.baseName,
-		Namespace: gad.namespace,
+		Namespace: gad.globals.TargetNamespace(),
+	}
+
+	// Deleting using objectMeta and recreating it (in otlp_gateway.go) with same name causes reconcile loop. So delete the service using label selector
+	// Delete the OTLP service
+	serviceSelector := map[string]string{commonresources.LabelKeyK8sName: gad.baseName}
+	if err := k8sutils.DeleteObjectsByLabelSelector(ctx, c, &corev1.ServiceList{}, serviceSelector); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete otlp service: %w", err))
 	}
 
 	secret := corev1.Secret{ObjectMeta: objectMeta}
@@ -254,14 +262,17 @@ func (gad *GatewayApplierDeleter) DeleteResources(ctx context.Context, c client.
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete configmap: %w", err))
 	}
 
+	networkPolicySelector := map[string]string{
+		commonresources.LabelKeyK8sName: name.Name,
+	}
+
+	if err := k8sutils.DeleteObjectsByLabelSelector(ctx, c, &networkingv1.NetworkPolicyList{}, networkPolicySelector); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete network policy: %w", err))
+	}
+
 	deployment := appsv1.Deployment{ObjectMeta: objectMeta}
 	if err := k8sutils.DeleteObject(ctx, c, &deployment); err != nil {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete deployment: %w", err))
-	}
-
-	OTLPService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: gad.otlpServiceName, Namespace: gad.namespace}}
-	if err := k8sutils.DeleteObject(ctx, c, &OTLPService); err != nil {
-		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete otlp service: %w", err))
 	}
 
 	if isIstioActive {
@@ -275,49 +286,55 @@ func (gad *GatewayApplierDeleter) DeleteResources(ctx context.Context, c client.
 }
 
 func (gad *GatewayApplierDeleter) makeGatewayDeployment(configChecksum string, opts GatewayApplyOptions) *appsv1.Deployment {
-	labels := commonresources.MakeDefaultLabels(gad.baseName, commonresources.LabelValueK8sComponentGateway)
-	selectorLabels := commonresources.MakeDefaultSelectorLabels(gad.baseName)
-	podLabels := make(map[string]string)
-	maps.Copy(podLabels, labels)
-	maps.Copy(podLabels, gad.extraPodLabels)
+	podSpec := gad.makeGatewayPodSpec(opts)
+	metadata := gad.makeGatewayMetadata(configChecksum, opts)
 
+	return makeDeployment(
+		gad.baseName,
+		gad.globals.TargetNamespace(),
+		opts.Replicas,
+		metadata,
+		podSpec,
+	)
+}
+
+// makeGatewayMetadata prepares labels and annotations for gateway resources
+func (gad *GatewayApplierDeleter) makeGatewayMetadata(configChecksum string, opts GatewayApplyOptions) WorkloadMetadata {
 	annotations := gad.makeAnnotations(configChecksum, opts)
 
+	return MakeWorkloadMetadata(
+		&gad.globals,
+		gad.baseName,
+		commonresources.LabelValueK8sComponentGateway,
+		gad.extraPodLabels,
+		annotations,
+	)
+}
+
+// makeGatewayPodSpec creates the pod spec for gateway (Deployment or DaemonSet)
+//
+//nolint:dupl // repeating the code as we this would be deleted when we implement all signals in OTLP gateway
+func (gad *GatewayApplierDeleter) makeGatewayPodSpec(opts GatewayApplyOptions) corev1.PodSpec {
 	resources := gad.makeGatewayResourceRequirements(opts)
 
 	containerOpts := slices.Clone(gad.containerOpts)
 	containerOpts = append(containerOpts,
 		commonresources.WithResources(resources),
-		commonresources.WithGoMemLimitEnvVar(resources.Limits[corev1.ResourceMemory]),
+		commonresources.WithClusterTrustBundleVolumeMount(gad.globals.ClusterTrustBundleName()),
 	)
 
-	podSpec := makePodSpec(
+	podOptions := make([]commonresources.PodSpecOption, 0)
+	podOptions = append(podOptions, gad.podOpts...)
+	podOptions = append(podOptions, commonresources.WithImagePullSecretName(gad.globals.ImagePullSecretName()),
+		commonresources.WithClusterTrustBundleVolume(gad.globals.ClusterTrustBundleName()),
+	)
+
+	return makePodSpec(
 		gad.baseName,
 		gad.image,
-		gad.podOpts,
+		podOptions,
 		containerOpts,
 	)
-
-	return &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      gad.baseName,
-			Namespace: gad.namespace,
-			Labels:    labels,
-		},
-		Spec: appsv1.DeploymentSpec{
-			Replicas: ptr.To(opts.Replicas),
-			Selector: &metav1.LabelSelector{
-				MatchLabels: selectorLabels,
-			},
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels:      podLabels,
-					Annotations: annotations,
-				},
-				Spec: podSpec,
-			},
-		},
-	}
 }
 
 func (gad *GatewayApplierDeleter) makeGatewayResourceRequirements(opts GatewayApplyOptions) corev1.ResourceRequirements {
@@ -372,14 +389,10 @@ func makePodAffinity(labels map[string]string) corev1.Affinity {
 }
 
 func (gad *GatewayApplierDeleter) makeOTLPService() *corev1.Service {
-	commonLabels := commonresources.MakeDefaultLabels(gad.baseName, commonresources.LabelValueK8sComponentGateway)
-	selectorLabels := commonresources.MakeDefaultSelectorLabels(gad.baseName)
-
-	return &corev1.Service{
+	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      gad.otlpServiceName,
-			Namespace: gad.namespace,
-			Labels:    commonLabels,
+			Namespace: gad.globals.TargetNamespace(),
 		},
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{
@@ -396,24 +409,22 @@ func (gad *GatewayApplierDeleter) makeOTLPService() *corev1.Service {
 					TargetPort: intstr.FromInt32(ports.OTLPHTTP),
 				},
 			},
-			Selector: selectorLabels,
+			Selector: commonresources.DefaultSelector(gad.baseName),
 			Type:     corev1.ServiceTypeClusterIP,
 		},
 	}
+
+	return service
 }
 
 func (gad *GatewayApplierDeleter) makePeerAuthentication() *istiosecurityclientv1.PeerAuthentication {
-	commonLabels := commonresources.MakeDefaultLabels(gad.baseName, commonresources.LabelValueK8sComponentGateway)
-	selectorLabels := commonresources.MakeDefaultSelectorLabels(gad.baseName)
-
 	return &istiosecurityclientv1.PeerAuthentication{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      gad.baseName,
-			Namespace: gad.namespace,
-			Labels:    commonLabels,
+			Namespace: gad.globals.TargetNamespace(),
 		},
 		Spec: istiosecurityv1.PeerAuthentication{
-			Selector: &istiotypev1beta1.WorkloadSelector{MatchLabels: selectorLabels},
+			Selector: &istiotypev1beta1.WorkloadSelector{MatchLabels: commonresources.DefaultSelector(gad.baseName)},
 			Mtls:     &istiosecurityv1.PeerAuthentication_MutualTLS{Mode: istiosecurityv1.PeerAuthentication_MutualTLS_PERMISSIVE},
 		},
 	}
@@ -424,6 +435,7 @@ func (gad *GatewayApplierDeleter) makeAnnotations(configChecksum string, opts Ga
 
 	if opts.IstioEnabled {
 		annotations[commonresources.AnnotationKeyIstioExcludeInboundPorts] = fmt.Sprintf("%d", ports.Metrics)
+		annotations[commonresources.AnnotationKeyIstioExcludeInboundPorts] = fmt.Sprintf("%d", ports.Metrics)
 		// When a workload is outside the istio mesh and communicates with pod in service mesh, the envoy proxy does not
 		// preserve the source IP and destination IP. To preserve source/destination IP we need TPROXY interception mode.
 		// More info: https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/#ProxyConfig-InboundInterceptionMode
@@ -433,11 +445,46 @@ func (gad *GatewayApplierDeleter) makeAnnotations(configChecksum string, opts Ga
 	return annotations
 }
 
-func gatewayIngressAllowedPorts() []int32 {
+func makeGatewayNetworkPolicies(name types.NamespacedName, istioEnabled bool) []*networkingv1.NetworkPolicy {
+	var (
+		otlpPorts    = gatewayIngressOTLPPorts()
+		metricsPorts = gatewayIngressMetricsPorts(istioEnabled)
+	)
+
+	metricsNetworkPolicy := commonresources.MakeNetworkPolicy(
+		name,
+		commonresources.DefaultSelector(name.Name),
+		commonresources.WithNameSuffix("metrics"),
+		commonresources.WithIngressFromPodsInAllNamespaces(
+			map[string]string{
+				commonresources.LabelKeyTelemetryMetricsScraping: commonresources.LabelValueTelemetryMetricsScraping,
+			},
+			metricsPorts,
+		),
+	)
+
+	gatewayNetworkPolicies := commonresources.MakeNetworkPolicy(
+		name,
+		commonresources.DefaultSelector(name.Name),
+		commonresources.WithIngressFromAny(otlpPorts...),
+		commonresources.WithEgressToAny(),
+	)
+
+	return []*networkingv1.NetworkPolicy{metricsNetworkPolicy, gatewayNetworkPolicies}
+}
+
+func gatewayIngressOTLPPorts() []int32 {
 	return []int32{
-		ports.Metrics,
-		ports.HealthCheck,
 		ports.OTLPHTTP,
 		ports.OTLPGRPC,
 	}
+}
+
+func gatewayIngressMetricsPorts(istioEnabled bool) []int32 {
+	metricsPorts := []int32{ports.Metrics}
+	if istioEnabled {
+		metricsPorts = append(metricsPorts, ports.IstioEnvoyTelemetry)
+	}
+
+	return metricsPorts
 }

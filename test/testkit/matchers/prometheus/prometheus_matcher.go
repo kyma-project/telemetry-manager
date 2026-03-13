@@ -4,12 +4,12 @@ import (
 	"bytes"
 
 	"github.com/onsi/gomega"
-	"github.com/onsi/gomega/types"
+	gomegatypes "github.com/onsi/gomega/types"
 	"github.com/prometheus/common/expfmt"
 	"github.com/prometheus/common/model"
 )
 
-func HaveFlatMetricFamilies(matcher types.GomegaMatcher) types.GomegaMatcher {
+func HaveFlatMetricFamilies(matcher gomegatypes.GomegaMatcher) gomegatypes.GomegaMatcher {
 	return gomega.WithTransform(func(responseBody []byte) ([]FlatMetricFamily, error) {
 		parser := expfmt.NewTextParser(model.UTF8Validation)
 
@@ -21,19 +21,19 @@ func HaveFlatMetricFamilies(matcher types.GomegaMatcher) types.GomegaMatcher {
 	}, matcher)
 }
 
-func HaveName(matcher types.GomegaMatcher) types.GomegaMatcher {
+func HaveName(matcher gomegatypes.GomegaMatcher) gomegatypes.GomegaMatcher {
 	return gomega.WithTransform(func(fmf FlatMetricFamily) string {
 		return fmf.Name
 	}, matcher)
 }
 
-func HaveMetricValue(matcher types.GomegaMatcher) types.GomegaMatcher {
+func HaveMetricValue(matcher gomegatypes.GomegaMatcher) gomegatypes.GomegaMatcher {
 	return gomega.WithTransform(func(fmf FlatMetricFamily) float64 {
 		return fmf.MetricValue
 	}, matcher)
 }
 
-func HaveLabels(matcher types.GomegaMatcher) types.GomegaMatcher {
+func HaveLabels(matcher gomegatypes.GomegaMatcher) gomegatypes.GomegaMatcher {
 	return gomega.WithTransform(func(fmf FlatMetricFamily) map[string]string {
 		return fmf.Labels
 	}, matcher)

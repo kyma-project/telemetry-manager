@@ -10,7 +10,6 @@ metadata:
     kyma-project.io/module: telemetry
   {{- include "telemetry-manager.labels" . | indent 4 }}
 webhooks:
-{{- if .Values.experimental.enabled }}
 - name: mutating-metricpipelines-v1beta1.kyma-project.io
   clientConfig:
     service:
@@ -93,7 +92,6 @@ webhooks:
         - logpipelines
       scope: '*'
 
-{{- end }}
 - admissionReviewVersions:
   - v1beta1
   - v1

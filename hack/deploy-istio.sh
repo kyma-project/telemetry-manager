@@ -157,6 +157,25 @@ metadata:
 EOF
 }
 
+function wait_for_service_account() {
+  local namespace=$1
+  local max_attempts=30
+  local delay_seconds=2
+
+  echo "Waiting for default service account in namespace $namespace..."
+  for ((attempts=1; attempts<=max_attempts; attempts++)); do
+    if kubectl get serviceaccount default -n "$namespace" &>/dev/null; then
+      echo "Default service account ready in namespace $namespace"
+      return 0
+    fi
+    echo "Attempt $attempts/$max_attempts: Service account not ready yet, waiting $delay_seconds seconds..."
+    sleep $delay_seconds
+  done
+
+  echo "ERROR: Default service account not created in namespace $namespace after $max_attempts attempts"
+  return 1
+}
+
 function main() {
   kubectl apply -f "https://github.com/kyma-project/istio/releases/download/$ISTIO_VERSION/istio-manager.yaml"
   kubectl apply -f "https://github.com/kyma-project/istio/releases/download/$ISTIO_VERSION/istio-default-cr.yaml"
@@ -166,6 +185,7 @@ function main() {
   ensure_peer_authentication default "$ISTIO_NAMESPACE" STRICT
 
   apply_namespace "istio-permissive-mtls"
+  wait_for_service_account "istio-permissive-mtls"
   ensure_peer_authentication default istio-permissive-mtls PERMISSIVE
 }
 

@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 
+	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -36,15 +37,18 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
-	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/tracegateway"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
+	"github.com/kyma-project/telemetry-manager/internal/secretwatch"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	predicateutils "github.com/kyma-project/telemetry-manager/internal/utils/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
@@ -60,39 +64,45 @@ type TracePipelineController struct {
 
 	reconcileTriggerChan <-chan event.GenericEvent
 	reconciler           *tracepipeline.Reconciler
+	secretWatchClient    *secretwatch.Client
 }
 
 type TracePipelineControllerConfig struct {
+	config.Global
+
 	RestConfig                    *rest.Config
-	SelfMonitorName               string
-	TelemetryNamespace            string
 	OTelCollectorImage            string
 	TraceGatewayPriorityClassName string
-	EnableFIPSMode                bool
 }
 
-func NewTracePipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, config TracePipelineControllerConfig) (*TracePipelineController, error) {
-	flowHealthProber, err := prober.NewOTelTraceGatewayProber(types.NamespacedName{Name: config.SelfMonitorName, Namespace: config.TelemetryNamespace})
-	if err != nil {
-		return nil, err
+func NewTracePipelineController(config TracePipelineControllerConfig, client client.Client, reconcileTriggerChan <-chan event.GenericEvent, secretWatchClient *secretwatch.Client) (*TracePipelineController, error) {
+	pipelineCount := resourcelock.MaxPipelineCount
+
+	if config.UnlimitedPipelines() {
+		pipelineCount = resourcelock.UnlimitedPipelineCount
 	}
 
 	pipelineLock := resourcelock.NewLocker(
 		client,
 		types.NamespacedName{
-			Name:      "telemetry-tracepipeline-lock",
-			Namespace: config.TelemetryNamespace,
+			Name:      names.TracePipelineLock,
+			Namespace: config.TargetNamespace(),
 		},
-		MaxPipelineCount,
+		pipelineCount,
 	)
 
 	pipelineSync := resourcelock.NewSyncer(
 		client,
 		types.NamespacedName{
-			Name:      "telemetry-tracepipeline-sync",
-			Namespace: config.TelemetryNamespace,
+			Name:      names.TracePipelineSync,
+			Namespace: config.TargetNamespace(),
 		},
 	)
+
+	flowHealthProber, err := prober.NewOTelTraceGatewayProber(types.NamespacedName{Name: names.SelfMonitor, Namespace: config.TargetNamespace()})
+	if err != nil {
+		return nil, err
+	}
 
 	transformSpecValidator, err := ottl.NewTransformSpecValidator(ottl.SignalTypeTrace)
 	if err != nil {
@@ -104,14 +114,14 @@ func NewTracePipelineController(client client.Client, reconcileTriggerChan <-cha
 		return nil, err
 	}
 
-	pipelineValidator := &tracepipeline.Validator{
-		EndpointValidator:      &endpoint.Validator{Client: client},
-		TLSCertValidator:       tlscert.New(client),
-		SecretRefValidator:     &secretref.Validator{Client: client},
-		PipelineLock:           pipelineLock,
-		TransformSpecValidator: transformSpecValidator,
-		FilterSpecValidator:    filterSpecValidator,
-	}
+	pipelineValidator := tracepipeline.NewValidator(
+		tracepipeline.WithEndpointValidator(&endpoint.Validator{Client: client}),
+		tracepipeline.WithTLSCertValidator(tlscert.New(client)),
+		tracepipeline.WithSecretRefValidator(&secretref.Validator{Client: client}),
+		tracepipeline.WithValidatorPipelineLock(pipelineLock),
+		tracepipeline.WithTransformSpecValidator(transformSpecValidator),
+		tracepipeline.WithFilterSpecValidator(filterSpecValidator),
+	)
 
 	discoveryClient, err := discovery.NewDiscoveryClientForConfig(config.RestConfig)
 	if err != nil {
@@ -119,28 +129,29 @@ func NewTracePipelineController(client client.Client, reconcileTriggerChan <-cha
 	}
 
 	reconciler := tracepipeline.New(
-		client,
-		config.TelemetryNamespace,
-		flowHealthProber,
-		otelcollector.NewTraceGatewayApplierDeleter(
-			config.OTelCollectorImage,
-			config.TelemetryNamespace,
-			config.TraceGatewayPriorityClassName,
-			config.EnableFIPSMode,
-		),
-		&tracegateway.Builder{Reader: client},
-		&workloadstatus.DeploymentProber{Client: client},
-		istiostatus.NewChecker(discoveryClient),
-		overrides.New(client, overrides.HandlerConfig{SystemNamespace: config.TelemetryNamespace}),
-		pipelineLock,
-		pipelineSync,
-		pipelineValidator,
-		&conditions.ErrorToMessageConverter{})
+		tracepipeline.WithClient(client),
+		tracepipeline.WithGlobals(config.Global),
+
+		tracepipeline.WithGatewayApplierDeleter(otelcollector.NewTraceGatewayApplierDeleter(config.Global, config.OTelCollectorImage, config.TraceGatewayPriorityClassName)),
+		tracepipeline.WithGatewayConfigBuilder(&tracegateway.Builder{Reader: client}),
+		tracepipeline.WithGatewayProber(&workloadstatus.DeploymentProber{Client: client}),
+
+		tracepipeline.WithFlowHealthProber(flowHealthProber),
+		tracepipeline.WithIstioStatusChecker(istiostatus.NewChecker(discoveryClient)),
+		tracepipeline.WithOverridesHandler(overrides.New(config.Global, client)),
+		tracepipeline.WithErrorToMessageConverter(&conditions.ErrorToMessageConverter{}),
+
+		tracepipeline.WithPipelineLock(pipelineLock),
+		tracepipeline.WithPipelineSyncer(pipelineSync),
+		tracepipeline.WithPipelineValidator(pipelineValidator),
+		tracepipeline.WithSecretWatcher(secretWatchClient),
+	)
 
 	return &TracePipelineController{
 		Client:               client,
 		reconcileTriggerChan: reconcileTriggerChan,
 		reconciler:           reconciler,
+		secretWatchClient:    secretWatchClient,
 	}, nil
 }
 
@@ -149,7 +160,7 @@ func (r *TracePipelineController) Reconcile(ctx context.Context, req ctrl.Reques
 }
 
 func (r *TracePipelineController) SetupWithManager(mgr ctrl.Manager) error {
-	b := ctrl.NewControllerManagedBy(mgr).For(&telemetryv1alpha1.TracePipeline{})
+	b := ctrl.NewControllerManagedBy(mgr).For(&telemetryv1beta1.TracePipeline{})
 
 	b.WatchesRawSource(
 		source.Channel(r.reconcileTriggerChan, &handler.EnqueueRequestForObject{}),
@@ -166,26 +177,40 @@ func (r *TracePipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		&networkingv1.NetworkPolicy{},
 	}
 
+	discoveryClient, err := discovery.NewDiscoveryClientForConfig(mgr.GetConfig())
+	if err != nil {
+		return fmt.Errorf("failed to create discovery client: %w", err)
+	}
+
+	isIstioActive, err := istiostatus.NewChecker(discoveryClient).IsIstioActive(context.Background())
+	if err != nil {
+		return fmt.Errorf("failed to check Istio status: %w", err)
+	}
+
+	if isIstioActive {
+		ownedResourceTypesToWatch = append(ownedResourceTypesToWatch, &istiosecurityclientv1.PeerAuthentication{})
+	}
+
 	for _, resource := range ownedResourceTypesToWatch {
 		b = b.Watches(
 			resource,
 			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(),
 				mgr.GetRESTMapper(),
-				&telemetryv1alpha1.TracePipeline{},
+				&telemetryv1beta1.TracePipeline{},
 			),
 			ctrlbuilder.WithPredicates(predicateutils.OwnedResourceChanged()),
 		)
 	}
 
 	return b.Watches(
-		&operatorv1alpha1.Telemetry{},
+		&operatorv1beta1.Telemetry{},
 		handler.EnqueueRequestsFromMapFunc(r.mapTelemetryChanges),
 		ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete()),
 	).Complete(r)
 }
 
 func (r *TracePipelineController) mapTelemetryChanges(ctx context.Context, object client.Object) []reconcile.Request {
-	_, ok := object.(*operatorv1alpha1.Telemetry)
+	_, ok := object.(*operatorv1beta1.Telemetry)
 	if !ok {
 		logf.FromContext(ctx).V(1).Error(nil, "Unexpected type: expected Telemetry")
 		return nil
@@ -200,7 +225,7 @@ func (r *TracePipelineController) mapTelemetryChanges(ctx context.Context, objec
 }
 
 func (r *TracePipelineController) createRequestsForAllPipelines(ctx context.Context) ([]reconcile.Request, error) {
-	var pipelines telemetryv1alpha1.TracePipelineList
+	var pipelines telemetryv1beta1.TracePipelineList
 
 	var requests []reconcile.Request
 

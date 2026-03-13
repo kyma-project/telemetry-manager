@@ -1,5 +1,7 @@
 package common
 
+import telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+
 // =============================================================================
 // BASE CONFIGURATION TYPES
 // =============================================================================
@@ -7,7 +9,7 @@ package common
 // Config represents the root configuration structure for OpenTelemetry Collector
 type Config struct {
 	Extensions map[string]any `yaml:"extensions"`
-	Service    Service        `yaml:"service"`
+	Service    ServiceConfig  `yaml:"service"`
 
 	Receivers  map[string]any `yaml:"receivers"`
 	Processors map[string]any `yaml:"processors"`
@@ -19,37 +21,59 @@ type Config struct {
 // EXTENSION TYPES
 // =============================================================================
 
-type K8sLeaderElector struct {
+type K8sLeaderElectorExtensionConfig struct {
 	AuthType       string `yaml:"auth_type,omitempty"`
 	LeaseName      string `yaml:"lease_name,omitempty"`
 	LeaseNamespace string `yaml:"lease_namespace,omitempty"`
 }
 
-type FileStorage struct {
+type FileStorageExtensionConfig struct {
 	CreateDirectory bool   `yaml:"create_directory,omitempty"`
 	Directory       string `yaml:"directory,omitempty"`
+}
+
+type OAuth2ExtensionConfig struct {
+	TokenURL     string            `yaml:"token_url"`
+	ClientID     string            `yaml:"client_id"`
+	ClientSecret string            `yaml:"client_secret"` //nolint:gosec // G117: struct field for OTel config, not a credential
+	Scopes       []string          `yaml:"scopes,omitempty"`
+	Params       map[string]string `yaml:"endpoint_params,omitempty"`
+}
+
+type CGroupRuntimeExtension struct {
+	GoMaxProcs CGroupRuntimeGoMaxProcs `yaml:"gomaxprocs"`
+	GoMemLimit CGroupRuntimeGoMemLimit `yaml:"gomemlimit"`
+}
+
+type CGroupRuntimeGoMaxProcs struct {
+	Enabled bool `yaml:"enabled"`
+}
+
+type CGroupRuntimeGoMemLimit struct {
+	Enabled bool    `yaml:"enabled"`
+	Ratio   float64 `yaml:"ratio,omitempty"`
 }
 
 // =============================================================================
 // SERVICE TYPES
 // =============================================================================
 
-type Service struct {
-	Pipelines  map[string]Pipeline `yaml:"pipelines,omitempty"`
-	Telemetry  Telemetry           `yaml:"telemetry,omitempty"`
-	Extensions []string            `yaml:"extensions,omitempty"`
+type ServiceConfig struct {
+	Pipelines  map[string]ServicePipeline `yaml:"pipelines,omitempty"`
+	Telemetry  Telemetry                  `yaml:"telemetry,omitempty"`
+	Extensions []string                   `yaml:"extensions,omitempty"`
 }
 
 type Telemetry struct {
-	Metrics Metrics `yaml:"metrics"`
-	Logs    Logs    `yaml:"logs"`
+	Metrics TelemetryMetrics `yaml:"metrics"`
+	Logs    Logs             `yaml:"logs"`
 }
 
-type Metrics struct {
-	Readers []MetricReader `yaml:"readers"`
+type TelemetryMetrics struct {
+	Readers []TelemetryMetricReader `yaml:"readers"`
 }
 
-type MetricReader struct {
+type TelemetryMetricReader struct {
 	Pull PullMetricReader `yaml:"pull"`
 }
 
@@ -71,7 +95,7 @@ type Logs struct {
 	Encoding string `yaml:"encoding"`
 }
 
-type Pipeline struct {
+type ServicePipeline struct {
 	Receivers  []string `yaml:"receivers"`
 	Processors []string `yaml:"processors"`
 	Exporters  []string `yaml:"exporters"`
@@ -81,7 +105,7 @@ type Pipeline struct {
 // RECEIVER TYPES
 // =============================================================================
 
-type OTLPReceiver struct {
+type OTLPReceiverConfig struct {
 	Protocols ReceiverProtocols `yaml:"protocols,omitempty"`
 }
 
@@ -98,7 +122,7 @@ type Endpoint struct {
 // EXPORTER TYPES
 // =============================================================================
 
-type OTLPExporter struct {
+type OTLPExporterConfig struct {
 	MetricsEndpoint string            `yaml:"metrics_endpoint,omitempty"`
 	TracesEndpoint  string            `yaml:"traces_endpoint,omitempty"`
 	LogsEndpoint    string            `yaml:"logs_endpoint,omitempty"`
@@ -107,6 +131,7 @@ type OTLPExporter struct {
 	TLS             TLS               `yaml:"tls,omitempty"`
 	SendingQueue    SendingQueue      `yaml:"sending_queue,omitempty"`
 	RetryOnFailure  RetryOnFailure    `yaml:"retry_on_failure,omitempty"`
+	Auth            Auth              `yaml:"auth,omitempty"`
 }
 
 type TLS struct {
@@ -129,28 +154,27 @@ type RetryOnFailure struct {
 	MaxElapsedTime  string `yaml:"max_elapsed_time"`
 }
 
+type Auth struct {
+	Authenticator string `yaml:"authenticator"`
+}
+
 // =============================================================================
 // PROCESSOR TYPES
 // =============================================================================
 
-type BaseProcessors struct {
-	Batch         *BatchProcessor `yaml:"batch,omitempty"`
-	MemoryLimiter *MemoryLimiter  `yaml:"memory_limiter,omitempty"`
-}
-
-type BatchProcessor struct {
+type BatchProcessorConfig struct {
 	SendBatchSize    int    `yaml:"send_batch_size"`
 	Timeout          string `yaml:"timeout"`
 	SendBatchMaxSize int    `yaml:"send_batch_max_size"`
 }
 
-type MemoryLimiter struct {
+type MemoryLimiterConfig struct {
 	CheckInterval        string `yaml:"check_interval"`
 	LimitPercentage      int    `yaml:"limit_percentage"`
 	SpikeLimitPercentage int    `yaml:"spike_limit_percentage"`
 }
 
-type K8sAttributesProcessor struct {
+type K8sAttributesProcessorConfig struct {
 	AuthType       string             `yaml:"auth_type"`
 	Passthrough    bool               `yaml:"passthrough"`
 	Extract        ExtractK8sMetadata `yaml:"extract"`
@@ -158,8 +182,10 @@ type K8sAttributesProcessor struct {
 }
 
 type ExtractK8sMetadata struct {
-	Metadata []string       `yaml:"metadata"`
-	Labels   []ExtractLabel `yaml:"labels"`
+	Metadata                     []string       `yaml:"metadata"`
+	Labels                       []ExtractLabel `yaml:"labels"`
+	OTelAnnotations              bool           `yaml:"otel_annotations,omitempty"`
+	DeploymentNameFromReplicaset bool           `yaml:"deployment_name_from_replicaset,omitempty"`
 }
 
 type ExtractLabel struct {
@@ -178,18 +204,7 @@ type PodAssociation struct {
 	Name string `yaml:"name,omitempty"`
 }
 
-type ResourceProcessor struct {
-	Attributes []AttributeAction `yaml:"attributes"`
-}
-
-type AttributeAction struct {
-	Action       string `yaml:"action,omitempty"`
-	Key          string `yaml:"key,omitempty"`
-	Value        string `yaml:"value,omitempty"`
-	RegexPattern string `yaml:"pattern,omitempty"`
-}
-
-type TransformProcessor struct {
+type TransformProcessorConfig struct {
 	ErrorMode        string                         `yaml:"error_mode"`
 	LogStatements    []TransformProcessorStatements `yaml:"log_statements,omitempty"`
 	MetricStatements []TransformProcessorStatements `yaml:"metric_statements,omitempty"`
@@ -201,18 +216,18 @@ type TransformProcessorStatements struct {
 	Conditions []string `yaml:"conditions,omitempty"`
 }
 
-type ServiceEnrichmentProcessor struct {
+type ServiceEnrichmentProcessorConfig struct {
 	ResourceAttributes []string `yaml:"resource_attributes"`
 }
 
-type IstioNoiseFilterProcessor struct {
+type IstioNoiseFilterProcessorConfig struct {
 }
 
-type FilterProcessor struct {
-	ErrorMode string                 `yaml:"error_mode"`
-	Metrics   FilterProcessorMetrics `yaml:"metrics,omitempty"`
-	Logs      FilterProcessorLogs    `yaml:"logs,omitempty"`
-	Traces    FilterProcessorTraces  `yaml:"traces,omitempty"`
+type FilterProcessorConfig struct {
+	ErrorMode string                        `yaml:"error_mode"`
+	Metrics   []telemetryv1beta1.FilterSpec `yaml:"metric_conditions,omitempty"`
+	Logs      []telemetryv1beta1.FilterSpec `yaml:"log_conditions,omitempty"`
+	Traces    []telemetryv1beta1.FilterSpec `yaml:"trace_conditions,omitempty"`
 }
 
 type FilterProcessorMetrics struct {
@@ -233,7 +248,7 @@ type FilterProcessorLogs struct {
 // CONNECTOR TYPES
 // =============================================================================
 
-type RoutingConnector struct {
+type RoutingConnectorConfig struct {
 	DefaultPipelines []string                     `yaml:"default_pipelines"`
 	ErrorMode        string                       `yaml:"error_mode"`
 	Table            []RoutingConnectorTableEntry `yaml:"table"`
@@ -245,5 +260,5 @@ type RoutingConnectorTableEntry struct {
 	Context   string   `yaml:"context,omitempty"`
 }
 
-type ForwardConnector struct {
+type ForwardConnectorConfig struct {
 }

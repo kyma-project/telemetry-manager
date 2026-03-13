@@ -4,13 +4,14 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/types"
+	gomegatypes "github.com/onsi/gomega/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/trace"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
@@ -20,12 +21,12 @@ import (
 )
 
 func TestTransform(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelTraces)
+	suite.SetupTest(t, suite.LabelTraces)
 
 	tests := []struct {
 		name          string
-		transformSpec telemetryv1alpha1.TransformSpec
-		assertion     types.GomegaMatcher
+		transformSpec telemetryv1beta1.TransformSpec
+		assertion     gomegatypes.GomegaMatcher
 		tranceGen     func(ns string) client.Object
 	}{
 		{
@@ -33,7 +34,7 @@ func TestTransform(t *testing.T) {
 			tranceGen: func(ns string) client.Object {
 				return telemetrygen.NewPod(ns, telemetrygen.SignalTypeTraces).K8sObject()
 			},
-			transformSpec: telemetryv1alpha1.TransformSpec{
+			transformSpec: telemetryv1beta1.TransformSpec{
 				Statements: []string{"set(span.attributes[\"system\"], \"false\") where not IsMatch(resource.attributes[\"k8s.namespace.name\"], \".*-system\")"},
 			},
 			assertion: HaveFlatTraces(ContainElement(SatisfyAll(
@@ -45,7 +46,7 @@ func TestTransform(t *testing.T) {
 			tranceGen: func(ns string) client.Object {
 				return telemetrygen.NewPod(ns, telemetrygen.SignalTypeTraces, telemetrygen.WithTelemetryAttribute("component", "proxy")).K8sObject()
 			},
-			transformSpec: telemetryv1alpha1.TransformSpec{
+			transformSpec: telemetryv1beta1.TransformSpec{
 				Conditions: []string{"span.attributes[\"component\"] == \"proxy\""},
 				Statements: []string{"set(span.attributes[\"FromProxy\"], \"true\")"},
 			},
@@ -58,7 +59,7 @@ func TestTransform(t *testing.T) {
 			tranceGen: func(ns string) client.Object {
 				return telemetrygen.NewPod(ns, telemetrygen.SignalTypeTraces).K8sObject()
 			},
-			transformSpec: telemetryv1alpha1.TransformSpec{
+			transformSpec: telemetryv1beta1.TransformSpec{
 				Statements: []string{"set(span.attributes[\"name\"], \"passed\")",
 					"set(resource.attributes[\"test\"], \"passed\")",
 				},
@@ -82,21 +83,18 @@ func TestTransform(t *testing.T) {
 			backend := kitbackend.New(backendNs, kitbackend.SignalTypeTraces)
 			pipeline := testutils.NewTracePipelineBuilder().
 				WithName(pipelineName).
-				WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+				WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 				WithTransform(tt.transformSpec).
 				Build()
 
 			resources := []client.Object{
-				kitk8s.NewNamespace(backendNs).K8sObject(),
-				kitk8s.NewNamespace(genNs).K8sObject(),
+				kitk8sobjects.NewNamespace(backendNs).K8sObject(),
+				kitk8sobjects.NewNamespace(genNs).K8sObject(),
 				&pipeline,
 				tt.tranceGen(genNs),
 			}
 			resources = append(resources, backend.K8sObjects()...)
 
-			t.Cleanup(func() {
-				Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-			})
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 			assert.BackendReachable(t, backend)

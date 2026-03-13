@@ -4,21 +4,19 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
-	"github.com/kyma-project/telemetry-manager/internal/overrides"
+	"github.com/kyma-project/telemetry-manager/internal/metrics"
 	commonStatusStubs "github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus/stubs"
-	logpipelinemocks "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/mocks"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/otel/mocks"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/stubs"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
@@ -27,1124 +25,672 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
-func TestReconcile(t *testing.T) {
-	scheme := runtime.NewScheme()
-	_ = clientgoscheme.AddToScheme(scheme)
-	_ = telemetryv1alpha1.AddToScheme(scheme)
-
-	overridesHandlerStub := &logpipelinemocks.OverridesHandler{}
-	overridesHandlerStub.On("LoadOverrides", t.Context()).Return(&overrides.Config{}, nil)
-
-	istioStatusCheckerStub := &stubs.IstioStatusChecker{IsActive: false}
-
-	telemetryNamespace := "default"
-	moduleVersion := "1.0.0"
-
-	t.Run("log gateway probing failed", func(t *testing.T) {
-		pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput().Build()
-		fakeClient := testutils.NewFakeClientWrapper().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
-
-		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
-		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil).Times(1)
-
-		agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
-		agentConfigBuilderMock.On("Build", mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
-
-		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
-		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
-		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
-		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
-
-		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(workloadstatus.ErrDeploymentFetching)
-		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
-
-		gatewayFlowHeathProber := &mocks.GatewayFlowHealthProber{}
-		gatewayFlowHeathProber.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
-
-		agentFlowHealthProber := &mocks.AgentFlowHealthProber{}
-		agentFlowHealthProber.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelAgentProbeResult{}, nil)
-
-		pipelineLock := &mocks.PipelineLock{}
-		pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
-		pipelineLock.On("ReleaseLock", mock.Anything).Return(nil)
-		pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
-
-		pipelineValidatorWithStubs := &Validator{
-			PipelineLock:           pipelineLock,
-			EndpointValidator:      stubs.NewEndpointValidator(nil),
-			TLSCertValidator:       stubs.NewTLSCertValidator(nil),
-			SecretRefValidator:     stubs.NewSecretRefValidator(nil),
-			TransformSpecValidator: stubs.NewTransformSpecValidator(nil),
-			FilterSpecValidator:    stubs.NewFilterSpecValidator(nil),
-		}
-
-		errToMsg := &conditions.ErrorToMessageConverter{}
-
-		sut := New(
-			fakeClient,
-			telemetryNamespace,
-			moduleVersion,
-			gatewayFlowHeathProber,
-			agentFlowHealthProber,
-			agentConfigBuilderMock,
-			agentApplierDeleterMock,
-			agentProberStub,
-			gatewayApplierDeleterMock,
-			gatewayConfigBuilderMock,
-			gatewayProberStub,
-			istioStatusCheckerStub,
-			pipelineLock,
-			pipelineValidatorWithStubs,
-			errToMsg)
-		err := sut.Reconcile(t.Context(), &pipeline)
-		require.NoError(t, err)
-
-		var updatedPipeline telemetryv1alpha1.LogPipeline
-
-		err = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
-		require.NoError(t, err)
-
-		requireHasStatusCondition(t, updatedPipeline,
-			conditions.TypeGatewayHealthy,
-			metav1.ConditionFalse,
-			conditions.ReasonGatewayNotReady,
-			"Failed to get Deployment",
-		)
-
-		gatewayConfigBuilderMock.AssertExpectations(t)
-	})
-
-	t.Run("log gateway deployment is not ready", func(t *testing.T) {
-		pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput().Build()
-		fakeClient := testutils.NewFakeClientWrapper().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
-
-		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
-		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil).Times(1)
-
-		agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
-		agentConfigBuilderMock.On("Build", containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
-
-		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
-		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
-
-		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
-		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
-		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(&workloadstatus.PodIsPendingError{ContainerName: "foo", Message: "Error"})
-		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
-
-		gatewayFlowHeathProber := &mocks.GatewayFlowHealthProber{}
-		gatewayFlowHeathProber.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
-
-		agentFlowHealthProber := &mocks.AgentFlowHealthProber{}
-		agentFlowHealthProber.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelAgentProbeResult{}, nil)
-
-		pipelineLock := &mocks.PipelineLock{}
-		pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
-		pipelineLock.On("ReleaseLock", mock.Anything).Return(nil)
-		pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
-
-		pipelineValidatorWithStubs := &Validator{
-			PipelineLock:           pipelineLock,
-			EndpointValidator:      stubs.NewEndpointValidator(nil),
-			TLSCertValidator:       stubs.NewTLSCertValidator(nil),
-			SecretRefValidator:     stubs.NewSecretRefValidator(nil),
-			TransformSpecValidator: stubs.NewTransformSpecValidator(nil),
-			FilterSpecValidator:    stubs.NewFilterSpecValidator(nil),
-		}
-
-		errToMsg := &conditions.ErrorToMessageConverter{}
-
-		sut := New(
-			fakeClient,
-			telemetryNamespace,
-			moduleVersion,
-			gatewayFlowHeathProber,
-			agentFlowHealthProber,
-			agentConfigBuilderMock,
-			agentApplierDeleterMock,
-			agentProberStub,
-			gatewayApplierDeleterMock,
-			gatewayConfigBuilderMock,
-			gatewayProberStub,
-			istioStatusCheckerStub,
-			pipelineLock,
-			pipelineValidatorWithStubs,
-			errToMsg)
-		err := sut.Reconcile(t.Context(), &pipeline)
-		require.NoError(t, err)
-
-		var updatedPipeline telemetryv1alpha1.LogPipeline
-
-		err = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
-		require.NoError(t, err)
-
-		requireHasStatusCondition(t, updatedPipeline,
-			conditions.TypeGatewayHealthy,
-			metav1.ConditionFalse,
-			conditions.ReasonGatewayNotReady,
-			"Pod is in the pending state because container: foo is not running due to: Error. Please check the container: foo logs.",
-		)
-
-		gatewayConfigBuilderMock.AssertExpectations(t)
-	})
-
-	t.Run("log gateway deployment is ready", func(t *testing.T) {
-		pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput().Build()
-		fakeClient := testutils.NewFakeClientWrapper().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
-
-		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
-		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil).Times(1)
-
-		agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
-		agentConfigBuilderMock.On("Build", containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
-
-		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
-		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
-
-		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
-		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
-		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
-		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
-
-		pipelineLock := &mocks.PipelineLock{}
-		pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
-		pipelineLock.On("ReleaseLock", mock.Anything).Return(nil)
-		pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
-
-		pipelineValidatorWithStubs := &Validator{
-			PipelineLock:           pipelineLock,
-			EndpointValidator:      stubs.NewEndpointValidator(nil),
-			TLSCertValidator:       stubs.NewTLSCertValidator(nil),
-			SecretRefValidator:     stubs.NewSecretRefValidator(nil),
-			TransformSpecValidator: stubs.NewTransformSpecValidator(nil),
-			FilterSpecValidator:    stubs.NewFilterSpecValidator(nil),
-		}
-
-		gatewayFlowHeathProber := &mocks.GatewayFlowHealthProber{}
-		gatewayFlowHeathProber.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
-
-		agentFlowHealthProber := &mocks.AgentFlowHealthProber{}
-		agentFlowHealthProber.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelAgentProbeResult{}, nil)
-
-		errToMsg := &conditions.ErrorToMessageConverter{}
-
-		sut := New(
-			fakeClient,
-			telemetryNamespace,
-			moduleVersion,
-			gatewayFlowHeathProber,
-			agentFlowHealthProber,
-			agentConfigBuilderMock,
-			agentApplierDeleterMock,
-			agentProberStub,
-			gatewayApplierDeleterMock,
-			gatewayConfigBuilderMock,
-			gatewayProberStub,
-			istioStatusCheckerStub,
-			pipelineLock,
-			pipelineValidatorWithStubs,
-			errToMsg)
-		err := sut.Reconcile(t.Context(), &pipeline)
-		require.NoError(t, err)
-
-		var updatedPipeline telemetryv1alpha1.LogPipeline
-
-		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
-
-		requireHasStatusCondition(t, updatedPipeline,
-			conditions.TypeGatewayHealthy,
-			metav1.ConditionTrue,
-			conditions.ReasonGatewayReady,
-			"Log gateway Deployment is ready",
-		)
-
-		gatewayConfigBuilderMock.AssertExpectations(t)
-	})
-
-	t.Run("log agent daemonset is not ready", func(t *testing.T) {
-		pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).WithApplicationInput(true).Build()
-		fakeClient := testutils.NewFakeClientWrapper().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
-
-		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
-		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
-		agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
-		agentConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
-
-		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
-		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
-
-		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
-		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
-		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
-		agentProberStub := commonStatusStubs.NewDaemonSetProber(&workloadstatus.PodIsPendingError{Message: "Error"})
-
-		pipelineLock := &mocks.PipelineLock{}
-		pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
-		pipelineLock.On("ReleaseLock", mock.Anything).Return(nil)
-		pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
-
-		pipelineValidatorWithStubs := &Validator{
-			PipelineLock:           pipelineLock,
-			EndpointValidator:      stubs.NewEndpointValidator(nil),
-			TLSCertValidator:       stubs.NewTLSCertValidator(nil),
-			SecretRefValidator:     stubs.NewSecretRefValidator(nil),
-			TransformSpecValidator: stubs.NewTransformSpecValidator(nil),
-			FilterSpecValidator:    stubs.NewFilterSpecValidator(nil),
-		}
-
-		gatewayFlowHeathProber := &mocks.GatewayFlowHealthProber{}
-		gatewayFlowHeathProber.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
-
-		agentFlowHealthProber := &mocks.AgentFlowHealthProber{}
-		agentFlowHealthProber.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelAgentProbeResult{}, nil)
-
-		errToMsg := &conditions.ErrorToMessageConverter{}
-
-		sut := New(
-			fakeClient,
-			telemetryNamespace,
-			moduleVersion,
-			gatewayFlowHeathProber,
-			agentFlowHealthProber,
-			agentConfigBuilderMock,
-			agentApplierDeleterMock,
-			agentProberStub,
-			gatewayApplierDeleterMock,
-			gatewayConfigBuilderMock,
-			gatewayProberStub,
-			istioStatusCheckerStub,
-			pipelineLock,
-			pipelineValidatorWithStubs,
-			errToMsg)
-		err := sut.Reconcile(t.Context(), &pipeline)
-		require.NoError(t, err)
-
-		var updatedPipeline telemetryv1alpha1.LogPipeline
-
-		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
-
-		requireHasStatusCondition(t, updatedPipeline,
-			conditions.TypeAgentHealthy,
-			metav1.ConditionFalse,
-			conditions.ReasonAgentNotReady,
-			"Pod is in the pending state because container:  is not running due to: Error. Please check the container:  logs.")
-
-		agentConfigBuilderMock.AssertExpectations(t)
-		gatewayConfigBuilderMock.AssertExpectations(t)
-	})
-
-	t.Run("log agent daemonset is ready", func(t *testing.T) {
-		pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).WithApplicationInput(true).Build()
-		fakeClient := testutils.NewFakeClientWrapper().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
-
-		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
-		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
-		agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
-		agentConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
-
-		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
-		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
-
-		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
-		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
-		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
-		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
-
-		pipelineLock := &mocks.PipelineLock{}
-		pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
-		pipelineLock.On("ReleaseLock", mock.Anything).Return(nil)
-		pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
-
-		pipelineValidatorWithStubs := &Validator{
-			PipelineLock:           pipelineLock,
-			EndpointValidator:      stubs.NewEndpointValidator(nil),
-			TLSCertValidator:       stubs.NewTLSCertValidator(nil),
-			SecretRefValidator:     stubs.NewSecretRefValidator(nil),
-			TransformSpecValidator: stubs.NewTransformSpecValidator(nil),
-			FilterSpecValidator:    stubs.NewFilterSpecValidator(nil),
-		}
-
-		gatewayFlowHeathProber := &mocks.GatewayFlowHealthProber{}
-		gatewayFlowHeathProber.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
-
-		agentFlowHealthProber := &mocks.AgentFlowHealthProber{}
-		agentFlowHealthProber.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelAgentProbeResult{}, nil)
-
-		errToMsg := &conditions.ErrorToMessageConverter{}
-
-		sut := New(
-			fakeClient,
-			telemetryNamespace,
-			moduleVersion,
-			gatewayFlowHeathProber,
-			agentFlowHealthProber,
-			agentConfigBuilderMock,
-			agentApplierDeleterMock,
-			agentProberStub,
-			gatewayApplierDeleterMock,
-			gatewayConfigBuilderMock,
-			gatewayProberStub,
-			istioStatusCheckerStub,
-			pipelineLock,
-			pipelineValidatorWithStubs,
-			errToMsg)
-		err := sut.Reconcile(t.Context(), &pipeline)
-		require.NoError(t, err)
-
-		var updatedPipeline telemetryv1alpha1.LogPipeline
-
-		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
-
-		requireHasStatusCondition(t, updatedPipeline,
-			conditions.TypeAgentHealthy,
-			metav1.ConditionTrue,
-			conditions.ReasonAgentReady,
-			"Log agent DaemonSet is ready")
-
-		agentConfigBuilderMock.AssertExpectations(t)
-		gatewayConfigBuilderMock.AssertExpectations(t)
-	})
-
-	t.Run("log gateway flow healthy", func(t *testing.T) {
-		tests := []struct {
-			name            string
-			probe           prober.OTelGatewayProbeResult
-			probeErr        error
-			expectedStatus  metav1.ConditionStatus
-			expectedReason  string
-			expectedMessage string
-		}{
-			{
-				name:            "prober fails",
-				probeErr:        assert.AnError,
-				expectedStatus:  metav1.ConditionUnknown,
-				expectedReason:  conditions.ReasonSelfMonGatewayProbingFailed,
-				expectedMessage: "Could not determine the health of the telemetry flow because the self monitor probing of gateway failed",
-			},
-			{
-				name: "healthy",
-				probe: prober.OTelGatewayProbeResult{
-					PipelineProbeResult: prober.PipelineProbeResult{Healthy: true},
-				},
-				expectedStatus:  metav1.ConditionTrue,
-				expectedReason:  conditions.ReasonSelfMonFlowHealthy,
-				expectedMessage: "No problems detected in the telemetry flow",
-			},
-			{
-				name: "throttling",
-				probe: prober.OTelGatewayProbeResult{
-					Throttling: true,
-				},
-				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonGatewayThrottling,
-				expectedMessage: "Log gateway is unable to receive logs at current rate. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=gateway-throttling",
-			},
-			{
-				name: "some data dropped",
-				probe: prober.OTelGatewayProbeResult{
-					PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
-				},
-				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonGatewaySomeDataDropped,
-				expectedMessage: "Backend is reachable, but rejecting logs. Some logs are dropped in Log gateway. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=not-all-logs-arrive-at-the-backend",
-			},
-			{
-				name: "some data dropped shadows other problems",
-				probe: prober.OTelGatewayProbeResult{
-					PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
-					Throttling:          true,
-				},
-				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonGatewaySomeDataDropped,
-				expectedMessage: "Backend is reachable, but rejecting logs. Some logs are dropped in Log gateway. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=not-all-logs-arrive-at-the-backend",
-			},
-			{
-				name: "all data dropped",
-				probe: prober.OTelGatewayProbeResult{
-					PipelineProbeResult: prober.PipelineProbeResult{AllDataDropped: true},
-				},
-				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonGatewayAllDataDropped,
-				expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped in Log gateway. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=no-logs-arrive-at-the-backend",
-			},
-			{
-				name: "all data dropped shadows other problems",
-				probe: prober.OTelGatewayProbeResult{
-					PipelineProbeResult: prober.PipelineProbeResult{AllDataDropped: true},
-					Throttling:          true,
-				},
-				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonGatewayAllDataDropped,
-				expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped in Log gateway. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=no-logs-arrive-at-the-backend",
-			},
-		}
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).WithApplicationInput(true).Build()
-				fakeClient := testutils.NewFakeClientWrapper().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
-
-				gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
-				gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
-
-				agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
-				agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Times(1)
-
-				agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
-				agentConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
-
-				gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
-				gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
-				gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
-
-				agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
-
-				gatewayFlowHeathProber := &mocks.GatewayFlowHealthProber{}
-				gatewayFlowHeathProber.On("Probe", mock.Anything, pipeline.Name).Return(tt.probe, tt.probeErr)
-
-				agentFlowHealthProber := &mocks.AgentFlowHealthProber{}
-				agentFlowHealthProber.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelAgentProbeResult{}, nil)
-
-				pipelineLock := &mocks.PipelineLock{}
-				pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
-				pipelineLock.On("ReleaseLock", mock.Anything).Return(nil)
-				pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
-
-				pipelineValidatorWithStubs := &Validator{
-					PipelineLock:           pipelineLock,
-					EndpointValidator:      stubs.NewEndpointValidator(nil),
-					TLSCertValidator:       stubs.NewTLSCertValidator(nil),
-					SecretRefValidator:     stubs.NewSecretRefValidator(nil),
-					TransformSpecValidator: stubs.NewTransformSpecValidator(nil),
-					FilterSpecValidator:    stubs.NewFilterSpecValidator(nil),
-				}
-
-				errToMsg := &conditions.ErrorToMessageConverter{}
-				sut := New(
-					fakeClient,
-					telemetryNamespace,
-					moduleVersion,
-					gatewayFlowHeathProber,
-					agentFlowHealthProber,
-					agentConfigBuilderMock,
-					agentApplierDeleterMock,
-					agentProberStub,
-					gatewayApplierDeleterMock,
-					gatewayConfigBuilderMock,
-					gatewayProberStub,
-					istioStatusCheckerStub,
-					pipelineLock,
-					pipelineValidatorWithStubs,
-					errToMsg)
-				err := sut.Reconcile(t.Context(), &pipeline)
-				require.NoError(t, err)
-
-				var updatedPipeline telemetryv1alpha1.LogPipeline
-
-				_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
-
-				requireHasStatusCondition(t, updatedPipeline,
-					conditions.TypeFlowHealthy,
-					tt.expectedStatus,
-					tt.expectedReason,
-					tt.expectedMessage,
-				)
-				agentConfigBuilderMock.AssertExpectations(t)
-				gatewayConfigBuilderMock.AssertExpectations(t)
-			})
-		}
-	})
-
-	t.Run("log agent flow healthy", func(t *testing.T) {
-		tests := []struct {
-			name            string
-			probe           prober.OTelAgentProbeResult
-			probeErr        error
-			expectedStatus  metav1.ConditionStatus
-			expectedReason  string
-			expectedMessage string
-		}{
-			{
-				name:            "prober fails",
-				probeErr:        assert.AnError,
-				expectedStatus:  metav1.ConditionUnknown,
-				expectedReason:  conditions.ReasonSelfMonAgentProbingFailed,
-				expectedMessage: "Could not determine the health of the telemetry flow because the self monitor probing of agent failed",
-			},
-			{
-				name: "healthy",
-				probe: prober.OTelAgentProbeResult{
-					PipelineProbeResult: prober.PipelineProbeResult{Healthy: true},
-				},
-				expectedStatus:  metav1.ConditionTrue,
-				expectedReason:  conditions.ReasonSelfMonFlowHealthy,
-				expectedMessage: "No problems detected in the telemetry flow",
-			},
-			{
-				name: "some data dropped",
-				probe: prober.OTelAgentProbeResult{
-					PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
-				},
-				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonAgentSomeDataDropped,
-				expectedMessage: "Backend is reachable, but rejecting logs. Some logs are dropped in Log agent. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=not-all-logs-arrive-at-the-backend",
-			},
-			{
-				name: "all data dropped",
-				probe: prober.OTelAgentProbeResult{
-					PipelineProbeResult: prober.PipelineProbeResult{AllDataDropped: true},
-				},
-				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonAgentAllDataDropped,
-				expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped in Log agent. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=no-logs-arrive-at-the-backend",
-			},
-			{
-				name: "all data dropped shadows other problems",
-				probe: prober.OTelAgentProbeResult{
-					PipelineProbeResult: prober.PipelineProbeResult{AllDataDropped: true, SomeDataDropped: true},
-				},
-				expectedStatus:  metav1.ConditionFalse,
-				expectedReason:  conditions.ReasonSelfMonAgentAllDataDropped,
-				expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped in Log agent. See troubleshooting: https://kyma-project.io/#/telemetry-manager/user/logs?id=no-logs-arrive-at-the-backend",
-			},
-		}
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).WithApplicationInput(true).Build()
-				fakeClient := testutils.NewFakeClientWrapper().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
-
-				gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
-				gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
-
-				agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
-				agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Times(1)
-
-				agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
-				agentConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
-
-				gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
-				gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
-				gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
-
-				agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
-
-				gatewayFlowHeathProber := &mocks.GatewayFlowHealthProber{}
-				gatewayFlowHeathProber.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
-
-				agentFlowHealthProber := &mocks.AgentFlowHealthProber{}
-				agentFlowHealthProber.On("Probe", mock.Anything, pipeline.Name).Return(tt.probe, tt.probeErr)
-
-				pipelineLock := &mocks.PipelineLock{}
-				pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
-				pipelineLock.On("ReleaseLock", mock.Anything).Return(nil)
-				pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
-
-				pipelineValidatorWithStubs := &Validator{
-					PipelineLock:           pipelineLock,
-					EndpointValidator:      stubs.NewEndpointValidator(nil),
-					TLSCertValidator:       stubs.NewTLSCertValidator(nil),
-					SecretRefValidator:     stubs.NewSecretRefValidator(nil),
-					TransformSpecValidator: stubs.NewTransformSpecValidator(nil),
-					FilterSpecValidator:    stubs.NewFilterSpecValidator(nil),
-				}
-
-				errToMsg := &conditions.ErrorToMessageConverter{}
-				sut := New(
-					fakeClient,
-					telemetryNamespace,
-					moduleVersion,
-					gatewayFlowHeathProber,
-					agentFlowHealthProber,
-					agentConfigBuilderMock,
-					agentApplierDeleterMock,
-					agentProberStub,
-					gatewayApplierDeleterMock,
-					gatewayConfigBuilderMock,
-					gatewayProberStub,
-					istioStatusCheckerStub,
-					pipelineLock,
-					pipelineValidatorWithStubs,
-					errToMsg)
-				err := sut.Reconcile(t.Context(), &pipeline)
-				require.NoError(t, err)
-
-				var updatedPipeline telemetryv1alpha1.LogPipeline
-
-				_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
-
-				requireHasStatusCondition(t, updatedPipeline,
-					conditions.TypeFlowHealthy,
-					tt.expectedStatus,
-					tt.expectedReason,
-					tt.expectedMessage,
-				)
-				agentConfigBuilderMock.AssertExpectations(t)
-				gatewayConfigBuilderMock.AssertExpectations(t)
-			})
-		}
-	})
-
-	t.Run("invalid transform spec", func(t *testing.T) {
-		pipeline := testutils.NewLogPipelineBuilder().Build()
-		fakeClient := testutils.NewFakeClientWrapper().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
-
-		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
-		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil)
-
-		agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
-		agentConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil)
-
-		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
-		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-		gatewayApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
-		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
-		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil)
-
-		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
-
-		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
-
-		gatewayFlowHeathProber := &mocks.GatewayFlowHealthProber{}
-		gatewayFlowHeathProber.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
-
-		agentFlowHealthProber := &mocks.AgentFlowHealthProber{}
-		agentFlowHealthProber.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelAgentProbeResult{}, nil)
-
-		pipelineLock := &mocks.PipelineLock{}
-		pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
-		pipelineLock.On("ReleaseLock", mock.Anything).Return(nil)
-		pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
-
-		pipelineValidatorWithStubs := &Validator{
-			PipelineLock:       pipelineLock,
-			EndpointValidator:  stubs.NewEndpointValidator(nil),
-			TLSCertValidator:   stubs.NewTLSCertValidator(nil),
-			SecretRefValidator: stubs.NewSecretRefValidator(nil),
-			TransformSpecValidator: stubs.NewTransformSpecValidator(
-				&ottl.InvalidOTTLSpecError{
-					Err: fmt.Errorf("invalid TransformSpec: error while parsing statements"),
-				},
+func TestGatewayHealthCondition(t *testing.T) {
+	tests := []struct {
+		name              string
+		gatewayProberStub *commonStatusStubs.DeploymentSetProber
+		expectedCondition metav1.Condition
+	}{
+		{
+			name: "log gateway probing failed",
+			gatewayProberStub: commonStatusStubs.NewDeploymentSetProber(
+				workloadstatus.ErrDeploymentFetching,
 			),
-			FilterSpecValidator: stubs.NewFilterSpecValidator(nil),
-		}
-
-		errToMsg := &conditions.ErrorToMessageConverter{}
-		sut := New(
-			fakeClient,
-			telemetryNamespace,
-			moduleVersion,
-			gatewayFlowHeathProber,
-			agentFlowHealthProber,
-			agentConfigBuilderMock,
-			agentApplierDeleterMock,
-			agentProberStub,
-			gatewayApplierDeleterMock,
-			gatewayConfigBuilderMock,
-			gatewayProberStub,
-			istioStatusCheckerStub,
-			pipelineLock,
-			pipelineValidatorWithStubs,
-			errToMsg)
-		err := sut.Reconcile(t.Context(), &pipeline)
-		require.NoError(t, err)
-
-		var updatedPipeline telemetryv1alpha1.LogPipeline
-
-		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
-
-		requireHasStatusCondition(t, updatedPipeline,
-			conditions.TypeConfigurationGenerated,
-			metav1.ConditionFalse,
-			conditions.ReasonOTTLSpecInvalid,
-			"Invalid TransformSpec: error while parsing statements",
-		)
-
-		agentConfigBuilderMock.AssertNotCalled(t, "Build", mock.Anything, mock.Anything, mock.Anything)
-		gatewayConfigBuilderMock.AssertNotCalled(t, "Build", mock.Anything, mock.Anything, mock.Anything)
-	})
-
-	t.Run("invalid filter spec", func(t *testing.T) {
-		pipeline := testutils.NewLogPipelineBuilder().Build()
-		fakeClient := testutils.NewFakeClientWrapper().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
-
-		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
-		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil)
-
-		agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
-		agentConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil)
-
-		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
-		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-		gatewayApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
-		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
-		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil)
-
-		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
-
-		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
-
-		gatewayFlowHeathProber := &mocks.GatewayFlowHealthProber{}
-		gatewayFlowHeathProber.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
-
-		agentFlowHealthProber := &mocks.AgentFlowHealthProber{}
-		agentFlowHealthProber.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelAgentProbeResult{}, nil)
-
-		pipelineLock := &mocks.PipelineLock{}
-		pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
-		pipelineLock.On("ReleaseLock", mock.Anything).Return(nil)
-		pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
-
-		pipelineValidatorWithStubs := &Validator{
-			PipelineLock:           pipelineLock,
-			EndpointValidator:      stubs.NewEndpointValidator(nil),
-			TLSCertValidator:       stubs.NewTLSCertValidator(nil),
-			SecretRefValidator:     stubs.NewSecretRefValidator(nil),
-			TransformSpecValidator: stubs.NewTransformSpecValidator(nil),
-			FilterSpecValidator: stubs.NewFilterSpecValidator(
-				&ottl.InvalidOTTLSpecError{
-					Err: fmt.Errorf("invalid FilterSpec: error while parsing conditions"),
-				},
+			expectedCondition: metav1.Condition{
+				Type:    conditions.TypeGatewayHealthy,
+				Status:  metav1.ConditionFalse,
+				Reason:  conditions.ReasonGatewayNotReady,
+				Message: "Failed to get Deployment",
+			},
+		},
+		{
+			name: "log gateway deployment is not ready",
+			gatewayProberStub: commonStatusStubs.NewDeploymentSetProber(
+				&workloadstatus.PodIsPendingError{ContainerName: "foo", Message: "Error"},
 			),
-		}
+			expectedCondition: metav1.Condition{
+				Type:    conditions.TypeGatewayHealthy,
+				Status:  metav1.ConditionFalse,
+				Reason:  conditions.ReasonGatewayNotReady,
+				Message: "Pod is in the pending state because container: foo is not running due to: Error. Please check the container: foo logs.",
+			},
+		},
+		{
+			name:              "log gateway deployment is ready",
+			gatewayProberStub: commonStatusStubs.NewDeploymentSetProber(nil),
+			expectedCondition: metav1.Condition{
+				Type:    conditions.TypeGatewayHealthy,
+				Status:  metav1.ConditionTrue,
+				Reason:  conditions.ReasonGatewayReady,
+				Message: "Log gateway Deployment is ready",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput().Build()
+			fakeClient := newTestClient(t, &pipeline)
 
-		errToMsg := &conditions.ErrorToMessageConverter{}
-		sut := New(
-			fakeClient,
-			telemetryNamespace,
-			moduleVersion,
-			gatewayFlowHeathProber,
-			agentFlowHealthProber,
-			agentConfigBuilderMock,
-			agentApplierDeleterMock,
-			agentProberStub,
-			gatewayApplierDeleterMock,
-			gatewayConfigBuilderMock,
-			gatewayProberStub,
-			istioStatusCheckerStub,
-			pipelineLock,
-			pipelineValidatorWithStubs,
-			errToMsg)
-		err := sut.Reconcile(t.Context(), &pipeline)
-		require.NoError(t, err)
+			sut := newTestReconciler(fakeClient,
+				WithGatewayProber(tt.gatewayProberStub))
+			result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
+			require.NoError(t, result.err)
+			requireHasStatusConditionObject(t, result.pipeline, tt.expectedCondition)
+		})
+	}
+}
 
-		var updatedPipeline telemetryv1alpha1.LogPipeline
+func TestAgentHealthCondition(t *testing.T) {
+	tests := []struct {
+		name              string
+		agentProberStub   *commonStatusStubs.DaemonSetProber
+		expectedCondition metav1.Condition
+	}{
+		{
+			name:            "log agent daomonset is not ready",
+			agentProberStub: commonStatusStubs.NewDaemonSetProber(&workloadstatus.PodIsPendingError{Message: "Error"}),
+			expectedCondition: metav1.Condition{
+				Type:    conditions.TypeAgentHealthy,
+				Status:  metav1.ConditionFalse,
+				Reason:  conditions.ReasonAgentNotReady,
+				Message: "Pod is in the pending state because container:  is not running due to: Error. Please check the container:  logs.",
+			},
+		},
+		{
+			name:            "log agent daemonset is ready",
+			agentProberStub: commonStatusStubs.NewDaemonSetProber(nil),
+			expectedCondition: metav1.Condition{
+				Type:    conditions.TypeAgentHealthy,
+				Status:  metav1.ConditionTrue,
+				Reason:  conditions.ReasonAgentReady,
+				Message: "Log agent DaemonSet is ready",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).WithRuntimeInput(true).Build()
+			fakeClient := newTestClient(t, &pipeline)
 
-		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+			sut := newTestReconciler(fakeClient,
+				WithAgentProber(tt.agentProberStub))
+			result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
+			require.NoError(t, result.err)
 
-		requireHasStatusCondition(t, updatedPipeline,
-			conditions.TypeConfigurationGenerated,
-			metav1.ConditionFalse,
-			conditions.ReasonOTTLSpecInvalid,
-			"Invalid FilterSpec: error while parsing conditions",
-		)
+			requireHasStatusConditionObject(t, result.pipeline, tt.expectedCondition)
+		})
+	}
+}
 
-		agentConfigBuilderMock.AssertNotCalled(t, "Build", mock.Anything, mock.Anything, mock.Anything)
-		gatewayConfigBuilderMock.AssertNotCalled(t, "Build", mock.Anything, mock.Anything, mock.Anything)
-	})
+func TestGatewayFlowHealthCondition(t *testing.T) {
+	tests := []struct {
+		name            string
+		probe           prober.OTelGatewayProbeResult
+		probeErr        error
+		expectedStatus  metav1.ConditionStatus
+		expectedReason  string
+		expectedMessage string
+	}{
+		{
+			name:            "prober fails",
+			probeErr:        assert.AnError,
+			expectedStatus:  metav1.ConditionUnknown,
+			expectedReason:  conditions.ReasonSelfMonGatewayProbingFailed,
+			expectedMessage: "Could not determine the health of the telemetry flow because the self monitor probing of gateway failed",
+		},
+		{
+			name: "healthy",
+			probe: prober.OTelGatewayProbeResult{
+				PipelineProbeResult: prober.PipelineProbeResult{Healthy: true},
+			},
+			expectedStatus:  metav1.ConditionTrue,
+			expectedReason:  conditions.ReasonSelfMonFlowHealthy,
+			expectedMessage: "No problems detected in the telemetry flow",
+		},
+		{
+			name: "throttling",
+			probe: prober.OTelGatewayProbeResult{
+				Throttling: true,
+			},
+			expectedStatus:  metav1.ConditionFalse,
+			expectedReason:  conditions.ReasonSelfMonGatewayThrottling,
+			expectedMessage: "Log gateway is unable to receive logs at current rate. See troubleshooting: " + conditions.LinkGatewayThrottling,
+		},
+		{
+			name: "some data dropped",
+			probe: prober.OTelGatewayProbeResult{
+				PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
+			},
+			expectedStatus:  metav1.ConditionFalse,
+			expectedReason:  conditions.ReasonSelfMonGatewaySomeDataDropped,
+			expectedMessage: "Backend is reachable, but rejecting logs. Some logs are dropped in Log gateway. See troubleshooting: " + conditions.LinkNotAllDataArriveAtBackend,
+		},
+		{
+			name: "some data dropped shadows other problems",
+			probe: prober.OTelGatewayProbeResult{
+				PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
+				Throttling:          true,
+			},
+			expectedStatus:  metav1.ConditionFalse,
+			expectedReason:  conditions.ReasonSelfMonGatewaySomeDataDropped,
+			expectedMessage: "Backend is reachable, but rejecting logs. Some logs are dropped in Log gateway. See troubleshooting: " + conditions.LinkNotAllDataArriveAtBackend,
+		},
+		{
+			name: "all data dropped",
+			probe: prober.OTelGatewayProbeResult{
+				PipelineProbeResult: prober.PipelineProbeResult{AllDataDropped: true},
+			},
+			expectedStatus:  metav1.ConditionFalse,
+			expectedReason:  conditions.ReasonSelfMonGatewayAllDataDropped,
+			expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped in Log gateway. See troubleshooting: " + conditions.LinkNoDataArriveAtBackend,
+		},
+		{
+			name: "all data dropped shadows other problems",
+			probe: prober.OTelGatewayProbeResult{
+				PipelineProbeResult: prober.PipelineProbeResult{AllDataDropped: true},
+				Throttling:          true,
+			},
+			expectedStatus:  metav1.ConditionFalse,
+			expectedReason:  conditions.ReasonSelfMonGatewayAllDataDropped,
+			expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped in Log gateway. See troubleshooting: " + conditions.LinkNoDataArriveAtBackend,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).WithRuntimeInput(true).Build()
+			fakeClient := newTestClient(t, &pipeline)
 
-	t.Run("one log pipeline does not require an agent", func(t *testing.T) {
-		pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput().WithApplicationInput(false).Build()
-		fakeClient := testutils.NewFakeClientWrapper().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+			// Only override the gateway flow health prober to inject test scenario
+			gatewayFlowHeathProber := &mocks.GatewayFlowHealthProber{}
+			gatewayFlowHeathProber.On("Probe", mock.Anything, pipeline.Name).Return(tt.probe, tt.probeErr)
 
-		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
-		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil).Times(1)
+			sut := newTestReconciler(fakeClient,
+				WithGatewayFlowHealthProber(gatewayFlowHeathProber))
+			result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
 
-		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
-		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipeline(pipeline), mock.Anything).Return(&common.Config{}, nil, nil).Times(1)
+			if tt.probeErr != nil {
+				require.Error(t, result.err)
+			} else {
+				require.NoError(t, result.err)
+			}
 
-		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
-		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+			requireHasStatusCondition(t, result.pipeline,
+				conditions.TypeFlowHealthy,
+				tt.expectedStatus,
+				tt.expectedReason,
+				tt.expectedMessage,
+			)
+		})
+	}
+}
 
-		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
-		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
+func TestAgentFlowHealthCondition(t *testing.T) {
+	tests := []struct {
+		name            string
+		probe           prober.OTelAgentProbeResult
+		probeErr        error
+		expectedStatus  metav1.ConditionStatus
+		expectedReason  string
+		expectedMessage string
+	}{
+		{
+			name:            "prober fails",
+			probeErr:        assert.AnError,
+			expectedStatus:  metav1.ConditionUnknown,
+			expectedReason:  conditions.ReasonSelfMonAgentProbingFailed,
+			expectedMessage: "Could not determine the health of the telemetry flow because the self monitor probing of agent failed",
+		},
+		{
+			name: "healthy",
+			probe: prober.OTelAgentProbeResult{
+				PipelineProbeResult: prober.PipelineProbeResult{Healthy: true},
+			},
+			expectedStatus:  metav1.ConditionTrue,
+			expectedReason:  conditions.ReasonSelfMonFlowHealthy,
+			expectedMessage: "No problems detected in the telemetry flow",
+		},
+		{
+			name: "some data dropped",
+			probe: prober.OTelAgentProbeResult{
+				PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
+			},
+			expectedStatus:  metav1.ConditionFalse,
+			expectedReason:  conditions.ReasonSelfMonAgentSomeDataDropped,
+			expectedMessage: "Backend is reachable, but rejecting logs. Some logs are dropped in Log agent. See troubleshooting: " + conditions.LinkNotAllDataArriveAtBackend,
+		},
+		{
+			name: "all data dropped",
+			probe: prober.OTelAgentProbeResult{
+				PipelineProbeResult: prober.PipelineProbeResult{AllDataDropped: true},
+			},
+			expectedStatus:  metav1.ConditionFalse,
+			expectedReason:  conditions.ReasonSelfMonAgentAllDataDropped,
+			expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped in Log agent. See troubleshooting: " + conditions.LinkNoDataArriveAtBackend,
+		},
+		{
+			name: "all data dropped shadows other problems",
+			probe: prober.OTelAgentProbeResult{
+				PipelineProbeResult: prober.PipelineProbeResult{AllDataDropped: true, SomeDataDropped: true},
+			},
+			expectedStatus:  metav1.ConditionFalse,
+			expectedReason:  conditions.ReasonSelfMonAgentAllDataDropped,
+			expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped in Log agent. See troubleshooting: " + conditions.LinkNoDataArriveAtBackend,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).WithRuntimeInput(true).Build()
+			fakeClient := newTestClient(t, &pipeline)
 
-		gatewayFlowHeathProber := &mocks.GatewayFlowHealthProber{}
-		gatewayFlowHeathProber.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{}, nil)
+			// Only override the agent flow health prober to inject test scenario
+			agentFlowHealthProber := &mocks.AgentFlowHealthProber{}
+			agentFlowHealthProber.On("Probe", mock.Anything, pipeline.Name).Return(tt.probe, tt.probeErr)
 
-		agentFlowHealthProber := &mocks.AgentFlowHealthProber{}
-		agentFlowHealthProber.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelAgentProbeResult{}, nil)
+			sut := newTestReconciler(fakeClient,
+				WithAgentFlowHealthProber(agentFlowHealthProber))
+			result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
 
-		pipelineLock := &mocks.PipelineLock{}
-		pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
-		pipelineLock.On("ReleaseLock", mock.Anything).Return(nil)
-		pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
+			if tt.probeErr != nil {
+				require.Error(t, result.err)
+			} else {
+				require.NoError(t, result.err)
+			}
 
-		pipelineValidatorWithStubs := &Validator{
-			PipelineLock:           pipelineLock,
-			EndpointValidator:      stubs.NewEndpointValidator(nil),
-			TLSCertValidator:       stubs.NewTLSCertValidator(nil),
-			SecretRefValidator:     stubs.NewSecretRefValidator(nil),
-			TransformSpecValidator: stubs.NewTransformSpecValidator(nil),
-			FilterSpecValidator:    stubs.NewFilterSpecValidator(nil),
-		}
+			requireHasStatusCondition(t, result.pipeline,
+				conditions.TypeFlowHealthy,
+				tt.expectedStatus,
+				tt.expectedReason,
+				tt.expectedMessage,
+			)
+		})
+	}
+}
 
-		sut := New(
-			fakeClient,
-			telemetryNamespace,
-			moduleVersion,
-			gatewayFlowHeathProber,
-			agentFlowHealthProber,
-			&mocks.AgentConfigBuilder{},
-			agentApplierDeleterMock,
-			agentProberStub,
-			gatewayApplierDeleterMock,
-			gatewayConfigBuilderMock,
-			gatewayProberStub,
-			istioStatusCheckerStub,
-			pipelineLock,
-			pipelineValidatorWithStubs,
-			&conditions.ErrorToMessageConverter{})
-		err := sut.Reconcile(t.Context(), &pipeline)
-		require.NoError(t, err)
+func TestOTTLSpecValidation(t *testing.T) {
+	tests := []struct {
+		name        string
+		validator   *Validator
+		condStatus  metav1.ConditionStatus
+		condReason  string
+		condMessage string
+	}{
+		{
+			name: "invalid transform spec",
+			validator: newTestValidator(
+				WithTransformSpecValidator(stubs.NewTransformSpecValidator(
+					&ottl.InvalidOTTLSpecError{
+						Err: fmt.Errorf("invalid TransformSpec: error while parsing statements"),
+					},
+				))),
+			condStatus:  metav1.ConditionFalse,
+			condReason:  conditions.ReasonOTTLSpecInvalid,
+			condMessage: "OTTL specification is invalid, invalid TransformSpec: error while parsing statements. Fix the syntax error indicated by the message or see troubleshooting: " + conditions.LinkOTTLSpecInvalid,
+		},
+		{
+			name: "invalid filter spec",
+			validator: newTestValidator(
+				WithFilterSpecValidator(stubs.NewFilterSpecValidator(
+					&ottl.InvalidOTTLSpecError{
+						Err: fmt.Errorf("invalid FilterSpec: error while parsing conditions"),
+					},
+				))),
+			condStatus:  metav1.ConditionFalse,
+			condReason:  conditions.ReasonOTTLSpecInvalid,
+			condMessage: "OTTL specification is invalid, invalid FilterSpec: error while parsing conditions. Fix the syntax error indicated by the message or see troubleshooting: " + conditions.LinkOTTLSpecInvalid,
+		},
+	}
 
-		var updatedPipeline telemetryv1alpha1.LogPipeline
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			pipeline := testutils.NewLogPipelineBuilder().Build()
+			fakeClient := newTestClient(t, &pipeline)
 
-		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+			sut := newTestReconciler(fakeClient,
+				WithPipelineValidator(tt.validator))
+			result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
+			require.NoError(t, result.err)
 
-		requireHasStatusCondition(t, updatedPipeline,
-			conditions.TypeAgentHealthy,
-			metav1.ConditionTrue,
-			conditions.ReasonLogAgentNotRequired,
-			"")
+			cond := meta.FindStatusCondition(result.pipeline.Status.Conditions, conditions.TypeConfigurationGenerated)
+			require.Equal(t, tt.condStatus, cond.Status)
+			require.Equal(t, tt.condReason, cond.Reason)
+			require.Equal(t, tt.condMessage, cond.Message)
+		})
+	}
+}
 
-		agentApplierDeleterMock.AssertExpectations(t)
-		gatewayConfigBuilderMock.AssertExpectations(t)
-	})
+func TestAgentRequiredScenarios(t *testing.T) {
+	tests := []struct {
+		name                         string
+		pipelineConfigs              []pipelineConfig
+		pipelinesToCheck             []string
+		expectedConditionPerPipeline map[string]metav1.Condition
+	}{
+		{
+			name: "one log pipeline does not require an agent",
+			pipelineConfigs: []pipelineConfig{
+				{name: "pipeline", RuntimeInput: false},
+			},
+			pipelinesToCheck: []string{"pipeline"},
+			expectedConditionPerPipeline: map[string]metav1.Condition{
+				"pipeline": {
+					Type:   conditions.TypeAgentHealthy,
+					Status: metav1.ConditionTrue,
+					Reason: conditions.ReasonLogAgentNotRequired,
+				},
+			},
+		},
+		{
+			name: "some log pipelines do not require an agent",
+			pipelineConfigs: []pipelineConfig{
+				{name: "pipeline1", RuntimeInput: false},
+				{name: "pipeline2", RuntimeInput: true},
+			},
+			pipelinesToCheck: []string{"pipeline1"},
+			expectedConditionPerPipeline: map[string]metav1.Condition{
+				"pipeline1": {
+					Type:   conditions.TypeAgentHealthy,
+					Status: metav1.ConditionTrue,
+					Reason: conditions.ReasonLogAgentNotRequired,
+				},
+				"pipeline2": {
+					Type:   conditions.TypeAgentHealthy,
+					Status: metav1.ConditionTrue,
+					Reason: conditions.ReasonAgentReady,
+				},
+			},
+		},
+		{
+			name: "all log pipelines do not require an agent",
+			pipelineConfigs: []pipelineConfig{
+				{name: "pipeline1", RuntimeInput: false},
+				{name: "pipeline2", RuntimeInput: false},
+			},
+			pipelinesToCheck: []string{"pipeline1", "pipeline2"},
+			expectedConditionPerPipeline: map[string]metav1.Condition{
+				"pipeline1": {
+					Type:   conditions.TypeAgentHealthy,
+					Status: metav1.ConditionTrue,
+					Reason: conditions.ReasonLogAgentNotRequired,
+				},
+				"pipeline2": {
+					Type:   conditions.TypeAgentHealthy,
+					Status: metav1.ConditionTrue,
+					Reason: conditions.ReasonLogAgentNotRequired,
+				},
+			},
+		},
+	}
 
-	t.Run("some log pipelines do not require an agent", func(t *testing.T) {
-		pipeline1 := testutils.NewLogPipelineBuilder().WithName("pipeline1").WithOTLPOutput().WithApplicationInput(false).Build()
-		pipeline2 := testutils.NewLogPipelineBuilder().WithName("pipeline2").WithOTLPOutput().WithApplicationInput(true).Build()
-		fakeClient := testutils.NewFakeClientWrapper().WithScheme(scheme).WithObjects(&pipeline1, &pipeline2).WithStatusSubresource(&pipeline1, &pipeline2).Build()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Build pipelines from configs
+			var pipelines []client.Object
 
-		agentConfigBuilder := &mocks.AgentConfigBuilder{}
-		agentConfigBuilder.On("Build", mock.Anything, mock.Anything, mock.Anything).Return(&common.Config{}, nil, nil)
+			for _, cfg := range tt.pipelineConfigs {
+				pipeline := testutils.NewLogPipelineBuilder().
+					WithName(cfg.name).
+					WithOTLPOutput().
+					WithRuntimeInput(cfg.RuntimeInput).
+					Build()
+				pipelines = append(pipelines, &pipeline)
+			}
 
-		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
-		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+			fakeClient := newTestClient(t, pipelines...)
+			sut := newTestReconciler(fakeClient)
 
-		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
-		gatewayConfigBuilderMock.On("Build", mock.Anything, mock.Anything, mock.Anything).Return(&common.Config{}, nil, nil)
+			// Reconcile all pipelines
+			for _, cfg := range tt.pipelineConfigs {
+				result := reconcileAndGet(t, fakeClient, sut, cfg.name)
+				require.NoError(t, result.err)
+			}
 
-		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
-		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+			// Check conditions for pipelines that need verification
+			for _, pipelineName := range tt.pipelinesToCheck {
+				result := reconcileAndGet(t, fakeClient, sut, pipelineName)
+				require.NoError(t, result.err)
 
-		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
-		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
+				expectedCond := tt.expectedConditionPerPipeline[pipelineName]
+				requireHasStatusConditionObject(t, result.pipeline, expectedCond)
+			}
+		})
+	}
+}
 
-		gatewayFlowHeathProber := &mocks.GatewayFlowHealthProber{}
-		gatewayFlowHeathProber.On("Probe", mock.Anything, mock.Anything).Return(prober.OTelGatewayProbeResult{}, nil)
-
-		agentFlowHealthProber := &mocks.AgentFlowHealthProber{}
-		agentFlowHealthProber.On("Probe", mock.Anything, mock.Anything).Return(prober.OTelAgentProbeResult{}, nil)
-
-		pipelineLock := &mocks.PipelineLock{}
-		pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
-		pipelineLock.On("ReleaseLock", mock.Anything).Return(nil)
-		pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
-
-		pipelineValidatorWithStubs := &Validator{
-			PipelineLock:           pipelineLock,
-			EndpointValidator:      stubs.NewEndpointValidator(nil),
-			TLSCertValidator:       stubs.NewTLSCertValidator(nil),
-			SecretRefValidator:     stubs.NewSecretRefValidator(nil),
-			TransformSpecValidator: stubs.NewTransformSpecValidator(nil),
-			FilterSpecValidator:    stubs.NewFilterSpecValidator(nil),
-		}
-
-		sut := New(
-			fakeClient,
-			telemetryNamespace,
-			moduleVersion,
-			gatewayFlowHeathProber,
-			agentFlowHealthProber,
-			agentConfigBuilder,
-			agentApplierDeleterMock,
-			agentProberStub,
-			gatewayApplierDeleterMock,
-			gatewayConfigBuilderMock,
-			gatewayProberStub,
-			istioStatusCheckerStub,
-			pipelineLock,
-			pipelineValidatorWithStubs,
-			&conditions.ErrorToMessageConverter{})
-		err1 := sut.Reconcile(t.Context(), &pipeline1)
-		err2 := sut.Reconcile(t.Context(), &pipeline2)
-
-		require.NoError(t, err1)
-		require.NoError(t, err2)
-
-		var updatedPipeline1 telemetryv1alpha1.LogPipeline
-
-		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline1.Name}, &updatedPipeline1)
-
-		requireHasStatusCondition(t, updatedPipeline1,
-			conditions.TypeAgentHealthy,
-			metav1.ConditionTrue,
-			conditions.ReasonLogAgentNotRequired,
-			"")
-
-		agentConfigBuilder.AssertExpectations(t)
-		agentApplierDeleterMock.AssertExpectations(t)
-		gatewayConfigBuilderMock.AssertExpectations(t)
-	})
-
-	t.Run("all log pipelines do not require an agent", func(t *testing.T) {
-		pipeline1 := testutils.NewLogPipelineBuilder().WithName("pipeline1").WithOTLPOutput().WithApplicationInput(false).Build()
-		pipeline2 := testutils.NewLogPipelineBuilder().WithName("pipeline2").WithOTLPOutput().WithApplicationInput(false).Build()
-		fakeClient := testutils.NewFakeClientWrapper().WithScheme(scheme).WithObjects(&pipeline1, &pipeline2).WithStatusSubresource(&pipeline1, &pipeline2).Build()
-
-		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
-		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil).Times(2)
-
-		gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
-		gatewayConfigBuilderMock.On("Build", mock.Anything, containsPipelines([]telemetryv1alpha1.LogPipeline{pipeline1, pipeline2}), mock.Anything).Return(&common.Config{}, nil, nil)
-
-		gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
-		gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
-		gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
-		agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
-
-		gatewayFlowHeathProber := &mocks.GatewayFlowHealthProber{}
-		gatewayFlowHeathProber.On("Probe", mock.Anything, mock.Anything).Return(prober.OTelGatewayProbeResult{}, nil)
-
-		agentFlowHealthProber := &mocks.AgentFlowHealthProber{}
-		agentFlowHealthProber.On("Probe", mock.Anything, mock.Anything).Return(prober.OTelAgentProbeResult{}, nil)
-
-		pipelineLock := &mocks.PipelineLock{}
-		pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
-		pipelineLock.On("ReleaseLock", mock.Anything).Return(nil)
-		pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil)
-
-		pipelineValidatorWithStubs := &Validator{
-			PipelineLock:           pipelineLock,
-			EndpointValidator:      stubs.NewEndpointValidator(nil),
-			TLSCertValidator:       stubs.NewTLSCertValidator(nil),
-			SecretRefValidator:     stubs.NewSecretRefValidator(nil),
-			TransformSpecValidator: stubs.NewTransformSpecValidator(nil),
-			FilterSpecValidator:    stubs.NewFilterSpecValidator(nil),
-		}
-
-		sut := New(
-			fakeClient,
-			telemetryNamespace,
-			moduleVersion,
-			gatewayFlowHeathProber,
-			agentFlowHealthProber,
-			&mocks.AgentConfigBuilder{},
-			agentApplierDeleterMock,
-			agentProberStub,
-			gatewayApplierDeleterMock,
-			gatewayConfigBuilderMock,
-			gatewayProberStub,
-			istioStatusCheckerStub,
-			pipelineLock,
-			pipelineValidatorWithStubs,
-			&conditions.ErrorToMessageConverter{})
-		err1 := sut.Reconcile(t.Context(), &pipeline1)
-		err2 := sut.Reconcile(t.Context(), &pipeline2)
-
-		require.NoError(t, err1)
-		require.NoError(t, err2)
-
-		var updatedPipeline1 telemetryv1alpha1.LogPipeline
-
-		var updatedPipeline2 telemetryv1alpha1.LogPipeline
-
-		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline1.Name}, &updatedPipeline1)
-		_ = fakeClient.Get(t.Context(), types.NamespacedName{Name: pipeline1.Name}, &updatedPipeline2)
-
-		requireHasStatusCondition(t, updatedPipeline1,
-			conditions.TypeAgentHealthy,
-			metav1.ConditionTrue,
-			conditions.ReasonLogAgentNotRequired,
-			"")
-		requireHasStatusCondition(t, updatedPipeline2,
-			conditions.TypeAgentHealthy,
-			metav1.ConditionTrue,
-			conditions.ReasonLogAgentNotRequired,
-			"")
-
-		agentApplierDeleterMock.AssertExpectations(t)
-		gatewayConfigBuilderMock.AssertExpectations(t)
-	})
+type pipelineConfig struct {
+	name         string
+	RuntimeInput bool
 }
 
 func TestGetPipelinesRequiringAgents(t *testing.T) {
 	r := Reconciler{}
 
 	t.Run("no pipelines", func(t *testing.T) {
-		pipelines := []telemetryv1alpha1.LogPipeline{}
+		pipelines := []telemetryv1beta1.LogPipeline{}
 		require.Empty(t, r.getPipelinesRequiringAgents(pipelines))
 	})
 
 	t.Run("no pipeline requires an agent", func(t *testing.T) {
-		pipeline1 := testutils.NewLogPipelineBuilder().WithOTLPOutput().WithApplicationInput(false).Build()
-		pipeline2 := testutils.NewLogPipelineBuilder().WithOTLPOutput().WithApplicationInput(false).Build()
-		pipelines := []telemetryv1alpha1.LogPipeline{pipeline1, pipeline2}
+		pipeline1 := testutils.NewLogPipelineBuilder().WithOTLPOutput().WithRuntimeInput(false).Build()
+		pipeline2 := testutils.NewLogPipelineBuilder().WithOTLPOutput().WithRuntimeInput(false).Build()
+		pipelines := []telemetryv1beta1.LogPipeline{pipeline1, pipeline2}
 		require.Empty(t, r.getPipelinesRequiringAgents(pipelines))
 	})
 
 	t.Run("some pipelines require an agent", func(t *testing.T) {
-		pipeline1 := testutils.NewLogPipelineBuilder().WithOTLPOutput().WithApplicationInput(true).Build()
-		pipeline2 := testutils.NewLogPipelineBuilder().WithOTLPOutput().WithApplicationInput(false).Build()
-		pipelines := []telemetryv1alpha1.LogPipeline{pipeline1, pipeline2}
-		require.ElementsMatch(t, []telemetryv1alpha1.LogPipeline{pipeline1}, r.getPipelinesRequiringAgents(pipelines))
+		pipeline1 := testutils.NewLogPipelineBuilder().WithOTLPOutput().WithRuntimeInput(true).Build()
+		pipeline2 := testutils.NewLogPipelineBuilder().WithOTLPOutput().WithRuntimeInput(false).Build()
+		pipelines := []telemetryv1beta1.LogPipeline{pipeline1, pipeline2}
+		require.ElementsMatch(t, []telemetryv1beta1.LogPipeline{pipeline1}, r.getPipelinesRequiringAgents(pipelines))
 	})
 
 	t.Run("all pipelines require an agent", func(t *testing.T) {
-		pipeline1 := testutils.NewLogPipelineBuilder().WithOTLPOutput().WithApplicationInput(true).Build()
-		pipeline2 := testutils.NewLogPipelineBuilder().WithOTLPOutput().WithApplicationInput(true).Build()
-		pipelines := []telemetryv1alpha1.LogPipeline{pipeline1, pipeline2}
-		require.ElementsMatch(t, []telemetryv1alpha1.LogPipeline{pipeline1, pipeline2}, r.getPipelinesRequiringAgents(pipelines))
+		pipeline1 := testutils.NewLogPipelineBuilder().WithOTLPOutput().WithRuntimeInput(true).Build()
+		pipeline2 := testutils.NewLogPipelineBuilder().WithOTLPOutput().WithRuntimeInput(true).Build()
+		pipelines := []telemetryv1beta1.LogPipeline{pipeline1, pipeline2}
+		require.ElementsMatch(t, []telemetryv1beta1.LogPipeline{pipeline1, pipeline2}, r.getPipelinesRequiringAgents(pipelines))
 	})
 }
 
-func requireHasStatusCondition(t *testing.T, pipeline telemetryv1alpha1.LogPipeline, condType string, status metav1.ConditionStatus, reason, message string) {
-	cond := meta.FindStatusCondition(pipeline.Status.Conditions, condType)
-	require.NotNil(t, cond, "could not find condition of type %s", condType)
-	require.Equal(t, status, cond.Status)
-	require.Equal(t, reason, cond.Reason)
-	require.Equal(t, message, cond.Message)
-	require.Equal(t, pipeline.Generation, cond.ObservedGeneration)
-	require.NotEmpty(t, cond.LastTransitionTime)
-}
+func TestPipelineInfoTracking(t *testing.T) {
+	tests := []struct {
+		name                 string
+		pipeline             telemetryv1beta1.LogPipeline
+		secret               *corev1.Secret
+		expectedEndpoint     string
+		expectedFeatureUsage []string
+	}{
+		{
+			name: "pipeline without features",
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("pipeline-1").
+				WithOTLPInput(false).
+				WithOTLPOutput(testutils.OTLPEndpoint("test")).
+				Build(),
+			expectedEndpoint:     "test",
+			expectedFeatureUsage: []string{},
+		},
+		{
+			name: "pipeline with transform",
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("pipeline-2").
+				WithOTLPInput(false).
+				WithOTLPOutput(testutils.OTLPEndpoint("test")).
+				WithTransform(telemetryv1beta1.TransformSpec{
+					Statements: []string{"set(resource.attributes[\"test\"], \"value\")"},
+				}).
+				Build(),
+			expectedEndpoint: "test",
+			expectedFeatureUsage: []string{
+				metrics.FeatureTransform,
+			},
+		},
+		{
+			name: "pipeline with filter",
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("pipeline-3").
+				WithOTLPInput(false).
+				WithOTLPOutput(testutils.OTLPEndpoint("test")).
+				WithFilter(telemetryv1beta1.FilterSpec{
+					Conditions: []string{"resource.attributes[\"test\"] == \"value\""},
+				}).
+				Build(),
+			expectedEndpoint: "test",
+			expectedFeatureUsage: []string{
+				metrics.FeatureFilter,
+			},
+		},
+		{
+			name: "pipeline with transform and filter",
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("pipeline-4").
+				WithOTLPInput(false).
+				WithOTLPOutput(testutils.OTLPEndpoint("test")).
+				WithTransform(telemetryv1beta1.TransformSpec{
+					Statements: []string{"set(resource.attributes[\"test\"], \"value\")"},
+				}).
+				WithFilter(telemetryv1beta1.FilterSpec{
+					Conditions: []string{"resource.attributes[\"test\"] == \"value\""},
+				}).
+				Build(),
+			expectedEndpoint: "test",
+			expectedFeatureUsage: []string{
+				metrics.FeatureTransform,
+				metrics.FeatureFilter,
+			},
+		},
+		{
+			name: "pipeline with OTLP input",
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("pipeline-5").
+				WithOTLPOutput(testutils.OTLPEndpoint("test")).
+				WithOTLPInput(true).
+				Build(),
+			expectedEndpoint: "test",
+			expectedFeatureUsage: []string{
+				metrics.FeatureInputOTLP,
+			},
+		},
+		{
+			name: "pipeline with runtime and OTLP input",
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("pipeline-6").
+				WithOTLPInput(true).
+				WithRuntimeInput(true).
+				WithOTLPOutput(testutils.OTLPEndpoint("test")).
+				Build(),
+			expectedEndpoint: "test",
+			expectedFeatureUsage: []string{
+				metrics.FeatureInputRuntime,
+				metrics.FeatureInputOTLP,
+			},
+		},
+		{
+			name: "pipeline with all OTLP features",
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("pipeline-12").
+				WithOTLPOutput(testutils.OTLPEndpoint("test")).
+				WithOTLPInput(true).
+				WithRuntimeInput(true).
+				WithTransform(telemetryv1beta1.TransformSpec{
+					Statements: []string{"set(resource.attributes[\"test\"], \"value\")"},
+				}).
+				WithFilter(telemetryv1beta1.FilterSpec{
+					Conditions: []string{"resource.attributes[\"test\"] == \"value\""},
+				}).
+				Build(),
+			expectedEndpoint: "test",
+			expectedFeatureUsage: []string{
+				metrics.FeatureTransform,
+				metrics.FeatureFilter,
+				metrics.FeatureInputOTLP,
+				metrics.FeatureInputRuntime,
+			},
+		},
+		{
+			name: "endpoint from secret",
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("pipeline-endpoint-secret").
+				WithOTLPInput(false).
+				WithOTLPOutput(testutils.OTLPEndpointFromSecret("endpoint-secret", "default", "host")).
+				Build(),
+			secret: &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "endpoint-secret",
+					Namespace: "default",
+				},
+				Data: map[string][]byte{
+					"host": []byte("loki.example.com"),
+				},
+			},
+			expectedEndpoint:     "loki.example.com",
+			expectedFeatureUsage: []string{},
+		},
+		{
+			name: "endpoint plain",
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("pipeline-endpoint-plain").
+				WithOTLPInput(false).
+				WithOTLPOutput(testutils.OTLPEndpoint("endpoint.example.com")).
+				Build(),
+			expectedEndpoint:     "endpoint.example.com",
+			expectedFeatureUsage: []string{},
+		},
+		{
+			name: "non-reconcilable pipeline with invalid transform",
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithName("pipeline-non-reconcilable").
+				WithOTLPInput(false).
+				WithOTLPOutput(testutils.OTLPEndpoint("endpoint.example.com")).
+				WithTransform(telemetryv1beta1.TransformSpec{
+					Statements: []string{"invalid syntax"},
+				}).
+				Build(),
+			expectedEndpoint: "endpoint.example.com",
+			expectedFeatureUsage: []string{
+				metrics.FeatureTransform,
+			},
+		},
+	}
 
-func containsPipeline(p telemetryv1alpha1.LogPipeline) any {
-	return mock.MatchedBy(func(pipelines []telemetryv1alpha1.LogPipeline) bool {
-		return len(pipelines) == 1 && pipelines[0].Name == p.Name
-	})
-}
-
-func containsPipelines(pp []telemetryv1alpha1.LogPipeline) any {
-	return mock.MatchedBy(func(pipelines []telemetryv1alpha1.LogPipeline) bool {
-		if len(pipelines) != len(pp) {
-			return false
-		}
-
-		pipelineMap := make(map[string]bool)
-		for _, p := range pipelines {
-			pipelineMap[p.Name] = true
-		}
-
-		for _, p := range pp {
-			if !pipelineMap[p.Name] {
-				return false
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			objs := []client.Object{&tt.pipeline}
+			if tt.secret != nil {
+				objs = append(objs, tt.secret)
 			}
-		}
 
-		return true
-	})
+			fakeClient := newTestClient(t, objs...)
+			validator, _ := ottl.NewTransformSpecValidator(ottl.SignalTypeLog)
+			sut := newTestReconciler(fakeClient, WithPipelineValidator(newTestValidator(WithTransformSpecValidator(validator))))
+
+			result := reconcileAndGet(t, fakeClient, sut, tt.pipeline.Name)
+			require.NoError(t, result.err)
+
+			// Build expected label values
+			labelValues := buildLabelValues(tt.pipeline.Name, tt.expectedEndpoint, tt.expectedFeatureUsage)
+
+			metricValue := testutil.ToFloat64(metrics.LogPipelineInfo.WithLabelValues(labelValues...))
+			require.Equal(t, float64(1), metricValue, "pipeline info metric should match for pipeline %q with endpoint %q and features %v", tt.pipeline.Name, tt.expectedEndpoint, tt.expectedFeatureUsage)
+		})
+	}
+}
+
+func buildLabelValues(pipelineName, endpoint string, enabledFeatures []string) []string {
+	// Create a set of enabled features for quick lookup
+	featuresSet := make(map[string]bool, len(enabledFeatures))
+	for _, feature := range enabledFeatures {
+		featuresSet[feature] = true
+	}
+
+	labelValues := []string{pipelineName, endpoint}
+
+	for _, feature := range metrics.LogPipelineFeatures {
+		if featuresSet[feature] {
+			labelValues = append(labelValues, "true")
+		} else {
+			labelValues = append(labelValues, "false")
+		}
+	}
+
+	return labelValues
 }

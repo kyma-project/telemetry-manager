@@ -1,18 +1,21 @@
 package shared
 
 import (
+	"fmt"
 	"testing"
 
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
@@ -20,22 +23,32 @@ import (
 
 func TestSecretMissing_OTel(t *testing.T) {
 	tests := []struct {
-		label string
-		input telemetryv1alpha1.LogPipelineInput
+		name   string
+		labels []string
+		opts   []kubeprep.Option
+		input  telemetryv1beta1.LogPipelineInput
 	}{
 		{
-			label: suite.LabelLogAgent,
-			input: testutils.BuildLogPipelineApplicationInput(),
+			name:   suite.LabelLogAgent,
+			labels: []string{suite.LabelLogAgent},
+			input:  testutils.BuildLogPipelineRuntimeInput(),
 		},
 		{
-			label: suite.LabelLogGateway,
-			input: testutils.BuildLogPipelineOTLPInput(),
+			name:   suite.LabelLogGateway,
+			labels: []string{suite.LabelLogGateway},
+			input:  testutils.BuildLogPipelineOTLPInput(),
+		},
+		{
+			name:   fmt.Sprintf("%s-%s", suite.LabelLogGateway, suite.LabelExperimental),
+			labels: []string{suite.LabelLogGateway},
+			opts:   []kubeprep.Option{kubeprep.WithExperimental()},
+			input:  testutils.BuildLogPipelineOTLPInput(),
 		},
 	}
 
 	for _, tc := range tests {
-		t.Run(tc.label, func(t *testing.T) {
-			suite.RegisterTestCase(t, tc.label)
+		t.Run(tc.name, func(t *testing.T) {
+			suite.SetupTestWithOptions(t, tc.labels, tc.opts...)
 
 			const (
 				endpointKey   = "logs-endpoint"
@@ -43,12 +56,12 @@ func TestSecretMissing_OTel(t *testing.T) {
 			)
 
 			var (
-				uniquePrefix = unique.Prefix(tc.label)
+				uniquePrefix = unique.Prefix(tc.name)
 				pipelineName = uniquePrefix()
 				secretName   = uniquePrefix()
 			)
 
-			secret := kitk8s.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, kitk8s.WithStringData(endpointKey, endpointValue))
+			secret := kitk8sobjects.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, kitk8sobjects.WithStringData(endpointKey, endpointValue))
 
 			pipeline := testutils.NewLogPipelineBuilder().
 				WithName(pipelineName).
@@ -64,9 +77,6 @@ func TestSecretMissing_OTel(t *testing.T) {
 				&pipeline,
 			}
 
-			t.Cleanup(func() {
-				Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-			})
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 			assert.LogPipelineHasCondition(t, pipelineName, metav1.Condition{
@@ -81,7 +91,7 @@ func TestSecretMissing_OTel(t *testing.T) {
 				Reason: conditions.ReasonSelfMonConfigNotGenerated,
 			})
 
-			assert.TelemetryHasState(t, operatorv1alpha1.StateWarning)
+			assert.TelemetryHasState(t, operatorv1beta1.StateWarning)
 			assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
 				Type:   conditions.TypeLogComponentsHealthy,
 				Status: metav1.ConditionFalse,
@@ -97,7 +107,7 @@ func TestSecretMissing_OTel(t *testing.T) {
 }
 
 func TestSecretMissing_FluentBit(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelFluentBit)
+	suite.SetupTestWithOptions(t, []string{suite.LabelFluentBit}, kubeprep.WithOverrideFIPSMode(false))
 
 	const (
 		hostKey   = "logs-host"
@@ -110,7 +120,7 @@ func TestSecretMissing_FluentBit(t *testing.T) {
 		secretName   = uniquePrefix()
 	)
 
-	secret := kitk8s.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, kitk8s.WithStringData(hostKey, hostValue))
+	secret := kitk8sobjects.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, kitk8sobjects.WithStringData(hostKey, hostValue))
 
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
@@ -125,9 +135,6 @@ func TestSecretMissing_FluentBit(t *testing.T) {
 		&pipeline,
 	}
 
-	t.Cleanup(func() {
-		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-	})
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.LogPipelineHasCondition(t, pipelineName, metav1.Condition{
@@ -142,7 +149,7 @@ func TestSecretMissing_FluentBit(t *testing.T) {
 		Reason: conditions.ReasonSelfMonConfigNotGenerated,
 	})
 
-	assert.TelemetryHasState(t, operatorv1alpha1.StateWarning)
+	assert.TelemetryHasState(t, operatorv1beta1.StateWarning)
 	assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
 		Type:   conditions.TypeLogComponentsHealthy,
 		Status: metav1.ConditionFalse,

@@ -2,11 +2,12 @@ package stdoutloggen
 
 import (
 	"fmt"
+	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 
-	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 )
 
 const (
@@ -63,8 +64,20 @@ func WithText(text string) Option {
 	}
 }
 
-func NewDeployment(namespace string, opts ...Option) *kitk8s.Deployment {
-	return kitk8s.NewDeployment(DefaultName, namespace).WithPodSpec(PodSpec(opts...))
+// GetVersion extracts and returns the version of the stdout log generator image
+//
+// Example: "latest" extracted from "europe-docker.pkg.dev/kyma-project/prod/stdout-log-generator:latest"
+func GetVersion() string {
+	parts := strings.Split(DefaultImageName, ":")
+	if len(parts) < 2 {
+		return ""
+	}
+
+	return parts[len(parts)-1]
+}
+
+func NewDeployment(namespace string, opts ...Option) *kitk8sobjects.Deployment {
+	return kitk8sobjects.NewDeployment(DefaultName, namespace).WithPodSpec(PodSpec(opts...))
 }
 
 func PodSpec(opts ...Option) corev1.PodSpec {

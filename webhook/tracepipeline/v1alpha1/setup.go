@@ -7,9 +7,10 @@ import (
 )
 
 func SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).For(&telemetryv1alpha1.TracePipeline{}).
+	return ctrl.NewWebhookManagedBy(mgr, &telemetryv1alpha1.TracePipeline{}).
 		WithDefaulter(&defaulter{
 			DefaultOTLPOutputProtocol: telemetryv1alpha1.OTLPProtocolGRPC,
 		}).
+		WithValidator(&validator{}).
 		Complete()
 }

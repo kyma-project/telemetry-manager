@@ -10,6 +10,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	"github.com/kyma-project/telemetry-manager/internal/config"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 )
 
 func TestLoadOverrides(t *testing.T) {
@@ -85,7 +88,7 @@ tracing:
 			if tt.configMapData != nil {
 				configMap := &corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      configMapName,
+						Name:      names.OverrideConfigMap,
 						Namespace: "test-namespace",
 					},
 					Data: tt.configMapData,
@@ -96,7 +99,7 @@ tracing:
 			}
 
 			atomicLevel := zap.NewAtomicLevelAt(tt.defaultLevel)
-			handler := New(fakeClient, HandlerConfig{SystemNamespace: "test-namespace"}, WithAtomicLevel(atomicLevel))
+			handler := New(config.NewGlobal(config.WithTargetNamespace("test-namespace")), fakeClient, WithAtomicLevel(atomicLevel))
 			overrides, err := handler.LoadOverrides(t.Context())
 
 			if tt.expectError {
@@ -115,7 +118,7 @@ func TestLoadOverridesResetsLogLevelIfNoConfigMapFound(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().Build()
 	configMap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      configMapName,
+			Name:      names.OverrideConfigMap,
 			Namespace: "test-namespace",
 		},
 		Data: map[string]string{
@@ -129,7 +132,7 @@ tracing:
 	require.NoError(t, err)
 
 	atomicLevel := zap.NewAtomicLevelAt(zapcore.InfoLevel)
-	handler := New(fakeClient, HandlerConfig{SystemNamespace: "test-namespace"}, WithAtomicLevel(atomicLevel))
+	handler := New(config.NewGlobal(config.WithTargetNamespace("test-namespace")), fakeClient, WithAtomicLevel(atomicLevel))
 
 	require.Equal(t, atomicLevel.Level(), zapcore.InfoLevel)
 

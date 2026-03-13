@@ -12,11 +12,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry/mocks"
-	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
@@ -24,7 +25,7 @@ func TestUpdateStatus(t *testing.T) {
 	tests := []struct {
 		name                 string
 		config               *Config
-		telemetry            *operatorv1alpha1.Telemetry
+		telemetry            *operatorv1beta1.Telemetry
 		resources            []client.Object
 		logsCheckerReturn    *metav1.Condition
 		logsCheckerError     error
@@ -32,43 +33,41 @@ func TestUpdateStatus(t *testing.T) {
 		metricsCheckerError  error
 		tracesCheckerReturn  *metav1.Condition
 		tracesCheckerError   error
-		expectedState        operatorv1alpha1.State
+		expectedState        operatorv1beta1.State
 		expectedConditions   []metav1.Condition
-		expectedEndpoints    operatorv1alpha1.GatewayEndpoints
+		expectedEndpoints    operatorv1beta1.GatewayEndpoints
 		expectError          bool
 	}{
 		{
 			name: "all components are healthy",
 			config: &Config{
-				Logs:    LogsConfig{Namespace: "telemetry-system"},
-				Traces:  TracesConfig{Namespace: "telemetry-system"},
-				Metrics: MetricsConfig{Namespace: "telemetry-system"},
+				Global: config.NewGlobal(config.WithTargetNamespace("telemetry-system")),
 			},
-			telemetry:            &operatorv1alpha1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
+			telemetry:            &operatorv1beta1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
 			logsCheckerReturn:    &metav1.Condition{Type: conditions.TypeLogComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			metricsCheckerReturn: &metav1.Condition{Type: conditions.TypeMetricComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			tracesCheckerReturn:  &metav1.Condition{Type: conditions.TypeTraceComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			resources: []client.Object{
-				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.LogOTLPServiceName).Build()),
-				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.TraceOTLPServiceName).Build()),
-				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.MetricOTLPServiceName).Build()),
+				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPLogsService).Build()),
+				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPTracesService).Build()),
+				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPMetricsService).Build()),
 			},
-			expectedState: operatorv1alpha1.StateReady,
+			expectedState: operatorv1beta1.StateReady,
 			expectedConditions: []metav1.Condition{
 				{Type: conditions.TypeLogComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 				{Type: conditions.TypeMetricComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 				{Type: conditions.TypeTraceComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			},
-			expectedEndpoints: operatorv1alpha1.GatewayEndpoints{
-				Logs: &operatorv1alpha1.OTLPEndpoints{
+			expectedEndpoints: operatorv1beta1.GatewayEndpoints{
+				Logs: &operatorv1beta1.OTLPEndpoints{
 					GRPC: "http://telemetry-otlp-logs.telemetry-system:4317",
 					HTTP: "http://telemetry-otlp-logs.telemetry-system:4318",
 				},
-				Traces: &operatorv1alpha1.OTLPEndpoints{
+				Traces: &operatorv1beta1.OTLPEndpoints{
 					GRPC: "http://telemetry-otlp-traces.telemetry-system:4317",
 					HTTP: "http://telemetry-otlp-traces.telemetry-system:4318",
 				},
-				Metrics: &operatorv1alpha1.OTLPEndpoints{
+				Metrics: &operatorv1beta1.OTLPEndpoints{
 					GRPC: "http://telemetry-otlp-metrics.telemetry-system:4317",
 					HTTP: "http://telemetry-otlp-metrics.telemetry-system:4318",
 				},
@@ -77,35 +76,33 @@ func TestUpdateStatus(t *testing.T) {
 		{
 			name: "log components are unhealthy",
 			config: &Config{
-				Logs:    LogsConfig{Namespace: "telemetry-system"},
-				Traces:  TracesConfig{Namespace: "telemetry-system"},
-				Metrics: MetricsConfig{Namespace: "telemetry-system"},
+				Global: config.NewGlobal(config.WithTargetNamespace("telemetry-system")),
 			},
-			telemetry:            &operatorv1alpha1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
+			telemetry:            &operatorv1beta1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
 			logsCheckerReturn:    &metav1.Condition{Type: conditions.TypeLogComponentsHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonAgentNotReady},
 			metricsCheckerReturn: &metav1.Condition{Type: conditions.TypeMetricComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			tracesCheckerReturn:  &metav1.Condition{Type: conditions.TypeTraceComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
-			expectedState:        operatorv1alpha1.StateWarning,
+			expectedState:        operatorv1beta1.StateWarning,
 			resources: []client.Object{
-				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.LogOTLPServiceName).Build()),
-				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.TraceOTLPServiceName).Build()),
-				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.MetricOTLPServiceName).Build()),
+				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPLogsService).Build()),
+				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPTracesService).Build()),
+				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPMetricsService).Build()),
 			},
 			expectedConditions: []metav1.Condition{
 				{Type: conditions.TypeLogComponentsHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonAgentNotReady},
 				{Type: conditions.TypeMetricComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 				{Type: conditions.TypeTraceComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			},
-			expectedEndpoints: operatorv1alpha1.GatewayEndpoints{
-				Logs: &operatorv1alpha1.OTLPEndpoints{
+			expectedEndpoints: operatorv1beta1.GatewayEndpoints{
+				Logs: &operatorv1beta1.OTLPEndpoints{
 					GRPC: "http://telemetry-otlp-logs.telemetry-system:4317",
 					HTTP: "http://telemetry-otlp-logs.telemetry-system:4318",
 				},
-				Traces: &operatorv1alpha1.OTLPEndpoints{
+				Traces: &operatorv1beta1.OTLPEndpoints{
 					GRPC: "http://telemetry-otlp-traces.telemetry-system:4317",
 					HTTP: "http://telemetry-otlp-traces.telemetry-system:4318",
 				},
-				Metrics: &operatorv1alpha1.OTLPEndpoints{
+				Metrics: &operatorv1beta1.OTLPEndpoints{
 					GRPC: "http://telemetry-otlp-metrics.telemetry-system:4317",
 					HTTP: "http://telemetry-otlp-metrics.telemetry-system:4318",
 				},
@@ -114,35 +111,33 @@ func TestUpdateStatus(t *testing.T) {
 		{
 			name: "trace components are unhealthy",
 			config: &Config{
-				Logs:    LogsConfig{Namespace: "telemetry-system"},
-				Traces:  TracesConfig{Namespace: "telemetry-system"},
-				Metrics: MetricsConfig{Namespace: "telemetry-system"},
+				Global: config.NewGlobal(config.WithTargetNamespace("telemetry-system")),
 			},
-			telemetry:            &operatorv1alpha1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
+			telemetry:            &operatorv1beta1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
 			logsCheckerReturn:    &metav1.Condition{Type: conditions.TypeLogComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			metricsCheckerReturn: &metav1.Condition{Type: conditions.TypeMetricComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			tracesCheckerReturn:  &metav1.Condition{Type: conditions.TypeTraceComponentsHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonGatewayNotReady},
 			resources: []client.Object{
-				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.LogOTLPServiceName).Build()),
-				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.TraceOTLPServiceName).Build()),
-				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.MetricOTLPServiceName).Build()),
+				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPLogsService).Build()),
+				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPTracesService).Build()),
+				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPMetricsService).Build()),
 			},
-			expectedState: operatorv1alpha1.StateWarning,
+			expectedState: operatorv1beta1.StateWarning,
 			expectedConditions: []metav1.Condition{
 				{Type: conditions.TypeLogComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 				{Type: conditions.TypeMetricComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 				{Type: conditions.TypeTraceComponentsHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonGatewayNotReady},
 			},
-			expectedEndpoints: operatorv1alpha1.GatewayEndpoints{
-				Logs: &operatorv1alpha1.OTLPEndpoints{
+			expectedEndpoints: operatorv1beta1.GatewayEndpoints{
+				Logs: &operatorv1beta1.OTLPEndpoints{
 					GRPC: "http://telemetry-otlp-logs.telemetry-system:4317",
 					HTTP: "http://telemetry-otlp-logs.telemetry-system:4318",
 				},
-				Traces: &operatorv1alpha1.OTLPEndpoints{
+				Traces: &operatorv1beta1.OTLPEndpoints{
 					GRPC: "http://telemetry-otlp-traces.telemetry-system:4317",
 					HTTP: "http://telemetry-otlp-traces.telemetry-system:4318",
 				},
-				Metrics: &operatorv1alpha1.OTLPEndpoints{
+				Metrics: &operatorv1beta1.OTLPEndpoints{
 					GRPC: "http://telemetry-otlp-metrics.telemetry-system:4317",
 					HTTP: "http://telemetry-otlp-metrics.telemetry-system:4318",
 				},
@@ -151,35 +146,33 @@ func TestUpdateStatus(t *testing.T) {
 		{
 			name: "metric components are unhealthy",
 			config: &Config{
-				Logs:    LogsConfig{Namespace: "telemetry-system"},
-				Traces:  TracesConfig{Namespace: "telemetry-system"},
-				Metrics: MetricsConfig{Namespace: "telemetry-system"},
+				Global: config.NewGlobal(config.WithTargetNamespace("telemetry-system")),
 			},
-			telemetry:            &operatorv1alpha1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
+			telemetry:            &operatorv1beta1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
 			logsCheckerReturn:    &metav1.Condition{Type: conditions.TypeLogComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			metricsCheckerReturn: &metav1.Condition{Type: conditions.TypeMetricComponentsHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonGatewayNotReady},
 			tracesCheckerReturn:  &metav1.Condition{Type: conditions.TypeTraceComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			resources: []client.Object{
-				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.LogOTLPServiceName).Build()),
-				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.TraceOTLPServiceName).Build()),
-				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.MetricOTLPServiceName).Build()),
+				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPLogsService).Build()),
+				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPTracesService).Build()),
+				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPMetricsService).Build()),
 			},
-			expectedState: operatorv1alpha1.StateWarning,
+			expectedState: operatorv1beta1.StateWarning,
 			expectedConditions: []metav1.Condition{
 				{Type: conditions.TypeLogComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 				{Type: conditions.TypeMetricComponentsHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonGatewayNotReady},
 				{Type: conditions.TypeTraceComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			},
-			expectedEndpoints: operatorv1alpha1.GatewayEndpoints{
-				Logs: &operatorv1alpha1.OTLPEndpoints{
+			expectedEndpoints: operatorv1beta1.GatewayEndpoints{
+				Logs: &operatorv1beta1.OTLPEndpoints{
 					GRPC: "http://telemetry-otlp-logs.telemetry-system:4317",
 					HTTP: "http://telemetry-otlp-logs.telemetry-system:4318",
 				},
-				Traces: &operatorv1alpha1.OTLPEndpoints{
+				Traces: &operatorv1beta1.OTLPEndpoints{
 					GRPC: "http://telemetry-otlp-traces.telemetry-system:4317",
 					HTTP: "http://telemetry-otlp-traces.telemetry-system:4318",
 				},
-				Metrics: &operatorv1alpha1.OTLPEndpoints{
+				Metrics: &operatorv1beta1.OTLPEndpoints{
 					GRPC: "http://telemetry-otlp-metrics.telemetry-system:4317",
 					HTTP: "http://telemetry-otlp-metrics.telemetry-system:4318",
 				},
@@ -187,7 +180,7 @@ func TestUpdateStatus(t *testing.T) {
 		},
 		{
 			name:                 "log components check error",
-			telemetry:            &operatorv1alpha1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
+			telemetry:            &operatorv1beta1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
 			logsCheckerError:     fmt.Errorf("logs check error"),
 			metricsCheckerReturn: &metav1.Condition{Type: conditions.TypeMetricComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			tracesCheckerReturn:  &metav1.Condition{Type: conditions.TypeTraceComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
@@ -195,7 +188,7 @@ func TestUpdateStatus(t *testing.T) {
 		},
 		{
 			name:                "metric components check error",
-			telemetry:           &operatorv1alpha1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
+			telemetry:           &operatorv1beta1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
 			logsCheckerReturn:   &metav1.Condition{Type: conditions.TypeLogComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			metricsCheckerError: fmt.Errorf("metrics check error"),
 			tracesCheckerReturn: &metav1.Condition{Type: conditions.TypeTraceComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
@@ -206,7 +199,7 @@ func TestUpdateStatus(t *testing.T) {
 		},
 		{
 			name:                 "trace components check error",
-			telemetry:            &operatorv1alpha1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
+			telemetry:            &operatorv1beta1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
 			logsCheckerReturn:    &metav1.Condition{Type: conditions.TypeLogComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			metricsCheckerReturn: &metav1.Condition{Type: conditions.TypeMetricComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			tracesCheckerError:   fmt.Errorf("traces check error"),
@@ -219,14 +212,12 @@ func TestUpdateStatus(t *testing.T) {
 		{
 			name: "deleting with no dependent resources",
 			config: &Config{
-				Logs:    LogsConfig{Namespace: "telemetry-system"},
-				Traces:  TracesConfig{Namespace: "telemetry-system"},
-				Metrics: MetricsConfig{Namespace: "telemetry-system"},
+				Global: config.NewGlobal(config.WithTargetNamespace("telemetry-system")),
 			},
-			telemetry: &operatorv1alpha1.Telemetry{
+			telemetry: &operatorv1beta1.Telemetry{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:              "default",
-					DeletionTimestamp: pointerFrom(metav1.Now()),
+					DeletionTimestamp: new(metav1.Now()),
 					Finalizers:        []string{"telemetry.kyma-project.io/finalizer"},
 				},
 			},
@@ -234,26 +225,26 @@ func TestUpdateStatus(t *testing.T) {
 			metricsCheckerReturn: &metav1.Condition{Type: conditions.TypeMetricComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			tracesCheckerReturn:  &metav1.Condition{Type: conditions.TypeTraceComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			resources: []client.Object{
-				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.LogOTLPServiceName).Build()),
-				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.TraceOTLPServiceName).Build()),
-				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.MetricOTLPServiceName).Build()),
+				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPLogsService).Build()),
+				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPTracesService).Build()),
+				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPMetricsService).Build()),
 			},
-			expectedState: operatorv1alpha1.StateDeleting,
+			expectedState: operatorv1beta1.StateDeleting,
 			expectedConditions: []metav1.Condition{
 				{Type: conditions.TypeLogComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 				{Type: conditions.TypeMetricComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 				{Type: conditions.TypeTraceComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			},
-			expectedEndpoints: operatorv1alpha1.GatewayEndpoints{
-				Logs: &operatorv1alpha1.OTLPEndpoints{
+			expectedEndpoints: operatorv1beta1.GatewayEndpoints{
+				Logs: &operatorv1beta1.OTLPEndpoints{
 					GRPC: "http://telemetry-otlp-logs.telemetry-system:4317",
 					HTTP: "http://telemetry-otlp-logs.telemetry-system:4318",
 				},
-				Traces: &operatorv1alpha1.OTLPEndpoints{
+				Traces: &operatorv1beta1.OTLPEndpoints{
 					GRPC: "http://telemetry-otlp-traces.telemetry-system:4317",
 					HTTP: "http://telemetry-otlp-traces.telemetry-system:4318",
 				},
-				Metrics: &operatorv1alpha1.OTLPEndpoints{
+				Metrics: &operatorv1beta1.OTLPEndpoints{
 					GRPC: "http://telemetry-otlp-metrics.telemetry-system:4317",
 					HTTP: "http://telemetry-otlp-metrics.telemetry-system:4318",
 				},
@@ -262,14 +253,12 @@ func TestUpdateStatus(t *testing.T) {
 		{
 			name: "deleting with dependent resources",
 			config: &Config{
-				Logs:    LogsConfig{Namespace: "telemetry-system"},
-				Traces:  TracesConfig{Namespace: "telemetry-system"},
-				Metrics: MetricsConfig{Namespace: "telemetry-system"},
+				Global: config.NewGlobal(config.WithTargetNamespace("telemetry-system")),
 			},
-			telemetry: &operatorv1alpha1.Telemetry{
+			telemetry: &operatorv1beta1.Telemetry{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:              "default",
-					DeletionTimestamp: pointerFrom(metav1.Now()),
+					DeletionTimestamp: new(metav1.Now()),
 					Finalizers:        []string{"telemetry.kyma-project.io/finalizer"},
 				},
 			},
@@ -278,17 +267,17 @@ func TestUpdateStatus(t *testing.T) {
 			tracesCheckerReturn:  &metav1.Condition{Type: conditions.TypeTraceComponentsHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonComponentsRunning},
 
 			resources: []client.Object{
-				pointerFrom(testutils.NewTracePipelineBuilder().Build()),
-				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.MetricOTLPServiceName).Build()),
+				new(testutils.NewTracePipelineBuilder().Build()),
+				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPMetricsService).Build()),
 			},
-			expectedState: operatorv1alpha1.StateWarning,
+			expectedState: operatorv1beta1.StateWarning,
 			expectedConditions: []metav1.Condition{
 				{Type: conditions.TypeLogComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 				{Type: conditions.TypeMetricComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 				{Type: conditions.TypeTraceComponentsHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonComponentsRunning},
 			},
-			expectedEndpoints: operatorv1alpha1.GatewayEndpoints{
-				Metrics: &operatorv1alpha1.OTLPEndpoints{
+			expectedEndpoints: operatorv1beta1.GatewayEndpoints{
+				Metrics: &operatorv1beta1.OTLPEndpoints{
 					GRPC: "http://telemetry-otlp-metrics.telemetry-system:4317",
 					HTTP: "http://telemetry-otlp-metrics.telemetry-system:4318",
 				}},
@@ -296,35 +285,33 @@ func TestUpdateStatus(t *testing.T) {
 		{
 			name: "metric agent is unhealthy",
 			config: &Config{
-				Logs:    LogsConfig{Namespace: "telemetry-system"},
-				Traces:  TracesConfig{Namespace: "telemetry-system"},
-				Metrics: MetricsConfig{Namespace: "telemetry-system"},
+				Global: config.NewGlobal(config.WithTargetNamespace("telemetry-system")),
 			},
-			telemetry:            &operatorv1alpha1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
+			telemetry:            &operatorv1beta1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
 			logsCheckerReturn:    &metav1.Condition{Type: conditions.TypeLogComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			metricsCheckerReturn: &metav1.Condition{Type: conditions.TypeMetricComponentsHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonAgentNotReady},
 			tracesCheckerReturn:  &metav1.Condition{Type: conditions.TypeTraceComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			resources: []client.Object{
-				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.LogOTLPServiceName).Build()),
-				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.TraceOTLPServiceName).Build()),
-				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.MetricOTLPServiceName).Build()),
+				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPLogsService).Build()),
+				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPTracesService).Build()),
+				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPMetricsService).Build()),
 			},
-			expectedState: operatorv1alpha1.StateWarning,
+			expectedState: operatorv1beta1.StateWarning,
 			expectedConditions: []metav1.Condition{
 				{Type: conditions.TypeLogComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 				{Type: conditions.TypeMetricComponentsHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonAgentNotReady},
 				{Type: conditions.TypeTraceComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			},
-			expectedEndpoints: operatorv1alpha1.GatewayEndpoints{
-				Logs: &operatorv1alpha1.OTLPEndpoints{
+			expectedEndpoints: operatorv1beta1.GatewayEndpoints{
+				Logs: &operatorv1beta1.OTLPEndpoints{
 					GRPC: "http://telemetry-otlp-logs.telemetry-system:4317",
 					HTTP: "http://telemetry-otlp-logs.telemetry-system:4318",
 				},
-				Traces: &operatorv1alpha1.OTLPEndpoints{
+				Traces: &operatorv1beta1.OTLPEndpoints{
 					GRPC: "http://telemetry-otlp-traces.telemetry-system:4317",
 					HTTP: "http://telemetry-otlp-traces.telemetry-system:4318",
 				},
-				Metrics: &operatorv1alpha1.OTLPEndpoints{
+				Metrics: &operatorv1beta1.OTLPEndpoints{
 					GRPC: "http://telemetry-otlp-metrics.telemetry-system:4317",
 					HTTP: "http://telemetry-otlp-metrics.telemetry-system:4318",
 				},
@@ -333,26 +320,24 @@ func TestUpdateStatus(t *testing.T) {
 		{
 			name: "only log metric pipeline is defined",
 			config: &Config{
-				Logs:    LogsConfig{Namespace: "telemetry-system"},
-				Traces:  TracesConfig{Namespace: "telemetry-system"},
-				Metrics: MetricsConfig{Namespace: "telemetry-system"},
+				Global: config.NewGlobal(config.WithTargetNamespace("telemetry-system")),
 			},
-			telemetry:            &operatorv1alpha1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
+			telemetry:            &operatorv1beta1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
 			logsCheckerReturn:    &metav1.Condition{Type: conditions.TypeLogComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			metricsCheckerReturn: &metav1.Condition{Type: conditions.TypeMetricComponentsHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonAgentNotReady},
 			tracesCheckerReturn:  &metav1.Condition{Type: conditions.TypeTraceComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			resources: []client.Object{
-				pointerFrom(testutils.NewMetricPipelineBuilder().Build()),
-				pointerFrom(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(otelcollector.MetricOTLPServiceName).Build()),
+				new(testutils.NewMetricPipelineBuilder().Build()),
+				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPMetricsService).Build()),
 			},
-			expectedState: operatorv1alpha1.StateWarning,
+			expectedState: operatorv1beta1.StateWarning,
 			expectedConditions: []metav1.Condition{
 				{Type: conditions.TypeLogComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 				{Type: conditions.TypeMetricComponentsHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonAgentNotReady},
 				{Type: conditions.TypeTraceComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			},
-			expectedEndpoints: operatorv1alpha1.GatewayEndpoints{
-				Metrics: &operatorv1alpha1.OTLPEndpoints{
+			expectedEndpoints: operatorv1beta1.GatewayEndpoints{
+				Metrics: &operatorv1beta1.OTLPEndpoints{
 					GRPC: "http://telemetry-otlp-metrics.telemetry-system:4317",
 					HTTP: "http://telemetry-otlp-metrics.telemetry-system:4318",
 				},
@@ -365,8 +350,8 @@ func TestUpdateStatus(t *testing.T) {
 			// Arrange
 			scheme := runtime.NewScheme()
 			_ = clientgoscheme.AddToScheme(scheme)
-			_ = telemetryv1alpha1.AddToScheme(scheme)
-			_ = operatorv1alpha1.AddToScheme(scheme)
+			_ = telemetryv1beta1.AddToScheme(scheme)
+			_ = operatorv1beta1.AddToScheme(scheme)
 
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(tt.telemetry).WithStatusSubresource(tt.telemetry).Build()
 			for _, res := range tt.resources {
@@ -419,8 +404,4 @@ func TestUpdateStatus(t *testing.T) {
 			require.Equal(t, tt.expectedEndpoints, tt.telemetry.Status.Endpoints)
 		})
 	}
-}
-
-func pointerFrom[T any](value T) *T {
-	return &value
 }

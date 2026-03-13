@@ -3,28 +3,28 @@ package builder
 import (
 	"fmt"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
 
-func createKubernetesFilter(pipeline *telemetryv1alpha1.LogPipeline) string {
-	appInput := &telemetryv1alpha1.LogPipelineApplicationInput{}
-	if pipeline.Spec.Input.Application != nil {
-		appInput = pipeline.Spec.Input.Application
+func createKubernetesFilter(pipeline *telemetryv1beta1.LogPipeline) string {
+	runtimeInput := &telemetryv1beta1.LogPipelineRuntimeInput{}
+	if pipeline.Spec.Input.Runtime != nil {
+		runtimeInput = pipeline.Spec.Input.Runtime
 	}
 
 	keepAnnotations := false
-	if appInput.KeepAnnotations != nil {
-		keepAnnotations = *appInput.KeepAnnotations
+	if runtimeInput.FluentBitKeepAnnotations != nil {
+		keepAnnotations = *runtimeInput.FluentBitKeepAnnotations
 	}
 
 	keepLabels := true
-	if appInput.DropLabels != nil {
-		keepLabels = !*appInput.DropLabels
+	if runtimeInput.FluentBitDropLabels != nil {
+		keepLabels = !*runtimeInput.FluentBitDropLabels
 	}
 
 	keepOriginalBody := true
-	if appInput.KeepOriginalBody != nil {
-		keepOriginalBody = *appInput.KeepOriginalBody
+	if runtimeInput.KeepOriginalBody != nil {
+		keepOriginalBody = *runtimeInput.KeepOriginalBody
 	}
 
 	return NewFilterSectionBuilder().

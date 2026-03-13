@@ -24,18 +24,40 @@ spec:
         app.kubernetes.io/name: manager
         control-plane: telemetry-manager
         kyma-project.io/component: controller
+        kyma-project.io/module: telemetry
       {{- include "telemetry-manager.selectorLabels" . | indent 8 }}
       annotations:
         kubectl.kubernetes.io/default-container: manager
         sidecar.istio.io/inject: "false"
     spec:
+      {{- if .Values.global.imagePullSecret.enabled }}
+      imagePullSecrets:
+      - name: {{ .Values.global.imagePullSecret.name }}
+      {{- end }}
       containers:
       - args:
         {{- range $key, $value := .Values.manager.container.args }}
         - --{{ $key }}={{ $value }}
         {{- end }}
+        {{- if not (empty .Values.additionalMetadata.labels) }}
+        {{- range $k, $v := .Values.additionalMetadata.labels }}
+        - --additional-label={{ (printf "%s=%s" $k $v) }}
+        {{- end }}
+        {{- end }}
+        {{- if not (empty .Values.additionalMetadata.annotations) }}
+        {{- range $k, $v := .Values.additionalMetadata.annotations }}
+        - --additional-annotation={{ (printf "%s=%s" $k $v) }}
+        {{- end }}
+        {{- end }}
+        {{- if .Values.global.imagePullSecret.enabled }}
+        - --image-pull-secret-name={{ .Values.global.imagePullSecret.name }}
+        {{- end }}
+        {{- if .Values.global.caBundle.enabled }}
+        - --cluster-trust-bundle-name={{ .Values.global.caBundle.name }}
+        {{- end }}
         {{- if .Values.experimental.enabled }}
-        - --enable-v1beta1-log-pipelines=true
+        - --deploy-otlp-gateway=true
+        - --unlimited-pipelines=true
         {{- end }}
         command:
         - /manager
@@ -48,6 +70,10 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
+        - name: TARGET_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         - name: FLUENT_BIT_IMAGE
           value: {{ quote .Values.manager.container.env.fluentBitImage }}
         - name: FLUENT_BIT_EXPORTER_IMAGE
@@ -56,8 +82,14 @@ spec:
           value: {{ quote .Values.manager.container.env.otelCollectorImage }}
         - name: SELF_MONITOR_IMAGE
           value: {{ quote .Values.manager.container.env.selfMonitorImage }}
+        - name: SELF_MONITOR_FIPS_IMAGE
+          value: {{ quote .Values.manager.container.env.selfMonitorFIPSImage }}
         - name: ALPINE_IMAGE
           value: {{ quote .Values.manager.container.env.alpineImage }}
+        {{- if .Values.manager.container.env.operateInFipsMode }}
+        - name: KYMA_FIPS_MODE_ENABLED
+          value: {{ quote .Values.manager.container.env.operateInFipsMode }}
+        {{- end }}
         image: {{ .Values.manager.container.image.repository }}
         imagePullPolicy: {{ .Values.manager.container.image.pullPolicy }}
         livenessProbe:
@@ -85,3 +117,5 @@ spec:
       volumes:
       - emptyDir: {}
         name: crt-volume
+
+

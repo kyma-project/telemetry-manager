@@ -14,10 +14,17 @@ For examples using the OTel SDK in a different language, refer to the official [
 
 ![setup](./../assets/sample-app.drawio.svg)
 
+## Table of Content
+
+- [Prerequisites](#prerequisites)
+- [Exploring the Sample App](#exploring-the-sample-app)
+- [Deploying the Sample App](#deploying-the-sample-app)
+- [Cleanup](#cleanup)
+
 ## Prerequisites
 
 - Kyma as the target deployment environment.
-- The [Telemetry module](../../README.md) is [added](https://kyma-project.io/#/02-get-started/01-quick-install).
+- The [Telemetry module](../../README.md) is [added](https://kyma-project.io/02-get-started/01-quick-install).
 
 - [Kubectl version that is within one minor version (older or newer) of `kube-apiserver`](https://kubernetes.io/releases/version-skew-policy/#kubectl).
 
@@ -115,7 +122,7 @@ By default, the exporters are configured to print to stdout, so that you can run
    curl http://localhost:8080/forward
    ```
 
-### Cleanup
+## Cleanup
 
 Run the following commands to completely remove the sample app from the cluster:
 

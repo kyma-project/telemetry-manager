@@ -12,7 +12,7 @@ import (
 )
 
 func TestEndpointWithPathValidation(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelTraces)
+	suite.SetupTest(t, suite.LabelTraces)
 
 	tracePipelineDefaultGRPCWithPath := testutils.NewTracePipelineBuilder().
 		WithName("tracepipeline-default-reject-with-path").
@@ -44,10 +44,6 @@ func TestEndpointWithPathValidation(t *testing.T) {
 		&tracePipelineWithHTTPAndPath,
 		&tracePipelineWithHTTPAndWithoutPath,
 	}
-
-	t.Cleanup(func() {
-		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-	})
 
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 

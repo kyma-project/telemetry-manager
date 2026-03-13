@@ -1,0 +1,10 @@
+---
+apiVersion: operator.kyma-project.io/v1beta1
+kind: Telemetry
+metadata:
+  name: default
+  namespace: kyma-system
+spec:
+  enrichments:
+    extractPodLabels:
+      - keyPrefix: "app.kubernetes.io/"

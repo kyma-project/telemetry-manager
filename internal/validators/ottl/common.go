@@ -60,7 +60,7 @@ type genericParserCollection ottl.ParserCollection[any]
 
 type genericParserCollectionOption ottl.ParserCollectionOption[any]
 
-func withLogParser(functions map[string]ottl.Factory[ottllog.TransformContext], opts ...ottl.ParserCollectionContextOption[ottllog.TransformContext, any]) genericParserCollectionOption {
+func withLogParser(functions map[string]ottl.Factory[*ottllog.TransformContext], opts ...ottl.ParserCollectionContextOption[*ottllog.TransformContext, any]) genericParserCollectionOption {
 	return func(pc *ottl.ParserCollection[any]) error {
 		logParser, err := ottllog.NewParser(functions, pc.Settings, ottllog.EnablePathContextNames())
 		if err != nil {
@@ -71,7 +71,7 @@ func withLogParser(functions map[string]ottl.Factory[ottllog.TransformContext], 
 	}
 }
 
-func withDataPointParser(functions map[string]ottl.Factory[ottldatapoint.TransformContext], opts ...ottl.ParserCollectionContextOption[ottldatapoint.TransformContext, any]) genericParserCollectionOption {
+func withDataPointParser(functions map[string]ottl.Factory[*ottldatapoint.TransformContext], opts ...ottl.ParserCollectionContextOption[*ottldatapoint.TransformContext, any]) genericParserCollectionOption {
 	return func(pc *ottl.ParserCollection[any]) error {
 		datapointParser, err := ottldatapoint.NewParser(functions, pc.Settings, ottldatapoint.EnablePathContextNames())
 		if err != nil {
@@ -82,7 +82,7 @@ func withDataPointParser(functions map[string]ottl.Factory[ottldatapoint.Transfo
 	}
 }
 
-func withMetricParser(functions map[string]ottl.Factory[ottlmetric.TransformContext], opts ...ottl.ParserCollectionContextOption[ottlmetric.TransformContext, any]) genericParserCollectionOption {
+func withMetricParser(functions map[string]ottl.Factory[*ottlmetric.TransformContext], opts ...ottl.ParserCollectionContextOption[*ottlmetric.TransformContext, any]) genericParserCollectionOption {
 	return func(pc *ottl.ParserCollection[any]) error {
 		metricParser, err := ottlmetric.NewParser(functions, pc.Settings, ottlmetric.EnablePathContextNames())
 		if err != nil {
@@ -93,7 +93,7 @@ func withMetricParser(functions map[string]ottl.Factory[ottlmetric.TransformCont
 	}
 }
 
-func withSpanEventParser(functions map[string]ottl.Factory[ottlspanevent.TransformContext], opts ...ottl.ParserCollectionContextOption[ottlspanevent.TransformContext, any]) genericParserCollectionOption {
+func withSpanEventParser(functions map[string]ottl.Factory[*ottlspanevent.TransformContext], opts ...ottl.ParserCollectionContextOption[*ottlspanevent.TransformContext, any]) genericParserCollectionOption {
 	return func(pc *ottl.ParserCollection[any]) error {
 		spanEventParser, err := ottlspanevent.NewParser(functions, pc.Settings, ottlspanevent.EnablePathContextNames())
 		if err != nil {
@@ -104,7 +104,7 @@ func withSpanEventParser(functions map[string]ottl.Factory[ottlspanevent.Transfo
 	}
 }
 
-func withSpanParser(functions map[string]ottl.Factory[ottlspan.TransformContext], opts ...ottl.ParserCollectionContextOption[ottlspan.TransformContext, any]) genericParserCollectionOption {
+func withSpanParser(functions map[string]ottl.Factory[*ottlspan.TransformContext], opts ...ottl.ParserCollectionContextOption[*ottlspan.TransformContext, any]) genericParserCollectionOption {
 	return func(pc *ottl.ParserCollection[any]) error {
 		spanParser, err := ottlspan.NewParser(functions, pc.Settings, ottlspan.EnablePathContextNames())
 		if err != nil {
@@ -115,7 +115,7 @@ func withSpanParser(functions map[string]ottl.Factory[ottlspan.TransformContext]
 	}
 }
 
-func withResourceParser(functions map[string]ottl.Factory[ottlresource.TransformContext], opts ...ottl.ParserCollectionContextOption[ottlresource.TransformContext, any]) genericParserCollectionOption {
+func withResourceParser(functions map[string]ottl.Factory[*ottlresource.TransformContext], opts ...ottl.ParserCollectionContextOption[*ottlresource.TransformContext, any]) genericParserCollectionOption {
 	return func(pc *ottl.ParserCollection[any]) error {
 		resourceParser, err := ottlresource.NewParser(functions, pc.Settings, ottlresource.EnablePathContextNames())
 		if err != nil {
@@ -126,7 +126,7 @@ func withResourceParser(functions map[string]ottl.Factory[ottlresource.Transform
 	}
 }
 
-func withScopeParser(functions map[string]ottl.Factory[ottlscope.TransformContext], opts ...ottl.ParserCollectionContextOption[ottlscope.TransformContext, any]) genericParserCollectionOption {
+func withScopeParser(functions map[string]ottl.Factory[*ottlscope.TransformContext], opts ...ottl.ParserCollectionContextOption[*ottlscope.TransformContext, any]) genericParserCollectionOption {
 	return func(pc *ottl.ParserCollection[any]) error {
 		scopeParser, err := ottlscope.NewParser(functions, pc.Settings, ottlscope.EnablePathContextNames())
 		if err != nil {

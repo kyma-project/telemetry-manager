@@ -1,18 +1,22 @@
 package shared
 
 import (
+	"fmt"
 	"testing"
 
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdoutloggen"
@@ -23,37 +27,58 @@ import (
 
 func TestMTLSAboutToExpireCert_OTel(t *testing.T) {
 	tests := []struct {
-		label               string
-		inputBuilder        func(includeNs string) telemetryv1alpha1.LogPipelineInput
+		name                string
+		labels              []string
+		opts                []kubeprep.Option
+		inputBuilder        func(includeNs string) telemetryv1beta1.LogPipelineInput
 		logGeneratorBuilder func(ns string) client.Object
-		expectAgent         bool
+		resourceName        types.NamespacedName
+		readinessCheckFunc  func(t *testing.T, name types.NamespacedName)
 	}{
 		{
-			label: suite.LabelLogAgent,
-			inputBuilder: func(includeNs string) telemetryv1alpha1.LogPipelineInput {
-				return testutils.BuildLogPipelineApplicationInput(testutils.ExtIncludeNamespaces(includeNs))
+			name:   suite.LabelLogAgent,
+			labels: []string{suite.LabelLogAgent, suite.LabelMTLS},
+			inputBuilder: func(includeNs string) telemetryv1beta1.LogPipelineInput {
+				return testutils.BuildLogPipelineRuntimeInput(testutils.IncludeNamespaces(includeNs))
 			},
 			logGeneratorBuilder: func(ns string) client.Object {
 				return stdoutloggen.NewDeployment(ns).K8sObject()
 			},
-			expectAgent: true,
+			resourceName:       kitkyma.LogAgentName,
+			readinessCheckFunc: assert.DaemonSetReady,
 		},
 		{
-			label: suite.LabelLogGateway,
-			inputBuilder: func(includeNs string) telemetryv1alpha1.LogPipelineInput {
+			name:   suite.LabelLogGateway,
+			labels: []string{suite.LabelLogGateway, suite.LabelMTLS},
+			inputBuilder: func(includeNs string) telemetryv1beta1.LogPipelineInput {
 				return testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
 			},
 			logGeneratorBuilder: func(ns string) client.Object {
 				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeLogs).K8sObject()
 			},
+			resourceName:       kitkyma.LogGatewayName,
+			readinessCheckFunc: assert.DeploymentReady,
+		},
+		{
+			name:   fmt.Sprintf("%s-%s", suite.LabelLogGateway, suite.LabelExperimental),
+			labels: []string{suite.LabelLogGateway, suite.LabelMTLS},
+			opts:   []kubeprep.Option{kubeprep.WithExperimental()},
+			inputBuilder: func(includeNs string) telemetryv1beta1.LogPipelineInput {
+				return testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
+			},
+			logGeneratorBuilder: func(ns string) client.Object {
+				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeCentralLogs).K8sObject()
+			},
+			resourceName:       kitkyma.TelemetryOTLPGatewayName,
+			readinessCheckFunc: assert.DaemonSetReady,
 		},
 	}
 	for _, tc := range tests {
-		t.Run(tc.label, func(t *testing.T) {
-			suite.RegisterTestCase(t, tc.label)
+		t.Run(tc.name, func(t *testing.T) {
+			suite.SetupTestWithOptions(t, tc.labels, tc.opts...)
 
 			var (
-				uniquePrefix = unique.Prefix(tc.label)
+				uniquePrefix = unique.Prefix(tc.name)
 				pipelineName = uniquePrefix()
 				backendNs    = uniquePrefix("backend")
 				genNs        = uniquePrefix("gen")
@@ -64,14 +89,14 @@ func TestMTLSAboutToExpireCert_OTel(t *testing.T) {
 				Build()
 			Expect(err).ToNot(HaveOccurred())
 
-			backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithTLS(*serverCerts))
+			backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithMTLS(*serverCerts))
 
 			pipeline := testutils.NewLogPipelineBuilder().
 				WithName(pipelineName).
 				WithInput(tc.inputBuilder(genNs)).
 				WithOTLPOutput(
-					testutils.OTLPEndpoint(backend.Endpoint()),
-					testutils.OTLPClientTLSFromString(
+					testutils.OTLPEndpoint(backend.EndpointHTTPS()),
+					testutils.OTLPClientMTLSFromString(
 						clientCerts.CaCertPem.String(),
 						clientCerts.ClientCertPem.String(),
 						clientCerts.ClientKeyPem.String(),
@@ -79,24 +104,18 @@ func TestMTLSAboutToExpireCert_OTel(t *testing.T) {
 				Build()
 
 			resources := []client.Object{
-				kitk8s.NewNamespace(backendNs).K8sObject(),
-				kitk8s.NewNamespace(genNs).K8sObject(),
+				kitk8sobjects.NewNamespace(backendNs).K8sObject(),
+				kitk8sobjects.NewNamespace(genNs).K8sObject(),
 				&pipeline,
 				tc.logGeneratorBuilder(genNs),
 			}
 			resources = append(resources, backend.K8sObjects()...)
 
-			t.Cleanup(func() {
-				Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-			})
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 			assert.BackendReachable(t, backend)
-			assert.DeploymentReady(t, kitkyma.LogGatewayName)
 
-			if tc.expectAgent {
-				assert.DaemonSetReady(t, kitkyma.LogAgentName)
-			}
+			tc.readinessCheckFunc(t, tc.resourceName)
 
 			assert.FluentBitLogPipelineHealthy(t, pipelineName)
 			assert.LogPipelineHasCondition(t, pipelineName, metav1.Condition{
@@ -105,7 +124,7 @@ func TestMTLSAboutToExpireCert_OTel(t *testing.T) {
 				Reason: conditions.ReasonTLSCertificateAboutToExpire,
 			})
 
-			assert.TelemetryHasState(t, operatorv1alpha1.StateWarning)
+			assert.TelemetryHasState(t, operatorv1beta1.StateWarning)
 			assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
 				Type:   conditions.TypeLogComponentsHealthy,
 				Status: metav1.ConditionTrue,
@@ -118,7 +137,7 @@ func TestMTLSAboutToExpireCert_OTel(t *testing.T) {
 }
 
 func TestMTLSAboutToExpireCert_FluentBit(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelFluentBit)
+	suite.SetupTestWithOptions(t, []string{suite.LabelFluentBit}, kubeprep.WithOverrideFIPSMode(false))
 
 	var (
 		uniquePrefix = unique.Prefix()
@@ -132,7 +151,7 @@ func TestMTLSAboutToExpireCert_FluentBit(t *testing.T) {
 		Build()
 	Expect(err).ToNot(HaveOccurred())
 
-	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithTLS(*serverCerts))
+	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithMTLS(*serverCerts))
 
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
@@ -147,16 +166,13 @@ func TestMTLSAboutToExpireCert_FluentBit(t *testing.T) {
 		Build()
 
 	resources := []client.Object{
-		kitk8s.NewNamespace(backendNs).K8sObject(),
-		kitk8s.NewNamespace(genNs).K8sObject(),
+		kitk8sobjects.NewNamespace(backendNs).K8sObject(),
+		kitk8sobjects.NewNamespace(genNs).K8sObject(),
 		&pipeline,
 		stdoutloggen.NewDeployment(genNs).K8sObject(),
 	}
 	resources = append(resources, backend.K8sObjects()...)
 
-	t.Cleanup(func() {
-		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-	})
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.BackendReachable(t, backend)
@@ -169,7 +185,7 @@ func TestMTLSAboutToExpireCert_FluentBit(t *testing.T) {
 		Reason: conditions.ReasonTLSCertificateAboutToExpire,
 	})
 
-	assert.TelemetryHasState(t, operatorv1alpha1.StateWarning)
+	assert.TelemetryHasState(t, operatorv1beta1.StateWarning)
 	assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
 		Type:   conditions.TypeLogComponentsHealthy,
 		Status: metav1.ConditionTrue,

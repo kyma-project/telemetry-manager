@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"k8s.io/utils/ptr"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
@@ -27,7 +26,7 @@ func TestDefault(t *testing.T) {
 				Spec: telemetryv1alpha1.LogPipelineSpec{
 					Input: telemetryv1alpha1.LogPipelineInput{},
 					Output: telemetryv1alpha1.LogPipelineOutput{
-						HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{
+						FluentBitHTTP: &telemetryv1alpha1.FluentBitHTTPOutput{
 							Host: telemetryv1alpha1.ValueType{Value: "example.com"},
 						},
 					},
@@ -37,12 +36,12 @@ func TestDefault(t *testing.T) {
 				Spec: telemetryv1alpha1.LogPipelineSpec{
 					Input: telemetryv1alpha1.LogPipelineInput{
 						Application: &telemetryv1alpha1.LogPipelineApplicationInput{
-							Enabled:          ptr.To(true),
-							KeepOriginalBody: ptr.To(true),
+							Enabled:          new(true),
+							KeepOriginalBody: new(true),
 						},
 					},
 					Output: telemetryv1alpha1.LogPipelineOutput{
-						HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{
+						FluentBitHTTP: &telemetryv1alpha1.FluentBitHTTPOutput{
 							Host: telemetryv1alpha1.ValueType{Value: "example.com"},
 						},
 					},
@@ -55,7 +54,7 @@ func TestDefault(t *testing.T) {
 				Spec: telemetryv1alpha1.LogPipelineSpec{
 					Input: telemetryv1alpha1.LogPipelineInput{
 						Application: &telemetryv1alpha1.LogPipelineApplicationInput{
-							KeepOriginalBody: ptr.To(false),
+							KeepOriginalBody: new(false),
 						},
 					},
 				},
@@ -64,8 +63,8 @@ func TestDefault(t *testing.T) {
 				Spec: telemetryv1alpha1.LogPipelineSpec{
 					Input: telemetryv1alpha1.LogPipelineInput{
 						Application: &telemetryv1alpha1.LogPipelineApplicationInput{
-							Enabled:          ptr.To(true),
-							KeepOriginalBody: ptr.To(false),
+							Enabled:          new(true),
+							KeepOriginalBody: new(false),
 						},
 					},
 				},
@@ -77,7 +76,7 @@ func TestDefault(t *testing.T) {
 				Spec: telemetryv1alpha1.LogPipelineSpec{
 					Input: telemetryv1alpha1.LogPipelineInput{
 						Application: &telemetryv1alpha1.LogPipelineApplicationInput{
-							Enabled: ptr.To(false),
+							Enabled: new(false),
 						},
 					},
 				},
@@ -86,8 +85,8 @@ func TestDefault(t *testing.T) {
 				Spec: telemetryv1alpha1.LogPipelineSpec{
 					Input: telemetryv1alpha1.LogPipelineInput{
 						Application: &telemetryv1alpha1.LogPipelineApplicationInput{
-							Enabled:          ptr.To(false),
-							KeepOriginalBody: ptr.To(true),
+							Enabled:          new(false),
+							KeepOriginalBody: new(true),
 						},
 					},
 				},
@@ -109,8 +108,8 @@ func TestDefault(t *testing.T) {
 				Spec: telemetryv1alpha1.LogPipelineSpec{
 					Input: telemetryv1alpha1.LogPipelineInput{
 						Application: &telemetryv1alpha1.LogPipelineApplicationInput{
-							Enabled:          ptr.To(true),
-							KeepOriginalBody: ptr.To(true),
+							Enabled:          new(true),
+							KeepOriginalBody: new(true),
 						},
 						OTLP: &telemetryv1alpha1.OTLPInput{
 							Disabled:   false,
@@ -148,8 +147,8 @@ func TestDefault(t *testing.T) {
 				Spec: telemetryv1alpha1.LogPipelineSpec{
 					Input: telemetryv1alpha1.LogPipelineInput{
 						Application: &telemetryv1alpha1.LogPipelineApplicationInput{
-							Enabled:          ptr.To(true),
-							KeepOriginalBody: ptr.To(true),
+							Enabled:          new(true),
+							KeepOriginalBody: new(true),
 						},
 						OTLP: &telemetryv1alpha1.OTLPInput{
 							Namespaces: &telemetryv1alpha1.NamespaceSelector{
@@ -179,8 +178,8 @@ func TestDefault(t *testing.T) {
 				Spec: telemetryv1alpha1.LogPipelineSpec{
 					Input: telemetryv1alpha1.LogPipelineInput{
 						Application: &telemetryv1alpha1.LogPipelineApplicationInput{
-							Enabled:          ptr.To(true),
-							KeepOriginalBody: ptr.To(true),
+							Enabled:          new(true),
+							KeepOriginalBody: new(true),
 						},
 						OTLP: &telemetryv1alpha1.OTLPInput{
 							Namespaces: &telemetryv1alpha1.NamespaceSelector{},

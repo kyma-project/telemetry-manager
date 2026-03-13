@@ -8,50 +8,73 @@ import (
 	"github.com/stretchr/testify/require"
 	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	autoscalingvpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 
+	"github.com/kyma-project/telemetry-manager/internal/config"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
 func TestAgent_ApplyResources(t *testing.T) {
+	globals := config.NewGlobal(
+		config.WithTargetNamespace("kyma-system"),
+		config.WithImagePullSecretName("mySecret"),
+		config.WithAdditionalWorkloadLabels(map[string]string{"test-label-key": "test-label-value"}),
+		config.WithAdditionalWorkloadAnnotations(map[string]string{"test-anno-key": "test-anno-value"}),
+		config.WithClusterTrustBundleName("trustBundle"),
+	)
+	globalsWithFIPS := config.NewGlobal(
+		config.WithTargetNamespace("kyma-system"),
+		config.WithOperateInFIPSMode(true),
+	)
 	collectorImage := "opentelemetry/collector:dummy"
-	namespace := "kyma-system"
 	priorityClassName := "normal"
 
 	tests := []struct {
-		name             string
-		sut              *AgentApplierDeleter
-		collectorEnvVars map[string][]byte
-		istioEnabled     bool
-		backendPorts     []string
-		goldenFilePath   string
-		saveGoldenFile   bool
+		name                string
+		sut                 *AgentApplierDeleter
+		collectorEnvVars    map[string][]byte
+		istioEnabled        bool
+		backendPorts        []string
+		goldenFilePath      string
+		vpaCRDExists        bool
+		vpaEnabled          bool
+		vpaMaxAllowedMemory resource.Quantity
 	}{
 		{
 			name:           "metric agent",
-			sut:            NewMetricAgentApplierDeleter(collectorImage, namespace, priorityClassName, false),
+			sut:            NewMetricAgentApplierDeleter(globals, collectorImage, priorityClassName),
 			goldenFilePath: "testdata/metric-agent.yaml",
 		},
 		{
 			name:           "metric agent with istio",
-			sut:            NewMetricAgentApplierDeleter(collectorImage, namespace, priorityClassName, false),
+			sut:            NewMetricAgentApplierDeleter(globals, collectorImage, priorityClassName),
 			istioEnabled:   true,
 			backendPorts:   []string{"4317", "9090"},
 			goldenFilePath: "testdata/metric-agent-istio.yaml",
 		},
 		{
 			name:           "metric agent with FIPS mode enabled",
-			sut:            NewMetricAgentApplierDeleter(collectorImage, namespace, priorityClassName, true),
+			sut:            NewMetricAgentApplierDeleter(globalsWithFIPS, collectorImage, priorityClassName),
 			goldenFilePath: "testdata/metric-agent-fips-enabled.yaml",
 		},
 		{
+			name:                "metric agent with VPA",
+			sut:                 NewMetricAgentApplierDeleter(globals, collectorImage, priorityClassName),
+			goldenFilePath:      "testdata/metric-agent-vpa.yaml",
+			vpaCRDExists:        true,
+			vpaEnabled:          true,
+			vpaMaxAllowedMemory: resource.MustParse("1Gi"),
+		},
+		{
 			name: "log agent",
-			sut:  NewLogAgentApplierDeleter(collectorImage, namespace, priorityClassName, false),
+			sut:  NewLogAgentApplierDeleter(globals, collectorImage, priorityClassName),
 			collectorEnvVars: map[string][]byte{
 				"DUMMY_ENV_VAR": []byte("foo"),
 			},
@@ -59,7 +82,7 @@ func TestAgent_ApplyResources(t *testing.T) {
 		},
 		{
 			name: "log agent with istio",
-			sut:  NewLogAgentApplierDeleter(collectorImage, namespace, priorityClassName, false),
+			sut:  NewLogAgentApplierDeleter(globals, collectorImage, priorityClassName),
 			collectorEnvVars: map[string][]byte{
 				"DUMMY_ENV_VAR": []byte("foo"),
 			},
@@ -68,11 +91,22 @@ func TestAgent_ApplyResources(t *testing.T) {
 		},
 		{
 			name: "log agent with FIPS mode enabled",
-			sut:  NewLogAgentApplierDeleter(collectorImage, namespace, priorityClassName, true),
+			sut:  NewLogAgentApplierDeleter(globalsWithFIPS, collectorImage, priorityClassName),
 			collectorEnvVars: map[string][]byte{
 				"DUMMY_ENV_VAR": []byte("foo"),
 			},
 			goldenFilePath: "testdata/log-agent-fips-enabled.yaml",
+		},
+		{
+			name: "log agent with VPA",
+			sut:  NewLogAgentApplierDeleter(globals, collectorImage, priorityClassName),
+			collectorEnvVars: map[string][]byte{
+				"DUMMY_ENV_VAR": []byte("foo"),
+			},
+			goldenFilePath:      "testdata/log-agent-vpa.yaml",
+			vpaCRDExists:        true,
+			vpaEnabled:          true,
+			vpaMaxAllowedMemory: resource.MustParse("1Gi"),
 		},
 	}
 
@@ -82,8 +116,9 @@ func TestAgent_ApplyResources(t *testing.T) {
 		scheme := runtime.NewScheme()
 		utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 		utilruntime.Must(istiosecurityclientv1.AddToScheme(scheme))
+		utilruntime.Must(autoscalingvpav1.AddToScheme(scheme))
 
-		fakeClient := fake.NewClientBuilder().WithInterceptorFuncs(interceptor.Funcs{
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithInterceptorFuncs(interceptor.Funcs{
 			Create: func(_ context.Context, c client.WithWatch, obj client.Object, _ ...client.CreateOption) error {
 				objects = append(objects, obj)
 				// Nothing has to be created, just add created object to the list
@@ -97,15 +132,19 @@ func TestAgent_ApplyResources(t *testing.T) {
 				CollectorConfigYAML: "dummy",
 				CollectorEnvVars:    tt.collectorEnvVars,
 				BackendPorts:        tt.backendPorts,
+				VpaCRDExists:        tt.vpaCRDExists,
+				VpaEnabled:          tt.vpaEnabled,
+				VpaMaxAllowedMemory: tt.vpaMaxAllowedMemory,
 			})
 			require.NoError(t, err)
 
-			if tt.saveGoldenFile {
-				testutils.SaveAsYAML(t, scheme, objects, tt.goldenFilePath)
-			}
-
 			bytes, err := testutils.MarshalYAML(scheme, objects)
 			require.NoError(t, err)
+
+			if testutils.ShouldUpdateGoldenFiles() {
+				testutils.UpdateGoldenFileYAML(t, tt.goldenFilePath, bytes)
+				return
+			}
 
 			goldenFileBytes, err := os.ReadFile(tt.goldenFilePath)
 			require.NoError(t, err)
@@ -116,13 +155,17 @@ func TestAgent_ApplyResources(t *testing.T) {
 }
 
 func TestAgent_DeleteResources(t *testing.T) {
+	globals := config.NewGlobal(config.WithTargetNamespace("kyma-system"))
 	image := "opentelemetry/collector:dummy"
-	namespace := "kyma-system"
 	priorityClassName := "normal"
 
 	var created []client.Object
 
-	fakeClient := fake.NewClientBuilder().WithInterceptorFuncs(interceptor.Funcs{
+	scheme := runtime.NewScheme()
+	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+	utilruntime.Must(autoscalingvpav1.AddToScheme(scheme))
+
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithInterceptorFuncs(interceptor.Funcs{
 		Create: func(ctx context.Context, c client.WithWatch, obj client.Object, _ ...client.CreateOption) error {
 			created = append(created, obj)
 			return c.Create(ctx, obj)
@@ -135,20 +178,23 @@ func TestAgent_DeleteResources(t *testing.T) {
 	}{
 		{
 			name: "metric agent",
-			sut:  NewMetricAgentApplierDeleter(image, namespace, priorityClassName, false),
+			sut:  NewMetricAgentApplierDeleter(globals, image, priorityClassName),
 		},
 		{
 			name: "log agent",
-			sut:  NewLogAgentApplierDeleter(image, namespace, priorityClassName, false),
+			sut:  NewLogAgentApplierDeleter(globals, image, priorityClassName),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := tt.sut.ApplyResources(t.Context(), fakeClient, AgentApplyOptions{})
+			err := tt.sut.ApplyResources(t.Context(), fakeClient, AgentApplyOptions{
+				VpaCRDExists: true,
+				VpaEnabled:   true,
+			})
 			require.NoError(t, err)
 
-			err = tt.sut.DeleteResources(t.Context(), fakeClient)
+			err = tt.sut.DeleteResources(t.Context(), fakeClient, true)
 			require.NoError(t, err)
 
 			for i := range created {

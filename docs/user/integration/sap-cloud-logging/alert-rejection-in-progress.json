@@ -53,7 +53,7 @@
                   "name": "Notify",
                   "destination_id": "",
                   "message_template": {
-                     "source": "Monitor {{ctx.monitor.name}} just entered alert status. Please investigate the issue.\n  - Trigger: {{ctx.trigger.name}}\n  - Severity: {{ctx.trigger.severity}}\n  - Period start: {{ctx.periodStart}}\n  - Period end: {{ctx.periodEnd}}",
+                     "source": "Monitor {{ctx.monitor.name}} just entered alert status. Please investigate the issue.\n  - Trigger: {{ctx.trigger.name}}\n  - Severity: {{ctx.trigger.severity}}\n  - Period start: {{ctx.periodStart}}\n  - Period end: {{ctx.periodEnd}}\n  - <link to your instance>/app/alerting",
                      "lang": "mustache"
                   },
                   "throttle_enabled": true,
@@ -69,40 +69,5 @@
             ]
          }
       }
-   ],
-   "ui_metadata": {
-      "schedule": {
-         "timezone": null,
-         "frequency": "interval",
-         "period": {
-            "unit": "MINUTES",
-            "interval": 1
-         },
-         "daily": 0,
-         "weekly": {
-            "tue": false,
-            "wed": false,
-            "thur": false,
-            "sat": false,
-            "fri": false,
-            "mon": false,
-            "sun": false
-         },
-         "monthly": {
-            "type": "day",
-            "day": 1
-         },
-         "cronExpression": "0 */1 * * *"
-      },
-      "monitor_type": "query_level_monitor",
-      "search": {
-         "searchType": "graph",
-         "timeField": "@timestamp",
-         "aggregations": [],
-         "groupBy": [],
-         "bucketValue": 1,
-         "bucketUnitOfTime": "h",
-         "filters": []
-      }
-   }
+   ]
 }

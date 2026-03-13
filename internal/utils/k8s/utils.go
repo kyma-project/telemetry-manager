@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 
+	istionetworkingclientv1 "istio.io/client-go/pkg/apis/networking/v1"
 	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -12,8 +13,10 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	autoscalingvpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
@@ -127,19 +130,6 @@ func CreateOrUpdateServiceAccount(ctx context.Context, c client.Client, desired 
 	}
 
 	return c.Update(ctx, desired)
-}
-
-func CreateIfNotExistsConfigMap(ctx context.Context, c client.Client, desired *corev1.ConfigMap) error {
-	err := c.Get(ctx, types.NamespacedName{Name: desired.Name, Namespace: desired.Namespace}, &corev1.ConfigMap{})
-	if err != nil {
-		if !apierrors.IsNotFound(err) {
-			return err
-		}
-
-		return c.Create(ctx, desired)
-	}
-
-	return nil
 }
 
 func CreateOrUpdateConfigMap(ctx context.Context, c client.Client, desired *corev1.ConfigMap) error {
@@ -284,8 +274,42 @@ func CreateOrUpdatePeerAuthentication(ctx context.Context, c client.Client, desi
 	return c.Update(ctx, desired)
 }
 
+func CreateOrUpdateDestinationRule(ctx context.Context, c client.Client, desired *istionetworkingclientv1.DestinationRule) error {
+	var existing istionetworkingclientv1.DestinationRule
+
+	err := c.Get(ctx, types.NamespacedName{Name: desired.Name, Namespace: desired.Namespace}, &existing)
+	if err != nil {
+		if !apierrors.IsNotFound(err) {
+			return err
+		}
+
+		return c.Create(ctx, desired)
+	}
+
+	mergeMetadata(&desired.ObjectMeta, existing.ObjectMeta)
+
+	return c.Update(ctx, desired)
+}
+
 func CreateOrUpdateValidatingWebhookConfiguration(ctx context.Context, c client.Client, desired *admissionregistrationv1.ValidatingWebhookConfiguration) error {
 	var existing admissionregistrationv1.ValidatingWebhookConfiguration
+
+	err := c.Get(ctx, types.NamespacedName{Name: desired.Name, Namespace: desired.Namespace}, &existing)
+	if err != nil {
+		if !apierrors.IsNotFound(err) {
+			return err
+		}
+
+		return c.Create(ctx, desired)
+	}
+
+	mergeMetadata(&desired.ObjectMeta, existing.ObjectMeta)
+
+	return c.Update(ctx, desired)
+}
+
+func CreateOrUpdateVPA(ctx context.Context, c client.Client, desired *autoscalingvpav1.VerticalPodAutoscaler) error {
+	var existing autoscalingvpav1.VerticalPodAutoscaler
 
 	err := c.Get(ctx, types.NamespacedName{Name: desired.Name, Namespace: desired.Namespace}, &existing)
 	if err != nil {
@@ -363,43 +387,37 @@ func mergeMapsByPrefix(newMap map[string]string, oldMap map[string]string, prefi
 	return newMap
 }
 
-func GetOrCreateConfigMap(ctx context.Context, c client.Client, name types.NamespacedName, labels map[string]string) (corev1.ConfigMap, error) {
-	cm := corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: name.Name, Namespace: name.Namespace, Labels: labels}}
-
-	err := c.Get(ctx, client.ObjectKeyFromObject(&cm), &cm)
-	if err == nil {
-		return cm, nil
-	}
-
-	if apierrors.IsNotFound(err) {
-		err = c.Create(ctx, &cm)
-		if err == nil {
-			return cm, nil
-		}
-	}
-
-	return corev1.ConfigMap{}, err
-}
-
-func GetOrCreateSecret(ctx context.Context, c client.Client, name types.NamespacedName, labels map[string]string) (corev1.Secret, error) {
-	secret := corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: name.Name, Namespace: name.Namespace, Labels: labels}}
-
-	err := c.Get(ctx, client.ObjectKeyFromObject(&secret), &secret)
-	if err == nil {
-		return secret, nil
-	}
-
-	if apierrors.IsNotFound(err) {
-		err = c.Create(ctx, &secret)
-		if err == nil {
-			return secret, nil
-		}
-	}
-
-	return corev1.Secret{}, err
-}
-
 func DeleteObject(ctx context.Context, c client.Client, obj client.Object) error {
 	err := c.Delete(ctx, obj)
 	return client.IgnoreNotFound(err)
+}
+
+func DeleteObjectsByLabelSelector(ctx context.Context, c client.Client, objList client.ObjectList, labelSelector map[string]string) error {
+	listOptions := []client.ListOption{
+		client.MatchingLabels(labelSelector),
+	}
+
+	err := c.List(ctx, objList, listOptions...)
+	if err != nil {
+		return client.IgnoreNotFound(err)
+	}
+
+	items, err := meta.ExtractList(objList)
+	if err != nil {
+		return err
+	}
+
+	for _, item := range items {
+		obj, ok := item.(client.Object)
+		if !ok {
+			continue
+		}
+
+		err = c.Delete(ctx, obj)
+		if err != nil {
+			return client.IgnoreNotFound(err)
+		}
+	}
+
+	return nil
 }

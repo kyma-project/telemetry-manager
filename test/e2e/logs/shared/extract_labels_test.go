@@ -1,17 +1,20 @@
 package shared
 
 import (
-	"context"
+	"fmt"
 	"testing"
 
 	. "github.com/onsi/gomega"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/matchers/log/fluentbit"
@@ -25,35 +28,56 @@ import (
 
 func TestExtractLabels_OTel(t *testing.T) {
 	tests := []struct {
-		label               string
-		inputBuilder        func(includeNs string) telemetryv1alpha1.LogPipelineInput
+		name                string
+		labels              []string
+		opts                []kubeprep.Option
+		inputBuilder        func(includeNs string) telemetryv1beta1.LogPipelineInput
 		logGeneratorBuilder func(ns string, labels map[string]string) client.Object
-		expectAgent         bool
+		resourceName        types.NamespacedName
+		readinessCheckFunc  func(t *testing.T, name types.NamespacedName)
 	}{
 		{
-			label: suite.LabelLogAgent,
-			inputBuilder: func(includeNs string) telemetryv1alpha1.LogPipelineInput {
-				return testutils.BuildLogPipelineApplicationInput(testutils.ExtIncludeNamespaces(includeNs))
+			name:   suite.LabelLogAgent,
+			labels: []string{suite.LabelLogAgent},
+			inputBuilder: func(includeNs string) telemetryv1beta1.LogPipelineInput {
+				return testutils.BuildLogPipelineRuntimeInput(testutils.IncludeNamespaces(includeNs))
 			},
 			logGeneratorBuilder: func(ns string, labels map[string]string) client.Object {
 				return stdoutloggen.NewDeployment(ns).WithLabels(labels).K8sObject()
 			},
-			expectAgent: true,
+			resourceName:       kitkyma.LogAgentName,
+			readinessCheckFunc: assert.DaemonSetReady,
 		},
 		{
-			label: suite.LabelLogGateway,
-			inputBuilder: func(includeNs string) telemetryv1alpha1.LogPipelineInput {
+			name:   suite.LabelLogGateway,
+			labels: []string{suite.LabelLogGateway},
+			inputBuilder: func(includeNs string) telemetryv1beta1.LogPipelineInput {
 				return testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
 			},
 			logGeneratorBuilder: func(ns string, labels map[string]string) client.Object {
 				return telemetrygen.NewPod(ns, telemetrygen.SignalTypeLogs).WithLabels(labels).K8sObject()
 			},
+			resourceName:       kitkyma.LogGatewayName,
+			readinessCheckFunc: assert.DeploymentReady,
+		},
+		{
+			name:   fmt.Sprintf("%s-%s", suite.LabelLogGateway, suite.LabelExperimental),
+			labels: []string{suite.LabelLogGateway},
+			opts:   []kubeprep.Option{kubeprep.WithExperimental()},
+			inputBuilder: func(includeNs string) telemetryv1beta1.LogPipelineInput {
+				return testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
+			},
+			logGeneratorBuilder: func(ns string, labels map[string]string) client.Object {
+				return telemetrygen.NewPod(ns, telemetrygen.SignalTypeCentralLogs).WithLabels(labels).K8sObject()
+			},
+			resourceName:       kitkyma.TelemetryOTLPGatewayName,
+			readinessCheckFunc: assert.DaemonSetReady,
 		},
 	}
 
 	for _, tc := range tests {
-		t.Run(tc.label, func(t *testing.T) {
-			suite.RegisterTestCase(t, tc.label)
+		t.Run(tc.name, func(t *testing.T) {
+			suite.SetupTestWithOptions(t, tc.labels, tc.opts...)
 
 			const (
 				k8sLabelKeyPrefix = "k8s.pod.label"
@@ -71,11 +95,11 @@ func TestExtractLabels_OTel(t *testing.T) {
 			)
 
 			var (
-				uniquePrefix = unique.Prefix(tc.label)
+				uniquePrefix = unique.Prefix(tc.name)
 				pipelineName = uniquePrefix()
 				backendNs    = uniquePrefix("backend")
 				genNs        = uniquePrefix("gen")
-				telemetry    operatorv1alpha1.Telemetry
+				telemetry    operatorv1beta1.Telemetry
 			)
 
 			backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel)
@@ -83,7 +107,7 @@ func TestExtractLabels_OTel(t *testing.T) {
 			pipeline := testutils.NewLogPipelineBuilder().
 				WithName(pipelineName).
 				WithInput(tc.inputBuilder(genNs)).
-				WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+				WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 				Build()
 
 			genLabels := map[string]string{
@@ -93,10 +117,12 @@ func TestExtractLabels_OTel(t *testing.T) {
 				labelKeyShouldNotMatch: labelValueShouldNotMatch,
 			}
 
+			kitk8s.PreserveAndScheduleRestoreOfTelemetryResource(t, kitkyma.TelemetryName)
+
 			Eventually(func(g Gomega) {
 				g.Expect(suite.K8sClient.Get(t.Context(), kitkyma.TelemetryName, &telemetry)).NotTo(HaveOccurred())
-				telemetry.Spec.Enrichments = &operatorv1alpha1.EnrichmentSpec{
-					ExtractPodLabels: []operatorv1alpha1.PodLabel{
+				telemetry.Spec.Enrichments = &operatorv1beta1.EnrichmentSpec{
+					ExtractPodLabels: []operatorv1beta1.PodLabel{
 						{Key: "log.test.exact.should.match"},
 						{KeyPrefix: "log.test.prefix"},
 					},
@@ -105,34 +131,23 @@ func TestExtractLabels_OTel(t *testing.T) {
 			}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 
 			resources := []client.Object{
-				kitk8s.NewNamespace(backendNs).K8sObject(),
-				kitk8s.NewNamespace(genNs).K8sObject(),
+				kitk8sobjects.NewNamespace(backendNs).K8sObject(),
+				kitk8sobjects.NewNamespace(genNs).K8sObject(),
 				&pipeline,
 				tc.logGeneratorBuilder(genNs, genLabels),
 			}
 			resources = append(resources, backend.K8sObjects()...)
 
-			t.Cleanup(func() {
-				Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-				Eventually(func(g Gomega) {
-					g.Expect(suite.K8sClient.Get(context.Background(), kitkyma.TelemetryName, &telemetry)).To(Succeed()) //nolint:usetesting // Remove ctx from Get
-					telemetry.Spec.Enrichments = &operatorv1alpha1.EnrichmentSpec{}
-					g.Expect(suite.K8sClient.Update(context.Background(), &telemetry)).To(Succeed()) //nolint:usetesting // Remove ctx from Update
-				}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
-			})
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
-			if tc.expectAgent {
-				assert.DaemonSetReady(t, kitkyma.LogAgentName)
-			}
+			tc.readinessCheckFunc(t, tc.resourceName)
 
 			assert.BackendReachable(t, backend)
-			assert.DeploymentReady(t, kitkyma.LogGatewayName)
 			assert.OTelLogPipelineHealthy(t, pipelineName)
 			assert.OTelLogsFromNamespaceDelivered(t, backend, genNs)
 
 			// Verify that at least one log entry contains the expected labels, rather than requiring all entries to match.
-			// This approach accounts for potential delays in the k8sattributes processor syncing with the API server during startup,
+			// This approach accounts for potential delays in the k8s_attributes processor syncing with the API server during startup,
 			// which can result in some logs not being enriched and causing test flakiness.
 			assert.BackendDataEventuallyMatches(t, backend,
 				HaveFlatLogs(ContainElement(
@@ -149,7 +164,7 @@ func TestExtractLabels_OTel(t *testing.T) {
 }
 
 func TestExtractLabels_FluentBit(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelFluentBit)
+	suite.SetupTestWithOptions(t, []string{suite.LabelFluentBit}, kubeprep.WithOverrideFIPSMode(false))
 
 	var (
 		uniquePrefix           = unique.Prefix()
@@ -170,7 +185,7 @@ func TestExtractLabels_FluentBit(t *testing.T) {
 	pipelineNotDropped := testutils.NewLogPipelineBuilder().
 		WithName(pipelineNameNotDropped).
 		WithKeepAnnotations(false).
-		WithApplicationInput(true, testutils.ExtIncludeNamespaces(genNs)).
+		WithRuntimeInput(true, testutils.IncludeNamespaces(genNs)).
 		WithDropLabels(false).
 		WithHTTPOutput(testutils.HTTPHost(backendNotDropped.Host()), testutils.HTTPPort(backendNotDropped.Port())).
 		Build()
@@ -178,15 +193,15 @@ func TestExtractLabels_FluentBit(t *testing.T) {
 	pipelineDropped := testutils.NewLogPipelineBuilder().
 		WithName(pipelineNameDropped).
 		WithKeepAnnotations(false).
-		WithApplicationInput(true, testutils.ExtIncludeNamespaces(genNs)).
+		WithRuntimeInput(true, testutils.IncludeNamespaces(genNs)).
 		WithDropLabels(true).
 		WithHTTPOutput(testutils.HTTPHost(backendDropped.Host()), testutils.HTTPPort(backendDropped.Port())).
 		Build()
 
 	resources := []client.Object{
-		kitk8s.NewNamespace(notDroppedNs).K8sObject(),
-		kitk8s.NewNamespace(droppedNs).K8sObject(),
-		kitk8s.NewNamespace(genNs).K8sObject(),
+		kitk8sobjects.NewNamespace(notDroppedNs).K8sObject(),
+		kitk8sobjects.NewNamespace(droppedNs).K8sObject(),
+		kitk8sobjects.NewNamespace(genNs).K8sObject(),
 		logProducer.K8sObject(),
 		&pipelineNotDropped,
 		&pipelineDropped,
@@ -194,9 +209,6 @@ func TestExtractLabels_FluentBit(t *testing.T) {
 	resources = append(resources, backendNotDropped.K8sObjects()...)
 	resources = append(resources, backendDropped.K8sObjects()...)
 
-	t.Cleanup(func() {
-		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-	})
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.BackendReachable(t, backendNotDropped)

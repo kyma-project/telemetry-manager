@@ -13,7 +13,7 @@ import (
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
-	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 )
 
 const (
@@ -44,6 +44,11 @@ const (
 	SignalTypeMetricsAgent  = "metrics"
 )
 
+type OIDCConfig struct {
+	issuerURL string
+	audience  string
+}
+
 type Backend struct {
 	abortFaultPercentage float64
 	dropFromSourceLabel  map[string]string
@@ -52,13 +57,15 @@ type Backend struct {
 	namespace            string
 	replicas             int32
 	signalType           SignalType
+	oidc                 *OIDCConfig
+	mtls                 bool
 
 	fluentDConfigMap    *fluentdConfigMapBuilder
-	hostSecret          *kitk8s.Secret
+	hostSecret          *kitk8sobjects.Secret
 	collectorConfigMap  *collectorConfigMapBuilder
 	collectorDeployment *collectorDeploymentBuilder
-	collectorService    *kitk8s.Service
-	virtualService      *kitk8s.VirtualService
+	collectorService    *kitk8sobjects.Service
+	virtualService      *kitk8sobjects.VirtualService
 }
 
 func New(namespace string, signalType SignalType, opts ...Option) *Backend {
@@ -90,9 +97,18 @@ func (b *Backend) NamespacedName() types.NamespacedName {
 	return types.NamespacedName{Name: b.name, Namespace: b.namespace}
 }
 
-func (b *Backend) Endpoint() string {
+func (b *Backend) EndpointHTTP() string {
 	addr := net.JoinHostPort(b.Host(), strconv.Itoa(int(b.Port())))
 	return fmt.Sprintf("http://%s", addr)
+}
+
+func (b *Backend) EndpointHTTPS() string {
+	addr := net.JoinHostPort(b.Host(), strconv.Itoa(int(b.Port())))
+	return fmt.Sprintf("https://%s", addr)
+}
+
+func (b *Backend) EndpointNoScheme() string {
+	return net.JoinHostPort(b.Host(), strconv.Itoa(int(b.Port())))
 }
 
 func (b *Backend) Host() string {
@@ -133,8 +149,8 @@ func (b *Backend) K8sObjects() []client.Object {
 	}
 
 	objects = append(objects, b.collectorConfigMap.K8sObject())
-	objects = append(objects, b.collectorDeployment.K8sObject(kitk8s.WithLabel("app", b.name)))
-	objects = append(objects, b.collectorService.K8sObject(kitk8s.WithLabel("app", b.name)))
+	objects = append(objects, b.collectorDeployment.K8sObject(kitk8sobjects.WithLabel("app", b.name)))
+	objects = append(objects, b.collectorService.K8sObject(kitk8sobjects.WithLabel("app", b.name)))
 	objects = append(objects, b.hostSecret.K8sObject())
 
 	return objects
@@ -149,6 +165,8 @@ func (b *Backend) buildResources() {
 		exportedFilePath,
 		b.signalType,
 		b.certs,
+		b.oidc,
+		b.mtls,
 	)
 
 	b.collectorDeployment = newCollectorDeployment(
@@ -162,7 +180,7 @@ func (b *Backend) buildResources() {
 		"traffic.sidecar.istio.io/excludeInboundPorts": strconv.Itoa(int(QueryPort)),
 	})
 
-	b.collectorService = kitk8s.NewService(b.name, b.namespace).
+	b.collectorService = kitk8sobjects.NewService(b.name, b.namespace).
 		WithPort(otlpGRPCPortName, otlpGRPCPort).
 		WithPort(otlpHTTPPortName, otlpHTTPPort).
 		WithPort(queryPortName, QueryPort)
@@ -170,7 +188,7 @@ func (b *Backend) buildResources() {
 	// TODO: LogPipelines requires the host and the port to be separated.
 	// TracePipeline/MetricPipeline requires an endpoint in the format of scheme://host:port.
 	// The referencable secret is called host in both cases, but the value is different. It has to be refactored.
-	host := b.Endpoint()
+	host := b.EndpointHTTP()
 
 	if b.signalType == SignalTypeLogsFluentBit {
 		b.fluentDConfigMap = newFluentDConfigMapBuilder(
@@ -183,15 +201,15 @@ func (b *Backend) buildResources() {
 		host = b.Host()
 	}
 
-	b.hostSecret = kitk8s.NewOpaqueSecret(
+	b.hostSecret = kitk8sobjects.NewOpaqueSecret(
 		fmt.Sprintf("%s-receiver-hostname", b.name),
 		b.namespace,
-		kitk8s.WithStringData("host", host),
+		kitk8sobjects.WithStringData("host", host),
 	)
 
 	if b.abortFaultPercentage > 0 {
 		// Configure fault injection for self-monitoring negative tests.
-		b.virtualService = kitk8s.NewVirtualService(
+		b.virtualService = kitk8sobjects.NewVirtualService(
 			"fault-injection",
 			b.namespace,
 			b.name,

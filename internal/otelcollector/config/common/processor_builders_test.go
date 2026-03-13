@@ -6,60 +6,91 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
+	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
 
-func TestInsertClusterNameProcessorConfig(t *testing.T) {
+func TestInsertClusterAttributesProcessorStatements(t *testing.T) {
 	require := require.New(t)
 
-	expectedAttributeActions := []AttributeAction{
-		{
-			Action: AttributeActionInsert,
-			Key:    "k8s.cluster.name",
-			Value:  "test-cluster",
+	expectedProcessorStatements := []TransformProcessorStatements{{
+		Statements: []string{
+			"set(resource.attributes[\"k8s.cluster.name\"], \"test-cluster\") where resource.attributes[\"k8s.cluster.name\"] == nil or resource.attributes[\"k8s.cluster.name\"] == \"\"",
+			"set(resource.attributes[\"k8s.cluster.uid\"], \"test-cluster-uid\") where resource.attributes[\"k8s.cluster.uid\"] == nil or resource.attributes[\"k8s.cluster.uid\"] == \"\"",
+			"set(resource.attributes[\"cloud.provider\"], \"test-cloud-provider\") where resource.attributes[\"cloud.provider\"] == nil or resource.attributes[\"cloud.provider\"] == \"\"",
 		},
-		{
-			Action: AttributeActionInsert,
-			Key:    "k8s.cluster.uid",
-			Value:  "test-cluster-uid",
-		},
-		{
-			Action: AttributeActionInsert,
-			Key:    "cloud.provider",
-			Value:  "test-cloud-provider",
-		},
-	}
+	}}
 
-	config := InsertClusterAttributesProcessorConfig("test-cluster", "test-cluster-uid", "test-cloud-provider")
+	processorStatements := InsertClusterAttributesProcessorStatements(
+		ClusterOptions{
+			ClusterName:   "test-cluster",
+			ClusterUID:    "test-cluster-uid",
+			CloudProvider: "test-cloud-provider",
+		},
+	)
 
-	require.ElementsMatch(expectedAttributeActions, config.Attributes, "Attributes should match")
+	require.ElementsMatch(expectedProcessorStatements, processorStatements, "Attributes should match")
 }
 
-func TestDropKymaAttributesProcessorConfig(t *testing.T) {
+func TestInsertClusterAttributesProcessorStatementsWithEmptyValues(t *testing.T) {
 	require := require.New(t)
 
-	expectedAttributeActions := []AttributeAction{
-		{
-			Action:       AttributeActionDelete,
-			RegexPattern: "kyma.*",
+	expectedProcessorStatements := []TransformProcessorStatements{{
+		Statements: []string{
+			"set(resource.attributes[\"k8s.cluster.name\"], \"\") where resource.attributes[\"k8s.cluster.name\"] == nil or resource.attributes[\"k8s.cluster.name\"] == \"\"",
+			"set(resource.attributes[\"k8s.cluster.uid\"], \"\") where resource.attributes[\"k8s.cluster.uid\"] == nil or resource.attributes[\"k8s.cluster.uid\"] == \"\"",
 		},
-	}
+	}}
 
-	config := DropKymaAttributesProcessorConfig()
+	processorStatements := InsertClusterAttributesProcessorStatements(
+		ClusterOptions{
+			ClusterName:   "",
+			ClusterUID:    "",
+			CloudProvider: "",
+		},
+	)
 
-	require.ElementsMatch(expectedAttributeActions, config.Attributes, "Attributes should match")
+	require.ElementsMatch(expectedProcessorStatements, processorStatements, "Attributes should match")
+}
+
+func TestDropKymaAttributesProcessorStatements(t *testing.T) {
+	require := require.New(t)
+
+	expectedProcessorStatements := []TransformProcessorStatements{{
+		Statements: []string{
+			"delete_matching_keys(resource.attributes, \"kyma.*\")",
+		},
+	}}
+
+	processorStatements := DropKymaAttributesProcessorStatements()
+
+	require.ElementsMatch(expectedProcessorStatements, processorStatements, "Attributes should match")
+}
+
+func TestDropUnknownServiceNameProcessorStatements(t *testing.T) {
+	require := require.New(t)
+
+	expectedProcessorStatements := []TransformProcessorStatements{{
+		Statements: []string{
+			"delete_key(resource.attributes, \"service.name\") where resource.attributes[\"service.name\"] != nil and HasPrefix(resource.attributes[\"service.name\"], \"unknown_service\")",
+		},
+	}}
+
+	processorStatements := DropUnknownServiceNameProcessorStatements()
+
+	require.ElementsMatch(expectedProcessorStatements, processorStatements, "Attributes should match")
 }
 
 func TestTransformedInstrumentationScope(t *testing.T) {
 	instrumentationScopeVersion := "main"
 	tests := []struct {
 		name        string
-		want        *TransformProcessor
+		want        *TransformProcessorConfig
 		inputSource InputSourceType
 	}{
 		{
 			name: "InputSourceRuntime",
-			want: &TransformProcessor{
+			want: &TransformProcessorConfig{
 				ErrorMode: "ignore",
 				MetricStatements: []TransformProcessorStatements{{
 					Statements: []string{
@@ -71,7 +102,7 @@ func TestTransformedInstrumentationScope(t *testing.T) {
 			inputSource: InputSourceRuntime,
 		}, {
 			name: "InputSourcePrometheus",
-			want: &TransformProcessor{
+			want: &TransformProcessorConfig{
 				ErrorMode: "ignore",
 				MetricStatements: []TransformProcessorStatements{
 					{
@@ -85,7 +116,7 @@ func TestTransformedInstrumentationScope(t *testing.T) {
 			inputSource: InputSourcePrometheus,
 		}, {
 			name: "InputSourceIstio",
-			want: &TransformProcessor{
+			want: &TransformProcessorConfig{
 				ErrorMode: "ignore",
 				MetricStatements: []TransformProcessorStatements{{
 					Statements: []string{
@@ -97,7 +128,7 @@ func TestTransformedInstrumentationScope(t *testing.T) {
 			inputSource: InputSourceIstio,
 		}, {
 			name: "InputSourceKyma",
-			want: &TransformProcessor{
+			want: &TransformProcessorConfig{
 				ErrorMode: "ignore",
 				MetricStatements: []TransformProcessorStatements{{
 					Statements: []string{
@@ -109,7 +140,7 @@ func TestTransformedInstrumentationScope(t *testing.T) {
 			inputSource: InputSourceKyma,
 		}, {
 			name: "InputSourceK8sCluster",
-			want: &TransformProcessor{
+			want: &TransformProcessorConfig{
 				ErrorMode: "ignore",
 				MetricStatements: []TransformProcessorStatements{{
 					Statements: []string{
@@ -124,14 +155,14 @@ func TestTransformedInstrumentationScope(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := InstrumentationScopeProcessorConfig(instrumentationScopeVersion, tt.inputSource); !compareTransformProcessor(got, tt.want) {
+			if got := InstrumentationScopeProcessor(instrumentationScopeVersion, tt.inputSource); !compareTransformProcessor(got, tt.want) {
 				t.Errorf("makeInstrumentationScopeProcessor() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func compareTransformProcessor(got, want *TransformProcessor) bool {
+func compareTransformProcessor(got, want *TransformProcessorConfig) bool {
 	if got.ErrorMode != want.ErrorMode {
 		return false
 	}
@@ -155,9 +186,7 @@ func compareTransformProcessor(got, want *TransformProcessor) bool {
 	return true
 }
 
-func TestK8sAttributesProcessorConfig(t *testing.T) {
-	require := require.New(t)
-
+func TestK8sAttributesProcessor(t *testing.T) {
 	expectedPodAssociations := []PodAssociations{
 		{
 			Sources: []PodAssociation{{From: "resource_attribute", Name: "k8s.pod.ip"}},
@@ -169,91 +198,157 @@ func TestK8sAttributesProcessorConfig(t *testing.T) {
 			Sources: []PodAssociation{{From: "connection"}},
 		},
 	}
-	expectedK8sAttributes := []string{
-		"k8s.pod.name",
-		"k8s.node.name",
-		"k8s.namespace.name",
-		"k8s.deployment.name",
-		"k8s.statefulset.name",
-		"k8s.daemonset.name",
-		"k8s.cronjob.name",
-		"k8s.job.name",
+
+	tests := []struct {
+		name                  string
+		isOTel                bool
+		expectedK8sAttributes []string
+		expectedExtractLabels []ExtractLabel
+	}{
+		{
+			name:   "kyma-legacy",
+			isOTel: false,
+			expectedK8sAttributes: []string{
+				"k8s.pod.name",
+				"k8s.node.name",
+				"k8s.namespace.name",
+				"k8s.deployment.name",
+				"k8s.statefulset.name",
+				"k8s.daemonset.name",
+				"k8s.cronjob.name",
+				"k8s.job.name",
+			},
+			expectedExtractLabels: []ExtractLabel{
+				{
+					From:    "pod",
+					Key:     "app.kubernetes.io/name",
+					TagName: "kyma.kubernetes_io_app_name",
+				},
+				{
+					From:    "pod",
+					Key:     "app",
+					TagName: "kyma.app_name",
+				},
+				{
+					From:    "node",
+					Key:     "topology.kubernetes.io/region",
+					TagName: "cloud.region",
+				},
+				{
+					From:    "node",
+					Key:     "topology.kubernetes.io/zone",
+					TagName: "cloud.availability_zone",
+				},
+				{
+					From:    "node",
+					Key:     "node.kubernetes.io/instance-type",
+					TagName: "host.type",
+				},
+				{
+					From:    "node",
+					Key:     "kubernetes.io/arch",
+					TagName: "host.arch",
+				},
+				{
+					From:     "pod",
+					KeyRegex: "(app.kubernetes.io/name.*)",
+					TagName:  "k8s.pod.label.$0",
+				},
+				{
+					From:     "pod",
+					KeyRegex: "(^app$)",
+					TagName:  "k8s.pod.label.$0",
+				},
+			},
+		},
+		{
+			name:   "otel",
+			isOTel: true,
+			expectedK8sAttributes: []string{
+				"k8s.pod.name",
+				"k8s.node.name",
+				"k8s.namespace.name",
+				"k8s.deployment.name",
+				"k8s.statefulset.name",
+				"k8s.daemonset.name",
+				"k8s.cronjob.name",
+				"k8s.job.name",
+				"service.namespace",
+				"service.name",
+				"service.version",
+				"service.instance.id",
+			},
+			expectedExtractLabels: []ExtractLabel{
+				{
+					From:    "node",
+					Key:     "topology.kubernetes.io/region",
+					TagName: "cloud.region",
+				},
+				{
+					From:    "node",
+					Key:     "topology.kubernetes.io/zone",
+					TagName: "cloud.availability_zone",
+				},
+				{
+					From:    "node",
+					Key:     "node.kubernetes.io/instance-type",
+					TagName: "host.type",
+				},
+				{
+					From:    "node",
+					Key:     "kubernetes.io/arch",
+					TagName: "host.arch",
+				},
+				{
+					From:     "pod",
+					KeyRegex: "(app.kubernetes.io/name.*)",
+					TagName:  "k8s.pod.label.$0",
+				},
+				{
+					From:     "pod",
+					KeyRegex: "(^app$)",
+					TagName:  "k8s.pod.label.$0",
+				},
+			},
+		},
 	}
-	expectedExtractLabels := []ExtractLabel{
-		{
-			From:    "pod",
-			Key:     "app.kubernetes.io/name",
-			TagName: "kyma.kubernetes_io_app_name",
-		},
-		{
-			From:    "pod",
-			Key:     "app",
-			TagName: "kyma.app_name",
-		},
-		{
-			From:    "node",
-			Key:     "topology.kubernetes.io/region",
-			TagName: "cloud.region",
-		},
-		{
-			From:    "node",
-			Key:     "topology.kubernetes.io/zone",
-			TagName: "cloud.availability_zone",
-		},
-		{
-			From:    "node",
-			Key:     "node.kubernetes.io/instance-type",
-			TagName: "host.type",
-		},
-		{
-			From:    "node",
-			Key:     "kubernetes.io/arch",
-			TagName: "host.arch",
-		},
-		{
-			From:     "pod",
-			KeyRegex: "(app.kubernetes.io/name.*)",
-			TagName:  "k8s.pod.label.$0",
-		},
-		{
-			From:     "pod",
-			KeyRegex: "(^app$)",
-			TagName:  "k8s.pod.label.$0",
-		},
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			config := K8sAttributesProcessor(&operatorv1beta1.EnrichmentSpec{
+				ExtractPodLabels: []operatorv1beta1.PodLabel{
+					{Key: "", KeyPrefix: "app.kubernetes.io/name"},
+					{Key: "app", KeyPrefix: ""},
+				},
+			}, tt.isOTel)
+
+			require.Equal(t, "serviceAccount", config.AuthType)
+			require.Equal(t, false, config.Passthrough)
+			require.Equal(t, expectedPodAssociations, config.PodAssociation, "PodAssociation should match")
+
+			require.ElementsMatch(t, tt.expectedK8sAttributes, config.Extract.Metadata, "Metadata should match")
+			require.ElementsMatch(t, tt.expectedExtractLabels, config.Extract.Labels, "Labels should match")
+		})
 	}
-
-	config := K8sAttributesProcessorConfig(&operatorv1alpha1.EnrichmentSpec{
-		ExtractPodLabels: []operatorv1alpha1.PodLabel{
-			{Key: "", KeyPrefix: "app.kubernetes.io/name"},
-			{Key: "app", KeyPrefix: ""},
-		},
-	})
-
-	require.Equal("serviceAccount", config.AuthType)
-	require.Equal(false, config.Passthrough)
-	require.Equal(expectedPodAssociations, config.PodAssociation, "PodAssociation should match")
-
-	require.ElementsMatch(expectedK8sAttributes, config.Extract.Metadata, "Metadata should match")
-	require.ElementsMatch(expectedExtractLabels, config.Extract.Labels, "Labels should match")
 }
 
 func TestBuildPodLabelEnrichments(t *testing.T) {
 	tests := []struct {
 		name     string
-		presets  *operatorv1alpha1.EnrichmentSpec
+		presets  *operatorv1beta1.EnrichmentSpec
 		expected []ExtractLabel
 	}{
 		{
 			name: "Enrichments disabled",
-			presets: &operatorv1alpha1.EnrichmentSpec{
-				ExtractPodLabels: []operatorv1alpha1.PodLabel{},
+			presets: &operatorv1beta1.EnrichmentSpec{
+				ExtractPodLabels: []operatorv1beta1.PodLabel{},
 			},
 			expected: []ExtractLabel{},
 		},
 		{
 			name: "Enrichments enabled with key",
-			presets: &operatorv1alpha1.EnrichmentSpec{
-				ExtractPodLabels: []operatorv1alpha1.PodLabel{
+			presets: &operatorv1beta1.EnrichmentSpec{
+				ExtractPodLabels: []operatorv1beta1.PodLabel{
 					{Key: "app"},
 				},
 			},
@@ -267,8 +362,8 @@ func TestBuildPodLabelEnrichments(t *testing.T) {
 		},
 		{
 			name: "Enrichments enabled with key prefix",
-			presets: &operatorv1alpha1.EnrichmentSpec{
-				ExtractPodLabels: []operatorv1alpha1.PodLabel{
+			presets: &operatorv1beta1.EnrichmentSpec{
+				ExtractPodLabels: []operatorv1beta1.PodLabel{
 					{KeyPrefix: "app.kubernetes.io"},
 				},
 			},
@@ -282,8 +377,8 @@ func TestBuildPodLabelEnrichments(t *testing.T) {
 		},
 		{
 			name: "Enrichments enabled with multiple labels",
-			presets: &operatorv1alpha1.EnrichmentSpec{
-				ExtractPodLabels: []operatorv1alpha1.PodLabel{
+			presets: &operatorv1beta1.EnrichmentSpec{
+				ExtractPodLabels: []operatorv1beta1.PodLabel{
 					{Key: "app"},
 					{KeyPrefix: "app.kubernetes.io"},
 				},
@@ -312,7 +407,7 @@ func TestBuildPodLabelEnrichments(t *testing.T) {
 	}
 }
 
-func TestKymaInputNameProcessorConfig(t *testing.T) {
+func TestKymaInputNameProcessorStatements(t *testing.T) {
 	type args struct {
 		inputSource InputSourceType
 	}
@@ -320,92 +415,286 @@ func TestKymaInputNameProcessorConfig(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want *ResourceProcessor
+		want []TransformProcessorStatements
 	}{
 		{
 			name: "InputSourceRuntime",
 			args: args{inputSource: InputSourceRuntime},
-			want: &ResourceProcessor{
-				Attributes: []AttributeAction{
-					{
-						Action: AttributeActionInsert,
-						Key:    KymaInputNameAttribute,
-						Value:  string(InputSourceRuntime),
-					},
+			want: []TransformProcessorStatements{{
+				Statements: []string{
+					"set(resource.attributes[\"kyma.input.name\"], \"runtime\")",
 				},
-			},
+			}},
 		},
 		{
 			name: "InputSourcePrometheus",
 			args: args{inputSource: InputSourcePrometheus},
-			want: &ResourceProcessor{
-				Attributes: []AttributeAction{
-					{
-						Action: AttributeActionInsert,
-						Key:    KymaInputNameAttribute,
-						Value:  string(InputSourcePrometheus),
-					},
+			want: []TransformProcessorStatements{{
+				Statements: []string{
+					"set(resource.attributes[\"kyma.input.name\"], \"prometheus\")",
 				},
-			},
+			}},
 		},
 		{
 			name: "InputSourceIstio",
 			args: args{inputSource: InputSourceIstio},
-			want: &ResourceProcessor{
-				Attributes: []AttributeAction{
-					{
-						Action: AttributeActionInsert,
-						Key:    KymaInputNameAttribute,
-						Value:  string(InputSourceIstio),
-					},
+			want: []TransformProcessorStatements{{
+				Statements: []string{
+					"set(resource.attributes[\"kyma.input.name\"], \"istio\")",
 				},
-			},
+			}},
 		},
 		{
 			name: "InputSourceOTLP",
 			args: args{inputSource: InputSourceOTLP},
-			want: &ResourceProcessor{
-				Attributes: []AttributeAction{
-					{
-						Action: AttributeActionInsert,
-						Key:    KymaInputNameAttribute,
-						Value:  string(InputSourceOTLP),
-					},
+			want: []TransformProcessorStatements{{
+				Statements: []string{
+					"set(resource.attributes[\"kyma.input.name\"], \"otlp\")",
 				},
-			},
+			}},
 		},
 		{
 			name: "InputSourceKyma",
 			args: args{inputSource: InputSourceKyma},
-			want: &ResourceProcessor{
-				Attributes: []AttributeAction{
-					{
-						Action: AttributeActionInsert,
-						Key:    KymaInputNameAttribute,
-						Value:  string(InputSourceKyma),
-					},
+			want: []TransformProcessorStatements{{
+				Statements: []string{
+					"set(resource.attributes[\"kyma.input.name\"], \"kyma\")",
 				},
-			},
+			}},
 		},
 		{
 			name: "InputSourceK8sCluster",
 			args: args{inputSource: InputSourceK8sCluster},
-			want: &ResourceProcessor{
-				Attributes: []AttributeAction{
-					{
-						Action: AttributeActionInsert,
-						Key:    KymaInputNameAttribute,
-						Value:  string(InputSourceK8sCluster),
-					},
+			want: []TransformProcessorStatements{{
+				Statements: []string{
+					"set(resource.attributes[\"kyma.input.name\"], \"k8s_cluster\")",
 				},
-			},
+			}},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := KymaInputNameProcessorConfig(tt.args.inputSource); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("KymaInputNameProcessorConfig() = %v, want %v", got, tt.want)
+			if got := KymaInputNameProcessorStatements(tt.args.inputSource); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("KymaInputNameProcessorStatements() = %v, want %v", got, tt.want)
 			}
 		})
 	}
+}
+
+func TestResolveServiceNameConfig(t *testing.T) {
+	require := require.New(t)
+
+	config := ResolveServiceName()
+
+	require.NotNil(config)
+	require.Equal([]string{"kyma.kubernetes_io_app_name", "kyma.app_name"}, config.ResourceAttributes)
+}
+
+func TestLogFilterProcessor(t *testing.T) {
+	require := require.New(t)
+
+	logs := []telemetryv1beta1.FilterSpec{
+		{
+			Conditions: []string{"condition1", "condition2"},
+		},
+		{
+			Conditions: []string{"condition3"},
+		},
+	}
+
+	config := LogFilterProcessor(logs)
+
+	require.NotNil(config)
+	require.Equal("ignore", config.ErrorMode)
+	require.Len(config.Logs, 2)
+	require.Equal(logs, config.Logs)
+	require.Empty(config.Metrics)
+	require.Empty(config.Traces)
+}
+
+func TestMetricFilterProcessor(t *testing.T) {
+	require := require.New(t)
+
+	metrics := []telemetryv1beta1.FilterSpec{
+		{
+			Conditions: []string{"metric_condition1", "datapoint_condition1"},
+		},
+		{
+			Conditions: []string{"metric_condition2"},
+		},
+	}
+
+	config := MetricFilterProcessor(metrics)
+
+	require.NotNil(config)
+	require.Equal("ignore", config.ErrorMode)
+	require.Len(config.Metrics, 2)
+	require.Equal(metrics, config.Metrics)
+	require.Empty(config.Logs)
+	require.Empty(config.Traces)
+}
+
+func TestTraceFilterProcessor(t *testing.T) {
+	require := require.New(t)
+
+	traces := []telemetryv1beta1.FilterSpec{
+		{
+			Conditions: []string{"span_condition1", "spanevent_condition1"},
+		},
+		{
+			Conditions: []string{"span_condition2"},
+		},
+	}
+
+	config := TraceFilterProcessor(traces)
+
+	require.NotNil(config)
+	require.Equal("ignore", config.ErrorMode)
+	require.Len(config.Traces, 2)
+	require.Equal(traces, config.Traces)
+	require.Empty(config.Logs)
+	require.Empty(config.Metrics)
+}
+
+func TestLogTransformProcessor(t *testing.T) {
+	require := require.New(t)
+
+	statements := []TransformProcessorStatements{
+		{
+			Statements: []string{"set(body, \"test\")"},
+			Conditions: []string{"body != nil"},
+		},
+	}
+
+	config := LogTransformProcessor(statements)
+
+	require.NotNil(config)
+	require.Equal("ignore", config.ErrorMode)
+	require.Equal(statements, config.LogStatements)
+	require.Empty(config.MetricStatements)
+	require.Empty(config.TraceStatements)
+}
+
+func TestMetricTransformProcessor(t *testing.T) {
+	require := require.New(t)
+
+	statements := []TransformProcessorStatements{
+		{
+			Statements: []string{"set(name, \"test\")"},
+		},
+	}
+
+	config := MetricTransformProcessor(statements)
+
+	require.NotNil(config)
+	require.Equal("ignore", config.ErrorMode)
+	require.Equal(statements, config.MetricStatements)
+	require.Empty(config.LogStatements)
+	require.Empty(config.TraceStatements)
+}
+
+func TestTraceTransformProcessor(t *testing.T) {
+	require := require.New(t)
+
+	statements := []TransformProcessorStatements{
+		{
+			Statements: []string{"set(name, \"test\")"},
+		},
+	}
+
+	config := TraceTransformProcessor(statements)
+
+	require.NotNil(config)
+	require.Equal("ignore", config.ErrorMode)
+	require.Equal(statements, config.TraceStatements)
+	require.Empty(config.LogStatements)
+	require.Empty(config.MetricStatements)
+}
+
+func TestTransformSpecsToProcessorStatements(t *testing.T) {
+	tests := []struct {
+		name     string
+		specs    []telemetryv1beta1.TransformSpec
+		expected []TransformProcessorStatements
+	}{
+		{
+			name:     "empty specs",
+			specs:    []telemetryv1beta1.TransformSpec{},
+			expected: []TransformProcessorStatements{},
+		},
+		{
+			name: "single spec without conditions",
+			specs: []telemetryv1beta1.TransformSpec{
+				{
+					Statements: []string{"set(body, \"modified\")"},
+				},
+			},
+			expected: []TransformProcessorStatements{
+				{
+					Statements: []string{"set(body, \"modified\")"},
+					Conditions: nil,
+				},
+			},
+		},
+		{
+			name: "single spec with conditions",
+			specs: []telemetryv1beta1.TransformSpec{
+				{
+					Statements: []string{"set(body, \"modified\")"},
+					Conditions: []string{"body != nil"},
+				},
+			},
+			expected: []TransformProcessorStatements{
+				{
+					Statements: []string{"set(body, \"modified\")"},
+					Conditions: []string{"body != nil"},
+				},
+			},
+		},
+		{
+			name: "multiple specs",
+			specs: []telemetryv1beta1.TransformSpec{
+				{
+					Statements: []string{"statement1"},
+					Conditions: []string{"condition1"},
+				},
+				{
+					Statements: []string{"statement2", "statement3"},
+					Conditions: []string{"condition2", "condition3"},
+				},
+			},
+			expected: []TransformProcessorStatements{
+				{
+					Statements: []string{"statement1"},
+					Conditions: []string{"condition1"},
+				},
+				{
+					Statements: []string{"statement2", "statement3"},
+					Conditions: []string{"condition2", "condition3"},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			require := require.New(t)
+
+			result := TransformSpecsToProcessorStatements(tt.specs)
+
+			require.Equal(tt.expected, result)
+		})
+	}
+}
+
+func TestInstrumentationScopeProcessorConfigMultipleSources(t *testing.T) {
+	require := require.New(t)
+
+	instrumentationScopeVersion := "v1.0.0"
+	config := InstrumentationScopeProcessor(instrumentationScopeVersion, InputSourceRuntime, InputSourcePrometheus)
+
+	require.NotNil(config)
+	require.Equal("ignore", config.ErrorMode)
+	require.Len(config.MetricStatements, 1)
+	require.Len(config.MetricStatements[0].Statements, 4)
 }

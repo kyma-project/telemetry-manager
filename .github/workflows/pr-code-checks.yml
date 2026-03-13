@@ -10,19 +10,19 @@ on:
       - "main"
       - "release-*"
     paths-ignore:
-      - 'docs/**'
-      - '**/*.md'
-      - 'OWNERS'
-      - 'CODEOWNERS'
-      - 'external-images.yaml'
+      - "docs/**"
+      - "**/*.md"
+      - "OWNERS"
+      - "CODEOWNERS"
+      - "external-images.yaml"
   workflow_dispatch:
 
 jobs:
   unit-tests:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Setup Golang
         uses: "./.github/template/setup-golang"
@@ -30,11 +30,15 @@ jobs:
       - name: Run tests
         run: make test
 
+      - name: Run tests sample-app
+        working-directory: dependencies/sample-app
+        run: make test
+
   lint:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Setup Golang
         uses: "./.github/template/setup-golang"
@@ -45,8 +49,8 @@ jobs:
   coverage:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Setup Golang
         uses: "./.github/template/setup-golang"
@@ -57,8 +61,8 @@ jobs:
   verify-code-generated:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Setup Golang
         uses: "./.github/template/setup-golang"
@@ -69,9 +73,10 @@ jobs:
   test-renovate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-      - name: Test Renovate Config
-        uses: renovatebot/github-action@a3c115cd6676c8a5bc72f9715f108759e570daf5 # v43.0.19
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Test Renovate config
+        uses: renovatebot/github-action@0b17c4eb901eca44d018fb25744a50a74b2042df # v46.1.4
         with:
           configurationFile: renovate.json
           token: ${{ secrets.GITHUB_TOKEN }}

@@ -6,9 +6,7 @@ import (
 	"regexp"
 	"strings"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
@@ -17,23 +15,6 @@ import (
 var forbiddenFilters = []string{"kubernetes", "rewrite_tag"}
 var validHostNamePattern = regexp.MustCompile(`^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$`)
 
-type EndpointValidator interface {
-	Validate(ctx context.Context, endpoint *telemetryv1alpha1.ValueType, protocol string) error
-}
-
-type TLSCertValidator interface {
-	Validate(ctx context.Context, config tlscert.TLSBundle) error
-}
-
-type SecretRefValidator interface {
-	ValidateLogPipeline(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error
-}
-
-type PipelineLock interface {
-	TryAcquireLock(ctx context.Context, owner metav1.Object) error
-	IsLockHolder(ctx context.Context, owner metav1.Object) error
-}
-
 type Validator struct {
 	EndpointValidator  EndpointValidator
 	TLSCertValidator   TLSCertValidator
@@ -41,7 +22,49 @@ type Validator struct {
 	PipelineLock       PipelineLock
 }
 
-func (v *Validator) Validate(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error {
+// ValidatorOption configures the Validator during initialization.
+type ValidatorOption func(*Validator)
+
+// WithEndpointValidator sets the endpoint validator for the Validator.
+func WithEndpointValidator(validator EndpointValidator) ValidatorOption {
+	return func(v *Validator) {
+		v.EndpointValidator = validator
+	}
+}
+
+// WithTLSCertValidator sets the TLS certificate validator for the Validator.
+func WithTLSCertValidator(validator TLSCertValidator) ValidatorOption {
+	return func(v *Validator) {
+		v.TLSCertValidator = validator
+	}
+}
+
+// WithSecretRefValidator sets the secret reference validator for the Validator.
+func WithSecretRefValidator(validator SecretRefValidator) ValidatorOption {
+	return func(v *Validator) {
+		v.SecretRefValidator = validator
+	}
+}
+
+// WithValidatorPipelineLock sets the pipeline lock for the Validator.
+func WithValidatorPipelineLock(lock PipelineLock) ValidatorOption {
+	return func(v *Validator) {
+		v.PipelineLock = lock
+	}
+}
+
+// NewValidator creates a new Validator with the provided options.
+func NewValidator(opts ...ValidatorOption) *Validator {
+	v := &Validator{}
+
+	for _, opt := range opts {
+		opt(v)
+	}
+
+	return v
+}
+
+func (v *Validator) Validate(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) error {
 	if err := v.PipelineLock.TryAcquireLock(ctx, pipeline); err != nil {
 		return err
 	}
@@ -50,17 +73,20 @@ func (v *Validator) Validate(ctx context.Context, pipeline *telemetryv1alpha1.Lo
 		return err
 	}
 
-	if pipeline.Spec.Output.HTTP != nil {
-		if err := v.EndpointValidator.Validate(ctx, &pipeline.Spec.Output.HTTP.Host, endpoint.FluentdProtocolHTTP); err != nil {
+	if pipeline.Spec.Output.FluentBitHTTP != nil {
+		if err := v.EndpointValidator.Validate(ctx, endpoint.EndpointValidationParams{
+			Endpoint: &pipeline.Spec.Output.FluentBitHTTP.Host,
+			Protocol: endpoint.FluentdProtocolHTTP,
+		}); err != nil {
 			return err
 		}
 	}
 
 	if tlsValidationRequired(pipeline) {
-		tlsConfig := tlscert.TLSBundle{
-			Cert: pipeline.Spec.Output.HTTP.TLS.Cert,
-			Key:  pipeline.Spec.Output.HTTP.TLS.Key,
-			CA:   pipeline.Spec.Output.HTTP.TLS.CA,
+		tlsConfig := tlscert.TLSValidationParams{
+			Cert: pipeline.Spec.Output.FluentBitHTTP.TLS.Cert,
+			Key:  pipeline.Spec.Output.FluentBitHTTP.TLS.Key,
+			CA:   pipeline.Spec.Output.FluentBitHTTP.TLS.CA,
 		}
 
 		if err := v.TLSCertValidator.Validate(ctx, tlsConfig); err != nil {
@@ -76,11 +102,11 @@ func (v *Validator) Validate(ctx context.Context, pipeline *telemetryv1alpha1.Lo
 		return err
 	}
 
-	if err := validateCustomOutput(pipeline.Spec.Output.Custom); err != nil {
+	if err := validateCustomOutput(pipeline.Spec.Output.FluentBitCustom); err != nil {
 		return err
 	}
 
-	httpOutput := pipeline.Spec.Output.HTTP
+	httpOutput := pipeline.Spec.Output.FluentBitHTTP
 	if httpOutput != nil && httpOutput.Host.Value != "" && !isValidHostname(httpOutput.Host.Value) {
 		return fmt.Errorf("invalid hostname '%s'", httpOutput.Host.Value)
 	}
@@ -88,8 +114,8 @@ func (v *Validator) Validate(ctx context.Context, pipeline *telemetryv1alpha1.Lo
 	return nil
 }
 
-func tlsValidationRequired(pipeline *telemetryv1alpha1.LogPipeline) bool {
-	http := pipeline.Spec.Output.HTTP
+func tlsValidationRequired(pipeline *telemetryv1beta1.LogPipeline) bool {
+	http := pipeline.Spec.Output.FluentBitHTTP
 	if http == nil {
 		return false
 	}
@@ -102,8 +128,8 @@ func isValidHostname(host string) bool {
 	return validHostNamePattern.MatchString(host)
 }
 
-func validateFileNames(logpipeline *telemetryv1alpha1.LogPipeline) error {
-	files := logpipeline.Spec.Files
+func validateFileNames(logpipeline *telemetryv1beta1.LogPipeline) error {
+	files := logpipeline.Spec.FluentBitFiles
 	uniqFileMap := make(map[string]bool)
 
 	for _, f := range files {
@@ -117,7 +143,7 @@ func validateFileNames(logpipeline *telemetryv1alpha1.LogPipeline) error {
 	return nil
 }
 
-func validateFilters(lp *telemetryv1alpha1.LogPipeline) error {
+func validateFilters(lp *telemetryv1beta1.LogPipeline) error {
 	for _, filterPlugin := range lp.Spec.FluentBitFilters {
 		if err := validateCustomFilter(filterPlugin.Custom); err != nil {
 			return err

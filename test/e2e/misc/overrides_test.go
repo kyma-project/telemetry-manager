@@ -11,10 +11,13 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/matchers/log/fluentbit"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
@@ -24,7 +27,7 @@ import (
 )
 
 func TestOverrides(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelTelemetry)
+	suite.SetupTestWithOptions(t, []string{suite.LabelTelemetry, suite.LabelFluentBit}, kubeprep.WithOverrideFIPSMode(false))
 
 	const (
 		appNameLabelKey = "app.kubernetes.io/name"
@@ -40,7 +43,7 @@ func TestOverrides(t *testing.T) {
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit)
 	logPipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
-		WithSystemNamespaces(true).
+		WithExcludeNamespaces().
 		WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
 		Build()
 
@@ -48,7 +51,7 @@ func TestOverrides(t *testing.T) {
 	tracePipeline := testutils.NewTracePipelineBuilder().WithName(pipelineName).Build()
 
 	resources := []client.Object{
-		kitk8s.NewNamespace(backendNs).K8sObject(),
+		kitk8sobjects.NewNamespace(backendNs).K8sObject(),
 		&logPipeline,
 		&metricPipeline,
 		&tracePipeline,
@@ -56,9 +59,6 @@ func TestOverrides(t *testing.T) {
 
 	resources = append(resources, backend.K8sObjects()...)
 
-	t.Cleanup(func() {
-		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-	})
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	// Verify that before overrides we don't have any DEBUG logs
@@ -81,7 +81,8 @@ func TestOverrides(t *testing.T) {
 		assert.WithOptionalDescription("should NOT have logs from the telemetry-manager pod with DEBUG level"))
 
 	// Verify that after overrides config we have DEBUG logs
-	overrides = kitk8s.NewOverrides().WithLogLevel(kitk8s.DEBUG).K8sObject()
+	timeBeforeCreatingOverrides := time.Now().UTC().Truncate(time.Second)
+	overrides = kitk8sobjects.NewOverrides().WithLogLevel(kitk8sobjects.DEBUG).K8sObject()
 	Expect(kitk8s.CreateObjects(t, overrides)).Should(Succeed())
 
 	triggerLogPipelineReconcilation(pipelineName)
@@ -90,7 +91,7 @@ func TestOverrides(t *testing.T) {
 		fluentbit.HaveFlatLogs(ContainElement(SatisfyAll(
 			fluentbit.HavePodName(ContainSubstring("telemetry-manager")),
 			fluentbit.HaveLevel(Equal("DEBUG")),
-			fluentbit.HaveTimestamp(BeTemporally(">=", time.Now().UTC())),
+			fluentbit.HaveTimestamp(BeTemporally(">=", timeBeforeCreatingOverrides)),
 		))),
 		assert.WithOptionalDescription("should have logs from the telemetry-manager pod with DEBUG level"))
 
@@ -98,7 +99,7 @@ func TestOverrides(t *testing.T) {
 	assertPipelineReconciliationDisabled(suite.Ctx, suite.K8sClient, kitkyma.FluentBitConfigMap, appNameLabelKey)
 	assertPipelineReconciliationDisabled(suite.Ctx, suite.K8sClient, kitkyma.MetricGatewayConfigMap, appNameLabelKey)
 	assertPipelineReconciliationDisabled(suite.Ctx, suite.K8sClient, kitkyma.TraceGatewayConfigMap, appNameLabelKey)
-	assertTelemetryReconciliationDisabled(suite.Ctx, suite.K8sClient, kitkyma.ValidatingWebhookName)
+	assertTelemetryReconciliationDisabled(suite.Ctx, suite.K8sClient, names.ValidatingWebhookConfig)
 
 	// Delete the overrides configmap at the end of the test
 	Expect(kitk8s.DeleteObjects(overrides)).Should(Succeed())
@@ -141,7 +142,7 @@ func triggerLogPipelineReconcilation(pipelineName string) {
 		Name: pipelineName,
 	}
 
-	var logPipeline telemetryv1alpha1.LogPipeline
+	var logPipeline telemetryv1beta1.LogPipeline
 
 	err := suite.K8sClient.Get(suite.Ctx, lookupKey, &logPipeline)
 	Expect(err).ToNot(HaveOccurred())

@@ -16,24 +16,21 @@ Combined with the Kyma Telemetry module, you can collect custom spans and metric
 
 ## Table of Content
 
-- [Integrate With Dynatrace](#integrate-with-dynatrace)
-  - [Overview](#overview)
-  - [Table of Content](#table-of-content)
-  - [Prerequisites](#prerequisites)
-  - [Prepare the Namespace](#prepare-the-namespace)
-  - [Dynatrace Setup](#dynatrace-setup)
-  - [Telemetry Module Setup](#telemetry-module-setup)
-    - [Create Secret](#create-secret)
-    - [Ingest Traces](#ingest-traces)
-    - [Ingest Metrics](#ingest-metrics)
-  - [Set Up Kyma Dashboard Integration](#set-up-kyma-dashboard-integration)
-  - [Use Dynatrace Dashboards](#use-dynatrace-dashboards)
-  - [Use Dynatrace Alerts](#use-dynatrace-alerts)
+- [Prerequisites](#prerequisites)
+- [Prepare the Namespace](#prepare-the-namespace)
+- [Dynatrace Setup](#dynatrace-setup)
+- [Telemetry Module Setup](#telemetry-module-setup)
+  - [Create Secret](#create-secret)
+  - [Ingest Traces](#ingest-traces)
+  - [Ingest Metrics](#ingest-metrics)
+- [Set Up Kyma Dashboard Integration](#set-up-kyma-dashboard-integration)
+- [Use Dynatrace Dashboards](#use-dynatrace-dashboards)
+- [Use Dynatrace Alerts](#use-dynatrace-alerts)
 
 ## Prerequisites
 
 - Kyma as the target deployment environment
-- The [Telemetry module](https://kyma-project.io/#/telemetry-manager/user/README) is [added](https://kyma-project.io/#/02-get-started/01-quick-install)
+- The [Telemetry module](https://kyma-project.io/#/telemetry-manager/user/README) is [added](https://kyma-project.io/02-get-started/01-quick-install)
 - Active Dynatrace environment with permissions to create new access tokens
 - Helm 3.x if you want to deploy the [OpenTelemetry sample application](../opentelemetry-demo/README.md)
 
@@ -53,156 +50,88 @@ Combined with the Kyma Telemetry module, you can collect custom spans and metric
 
 ## Dynatrace Setup
 
+To integrate Dynatrace, you first install the [Dynatrace Operator](https://github.com/Dynatrace/dynatrace-operator) and then create a `DynaKube` custom resource (CR). This CR configures the operator to roll out the OneAgent, which handles data collection. The Dynatrace OneAgent offers several [observability modes](https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/deployment#observability-options), two of which are relevant for application telemetry: `cloudNativeFullStack` and `applicationMonitoring`. Choose the deployment mode that fits your needs and apply the Kyma-specific configurations.
 
-There are different ways to deploy Dynatrace on Kubernetes. All [deployment options](https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/deployment) are based on the [Dynatrace Operator](https://github.com/Dynatrace/dynatrace-operator).
+> [!NOTE]
+> The following examples use API version `dynatrace.com/v1beta5`, which is also compatible with `v1beta4` and `v1beta3`. If you use an older version of the Dynatrace Operator, follow the [Migration guides for DynaKube apiVersions](https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/guides/migration/dynakube).
 
-### 1. Install Dynatrace Operator
-Install Dynatrace with the namespace you prepared earlier.
+1. Install the Dynatrace operator with the namespace you prepared.
 
-### 2. Configure the DynaKube resource
-Set the correct `apiUrl` of your environment.
+1. Create a [DynaKube](https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/reference/dynakube-parameters) CR with the `apiUrl` of your Dynatrace environment, and configure the `namespaceSelector` for both `metadataEnrichment` and for your desired observability mode:
 
-### 3. Exclude Kyma system namespaces (Kyma exclusion)
+   - Example for full-stack visibility:
 
-To avoid sidecar injection into Kyma system namespaces, you must configure `namespaceSelector` for both `metadataEnrichment` and the OneAgent mode you use (`cloudNativeFullStack` or `applicationMonitoring`).
+     ```yaml
+     apiVersion: dynatrace.com/v1beta5
+     kind: DynaKube
+     metadata:
+       name: e2e-cluster
+     spec:
+       apiUrl: https://{YOUR_ENVIRONMENT_ID}.live.dynatrace.com/api
+       metadataEnrichment:
+         enabled: true
+         namespaceSelector:
+           matchExpressions:
+           - key: operator.kyma-project.io/managed-by
+             operator: NotIn
+             values:
+               - kyma
+       oneAgent:
+         cloudNativeFullStack:
+           namespaceSelector:
+             matchExpressions:
+             - key: operator.kyma-project.io/managed-by
+               operator: NotIn
+               values:
+                 - kyma
+     ```
 
-**The configuration differs by DynaKube API version:**
+   - Example for application-level observability:
 
-#### v1beta5, v1beta4, v1beta3
-For these versions, both `cloudNativeFullStack` and `applicationMonitoring` support `namespaceSelector`. Choose the mode you use and set the exclusion accordingly. Example for `cloudNativeFullStack`:
+     ```yaml
+     apiVersion: dynatrace.com/v1beta5
+     kind: DynaKube
+     metadata:
+       name: e2e-cluster
+     spec:
+       apiUrl: https://{YOUR_ENVIRONMENT_ID}.live.dynatrace.com/api
+       metadataEnrichment:
+         enabled: true
+         namespaceSelector:
+           matchExpressions:
+           - key: operator.kyma-project.io/managed-by
+             operator: NotIn
+             values:
+               - kyma
+       oneAgent:
+         applicationMonitoring:
+           namespaceSelector:
+             matchExpressions:
+             - key: operator.kyma-project.io/managed-by
+               operator: NotIn
+               values:
+                 - kyma
+     ```
 
-```yaml
-spec:
-  metadataEnrichment:
-    enabled: true
-    namespaceSelector:
-      matchExpressions:
-      - key: operator.kyma-project.io/managed-by
-        operator: NotIn
-        values:
-          - kyma
-  oneAgent:
-    cloudNativeFullStack:
-      namespaceSelector:
-        matchExpressions:
-        - key: operator.kyma-project.io/managed-by
-          operator: NotIn
-          values:
-            - kyma
-```
+1. Optionally, modify your DynaKube CR to enable OTLP ingestion using the OTel Collector (see [Enable Dynatrace telemetry ingest endpoints](https://docs.dynatrace.com/managed/ingest-from/setup-on-k8s/extend-observability-k8s/telemetry-ingest)):
 
-Or, if you use `applicationMonitoring`:
+    ```yaml
+    spec:
+      telemetryIngest:
+        protocols:
+        - otlp
+      templates:
+        otelCollector:
+          imageRef:
+            repository: public.ecr.aws/dynatrace/dynatrace-otel-collector
+            tag: latest
+    ```
 
-```yaml
-spec:
-  metadataEnrichment:
-    enabled: true
-    namespaceSelector:
-      matchExpressions:
-      - key: operator.kyma-project.io/managed-by
-        operator: NotIn
-        values:
-          - kyma
-  oneAgent:
-    applicationMonitoring:
-      namespaceSelector:
-        matchExpressions:
-        - key: operator.kyma-project.io/managed-by
-          operator: NotIn
-          values:
-            - kyma
-```
+1. In your Dynatrace UI, configure the Kubernetes integration settings (see [Dynatrace: Global default monitoring settings for Kubernetes/OpenShift](https://docs.dynatrace.com/docs/observe/infrastructure-monitoring/container-platform-monitoring/kubernetes-monitoring/default-monitoring-settings#configure-environment-level-settings)).
 
-#### v1beta2
-In v1beta2, `namespaceSelector` is also available for both `cloudNativeFullStack` and `applicationMonitoring`. The syntax is the same as above. **However, `metadataEnrichment.enabled` defaults to `true` in v1beta2.**
+1. In the Dynatrace Hub, enable the **Istio Service Mesh** extension and follow the instructions to annotate your services.
 
-Example for `cloudNativeFullStack`:
-
-```yaml
-spec:
-  metadataEnrichment:
-    # enabled: true  # true by default in v1beta2
-    namespaceSelector:
-      matchExpressions:
-      - key: operator.kyma-project.io/managed-by
-        operator: NotIn
-        values:
-          - kyma
-  oneAgent:
-    cloudNativeFullStack:
-      namespaceSelector:
-        matchExpressions:
-        - key: operator.kyma-project.io/managed-by
-          operator: NotIn
-          values:
-            - kyma
-```
-
-#### v1beta1
-
-In v1beta1, `metadataEnrichment` is not available. The `namespaceSelector` can be configured either at the top-level `.spec` (applies to both OneAgent modes) **or** under the OneAgent mode you use.
-
-Example (top-level, applies to all modes):
-
-```yaml
-spec:
-  namespaceSelector:
-    matchExpressions:
-    - key: operator.kyma-project.io/managed-by
-      operator: NotIn
-      values:
-        - kyma
-  oneAgent:
-    cloudNativeFullStack: {}
-    # or
-    # applicationMonitoring: {}
-```
-
-Example (under the OneAgent mode, applies only to that mode):
-
-```yaml
-spec:
-  oneAgent:
-    cloudNativeFullStack:
-      namespaceSelector:
-        matchExpressions:
-        - key: operator.kyma-project.io/managed-by
-          operator: NotIn
-          values:
-            - kyma
-    # or
-    # applicationMonitoring:
-    #   namespaceSelector:
-    #     matchExpressions:
-    #     - key: operator.kyma-project.io/managed-by
-    #       operator: NotIn
-    #       values:
-    #         - kyma
-```
-
-> **Tip:**
-> Always check the [DynaKube CRD documentation](https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/reference/dynakube-parameters) for your Operator version to confirm available fields and defaults.
-
-### 4. Enable OTLP ingestion (optional)
-To enable OTLP ingestion using the OTel Collector (see [Enable Dynatrace telemetry ingest endpoints](https://docs.dynatrace.com/managed/ingest-from/setup-on-k8s/extend-observability-k8s/telemetry-ingest)):
-
-```yaml
-spec:
-  telemetryIngest:
-    protocols:
-    - otlp
-  templates:
-    otelCollector:
-      imageRef:
-        repository: public.ecr.aws/dynatrace/dynatrace-otel-collector
-        tag: latest
-```
-
-### 5. Finalize Dynatrace configuration
-- In the environment, go to **Settings > Cloud and virtualization > Kubernetes** and enable relevant Kubernetes features.
-- In the Dynatrace Hub, enable the **Istio Service Mesh** extension and annotate your services as outlined in the description.
-
-As a result, you see data arriving in your environment and Kubernetes monitoring is possible.
+After applying the `DynaKube` CR, the Dynatrace Operator deploys the necessary components, and you see data arriving in your Dynatrace environment.
 
 ## Telemetry Module Setup
 
@@ -236,11 +165,35 @@ We recommend direct integration with the Dynatrace server. This approach reduces
 
     ```bash
     cat <<EOF | kubectl apply -f -
-    apiVersion: telemetry.kyma-project.io/v1alpha1
+    apiVersion: telemetry.kyma-project.io/v1beta1
     kind: TracePipeline
     metadata:
         name: dynatrace
     spec:
+      transform:
+        - statements:
+          - set(resource.attributes["k8s.workload.name"], resource.attributes["k8s.statefulset.name"]) where IsString(resource.attributes["k8s.statefulset.name"])
+          - set(resource.attributes["k8s.workload.name"], resource.attributes["k8s.replicaset.name"]) where IsString(resource.attributes["k8s.replicaset.name"])
+          - set(resource.attributes["k8s.workload.name"], resource.attributes["k8s.job.name"]) where IsString(resource.attributes["k8s.job.name"])
+          - set(resource.attributes["k8s.workload.name"], resource.attributes["k8s.deployment.name"]) where IsString(resource.attributes["k8s.deployment.name"])
+          - set(resource.attributes["k8s.workload.name"], resource.attributes["k8s.daemonset.name"]) where IsString(resource.attributes["k8s.daemonset.name"])
+          - set(resource.attributes["k8s.workload.name"], resource.attributes["k8s.cronjob.name"]) where IsString(resource.attributes["k8s.cronjob.name"])
+          - set(resource.attributes["k8s.workload.kind"], "statefulset") where IsString(resource.attributes["k8s.statefulset.name"])
+          - set(resource.attributes["k8s.workload.kind"], "replicaset") where IsString(resource.attributes["k8s.replicaset.name"])
+          - set(resource.attributes["k8s.workload.kind"], "job") where IsString(resource.attributes["k8s.job.name"])
+          - set(resource.attributes["k8s.workload.kind"], "deployment") where IsString(resource.attributes["k8s.deployment.name"])
+          - set(resource.attributes["k8s.workload.kind"], "daemonset") where IsString(resource.attributes["k8s.daemonset.name"])
+          - set(resource.attributes["k8s.workload.kind"], "cronjob") where IsString(resource.attributes["k8s.cronjob.name"])
+          - set(resource.attributes["dt.kubernetes.workload.name"], resource.attributes["k8s.workload.name"])
+          - set(resource.attributes["dt.kubernetes.workload.kind"], resource.attributes["k8s.workload.kind"])
+          - delete_key(resource.attributes, "k8s.statefulset.name")
+          - delete_key(resource.attributes, "k8s.replicaset.name")
+          - delete_key(resource.attributes, "k8s.job.name")
+          - delete_key(resource.attributes, "k8s.deployment.name")
+          - delete_key(resource.attributes, "k8s.daemonset.name")
+          - delete_key(resource.attributes, "k8s.cronjob.name")
+        - statements:
+          - set(resource.attributes["k8s.pod.ip"], resource.attributes["ip"]) where resource.attributes["k8s.pod.ip"] == nil
         output:
             otlp:
                 endpoint:
@@ -302,7 +255,7 @@ Depending on your metrics source and temporality, choose one of the following me
 
         ```bash
         cat <<EOF | kubectl apply -f -
-        apiVersion: telemetry.kyma-project.io/v1alpha1
+        apiVersion: telemetry.kyma-project.io/v1beta1
         kind: MetricPipeline
         metadata:
             name: dynatrace
@@ -327,11 +280,35 @@ Depending on your metrics source and temporality, choose one of the following me
 
         ```bash
         cat <<EOF | kubectl apply -f -
-        apiVersion: telemetry.kyma-project.io/v1alpha1
+        apiVersion: telemetry.kyma-project.io/v1beta1
         kind: MetricPipeline
         metadata:
             name: dynatrace
         spec:
+          transform:
+            - statements:
+              - set(resource.attributes["k8s.workload.name"], resource.attributes["k8s.statefulset.name"]) where IsString(resource.attributes["k8s.statefulset.name"])
+              - set(resource.attributes["k8s.workload.name"], resource.attributes["k8s.replicaset.name"]) where IsString(resource.attributes["k8s.replicaset.name"])
+              - set(resource.attributes["k8s.workload.name"], resource.attributes["k8s.job.name"]) where IsString(resource.attributes["k8s.job.name"])
+              - set(resource.attributes["k8s.workload.name"], resource.attributes["k8s.deployment.name"]) where IsString(resource.attributes["k8s.deployment.name"])
+              - set(resource.attributes["k8s.workload.name"], resource.attributes["k8s.daemonset.name"]) where IsString(resource.attributes["k8s.daemonset.name"])
+              - set(resource.attributes["k8s.workload.name"], resource.attributes["k8s.cronjob.name"]) where IsString(resource.attributes["k8s.cronjob.name"])
+              - set(resource.attributes["k8s.workload.kind"], "statefulset") where IsString(resource.attributes["k8s.statefulset.name"])
+              - set(resource.attributes["k8s.workload.kind"], "replicaset") where IsString(resource.attributes["k8s.replicaset.name"])
+              - set(resource.attributes["k8s.workload.kind"], "job") where IsString(resource.attributes["k8s.job.name"])
+              - set(resource.attributes["k8s.workload.kind"], "deployment") where IsString(resource.attributes["k8s.deployment.name"])
+              - set(resource.attributes["k8s.workload.kind"], "daemonset") where IsString(resource.attributes["k8s.daemonset.name"])
+              - set(resource.attributes["k8s.workload.kind"], "cronjob") where IsString(resource.attributes["k8s.cronjob.name"])
+              - set(resource.attributes["dt.kubernetes.workload.name"], resource.attributes["k8s.workload.name"])
+              - set(resource.attributes["dt.kubernetes.workload.kind"], resource.attributes["k8s.workload.kind"])
+              - delete_key(resource.attributes, "k8s.statefulset.name")
+              - delete_key(resource.attributes, "k8s.replicaset.name")
+              - delete_key(resource.attributes, "k8s.job.name")
+              - delete_key(resource.attributes, "k8s.deployment.name")
+              - delete_key(resource.attributes, "k8s.daemonset.name")
+              - delete_key(resource.attributes, "k8s.cronjob.name")
+            - statements:
+              - set(resource.attributes["k8s.pod.ip"], resource.attributes["ip"]) where resource.attributes["k8s.pod.ip"] == nil
             output:
                 otlp:
                     endpoint:

@@ -1,4 +1,10 @@
 extensions:
+    cgroupruntime:
+        gomaxprocs:
+            enabled: false
+        gomemlimit:
+            enabled: true
+            ratio: 0.8
     health_check:
         endpoint: ${MY_POD_IP}:13133
     pprof:
@@ -10,16 +16,16 @@ service:
                 - otlp
             processors:
                 - memory_limiter
-                - k8sattributes
+                - k8s_attributes
                 - istio_noise_filter
-                - resource/insert-cluster-attributes
+                - transform/insert-cluster-attributes
                 - service_enrichment
-                - resource/drop-kyma-attributes
+                - transform/drop-kyma-attributes
                 - transform/user-defined-test1
                 - filter/user-defined-test1
                 - batch
             exporters:
-                - otlp/test1
+                - otlp_grpc/test1
     telemetry:
         metrics:
             readers:
@@ -34,6 +40,7 @@ service:
     extensions:
         - health_check
         - pprof
+        - cgroupruntime
 receivers:
     otlp:
         protocols:
@@ -48,11 +55,11 @@ processors:
         send_batch_max_size: 512
     filter/user-defined-test1:
         error_mode: ignore
-        traces:
-            span:
+        trace_conditions:
+            - conditions:
                 - IsMatch(span.name, ".*grpc.*")
     istio_noise_filter: {}
-    k8sattributes:
+    k8s_attributes:
         auth_type: serviceAccount
         passthrough: false
         extract:
@@ -97,24 +104,22 @@ processors:
         check_interval: 1s
         limit_percentage: 75
         spike_limit_percentage: 15
-    resource/drop-kyma-attributes:
-        attributes:
-            - action: delete
-              pattern: kyma.*
-    resource/insert-cluster-attributes:
-        attributes:
-            - action: insert
-              key: k8s.cluster.name
-              value: ${KUBERNETES_SERVICE_HOST}
-            - action: insert
-              key: k8s.cluster.uid
-            - action: insert
-              key: cloud.provider
-              value: test-cloud-provider
     service_enrichment:
         resource_attributes:
             - kyma.kubernetes_io_app_name
             - kyma.app_name
+    transform/drop-kyma-attributes:
+        error_mode: ignore
+        trace_statements:
+            - statements:
+                - delete_matching_keys(resource.attributes, "kyma.*")
+    transform/insert-cluster-attributes:
+        error_mode: ignore
+        trace_statements:
+            - statements:
+                - set(resource.attributes["k8s.cluster.name"], "${KUBERNETES_SERVICE_HOST}") where resource.attributes["k8s.cluster.name"] == nil or resource.attributes["k8s.cluster.name"] == ""
+                - set(resource.attributes["k8s.cluster.uid"], "") where resource.attributes["k8s.cluster.uid"] == nil or resource.attributes["k8s.cluster.uid"] == ""
+                - set(resource.attributes["cloud.provider"], "test-cloud-provider") where resource.attributes["cloud.provider"] == nil or resource.attributes["cloud.provider"] == ""
     transform/user-defined-test1:
         error_mode: ignore
         trace_statements:
@@ -124,7 +129,7 @@ processors:
               conditions:
                 - IsMatch(body, ".*error.*")
 exporters:
-    otlp/test1:
+    otlp_grpc/test1:
         endpoint: ${OTLP_ENDPOINT_TEST1}
         sending_queue:
             enabled: true

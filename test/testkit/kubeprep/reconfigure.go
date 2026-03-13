@@ -1,0 +1,304 @@
+package kubeprep
+
+import (
+	"fmt"
+	"time"
+
+	"gopkg.in/yaml.v3"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+// SetupCluster configures the cluster for test execution.
+// It always runs helm upgrade --install (idempotent) and deploys prerequisites.
+// Only Istio changes require special handling (manager must be removed first).
+//
+// This function is idempotent and safe to call multiple times.
+func SetupCluster(t TestingT, k8sClient client.Client, cfg Config) error {
+	t.Logf("Setting up cluster: istio=%t, fips=%t, experimental=%t, prerequisites=%t, forceFresh=%t, helmValues=%v, chart=%s",
+		cfg.InstallIstio, cfg.OperateInFIPSMode, cfg.EnableExperimental, cfg.DeployPrerequisites, cfg.ForceFreshInstall, cfg.HelmValues, cfg.ChartPath)
+
+	// Handle force fresh install - completely remove telemetry first
+	if cfg.ForceFreshInstall {
+		t.Log("Force fresh install requested, removing existing telemetry installation...")
+
+		if err := undeployManager(t, k8sClient); err != nil {
+			t.Logf("Warning: failed to undeploy manager (may not exist): %v", err)
+		}
+
+		// Wait for CRDs to be fully deleted to ensure clean API server state
+		if err := waitForCRDsDeletion(t, k8sClient); err != nil {
+			t.Logf("Warning: failed waiting for CRDs deletion: %v", err)
+		}
+	}
+
+	// Ensure Istio is in the desired state
+	if err := ensureIstioState(t, k8sClient, cfg); err != nil {
+		return fmt.Errorf("failed to ensure Istio state: %w", err)
+	}
+
+	// Deploy/upgrade manager with desired configuration
+	if err := ensureManagerDeployed(t, k8sClient, cfg); err != nil {
+		return fmt.Errorf("failed to ensure manager deployed: %w", err)
+	}
+
+	// Deploy test prerequisites if enabled
+	if err := ensureTestPrerequisites(t, k8sClient, cfg.DeployPrerequisites); err != nil {
+		return fmt.Errorf("failed to ensure test prerequisites: %w", err)
+	}
+
+	t.Log("Cluster setup complete")
+
+	return nil
+}
+
+// ensureTestPrerequisites deploys test prerequisites if enabled.
+// Server-side apply is idempotent, so this is safe to call multiple times.
+func ensureTestPrerequisites(t TestingT, k8sClient client.Client, deploy bool) error {
+	if !deploy {
+		t.Log("Skipping test prerequisites deployment")
+		return nil
+	}
+
+	return deployTestPrerequisites(t, k8sClient)
+}
+
+// ensureManagerDeployed ensures the telemetry manager is deployed with the desired configuration.
+// If values changed, it undeploys first and then deploys fresh to ensure a clean state.
+// If SkipManagerRemoval is set, it skips undeploy and does an in-place upgrade (for upgrade tests).
+func ensureManagerDeployed(t TestingT, k8sClient client.Client, cfg Config) error {
+	ctx := t.Context()
+
+	// Check if values changed compared to current release
+	newValues := buildHelmValues(cfg, cfg.ManagerImage)
+	currentValues := getReleaseValues(ctx)
+	valuesChanged := !valuesEqual(currentValues, newValues)
+
+	if valuesChanged {
+		newYAML, _ := yaml.Marshal(newValues)
+		t.Logf("Helm values changed.\nCurrent release values:\n%s\nNew values:\n%s", currentValues, string(newYAML))
+	}
+
+	// If values changed and release exists, decide whether to undeploy first
+	if valuesChanged && releaseExists(ctx) {
+		if cfg.SkipManagerRemoval {
+			// Upgrade test: skip undeploy, do in-place upgrade
+			t.Log("Configuration changed, performing in-place upgrade (SkipManagerRemoval set)...")
+		} else {
+			// Normal test: undeploy first for clean slate
+			t.Log("Configuration changed, removing manager first...")
+
+			if err := undeployManager(t, k8sClient); err != nil {
+				return fmt.Errorf("failed to remove manager: %w", err)
+			}
+
+			if err := waitForCRDsDeletion(t, k8sClient); err != nil {
+				t.Logf("Warning: failed waiting for CRDs deletion: %v", err)
+			}
+		}
+	}
+
+	// Deploy manager
+	if err := deployManager(t, k8sClient, cfg); err != nil {
+		return fmt.Errorf("failed to deploy manager: %w", err)
+	}
+
+	// For upgrade tests (SkipManagerRemoval), we need to wait for rollout
+	// since we didn't undeploy first
+	if cfg.SkipManagerRemoval && valuesChanged {
+		t.Log("Waiting for deployment rollout to complete...")
+
+		if err := waitForRolloutComplete(ctx, k8sClient, t, 3*time.Minute); err != nil {
+			return fmt.Errorf("rollout did not complete: %w", err)
+		}
+
+		if err := waitForSinglePod(ctx, k8sClient, t, 1*time.Minute); err != nil {
+			return fmt.Errorf("multiple pods still running: %w", err)
+		}
+
+		t.Logf("Waiting %s for manager to reconcile resources...", reconcileDelay)
+		time.Sleep(reconcileDelay)
+	}
+
+	return nil
+}
+
+// ensureIstioState ensures Istio is in the desired state (installed or not installed).
+// It handles cleanup of problematic states and triggers install/uninstall as needed.
+func ensureIstioState(t TestingT, k8sClient client.Client, cfg Config) error {
+	ctx := t.Context()
+
+	// Check current Istio state
+	istioState := DetectIstioState(ctx, k8sClient)
+	t.Logf("Detected Istio state: %s", istioState)
+
+	// Handle problematic Istio states that need cleanup before proceeding
+	if istioState.NeedsReinstall() {
+		if err := handleIstioCleanup(t, k8sClient, istioState); err != nil {
+			return fmt.Errorf("failed to cleanup Istio: %w", err)
+		}
+		// After cleanup, Istio is not installed
+		istioState = IstioNotInstalled
+	}
+
+	// Determine if Istio state matches desired state
+	currentInstalled := istioState == IstioFullyInstalled
+
+	// Handle Istio changes (requires special ordering)
+	if currentInstalled != cfg.InstallIstio {
+		if cfg.SkipManagerRemoval {
+			return fmt.Errorf("istio state change required (%t -> %t) but SkipManagerRemoval is set", currentInstalled, cfg.InstallIstio)
+		}
+
+		if err := handleIstioChange(t, k8sClient, currentInstalled, cfg.InstallIstio); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// handleIstioChange handles Istio installation/uninstallation.
+// The manager and test prerequisites must be removed before Istio changes to avoid webhook/sidecar/network policy conflicts.
+func handleIstioChange(t TestingT, k8sClient client.Client, currentInstalled, desiredInstalled bool) error {
+	// Remove test prerequisites FIRST (network policies can block Istio installation)
+	t.Log("Removing test prerequisites before Istio change...")
+
+	if err := removeTestPrerequisites(t, k8sClient); err != nil {
+		t.Logf("Warning: failed to remove test prerequisites: %v", err)
+	}
+
+	// Remove manager (prevents conflicts during Istio changes)
+	t.Log("Removing manager before Istio change...")
+
+	if err := undeployManager(t, k8sClient); err != nil {
+		return fmt.Errorf("failed to remove manager: %w", err)
+	}
+
+	// Wait for CRDs to be fully deleted
+	if err := waitForCRDsDeletion(t, k8sClient); err != nil {
+		return fmt.Errorf("failed waiting for CRDs deletion: %w", err)
+	}
+
+	// Perform Istio change
+	if !currentInstalled && desiredInstalled {
+		t.Log("Installing Istio...")
+		installIstio(t, k8sClient)
+	} else if currentInstalled && !desiredInstalled {
+		t.Log("Uninstalling Istio...")
+
+		if err := uninstallIstio(t, k8sClient); err != nil {
+			return fmt.Errorf("failed to uninstall Istio: %w", err)
+		}
+	}
+
+	return nil
+}
+
+// waitForCRDsDeletion waits for telemetry CRDs to be fully deleted
+func waitForCRDsDeletion(t TestingT, k8sClient client.Client) error {
+	telemetryCRDs := []string{
+		"logpipelines.telemetry.kyma-project.io",
+		"tracepipelines.telemetry.kyma-project.io",
+		"metricpipelines.telemetry.kyma-project.io",
+		"telemetries.operator.kyma-project.io",
+		"logparsers.telemetry.kyma-project.io",
+	}
+
+	timeout := 2 * time.Minute
+	interval := 2 * time.Second
+	deadline := time.Now().Add(timeout)
+
+	for time.Now().Before(deadline) {
+		allDeleted := true
+
+		for _, crdName := range telemetryCRDs {
+			exists, err := crdExists(t.Context(), k8sClient, crdName)
+			if err != nil {
+				t.Logf("Warning: error checking CRD %s: %v", crdName, err)
+				continue
+			}
+
+			if exists {
+				allDeleted = false
+				break
+			}
+		}
+
+		if allDeleted {
+			return nil
+		}
+
+		time.Sleep(interval)
+	}
+
+	return fmt.Errorf("timeout waiting for CRDs to be deleted")
+}
+
+// handleIstioCleanup handles cleanup for problematic Istio states (orphaned or partially installed).
+func handleIstioCleanup(t TestingT, k8sClient client.Client, state IstioState) error {
+	switch state {
+	case IstioOrphaned:
+		t.Log("Cleaning up orphaned Istio CR (no manager running)...")
+
+		if err := removeIstioCRFinalizers(t, k8sClient); err != nil {
+			return fmt.Errorf("failed to remove Istio CR finalizers: %w", err)
+		}
+
+	case IstioPartiallyInstalled:
+		t.Log("Cleaning up partial Istio installation...")
+
+		if err := uninstallIstio(t, k8sClient); err != nil {
+			return fmt.Errorf("failed to uninstall partial Istio: %w", err)
+		}
+
+	case IstioNotInstalled, IstioFullyInstalled:
+		// No cleanup needed for these states
+	}
+
+	t.Log("Istio cleanup complete")
+
+	return nil
+}
+
+// removeIstioCRFinalizers removes finalizers from the Istio CR to allow deletion.
+// This is needed when the Istio manager is not running and cannot clean up the finalizers itself.
+func removeIstioCRFinalizers(t TestingT, k8sClient client.Client) error {
+	ctx := t.Context()
+
+	istioCR := &unstructured.Unstructured{}
+	istioCR.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "operator.kyma-project.io",
+		Version: "v1alpha2",
+		Kind:    "Istio",
+	})
+
+	err := k8sClient.Get(ctx, types.NamespacedName{
+		Name:      "default",
+		Namespace: "kyma-system",
+	}, istioCR)
+	if err != nil {
+		return fmt.Errorf("failed to get Istio CR: %w", err)
+	}
+
+	finalizers := istioCR.GetFinalizers()
+	if len(finalizers) == 0 {
+		t.Log("Istio CR has no finalizers")
+		return nil
+	}
+
+	t.Logf("Removing finalizers from Istio CR: %v", finalizers)
+
+	// Remove all finalizers
+	istioCR.SetFinalizers(nil)
+
+	if err := k8sClient.Update(ctx, istioCR); err != nil {
+		return fmt.Errorf("failed to remove finalizers from Istio CR: %w", err)
+	}
+
+	t.Log("Finalizers removed from Istio CR")
+
+	return nil
+}

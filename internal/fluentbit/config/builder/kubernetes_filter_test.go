@@ -5,9 +5,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
 
 func TestCreateKubernetesFilterKeepAnnotations(t *testing.T) {
@@ -24,12 +23,12 @@ func TestCreateKubernetesFilterKeepAnnotations(t *testing.T) {
     merge_log           on
 
 `
-	logPipeline := &telemetryv1alpha1.LogPipeline{
+	logPipeline := &telemetryv1beta1.LogPipeline{
 		ObjectMeta: metav1.ObjectMeta{Name: "test-logpipeline"},
-		Spec: telemetryv1alpha1.LogPipelineSpec{
-			Input: telemetryv1alpha1.LogPipelineInput{
-				Application: &telemetryv1alpha1.LogPipelineApplicationInput{
-					KeepAnnotations: ptr.To(true),
+		Spec: telemetryv1beta1.LogPipelineSpec{
+			Input: telemetryv1beta1.LogPipelineInput{
+				Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
+					FluentBitKeepAnnotations: new(true),
 				}}}}
 
 	actual := createKubernetesFilter(logPipeline)
@@ -50,12 +49,12 @@ func TestCreateKubernetesFilterDropLabels(t *testing.T) {
     merge_log           on
 
 `
-	logPipeline := &telemetryv1alpha1.LogPipeline{
+	logPipeline := &telemetryv1beta1.LogPipeline{
 		ObjectMeta: metav1.ObjectMeta{Name: "test-logpipeline"},
-		Spec: telemetryv1alpha1.LogPipelineSpec{
-			Input: telemetryv1alpha1.LogPipelineInput{
-				Application: &telemetryv1alpha1.LogPipelineApplicationInput{
-					DropLabels: ptr.To(true),
+		Spec: telemetryv1beta1.LogPipelineSpec{
+			Input: telemetryv1beta1.LogPipelineInput{
+				Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
+					FluentBitDropLabels: new(true),
 				}}}}
 
 	actual := createKubernetesFilter(logPipeline)
@@ -76,12 +75,12 @@ func TestCreateKubernetesFilterKeepOriginalBodyTrue(t *testing.T) {
     merge_log           on
 
 `
-	logPipeline := &telemetryv1alpha1.LogPipeline{
+	logPipeline := &telemetryv1beta1.LogPipeline{
 		ObjectMeta: metav1.ObjectMeta{Name: "test-logpipeline"},
-		Spec: telemetryv1alpha1.LogPipelineSpec{
-			Input: telemetryv1alpha1.LogPipelineInput{
-				Application: &telemetryv1alpha1.LogPipelineApplicationInput{
-					KeepOriginalBody: ptr.To(true),
+		Spec: telemetryv1beta1.LogPipelineSpec{
+			Input: telemetryv1beta1.LogPipelineInput{
+				Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
+					KeepOriginalBody: new(true),
 				}}}}
 
 	actual := createKubernetesFilter(logPipeline)
@@ -102,12 +101,12 @@ func TestCreateKubernetesFilterKeepOriginalBodyFalse(t *testing.T) {
     merge_log           on
 
 `
-	logPipeline := &telemetryv1alpha1.LogPipeline{
+	logPipeline := &telemetryv1beta1.LogPipeline{
 		ObjectMeta: metav1.ObjectMeta{Name: "test-logpipeline"},
-		Spec: telemetryv1alpha1.LogPipelineSpec{
-			Input: telemetryv1alpha1.LogPipelineInput{
-				Application: &telemetryv1alpha1.LogPipelineApplicationInput{
-					KeepOriginalBody: ptr.To(false),
+		Spec: telemetryv1beta1.LogPipelineSpec{
+			Input: telemetryv1beta1.LogPipelineInput{
+				Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
+					KeepOriginalBody: new(false),
 				}}}}
 
 	actual := createKubernetesFilter(logPipeline)

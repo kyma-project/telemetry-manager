@@ -1,3 +1,5 @@
+## values are documented at https://github.com/prometheus-community/helm-charts/blob/main/charts/kube-prometheus-stack/values.yaml
+## to install manually call: helm upgrade --install prometheus prometheus-community/kube-prometheus-stack -n prometheus -f values.yaml
 
 ####### This block configures resource limits for the tooling and disables scaping of them via annotations
 
@@ -76,6 +78,10 @@ prometheus:
       requests:
         cpu: 125m
         memory: 256m
+
+    podMetadata:
+      labels:
+        networking.kyma-project.io/metrics-scraping: allowed
 
 
 ####### This block enabled scrape discovery based on typical prometheus annotations

@@ -1,7 +1,6 @@
 package migrated
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -11,19 +10,19 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	"github.com/stretchr/testify/require"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdloggen"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdloggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -59,7 +58,7 @@ func TestOTelLogPipeline_ServiceNameEnrichment(t *testing.T) {
 			},
 			logProducerFunc: func(deploymentName, namespace string) client.Object {
 				podSpecWithUndefinedService := telemetrygen.PodSpec(telemetrygen.SignalTypeLogs, telemetrygen.WithServiceName(""))
-				return kitk8s.NewDeployment(deploymentName, namespace).
+				return kitk8sobjects.NewDeployment(deploymentName, namespace).
 					WithLabel(appLabelName, appLabelValue).
 					WithPodSpec(podSpecWithUndefinedService).
 					K8sObject()
@@ -110,23 +109,17 @@ func TestOTelLogPipeline_ServiceNameEnrichment(t *testing.T) {
 				Build()
 
 			resources := []client.Object{
-				kitk8s.NewNamespace(mockNs).K8sObject(),
+				kitk8sobjects.NewNamespace(mockNs).K8sObject(),
 				&pipeline,
 				tc.logProducerFunc(genName, mockNs),
 			}
 			resources = append(resources, backend.K8sObjects()...)
 
-			t.Cleanup(func() {
-				// Cannot use t.Context() here because it is already canceled at this point
-				err := kitk8s.DeleteObjects(context.Background(), suite.K8sClient, resources...)
-				require.NoError(t, err)
-			})
 			Expect(kitk8s.CreateObjects(t.Context(), resources...)).Should(Succeed())
 
 			t.Log("Waiting for resources to be ready")
 
 			assert.DeploymentReady(t.Context(), suite.K8sClient, kitkyma.LogGatewayName)
-			assert.DeploymentReady(t.Context(), suite.K8sClient, types.NamespacedName{Name: backend.Name(), Namespace: mockNs})
 			assert.LogPipelineOtelHealthy(t.Context(), suite.K8sClient, pipelineName)
 			assert.OtelLogsFromNamespaceDelivered(suite.ProxyClient, backend.ExportURL(suite.ProxyClient), mockNs)
 

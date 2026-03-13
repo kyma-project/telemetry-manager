@@ -22,15 +22,15 @@ data:
         - label: "Dashboards"
           link: "$string('https://') & $base64decode($string($clsSecret().data.'dashboards-endpoint')) & \"/app/dashboards#/view/maintained-by-perfx_kyma-content-package_Kyma-Overview\""
         - label: "Discover Logs"
-          link: "$string('https://') & $base64decode($string($clsSecret().data.'dashboards-endpoint')) & \"/app/discover?security_tenant=global#/?_g=(filters:!(),refreshInterval:(pause:!t,value:5000),time:(from:now-7d,to:now))&_a=(columns:!(kubernetes.pod_name,kubernetes.container_name,log),index:maintained-by-perfx_kyma-content-package_index-pattern-logs-json-kyma)\""
+          link: "$string('https://') & $base64decode($string($clsSecret().data.'dashboards-endpoint')) & \"/app/discover?security_tenant=global#/?_g=(filters:!(),refreshInterval:(pause:!t,value:5000),time:(from:now-7d,to:now))&_a=(columns:!('serviceName','resource.attributes.k8s@pod@name','traceId','severityText','body'),index:maintained-by-perfx_otel-content-package_index-pattern-logs-otel-v1)\""
         - label: "Observe Traces"
-          link: "$string('https://') & $base64decode($string($clsSecret().data.'dashboards-endpoint')) & \"/app/observability-dashboards#/trace_analytics/home\""
+          link: "$string('https://') & $base64decode($string($clsSecret().data.'dashboards-endpoint')) & \"/app/observability-traces#/traces\""
         - label: "Discover Metrics"
           link: "$string('https://') & $base64decode($string($clsSecret().data.'dashboards-endpoint')) & \"/app/discover?security_tenant=global#/?_g=(filters:!(),refreshInterval:(pause:!t,value:5000),time:(from:now-7d,to:now))&_a=(columns:!(name,kind,value),index:maintained-by-perfx_otel-content-package_index-pattern-metrics-otel-v1)\""
   injections: |-
-    - name: "Logs for namespace"
+    - name: "Logs for Namespace"
       source: "'Discover Logs in SAP Cloud Logging'"
-      link: "$prepareUrl($string('https://') & $base64decode($string($clsSecret().data.'dashboards-endpoint')) & '/app/discover?security_tenant=global#/?_g=(filters:!(),refreshInterval:(pause:!t,value:5000),time:(from:now-1d,to:now))&_a=(columns:!(kubernetes.pod_name,kubernetes.container_name,trace_id,log),filters:!((query:(match_phrase:(kubernetes.namespace_name:{name})))),index:maintained-by-perfx_kyma-content-package_index-pattern-logs-json-kyma)',
+      link: "$prepareUrl($string('https://') & $base64decode($string($clsSecret().data.'dashboards-endpoint')) & \"/app/discover?security_tenant=global#/?_g=(filters:!(),refreshInterval:(pause:!t,value:5000),time:(from:now-1d,to:now))&_a=(columns:!('serviceName','resource.attributes.k8s@pod@name','traceId','severityText','body'),sort:!(!(time,desc)),filters:!((query:(match_phrase:('resource.attributes.k8s@namespace@name':{name})))),index:maintained-by-perfx_otel-content-package_index-pattern-logs-otel-v1)\",
         {'name': $embedResource.metadata.name}
       )"
       widget: ExternalLink
@@ -40,9 +40,9 @@ data:
         - slot: details-header
           location: Namespaces
       order: 1
-    - name: "Logs for pod"
+    - name: "Logs for Pod"
       source: "'Discover Logs in SAP Cloud Logging'"
-      link: "$prepareUrl($string('https://') & $base64decode($string($clsSecret().data.'dashboards-endpoint')) & '/app/discover?security_tenant=global#/?_g=(filters:!(),refreshInterval:(pause:!t,value:5000),time:(from:now-1d,to:now))&_a=(columns:!(kubernetes.pod_name,kubernetes.container_name,trace_id,log),filters:!((query:(match_phrase:(kubernetes.namespace_name:{namespace}))),(query:(match_phrase:(kubernetes.pod_name:{name})))),index:maintained-by-perfx_kyma-content-package_index-pattern-logs-json-kyma)',
+      link: "$prepareUrl($string('https://') & $base64decode($string($clsSecret().data.'dashboards-endpoint')) & \"/app/discover?security_tenant=global#/?_g=(filters:!(),refreshInterval:(pause:!t,value:5000),time:(from:now-1d,to:now))&_a=(columns:!('serviceName','resource.attributes.k8s@pod@name','traceId','severityText','body'),sort:!(!(time,desc)),filters:!((query:(match_phrase:('resource.attributes.k8s@namespace@name':{namespace}))),(query:(match_phrase:('resource.attributes.k8s@pod@name':{name})))),index:maintained-by-perfx_otel-content-package_index-pattern-logs-otel-v1)\",
         {'namespace': $embedResource.metadata.namespace,
         'name': $embedResource.metadata.name }
       )"
@@ -53,9 +53,74 @@ data:
         - slot: details-header
           location: Pods
       order: 1
-    - name: "Logs for Functions"
+    - name: "Logs for Deployment"
       source: "'Discover Logs in SAP Cloud Logging'"
-      link: "$prepareUrl($string('https://') & $base64decode($string($clsSecret().data.'dashboards-endpoint')) & '/app/discover?security_tenant=global#/?_g=(filters:!(),refreshInterval:(pause:!t,value:5000),time:(from:now-1d,to:now))&_a=(columns:!(kubernetes.pod_name,kubernetes.container_name,trace_id,log),filters:!((query:(match_phrase:(kubernetes.namespace_name:{namespace}))),(query:(match_phrase:(kubernetes.labels.serverless_kyma-project_io_function-name:{name})))),index:maintained-by-perfx_kyma-content-package_index-pattern-logs-json-kyma)',
+      link: "$prepareUrl($string('https://') & $base64decode($string($clsSecret().data.'dashboards-endpoint')) & \"/app/discover?security_tenant=global#/?_g=(filters:!(),refreshInterval:(pause:!t,value:5000),time:(from:now-1d,to:now))&_a=(columns:!('serviceName','resource.attributes.k8s@pod@name','traceId','severityText','body'),sort:!(!(time,desc)),filters:!((query:(match_phrase:('resource.attributes.k8s@namespace@name':{namespace}))),(query:(match_phrase:('resource.attributes.k8s@deployment@name':{name})))),index:maintained-by-perfx_otel-content-package_index-pattern-logs-otel-v1)\",
+        {'namespace': $embedResource.metadata.namespace,
+        'name': $embedResource.metadata.name }
+      )"
+      widget: ExternalLink
+      type: button
+      copyable: false
+      targets:
+        - slot: details-header
+          location: Deployments
+      order: 1
+    - name: "Logs for DaemonSet"
+      source: "'Discover Logs in SAP Cloud Logging'"
+      link: "$prepareUrl($string('https://') & $base64decode($string($clsSecret().data.'dashboards-endpoint')) & \"/app/discover?security_tenant=global#/?_g=(filters:!(),refreshInterval:(pause:!t,value:5000),time:(from:now-1d,to:now))&_a=(columns:!('serviceName','resource.attributes.k8s@pod@name','traceId','severityText','body'),sort:!(!(time,desc)),filters:!((query:(match_phrase:('resource.attributes.k8s@namespace@name':{namespace}))),(query:(match_phrase:('resource.attributes.k8s@daemonset@name':{name})))),index:maintained-by-perfx_otel-content-package_index-pattern-logs-otel-v1)\",
+        {'namespace': $embedResource.metadata.namespace,
+        'name': $embedResource.metadata.name }
+      )"
+      widget: ExternalLink
+      type: button
+      copyable: false
+      targets:
+        - slot: details-header
+          location: DaemonSets
+      order: 1
+    - name: "Logs for StatefulSet"
+      source: "'Discover Logs in SAP Cloud Logging'"
+      link: "$prepareUrl($string('https://') & $base64decode($string($clsSecret().data.'dashboards-endpoint')) & \"/app/discover?security_tenant=global#/?_g=(filters:!(),refreshInterval:(pause:!t,value:5000),time:(from:now-1d,to:now))&_a=(columns:!('serviceName','resource.attributes.k8s@pod@name','traceId','severityText','body'),sort:!(!(time,desc)),filters:!((query:(match_phrase:('resource.attributes.k8s@namespace@name':{namespace}))),(query:(match_phrase:('resource.attributes.k8s@statefulset@name':{name})))),index:maintained-by-perfx_otel-content-package_index-pattern-logs-otel-v1)\",
+        {'namespace': $embedResource.metadata.namespace,
+        'name': $embedResource.metadata.name }
+      )"
+      widget: ExternalLink
+      type: button
+      copyable: false
+      targets:
+        - slot: details-header
+          location: StatefulSets
+      order: 1
+    - name: "Logs for Job"
+      source: "'Discover Logs in SAP Cloud Logging'"
+      link: "$prepareUrl($string('https://') & $base64decode($string($clsSecret().data.'dashboards-endpoint')) & \"/app/discover?security_tenant=global#/?_g=(filters:!(),refreshInterval:(pause:!t,value:5000),time:(from:now-1d,to:now))&_a=(columns:!('serviceName','resource.attributes.k8s@pod@name','traceId','severityText','body'),sort:!(!(time,desc)),filters:!((query:(match_phrase:('resource.attributes.k8s@namespace@name':{namespace}))),(query:(match_phrase:('resource.attributes.k8s@job@name':{name})))),index:maintained-by-perfx_otel-content-package_index-pattern-logs-otel-v1)\",
+        {'namespace': $embedResource.metadata.namespace,
+        'name': $embedResource.metadata.name }
+      )"
+      widget: ExternalLink
+      type: button
+      copyable: false
+      targets:
+        - slot: details-header
+          location: Jobs
+      order: 1
+    - name: "Logs for CronJob"
+      source: "'Discover Logs in SAP Cloud Logging'"
+      link: "$prepareUrl($string('https://') & $base64decode($string($clsSecret().data.'dashboards-endpoint')) & \"/app/discover?security_tenant=global#/?_g=(filters:!(),refreshInterval:(pause:!t,value:5000),time:(from:now-1d,to:now))&_a=(columns:!('serviceName','resource.attributes.k8s@pod@name','traceId','severityText','body'),sort:!(!(time,desc)),filters:!((query:(match_phrase:('resource.attributes.k8s@namespace@name':{namespace}))),(query:(match_phrase:('resource.attributes.k8s@cronjob@name':{name})))),index:maintained-by-perfx_otel-content-package_index-pattern-logs-otel-v1)\",
+        {'namespace': $embedResource.metadata.namespace,
+        'name': $embedResource.metadata.name }
+      )"
+      widget: ExternalLink
+      type: button
+      copyable: false
+      targets:
+        - slot: details-header
+          location: CronJobs
+      order: 1
+    - name: "Logs for Function"
+      source: "'Discover Logs in SAP Cloud Logging'"
+      link: "$prepareUrl($string('https://') & $base64decode($string($clsSecret().data.'dashboards-endpoint')) & \"/app/discover?security_tenant=global#/?_g=(filters:!(),refreshInterval:(pause:!t,value:5000),time:(from:now-1d,to:now))&_a=(columns:!('serviceName','resource.attributes.k8s@pod@name','traceId','severityText','body'),sort:!(!(time,desc)),filters:!((query:(match_phrase:('resource.attributes.k8s@namespace@name':{namespace}))),(query:(match_phrase:(serviceName:{name})))),index:maintained-by-perfx_otel-content-package_index-pattern-logs-otel-v1)\",
         {'namespace': $embedResource.metadata.namespace,
         'name': $embedResource.metadata.name }
       )"
@@ -66,9 +131,21 @@ data:
         - slot: details-header
           location: Functions
       order: 1
-    - name: "Traces for pods"
+    - name: "Traces for Namespace"
       source: "'Discover Traces in SAP Cloud Logging'"
-      link: "$prepareUrl($string('https://') & $base64decode($string($clsSecret().data.'dashboards-endpoint')) & \"/app/discover?security_tenant=global#/?_g=(filters:!(),refreshInterval:(pause:!t,value:5000),time:(from:now-1d,to:now))&_a=(columns:!(serviceName,traceGroup,traceId),filters:!((query:(match_phrase:('resource.attributes.k8s@namespace@name':{namespace}))),(query:(match_phrase:('resource.attributes.k8s@pod@name':{name})))),index:maintained-by-perfx_otel-content-package_index-pattern-otel-v1-apm-span)\",
+      link: "$prepareUrl($string('https://') & $base64decode($string($clsSecret().data.'dashboards-endpoint')) & \"/app/discover?security_tenant=global#/?_g=(filters:!(),refreshInterval:(pause:!t,value:5000),time:(from:now-1d,to:now))&_a=(columns:!(serviceName,traceGroup,traceId),sort:!(!(time,desc)),filters:!((query:(match_phrase:('resource.attributes.k8s@namespace@name':{namespace})))),index:maintained-by-perfx_otel-content-package_index-pattern-otel-v1-apm-span)\",
+        {'namespace': $embedResource.metadata.namespace }
+      )"
+      widget: ExternalLink
+      type: button
+      copyable: false
+      targets:
+        - slot: details-header
+          location: Namespaces
+      order: 1
+    - name: "Traces for Pod"
+      source: "'Discover Traces in SAP Cloud Logging'"
+      link: "$prepareUrl($string('https://') & $base64decode($string($clsSecret().data.'dashboards-endpoint')) & \"/app/discover?security_tenant=global#/?_g=(filters:!(),refreshInterval:(pause:!t,value:5000),time:(from:now-1d,to:now))&_a=(columns:!(serviceName,traceGroup,traceId),sort:!(!(time,desc)),filters:!((query:(match_phrase:('resource.attributes.k8s@namespace@name':{namespace}))),(query:(match_phrase:('resource.attributes.k8s@pod@name':{name})))),index:maintained-by-perfx_otel-content-package_index-pattern-otel-v1-apm-span)\",
         {'namespace': $embedResource.metadata.namespace,
         'name': $embedResource.metadata.name }
       )"
@@ -79,9 +156,9 @@ data:
         - slot: details-header
           location: Pods
       order: 1
-    - name: "Traces for deployments"
+    - name: "Traces for Deployment"
       source: "'Discover Traces in SAP Cloud Logging'"
-      link: "$prepareUrl($string('https://') & $base64decode($string($clsSecret().data.'dashboards-endpoint')) & \"/app/discover?security_tenant=global#/?_g=(filters:!(),refreshInterval:(pause:!t,value:5000),time:(from:now-1d,to:now))&_a=(columns:!(serviceName,traceGroup,traceId),filters:!((query:(match_phrase:('resource.attributes.k8s@namespace@name':{namespace}))),(query:(match_phrase:('resource.attributes.k8s@deployment@name':{name})))),index:maintained-by-perfx_otel-content-package_index-pattern-otel-v1-apm-span)\",
+      link: "$prepareUrl($string('https://') & $base64decode($string($clsSecret().data.'dashboards-endpoint')) & \"/app/discover?security_tenant=global#/?_g=(filters:!(),refreshInterval:(pause:!t,value:5000),time:(from:now-1d,to:now))&_a=(columns:!(serviceName,traceGroup,traceId),sort:!(!(time,desc)),filters:!((query:(match_phrase:('resource.attributes.k8s@namespace@name':{namespace}))),(query:(match_phrase:('resource.attributes.k8s@deployment@name':{name})))),index:maintained-by-perfx_otel-content-package_index-pattern-otel-v1-apm-span)\",
         {'namespace': $embedResource.metadata.namespace,
         'name': $embedResource.metadata.name }
       )"
@@ -92,9 +169,9 @@ data:
         - slot: details-header
           location: Deployments
       order: 1
-    - name: "Metrics for namespace"
+    - name: "Metrics for Namespace"
       source: "'Discover Metrics in SAP Cloud Logging'"
-      link: "$prepareUrl($string('https://') & $base64decode($string($clsSecret().data.'dashboards-endpoint')) & \"/app/discover?security_tenant=global#/?_g=(filters:!(),refreshInterval:(pause:!t,value:5000),time:(from:now-1d,to:now))&_a=(columns:!(name,kind,value),filters:!((query:(match_phrase:('resource.attributes.k8s@namespace@name':{namespace})))),index:maintained-by-perfx_otel-content-package_index-pattern-metrics-otel-v1)\",
+      link: "$prepareUrl($string('https://') & $base64decode($string($clsSecret().data.'dashboards-endpoint')) & \"/app/discover?security_tenant=global#/?_g=(filters:!(),refreshInterval:(pause:!t,value:5000),time:(from:now-1d,to:now))&_a=(columns:!('serviceName','resource.attributes.k8s@pod@name',name,kind,value),sort:!(!(time,desc)),filters:!((query:(match_phrase:('resource.attributes.k8s@namespace@name':{namespace})))),index:maintained-by-perfx_otel-content-package_index-pattern-metrics-otel-v1)\",
         {'namespace': $embedResource.metadata.name }
       )"
       widget: ExternalLink
@@ -104,9 +181,9 @@ data:
         - slot: details-header
           location: Namespaces
       order: 1
-    - name: "Metrics for pods"
+    - name: "Metrics for Pod"
       source: "'Discover Metrics in SAP Cloud Logging'"
-      link: "$prepareUrl($string('https://') & $base64decode($string($clsSecret().data.'dashboards-endpoint')) & \"/app/discover?security_tenant=global#/?_g=(filters:!(),refreshInterval:(pause:!t,value:5000),time:(from:now-1d,to:now))&_a=(columns:!(name,kind,value),filters:!((query:(match_phrase:('resource.attributes.k8s@namespace@name':{namespace}))),(query:(match_phrase:('resource.attributes.k8s@pod@name':{name})))),index:maintained-by-perfx_otel-content-package_index-pattern-metrics-otel-v1)\",
+      link: "$prepareUrl($string('https://') & $base64decode($string($clsSecret().data.'dashboards-endpoint')) & \"/app/discover?security_tenant=global#/?_g=(filters:!(),refreshInterval:(pause:!t,value:5000),time:(from:now-1d,to:now))&_a=(columns:!('serviceName','resource.attributes.k8s@pod@name',name,kind,value),sort:!(!(time,desc)),filters:!((query:(match_phrase:('resource.attributes.k8s@namespace@name':{namespace}))),(query:(match_phrase:('resource.attributes.k8s@pod@name':{name})))),index:maintained-by-perfx_otel-content-package_index-pattern-metrics-otel-v1)\",
         {'namespace': $embedResource.metadata.namespace,
         'name': $embedResource.metadata.name }
       )"
@@ -117,9 +194,22 @@ data:
         - slot: details-header
           location: Pods
       order: 1
-    - name: "Metrics for deployments"
+    - name: "Metrics for Function"
       source: "'Discover Metrics in SAP Cloud Logging'"
-      link: "$prepareUrl($string('https://') & $base64decode($string($clsSecret().data.'dashboards-endpoint')) & \"/app/discover?security_tenant=global#/?_g=(filters:!(),refreshInterval:(pause:!t,value:5000),time:(from:now-1d,to:now))&_a=(columns:!(name,kind,value),filters:!((query:(match_phrase:('resource.attributes.k8s@namespace@name':{namespace}))),(query:(match_phrase:('resource.attributes.k8s@deployment@name':{name})))),index:maintained-by-perfx_otel-content-package_index-pattern-metrics-otel-v1)\",
+      link: "$prepareUrl($string('https://') & $base64decode($string($clsSecret().data.'dashboards-endpoint')) & \"/app/discover?security_tenant=global#/?_g=(filters:!(),refreshInterval:(pause:!t,value:5000),time:(from:now-1d,to:now))&_a=(columns:!('serviceName','resource.attributes.k8s@pod@name',name,kind,value),sort:!(!(time,desc)),filters:!((query:(match_phrase:('resource.attributes.k8s@namespace@name':{namespace}))),(query:(match_phrase:('serviceName':{name})))),index:maintained-by-perfx_otel-content-package_index-pattern-metrics-otel-v1)\",
+        {'namespace': $embedResource.metadata.namespace,
+        'name': $embedResource.metadata.name }
+      )"
+      widget: ExternalLink
+      type: button
+      copyable: false
+      targets:
+        - slot: details-header
+          location: Functions
+      order: 1
+    - name: "Metrics for Deployment"
+      source: "'Discover Metrics in SAP Cloud Logging'"
+      link: "$prepareUrl($string('https://') & $base64decode($string($clsSecret().data.'dashboards-endpoint')) & \"/app/discover?security_tenant=global#/?_g=(filters:!(),refreshInterval:(pause:!t,value:5000),time:(from:now-1d,to:now))&_a=(columns:!('serviceName','resource.attributes.k8s@pod@name',name,kind,value),sort:!(!(time,desc)),filters:!((query:(match_phrase:('resource.attributes.k8s@namespace@name':{namespace}))),(query:(match_phrase:('resource.attributes.k8s@deployment@name':{name})))),index:maintained-by-perfx_otel-content-package_index-pattern-metrics-otel-v1)\",
         {'namespace': $embedResource.metadata.namespace,
         'name': $embedResource.metadata.name }
       )"
@@ -129,4 +219,56 @@ data:
       targets:
         - slot: details-header
           location: Deployments
+      order: 1
+    - name: "Metrics for StatefulSet"
+      source: "'Discover Metrics in SAP Cloud Logging'"
+      link: "$prepareUrl($string('https://') & $base64decode($string($clsSecret().data.'dashboards-endpoint')) & \"/app/discover?security_tenant=global#/?_g=(filters:!(),refreshInterval:(pause:!t,value:5000),time:(from:now-1d,to:now))&_a=(columns:!('serviceName','resource.attributes.k8s@pod@name',name,kind,value),sort:!(!(time,desc)),filters:!((query:(match_phrase:('resource.attributes.k8s@namespace@name':{namespace}))),(query:(match_phrase:('resource.attributes.k8s@statefulset@name':{name})))),index:maintained-by-perfx_otel-content-package_index-pattern-metrics-otel-v1)\",
+        {'namespace': $embedResource.metadata.namespace,
+        'name': $embedResource.metadata.name }
+      )"
+      widget: ExternalLink
+      type: button
+      copyable: false
+      targets:
+        - slot: details-header
+          location: Statefulsets
+      order: 1
+    - name: "Metrics for DaemonSet"
+      source: "'Discover Metrics in SAP Cloud Logging'"
+      link: "$prepareUrl($string('https://') & $base64decode($string($clsSecret().data.'dashboards-endpoint')) & \"/app/discover?security_tenant=global#/?_g=(filters:!(),refreshInterval:(pause:!t,value:5000),time:(from:now-1d,to:now))&_a=(columns:!('serviceName','resource.attributes.k8s@pod@name',name,kind,value),sort:!(!(time,desc)),filters:!((query:(match_phrase:('resource.attributes.k8s@namespace@name':{namespace}))),(query:(match_phrase:('resource.attributes.k8s@daemonset@name':{name})))),index:maintained-by-perfx_otel-content-package_index-pattern-metrics-otel-v1)\",
+        {'namespace': $embedResource.metadata.namespace,
+        'name': $embedResource.metadata.name }
+      )"
+      widget: ExternalLink
+      type: button
+      copyable: false
+      targets:
+        - slot: details-header
+          location: Daemonsets
+      order: 1
+    - name: "Metrics for Job"
+      source: "'Discover Metrics in SAP Cloud Logging'"
+      link: "$prepareUrl($string('https://') & $base64decode($string($clsSecret().data.'dashboards-endpoint')) & \"/app/discover?security_tenant=global#/?_g=(filters:!(),refreshInterval:(pause:!t,value:5000),time:(from:now-1d,to:now))&_a=(columns:!('serviceName','resource.attributes.k8s@pod@name',name,kind,value),sort:!(!(time,desc)),filters:!((query:(match_phrase:('resource.attributes.k8s@namespace@name':{namespace}))),(query:(match_phrase:('resource.attributes.k8s@job@name':{name})))),index:maintained-by-perfx_otel-content-package_index-pattern-metrics-otel-v1)\",
+        {'namespace': $embedResource.metadata.namespace,
+        'name': $embedResource.metadata.name }
+      )"
+      widget: ExternalLink
+      type: button
+      copyable: false
+      targets:
+        - slot: details-header
+          location: Jobs
+      order: 1
+    - name: "Metrics for CronJob"
+      source: "'Discover Metrics in SAP Cloud Logging'"
+      link: "$prepareUrl($string('https://') & $base64decode($string($clsSecret().data.'dashboards-endpoint')) & \"/app/discover?security_tenant=global#/?_g=(filters:!(),refreshInterval:(pause:!t,value:5000),time:(from:now-1d,to:now))&_a=(columns:!('serviceName','resource.attributes.k8s@pod@name',name,kind,value),sort:!(!(time,desc)),filters:!((query:(match_phrase:('resource.attributes.k8s@namespace@name':{namespace}))),(query:(match_phrase:('resource.attributes.k8s@cronjob@name':{name})))),index:maintained-by-perfx_otel-content-package_index-pattern-metrics-otel-v1)\",
+        {'namespace': $embedResource.metadata.namespace,
+        'name': $embedResource.metadata.name }
+      )"
+      widget: ExternalLink
+      type: button
+      copyable: false
+      targets:
+        - slot: details-header
+          location: Cronjobs
       order: 1

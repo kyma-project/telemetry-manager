@@ -10,40 +10,36 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
+	sharedtypesutils "github.com/kyma-project/telemetry-manager/internal/utils/sharedtypes"
 )
 
-func IsIstioInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
+func IsIstioInputEnabled(input telemetryv1beta1.MetricPipelineInput) bool {
 	return input.Istio != nil && input.Istio.Enabled != nil && *input.Istio.Enabled
 }
 
-func IsEnvoyMetricsEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
+func IsEnvoyMetricsEnabled(input telemetryv1beta1.MetricPipelineInput) bool {
 	return input.Istio.EnvoyMetrics != nil && input.Istio.EnvoyMetrics.Enabled != nil && *input.Istio.EnvoyMetrics.Enabled
 }
 
-func IsPrometheusInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
+func IsPrometheusInputEnabled(input telemetryv1beta1.MetricPipelineInput) bool {
 	return input.Prometheus != nil && input.Prometheus.Enabled != nil && *input.Prometheus.Enabled
 }
 
-func IsRuntimeInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
+func IsRuntimeInputEnabled(input telemetryv1beta1.MetricPipelineInput) bool {
 	return input.Runtime != nil && input.Runtime.Enabled != nil && *input.Runtime.Enabled
 }
 
-func IsOTLPInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
-	return input.OTLP == nil || !input.OTLP.Disabled
-}
-
-func IsPrometheusDiagnosticInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
+func IsPrometheusDiagnosticInputEnabled(input telemetryv1beta1.MetricPipelineInput) bool {
 	return input.Prometheus.DiagnosticMetrics != nil && input.Prometheus.DiagnosticMetrics.Enabled != nil && *input.Prometheus.DiagnosticMetrics.Enabled
 }
 
-func IsIstioDiagnosticInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
+func IsIstioDiagnosticInputEnabled(input telemetryv1beta1.MetricPipelineInput) bool {
 	return input.Istio.DiagnosticMetrics != nil && input.Istio.DiagnosticMetrics.Enabled != nil && *input.Istio.DiagnosticMetrics.Enabled
 }
 
-func IsRuntimePodInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
+func IsRuntimePodInputEnabled(input telemetryv1beta1.MetricPipelineInput) bool {
 	// Runtime pod metrics should be enabled by default if any of the fields (Resources, Pod or Enabled) is nil
 	if input.Runtime.Resources == nil || input.Runtime.Resources.Pod == nil || input.Runtime.Resources.Pod.Enabled == nil {
 		return true
@@ -52,7 +48,7 @@ func IsRuntimePodInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool 
 	return *input.Runtime.Resources.Pod.Enabled
 }
 
-func IsRuntimeContainerInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
+func IsRuntimeContainerInputEnabled(input telemetryv1beta1.MetricPipelineInput) bool {
 	// Runtime container metrics should be enabled by default if any of the fields (Resources, Container or Enabled) is nil
 	if input.Runtime.Resources == nil || input.Runtime.Resources.Container == nil || input.Runtime.Resources.Container.Enabled == nil {
 		return true
@@ -61,7 +57,7 @@ func IsRuntimeContainerInputEnabled(input telemetryv1alpha1.MetricPipelineInput)
 	return *input.Runtime.Resources.Container.Enabled
 }
 
-func IsRuntimeNodeInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
+func IsRuntimeNodeInputEnabled(input telemetryv1beta1.MetricPipelineInput) bool {
 	// Runtime node metrics should be enabled by default if any of the fields (Resources, Node or Enabled) is nil
 	if input.Runtime.Resources == nil || input.Runtime.Resources.Node == nil || input.Runtime.Resources.Node.Enabled == nil {
 		return true
@@ -70,7 +66,7 @@ func IsRuntimeNodeInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool
 	return *input.Runtime.Resources.Node.Enabled
 }
 
-func IsRuntimeVolumeInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
+func IsRuntimeVolumeInputEnabled(input telemetryv1beta1.MetricPipelineInput) bool {
 	// Runtime volume metrics should be enabled by default if any of the fields (Resources, Volume or Enabled) is nil
 	if input.Runtime.Resources == nil || input.Runtime.Resources.Volume == nil || input.Runtime.Resources.Volume.Enabled == nil {
 		return true
@@ -79,7 +75,7 @@ func IsRuntimeVolumeInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bo
 	return *input.Runtime.Resources.Volume.Enabled
 }
 
-func IsRuntimeStatefulSetInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
+func IsRuntimeStatefulSetInputEnabled(input telemetryv1beta1.MetricPipelineInput) bool {
 	// Runtime Statefulset metrics should be enabled by default if any of the fields (Resources, Statefulset or Enabled) is nil
 	if input.Runtime.Resources == nil || input.Runtime.Resources.StatefulSet == nil || input.Runtime.Resources.StatefulSet.Enabled == nil {
 		return true
@@ -88,7 +84,7 @@ func IsRuntimeStatefulSetInputEnabled(input telemetryv1alpha1.MetricPipelineInpu
 	return *input.Runtime.Resources.StatefulSet.Enabled
 }
 
-func IsRuntimeDeploymentInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
+func IsRuntimeDeploymentInputEnabled(input telemetryv1beta1.MetricPipelineInput) bool {
 	// Runtime Deployment metrics should be enabled by default if any of the fields (Resources, Deployment or Enabled) is nil
 	if input.Runtime.Resources == nil || input.Runtime.Resources.Deployment == nil || input.Runtime.Resources.Deployment.Enabled == nil {
 		return true
@@ -97,7 +93,7 @@ func IsRuntimeDeploymentInputEnabled(input telemetryv1alpha1.MetricPipelineInput
 	return *input.Runtime.Resources.Deployment.Enabled
 }
 
-func IsRuntimeDaemonSetInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
+func IsRuntimeDaemonSetInputEnabled(input telemetryv1beta1.MetricPipelineInput) bool {
 	// Runtime DaemonSet metrics should be enabled by default if any of the fields (Resources, DaemonSet or Enabled) is nil
 	if input.Runtime.Resources == nil || input.Runtime.Resources.DaemonSet == nil || input.Runtime.Resources.DaemonSet.Enabled == nil {
 		return true
@@ -106,7 +102,7 @@ func IsRuntimeDaemonSetInputEnabled(input telemetryv1alpha1.MetricPipelineInput)
 	return *input.Runtime.Resources.DaemonSet.Enabled
 }
 
-func IsRuntimeJobInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
+func IsRuntimeJobInputEnabled(input telemetryv1beta1.MetricPipelineInput) bool {
 	// Runtime Job metrics should be enabled by default if any of the fields (Resources, Job or Enabled) is nil
 	if input.Runtime.Resources == nil || input.Runtime.Resources.Job == nil || input.Runtime.Resources.Job.Enabled == nil {
 		return true
@@ -116,11 +112,11 @@ func IsRuntimeJobInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool 
 }
 
 // OTLPOutputPorts returns the list of ports of the backends defined in all given MetricPipelines
-func OTLPOutputPorts(ctx context.Context, c client.Reader, allPipelines []telemetryv1alpha1.MetricPipeline) ([]string, error) {
+func OTLPOutputPorts(ctx context.Context, c client.Reader, allPipelines []telemetryv1beta1.MetricPipeline) ([]string, error) {
 	backendPorts := []string{}
 
 	for _, pipeline := range allPipelines {
-		endpoint, err := common.ResolveValue(ctx, c, pipeline.Spec.Output.OTLP.Endpoint)
+		endpoint, err := sharedtypesutils.ResolveValue(ctx, c, pipeline.Spec.Output.OTLP.Endpoint)
 		if err != nil {
 			return nil, fmt.Errorf("failed to resolve the value of the OTLP output endpoint: %w", err)
 		}
@@ -141,7 +137,7 @@ func OTLPOutputPorts(ctx context.Context, c client.Reader, allPipelines []teleme
 	return backendPorts, nil
 }
 
-func extractPort(endpoint, protocol string) string {
+func extractPort(endpoint string, protocol telemetryv1beta1.OTLPProtocol) string {
 	normalizedURL := endpoint
 	hasScheme := strings.Contains(endpoint, "://")
 
@@ -157,7 +153,7 @@ func extractPort(endpoint, protocol string) string {
 		return ""
 	}
 	// OTLP exporter accepts a URL without a port when protocol is OTLP/HTTP
-	if endpointURL.Port() == "" && protocol == telemetryv1alpha1.OTLPProtocolHTTP {
+	if endpointURL.Port() == "" && protocol == telemetryv1beta1.OTLPProtocolHTTP {
 		return strconv.Itoa(int(ports.OTLPHTTP))
 	}
 

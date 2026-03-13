@@ -10,9 +10,10 @@ import (
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
-	"github.com/kyma-project/telemetry-manager/test/testkit"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/trace"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
@@ -26,7 +27,7 @@ import (
 // One backend and one app are deployed with Istio sidecar injection enabled (inside the mesh), while the other backend and app are deployed without Istio (outside the mesh).
 // The test validates that traces are correctly routed to the appropriate backends, Istio sidecar injection is functioning as expected, and only the desired spans are present in the collected traces.
 func TestTracesRouting(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelGardener, suite.LabelIstio)
+	suite.SetupTestWithOptions(t, []string{suite.LabelGardener}, kubeprep.WithIstio())
 
 	const (
 		appName          = "app"
@@ -48,15 +49,15 @@ func TestTracesRouting(t *testing.T) {
 
 	tracePipeline := testutils.NewTracePipelineBuilder().
 		WithName(pipeline1Name).
-		WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+		WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 		Build()
 
 	istioTracePipeline := testutils.NewTracePipelineBuilder().
 		WithName(pipeline2Name).
-		WithOTLPOutput(testutils.OTLPEndpoint(istiofiedBackend.Endpoint())).
+		WithOTLPOutput(testutils.OTLPEndpoint(istiofiedBackend.EndpointHTTP())).
 		Build()
 
-	traceGatewayExternalService := kitk8s.NewService("telemetry-otlp-traces-external", kitkyma.SystemNamespaceName).
+	traceGatewayExternalService := kitk8sobjects.NewService("telemetry-otlp-traces-external", kitkyma.SystemNamespaceName).
 		WithPort("grpc-otlp", ports.OTLPGRPC).
 		WithPort("http-metrics", ports.Metrics)
 	metricServiceURL := suite.ProxyClient.ProxyURLForService(kitkyma.SystemNamespaceName, "telemetry-otlp-traces-external", "metrics", ports.Metrics)
@@ -68,21 +69,18 @@ func TestTracesRouting(t *testing.T) {
 	istiofiedAppURL := istiofiedApp.PodURL(suite.ProxyClient)
 
 	resources := []client.Object{
-		kitk8s.NewNamespace(backendNs).K8sObject(),
-		kitk8s.NewNamespace(istiofiedBackendNs, kitk8s.WithIstioInjection()).K8sObject(),
-		kitk8s.NewNamespace(appNs).K8sObject(),
+		kitk8sobjects.NewNamespace(backendNs).K8sObject(),
+		kitk8sobjects.NewNamespace(istiofiedBackendNs, kitk8sobjects.WithIstioInjection()).K8sObject(),
+		kitk8sobjects.NewNamespace(appNs).K8sObject(),
 		&istioTracePipeline,
 		&tracePipeline,
-		traceGatewayExternalService.K8sObject(kitk8s.WithLabel("app.kubernetes.io/name", "telemetry-trace-gateway")),
+		traceGatewayExternalService.K8sObject(kitk8sobjects.WithLabel("app.kubernetes.io/name", "telemetry-trace-gateway")),
 		app.Pod().K8sObject(),
 		istiofiedApp.Pod().K8sObject(),
 	}
 	resources = append(resources, backend.K8sObjects()...)
 	resources = append(resources, istiofiedBackend.K8sObjects()...)
 
-	t.Cleanup(func() {
-		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-	})
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.BackendReachable(t, backend)
@@ -125,7 +123,7 @@ func TestTracesRouting(t *testing.T) {
 	assertNoIstioNoiseSpans(t, istiofiedBackend)
 }
 
-func assertSidecarPresent(t testkit.T, namespace string, labelSelector map[string]string) {
+func assertSidecarPresent(t *testing.T, namespace string, labelSelector map[string]string) {
 	t.Helper()
 
 	Eventually(func(g Gomega) {
@@ -140,7 +138,7 @@ func assertSidecarPresent(t testkit.T, namespace string, labelSelector map[strin
 	}, periodic.EventuallyTimeout*2, periodic.DefaultInterval).Should(Succeed())
 }
 
-func assertAppIsRunning(t testkit.T, namespace string, labelSelector map[string]string) {
+func assertAppIsRunning(t *testing.T, namespace string, labelSelector map[string]string) {
 	t.Helper()
 
 	listOptions := client.ListOptions{
@@ -151,7 +149,7 @@ func assertAppIsRunning(t testkit.T, namespace string, labelSelector map[string]
 	assert.PodsReady(t, listOptions)
 }
 
-func assertIstioSpans(t testkit.T, backend *kitbackend.Backend, namespace string) {
+func assertIstioSpans(t *testing.T, backend *kitbackend.Backend, namespace string) {
 	t.Helper()
 
 	assert.BackendDataEventuallyMatches(t, backend,
@@ -163,7 +161,7 @@ func assertIstioSpans(t testkit.T, backend *kitbackend.Backend, namespace string
 	)
 }
 
-func assertNoIstioNoiseSpans(t testkit.T, backend *kitbackend.Backend) {
+func assertNoIstioNoiseSpans(t *testing.T, backend *kitbackend.Backend) {
 	t.Helper()
 
 	assert.BackendDataEventuallyMatches(t, backend,
@@ -176,7 +174,7 @@ func assertNoIstioNoiseSpans(t testkit.T, backend *kitbackend.Backend) {
 	)
 }
 
-func assertCustomAppSpans(t testkit.T, backend *kitbackend.Backend, name, namespace string) {
+func assertCustomAppSpans(t *testing.T, backend *kitbackend.Backend, name, namespace string) {
 	t.Helper()
 
 	assert.BackendDataEventuallyMatches(t, backend,

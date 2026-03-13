@@ -7,7 +7,7 @@ import (
 	promv1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/config"
+	selfmonitorconfig "github.com/kyma-project/telemetry-manager/internal/selfmonitor/config"
 )
 
 // OTelAgentProber is a prober for OTel Agent
@@ -21,7 +21,7 @@ type OTelAgentProbeResult struct {
 }
 
 func NewOTelLogAgentProber(selfMonitorName types.NamespacedName) (*OTelAgentProber, error) {
-	return newOTelAgentProber(selfMonitorName, config.MatchesLogPipelineRule)
+	return newOTelAgentProber(selfMonitorName, selfmonitorconfig.MatchesLogPipelineRule)
 }
 
 func newOTelAgentProber(selfMonitorName types.NamespacedName, matcher matcherFunc) (*OTelAgentProber, error) {
@@ -42,8 +42,8 @@ func (p *OTelAgentProber) Probe(ctx context.Context, pipelineName string) (OTelA
 		return OTelAgentProbeResult{}, fmt.Errorf("failed to retrieve alerts: %w", err)
 	}
 
-	allDropped := p.isFiring(alerts, config.RuleNameAgentAllDataDropped, pipelineName)
-	someDropped := p.isFiring(alerts, config.RuleNameAgentSomeDataDropped, pipelineName)
+	allDropped := p.isFiring(alerts, selfmonitorconfig.RuleNameAgentAllDataDropped, pipelineName)
+	someDropped := p.isFiring(alerts, selfmonitorconfig.RuleNameAgentSomeDataDropped, pipelineName)
 	healthy := !allDropped && !someDropped
 
 	return OTelAgentProbeResult{

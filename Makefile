@@ -6,6 +6,7 @@ FLUENT_BIT_EXPORTER_IMAGE ?= $(ENV_FLUENTBIT_EXPORTER_IMAGE)
 FLUENT_BIT_IMAGE ?= $(ENV_FLUENTBIT_IMAGE)
 OTEL_COLLECTOR_IMAGE ?= $(ENV_OTEL_COLLECTOR_IMAGE)
 SELF_MONITOR_IMAGE ?= $(ENV_SELFMONITOR_IMAGE)
+SELF_MONITOR_FIPS_IMAGE ?= $(ENV_SELFMONITOR_FIPS_IMAGE)
 K3S_IMAGE ?= $(ENV_K3S_IMAGE)
 ALPINE_IMAGE ?= $(ENV_ALPINE_IMAGE)
 HELM_RELEASE_VERSION ?= $(ENV_HELM_RELEASE_VERSION)
@@ -49,6 +50,7 @@ $(TOOLS_BIN_NAMES): $(TOOLS_BIN_DIR) $(TOOLS_MOD_DIR)/go.mod
 	cd $(TOOLS_MOD_DIR) && go build -o $@ -trimpath $(filter $(filter %/$(notdir $@),$(TOOLS_PKG_NAMES_CLEAN))%,$(TOOLS_PKG_NAMES))
 
 CONTROLLER_GEN   := $(TOOLS_BIN_DIR)/controller-gen
+CONVERSION_GEN   := $(TOOLS_BIN_DIR)/conversion-gen
 GOLANGCI_LINT    := $(TOOLS_BIN_DIR)/golangci-lint
 GO_TEST_COVERAGE := $(TOOLS_BIN_DIR)/go-test-coverage
 GOTESTSUM        := $(TOOLS_BIN_DIR)/gotestsum
@@ -58,7 +60,6 @@ YQ               := $(TOOLS_BIN_DIR)/yq
 JQ               := $(TOOLS_BIN_DIR)/gojq
 YAMLFMT          := $(TOOLS_BIN_DIR)/yamlfmt
 STRINGER         := $(TOOLS_BIN_DIR)/stringer
-WSL              := $(TOOLS_BIN_DIR)/wsl
 K3D              := $(TOOLS_BIN_DIR)/k3d
 PROMLINTER       := $(TOOLS_BIN_DIR)/promlinter
 GOMPLATE         := $(TOOLS_BIN_DIR)/gomplate
@@ -74,6 +75,7 @@ $(POPULATE_IMAGES):
 # Sub-makefile
 include hack/make/provision.mk
 include hack/make/e2e.mk
+include hack/make/monitoring.mk
 
 ##@ General
 
@@ -97,6 +99,9 @@ MODULE_NAMES := $(notdir $(GO_MODULE_DIRS))
 # All standard and fix lint targets
 LINT_TARGETS := $(addprefix lint-,$(MODULE_NAMES))
 LINT_FIX_TARGETS := $(addprefix lint-fix-,$(MODULE_NAMES))
+
+# All build targets for dependencies
+BUILD_DEPENDENCY_TARGETS := $(addprefix build-,$(MODULE_NAMES))
 
 ##@ Code Quality
 
@@ -149,8 +154,9 @@ lint-fix: lint-fix-manager $(LINT_FIX_TARGETS) ## Run linting checks with automa
 ##@ Code Generation
 
 .PHONY: generate
-generate: $(CONTROLLER_GEN) $(MOCKERY) $(STRINGER) $(YQ) $(YAMLFMT) $(POPULATE_IMAGES) ## Generate code including DeepCopy, DeepCopyInto, DeepCopyObject methods and update helm values
+generate: $(CONTROLLER_GEN) $(MOCKERY) $(STRINGER) $(YQ) $(YAMLFMT) $(POPULATE_IMAGES) $(CONVERSION_GEN) ## Generate code including DeepCopy, DeepCopyInto, DeepCopyObject methods and update helm values
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
+	$(CONVERSION_GEN) --go-header-file ./hack/boilerplate.go.txt --output-file zz_generated.conversion.go ./apis/telemetry/v1alpha1 ./apis/telemetry/v1beta1
 	$(MOCKERY)
 	$(STRINGER) --type Mode internal/utils/logpipeline/logpipeline.go
 	$(STRINGER) --type FeatureFlag internal/featureflags/featureflags.go
@@ -158,6 +164,7 @@ generate: $(CONTROLLER_GEN) $(MOCKERY) $(STRINGER) $(YQ) $(YAMLFMT) $(POPULATE_I
 	$(YQ) eval '.manager.container.env.fluentBitExporterImage = ${FLUENT_BIT_EXPORTER_IMAGE}' -i helm/values.yaml
 	$(YQ) eval '.manager.container.env.otelCollectorImage = ${OTEL_COLLECTOR_IMAGE}' -i helm/values.yaml
 	$(YQ) eval '.manager.container.env.selfMonitorImage = ${SELF_MONITOR_IMAGE}' -i helm/values.yaml
+	$(YQ) eval '.manager.container.env.selfMonitorFIPSImage = ${SELF_MONITOR_FIPS_IMAGE}' -i helm/values.yaml
 	$(YQ) eval '.manager.container.env.alpineImage = ${ALPINE_IMAGE}' -i helm/values.yaml
 	$(YQ) eval '.manager.container.image.repository = "${MANAGER_IMAGE}"' -i helm/values.yaml
 	$(YQ) eval '.version = "${HELM_RELEASE_VERSION}"' -i helm/Chart.yaml
@@ -169,10 +176,8 @@ generate: $(CONTROLLER_GEN) $(MOCKERY) $(STRINGER) $(YQ) $(YAMLFMT) $(POPULATE_I
 	$(POPULATE_IMAGES)
 
 .PHONY: manifests
-manifests: $(CONTROLLER_GEN) $(YQ) $(YAMLFMT) ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition for v1alpha1
-	$(CONTROLLER_GEN) rbac:roleName=manager-role webhook paths="./..."
-	$(CONTROLLER_GEN) crd paths="./apis/operator/v1alpha1" output:crd:artifacts:config=helm/charts/default/templates
-	$(CONTROLLER_GEN) crd paths="./apis/telemetry/v1alpha1" output:crd:artifacts:config=helm/charts/default/templates
+manifests: $(CONTROLLER_GEN) $(YQ) $(YAMLFMT) ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition for v1alpha1 and v1beta1
+	$(CONTROLLER_GEN) rbac:roleName=manager-role webhook crd paths="./..." output:crd:artifacts:config=helm/charts/default/templates
 	$(YAMLFMT)
 
 .PHONY: manifests-experimental
@@ -184,16 +189,16 @@ manifests-experimental: $(CONTROLLER_GEN) $(YAMLFMT) ## Generate manifests for e
 crd-docs-gen: $(TABLE_GEN) manifests ## Generate CRD documentation in markdown format
 	$(TABLE_GEN) --crd-filename ./helm/charts/default/templates/operator.kyma-project.io_telemetries.yaml --md-filename ./docs/user/resources/01-telemetry.md
 	$(TABLE_GEN) --crd-filename ./helm/charts/default/templates/telemetry.kyma-project.io_logpipelines.yaml --md-filename ./docs/user/resources/02-logpipeline.md
-	$(TABLE_GEN) --crd-filename ./helm/charts/default/templates/telemetry.kyma-project.io_logparsers.yaml --md-filename ./docs/user/resources/03-logparser.md
 	$(TABLE_GEN) --crd-filename ./helm/charts/default/templates/telemetry.kyma-project.io_tracepipelines.yaml --md-filename ./docs/user/resources/04-tracepipeline.md
 	$(TABLE_GEN) --crd-filename ./helm/charts/default/templates/telemetry.kyma-project.io_metricpipelines.yaml --md-filename ./docs/user/resources/05-metricpipeline.md
 
 .PHONY: check-clean
-check-clean: generate manifests manifests-experimental crd-docs-gen generate-e2e-targets ## Check if repo is clean and up-to-date after code generation
+check-clean: generate manifests manifests-experimental crd-docs-gen ## Check if repo is clean and up-to-date after code generation
 	@echo "Checking if all generated files are up-to-date"
-	@git diff --name-only --exit-code || (echo "Generated files are not up-to-date. Please run 'make generate manifests manifests-experimental crd-docs-gen generate-e2e-targets' to update them." && exit 1)
+	@git diff --name-only --exit-code || (echo "Generated files are not up-to-date. Please run 'make generate manifests manifests-experimental crd-docs-gen' to update them." && exit 1)
 
 ##@ Testing
+
 .PHONY: test
 test: manifests generate fmt vet tidy ## Run all unit tests
 	go test ./test/testkit/matchers/...
@@ -206,11 +211,37 @@ check-coverage: $(GO_TEST_COVERAGE) ## Check test coverage against thresholds
 	go test $$(go list ./... | grep -v /test/) -short -coverprofile=cover.out -covermode=atomic -coverpkg=./...
 	$(GO_TEST_COVERAGE) --config=./.testcoverage.yml
 
+.PHONY: update-golden-files
+update-golden-files: ## Update all golden files for config builder tests
+	@echo "Updating all golden files in the project..."
+	go test $$(go list ./... | grep -v /test/) -- -update-golden-files || true
+	@echo "All golden files updated successfully"
+
 ##@ Build
 
 .PHONY: build
-build: generate fmt vet tidy ## Build manager binary
-	go build -o bin/manager main.go
+build: build-manager fmt vet tidy ## Format, vet and build the manager
+
+.PHONY: build-for-codeql
+build-for-codeql: build-manager-no-generate build-dependencies ## Build the manager and the custom tools in dependencies
+
+.PHONY: build-manager
+build-manager: generate
+	go build -o $(ARTIFACTS)/manager .
+
+.PHONY: build-manager-no-generate
+build-manager-no-generate:
+	go build -o $(ARTIFACTS)/manager .
+
+# Pattern rule for building each dependency module
+$(BUILD_DEPENDENCY_TARGETS):
+	@modname=$(@:build-%=%); \
+	echo "Building $$modname..."; \
+	cd $(DEPENDENCIES_DIR)/$$modname && pwd && go build -o $(ARTIFACTS)/$$modname .
+
+.PHONY: build-dependencies $(BUILD_DEPENDENCY_TARGETS)
+build-dependencies: $(BUILD_DEPENDENCY_TARGETS) ## Build custom tools in dependencies
+
 
 .PHONY: docker-build
 docker-build: ## Build docker image with the manager
@@ -219,6 +250,26 @@ docker-build: ## Build docker image with the manager
 .PHONY: docker-push
 docker-push: ## Push docker image with the manager
 	docker push ${MANAGER_IMAGE}
+
+.PHONY: docker-build-selfmonitor
+docker-build-selfmonitor: ## Build docker image for telemetry self-monitor
+	@set -a && . dependencies/telemetry-self-monitor/envs && set +a && \
+	docker build -t ${SELF_MONITOR_IMAGE} \
+		--build-arg ALPINE_VERSION=$${ALPINE_VERSION} \
+		--build-arg PROMETHEUS_VERSION=$${PROMETHEUS_VERSION} \
+		dependencies/telemetry-self-monitor
+
+.PHONY: docker-push-selfmonitor
+docker-push-selfmonitor: ## Push docker image for telemetry self-monitor
+	docker push ${SELF_MONITOR_IMAGE}
+
+.PHONY: docker-pull-self-monitor-fips-image
+docker-pull-self-monitor-fips-image: ## Pull the Self-Monitor FIPS image
+	docker pull ${SELF_MONITOR_FIPS_IMAGE}
+
+.PHONY: k3d-import-self-monitor-fips-image
+k3d-import-self-monitor-fips-image: ## Import the Self-Monitor FIPS image into the K3D cluster
+	./hack/k3d-import-image.sh ${SELF_MONITOR_FIPS_IMAGE}
 
 ##@ Development
 
@@ -239,6 +290,7 @@ tls.crt: tls.key
 gen-webhook-cert: tls.key tls.crt ## Generate TLS certificates for webhook development
 
 ##@ Deployment
+
 ifndef ignore-not-found
   ignore-not-found = false
 endif
@@ -250,49 +302,87 @@ install: manifests $(HELM) ## Install CRDs into the K8s cluster
 .PHONY: install-with-telemetry
 install-with-telemetry: install ## Install CRDs and create sample telemetry resource
 	kubectl get ns kyma-system || kubectl create ns kyma-system
-	kubectl apply -f samples/operator_v1alpha1_telemetry.yaml -n kyma-system
+	kubectl apply -f samples/operator_v1beta1_telemetry.yaml -n kyma-system
 
 .PHONY: uninstall
 uninstall: manifests $(HELM) ## Uninstall CRDs from the K8s cluster (use ignore-not-found=true to ignore missing resources)
 	$(HELM) template helm/charts/default | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
 .PHONY: deploy
-deploy: manifests $(HELM) ## Deploy telemetry manager with default/release configuration
+deploy: manifests $(HELM) docker-pull-self-monitor-fips-image k3d-import-self-monitor-fips-image ## Deploy telemetry manager with default/release configuration
 	$(HELM) template telemetry helm \
-	    --set experimental.enabled=false \
-	    --set default.enabled=true \
+		--set experimental.enabled=false \
+		--set default.enabled=true \
 		--set nameOverride=telemetry \
-	    --set manager.container.image.repository=${MANAGER_IMAGE} \
-	    --set manager.container.image.pullPolicy="Always" \
-	    --set manager.container.args.enable-fips-mode=true \
-	    --namespace kyma-system \
+		--set manager.container.image.repository=${MANAGER_IMAGE} \
+		--set manager.container.image.pullPolicy="Always" \
+		--set manager.container.env.operateInFipsMode=true \
+		--namespace kyma-system \
+	| kubectl apply -f -
+
+.PHONY: deploy-no-fips
+deploy-no-fips: manifests $(HELM) ## Deploy telemetry manager with FIPS mode disabled
+	$(HELM) template telemetry helm \
+		--set experimental.enabled=false \
+		--set default.enabled=true \
+		--set nameOverride=telemetry \
+		--set manager.container.image.repository=${MANAGER_IMAGE} \
+		--set manager.container.image.pullPolicy="Always" \
+		--set manager.container.env.operateInFipsMode=false \
+		--namespace kyma-system \
 	| kubectl apply -f -
 
 .PHONY: undeploy
 undeploy: $(HELM) ## Undeploy telemetry manager with default/release configuration
 	$(HELM) template telemetry helm \
-	    --set experimental.enabled=false \
-	    --set default.enabled=true \
+		--set experimental.enabled=false \
+		--set default.enabled=true \
 		--set nameOverride=telemetry \
 		--namespace kyma-system \
 	| kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
 .PHONY: deploy-experimental
-deploy-experimental: manifests-experimental $(HELM) ## Deploy telemetry manager with experimental features enabled
+deploy-experimental: manifests-experimental $(HELM) docker-pull-self-monitor-fips-image k3d-import-self-monitor-fips-image ## Deploy telemetry manager with experimental features enabled
 	$(HELM) template telemetry helm \
-	    --set experimental.enabled=true \
+		--set experimental.enabled=true \
 		--set default.enabled=false \
 		--set nameOverride=telemetry \
 		--set manager.container.image.repository=${MANAGER_IMAGE} \
 		--set manager.container.image.pullPolicy="Always" \
-	    --set manager.container.args.enable-fips-mode=true \
+		--set manager.container.env.operateInFipsMode=true \
+		--namespace kyma-system \
+	| kubectl apply -f -
+
+.PHONY: deploy-experimental-no-fips
+deploy-experimental-no-fips: manifests-experimental $(HELM) ## Deploy telemetry manager with experimental features and FIPS mode disabled
+	$(HELM) template telemetry helm \
+		--set experimental.enabled=true \
+		--set default.enabled=false \
+		--set nameOverride=telemetry \
+		--set manager.container.image.repository=${MANAGER_IMAGE} \
+		--set manager.container.image.pullPolicy="Always" \
+		--set manager.container.env.operateInFipsMode=false \
+		--namespace kyma-system \
+	| kubectl apply -f -
+
+.PHONY: deploy-custom-labels-annotations-no-fips
+deploy-custom-labels-annotations-no-fips: manifests $(HELM) ## Deploy telemetry manager with custom labels and annotations, and FIPS mode disabled
+	$(HELM) template telemetry helm \
+		--set experimental.enabled=false \
+		--set default.enabled=true\
+		--set nameOverride=telemetry \
+		--set manager.container.image.repository=${MANAGER_IMAGE} \
+		--set manager.container.image.pullPolicy="Always" \
+		--set manager.container.env.operateInFipsMode=false \
+		--set additionalMetadata.labels.my-meta-label="foo" \
+		--set additionalMetadata.annotations.my-meta-annotation="bar" \
 		--namespace kyma-system \
 	| kubectl apply -f -
 
 .PHONY: undeploy-experimental
 undeploy-experimental: $(HELM) ## Undeploy telemetry manager with experimental features
 	$(HELM) template telemetry helm \
-	    --set experimental.enabled=true \
+		--set experimental.enabled=true \
 		--set default.enabled=false \
 		--set nameOverride=telemetry \
 		--namespace kyma-system \
@@ -302,4 +392,4 @@ undeploy-experimental: $(HELM) ## Undeploy telemetry manager with experimental f
 
 .PHONY: update-metrics-docs
 update-metrics-docs: $(PROMLINTER) $(GOMPLATE) ## Update internal metrics documentation
-	@metrics=$$(mktemp).json; echo $${metrics}; $(PROMLINTER) list -ojson . > $${metrics}; $(GOMPLATE) -d telemetry=$${metrics} -f hack/telemetry-internal-metrics.md.tpl > docs/contributor/telemetry-internal-metrics.md
+	@metrics=$$(mktemp).json; echo $${metrics}; $(PROMLINTER) list -ojson internal > $${metrics}; $(GOMPLATE) -d telemetry=$${metrics} -f hack/telemetry-internal-metrics.md.tpl > docs/contributor/telemetry-internal-metrics.md

@@ -12,11 +12,10 @@ jobs:
     name: Validate .env file
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      # check that the .env file does not contain references to the main branch
-      - name: Check .env file
+      - name: Verify .env file has no main branch references
         run: |
           if grep -q "main" .env; then
             echo "The .env file contains references to the main branch"

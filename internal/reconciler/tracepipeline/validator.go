@@ -3,30 +3,12 @@ package tracepipeline
 import (
 	"context"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
 
-type EndpointValidator interface {
-	Validate(ctx context.Context, endpoint *telemetryv1alpha1.ValueType, protocol string) error
-}
-
-type SecretRefValidator interface {
-	ValidateTracePipeline(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) error
-}
-
-type TLSCertValidator interface {
-	Validate(ctx context.Context, config tlscert.TLSBundle) error
-}
-
-type TransformSpecValidator interface {
-	Validate(transforms []telemetryv1alpha1.TransformSpec) error
-}
-
-type FilterSpecValidator interface {
-	Validate(filters []telemetryv1alpha1.FilterSpec) error
-}
-
+// Validator validates TracePipeline resources by checking endpoints, TLS certificates, secret references, and pipeline locks.
 type Validator struct {
 	EndpointValidator      EndpointValidator
 	TLSCertValidator       TLSCertValidator
@@ -36,19 +18,85 @@ type Validator struct {
 	FilterSpecValidator    FilterSpecValidator
 }
 
-func (v *Validator) validate(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) error {
+// ValidatorOption configures the Validator during initialization.
+type ValidatorOption func(*Validator)
+
+// WithEndpointValidator sets the endpoint validator for the Validator.
+func WithEndpointValidator(validator EndpointValidator) ValidatorOption {
+	return func(v *Validator) {
+		v.EndpointValidator = validator
+	}
+}
+
+// WithTLSCertValidator sets the TLS certificate validator for the Validator.
+func WithTLSCertValidator(validator TLSCertValidator) ValidatorOption {
+	return func(v *Validator) {
+		v.TLSCertValidator = validator
+	}
+}
+
+// WithSecretRefValidator sets the secret reference validator for the Validator.
+func WithSecretRefValidator(validator SecretRefValidator) ValidatorOption {
+	return func(v *Validator) {
+		v.SecretRefValidator = validator
+	}
+}
+
+// WithValidatorPipelineLock sets the pipeline lock for the Validator.
+func WithValidatorPipelineLock(lock PipelineLock) ValidatorOption {
+	return func(v *Validator) {
+		v.PipelineLock = lock
+	}
+}
+
+// WithTransformSpecValidator sets the transform spec validator for the Validator.
+func WithTransformSpecValidator(validator TransformSpecValidator) ValidatorOption {
+	return func(v *Validator) {
+		v.TransformSpecValidator = validator
+	}
+}
+
+// WithFilterSpecValidator sets the filter spec validator for the Validator.
+func WithFilterSpecValidator(validator FilterSpecValidator) ValidatorOption {
+	return func(v *Validator) {
+		v.FilterSpecValidator = validator
+	}
+}
+
+// NewValidator creates a new Validator with the provided options.
+func NewValidator(opts ...ValidatorOption) *Validator {
+	v := &Validator{}
+
+	for _, opt := range opts {
+		opt(v)
+	}
+
+	return v
+}
+
+func (v *Validator) validate(ctx context.Context, pipeline *telemetryv1beta1.TracePipeline) error {
 	if err := v.SecretRefValidator.ValidateTracePipeline(ctx, pipeline); err != nil {
 		return err
 	}
 
 	if pipeline.Spec.Output.OTLP != nil {
-		if err := v.EndpointValidator.Validate(ctx, &pipeline.Spec.Output.OTLP.Endpoint, pipeline.Spec.Output.OTLP.Protocol); err != nil {
+		var oauth2 *telemetryv1beta1.OAuth2Options = nil
+		if pipeline.Spec.Output.OTLP.Authentication != nil {
+			oauth2 = pipeline.Spec.Output.OTLP.Authentication.OAuth2
+		}
+
+		if err := v.EndpointValidator.Validate(ctx, endpoint.EndpointValidationParams{
+			Endpoint:   &pipeline.Spec.Output.OTLP.Endpoint,
+			Protocol:   pipeline.Spec.Output.OTLP.Protocol,
+			OutputTLS:  pipeline.Spec.Output.OTLP.TLS,
+			OTLPOAuth2: oauth2,
+		}); err != nil {
 			return err
 		}
 	}
 
 	if tlsValidationRequired(pipeline) {
-		tlsConfig := tlscert.TLSBundle{
+		tlsConfig := tlscert.TLSValidationParams{
 			Cert: pipeline.Spec.Output.OTLP.TLS.Cert,
 			Key:  pipeline.Spec.Output.OTLP.TLS.Key,
 			CA:   pipeline.Spec.Output.OTLP.TLS.CA,
@@ -74,7 +122,7 @@ func (v *Validator) validate(ctx context.Context, pipeline *telemetryv1alpha1.Tr
 	return nil
 }
 
-func tlsValidationRequired(pipeline *telemetryv1alpha1.TracePipeline) bool {
+func tlsValidationRequired(pipeline *telemetryv1beta1.TracePipeline) bool {
 	otlp := pipeline.Spec.Output.OTLP
 	if otlp == nil {
 		return false

@@ -27,7 +27,7 @@ Learn how to use [Loki](https://github.com/grafana/loki/tree/main/production/hel
 ## Prerequisites
 
 - Kyma as the target deployment environment
-- The [Telemetry module](https://kyma-project.io/#/telemetry-manager/user/README) is [added](https://kyma-project.io/#/02-get-started/01-quick-install)
+- The [Telemetry module](https://kyma-project.io/#/telemetry-manager/user/README) is [added](https://kyma-project.io/02-get-started/01-quick-install)
 - [Kubectl version that is within one minor version (older or newer) of `kube-apiserver`](https://kubernetes.io/releases/version-skew-policy/#kubectl)
 - Helm 3.x
 
@@ -90,19 +90,19 @@ kubectl -n ${K8S_NAMESPACE} get pod -l app.kubernetes.io/name=loki
 
 ### Create a LogPipeline Resource
 
-To ingest the application logs from within your cluster to Loki, use Kyma's [LogPipeline](./../../collecting-logs/README.md) feature based on OTLP. It enables the `application` input to automatically tail application logs from `stdout/stderr`. If you want to push logs natively, additionally use the [Set Up the OTLP Input](./../../otlp-input.md).
+To ingest the application logs from within your cluster to Loki, use Kyma's [LogPipeline](./../../collecting-logs/README.md) feature based on OTLP. It enables the `runtime` input to automatically tail application logs from `stdout/stderr`. If you want to push logs natively, additionally use the [Set Up the OTLP Input](./../../otlp-input.md).
 
 Apply the LogPipeline:
 
    ```bash
    cat <<EOF | kubectl apply -f -
-   apiVersion: telemetry.kyma-project.io/v1alpha1
+   apiVersion: telemetry.kyma-project.io/v1beta1
    kind: LogPipeline
    metadata:
      name: custom-loki
    spec:
       input:
-         application:
+         runtime:
             enabled: true
       output:
          otlp:

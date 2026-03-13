@@ -26,6 +26,16 @@ func ResourceAttributeIsNotNil(key string) string {
 	return fmt.Sprintf("%s != nil", ResourceAttribute(key))
 }
 
+// ResourceAttributeIsNilOrEmpty returns an OTel expression that checks if the resource attribute is nil or an empty string
+func ResourceAttributeIsNilOrEmpty(key string) string {
+	return fmt.Sprintf("%s == nil or %s == \"\"", ResourceAttribute(key), ResourceAttribute(key))
+}
+
+// ResourceAttributeHasPrefix returns an OTel expression that checks if the resource attribute has the specified prefix
+func ResourceAttributeHasPrefix(key, prefix string) string {
+	return fmt.Sprintf("HasPrefix(resource.attributes[\"%s\"], \"%s\")", key, prefix)
+}
+
 func ResourceAttribute(key string) string {
 	return fmt.Sprintf("resource.attributes[\"%s\"]", key)
 }
@@ -50,8 +60,8 @@ func Attribute(key string) string {
 	return fmt.Sprintf("attributes[\"%s\"]", key)
 }
 
-func NameAttributeEquals(name string) string {
-	return fmt.Sprintf("name == \"%s\"", name)
+func MetricNameAttributeEquals(name string) string {
+	return fmt.Sprintf("metric.name == \"%s\"", name)
 }
 
 func JoinWithOr(parts ...string) string {
@@ -64,6 +74,10 @@ func JoinWithRegExpOr(parts ...string) string {
 
 func JoinWithAnd(parts ...string) string {
 	return strings.Join(parts, " and ")
+}
+
+func JoinWithWhere(statement string, condition string) string {
+	return fmt.Sprintf("%s where %s", statement, condition)
 }
 
 func IsMatch(key, regexPattern string) string {
@@ -84,6 +98,11 @@ func Not(expression string) string {
 	}
 
 	return fmt.Sprintf("not(%s)", expression)
+}
+
+// DeleteResourceAttribute returns an OTel expression that deletes the specified resource attribute key
+func DeleteResourceAttribute(key string) string {
+	return fmt.Sprintf("delete_key(resource.attributes, \"%s\")", key)
 }
 
 func isWrappedInParentheses(expression string) bool {

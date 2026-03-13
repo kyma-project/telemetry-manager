@@ -96,12 +96,15 @@ metadata:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  annotations:
+    test-anno-key: test-anno-value
   labels:
     app.kubernetes.io/component: gateway
     app.kubernetes.io/managed-by: telemetry-manager
     app.kubernetes.io/name: telemetry-metric-gateway
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
+    test-label-key: test-label-value
   name: telemetry-metric-gateway
   namespace: kyma-system
 spec:
@@ -114,6 +117,7 @@ spec:
     metadata:
       annotations:
         checksum/config: 1d8e9f768e6b24485bbdd6b9aa417d37fec897a7dafc8321355abc0d45259c9e
+        test-anno-key: test-anno-value
       labels:
         app.kubernetes.io/component: gateway
         app.kubernetes.io/managed-by: telemetry-manager
@@ -123,6 +127,7 @@ spec:
         sidecar.istio.io/inject: "true"
         telemetry.kyma-project.io/metric-export: "true"
         telemetry.kyma-project.io/metric-ingest: "true"
+        test-label-key: test-label-value
     spec:
       affinity:
         podAntiAffinity:
@@ -155,8 +160,6 @@ spec:
               fieldPath: spec.nodeName
         - name: GODEBUG
           value: fips140=off
-        - name: GOMEMLIMIT
-          value: "429496720"
         envFrom:
         - secretRef:
             name: telemetry-metric-gateway
@@ -191,6 +194,11 @@ spec:
         volumeMounts:
         - mountPath: /conf
           name: config
+        - mountPath: /etc/ssl/certs
+          name: custom-ca-bundle
+          readOnly: true
+      imagePullSecrets:
+      - name: mySecret
       priorityClassName: normal
       securityContext:
         runAsNonRoot: true
@@ -205,6 +213,12 @@ spec:
             path: relay.conf
           name: telemetry-metric-gateway
         name: config
+      - name: custom-ca-bundle
+        projected:
+          sources:
+          - clusterTrustBundle:
+              name: trustBundle
+              path: ca-certificates.crt
 status: {}
 ---
 apiVersion: networking.k8s.io/v1
@@ -216,26 +230,13 @@ metadata:
     app.kubernetes.io/name: telemetry-metric-gateway
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
-  name: telemetry-metric-gateway
+  name: kyma-project.io--telemetry-metric-gateway
   namespace: kyma-system
 spec:
   egress:
-  - to:
-    - ipBlock:
-        cidr: 0.0.0.0/0
-    - ipBlock:
-        cidr: ::/0
+  - {}
   ingress:
-  - from:
-    - ipBlock:
-        cidr: 0.0.0.0/0
-    - ipBlock:
-        cidr: ::/0
-    ports:
-    - port: 8888
-      protocol: TCP
-    - port: 13133
-      protocol: TCP
+  - ports:
     - port: 4318
       protocol: TCP
     - port: 4317
@@ -246,6 +247,33 @@ spec:
   policyTypes:
   - Ingress
   - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  labels:
+    app.kubernetes.io/component: gateway
+    app.kubernetes.io/managed-by: telemetry-manager
+    app.kubernetes.io/name: telemetry-metric-gateway
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
+  name: kyma-project.io--telemetry-metric-gateway-metrics
+  namespace: kyma-system
+spec:
+  ingress:
+  - from:
+    - namespaceSelector: {}
+      podSelector:
+        matchLabels:
+          networking.kyma-project.io/metrics-scraping: allowed
+    ports:
+    - port: 8888
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: telemetry-metric-gateway
+  policyTypes:
+  - Ingress
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole

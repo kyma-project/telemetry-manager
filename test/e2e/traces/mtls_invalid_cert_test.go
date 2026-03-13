@@ -7,7 +7,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
+	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
@@ -18,7 +18,7 @@ import (
 )
 
 func TestMTLSInvalidCert(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelTraces)
+	suite.SetupTest(t, suite.LabelTraces, suite.LabelMTLS)
 
 	var (
 		uniquePrefix = unique.Prefix()
@@ -31,13 +31,13 @@ func TestMTLSInvalidCert(t *testing.T) {
 		Build()
 	Expect(err).ToNot(HaveOccurred())
 
-	backend := kitbackend.New(backendNs, kitbackend.SignalTypeTraces, kitbackend.WithTLS(*invalidServerCerts))
+	backend := kitbackend.New(backendNs, kitbackend.SignalTypeTraces, kitbackend.WithMTLS(*invalidServerCerts))
 
 	pipeline := testutils.NewTracePipelineBuilder().
 		WithName(pipelineName).
 		WithOTLPOutput(
-			testutils.OTLPEndpoint(backend.Endpoint()),
-			testutils.OTLPClientTLSFromString(
+			testutils.OTLPEndpoint(backend.EndpointHTTPS()),
+			testutils.OTLPClientMTLSFromString(
 				invalidClientCerts.CaCertPem.String(),
 				invalidClientCerts.ClientCertPem.String(),
 				invalidClientCerts.ClientKeyPem.String(),
@@ -49,9 +49,6 @@ func TestMTLSInvalidCert(t *testing.T) {
 		&pipeline,
 	}
 
-	t.Cleanup(func() {
-		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-	})
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.TracePipelineHasCondition(t, pipelineName, metav1.Condition{
@@ -66,7 +63,7 @@ func TestMTLSInvalidCert(t *testing.T) {
 		Reason: conditions.ReasonSelfMonConfigNotGenerated,
 	})
 
-	assert.TelemetryHasState(t, operatorv1alpha1.StateWarning)
+	assert.TelemetryHasState(t, operatorv1beta1.StateWarning)
 	assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
 		Type:   conditions.TypeTraceComponentsHealthy,
 		Status: metav1.ConditionFalse,

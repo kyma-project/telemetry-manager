@@ -3,26 +3,15 @@ name: PR Integration
 permissions:
   contents: read
 
-env:
-  # add the tag PR-<number> to the image if it is a PR, if the trigger is merge_group, then add the sha as the tag
-  MANAGER_IMAGE: europe-docker.pkg.dev/kyma-project/dev/telemetry-manager:${{ github.event_name == 'pull_request' && 'PR-' || '' }}${{ github.event.number || github.event.merge_group.head_sha }}
-
 on:
+  schedule:
+    # Run every 3 hours on main branch
+    - cron: "0 */3 * * *"
   merge_group:
-  pull_request:
+  push:
     branches:
       - "main"
       - "release-*"
-    # only include PRs that change:
-    # go files
-    # go mod files
-    # test files in the test/e2e directory
-    # test files in the istio directory
-    # exclude go files that end with _test.go
-    # exclude (go) files in the doc folder
-    # include the workflow definition itself
-    # include dependencies of the workflow definition
-    # exclude busola configmap files
     paths:
       - "**/go.mod"
       - "**/go.sum"
@@ -37,185 +26,273 @@ on:
       - ".env"
       - ".k3d-kyma.yaml"
       - "Makefile"
+      - "hack/make/*.mk"
+      - "helm/**"
+  pull_request:
+    branches:
+      - "main"
+      - "release-*"
+    paths:
+      - "**/go.mod"
+      - "**/go.sum"
+      - "**.go"
+      - "config/**"
+      - "!config/busola/**"
+      - "!**_test.go"
+      - "!docs/**"
+      - "test/**.go"
+      - ".github/workflows/pr-integration.yml"
+      - ".github/template/**"
+      - ".env"
+      - ".k3d-kyma.yaml"
+      - "Makefile"
+      - "hack/make/*.mk"
+      - "helm/**"
 
   workflow_dispatch:
+
+env:
+  E2E_TEST_TIMEOUT: 60m
+  # FIPS images are only available on push/schedule (not on PR due to registry restrictions)
+  FIPS_IMAGE_AVAILABLE: ${{ github.event_name != 'pull_request' }}
 
 jobs:
   setup:
     runs-on: ubuntu-latest
+    outputs:
+      manager-image: ${{ steps.set-env.outputs.manager-image }}
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Setup Golang
         uses: ./.github/template/setup-golang
 
+      - name: Prepare environment variables
+        id: set-env
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            IMAGE_REPO="europe-docker.pkg.dev/kyma-project/dev/telemetry-manager"
+            IMAGE_TAG="${{ github.event.pull_request.head.sha }}"
+          elif [[ "${{ github.event_name }}" == "merge_group" ]]; then
+            IMAGE_REPO="europe-docker.pkg.dev/kyma-project/dev/telemetry-manager"
+            IMAGE_TAG="${{ github.event.merge_group.head_sha }}"
+          else
+            IMAGE_REPO="europe-docker.pkg.dev/kyma-project/prod/telemetry-manager"
+
+            GIT_COMMIT_SHA=$(git rev-parse --short=8 HEAD)
+            GIT_COMMIT_DATE=$(git show -s --format=%cd --date=format:'v%Y%m%d' $GIT_COMMIT_SHA)
+            IMAGE_TAG="$GIT_COMMIT_DATE-$GIT_COMMIT_SHA"
+          fi
+
+          MANAGER_IMAGE="$IMAGE_REPO:$IMAGE_TAG"
+          echo "manager-image=$MANAGER_IMAGE" >> $GITHUB_OUTPUT
+          echo "image-repo=$IMAGE_REPO" >> $GITHUB_OUTPUT
+          echo "image-tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
+          echo "Manager image: $MANAGER_IMAGE"
+
       - name: Wait for image to be built
         shell: bash
-        run: |
-          make wait-for-image
+        run: make wait-for-image
         env:
-          IMAGE_TAG: "${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha }}"
+          IMAGE_REPO: "${{ steps.set-env.outputs.image-repo }}"
+          IMAGE_TAG: "${{ steps.set-env.outputs.image-tag }}"
           QUERY_INTERVAL: 30
-          IMAGE_REPO: "europe-docker.pkg.dev/kyma-project/dev/telemetry-manager"
 
-  e2e-selfmonitor:
+  # e2e-logs split by fluent-bit vs otel AND by set labels for parallel execution
+  e2e-logs:
     needs: setup
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        kind:
-          - fluent-bit
-          - log-agent
-          - log-gateway
-          - metric-gateway
-          - metric-agent
-          - traces
+        variant:
+          - name: "-fluentbit"
+            label: "fluent-bit"
+          - name: "-otel"
+            label: "not fluent-bit"
+        set:
+          - name: "-a"
+            label: "set-a"
+          - name: "-b"
+            label: "set-b"
+          - name: "-c"
+            label: "set-c"
+    name: e2e-logs${{ matrix.variant.name }}${{ matrix.set.name }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Run E2E test
+        uses: ./.github/template/run-e2e-test
+        with:
+          test-id: e2e-logs${{ matrix.variant.name }}${{ matrix.set.name }}
+          test-path: ./test/e2e/logs/...
+          test-labels: not experimental and ${{ matrix.variant.label }} and ${{ matrix.set.label }}
+          manager-image: ${{ needs.setup.outputs.manager-image }}
+          fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
+          google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
+
+  # e2e-metrics split by set labels for parallel execution
+  e2e-metrics:
+    needs: setup
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        set:
+          - name: "-a"
+            label: "set-a"
+          - name: "-b"
+            label: "set-b"
+          - name: "-c"
+            label: "set-c"
+    name: e2e-metrics${{ matrix.set.name }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Run E2E test
+        uses: ./.github/template/run-e2e-test
+        with:
+          test-id: e2e-metrics${{ matrix.set.name }}
+          test-path: ./test/e2e/metrics/...
+          test-labels: not experimental and ${{ matrix.set.label }}
+          manager-image: ${{ needs.setup.outputs.manager-image }}
+          fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
+          google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
+
+  # All e2e suites with experimental flavor
+  e2e-experimental:
+    needs: setup
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        suite:
+          - name: e2e-logs
+            path: ./test/e2e/logs/...
+          - name: e2e-metrics
+            path: ./test/e2e/metrics/...
+          - name: e2e-traces
+            path: ./test/e2e/traces/...
+          - name: e2e-misc
+            path: ./test/e2e/misc/...
+    name: ${{ matrix.suite.name }}-experimental
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Run E2E test
+        uses: ./.github/template/run-e2e-test
+        with:
+          test-id: ${{ matrix.suite.name }}-experimental
+          test-path: ${{ matrix.suite.path }}
+          test-labels: experimental
+          manager-image: ${{ needs.setup.outputs.manager-image }}
+          fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
+          google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
+
+  # e2e-traces and e2e-misc (non-experimental) without set splitting
+  e2e:
+    needs: setup
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        suite:
+          - name: e2e-traces
+            path: ./test/e2e/traces/...
+          - name: e2e-misc
+            path: ./test/e2e/misc/...
+    name: ${{ matrix.suite.name }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Run E2E test
+        uses: ./.github/template/run-e2e-test
+        with:
+          test-id: ${{ matrix.suite.name }}
+          test-path: ${{ matrix.suite.path }}
+          test-labels: not experimental
+          manager-image: ${{ needs.setup.outputs.manager-image }}
+          fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
+          google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
+
+  # Upgrade and integration tests
+  e2e-other:
+    needs: setup
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        suite:
+          - name: e2e-upgrade
+            path: ./test/e2e/upgrade/...
+          - name: integration
+            path: ./test/integration/...
+    name: ${{ matrix.suite.name }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Run E2E test
+        uses: ./.github/template/run-e2e-test
+        with:
+          test-id: ${{ matrix.suite.name }}
+          test-path: ${{ matrix.suite.path }}
+          test-labels: ""
+          manager-image: ${{ needs.setup.outputs.manager-image }}
+          fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
+          google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
+
+  # Selfmonitor tests
+  selfmonitor:
+    needs: setup
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
         scenario:
           - healthy
           - backpressure
           - outage
-    name: "selfmon: ${{ matrix.kind }}-${{ matrix.scenario }}"
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-
-      - name: Setup test environment
-        uses: "./.github/template/test-setup"
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          install-istio: ${{ matrix.scenario != 'healthy' }}
-
-      - name: Execute tests
-        uses: "./.github/template/test-execute"
-        with:
-          id: ${{ matrix.kind }}-${{ matrix.scenario }}
-          path: ./test/selfmonitor/...
-          labels: "selfmonitor-${{ matrix.kind }}-${{ matrix.scenario }}"
-
-      - name: Clean-up test environment
-        uses: "./.github/template/test-cleanup"
-        if: ${{ !cancelled()  }}
-        with:
-          id: selfmonitor-${{ matrix.kind }}-${{ matrix.scenario }}
-          failure: failure()
-
-  e2e:
-    needs: setup
-    strategy:
-      fail-fast: false
-      matrix:
-        labels:
-          # LOGS
-          - name: fluent-bit
-            mode: release
-            type: e2e
+        component:
           - name: log-agent
-            mode: release
-            type: e2e
+            label: log-agent
           - name: log-gateway
-            mode: release
-            type: e2e
-          - name: logs-max-pipeline
-            mode: release
-            type: e2e
-          - name: fluent-bit-max-pipeline
-            mode: release
-            type: e2e
-          - name: otel-max-pipeline
-            mode: release
-            type: e2e
-          - name: logs-misc
-            mode: release
-            type: e2e
-          # METRICS
-          - name: metric-agent-a
-            mode: release
-            type: e2e
-          - name: metric-agent-b
-            mode: release
-            type: e2e
-          - name: metric-agent-c
-            mode: release
-            type: e2e
-          - name: metric-gateway-a
-            mode: release
-            type: e2e
-          - name: metric-gateway-b
-            mode: release
-            type: e2e
-          - name: metric-gateway-c
-            mode: release
-            type: e2e
-          - name: metrics-misc
-            mode: release
-            type: e2e
-          - name: metrics-max-pipeline
-            mode: release
-            type: e2e
-          # TRACES
+            label: log-gateway
+          - name: fluent-bit
+            label: fluent-bit
+          - name: metric-agent
+            label: metric-agent
+          - name: metric-gateway
+            label: metric-gateway
           - name: traces
-            mode: release
-            type: e2e
-          - name: traces-max-pipeline
-            mode: release
-            type: e2e
-          # TELEMETRY
-          - name: telemetry
-            mode: release
-            type: e2e
-          # MISC
-          - name: misc
-            mode: release
-            type: e2e
-          # OTHER
-          - name: experimental
-            mode: experimental
-            type: e2e
-          # INTEGRATION
-          - name: istio
-            mode: release
-            type: integration
-    name: "e2e: ${{ matrix.labels.name }}"
-    runs-on: ubuntu-latest
+            label: traces
+    name: selfmonitor-${{ matrix.scenario }}-${{ matrix.component.name }}
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Setup test environment
-        uses: "./.github/template/test-setup"
+      - name: Run E2E test
+        uses: ./.github/template/run-e2e-test
         with:
-          experimental: ${{ matrix.labels.mode == 'experimental' }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          install-istio: ${{ matrix.labels.name == 'istio' && matrix.labels.type == 'integration' }}
-
-      - name: Execute tests
-        uses: "./.github/template/test-execute"
-        with:
-          id: ${{ matrix.labels.type }}-${{ matrix.labels.name }}
-          path: ./test/${{ matrix.labels.type }}/...
-          labels: ${{ matrix.labels.name }}
-
-      - name: Clean-up test environment
-        uses: "./.github/template/test-cleanup"
-        if: ${{ !cancelled()  }}
-        with:
-          id: ${{ matrix.labels.type }}-${{ matrix.labels.name }}
-          failure: failure()
-
-      - name: Print logs from all pods in kyma-system namespace
-        if: failure()
-        run: |
-          for pod in $(kubectl get pods -n kyma-system -o name); do echo "=== $pod ==="; kubectl logs -n kyma-system $pod; done || true
+          test-id: selfmonitor-${{ matrix.scenario }}-${{ matrix.component.name }}
+          test-path: ./test/selfmonitor/...
+          test-labels: ${{ matrix.scenario }} and ${{ matrix.component.label }}
+          manager-image: ${{ needs.setup.outputs.manager-image }}
+          fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
+          google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
 
   summary:
-    needs: [e2e-selfmonitor, e2e]
+    needs: [e2e-logs, e2e-metrics, e2e-experimental, e2e, e2e-other, selfmonitor]
     runs-on: ubuntu-latest
     if: always()
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Generate test summary
         uses: "./.github/template/test-summary"

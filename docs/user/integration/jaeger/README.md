@@ -21,7 +21,7 @@ Learn how to use [Jaeger](https://github.com/jaegertracing/helm-charts/tree/main
 ## Prerequisites
 
 - Kyma as the target deployment environment
-- The [Telemetry module](../../README.md) is [added](https://kyma-project.io/#/02-get-started/01-quick-install)
+- The [Telemetry module](../../README.md) is [added](https://kyma-project.io/02-get-started/01-quick-install)
 - [Kubectl version that is within one minor version (older or newer) of `kube-apiserver`](https://kubernetes.io/releases/version-skew-policy/#kubectl)
 - Helm 3.x
 
@@ -50,9 +50,6 @@ Learn how to use [Jaeger](https://github.com/jaegertracing/helm-charts/tree/main
 
 ### Install Jaeger
 
-> [!NOTE]
-> It is officially recommended to install Jaeger with the [Jaeger operator](https://github.com/jaegertracing/helm-charts/tree/main/charts/jaeger-operator). Because the operator requires a cert-manager to be installed, the following instructions use a plain Jaeger installation. However, the described installation is not meant to be used for production setups.
-
 Run the Helm upgrade command, which installs the chart if not present yet.
 
 ```bash
@@ -75,7 +72,7 @@ To configure the Kyma trace gateway with the deployed Jaeger instance as the bac
 
 ```bash
 cat <<EOF | kubectl -n $K8S_NAMESPACE apply -f -
-apiVersion: telemetry.kyma-project.io/v1alpha1
+apiVersion: telemetry.kyma-project.io/v1beta1
 kind: TracePipeline
 metadata:
   name: jaeger

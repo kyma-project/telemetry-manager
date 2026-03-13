@@ -7,28 +7,28 @@ import (
 	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
 
 func TestExporterIDHTTP(t *testing.T) {
-	require.Equal(t, "otlphttp/test", ExporterID("http", "test"))
+	require.Equal(t, "otlp_http/test", ExporterID("http", "test"))
 }
 
 func TestExporterIDGRPC(t *testing.T) {
-	require.Equal(t, "otlp/test", ExporterID("grpc", "test"))
+	require.Equal(t, "otlp_grpc/test", ExporterID("grpc", "test"))
 }
 
 func TestExorterIDDefault(t *testing.T) {
-	require.Equal(t, "otlp/test", ExporterID("", "test"))
+	require.Equal(t, "otlp_grpc/test", ExporterID("", "test"))
 }
 
-func TestMakeConfig(t *testing.T) {
-	output := &telemetryv1alpha1.OTLPOutput{
-		Endpoint: telemetryv1alpha1.ValueType{Value: "otlp-endpoint"},
+func TestMakeExporterConfig(t *testing.T) {
+	output := &telemetryv1beta1.OTLPOutput{
+		Endpoint: telemetryv1beta1.ValueType{Value: "otlp-endpoint"},
 	}
 
 	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512, SignalTypeTrace)
-	otlpExporterConfig, envVars, err := cb.OTLPExporterConfig(t.Context())
+	otlpExporterConfig, envVars, err := cb.OTLPExporter(t.Context())
 	require.NoError(t, err)
 	require.NotNil(t, envVars)
 
@@ -45,15 +45,15 @@ func TestMakeConfig(t *testing.T) {
 	require.Equal(t, "300s", otlpExporterConfig.RetryOnFailure.MaxElapsedTime)
 }
 
-func TestMakeConfigTraceWithPath(t *testing.T) {
-	output := &telemetryv1alpha1.OTLPOutput{
-		Endpoint: telemetryv1alpha1.ValueType{Value: "otlp-endpoint"},
+func TestMakeExporterConfigTraceWithPath(t *testing.T) {
+	output := &telemetryv1beta1.OTLPOutput{
+		Endpoint: telemetryv1beta1.ValueType{Value: "otlp-endpoint"},
 		Path:     "/v1/test",
 		Protocol: "http",
 	}
 
 	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512, SignalTypeTrace)
-	otlpExporterConfig, envVars, err := cb.OTLPExporterConfig(t.Context())
+	otlpExporterConfig, envVars, err := cb.OTLPExporter(t.Context())
 	require.NoError(t, err)
 	require.NotNil(t, envVars)
 
@@ -64,15 +64,15 @@ func TestMakeConfigTraceWithPath(t *testing.T) {
 	require.Empty(t, otlpExporterConfig.Endpoint)
 }
 
-func TestMakeConfigMetricWithPath(t *testing.T) {
-	output := &telemetryv1alpha1.OTLPOutput{
-		Endpoint: telemetryv1alpha1.ValueType{Value: "otlp-endpoint"},
+func TestMakeExporterConfigMetricWithPath(t *testing.T) {
+	output := &telemetryv1beta1.OTLPOutput{
+		Endpoint: telemetryv1beta1.ValueType{Value: "otlp-endpoint"},
 		Path:     "/v1/test",
 		Protocol: "http",
 	}
 
 	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512, SignalTypeMetric)
-	otlpExporterConfig, envVars, err := cb.OTLPExporterConfig(t.Context())
+	otlpExporterConfig, envVars, err := cb.OTLPExporter(t.Context())
 	require.NoError(t, err)
 	require.NotNil(t, envVars)
 
@@ -83,19 +83,19 @@ func TestMakeConfigMetricWithPath(t *testing.T) {
 	require.Empty(t, otlpExporterConfig.Endpoint)
 }
 
-func TestMakeExporterWithBasicAuth(t *testing.T) {
-	output := &telemetryv1alpha1.OTLPOutput{
-		Endpoint: telemetryv1alpha1.ValueType{Value: "otlp-endpoint"},
-		Authentication: &telemetryv1alpha1.AuthenticationOptions{
-			Basic: &telemetryv1alpha1.BasicAuthOptions{
-				User:     telemetryv1alpha1.ValueType{Value: "testuser"},
-				Password: telemetryv1alpha1.ValueType{Value: "testpass"},
+func TestMakeExporterConfigWithBasicAuth(t *testing.T) {
+	output := &telemetryv1beta1.OTLPOutput{
+		Endpoint: telemetryv1beta1.ValueType{Value: "otlp-endpoint"},
+		Authentication: &telemetryv1beta1.AuthenticationOptions{
+			Basic: &telemetryv1beta1.BasicAuthOptions{
+				User:     telemetryv1beta1.ValueType{Value: "testuser"},
+				Password: telemetryv1beta1.ValueType{Value: "testpass"},
 			},
 		},
 	}
 
 	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512, SignalTypeTrace)
-	otlpExporterConfig, envVars, err := cb.OTLPExporterConfig(t.Context())
+	otlpExporterConfig, envVars, err := cb.OTLPExporter(t.Context())
 	require.NoError(t, err)
 	require.NotNil(t, envVars)
 
@@ -108,22 +108,43 @@ func TestMakeExporterWithBasicAuth(t *testing.T) {
 	require.Equal(t, envVars["BASIC_AUTH_HEADER_TEST"], []byte("Basic "+base64UserPass))
 }
 
+func TestMakeExporterConfigWithOAuth2(t *testing.T) {
+	output := &telemetryv1beta1.OTLPOutput{
+		Endpoint: telemetryv1beta1.ValueType{Value: "otlp-endpoint"},
+		Authentication: &telemetryv1beta1.AuthenticationOptions{
+			OAuth2: &telemetryv1beta1.OAuth2Options{
+				TokenURL:     telemetryv1beta1.ValueType{Value: "token-url"},
+				ClientID:     telemetryv1beta1.ValueType{Value: "client-id"},
+				ClientSecret: telemetryv1beta1.ValueType{Value: "client-secret"},
+			},
+		},
+	}
+
+	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512, SignalTypeTrace)
+	otlpExporterConfig, envVars, err := cb.OTLPExporter(t.Context())
+	require.NoError(t, err)
+	require.NotNil(t, envVars)
+
+	require.NotNil(t, otlpExporterConfig.Auth)
+	require.Equal(t, otlpExporterConfig.Auth.Authenticator, "oauth2client/test")
+}
+
 func TestMakeExporterConfigWithCustomHeaders(t *testing.T) {
-	headers := []telemetryv1alpha1.Header{
+	headers := []telemetryv1beta1.Header{
 		{
 			Name: "Authorization",
-			ValueType: telemetryv1alpha1.ValueType{
+			ValueType: telemetryv1beta1.ValueType{
 				Value: "Bearer xyz",
 			},
 		},
 	}
-	output := &telemetryv1alpha1.OTLPOutput{
-		Endpoint: telemetryv1alpha1.ValueType{Value: "otlp-endpoint"},
+	output := &telemetryv1beta1.OTLPOutput{
+		Endpoint: telemetryv1beta1.ValueType{Value: "otlp-endpoint"},
 		Headers:  headers,
 	}
 
 	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512, SignalTypeTrace)
-	otlpExporterConfig, envVars, err := cb.OTLPExporterConfig(t.Context())
+	otlpExporterConfig, envVars, err := cb.OTLPExporter(t.Context())
 	require.NoError(t, err)
 	require.NotNil(t, envVars)
 
@@ -132,16 +153,16 @@ func TestMakeExporterConfigWithCustomHeaders(t *testing.T) {
 }
 
 func TestMakeExporterConfigWithTLSInsecure(t *testing.T) {
-	tls := &telemetryv1alpha1.OTLPTLS{
+	tls := &telemetryv1beta1.OutputTLS{
 		Insecure: true,
 	}
-	output := &telemetryv1alpha1.OTLPOutput{
-		Endpoint: telemetryv1alpha1.ValueType{Value: "otlp-endpoint"},
+	output := &telemetryv1beta1.OTLPOutput{
+		Endpoint: telemetryv1beta1.ValueType{Value: "otlp-endpoint"},
 		TLS:      tls,
 	}
 
 	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512, SignalTypeTrace)
-	otlpExporterConfig, envVars, err := cb.OTLPExporterConfig(t.Context())
+	otlpExporterConfig, envVars, err := cb.OTLPExporter(t.Context())
 	require.NoError(t, err)
 	require.NotNil(t, envVars)
 
@@ -149,17 +170,17 @@ func TestMakeExporterConfigWithTLSInsecure(t *testing.T) {
 }
 
 func TestMakeExporterConfigWithTLSInsecureSkipVerify(t *testing.T) {
-	tls := &telemetryv1alpha1.OTLPTLS{
+	tls := &telemetryv1beta1.OutputTLS{
 		Insecure:           false,
 		InsecureSkipVerify: true,
 	}
-	output := &telemetryv1alpha1.OTLPOutput{
-		Endpoint: telemetryv1alpha1.ValueType{Value: "otlp-endpoint"},
+	output := &telemetryv1beta1.OTLPOutput{
+		Endpoint: telemetryv1beta1.ValueType{Value: "otlp-endpoint"},
 		TLS:      tls,
 	}
 
 	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512, SignalTypeTrace)
-	otlpExporterConfig, envVars, err := cb.OTLPExporterConfig(t.Context())
+	otlpExporterConfig, envVars, err := cb.OTLPExporter(t.Context())
 	require.NoError(t, err)
 	require.NotNil(t, envVars)
 
@@ -169,26 +190,26 @@ func TestMakeExporterConfigWithTLSInsecureSkipVerify(t *testing.T) {
 }
 
 func TestMakeExporterConfigWithmTLS(t *testing.T) {
-	tls := &telemetryv1alpha1.OTLPTLS{
+	tls := &telemetryv1beta1.OutputTLS{
 		Insecure:           false,
 		InsecureSkipVerify: false,
-		CA: &telemetryv1alpha1.ValueType{
+		CA: &telemetryv1beta1.ValueType{
 			Value: "test ca cert pem",
 		},
-		Cert: &telemetryv1alpha1.ValueType{
+		Cert: &telemetryv1beta1.ValueType{
 			Value: "test client cert pem",
 		},
-		Key: &telemetryv1alpha1.ValueType{
+		Key: &telemetryv1beta1.ValueType{
 			Value: "test client key pem",
 		},
 	}
-	output := &telemetryv1alpha1.OTLPOutput{
-		Endpoint: telemetryv1alpha1.ValueType{Value: "otlp-endpoint"},
+	output := &telemetryv1beta1.OTLPOutput{
+		Endpoint: telemetryv1beta1.ValueType{Value: "otlp-endpoint"},
 		TLS:      tls,
 	}
 
 	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512, SignalTypeTrace)
-	otlpExporterConfig, envVars, err := cb.OTLPExporterConfig(t.Context())
+	otlpExporterConfig, envVars, err := cb.OTLPExporter(t.Context())
 	require.NoError(t, err)
 	require.NotNil(t, envVars)
 

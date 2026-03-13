@@ -9,89 +9,77 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
 func TestResources_OTel(t *testing.T) {
-	tests := []struct {
-		label     string
-		input     telemetryv1alpha1.LogPipelineInput
-		resources []assert.Resource
-	}{
-		{
-			label: suite.LabelLogAgent,
-			input: testutils.BuildLogPipelineApplicationInput(),
-			resources: []assert.Resource{
-				assert.NewResource(&appsv1.DaemonSet{}, kitkyma.LogAgentName),
-				assert.NewResource(&corev1.ServiceAccount{}, kitkyma.LogAgentServiceAccount),
-				assert.NewResource(&rbacv1.ClusterRole{}, kitkyma.LogAgentClusterRole),
-				assert.NewResource(&rbacv1.ClusterRoleBinding{}, kitkyma.LogAgentClusterRoleBinding),
-				assert.NewResource(&corev1.Service{}, kitkyma.LogAgentMetricsService),
-				assert.NewResource(&networkingv1.NetworkPolicy{}, kitkyma.LogAgentNetworkPolicy),
-				assert.NewResource(&corev1.ConfigMap{}, kitkyma.LogAgentConfigMap),
-				assert.NewResource(&corev1.Service{}, kitkyma.LogGatewayOTLPService),
-			},
-		},
-		{
-			label: suite.LabelLogGateway,
-			input: testutils.BuildLogPipelineOTLPInput(),
-			resources: []assert.Resource{
-				assert.NewResource(&appsv1.Deployment{}, kitkyma.LogGatewayName),
-				assert.NewResource(&corev1.Service{}, kitkyma.LogGatewayMetricsService),
-				assert.NewResource(&corev1.ServiceAccount{}, kitkyma.LogGatewayServiceAccount),
-				assert.NewResource(&rbacv1.ClusterRole{}, kitkyma.LogGatewayClusterRole),
-				assert.NewResource(&rbacv1.ClusterRoleBinding{}, kitkyma.LogGatewayClusterRoleBinding),
-				assert.NewResource(&networkingv1.NetworkPolicy{}, kitkyma.LogGatewayNetworkPolicy),
-				assert.NewResource(&corev1.Secret{}, kitkyma.LogGatewaySecretName),
-				assert.NewResource(&corev1.ConfigMap{}, kitkyma.LogGatewayConfigMap),
-				assert.NewResource(&corev1.Service{}, kitkyma.LogGatewayOTLPService),
-			},
-		},
-	}
-	for _, tc := range tests {
-		t.Run(tc.label, func(t *testing.T) {
-			suite.RegisterTestCase(t, tc.label)
+	suite.SetupTestWithOptions(t, []string{suite.LabelLogs, suite.LabelOtel})
 
-			const (
-				endpointKey   = "endpoint"
-				endpointValue = "http://localhost:1234"
-			)
+	const (
+		endpointKey   = "endpoint"
+		endpointValue = "http://localhost:1234"
+	)
 
-			var (
-				uniquePrefix = unique.Prefix(tc.label)
-				pipelineName = uniquePrefix()
-				secretName   = uniquePrefix()
-			)
+	var (
+		uniquePrefix = unique.Prefix()
+		pipelineName = uniquePrefix()
+		secretName   = uniquePrefix()
+		resources    = []assert.Resource{
+			// Agent resources
+			assert.NewResource(&appsv1.DaemonSet{}, kitkyma.LogAgentName),
+			assert.NewResource(&corev1.ServiceAccount{}, kitkyma.LogAgentServiceAccount),
+			assert.NewResource(&rbacv1.ClusterRole{}, kitkyma.LogAgentClusterRole),
+			assert.NewResource(&rbacv1.ClusterRoleBinding{}, kitkyma.LogAgentClusterRoleBinding),
+			assert.NewResource(&corev1.Service{}, kitkyma.LogAgentMetricsService),
+			assert.NewResource(&networkingv1.NetworkPolicy{}, kitkyma.LogAgentNetworkPolicy),
+			assert.NewResource(&corev1.ConfigMap{}, kitkyma.LogAgentConfigMap),
+			assert.NewResource(&corev1.Service{}, kitkyma.LogGatewayOTLPService),
+			assert.NewResource(&corev1.Secret{}, kitkyma.LogAgentSecretName),
 
-			secret := kitk8s.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, kitk8s.WithStringData(endpointKey, endpointValue))
-			pipeline := testutils.NewLogPipelineBuilder().
-				WithInput(tc.input).
-				WithName(pipelineName).
-				WithOTLPOutput(testutils.OTLPEndpointFromSecret(secret.Name(), kitkyma.DefaultNamespaceName, endpointKey)).
-				Build()
+			// Gateway resources
+			assert.NewResource(&appsv1.Deployment{}, kitkyma.LogGatewayName),
+			assert.NewResource(&corev1.Service{}, kitkyma.LogGatewayMetricsService),
+			assert.NewResource(&corev1.ServiceAccount{}, kitkyma.LogGatewayServiceAccount),
+			assert.NewResource(&rbacv1.ClusterRole{}, kitkyma.LogGatewayClusterRole),
+			assert.NewResource(&rbacv1.ClusterRoleBinding{}, kitkyma.LogGatewayClusterRoleBinding),
+			assert.NewResource(&networkingv1.NetworkPolicy{}, kitkyma.LogGatewayNetworkPolicy),
+			assert.NewResource(&corev1.Secret{}, kitkyma.LogGatewaySecretName),
+			assert.NewResource(&corev1.ConfigMap{}, kitkyma.LogGatewayConfigMap),
+			assert.NewResource(&corev1.Service{}, kitkyma.LogGatewayOTLPService),
+			// TODO(skhalash): Re-enable after fixing the istiod deployment timeout issue in the test
+			// assert.NewResource(&istiosecurityclientv1.PeerAuthentication{}, kitkyma.LogGatewayPeerAuthentication),
+		}
+	)
 
-			t.Cleanup(func() {
-				Expect(kitk8s.DeleteObjects(&pipeline)).To(Succeed())
-			})
-			Expect(kitk8s.CreateObjects(t, &pipeline, secret.K8sObject())).To(Succeed())
+	secret := kitk8sobjects.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, kitk8sobjects.WithStringData(endpointKey, endpointValue))
+	pipeline := testutils.NewLogPipelineBuilder().
+		WithName(pipelineName).
+		WithOTLPInput(true).
+		WithRuntimeInput(true).
+		WithOTLPOutput(testutils.OTLPEndpointFromSecret(secret.Name(), kitkyma.DefaultNamespaceName, endpointKey)).
+		Build()
 
-			assert.ResourcesExist(t, tc.resources...)
-			// FIXME: Currently failing (resources are not deleted when pipeline becomes non-reconcilable)
-			// t.Log("When LogPipeline becomes non-reconcilable, resources should be cleaned up")
-			// Expect(suite.K8sClient.Delete(t, secret.K8sObject())).To(Succeed())
-			// assert.ResourcesNotExist(t, tc.resources...)
-		})
-	}
+	Expect(kitk8s.CreateObjects(t, &pipeline, secret.K8sObject())).To(Succeed())
+
+	assert.ResourcesExist(t, resources...)
+
+	assert.ResourcesReconciled(t, resources...)
+
+	// FIXME: Currently failing (resources are not deleted when pipeline becomes non-reconcilable)
+	// t.Log("When LogPipeline becomes non-reconcilable, resources should be cleaned up")
+	// Expect(suite.K8sClient.Delete(t, secret.K8sObject())).To(Succeed())
+	// assert.ResourcesNotExist(t, tc.resources...)
 }
 
 func TestResources_FluentBit(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelFluentBit)
+	suite.SetupTestWithOptions(t, []string{suite.LabelLogs, suite.LabelFluentBit}, kubeprep.WithOverrideFIPSMode(false))
 
 	const hostKey = "host"
 
@@ -109,13 +97,15 @@ func TestResources_FluentBit(t *testing.T) {
 			assert.NewResource(&networkingv1.NetworkPolicy{}, kitkyma.FluentBitNetworkPolicy),
 			assert.NewResource(&corev1.ConfigMap{}, kitkyma.FluentBitConfigMap),
 			assert.NewResource(&corev1.ConfigMap{}, kitkyma.FluentBitLuaConfigMap),
-			assert.NewResource(&corev1.ConfigMap{}, kitkyma.FluentBitParserConfigMap),
 			assert.NewResource(&corev1.ConfigMap{}, kitkyma.FluentBitSectionsConfigMap),
 			assert.NewResource(&corev1.ConfigMap{}, kitkyma.FluentBitFilesConfigMap),
+			assert.NewResource(&corev1.Secret{}, kitkyma.FluentBitEnvSecret),
+			assert.NewResource(&corev1.Secret{}, kitkyma.FluentBitTLSConfigSecret),
 		}
 	)
 
-	secret := kitk8s.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, kitk8s.WithStringData(hostKey, "localhost"))
+	secret := kitk8sobjects.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, kitk8sobjects.WithStringData(hostKey, "localhost"))
+
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
 		WithHTTPOutput(testutils.HTTPHostFromSecret(
@@ -124,12 +114,11 @@ func TestResources_FluentBit(t *testing.T) {
 			hostKey)).
 		Build()
 
-	t.Cleanup(func() {
-		Expect(kitk8s.DeleteObjects(&pipeline)).To(Succeed())
-	})
 	Expect(kitk8s.CreateObjects(t, &pipeline, secret.K8sObject())).To(Succeed())
 
 	assert.ResourcesExist(t, resources...)
+
+	assert.ResourcesReconciled(t, resources...)
 
 	// When pipeline becomes non-reconcilable...
 	Expect(suite.K8sClient.Delete(t.Context(), secret.K8sObject())).To(Succeed())

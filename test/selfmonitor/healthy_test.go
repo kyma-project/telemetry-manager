@@ -1,14 +1,20 @@
 package selfmonitor
 
 import (
+	"fmt"
 	"testing"
 
 	. "github.com/onsi/gomega"
+	appsv1 "k8s.io/api/apps/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
+	"github.com/kyma-project/telemetry-manager/test/testkit"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
@@ -20,18 +26,20 @@ import (
 
 func TestHealthy(t *testing.T) {
 	tests := []struct {
-		labelPrefix string
-		pipeline    func(includeNs string, backend *kitbackend.Backend) client.Object
-		generator   func(ns string) []client.Object
-		assert      func(t *testing.T, ns string, backend *kitbackend.Backend, pipelineName string)
+		name      string
+		component string
+		pipeline  func(pipelineName, includeNs string, backend *kitbackend.Backend) client.Object
+		generator func(ns string) []client.Object
+		assert    func(t *testing.T, ns string, backend *kitbackend.Backend, pipelineName string)
 	}{
 		{
-			labelPrefix: suite.LabelSelfMonitorLogAgentPrefix,
-			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
+			name:      "log-agent",
+			component: suite.LabelLogAgent,
+			pipeline: func(pipelineName, includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewLogPipelineBuilder().
-					WithName(suite.LabelSelfMonitorLogAgentPrefix).
-					WithInput(testutils.BuildLogPipelineApplicationInput(testutils.ExtIncludeNamespaces(includeNs))).
-					WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+					WithName(pipelineName).
+					WithInput(testutils.BuildLogPipelineRuntimeInput(testutils.IncludeNamespaces(includeNs))).
+					WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 					Build()
 
 				return &p
@@ -50,12 +58,13 @@ func TestHealthy(t *testing.T) {
 			},
 		},
 		{
-			labelPrefix: suite.LabelSelfMonitorLogGatewayPrefix,
-			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
+			name:      "log-gateway",
+			component: suite.LabelLogGateway,
+			pipeline: func(pipelineName, includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewLogPipelineBuilder().
-					WithName(suite.LabelSelfMonitorLogGatewayPrefix).
+					WithName(pipelineName).
 					WithInput(testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))).
-					WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+					WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 					Build()
 
 				return &p
@@ -73,11 +82,12 @@ func TestHealthy(t *testing.T) {
 			},
 		},
 		{
-			labelPrefix: suite.LabelSelfMonitorFluentBitPrefix,
-			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
+			name:      "fluent-bit",
+			component: suite.LabelFluentBit,
+			pipeline: func(pipelineName, includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewLogPipelineBuilder().
-					WithName(suite.LabelSelfMonitorFluentBitPrefix).
-					WithApplicationInput(true, testutils.ExtIncludeNamespaces(includeNs)).
+					WithName(pipelineName).
+					WithRuntimeInput(true, testutils.IncludeNamespaces(includeNs)).
 					WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
 					Build()
 
@@ -96,11 +106,12 @@ func TestHealthy(t *testing.T) {
 			},
 		},
 		{
-			labelPrefix: suite.LabelSelfMonitorMetricGatewayPrefix,
-			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
+			name:      "metric-gateway",
+			component: suite.LabelMetricGateway,
+			pipeline: func(pipelineName, includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewMetricPipelineBuilder().
-					WithName(suite.LabelSelfMonitorMetricGatewayPrefix).
-					WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+					WithName(pipelineName).
+					WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 					Build()
 
 				return &p
@@ -118,12 +129,13 @@ func TestHealthy(t *testing.T) {
 			},
 		},
 		{
-			labelPrefix: suite.LabelSelfMonitorMetricAgentPrefix,
-			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
+			name:      "metric-agent",
+			component: suite.LabelMetricAgent,
+			pipeline: func(pipelineName, includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewMetricPipelineBuilder().
-					WithName(suite.LabelSelfMonitorMetricAgentPrefix).
+					WithName(pipelineName).
 					WithPrometheusInput(true, testutils.IncludeNamespaces(includeNs)).
-					WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+					WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 					Build()
 
 				return &p
@@ -145,11 +157,12 @@ func TestHealthy(t *testing.T) {
 			},
 		},
 		{
-			labelPrefix: suite.LabelSelfMonitorTracesPrefix,
-			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
+			name:      "traces",
+			component: suite.LabelTraces,
+			pipeline: func(pipelineName, includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewTracePipelineBuilder().
-					WithName(suite.LabelSelfMonitorTracesPrefix).
-					WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+					WithName(pipelineName).
+					WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 					Build()
 
 				return &p
@@ -168,37 +181,90 @@ func TestHealthy(t *testing.T) {
 		},
 	}
 
+	// Tests run once per test case. FIPS mode is determined by environment (FIPS_IMAGE_AVAILABLE).
+	// FluentBit tests always run in no-FIPS mode via WithOverrideFIPSMode(false).
 	for _, tc := range tests {
-		t.Run(tc.labelPrefix, func(t *testing.T) {
-			suite.RegisterTestCase(t, label(tc.labelPrefix, suite.LabelSelfMonitorHealthySuffix))
+		t.Run(tc.name, func(t *testing.T) {
+			// Labels: selfmonitor + component + scenario
+			labels := []string{
+				suite.LabelSelfMonitor,
+				tc.component,
+				suite.LabelHealthy,
+			}
+
+			// FluentBit doesn't support FIPS mode
+			var opts []kubeprep.Option
+			if isFluentBit(tc.component) {
+				opts = append(opts, kubeprep.WithOverrideFIPSMode(false))
+			}
+
+			suite.SetupTestWithOptions(t, labels, opts...)
+
+			pipelineName := fmt.Sprintf("selfmonitor-%s", tc.name)
 
 			var (
-				uniquePrefix = unique.Prefix(tc.labelPrefix)
+				uniquePrefix = unique.Prefix(tc.name)
 				backendNs    = uniquePrefix("backend")
 				genNs        = uniquePrefix("gen")
 			)
 
-			backend := kitbackend.New(backendNs, signalType(tc.labelPrefix))
-			pipeline := tc.pipeline(genNs, backend)
+			backend := kitbackend.New(backendNs, signalTypeForComponent(tc.component))
+			pipeline := tc.pipeline(pipelineName, genNs, backend)
 			generator := tc.generator(genNs)
 
 			resources := []client.Object{
-				kitk8s.NewNamespace(backendNs).K8sObject(),
-				kitk8s.NewNamespace(genNs).K8sObject(),
+				kitk8sobjects.NewNamespace(backendNs).K8sObject(),
+				kitk8sobjects.NewNamespace(genNs).K8sObject(),
 				pipeline,
 			}
 			resources = append(resources, generator...)
 			resources = append(resources, backend.K8sObjects()...)
 
-			t.Cleanup(func() {
-				Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-			})
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 			assert.BackendReachable(t, backend)
 			assert.DeploymentReady(t, kitkyma.SelfMonitorName)
 
+			FIPSModeEnabled, err := isFIPSModeEnabled(t)
+			Expect(err).ToNot(HaveOccurred())
+
+			if FIPSModeEnabled {
+				// assert that the Self-Monitor image is the prometheus-fips image when FIPS mode is enabled
+				assert.DeploymentHasImage(t, kitkyma.SelfMonitorName, names.SelfMonitorContainerName, testkit.SelfMonitorFIPSImage)
+			} else {
+				// assert that the Self-Monitor image is the regular telemetry-self-monitor image when FIPS mode is not enabled
+				assert.DeploymentHasImage(t, kitkyma.SelfMonitorName, names.SelfMonitorContainerName, testkit.SelfMonitorImage)
+			}
+
 			tc.assert(t, genNs, backend, pipeline.GetName())
 		})
 	}
+}
+
+func isFIPSModeEnabled(t *testing.T) (bool, error) {
+	const (
+		managerContainerName = "manager"
+		fipsEnvVarName       = "KYMA_FIPS_MODE_ENABLED"
+	)
+
+	var deployment appsv1.Deployment
+
+	err := suite.K8sClient.Get(t.Context(), kitkyma.TelemetryManagerName, &deployment)
+	if err != nil {
+		return false, fmt.Errorf("failed to get manager deployment: %w", err)
+	}
+
+	for _, container := range deployment.Spec.Template.Spec.Containers {
+		if container.Name == managerContainerName {
+			for _, env := range container.Env {
+				if env.Name == fipsEnvVarName && env.Value == "true" {
+					return true, nil
+				}
+			}
+
+			return false, nil
+		}
+	}
+
+	return false, fmt.Errorf("manager container not found in manager deployment")
 }

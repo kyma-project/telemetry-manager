@@ -16,7 +16,7 @@ import (
 )
 
 func TestVersionConversion(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelExperimental)
+	suite.SetupTest(t, suite.LabelLogs, suite.LabelMisc)
 
 	var (
 		uniquePrefix         = unique.Prefix()
@@ -30,13 +30,13 @@ func TestVersionConversion(t *testing.T) {
 		},
 		Spec: telemetryv1alpha1.LogPipelineSpec{
 			Output: telemetryv1alpha1.LogPipelineOutput{
-				HTTP: &telemetryv1alpha1.LogPipelineHTTPOutput{
+				FluentBitHTTP: &telemetryv1alpha1.FluentBitHTTPOutput{
 					Host: telemetryv1alpha1.ValueType{
 						Value: "localhost",
 					},
 					Port: "443",
 					URI:  "/",
-					TLS: telemetryv1alpha1.LogPipelineOutputTLS{
+					TLS: telemetryv1alpha1.FluentBitHTTPOutputTLS{
 						Disabled: true,
 					},
 				},
@@ -50,13 +50,13 @@ func TestVersionConversion(t *testing.T) {
 		},
 		Spec: telemetryv1beta1.LogPipelineSpec{
 			Output: telemetryv1beta1.LogPipelineOutput{
-				HTTP: &telemetryv1beta1.LogPipelineHTTPOutput{
+				FluentBitHTTP: &telemetryv1beta1.FluentBitHTTPOutput{
 					Host: telemetryv1beta1.ValueType{
 						Value: "localhost",
 					},
 					Port: "443",
 					URI:  "/",
-					TLSConfig: telemetryv1beta1.OutputTLS{
+					TLS: telemetryv1beta1.OutputTLS{
 						Insecure: true,
 					},
 				},
@@ -70,9 +70,6 @@ func TestVersionConversion(t *testing.T) {
 	}
 
 	kitk8s.CreateObjects(t, resources...)
-	t.Cleanup(func() {
-		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-	})
 
 	var v1Alpha1AsV1Beta1 telemetryv1beta1.LogPipeline
 

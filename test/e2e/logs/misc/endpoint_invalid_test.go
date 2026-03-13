@@ -11,13 +11,15 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
 func TestEndpointInvalid_OTel(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelLogsMisc)
+	suite.SetupTest(t, suite.LabelLogs, suite.LabelMisc)
 
 	const (
 		endpointKey     = "endpoint"
@@ -36,7 +38,7 @@ func TestEndpointInvalid_OTel(t *testing.T) {
 		WithOTLPOutput(testutils.OTLPEndpoint(invalidEndpoint)).
 		Build()
 
-	secret := kitk8s.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, kitk8s.WithStringData(endpointKey, invalidEndpoint))
+	secret := kitk8sobjects.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, kitk8sobjects.WithStringData(endpointKey, invalidEndpoint))
 	pipelineInvalidEndpointValueFrom := testutils.NewLogPipelineBuilder().
 		WithName(pipelineNameValueFromSecret).
 		WithOTLPOutput(testutils.OTLPEndpointFromSecret(secret.Name(), secret.Namespace(), endpointKey)).
@@ -47,10 +49,6 @@ func TestEndpointInvalid_OTel(t *testing.T) {
 		&pipelineInvalidEndpointValueFrom,
 		&pipelineInvalidEndpointValue,
 	}
-
-	t.Cleanup(func() {
-		Expect(kitk8s.DeleteObjects(resourcesToSucceedCreation...)).To(Succeed())
-	})
 
 	Expect(kitk8s.CreateObjects(t, resourcesToSucceedCreation...)).To(Succeed())
 
@@ -68,7 +66,7 @@ func TestEndpointInvalid_OTel(t *testing.T) {
 }
 
 func TestEndpointInvalid_FluentBit(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelFluentBit)
+	suite.SetupTestWithOptions(t, []string{suite.LabelFluentBit}, kubeprep.WithOverrideFIPSMode(false))
 
 	const (
 		hostKey     = "host"
@@ -87,7 +85,7 @@ func TestEndpointInvalid_FluentBit(t *testing.T) {
 		WithHTTPOutput(testutils.HTTPHost(invalidHost)).
 		Build()
 
-	secret := kitk8s.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, kitk8s.WithStringData(hostKey, invalidHost))
+	secret := kitk8sobjects.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, kitk8sobjects.WithStringData(hostKey, invalidHost))
 	pipelineInvalidEndpointValueFrom := testutils.NewLogPipelineBuilder().
 		WithName(pipelineNameValueFromSecret).
 		WithHTTPOutput(testutils.HTTPHostFromSecret(secret.Name(), secret.Namespace(), hostKey)).
@@ -102,10 +100,6 @@ func TestEndpointInvalid_FluentBit(t *testing.T) {
 		&pipelineInvalidEndpointValue,
 	}
 
-	t.Cleanup(func() {
-		Expect(kitk8s.DeleteObjects(resourcesInvalidEndpointValueFrom...)).To(Succeed())
-		Expect(kitk8s.DeleteObjects(resourcesInvalidEndpointValue...)).To(Succeed())
-	})
 	Expect(kitk8s.CreateObjects(t, resourcesInvalidEndpointValueFrom...)).To(Succeed())
 	Expect(kitk8s.CreateObjects(t, resourcesInvalidEndpointValue...)).To(Succeed())
 

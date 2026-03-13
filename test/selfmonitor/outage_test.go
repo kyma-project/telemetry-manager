@@ -1,17 +1,20 @@
 package selfmonitor
 
 import (
+	"fmt"
 	"testing"
 
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
+	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
@@ -23,18 +26,20 @@ import (
 
 func TestOutage(t *testing.T) {
 	tests := []struct {
-		labelPrefix string
-		pipeline    func(includeNs string, backend *kitbackend.Backend) client.Object
-		generator   func(ns string) []client.Object
-		assert      func(t *testing.T, pipelineName string)
+		name       string
+		component  string
+		pipeline   func(pipelineName, includeNs string, backend *kitbackend.Backend) client.Object
+		generator  func(ns string) []client.Object
+		assertions func(t *testing.T, pipelineName string)
 	}{
 		{
-			labelPrefix: suite.LabelSelfMonitorLogAgentPrefix,
-			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
+			name:      "log-agent",
+			component: suite.LabelLogAgent,
+			pipeline: func(pipelineName, includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewLogPipelineBuilder().
-					WithName(suite.LabelSelfMonitorLogAgentPrefix).
-					WithInput(testutils.BuildLogPipelineApplicationInput(testutils.ExtIncludeNamespaces(includeNs))).
-					WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+					WithName(pipelineName).
+					WithInput(testutils.BuildLogPipelineRuntimeInput(testutils.IncludeNamespaces(includeNs))).
+					WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 					Build()
 
 				return &p
@@ -42,7 +47,7 @@ func TestOutage(t *testing.T) {
 			generator: func(ns string) []client.Object {
 				return []client.Object{stdoutloggen.NewDeployment(ns, stdoutloggen.WithRate(4000)).K8sObject()}
 			},
-			assert: func(t *testing.T, pipelineName string) {
+			assertions: func(t *testing.T, pipelineName string) {
 				assert.DeploymentReady(t, kitkyma.LogGatewayName)
 				assert.DaemonSetReady(t, kitkyma.LogAgentName)
 				assert.OTelLogPipelineHealthy(t, pipelineName)
@@ -51,7 +56,7 @@ func TestOutage(t *testing.T) {
 					{Reason: conditions.ReasonSelfMonAgentAllDataDropped, Status: metav1.ConditionFalse},
 				})
 
-				assert.TelemetryHasState(t, operatorv1alpha1.StateWarning)
+				assert.TelemetryHasState(t, operatorv1beta1.StateWarning)
 				assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
 					Type:   conditions.TypeLogComponentsHealthy,
 					Status: metav1.ConditionFalse,
@@ -60,12 +65,13 @@ func TestOutage(t *testing.T) {
 			},
 		},
 		{
-			labelPrefix: suite.LabelSelfMonitorLogGatewayPrefix,
-			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
+			name:      "log-gateway",
+			component: suite.LabelLogGateway,
+			pipeline: func(pipelineName, includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewLogPipelineBuilder().
-					WithName(suite.LabelSelfMonitorLogGatewayPrefix).
+					WithName(pipelineName).
 					WithInput(testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))).
-					WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+					WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 					Build()
 
 				return &p
@@ -78,7 +84,7 @@ func TestOutage(t *testing.T) {
 						K8sObject(),
 				}
 			},
-			assert: func(t *testing.T, pipelineName string) {
+			assertions: func(t *testing.T, pipelineName string) {
 				assert.DeploymentReady(t, kitkyma.LogGatewayName)
 				assert.OTelLogPipelineHealthy(t, pipelineName)
 				assert.LogPipelineConditionReasonsTransition(t, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
@@ -86,7 +92,7 @@ func TestOutage(t *testing.T) {
 					{Reason: conditions.ReasonSelfMonGatewayAllDataDropped, Status: metav1.ConditionFalse},
 				})
 
-				assert.TelemetryHasState(t, operatorv1alpha1.StateWarning)
+				assert.TelemetryHasState(t, operatorv1beta1.StateWarning)
 				assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
 					Type:   conditions.TypeLogComponentsHealthy,
 					Status: metav1.ConditionFalse,
@@ -95,20 +101,21 @@ func TestOutage(t *testing.T) {
 			},
 		},
 		{
-			labelPrefix: suite.LabelSelfMonitorFluentBitPrefix,
-			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
+			name:      "fluent-bit",
+			component: suite.LabelFluentBit,
+			pipeline: func(pipelineName, includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewLogPipelineBuilder().
-					WithName(suite.LabelSelfMonitorFluentBitPrefix).
-					WithApplicationInput(true, testutils.ExtIncludeNamespaces(includeNs)).
+					WithName(pipelineName).
+					WithRuntimeInput(true, testutils.IncludeNamespaces(includeNs)).
 					WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
 					Build()
 
 				return &p
 			},
 			generator: func(ns string) []client.Object {
-				return []client.Object{stdoutloggen.NewDeployment(ns, stdoutloggen.WithRate(5000)).K8sObject()}
+				return []client.Object{stdoutloggen.NewDeployment(ns, stdoutloggen.WithRate(5_000)).K8sObject()}
 			},
-			assert: func(t *testing.T, pipelineName string) {
+			assertions: func(t *testing.T, pipelineName string) {
 				assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
 				assert.FluentBitLogPipelineHealthy(t, pipelineName)
 				assert.LogPipelineConditionReasonsTransition(t, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
@@ -117,7 +124,7 @@ func TestOutage(t *testing.T) {
 					{Reason: conditions.ReasonSelfMonAgentAllDataDropped, Status: metav1.ConditionFalse},
 				})
 
-				assert.TelemetryHasState(t, operatorv1alpha1.StateWarning)
+				assert.TelemetryHasState(t, operatorv1beta1.StateWarning)
 				assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
 					Type:   conditions.TypeLogComponentsHealthy,
 					Status: metav1.ConditionFalse,
@@ -125,13 +132,13 @@ func TestOutage(t *testing.T) {
 				})
 			},
 		},
-
 		{
-			labelPrefix: suite.LabelSelfMonitorMetricGatewayPrefix,
-			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
+			name:      "metric-gateway",
+			component: suite.LabelMetricGateway,
+			pipeline: func(pipelineName, includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewMetricPipelineBuilder().
-					WithName(suite.LabelSelfMonitorMetricGatewayPrefix).
-					WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+					WithName(pipelineName).
+					WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 					Build()
 
 				return &p
@@ -146,7 +153,7 @@ func TestOutage(t *testing.T) {
 						K8sObject(),
 				}
 			},
-			assert: func(t *testing.T, pipelineName string) {
+			assertions: func(t *testing.T, pipelineName string) {
 				assert.DeploymentReady(t, kitkyma.MetricGatewayName)
 				assert.MetricPipelineHealthy(t, pipelineName)
 				assert.MetricPipelineConditionReasonsTransition(t, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
@@ -154,7 +161,7 @@ func TestOutage(t *testing.T) {
 					{Reason: conditions.ReasonSelfMonGatewayAllDataDropped, Status: metav1.ConditionFalse},
 				})
 
-				assert.TelemetryHasState(t, operatorv1alpha1.StateWarning)
+				assert.TelemetryHasState(t, operatorv1beta1.StateWarning)
 				assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
 					Type:   conditions.TypeMetricComponentsHealthy,
 					Status: metav1.ConditionFalse,
@@ -163,12 +170,13 @@ func TestOutage(t *testing.T) {
 			},
 		},
 		{
-			labelPrefix: suite.LabelSelfMonitorMetricAgentPrefix,
-			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
+			name:      "metric-agent",
+			component: suite.LabelMetricAgent,
+			pipeline: func(pipelineName, includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewMetricPipelineBuilder().
-					WithName(suite.LabelSelfMonitorMetricAgentPrefix).
+					WithName(pipelineName).
 					WithPrometheusInput(true, testutils.IncludeNamespaces(includeNs)).
-					WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+					WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 					Build()
 
 				return &p
@@ -181,7 +189,7 @@ func TestOutage(t *testing.T) {
 					metricProducer.Service().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
 				}
 			},
-			assert: func(t *testing.T, pipelineName string) {
+			assertions: func(t *testing.T, pipelineName string) {
 				assert.DeploymentReady(t, kitkyma.MetricGatewayName)
 				assert.DaemonSetReady(t, kitkyma.MetricAgentName)
 				assert.MetricPipelineHealthy(t, pipelineName)
@@ -190,7 +198,7 @@ func TestOutage(t *testing.T) {
 					{Reason: conditions.ReasonSelfMonAgentAllDataDropped, Status: metav1.ConditionFalse},
 				})
 
-				assert.TelemetryHasState(t, operatorv1alpha1.StateWarning)
+				assert.TelemetryHasState(t, operatorv1beta1.StateWarning)
 				assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
 					Type:   conditions.TypeMetricComponentsHealthy,
 					Status: metav1.ConditionFalse,
@@ -198,13 +206,13 @@ func TestOutage(t *testing.T) {
 				})
 			},
 		},
-
 		{
-			labelPrefix: suite.LabelSelfMonitorTracesPrefix,
-			pipeline: func(includeNs string, backend *kitbackend.Backend) client.Object {
+			name:      "traces",
+			component: suite.LabelTraces,
+			pipeline: func(pipelineName, includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewTracePipelineBuilder().
-					WithName(suite.LabelSelfMonitorTracesPrefix).
-					WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+					WithName(pipelineName).
+					WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 					Build()
 
 				return &p
@@ -217,7 +225,7 @@ func TestOutage(t *testing.T) {
 						K8sObject(),
 				}
 			},
-			assert: func(t *testing.T, pipelineName string) {
+			assertions: func(t *testing.T, pipelineName string) {
 				assert.DeploymentReady(t, kitkyma.TraceGatewayName)
 				assert.TracePipelineHealthy(t, pipelineName)
 				assert.TracePipelineConditionReasonsTransition(t, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
@@ -225,7 +233,7 @@ func TestOutage(t *testing.T) {
 					{Reason: conditions.ReasonSelfMonGatewayAllDataDropped, Status: metav1.ConditionFalse},
 				})
 
-				assert.TelemetryHasState(t, operatorv1alpha1.StateWarning)
+				assert.TelemetryHasState(t, operatorv1beta1.StateWarning)
 				assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
 					Type:   conditions.TypeTraceComponentsHealthy,
 					Status: metav1.ConditionFalse,
@@ -235,43 +243,59 @@ func TestOutage(t *testing.T) {
 		},
 	}
 
+	// Tests run once per test case. FIPS mode is determined by environment (FIPS_IMAGE_AVAILABLE).
+	// FluentBit tests always run in no-FIPS mode via WithOverrideFIPSMode(false).
 	for _, tc := range tests {
-		t.Run(tc.labelPrefix, func(t *testing.T) {
-			suite.RegisterTestCase(t, label(tc.labelPrefix, suite.LabelSelfMonitorOutageSuffix))
+		t.Run(tc.name, func(t *testing.T) {
+			// Labels: selfmonitor + component + scenario
+			labels := []string{
+				suite.LabelSelfMonitor,
+				tc.component,
+				suite.LabelOutage,
+			}
+
+			// Outage tests need Istio for traffic simulation
+			opts := []kubeprep.Option{kubeprep.WithIstio()}
+
+			// FluentBit doesn't support FIPS mode
+			if isFluentBit(tc.component) {
+				opts = append(opts, kubeprep.WithOverrideFIPSMode(false))
+			}
+
+			suite.SetupTestWithOptions(t, labels, opts...)
+
+			pipelineName := fmt.Sprintf("selfmonitor-%s", tc.name)
 
 			var (
-				uniquePrefix = unique.Prefix(tc.labelPrefix)
+				uniquePrefix = unique.Prefix(tc.name)
 				backendNs    = uniquePrefix("backend")
 				genNs        = uniquePrefix("gen")
 				backend      *kitbackend.Backend
 			)
-			if tc.labelPrefix == suite.LabelSelfMonitorMetricAgentPrefix {
+			if tc.component == suite.LabelMetricAgent {
 				// Metric agent and gateway (using kyma stats receiver) both send data to backend
 				// We want to simulate outage only on agent, so block all traffic only from agent.
-				backend = kitbackend.New(backendNs, signalType(tc.labelPrefix), kitbackend.WithAbortFaultInjection(100),
+				backend = kitbackend.New(backendNs, signalTypeForComponent(tc.component), kitbackend.WithAbortFaultInjection(100),
 					kitbackend.WithDropFromSourceLabel(map[string]string{"app.kubernetes.io/name": "telemetry-metric-agent"}))
 			} else {
-				backend = kitbackend.New(backendNs, signalType(tc.labelPrefix), kitbackend.WithReplicas(0)) // simulate outage
+				backend = kitbackend.New(backendNs, signalTypeForComponent(tc.component), kitbackend.WithReplicas(0)) // simulate outage
 			}
 
-			pipeline := tc.pipeline(genNs, backend)
+			pipeline := tc.pipeline(pipelineName, genNs, backend)
 			generator := tc.generator(genNs)
 
 			resources := []client.Object{
-				kitk8s.NewNamespace(backendNs).K8sObject(),
-				kitk8s.NewNamespace(genNs).K8sObject(),
+				kitk8sobjects.NewNamespace(backendNs).K8sObject(),
+				kitk8sobjects.NewNamespace(genNs).K8sObject(),
 				pipeline,
 			}
 			resources = append(resources, generator...)
 			resources = append(resources, backend.K8sObjects()...)
 
-			t.Cleanup(func() {
-				Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-			})
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 			assert.DeploymentReady(t, kitkyma.SelfMonitorName)
-			tc.assert(t, pipeline.GetName())
+			tc.assertions(t, pipeline.GetName())
 		})
 	}
 }

@@ -9,7 +9,7 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
@@ -19,26 +19,26 @@ import (
 func TestValidateLogPipelineSpec(t *testing.T) {
 	tests := []struct {
 		name         string
-		logPipeline  *telemetryv1alpha1.LogPipeline
+		logPipeline  *telemetryv1beta1.LogPipeline
 		expectError  bool
 		errorMessage string
 	}{
 		// Output validation cases
 		{
 			name: "valid custom output",
-			logPipeline: &telemetryv1alpha1.LogPipeline{
-				Spec: telemetryv1alpha1.LogPipelineSpec{
-					Output: telemetryv1alpha1.LogPipelineOutput{Custom: "name http"},
+			logPipeline: &telemetryv1beta1.LogPipeline{
+				Spec: telemetryv1beta1.LogPipelineSpec{
+					Output: telemetryv1beta1.LogPipelineOutput{FluentBitCustom: "name http"},
 				},
 			},
 			expectError: false,
 		},
 		{
 			name: "custom output with forbidden parameter",
-			logPipeline: &telemetryv1alpha1.LogPipeline{
-				Spec: telemetryv1alpha1.LogPipelineSpec{
-					Output: telemetryv1alpha1.LogPipelineOutput{
-						Custom: `
+			logPipeline: &telemetryv1beta1.LogPipeline{
+				Spec: telemetryv1beta1.LogPipelineSpec{
+					Output: telemetryv1beta1.LogPipelineOutput{
+						FluentBitCustom: `
     name    http
     storage.total_limit_size 10G`,
 					},
@@ -49,9 +49,9 @@ func TestValidateLogPipelineSpec(t *testing.T) {
 		},
 		{
 			name: "custom output missing name",
-			logPipeline: &telemetryv1alpha1.LogPipeline{
-				Spec: telemetryv1alpha1.LogPipelineSpec{
-					Output: telemetryv1alpha1.LogPipelineOutput{Custom: "Regex .*"},
+			logPipeline: &telemetryv1beta1.LogPipeline{
+				Spec: telemetryv1beta1.LogPipelineSpec{
+					Output: telemetryv1beta1.LogPipelineOutput{FluentBitCustom: "Regex .*"},
 				},
 			},
 			expectError:  true,
@@ -60,24 +60,24 @@ func TestValidateLogPipelineSpec(t *testing.T) {
 		// Filter validation cases
 		{
 			name: "valid custom filter",
-			logPipeline: &telemetryv1alpha1.LogPipeline{
-				Spec: telemetryv1alpha1.LogPipelineSpec{
-					FluentBitFilters: []telemetryv1alpha1.LogPipelineFilter{
+			logPipeline: &telemetryv1beta1.LogPipeline{
+				Spec: telemetryv1beta1.LogPipelineSpec{
+					FluentBitFilters: []telemetryv1beta1.FluentBitFilter{
 						{Custom: "Name grep"},
 					},
-					Output: telemetryv1alpha1.LogPipelineOutput{Custom: "Name http"},
+					Output: telemetryv1beta1.LogPipelineOutput{FluentBitCustom: "Name http"},
 				},
 			},
 			expectError: false,
 		},
 		{
 			name: "custom filter without name",
-			logPipeline: &telemetryv1alpha1.LogPipeline{
-				Spec: telemetryv1alpha1.LogPipelineSpec{
-					FluentBitFilters: []telemetryv1alpha1.LogPipelineFilter{
+			logPipeline: &telemetryv1beta1.LogPipeline{
+				Spec: telemetryv1beta1.LogPipelineSpec{
+					FluentBitFilters: []telemetryv1beta1.FluentBitFilter{
 						{Custom: "foo bar"},
 					},
-					Output: telemetryv1alpha1.LogPipelineOutput{Custom: "Name http"},
+					Output: telemetryv1beta1.LogPipelineOutput{FluentBitCustom: "Name http"},
 				},
 			},
 			expectError:  true,
@@ -85,12 +85,12 @@ func TestValidateLogPipelineSpec(t *testing.T) {
 		},
 		{
 			name: "custom filter with forbidden match condition",
-			logPipeline: &telemetryv1alpha1.LogPipeline{
-				Spec: telemetryv1alpha1.LogPipelineSpec{
-					FluentBitFilters: []telemetryv1alpha1.LogPipelineFilter{
+			logPipeline: &telemetryv1beta1.LogPipeline{
+				Spec: telemetryv1beta1.LogPipelineSpec{
+					FluentBitFilters: []telemetryv1beta1.FluentBitFilter{
 						{Custom: "Name grep\nMatch *"},
 					},
-					Output: telemetryv1alpha1.LogPipelineOutput{Custom: "Name http"},
+					Output: telemetryv1beta1.LogPipelineOutput{FluentBitCustom: "Name http"},
 				},
 			},
 			expectError:  true,
@@ -98,12 +98,12 @@ func TestValidateLogPipelineSpec(t *testing.T) {
 		},
 		{
 			name: "denied filter plugin",
-			logPipeline: &telemetryv1alpha1.LogPipeline{
-				Spec: telemetryv1alpha1.LogPipelineSpec{
-					FluentBitFilters: []telemetryv1alpha1.LogPipelineFilter{
+			logPipeline: &telemetryv1beta1.LogPipeline{
+				Spec: telemetryv1beta1.LogPipelineSpec{
+					FluentBitFilters: []telemetryv1beta1.FluentBitFilter{
 						{Custom: "Name kubernetes"},
 					},
-					Output: telemetryv1alpha1.LogPipelineOutput{Custom: "Name http"},
+					Output: telemetryv1beta1.LogPipelineOutput{FluentBitCustom: "Name http"},
 				},
 			},
 			expectError:  true,
@@ -112,26 +112,26 @@ func TestValidateLogPipelineSpec(t *testing.T) {
 		// FileName validation cases
 		{
 			name: "valid files",
-			logPipeline: &telemetryv1alpha1.LogPipeline{
-				Spec: telemetryv1alpha1.LogPipelineSpec{
-					Files: []telemetryv1alpha1.LogPipelineFileMount{
+			logPipeline: &telemetryv1beta1.LogPipeline{
+				Spec: telemetryv1beta1.LogPipelineSpec{
+					FluentBitFiles: []telemetryv1beta1.FluentBitFile{
 						{Name: "f1.json", Content: ""},
 						{Name: "f2.json", Content: ""},
 					},
-					Output: telemetryv1alpha1.LogPipelineOutput{Custom: "Name http"},
+					Output: telemetryv1beta1.LogPipelineOutput{FluentBitCustom: "Name http"},
 				},
 			},
 			expectError: false,
 		},
 		{
 			name: "duplicate file name",
-			logPipeline: &telemetryv1alpha1.LogPipeline{
-				Spec: telemetryv1alpha1.LogPipelineSpec{
-					Files: []telemetryv1alpha1.LogPipelineFileMount{
+			logPipeline: &telemetryv1beta1.LogPipeline{
+				Spec: telemetryv1beta1.LogPipelineSpec{
+					FluentBitFiles: []telemetryv1beta1.FluentBitFile{
 						{Name: "f1.json", Content: ""},
 						{Name: "f1.json", Content: ""},
 					},
-					Output: telemetryv1alpha1.LogPipelineOutput{Custom: "Name http"},
+					Output: telemetryv1beta1.LogPipelineOutput{FluentBitCustom: "Name http"},
 				},
 			},
 			expectError:  true,
@@ -143,7 +143,7 @@ func TestValidateLogPipelineSpec(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			scheme := runtime.NewScheme()
 			_ = clientgoscheme.AddToScheme(scheme)
-			_ = telemetryv1alpha1.AddToScheme(scheme)
+			_ = telemetryv1beta1.AddToScheme(scheme)
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects().Build()
 
 			pipelineValidator := &Validator{

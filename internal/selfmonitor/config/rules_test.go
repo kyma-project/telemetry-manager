@@ -7,6 +7,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
+
+	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
 func TestMakeRules(t *testing.T) {
@@ -15,6 +17,10 @@ func TestMakeRules(t *testing.T) {
 	require.NoError(t, err)
 
 	goldenFilePath := filepath.Join("testdata", "rules.yaml")
+	if testutils.ShouldUpdateGoldenFiles() {
+		testutils.UpdateGoldenFileYAML(t, goldenFilePath, rulesYAML)
+	}
+
 	goldenFile, err := os.ReadFile(goldenFilePath)
 	require.NoError(t, err, "failed to load golden file")
 	require.Equal(t, string(goldenFile), string(rulesYAML))

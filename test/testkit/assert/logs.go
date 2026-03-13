@@ -1,6 +1,7 @@
 package assert
 
 import (
+	"testing"
 	"time"
 
 	. "github.com/onsi/gomega"
@@ -9,9 +10,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
-	"github.com/kyma-project/telemetry-manager/test/testkit"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/matchers/log/fluentbit"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
@@ -19,7 +19,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-func FluentBitLogsFromContainerDelivered(t testkit.T, backend *kitbackend.Backend, expectedContainerName string, optionalDescription ...any) {
+func FluentBitLogsFromContainerDelivered(t *testing.T, backend *kitbackend.Backend, expectedContainerName string, optionalDescription ...any) {
 	t.Helper()
 
 	BackendDataEventuallyMatches(
@@ -30,7 +30,7 @@ func FluentBitLogsFromContainerDelivered(t testkit.T, backend *kitbackend.Backen
 	)
 }
 
-func FluentBitLogsFromContainerNotDelivered(t testkit.T, backend *kitbackend.Backend, expectedContainerName string, optionalDescription ...any) {
+func FluentBitLogsFromContainerNotDelivered(t *testing.T, backend *kitbackend.Backend, expectedContainerName string, optionalDescription ...any) {
 	t.Helper()
 
 	BackendDataConsistentlyMatches(
@@ -41,7 +41,7 @@ func FluentBitLogsFromContainerNotDelivered(t testkit.T, backend *kitbackend.Bac
 	)
 }
 
-func FluentBitLogsFromPodDelivered(t testkit.T, backend *kitbackend.Backend, expectedPodNamePrefix string, optionalDescription ...any) {
+func FluentBitLogsFromPodDelivered(t *testing.T, backend *kitbackend.Backend, expectedPodNamePrefix string, optionalDescription ...any) {
 	t.Helper()
 
 	BackendDataEventuallyMatches(
@@ -52,7 +52,7 @@ func FluentBitLogsFromPodDelivered(t testkit.T, backend *kitbackend.Backend, exp
 	)
 }
 
-func FluentBitLogsFromNamespaceDelivered(t testkit.T, backend *kitbackend.Backend, namespace string, optionalDescription ...any) {
+func FluentBitLogsFromNamespaceDelivered(t *testing.T, backend *kitbackend.Backend, namespace string, optionalDescription ...any) {
 	t.Helper()
 
 	BackendDataEventuallyMatches(
@@ -63,7 +63,7 @@ func FluentBitLogsFromNamespaceDelivered(t testkit.T, backend *kitbackend.Backen
 	)
 }
 
-func FluentBitLogsFromNamespaceNotDelivered(t testkit.T, backend *kitbackend.Backend, namespace string, optionalDescription ...any) {
+func FluentBitLogsFromNamespaceNotDelivered(t *testing.T, backend *kitbackend.Backend, namespace string, optionalDescription ...any) {
 	t.Helper()
 
 	BackendDataConsistentlyMatches(
@@ -74,7 +74,7 @@ func FluentBitLogsFromNamespaceNotDelivered(t testkit.T, backend *kitbackend.Bac
 	)
 }
 
-func OTelLogsFromContainerDelivered(t testkit.T, backend *kitbackend.Backend, containerName string, optionalDescription ...any) {
+func OTelLogsFromContainerDelivered(t *testing.T, backend *kitbackend.Backend, containerName string, optionalDescription ...any) {
 	t.Helper()
 
 	BackendDataEventuallyMatches(
@@ -85,7 +85,7 @@ func OTelLogsFromContainerDelivered(t testkit.T, backend *kitbackend.Backend, co
 	)
 }
 
-func OTelLogsFromContainerNotDelivered(t testkit.T, backend *kitbackend.Backend, containerName string, optionalDescription ...any) {
+func OTelLogsFromContainerNotDelivered(t *testing.T, backend *kitbackend.Backend, containerName string, optionalDescription ...any) {
 	t.Helper()
 
 	BackendDataConsistentlyMatches(
@@ -96,7 +96,7 @@ func OTelLogsFromContainerNotDelivered(t testkit.T, backend *kitbackend.Backend,
 	)
 }
 
-func OTelLogsFromNamespaceDelivered(t testkit.T, backend *kitbackend.Backend, namespace string, optionalDescription ...any) {
+func OTelLogsFromNamespaceDelivered(t *testing.T, backend *kitbackend.Backend, namespace string, optionalDescription ...any) {
 	t.Helper()
 
 	BackendDataEventuallyMatches(
@@ -107,7 +107,7 @@ func OTelLogsFromNamespaceDelivered(t testkit.T, backend *kitbackend.Backend, na
 	)
 }
 
-func OTelLogsFromNamespaceNotDelivered(t testkit.T, backend *kitbackend.Backend, namespace string, optionalDescription ...any) {
+func OTelLogsFromNamespaceNotDelivered(t *testing.T, backend *kitbackend.Backend, namespace string, optionalDescription ...any) {
 	t.Helper()
 
 	BackendDataConsistentlyMatches(
@@ -118,7 +118,7 @@ func OTelLogsFromNamespaceNotDelivered(t testkit.T, backend *kitbackend.Backend,
 	)
 }
 
-func OTelLogsFromPodNotDelivered(t testkit.T, backend *kitbackend.Backend, podNamePrefix string, optionalDescription ...any) {
+func OTelLogsFromPodNotDelivered(t *testing.T, backend *kitbackend.Backend, podNamePrefix string, optionalDescription ...any) {
 	t.Helper()
 
 	BackendDataConsistentlyMatches(
@@ -129,7 +129,7 @@ func OTelLogsFromPodNotDelivered(t testkit.T, backend *kitbackend.Backend, podNa
 	)
 }
 
-func OTelLogsFromPodDelivered(t testkit.T, backend *kitbackend.Backend, podNamePrefix string, optionalDescription ...any) {
+func OTelLogsFromPodDelivered(t *testing.T, backend *kitbackend.Backend, podNamePrefix string, optionalDescription ...any) {
 	t.Helper()
 
 	BackendDataEventuallyMatches(
@@ -141,11 +141,11 @@ func OTelLogsFromPodDelivered(t testkit.T, backend *kitbackend.Backend, podNameP
 }
 
 //nolint:dupl //LogPipelineHealthy and MetricPipelineHealthy have similarities, but they are not the same
-func FluentBitLogPipelineHealthy(t testkit.T, pipelineName string) {
+func FluentBitLogPipelineHealthy(t *testing.T, pipelineName string) {
 	t.Helper()
 
 	Eventually(func(g Gomega) {
-		var pipeline telemetryv1alpha1.LogPipeline
+		var pipeline telemetryv1beta1.LogPipeline
 
 		key := types.NamespacedName{Name: pipelineName}
 		g.Expect(suite.K8sClient.Get(t.Context(), key, &pipeline)).To(Succeed())
@@ -156,11 +156,11 @@ func FluentBitLogPipelineHealthy(t testkit.T, pipelineName string) {
 }
 
 //nolint:dupl //LogPipelineOtelHealthy and LogPipelineHealthy have similarities, but they are not the same
-func OTelLogPipelineHealthy(t testkit.T, pipelineName string) {
+func OTelLogPipelineHealthy(t *testing.T, pipelineName string) {
 	t.Helper()
 
 	Eventually(func(g Gomega) {
-		var pipeline telemetryv1alpha1.LogPipeline
+		var pipeline telemetryv1beta1.LogPipeline
 
 		key := types.NamespacedName{Name: pipelineName}
 		g.Expect(suite.K8sClient.Get(t.Context(), key, &pipeline)).To(Succeed())
@@ -171,18 +171,18 @@ func OTelLogPipelineHealthy(t testkit.T, pipelineName string) {
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
-func statusConditionHealthy(g Gomega, pipeline telemetryv1alpha1.LogPipeline, condType string) {
+func statusConditionHealthy(g Gomega, pipeline telemetryv1beta1.LogPipeline, condType string) {
 	condition := meta.FindStatusCondition(pipeline.Status.Conditions, condType)
 	g.Expect(condition).NotTo(BeNil())
 	g.Expect(condition.Status).To(Equal(metav1.ConditionTrue), "Condition %s not healthy. Reason: %s. Message: %s", condType, condition.Reason, condition.Message)
 }
 
 //nolint:dupl // This provides a better readability for the test as we can test the TLS condition in a clear way
-func LogPipelineHasCondition(t testkit.T, pipelineName string, expectedCond metav1.Condition) {
+func LogPipelineHasCondition(t *testing.T, pipelineName string, expectedCond metav1.Condition) {
 	t.Helper()
 
 	Eventually(func(g Gomega) {
-		var pipeline telemetryv1alpha1.LogPipeline
+		var pipeline telemetryv1beta1.LogPipeline
 
 		key := types.NamespacedName{Name: pipelineName}
 		g.Expect(suite.K8sClient.Get(t.Context(), key, &pipeline)).To(Succeed())
@@ -194,15 +194,15 @@ func LogPipelineHasCondition(t testkit.T, pipelineName string, expectedCond meta
 }
 
 //nolint:dupl //LogPipelineConditionReasonsTransition,TracePipelineConditionReasonsTransition, MetricPipelineConditionReasonsTransition have similarities, but they are not the same
-func LogPipelineConditionReasonsTransition(t testkit.T, pipelineName, condType string, expected []ReasonStatus) {
+func LogPipelineConditionReasonsTransition(t *testing.T, pipelineName, condType string, expected []ReasonStatus) {
 	t.Helper()
 
 	var currCond *metav1.Condition
 
-	for _, expected := range expected {
+	for _, exp := range expected {
 		// Wait for the current condition to match the expected condition
 		Eventually(func(g Gomega) ReasonStatus {
-			var pipeline telemetryv1alpha1.LogPipeline
+			var pipeline telemetryv1beta1.LogPipeline
 
 			key := types.NamespacedName{Name: pipelineName}
 			err := suite.K8sClient.Get(t.Context(), key, &pipeline)
@@ -214,17 +214,17 @@ func LogPipelineConditionReasonsTransition(t testkit.T, pipelineName, condType s
 			}
 
 			return ReasonStatus{Reason: currCond.Reason, Status: currCond.Status}
-		}, 10*time.Minute, periodic.DefaultInterval).Should(Equal(expected), "expected reason %s[%s] of type %s not reached", expected.Reason, expected.Status, condType)
+		}, 10*time.Minute, periodic.DefaultInterval).Should(Equal(exp), "expected reason %s[%s] of type %s not reached", exp.Reason, exp.Status, condType)
 
 		t.Logf("Transitioned to [%s]%s\n", currCond.Status, currCond.Reason)
 	}
 }
 
-func LogPipelineUnsupportedMode(t testkit.T, pipelineName string, isUnsupportedMode bool) {
+func LogPipelineUnsupportedMode(t *testing.T, pipelineName string, isUnsupportedMode bool) {
 	t.Helper()
 
 	Eventually(func(g Gomega) {
-		var pipeline telemetryv1alpha1.LogPipeline
+		var pipeline telemetryv1beta1.LogPipeline
 
 		key := types.NamespacedName{Name: pipelineName}
 		g.Expect(suite.K8sClient.Get(t.Context(), key, &pipeline)).To(Succeed())
@@ -233,11 +233,11 @@ func LogPipelineUnsupportedMode(t testkit.T, pipelineName string, isUnsupportedM
 }
 
 //nolint:dupl // TODO: Find a generic approach to merge this helper function with the other ones for the other telemetry types
-func LogPipelineSelfMonitorIsHealthy(t testkit.T, k8sClient client.Client, pipelineName string) {
+func LogPipelineSelfMonitorIsHealthy(t *testing.T, k8sClient client.Client, pipelineName string) {
 	t.Helper()
 
 	Eventually(func(g Gomega) {
-		var pipeline telemetryv1alpha1.LogPipeline
+		var pipeline telemetryv1beta1.LogPipeline
 
 		key := types.NamespacedName{Name: pipelineName}
 		g.Expect(k8sClient.Get(t.Context(), key, &pipeline)).To(Succeed())

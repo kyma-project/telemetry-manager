@@ -9,6 +9,7 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/trace"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
@@ -17,8 +18,9 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
+// TODO(TeodorSAP): Remove this test in favor of service_enrichment_test.go once legacy service enrichment strategy is fully deprecated.
 func TestServiceName(t *testing.T) {
-	suite.RegisterTestCase(t, suite.LabelTraces)
+	suite.SetupTest(t, suite.LabelTraces)
 
 	const (
 		podWithNoLabelsName              = "pod-with-no-labels"
@@ -39,7 +41,7 @@ func TestServiceName(t *testing.T) {
 
 	pipeline := testutils.NewTracePipelineBuilder().
 		WithName(pipelineName).
-		WithOTLPOutput(testutils.OTLPEndpoint(backend.Endpoint())).
+		WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 		Build()
 
 	podSpecWithUndefinedService := telemetrygen.PodSpec(telemetrygen.SignalTypeTraces,
@@ -50,18 +52,15 @@ func TestServiceName(t *testing.T) {
 		telemetrygen.WithServiceName(unknownServicePatternName))
 
 	resources := []client.Object{
-		kitk8s.NewNamespace(backendNs).K8sObject(),
-		kitk8s.NewNamespace(genNs).K8sObject(),
+		kitk8sobjects.NewNamespace(backendNs).K8sObject(),
+		kitk8sobjects.NewNamespace(genNs).K8sObject(),
 		&pipeline,
-		kitk8s.NewPod(podWithNoLabelsName, genNs).WithPodSpec(podSpecWithUndefinedService).K8sObject(),
-		kitk8s.NewPod(podWithUnknownServiceName, genNs).WithPodSpec(podSpecWithUnknownService).K8sObject(),
-		kitk8s.NewPod(podWithUnknownServicePatternName, genNs).WithPodSpec(podSpecWithUnknownServicePattern).K8sObject(),
+		kitk8sobjects.NewPod(podWithNoLabelsName, genNs).WithPodSpec(podSpecWithUndefinedService).K8sObject(),
+		kitk8sobjects.NewPod(podWithUnknownServiceName, genNs).WithPodSpec(podSpecWithUnknownService).K8sObject(),
+		kitk8sobjects.NewPod(podWithUnknownServicePatternName, genNs).WithPodSpec(podSpecWithUnknownServicePattern).K8sObject(),
 	}
 	resources = append(resources, backend.K8sObjects()...)
 
-	t.Cleanup(func() {
-		Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-	})
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.BackendReachable(t, backend)

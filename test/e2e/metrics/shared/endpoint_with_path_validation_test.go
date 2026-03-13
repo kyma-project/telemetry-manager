@@ -6,7 +6,7 @@ import (
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -15,25 +15,28 @@ import (
 
 func TestEndpointWithPathValidation(t *testing.T) {
 	tests := []struct {
-		label string
-		input telemetryv1alpha1.MetricPipelineInput
+		name   string
+		labels []string
+		input  telemetryv1beta1.MetricPipelineInput
 	}{
 		{
-			label: suite.LabelMetricAgentSetA,
-			input: testutils.BuildMetricPipelineRuntimeInput(),
+			name:   "agent",
+			labels: []string{suite.LabelMetricAgent},
+			input:  testutils.BuildMetricPipelineRuntimeInput(),
 		},
 		{
-			label: suite.LabelMetricGatewaySetA,
-			input: testutils.BuildMetricPipelineOTLPInput(),
+			name:   "gateway",
+			labels: []string{suite.LabelMetricGateway},
+			input:  testutils.BuildMetricPipelineOTLPInput(),
 		},
 	}
 
 	for _, tc := range tests {
-		t.Run(tc.label, func(t *testing.T) {
-			suite.RegisterTestCase(t, tc.label)
+		t.Run(tc.name, func(t *testing.T) {
+			suite.SetupTest(t, tc.labels...)
 
 			var (
-				uniquePrefix = unique.Prefix(tc.label)
+				uniquePrefix = unique.Prefix(tc.name)
 			)
 
 			metricPipelineWithGRPCAndWithoutPath := testutils.NewMetricPipelineBuilder().
@@ -60,9 +63,6 @@ func TestEndpointWithPathValidation(t *testing.T) {
 				&metricPipelineWithHTTPAndWithoutPath,
 			}
 
-			t.Cleanup(func() {
-				Expect(kitk8s.DeleteObjects(resources...)).To(Succeed())
-			})
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 		})
 	}
