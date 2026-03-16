@@ -160,6 +160,7 @@ processors:
 exporters:
     otlp_grpc/test1:
         endpoint: ${OTLP_ENDPOINT_TEST1}
+        compression: gzip
         sending_queue:
             enabled: true
             queue_size: 128
@@ -170,6 +171,7 @@ exporters:
             max_elapsed_time: 300s
     otlp_grpc/test2:
         endpoint: ${OTLP_ENDPOINT_TEST2}
+        compression: gzip
         sending_queue:
             enabled: true
             queue_size: 128

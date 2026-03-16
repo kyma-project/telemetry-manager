@@ -41,6 +41,15 @@ const (
 	OTLPProtocolGRPC OTLPProtocol = "grpc"
 )
 
+type OTLPCompressionEncoding string
+
+const (
+	OTLPCompressionNone   OTLPCompressionEncoding = "none"
+	OTLPCompressionGzip   OTLPCompressionEncoding = "gzip"
+	OTLPCompressionSnappy OTLPCompressionEncoding = "snappy"
+	OTLPCompressionZstd   OTLPCompressionEncoding = "zstd"
+)
+
 // OTLPOutput OTLP output configuration
 // +kubebuilder:validation:XValidation:rule="(has(self.path) && size(self.path) > 0) ? self.protocol == 'http' : true",message="Path is only available with HTTP protocol"
 // +kubebuilder:validation:XValidation:rule="(has(self.authentication) && has(self.authentication.oauth2) && self.protocol == 'grpc' && has(self.tls)) ? !(has(self.tls.insecure) && self.tls.insecure == true) : true",message="OAuth2 authentication requires TLS when using gRPC protocol"
@@ -64,6 +73,10 @@ type OTLPOutput struct {
 	// TLS defines TLS options for the OTLP output.
 	// +kubebuilder:validation:Optional
 	TLS *OutputTLS `json:"tls,omitempty"`
+	// Compression defines the compression algorithm to use when sending data to the OTLP backend. If not set, `gzip` is used. To disable compression, set this field to `none`.
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Enum=none;gzip;snappy;zstd
+	Compression OTLPCompressionEncoding `json:"compression,omitempty"`
 }
 
 // AuthenticationOptions OTLP output authentication options
