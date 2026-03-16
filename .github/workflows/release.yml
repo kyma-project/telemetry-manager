@@ -7,9 +7,19 @@ on:
         description: 'Version to release (e.g., 1.2.3)'
         required: true
         type: string
-      occ_image:
+      occ_image_version:
         description: 'OCC Image Version (e.g., 0.1.0-0.2.0)'
         required: true
+        type: string
+      self_monitor_image_tag:
+        description: 'Self-monitor image tag to use in release (e.g., v20260302-bbf32a3b)'
+        required: true
+        default: ""
+        type: string
+      dir_size_image_tag:
+        description: 'DSM image tag to use in release (e.g., v20260302-12345678)'
+        required: true
+        default: ""
         type: string
       dry_run:
         description: 'Perform a dry run without creating a release'
@@ -22,7 +32,7 @@ on:
         default: false
         type: boolean
 
-run-name: "Release Telemetry version ${{ inputs.version }} with OCC image ${{ inputs.occ_image }}, dry-run: ${{ inputs.dry_run }}, force mode: ${{ inputs.force }}"
+run-name: "Release Telemetry version ${{ inputs.version }} with OCC image ${{ inputs.occ_image_version }}, dry-run: ${{ inputs.dry_run }}, force mode: ${{ inputs.force }}"
 
 permissions:
   contents: write
@@ -44,10 +54,13 @@ jobs:
       - name: Validate version format
         env:
           VERSION: ${{ github.event.inputs.version }}
-          OCC_IMAGE: ${{ github.event.inputs.occ_image }}
+          OCC_IMAGE_VERSION: ${{ github.event.inputs.occ_image_version }}
+          SELF_MONITOR_IMAGE_TAG: ${{ github.event.inputs.self_monitor_image_tag }}
+          DIR_SIZE_IMAGE_TAG: ${{ github.event.inputs.dir_size_image_tag }}
         run: |
           echo "Validating version formats..."
-          
+
+          # Validate release version format (X.Y.Z)
           if ! [[ "${VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "::error::Invalid version format: ${VERSION}"
             echo "Expected format: X.Y.Z (e.g., 1.2.3)"
@@ -55,17 +68,42 @@ jobs:
           fi
           echo "✓ Release version format valid: ${VERSION}"
 
-          if ! [[ "${OCC_IMAGE}" =~ ^[0-9]+\.[0-9]+\.[0-9]+-[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "::error::Invalid OCC image version format: ${OCC_IMAGE}"
+          # Validate OCC image version format (X.Y.Z-A.B.C)
+          if ! [[ "${OCC_IMAGE_VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+-[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Invalid OCC image version format: ${OCC_IMAGE_VERSION}"
             echo "Expected format: X.Y.Z-A.B.C (e.g., 1.2.3-4.5.6)"
             exit 1
           fi
-          echo "OCC image version format valid: ${OCC_IMAGE}"
+          echo "✓ OCC image version format valid: ${OCC_IMAGE_VERSION}"
+
+          # Validate self-monitor image tag format (vYYYYMMDD-hash)
+          if [ -n "${SELF_MONITOR_IMAGE_TAG}" ]; then
+            if ! [[ "${SELF_MONITOR_IMAGE_TAG}" =~ ^v[0-9]{8}-[a-f0-9]{8}$ ]]; then
+              echo "::error::Invalid self-monitor image tag format: ${SELF_MONITOR_IMAGE_TAG}"
+              echo "Expected format: vYYYYMMDD-HASH (e.g., v20260302-bbf32a3b)"
+              exit 1
+            fi
+            echo "✓ Self-monitor image tag format valid: ${SELF_MONITOR_IMAGE_TAG}"
+          else
+            echo "::warning::Self-monitor image tag is empty, using default"
+          fi
+
+          # Validate dir-size image tag format (vYYYYMMDD-hash)
+          if [ -n "${DIR_SIZE_IMAGE_TAG}" ]; then
+            if ! [[ "${DIR_SIZE_IMAGE_TAG}" =~ ^v[0-9]{8}-[a-f0-9]{8}$ ]]; then
+              echo "::error::Invalid dir-size image tag format: ${DIR_SIZE_IMAGE_TAG}"
+              echo "Expected format: vYYYYMMDD-HASH (e.g., v20260302-12345678)"
+              exit 1
+            fi
+            echo "✓ Dir-size image tag format valid: ${DIR_SIZE_IMAGE_TAG}"
+          else
+            echo "::warning::Dir-size image tag is empty, using default"
+          fi
           
           # Check if OCC Docker image exists
           echo "Checking if OCC Docker image exists..."
           OCC_IMAGE_REPO="europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector"
-          OCC_IMAGE_FULL="${OCC_IMAGE_REPO}:${OCC_IMAGE}"
+          OCC_IMAGE_FULL="${OCC_IMAGE_REPO}:${OCC_IMAGE_VERSION}"
 
           if docker manifest inspect "${OCC_IMAGE_FULL}" > /dev/null 2>&1; then
             echo "OCC Docker image exists: ${OCC_IMAGE_FULL}"
@@ -223,7 +261,9 @@ jobs:
       - name: Bump version in files
         env:
           VERSION: ${{ github.event.inputs.version }}
-          OCC_IMAGE: ${{ github.event.inputs.occ_image }}
+          OCC_IMAGE_VERSION: ${{ github.event.inputs.occ_image_version }}
+          SELF_MONITOR_IMAGE_TAG: ${{ github.event.inputs.self_monitor_image_tag }}
+          DIR_SIZE_IMAGE_TAG: ${{ github.event.inputs.dir_size_image_tag }}
         run: |
           echo "Bumping version to ${VERSION}..."
 
@@ -234,8 +274,14 @@ jobs:
             sed -i.bak "s|ENV_MANAGER_IMAGE=\(.*\):.*|ENV_MANAGER_IMAGE=\1:${VERSION}|" .env && rm .env.bak
             echo "Updated ENV_MANAGER_IMAGE tag in .env"
 
-            sed -i.bak 's|ENV_OTEL_COLLECTOR_IMAGE="\([^:]*\):[^"]*"|ENV_OTEL_COLLECTOR_IMAGE="\1:'"${OCC_IMAGE}"'"|' .env && rm .env.bak
+            sed -i.bak 's|ENV_OTEL_COLLECTOR_IMAGE="\([^:]*\):[^"]*"|ENV_OTEL_COLLECTOR_IMAGE="\1:'"${OCC_IMAGE_VERSION}"'"|' .env && rm .env.bak
             echo "Updated ENV_OTEL_COLLECTOR_IMAGE tag in .env"
+
+            sed -i.bak 's|ENV_SELFMONITOR_IMAGE="\([^:]*\):[^"]*"|ENV_SELFMONITOR_IMAGE="\1:'"${SELF_MONITOR_IMAGE_TAG}"'"|' .env && rm .env.bak
+            echo "Updated ENV_SELFMONITOR_IMAGE tag in .env"
+          
+            sed -i.bak 's|ENV_FLUENTBIT_EXPORTER_IMAGE="\([^:]*\):[^"]*"|ENV_FLUENTBIT_EXPORTER_IMAGE="\1:'"${DIR_SIZE_IMAGE_TAG}"'"|' .env && rm .env.bak
+            echo "Updated ENV_FLUENTBIT_EXPORTER_IMAGE tag in .env"
 
             make generate
           fi
@@ -259,17 +305,32 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ github.event.inputs.version }}
           RELEASE_BRANCH: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
-          OCC_IMAGE: ${{ github.event.inputs.occ_image }}
+          OCC_IMAGE_VERSION: ${{ github.event.inputs.occ_image_version }}
+          SELF_MONITOR_IMAGE_TAG: ${{ github.event.inputs.self_monitor_image_tag }}
+          DIR_SIZE_IMAGE_TAG: ${{ github.event.inputs.dir_size_image_tag }}
         run: |
+          # Build changes list dynamically
+          CHANGES="- Updated \`ENV_HELM_RELEASE_VERSION\` to \`${VERSION}\`
+          - Updated \`ENV_MANAGER_IMAGE\` tag to \`${VERSION}\`
+          - Updated \`ENV_OTEL_COLLECTOR_IMAGE\` tag to \`${OCC_IMAGE_VERSION}\`"
+
+          if [ -n "${SELF_MONITOR_IMAGE_TAG}" ]; then
+            CHANGES="${CHANGES}
+          - Updated \`ENV_SELFMONITOR_IMAGE\` tag to \`${SELF_MONITOR_IMAGE_TAG}\`"
+          fi
+
+          if [ -n "${DIR_SIZE_IMAGE_TAG}" ]; then
+            CHANGES="${CHANGES}
+          - Updated \`ENV_FLUENTBIT_EXPORTER_IMAGE\` tag to \`${DIR_SIZE_IMAGE_TAG}\`"
+          fi
+
           PR_BODY="$(cat <<EOF
           ## Release Preparation for ${VERSION}
 
           This PR prepares the release branch for version **${VERSION}**.
 
           ### Changes
-          - Updated \`ENV_HELM_RELEASE_VERSION\` to \`${VERSION}\`
-          - Updated \`ENV_MANAGER_IMAGE\` tag to \`${VERSION}\`
-          - Updated \`ENV_OTEL_COLLECTOR_IMAGE\` tag to \`${OCC_IMAGE}\`
+          ${CHANGES}
 
           ### Review Checklist
           - [ ] Version numbers are correct
@@ -537,7 +598,7 @@ jobs:
           - **Version**: ${{ needs.prepare-release.outputs.release-tag }}
           - **Branch**: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
           - **PR**: #${{ needs.prepare-release.outputs.pr-number }}
-          - **OCC Image**: ${{ github.event.inputs.occ_image }}
+          - **OCC Image**: ${{ github.event.inputs.occ_image_version }}
           - **Helm Chart**: \`${HELM_CHART}\`
           
           ### Docker Images
@@ -559,7 +620,7 @@ jobs:
 
           **Version**: ${{ needs.prepare-release.outputs.release-tag }}
           **Release Branch**: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
-          **OCC Image**: ${{ github.event.inputs.occ_image }}
+          **OCC Image**: ${{ github.event.inputs.occ_image_version }}
 
           ### Completed (Dry Run)
           - Version validation
