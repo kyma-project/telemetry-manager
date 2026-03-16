@@ -19,7 +19,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var pipelineTypes = []string{"logpipelines", "metricpipelines", "tracepipelines"}
+var resourceTypes = []string{"logpipelines", "metricpipelines", "tracepipelines", "telemetries"}
 
 func TestRBACPermissions(t *testing.T) {
 	suite.SetupTest(t, suite.LabelTelemetry, suite.LabelMisc)
@@ -123,25 +123,24 @@ func setupAllRoleBindings(testNS string) {
 func testViewerPermissions(g Gomega, testNS string) {
 	user := fmt.Sprintf("system:serviceaccount:%s:viewer-sa", testNS)
 
-	for _, pipelineType := range pipelineTypes {
-		// Should be able to view pipelines
-		checkReadPermissions(g, user, pipelineType, "", "Viewer")
+	for _, resourceType := range resourceTypes {
+		// Should be able to view telemetry resources
+		checkReadPermissions(g, user, resourceType, "", "Viewer")
 
-		// Should NOT be able to create/update/delete pipelines
-		checkNoWritePermissions(g, user, pipelineType, "", "Viewer")
+		// Should NOT be able to create/update/delete telemetry resources
+		checkNoWritePermissions(g, user, resourceType, "", "Viewer")
 
 		// Finalizers - viewer cannot modify (finalizers part of metadata, needs update permission)
-		checkFinalizerPermissions(g, user, pipelineType, "Viewer", false)
+		checkFinalizerPermissions(g, user, resourceType, "Viewer", false)
 	}
-
-	// Telemetry CR permissions
-	checkReadPermissions(g, user, "telemetries", "", "Viewer")
 
 	// Should be able to view ConfigMaps
 	checkCanI(g, user, "get", "configmaps/telemetry-metricpipelines", kitkyma.SystemNamespaceName, "Viewer", true)
 	checkCanI(g, user, "list", "configmaps/telemetry-metricpipelines", kitkyma.SystemNamespaceName, "Viewer", true)
+
 	checkCanI(g, user, "get", "configmaps/telemetry-logpipelines", kitkyma.SystemNamespaceName, "Viewer", true)
 	checkCanI(g, user, "list", "configmaps/telemetry-logpipelines", kitkyma.SystemNamespaceName, "Viewer", true)
+
 	checkCanI(g, user, "get", "configmaps/telemetry-tracepipelines", kitkyma.SystemNamespaceName, "Viewer", true)
 	checkCanI(g, user, "list", "configmaps/telemetry-tracepipelines", kitkyma.SystemNamespaceName, "Viewer", true)
 
@@ -152,64 +151,43 @@ func testViewerPermissions(g Gomega, testNS string) {
 func testEditorPermissions(g Gomega, testNS string) {
 	user := fmt.Sprintf("system:serviceaccount:%s:editor-sa", testNS)
 
-	for _, pipelineType := range pipelineTypes {
+	for _, resourceType := range resourceTypes {
 		// Should have full CRUD permissions
-		checkFullCRUDPermissions(g, user, pipelineType, "", "Editor")
+		checkFullCRUDPermissions(g, user, resourceType, "", "Editor")
 
 		// Finalizers - editor CAN update finalizers (finalizers part of metadata, granted by update permission on resource)
-		checkFinalizerPermissions(g, user, pipelineType, "Editor", true)
+		checkFinalizerPermissions(g, user, resourceType, "Editor", true)
 	}
-
-	// Telemetry CR (operator.kyma-project.io) - can update/patch but NOT create/delete
-	// (Lifecycle Manager owns create/delete operations)
-	checkCanI(g, user, "get", "telemetries", "", "Editor", true)
-	checkCanI(g, user, "patch", "telemetries", "", "Editor", true)
-	checkCanI(g, user, "update", "telemetries", "", "Editor", true)
-	checkCanI(g, user, "create", "telemetries", "", "Editor", false)
-	checkCanI(g, user, "delete", "telemetries", "", "Editor", false)
-
-	// Should be able to delete or update ConfigMaps in telemetry namespace (from base edit role)
-	checkCanI(g, user, "delete", "configmaps", kitkyma.SystemNamespaceName, "Editor", true)
-	checkCanI(g, user, "update", "configmaps", kitkyma.SystemNamespaceName, "Editor", true)
 }
 
 func testAdminPermissions(g Gomega, testNS string) {
 	user := fmt.Sprintf("system:serviceaccount:%s:admin-sa", testNS)
 
-	for _, pipelineType := range pipelineTypes {
-		// Should have all editor permissions for pipelines
-		checkCanI(g, user, "get", pipelineType, "", "Admin", true)
-		checkCanI(g, user, "create", pipelineType, "", "Admin", true)
-		checkCanI(g, user, "delete", pipelineType, "", "Admin", true)
+	for _, resourceType := range resourceTypes {
+		// Should have all the  permissions for all telemetry resources
+		checkFullCRUDPermissions(g, user, resourceType, "", "Admin")
 
 		// Finalizers - admin CAN update finalizers
-		checkFinalizerPermissions(g, user, pipelineType, "Admin", true)
+		checkFinalizerPermissions(g, user, resourceType, "Admin", true)
 	}
-
-	// Telemetry CR - same restrictions as editor (Lifecycle Manager-owned)
-	checkCanI(g, user, "patch", "telemetries", "", "Admin", true)
-	checkCanI(g, user, "create", "telemetries", "", "Admin", false)
-	checkCanI(g, user, "delete", "telemetries", "", "Admin", false)
 }
 
 func testTelemetryOnlyEditorPermissions(g Gomega, testNS string) {
 	user := fmt.Sprintf("system:serviceaccount:%s:telemetry-only-editor-sa", testNS)
 
-	for _, pipelineType := range pipelineTypes {
-		// Should be able to manage telemetry pipelines (from kyma-telemetry-edit)
-		checkFullCRUDPermissions(g, user, pipelineType, "", "Telemetry-only editor")
+	for _, resourceTyoe := range resourceTypes {
+		// Should be able to manage telemetry resources (from kyma-telemetry-edit)
+		checkCanI(g, user, "create", resourceTyoe, "", "Telemetry-only editor", true)
+		checkCanI(g, user, "update", resourceTyoe, "", "Telemetry-only editor", true)
+		checkCanI(g, user, "patch", resourceTyoe, "", "Telemetry-only editor", true)
+		checkCanI(g, user, "delete", resourceTyoe, "", "Telemetry-only editor", true)
+		checkCanI(g, user, "deletecollection", resourceTyoe, "", "Telemetry-only editor", true)
 
 		// Finalizers - CAN update finalizers (finalizers part of metadata, granted by update permission)
-		checkFinalizerPermissions(g, user, pipelineType, "Telemetry-only editor", true)
-		finalizerResource := pipelineType + "/finalizers"
+		checkFinalizerPermissions(g, user, resourceTyoe, "Telemetry-only editor", true)
+		finalizerResource := resourceTyoe + "/finalizers"
 		checkCanI(g, user, "delete", finalizerResource, "", "Telemetry-only editor", true)
 	}
-
-	// Telemetry CR - can patch/update but NOT create/delete (Lifecycle Manager-owned)
-	checkCanI(g, user, "get", "telemetries", "", "Telemetry-only editor", true)
-	checkCanI(g, user, "patch", "telemetries", "", "Telemetry-only editor", true)
-	checkCanI(g, user, "create", "telemetries", "", "Telemetry-only editor", false)
-	checkCanI(g, user, "delete", "telemetries", "", "Telemetry-only editor", false)
 
 	// Should NOT have Secret access (kyma-telemetry-edit doesn't grant it)
 	checkNoSecretAccess(g, user, "Telemetry-only editor")
@@ -328,6 +306,7 @@ func checkFullCRUDPermissions(g Gomega, user, resource, namespace, persona strin
 	checkCanI(g, user, "update", resource, namespace, persona, true)
 	checkCanI(g, user, "patch", resource, namespace, persona, true)
 	checkCanI(g, user, "delete", resource, namespace, persona, true)
+	checkCanI(g, user, "deletecollection", resource, namespace, persona, true)
 }
 
 func checkFinalizerPermissions(g Gomega, user, pipelineType, persona string, canUpdate bool) {
