@@ -382,6 +382,7 @@ exporters:
         endpoint: ${OTLP_ENDPOINT_TEST1}
         tls:
             insecure: true
+        compression: gzip
         retry_on_failure:
             enabled: true
             initial_interval: 5s
@@ -391,6 +392,7 @@ exporters:
         endpoint: ${OTLP_ENDPOINT_TEST2}
         tls:
             insecure: true
+        compression: gzip
         retry_on_failure:
             enabled: true
             initial_interval: 5s

@@ -251,5 +251,5 @@ func TestMakeExporterConfigWithNoCompression(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, envVars)
 
-	require.Empty(t, otlpExporterConfig.Compression)
+	require.Equal(t, "gzip", otlpExporterConfig.Compression)
 }

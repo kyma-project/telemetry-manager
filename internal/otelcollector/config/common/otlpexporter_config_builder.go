@@ -60,11 +60,16 @@ func otlpExporter(otlpOutput *telemetryv1beta1.OTLPOutput, pipelineName string, 
 		sendingQueue.Enabled = true
 	}
 
+	compression := string(otlpOutput.Compression)
+	if compression == "" {
+		compression = string(telemetryv1beta1.OTLPCompressionGzip)
+	}
+
 	otlpExporter := OTLPExporterConfig{
 		Endpoint:     fmt.Sprintf("${%s}", otlpEndpointVariable),
 		Headers:      headers,
 		TLS:          tls,
-		Compression:  string(otlpOutput.Compression),
+		Compression:  compression,
 		SendingQueue: sendingQueue,
 		RetryOnFailure: RetryOnFailure{
 			Enabled:         true,
