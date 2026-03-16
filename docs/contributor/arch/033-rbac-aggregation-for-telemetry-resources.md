@@ -1,6 +1,6 @@
 ---
 title: RBAC Aggregation for Telemetry Resources
-status: Proposed
+status: Accepted
 date: 2026-03-04
 ---
 
@@ -154,7 +154,6 @@ We create **two aggregated ClusterRoles** for telemetry resources, following Kub
 | **kyma-telemetry-view** |     `view`      | **Cluster-scoped:**<br/>• `logpipelines`<br/>• `metricpipelines`<br/>• `tracepipelines`<br/>• `telemetries`<br/><br/>**Namespace-scoped:**<br/>• ConfigMap `telemetry-logpipelines`, `telemetry-tracepipelines`, `telemetry-metricpipelines` in `kyma-system` |                              `get`, `list`, `watch`                               |   Read-only access for monitoring, debugging, and observability. Enables SREs, auditors, and developers to view telemetry configurations without modification rights.   |
 | **kyma-telemetry-edit** | `edit`, `admin` |                                                                       **Cluster-scoped:**<br/>• `logpipelines`<br/>• `metricpipelines`<br/>• `tracepipelines`<br/>• `telemetries`*<br/>                                                                       | `create`, `delete`, `deletecollection`, `get`, `list`, `patch`, `update`, `watch` | Full CRUD access for platform engineers and DevOps teams managing telemetry infrastructure. Does **not** include direct Secret access (credentials managed separately). |
 
-**\*Note on Telemetry CR permissions:** The `telemetries` resource (from `operator.kyma-project.io` API group) has limited permissions - only `get`, `list`, `patch`, `update`, and `watch` are granted. The `create` and `delete` verbs are intentionally excluded because the Telemetry CR lifecycle is managed by the Kyma Lifecycle Manager. Any manual create/delete operations would be automatically reverted by the controller.
 
 **Note:** We do **not** create a separate `kyma-telemetry-admin` role because:
 - The traditional `admin` vs `edit` distinction (managing Roles/RoleBindings) does not apply to cluster-scoped resources
