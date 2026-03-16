@@ -44,8 +44,8 @@ func TestApplySelfMonitorResources(t *testing.T) {
 			Global: config.NewGlobal(
 				config.WithTargetNamespace(namespace),
 				config.WithImagePullSecretName("mySecret"),
-				config.WithAdditionalLabels(map[string]string{"test-label-key": "test-label-value"}),
-				config.WithAdditionalAnnotations(map[string]string{"test-anno-key": "test-anno-value"}),
+				config.WithAdditionalWorkloadLabels(map[string]string{"test-label-key": "test-label-value"}),
+				config.WithAdditionalWorkloadAnnotations(map[string]string{"test-anno-key": "test-anno-value"}),
 			),
 		},
 	}

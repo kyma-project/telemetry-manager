@@ -36,8 +36,8 @@ func TestMakeWorkloadMetadata(t *testing.T) {
 			name: "metadata with additional labels and annotations",
 			globals: config.NewGlobal(
 				config.WithTargetNamespace("kyma-system"),
-				config.WithAdditionalLabels(map[string]string{"custom-label": "value"}),
-				config.WithAdditionalAnnotations(map[string]string{"custom-annotation": "annotation-value"}),
+				config.WithAdditionalWorkloadLabels(map[string]string{"custom-label": "value"}),
+				config.WithAdditionalWorkloadAnnotations(map[string]string{"custom-annotation": "annotation-value"}),
 			),
 			baseName:               "test-collector",
 			componentType:          "telemetry",
@@ -52,7 +52,6 @@ func TestMakeWorkloadMetadata(t *testing.T) {
 
 			require.Equal(t, tt.expectedPodLabels, len(metadata.PodLabels))
 			require.Equal(t, tt.expectedPodAnnotations, len(metadata.PodAnnotations))
-			require.Contains(t, metadata.ResourceLabels, "app.kubernetes.io/name")
 			require.Contains(t, metadata.PodLabels, "app.kubernetes.io/name")
 		})
 	}

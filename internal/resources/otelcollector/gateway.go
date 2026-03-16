@@ -20,6 +20,7 @@ import (
 
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
+	"github.com/kyma-project/telemetry-manager/internal/k8sclients"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
@@ -106,7 +107,7 @@ func NewLogGatewayApplierDeleter(globals config.Global, image, priorityClassName
 		dynamicMemoryRequest: logGatewayDynamicMemoryRequest,
 		podOpts: []commonresources.PodSpecOption{
 			commonresources.WithPriorityClass(priorityClassName),
-			commonresources.WithAffinity(makePodAffinity(commonresources.MakeDefaultSelectorLabels(names.LogGateway))),
+			commonresources.WithAffinity(makePodAffinity(commonresources.DefaultSelector(names.LogGateway))),
 		},
 		containerOpts: []commonresources.ContainerOption{
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentPodIP, fieldPathPodIP),
@@ -139,7 +140,7 @@ func NewMetricGatewayApplierDeleter(globals config.Global, image, priorityClassN
 		dynamicMemoryRequest: metricGatewayDynamicMemoryRequest,
 		podOpts: []commonresources.PodSpecOption{
 			commonresources.WithPriorityClass(priorityClassName),
-			commonresources.WithAffinity(makePodAffinity(commonresources.MakeDefaultSelectorLabels(names.MetricGateway))),
+			commonresources.WithAffinity(makePodAffinity(commonresources.DefaultSelector(names.MetricGateway))),
 		},
 		containerOpts: []commonresources.ContainerOption{
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentPodIP, fieldPathPodIP),
@@ -172,7 +173,7 @@ func NewTraceGatewayApplierDeleter(globals config.Global, image, priorityClassNa
 		dynamicMemoryRequest: traceGatewayDynamicMemoryRequest,
 		podOpts: []commonresources.PodSpecOption{
 			commonresources.WithPriorityClass(priorityClassName),
-			commonresources.WithAffinity(makePodAffinity(commonresources.MakeDefaultSelectorLabels(names.TraceGateway))),
+			commonresources.WithAffinity(makePodAffinity(commonresources.DefaultSelector(names.TraceGateway))),
 		},
 		containerOpts: []commonresources.ContainerOption{
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentPodIP, fieldPathPodIP),
@@ -187,17 +188,19 @@ func (gad *GatewayApplierDeleter) ApplyResources(ctx context.Context, c client.C
 		name = types.NamespacedName{Namespace: gad.globals.TargetNamespace(), Name: gad.baseName}
 	)
 
-	if err := applyCommonResources(ctx, c, name, commonresources.LabelValueK8sComponentGateway, gad.rbac); err != nil {
+	labelerClient := k8sclients.NewLabeler(c, commonresources.DefaultLabels(gad.baseName, commonresources.LabelValueK8sComponentGateway))
+
+	if err := applyCommonResources(ctx, labelerClient, name, gad.rbac); err != nil {
 		return fmt.Errorf("failed to create common resource: %w", err)
 	}
 
-	secret := makeSecret(name, commonresources.LabelValueK8sComponentGateway, opts.CollectorEnvVars)
-	if err := k8sutils.CreateOrUpdateSecret(ctx, c, secret); err != nil {
+	secret := makeSecret(name, opts.CollectorEnvVars)
+	if err := k8sutils.CreateOrUpdateSecret(ctx, labelerClient, secret); err != nil {
 		return fmt.Errorf("failed to create env secret: %w", err)
 	}
 
-	configMap := makeConfigMap(name, commonresources.LabelValueK8sComponentGateway, opts.CollectorConfigYAML)
-	if err := k8sutils.CreateOrUpdateConfigMap(ctx, c, configMap); err != nil {
+	configMap := makeConfigMap(name, opts.CollectorConfigYAML)
+	if err := k8sutils.CreateOrUpdateConfigMap(ctx, labelerClient, configMap); err != nil {
 		return fmt.Errorf("failed to create configmap: %w", err)
 	}
 
@@ -206,21 +209,21 @@ func (gad *GatewayApplierDeleter) ApplyResources(ctx context.Context, c client.C
 	networkPolicies := makeGatewayNetworkPolicies(name, opts.IstioEnabled)
 
 	for _, np := range networkPolicies {
-		if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, np); err != nil {
+		if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, labelerClient, np); err != nil {
 			return fmt.Errorf("failed to create agent network policies: %w", err)
 		}
 	}
 
-	if err := k8sutils.CreateOrUpdateDeployment(ctx, c, gad.makeGatewayDeployment(configChecksum, opts)); err != nil {
+	if err := k8sutils.CreateOrUpdateDeployment(ctx, labelerClient, gad.makeGatewayDeployment(configChecksum, opts)); err != nil {
 		return fmt.Errorf("failed to create deployment: %w", err)
 	}
 
-	if err := k8sutils.CreateOrUpdateService(ctx, c, gad.makeOTLPService()); err != nil {
+	if err := k8sutils.CreateOrUpdateService(ctx, labelerClient, gad.makeOTLPService()); err != nil {
 		return fmt.Errorf("failed to create otlp service: %w", err)
 	}
 
 	if opts.IstioEnabled {
-		if err := k8sutils.CreateOrUpdatePeerAuthentication(ctx, c, gad.makePeerAuthentication()); err != nil {
+		if err := k8sutils.CreateOrUpdatePeerAuthentication(ctx, labelerClient, gad.makePeerAuthentication()); err != nil {
 			return fmt.Errorf("failed to create peerauthentication: %w", err)
 		}
 	}
@@ -386,14 +389,10 @@ func makePodAffinity(labels map[string]string) corev1.Affinity {
 }
 
 func (gad *GatewayApplierDeleter) makeOTLPService() *corev1.Service {
-	commonLabels := commonresources.MakeDefaultLabels(gad.baseName, commonresources.LabelValueK8sComponentGateway)
-	selectorLabels := commonresources.MakeDefaultSelectorLabels(gad.baseName)
-
 	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      gad.otlpServiceName,
 			Namespace: gad.globals.TargetNamespace(),
-			Labels:    commonLabels,
 		},
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{
@@ -410,7 +409,7 @@ func (gad *GatewayApplierDeleter) makeOTLPService() *corev1.Service {
 					TargetPort: intstr.FromInt32(ports.OTLPHTTP),
 				},
 			},
-			Selector: selectorLabels,
+			Selector: commonresources.DefaultSelector(gad.baseName),
 			Type:     corev1.ServiceTypeClusterIP,
 		},
 	}
@@ -419,17 +418,13 @@ func (gad *GatewayApplierDeleter) makeOTLPService() *corev1.Service {
 }
 
 func (gad *GatewayApplierDeleter) makePeerAuthentication() *istiosecurityclientv1.PeerAuthentication {
-	commonLabels := commonresources.MakeDefaultLabels(gad.baseName, commonresources.LabelValueK8sComponentGateway)
-	selectorLabels := commonresources.MakeDefaultSelectorLabels(gad.baseName)
-
 	return &istiosecurityclientv1.PeerAuthentication{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      gad.baseName,
 			Namespace: gad.globals.TargetNamespace(),
-			Labels:    commonLabels,
 		},
 		Spec: istiosecurityv1.PeerAuthentication{
-			Selector: &istiotypev1beta1.WorkloadSelector{MatchLabels: selectorLabels},
+			Selector: &istiotypev1beta1.WorkloadSelector{MatchLabels: commonresources.DefaultSelector(gad.baseName)},
 			Mtls:     &istiosecurityv1.PeerAuthentication_MutualTLS{Mode: istiosecurityv1.PeerAuthentication_MutualTLS_PERMISSIVE},
 		},
 	}
@@ -458,8 +453,7 @@ func makeGatewayNetworkPolicies(name types.NamespacedName, istioEnabled bool) []
 
 	metricsNetworkPolicy := commonresources.MakeNetworkPolicy(
 		name,
-		commonresources.MakeDefaultLabels(name.Name, commonresources.LabelValueK8sComponentGateway),
-		commonresources.MakeDefaultSelectorLabels(name.Name),
+		commonresources.DefaultSelector(name.Name),
 		commonresources.WithNameSuffix("metrics"),
 		commonresources.WithIngressFromPodsInAllNamespaces(
 			map[string]string{
@@ -471,8 +465,7 @@ func makeGatewayNetworkPolicies(name types.NamespacedName, istioEnabled bool) []
 
 	gatewayNetworkPolicies := commonresources.MakeNetworkPolicy(
 		name,
-		commonresources.MakeDefaultLabels(name.Name, commonresources.LabelValueK8sComponentGateway),
-		commonresources.MakeDefaultSelectorLabels(name.Name),
+		commonresources.DefaultSelector(name.Name),
 		commonresources.WithIngressFromAny(otlpPorts...),
 		commonresources.WithEgressToAny(),
 	)

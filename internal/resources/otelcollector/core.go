@@ -6,12 +6,15 @@ import (
 	"fmt"
 	"strconv"
 
+	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	autoscalingvpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
@@ -21,9 +24,9 @@ import (
 )
 
 // applyCommonResources applies resources to gateway and agent deployment node
-func applyCommonResources(ctx context.Context, c client.Client, name types.NamespacedName, componentType string, rbac rbac) error {
+func applyCommonResources(ctx context.Context, c client.Client, name types.NamespacedName, rbac rbac) error {
 	// Create service account before RBAC resources
-	if err := k8sutils.CreateOrUpdateServiceAccount(ctx, c, makeServiceAccount(name, componentType)); err != nil {
+	if err := k8sutils.CreateOrUpdateServiceAccount(ctx, c, makeServiceAccount(name)); err != nil {
 		return fmt.Errorf("failed to create service account: %w", err)
 	}
 
@@ -60,7 +63,7 @@ func applyCommonResources(ctx context.Context, c client.Client, name types.Names
 		}
 	}
 
-	if err := k8sutils.CreateOrUpdateService(ctx, c, makeMetricsService(name, componentType)); err != nil {
+	if err := k8sutils.CreateOrUpdateService(ctx, c, makeMetricsService(name)); err != nil {
 		return fmt.Errorf("failed to create metrics service: %w", err)
 	}
 
@@ -114,24 +117,22 @@ func deleteCommonResources(ctx context.Context, c client.Client, name types.Name
 	return allErrors
 }
 
-func makeServiceAccount(name types.NamespacedName, componentType string) *corev1.ServiceAccount {
+func makeServiceAccount(name types.NamespacedName) *corev1.ServiceAccount {
 	serviceAccount := corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
 			Namespace: name.Namespace,
-			Labels:    commonresources.MakeDefaultLabels(name.Name, componentType),
 		},
 	}
 
 	return &serviceAccount
 }
 
-func makeConfigMap(name types.NamespacedName, componentType string, collectorConfigYAML string) *corev1.ConfigMap {
+func makeConfigMap(name types.NamespacedName, collectorConfigYAML string) *corev1.ConfigMap {
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
 			Namespace: name.Namespace,
-			Labels:    commonresources.MakeDefaultLabels(name.Name, componentType),
 		},
 		Data: map[string]string{
 			configFileName: collectorConfigYAML,
@@ -139,22 +140,20 @@ func makeConfigMap(name types.NamespacedName, componentType string, collectorCon
 	}
 }
 
-func makeSecret(name types.NamespacedName, componentType string, secretData map[string][]byte) *corev1.Secret {
+func makeSecret(name types.NamespacedName, secretData map[string][]byte) *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
 			Namespace: name.Namespace,
-			Labels:    commonresources.MakeDefaultLabels(name.Name, componentType),
 		},
 		Data: secretData,
 	}
 }
 
-func makeMetricsService(name types.NamespacedName, componentType string) *corev1.Service {
-	labels := commonresources.MakeDefaultLabels(name.Name, componentType)
-	labels[commonresources.LabelKeyTelemetrySelfMonitor] = commonresources.LabelValueTelemetrySelfMonitor
-
-	selectorLabels := commonresources.MakeDefaultSelectorLabels(name.Name)
+func makeMetricsService(name types.NamespacedName) *corev1.Service {
+	labels := map[string]string{
+		commonresources.LabelKeyTelemetrySelfMonitor: commonresources.LabelValueTelemetrySelfMonitor,
+	}
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -176,8 +175,47 @@ func makeMetricsService(name types.NamespacedName, componentType string) *corev1
 					TargetPort: intstr.FromInt32(ports.Metrics),
 				},
 			},
-			Selector: selectorLabels,
+			Selector: commonresources.DefaultSelector(name.Name),
 			Type:     corev1.ServiceTypeClusterIP,
+		},
+	}
+}
+
+func makeVPA(name types.NamespacedName, targetRefKind string, minAllowedMemory, maxAllowedMemory resource.Quantity) *autoscalingvpav1.VerticalPodAutoscaler {
+	updateMode := autoscalingvpav1.UpdateModeInPlaceOrRecreate
+	controlledValues := autoscalingvpav1.ContainerControlledValuesRequestsAndLimits
+
+	return &autoscalingvpav1.VerticalPodAutoscaler{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name.Name,
+			Namespace: name.Namespace,
+		},
+		Spec: autoscalingvpav1.VerticalPodAutoscalerSpec{
+			TargetRef: &autoscalingv1.CrossVersionObjectReference{
+				APIVersion: "apps/v1",
+				Kind:       targetRefKind,
+				Name:       name.Name,
+			},
+			UpdatePolicy: &autoscalingvpav1.PodUpdatePolicy{
+				UpdateMode: &updateMode,
+			},
+			ResourcePolicy: &autoscalingvpav1.PodResourcePolicy{
+				ContainerPolicies: []autoscalingvpav1.ContainerResourcePolicy{
+					{
+						ContainerName: containerName,
+						ControlledResources: &[]corev1.ResourceName{
+							corev1.ResourceMemory,
+						},
+						MinAllowed: corev1.ResourceList{
+							corev1.ResourceMemory: minAllowedMemory,
+						},
+						MaxAllowed: corev1.ResourceList{
+							corev1.ResourceMemory: maxAllowedMemory,
+						},
+						ControlledValues: &controlledValues,
+					},
+				},
+			},
 		},
 	}
 }

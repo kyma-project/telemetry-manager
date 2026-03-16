@@ -55,7 +55,7 @@ Before enabling VPA, reduce the request-to-limit ratio to a more reasonable valu
 
 We need to have a strategy to set `GOMEMLIMIT` when VPA manages Pod resources.
 - The `GOMEMLIMIT` value must be a percentage of the memory limit that VPA sets, for example, 80% of the memory limit.
-- The `GOMEMELIMT` calculation must be dynamic. That means it must change when VPA sets a new memory limit.
+- The `GOMEMLIMIT` calculation must be dynamic. That means it must change when VPA sets a new memory limit.
 
 
 ## Considered Options
@@ -194,7 +194,7 @@ Consider the following inherent VPA limitations when you use it with the Central
 2. **HPA Incompatibility**: VPA cannot be used with Horizontal Pod Autoscaler (HPA) on the same resource metrics (CPU or memory). This is not a concern for DaemonSets, which don't support HPA.
 3. **Admission Webhook Conflicts**: VPA's admission controller may conflict with other mutating admission webhooks depending on webhook configuration and ordering.
 4. **Out-of-Memory Handling**: While VPA reacts to most OOM events, it cannot handle all out-of-memory scenarios and may not prevent all OOMKills. To scale Pods that are OOMed, the Pod must run long enough for the VPA Recommender to collect metrics.
-5. **Multiple VPA Resources**: Configuring multiple VPA resources targeting the same pod results in undefined behavior. Ensure only one VPA resource targets the Central OTLP Gateway and Agent DaemonSet.
+5. **Multiple VPA Resources**: Configuring multiple VPA resources targeting the same Pod results in undefined behavior. Ensure only one VPA resource targets the Central OTLP Gateway and Agent DaemonSet.
 6. **Recommendations Without Controller**: VPA cannot update resources for standalone Pods not managed by a controller (Deployment, DaemonSet, StatefulSet, etc.).
 
 ### Telemetry Pipelines Memory Allocation Strategy with VPA
@@ -205,8 +205,8 @@ This section defines the memory allocation strategy for telemetry pipelines when
 
 Configure VPA memory boundaries based on the smallest node's memory capacity in the cluster:
 
-- **maxAllowed Memory**: Set to **30%** of the smallest node's memory capacity. For example, if the smallest node has 16Gi of memory, set `maxAllowed` to approximately 4.8Gi (16Gi × 0.3). This ensures that VPA recommendations stay within available resources while allowing burst capacity.
-- **minAllowed Memory**: Set to the initial Pod memory request of `64Mi` to allow VPA to scale down resources when load is low.
+- **maxAllowed Memory**: Set to **30%** of the smallest node's memory capacity. For example, if the smallest node has 16Gi of memory, set `maxAllowed` to approximately 4.8Gi (16Gi × 0.3). This keeps VPA recommendations within available resources and still provides burst capacity.
+- **minAllowed Memory**: Set to the initial Pod memory request of `64Mi` so VPA can scale down resources when load is low.
 
 #### Initial Pod Memory Settings
 
@@ -249,8 +249,8 @@ The following table shows memory configuration for different pipeline counts, as
 
 **Column Definitions:**
 
-- **Pod Memory Request (Initial)**: The starting memory request before VPA adjustments. Set to 64Mi to allow VPA to scale up when load increases.
-- **Pod Memory Limit (Initial)**: The starting memory limit calculated as `Request × 2` (128Mi). This provides a reasonable baseline while allowing VPA to adjust based on usage.
+- **Pod Memory Request (Initial)**: The starting memory request before VPA adjustments. Set to 64Mi so VPA can scale up when load increases.
+- **Pod Memory Limit (Initial)**: The starting memory limit calculated as `Request × 2` (128Mi). This provides a reasonable baseline, and VPA can adjust it based on usage.
 - **VPA Min Allowed**: The minimum memory request VPA can set (64Mi). The corresponding minimum limit is 128Mi based on the 2:1 ratio.
 - **VPA Max Allowed**: The maximum memory request VPA can set (5Gi based on 30% of 16Gi node capacity). This prevents VPA from exceeding available node resources.
 - **Max Pod Memory Limit (Ratio 2)**: The maximum memory limit when VPA sets the maximum request (10Gi = 5Gi × 2). This is the upper bound for Pod memory consumption.
