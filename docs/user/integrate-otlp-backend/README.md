@@ -40,7 +40,7 @@ Ensure the port in your endpoint URL is correct for the chosen protocol.
 
 ## Configure Compression
 
-By default, the OpenTelemetry Collector uses `gzip` compression when exporting data. To use a different compression algorithm, set the **compression** attribute to one of the supported values: `gzip`, `snappy`, `zstd`, or `none` (to disable compression explicitly).
+By default, the Telemetry gateway uses `gzip` compression when exporting data. To use a different compression algorithm, set the **compression** attribute to one of the supported values: `gzip`, `snappy`, `zstd`, or `none` (to disable compression explicitly).
 
 ```yaml
 ...
