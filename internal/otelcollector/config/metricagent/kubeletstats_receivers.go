@@ -15,8 +15,7 @@ func kubeletStatsReceiver(runtimeResources runtimeResourceSources) *KubeletStats
 	return &KubeletStatsReceiverConfig{
 		CollectionInterval: collectionInterval,
 		AuthType:           "serviceAccount",
-		// This should be fixed with: https://github.com/kyma-project/telemetry-manager/issues/1792
-		InsecureSkipVerify: true,
+		InsecureSkipVerify: false,
 		Endpoint:           fmt.Sprintf("https://${%s}:%d", common.EnvVarCurrentNodeName, portKubelet),
 		MetricGroups:       kubeletStatsMetricGroups(runtimeResources),
 		Metrics: KubeletStatsMetrics{

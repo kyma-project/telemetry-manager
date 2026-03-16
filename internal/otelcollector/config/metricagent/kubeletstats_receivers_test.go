@@ -170,7 +170,7 @@ func TestKubeletStatsReceiverConfig(t *testing.T) {
 				CollectionInterval: "30s",
 				AuthType:           "serviceAccount",
 				Endpoint:           "https://${MY_NODE_NAME}:10250",
-				InsecureSkipVerify: true,
+				InsecureSkipVerify: false,
 				MetricGroups:       test.expectedMetricGroups,
 				Metrics: KubeletStatsMetrics{
 					ContainerCPUUsage:            Metric{Enabled: true},
