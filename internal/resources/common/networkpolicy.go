@@ -14,13 +14,13 @@ import (
 
 type NetworkPolicyOption func(*networkingv1.NetworkPolicy)
 
-// MakeNetworkPolicy creates a NetworkPolicy with the given name, labels, pod selector, and options.
+// MakeNetworkPolicy creates a NetworkPolicy with the given name, pod selector, and options.
+// Resource labels are applied by the Labeler interceptor at write time.
 // PolicyTypes are automatically derived based on which rules are present:
 // - Ingress type is added only if ingress rules exist
 // - Egress type is added only if egress rules exist
 func MakeNetworkPolicy(
 	name types.NamespacedName,
-	labels map[string]string,
 	selectorLabels map[string]string,
 	opts ...NetworkPolicyOption,
 ) *networkingv1.NetworkPolicy {
@@ -28,7 +28,6 @@ func MakeNetworkPolicy(
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      NetworkPolicyPrefix + name.Name,
 			Namespace: name.Namespace,
-			Labels:    labels,
 		},
 		Spec: networkingv1.NetworkPolicySpec{
 			PodSelector: metav1.LabelSelector{
