@@ -92,7 +92,7 @@ jobs:
           elif [[ "${{ inputs.image_tag }}" ]]; then
             TAG="${{ inputs.image_tag }}"
             MANAGER_IMAGE="europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:${TAG}"
-            echo "Using release image for merge group: $MANAGER_IMAGE"
+            echo "Using release image: $MANAGER_IMAGE"
           else
             # For push events, use prod image with commit-based tag
             GIT_COMMIT_SHA=$(git rev-parse --short=8 HEAD)

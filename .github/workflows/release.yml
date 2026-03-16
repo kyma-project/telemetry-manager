@@ -112,6 +112,32 @@ jobs:
             echo "Please verify the image has been built and pushed to the registry"
             exit 1
           fi
+          
+          # Check if Directory Size Exporter Docker image exists
+          echo "Checking if Directory Size Exporter Docker image exists..."
+          DSE_IMAGE_REPO="europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter"
+          DSE_IMAGE_FULL="${DSE_IMAGE_REPO}:${DIR_SIZE_IMAGE_TAG}"
+
+          if docker manifest inspect "${DSE_IMAGE_FULL}" > /dev/null 2>&1; then
+            echo "Directory Size Exporter Docker image exists: ${DSE_IMAGE_FULL}"
+          else
+            echo "::error::Directory Size Exporter Docker image does not exist: ${DSE_IMAGE_FULL}"
+            echo "Please verify the image has been built and pushed to the registry"
+            exit 1
+          fi
+          
+          # Check if Self Monitor Docker image exists
+          echo "Checking if Self Monitor Docker image exists..."
+          SELF_MONITOR_IMAGE_REPO="europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor"
+          SELF_MONITOR_FULL="${SELF_MONITOR_IMAGE_REPO}:${SELF_MONITOR_IMAGE_TAG}"
+
+          if docker manifest inspect "${SELF_MONITOR_FULL}" > /dev/null 2>&1; then
+            echo "Self Monitor Docker image exists: ${SELF_MONITOR_FULL}"
+          else
+            echo "::error::Self Monitor Docker image does not exist: ${SELF_MONITOR_FULL}"
+            echo "Please verify the image has been built and pushed to the registry"
+            exit 1
+          fi
       - name: Check if milestone exists and is closed
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
