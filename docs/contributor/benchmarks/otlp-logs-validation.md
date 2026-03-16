@@ -390,7 +390,7 @@ By enabling the storeCheckpoint preset (Helm), the `file_storage` extension is a
 
 
 ## Comparison with FluentBit Setup
-In the FluentBit setup, for the very same (initial) scenario (that is, 10 generator replicas [old setup] or 2 agents), the load test outputs the following values for the agent:
+In the FluentBit setup, for the very same (initial) scenario (that is, 10 generator replicas [old setup] or 2 agents), the `load test` outputs the following values for the agent:
 - Exported Log Records/second: 27.8K
 
 ## Conclusions
