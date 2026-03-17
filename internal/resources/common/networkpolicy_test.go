@@ -17,7 +17,6 @@ import (
 
 func TestMakeNetworkPolicy(t *testing.T) {
 	name := types.NamespacedName{Name: "test-component", Namespace: "test-namespace"}
-	labels := map[string]string{"app": "test"}
 	selectorLabels := map[string]string{"app.kubernetes.io/name": "test-component"}
 
 	tests := []struct {
@@ -33,7 +32,7 @@ func TestMakeNetworkPolicy(t *testing.T) {
 		{
 			name: "ingress options",
 			opts: []NetworkPolicyOption{
-				WithIngressFromAny([]int32{8080}),
+				WithIngressFromAny(8080),
 				WithIngressFromPods(map[string]string{"app": "source"}, []int32{9090}),
 				WithIngressFromPodsInAllNamespaces(map[string]string{"app": "global"}, []int32{9091}),
 				WithIngressFromPodsInNamespace("other-ns", map[string]string{"app": "external"}, []int32{9092}),
@@ -44,6 +43,13 @@ func TestMakeNetworkPolicy(t *testing.T) {
 				}),
 			},
 			goldenFilePath: "testdata/networkpolicy-ingress.yaml",
+		},
+		{
+			name: "ingress from any",
+			opts: []NetworkPolicyOption{
+				WithIngressFromAny(),
+			},
+			goldenFilePath: "testdata/networkpolicy-ingress-any.yaml",
 		},
 		{
 			name: "egress options",
@@ -64,7 +70,7 @@ func TestMakeNetworkPolicy(t *testing.T) {
 			name: "with name suffix",
 			opts: []NetworkPolicyOption{
 				WithNameSuffix("custom"),
-				WithIngressFromAny([]int32{8080}),
+				WithIngressFromAny(8080),
 				WithEgressToAny(),
 			},
 			goldenFilePath: "testdata/networkpolicy-with-name-suffix.yaml",
@@ -76,7 +82,7 @@ func TestMakeNetworkPolicy(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			np := MakeNetworkPolicy(name, labels, selectorLabels, tt.opts...)
+			np := MakeNetworkPolicy(name, selectorLabels, tt.opts...)
 
 			objects := []client.Object{np}
 			bytes, err := testutils.MarshalYAML(scheme, objects)

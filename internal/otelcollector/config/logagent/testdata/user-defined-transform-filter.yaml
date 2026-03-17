@@ -1,4 +1,10 @@
 extensions:
+    cgroupruntime:
+        gomaxprocs:
+            enabled: false
+        gomemlimit:
+            enabled: true
+            ratio: 0.8
     file_storage:
         create_directory: true
         directory: /tmp/telemetry-log-agent/file-log-receiver
@@ -14,7 +20,7 @@ service:
             processors:
                 - memory_limiter
                 - transform/set-instrumentation-scope-runtime
-                - k8sattributes
+                - k8s_attributes
                 - transform/insert-cluster-attributes
                 - service_enrichment
                 - transform/drop-kyma-attributes
@@ -36,6 +42,7 @@ service:
     extensions:
         - health_check
         - pprof
+        - cgroupruntime
         - file_storage
 receivers:
     filelog/test1:
@@ -159,10 +166,10 @@ receivers:
 processors:
     filter/user-defined-test1:
         error_mode: ignore
-        logs:
-            log_record:
+        log_conditions:
+            - conditions:
                 - IsMatch(log.attributes["foo"], ".*bar.*")
-    k8sattributes:
+    k8s_attributes:
         auth_type: serviceAccount
         passthrough: false
         extract:
@@ -240,6 +247,7 @@ processors:
 exporters:
     otlp_grpc/test1:
         endpoint: ${OTLP_ENDPOINT_TEST1}
+        compression: gzip
         retry_on_failure:
             enabled: true
             initial_interval: 5s

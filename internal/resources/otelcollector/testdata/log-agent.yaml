@@ -107,8 +107,6 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.podIP
-        - name: GOMEMLIMIT
-          value: "1006632960"
         - name: GODEBUG
           value: fips140=off
         envFrom:
@@ -130,7 +128,7 @@ spec:
             memory: 1200Mi
           requests:
             cpu: 15m
-            memory: 50Mi
+            memory: 64Mi
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -208,11 +206,7 @@ metadata:
   namespace: kyma-system
 spec:
   egress:
-  - to:
-    - ipBlock:
-        cidr: 0.0.0.0/0
-    - ipBlock:
-        cidr: ::/0
+  - {}
   podSelector:
     matchLabels:
       app.kubernetes.io/name: telemetry-log-agent

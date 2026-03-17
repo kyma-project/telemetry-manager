@@ -40,6 +40,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	autoscalingvpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	"k8s.io/client-go/discovery"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -70,6 +71,7 @@ import (
 	selfmonitorwebhook "github.com/kyma-project/telemetry-manager/internal/selfmonitor/webhook"
 	"github.com/kyma-project/telemetry-manager/internal/storagemigration"
 	loggerutils "github.com/kyma-project/telemetry-manager/internal/utils/logger"
+	"github.com/kyma-project/telemetry-manager/internal/vpastatus"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
 	logpipelinewebhookv1alpha1 "github.com/kyma-project/telemetry-manager/webhook/logpipeline/v1alpha1"
 	logpipelinewebhookv1beta1 "github.com/kyma-project/telemetry-manager/webhook/logpipeline/v1beta1"
@@ -138,6 +140,7 @@ func init() {
 	utilruntime.Must(istionetworkingclientv1.AddToScheme(scheme))
 	utilruntime.Must(telemetryv1beta1.AddToScheme(scheme))
 	utilruntime.Must(operatorv1beta1.AddToScheme(scheme))
+	utilruntime.Must(autoscalingvpav1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -174,8 +177,8 @@ func run() error {
 		config.WithVersion(build.GitTag()),
 		config.WithImagePullSecretName(imagePullSecretName),
 		config.WithClusterTrustBundleName(clusterTrustBundleName),
-		config.WithAdditionalLabels(additionalLabels),
-		config.WithAdditionalAnnotations(additionalAnnotations),
+		config.WithAdditionalWorkloadLabels(additionalLabels),
+		config.WithAdditionalWorkloadAnnotations(additionalAnnotations),
 		config.WithDeployOTLPGateway(featureflags.IsEnabled(featureflags.DeployOTLPGateway)),
 		config.WithUnlimitedPipelines(featureflags.IsEnabled(featureflags.UnlimitedPipelineCount)),
 	)
@@ -300,33 +303,72 @@ func setupControllersAndWebhooks(mgr manager.Manager, globals config.Global, env
 
 func setupManager(globals config.Global) (manager.Manager, error) {
 	restConfig := ctrl.GetConfigOrDie()
+	ctx := context.Background()
 
 	discoveryClient, err := discovery.NewDiscoveryClientForConfig(restConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create discovery client: %w", err)
 	}
 
-	isIstioActive := istiostatus.NewChecker(discoveryClient).IsIstioActive(context.Background())
-
-	cacheOptions := map[client.Object]cache.ByObject{
-		&appsv1.Deployment{}:                        {Field: setNamespaceFieldSelector(globals)},
-		&appsv1.ReplicaSet{}:                        {Field: setNamespaceFieldSelector(globals)},
-		&appsv1.DaemonSet{}:                         {Field: setNamespaceFieldSelector(globals)},
-		&corev1.ConfigMap{}:                         {Namespaces: setConfigMapNamespaceFieldSelector(globals)},
-		&corev1.ServiceAccount{}:                    {Field: setNamespaceFieldSelector(globals)},
-		&corev1.Service{}:                           {Field: setNamespaceFieldSelector(globals)},
-		&networkingv1.NetworkPolicy{}:               {Field: setNamespaceFieldSelector(globals)},
-		&corev1.Secret{}:                            {Field: setNamespaceFieldSelector(globals)},
-		&operatorv1beta1.Telemetry{}:                {Field: setNamespaceFieldSelector(globals)},
-		&rbacv1.Role{}:                              {Field: setNamespaceFieldSelector(globals)},
-		&rbacv1.RoleBinding{}:                       {Field: setNamespaceFieldSelector(globals)},
-		&apiextensionsv1.CustomResourceDefinition{}: {Label: setLabelSelector()},
-		&admissionregistrationv1.ValidatingWebhookConfiguration{}: {Label: setLabelSelector()},
-		&admissionregistrationv1.MutatingWebhookConfiguration{}:   {Label: setLabelSelector()},
+	isIstioActive, err := istiostatus.NewChecker(discoveryClient).IsIstioActive(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check Istio status: %w", err)
 	}
 
+	k8sClient, err := client.New(restConfig, client.Options{Scheme: scheme})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create client: %w", err)
+	}
+
+	vpaCRDExists, err := vpastatus.NewChecker(restConfig).VpaCRDExists(ctx, k8sClient)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check VPA status: %w", err)
+	}
+
+	cacheOptions := map[client.Object]cache.ByObject{
+		// Namespace-scoped managed resources: filter by namespace and module label
+		&appsv1.Deployment{}:          scopedByNamespaceAndLabel(globals),
+		&appsv1.DaemonSet{}:           scopedByNamespaceAndLabel(globals),
+		&appsv1.ReplicaSet{}:          scopedByNamespaceAndLabel(globals),
+		&corev1.Pod{}:                 scopedByNamespaceAndLabel(globals),
+		&corev1.Secret{}:              scopedByNamespaceAndLabel(globals), // only applicable for manager-created secrets, user-created secrets are watched by secretwatch client
+		&corev1.Service{}:             scopedByNamespaceAndLabel(globals),
+		&corev1.ServiceAccount{}:      scopedByNamespaceAndLabel(globals),
+		&networkingv1.NetworkPolicy{}: scopedByNamespaceAndLabel(globals),
+		&rbacv1.Role{}:                scopedByNamespaceAndLabel(globals),
+		&rbacv1.RoleBinding{}:         scopedByNamespaceAndLabel(globals),
+
+		// Default Telemetry CR has no labels: filter by namespace only
+		&operatorv1beta1.Telemetry{}: scopedByNamespace(globals),
+
+		// Cluster-scoped managed resources: filter by label only
+		&rbacv1.ClusterRole{}:                                     scopedByLabel(),
+		&rbacv1.ClusterRoleBinding{}:                              scopedByLabel(),
+		&apiextensionsv1.CustomResourceDefinition{}:               scopedByLabel(),
+		&admissionregistrationv1.ValidatingWebhookConfiguration{}: scopedByLabel(),
+		&admissionregistrationv1.MutatingWebhookConfiguration{}:   scopedByLabel(),
+
+		// configmap: mixed scoping (shoot-info by name in kube-system, managed configmaps and overrides by namespace)
+		// No label filter for target namespace: overrides ConfigMap is user-created without the module label
+		&corev1.ConfigMap{}: {
+			Namespaces: map[string]cache.Config{
+				"kube-system":             {FieldSelector: fields.SelectorFromSet(fields.Set{"metadata.name": "shoot-info"})},
+				globals.TargetNamespace(): {}, // do not apply label filter since overrides ConfigMap does not have module label
+			},
+		},
+	}
+
+	// Only restrict storage of Istio CRs in the cache if Istio is active
+	// otherwise, manager will have errors if the Istio CRD is not present in the cluster
 	if isIstioActive {
-		cacheOptions[&istiosecurityclientv1.PeerAuthentication{}] = cache.ByObject{Field: setNamespaceFieldSelector(globals)}
+		cacheOptions[&istiosecurityclientv1.PeerAuthentication{}] = scopedByNamespaceAndLabel(globals)
+		cacheOptions[&istionetworkingclientv1.DestinationRule{}] = scopedByNamespaceAndLabel(globals)
+	}
+
+	// Only restrict storage of VPA CRs in the cache if VPA CRD exists in the cluster
+	// otherwise, manager will have errors if the VPA CRD is not present in the cluster
+	if vpaCRDExists {
+		cacheOptions[&autoscalingvpav1.VerticalPodAutoscaler{}] = scopedByNamespaceAndLabel(globals)
 	}
 
 	mgr, err := ctrl.NewManager(restConfig, ctrl.Options{
@@ -595,21 +637,27 @@ func ensureWebhookCert(webhookCertConfig webhookcert.Config, mgr manager.Manager
 	return nil
 }
 
-func setNamespaceFieldSelector(globals config.Global) fields.Selector {
-	return fields.SelectorFromSet(fields.Set{"metadata.namespace": globals.TargetNamespace()})
-}
-
-func setLabelSelector() labels.Selector {
-	return labels.SelectorFromSet(labels.Set{commonresources.LabelKeyKymaModule: commonresources.LabelValueKymaModule})
-}
-
-func setConfigMapNamespaceFieldSelector(globals config.Global) map[string]cache.Config {
-	return map[string]cache.Config{
-		"kube-system": {
-			FieldSelector: fields.SelectorFromSet(fields.Set{"metadata.name": "shoot-info"}),
-		},
-		globals.TargetNamespace(): {},
+func scopedByNamespace(globals config.Global) cache.ByObject {
+	return cache.ByObject{
+		Field: fields.SelectorFromSet(fields.Set{"metadata.namespace": globals.TargetNamespace()}),
 	}
+}
+
+func scopedByNamespaceAndLabel(globals config.Global) cache.ByObject {
+	return cache.ByObject{
+		Field: fields.SelectorFromSet(fields.Set{"metadata.namespace": globals.TargetNamespace()}),
+		Label: moduleLabelSelector(),
+	}
+}
+
+func scopedByLabel() cache.ByObject {
+	return cache.ByObject{
+		Label: moduleLabelSelector(),
+	}
+}
+
+func moduleLabelSelector() labels.Selector {
+	return labels.SelectorFromSet(labels.Set{commonresources.LabelKeyKymaModule: commonresources.LabelValueKymaModule})
 }
 
 func createWebhookConfig(globals config.Global) webhookcert.Config {

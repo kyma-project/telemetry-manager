@@ -1,4 +1,10 @@
 extensions:
+    cgroupruntime:
+        gomaxprocs:
+            enabled: false
+        gomemlimit:
+            enabled: true
+            ratio: 0.8
     health_check:
         endpoint: ${MY_POD_IP}:13133
     k8s_leader_elector:
@@ -12,7 +18,7 @@ service:
             receivers:
                 - routing/prometheus-input
             processors:
-                - k8sattributes
+                - k8s_attributes
                 - service_enrichment
             exporters:
                 - routing/enrichment
@@ -53,6 +59,7 @@ service:
     extensions:
         - health_check
         - pprof
+        - cgroupruntime
         - k8s_leader_elector
 receivers:
     prometheus/app-pods:
@@ -161,10 +168,10 @@ processors:
         send_batch_max_size: 1024
     filter/drop-envoy-metrics-if-disabled:
         error_mode: ignore
-        metrics:
-            metric:
-                - IsMatch(name, "^envoy_.*") and resource.attributes["kyma.input.name"] == "istio"
-    k8sattributes:
+        metric_conditions:
+            - conditions:
+                - IsMatch(metric.name, "^envoy_.*") and resource.attributes["kyma.input.name"] == "istio"
+    k8s_attributes:
         auth_type: serviceAccount
         passthrough: false
         extract:
@@ -248,6 +255,7 @@ processors:
 exporters:
     otlp_grpc/test:
         endpoint: ${OTLP_ENDPOINT_TEST}
+        compression: gzip
         sending_queue:
             enabled: true
             queue_size: 256

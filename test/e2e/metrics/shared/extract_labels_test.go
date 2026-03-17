@@ -129,7 +129,7 @@ func TestExtractLabels(t *testing.T) {
 			assert.MetricPipelineHealthy(t, pipelineName)
 
 			// Verify that at least one log entry contains the expected labels, rather than requiring all entries to match.
-			// This approach accounts for potential delays in the k8sattributes processor syncing with the API server during startup,
+			// This approach accounts for potential delays in the k8s_attributes processor syncing with the API server during startup,
 			// which can result in some logs not being enriched and causing test flakiness.
 			assert.BackendDataEventuallyMatches(t, backend,
 				HaveFlatMetrics(ContainElement(

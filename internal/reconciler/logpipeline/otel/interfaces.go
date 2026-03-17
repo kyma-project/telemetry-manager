@@ -36,7 +36,13 @@ type GatewayFlowHealthProber interface {
 // This affects resource configuration, particularly network policies and sidecars.
 type IstioStatusChecker interface {
 	// IsIstioActive returns true if Istio is installed and active in the cluster.
-	IsIstioActive(ctx context.Context) bool
+	IsIstioActive(ctx context.Context) (bool, error)
+}
+
+// VpaStatusChecker determines whether Vertical Pod Autoscaler (VPA) is active in the cluster.
+type VpaStatusChecker interface {
+	// VpaCRDExists checks if the VPA CRD exists in the cluster.
+	VpaCRDExists(ctx context.Context, client client.Client) (bool, error)
 }
 
 // AgentConfigBuilder builds the OTel Collector configuration for the log agent.
@@ -54,7 +60,7 @@ type AgentApplierDeleter interface {
 	ApplyResources(ctx context.Context, c client.Client, opts otelcollector.AgentApplyOptions) error
 
 	// DeleteResources removes all agent resources from the cluster.
-	DeleteResources(ctx context.Context, c client.Client) error
+	DeleteResources(ctx context.Context, c client.Client, vpaCRDExists bool) error
 }
 
 // Prober checks the readiness of Kubernetes workloads (Deployments, DaemonSets).

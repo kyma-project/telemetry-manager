@@ -322,16 +322,16 @@ func TestGettersForOptionalFields(t *testing.T) {
 	g := NewGlobal(
 		WithImagePullSecretName("my-secret"),
 		WithClusterTrustBundleName("trust-bundle"),
-		WithAdditionalLabels(labels),
-		WithAdditionalAnnotations(annotations),
+		WithAdditionalWorkloadLabels(labels),
+		WithAdditionalWorkloadAnnotations(annotations),
 		WithDeployOTLPGateway(false),
 		WithUnlimitedPipelines(true),
 	)
 
 	require.Equal(t, "my-secret", g.ImagePullSecretName())
 	require.Equal(t, "trust-bundle", g.ClusterTrustBundleName())
-	require.Equal(t, labels, g.AdditionalLabels())
-	require.Equal(t, annotations, g.AdditionalAnnotations())
+	require.Equal(t, labels, g.AdditionalWorkloadLabels())
+	require.Equal(t, annotations, g.AdditionalWorkloadAnnotations())
 	require.False(t, g.DeployOTLPGateway())
 	require.True(t, g.UnlimitedPipelines())
 }

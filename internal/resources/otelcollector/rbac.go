@@ -35,7 +35,6 @@ func withClusterRole(options ...ClusterRoleOption) RBACOption {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      name.Name,
 				Namespace: name.Namespace,
-				Labels:    commonresources.MakeDefaultLabels(name.Name, r.component),
 			},
 			Rules: []rbacv1.PolicyRule{},
 		}
@@ -53,7 +52,6 @@ func withClusterRoleBinding() RBACOption {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      name.Name,
 				Namespace: name.Namespace,
-				Labels:    commonresources.MakeDefaultLabels(name.Name, r.component),
 			},
 			Subjects: []rbacv1.Subject{{Name: name.Name, Namespace: name.Namespace, Kind: rbacv1.ServiceAccountKind}},
 			RoleRef: rbacv1.RoleRef{
@@ -71,7 +69,6 @@ func withRole(options ...RoleOption) RBACOption {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      name.Name,
 				Namespace: name.Namespace,
-				Labels:    commonresources.MakeDefaultLabels(name.Name, r.component),
 			},
 			Rules: []rbacv1.PolicyRule{},
 		}
@@ -90,7 +87,6 @@ func withRoleBinding() RBACOption {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      name.Name,
 				Namespace: name.Namespace,
-				Labels:    commonresources.MakeDefaultLabels(name.Name, r.component),
 			},
 			Subjects: []rbacv1.Subject{
 				{

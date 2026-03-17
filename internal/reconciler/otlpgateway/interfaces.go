@@ -23,5 +23,5 @@ type GatewayApplierDeleter interface {
 
 // IstioStatusChecker checks whether Istio is active in the cluster.
 type IstioStatusChecker interface {
-	IsIstioActive(ctx context.Context) bool
+	IsIstioActive(ctx context.Context) (bool, error)
 }

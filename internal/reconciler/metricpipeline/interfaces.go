@@ -34,7 +34,7 @@ type AgentApplierDeleter interface {
 	ApplyResources(ctx context.Context, c client.Client, opts otelcollector.AgentApplyOptions) error
 	// DeleteResources removes the metric agent resources from the cluster.
 	// This cleans up all agent-related Kubernetes resources.
-	DeleteResources(ctx context.Context, c client.Client) error
+	DeleteResources(ctx context.Context, c client.Client, vpaCRDExists bool) error
 }
 
 // PipelineLock manages exclusive access to pipeline resources to enforce maximum pipeline limits.
@@ -87,7 +87,13 @@ type OverridesHandler interface {
 type IstioStatusChecker interface {
 	// IsIstioActive returns true if Istio is currently active in the cluster.
 	// This affects whether Istio-specific configurations (like PeerAuthentication) are applied.
-	IsIstioActive(ctx context.Context) bool
+	IsIstioActive(ctx context.Context) (bool, error)
+}
+
+// VpaStatusChecker determines whether Vertical Pod Autoscaler (VPA) is active in the cluster.
+type VpaStatusChecker interface {
+	// VpaCRDExists checks if the VPA CRD exists in the cluster.
+	VpaCRDExists(ctx context.Context, client client.Client) (bool, error)
 }
 
 // EndpointValidator validates metric pipeline endpoint configurations.

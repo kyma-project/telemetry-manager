@@ -15,6 +15,7 @@ import (
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
+	"github.com/kyma-project/telemetry-manager/internal/k8sclients"
 	"github.com/kyma-project/telemetry-manager/internal/metrics"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metricagent"
@@ -41,6 +42,7 @@ type Reconciler struct {
 	agentFlowHealthProber   AgentFlowHealthProber
 	gatewayProber           commonstatus.Prober
 	istioStatusChecker      IstioStatusChecker
+	vpaStatusChecker        VpaStatusChecker
 	overridesHandler        OverridesHandler
 	pipelineLock            PipelineLock
 	pipelineSync            PipelineSyncer
@@ -105,6 +107,13 @@ func WithGatewayProber(prober commonstatus.Prober) Option {
 func WithIstioStatusChecker(checker IstioStatusChecker) Option {
 	return func(r *Reconciler) {
 		r.istioStatusChecker = checker
+	}
+}
+
+// WithVpaStatusChecker sets the VPA status checker.
+func WithVpaStatusChecker(checker VpaStatusChecker) Option {
+	return func(r *Reconciler) {
+		r.vpaStatusChecker = checker
 	}
 }
 
@@ -301,7 +310,12 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 	if len(reconcilablePipelinesRequiringAgents) == 0 {
 		logf.FromContext(ctx).V(1).Info("cleaning up metric agent resources: no metric pipelines require an agent")
 
-		if err = r.agentApplierDeleter.DeleteResources(ctx, r.Client); err != nil {
+		vpaCRDExists, err := r.vpaStatusChecker.VpaCRDExists(ctx, r.Client)
+		if err != nil {
+			return fmt.Errorf("failed to check VPA status: %w", err)
+		}
+
+		if err = r.agentApplierDeleter.DeleteResources(ctx, r.Client, vpaCRDExists); err != nil {
 			return fmt.Errorf("failed to delete agent resources: %w", err)
 		}
 	} else {
@@ -372,7 +386,11 @@ func isMetricAgentRequired(pipeline *telemetryv1beta1.MetricPipeline) bool {
 }
 
 func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *telemetryv1beta1.MetricPipeline, allPipelines []telemetryv1beta1.MetricPipeline) error {
-	isIstioActive := r.istioStatusChecker.IsIstioActive(ctx)
+	isIstioActive, err := r.istioStatusChecker.IsIstioActive(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to check Istio status: %w", err)
+	}
+
 	shootInfo := k8sutils.GetGardenerShootInfo(ctx, r.Client)
 	telemetryOptions := telemetryutils.Options{
 		SignalType:                common.SignalTypeMetric,
@@ -393,6 +411,13 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 		enrichments = t.Spec.Enrichments
 	}
 
+	vpaCRDExists, err := r.vpaStatusChecker.VpaCRDExists(ctx, r.Client)
+	if err != nil {
+		return fmt.Errorf("failed to check VPA status: %w", err)
+	}
+
+	isVpaEnabled := telemetryutils.IsVpaEnabledInTelemetry(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
+
 	agentConfig, collectorEnvVars, err := r.agentConfigBuilder.Build(ctx, allPipelines, metricagent.BuildOptions{
 		IstioActive:                 isIstioActive,
 		IstioCertPath:               otelcollector.IstioCertPath,
@@ -405,6 +430,7 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 		},
 		Enrichments:       enrichments,
 		ServiceEnrichment: telemetryutils.GetServiceEnrichmentFromTelemetryOrDefault(ctx, telemetryOptions),
+		VpaActive:         vpaCRDExists && isVpaEnabled,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create collector config: %w", err)
@@ -420,11 +446,19 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 		return fmt.Errorf("failed to get ports of the backends: %w", err)
 	}
 
+	vpaMaxAllowedMemory, err := k8sutils.CalculateVpaMaxAllowedMemory(ctx, r.Client)
+	if err != nil {
+		return fmt.Errorf("failed to calculate VPA max allowed memory: %w", err)
+	}
+
 	if err := r.agentApplierDeleter.ApplyResources(
 		ctx,
-		k8sutils.NewOwnerReferenceSetter(r.Client, pipeline),
+		k8sclients.NewOwnerReferenceSetter(r.Client, pipeline),
 		otelcollector.AgentApplyOptions{
 			IstioEnabled:        isIstioActive,
+			VpaCRDExists:        vpaCRDExists,
+			VpaEnabled:          isVpaEnabled,
+			VpaMaxAllowedMemory: vpaMaxAllowedMemory,
 			CollectorConfigYAML: string(agentConfigYAML),
 			CollectorEnvVars:    collectorEnvVars,
 			BackendPorts:        backendPorts,

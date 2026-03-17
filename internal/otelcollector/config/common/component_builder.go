@@ -50,7 +50,7 @@ type ComponentBuilder[T any] struct {
 //	    return b.Config, b.EnvVars, nil
 //	}
 func (cb *ComponentBuilder[T]) AddServicePipeline(ctx context.Context, pipeline T, pipelineID string, fs ...BuildComponentFunc[T]) error {
-	cb.Config.Service.Pipelines[pipelineID] = Pipeline{}
+	cb.Config.Service.Pipelines[pipelineID] = ServicePipeline{}
 
 	for _, f := range fs {
 		if err := f(ctx, pipeline, pipelineID); err != nil {
@@ -71,7 +71,7 @@ func (cb *ComponentBuilder[T]) AddServicePipeline(ctx context.Context, pipeline 
 //	    return b.AddReceiver(
 //	        b.StaticComponentID[*LogPipeline]("otlp"),
 //	        func(lp *LogPipeline) any {
-//	            return &OTLPReceiver{
+//	            return &OTLPReceiverConfig{
 //	                Protocols: ReceiverProtocols{
 //	                    HTTP: Endpoint{Endpoint: fmt.Sprintf("${%s}:4318", EnvVarCurrentPodIP)},
 //	                    GRPC: Endpoint{Endpoint: fmt.Sprintf("${%s}:4317", EnvVarCurrentPodIP)},
@@ -99,9 +99,9 @@ func (cb *ComponentBuilder[T]) AddReceiver(componentIDFunc ComponentIDFunc[T], c
 			receiversOrConnectors[componentID] = receiverConfig
 		}
 
-		pipelineConfig := cb.Config.Service.Pipelines[pipelineID]
-		pipelineConfig.Receivers = append(pipelineConfig.Receivers, componentID)
-		cb.Config.Service.Pipelines[pipelineID] = pipelineConfig
+		servicePipeline := cb.Config.Service.Pipelines[pipelineID]
+		servicePipeline.Receivers = append(servicePipeline.Receivers, componentID)
+		cb.Config.Service.Pipelines[pipelineID] = servicePipeline
 
 		return nil
 	}
@@ -117,7 +117,7 @@ func (cb *ComponentBuilder[T]) AddReceiver(componentIDFunc ComponentIDFunc[T], c
 //	    return b.AddProcessor(
 //	        b.StaticComponentID[*LogPipeline]("memory_limiter"),
 //	        func(lp *LogPipeline) any {
-//	            return &MemoryLimiter{
+//	            return &MemoryLimiterConfig{
 //	                CheckInterval:        "1s",
 //	                LimitPercentage:      75,
 //	                SpikeLimitPercentage: 15,
@@ -159,7 +159,7 @@ func (cb *ComponentBuilder[T]) AddProcessor(componentIDFunc ComponentIDFunc[T], 
 //	            builder := NewOTLPExporterConfigBuilder(
 //	                b.Reader, lp.Spec.Output.OTLP, lp.Name, queueSize, SignalTypeLog,
 //	            )
-//	            return builder.OTLPExporterConfig(ctx)
+//	            return builder.OTLPExporter(ctx)
 //	        },
 //	    )
 //	}

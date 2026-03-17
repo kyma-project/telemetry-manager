@@ -1,4 +1,10 @@
 extensions:
+    cgroupruntime:
+        gomaxprocs:
+            enabled: false
+        gomemlimit:
+            enabled: true
+            ratio: 0.8
     health_check:
         endpoint: ${MY_POD_IP}:13133
     pprof:
@@ -10,7 +16,7 @@ service:
                 - otlp
             processors:
                 - memory_limiter
-                - k8sattributes
+                - k8s_attributes
                 - istio_noise_filter
                 - transform/insert-cluster-attributes
                 - service_enrichment
@@ -22,16 +28,17 @@ service:
         metrics:
             readers:
                 - pull:
-                    exporter:
-                        prometheus:
-                            host: ${MY_POD_IP}
-                            port: 8888
+                      exporter:
+                          prometheus:
+                              host: ${MY_POD_IP}
+                              port: 8888
         logs:
             level: info
             encoding: json
     extensions:
         - health_check
         - pprof
+        - cgroupruntime
 receivers:
     otlp:
         protocols:
@@ -45,7 +52,7 @@ processors:
         timeout: 10s
         send_batch_max_size: 512
     istio_noise_filter: {}
-    k8sattributes:
+    k8s_attributes:
         auth_type: serviceAccount
         passthrough: false
         extract:
@@ -79,13 +86,13 @@ processors:
                   tag_name: host.arch
         pod_association:
             - sources:
-                - from: resource_attribute
-                  name: k8s.pod.ip
+                  - from: resource_attribute
+                    name: k8s.pod.ip
             - sources:
-                - from: resource_attribute
-                  name: k8s.pod.uid
+                  - from: resource_attribute
+                    name: k8s.pod.uid
             - sources:
-                - from: connection
+                  - from: connection
     memory_limiter:
         check_interval: 1s
         limit_percentage: 75
@@ -98,17 +105,18 @@ processors:
         error_mode: ignore
         trace_statements:
             - statements:
-                - delete_matching_keys(resource.attributes, "kyma.*")
+                  - delete_matching_keys(resource.attributes, "kyma.*")
     transform/insert-cluster-attributes:
         error_mode: ignore
         trace_statements:
             - statements:
-                - set(resource.attributes["k8s.cluster.name"], "${KUBERNETES_SERVICE_HOST}") where resource.attributes["k8s.cluster.name"] == nil or resource.attributes["k8s.cluster.name"] == ""
-                - set(resource.attributes["k8s.cluster.uid"], "") where resource.attributes["k8s.cluster.uid"] == nil or resource.attributes["k8s.cluster.uid"] == ""
-                - set(resource.attributes["cloud.provider"], "test-cloud-provider") where resource.attributes["cloud.provider"] == nil or resource.attributes["cloud.provider"] == ""
+                  - set(resource.attributes["k8s.cluster.name"], "${KUBERNETES_SERVICE_HOST}") where resource.attributes["k8s.cluster.name"] == nil or resource.attributes["k8s.cluster.name"] == ""
+                  - set(resource.attributes["k8s.cluster.uid"], "") where resource.attributes["k8s.cluster.uid"] == nil or resource.attributes["k8s.cluster.uid"] == ""
+                  - set(resource.attributes["cloud.provider"], "test-cloud-provider") where resource.attributes["cloud.provider"] == nil or resource.attributes["cloud.provider"] == ""
 exporters:
-    otlp_grpc/test-trace:
-        endpoint: ${OTLP_ENDPOINT_TEST_TRACE}
+    otlp_http/test:
+        endpoint: ${OTLP_ENDPOINT_TEST}
+        compression: gzip
         sending_queue:
             enabled: true
             queue_size: 256

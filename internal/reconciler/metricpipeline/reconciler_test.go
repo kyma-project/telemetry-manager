@@ -68,7 +68,7 @@ func TestGatewayHealthCondition(t *testing.T) {
 			fakeClient := newTestClient(t, &pipeline)
 
 			agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
-			agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil).Once()
+			agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
 
 			reconcilerOpts := []any{
 				withAgentApplierDeleterAssert(agentApplierDeleterMock),
@@ -93,6 +93,7 @@ func TestGatewayHealthCondition(t *testing.T) {
 		})
 	}
 }
+
 func TestAgentHealthCondition(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -155,6 +156,7 @@ func TestAgentHealthCondition(t *testing.T) {
 		})
 	}
 }
+
 func TestSecretReferenceValidation(t *testing.T) {
 	t.Run("referenced secret exists", func(t *testing.T) {
 		secret := &corev1.Secret{
@@ -169,7 +171,7 @@ func TestSecretReferenceValidation(t *testing.T) {
 		fakeClient := newTestClient(t, &pipeline)
 
 		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
-		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil).Once()
+		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
 
 		sut, assertAll := newTestReconciler(
 			fakeClient,
@@ -218,12 +220,13 @@ func TestSecretReferenceValidation(t *testing.T) {
 		assertAll(t)
 	})
 }
+
 func TestMaxPipelineLimit(t *testing.T) {
 	pipeline := testutils.NewMetricPipelineBuilder().Build()
 	fakeClient := newTestClient(t, &pipeline)
 
 	agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
-	agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil).Once()
+	agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
 
 	pipelineLockStub := &mocks.PipelineLock{}
 	pipelineLockStub.On("TryAcquireLock", mock.Anything, mock.Anything).Return(resourcelock.ErrMaxPipelinesExceeded)
@@ -338,7 +341,7 @@ func TestGatewayFlowHealthCondition(t *testing.T) {
 			fakeClient := newTestClient(t, &pipeline)
 
 			agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
-			agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil).Once()
+			agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
 
 			gatewayFlowHealthProberStub := &mocks.GatewayFlowHealthProber{}
 			gatewayFlowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(tt.probe, tt.probeErr)
@@ -456,6 +459,7 @@ func TestAgentFlowHealthCondition(t *testing.T) {
 		})
 	}
 }
+
 func TestTLSCertificateValidation(t *testing.T) {
 	tests := []struct {
 		name            string
@@ -528,7 +532,7 @@ func TestTLSCertificateValidation(t *testing.T) {
 
 			agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
 			agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-			agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil)
+			agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 			customValidator := newTestValidator(
 				WithTLSCertValidator(stubs.NewTLSCertValidator(tt.tlsCertErr)),
@@ -562,6 +566,7 @@ func TestTLSCertificateValidation(t *testing.T) {
 		})
 	}
 }
+
 func TestOTTLSpecValidation(t *testing.T) {
 	tests := []struct {
 		name            string
@@ -614,6 +619,7 @@ func TestOTTLSpecValidation(t *testing.T) {
 		})
 	}
 }
+
 func TestAPIServerFailureHandling(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -680,6 +686,7 @@ func TestAPIServerFailureHandling(t *testing.T) {
 		})
 	}
 }
+
 func TestNonReconcilablePipelines(t *testing.T) {
 	pipeline := testutils.NewMetricPipelineBuilder().
 		WithRuntimeInput(true).
@@ -688,7 +695,7 @@ func TestNonReconcilablePipelines(t *testing.T) {
 	fakeClient := newTestClient(t, &pipeline)
 
 	agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
-	agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil).Once()
+	agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
 
 	customValidator := newTestValidator(
 		WithSecretRefValidator(stubs.NewSecretRefValidator(fmt.Errorf("%w: Secret 'some-secret' of Namespace 'some-namespace'", secretref.ErrSecretRefNotFound))),
@@ -765,7 +772,7 @@ func TestAgentRequirementDetermination(t *testing.T) { //nolint: gocognit // Com
 			// Setup mocks
 			agentMock := &mocks.AgentApplierDeleter{}
 			if tt.expectedAgentDeletes > 0 {
-				agentMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil).Times(tt.expectedAgentDeletes)
+				agentMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Times(tt.expectedAgentDeletes)
 			}
 
 			if tt.expectedAgentApplies > 0 {
@@ -805,6 +812,7 @@ func TestAgentRequirementDetermination(t *testing.T) { //nolint: gocognit // Com
 		})
 	}
 }
+
 func TestPodErrorConditionReporting(t *testing.T) {
 	tests := []struct {
 		name            string
