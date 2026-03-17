@@ -12,12 +12,12 @@ on:
         required: true
         type: string
       self_monitor_image_tag:
-        description: 'Self-monitor image tag to use in release (e.g., v20260302-bbf32a3b)'
+        description: 'Self-Monitor image tag to use in release (e.g., v20260302-bbf32a3b)'
         required: true
         default: ""
         type: string
       dir_size_image_tag:
-        description: 'DSM image tag to use in release (e.g., v20260302-12345678)'
+        description: 'Directory Size Exporter image tag to use in release (e.g., v20260302-12345678)'
         required: true
         default: ""
         type: string
@@ -277,7 +277,7 @@ jobs:
           VERSION: ${{ github.event.inputs.version }}
           RELEASE_BRANCH: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
         run: |
-          BUMP_BRANCH="release-prep-${VERSION}"
+          BUMP_BRANCH="rel-prep-${VERSION}"
           echo "Creating version bump branch ${BUMP_BRANCH}..."
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -432,7 +432,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ github.event.inputs.version }}
         run: |
-          BUMP_BRANCH="release-prep-${VERSION}"
+          BUMP_BRANCH="rel-prep-${VERSION}"
           echo "Cleaning up bump branch ${BUMP_BRANCH}..."
 
           if git ls-remote --heads origin "${BUMP_BRANCH}" | grep -q "${BUMP_BRANCH}"; then
@@ -452,7 +452,9 @@ jobs:
       name: telemetry-manager
       dockerfile: Dockerfile
       context: .
-      tags: ${{ needs.prepare-release.outputs.release-tag }}
+      tags: |-
+        ${{ needs.prepare-release.outputs.release-tag }}
+        ${{ needs.prepare-release.outputs.release-tag }}-experimental
       platforms: "linux/amd64,linux/arm64"
 
   unit-tests:
