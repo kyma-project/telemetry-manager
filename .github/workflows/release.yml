@@ -443,24 +443,6 @@ jobs:
             echo "Bump branch ${BUMP_BRANCH} not found on remote (may already be deleted)"
           fi
 
-  build-image:
-    permissions:
-      id-token: write # Required for requesting the JWT token
-      contents: read
-    needs:
-      - validate-and-prepare-branch
-      - prepare-release
-    if: always() && !cancelled() && needs.validate-and-prepare-branch.result == 'success'
-    uses: kyma-project/test-infra/.github/workflows/image-builder.yml@main # Usage: kyma-project/test-infra/.github/workflows/image-builder.yml@main
-    with:
-      name: telemetry-manager
-      dockerfile: Dockerfile
-      context: .
-      tags: |-
-        ${{ inputs.version }}
-        ${{ inputs.version }}-experimental
-      platforms: "linux/amd64,linux/arm64"
-
   unit-tests:
     runs-on: ubuntu-latest
     needs:
@@ -482,10 +464,9 @@ jobs:
 
   run-pr-integration:
     needs:
-      - build-image
       - validate-and-prepare-branch
       - prepare-release
-    if: always() && !cancelled() && needs.build-image.result == 'success'
+    if: always() && !cancelled() && needs.validate-and-prepare-branch.result == 'success'
     uses: ./.github/workflows/pr-integration.yml
     with:
       image_tag: ${{ inputs.version }}
@@ -494,10 +475,9 @@ jobs:
 
   run-gardener-integration:
     needs:
-      - build-image
       - validate-and-prepare-branch
       - prepare-release
-    if: always() && !cancelled() && needs.build-image.result == 'success'
+    if: always() && !cancelled() && needs.validate-and-prepare-branch.result == 'success'
     uses: ./.github/workflows/gardener-integration.yml
     with:
       image_tag: ${{ inputs.version }}
@@ -519,7 +499,6 @@ jobs:
       - validate-and-prepare-branch
       - prepare-release
       - upload-release-report
-      - build-image
       - unit-tests
     if: always() && !cancelled() && needs.validate-and-prepare-branch.result == 'success' && needs.upload-release-report.result == 'success'
     permissions:
