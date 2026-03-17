@@ -85,12 +85,6 @@ status:
 apiVersion: v1
 kind: Service
 metadata:
-  labels:
-    app.kubernetes.io/component: gateway
-    app.kubernetes.io/managed-by: telemetry-manager
-    app.kubernetes.io/name: telemetry-otlp-gateway
-    app.kubernetes.io/part-of: telemetry
-    kyma-project.io/module: telemetry
   name: telemetry-otlp-logs
   namespace: kyma-system
 spec:
@@ -113,12 +107,6 @@ status:
 apiVersion: v1
 kind: Service
 metadata:
-  labels:
-    app.kubernetes.io/component: gateway
-    app.kubernetes.io/managed-by: telemetry-manager
-    app.kubernetes.io/name: telemetry-otlp-gateway
-    app.kubernetes.io/part-of: telemetry
-    kyma-project.io/module: telemetry
   name: telemetry-otlp-traces
   namespace: kyma-system
 spec:
@@ -212,8 +200,6 @@ spec:
               fieldPath: spec.nodeName
         - name: GODEBUG
           value: fips140=only,tlsmlkem=0
-        - name: GOMEMLIMIT
-          value: "419430400"
         envFrom:
         - secretRef:
             name: telemetry-otlp-gateway
@@ -286,18 +272,9 @@ metadata:
   namespace: kyma-system
 spec:
   egress:
-  - to:
-    - ipBlock:
-        cidr: 0.0.0.0/0
-    - ipBlock:
-        cidr: ::/0
+  - {}
   ingress:
-  - from:
-    - ipBlock:
-        cidr: 0.0.0.0/0
-    - ipBlock:
-        cidr: ::/0
-    ports:
+  - ports:
     - port: 4318
       protocol: TCP
     - port: 4317

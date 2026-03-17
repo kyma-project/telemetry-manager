@@ -56,6 +56,9 @@ const (
 
 	LogPipelineCRD    = "logpipelines.telemetry.kyma-project.io"
 	MetricPipelineCRD = "metricpipelines.telemetry.kyma-project.io"
+
+	VpaGroupVersion = "autoscaling.k8s.io/v1"
+	VpaKind         = "VerticalPodAutoscaler"
 )
 
 // MetricsServiceName returns the metrics service name for a given component name

@@ -22,6 +22,7 @@ func TestBuildConfig(t *testing.T) {
 		goldenFileName    string
 		pipelines         []telemetryv1beta1.LogPipeline
 		serviceEnrichment string
+		vpaActive         bool
 	}{
 		{
 			name:           "single pipeline",
@@ -44,6 +45,18 @@ func TestBuildConfig(t *testing.T) {
 					WithName("test").
 					WithRuntimeInput(true).
 					WithKeepOriginalBody(true).
+					WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).
+					Build(),
+			},
+		},
+		{
+			name:           "pipeline with VPA active",
+			goldenFileName: "vpa-active.yaml",
+			vpaActive:      true,
+			pipelines: []telemetryv1beta1.LogPipeline{
+				testutils.NewLogPipelineBuilder().
+					WithName("test").
+					WithRuntimeInput(true).
 					WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).
 					Build(),
 			},
@@ -187,6 +200,7 @@ func TestBuildConfig(t *testing.T) {
 				InstrumentationScopeVersion: "main",
 				AgentNamespace:              "kyma-system",
 				ServiceEnrichment:           tt.serviceEnrichment,
+				VpaActive:                   tt.vpaActive,
 			}
 
 			collectorConfig, _, err := sut.Build(t.Context(), tt.pipelines, buildOptions)

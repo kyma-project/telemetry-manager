@@ -183,7 +183,11 @@ func (r *Reconciler) processConfigAndBuildResources(ctx context.Context, tracePi
 		return fmt.Errorf("failed to marshal config: %w", err)
 	}
 
-	isIstioActive := r.istioStatusChecker.IsIstioActive(ctx)
+	isIstioActive, err := r.istioStatusChecker.IsIstioActive(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to check Istio status: %w", err)
+	}
+
 	opts := otelcollector.GatewayApplyOptions{
 		CollectorConfigYAML:            string(collectorConfigYAML),
 		CollectorEnvVars:               collectorEnvVars,
@@ -217,7 +221,12 @@ func (r *Reconciler) doReconcile(ctx context.Context) error {
 	if len(tracePipelines) == 0 && len(logPipelines) == 0 {
 		log.V(1).Info("no valid pipelines, deleting gateway resources")
 
-		if err := r.gatewayApplierDeleter.DeleteResources(ctx, r.Client, r.istioStatusChecker.IsIstioActive(ctx)); err != nil {
+		isIstioActive, err := r.istioStatusChecker.IsIstioActive(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to check Istio status: %w", err)
+		}
+
+		if err := r.gatewayApplierDeleter.DeleteResources(ctx, r.Client, isIstioActive); err != nil {
 			return fmt.Errorf("failed to delete gateway: %w", err)
 		}
 

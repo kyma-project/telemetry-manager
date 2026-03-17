@@ -21,7 +21,7 @@ func TestMakeExtensionConfig(t *testing.T) {
 	}
 
 	cb := NewOAuth2ExtensionConfigBuilder(fake.NewClientBuilder().Build(), oauth2Options, "test", SignalTypeTrace)
-	oauth2ExtensionConfig, envVars, err := cb.OAuth2ExtensionConfig(t.Context())
+	oauth2ExtensionConfig, envVars, err := cb.OAuth2Extension(t.Context())
 	require.NoError(t, err)
 	require.NotNil(t, envVars)
 

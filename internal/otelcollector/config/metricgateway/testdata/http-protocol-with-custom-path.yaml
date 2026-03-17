@@ -1,4 +1,10 @@
 extensions:
+    cgroupruntime:
+        gomaxprocs:
+            enabled: false
+        gomemlimit:
+            enabled: true
+            ratio: 0.8
     health_check:
         endpoint: ${MY_POD_IP}:13133
     k8s_leader_elector:
@@ -14,7 +20,7 @@ service:
             processors:
                 - memory_limiter
                 - transform/set-instrumentation-scope-kyma
-                - k8sattributes
+                - k8s_attributes
                 - service_enrichment
                 - transform/insert-cluster-attributes
             exporters:
@@ -55,6 +61,7 @@ service:
     extensions:
         - health_check
         - pprof
+        - cgroupruntime
         - k8s_leader_elector
 receivers:
     kymastats:
@@ -85,7 +92,7 @@ processors:
         send_batch_size: 1024
         timeout: 10s
         send_batch_max_size: 1024
-    k8sattributes:
+    k8s_attributes:
         auth_type: serviceAccount
         passthrough: false
         extract:
@@ -167,6 +174,7 @@ exporters:
         metrics_endpoint: ${OTLP_ENDPOINT_TEST}
         tls:
             insecure: true
+        compression: gzip
         sending_queue:
             enabled: true
             queue_size: 256

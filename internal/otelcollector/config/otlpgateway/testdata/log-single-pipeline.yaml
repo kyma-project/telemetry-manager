@@ -1,4 +1,10 @@
 extensions:
+    cgroupruntime:
+        gomaxprocs:
+            enabled: false
+        gomemlimit:
+            enabled: true
+            ratio: 0.8
     health_check:
         endpoint: ${MY_POD_IP}:13133
     pprof:
@@ -11,7 +17,7 @@ service:
             processors:
                 - memory_limiter
                 - transform/set-observed-time-if-zero
-                - k8sattributes
+                - k8s_attributes
                 - istio_noise_filter
                 - transform/insert-cluster-attributes
                 - service_enrichment
@@ -24,16 +30,17 @@ service:
         metrics:
             readers:
                 - pull:
-                    exporter:
-                        prometheus:
-                            host: ${MY_POD_IP}
-                            port: 8888
+                      exporter:
+                          prometheus:
+                              host: ${MY_POD_IP}
+                              port: 8888
         logs:
             level: info
             encoding: json
     extensions:
         - health_check
         - pprof
+        - cgroupruntime
 receivers:
     otlp:
         protocols:
@@ -49,7 +56,7 @@ processors:
     istio_enrichment:
         scope_version: 1.0.0
     istio_noise_filter: {}
-    k8sattributes:
+    k8s_attributes:
         auth_type: serviceAccount
         passthrough: false
         extract:
@@ -83,13 +90,13 @@ processors:
                   tag_name: host.arch
         pod_association:
             - sources:
-                - from: resource_attribute
-                  name: k8s.pod.ip
+                  - from: resource_attribute
+                    name: k8s.pod.ip
             - sources:
-                - from: resource_attribute
-                  name: k8s.pod.uid
+                  - from: resource_attribute
+                    name: k8s.pod.uid
             - sources:
-                - from: connection
+                  - from: connection
     memory_limiter:
         check_interval: 1s
         limit_percentage: 75
@@ -102,24 +109,25 @@ processors:
         error_mode: ignore
         log_statements:
             - statements:
-                - delete_matching_keys(resource.attributes, "kyma.*")
+                  - delete_matching_keys(resource.attributes, "kyma.*")
     transform/insert-cluster-attributes:
         error_mode: ignore
         log_statements:
             - statements:
-                - set(resource.attributes["k8s.cluster.name"], "${KUBERNETES_SERVICE_HOST}") where resource.attributes["k8s.cluster.name"] == nil or resource.attributes["k8s.cluster.name"] == ""
-                - set(resource.attributes["k8s.cluster.uid"], "") where resource.attributes["k8s.cluster.uid"] == nil or resource.attributes["k8s.cluster.uid"] == ""
-                - set(resource.attributes["cloud.provider"], "test-cloud-provider") where resource.attributes["cloud.provider"] == nil or resource.attributes["cloud.provider"] == ""
+                  - set(resource.attributes["k8s.cluster.name"], "${KUBERNETES_SERVICE_HOST}") where resource.attributes["k8s.cluster.name"] == nil or resource.attributes["k8s.cluster.name"] == ""
+                  - set(resource.attributes["k8s.cluster.uid"], "") where resource.attributes["k8s.cluster.uid"] == nil or resource.attributes["k8s.cluster.uid"] == ""
+                  - set(resource.attributes["cloud.provider"], "test-cloud-provider") where resource.attributes["cloud.provider"] == nil or resource.attributes["cloud.provider"] == ""
     transform/set-observed-time-if-zero:
         error_mode: ignore
         log_statements:
             - statements:
-                - set(log.observed_time, Now())
+                  - set(log.observed_time, Now())
               conditions:
-                - log.observed_time_unix_nano == 0
+                  - log.observed_time_unix_nano == 0
 exporters:
-    otlp_grpc/test-log:
-        endpoint: ${OTLP_ENDPOINT_TEST_LOG}
+    otlp_grpc/test:
+        endpoint: ${OTLP_ENDPOINT_TEST}
+        compression: gzip
         sending_queue:
             enabled: true
             queue_size: 256

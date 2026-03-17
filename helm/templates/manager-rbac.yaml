@@ -139,6 +139,18 @@ rules:
       - get
       - patch
       - update
+  - apiGroups:
+      - autoscaling.k8s.io
+    resources:
+      - verticalpodautoscalers
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
 
   #############################
   # Policy rules for fluent-bit

@@ -1,4 +1,10 @@
 extensions:
+    cgroupruntime:
+        gomaxprocs:
+            enabled: false
+        gomemlimit:
+            enabled: true
+            ratio: 0.8
     health_check:
         endpoint: ${MY_POD_IP}:13133
     k8s_leader_elector:
@@ -12,7 +18,7 @@ service:
             receivers:
                 - routing/runtime-input
             processors:
-                - k8sattributes
+                - k8s_attributes
                 - service_enrichment
             exporters:
                 - routing/enrichment
@@ -56,6 +62,7 @@ service:
     extensions:
         - health_check
         - pprof
+        - cgroupruntime
         - k8s_leader_elector
 receivers:
     k8s_cluster:
@@ -121,6 +128,19 @@ receivers:
                 enabled: false
             k8s.node.memory.page_faults:
                 enabled: false
+        resource_attributes:
+            aws.volume.id:
+                enabled: false
+            fs.type:
+                enabled: false
+            gce.pd.name:
+                enabled: false
+            glusterfs.endpoints.name:
+                enabled: false
+            glusterfs.path:
+                enabled: false
+            partition:
+                enabled: false
         extra_metadata_labels:
             - k8s.volume.type
         collect_all_network_interfaces:
@@ -132,20 +152,20 @@ processors:
         send_batch_max_size: 1024
     filter/drop-envoy-metrics-if-disabled:
         error_mode: ignore
-        metrics:
-            metric:
-                - IsMatch(name, "^envoy_.*") and resource.attributes["kyma.input.name"] == "istio"
+        metric_conditions:
+            - conditions:
+                - IsMatch(metric.name, "^envoy_.*") and resource.attributes["kyma.input.name"] == "istio"
     filter/drop-non-pvc-volumes-metrics:
         error_mode: ignore
-        metrics:
-            metric:
+        metric_conditions:
+            - conditions:
                 - resource.attributes["k8s.volume.name"] != nil and resource.attributes["k8s.volume.type"] != "persistentVolumeClaim"
     filter/drop-virtual-network-interfaces:
         error_mode: ignore
-        metrics:
-            datapoint:
-                - IsMatch(metric.name, "^k8s.node.network.*") and not(IsMatch(attributes["interface"], "^(eth|en).*"))
-    k8sattributes:
+        metric_conditions:
+            - conditions:
+                - IsMatch(metric.name, "^k8s.node.network.*") and not(IsMatch(datapoint.attributes["interface"], "^(eth|en).*"))
+    k8s_attributes:
         auth_type: serviceAccount
         passthrough: false
         extract:
@@ -244,6 +264,7 @@ exporters:
         endpoint: ${OTLP_ENDPOINT_TEST}
         tls:
             insecure: true
+        compression: gzip
         sending_queue:
             enabled: true
             queue_size: 256
