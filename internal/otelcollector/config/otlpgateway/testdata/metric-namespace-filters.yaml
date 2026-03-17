@@ -178,8 +178,8 @@ processors:
             - statements:
                 - set(resource.attributes["kyma.input.name"], "otlp")
 exporters:
-    otlp_grpc/cls:
-        endpoint: ${OTLP_ENDPOINT_CLS}
+    otlp_grpc/test-metric:
+        endpoint: ${OTLP_ENDPOINT_TEST_METRIC}
         compression: gzip
         sending_queue:
             enabled: true

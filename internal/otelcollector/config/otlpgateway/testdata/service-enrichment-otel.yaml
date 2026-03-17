@@ -37,7 +37,7 @@ service:
                 - memory_limiter
                 - transform/set-instrumentation-scope-kyma
                 - transform/drop-unknown-service-name
-                - k8sattributes
+                - k8s_attributes
                 - transform/insert-cluster-attributes
             exporters:
                 - forward/enrichment
@@ -70,7 +70,7 @@ service:
                 - memory_limiter
                 - transform/drop-istio-service-enrichment
                 - transform/drop-unknown-service-name
-                - k8sattributes
+                - k8s_attributes
                 - istio_noise_filter
                 - transform/insert-cluster-attributes
                 - transform/drop-kyma-attributes
@@ -81,10 +81,10 @@ service:
         metrics:
             readers:
                 - pull:
-                      exporter:
-                          prometheus:
-                              host: ${MY_POD_IP}
-                              port: 8888
+                    exporter:
+                        prometheus:
+                            host: ${MY_POD_IP}
+                            port: 8888
         logs:
             level: info
             encoding: json
@@ -92,6 +92,7 @@ service:
         - health_check
         - pprof
         - cgroupruntime
+        - k8s_leader_elector
 receivers:
     kymastats:
         auth_type: serviceAccount
@@ -158,13 +159,13 @@ processors:
             deployment_name_from_replicaset: true
         pod_association:
             - sources:
-                  - from: resource_attribute
-                    name: k8s.pod.ip
+                - from: resource_attribute
+                  name: k8s.pod.ip
             - sources:
-                  - from: resource_attribute
-                    name: k8s.pod.uid
+                - from: resource_attribute
+                  name: k8s.pod.uid
             - sources:
-                  - from: connection
+                - from: connection
     memory_limiter:
         check_interval: 1s
         limit_percentage: 75
@@ -173,34 +174,72 @@ processors:
         error_mode: ignore
         trace_statements:
             - statements:
-                  - delete_matching_keys(resource.attributes, "service.*") where span.attributes["component"] == "proxy"
+                - delete_matching_keys(resource.attributes, "service.*") where span.attributes["component"] == "proxy"
     transform/drop-kyma-attributes:
         error_mode: ignore
         trace_statements:
             - statements:
-                  - delete_matching_keys(resource.attributes, "kyma.*")
+                - delete_matching_keys(resource.attributes, "kyma.*")
     transform/drop-unknown-service-name:
         error_mode: ignore
         trace_statements:
             - statements:
-                  - delete_key(resource.attributes, "service.name") where resource.attributes["service.name"] != nil and HasPrefix(resource.attributes["service.name"], "unknown_service")
+                - delete_key(resource.attributes, "service.name") where resource.attributes["service.name"] != nil and HasPrefix(resource.attributes["service.name"], "unknown_service")
     transform/insert-cluster-attributes:
         error_mode: ignore
         trace_statements:
             - statements:
-                  - set(resource.attributes["k8s.cluster.name"], "${KUBERNETES_SERVICE_HOST}") where resource.attributes["k8s.cluster.name"] == nil or resource.attributes["k8s.cluster.name"] == ""
-                  - set(resource.attributes["k8s.cluster.uid"], "") where resource.attributes["k8s.cluster.uid"] == nil or resource.attributes["k8s.cluster.uid"] == ""
-                  - set(resource.attributes["cloud.provider"], "test-cloud-provider") where resource.attributes["cloud.provider"] == nil or resource.attributes["cloud.provider"] == ""
+                - set(resource.attributes["k8s.cluster.name"], "${KUBERNETES_SERVICE_HOST}") where resource.attributes["k8s.cluster.name"] == nil or resource.attributes["k8s.cluster.name"] == ""
+                - set(resource.attributes["k8s.cluster.uid"], "") where resource.attributes["k8s.cluster.uid"] == nil or resource.attributes["k8s.cluster.uid"] == ""
+                - set(resource.attributes["cloud.provider"], "test-cloud-provider") where resource.attributes["cloud.provider"] == nil or resource.attributes["cloud.provider"] == ""
+    transform/set-instrumentation-scope-kyma:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - set(scope.version, "1.0.0") where scope.name == "github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver"
+                - set(scope.name, "io.kyma-project.telemetry/kyma") where scope.name == "github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver"
+    transform/set-kyma-input-name-kyma:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - set(resource.attributes["kyma.input.name"], "kyma")
+    transform/set-kyma-input-name-otlp:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - set(resource.attributes["kyma.input.name"], "otlp")
     transform/set-observed-time-if-zero:
         error_mode: ignore
         log_statements:
             - statements:
-                  - set(log.observed_time, Now())
+                - set(log.observed_time, Now())
               conditions:
-                  - log.observed_time_unix_nano == 0
+                - log.observed_time_unix_nano == 0
 exporters:
-    otlp_grpc/test:
-        endpoint: ${OTLP_ENDPOINT_TEST}
+    otlp_grpc/test-log:
+        endpoint: ${OTLP_ENDPOINT_TEST_LOG}
+        compression: gzip
+        sending_queue:
+            enabled: true
+            queue_size: 256
+        retry_on_failure:
+            enabled: true
+            initial_interval: 5s
+            max_interval: 30s
+            max_elapsed_time: 300s
+    otlp_grpc/test-metric:
+        endpoint: ${OTLP_ENDPOINT_TEST_METRIC}
+        compression: gzip
+        sending_queue:
+            enabled: true
+            queue_size: 256
+        retry_on_failure:
+            enabled: true
+            initial_interval: 5s
+            max_interval: 30s
+            max_elapsed_time: 300s
+    otlp_grpc/test-trace:
+        endpoint: ${OTLP_ENDPOINT_TEST_TRACE}
         compression: gzip
         sending_queue:
             enabled: true

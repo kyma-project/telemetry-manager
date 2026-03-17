@@ -172,17 +172,6 @@ func (r *TracePipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		})),
 	)
 
-	isIstioActive, err := istiostatus.NewChecker(discoveryClient).IsIstioActive(context.Background())
-	if err != nil {
-		return fmt.Errorf("failed to check Istio status: %w", err)
-	}
-
-	// Only watch PeerAuthentication CR if Istio is active
-	// otherwise, manager will have errors if the PeerAuthentication CRD is not present in the cluster
-	if isIstioActive {
-		ownedResourceTypesToWatch = append(ownedResourceTypesToWatch, &istiosecurityclientv1.PeerAuthentication{})
-	}
-
 	return b.Complete(r)
 }
 

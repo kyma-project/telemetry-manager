@@ -1,4 +1,10 @@
 extensions:
+    cgroupruntime:
+        gomaxprocs:
+            enabled: false
+        gomemlimit:
+            enabled: true
+            ratio: 0.8
     health_check:
         endpoint: ${MY_POD_IP}:13133
     k8s_leader_elector:
@@ -33,7 +39,7 @@ service:
             processors:
                 - memory_limiter
                 - transform/set-observed-time-if-zero
-                - k8sattributes
+                - k8s_attributes
                 - istio_noise_filter
                 - transform/insert-cluster-attributes
                 - service_enrichment
@@ -48,7 +54,7 @@ service:
             processors:
                 - memory_limiter
                 - transform/set-instrumentation-scope-kyma
-                - k8sattributes
+                - k8s_attributes
                 - service_enrichment
                 - transform/insert-cluster-attributes
             exporters:
@@ -80,7 +86,7 @@ service:
                 - otlp
             processors:
                 - memory_limiter
-                - k8sattributes
+                - k8s_attributes
                 - istio_noise_filter
                 - transform/insert-cluster-attributes
                 - service_enrichment
@@ -102,6 +108,7 @@ service:
     extensions:
         - health_check
         - pprof
+        - cgroupruntime
         - oauth2client/test-trace
         - oauth2client/test-log
         - k8s_leader_elector
@@ -138,7 +145,7 @@ processors:
     istio_enrichment:
         scope_version: 1.0.0
     istio_noise_filter: {}
-    k8sattributes:
+    k8s_attributes:
         auth_type: serviceAccount
         passthrough: false
         extract:
@@ -225,6 +232,7 @@ processors:
 exporters:
     otlp_http/test-log:
         endpoint: ${OTLP_ENDPOINT_TEST_LOG}
+        compression: gzip
         sending_queue:
             enabled: true
             queue_size: 256
@@ -239,6 +247,7 @@ exporters:
         endpoint: ${OTLP_ENDPOINT_TEST_METRIC}
         tls:
             insecure: true
+        compression: gzip
         sending_queue:
             enabled: true
             queue_size: 256
@@ -251,6 +260,7 @@ exporters:
             authenticator: oauth2client/test-metric
     otlp_http/test-trace:
         endpoint: ${OTLP_ENDPOINT_TEST_TRACE}
+        compression: gzip
         sending_queue:
             enabled: true
             queue_size: 256

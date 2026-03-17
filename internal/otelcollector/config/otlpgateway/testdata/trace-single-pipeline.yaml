@@ -28,10 +28,10 @@ service:
         metrics:
             readers:
                 - pull:
-                      exporter:
-                          prometheus:
-                              host: ${MY_POD_IP}
-                              port: 8888
+                    exporter:
+                        prometheus:
+                            host: ${MY_POD_IP}
+                            port: 8888
         logs:
             level: info
             encoding: json
@@ -86,13 +86,13 @@ processors:
                   tag_name: host.arch
         pod_association:
             - sources:
-                  - from: resource_attribute
-                    name: k8s.pod.ip
+                - from: resource_attribute
+                  name: k8s.pod.ip
             - sources:
-                  - from: resource_attribute
-                    name: k8s.pod.uid
+                - from: resource_attribute
+                  name: k8s.pod.uid
             - sources:
-                  - from: connection
+                - from: connection
     memory_limiter:
         check_interval: 1s
         limit_percentage: 75
@@ -105,17 +105,17 @@ processors:
         error_mode: ignore
         trace_statements:
             - statements:
-                  - delete_matching_keys(resource.attributes, "kyma.*")
+                - delete_matching_keys(resource.attributes, "kyma.*")
     transform/insert-cluster-attributes:
         error_mode: ignore
         trace_statements:
             - statements:
-                  - set(resource.attributes["k8s.cluster.name"], "${KUBERNETES_SERVICE_HOST}") where resource.attributes["k8s.cluster.name"] == nil or resource.attributes["k8s.cluster.name"] == ""
-                  - set(resource.attributes["k8s.cluster.uid"], "") where resource.attributes["k8s.cluster.uid"] == nil or resource.attributes["k8s.cluster.uid"] == ""
-                  - set(resource.attributes["cloud.provider"], "test-cloud-provider") where resource.attributes["cloud.provider"] == nil or resource.attributes["cloud.provider"] == ""
+                - set(resource.attributes["k8s.cluster.name"], "${KUBERNETES_SERVICE_HOST}") where resource.attributes["k8s.cluster.name"] == nil or resource.attributes["k8s.cluster.name"] == ""
+                - set(resource.attributes["k8s.cluster.uid"], "") where resource.attributes["k8s.cluster.uid"] == nil or resource.attributes["k8s.cluster.uid"] == ""
+                - set(resource.attributes["cloud.provider"], "test-cloud-provider") where resource.attributes["cloud.provider"] == nil or resource.attributes["cloud.provider"] == ""
 exporters:
-    otlp_http/test:
-        endpoint: ${OTLP_ENDPOINT_TEST}
+    otlp_grpc/test-trace:
+        endpoint: ${OTLP_ENDPOINT_TEST_TRACE}
         compression: gzip
         sending_queue:
             enabled: true

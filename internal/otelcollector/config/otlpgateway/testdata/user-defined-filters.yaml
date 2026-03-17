@@ -1,4 +1,10 @@
 extensions:
+    cgroupruntime:
+        gomaxprocs:
+            enabled: false
+        gomemlimit:
+            enabled: true
+            ratio: 0.8
     health_check:
         endpoint: ${MY_POD_IP}:13133
     k8s_leader_elector:
@@ -15,7 +21,7 @@ service:
             processors:
                 - memory_limiter
                 - transform/set-observed-time-if-zero
-                - k8sattributes
+                - k8s_attributes
                 - istio_noise_filter
                 - transform/insert-cluster-attributes
                 - service_enrichment
@@ -31,7 +37,7 @@ service:
             processors:
                 - memory_limiter
                 - transform/set-observed-time-if-zero
-                - k8sattributes
+                - k8s_attributes
                 - istio_noise_filter
                 - transform/insert-cluster-attributes
                 - service_enrichment
@@ -47,7 +53,7 @@ service:
             processors:
                 - memory_limiter
                 - transform/set-instrumentation-scope-kyma
-                - k8sattributes
+                - k8s_attributes
                 - service_enrichment
                 - transform/insert-cluster-attributes
             exporters:
@@ -89,7 +95,7 @@ service:
                 - otlp
             processors:
                 - memory_limiter
-                - k8sattributes
+                - k8s_attributes
                 - istio_noise_filter
                 - transform/insert-cluster-attributes
                 - service_enrichment
@@ -103,7 +109,7 @@ service:
                 - otlp
             processors:
                 - memory_limiter
-                - k8sattributes
+                - k8s_attributes
                 - istio_noise_filter
                 - transform/insert-cluster-attributes
                 - service_enrichment
@@ -126,6 +132,7 @@ service:
     extensions:
         - health_check
         - pprof
+        - cgroupruntime
         - k8s_leader_elector
 receivers:
     kymastats:
@@ -158,38 +165,38 @@ processors:
         send_batch_max_size: 512
     filter/user-defined-test-log-1:
         error_mode: ignore
-        logs:
-            log_record:
+        log_conditions:
+            - conditions:
                 - IsMatch(log.attributes["foo"], ".*bar.*")
     filter/user-defined-test-log-2:
         error_mode: ignore
-        logs:
-            log_record:
+        log_conditions:
+            - conditions:
                 - IsMatch(log.body, ".*error.*")
     filter/user-defined-test-metric-1:
         error_mode: ignore
-        metrics:
-            datapoint:
+        metric_conditions:
+            - conditions:
                 - metric.type == METRIC_DATA_TYPE_SUMMARY
     filter/user-defined-test-metric-2:
         error_mode: ignore
-        metrics:
-            datapoint:
+        metric_conditions:
+            - conditions:
                 - metric.type == METRIC_DATA_TYPE_HISTOGRAM
     filter/user-defined-test-trace-1:
         error_mode: ignore
-        traces:
-            span:
+        trace_conditions:
+            - conditions:
                 - IsMatch(span.name, ".*grpc.*")
     filter/user-defined-test-trace-2:
         error_mode: ignore
-        traces:
-            span:
+        trace_conditions:
+            - conditions:
                 - IsMatch(spanevent.attributes["foo"], ".*bar.*")
     istio_enrichment:
         scope_version: 1.0.0
     istio_noise_filter: {}
-    k8sattributes:
+    k8s_attributes:
         auth_type: serviceAccount
         passthrough: false
         extract:
@@ -276,6 +283,7 @@ processors:
 exporters:
     otlp_grpc/test-log-1:
         endpoint: ${OTLP_ENDPOINT_TEST_LOG_1}
+        compression: gzip
         sending_queue:
             enabled: true
             queue_size: 128
@@ -286,6 +294,7 @@ exporters:
             max_elapsed_time: 300s
     otlp_grpc/test-log-2:
         endpoint: ${OTLP_ENDPOINT_TEST_LOG_2}
+        compression: gzip
         sending_queue:
             enabled: true
             queue_size: 128
@@ -296,6 +305,7 @@ exporters:
             max_elapsed_time: 300s
     otlp_grpc/test-metric-1:
         endpoint: ${OTLP_ENDPOINT_TEST_METRIC_1}
+        compression: gzip
         sending_queue:
             enabled: true
             queue_size: 128
@@ -306,6 +316,7 @@ exporters:
             max_elapsed_time: 300s
     otlp_grpc/test-metric-2:
         endpoint: ${OTLP_ENDPOINT_TEST_METRIC_2}
+        compression: gzip
         sending_queue:
             enabled: true
             queue_size: 128
@@ -316,6 +327,7 @@ exporters:
             max_elapsed_time: 300s
     otlp_grpc/test-trace-1:
         endpoint: ${OTLP_ENDPOINT_TEST_TRACE_1}
+        compression: gzip
         sending_queue:
             enabled: true
             queue_size: 128
@@ -326,6 +338,7 @@ exporters:
             max_elapsed_time: 300s
     otlp_grpc/test-trace-2:
         endpoint: ${OTLP_ENDPOINT_TEST_TRACE_2}
+        compression: gzip
         sending_queue:
             enabled: true
             queue_size: 128

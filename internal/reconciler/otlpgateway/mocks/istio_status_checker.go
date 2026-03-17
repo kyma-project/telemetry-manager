@@ -38,7 +38,7 @@ func (_m *IstioStatusChecker) EXPECT() *IstioStatusChecker_Expecter {
 }
 
 // IsIstioActive provides a mock function for the type IstioStatusChecker
-func (_mock *IstioStatusChecker) IsIstioActive(ctx context.Context) bool {
+func (_mock *IstioStatusChecker) IsIstioActive(ctx context.Context) (bool, error) {
 	ret := _mock.Called(ctx)
 
 	if len(ret) == 0 {
@@ -46,12 +46,21 @@ func (_mock *IstioStatusChecker) IsIstioActive(ctx context.Context) bool {
 	}
 
 	var r0 bool
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context) (bool, error)); ok {
+		return returnFunc(ctx)
+	}
 	if returnFunc, ok := ret.Get(0).(func(context.Context) bool); ok {
 		r0 = returnFunc(ctx)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
-	return r0
+	if returnFunc, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = returnFunc(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
 }
 
 // IstioStatusChecker_IsIstioActive_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'IsIstioActive'
@@ -78,12 +87,12 @@ func (_c *IstioStatusChecker_IsIstioActive_Call) Run(run func(ctx context.Contex
 	return _c
 }
 
-func (_c *IstioStatusChecker_IsIstioActive_Call) Return(b bool) *IstioStatusChecker_IsIstioActive_Call {
-	_c.Call.Return(b)
+func (_c *IstioStatusChecker_IsIstioActive_Call) Return(b bool, err error) *IstioStatusChecker_IsIstioActive_Call {
+	_c.Call.Return(b, err)
 	return _c
 }
 
-func (_c *IstioStatusChecker_IsIstioActive_Call) RunAndReturn(run func(ctx context.Context) bool) *IstioStatusChecker_IsIstioActive_Call {
+func (_c *IstioStatusChecker_IsIstioActive_Call) RunAndReturn(run func(ctx context.Context) (bool, error)) *IstioStatusChecker_IsIstioActive_Call {
 	_c.Call.Return(run)
 	return _c
 }

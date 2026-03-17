@@ -66,9 +66,9 @@ type mockIstioStatusChecker struct {
 	mock.Mock
 }
 
-func (m *mockIstioStatusChecker) IsIstioActive(ctx context.Context) bool {
+func (m *mockIstioStatusChecker) IsIstioActive(ctx context.Context) (bool, error) {
 	args := m.Called(ctx)
-	return args.Bool(0)
+	return args.Bool(0), args.Error(1)
 }
 
 func newTestClient(t *testing.T, objs ...client.Object) client.Client {
@@ -126,7 +126,7 @@ func TestReconcile_ConfigMapCreatedIfNotExists(t *testing.T) {
 	fakeClient := newTestClient(t)
 	mocks := newDefaultMocks()
 
-	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false)
+	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false, nil)
 	mocks.gatewayApplierDeleter.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	sut := newTestReconciler(fakeClient, mocks)
@@ -160,7 +160,7 @@ func TestReconcile_NoPipelines_DeletesGateway(t *testing.T) {
 	fakeClient := newTestClient(t, cm)
 	mocks := newDefaultMocks()
 
-	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false)
+	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false, nil)
 	mocks.gatewayApplierDeleter.On("DeleteResources", mock.Anything, mock.Anything, false).Return(nil)
 
 	sut := newTestReconciler(fakeClient, mocks)
@@ -191,7 +191,7 @@ func TestReconcile_SinglePipeline_DeploysGateway(t *testing.T) {
 	fakeClient := newTestClient(t, &pipeline, cm)
 	mocks := newDefaultMocks()
 
-	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false)
+	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false, nil)
 	mocks.configBuilder.On("Build", mock.Anything, mock.Anything, mock.Anything).Return(&common.Config{}, common.EnvVars{}, nil)
 	mocks.gatewayApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
@@ -225,7 +225,7 @@ func TestReconcile_GenerationMismatch_SkipsPipeline(t *testing.T) {
 	fakeClient := newTestClient(t, &pipeline, cm)
 	mocks := newDefaultMocks()
 
-	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false)
+	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false, nil)
 	mocks.gatewayApplierDeleter.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	sut := newTestReconciler(fakeClient, mocks)
@@ -260,7 +260,7 @@ func TestReconcile_PipelineDeleted_SkipsPipeline(t *testing.T) {
 	fakeClient := newTestClient(t, &pipeline, cm)
 	mocks := newDefaultMocks()
 
-	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false)
+	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false, nil)
 	mocks.gatewayApplierDeleter.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	sut := newTestReconciler(fakeClient, mocks)
@@ -295,7 +295,7 @@ func TestReconcile_MultiplePipelines_AggregatesConfig(t *testing.T) {
 	fakeClient := newTestClient(t, &pipeline1, &pipeline2, cm)
 	mocks := newDefaultMocks()
 
-	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false)
+	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false, nil)
 	mocks.configBuilder.On("Build", mock.Anything, mock.MatchedBy(func(opts otlpgateway.BuildOptions) bool {
 		return len(opts.TracePipelines) == 2
 	})).Return(&common.Config{}, common.EnvVars{}, nil)
@@ -327,7 +327,7 @@ func TestReconcile_MissingPipeline_SkipsGracefully(t *testing.T) {
 	fakeClient := newTestClient(t, cm)
 	mocks := newDefaultMocks()
 
-	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false)
+	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false, nil)
 	mocks.gatewayApplierDeleter.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	sut := newTestReconciler(fakeClient, mocks)
@@ -358,7 +358,7 @@ func TestReconcile_IstioEnabled_PassesFlag(t *testing.T) {
 	fakeClient := newTestClient(t, &pipeline, cm)
 	mocks := newDefaultMocks()
 
-	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(true)
+	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(true, nil)
 	mocks.configBuilder.On("Build", mock.Anything, mock.Anything, mock.Anything).Return(&common.Config{}, common.EnvVars{}, nil)
 	mocks.gatewayApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.MatchedBy(func(opts otelcollector.GatewayApplyOptions) bool {
 		return opts.IstioEnabled == true
@@ -547,7 +547,7 @@ func TestReconcile_LogPipeline_DeploysGateway(t *testing.T) {
 	fakeClient := newTestClient(t, &logPipeline, cm)
 	mocks := newDefaultMocks()
 
-	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false)
+	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false, nil)
 	mocks.configBuilder.On("Build", mock.Anything, mock.Anything).Return(&common.Config{}, common.EnvVars{}, nil)
 	mocks.gatewayApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
@@ -586,7 +586,7 @@ func TestReconcile_TraceAndLogPipelines_DeploysUnifiedGateway(t *testing.T) {
 	fakeClient := newTestClient(t, &tracePipeline, &logPipeline, cm)
 	mocks := newDefaultMocks()
 
-	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false)
+	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false, nil)
 	mocks.configBuilder.On("Build", mock.Anything, mock.Anything).Return(&common.Config{}, common.EnvVars{}, nil)
 	mocks.gatewayApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
@@ -722,7 +722,7 @@ func TestReconcile_OnlyLogPipelines_DeploysGateway(t *testing.T) {
 	fakeClient := newTestClient(t, &logPipeline, cm)
 	mocks := newDefaultMocks()
 
-	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false)
+	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false, nil)
 	mocks.configBuilder.On("Build", mock.Anything, mock.Anything).Return(&common.Config{}, common.EnvVars{}, nil)
 	mocks.gatewayApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
@@ -794,7 +794,7 @@ func TestOverrideFunctionality(t *testing.T) {
 			fakeClient := newTestClient(t, &pipeline, cm)
 			mocks := newDefaultMocks()
 
-			mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false)
+			mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false, nil)
 
 			if tt.expectReconcile {
 				mocks.configBuilder.On("Build", mock.Anything, mock.Anything).Return(&common.Config{}, common.EnvVars{}, nil)
@@ -987,7 +987,7 @@ func TestReconcile_MetricPipeline_DeploysGateway(t *testing.T) {
 	fakeClient := newTestClient(t, &metricPipeline, cm)
 	mocks := newDefaultMocks()
 
-	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false)
+	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false, nil)
 	mocks.configBuilder.On("Build", mock.Anything, mock.Anything).Return(&common.Config{}, common.EnvVars{}, nil)
 	mocks.gatewayApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 

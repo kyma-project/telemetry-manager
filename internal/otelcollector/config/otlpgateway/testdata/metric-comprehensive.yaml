@@ -121,12 +121,12 @@ processors:
         error_mode: ignore
         metric_conditions:
             - conditions:
-                - metric.type == METRIC_DATA_TYPE_GAUGE
+                - metric.type == METRIC_DATA_TYPE_SUMMARY
     filter/user-defined-dynatrace:
         error_mode: ignore
         metric_conditions:
             - conditions:
-                - metric.type == METRIC_DATA_TYPE_SUMMARY
+                - metric.type == METRIC_DATA_TYPE_HISTOGRAM
     k8s_attributes:
         auth_type: serviceAccount
         passthrough: false
