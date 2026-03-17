@@ -141,17 +141,17 @@ func (o *OTLPGatewayApplierDeleter) ApplyResources(ctx context.Context, c client
 	// Create the legacy services for backward compatibility
 	// These services use the old names but point to the new DaemonSet
 	legacyLogService := o.makeLegacyOTLPService(names.OTLPLogsService)
-	if err := k8sutils.CreateOrUpdateService(ctx, c, legacyLogService); err != nil {
+	if err := k8sutils.CreateOrUpdateService(ctx, labelerClient, legacyLogService); err != nil {
 		return fmt.Errorf("failed to create legacy log otlp service: %w", err)
 	}
 
 	legacyTraceService := o.makeLegacyOTLPService(names.OTLPTracesService)
-	if err := k8sutils.CreateOrUpdateService(ctx, c, legacyTraceService); err != nil {
+	if err := k8sutils.CreateOrUpdateService(ctx, labelerClient, legacyTraceService); err != nil {
 		return fmt.Errorf("failed to create legacy trace otlp service: %w", err)
 	}
 
 	legacyMetricService := o.makeLegacyOTLPService(names.OTLPMetricsService)
-	if err := k8sutils.CreateOrUpdateService(ctx, c, legacyMetricService); err != nil {
+	if err := k8sutils.CreateOrUpdateService(ctx, labelerClient, legacyMetricService); err != nil {
 		return fmt.Errorf("failed to create legacy metric otlp service: %w", err)
 	}
 
