@@ -144,7 +144,7 @@ jobs:
           VERSION: ${{ github.event.inputs.version }}
         run: |
           echo "Checking milestone for version ${VERSION}..."
-          MILESTONE=$(gh api "repos/${{ github.repository }}/milestones?state=all&direction=desc" --jq ".[] | select(.title == \"${VERSION}\")")
+          MILESTONE=$(gh api "repos/${{ github.repository }}/milestones?state=all&direction=desc&per_page=100" --jq ".[] | select(.title == \"${VERSION}\")")
 
           if [ -z "$MILESTONE" ]; then
             echo "Milestone ${VERSION} does not exist. Please create it first."
