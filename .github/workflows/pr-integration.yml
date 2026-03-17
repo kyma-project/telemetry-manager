@@ -50,7 +50,17 @@ on:
       - "helm/**"
 
   workflow_dispatch:
-
+# This is reused on release.yml so workflow_call is used.
+  workflow_call:
+    inputs:
+      ref:
+        description: "Git reference (branch, tag, or SHA) to checkout"
+        type: string
+        required: false
+      image_tag:
+        description: "Image tag to use for the tests"
+        type: string
+        required: false
 env:
   E2E_TEST_TIMEOUT: 60m
   # FIPS images are only available on push/schedule (not on PR due to registry restrictions)
@@ -64,6 +74,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: '0'
+          ref: ${{ inputs.ref || github.ref }}
 
       - name: Setup Golang
         uses: ./.github/template/setup-golang
@@ -77,6 +90,9 @@ jobs:
           elif [[ "${{ github.event_name }}" == "merge_group" ]]; then
             IMAGE_REPO="europe-docker.pkg.dev/kyma-project/dev/telemetry-manager"
             IMAGE_TAG="${{ github.event.merge_group.head_sha }}"
+          elif [[ "${{ inputs.image_tag }}" ]]; then
+            IMAGE_REPO="europe-docker.pkg.dev/kyma-project/prod/telemetry-manager"
+            IMAGE_TAG="${{ inputs.image_tag }}"
           else
             IMAGE_REPO="europe-docker.pkg.dev/kyma-project/prod/telemetry-manager"
 
