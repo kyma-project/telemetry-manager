@@ -328,6 +328,7 @@ func setupManager(globals config.Global) (manager.Manager, error) {
 		&appsv1.Deployment{}:          scopedByNamespaceAndLabel(globals),
 		&appsv1.DaemonSet{}:           scopedByNamespaceAndLabel(globals),
 		&appsv1.ReplicaSet{}:          scopedByNamespaceAndLabel(globals),
+		&corev1.Node{}:                {},
 		&corev1.Pod{}:                 scopedByNamespaceAndLabel(globals),
 		&corev1.Secret{}:              scopedByNamespaceAndLabel(globals), // only applicable for manager-created secrets, user-created secrets are watched by secretwatch client
 		&corev1.Service{}:             scopedByNamespaceAndLabel(globals),
