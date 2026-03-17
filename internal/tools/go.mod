@@ -12,7 +12,7 @@ require (
 	github.com/kyma-project/kyma/hack/table-gen v0.0.0-20250404123224-5afb7a10791b
 	github.com/mikefarah/yq/v4 v4.52.4
 	github.com/vektra/mockery/v3 v3.7.0
-	github.com/vladopajic/go-test-coverage/v2 v2.18.3
+	github.com/vladopajic/go-test-coverage/v2 v2.18.4
 	github.com/yeya24/promlinter v0.3.0
 	golang.org/x/tools v0.43.0
 	gotest.tools/gotestsum v1.13.0
@@ -237,8 +237,8 @@ require (
 	github.com/google/gnostic-models v0.7.0 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/go-containerregistry v0.19.1 // indirect
-	github.com/google/go-github/v56 v56.0.0 // indirect
-	github.com/google/go-querystring v1.1.0 // indirect
+	github.com/google/go-github/v82 v82.0.0 // indirect
+	github.com/google/go-querystring v1.2.0 // indirect
 	github.com/google/s2a-go v0.1.9 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/google/uuid v1.6.0 // indirect
