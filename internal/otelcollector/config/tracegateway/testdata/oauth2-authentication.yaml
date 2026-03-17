@@ -123,6 +123,7 @@ processors:
 exporters:
     otlp_http/test:
         endpoint: ${OTLP_ENDPOINT_TEST}
+        compression: gzip
         sending_queue:
             enabled: true
             queue_size: 256

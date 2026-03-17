@@ -247,6 +247,7 @@ processors:
 exporters:
     otlp_grpc/test1:
         endpoint: ${OTLP_ENDPOINT_TEST1}
+        compression: gzip
         retry_on_failure:
             enabled: true
             initial_interval: 5s

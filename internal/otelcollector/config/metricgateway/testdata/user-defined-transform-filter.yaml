@@ -187,6 +187,7 @@ processors:
 exporters:
     otlp_grpc/cls:
         endpoint: ${OTLP_ENDPOINT_CLS}
+        compression: gzip
         sending_queue:
             enabled: true
             queue_size: 256

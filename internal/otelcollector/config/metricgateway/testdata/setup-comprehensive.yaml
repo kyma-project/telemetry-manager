@@ -220,6 +220,7 @@ processors:
 exporters:
     otlp_grpc/cls:
         endpoint: ${OTLP_ENDPOINT_CLS}
+        compression: gzip
         sending_queue:
             enabled: true
             queue_size: 128
@@ -230,6 +231,7 @@ exporters:
             max_elapsed_time: 300s
     otlp_grpc/dynatrace:
         endpoint: ${OTLP_ENDPOINT_DYNATRACE}
+        compression: gzip
         sending_queue:
             enabled: true
             queue_size: 128

@@ -239,6 +239,7 @@ processors:
 exporters:
     otlp_http/test:
         endpoint: ${OTLP_ENDPOINT_TEST}
+        compression: gzip
         retry_on_failure:
             enabled: true
             initial_interval: 5s
