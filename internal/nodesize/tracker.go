@@ -3,6 +3,7 @@ package nodesize
 import (
 	"context"
 	"fmt"
+	"math"
 	"sync"
 
 	corev1 "k8s.io/api/core/v1"
@@ -12,6 +13,8 @@ import (
 
 	"github.com/kyma-project/telemetry-manager/internal/metrics"
 )
+
+const vpaMaxAllowedMemoryFraction = 0.3
 
 type Tracker struct {
 	mu             sync.RWMutex
@@ -63,6 +66,21 @@ func (t *Tracker) SmallestMemory() resource.Quantity {
 	}
 
 	return t.smallestMemory.DeepCopy()
+}
+
+// VpaMaxAllowedMemory returns 30% of the smallest allocatable memory,
+// rounded down to the nearest KiB. This value is intended to be used as
+// the maxAllowed memory in a VPA resource policy.
+func (t *Tracker) VpaMaxAllowedMemory() resource.Quantity {
+	smallest := t.SmallestMemory()
+
+	thirtyPercent := int64(math.Round(float64(smallest.Value()) * vpaMaxAllowedMemoryFraction))
+
+	const kib = 1024
+
+	roundedToKiB := (thirtyPercent / kib) * kib
+
+	return *resource.NewQuantity(roundedToKiB, resource.BinarySI)
 }
 
 func computeSmallestAllocatableMemory(nodes []corev1.Node) resource.Quantity {

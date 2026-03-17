@@ -48,6 +48,7 @@ type Reconciler struct {
 	gatewayProber             Prober
 	istioStatusChecker        IstioStatusChecker
 	vpaStatusChecker          VpaStatusChecker
+	nodeSizeTracker           NodeSizeTracker
 	pipelineLock              PipelineLock
 	pipelineValidator         *Validator
 	errToMessageConverter     ErrorToMessageConverter
@@ -137,6 +138,13 @@ func WithIstioStatusChecker(checker IstioStatusChecker) Option {
 func WithVpaStatusChecker(checker VpaStatusChecker) Option {
 	return func(r *Reconciler) {
 		r.vpaStatusChecker = checker
+	}
+}
+
+// WithNodeSizeTracker sets the node size tracker.
+func WithNodeSizeTracker(tracker NodeSizeTracker) Option {
+	return func(r *Reconciler) {
+		r.nodeSizeTracker = tracker
 	}
 }
 
@@ -450,10 +458,7 @@ func (r *Reconciler) reconcileAgent(ctx context.Context, pipeline *telemetryv1be
 		return fmt.Errorf("failed to check Istio status: %w", err)
 	}
 
-	vpaMaxAllowedMemory, err := k8sutils.CalculateVpaMaxAllowedMemory(ctx, r.Client)
-	if err != nil {
-		return fmt.Errorf("failed to calculate VPA max allowed memory: %w", err)
-	}
+	vpaMaxAllowedMemory := r.nodeSizeTracker.VpaMaxAllowedMemory()
 
 	if err := r.agentApplierDeleter.ApplyResources(
 		ctx,

@@ -145,7 +145,7 @@ func NewLogPipelineController(config LogPipelineControllerConfig, client client.
 		return nil, err
 	}
 
-	otelReconciler, err := configureOTelReconciler(config, client, pipelineLockOTEL, gatewayFlowHealthProber, agentFlowHealthProber)
+	otelReconciler, err := configureOTelReconciler(config, client, pipelineLockOTEL, gatewayFlowHealthProber, agentFlowHealthProber, nodeSizeTracker)
 	if err != nil {
 		return nil, err
 	}
@@ -303,7 +303,7 @@ func configureFluentBitReconciler(config LogPipelineControllerConfig, client cli
 }
 
 //nolint:unparam // error is always nil: An error could be returned after implementing the IstioStatusChecker (TODO)
-func configureOTelReconciler(config LogPipelineControllerConfig, client client.Client, pipelineLock logpipelineotel.PipelineLock, gatewayFlowHealthProber *prober.OTelGatewayProber, agentFlowHealthProber *prober.OTelAgentProber) (*logpipelineotel.Reconciler, error) {
+func configureOTelReconciler(config LogPipelineControllerConfig, client client.Client, pipelineLock logpipelineotel.PipelineLock, gatewayFlowHealthProber *prober.OTelGatewayProber, agentFlowHealthProber *prober.OTelAgentProber, nodeSizeTracker *nodesize.Tracker) (*logpipelineotel.Reconciler, error) {
 	transformSpecValidator, err := ottl.NewTransformSpecValidator(ottl.SignalTypeLog)
 	if err != nil {
 		return nil, err
@@ -375,6 +375,7 @@ func configureOTelReconciler(config LogPipelineControllerConfig, client client.C
 
 		logpipelineotel.WithIstioStatusChecker(istiostatus.NewChecker(discoveryClient)),
 		logpipelineotel.WithVpaStatusChecker(vpastatus.NewChecker(config.RestConfig)),
+		logpipelineotel.WithNodeSizeTracker(nodeSizeTracker),
 		logpipelineotel.WithPipelineLock(pipelineLock),
 		logpipelineotel.WithPipelineValidator(pipelineValidator),
 	)

@@ -161,6 +161,7 @@ func NewMetricPipelineController(config MetricPipelineControllerConfig, client c
 		metricpipeline.WithErrorToMessageConverter(&conditions.ErrorToMessageConverter{}),
 		metricpipeline.WithIstioStatusChecker(istiostatus.NewChecker(discoveryClient)),
 		metricpipeline.WithVpaStatusChecker(vpastatus.NewChecker(config.RestConfig)),
+		metricpipeline.WithNodeSizeTracker(nodeSizeTracker),
 		metricpipeline.WithOverridesHandler(overrides.New(config.Global, client)),
 		metricpipeline.WithPipelineValidator(pipelineValidator),
 
