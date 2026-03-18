@@ -2,6 +2,7 @@ package selfmonitor
 
 import (
 	"fmt"
+	"net/http"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -267,14 +268,18 @@ func TestBackpressure(t *testing.T) {
 				backend      *kitbackend.Backend
 			)
 
-			if tc.component == suite.LabelMetricAgent {
-				// Metric agent and gateway (using kyma stats receiver) both send data to backend
-				// We want to simulate backpressure only on agent, so block some percentage of traffic only from agent.
-				backend = kitbackend.New(backendNs, signalTypeForComponent(tc.component), kitbackend.WithAbortFaultInjection(50),
-					kitbackend.WithDropFromSourceLabel(map[string]string{"app.kubernetes.io/name": "telemetry-metric-agent"}))
-			} else {
-				backend = kitbackend.New(backendNs, signalTypeForComponent(tc.component), kitbackend.WithAbortFaultInjection(50))
+			backendOpts := []kitbackend.Option{
+				kitbackend.WithAbortFaultInjection(50, http.StatusInternalServerError),
 			}
+
+			switch tc.component {
+			case suite.LabelMetricAgent:
+				backendOpts = append(backendOpts, kitbackend.WithDropFromSourceLabel(map[string]string{"app.kubernetes.io/name": "telemetry-metric-agent"}))
+			case suite.LabelFluentBit:
+				backendOpts = []kitbackend.Option{kitbackend.WithAbortFaultInjection(50, http.StatusBadRequest)}
+			}
+
+			backend = kitbackend.New(backendNs, signalTypeForComponent(tc.component), backendOpts...)
 
 			pipeline := tc.pipeline(pipelineName, genNs, backend)
 			generator := tc.generator(genNs)

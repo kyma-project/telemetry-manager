@@ -60,12 +60,13 @@ type Backend struct {
 	oidc                 *OIDCConfig
 	mtls                 bool
 
-	fluentDConfigMap    *fluentdConfigMapBuilder
-	hostSecret          *kitk8sobjects.Secret
-	collectorConfigMap  *collectorConfigMapBuilder
-	collectorDeployment *collectorDeploymentBuilder
-	collectorService    *kitk8sobjects.Service
-	virtualService      *kitk8sobjects.VirtualService
+	fluentDConfigMap     *fluentdConfigMapBuilder
+	hostSecret           *kitk8sobjects.Secret
+	collectorConfigMap   *collectorConfigMapBuilder
+	collectorDeployment  *collectorDeploymentBuilder
+	collectorService     *kitk8sobjects.Service
+	virtualService       *kitk8sobjects.VirtualService
+	abortFaultStatusCode int32
 }
 
 func New(namespace string, signalType SignalType, opts ...Option) *Backend {
@@ -213,6 +214,6 @@ func (b *Backend) buildResources() {
 			"fault-injection",
 			b.namespace,
 			b.name,
-		).WithFaultAbortPercentage(b.abortFaultPercentage).WithSourceLabel(b.dropFromSourceLabel)
+		).WithFaultAbortPercentage(b.abortFaultPercentage, b.abortFaultStatusCode).WithSourceLabel(b.dropFromSourceLabel)
 	}
 }

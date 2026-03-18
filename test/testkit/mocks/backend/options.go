@@ -10,9 +10,10 @@ func WithDropFromSourceLabel(label map[string]string) Option {
 	}
 }
 
-func WithAbortFaultInjection(abortFaultPercentage float64) Option {
+func WithAbortFaultInjection(abortFaultPercentage float64, statusCode int32) Option {
 	return func(b *Backend) {
 		b.abortFaultPercentage = abortFaultPercentage
+		b.abortFaultStatusCode = statusCode
 	}
 }
 

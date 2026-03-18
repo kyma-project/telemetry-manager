@@ -18,15 +18,17 @@ type VirtualService struct {
 	faultDelayPercentage float64
 	sourceLabel          map[string]string
 	faultDelayFixedDelay time.Duration
+	faultAbortHttpStatus int32
 }
 
 type Option func(*VirtualService)
 
 func NewVirtualService(name, namespace, host string) *VirtualService {
 	return &VirtualService{
-		name:      name,
-		namespace: namespace,
-		host:      host,
+		name:                 name,
+		namespace:            namespace,
+		host:                 host,
+		faultAbortHttpStatus: http.StatusInternalServerError,
 	}
 }
 
@@ -35,8 +37,10 @@ func (s *VirtualService) WithSourceLabel(sourceLabel map[string]string) *Virtual
 	return s
 }
 
-func (s *VirtualService) WithFaultAbortPercentage(percentage float64) *VirtualService {
+func (s *VirtualService) WithFaultAbortPercentage(percentage float64, httpStatus int32) *VirtualService {
 	s.faultAbortPercentage = percentage
+	s.faultAbortHttpStatus = httpStatus
+
 	return s
 }
 
@@ -91,7 +95,7 @@ func (s *VirtualService) K8sObject() *istionetworkingclientv1.VirtualService {
 								Value: s.faultAbortPercentage,
 							},
 								ErrorType: &istionetworkingv1.HTTPFaultInjection_Abort_HttpStatus{
-									HttpStatus: http.StatusInternalServerError,
+									HttpStatus: int32(s.faultAbortHttpStatus),
 								},
 							}
 						}(),

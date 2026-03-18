@@ -2,6 +2,7 @@ package selfmonitor
 
 import (
 	"fmt"
+	"net/http"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -45,7 +46,7 @@ func TestOutage(t *testing.T) {
 				return &p
 			},
 			generator: func(ns string) []client.Object {
-				return []client.Object{stdoutloggen.NewDeployment(ns, stdoutloggen.WithRate(4000)).K8sObject()}
+				return []client.Object{stdoutloggen.NewDeployment(ns, stdoutloggen.WithRate(100)).K8sObject()}
 			},
 			assertions: func(t *testing.T, pipelineName string) {
 				assert.DeploymentReady(t, kitkyma.LogGatewayName)
@@ -79,8 +80,8 @@ func TestOutage(t *testing.T) {
 			generator: func(ns string) []client.Object {
 				return []client.Object{
 					telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeLogs,
-						telemetrygen.WithRate(800),
-						telemetrygen.WithWorkers(5)).
+						telemetrygen.WithRate(100),
+						telemetrygen.WithWorkers(1)).
 						K8sObject(),
 				}
 			},
@@ -146,9 +147,9 @@ func TestOutage(t *testing.T) {
 			generator: func(ns string) []client.Object {
 				return []client.Object{
 					telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeMetrics,
-						telemetrygen.WithRate(10_000_000),
-						telemetrygen.WithWorkers(50),
-						telemetrygen.WithInterval("30s")).
+						telemetrygen.WithRate(100),
+						telemetrygen.WithWorkers(1),
+					).
 						WithReplicas(2).
 						K8sObject(),
 				}
@@ -221,7 +222,7 @@ func TestOutage(t *testing.T) {
 				return []client.Object{
 					telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeTraces,
 						telemetrygen.WithRate(80),
-						telemetrygen.WithWorkers(10)).
+						telemetrygen.WithWorkers(1)).
 						K8sObject(),
 				}
 			},
@@ -272,14 +273,16 @@ func TestOutage(t *testing.T) {
 				genNs        = uniquePrefix("gen")
 				backend      *kitbackend.Backend
 			)
+
+			backendOpts := []kitbackend.Option{kitbackend.WithAbortFaultInjection(100, http.StatusInternalServerError)}
+
 			if tc.component == suite.LabelMetricAgent {
 				// Metric agent and gateway (using kyma stats receiver) both send data to backend
 				// We want to simulate outage only on agent, so block all traffic only from agent.
-				backend = kitbackend.New(backendNs, signalTypeForComponent(tc.component), kitbackend.WithAbortFaultInjection(100),
-					kitbackend.WithDropFromSourceLabel(map[string]string{"app.kubernetes.io/name": "telemetry-metric-agent"}))
-			} else {
-				backend = kitbackend.New(backendNs, signalTypeForComponent(tc.component), kitbackend.WithReplicas(0)) // simulate outage
+				backendOpts = append(backendOpts, kitbackend.WithDropFromSourceLabel(map[string]string{"app.kubernetes.io/name": "telemetry-metric-agent"}))
 			}
+
+			backend = kitbackend.New(backendNs, signalTypeForComponent(tc.component), backendOpts...)
 
 			pipeline := tc.pipeline(pipelineName, genNs, backend)
 			generator := tc.generator(genNs)
