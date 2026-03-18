@@ -442,6 +442,30 @@ jobs:
           else
             echo "Bump branch ${BUMP_BRANCH} not found on remote (may already be deleted)"
           fi
+      - name: Create and push release tag
+        if: ${{ inputs.dry_run != true }}
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+          RELEASE_BRANCH: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
+        run: |
+          echo "Creating release tag ${VERSION} on release branch ${RELEASE_BRANCH}..."
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git tag -a "${VERSION}" -m "Release ${VERSION}"
+          git push origin "${VERSION}"
+
+          echo "Created and pushed tag ${VERSION} from ${RELEASE_BRANCH}"
+
+      - name: Skip tag creation (dry run)
+        if: ${{ inputs.dry_run == true }}
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+          RELEASE_BRANCH: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
+        run: |
+          echo "::notice::DRY RUN: Skipping tag creation for ${VERSION} on ${RELEASE_BRANCH}"
+          echo "Would have created and pushed tag: ${VERSION}"
 
   unit-tests:
     runs-on: ubuntu-latest
@@ -525,30 +549,6 @@ jobs:
             echo "::warning::Expected commit ${MERGE_SHA} but got ${CURRENT_SHA}"
             echo "Release branch may have additional commits after PR merge"
           fi
-      - name: Create and push release tag
-        if: ${{ inputs.dry_run != true }}
-        env:
-          VERSION: ${{ github.event.inputs.version }}
-          RELEASE_BRANCH: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
-        run: |
-          echo "Creating release tag ${VERSION} on release branch ${RELEASE_BRANCH}..."
-
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          git tag -a "${VERSION}" -m "Release ${VERSION}"
-          git push origin "${VERSION}"
-
-          echo "Created and pushed tag ${VERSION} from ${RELEASE_BRANCH}"
-
-      - name: Skip tag creation (dry run)
-        if: ${{ inputs.dry_run == true }}
-        env:
-          VERSION: ${{ github.event.inputs.version }}
-          RELEASE_BRANCH: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
-        run: |
-          echo "::notice::DRY RUN: Skipping tag creation for ${VERSION} on ${RELEASE_BRANCH}"
-          echo "Would have created and pushed tag: ${VERSION}"
 
       - name: Install tools
         shell: bash
