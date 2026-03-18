@@ -163,6 +163,7 @@ For details, see the [MetricPipeline specification file](https://github.com/kyma
 | **output.&#x200b;otlp.&#x200b;authentication.&#x200b;oauth2.&#x200b;tokenURL.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;key** (required) | string | Key defines the name of the attribute of the Secret holding the referenced value. |
 | **output.&#x200b;otlp.&#x200b;authentication.&#x200b;oauth2.&#x200b;tokenURL.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;name** (required) | string | Name of the Secret containing the referenced value. |
 | **output.&#x200b;otlp.&#x200b;authentication.&#x200b;oauth2.&#x200b;tokenURL.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace** (required) | string | Namespace containing the Secret with the referenced value. |
+| **output.&#x200b;otlp.&#x200b;compression**  | string | Compression defines the compression algorithm to use when sending data to the OTLP backend. If not set, `gzip` is used. To disable compression, set this field to `none`. |
 | **output.&#x200b;otlp.&#x200b;endpoint** (required) | object | Endpoint defines the host and port (`<host>:<port>`) of an OTLP endpoint. |
 | **output.&#x200b;otlp.&#x200b;endpoint.&#x200b;value**  | string | Value as plain text. |
 | **output.&#x200b;otlp.&#x200b;endpoint.&#x200b;valueFrom**  | object | ValueFrom is the value as a reference to a resource. |

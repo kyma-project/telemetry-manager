@@ -28,6 +28,7 @@ func TestBuildConfig(t *testing.T) {
 
 		// istioActive indicates if the "cluster" has an active istio installation or not. Not to be confused with the IstioInput in a pipeline
 		istioActive bool
+		vpaActive   bool
 	}{
 		{
 			name:              "pipeline with runtime input only and otel service enrichment",
@@ -37,6 +38,22 @@ func TestBuildConfig(t *testing.T) {
 				testutils.NewMetricPipelineBuilder().
 					WithName("test").
 					WithRuntimeInput(true).
+					WithPrometheusInput(false).
+					WithIstioInput(false).
+					WithOTLPOutput().
+					Build(),
+			},
+		},
+		{
+			name:           "pipeline with runtime input only and VPA is active",
+			goldenFileName: "vpa-active.yaml",
+			vpaActive:      true,
+			pipelines: []telemetryv1beta1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().
+					WithName("test").
+					WithRuntimeInput(true).
+					WithPrometheusInput(false).
+					WithIstioInput(false).
 					WithOTLPOutput().
 					Build(),
 			},
@@ -443,6 +460,7 @@ func TestBuildConfig(t *testing.T) {
 				InstrumentationScopeVersion: "main",
 				IstioActive:                 tt.istioActive,
 				ServiceEnrichment:           tt.serviceEnrichment,
+				VpaActive:                   tt.vpaActive,
 			}
 			config, _, err := sut.Build(t.Context(), tt.pipelines, buildOptions)
 			require.NoError(t, err)

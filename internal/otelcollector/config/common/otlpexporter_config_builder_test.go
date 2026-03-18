@@ -226,3 +226,38 @@ func TestMakeExporterConfigWithmTLS(t *testing.T) {
 	require.Equal(t, envVars["OTLP_TLS_CERT_PEM_TEST"], []byte("test client cert pem"))
 	require.Equal(t, envVars["OTLP_TLS_KEY_PEM_TEST"], []byte("test client key pem"))
 }
+
+func TestMakeExporterConfigCompression(t *testing.T) {
+	tests := []struct {
+		name                string
+		compression         telemetryv1beta1.OTLPCompressionEncoding
+		expectedCompression string
+	}{
+		{
+			name:                "snappy compression",
+			compression:         telemetryv1beta1.OTLPCompressionSnappy,
+			expectedCompression: "snappy",
+		},
+		{
+			name:                "no compression set defaults to gzip",
+			compression:         "",
+			expectedCompression: "gzip",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			output := &telemetryv1beta1.OTLPOutput{
+				Endpoint:    telemetryv1beta1.ValueType{Value: "otlp-endpoint"},
+				Compression: tt.compression,
+			}
+
+			cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512, SignalTypeTrace)
+			otlpExporterConfig, envVars, err := cb.OTLPExporter(t.Context())
+			require.NoError(t, err)
+			require.NotNil(t, envVars)
+
+			require.Equal(t, tt.expectedCompression, otlpExporterConfig.Compression)
+		})
+	}
+}

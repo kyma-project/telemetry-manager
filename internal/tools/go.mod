@@ -12,9 +12,9 @@ require (
 	github.com/kyma-project/kyma/hack/table-gen v0.0.0-20250404123224-5afb7a10791b
 	github.com/mikefarah/yq/v4 v4.52.4
 	github.com/vektra/mockery/v3 v3.7.0
-	github.com/vladopajic/go-test-coverage/v2 v2.18.3
+	github.com/vladopajic/go-test-coverage/v2 v2.18.4
 	github.com/yeya24/promlinter v0.3.0
-	golang.org/x/tools v0.42.0
+	golang.org/x/tools v0.43.0
 	gotest.tools/gotestsum v1.13.0
 	helm.sh/helm/v4 v4.1.3
 	k8s.io/code-generator v0.35.2
@@ -237,8 +237,8 @@ require (
 	github.com/google/gnostic-models v0.7.0 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/go-containerregistry v0.19.1 // indirect
-	github.com/google/go-github/v56 v56.0.0 // indirect
-	github.com/google/go-querystring v1.1.0 // indirect
+	github.com/google/go-github/v82 v82.0.0 // indirect
+	github.com/google/go-querystring v1.2.0 // indirect
 	github.com/google/s2a-go v0.1.9 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/google/uuid v1.6.0 // indirect
@@ -476,17 +476,17 @@ require (
 	go.yaml.in/yaml/v4 v4.0.0-rc.3 // indirect
 	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba // indirect
 	gocloud.dev v0.44.0 // indirect
-	golang.org/x/crypto v0.48.0 // indirect
+	golang.org/x/crypto v0.49.0 // indirect
 	golang.org/x/exp v0.0.0-20260212183809-81e46e3db34a // indirect
 	golang.org/x/exp/typeparams v0.0.0-20260209203927-2842357ff358 // indirect
 	golang.org/x/image v0.18.0 // indirect
-	golang.org/x/mod v0.33.0 // indirect
-	golang.org/x/net v0.51.0 // indirect
+	golang.org/x/mod v0.34.0 // indirect
+	golang.org/x/net v0.52.0 // indirect
 	golang.org/x/oauth2 v0.34.0 // indirect
 	golang.org/x/sync v0.20.0 // indirect
-	golang.org/x/sys v0.41.0 // indirect
-	golang.org/x/term v0.40.0 // indirect
-	golang.org/x/text v0.34.0 // indirect
+	golang.org/x/sys v0.42.0 // indirect
+	golang.org/x/term v0.41.0 // indirect
+	golang.org/x/text v0.35.0 // indirect
 	golang.org/x/time v0.12.0 // indirect
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
 	google.golang.org/api v0.247.0 // indirect

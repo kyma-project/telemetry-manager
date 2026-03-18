@@ -265,6 +265,7 @@ exporters:
         endpoint: ${OTLP_ENDPOINT_TEST}
         tls:
             insecure: true
+        compression: gzip
         sending_queue:
             enabled: true
             queue_size: 256

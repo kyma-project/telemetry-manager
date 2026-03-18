@@ -143,6 +143,12 @@ func OTLPProtocol(protocol telemetryv1beta1.OTLPProtocol) OTLPOutputOption {
 	}
 }
 
+func OTLPCompression(compression telemetryv1beta1.OTLPCompressionEncoding) OTLPOutputOption {
+	return func(output *telemetryv1beta1.OTLPOutput) {
+		output.Compression = compression
+	}
+}
+
 func OTLPEndpointPath(path string) OTLPOutputOption {
 	return func(output *telemetryv1beta1.OTLPOutput) {
 		output.Path = path
