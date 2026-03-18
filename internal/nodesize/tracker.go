@@ -68,10 +68,10 @@ func (t *Tracker) SmallestMemory() resource.Quantity {
 	return t.smallestMemory.DeepCopy()
 }
 
-// VpaMaxAllowedMemory returns 30% of the smallest allocatable memory,
+// VPAMaxAllowedMemory returns 30% of the smallest allocatable memory,
 // rounded down to the nearest KiB. This value is intended to be used as
 // the maxAllowed memory in a VPA resource policy.
-func (t *Tracker) VpaMaxAllowedMemory() resource.Quantity {
+func (t *Tracker) VPAMaxAllowedMemory() resource.Quantity {
 	smallest := t.SmallestMemory()
 
 	thirtyPercent := int64(math.Round(float64(smallest.Value()) * vpaMaxAllowedMemoryFraction))

@@ -6,6 +6,6 @@ type NodeSizeTracker struct {
 	MaxMemory resource.Quantity
 }
 
-func (t *NodeSizeTracker) VpaMaxAllowedMemory() resource.Quantity {
+func (t *NodeSizeTracker) VPAMaxAllowedMemory() resource.Quantity {
 	return t.MaxMemory
 }

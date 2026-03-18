@@ -134,7 +134,7 @@ func TestAgent_ApplyResources(t *testing.T) {
 				BackendPorts:        tt.backendPorts,
 				VpaCRDExists:        tt.vpaCRDExists,
 				VpaEnabled:          tt.vpaEnabled,
-				VpaMaxAllowedMemory: tt.vpaMaxAllowedMemory,
+				VPAMaxAllowedMemory: tt.vpaMaxAllowedMemory,
 			})
 			require.NoError(t, err)
 

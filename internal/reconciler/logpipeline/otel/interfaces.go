@@ -85,8 +85,8 @@ type VpaStatusChecker interface {
 
 // NodeSizeTracker tracks node sizes and provides VPA memory calculations.
 type NodeSizeTracker interface {
-	// VpaMaxAllowedMemory returns 30% of the smallest allocatable memory, rounded down to the nearest KiB.
-	VpaMaxAllowedMemory() resource.Quantity
+	// VPAMaxAllowedMemory returns 30% of the smallest allocatable memory, rounded down to the nearest KiB.
+	VPAMaxAllowedMemory() resource.Quantity
 }
 
 // AgentConfigBuilder builds the OTel Collector configuration for the log agent.

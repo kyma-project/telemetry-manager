@@ -520,7 +520,7 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 		return fmt.Errorf("failed to get ports of the backends: %w", err)
 	}
 
-	vpaMaxAllowedMemory := r.nodeSizeTracker.VpaMaxAllowedMemory()
+	vpaMaxAllowedMemory := r.nodeSizeTracker.VPAMaxAllowedMemory()
 
 	if err := r.agentApplierDeleter.ApplyResources(
 		ctx,
@@ -529,7 +529,7 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 			IstioEnabled:        isIstioActive,
 			VpaCRDExists:        vpaCRDExists,
 			VpaEnabled:          isVpaEnabled,
-			VpaMaxAllowedMemory: vpaMaxAllowedMemory,
+			VPAMaxAllowedMemory: vpaMaxAllowedMemory,
 			CollectorConfigYAML: string(agentConfigYAML),
 			CollectorEnvVars:    collectorEnvVars,
 			BackendPorts:        backendPorts,

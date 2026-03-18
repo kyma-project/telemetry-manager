@@ -458,7 +458,7 @@ func (r *Reconciler) reconcileAgent(ctx context.Context, pipeline *telemetryv1be
 		return fmt.Errorf("failed to check Istio status: %w", err)
 	}
 
-	vpaMaxAllowedMemory := r.nodeSizeTracker.VpaMaxAllowedMemory()
+	vpaMaxAllowedMemory := r.nodeSizeTracker.VPAMaxAllowedMemory()
 
 	if err := r.agentApplierDeleter.ApplyResources(
 		ctx,
@@ -467,7 +467,7 @@ func (r *Reconciler) reconcileAgent(ctx context.Context, pipeline *telemetryv1be
 			IstioEnabled:        isIstioActive,
 			VpaCRDExists:        vpaCRDExists,
 			VpaEnabled:          isVpaEnabled,
-			VpaMaxAllowedMemory: vpaMaxAllowedMemory,
+			VPAMaxAllowedMemory: vpaMaxAllowedMemory,
 			CollectorConfigYAML: string(agentConfigYAML),
 			CollectorEnvVars:    envVars,
 		},
