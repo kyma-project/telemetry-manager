@@ -12,12 +12,12 @@ on:
         required: true
         type: string
       self_monitor_image_tag:
-        description: 'Self-monitor image tag to use in release (e.g., v20260302-bbf32a3b)'
+        description: 'Self-Monitor image tag to use in release (e.g., v20260302-bbf32a3b)'
         required: true
         default: ""
         type: string
       dir_size_image_tag:
-        description: 'DSM image tag to use in release (e.g., v20260302-12345678)'
+        description: 'Directory Size Exporter image tag to use in release (e.g., v20260302-12345678)'
         required: true
         default: ""
         type: string
@@ -257,6 +257,7 @@ jobs:
           echo "Created branch ${RELEASE_BRANCH}"
 
   prepare-release:
+    if: ${{ inputs.force != true }}
     needs: validate-and-prepare-branch
     runs-on: ubuntu-latest
     outputs:
@@ -277,7 +278,7 @@ jobs:
           VERSION: ${{ github.event.inputs.version }}
           RELEASE_BRANCH: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
         run: |
-          BUMP_BRANCH="release-prep-${VERSION}"
+          BUMP_BRANCH="rel-prep-${VERSION}"
           echo "Creating version bump branch ${BUMP_BRANCH}..."
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -432,7 +433,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ github.event.inputs.version }}
         run: |
-          BUMP_BRANCH="release-prep-${VERSION}"
+          BUMP_BRANCH="rel-prep-${VERSION}"
           echo "Cleaning up bump branch ${BUMP_BRANCH}..."
 
           if git ls-remote --heads origin "${BUMP_BRANCH}" | grep -q "${BUMP_BRANCH}"; then
@@ -440,100 +441,6 @@ jobs:
             echo "✓ Deleted bump branch ${BUMP_BRANCH}"
           else
             echo "Bump branch ${BUMP_BRANCH} not found on remote (may already be deleted)"
-          fi
-
-  build-image:
-    permissions:
-      id-token: write # Required for requesting the JWT token
-      contents: read
-    needs: prepare-release
-    uses: kyma-project/test-infra/.github/workflows/image-builder.yml@main # Usage: kyma-project/test-infra/.github/workflows/image-builder.yml@main
-    with:
-      name: telemetry-manager
-      dockerfile: Dockerfile
-      context: .
-      tags: ${{ needs.prepare-release.outputs.release-tag }}
-      platforms: "linux/amd64,linux/arm64"
-
-  unit-tests:
-    runs-on: ubuntu-latest
-    needs:
-      - prepare-release
-      - validate-and-prepare-branch
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          ref: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
-          fetch-depth: 0
-
-      - name: Setup Golang
-        uses: "./.github/template/setup-golang"
-
-      - name: Run tests
-        run: make test
-
-  run-pr-integration:
-    needs:
-      - build-image
-      - prepare-release
-      - validate-and-prepare-branch
-    uses: ./.github/workflows/pr-integration.yml
-    with:
-      image_tag: ${{ needs.prepare-release.outputs.release-tag }}
-      ref: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
-    secrets: inherit
-
-  run-gardener-integration:
-    needs:
-      - build-image
-      - prepare-release
-      - validate-and-prepare-branch
-    uses: ./.github/workflows/gardener-integration.yml
-    with:
-      image_tag: ${{ needs.prepare-release.outputs.release-tag }}
-      ref: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
-    secrets: inherit
-
-  upload-release-report:
-    needs:
-      - run-pr-integration
-      - run-gardener-integration
-      - unit-tests
-    uses: kyma-project/compliancy/.github/workflows/notify-release-report.yml@main
-    with:
-      release_version: ${{ github.event.inputs.version }}
-    secrets: inherit
-
-  create-release:
-    needs:
-      - validate-and-prepare-branch
-      - prepare-release
-      - upload-release-report
-      - build-image
-      - unit-tests
-    permissions:
-      contents: write
-    runs-on: ubuntu-latest
-    env:
-      KYMA_TELEMETRY_MANAGER_REPO: ${{ github.repository }}
-    steps:
-      - name: Checkout release tag
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          ref: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
-          fetch-depth: 0
-      - name: Verify we're on the merged PR commit
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_NUMBER: ${{ needs.prepare-release.outputs.pr-number }}
-        run: |
-          MERGE_SHA=$(gh pr view "${PR_NUMBER}" --json mergeCommit --jq .mergeCommit.oid)
-          CURRENT_SHA=$(git rev-parse HEAD)
-          
-          if [ "$MERGE_SHA" != "$CURRENT_SHA" ]; then
-            echo "::warning::Expected commit ${MERGE_SHA} but got ${CURRENT_SHA}"
-            echo "Release branch may have additional commits after PR merge"
           fi
       - name: Create and push release tag
         if: ${{ inputs.dry_run != true }}
@@ -560,22 +467,105 @@ jobs:
           echo "::notice::DRY RUN: Skipping tag creation for ${VERSION} on ${RELEASE_BRANCH}"
           echo "Would have created and pushed tag: ${VERSION}"
 
+  unit-tests:
+    runs-on: ubuntu-latest
+    needs:
+      - validate-and-prepare-branch
+      - prepare-release
+    if: always() && !cancelled() && needs.validate-and-prepare-branch.result == 'success'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
+          fetch-depth: 0
+
+      - name: Setup Golang
+        uses: "./.github/template/setup-golang"
+
+      - name: Run tests
+        run: make test
+
+  run-pr-integration:
+    needs:
+      - validate-and-prepare-branch
+      - prepare-release
+    if: always() && !cancelled() && needs.validate-and-prepare-branch.result == 'success'
+    uses: ./.github/workflows/pr-integration.yml
+    with:
+      image_tag: ${{ inputs.version }}
+      ref: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
+    secrets: inherit
+
+  run-gardener-integration:
+    needs:
+      - validate-and-prepare-branch
+      - prepare-release
+    if: always() && !cancelled() && needs.validate-and-prepare-branch.result == 'success'
+    uses: ./.github/workflows/gardener-integration.yml
+    with:
+      image_tag: ${{ inputs.version }}
+      ref: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
+    secrets: inherit
+
+  upload-release-report:
+    needs:
+      - run-pr-integration
+      - run-gardener-integration
+      - unit-tests
+    uses: kyma-project/compliancy/.github/workflows/notify-release-report.yml@main
+    with:
+      release_version: ${{ github.event.inputs.version }}
+    secrets: inherit
+
+  create-release:
+    needs:
+      - validate-and-prepare-branch
+      - prepare-release
+      - upload-release-report
+      - unit-tests
+    if: always() && !cancelled() && needs.validate-and-prepare-branch.result == 'success' && needs.upload-release-report.result == 'success'
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    env:
+      KYMA_TELEMETRY_MANAGER_REPO: ${{ github.repository }}
+    steps:
+      - name: Checkout release tag
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
+          fetch-depth: 0
+      - name: Verify we're on the merged PR commit
+        if: ${{ inputs.force != true }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ needs.prepare-release.outputs.pr-number }}
+        run: |
+          MERGE_SHA=$(gh pr view "${PR_NUMBER}" --json mergeCommit --jq .mergeCommit.oid)
+          CURRENT_SHA=$(git rev-parse HEAD)
+
+          if [ "$MERGE_SHA" != "$CURRENT_SHA" ]; then
+            echo "::warning::Expected commit ${MERGE_SHA} but got ${CURRENT_SHA}"
+            echo "Release branch may have additional commits after PR merge"
+          fi
+
       - name: Install tools
         shell: bash
         run: make install-tools
 
       - name: Release
         if: ${{ inputs.dry_run != true }}
-        run: hack/release.sh ${{ needs.prepare-release.outputs.release-tag }}
+        run: hack/release.sh ${{ inputs.version }}
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-          GORELEASER_CURRENT_TAG: "${{ needs.prepare-release.outputs.release-tag }}"
+          GORELEASER_CURRENT_TAG: "${{ inputs.version }}"
 
       - name: Skip GitHub release (dry run)
         if: ${{ inputs.dry_run == true }}
         run: |
           echo "::notice::DRY RUN: Skipping GitHub release creation"
-          echo "Would have run: hack/release.sh ${{ needs.prepare-release.outputs.release-tag }}"
+          echo "Would have run: hack/release.sh ${{ inputs.version }}"
 
       - name: Package Helm chart
         run: |
@@ -589,7 +579,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           [[ ! -e ${HELM_CHART} ]] && echo "::error ::Packaged Helm chart does not exist" && exit 1
-          gh release upload ${{ needs.prepare-release.outputs.release-tag }} --clobber ${HELM_CHART}
+          gh release upload ${{ inputs.version }} --clobber ${HELM_CHART}
 
       - name: Skip Helm chart upload (dry run)
         if: ${{ inputs.dry_run == true }}
@@ -603,9 +593,9 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git checkout gh-pages
-          helm repo index --url https://github.com/${{ github.repository }}/releases/download/${{ needs.prepare-release.outputs.release-tag }} --merge ./index.yaml ./
+          helm repo index --url https://github.com/${{ github.repository }}/releases/download/${{ inputs.version }} --merge ./index.yaml ./
           git add index.yaml
-          git commit -m "Update Helm chart metadata for ${{ needs.prepare-release.outputs.release-tag }}"
+          git commit -m "Update Helm chart metadata for ${{ inputs.version }}"
           git push origin gh-pages
 
       - name: Skip gh-pages update (dry run)
@@ -617,26 +607,25 @@ jobs:
         if: ${{ success() && inputs.dry_run != true }}
         run: |
           cat >> $GITHUB_STEP_SUMMARY <<EOF
-          ##  Release ${{ needs.prepare-release.outputs.release-tag }} Published Successfully!
-          
+          ##  Release ${{ inputs.version }} Published Successfully!
+
           ### Release Information
-          - **Release**: https://github.com/${{ github.repository }}/releases/tag/${{ needs.prepare-release.outputs.release-tag }}
-          - **Version**: ${{ needs.prepare-release.outputs.release-tag }}
+          - **Release**: https://github.com/${{ github.repository }}/releases/tag/${{ inputs.version }}
+          - **Version**: ${{ inputs.version }}
           - **Branch**: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
-          - **PR**: #${{ needs.prepare-release.outputs.pr-number }}
           - **OCC Image**: ${{ github.event.inputs.occ_image_version }}
           - **Helm Chart**: \`${HELM_CHART}\`
           
           ### Docker Images
           \`\`\`
-          europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:${{ needs.prepare-release.outputs.release-tag }}
+          europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:${{ inputs.version }}
           \`\`\`
-          
+
           ### What's Next?
           1. Verify the release at the URL above
           2. Announce the release to the team
           3. Update external documentation if needed
-          
+
           EOF
       - name: Dry run summary
         if: ${{ inputs.dry_run == true }}
@@ -644,7 +633,7 @@ jobs:
           cat >> $GITHUB_STEP_SUMMARY <<EOF
           ## Dry Run Summary
 
-          **Version**: ${{ needs.prepare-release.outputs.release-tag }}
+          **Version**: ${{ inputs.version }}
           **Release Branch**: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
           **OCC Image**: ${{ github.event.inputs.occ_image_version }}
 
