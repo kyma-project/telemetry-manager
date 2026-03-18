@@ -36,7 +36,7 @@ func TestRejectTracePipelineCreation(t *testing.T) {
 			pipeline: telemetryv1beta1.TracePipeline{
 				Spec: telemetryv1beta1.TracePipelineSpec{},
 			},
-			errorMsg: "must be of type object",
+			errorMsg: "Required value",
 			field:    "spec.output.otlp",
 			causes:   2,
 		},
