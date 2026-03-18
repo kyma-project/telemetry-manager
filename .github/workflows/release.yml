@@ -453,10 +453,38 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git tag -a "${VERSION}" -m "Release ${VERSION}"
-          git push origin "${VERSION}"
+          # Ensure we're on the release branch
+          git checkout "${RELEASE_BRANCH}"
 
-          echo "Created and pushed tag ${VERSION} from ${RELEASE_BRANCH}"
+          # Fetch latest changes from remote
+          echo "Fetching latest changes from origin/${RELEASE_BRANCH}..."
+          git fetch origin "${RELEASE_BRANCH}"
+
+          # Check if local branch is behind remote
+          LOCAL_COMMIT=$(git rev-parse HEAD)
+          REMOTE_COMMIT=$(git rev-parse "origin/${RELEASE_BRANCH}")
+
+          if [ "$LOCAL_COMMIT" != "$REMOTE_COMMIT" ]; then
+            echo "Local branch is behind remote. Updating..."
+            git reset --hard "origin/${RELEASE_BRANCH}"
+            echo "✓ Branch updated to latest commit: ${REMOTE_COMMIT}"
+          else
+            echo "✓ Branch is already up-to-date with remote"
+          fi
+
+          # Verify we're on the correct commit
+          CURRENT_COMMIT=$(git rev-parse HEAD)
+          echo "Current commit: ${CURRENT_COMMIT}"
+
+          # Create annotated tag
+          git tag -a "${VERSION}" -m "Release ${VERSION}"
+          echo "Created tag ${VERSION} at commit ${CURRENT_COMMIT}"
+
+          # Push tag to upstream
+          git push upstream "${VERSION}"
+          echo "✓ Pushed tag ${VERSION} to upstream"
+
+          echo "✓ Successfully created and pushed tag ${VERSION} from ${RELEASE_BRANCH}"
 
       - name: Skip tag creation (dry run)
         if: ${{ inputs.dry_run == true }}
