@@ -46,6 +46,11 @@ manager:
     runAsNonRoot: true
     seccompProfile:
       type: RuntimeDefault
+  additionalMetadata:
+    labels:
+    # custom-label: my-value
+    annotations:
+    # custom-resource-annotation: my-value
 managerMetrics:
   ports:
     - name: http-metrics
