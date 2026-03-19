@@ -78,12 +78,12 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          ref: chart/telemetry
-          repository: ${{ env.REPO }}
-          github-server-url: ${{ env.GH_HOST }}
-          token: ${{ secrets.HUSKIES_GHTOOLS_TOKEN }}
+        run: |
+          rm -rf ./*
+          git clone \
+            "https://x-access-token:${GH_TOKEN}@${GH_HOST}/${REPO}.git" \
+            --branch chart/telemetry \
+            .
 
       - name: Configure git
         run: |
@@ -121,7 +121,7 @@ jobs:
       - name: Update Chart.yaml
         run: |
           yq -i '.appVersion = "${{ inputs.version }}"' telemetry/Chart.yaml
-          yq -i '.dependencies[] |= (select(.name == "telemetry") .version = "${{ inputs.version }}")' telemetry/Chart.yaml
+          yq -i '.dependencies[] |= (select(.name == "telemetry") | .version = "${{ inputs.version }}")' telemetry/Chart.yaml
 
       - name: Verify changes
         run: |
@@ -210,13 +210,13 @@ jobs:
           **Branch**: bump-telemetry-${{ inputs.version }}
           **Dry Run**: ${{ inputs.dry_run }}
           **Auto Merge**: ${{ inputs.auto_merge }}
-          ${{ inputs.dry_run != 'true' && format('**PR**: {0}', steps.create-pr.outputs.pr-url) || '' }}
+          ${{ inputs.dry_run != true && format('**PR**: {0}', steps.create-pr.outputs.pr-url) || '' }}
 
           ### Next Steps
-          ${{ inputs.dry_run == 'true' && '- Re-run workflow with dry_run=false to create PR' || format('1. Review the PR at {0}', steps.create-pr.outputs.pr-url) }}
-          ${{ inputs.dry_run != 'true' && '2. Verify chart changes are correct' || '' }}
-          ${{ inputs.dry_run != 'true' && inputs.auto_merge != 'true' && '3. Merge the PR to deploy' || '' }}
-          ${{ inputs.dry_run != 'true' && inputs.auto_merge == 'true' && '3. PR will auto-merge when checks pass' || '' }}
+          ${{ inputs.dry_run == true && '- Re-run workflow with dry_run=false to create PR' || format('1. Review the PR at {0}', steps.create-pr.outputs.pr-url) }}
+          ${{ inputs.dry_run != true && '2. Verify chart changes are correct' || '' }}
+          ${{ inputs.dry_run != true && inputs.auto_merge != true && '3. Merge the PR to deploy' || '' }}
+          ${{ inputs.dry_run != true && inputs.auto_merge == true && '3. PR will auto-merge when checks pass' || '' }}
           EOF
 
   release-rmo:
@@ -231,12 +231,12 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          ref: chart/runtime-monitoring-operator
-          repository: ${{ env.REPO }}
-          github-server-url: ${{ env.GH_HOST }}
-          token: ${{ secrets.HUSKIES_GHTOOLS_TOKEN }}
+        run: |
+          rm -rf ./*
+          git clone \
+            "https://x-access-token:${GH_TOKEN}@${GH_HOST}/${REPO}.git" \
+            --branch chart/runtime-monitoring-operator \
+            .
 
       - name: Configure git
         run: |
@@ -328,7 +328,7 @@ jobs:
           echo "No existing PR found. Creating new PR..."
 
           PR_URL=$(gh pr create \
-            --base chart/rmo \
+            --base chart/runtime-monitoring-operator \
             --head "${BRANCH_NAME}" \
             --title "Bump RMO OTel Collector to ${{ inputs.version }}" \
             --body "Bump RMO OTel Collector version to ${{ inputs.version }}" \
@@ -363,11 +363,11 @@ jobs:
           **Branch**: bump-rmo-occ-${{ inputs.version }}
           **Dry Run**: ${{ inputs.dry_run }}
           **Auto Merge**: ${{ inputs.auto_merge }}
-          ${{ inputs.dry_run != 'true' && format('**PR**: {0}', steps.create-pr.outputs.pr-url) || '' }}
+          ${{ inputs.dry_run != true && format('**PR**: {0}', steps.create-pr.outputs.pr-url) || '' }}
 
           ### Next Steps
-          ${{ inputs.dry_run == 'true' && '- Re-run workflow with dry_run=false to create PR' || format('1. Review the PR at {0}', steps.create-pr.outputs.pr-url) }}
-          ${{ inputs.dry_run != 'true' && '2. Verify OTel Collector version changes are correct' || '' }}
-          ${{ inputs.dry_run != 'true' && inputs.auto_merge != 'true' && '3. Merge the PR to deploy' || '' }}
-          ${{ inputs.dry_run != 'true' && inputs.auto_merge == 'true' && '3. PR will auto-merge when checks pass' || '' }}
+          ${{ inputs.dry_run == true && '- Re-run workflow with dry_run=false to create PR' || format('1. Review the PR at {0}', steps.create-pr.outputs.pr-url) }}
+          ${{ inputs.dry_run != true && '2. Verify OTel Collector version changes are correct' || '' }}
+          ${{ inputs.dry_run != true && inputs.auto_merge != true && '3. Merge the PR to deploy' || '' }}
+          ${{ inputs.dry_run != true && inputs.auto_merge == true && '3. PR will auto-merge when checks pass' || '' }}
           EOF
