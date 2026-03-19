@@ -44,18 +44,20 @@ spec:
         type: Static
         static:
           replicas: 2
-    # New section
-    collectionInterval:
-      default: 60s        # applies to all pull-based inputs (runtime, prometheus, istio)
-      runtime: 120s        # optional: override for runtime input only
-      prometheus: 30s      # optional: override for prometheus input only
-      istio: 45s           # optional: override for istio input only
+    # New fields
+    collectionInterval: 60s    # applies to all pull-based inputs (runtime, prometheus, istio)
+    runtime:
+      collectionInterval: 120s # optional: override for runtime input only
+    prometheus:
+      collectionInterval: 30s  # optional: override for prometheus input only
+    istio:
+      collectionInterval: 45s  # optional: override for istio input only
 ```
 
 **Precedence:**
 
-1. Input-specific override in the Telemetry CR (for example, `collectionInterval.runtime`) — highest priority
-2. `collectionInterval.default` in the Telemetry CR
+1. Input-specific override in the Telemetry CR (for example, `metric.runtime.collectionInterval`) — highest priority
+2. `metric.collectionInterval` in the Telemetry CR
 3. Hardcoded default of `30s`
 
 ![Per-input collection interval with pipeline-level override](./../assets/034-collection-interval-pipeline.svg)
@@ -93,14 +95,14 @@ spec:
 **Precedence (with Step 2):**
 
 1. Input-level `collectionInterval` in MetricPipeline (highest priority)
-2. Input-specific override in the Telemetry CR (for example, `collectionInterval.runtime`)
-3. `collectionInterval.default` in the Telemetry CR
+2. Input-specific override in the Telemetry CR (for example, `metric.runtime.collectionInterval`)
+3. `metric.collectionInterval` in the Telemetry CR
 4. Hardcoded default of `30s`
 
 **Conflict resolution:**
 
 ```
-Telemetry CR: collectionInterval.runtime = 60s
+Telemetry CR: metric.runtime.collectionInterval = 60s
 
 Pipeline A: runtime.collectionInterval not set     → resolves to 60s ✅
 Pipeline B: runtime.collectionInterval = 60s       → resolves to 60s ✅ (same value)
