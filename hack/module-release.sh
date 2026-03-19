@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-# standard bash error handling
 set -o errexit  # exit immediately when a command fails.
 set -E          # needs to be set if we want the ERR trap
 set -o pipefail # prevents errors in a pipeline from being masked
@@ -78,7 +77,8 @@ setup_folder() {
       echo "Folder ${TARGET_FOLDER} does not exist. Creating from previous version..."
 
       # Find the most recent version folder (sorted by semantic version)
-      PREVIOUS_VERSION=$(ls -1 "${MODULE_DIR}" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1)
+      # Use || true to prevent errexit when grep finds no matches
+      PREVIOUS_VERSION=$(ls -1 "${MODULE_DIR}" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1 || true)
 
       if [ -z "${PREVIOUS_VERSION}" ]; then
         echo "::error::No previous version found in ${MODULE_DIR}"
@@ -95,7 +95,7 @@ setup_folder() {
 
     # Export TELEMETRY_FOLDER to GITHUB_ENV if in GitHub Actions, otherwise just export as env var
     if [ -n "${GITHUB_ENV:-}" ]; then
-      echo "TELEMETRY_FOLDER=${TARGET_FOLDER}" >> $GITHUB_ENV
+      echo "TELEMETRY_FOLDER=${TARGET_FOLDER}" >> "$GITHUB_ENV"
     fi
     export TELEMETRY_FOLDER="${TARGET_FOLDER}"
 
@@ -110,7 +110,8 @@ setup_folder() {
       echo "Folder ${TARGET_FOLDER} does not exist. Creating from previous version..."
 
       # Find the most recent experimental version folder (only -experimental versions)
-      PREVIOUS_VERSION=$(ls -1 "${MODULE_DIR}" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+-experimental$' | sort -V | tail -1)
+      # Use || true to prevent errexit when grep finds no matches
+      PREVIOUS_VERSION=$(ls -1 "${MODULE_DIR}" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+-experimental$' | sort -V | tail -1 || true)
 
       if [ -z "${PREVIOUS_VERSION}" ]; then
         echo "::error::No previous experimental version found in ${MODULE_DIR}"
@@ -127,7 +128,7 @@ setup_folder() {
 
     # Export TELEMETRY_FOLDER to GITHUB_ENV if in GitHub Actions, otherwise just export as env var
     if [ -n "${GITHUB_ENV:-}" ]; then
-      echo "TELEMETRY_FOLDER=${TARGET_FOLDER}" >> $GITHUB_ENV
+      echo "TELEMETRY_FOLDER=${TARGET_FOLDER}" >> "$GITHUB_ENV"
     fi
     export TELEMETRY_FOLDER="${TARGET_FOLDER}"
 

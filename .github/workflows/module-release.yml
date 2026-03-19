@@ -91,18 +91,24 @@ jobs:
     needs: validate-inputs
     runs-on: ubuntu-latest
     env:
-      GH_HOST: https://github.tools.sap
+      GH_HOST: github.tools.sap
       GH_REPO: kyma/module-manifests
       GH_TOKEN: ${{ secrets.HUSKIES_GHTOOLS_TOKEN }}
     steps:
-      - name: Checkout code
+      - name: Checkout telemetry-manager (for scripts)
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          path: telemetry-manager
+
+      - name: Checkout module-manifests (working repository)
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: '0'
           ref: main
           repository: ${{ env.GH_REPO }}
-          github-server-url: ${{ env.GH_HOST }}
+          github-server-url: https://${{ env.GH_HOST }}
           token: ${{ secrets.HUSKIES_GHTOOLS_TOKEN }}
+          path: module-manifests
 
       - name: Install yq
         run: |
@@ -141,43 +147,50 @@ jobs:
           yq --version
 
       - name: Configure git
+        working-directory: module-manifests
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Create branch
+        working-directory: module-manifests
         run: |
           git checkout -b bump-telemetry-${{ inputs.version }}-${{ inputs.channel }}
 
       - name: Check for duplicate version
+        working-directory: module-manifests
         env:
           VERSION: ${{ inputs.version }}
           CHANNEL: ${{ inputs.channel }}
         run: |
-          ./hack/module-release.sh check-duplicate "${VERSION}" "${CHANNEL}"
+          ../telemetry-manager/hack/module-release.sh check-duplicate "${VERSION}" "${CHANNEL}"
 
       - name: Setup version folder
+        working-directory: module-manifests
         env:
           VERSION: ${{ inputs.version }}
           CHANNEL: ${{ inputs.channel }}
         run: |
-          ./hack/module-release.sh setup-folder "${VERSION}" "${CHANNEL}"
+          ../telemetry-manager/hack/module-release.sh setup-folder "${VERSION}" "${CHANNEL}"
 
       - name: Update module-config.yaml
+        working-directory: module-manifests
         env:
           VERSION: ${{ inputs.version }}
           CHANNEL: ${{ inputs.channel }}
         run: |
-          ./hack/module-release.sh update-config "${VERSION}" "${CHANNEL}"
+          ../telemetry-manager/hack/module-release.sh update-config "${VERSION}" "${CHANNEL}"
 
       - name: Update module-releases.yaml
+        working-directory: module-manifests
         env:
           VERSION: ${{ inputs.version }}
           CHANNEL: ${{ inputs.channel }}
         run: |
-          ./hack/module-release.sh update-releases "${VERSION}" "${CHANNEL}"
+          ../telemetry-manager/hack/module-release.sh update-releases "${VERSION}" "${CHANNEL}"
 
       - name: Verify changes
+        working-directory: module-manifests
         run: |
           echo "Changes to be committed:"
           git status
@@ -185,13 +198,17 @@ jobs:
           echo "Diff:"
           git diff
 
-          if git diff --quiet && git diff --staged --quiet; then
+          # Check for any changes including untracked files
+          if [ -z "$(git status --porcelain)" ]; then
             echo "::error::No changes detected. Module may already be at version ${{ inputs.version }}"
             exit 1
           fi
 
+          echo "✓ Changes detected and ready to commit"
+
       - name: Commit changes
         if: ${{ !inputs.dry_run }}
+        working-directory: module-manifests
         env:
           VERSION: ${{ inputs.version }}
           CHANNEL: ${{ inputs.channel }}
@@ -214,6 +231,7 @@ jobs:
 
       - name: Push branch
         if: ${{ !inputs.dry_run }}
+        working-directory: module-manifests
         env:
           VERSION: ${{ inputs.version }}
           CHANNEL: ${{ inputs.channel }}
@@ -224,6 +242,7 @@ jobs:
 
       - name: Create PR
         if: ${{ !inputs.dry_run }}
+        working-directory: module-manifests
         id: create-pr
         env:
           VERSION: ${{ inputs.version }}
@@ -283,6 +302,7 @@ jobs:
 
       - name: Enable auto-merge
         if: ${{ !inputs.dry_run && inputs.auto_merge }}
+        working-directory: module-manifests
         env:
           VERSION: ${{ inputs.version }}
           CHANNEL: ${{ inputs.channel }}
