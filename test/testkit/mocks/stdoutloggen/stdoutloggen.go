@@ -64,6 +64,14 @@ func WithText(text string) Option {
 	}
 }
 
+// WithBytes sets the size of each log in bytes.
+func WithBytes(bytes int) Option {
+	return func(spec *corev1.PodSpec) {
+		spec.Containers[0].Args = append(spec.Containers[0].Args, "--bytes")
+		spec.Containers[0].Args = append(spec.Containers[0].Args, fmt.Sprintf("%d", bytes))
+	}
+}
+
 // GetVersion extracts and returns the version of the stdout log generator image
 //
 // Example: "latest" extracted from "europe-docker.pkg.dev/kyma-project/prod/stdout-log-generator:latest"

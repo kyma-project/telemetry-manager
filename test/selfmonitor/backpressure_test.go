@@ -44,7 +44,7 @@ func TestBackpressure(t *testing.T) {
 		{
 			name:           "fluent-bit-buffer-filling-up",
 			component:      suite.LabelFluentBit,
-			backendOpts:    backendRetryableSlowErr(faultPercentageAll),
+			backendOpts:    backendRetryableErr(faultPercentageNinety),
 			generator:      stdoutLogGenerator(20 * defaultRate),
 			expectedReason: conditions.ReasonSelfMonAgentBufferFillingUp,
 		},
@@ -52,7 +52,7 @@ func TestBackpressure(t *testing.T) {
 			name:           "fluent-bit-data-dropped",
 			component:      suite.LabelFluentBit,
 			backendOpts:    backendNonRetryableErr(faultPercentageHalf),
-			generator:      stdoutLogGenerator(10 * defaultRate),
+			generator:      stdoutLogGenerator(defaultRate),
 			expectedReason: conditions.ReasonSelfMonAgentSomeDataDropped,
 		},
 		{
