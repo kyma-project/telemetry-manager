@@ -1,0 +1,324 @@
+name: Management Plane Chart Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 1.2.3 for Telemetry, 1.2.3-4.5.6 for RMO)'
+        required: true
+        type: string
+        default: ''
+      target_chart:
+        description: 'Target chart to release'
+        required: true
+        type: choice
+        options:
+          - Telemetry
+          - RMO
+      dry_run:
+        description: 'Perform a dry run without creating PR'
+        required: false
+        default: false
+        type: boolean
+      auto_merge:
+        description: 'Auto-merge PR after creation'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  validate-inputs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate version format
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+          TARGET_CHART: ${{ github.event.inputs.target_chart }}
+        run: |
+          echo "Validating version format for target chart: ${TARGET_CHART}"
+          echo "Version: ${VERSION}"
+
+          if [ "${TARGET_CHART}" = "Telemetry" ]; then
+            # Telemetry chart expects X.Y.Z format
+            if ! [[ "${VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "::error::Invalid version format for Telemetry chart: ${VERSION}"
+              echo "Expected format: X.Y.Z (e.g., 1.2.3)"
+              exit 1
+            fi
+            echo "✓ Telemetry version format valid: ${VERSION}"
+          elif [ "${TARGET_CHART}" = "RMO" ]; then
+            # RMO chart expects X.Y.Z-A.B.C format
+            if ! [[ "${VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+-[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "::error::Invalid version format for RMO chart: ${VERSION}"
+              echo "Expected format: X.Y.Z-A.B.C (e.g., 1.2.3-4.5.6)"
+              exit 1
+            fi
+            echo "✓ RMO version format valid: ${VERSION}"
+          else
+            echo "::error::Unknown target chart: ${TARGET_CHART}"
+            exit 1
+          fi
+
+  release-telemetry:
+    name: Release Telemetry Chart
+    runs-on: ubuntu-latest
+    needs: validate-inputs
+    if: ${{ github.event.inputs.target_chart == 'Telemetry' }}
+    env:
+      GH_HOST: github.tools.sap
+      REPO: kyma/management-plane-charts
+
+    steps:
+      - name: Login to Github
+        run: |
+          echo "${{ secrets.HUSKIES_GHTOOLS_TOKEN }}" | gh auth login --with-token
+
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: chart/telemetry
+          repository: ${{ env.GH_HOST }}/${{ env.REPO }}
+          token: ${{ secrets.HUSKIES_GHTOOLS_TOKEN }}
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create Branch
+        run: |
+          git checkout -b bump-telemetry-${{ github.event.inputs.version }}
+
+      - name: Setup python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.x"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r tools/requirements.txt
+
+      - name: Bump chart version
+        run: make bump-patch
+
+      - name: Update Chart.yaml
+        run: |
+          yq -i '.appVersion = "${{ inputs.version }}"' telemetry/Chart.yaml
+          yq -i '.dependencies[] |= (select(.name == "telemetry") .version = "${{ inputs.version }}")' telemetry/Chart.yaml
+
+      - name: Verify changes
+        run: |
+          echo "Changes to be committed:"
+          git diff
+
+          if git diff --quiet; then
+            echo "::error::No changes detected. Chart may already be at version ${{ inputs.version }}"
+            exit 1
+          fi
+
+      - name: Verify Chart.yaml was updated
+        run: |
+          CURRENT_VERSION=$(yq '.appVersion' telemetry/Chart.yaml)
+          if [ "$CURRENT_VERSION" != "${{ inputs.version }}" ]; then
+            echo "::error::Chart.yaml appVersion mismatch. Expected: ${{ inputs.version }}, Got: $CURRENT_VERSION"
+            exit 1
+          fi
+          echo "✓ Chart.yaml appVersion verified: $CURRENT_VERSION"
+
+      - name: Commit changes
+        run: |
+          git add .
+          git commit -m "Bump Telemetry to ${{ inputs.version }}"
+
+      - name: Push branch
+        if: ${{ inputs.dry_run != true }}
+        run: |
+          git push origin bump-telemetry-${{ github.event.inputs.version }}
+
+      - name: Create PR
+        if: ${{ inputs.dry_run != true }}
+        id: create-pr
+        run: |
+          PR_URL=$(gh pr create \
+            --base chart/telemetry \
+            --head bump-telemetry-${{ github.event.inputs.version }} \
+            --title "Bump Telemetry to ${{ inputs.version }}" \
+            --body "Bump Telemetry chart to version ${{ inputs.version }}" \
+            --label pr-deploy)
+          PR_NUMBER=$(echo "${PR_URL}" | grep -o '[0-9]*$')
+          echo "pr-url=${PR_URL}" >> $GITHUB_OUTPUT
+          echo "pr-number=${PR_NUMBER}" >> $GITHUB_OUTPUT
+          echo "Created PR: ${PR_URL}"
+
+      - name: Enable auto-merge
+        if: ${{ inputs.dry_run != true && inputs.auto_merge == true }}
+        run: |
+          gh pr merge ${{ steps.create-pr.outputs.pr-number }} --auto --squash
+          echo "✓ Auto-merge enabled for PR #${{ steps.create-pr.outputs.pr-number }}"
+
+      - name: Skip PR creation (dry run)
+        if: ${{ inputs.dry_run == true }}
+        run: |
+          echo "::notice::DRY RUN: Skipping PR creation"
+          echo "Would have created PR with:"
+          echo "  Branch: bump-telemetry-${{ github.event.inputs.version }}"
+          echo "  Title: Bump Telemetry to ${{ inputs.version }}"
+          echo "  Label: pr-deploy"
+
+      - name: Workflow summary
+        if: always()
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY <<EOF
+          ## Telemetry Chart Release Summary
+
+          **Version**: ${{ inputs.version }}
+          **Branch**: bump-telemetry-${{ inputs.version }}
+          **Dry Run**: ${{ inputs.dry_run }}
+          **Auto Merge**: ${{ inputs.auto_merge }}
+          ${{ inputs.dry_run != 'true' && format('**PR**: {0}', steps.create-pr.outputs.pr-url) || '' }}
+
+          ### Next Steps
+          ${{ inputs.dry_run == 'true' && '- Re-run workflow with dry_run=false to create PR' || format('1. Review the PR at {0}', steps.create-pr.outputs.pr-url) }}
+          ${{ inputs.dry_run != 'true' && '2. Verify chart changes are correct' || '' }}
+          ${{ inputs.dry_run != 'true' && inputs.auto_merge != 'true' && '3. Merge the PR to deploy' || '' }}
+          ${{ inputs.dry_run != 'true' && inputs.auto_merge == 'true' && '3. PR will auto-merge when checks pass' || '' }}
+          EOF
+
+  release-rmo:
+    name: Release RMO Chart
+    runs-on: ubuntu-latest
+    needs: validate-inputs
+    if: ${{ github.event.inputs.target_chart == 'RMO' }}
+    env:
+      GH_HOST: github.tools.sap
+      REPO: kyma/management-plane-charts
+
+    steps:
+      - name: Login to Github
+        run: |
+          echo "${{ secrets.HUSKIES_GHTOOLS_TOKEN }}" | gh auth login --with-token
+
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: chart/runtime-monitoring-operator
+          repository: ${{ env.GH_HOST }}/${{ env.REPO }}
+          token: ${{ secrets.HUSKIES_GHTOOLS_TOKEN }}
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create Branch
+        run: |
+          git checkout -b bump-rmo-${{ github.event.inputs.version }}
+
+      - name: Setup python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.x"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r tools/requirements.txt
+
+      - name: Bump chart version
+        run: make bump-patch
+
+      - name: Update values.yaml
+        run: |
+          yq -i '.appVersion = "${{ inputs.version }}"' rmo/Chart.yaml
+          yq -i '.dependencies[] |= (select(.name == "rmo") .version = "${{ inputs.version }}")' rmo/Chart.yaml
+
+      - name: Update OTel Collector tag in values.yaml
+        run: |
+          yq -i '.argosap.config.rma.image.otelCollector.tag = "${{ inputs.version }}"' runtime-monitoring-operator/values.yaml
+          echo "✓ Updated argosap.config.rma.image.otelCollector.tag to ${{ inputs.version }}"
+
+      - name: Verify changes
+        run: |
+          echo "Changes to be committed:"
+          git diff
+
+          if git diff --quiet; then
+            echo "::error::No changes detected. Chart may already be at version ${{ inputs.version }}"
+            exit 1
+          fi
+
+      - name: Verify Chart.yaml was updated
+        run: |
+          CURRENT_VERSION=$(yq '.appVersion' rmo/Chart.yaml)
+          if [ "$CURRENT_VERSION" != "${{ inputs.version }}" ]; then
+            echo "::error::Chart.yaml appVersion mismatch. Expected: ${{ inputs.version }}, Got: $CURRENT_VERSION"
+            exit 1
+          fi
+          echo "✓ Chart.yaml appVersion verified: $CURRENT_VERSION"
+
+      - name: Verify values.yaml was updated
+        run: |
+          OTEL_TAG=$(yq '.argosap.config.rma.image.otelCollector.tag' runtime-monitoring-operator/values.yaml)
+          if [ "$OTEL_TAG" != "${{ inputs.version }}" ]; then
+            echo "::error::values.yaml OTel Collector tag mismatch. Expected: ${{ inputs.version }}, Got: $OTEL_TAG"
+            exit 1
+          fi
+          echo "✓ values.yaml OTel Collector tag verified: $OTEL_TAG"
+
+      - name: Commit changes
+        run: |
+          git add .
+          git commit -m "Bump RMO to ${{ inputs.version }}"
+
+      - name: Push branch
+        if: ${{ inputs.dry_run != true }}
+        run: |
+          git push origin bump-rmo-${{ github.event.inputs.version }}
+
+      - name: Create PR
+        if: ${{ inputs.dry_run != true }}
+        id: create-pr
+        run: |
+          PR_URL=$(gh pr create \
+            --base chart/rmo \
+            --head bump-rmo-${{ github.event.inputs.version }} \
+            --title "Bump RMO to ${{ inputs.version }}" \
+            --body "Bump RMO chart to version ${{ inputs.version }}" \
+            --label pr-deploy)
+          PR_NUMBER=$(echo "${PR_URL}" | grep -o '[0-9]*$')
+          echo "pr-url=${PR_URL}" >> $GITHUB_OUTPUT
+          echo "pr-number=${PR_NUMBER}" >> $GITHUB_OUTPUT
+          echo "Created PR: ${PR_URL}"
+
+      - name: Enable auto-merge
+        if: ${{ inputs.dry_run != true && inputs.auto_merge == true }}
+        run: |
+          gh pr merge ${{ steps.create-pr.outputs.pr-number }} --auto --squash
+          echo "✓ Auto-merge enabled for PR #${{ steps.create-pr.outputs.pr-number }}"
+
+      - name: Skip PR creation (dry run)
+        if: ${{ inputs.dry_run == true }}
+        run: |
+          echo "::notice::DRY RUN: Skipping PR creation"
+          echo "Would have created PR with:"
+          echo "  Branch: bump-rmo-${{ github.event.inputs.version }}"
+          echo "  Title: Bump RMO to ${{ inputs.version }}"
+          echo "  Label: pr-deploy"
+
+      - name: Workflow summary
+        if: always()
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY <<EOF
+          ## RMO Chart Release Summary
+
+          **Version**: ${{ inputs.version }}
+          **Branch**: bump-rmo-${{ inputs.version }}
+          **Dry Run**: ${{ inputs.dry_run }}
+          **Auto Merge**: ${{ inputs.auto_merge }}
+          ${{ inputs.dry_run != 'true' && format('**PR**: {0}', steps.create-pr.outputs.pr-url) || '' }}
+
+          ### Next Steps
+          ${{ inputs.dry_run == 'true' && '- Re-run workflow with dry_run=false to create PR' || format('1. Review the PR at {0}', steps.create-pr.outputs.pr-url) }}
+          ${{ inputs.dry_run != 'true' && '2. Verify chart changes are correct' || '' }}
+          ${{ inputs.dry_run != 'true' && inputs.auto_merge != 'true' && '3. Merge the PR to deploy' || '' }}
+          ${{ inputs.dry_run != 'true' && inputs.auto_merge == 'true' && '3. PR will auto-merge when checks pass' || '' }}
+          EOF
