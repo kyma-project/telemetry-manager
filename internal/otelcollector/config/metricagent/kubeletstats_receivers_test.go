@@ -163,8 +163,8 @@ func TestKubeletStatsReceiverConfig(t *testing.T) {
 			collectorConfig, _, err := sut.Build(ctx, []telemetryv1beta1.MetricPipeline{
 				test.pipeline,
 			}, BuildOptions{
-			CollectionIntervals: telemetryutils.ResolveMetricCollectionIntervals(nil),
-		})
+				CollectionIntervals: telemetryutils.ResolveMetricCollectionIntervals(nil),
+			})
 			require.NoError(t, err)
 
 			require.NotContains(t, collectorConfig.Receivers, "prometheus/app-pods")
