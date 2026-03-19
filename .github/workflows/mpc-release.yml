@@ -74,17 +74,15 @@ jobs:
     env:
       GH_HOST: github.tools.sap
       REPO: kyma/management-plane-charts
+      GH_TOKEN: ${{ secrets.HUSKIES_GHTOOLS_TOKEN }}
 
     steps:
-      - name: Login to Github
-        run: |
-          echo "${{ secrets.HUSKIES_GHTOOLS_TOKEN }}" | gh auth login --with-token
-
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: chart/telemetry
-          repository: ${{ env.GH_HOST }}/${{ env.REPO }}
+          repository: ${{ env.REPO }}
+          github-server-url: ${{ env.GH_HOST }}
           token: ${{ secrets.HUSKIES_GHTOOLS_TOKEN }}
 
       - name: Configure git
@@ -229,17 +227,15 @@ jobs:
     env:
       GH_HOST: github.tools.sap
       REPO: kyma/management-plane-charts
+      GH_TOKEN: ${{ secrets.HUSKIES_GHTOOLS_TOKEN }}
 
     steps:
-      - name: Login to Github
-        run: |
-          echo "${{ secrets.HUSKIES_GHTOOLS_TOKEN }}" | gh auth login --with-token
-
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: chart/runtime-monitoring-operator
-          repository: ${{ env.GH_HOST }}/${{ env.REPO }}
+          repository: ${{ env.REPO }}
+          github-server-url: ${{ env.GH_HOST }}
           token: ${{ secrets.HUSKIES_GHTOOLS_TOKEN }}
 
       - name: Configure git
