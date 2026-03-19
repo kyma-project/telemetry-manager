@@ -1,5 +1,6 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "osvVulnerabilityAlerts": true,
   "extends": [
     "config:recommended",
     ":semanticCommits",
@@ -53,6 +54,16 @@
         "indirect"
       ],
       "enabled": false
+    },
+    {
+      "matchManagers": [
+        "gomod"
+      ],
+      "matchDepTypes": [
+        "indirect"
+      ],
+      "isVulnerabilityAlert": true,
+      "enabled": true
     },
     {
       "matchManagers": [
