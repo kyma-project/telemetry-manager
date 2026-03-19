@@ -127,56 +127,7 @@ jobs:
           path: module-manifests
 
       - name: Install yq
-        run: |
-          set -euo pipefail
-          YQ_VERSION="v4.44.1"
-          YQ_BINARY_PATH="/usr/local/bin/yq"
-          YQ_BASE_URL="https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}"
-
-          echo "Downloading yq ${YQ_VERSION}..."
-          sudo wget -qO "${YQ_BINARY_PATH}" "${YQ_BASE_URL}/yq_linux_amd64"
-
-          echo "Downloading checksums and hash order..."
-          CHECKSUMS_FILE="$(mktemp)"
-          HASHES_ORDER_FILE="$(mktemp)"
-          wget -qO "${CHECKSUMS_FILE}" "${YQ_BASE_URL}/checksums"
-          wget -qO "${HASHES_ORDER_FILE}" "${YQ_BASE_URL}/checksums_hashes_order"
-
-          echo "Verifying yq binary integrity..."
-          # Dynamically find SHA-256 column position from checksums_hashes_order
-          SHA256_LINE_NUM=$(grep -n "^SHA-256$" "${HASHES_ORDER_FILE}" | cut -d: -f1)
-          if [ -z "${SHA256_LINE_NUM}" ]; then
-            echo "::error::Could not find SHA-256 in checksums_hashes_order"
-            rm -f "${CHECKSUMS_FILE}" "${HASHES_ORDER_FILE}"
-            exit 1
-          fi
-
-          # Column index is line number + 1 (field 1 is filename, hashes start at field 2)
-          SHA256_COLUMN=$((SHA256_LINE_NUM + 1))
-          echo "SHA-256 is at column ${SHA256_COLUMN}"
-
-          # Extract SHA-256 checksum using dynamic column
-          EXPECTED_SHA256="$(grep '^yq_linux_amd64[[:space:]]' "${CHECKSUMS_FILE}" | sed 's/  /\t/g' | cut -f${SHA256_COLUMN})"
-          ACTUAL_SHA256="$(sha256sum "${YQ_BINARY_PATH}" | awk '{print $1}')"
-
-          if [ -z "${EXPECTED_SHA256}" ]; then
-            echo "::error::Failed to find expected checksum for yq_linux_amd64 in checksums file"
-            rm -f "${CHECKSUMS_FILE}" "${HASHES_ORDER_FILE}"
-            exit 1
-          fi
-
-          if [ "${EXPECTED_SHA256}" != "${ACTUAL_SHA256}" ]; then
-            echo "::error::Checksum verification failed for yq binary"
-            echo "Expected: ${EXPECTED_SHA256}"
-            echo "Actual:   ${ACTUAL_SHA256}"
-            rm -f "${CHECKSUMS_FILE}" "${HASHES_ORDER_FILE}"
-            exit 1
-          fi
-
-          echo "✓ Checksum verification successful"
-          rm -f "${CHECKSUMS_FILE}" "${HASHES_ORDER_FILE}"
-          sudo chmod +x "${YQ_BINARY_PATH}"
-          yq --version
+        run: telemetry-manager/hack/install-yq.sh
 
       - name: Configure git
         working-directory: module-manifests

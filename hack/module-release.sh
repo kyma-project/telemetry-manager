@@ -61,7 +61,7 @@ get_version_tag() {
   fi
 }
 
-# Check for duplicate version
+# Check for duplicate version and prevent downgrades
 check_duplicate() {
   local version="$1"
   local channel="$2"
@@ -73,16 +73,54 @@ check_duplicate() {
   # Check current version in module-releases.yaml
   CURRENT_VERSION=$(yq ".channels[] | select(.channel == \"${channel}\") | .version" "${MODULE_RELEASES}")
 
-  if [ "${CURRENT_VERSION}" = "${VERSION_TAG}" ]; then
-    echo "::error::Version ${VERSION_TAG} is already released for ${channel} channel"
-    echo "Current version in module-releases.yaml: ${CURRENT_VERSION}"
-    echo "Please use a newer version number"
+  # Extract base version (strip -experimental suffix for comparison)
+  CURRENT_BASE_VERSION="${CURRENT_VERSION%-experimental}"
+  NEW_BASE_VERSION="${version}"
+
+  # Use Python semver library for semantic version comparison
+  # This prevents both duplicates and downgrades
+  python3 - <<EOF
+import sys
+try:
+    import semver
+except ImportError:
+    print("::error::Python semver module not installed. Install with: pip install semver", file=sys.stderr)
+    sys.exit(1)
+
+current = "${CURRENT_BASE_VERSION}"
+new = "${NEW_BASE_VERSION}"
+
+try:
+    current_ver = semver.VersionInfo.parse(current)
+    new_ver = semver.VersionInfo.parse(new)
+except Exception as e:
+    print(f"::error::Invalid semantic version format: {e}", file=sys.stderr)
+    sys.exit(1)
+
+if new_ver < current_ver:
+    print(f"::error::Version downgrade not allowed for ${channel} channel", file=sys.stderr)
+    print(f"Current version: ${CURRENT_VERSION} (base: {current})", file=sys.stderr)
+    print(f"Requested version: ${VERSION_TAG} (base: {new})", file=sys.stderr)
+    print(f"Please use a version greater than {current}", file=sys.stderr)
+    sys.exit(1)
+elif new_ver == current_ver:
+    print(f"::error::Version ${VERSION_TAG} is already released for ${channel} channel", file=sys.stderr)
+    print(f"Current version in module-releases.yaml: ${CURRENT_VERSION}", file=sys.stderr)
+    print(f"Please use a newer version number", file=sys.stderr)
+    sys.exit(1)
+
+# Version is valid (new_ver > current_ver)
+sys.exit(0)
+EOF
+
+  if [ $? -ne 0 ]; then
     exit 1
   fi
 
-  echo "✓ Version ${VERSION_TAG} is not yet released for ${channel} channel"
-  echo "  Current version: ${CURRENT_VERSION}"
-  echo "  New version: ${VERSION_TAG}"
+  echo "✓ Version ${VERSION_TAG} is valid for ${channel} channel"
+  echo "  Current version: ${CURRENT_VERSION} (base: ${CURRENT_BASE_VERSION})"
+  echo "  New version: ${VERSION_TAG} (base: ${NEW_BASE_VERSION})"
+  echo "  ✓ Version is newer than current"
 }
 
 # Setup version folder

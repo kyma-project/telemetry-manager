@@ -53,24 +53,21 @@ BRANCH_NAME="bump-telemetry-${VERSION}-${CHANNEL}"
 # Check if PR already exists for this branch
 echo "Checking if PR already exists for branch: ${BRANCH_NAME}..."
 
-# Run gh pr list and capture both stdout and exit code
-set +e  # Temporarily disable errexit to handle the exit code ourselves
+# Run gh pr list - it returns exit code 0 with empty array [] if no PRs found
+# Any non-zero exit code indicates a real error (auth, network, API, etc.)
+set +e  # Temporarily disable errexit to capture the exit code
 EXISTING_PR=$(gh pr list --head "${BRANCH_NAME}" --json number,url --jq '.[0] | select(.number != null)' 2>&1)
 GH_EXIT_CODE=$?
 set -e  # Re-enable errexit
 
-# Check for actual errors (not just "no PRs found")
+# Any non-zero exit code from gh is a fatal error
 if [ ${GH_EXIT_CODE} -ne 0 ]; then
-  # gh failed - check if it's a real error or just no results
-  if echo "${EXISTING_PR}" | grep -qE "(authentication|permission|connect|network|timeout|rate limit)"; then
-    # Real error - authentication, network, or API issue
-    echo "::error::Failed to check for existing PRs: ${EXISTING_PR}"
-    exit 1
-  fi
-  # If the error doesn't match known error patterns, it might be "no PRs found"
-  # which is actually a success case for us
-  EXISTING_PR=""
+  echo "::error::Failed to check for existing PRs (exit code ${GH_EXIT_CODE}): ${EXISTING_PR}"
+  exit 1
 fi
+
+# At this point, gh succeeded (exit code 0)
+# EXISTING_PR is either empty/null (no PRs) or contains PR data
 
 # Filter out empty objects/null results
 if [ -n "${EXISTING_PR}" ] && [ "${EXISTING_PR}" != "null" ] && [ "${EXISTING_PR}" != "{}" ]; then
