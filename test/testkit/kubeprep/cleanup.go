@@ -46,11 +46,13 @@ func WaitForManagedResourceCleanup(ctx context.Context, k8sClient client.Client)
 // Call after WaitForManagedResourceCleanup so the manager has removed the Fluent Bit DaemonSet.
 func CleanupFluentBitHostPath(ctx context.Context, k8sClient client.Client) error {
 	key := types.NamespacedName{Name: fluentBitHostPathCleanupDSName, Namespace: kymaSystemNamespace}
+
 	existing := &appsv1.DaemonSet{}
 	if err := k8sClient.Get(ctx, key, existing); err == nil {
 		if delErr := k8sClient.Delete(ctx, existing); client.IgnoreNotFound(delErr) != nil {
 			return fmt.Errorf("delete stale hostpath cleanup daemonset: %w", delErr)
 		}
+
 		Eventually(func(g Gomega) {
 			err := k8sClient.Get(ctx, key, &appsv1.DaemonSet{})
 			g.Expect(apierrors.IsNotFound(err)).To(BeTrueBecause("stale hostpath cleanup daemonset should be gone"))
@@ -86,7 +88,9 @@ func CleanupFluentBitHostPath(ctx context.Context, k8sClient client.Client) erro
 
 func fluentBitHostPathCleanupDaemonSet(namespace string) *appsv1.DaemonSet {
 	const volumeName = "hostpath"
+
 	grace := int64(60)
+
 	return &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fluentBitHostPathCleanupDSName,

@@ -325,6 +325,7 @@ func SetupTestWithOptions(t *testing.T, labels []string, opts ...kubeprep.Option
 		t.Cleanup(func() {
 			ctx := context.Background()
 			kubeprep.WaitForManagedResourceCleanup(ctx, K8sClient)
+
 			if cfg.CleanupFluentBitHostPath {
 				if err := kubeprep.CleanupFluentBitHostPath(ctx, K8sClient); err != nil {
 					t.Logf("Fluent Bit hostPath cleanup failed (non-fatal): %v", err)
