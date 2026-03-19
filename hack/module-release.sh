@@ -52,6 +52,8 @@ get_version_tag() {
   local version="$1"
   local channel="$2"
 
+  validate_channel "${channel}"
+
   if [ "${channel}" = "experimental" ]; then
     echo "${version}-experimental"
   else
