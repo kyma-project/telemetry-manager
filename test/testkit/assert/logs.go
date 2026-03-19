@@ -2,7 +2,6 @@ package assert
 
 import (
 	"testing"
-	"time"
 
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -214,7 +213,7 @@ func LogPipelineConditionReasonsTransition(t *testing.T, pipelineName, condType 
 			}
 
 			return ReasonStatus{Reason: currCond.Reason, Status: currCond.Status}
-		}, 10*time.Minute, periodic.DefaultInterval).Should(Equal(exp), "expected reason %s[%s] of type %s not reached", exp.Reason, exp.Status, condType)
+		}, periodic.FlowHealthConditionTransitionTimeout, periodic.DefaultInterval).Should(Equal(exp), "expected reason %s[%s] of type %s not reached", exp.Reason, exp.Status, condType)
 
 		t.Logf("Transitioned to [%s]%s\n", currCond.Status, currCond.Reason)
 	}
