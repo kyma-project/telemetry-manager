@@ -28,6 +28,8 @@ type Config struct {
 	SkipManagerRemoval         bool     // Skip manager removal during reconfiguration (for upgrade tests)
 	ForceFreshInstall          bool     // Force complete removal before install (ensures clean API server state)
 	SkipManagedResourceCleanup bool     // Skip waiting for manager-created resources (collectors, selfmonitor) to be deleted at test end
+	// CleanupFluentBitHostPath clears Fluent Bit node buffer paths after managed resource cleanup (WithFluentBitHostPathCleanup).
+	CleanupFluentBitHostPath bool
 }
 
 // Option is a functional option for configuring cluster setup
@@ -114,6 +116,15 @@ func WithSkipManagerRemoval() Option {
 func WithSkipManagedResourceCleanup() Option {
 	return func(c *Config) {
 		c.SkipManagedResourceCleanup = true
+	}
+}
+
+// WithFluentBitHostPathCleanup enables clearing /var/telemetry-fluent-bit on nodes after the test,
+// immediately after WaitForManagedResourceCleanup. Ineffective if WithSkipManagedResourceCleanup is set
+// (no teardown hook is registered). Use for tests that deploy Fluent Bit and need a clean buffer directory.
+func WithFluentBitHostPathCleanup() Option {
+	return func(c *Config) {
+		c.CleanupFluentBitHostPath = true
 	}
 }
 

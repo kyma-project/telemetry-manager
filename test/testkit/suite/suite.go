@@ -289,6 +289,7 @@ func SetupTest(t *testing.T, labels ...string) {
 //   - kubeprep.WithHelmValues("key=value") - adds custom helm values
 //   - kubeprep.WithChartVersion("url") - uses a specific chart version (for upgrade tests)
 //   - kubeprep.WithOverrideFIPSMode(bool) - overrides FIPS mode setting
+//   - kubeprep.WithFluentBitHostPathCleanup() - after teardown, wipe Fluent Bit hostPath on nodes (requires managed resource cleanup)
 func SetupTestWithOptions(t *testing.T, labels []string, opts ...kubeprep.Option) {
 	RegisterTestingT(t)
 
@@ -322,7 +323,13 @@ func SetupTestWithOptions(t *testing.T, labels []string, opts ...kubeprep.Option
 	// remove dependent resources like collectors and selfmonitor.
 	if !cfg.SkipManagedResourceCleanup {
 		t.Cleanup(func() {
-			kubeprep.WaitForManagedResourceCleanup(context.Background(), K8sClient)
+			ctx := context.Background()
+			kubeprep.WaitForManagedResourceCleanup(ctx, K8sClient)
+			if cfg.CleanupFluentBitHostPath {
+				if err := kubeprep.CleanupFluentBitHostPath(ctx, K8sClient); err != nil {
+					t.Logf("Fluent Bit hostPath cleanup failed (non-fatal): %v", err)
+				}
+			}
 		})
 	}
 

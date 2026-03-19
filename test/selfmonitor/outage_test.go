@@ -93,7 +93,7 @@ func TestOutage(t *testing.T) {
 
 			opts := []kubeprep.Option{kubeprep.WithIstio()}
 			if isFluentBit(tc.component) {
-				opts = append(opts, kubeprep.WithOverrideFIPSMode(false))
+				opts = append(opts, kubeprep.WithOverrideFIPSMode(false), kubeprep.WithFluentBitHostPathCleanup())
 			}
 
 			suite.SetupTestWithOptions(t, labels, opts...)
@@ -116,9 +116,6 @@ func TestOutage(t *testing.T) {
 			}
 			resources = append(resources, tc.generator(genNs)...)
 			resources = append(resources, backend.K8sObjects()...)
-			if isFluentBit(tc.component) {
-				resources = append(resources, FluentBitHostPathCleanupDaemonSet(TelemetryNamespace))
-			}
 
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
