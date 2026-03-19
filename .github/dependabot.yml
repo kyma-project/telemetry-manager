@@ -1,0 +1,71 @@
+version: 2
+updates:
+  # Root Go module
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
+    labels:
+      - area/dependency
+      - kind/chore
+
+  # Internal tools Go module
+  - package-ecosystem: gomod
+    directory: /internal/tools
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
+    labels:
+      - area/dependency
+      - kind/chore
+
+  # dependencies/directory-size-exporter Go module
+  - package-ecosystem: gomod
+    directory: /dependencies/directory-size-exporter
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
+    labels:
+      - area/dependency
+      - kind/chore
+
+  # dependencies/populateimages Go module
+  - package-ecosystem: gomod
+    directory: /dependencies/populateimages
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
+    labels:
+      - area/dependency
+      - kind/chore
+
+  # dependencies/sample-app Go module
+  - package-ecosystem: gomod
+    directory: /dependencies/sample-app
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
+    labels:
+      - area/dependency
+      - kind/chore
+
+  # dependencies/stdout-log-generator Go module
+  - package-ecosystem: gomod
+    directory: /dependencies/stdout-log-generator
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
+    labels:
+      - area/dependency
+      - kind/chore
+
+  # GitHub Actions
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
+    labels:
+      - area/dependency
+      - kind/chore
