@@ -5,10 +5,7 @@ metadata:
   annotations:
     cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/{{ include "telemetry-manager.fullname" . }}-
   labels:
-    app.kubernetes.io/component: controller
-    app.kubernetes.io/part-of: telemetry
-    kyma-project.io/module: telemetry
-  {{- include "telemetry-manager.labels" . | indent 4 }}
+  {{- include "telemetry-manager.labels" . | nindent 4 }}
 webhooks:
 - admissionReviewVersions:
   - v1beta1

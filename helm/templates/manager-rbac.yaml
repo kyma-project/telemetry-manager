@@ -3,10 +3,7 @@ kind: ClusterRole
 metadata:
   name: {{ include "telemetry-manager.fullname" . }}-manager-role
   labels:
-    app.kubernetes.io/component: controller
-    app.kubernetes.io/part-of: telemetry
-    kyma-project.io/module: telemetry
-  {{- include "telemetry-manager.labels" . | indent 4 }}
+  {{- include "telemetry-manager.labels" . | nindent 4 }}
 rules:
   ##########################
   # Policy rules for manager
@@ -315,10 +312,7 @@ metadata:
   name: {{ include "telemetry-manager.fullname" . }}-manager-role
   namespace: {{ .Release.Namespace }}
   labels:
-    app.kubernetes.io/component: controller
-    app.kubernetes.io/part-of: telemetry
-    kyma-project.io/module: telemetry
-  {{- include "telemetry-manager.labels" . | indent 4 }}
+  {{- include "telemetry-manager.labels" . | nindent 4 }}
 rules:
   - apiGroups:
       - ""
@@ -417,10 +411,7 @@ metadata:
   name: {{ include "telemetry-manager.fullname" . }}-manager-leader-election-role
   namespace: {{ .Release.Namespace }}
   labels:
-    app.kubernetes.io/component: controller
-    app.kubernetes.io/part-of: telemetry
-    kyma-project.io/module: telemetry
-  {{- include "telemetry-manager.labels" . | indent 4 }}
+  {{- include "telemetry-manager.labels" . | nindent 4 }}
 rules:
   - apiGroups:
       - ""
@@ -460,10 +451,7 @@ kind: ClusterRoleBinding
 metadata:
   name: {{ include "telemetry-manager.fullname" . }}-manager-rolebinding
   labels:
-    app.kubernetes.io/component: controller
-    app.kubernetes.io/part-of: telemetry
-    kyma-project.io/module: telemetry
-  {{- include "telemetry-manager.labels" . | indent 4 }}
+  {{- include "telemetry-manager.labels" . | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -479,10 +467,7 @@ metadata:
   name: {{ include "telemetry-manager.fullname" . }}-manager-rolebinding
   namespace: {{ .Release.Namespace }}
   labels:
-    app.kubernetes.io/component: controller
-    app.kubernetes.io/part-of: telemetry
-    kyma-project.io/module: telemetry
-  {{- include "telemetry-manager.labels" . | indent 4 }}
+  {{- include "telemetry-manager.labels" . | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -498,10 +483,7 @@ metadata:
   name: {{ include "telemetry-manager.fullname" . }}-manager-leader-election-rolebinding
   namespace: {{ .Release.Namespace }}
   labels:
-    app.kubernetes.io/component: controller
-    app.kubernetes.io/part-of: telemetry
-    kyma-project.io/module: telemetry
-  {{- include "telemetry-manager.labels" . | indent 4 }}
+  {{- include "telemetry-manager.labels" . | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
