@@ -58,6 +58,13 @@ func backendRetryableErr(percentage float64) []kitbackend.Option {
 	return []kitbackend.Option{kitbackend.WithAbortFaultInjection(percentage, retriableErrCode)}
 }
 
+// backendScaledToZero runs the mock backend Deployment with zero replicas so the Service has no ready endpoints.
+// Fluent Bit keeps reading logs while output cannot complete (no HTTP response), which tends to surface
+// ReasonSelfMonAgentNoLogsDelivered rather than immediate non-retryable drops (ReasonSelfMonAgentAllDataDropped).
+func backendScaledToZero() []kitbackend.Option {
+	return []kitbackend.Option{kitbackend.WithReplicas(0)}
+}
+
 func withMetricAgentSourceDrop(opts []kitbackend.Option) []kitbackend.Option {
 	return append(opts, kitbackend.WithDropFromSourceLabel(map[string]string{"app.kubernetes.io/name": "telemetry-metric-agent"}))
 }

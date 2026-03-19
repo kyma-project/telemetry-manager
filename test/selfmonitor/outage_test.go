@@ -42,14 +42,20 @@ func TestOutage(t *testing.T) {
 			expectedReasons: flowHealthyThenDegraded(conditions.ReasonSelfMonGatewayAllDataDropped),
 		},
 		{
-			name:        "fluent-bit",
+			name:        "fluent-bit-no-logs-delivered",
 			component:   suite.LabelFluentBit,
-			backendOpts: backendNonRetryableErr(faultPercentageAll),
+			backendOpts: backendScaledToZero(),
 			generator:   stdoutLogGenerator(defaultRate),
 			expectedReasons: flowHealthyThenDegraded(
 				conditions.ReasonSelfMonAgentNoLogsDelivered,
-				conditions.ReasonSelfMonAgentAllDataDropped,
 			),
+		},
+		{
+			name:            "fluent-bit-all-data-dropped",
+			component:       suite.LabelFluentBit,
+			backendOpts:     backendNonRetryableErr(faultPercentageAll),
+			generator:       stdoutLogGenerator(defaultRate),
+			expectedReasons: flowHealthyThenDegraded(conditions.ReasonSelfMonAgentAllDataDropped),
 		},
 		{
 			name:        "metric-gateway",
