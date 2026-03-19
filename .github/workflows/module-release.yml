@@ -4,7 +4,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: module-release-${{ github.event.inputs.channel }}
+  group: module-release-${{ inputs.channel }}
   cancel-in-progress: false
 
 on:
@@ -59,7 +59,7 @@ jobs:
     steps:
       - name: Validate version format
         env:
-          VERSION: ${{ github.event.inputs.version }}
+          VERSION: ${{ inputs.version }}
         run: |
           echo "Validating version format..."
           echo "Version: ${VERSION}"
@@ -74,7 +74,7 @@ jobs:
 
       - name: Validate tag exists in telemetry-manager
         env:
-          VERSION: ${{ github.event.inputs.version }}
+          VERSION: ${{ inputs.version }}
         run: |
           echo "Checking if tag ${VERSION} exists in telemetry-manager repository..."
 
@@ -118,33 +118,33 @@ jobs:
 
       - name: Create branch
         run: |
-          git checkout -b bump-telemetry-${{ github.event.inputs.version }}-${{ github.event.inputs.channel }}
+          git checkout -b bump-telemetry-${{ inputs.version }}-${{ inputs.channel }}
 
       - name: Check for duplicate version
         env:
-          VERSION: ${{ github.event.inputs.version }}
-          CHANNEL: ${{ github.event.inputs.channel }}
+          VERSION: ${{ inputs.version }}
+          CHANNEL: ${{ inputs.channel }}
         run: |
           ./hack/module-release.sh check-duplicate "${VERSION}" "${CHANNEL}"
 
       - name: Setup version folder
         env:
-          VERSION: ${{ github.event.inputs.version }}
-          CHANNEL: ${{ github.event.inputs.channel }}
+          VERSION: ${{ inputs.version }}
+          CHANNEL: ${{ inputs.channel }}
         run: |
           ./hack/module-release.sh setup-folder "${VERSION}" "${CHANNEL}"
 
       - name: Update module-config.yaml
         env:
-          VERSION: ${{ github.event.inputs.version }}
-          CHANNEL: ${{ github.event.inputs.channel }}
+          VERSION: ${{ inputs.version }}
+          CHANNEL: ${{ inputs.channel }}
         run: |
           ./hack/module-release.sh update-config "${VERSION}" "${CHANNEL}"
 
       - name: Update module-releases.yaml
         env:
-          VERSION: ${{ github.event.inputs.version }}
-          CHANNEL: ${{ github.event.inputs.channel }}
+          VERSION: ${{ inputs.version }}
+          CHANNEL: ${{ inputs.channel }}
         run: |
           ./hack/module-release.sh update-releases "${VERSION}" "${CHANNEL}"
 
@@ -164,8 +164,8 @@ jobs:
       - name: Commit changes
         if: ${{ !inputs.dry_run }}
         env:
-          VERSION: ${{ github.event.inputs.version }}
-          CHANNEL: ${{ github.event.inputs.channel }}
+          VERSION: ${{ inputs.version }}
+          CHANNEL: ${{ inputs.channel }}
         run: |
           git add .
           COMMIT_MSG="bump telemetry version to ${VERSION} on ${CHANNEL}"
@@ -175,8 +175,8 @@ jobs:
       - name: Dry run summary
         if: ${{ inputs.dry_run }}
         env:
-          VERSION: ${{ github.event.inputs.version }}
-          CHANNEL: ${{ github.event.inputs.channel }}
+          VERSION: ${{ inputs.version }}
+          CHANNEL: ${{ inputs.channel }}
         run: |
           echo "🔍 DRY RUN MODE - No changes will be committed or pushed"
           echo ""
@@ -186,8 +186,8 @@ jobs:
       - name: Push branch
         if: ${{ !inputs.dry_run }}
         env:
-          VERSION: ${{ github.event.inputs.version }}
-          CHANNEL: ${{ github.event.inputs.channel }}
+          VERSION: ${{ inputs.version }}
+          CHANNEL: ${{ inputs.channel }}
         run: |
           BRANCH_NAME="bump-telemetry-${VERSION}-${CHANNEL}"
           git push origin "${BRANCH_NAME}"
@@ -197,8 +197,8 @@ jobs:
         if: ${{ !inputs.dry_run }}
         id: create-pr
         env:
-          VERSION: ${{ github.event.inputs.version }}
-          CHANNEL: ${{ github.event.inputs.channel }}
+          VERSION: ${{ inputs.version }}
+          CHANNEL: ${{ inputs.channel }}
         run: |
           BRANCH_NAME="bump-telemetry-${VERSION}-${CHANNEL}"
 
@@ -255,8 +255,8 @@ jobs:
       - name: Enable auto-merge
         if: ${{ !inputs.dry_run && inputs.auto_merge }}
         env:
-          VERSION: ${{ github.event.inputs.version }}
-          CHANNEL: ${{ github.event.inputs.channel }}
+          VERSION: ${{ inputs.version }}
+          CHANNEL: ${{ inputs.channel }}
         run: |
           PR_NUMBER="${{ steps.create-pr.outputs.pr-number }}"
 
@@ -267,8 +267,8 @@ jobs:
       - name: Workflow summary
         if: always()
         env:
-          VERSION: ${{ github.event.inputs.version }}
-          CHANNEL: ${{ github.event.inputs.channel }}
+          VERSION: ${{ inputs.version }}
+          CHANNEL: ${{ inputs.channel }}
           DRY_RUN: ${{ inputs.dry_run }}
           AUTO_MERGE: ${{ inputs.auto_merge }}
         run: |
