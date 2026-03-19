@@ -316,6 +316,16 @@ func SetupTestWithOptions(t *testing.T, labels []string, opts ...kubeprep.Option
 	// Log FIPS configuration for clarity
 	logFIPSConfiguration(t, cfg)
 
+	// Register cleanup for manager-created resources before cluster setup.
+	// t.Cleanup runs in LIFO order, so this runs AFTER CreateObjects cleanup
+	// (which deletes pipelines), giving the manager time to reconcile and
+	// remove dependent resources like collectors and selfmonitor.
+	if !cfg.SkipManagedResourceCleanup {
+		t.Cleanup(func() {
+			kubeprep.WaitForManagedResourceCleanup(context.Background(), K8sClient)
+		})
+	}
+
 	// Setup cluster (idempotent: always runs helm upgrade + prerequisites)
 	require.NoError(t, kubeprep.SetupCluster(t, K8sClient, cfg))
 }
