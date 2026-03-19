@@ -1,6 +1,6 @@
 ---
 title: Configurable Collection Interval for Metric Pipelines
-status: Proposed
+status: Accepted
 date: 2026-03-18
 ---
 
@@ -124,12 +124,10 @@ We implement both steps sequentially:
 ### Positive Consequences
 
 - Users can reduce metric volume and storage costs by increasing collection intervals.
-- The default behavior (30s) remains unchanged for existing configurations.
-- Step 1 avoids cross-pipeline coupling entirely by using the singleton Telemetry CR.
 - The approach is backwards-compatible because all new fields are optional with defaults.
 - The implementation for Step 1 is minimal: the interval flows through the existing `BuildOptions` plumbing, and receiver functions only need to accept a parameter instead of using hardcoded constants.
 
 ### Negative Consequences
 
 - Step 1 does not provide per-pipeline granularity. All pipelines sharing an input type use the same interval from the Telemetry CR.
-- Step 2 introduces coupling between MetricPipeline CRs. A change to `collectionInterval` in one pipeline can cause another pipeline to become unhealthy. Status conditions and events must communicate this clearly to the user.
+- Step 2 increases memory consumption since the same targets now have to be scraped twice.
