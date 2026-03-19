@@ -1,6 +1,10 @@
 package backend
 
-import testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
+import (
+	"time"
+
+	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
+)
 
 type Option func(*Backend)
 
@@ -14,6 +18,13 @@ func WithAbortFaultInjection(abortFaultPercentage float64, statusCode int32) Opt
 	return func(b *Backend) {
 		b.abortFaultPercentage = abortFaultPercentage
 		b.abortFaultStatusCode = statusCode
+	}
+}
+
+func WithDelayFaultInjection(percentage float64, delay time.Duration) Option {
+	return func(b *Backend) {
+		b.delayFaultPercentage = percentage
+		b.delayFaultDuration = delay
 	}
 }
 

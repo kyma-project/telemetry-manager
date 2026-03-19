@@ -27,15 +27,17 @@ import (
 
 func TestOutage(t *testing.T) {
 	tests := []struct {
-		name       string
-		component  string
-		pipeline   func(pipelineName, includeNs string, backend *kitbackend.Backend) client.Object
-		generator  func(ns string) []client.Object
-		assertions func(t *testing.T, pipelineName string)
+		name        string
+		component   string
+		backendOpts []kitbackend.Option
+		pipeline    func(pipelineName, includeNs string, backend *kitbackend.Backend) client.Object
+		generator   func(ns string) []client.Object
+		assertions  func(t *testing.T, pipelineName string)
 	}{
 		{
-			name:      "log-agent",
-			component: suite.LabelLogAgent,
+			name:        "log-agent",
+			component:   suite.LabelLogAgent,
+			backendOpts: []kitbackend.Option{kitbackend.WithAbortFaultInjection(100, http.StatusInternalServerError)},
 			pipeline: func(pipelineName, includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewLogPipelineBuilder().
 					WithName(pipelineName).
@@ -66,8 +68,9 @@ func TestOutage(t *testing.T) {
 			},
 		},
 		{
-			name:      "log-gateway",
-			component: suite.LabelLogGateway,
+			name:        "log-gateway",
+			component:   suite.LabelLogGateway,
+			backendOpts: []kitbackend.Option{kitbackend.WithAbortFaultInjection(100, http.StatusInternalServerError)},
 			pipeline: func(pipelineName, includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewLogPipelineBuilder().
 					WithName(pipelineName).
@@ -102,8 +105,9 @@ func TestOutage(t *testing.T) {
 			},
 		},
 		{
-			name:      "fluent-bit",
-			component: suite.LabelFluentBit,
+			name:        "fluent-bit",
+			component:   suite.LabelFluentBit,
+			backendOpts: []kitbackend.Option{kitbackend.WithAbortFaultInjection(100, http.StatusBadRequest)},
 			pipeline: func(pipelineName, includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewLogPipelineBuilder().
 					WithName(pipelineName).
@@ -114,7 +118,7 @@ func TestOutage(t *testing.T) {
 				return &p
 			},
 			generator: func(ns string) []client.Object {
-				return []client.Object{stdoutloggen.NewDeployment(ns, stdoutloggen.WithRate(5_000)).K8sObject()}
+				return []client.Object{stdoutloggen.NewDeployment(ns, stdoutloggen.WithRate(100)).K8sObject()}
 			},
 			assertions: func(t *testing.T, pipelineName string) {
 				assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
@@ -134,8 +138,9 @@ func TestOutage(t *testing.T) {
 			},
 		},
 		{
-			name:      "metric-gateway",
-			component: suite.LabelMetricGateway,
+			name:        "metric-gateway",
+			component:   suite.LabelMetricGateway,
+			backendOpts: []kitbackend.Option{kitbackend.WithAbortFaultInjection(100, http.StatusInternalServerError)},
 			pipeline: func(pipelineName, includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewMetricPipelineBuilder().
 					WithName(pipelineName).
@@ -173,6 +178,10 @@ func TestOutage(t *testing.T) {
 		{
 			name:      "metric-agent",
 			component: suite.LabelMetricAgent,
+			backendOpts: []kitbackend.Option{
+				kitbackend.WithAbortFaultInjection(100, http.StatusInternalServerError),
+				kitbackend.WithDropFromSourceLabel(map[string]string{"app.kubernetes.io/name": "telemetry-metric-agent"}),
+			},
 			pipeline: func(pipelineName, includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewMetricPipelineBuilder().
 					WithName(pipelineName).
@@ -208,8 +217,9 @@ func TestOutage(t *testing.T) {
 			},
 		},
 		{
-			name:      "traces",
-			component: suite.LabelTraces,
+			name:        "traces",
+			component:   suite.LabelTraces,
+			backendOpts: []kitbackend.Option{kitbackend.WithAbortFaultInjection(100, http.StatusInternalServerError)},
 			pipeline: func(pipelineName, includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewTracePipelineBuilder().
 					WithName(pipelineName).
@@ -271,18 +281,9 @@ func TestOutage(t *testing.T) {
 				uniquePrefix = unique.Prefix(tc.name)
 				backendNs    = uniquePrefix("backend")
 				genNs        = uniquePrefix("gen")
-				backend      *kitbackend.Backend
 			)
 
-			backendOpts := []kitbackend.Option{kitbackend.WithAbortFaultInjection(100, http.StatusInternalServerError)}
-
-			if tc.component == suite.LabelMetricAgent {
-				// Metric agent and gateway (using kyma stats receiver) both send data to backend
-				// We want to simulate outage only on agent, so block all traffic only from agent.
-				backendOpts = append(backendOpts, kitbackend.WithDropFromSourceLabel(map[string]string{"app.kubernetes.io/name": "telemetry-metric-agent"}))
-			}
-
-			backend = kitbackend.New(backendNs, signalTypeForComponent(tc.component), backendOpts...)
+			backend := kitbackend.New(backendNs, signalTypeForComponent(tc.component), tc.backendOpts...)
 
 			pipeline := tc.pipeline(pipelineName, genNs, backend)
 			generator := tc.generator(genNs)

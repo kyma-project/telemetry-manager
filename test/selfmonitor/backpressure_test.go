@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"testing"
+	"time"
 
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -25,17 +26,21 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
+var defaultRate = 100
+
 func TestBackpressure(t *testing.T) {
 	tests := []struct {
-		name       string
-		component  string
-		pipeline   func(pipelineName, includeNs string, backend *kitbackend.Backend) client.Object
-		generator  func(ns string) []client.Object
-		assertions func(t *testing.T, pipelineName string)
+		name        string
+		component   string
+		backendOpts []kitbackend.Option
+		pipeline    func(pipelineName, includeNs string, backend *kitbackend.Backend) client.Object
+		generator   func(ns string) []client.Object
+		assertions  func(t *testing.T, pipelineName string)
 	}{
 		{
-			name:      "log-agent",
-			component: suite.LabelLogAgent,
+			name:        "log-agent",
+			component:   suite.LabelLogAgent,
+			backendOpts: []kitbackend.Option{kitbackend.WithAbortFaultInjection(50, http.StatusInternalServerError)},
 			pipeline: func(pipelineName, includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewLogPipelineBuilder().
 					WithName(pipelineName).
@@ -47,7 +52,7 @@ func TestBackpressure(t *testing.T) {
 			},
 			generator: func(ns string) []client.Object {
 				return []client.Object{
-					stdoutloggen.NewDeployment(ns, stdoutloggen.WithRate(4000)).K8sObject(),
+					stdoutloggen.NewDeployment(ns, stdoutloggen.WithRate(defaultRate)).K8sObject(),
 				}
 			},
 			assertions: func(t *testing.T, pipelineName string) {
@@ -67,8 +72,9 @@ func TestBackpressure(t *testing.T) {
 			},
 		},
 		{
-			name:      "log-gateway",
-			component: suite.LabelLogGateway,
+			name:        "log-gateway",
+			component:   suite.LabelLogGateway,
+			backendOpts: []kitbackend.Option{kitbackend.WithAbortFaultInjection(50, http.StatusInternalServerError)},
 			pipeline: func(pipelineName, includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewLogPipelineBuilder().
 					WithName(pipelineName).
@@ -81,8 +87,8 @@ func TestBackpressure(t *testing.T) {
 			generator: func(ns string) []client.Object {
 				return []client.Object{
 					telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeLogs,
-						telemetrygen.WithRate(800),
-						telemetrygen.WithWorkers(5)).
+						telemetrygen.WithRate(defaultRate),
+						telemetrygen.WithWorkers(1)).
 						K8sObject(),
 				}
 			},
@@ -102,8 +108,12 @@ func TestBackpressure(t *testing.T) {
 			},
 		},
 		{
-			name:      "fluent-bit",
+			name:      "fluent-bit-buffer-filling-up",
 			component: suite.LabelFluentBit,
+			backendOpts: []kitbackend.Option{
+				kitbackend.WithAbortFaultInjection(100, http.StatusTooManyRequests),
+				kitbackend.WithDelayFaultInjection(100, 10*time.Second),
+			},
 			pipeline: func(pipelineName, includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewLogPipelineBuilder().
 					WithName(pipelineName).
@@ -114,7 +124,7 @@ func TestBackpressure(t *testing.T) {
 				return &p
 			},
 			generator: func(ns string) []client.Object {
-				return []client.Object{stdoutloggen.NewDeployment(ns, stdoutloggen.WithRate(6000)).K8sObject()}
+				return []client.Object{stdoutloggen.NewDeployment(ns, stdoutloggen.WithRate(20*defaultRate),).K8sObject()}
 			},
 			assertions: func(t *testing.T, pipelineName string) {
 				assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
@@ -122,6 +132,36 @@ func TestBackpressure(t *testing.T) {
 				assert.LogPipelineConditionReasonsTransition(t, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
 					{Reason: conditions.ReasonSelfMonFlowHealthy, Status: metav1.ConditionTrue},
 					{Reason: conditions.ReasonSelfMonAgentBufferFillingUp, Status: metav1.ConditionFalse},
+				})
+				assert.TelemetryHasState(t, operatorv1beta1.StateWarning)
+				assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
+					Type:   conditions.TypeLogComponentsHealthy,
+					Status: metav1.ConditionFalse,
+					Reason: conditions.ReasonSelfMonAgentBufferFillingUp,
+				})
+			},
+		},
+		{
+			name:        "fluent-bit-data-dropped",
+			component:   suite.LabelFluentBit,
+			backendOpts: []kitbackend.Option{kitbackend.WithAbortFaultInjection(50, http.StatusBadRequest)},
+			pipeline: func(pipelineName, includeNs string, backend *kitbackend.Backend) client.Object {
+				p := testutils.NewLogPipelineBuilder().
+					WithName(pipelineName).
+					WithRuntimeInput(true, testutils.IncludeNamespaces(includeNs)).
+					WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
+					Build()
+
+				return &p
+			},
+			generator: func(ns string) []client.Object {
+				return []client.Object{stdoutloggen.NewDeployment(ns, stdoutloggen.WithRate(10*defaultRate)).K8sObject()}
+			},
+			assertions: func(t *testing.T, pipelineName string) {
+				assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
+				assert.FluentBitLogPipelineHealthy(t, pipelineName)
+				assert.LogPipelineConditionReasonsTransition(t, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
+					{Reason: conditions.ReasonSelfMonFlowHealthy, Status: metav1.ConditionTrue},
 					{Reason: conditions.ReasonSelfMonAgentSomeDataDropped, Status: metav1.ConditionFalse},
 				})
 				assert.TelemetryHasState(t, operatorv1beta1.StateWarning)
@@ -133,8 +173,9 @@ func TestBackpressure(t *testing.T) {
 			},
 		},
 		{
-			name:      "metric-gateway",
-			component: suite.LabelMetricGateway,
+			name:        "metric-gateway",
+			component:   suite.LabelMetricGateway,
+			backendOpts: []kitbackend.Option{kitbackend.WithAbortFaultInjection(50, http.StatusInternalServerError)},
 			pipeline: func(pipelineName, includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewMetricPipelineBuilder().
 					WithName(pipelineName).
@@ -146,8 +187,8 @@ func TestBackpressure(t *testing.T) {
 			generator: func(ns string) []client.Object {
 				return []client.Object{
 					telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeMetrics,
-						telemetrygen.WithRate(800),
-						telemetrygen.WithWorkers(5)).
+						telemetrygen.WithRate(defaultRate),
+						telemetrygen.WithWorkers(1)).
 						K8sObject(),
 				}
 			},
@@ -169,6 +210,10 @@ func TestBackpressure(t *testing.T) {
 		{
 			name:      "metric-agent",
 			component: suite.LabelMetricAgent,
+			backendOpts: []kitbackend.Option{
+				kitbackend.WithAbortFaultInjection(50, http.StatusInternalServerError),
+				kitbackend.WithDropFromSourceLabel(map[string]string{"app.kubernetes.io/name": "telemetry-metric-agent"}),
+			},
 			pipeline: func(pipelineName, includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewMetricPipelineBuilder().
 					WithName(pipelineName).
@@ -203,8 +248,9 @@ func TestBackpressure(t *testing.T) {
 			},
 		},
 		{
-			name:      "traces",
-			component: suite.LabelTraces,
+			name:        "traces",
+			component:   suite.LabelTraces,
+			backendOpts: []kitbackend.Option{kitbackend.WithAbortFaultInjection(50, http.StatusInternalServerError)},
 			pipeline: func(pipelineName, includeNs string, backend *kitbackend.Backend) client.Object {
 				p := testutils.NewTracePipelineBuilder().
 					WithName(pipelineName).
@@ -216,8 +262,8 @@ func TestBackpressure(t *testing.T) {
 			generator: func(ns string) []client.Object {
 				return []client.Object{
 					telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeTraces,
-						telemetrygen.WithRate(800),
-						telemetrygen.WithWorkers(5)).
+						telemetrygen.WithRate(defaultRate),
+						telemetrygen.WithWorkers(1)).
 						K8sObject(),
 				}
 			},
@@ -265,21 +311,9 @@ func TestBackpressure(t *testing.T) {
 				uniquePrefix = unique.Prefix(tc.name)
 				backendNs    = uniquePrefix("backend")
 				genNs        = uniquePrefix("gen")
-				backend      *kitbackend.Backend
 			)
 
-			backendOpts := []kitbackend.Option{
-				kitbackend.WithAbortFaultInjection(50, http.StatusInternalServerError),
-			}
-
-			switch tc.component {
-			case suite.LabelMetricAgent:
-				backendOpts = append(backendOpts, kitbackend.WithDropFromSourceLabel(map[string]string{"app.kubernetes.io/name": "telemetry-metric-agent"}))
-			case suite.LabelFluentBit:
-				backendOpts = []kitbackend.Option{kitbackend.WithAbortFaultInjection(50, http.StatusBadRequest)}
-			}
-
-			backend = kitbackend.New(backendNs, signalTypeForComponent(tc.component), backendOpts...)
+			backend := kitbackend.New(backendNs, signalTypeForComponent(tc.component), tc.backendOpts...)
 
 			pipeline := tc.pipeline(pipelineName, genNs, backend)
 			generator := tc.generator(genNs)

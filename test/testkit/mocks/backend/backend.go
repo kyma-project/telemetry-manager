@@ -5,6 +5,7 @@ import (
 	"net"
 	"path/filepath"
 	"strconv"
+	"time"
 
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -51,6 +52,9 @@ type OIDCConfig struct {
 
 type Backend struct {
 	abortFaultPercentage float64
+	abortFaultStatusCode int32
+	delayFaultPercentage float64
+	delayFaultDuration   time.Duration
 	dropFromSourceLabel  map[string]string
 	certs                *testutils.ServerCerts
 	name                 string
@@ -60,13 +64,12 @@ type Backend struct {
 	oidc                 *OIDCConfig
 	mtls                 bool
 
-	fluentDConfigMap     *fluentdConfigMapBuilder
-	hostSecret           *kitk8sobjects.Secret
-	collectorConfigMap   *collectorConfigMapBuilder
-	collectorDeployment  *collectorDeploymentBuilder
-	collectorService     *kitk8sobjects.Service
-	virtualService       *kitk8sobjects.VirtualService
-	abortFaultStatusCode int32
+	fluentDConfigMap    *fluentdConfigMapBuilder
+	hostSecret          *kitk8sobjects.Secret
+	collectorConfigMap  *collectorConfigMapBuilder
+	collectorDeployment *collectorDeploymentBuilder
+	collectorService    *kitk8sobjects.Service
+	virtualService      *kitk8sobjects.VirtualService
 }
 
 func New(namespace string, signalType SignalType, opts ...Option) *Backend {
@@ -208,12 +211,19 @@ func (b *Backend) buildResources() {
 		kitk8sobjects.WithStringData("host", host),
 	)
 
-	if b.abortFaultPercentage > 0 {
-		// Configure fault injection for self-monitoring negative tests.
+	if b.abortFaultPercentage > 0 || b.delayFaultDuration > 0 {
 		b.virtualService = kitk8sobjects.NewVirtualService(
 			"fault-injection",
 			b.namespace,
 			b.name,
-		).WithFaultAbortPercentage(b.abortFaultPercentage, b.abortFaultStatusCode).WithSourceLabel(b.dropFromSourceLabel)
+		).WithSourceLabel(b.dropFromSourceLabel)
+
+		if b.abortFaultPercentage > 0 {
+			b.virtualService.WithFaultAbortPercentage(b.abortFaultPercentage, b.abortFaultStatusCode)
+		}
+
+		if b.delayFaultDuration > 0 {
+			b.virtualService.WithFaultDelay(b.delayFaultPercentage, b.delayFaultDuration)
+		}
 	}
 }
