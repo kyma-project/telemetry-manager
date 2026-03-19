@@ -1,5 +1,12 @@
 name: Management Plane Chart Release
 
+permissions:
+  contents: read
+
+concurrency:
+  group: mpc-release-${{ github.event.inputs.target_chart }}
+  cancel-in-progress: false
+
 on:
   workflow_dispatch:
     inputs:
@@ -87,7 +94,19 @@ jobs:
 
       - name: Create Branch
         run: |
-          git checkout -b bump-telemetry-${{ github.event.inputs.version }}
+          BRANCH_NAME="bump-telemetry-${{ github.event.inputs.version }}"
+
+          # Check if branch exists remotely
+          if git ls-remote --heads origin "${BRANCH_NAME}" | grep -q "${BRANCH_NAME}"; then
+            echo "Branch ${BRANCH_NAME} already exists, checking it out..."
+            git fetch origin "${BRANCH_NAME}"
+            git checkout "${BRANCH_NAME}"
+            echo "✓ Checked out existing branch: ${BRANCH_NAME}"
+          else
+            echo "Creating new branch: ${BRANCH_NAME}..."
+            git checkout -b "${BRANCH_NAME}"
+            echo "✓ Created new branch: ${BRANCH_NAME}"
+          fi
 
       - name: Setup python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
@@ -139,9 +158,27 @@ jobs:
         if: ${{ inputs.dry_run != true }}
         id: create-pr
         run: |
+          BRANCH_NAME="bump-telemetry-${{ github.event.inputs.version }}"
+
+          # Check if PR already exists for this branch
+          echo "Checking if PR already exists for branch: ${BRANCH_NAME}..."
+          EXISTING_PR=$(gh pr list --head "${BRANCH_NAME}" --json number,url --jq '.[0] | select(.number != null)' || echo "")
+
+          if [ -n "${EXISTING_PR}" ]; then
+            PR_NUMBER=$(echo "${EXISTING_PR}" | jq -r '.number')
+            PR_URL=$(echo "${EXISTING_PR}" | jq -r '.url')
+            echo "::notice::PR already exists for this branch"
+            echo "✓ Using existing PR #${PR_NUMBER}: ${PR_URL}"
+            echo "pr-url=${PR_URL}" >> $GITHUB_OUTPUT
+            echo "pr-number=${PR_NUMBER}" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "No existing PR found. Creating new PR..."
+
           PR_URL=$(gh pr create \
             --base chart/telemetry \
-            --head bump-telemetry-${{ github.event.inputs.version }} \
+            --head "${BRANCH_NAME}" \
             --title "Bump Telemetry to ${{ inputs.version }}" \
             --body "Bump Telemetry chart to version ${{ inputs.version }}" \
             --label pr-deploy)
@@ -212,7 +249,19 @@ jobs:
 
       - name: Create Branch
         run: |
-          git checkout -b bump-rmo-${{ github.event.inputs.version }}
+          BRANCH_NAME="bump-rmo-occ-${{ github.event.inputs.version }}"
+
+          # Check if branch exists remotely
+          if git ls-remote --heads origin "${BRANCH_NAME}" | grep -q "${BRANCH_NAME}"; then
+            echo "Branch ${BRANCH_NAME} already exists, checking it out..."
+            git fetch origin "${BRANCH_NAME}"
+            git checkout "${BRANCH_NAME}"
+            echo "✓ Checked out existing branch: ${BRANCH_NAME}"
+          else
+            echo "Creating new branch: ${BRANCH_NAME}..."
+            git checkout -b "${BRANCH_NAME}"
+            echo "✓ Created new branch: ${BRANCH_NAME}"
+          fi
 
       - name: Setup python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
@@ -225,11 +274,6 @@ jobs:
 
       - name: Bump chart version
         run: make bump-patch
-
-      - name: Update values.yaml
-        run: |
-          yq -i '.appVersion = "${{ inputs.version }}"' rmo/Chart.yaml
-          yq -i '.dependencies[] |= (select(.name == "rmo") .version = "${{ inputs.version }}")' rmo/Chart.yaml
 
       - name: Update OTel Collector tag in values.yaml
         run: |
@@ -246,15 +290,6 @@ jobs:
             exit 1
           fi
 
-      - name: Verify Chart.yaml was updated
-        run: |
-          CURRENT_VERSION=$(yq '.appVersion' rmo/Chart.yaml)
-          if [ "$CURRENT_VERSION" != "${{ inputs.version }}" ]; then
-            echo "::error::Chart.yaml appVersion mismatch. Expected: ${{ inputs.version }}, Got: $CURRENT_VERSION"
-            exit 1
-          fi
-          echo "✓ Chart.yaml appVersion verified: $CURRENT_VERSION"
-
       - name: Verify values.yaml was updated
         run: |
           OTEL_TAG=$(yq '.argosap.config.rma.image.otelCollector.tag' runtime-monitoring-operator/values.yaml)
@@ -267,22 +302,40 @@ jobs:
       - name: Commit changes
         run: |
           git add .
-          git commit -m "Bump RMO to ${{ inputs.version }}"
+          git commit -m "Bump RMO OTel Collector to ${{ inputs.version }}"
 
       - name: Push branch
         if: ${{ inputs.dry_run != true }}
         run: |
-          git push origin bump-rmo-${{ github.event.inputs.version }}
+          git push origin bump-rmo-occ-${{ github.event.inputs.version }}
 
       - name: Create PR
         if: ${{ inputs.dry_run != true }}
         id: create-pr
         run: |
+          BRANCH_NAME="bump-rmo-occ-${{ github.event.inputs.version }}"
+
+          # Check if PR already exists for this branch
+          echo "Checking if PR already exists for branch: ${BRANCH_NAME}..."
+          EXISTING_PR=$(gh pr list --head "${BRANCH_NAME}" --json number,url --jq '.[0] | select(.number != null)' || echo "")
+
+          if [ -n "${EXISTING_PR}" ]; then
+            PR_NUMBER=$(echo "${EXISTING_PR}" | jq -r '.number')
+            PR_URL=$(echo "${EXISTING_PR}" | jq -r '.url')
+            echo "::notice::PR already exists for this branch"
+            echo "✓ Using existing PR #${PR_NUMBER}: ${PR_URL}"
+            echo "pr-url=${PR_URL}" >> $GITHUB_OUTPUT
+            echo "pr-number=${PR_NUMBER}" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "No existing PR found. Creating new PR..."
+
           PR_URL=$(gh pr create \
             --base chart/rmo \
-            --head bump-rmo-${{ github.event.inputs.version }} \
-            --title "Bump RMO to ${{ inputs.version }}" \
-            --body "Bump RMO chart to version ${{ inputs.version }}" \
+            --head "${BRANCH_NAME}" \
+            --title "Bump RMO OTel Collector to ${{ inputs.version }}" \
+            --body "Bump RMO OTel Collector version to ${{ inputs.version }}" \
             --label pr-deploy)
           PR_NUMBER=$(echo "${PR_URL}" | grep -o '[0-9]*$')
           echo "pr-url=${PR_URL}" >> $GITHUB_OUTPUT
@@ -300,25 +353,25 @@ jobs:
         run: |
           echo "::notice::DRY RUN: Skipping PR creation"
           echo "Would have created PR with:"
-          echo "  Branch: bump-rmo-${{ github.event.inputs.version }}"
-          echo "  Title: Bump RMO to ${{ inputs.version }}"
+          echo "  Branch: bump-rmo-occ-${{ github.event.inputs.version }}"
+          echo "  Title: Bump RMO OTel Collector to ${{ inputs.version }}"
           echo "  Label: pr-deploy"
 
       - name: Workflow summary
         if: always()
         run: |
           cat >> $GITHUB_STEP_SUMMARY <<EOF
-          ## RMO Chart Release Summary
+          ## RMO OTel Collector Release Summary
 
           **Version**: ${{ inputs.version }}
-          **Branch**: bump-rmo-${{ inputs.version }}
+          **Branch**: bump-rmo-occ-${{ inputs.version }}
           **Dry Run**: ${{ inputs.dry_run }}
           **Auto Merge**: ${{ inputs.auto_merge }}
           ${{ inputs.dry_run != 'true' && format('**PR**: {0}', steps.create-pr.outputs.pr-url) || '' }}
 
           ### Next Steps
           ${{ inputs.dry_run == 'true' && '- Re-run workflow with dry_run=false to create PR' || format('1. Review the PR at {0}', steps.create-pr.outputs.pr-url) }}
-          ${{ inputs.dry_run != 'true' && '2. Verify chart changes are correct' || '' }}
+          ${{ inputs.dry_run != 'true' && '2. Verify OTel Collector version changes are correct' || '' }}
           ${{ inputs.dry_run != 'true' && inputs.auto_merge != 'true' && '3. Merge the PR to deploy' || '' }}
           ${{ inputs.dry_run != 'true' && inputs.auto_merge == 'true' && '3. PR will auto-merge when checks pass' || '' }}
           EOF
