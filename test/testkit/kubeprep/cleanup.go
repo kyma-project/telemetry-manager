@@ -17,7 +17,7 @@ import (
 // Helm chart resources use "app.kubernetes.io/managed-by: kyma", while the manager
 // stamps its runtime-created resources with "app.kubernetes.io/managed-by: telemetry-manager".
 var runtimeResourceSelector = client.MatchingLabels{
-	commonresources.LabelKeyK8sManagedBy: commonresources.LabelValueK8sManagedByTelemetryManager,
+	commonresources.LabelKeyK8sManagedBy: commonresources.LabelValueK8sManagedBy,
 }
 
 // WaitForManagedResourceCleanup waits until all runtime-created resources

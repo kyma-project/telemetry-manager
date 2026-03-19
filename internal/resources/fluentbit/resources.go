@@ -703,14 +703,14 @@ func makeNetworkPolicies(name types.NamespacedName, istioEnabled bool) []*networ
 
 func defaultFluentBitLabels() map[string]string {
 	result := commonresources.DefaultLabels("fluent-bit", commonresources.LabelValueK8sComponentAgent)
-	result[commonresources.LabelKeyK8sInstance] = commonresources.LabelValueK8sInstanceTelemetry
+	result[commonresources.LabelKeyK8sInstance] = commonresources.LabelValueK8sInstance
 
 	return result
 }
 
 func defaultFluentBitSelector() map[string]string {
 	result := maps.Clone(commonresources.DefaultSelector("fluent-bit"))
-	result[commonresources.LabelKeyK8sInstance] = commonresources.LabelValueK8sInstanceTelemetry
+	result[commonresources.LabelKeyK8sInstance] = commonresources.LabelValueK8sInstance
 
 	return result
 }

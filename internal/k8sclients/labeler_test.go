@@ -87,9 +87,9 @@ func TestLabeler_Get(t *testing.T) {
 func requireDefaultLabels(t *testing.T, labels map[string]string) {
 	t.Helper()
 
-	require.Equal(t, commonresources.LabelValueKymaModuleTelemetry, labels[commonresources.LabelKeyKymaModule])
-	require.Equal(t, commonresources.LabelValueK8sPartOfTelemetry, labels[commonresources.LabelKeyK8sPartOf])
-	require.Equal(t, commonresources.LabelValueK8sManagedByTelemetryManager, labels[commonresources.LabelKeyK8sManagedBy])
+	require.Equal(t, commonresources.LabelValueKymaModule, labels[commonresources.LabelKeyKymaModule])
+	require.Equal(t, commonresources.LabelValueK8sPartOf, labels[commonresources.LabelKeyK8sPartOf])
+	require.Equal(t, commonresources.LabelValueK8sManagedBy, labels[commonresources.LabelKeyK8sManagedBy])
 	require.Equal(t, "test-collector", labels[commonresources.LabelKeyK8sName])
 	require.Equal(t, "gateway", labels[commonresources.LabelKeyK8sComponent])
 }

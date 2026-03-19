@@ -638,7 +638,7 @@ func scopedByLabel() cache.ByObject {
 }
 
 func moduleLabelSelector() labels.Selector {
-	return labels.SelectorFromSet(labels.Set{commonresources.LabelKeyKymaModule: commonresources.LabelValueKymaModuleTelemetry})
+	return labels.SelectorFromSet(labels.Set{commonresources.LabelKeyKymaModule: commonresources.LabelValueKymaModule})
 }
 
 func createWebhookConfig(globals config.Global) webhookcert.Config {

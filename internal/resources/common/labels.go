@@ -49,23 +49,23 @@ const (
 	// LabelValueFalse can be used in all labels that require "false" as value
 	LabelValueFalse = "false"
 
-	LabelKeyKymaModule            = "kyma-project.io/module"
-	LabelValueKymaModuleTelemetry = "telemetry"
+	LabelKeyKymaModule   = "kyma-project.io/module"
+	LabelValueKymaModule = "telemetry"
 
-	LabelKeyK8sName                        = "app.kubernetes.io/name"
-	LabelKeyK8sPartOf                      = "app.kubernetes.io/part-of"
-	LabelValueK8sPartOfTelemetry           = "telemetry"
-	LabelKeyK8sManagedBy                   = "app.kubernetes.io/managed-by"
-	LabelValueK8sManagedByTelemetryManager = "telemetry-manager"
-	LabelKeyK8sComponent                   = "app.kubernetes.io/component"
-	LabelValueK8sComponentController       = "controller"
-	LabelValueK8sComponentAgent            = "agent"
-	LabelValueK8sComponentGateway          = "gateway"
-	LabelValueK8sComponentMonitor          = "monitor"
-	LabelKeyK8sInstance                    = "app.kubernetes.io/instance"
-	LabelValueK8sInstanceTelemetry         = "telemetry"
-	LabelKeyK8sHostname                    = "kubernetes.io/hostname"
-	LabelKeyK8sZone                        = "topology.kubernetes.io/zone"
+	LabelKeyK8sName                  = "app.kubernetes.io/name"
+	LabelKeyK8sPartOf                = "app.kubernetes.io/part-of"
+	LabelValueK8sPartOf              = "telemetry"
+	LabelKeyK8sManagedBy             = "app.kubernetes.io/managed-by"
+	LabelValueK8sManagedBy           = "telemetry-manager"
+	LabelKeyK8sComponent             = "app.kubernetes.io/component"
+	LabelValueK8sComponentController = "controller"
+	LabelValueK8sComponentAgent      = "agent"
+	LabelValueK8sComponentGateway    = "gateway"
+	LabelValueK8sComponentMonitor    = "monitor"
+	LabelKeyK8sInstance              = "app.kubernetes.io/instance"
+	LabelValueK8sInstance            = "telemetry"
+	LabelKeyK8sHostname              = "kubernetes.io/hostname"
+	LabelKeyK8sZone                  = "topology.kubernetes.io/zone"
 
 	LabelKeyIstioInject = "sidecar.istio.io/inject"
 
@@ -95,9 +95,9 @@ const (
 // These labels are shared by all telemetry-managed resources regardless of component type.
 func ModuleLabels() map[string]string {
 	return map[string]string{
-		LabelKeyKymaModule:   LabelValueKymaModuleTelemetry,
-		LabelKeyK8sPartOf:    LabelValueK8sPartOfTelemetry,
-		LabelKeyK8sManagedBy: LabelValueK8sManagedByTelemetryManager,
+		LabelKeyKymaModule:   LabelValueKymaModule,
+		LabelKeyK8sPartOf:    LabelValueK8sPartOf,
+		LabelKeyK8sManagedBy: LabelValueK8sManagedBy,
 	}
 }
 
