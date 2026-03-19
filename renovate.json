@@ -59,16 +59,6 @@
       "matchManagers": [
         "gomod"
       ],
-      "matchDepTypes": [
-        "indirect"
-      ],
-      "isVulnerabilityAlert": true,
-      "enabled": true
-    },
-    {
-      "matchManagers": [
-        "gomod"
-      ],
       "matchUpdateTypes": [
         "digest"
       ],
