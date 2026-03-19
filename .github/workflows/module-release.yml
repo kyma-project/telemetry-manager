@@ -91,7 +91,7 @@ jobs:
     needs: validate-inputs
     runs-on: ubuntu-latest
     env:
-      GH_HOST: github.tools.sap
+      GH_HOST: https://github.tools.sap
       GH_REPO: kyma/module-manifests
       GH_TOKEN: ${{ secrets.HUSKIES_GHTOOLS_TOKEN }}
     steps:
@@ -106,9 +106,38 @@ jobs:
 
       - name: Install yq
         run: |
+          set -euo pipefail
           YQ_VERSION="v4.44.1"
-          wget -qO /usr/local/bin/yq "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64"
-          chmod +x /usr/local/bin/yq
+          YQ_BINARY_PATH="/usr/local/bin/yq"
+          YQ_BASE_URL="https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}"
+
+          echo "Downloading yq ${YQ_VERSION}..."
+          sudo wget -qO "${YQ_BINARY_PATH}" "${YQ_BASE_URL}/yq_linux_amd64"
+
+          echo "Downloading yq checksums..."
+          CHECKSUMS_FILE="$(mktemp)"
+          wget -qO "${CHECKSUMS_FILE}" "${YQ_BASE_URL}/checksums"
+
+          echo "Verifying yq binary integrity..."
+          # SHA-256 is at column 19 (field 1 is filename, field 19 is SHA-256 per checksums_hashes_order)
+          EXPECTED_SHA256="$(grep '^yq_linux_amd64[[:space:]]' "${CHECKSUMS_FILE}" | sed 's/  /\t/g' | cut -f19)"
+          ACTUAL_SHA256="$(sha256sum "${YQ_BINARY_PATH}" | awk '{print $1}')"
+
+          if [ -z "${EXPECTED_SHA256}" ]; then
+            echo "::error::Failed to find expected checksum for yq_linux_amd64 in checksums file"
+            exit 1
+          fi
+
+          if [ "${EXPECTED_SHA256}" != "${ACTUAL_SHA256}" ]; then
+            echo "::error::Checksum verification failed for yq binary"
+            echo "Expected: ${EXPECTED_SHA256}"
+            echo "Actual:   ${ACTUAL_SHA256}"
+            exit 1
+          fi
+
+          echo "✓ Checksum verification successful"
+          rm -f "${CHECKSUMS_FILE}"
+          sudo chmod +x "${YQ_BINARY_PATH}"
           yq --version
 
       - name: Configure git
