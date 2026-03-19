@@ -1,53 +1,21 @@
 package selfmonitor
 
 import (
-	"context"
-	"fmt"
-	"time"
-
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"k8s.io/utils/ptr"
-
-	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 )
 
 const (
 	fluentBitHostPathCleanupName = "telemetry-fluent-bit-hostpath-cleanup"
 	fluentBitHostPath            = "/var/telemetry-fluent-bit"
 	cleanupMountPath             = "/cleanup"
-	cleanupWaitTimeout           = 2 * time.Minute
-	cleanupPollInterval          = 5 * time.Second
 )
 
 // TelemetryNamespace is the namespace where telemetry components run in the test cluster.
 const TelemetryNamespace = "kyma-system"
-
-// WaitForFluentBitDaemonSetGone blocks until the Fluent Bit DaemonSet is deleted in the given namespace.
-// Call this before CreateObjects in Fluent Bit tests so the hostPath cleanup DaemonSet can run on a clean slate.
-func WaitForFluentBitDaemonSetGone(ctx context.Context, k8sClient client.Client, namespace string) error {
-	deadline := time.Now().Add(cleanupWaitTimeout)
-	for time.Now().Before(deadline) {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
-		}
-		ds := &appsv1.DaemonSet{}
-		err := k8sClient.Get(ctx, types.NamespacedName{Name: names.FluentBit, Namespace: namespace}, ds)
-		if err != nil {
-			if client.IgnoreNotFound(err) == nil {
-				return nil
-			}
-			return err
-		}
-		time.Sleep(cleanupPollInterval)
-	}
-	return fmt.Errorf("timeout waiting for DaemonSet %s/%s to be deleted", namespace, names.FluentBit)
-}
 
 // FluentBitHostPathCleanupDaemonSet returns a DaemonSet that holds the Fluent Bit hostPath mount during the test.
 // Add it to the resources passed to CreateObjects in Fluent Bit tests. When CreateObjects' t.Cleanup deletes the
