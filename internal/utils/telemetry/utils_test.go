@@ -2,6 +2,7 @@ package telemetry
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -13,6 +14,126 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 )
+
+func TestResolveMetricCollectionIntervals(t *testing.T) {
+	tests := []struct {
+		name     string
+		spec     *operatorv1beta1.MetricSpec
+		expected MetricCollectionIntervals
+	}{
+		{
+			name: "nil metric spec returns defaults",
+			spec: nil,
+			expected: MetricCollectionIntervals{
+				Runtime:    30 * time.Second,
+				Prometheus: 30 * time.Second,
+				Istio:      30 * time.Second,
+			},
+		},
+		{
+			name: "empty metric spec returns defaults",
+			spec: &operatorv1beta1.MetricSpec{},
+			expected: MetricCollectionIntervals{
+				Runtime:    30 * time.Second,
+				Prometheus: 30 * time.Second,
+				Istio:      30 * time.Second,
+			},
+		},
+		{
+			name: "global collection interval applies to all inputs",
+			spec: &operatorv1beta1.MetricSpec{
+				CollectionInterval: &metav1.Duration{Duration: 1 * time.Minute},
+			},
+			expected: MetricCollectionIntervals{
+				Runtime:    1 * time.Minute,
+				Prometheus: 1 * time.Minute,
+				Istio:      1 * time.Minute,
+			},
+		},
+		{
+			name: "runtime override takes precedence over global",
+			spec: &operatorv1beta1.MetricSpec{
+				CollectionInterval: &metav1.Duration{Duration: 1 * time.Minute},
+				Runtime:            &operatorv1beta1.MetricInputSpec{CollectionInterval: &metav1.Duration{Duration: 10 * time.Second}},
+			},
+			expected: MetricCollectionIntervals{
+				Runtime:    10 * time.Second,
+				Prometheus: 1 * time.Minute,
+				Istio:      1 * time.Minute,
+			},
+		},
+		{
+			name: "prometheus override takes precedence over global",
+			spec: &operatorv1beta1.MetricSpec{
+				CollectionInterval: &metav1.Duration{Duration: 1 * time.Minute},
+				Prometheus:         &operatorv1beta1.MetricInputSpec{CollectionInterval: &metav1.Duration{Duration: 15 * time.Second}},
+			},
+			expected: MetricCollectionIntervals{
+				Runtime:    1 * time.Minute,
+				Prometheus: 15 * time.Second,
+				Istio:      1 * time.Minute,
+			},
+		},
+		{
+			name: "istio override takes precedence over global",
+			spec: &operatorv1beta1.MetricSpec{
+				CollectionInterval: &metav1.Duration{Duration: 1 * time.Minute},
+				Istio:              &operatorv1beta1.MetricInputSpec{CollectionInterval: &metav1.Duration{Duration: 45 * time.Second}},
+			},
+			expected: MetricCollectionIntervals{
+				Runtime:    1 * time.Minute,
+				Prometheus: 1 * time.Minute,
+				Istio:      45 * time.Second,
+			},
+		},
+		{
+			name: "all input overrides take precedence over global",
+			spec: &operatorv1beta1.MetricSpec{
+				CollectionInterval: &metav1.Duration{Duration: 1 * time.Minute},
+				Runtime:            &operatorv1beta1.MetricInputSpec{CollectionInterval: &metav1.Duration{Duration: 10 * time.Second}},
+				Prometheus:         &operatorv1beta1.MetricInputSpec{CollectionInterval: &metav1.Duration{Duration: 20 * time.Second}},
+				Istio:              &operatorv1beta1.MetricInputSpec{CollectionInterval: &metav1.Duration{Duration: 40 * time.Second}},
+			},
+			expected: MetricCollectionIntervals{
+				Runtime:    10 * time.Second,
+				Prometheus: 20 * time.Second,
+				Istio:      40 * time.Second,
+			},
+		},
+		{
+			name: "input overrides without global use default as base",
+			spec: &operatorv1beta1.MetricSpec{
+				Runtime: &operatorv1beta1.MetricInputSpec{CollectionInterval: &metav1.Duration{Duration: 5 * time.Second}},
+			},
+			expected: MetricCollectionIntervals{
+				Runtime:    5 * time.Second,
+				Prometheus: 30 * time.Second,
+				Istio:      30 * time.Second,
+			},
+		},
+		{
+			name: "input spec present but collection interval nil uses global",
+			spec: &operatorv1beta1.MetricSpec{
+				CollectionInterval: &metav1.Duration{Duration: 2 * time.Minute},
+				Runtime:            &operatorv1beta1.MetricInputSpec{},
+				Prometheus:         &operatorv1beta1.MetricInputSpec{},
+				Istio:              &operatorv1beta1.MetricInputSpec{},
+			},
+			expected: MetricCollectionIntervals{
+				Runtime:    2 * time.Minute,
+				Prometheus: 2 * time.Minute,
+				Istio:      2 * time.Minute,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := ResolveMetricCollectionIntervals(tt.spec)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
 
 func TestDefaultTelemetryInstanceFound(t *testing.T) {
 	ctx := t.Context()
