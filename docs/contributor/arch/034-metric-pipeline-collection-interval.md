@@ -26,9 +26,7 @@ This shared model is intentional: running multiple scraping receivers of the sam
 
 ### Step 1: Global Collection Interval in the Telemetry CR
 
-Add collection interval configuration to the `MetricSpec` in the Telemetry CR. This provides a cluster-wide default for all pull-based inputs (Runtime, Prometheus, Istio), with optional per-input overrides. Because the Telemetry CR is a singleton, there are no cross-pipeline conflicts to resolve.
-
-The value flows through the existing `BuildOptions` struct into the config builder, which already receives other Telemetry CR settings (such as enrichments and service enrichment strategy). This requires minimal changes to the config builder: the receiver functions accept the interval as a parameter instead of using hardcoded constants.
+Add collection interval configuration to the `MetricSpec` in the Telemetry CR. This provides a cluster-wide default for all pull-based inputs (Runtime, Prometheus, Istio), with optional per-input overrides. 
 
 **API changes to the Telemetry CR:**
 
@@ -66,7 +64,7 @@ spec:
 
 In a future iteration, add a `collectionInterval` field to each pull-based input type in the MetricPipeline spec. This provides per-pipeline granularity, overriding the Telemetry CR value.
 
-Because receivers are shared across pipelines, all MetricPipelines that enable the same input type must agree on the effective collection interval. If two pipelines specify conflicting intervals for the same input, the reconciler sets a `ConfigurationGenerated` condition with status `False` and reason `CollectionIntervalConflict` on the pipeline that was created later (by creation timestamp).
+As a consequence, a separate scrape loop must be introduced for each unique collection interval. This means the same metrics are collected multiple times, which increases memory consumption on the agent.
 
 **API changes to MetricPipeline:**
 
@@ -103,8 +101,8 @@ spec:
 
 We implement both steps sequentially:
 
-1. **Step 1** adds collection interval configuration to the Telemetry CR. This addresses the core feature request from [#3125](https://github.com/kyma-project/telemetry-manager/issues/3125) with minimal changes. No cross-pipeline conflict validation is needed because the Telemetry CR is a singleton.
-2. **Step 2** adds per-MetricPipeline overrides after Step 1 is validated in production. This step introduces cross-pipeline conflict validation.
+1. **Step 1** adds collection interval configuration to the Telemetry CR. This addresses the core feature request from [#3125](https://github.com/kyma-project/telemetry-manager/issues/3125) with minimal changes. 
+2. **Step 2** adds per-MetricPipeline overrides after Step 1 is validated in production. 
 
 ## Consequences
 
@@ -117,4 +115,4 @@ We implement both steps sequentially:
 ### Negative Consequences
 
 - Step 1 does not provide per-pipeline granularity. All pipelines sharing an input type use the same interval from the Telemetry CR.
-- Step 2 increases memory consumption since the same targets now have to be scraped twice.
+- Step 2 increases memory consumption since the same metrics now have to be collected multiple times.
