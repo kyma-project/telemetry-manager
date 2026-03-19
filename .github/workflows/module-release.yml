@@ -83,8 +83,16 @@ jobs:
         with:
           fetch-depth: '0'
           ref: main
-          repository: ${{ env.GH_HOST }}/${{ env.GH_REPO }}
+          repository: ${{ env.GH_REPO }}
+          github-server-url: ${{ env.GH_HOST }}
           token: ${{ secrets.HUSKIES_GHTOOLS_TOKEN }}
+
+      - name: Install yq
+        run: |
+          YQ_VERSION="v4.44.1"
+          wget -qO /usr/local/bin/yq "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64"
+          chmod +x /usr/local/bin/yq
+          yq --version
 
       - name: Configure git
         run: |
@@ -475,7 +483,8 @@ jobs:
 
           ### Dry Run Mode
           🔍 **No changes were committed or pushed**
-          - Branch was not created
+          - Local branch created but not pushed to remote
+          - Changes applied locally but not committed
           - PR was not created
           - Use this mode to validate the workflow logic
           EOF
