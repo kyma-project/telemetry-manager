@@ -1087,8 +1087,8 @@ github.com/raeperd/recvcheck v0.2.0 h1:GnU+NsbiCqdC2XX5+vMZzP+jAJC5fht7rcVTAhX74
 github.com/raeperd/recvcheck v0.2.0/go.mod h1:n04eYkwIR0JbgD73wT8wL4JjPC3wm0nFtzBnWNocnYU=
 github.com/rancher/dynamiclistener v0.3.5 h1:5TaIHvkDGmZKvc96Huur16zfTKOiLhDtK4S+WV0JA6A=
 github.com/rancher/dynamiclistener v0.3.5/go.mod h1:dW/YF6/m2+uEyJ5VtEcd9THxda599HP6N9dSXk81+k0=
-github.com/rancher/wharfie v0.6.2 h1:ZTrZ0suU0abWwLLf2zaqjhwpxK8+BkbnMocnU2u1bSQ=
-github.com/rancher/wharfie v0.6.2/go.mod h1:7ii0+eehBwUEFaJMiRHWCbvN11bsfVHT1oc+P/6IBSg=
+github.com/rancher/wharfie v0.6.3 h1:biaGjshs7SguelIelRXfMUBvXnl2ZgyUhkxQRRcU/vQ=
+github.com/rancher/wharfie v0.6.3/go.mod h1:kWv97z0sMAbnVNT/oe+JFZJVKn4xkas7ZdFf6UifWis=
 github.com/redis/go-redis/extra/rediscmd/v9 v9.0.5 h1:EaDatTxkdHG+U3Bk4EUr+DZ7fOGwTfezUiUJMaIcaho=
 github.com/redis/go-redis/extra/rediscmd/v9 v9.0.5/go.mod h1:fyalQWdtzDBECAQFBJuQe5bzQ02jGd5Qcbgb97Flm7U=
 github.com/redis/go-redis/extra/redisotel/v9 v9.0.5 h1:EfpWLLCyXw8PSM2/XNJLjI3Pb27yVE+gIAfeqp8LUCc=
