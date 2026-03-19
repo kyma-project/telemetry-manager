@@ -43,6 +43,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
+	"github.com/kyma-project/telemetry-manager/internal/nodesize"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metricagent"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metricgateway"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
@@ -70,6 +71,7 @@ type MetricPipelineController struct {
 	reconcileTriggerChan <-chan event.GenericEvent
 	reconciler           *metricpipeline.Reconciler
 	secretWatchClient    *secretwatch.Client
+	nodeSizeTracker      *nodesize.Tracker
 }
 
 type MetricPipelineControllerConfig struct {
@@ -81,7 +83,7 @@ type MetricPipelineControllerConfig struct {
 	RestConfig                     *rest.Config
 }
 
-func NewMetricPipelineController(config MetricPipelineControllerConfig, client client.Client, reconcileTriggerChan <-chan event.GenericEvent, secretWatchClient *secretwatch.Client) (*MetricPipelineController, error) {
+func NewMetricPipelineController(config MetricPipelineControllerConfig, client client.Client, reconcileTriggerChan <-chan event.GenericEvent, secretWatchClient *secretwatch.Client, nodeSizeTracker *nodesize.Tracker) (*MetricPipelineController, error) {
 	pipelineCount := resourcelock.MaxPipelineCount
 
 	if config.UnlimitedPipelines() {
@@ -159,6 +161,7 @@ func NewMetricPipelineController(config MetricPipelineControllerConfig, client c
 		metricpipeline.WithErrorToMessageConverter(&conditions.ErrorToMessageConverter{}),
 		metricpipeline.WithIstioStatusChecker(istiostatus.NewChecker(discoveryClient)),
 		metricpipeline.WithVpaStatusChecker(vpastatus.NewChecker(config.RestConfig)),
+		metricpipeline.WithNodeSizeTracker(nodeSizeTracker),
 		metricpipeline.WithOverridesHandler(overrides.New(config.Global, client)),
 		metricpipeline.WithPipelineValidator(pipelineValidator),
 
@@ -173,6 +176,7 @@ func NewMetricPipelineController(config MetricPipelineControllerConfig, client c
 		reconcileTriggerChan: reconcileTriggerChan,
 		reconciler:           reconciler,
 		secretWatchClient:    secretWatchClient,
+		nodeSizeTracker:      nodeSizeTracker,
 	}, nil
 }
 
@@ -249,6 +253,10 @@ func (r *MetricPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		&operatorv1beta1.Telemetry{},
 		handler.EnqueueRequestsFromMapFunc(r.mapTelemetryChanges),
 		ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete()),
+	).Watches(
+		&corev1.Node{},
+		handler.EnqueueRequestsFromMapFunc(r.mapNodeChanges),
+		ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete()),
 	).Complete(r)
 }
 
@@ -256,6 +264,25 @@ func (r *MetricPipelineController) mapTelemetryChanges(ctx context.Context, obje
 	_, ok := object.(*operatorv1beta1.Telemetry)
 	if !ok {
 		logf.FromContext(ctx).V(1).Error(nil, "Unexpected type: expected Telemetry")
+		return nil
+	}
+
+	requests, err := r.createRequestsForAllPipelines(ctx)
+	if err != nil {
+		logf.FromContext(ctx).Error(err, "Unable to create reconcile requests")
+	}
+
+	return requests
+}
+
+func (r *MetricPipelineController) mapNodeChanges(ctx context.Context, object client.Object) []reconcile.Request {
+	changed, err := r.nodeSizeTracker.UpdateSmallestMemory(ctx)
+	if err != nil {
+		logf.FromContext(ctx).Error(err, "Unable to update smallest node memory")
+		return nil
+	}
+
+	if !changed {
 		return nil
 	}
 

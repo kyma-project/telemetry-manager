@@ -13,6 +13,7 @@ const (
 	subsystemPipelines         = "pipelines"
 	subsystemSelfMonitorProber = "self_monitor_prober"
 	subsystemSecretWatch       = "secret_watch"
+	subsystemNodeSize          = "node_size"
 )
 
 const (
@@ -207,6 +208,15 @@ var (
 			Help:      "Total number of secret watcher reconnection attempts.",
 		},
 		[]string{"secret_namespace", "secret_name"},
+	)
+
+	NodeSmallestMemoryBytes = promauto.With(registry).NewGauge(
+		prometheus.GaugeOpts{
+			Namespace: defaultNamespace,
+			Subsystem: subsystemNodeSize,
+			Name:      "smallest_memory_bytes",
+			Help:      "The allocatable memory in bytes of the smallest node in the cluster.",
+		},
 	)
 )
 
