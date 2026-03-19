@@ -494,10 +494,10 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 			ClusterUID:    clusterUID,
 			CloudProvider: shootInfo.CloudProvider,
 		},
-		Enrichments:       telemetrySpec.Enrichments,
-		ServiceEnrichment: telemetryutils.GetServiceEnrichmentFromTelemetryOrDefault(ctx, telemetryOptions),
-		VpaActive:         vpaCRDExists && isVpaEnabled,
-		TelemetrySpec:     telemetrySpec,
+		Enrichments:         telemetrySpec.Enrichments,
+		ServiceEnrichment:   telemetryutils.GetServiceEnrichmentFromTelemetryOrDefault(ctx, telemetryOptions),
+		VpaActive:           vpaCRDExists && isVpaEnabled,
+		CollectionIntervals: telemetryutils.ResolveMetricCollectionIntervals(telemetrySpec.Metric),
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create collector config: %w", err)

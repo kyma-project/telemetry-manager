@@ -14,6 +14,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	metricpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/metricpipeline"
+	telemetryutils "github.com/kyma-project/telemetry-manager/internal/utils/telemetry"
 )
 
 const enrichmentServicePipelineID = "metrics/enrichment-conditional"
@@ -41,8 +42,8 @@ type BuildOptions struct {
 	ServiceEnrichment string
 	// VpaActive indicates whether VPA is active (VPA CRD exists and VPA is enabled via annotation in Telemetry CR).
 	VpaActive bool
-	// TelemetrySpec contains the desired state of the Telemetry CR, providing access to module-level settings.
-	TelemetrySpec operatorv1beta1.TelemetrySpec
+	// CollectionIntervals contains the resolved collection intervals for each pull-based metric input type.
+	CollectionIntervals telemetryutils.MetricCollectionIntervals
 }
 
 // inputSources represents the enabled input sources for the telemetry metric agent.
@@ -66,47 +67,6 @@ type runtimeResourceSources struct {
 	job         bool
 }
 
-// collectionIntervals holds the resolved collection interval for each input type.
-type collectionIntervals struct {
-	runtime    time.Duration
-	prometheus time.Duration
-	istio      time.Duration
-}
-
-const defaultCollectionInterval = 30 * time.Second
-
-// resolveCollectionIntervals computes the effective collection interval for each input type
-// following the precedence: input-specific override > global collectionInterval > 30s default.
-func resolveCollectionIntervals(opts BuildOptions) collectionIntervals {
-	globalInterval := defaultCollectionInterval
-
-	if opts.TelemetrySpec.Metric != nil && opts.TelemetrySpec.Metric.CollectionInterval != nil {
-		globalInterval = opts.TelemetrySpec.Metric.CollectionInterval.Duration
-	}
-
-	intervals := collectionIntervals{
-		runtime:    globalInterval,
-		prometheus: globalInterval,
-		istio:      globalInterval,
-	}
-
-	if opts.TelemetrySpec.Metric != nil {
-		if opts.TelemetrySpec.Metric.Runtime != nil && opts.TelemetrySpec.Metric.Runtime.CollectionInterval != nil {
-			intervals.runtime = opts.TelemetrySpec.Metric.Runtime.CollectionInterval.Duration
-		}
-
-		if opts.TelemetrySpec.Metric.Prometheus != nil && opts.TelemetrySpec.Metric.Prometheus.CollectionInterval != nil {
-			intervals.prometheus = opts.TelemetrySpec.Metric.Prometheus.CollectionInterval.Duration
-		}
-
-		if opts.TelemetrySpec.Metric.Istio != nil && opts.TelemetrySpec.Metric.Istio.CollectionInterval != nil {
-			intervals.istio = opts.TelemetrySpec.Metric.Istio.CollectionInterval.Duration
-		}
-	}
-
-	return intervals
-}
-
 func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1beta1.MetricPipeline, opts BuildOptions) (*common.Config, common.EnvVars, error) {
 	// Sort pipelines to ensure consistent order and checksum for generated ConfigMap
 	slices.SortFunc(pipelines, func(a, b telemetryv1beta1.MetricPipeline) int {
@@ -127,8 +87,6 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1beta1.Metric
 		nil,
 	)
 	b.EnvVars = make(common.EnvVars)
-
-	intervals := resolveCollectionIntervals(opts)
 
 	inputs := inputSources{
 		runtimeResources: runtimeResourceSources{
@@ -155,8 +113,8 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1beta1.Metric
 
 	if inputs.runtime {
 		if err := b.AddServicePipeline(ctx, nil, "metrics/input-runtime",
-			b.addKubeletStatsReceiver(inputs.runtimeResources, intervals.runtime),
-			b.addK8sClusterReceiver(inputs.runtimeResources, intervals.runtime),
+			b.addKubeletStatsReceiver(inputs.runtimeResources, opts.CollectionIntervals.Runtime),
+			b.addK8sClusterReceiver(inputs.runtimeResources, opts.CollectionIntervals.Runtime),
 			b.addMemoryLimiterProcessor(),
 			b.addFilterDropNonPVCVolumesMetricsProcessor(inputs.runtimeResources),
 			b.addFilterDropVirtualNetworkInterfacesProcessor(),
@@ -174,8 +132,8 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1beta1.Metric
 
 	if inputs.prometheus {
 		if err := b.AddServicePipeline(ctx, nil, "metrics/input-prometheus",
-			b.addPrometheusAppPodsReceiver(intervals.prometheus),
-			b.addPrometheusAppServicesReceiver(opts, intervals.prometheus),
+			b.addPrometheusAppPodsReceiver(opts.CollectionIntervals.Prometheus),
+			b.addPrometheusAppServicesReceiver(opts, opts.CollectionIntervals.Prometheus),
 			b.addMemoryLimiterProcessor(),
 			b.addDropServiceNameProcessor(),
 			b.addSetInstrumentationScopeToPrometheusProcessor(opts),
@@ -190,7 +148,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1beta1.Metric
 
 	if inputs.istio {
 		if err := b.AddServicePipeline(ctx, nil, "metrics/input-istio",
-			b.addPrometheusIstioReceiver(inputs.envoy, intervals.istio),
+			b.addPrometheusIstioReceiver(inputs.envoy, opts.CollectionIntervals.Istio),
 			b.addMemoryLimiterProcessor(),
 			b.addDropServiceNameProcessor(),
 			b.addIstioNoiseFilterProcessor(),
