@@ -35,6 +35,10 @@ runs:
     - name: Setup Golang
       uses: ./.github/template/setup-golang
 
+    - name: Add tools bin to PATH
+      shell: bash
+      run: echo "$GITHUB_WORKSPACE/bin" >> $GITHUB_PATH
+
     - name: Download manager image artifact
       if: inputs.manager-image-archive != ''
       uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
