@@ -52,16 +52,39 @@ BRANCH_NAME="bump-telemetry-${VERSION}-${CHANNEL}"
 
 # Check if PR already exists for this branch
 echo "Checking if PR already exists for branch: ${BRANCH_NAME}..."
-EXISTING_PR=$(gh pr list --head "${BRANCH_NAME}" --json number,url --jq '.[0] | select(.number != null)' || echo "")
 
-if [ -n "${EXISTING_PR}" ]; then
+# Run gh pr list and capture both stdout and exit code
+set +e  # Temporarily disable errexit to handle the exit code ourselves
+EXISTING_PR=$(gh pr list --head "${BRANCH_NAME}" --json number,url --jq '.[0] | select(.number != null)' 2>&1)
+GH_EXIT_CODE=$?
+set -e  # Re-enable errexit
+
+# Check for actual errors (not just "no PRs found")
+if [ ${GH_EXIT_CODE} -ne 0 ]; then
+  # gh failed - check if it's a real error or just no results
+  if echo "${EXISTING_PR}" | grep -qE "(authentication|permission|connect|network|timeout|rate limit)"; then
+    # Real error - authentication, network, or API issue
+    echo "::error::Failed to check for existing PRs: ${EXISTING_PR}"
+    exit 1
+  fi
+  # If the error doesn't match known error patterns, it might be "no PRs found"
+  # which is actually a success case for us
+  EXISTING_PR=""
+fi
+
+# Filter out empty objects/null results
+if [ -n "${EXISTING_PR}" ] && [ "${EXISTING_PR}" != "null" ] && [ "${EXISTING_PR}" != "{}" ]; then
   PR_NUMBER=$(echo "${EXISTING_PR}" | jq -r '.number')
   PR_URL=$(echo "${EXISTING_PR}" | jq -r '.url')
-  echo "::notice::PR already exists for this branch"
-  echo "✓ Using existing PR #${PR_NUMBER}: ${PR_URL}"
-  echo "pr-url=${PR_URL}" >> "${OUTPUT_FILE}"
-  echo "pr-number=${PR_NUMBER}" >> "${OUTPUT_FILE}"
-  exit 0
+
+  # Validate we got actual values
+  if [ -n "${PR_NUMBER}" ] && [ "${PR_NUMBER}" != "null" ] && [ -n "${PR_URL}" ] && [ "${PR_URL}" != "null" ]; then
+    echo "::notice::PR already exists for this branch"
+    echo "✓ Using existing PR #${PR_NUMBER}: ${PR_URL}"
+    echo "pr-url=${PR_URL}" >> "${OUTPUT_FILE}"
+    echo "pr-number=${PR_NUMBER}" >> "${OUTPUT_FILE}"
+    exit 0
+  fi
 fi
 
 echo "No existing PR found. Creating new PR..."

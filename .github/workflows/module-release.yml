@@ -136,17 +136,32 @@ jobs:
           echo "Downloading yq ${YQ_VERSION}..."
           sudo wget -qO "${YQ_BINARY_PATH}" "${YQ_BASE_URL}/yq_linux_amd64"
 
-          echo "Downloading yq checksums..."
+          echo "Downloading checksums and hash order..."
           CHECKSUMS_FILE="$(mktemp)"
+          HASHES_ORDER_FILE="$(mktemp)"
           wget -qO "${CHECKSUMS_FILE}" "${YQ_BASE_URL}/checksums"
+          wget -qO "${HASHES_ORDER_FILE}" "${YQ_BASE_URL}/checksums_hashes_order"
 
           echo "Verifying yq binary integrity..."
-          # SHA-256 is at column 19 (field 1 is filename, field 19 is SHA-256 per checksums_hashes_order)
-          EXPECTED_SHA256="$(grep '^yq_linux_amd64[[:space:]]' "${CHECKSUMS_FILE}" | sed 's/  /\t/g' | cut -f19)"
+          # Dynamically find SHA-256 column position from checksums_hashes_order
+          SHA256_LINE_NUM=$(grep -n "^SHA-256$" "${HASHES_ORDER_FILE}" | cut -d: -f1)
+          if [ -z "${SHA256_LINE_NUM}" ]; then
+            echo "::error::Could not find SHA-256 in checksums_hashes_order"
+            rm -f "${CHECKSUMS_FILE}" "${HASHES_ORDER_FILE}"
+            exit 1
+          fi
+
+          # Column index is line number + 1 (field 1 is filename, hashes start at field 2)
+          SHA256_COLUMN=$((SHA256_LINE_NUM + 1))
+          echo "SHA-256 is at column ${SHA256_COLUMN}"
+
+          # Extract SHA-256 checksum using dynamic column
+          EXPECTED_SHA256="$(grep '^yq_linux_amd64[[:space:]]' "${CHECKSUMS_FILE}" | sed 's/  /\t/g' | cut -f${SHA256_COLUMN})"
           ACTUAL_SHA256="$(sha256sum "${YQ_BINARY_PATH}" | awk '{print $1}')"
 
           if [ -z "${EXPECTED_SHA256}" ]; then
             echo "::error::Failed to find expected checksum for yq_linux_amd64 in checksums file"
+            rm -f "${CHECKSUMS_FILE}" "${HASHES_ORDER_FILE}"
             exit 1
           fi
 
@@ -154,11 +169,12 @@ jobs:
             echo "::error::Checksum verification failed for yq binary"
             echo "Expected: ${EXPECTED_SHA256}"
             echo "Actual:   ${ACTUAL_SHA256}"
+            rm -f "${CHECKSUMS_FILE}" "${HASHES_ORDER_FILE}"
             exit 1
           fi
 
           echo "✓ Checksum verification successful"
-          rm -f "${CHECKSUMS_FILE}"
+          rm -f "${CHECKSUMS_FILE}" "${HASHES_ORDER_FILE}"
           sudo chmod +x "${YQ_BINARY_PATH}"
           yq --version
 
@@ -180,8 +196,9 @@ jobs:
           if git ls-remote --heads origin "${BRANCH_NAME}" | grep -q "${BRANCH_NAME}"; then
             echo "Branch ${BRANCH_NAME} exists on remote, checking it out..."
             git fetch origin "${BRANCH_NAME}"
-            git checkout "${BRANCH_NAME}"
-            echo "✓ Checked out existing branch ${BRANCH_NAME}"
+            # Create local branch tracking the remote branch
+            git checkout -B "${BRANCH_NAME}" "origin/${BRANCH_NAME}"
+            echo "✓ Checked out existing branch ${BRANCH_NAME} from origin/${BRANCH_NAME}"
           else
             echo "Branch ${BRANCH_NAME} does not exist, creating new branch..."
             git checkout -b "${BRANCH_NAME}"
