@@ -56,7 +56,7 @@ const (
 var (
 	fbContainerCPURequest    = resource.MustParse("100m")
 	fbContainerMemoryRequest = resource.MustParse("50Mi")
-	fbContainerMemoryLimit   = resource.MustParse("1Gi")
+	fbContainerMemoryLimit   = resource.MustParse("1.5Gi")
 
 	exporterContainerCPURequest    = resource.MustParse("1m")
 	exporterContainerMemoryRequest = resource.MustParse("5Mi")
