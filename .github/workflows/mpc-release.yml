@@ -76,8 +76,9 @@ jobs:
         id: set-matrix
         run: |
           if [ "${{ inputs.target_chart }}" = "Telemetry" ]; then
-            cat >> "$GITHUB_OUTPUT" <<EOF
-          matrix={
+            cat >> "$GITHUB_OUTPUT" <<'EOF'
+          matrix<<MATRIX_EOF
+          {
             "include": [{
               "chart_name": "Telemetry",
               "base_branch": "chart/telemetry",
@@ -93,10 +94,12 @@ jobs:
               "summary_details": "Verify chart changes are correct"
             }]
           }
+          MATRIX_EOF
           EOF
           elif [ "${{ inputs.target_chart }}" = "RMO" ]; then
-            cat >> "$GITHUB_OUTPUT" <<EOF
-          matrix={
+            cat >> "$GITHUB_OUTPUT" <<'EOF'
+          matrix<<MATRIX_EOF
+          {
             "include": [{
               "chart_name": "RMO",
               "base_branch": "chart/runtime-monitoring-operator",
@@ -112,6 +115,7 @@ jobs:
               "summary_details": "Verify OTel Collector version changes are correct"
             }]
           }
+          MATRIX_EOF
           EOF
           fi
 

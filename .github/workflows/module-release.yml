@@ -173,7 +173,9 @@ jobs:
           python-version: '3.x'
 
       - name: Install Python dependencies
-        run: python3 -m pip install semver
+        run: |
+          # Pin semver version for reproducibility and security
+          python3 -m pip install semver==3.0.4
 
       - name: Check for duplicate version
         working-directory: module-manifests
