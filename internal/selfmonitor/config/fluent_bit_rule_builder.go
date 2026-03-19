@@ -58,9 +58,11 @@ func (rb fluentBitRuleBuilder) exporterSentExpr() string {
 }
 
 // Check if the buffer usage is significant.
+// Sums chunks_down across all inputs (including storage_backlog where retried chunks reside).
+// The resulting alert has no pipeline_name label, so it matches all pipelines via matchesRule.
 func (rb fluentBitRuleBuilder) bufferInUseExpr() string {
 	return instant(fluentBitInputStorageChunksDown, selectService(names.FluentBitMetricsService)).
-		maxBy(labelPipelineName).
+		sum().
 		greaterThan(inputStorageChunksDown300Chunks).
 		build()
 }

@@ -47,7 +47,7 @@ groups:
           expr: (sum by (pipeline_name) (rate(fluentbit_output_dropped_records_total{service="telemetry-fluent-bit-metrics"}[5m])) > 0) and (sum by (pipeline_name) (rate(fluentbit_output_proc_bytes_total{service="telemetry-fluent-bit-metrics"}[5m])) > 0)
           for: 1m0s
         - alert: LogFluentBitBufferInUse
-          expr: max by (pipeline_name) (fluentbit_input_storage_chunks_down{service="telemetry-fluent-bit-metrics"}) > 300
+          expr: sum(fluentbit_input_storage_chunks_down{service="telemetry-fluent-bit-metrics"}) > 300
           for: 1m0s
         - alert: LogFluentBitNoLogsDelivered
           expr: (sum by (pipeline_name) (rate(fluentbit_input_bytes_total{service="telemetry-fluent-bit-metrics"}[5m])) > 0) and (sum by (pipeline_name) (rate(fluentbit_output_proc_bytes_total{service="telemetry-fluent-bit-metrics"}[5m])) == 0)

@@ -44,13 +44,13 @@ func rate(metric string, selectors ...labelSelector) *exprBuilder {
 	return eb
 }
 
-func (eb *exprBuilder) sumBy(labels ...string) *exprBuilder {
-	eb.expr = fmt.Sprintf("sum by (%s) (%s)", strings.Join(labels, ","), eb.expr)
+func (eb *exprBuilder) sum() *exprBuilder {
+	eb.expr = fmt.Sprintf("sum(%s)", eb.expr)
 	return eb
 }
 
-func (eb *exprBuilder) maxBy(labels ...string) *exprBuilder {
-	eb.expr = fmt.Sprintf("max by (%s) (%s)", strings.Join(labels, ","), eb.expr)
+func (eb *exprBuilder) sumBy(labels ...string) *exprBuilder {
+	eb.expr = fmt.Sprintf("sum by (%s) (%s)", strings.Join(labels, ","), eb.expr)
 	return eb
 }
 

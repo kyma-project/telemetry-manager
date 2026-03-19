@@ -100,6 +100,10 @@ func TestOutage(t *testing.T) {
 				genNs        = uniquePrefix("gen")
 			)
 
+			if isFluentBit(tc.component) {
+				Expect(WaitForFluentBitDaemonSetGone(suite.Ctx, suite.K8sClient, TelemetryNamespace)).To(Succeed())
+			}
+
 			backend := kitbackend.New(backendNs, signalTypeForComponent(tc.component), tc.backendOpts...)
 			pipeline := buildPipeline(tc.component, pipelineName, genNs, backend)
 
@@ -110,6 +114,9 @@ func TestOutage(t *testing.T) {
 			}
 			resources = append(resources, tc.generator(genNs)...)
 			resources = append(resources, backend.K8sObjects()...)
+			if isFluentBit(tc.component) {
+				resources = append(resources, FluentBitHostPathCleanupDaemonSet(TelemetryNamespace))
+			}
 
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 

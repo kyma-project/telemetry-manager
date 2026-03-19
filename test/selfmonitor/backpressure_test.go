@@ -44,8 +44,8 @@ func TestBackpressure(t *testing.T) {
 		{
 			name:           "fluent-bit-buffer-filling-up",
 			component:      suite.LabelFluentBit,
-			backendOpts:    backendRetryableErr(faultPercentageNinety),
-			generator:      stdoutLogGenerator(20 * defaultRate),
+			backendOpts:    backendRetryableErr(faultPercentageNinetyFive),
+			generator:      stdoutLogGenerator(60 * defaultRate),
 			expectedReason: conditions.ReasonSelfMonAgentBufferFillingUp,
 		},
 		{
@@ -97,6 +97,10 @@ func TestBackpressure(t *testing.T) {
 				genNs        = uniquePrefix("gen")
 			)
 
+			if isFluentBit(tc.component) {
+				Expect(WaitForFluentBitDaemonSetGone(suite.Ctx, suite.K8sClient, TelemetryNamespace)).To(Succeed())
+			}
+
 			backend := kitbackend.New(backendNs, signalTypeForComponent(tc.component), tc.backendOpts...)
 			pipeline := buildPipeline(tc.component, pipelineName, genNs, backend)
 
@@ -107,6 +111,9 @@ func TestBackpressure(t *testing.T) {
 			}
 			resources = append(resources, tc.generator(genNs)...)
 			resources = append(resources, backend.K8sObjects()...)
+			if isFluentBit(tc.component) {
+				resources = append(resources, FluentBitHostPathCleanupDaemonSet(TelemetryNamespace))
+			}
 
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
