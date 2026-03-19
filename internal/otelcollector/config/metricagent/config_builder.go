@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"slices"
 	"strings"
+	"time"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -40,6 +41,8 @@ type BuildOptions struct {
 	ServiceEnrichment string
 	// VpaActive indicates whether VPA is active (VPA CRD exists and VPA is enabled via annotation in Telemetry CR).
 	VpaActive bool
+	// TelemetrySpec contains the desired state of the Telemetry CR, providing access to module-level settings.
+	TelemetrySpec operatorv1beta1.TelemetrySpec
 }
 
 // inputSources represents the enabled input sources for the telemetry metric agent.
@@ -63,6 +66,47 @@ type runtimeResourceSources struct {
 	job         bool
 }
 
+// collectionIntervals holds the resolved collection interval for each input type.
+type collectionIntervals struct {
+	runtime    time.Duration
+	prometheus time.Duration
+	istio      time.Duration
+}
+
+const defaultCollectionInterval = 30 * time.Second
+
+// resolveCollectionIntervals computes the effective collection interval for each input type
+// following the precedence: input-specific override > global collectionInterval > 30s default.
+func resolveCollectionIntervals(opts BuildOptions) collectionIntervals {
+	globalInterval := defaultCollectionInterval
+
+	if opts.TelemetrySpec.Metric != nil && opts.TelemetrySpec.Metric.CollectionInterval != nil {
+		globalInterval = opts.TelemetrySpec.Metric.CollectionInterval.Duration
+	}
+
+	intervals := collectionIntervals{
+		runtime:    globalInterval,
+		prometheus: globalInterval,
+		istio:      globalInterval,
+	}
+
+	if opts.TelemetrySpec.Metric != nil {
+		if opts.TelemetrySpec.Metric.Runtime != nil && opts.TelemetrySpec.Metric.Runtime.CollectionInterval != nil {
+			intervals.runtime = opts.TelemetrySpec.Metric.Runtime.CollectionInterval.Duration
+		}
+
+		if opts.TelemetrySpec.Metric.Prometheus != nil && opts.TelemetrySpec.Metric.Prometheus.CollectionInterval != nil {
+			intervals.prometheus = opts.TelemetrySpec.Metric.Prometheus.CollectionInterval.Duration
+		}
+
+		if opts.TelemetrySpec.Metric.Istio != nil && opts.TelemetrySpec.Metric.Istio.CollectionInterval != nil {
+			intervals.istio = opts.TelemetrySpec.Metric.Istio.CollectionInterval.Duration
+		}
+	}
+
+	return intervals
+}
+
 func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1beta1.MetricPipeline, opts BuildOptions) (*common.Config, common.EnvVars, error) {
 	// Sort pipelines to ensure consistent order and checksum for generated ConfigMap
 	slices.SortFunc(pipelines, func(a, b telemetryv1beta1.MetricPipeline) int {
@@ -83,6 +127,8 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1beta1.Metric
 		nil,
 	)
 	b.EnvVars = make(common.EnvVars)
+
+	intervals := resolveCollectionIntervals(opts)
 
 	inputs := inputSources{
 		runtimeResources: runtimeResourceSources{
@@ -109,8 +155,8 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1beta1.Metric
 
 	if inputs.runtime {
 		if err := b.AddServicePipeline(ctx, nil, "metrics/input-runtime",
-			b.addKubeletStatsReceiver(inputs.runtimeResources),
-			b.addK8sClusterReceiver(inputs.runtimeResources),
+			b.addKubeletStatsReceiver(inputs.runtimeResources, intervals.runtime),
+			b.addK8sClusterReceiver(inputs.runtimeResources, intervals.runtime),
 			b.addMemoryLimiterProcessor(),
 			b.addFilterDropNonPVCVolumesMetricsProcessor(inputs.runtimeResources),
 			b.addFilterDropVirtualNetworkInterfacesProcessor(),
@@ -128,8 +174,8 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1beta1.Metric
 
 	if inputs.prometheus {
 		if err := b.AddServicePipeline(ctx, nil, "metrics/input-prometheus",
-			b.addPrometheusAppPodsReceiver(),
-			b.addPrometheusAppServicesReceiver(opts),
+			b.addPrometheusAppPodsReceiver(intervals.prometheus),
+			b.addPrometheusAppServicesReceiver(opts, intervals.prometheus),
 			b.addMemoryLimiterProcessor(),
 			b.addDropServiceNameProcessor(),
 			b.addSetInstrumentationScopeToPrometheusProcessor(opts),
@@ -144,7 +190,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1beta1.Metric
 
 	if inputs.istio {
 		if err := b.AddServicePipeline(ctx, nil, "metrics/input-istio",
-			b.addPrometheusIstioReceiver(inputs.envoy),
+			b.addPrometheusIstioReceiver(inputs.envoy, intervals.istio),
 			b.addMemoryLimiterProcessor(),
 			b.addDropServiceNameProcessor(),
 			b.addIstioNoiseFilterProcessor(),
@@ -232,47 +278,47 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1beta1.Metric
 
 // Receiver builders
 
-func (b *Builder) addK8sClusterReceiver(runtimeResources runtimeResourceSources) buildComponentFunc {
+func (b *Builder) addK8sClusterReceiver(runtimeResources runtimeResourceSources, collectionInterval time.Duration) buildComponentFunc {
 	return b.AddReceiver(
 		b.StaticComponentID(common.ComponentIDK8sClusterReceiver),
 		func(*telemetryv1beta1.MetricPipeline) any {
-			return k8sClusterReceiver(runtimeResources)
+			return k8sClusterReceiver(runtimeResources, collectionInterval)
 		},
 	)
 }
 
-func (b *Builder) addKubeletStatsReceiver(runtimeResources runtimeResourceSources) buildComponentFunc {
+func (b *Builder) addKubeletStatsReceiver(runtimeResources runtimeResourceSources, collectionInterval time.Duration) buildComponentFunc {
 	return b.AddReceiver(
 		b.StaticComponentID(common.ComponentIDKubeletStatsReceiver),
 		func(*telemetryv1beta1.MetricPipeline) any {
-			return kubeletStatsReceiver(runtimeResources)
+			return kubeletStatsReceiver(runtimeResources, collectionInterval)
 		},
 	)
 }
 
-func (b *Builder) addPrometheusAppPodsReceiver() buildComponentFunc {
+func (b *Builder) addPrometheusAppPodsReceiver(collectionInterval time.Duration) buildComponentFunc {
 	return b.AddReceiver(
 		b.StaticComponentID(common.ComponentIDPrometheusAppPodsReceiver),
 		func(*telemetryv1beta1.MetricPipeline) any {
-			return prometheusPodsReceiverConfig()
+			return prometheusPodsReceiverConfig(collectionInterval)
 		},
 	)
 }
 
-func (b *Builder) addPrometheusAppServicesReceiver(opts BuildOptions) buildComponentFunc {
+func (b *Builder) addPrometheusAppServicesReceiver(opts BuildOptions, collectionInterval time.Duration) buildComponentFunc {
 	return b.AddReceiver(
 		b.StaticComponentID(common.ComponentIDPrometheusAppServicesReceiver),
 		func(*telemetryv1beta1.MetricPipeline) any {
-			return prometheusServicesReceiverConfig(opts)
+			return prometheusServicesReceiverConfig(opts, collectionInterval)
 		},
 	)
 }
 
-func (b *Builder) addPrometheusIstioReceiver(envoyMetricsEnabled bool) buildComponentFunc {
+func (b *Builder) addPrometheusIstioReceiver(envoyMetricsEnabled bool, collectionInterval time.Duration) buildComponentFunc {
 	return b.AddReceiver(
 		b.StaticComponentID(common.ComponentIDPrometheusIstioReceiver),
 		func(*telemetryv1beta1.MetricPipeline) any {
-			return prometheusIstioReceiverConfig(envoyMetricsEnabled)
+			return prometheusIstioReceiverConfig(envoyMetricsEnabled, collectionInterval)
 		},
 	)
 }
