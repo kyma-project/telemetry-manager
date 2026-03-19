@@ -117,14 +117,14 @@ jobs:
           path: telemetry-manager
 
       - name: Checkout module-manifests (working repository)
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          fetch-depth: '0'
-          ref: main
-          repository: ${{ env.GH_REPO }}
-          github-server-url: https://${{ env.GH_HOST }}
-          token: ${{ secrets.HUSKIES_GHTOOLS_TOKEN }}
-          path: module-manifests
+        env:
+          GH_TOKEN: ${{ secrets.HUSKIES_GHTOOLS_TOKEN }}
+        run: |
+          rm -rf module-manifests
+          git clone \
+            "https://x-access-token:${GH_TOKEN}@${GH_HOST}/${GH_REPO}.git" \
+            --branch main \
+            module-manifests
 
       - name: Install yq
         run: telemetry-manager/hack/install-yq.sh
