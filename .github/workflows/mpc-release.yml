@@ -66,164 +66,61 @@ jobs:
             exit 1
           fi
 
-  release-telemetry:
-    name: Release Telemetry Chart
+  prepare-matrix:
     runs-on: ubuntu-latest
     needs: validate-inputs
-    if: ${{ inputs.target_chart == 'Telemetry' }}
-    env:
-      GH_HOST: github.tools.sap
-      REPO: kyma/management-plane-charts
-      GH_TOKEN: ${{ secrets.HUSKIES_GHTOOLS_TOKEN }}
-
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
-      - name: Checkout code
+      - name: Set matrix
+        id: set-matrix
         run: |
-          rm -rf ./*
-          git clone \
-            "https://x-access-token:${GH_TOKEN}@${GH_HOST}/${REPO}.git" \
-            --branch chart/telemetry \
-            .
-
-      - name: Configure git
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-      - name: Create Branch
-        run: |
-          BRANCH_NAME="bump-telemetry-${{ inputs.version }}"
-
-          # Check if branch exists remotely
-          if git ls-remote --heads origin "${BRANCH_NAME}" | grep -q "${BRANCH_NAME}"; then
-            echo "Branch ${BRANCH_NAME} already exists, checking it out..."
-            git fetch origin "${BRANCH_NAME}"
-            git checkout "${BRANCH_NAME}"
-            echo "✓ Checked out existing branch: ${BRANCH_NAME}"
-          else
-            echo "Creating new branch: ${BRANCH_NAME}..."
-            git checkout -b "${BRANCH_NAME}"
-            echo "✓ Created new branch: ${BRANCH_NAME}"
-          fi
-
-      - name: Setup python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
-        with:
-          python-version: "3.x"
-          cache: "pip"
-
-      - name: Install dependencies
-        run: pip install -r tools/requirements.txt
-
-      - name: Bump chart version
-        run: make bump-patch
-
-      - name: Update Chart.yaml
-        run: |
-          yq -i '.appVersion = "${{ inputs.version }}"' telemetry/Chart.yaml
-          yq -i '.dependencies[] |= (select(.name == "telemetry") | .version = "${{ inputs.version }}")' telemetry/Chart.yaml
-
-      - name: Verify changes
-        run: |
-          echo "Changes to be committed:"
-          git diff
-
-          if git diff --quiet; then
-            echo "::error::No changes detected. Chart may already be at version ${{ inputs.version }}"
-            exit 1
-          fi
-
-      - name: Verify Chart.yaml was updated
-        run: |
-          CURRENT_VERSION=$(yq '.appVersion' telemetry/Chart.yaml)
-          if [ "$CURRENT_VERSION" != "${{ inputs.version }}" ]; then
-            echo "::error::Chart.yaml appVersion mismatch. Expected: ${{ inputs.version }}, Got: $CURRENT_VERSION"
-            exit 1
-          fi
-          echo "✓ Chart.yaml appVersion verified: $CURRENT_VERSION"
-
-      - name: Commit changes
-        run: |
-          git add .
-          git commit -m "Bump Telemetry to ${{ inputs.version }}"
-
-      - name: Push branch
-        if: ${{ inputs.dry_run != true }}
-        run: |
-          git push origin bump-telemetry-${{ inputs.version }}
-
-      - name: Create PR
-        if: ${{ inputs.dry_run != true }}
-        id: create-pr
-        run: |
-          BRANCH_NAME="bump-telemetry-${{ inputs.version }}"
-
-          # Check if PR already exists for this branch
-          echo "Checking if PR already exists for branch: ${BRANCH_NAME}..."
-          EXISTING_PR=$(gh pr list --head "${BRANCH_NAME}" --json number,url --jq '.[0] | select(.number != null)' || echo "")
-
-          if [ -n "${EXISTING_PR}" ]; then
-            PR_NUMBER=$(echo "${EXISTING_PR}" | jq -r '.number')
-            PR_URL=$(echo "${EXISTING_PR}" | jq -r '.url')
-            echo "::notice::PR already exists for this branch"
-            echo "✓ Using existing PR #${PR_NUMBER}: ${PR_URL}"
-            echo "pr-url=${PR_URL}" >> $GITHUB_OUTPUT
-            echo "pr-number=${PR_NUMBER}" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          echo "No existing PR found. Creating new PR..."
-
-          PR_URL=$(gh pr create \
-            --base chart/telemetry \
-            --head "${BRANCH_NAME}" \
-            --title "Bump Telemetry to ${{ inputs.version }}" \
-            --body "Bump Telemetry chart to version ${{ inputs.version }}" \
-            --label pr-deploy)
-          PR_NUMBER=$(echo "${PR_URL}" | grep -o '[0-9]*$')
-          echo "pr-url=${PR_URL}" >> $GITHUB_OUTPUT
-          echo "pr-number=${PR_NUMBER}" >> $GITHUB_OUTPUT
-          echo "Created PR: ${PR_URL}"
-
-      - name: Enable auto-merge
-        if: ${{ inputs.dry_run != true && inputs.auto_merge == true }}
-        run: |
-          gh pr merge ${{ steps.create-pr.outputs.pr-number }} --auto --squash
-          echo "✓ Auto-merge enabled for PR #${{ steps.create-pr.outputs.pr-number }}"
-
-      - name: Skip PR creation (dry run)
-        if: ${{ inputs.dry_run == true }}
-        run: |
-          echo "::notice::DRY RUN: Skipping PR creation"
-          echo "Would have created PR with:"
-          echo "  Branch: bump-telemetry-${{ inputs.version }}"
-          echo "  Title: Bump Telemetry to ${{ inputs.version }}"
-          echo "  Label: pr-deploy"
-
-      - name: Workflow summary
-        if: always()
-        run: |
-          cat >> $GITHUB_STEP_SUMMARY <<EOF
-          ## Telemetry Chart Release Summary
-
-          **Version**: ${{ inputs.version }}
-          **Branch**: bump-telemetry-${{ inputs.version }}
-          **Dry Run**: ${{ inputs.dry_run }}
-          **Auto Merge**: ${{ inputs.auto_merge }}
-          ${{ inputs.dry_run != true && format('**PR**: {0}', steps.create-pr.outputs.pr-url) || '' }}
-
-          ### Next Steps
-          ${{ inputs.dry_run == true && '- Re-run workflow with dry_run=false to create PR' || format('1. Review the PR at {0}', steps.create-pr.outputs.pr-url) }}
-          ${{ inputs.dry_run != true && '2. Verify chart changes are correct' || '' }}
-          ${{ inputs.dry_run != true && inputs.auto_merge != true && '3. Merge the PR to deploy' || '' }}
-          ${{ inputs.dry_run != true && inputs.auto_merge == true && '3. PR will auto-merge when checks pass' || '' }}
+          if [ "${{ inputs.target_chart }}" = "Telemetry" ]; then
+            cat >> "$GITHUB_OUTPUT" <<EOF
+          matrix={
+            "include": [{
+              "chart_name": "Telemetry",
+              "base_branch": "chart/telemetry",
+              "branch_prefix": "bump-telemetry",
+              "chart_dir": "telemetry",
+              "update_command": "yq -i '.appVersion = \"${{ inputs.version }}\" ' telemetry/Chart.yaml && yq -i '.dependencies[] |= (select(.name == \"telemetry-manager\") | .version = \"${{ inputs.version }}\")' telemetry/Chart.yaml",
+              "verify_command": "yq '.appVersion' telemetry/Chart.yaml",
+              "verify_field": "appVersion",
+              "commit_title": "Bump Telemetry to ${{ inputs.version }}",
+              "pr_title": "Bump Telemetry to ${{ inputs.version }}",
+              "pr_body": "Bump Telemetry chart to version ${{ inputs.version }}",
+              "summary_title": "Telemetry Chart Release Summary",
+              "summary_details": "Verify chart changes are correct"
+            }]
+          }
           EOF
+          elif [ "${{ inputs.target_chart }}" = "RMO" ]; then
+            cat >> "$GITHUB_OUTPUT" <<EOF
+          matrix={
+            "include": [{
+              "chart_name": "RMO",
+              "base_branch": "chart/runtime-monitoring-operator",
+              "branch_prefix": "bump-rmo-occ",
+              "chart_dir": "runtime-monitoring-operator",
+              "update_command": "yq -i '.argosap.config.rma.image.otelCollector.tag = \"${{ inputs.version }}\"' runtime-monitoring-operator/values.yaml",
+              "verify_command": "yq '.argosap.config.rma.image.otelCollector.tag' runtime-monitoring-operator/values.yaml",
+              "verify_field": "OTel Collector tag",
+              "commit_title": "Bump RMO OTel Collector to ${{ inputs.version }}",
+              "pr_title": "Bump RMO OTel Collector to ${{ inputs.version }}",
+              "pr_body": "Bump RMO OTel Collector version to ${{ inputs.version }}",
+              "summary_title": "RMO OTel Collector Release Summary",
+              "summary_details": "Verify OTel Collector version changes are correct"
+            }]
+          }
+          EOF
+          fi
 
-  release-rmo:
-    name: Release RMO Chart
+  release-chart:
+    name: Release ${{ matrix.chart_name }} Chart
     runs-on: ubuntu-latest
-    needs: validate-inputs
-    if: ${{ inputs.target_chart == 'RMO' }}
+    needs: prepare-matrix
+    strategy:
+      matrix: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
     env:
       GH_HOST: github.tools.sap
       REPO: kyma/management-plane-charts
@@ -232,10 +129,10 @@ jobs:
     steps:
       - name: Checkout code
         run: |
-          rm -rf ./*
+          rm -rf ./* ./.[!.]* ./..?*
           git clone \
             "https://x-access-token:${GH_TOKEN}@${GH_HOST}/${REPO}.git" \
-            --branch chart/runtime-monitoring-operator \
+            --branch ${{ matrix.base_branch }} \
             .
 
       - name: Configure git
@@ -245,7 +142,7 @@ jobs:
 
       - name: Create Branch
         run: |
-          BRANCH_NAME="bump-rmo-occ-${{ inputs.version }}"
+          BRANCH_NAME="${{ matrix.branch_prefix }}-${{ inputs.version }}"
 
           # Check if branch exists remotely
           if git ls-remote --heads origin "${BRANCH_NAME}" | grep -q "${BRANCH_NAME}"; then
@@ -268,13 +165,47 @@ jobs:
       - name: Install dependencies
         run: pip install -r tools/requirements.txt
 
+      - name: Install yq
+        run: |
+          YQ_VERSION="4.44.1"
+          YQ_BINARY="yq_linux_amd64"
+          YQ_URL="https://github.com/mikefarah/yq/releases/download/v${YQ_VERSION}/${YQ_BINARY}"
+          CHECKSUMS_URL="https://github.com/mikefarah/yq/releases/download/v${YQ_VERSION}/checksums"
+          HASHES_ORDER_URL="https://github.com/mikefarah/yq/releases/download/v${YQ_VERSION}/checksums_hashes_order"
+
+          # Download files
+          wget -q "${YQ_URL}" -O /tmp/yq
+          wget -q "${CHECKSUMS_URL}" -O /tmp/checksums
+          wget -q "${HASHES_ORDER_URL}" -O /tmp/checksums_hashes_order
+
+          # Compute SHA-256 column dynamically
+          HASHES_ORDER_FILE="/tmp/checksums_hashes_order"
+          CHECKSUMS_FILE="/tmp/checksums"
+          SHA256_LINE_NUM=$(grep -n "^SHA-256$" "${HASHES_ORDER_FILE}" | cut -d: -f1)
+          SHA256_COLUMN=$((SHA256_LINE_NUM + 1))
+
+          # Extract expected checksum
+          EXPECTED_SHA256="$(grep "^${YQ_BINARY}[[:space:]]" "${CHECKSUMS_FILE}" | sed 's/  /\t/g' | cut -f${SHA256_COLUMN})"
+          ACTUAL_SHA256="$(sha256sum /tmp/yq | cut -d' ' -f1)"
+
+          # Verify checksum
+          if [ "${EXPECTED_SHA256}" != "${ACTUAL_SHA256}" ]; then
+            echo "::error::yq checksum mismatch"
+            echo "Expected: ${EXPECTED_SHA256}"
+            echo "Got:      ${ACTUAL_SHA256}"
+            exit 1
+          fi
+
+          # Install yq
+          chmod +x /tmp/yq
+          sudo mv /tmp/yq /usr/local/bin/yq
+          echo "✓ yq ${YQ_VERSION} installed and verified"
+
       - name: Bump chart version
         run: make bump-patch
 
-      - name: Update OTel Collector tag in values.yaml
-        run: |
-          yq -i '.argosap.config.rma.image.otelCollector.tag = "${{ inputs.version }}"' runtime-monitoring-operator/values.yaml
-          echo "✓ Updated argosap.config.rma.image.otelCollector.tag to ${{ inputs.version }}"
+      - name: Update chart files
+        run: ${{ matrix.update_command }}
 
       - name: Verify changes
         run: |
@@ -286,30 +217,30 @@ jobs:
             exit 1
           fi
 
-      - name: Verify values.yaml was updated
+      - name: Verify update was applied
         run: |
-          OTEL_TAG=$(yq '.argosap.config.rma.image.otelCollector.tag' runtime-monitoring-operator/values.yaml)
-          if [ "$OTEL_TAG" != "${{ inputs.version }}" ]; then
-            echo "::error::values.yaml OTel Collector tag mismatch. Expected: ${{ inputs.version }}, Got: $OTEL_TAG"
+          CURRENT_VERSION=$(${{ matrix.verify_command }})
+          if [ "$CURRENT_VERSION" != "${{ inputs.version }}" ]; then
+            echo "::error::${{ matrix.verify_field }} mismatch. Expected: ${{ inputs.version }}, Got: $CURRENT_VERSION"
             exit 1
           fi
-          echo "✓ values.yaml OTel Collector tag verified: $OTEL_TAG"
+          echo "✓ ${{ matrix.verify_field }} verified: $CURRENT_VERSION"
 
       - name: Commit changes
         run: |
           git add .
-          git commit -m "Bump RMO OTel Collector to ${{ inputs.version }}"
+          git commit -m "${{ matrix.commit_title }}"
 
       - name: Push branch
         if: ${{ inputs.dry_run != true }}
         run: |
-          git push origin bump-rmo-occ-${{ inputs.version }}
+          git push origin ${{ matrix.branch_prefix }}-${{ inputs.version }}
 
       - name: Create PR
         if: ${{ inputs.dry_run != true }}
         id: create-pr
         run: |
-          BRANCH_NAME="bump-rmo-occ-${{ inputs.version }}"
+          BRANCH_NAME="${{ matrix.branch_prefix }}-${{ inputs.version }}"
 
           # Check if PR already exists for this branch
           echo "Checking if PR already exists for branch: ${BRANCH_NAME}..."
@@ -320,22 +251,22 @@ jobs:
             PR_URL=$(echo "${EXISTING_PR}" | jq -r '.url')
             echo "::notice::PR already exists for this branch"
             echo "✓ Using existing PR #${PR_NUMBER}: ${PR_URL}"
-            echo "pr-url=${PR_URL}" >> $GITHUB_OUTPUT
-            echo "pr-number=${PR_NUMBER}" >> $GITHUB_OUTPUT
+            echo "pr-url=${PR_URL}" >> "$GITHUB_OUTPUT"
+            echo "pr-number=${PR_NUMBER}" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
           echo "No existing PR found. Creating new PR..."
 
           PR_URL=$(gh pr create \
-            --base chart/runtime-monitoring-operator \
+            --base ${{ matrix.base_branch }} \
             --head "${BRANCH_NAME}" \
-            --title "Bump RMO OTel Collector to ${{ inputs.version }}" \
-            --body "Bump RMO OTel Collector version to ${{ inputs.version }}" \
+            --title "${{ matrix.pr_title }}" \
+            --body "${{ matrix.pr_body }}" \
             --label pr-deploy)
           PR_NUMBER=$(echo "${PR_URL}" | grep -o '[0-9]*$')
-          echo "pr-url=${PR_URL}" >> $GITHUB_OUTPUT
-          echo "pr-number=${PR_NUMBER}" >> $GITHUB_OUTPUT
+          echo "pr-url=${PR_URL}" >> "$GITHUB_OUTPUT"
+          echo "pr-number=${PR_NUMBER}" >> "$GITHUB_OUTPUT"
           echo "Created PR: ${PR_URL}"
 
       - name: Enable auto-merge
@@ -349,25 +280,25 @@ jobs:
         run: |
           echo "::notice::DRY RUN: Skipping PR creation"
           echo "Would have created PR with:"
-          echo "  Branch: bump-rmo-occ-${{ inputs.version }}"
-          echo "  Title: Bump RMO OTel Collector to ${{ inputs.version }}"
+          echo "  Branch: ${{ matrix.branch_prefix }}-${{ inputs.version }}"
+          echo "  Title: ${{ matrix.pr_title }}"
           echo "  Label: pr-deploy"
 
       - name: Workflow summary
         if: always()
         run: |
-          cat >> $GITHUB_STEP_SUMMARY <<EOF
-          ## RMO OTel Collector Release Summary
+          cat >> "$GITHUB_STEP_SUMMARY" <<EOF
+          ## ${{ matrix.summary_title }}
 
           **Version**: ${{ inputs.version }}
-          **Branch**: bump-rmo-occ-${{ inputs.version }}
+          **Branch**: ${{ matrix.branch_prefix }}-${{ inputs.version }}
           **Dry Run**: ${{ inputs.dry_run }}
           **Auto Merge**: ${{ inputs.auto_merge }}
           ${{ inputs.dry_run != true && format('**PR**: {0}', steps.create-pr.outputs.pr-url) || '' }}
 
           ### Next Steps
           ${{ inputs.dry_run == true && '- Re-run workflow with dry_run=false to create PR' || format('1. Review the PR at {0}', steps.create-pr.outputs.pr-url) }}
-          ${{ inputs.dry_run != true && '2. Verify OTel Collector version changes are correct' || '' }}
+          ${{ inputs.dry_run != true && format('2. {0}', matrix.summary_details) || '' }}
           ${{ inputs.dry_run != true && inputs.auto_merge != true && '3. Merge the PR to deploy' || '' }}
           ${{ inputs.dry_run != true && inputs.auto_merge == true && '3. PR will auto-merge when checks pass' || '' }}
           EOF
