@@ -73,6 +73,14 @@ func TestAgent_ApplyResources(t *testing.T) {
 			vpaMaxAllowedMemory: resource.MustParse("1Gi"),
 		},
 		{
+			name:                "metric agent with VPA and zero max allowed memory",
+			sut:                 NewMetricAgentApplierDeleter(globals, collectorImage, priorityClassName),
+			goldenFilePath:      "testdata/metric-agent-vpa-zero-max-memory.yaml",
+			vpaCRDExists:        true,
+			vpaEnabled:          true,
+			vpaMaxAllowedMemory: resource.Quantity{}, // zero, must be clamped min allowed memory
+		},
+		{
 			name: "log agent",
 			sut:  NewLogAgentApplierDeleter(globals, collectorImage, priorityClassName),
 			collectorEnvVars: map[string][]byte{
