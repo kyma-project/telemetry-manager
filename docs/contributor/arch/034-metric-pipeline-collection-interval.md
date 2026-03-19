@@ -99,19 +99,6 @@ spec:
 3. `metric.collectionInterval` in the Telemetry CR
 4. Hardcoded default of `30s`
 
-**Conflict resolution:**
-
-```
-Telemetry CR: metric.runtime.collectionInterval = 60s
-
-Pipeline A: runtime.collectionInterval not set     → resolves to 60s ✅
-Pipeline B: runtime.collectionInterval = 60s       → resolves to 60s ✅ (same value)
-Pipeline C: runtime.collectionInterval = 30s       → resolves to 30s ❌ (conflict with 60s)
-```
-
-> [!NOTE]
-> Step 2 requires cross-pipeline conflict validation and refactoring in the config builder to resolve the effective interval from both the Telemetry CR and the MetricPipeline inputs. Step 1 intentionally avoids this complexity.
-
 ## Decision
 
 We implement both steps sequentially:
