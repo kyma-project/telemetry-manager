@@ -136,23 +136,23 @@ jobs:
         with:
           path: telemetry-manager
 
-      - name: Checkout management-plane-charts
+      - name: Configure git authentication
         env:
           GH_TOKEN: ${{ secrets.HUSKIES_GHTOOLS_TOKEN }}
         run: |
-          # Configure git to use token from environment without exposing it in URLs
+          # Configure git credential helper for entire job (used by clone/fetch/push/ls-remote)
+          # This avoids embedding tokens in URLs while keeping authentication available
           git config --global credential.helper '!f() { echo "username=x-access-token"; echo "password=$GH_TOKEN"; }; f'
 
-          # Clone using HTTPS without token in URL
+      - name: Checkout management-plane-charts
+        run: |
+          # Clone using HTTPS without token in URL (uses credential helper)
           git clone \
             "https://${GH_HOST}/${REPO}.git" \
             --branch ${{ matrix.base_branch }} \
             management-plane-charts
 
-          # Clean up global credential helper
-          git config --global --unset credential.helper
-
-      - name: Configure git
+      - name: Configure git identity
         working-directory: management-plane-charts
         run: |
           git config user.name "github-actions[bot]"
