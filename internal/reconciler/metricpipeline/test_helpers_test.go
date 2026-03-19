@@ -224,6 +224,7 @@ func newTestReconciler(client client.Client, opts ...any) (*testReconciler, func
 		WithAgentFlowHealthProber(agentFlowHealthProber),
 		WithIstioStatusChecker(&stubs.IstioStatusChecker{IsActive: false}),
 		WithVpaStatusChecker(&stubs.VpaStatusChecker{CRDExists: false}),
+		WithNodeSizeTracker(&stubs.NodeSizeTracker{}),
 		WithOverridesHandler(overridesHandler),
 		WithPipelineLock(pipelineLock),
 		WithPipelineSyncer(pipelineSync),
