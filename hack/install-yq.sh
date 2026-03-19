@@ -27,22 +27,60 @@ ARCH="$(uname -m)"
 
 case "${OS}" in
   Linux*)
-    YQ_BINARY="yq_linux_amd64"
+    case "${ARCH}" in
+      x86_64)
+        YQ_BINARY="yq_linux_amd64"
+        ;;
+      aarch64|arm64)
+        YQ_BINARY="yq_linux_arm64"
+        ;;
+      i386|i686)
+        YQ_BINARY="yq_linux_386"
+        ;;
+      *)
+        echo "::error::Unsupported Linux architecture: ${ARCH}"
+        echo "Supported architectures: x86_64, aarch64/arm64, i386/i686"
+        exit 1
+        ;;
+    esac
     ;;
   Darwin*)
-    if [ "${ARCH}" = "arm64" ]; then
-      YQ_BINARY="yq_darwin_arm64"
-    else
-      YQ_BINARY="yq_darwin_amd64"
-    fi
+    case "${ARCH}" in
+      arm64)
+        YQ_BINARY="yq_darwin_arm64"
+        ;;
+      x86_64)
+        YQ_BINARY="yq_darwin_amd64"
+        ;;
+      *)
+        echo "::error::Unsupported macOS architecture: ${ARCH}"
+        echo "Supported architectures: arm64, x86_64"
+        exit 1
+        ;;
+    esac
     ;;
   *)
     echo "::error::Unsupported operating system: ${OS}"
+    echo "Supported operating systems: Linux, Darwin (macOS)"
     exit 1
     ;;
 esac
 
 echo "Detected platform: ${OS} ${ARCH} -> ${YQ_BINARY}"
+
+# Define platform-specific commands
+case "${OS}" in
+  Linux*)
+    DOWNLOAD_CMD="wget -q"
+    DOWNLOAD_OUTPUT_FLAG="-O"
+    SHA256_CMD="sha256sum"
+    ;;
+  Darwin*)
+    DOWNLOAD_CMD="curl -sfL"
+    DOWNLOAD_OUTPUT_FLAG="-o"
+    SHA256_CMD="shasum -a 256"
+    ;;
+esac
 
 YQ_URL="https://github.com/mikefarah/yq/releases/download/v${YQ_VERSION}/${YQ_BINARY}"
 CHECKSUMS_URL="https://github.com/mikefarah/yq/releases/download/v${YQ_VERSION}/checksums"
@@ -60,13 +98,13 @@ HASHES_ORDER_FILE="${TEMP_DIR}/checksums_hashes_order"
 
 # Download files
 echo "Downloading yq binary..."
-wget -q "${YQ_URL}" -O "${YQ_TEMP_PATH}"
+${DOWNLOAD_CMD} "${YQ_URL}" ${DOWNLOAD_OUTPUT_FLAG} "${YQ_TEMP_PATH}"
 
 echo "Downloading checksums..."
-wget -q "${CHECKSUMS_URL}" -O "${CHECKSUMS_FILE}"
+${DOWNLOAD_CMD} "${CHECKSUMS_URL}" ${DOWNLOAD_OUTPUT_FLAG} "${CHECKSUMS_FILE}"
 
 echo "Downloading checksum order metadata..."
-wget -q "${HASHES_ORDER_URL}" -O "${HASHES_ORDER_FILE}"
+${DOWNLOAD_CMD} "${HASHES_ORDER_URL}" ${DOWNLOAD_OUTPUT_FLAG} "${HASHES_ORDER_FILE}"
 
 # Compute SHA-256 column dynamically
 echo "Computing SHA-256 checksum column..."
@@ -90,7 +128,7 @@ fi
 
 # Calculate actual checksum
 echo "Calculating actual SHA-256 checksum..."
-ACTUAL_SHA256="$(sha256sum "${YQ_TEMP_PATH}" | cut -d' ' -f1)"
+ACTUAL_SHA256="$(${SHA256_CMD} "${YQ_TEMP_PATH}" | cut -d' ' -f1)"
 
 # Verify checksum
 echo "Verifying checksum..."

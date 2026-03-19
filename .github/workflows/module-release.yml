@@ -120,11 +120,18 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.HUSKIES_GHTOOLS_TOKEN }}
         run: |
+          # Configure git to use token from environment without exposing it in URLs
+          git config --global credential.helper '!f() { echo "username=x-access-token"; echo "password=$GH_TOKEN"; }; f'
+
+          # Clone using HTTPS without token in URL
           rm -rf module-manifests
           git clone \
-            "https://x-access-token:${GH_TOKEN}@${GH_HOST}/${GH_REPO}.git" \
+            "https://${GH_HOST}/${GH_REPO}.git" \
             --branch main \
             module-manifests
+
+          # Clean up global credential helper
+          git config --global --unset credential.helper
 
       - name: Install yq
         run: telemetry-manager/hack/install-yq.sh
@@ -155,6 +162,14 @@ jobs:
             git checkout -b "${BRANCH_NAME}"
             echo "✓ Created new branch ${BRANCH_NAME}"
           fi
+
+      - name: Setup Python
+        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
+        with:
+          python-version: '3.x'
+
+      - name: Install Python dependencies
+        run: python3 -m pip install semver
 
       - name: Check for duplicate version
         working-directory: module-manifests

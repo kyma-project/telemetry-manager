@@ -113,10 +113,6 @@ elif new_ver == current_ver:
 sys.exit(0)
 EOF
 
-  if [ $? -ne 0 ]; then
-    exit 1
-  fi
-
   echo "✓ Version ${VERSION_TAG} is valid for ${channel} channel"
   echo "  Current version: ${CURRENT_VERSION} (base: ${CURRENT_BASE_VERSION})"
   echo "  New version: ${VERSION_TAG} (base: ${NEW_BASE_VERSION})"

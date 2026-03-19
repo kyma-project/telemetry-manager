@@ -133,19 +133,29 @@ jobs:
           path: telemetry-manager
 
       - name: Checkout management-plane-charts
+        env:
+          GH_TOKEN: ${{ secrets.HUSKIES_GHTOOLS_TOKEN }}
         run: |
-          rm -rf ./* ./.[!.]* ./..?*
+          # Configure git to use token from environment without exposing it in URLs
+          git config --global credential.helper '!f() { echo "username=x-access-token"; echo "password=$GH_TOKEN"; }; f'
+
+          # Clone using HTTPS without token in URL
           git clone \
-            "https://x-access-token:${GH_TOKEN}@${GH_HOST}/${REPO}.git" \
+            "https://${GH_HOST}/${REPO}.git" \
             --branch ${{ matrix.base_branch }} \
-            .
+            management-plane-charts
+
+          # Clean up global credential helper
+          git config --global --unset credential.helper
 
       - name: Configure git
+        working-directory: management-plane-charts
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Create Branch
+        working-directory: management-plane-charts
         run: |
           BRANCH_NAME="${{ matrix.branch_prefix }}-${{ inputs.version }}"
 
@@ -168,18 +178,22 @@ jobs:
           cache: "pip"
 
       - name: Install dependencies
+        working-directory: management-plane-charts
         run: pip install -r tools/requirements.txt
 
       - name: Install yq
-        run: ../telemetry-manager/hack/install-yq.sh
+        run: telemetry-manager/hack/install-yq.sh
 
       - name: Bump chart version
+        working-directory: management-plane-charts
         run: make bump-patch
 
       - name: Update chart files
+        working-directory: management-plane-charts
         run: ${{ matrix.update_command }}
 
       - name: Verify changes
+        working-directory: management-plane-charts
         run: |
           echo "Changes to be committed:"
           git diff
@@ -190,6 +204,7 @@ jobs:
           fi
 
       - name: Verify update was applied
+        working-directory: management-plane-charts
         run: |
           CURRENT_VERSION=$(${{ matrix.verify_command }})
           if [ "$CURRENT_VERSION" != "${{ inputs.version }}" ]; then
@@ -199,18 +214,21 @@ jobs:
           echo "✓ ${{ matrix.verify_field }} verified: $CURRENT_VERSION"
 
       - name: Commit changes
+        working-directory: management-plane-charts
         run: |
           git add .
           git commit -m "${{ matrix.commit_title }}"
 
       - name: Push branch
         if: ${{ inputs.dry_run != true }}
+        working-directory: management-plane-charts
         run: |
           git push origin ${{ matrix.branch_prefix }}-${{ inputs.version }}
 
       - name: Create PR
         if: ${{ inputs.dry_run != true }}
         id: create-pr
+        working-directory: management-plane-charts
         run: |
           BRANCH_NAME="${{ matrix.branch_prefix }}-${{ inputs.version }}"
 
@@ -243,6 +261,7 @@ jobs:
 
       - name: Enable auto-merge
         if: ${{ inputs.dry_run != true && inputs.auto_merge == true }}
+        working-directory: management-plane-charts
         run: |
           gh pr merge ${{ steps.create-pr.outputs.pr-number }} --auto --squash
           echo "✓ Auto-merge enabled for PR #${{ steps.create-pr.outputs.pr-number }}"
