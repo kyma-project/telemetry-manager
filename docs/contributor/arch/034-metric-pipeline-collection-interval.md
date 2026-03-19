@@ -22,7 +22,7 @@ Because receivers are shared, all pipelines that enable the same input type must
 
 This shared model is intentional: running multiple scraping receivers of the same type (for example, two kubeletstats receivers with different intervals) would cause duplicated metric collection, increasing resource consumption on the agent and the kubelet/API server.
 
-## Considered Options
+## Proposed Solution
 
 ### Step 1: Global Collection Interval in the Telemetry CR
 
