@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/onsi/gomega"
+	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -17,7 +17,7 @@ import (
 // Helm chart resources use "app.kubernetes.io/managed-by: kyma", while the manager
 // stamps its runtime-created resources with "app.kubernetes.io/managed-by: telemetry-manager".
 var runtimeResourceSelector = client.MatchingLabels{
-	commonresources.LabelKeyK8sManagedBy: commonresources.LabelValueK8sManagedBy,
+	commonresources.LabelKeyK8sManagedBy: commonresources.LabelValueK8sManagedByTelemetryManager,
 }
 
 // WaitForManagedResourceCleanup waits until all runtime-created resources
@@ -28,7 +28,7 @@ var runtimeResourceSelector = client.MatchingLabels{
 // deleted, giving the manager time to reconcile and remove dependent resources
 // like collectors, agents, and the selfmonitor.
 func WaitForManagedResourceCleanup(ctx context.Context, k8sClient client.Client) {
-	gomega.Eventually(allRuntimeResourcesDeleted(ctx, k8sClient), periodic.EventuallyTimeout, periodic.DefaultInterval).Should(gomega.Succeed())
+	Eventually(allRuntimeResourcesDeleted(ctx, k8sClient), periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
 func allRuntimeResourcesDeleted(ctx context.Context, k8sClient client.Client) func() error {
