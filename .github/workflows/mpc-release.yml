@@ -4,7 +4,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: mpc-release-${{ github.event.inputs.target_chart }}
+  group: mpc-release-${{ inputs.target_chart }}
   cancel-in-progress: false
 
 on:
@@ -39,8 +39,8 @@ jobs:
     steps:
       - name: Validate version format
         env:
-          VERSION: ${{ github.event.inputs.version }}
-          TARGET_CHART: ${{ github.event.inputs.target_chart }}
+          VERSION: ${{ inputs.version }}
+          TARGET_CHART: ${{ inputs.target_chart }}
         run: |
           echo "Validating version format for target chart: ${TARGET_CHART}"
           echo "Version: ${VERSION}"
@@ -70,7 +70,7 @@ jobs:
     name: Release Telemetry Chart
     runs-on: ubuntu-latest
     needs: validate-inputs
-    if: ${{ github.event.inputs.target_chart == 'Telemetry' }}
+    if: ${{ inputs.target_chart == 'Telemetry' }}
     env:
       GH_HOST: github.tools.sap
       REPO: kyma/management-plane-charts
@@ -92,7 +92,7 @@ jobs:
 
       - name: Create Branch
         run: |
-          BRANCH_NAME="bump-telemetry-${{ github.event.inputs.version }}"
+          BRANCH_NAME="bump-telemetry-${{ inputs.version }}"
 
           # Check if branch exists remotely
           if git ls-remote --heads origin "${BRANCH_NAME}" | grep -q "${BRANCH_NAME}"; then
@@ -150,13 +150,13 @@ jobs:
       - name: Push branch
         if: ${{ inputs.dry_run != true }}
         run: |
-          git push origin bump-telemetry-${{ github.event.inputs.version }}
+          git push origin bump-telemetry-${{ inputs.version }}
 
       - name: Create PR
         if: ${{ inputs.dry_run != true }}
         id: create-pr
         run: |
-          BRANCH_NAME="bump-telemetry-${{ github.event.inputs.version }}"
+          BRANCH_NAME="bump-telemetry-${{ inputs.version }}"
 
           # Check if PR already exists for this branch
           echo "Checking if PR already exists for branch: ${BRANCH_NAME}..."
@@ -196,7 +196,7 @@ jobs:
         run: |
           echo "::notice::DRY RUN: Skipping PR creation"
           echo "Would have created PR with:"
-          echo "  Branch: bump-telemetry-${{ github.event.inputs.version }}"
+          echo "  Branch: bump-telemetry-${{ inputs.version }}"
           echo "  Title: Bump Telemetry to ${{ inputs.version }}"
           echo "  Label: pr-deploy"
 
@@ -223,7 +223,7 @@ jobs:
     name: Release RMO Chart
     runs-on: ubuntu-latest
     needs: validate-inputs
-    if: ${{ github.event.inputs.target_chart == 'RMO' }}
+    if: ${{ inputs.target_chart == 'RMO' }}
     env:
       GH_HOST: github.tools.sap
       REPO: kyma/management-plane-charts
@@ -245,7 +245,7 @@ jobs:
 
       - name: Create Branch
         run: |
-          BRANCH_NAME="bump-rmo-occ-${{ github.event.inputs.version }}"
+          BRANCH_NAME="bump-rmo-occ-${{ inputs.version }}"
 
           # Check if branch exists remotely
           if git ls-remote --heads origin "${BRANCH_NAME}" | grep -q "${BRANCH_NAME}"; then
@@ -303,13 +303,13 @@ jobs:
       - name: Push branch
         if: ${{ inputs.dry_run != true }}
         run: |
-          git push origin bump-rmo-occ-${{ github.event.inputs.version }}
+          git push origin bump-rmo-occ-${{ inputs.version }}
 
       - name: Create PR
         if: ${{ inputs.dry_run != true }}
         id: create-pr
         run: |
-          BRANCH_NAME="bump-rmo-occ-${{ github.event.inputs.version }}"
+          BRANCH_NAME="bump-rmo-occ-${{ inputs.version }}"
 
           # Check if PR already exists for this branch
           echo "Checking if PR already exists for branch: ${BRANCH_NAME}..."
@@ -349,7 +349,7 @@ jobs:
         run: |
           echo "::notice::DRY RUN: Skipping PR creation"
           echo "Would have created PR with:"
-          echo "  Branch: bump-rmo-occ-${{ github.event.inputs.version }}"
+          echo "  Branch: bump-rmo-occ-${{ inputs.version }}"
           echo "  Title: Bump RMO OTel Collector to ${{ inputs.version }}"
           echo "  Label: pr-deploy"
 
