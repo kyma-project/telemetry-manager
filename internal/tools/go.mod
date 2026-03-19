@@ -32,7 +32,7 @@ require (
 	cloud.google.com/go/iam v1.5.2 // indirect
 	cloud.google.com/go/monitoring v1.24.2 // indirect
 	cloud.google.com/go/storage v1.56.0 // indirect
-	codeberg.org/chavacava/garif v0.2.0 // indirect
+	codeberg.org/chavacava/garif v0.2.1 // indirect
 	codeberg.org/polyfloyd/go-errorlint v1.9.0 // indirect
 	cuelang.org/go v0.15.3 // indirect
 	dario.cat/mergo v1.0.1 // indirect
