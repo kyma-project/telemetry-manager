@@ -1,0 +1,498 @@
+name: Telemetry Module Release
+
+permissions:
+  contents: read
+
+concurrency:
+  group: module-release-${{ github.event.inputs.channel }}
+  cancel-in-progress: false
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 1.2.3)'
+        required: true
+        type: string
+      channel:
+        description: 'Release channel (regular, fast, experimental)'
+        required: true
+        type: choice
+        options:
+          - regular
+          - fast
+          - experimental
+      dry_run:
+        description: 'Dry run mode (skip PR creation and push)'
+        required: false
+        type: boolean
+        default: false
+      auto_merge:
+        description: 'Enable auto-merge on created PR'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  validate-inputs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate version format
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+        run: |
+          echo "Validating version format..."
+          echo "Version: ${VERSION}"
+
+          # Validate version format (X.Y.Z)
+          if ! [[ "${VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Invalid version format: ${VERSION}"
+            echo "Expected format: X.Y.Z (e.g., 1.2.3)"
+            exit 1
+          fi
+          echo "✓ Version format valid: ${VERSION}"
+
+      - name: Validate tag exists in telemetry-manager
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+        run: |
+          echo "Checking if tag ${VERSION} exists in telemetry-manager repository..."
+
+          if ! git ls-remote --tags https://github.com/kyma-project/telemetry-manager.git | grep -q "refs/tags/${VERSION}$"; then
+            echo "::error::Tag ${VERSION} does not exist in kyma-project/telemetry-manager repository"
+            echo "Please ensure the tag is created before releasing the module"
+            exit 1
+          fi
+
+          echo "✓ Tag ${VERSION} exists in telemetry-manager repository"
+
+  release-module:
+    name: Release Telemetry Module
+    needs: validate-inputs
+    runs-on: ubuntu-latest
+    env:
+      GH_HOST: github.tools.sap
+      GH_REPO: kyma/module-manifests
+    steps:
+      - name: Login to Github
+        run: |
+          echo "${{ secrets.HUSKIES_GHTOOLS_TOKEN }}" | gh auth login --with-token
+
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: '0'
+          ref: main
+          repository: ${{ env.GH_HOST }}/${{ env.GH_REPO }}
+          token: ${{ secrets.HUSKIES_GHTOOLS_TOKEN }}
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create branch
+        run: |
+          git checkout -b bump-telemetry-module-${{ github.event.inputs.version }}-${{ github.event.inputs.channel }}
+
+      - name: Check for duplicate version
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+          CHANNEL: ${{ github.event.inputs.channel }}
+        run: |
+          MODULE_RELEASES="modules/telemetry/module-releases.yaml"
+
+          # Determine the expected version tag
+          if [ "${CHANNEL}" = "experimental" ]; then
+            VERSION_TAG="${VERSION}-experimental"
+          else
+            VERSION_TAG="${VERSION}"
+          fi
+
+          echo "Checking if version ${VERSION_TAG} is already released for ${CHANNEL} channel..."
+
+          # Check current version in module-releases.yaml
+          CURRENT_VERSION=$(yq ".channels[] | select(.channel == \"${CHANNEL}\") | .version" "${MODULE_RELEASES}")
+
+          if [ "${CURRENT_VERSION}" = "${VERSION_TAG}" ]; then
+            echo "::error::Version ${VERSION_TAG} is already released for ${CHANNEL} channel"
+            echo "Current version in module-releases.yaml: ${CURRENT_VERSION}"
+            echo "Please use a newer version number"
+            exit 1
+          fi
+
+          echo "✓ Version ${VERSION_TAG} is not yet released for ${CHANNEL} channel"
+          echo "  Current version: ${CURRENT_VERSION}"
+          echo "  New version: ${VERSION_TAG}"
+
+      - name: Setup version folder
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+          CHANNEL: ${{ github.event.inputs.channel }}
+        run: |
+          MODULE_DIR="modules/telemetry"
+
+          # For fast and regular channels, folder name should be the version
+          if [ "${CHANNEL}" = "fast" ] || [ "${CHANNEL}" = "regular" ]; then
+            TARGET_FOLDER="${MODULE_DIR}/${VERSION}"
+
+            # Check if folder already exists
+            if [ -d "${TARGET_FOLDER}" ]; then
+              echo "✓ Folder ${TARGET_FOLDER} already exists"
+            else
+              echo "Folder ${TARGET_FOLDER} does not exist. Creating from previous version..."
+
+              # Find the most recent version folder (sorted by semantic version)
+              PREVIOUS_VERSION=$(ls -1 "${MODULE_DIR}" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1)
+
+              if [ -z "${PREVIOUS_VERSION}" ]; then
+                echo "::error::No previous version found in ${MODULE_DIR}"
+                exit 1
+              fi
+
+              PREVIOUS_FOLDER="${MODULE_DIR}/${PREVIOUS_VERSION}"
+              echo "Copying from previous version: ${PREVIOUS_VERSION}"
+
+              # Copy previous version to new version folder
+              cp -r "${PREVIOUS_FOLDER}" "${TARGET_FOLDER}"
+              echo "✓ Created ${TARGET_FOLDER} from ${PREVIOUS_FOLDER}"
+            fi
+
+            echo "TELEMETRY_FOLDER=${TARGET_FOLDER}" >> $GITHUB_ENV
+          elif [ "${CHANNEL}" = "experimental" ]; then
+            # For experimental channel, folder name should be x.y.z-experimental
+            TARGET_FOLDER="${MODULE_DIR}/${VERSION}-experimental"
+
+            # Check if folder already exists
+            if [ -d "${TARGET_FOLDER}" ]; then
+              echo "✓ Folder ${TARGET_FOLDER} already exists"
+            else
+              echo "Folder ${TARGET_FOLDER} does not exist. Creating from previous version..."
+
+              # Find the most recent experimental version folder (only -experimental versions)
+              PREVIOUS_VERSION=$(ls -1 "${MODULE_DIR}" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+-experimental$' | sort -V | tail -1)
+
+              if [ -z "${PREVIOUS_VERSION}" ]; then
+                echo "::error::No previous experimental version found in ${MODULE_DIR}"
+                exit 1
+              fi
+
+              PREVIOUS_FOLDER="${MODULE_DIR}/${PREVIOUS_VERSION}"
+              echo "Copying from previous experimental version: ${PREVIOUS_VERSION}"
+
+              # Copy previous experimental version to new experimental folder
+              cp -r "${PREVIOUS_FOLDER}" "${TARGET_FOLDER}"
+              echo "✓ Created ${TARGET_FOLDER} from ${PREVIOUS_FOLDER}"
+            fi
+
+            echo "TELEMETRY_FOLDER=${TARGET_FOLDER}" >> $GITHUB_ENV
+          else
+            echo "::error::Unknown channel: ${CHANNEL}"
+            exit 1
+          fi
+
+      - name: Update module-config.yaml
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+          CHANNEL: ${{ github.event.inputs.channel }}
+        run: |
+          MODULE_CONFIG="${TELEMETRY_FOLDER}/module-config.yaml"
+
+          if [ ! -f "${MODULE_CONFIG}" ]; then
+            echo "::error::module-config.yaml not found at ${MODULE_CONFIG}"
+            exit 1
+          fi
+
+          echo "Updating ${MODULE_CONFIG}..."
+           
+          REPOSITORY_TAG="${VERSION}"
+          
+          # Determine the version tag based on channel
+          if [ "${CHANNEL}" = "fast" ] || [ "${CHANNEL}" = "regular" ]; then
+            VERSION_TAG="${VERSION}"
+          elif [ "${CHANNEL}" = "experimental" ]; then
+            VERSION_TAG="${VERSION}-experimental"
+          else
+            echo "::error::Unknown channel: ${CHANNEL}"
+            exit 1
+          fi
+
+          echo "Setting version fields to: ${VERSION_TAG}"
+
+          # Update version field
+          yq -i ".version = \"${VERSION_TAG}\"" "${MODULE_CONFIG}"
+          echo "✓ Updated .version to ${VERSION_TAG}"
+
+          # Update repositoryTag field
+          yq -i ".repositoryTag = \"${REPOSITORY_TAG}\"" "${MODULE_CONFIG}"
+          echo "✓ Updated .repositoryTag to ${REPOSITORY_TAG}"
+
+          # Verify updates
+          CURRENT_VERSION=$(yq '.version' "${MODULE_CONFIG}")
+          CURRENT_REPOSITORY_TAG=$(yq '.repositoryTag' "${MODULE_CONFIG}")
+
+          if [ "$CURRENT_VERSION" != "$VERSION_TAG" ]; then
+            echo "::error::Failed to update version field. Expected: ${VERSION_TAG}, Got: ${CURRENT_VERSION}"
+            exit 1
+          fi
+
+          if [ "$CURRENT_REPOSITORY_TAG" != "$REPOSITORY_TAG" ]; then
+            echo "::error::Failed to update repositoryTag field. Expected: ${REPOSITORY_TAG}, Got: ${CURRENT_REPOSITORY_TAG}"
+            exit 1
+          fi
+
+          echo "✓ module-config.yaml updated and verified successfully"
+          echo "  - Folder: ${TELEMETRY_FOLDER}"
+          echo "  - Version: ${CURRENT_VERSION}"
+          echo "  - Repository Tag: ${CURRENT_REPOSITORY_TAG}"
+
+      - name: Update module-releases.yaml
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+          CHANNEL: ${{ github.event.inputs.channel }}
+        run: |
+          MODULE_RELEASES="modules/telemetry/module-releases.yaml"
+
+          if [ ! -f "${MODULE_RELEASES}" ]; then
+            echo "::error::module-releases.yaml not found at ${MODULE_RELEASES}"
+            exit 1
+          fi
+
+          echo "Updating ${MODULE_RELEASES}..."
+
+          # Determine the version tag based on channel
+          if [ "${CHANNEL}" = "fast" ] || [ "${CHANNEL}" = "regular" ]; then
+            VERSION_TAG="${VERSION}"
+          elif [ "${CHANNEL}" = "experimental" ]; then
+            VERSION_TAG="${VERSION}-experimental"
+          else
+            echo "::error::Unknown channel: ${CHANNEL}"
+            exit 1
+          fi
+
+          echo "Updating channel '${CHANNEL}' to version: ${VERSION_TAG}"
+
+          # Update the version for the specified channel
+          yq -i "(.channels[] | select(.channel == \"${CHANNEL}\") | .version) = \"${VERSION_TAG}\"" "${MODULE_RELEASES}"
+
+          # Verify update
+          UPDATED_VERSION=$(yq ".channels[] | select(.channel == \"${CHANNEL}\") | .version" "${MODULE_RELEASES}")
+
+          if [ "$UPDATED_VERSION" != "$VERSION_TAG" ]; then
+            echo "::error::Failed to update module-releases.yaml. Expected: ${VERSION_TAG}, Got: ${UPDATED_VERSION}"
+            exit 1
+          fi
+
+          echo "✓ module-releases.yaml updated successfully"
+          echo "  - Channel: ${CHANNEL}"
+          echo "  - Version: ${UPDATED_VERSION}"
+
+          # Display the updated file
+          echo ""
+          echo "Updated module-releases.yaml:"
+          cat "${MODULE_RELEASES}"
+
+      - name: Verify changes
+        run: |
+          echo "Changes to be committed:"
+          git status
+          echo ""
+          echo "Diff:"
+          git diff
+
+          if git diff --quiet && git diff --staged --quiet; then
+            echo "::error::No changes detected. Module may already be at version ${{ inputs.version }}"
+            exit 1
+          fi
+
+      - name: Commit changes
+        if: ${{ !inputs.dry_run }}
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+          CHANNEL: ${{ github.event.inputs.channel }}
+        run: |
+          git add .
+
+          if [ "${CHANNEL}" = "experimental" ]; then
+            COMMIT_MSG="Bump Telemetry module to ${VERSION}-experimental (${CHANNEL} channel)"
+          else
+            COMMIT_MSG="Bump Telemetry module to ${VERSION} (${CHANNEL} channel)"
+          fi
+
+          git commit -m "${COMMIT_MSG}"
+          echo "✓ Committed changes with message: ${COMMIT_MSG}"
+
+      - name: Dry run summary
+        if: ${{ inputs.dry_run }}
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+          CHANNEL: ${{ github.event.inputs.channel }}
+        run: |
+          echo "🔍 DRY RUN MODE - No changes will be committed or pushed"
+          echo ""
+          echo "Would commit with message:"
+          if [ "${CHANNEL}" = "experimental" ]; then
+            echo "  Bump Telemetry module to ${VERSION}-experimental (${CHANNEL} channel)"
+          else
+            echo "  Bump Telemetry module to ${VERSION} (${CHANNEL} channel)"
+          fi
+
+      - name: Push branch
+        if: ${{ !inputs.dry_run }}
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+          CHANNEL: ${{ github.event.inputs.channel }}
+        run: |
+          BRANCH_NAME="bump-telemetry-module-${VERSION}-${CHANNEL}"
+          git push origin "${BRANCH_NAME}"
+          echo "✓ Pushed branch: ${BRANCH_NAME}"
+
+      - name: Create PR
+        if: ${{ !inputs.dry_run }}
+        id: create-pr
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+          CHANNEL: ${{ github.event.inputs.channel }}
+        run: |
+          BRANCH_NAME="bump-telemetry-module-${VERSION}-${CHANNEL}"
+
+          # Check if PR already exists for this branch
+          echo "Checking if PR already exists for branch: ${BRANCH_NAME}..."
+          EXISTING_PR=$(gh pr list --head "${BRANCH_NAME}" --json number,url --jq '.[0] | select(.number != null)' || echo "")
+
+          if [ -n "${EXISTING_PR}" ]; then
+            PR_NUMBER=$(echo "${EXISTING_PR}" | jq -r '.number')
+            PR_URL=$(echo "${EXISTING_PR}" | jq -r '.url')
+            echo "::notice::PR already exists for this branch"
+            echo "✓ Using existing PR #${PR_NUMBER}: ${PR_URL}"
+            echo "pr-url=${PR_URL}" >> $GITHUB_OUTPUT
+            echo "pr-number=${PR_NUMBER}" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "No existing PR found. Creating new PR..."
+
+          if [ "${CHANNEL}" = "experimental" ]; then
+            PR_TITLE="Bump Telemetry module to ${VERSION}-experimental (${CHANNEL} channel)"
+            PR_BODY=$(cat <<EOF
+          Bump Telemetry module to version ${VERSION}-experimental for ${CHANNEL} channel.
+
+          **Changes:**
+          - Created/Updated folder: modules/telemetry/${VERSION}-experimental
+          - Updated module-config.yaml:
+            - version: ${VERSION}-experimental
+            - repositoryTag: ${VERSION}
+          - Updated module-releases.yaml:
+            - channels.experimental.version: ${VERSION}-experimental
+          EOF
+          )
+          else
+            PR_TITLE="Bump Telemetry module to ${VERSION} (${CHANNEL} channel)"
+            PR_BODY=$(cat <<EOF
+          Bump Telemetry module to version ${VERSION} for ${CHANNEL} channel.
+
+          **Changes:**
+          - Created/Updated folder: modules/telemetry/${VERSION}
+          - Updated module-config.yaml:
+            - version: ${VERSION}
+            - repositoryTag: ${VERSION}
+          - Updated module-releases.yaml:
+            - channels.${CHANNEL}.version: ${VERSION}
+          EOF
+          )
+          fi
+
+          PR_URL=$(gh pr create \
+            --base main \
+            --head "${BRANCH_NAME}" \
+            --title "${PR_TITLE}" \
+            --body "${PR_BODY}")
+
+          PR_NUMBER=$(echo "${PR_URL}" | grep -o '[0-9]*$')
+          echo "pr-url=${PR_URL}" >> $GITHUB_OUTPUT
+          echo "pr-number=${PR_NUMBER}" >> $GITHUB_OUTPUT
+          echo "✓ Created PR: ${PR_URL}"
+
+      - name: Enable auto-merge
+        if: ${{ !inputs.dry_run && inputs.auto_merge }}
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+          CHANNEL: ${{ github.event.inputs.channel }}
+        run: |
+          PR_NUMBER="${{ steps.create-pr.outputs.pr-number }}"
+
+          echo "Enabling auto-merge for PR #${PR_NUMBER}..."
+          gh pr merge "${PR_NUMBER}" --auto --squash
+          echo "✓ Auto-merge enabled for PR #${PR_NUMBER}"
+
+      - name: Workflow summary
+        if: always()
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+          CHANNEL: ${{ github.event.inputs.channel }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          AUTO_MERGE: ${{ inputs.auto_merge }}
+        run: |
+          if [ "${CHANNEL}" = "experimental" ]; then
+            VERSION_TAG="${VERSION}-experimental"
+            FOLDER_PATH="modules/telemetry/${VERSION}-experimental"
+          else
+            VERSION_TAG="${VERSION}"
+            FOLDER_PATH="modules/telemetry/${VERSION}"
+          fi
+
+          cat >> $GITHUB_STEP_SUMMARY <<EOF
+          ## Telemetry Module Release Summary
+
+          **Version**: ${VERSION}
+          **Channel**: ${CHANNEL}
+          **Version Tag**: ${VERSION_TAG}
+          **Folder**: ${FOLDER_PATH}
+          **Branch**: bump-telemetry-module-${VERSION}-${CHANNEL}
+          **Dry Run**: ${DRY_RUN}
+          **Auto-Merge**: ${AUTO_MERGE}
+          EOF
+
+          if [ "${DRY_RUN}" = "false" ]; then
+            cat >> $GITHUB_STEP_SUMMARY <<EOF
+          **PR**: ${{ steps.create-pr.outputs.pr-url }}
+          EOF
+          fi
+
+          cat >> $GITHUB_STEP_SUMMARY <<EOF
+
+          ### Changes Made
+          - Created/Updated module folder: \`${FOLDER_PATH}\`
+          - Updated \`module-config.yaml\`:
+            - \`.version\` = \`${VERSION_TAG}\`
+            - \`.repositoryTag\` = \`${VERSION}\`
+          - Updated \`module-releases.yaml\`:
+            - \`channels.${CHANNEL}.version\` = \`${VERSION_TAG}\`
+          EOF
+
+          if [ "${DRY_RUN}" = "true" ]; then
+            cat >> $GITHUB_STEP_SUMMARY <<EOF
+
+          ### Dry Run Mode
+          🔍 **No changes were committed or pushed**
+          - Branch was not created
+          - PR was not created
+          - Use this mode to validate the workflow logic
+          EOF
+          elif [ "${AUTO_MERGE}" = "true" ]; then
+            cat >> $GITHUB_STEP_SUMMARY <<EOF
+
+          ### Next Steps
+          1. Auto-merge is enabled on PR ${{ steps.create-pr.outputs.pr-url }}
+          2. PR will be merged automatically once all checks pass
+          3. Module will be published after merge
+          EOF
+          else
+            cat >> $GITHUB_STEP_SUMMARY <<EOF
+
+          ### Next Steps
+          1. Review the PR at ${{ steps.create-pr.outputs.pr-url }}
+          2. Verify the module-config.yaml and module-releases.yaml changes
+          3. Merge the PR to publish the module
+          EOF
+          fi
