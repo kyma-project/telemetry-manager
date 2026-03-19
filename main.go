@@ -64,6 +64,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
 	mgrports "github.com/kyma-project/telemetry-manager/internal/manager/ports"
 	"github.com/kyma-project/telemetry-manager/internal/metrics"
+	"github.com/kyma-project/telemetry-manager/internal/nodesize"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
@@ -199,7 +200,9 @@ func run() error {
 		return err
 	}
 
-	err = setupControllersAndWebhooks(mgr, globals, envCfg)
+	nodeSizeTracker := nodesize.NewTracker(mgr.GetClient())
+
+	err = setupControllersAndWebhooks(mgr, globals, envCfg, nodeSizeTracker)
 	if err != nil {
 		return err
 	}
@@ -232,7 +235,7 @@ func setupSetupLog() (*zap.Logger, error) {
 	return zapLogger, nil
 }
 
-func setupControllersAndWebhooks(mgr manager.Manager, globals config.Global, envCfg envConfig) error {
+func setupControllersAndWebhooks(mgr manager.Manager, globals config.Global, envCfg envConfig, nodeSizeTracker *nodesize.Tracker) error {
 	var (
 		tracePipelineReconcileChan  = make(chan event.GenericEvent)
 		metricPipelineReconcileChan = make(chan event.GenericEvent)
@@ -248,15 +251,15 @@ func setupControllersAndWebhooks(mgr manager.Manager, globals config.Global, env
 		return fmt.Errorf("failed to add secret watch stop runnable: %w", err)
 	}
 
-	if err := setupTracePipelineController(globals, envCfg, mgr, tracePipelineReconcileChan, secretWatchClient); err != nil {
+	if err := setupTracePipelineController(globals, envCfg, mgr, tracePipelineReconcileChan, secretWatchClient, nodeSizeTracker); err != nil {
 		return fmt.Errorf("failed to enable trace pipeline controller: %w", err)
 	}
 
-	if err := setupMetricPipelineController(globals, envCfg, mgr, metricPipelineReconcileChan, secretWatchClient); err != nil {
+	if err := setupMetricPipelineController(globals, envCfg, mgr, metricPipelineReconcileChan, secretWatchClient, nodeSizeTracker); err != nil {
 		return fmt.Errorf("failed to enable metric pipeline controller: %w", err)
 	}
 
-	if err := setupLogPipelineController(globals, envCfg, mgr, logPipelineReconcileChan, secretWatchClient); err != nil {
+	if err := setupLogPipelineController(globals, envCfg, mgr, logPipelineReconcileChan, secretWatchClient, nodeSizeTracker); err != nil {
 		return fmt.Errorf("failed to enable log pipeline controller: %w", err)
 	}
 
@@ -325,6 +328,7 @@ func setupManager(globals config.Global) (manager.Manager, error) {
 		&appsv1.Deployment{}:          scopedByNamespaceAndLabel(globals),
 		&appsv1.DaemonSet{}:           scopedByNamespaceAndLabel(globals),
 		&appsv1.ReplicaSet{}:          scopedByNamespaceAndLabel(globals),
+		&corev1.Node{}:                {},
 		&corev1.Pod{}:                 scopedByNamespaceAndLabel(globals),
 		&corev1.Secret{}:              scopedByNamespaceAndLabel(globals), // only applicable for manager-created secrets, user-created secrets are watched by secretwatch client
 		&corev1.Service{}:             scopedByNamespaceAndLabel(globals),
@@ -485,7 +489,7 @@ func setupTelemetryController(globals config.Global, cfg envConfig, webhookCertC
 	return nil
 }
 
-func setupLogPipelineController(globals config.Global, cfg envConfig, mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent, secretWatchClient *secretwatch.Client) error {
+func setupLogPipelineController(globals config.Global, cfg envConfig, mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent, secretWatchClient *secretwatch.Client, nodeSizeTracker *nodesize.Tracker) error {
 	setupLog.Info("Setting up logpipeline controller")
 
 	logPipelineController, err := telemetrycontrollers.NewLogPipelineController(
@@ -504,6 +508,7 @@ func setupLogPipelineController(globals config.Global, cfg envConfig, mgr manage
 		mgr.GetClient(),
 		reconcileTriggerChan,
 		secretWatchClient,
+		nodeSizeTracker,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create logpipeline controller: %w", err)
@@ -516,7 +521,7 @@ func setupLogPipelineController(globals config.Global, cfg envConfig, mgr manage
 	return nil
 }
 
-func setupTracePipelineController(globals config.Global, envCfg envConfig, mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent, secretWatchClient *secretwatch.Client) error {
+func setupTracePipelineController(globals config.Global, envCfg envConfig, mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent, secretWatchClient *secretwatch.Client, nodeSizeTracker *nodesize.Tracker) error {
 	setupLog.Info("Setting up tracepipeline controller")
 
 	tracePipelineController, err := telemetrycontrollers.NewTracePipelineController(
@@ -529,6 +534,7 @@ func setupTracePipelineController(globals config.Global, envCfg envConfig, mgr m
 		mgr.GetClient(),
 		reconcileTriggerChan,
 		secretWatchClient,
+		nodeSizeTracker,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create tracepipeline controller: %w", err)
@@ -541,7 +547,7 @@ func setupTracePipelineController(globals config.Global, envCfg envConfig, mgr m
 	return nil
 }
 
-func setupMetricPipelineController(globals config.Global, cfg envConfig, mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent, secretWatchClient *secretwatch.Client) error {
+func setupMetricPipelineController(globals config.Global, cfg envConfig, mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent, secretWatchClient *secretwatch.Client, nodeSizeTracker *nodesize.Tracker) error {
 	setupLog.Info("Setting up metricpipeline controller")
 
 	metricPipelineController, err := telemetrycontrollers.NewMetricPipelineController(
@@ -555,6 +561,7 @@ func setupMetricPipelineController(globals config.Global, cfg envConfig, mgr man
 		mgr.GetClient(),
 		reconcileTriggerChan,
 		secretWatchClient,
+		nodeSizeTracker,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create metricpipeline controller: %w", err)
