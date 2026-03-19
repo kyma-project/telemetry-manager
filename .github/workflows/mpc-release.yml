@@ -83,7 +83,7 @@ jobs:
               "base_branch": "chart/telemetry",
               "branch_prefix": "bump-telemetry",
               "chart_dir": "telemetry",
-              "update_command": "yq -i '.appVersion = \"${{ inputs.version }}\" ' telemetry/Chart.yaml && yq -i '.dependencies[] |= (select(.name == \"telemetry-manager\") | .version = \"${{ inputs.version }}\")' telemetry/Chart.yaml",
+              "update_command": "yq -i '.appVersion = \"${{ inputs.version }}\" ' telemetry/Chart.yaml && yq -i '(.dependencies[] | select(.name == \"telemetry-manager\") | .version) = \"${{ inputs.version }}\"' telemetry/Chart.yaml",
               "verify_command": "yq '.appVersion' telemetry/Chart.yaml",
               "verify_field": "appVersion",
               "commit_title": "Bump Telemetry to ${{ inputs.version }}",
@@ -159,11 +159,12 @@ jobs:
         run: |
           BRANCH_NAME="${{ matrix.branch_prefix }}-${{ inputs.version }}"
 
-          # Check if branch exists remotely
-          if git ls-remote --heads origin "${BRANCH_NAME}" | grep -q "${BRANCH_NAME}"; then
+          # Check if branch exists remotely (match exact ref to avoid false positives)
+          if git ls-remote --heads origin "${BRANCH_NAME}" | grep -q "refs/heads/${BRANCH_NAME}$"; then
             echo "Branch ${BRANCH_NAME} already exists, checking it out..."
             git fetch origin "${BRANCH_NAME}"
-            git checkout "${BRANCH_NAME}"
+            # Create/update local branch from remote ref
+            git checkout -B "${BRANCH_NAME}" "origin/${BRANCH_NAME}"
             echo "✓ Checked out existing branch: ${BRANCH_NAME}"
           else
             echo "Creating new branch: ${BRANCH_NAME}..."
@@ -234,16 +235,35 @@ jobs:
 
           # Check if PR already exists for this branch
           echo "Checking if PR already exists for branch: ${BRANCH_NAME}..."
-          EXISTING_PR=$(gh pr list --head "${BRANCH_NAME}" --json number,url --jq '.[0] | select(.number != null)' || echo "")
 
-          if [ -n "${EXISTING_PR}" ]; then
+          # Capture gh exit code to distinguish real errors from "no PR found"
+          set +e
+          EXISTING_PR=$(gh pr list --head "${BRANCH_NAME}" --json number,url --jq '.[0] | select(.number != null)' 2>&1)
+          GH_EXIT_CODE=$?
+          set -e
+
+          # Any non-zero exit code from gh is a fatal error
+          if [ ${GH_EXIT_CODE} -ne 0 ]; then
+            echo "::error::Failed to check for existing PRs (exit code ${GH_EXIT_CODE}): ${EXISTING_PR}"
+            exit 1
+          fi
+
+          # At this point, gh succeeded (exit code 0)
+          # EXISTING_PR is either empty/null (no PRs) or contains PR data
+
+          # Filter out empty objects/null results
+          if [ -n "${EXISTING_PR}" ] && [ "${EXISTING_PR}" != "null" ] && [ "${EXISTING_PR}" != "{}" ]; then
             PR_NUMBER=$(echo "${EXISTING_PR}" | jq -r '.number')
             PR_URL=$(echo "${EXISTING_PR}" | jq -r '.url')
-            echo "::notice::PR already exists for this branch"
-            echo "✓ Using existing PR #${PR_NUMBER}: ${PR_URL}"
-            echo "pr-url=${PR_URL}" >> "$GITHUB_OUTPUT"
-            echo "pr-number=${PR_NUMBER}" >> "$GITHUB_OUTPUT"
-            exit 0
+
+            # Validate we got actual values
+            if [ -n "${PR_NUMBER}" ] && [ "${PR_NUMBER}" != "null" ] && [ -n "${PR_URL}" ] && [ "${PR_URL}" != "null" ]; then
+              echo "::notice::PR already exists for this branch"
+              echo "✓ Using existing PR #${PR_NUMBER}: ${PR_URL}"
+              echo "pr-url=${PR_URL}" >> "$GITHUB_OUTPUT"
+              echo "pr-number=${PR_NUMBER}" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
           fi
 
           echo "No existing PR found. Creating new PR..."
@@ -257,7 +277,7 @@ jobs:
           PR_NUMBER=$(echo "${PR_URL}" | grep -o '[0-9]*$')
           echo "pr-url=${PR_URL}" >> "$GITHUB_OUTPUT"
           echo "pr-number=${PR_NUMBER}" >> "$GITHUB_OUTPUT"
-          echo "Created PR: ${PR_URL}"
+          echo "✓ Created PR #${PR_NUMBER}: ${PR_URL}"
 
       - name: Enable auto-merge
         if: ${{ inputs.dry_run != true && inputs.auto_merge == true }}

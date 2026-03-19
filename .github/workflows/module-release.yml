@@ -52,6 +52,10 @@ on:
         required: false
         type: boolean
         default: false
+    secrets:
+      HUSKIES_GHTOOLS_TOKEN:
+        description: 'GitHub token for accessing github.tools.sap'
+        required: true
 
 jobs:
   validate-inputs:
@@ -151,7 +155,7 @@ jobs:
           BRANCH_NAME="bump-telemetry-${VERSION}-${CHANNEL}"
 
           echo "Checking if branch ${BRANCH_NAME} exists on remote..."
-          if git ls-remote --heads origin "${BRANCH_NAME}" | grep -q "${BRANCH_NAME}"; then
+          if git ls-remote --heads origin "${BRANCH_NAME}" | grep -q "refs/heads/${BRANCH_NAME}$"; then
             echo "Branch ${BRANCH_NAME} exists on remote, checking it out..."
             git fetch origin "${BRANCH_NAME}"
             # Create local branch tracking the remote branch
@@ -253,7 +257,7 @@ jobs:
           BRANCH_NAME="bump-telemetry-${VERSION}-${CHANNEL}"
 
           # Check if branch exists on remote
-          if git ls-remote --heads origin "${BRANCH_NAME}" | grep -q "${BRANCH_NAME}"; then
+          if git ls-remote --heads origin "${BRANCH_NAME}" | grep -q "refs/heads/${BRANCH_NAME}$"; then
             echo "Branch ${BRANCH_NAME} exists on remote, force pushing to update..."
             git push --force-with-lease origin "${BRANCH_NAME}"
             echo "✓ Force pushed branch: ${BRANCH_NAME}"
