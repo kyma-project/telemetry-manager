@@ -46,11 +46,15 @@ manager:
     runAsNonRoot: true
     seccompProfile:
       type: RuntimeDefault
-  additionalMetadata:
-    labels:
-    # custom-label: my-value
+  annotations:
+    # custom-deployment-annotation: my-annotation-value
+  labels:
+    # custom-deployment-label: my-value
+  pod:
     annotations:
-    # custom-resource-annotation: my-value
+    # custom-pod-annotation: my-pod-annotation-value
+    labels:
+    # custom-pod-label: my-pod-label-value
 managerMetrics:
   ports:
     - name: http-metrics
@@ -61,8 +65,14 @@ managerWebhook:
     - port: 443
       protocol: TCP
       targetPort: 9443
-additionalMetadata:
-  labels:
-  # custom-label: my-value
-  annotations:
-# custom-resource-annotation: my-value
+managedResources:
+  workload:
+    labels:
+    # custom-workload-label: my-value
+    annotations:
+    # custom-workload-annotation: my-value
+    pod:
+      labels:
+      # custom-pod-label: my-value
+      annotations:
+      # custom-pod-annotation: my-value

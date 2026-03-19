@@ -32,6 +32,7 @@ func MakeWorkloadMetadata(globals *config.Global, baseName string, componentType
 	podLabels := make(map[string]string)
 	maps.Copy(podLabels, commonresources.DefaultLabels(baseName, componentType))
 	maps.Copy(podLabels, globals.AdditionalWorkloadLabels())
+	maps.Copy(podLabels, globals.AdditionalWorkloadPodLabels())
 	maps.Copy(podLabels, extraPodLabels)
 
 	// Resource annotations: only additional annotations from globals
@@ -41,6 +42,7 @@ func MakeWorkloadMetadata(globals *config.Global, baseName string, componentType
 	// Pod annotations: additional annotations from globals + workload-specific annotations
 	podAnnotations := make(map[string]string)
 	maps.Copy(podAnnotations, globals.AdditionalWorkloadAnnotations())
+	maps.Copy(podAnnotations, globals.AdditionalWorkloadPodAnnotations())
 	maps.Copy(podAnnotations, extraPodAnnotations)
 
 	return WorkloadMetadata{
