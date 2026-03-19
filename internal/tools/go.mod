@@ -147,7 +147,7 @@ require (
 	github.com/cockroachdb/apd/v3 v3.2.1 // indirect
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/containerd/stargz-snapshotter/estargz v0.14.3 // indirect
-	github.com/cpuguy83/go-md2man/v2 v2.0.6 // indirect
+	github.com/cpuguy83/go-md2man/v2 v2.0.7 // indirect
 	github.com/curioswitch/go-reassign v0.3.0 // indirect
 	github.com/cyphar/filepath-securejoin v0.6.1 // indirect
 	github.com/daixiang0/gci v0.13.7 // indirect
