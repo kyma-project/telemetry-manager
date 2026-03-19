@@ -3,6 +3,7 @@
 set -o errexit  # exit immediately when a command fails.
 set -E          # needs to be set if we want the ERR trap
 set -o pipefail # prevents errors in a pipeline from being masked
+set -o nounset  # treat unset variables as an error
 
 
 # Telemetry Module Release Script
@@ -22,8 +23,29 @@ COMMAND="${1:-}"
 VERSION="${2:-}"
 CHANNEL="${3:-}"
 
+ if [ -z "${COMMAND}" ] || [ -z "${VERSION}" ] || [ -z "${CHANNEL}" ]; then
+   echo "Usage: module-release.sh <command> <version> <channel>"
+   echo "Commands: check-duplicate | setup-folder | update-config | update-releases"
+   echo "Channels: regular | fast | experimental"
+   exit 1
+ fi
+
 MODULE_DIR="modules/telemetry"
 MODULE_RELEASES="${MODULE_DIR}/module-releases.yaml"
+
+ # Validate that the provided channel is supported
+ validate_channel() {
+   local channel="$1"
+   case "${channel}" in
+     regular|fast|experimental)
+       # valid channel
+       ;;
+     *)
+       echo "::error::Invalid channel '${channel}'. Allowed channels are: regular, fast, experimental." >&2
+       exit 1
+       ;;
+   esac
+ }
 
 # Determine version tag based on channel
 get_version_tag() {

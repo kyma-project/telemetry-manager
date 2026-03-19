@@ -72,6 +72,23 @@ jobs:
           fi
           echo "✓ Version format valid: ${VERSION}"
 
+      - name: Validate channel
+        env:
+          CHANNEL: ${{ inputs.channel }}
+        run: |
+          echo "Validating release channel..."
+          echo "Channel: ${CHANNEL}"
+          case "${CHANNEL}" in
+            regular|fast|experimental)
+              echo "✓ Channel valid: ${CHANNEL}"
+              ;;
+            *)
+              echo "::error::Invalid channel: ${CHANNEL}"
+              echo "Allowed values: regular, fast, experimental"
+              exit 1
+              ;;
+          esac
+
       - name: Validate tag exists in telemetry-manager
         env:
           VERSION: ${{ inputs.version }}
@@ -93,7 +110,6 @@ jobs:
     env:
       GH_HOST: github.tools.sap
       GH_REPO: kyma/module-manifests
-      GH_TOKEN: ${{ secrets.HUSKIES_GHTOOLS_TOKEN }}
     steps:
       - name: Checkout telemetry-manager (for scripts)
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -152,10 +168,25 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Create branch
+      - name: Create or reuse branch
         working-directory: module-manifests
+        env:
+          VERSION: ${{ inputs.version }}
+          CHANNEL: ${{ inputs.channel }}
         run: |
-          git checkout -b bump-telemetry-${{ inputs.version }}-${{ inputs.channel }}
+          BRANCH_NAME="bump-telemetry-${VERSION}-${CHANNEL}"
+
+          echo "Checking if branch ${BRANCH_NAME} exists on remote..."
+          if git ls-remote --heads origin "${BRANCH_NAME}" | grep -q "${BRANCH_NAME}"; then
+            echo "Branch ${BRANCH_NAME} exists on remote, checking it out..."
+            git fetch origin "${BRANCH_NAME}"
+            git checkout "${BRANCH_NAME}"
+            echo "✓ Checked out existing branch ${BRANCH_NAME}"
+          else
+            echo "Branch ${BRANCH_NAME} does not exist, creating new branch..."
+            git checkout -b "${BRANCH_NAME}"
+            echo "✓ Created new branch ${BRANCH_NAME}"
+          fi
 
       - name: Check for duplicate version
         working-directory: module-manifests
@@ -237,8 +268,17 @@ jobs:
           CHANNEL: ${{ inputs.channel }}
         run: |
           BRANCH_NAME="bump-telemetry-${VERSION}-${CHANNEL}"
-          git push origin "${BRANCH_NAME}"
-          echo "✓ Pushed branch: ${BRANCH_NAME}"
+
+          # Check if branch exists on remote
+          if git ls-remote --heads origin "${BRANCH_NAME}" | grep -q "${BRANCH_NAME}"; then
+            echo "Branch ${BRANCH_NAME} exists on remote, force pushing to update..."
+            git push --force-with-lease origin "${BRANCH_NAME}"
+            echo "✓ Force pushed branch: ${BRANCH_NAME}"
+          else
+            echo "Branch ${BRANCH_NAME} does not exist on remote, pushing..."
+            git push -u origin "${BRANCH_NAME}"
+            echo "✓ Pushed branch: ${BRANCH_NAME}"
+          fi
 
       - name: Create PR
         if: ${{ !inputs.dry_run }}
@@ -247,58 +287,20 @@ jobs:
         env:
           VERSION: ${{ inputs.version }}
           CHANNEL: ${{ inputs.channel }}
+          GH_TOKEN: ${{ secrets.HUSKIES_GHTOOLS_TOKEN }}
         run: |
-          BRANCH_NAME="bump-telemetry-${VERSION}-${CHANNEL}"
+          # Create temporary file for script output
+          OUTPUT_FILE=$(mktemp)
 
-          # Check if PR already exists for this branch
-          echo "Checking if PR already exists for branch: ${BRANCH_NAME}..."
-          EXISTING_PR=$(gh pr list --head "${BRANCH_NAME}" --json number,url --jq '.[0] | select(.number != null)' || echo "")
+          # Run PR creation script
+          ../telemetry-manager/hack/create-module-release-pr.sh "${VERSION}" "${CHANNEL}" "${OUTPUT_FILE}"
 
-          if [ -n "${EXISTING_PR}" ]; then
-            PR_NUMBER=$(echo "${EXISTING_PR}" | jq -r '.number')
-            PR_URL=$(echo "${EXISTING_PR}" | jq -r '.url')
-            echo "::notice::PR already exists for this branch"
-            echo "✓ Using existing PR #${PR_NUMBER}: ${PR_URL}"
-            echo "pr-url=${PR_URL}" >> $GITHUB_OUTPUT
-            echo "pr-number=${PR_NUMBER}" >> $GITHUB_OUTPUT
-            exit 0
-          fi
+          # Read outputs and set them for GitHub Actions
+          while IFS='=' read -r key value; do
+            echo "${key}=${value}" >> $GITHUB_OUTPUT
+          done < "${OUTPUT_FILE}"
 
-          echo "No existing PR found. Creating new PR..."
-
-          # Determine version tag and folder based on channel
-          if [ "${CHANNEL}" = "experimental" ]; then
-            VERSION_TAG="${VERSION}-experimental"
-            FOLDER_PATH="modules/telemetry/${VERSION}-experimental"
-          else
-            VERSION_TAG="${VERSION}"
-            FOLDER_PATH="modules/telemetry/${VERSION}"
-          fi
-
-          PR_TITLE="bump telemetry version to ${VERSION} on ${CHANNEL}"
-          PR_BODY=$(cat <<EOF
-          Bump telemetry version to ${VERSION} on ${CHANNEL} channel.
-
-          **Changes:**
-          - Created/Updated folder: ${FOLDER_PATH}
-          - Updated module-config.yaml:
-            - version: ${VERSION_TAG}
-            - repositoryTag: ${VERSION}
-          - Updated module-releases.yaml:
-            - channels.${CHANNEL}.version: ${VERSION_TAG}
-          EOF
-          )
-
-          PR_URL=$(gh pr create \
-            --base main \
-            --head "${BRANCH_NAME}" \
-            --title "${PR_TITLE}" \
-            --body "${PR_BODY}")
-
-          PR_NUMBER=$(echo "${PR_URL}" | grep -o '[0-9]*$')
-          echo "pr-url=${PR_URL}" >> $GITHUB_OUTPUT
-          echo "pr-number=${PR_NUMBER}" >> $GITHUB_OUTPUT
-          echo "✓ Created PR: ${PR_URL}"
+          rm -f "${OUTPUT_FILE}"
 
       - name: Enable auto-merge
         if: ${{ !inputs.dry_run && inputs.auto_merge }}
@@ -306,6 +308,7 @@ jobs:
         env:
           VERSION: ${{ inputs.version }}
           CHANNEL: ${{ inputs.channel }}
+          GH_TOKEN: ${{ secrets.HUSKIES_GHTOOLS_TOKEN }}
         run: |
           PR_NUMBER="${{ steps.create-pr.outputs.pr-number }}"
 
