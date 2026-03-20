@@ -47,9 +47,9 @@ manager:
     seccompProfile:
       type: RuntimeDefault
   annotations:
-    # custom-deployment-annotation: my-annotation-value
+  # custom-deployment-annotation: my-annotation-value
   labels:
-    # custom-deployment-label: my-value
+  # custom-deployment-label: my-value
   pod:
     annotations:
     # custom-pod-annotation: my-pod-annotation-value
@@ -75,4 +75,4 @@ managedResources:
       labels:
       # custom-pod-label: my-value
       annotations:
-      # custom-pod-annotation: my-value
+# custom-pod-annotation: my-value
