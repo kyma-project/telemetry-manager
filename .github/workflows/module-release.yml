@@ -114,6 +114,7 @@ jobs:
     env:
       GH_HOST: github.tools.sap
       GH_REPO: kyma/module-manifests
+      GH_TOKEN: ${{ secrets.HUSKIES_GHTOOLS_TOKEN }}
     steps:
       - name: Checkout telemetry-manager (for scripts)
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -121,8 +122,6 @@ jobs:
           path: telemetry-manager
 
       - name: Configure git authentication
-        env:
-          GH_TOKEN: ${{ secrets.HUSKIES_GHTOOLS_TOKEN }}
         run: |
           # Configure git credential helper for entire job (used by clone/fetch/push/ls-remote)
           # This avoids embedding tokens in URLs while keeping authentication available
@@ -161,10 +160,12 @@ jobs:
             # Create local branch tracking the remote branch
             git checkout -B "${BRANCH_NAME}" "origin/${BRANCH_NAME}"
             echo "✓ Checked out existing branch ${BRANCH_NAME} from origin/${BRANCH_NAME}"
+            echo "BRANCH_EXISTS=true" >> $GITHUB_ENV
           else
             echo "Branch ${BRANCH_NAME} does not exist, creating new branch..."
             git checkout -b "${BRANCH_NAME}"
             echo "✓ Created new branch ${BRANCH_NAME}"
+            echo "BRANCH_EXISTS=false" >> $GITHUB_ENV
           fi
 
       - name: Setup Python
@@ -178,6 +179,7 @@ jobs:
           python3 -m pip install semver==3.0.4
 
       - name: Check for duplicate version
+        if: env.BRANCH_EXISTS == 'false'
         working-directory: module-manifests
         env:
           VERSION: ${{ inputs.version }}

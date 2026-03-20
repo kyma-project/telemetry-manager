@@ -53,35 +53,31 @@ BRANCH_NAME="bump-telemetry-${VERSION}-${CHANNEL}"
 # Check if PR already exists for this branch
 echo "Checking if PR already exists for branch: ${BRANCH_NAME}..."
 
-# Run gh pr list - it returns exit code 0 with empty array [] if no PRs found
-# Any non-zero exit code indicates a real error (auth, network, API, etc.)
+# Use gh --jq to extract values directly, avoiding double jq parsing
+# Redirect stderr to capture any real errors (auth, network, API)
+GH_PR_LIST_ERR_FILE="$(mktemp)"
 set +e  # Temporarily disable errexit to capture the exit code
-EXISTING_PR=$(gh pr list --head "${BRANCH_NAME}" --json number,url --jq '.[0] | select(.number != null)' 2>&1)
+PR_NUMBER=$(gh pr list --head "${BRANCH_NAME}" --json number --jq '.[0].number // empty' 2>"${GH_PR_LIST_ERR_FILE}")
 GH_EXIT_CODE=$?
 set -e  # Re-enable errexit
 
 # Any non-zero exit code from gh is a fatal error
 if [ ${GH_EXIT_CODE} -ne 0 ]; then
-  echo "::error::Failed to check for existing PRs (exit code ${GH_EXIT_CODE}): ${EXISTING_PR}"
+  GH_ERROR_OUTPUT="$(cat "${GH_PR_LIST_ERR_FILE}")"
+  rm -f "${GH_PR_LIST_ERR_FILE}"
+  echo "::error::Failed to check for existing PRs (exit code ${GH_EXIT_CODE}): ${GH_ERROR_OUTPUT}"
   exit 1
 fi
+rm -f "${GH_PR_LIST_ERR_FILE}"
 
-# At this point, gh succeeded (exit code 0)
-# EXISTING_PR is either empty/null (no PRs) or contains PR data
-
-# Filter out empty objects/null results
-if [ -n "${EXISTING_PR}" ] && [ "${EXISTING_PR}" != "null" ] && [ "${EXISTING_PR}" != "{}" ]; then
-  PR_NUMBER=$(echo "${EXISTING_PR}" | jq -r '.number')
-  PR_URL=$(echo "${EXISTING_PR}" | jq -r '.url')
-
-  # Validate we got actual values
-  if [ -n "${PR_NUMBER}" ] && [ "${PR_NUMBER}" != "null" ] && [ -n "${PR_URL}" ] && [ "${PR_URL}" != "null" ]; then
-    echo "::notice::PR already exists for this branch"
-    echo "✓ Using existing PR #${PR_NUMBER}: ${PR_URL}"
-    echo "pr-url=${PR_URL}" >> "${OUTPUT_FILE}"
-    echo "pr-number=${PR_NUMBER}" >> "${OUTPUT_FILE}"
-    exit 0
-  fi
+# If PR_NUMBER is non-empty, a PR exists - get the URL
+if [ -n "${PR_NUMBER}" ]; then
+  PR_URL=$(gh pr list --head "${BRANCH_NAME}" --json url --jq '.[0].url')
+  echo "::notice::PR already exists for this branch"
+  echo "✓ Using existing PR #${PR_NUMBER}: ${PR_URL}"
+  echo "pr-url=${PR_URL}" >> "${OUTPUT_FILE}"
+  echo "pr-number=${PR_NUMBER}" >> "${OUTPUT_FILE}"
+  exit 0
 fi
 
 echo "No existing PR found. Creating new PR..."

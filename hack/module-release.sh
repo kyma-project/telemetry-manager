@@ -71,7 +71,8 @@ check_duplicate() {
   echo "Checking if version ${VERSION_TAG} is already released for ${channel} channel..."
 
   # Check current version in module-releases.yaml
-  CURRENT_VERSION=$(yq ".channels[] | select(.channel == \"${channel}\") | .version" "${MODULE_RELEASES}")
+  # Use -r flag for raw output (no quotes) to ensure clean version strings
+  CURRENT_VERSION=$(yq -r ".channels[] | select(.channel == \"${channel}\") | .version" "${MODULE_RELEASES}")
 
   # Extract base version (strip -experimental suffix for comparison)
   CURRENT_BASE_VERSION="${CURRENT_VERSION%-experimental}"
@@ -263,8 +264,9 @@ update_config() {
   fi
 
   # Verify updates
-  CURRENT_VERSION=$(yq '.version' "${MODULE_CONFIG}")
-  CURRENT_REPOSITORY_TAG=$(yq '.repositoryTag' "${MODULE_CONFIG}")
+  # Use -r flag for raw output (no quotes) for clean string comparison
+  CURRENT_VERSION=$(yq -r '.version' "${MODULE_CONFIG}")
+  CURRENT_REPOSITORY_TAG=$(yq -r '.repositoryTag' "${MODULE_CONFIG}")
 
   if [ "$CURRENT_VERSION" != "$VERSION_TAG" ]; then
     echo "::error::Failed to update version field. Expected: ${VERSION_TAG}, Got: ${CURRENT_VERSION}"
@@ -302,7 +304,8 @@ update_releases() {
   yq -i "(.channels[] | select(.channel == \"${channel}\") | .version) = \"${VERSION_TAG}\"" "${MODULE_RELEASES}"
 
   # Verify update
-  UPDATED_VERSION=$(yq ".channels[] | select(.channel == \"${channel}\") | .version" "${MODULE_RELEASES}")
+  # Use -r flag for raw output (no quotes) for clean string comparison
+  UPDATED_VERSION=$(yq -r ".channels[] | select(.channel == \"${channel}\") | .version" "${MODULE_RELEASES}")
 
   if [ "$UPDATED_VERSION" != "$VERSION_TAG" ]; then
     echo "::error::Failed to update module-releases.yaml. Expected: ${VERSION_TAG}, Got: ${UPDATED_VERSION}"

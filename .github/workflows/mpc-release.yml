@@ -85,7 +85,7 @@ jobs:
               "branch_prefix": "bump-telemetry",
               "chart_dir": "telemetry",
               "update_command": "yq -i '.appVersion = \"${{ inputs.version }}\" ' telemetry/Chart.yaml && yq -i '(.dependencies[] | select(.name == \"telemetry-manager\") | .version) = \"${{ inputs.version }}\"' telemetry/Chart.yaml",
-              "verify_command": "yq '.appVersion' telemetry/Chart.yaml",
+              "verify_command": "yq -r '.appVersion' telemetry/Chart.yaml",
               "verify_field": "appVersion",
               "commit_title": "Bump Telemetry to ${{ inputs.version }}",
               "pr_title": "Bump Telemetry to ${{ inputs.version }}",
@@ -106,7 +106,7 @@ jobs:
               "branch_prefix": "bump-rmo-occ",
               "chart_dir": "runtime-monitoring-operator",
               "update_command": "yq -i '.argosap.config.rma.image.otelCollector.tag = \"${{ inputs.version }}\"' runtime-monitoring-operator/values.yaml",
-              "verify_command": "yq '.argosap.config.rma.image.otelCollector.tag' runtime-monitoring-operator/values.yaml",
+              "verify_command": "yq -r '.argosap.config.rma.image.otelCollector.tag' runtime-monitoring-operator/values.yaml",
               "verify_field": "OTel Collector tag",
               "commit_title": "Bump RMO OTel Collector to ${{ inputs.version }}",
               "pr_title": "Bump RMO OTel Collector to ${{ inputs.version }}",
@@ -137,8 +137,6 @@ jobs:
           path: telemetry-manager
 
       - name: Configure git authentication
-        env:
-          GH_TOKEN: ${{ secrets.HUSKIES_GHTOOLS_TOKEN }}
         run: |
           # Configure git credential helper for entire job (used by clone/fetch/push/ls-remote)
           # This avoids embedding tokens in URLs while keeping authentication available
@@ -240,34 +238,26 @@ jobs:
           # Check if PR already exists for this branch
           echo "Checking if PR already exists for branch: ${BRANCH_NAME}..."
 
-          # Capture gh exit code to distinguish real errors from "no PR found"
+          # Use gh --jq to extract values directly, avoiding double jq parsing and stderr corruption
           set +e
-          EXISTING_PR=$(gh pr list --head "${BRANCH_NAME}" --json number,url --jq '.[0] | select(.number != null)' 2>&1)
+          PR_NUMBER=$(gh pr list --head "${BRANCH_NAME}" --json number --jq '.[0].number // empty' 2>/dev/null)
           GH_EXIT_CODE=$?
           set -e
 
           # Any non-zero exit code from gh is a fatal error
           if [ ${GH_EXIT_CODE} -ne 0 ]; then
-            echo "::error::Failed to check for existing PRs (exit code ${GH_EXIT_CODE}): ${EXISTING_PR}"
+            echo "::error::Failed to check for existing PRs (exit code ${GH_EXIT_CODE})"
             exit 1
           fi
 
-          # At this point, gh succeeded (exit code 0)
-          # EXISTING_PR is either empty/null (no PRs) or contains PR data
-
-          # Filter out empty objects/null results
-          if [ -n "${EXISTING_PR}" ] && [ "${EXISTING_PR}" != "null" ] && [ "${EXISTING_PR}" != "{}" ]; then
-            PR_NUMBER=$(echo "${EXISTING_PR}" | jq -r '.number')
-            PR_URL=$(echo "${EXISTING_PR}" | jq -r '.url')
-
-            # Validate we got actual values
-            if [ -n "${PR_NUMBER}" ] && [ "${PR_NUMBER}" != "null" ] && [ -n "${PR_URL}" ] && [ "${PR_URL}" != "null" ]; then
-              echo "::notice::PR already exists for this branch"
-              echo "✓ Using existing PR #${PR_NUMBER}: ${PR_URL}"
-              echo "pr-url=${PR_URL}" >> "$GITHUB_OUTPUT"
-              echo "pr-number=${PR_NUMBER}" >> "$GITHUB_OUTPUT"
-              exit 0
-            fi
+          # If PR_NUMBER is non-empty, a PR exists - get the URL
+          if [ -n "${PR_NUMBER}" ]; then
+            PR_URL=$(gh pr list --head "${BRANCH_NAME}" --json url --jq '.[0].url')
+            echo "::notice::PR already exists for this branch"
+            echo "✓ Using existing PR #${PR_NUMBER}: ${PR_URL}"
+            echo "pr-url=${PR_URL}" >> "$GITHUB_OUTPUT"
+            echo "pr-number=${PR_NUMBER}" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
 
           echo "No existing PR found. Creating new PR..."
