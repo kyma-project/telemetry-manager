@@ -16,17 +16,18 @@ const (
 
 // Config contains cluster preparation configuration
 type Config struct {
-	ManagerImage        string   // Required: telemetry manager container image
-	LocalImage          bool     // Image is local (for k3d import and pull policy)
-	InstallIstio        bool     // Install Istio before tests
-	OperateInFIPSMode   bool     // Deploy manager in FIPS mode
-	FIPSModeOverridden  bool     // True if FIPS mode was explicitly overridden via WithOverrideFIPSMode
-	EnableExperimental  bool     // Enable experimental CRDs
-	HelmValues          []string // Custom helm --set values (e.g., "additionalMetadata.labels.foo=bar")
-	ChartPath           string   // Helm chart path/URL (empty = use local chart)
-	DeployPrerequisites bool     // Deploy test prerequisites (default: true)
-	SkipManagerRemoval  bool     // Skip manager removal during reconfiguration (for upgrade tests)
-	ForceFreshInstall   bool     // Force complete removal before install (ensures clean API server state)
+	ManagerImage               string   // Required: telemetry manager container image
+	LocalImage                 bool     // Image is local (for k3d import and pull policy)
+	InstallIstio               bool     // Install Istio before tests
+	OperateInFIPSMode          bool     // Deploy manager in FIPS mode
+	FIPSModeOverridden         bool     // True if FIPS mode was explicitly overridden via WithOverrideFIPSMode
+	EnableExperimental         bool     // Enable experimental CRDs
+	HelmValues                 []string // Custom helm --set values (e.g., "additionalMetadata.labels.foo=bar")
+	ChartPath                  string   // Helm chart path/URL (empty = use local chart)
+	DeployPrerequisites        bool     // Deploy test prerequisites (default: true)
+	SkipManagerRemoval         bool     // Skip manager removal during reconfiguration (for upgrade tests)
+	ForceFreshInstall          bool     // Force complete removal before install (ensures clean API server state)
+	SkipManagedResourceCleanup bool     // Skip waiting for manager-created resources (collectors, selfmonitor) to be deleted at test end
 }
 
 // Option is a functional option for configuring cluster setup
@@ -103,6 +104,16 @@ func WithExperimental() Option {
 func WithSkipManagerRemoval() Option {
 	return func(c *Config) {
 		c.SkipManagerRemoval = true
+	}
+}
+
+// WithSkipManagedResourceCleanup disables the default t.Cleanup that waits for all
+// manager-created resources (collectors, selfmonitor, fluent-bit) to be deleted
+// after test pipelines are removed. Use this for tests where waiting for cleanup
+// is unnecessary (e.g., upgrade tests that keep pipelines alive).
+func WithSkipManagedResourceCleanup() Option {
+	return func(c *Config) {
+		c.SkipManagedResourceCleanup = true
 	}
 }
 
