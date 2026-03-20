@@ -99,10 +99,10 @@ spec:
 
 ## Decision
 
-We implement both steps sequentially:
+We implement Step 1 now and defer Step 2 until there are enough user requests for per-pipeline granularity:
 
-1. **Step 1** adds collection interval configuration to the Telemetry CR. This addresses the core feature request from [#3125](https://github.com/kyma-project/telemetry-manager/issues/3125) with minimal changes. 
-2. **Step 2** adds per-MetricPipeline overrides after Step 1 is validated in production. 
+1. **Step 1** adds collection interval configuration to the Telemetry CR. This addresses the core feature request from [#3125](https://github.com/kyma-project/telemetry-manager/issues/3125) with minimal changes.
+2. **Step 2** adds per-MetricPipeline overrides. We implement this only if there is sufficient user demand for per-pipeline collection intervals.
 
 ## Consequences
 
