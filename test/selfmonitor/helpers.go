@@ -13,6 +13,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/faultbackend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdoutloggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
@@ -30,7 +31,7 @@ const (
 // HTTP status codes used for fault injection.
 //
 // Retryability differs between OTel Collector and Fluent Bit (summarized for tests; exact
-// sets follow the collector/Fluent Bit versions wired into Kyma—see exporter and output plugin docs if in doubt):
+// sets follow the collector/Fluent Bit versions wired into Kyma — see exporter and output plugin docs if in doubt):
 //
 //	OTel Collector retryable codes: 429, 502, 503, 504
 //	OTel Collector non-retryable codes: everything else, including 400 and 500
@@ -42,23 +43,22 @@ const (
 // as the universal non-retryable status code.
 // HTTP 429 is retryable for both, so it is used as the universal retryable status code.
 //
-// Mock backends apply faults via an Istio VirtualService HTTP abort (see test/testkit/mocks/backend) using
-// these same codes: backendNonRetryableErr → 400, backendRetryableErr → 429. PRs/docs should not claim
-// “500 for non-retryable”: 500 is 5xx and therefore retryable for Fluent Bit, and is not what these helpers use.
+// Fault backends use the mock-backend container (test/testkit/mocks/faultbackend) to return
+// these codes at configurable percentages: faultNonRetryableErr → 400, faultRetryableErr → 429.
 const (
 	retryableErrCode    = http.StatusTooManyRequests
 	nonRetryableErrCode = http.StatusBadRequest
 )
 
-// backendNonRetryableErr causes the backend to reject requests with HTTP 400 at the given percentage.
+// faultNonRetryableErr returns FaultBackend options that reject requests with HTTP 400 at the given percentage.
 // HTTP 400 is non-retryable for both OTel Collector and Fluent Bit, so rejected data is
 // dropped immediately without retry.
-func backendNonRetryableErr(percentage float64) []kitbackend.Option {
-	return []kitbackend.Option{kitbackend.WithAbortFaultInjection(percentage, nonRetryableErrCode)}
+func faultNonRetryableErr(percentage float64) []faultbackend.Option {
+	return []faultbackend.Option{faultbackend.WithStatusCodeAndPercentage(nonRetryableErrCode, percentage)}
 }
 
-func backendRetryableErr(percentage float64) []kitbackend.Option {
-	return []kitbackend.Option{kitbackend.WithAbortFaultInjection(percentage, retryableErrCode)}
+func faultRetryableErr(percentage float64) []faultbackend.Option {
+	return []faultbackend.Option{faultbackend.WithStatusCodeAndPercentage(retryableErrCode, percentage)}
 }
 
 // backendNoEndpoints runs the mock backend Deployment with zero replicas so the Service has no ready endpoints.
@@ -68,13 +68,15 @@ func backendNoEndpoints() []kitbackend.Option {
 	return []kitbackend.Option{kitbackend.WithReplicas(0)}
 }
 
-func withMetricAgentSourceDrop(opts []kitbackend.Option) []kitbackend.Option {
-	return append(opts, kitbackend.WithDropFromSourceLabel(map[string]string{"app.kubernetes.io/name": "telemetry-metric-agent"}))
+// pipelineBackend is satisfied by both *backend.Backend and *faultbackend.FaultBackend,
+// allowing buildPipeline to work with either.
+type pipelineBackend interface {
+	EndpointHTTP() string
+	Host() string
+	Port() int32
 }
 
-// Pipeline builders
-
-func buildPipeline(component, pipelineName, includeNs string, backend *kitbackend.Backend) client.Object {
+func buildPipeline(component, pipelineName, includeNs string, backend pipelineBackend) client.Object {
 	switch component {
 	case suite.LabelLogAgent:
 		p := testutils.NewLogPipelineBuilder().

@@ -13,7 +13,7 @@ import (
 	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/faultbackend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
@@ -23,21 +23,21 @@ func TestBackpressure(t *testing.T) {
 	tests := []struct {
 		name           string
 		component      string
-		backendOpts    []kitbackend.Option
+		faultOpts      []faultbackend.Option
 		generator      func(ns string) []client.Object
 		expectedReason string
 	}{
 		{
 			name:           "log-agent",
 			component:      suite.LabelLogAgent,
-			backendOpts:    backendNonRetryableErr(faultPercentageHalf),
+			faultOpts:      faultNonRetryableErr(faultPercentageHalf),
 			generator:      stdoutLogGenerator(defaultRate),
 			expectedReason: conditions.ReasonSelfMonAgentSomeDataDropped,
 		},
 		{
 			name:           "log-gateway",
 			component:      suite.LabelLogGateway,
-			backendOpts:    backendNonRetryableErr(faultPercentageHalf),
+			faultOpts:      faultNonRetryableErr(faultPercentageHalf),
 			generator:      otelGenerator(telemetrygen.SignalTypeLogs, telemetrygen.WithRate(defaultRate), telemetrygen.WithWorkers(1)),
 			expectedReason: conditions.ReasonSelfMonGatewaySomeDataDropped,
 		},
@@ -46,7 +46,7 @@ func TestBackpressure(t *testing.T) {
 			// High generator rate ensures the queue fills faster than retries can drain.
 			name:           "fluent-bit-buffer-filling-up",
 			component:      suite.LabelFluentBit,
-			backendOpts:    backendRetryableErr(faultPercentageNinetyFive),
+			faultOpts:      faultRetryableErr(faultPercentageNinetyFive),
 			generator:      stdoutLogGenerator(60 * defaultRate),
 			expectedReason: conditions.ReasonSelfMonAgentBufferFillingUp,
 		},
@@ -54,28 +54,28 @@ func TestBackpressure(t *testing.T) {
 			// HTTP 400 is non-retryable for Fluent Bit: data is dropped immediately without filling the queue → SomeDataDropped.
 			name:           "fluent-bit-data-dropped",
 			component:      suite.LabelFluentBit,
-			backendOpts:    backendNonRetryableErr(faultPercentageHalf),
+			faultOpts:      faultNonRetryableErr(faultPercentageHalf),
 			generator:      stdoutLogGenerator(defaultRate),
 			expectedReason: conditions.ReasonSelfMonAgentSomeDataDropped,
 		},
 		{
 			name:           "metric-gateway",
 			component:      suite.LabelMetricGateway,
-			backendOpts:    backendNonRetryableErr(faultPercentageHalf),
+			faultOpts:      faultNonRetryableErr(faultPercentageHalf),
 			generator:      otelGenerator(telemetrygen.SignalTypeMetrics, telemetrygen.WithRate(defaultRate), telemetrygen.WithWorkers(1)),
 			expectedReason: conditions.ReasonSelfMonGatewaySomeDataDropped,
 		},
 		{
 			name:           "metric-agent",
 			component:      suite.LabelMetricAgent,
-			backendOpts:    withMetricAgentSourceDrop(backendNonRetryableErr(faultPercentageHalf)),
+			faultOpts:      faultNonRetryableErr(faultPercentageHalf),
 			generator:      promMetricGeneratorHighLoad(),
 			expectedReason: conditions.ReasonSelfMonAgentSomeDataDropped,
 		},
 		{
 			name:           "traces",
 			component:      suite.LabelTraces,
-			backendOpts:    backendNonRetryableErr(faultPercentageHalf),
+			faultOpts:      faultNonRetryableErr(faultPercentageHalf),
 			generator:      otelGenerator(telemetrygen.SignalTypeTraces, telemetrygen.WithRate(defaultRate), telemetrygen.WithWorkers(1)),
 			expectedReason: conditions.ReasonSelfMonGatewaySomeDataDropped,
 		},
@@ -85,7 +85,7 @@ func TestBackpressure(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			labels := []string{suite.LabelSelfMonitor, tc.component, suite.LabelBackpressure}
 
-			opts := []kubeprep.Option{kubeprep.WithIstio()}
+			var opts []kubeprep.Option
 			if isFluentBit(tc.component) {
 				opts = append(opts, kubeprep.WithOverrideFIPSMode(false), kubeprep.WithFluentBitHostPathCleanup())
 			}
@@ -100,8 +100,13 @@ func TestBackpressure(t *testing.T) {
 				genNs        = uniquePrefix("gen")
 			)
 
-			backend := kitbackend.New(backendNs, signalTypeForComponent(tc.component), tc.backendOpts...)
-			pipeline := buildPipeline(tc.component, pipelineName, genNs, backend)
+			fbOpts := tc.faultOpts
+			if isFluentBit(tc.component) {
+				fbOpts = append(fbOpts, faultbackend.WithFluentBitPort())
+			}
+
+			fb := faultbackend.New(backendNs, fbOpts...)
+			pipeline := buildPipeline(tc.component, pipelineName, genNs, fb)
 
 			resources := []client.Object{
 				kitk8sobjects.NewNamespace(backendNs).K8sObject(),
@@ -109,12 +114,11 @@ func TestBackpressure(t *testing.T) {
 				pipeline,
 			}
 			resources = append(resources, tc.generator(genNs)...)
-			resources = append(resources, backend.K8sObjects()...)
+			resources = append(resources, fb.K8sObjects()...)
 
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 			assert.SelfMonitorDebugOnFailure(t)
-			assert.BackendReachable(t, backend)
 			assert.DeploymentReady(t, kitkyma.SelfMonitorName)
 
 			assertFlowDegraded(t, tc.component, pipelineName, flowHealthyThenDegraded(tc.expectedReason))

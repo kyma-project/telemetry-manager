@@ -50,23 +50,19 @@ type OIDCConfig struct {
 }
 
 type Backend struct {
-	abortFaultPercentage float64
-	abortFaultStatusCode int32
-	dropFromSourceLabel  map[string]string
-	certs                *testutils.ServerCerts
-	name                 string
-	namespace            string
-	replicas             int32
-	signalType           SignalType
-	oidc                 *OIDCConfig
-	mtls                 bool
+	certs      *testutils.ServerCerts
+	name       string
+	namespace  string
+	replicas   int32
+	signalType SignalType
+	oidc       *OIDCConfig
+	mtls       bool
 
 	fluentDConfigMap    *fluentdConfigMapBuilder
 	hostSecret          *kitk8sobjects.Secret
 	collectorConfigMap  *collectorConfigMapBuilder
 	collectorDeployment *collectorDeploymentBuilder
 	collectorService    *kitk8sobjects.Service
-	virtualService      *kitk8sobjects.VirtualService
 }
 
 func New(namespace string, signalType SignalType, opts ...Option) *Backend {
@@ -140,13 +136,9 @@ func (b *Backend) K8sObjects() []client.Object {
 	var objects []client.Object
 	if b.signalType == SignalTypeLogsFluentBit {
 		// If FluentBit is used, a FluentD sidecar is added to the collector deployment.
-		// The sidecar is connfigured to accept logs from FluentBit and forward them to the collector usngg the fluent protocol.
+		// The sidecar is configured to accept logs from FluentBit and forward them to the collector using the fluent protocol.
 		// The data is then converted to OTLP and can be queried as usual.
 		objects = append(objects, b.fluentDConfigMap.K8sObject())
-	}
-
-	if b.virtualService != nil {
-		objects = append(objects, b.virtualService.K8sObject())
 	}
 
 	objects = append(objects, b.collectorConfigMap.K8sObject())
@@ -207,13 +199,4 @@ func (b *Backend) buildResources() {
 		b.namespace,
 		kitk8sobjects.WithStringData("host", host),
 	)
-
-	if b.abortFaultPercentage > 0 {
-		b.virtualService = kitk8sobjects.NewVirtualService(
-			"fault-injection",
-			b.namespace,
-			b.name,
-		).WithSourceLabel(b.dropFromSourceLabel).
-			WithFaultAbortPercentage(b.abortFaultPercentage, b.abortFaultStatusCode)
-	}
 }

@@ -14,6 +14,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/faultbackend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
@@ -21,40 +22,43 @@ import (
 
 // TestOutage checks FlowHealthy degrades when the pipeline cannot deliver telemetry.
 //
-// Compared to upstream/main: OTel-based rows (log-agent, log-gateway, metric-gateway, traces) use
-// backendNonRetryableErr (Istio VirtualService HTTP 400 abort) so the backend Service still has endpoints and
-// failures are mesh-level exporter errors. Previously these cases used WithReplicas(0) (no endpoints), which
-// is a different failure mode. Metric-agent keeps a labeled fault (only agent traffic aborted). Fluent Bit has
-// two rows: no-endpoints (backendNoEndpoints → NoLogsDelivered then AllDataDropped) and HTTP abort (all dropped).
+// OTel-based rows (log-agent, log-gateway, metric-gateway, metric-agent, traces) use a FaultBackend
+// that returns HTTP 400 (non-retryable) for 100% of requests. Fluent Bit has two rows:
+// no-endpoints (backendNoEndpoints → NoLogsDelivered then AllDataDropped) and HTTP 400 abort (all dropped).
 func TestOutage(t *testing.T) {
 	tests := []struct {
 		name            string
 		component       string
+		faultOpts       []faultbackend.Option
 		backendOpts     []kitbackend.Option
+		useFaultBackend bool
 		generator       func(ns string) []client.Object
 		expectedReasons []assert.ReasonStatus
 	}{
 		{
 			name:            "log-agent",
 			component:       suite.LabelLogAgent,
-			backendOpts:     backendNonRetryableErr(faultPercentageAll),
+			faultOpts:       faultNonRetryableErr(faultPercentageAll),
+			useFaultBackend: true,
 			generator:       stdoutLogGenerator(4000),
 			expectedReasons: flowHealthyThenDegraded(conditions.ReasonSelfMonAgentAllDataDropped),
 		},
 		{
 			name:            "log-gateway",
 			component:       suite.LabelLogGateway,
-			backendOpts:     backendNonRetryableErr(faultPercentageAll),
+			faultOpts:       faultNonRetryableErr(faultPercentageAll),
+			useFaultBackend: true,
 			generator:       otelGenerator(telemetrygen.SignalTypeLogs, telemetrygen.WithRate(800), telemetrygen.WithWorkers(5)),
 			expectedReasons: flowHealthyThenDegraded(conditions.ReasonSelfMonGatewayAllDataDropped),
 		},
 		{
 			// No backend endpoints: Fluent Bit reads logs but cannot complete output; FlowHealthy moves through
-			// NoLogsDelivered to AllDataDropped (matches upstream/main self-monitor aggregation / Telemetry CR reason).
-			name:        "fluent-bit-no-logs-delivered",
-			component:   suite.LabelFluentBit,
-			backendOpts: backendNoEndpoints(),
-			generator:   stdoutLogGenerator(5000),
+			// NoLogsDelivered to AllDataDropped.
+			name:            "fluent-bit-no-logs-delivered",
+			component:       suite.LabelFluentBit,
+			backendOpts:     backendNoEndpoints(),
+			useFaultBackend: false,
+			generator:       stdoutLogGenerator(5000),
 			expectedReasons: flowHealthyThenDegraded(
 				conditions.ReasonSelfMonAgentNoLogsDelivered,
 				conditions.ReasonSelfMonAgentAllDataDropped,
@@ -63,14 +67,16 @@ func TestOutage(t *testing.T) {
 		{
 			name:            "fluent-bit-all-data-dropped",
 			component:       suite.LabelFluentBit,
-			backendOpts:     backendNonRetryableErr(faultPercentageAll),
+			faultOpts:       faultNonRetryableErr(faultPercentageAll),
+			useFaultBackend: true,
 			generator:       stdoutLogGenerator(defaultRate),
 			expectedReasons: flowHealthyThenDegraded(conditions.ReasonSelfMonAgentAllDataDropped),
 		},
 		{
-			name:        "metric-gateway",
-			component:   suite.LabelMetricGateway,
-			backendOpts: backendNonRetryableErr(faultPercentageAll),
+			name:            "metric-gateway",
+			component:       suite.LabelMetricGateway,
+			faultOpts:       faultNonRetryableErr(faultPercentageAll),
+			useFaultBackend: true,
 			generator: func(ns string) []client.Object {
 				return []client.Object{
 					telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeMetrics,
@@ -85,14 +91,16 @@ func TestOutage(t *testing.T) {
 		{
 			name:            "metric-agent",
 			component:       suite.LabelMetricAgent,
-			backendOpts:     withMetricAgentSourceDrop(backendNonRetryableErr(faultPercentageAll)),
+			faultOpts:       faultNonRetryableErr(faultPercentageAll),
+			useFaultBackend: true,
 			generator:       promMetricGeneratorHighLoad(),
 			expectedReasons: flowHealthyThenDegraded(conditions.ReasonSelfMonAgentAllDataDropped),
 		},
 		{
 			name:            "traces",
 			component:       suite.LabelTraces,
-			backendOpts:     backendNonRetryableErr(faultPercentageAll),
+			faultOpts:       faultNonRetryableErr(faultPercentageAll),
+			useFaultBackend: true,
 			generator:       otelGenerator(telemetrygen.SignalTypeTraces, telemetrygen.WithRate(80), telemetrygen.WithWorkers(10)),
 			expectedReasons: flowHealthyThenDegraded(conditions.ReasonSelfMonGatewayAllDataDropped),
 		},
@@ -102,7 +110,7 @@ func TestOutage(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			labels := []string{suite.LabelSelfMonitor, tc.component, suite.LabelOutage}
 
-			opts := []kubeprep.Option{kubeprep.WithIstio()}
+			var opts []kubeprep.Option
 			if isFluentBit(tc.component) {
 				opts = append(opts, kubeprep.WithOverrideFIPSMode(false), kubeprep.WithFluentBitHostPathCleanup())
 			}
@@ -117,22 +125,33 @@ func TestOutage(t *testing.T) {
 				genNs        = uniquePrefix("gen")
 			)
 
-			backend := kitbackend.New(backendNs, signalTypeForComponent(tc.component), tc.backendOpts...)
-			pipeline := buildPipeline(tc.component, pipelineName, genNs, backend)
-
 			resources := []client.Object{
 				kitk8sobjects.NewNamespace(backendNs).K8sObject(),
 				kitk8sobjects.NewNamespace(genNs).K8sObject(),
-				pipeline,
 			}
-			resources = append(resources, tc.generator(genNs)...)
-			resources = append(resources, backend.K8sObjects()...)
+
+			if tc.useFaultBackend {
+				fbOpts := tc.faultOpts
+				if isFluentBit(tc.component) {
+					fbOpts = append(fbOpts, faultbackend.WithFluentBitPort())
+				}
+
+				fb := faultbackend.New(backendNs, fbOpts...)
+				pipeline := buildPipeline(tc.component, pipelineName, genNs, fb)
+				resources = append(resources, pipeline)
+				resources = append(resources, tc.generator(genNs)...)
+				resources = append(resources, fb.K8sObjects()...)
+			} else {
+				backend := kitbackend.New(backendNs, signalTypeForComponent(tc.component), tc.backendOpts...)
+				pipeline := buildPipeline(tc.component, pipelineName, genNs, backend)
+				resources = append(resources, pipeline)
+				resources = append(resources, tc.generator(genNs)...)
+				resources = append(resources, backend.K8sObjects()...)
+			}
 
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 			assert.SelfMonitorDebugOnFailure(t)
-			// BackendReachable is intentionally skipped: some rows (e.g. fluent-bit-no-logs-delivered)
-			// use backendNoEndpoints (0 replicas), making the backend Service unreachable by design.
 			assert.DeploymentReady(t, kitkyma.SelfMonitorName)
 
 			assertFlowDegraded(t, tc.component, pipelineName, tc.expectedReasons)
