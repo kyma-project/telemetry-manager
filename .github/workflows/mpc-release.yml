@@ -76,47 +76,68 @@ jobs:
         id: set-matrix
         run: |
           if [ "${{ inputs.target_chart }}" = "Telemetry" ]; then
-            cat >> "$GITHUB_OUTPUT" <<'EOF'
-          matrix<<MATRIX_EOF
-          {
-            "include": [{
-              "chart_name": "Telemetry",
-              "base_branch": "chart/telemetry",
-              "branch_prefix": "bump-telemetry",
-              "chart_dir": "telemetry",
-              "update_command": "yq -i '.appVersion = \"${{ inputs.version }}\" ' telemetry/Chart.yaml && yq -i '(.dependencies[] | select(.name == \"telemetry-manager\") | .version) = \"${{ inputs.version }}\"' telemetry/Chart.yaml",
-              "verify_command": "yq -r '.appVersion' telemetry/Chart.yaml",
-              "verify_field": "appVersion",
-              "commit_title": "Bump Telemetry to ${{ inputs.version }}",
-              "pr_title": "Bump Telemetry to ${{ inputs.version }}",
-              "pr_body": "Bump Telemetry chart to version ${{ inputs.version }}",
-              "summary_title": "Telemetry Chart Release Summary",
-              "summary_details": "Verify chart changes are correct"
-            }]
-          }
-          MATRIX_EOF
-          EOF
+            # Use jq to generate JSON and write directly to avoid heredoc indentation issues
+            jq -n \
+              --arg chart_name "Telemetry" \
+              --arg base_branch "chart/telemetry" \
+              --arg branch_prefix "bump-telemetry" \
+              --arg chart_dir "telemetry" \
+              --arg update_command "yq -i '.appVersion = \"${{ inputs.version }}\" ' telemetry/Chart.yaml && yq -i '(.dependencies[] | select(.name == \"telemetry-manager\") | .version) = \"${{ inputs.version }}\"' telemetry/Chart.yaml" \
+              --arg verify_command "yq -r '.appVersion' telemetry/Chart.yaml" \
+              --arg verify_field "appVersion" \
+              --arg commit_title "Bump Telemetry to ${{ inputs.version }}" \
+              --arg pr_title "Bump Telemetry to ${{ inputs.version }}" \
+              --arg pr_body "Bump Telemetry chart to version ${{ inputs.version }}" \
+              --arg summary_title "Telemetry Chart Release Summary" \
+              --arg summary_details "Verify chart changes are correct" \
+              '{include: [{
+                chart_name: $chart_name,
+                base_branch: $base_branch,
+                branch_prefix: $branch_prefix,
+                chart_dir: $chart_dir,
+                update_command: $update_command,
+                verify_command: $verify_command,
+                verify_field: $verify_field,
+                commit_title: $commit_title,
+                pr_title: $pr_title,
+                pr_body: $pr_body,
+                summary_title: $summary_title,
+                summary_details: $summary_details
+              }]}' > /tmp/matrix.json
+            echo "matrix<<MATRIX_EOF" >> "$GITHUB_OUTPUT"
+            cat /tmp/matrix.json >> "$GITHUB_OUTPUT"
+            echo "MATRIX_EOF" >> "$GITHUB_OUTPUT"
           elif [ "${{ inputs.target_chart }}" = "RMO" ]; then
-            cat >> "$GITHUB_OUTPUT" <<'EOF'
-          matrix<<MATRIX_EOF
-          {
-            "include": [{
-              "chart_name": "RMO",
-              "base_branch": "chart/runtime-monitoring-operator",
-              "branch_prefix": "bump-rmo-occ",
-              "chart_dir": "runtime-monitoring-operator",
-              "update_command": "yq -i '.argosap.config.rma.image.otelCollector.tag = \"${{ inputs.version }}\"' runtime-monitoring-operator/values.yaml",
-              "verify_command": "yq -r '.argosap.config.rma.image.otelCollector.tag' runtime-monitoring-operator/values.yaml",
-              "verify_field": "OTel Collector tag",
-              "commit_title": "Bump RMO OTel Collector to ${{ inputs.version }}",
-              "pr_title": "Bump RMO OTel Collector to ${{ inputs.version }}",
-              "pr_body": "Bump RMO OTel Collector version to ${{ inputs.version }}",
-              "summary_title": "RMO OTel Collector Release Summary",
-              "summary_details": "Verify OTel Collector version changes are correct"
-            }]
-          }
-          MATRIX_EOF
-          EOF
+            jq -n \
+              --arg chart_name "RMO" \
+              --arg base_branch "chart/runtime-monitoring-operator" \
+              --arg branch_prefix "bump-rmo-occ" \
+              --arg chart_dir "runtime-monitoring-operator" \
+              --arg update_command "yq -i '.argosap.config.rma.image.otelCollector.tag = \"${{ inputs.version }}\"' runtime-monitoring-operator/values.yaml" \
+              --arg verify_command "yq -r '.argosap.config.rma.image.otelCollector.tag' runtime-monitoring-operator/values.yaml" \
+              --arg verify_field "OTel Collector tag" \
+              --arg commit_title "Bump RMO OTel Collector to ${{ inputs.version }}" \
+              --arg pr_title "Bump RMO OTel Collector to ${{ inputs.version }}" \
+              --arg pr_body "Bump RMO OTel Collector version to ${{ inputs.version }}" \
+              --arg summary_title "RMO OTel Collector Release Summary" \
+              --arg summary_details "Verify OTel Collector version changes are correct" \
+              '{include: [{
+                chart_name: $chart_name,
+                base_branch: $base_branch,
+                branch_prefix: $branch_prefix,
+                chart_dir: $chart_dir,
+                update_command: $update_command,
+                verify_command: $verify_command,
+                verify_field: $verify_field,
+                commit_title: $commit_title,
+                pr_title: $pr_title,
+                pr_body: $pr_body,
+                summary_title: $summary_title,
+                summary_details: $summary_details
+              }]}' > /tmp/matrix.json
+            echo "matrix<<MATRIX_EOF" >> "$GITHUB_OUTPUT"
+            cat /tmp/matrix.json >> "$GITHUB_OUTPUT"
+            echo "MATRIX_EOF" >> "$GITHUB_OUTPUT"
           fi
 
   release-chart:
