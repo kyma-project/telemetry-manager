@@ -27,9 +27,9 @@ const (
 	faultPercentageNinetyFive float64 = 95
 )
 
-// Backend fault injection presets.
+// HTTP status codes used for fault injection.
 //
-// HTTP status code retryability differs between OTel Collector and Fluent Bit (summarized for tests; exact
+// Retryability differs between OTel Collector and Fluent Bit (summarized for tests; exact
 // sets follow the collector/Fluent Bit versions wired into Kyma—see exporter and output plugin docs if in doubt):
 //
 //	OTel Collector retryable codes: 429, 502, 503, 504
@@ -45,16 +45,14 @@ const (
 // Mock backends apply faults via an Istio VirtualService HTTP abort (see test/testkit/mocks/backend) using
 // these same codes: backendNonRetryableErr → 400, backendRetryableErr → 429. PRs/docs should not claim
 // “500 for non-retryable”: 500 is 5xx and therefore retryable for Fluent Bit, and is not what these helpers use.
-
-// backendNonRetryableErr causes the backend to reject requests with HTTP 400 at the given percentage.
-// HTTP 400 is non-retryable for both OTel Collector and Fluent Bit, so rejected data is
-// dropped immediately without retry.
-
 const (
 	retryableErrCode    = http.StatusTooManyRequests
 	nonRetryableErrCode = http.StatusBadRequest
 )
 
+// backendNonRetryableErr causes the backend to reject requests with HTTP 400 at the given percentage.
+// HTTP 400 is non-retryable for both OTel Collector and Fluent Bit, so rejected data is
+// dropped immediately without retry.
 func backendNonRetryableErr(percentage float64) []kitbackend.Option {
 	return []kitbackend.Option{kitbackend.WithAbortFaultInjection(percentage, nonRetryableErrCode)}
 }
@@ -242,6 +240,8 @@ func assertPipelineConditionTransition(t *testing.T, component, pipelineName str
 		assert.MetricPipelineConditionReasonsTransition(t, pipelineName, conditions.TypeFlowHealthy, expectedReasons)
 	case suite.LabelTraces:
 		assert.TracePipelineConditionReasonsTransition(t, pipelineName, conditions.TypeFlowHealthy, expectedReasons)
+	default:
+		panic("unknown component: " + component)
 	}
 }
 

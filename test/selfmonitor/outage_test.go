@@ -131,6 +131,8 @@ func TestOutage(t *testing.T) {
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 			assert.SelfMonitorDebugOnFailure(t)
+			// BackendReachable is intentionally skipped: some rows (e.g. fluent-bit-no-logs-delivered)
+			// use backendNoEndpoints (0 replicas), making the backend Service unreachable by design.
 			assert.DeploymentReady(t, kitkyma.SelfMonitorName)
 
 			assertFlowDegraded(t, tc.component, pipelineName, tc.expectedReasons)

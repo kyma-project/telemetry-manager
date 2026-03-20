@@ -42,6 +42,8 @@ func TestBackpressure(t *testing.T) {
 			expectedReason: conditions.ReasonSelfMonGatewaySomeDataDropped,
 		},
 		{
+			// HTTP 429 is retryable for Fluent Bit: requests are retried, queue fills up → BufferFillingUp alert.
+			// High generator rate ensures the queue fills faster than retries can drain.
 			name:           "fluent-bit-buffer-filling-up",
 			component:      suite.LabelFluentBit,
 			backendOpts:    backendRetryableErr(faultPercentageNinetyFive),
@@ -49,6 +51,7 @@ func TestBackpressure(t *testing.T) {
 			expectedReason: conditions.ReasonSelfMonAgentBufferFillingUp,
 		},
 		{
+			// HTTP 400 is non-retryable for Fluent Bit: data is dropped immediately without filling the queue → SomeDataDropped.
 			name:           "fluent-bit-data-dropped",
 			component:      suite.LabelFluentBit,
 			backendOpts:    backendNonRetryableErr(faultPercentageHalf),
