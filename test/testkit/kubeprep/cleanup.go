@@ -106,6 +106,9 @@ func CleanupFluentBitHostPath(ctx context.Context, k8sClient client.Client) erro
 		return fmt.Errorf("delete hostpath cleanup daemonset: %w", err)
 	}
 
+	// Deleting the DaemonSet triggers pod termination and the preStop hook (rm -rf) runs asynchronously.
+	// TerminationGracePeriodSeconds (60s) gives the hook time to complete before the pod is killed.
+	// We wait for the DaemonSet object itself to be gone, which implies all pods have been terminated.
 	if err := waitUntil(ctx, periodic.EventuallyTimeout, periodic.DefaultInterval, func() (bool, error) {
 		err := k8sClient.Get(ctx, key, &appsv1.DaemonSet{})
 		if apierrors.IsNotFound(err) {

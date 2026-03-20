@@ -63,10 +63,10 @@ func backendRetryableErr(percentage float64) []kitbackend.Option {
 	return []kitbackend.Option{kitbackend.WithAbortFaultInjection(percentage, retryableErrCode)}
 }
 
-// backendScaledToZero runs the mock backend Deployment with zero replicas so the Service has no ready endpoints.
+// backendNoEndpoints runs the mock backend Deployment with zero replicas so the Service has no ready endpoints.
 // Fluent Bit keeps reading logs while output cannot complete (no HTTP response), which tends to surface
 // ReasonSelfMonAgentNoLogsDelivered rather than immediate non-retryable drops (ReasonSelfMonAgentAllDataDropped).
-func backendScaledToZero() []kitbackend.Option {
+func backendNoEndpoints() []kitbackend.Option {
 	return []kitbackend.Option{kitbackend.WithReplicas(0)}
 }
 
@@ -210,6 +210,8 @@ func assertComponentReady(t *testing.T, component string) {
 		assert.DaemonSetReady(t, kitkyma.MetricAgentName)
 	case suite.LabelTraces:
 		assert.DeploymentReady(t, kitkyma.TraceGatewayName)
+	default:
+		panic("unknown component: " + component)
 	}
 }
 
@@ -225,6 +227,8 @@ func assertPipelineHealthy(t *testing.T, component, pipelineName string) {
 		assert.MetricPipelineHealthy(t, pipelineName)
 	case suite.LabelTraces:
 		assert.TracePipelineHealthy(t, pipelineName)
+	default:
+		panic("unknown component: " + component)
 	}
 }
 

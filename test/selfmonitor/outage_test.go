@@ -25,7 +25,7 @@ import (
 // backendNonRetryableErr (Istio VirtualService HTTP 400 abort) so the backend Service still has endpoints and
 // failures are mesh-level exporter errors. Previously these cases used WithReplicas(0) (no endpoints), which
 // is a different failure mode. Metric-agent keeps a labeled fault (only agent traffic aborted). Fluent Bit has
-// two rows: no-endpoints (backendScaledToZero → NoLogsDelivered then AllDataDropped) and HTTP abort (all dropped).
+// two rows: no-endpoints (backendNoEndpoints → NoLogsDelivered then AllDataDropped) and HTTP abort (all dropped).
 func TestOutage(t *testing.T) {
 	tests := []struct {
 		name            string
@@ -53,7 +53,7 @@ func TestOutage(t *testing.T) {
 			// NoLogsDelivered to AllDataDropped (matches upstream/main self-monitor aggregation / Telemetry CR reason).
 			name:        "fluent-bit-no-logs-delivered",
 			component:   suite.LabelFluentBit,
-			backendOpts: backendScaledToZero(),
+			backendOpts: backendNoEndpoints(),
 			generator:   stdoutLogGenerator(5000),
 			expectedReasons: flowHealthyThenDegraded(
 				conditions.ReasonSelfMonAgentNoLogsDelivered,
