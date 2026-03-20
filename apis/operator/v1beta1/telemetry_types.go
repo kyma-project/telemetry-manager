@@ -82,6 +82,7 @@ type MetricSpec struct {
 	// The value is a duration string (for example, "30s", "1m", "5m"). Minimum is 1s. Default is 30s.
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Format=duration
+	// +kubebuilder:validation:XValidation:rule="self > duration('0s')",message="'collectionInterval' must be greater than 0"
 	CollectionInterval *metav1.Duration `json:"collectionInterval,omitempty"`
 
 	// Runtime configures collection settings specific to runtime metrics input.
@@ -103,6 +104,7 @@ type MetricInputSpec struct {
 	// The value is a duration string (for example, "30s", "1m", "5m"). Minimum is 1s.
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Format=duration
+	// +kubebuilder:validation:XValidation:rule="self > duration('0s')",message="'collectionInterval' must be greater than 0"
 	CollectionInterval *metav1.Duration `json:"collectionInterval,omitempty"`
 }
 
