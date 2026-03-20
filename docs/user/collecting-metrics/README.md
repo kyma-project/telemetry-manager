@@ -54,10 +54,10 @@ You can adjust the MetricPipeline using runtime configuration with the available
 - Scrape **prometheus** metrics from applications that expose a Prometheus-compatible endpoint (see [Collect Prometheus Metrics](prometheus-input.md)).
 - Collect **istio** service mesh metrics from Istio proxies and control plane components (see [Collect Istio Metrics](istio-input.md)).
 - Collect **runtime** resource usage and status metrics from Kubernetes components like Pods, Nodes, and Deployments (see [Collect Runtime Metrics](runtime-input.md)).
-- Change the **collection interval** for all pull-based inputs or for a specific input type (see [Configure Collection Interval](#configure-collection-interval)).
 - Use diagnostic metrics to debug your **prometheus** and **istio** configuration (see [Collect Diagnostic Metrics](./prometheus-input.md#collect-diagnostic-metrics)).
 - Choose from which specific namespaces you want to include or exclude metrics (see [Filter Metrics](../filter-and-process/filter-metrics.md)).
 - Avoid redundancy by dropping push-based OTLP metrics that are sent directly to the metric gateway (see [Route Specific Inputs to Different Backends](./../otlp-input.md#route-specific-inputs-to-different-backends)).
+- Reduce or increase metric collection frequency for all pull-based inputs or for a specific input type by changing **collection interval** (see [Configure Collection Interval](#configure-collection-interval)).
 
 ## Configure Collection Interval
 
