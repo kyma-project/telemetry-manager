@@ -25,18 +25,35 @@ If release name contains chart name it will be used as a full name.
 
 
 {{/*
-Common labels
+Common labels for resource metadata
 */}}
 {{- define "telemetry-manager.labels" -}}
-{{ include "telemetry-manager.selectorLabels" . }}
-app.kubernetes.io/managed-by: kyma
 app.kubernetes.io/name: telemetry-manager
+app.kubernetes.io/component: controller
+app.kubernetes.io/managed-by: kyma
+app.kubernetes.io/part-of: telemetry
+kyma-project.io/module: telemetry
 {{- end }}
 
 {{/*
-Selector labels
+Legacy selector labels (immutable on existing Deployments)
 */}}
 {{- define "telemetry-manager.selectorLabels" -}}
+app.kubernetes.io/instance: telemetry
+app.kubernetes.io/name: manager
+control-plane: telemetry-manager
+kyma-project.io/component: controller
+{{- end }}
+
+{{/*
+Pod template labels (legacy selector + new common labels)
+*/}}
+{{- define "telemetry-manager.podLabels" -}}
+{{ include "telemetry-manager.selectorLabels" . }}
+app.kubernetes.io/component: controller
+app.kubernetes.io/managed-by: kyma
+app.kubernetes.io/part-of: telemetry
+kyma-project.io/module: telemetry
 {{- end }}
 
 {{/*
