@@ -54,9 +54,46 @@ You can adjust the MetricPipeline using runtime configuration with the available
 - Scrape **prometheus** metrics from applications that expose a Prometheus-compatible endpoint (see [Collect Prometheus Metrics](prometheus-input.md)).
 - Collect **istio** service mesh metrics from Istio proxies and control plane components (see [Collect Istio Metrics](istio-input.md)).
 - Collect **runtime** resource usage and status metrics from Kubernetes components like Pods, Nodes, and Deployments (see [Collect Runtime Metrics](runtime-input.md)).
+- Change the **collection interval** for all pull-based inputs or for a specific input type (see [Configure Collection Interval](#configure-collection-interval)).
 - Use diagnostic metrics to debug your **prometheus** and **istio** configuration (see [Collect Diagnostic Metrics](./prometheus-input.md#collect-diagnostic-metrics)).
 - Choose from which specific namespaces you want to include or exclude metrics (see [Filter Metrics](../filter-and-process/filter-metrics.md)).
 - Avoid redundancy by dropping push-based OTLP metrics that are sent directly to the metric gateway (see [Route Specific Inputs to Different Backends](./../otlp-input.md#route-specific-inputs-to-different-backends)).
+
+## Configure Collection Interval
+
+By default, the metric agent scrapes all pull-based inputs (Prometheus, Istio, and runtime) every 30 seconds. You can change this interval in the Telemetry CR.
+
+To set a global collection interval that applies to all pull-based inputs, use the **metric.collectionInterval** field:
+
+```yaml
+apiVersion: operator.kyma-project.io/v1beta1
+kind: Telemetry
+metadata:
+  name: default
+  namespace: kyma-system
+spec:
+  metric:
+    collectionInterval: 60s
+```
+
+To override the interval for a specific input type, use the input-specific **collectionInterval** field. The following example sets a global interval of `60s` but overrides it to `15s` for the Prometheus input:
+
+```yaml
+apiVersion: operator.kyma-project.io/v1beta1
+kind: Telemetry
+metadata:
+  name: default
+  namespace: kyma-system
+spec:
+  metric:
+    collectionInterval: 60s
+    prometheus:
+      collectionInterval: 15s
+```
+
+The precedence is as follows: input-specific override > global **metric.collectionInterval** > default of `30s`.
+
+For details on the available parameters, see [Telemetry Custom Resource](../resources/01-telemetry.md).
 
 ## Limitations
 

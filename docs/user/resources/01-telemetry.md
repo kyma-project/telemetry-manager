@@ -31,6 +31,7 @@ spec:
         static:
           replicas: 3
   metric:
+    collectionInterval: 60s
     gateway:
       scaling:
         type: Static
