@@ -78,7 +78,7 @@ func newStats(rules []rule, defaultBehavior string) *stats {
 	if defaultBehavior == "close" {
 		codeSet[0] = true
 	} else {
-		code, _ := strconv.Atoi(defaultBehavior) //nolint:errcheck // already validated in parseConfig
+		code, _ := strconv.Atoi(defaultBehavior) //nolint:errcheck // already validated by parseConfig
 		codeSet[code] = true
 	}
 
@@ -142,9 +142,6 @@ func main() {
 
 func parseConfig() ([]rule, string) {
 	rulesEnv := os.Getenv("FAULT_RULES")
-	if rulesEnv == "" {
-		log.Fatal("FAULT_RULES environment variable is required (e.g. 400:50,200:30)")
-	}
 
 	defaultBehavior := os.Getenv("FAULT_DEFAULT")
 	if defaultBehavior == "" {
@@ -161,31 +158,37 @@ func parseConfig() ([]rule, string) {
 
 	var totalPercentage float64
 
-	for entry := range strings.SplitSeq(rulesEnv, ",") {
-		parts := strings.SplitN(entry, ":", ruleParts)
-		if len(parts) != ruleParts {
-			log.Fatalf("Invalid rule format: %s, expected statusCode:percentage", entry) //nolint:gosec // env var value is safe to log
+	if rulesEnv != "" {
+		for entry := range strings.SplitSeq(rulesEnv, ",") {
+			parts := strings.SplitN(entry, ":", ruleParts)
+			if len(parts) != ruleParts {
+				log.Fatalf("Invalid rule format: %s, expected statusCode:percentage", entry) //nolint:gosec // env var value is safe to log
+			}
+
+			statusCode, err := strconv.Atoi(strings.TrimSpace(parts[0]))
+			if err != nil {
+				log.Fatalf("Invalid status code in rule: %s: %v", entry, err) //nolint:gosec // env var value is safe to log
+			}
+
+			percentage, err := strconv.ParseFloat(strings.TrimSpace(parts[1]), 64)
+			if err != nil {
+				log.Fatalf("Invalid percentage in rule %s: %v", entry, err) //nolint:gosec // env var value is safe to log
+			}
+
+			rules = append(rules, rule{statusCode: statusCode, percentage: percentage})
+			totalPercentage += percentage
 		}
 
-		statusCode, err := strconv.Atoi(strings.TrimSpace(parts[0]))
-		if err != nil {
-			log.Fatalf("Invalid status code in rule: %s: %v", entry, err) //nolint:gosec // env var value is safe to log
+		if totalPercentage > maxPercentage {
+			log.Fatalf("Total percentage across rules is %.2f%%, exceeds 100%%", totalPercentage)
 		}
-
-		percentage, err := strconv.ParseFloat(strings.TrimSpace(parts[1]), 64)
-		if err != nil {
-			log.Fatalf("Invalid percentage in rule %s: %v", entry, err) //nolint:gosec // env var value is safe to log
-		}
-
-		rules = append(rules, rule{statusCode: statusCode, percentage: percentage})
-		totalPercentage += percentage
 	}
 
-	if totalPercentage > maxPercentage {
-		log.Fatalf("Total percentage across rules is %.2f%%, exceeds 100%%", totalPercentage)
+	if rulesEnv != "" {
+		log.Printf("Fault rules: %s (default: %s, remainder: %.2f%%)", rulesEnv, defaultBehavior, maxPercentage-totalPercentage) //nolint:gosec // env var values are safe to log
+	} else {
+		log.Printf("No fault rules configured, all requests use default: %s", defaultBehavior) //nolint:gosec // env var value is safe to log
 	}
-
-	log.Printf("Fault rules: %s (default: %s, remainder: %.2f%%)", rulesEnv, defaultBehavior, maxPercentage-totalPercentage) //nolint:gosec // env var values are safe to log
 
 	return rules, defaultBehavior
 }
@@ -208,7 +211,7 @@ func buildHandler(rules []rule, defaultBehavior string, reqStats *stats) http.Ha
 		// Drain the request body to avoid connection resets on keep-alive connections.
 		// Without this, responding before the client finishes sending can cause a TCP RST,
 		// which the OTLP exporter treats as a retryable connection error instead of a clean HTTP 400.
-		_, _ = io.Copy(io.Discard, r.Body) //nolint:errcheck // best-effort drain
+		_, _ = io.Copy(io.Discard, r.Body) //nolint:errcheck // best-effort drain; body may already be closed
 
 		roll := rand.Float64() * maxPercentage //nolint:gosec // deterministic randomness is fine for fault injection
 
