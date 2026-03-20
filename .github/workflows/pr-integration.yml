@@ -94,6 +94,7 @@ jobs:
 
       - name: Save and upload image artifact
         if: github.event_name == 'pull_request'
+        shell: bash
         run: docker save telemetry-manager:pr | zstd -T0 -3 > /tmp/manager-image.tar.zst
 
       - name: Upload image artifact
