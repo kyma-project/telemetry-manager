@@ -54,3 +54,5 @@ By adopting this approach, we transfer the effort associated with expression eva
 ## Consequences
 
 The described setup involves a lot of interaction between Telemetry Manager and Prometheus, which should be sufficiently monitored.
+
+Most log flow alerts keep a `pipeline_name` label so the webhook can target one pipeline. The `LogFluentBitBufferInUse` rule is different: it sums `fluentbit_input_storage_chunks_down` across inputs so backlog in storage paths like `storage_backlog` counts toward one cluster-wide total. The alert can fire when the sum crosses the threshold, not only when a single pipeline peaks. To read the live sum when you tune the threshold, use the self-monitor Prometheus API or the helper script `scripts/get-chunks-down-threshold.sh`.

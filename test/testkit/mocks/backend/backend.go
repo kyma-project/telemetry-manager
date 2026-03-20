@@ -5,7 +5,6 @@ import (
 	"net"
 	"path/filepath"
 	"strconv"
-	"time"
 
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -53,8 +52,6 @@ type OIDCConfig struct {
 type Backend struct {
 	abortFaultPercentage float64
 	abortFaultStatusCode int32
-	delayFaultPercentage float64
-	delayFaultDuration   time.Duration
 	dropFromSourceLabel  map[string]string
 	certs                *testutils.ServerCerts
 	name                 string
@@ -211,19 +208,12 @@ func (b *Backend) buildResources() {
 		kitk8sobjects.WithStringData("host", host),
 	)
 
-	if b.abortFaultPercentage > 0 || b.delayFaultDuration > 0 {
+	if b.abortFaultPercentage > 0 {
 		b.virtualService = kitk8sobjects.NewVirtualService(
 			"fault-injection",
 			b.namespace,
 			b.name,
-		).WithSourceLabel(b.dropFromSourceLabel)
-
-		if b.abortFaultPercentage > 0 {
-			b.virtualService.WithFaultAbortPercentage(b.abortFaultPercentage, b.abortFaultStatusCode)
-		}
-
-		if b.delayFaultDuration > 0 {
-			b.virtualService.WithFaultDelay(b.delayFaultPercentage, b.delayFaultDuration)
-		}
+		).WithSourceLabel(b.dropFromSourceLabel).
+			WithFaultAbortPercentage(b.abortFaultPercentage, b.abortFaultStatusCode)
 	}
 }
