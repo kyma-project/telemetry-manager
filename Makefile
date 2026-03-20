@@ -64,6 +64,7 @@ K3D              := $(TOOLS_BIN_DIR)/k3d
 PROMLINTER       := $(TOOLS_BIN_DIR)/promlinter
 GOMPLATE         := $(TOOLS_BIN_DIR)/gomplate
 HELM             := $(TOOLS_BIN_DIR)/helm
+KUBECONFORM      := $(TOOLS_BIN_DIR)/kubeconform
 KUBECTL          := kubectl
 
 POPULATE_IMAGES  := $(TOOLS_BIN_DIR)/populate-images
@@ -150,6 +151,23 @@ lint-fix: lint-fix-manager $(LINT_FIX_TARGETS) ## Run linting checks with automa
 	@echo "All lint fix checks completed."
 
 .PHONY: lint-manager lint-fix-manager $(LINT_TARGETS) $(LINT_FIX_TARGETS)
+
+.PHONY: check-kubeconform
+check-kubeconform: $(HELM) $(KUBECONFORM) ## Validate Helm-rendered templates with kubeconform
+	@echo "Validating default chart variant..."
+	$(HELM) template telemetry helm \
+		--set experimental.enabled=false \
+		--set default.enabled=true \
+		--set nameOverride=telemetry \
+		--namespace kyma-system \
+	| $(KUBECONFORM) -summary -strict -ignore-missing-schemas -verbose -schema-location default
+	@echo "Validating experimental chart variant..."
+	$(HELM) template telemetry helm \
+		--set experimental.enabled=true \
+		--set default.enabled=false \
+		--set nameOverride=telemetry \
+		--namespace kyma-system \
+	| $(KUBECONFORM) -summary -strict -ignore-missing-schemas -verbose -schema-location default
 
 ##@ Code Generation
 

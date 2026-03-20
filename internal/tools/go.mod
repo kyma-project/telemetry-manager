@@ -13,6 +13,7 @@ require (
 	github.com/mikefarah/yq/v4 v4.52.4
 	github.com/vektra/mockery/v3 v3.7.0
 	github.com/vladopajic/go-test-coverage/v2 v2.18.4
+	github.com/yannh/kubeconform v0.7.0
 	github.com/yeya24/promlinter v0.3.0
 	golang.org/x/tools v0.43.0
 	gotest.tools/gotestsum v1.13.0
