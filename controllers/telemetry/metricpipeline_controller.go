@@ -221,6 +221,7 @@ func (r *MetricPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		return fmt.Errorf("failed to check VPA status: %w", err)
 	}
 
+	// TODO: PeerAuthentication watch should be removed after migrating the agent
 	// Only watch PeerAuthentication CR if Istio is active
 	// otherwise, manager will have errors if the PeerAuthentication CRD is not present in the cluster
 	if isIstioActive {

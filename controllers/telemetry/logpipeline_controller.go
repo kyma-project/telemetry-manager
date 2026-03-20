@@ -201,6 +201,7 @@ func (r *LogPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		return fmt.Errorf("failed to create discovery client: %w", err)
 	}
 
+	// TODO: PeerAuthentication watch should be removed after migrating the agents
 	isIstioActive, err := istiostatus.NewChecker(discoveryClient).IsIstioActive(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to check Istio status: %w", err)
