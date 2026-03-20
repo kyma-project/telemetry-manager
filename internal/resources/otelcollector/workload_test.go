@@ -18,41 +18,155 @@ func TestMakeWorkloadMetadata(t *testing.T) {
 		baseName               string
 		componentType          string
 		extraPodLabels         map[string]string
-		annotations            map[string]string
+		extraPodAnnotations    map[string]string
 		expectedPodLabels      int
 		expectedPodAnnotations int
+		expectedResourceLabels int
+		expectedResourceAnnotations int
+		verifyPodLabels        map[string]string
+		verifyPodAnnotations   map[string]string
 	}{
 		{
 			name: "basic metadata without additional labels",
 			globals: config.NewGlobal(
 				config.WithTargetNamespace("kyma-system"),
 			),
-			baseName:               "test-collector",
-			componentType:          "telemetry",
-			expectedPodLabels:      5, // default labels only
-			expectedPodAnnotations: 0,
+			baseName:                    "test-collector",
+			componentType:               "telemetry",
+			expectedPodLabels:           5, // default labels only
+			expectedPodAnnotations:      0,
+			expectedResourceLabels:      0,
+			expectedResourceAnnotations: 0,
 		},
 		{
-			name: "metadata with additional labels and annotations",
+			name: "metadata with workload labels and annotations only",
 			globals: config.NewGlobal(
 				config.WithTargetNamespace("kyma-system"),
-				config.WithAdditionalWorkloadLabels(map[string]string{"custom-label": "value"}),
-				config.WithAdditionalWorkloadAnnotations(map[string]string{"custom-annotation": "annotation-value"}),
+				config.WithAdditionalWorkloadLabels(map[string]string{"workload-label": "workload-value"}),
+				config.WithAdditionalWorkloadAnnotations(map[string]string{"workload-annotation": "workload-annotation-value"}),
 			),
-			baseName:               "test-collector",
-			componentType:          "telemetry",
-			expectedPodLabels:      6, // default + 1 custom
-			expectedPodAnnotations: 1,
+			baseName:                    "test-collector",
+			componentType:               "telemetry",
+			expectedPodLabels:           6, // default + 1 workload label
+			expectedPodAnnotations:      1, // 1 workload annotation
+			expectedResourceLabels:      1, // 1 workload label
+			expectedResourceAnnotations: 1, // 1 workload annotation
+			verifyPodLabels: map[string]string{
+				"workload-label": "workload-value",
+			},
+			verifyPodAnnotations: map[string]string{
+				"workload-annotation": "workload-annotation-value",
+			},
+		},
+		{
+			name: "metadata with pod-specific labels and annotations",
+			globals: config.NewGlobal(
+				config.WithTargetNamespace("kyma-system"),
+				config.WithAdditionalWorkloadPodLabels(map[string]string{"pod-label": "pod-value"}),
+				config.WithAdditionalWorkloadPodAnnotations(map[string]string{"pod-annotation": "pod-annotation-value"}),
+			),
+			baseName:                    "test-collector",
+			componentType:               "telemetry",
+			expectedPodLabels:           6, // default + 1 pod label
+			expectedPodAnnotations:      1, // 1 pod annotation
+			expectedResourceLabels:      0, // no workload labels
+			expectedResourceAnnotations: 0, // no workload annotations
+			verifyPodLabels: map[string]string{
+				"pod-label": "pod-value",
+			},
+			verifyPodAnnotations: map[string]string{
+				"pod-annotation": "pod-annotation-value",
+			},
+		},
+		{
+			name: "metadata with both workload and pod-specific labels/annotations",
+			globals: config.NewGlobal(
+				config.WithTargetNamespace("kyma-system"),
+				config.WithAdditionalWorkloadLabels(map[string]string{"workload-label": "workload-value"}),
+				config.WithAdditionalWorkloadAnnotations(map[string]string{"workload-annotation": "workload-annotation-value"}),
+				config.WithAdditionalWorkloadPodLabels(map[string]string{"pod-label": "pod-value"}),
+				config.WithAdditionalWorkloadPodAnnotations(map[string]string{"pod-annotation": "pod-annotation-value"}),
+			),
+			baseName:                    "test-collector",
+			componentType:               "telemetry",
+			expectedPodLabels:           7, // default + 1 workload label + 1 pod label
+			expectedPodAnnotations:      2, // 1 workload annotation + 1 pod annotation
+			expectedResourceLabels:      1, // 1 workload label
+			expectedResourceAnnotations: 1, // 1 workload annotation
+			verifyPodLabels: map[string]string{
+				"workload-label": "workload-value",
+				"pod-label":      "pod-value",
+			},
+			verifyPodAnnotations: map[string]string{
+				"workload-annotation": "workload-annotation-value",
+				"pod-annotation":      "pod-annotation-value",
+			},
+		},
+		{
+			name: "metadata with extra pod labels and annotations from workload",
+			globals: config.NewGlobal(
+				config.WithTargetNamespace("kyma-system"),
+				config.WithAdditionalWorkloadLabels(map[string]string{"workload-label": "value"}),
+			),
+			baseName:      "test-collector",
+			componentType: "telemetry",
+			extraPodLabels: map[string]string{
+				"istio-inject": "true",
+			},
+			extraPodAnnotations: map[string]string{
+				"sidecar.istio.io/inject": "true",
+			},
+			expectedPodLabels:           7, // default + 1 workload + 1 extra
+			expectedPodAnnotations:      1, // 1 extra
+			expectedResourceLabels:      1,
+			expectedResourceAnnotations: 0,
+			verifyPodLabels: map[string]string{
+				"workload-label": "value",
+				"istio-inject":   "true",
+			},
+			verifyPodAnnotations: map[string]string{
+				"sidecar.istio.io/inject": "true",
+			},
+		},
+		{
+			name: "metadata layering order - extra labels override pod labels",
+			globals: config.NewGlobal(
+				config.WithTargetNamespace("kyma-system"),
+				config.WithAdditionalWorkloadLabels(map[string]string{"env": "workload"}),
+				config.WithAdditionalWorkloadPodLabels(map[string]string{"env": "pod"}),
+			),
+			baseName:      "test-collector",
+			componentType: "telemetry",
+			extraPodLabels: map[string]string{
+				"env": "extra", // should override pod and workload labels
+			},
+			expectedPodLabels:      6, // default + 1 (env key used 3 times but only counts once)
+			expectedResourceLabels: 1,
+			verifyPodLabels: map[string]string{
+				"env": "extra", // extra takes precedence
+			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			metadata := MakeWorkloadMetadata(&tt.globals, tt.baseName, tt.componentType, tt.extraPodLabels, tt.annotations)
+			metadata := MakeWorkloadMetadata(&tt.globals, tt.baseName, tt.componentType, tt.extraPodLabels, tt.extraPodAnnotations)
 
-			require.Equal(t, tt.expectedPodLabels, len(metadata.PodLabels))
-			require.Equal(t, tt.expectedPodAnnotations, len(metadata.PodAnnotations))
+			require.Equal(t, tt.expectedPodLabels, len(metadata.PodLabels), "pod labels count mismatch")
+			require.Equal(t, tt.expectedPodAnnotations, len(metadata.PodAnnotations), "pod annotations count mismatch")
+			require.Equal(t, tt.expectedResourceLabels, len(metadata.ResourceLabels), "resource labels count mismatch")
+			require.Equal(t, tt.expectedResourceAnnotations, len(metadata.ResourceAnnotations), "resource annotations count mismatch")
+
+			// Verify default labels are always present
 			require.Contains(t, metadata.PodLabels, "app.kubernetes.io/name")
+
+			// Verify specific labels/annotations if provided
+			for k, v := range tt.verifyPodLabels {
+				require.Equal(t, v, metadata.PodLabels[k], "pod label %s should equal %s", k, v)
+			}
+			for k, v := range tt.verifyPodAnnotations {
+				require.Equal(t, v, metadata.PodAnnotations[k], "pod annotation %s should equal %s", k, v)
+			}
 		})
 	}
 }

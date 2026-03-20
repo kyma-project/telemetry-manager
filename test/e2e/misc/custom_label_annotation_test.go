@@ -21,8 +21,12 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-var label = map[string]string{"my-meta-label": "foo"}
-var annotation = map[string]string{"my-meta-annotation": "bar"}
+var (
+	workloadLabel         = map[string]string{"my-workload-label": "workload-value"}
+	workloadAnnotation    = map[string]string{"my-workload-annotation": "workload-annotation-value"}
+	workloadPodLabel      = map[string]string{"my-pod-label": "pod-value"}
+	workloadPodAnnotation = map[string]string{"my-pod-annotation": "pod-annotation-value"}
+)
 
 func TestLabelAnnotation(t *testing.T) {
 	tests := []struct {
@@ -52,25 +56,34 @@ func TestLabelAnnotation(t *testing.T) {
 				assert.DaemonSetReady(t, kitkyma.LogAgentName)
 				assert.OTelLogPipelineHealthy(t, pipelineName)
 				assert.OTelLogsFromNamespaceDelivered(t, backend, ns)
-				assert.DeploymentHasLabel(t, kitkyma.LogGatewayName, label)
-				assert.DeploymentHasAnnotation(t, kitkyma.LogGatewayName, annotation)
+
+				// Gateway should have workload labels/annotations
+				assert.DeploymentHasLabel(t, kitkyma.LogGatewayName, workloadLabel)
+				assert.DeploymentHasAnnotation(t, kitkyma.LogGatewayName, workloadAnnotation)
 
 				var gwSelector = client.ListOptions{
 					LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": "telemetry-log-gateway"}),
 					Namespace:     kitkyma.SystemNamespaceName,
 				}
-				assert.PodsHaveAnnotation(t, gwSelector, annotation)
-				assert.PodsHaveLabel(t, gwSelector, label)
+				// Gateway pods should have both workload and pod-specific labels/annotations
+				assert.PodsHaveAnnotation(t, gwSelector, workloadAnnotation)
+				assert.PodsHaveAnnotation(t, gwSelector, workloadPodAnnotation)
+				assert.PodsHaveLabel(t, gwSelector, workloadLabel)
+				assert.PodsHaveLabel(t, gwSelector, workloadPodLabel)
 
-				assert.DaemonSetHasLabel(t, kitkyma.LogAgentName, label)
-				assert.DaemonSetHasAnnotation(t, kitkyma.LogAgentName, annotation)
+				// Agent should have workload labels/annotations
+				assert.DaemonSetHasLabel(t, kitkyma.LogAgentName, workloadLabel)
+				assert.DaemonSetHasAnnotation(t, kitkyma.LogAgentName, workloadAnnotation)
 
 				var agentSelector = client.ListOptions{
 					LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": "telemetry-log-agent"}),
 					Namespace:     kitkyma.SystemNamespaceName,
 				}
-				assert.PodsHaveAnnotation(t, agentSelector, annotation)
-				assert.PodsHaveLabel(t, agentSelector, label)
+				// Agent pods should have both workload and pod-specific labels/annotations
+				assert.PodsHaveAnnotation(t, agentSelector, workloadAnnotation)
+				assert.PodsHaveAnnotation(t, agentSelector, workloadPodAnnotation)
+				assert.PodsHaveLabel(t, agentSelector, workloadLabel)
+				assert.PodsHaveLabel(t, agentSelector, workloadPodLabel)
 			},
 		},
 		{
@@ -93,15 +106,20 @@ func TestLabelAnnotation(t *testing.T) {
 				assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
 				assert.FluentBitLogPipelineHealthy(t, pipelineName)
 				assert.FluentBitLogsFromNamespaceDelivered(t, backend, ns)
-				assert.DaemonSetHasLabel(t, kitkyma.FluentBitDaemonSetName, label)
-				assert.DaemonSetHasAnnotation(t, kitkyma.FluentBitDaemonSetName, annotation)
+
+				// FluentBit agent should have workload labels/annotations
+				assert.DaemonSetHasLabel(t, kitkyma.FluentBitDaemonSetName, workloadLabel)
+				assert.DaemonSetHasAnnotation(t, kitkyma.FluentBitDaemonSetName, workloadAnnotation)
 
 				var selector = client.ListOptions{
 					LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": "fluent-bit"}),
 					Namespace:     kitkyma.SystemNamespaceName,
 				}
-				assert.PodsHaveAnnotation(t, selector, annotation)
-				assert.PodsHaveLabel(t, selector, label)
+				// FluentBit pods should have both workload and pod-specific labels/annotations
+				assert.PodsHaveAnnotation(t, selector, workloadAnnotation)
+				assert.PodsHaveAnnotation(t, selector, workloadPodAnnotation)
+				assert.PodsHaveLabel(t, selector, workloadLabel)
+				assert.PodsHaveLabel(t, selector, workloadPodLabel)
 			},
 		},
 
@@ -130,25 +148,33 @@ func TestLabelAnnotation(t *testing.T) {
 				assert.MetricPipelineHealthy(t, pipelineName)
 				assert.MetricsFromNamespaceDelivered(t, backend, ns, prommetricgen.CustomMetricNames())
 
-				assert.DeploymentHasLabel(t, kitkyma.MetricGatewayName, label)
-				assert.DeploymentHasAnnotation(t, kitkyma.MetricGatewayName, annotation)
+				// Gateway should have workload labels/annotations
+				assert.DeploymentHasLabel(t, kitkyma.MetricGatewayName, workloadLabel)
+				assert.DeploymentHasAnnotation(t, kitkyma.MetricGatewayName, workloadAnnotation)
 
 				var gwSelector = client.ListOptions{
 					LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": "telemetry-metric-gateway"}),
 					Namespace:     kitkyma.SystemNamespaceName,
 				}
-				assert.PodsHaveAnnotation(t, gwSelector, annotation)
-				assert.PodsHaveLabel(t, gwSelector, label)
+				// Gateway pods should have both workload and pod-specific labels/annotations
+				assert.PodsHaveAnnotation(t, gwSelector, workloadAnnotation)
+				assert.PodsHaveAnnotation(t, gwSelector, workloadPodAnnotation)
+				assert.PodsHaveLabel(t, gwSelector, workloadLabel)
+				assert.PodsHaveLabel(t, gwSelector, workloadPodLabel)
 
-				assert.DaemonSetHasLabel(t, kitkyma.MetricAgentName, label)
-				assert.DaemonSetHasAnnotation(t, kitkyma.MetricAgentName, annotation)
+				// Agent should have workload labels/annotations
+				assert.DaemonSetHasLabel(t, kitkyma.MetricAgentName, workloadLabel)
+				assert.DaemonSetHasAnnotation(t, kitkyma.MetricAgentName, workloadAnnotation)
 
 				var agentSelector = client.ListOptions{
 					LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": "telemetry-metric-agent"}),
 					Namespace:     kitkyma.SystemNamespaceName,
 				}
-				assert.PodsHaveAnnotation(t, agentSelector, annotation)
-				assert.PodsHaveLabel(t, agentSelector, label)
+				// Agent pods should have both workload and pod-specific labels/annotations
+				assert.PodsHaveAnnotation(t, agentSelector, workloadAnnotation)
+				assert.PodsHaveAnnotation(t, agentSelector, workloadPodAnnotation)
+				assert.PodsHaveLabel(t, agentSelector, workloadLabel)
+				assert.PodsHaveLabel(t, agentSelector, workloadPodLabel)
 			},
 		},
 		{
@@ -171,28 +197,34 @@ func TestLabelAnnotation(t *testing.T) {
 				assert.TracePipelineHealthy(t, pipelineName)
 				assert.TracesFromNamespaceDelivered(t, backend, ns)
 
-				assert.DeploymentHasLabel(t, kitkyma.TraceGatewayName, label)
-				assert.DeploymentHasAnnotation(t, kitkyma.TraceGatewayName, annotation)
+				// Gateway should have workload labels/annotations
+				assert.DeploymentHasLabel(t, kitkyma.TraceGatewayName, workloadLabel)
+				assert.DeploymentHasAnnotation(t, kitkyma.TraceGatewayName, workloadAnnotation)
 
 				var selector = client.ListOptions{
 					LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": "telemetry-trace-gateway"}),
 					Namespace:     kitkyma.SystemNamespaceName,
 				}
-				assert.PodsHaveAnnotation(t, selector, annotation)
-				assert.PodsHaveLabel(t, selector, label)
+				// Gateway pods should have both workload and pod-specific labels/annotations
+				assert.PodsHaveAnnotation(t, selector, workloadAnnotation)
+				assert.PodsHaveAnnotation(t, selector, workloadPodAnnotation)
+				assert.PodsHaveLabel(t, selector, workloadLabel)
+				assert.PodsHaveLabel(t, selector, workloadPodLabel)
 			},
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(string(tc.labelPrefix), func(t *testing.T) {
-			// Use SetupTestWithOptions with custom helm values for labels/annotations
+			// Use SetupTestWithOptions with custom helm values for workload and pod labels/annotations
 			suite.SetupTestWithOptions(t,
 				[]string{suite.LabelCustomLabelAnnotation},
 				kubeprep.WithOverrideFIPSMode(false),
 				kubeprep.WithHelmValues(
-					"additionalMetadata.labels.my-meta-label=foo",
-					"additionalMetadata.annotations.my-meta-annotation=bar",
+					"managedResources.workload.labels.my-workload-label=workload-value",
+					"managedResources.workload.annotations.my-workload-annotation=workload-annotation-value",
+					"managedResources.workload.pod.labels.my-pod-label=pod-value",
+					"managedResources.workload.pod.annotations.my-pod-annotation=pod-annotation-value",
 				))
 
 			var (

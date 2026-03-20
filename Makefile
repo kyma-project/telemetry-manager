@@ -374,8 +374,10 @@ deploy-custom-labels-annotations-no-fips: manifests $(HELM) ## Deploy telemetry 
 		--set manager.container.image.repository=${MANAGER_IMAGE} \
 		--set manager.container.image.pullPolicy="Always" \
 		--set manager.container.env.operateInFipsMode=false \
-		--set additionalMetadata.labels.my-meta-label="foo" \
-		--set additionalMetadata.annotations.my-meta-annotation="bar" \
+		--set managedResources.workload.labels.my-workload-label="workload-value" \
+		--set managedResources.workload.annotations.my-workload-annotation="workload-annotation-value" \
+		--set managedResources.workload.pod.labels.my-pod-label="pod-value" \
+		--set managedResources.workload.pod.annotations.my-pod-annotation="pod-annotation-value" \
 		--namespace kyma-system \
 	| kubectl apply -f -
 
