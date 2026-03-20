@@ -374,6 +374,10 @@ deploy-custom-labels-annotations-no-fips: manifests $(HELM) ## Deploy telemetry 
 		--set manager.container.image.repository=${MANAGER_IMAGE} \
 		--set manager.container.image.pullPolicy="Always" \
 		--set manager.container.env.operateInFipsMode=false \
+		--set manager.labels.my-manager-label="manager-value" \
+		--set manager.annotations.my-manager-annotation="manager-annotation-value" \
+		--set manager.pod.labels.my-manager-pod-label="manager-pod-value" \
+		--set manager.pod.annotations.my-manager-pod-annotation="manager-pod-annotation-value" \
 		--set managedResources.workload.labels.my-workload-label="workload-value" \
 		--set managedResources.workload.annotations.my-workload-annotation="workload-annotation-value" \
 		--set managedResources.workload.pod.labels.my-pod-label="pod-value" \

@@ -22,6 +22,10 @@ import (
 )
 
 var (
+	managerLabel          = map[string]string{"my-manager-label": "manager-value"}
+	managerAnnotation     = map[string]string{"my-manager-annotation": "manager-annotation-value"}
+	managerPodLabel       = map[string]string{"my-manager-pod-label": "manager-pod-value"}
+	managerPodAnnotation  = map[string]string{"my-manager-pod-annotation": "manager-pod-annotation-value"}
 	workloadLabel         = map[string]string{"my-workload-label": "workload-value"}
 	workloadAnnotation    = map[string]string{"my-workload-annotation": "workload-annotation-value"}
 	workloadPodLabel      = map[string]string{"my-pod-label": "pod-value"}
@@ -221,6 +225,10 @@ func TestLabelAnnotation(t *testing.T) {
 				[]string{suite.LabelCustomLabelAnnotation},
 				kubeprep.WithOverrideFIPSMode(false),
 				kubeprep.WithHelmValues(
+					"manager.labels.my-manager-label=manager-value",
+					"manager.annotations.my-manager-annotation=manager-annotation-value",
+					"manager.pod.labels.my-manager-pod-label=manager-pod-value",
+					"manager.pod.annotations.my-manager-pod-annotation=manager-pod-annotation-value",
 					"managedResources.workload.labels.my-workload-label=workload-value",
 					"managedResources.workload.annotations.my-workload-annotation=workload-annotation-value",
 					"managedResources.workload.pod.labels.my-pod-label=pod-value",
@@ -249,6 +257,23 @@ func TestLabelAnnotation(t *testing.T) {
 
 			assert.BackendReachable(t, backend)
 			assert.DeploymentReady(t, kitkyma.SelfMonitorName)
+
+			// Telemetry Manager should have manager labels/annotations
+			assert.DeploymentHasLabel(t, kitkyma.TelemetryManagerName, managerLabel)
+			assert.DeploymentHasAnnotation(t, kitkyma.TelemetryManagerName, managerAnnotation)
+
+			var managerSelector = client.ListOptions{
+				LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": "telemetry-manager"}),
+				Namespace:     kitkyma.SystemNamespaceName,
+			}
+			// Telemetry Manager pods should have both manager and pod-specific labels/annotations
+			assert.PodsHaveLabel(t, managerSelector, managerLabel)
+			assert.PodsHaveLabel(t, managerSelector, managerPodLabel)
+			assert.PodsHaveAnnotation(t, managerSelector, managerAnnotation)
+			assert.PodsHaveAnnotation(t, managerSelector, managerPodAnnotation)
+			// Telemetry Manager pods should have default pod annotations
+			assert.PodsHaveAnnotation(t, managerSelector, map[string]string{"kubectl.kubernetes.io/default-container": "manager"})
+			assert.PodsHaveAnnotation(t, managerSelector, map[string]string{"sidecar.istio.io/inject": "false"})
 
 			tc.assert(t, genNs, backend, pipeline.GetName())
 		})
