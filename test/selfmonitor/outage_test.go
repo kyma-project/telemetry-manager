@@ -19,6 +19,13 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
+// TestOutage checks FlowHealthy degrades when the pipeline cannot deliver telemetry.
+//
+// Compared to upstream/main: OTel-based rows (log-agent, log-gateway, metric-gateway, traces) use
+// backendNonRetryableErr (Istio VirtualService HTTP 400 abort) so the backend Service still has endpoints and
+// failures are mesh-level exporter errors. Previously these cases used WithReplicas(0) (no endpoints), which
+// is a different failure mode. Metric-agent keeps a labeled fault (only agent traffic aborted). Fluent Bit has
+// two rows: no-endpoints (backendScaledToZero → NoLogsDelivered then AllDataDropped) and HTTP abort (all dropped).
 func TestOutage(t *testing.T) {
 	tests := []struct {
 		name            string
@@ -31,23 +38,26 @@ func TestOutage(t *testing.T) {
 			name:            "log-agent",
 			component:       suite.LabelLogAgent,
 			backendOpts:     backendNonRetryableErr(faultPercentageAll),
-			generator:       stdoutLogGenerator(defaultRate),
+			generator:       stdoutLogGenerator(4000),
 			expectedReasons: flowHealthyThenDegraded(conditions.ReasonSelfMonAgentAllDataDropped),
 		},
 		{
 			name:            "log-gateway",
 			component:       suite.LabelLogGateway,
 			backendOpts:     backendNonRetryableErr(faultPercentageAll),
-			generator:       otelGenerator(telemetrygen.SignalTypeLogs, telemetrygen.WithRate(defaultRate), telemetrygen.WithWorkers(1)),
+			generator:       otelGenerator(telemetrygen.SignalTypeLogs, telemetrygen.WithRate(800), telemetrygen.WithWorkers(5)),
 			expectedReasons: flowHealthyThenDegraded(conditions.ReasonSelfMonGatewayAllDataDropped),
 		},
 		{
+			// No backend endpoints: Fluent Bit reads logs but cannot complete output; FlowHealthy moves through
+			// NoLogsDelivered to AllDataDropped (matches upstream/main self-monitor aggregation / Telemetry CR reason).
 			name:        "fluent-bit-no-logs-delivered",
 			component:   suite.LabelFluentBit,
 			backendOpts: backendScaledToZero(),
-			generator:   stdoutLogGenerator(defaultRate),
+			generator:   stdoutLogGenerator(5000),
 			expectedReasons: flowHealthyThenDegraded(
 				conditions.ReasonSelfMonAgentNoLogsDelivered,
+				conditions.ReasonSelfMonAgentAllDataDropped,
 			),
 		},
 		{
@@ -64,8 +74,9 @@ func TestOutage(t *testing.T) {
 			generator: func(ns string) []client.Object {
 				return []client.Object{
 					telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeMetrics,
-						telemetrygen.WithRate(defaultRate),
-						telemetrygen.WithWorkers(1),
+						telemetrygen.WithRate(10_000_000),
+						telemetrygen.WithWorkers(50),
+						telemetrygen.WithInterval("30s"),
 					).WithReplicas(2).K8sObject(),
 				}
 			},
@@ -82,7 +93,7 @@ func TestOutage(t *testing.T) {
 			name:            "traces",
 			component:       suite.LabelTraces,
 			backendOpts:     backendNonRetryableErr(faultPercentageAll),
-			generator:       otelGenerator(telemetrygen.SignalTypeTraces, telemetrygen.WithRate(80), telemetrygen.WithWorkers(1)),
+			generator:       otelGenerator(telemetrygen.SignalTypeTraces, telemetrygen.WithRate(80), telemetrygen.WithWorkers(10)),
 			expectedReasons: flowHealthyThenDegraded(conditions.ReasonSelfMonGatewayAllDataDropped),
 		},
 	}

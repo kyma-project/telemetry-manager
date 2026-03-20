@@ -10,6 +10,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// VirtualService builds an Istio VirtualService with optional HTTP fault injection (delay / abort).
+//
+// For self-monitor and mock-backend tests, align HTTP abort status with exporter retry semantics:
+//   - 400 Bad Request: non-retryable for both OTel Collector and Fluent Bit (see test/selfmonitor/helpers.go).
+//   - 429 Too Many Requests: retryable for both (used e.g. in backendRetryableErr).
+//
+// Call WithFaultAbortPercentage(percentage, httpStatus) so the abort uses the intended code; the default
+// in NewVirtualService matches the non-retryable convention (400) if a caller ever omits the status.
 type VirtualService struct {
 	name                 string
 	namespace            string
@@ -28,7 +36,7 @@ func NewVirtualService(name, namespace, host string) *VirtualService {
 		name:                 name,
 		namespace:            namespace,
 		host:                 host,
-		faultAbortHttpStatus: http.StatusInternalServerError,
+		faultAbortHttpStatus: http.StatusBadRequest,
 	}
 }
 
@@ -37,6 +45,8 @@ func (s *VirtualService) WithSourceLabel(sourceLabel map[string]string) *Virtual
 	return s
 }
 
+// WithFaultAbortPercentage sets the fraction of requests that receive an HTTP fault abort with httpStatus
+// (e.g. http.StatusBadRequest for non-retryable, http.StatusTooManyRequests for retryable).
 func (s *VirtualService) WithFaultAbortPercentage(percentage float64, httpStatus int32) *VirtualService {
 	s.faultAbortPercentage = percentage
 	s.faultAbortHttpStatus = httpStatus

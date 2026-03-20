@@ -3,6 +3,7 @@ package kubeprep
 import (
 	"context"
 	"fmt"
+	"time"
 
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
@@ -21,6 +22,8 @@ const (
 	fluentBitHostPathCleanupDSName = "telemetry-fluent-bit-hostpath-cleanup"
 	fluentBitHostPathOnNode        = "/var/telemetry-fluent-bit"
 	fluentBitHostPathMountInPod    = "/cleanup"
+	// Pin image tag for reproducible test cleanup pods (avoid floating :latest).
+	fluentBitHostPathCleanupImage = "busybox:1.36"
 )
 
 // runtimeResourceSelector selects resources created at runtime by the telemetry-manager.
@@ -44,6 +47,9 @@ func WaitForManagedResourceCleanup(ctx context.Context, k8sClient client.Client)
 // CleanupFluentBitHostPath deploys a short-lived DaemonSet that mounts the Fluent Bit hostPath,
 // then deletes it so the pod preStop hook clears /var/telemetry-fluent-bit on each node.
 // Call after WaitForManagedResourceCleanup so the manager has removed the Fluent Bit DaemonSet.
+//
+// Errors from this function are intended to be non-fatal for callers (e.g. suite cleanup logs and continues).
+// It therefore uses polling that returns errors on timeout instead of Gomega assertions, which would fail the test.
 func CleanupFluentBitHostPath(ctx context.Context, k8sClient client.Client) error {
 	key := types.NamespacedName{Name: fluentBitHostPathCleanupDSName, Namespace: kymaSystemNamespace}
 
@@ -53,10 +59,20 @@ func CleanupFluentBitHostPath(ctx context.Context, k8sClient client.Client) erro
 			return fmt.Errorf("delete stale hostpath cleanup daemonset: %w", delErr)
 		}
 
-		Eventually(func(g Gomega) {
+		if err := waitUntil(ctx, periodic.EventuallyTimeout, periodic.DefaultInterval, func() (bool, error) {
 			err := k8sClient.Get(ctx, key, &appsv1.DaemonSet{})
-			g.Expect(apierrors.IsNotFound(err)).To(BeTrueBecause("stale hostpath cleanup daemonset should be gone"))
-		}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+			if apierrors.IsNotFound(err) {
+				return true, nil
+			}
+
+			if err != nil {
+				return false, fmt.Errorf("wait for stale hostpath cleanup daemonset gone: %w", err)
+			}
+
+			return false, nil
+		}); err != nil {
+			return err
+		}
 	} else if client.IgnoreNotFound(err) != nil {
 		return fmt.Errorf("get hostpath cleanup daemonset: %w", err)
 	}
@@ -66,24 +82,72 @@ func CleanupFluentBitHostPath(ctx context.Context, k8sClient client.Client) erro
 		return fmt.Errorf("create hostpath cleanup daemonset: %w", err)
 	}
 
-	Eventually(func(g Gomega) {
+	if err := waitUntil(ctx, periodic.EventuallyTimeout, periodic.DefaultInterval, func() (bool, error) {
 		var got appsv1.DaemonSet
-		g.Expect(k8sClient.Get(ctx, key, &got)).To(Succeed())
+		if err := k8sClient.Get(ctx, key, &got); err != nil {
+			if apierrors.IsNotFound(err) {
+				return false, nil
+			}
+
+			return false, fmt.Errorf("wait for hostpath cleanup daemonset ready: %w", err)
+		}
+
 		desired := got.Status.DesiredNumberScheduled
-		g.Expect(desired).To(BeNumerically(">", 0))
-		g.Expect(got.Status.NumberReady).To(Equal(desired))
-	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+		if desired <= 0 || got.Status.NumberReady != desired {
+			return false, nil
+		}
+
+		return true, nil
+	}); err != nil {
+		return err
+	}
 
 	if err := k8sClient.Delete(ctx, ds); err != nil {
 		return fmt.Errorf("delete hostpath cleanup daemonset: %w", err)
 	}
 
-	Eventually(func(g Gomega) {
+	if err := waitUntil(ctx, periodic.EventuallyTimeout, periodic.DefaultInterval, func() (bool, error) {
 		err := k8sClient.Get(ctx, key, &appsv1.DaemonSet{})
-		g.Expect(apierrors.IsNotFound(err)).To(BeTrueBecause("hostpath cleanup daemonset should be fully removed after preStop"))
-	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+		if apierrors.IsNotFound(err) {
+			return true, nil
+		}
+
+		if err != nil {
+			return false, fmt.Errorf("wait for hostpath cleanup daemonset removed: %w", err)
+		}
+
+		return false, nil
+	}); err != nil {
+		return err
+	}
 
 	return nil
+}
+
+// waitUntil polls until done returns (true, nil), ctx is canceled, timeout elapses, or done returns a non-nil error.
+func waitUntil(ctx context.Context, timeout, interval time.Duration, done func() (ok bool, err error)) error {
+	deadline := time.Now().Add(timeout)
+
+	for {
+		ok, err := done()
+		if err != nil {
+			return err
+		}
+
+		if ok {
+			return nil
+		}
+
+		if time.Now().After(deadline) {
+			return fmt.Errorf("timed out after %s", timeout)
+		}
+
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(interval):
+		}
+	}
 }
 
 func fluentBitHostPathCleanupDaemonSet(namespace string) *appsv1.DaemonSet {
@@ -109,7 +173,7 @@ func fluentBitHostPathCleanupDaemonSet(namespace string) *appsv1.DaemonSet {
 					Containers: []corev1.Container{
 						{
 							Name:    "sleep",
-							Image:   "busybox",
+							Image:   fluentBitHostPathCleanupImage,
 							Command: []string{"sh", "-c", "sleep 3600"},
 							VolumeMounts: []corev1.VolumeMount{
 								{Name: volumeName, MountPath: fluentBitHostPathMountInPod},

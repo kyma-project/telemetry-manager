@@ -29,7 +29,8 @@ const (
 
 // Backend fault injection presets.
 //
-// HTTP status code retryability differs between OTel Collector and Fluent Bit:
+// HTTP status code retryability differs between OTel Collector and Fluent Bit (summarized for tests; exact
+// sets follow the collector/Fluent Bit versions wired into Kyma—see exporter and output plugin docs if in doubt):
 //
 //	OTel Collector retryable codes: 429, 502, 503, 504
 //	OTel Collector non-retryable codes: everything else, including 400 and 500
@@ -40,13 +41,17 @@ const (
 // HTTP 400 is non-retryable for both OTel Collector and Fluent Bit, so it is used
 // as the universal non-retryable status code.
 // HTTP 429 is retryable for both, so it is used as the universal retryable status code.
+//
+// Mock backends apply faults via an Istio VirtualService HTTP abort (see test/testkit/mocks/backend) using
+// these same codes: backendNonRetryableErr → 400, backendRetryableErr → 429. PRs/docs should not claim
+// “500 for non-retryable”: 500 is 5xx and therefore retryable for Fluent Bit, and is not what these helpers use.
 
 // backendNonRetryableErr causes the backend to reject requests with HTTP 400 at the given percentage.
 // HTTP 400 is non-retryable for both OTel Collector and Fluent Bit, so rejected data is
 // dropped immediately without retry.
 
 const (
-	retriableErrCode    = http.StatusTooManyRequests
+	retryableErrCode    = http.StatusTooManyRequests
 	nonRetryableErrCode = http.StatusBadRequest
 )
 
@@ -55,7 +60,7 @@ func backendNonRetryableErr(percentage float64) []kitbackend.Option {
 }
 
 func backendRetryableErr(percentage float64) []kitbackend.Option {
-	return []kitbackend.Option{kitbackend.WithAbortFaultInjection(percentage, retriableErrCode)}
+	return []kitbackend.Option{kitbackend.WithAbortFaultInjection(percentage, retryableErrCode)}
 }
 
 // backendScaledToZero runs the mock backend Deployment with zero replicas so the Service has no ready endpoints.

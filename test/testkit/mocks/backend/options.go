@@ -14,6 +14,9 @@ func WithDropFromSourceLabel(label map[string]string) Option {
 	}
 }
 
+// WithAbortFaultInjection configures an Istio VirtualService HTTP abort for a fraction of requests.
+// Use 400 (Bad Request) for non-retryable and 429 (Too Many Requests) for retryable behavior consistent
+// with OTel Collector and Fluent Bit (see test/selfmonitor/helpers.go).
 func WithAbortFaultInjection(abortFaultPercentage float64, statusCode int32) Option {
 	return func(b *Backend) {
 		b.abortFaultPercentage = abortFaultPercentage
