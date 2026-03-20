@@ -139,6 +139,9 @@ spec:
                       The value is a duration string (for example, "30s", "1m", "5m"). Minimum is 1s. Default is 30s.
                     format: duration
                     type: string
+                    x-kubernetes-validations:
+                    - message: '''collectionInterval'' must be greater than 0'
+                      rule: self > duration('0s')
                   gateway:
                     description: Gateway configures the metric gateway.
                     properties:
@@ -177,6 +180,9 @@ spec:
                           The value is a duration string (for example, "30s", "1m", "5m"). Minimum is 1s.
                         format: duration
                         type: string
+                        x-kubernetes-validations:
+                        - message: '''collectionInterval'' must be greater than 0'
+                          rule: self > duration('0s')
                     type: object
                   prometheus:
                     description: Prometheus configures collection settings specific
@@ -188,6 +194,9 @@ spec:
                           The value is a duration string (for example, "30s", "1m", "5m"). Minimum is 1s.
                         format: duration
                         type: string
+                        x-kubernetes-validations:
+                        - message: '''collectionInterval'' must be greater than 0'
+                          rule: self > duration('0s')
                     type: object
                   runtime:
                     description: Runtime configures collection settings specific to
@@ -199,6 +208,9 @@ spec:
                           The value is a duration string (for example, "30s", "1m", "5m"). Minimum is 1s.
                         format: duration
                         type: string
+                        x-kubernetes-validations:
+                        - message: '''collectionInterval'' must be greater than 0'
+                          rule: self > duration('0s')
                     type: object
                 type: object
               trace:
@@ -463,6 +475,9 @@ spec:
                       The value is a duration string (for example, "30s", "1m", "5m"). Minimum is 1s. Default is 30s.
                     format: duration
                     type: string
+                    x-kubernetes-validations:
+                    - message: '''collectionInterval'' must be greater than 0'
+                      rule: self > duration('0s')
                   gateway:
                     description: Gateway configures the metric gateway.
                     properties:
@@ -501,6 +516,9 @@ spec:
                           The value is a duration string (for example, "30s", "1m", "5m"). Minimum is 1s.
                         format: duration
                         type: string
+                        x-kubernetes-validations:
+                        - message: '''collectionInterval'' must be greater than 0'
+                          rule: self > duration('0s')
                     type: object
                   prometheus:
                     description: Prometheus configures collection settings specific
@@ -512,6 +530,9 @@ spec:
                           The value is a duration string (for example, "30s", "1m", "5m"). Minimum is 1s.
                         format: duration
                         type: string
+                        x-kubernetes-validations:
+                        - message: '''collectionInterval'' must be greater than 0'
+                          rule: self > duration('0s')
                     type: object
                   runtime:
                     description: Runtime configures collection settings specific to
@@ -523,6 +544,9 @@ spec:
                           The value is a duration string (for example, "30s", "1m", "5m"). Minimum is 1s.
                         format: duration
                         type: string
+                        x-kubernetes-validations:
+                        - message: '''collectionInterval'' must be greater than 0'
+                          rule: self > duration('0s')
                     type: object
                 type: object
               trace:
