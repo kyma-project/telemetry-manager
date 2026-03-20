@@ -20,7 +20,3 @@ runs:
       if: steps.go-cache.outputs.cache-hit != 'true'
       run: go mod download
 
-    - name: Install tools
-      shell: bash
-      if: steps.go-cache.outputs.cache-hit != 'true'
-      run: make install-tools

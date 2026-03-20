@@ -82,7 +82,7 @@ func waitForSinglePod(ctx context.Context, k8sClient client.Client, t TestingT, 
 		pods := &corev1.PodList{}
 		if err := k8sClient.List(ctx, pods,
 			client.InNamespace(kymaSystemNamespace),
-			client.MatchingLabels{"control-plane": "telemetry-manager"},
+			client.MatchingLabels{"app.kubernetes.io/name": "manager"},
 		); err != nil {
 			return fmt.Errorf("failed to list pods: %w", err)
 		}

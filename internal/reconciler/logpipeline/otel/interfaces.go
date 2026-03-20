@@ -3,6 +3,7 @@ package otel
 import (
 	"context"
 
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -80,6 +81,12 @@ type IstioStatusChecker interface {
 type VpaStatusChecker interface {
 	// VpaCRDExists checks if the VPA CRD exists in the cluster.
 	VpaCRDExists(ctx context.Context, client client.Client) (bool, error)
+}
+
+// NodeSizeTracker tracks node sizes and provides VPA memory calculations.
+type NodeSizeTracker interface {
+	// VPAMaxAllowedMemory returns 30% of the smallest allocatable memory, rounded down to the nearest KiB.
+	VPAMaxAllowedMemory() resource.Quantity
 }
 
 // AgentConfigBuilder builds the OTel Collector configuration for the log agent.
