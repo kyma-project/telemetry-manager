@@ -80,16 +80,25 @@ check_duplicate() {
 
   # Use Python semver library for semantic version comparison
   # This prevents both duplicates and downgrades
-  python3 - <<EOF
+  # Pass versions as command-line arguments to avoid code injection
+  python3 - "${CURRENT_BASE_VERSION}" "${NEW_BASE_VERSION}" "${channel}" "${CURRENT_VERSION}" "${VERSION_TAG}" <<'EOF'
 import sys
+
+if len(sys.argv) != 6:
+    print("::error::Internal error: incorrect number of arguments to version checker", file=sys.stderr)
+    sys.exit(1)
+
 try:
     import semver
 except ImportError:
     print("::error::Python semver module not installed. Install with: pip install semver", file=sys.stderr)
     sys.exit(1)
 
-current = "${CURRENT_BASE_VERSION}"
-new = "${NEW_BASE_VERSION}"
+current = sys.argv[1]
+new = sys.argv[2]
+channel = sys.argv[3]
+current_version = sys.argv[4]
+version_tag = sys.argv[5]
 
 try:
     current_ver = semver.VersionInfo.parse(current)
@@ -99,14 +108,14 @@ except Exception as e:
     sys.exit(1)
 
 if new_ver < current_ver:
-    print(f"::error::Version downgrade not allowed for ${channel} channel", file=sys.stderr)
-    print(f"Current version: ${CURRENT_VERSION} (base: {current})", file=sys.stderr)
-    print(f"Requested version: ${VERSION_TAG} (base: {new})", file=sys.stderr)
+    print(f"::error::Version downgrade not allowed for {channel} channel", file=sys.stderr)
+    print(f"Current version: {current_version} (base: {current})", file=sys.stderr)
+    print(f"Requested version: {version_tag} (base: {new})", file=sys.stderr)
     print(f"Please use a version greater than {current}", file=sys.stderr)
     sys.exit(1)
 elif new_ver == current_ver:
-    print(f"::error::Version ${VERSION_TAG} is already released for ${channel} channel", file=sys.stderr)
-    print(f"Current version in module-releases.yaml: ${CURRENT_VERSION}", file=sys.stderr)
+    print(f"::error::Version {version_tag} is already released for {channel} channel", file=sys.stderr)
+    print(f"Current version in module-releases.yaml: {current_version}", file=sys.stderr)
     print(f"Please use a newer version number", file=sys.stderr)
     sys.exit(1)
 

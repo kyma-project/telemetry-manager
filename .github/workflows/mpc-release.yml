@@ -82,7 +82,7 @@ jobs:
               --arg base_branch "chart/telemetry" \
               --arg branch_prefix "bump-telemetry" \
               --arg chart_dir "telemetry" \
-              --arg update_command "yq -i '.appVersion = \"${{ inputs.version }}\" ' telemetry/Chart.yaml && yq -i '(.dependencies[] | select(.name == \"telemetry-manager\") | .version) = \"${{ inputs.version }}\"' telemetry/Chart.yaml" \
+              --arg update_command 'yq -i '"'"'.appVersion = "${{ inputs.version }}" '"'"' telemetry/Chart.yaml && yq -i '"'"'(.dependencies[] | select(.name == "telemetry-manager") | .version) = "${{ inputs.version }}"'"'"' telemetry/Chart.yaml' \
               --arg verify_command "yq -r '.appVersion' telemetry/Chart.yaml" \
               --arg verify_field "appVersion" \
               --arg commit_title "Bump Telemetry to ${{ inputs.version }}" \
@@ -113,7 +113,7 @@ jobs:
               --arg base_branch "chart/runtime-monitoring-operator" \
               --arg branch_prefix "bump-rmo-occ" \
               --arg chart_dir "runtime-monitoring-operator" \
-              --arg update_command "yq -i '.argosap.config.rma.image.otelCollector.tag = \"${{ inputs.version }}\"' runtime-monitoring-operator/values.yaml" \
+              --arg update_command 'yq -i '"'"'.argosap.config.rma.image.otelCollector.tag = "${{ inputs.version }}"'"'"' runtime-monitoring-operator/values.yaml' \
               --arg verify_command "yq -r '.argosap.config.rma.image.otelCollector.tag' runtime-monitoring-operator/values.yaml" \
               --arg verify_field "OTel Collector tag" \
               --arg commit_title "Bump RMO OTel Collector to ${{ inputs.version }}" \
@@ -200,6 +200,7 @@ jobs:
         with:
           python-version: "3.x"
           cache: "pip"
+          cache-dependency-path: management-plane-charts/tools/requirements.txt
 
       - name: Install dependencies
         working-directory: management-plane-charts
