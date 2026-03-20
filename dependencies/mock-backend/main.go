@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"math/rand/v2"
 	"net"
@@ -13,6 +14,9 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
 )
 
 const (
@@ -54,6 +58,7 @@ func (s *stats) logAndReset() {
 	}
 
 	var parts []string
+
 	for i := range s.counters {
 		count := s.counters[i].count.Swap(0)
 		if count > 0 {
@@ -73,7 +78,7 @@ func newStats(rules []rule, defaultBehavior string) *stats {
 	if defaultBehavior == "close" {
 		codeSet[0] = true
 	} else {
-		code, _ := strconv.Atoi(defaultBehavior)
+		code, _ := strconv.Atoi(defaultBehavior) //nolint:errcheck // already validated in parseConfig
 		codeSet[code] = true
 	}
 
@@ -108,11 +113,7 @@ func main() {
 
 	var wg sync.WaitGroup
 	for _, port := range ports {
-		wg.Add(1)
-
-		go func() {
-			defer wg.Done()
-
+		wg.Go(func() {
 			var lc net.ListenConfig
 
 			ln, err := lc.Listen(context.Background(), "tcp", port)
@@ -122,11 +123,18 @@ func main() {
 
 			log.Printf("Listening on %s", port)
 
+			// Wrap handler with h2c to support HTTP/2 cleartext with prior knowledge,
+			// which is how gRPC clients (e.g. OTel Collector OTLP exporter) connect.
+			h2cHandler := h2c.NewHandler(handler, &http2.Server{})
+
 			//nolint:gosec // no timeouts needed for test-only mock server
-			if err := http.Serve(ln, handler); err != nil {
+			server := &http.Server{
+				Handler: h2cHandler,
+			}
+			if err := server.Serve(ln); err != nil {
 				log.Fatalf("Server on %s failed: %v", port, err)
 			}
-		}()
+		})
 	}
 
 	wg.Wait()
@@ -153,7 +161,7 @@ func parseConfig() ([]rule, string) {
 
 	var totalPercentage float64
 
-	for _, entry := range strings.Split(rulesEnv, ",") {
+	for entry := range strings.SplitSeq(rulesEnv, ",") {
 		parts := strings.SplitN(entry, ":", ruleParts)
 		if len(parts) != ruleParts {
 			log.Fatalf("Invalid rule format: %s, expected statusCode:percentage", entry) //nolint:gosec // env var value is safe to log
@@ -196,7 +204,12 @@ func buildHandler(rules []rule, defaultBehavior string, reqStats *stats) http.Ha
 		thresholds = append(thresholds, threshold{cumulative: cumulative, statusCode: r.statusCode})
 	}
 
-	return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Drain the request body to avoid connection resets on keep-alive connections.
+		// Without this, responding before the client finishes sending can cause a TCP RST,
+		// which the OTLP exporter treats as a retryable connection error instead of a clean HTTP 400.
+		_, _ = io.Copy(io.Discard, r.Body) //nolint:errcheck // best-effort drain
+
 		roll := rand.Float64() * maxPercentage //nolint:gosec // deterministic randomness is fine for fault injection
 
 		for _, t := range thresholds {
