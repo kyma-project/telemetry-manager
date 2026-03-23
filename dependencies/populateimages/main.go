@@ -24,6 +24,7 @@ const (
 	SelfMonitorImage                 = "{{ .ENV_SELFMONITOR_IMAGE }}"
 	SelfMonitorFIPSImage             = "{{ .ENV_SELFMONITOR_FIPS_IMAGE }}"
 	MockBackendImage                 = "{{ .ENV_MOCK_BACKEND_IMAGE }}"
+	AlpineImage                      = "{{ .ENV_ALPINE_IMAGE }}"
 )
 `,
 }

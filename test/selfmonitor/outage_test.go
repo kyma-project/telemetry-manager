@@ -79,6 +79,8 @@ func TestOutage(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			labels := []string{suite.LabelSelfMonitor, tc.component, suite.LabelOutage}
 
+			// Istio is not required: fault injection is handled by the mock-backend directly
+			// (see test/testkit/mocks/faultbackend) rather than via Istio VirtualServices.
 			var opts []kubeprep.Option
 			if isFluentBit(tc.component) {
 				opts = append(opts, kubeprep.WithOverrideFIPSMode(false), kubeprep.WithFluentBitHostPathCleanup())

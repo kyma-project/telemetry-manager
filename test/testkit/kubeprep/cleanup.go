@@ -15,6 +15,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
+	"github.com/kyma-project/telemetry-manager/test/testkit"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 )
 
@@ -22,10 +23,6 @@ const (
 	fluentBitHostPathCleanupDSName = "telemetry-fluent-bit-hostpath-cleanup"
 	fluentBitHostPathOnNode        = "/var/telemetry-fluent-bit"
 	fluentBitHostPathMountInPod    = "/cleanup"
-	// Pin image tag for reproducible test cleanup pods (avoid floating :latest).
-	// TODO: migrate to europe-docker.pkg.dev/kyma-project registry (ENV_ALPINE_IMAGE) once it is
-	// available as a testkit constant generated from .env, to avoid Docker Hub pull-rate limits in CI.
-	fluentBitHostPathCleanupImage = "busybox:1.36"
 )
 
 // runtimeResourceSelector selects resources created at runtime by the telemetry-manager.
@@ -180,7 +177,7 @@ func fluentBitHostPathCleanupDaemonSet(namespace string) *appsv1.DaemonSet {
 					Containers: []corev1.Container{
 						{
 							Name:    "sleep",
-							Image:   fluentBitHostPathCleanupImage,
+							Image:   testkit.AlpineImage,
 							Command: []string{"sh", "-c", "sleep 3600"},
 							VolumeMounts: []corev1.VolumeMount{
 								{Name: volumeName, MountPath: fluentBitHostPathMountInPod},

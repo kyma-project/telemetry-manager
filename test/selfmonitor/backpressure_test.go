@@ -23,23 +23,23 @@ const bufferFillingUpRate = 60 * defaultRate
 
 func TestBackpressure(t *testing.T) {
 	tests := []struct {
-		name           string
-		component      string
-		faultOpts      []faultbackend.Option
-		generator      func(ns string) []client.Object
-		expectedReason string
+		name            string
+		component       string
+		faultOpts       []faultbackend.Option
+		generator       func(ns string) []client.Object
+		expectedReasons []assert.ReasonStatus
 	}{
 		{
-			name:           "log-agent",
-			component:      suite.LabelLogAgent,
-			faultOpts:      faultNonRetryableErr(faultPercentageThirty),
-			expectedReason: conditions.ReasonSelfMonAgentSomeDataDropped,
+			name:            "log-agent",
+			component:       suite.LabelLogAgent,
+			faultOpts:       faultNonRetryableErr(faultPercentageThirty),
+			expectedReasons: flowHealthyThenDegraded(conditions.ReasonSelfMonAgentSomeDataDropped),
 		},
 		{
-			name:           "log-gateway",
-			component:      suite.LabelLogGateway,
-			faultOpts:      faultNonRetryableErr(faultPercentageThirty),
-			expectedReason: conditions.ReasonSelfMonGatewaySomeDataDropped,
+			name:            "log-gateway",
+			component:       suite.LabelLogGateway,
+			faultOpts:       faultNonRetryableErr(faultPercentageThirty),
+			expectedReasons: flowHealthyThenDegraded(conditions.ReasonSelfMonGatewaySomeDataDropped),
 		},
 		{
 			// HTTP 429 is retryable for Fluent Bit: the output plugin retries, so requests accumulate
@@ -59,33 +59,33 @@ func TestBackpressure(t *testing.T) {
 			faultOpts: append(faultRetryableErr(faultPercentageNinetyEight),
 				faultbackend.WithDelay(200, 3*time.Second),
 			),
-			generator:      stdoutLogGenerator(bufferFillingUpRate),
-			expectedReason: conditions.ReasonSelfMonAgentBufferFillingUp,
+			generator:       stdoutLogGenerator(bufferFillingUpRate),
+			expectedReasons: flowHealthyThenDegraded(conditions.ReasonSelfMonAgentBufferFillingUp),
 		},
 		{
 			// HTTP 400 is non-retryable for Fluent Bit: data is dropped immediately without filling the queue → SomeDataDropped.
-			name:           "fluent-bit-data-dropped",
-			component:      suite.LabelFluentBit,
-			faultOpts:      faultNonRetryableErr(faultPercentageThirty),
-			expectedReason: conditions.ReasonSelfMonAgentSomeDataDropped,
+			name:            "fluent-bit-data-dropped",
+			component:       suite.LabelFluentBit,
+			faultOpts:       faultNonRetryableErr(faultPercentageThirty),
+			expectedReasons: flowHealthyThenDegraded(conditions.ReasonSelfMonAgentSomeDataDropped),
 		},
 		{
-			name:           "metric-gateway",
-			component:      suite.LabelMetricGateway,
-			faultOpts:      faultNonRetryableErr(faultPercentageThirty),
-			expectedReason: conditions.ReasonSelfMonGatewaySomeDataDropped,
+			name:            "metric-gateway",
+			component:       suite.LabelMetricGateway,
+			faultOpts:       faultNonRetryableErr(faultPercentageThirty),
+			expectedReasons: flowHealthyThenDegraded(conditions.ReasonSelfMonGatewaySomeDataDropped),
 		},
 		{
-			name:           "metric-agent",
-			component:      suite.LabelMetricAgent,
-			faultOpts:      faultNonRetryableErr(faultPercentageThirty),
-			expectedReason: conditions.ReasonSelfMonAgentSomeDataDropped,
+			name:            "metric-agent",
+			component:       suite.LabelMetricAgent,
+			faultOpts:       faultNonRetryableErr(faultPercentageThirty),
+			expectedReasons: flowHealthyThenDegraded(conditions.ReasonSelfMonAgentSomeDataDropped),
 		},
 		{
-			name:           "traces",
-			component:      suite.LabelTraces,
-			faultOpts:      faultNonRetryableErr(faultPercentageThirty),
-			expectedReason: conditions.ReasonSelfMonGatewaySomeDataDropped,
+			name:            "traces",
+			component:       suite.LabelTraces,
+			faultOpts:       faultNonRetryableErr(faultPercentageThirty),
+			expectedReasons: flowHealthyThenDegraded(conditions.ReasonSelfMonGatewaySomeDataDropped),
 		},
 	}
 
@@ -93,6 +93,8 @@ func TestBackpressure(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			labels := []string{suite.LabelSelfMonitor, tc.component, suite.LabelBackpressure}
 
+			// Istio is not required: fault injection is handled by the mock-backend directly
+			// (see test/testkit/mocks/faultbackend) rather than via Istio VirtualServices.
 			var opts []kubeprep.Option
 			if isFluentBit(tc.component) {
 				opts = append(opts, kubeprep.WithOverrideFIPSMode(false), kubeprep.WithFluentBitHostPathCleanup())
@@ -133,7 +135,7 @@ func TestBackpressure(t *testing.T) {
 
 			assert.DeploymentReady(t, kitkyma.SelfMonitorName)
 
-			assertFlowDegraded(t, tc.component, pipelineName, flowHealthyThenDegraded(tc.expectedReason))
+			assertFlowDegraded(t, tc.component, pipelineName, tc.expectedReasons)
 		})
 	}
 }
