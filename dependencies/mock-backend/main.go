@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/binary"
 	"fmt"
 	"io"
 	"log"
@@ -20,10 +21,38 @@ import (
 )
 
 const (
-	maxPercentage = 100
-	ruleParts     = 2
-	statsInterval = time.Second
+	maxPercentage    = 100
+	ruleParts        = 2
+	statsInterval    = time.Second
+	grpcFrameHdrSize = 5 // 1 byte compression flag + 4 bytes message length
 )
+
+// gRPC status codes used for fault injection.
+// See https://grpc.github.io/grpc/core/md_doc_statuscodes.html
+const (
+	grpcStatusInvalidArgument   = 3  // non-retryable; maps to HTTP 400
+	grpcStatusResourceExhausted = 8  // retryable;     maps to HTTP 429
+	grpcStatusInternal          = 13 // non-retryable; maps to HTTP 500
+)
+
+// httpToGRPCStatus maps an HTTP fault status code to the gRPC status code that
+// produces the same retryability behavior in the OTel Collector OTLP exporter.
+//
+// OTel Collector retryable gRPC codes: Canceled, DeadlineExceeded, Aborted,
+// OutOfRange, Unavailable, DataLoss, ResourceExhausted (with Retry-After).
+// Everything else is permanent / non-retryable.
+func httpToGRPCStatus(httpCode int) int {
+	switch httpCode {
+	case http.StatusTooManyRequests: // 429 – retryable for both OTel and Fluent Bit
+		return grpcStatusResourceExhausted
+	case http.StatusBadRequest: // 400 – non-retryable for both
+		return grpcStatusInvalidArgument
+	case http.StatusInternalServerError: // 500 – non-retryable for OTel
+		return grpcStatusInternal
+	default:
+		return grpcStatusInternal
+	}
+}
 
 type rule struct {
 	statusCode int
@@ -193,6 +222,39 @@ func parseConfig() ([]rule, string) {
 	return rules, defaultBehavior
 }
 
+func isGRPC(r *http.Request) bool {
+	return strings.HasPrefix(r.Header.Get("Content-Type"), "application/grpc")
+}
+
+// writeGRPCResponse writes a proper gRPC response over HTTP/2.
+// For success (httpCode 200) it sends an empty OTLP export response body.
+// For errors it sends only the grpc-status trailer with no body.
+func writeGRPCResponse(w http.ResponseWriter, httpCode int) {
+	h := w.Header()
+	h.Set("Content-Type", "application/grpc")
+
+	grpcStatus := "0"
+	if httpCode != http.StatusOK {
+		grpcStatus = strconv.Itoa(httpToGRPCStatus(httpCode))
+	}
+
+	// Declare the trailer before WriteHeader so HTTP/2 sends it as a proper trailer frame.
+	h.Set("Trailer", "Grpc-Status")
+
+	w.WriteHeader(http.StatusOK)
+
+	if httpCode == http.StatusOK {
+		// Write empty gRPC data frame (5-byte header: no compression, 0-byte body).
+		frame := make([]byte, grpcFrameHdrSize)
+		frame[0] = 0 // no compression
+		binary.BigEndian.PutUint32(frame[1:], 0)
+		_, _ = w.Write(frame) //nolint:errcheck // best-effort write
+	}
+
+	// Set the trailer. Using http.TrailerPrefix works for both HTTP/1.1 and HTTP/2.
+	h.Set(http.TrailerPrefix+"Grpc-Status", grpcStatus)
+}
+
 func buildHandler(rules []rule, defaultBehavior string, reqStats *stats) http.Handler {
 	type threshold struct {
 		cumulative float64
@@ -217,7 +279,7 @@ func buildHandler(rules []rule, defaultBehavior string, reqStats *stats) http.Ha
 
 		for _, t := range thresholds {
 			if roll < t.cumulative {
-				w.WriteHeader(t.statusCode)
+				respond(w, r, t.statusCode)
 				reqStats.record(t.statusCode)
 
 				return
@@ -249,7 +311,17 @@ func buildHandler(rules []rule, defaultBehavior string, reqStats *stats) http.Ha
 			return
 		}
 
-		w.WriteHeader(code)
+		respond(w, r, code)
 		reqStats.record(code)
 	})
+}
+
+// respond writes the appropriate response based on whether the request is gRPC or plain HTTP.
+func respond(w http.ResponseWriter, r *http.Request, httpCode int) {
+	if isGRPC(r) {
+		writeGRPCResponse(w, httpCode)
+		return
+	}
+
+	w.WriteHeader(httpCode)
 }
