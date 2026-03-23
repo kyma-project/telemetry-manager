@@ -91,17 +91,17 @@ var (
 	setupLog = ctrl.Log.WithName("setup")
 
 	// Operator flags
-	certDir                         string
-	highPriorityClassName           string
-	normalPriorityClassName         string
-	clusterTrustBundleName          string
-	imagePullSecretName             string
-	additionalWorkloadLabels        cliflags.Map
-	additionalWorkloadAnnotations   cliflags.Map
-	additionalWorkloadPodLabels     cliflags.Map
+	certDir                          string
+	highPriorityClassName            string
+	normalPriorityClassName          string
+	clusterTrustBundleName           string
+	imagePullSecretName              string
+	additionalWorkloadLabels         cliflags.Map
+	additionalWorkloadAnnotations    cliflags.Map
+	additionalWorkloadPodLabels      cliflags.Map
 	additionalWorkloadPodAnnotations cliflags.Map
-	deployOTLPGateway               bool
-	unlimitedPipelines              bool
+	deployOTLPGateway                bool
+	unlimitedPipelines               bool
 )
 
 const (

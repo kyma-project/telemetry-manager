@@ -13,18 +13,18 @@ import (
 
 func TestMakeWorkloadMetadata(t *testing.T) {
 	tests := []struct {
-		name                   string
-		globals                config.Global
-		baseName               string
-		componentType          string
-		extraPodLabels         map[string]string
-		extraPodAnnotations    map[string]string
-		expectedPodLabels      int
-		expectedPodAnnotations int
-		expectedResourceLabels int
+		name                        string
+		globals                     config.Global
+		baseName                    string
+		componentType               string
+		extraPodLabels              map[string]string
+		extraPodAnnotations         map[string]string
+		expectedPodLabels           int
+		expectedPodAnnotations      int
+		expectedResourceLabels      int
 		expectedResourceAnnotations int
-		verifyPodLabels        map[string]string
-		verifyPodAnnotations   map[string]string
+		verifyPodLabels             map[string]string
+		verifyPodAnnotations        map[string]string
 	}{
 		{
 			name: "basic metadata without additional labels",
@@ -164,6 +164,7 @@ func TestMakeWorkloadMetadata(t *testing.T) {
 			for k, v := range tt.verifyPodLabels {
 				require.Equal(t, v, metadata.PodLabels[k], "pod label %s should equal %s", k, v)
 			}
+
 			for k, v := range tt.verifyPodAnnotations {
 				require.Equal(t, v, metadata.PodAnnotations[k], "pod annotation %s should equal %s", k, v)
 			}
