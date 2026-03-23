@@ -263,7 +263,7 @@ func TestLabelAnnotation(t *testing.T) {
 			assert.DeploymentHasAnnotation(t, kitkyma.TelemetryManagerName, managerAnnotation)
 
 			var managerSelector = client.ListOptions{
-				LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": "telemetry-manager"}),
+				LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": "manager"}),
 				Namespace:     kitkyma.SystemNamespaceName,
 			}
 			// Telemetry Manager pods should have both manager and pod-specific labels/annotations
