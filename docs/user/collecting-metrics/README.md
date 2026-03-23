@@ -57,7 +57,7 @@ You can adjust the MetricPipeline using runtime configuration with the available
 - Use diagnostic metrics to debug your **prometheus** and **istio** configuration (see [Collect Diagnostic Metrics](./prometheus-input.md#collect-diagnostic-metrics)).
 - Choose from which specific namespaces you want to include or exclude metrics (see [Filter Metrics](../filter-and-process/filter-metrics.md)).
 - Avoid redundancy by dropping push-based OTLP metrics that are sent directly to the metric gateway (see [Route Specific Inputs to Different Backends](./../otlp-input.md#route-specific-inputs-to-different-backends)).
-- Reduce or increase metric collection frequency for all pull-based inputs or for a specific input type by changing **collection interval** (see [Configure Collection Interval](#configure-collection-interval)).
+- Reduce or increase metric collection frequency for all pull-based inputs or for a specific input type by changing the collection interval (see [Configure Collection Interval](#configure-collection-interval)).
 
 ## Configure Collection Interval
 
@@ -91,7 +91,7 @@ spec:
       collectionInterval: 15s
 ```
 
-The precedence is as follows: input-specific override > global **metric.collectionInterval** > default of `30s`.
+The input-specific override takes precedence over the global **metric.collectionInterval**, which takes precedence over the default of `30s`.
 
 For details on the available parameters, see [Telemetry Custom Resource](../resources/01-telemetry.md).
 

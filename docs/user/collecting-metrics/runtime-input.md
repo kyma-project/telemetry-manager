@@ -17,7 +17,7 @@ With this, the metric agent starts collecting all runtime metrics from all resou
 
 > [!TIP]
 > To select metrics from specific namespaces or to include system namespaces, see [Filter Metrics](../filter-and-process/filter-metrics.md).
-> To change how often runtime metrics are collected, configure the collection interval (see [Configure Collection Interval](README.md#configure-collection-interval)).
+> To change the scrape interval for runtime metrics, see [Configure Collection Interval](README.md#configure-collection-interval)).
 
 ## Select Resource Types
 
