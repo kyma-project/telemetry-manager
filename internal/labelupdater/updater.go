@@ -1,3 +1,4 @@
+// TODO: Remove after rollout 1.60.0
 package labelupdater
 
 import (
@@ -70,29 +71,16 @@ func (u *Updater) ensureLabels(ctx context.Context) error {
 		&rbacv1.ClusterRoleBinding{ObjectMeta: metav1.ObjectMeta{Name: names.FluentBit}},
 	}
 
-	updated := 0
-
 	for _, r := range resources {
-		wasUpdated, err := u.ensureLabelOnResource(ctx, r)
-		if err != nil {
+		if err := u.ensureLabelOnResource(ctx, r); err != nil {
 			return err
 		}
-
-		if wasUpdated {
-			updated++
-		}
-	}
-
-	if updated == 0 {
-		u.logger.Info("All resources already have the module label")
-	} else {
-		u.logger.Info("Label update completed", "updatedResources", updated)
 	}
 
 	return nil
 }
 
-func (u *Updater) ensureLabelOnResource(ctx context.Context, obj client.Object) (bool, error) {
+func (u *Updater) ensureLabelOnResource(ctx context.Context, obj client.Object) error {
 	key := types.NamespacedName{
 		Name:      obj.GetName(),
 		Namespace: obj.GetNamespace(),
@@ -101,26 +89,43 @@ func (u *Updater) ensureLabelOnResource(ctx context.Context, obj client.Object) 
 	// Use the API reader to bypass the label-scoped cache
 	if err := u.apiReader.Get(ctx, key, obj); err != nil {
 		if apierrors.IsNotFound(err) {
-			return false, nil
+			return nil
 		}
 
-		return false, fmt.Errorf("failed to get %T %s: %w", obj, key, err)
+		return fmt.Errorf("failed to get %T %s: %w", obj, key, err)
+	}
+
+	if hasModuleLabel(obj) {
+		return nil
+	}
+
+	if err := patchModuleLabel(ctx, u.client, obj); err != nil {
+		return fmt.Errorf("failed to patch label on %T %s: %w", obj, key, err)
+	}
+
+	u.logger.Info("Patched module label", "resource", key, "kind", fmt.Sprintf("%T", obj))
+
+	return nil
+}
+
+func hasModuleLabel(obj client.Object) bool {
+	labels := obj.GetLabels()
+	if labels == nil {
+		return false
+	}
+
+	_, ok := labels[commonresources.LabelKeyKymaModule]
+
+	return ok
+}
+
+func patchModuleLabel(ctx context.Context, c client.Client, obj client.Object) error {
+	base, ok := obj.DeepCopyObject().(client.Object)
+	if !ok {
+		return fmt.Errorf("failed to deep copy %T", obj)
 	}
 
 	labels := obj.GetLabels()
-	if labels != nil {
-		if _, ok := labels[commonresources.LabelKeyKymaModule]; ok {
-			return false, nil
-		}
-	}
-
-	base, ok := obj.DeepCopyObject().(client.Object)
-	if !ok {
-		return false, fmt.Errorf("failed to deep copy %T %s", obj, key)
-	}
-
-	patch := client.MergeFrom(base)
-
 	if labels == nil {
 		labels = make(map[string]string)
 	}
@@ -128,11 +133,5 @@ func (u *Updater) ensureLabelOnResource(ctx context.Context, obj client.Object) 
 	labels[commonresources.LabelKeyKymaModule] = commonresources.LabelValueKymaModule
 	obj.SetLabels(labels)
 
-	if err := u.client.Patch(ctx, obj, patch); err != nil {
-		return false, fmt.Errorf("failed to patch label on %T %s: %w", obj, key, err)
-	}
-
-	u.logger.Info("Patched module label", "resource", key, "kind", fmt.Sprintf("%T", obj))
-
-	return true, nil
+	return c.Patch(ctx, obj, client.MergeFrom(base))
 }
