@@ -160,14 +160,18 @@ check-kubeconform: $(HELM) $(KUBECONFORM) ## Validate Helm-rendered templates wi
 		--set default.enabled=true \
 		--set nameOverride=telemetry \
 		--namespace kyma-system \
-	| $(KUBECONFORM) -summary -strict -ignore-missing-schemas -verbose -schema-location default
+	| $(KUBECONFORM) -summary -strict -verbose \
+		-schema-location default \
+		-schema-location 'https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/{{ .NormalizedKubernetesVersion }}/{{ .ResourceKind }}{{ .KindSuffix }}.json'
 	@echo "Validating experimental chart variant..."
 	$(HELM) template telemetry helm \
 		--set experimental.enabled=true \
 		--set default.enabled=false \
 		--set nameOverride=telemetry \
 		--namespace kyma-system \
-	| $(KUBECONFORM) -summary -strict -ignore-missing-schemas -verbose -schema-location default
+	| $(KUBECONFORM) -summary -strict -verbose \
+		-schema-location default \
+		-schema-location 'https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/{{ .NormalizedKubernetesVersion }}/{{ .ResourceKind }}{{ .KindSuffix }}.json'
 
 ##@ Code Generation
 
