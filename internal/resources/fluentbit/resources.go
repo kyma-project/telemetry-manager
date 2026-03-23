@@ -287,6 +287,7 @@ func (aad *AgentApplierDeleter) makeDaemonSet(namespace string, checksum string)
 	podLabels := make(map[string]string)
 	maps.Copy(podLabels, defaultFluentBitLabels())
 	maps.Copy(podLabels, aad.globals.AdditionalWorkloadLabels())
+	maps.Copy(podLabels, aad.globals.AdditionalWorkloadPodLabels())
 	podLabels[commonresources.LabelKeyIstioInject] = commonresources.LabelValueTrue
 	podLabels[commonresources.LabelKeyTelemetryLogExport] = commonresources.LabelValueTrue
 
@@ -297,6 +298,7 @@ func (aad *AgentApplierDeleter) makeDaemonSet(namespace string, checksum string)
 	// Pod annotations: additional annotations from globals + checksum and Istio annotations
 	podAnnotations := make(map[string]string)
 	maps.Copy(podAnnotations, aad.globals.AdditionalWorkloadAnnotations())
+	maps.Copy(podAnnotations, aad.globals.AdditionalWorkloadPodAnnotations())
 	podAnnotations[commonresources.AnnotationKeyChecksumConfig] = checksum
 	podAnnotations[commonresources.AnnotationKeyIstioExcludeInboundPorts] = fmt.Sprintf("%v,%v", fbports.HTTP, fbports.ExporterMetrics)
 
