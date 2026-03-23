@@ -73,6 +73,7 @@ func TestOTLPGateway_ApplyResources(t *testing.T) {
 			scheme := runtime.NewScheme()
 			utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 			utilruntime.Must(istionetworkingclientv1.AddToScheme(scheme))
+			utilruntime.Must(istiosecurityclientv1.AddToScheme(scheme))
 			utilruntime.Must(v1alpha3.AddToScheme(scheme))
 
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithInterceptorFuncs(interceptor.Funcs{

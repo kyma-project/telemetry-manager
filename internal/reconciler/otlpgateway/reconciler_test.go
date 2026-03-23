@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -75,6 +76,7 @@ func newTestClient(t *testing.T, objs ...client.Object) client.Client {
 	scheme := runtime.NewScheme()
 	require.NoError(t, clientgoscheme.AddToScheme(scheme))
 	require.NoError(t, telemetryv1beta1.AddToScheme(scheme))
+	require.NoError(t, istiosecurityclientv1.AddToScheme(scheme))
 
 	kymaSystemNamespace := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{

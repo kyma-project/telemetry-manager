@@ -7,7 +7,10 @@ import (
 	"slices"
 
 	"istio.io/api/networking/v1alpha3"
+	istiosecurityv1 "istio.io/api/security/v1"
+	istiotypev1beta1 "istio.io/api/type/v1beta1"
 	istionetworkingclientv1 "istio.io/client-go/pkg/apis/networking/v1"
+	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -161,6 +164,10 @@ func (o *OTLPGatewayApplierDeleter) ApplyResources(ctx context.Context, c client
 				return fmt.Errorf("failed to create destinationrule: %w", err)
 			}
 		}
+
+		if err := k8sutils.CreateOrUpdatePeerAuthentication(ctx, labelerClient, o.makePeerAuthentication()); err != nil {
+			return fmt.Errorf("failed to create peerauthentication: %w", err)
+		}
 	}
 
 	return nil
@@ -250,6 +257,19 @@ func (o *OTLPGatewayApplierDeleter) makeDestinationRule(name string) *istionetwo
 			TrafficPolicy: &v1alpha3.TrafficPolicy{
 				Tls: &v1alpha3.ClientTLSSettings{Mode: v1alpha3.ClientTLSSettings_DISABLE},
 			},
+		},
+	}
+}
+
+func (o *OTLPGatewayApplierDeleter) makePeerAuthentication() *istiosecurityclientv1.PeerAuthentication {
+	return &istiosecurityclientv1.PeerAuthentication{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      o.baseName,
+			Namespace: o.globals.TargetNamespace(),
+		},
+		Spec: istiosecurityv1.PeerAuthentication{
+			Selector: &istiotypev1beta1.WorkloadSelector{MatchLabels: commonresources.DefaultSelector(o.baseName)},
+			Mtls:     &istiosecurityv1.PeerAuthentication_MutualTLS{Mode: istiosecurityv1.PeerAuthentication_MutualTLS_PERMISSIVE},
 		},
 	}
 }
