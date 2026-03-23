@@ -117,7 +117,7 @@ func (b *Builder) addMetricKymaStatsReceiver(builder *common.ComponentBuilder[*t
 	return builder.AddReceiver(
 		builder.StaticComponentID(common.ComponentIDKymaStatsReceiver),
 		func(mp *telemetryv1beta1.MetricPipeline) any {
-			return &KymaStatsReceiver{
+			return &KymaStatsReceiverConfig{
 				AuthType:           "serviceAccount",
 				K8sLeaderElector:   "k8s_leader_elector",
 				CollectionInterval: "30s",

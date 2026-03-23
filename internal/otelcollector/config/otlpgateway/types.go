@@ -5,8 +5,8 @@ type IstioEnrichmentProcessorConfig struct {
 	ScopeVersion string `yaml:"scope_version,omitempty"`
 }
 
-// KymaStatsReceiver configures the kymastats receiver for collecting Kyma-specific metrics.
-type KymaStatsReceiver struct {
+// KymaStatsReceiverConfig configures the kymastats receiver for collecting Kyma-specific metrics.
+type KymaStatsReceiverConfig struct {
 	AuthType           string      `yaml:"auth_type"`
 	CollectionInterval string      `yaml:"collection_interval"`
 	Resources          []ModuleGVR `yaml:"resources"`
