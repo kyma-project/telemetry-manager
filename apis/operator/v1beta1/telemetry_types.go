@@ -100,7 +100,7 @@ type MetricSpec struct {
 
 // MetricInputSpec defines collection settings for a specific metric input type.
 type MetricInputSpec struct {
-	// CollectionInterval defines the collection/scrape interval for this specific input, overriding the global metric.collectionInterval.
+	// CollectionInterval defines the scrape interval for this specific input, overriding the global metric.collectionInterval.
 	// The value is a duration string (for example, "30s", "1m", "5m"). Minimum is 1s.
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Format=duration
