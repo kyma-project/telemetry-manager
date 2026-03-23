@@ -5,6 +5,7 @@ import (
 	"net"
 	"strconv"
 	"strings"
+	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -39,6 +40,7 @@ type FaultBackend struct {
 	rules            []rule
 	defaultBehavior  string
 	useFluentBitPort bool
+	delays           map[int32]time.Duration
 }
 
 func New(namespace string, opts ...Option) *FaultBackend {
@@ -103,6 +105,15 @@ func (fb *FaultBackend) buildEnvVars() []corev1.EnvVar {
 	}
 
 	envs = append(envs, corev1.EnvVar{Name: "FAULT_DEFAULT", Value: fb.defaultBehavior})
+
+	if len(fb.delays) > 0 {
+		parts := make([]string, 0, len(fb.delays))
+		for code, d := range fb.delays {
+			parts = append(parts, fmt.Sprintf("%d:%d", code, d.Milliseconds()))
+		}
+
+		envs = append(envs, corev1.EnvVar{Name: "FAULT_DELAYS", Value: strings.Join(parts, ",")})
+	}
 
 	return envs
 }

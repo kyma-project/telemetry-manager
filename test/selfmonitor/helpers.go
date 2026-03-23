@@ -22,9 +22,9 @@ import (
 const (
 	defaultRate = 100
 
-	faultPercentageAll        float64 = 100
-	faultPercentageThirty     float64 = 30
-	faultPercentageNinetyFive float64 = 95
+	faultPercentageAll         float64 = 100
+	faultPercentageThirty      float64 = 30
+	faultPercentageNinetyEight float64 = 98
 )
 
 // HTTP status codes used for fault injection.
@@ -279,4 +279,3 @@ func flowHealthyThenDegraded(reasons ...string) []assert.ReasonStatus {
 
 	return result
 }
-

@@ -3,6 +3,7 @@ package selfmonitor
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -43,9 +44,12 @@ func TestBackpressure(t *testing.T) {
 		{
 			// HTTP 429 is retryable for Fluent Bit: requests are retried, queue fills up → BufferFillingUp alert.
 			// High generator rate ensures the queue fills faster than retries can drain.
-			name:           "fluent-bit-buffer-filling-up",
-			component:      suite.LabelFluentBit,
-			faultOpts:      faultRetryableErr(faultPercentageNinetyFive),
+			// A delay on HTTP 200 slows down successful drains so the queue keeps growing.
+			name:      "fluent-bit-buffer-filling-up",
+			component: suite.LabelFluentBit,
+			faultOpts: append(faultRetryableErr(faultPercentageNinetyEight),
+				faultbackend.WithDelay(200, 3*time.Second),
+			),
 			generator:      stdoutLogGenerator(bufferFillingUpRate),
 			expectedReason: conditions.ReasonSelfMonAgentBufferFillingUp,
 		},

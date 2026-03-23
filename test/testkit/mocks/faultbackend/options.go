@@ -1,6 +1,9 @@
 package faultbackend
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 type Option func(*FaultBackend)
 
@@ -42,5 +45,18 @@ func WithReplicas(replicas int32) Option {
 func WithFluentBitPort() Option {
 	return func(fb *FaultBackend) {
 		fb.useFluentBitPort = true
+	}
+}
+
+// WithDelay configures a response delay for a specific HTTP status code.
+// The mock-backend will sleep for the given duration before sending the response.
+// The body is drained before sleeping, so only the goroutine stack is held during the delay.
+func WithDelay(statusCode int32, delay time.Duration) Option {
+	return func(fb *FaultBackend) {
+		if fb.delays == nil {
+			fb.delays = make(map[int32]time.Duration)
+		}
+
+		fb.delays[statusCode] = delay
 	}
 }
