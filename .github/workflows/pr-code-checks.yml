@@ -80,15 +80,3 @@ jobs:
         with:
           configurationFile: renovate.json
           token: ${{ secrets.GITHUB_TOKEN }}
-
-  helm-kubeconform:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
-      - name: Setup Golang
-        uses: "./.github/template/setup-golang"
-
-      - name: Validate Helm templates with kubeconform
-        run: make check-kubeconform

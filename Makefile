@@ -160,18 +160,22 @@ check-kubeconform: $(HELM) $(KUBECONFORM) ## Validate Helm-rendered templates wi
 		--set default.enabled=true \
 		--set nameOverride=telemetry \
 		--namespace kyma-system \
-	| $(KUBECONFORM) -summary -strict -verbose \
+		> /tmp/helm-default.yaml || (echo "ERROR: helm template failed for default variant"; exit 1)
+	$(KUBECONFORM) -summary -strict -verbose \
 		-schema-location default \
-		-schema-location 'https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/{{ .NormalizedKubernetesVersion }}/{{ .ResourceKind }}{{ .KindSuffix }}.json'
+		-schema-location 'https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/{{ .NormalizedKubernetesVersion }}/{{ .ResourceKind }}{{ .KindSuffix }}.json' \
+		/tmp/helm-default.yaml
 	@echo "Validating experimental chart variant..."
 	$(HELM) template telemetry helm \
 		--set experimental.enabled=true \
 		--set default.enabled=false \
 		--set nameOverride=telemetry \
 		--namespace kyma-system \
-	| $(KUBECONFORM) -summary -strict -verbose \
+		> /tmp/helm-experimental.yaml || (echo "ERROR: helm template failed for experimental variant"; exit 1)
+	$(KUBECONFORM) -summary -strict -verbose \
 		-schema-location default \
-		-schema-location 'https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/{{ .NormalizedKubernetesVersion }}/{{ .ResourceKind }}{{ .KindSuffix }}.json'
+		-schema-location 'https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/{{ .NormalizedKubernetesVersion }}/{{ .ResourceKind }}{{ .KindSuffix }}.json' \
+		/tmp/helm-experimental.yaml
 
 ##@ Code Generation
 
