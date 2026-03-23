@@ -241,6 +241,11 @@ func (o *OTLPGatewayApplierDeleter) DeleteResources(ctx context.Context, c clien
 				allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete destinationrule: %w", err))
 			}
 		}
+
+		peerAuth := istiosecurityclientv1.PeerAuthentication{ObjectMeta: metav1.ObjectMeta{Name: o.baseName, Namespace: o.globals.TargetNamespace()}}
+		if err := k8sutils.DeleteObject(ctx, c, &peerAuth); err != nil {
+			allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete peerauthentication: %w", err))
+		}
 	}
 
 	return allErrors
