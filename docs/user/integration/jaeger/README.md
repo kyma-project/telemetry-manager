@@ -68,7 +68,7 @@ kubectl -n $K8S_NAMESPACE rollout status deploy $HELM_JAEGER_RELEASE
 
 ### Activate a TracePipeline
 
-To configure the Kyma trace gateway with the deployed Jaeger instance as the backend. To create a new [TracePipeline](../../collecting-traces/README.md), execute the following command:
+To configure the Kyma trace gateway with the deployed Jaeger instance as the backend, create a new [TracePipeline](../../collecting-traces/README.md) with the following command:
 
 ```bash
 cat <<EOF | kubectl -n $K8S_NAMESPACE apply -f -
