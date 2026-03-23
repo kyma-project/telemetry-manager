@@ -155,27 +155,25 @@ lint-fix: lint-fix-manager $(LINT_FIX_TARGETS) ## Run linting checks with automa
 .PHONY: check-kubeconform
 check-kubeconform: $(HELM) $(KUBECONFORM) ## Validate Helm-rendered templates with kubeconform
 	@echo "Validating default chart variant..."
-	$(HELM) template telemetry helm \
-		--set experimental.enabled=false \
-		--set default.enabled=true \
-		--set nameOverride=telemetry \
-		--namespace kyma-system \
-		> /tmp/helm-default.yaml || (echo "ERROR: helm template failed for default variant"; exit 1)
-	$(KUBECONFORM) -summary -strict -verbose \
-		-schema-location default \
-		-schema-location 'https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/{{ .NormalizedKubernetesVersion }}/{{ .ResourceKind }}{{ .KindSuffix }}.json' \
-		/tmp/helm-default.yaml
+	@bash -o pipefail -c " \
+		$(HELM) template telemetry helm \
+			--set experimental.enabled=false \
+			--set default.enabled=true \
+			--set nameOverride=telemetry \
+			--namespace kyma-system |\
+		$(KUBECONFORM) -summary -strict -verbose \
+			-schema-location default \
+			-schema-location 'https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/{{ .NormalizedKubernetesVersion }}/{{ .ResourceKind }}{{ .KindSuffix }}.json'"
 	@echo "Validating experimental chart variant..."
-	$(HELM) template telemetry helm \
-		--set experimental.enabled=true \
-		--set default.enabled=false \
-		--set nameOverride=telemetry \
-		--namespace kyma-system \
-		> /tmp/helm-experimental.yaml || (echo "ERROR: helm template failed for experimental variant"; exit 1)
-	$(KUBECONFORM) -summary -strict -verbose \
-		-schema-location default \
-		-schema-location 'https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/{{ .NormalizedKubernetesVersion }}/{{ .ResourceKind }}{{ .KindSuffix }}.json' \
-		/tmp/helm-experimental.yaml
+	@bash -o pipefail -c " \
+		$(HELM) template telemetry helm \
+			--set experimental.enabled=true \
+			--set default.enabled=false \
+			--set nameOverride=telemetry \
+			--namespace kyma-system |\
+		$(KUBECONFORM) -summary -strict -verbose \
+			-schema-location default \
+			-schema-location 'https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/{{ .NormalizedKubernetesVersion }}/{{ .ResourceKind }}{{ .KindSuffix }}.json'"
 
 ##@ Code Generation
 
