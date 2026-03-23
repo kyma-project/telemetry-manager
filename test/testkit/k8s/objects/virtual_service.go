@@ -14,7 +14,7 @@ import (
 //
 // For self-monitor and mock-backend tests, align HTTP abort status with exporter retry semantics:
 //   - 400 Bad Request: non-retryable for both OTel Collector and Fluent Bit (see test/selfmonitor/helpers.go).
-//   - 429 Too Many Requests: retryable for both (used e.g. in backendRetryableErr).
+//   - 429 Too Many Requests: retryable for both (used e.g. in faultRetryableErr in test/selfmonitor/helpers.go).
 //
 // Call WithFaultAbortPercentage(percentage, httpStatus) so the abort uses the intended code; the default
 // in NewVirtualService matches the non-retryable convention (400) if a caller ever omits the status.

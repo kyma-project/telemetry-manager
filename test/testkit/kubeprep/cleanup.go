@@ -23,6 +23,8 @@ const (
 	fluentBitHostPathOnNode        = "/var/telemetry-fluent-bit"
 	fluentBitHostPathMountInPod    = "/cleanup"
 	// Pin image tag for reproducible test cleanup pods (avoid floating :latest).
+	// TODO: migrate to europe-docker.pkg.dev/kyma-project registry (ENV_ALPINE_IMAGE) once it is
+	// available as a testkit constant generated from .env, to avoid Docker Hub pull-rate limits in CI.
 	fluentBitHostPathCleanupImage = "busybox:1.36"
 )
 

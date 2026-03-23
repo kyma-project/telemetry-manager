@@ -38,8 +38,12 @@ func TestOutage(t *testing.T) {
 			expectedReasons: flowHealthyThenDegraded(conditions.ReasonSelfMonGatewayAllDataDropped),
 		},
 		{
-			// Connection close: Fluent Bit connects but the backend immediately drops the connection,
-			// so no HTTP response is ever received.
+			// Connection close: Fluent Bit connects to port 9880 (HTTP/1.1, not HTTP/2) but the backend
+			// immediately hijacks and closes the TCP connection, so no HTTP response is ever received.
+			// Fluent Bit's HTTP output plugin counts this as no data delivered, which fires the
+			// NoLogsDelivered alert in the self-monitor. This replaces the previous zero-replicas
+			// approach (which caused ECONNREFUSED); both fault modes result in no successful delivery,
+			// but WithDefaultClose() is more deterministic on clusters where port reuse can be delayed.
 			name:            "fluent-bit-no-logs-delivered",
 			component:       suite.LabelFluentBit,
 			faultOpts:       []faultbackend.Option{faultbackend.WithDefaultClose()},

@@ -42,9 +42,18 @@ func TestBackpressure(t *testing.T) {
 			expectedReason: conditions.ReasonSelfMonGatewaySomeDataDropped,
 		},
 		{
-			// HTTP 429 is retryable for Fluent Bit: requests are retried, queue fills up → BufferFillingUp alert.
-			// High generator rate ensures the queue fills faster than retries can drain.
-			// A delay on HTTP 200 slows down successful drains so the queue keeps growing.
+			// HTTP 429 is retryable for Fluent Bit: the output plugin retries, so requests accumulate
+			// in the Fluent Bit buffer → BufferFillingUp alert.
+			//
+			// 98% of requests receive HTTP 429 (retryable); Fluent Bit retries them but they never drain.
+			// The remaining 2% succeed (HTTP 200), but those responses are delayed by 3 s, which limits
+			// the successful drain throughput to ≈0.02 × (1/3 s) batches/s — far below the incoming
+			// rate of bufferFillingUpRate (6000 lines/s). As a result the queue fills faster than it
+			// empties, triggering the BufferFillingUp alert before SomeDataDropped.
+			//
+			// The delay is intentionally on the 200 path (successful drain), not the 429 path (retry):
+			// slowing down the rare successful responses is sufficient to prevent the queue from clearing,
+			// while keeping the retry loop fast enough to exercise the queue pressure code path.
 			name:      "fluent-bit-buffer-filling-up",
 			component: suite.LabelFluentBit,
 			faultOpts: append(faultRetryableErr(faultPercentageNinetyEight),
