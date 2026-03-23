@@ -1,4 +1,3 @@
-// TODO: Remove after rollout 1.60.0
 package labelupdater
 
 import (
