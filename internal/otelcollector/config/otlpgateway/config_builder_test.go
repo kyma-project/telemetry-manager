@@ -483,6 +483,23 @@ func TestBuild(t *testing.T) {
 					Build(),
 			},
 		},
+		{
+			name:           "all-signals-multi-backend",
+			goldenFileName: "all-signals-multi-backend.yaml",
+			moduleVersion:  "1.0.0",
+			tracePipelines: []telemetryv1beta1.TracePipeline{
+				testutils.NewTracePipelineBuilder().WithName("trace-backend-1").WithOTLPOutput(testutils.OTLPEndpoint("https://backend-1.example.com")).Build(),
+				testutils.NewTracePipelineBuilder().WithName("trace-backend-2").WithOTLPOutput(testutils.OTLPEndpoint("https://backend-2.example.com")).Build(),
+			},
+			logPipelines: []telemetryv1beta1.LogPipeline{
+				testutils.NewLogPipelineBuilder().WithName("log-backend-1").WithOTLPOutput(testutils.OTLPEndpoint("https://backend-1.example.com")).Build(),
+				testutils.NewLogPipelineBuilder().WithName("log-backend-2").WithOTLPOutput(testutils.OTLPEndpoint("https://backend-2.example.com")).Build(),
+			},
+			metricPipelines: []telemetryv1beta1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().WithName("metric-backend-1").WithOTLPInput(true).WithOTLPOutput(testutils.OTLPEndpoint("https://backend-1.example.com")).Build(),
+				testutils.NewMetricPipelineBuilder().WithName("metric-backend-2").WithOTLPInput(true).WithOTLPOutput(testutils.OTLPEndpoint("https://backend-2.example.com")).Build(),
+			},
+		},
 	}
 
 	for _, tt := range tests {
