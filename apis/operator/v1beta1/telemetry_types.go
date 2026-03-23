@@ -78,7 +78,7 @@ type MetricSpec struct {
 	// +kubebuilder:validation:Optional
 	Gateway GatewaySpec `json:"gateway"`
 
-	// CollectionInterval defines the default collection/scrape interval for all pull-based metric inputs (runtime, prometheus, istio).
+	// CollectionInterval defines the default scrape interval for all pull-based metric inputs (runtime, prometheus, istio).
 	// The value is a duration string (for example, "30s", "1m", "5m"). Minimum is 1s. Default is 30s.
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Format=duration
