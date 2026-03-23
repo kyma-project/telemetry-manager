@@ -12,7 +12,6 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/faultbackend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdoutloggen"
@@ -24,7 +23,7 @@ const (
 	defaultRate = 100
 
 	faultPercentageAll        float64 = 100
-	faultPercentageHalf       float64 = 50
+	faultPercentageThirty     float64 = 30
 	faultPercentageNinetyFive float64 = 95
 )
 
@@ -59,13 +58,6 @@ func faultNonRetryableErr(percentage float64) []faultbackend.Option {
 
 func faultRetryableErr(percentage float64) []faultbackend.Option {
 	return []faultbackend.Option{faultbackend.WithStatusCodeAndPercentage(retryableErrCode, percentage)}
-}
-
-// backendNoEndpoints runs the mock backend Deployment with zero replicas so the Service has no ready endpoints.
-// Fluent Bit keeps reading logs while output cannot complete (no HTTP response), which tends to surface
-// ReasonSelfMonAgentNoLogsDelivered rather than immediate non-retryable drops (ReasonSelfMonAgentAllDataDropped).
-func backendNoEndpoints() []kitbackend.Option {
-	return []kitbackend.Option{kitbackend.WithReplicas(0)}
 }
 
 // pipelineBackend is satisfied by both *backend.Backend and *faultbackend.FaultBackend,
@@ -137,21 +129,42 @@ func buildPipeline(component, pipelineName, includeNs string, backend pipelineBa
 
 // Generator factories
 
+// defaultGenerator returns the standard telemetry generator for a component at defaultRate.
+// Each component type uses the generator matching its pipeline input:
+//   - log-agent / fluent-bit: stdout log generator (runtime input reads container logs)
+//   - log-gateway: telemetrygen sending OTLP logs
+//   - metric-gateway: telemetrygen sending OTLP metrics
+//   - metric-agent: Prometheus metric endpoint (scraped by the agent)
+//   - traces: telemetrygen sending OTLP traces
+func defaultGenerator(component string) func(ns string) []client.Object {
+	switch component {
+	case suite.LabelLogAgent, suite.LabelFluentBit:
+		return stdoutLogGenerator(defaultRate)
+	case suite.LabelLogGateway:
+		return otelGenerator(telemetrygen.SignalTypeLogs)
+	case suite.LabelMetricGateway:
+		return otelGenerator(telemetrygen.SignalTypeMetrics)
+	case suite.LabelMetricAgent:
+		return promMetricGenerator()
+	case suite.LabelTraces:
+		return otelGenerator(telemetrygen.SignalTypeTraces)
+	default:
+		panic("unknown component: " + component)
+	}
+}
+
 func stdoutLogGenerator(rate int) func(ns string) []client.Object {
 	return func(ns string) []client.Object {
 		return []client.Object{stdoutloggen.NewDeployment(ns, stdoutloggen.WithRate(rate)).K8sObject()}
 	}
 }
 
-func stdoutLogGeneratorDefault() func(ns string) []client.Object {
-	return func(ns string) []client.Object {
-		return []client.Object{stdoutloggen.NewDeployment(ns).K8sObject()}
-	}
-}
-
 func otelGenerator(signalType telemetrygen.SignalType, opts ...telemetrygen.Option) func(ns string) []client.Object {
 	return func(ns string) []client.Object {
-		return []client.Object{telemetrygen.NewDeployment(ns, signalType, opts...).K8sObject()}
+		allOpts := []telemetrygen.Option{telemetrygen.WithRate(defaultRate), telemetrygen.WithWorkers(1)}
+		allOpts = append(allOpts, opts...)
+
+		return []client.Object{telemetrygen.NewDeployment(ns, signalType, allOpts...).K8sObject()}
 	}
 }
 
@@ -161,17 +174,6 @@ func promMetricGenerator() func(ns string) []client.Object {
 
 		return []client.Object{
 			metricProducer.Pod().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
-			metricProducer.Service().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
-		}
-	}
-}
-
-func promMetricGeneratorHighLoad() func(ns string) []client.Object {
-	return func(ns string) []client.Object {
-		metricProducer := prommetricgen.New(ns)
-
-		return []client.Object{
-			metricProducer.Pod().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).WithAvalancheHighLoad().K8sObject(),
 			metricProducer.Service().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
 		}
 	}
@@ -277,3 +279,4 @@ func flowHealthyThenDegraded(reasons ...string) []assert.ReasonStatus {
 
 	return result
 }
+

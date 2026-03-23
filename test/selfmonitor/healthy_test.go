@@ -26,13 +26,11 @@ func TestHealthy(t *testing.T) {
 	tests := []struct {
 		name      string
 		component string
-		generator func(ns string) []client.Object
 		assert    func(t *testing.T, ns string, backend *kitbackend.Backend, pipelineName string)
 	}{
 		{
 			name:      "log-agent",
 			component: suite.LabelLogAgent,
-			generator: stdoutLogGeneratorDefault(),
 			assert: func(t *testing.T, ns string, backend *kitbackend.Backend, pipelineName string) {
 				assertComponentReady(t, suite.LabelLogAgent)
 				assertPipelineHealthy(t, suite.LabelLogAgent, pipelineName)
@@ -43,7 +41,6 @@ func TestHealthy(t *testing.T) {
 		{
 			name:      "log-gateway",
 			component: suite.LabelLogGateway,
-			generator: otelGenerator(telemetrygen.SignalTypeLogs),
 			assert: func(t *testing.T, ns string, backend *kitbackend.Backend, pipelineName string) {
 				assertComponentReady(t, suite.LabelLogGateway)
 				assertPipelineHealthy(t, suite.LabelLogGateway, pipelineName)
@@ -54,7 +51,6 @@ func TestHealthy(t *testing.T) {
 		{
 			name:      "fluent-bit",
 			component: suite.LabelFluentBit,
-			generator: stdoutLogGeneratorDefault(),
 			assert: func(t *testing.T, ns string, backend *kitbackend.Backend, pipelineName string) {
 				assertComponentReady(t, suite.LabelFluentBit)
 				assertPipelineHealthy(t, suite.LabelFluentBit, pipelineName)
@@ -65,7 +61,6 @@ func TestHealthy(t *testing.T) {
 		{
 			name:      "metric-gateway",
 			component: suite.LabelMetricGateway,
-			generator: otelGenerator(telemetrygen.SignalTypeMetrics),
 			assert: func(t *testing.T, ns string, backend *kitbackend.Backend, pipelineName string) {
 				assertComponentReady(t, suite.LabelMetricGateway)
 				assertPipelineHealthy(t, suite.LabelMetricGateway, pipelineName)
@@ -76,7 +71,6 @@ func TestHealthy(t *testing.T) {
 		{
 			name:      "metric-agent",
 			component: suite.LabelMetricAgent,
-			generator: promMetricGenerator(),
 			assert: func(t *testing.T, ns string, backend *kitbackend.Backend, pipelineName string) {
 				assertComponentReady(t, suite.LabelMetricAgent)
 				assertPipelineHealthy(t, suite.LabelMetricAgent, pipelineName)
@@ -87,7 +81,6 @@ func TestHealthy(t *testing.T) {
 		{
 			name:      "traces",
 			component: suite.LabelTraces,
-			generator: otelGenerator(telemetrygen.SignalTypeTraces),
 			assert: func(t *testing.T, ns string, backend *kitbackend.Backend, pipelineName string) {
 				assertComponentReady(t, suite.LabelTraces)
 				assertPipelineHealthy(t, suite.LabelTraces, pipelineName)
@@ -124,7 +117,7 @@ func TestHealthy(t *testing.T) {
 				kitk8sobjects.NewNamespace(genNs).K8sObject(),
 				pipeline,
 			}
-			resources = append(resources, tc.generator(genNs)...)
+			resources = append(resources, defaultGenerator(tc.component)(genNs)...)
 			resources = append(resources, backend.K8sObjects()...)
 
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())

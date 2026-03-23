@@ -12,7 +12,7 @@ const (
 	// self-monitor-driven reason (e.g. GatewayAllTelemetryDataDropped). Alert rules use a 5m rate() window and
 	// typically `for: 1m`, then Prometheus must evaluate, the manager must reconcile, and scrapes must run — which
 	// can exceed 10 minutes on loaded CI clusters.
-	FlowHealthConditionTransitionTimeout = time.Minute * 18
+	FlowHealthConditionTransitionTimeout = time.Minute * 10
 
 	// ConsistentlyTimeout is used when asserting the absence of an event with Consistently.
 	ConsistentlyTimeout = time.Second * 10

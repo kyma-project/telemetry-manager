@@ -14,10 +14,11 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/faultbackend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
+
+const bufferFillingUpRate = 60 * defaultRate
 
 func TestBackpressure(t *testing.T) {
 	tests := []struct {
@@ -30,15 +31,13 @@ func TestBackpressure(t *testing.T) {
 		{
 			name:           "log-agent",
 			component:      suite.LabelLogAgent,
-			faultOpts:      faultNonRetryableErr(faultPercentageHalf),
-			generator:      stdoutLogGenerator(defaultRate),
+			faultOpts:      faultNonRetryableErr(faultPercentageThirty),
 			expectedReason: conditions.ReasonSelfMonAgentSomeDataDropped,
 		},
 		{
 			name:           "log-gateway",
 			component:      suite.LabelLogGateway,
-			faultOpts:      faultNonRetryableErr(faultPercentageHalf),
-			generator:      otelGenerator(telemetrygen.SignalTypeLogs, telemetrygen.WithRate(defaultRate), telemetrygen.WithWorkers(1)),
+			faultOpts:      faultNonRetryableErr(faultPercentageThirty),
 			expectedReason: conditions.ReasonSelfMonGatewaySomeDataDropped,
 		},
 		{
@@ -47,36 +46,32 @@ func TestBackpressure(t *testing.T) {
 			name:           "fluent-bit-buffer-filling-up",
 			component:      suite.LabelFluentBit,
 			faultOpts:      faultRetryableErr(faultPercentageNinetyFive),
-			generator:      stdoutLogGenerator(60 * defaultRate),
+			generator:      stdoutLogGenerator(bufferFillingUpRate),
 			expectedReason: conditions.ReasonSelfMonAgentBufferFillingUp,
 		},
 		{
 			// HTTP 400 is non-retryable for Fluent Bit: data is dropped immediately without filling the queue → SomeDataDropped.
 			name:           "fluent-bit-data-dropped",
 			component:      suite.LabelFluentBit,
-			faultOpts:      faultNonRetryableErr(faultPercentageHalf),
-			generator:      stdoutLogGenerator(defaultRate),
+			faultOpts:      faultNonRetryableErr(faultPercentageThirty),
 			expectedReason: conditions.ReasonSelfMonAgentSomeDataDropped,
 		},
 		{
 			name:           "metric-gateway",
 			component:      suite.LabelMetricGateway,
-			faultOpts:      faultNonRetryableErr(faultPercentageHalf),
-			generator:      otelGenerator(telemetrygen.SignalTypeMetrics, telemetrygen.WithRate(defaultRate), telemetrygen.WithWorkers(1)),
+			faultOpts:      faultNonRetryableErr(faultPercentageThirty),
 			expectedReason: conditions.ReasonSelfMonGatewaySomeDataDropped,
 		},
 		{
 			name:           "metric-agent",
 			component:      suite.LabelMetricAgent,
-			faultOpts:      faultNonRetryableErr(faultPercentageHalf),
-			generator:      promMetricGeneratorHighLoad(),
+			faultOpts:      faultNonRetryableErr(faultPercentageThirty),
 			expectedReason: conditions.ReasonSelfMonAgentSomeDataDropped,
 		},
 		{
 			name:           "traces",
 			component:      suite.LabelTraces,
-			faultOpts:      faultNonRetryableErr(faultPercentageHalf),
-			generator:      otelGenerator(telemetrygen.SignalTypeTraces, telemetrygen.WithRate(defaultRate), telemetrygen.WithWorkers(1)),
+			faultOpts:      faultNonRetryableErr(faultPercentageThirty),
 			expectedReason: conditions.ReasonSelfMonGatewaySomeDataDropped,
 		},
 	}
@@ -108,17 +103,21 @@ func TestBackpressure(t *testing.T) {
 			fb := faultbackend.New(backendNs, fbOpts...)
 			pipeline := buildPipeline(tc.component, pipelineName, genNs, fb)
 
+			gen := tc.generator
+			if gen == nil {
+				gen = defaultGenerator(tc.component)
+			}
+
 			resources := []client.Object{
 				kitk8sobjects.NewNamespace(backendNs).K8sObject(),
 				kitk8sobjects.NewNamespace(genNs).K8sObject(),
 				pipeline,
 			}
-			resources = append(resources, tc.generator(genNs)...)
+			resources = append(resources, gen(genNs)...)
 			resources = append(resources, fb.K8sObjects()...)
 
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
-			assert.SelfMonitorDebugOnFailure(t)
 			assert.DeploymentReady(t, kitkyma.SelfMonitorName)
 
 			assertFlowDegraded(t, tc.component, pipelineName, flowHealthyThenDegraded(tc.expectedReason))

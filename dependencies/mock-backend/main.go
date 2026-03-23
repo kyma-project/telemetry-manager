@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"encoding/binary"
 	"fmt"
+	"io"
 	"log"
 	"math/rand/v2"
 	"net"
@@ -13,13 +15,44 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
 )
 
 const (
-	maxPercentage = 100
-	ruleParts     = 2
-	statsInterval = time.Second
+	maxPercentage    = 100
+	ruleParts        = 2
+	statsInterval    = time.Second
+	grpcFrameHdrSize = 5 // 1 byte compression flag + 4 bytes message length
 )
+
+// gRPC status codes used for fault injection.
+// See https://grpc.github.io/grpc/core/md_doc_statuscodes.html
+const (
+	grpcStatusInvalidArgument   = 3  // non-retryable; maps to HTTP 400
+	grpcStatusResourceExhausted = 8  // retryable;     maps to HTTP 429
+	grpcStatusInternal          = 13 // non-retryable; maps to HTTP 500
+)
+
+// httpToGRPCStatus maps an HTTP fault status code to the gRPC status code that
+// produces the same retryability behavior in the OTel Collector OTLP exporter.
+//
+// OTel Collector retryable gRPC codes: Canceled, DeadlineExceeded, Aborted,
+// OutOfRange, Unavailable, DataLoss, ResourceExhausted (with Retry-After).
+// Everything else is permanent / non-retryable.
+func httpToGRPCStatus(httpCode int) int {
+	switch httpCode {
+	case http.StatusTooManyRequests: // 429 – retryable for both OTel and Fluent Bit
+		return grpcStatusResourceExhausted
+	case http.StatusBadRequest: // 400 – non-retryable for both
+		return grpcStatusInvalidArgument
+	case http.StatusInternalServerError: // 500 – non-retryable for OTel
+		return grpcStatusInternal
+	default:
+		return grpcStatusInternal
+	}
+}
 
 type rule struct {
 	statusCode int
@@ -54,6 +87,7 @@ func (s *stats) logAndReset() {
 	}
 
 	var parts []string
+
 	for i := range s.counters {
 		count := s.counters[i].count.Swap(0)
 		if count > 0 {
@@ -73,7 +107,7 @@ func newStats(rules []rule, defaultBehavior string) *stats {
 	if defaultBehavior == "close" {
 		codeSet[0] = true
 	} else {
-		code, _ := strconv.Atoi(defaultBehavior)
+		code, _ := strconv.Atoi(defaultBehavior) //nolint:errcheck // already validated by parseConfig
 		codeSet[code] = true
 	}
 
@@ -108,11 +142,7 @@ func main() {
 
 	var wg sync.WaitGroup
 	for _, port := range ports {
-		wg.Add(1)
-
-		go func() {
-			defer wg.Done()
-
+		wg.Go(func() {
 			var lc net.ListenConfig
 
 			ln, err := lc.Listen(context.Background(), "tcp", port)
@@ -122,11 +152,18 @@ func main() {
 
 			log.Printf("Listening on %s", port)
 
+			// Wrap handler with h2c to support HTTP/2 cleartext with prior knowledge,
+			// which is how gRPC clients (e.g. OTel Collector OTLP exporter) connect.
+			h2cHandler := h2c.NewHandler(handler, &http2.Server{})
+
 			//nolint:gosec // no timeouts needed for test-only mock server
-			if err := http.Serve(ln, handler); err != nil {
+			server := &http.Server{
+				Handler: h2cHandler,
+			}
+			if err := server.Serve(ln); err != nil {
 				log.Fatalf("Server on %s failed: %v", port, err)
 			}
-		}()
+		})
 	}
 
 	wg.Wait()
@@ -134,9 +171,6 @@ func main() {
 
 func parseConfig() ([]rule, string) {
 	rulesEnv := os.Getenv("FAULT_RULES")
-	if rulesEnv == "" {
-		log.Fatal("FAULT_RULES environment variable is required (e.g. 400:50,200:30)")
-	}
 
 	defaultBehavior := os.Getenv("FAULT_DEFAULT")
 	if defaultBehavior == "" {
@@ -153,33 +187,72 @@ func parseConfig() ([]rule, string) {
 
 	var totalPercentage float64
 
-	for _, entry := range strings.Split(rulesEnv, ",") {
-		parts := strings.SplitN(entry, ":", ruleParts)
-		if len(parts) != ruleParts {
-			log.Fatalf("Invalid rule format: %s, expected statusCode:percentage", entry) //nolint:gosec // env var value is safe to log
+	if rulesEnv != "" {
+		for entry := range strings.SplitSeq(rulesEnv, ",") {
+			parts := strings.SplitN(entry, ":", ruleParts)
+			if len(parts) != ruleParts {
+				log.Fatalf("Invalid rule format: %s, expected statusCode:percentage", entry) //nolint:gosec // env var value is safe to log
+			}
+
+			statusCode, err := strconv.Atoi(strings.TrimSpace(parts[0]))
+			if err != nil {
+				log.Fatalf("Invalid status code in rule: %s: %v", entry, err) //nolint:gosec // env var value is safe to log
+			}
+
+			percentage, err := strconv.ParseFloat(strings.TrimSpace(parts[1]), 64)
+			if err != nil {
+				log.Fatalf("Invalid percentage in rule %s: %v", entry, err) //nolint:gosec // env var value is safe to log
+			}
+
+			rules = append(rules, rule{statusCode: statusCode, percentage: percentage})
+			totalPercentage += percentage
 		}
 
-		statusCode, err := strconv.Atoi(strings.TrimSpace(parts[0]))
-		if err != nil {
-			log.Fatalf("Invalid status code in rule: %s: %v", entry, err) //nolint:gosec // env var value is safe to log
+		if totalPercentage > maxPercentage {
+			log.Fatalf("Total percentage across rules is %.2f%%, exceeds 100%%", totalPercentage)
 		}
-
-		percentage, err := strconv.ParseFloat(strings.TrimSpace(parts[1]), 64)
-		if err != nil {
-			log.Fatalf("Invalid percentage in rule %s: %v", entry, err) //nolint:gosec // env var value is safe to log
-		}
-
-		rules = append(rules, rule{statusCode: statusCode, percentage: percentage})
-		totalPercentage += percentage
 	}
 
-	if totalPercentage > maxPercentage {
-		log.Fatalf("Total percentage across rules is %.2f%%, exceeds 100%%", totalPercentage)
+	if rulesEnv != "" {
+		log.Printf("Fault rules: %s (default: %s, remainder: %.2f%%)", rulesEnv, defaultBehavior, maxPercentage-totalPercentage) //nolint:gosec // env var values are safe to log
+	} else {
+		log.Printf("No fault rules configured, all requests use default: %s", defaultBehavior) //nolint:gosec // env var value is safe to log
 	}
-
-	log.Printf("Fault rules: %s (default: %s, remainder: %.2f%%)", rulesEnv, defaultBehavior, maxPercentage-totalPercentage) //nolint:gosec // env var values are safe to log
 
 	return rules, defaultBehavior
+}
+
+func isGRPC(r *http.Request) bool {
+	return strings.HasPrefix(r.Header.Get("Content-Type"), "application/grpc")
+}
+
+// writeGRPCResponse writes a proper gRPC response over HTTP/2.
+// For success (httpCode 200) it sends an empty OTLP export response body.
+// For errors it sends only the grpc-status trailer with no body.
+func writeGRPCResponse(w http.ResponseWriter, httpCode int) {
+	h := w.Header()
+	h.Set("Content-Type", "application/grpc")
+
+	grpcStatus := "0"
+	if httpCode != http.StatusOK {
+		grpcStatus = strconv.Itoa(httpToGRPCStatus(httpCode))
+	}
+
+	// Declare the trailer before WriteHeader so HTTP/2 sends it as a proper trailer frame.
+	h.Set("Trailer", "Grpc-Status")
+
+	w.WriteHeader(http.StatusOK)
+
+	if httpCode == http.StatusOK {
+		// Write empty gRPC data frame (5-byte header: no compression, 0-byte body).
+		frame := make([]byte, grpcFrameHdrSize)
+		frame[0] = 0 // no compression
+		binary.BigEndian.PutUint32(frame[1:], 0)
+		_, _ = w.Write(frame) //nolint:errcheck // best-effort write
+	}
+
+	// Set the trailer. Using http.TrailerPrefix works for both HTTP/1.1 and HTTP/2.
+	h.Set(http.TrailerPrefix+"Grpc-Status", grpcStatus)
 }
 
 func buildHandler(rules []rule, defaultBehavior string, reqStats *stats) http.Handler {
@@ -196,12 +269,17 @@ func buildHandler(rules []rule, defaultBehavior string, reqStats *stats) http.Ha
 		thresholds = append(thresholds, threshold{cumulative: cumulative, statusCode: r.statusCode})
 	}
 
-	return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Drain the request body to avoid connection resets on keep-alive connections.
+		// Without this, responding before the client finishes sending can cause a TCP RST,
+		// which the OTLP exporter treats as a retryable connection error instead of a clean HTTP 400.
+		_, _ = io.Copy(io.Discard, r.Body) //nolint:errcheck // best-effort drain; body may already be closed
+
 		roll := rand.Float64() * maxPercentage //nolint:gosec // deterministic randomness is fine for fault injection
 
 		for _, t := range thresholds {
 			if roll < t.cumulative {
-				w.WriteHeader(t.statusCode)
+				respond(w, r, t.statusCode)
 				reqStats.record(t.statusCode)
 
 				return
@@ -233,7 +311,17 @@ func buildHandler(rules []rule, defaultBehavior string, reqStats *stats) http.Ha
 			return
 		}
 
-		w.WriteHeader(code)
+		respond(w, r, code)
 		reqStats.record(code)
 	})
+}
+
+// respond writes the appropriate response based on whether the request is gRPC or plain HTTP.
+func respond(w http.ResponseWriter, r *http.Request, httpCode int) {
+	if isGRPC(r) {
+		writeGRPCResponse(w, httpCode)
+		return
+	}
+
+	w.WriteHeader(httpCode)
 }

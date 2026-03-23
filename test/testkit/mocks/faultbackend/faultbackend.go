@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
@@ -89,13 +90,21 @@ func (fb *FaultBackend) K8sObjects() []client.Object {
 	}
 }
 
-func (fb *FaultBackend) faultRulesEnv() string {
-	parts := make([]string, 0, len(fb.rules))
-	for _, r := range fb.rules {
-		parts = append(parts, fmt.Sprintf("%d:%.0f", r.statusCode, r.percentage))
+func (fb *FaultBackend) buildEnvVars() []corev1.EnvVar {
+	var envs []corev1.EnvVar
+
+	if len(fb.rules) > 0 {
+		parts := make([]string, 0, len(fb.rules))
+		for _, r := range fb.rules {
+			parts = append(parts, fmt.Sprintf("%d:%.0f", r.statusCode, r.percentage))
+		}
+
+		envs = append(envs, corev1.EnvVar{Name: "FAULT_RULES", Value: strings.Join(parts, ",")})
 	}
 
-	return strings.Join(parts, ",")
+	envs = append(envs, corev1.EnvVar{Name: "FAULT_DEFAULT", Value: fb.defaultBehavior})
+
+	return envs
 }
 
 func (fb *FaultBackend) buildService() *kitk8sobjects.Service {

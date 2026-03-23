@@ -27,10 +27,7 @@ func (fb *FaultBackend) buildDeployment() *appsv1.Deployment {
 						{
 							Name:  "mock-backend",
 							Image: testkit.MockBackendImage,
-							Env: []corev1.EnvVar{
-								{Name: "FAULT_RULES", Value: fb.faultRulesEnv()},
-								{Name: "FAULT_DEFAULT", Value: fb.defaultBehavior},
-							},
+							Env:   fb.buildEnvVars(),
 							Ports: []corev1.ContainerPort{
 								{ContainerPort: otlpGRPCPort, Name: "grpc-otlp", Protocol: corev1.ProtocolTCP},
 								{ContainerPort: otlpHTTPPort, Name: "http-otlp", Protocol: corev1.ProtocolTCP},
