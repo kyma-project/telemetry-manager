@@ -68,7 +68,7 @@ kubectl -n $K8S_NAMESPACE rollout status deploy $HELM_JAEGER_RELEASE
 
 ### Activate a TracePipeline
 
-To configure the Kyma trace gateway with the deployed Jaeger instance as the backend. To create a new [TracePipeline](../../collecting-traces/README.md), execute the following command:
+To configure the Kyma trace gateway with the deployed Jaeger instance as the backend, create a new [TracePipeline](../../collecting-traces/README.md) with the following command:
 
 ```bash
 cat <<EOF | kubectl -n $K8S_NAMESPACE apply -f -
@@ -81,7 +81,7 @@ spec:
     otlp:
       protocol: http
       endpoint:
-        value: http://$HELM_JAEGER_RELEASE-collector.$K8S_NAMESPACE.svc.cluster.local:4318
+        value: http://$HELM_JAEGER_RELEASE.$K8S_NAMESPACE.svc.cluster.local:4318
 EOF
 ```
   
@@ -109,7 +109,7 @@ EOF
 1. To access Jaeger using port forwarding, run:
 
    ```bash
-   kubectl -n $K8S_NAMESPACE port-forward svc/$HELM_JAEGER_RELEASE-query 16686
+   kubectl -n $K8S_NAMESPACE port-forward svc/$HELM_JAEGER_RELEASE 16686
    ```
 
 2. Open the Jaeger UI in your browser under `http://localhost:16686`.
@@ -141,7 +141,7 @@ Jaeger can be provided as a data source integrated into Grafana. For example, it
           - name: Jaeger-Tracing
             type: jaeger
             access: proxy
-            url: http://$HELM_JAEGER_RELEASE-query.$K8S_NAMESPACE:16686
+            url: http://$HELM_JAEGER_RELEASE.$K8S_NAMESPACE:16686
             editable: true
     EOF
     ```
@@ -150,41 +150,7 @@ Jaeger can be provided as a data source integrated into Grafana. For example, it
 
 ### Authentication
 
-By itself, Jaeger does not provide authentication mechanisms. To secure Jaeger, follow the instructions provided in the [Jaeger documentation](https://www.jaegertracing.io/docs/2.0/faq/#how-do-i-configure-authentication-for-jaeger-ui).
-
-### Expose Jaeger
-
->**CAUTION**: The following approach exposes the Jaeger instance as it is, without providing any ways of authentication.
-
-1. To expose Jaeger using Kyma API Gateway, create the following APIRule:
-
-    ```bash
-    cat <<EOF | kubectl -n $K8S_NAMESPACE apply -f -
-    apiVersion: gateway.kyma-project.io/v1beta1
-    kind: APIRule
-    metadata:
-      name: jaeger
-    spec:
-      host: jaeger-ui
-      service:
-        name: $HELM_JAEGER_RELEASE-query
-        port: 16686
-      gateway: kyma-system/kyma-gateway
-      rules:
-        - path: /.*
-          methods: ["GET", "POST"]
-          accessStrategies:
-            - handler: noop
-          mutators:
-            - handler: noop
-    EOF
-    ```
-
-2. Get the public URL of your Jaeger instance:
-
-    ```bash
-    kubectl -n $K8S_NAMESPACE get vs -l apirule.gateway.kyma-project.io/v1beta1=jaeger.$K8S_NAMESPACE -ojsonpath='{.items[*].spec.hosts[*]}'
-    ```
+By itself, Jaeger does not provide authentication mechanisms. To secure Jaeger, follow the instructions provided in the [Jaeger documentation](https://www.jaegertracing.io/docs/2.16/faq/#how-do-i-configure-authentication-for-jaeger-ui).
 
 ## Clean Up
 
