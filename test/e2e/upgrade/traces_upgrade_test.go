@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
@@ -69,7 +68,6 @@ func TestTracesUpgrade(t *testing.T) {
 	assert.TracePipelineHealthy(t, pipelineName)
 	assert.BackendReachable(t, backend)
 	assert.TracesFromNamespaceDelivered(t, backend, genNs)
-	require.NoError(t, kitk8s.DeleteObjects(generator))
 
 	// === UPGRADE TO NEW VERSION ===
 	t.Log("Upgrading manager to target version...")
