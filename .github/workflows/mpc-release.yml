@@ -36,6 +36,7 @@ on:
 jobs:
   validate-inputs:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Validate version format
         env:
@@ -69,81 +70,51 @@ jobs:
   prepare-matrix:
     runs-on: ubuntu-latest
     needs: validate-inputs
+    timeout-minutes: 5
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
+      - name: Checkout repository for config
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
       - name: Set matrix
         id: set-matrix
         run: |
-          if [ "${{ inputs.target_chart }}" = "Telemetry" ]; then
-            # Use jq to generate JSON and write directly to avoid heredoc indentation issues
-            jq -n \
-              --arg chart_name "Telemetry" \
-              --arg base_branch "chart/telemetry" \
-              --arg branch_prefix "bump-telemetry" \
-              --arg chart_dir "telemetry" \
-              --arg update_command 'yq -i '"'"'.appVersion = "${{ inputs.version }}" '"'"' telemetry/Chart.yaml && yq -i '"'"'(.dependencies[] | select(.name == "telemetry-manager") | .version) = "${{ inputs.version }}"'"'"' telemetry/Chart.yaml' \
-              --arg verify_command "yq -r '.appVersion' telemetry/Chart.yaml" \
-              --arg verify_field "appVersion" \
-              --arg commit_title "Bump Telemetry to ${{ inputs.version }}" \
-              --arg pr_title "Bump Telemetry to ${{ inputs.version }}" \
-              --arg pr_body "Bump Telemetry chart to version ${{ inputs.version }}" \
-              --arg summary_title "Telemetry Chart Release Summary" \
-              --arg summary_details "Verify chart changes are correct" \
-              '{include: [{
-                chart_name: $chart_name,
-                base_branch: $base_branch,
-                branch_prefix: $branch_prefix,
-                chart_dir: $chart_dir,
-                update_command: $update_command,
-                verify_command: $verify_command,
-                verify_field: $verify_field,
-                commit_title: $commit_title,
-                pr_title: $pr_title,
-                pr_body: $pr_body,
-                summary_title: $summary_title,
-                summary_details: $summary_details
-              }]}' > /tmp/matrix.json
-            echo "matrix<<MATRIX_EOF" >> "$GITHUB_OUTPUT"
-            cat /tmp/matrix.json >> "$GITHUB_OUTPUT"
-            echo "MATRIX_EOF" >> "$GITHUB_OUTPUT"
-          elif [ "${{ inputs.target_chart }}" = "RMO" ]; then
-            jq -n \
-              --arg chart_name "RMO" \
-              --arg base_branch "chart/runtime-monitoring-operator" \
-              --arg branch_prefix "bump-rmo-occ" \
-              --arg chart_dir "runtime-monitoring-operator" \
-              --arg update_command 'yq -i '"'"'.argosap.config.rma.image.otelCollector.tag = "${{ inputs.version }}"'"'"' runtime-monitoring-operator/values.yaml' \
-              --arg verify_command "yq -r '.argosap.config.rma.image.otelCollector.tag' runtime-monitoring-operator/values.yaml" \
-              --arg verify_field "OTel Collector tag" \
-              --arg commit_title "Bump RMO OTel Collector to ${{ inputs.version }}" \
-              --arg pr_title "Bump RMO OTel Collector to ${{ inputs.version }}" \
-              --arg pr_body "Bump RMO OTel Collector version to ${{ inputs.version }}" \
-              --arg summary_title "RMO OTel Collector Release Summary" \
-              --arg summary_details "Verify OTel Collector version changes are correct" \
-              '{include: [{
-                chart_name: $chart_name,
-                base_branch: $base_branch,
-                branch_prefix: $branch_prefix,
-                chart_dir: $chart_dir,
-                update_command: $update_command,
-                verify_command: $verify_command,
-                verify_field: $verify_field,
-                commit_title: $commit_title,
-                pr_title: $pr_title,
-                pr_body: $pr_body,
-                summary_title: $summary_title,
-                summary_details: $summary_details
-              }]}' > /tmp/matrix.json
-            echo "matrix<<MATRIX_EOF" >> "$GITHUB_OUTPUT"
-            cat /tmp/matrix.json >> "$GITHUB_OUTPUT"
-            echo "MATRIX_EOF" >> "$GITHUB_OUTPUT"
+          # Load chart configuration from JSON file
+          CONFIG=$(jq ".charts[\"${{ inputs.target_chart }}\"]" .github/configs/mpc-release-matrix.json)
+
+          if [ "$CONFIG" = "null" ]; then
+            echo "::error::Unknown target chart: ${{ inputs.target_chart }}"
+            echo "Available charts: $(jq -r '.charts | keys[]' .github/configs/mpc-release-matrix.json | tr '\n' ', ')"
+            exit 1
           fi
+
+          # Substitute {{VERSION}} placeholder with actual version
+          CONFIG=$(echo "$CONFIG" | jq --arg version "${{ inputs.version }}" '
+            walk(
+              if type == "string" then
+                gsub("{{VERSION}}"; $version)
+              else
+                .
+              end
+            )
+          ')
+
+          # Wrap in matrix format
+          MATRIX=$(jq -n --argjson config "$CONFIG" '{include: [$config]}')
+
+          # Output matrix
+          echo "matrix<<MATRIX_EOF" >> "$GITHUB_OUTPUT"
+          echo "$MATRIX" >> "$GITHUB_OUTPUT"
+          echo "MATRIX_EOF" >> "$GITHUB_OUTPUT"
+
+          echo "✓ Loaded configuration for ${{ inputs.target_chart }} chart"
 
   release-chart:
     name: Release ${{ matrix.chart_name }} Chart
     runs-on: ubuntu-latest
     needs: prepare-matrix
+    timeout-minutes: 30
     strategy:
       matrix: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
     env:
@@ -158,10 +129,10 @@ jobs:
           path: telemetry-manager
 
       - name: Configure git authentication
-        run: |
-          # Configure git credential helper for entire job (used by clone/fetch/push/ls-remote)
-          # This avoids embedding tokens in URLs while keeping authentication available
-          git config --global credential.helper '!f() { echo "username=x-access-token"; echo "password=$GH_TOKEN"; }; f'
+        uses: ./telemetry-manager/.github/template/setup-git-auth
+        with:
+          token: ${{ secrets.HUSKIES_GHTOOLS_TOKEN }}
+          host: ${{ env.GH_HOST }}
 
       - name: Checkout management-plane-charts
         run: |
@@ -178,22 +149,10 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Create Branch
-        working-directory: management-plane-charts
-        run: |
-          BRANCH_NAME="${{ matrix.branch_prefix }}-${{ inputs.version }}"
-
-          # Check if branch exists remotely (match exact ref to avoid false positives)
-          if git ls-remote --heads origin "${BRANCH_NAME}" | grep -q "refs/heads/${BRANCH_NAME}$"; then
-            echo "Branch ${BRANCH_NAME} already exists, checking it out..."
-            git fetch origin "${BRANCH_NAME}"
-            # Create/update local branch from remote ref
-            git checkout -B "${BRANCH_NAME}" "origin/${BRANCH_NAME}"
-            echo "✓ Checked out existing branch: ${BRANCH_NAME}"
-          else
-            echo "Creating new branch: ${BRANCH_NAME}..."
-            git checkout -b "${BRANCH_NAME}"
-            echo "✓ Created new branch: ${BRANCH_NAME}"
-          fi
+        uses: ./telemetry-manager/.github/template/checkout-or-create-branch
+        with:
+          branch-name: ${{ matrix.branch_prefix }}-${{ inputs.version }}
+          repository-path: management-plane-charts
 
       - name: Setup python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
@@ -207,7 +166,7 @@ jobs:
         run: pip install -r tools/requirements.txt
 
       - name: Install yq
-        run: telemetry-manager/hack/install-yq.sh
+        run: telemetry-manager/hack/module-release.sh install-yq
 
       - name: Bump chart version
         working-directory: management-plane-charts
@@ -290,7 +249,15 @@ jobs:
             --title "${{ matrix.pr_title }}" \
             --body "${{ matrix.pr_body }}" \
             --label pr-deploy)
-          PR_NUMBER=$(echo "${PR_URL}" | grep -o '[0-9]*$')
+
+          # Extract and validate PR number
+          PR_NUMBER=$(echo "${PR_URL}" | grep -o '[0-9]\+$')
+          if [[ ! "${PR_NUMBER}" =~ ^[0-9]+$ ]] || [ -z "${PR_NUMBER}" ]; then
+            echo "::error::Failed to extract PR number from URL: ${PR_URL}"
+            echo "Expected URL format: https://host/org/repo/pull/NUMBER"
+            exit 1
+          fi
+
           echo "pr-url=${PR_URL}" >> "$GITHUB_OUTPUT"
           echo "pr-number=${PR_NUMBER}" >> "$GITHUB_OUTPUT"
           echo "✓ Created PR #${PR_NUMBER}: ${PR_URL}"

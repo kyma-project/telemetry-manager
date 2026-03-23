@@ -60,21 +60,17 @@ on:
 jobs:
   validate-inputs:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - name: Validate version format
-        env:
-          VERSION: ${{ inputs.version }}
-        run: |
-          echo "Validating version format..."
-          echo "Version: ${VERSION}"
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-          # Validate version format (X.Y.Z)
-          if ! [[ "${VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "::error::Invalid version format: ${VERSION}"
-            echo "Expected format: X.Y.Z (e.g., 1.2.3)"
-            exit 1
-          fi
-          echo "✓ Version format valid: ${VERSION}"
+      - name: Validate version format
+        uses: ./.github/template/validate-semver
+        with:
+          version: ${{ inputs.version }}
+          allow-suffix: 'false'
+          format-description: 'X.Y.Z (e.g., 1.2.3)'
 
       - name: Validate channel
         env:
@@ -107,10 +103,50 @@ jobs:
 
           echo "✓ Tag ${VERSION} exists in telemetry-manager repository"
 
+      - name: Validate Docker images exist
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          echo "Checking if Docker images exist for version ${VERSION}..."
+
+          # List of images to check (manager and self-monitor)
+          IMAGES=(
+            "europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:${VERSION}"
+          )
+
+          MISSING_IMAGES=()
+
+          for IMAGE in "${IMAGES[@]}"; do
+            echo "Checking image: ${IMAGE}"
+            if docker manifest inspect "${IMAGE}" > /dev/null 2>&1; then
+              echo "  ✓ Image exists: ${IMAGE}"
+            else
+              echo "  ✗ Image not found: ${IMAGE}"
+              MISSING_IMAGES+=("${IMAGE}")
+            fi
+          done
+
+          if [ ${#MISSING_IMAGES[@]} -gt 0 ]; then
+            echo ""
+            echo "::error::Missing Docker images for version ${VERSION}"
+            echo "The following images do not exist:"
+            for IMAGE in "${MISSING_IMAGES[@]}"; do
+              echo "  - ${IMAGE}"
+            done
+            echo ""
+            echo "Please ensure the build-manager-image workflow has completed successfully"
+            echo "and the images are available in the registry before releasing the module."
+            exit 1
+          fi
+
+          echo ""
+          echo "✓ All required Docker images exist for version ${VERSION}"
+
   release-module:
     name: Release Telemetry Module
     needs: validate-inputs
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     env:
       GH_HOST: github.tools.sap
       GH_REPO: kyma/module-manifests
@@ -122,10 +158,10 @@ jobs:
           path: telemetry-manager
 
       - name: Configure git authentication
-        run: |
-          # Configure git credential helper for entire job (used by clone/fetch/push/ls-remote)
-          # This avoids embedding tokens in URLs while keeping authentication available
-          git config --global credential.helper '!f() { echo "username=x-access-token"; echo "password=$GH_TOKEN"; }; f'
+        uses: ./telemetry-manager/.github/template/setup-git-auth
+        with:
+          token: ${{ secrets.HUSKIES_GHTOOLS_TOKEN }}
+          host: ${{ env.GH_HOST }}
 
       - name: Checkout module-manifests (working repository)
         run: |
@@ -137,7 +173,7 @@ jobs:
             module-manifests
 
       - name: Install yq
-        run: telemetry-manager/hack/install-yq.sh
+        run: telemetry-manager/hack/module-release.sh install-yq
 
       - name: Configure git
         working-directory: module-manifests
@@ -146,27 +182,10 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Create or reuse branch
-        working-directory: module-manifests
-        env:
-          VERSION: ${{ inputs.version }}
-          CHANNEL: ${{ inputs.channel }}
-        run: |
-          BRANCH_NAME="bump-telemetry-${VERSION}-${CHANNEL}"
-
-          echo "Checking if branch ${BRANCH_NAME} exists on remote..."
-          if git ls-remote --heads origin "${BRANCH_NAME}" | grep -q "refs/heads/${BRANCH_NAME}$"; then
-            echo "Branch ${BRANCH_NAME} exists on remote, checking it out..."
-            git fetch origin "${BRANCH_NAME}"
-            # Create local branch tracking the remote branch
-            git checkout -B "${BRANCH_NAME}" "origin/${BRANCH_NAME}"
-            echo "✓ Checked out existing branch ${BRANCH_NAME} from origin/${BRANCH_NAME}"
-            echo "BRANCH_EXISTS=true" >> $GITHUB_ENV
-          else
-            echo "Branch ${BRANCH_NAME} does not exist, creating new branch..."
-            git checkout -b "${BRANCH_NAME}"
-            echo "✓ Created new branch ${BRANCH_NAME}"
-            echo "BRANCH_EXISTS=false" >> $GITHUB_ENV
-          fi
+        uses: ./telemetry-manager/.github/template/checkout-or-create-branch
+        with:
+          branch-name: bump-telemetry-${{ inputs.version }}-${{ inputs.channel }}
+          repository-path: module-manifests
 
       - name: Setup Python
         uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
@@ -179,7 +198,7 @@ jobs:
           python3 -m pip install semver==3.0.4
 
       - name: Check for duplicate version
-        if: env.BRANCH_EXISTS == 'false'
+        # Always check, even when reusing branch, to prevent duplicate releases
         working-directory: module-manifests
         env:
           VERSION: ${{ inputs.version }}
@@ -262,9 +281,21 @@ jobs:
 
           # Check if branch exists on remote
           if git ls-remote --heads origin "${BRANCH_NAME}" | grep -q "refs/heads/${BRANCH_NAME}$"; then
-            echo "Branch ${BRANCH_NAME} exists on remote, force pushing to update..."
-            git push --force-with-lease origin "${BRANCH_NAME}"
-            echo "✓ Force pushed branch: ${BRANCH_NAME}"
+            echo "Branch ${BRANCH_NAME} exists on remote, checking if safe to force push..."
+
+            # Fetch remote branch to compare
+            git fetch origin "${BRANCH_NAME}"
+
+            # Check if local branch contains all commits from remote (safe to force push)
+            if git merge-base --is-ancestor "origin/${BRANCH_NAME}" HEAD; then
+              echo "✓ Local branch is ahead of or equal to remote, safe to force push"
+              git push --force-with-lease origin "${BRANCH_NAME}"
+              echo "✓ Force pushed branch: ${BRANCH_NAME}"
+            else
+              echo "::error::Cannot force push: local branch does not contain all commits from origin/${BRANCH_NAME}"
+              echo "This would result in commit loss. Please investigate the branch state."
+              exit 1
+            fi
           else
             echo "Branch ${BRANCH_NAME} does not exist on remote, pushing..."
             git push -u origin "${BRANCH_NAME}"
@@ -284,11 +315,38 @@ jobs:
           OUTPUT_FILE=$(mktemp)
 
           # Run PR creation script
-          ../telemetry-manager/hack/create-module-release-pr.sh "${VERSION}" "${CHANNEL}" "${OUTPUT_FILE}"
+          ../telemetry-manager/hack/module-release.sh create-pr "${VERSION}" "${CHANNEL}" "${OUTPUT_FILE}"
+
+          # Validate output file exists and is not empty
+          if [ ! -s "${OUTPUT_FILE}" ]; then
+            echo "::error::module-release.sh create-pr produced no output"
+            rm -f "${OUTPUT_FILE}"
+            exit 1
+          fi
+
+          # Validate output format (should have pr-url and pr-number)
+          if ! grep -q "^pr-url=" "${OUTPUT_FILE}"; then
+            echo "::error::module-release.sh create-pr output missing pr-url field"
+            echo "Output file contents:"
+            cat "${OUTPUT_FILE}"
+            rm -f "${OUTPUT_FILE}"
+            exit 1
+          fi
+
+          if ! grep -q "^pr-number=" "${OUTPUT_FILE}"; then
+            echo "::error::module-release.sh create-pr output missing pr-number field"
+            echo "Output file contents:"
+            cat "${OUTPUT_FILE}"
+            rm -f "${OUTPUT_FILE}"
+            exit 1
+          fi
 
           # Read outputs and set them for GitHub Actions
           while IFS='=' read -r key value; do
-            echo "${key}=${value}" >> $GITHUB_OUTPUT
+            # Skip empty lines
+            if [ -n "${key}" ]; then
+              echo "${key}=${value}" >> $GITHUB_OUTPUT
+            fi
           done < "${OUTPUT_FILE}"
 
           rm -f "${OUTPUT_FILE}"

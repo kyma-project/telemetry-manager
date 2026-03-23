@@ -1,0 +1,44 @@
+name: Checkout or Create Branch
+description: Atomically checkout existing branch or create new branch with proper tracking
+inputs:
+  branch-name:
+    description: 'Name of the branch to checkout or create'
+    required: true
+  repository-path:
+    description: 'Path to the git repository'
+    required: false
+    default: '.'
+outputs:
+  branch-existed:
+    description: 'Whether the branch already existed remotely'
+    value: ${{ steps.branch-op.outputs.branch-existed }}
+runs:
+  using: composite
+  steps:
+    - name: Checkout or create branch
+      id: branch-op
+      shell: bash
+      working-directory: ${{ inputs.repository-path }}
+      run: |
+        BRANCH_NAME="${{ inputs.branch-name }}"
+
+        echo "Processing branch: ${BRANCH_NAME}"
+
+        # Use atomic git operations to handle both cases without race condition
+        # First fetch to ensure we have latest remote refs
+        git fetch origin
+
+        # Check if branch exists remotely (match exact ref to avoid false positives)
+        if git ls-remote --heads origin "${BRANCH_NAME}" | grep -q "refs/heads/${BRANCH_NAME}$"; then
+          echo "Branch ${BRANCH_NAME} exists remotely, checking it out..."
+          # -B creates or resets the branch atomically
+          git checkout -B "${BRANCH_NAME}" "origin/${BRANCH_NAME}"
+          echo "✓ Checked out existing branch: ${BRANCH_NAME}"
+          echo "branch-existed=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "Creating new branch: ${BRANCH_NAME}..."
+          # -B also works for new branches (equivalent to -b but safer)
+          git checkout -B "${BRANCH_NAME}"
+          echo "✓ Created new branch: ${BRANCH_NAME}"
+          echo "branch-existed=false" >> "$GITHUB_OUTPUT"
+        fi
