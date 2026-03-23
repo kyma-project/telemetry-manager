@@ -78,15 +78,40 @@ jobs:
           fetch-depth: '0'
           ref: ${{ inputs.ref || github.ref }}
 
-      - name: Setup Golang
-        uses: ./.github/template/setup-golang
+      - name: Set up Docker Buildx
+        if: github.event_name == 'pull_request'
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+
+      - name: Build image
+        if: github.event_name == 'pull_request'
+        uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294 # v7.0.0
+        with:
+          context: .
+          platforms: linux/amd64
+          load: true
+          tags: telemetry-manager:pr
+          build-args: BUILD_COMMIT_SHA=${{ github.event.pull_request.head.sha }}
+
+      - name: Save and upload image artifact
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: docker save telemetry-manager:pr | zstd -T0 -3 > /tmp/manager-image.tar.zst
+
+      - name: Upload image artifact
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: manager-image
+          path: /tmp/manager-image.tar.zst
+          retention-days: 1
 
       - name: Prepare environment variables
         id: set-env
         run: |
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            IMAGE_REPO="europe-docker.pkg.dev/kyma-project/dev/telemetry-manager"
-            IMAGE_TAG="${{ github.event.pull_request.head.sha }}"
+            MANAGER_IMAGE="telemetry-manager:pr"
+            echo "manager-image=$MANAGER_IMAGE" >> $GITHUB_OUTPUT
+            echo "Manager image: $MANAGER_IMAGE"
           elif [[ "${{ github.event_name }}" == "merge_group" ]]; then
             IMAGE_REPO="europe-docker.pkg.dev/kyma-project/dev/telemetry-manager"
             IMAGE_TAG="${{ github.event.merge_group.head_sha }}"
@@ -101,13 +126,16 @@ jobs:
             IMAGE_TAG="$GIT_COMMIT_DATE-$GIT_COMMIT_SHA"
           fi
 
-          MANAGER_IMAGE="$IMAGE_REPO:$IMAGE_TAG"
-          echo "manager-image=$MANAGER_IMAGE" >> $GITHUB_OUTPUT
-          echo "image-repo=$IMAGE_REPO" >> $GITHUB_OUTPUT
-          echo "image-tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
-          echo "Manager image: $MANAGER_IMAGE"
+          if [[ -n "${IMAGE_REPO:-}" ]]; then
+            MANAGER_IMAGE="$IMAGE_REPO:$IMAGE_TAG"
+            echo "manager-image=$MANAGER_IMAGE" >> $GITHUB_OUTPUT
+            echo "image-repo=$IMAGE_REPO" >> $GITHUB_OUTPUT
+            echo "image-tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
+            echo "Manager image: $MANAGER_IMAGE"
+          fi
 
       - name: Wait for image to be built
+        if: github.event_name != 'pull_request'
         shell: bash
         run: make wait-for-image
         env:
@@ -149,6 +177,7 @@ jobs:
           test-path: ./test/e2e/logs/...
           test-labels: not experimental and ${{ matrix.variant.label }} and ${{ matrix.set.label }}
           manager-image: ${{ needs.setup.outputs.manager-image }}
+          manager-image-archive: ${{ github.event_name == 'pull_request' && 'manager-image' || '' }}
           fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
           google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
 
@@ -181,6 +210,7 @@ jobs:
           test-path: ./test/e2e/metrics/...
           test-labels: not experimental and ${{ matrix.set.label }}
           manager-image: ${{ needs.setup.outputs.manager-image }}
+          manager-image-archive: ${{ github.event_name == 'pull_request' && 'manager-image' || '' }}
           fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
           google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
 
@@ -215,6 +245,7 @@ jobs:
           test-path: ${{ matrix.suite.path }}
           test-labels: experimental
           manager-image: ${{ needs.setup.outputs.manager-image }}
+          manager-image-archive: ${{ github.event_name == 'pull_request' && 'manager-image' || '' }}
           fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
           google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
 
@@ -245,6 +276,7 @@ jobs:
           test-path: ${{ matrix.suite.path }}
           test-labels: not experimental
           manager-image: ${{ needs.setup.outputs.manager-image }}
+          manager-image-archive: ${{ github.event_name == 'pull_request' && 'manager-image' || '' }}
           fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
           google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
 
@@ -275,6 +307,7 @@ jobs:
           test-path: ${{ matrix.suite.path }}
           test-labels: ""
           manager-image: ${{ needs.setup.outputs.manager-image }}
+          manager-image-archive: ${{ github.event_name == 'pull_request' && 'manager-image' || '' }}
           fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
           google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
 
@@ -317,6 +350,7 @@ jobs:
           test-path: ./test/selfmonitor/...
           test-labels: ${{ matrix.scenario }} and ${{ matrix.component.label }}
           manager-image: ${{ needs.setup.outputs.manager-image }}
+          manager-image-archive: ${{ github.event_name == 'pull_request' && 'manager-image' || '' }}
           fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
           google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
 

@@ -4,9 +4,7 @@ metadata:
   name: kyma-project.io--{{ include "telemetry-manager.fullname" . }}-manager
   namespace: {{ .Release.Namespace }}
   labels:
-    app.kubernetes.io/name: manager
-    kyma-project.io/module: telemetry
-  {{- include "telemetry-manager.labels" . | indent 4 }}
+  {{- include "telemetry-manager.labels" . | nindent 4 }}
 spec:
   egress:
   - to:
@@ -18,8 +16,7 @@ spec:
       protocol: TCP
   podSelector:
     matchLabels:
-      app.kubernetes.io/instance: telemetry
-      app.kubernetes.io/name: manager
+    {{- include "telemetry-manager.selectorLabels" . | nindent 6 }}
   policyTypes:
   - Egress
 ---
@@ -29,9 +26,7 @@ metadata:
   name: kyma-project.io--allow-{{ include "telemetry-manager.fullname" . }}-manager-webhooks
   namespace: {{ .Release.Namespace }}
   labels:
-    app.kubernetes.io/part-of: telemetry
-    kyma-project.io/module: telemetry
-  {{- include "telemetry-manager.labels" . | indent 4 }}
+  {{- include "telemetry-manager.labels" . | nindent 4 }}
 spec:
   ingress:
     - ports:
@@ -39,8 +34,7 @@ spec:
           protocol: TCP
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: manager
-      kyma-project.io/module: telemetry
+    {{- include "telemetry-manager.selectorLabels" . | nindent 6 }}
   policyTypes:
     - Ingress
 ---
@@ -50,10 +44,8 @@ metadata:
   name: kyma-project.io--allow-{{ include "telemetry-manager.fullname" . }}-to-dns
   namespace: {{ .Release.Namespace }}
   labels:
-    app.kubernetes.io/part-of: telemetry
-    kyma-project.io/module: telemetry
     purpose: dns
-  {{- include "telemetry-manager.labels" . | indent 4 }}
+  {{- include "telemetry-manager.labels" . | nindent 4 }}
 spec:
   egress:
     - ports:
@@ -100,10 +92,8 @@ metadata:
   name: kyma-project.io--allow-{{ include "telemetry-manager.fullname" . }}-to-apiserver
   namespace: {{ .Release.Namespace }}
   labels:
-    app.kubernetes.io/part-of: telemetry
-    kyma-project.io/module: telemetry
     purpose: apiserver
-  {{- include "telemetry-manager.labels" . | indent 4 }}
+  {{- include "telemetry-manager.labels" . | nindent 4 }}
 spec:
   podSelector:
     matchLabels:
@@ -121,16 +111,12 @@ metadata:
   name: kyma-project.io--allow-{{ include "telemetry-manager.fullname" . }}-manager-metrics
   namespace: {{ .Release.Namespace }}
   labels:
-    app.kubernetes.io/component: controller
-    app.kubernetes.io/part-of: telemetry
-    kyma-project.io/module: telemetry
     purpose: metrics
-  {{- include "telemetry-manager.labels" . | indent 4 }}
+  {{- include "telemetry-manager.labels" . | nindent 4 }}
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: manager
-      kyma-project.io/module: telemetry
+    {{- include "telemetry-manager.selectorLabels" . | nindent 6 }}
   ingress:
     - from:
         - namespaceSelector: {}
