@@ -17,6 +17,7 @@ When you want to migrate to the `otlp` output, create a new LogPipeline. To prev
 You can't modify an existing LogPipeline to change its output type. You must create a new resource.
 
 In the following sample LogPipeline, see the fields that you must change or remove for the migration:
+
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1beta1
 kind: LogPipeline
@@ -48,8 +49,9 @@ spec:
 See how the deprecated fields map to their new OTLP-based counterparts:
 
 | Deprecated Field | Migration Action |
-|:--:|:--:|
+|: -- :|: -- :|
 | **spec.output.http** or **spec.output.custom** | Replace with **spec.output.otlp**. |
+| **spec.output.http.uri** | OTLP uses a predefined index that you can't change. If you need a custom index, use reindexing (see [OpenSearch: Reindex Data](https://docs.opensearch.org/latest/im-plugin/reindex-data/). |
 | **spec.filters**                           | Rewrite custom Fluent Bit filters as OTTL transform or filter expressions.|
 | **spec.variables** and **spec.files**          | Incorporate the logic of your custom filters into your new OTTL transform or filter expressions. |
 | **spec.input.runtime.dropLabels**      | Configure label enrichment in the central Telemetry resource instead.|
