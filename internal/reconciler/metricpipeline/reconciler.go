@@ -478,11 +478,11 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 		return fmt.Errorf("failed to get kube-system namespace for cluster UID: %w", err)
 	}
 
-	var enrichments *operatorv1beta1.EnrichmentSpec
+	var telemetrySpec operatorv1beta1.TelemetrySpec
 
 	t, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
 	if err == nil {
-		enrichments = t.Spec.Enrichments
+		telemetrySpec = t.Spec
 	}
 
 	vpaCRDExists, err := r.vpaStatusChecker.VpaCRDExists(ctx, r.Client)
@@ -502,9 +502,10 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 			ClusterUID:    clusterUID,
 			CloudProvider: shootInfo.CloudProvider,
 		},
-		Enrichments:       enrichments,
-		ServiceEnrichment: telemetryutils.GetServiceEnrichmentFromTelemetryOrDefault(ctx, telemetryOptions),
-		VpaActive:         vpaCRDExists && isVpaEnabled,
+		Enrichments:         telemetrySpec.Enrichments,
+		ServiceEnrichment:   telemetryutils.GetServiceEnrichmentFromTelemetryOrDefault(ctx, telemetryOptions),
+		VpaActive:           vpaCRDExists && isVpaEnabled,
+		CollectionIntervals: telemetryutils.ResolveMetricCollectionIntervals(telemetrySpec.Metric),
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create collector config: %w", err)
