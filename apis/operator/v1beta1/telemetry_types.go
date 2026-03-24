@@ -77,6 +77,35 @@ type MetricSpec struct {
 	// Gateway configures the metric gateway.
 	// +kubebuilder:validation:Optional
 	Gateway GatewaySpec `json:"gateway"`
+
+	// CollectionInterval defines the default scrape interval for all pull-based metric inputs (runtime, prometheus, istio).
+	// The value is a duration string (for example, "30s", "1m", "5m"). Minimum is 1s. Default is 30s.
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Format=duration
+	// +kubebuilder:validation:XValidation:rule="self > duration('0s')",message="'collectionInterval' must be greater than 0"
+	CollectionInterval *metav1.Duration `json:"collectionInterval,omitempty"`
+
+	// Runtime configures collection settings specific to runtime metrics input.
+	// +kubebuilder:validation:Optional
+	Runtime *MetricInputSpec `json:"runtime,omitempty"`
+
+	// Prometheus configures collection settings specific to Prometheus metrics input.
+	// +kubebuilder:validation:Optional
+	Prometheus *MetricInputSpec `json:"prometheus,omitempty"`
+
+	// Istio configures collection settings specific to Istio metrics input.
+	// +kubebuilder:validation:Optional
+	Istio *MetricInputSpec `json:"istio,omitempty"`
+}
+
+// MetricInputSpec defines collection settings for a specific metric input type.
+type MetricInputSpec struct {
+	// CollectionInterval defines the scrape interval for this specific input, overriding the global metric.collectionInterval.
+	// The value is a duration string (for example, "30s", "1m", "5m"). Minimum is 1s.
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Format=duration
+	// +kubebuilder:validation:XValidation:rule="self > duration('0s')",message="'collectionInterval' must be greater than 0"
+	CollectionInterval *metav1.Duration `json:"collectionInterval,omitempty"`
 }
 
 // TraceSpec configures module settings specific to the trace features.

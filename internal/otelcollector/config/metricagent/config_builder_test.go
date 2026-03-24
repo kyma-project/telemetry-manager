@@ -11,6 +11,7 @@ import (
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
+	telemetryutils "github.com/kyma-project/telemetry-manager/internal/utils/telemetry"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
@@ -461,6 +462,7 @@ func TestBuildConfig(t *testing.T) {
 				IstioActive:                 tt.istioActive,
 				ServiceEnrichment:           tt.serviceEnrichment,
 				VpaActive:                   tt.vpaActive,
+				CollectionIntervals:         telemetryutils.ResolveMetricCollectionIntervals(nil),
 			}
 			config, _, err := sut.Build(t.Context(), tt.pipelines, buildOptions)
 			require.NoError(t, err)
@@ -491,6 +493,7 @@ func TestBuildConfigShuffled(t *testing.T) {
 	buildOptions := BuildOptions{
 		IstioCertPath:               "/etc/istio-output-certs",
 		InstrumentationScopeVersion: "main",
+		CollectionIntervals:         telemetryutils.ResolveMetricCollectionIntervals(nil),
 	}
 
 	pipelines := []telemetryv1beta1.MetricPipeline{

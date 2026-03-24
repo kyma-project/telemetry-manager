@@ -2,6 +2,7 @@ package telemetry
 
 import (
 	"context"
+	"time"
 
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -13,6 +14,48 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 )
+
+const defaultCollectionInterval = 30 * time.Second
+
+// MetricCollectionIntervals holds the resolved collection interval for each pull-based metric input type.
+type MetricCollectionIntervals struct {
+	Runtime    time.Duration
+	Prometheus time.Duration
+	Istio      time.Duration
+}
+
+// ResolveMetricCollectionIntervals computes the effective collection interval for each input type
+// from the Telemetry CR MetricSpec, following the precedence:
+// input-specific override > metric.collectionInterval > 30s default.
+func ResolveMetricCollectionIntervals(metricSpec *operatorv1beta1.MetricSpec) MetricCollectionIntervals {
+	globalInterval := defaultCollectionInterval
+
+	if metricSpec != nil && metricSpec.CollectionInterval != nil {
+		globalInterval = metricSpec.CollectionInterval.Duration
+	}
+
+	intervals := MetricCollectionIntervals{
+		Runtime:    globalInterval,
+		Prometheus: globalInterval,
+		Istio:      globalInterval,
+	}
+
+	if metricSpec != nil {
+		if metricSpec.Runtime != nil && metricSpec.Runtime.CollectionInterval != nil {
+			intervals.Runtime = metricSpec.Runtime.CollectionInterval.Duration
+		}
+
+		if metricSpec.Prometheus != nil && metricSpec.Prometheus.CollectionInterval != nil {
+			intervals.Prometheus = metricSpec.Prometheus.CollectionInterval.Duration
+		}
+
+		if metricSpec.Istio != nil && metricSpec.Istio.CollectionInterval != nil {
+			intervals.Istio = metricSpec.Istio.CollectionInterval.Duration
+		}
+	}
+
+	return intervals
+}
 
 func GetDefaultTelemetryInstance(ctx context.Context, client client.Client, namespace string) (operatorv1beta1.Telemetry, error) {
 	var telemetry operatorv1beta1.Telemetry

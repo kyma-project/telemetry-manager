@@ -133,6 +133,15 @@ spec:
                 description: Metric configures module settings specific to the metric
                   features. This field is optional.
                 properties:
+                  collectionInterval:
+                    description: |-
+                      CollectionInterval defines the default collection/scrape interval for all pull-based metric inputs (runtime, prometheus, istio).
+                      The value is a duration string (for example, "30s", "1m", "5m"). Minimum is 1s. Default is 30s.
+                    format: duration
+                    type: string
+                    x-kubernetes-validations:
+                    - message: '''collectionInterval'' must be greater than 0'
+                      rule: self > duration('0s')
                   gateway:
                     description: Gateway configures the metric gateway.
                     properties:
@@ -160,6 +169,48 @@ spec:
                             - Static
                             type: string
                         type: object
+                    type: object
+                  istio:
+                    description: Istio configures collection settings specific to
+                      Istio metrics input.
+                    properties:
+                      collectionInterval:
+                        description: |-
+                          CollectionInterval defines the collection/scrape interval for this specific input, overriding the global metric.collectionInterval.
+                          The value is a duration string (for example, "30s", "1m", "5m"). Minimum is 1s.
+                        format: duration
+                        type: string
+                        x-kubernetes-validations:
+                        - message: '''collectionInterval'' must be greater than 0'
+                          rule: self > duration('0s')
+                    type: object
+                  prometheus:
+                    description: Prometheus configures collection settings specific
+                      to Prometheus metrics input.
+                    properties:
+                      collectionInterval:
+                        description: |-
+                          CollectionInterval defines the collection/scrape interval for this specific input, overriding the global metric.collectionInterval.
+                          The value is a duration string (for example, "30s", "1m", "5m"). Minimum is 1s.
+                        format: duration
+                        type: string
+                        x-kubernetes-validations:
+                        - message: '''collectionInterval'' must be greater than 0'
+                          rule: self > duration('0s')
+                    type: object
+                  runtime:
+                    description: Runtime configures collection settings specific to
+                      runtime metrics input.
+                    properties:
+                      collectionInterval:
+                        description: |-
+                          CollectionInterval defines the collection/scrape interval for this specific input, overriding the global metric.collectionInterval.
+                          The value is a duration string (for example, "30s", "1m", "5m"). Minimum is 1s.
+                        format: duration
+                        type: string
+                        x-kubernetes-validations:
+                        - message: '''collectionInterval'' must be greater than 0'
+                          rule: self > duration('0s')
                     type: object
                 type: object
               trace:
@@ -418,6 +469,15 @@ spec:
                 description: Metric configures module settings specific to the metric
                   features. This field is optional.
                 properties:
+                  collectionInterval:
+                    description: |-
+                      CollectionInterval defines the default scrape interval for all pull-based metric inputs (runtime, prometheus, istio).
+                      The value is a duration string (for example, "30s", "1m", "5m"). Minimum is 1s. Default is 30s.
+                    format: duration
+                    type: string
+                    x-kubernetes-validations:
+                    - message: '''collectionInterval'' must be greater than 0'
+                      rule: self > duration('0s')
                   gateway:
                     description: Gateway configures the metric gateway.
                     properties:
@@ -445,6 +505,48 @@ spec:
                             - Static
                             type: string
                         type: object
+                    type: object
+                  istio:
+                    description: Istio configures collection settings specific to
+                      Istio metrics input.
+                    properties:
+                      collectionInterval:
+                        description: |-
+                          CollectionInterval defines the scrape interval for this specific input, overriding the global metric.collectionInterval.
+                          The value is a duration string (for example, "30s", "1m", "5m"). Minimum is 1s.
+                        format: duration
+                        type: string
+                        x-kubernetes-validations:
+                        - message: '''collectionInterval'' must be greater than 0'
+                          rule: self > duration('0s')
+                    type: object
+                  prometheus:
+                    description: Prometheus configures collection settings specific
+                      to Prometheus metrics input.
+                    properties:
+                      collectionInterval:
+                        description: |-
+                          CollectionInterval defines the scrape interval for this specific input, overriding the global metric.collectionInterval.
+                          The value is a duration string (for example, "30s", "1m", "5m"). Minimum is 1s.
+                        format: duration
+                        type: string
+                        x-kubernetes-validations:
+                        - message: '''collectionInterval'' must be greater than 0'
+                          rule: self > duration('0s')
+                    type: object
+                  runtime:
+                    description: Runtime configures collection settings specific to
+                      runtime metrics input.
+                    properties:
+                      collectionInterval:
+                        description: |-
+                          CollectionInterval defines the scrape interval for this specific input, overriding the global metric.collectionInterval.
+                          The value is a duration string (for example, "30s", "1m", "5m"). Minimum is 1s.
+                        format: duration
+                        type: string
+                        x-kubernetes-validations:
+                        - message: '''collectionInterval'' must be greater than 0'
+                          rule: self > duration('0s')
                     type: object
                 type: object
               trace:
