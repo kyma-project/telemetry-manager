@@ -184,6 +184,21 @@ func promMetricGenerator() func(ns string) []client.Object {
 	}
 }
 
+// promMetricGeneratorHighLoad produces high-volume Prometheus metrics via the Avalanche load generator.
+// Required for metric-agent fault-injection tests (backpressure/outage): the self-monitor rules fire
+// only when both drop and sent rates are non-zero, which needs enough throughput to stay above zero
+// in the Prometheus scrape window even when a large fraction of exports are faulted.
+func promMetricGeneratorHighLoad() func(ns string) []client.Object {
+	return func(ns string) []client.Object {
+		metricProducer := prommetricgen.New(ns)
+
+		return []client.Object{
+			metricProducer.Pod().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).WithAvalancheHighLoad().K8sObject(),
+			metricProducer.Service().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
+		}
+	}
+}
+
 // Assertion helpers
 
 func componentConditionType(component string) string {

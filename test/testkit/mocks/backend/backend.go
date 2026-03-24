@@ -3,6 +3,7 @@ package backend
 import (
 	"fmt"
 	"net"
+	"net/http"
 	"path/filepath"
 	"strconv"
 
@@ -50,19 +51,22 @@ type OIDCConfig struct {
 }
 
 type Backend struct {
-	certs      *testutils.ServerCerts
-	name       string
-	namespace  string
-	replicas   int32
-	signalType SignalType
-	oidc       *OIDCConfig
-	mtls       bool
+	abortFaultPercentage float64
+	dropFromSourceLabel  map[string]string
+	certs                *testutils.ServerCerts
+	name                 string
+	namespace            string
+	replicas             int32
+	signalType           SignalType
+	oidc                 *OIDCConfig
+	mtls                 bool
 
 	fluentDConfigMap    *fluentdConfigMapBuilder
 	hostSecret          *kitk8sobjects.Secret
 	collectorConfigMap  *collectorConfigMapBuilder
 	collectorDeployment *collectorDeploymentBuilder
 	collectorService    *kitk8sobjects.Service
+	virtualService      *kitk8sobjects.VirtualService
 }
 
 func New(namespace string, signalType SignalType, opts ...Option) *Backend {
@@ -146,6 +150,10 @@ func (b *Backend) K8sObjects() []client.Object {
 	objects = append(objects, b.collectorService.K8sObject(kitk8sobjects.WithLabel("app", b.name)))
 	objects = append(objects, b.hostSecret.K8sObject())
 
+	if b.virtualService != nil {
+		objects = append(objects, b.virtualService.K8sObject())
+	}
+
 	return objects
 }
 
@@ -199,4 +207,12 @@ func (b *Backend) buildResources() {
 		b.namespace,
 		kitk8sobjects.WithStringData("host", host),
 	)
+
+	if b.abortFaultPercentage > 0 {
+		b.virtualService = kitk8sobjects.NewVirtualService(
+			"fault-injection",
+			b.namespace,
+			b.name,
+		).WithFaultAbortPercentage(b.abortFaultPercentage, http.StatusBadRequest).WithSourceLabel(b.dropFromSourceLabel)
+	}
 }

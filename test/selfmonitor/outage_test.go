@@ -13,6 +13,7 @@ import (
 	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
+	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/faultbackend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
@@ -23,7 +24,12 @@ func TestOutage(t *testing.T) {
 		name            string
 		component       string
 		faultOpts       []faultbackend.Option
+		generator       func(ns string) []client.Object
 		expectedReasons []assert.ReasonStatus
+		// useIstio indicates that this test case requires Istio fault injection via VirtualService
+		// rather than the faultbackend. Used for metric-agent, where the VS selectively blocks only
+		// agent→gateway traffic without affecting the gateway's own backend traffic.
+		useIstio bool
 	}{
 		{
 			name:            "log-agent",
@@ -62,10 +68,15 @@ func TestOutage(t *testing.T) {
 			expectedReasons: flowHealthyThenDegraded(conditions.ReasonSelfMonGatewayAllDataDropped),
 		},
 		{
+			// Metric agent and gateway (using kyma stats receiver) both export data to the same backend.
+			// Faulting the backend would affect both, masking the agent-specific alert.
+			// An Istio VirtualService with a source-label match on telemetry-metric-agent pods
+			// blocks all requests from the agent→gateway leg, leaving the gateway's own backend traffic healthy.
 			name:            "metric-agent",
 			component:       suite.LabelMetricAgent,
-			faultOpts:       faultNonRetryableErr(faultPercentageAll),
+			generator:       promMetricGeneratorHighLoad(),
 			expectedReasons: flowHealthyThenDegraded(conditions.ReasonSelfMonAgentAllDataDropped),
+			useIstio:        true,
 		},
 		{
 			name:            "traces",
@@ -79,9 +90,11 @@ func TestOutage(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			labels := []string{suite.LabelSelfMonitor, tc.component, suite.LabelOutage}
 
-			// Istio is not required: fault injection is handled by the mock-backend directly
-			// (see test/testkit/mocks/faultbackend) rather than via Istio VirtualServices.
 			var opts []kubeprep.Option
+			if tc.useIstio {
+				opts = append(opts, kubeprep.WithIstio())
+			}
+
 			if isFluentBit(tc.component) {
 				opts = append(opts, kubeprep.WithOverrideFIPSMode(false), kubeprep.WithFluentBitHostPathCleanup())
 			}
@@ -96,21 +109,43 @@ func TestOutage(t *testing.T) {
 				genNs        = uniquePrefix("gen")
 			)
 
-			fbOpts := tc.faultOpts
-			if isFluentBit(tc.component) {
-				fbOpts = append(fbOpts, faultbackend.WithFluentBitPort())
+			gen := tc.generator
+			if gen == nil {
+				gen = defaultGenerator(tc.component)
 			}
 
-			fb := faultbackend.New(backendNs, fbOpts...)
-			pipeline := buildPipeline(tc.component, pipelineName, genNs, fb)
+			var (
+				pipeline  client.Object
+				resources []client.Object
+			)
 
-			resources := []client.Object{
+			resources = append(resources,
 				kitk8sobjects.NewNamespace(backendNs).K8sObject(),
 				kitk8sobjects.NewNamespace(genNs).K8sObject(),
-				pipeline,
+			)
+
+			if tc.useIstio {
+				// Use a regular backend with an Istio VirtualService that drops 100% of requests
+				// from the metric-agent pods only, leaving the gateway's traffic unaffected.
+				backend := kitbackend.New(backendNs, signalTypeForComponent(tc.component),
+					kitbackend.WithAbortFaultInjection(100),
+					kitbackend.WithDropFromSourceLabel(map[string]string{"app.kubernetes.io/name": "telemetry-metric-agent"}),
+				)
+				pipeline = buildPipeline(tc.component, pipelineName, genNs, backend)
+				resources = append(resources, backend.K8sObjects()...)
+			} else {
+				fbOpts := tc.faultOpts
+				if isFluentBit(tc.component) {
+					fbOpts = append(fbOpts, faultbackend.WithFluentBitPort())
+				}
+
+				fb := faultbackend.New(backendNs, fbOpts...)
+				pipeline = buildPipeline(tc.component, pipelineName, genNs, fb)
+				resources = append(resources, fb.K8sObjects()...)
 			}
-			resources = append(resources, defaultGenerator(tc.component)(genNs)...)
-			resources = append(resources, fb.K8sObjects()...)
+
+			resources = append(resources, pipeline)
+			resources = append(resources, gen(genNs)...)
 
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
