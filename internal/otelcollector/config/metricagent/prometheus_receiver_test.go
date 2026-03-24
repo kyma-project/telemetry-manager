@@ -8,6 +8,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+	telemetryutils "github.com/kyma-project/telemetry-manager/internal/utils/telemetry"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
@@ -52,7 +53,8 @@ func TestPrometheusReceiverConfig(t *testing.T) {
 				collectorConfig, _, err := sut.Build(ctx, []telemetryv1beta1.MetricPipeline{
 					testutils.NewMetricPipelineBuilder().WithPrometheusInput(true).Build(),
 				}, BuildOptions{
-					IstioActive: tt.istioEnabled,
+					IstioActive:         tt.istioEnabled,
+					CollectionIntervals: telemetryutils.ResolveMetricCollectionIntervals(nil),
 				})
 				require.NoError(t, err)
 
@@ -82,7 +84,8 @@ func TestPrometheusReceiverConfig(t *testing.T) {
 		collectorConfig, _, err := sut.Build(ctx, []telemetryv1beta1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().WithIstioInput(true).Build(),
 		}, BuildOptions{
-			IstioActive: true,
+			IstioActive:         true,
+			CollectionIntervals: telemetryutils.ResolveMetricCollectionIntervals(nil),
 		})
 		require.NoError(t, err)
 
@@ -98,7 +101,8 @@ func TestPrometheusReceiverConfig(t *testing.T) {
 		collectorConfig, _, err := sut.Build(ctx, []telemetryv1beta1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().WithIstioInput(true).WithIstioInputEnvoyMetrics(true).Build(),
 		}, BuildOptions{
-			IstioActive: true,
+			IstioActive:         true,
+			CollectionIntervals: telemetryutils.ResolveMetricCollectionIntervals(nil),
 		})
 		require.NoError(t, err)
 
