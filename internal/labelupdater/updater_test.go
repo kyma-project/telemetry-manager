@@ -1,7 +1,10 @@
 package labelupdater
 
 import (
+	"context"
+	"errors"
 	"testing"
+	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
@@ -14,6 +17,7 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
@@ -121,14 +125,76 @@ func TestStart(t *testing.T) {
 	}
 }
 
-func newFakeClient(t *testing.T, objs ...runtime.Object) client.Client {
+func TestStart_RetriesUntilContextCancelled(t *testing.T) {
+	fakeClient := fake.NewClientBuilder().
+		WithScheme(newTestScheme(t)).
+		WithRuntimeObjects(
+			&corev1.ServiceAccount{ObjectMeta: metav1.ObjectMeta{Name: names.FluentBit, Namespace: testNamespace}},
+		).
+		WithInterceptorFuncs(interceptor.Funcs{
+			Get: func(_ context.Context, _ client.WithWatch, _ client.ObjectKey, _ client.Object, _ ...client.GetOption) error {
+				return errors.New("transient error")
+			},
+		}).
+		Build()
+
+	updater := New(fakeClient, fakeClient, logr.Discard(), testNamespace)
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	// Cancel after a short delay to allow at least one retry attempt
+	go func() {
+		time.Sleep(50 * time.Millisecond)
+		cancel()
+	}()
+
+	// Start should return nil when context is canceled (graceful shutdown)
+	err := updater.Start(ctx)
+	require.NoError(t, err)
+}
+
+func TestStart_SucceedsAfterRetry(t *testing.T) {
+	attemptCount := 0
+	fakeClient := fake.NewClientBuilder().
+		WithScheme(newTestScheme(t)).
+		WithRuntimeObjects(
+			&corev1.ServiceAccount{ObjectMeta: metav1.ObjectMeta{Name: names.FluentBit, Namespace: testNamespace}},
+			&rbacv1.ClusterRoleBinding{ObjectMeta: metav1.ObjectMeta{Name: names.FluentBit}},
+		).
+		WithInterceptorFuncs(interceptor.Funcs{
+			Get: func(ctx context.Context, c client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+				attemptCount++
+				// Fail the first attempt, succeed on retry
+				if attemptCount == 1 {
+					return errors.New("transient error")
+				}
+
+				return c.Get(ctx, key, obj, opts...)
+			},
+		}).
+		Build()
+
+	updater := New(fakeClient, fakeClient, logr.Discard(), testNamespace)
+
+	err := updater.Start(context.Background())
+	require.NoError(t, err)
+	require.GreaterOrEqual(t, attemptCount, 2, "Should have retried at least once")
+}
+
+func newTestScheme(t *testing.T) *runtime.Scheme {
 	t.Helper()
 
 	scheme := runtime.NewScheme()
 	require.NoError(t, clientgoscheme.AddToScheme(scheme))
 
+	return scheme
+}
+
+func newFakeClient(t *testing.T, objs ...runtime.Object) client.Client {
+	t.Helper()
+
 	return fake.NewClientBuilder().
-		WithScheme(scheme).
+		WithScheme(newTestScheme(t)).
 		WithRuntimeObjects(objs...).
 		Build()
 }
