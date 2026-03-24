@@ -34,10 +34,12 @@ func TestMetricsUpgrade(t *testing.T) {
 	suite.SetupTestWithOptions(t, labels, kubeprep.WithChartVersion(os.Getenv("UPGRADE_FROM_CHART")))
 
 	var (
-		uniquePrefix = unique.Prefix()
-		pipelineName = uniquePrefix()
-		backendNs    = uniquePrefix("backend")
-		genNs        = uniquePrefix("gen")
+		uniquePrefix      = unique.Prefix()
+		pipelineName      = uniquePrefix()
+		pipelineNameAfter = pipelineName + "-after"
+		backendNs         = uniquePrefix("backend")
+		backendNsAfter    = uniquePrefix("backend-after")
+		genNs             = uniquePrefix("gen")
 	)
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics)
@@ -50,7 +52,7 @@ func TestMetricsUpgrade(t *testing.T) {
 	resources := []client.Object{
 		kitk8sobjects.NewNamespace(backendNs).K8sObject(),
 		kitk8sobjects.NewNamespace(genNs).K8sObject(),
-		&pipeline,
+		new(pipeline),
 		telemetrygen.NewPod(genNs, telemetrygen.SignalTypeMetrics).K8sObject(),
 	}
 	resources = append(resources, backend.K8sObjects()...)
@@ -70,9 +72,36 @@ func TestMetricsUpgrade(t *testing.T) {
 	Expect(suite.UpgradeToTargetVersion(t)).To(Succeed())
 
 	// === VALIDATE AFTER UPGRADE ===
-	t.Log("Validating metric pipeline after upgrade...")
+
+	// ==== EXISTING PIPELINES ====
+	t.Log("Validating existing metric pipeline after upgrade...")
 	assert.DeploymentReady(t, kitkyma.MetricGatewayName)
 	assert.MetricPipelineHealthy(t, pipelineName)
 	assert.BackendReachable(t, backend)
 	assert.MetricsFromNamespaceDelivered(t, backend, genNs, telemetrygen.MetricNames)
+
+	// Create new pipelines
+
+	backendAfter := kitbackend.New(backendNsAfter, kitbackend.SignalTypeMetrics)
+
+	pipelineAfter := testutils.NewMetricPipelineBuilder().
+		WithName(pipelineNameAfter).
+		WithOTLPOutput(testutils.OTLPEndpoint(backendAfter.EndpointHTTP())).
+		Build()
+
+	afterResources := []client.Object{
+		new(pipelineAfter),
+		kitk8sobjects.NewNamespace(backendNsAfter).K8sObject(),
+	}
+	afterResources = append(afterResources, backendAfter.K8sObjects()...)
+
+	// Create resources (without automatic cleanup - upgrade tests preserve resources)
+	Expect(kitk8s.CreateObjects(t, afterResources...)).To(Succeed())
+
+	// ==== NEW PIPELINES ====
+	t.Log("Validating metric pipeline creation after upgrade...")
+	assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+	assert.MetricPipelineHealthy(t, pipelineNameAfter)
+	assert.BackendReachable(t, backendAfter)
+	assert.MetricsFromNamespaceDelivered(t, backendAfter, genNs, telemetrygen.MetricNames)
 }
