@@ -49,12 +49,12 @@ spec:
 See how the deprecated fields map to their new OTLP-based counterparts:
 
 | Deprecated Field | Migration Action |
-|: -- :|: -- :|
+| :---: | :---: |
 | **spec.output.http** or **spec.output.custom** | Replace with **spec.output.otlp**. |
-| **spec.output.http.uri** | OTLP uses a predefined index that you can't change. If you need a custom index, use reindexing (see [OpenSearch: Reindex Data](https://docs.opensearch.org/latest/im-plugin/reindex-data/). |
-| **spec.filters**                           | Rewrite custom Fluent Bit filters as OTTL transform or filter expressions.|
-| **spec.variables** and **spec.files**          | Incorporate the logic of your custom filters into your new OTTL transform or filter expressions. |
-| **spec.input.runtime.dropLabels**      | Configure label enrichment in the central Telemetry resource instead.|
+| **spec.output.http.uri** | OTLP uses a predefined index that you can't change. If you need a custom index, use reindexing (see [OpenSearch: Reindex Data](https://docs.opensearch.org/latest/im-plugin/reindex-data/)). |
+| **spec.filters** | Rewrite custom Fluent Bit filters as OTTL transform or filter expressions. |
+| **spec.variables** and **spec.files** | Incorporate the logic of your custom filters into your new OTTL transform or filter expressions. |
+| **spec.input.runtime.dropLabels** | Configure label enrichment in the central Telemetry resource instead. |
 | **spec.input.runtime.keepAnnotations** | Remove this functionality, it's not supported with the `otlp` output. |
 
 ## Procedure
