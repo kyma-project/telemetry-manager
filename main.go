@@ -62,6 +62,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/featureflags"
 	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
+	"github.com/kyma-project/telemetry-manager/internal/labelupdater"
 	mgrports "github.com/kyma-project/telemetry-manager/internal/manager/ports"
 	"github.com/kyma-project/telemetry-manager/internal/metrics"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
@@ -209,6 +210,14 @@ func run() error {
 	storageMigrator := storagemigration.New(mgr.GetClient(), setupLog)
 	if err := mgr.Add(storageMigrator); err != nil {
 		return fmt.Errorf("failed to add storage migration runnable: %w", err)
+	}
+
+	// Add label updater to patch the module label onto resources created before
+	// the label-scoped cache was introduced. Without this, the scoped cache
+	// cannot see pre-existing resources and reconciliation fails with AlreadyExists.
+	labelUpdater := labelupdater.New(mgr.GetAPIReader(), mgr.GetClient(), setupLog, globals.TargetNamespace())
+	if err := mgr.Add(labelUpdater); err != nil {
+		return fmt.Errorf("failed to add label updater runnable: %w", err)
 	}
 
 	// +kubebuilder:scaffold:builder
