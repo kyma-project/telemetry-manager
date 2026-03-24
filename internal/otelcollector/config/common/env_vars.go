@@ -233,7 +233,13 @@ func resolveEndpointURL(ctx context.Context, c client.Reader, output *telemetryv
 			return nil, err
 		}
 
-		u.Path = path.Join(u.Path, output.Path)
+		pathRef, err := url.Parse(output.Path)
+		if err != nil {
+			return nil, err
+		}
+
+		u.Path = path.Join(u.Path, pathRef.Path)
+		u.RawQuery = pathRef.RawQuery
 
 		return []byte(u.String()), nil
 	}
