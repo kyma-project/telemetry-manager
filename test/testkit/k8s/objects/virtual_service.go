@@ -18,6 +18,10 @@ import (
 //
 // Call WithFaultAbortPercentage(percentage, httpStatus) so the abort uses the intended code; the default
 // in NewVirtualService matches the non-retryable convention (400) if a caller ever omits the status.
+//
+// sourceLabels is an Istio selector (NOT a runtime match): it determines which sidecar proxies
+// receive this VirtualService config. Pods whose labels don't match never see the VS at all,
+// so no fallback route is needed for non-matching workloads.
 type VirtualService struct {
 	name                 string
 	namespace            string

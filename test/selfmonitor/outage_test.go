@@ -127,6 +127,8 @@ func TestOutage(t *testing.T) {
 			if tc.useIstio {
 				// Use a regular backend with an Istio VirtualService that drops 100% of requests
 				// from the metric-agent pods only, leaving the gateway's traffic unaffected.
+				// sourceLabels is an Istio selector (not a runtime match): the VS config is only
+				// pushed to sidecars of pods matching the label, so the gateway never sees it.
 				backend := kitbackend.New(backendNs, signalTypeForComponent(tc.component),
 					kitbackend.WithAbortFaultInjection(100),
 					kitbackend.WithDropFromSourceLabel(map[string]string{"app.kubernetes.io/name": "telemetry-metric-agent"}),

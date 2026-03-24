@@ -138,10 +138,12 @@ func TestBackpressure(t *testing.T) {
 			)
 
 			if tc.useIstio {
-				// Use a regular backend with an Istio VirtualService that drops 95% of requests
+				// Use a regular backend with an Istio VirtualService that drops 30% of requests
 				// from the metric-agent pods only, leaving the gateway's traffic unaffected.
+				// sourceLabels is an Istio selector (not a runtime match): the VS config is only
+				// pushed to sidecars of pods matching the label, so the gateway never sees it.
 				backend := kitbackend.New(backendNs, signalTypeForComponent(tc.component),
-					kitbackend.WithAbortFaultInjection(95),
+					kitbackend.WithAbortFaultInjection(faultPercentageThirty),
 					kitbackend.WithDropFromSourceLabel(map[string]string{"app.kubernetes.io/name": "telemetry-metric-agent"}),
 				)
 				pipeline = buildPipeline(tc.component, pipelineName, genNs, backend)
