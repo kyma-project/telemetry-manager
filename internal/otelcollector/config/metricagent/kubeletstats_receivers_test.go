@@ -8,6 +8,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+	telemetryutils "github.com/kyma-project/telemetry-manager/internal/utils/telemetry"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
@@ -96,7 +97,8 @@ func TestKubeletStatsReceiverConfig(t *testing.T) {
 			collectorConfig, _, err := sut.Build(ctx, []telemetryv1beta1.MetricPipeline{
 				test.pipeline,
 			}, BuildOptions{
-				AgentNamespace: agentNamespace,
+				AgentNamespace:      agentNamespace,
+				CollectionIntervals: telemetryutils.ResolveMetricCollectionIntervals(nil),
 			})
 			require.NoError(t, err)
 
@@ -160,7 +162,9 @@ func TestKubeletStatsReceiverConfig(t *testing.T) {
 		for _, test := range tests {
 			collectorConfig, _, err := sut.Build(ctx, []telemetryv1beta1.MetricPipeline{
 				test.pipeline,
-			}, BuildOptions{})
+			}, BuildOptions{
+				CollectionIntervals: telemetryutils.ResolveMetricCollectionIntervals(nil),
+			})
 			require.NoError(t, err)
 
 			require.NotContains(t, collectorConfig.Receivers, "prometheus/app-pods")

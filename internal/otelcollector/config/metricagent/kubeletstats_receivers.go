@@ -2,18 +2,16 @@ package metricagent
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 )
 
-func kubeletStatsReceiver(runtimeResources runtimeResourceSources) *KubeletStatsReceiverConfig {
-	const (
-		collectionInterval = "30s"
-		portKubelet        = 10250
-	)
+func kubeletStatsReceiver(runtimeResources runtimeResourceSources, collectionInterval time.Duration) *KubeletStatsReceiverConfig {
+	const portKubelet = 10250
 
 	return &KubeletStatsReceiverConfig{
-		CollectionInterval: collectionInterval,
+		CollectionInterval: collectionInterval.String(),
 		AuthType:           "serviceAccount",
 		InsecureSkipVerify: true,
 		Endpoint:           fmt.Sprintf("https://${%s}:%d", common.EnvVarCurrentNodeName, portKubelet),
@@ -44,10 +42,10 @@ func kubeletStatsReceiver(runtimeResources runtimeResourceSources) *KubeletStats
 	}
 }
 
-func k8sClusterReceiver(runtimeResources runtimeResourceSources) *K8sClusterReceiverConfig {
+func k8sClusterReceiver(runtimeResources runtimeResourceSources, collectionInterval time.Duration) *K8sClusterReceiverConfig {
 	return &K8sClusterReceiverConfig{
 		AuthType:               "serviceAccount",
-		CollectionInterval:     "30s",
+		CollectionInterval:     collectionInterval.String(),
 		NodeConditionsToReport: []string{},
 		K8sLeaderElector:       "k8s_leader_elector",
 		Metrics:                k8sClusterMetricsToDrop(runtimeResources),

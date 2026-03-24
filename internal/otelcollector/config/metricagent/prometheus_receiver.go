@@ -25,7 +25,6 @@ const (
 )
 
 const (
-	scrapeInterval           = 30 * time.Second
 	sampleLimit              = 50000
 	bodySizeLimit            = "20MB"
 	appPodsJobName           = "app-pods"
@@ -34,11 +33,11 @@ const (
 )
 
 // prometheusPodsReceiverConfig creates a Prometheus configuration for scraping Pods that are annotated with prometheus.io annotations.
-func prometheusPodsReceiverConfig() *PrometheusReceiverConfig {
+func prometheusPodsReceiverConfig(collectionInterval time.Duration) *PrometheusReceiverConfig {
 	var config PrometheusReceiverConfig
 
 	scrapeConfig := Scrape{
-		ScrapeInterval:             scrapeInterval,
+		ScrapeInterval:             collectionInterval,
 		SampleLimit:                sampleLimit,
 		BodySizeLimit:              bodySizeLimit,
 		KubernetesDiscoveryConfigs: discoveryConfigWithNodeSelector(RolePod),
@@ -55,11 +54,11 @@ func prometheusPodsReceiverConfig() *PrometheusReceiverConfig {
 // If Istio is enabled, an additional scrape job config is generated (suffixed with -secure) to scrape annotated Services over HTTPS using Istio certificate.
 // Istio certificate is expected to be mounted at the provided path using the proxy.istio.io/config annotation.
 // See more: https://istio.io/latest/docs/ops/integrations/prometheus/#tls-settings
-func prometheusServicesReceiverConfig(opts BuildOptions) *PrometheusReceiverConfig {
+func prometheusServicesReceiverConfig(opts BuildOptions, collectionInterval time.Duration) *PrometheusReceiverConfig {
 	var config PrometheusReceiverConfig
 
 	baseScrapeConfig := Scrape{
-		ScrapeInterval:             scrapeInterval,
+		ScrapeInterval:             collectionInterval,
 		SampleLimit:                sampleLimit,
 		KubernetesDiscoveryConfigs: discoveryConfigWithNodeSelector(RoleEndpoints),
 	}
@@ -143,7 +142,7 @@ func tlsConfig(istioCertPath string) *TLS {
 	}
 }
 
-func prometheusIstioReceiverConfig(envoyMetricsEnabled bool) *PrometheusReceiverConfig {
+func prometheusIstioReceiverConfig(envoyMetricsEnabled bool, collectionInterval time.Duration) *PrometheusReceiverConfig {
 	metricNames := "istio_.*"
 	if envoyMetricsEnabled {
 		metricNames = strings.Join([]string{"envoy_.*", metricNames}, "|")
@@ -156,7 +155,7 @@ func prometheusIstioReceiverConfig(envoyMetricsEnabled bool) *PrometheusReceiver
 					JobName:                    "istio-proxy",
 					SampleLimit:                sampleLimit,
 					MetricsPath:                "/stats/prometheus",
-					ScrapeInterval:             scrapeInterval,
+					ScrapeInterval:             collectionInterval,
 					KubernetesDiscoveryConfigs: discoveryConfigWithNodeSelector(RolePod),
 					RelabelConfigs: []Relabel{
 						keepIfRunningOnSameNode(NodeAffiliatedPod),
