@@ -28,7 +28,7 @@ jobs:
           if [[ $GITHUB_EVENT_NAME == 'push' || $GITHUB_EVENT_NAME == 'merge_group' ]]; then
             {
               echo "tags<<EOTAGS"
-              echo "latest"
+              echo "main"
               echo "EOTAGS"
             } >> "$GITHUB_OUTPUT"
           else
