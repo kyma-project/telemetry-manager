@@ -135,7 +135,7 @@ install_yq() {
 
   # Create temporary directory
   local TEMP_DIR=$(mktemp -d)
-  trap 'rm -rf "${TEMP_DIR}"' EXIT
+  trap "rm -rf '${TEMP_DIR}'" EXIT
 
   local YQ_TEMP_PATH="${TEMP_DIR}/yq"
   local CHECKSUMS_FILE="${TEMP_DIR}/checksums"
