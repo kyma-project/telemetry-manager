@@ -270,12 +270,11 @@ func assertPipelineConditionTransition(t *testing.T, component, pipelineName str
 }
 
 // assertFlowDegraded runs the standard assertion sequence for backpressure/outage tests:
-// component readiness, pipeline health, condition transition, and telemetry warning state.
+// condition transition and telemetry warning state. Call assertComponentReady and
+// assertPipelineHealthy before enabling faults, then call this function.
 func assertFlowDegraded(t *testing.T, component, pipelineName string, expectedReasons []assert.ReasonStatus) {
 	t.Helper()
 
-	assertComponentReady(t, component)
-	assertPipelineHealthy(t, component, pipelineName)
 	assertPipelineConditionTransition(t, component, pipelineName, expectedReasons)
 
 	finalReason := expectedReasons[len(expectedReasons)-1].Reason

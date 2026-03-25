@@ -161,6 +161,7 @@ func TestOutage(t *testing.T) {
 			// the self-monitor has a clean rate() baseline to detect the transition.
 			assertComponentReady(t, tc.component)
 			assertPipelineHealthy(t, tc.component, pipelineName)
+			t.Log("Pipeline is healthy, enabling faults")
 
 			faultEnabler.EnableFaults(t)
 
