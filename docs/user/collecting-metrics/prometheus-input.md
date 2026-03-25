@@ -20,6 +20,7 @@ By default, the **prometheus** input is disabled. If your applications emit Prom
 > [!TIP]
 > To validate or debug your configuration, use diagnostic metrics (see [Collect Diagnostic Metrics](#collect-diagnostic-metrics)).
 > To select metrics from specific namespaces or to include system namespaces, see [Filter Metrics](../filter-and-process/filter-metrics.md).
+> To change the scrape interval for Prometheus metrics, see [Configure Collection Interval](README.md#configure-collection-interval)).
 
 ## Enable Metrics Collection With Annotations
 

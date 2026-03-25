@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	migrationGuideLink = "https://kyma-project.io/#/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html"
+	migrationGuideLink = "https://kyma-project.io/#/telemetry-manager/user/integrate-otlp-backend/migration-to-otlp-logs"
 )
 
 type validator struct {
