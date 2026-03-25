@@ -14,15 +14,6 @@ func UpdateOrDelete() ctrlpredicate.Predicate {
 	}
 }
 
-func CreateOrUpdateOrDelete() ctrlpredicate.Predicate {
-	return ctrlpredicate.Funcs{
-		CreateFunc:  func(e event.CreateEvent) bool { return true },
-		DeleteFunc:  func(e event.DeleteEvent) bool { return true },
-		UpdateFunc:  func(e event.UpdateEvent) bool { return true },
-		GenericFunc: func(e event.GenericEvent) bool { return false },
-	}
-}
-
 // OwnedResourceChanged returns a predicate function that returns true
 // when there is a change in the resource version of the owned resource or when
 // the resource is deleted.

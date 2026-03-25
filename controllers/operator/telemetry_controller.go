@@ -118,30 +118,31 @@ func (r *TelemetryController) SetupWithManager(mgr ctrl.Manager) error {
 		)
 	}
 
-	b = b.Watches(
-		&admissionregistrationv1.ValidatingWebhookConfiguration{},
-		handler.EnqueueRequestsFromMapFunc(r.mapValidatingWebhook),
-		ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete())).
+	b = b.
+		Watches(
+			&admissionregistrationv1.ValidatingWebhookConfiguration{},
+			handler.EnqueueRequestsFromMapFunc(r.mapValidatingWebhook),
+		).
 		Watches(
 			&admissionregistrationv1.MutatingWebhookConfiguration{},
 			handler.EnqueueRequestsFromMapFunc(r.mapMutatingWebhook),
-			ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete())).
+		).
 		Watches(
 			&apiextensionsv1.CustomResourceDefinition{},
 			handler.EnqueueRequestsFromMapFunc(r.mapPipelineCRD),
-			ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete())).
+		).
 		Watches(
 			&telemetryv1beta1.LogPipeline{},
 			handler.EnqueueRequestsFromMapFunc(r.mapLogPipeline),
-			ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete())).
+		).
 		Watches(
 			&telemetryv1beta1.TracePipeline{},
 			handler.EnqueueRequestsFromMapFunc(r.mapTracePipeline),
-			ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete())).
+		).
 		Watches(
 			&telemetryv1beta1.MetricPipeline{},
 			handler.EnqueueRequestsFromMapFunc(r.mapMetricPipeline),
-			ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete()))
+		)
 
 	return b.Complete(r)
 }
