@@ -35,13 +35,13 @@ func TestOutage(t *testing.T) {
 			name:            "log-agent",
 			component:       suite.LabelLogAgent,
 			faultOpts:       faultNonRetryableErr(faultPercentageAll),
-			expectedReasons: flowHealthyThenDegraded(conditions.ReasonSelfMonAgentAllDataDropped),
+			expectedReasons: degradedReasons(conditions.ReasonSelfMonAgentAllDataDropped),
 		},
 		{
 			name:            "log-gateway",
 			component:       suite.LabelLogGateway,
 			faultOpts:       faultNonRetryableErr(faultPercentageAll),
-			expectedReasons: flowHealthyThenDegraded(conditions.ReasonSelfMonGatewayAllDataDropped),
+			expectedReasons: degradedReasons(conditions.ReasonSelfMonGatewayAllDataDropped),
 		},
 		{
 			// Connection close: Fluent Bit connects to port 9880 (HTTP/1.1, not HTTP/2) but the backend
@@ -53,19 +53,19 @@ func TestOutage(t *testing.T) {
 			name:            "fluent-bit-no-logs-delivered",
 			component:       suite.LabelFluentBit,
 			faultOpts:       []faultbackend.Option{faultbackend.WithDefaultClose()},
-			expectedReasons: flowHealthyThenDegraded(conditions.ReasonSelfMonAgentNoLogsDelivered),
+			expectedReasons: degradedReasons(conditions.ReasonSelfMonAgentNoLogsDelivered),
 		},
 		{
 			name:            "fluent-bit-all-data-dropped",
 			component:       suite.LabelFluentBit,
 			faultOpts:       faultNonRetryableErr(faultPercentageAll),
-			expectedReasons: flowHealthyThenDegraded(conditions.ReasonSelfMonAgentAllDataDropped),
+			expectedReasons: degradedReasons(conditions.ReasonSelfMonAgentAllDataDropped),
 		},
 		{
 			name:            "metric-gateway",
 			component:       suite.LabelMetricGateway,
 			faultOpts:       faultNonRetryableErr(faultPercentageAll),
-			expectedReasons: flowHealthyThenDegraded(conditions.ReasonSelfMonGatewayAllDataDropped),
+			expectedReasons: degradedReasons(conditions.ReasonSelfMonGatewayAllDataDropped),
 		},
 		{
 			// Metric agent and gateway (using kyma stats receiver) both export data to the same backend.
@@ -75,14 +75,14 @@ func TestOutage(t *testing.T) {
 			name:            "metric-agent",
 			component:       suite.LabelMetricAgent,
 			generator:       promMetricGeneratorHighLoad(),
-			expectedReasons: flowHealthyThenDegraded(conditions.ReasonSelfMonAgentAllDataDropped),
+			expectedReasons: degradedReasons(conditions.ReasonSelfMonAgentAllDataDropped),
 			useIstio:        true,
 		},
 		{
 			name:            "traces",
 			component:       suite.LabelTraces,
 			faultOpts:       faultNonRetryableErr(faultPercentageAll),
-			expectedReasons: flowHealthyThenDegraded(conditions.ReasonSelfMonGatewayAllDataDropped),
+			expectedReasons: degradedReasons(conditions.ReasonSelfMonGatewayAllDataDropped),
 		},
 	}
 

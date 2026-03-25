@@ -38,13 +38,13 @@ func TestBackpressure(t *testing.T) {
 			name:            "log-agent",
 			component:       suite.LabelLogAgent,
 			faultOpts:       faultNonRetryableErr(faultPercentageThirty),
-			expectedReasons: flowHealthyThenDegraded(conditions.ReasonSelfMonAgentSomeDataDropped),
+			expectedReasons: degradedReasons(conditions.ReasonSelfMonAgentSomeDataDropped),
 		},
 		{
 			name:            "log-gateway",
 			component:       suite.LabelLogGateway,
 			faultOpts:       faultNonRetryableErr(faultPercentageThirty),
-			expectedReasons: flowHealthyThenDegraded(conditions.ReasonSelfMonGatewaySomeDataDropped),
+			expectedReasons: degradedReasons(conditions.ReasonSelfMonGatewaySomeDataDropped),
 		},
 		{
 			// HTTP 429 is retryable for Fluent Bit: the output plugin retries, so requests accumulate
@@ -65,20 +65,20 @@ func TestBackpressure(t *testing.T) {
 				faultbackend.WithDelay(200, 3*time.Second),
 			),
 			generator:       stdoutLogGenerator(bufferFillingUpRate),
-			expectedReasons: flowHealthyThenDegraded(conditions.ReasonSelfMonAgentBufferFillingUp),
+			expectedReasons: degradedReasons(conditions.ReasonSelfMonAgentBufferFillingUp),
 		},
 		{
 			// HTTP 400 is non-retryable for Fluent Bit: data is dropped immediately without filling the queue → SomeDataDropped.
 			name:            "fluent-bit-data-dropped",
 			component:       suite.LabelFluentBit,
 			faultOpts:       faultNonRetryableErr(faultPercentageThirty),
-			expectedReasons: flowHealthyThenDegraded(conditions.ReasonSelfMonAgentSomeDataDropped),
+			expectedReasons: degradedReasons(conditions.ReasonSelfMonAgentSomeDataDropped),
 		},
 		{
 			name:            "metric-gateway",
 			component:       suite.LabelMetricGateway,
 			faultOpts:       faultNonRetryableErr(faultPercentageThirty),
-			expectedReasons: flowHealthyThenDegraded(conditions.ReasonSelfMonGatewaySomeDataDropped),
+			expectedReasons: degradedReasons(conditions.ReasonSelfMonGatewaySomeDataDropped),
 		},
 		{
 			// Metric agent and gateway (using kyma stats receiver) both export data to the same backend.
@@ -88,14 +88,14 @@ func TestBackpressure(t *testing.T) {
 			name:            "metric-agent",
 			component:       suite.LabelMetricAgent,
 			generator:       promMetricGeneratorHighLoad(),
-			expectedReasons: flowHealthyThenDegraded(conditions.ReasonSelfMonAgentSomeDataDropped),
+			expectedReasons: degradedReasons(conditions.ReasonSelfMonAgentSomeDataDropped),
 			useIstio:        true,
 		},
 		{
 			name:            "traces",
 			component:       suite.LabelTraces,
 			faultOpts:       faultNonRetryableErr(faultPercentageThirty),
-			expectedReasons: flowHealthyThenDegraded(conditions.ReasonSelfMonGatewaySomeDataDropped),
+			expectedReasons: degradedReasons(conditions.ReasonSelfMonGatewaySomeDataDropped),
 		},
 	}
 
