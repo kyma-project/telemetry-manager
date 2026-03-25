@@ -80,7 +80,7 @@ jobs:
           echo "Channel: ${CHANNEL}"
           case "${CHANNEL}" in
             regular|fast|experimental)
-              echo "✓ Channel valid: ${CHANNEL}"
+              echo "Channel valid: ${CHANNEL}"
               ;;
             *)
               echo "::error::Invalid channel: ${CHANNEL}"
@@ -101,7 +101,7 @@ jobs:
             exit 1
           fi
 
-          echo "✓ Tag ${VERSION} exists in telemetry-manager repository"
+          echo "Tag ${VERSION} exists in telemetry-manager repository"
 
       - name: Validate Docker images exist
         env:
@@ -119,9 +119,9 @@ jobs:
           for IMAGE in "${IMAGES[@]}"; do
             echo "Checking image: ${IMAGE}"
             if docker manifest inspect "${IMAGE}" > /dev/null 2>&1; then
-              echo "  ✓ Image exists: ${IMAGE}"
+              echo "  Image exists: ${IMAGE}"
             else
-              echo "  ✗ Image not found: ${IMAGE}"
+              echo "  Image not found: ${IMAGE}"
               MISSING_IMAGES+=("${IMAGE}")
             fi
           done
@@ -140,7 +140,7 @@ jobs:
           fi
 
           echo ""
-          echo "✓ All required Docker images exist for version ${VERSION}"
+          echo "All required Docker images exist for version ${VERSION}"
 
   release-module:
     name: Release Telemetry Module
@@ -245,7 +245,7 @@ jobs:
             exit 1
           fi
 
-          echo "✓ Changes detected and ready to commit"
+          echo "Changes detected and ready to commit"
 
       - name: Commit changes
         if: ${{ !inputs.dry_run }}
@@ -257,7 +257,7 @@ jobs:
           git add .
           COMMIT_MSG="bump telemetry version to ${VERSION} on ${CHANNEL}"
           git commit -m "${COMMIT_MSG}"
-          echo "✓ Committed changes with message: ${COMMIT_MSG}"
+          echo "Committed changes with message: ${COMMIT_MSG}"
 
       - name: Dry run summary
         if: ${{ inputs.dry_run }}
@@ -265,7 +265,7 @@ jobs:
           VERSION: ${{ inputs.version }}
           CHANNEL: ${{ inputs.channel }}
         run: |
-          echo "🔍 DRY RUN MODE - No changes will be committed or pushed"
+          echo "DRY RUN MODE - No changes will be committed or pushed"
           echo ""
           echo "Would commit with message:"
           echo "  bump telemetry version to ${VERSION} on ${CHANNEL}"
@@ -288,9 +288,9 @@ jobs:
 
             # Check if local branch contains all commits from remote (safe to force push)
             if git merge-base --is-ancestor "origin/${BRANCH_NAME}" HEAD; then
-              echo "✓ Local branch is ahead of or equal to remote, safe to force push"
+              echo "Local branch is ahead of or equal to remote, safe to force push"
               git push --force-with-lease origin "${BRANCH_NAME}"
-              echo "✓ Force pushed branch: ${BRANCH_NAME}"
+              echo "Force pushed branch: ${BRANCH_NAME}"
             else
               echo "::error::Cannot force push: local branch does not contain all commits from origin/${BRANCH_NAME}"
               echo "This would result in commit loss. Please investigate the branch state."
@@ -299,7 +299,7 @@ jobs:
           else
             echo "Branch ${BRANCH_NAME} does not exist on remote, pushing..."
             git push -u origin "${BRANCH_NAME}"
-            echo "✓ Pushed branch: ${BRANCH_NAME}"
+            echo "Pushed branch: ${BRANCH_NAME}"
           fi
 
       - name: Create PR
@@ -363,7 +363,7 @@ jobs:
 
           echo "Enabling auto-merge for PR #${PR_NUMBER}..."
           gh pr merge "${PR_NUMBER}" --auto --squash
-          echo "✓ Auto-merge enabled for PR #${PR_NUMBER}"
+          echo "Auto-merge enabled for PR #${PR_NUMBER}"
 
       - name: Workflow summary
         if: always()
@@ -414,7 +414,7 @@ jobs:
             cat >> $GITHUB_STEP_SUMMARY <<EOF
 
           ### Dry Run Mode
-          🔍 **No changes were committed or pushed**
+          **No changes were committed or pushed**
           - Local branch created but not pushed to remote
           - Changes applied locally but not committed
           - PR was not created

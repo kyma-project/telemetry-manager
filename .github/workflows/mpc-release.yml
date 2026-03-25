@@ -53,7 +53,7 @@ jobs:
               echo "Expected format: X.Y.Z (e.g., 1.2.3)"
               exit 1
             fi
-            echo "✓ Telemetry version format valid: ${VERSION}"
+            echo "Telemetry version format valid: ${VERSION}"
           elif [ "${TARGET_CHART}" = "RMO" ]; then
             # RMO chart expects X.Y.Z-A.B.C format
             if ! [[ "${VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+-[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
@@ -61,7 +61,7 @@ jobs:
               echo "Expected format: X.Y.Z-A.B.C (e.g., 1.2.3-4.5.6)"
               exit 1
             fi
-            echo "✓ RMO version format valid: ${VERSION}"
+            echo "RMO version format valid: ${VERSION}"
           else
             echo "::error::Unknown target chart: ${TARGET_CHART}"
             exit 1
@@ -108,7 +108,7 @@ jobs:
           echo "$MATRIX" >> "$GITHUB_OUTPUT"
           echo "MATRIX_EOF" >> "$GITHUB_OUTPUT"
 
-          echo "✓ Loaded configuration for ${{ inputs.target_chart }} chart"
+          echo "Loaded configuration for ${{ inputs.target_chart }} chart"
 
   release-chart:
     name: Release ${{ matrix.chart_name }} Chart
@@ -195,7 +195,7 @@ jobs:
             echo "::error::${{ matrix.verify_field }} mismatch. Expected: ${{ inputs.version }}, Got: $CURRENT_VERSION"
             exit 1
           fi
-          echo "✓ ${{ matrix.verify_field }} verified: $CURRENT_VERSION"
+          echo "${{ matrix.verify_field }} verified: $CURRENT_VERSION"
 
       - name: Commit changes
         working-directory: management-plane-charts
@@ -235,7 +235,7 @@ jobs:
           if [ -n "${PR_NUMBER}" ]; then
             PR_URL=$(gh pr list --head "${BRANCH_NAME}" --json url --jq '.[0].url')
             echo "::notice::PR already exists for this branch"
-            echo "✓ Using existing PR #${PR_NUMBER}: ${PR_URL}"
+            echo "Using existing PR #${PR_NUMBER}: ${PR_URL}"
             echo "pr-url=${PR_URL}" >> "$GITHUB_OUTPUT"
             echo "pr-number=${PR_NUMBER}" >> "$GITHUB_OUTPUT"
             exit 0
@@ -260,14 +260,14 @@ jobs:
 
           echo "pr-url=${PR_URL}" >> "$GITHUB_OUTPUT"
           echo "pr-number=${PR_NUMBER}" >> "$GITHUB_OUTPUT"
-          echo "✓ Created PR #${PR_NUMBER}: ${PR_URL}"
+          echo "Created PR #${PR_NUMBER}: ${PR_URL}"
 
       - name: Enable auto-merge
         if: ${{ inputs.dry_run != true && inputs.auto_merge == true }}
         working-directory: management-plane-charts
         run: |
           gh pr merge ${{ steps.create-pr.outputs.pr-number }} --auto --squash
-          echo "✓ Auto-merge enabled for PR #${{ steps.create-pr.outputs.pr-number }}"
+          echo "Auto-merge enabled for PR #${{ steps.create-pr.outputs.pr-number }}"
 
       - name: Skip PR creation (dry run)
         if: ${{ inputs.dry_run == true }}
