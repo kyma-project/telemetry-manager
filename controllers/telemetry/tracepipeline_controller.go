@@ -163,12 +163,10 @@ func (r *TracePipelineController) Reconcile(ctx context.Context, req ctrl.Reques
 	return r.reconciler.Reconcile(ctx, req)
 }
 
-// tracePipelineOwnedResourceTypes returns the list of Kubernetes resource types that are always
+// tracePipelineOwnedResourceTypes returns the list of Kubernetes resource types that are
 // managed (created/updated/deleted) by the TracePipeline reconciler and must be watched for changes.
-// Conditionally managed resources (PeerAuthentication) are handled separately
-// in SetupWithManager based on runtime cluster capabilities.
-func tracePipelineOwnedResourceTypes() []client.Object {
-	return []client.Object{
+func tracePipelineOwnedResourceTypes(isIstioActive bool) []client.Object {
+	resources := []client.Object{
 		&appsv1.Deployment{},
 		&corev1.ConfigMap{},
 		&corev1.Secret{},
@@ -178,6 +176,12 @@ func tracePipelineOwnedResourceTypes() []client.Object {
 		&rbacv1.ClusterRoleBinding{},
 		&networkingv1.NetworkPolicy{},
 	}
+
+	if isIstioActive {
+		resources = append(resources, &istiosecurityclientv1.PeerAuthentication{})
+	}
+
+	return resources
 }
 
 func (r *TracePipelineController) SetupWithManager(mgr ctrl.Manager) error {
@@ -186,8 +190,6 @@ func (r *TracePipelineController) SetupWithManager(mgr ctrl.Manager) error {
 	b.WatchesRawSource(
 		source.Channel(r.reconcileTriggerChan, &handler.EnqueueRequestForObject{}),
 	)
-
-	ownedResourceTypesToWatch := tracePipelineOwnedResourceTypes()
 
 	discoveryClient, err := discovery.NewDiscoveryClientForConfig(mgr.GetConfig())
 	if err != nil {
@@ -199,11 +201,7 @@ func (r *TracePipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		return fmt.Errorf("failed to check Istio status: %w", err)
 	}
 
-	if isIstioActive {
-		ownedResourceTypesToWatch = append(ownedResourceTypesToWatch, &istiosecurityclientv1.PeerAuthentication{})
-	}
-
-	for _, resource := range ownedResourceTypesToWatch {
+	for _, resource := range tracePipelineOwnedResourceTypes(isIstioActive) {
 		b = b.Watches(
 			resource,
 			handler.EnqueueRequestForOwner(

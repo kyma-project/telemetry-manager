@@ -185,12 +185,10 @@ func (r *MetricPipelineController) Reconcile(ctx context.Context, req ctrl.Reque
 	return r.reconciler.Reconcile(ctx, req)
 }
 
-// metricPipelineOwnedResourceTypes returns the list of Kubernetes resource types that are always
+// metricPipelineOwnedResourceTypes returns the list of Kubernetes resource types that are
 // managed (created/updated/deleted) by the MetricPipeline reconciler and must be watched for changes.
-// Conditionally managed resources (PeerAuthentication, VPA) are handled separately
-// in SetupWithManager based on runtime cluster capabilities.
-func metricPipelineOwnedResourceTypes() []client.Object {
-	return []client.Object{
+func metricPipelineOwnedResourceTypes(isIstioActive, vpaCRDExists bool) []client.Object {
+	resources := []client.Object{
 		&appsv1.DaemonSet{},
 		&appsv1.Deployment{},
 		&corev1.ConfigMap{},
@@ -203,6 +201,16 @@ func metricPipelineOwnedResourceTypes() []client.Object {
 		&rbacv1.RoleBinding{},
 		&networkingv1.NetworkPolicy{},
 	}
+
+	if isIstioActive {
+		resources = append(resources, &istiosecurityclientv1.PeerAuthentication{})
+	}
+
+	if vpaCRDExists {
+		resources = append(resources, &autoscalingvpav1.VerticalPodAutoscaler{})
+	}
+
+	return resources
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -212,8 +220,6 @@ func (r *MetricPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 	b.WatchesRawSource(
 		source.Channel(r.reconcileTriggerChan, &handler.EnqueueRequestForObject{}),
 	)
-
-	ownedResourceTypesToWatch := metricPipelineOwnedResourceTypes()
 
 	ctx := context.Background()
 
@@ -232,21 +238,7 @@ func (r *MetricPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		return fmt.Errorf("failed to check VPA status: %w", err)
 	}
 
-	// Only watch PeerAuthentication CR if Istio is active
-	// otherwise, manager will have errors if the PeerAuthentication CRD is not present in the cluster
-	if isIstioActive {
-		ownedResourceTypesToWatch = append(ownedResourceTypesToWatch, &istiosecurityclientv1.PeerAuthentication{})
-	}
-
-	// Only watch VPA CR if VPA CRD exists in the cluster
-	// otherwise, manager will have errors if the VPA CRD is not present in the cluster
-	// NOTE: controller needs to watch VPA CR even if the annotation to enable VPA is not present in Telemetry CR,
-	// because the annotation can be added later and this function is only called once during the setup of the controller.
-	if vpaCRDExists {
-		ownedResourceTypesToWatch = append(ownedResourceTypesToWatch, &autoscalingvpav1.VerticalPodAutoscaler{})
-	}
-
-	for _, resource := range ownedResourceTypesToWatch {
+	for _, resource := range metricPipelineOwnedResourceTypes(isIstioActive, vpaCRDExists) {
 		b = b.Watches(
 			resource,
 			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(),
