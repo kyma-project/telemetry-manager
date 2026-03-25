@@ -18,8 +18,8 @@ Before starting a release, ensure:
 1. **Milestone Verification**: All issues in the [GitHub milestone](https://github.com/kyma-project/telemetry-manager/milestones) for the version are closed and the milestone is closed.
 
 2. **Component Releases**: Release dependencies in this order:
-   - [directory-size-exporter](https://github.com/kyma-project/directory-size-exporter) - produces image tags like `v20260302-12345678`
-   - [telemetry-self-monitor](https://github.com/kyma-project/telemetry-self-monitor) - produces image tags like `v20260302-bbf32a3b`
+   - [directory-size-exporter](https://github.com/kyma-project/telemetry-manager/actions/workflows/build-directory-size-reporter-image.yml) - produces image tags like `v20260302-12345678`
+   - [telemetry-self-monitor](https://github.com/kyma-project/telemetry-manager/actions/workflows/build-self-monitor-image.yml) - produces image tags like `v20260302-bbf32a3b`
    - [opentelemetry-collector-components](https://github.com/kyma-project/opentelemetry-collector-components) - version format: `{OCC_VERSION}-{TELEMETRY_VERSION}` (for example, `0.100.0-1.2.3`)
 
 3. **Docker Image Availability**: Verify that the required Docker images exist:
@@ -297,6 +297,6 @@ The release changelog is auto-generated from PR titles following [Conventional C
 
 ## Related Documentation
 
-- [Releasing (Legacy Process)](./releasing.md) - Manual release process (deprecated)
-- [Module Release Workflow](./.github/workflows/module-release.yml) - Module release automation
-- [Release Workflow](./.github/workflows/release.yml) - Main release workflow
+- [Release Workflow](https://github.com/kyma-project/telemetry-manager/actions/workflows/release.yml) - Main release workflow
+- [Module Release Workflow](https://github.com/kyma-project/telemetry-manager/actions/workflows/module-release.yml) - Module release automation
+
