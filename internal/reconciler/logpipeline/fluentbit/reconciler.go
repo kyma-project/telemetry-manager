@@ -262,12 +262,12 @@ func (r *Reconciler) getReconcilablePipelines(ctx context.Context, allPipelines 
 	var reconcilableLogPipelines []telemetryv1beta1.LogPipeline
 
 	for i := range allPipelines {
-		isReconcilable, err := r.IsReconcilable(ctx, &allPipelines[i])
+		isPipelineReconcilable, err := r.IsReconcilable(ctx, &allPipelines[i])
 		if err != nil {
 			return nil, err
 		}
 
-		if isReconcilable {
+		if isPipelineReconcilable {
 			reconcilableLogPipelines = append(reconcilableLogPipelines, allPipelines[i])
 		}
 	}
