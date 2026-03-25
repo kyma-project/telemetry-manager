@@ -26,6 +26,11 @@ const (
 	ruleParts        = 2
 	statsInterval    = time.Second
 	grpcFrameHdrSize = 5 // 1 byte compression flag + 4 bytes message length
+
+	portOTLPGRPC  = ":4317"
+	portOTLPHTTP  = ":4318"
+	portFluentD   = ":9880"
+	portConfigAPI = ":9090"
 )
 
 // gRPC status codes used for fault injection.
@@ -147,6 +152,9 @@ func newFaultConfig(rules []rule, defaultBehavior string, defaultDelayMS int) *f
 }
 
 func buildThresholds(rules []rule) []threshold {
+	// Build cumulative thresholds for weighted random selection.
+	// E.g. rules 500:30, 429:20 produce thresholds [30, 50]; a roll in [0,30)
+	// returns 500, [30,50) returns 429, and >=50 falls through to the default.
 	thresholds := make([]threshold, 0, len(rules))
 
 	var cumulative float64
@@ -176,7 +184,7 @@ func main() {
 
 	handler := buildHandler(cfg, reqStats)
 
-	ports := []string{":4317", ":4318", ":9880"}
+	ports := []string{portOTLPGRPC, portOTLPHTTP, portFluentD}
 
 	var wg sync.WaitGroup
 	for _, port := range ports {
@@ -211,17 +219,17 @@ func main() {
 
 		var lc net.ListenConfig
 
-		ln, err := lc.Listen(context.Background(), "tcp", ":9090")
+		ln, err := lc.Listen(context.Background(), "tcp", portConfigAPI)
 		if err != nil {
-			log.Fatalf("Failed to listen on :9090: %v", err)
+			log.Fatalf("Failed to listen on %s: %v", portConfigAPI, err)
 		}
 
-		log.Printf("Config endpoint listening on :9090")
+		log.Printf("Config endpoint listening on %s", portConfigAPI)
 
 		//nolint:gosec // no timeouts needed for test-only mock server
 		server := &http.Server{Handler: mux}
 		if err := server.Serve(ln); err != nil {
-			log.Fatalf("Config server on :9090 failed: %v", err)
+			log.Fatalf("Config server on %s failed: %v", portConfigAPI, err)
 		}
 	})
 
