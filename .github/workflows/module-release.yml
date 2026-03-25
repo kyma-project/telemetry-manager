@@ -1,0 +1,439 @@
+name: Telemetry Module Release
+
+permissions:
+  contents: read
+
+concurrency:
+  group: module-release-${{ inputs.channel }}
+  cancel-in-progress: false
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 1.2.3)'
+        required: true
+        type: string
+      channel:
+        description: 'Release channel (regular, fast, experimental)'
+        required: true
+        type: choice
+        options:
+          - regular
+          - fast
+          - experimental
+      dry_run:
+        description: 'Dry run mode (skip PR creation and push)'
+        required: false
+        type: boolean
+        default: false
+      auto_merge:
+        description: 'Enable auto-merge on created PR'
+        required: false
+        type: boolean
+        default: false
+  workflow_call:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 1.2.3)'
+        required: true
+        type: string
+      channel:
+        description: 'Release channel (regular, fast, experimental)'
+        required: true
+        type: string
+      dry_run:
+        description: 'Dry run mode (skip PR creation and push)'
+        required: false
+        type: boolean
+        default: false
+      auto_merge:
+        description: 'Enable auto-merge on created PR'
+        required: false
+        type: boolean
+        default: false
+    secrets:
+      HUSKIES_GHTOOLS_TOKEN:
+        description: 'GitHub token for accessing github.tools.sap'
+        required: true
+
+jobs:
+  validate-inputs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Validate version format
+        uses: ./.github/template/validate-semver
+        with:
+          version: ${{ inputs.version }}
+          allow-suffix: 'false'
+          format-description: 'X.Y.Z (e.g., 1.2.3)'
+
+      - name: Validate channel
+        env:
+          CHANNEL: ${{ inputs.channel }}
+        run: |
+          echo "Validating release channel..."
+          echo "Channel: ${CHANNEL}"
+          case "${CHANNEL}" in
+            regular|fast|experimental)
+              echo "Channel valid: ${CHANNEL}"
+              ;;
+            *)
+              echo "::error::Invalid channel: ${CHANNEL}"
+              echo "Allowed values: regular, fast, experimental"
+              exit 1
+              ;;
+          esac
+
+      - name: Validate tag exists in telemetry-manager
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          echo "Checking if tag ${VERSION} exists in telemetry-manager repository..."
+
+          if ! git ls-remote --tags https://github.com/kyma-project/telemetry-manager.git | grep -q "refs/tags/${VERSION}$"; then
+            echo "::error::Tag ${VERSION} does not exist in kyma-project/telemetry-manager repository"
+            echo "Please ensure the tag is created before releasing the module"
+            exit 1
+          fi
+
+          echo "Tag ${VERSION} exists in telemetry-manager repository"
+
+      - name: Validate Docker images exist
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          echo "Checking if Docker images exist for version ${VERSION}..."
+
+          # List of images to check (manager and self-monitor)
+          IMAGES=(
+            "europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:${VERSION}"
+          )
+
+          MISSING_IMAGES=()
+
+          for IMAGE in "${IMAGES[@]}"; do
+            echo "Checking image: ${IMAGE}"
+            if docker manifest inspect "${IMAGE}" > /dev/null 2>&1; then
+              echo "  Image exists: ${IMAGE}"
+            else
+              echo "  Image not found: ${IMAGE}"
+              MISSING_IMAGES+=("${IMAGE}")
+            fi
+          done
+
+          if [ ${#MISSING_IMAGES[@]} -gt 0 ]; then
+            echo ""
+            echo "::error::Missing Docker images for version ${VERSION}"
+            echo "The following images do not exist:"
+            for IMAGE in "${MISSING_IMAGES[@]}"; do
+              echo "  - ${IMAGE}"
+            done
+            echo ""
+            echo "Please ensure the build-manager-image workflow has completed successfully"
+            echo "and the images are available in the registry before releasing the module."
+            exit 1
+          fi
+
+          echo ""
+          echo "All required Docker images exist for version ${VERSION}"
+
+  release-module:
+    name: Release Telemetry Module
+    needs: validate-inputs
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GH_HOST: github.tools.sap
+      GH_REPO: kyma/module-manifests
+      GH_TOKEN: ${{ secrets.HUSKIES_GHTOOLS_TOKEN }}
+    steps:
+      - name: Checkout telemetry-manager (for scripts)
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          path: telemetry-manager
+
+      - name: Configure git authentication
+        uses: ./telemetry-manager/.github/template/setup-git-auth
+        with:
+          token: ${{ secrets.HUSKIES_GHTOOLS_TOKEN }}
+          host: ${{ env.GH_HOST }}
+
+      - name: Checkout module-manifests (working repository)
+        run: |
+          # Clone using HTTPS without token in URL (uses credential helper)
+          rm -rf module-manifests
+          git clone \
+            "https://${GH_HOST}/${GH_REPO}.git" \
+            --branch main \
+            module-manifests
+
+      - name: Install yq
+        run: telemetry-manager/hack/module-release.sh install-yq
+
+      - name: Configure git
+        working-directory: module-manifests
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create or reuse branch
+        uses: ./telemetry-manager/.github/template/checkout-or-create-branch
+        with:
+          branch-name: bump-telemetry-${{ inputs.version }}-${{ inputs.channel }}
+          repository-path: module-manifests
+
+      - name: Setup Python
+        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
+        with:
+          python-version: '3.x'
+
+      - name: Install Python dependencies
+        run: |
+          # Pin semver version for reproducibility and security
+          python3 -m pip install semver==3.0.4
+
+      - name: Check for duplicate version
+        # Always check, even when reusing branch, to prevent duplicate releases
+        working-directory: module-manifests
+        env:
+          VERSION: ${{ inputs.version }}
+          CHANNEL: ${{ inputs.channel }}
+        run: |
+          ../telemetry-manager/hack/module-release.sh check-duplicate "${VERSION}" "${CHANNEL}"
+
+      - name: Setup version folder
+        working-directory: module-manifests
+        env:
+          VERSION: ${{ inputs.version }}
+          CHANNEL: ${{ inputs.channel }}
+        run: |
+          ../telemetry-manager/hack/module-release.sh setup-folder "${VERSION}" "${CHANNEL}"
+
+      - name: Update module-config.yaml
+        working-directory: module-manifests
+        env:
+          VERSION: ${{ inputs.version }}
+          CHANNEL: ${{ inputs.channel }}
+        run: |
+          ../telemetry-manager/hack/module-release.sh update-config "${VERSION}" "${CHANNEL}"
+
+      - name: Update module-releases.yaml
+        working-directory: module-manifests
+        env:
+          VERSION: ${{ inputs.version }}
+          CHANNEL: ${{ inputs.channel }}
+        run: |
+          ../telemetry-manager/hack/module-release.sh update-releases "${VERSION}" "${CHANNEL}"
+
+      - name: Verify changes
+        working-directory: module-manifests
+        run: |
+          echo "Changes to be committed:"
+          git status
+          echo ""
+          echo "Diff:"
+          git diff
+
+          # Check for any changes including untracked files
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "::error::No changes detected. Module may already be at version ${{ inputs.version }}"
+            exit 1
+          fi
+
+          echo "Changes detected and ready to commit"
+
+      - name: Commit changes
+        if: ${{ !inputs.dry_run }}
+        working-directory: module-manifests
+        env:
+          VERSION: ${{ inputs.version }}
+          CHANNEL: ${{ inputs.channel }}
+        run: |
+          git add .
+          COMMIT_MSG="bump telemetry version to ${VERSION} on ${CHANNEL}"
+          git commit -m "${COMMIT_MSG}"
+          echo "Committed changes with message: ${COMMIT_MSG}"
+
+      - name: Dry run summary
+        if: ${{ inputs.dry_run }}
+        env:
+          VERSION: ${{ inputs.version }}
+          CHANNEL: ${{ inputs.channel }}
+        run: |
+          echo "DRY RUN MODE - No changes will be committed or pushed"
+          echo ""
+          echo "Would commit with message:"
+          echo "  bump telemetry version to ${VERSION} on ${CHANNEL}"
+
+      - name: Push branch
+        if: ${{ !inputs.dry_run }}
+        working-directory: module-manifests
+        env:
+          VERSION: ${{ inputs.version }}
+          CHANNEL: ${{ inputs.channel }}
+        run: |
+          BRANCH_NAME="bump-telemetry-${VERSION}-${CHANNEL}"
+
+          # Check if branch exists on remote
+          if git ls-remote --heads origin "${BRANCH_NAME}" | grep -q "refs/heads/${BRANCH_NAME}$"; then
+            echo "Branch ${BRANCH_NAME} exists on remote, checking if safe to force push..."
+
+            # Fetch remote branch to compare
+            git fetch origin "${BRANCH_NAME}"
+
+            # Check if local branch contains all commits from remote (safe to force push)
+            if git merge-base --is-ancestor "origin/${BRANCH_NAME}" HEAD; then
+              echo "Local branch is ahead of or equal to remote, safe to force push"
+              git push --force-with-lease origin "${BRANCH_NAME}"
+              echo "Force pushed branch: ${BRANCH_NAME}"
+            else
+              echo "::error::Cannot force push: local branch does not contain all commits from origin/${BRANCH_NAME}"
+              echo "This would result in commit loss. Please investigate the branch state."
+              exit 1
+            fi
+          else
+            echo "Branch ${BRANCH_NAME} does not exist on remote, pushing..."
+            git push -u origin "${BRANCH_NAME}"
+            echo "Pushed branch: ${BRANCH_NAME}"
+          fi
+
+      - name: Create PR
+        if: ${{ !inputs.dry_run }}
+        working-directory: module-manifests
+        id: create-pr
+        env:
+          VERSION: ${{ inputs.version }}
+          CHANNEL: ${{ inputs.channel }}
+          GH_TOKEN: ${{ secrets.HUSKIES_GHTOOLS_TOKEN }}
+        run: |
+          # Create temporary file for script output
+          OUTPUT_FILE=$(mktemp)
+
+          # Run PR creation script
+          ../telemetry-manager/hack/module-release.sh create-pr "${VERSION}" "${CHANNEL}" "${OUTPUT_FILE}"
+
+          # Validate output file exists and is not empty
+          if [ ! -s "${OUTPUT_FILE}" ]; then
+            echo "::error::module-release.sh create-pr produced no output"
+            rm -f "${OUTPUT_FILE}"
+            exit 1
+          fi
+
+          # Validate output format (should have pr-url and pr-number)
+          if ! grep -q "^pr-url=" "${OUTPUT_FILE}"; then
+            echo "::error::module-release.sh create-pr output missing pr-url field"
+            echo "Output file contents:"
+            cat "${OUTPUT_FILE}"
+            rm -f "${OUTPUT_FILE}"
+            exit 1
+          fi
+
+          if ! grep -q "^pr-number=" "${OUTPUT_FILE}"; then
+            echo "::error::module-release.sh create-pr output missing pr-number field"
+            echo "Output file contents:"
+            cat "${OUTPUT_FILE}"
+            rm -f "${OUTPUT_FILE}"
+            exit 1
+          fi
+
+          # Read outputs and set them for GitHub Actions
+          while IFS='=' read -r key value; do
+            # Skip empty lines
+            if [ -n "${key}" ]; then
+              echo "${key}=${value}" >> $GITHUB_OUTPUT
+            fi
+          done < "${OUTPUT_FILE}"
+
+          rm -f "${OUTPUT_FILE}"
+
+      - name: Enable auto-merge
+        if: ${{ !inputs.dry_run && inputs.auto_merge }}
+        working-directory: module-manifests
+        env:
+          VERSION: ${{ inputs.version }}
+          CHANNEL: ${{ inputs.channel }}
+          GH_TOKEN: ${{ secrets.HUSKIES_GHTOOLS_TOKEN }}
+        run: |
+          PR_NUMBER="${{ steps.create-pr.outputs.pr-number }}"
+
+          echo "Enabling auto-merge for PR #${PR_NUMBER}..."
+          gh pr merge "${PR_NUMBER}" --auto --squash
+          echo "Auto-merge enabled for PR #${PR_NUMBER}"
+
+      - name: Workflow summary
+        if: always()
+        env:
+          VERSION: ${{ inputs.version }}
+          CHANNEL: ${{ inputs.channel }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          AUTO_MERGE: ${{ inputs.auto_merge }}
+        run: |
+          if [ "${CHANNEL}" = "experimental" ]; then
+            VERSION_TAG="${VERSION}-experimental"
+            FOLDER_PATH="modules/telemetry/${VERSION}-experimental"
+          else
+            VERSION_TAG="${VERSION}"
+            FOLDER_PATH="modules/telemetry/${VERSION}"
+          fi
+
+          cat >> $GITHUB_STEP_SUMMARY <<EOF
+          ## Telemetry Module Release Summary
+
+          **Version**: ${VERSION}
+          **Channel**: ${CHANNEL}
+          **Version Tag**: ${VERSION_TAG}
+          **Folder**: ${FOLDER_PATH}
+          **Branch**: bump-telemetry-${VERSION}-${CHANNEL}
+          **Dry Run**: ${DRY_RUN}
+          **Auto-Merge**: ${AUTO_MERGE}
+          EOF
+
+          if [ "${DRY_RUN}" = "false" ]; then
+            cat >> $GITHUB_STEP_SUMMARY <<EOF
+          **PR**: ${{ steps.create-pr.outputs.pr-url }}
+          EOF
+          fi
+
+          cat >> $GITHUB_STEP_SUMMARY <<EOF
+
+          ### Changes Made
+          - Created/Updated module folder: \`${FOLDER_PATH}\`
+          - Updated \`module-config.yaml\`:
+            - \`.version\` = \`${VERSION_TAG}\`
+            - \`.repositoryTag\` = \`${VERSION}\`
+          - Updated \`module-releases.yaml\`:
+            - \`channels.${CHANNEL}.version\` = \`${VERSION_TAG}\`
+          EOF
+
+          if [ "${DRY_RUN}" = "true" ]; then
+            cat >> $GITHUB_STEP_SUMMARY <<EOF
+
+          ### Dry Run Mode
+          **No changes were committed or pushed**
+          - Local branch created but not pushed to remote
+          - Changes applied locally but not committed
+          - PR was not created
+          - Use this mode to validate the workflow logic
+          EOF
+          elif [ "${AUTO_MERGE}" = "true" ]; then
+            cat >> $GITHUB_STEP_SUMMARY <<EOF
+
+          ### Next Steps
+          1. Auto-merge is enabled on PR ${{ steps.create-pr.outputs.pr-url }}
+          2. PR will be merged automatically once all checks pass
+          3. Module will be published after merge
+          EOF
+          else
+            cat >> $GITHUB_STEP_SUMMARY <<EOF
+
+          ### Next Steps
+          1. Review the PR at ${{ steps.create-pr.outputs.pr-url }}
+          2. Verify the module-config.yaml and module-releases.yaml changes
+          3. Merge the PR to publish the module
+          EOF
+          fi
