@@ -18,20 +18,22 @@ func (fb *FaultBackend) buildDeployment() *appsv1.Deployment {
 			Labels:    labels,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: new(fb.replicas),
+			Replicas: &fb.replicas,
 			Selector: &metav1.LabelSelector{MatchLabels: labels},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{Labels: labels},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name:  "mock-backend",
-							Image: testkit.MockBackendImage,
-							Env:   fb.buildEnvVars(),
+							Name:            "mock-backend",
+							Image:           testkit.MockBackendImage,
+							ImagePullPolicy: corev1.PullIfNotPresent,
+							Env:             fb.buildEnvVars(),
 							Ports: []corev1.ContainerPort{
 								{ContainerPort: otlpGRPCPort, Name: "grpc-otlp", Protocol: corev1.ProtocolTCP},
 								{ContainerPort: otlpHTTPPort, Name: "http-otlp", Protocol: corev1.ProtocolTCP},
 								{ContainerPort: httpFluentBitPushPort, Name: "http-logs", Protocol: corev1.ProtocolTCP},
+								{ContainerPort: configPort, Name: "http-config", Protocol: corev1.ProtocolTCP},
 							},
 						},
 					},

@@ -128,8 +128,9 @@ func TestBackpressure(t *testing.T) {
 			}
 
 			var (
-				pipeline  client.Object
-				resources []client.Object
+				pipeline     client.Object
+				resources    []client.Object
+				faultEnabler FaultEnabler
 			)
 
 			resources = append(resources,
@@ -138,16 +139,18 @@ func TestBackpressure(t *testing.T) {
 			)
 
 			if tc.useIstio {
-				// Use a regular backend with an Istio VirtualService that drops 30% of requests
-				// from the metric-agent pods only, leaving the gateway's traffic unaffected.
+				// Use a regular backend and inject faults via a VirtualService that targets only
+				// telemetry-metric-agent pods, leaving the gateway's backend traffic unaffected.
 				// sourceLabels is an Istio selector (not a runtime match): the VS config is only
 				// pushed to sidecars of pods matching the label, so the gateway never sees it.
-				backend := kitbackend.New(backendNs, signalTypeForComponent(tc.component),
-					kitbackend.WithAbortFaultInjection(faultPercentageThirty),
-					kitbackend.WithDropFromSourceLabel(map[string]string{"app.kubernetes.io/name": "telemetry-metric-agent"}),
-				)
+				backend := kitbackend.New(backendNs, signalTypeForComponent(tc.component))
 				pipeline = buildPipeline(tc.component, pipelineName, genNs, backend)
 				resources = append(resources, backend.K8sObjects()...)
+				faultEnabler = newIstioFaultEnabler(
+					"fault-injection", backendNs, backend.Name(),
+					faultPercentageThirty,
+					map[string]string{"app.kubernetes.io/name": "telemetry-metric-agent"},
+				)
 			} else {
 				fbOpts := tc.faultOpts
 				if isFluentBit(tc.component) {
@@ -157,6 +160,7 @@ func TestBackpressure(t *testing.T) {
 				fb := faultbackend.New(backendNs, fbOpts...)
 				pipeline = buildPipeline(tc.component, pipelineName, genNs, fb)
 				resources = append(resources, fb.K8sObjects()...)
+				faultEnabler = fb
 			}
 
 			resources = append(resources, pipeline)
@@ -165,6 +169,13 @@ func TestBackpressure(t *testing.T) {
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 			assert.DeploymentReady(t, kitkyma.SelfMonitorName)
+
+			// Wait for the pipeline to be healthy before enabling faults, so that
+			// the self-monitor has a clean rate() baseline to detect the transition.
+			assertComponentReady(t, tc.component)
+			assertPipelineHealthy(t, tc.component, pipelineName)
+
+			faultEnabler.EnableFaults(t)
 
 			assertFlowDegraded(t, tc.component, pipelineName, tc.expectedReasons)
 		})
