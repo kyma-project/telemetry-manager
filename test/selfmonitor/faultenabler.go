@@ -34,5 +34,6 @@ func newIstioFaultEnabler(name, namespace, host string, percentage float64, sour
 
 func (e *istioFaultEnabler) EnableFaults(t *testing.T) {
 	t.Helper()
+	t.Log("Enabling faults via Istio VirtualService")
 	Expect(kitk8s.CreateObjects(t, e.vs.K8sObject())).To(Succeed())
 }
