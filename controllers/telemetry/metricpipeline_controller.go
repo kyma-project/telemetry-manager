@@ -184,19 +184,15 @@ func (r *MetricPipelineController) Reconcile(ctx context.Context, req ctrl.Reque
 	return r.reconciler.Reconcile(ctx, req)
 }
 
-// SetupWithManager sets up the controller with the Manager.
-func (r *MetricPipelineController) SetupWithManager(mgr ctrl.Manager) error {
-	b := ctrl.NewControllerManagedBy(mgr).For(&telemetryv1beta1.MetricPipeline{})
-
-	b.WatchesRawSource(
-		source.Channel(r.reconcileTriggerChan, &handler.EnqueueRequestForObject{}),
-	)
-
-	ownedResourceTypesToWatch := []client.Object{
-		&appsv1.Deployment{},
+// metricPipelineOwnedResourceTypes returns the list of Kubernetes resource types that are always
+// managed (created/updated/deleted) by the MetricPipeline reconciler and must be watched for changes.
+// Conditionally managed resources (PeerAuthentication, VPA) are handled separately
+// in SetupWithManager based on runtime cluster capabilities.
+func metricPipelineOwnedResourceTypes() []client.Object {
+	return []client.Object{
 		&appsv1.DaemonSet{},
+		&appsv1.Deployment{},
 		&corev1.ConfigMap{},
-		&corev1.Pod{},
 		&corev1.Secret{},
 		&corev1.Service{},
 		&corev1.ServiceAccount{},
@@ -206,6 +202,17 @@ func (r *MetricPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		&rbacv1.RoleBinding{},
 		&networkingv1.NetworkPolicy{},
 	}
+}
+
+// SetupWithManager sets up the controller with the Manager.
+func (r *MetricPipelineController) SetupWithManager(mgr ctrl.Manager) error {
+	b := ctrl.NewControllerManagedBy(mgr).For(&telemetryv1beta1.MetricPipeline{})
+
+	b.WatchesRawSource(
+		source.Channel(r.reconcileTriggerChan, &handler.EnqueueRequestForObject{}),
+	)
+
+	ownedResourceTypesToWatch := metricPipelineOwnedResourceTypes()
 
 	ctx := context.Background()
 
@@ -254,6 +261,10 @@ func (r *MetricPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		handler.EnqueueRequestsFromMapFunc(r.mapTelemetryChanges),
 		ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete()),
 	).Watches(
+		&corev1.Pod{},
+		handler.EnqueueRequestsFromMapFunc(r.mapPodChanges),
+		ctrlbuilder.WithPredicates(predicateutils.UpdateOrDelete()),
+	).Watches(
 		&corev1.Node{},
 		handler.EnqueueRequestsFromMapFunc(r.mapNodeChanges),
 		ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete()),
@@ -264,6 +275,25 @@ func (r *MetricPipelineController) mapTelemetryChanges(ctx context.Context, obje
 	_, ok := object.(*operatorv1beta1.Telemetry)
 	if !ok {
 		logf.FromContext(ctx).V(1).Error(nil, "Unexpected type: expected Telemetry")
+		return nil
+	}
+
+	requests, err := r.createRequestsForAllPipelines(ctx)
+	if err != nil {
+		logf.FromContext(ctx).Error(err, "Unable to create reconcile requests")
+	}
+
+	return requests
+}
+
+func (r *MetricPipelineController) mapPodChanges(ctx context.Context, object client.Object) []reconcile.Request {
+	pod, ok := object.(*corev1.Pod)
+	if !ok {
+		logf.FromContext(ctx).V(1).Error(nil, "Unexpected type: expected Pod")
+		return nil
+	}
+
+	if !isPodFrom(pod, names.MetricGateway, names.MetricAgent) {
 		return nil
 	}
 

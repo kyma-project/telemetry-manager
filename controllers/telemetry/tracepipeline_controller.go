@@ -162,14 +162,12 @@ func (r *TracePipelineController) Reconcile(ctx context.Context, req ctrl.Reques
 	return r.reconciler.Reconcile(ctx, req)
 }
 
-func (r *TracePipelineController) SetupWithManager(mgr ctrl.Manager) error {
-	b := ctrl.NewControllerManagedBy(mgr).For(&telemetryv1beta1.TracePipeline{})
-
-	b.WatchesRawSource(
-		source.Channel(r.reconcileTriggerChan, &handler.EnqueueRequestForObject{}),
-	)
-
-	ownedResourceTypesToWatch := []client.Object{
+// tracePipelineOwnedResourceTypes returns the list of Kubernetes resource types that are always
+// managed (created/updated/deleted) by the TracePipeline reconciler and must be watched for changes.
+// Conditionally managed resources (PeerAuthentication) are handled separately
+// in SetupWithManager based on runtime cluster capabilities.
+func tracePipelineOwnedResourceTypes() []client.Object {
+	return []client.Object{
 		&appsv1.Deployment{},
 		&corev1.ConfigMap{},
 		&corev1.Secret{},
@@ -179,6 +177,16 @@ func (r *TracePipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		&rbacv1.ClusterRoleBinding{},
 		&networkingv1.NetworkPolicy{},
 	}
+}
+
+func (r *TracePipelineController) SetupWithManager(mgr ctrl.Manager) error {
+	b := ctrl.NewControllerManagedBy(mgr).For(&telemetryv1beta1.TracePipeline{})
+
+	b.WatchesRawSource(
+		source.Channel(r.reconcileTriggerChan, &handler.EnqueueRequestForObject{}),
+	)
+
+	ownedResourceTypesToWatch := tracePipelineOwnedResourceTypes()
 
 	discoveryClient, err := discovery.NewDiscoveryClientForConfig(mgr.GetConfig())
 	if err != nil {
@@ -210,6 +218,10 @@ func (r *TracePipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		handler.EnqueueRequestsFromMapFunc(r.mapTelemetryChanges),
 		ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete()),
 	).Watches(
+		&corev1.Pod{},
+		handler.EnqueueRequestsFromMapFunc(r.mapPodChanges),
+		ctrlbuilder.WithPredicates(predicateutils.UpdateOrDelete()),
+	).Watches(
 		&corev1.Node{},
 		handler.EnqueueRequestsFromMapFunc(r.mapNodeChanges),
 		ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete()),
@@ -220,6 +232,25 @@ func (r *TracePipelineController) mapTelemetryChanges(ctx context.Context, objec
 	_, ok := object.(*operatorv1beta1.Telemetry)
 	if !ok {
 		logf.FromContext(ctx).V(1).Error(nil, "Unexpected type: expected Telemetry")
+		return nil
+	}
+
+	requests, err := r.createRequestsForAllPipelines(ctx)
+	if err != nil {
+		logf.FromContext(ctx).Error(err, "Unable to create reconcile requests")
+	}
+
+	return requests
+}
+
+func (r *TracePipelineController) mapPodChanges(ctx context.Context, object client.Object) []reconcile.Request {
+	pod, ok := object.(*corev1.Pod)
+	if !ok {
+		logf.FromContext(ctx).V(1).Error(nil, "Unexpected type: expected Pod")
+		return nil
+	}
+
+	if !isPodFrom(pod, names.TraceGateway) {
 		return nil
 	}
 
