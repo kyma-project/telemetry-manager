@@ -50,6 +50,19 @@ var testScenarios = []struct {
 		errMsgFluentdHTTP: "",
 	},
 	{
+		name:     "with scheme: valid endpoint with path, query params, and port",
+		endpoint: "https://foo.bar:4317/ingest?token=abc&query=param",
+
+		errOTLPGRPC:    nil,
+		errMsgOTLPGRPC: "",
+
+		errOTLPHTTP:    nil,
+		errMsgOTLPHTTP: "",
+
+		errFluentdHTTP:    nil,
+		errMsgFluentdHTTP: "",
+	},
+	{
 		name:     "with IPv4: valid IPv4 endpoint with path and port",
 		endpoint: "https://10.108.183.198:4317/foo/bar",
 
