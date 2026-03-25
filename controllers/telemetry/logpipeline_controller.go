@@ -181,7 +181,7 @@ func (r *LogPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		source.Channel(r.reconcileTriggerChan, &handler.EnqueueRequestForObject{}),
 	)
 
-	// TODO: Mainly for FluentBit and Log Agent reconciliation, should be removed after migrating them as well.
+	// TODO: Mainly for FluentBit and Log Agent reconciliation, should be moved to agent controllers after migration.
 	ownedResourceTypesToWatch := []client.Object{
 		&appsv1.DaemonSet{},           // FluentBit and OTel Log Agent DaemonSets
 		&corev1.ConfigMap{},           // FluentBit and OTel Collector config
@@ -201,7 +201,7 @@ func (r *LogPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		return fmt.Errorf("failed to create discovery client: %w", err)
 	}
 
-	// TODO: PeerAuthentication watch should be removed after migrating the agents
+	// TODO: PeerAuthentication watch should be moved to agent controllers after migration.
 	isIstioActive, err := istiostatus.NewChecker(discoveryClient).IsIstioActive(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to check Istio status: %w", err)
@@ -272,14 +272,7 @@ func (r *LogPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 // due to max pipeline limit get a chance to acquire the lock when slots become available.
 func (r *LogPipelineController) mapLockConfigMapToAllPipelines(ctx context.Context, object client.Object) []reconcile.Request {
 	logf.FromContext(ctx).V(1).Info("Pipeline lock ConfigMap changed, triggering reconciliation of all LogPipelines")
-
-	requests, err := r.createRequestsForAllPipelines(ctx)
-	if err != nil {
-		logf.FromContext(ctx).Error(err, "Failed to list LogPipelines")
-		return []reconcile.Request{}
-	}
-
-	return requests
+	return r.enqueueAllPipelines(ctx)
 }
 
 // mapOTLPGatewayToOTLPPipelines enqueues reconciliation requests for LogPipelines with OTLP input
@@ -318,12 +311,7 @@ func (r *LogPipelineController) mapTelemetryChanges(ctx context.Context, object 
 		return nil
 	}
 
-	requests, err := r.createRequestsForAllPipelines(ctx)
-	if err != nil {
-		logf.FromContext(ctx).Error(err, "Unable to create reconcile requests")
-	}
-
-	return requests
+	return r.enqueueAllPipelines(ctx)
 }
 
 func configureFluentBitReconciler(config LogPipelineControllerConfig, client client.Client, flowHealthProber *prober.FluentBitProber, pipelineLock logpipelinefluentbit.PipelineLock) (*logpipelinefluentbit.Reconciler, error) {
@@ -425,21 +413,22 @@ func configureOTelReconciler(config LogPipelineControllerConfig, client client.C
 	return otelReconciler, nil
 }
 
-func (r *LogPipelineController) createRequestsForAllPipelines(ctx context.Context) ([]reconcile.Request, error) {
-	var pipelines telemetryv1beta1.LogPipelineList
-
-	var requests []reconcile.Request
-
-	err := r.List(ctx, &pipelines)
-	if err != nil {
-		return nil, fmt.Errorf("failed to list LogPipelines: %w", err)
+// enqueueAllPipelines lists all LogPipelines and returns a reconcile request for each one.
+func (r *LogPipelineController) enqueueAllPipelines(ctx context.Context) []reconcile.Request {
+	var pipelineList telemetryv1beta1.LogPipelineList
+	if err := r.List(ctx, &pipelineList); err != nil {
+		logf.FromContext(ctx).Error(err, "Failed to list LogPipelines")
+		return []reconcile.Request{}
 	}
 
-	for i := range pipelines.Items {
-		var pipeline = pipelines.Items[i]
-
-		requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+	requests := make([]reconcile.Request, len(pipelineList.Items))
+	for i := range pipelineList.Items {
+		requests[i] = reconcile.Request{
+			NamespacedName: types.NamespacedName{
+				Name: pipelineList.Items[i].Name,
+			},
+		}
 	}
 
-	return requests, nil
+	return requests
 }

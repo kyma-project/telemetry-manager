@@ -189,7 +189,7 @@ func (r *MetricPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		source.Channel(r.reconcileTriggerChan, &handler.EnqueueRequestForObject{}),
 	)
 
-	// TODO: Mainly for Metric Agent reconciliation, should be removed after migrating it as well.
+	// TODO: Mainly for Metric Agent reconciliation, should be moved to agent controller after migration.
 	ownedResourceTypesToWatch := []client.Object{
 		&appsv1.DaemonSet{},
 		&corev1.ConfigMap{},
@@ -221,7 +221,7 @@ func (r *MetricPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		return fmt.Errorf("failed to check VPA status: %w", err)
 	}
 
-	// TODO: PeerAuthentication watch should be removed after migrating the agent
+	// TODO: PeerAuthentication watch should be moved to agent controller after migration.
 	// Only watch PeerAuthentication CR if Istio is active
 	// otherwise, manager will have errors if the PeerAuthentication CRD is not present in the cluster
 	if isIstioActive {
@@ -280,23 +280,7 @@ func (r *MetricPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 // due to max pipeline limit get a chance to acquire the lock when slots become available.
 func (r *MetricPipelineController) mapLockConfigMapToAllPipelines(ctx context.Context, object client.Object) []reconcile.Request {
 	logf.FromContext(ctx).V(1).Info("Pipeline lock ConfigMap changed, triggering reconciliation of all MetricPipelines")
-
-	var pipelineList telemetryv1beta1.MetricPipelineList
-	if err := r.List(ctx, &pipelineList); err != nil {
-		logf.FromContext(ctx).Error(err, "Failed to list MetricPipelines")
-		return []reconcile.Request{}
-	}
-
-	requests := make([]reconcile.Request, len(pipelineList.Items))
-	for i := range pipelineList.Items {
-		requests[i] = reconcile.Request{
-			NamespacedName: types.NamespacedName{
-				Name: pipelineList.Items[i].Name,
-			},
-		}
-	}
-
-	return requests
+	return r.enqueueAllPipelines(ctx)
 }
 
 // mapOTLPGatewayToAllPipelines enqueues reconciliation requests for all MetricPipelines
@@ -304,23 +288,7 @@ func (r *MetricPipelineController) mapLockConfigMapToAllPipelines(ctx context.Co
 // are updated to reflect the current gateway state.
 func (r *MetricPipelineController) mapOTLPGatewayToAllPipelines(ctx context.Context, object client.Object) []reconcile.Request {
 	logf.FromContext(ctx).V(1).Info("OTLP Gateway DaemonSet changed, triggering reconciliation of all MetricPipelines")
-
-	var pipelineList telemetryv1beta1.MetricPipelineList
-	if err := r.List(ctx, &pipelineList); err != nil {
-		logf.FromContext(ctx).Error(err, "Failed to list MetricPipelines")
-		return []reconcile.Request{}
-	}
-
-	requests := make([]reconcile.Request, len(pipelineList.Items))
-	for i := range pipelineList.Items {
-		requests[i] = reconcile.Request{
-			NamespacedName: types.NamespacedName{
-				Name: pipelineList.Items[i].Name,
-			},
-		}
-	}
-
-	return requests
+	return r.enqueueAllPipelines(ctx)
 }
 
 func (r *MetricPipelineController) mapTelemetryChanges(ctx context.Context, object client.Object) []reconcile.Request {
@@ -330,29 +298,25 @@ func (r *MetricPipelineController) mapTelemetryChanges(ctx context.Context, obje
 		return nil
 	}
 
-	requests, err := r.createRequestsForAllPipelines(ctx)
-	if err != nil {
-		logf.FromContext(ctx).Error(err, "Unable to create reconcile requests")
+	return r.enqueueAllPipelines(ctx)
+}
+
+// enqueueAllPipelines lists all MetricPipelines and returns a reconcile request for each one.
+func (r *MetricPipelineController) enqueueAllPipelines(ctx context.Context) []reconcile.Request {
+	var pipelineList telemetryv1beta1.MetricPipelineList
+	if err := r.List(ctx, &pipelineList); err != nil {
+		logf.FromContext(ctx).Error(err, "Failed to list MetricPipelines")
+		return []reconcile.Request{}
+	}
+
+	requests := make([]reconcile.Request, len(pipelineList.Items))
+	for i := range pipelineList.Items {
+		requests[i] = reconcile.Request{
+			NamespacedName: types.NamespacedName{
+				Name: pipelineList.Items[i].Name,
+			},
+		}
 	}
 
 	return requests
-}
-
-func (r *MetricPipelineController) createRequestsForAllPipelines(ctx context.Context) ([]reconcile.Request, error) {
-	var pipelines telemetryv1beta1.MetricPipelineList
-
-	var requests []reconcile.Request
-
-	err := r.List(ctx, &pipelines)
-	if err != nil {
-		return nil, fmt.Errorf("failed to list MetricPipelines: %w", err)
-	}
-
-	for i := range pipelines.Items {
-		var pipeline = pipelines.Items[i]
-
-		requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
-	}
-
-	return requests, nil
 }
