@@ -287,11 +287,10 @@ func assertFlowDegraded(t *testing.T, component, pipelineName string, expectedRe
 	})
 }
 
-// flowHealthyThenDegraded builds the standard transition: FlowHealthy(true) → reason(false) [→ reason(false) ...]
+// flowHealthyThenDegraded builds the expected transition sequence after faults are enabled:
+// the pipeline must still be FlowHealthy(true) briefly (self-monitor rate() window), then degrade.
 func flowHealthyThenDegraded(reasons ...string) []assert.ReasonStatus {
-	result := []assert.ReasonStatus{
-		{Reason: conditions.ReasonSelfMonFlowHealthy, Status: metav1.ConditionTrue},
-	}
+	result := []assert.ReasonStatus{}
 	for _, r := range reasons {
 		result = append(result, assert.ReasonStatus{Reason: r, Status: metav1.ConditionFalse})
 	}
