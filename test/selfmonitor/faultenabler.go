@@ -1,7 +1,6 @@
 package selfmonitor
 
 import (
-	"net/http"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -20,14 +19,20 @@ type FaultEnabler interface {
 
 // istioFaultEnabler applies a pre-built VirtualService at runtime via kitk8s.CreateObjects.
 // Use this for metric-agent tests where the VS must selectively block only
-// agent→gateway traffic without affecting the gateway's own backend traffic.
+// agent→backend traffic without affecting the gateway's own backend traffic.
 type istioFaultEnabler struct {
 	vs *kitk8sobjects.VirtualService
 }
 
+// newIstioFaultEnabler creates an istioFaultEnabler that injects a gRPC INVALID_ARGUMENT fault.
+// A gRPC status fault is used because the metric agent communicates with the backend over gRPC
+// (port 4317). Using an HTTP abort on gRPC traffic produces a transport-level error that the
+// OTel gRPC exporter does not count as send_failed, so the self-monitor alert never fires.
+// INVALID_ARGUMENT is a non-retryable gRPC status code, causing the exporter to drop data
+// immediately and increment otelcol_exporter_send_failed_metric_points_total.
 func newIstioFaultEnabler(name, namespace, host string, percentage float64, sourceLabel map[string]string) *istioFaultEnabler {
 	vs := kitk8sobjects.NewVirtualService(name, namespace, host).
-		WithFaultAbortPercentage(percentage, http.StatusBadRequest).
+		WithFaultAbortGrpcStatus(percentage, "INVALID_ARGUMENT").
 		WithSourceLabel(sourceLabel)
 
 	return &istioFaultEnabler{vs: vs}
