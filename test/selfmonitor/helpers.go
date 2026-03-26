@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	defaultRate = 100
+	defaultRate = 1000
 
 	faultPercentageAll         float64 = 100
 	faultPercentageThirty      float64 = 30
