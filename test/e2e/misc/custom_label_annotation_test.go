@@ -199,10 +199,8 @@ func TestLabelAnnotation(t *testing.T) {
 					LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": "telemetry-trace-gateway"}),
 					Namespace:     kitkyma.SystemNamespaceName,
 				}
-				// Gateway pods should have both workload and pod-specific labels/annotations
-				assert.PodsHaveAnnotation(t, selector, workloadAnnotation)
+				// Gateway pods should have only pod-specific labels/annotations (not workload-level ones)
 				assert.PodsHaveAnnotation(t, selector, workloadPodAnnotation)
-				assert.PodsHaveLabel(t, selector, workloadLabel)
 				assert.PodsHaveLabel(t, selector, workloadPodLabel)
 			},
 		},
