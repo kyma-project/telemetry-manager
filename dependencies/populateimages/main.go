@@ -23,6 +23,7 @@ const (
 	DefaultOTelCollectorImage        = "{{ .ENV_OTEL_COLLECTOR_IMAGE }}"
 	SelfMonitorImage                 = "{{ .ENV_SELFMONITOR_IMAGE }}"
 	SelfMonitorFIPSImage             = "{{ .ENV_SELFMONITOR_FIPS_IMAGE }}"
+	FaultBackendImage                = "{{ .ENV_FAULT_BACKEND_IMAGE }}"
 )
 `,
 }

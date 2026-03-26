@@ -1,4 +1,4 @@
-name: Build Mock Backend Image
+name: Build Fault Backend Image
 
 permissions:
   contents: read
@@ -6,13 +6,13 @@ permissions:
 on:
   pull_request_target:
     paths:
-      - "dependencies/mock-backend/**"
+      - "dependencies/fault-backend/**"
     types: [opened, edited, synchronize, reopened, ready_for_review]
   push:
     branches:
       - main
     paths:
-      - "dependencies/mock-backend/**"
+      - "dependencies/fault-backend/**"
   workflow_dispatch:
 
 jobs:
@@ -28,7 +28,7 @@ jobs:
           if [[ $GITHUB_EVENT_NAME == 'push' || $GITHUB_EVENT_NAME == 'merge_group' ]]; then
             {
               echo "tags<<EOTAGS"
-              echo "latest"
+              echo "main"
               echo "EOTAGS"
             } >> "$GITHUB_OUTPUT"
           else
@@ -47,9 +47,9 @@ jobs:
     needs: envs
     uses: kyma-project/test-infra/.github/workflows/image-builder.yml@main
     with:
-      name: mock-backend
+      name: fault-backend
       dockerfile: Dockerfile
-      context: dependencies/mock-backend
+      context: dependencies/fault-backend
       tags: ${{ needs.envs.outputs.tags }}
       platforms: "linux/amd64,linux/arm64"
 
