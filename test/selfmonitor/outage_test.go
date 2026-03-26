@@ -30,18 +30,25 @@ func TestOutage(t *testing.T) {
 		// rather than the faultbackend. Used for metric-agent, where the VS selectively blocks only
 		// agent→gateway traffic without affecting the gateway's own backend traffic.
 		useIstio bool
+		// skipHealthyBaseline skips waiting for the pipeline to be healthy before enabling faults.
+		// Use this when the alert condition is satisfied even without a prior healthy baseline
+		// (i.e. send_failed > 0 and sent == 0 from the very start), which avoids waiting for the
+		// 5-minute rate window to decay after a healthy period.
+		skipHealthyBaseline bool
 	}{
 		{
-			name:            "log-agent",
-			component:       suite.LabelLogAgent,
-			faultOpts:       faultNonRetryableErr(faultPercentageAll),
-			expectedReasons: degradedReasons(conditions.ReasonSelfMonAgentAllDataDropped),
+			name:                "log-agent",
+			component:           suite.LabelLogAgent,
+			faultOpts:           append(faultNonRetryableErr(faultPercentageAll), faultbackend.WithStartFaulted()),
+			expectedReasons:     degradedReasons(conditions.ReasonSelfMonAgentAllDataDropped),
+			skipHealthyBaseline: true,
 		},
 		{
-			name:            "log-gateway",
-			component:       suite.LabelLogGateway,
-			faultOpts:       faultNonRetryableErr(faultPercentageAll),
-			expectedReasons: degradedReasons(conditions.ReasonSelfMonGatewayAllDataDropped),
+			name:                "log-gateway",
+			component:           suite.LabelLogGateway,
+			faultOpts:           append(faultNonRetryableErr(faultPercentageAll), faultbackend.WithStartFaulted()),
+			expectedReasons:     degradedReasons(conditions.ReasonSelfMonGatewayAllDataDropped),
+			skipHealthyBaseline: true,
 		},
 		{
 			// Connection close: Fluent Bit connects to port 9880 (HTTP/1.1, not HTTP/2) but the backend
@@ -50,10 +57,11 @@ func TestOutage(t *testing.T) {
 			// NoLogsDelivered alert in the self-monitor. This replaces the previous zero-replicas
 			// approach (which caused ECONNREFUSED); both fault modes result in no successful delivery,
 			// but WithDefaultClose() is more deterministic on clusters where port reuse can be delayed.
-			name:            "fluent-bit-no-logs-delivered",
-			component:       suite.LabelFluentBit,
-			faultOpts:       []faultbackend.Option{faultbackend.WithDefaultClose()},
-			expectedReasons: degradedReasons(conditions.ReasonSelfMonAgentNoLogsDelivered),
+			name:                "fluent-bit-no-logs-delivered",
+			component:           suite.LabelFluentBit,
+			faultOpts:           []faultbackend.Option{faultbackend.WithDefaultClose(), faultbackend.WithStartFaulted()},
+			expectedReasons:     degradedReasons(conditions.ReasonSelfMonAgentNoLogsDelivered),
+			skipHealthyBaseline: true,
 		},
 		{
 			name:            "fluent-bit-all-data-dropped",
@@ -62,27 +70,32 @@ func TestOutage(t *testing.T) {
 			expectedReasons: degradedReasons(conditions.ReasonSelfMonAgentAllDataDropped),
 		},
 		{
-			name:            "metric-gateway",
-			component:       suite.LabelMetricGateway,
-			faultOpts:       faultNonRetryableErr(faultPercentageAll),
-			expectedReasons: degradedReasons(conditions.ReasonSelfMonGatewayAllDataDropped),
+			name:                "metric-gateway",
+			component:           suite.LabelMetricGateway,
+			faultOpts:           append(faultNonRetryableErr(faultPercentageAll), faultbackend.WithStartFaulted()),
+			expectedReasons:     degradedReasons(conditions.ReasonSelfMonGatewayAllDataDropped),
+			skipHealthyBaseline: true,
 		},
 		{
 			// Metric agent and gateway (using kyma stats receiver) both export data to the same backend.
 			// Faulting the backend would affect both, masking the agent-specific alert.
 			// An Istio VirtualService with a source-label match on telemetry-metric-agent pods
 			// blocks all requests from the agent→gateway leg, leaving the gateway's own backend traffic healthy.
-			name:            "metric-agent",
-			component:       suite.LabelMetricAgent,
-			generator:       promMetricGeneratorHighLoad(),
-			expectedReasons: degradedReasons(conditions.ReasonSelfMonAgentAllDataDropped),
-			useIstio:        true,
+			// sourceLabels is an Istio selector (not a runtime match): the VS config is only
+			// pushed to sidecars of pods matching the label, so the gateway never sees it.
+			name:                "metric-agent",
+			component:           suite.LabelMetricAgent,
+			generator:           promMetricGeneratorHighLoad(),
+			expectedReasons:     degradedReasons(conditions.ReasonSelfMonAgentAllDataDropped),
+			useIstio:            true,
+			skipHealthyBaseline: true,
 		},
 		{
-			name:            "traces",
-			component:       suite.LabelTraces,
-			faultOpts:       faultNonRetryableErr(faultPercentageAll),
-			expectedReasons: degradedReasons(conditions.ReasonSelfMonGatewayAllDataDropped),
+			name:                "traces",
+			component:           suite.LabelTraces,
+			faultOpts:           append(faultNonRetryableErr(faultPercentageAll), faultbackend.WithStartFaulted()),
+			expectedReasons:     degradedReasons(conditions.ReasonSelfMonGatewayAllDataDropped),
+			skipHealthyBaseline: true,
 		},
 	}
 
@@ -133,11 +146,17 @@ func TestOutage(t *testing.T) {
 				backend := kitbackend.New(backendNs, signalTypeForComponent(tc.component))
 				pipeline = buildPipeline(tc.component, pipelineName, genNs, backend)
 				resources = append(resources, backend.K8sObjects()...)
-				faultEnabler = newIstioFaultEnabler(
+
+				ife := newIstioFaultEnabler(
 					"fault-injection", backendNs, backend.Name(),
 					faultPercentageAll,
 					map[string]string{"app.kubernetes.io/name": "telemetry-metric-agent"},
 				)
+				if tc.skipHealthyBaseline {
+					resources = append(resources, ife.K8sObjects()...)
+				} else {
+					faultEnabler = ife
+				}
 			} else {
 				fbOpts := tc.faultOpts
 				if isFluentBit(tc.component) {
@@ -156,14 +175,20 @@ func TestOutage(t *testing.T) {
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 			assert.DeploymentReady(t, kitkyma.SelfMonitorName)
-
-			// Wait for the pipeline to be healthy before enabling faults, so that
-			// the self-monitor has a clean rate() baseline to detect the transition.
 			assertComponentReady(t, tc.component)
-			assertPipelineHealthy(t, tc.component, pipelineName)
-			t.Log("Pipeline is healthy, enabling faults")
 
-			faultEnabler.EnableFaults(t)
+			if tc.skipHealthyBaseline {
+				// Faults are active from boot (WithStartFaulted): no EnableFaults call needed,
+				// and no healthy baseline is required. The alert fires as soon as send_failed > 0
+				// and sent == 0, which is the case from the start.
+				t.Log("Faults active from boot, skipping healthy baseline")
+			} else {
+				// Wait for the pipeline to be healthy before enabling faults, so that
+				// the self-monitor has a clean rate() baseline to detect the transition.
+				assertPipelineHealthy(t, tc.component, pipelineName)
+				t.Log("Pipeline is healthy, enabling faults")
+				faultEnabler.EnableFaults(t)
+			}
 
 			assertFlowDegraded(t, tc.component, pipelineName, tc.expectedReasons)
 		})

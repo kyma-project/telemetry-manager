@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
@@ -36,4 +37,10 @@ func (e *istioFaultEnabler) EnableFaults(t *testing.T) {
 	t.Helper()
 	t.Log("Enabling faults via Istio VirtualService")
 	Expect(kitk8s.CreateObjects(t, e.vs.K8sObject())).To(Succeed())
+}
+
+// K8sObjects returns the VirtualService as a Kubernetes object slice so it can be
+// included in the initial resource set when no healthy baseline is required.
+func (e *istioFaultEnabler) K8sObjects() []client.Object {
+	return []client.Object{e.vs.K8sObject()}
 }

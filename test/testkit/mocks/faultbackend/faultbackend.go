@@ -51,6 +51,7 @@ type FaultBackend struct {
 	defaultBehavior  string
 	useFluentBitPort bool
 	delays           map[int32]time.Duration
+	startFaulted     bool
 }
 
 func New(namespace string, opts ...Option) *FaultBackend {
@@ -143,12 +144,21 @@ func (fb *FaultBackend) EnableFaults(t *testing.T) {
 	t.Logf("Enabled faults on %s: rules=%s default=%s", proxyURL, rules, fb.defaultBehavior)
 }
 
-// buildEnvVars always starts the backend healthy so the pipeline can reach FlowHealthy
-// before faults are enabled via EnableFaults().
+// buildEnvVars returns the initial env vars for the fault-backend container.
+// By default the backend starts healthy (FAULT_RULES="" FAULT_DEFAULT=200).
+// If WithStartFaulted() was set, the configured fault rules are active from boot.
 func (fb *FaultBackend) buildEnvVars() []corev1.EnvVar {
+	rules := ""
+	defaultBehavior := "200"
+
+	if fb.startFaulted {
+		rules = fb.faultRulesString()
+		defaultBehavior = fb.defaultBehavior
+	}
+
 	return []corev1.EnvVar{
-		{Name: "FAULT_RULES", Value: ""},
-		{Name: "FAULT_DEFAULT", Value: "200"},
+		{Name: "FAULT_RULES", Value: rules},
+		{Name: "FAULT_DEFAULT", Value: defaultBehavior},
 	}
 }
 

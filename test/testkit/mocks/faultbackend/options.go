@@ -60,3 +60,12 @@ func WithDelay(statusCode int32, delay time.Duration) Option {
 		fb.delays[statusCode] = delay
 	}
 }
+
+// WithStartFaulted makes the backend start with its fault rules already active,
+// so no EnableFaults() call is needed. Use this when the test does not require a
+// healthy baseline before faults begin.
+func WithStartFaulted() Option {
+	return func(fb *FaultBackend) {
+		fb.startFaulted = true
+	}
+}
