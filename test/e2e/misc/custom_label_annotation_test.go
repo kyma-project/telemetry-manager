@@ -266,10 +266,8 @@ func TestLabelAnnotation(t *testing.T) {
 				LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": "manager"}),
 				Namespace:     kitkyma.SystemNamespaceName,
 			}
-			// Telemetry Manager pods should have both manager and pod-specific labels/annotations
-			assert.PodsHaveLabel(t, managerSelector, managerLabel)
+			// Telemetry Manager pods should have only pod-specific labels/annotations (not deployment-level ones)
 			assert.PodsHaveLabel(t, managerSelector, managerPodLabel)
-			assert.PodsHaveAnnotation(t, managerSelector, managerAnnotation)
 			assert.PodsHaveAnnotation(t, managerSelector, managerPodAnnotation)
 			// Telemetry Manager pods should have default pod annotations
 			assert.PodsHaveAnnotation(t, managerSelector, map[string]string{"kubectl.kubernetes.io/default-container": "manager"})

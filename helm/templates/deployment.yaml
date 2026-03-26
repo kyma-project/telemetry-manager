@@ -21,18 +21,12 @@ spec:
     metadata:
       labels:
       {{- include "telemetry-manager.podLabels" . | nindent 8 }}
-      {{- if not (empty .Values.manager.labels) }}
-      {{- toYaml .Values.manager.labels | nindent 8 }}
-      {{- end }}
       {{- if not (empty .Values.manager.pod.labels) }}
       {{- toYaml .Values.manager.pod.labels | nindent 8 }}
       {{- end }}
       annotations:
         kubectl.kubernetes.io/default-container: manager
         sidecar.istio.io/inject: "false"
-      {{- if not (empty .Values.manager.annotations) }}
-      {{- toYaml .Values.manager.annotations | nindent 8 }}
-      {{- end }}
       {{- if not (empty .Values.manager.pod.annotations) }}
       {{- toYaml .Values.manager.pod.annotations | nindent 8 }}
       {{- end }}

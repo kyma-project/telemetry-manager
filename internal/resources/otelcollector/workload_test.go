@@ -47,16 +47,10 @@ func TestMakeWorkloadMetadata(t *testing.T) {
 			),
 			baseName:                    "test-collector",
 			componentType:               "telemetry",
-			expectedPodLabels:           6, // default + 1 workload label
-			expectedPodAnnotations:      1, // 1 workload annotation
+			expectedPodLabels:           5, // default labels only (workload labels not merged into pods)
+			expectedPodAnnotations:      0, // workload annotations not merged into pods
 			expectedResourceLabels:      1, // 1 workload label
 			expectedResourceAnnotations: 1, // 1 workload annotation
-			verifyPodLabels: map[string]string{
-				"workload-label": "workload-value",
-			},
-			verifyPodAnnotations: map[string]string{
-				"workload-annotation": "workload-annotation-value",
-			},
 		},
 		{
 			name: "metadata with pod-specific labels and annotations",
@@ -89,17 +83,15 @@ func TestMakeWorkloadMetadata(t *testing.T) {
 			),
 			baseName:                    "test-collector",
 			componentType:               "telemetry",
-			expectedPodLabels:           7, // default + 1 workload label + 1 pod label
-			expectedPodAnnotations:      2, // 1 workload annotation + 1 pod annotation
+			expectedPodLabels:           6, // default + 1 pod label (workload label not merged)
+			expectedPodAnnotations:      1, // 1 pod annotation (workload annotation not merged)
 			expectedResourceLabels:      1, // 1 workload label
 			expectedResourceAnnotations: 1, // 1 workload annotation
 			verifyPodLabels: map[string]string{
-				"workload-label": "workload-value",
-				"pod-label":      "pod-value",
+				"pod-label": "pod-value",
 			},
 			verifyPodAnnotations: map[string]string{
-				"workload-annotation": "workload-annotation-value",
-				"pod-annotation":      "pod-annotation-value",
+				"pod-annotation": "pod-annotation-value",
 			},
 		},
 		{
@@ -116,13 +108,12 @@ func TestMakeWorkloadMetadata(t *testing.T) {
 			extraPodAnnotations: map[string]string{
 				"sidecar.istio.io/inject": "true",
 			},
-			expectedPodLabels:           7, // default + 1 workload + 1 extra
+			expectedPodLabels:           6, // default + 1 extra (workload label not merged)
 			expectedPodAnnotations:      1, // 1 extra
 			expectedResourceLabels:      1,
 			expectedResourceAnnotations: 0,
 			verifyPodLabels: map[string]string{
-				"workload-label": "value",
-				"istio-inject":   "true",
+				"istio-inject": "true",
 			},
 			verifyPodAnnotations: map[string]string{
 				"sidecar.istio.io/inject": "true",
