@@ -34,6 +34,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	ctrlpredicate "sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
@@ -162,14 +163,10 @@ func (r *TracePipelineController) Reconcile(ctx context.Context, req ctrl.Reques
 	return r.reconciler.Reconcile(ctx, req)
 }
 
-func (r *TracePipelineController) SetupWithManager(mgr ctrl.Manager) error {
-	b := ctrl.NewControllerManagedBy(mgr).For(&telemetryv1beta1.TracePipeline{})
-
-	b.WatchesRawSource(
-		source.Channel(r.reconcileTriggerChan, &handler.EnqueueRequestForObject{}),
-	)
-
-	ownedResourceTypesToWatch := []client.Object{
+// tracePipelineOwnedResourceTypes returns the list of Kubernetes resource types that are
+// managed (created/updated/deleted) by the TracePipeline reconciler and must be watched for changes.
+func tracePipelineOwnedResourceTypes(isIstioActive bool) []client.Object {
+	resources := []client.Object{
 		&appsv1.Deployment{},
 		&corev1.ConfigMap{},
 		&corev1.Secret{},
@@ -179,6 +176,20 @@ func (r *TracePipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		&rbacv1.ClusterRoleBinding{},
 		&networkingv1.NetworkPolicy{},
 	}
+
+	if isIstioActive {
+		resources = append(resources, &istiosecurityclientv1.PeerAuthentication{})
+	}
+
+	return resources
+}
+
+func (r *TracePipelineController) SetupWithManager(mgr ctrl.Manager) error {
+	b := ctrl.NewControllerManagedBy(mgr).For(&telemetryv1beta1.TracePipeline{})
+
+	b.WatchesRawSource(
+		source.Channel(r.reconcileTriggerChan, &handler.EnqueueRequestForObject{}),
+	)
 
 	discoveryClient, err := discovery.NewDiscoveryClientForConfig(mgr.GetConfig())
 	if err != nil {
@@ -190,14 +201,11 @@ func (r *TracePipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		return fmt.Errorf("failed to check Istio status: %w", err)
 	}
 
-	if isIstioActive {
-		ownedResourceTypesToWatch = append(ownedResourceTypesToWatch, &istiosecurityclientv1.PeerAuthentication{})
-	}
-
-	for _, resource := range ownedResourceTypesToWatch {
+	for _, resource := range tracePipelineOwnedResourceTypes(isIstioActive) {
 		b = b.Watches(
 			resource,
-			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(),
+			handler.EnqueueRequestForOwner(
+				mgr.GetClient().Scheme(),
 				mgr.GetRESTMapper(),
 				&telemetryv1beta1.TracePipeline{},
 			),
@@ -208,11 +216,17 @@ func (r *TracePipelineController) SetupWithManager(mgr ctrl.Manager) error {
 	return b.Watches(
 		&operatorv1beta1.Telemetry{},
 		handler.EnqueueRequestsFromMapFunc(r.mapTelemetryChanges),
-		ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete()),
+		// React to spec changes (tracked by generation) and annotation changes on the Telemetry CR.
+		// Annotations carry configuration like VPA opt-in that affect pipeline resources.
+		// Status-only updates are ignored to avoid unnecessary reconciliation loops.
+		ctrlbuilder.WithPredicates(ctrlpredicate.Or(ctrlpredicate.GenerationChangedPredicate{}, ctrlpredicate.AnnotationChangedPredicate{})),
+	).Watches(
+		&corev1.Pod{},
+		handler.EnqueueRequestsFromMapFunc(r.mapPodChanges),
+		ctrlbuilder.WithPredicates(predicateutils.UpdateOrDelete()),
 	).Watches(
 		&corev1.Node{},
 		handler.EnqueueRequestsFromMapFunc(r.mapNodeChanges),
-		ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete()),
 	).Complete(r)
 }
 
@@ -220,6 +234,25 @@ func (r *TracePipelineController) mapTelemetryChanges(ctx context.Context, objec
 	_, ok := object.(*operatorv1beta1.Telemetry)
 	if !ok {
 		logf.FromContext(ctx).V(1).Error(nil, "Unexpected type: expected Telemetry")
+		return nil
+	}
+
+	requests, err := r.createRequestsForAllPipelines(ctx)
+	if err != nil {
+		logf.FromContext(ctx).Error(err, "Unable to create reconcile requests")
+	}
+
+	return requests
+}
+
+func (r *TracePipelineController) mapPodChanges(ctx context.Context, object client.Object) []reconcile.Request {
+	pod, ok := object.(*corev1.Pod)
+	if !ok {
+		logf.FromContext(ctx).V(1).Error(nil, "Unexpected type: expected Pod")
+		return nil
+	}
+
+	if !isPodFrom(pod, names.TraceGateway) {
 		return nil
 	}
 
