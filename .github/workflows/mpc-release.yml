@@ -1,0 +1,298 @@
+name: Management Plane Chart Release
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mpc-release-${{ inputs.target_chart }}
+  cancel-in-progress: false
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 1.2.3 for Telemetry, 1.2.3-4.5.6 for RMO)'
+        required: true
+        type: string
+        default: ''
+      target_chart:
+        description: 'Target chart to release'
+        required: true
+        type: choice
+        options:
+          - Telemetry
+          - RMO
+      dry_run:
+        description: 'Perform a dry run without creating PR'
+        required: false
+        default: false
+        type: boolean
+      auto_merge:
+        description: 'Auto-merge PR after creation'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  validate-inputs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Validate version format
+        env:
+          VERSION: ${{ inputs.version }}
+          TARGET_CHART: ${{ inputs.target_chart }}
+        run: |
+          echo "Validating version format for target chart: ${TARGET_CHART}"
+          echo "Version: ${VERSION}"
+
+          if [ "${TARGET_CHART}" = "Telemetry" ]; then
+            # Telemetry chart expects X.Y.Z format
+            if ! [[ "${VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "::error::Invalid version format for Telemetry chart: ${VERSION}"
+              echo "Expected format: X.Y.Z (e.g., 1.2.3)"
+              exit 1
+            fi
+            echo "Telemetry version format valid: ${VERSION}"
+          elif [ "${TARGET_CHART}" = "RMO" ]; then
+            # RMO chart expects X.Y.Z-A.B.C format
+            if ! [[ "${VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+-[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "::error::Invalid version format for RMO chart: ${VERSION}"
+              echo "Expected format: X.Y.Z-A.B.C (e.g., 1.2.3-4.5.6)"
+              exit 1
+            fi
+            echo "RMO version format valid: ${VERSION}"
+          else
+            echo "::error::Unknown target chart: ${TARGET_CHART}"
+            exit 1
+          fi
+
+  prepare-matrix:
+    runs-on: ubuntu-latest
+    needs: validate-inputs
+    timeout-minutes: 5
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Checkout repository for config
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set matrix
+        id: set-matrix
+        run: |
+          # Load chart configuration from JSON file
+          CONFIG=$(jq ".charts[\"${{ inputs.target_chart }}\"]" .github/configs/mpc-release-matrix.json)
+
+          if [ "$CONFIG" = "null" ]; then
+            echo "::error::Unknown target chart: ${{ inputs.target_chart }}"
+            echo "Available charts: $(jq -r '.charts | keys[]' .github/configs/mpc-release-matrix.json | tr '\n' ', ')"
+            exit 1
+          fi
+
+          # Substitute {{VERSION}} placeholder with actual version
+          CONFIG=$(echo "$CONFIG" | jq --arg version "${{ inputs.version }}" '
+            walk(
+              if type == "string" then
+                gsub("{{VERSION}}"; $version)
+              else
+                .
+              end
+            )
+          ')
+
+          # Wrap in matrix format
+          MATRIX=$(jq -n --argjson config "$CONFIG" '{include: [$config]}')
+
+          # Output matrix
+          echo "matrix<<MATRIX_EOF" >> "$GITHUB_OUTPUT"
+          echo "$MATRIX" >> "$GITHUB_OUTPUT"
+          echo "MATRIX_EOF" >> "$GITHUB_OUTPUT"
+
+          echo "Loaded configuration for ${{ inputs.target_chart }} chart"
+
+  release-chart:
+    name: Release ${{ matrix.chart_name }} Chart
+    runs-on: ubuntu-latest
+    needs: prepare-matrix
+    timeout-minutes: 30
+    strategy:
+      matrix: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
+    env:
+      GH_HOST: github.tools.sap
+      REPO: kyma/management-plane-charts
+      GH_TOKEN: ${{ secrets.HUSKIES_GHTOOLS_TOKEN }}
+
+    steps:
+      - name: Checkout telemetry-manager (for scripts)
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          path: telemetry-manager
+
+      - name: Configure git authentication
+        uses: ./telemetry-manager/.github/template/setup-git-auth
+        with:
+          token: ${{ secrets.HUSKIES_GHTOOLS_TOKEN }}
+          host: ${{ env.GH_HOST }}
+
+      - name: Checkout management-plane-charts
+        run: |
+          # Clone using HTTPS without token in URL (uses credential helper)
+          git clone \
+            "https://${GH_HOST}/${REPO}.git" \
+            --branch ${{ matrix.base_branch }} \
+            management-plane-charts
+
+      - name: Configure git identity
+        working-directory: management-plane-charts
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create Branch
+        uses: ./telemetry-manager/.github/template/checkout-or-create-branch
+        with:
+          branch-name: ${{ matrix.branch_prefix }}-${{ inputs.version }}
+          repository-path: management-plane-charts
+
+      - name: Setup python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.x"
+          cache: "pip"
+          cache-dependency-path: management-plane-charts/tools/requirements.txt
+
+      - name: Install dependencies
+        working-directory: management-plane-charts
+        run: pip install -r tools/requirements.txt
+
+      - name: Install yq
+        run: telemetry-manager/hack/module-release.sh install-yq
+
+      - name: Bump chart version
+        working-directory: management-plane-charts
+        run: make bump-patch
+
+      - name: Update chart files
+        working-directory: management-plane-charts
+        run: ${{ matrix.update_command }}
+
+      - name: Verify changes
+        working-directory: management-plane-charts
+        run: |
+          echo "Changes to be committed:"
+          git diff
+
+          if git diff --quiet; then
+            echo "::error::No changes detected. Chart may already be at version ${{ inputs.version }}"
+            exit 1
+          fi
+
+      - name: Verify update was applied
+        working-directory: management-plane-charts
+        run: |
+          CURRENT_VERSION=$(${{ matrix.verify_command }})
+          if [ "$CURRENT_VERSION" != "${{ inputs.version }}" ]; then
+            echo "::error::${{ matrix.verify_field }} mismatch. Expected: ${{ inputs.version }}, Got: $CURRENT_VERSION"
+            exit 1
+          fi
+          echo "${{ matrix.verify_field }} verified: $CURRENT_VERSION"
+
+      - name: Commit changes
+        working-directory: management-plane-charts
+        run: |
+          git add .
+          git commit -m "${{ matrix.commit_title }}"
+
+      - name: Push branch
+        if: ${{ inputs.dry_run != true }}
+        working-directory: management-plane-charts
+        run: |
+          git push origin ${{ matrix.branch_prefix }}-${{ inputs.version }}
+
+      - name: Create PR
+        if: ${{ inputs.dry_run != true }}
+        id: create-pr
+        working-directory: management-plane-charts
+        run: |
+          BRANCH_NAME="${{ matrix.branch_prefix }}-${{ inputs.version }}"
+
+          # Check if PR already exists for this branch
+          echo "Checking if PR already exists for branch: ${BRANCH_NAME}..."
+
+          # Use gh --jq to extract values directly, avoiding double jq parsing and stderr corruption
+          set +e
+          PR_NUMBER=$(gh pr list --head "${BRANCH_NAME}" --json number --jq '.[0].number // empty' 2>/dev/null)
+          GH_EXIT_CODE=$?
+          set -e
+
+          # Any non-zero exit code from gh is a fatal error
+          if [ ${GH_EXIT_CODE} -ne 0 ]; then
+            echo "::error::Failed to check for existing PRs (exit code ${GH_EXIT_CODE})"
+            exit 1
+          fi
+
+          # If PR_NUMBER is non-empty, a PR exists - get the URL
+          if [ -n "${PR_NUMBER}" ]; then
+            PR_URL=$(gh pr list --head "${BRANCH_NAME}" --json url --jq '.[0].url')
+            echo "::notice::PR already exists for this branch"
+            echo "Using existing PR #${PR_NUMBER}: ${PR_URL}"
+            echo "pr-url=${PR_URL}" >> "$GITHUB_OUTPUT"
+            echo "pr-number=${PR_NUMBER}" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "No existing PR found. Creating new PR..."
+
+          PR_URL=$(gh pr create \
+            --base ${{ matrix.base_branch }} \
+            --head "${BRANCH_NAME}" \
+            --title "${{ matrix.pr_title }}" \
+            --body "${{ matrix.pr_body }}" \
+            --label pr-deploy)
+
+          # Extract and validate PR number
+          PR_NUMBER=$(echo "${PR_URL}" | grep -o '[0-9]\+$')
+          if [[ ! "${PR_NUMBER}" =~ ^[0-9]+$ ]] || [ -z "${PR_NUMBER}" ]; then
+            echo "::error::Failed to extract PR number from URL: ${PR_URL}"
+            echo "Expected URL format: https://host/org/repo/pull/NUMBER"
+            exit 1
+          fi
+
+          echo "pr-url=${PR_URL}" >> "$GITHUB_OUTPUT"
+          echo "pr-number=${PR_NUMBER}" >> "$GITHUB_OUTPUT"
+          echo "Created PR #${PR_NUMBER}: ${PR_URL}"
+
+      - name: Enable auto-merge
+        if: ${{ inputs.dry_run != true && inputs.auto_merge == true }}
+        working-directory: management-plane-charts
+        run: |
+          gh pr merge ${{ steps.create-pr.outputs.pr-number }} --auto --squash
+          echo "Auto-merge enabled for PR #${{ steps.create-pr.outputs.pr-number }}"
+
+      - name: Skip PR creation (dry run)
+        if: ${{ inputs.dry_run == true }}
+        run: |
+          echo "::notice::DRY RUN: Skipping PR creation"
+          echo "Would have created PR with:"
+          echo "  Branch: ${{ matrix.branch_prefix }}-${{ inputs.version }}"
+          echo "  Title: ${{ matrix.pr_title }}"
+          echo "  Label: pr-deploy"
+
+      - name: Workflow summary
+        if: always()
+        run: |
+          cat >> "$GITHUB_STEP_SUMMARY" <<EOF
+          ## ${{ matrix.summary_title }}
+
+          **Version**: ${{ inputs.version }}
+          **Branch**: ${{ matrix.branch_prefix }}-${{ inputs.version }}
+          **Dry Run**: ${{ inputs.dry_run }}
+          **Auto Merge**: ${{ inputs.auto_merge }}
+          ${{ inputs.dry_run != true && format('**PR**: {0}', steps.create-pr.outputs.pr-url) || '' }}
+
+          ### Next Steps
+          ${{ inputs.dry_run == true && '- Re-run workflow with dry_run=false to create PR' || format('1. Review the PR at {0}', steps.create-pr.outputs.pr-url) }}
+          ${{ inputs.dry_run != true && format('2. {0}', matrix.summary_details) || '' }}
+          ${{ inputs.dry_run != true && inputs.auto_merge != true && '3. Merge the PR to deploy' || '' }}
+          ${{ inputs.dry_run != true && inputs.auto_merge == true && '3. PR will auto-merge when checks pass' || '' }}
+          EOF

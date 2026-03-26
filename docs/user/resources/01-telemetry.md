@@ -100,7 +100,7 @@ For details, see the [Telemetry specification file](https://github.com/kyma-proj
 | **log.&#x200b;gateway.&#x200b;scaling.&#x200b;static.&#x200b;replicas**  | integer | Replicas defines a static number of Pods to run the gateway. Minimum is 1. |
 | **log.&#x200b;gateway.&#x200b;scaling.&#x200b;type**  | string | Type of scaling strategy. Default is none, using a fixed amount of replicas. |
 | **metric**  | object | Metric configures module settings specific to the metric features. This field is optional. |
-| **metric.&#x200b;collectionInterval**  | string | CollectionInterval defines the default scrape interval for all pull-based metric inputs (runtime, prometheus, istio). The value is a duration string (for example, "30s", "1m", "5m"). Minimum is 1s. Default is 30s. |
+| **metric.&#x200b;collectionInterval**  | string | CollectionInterval defines the default scrape interval for all pull-based metric inputs (runtime, prometheus, istio). The value is a duration string (for example, "30s", "1m", "5m"). Default is 30s. |
 | **metric.&#x200b;gateway**  | object | Gateway configures the metric gateway. |
 | **metric.&#x200b;gateway.&#x200b;scaling**  | object | Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type. |
 | **metric.&#x200b;gateway.&#x200b;scaling.&#x200b;static**  | object | Static is a scaling strategy enabling you to define a custom amount of replicas to be used for the gateway. Present only if Type = StaticScalingStrategyType. |
@@ -163,7 +163,7 @@ For details, see the [Telemetry specification file](https://github.com/kyma-proj
 | **log.&#x200b;gateway.&#x200b;scaling.&#x200b;static.&#x200b;replicas**  | integer | Replicas defines a static number of Pods to run the gateway. Minimum is 1. |
 | **log.&#x200b;gateway.&#x200b;scaling.&#x200b;type**  | string | Type of scaling strategy. Default is none, using a fixed amount of replicas. |
 | **metric**  | object | Metric configures module settings specific to the metric features. This field is optional. |
-| **metric.&#x200b;collectionInterval**  | string | CollectionInterval defines the default collection/scrape interval for all pull-based metric inputs (runtime, prometheus, istio). The value is a duration string (for example, "30s", "1m", "5m"). Minimum is 1s. Default is 30s. |
+| **metric.&#x200b;collectionInterval**  | string | CollectionInterval defines the default collection/scrape interval for all pull-based metric inputs (runtime, prometheus, istio). The value is a duration string (for example, "30s", "1m", "5m"). Default is 30s. |
 | **metric.&#x200b;gateway**  | object | Gateway configures the metric gateway. |
 | **metric.&#x200b;gateway.&#x200b;scaling**  | object | Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type. |
 | **metric.&#x200b;gateway.&#x200b;scaling.&#x200b;static**  | object | Static is a scaling strategy enabling you to define a custom amount of replicas to be used for the gateway. Present only if Type = StaticScalingStrategyType. |
