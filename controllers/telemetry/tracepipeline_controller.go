@@ -216,6 +216,7 @@ func (r *TracePipelineController) SetupWithManager(mgr ctrl.Manager) error {
 	return b.Watches(
 		&operatorv1beta1.Telemetry{},
 		handler.EnqueueRequestsFromMapFunc(r.mapTelemetryChanges),
+		// Watch for spec and annotation changes
 		ctrlbuilder.WithPredicates(ctrlpredicate.Or(ctrlpredicate.GenerationChangedPredicate{}, ctrlpredicate.AnnotationChangedPredicate{})),
 	).Watches(
 		&corev1.Pod{},

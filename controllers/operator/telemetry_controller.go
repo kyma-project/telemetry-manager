@@ -113,7 +113,11 @@ func (r *TelemetryController) SetupWithManager(mgr ctrl.Manager) error {
 	for _, resource := range ownedResourceTypesToWatch {
 		b = b.Watches(
 			resource,
-			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &operatorv1beta1.Telemetry{}),
+			handler.EnqueueRequestForOwner(
+				mgr.GetClient().Scheme(),
+				mgr.GetRESTMapper(),
+				&operatorv1beta1.Telemetry{},
+			),
 			ctrlbuilder.WithPredicates(predicateutils.OwnedResourceChanged()),
 		)
 	}

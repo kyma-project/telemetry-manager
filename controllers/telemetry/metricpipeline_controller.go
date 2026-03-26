@@ -241,7 +241,8 @@ func (r *MetricPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 	for _, resource := range metricPipelineOwnedResourceTypes(isIstioActive, vpaCRDExists) {
 		b = b.Watches(
 			resource,
-			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(),
+			handler.EnqueueRequestForOwner(
+				mgr.GetClient().Scheme(),
 				mgr.GetRESTMapper(),
 				&telemetryv1beta1.MetricPipeline{},
 			),
@@ -252,6 +253,7 @@ func (r *MetricPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 	return b.Watches(
 		&operatorv1beta1.Telemetry{},
 		handler.EnqueueRequestsFromMapFunc(r.mapTelemetryChanges),
+		// Watch for spec and annotation changes
 		ctrlbuilder.WithPredicates(ctrlpredicate.Or(ctrlpredicate.GenerationChangedPredicate{}, ctrlpredicate.AnnotationChangedPredicate{})),
 	).Watches(
 		&corev1.Pod{},
