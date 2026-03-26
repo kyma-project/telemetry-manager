@@ -103,7 +103,7 @@ func (fb *FaultBackend) K8sObjects() []client.Object {
 }
 
 // EnableFaults activates the configured fault rules at runtime by POSTing to the
-// mock-backend's /config endpoint on port 9090 via the API server proxy.
+// fault-backend's /config endpoint on port 9090 via the API server proxy.
 // The faultbackend starts healthy (FAULT_RULES="" FAULT_DEFAULT=200); call this
 // method after the pipeline reaches FlowHealthy to create a clean rate() baseline
 // before faults begin.
@@ -163,7 +163,7 @@ func (fb *FaultBackend) buildService() *kitk8sobjects.Service {
 }
 
 // faultRulesString returns the fault rules in the "statusCode:percentage,..." format
-// expected by the mock-backend /config endpoint.
+// expected by the fault-backend /config endpoint.
 func (fb *FaultBackend) faultRulesString() string {
 	parts := make([]string, 0, len(fb.rules))
 	for _, r := range fb.rules {

@@ -12,7 +12,7 @@ import (
 
 // VirtualService builds an Istio VirtualService with optional HTTP fault injection (delay / abort).
 //
-// For self-monitor and mock-backend tests, align HTTP abort status with exporter retry semantics:
+// For self-monitor and fault-backend tests, align HTTP abort status with exporter retry semantics:
 //   - 400 Bad Request: non-retryable for both OTel Collector and Fluent Bit (see test/selfmonitor/helpers.go).
 //   - 429 Too Many Requests: retryable for both (used e.g. in faultRetryableErr in test/selfmonitor/helpers.go).
 //

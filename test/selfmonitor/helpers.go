@@ -42,7 +42,7 @@ const (
 // as the universal non-retryable status code.
 // HTTP 429 is retryable for both, so it is used as the universal retryable status code.
 //
-// Fault backends use the mock-backend container (test/testkit/mocks/faultbackend) to return
+// Fault backends use the fault-backend container (test/testkit/mocks/faultbackend) to return
 // these codes at configurable percentages: faultNonRetryableErr → 400, faultRetryableErr → 429.
 const (
 	retryableErrCode    = http.StatusTooManyRequests

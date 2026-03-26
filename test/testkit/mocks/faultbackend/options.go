@@ -49,7 +49,7 @@ func WithFluentBitPort() Option {
 }
 
 // WithDelay configures a response delay for a specific HTTP status code.
-// The mock-backend will sleep for the given duration before sending the response.
+// The fault-backend will sleep for the given duration before sending the response.
 // The body is drained before sleeping, so only the goroutine stack is held during the delay.
 func WithDelay(statusCode int32, delay time.Duration) Option {
 	return func(fb *FaultBackend) {
