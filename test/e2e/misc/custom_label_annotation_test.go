@@ -69,10 +69,8 @@ func TestLabelAnnotation(t *testing.T) {
 					LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": "telemetry-log-gateway"}),
 					Namespace:     kitkyma.SystemNamespaceName,
 				}
-				// Gateway pods should have both workload and pod-specific labels/annotations
-				assert.PodsHaveAnnotation(t, gwSelector, workloadAnnotation)
+				// Gateway pods should have only pod-specific labels/annotations (not workload-level ones)
 				assert.PodsHaveAnnotation(t, gwSelector, workloadPodAnnotation)
-				assert.PodsHaveLabel(t, gwSelector, workloadLabel)
 				assert.PodsHaveLabel(t, gwSelector, workloadPodLabel)
 
 				// Agent should have workload labels/annotations
@@ -83,10 +81,8 @@ func TestLabelAnnotation(t *testing.T) {
 					LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": "telemetry-log-agent"}),
 					Namespace:     kitkyma.SystemNamespaceName,
 				}
-				// Agent pods should have both workload and pod-specific labels/annotations
-				assert.PodsHaveAnnotation(t, agentSelector, workloadAnnotation)
+				// Agent pods should have only pod-specific labels/annotations (not workload-level ones)
 				assert.PodsHaveAnnotation(t, agentSelector, workloadPodAnnotation)
-				assert.PodsHaveLabel(t, agentSelector, workloadLabel)
 				assert.PodsHaveLabel(t, agentSelector, workloadPodLabel)
 			},
 		},
@@ -119,10 +115,8 @@ func TestLabelAnnotation(t *testing.T) {
 					LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": "fluent-bit"}),
 					Namespace:     kitkyma.SystemNamespaceName,
 				}
-				// FluentBit pods should have both workload and pod-specific labels/annotations
-				assert.PodsHaveAnnotation(t, selector, workloadAnnotation)
+				// FluentBit pods should have only pod-specific labels/annotations (not workload-level ones)
 				assert.PodsHaveAnnotation(t, selector, workloadPodAnnotation)
-				assert.PodsHaveLabel(t, selector, workloadLabel)
 				assert.PodsHaveLabel(t, selector, workloadPodLabel)
 			},
 		},
@@ -160,10 +154,8 @@ func TestLabelAnnotation(t *testing.T) {
 					LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": "telemetry-metric-gateway"}),
 					Namespace:     kitkyma.SystemNamespaceName,
 				}
-				// Gateway pods should have both workload and pod-specific labels/annotations
-				assert.PodsHaveAnnotation(t, gwSelector, workloadAnnotation)
+				// Gateway pods should have only pod-specific labels/annotations (not workload-level ones)
 				assert.PodsHaveAnnotation(t, gwSelector, workloadPodAnnotation)
-				assert.PodsHaveLabel(t, gwSelector, workloadLabel)
 				assert.PodsHaveLabel(t, gwSelector, workloadPodLabel)
 
 				// Agent should have workload labels/annotations
@@ -174,10 +166,8 @@ func TestLabelAnnotation(t *testing.T) {
 					LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": "telemetry-metric-agent"}),
 					Namespace:     kitkyma.SystemNamespaceName,
 				}
-				// Agent pods should have both workload and pod-specific labels/annotations
-				assert.PodsHaveAnnotation(t, agentSelector, workloadAnnotation)
+				// Agent pods should have only pod-specific labels/annotations (not workload-level ones)
 				assert.PodsHaveAnnotation(t, agentSelector, workloadPodAnnotation)
-				assert.PodsHaveLabel(t, agentSelector, workloadLabel)
 				assert.PodsHaveLabel(t, agentSelector, workloadPodLabel)
 			},
 		},
