@@ -26,7 +26,7 @@ func (fb *FaultBackend) buildDeployment() *appsv1.Deployment {
 					Containers: []corev1.Container{
 						{
 							Name:            "mock-backend",
-							Image:           testkit.MockBackendImage,
+							Image:           testkit.FaultBackendImage,
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Env:             fb.buildEnvVars(),
 							Ports: []corev1.ContainerPort{

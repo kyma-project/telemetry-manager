@@ -9,7 +9,7 @@ SELF_MONITOR_IMAGE ?= $(ENV_SELFMONITOR_IMAGE)
 SELF_MONITOR_FIPS_IMAGE ?= $(ENV_SELFMONITOR_FIPS_IMAGE)
 K3S_IMAGE ?= $(ENV_K3S_IMAGE)
 ALPINE_IMAGE ?= $(ENV_ALPINE_IMAGE)
-MOCK_BACKEND_IMAGE ?= $(ENV_MOCK_BACKEND_IMAGE)
+FAULT_BACKEND_IMAGE ?= $(ENV_FAULT_BACKEND_IMAGE)
 HELM_RELEASE_VERSION ?= $(ENV_HELM_RELEASE_VERSION)
 
 # Operating system architecture
@@ -288,17 +288,17 @@ docker-build-selfmonitor: ## Build docker image for telemetry self-monitor
 docker-push-selfmonitor: ## Push docker image for telemetry self-monitor
 	docker push ${SELF_MONITOR_IMAGE}
 
-.PHONY: docker-build-mock-backend
-docker-build-mock-backend: ## Build docker image for the mock backend
-	docker build -t ${MOCK_BACKEND_IMAGE} dependencies/mock-backend
+.PHONY: docker-build-fault-backend
+docker-build-fault-backend: ## Build docker image for the fault backend
+	docker build -t ${FAULT_BACKEND_IMAGE} dependencies/fault-backend
 
-.PHONY: docker-push-mock-backend
-docker-push-mock-backend: ## Push docker image for the mock backend
-	docker push ${MOCK_BACKEND_IMAGE}
+.PHONY: docker-push-fault-backend
+docker-push-fault-backend: ## Push docker image for the fault backend
+	docker push ${FAULT_BACKEND_IMAGE}
 
-.PHONY: k3d-import-mock-backend
-k3d-import-mock-backend: ## Import the mock backend image into the K3D cluster
-	./hack/k3d-import-image.sh ${MOCK_BACKEND_IMAGE}
+.PHONY: k3d-import-fault-backend
+k3d-import-fault-backend: ## Import the fault backend image into the K3D cluster
+	k3d image import ${FAULT_BACKEND_IMAGE} -c kyma
 
 .PHONY: docker-pull-self-monitor-fips-image
 docker-pull-self-monitor-fips-image: ## Pull the Self-Monitor FIPS image
