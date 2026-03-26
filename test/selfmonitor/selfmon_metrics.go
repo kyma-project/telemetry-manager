@@ -49,13 +49,13 @@ func alertConditionDescription(reason, component string) string {
 		return "need: rate(send_failed or enqueue_failed) > 0 AND rate(sent) == 0"
 	case "GatewayAllTelemetryDataDropped":
 		return "need: rate(send_failed or enqueue_failed) > 0 AND rate(sent) == 0"
-	case "AgentTelemetryDataDropped":
+	case "AgentSomeTelemetryDataDropped", "AgentTelemetryDataDropped":
 		if isFluentBitComponent {
 			return "need: rate(fluentbit_output_dropped_records) > 0 AND rate(fluentbit_output_proc_bytes) > 0"
 		}
 
 		return "need: rate(send_failed or enqueue_failed) > 0 AND rate(sent) > 0"
-	case "GatewayTelemetryDataDropped":
+	case "GatewaySomeTelemetryDataDropped", "GatewayTelemetryDataDropped":
 		return "need: rate(send_failed or enqueue_failed) > 0 AND rate(sent) > 0"
 	case "AgentBufferFillingUp":
 		return "need: max(fluentbit_input_storage_chunks_down) > 300"
