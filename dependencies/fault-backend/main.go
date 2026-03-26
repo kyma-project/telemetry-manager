@@ -1,3 +1,7 @@
+// fault-backend is a test-only HTTP/gRPC server that accepts OTLP and FluentD
+// traffic and injects configurable faults (error status codes, connection closes,
+// delays). It does NOT act as a proxy: it drains and discards all incoming data
+// without forwarding it anywhere.
 package main
 
 import (
@@ -167,7 +171,7 @@ func buildThresholds(rules []rule) []threshold {
 }
 
 func main() {
-	log.SetPrefix(fmt.Sprintf("[%s] ", "mock-backend"))
+	log.SetPrefix(fmt.Sprintf("[%s] ", "fault-backend"))
 
 	rules, defaultBehavior, defaultDelayMS := parseConfig()
 	reqStats := newStats(rules, defaultBehavior)
@@ -202,7 +206,7 @@ func main() {
 			// which is how gRPC clients (e.g. OTel Collector OTLP exporter) connect.
 			h2cHandler := h2c.NewHandler(handler, &http2.Server{})
 
-			//nolint:gosec // no timeouts needed for test-only mock server
+			//nolint:gosec // no timeouts needed for test-only fault backend
 			server := &http.Server{
 				Handler: h2cHandler,
 			}
@@ -226,7 +230,7 @@ func main() {
 
 		log.Printf("Config endpoint listening on %s", portConfigAPI)
 
-		//nolint:gosec // no timeouts needed for test-only mock server
+		//nolint:gosec // no timeouts needed for test-only fault backend
 		server := &http.Server{Handler: mux}
 		if err := server.Serve(ln); err != nil {
 			log.Fatalf("Config server on %s failed: %v", portConfigAPI, err)
