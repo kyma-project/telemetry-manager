@@ -248,12 +248,16 @@ func assertPipelineHealthy(t *testing.T, component, pipelineName string) {
 	switch component {
 	case suite.LabelLogAgent, suite.LabelLogGateway:
 		assert.OTelLogPipelineHealthy(t, pipelineName)
+		assert.LogPipelineSelfMonitorIsHealthy(t, suite.K8sClient, pipelineName)
 	case suite.LabelFluentBit:
 		assert.FluentBitLogPipelineHealthy(t, pipelineName)
+		assert.LogPipelineSelfMonitorIsHealthy(t, suite.K8sClient, pipelineName)
 	case suite.LabelMetricGateway, suite.LabelMetricAgent:
 		assert.MetricPipelineHealthy(t, pipelineName)
+		assert.MetricPipelineSelfMonitorIsHealthy(t, suite.K8sClient, pipelineName)
 	case suite.LabelTraces:
 		assert.TracePipelineHealthy(t, pipelineName)
+		assert.TracePipelineSelfMonitorIsHealthy(t, suite.K8sClient, pipelineName)
 	default:
 		panic("unknown component: " + component)
 	}
