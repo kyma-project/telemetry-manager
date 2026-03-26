@@ -253,7 +253,9 @@ func (r *MetricPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 	return b.Watches(
 		&operatorv1beta1.Telemetry{},
 		handler.EnqueueRequestsFromMapFunc(r.mapTelemetryChanges),
-		// Watch for spec and annotation changes
+		// React to spec changes (tracked by generation) and annotation changes on the Telemetry CR.
+		// Annotations carry configuration like VPA opt-in that affect pipeline resources.
+		// Status-only updates are ignored to avoid unnecessary reconciliation loops.
 		ctrlbuilder.WithPredicates(ctrlpredicate.Or(ctrlpredicate.GenerationChangedPredicate{}, ctrlpredicate.AnnotationChangedPredicate{})),
 	).Watches(
 		&corev1.Pod{},
