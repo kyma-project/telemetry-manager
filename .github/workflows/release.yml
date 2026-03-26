@@ -648,7 +648,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               workflow_id: 'module-release.yml',
-              ref: 'main',
+              ref: '${{ github.ref_name }}',
               inputs: {
                 version: '${{ inputs.version }}',
                 channel: 'fast',
@@ -669,7 +669,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               workflow_id: 'module-release.yml',
-              ref: 'main',
+              ref: '${{ github.ref_name }}',
               inputs: {
                 version: '${{ inputs.version }}',
                 channel: 'experimental',

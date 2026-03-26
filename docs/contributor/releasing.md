@@ -15,7 +15,7 @@ The release process is automated through GitHub Actions workflows that handle:
 
 Before starting a release, ensure:
 
-1. **Milestone Verification**: All issues in the [GitHub milestone](https://github.com/kyma-project/telemetry-manager/milestones) for the version are closed and the milestone is closed.
+1. **Milestone Verification**: All issues in the [GitHub milestone](https://github.com/kyma-project/telemetry-manager/milestones) for the version are closed and the milestone is closed. Create a new [GitHub milestone](https://github.com/kyma-project/telemetry-manager/milestones) for the next version.
 
 2. **Component Releases**: Release dependencies in this order:
    - [directory-size-exporter](https://github.com/kyma-project/telemetry-manager/actions/workflows/build-directory-size-reporter-image.yml) - produces image tags like `v20260302-12345678`
