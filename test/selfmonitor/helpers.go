@@ -4,10 +4,14 @@ import (
 	"net/http"
 	"testing"
 
+	. "github.com/onsi/gomega"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
@@ -16,6 +20,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdoutloggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
@@ -257,15 +262,46 @@ func assertPipelineHealthy(t *testing.T, component, pipelineName string) {
 func assertPipelineConditionTransition(t *testing.T, component, pipelineName string, expectedReasons []assert.ReasonStatus) {
 	t.Helper()
 
-	switch component {
-	case suite.LabelLogAgent, suite.LabelLogGateway, suite.LabelFluentBit:
-		assert.LogPipelineConditionReasonsTransition(t, pipelineName, conditions.TypeFlowHealthy, expectedReasons)
-	case suite.LabelMetricGateway, suite.LabelMetricAgent:
-		assert.MetricPipelineConditionReasonsTransition(t, pipelineName, conditions.TypeFlowHealthy, expectedReasons)
-	case suite.LabelTraces:
-		assert.TracePipelineConditionReasonsTransition(t, pipelineName, conditions.TypeFlowHealthy, expectedReasons)
-	default:
-		panic("unknown component: " + component)
+	condType := conditions.TypeFlowHealthy
+	key := types.NamespacedName{Name: pipelineName}
+
+	var currCond *metav1.Condition
+
+	for _, exp := range expectedReasons {
+		t.Logf("Waiting for condition %s[%s] (%s) — watching self-monitor metrics for component %s",
+			exp.Reason, exp.Status, alertConditionDescription(exp.Reason, component), component)
+
+		Eventually(func(g Gomega) assert.ReasonStatus {
+			logSelfMonitorMetrics(t, component)
+
+			switch component {
+			case suite.LabelLogAgent, suite.LabelLogGateway, suite.LabelFluentBit:
+				var pipeline telemetryv1beta1.LogPipeline
+				g.Expect(suite.K8sClient.Get(t.Context(), key, &pipeline)).To(Succeed())
+				currCond = meta.FindStatusCondition(pipeline.Status.Conditions, condType)
+			case suite.LabelMetricGateway, suite.LabelMetricAgent:
+				var pipeline telemetryv1beta1.MetricPipeline
+				g.Expect(suite.K8sClient.Get(t.Context(), key, &pipeline)).To(Succeed())
+				currCond = meta.FindStatusCondition(pipeline.Status.Conditions, condType)
+			case suite.LabelTraces:
+				var pipeline telemetryv1beta1.TracePipeline
+				g.Expect(suite.K8sClient.Get(t.Context(), key, &pipeline)).To(Succeed())
+				currCond = meta.FindStatusCondition(pipeline.Status.Conditions, condType)
+			default:
+				panic("unknown component: " + component)
+			}
+
+			if currCond == nil {
+				return assert.ReasonStatus{}
+			}
+
+			return assert.ReasonStatus{Reason: currCond.Reason, Status: currCond.Status}
+		}, periodic.FlowHealthConditionTransitionTimeout, periodic.SelfmonitorQueryInterval).Should(
+			Equal(exp),
+			"expected reason %s[%s] of type %s not reached", exp.Reason, exp.Status, condType,
+		)
+
+		t.Logf("Transitioned to [%s]%s\n", currCond.Status, currCond.Reason)
 	}
 }
 
