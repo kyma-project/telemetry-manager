@@ -261,6 +261,38 @@ func assertPipelineHealthy(t *testing.T, component, pipelineName string) {
 	default:
 		panic("unknown component: " + component)
 	}
+
+	// Wait until Prometheus has enough scrape samples for rate() to return non-zero.
+	// FlowHealthy=True confirms data is flowing at the CR level, but rate([5m]) queries
+	// need at least 2 scrape samples in the window (scrape interval = 30s). If a pod
+	// restarted recently, new series may have only 1 sample and rate() returns (no data).
+	// Waiting here ensures the fault baseline is clean before faults are enabled.
+	t.Log("Waiting for self-monitor rate metrics to be non-zero before enabling faults")
+	assertSelfMonitorRateNonZero(t, component)
+}
+
+// assertSelfMonitorRateNonZero waits until at least one of the component's rate queries
+// returns a non-zero value, confirming that Prometheus has sufficient scrape history.
+func assertSelfMonitorRateNonZero(t *testing.T, component string) {
+	t.Helper()
+
+	Eventually(func() bool {
+		for _, query := range metricsForComponent(component) {
+			val, err := queryPrometheus(t.Context(), query)
+			if err != nil || val == "(no data)" {
+				continue
+			}
+			// Any non-empty, non-zero result is sufficient.
+			if val != "" {
+				return true
+			}
+		}
+
+		return false
+	}, periodic.EventuallyTimeout, periodic.SelfmonitorQueryInterval).Should(
+		BeTrue(),
+		"self-monitor rate metrics never became non-zero for component %s", component,
+	)
 }
 
 func assertPipelineConditionTransition(t *testing.T, component, pipelineName string, expectedReasons []assert.ReasonStatus) {
