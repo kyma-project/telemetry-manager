@@ -1,8 +1,13 @@
+// fault-backend is a test-only HTTP/gRPC server that accepts OTLP and FluentD
+// traffic and injects configurable faults (error status codes, connection closes,
+// delays). It does NOT act as a proxy: it drains and discards all incoming data
+// without forwarding it anywhere.
 package main
 
 import (
 	"context"
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -25,6 +30,11 @@ const (
 	ruleParts        = 2
 	statsInterval    = time.Second
 	grpcFrameHdrSize = 5 // 1 byte compression flag + 4 bytes message length
+
+	portOTLPGRPC  = ":4317"
+	portOTLPHTTP  = ":4318"
+	portFluentD   = ":9880"
+	portConfigAPI = ":9090"
 )
 
 // gRPC status codes used for fault injection.
@@ -58,6 +68,12 @@ type rule struct {
 	statusCode int
 	percentage float64
 	delayMS    int // milliseconds to sleep before responding; 0 means no delay
+}
+
+type threshold struct {
+	cumulative float64
+	statusCode int
+	delayMS    int
 }
 
 type stats struct {
@@ -122,11 +138,44 @@ func newStats(rules []rule, defaultBehavior string) *stats {
 	return s
 }
 
+// faultConfig holds the mutable fault injection configuration.
+// The data-path handler reads it under RLock; the /config endpoint writes under Lock.
+type faultConfig struct {
+	mu              sync.RWMutex
+	thresholds      []threshold
+	defaultBehavior string
+	defaultDelayMS  int
+}
+
+func newFaultConfig(rules []rule, defaultBehavior string, defaultDelayMS int) *faultConfig {
+	return &faultConfig{
+		thresholds:      buildThresholds(rules),
+		defaultBehavior: defaultBehavior,
+		defaultDelayMS:  defaultDelayMS,
+	}
+}
+
+func buildThresholds(rules []rule) []threshold {
+	// Build cumulative thresholds for weighted random selection.
+	// E.g. rules 500:30, 429:20 produce thresholds [30, 50]; a roll in [0,30)
+	// returns 500, [30,50) returns 429, and >=50 falls through to the default.
+	thresholds := make([]threshold, 0, len(rules))
+
+	var cumulative float64
+	for _, r := range rules {
+		cumulative += r.percentage
+		thresholds = append(thresholds, threshold{cumulative: cumulative, statusCode: r.statusCode, delayMS: r.delayMS})
+	}
+
+	return thresholds
+}
+
 func main() {
-	log.SetPrefix(fmt.Sprintf("[%s] ", "mock-backend"))
+	log.SetPrefix(fmt.Sprintf("[%s] ", "fault-backend"))
 
 	rules, defaultBehavior, defaultDelayMS := parseConfig()
 	reqStats := newStats(rules, defaultBehavior)
+	cfg := newFaultConfig(rules, defaultBehavior, defaultDelayMS)
 
 	go func() {
 		ticker := time.NewTicker(statsInterval)
@@ -137,9 +186,9 @@ func main() {
 		}
 	}()
 
-	handler := buildHandler(rules, defaultBehavior, defaultDelayMS, reqStats)
+	handler := buildHandler(cfg, reqStats)
 
-	ports := []string{":4317", ":4318", ":9880"}
+	ports := []string{portOTLPGRPC, portOTLPHTTP, portFluentD}
 
 	var wg sync.WaitGroup
 	for _, port := range ports {
@@ -157,7 +206,7 @@ func main() {
 			// which is how gRPC clients (e.g. OTel Collector OTLP exporter) connect.
 			h2cHandler := h2c.NewHandler(handler, &http2.Server{})
 
-			//nolint:gosec // no timeouts needed for test-only mock server
+			//nolint:gosec // no timeouts needed for test-only fault backend
 			server := &http.Server{
 				Handler: h2cHandler,
 			}
@@ -167,7 +216,166 @@ func main() {
 		})
 	}
 
+	// Start the config endpoint on a separate port so it doesn't interfere with data paths.
+	wg.Go(func() {
+		mux := http.NewServeMux()
+		mux.HandleFunc("POST /config", configHandler(cfg, reqStats))
+
+		var lc net.ListenConfig
+
+		ln, err := lc.Listen(context.Background(), "tcp", portConfigAPI)
+		if err != nil {
+			log.Fatalf("Failed to listen on %s: %v", portConfigAPI, err)
+		}
+
+		log.Printf("Config endpoint listening on %s", portConfigAPI)
+
+		//nolint:gosec // no timeouts needed for test-only fault backend
+		server := &http.Server{Handler: mux}
+		if err := server.Serve(ln); err != nil {
+			log.Fatalf("Config server on %s failed: %v", portConfigAPI, err)
+		}
+	})
+
 	wg.Wait()
+}
+
+// configRequest is the JSON body for POST /config.
+// All fields are optional; omitted fields keep their current value.
+type configRequest struct {
+	Rules   *string `json:"rules"`
+	Default *string `json:"default"`
+	Delays  *string `json:"delays"`
+}
+
+// configHandler returns an http.HandlerFunc that reconfigures fault rules at runtime.
+func configHandler(cfg *faultConfig, reqStats *stats) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req configRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, fmt.Sprintf("invalid JSON: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		cfg.mu.Lock()
+		defer cfg.mu.Unlock()
+
+		if req.Default != nil {
+			def := *req.Default
+			if def != "close" {
+				if _, err := strconv.Atoi(def); err != nil {
+					http.Error(w, fmt.Sprintf("invalid default: must be a status code or 'close', got: %s", def), http.StatusBadRequest)
+					return
+				}
+			}
+
+			cfg.defaultBehavior = def
+		}
+
+		delays := make(map[int]int)
+
+		if req.Delays != nil {
+			var err error
+
+			delays, err = parseDelayString(*req.Delays)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("invalid delays: %v", err), http.StatusBadRequest)
+				return
+			}
+		}
+
+		if req.Rules != nil {
+			rules, err := parseRulesString(*req.Rules, delays)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("invalid rules: %v", err), http.StatusBadRequest)
+				return
+			}
+
+			cfg.thresholds = buildThresholds(rules)
+
+			// Rebuild stats to track new status codes.
+			*reqStats = *newStats(rules, cfg.defaultBehavior)
+		}
+
+		// Update default delay.
+		if cfg.defaultBehavior != "close" {
+			if code, err := strconv.Atoi(cfg.defaultBehavior); err == nil {
+				cfg.defaultDelayMS = delays[code]
+			}
+		}
+
+		log.Printf("Config updated: default=%s, thresholds=%d", cfg.defaultBehavior, len(cfg.thresholds)) //nolint:gosec // safe to log
+
+		w.WriteHeader(http.StatusOK)
+	}
+}
+
+// parseRulesString parses the rules format "statusCode:percentage,..." into a []rule.
+func parseRulesString(rulesStr string, delays map[int]int) ([]rule, error) {
+	if rulesStr == "" {
+		return nil, nil
+	}
+
+	var (
+		rules           []rule
+		totalPercentage float64
+	)
+
+	for entry := range strings.SplitSeq(rulesStr, ",") {
+		parts := strings.SplitN(entry, ":", ruleParts)
+		if len(parts) != ruleParts {
+			return nil, fmt.Errorf("invalid rule format: %s, expected statusCode:percentage", entry)
+		}
+
+		statusCode, err := strconv.Atoi(strings.TrimSpace(parts[0]))
+		if err != nil {
+			return nil, fmt.Errorf("invalid status code in rule: %s: %w", entry, err)
+		}
+
+		percentage, err := strconv.ParseFloat(strings.TrimSpace(parts[1]), 64)
+		if err != nil {
+			return nil, fmt.Errorf("invalid percentage in rule %s: %w", entry, err)
+		}
+
+		rules = append(rules, rule{statusCode: statusCode, percentage: percentage, delayMS: delays[statusCode]})
+		totalPercentage += percentage
+	}
+
+	if totalPercentage > maxPercentage {
+		return nil, fmt.Errorf("total percentage across rules is %.2f%%, exceeds 100%%", totalPercentage)
+	}
+
+	return rules, nil
+}
+
+// parseDelayString parses "statusCode:delayMs,..." into map[statusCode]delayMs.
+func parseDelayString(env string) (map[int]int, error) {
+	delays := make(map[int]int)
+
+	if env == "" {
+		return delays, nil
+	}
+
+	for entry := range strings.SplitSeq(env, ",") {
+		parts := strings.SplitN(strings.TrimSpace(entry), ":", ruleParts)
+		if len(parts) != ruleParts {
+			return nil, fmt.Errorf("invalid delay format: %s, expected statusCode:delayMs", entry)
+		}
+
+		statusCode, err := strconv.Atoi(strings.TrimSpace(parts[0]))
+		if err != nil {
+			return nil, fmt.Errorf("invalid status code in delay: %s: %w", entry, err)
+		}
+
+		delayMS, err := strconv.Atoi(strings.TrimSpace(parts[1]))
+		if err != nil {
+			return nil, fmt.Errorf("invalid delay ms in delay: %s: %w", entry, err)
+		}
+
+		delays[statusCode] = delayMS
+	}
+
+	return delays, nil
 }
 
 func parseConfig() ([]rule, string, int) {
@@ -302,26 +510,18 @@ func writeGRPCResponse(w http.ResponseWriter, httpCode int) {
 	h.Set(http.TrailerPrefix+"Grpc-Status", grpcStatus)
 }
 
-func buildHandler(rules []rule, defaultBehavior string, defaultDelayMS int, reqStats *stats) http.Handler {
-	type threshold struct {
-		cumulative float64
-		statusCode int
-		delayMS    int
-	}
-
-	thresholds := make([]threshold, 0, len(rules))
-
-	var cumulative float64
-	for _, r := range rules {
-		cumulative += r.percentage
-		thresholds = append(thresholds, threshold{cumulative: cumulative, statusCode: r.statusCode, delayMS: r.delayMS})
-	}
-
+func buildHandler(cfg *faultConfig, reqStats *stats) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Drain the request body to avoid connection resets on keep-alive connections.
 		// Without this, responding before the client finishes sending can cause a TCP RST,
 		// which the OTLP exporter treats as a retryable connection error instead of a clean HTTP 400.
 		_, _ = io.Copy(io.Discard, r.Body) //nolint:errcheck // best-effort drain; body may already be closed
+
+		cfg.mu.RLock()
+		thresholds := cfg.thresholds
+		defaultBehavior := cfg.defaultBehavior
+		defaultDelayMS := cfg.defaultDelayMS
+		cfg.mu.RUnlock()
 
 		roll := rand.Float64() * maxPercentage //nolint:gosec // deterministic randomness is fine for fault injection
 

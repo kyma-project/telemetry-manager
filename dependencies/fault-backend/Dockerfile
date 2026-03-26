@@ -10,10 +10,10 @@ RUN go mod download
 
 COPY main.go ./
 
-RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o mock-backend
+RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o fault-backend
 
 FROM scratch
 LABEL org.opencontainers.image.source="https://github.com/kyma-project/telemetry-manager"
 WORKDIR /
-COPY --from=builder /app/mock-backend .
-ENTRYPOINT ["/mock-backend"]
+COPY --from=builder /app/fault-backend .
+ENTRYPOINT ["/fault-backend"]

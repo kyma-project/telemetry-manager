@@ -35,6 +35,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	ctrlpredicate "sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
@@ -184,19 +185,13 @@ func (r *MetricPipelineController) Reconcile(ctx context.Context, req ctrl.Reque
 	return r.reconciler.Reconcile(ctx, req)
 }
 
-// SetupWithManager sets up the controller with the Manager.
-func (r *MetricPipelineController) SetupWithManager(mgr ctrl.Manager) error {
-	b := ctrl.NewControllerManagedBy(mgr).For(&telemetryv1beta1.MetricPipeline{})
-
-	b.WatchesRawSource(
-		source.Channel(r.reconcileTriggerChan, &handler.EnqueueRequestForObject{}),
-	)
-
-	ownedResourceTypesToWatch := []client.Object{
-		&appsv1.Deployment{},
+// metricPipelineOwnedResourceTypes returns the list of Kubernetes resource types that are
+// managed (created/updated/deleted) by the MetricPipeline reconciler and must be watched for changes.
+func metricPipelineOwnedResourceTypes(isIstioActive, vpaCRDExists bool) []client.Object {
+	resources := []client.Object{
 		&appsv1.DaemonSet{},
+		&appsv1.Deployment{},
 		&corev1.ConfigMap{},
-		&corev1.Pod{},
 		&corev1.Secret{},
 		&corev1.Service{},
 		&corev1.ServiceAccount{},
@@ -206,6 +201,25 @@ func (r *MetricPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		&rbacv1.RoleBinding{},
 		&networkingv1.NetworkPolicy{},
 	}
+
+	if isIstioActive {
+		resources = append(resources, &istiosecurityclientv1.PeerAuthentication{})
+	}
+
+	if vpaCRDExists {
+		resources = append(resources, &autoscalingvpav1.VerticalPodAutoscaler{})
+	}
+
+	return resources
+}
+
+// SetupWithManager sets up the controller with the Manager.
+func (r *MetricPipelineController) SetupWithManager(mgr ctrl.Manager) error {
+	b := ctrl.NewControllerManagedBy(mgr).For(&telemetryv1beta1.MetricPipeline{})
+
+	b.WatchesRawSource(
+		source.Channel(r.reconcileTriggerChan, &handler.EnqueueRequestForObject{}),
+	)
 
 	ctx := context.Background()
 
@@ -224,24 +238,11 @@ func (r *MetricPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		return fmt.Errorf("failed to check VPA status: %w", err)
 	}
 
-	// Only watch PeerAuthentication CR if Istio is active
-	// otherwise, manager will have errors if the PeerAuthentication CRD is not present in the cluster
-	if isIstioActive {
-		ownedResourceTypesToWatch = append(ownedResourceTypesToWatch, &istiosecurityclientv1.PeerAuthentication{})
-	}
-
-	// Only watch VPA CR if VPA CRD exists in the cluster
-	// otherwise, manager will have errors if the VPA CRD is not present in the cluster
-	// NOTE: controller needs to watch VPA CR even if the annotation to enable VPA is not present in Telemetry CR,
-	// because the annotation can be added later and this function is only called once during the setup of the controller.
-	if vpaCRDExists {
-		ownedResourceTypesToWatch = append(ownedResourceTypesToWatch, &autoscalingvpav1.VerticalPodAutoscaler{})
-	}
-
-	for _, resource := range ownedResourceTypesToWatch {
+	for _, resource := range metricPipelineOwnedResourceTypes(isIstioActive, vpaCRDExists) {
 		b = b.Watches(
 			resource,
-			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(),
+			handler.EnqueueRequestForOwner(
+				mgr.GetClient().Scheme(),
 				mgr.GetRESTMapper(),
 				&telemetryv1beta1.MetricPipeline{},
 			),
@@ -252,11 +253,17 @@ func (r *MetricPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 	return b.Watches(
 		&operatorv1beta1.Telemetry{},
 		handler.EnqueueRequestsFromMapFunc(r.mapTelemetryChanges),
-		ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete()),
+		// React to spec changes (tracked by generation) and annotation changes on the Telemetry CR.
+		// Annotations carry configuration like VPA opt-in that affect pipeline resources.
+		// Status-only updates are ignored to avoid unnecessary reconciliation loops.
+		ctrlbuilder.WithPredicates(ctrlpredicate.Or(ctrlpredicate.GenerationChangedPredicate{}, ctrlpredicate.AnnotationChangedPredicate{})),
+	).Watches(
+		&corev1.Pod{},
+		handler.EnqueueRequestsFromMapFunc(r.mapPodChanges),
+		ctrlbuilder.WithPredicates(predicateutils.UpdateOrDelete()),
 	).Watches(
 		&corev1.Node{},
 		handler.EnqueueRequestsFromMapFunc(r.mapNodeChanges),
-		ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete()),
 	).Complete(r)
 }
 
@@ -264,6 +271,25 @@ func (r *MetricPipelineController) mapTelemetryChanges(ctx context.Context, obje
 	_, ok := object.(*operatorv1beta1.Telemetry)
 	if !ok {
 		logf.FromContext(ctx).V(1).Error(nil, "Unexpected type: expected Telemetry")
+		return nil
+	}
+
+	requests, err := r.createRequestsForAllPipelines(ctx)
+	if err != nil {
+		logf.FromContext(ctx).Error(err, "Unable to create reconcile requests")
+	}
+
+	return requests
+}
+
+func (r *MetricPipelineController) mapPodChanges(ctx context.Context, object client.Object) []reconcile.Request {
+	pod, ok := object.(*corev1.Pod)
+	if !ok {
+		logf.FromContext(ctx).V(1).Error(nil, "Unexpected type: expected Pod")
+		return nil
+	}
+
+	if !isPodFrom(pod, names.MetricGateway, names.MetricAgent) {
 		return nil
 	}
 
