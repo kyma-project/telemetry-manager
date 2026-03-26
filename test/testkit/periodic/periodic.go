@@ -32,6 +32,9 @@ const (
 	// DefaultInterval is the default interval duration used when no specialized interval is applicable.
 	DefaultInterval = time.Millisecond * 500
 
+	// SelfmonitorQueryInterval is the default interval duration used when checking for status changes related to Selfmonitor Alerts
+	SelfmonitorQueryInterval = time.Second * 5
+
 	// TelemetryInterval is used for asynchronous checks when polling Telemetry data from a mock backend via the export URL.
 	TelemetryInterval = time.Second
 )
