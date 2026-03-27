@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 
-	istionetworkingclientv1 "istio.io/client-go/pkg/apis/networking/v1"
 	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -198,7 +197,6 @@ func logPipelineOwnedResourceTypes(isIstioActive, vpaCRDExists bool) []client.Ob
 	if isIstioActive {
 		resources = append(resources,
 			&istiosecurityclientv1.PeerAuthentication{},
-			&istionetworkingclientv1.DestinationRule{},
 		)
 	}
 
@@ -277,7 +275,7 @@ func (r *LogPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 	// Watch OTLP Gateway DaemonSet to update GatewayHealthy condition for OTLP input pipelines
 	b.Watches(
 		&appsv1.DaemonSet{}, // OTLP Gateway DaemonSet
-		handler.EnqueueRequestsFromMapFunc(r.mapOTLPGatewayToOTLPPipelines),
+		handler.EnqueueRequestsFromMapFunc(r.mapOTLPGatewayChanges),
 		ctrlbuilder.WithPredicates(ctrlpredicate.NewPredicateFuncs(func(object client.Object) bool {
 			return object.GetName() == names.OTLPGateway &&
 				object.GetNamespace() == r.pipelineLockName.Namespace
@@ -288,7 +286,7 @@ func (r *LogPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 	// This ensures that when a pipeline is deleted and frees up a slot, waiting pipelines get reconciled
 	b.Watches(
 		&corev1.ConfigMap{}, // Pipeline lock ConfigMap
-		handler.EnqueueRequestsFromMapFunc(r.mapLockConfigMapToAllPipelines),
+		handler.EnqueueRequestsFromMapFunc(r.mapLockConfigMapChanges),
 		ctrlbuilder.WithPredicates(ctrlpredicate.NewPredicateFuncs(func(object client.Object) bool {
 			return object.GetName() == r.pipelineLockName.Name && object.GetNamespace() == r.pipelineLockName.Namespace
 		})),
@@ -297,18 +295,18 @@ func (r *LogPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 	return b.Complete(r)
 }
 
-// mapLockConfigMapToAllPipelines enqueues reconciliation requests for all LogPipelines
-// when the lock ConfigMap changes. This ensures that pipelines that were previously rejected
-// due to max pipeline limit get a chance to acquire the lock when slots become available.
-func (r *LogPipelineController) mapLockConfigMapToAllPipelines(ctx context.Context, object client.Object) []reconcile.Request {
+// mapLockConfigMapChanges enqueues reconciliation requests for all LogPipelines when the pipeline lock
+// ConfigMap changes. This ensures that pipelines previously rejected due to the max pipeline limit get
+// reconciled when slots become available.
+func (r *LogPipelineController) mapLockConfigMapChanges(ctx context.Context, object client.Object) []reconcile.Request {
 	logf.FromContext(ctx).V(1).Info("Pipeline lock ConfigMap changed, triggering reconciliation of all LogPipelines")
 	return r.enqueueAllPipelines(ctx)
 }
 
-// mapOTLPGatewayToOTLPPipelines enqueues reconciliation requests for LogPipelines with OTLP input
-// when the OTLP Gateway DaemonSet changes. This ensures that GatewayHealthy status conditions
-// are updated to reflect the current gateway state for pipelines that use the gateway.
-func (r *LogPipelineController) mapOTLPGatewayToOTLPPipelines(ctx context.Context, object client.Object) []reconcile.Request {
+// mapOTLPGatewayChanges enqueues reconciliation requests for LogPipelines with OTLP output when the
+// OTLP Gateway DaemonSet changes. This ensures that the GatewayHealthy status condition is updated to
+// reflect the current gateway state for pipelines that use the gateway.
+func (r *LogPipelineController) mapOTLPGatewayChanges(ctx context.Context, object client.Object) []reconcile.Request {
 	logf.FromContext(ctx).V(1).Info("OTLP Gateway DaemonSet changed, triggering reconciliation of LogPipelines with OTLP input")
 
 	var pipelineList telemetryv1beta1.LogPipelineList
@@ -334,6 +332,8 @@ func (r *LogPipelineController) mapOTLPGatewayToOTLPPipelines(ctx context.Contex
 	return requests
 }
 
+// mapTelemetryChanges enqueues reconciliation requests for all LogPipelines when the Telemetry CR
+// changes. This ensures pipelines reflect updated module-level settings such as VPA opt-in annotations.
 func (r *LogPipelineController) mapTelemetryChanges(ctx context.Context, object client.Object) []reconcile.Request {
 	_, ok := object.(*operatorv1beta1.Telemetry)
 	if !ok {
@@ -344,6 +344,9 @@ func (r *LogPipelineController) mapTelemetryChanges(ctx context.Context, object 
 	return r.enqueueAllPipelines(ctx)
 }
 
+// mapPodChanges enqueues reconciliation requests for all LogPipelines when a relevant Pod
+// (Fluent Bit, Log Agent, or OTLP Gateway) is updated or deleted. This ensures that the
+// TelemetryFlowHealthy status condition is updated based on the current pod state.
 func (r *LogPipelineController) mapPodChanges(ctx context.Context, object client.Object) []reconcile.Request {
 	pod, ok := object.(*corev1.Pod)
 	if !ok {
@@ -458,6 +461,9 @@ func configureOTelReconciler(config LogPipelineControllerConfig, client client.C
 	return otelReconciler, nil
 }
 
+// mapNodeChanges updates the node size tracker when a Node is added, removed, or modified.
+// If the smallest node memory changes, it enqueues reconciliation requests for all LogPipelines
+// so that resource requirements can be recalculated.
 func (r *LogPipelineController) mapNodeChanges(ctx context.Context, object client.Object) []reconcile.Request {
 	changed, err := r.nodeSizeTracker.UpdateSmallestMemory(ctx)
 	if err != nil {
