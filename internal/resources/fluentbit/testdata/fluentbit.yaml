@@ -240,7 +240,6 @@ spec:
     metadata:
       annotations:
         checksum/config: 91ba0ed4b08d1118be17c56fb8debd2751c946b444b77ae142a9483b119834e2
-        test-anno-key: test-anno-value
         traffic.sidecar.istio.io/excludeInboundPorts: 2020,2021
       labels:
         app.kubernetes.io/component: agent
@@ -251,7 +250,6 @@ spec:
         kyma-project.io/module: telemetry
         sidecar.istio.io/inject: "true"
         telemetry.kyma-project.io/log-export: "true"
-        test-label-key: test-label-value
     spec:
       containers:
       - envFrom:

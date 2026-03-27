@@ -92,15 +92,17 @@ var (
 	setupLog = ctrl.Log.WithName("setup")
 
 	// Operator flags
-	certDir                 string
-	highPriorityClassName   string
-	normalPriorityClassName string
-	clusterTrustBundleName  string
-	imagePullSecretName     string
-	additionalLabels        cliflags.Map
-	additionalAnnotations   cliflags.Map
-	deployOTLPGateway       bool
-	unlimitedPipelines      bool
+	certDir                          string
+	highPriorityClassName            string
+	normalPriorityClassName          string
+	clusterTrustBundleName           string
+	imagePullSecretName              string
+	additionalWorkloadLabels         cliflags.Map
+	additionalWorkloadAnnotations    cliflags.Map
+	additionalWorkloadPodLabels      cliflags.Map
+	additionalWorkloadPodAnnotations cliflags.Map
+	deployOTLPGateway                bool
+	unlimitedPipelines               bool
 )
 
 const (
@@ -179,8 +181,10 @@ func run() error {
 		config.WithVersion(build.GitTag()),
 		config.WithImagePullSecretName(imagePullSecretName),
 		config.WithClusterTrustBundleName(clusterTrustBundleName),
-		config.WithAdditionalWorkloadLabels(additionalLabels),
-		config.WithAdditionalWorkloadAnnotations(additionalAnnotations),
+		config.WithAdditionalWorkloadLabels(additionalWorkloadLabels),
+		config.WithAdditionalWorkloadAnnotations(additionalWorkloadAnnotations),
+		config.WithAdditionalWorkloadPodLabels(additionalWorkloadPodLabels),
+		config.WithAdditionalWorkloadPodAnnotations(additionalWorkloadPodAnnotations),
 		config.WithDeployOTLPGateway(featureflags.IsEnabled(featureflags.DeployOTLPGateway)),
 		config.WithUnlimitedPipelines(featureflags.IsEnabled(featureflags.UnlimitedPipelineCount)),
 	)
@@ -433,8 +437,10 @@ func parseFlags() {
 	flag.StringVar(&normalPriorityClassName, "normal-priority-class-name", "", "Normal priority class name used by managed Deployments")
 	flag.StringVar(&clusterTrustBundleName, "cluster-trust-bundle-name", "", "The name ClusterTrustBundle resource")
 	flag.StringVar(&imagePullSecretName, "image-pull-secret-name", "", "The image pull secret name to use for pulling images of all created workloads (agents, gateways, self-monitor)")
-	flag.Var(&additionalLabels, "additional-label", "Additional label to add to all created resources in key=value format")
-	flag.Var(&additionalAnnotations, "additional-annotation", "Additional annotation to add to all created resources in key=value format")
+	flag.Var(&additionalWorkloadLabels, "additional-workload-label", "Additional label to add to all created workload resources (DaemonSets, Deployments) in key=value format")
+	flag.Var(&additionalWorkloadAnnotations, "additional-workload-annotation", "Additional annotation to add to all created workload resources (DaemonSets, Deployments) in key=value format")
+	flag.Var(&additionalWorkloadPodLabels, "additional-workload-pod-label", "Additional label to add to all created workload pods in key=value format")
+	flag.Var(&additionalWorkloadPodAnnotations, "additional-workload-pod-annotation", "Additional annotation to add to all created workload pods in key=value format")
 
 	flag.BoolVar(&deployOTLPGateway, "deploy-otlp-gateway", false, "Enable deploying unified OTLP gateway")
 	flag.BoolVar(&unlimitedPipelines, "unlimited-pipelines", false, "Allow unlimited number of OTEL pipelines")

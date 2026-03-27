@@ -88,7 +88,6 @@ spec:
     metadata:
       annotations:
         checksum/config: 1d8e9f768e6b24485bbdd6b9aa417d37fec897a7dafc8321355abc0d45259c9e
-        test-anno-key: test-anno-value
         traffic.sidecar.istio.io/excludeInboundPorts: "8888"
       labels:
         app.kubernetes.io/component: agent
@@ -97,7 +96,6 @@ spec:
         app.kubernetes.io/part-of: telemetry
         kyma-project.io/module: telemetry
         sidecar.istio.io/inject: "true"
-        test-label-key: test-label-value
     spec:
       containers:
       - args:

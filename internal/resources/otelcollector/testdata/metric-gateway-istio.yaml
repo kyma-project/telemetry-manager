@@ -118,7 +118,6 @@ spec:
       annotations:
         checksum/config: 1d8e9f768e6b24485bbdd6b9aa417d37fec897a7dafc8321355abc0d45259c9e
         sidecar.istio.io/interceptionMode: TPROXY
-        test-anno-key: test-anno-value
         traffic.sidecar.istio.io/excludeInboundPorts: "8888"
       labels:
         app.kubernetes.io/component: gateway
@@ -129,7 +128,6 @@ spec:
         sidecar.istio.io/inject: "true"
         telemetry.kyma-project.io/metric-export: "true"
         telemetry.kyma-project.io/metric-ingest: "true"
-        test-label-key: test-label-value
     spec:
       affinity:
         podAntiAffinity:
