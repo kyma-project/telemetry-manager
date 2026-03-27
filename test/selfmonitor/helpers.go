@@ -274,6 +274,7 @@ func assertPipelineHealthy(t *testing.T, component, pipelineName string) {
 // assertSelfMonitorRateNonZero waits until at least one of the component's rate queries
 // returns a non-zero value, confirming that Prometheus has sufficient scrape history.
 func assertSelfMonitorRateNonZero(t *testing.T, component string) {
+	
 	t.Helper()
 
 	Eventually(func() bool {

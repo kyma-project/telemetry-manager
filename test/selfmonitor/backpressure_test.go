@@ -103,7 +103,7 @@ func TestBackpressure(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			labels := []string{suite.LabelSelfMonitor, tc.component, suite.LabelBackpressure}
 
-			var opts []kubeprep.Option
+			opts := []kubeprep.Option{kubeprep.WithGatewayReplicas(1)}
 			if tc.useIstio {
 				opts = append(opts, kubeprep.WithIstio())
 			}

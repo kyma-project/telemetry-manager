@@ -30,6 +30,9 @@ type Config struct {
 	SkipManagedResourceCleanup bool     // Skip waiting for manager-created resources (collectors, selfmonitor) to be deleted at test end
 	// CleanupFluentBitHostPath clears Fluent Bit node buffer paths after managed resource cleanup (WithFluentBitHostPathCleanup).
 	CleanupFluentBitHostPath bool
+	// GatewayReplicas sets the number of replicas for all gateways via the Telemetry CR's static scaling spec.
+	// Zero means use the manager default (2).
+	GatewayReplicas int32
 }
 
 // Option is a functional option for configuring cluster setup
@@ -135,6 +138,15 @@ func WithFluentBitHostPathCleanup() Option {
 func WithForceFreshInstall() Option {
 	return func(c *Config) {
 		c.ForceFreshInstall = true
+	}
+}
+
+// WithGatewayReplicas sets the number of replicas for all gateways (log, metric, trace)
+// via the Telemetry CR's static scaling spec. Use this to override the default of 2,
+// for example to reduce resource usage in tests that don't need HA.
+func WithGatewayReplicas(replicas int32) Option {
+	return func(c *Config) {
+		c.GatewayReplicas = replicas
 	}
 }
 
