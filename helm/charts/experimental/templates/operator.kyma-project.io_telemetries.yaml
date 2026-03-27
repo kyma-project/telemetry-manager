@@ -129,12 +129,12 @@ spec:
                             type: string
                         type: object
                     type: object
+                    x-kubernetes-validations:
+                    - message: Gateway scaling is deprecated and must not be set.
+                        The gateway runs as a DaemonSet that scales automatically
+                        with cluster nodes.
+                      rule: '!has(self.scaling) || (!has(self.scaling.type) && !has(self.scaling.static))'
                 type: object
-                x-kubernetes-validations:
-                - message: Gateway scaling is deprecated and must not be set. The
-                    gateway runs as a DaemonSet that scales automatically with cluster
-                    nodes.
-                  rule: '!has(self.gateway.scaling)'
               metric:
                 description: Metric configures module settings specific to the metric
                   features. This field is optional.
@@ -177,6 +177,11 @@ spec:
                             type: string
                         type: object
                     type: object
+                    x-kubernetes-validations:
+                    - message: Gateway scaling is deprecated and must not be set.
+                        The gateway runs as a DaemonSet that scales automatically
+                        with cluster nodes.
+                      rule: '!has(self.scaling) || (!has(self.scaling.type) && !has(self.scaling.static))'
                   istio:
                     description: Istio configures collection settings specific to
                       Istio metrics input.
@@ -220,11 +225,6 @@ spec:
                           rule: self > duration('0s')
                     type: object
                 type: object
-                x-kubernetes-validations:
-                - message: Gateway scaling is deprecated and must not be set. The
-                    gateway runs as a DaemonSet that scales automatically with cluster
-                    nodes.
-                  rule: '!has(self.gateway.scaling)'
               trace:
                 description: Trace configures module settings specific to the trace
                   features. This field is optional.
@@ -258,12 +258,12 @@ spec:
                             type: string
                         type: object
                     type: object
+                    x-kubernetes-validations:
+                    - message: Gateway scaling is deprecated and must not be set.
+                        The gateway runs as a DaemonSet that scales automatically
+                        with cluster nodes.
+                      rule: '!has(self.scaling) || (!has(self.scaling.type) && !has(self.scaling.static))'
                 type: object
-                x-kubernetes-validations:
-                - message: Gateway scaling is deprecated and must not be set. The
-                    gateway runs as a DaemonSet that scales automatically with cluster
-                    nodes.
-                  rule: '!has(self.gateway.scaling)'
             type: object
           status:
             description: TelemetryStatus defines the observed state of Telemetry
@@ -483,12 +483,12 @@ spec:
                             type: string
                         type: object
                     type: object
+                    x-kubernetes-validations:
+                    - message: Gateway scaling is deprecated and must not be set.
+                        The gateway runs as a DaemonSet that scales automatically
+                        with cluster nodes.
+                      rule: '!has(self.scaling) || (!has(self.scaling.type) && !has(self.scaling.static))'
                 type: object
-                x-kubernetes-validations:
-                - message: Gateway scaling is deprecated and must not be set. The
-                    gateway runs as a DaemonSet that scales automatically with cluster
-                    nodes.
-                  rule: '!has(self.gateway.scaling)'
               metric:
                 description: Metric configures module settings specific to the metric
                   features. This field is optional.
@@ -531,6 +531,11 @@ spec:
                             type: string
                         type: object
                     type: object
+                    x-kubernetes-validations:
+                    - message: Gateway scaling is deprecated and must not be set.
+                        The gateway runs as a DaemonSet that scales automatically
+                        with cluster nodes.
+                      rule: '!has(self.scaling) || (!has(self.scaling.type) && !has(self.scaling.static))'
                   istio:
                     description: Istio configures collection settings specific to
                       Istio metrics input.
@@ -574,11 +579,6 @@ spec:
                           rule: self > duration('0s')
                     type: object
                 type: object
-                x-kubernetes-validations:
-                - message: Gateway scaling is deprecated and must not be set. The
-                    gateway runs as a DaemonSet that scales automatically with cluster
-                    nodes.
-                  rule: '!has(self.gateway.scaling)'
               trace:
                 description: Trace configures module settings specific to the trace
                   features. This field is optional.
@@ -612,12 +612,12 @@ spec:
                             type: string
                         type: object
                     type: object
+                    x-kubernetes-validations:
+                    - message: Gateway scaling is deprecated and must not be set.
+                        The gateway runs as a DaemonSet that scales automatically
+                        with cluster nodes.
+                      rule: '!has(self.scaling) || (!has(self.scaling.type) && !has(self.scaling.static))'
                 type: object
-                x-kubernetes-validations:
-                - message: Gateway scaling is deprecated and must not be set. The
-                    gateway runs as a DaemonSet that scales automatically with cluster
-                    nodes.
-                  rule: '!has(self.gateway.scaling)'
             type: object
           status:
             description: TelemetryStatus defines the observed state of Telemetry

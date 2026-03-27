@@ -73,7 +73,6 @@ type TelemetrySpec struct {
 }
 
 // MetricSpec configures module settings specific to the metric features.
-// +kubebuilder:validation:XValidation:rule="!has(self.gateway.scaling)",message="Gateway scaling is deprecated and must not be set. The gateway runs as a DaemonSet that scales automatically with cluster nodes."
 type MetricSpec struct {
 	// Gateway configures the metric gateway.
 	// +kubebuilder:validation:Optional
@@ -110,7 +109,6 @@ type MetricInputSpec struct {
 }
 
 // TraceSpec configures module settings specific to the trace features.
-// +kubebuilder:validation:XValidation:rule="!has(self.gateway.scaling)",message="Gateway scaling is deprecated and must not be set. The gateway runs as a DaemonSet that scales automatically with cluster nodes."
 type TraceSpec struct {
 	// Gateway configures the trace gateway.
 	// +kubebuilder:validation:Optional
@@ -118,7 +116,6 @@ type TraceSpec struct {
 }
 
 // LogSpec configures module settings specific to the log features.
-// +kubebuilder:validation:XValidation:rule="!has(self.gateway.scaling)",message="Gateway scaling is deprecated and must not be set. The gateway runs as a DaemonSet that scales automatically with cluster nodes."
 type LogSpec struct {
 	// Gateway configures the log gateway.
 	// +kubebuilder:validation:Optional
@@ -128,12 +125,13 @@ type LogSpec struct {
 // GatewaySpec defines settings of a gateway.
 //
 // Deprecated: Gateway scaling configuration is no longer supported. The gateway now runs as a DaemonSet.
+// +kubebuilder:validation:XValidation:rule="!has(self.scaling) || (!has(self.scaling.type) && !has(self.scaling.static))",message="Gateway scaling is deprecated and must not be set. The gateway runs as a DaemonSet that scales automatically with cluster nodes."
 type GatewaySpec struct {
 	// Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.
 	//
 	// Deprecated: This field is no longer supported and must not be set.
 	// +kubebuilder:validation:Optional
-	Scaling Scaling `json:"scaling"`
+	Scaling *Scaling `json:"scaling,omitempty"`
 }
 
 // Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.
