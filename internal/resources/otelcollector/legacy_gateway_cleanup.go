@@ -18,6 +18,7 @@ import (
 )
 
 // TODO: Remove after first roll-out
+
 // DeleteLegacyGatewayResources removes all Kubernetes resources that were created by the old
 // per-signal gateway Deployments (telemetry-trace-gateway, telemetry-metric-gateway, telemetry-log-gateway).
 // This is needed for clusters upgrading from the old architecture to the centralized OTLP Gateway DaemonSet.
