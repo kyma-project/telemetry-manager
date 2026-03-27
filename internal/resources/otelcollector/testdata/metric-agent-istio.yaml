@@ -79,7 +79,6 @@ spec:
           proxyMetadata:
             OUTPUT_CERTS: /etc/istio-output-certs
         sidecar.istio.io/userVolumeMount: '[{"name": "istio-certs", "mountPath": "/etc/istio-output-certs"}]'
-        test-anno-key: test-anno-value
         traffic.sidecar.istio.io/excludeInboundPorts: "8888"
         traffic.sidecar.istio.io/includeOutboundIPRanges: ""
         traffic.sidecar.istio.io/includeOutboundPorts: 4317,9090
@@ -93,7 +92,6 @@ spec:
         sidecar.istio.io/inject: "true"
         telemetry.kyma-project.io/metric-export: "true"
         telemetry.kyma-project.io/metric-scrape: "true"
-        test-label-key: test-label-value
     spec:
       containers:
       - args:
