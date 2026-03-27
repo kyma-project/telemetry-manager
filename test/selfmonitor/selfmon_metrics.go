@@ -10,6 +10,10 @@ import (
 	"testing"
 	"time"
 
+	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	commonlabels "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	selfmonports "github.com/kyma-project/telemetry-manager/internal/selfmonitor/ports"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -148,6 +152,48 @@ func logSelfMonitorTargets(t *testing.T) {
 
 	for _, target := range dropped {
 		t.Logf("  [dropped] %s (labels: %v)", target.scrapeURL, target.labels)
+	}
+}
+
+// logScrapeEndpoints lists all Endpoints in the scrape namespace that carry the
+// self-monitor label, so we can see whether targets are missing because k8s
+// Endpoints don't exist yet or because Prometheus SD isn't discovering them.
+// It never fails the test.
+func logScrapeEndpoints(t *testing.T) {
+	t.Helper()
+
+	var epList corev1.EndpointsList
+	if err := suite.K8sClient.List(t.Context(), &epList,
+		client.InNamespace(kitkyma.SystemNamespaceName),
+		client.MatchingLabels{
+			commonlabels.LabelKeyTelemetrySelfMonitor: commonlabels.LabelValueTelemetrySelfMonitor,
+		},
+	); err != nil {
+		t.Logf("  endpoints list error: %v", err)
+		return
+	}
+
+	t.Logf("--- scrape endpoints in %s (self-monitor label, count: %d) ---", kitkyma.SystemNamespaceName, len(epList.Items))
+
+	for i := range epList.Items {
+		ep := &epList.Items[i]
+		for _, sub := range ep.Subsets {
+			for _, addr := range sub.Addresses {
+				for _, port := range sub.Ports {
+					t.Logf("  %s: %s:%d (ready)", ep.Name, addr.IP, port.Port)
+				}
+			}
+
+			for _, addr := range sub.NotReadyAddresses {
+				for _, port := range sub.Ports {
+					t.Logf("  %s: %s:%d (not-ready)", ep.Name, addr.IP, port.Port)
+				}
+			}
+		}
+
+		if len(ep.Subsets) == 0 {
+			t.Logf("  %s: no subsets", ep.Name)
+		}
 	}
 }
 

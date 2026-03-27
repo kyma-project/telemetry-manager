@@ -322,6 +322,7 @@ func assertSelfMonitorRateNonZero(t *testing.T, component string) {
 	t.Helper()
 
 	Eventually(func() bool {
+		logScrapeEndpoints(t)
 		logSelfMonitorTargets(t)
 		logComponentWorkloads(t, component)
 		t.Logf("--- rate baseline check [%s] ---", time.Now().Format(time.TimeOnly))
