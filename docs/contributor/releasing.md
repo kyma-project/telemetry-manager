@@ -40,7 +40,7 @@ The release process uses GitHub Actions workflows to automate the following task
 
 ### Step 1: Start Release Workflow
 
-In the telemetry-manager repo, go to **Actions**, select [Telemetry Release](https://github.com/kyma-project/telemetry-manager/actions/workflows/release.yml), and run the workflow with the following inputs:
+In the telemetry-manager repository, go to **Actions**, select [Telemetry Release](https://github.com/kyma-project/telemetry-manager/actions/workflows/release.yml), and run the workflow with the following inputs:
 
 
 | Input                      | Description                                                             | Example              |
@@ -153,7 +153,7 @@ If all checks pass, the workflow merges both PRs automatically.
 
 To release to the regular channel, manually trigger the module release workflow:
 
-In the telemetry-manager repo, go to **Actions**, select [Telemetry Module Release](https://github.com/kyma-project/telemetry-manager/actions/workflows/module-release.yml), and run the workflow with the following inputs:
+In the telemetry-manager repository, go to **Actions**, select [Telemetry Module Release](https://github.com/kyma-project/telemetry-manager/actions/workflows/module-release.yml), and run the workflow with the following inputs:
    - **version**: **`{VERSION}`**, such as `1.2.3`
    - **channel**: `regular`
    - **dry_run**: `false`
@@ -167,7 +167,7 @@ In the telemetry-manager repo, go to **Actions**, select [Telemetry Module Relea
 | `fast`         | Early adopters       | Every release     | Automatic (if module_release=true) |
 | `regular`      | Stable production    | Selected releases | Manual                             |
 
-## Monitoring Release Progress
+## Monitor Release Progress
 
 ### Workflow Status
 
@@ -222,7 +222,7 @@ Alternatively, rerun the workflow with force mode to re-create the release. Caut
 The workflow waits for a maximum of 120 minutes for you to merge the PR. If you do not merge the PR within 120 minutes, the workflow fails.
 **Solution**:
 1. Review and merge the PR manually.
-2. In the telemetry-manager repo, go to **Actions** and rerun the workflow.
+2. In the telemetry-manager repository, go to **Actions** and rerun the workflow.
 
 ## Post-Release Tasks
 
