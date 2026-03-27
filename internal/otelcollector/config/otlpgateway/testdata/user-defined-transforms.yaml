@@ -1,6 +1,16 @@
 extensions:
+    cgroupruntime:
+        gomaxprocs:
+            enabled: false
+        gomemlimit:
+            enabled: true
+            ratio: 0.8
     health_check:
         endpoint: ${MY_POD_IP}:13133
+    k8s_leader_elector:
+        auth_type: serviceAccount
+        lease_name: telemetry-metric-gateway-kymastats
+        lease_namespace: kyma-system
     pprof:
         endpoint: 127.0.0.1:1777
 service:
@@ -11,7 +21,7 @@ service:
             processors:
                 - memory_limiter
                 - transform/set-observed-time-if-zero
-                - k8sattributes
+                - k8s_attributes
                 - istio_noise_filter
                 - transform/insert-cluster-attributes
                 - service_enrichment
@@ -27,7 +37,7 @@ service:
             processors:
                 - memory_limiter
                 - transform/set-observed-time-if-zero
-                - k8sattributes
+                - k8s_attributes
                 - istio_noise_filter
                 - transform/insert-cluster-attributes
                 - service_enrichment
@@ -37,12 +47,55 @@ service:
                 - batch
             exporters:
                 - otlp_grpc/test-log-2
+        metrics/enrichment:
+            receivers:
+                - forward/input
+            processors:
+                - memory_limiter
+                - transform/set-instrumentation-scope-kyma
+                - k8s_attributes
+                - service_enrichment
+                - transform/insert-cluster-attributes
+            exporters:
+                - forward/enrichment
+        metrics/input-kyma-stats:
+            receivers:
+                - kymastats
+            processors:
+                - transform/set-kyma-input-name-kyma
+            exporters:
+                - forward/input
+        metrics/input-otlp:
+            receivers:
+                - otlp
+            processors:
+                - transform/set-kyma-input-name-otlp
+            exporters:
+                - forward/input
+        metrics/test-metric-1-output:
+            receivers:
+                - forward/enrichment
+            processors:
+                - transform/drop-kyma-attributes
+                - transform/user-defined-test-metric-1
+                - batch
+            exporters:
+                - otlp_grpc/test-metric-1
+        metrics/test-metric-2-output:
+            receivers:
+                - forward/enrichment
+            processors:
+                - transform/drop-kyma-attributes
+                - transform/user-defined-test-metric-2
+                - batch
+            exporters:
+                - otlp_grpc/test-metric-2
         traces/test-trace-1:
             receivers:
                 - otlp
             processors:
                 - memory_limiter
-                - k8sattributes
+                - k8s_attributes
                 - istio_noise_filter
                 - transform/insert-cluster-attributes
                 - service_enrichment
@@ -56,7 +109,7 @@ service:
                 - otlp
             processors:
                 - memory_limiter
-                - k8sattributes
+                - k8s_attributes
                 - istio_noise_filter
                 - transform/insert-cluster-attributes
                 - service_enrichment
@@ -79,7 +132,26 @@ service:
     extensions:
         - health_check
         - pprof
+        - cgroupruntime
+        - k8s_leader_elector
 receivers:
+    kymastats:
+        auth_type: serviceAccount
+        collection_interval: 30s
+        resources:
+            - group: operator.kyma-project.io
+              version: v1beta1
+              resource: telemetries
+            - group: telemetry.kyma-project.io
+              version: v1beta1
+              resource: logpipelines
+            - group: telemetry.kyma-project.io
+              version: v1beta1
+              resource: tracepipelines
+            - group: telemetry.kyma-project.io
+              version: v1beta1
+              resource: metricpipelines
+        k8s_leader_elector: k8s_leader_elector
     otlp:
         protocols:
             http:
@@ -94,7 +166,7 @@ processors:
     istio_enrichment:
         scope_version: 1.0.0
     istio_noise_filter: {}
-    k8sattributes:
+    k8s_attributes:
         auth_type: serviceAccount
         passthrough: false
         extract:
@@ -155,6 +227,22 @@ processors:
                 - set(resource.attributes["k8s.cluster.name"], "${KUBERNETES_SERVICE_HOST}") where resource.attributes["k8s.cluster.name"] == nil or resource.attributes["k8s.cluster.name"] == ""
                 - set(resource.attributes["k8s.cluster.uid"], "") where resource.attributes["k8s.cluster.uid"] == nil or resource.attributes["k8s.cluster.uid"] == ""
                 - set(resource.attributes["cloud.provider"], "test-cloud-provider") where resource.attributes["cloud.provider"] == nil or resource.attributes["cloud.provider"] == ""
+    transform/set-instrumentation-scope-kyma:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - set(scope.version, "1.0.0") where scope.name == "github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver"
+                - set(scope.name, "io.kyma-project.telemetry/kyma") where scope.name == "github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver"
+    transform/set-kyma-input-name-kyma:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - set(resource.attributes["kyma.input.name"], "kyma")
+    transform/set-kyma-input-name-otlp:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - set(resource.attributes["kyma.input.name"], "otlp")
     transform/set-observed-time-if-zero:
         error_mode: ignore
         log_statements:
@@ -178,6 +266,22 @@ processors:
                 - set(body, "transformed2")
               conditions:
                 - IsMatch(body, ".*error.*")
+    transform/user-defined-test-metric-1:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - set(attributes["metric.status"], "error")
+                - set(body, "transformed1")
+              conditions:
+                - IsMatch(body, ".*error.*")
+    transform/user-defined-test-metric-2:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - set(attributes["metric.status"], "error")
+                - set(body, "transformed2")
+              conditions:
+                - IsMatch(body, ".*error.*")
     transform/user-defined-test-trace-1:
         error_mode: ignore
         trace_statements:
@@ -197,6 +301,7 @@ processors:
 exporters:
     otlp_grpc/test-log-1:
         endpoint: ${OTLP_ENDPOINT_TEST_LOG_1}
+        compression: gzip
         sending_queue:
             enabled: true
             queue_size: 128
@@ -207,6 +312,29 @@ exporters:
             max_elapsed_time: 300s
     otlp_grpc/test-log-2:
         endpoint: ${OTLP_ENDPOINT_TEST_LOG_2}
+        compression: gzip
+        sending_queue:
+            enabled: true
+            queue_size: 128
+        retry_on_failure:
+            enabled: true
+            initial_interval: 5s
+            max_interval: 30s
+            max_elapsed_time: 300s
+    otlp_grpc/test-metric-1:
+        endpoint: ${OTLP_ENDPOINT_TEST_METRIC_1}
+        compression: gzip
+        sending_queue:
+            enabled: true
+            queue_size: 128
+        retry_on_failure:
+            enabled: true
+            initial_interval: 5s
+            max_interval: 30s
+            max_elapsed_time: 300s
+    otlp_grpc/test-metric-2:
+        endpoint: ${OTLP_ENDPOINT_TEST_METRIC_2}
+        compression: gzip
         sending_queue:
             enabled: true
             queue_size: 128
@@ -217,6 +345,7 @@ exporters:
             max_elapsed_time: 300s
     otlp_grpc/test-trace-1:
         endpoint: ${OTLP_ENDPOINT_TEST_TRACE_1}
+        compression: gzip
         sending_queue:
             enabled: true
             queue_size: 128
@@ -227,6 +356,7 @@ exporters:
             max_elapsed_time: 300s
     otlp_grpc/test-trace-2:
         endpoint: ${OTLP_ENDPOINT_TEST_TRACE_2}
+        compression: gzip
         sending_queue:
             enabled: true
             queue_size: 128
@@ -235,3 +365,6 @@ exporters:
             initial_interval: 5s
             max_interval: 30s
             max_elapsed_time: 300s
+connectors:
+    forward/enrichment: {}
+    forward/input: {}

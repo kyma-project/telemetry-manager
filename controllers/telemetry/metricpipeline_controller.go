@@ -35,6 +35,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	ctrlpredicate "sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
@@ -44,7 +45,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metricagent"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metricgateway"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
@@ -70,15 +70,15 @@ type MetricPipelineController struct {
 	reconcileTriggerChan <-chan event.GenericEvent
 	reconciler           *metricpipeline.Reconciler
 	secretWatchClient    *secretwatch.Client
+	pipelineLockName     types.NamespacedName
 }
 
 type MetricPipelineControllerConfig struct {
 	config.Global
 
-	MetricAgentPriorityClassName   string
-	MetricGatewayPriorityClassName string
-	OTelCollectorImage             string
-	RestConfig                     *rest.Config
+	MetricAgentPriorityClassName string
+	OTelCollectorImage           string
+	RestConfig                   *rest.Config
 }
 
 func NewMetricPipelineController(config MetricPipelineControllerConfig, client client.Client, reconcileTriggerChan <-chan event.GenericEvent, secretWatchClient *secretwatch.Client) (*MetricPipelineController, error) {
@@ -140,7 +140,6 @@ func NewMetricPipelineController(config MetricPipelineControllerConfig, client c
 	}
 
 	agentConfigBuilder := &metricagent.Builder{Reader: client}
-	gatewayConfigBuilder := &metricgateway.Builder{Reader: client}
 
 	reconciler := metricpipeline.New(
 		metricpipeline.WithClient(client),
@@ -151,10 +150,8 @@ func NewMetricPipelineController(config MetricPipelineControllerConfig, client c
 		metricpipeline.WithAgentFlowHealthProber(agentFlowHealthProber),
 		metricpipeline.WithAgentProber(&workloadstatus.DaemonSetProber{Client: client}),
 
-		metricpipeline.WithGatewayApplierDeleter(otelcollector.NewMetricGatewayApplierDeleter(config.Global, config.OTelCollectorImage, config.MetricGatewayPriorityClassName)),
-		metricpipeline.WithGatewayConfigBuilder(gatewayConfigBuilder),
 		metricpipeline.WithGatewayFlowHealthProber(gatewayFlowHealthProber),
-		metricpipeline.WithGatewayProber(&workloadstatus.DeploymentProber{Client: client}),
+		metricpipeline.WithGatewayProber(&workloadstatus.DaemonSetProber{Client: client}),
 
 		metricpipeline.WithErrorToMessageConverter(&conditions.ErrorToMessageConverter{}),
 		metricpipeline.WithIstioStatusChecker(istiostatus.NewChecker(discoveryClient)),
@@ -173,6 +170,10 @@ func NewMetricPipelineController(config MetricPipelineControllerConfig, client c
 		reconcileTriggerChan: reconcileTriggerChan,
 		reconciler:           reconciler,
 		secretWatchClient:    secretWatchClient,
+		pipelineLockName: types.NamespacedName{
+			Name:      names.MetricPipelineLock,
+			Namespace: config.TargetNamespace(),
+		},
 	}, nil
 }
 
@@ -188,8 +189,8 @@ func (r *MetricPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		source.Channel(r.reconcileTriggerChan, &handler.EnqueueRequestForObject{}),
 	)
 
+	// TODO: Mainly for Metric Agent reconciliation, should be moved to agent controller after migration.
 	ownedResourceTypesToWatch := []client.Object{
-		&appsv1.Deployment{},
 		&appsv1.DaemonSet{},
 		&corev1.ConfigMap{},
 		&corev1.Pod{},
@@ -220,6 +221,7 @@ func (r *MetricPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		return fmt.Errorf("failed to check VPA status: %w", err)
 	}
 
+	// TODO: PeerAuthentication watch should be moved to agent controller after migration.
 	// Only watch PeerAuthentication CR if Istio is active
 	// otherwise, manager will have errors if the PeerAuthentication CRD is not present in the cluster
 	if isIstioActive {
@@ -245,12 +247,48 @@ func (r *MetricPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		)
 	}
 
+	// Watch OTLP Gateway DaemonSet to update GatewayHealthy condition when gateway status changes
+	b.Watches(
+		&appsv1.DaemonSet{}, // OTLP Gateway DaemonSet
+		handler.EnqueueRequestsFromMapFunc(r.mapOTLPGatewayToAllPipelines),
+		ctrlbuilder.WithPredicates(ctrlpredicate.NewPredicateFuncs(func(object client.Object) bool {
+			return object.GetName() == names.OTLPGateway &&
+				object.GetNamespace() == r.pipelineLockName.Namespace
+		})),
+	)
+
+	// Watch the pipeline lock ConfigMap to trigger reconciliation of all pipelines when lock changes
+	// This ensures that when a pipeline is deleted and frees up a slot, waiting pipelines get reconciled
+	b.Watches(
+		&corev1.ConfigMap{}, // Pipeline lock ConfigMap
+		handler.EnqueueRequestsFromMapFunc(r.mapLockConfigMapToAllPipelines),
+		ctrlbuilder.WithPredicates(ctrlpredicate.NewPredicateFuncs(func(object client.Object) bool {
+			return object.GetName() == r.pipelineLockName.Name && object.GetNamespace() == r.pipelineLockName.Namespace
+		})),
+	)
+
 	// TODO: Watching the Telemetry CR should be entirely moved to the OTLP Gateway and Agents Controllers (remove this after the refactoring to MetricAgent Controller is done)
 	return b.Watches(
 		&operatorv1beta1.Telemetry{},
 		handler.EnqueueRequestsFromMapFunc(r.mapTelemetryChanges),
 		ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete()),
 	).Complete(r)
+}
+
+// mapLockConfigMapToAllPipelines enqueues reconciliation requests for all MetricPipelines
+// when the lock ConfigMap changes. This ensures that pipelines that were previously rejected
+// due to max pipeline limit get a chance to acquire the lock when slots become available.
+func (r *MetricPipelineController) mapLockConfigMapToAllPipelines(ctx context.Context, object client.Object) []reconcile.Request {
+	logf.FromContext(ctx).V(1).Info("Pipeline lock ConfigMap changed, triggering reconciliation of all MetricPipelines")
+	return r.enqueueAllPipelines(ctx)
+}
+
+// mapOTLPGatewayToAllPipelines enqueues reconciliation requests for all MetricPipelines
+// when the OTLP Gateway DaemonSet changes. This ensures that GatewayHealthy status conditions
+// are updated to reflect the current gateway state.
+func (r *MetricPipelineController) mapOTLPGatewayToAllPipelines(ctx context.Context, object client.Object) []reconcile.Request {
+	logf.FromContext(ctx).V(1).Info("OTLP Gateway DaemonSet changed, triggering reconciliation of all MetricPipelines")
+	return r.enqueueAllPipelines(ctx)
 }
 
 func (r *MetricPipelineController) mapTelemetryChanges(ctx context.Context, object client.Object) []reconcile.Request {
@@ -260,29 +298,25 @@ func (r *MetricPipelineController) mapTelemetryChanges(ctx context.Context, obje
 		return nil
 	}
 
-	requests, err := r.createRequestsForAllPipelines(ctx)
-	if err != nil {
-		logf.FromContext(ctx).Error(err, "Unable to create reconcile requests")
+	return r.enqueueAllPipelines(ctx)
+}
+
+// enqueueAllPipelines lists all MetricPipelines and returns a reconcile request for each one.
+func (r *MetricPipelineController) enqueueAllPipelines(ctx context.Context) []reconcile.Request {
+	var pipelineList telemetryv1beta1.MetricPipelineList
+	if err := r.List(ctx, &pipelineList); err != nil {
+		logf.FromContext(ctx).Error(err, "Failed to list MetricPipelines")
+		return []reconcile.Request{}
+	}
+
+	requests := make([]reconcile.Request, len(pipelineList.Items))
+	for i := range pipelineList.Items {
+		requests[i] = reconcile.Request{
+			NamespacedName: types.NamespacedName{
+				Name: pipelineList.Items[i].Name,
+			},
+		}
 	}
 
 	return requests
-}
-
-func (r *MetricPipelineController) createRequestsForAllPipelines(ctx context.Context) ([]reconcile.Request, error) {
-	var pipelines telemetryv1beta1.MetricPipelineList
-
-	var requests []reconcile.Request
-
-	err := r.List(ctx, &pipelines)
-	if err != nil {
-		return nil, fmt.Errorf("failed to list MetricPipelines: %w", err)
-	}
-
-	for i := range pipelines.Items {
-		var pipeline = pipelines.Items[i]
-
-		requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
-	}
-
-	return requests, nil
 }

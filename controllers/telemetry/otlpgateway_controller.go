@@ -123,6 +123,8 @@ func (r *OTLPGatewayController) SetupWithManager(mgr ctrl.Manager) error {
 		&corev1.ServiceAccount{},      // Identity for k8s API access
 		&rbacv1.ClusterRole{},         // Permissions for k8s metadata collection
 		&rbacv1.ClusterRoleBinding{},  // Binds ClusterRole to ServiceAccount
+		&rbacv1.Role{},                // Namespace-scoped permissions for leader election
+		&rbacv1.RoleBinding{},         // Binds Role to ServiceAccount
 		&networkingv1.NetworkPolicy{}, // Network access control
 	}
 

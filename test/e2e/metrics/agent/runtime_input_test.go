@@ -125,7 +125,7 @@ func TestRuntimeInput(t *testing.T) {
 	assert.MetricPipelineHealthy(t, pipelineNameA)
 	assert.MetricPipelineHealthy(t, pipelineNameB)
 	assert.MetricPipelineHealthy(t, pipelineNameC)
-	assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+	assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
 	assert.DaemonSetReady(t, kitkyma.MetricAgentName)
 	assert.BackendReachable(t, backendA)
 	assert.BackendReachable(t, backendB)

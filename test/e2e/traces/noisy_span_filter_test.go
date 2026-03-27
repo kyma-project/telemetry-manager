@@ -25,16 +25,14 @@ func TestNoisyFilters(t *testing.T) {
 		regularSpansNs = "regular-spans"
 
 		// noisy spans should be filtered
-		vmaScrapeSpansNs            = "vma-scrape-spans"
-		healthzSpansNs              = "healthz-spans"
-		fluentBitSpansNs            = "fluent-bit-spans"
-		metricAgentScrapeSpansNs    = "metric-agent-scrape-spans"
-		metricAgentSpansNs          = "metric-agent-spans"
-		metricGatewaySpansNs        = "metric-gateway-spans"
-		metricServiceSpansNs        = "metric-service-spans"
-		traceGatewaySpansNs         = "trace-gateway-spans"
-		traceServiceSpansNs         = "trace-service-spans"
-		traceServiceInternalSpansNs = "trace-service-internal-spans"
+		vmaScrapeSpansNs         = "vma-scrape-spans"
+		healthzSpansNs           = "healthz-spans"
+		fluentBitSpansNs         = "fluent-bit-spans"
+		metricAgentScrapeSpansNs = "metric-agent-scrape-spans"
+		metricAgentSpansNs       = "metric-agent-spans"
+		metricServiceSpansNs     = "metric-service-spans"
+		traceServiceSpansNs      = "trace-service-spans"
+		otlpGatewaySpansNs       = "otlp-gateway-spans"
 	)
 
 	var (
@@ -82,21 +80,11 @@ func TestNoisyFilters(t *testing.T) {
 		telemetrygen.WithTelemetryAttribute("istio.canonical_service", "telemetry-metric-agent"),
 		telemetrygen.WithResourceAttribute("k8s.namespace.name", kitkyma.SystemNamespaceName),
 	).K8sObject()
-	metricGatewaySpansGen := telemetrygen.NewPod(metricGatewaySpansNs, telemetrygen.SignalTypeTraces,
-		telemetrygen.WithTelemetryAttribute("component", "proxy"),
-		telemetrygen.WithTelemetryAttribute("istio.canonical_service", "telemetry-metric-gateway"),
-		telemetrygen.WithResourceAttribute("k8s.namespace.name", kitkyma.SystemNamespaceName),
-	).K8sObject()
 	metricServiceSpansGen := telemetrygen.NewPod(metricServiceSpansNs, telemetrygen.SignalTypeTraces,
 		telemetrygen.WithTelemetryAttribute("http.method", "POST"),
 		telemetrygen.WithTelemetryAttribute("component", "proxy"),
 		telemetrygen.WithTelemetryAttribute("upstream_cluster.name", "outbound||"),
 		telemetrygen.WithTelemetryAttribute("http.url", "http://telemetry-otlp-metrics.kyma-system:4317"),
-		telemetrygen.WithResourceAttribute("k8s.namespace.name", kitkyma.SystemNamespaceName),
-	).K8sObject()
-	traceGatewaySpansGen := telemetrygen.NewPod(traceGatewaySpansNs, telemetrygen.SignalTypeTraces,
-		telemetrygen.WithTelemetryAttribute("component", "proxy"),
-		telemetrygen.WithTelemetryAttribute("istio.canonical_service", "telemetry-otlp-gateway"),
 		telemetrygen.WithResourceAttribute("k8s.namespace.name", kitkyma.SystemNamespaceName),
 	).K8sObject()
 	traceServiceSpansGen := telemetrygen.NewPod(traceServiceSpansNs, telemetrygen.SignalTypeTraces,
@@ -106,7 +94,7 @@ func TestNoisyFilters(t *testing.T) {
 		telemetrygen.WithTelemetryAttribute("http.url", "http://telemetry-otlp-traces.kyma-system:4317"),
 		telemetrygen.WithResourceAttribute("k8s.namespace.name", kitkyma.SystemNamespaceName),
 	).K8sObject()
-	traceServiceInternalSpansGen := telemetrygen.NewPod(traceServiceInternalSpansNs, telemetrygen.SignalTypeTraces,
+	otlpGatewaySpansGen := telemetrygen.NewPod(otlpGatewaySpansNs, telemetrygen.SignalTypeTraces,
 		telemetrygen.WithTelemetryAttribute("component", "proxy"),
 		telemetrygen.WithTelemetryAttribute("istio.canonical_service", "telemetry-otlp-gateway"),
 		telemetrygen.WithResourceAttribute("k8s.namespace.name", kitkyma.SystemNamespaceName),
@@ -125,11 +113,9 @@ func TestNoisyFilters(t *testing.T) {
 		kitk8sobjects.NewNamespace(fluentBitSpansNs).K8sObject(),
 		kitk8sobjects.NewNamespace(metricAgentScrapeSpansNs).K8sObject(),
 		kitk8sobjects.NewNamespace(metricAgentSpansNs).K8sObject(),
-		kitk8sobjects.NewNamespace(metricGatewaySpansNs).K8sObject(),
 		kitk8sobjects.NewNamespace(metricServiceSpansNs).K8sObject(),
-		kitk8sobjects.NewNamespace(traceGatewaySpansNs).K8sObject(),
 		kitk8sobjects.NewNamespace(traceServiceSpansNs).K8sObject(),
-		kitk8sobjects.NewNamespace(traceServiceInternalSpansNs).K8sObject(),
+		kitk8sobjects.NewNamespace(otlpGatewaySpansNs).K8sObject(),
 	)
 
 	resources = append(resources,
@@ -139,11 +125,9 @@ func TestNoisyFilters(t *testing.T) {
 		fluentBitSpansGen,
 		metricAgentScrapeSpansGen,
 		metricAgentSpansGen,
-		metricGatewaySpansGen,
 		metricServiceSpansGen,
-		traceGatewaySpansGen,
 		traceServiceSpansGen,
-		traceServiceInternalSpansGen,
+		otlpGatewaySpansGen,
 	)
 
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
@@ -160,10 +144,8 @@ func TestNoisyFilters(t *testing.T) {
 		fluentBitSpansNs,
 		metricAgentScrapeSpansNs,
 		metricAgentSpansNs,
-		metricGatewaySpansNs,
 		metricServiceSpansNs,
-		traceGatewaySpansNs,
 		traceServiceSpansNs,
-		traceServiceInternalSpansNs,
+		otlpGatewaySpansNs,
 	})
 }

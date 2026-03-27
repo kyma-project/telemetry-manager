@@ -63,7 +63,7 @@ func TestMetricsIstioSamePort(t *testing.T) {
 
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
-	assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+	assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
 	assert.DaemonSetReady(t, kitkyma.MetricAgentName)
 	assert.BackendReachable(t, backend)
 	assert.BackendReachable(t, istiofiedBackend)

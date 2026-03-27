@@ -12,10 +12,9 @@ const (
 	TraceGateway  = telemetryPrefix + "trace-gateway"
 	OTLPGateway   = telemetryPrefix + "otlp-gateway"
 
-	LogAgentMetricsService      = LogAgent + metricsSuffix
-	MetricAgentMetricsService   = MetricAgent + metricsSuffix
-	MetricGatewayMetricsService = MetricGateway + metricsSuffix
-	OTLPGatewayMetricsService   = OTLPGateway + metricsSuffix
+	LogAgentMetricsService    = LogAgent + metricsSuffix
+	MetricAgentMetricsService = MetricAgent + metricsSuffix
+	OTLPGatewayMetricsService = OTLPGateway + metricsSuffix
 
 	FluentBit                       = telemetryPrefix + "fluent-bit"
 	FluentBitMetricsService         = FluentBit + metricsSuffix
@@ -31,7 +30,7 @@ const (
 	OTLPLogsService    = telemetryPrefix + "otlp-logs"
 	OTLPService        = telemetryPrefix + "otlp-gateway"
 
-	OTLPGatewayPipelinesSyncConfigMap = telemetryPrefix + OTLPGateway + "-pipelines"
+	OTLPGatewayPipelinesSyncConfigMap = OTLPGateway + "-pipelines"
 
 	SelfMonitor              = telemetryPrefix + "self-monitor"
 	SelfMonitorContainerName = "self-monitor"

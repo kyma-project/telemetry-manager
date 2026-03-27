@@ -76,7 +76,7 @@ func TestRuntimeNodeNamespace(t *testing.T) {
 
 	assert.BackendReachable(t, includeBacked)
 	assert.BackendReachable(t, excludeBackend)
-	assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+	assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
 	assert.DaemonSetReady(t, kitkyma.MetricAgentName)
 	assert.DeploymentReady(t, includeBacked.NamespacedName())
 	assert.DeploymentReady(t, excludeBackend.NamespacedName())

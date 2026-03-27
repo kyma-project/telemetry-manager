@@ -10,6 +10,7 @@ extensions:
     k8s_leader_elector:
         auth_type: serviceAccount
         lease_name: telemetry-metric-gateway-kymastats
+        lease_namespace: kyma-system
     pprof:
         endpoint: 127.0.0.1:1777
 service:
@@ -39,14 +40,14 @@ service:
                 - transform/set-kyma-input-name-otlp
             exporters:
                 - forward/input
-        metrics/test-output:
+        metrics/test-metric-output:
             receivers:
                 - forward/enrichment
             processors:
                 - transform/drop-kyma-attributes
                 - batch
             exporters:
-                - otlp_http/test
+                - otlp_grpc/test-metric
     telemetry:
         metrics:
             readers:
@@ -157,7 +158,7 @@ processors:
         error_mode: ignore
         metric_statements:
             - statements:
-                - set(scope.version, "") where scope.name == "github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver"
+                - set(scope.version, "1.0.0") where scope.name == "github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver"
                 - set(scope.name, "io.kyma-project.telemetry/kyma") where scope.name == "github.com/kyma-project/opentelemetry-collector-components/receiver/kymastatsreceiver"
     transform/set-kyma-input-name-kyma:
         error_mode: ignore
@@ -170,10 +171,8 @@ processors:
             - statements:
                 - set(resource.attributes["kyma.input.name"], "otlp")
 exporters:
-    otlp_http/test:
-        endpoint: ${OTLP_ENDPOINT_TEST}
-        tls:
-            insecure: true
+    otlp_grpc/test-metric:
+        endpoint: ${OTLP_ENDPOINT_TEST_METRIC}
         compression: gzip
         sending_queue:
             enabled: true

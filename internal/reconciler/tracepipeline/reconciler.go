@@ -231,13 +231,13 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 	r.trackPipelineInfoMetric(ctx, allPipelinesList.Items)
 
 	// Validate current pipeline
-	isReconcilable, err := r.isReconcilable(ctx, pipeline)
+	isPipelineReconcilable, err := r.isReconcilable(ctx, pipeline)
 	if err != nil {
 		return fmt.Errorf("failed to validate pipeline: %w", err)
 	}
 
 	// Update ConfigMap based on validation result
-	if isReconcilable {
+	if isPipelineReconcilable {
 		// Collect secret references and their current versions
 		secretRefs := secretref.GetSecretRefsTracePipeline(pipeline)
 		secretVersions := otelcollector.CollectSecretVersions(ctx, r.Client, secretRefs)

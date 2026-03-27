@@ -98,7 +98,7 @@ func TestOverrides(t *testing.T) {
 
 	// Verify that Pipeline reconciliation is disabled for all pipelines
 	assertReconciliationDisabled(suite.Ctx, suite.K8sClient, kitkyma.FluentBitConfigMap, appNameLabelKey)
-	assertReconciliationDisabled(suite.Ctx, suite.K8sClient, kitkyma.MetricGatewayConfigMap, appNameLabelKey)
+	assertReconciliationDisabled(suite.Ctx, suite.K8sClient, kitkyma.TelemetryOTLPConfigMap, appNameLabelKey)
 	assertReconciliationDisabled(suite.Ctx, suite.K8sClient, kitkyma.TelemetryOTLPConfigMap, appNameLabelKey)
 	assertTelemetryReconciliationDisabled(suite.Ctx, suite.K8sClient, names.ValidatingWebhookConfig)
 

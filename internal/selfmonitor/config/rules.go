@@ -70,9 +70,10 @@ const (
 func MakeRules() RuleGroups {
 	var rules []Rule
 
+	// OTLP Gateway - Metric pipelines
 	metricGatewayRuleBuilder := otelCollectorRuleBuilder{
 		dataType:    ruleDataType(typeMetricPipeline),
-		serviceName: names.MetricGatewayMetricsService,
+		serviceName: names.OTLPGatewayMetricsService,
 		namePrefix:  ruleNamePrefix(typeMetricPipeline),
 	}
 	rules = append(rules, metricGatewayRuleBuilder.gatewayRules()...)

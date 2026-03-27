@@ -71,7 +71,7 @@ func TestMetricsUpgrade(t *testing.T) {
 
 	// === VALIDATE AFTER UPGRADE ===
 	t.Log("Validating metric pipeline after upgrade...")
-	assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+	assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
 	assert.MetricPipelineHealthy(t, pipelineName)
 	assert.BackendReachable(t, backend)
 	assert.MetricsFromNamespaceDelivered(t, backend, genNs, telemetrygen.MetricNames)
