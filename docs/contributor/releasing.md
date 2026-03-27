@@ -238,8 +238,7 @@ After the release is complete, perform the following tasks:
   - Create milestone for next version at [Milestones](https://github.com/kyma-project/telemetry-manager/milestones). 
   - Review the auto-generated release notes. If you cherry-picked commits for the release, some changes might appear duplicated. Edit the release notes to correct this.
 
-## Related Documentation
+## Related Workflows
 
-- [Release Workflow](https://github.com/kyma-project/telemetry-manager/actions/workflows/release.yml) - Main release workflow
-- [Module Release Workflow](https://github.com/kyma-project/telemetry-manager/actions/workflows/module-release.yml) - Module release automation
-
+- [Module Release Workflow](https://github.com/kyma-project/telemetry-manager/actions/workflows/module-release.yml) 
+- [Management Plane Chart Release Workflow](https://github.com/kyma-project/telemetry-manager/actions/workflows/mpc-release.yml) 
