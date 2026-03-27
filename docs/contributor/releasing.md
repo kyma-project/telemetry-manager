@@ -4,7 +4,7 @@ This document describes the automated release process for Telemetry Manager usin
 
 ## Overview
 
-The release process is automated through GitHub Actions workflows that handle:
+The release process uses GitHub Actions workflows to automate the following tasks:
 - Version validation and milestone verification
 - Release branch creation and version bumping
 - Docker image builds and tests
@@ -13,14 +13,13 @@ The release process is automated through GitHub Actions workflows that handle:
 
 ## Prerequisites
 
-Before starting a release, ensure:
 
-1. **Milestone Verification**: All issues in the [GitHub milestone](https://github.com/kyma-project/telemetry-manager/milestones) for the version are closed and the milestone is closed. Create a new [GitHub milestone](https://github.com/kyma-project/telemetry-manager/milestones) for the next version.
+1. **Milestone Verification**: All issues in the [GitHub milestone](https://github.com/kyma-project/telemetry-manager/milestones) for the version are closed and the milestone is closed.
 
-2. **Component Releases**: Release dependencies in this order:
-   - [directory-size-exporter](https://github.com/kyma-project/telemetry-manager/actions/workflows/build-directory-size-reporter-image.yml) - produces image tags like `v20260302-12345678`
-   - [telemetry-self-monitor](https://github.com/kyma-project/telemetry-manager/actions/workflows/build-self-monitor-image.yml) - produces image tags like `v20260302-bbf32a3b`
-   - [opentelemetry-collector-components](https://github.com/kyma-project/opentelemetry-collector-components) - version format: `{OCC_VERSION}-{TELEMETRY_VERSION}` (for example, `0.100.0-1.2.3`)
+2. **Component Releases**: The following component dependencies are already released in the specified order:
+   1. [directory-size-exporter](https://github.com/kyma-project/telemetry-manager/actions/workflows/build-directory-size-reporter-image.yml) - produces image tags like `v20260302-12345678`
+   2. [telemetry-self-monitor](https://github.com/kyma-project/telemetry-manager/actions/workflows/build-self-monitor-image.yml) - produces image tags like `v20260302-bbf32a3b`
+   3. [opentelemetry-collector-components](https://github.com/kyma-project/opentelemetry-collector-components) - version format: `{OCC_VERSION}-{TELEMETRY_VERSION}` (for example, `0.100.0-1.2.3`)
 
 3. **Docker Image Availability**: Verify that the required Docker images exist:
    ```bash
@@ -34,7 +33,7 @@ Before starting a release, ensure:
    docker manifest inspect europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:{SELF_MONITOR_TAG}
    ```
 
-4. **Access Requirements**:
+4. **Access Requirements**: You have the following permissions:
    - Write access to the telemetry-manager repository
    - Access to merge PRs on the release branch
 
@@ -42,9 +41,8 @@ Before starting a release, ensure:
 
 ### Step 1: Start Release Workflow
 
-Navigate to [Actions > Telemetry Release](https://github.com/kyma-project/telemetry-manager/actions/workflows/release.yml) and click **Run workflow**.
+In the telemetry-manager repo, go to **Actions**, select [Telemetry Release](https://github.com/kyma-project/telemetry-manager/actions/workflows/release.yml) and run the workflow with the following inputs:
 
-Provide the following inputs:
 
 | Input | Description | Example |
 |-------|-------------|---------|
@@ -53,59 +51,55 @@ Provide the following inputs:
 | **self_monitor_image_tag** | Self-monitor image tag in vYYYYMMDD-HASH format | `v20260302-bbf32a3b` |
 | **dir_size_image_tag** | Directory size exporter image tag in vYYYYMMDD-HASH format | `v20260302-12345678` |
 | **dry_run** | Test the release process without creating tags/releases | `false` |
-| **force** | Re-create existing release (use with caution) | `false` |
+| **force** | Recreate existing release (use with caution) | `false` |
 | **module_release** | Trigger module release for experimental and fast channels after release | `true` |
 
 ### Step 2: Workflow Validation Phase
 
-The workflow automatically performs these validations:
+The workflow automatically validates the following conditions:
 
-1. **Version Format Check**: Validates version follows semantic versioning (X.Y.Z)
-2. **OCC Version Check**: Validates OCC version format (X.Y.Z-A.B.C)
-3. **Image Tag Check**: Validates image tag formats (vYYYYMMDD-HASH)
-4. **Docker Image Verification**: Checks that all required images exist in the registry
-5. **Milestone Verification**: Ensures milestone exists, is closed, and has no open issues
-6. **Release/Tag Existence Check**: Prevents duplicate releases (unless force mode is enabled)
-7. **Release Branch Determination**: Identifies if this is a patch release (branch exists) or minor/major release (new branch needed)
+- The version format follows semantic versioning (`X.Y.Z`).
+- The OCC version format matches the expected pattern (`X.Y.Z-A.B.C`).
+- The image tag format matches the expected pattern (`vYYYYMMDD-HASH`).
+- All required Docker images exist in the registry.
+- The milestone exists, is closed, and has no open issues.
+- No existing release or tag conflicts with the target version (skipped if force mode is enabled).
+- The release branch exists for a patch release, or a new branch is needed for a minor/major release.
 
 If validation fails, the workflow stops and reports the error.
 
 ### Step 3: Release Branch Preparation
 
-The workflow automatically:
+To determine the release type, the workflow checks if a `release-X.Y` branch already exists and handles branch preparation:
 
-**For Minor/Major Releases** (release branch doesn't exist):
-- Creates release branch: `release-X.Y` (for example, `release-1.2`)
-- Branches from `main`
+- For a minor or major release, the `release-X.Y` branch does not exist, so the workflow creates it from the `main` branch.
 
-**For Patch Releases** (release branch exists):
-- Uses existing release branch
-- No new branch creation needed
+-  For a patch release, the `release-X.Y` branch already exists, so the workflow uses the existing branch.
 
 ### Step 4: Version Bump PR
 
-The workflow creates a PR to the release branch with:
+The workflow creates a pull request (PR) against the release branch. This PR updates all version numbers and image tags for the new release.
 
-**Changes**:
-- Updates `.env` file:
+First, the workflow updates the following variables in the `.env` file with the values you provided:
   - `ENV_HELM_RELEASE_VERSION={VERSION}`
   - `ENV_MANAGER_IMAGE` tag to `{VERSION}`
   - `ENV_OTEL_COLLECTOR_IMAGE` tag to `{OCC_IMAGE_VERSION}`
   - `ENV_SELFMONITOR_IMAGE` tag to `{SELF_MONITOR_IMAGE_TAG}`
   - `ENV_FLUENTBIT_EXPORTER_IMAGE` tag to `{DIR_SIZE_IMAGE_TAG}`
-- Runs `make generate` to update generated files
+Next, it runs the `make generate` command to apply these changes to all auto-generated files, such as the Helm chart manifests.
 
-**Action Required**:
-The workflow waits (up to 120 minutes) for you to review and merge the PR. The PR includes a checklist:
+> [!WARNING] 
+> The workflow waits up to 120 minutes for you to review and merge the PR. If you do not merge the PR within that time, the workflow times out and fails.
+To review the PR, use the checklist in its description to verify the following conditions:
 - [ ] Version numbers are correct
 - [ ] Generated files are up to date
 - [ ] No unintended changes
 
 ### Step 5: Automated Testing
 
-After the PR is merged, the workflow automatically runs:
+After you merged the PR, the workflow automatically runs the following tests:
 
-1. **Unit Tests**: Full test suite execution
+1. **Unit Tests**: Full test suite
 2. **PR Integration Tests**: End-to-end integration tests
 3. **Gardener Integration Tests**: Tests on Gardener-managed clusters
 4. **Release Report Upload**: Uploads compliance reports
@@ -114,10 +108,10 @@ All tests must pass before proceeding to release creation.
 
 ### Step 6: Release Tag and GitHub Release
 
-After successful tests, the workflow:
+After all tests pass, the workflow performs the following actions to create the release:
 
 1. Creates annotated Git tag: `{VERSION}`
-2. Pushes tag to trigger:
+2. Pushes tag to trigger the following processes:
    - `build-manager-image.yml`: Builds and pushes Docker image
    - Release creation via goreleaser
 3. Packages Helm chart
@@ -126,7 +120,7 @@ After successful tests, the workflow:
 
 ### Step 7: Module Releases (Conditional)
 
-If `module_release` is set to `true` (default), the workflow automatically triggers module releases after the GitHub release is created:
+If `module_release` is set to `true` (default), the workflow triggers module releases after it created the GitHub release.
 
 **Fast Channel**:
 - Triggers `module-release.yml` workflow
@@ -140,17 +134,16 @@ If `module_release` is set to `true` (default), the workflow automatically trigg
 - Auto-merge: enabled
 - Creates PR in `kyma/module-manifests` repository
 
-Both PRs will auto-merge when all checks pass.
+If all checks pass, both PRs merge automatically.
 
-**Note**: Set `module_release: false` if you want to manually trigger module releases later or skip them entirely.
+> [!NOTE] 
+> To manually trigger module releases later or skip them entirely, set `module_release` to `false`.
 
 ### Step 8: Regular Channel (Manual)
 
-For the regular channel, manually trigger the module release:
+To release to the regular channel, manually trigger the module release workflow:
 
-1. Navigate to [Actions > Telemetry Module Release](https://github.com/kyma-project/telemetry-manager/actions/workflows/module-release.yml)
-2. Click **Run workflow**
-3. Provide:
+In the telemetry-manager repo, go to **Actions** and select [Telemetry Module Release](https://github.com/kyma-project/telemetry-manager/actions/workflows/module-release.yml) and run the workflow with the following inputs:
    - **version**: `{VERSION}` (for example, `1.2.3`)
    - **channel**: `regular`
    - **dry_run**: `false`
@@ -191,13 +184,17 @@ Check PRs in the module-manifests repository:
 
 ### Workflow Validation Failures
 
-**Milestone not closed**:
-- Close the milestone at [Milestones](https://github.com/kyma-project/telemetry-manager/milestones)
-- Ensure all issues are closed first
+**Symptom:** The workflow fails with a milestone validation error.
 
-**Docker image not found**:
-- Verify image exists in registry
-- Check image tag format matches expected pattern
+**Solution:**
+1. Go to [Milestones](https://github.com/kyma-project/telemetry-manager/milestones) and close any open issues.
+1. With all issues closed, close the milestone for the release version.
+
+**Symptom**: The workflow fails with an error that a Docker image was not found.
+
+**Solution:**
+1. Check that the image exists in registry.
+2. Check that the image tag format matches the expected pattern.
 - Wait for dependency builds to complete
 
 **Tag already exists**:
