@@ -37,9 +37,9 @@ const (
 
 var (
 	storageVolumeSize = resource.MustParse("1000Mi")
-	cpuRequest        = resource.MustParse("10m")
-	memoryRequest     = resource.MustParse("50Mi")
-	memoryLimit       = resource.MustParse("180Mi")
+	cpuRequest        = resource.MustParse("50m")
+	memoryRequest     = resource.MustParse("100Mi")
+	memoryLimit       = resource.MustParse("300Mi")
 )
 
 type ApplierDeleter struct {

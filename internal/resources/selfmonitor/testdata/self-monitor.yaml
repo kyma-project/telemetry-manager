@@ -90,7 +90,7 @@ spec:
         - --log.format=json
         env:
         - name: GOMEMLIMIT
-          value: "150994880"
+          value: "251658240"
         livenessProbe:
           failureThreshold: 5
           httpGet:
@@ -113,10 +113,10 @@ spec:
           timeoutSeconds: 3
         resources:
           limits:
-            memory: 180Mi
+            memory: 300Mi
           requests:
-            cpu: 10m
-            memory: 50Mi
+            cpu: 50m
+            memory: 100Mi
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
