@@ -102,7 +102,7 @@ func TestTracesUpgrade(t *testing.T) {
 
 	// ==== NEW PIPELINES ====
 	t.Log("Validating trace pipeline creation after upgrade...")
-	assert.DeploymentReady(t, kitkyma.TraceGatewayName)
+	assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
 	assert.TracePipelineHealthy(t, pipelineNameAfter)
 	assert.BackendReachable(t, backendAfter)
 	assert.TracesFromNamespaceDelivered(t, backendAfter, genNs)
