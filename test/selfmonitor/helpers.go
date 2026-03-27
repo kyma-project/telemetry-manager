@@ -6,6 +6,7 @@ import (
 	"time"
 
 	. "github.com/onsi/gomega"
+	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -207,6 +208,49 @@ func promMetricGeneratorHighLoad() func(ns string) []client.Object {
 
 // Assertion helpers
 
+// logComponentWorkloads logs the ready/desired replica counts for the gateway and agent
+// workloads relevant to the given component. Never fails the test.
+func logComponentWorkloads(t *testing.T, component string) {
+	t.Helper()
+
+	t.Logf("--- component workloads [%s] ---", component)
+
+	logDeployment := func(name types.NamespacedName) {
+		var d appsv1.Deployment
+		if err := suite.K8sClient.Get(t.Context(), name, &d); err != nil {
+			t.Logf("  deployment %s: get error: %v", name.Name, err)
+			return
+		}
+		t.Logf("  deployment %s: ready=%d/%d", name.Name, d.Status.ReadyReplicas, d.Status.Replicas)
+	}
+
+	logDaemonSet := func(name types.NamespacedName) {
+		var ds appsv1.DaemonSet
+		if err := suite.K8sClient.Get(t.Context(), name, &ds); err != nil {
+			t.Logf("  daemonset %s: get error: %v", name.Name, err)
+			return
+		}
+		t.Logf("  daemonset %s: ready=%d/%d", name.Name, ds.Status.NumberReady, ds.Status.DesiredNumberScheduled)
+	}
+
+	switch component {
+	case suite.LabelLogAgent:
+		logDeployment(kitkyma.LogGatewayName)
+		logDaemonSet(kitkyma.LogAgentName)
+	case suite.LabelLogGateway:
+		logDeployment(kitkyma.LogGatewayName)
+	case suite.LabelFluentBit:
+		logDaemonSet(kitkyma.FluentBitDaemonSetName)
+	case suite.LabelMetricGateway:
+		logDeployment(kitkyma.MetricGatewayName)
+	case suite.LabelMetricAgent:
+		logDeployment(kitkyma.MetricGatewayName)
+		logDaemonSet(kitkyma.MetricAgentName)
+	case suite.LabelTraces:
+		logDeployment(kitkyma.TraceGatewayName)
+	}
+}
+
 func componentConditionType(component string) string {
 	switch component {
 	case suite.LabelLogAgent, suite.LabelLogGateway, suite.LabelFluentBit:
@@ -279,6 +323,7 @@ func assertSelfMonitorRateNonZero(t *testing.T, component string) {
 
 	Eventually(func() bool {
 		logSelfMonitorTargets(t)
+		logComponentWorkloads(t, component)
 		t.Logf("--- rate baseline check [%s] ---", time.Now().Format(time.TimeOnly))
 
 		for _, query := range metricsForComponent(component) {
@@ -320,6 +365,7 @@ func assertPipelineConditionTransition(t *testing.T, component, pipelineName str
 
 		Eventually(func(g Gomega) assert.ReasonStatus {
 			logSelfMonitorTargets(t)
+			logComponentWorkloads(t, component)
 			logSelfMonitorMetrics(t, component)
 
 			switch component {
