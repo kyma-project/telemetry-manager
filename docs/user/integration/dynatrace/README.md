@@ -236,7 +236,6 @@ We recommend direct integration with the Dynatrace server. This approach reduces
     > [!WARNING]
     > Be cautious when you configure the **randomSamplingPercentage**:
     > - Could cause high volume of traces.
-    > - The Kyma trace gateway component does not scale automatically.
 
 1. To find traces from your Kyma cluster in the Dynatrace UI, go to **Applications & Microservices** > **Distributed traces**.
 
@@ -330,7 +329,7 @@ Depending on your metrics source and temporality, choose one of the following me
         EOF
         ```
 
-  1. Start pushing metrics to the metric gateway using [delta aggregation temporality.](https://docs.dynatrace.com/docs/ingest-from/opentelemetry/otlp-api/ingest-otlp-metrics/about-metrics-ingest#aggregation-temporality)
+  1. Start pushing metrics to the OTLP Gateway using [delta aggregation temporality.](https://docs.dynatrace.com/docs/ingest-from/opentelemetry/otlp-api/ingest-otlp-metrics/about-metrics-ingest#aggregation-temporality)
 
   1. To find metrics from your Kyma cluster in the Dynatrace UI, go to **Observe & Explore** > **Metrics**.
 
