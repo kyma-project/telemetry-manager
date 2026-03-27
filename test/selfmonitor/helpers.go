@@ -300,7 +300,7 @@ func assertSelfMonitorRateNonZero(t *testing.T, component string) {
 		}
 
 		return false
-	}, periodic.EventuallyTimeout, periodic.SelfmonitorQueryInterval).Should(
+	}, periodic.SelfmonitorRateBaselineTimeout, periodic.SelfmonitorQueryInterval).Should(
 		BeTrue(),
 		"self-monitor rate metrics never became non-zero for component %s", component,
 	)

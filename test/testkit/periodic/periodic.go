@@ -32,6 +32,11 @@ const (
 	// DefaultInterval is the default interval duration used when no specialized interval is applicable.
 	DefaultInterval = time.Millisecond * 500
 
+	// SelfmonitorRateBaselineTimeout is used when waiting for Prometheus rate() queries to return
+	// non-zero values before enabling faults. rate([5m]) needs at least 2 scrape samples (scrape
+	// interval = 30s), but on loaded CI clusters the metric-agent scrape may take longer to settle.
+	SelfmonitorRateBaselineTimeout = time.Minute * 5
+
 	// SelfmonitorQueryInterval is the default interval duration used when checking for status changes related to Selfmonitor Alerts
 	SelfmonitorQueryInterval = time.Second * 5
 
