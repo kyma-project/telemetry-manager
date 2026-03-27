@@ -51,8 +51,9 @@ type Names struct {
 }
 
 type KubernetesDiscoveryConfig struct {
-	Role       Role  `yaml:"role"`
-	Namespaces Names `yaml:"namespaces"`
+	Role            Role          `yaml:"role"`
+	Namespaces      Names         `yaml:"namespaces"`
+	RefreshInterval time.Duration `yaml:"refresh_interval,omitempty"`
 }
 
 type Role string
