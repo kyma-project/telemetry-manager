@@ -75,49 +75,7 @@ func GetDefaultTelemetryInstance(ctx context.Context, client client.Client, name
 type Options struct {
 	SignalType                common.SignalType
 	Client                    client.Client
-	DefaultReplicas           int32
 	DefaultTelemetryNamespace string
-}
-
-// GetReplicaCountFromTelemetry retrieves the desired number of gateway replicas from the Telemetry CR
-// for the specified signal type (traces, logs, or metrics).
-// It returns the configured replica count if static scaling is configured, otherwise returns the default replica count.
-func GetReplicaCountFromTelemetry(ctx context.Context, opts Options) int32 {
-	telemetry, err := GetDefaultTelemetryInstance(ctx, opts.Client, opts.DefaultTelemetryNamespace)
-	if err != nil {
-		logf.FromContext(ctx).V(1).Error(err, "Failed to get telemetry: using default scaling")
-		return opts.DefaultReplicas
-	}
-
-	gatewaySpec := getGatewaySpec(telemetry.Spec, opts.SignalType)
-	if gatewaySpec != nil &&
-		gatewaySpec.Scaling.Type == operatorv1beta1.StaticScalingStrategyType &&
-		gatewaySpec.Scaling.Static != nil &&
-		gatewaySpec.Scaling.Static.Replicas > 0 {
-		return gatewaySpec.Scaling.Static.Replicas
-	}
-
-	return opts.DefaultReplicas
-}
-
-// getGatewaySpec returns the GatewaySpec for the given signal type, or nil if not configured.
-func getGatewaySpec(spec operatorv1beta1.TelemetrySpec, signalType common.SignalType) *operatorv1beta1.GatewaySpec {
-	switch signalType {
-	case common.SignalTypeTrace:
-		if spec.Trace != nil {
-			return &spec.Trace.Gateway
-		}
-	case common.SignalTypeLog:
-		if spec.Log != nil {
-			return &spec.Log.Gateway
-		}
-	case common.SignalTypeMetric:
-		if spec.Metric != nil {
-			return &spec.Metric.Gateway
-		}
-	}
-
-	return nil
 }
 
 // GetClusterNameFromTelemetry retrieves the cluster name from the Telemetry CR enrichment configuration.

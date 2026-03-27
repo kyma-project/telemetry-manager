@@ -29,8 +29,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
 
-const defaultReplicaCount int32 = 2
-
 type Reconciler struct {
 	client.Client
 
@@ -331,7 +329,6 @@ func (r *Reconciler) reconcileAgent(ctx context.Context, pipeline *telemetryv1be
 	telemetryOptions := telemetryutils.Options{
 		SignalType:                common.SignalTypeLog,
 		Client:                    r.Client,
-		DefaultReplicas:           defaultReplicaCount,
 		DefaultTelemetryNamespace: r.globals.DefaultTelemetryNamespace(),
 	}
 	clusterName := telemetryutils.GetClusterNameFromTelemetry(ctx, telemetryOptions)

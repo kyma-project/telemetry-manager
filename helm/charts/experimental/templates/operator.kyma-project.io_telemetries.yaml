@@ -104,9 +104,10 @@ spec:
                     description: Gateway configures the log gateway.
                     properties:
                       scaling:
-                        description: Scaling defines which strategy is used for scaling
-                          the gateway, with detailed configuration options for each
-                          strategy type.
+                        description: |-
+                          Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.
+
+                          Deprecated: This field is no longer supported and must not be set.
                         properties:
                           static:
                             description: |-
@@ -129,6 +130,16 @@ spec:
                         type: object
                     type: object
                 type: object
+                x-kubernetes-validations:
+                - message: Gateway scaling is deprecated and must not be set. The
+                    gateway runs as a DaemonSet that scales automatically with cluster
+                    nodes.
+                  rule: '!has(self.gateway.scaling.type) || self.gateway.scaling.type
+                    == ”'
+                - message: Gateway scaling is deprecated and must not be set. The
+                    gateway runs as a DaemonSet that scales automatically with cluster
+                    nodes.
+                  rule: '!has(self.gateway.scaling.static)'
               metric:
                 description: Metric configures module settings specific to the metric
                   features. This field is optional.
@@ -146,9 +157,10 @@ spec:
                     description: Gateway configures the metric gateway.
                     properties:
                       scaling:
-                        description: Scaling defines which strategy is used for scaling
-                          the gateway, with detailed configuration options for each
-                          strategy type.
+                        description: |-
+                          Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.
+
+                          Deprecated: This field is no longer supported and must not be set.
                         properties:
                           static:
                             description: |-
@@ -213,6 +225,16 @@ spec:
                           rule: self > duration('0s')
                     type: object
                 type: object
+                x-kubernetes-validations:
+                - message: Gateway scaling is deprecated and must not be set. The
+                    gateway runs as a DaemonSet that scales automatically with cluster
+                    nodes.
+                  rule: '!has(self.gateway.scaling.type) || self.gateway.scaling.type
+                    == ”'
+                - message: Gateway scaling is deprecated and must not be set. The
+                    gateway runs as a DaemonSet that scales automatically with cluster
+                    nodes.
+                  rule: '!has(self.gateway.scaling.static)'
               trace:
                 description: Trace configures module settings specific to the trace
                   features. This field is optional.
@@ -221,9 +243,10 @@ spec:
                     description: Gateway configures the trace gateway.
                     properties:
                       scaling:
-                        description: Scaling defines which strategy is used for scaling
-                          the gateway, with detailed configuration options for each
-                          strategy type.
+                        description: |-
+                          Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.
+
+                          Deprecated: This field is no longer supported and must not be set.
                         properties:
                           static:
                             description: |-
@@ -246,6 +269,16 @@ spec:
                         type: object
                     type: object
                 type: object
+                x-kubernetes-validations:
+                - message: Gateway scaling is deprecated and must not be set. The
+                    gateway runs as a DaemonSet that scales automatically with cluster
+                    nodes.
+                  rule: '!has(self.gateway.scaling.type) || self.gateway.scaling.type
+                    == ”'
+                - message: Gateway scaling is deprecated and must not be set. The
+                    gateway runs as a DaemonSet that scales automatically with cluster
+                    nodes.
+                  rule: '!has(self.gateway.scaling.static)'
             type: object
           status:
             description: TelemetryStatus defines the observed state of Telemetry
@@ -440,9 +473,10 @@ spec:
                     description: Gateway configures the log gateway.
                     properties:
                       scaling:
-                        description: Scaling defines which strategy is used for scaling
-                          the gateway, with detailed configuration options for each
-                          strategy type.
+                        description: |-
+                          Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.
+
+                          Deprecated: This field is no longer supported and must not be set.
                         properties:
                           static:
                             description: |-
@@ -465,6 +499,16 @@ spec:
                         type: object
                     type: object
                 type: object
+                x-kubernetes-validations:
+                - message: Gateway scaling is deprecated and must not be set. The
+                    gateway runs as a DaemonSet that scales automatically with cluster
+                    nodes.
+                  rule: '!has(self.gateway.scaling.type) || self.gateway.scaling.type
+                    == ”'
+                - message: Gateway scaling is deprecated and must not be set. The
+                    gateway runs as a DaemonSet that scales automatically with cluster
+                    nodes.
+                  rule: '!has(self.gateway.scaling.static)'
               metric:
                 description: Metric configures module settings specific to the metric
                   features. This field is optional.
@@ -482,9 +526,10 @@ spec:
                     description: Gateway configures the metric gateway.
                     properties:
                       scaling:
-                        description: Scaling defines which strategy is used for scaling
-                          the gateway, with detailed configuration options for each
-                          strategy type.
+                        description: |-
+                          Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.
+
+                          Deprecated: This field is no longer supported and must not be set.
                         properties:
                           static:
                             description: |-
@@ -549,6 +594,16 @@ spec:
                           rule: self > duration('0s')
                     type: object
                 type: object
+                x-kubernetes-validations:
+                - message: Gateway scaling is deprecated and must not be set. The
+                    gateway runs as a DaemonSet that scales automatically with cluster
+                    nodes.
+                  rule: '!has(self.gateway.scaling.type) || self.gateway.scaling.type
+                    == ”'
+                - message: Gateway scaling is deprecated and must not be set. The
+                    gateway runs as a DaemonSet that scales automatically with cluster
+                    nodes.
+                  rule: '!has(self.gateway.scaling.static)'
               trace:
                 description: Trace configures module settings specific to the trace
                   features. This field is optional.
@@ -557,9 +612,10 @@ spec:
                     description: Gateway configures the trace gateway.
                     properties:
                       scaling:
-                        description: Scaling defines which strategy is used for scaling
-                          the gateway, with detailed configuration options for each
-                          strategy type.
+                        description: |-
+                          Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.
+
+                          Deprecated: This field is no longer supported and must not be set.
                         properties:
                           static:
                             description: |-
@@ -582,6 +638,16 @@ spec:
                         type: object
                     type: object
                 type: object
+                x-kubernetes-validations:
+                - message: Gateway scaling is deprecated and must not be set. The
+                    gateway runs as a DaemonSet that scales automatically with cluster
+                    nodes.
+                  rule: '!has(self.gateway.scaling.type) || self.gateway.scaling.type
+                    == ”'
+                - message: Gateway scaling is deprecated and must not be set. The
+                    gateway runs as a DaemonSet that scales automatically with cluster
+                    nodes.
+                  rule: '!has(self.gateway.scaling.static)'
             type: object
           status:
             description: TelemetryStatus defines the observed state of Telemetry

@@ -24,19 +24,8 @@ spec:
     extractPodLabels:
       - key: "app.kubernetes.io/name"
       - keyPrefix: "app.kubernetes.io"
-  trace:
-    gateway:
-      scaling:
-        type: Static
-        static:
-          replicas: 3
   metric:
     collectionInterval: 60s
-    gateway:
-      scaling:
-        type: Static
-        static:
-          replicas: 4
 Status:
   state: Ready
   endpoints:
@@ -95,14 +84,14 @@ For details, see the [Telemetry specification file](https://github.com/kyma-proj
 | **enrichments.&#x200b;extractPodLabels.&#x200b;keyPrefix**  | string | KeyPrefix specifies a prefix for label keys to be used. |
 | **log**  | object | Log configures module settings specific to the log features. This field is optional. |
 | **log.&#x200b;gateway**  | object | Gateway configures the log gateway. |
-| **log.&#x200b;gateway.&#x200b;scaling**  | object | Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type. |
+| **log.&#x200b;gateway.&#x200b;scaling**  | object | Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.  Deprecated: This field is no longer supported and must not be set. |
 | **log.&#x200b;gateway.&#x200b;scaling.&#x200b;static**  | object | Static is a scaling strategy enabling you to define a custom amount of replicas to be used for the gateway. Present only if Type = StaticScalingStrategyType. |
 | **log.&#x200b;gateway.&#x200b;scaling.&#x200b;static.&#x200b;replicas**  | integer | Replicas defines a static number of Pods to run the gateway. Minimum is 1. |
 | **log.&#x200b;gateway.&#x200b;scaling.&#x200b;type**  | string | Type of scaling strategy. Default is none, using a fixed amount of replicas. |
 | **metric**  | object | Metric configures module settings specific to the metric features. This field is optional. |
 | **metric.&#x200b;collectionInterval**  | string | CollectionInterval defines the default scrape interval for all pull-based metric inputs (runtime, prometheus, istio). The value is a duration string (for example, "30s", "1m", "5m"). Default is 30s. |
 | **metric.&#x200b;gateway**  | object | Gateway configures the metric gateway. |
-| **metric.&#x200b;gateway.&#x200b;scaling**  | object | Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type. |
+| **metric.&#x200b;gateway.&#x200b;scaling**  | object | Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.  Deprecated: This field is no longer supported and must not be set. |
 | **metric.&#x200b;gateway.&#x200b;scaling.&#x200b;static**  | object | Static is a scaling strategy enabling you to define a custom amount of replicas to be used for the gateway. Present only if Type = StaticScalingStrategyType. |
 | **metric.&#x200b;gateway.&#x200b;scaling.&#x200b;static.&#x200b;replicas**  | integer | Replicas defines a static number of Pods to run the gateway. Minimum is 1. |
 | **metric.&#x200b;gateway.&#x200b;scaling.&#x200b;type**  | string | Type of scaling strategy. Default is none, using a fixed amount of replicas. |
@@ -114,7 +103,7 @@ For details, see the [Telemetry specification file](https://github.com/kyma-proj
 | **metric.&#x200b;runtime.&#x200b;collectionInterval**  | string | CollectionInterval defines the scrape interval for this specific input, overriding the global metric.collectionInterval. The value is a duration string (for example, "30s", "1m", "5m"). Minimum is 1s. |
 | **trace**  | object | Trace configures module settings specific to the trace features. This field is optional. |
 | **trace.&#x200b;gateway**  | object | Gateway configures the trace gateway. |
-| **trace.&#x200b;gateway.&#x200b;scaling**  | object | Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type. |
+| **trace.&#x200b;gateway.&#x200b;scaling**  | object | Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.  Deprecated: This field is no longer supported and must not be set. |
 | **trace.&#x200b;gateway.&#x200b;scaling.&#x200b;static**  | object | Static is a scaling strategy enabling you to define a custom amount of replicas to be used for the gateway. Present only if Type = StaticScalingStrategyType. |
 | **trace.&#x200b;gateway.&#x200b;scaling.&#x200b;static.&#x200b;replicas**  | integer | Replicas defines a static number of Pods to run the gateway. Minimum is 1. |
 | **trace.&#x200b;gateway.&#x200b;scaling.&#x200b;type**  | string | Type of scaling strategy. Default is none, using a fixed amount of replicas. |
@@ -158,14 +147,14 @@ For details, see the [Telemetry specification file](https://github.com/kyma-proj
 | **enrichments.&#x200b;extractPodLabels.&#x200b;keyPrefix**  | string | KeyPrefix specifies a prefix for label keys to be used. |
 | **log**  | object | Log configures module settings specific to the log features. This field is optional. |
 | **log.&#x200b;gateway**  | object | Gateway configures the log gateway. |
-| **log.&#x200b;gateway.&#x200b;scaling**  | object | Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type. |
+| **log.&#x200b;gateway.&#x200b;scaling**  | object | Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.  Deprecated: This field is no longer supported and must not be set. |
 | **log.&#x200b;gateway.&#x200b;scaling.&#x200b;static**  | object | Static is a scaling strategy enabling you to define a custom amount of replicas to be used for the gateway. Present only if Type = StaticScalingStrategyType. |
 | **log.&#x200b;gateway.&#x200b;scaling.&#x200b;static.&#x200b;replicas**  | integer | Replicas defines a static number of Pods to run the gateway. Minimum is 1. |
 | **log.&#x200b;gateway.&#x200b;scaling.&#x200b;type**  | string | Type of scaling strategy. Default is none, using a fixed amount of replicas. |
 | **metric**  | object | Metric configures module settings specific to the metric features. This field is optional. |
 | **metric.&#x200b;collectionInterval**  | string | CollectionInterval defines the default collection/scrape interval for all pull-based metric inputs (runtime, prometheus, istio). The value is a duration string (for example, "30s", "1m", "5m"). Default is 30s. |
 | **metric.&#x200b;gateway**  | object | Gateway configures the metric gateway. |
-| **metric.&#x200b;gateway.&#x200b;scaling**  | object | Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type. |
+| **metric.&#x200b;gateway.&#x200b;scaling**  | object | Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.  Deprecated: This field is no longer supported and must not be set. |
 | **metric.&#x200b;gateway.&#x200b;scaling.&#x200b;static**  | object | Static is a scaling strategy enabling you to define a custom amount of replicas to be used for the gateway. Present only if Type = StaticScalingStrategyType. |
 | **metric.&#x200b;gateway.&#x200b;scaling.&#x200b;static.&#x200b;replicas**  | integer | Replicas defines a static number of Pods to run the gateway. Minimum is 1. |
 | **metric.&#x200b;gateway.&#x200b;scaling.&#x200b;type**  | string | Type of scaling strategy. Default is none, using a fixed amount of replicas. |
@@ -177,7 +166,7 @@ For details, see the [Telemetry specification file](https://github.com/kyma-proj
 | **metric.&#x200b;runtime.&#x200b;collectionInterval**  | string | CollectionInterval defines the collection/scrape interval for this specific input, overriding the global metric.collectionInterval. The value is a duration string (for example, "30s", "1m", "5m"). Minimum is 1s. |
 | **trace**  | object | Trace configures module settings specific to the trace features. This field is optional. |
 | **trace.&#x200b;gateway**  | object | Gateway configures the trace gateway. |
-| **trace.&#x200b;gateway.&#x200b;scaling**  | object | Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type. |
+| **trace.&#x200b;gateway.&#x200b;scaling**  | object | Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.  Deprecated: This field is no longer supported and must not be set. |
 | **trace.&#x200b;gateway.&#x200b;scaling.&#x200b;static**  | object | Static is a scaling strategy enabling you to define a custom amount of replicas to be used for the gateway. Present only if Type = StaticScalingStrategyType. |
 | **trace.&#x200b;gateway.&#x200b;scaling.&#x200b;static.&#x200b;replicas**  | integer | Replicas defines a static number of Pods to run the gateway. Minimum is 1. |
 | **trace.&#x200b;gateway.&#x200b;scaling.&#x200b;type**  | string | Type of scaling strategy. Default is none, using a fixed amount of replicas. |
@@ -214,7 +203,7 @@ The **state** attribute of the Telemetry CR is derived from the combined state o
 The state of the log components is determined by the status condition of type `LogComponentsHealthy`:
 
 | Condition Status | Condition Reason             | Condition Message                                                                                                                                                                                                                                                                                                                       |
-|------------------|------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ---------------- | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | True             | ComponentsRunning            | All log components are running                                                                                                                                                                                                                                                                                                          |
 | True             | NoPipelineDeployed           | No pipelines have been deployed                                                                                                                                                                                                                                                                                                         |
 | True             | TLSCertificateAboutToExpire  | TLS (CA) certificate is about to expire, configured certificate is valid until YYYY-MM-DD                                                                                                                                                                                                                                               |
