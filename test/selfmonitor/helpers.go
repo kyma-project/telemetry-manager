@@ -277,6 +277,8 @@ func assertSelfMonitorRateNonZero(t *testing.T, component string) {
 	t.Helper()
 
 	Eventually(func() bool {
+		logSelfMonitorTargets(t)
+
 		for _, query := range metricsForComponent(component) {
 			val, err := queryPrometheus(t.Context(), query)
 			if err != nil {
