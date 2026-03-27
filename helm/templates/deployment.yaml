@@ -4,31 +4,32 @@ metadata:
   name: {{ include "telemetry-manager.fullname" . }}-manager
   namespace: {{ .Release.Namespace }}
   labels:
-    app.kubernetes.io/component: controller
-    app.kubernetes.io/part-of: telemetry
-    kyma-project.io/module: telemetry
-  {{- include "telemetry-manager.labels" . | indent 4 }}
+  {{- include "telemetry-manager.labels" . | nindent 4 }}
+  {{- if not (empty .Values.manager.labels) }}
+  {{- toYaml .Values.manager.labels | nindent 4 }}
+  {{- end }}
+  {{- if not (empty .Values.manager.annotations) }}
+  annotations:
+  {{- toYaml .Values.manager.annotations | nindent 4 }}
+  {{- end }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/instance: telemetry
-      app.kubernetes.io/name: manager
-      control-plane: telemetry-manager
-      kyma-project.io/component: controller
-    {{- include "telemetry-manager.selectorLabels" . | indent 6 }}
+    {{- include "telemetry-manager.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        app.kubernetes.io/instance: telemetry
-        app.kubernetes.io/name: manager
-        control-plane: telemetry-manager
-        kyma-project.io/component: controller
-        kyma-project.io/module: telemetry
-      {{- include "telemetry-manager.selectorLabels" . | indent 8 }}
+      {{- include "telemetry-manager.podLabels" . | nindent 8 }}
+      {{- if not (empty .Values.manager.pod.labels) }}
+      {{- toYaml .Values.manager.pod.labels | nindent 8 }}
+      {{- end }}
       annotations:
         kubectl.kubernetes.io/default-container: manager
         sidecar.istio.io/inject: "false"
+      {{- if not (empty .Values.manager.pod.annotations) }}
+      {{- toYaml .Values.manager.pod.annotations | nindent 8 }}
+      {{- end }}
     spec:
       {{- if .Values.global.imagePullSecret.enabled }}
       imagePullSecrets:
@@ -39,14 +40,24 @@ spec:
         {{- range $key, $value := .Values.manager.container.args }}
         - --{{ $key }}={{ $value }}
         {{- end }}
-        {{- if not (empty .Values.additionalMetadata.labels) }}
-        {{- range $k, $v := .Values.additionalMetadata.labels }}
-        - --additional-label={{ (printf "%s=%s" $k $v) }}
+        {{- if not (empty .Values.managedResources.workload.labels) }}
+        {{- range $k, $v := .Values.managedResources.workload.labels }}
+        - --additional-workload-label={{ (printf "%s=%s" $k $v) }}
         {{- end }}
         {{- end }}
-        {{- if not (empty .Values.additionalMetadata.annotations) }}
-        {{- range $k, $v := .Values.additionalMetadata.annotations }}
-        - --additional-annotation={{ (printf "%s=%s" $k $v) }}
+        {{- if not (empty .Values.managedResources.workload.annotations) }}
+        {{- range $k, $v := .Values.managedResources.workload.annotations }}
+        - --additional-workload-annotation={{ (printf "%s=%s" $k $v) }}
+        {{- end }}
+        {{- end }}
+        {{- if not (empty .Values.managedResources.workload.pod.labels) }}
+        {{- range $k, $v := .Values.managedResources.workload.pod.labels }}
+        - --additional-workload-pod-label={{ (printf "%s=%s" $k $v) }}
+        {{- end }}
+        {{- end }}
+        {{- if not (empty .Values.managedResources.workload.pod.annotations) }}
+        {{- range $k, $v := .Values.managedResources.workload.pod.annotations }}
+        - --additional-workload-pod-annotation={{ (printf "%s=%s" $k $v) }}
         {{- end }}
         {{- end }}
         {{- if .Values.global.imagePullSecret.enabled }}
@@ -117,5 +128,6 @@ spec:
       volumes:
       - emptyDir: {}
         name: crt-volume
+
 
 

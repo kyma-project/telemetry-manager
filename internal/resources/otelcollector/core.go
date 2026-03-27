@@ -182,6 +182,10 @@ func makeMetricsService(name types.NamespacedName) *corev1.Service {
 }
 
 func makeVPA(name types.NamespacedName, targetRefKind string, minAllowedMemory, maxAllowedMemory resource.Quantity) *autoscalingvpav1.VerticalPodAutoscaler {
+	if maxAllowedMemory.Cmp(minAllowedMemory) < 0 {
+		maxAllowedMemory = minAllowedMemory
+	}
+
 	updateMode := autoscalingvpav1.UpdateModeInPlaceOrRecreate
 	controlledValues := autoscalingvpav1.ContainerControlledValuesRequestsAndLimits
 

@@ -23,7 +23,7 @@ wait-for-image: ## Wait for the manager image to be available in the registry
 # Usage: make e2e-test E2E_TEST_PATH=./test/e2e/logs/... E2E_TEST_LABELS="logs"
 # To run specific test function: make e2e-test E2E_TEST_PATH=./test/selfmonitor/... E2E_TEST_RUN="TestHealthy"
 .PHONY: e2e-test
-e2e-test: $(GOTESTSUM) ## Run E2E tests (use E2E_TEST_PATH, E2E_TEST_LABELS, E2E_TEST_ID, E2E_TEST_RUN)
+e2e-test: $(GOTESTSUM) $(K3D) ## Run E2E tests (use E2E_TEST_PATH, E2E_TEST_LABELS, E2E_TEST_ID, E2E_TEST_RUN)
 	@echo "Running e2e tests..."
 	@echo "  Path: $(E2E_TEST_PATH)"
 	@echo "  Labels: $(E2E_TEST_LABELS)"

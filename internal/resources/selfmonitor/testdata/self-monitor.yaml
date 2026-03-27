@@ -72,7 +72,6 @@ spec:
     metadata:
       annotations:
         checksum/config: 8cdf17444d9a798679152bba8d099a9609ab7bd266ddfbdcc70a091204ff1dd7
-        test-anno-key: test-anno-value
       labels:
         app.kubernetes.io/component: monitor
         app.kubernetes.io/managed-by: telemetry-manager
@@ -81,7 +80,6 @@ spec:
         kyma-project.io/module: telemetry
         networking.kyma-project.io/metrics-scraping: allowed
         sidecar.istio.io/inject: "false"
-        test-label-key: test-label-value
     spec:
       containers:
       - args:

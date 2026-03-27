@@ -168,6 +168,7 @@ func newTestReconciler(client client.Client, opts ...Option) *Reconciler {
 		WithAgentProber(agentProberStub),
 		WithIstioStatusChecker(istioStatusCheckerStub),
 		WithVpaStatusChecker(vpaStatusCheckerStub),
+		WithNodeSizeTracker(&stubs.NodeSizeTracker{}),
 		WithPipelineLock(pipelineLock),
 		WithPipelineValidator(pipelineValidator),
 		WithErrorToMessageConverter(errToMsg),

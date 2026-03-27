@@ -9,4 +9,5 @@ const (
 	DefaultOTelCollectorImage        = "europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:main"
 	SelfMonitorImage                 = "europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:main"
 	SelfMonitorFIPSImage             = "europe-docker.pkg.dev/kyma-project/restricted-prod/sap.com/prometheus-fips:3.10.0"
+	FaultBackendImage                = "europe-docker.pkg.dev/kyma-project/prod/fault-backend:main"
 )

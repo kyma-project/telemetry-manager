@@ -44,6 +44,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
+	"github.com/kyma-project/telemetry-manager/internal/nodesize"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metricagent"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline"
@@ -71,6 +72,7 @@ type MetricPipelineController struct {
 	reconciler           *metricpipeline.Reconciler
 	secretWatchClient    *secretwatch.Client
 	pipelineLockName     types.NamespacedName
+	nodeSizeTracker      *nodesize.Tracker
 }
 
 type MetricPipelineControllerConfig struct {
@@ -81,7 +83,7 @@ type MetricPipelineControllerConfig struct {
 	RestConfig                   *rest.Config
 }
 
-func NewMetricPipelineController(config MetricPipelineControllerConfig, client client.Client, reconcileTriggerChan <-chan event.GenericEvent, secretWatchClient *secretwatch.Client) (*MetricPipelineController, error) {
+func NewMetricPipelineController(config MetricPipelineControllerConfig, client client.Client, reconcileTriggerChan <-chan event.GenericEvent, secretWatchClient *secretwatch.Client, nodeSizeTracker *nodesize.Tracker) (*MetricPipelineController, error) {
 	pipelineCount := resourcelock.MaxPipelineCount
 
 	if config.UnlimitedPipelines() {
@@ -156,6 +158,7 @@ func NewMetricPipelineController(config MetricPipelineControllerConfig, client c
 		metricpipeline.WithErrorToMessageConverter(&conditions.ErrorToMessageConverter{}),
 		metricpipeline.WithIstioStatusChecker(istiostatus.NewChecker(discoveryClient)),
 		metricpipeline.WithVpaStatusChecker(vpastatus.NewChecker(config.RestConfig)),
+		metricpipeline.WithNodeSizeTracker(nodeSizeTracker),
 		metricpipeline.WithOverridesHandler(overrides.New(config.Global, client)),
 		metricpipeline.WithPipelineValidator(pipelineValidator),
 
@@ -174,6 +177,7 @@ func NewMetricPipelineController(config MetricPipelineControllerConfig, client c
 			Name:      names.MetricPipelineLock,
 			Namespace: config.TargetNamespace(),
 		},
+		nodeSizeTracker: nodeSizeTracker,
 	}, nil
 }
 
@@ -181,19 +185,14 @@ func (r *MetricPipelineController) Reconcile(ctx context.Context, req ctrl.Reque
 	return r.reconciler.Reconcile(ctx, req)
 }
 
-// SetupWithManager sets up the controller with the Manager.
-func (r *MetricPipelineController) SetupWithManager(mgr ctrl.Manager) error {
-	b := ctrl.NewControllerManagedBy(mgr).For(&telemetryv1beta1.MetricPipeline{})
-
-	b.WatchesRawSource(
-		source.Channel(r.reconcileTriggerChan, &handler.EnqueueRequestForObject{}),
-	)
-
-	// TODO: Mainly for Metric Agent reconciliation, should be moved to agent controller after migration.
-	ownedResourceTypesToWatch := []client.Object{
+// TODO: Mainly for Metric Agent reconciliation, should be moved to agent controller after migration.
+// metricPipelineOwnedResourceTypes returns the list of Kubernetes resource types that are
+// managed (created/updated/deleted) by the MetricPipeline reconciler and must be watched for changes.
+func metricPipelineOwnedResourceTypes(isIstioActive, vpaCRDExists bool) []client.Object {
+	resources := []client.Object{
 		&appsv1.DaemonSet{},
+		&appsv1.Deployment{},
 		&corev1.ConfigMap{},
-		&corev1.Pod{},
 		&corev1.Secret{},
 		&corev1.Service{},
 		&corev1.ServiceAccount{},
@@ -203,6 +202,32 @@ func (r *MetricPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		&rbacv1.RoleBinding{},
 		&networkingv1.NetworkPolicy{},
 	}
+
+	// TODO: PeerAuthentication watch should be moved to agent controller after migration.
+	// Only watch PeerAuthentication CR if Istio is active
+	// otherwise, manager will have errors if the PeerAuthentication CRD is not present in the cluster
+	if isIstioActive {
+		resources = append(resources, &istiosecurityclientv1.PeerAuthentication{})
+	}
+
+	// Only watch VPA CR if VPA CRD exists in the cluster
+	// otherwise, manager will have errors if the VPA CRD is not present in the cluster
+	// NOTE: controller needs to watch VPA CR even if the annotation to enable VPA is not present in Telemetry CR,
+	// because the annotation can be added later and this function is only called once during the setup of the controller.
+	if vpaCRDExists {
+		resources = append(resources, &autoscalingvpav1.VerticalPodAutoscaler{})
+	}
+
+	return resources
+}
+
+// SetupWithManager sets up the controller with the Manager.
+func (r *MetricPipelineController) SetupWithManager(mgr ctrl.Manager) error {
+	b := ctrl.NewControllerManagedBy(mgr).For(&telemetryv1beta1.MetricPipeline{})
+
+	b.WatchesRawSource(
+		source.Channel(r.reconcileTriggerChan, &handler.EnqueueRequestForObject{}),
+	)
 
 	ctx := context.Background()
 
@@ -221,25 +246,11 @@ func (r *MetricPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		return fmt.Errorf("failed to check VPA status: %w", err)
 	}
 
-	// TODO: PeerAuthentication watch should be moved to agent controller after migration.
-	// Only watch PeerAuthentication CR if Istio is active
-	// otherwise, manager will have errors if the PeerAuthentication CRD is not present in the cluster
-	if isIstioActive {
-		ownedResourceTypesToWatch = append(ownedResourceTypesToWatch, &istiosecurityclientv1.PeerAuthentication{})
-	}
-
-	// Only watch VPA CR if VPA CRD exists in the cluster
-	// otherwise, manager will have errors if the VPA CRD is not present in the cluster
-	// NOTE: controller needs to watch VPA CR even if the annotation to enable VPA is not present in Telemetry CR,
-	// because the annotation can be added later and this function is only called once during the setup of the controller.
-	if vpaCRDExists {
-		ownedResourceTypesToWatch = append(ownedResourceTypesToWatch, &autoscalingvpav1.VerticalPodAutoscaler{})
-	}
-
-	for _, resource := range ownedResourceTypesToWatch {
+	for _, resource := range metricPipelineOwnedResourceTypes(isIstioActive, vpaCRDExists) {
 		b = b.Watches(
 			resource,
-			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(),
+			handler.EnqueueRequestForOwner(
+				mgr.GetClient().Scheme(),
 				mgr.GetRESTMapper(),
 				&telemetryv1beta1.MetricPipeline{},
 			),
@@ -268,11 +279,30 @@ func (r *MetricPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 	)
 
 	// TODO: Watching the Telemetry CR should be entirely moved to the OTLP Gateway and Agents Controllers (remove this after the refactoring to MetricAgent Controller is done)
-	return b.Watches(
+	// Watch Telemetry CR
+	// React to spec changes (tracked by generation) and annotation changes on the Telemetry CR.
+	// Annotations carry configuration like VPA opt-in that affect pipeline resources.
+	// Status-only updates are ignored to avoid unnecessary reconciliation loops.
+	b.Watches(
 		&operatorv1beta1.Telemetry{},
 		handler.EnqueueRequestsFromMapFunc(r.mapTelemetryChanges),
-		ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete()),
-	).Complete(r)
+		ctrlbuilder.WithPredicates(ctrlpredicate.Or(ctrlpredicate.GenerationChangedPredicate{}, ctrlpredicate.AnnotationChangedPredicate{})),
+	)
+
+	// Watch for changes in Pods of interest (OTLP Gateway, Metric Agent) to trigger reconciliation of owning pipelines.
+	b.Watches(
+		&corev1.Pod{},
+		handler.EnqueueRequestsFromMapFunc(r.mapPodChanges),
+		ctrlbuilder.WithPredicates(predicateutils.UpdateOrDelete()),
+	)
+
+	// Watch for changes in Nodes to track smallest node memory and trigger reconciliation of all pipelines if it changes
+	b.Watches(
+		&corev1.Node{},
+		handler.EnqueueRequestsFromMapFunc(r.mapNodeChanges),
+	)
+
+	return b.Complete(r)
 }
 
 // mapLockConfigMapToAllPipelines enqueues reconciliation requests for all MetricPipelines
@@ -295,6 +325,34 @@ func (r *MetricPipelineController) mapTelemetryChanges(ctx context.Context, obje
 	_, ok := object.(*operatorv1beta1.Telemetry)
 	if !ok {
 		logf.FromContext(ctx).V(1).Error(nil, "Unexpected type: expected Telemetry")
+		return nil
+	}
+
+	return r.enqueueAllPipelines(ctx)
+}
+
+func (r *MetricPipelineController) mapPodChanges(ctx context.Context, object client.Object) []reconcile.Request {
+	pod, ok := object.(*corev1.Pod)
+	if !ok {
+		logf.FromContext(ctx).V(1).Error(nil, "Unexpected type: expected Pod")
+		return nil
+	}
+
+	if !isPodFrom(pod, names.OTLPGateway, names.MetricAgent) {
+		return nil
+	}
+
+	return r.enqueueAllPipelines(ctx)
+}
+
+func (r *MetricPipelineController) mapNodeChanges(ctx context.Context, object client.Object) []reconcile.Request {
+	changed, err := r.nodeSizeTracker.UpdateSmallestMemory(ctx)
+	if err != nil {
+		logf.FromContext(ctx).Error(err, "Unable to update smallest node memory")
+		return nil
+	}
+
+	if !changed {
 		return nil
 	}
 

@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 
+	istionetworkingclientv1 "istio.io/client-go/pkg/apis/networking/v1"
 	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -45,6 +46,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
+	"github.com/kyma-project/telemetry-manager/internal/nodesize"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/logagent"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
@@ -75,22 +77,22 @@ type LogPipelineController struct {
 	reconciler           *logpipeline.Reconciler
 	secretWatchClient    *secretwatch.Client
 	pipelineLockName     types.NamespacedName
+	nodeSizeTracker      *nodesize.Tracker
 }
 
 type LogPipelineControllerConfig struct {
 	config.Global
 
-	ExporterImage                string
-	FluentBitImage               string
-	OTelCollectorImage           string
-	ChownInitContainerImage      string
-	FluentBitPriorityClassName   string
-	LogAgentPriorityClassName    string
-	OTLPGatewayPriorityClassName string
-	RestConfig                   *rest.Config
+	ExporterImage              string
+	FluentBitImage             string
+	OTelCollectorImage         string
+	ChownInitContainerImage    string
+	FluentBitPriorityClassName string
+	LogAgentPriorityClassName  string
+	RestConfig                 *rest.Config
 }
 
-func NewLogPipelineController(config LogPipelineControllerConfig, client client.Client, reconcileTriggerChan <-chan event.GenericEvent, secretWatchClient *secretwatch.Client) (*LogPipelineController, error) {
+func NewLogPipelineController(config LogPipelineControllerConfig, client client.Client, reconcileTriggerChan <-chan event.GenericEvent, secretWatchClient *secretwatch.Client, nodeSizeTracker *nodesize.Tracker) (*LogPipelineController, error) {
 	pipelineCount := resourcelock.MaxPipelineCount
 
 	if config.UnlimitedPipelines() {
@@ -143,7 +145,7 @@ func NewLogPipelineController(config LogPipelineControllerConfig, client client.
 		return nil, err
 	}
 
-	otelReconciler, err := configureOTelReconciler(config, client, pipelineLockOTEL, agentFlowHealthProber, gatewayFlowHealthProber)
+	otelReconciler, err := configureOTelReconciler(config, client, pipelineLockOTEL, gatewayFlowHealthProber, agentFlowHealthProber, nodeSizeTracker)
 	if err != nil {
 		return nil, err
 	}
@@ -167,11 +169,48 @@ func NewLogPipelineController(config LogPipelineControllerConfig, client client.
 			Name:      names.LogPipelineLock,
 			Namespace: config.TargetNamespace(),
 		},
+		nodeSizeTracker: nodeSizeTracker,
 	}, nil
 }
 
 func (r *LogPipelineController) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	return r.reconciler.Reconcile(ctx, req)
+}
+
+// TODO: Mainly for FluentBit and Log Agent reconciliation, should be moved to agent controllers after migration.
+// logPipelineOwnedResourceTypes returns the list of Kubernetes resource types that are
+// managed (created/updated/deleted) by the LogPipeline reconciler and must be watched for changes.
+func logPipelineOwnedResourceTypes(isIstioActive, vpaCRDExists bool) []client.Object {
+	resources := []client.Object{
+		&appsv1.DaemonSet{},
+		&appsv1.Deployment{},
+		&corev1.ConfigMap{},
+		&corev1.Secret{},
+		&corev1.Service{},
+		&corev1.ServiceAccount{},
+		&rbacv1.ClusterRole{},
+		&rbacv1.ClusterRoleBinding{},
+		&networkingv1.NetworkPolicy{},
+	}
+
+	// Only watch PeerAuthentication CR if Istio is active
+	// otherwise, manager will have errors if the PeerAuthentication CRD is not present in the cluster
+	if isIstioActive {
+		resources = append(resources,
+			&istiosecurityclientv1.PeerAuthentication{},
+			&istionetworkingclientv1.DestinationRule{},
+		)
+	}
+
+	// Only watch VPA CR if VPA CRD exists in the cluster
+	// otherwise, manager will have errors if the VPA CRD is not present in the cluster
+	// NOTE: controller needs to watch VPA CR even if the annotation to enable VPA is not present in Telemetry CR,
+	// because the annotation can be added later and this function is only called once during the setup of the controller.
+	if vpaCRDExists {
+		resources = append(resources, &autoscalingvpav1.VerticalPodAutoscaler{})
+	}
+
+	return resources
 }
 
 func (r *LogPipelineController) SetupWithManager(mgr ctrl.Manager) error {
@@ -180,19 +219,6 @@ func (r *LogPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 	b.WatchesRawSource(
 		source.Channel(r.reconcileTriggerChan, &handler.EnqueueRequestForObject{}),
 	)
-
-	// TODO: Mainly for FluentBit and Log Agent reconciliation, should be moved to agent controllers after migration.
-	ownedResourceTypesToWatch := []client.Object{
-		&appsv1.DaemonSet{},           // FluentBit and OTel Log Agent DaemonSets
-		&corev1.ConfigMap{},           // FluentBit and OTel Collector config
-		&corev1.Pod{},                 // Pods for restart and readiness tracking
-		&corev1.Secret{},              // TLS certificates and secret refs
-		&corev1.Service{},             // Collector service endpoints
-		&corev1.ServiceAccount{},      // Identity for k8s API access
-		&rbacv1.ClusterRole{},         // Permissions for k8s metadata collection
-		&rbacv1.ClusterRoleBinding{},  // Binds ClusterRole to ServiceAccount
-		&networkingv1.NetworkPolicy{}, // Network access control
-	}
 
 	ctx := context.Background()
 
@@ -212,24 +238,11 @@ func (r *LogPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		return fmt.Errorf("failed to check VPA status: %w", err)
 	}
 
-	// Only watch PeerAuthentication CR if Istio is active
-	// otherwise, manager will have errors if the PeerAuthentication CRD is not present in the cluster
-	if isIstioActive {
-		ownedResourceTypesToWatch = append(ownedResourceTypesToWatch, &istiosecurityclientv1.PeerAuthentication{}) // Istio mTLS policy
-	}
-
-	// Only watch VPA CR if VPA CRD exists in the cluster
-	// otherwise, manager will have errors if the VPA CRD is not present in the cluster
-	// NOTE: controller needs to watch VPA CR even if the annotation to enable VPA is not present in Telemetry CR,
-	// because the annotation can be added later and this function is only called once during the setup of the controller.
-	if vpaCRDExists {
-		ownedResourceTypesToWatch = append(ownedResourceTypesToWatch, &autoscalingvpav1.VerticalPodAutoscaler{})
-	}
-
-	for _, resource := range ownedResourceTypesToWatch {
+	for _, resource := range logPipelineOwnedResourceTypes(isIstioActive, vpaCRDExists) {
 		b = b.Watches(
 			resource,
-			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(),
+			handler.EnqueueRequestForOwner(
+				mgr.GetClient().Scheme(),
 				mgr.GetRESTMapper(),
 				&telemetryv1beta1.LogPipeline{},
 			),
@@ -238,10 +251,27 @@ func (r *LogPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	// TODO: Watching the Telemetry CR should be entirely moved to the OTLP Gateway and Agents Controllers (remove this after the refactoring to LogAgent and FluentBit Controllers is done)
+	// Watch Telemetry CR
+	// React to spec changes (tracked by generation) and annotation changes on the Telemetry CR.
+	// Annotations carry configuration like VPA opt-in that affect pipeline resources.
+	// Status-only updates are ignored to avoid unnecessary reconciliation loops.
 	b.Watches(
 		&operatorv1beta1.Telemetry{},
 		handler.EnqueueRequestsFromMapFunc(r.mapTelemetryChanges),
-		ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete()),
+		ctrlbuilder.WithPredicates(ctrlpredicate.Or(ctrlpredicate.GenerationChangedPredicate{}, ctrlpredicate.AnnotationChangedPredicate{})),
+	)
+
+	// Watch for changes in Pods of interest (OTLP Gateway, Fluent Bit, Log Agent) to trigger reconciliation of owning pipelines.
+	b.Watches(
+		&corev1.Pod{},
+		handler.EnqueueRequestsFromMapFunc(r.mapPodChanges),
+		ctrlbuilder.WithPredicates(predicateutils.UpdateOrDelete()),
+	)
+
+	// Watch for changes in Nodes to track smallest node memory and trigger reconciliation of all pipelines if it changes
+	b.Watches(
+		&corev1.Node{},
+		handler.EnqueueRequestsFromMapFunc(r.mapNodeChanges),
 	)
 
 	// Watch OTLP Gateway DaemonSet to update GatewayHealthy condition for OTLP input pipelines
@@ -314,6 +344,20 @@ func (r *LogPipelineController) mapTelemetryChanges(ctx context.Context, object 
 	return r.enqueueAllPipelines(ctx)
 }
 
+func (r *LogPipelineController) mapPodChanges(ctx context.Context, object client.Object) []reconcile.Request {
+	pod, ok := object.(*corev1.Pod)
+	if !ok {
+		logf.FromContext(ctx).V(1).Error(nil, "Unexpected type: expected Pod")
+		return nil
+	}
+
+	if !isPodFrom(pod, names.FluentBit, names.LogAgent, names.OTLPGateway) {
+		return nil
+	}
+
+	return r.enqueueAllPipelines(ctx)
+}
+
 func configureFluentBitReconciler(config LogPipelineControllerConfig, client client.Client, flowHealthProber *prober.FluentBitProber, pipelineLock logpipelinefluentbit.PipelineLock) (*logpipelinefluentbit.Reconciler, error) {
 	pipelineValidator := logpipelinefluentbit.NewValidator(
 		logpipelinefluentbit.WithEndpointValidator(&endpoint.Validator{Client: client}),
@@ -357,7 +401,7 @@ func configureFluentBitReconciler(config LogPipelineControllerConfig, client cli
 }
 
 //nolint:unparam // error is always nil: An error could be returned after implementing the IstioStatusChecker (TODO)
-func configureOTelReconciler(config LogPipelineControllerConfig, client client.Client, pipelineLock logpipelineotel.PipelineLock, agentFlowHealthProber *prober.OTelAgentProber, gatewayFlowHealthProber *prober.OTelGatewayProber) (*logpipelineotel.Reconciler, error) {
+func configureOTelReconciler(config LogPipelineControllerConfig, client client.Client, pipelineLock logpipelineotel.PipelineLock, gatewayFlowHealthProber *prober.OTelGatewayProber, agentFlowHealthProber *prober.OTelAgentProber, nodeSizeTracker *nodesize.Tracker) (*logpipelineotel.Reconciler, error) {
 	transformSpecValidator, err := ottl.NewTransformSpecValidator(ottl.SignalTypeLog)
 	if err != nil {
 		return nil, err
@@ -406,11 +450,26 @@ func configureOTelReconciler(config LogPipelineControllerConfig, client client.C
 
 		logpipelineotel.WithIstioStatusChecker(istiostatus.NewChecker(discoveryClient)),
 		logpipelineotel.WithVpaStatusChecker(vpastatus.NewChecker(config.RestConfig)),
+		logpipelineotel.WithNodeSizeTracker(nodeSizeTracker),
 		logpipelineotel.WithPipelineLock(pipelineLock),
 		logpipelineotel.WithPipelineValidator(pipelineValidator),
 	)
 
 	return otelReconciler, nil
+}
+
+func (r *LogPipelineController) mapNodeChanges(ctx context.Context, object client.Object) []reconcile.Request {
+	changed, err := r.nodeSizeTracker.UpdateSmallestMemory(ctx)
+	if err != nil {
+		logf.FromContext(ctx).Error(err, "Unable to update smallest node memory")
+		return nil
+	}
+
+	if !changed {
+		return nil
+	}
+
+	return r.enqueueAllPipelines(ctx)
 }
 
 // enqueueAllPipelines lists all LogPipelines and returns a reconcile request for each one.

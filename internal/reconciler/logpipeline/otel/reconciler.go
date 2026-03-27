@@ -45,6 +45,7 @@ type Reconciler struct {
 	agentApplierDeleter     AgentApplierDeleter
 	istioStatusChecker      IstioStatusChecker
 	vpaStatusChecker        VpaStatusChecker
+	nodeSizeTracker         NodeSizeTracker
 	pipelineLock            PipelineLock
 	pipelineValidator       *Validator
 	errToMessageConverter   ErrorToMessageConverter
@@ -113,6 +114,13 @@ func WithIstioStatusChecker(checker IstioStatusChecker) Option {
 func WithVpaStatusChecker(checker VpaStatusChecker) Option {
 	return func(r *Reconciler) {
 		r.vpaStatusChecker = checker
+	}
+}
+
+// WithNodeSizeTracker sets the node size tracker.
+func WithNodeSizeTracker(tracker NodeSizeTracker) Option {
+	return func(r *Reconciler) {
+		r.nodeSizeTracker = tracker
 	}
 }
 
@@ -262,7 +270,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 	}
 
 	if len(reconcilablePipelinesRequiringAgents) > 0 {
-		if err := r.reconcileLogAgent(ctx, pipeline, reconcilablePipelinesRequiringAgents); err != nil {
+		if err := r.reconcileAgent(ctx, pipeline, reconcilablePipelinesRequiringAgents); err != nil {
 			return fmt.Errorf("failed to reconcile log agent: %w", err)
 		}
 	}
@@ -311,7 +319,7 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1be
 	return false, nil
 }
 
-func (r *Reconciler) reconcileLogAgent(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline, allPipelines []telemetryv1beta1.LogPipeline) error {
+func (r *Reconciler) reconcileAgent(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline, allPipelines []telemetryv1beta1.LogPipeline) error {
 	var enrichments *operatorv1beta1.EnrichmentSpec
 
 	t, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
@@ -366,10 +374,7 @@ func (r *Reconciler) reconcileLogAgent(ctx context.Context, pipeline *telemetryv
 		return fmt.Errorf("failed to check Istio status: %w", err)
 	}
 
-	vpaMaxAllowedMemory, err := k8sutils.CalculateVpaMaxAllowedMemory(ctx, r.Client)
-	if err != nil {
-		return fmt.Errorf("failed to calculate VPA max allowed memory: %w", err)
-	}
+	vpaMaxAllowedMemory := r.nodeSizeTracker.VPAMaxAllowedMemory()
 
 	if err := r.agentApplierDeleter.ApplyResources(
 		ctx,
@@ -378,7 +383,7 @@ func (r *Reconciler) reconcileLogAgent(ctx context.Context, pipeline *telemetryv
 			IstioEnabled:        isIstioActive,
 			VpaCRDExists:        vpaCRDExists,
 			VpaEnabled:          isVpaEnabled,
-			VpaMaxAllowedMemory: vpaMaxAllowedMemory,
+			VPAMaxAllowedMemory: vpaMaxAllowedMemory,
 			CollectorConfigYAML: string(agentConfigYAML),
 			CollectorEnvVars:    envVars,
 		},

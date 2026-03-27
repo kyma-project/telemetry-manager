@@ -43,6 +43,7 @@ type Reconciler struct {
 	gatewayProber           commonstatus.Prober
 	istioStatusChecker      IstioStatusChecker
 	vpaStatusChecker        VpaStatusChecker
+	nodeSizeTracker         NodeSizeTracker
 	overridesHandler        OverridesHandler
 	pipelineLock            PipelineLock
 	pipelineSync            PipelineSyncer
@@ -114,6 +115,13 @@ func WithIstioStatusChecker(checker IstioStatusChecker) Option {
 func WithVpaStatusChecker(checker VpaStatusChecker) Option {
 	return func(r *Reconciler) {
 		r.vpaStatusChecker = checker
+	}
+}
+
+// WithNodeSizeTracker sets the node size tracker.
+func WithNodeSizeTracker(tracker NodeSizeTracker) Option {
+	return func(r *Reconciler) {
+		r.nodeSizeTracker = tracker
 	}
 }
 
@@ -404,11 +412,11 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 		return fmt.Errorf("failed to get kube-system namespace for cluster UID: %w", err)
 	}
 
-	var enrichments *operatorv1beta1.EnrichmentSpec
+	var telemetrySpec operatorv1beta1.TelemetrySpec
 
 	t, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
 	if err == nil {
-		enrichments = t.Spec.Enrichments
+		telemetrySpec = t.Spec
 	}
 
 	vpaCRDExists, err := r.vpaStatusChecker.VpaCRDExists(ctx, r.Client)
@@ -428,9 +436,10 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 			ClusterUID:    clusterUID,
 			CloudProvider: shootInfo.CloudProvider,
 		},
-		Enrichments:       enrichments,
-		ServiceEnrichment: telemetryutils.GetServiceEnrichmentFromTelemetryOrDefault(ctx, telemetryOptions),
-		VpaActive:         vpaCRDExists && isVpaEnabled,
+		Enrichments:         telemetrySpec.Enrichments,
+		ServiceEnrichment:   telemetryutils.GetServiceEnrichmentFromTelemetryOrDefault(ctx, telemetryOptions),
+		VpaActive:           vpaCRDExists && isVpaEnabled,
+		CollectionIntervals: telemetryutils.ResolveMetricCollectionIntervals(telemetrySpec.Metric),
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create collector config: %w", err)
@@ -446,10 +455,7 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 		return fmt.Errorf("failed to get ports of the backends: %w", err)
 	}
 
-	vpaMaxAllowedMemory, err := k8sutils.CalculateVpaMaxAllowedMemory(ctx, r.Client)
-	if err != nil {
-		return fmt.Errorf("failed to calculate VPA max allowed memory: %w", err)
-	}
+	vpaMaxAllowedMemory := r.nodeSizeTracker.VPAMaxAllowedMemory()
 
 	if err := r.agentApplierDeleter.ApplyResources(
 		ctx,
@@ -458,7 +464,7 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 			IstioEnabled:        isIstioActive,
 			VpaCRDExists:        vpaCRDExists,
 			VpaEnabled:          isVpaEnabled,
-			VpaMaxAllowedMemory: vpaMaxAllowedMemory,
+			VPAMaxAllowedMemory: vpaMaxAllowedMemory,
 			CollectorConfigYAML: string(agentConfigYAML),
 			CollectorEnvVars:    collectorEnvVars,
 			BackendPorts:        backendPorts,

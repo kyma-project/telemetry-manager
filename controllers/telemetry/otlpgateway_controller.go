@@ -102,7 +102,6 @@ func (r *OTLPGatewayController) SetupWithManager(mgr ctrl.Manager) error {
 	// Primary watch: filter to only the coordination ConfigMap written by pipeline controllers
 	b := ctrl.NewControllerManagedBy(mgr).For(&corev1.ConfigMap{},
 		ctrlbuilder.WithPredicates(
-			predicateutils.CreateOrUpdateOrDelete(),
 			ctrlpredicate.NewPredicateFuncs(func(obj client.Object) bool {
 				return obj.GetName() == names.OTLPGatewayPipelinesSyncConfigMap
 			}),
@@ -151,10 +150,13 @@ func (r *OTLPGatewayController) SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	// Watch Telemetry CR
+	// React to spec changes (tracked by generation) and annotation changes on the Telemetry CR.
+	// Annotations carry configuration like VPA opt-in that affect pipeline resources.
+	// Status-only updates are ignored to avoid unnecessary reconciliation loops.
 	b.Watches(
 		&operatorv1beta1.Telemetry{},
 		handler.EnqueueRequestsFromMapFunc(r.mapTelemetryToConfigMap),
-		ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete()),
+		ctrlbuilder.WithPredicates(ctrlpredicate.Or(ctrlpredicate.GenerationChangedPredicate{}, ctrlpredicate.AnnotationChangedPredicate{})),
 	)
 
 	// Watch Istio resources if present

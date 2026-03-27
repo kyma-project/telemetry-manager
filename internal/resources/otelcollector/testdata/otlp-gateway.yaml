@@ -200,7 +200,6 @@ spec:
     metadata:
       annotations:
         checksum/config: 1d8e9f768e6b24485bbdd6b9aa417d37fec897a7dafc8321355abc0d45259c9e
-        test-anno-key: test-anno-value
       labels:
         app.kubernetes.io/component: gateway
         app.kubernetes.io/managed-by: telemetry-manager
@@ -214,7 +213,6 @@ spec:
         telemetry.kyma-project.io/metric-ingest: "true"
         telemetry.kyma-project.io/trace-export: "true"
         telemetry.kyma-project.io/trace-ingest: "true"
-        test-label-key: test-label-value
     spec:
       affinity:
         podAntiAffinity:

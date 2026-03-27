@@ -36,12 +36,14 @@ import (
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/config"
+	"github.com/kyma-project/telemetry-manager/internal/nodesize"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	"github.com/kyma-project/telemetry-manager/internal/secretwatch"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
+	predicateutils "github.com/kyma-project/telemetry-manager/internal/utils/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
 	"github.com/kyma-project/telemetry-manager/internal/validators/ottl"
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
@@ -57,6 +59,7 @@ type TracePipelineController struct {
 	reconciler           *tracepipeline.Reconciler
 	secretWatchClient    *secretwatch.Client
 	pipelineLockName     types.NamespacedName
+	nodeSizeTracker      *nodesize.Tracker
 }
 
 type TracePipelineControllerConfig struct {
@@ -66,7 +69,7 @@ type TracePipelineControllerConfig struct {
 	OTelCollectorImage string
 }
 
-func NewTracePipelineController(config TracePipelineControllerConfig, client client.Client, reconcileTriggerChan <-chan event.GenericEvent, secretWatchClient *secretwatch.Client) (*TracePipelineController, error) {
+func NewTracePipelineController(config TracePipelineControllerConfig, client client.Client, reconcileTriggerChan <-chan event.GenericEvent, secretWatchClient *secretwatch.Client, nodeSizeTracker *nodesize.Tracker) (*TracePipelineController, error) {
 	pipelineCount := resourcelock.MaxPipelineCount
 
 	if config.UnlimitedPipelines() {
@@ -138,6 +141,7 @@ func NewTracePipelineController(config TracePipelineControllerConfig, client cli
 			Name:      names.TracePipelineLock,
 			Namespace: config.TargetNamespace(),
 		},
+		nodeSizeTracker: nodeSizeTracker,
 	}, nil
 }
 
@@ -172,6 +176,19 @@ func (r *TracePipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		})),
 	)
 
+	// Watch for changes in Pods of interest (OTLP Gateway) to trigger reconciliation of owning pipelines.
+	b.Watches(
+		&corev1.Pod{},
+		handler.EnqueueRequestsFromMapFunc(r.mapPodChanges),
+		ctrlbuilder.WithPredicates(predicateutils.UpdateOrDelete()),
+	)
+
+	// Watch for changes in Nodes to track smallest node memory and trigger reconciliation of all pipelines if it changes
+	b.Watches(
+		&corev1.Node{},
+		handler.EnqueueRequestsFromMapFunc(r.mapNodeChanges),
+	)
+
 	return b.Complete(r)
 }
 
@@ -188,6 +205,34 @@ func (r *TracePipelineController) mapLockConfigMapToAllPipelines(ctx context.Con
 // are updated to reflect the current gateway state.
 func (r *TracePipelineController) mapOTLPGatewayToAllPipelines(ctx context.Context, object client.Object) []reconcile.Request {
 	logf.FromContext(ctx).V(1).Info("OTLP Gateway DaemonSet changed, triggering reconciliation of all TracePipelines")
+	return r.enqueueAllPipelines(ctx)
+}
+
+func (r *TracePipelineController) mapPodChanges(ctx context.Context, object client.Object) []reconcile.Request {
+	pod, ok := object.(*corev1.Pod)
+	if !ok {
+		logf.FromContext(ctx).V(1).Error(nil, "Unexpected type: expected Pod")
+		return nil
+	}
+
+	if !isPodFrom(pod, names.OTLPGateway) {
+		return nil
+	}
+
+	return r.enqueueAllPipelines(ctx)
+}
+
+func (r *TracePipelineController) mapNodeChanges(ctx context.Context, object client.Object) []reconcile.Request {
+	changed, err := r.nodeSizeTracker.UpdateSmallestMemory(ctx)
+	if err != nil {
+		logf.FromContext(ctx).Error(err, "Unable to update smallest node memory")
+		return nil
+	}
+
+	if !changed {
+		return nil
+	}
+
 	return r.enqueueAllPipelines(ctx)
 }
 
