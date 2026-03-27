@@ -51,7 +51,7 @@ In the telemetry-manager repository, go to **Actions**, select [Telemetry Releas
 | **dir_size_image_tag**     | Directory size exporter image tag in vYYYYMMDD-HASH format              | `v20260302-12345678` |
 | **dry_run**                | Test the release process without creating tags/releases                 |                      |
 | **force**                  | Recreate existing release (use with caution)                            |                      |
-| **module_release**         | Trigger module release for experimental and fast channels after release |                      |
+| **module_release**         | Trigger module release for experimental and fast channels after the main release |                      |
 
 To test the release process without creating actual tags or releases, set `dry_run` to `true`. This setting validates the workflow and catches any issues before you perform the real release.
 The `force` option re-creates an existing release by deleting the existing tag and release before creating a new one. Use this option with caution. It overwrites the existing release.

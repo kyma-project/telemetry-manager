@@ -32,7 +32,7 @@ on:
         default: false
         type: boolean
       module_release:
-        description: 'Whether to trigger module release workflow for after this release (only for experimental and fast channels)'
+        description: 'Whether to trigger module release workflow after this release (only for experimental and fast channels)'
         required: false
         default: true
         type: boolean
