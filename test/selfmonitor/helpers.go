@@ -310,6 +310,7 @@ func assertPipelineConditionTransition(t *testing.T, component, pipelineName str
 			exp.Reason, exp.Status, alertConditionDescription(exp.Reason, component), component)
 
 		Eventually(func(g Gomega) assert.ReasonStatus {
+			logSelfMonitorTargets(t)
 			logSelfMonitorMetrics(t, component)
 
 			switch component {

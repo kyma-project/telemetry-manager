@@ -128,6 +128,87 @@ func metricsForComponent(component string) []string {
 	}
 }
 
+// logSelfMonitorTargets queries the self-monitor Prometheus targets API and logs
+// the discovered scrape targets with their health status. It never fails the test.
+func logSelfMonitorTargets(t *testing.T) {
+	t.Helper()
+
+	targets, err := queryPrometheusTargets(t.Context())
+	if err != nil {
+		t.Logf("selfmon targets query failed: %v", err)
+		return
+	}
+
+	t.Logf("--- self-monitor targets (%d active) ---", len(targets))
+
+	for _, target := range targets {
+		t.Logf("  [%s] %s (labels: %v)", target.health, target.scrapeURL, target.labels)
+	}
+}
+
+type promTarget struct {
+	scrapeURL string
+	health    string
+	labels    map[string]string
+}
+
+type promTargetsResponse struct {
+	Status string `json:"status"`
+	Data   struct {
+		ActiveTargets []struct {
+			ScrapeURL string            `json:"scrapeUrl"`
+			Health    string            `json:"health"`
+			Labels    map[string]string `json:"labels"`
+			LastError string            `json:"lastError"`
+		} `json:"activeTargets"`
+	} `json:"data"`
+}
+
+func queryPrometheusTargets(ctx context.Context) ([]promTarget, error) {
+	baseURL := suite.ProxyClient.ProxyURLForService(
+		kitkyma.SelfMonitorService.Namespace,
+		kitkyma.SelfMonitorService.Name,
+		"api/v1/targets",
+		selfmonports.PrometheusPort,
+	)
+
+	resp, err := suite.ProxyClient.GetWithContext(ctx, baseURL)
+	if err != nil {
+		return nil, fmt.Errorf("GET failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("read body failed: %w", err)
+	}
+
+	var result promTargetsResponse
+	if err := json.Unmarshal(body, &result); err != nil {
+		return nil, fmt.Errorf("parse failed: %w", err)
+	}
+
+	if result.Status != "success" {
+		return nil, fmt.Errorf("prometheus status: %s", result.Status)
+	}
+
+	targets := make([]promTarget, len(result.Data.ActiveTargets))
+	for i, at := range result.Data.ActiveTargets {
+		health := at.Health
+		if at.LastError != "" {
+			health += " (" + at.LastError + ")"
+		}
+
+		targets[i] = promTarget{
+			scrapeURL: at.ScrapeURL,
+			health:    health,
+			labels:    at.Labels,
+		}
+	}
+
+	return targets, nil
+}
+
 type promQueryResponse struct {
 	Status string `json:"status"`
 	Data   struct {
