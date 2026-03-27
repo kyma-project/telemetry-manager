@@ -279,8 +279,13 @@ func assertSelfMonitorRateNonZero(t *testing.T, component string) {
 	Eventually(func() bool {
 		for _, query := range metricsForComponent(component) {
 			val, err := queryPrometheus(t.Context(), query)
-			if err != nil || val == "(no data)" {
-				t.Logf("rate baseline not ready [%s]: %v", query, err)
+			if err != nil {
+				t.Logf("rate baseline not ready [%s]: query error: %v", query, err)
+				continue
+			}
+
+			if val == "(no data)" {
+				t.Logf("rate baseline not ready [%s]: no data yet", query)
 				continue
 			}
 
