@@ -197,51 +197,57 @@ Check PRs in the module-manifests repository:
 2. Check that the image tag format matches the expected pattern.
 - Wait for dependency builds to complete
 
-**Tag already exists**:
-- Check existing tags: `git tag -l {VERSION}`
+**Symptom**: The workflow fails with an error that the tag already exists.
+
+**Solution:**
+1. To check the existing tags, run: `git tag -l {VERSION}`
 - Use force mode to re-create (caution: overwrites existing release)
-- Or choose a different version number
 
-### PR Not Merging
+### Version Bump PR Times Out
 
-If the version bump PR is not merged within 120 minutes:
-- Workflow times out and fails
-- Review and merge the PR manually
-- Re-run the workflow from the GitHub Actions UI
+**Cause**:
+The workflow waits for a maximum of 120 minutes for the PR to be merged. If you don't merge it in time, the workflow fails.
+**Solution**
+1. Review and merge the PR manually.
+2. In the telemetry-manager repo, go to **Actions** and rerun the workflow.
 
 ### Module Release Issues
 
-**PR creation fails**:
-- Check `HUSKIES_GHTOOLS_TOKEN` secret is configured
-- Verify network access to github.tools.sap
-- Check workflow logs for detailed error messages
+**Symptom:** The module release workflow fails to create a PR in the `module-manifests` repository.
+1. Make sure that the `HUSKIES_GHTOOLS_TOKEN` secret is configured.
+2. Verify network access to github.tools.sap.
+3. If the secret and network are okay, check the workflow logs for detailed error messages.
 
-**Auto-merge not working**:
-- Verify branch protection rules allow auto-merge
-- Check that required checks are passing
-- Manually merge if auto-merge fails
+**Symptom**: The module release PR is not merging automatically.
+
+**Solution**:
+1. Make sure your branch protection rules allow auto-merge.
+- Check if any required check is are failing.
+- If auto-merge still fails, merge the PR manually.
 
 ## Dry Run Mode
 
-To test the release process without creating actual releases:
+To test the release process without creating tags or releases, you can run it in dry-run mode.
 
-1. Set `dry_run: true` when starting the workflow
-2. The workflow will:
-   - Perform all validations
-   - Create and test version bump changes locally
-   - Run all tests
-   - Skip tag creation, release creation, and PR creation
-3. Review the dry run summary in the workflow output
-4. Run again with `dry_run: false` to create the actual release
+1. When you start the workflow, set `dry_run: true`.
+   The workflow performs all validation and testing steps, but it skips creating the version bump PR, the Git tag, and the GitHub release.
+3. Review the dry run summary in the workflow output.
+4. To create the actual release, run it again with `dry_run: false`.
 
 ## Force Mode
 
-Use force mode to re-create an existing release (use with caution):
+> [!CAUTION]
+> Force mode deletes the existing release and tag before recreating them. Use it only when necessary and communicate with the team beforehand.
 
-1. Set `force: true` when starting the workflow
-2. The workflow will:
-   - Delete existing release and tag
-   - Proceed with release creation
+Consider using force mode for the following purposes:
+   - Fixing a broken release
+   - Updating release assets
+   - Correcting version metadata
+
+To re-create an existing release, use force mode:
+
+When you start the workflow, set `force: true`.
+The workflow deletes the existing release and tag, and proceeds with release creation.
 3. Use cases:
    - Fixing a broken release
    - Updating release assets
