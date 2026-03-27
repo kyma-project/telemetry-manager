@@ -639,45 +639,31 @@ jobs:
 
       - name: Trigger module release for fast channel
         if: ${{ inputs.dry_run != true && inputs.module_release == true }}
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            console.log('Triggering module release for fast channel...');
-            await github.rest.actions.createWorkflowDispatch({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              workflow_id: 'module-release.yml',
-              ref: '${{ github.ref_name }}',
-              inputs: {
-                version: '${{ inputs.version }}',
-                channel: 'fast',
-                dry_run: 'false',
-                auto_merge: 'true'
-              }
-            });
-            console.log('Module release workflow triggered for fast channel');
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Triggering module release for fast channel..."
+          gh workflow run module-release.yml \
+            --ref "${{ github.ref_name }}" \
+            -f version="${{ inputs.version }}" \
+            -f channel="fast" \
+            -f dry_run="false" \
+            -f auto_merge="true"
+          echo "Module release workflow triggered for fast channel"
 
       - name: Trigger module release for experimental channel
         if: ${{ inputs.dry_run != true && inputs.module_release == true }}
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            console.log('Triggering module release for experimental channel...');
-            await github.rest.actions.createWorkflowDispatch({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              workflow_id: 'module-release.yml',
-              ref: '${{ github.ref_name }}',
-              inputs: {
-                version: '${{ inputs.version }}',
-                channel: 'experimental',
-                dry_run: 'false',
-                auto_merge: 'true'
-              }
-            });
-            console.log('Module release workflow triggered for experimental channel');
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Triggering module release for experimental channel..."
+          gh workflow run module-release.yml \
+            --ref "${{ github.ref_name }}" \
+            -f version="${{ inputs.version }}" \
+            -f channel="experimental" \
+            -f dry_run="false" \
+            -f auto_merge="true"
+          echo "Module release workflow triggered for experimental channel"
 
       - name: Release success summary
         if: ${{ success() && inputs.dry_run != true }}
@@ -706,7 +692,7 @@ jobs:
 
           ### What's Next?
           1. Verify the release at the URL above
-          2. Monitor the module release PRs (will auto-merge when checks pass)
+          2. Monitor the module release PRs
           3. Announce the release to the team
           4. Update external documentation if needed
 

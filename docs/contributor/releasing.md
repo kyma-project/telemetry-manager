@@ -144,8 +144,6 @@ If `module_release` is set to `true` (the default), the workflow triggers module
 - Auto-merge: enabled
 - Creates PR in `kyma/module-manifests` repository
 
-If all checks pass, the workflow merges both PRs automatically.
-
 > [!NOTE]
 > To manually trigger module releases later or skip them entirely, set `module_release` to `false`.
 
