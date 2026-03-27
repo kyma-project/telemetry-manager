@@ -42,15 +42,17 @@ type Experimental struct {
 type Global struct {
 	Experimental
 
-	managerNamespace              string
-	targetNamespace               string
-	operateInFIPSMode             bool
-	version                       string
-	imagePullSecretName           string
-	clusterTrustBundleName        string
-	additionalWorkloadLabels      map[string]string
-	additionalWorkloadAnnotations map[string]string
-	unlimitedPipelines            bool
+	managerNamespace                 string
+	targetNamespace                  string
+	operateInFIPSMode                bool
+	version                          string
+	imagePullSecretName              string
+	clusterTrustBundleName           string
+	additionalWorkloadLabels         map[string]string
+	additionalWorkloadAnnotations    map[string]string
+	additionalWorkloadPodLabels      map[string]string
+	additionalWorkloadPodAnnotations map[string]string
+	unlimitedPipelines               bool
 }
 
 type Option func(*Global)
@@ -100,6 +102,18 @@ func WithAdditionalWorkloadLabels(labels map[string]string) Option {
 func WithAdditionalWorkloadAnnotations(annotations map[string]string) Option {
 	return func(g *Global) {
 		g.additionalWorkloadAnnotations = annotations
+	}
+}
+
+func WithAdditionalWorkloadPodLabels(labels map[string]string) Option {
+	return func(g *Global) {
+		g.additionalWorkloadPodLabels = labels
+	}
+}
+
+func WithAdditionalWorkloadPodAnnotations(annotations map[string]string) Option {
+	return func(g *Global) {
+		g.additionalWorkloadPodAnnotations = annotations
 	}
 }
 
@@ -181,15 +195,27 @@ func (g *Global) ClusterTrustBundleName() string {
 }
 
 // AdditionalWorkloadLabels returns additional labels to be added to all workload resources created by Telemetry Manager (DaemonSets, Deployments, etc.),
-// set by the user using the CLI flag --additional-label,
+// set by the user using the CLI flag --additional-workload-label,
 func (g *Global) AdditionalWorkloadLabels() map[string]string {
 	return g.additionalWorkloadLabels
 }
 
 // AdditionalWorkloadAnnotations returns additional annotations to be added to all workload resources created by Telemetry Manager (DaemonSets, Deployments, etc.),
-// set by the user using the CLI flag --additional-annotation,
+// set by the user using the CLI flag --additional-workload-annotation,
 func (g *Global) AdditionalWorkloadAnnotations() map[string]string {
 	return g.additionalWorkloadAnnotations
+}
+
+// AdditionalWorkloadPodLabels returns additional labels to be added to all workload pods created by Telemetry Manager,
+// set by the user using the CLI flag --additional-workload-pod-label,
+func (g *Global) AdditionalWorkloadPodLabels() map[string]string {
+	return g.additionalWorkloadPodLabels
+}
+
+// AdditionalWorkloadPodAnnotations returns additional annotations to be added to all workload pods created by Telemetry Manager,
+// set by the user using the CLI flag --additional-workload-pod-annotation,
+func (g *Global) AdditionalWorkloadPodAnnotations() map[string]string {
+	return g.additionalWorkloadPodAnnotations
 }
 
 func (g *Global) UnlimitedPipelines() bool { return g.unlimitedPipelines }

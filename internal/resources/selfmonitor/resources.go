@@ -210,7 +210,7 @@ func (ad *ApplierDeleter) makeDeployment(configChecksum, configPath, configFile 
 	// Pod labels: need default labels explicitly since the labeler only sets top-level object labels
 	podLabels := make(map[string]string)
 	maps.Copy(podLabels, commonresources.DefaultLabels(names.SelfMonitor, commonresources.LabelValueK8sComponentMonitor))
-	maps.Copy(podLabels, ad.Config.AdditionalWorkloadLabels())
+	maps.Copy(podLabels, ad.Config.AdditionalWorkloadPodLabels())
 	podLabels[commonresources.LabelKeyIstioInject] = commonresources.LabelValueFalse
 	podLabels[commonresources.LabelKeyTelemetryMetricsScraping] = commonresources.LabelValueTelemetryMetricsScraping
 
@@ -218,9 +218,9 @@ func (ad *ApplierDeleter) makeDeployment(configChecksum, configPath, configFile 
 	resourceAnnotations := make(map[string]string)
 	maps.Copy(resourceAnnotations, ad.Config.AdditionalWorkloadAnnotations())
 
-	// Pod annotations: additional annotations plus config checksum
+	// Pod annotations: only pod-specific annotations plus config checksum
 	podAnnotations := make(map[string]string)
-	maps.Copy(podAnnotations, ad.Config.AdditionalWorkloadAnnotations())
+	maps.Copy(podAnnotations, ad.Config.AdditionalWorkloadPodAnnotations())
 	podAnnotations[commonresources.AnnotationKeyChecksumConfig] = configChecksum
 
 	podSpec := ad.makePodSpec(ad.Config.Image, configPath, configFile)

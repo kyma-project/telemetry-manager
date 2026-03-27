@@ -402,8 +402,8 @@ deploy-experimental-no-fips: manifests-experimental $(HELM) ## Deploy telemetry 
 		--namespace kyma-system \
 	| kubectl apply -f -
 
-.PHONY: deploy-custom-labels-annotations-no-fips
-deploy-custom-labels-annotations-no-fips: manifests $(HELM) ## Deploy telemetry manager with custom labels and annotations, and FIPS mode disabled
+.PHONY: deploy-with-all-custom-metadata-no-fips
+deploy-with-all-custom-metadata-no-fips: manifests $(HELM) ## Deploy telemetry manager with custom labels and annotations, and FIPS mode disabled
 	$(HELM) template telemetry helm \
 		--set experimental.enabled=false \
 		--set default.enabled=true\
@@ -411,8 +411,14 @@ deploy-custom-labels-annotations-no-fips: manifests $(HELM) ## Deploy telemetry 
 		--set manager.container.image.repository=${MANAGER_IMAGE} \
 		--set manager.container.image.pullPolicy="Always" \
 		--set manager.container.env.operateInFipsMode=false \
-		--set additionalMetadata.labels.my-meta-label="foo" \
-		--set additionalMetadata.annotations.my-meta-annotation="bar" \
+		--set manager.labels.my-manager-label="manager-value" \
+		--set manager.annotations.my-manager-annotation="manager-annotation-value" \
+		--set manager.pod.labels.my-manager-pod-label="manager-pod-value" \
+		--set manager.pod.annotations.my-manager-pod-annotation="manager-pod-annotation-value" \
+		--set managedResources.workload.labels.my-workload-label="workload-value" \
+		--set managedResources.workload.annotations.my-workload-annotation="workload-annotation-value" \
+		--set managedResources.workload.pod.labels.my-pod-label="pod-value" \
+		--set managedResources.workload.pod.annotations.my-pod-annotation="pod-annotation-value" \
 		--namespace kyma-system \
 	| kubectl apply -f -
 
