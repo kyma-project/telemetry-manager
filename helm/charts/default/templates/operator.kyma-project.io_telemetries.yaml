@@ -134,12 +134,7 @@ spec:
                 - message: Gateway scaling is deprecated and must not be set. The
                     gateway runs as a DaemonSet that scales automatically with cluster
                     nodes.
-                  rule: '!has(self.gateway.scaling.type) || self.gateway.scaling.type
-                    == ”'
-                - message: Gateway scaling is deprecated and must not be set. The
-                    gateway runs as a DaemonSet that scales automatically with cluster
-                    nodes.
-                  rule: '!has(self.gateway.scaling.static)'
+                  rule: '!has(self.gateway.scaling)'
               metric:
                 description: Metric configures module settings specific to the metric
                   features. This field is optional.
@@ -229,12 +224,7 @@ spec:
                 - message: Gateway scaling is deprecated and must not be set. The
                     gateway runs as a DaemonSet that scales automatically with cluster
                     nodes.
-                  rule: '!has(self.gateway.scaling.type) || self.gateway.scaling.type
-                    == ”'
-                - message: Gateway scaling is deprecated and must not be set. The
-                    gateway runs as a DaemonSet that scales automatically with cluster
-                    nodes.
-                  rule: '!has(self.gateway.scaling.static)'
+                  rule: '!has(self.gateway.scaling)'
               trace:
                 description: Trace configures module settings specific to the trace
                   features. This field is optional.
@@ -273,12 +263,7 @@ spec:
                 - message: Gateway scaling is deprecated and must not be set. The
                     gateway runs as a DaemonSet that scales automatically with cluster
                     nodes.
-                  rule: '!has(self.gateway.scaling.type) || self.gateway.scaling.type
-                    == ”'
-                - message: Gateway scaling is deprecated and must not be set. The
-                    gateway runs as a DaemonSet that scales automatically with cluster
-                    nodes.
-                  rule: '!has(self.gateway.scaling.static)'
+                  rule: '!has(self.gateway.scaling)'
             type: object
           status:
             description: TelemetryStatus defines the observed state of Telemetry
@@ -503,12 +488,7 @@ spec:
                 - message: Gateway scaling is deprecated and must not be set. The
                     gateway runs as a DaemonSet that scales automatically with cluster
                     nodes.
-                  rule: '!has(self.gateway.scaling.type) || self.gateway.scaling.type
-                    == ”'
-                - message: Gateway scaling is deprecated and must not be set. The
-                    gateway runs as a DaemonSet that scales automatically with cluster
-                    nodes.
-                  rule: '!has(self.gateway.scaling.static)'
+                  rule: '!has(self.gateway.scaling)'
               metric:
                 description: Metric configures module settings specific to the metric
                   features. This field is optional.
@@ -598,12 +578,7 @@ spec:
                 - message: Gateway scaling is deprecated and must not be set. The
                     gateway runs as a DaemonSet that scales automatically with cluster
                     nodes.
-                  rule: '!has(self.gateway.scaling.type) || self.gateway.scaling.type
-                    == ”'
-                - message: Gateway scaling is deprecated and must not be set. The
-                    gateway runs as a DaemonSet that scales automatically with cluster
-                    nodes.
-                  rule: '!has(self.gateway.scaling.static)'
+                  rule: '!has(self.gateway.scaling)'
               trace:
                 description: Trace configures module settings specific to the trace
                   features. This field is optional.
@@ -642,12 +617,7 @@ spec:
                 - message: Gateway scaling is deprecated and must not be set. The
                     gateway runs as a DaemonSet that scales automatically with cluster
                     nodes.
-                  rule: '!has(self.gateway.scaling.type) || self.gateway.scaling.type
-                    == ”'
-                - message: Gateway scaling is deprecated and must not be set. The
-                    gateway runs as a DaemonSet that scales automatically with cluster
-                    nodes.
-                  rule: '!has(self.gateway.scaling.static)'
+                  rule: '!has(self.gateway.scaling)'
             type: object
           status:
             description: TelemetryStatus defines the observed state of Telemetry

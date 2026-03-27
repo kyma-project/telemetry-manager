@@ -73,8 +73,7 @@ type TelemetrySpec struct {
 }
 
 // MetricSpec configures module settings specific to the metric features.
-// +kubebuilder:validation:XValidation:rule="!has(self.gateway.scaling.type) || self.gateway.scaling.type == ”",message="Gateway scaling is deprecated and must not be set. The gateway runs as a DaemonSet that scales automatically with cluster nodes."
-// +kubebuilder:validation:XValidation:rule="!has(self.gateway.scaling.static)",message="Gateway scaling is deprecated and must not be set. The gateway runs as a DaemonSet that scales automatically with cluster nodes."
+// +kubebuilder:validation:XValidation:rule="!has(self.gateway.scaling)",message="Gateway scaling is deprecated and must not be set. The gateway runs as a DaemonSet that scales automatically with cluster nodes."
 type MetricSpec struct {
 	// Gateway configures the metric gateway.
 	// +kubebuilder:validation:Optional
@@ -111,8 +110,7 @@ type MetricInputSpec struct {
 }
 
 // TraceSpec configures module settings specific to the trace features.
-// +kubebuilder:validation:XValidation:rule="!has(self.gateway.scaling.type) || self.gateway.scaling.type == ”",message="Gateway scaling is deprecated and must not be set. The gateway runs as a DaemonSet that scales automatically with cluster nodes."
-// +kubebuilder:validation:XValidation:rule="!has(self.gateway.scaling.static)",message="Gateway scaling is deprecated and must not be set. The gateway runs as a DaemonSet that scales automatically with cluster nodes."
+// +kubebuilder:validation:XValidation:rule="!has(self.gateway.scaling)",message="Gateway scaling is deprecated and must not be set. The gateway runs as a DaemonSet that scales automatically with cluster nodes."
 type TraceSpec struct {
 	// Gateway configures the trace gateway.
 	// +kubebuilder:validation:Optional
@@ -120,8 +118,7 @@ type TraceSpec struct {
 }
 
 // LogSpec configures module settings specific to the log features.
-// +kubebuilder:validation:XValidation:rule="!has(self.gateway.scaling.type) || self.gateway.scaling.type == ”",message="Gateway scaling is deprecated and must not be set. The gateway runs as a DaemonSet that scales automatically with cluster nodes."
-// +kubebuilder:validation:XValidation:rule="!has(self.gateway.scaling.static)",message="Gateway scaling is deprecated and must not be set. The gateway runs as a DaemonSet that scales automatically with cluster nodes."
+// +kubebuilder:validation:XValidation:rule="!has(self.gateway.scaling)",message="Gateway scaling is deprecated and must not be set. The gateway runs as a DaemonSet that scales automatically with cluster nodes."
 type LogSpec struct {
 	// Gateway configures the log gateway.
 	// +kubebuilder:validation:Optional
