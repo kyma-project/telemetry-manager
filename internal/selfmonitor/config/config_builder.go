@@ -5,10 +5,7 @@ import (
 	"time"
 )
 
-const (
-	defaultInterval   = 30 * time.Second
-	sdRefreshInterval = 1 * time.Minute
-)
+const defaultInterval = 30 * time.Second
 
 type BuilderConfig struct {
 	ScrapeNamespace        string
@@ -121,9 +118,8 @@ func makeScrapeConfig(scrapeNamespace string) []ScrapeConfig {
 				},
 			},
 			KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{{
-				Role:            RoleEndpoints,
-				Namespaces:      Names{Name: []string{scrapeNamespace}},
-				RefreshInterval: sdRefreshInterval,
+				Role:       RoleEndpoints,
+				Namespaces: Names{Name: []string{scrapeNamespace}},
 			}},
 		},
 	}

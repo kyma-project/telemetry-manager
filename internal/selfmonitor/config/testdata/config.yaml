@@ -58,4 +58,3 @@ scrape_configs:
           namespaces:
             names:
                 - kyma-system
-          refresh_interval: 1m0s
