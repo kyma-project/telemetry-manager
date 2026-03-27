@@ -44,15 +44,27 @@ The release process uses GitHub Actions workflows to automate the following task
 In the telemetry-manager repo, go to **Actions**, select [Telemetry Release](https://github.com/kyma-project/telemetry-manager/actions/workflows/release.yml) and run the workflow with the following inputs:
 
 
-| Input | Description | Example |
-|-------|-------------|---------|
-| **version** | Release version in X.Y.Z format | `1.2.3` |
-| **occ_image_version** | OCC image version in X.Y.Z-A.B.C format | `0.100.0-1.2.3` |
-| **self_monitor_image_tag** | Self-monitor image tag in vYYYYMMDD-HASH format | `v20260302-bbf32a3b` |
-| **dir_size_image_tag** | Directory size exporter image tag in vYYYYMMDD-HASH format | `v20260302-12345678` |
-| **dry_run** | Test the release process without creating tags/releases | `false` |
-| **force** | Recreate existing release (use with caution) | `false` |
-| **module_release** | Trigger module release for experimental and fast channels after release | `true` |
+| Input                      | Description                                                             | Example              |
+|----------------------------|-------------------------------------------------------------------------|----------------------|
+| **version**                | Release version in X.Y.Z format                                         | `1.2.3`              |
+| **occ_image_version**      | OCC image version in X.Y.Z-A.B.C format                                 | `0.100.0-1.2.3`      |
+| **self_monitor_image_tag** | Self-monitor image tag in vYYYYMMDD-HASH format                         | `v20260302-bbf32a3b` |
+| **dir_size_image_tag**     | Directory size exporter image tag in vYYYYMMDD-HASH format              | `v20260302-12345678` |
+| **dry_run**                | Test the release process without creating tags/releases                 |                      |
+| **force**                  | Recreate existing release (use with caution)                            |                      |
+| **module_release**         | Trigger module release for experimental and fast channels after release |                      |
+
+To test the release process without creating actual tags or releases, set `dry_run` to `true`. This allows you to validate the workflow and catch any issues before performing the real release.
+The `force` option allows you to re-create an existing release by deleting the existing tag and release before creating a new one. Use this option with caution, as it overwrites the existing release.
+The `module_release` option controls whether to automatically trigger module releases for the experimental and fast channels after the main release is created. The workflow by default will create module release for experimental and fast channel, set it to `false` if you want to skip module releases or trigger them manually later.
+
+> [!CAUTION]
+> Force mode deletes the existing release and tag before recreating them. Use it only when necessary and communicate with the team beforehand.
+
+Consider using force mode for the following purposes:
+- Fixing a broken release
+- Updating release assets
+- Correcting version metadata
 
 ### Step 2: Workflow Validation Phase
 
@@ -151,11 +163,11 @@ In the telemetry-manager repo, go to **Actions** and select [Telemetry Module Re
 
 ## Release Channels
 
-| Channel | Purpose | Update Frequency | Trigger |
-|---------|---------|------------------|---------|
-| **experimental** | Testing new features | Every release | Automatic (if module_release=true) |
-| **fast** | Early adopters | Every release | Automatic (if module_release=true) |
-| **regular** | Stable production | Selected releases | Manual |
+| Channel          | Purpose              | Update Frequency  | Trigger                            |
+|------------------|----------------------|-------------------|------------------------------------|
+| **experimental** | Testing new features | Every release     | Automatic (if module_release=true) |
+| **fast**         | Early adopters       | Every release     | Automatic (if module_release=true) |
+| **regular**      | Stable production    | Selected releases | Manual                             |
 
 ## Monitoring Release Progress
 
@@ -176,9 +188,7 @@ Monitor the release workflow at: [Actions > Telemetry Release](https://github.co
 
 Monitor module releases at: [Actions > Telemetry Module Release](https://github.com/kyma-project/telemetry-manager/actions/workflows/module-release.yml)
 
-Check PRs in the module-manifests repository:
-- For fast channel: `https://github.tools.sap/kyma/module-manifests/pulls`
-- For experimental channel: `https://github.tools.sap/kyma/module-manifests/pulls`
+Check PRs in the module-manifests repository, for both experimental and fast channels [here](https://github.tools.sap/kyma/module-manifests/pulls).
 
 ## Troubleshooting
 
@@ -188,20 +198,25 @@ Check PRs in the module-manifests repository:
 
 **Solution:**
 1. Go to [Milestones](https://github.com/kyma-project/telemetry-manager/milestones) and close any open issues.
-1. With all issues closed, close the milestone for the release version.
+2. With all issues closed, close the milestone for the release version.
+3. Rerun the workflow.
 
 **Symptom**: The workflow fails with an error that a Docker image was not found.
 
 **Solution:**
 1. Check that the image exists in registry.
 2. Check that the image tag format matches the expected pattern.
-- Wait for dependency builds to complete
+3. If the image is missing, build missing image(s) by running the corresponding workflow, wait for it to complete.
+4. Rerun the release workflow.
 
 **Symptom**: The workflow fails with an error that the tag already exists.
 
 **Solution:**
 1. To check the existing tags, run: `git tag -l {VERSION}`
-- Use force mode to re-create (caution: overwrites existing release)
+2. Remove the existing tag manually if it is a leftover from a failed release attempt.
+3. Rerun the release workflow.
+
+Alternative, rerun with force mode to re-create (caution: overwrites existing release if exists)
 
 ### Version Bump PR Times Out
 
@@ -211,92 +226,17 @@ The workflow waits for a maximum of 120 minutes for the PR to be merged. If you 
 1. Review and merge the PR manually.
 2. In the telemetry-manager repo, go to **Actions** and rerun the workflow.
 
-### Module Release Issues
-
-**Symptom:** The module release workflow fails to create a PR in the `module-manifests` repository.
-1. Make sure that the `HUSKIES_GHTOOLS_TOKEN` secret is configured.
-2. Verify network access to github.tools.sap.
-3. If the secret and network are okay, check the workflow logs for detailed error messages.
-
-**Symptom**: The module release PR is not merging automatically.
-
-**Solution**:
-1. Make sure your branch protection rules allow auto-merge.
-- Check if any required check is are failing.
-- If auto-merge still fails, merge the PR manually.
-
-## Dry Run Mode
-
-To test the release process without creating tags or releases, you can run it in dry-run mode.
-
-1. When you start the workflow, set `dry_run: true`.
-   The workflow performs all validation and testing steps, but it skips creating the version bump PR, the Git tag, and the GitHub release.
-3. Review the dry run summary in the workflow output.
-4. To create the actual release, run it again with `dry_run: false`.
-
-## Force Mode
-
-> [!CAUTION]
-> Force mode deletes the existing release and tag before recreating them. Use it only when necessary and communicate with the team beforehand.
-
-Consider using force mode for the following purposes:
-   - Fixing a broken release
-   - Updating release assets
-   - Correcting version metadata
-
-To re-create an existing release, use force mode:
-
-When you start the workflow, set `force: true`.
-The workflow deletes the existing release and tag, and proceeds with release creation.
-3. Use cases:
-   - Fixing a broken release
-   - Updating release assets
-   - Correcting version metadata
-
-**Warning**: Force mode overwrites existing releases. Use only when necessary and communicate with the team.
-
 ## Post-Release Tasks
 
 After the release is complete, perform the following tasks:
-
-1. To verify the release, check [Releases](https://github.com/kyma-project/telemetry-manager/releases).
-2. Monitor that the module PRs merge successfully.
-3. **Announce Release**: Notify the team via appropriate channels
-4. If an API or features changed, update external documentation.
-5. Create milestone for next version at [Milestones](https://github.com/kyma-project/telemetry-manager/milestones).
-6. Review the auto-generated release notes. If you cherry-picked commits for the release, some changes might appear duplicated. Edit the release notes to correct this.
-
-## Release Artifacts
-
-A successful release produces the following artifacts:
-
-- **Git Tag**: `{VERSION}` (for example, `1.2.3`)
-- **Docker Image**: `europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:{VERSION}`
-- **Helm Chart**: `telemetry-{VERSION}.tgz` (attached to GitHub release)
-- **GitHub Release**: With auto-generated changelog
-- **Module Manifests**: PRs in module-manifests repository for each channel
-
-## Changelog
-
-The release changelog is autogenerated from PR titles following [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/).
-
-### PR Title Format
-
-`type(scope?): subject`
-
-**Types**:
-- `feat`: New feature or functionality change
-- `fix`: Bug or regression fix
-- `docs`: Documentation changes
-- `test`: Test suite changes
-- `deps`: External dependency changes
-- `chore`: Maintenance changes (not included in changelog)
-
-**Subject Guidelines**:
-- Use imperative mood ("Add", "Fix", "Update", not "Added", "Fixed", "Updated")
-- Start with uppercase
-- No period at the end
-- Follow Kyma [capitalization](https://github.com/kyma-project/community/blob/main/docs/guidelines/content-guidelines/04-style-and-terminology.md#capitalization) and [terminology](https://github.com/kyma-project/community/blob/main/docs/guidelines/content-guidelines/04-style-and-terminology.md#terminology) guidelines.
+  - To verify the release, check [Releases](https://github.com/kyma-project/telemetry-manager/releases). A successful release produces the following artifacts:
+    - Git tag: `{VERSION}`
+    - GitHub release with auto-generated changelog
+    - Docker image: `europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:{VERSION}`
+    - Helm chart: `telemetry-{VERSION}.tgz` (attached to GitHub release)
+    - Module manifest PRs in `kyma/module-manifests` repository for experimental and fast channels (if module_release=true)
+  - Create milestone for next version at [Milestones](https://github.com/kyma-project/telemetry-manager/milestones). 
+  - Review the auto-generated release notes. If you cherry-picked commits for the release, some changes might appear duplicated. Edit the release notes to correct this.
 
 ## Related Documentation
 
