@@ -129,20 +129,25 @@ func metricsForComponent(component string) []string {
 }
 
 // logSelfMonitorTargets queries the self-monitor Prometheus targets API and logs
-// the discovered scrape targets with their health status. It never fails the test.
+// all discovered scrape targets (active and dropped) with their health status.
+// It never fails the test.
 func logSelfMonitorTargets(t *testing.T) {
 	t.Helper()
 
-	targets, err := queryPrometheusTargets(t.Context())
+	active, dropped, err := queryPrometheusTargets(t.Context())
 	if err != nil {
 		t.Logf("selfmon targets query failed: %v", err)
 		return
 	}
 
-	t.Logf("--- self-monitor targets (%d active) ---", len(targets))
+	t.Logf("--- self-monitor targets (active: %d, dropped: %d) ---", len(active), len(dropped))
 
-	for _, target := range targets {
+	for _, target := range active {
 		t.Logf("  [%s] %s (labels: %v)", target.health, target.scrapeURL, target.labels)
+	}
+
+	for _, target := range dropped {
+		t.Logf("  [dropped] %s (labels: %v)", target.scrapeURL, target.labels)
 	}
 }
 
@@ -161,10 +166,13 @@ type promTargetsResponse struct {
 			Labels    map[string]string `json:"labels"`
 			LastError string            `json:"lastError"`
 		} `json:"activeTargets"`
+		DroppedTargets []struct {
+			DiscoveredLabels map[string]string `json:"discoveredLabels"`
+		} `json:"droppedTargets"`
 	} `json:"data"`
 }
 
-func queryPrometheusTargets(ctx context.Context) ([]promTarget, error) {
+func queryPrometheusTargets(ctx context.Context) (active, dropped []promTarget, err error) {
 	baseURL := suite.ProxyClient.ProxyURLForService(
 		kitkyma.SelfMonitorService.Namespace,
 		kitkyma.SelfMonitorService.Name,
@@ -174,39 +182,47 @@ func queryPrometheusTargets(ctx context.Context) ([]promTarget, error) {
 
 	resp, err := suite.ProxyClient.GetWithContext(ctx, baseURL)
 	if err != nil {
-		return nil, fmt.Errorf("GET failed: %w", err)
+		return nil, nil, fmt.Errorf("GET failed: %w", err)
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("read body failed: %w", err)
+		return nil, nil, fmt.Errorf("read body failed: %w", err)
 	}
 
 	var result promTargetsResponse
 	if err := json.Unmarshal(body, &result); err != nil {
-		return nil, fmt.Errorf("parse failed: %w", err)
+		return nil, nil, fmt.Errorf("parse failed: %w", err)
 	}
 
 	if result.Status != "success" {
-		return nil, fmt.Errorf("prometheus status: %s", result.Status)
+		return nil, nil, fmt.Errorf("prometheus status: %s", result.Status)
 	}
 
-	targets := make([]promTarget, len(result.Data.ActiveTargets))
+	active = make([]promTarget, len(result.Data.ActiveTargets))
 	for i, at := range result.Data.ActiveTargets {
 		health := at.Health
 		if at.LastError != "" {
 			health += " (" + at.LastError + ")"
 		}
 
-		targets[i] = promTarget{
+		active[i] = promTarget{
 			scrapeURL: at.ScrapeURL,
 			health:    health,
 			labels:    at.Labels,
 		}
 	}
 
-	return targets, nil
+	dropped = make([]promTarget, len(result.Data.DroppedTargets))
+	for i, dt := range result.Data.DroppedTargets {
+		dropped[i] = promTarget{
+			scrapeURL: dt.DiscoveredLabels["__address__"],
+			labels:    dt.DiscoveredLabels,
+		}
+	}
+
+	return active, dropped, nil
 }
 
 type promQueryResponse struct {
