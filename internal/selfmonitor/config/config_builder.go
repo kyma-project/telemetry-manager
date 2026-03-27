@@ -61,7 +61,7 @@ func makeScrapeConfig(scrapeNamespace string) []ScrapeConfig {
 					Regex:        "true",
 				},
 				{
-					SourceLabels: []string{"__meta_kubernetes_endpoints_label_telemetry_kyma_project_io_self_monitor"},
+					SourceLabels: []string{"__meta_kubernetes_endpointslice_label_telemetry_kyma_project_io_self_monitor"},
 					Action:       Keep,
 					Regex:        "enabled",
 				},
@@ -89,7 +89,7 @@ func makeScrapeConfig(scrapeNamespace string) []ScrapeConfig {
 					TargetLabel:  "service",
 				},
 				{
-					SourceLabels: []string{"__meta_kubernetes_pod_node_name"},
+					SourceLabels: []string{"__meta_kubernetes_endpointslice_endpoint_node_name"},
 					Action:       Replace,
 					TargetLabel:  "node",
 				},
@@ -118,7 +118,7 @@ func makeScrapeConfig(scrapeNamespace string) []ScrapeConfig {
 				},
 			},
 			KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{{
-				Role:       RoleEndpoints,
+				Role:       RoleEndpointSlice,
 				Namespaces: Names{Name: []string{scrapeNamespace}},
 			}},
 		},

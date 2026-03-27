@@ -20,7 +20,7 @@ scrape_configs:
         - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
           regex: "true"
           action: keep
-        - source_labels: [__meta_kubernetes_endpoints_label_telemetry_kyma_project_io_self_monitor]
+        - source_labels: [__meta_kubernetes_endpointslice_label_telemetry_kyma_project_io_self_monitor]
           regex: enabled
           action: keep
         - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
@@ -38,7 +38,7 @@ scrape_configs:
         - source_labels: [__meta_kubernetes_service_name]
           target_label: service
           action: replace
-        - source_labels: [__meta_kubernetes_pod_node_name]
+        - source_labels: [__meta_kubernetes_endpointslice_endpoint_node_name]
           target_label: node
           action: replace
       metric_relabel_configs:
@@ -54,7 +54,7 @@ scrape_configs:
           target_label: pipeline_name
           action: replace
       kubernetes_sd_configs:
-        - role: endpoints
+        - role: endpointslice
           namespaces:
             names:
                 - kyma-system

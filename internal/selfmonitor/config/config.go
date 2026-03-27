@@ -58,7 +58,7 @@ type KubernetesDiscoveryConfig struct {
 type Role string
 
 const (
-	RoleEndpoints Role = "endpoints"
+	RoleEndpointSlice Role = "endpointslice"
 )
 
 type RelabelConfig struct {
