@@ -11,6 +11,8 @@ kubeAPI:
   hostPort: '6550'
 
 options:
+  runtime:
+    serversMemory: "4g"
   k3s:
     extraArgs:
       - arg: "--disable=traefik"
