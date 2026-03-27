@@ -3,6 +3,7 @@ package selfmonitor
 import (
 	"net/http"
 	"testing"
+	"time"
 
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -278,6 +279,7 @@ func assertSelfMonitorRateNonZero(t *testing.T, component string) {
 
 	Eventually(func() bool {
 		logSelfMonitorTargets(t)
+		t.Logf("--- rate baseline check [%s] ---", time.Now().Format(time.TimeOnly))
 
 		for _, query := range metricsForComponent(component) {
 			val, err := queryPrometheus(t.Context(), query)
