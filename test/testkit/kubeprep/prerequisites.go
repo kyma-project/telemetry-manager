@@ -1,8 +1,11 @@
 package kubeprep
 
 import (
+	"context"
 	"fmt"
 
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -56,11 +59,12 @@ spec:
   - Egress
 `
 
-	// allowSelfMonitorAPIServerEgressNetworkPolicy allows the selfmonitor Prometheus pod to reach the
-	// Kubernetes API server on port 443 for kubernetes SD target discovery.
-	// The production NetworkPolicy only lists pod-specific egress rules, which implicitly blocks
-	// all other egress (including to the API server) when the deny-all policy is active.
-	allowSelfMonitorAPIServerEgressNetworkPolicy = `---
+	// allowSelfMonitorAPIServerEgressNetworkPolicyYAML is a format string for a NetworkPolicy that allows
+	// the selfmonitor Prometheus pod to reach the Kubernetes API server for kubernetes SD target discovery.
+	// The production NetworkPolicy only lists pod-specific egress rules, which implicitly blocks all other
+	// egress (including to the API server) when the deny-all policy is active.
+	// %s is substituted with the API server cluster IP (e.g. "10.43.0.1/32").
+	allowSelfMonitorAPIServerEgressNetworkPolicyYAML = `---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -76,6 +80,9 @@ spec:
   - ports:
     - port: 443
       protocol: TCP
+    to:
+    - ipBlock:
+        cidr: %s/32
 `
 
 	allowFromGardenerVPNShootNetworkPolicy = `---
@@ -137,8 +144,17 @@ func deployTestPrerequisites(t TestingT, k8sClient client.Client, cfg Config) er
 	}
 
 	if cfg.AllowSelfMonitorAPIServerEgress {
-		if err := applyYAML(ctx, k8sClient, allowSelfMonitorAPIServerEgressNetworkPolicy); err != nil {
-			return fmt.Errorf("failed to apply self-monitor API server egress network policy: %w", err)
+		_, isK3d := detectK3DCluster(ctx)
+		if isK3d == nil {
+			apiServerIP, err := getAPIServerClusterIP(ctx, k8sClient)
+			if err != nil {
+				return fmt.Errorf("failed to get API server cluster IP: %w", err)
+			}
+
+			yaml := fmt.Sprintf(allowSelfMonitorAPIServerEgressNetworkPolicyYAML, apiServerIP)
+			if err := applyYAML(ctx, k8sClient, yaml); err != nil {
+				return fmt.Errorf("failed to apply self-monitor API server egress network policy: %w", err)
+			}
 		}
 	}
 
@@ -169,8 +185,17 @@ func removeTestPrerequisites(t TestingT, k8sClient client.Client, cfg Config) er
 	}
 
 	if cfg.AllowSelfMonitorAPIServerEgress {
-		if err := deleteYAML(ctx, k8sClient, allowSelfMonitorAPIServerEgressNetworkPolicy); err != nil {
-			return fmt.Errorf("failed to delete self-monitor API server egress network policy: %w", err)
+		_, isK3d := detectK3DCluster(ctx)
+		if isK3d == nil {
+			apiServerIP, err := getAPIServerClusterIP(ctx, k8sClient)
+			if err != nil {
+				return fmt.Errorf("failed to get API server cluster IP: %w", err)
+			}
+
+			yaml := fmt.Sprintf(allowSelfMonitorAPIServerEgressNetworkPolicyYAML, apiServerIP)
+			if err := deleteYAML(ctx, k8sClient, yaml); err != nil {
+				return fmt.Errorf("failed to delete self-monitor API server egress network policy: %w", err)
+			}
 		}
 	}
 
@@ -189,4 +214,19 @@ func removeTestPrerequisites(t TestingT, k8sClient client.Client, cfg Config) er
 	t.Log("Test prerequisites removed")
 
 	return nil
+}
+
+// getAPIServerClusterIP returns the cluster IP of the kubernetes service in the default namespace,
+// which is the virtual IP used to reach the Kubernetes API server from within the cluster.
+func getAPIServerClusterIP(ctx context.Context, k8sClient client.Client) (string, error) {
+	var svc corev1.Service
+	if err := k8sClient.Get(ctx, types.NamespacedName{Name: "kubernetes", Namespace: "default"}, &svc); err != nil {
+		return "", fmt.Errorf("failed to get kubernetes service: %w", err)
+	}
+
+	if svc.Spec.ClusterIP == "" {
+		return "", fmt.Errorf("kubernetes service has no cluster IP")
+	}
+
+	return svc.Spec.ClusterIP, nil
 }

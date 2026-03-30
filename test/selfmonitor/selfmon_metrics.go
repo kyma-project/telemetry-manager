@@ -162,10 +162,12 @@ func logSelfMonitorTargets(t *testing.T, ctx context.Context) {
 // scrape target. This guards against flakiness caused by the Prometheus kubernetes SD
 // watch-list failing during API server startup — if SD never connects, no targets are
 // discovered and no metrics are ever scraped.
+// If no targets are found within 1 minute, the selfmonitor pod is restarted once: a fresh
+// network namespace picks up all iptables/CNI rules that were not yet ready at initial pod start.
 func assertSelfMonitorHasActiveTargets(t *testing.T) {
 	t.Helper()
 
-	Eventually(func() bool {
+	hasActiveTargets := func() bool {
 		active, _, err := queryPrometheusTargets(t.Context())
 		if err != nil {
 			t.Logf("targets query failed (SD not ready yet): %v", err)
@@ -180,7 +182,24 @@ func assertSelfMonitorHasActiveTargets(t *testing.T) {
 		t.Logf("prometheus SD ready: %d active targets discovered", len(active))
 
 		return true
-	}, periodic.SelfmonitorRateBaselineTimeout, periodic.SelfmonitorQueryInterval).Should(
+	}
+
+	// First, poll for up to 1 minute. If no targets appear, restart the pod to recover
+	// from a potential CNI/iptables race where the pod's network namespace was set up
+	// before k3s had fully programmed the kubernetes ClusterIP DNAT rules.
+	deadline := time.Now().Add(time.Minute)
+	for time.Now().Before(deadline) {
+		if hasActiveTargets() {
+			return
+		}
+		time.Sleep(periodic.SelfmonitorQueryInterval)
+	}
+
+	t.Log("No active targets after 1 minute, restarting selfmonitor pod to recover from potential CNI/iptables race")
+	restartSelfMonitorPod(t)
+
+	// Now wait the full timeout for targets to appear after restart.
+	Eventually(hasActiveTargets, periodic.SelfmonitorRateBaselineTimeout, periodic.SelfmonitorQueryInterval).Should(
 		BeTrue(),
 		"prometheus service discovery never discovered any targets",
 	)
@@ -397,4 +416,32 @@ func logSelfMonitorPodLogs(t *testing.T, ctx context.Context) {
 
 		t.Logf("  pod %s logs:\n%s", pod.Name, string(body))
 	}
+}
+
+// restartSelfMonitorPod deletes all selfmonitor pods, causing the Deployment to recreate them
+// with a fresh network namespace. Used as a mitigation when Prometheus kubernetes SD fails to
+// connect to the API server due to a CNI/iptables race at pod startup time.
+func restartSelfMonitorPod(t *testing.T) {
+	t.Helper()
+
+	var podList corev1.PodList
+	if err := suite.K8sClient.List(t.Context(), &podList,
+		client.InNamespace(kitkyma.SystemNamespaceName),
+		client.MatchingLabels{commonresources.LabelKeyK8sName: names.SelfMonitor},
+	); err != nil {
+		t.Logf("selfmon pod list error (skipping restart): %v", err)
+		return
+	}
+
+	for i := range podList.Items {
+		pod := &podList.Items[i]
+		if err := suite.K8sClient.Delete(t.Context(), pod); client.IgnoreNotFound(err) != nil {
+			t.Logf("failed to delete selfmon pod %s (skipping): %v", pod.Name, err)
+		} else {
+			t.Logf("deleted selfmon pod %s for restart", pod.Name)
+		}
+	}
+
+	// Give the new pod time to start before the caller retries target discovery.
+	time.Sleep(10 * time.Second)
 }
