@@ -515,7 +515,6 @@ func buildHandler(cfg *faultConfig, reqStats *stats) http.Handler {
 		// Drain the request body to avoid connection resets on keep-alive connections.
 		// Without this, responding before the client finishes sending can cause a TCP RST,
 		// which the OTLP exporter treats as a retryable connection error instead of a clean HTTP 400.
-		// This drain applies unconditionally before the gRPC/HTTP branch so both paths are covered.
 		_, _ = io.Copy(io.Discard, r.Body) //nolint:errcheck // best-effort drain; body may already be closed
 
 		cfg.mu.RLock()
