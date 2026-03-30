@@ -11,6 +11,8 @@ The release process uses GitHub Actions workflows to automate the following task
 - GitHub release creation
 - Module manifest updates for multiple channels
 
+![Release Workflow](./assets/auditable-release-final.drawio.svg)
+
 ## Prerequisites
 
 1. **Milestone Verification**: Close all issues in the [GitHub milestone](https://github.com/kyma-project/telemetry-manager/milestones) for the version and close the milestone. Create a new [GitHub milestone](https://github.com/kyma-project/telemetry-manager/milestones) for the next version.
@@ -101,9 +103,9 @@ Next, the workflow runs the `make generate` command to apply these changes to al
 > [!WARNING]
 > If you do not merge the PR within 120 minutes, the workflow times out and fails. The workflow waits up to 120 minutes for you to review and merge the PR.
 To review the PR, use the checklist in the PR description to verify the following conditions:
-- [ ] Version numbers are correct
-- [ ] Generated files are up to date
-- [ ] No unintended changes
+- Version numbers are correct
+- Generated files are up to date
+- No unintended changes
 
 ### Step 5: Automated Testing
 
@@ -184,7 +186,7 @@ Monitor the release workflow at: [Actions > Telemetry Release](https://github.co
 
 Monitor module releases at: [Actions > Telemetry Module Release](https://github.com/kyma-project/telemetry-manager/actions/workflows/module-release.yml)
 
-Check the PRs for both experimental and fast channels in the [module-manifests repository](https://github.tools.sap/kyma/module-manifests/pulls).
+Check the pull requests for both experimental and fast channels in the [module-manifests repository](https://github.tools.sap/kyma/module-manifests/pulls).
 
 ## Troubleshooting
 
@@ -235,5 +237,7 @@ After the release completes, perform the following tasks:
 
 ## Related Workflows
 
-- [Module Release Workflow](https://github.com/kyma-project/telemetry-manager/actions/workflows/module-release.yml) 
+- [Module Release Workflow](https://github.com/kyma-project/telemetry-manager/actions/workflows/module-release.yml)
+  - ![Module Release Workflow](./assets/auditable-release-module-release.drawio.svg)
 - [Management Plane Chart Release Workflow](https://github.com/kyma-project/telemetry-manager/actions/workflows/mpc-release.yml) 
+  - ![Management Plane Chart Release Workflow](./assets/auditable-release-mpc-release.drawio.svg)
