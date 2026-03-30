@@ -192,6 +192,7 @@ func assertSelfMonitorHasActiveTargets(t *testing.T) {
 		if hasActiveTargets() {
 			return
 		}
+
 		time.Sleep(periodic.SelfmonitorQueryInterval)
 	}
 
@@ -443,5 +444,5 @@ func restartSelfMonitorPod(t *testing.T) {
 	}
 
 	// Give the new pod time to start before the caller retries target discovery.
-	time.Sleep(10 * time.Second)
+	time.Sleep(periodic.SelfmonitorPodRestartWait)
 }

@@ -42,4 +42,8 @@ const (
 
 	// TelemetryInterval is used for asynchronous checks when polling Telemetry data from a mock backend via the export URL.
 	TelemetryInterval = time.Second
+
+	// SelfmonitorPodRestartWait is the time to wait after deleting a selfmonitor pod before retrying target discovery.
+	// Allows the new pod's network namespace to initialize fully before Prometheus SD starts.
+	SelfmonitorPodRestartWait = 10 * time.Second
 )
