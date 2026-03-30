@@ -56,6 +56,28 @@ spec:
   - Egress
 `
 
+	// allowSelfMonitorAPIServerEgressNetworkPolicy allows the selfmonitor Prometheus pod to reach the
+	// Kubernetes API server on port 443 for kubernetes SD target discovery.
+	// The production NetworkPolicy only lists pod-specific egress rules, which implicitly blocks
+	// all other egress (including to the API server) when the deny-all policy is active.
+	allowSelfMonitorAPIServerEgressNetworkPolicy = `---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-self-monitor-apiserver-egress
+  namespace: kyma-system
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: telemetry-self-monitor
+  policyTypes:
+  - Egress
+  egress:
+  - ports:
+    - port: 443
+      protocol: TCP
+`
+
 	allowFromGardenerVPNShootNetworkPolicy = `---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -114,6 +136,12 @@ func deployTestPrerequisites(t TestingT, k8sClient client.Client, cfg Config) er
 		return fmt.Errorf("failed to apply network policy: %w", err)
 	}
 
+	if cfg.AllowSelfMonitorAPIServerEgress {
+		if err := applyYAML(ctx, k8sClient, allowSelfMonitorAPIServerEgressNetworkPolicy); err != nil {
+			return fmt.Errorf("failed to apply self-monitor API server egress network policy: %w", err)
+		}
+	}
+
 	if err := applyYAML(ctx, k8sClient, shootInfoConfigMapYAML); err != nil {
 		return fmt.Errorf("failed to apply shoot-info ConfigMap: %w", err)
 	}
@@ -131,13 +159,19 @@ func deployTestPrerequisites(t TestingT, k8sClient client.Client, cfg Config) er
 
 // removeTestPrerequisites removes test fixtures deployed by deployTestPrerequisites.
 // This should be called before Istio installation to avoid network policy conflicts.
-func removeTestPrerequisites(t TestingT, k8sClient client.Client) error {
+func removeTestPrerequisites(t TestingT, k8sClient client.Client, cfg Config) error {
 	ctx := t.Context()
 
 	t.Log("Removing test prerequisites...")
 
 	if err := deleteYAML(ctx, k8sClient, allowFromGardenerVPNShootNetworkPolicy); err != nil {
 		return fmt.Errorf("failed to delete gardener allow apiserver network policy: %w", err)
+	}
+
+	if cfg.AllowSelfMonitorAPIServerEgress {
+		if err := deleteYAML(ctx, k8sClient, allowSelfMonitorAPIServerEgressNetworkPolicy); err != nil {
+			return fmt.Errorf("failed to delete self-monitor API server egress network policy: %w", err)
+		}
 	}
 
 	if err := deleteYAML(ctx, k8sClient, networkPolicyYAML); err != nil {

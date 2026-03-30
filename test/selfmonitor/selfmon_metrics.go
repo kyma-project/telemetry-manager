@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -17,6 +18,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	selfmonports "github.com/kyma-project/telemetry-manager/internal/selfmonitor/ports"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
+	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
@@ -154,6 +156,34 @@ func logSelfMonitorTargets(t *testing.T, ctx context.Context) {
 	for _, target := range dropped {
 		t.Logf("  [dropped] %s (labels: %v)", target.scrapeURL, target.labels)
 	}
+}
+
+// assertSelfMonitorHasActiveTargets waits until Prometheus has discovered at least one active
+// scrape target. This guards against flakiness caused by the Prometheus kubernetes SD
+// watch-list failing during API server startup — if SD never connects, no targets are
+// discovered and no metrics are ever scraped.
+func assertSelfMonitorHasActiveTargets(t *testing.T) {
+	t.Helper()
+
+	Eventually(func() bool {
+		active, _, err := queryPrometheusTargets(t.Context())
+		if err != nil {
+			t.Logf("targets query failed (SD not ready yet): %v", err)
+			return false
+		}
+
+		if len(active) == 0 {
+			t.Logf("no active targets yet (kubernetes SD may still be connecting to API server)")
+			return false
+		}
+
+		t.Logf("prometheus SD ready: %d active targets discovered", len(active))
+
+		return true
+	}, periodic.SelfmonitorRateBaselineTimeout, periodic.SelfmonitorQueryInterval).Should(
+		BeTrue(),
+		"prometheus service discovery never discovered any targets",
+	)
 }
 
 // logScrapeEndpoints lists all Endpoints in the scrape namespace that carry the

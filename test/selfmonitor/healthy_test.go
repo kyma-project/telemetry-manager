@@ -94,7 +94,7 @@ func TestHealthy(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			labels := []string{suite.LabelSelfMonitor, tc.component, suite.LabelHealthy}
 
-			opts := []kubeprep.Option{kubeprep.WithGatewayReplicas(1)}
+			opts := []kubeprep.Option{kubeprep.WithGatewayReplicas(1), kubeprep.WithSelfMonitorAPIServerEgress()}
 			if isFluentBit(tc.component) {
 				opts = append(opts, kubeprep.WithOverrideFIPSMode(false), kubeprep.WithFluentBitHostPathCleanup())
 			}
@@ -126,6 +126,7 @@ func TestHealthy(t *testing.T) {
 
 			assert.BackendReachable(t, backend)
 			assert.DeploymentReady(t, kitkyma.SelfMonitorName)
+			assertSelfMonitorHasActiveTargets(t)
 
 			FIPSModeEnabled, err := isFIPSModeEnabled(t)
 			Expect(err).ToNot(HaveOccurred())

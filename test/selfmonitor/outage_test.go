@@ -103,7 +103,7 @@ func TestOutage(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			labels := []string{suite.LabelSelfMonitor, tc.component, suite.LabelOutage}
 
-			opts := []kubeprep.Option{kubeprep.WithGatewayReplicas(1)}
+			opts := []kubeprep.Option{kubeprep.WithGatewayReplicas(1), kubeprep.WithSelfMonitorAPIServerEgress()}
 			if tc.useIstio {
 				opts = append(opts, kubeprep.WithIstio())
 			}
@@ -177,6 +177,7 @@ func TestOutage(t *testing.T) {
 			logDiagnosticsOnFailure(t, tc.component)
 
 			assert.DeploymentReady(t, kitkyma.SelfMonitorName)
+			assertSelfMonitorHasActiveTargets(t)
 			assertComponentReady(t, tc.component)
 
 			if tc.skipHealthyBaseline {
