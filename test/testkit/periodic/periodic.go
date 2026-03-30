@@ -46,4 +46,8 @@ const (
 	// SelfmonitorPodRestartWait is the time to wait after deleting a selfmonitor pod before retrying target discovery.
 	// Allows the new pod's network namespace to initialize fully before Prometheus SD starts.
 	SelfmonitorPodRestartWait = 10 * time.Second
+
+	// HealthyConsistentlyTimeout is used when asserting that data delivery and pipeline health
+	// remain stable over a sustained observation window.
+	HealthyConsistentlyTimeout = 3 * time.Minute
 )

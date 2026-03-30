@@ -20,6 +20,11 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
+	logmatchers "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
+	"github.com/kyma-project/telemetry-manager/test/testkit/matchers/log/fluentbit"
+	metricmatchers "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
+	tracematchers "github.com/kyma-project/telemetry-manager/test/testkit/matchers/trace"
+	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/faultbackend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdoutloggen"
@@ -432,4 +437,137 @@ func logDiagnosticsOnFailure(t *testing.T, component string) {
 		logScrapeEndpoints(t, ctx)
 		logSelfMonitorPodLogs(t, ctx)
 	})
+}
+
+// healthyEntry groups the resources needed to assert that a single component
+// consistently delivers data and keeps its pipeline FlowHealthy.
+type healthyEntry struct {
+	component    string
+	backend      *kitbackend.Backend
+	pipelineName string
+	genNs        string
+}
+
+// assertAllHealthyConsistently checks, in a single Consistently loop, that:
+//   - every backend keeps receiving telemetry data from its generator namespace, and
+//   - every pipeline's FlowHealthy condition remains True.
+//
+// Call this after the individual Eventually-based checks (assertPipelineHealthy +
+// data-delivery) have already confirmed a healthy baseline.
+func assertAllHealthyConsistently(t *testing.T, entries []healthyEntry) {
+	t.Helper()
+
+	t.Logf("Asserting all pipelines and backends stay healthy consistently for %s", periodic.HealthyConsistentlyTimeout)
+
+	Consistently(func(g Gomega) {
+		for _, e := range entries {
+			assertDataDeliveredNow(g, t, e)
+			assertFlowHealthyNow(g, t, e.component, e.pipelineName)
+		}
+	}, periodic.HealthyConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
+}
+
+// assertDataDeliveredEventually waits until the backend holds at least one telemetry
+// record from the generator namespace. Call this before assertAllHealthyConsistently
+// to ensure data is already flowing before the sustained observation window begins.
+func assertDataDeliveredEventually(t *testing.T, e healthyEntry) {
+	t.Helper()
+
+	t.Logf("Waiting for data to flow from component %s to backend", e.component)
+
+	Eventually(func(g Gomega) {
+		assertDataDeliveredNow(g, t, e)
+	}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+}
+
+// assertDataDeliveredNow checks in the current Consistently tick that the backend holds
+// at least one telemetry record from the generator namespace.
+func assertDataDeliveredNow(g Gomega, t *testing.T, e healthyEntry) {
+	t.Helper()
+
+	queryURL := suite.ProxyClient.ProxyURLForService(
+		e.backend.Namespace(), e.backend.Name(),
+		kitbackend.QueryPath, kitbackend.QueryPort,
+	)
+
+	resp, err := suite.ProxyClient.GetWithContext(t.Context(), queryURL)
+	g.Expect(err).NotTo(HaveOccurred(), "component %s: backend query failed", e.component)
+
+	defer resp.Body.Close()
+
+	g.Expect(resp).To(HaveHTTPStatus(http.StatusOK), "component %s: backend returned non-200", e.component)
+
+	switch e.component {
+	case suite.LabelLogAgent, suite.LabelLogGateway:
+		g.Expect(resp).To(HaveHTTPBody(
+			logmatchers.HaveFlatLogs(ContainElement(logmatchers.HaveResourceAttributes(
+				HaveKeyWithValue("k8s.namespace.name", e.genNs),
+			))),
+		), "component %s: no OTel logs from namespace %s", e.component, e.genNs)
+
+	case suite.LabelFluentBit:
+		g.Expect(resp).To(HaveHTTPBody(
+			fluentbit.HaveFlatLogs(ContainElement(fluentbit.HaveNamespace(Equal(e.genNs)))),
+		), "component %s: no FluentBit logs from namespace %s", e.component, e.genNs)
+
+	case suite.LabelMetricGateway:
+		g.Expect(resp).To(HaveHTTPBody(
+			metricmatchers.HaveFlatMetrics(ContainElement(SatisfyAll(
+				metricmatchers.HaveName(BeElementOf(telemetrygen.MetricNames)),
+				metricmatchers.HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", e.genNs)),
+			))),
+		), "component %s: no metrics from namespace %s", e.component, e.genNs)
+
+	case suite.LabelMetricAgent:
+		g.Expect(resp).To(HaveHTTPBody(
+			metricmatchers.HaveFlatMetrics(ContainElement(SatisfyAll(
+				metricmatchers.HaveName(BeElementOf(prommetricgen.CustomMetricNames())),
+				metricmatchers.HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", e.genNs)),
+			))),
+		), "component %s: no Prometheus metrics from namespace %s", e.component, e.genNs)
+
+	case suite.LabelTraces:
+		g.Expect(resp).To(HaveHTTPBody(
+			tracematchers.HaveFlatTraces(ContainElement(
+				tracematchers.HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", e.genNs)),
+			)),
+		), "component %s: no traces from namespace %s", e.component, e.genNs)
+	}
+}
+
+// assertFlowHealthyNow checks in the current Consistently tick that the pipeline's
+// FlowHealthy condition is True.
+func assertFlowHealthyNow(g Gomega, t *testing.T, component, pipelineName string) {
+	t.Helper()
+
+	key := types.NamespacedName{Name: pipelineName}
+
+	switch component {
+	case suite.LabelLogAgent, suite.LabelLogGateway, suite.LabelFluentBit:
+		var pipeline telemetryv1beta1.LogPipeline
+		g.Expect(suite.K8sClient.Get(t.Context(), key, &pipeline)).To(Succeed())
+		cond := meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeFlowHealthy)
+		g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeFlowHealthy)).To(
+			BeTrueBecause("component %s: FlowHealthy condition: %v", component, cond),
+		)
+
+	case suite.LabelMetricGateway, suite.LabelMetricAgent:
+		var pipeline telemetryv1beta1.MetricPipeline
+		g.Expect(suite.K8sClient.Get(t.Context(), key, &pipeline)).To(Succeed())
+		cond := meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeFlowHealthy)
+		g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeFlowHealthy)).To(
+			BeTrueBecause("component %s: FlowHealthy condition: %v", component, cond),
+		)
+
+	case suite.LabelTraces:
+		var pipeline telemetryv1beta1.TracePipeline
+		g.Expect(suite.K8sClient.Get(t.Context(), key, &pipeline)).To(Succeed())
+		cond := meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeFlowHealthy)
+		g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeFlowHealthy)).To(
+			BeTrueBecause("component %s: FlowHealthy condition: %v", component, cond),
+		)
+
+	default:
+		panic("unknown component: " + component)
+	}
 }

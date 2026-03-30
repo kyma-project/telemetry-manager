@@ -16,130 +16,95 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
 func TestHealthy(t *testing.T) {
-	tests := []struct {
-		name      string
-		component string
-		assert    func(t *testing.T, ns string, backend *kitbackend.Backend, pipelineName string)
-	}{
-		{
-			name:      "log-agent",
-			component: suite.LabelLogAgent,
-			assert: func(t *testing.T, ns string, backend *kitbackend.Backend, pipelineName string) {
-				assertComponentReady(t, suite.LabelLogAgent)
-				assertPipelineHealthy(t, suite.LabelLogAgent, pipelineName)
-				assert.OTelLogsFromNamespaceDelivered(t, backend, ns)
-				assert.LogPipelineSelfMonitorIsHealthy(t, suite.K8sClient, pipelineName)
-			},
-		},
-		{
-			name:      "log-gateway",
-			component: suite.LabelLogGateway,
-			assert: func(t *testing.T, ns string, backend *kitbackend.Backend, pipelineName string) {
-				assertComponentReady(t, suite.LabelLogGateway)
-				assertPipelineHealthy(t, suite.LabelLogGateway, pipelineName)
-				assert.OTelLogsFromNamespaceDelivered(t, backend, ns)
-				assert.LogPipelineSelfMonitorIsHealthy(t, suite.K8sClient, pipelineName)
-			},
-		},
-		{
-			name:      "fluent-bit",
-			component: suite.LabelFluentBit,
-			assert: func(t *testing.T, ns string, backend *kitbackend.Backend, pipelineName string) {
-				assertComponentReady(t, suite.LabelFluentBit)
-				assertPipelineHealthy(t, suite.LabelFluentBit, pipelineName)
-				assert.FluentBitLogsFromNamespaceDelivered(t, backend, ns)
-				assert.LogPipelineSelfMonitorIsHealthy(t, suite.K8sClient, pipelineName)
-			},
-		},
-		{
-			name:      "metric-gateway",
-			component: suite.LabelMetricGateway,
-			assert: func(t *testing.T, ns string, backend *kitbackend.Backend, pipelineName string) {
-				assertComponentReady(t, suite.LabelMetricGateway)
-				assertPipelineHealthy(t, suite.LabelMetricGateway, pipelineName)
-				assert.MetricsFromNamespaceDelivered(t, backend, ns, telemetrygen.MetricNames)
-				assert.MetricPipelineSelfMonitorIsHealthy(t, suite.K8sClient, pipelineName)
-			},
-		},
-		{
-			name:      "metric-agent",
-			component: suite.LabelMetricAgent,
-			assert: func(t *testing.T, ns string, backend *kitbackend.Backend, pipelineName string) {
-				assertComponentReady(t, suite.LabelMetricAgent)
-				assertPipelineHealthy(t, suite.LabelMetricAgent, pipelineName)
-				assert.MetricsFromNamespaceDelivered(t, backend, ns, prommetricgen.CustomMetricNames())
-				assert.MetricPipelineSelfMonitorIsHealthy(t, suite.K8sClient, pipelineName)
-			},
-		},
-		{
-			name:      "traces",
-			component: suite.LabelTraces,
-			assert: func(t *testing.T, ns string, backend *kitbackend.Backend, pipelineName string) {
-				assertComponentReady(t, suite.LabelTraces)
-				assertPipelineHealthy(t, suite.LabelTraces, pipelineName)
-				assert.TracesFromNamespaceDelivered(t, backend, ns)
-				assert.TracePipelineSelfMonitorIsHealthy(t, suite.K8sClient, pipelineName)
-			},
-		},
+	components := []string{
+		suite.LabelLogAgent,
+		suite.LabelLogGateway,
+		suite.LabelFluentBit,
+		suite.LabelMetricGateway,
+		suite.LabelMetricAgent,
+		suite.LabelTraces,
 	}
 
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			labels := []string{suite.LabelSelfMonitor, tc.component, suite.LabelHealthy}
+	labels := []string{suite.LabelSelfMonitor, suite.LabelHealthy}
+	labels = append(labels, components...)
 
-			opts := []kubeprep.Option{kubeprep.WithGatewayReplicas(1)}
-			if isFluentBit(tc.component) {
-				opts = append(opts, kubeprep.WithOverrideFIPSMode(false), kubeprep.WithFluentBitHostPathCleanup())
-			}
+	suite.SetupTestWithOptions(t, labels,
+		kubeprep.WithGatewayReplicas(1),
+		kubeprep.WithOverrideFIPSMode(false),
+		kubeprep.WithFluentBitHostPathCleanup(),
+	)
+	enableDebugLogging(t)
 
-			suite.SetupTestWithOptions(t, labels, opts...)
-			enableDebugLogging(t)
+	var (
+		allResources []client.Object
+		entries      []healthyEntry
+	)
 
-			pipelineName := fmt.Sprintf("selfmonitor-%s", tc.name)
+	for _, component := range components {
+		pipelineName := fmt.Sprintf("selfmonitor-healthy-%s", component)
+		uniquePrefix := unique.Prefix(component)
+		backendNs := uniquePrefix("backend")
+		genNs := uniquePrefix("gen")
 
-			var (
-				uniquePrefix = unique.Prefix(tc.name)
-				backendNs    = uniquePrefix("backend")
-				genNs        = uniquePrefix("gen")
-			)
+		backend := kitbackend.New(backendNs, signalTypeForComponent(component))
+		pipeline := buildPipeline(component, pipelineName, genNs, backend)
 
-			backend := kitbackend.New(backendNs, signalTypeForComponent(tc.component))
-			pipeline := buildPipeline(tc.component, pipelineName, genNs, backend)
+		allResources = append(allResources,
+			kitk8sobjects.NewNamespace(backendNs).K8sObject(),
+			kitk8sobjects.NewNamespace(genNs).K8sObject(),
+			pipeline,
+		)
+		allResources = append(allResources, defaultGenerator(component)(genNs)...)
+		allResources = append(allResources, backend.K8sObjects()...)
 
-			resources := []client.Object{
-				kitk8sobjects.NewNamespace(backendNs).K8sObject(),
-				kitk8sobjects.NewNamespace(genNs).K8sObject(),
-				pipeline,
-			}
-			resources = append(resources, defaultGenerator(tc.component)(genNs)...)
-			resources = append(resources, backend.K8sObjects()...)
-
-			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
-			logDiagnosticsOnFailure(t, tc.component)
-
-			assert.BackendReachable(t, backend)
-			assert.DeploymentReady(t, kitkyma.SelfMonitorName)
-			assertSelfMonitorHasActiveTargets(t)
-
-			FIPSModeEnabled, err := isFIPSModeEnabled(t)
-			Expect(err).ToNot(HaveOccurred())
-
-			if FIPSModeEnabled {
-				assert.DeploymentHasImage(t, kitkyma.SelfMonitorName, names.SelfMonitorContainerName, testkit.SelfMonitorFIPSImage)
-			} else {
-				assert.DeploymentHasImage(t, kitkyma.SelfMonitorName, names.SelfMonitorContainerName, testkit.SelfMonitorImage)
-			}
-
-			tc.assert(t, genNs, backend, pipeline.GetName())
+		entries = append(entries, healthyEntry{
+			component:    component,
+			backend:      backend,
+			pipelineName: pipelineName,
+			genNs:        genNs,
 		})
 	}
+
+	Expect(kitk8s.CreateObjects(t, allResources...)).To(Succeed())
+
+	for _, component := range components {
+		logDiagnosticsOnFailure(t, component)
+	}
+
+	for _, e := range entries {
+		assert.BackendReachable(t, e.backend)
+	}
+
+	assert.DeploymentReady(t, kitkyma.SelfMonitorName)
+	assertSelfMonitorHasActiveTargets(t)
+
+	FIPSModeEnabled, err := isFIPSModeEnabled(t)
+	Expect(err).ToNot(HaveOccurred())
+
+	if FIPSModeEnabled {
+		assert.DeploymentHasImage(t, kitkyma.SelfMonitorName, names.SelfMonitorContainerName, testkit.SelfMonitorFIPSImage)
+	} else {
+		assert.DeploymentHasImage(t, kitkyma.SelfMonitorName, names.SelfMonitorContainerName, testkit.SelfMonitorImage)
+	}
+
+	// Wait for all components and pipelines to reach a healthy baseline.
+	for _, e := range entries {
+		assertComponentReady(t, e.component)
+		assertPipelineHealthy(t, e.component, e.pipelineName)
+	}
+
+	// Wait for data to actually flow to each backend before starting the sustained check.
+	for _, e := range entries {
+		assertDataDeliveredEventually(t, e)
+	}
+
+	// Verify that data delivery and FlowHealthy conditions remain stable together for 3 minutes.
+	assertAllHealthyConsistently(t, entries)
 }
 
 func isFIPSModeEnabled(t *testing.T) (bool, error) {
