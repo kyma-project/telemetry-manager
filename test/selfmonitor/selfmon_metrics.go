@@ -24,11 +24,17 @@ import (
 
 // logSelfMonitorMetrics queries the self-monitor Prometheus instant query API for all
 // metrics relevant to the given component and logs their current values for diagnostics.
+// hint is an optional human-readable description of the metric condition being waited for
+// (from alertConditionDescription); pass "" to omit it.
 // It never fails the test.
-func logSelfMonitorMetrics(t *testing.T, ctx context.Context, component string) {
+func logSelfMonitorMetrics(t *testing.T, ctx context.Context, component, hint string) {
 	t.Helper()
 
-	t.Logf("--- self-monitor metrics [%s] ---", time.Now().Format(time.TimeOnly))
+	if hint != "" {
+		t.Logf("--- self-monitor metrics [%s] (waiting for: %s) ---", time.Now().Format(time.TimeOnly), hint)
+	} else {
+		t.Logf("--- self-monitor metrics [%s] ---", time.Now().Format(time.TimeOnly))
+	}
 
 	for _, query := range metricsForComponent(component) {
 		value, err := queryPrometheus(ctx, query)
@@ -136,7 +142,8 @@ func metricsForComponent(component string) []string {
 }
 
 // logSelfMonitorTargets queries the self-monitor Prometheus targets API and logs
-// all discovered scrape targets (active and dropped) with their health status.
+// all discovered scrape targets with their health status.
+// Dropped targets are logged with compact labels (address, job, service name only).
 // It never fails the test.
 func logSelfMonitorTargets(t *testing.T, ctx context.Context) {
 	t.Helper()
@@ -154,7 +161,7 @@ func logSelfMonitorTargets(t *testing.T, ctx context.Context) {
 	}
 
 	for _, target := range dropped {
-		t.Logf("  [dropped] %s (labels: %v)", target.scrapeURL, target.labels)
+		t.Logf("  [dropped] %s (job: %s, service: %s)", target.scrapeURL, target.labels["job"], target.labels["__meta_kubernetes_service_name"])
 	}
 }
 

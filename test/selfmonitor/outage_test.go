@@ -181,13 +181,9 @@ func TestOutage(t *testing.T) {
 			assertComponentReady(t, tc.component)
 
 			if tc.skipHealthyBaseline {
-				// Faults are active from boot (WithStartFaulted): no EnableFaults call needed,
-				// and no healthy baseline is required. The alert fires as soon as send_failed > 0
-				// and sent == 0, which is the case from the start.
+				// Faults are active from boot (WithStartFaulted): no EnableFaults call needed.
 				t.Log("Faults active from boot, skipping healthy baseline")
 			} else {
-				// Wait for the pipeline to be healthy before enabling faults, so that
-				// the self-monitor has a clean rate() baseline to detect the transition.
 				assertPipelineHealthy(t, tc.component, pipelineName)
 				t.Log("Pipeline is healthy, enabling faults")
 				faultEnabler.EnableFaults(t)

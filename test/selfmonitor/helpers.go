@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 	"testing"
-	"time"
 
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
@@ -295,6 +294,8 @@ func assertComponentReady(t *testing.T, component string) {
 func assertPipelineHealthy(t *testing.T, component, pipelineName string) {
 	t.Helper()
 
+	t.Logf("Waiting for pipeline %s to be healthy — watching self-monitor metrics for component %s", pipelineName, component)
+
 	switch component {
 	case suite.LabelLogAgent, suite.LabelLogGateway:
 		assert.OTelLogPipelineHealthy(t, pipelineName)
@@ -312,49 +313,7 @@ func assertPipelineHealthy(t *testing.T, component, pipelineName string) {
 		panic("unknown component: " + component)
 	}
 
-	// Wait until Prometheus has enough scrape samples for rate() to return non-zero.
-	// FlowHealthy=True confirms data is flowing at the CR level, but rate([5m]) queries
-	// need at least 2 scrape samples in the window (scrape interval = 30s). If a pod
-	// restarted recently, new series may have only 1 sample and rate() returns (no data).
-	// Waiting here ensures the fault baseline is clean before faults are enabled.
-	t.Log("Waiting for self-monitor rate metrics to be non-zero before enabling faults")
-	assertSelfMonitorRateNonZero(t, component)
-}
-
-// assertSelfMonitorRateNonZero waits until at least one of the component's rate queries
-// returns a non-zero value, confirming that Prometheus has sufficient scrape history.
-func assertSelfMonitorRateNonZero(t *testing.T, component string) {
-	t.Helper()
-
-	Eventually(func() bool {
-		logScrapeEndpoints(t, t.Context())
-		logSelfMonitorTargets(t, t.Context())
-		logComponentWorkloads(t, t.Context(), component)
-		t.Logf("--- rate baseline check [%s] ---", time.Now().Format(time.TimeOnly))
-
-		for _, query := range metricsForComponent(component) {
-			val, err := queryPrometheus(t.Context(), query)
-			if err != nil {
-				t.Logf("rate baseline not ready [%s]: query error: %v", query, err)
-				continue
-			}
-
-			if val == "(no data)" {
-				t.Logf("rate baseline not ready [%s]: no data yet", query)
-				continue
-			}
-
-			if val != "" {
-				t.Logf("rate baseline ready [%s]: %s", query, val)
-				return true
-			}
-		}
-
-		return false
-	}, periodic.SelfmonitorRateBaselineTimeout, periodic.SelfmonitorQueryInterval).Should(
-		BeTrue(),
-		"self-monitor rate metrics never became non-zero for component %s", component,
-	)
+	logSelfMonitorMetrics(t, t.Context(), component, "")
 }
 
 func assertPipelineConditionTransition(t *testing.T, component, pipelineName string, expectedReasons []assert.ReasonStatus) {
@@ -370,9 +329,8 @@ func assertPipelineConditionTransition(t *testing.T, component, pipelineName str
 			exp.Reason, exp.Status, alertConditionDescription(exp.Reason, component), component)
 
 		Eventually(func(g Gomega) assert.ReasonStatus {
-			logSelfMonitorTargets(t, t.Context())
+			logSelfMonitorMetrics(t, t.Context(), component, alertConditionDescription(exp.Reason, component))
 			logComponentWorkloads(t, t.Context(), component)
-			logSelfMonitorMetrics(t, t.Context(), component)
 
 			switch component {
 			case suite.LabelLogAgent, suite.LabelLogGateway, suite.LabelFluentBit:
@@ -469,7 +427,7 @@ func logDiagnosticsOnFailure(t *testing.T, component string) {
 
 		ctx := context.Background()
 		logComponentWorkloads(t, ctx, component)
-		logSelfMonitorMetrics(t, ctx, component)
+		logSelfMonitorMetrics(t, ctx, component, "")
 		logSelfMonitorTargets(t, ctx)
 		logScrapeEndpoints(t, ctx)
 		logSelfMonitorPodLogs(t, ctx)

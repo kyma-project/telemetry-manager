@@ -172,9 +172,6 @@ func TestBackpressure(t *testing.T) {
 
 			assert.DeploymentReady(t, kitkyma.SelfMonitorName)
 			assertSelfMonitorHasActiveTargets(t)
-
-			// Wait for the pipeline to be healthy before enabling faults, so that
-			// the self-monitor has a clean rate() baseline to detect the transition.
 			assertComponentReady(t, tc.component)
 			assertPipelineHealthy(t, tc.component, pipelineName)
 			t.Log("Pipeline is healthy, enabling faults")
