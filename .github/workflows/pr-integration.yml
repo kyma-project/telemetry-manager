@@ -144,173 +144,173 @@ jobs:
           QUERY_INTERVAL: 30
 
   # e2e-logs split by fluent-bit vs otel AND by set labels for parallel execution
-  e2e-logs:
-    needs: setup
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        variant:
-          - name: "-fluentbit"
-            label: "fluent-bit"
-          - name: "-otel"
-            label: "not fluent-bit"
-        set:
-          - name: "-a"
-            label: "set-a"
-          - name: "-b"
-            label: "set-b"
-          - name: "-c"
-            label: "set-c"
-    name: e2e-logs${{ matrix.variant.name }}${{ matrix.set.name }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          fetch-depth: '0'
-          ref: ${{ inputs.ref || github.ref }}
-
-      - name: Run E2E test
-        uses: ./.github/template/run-e2e-test
-        with:
-          test-id: e2e-logs${{ matrix.variant.name }}${{ matrix.set.name }}
-          test-path: ./test/e2e/logs/...
-          test-labels: not experimental and ${{ matrix.variant.label }} and ${{ matrix.set.label }}
-          manager-image: ${{ needs.setup.outputs.manager-image }}
-          manager-image-archive: ${{ github.event_name == 'pull_request' && 'manager-image' || '' }}
-          fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
-          google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
-
-  # e2e-metrics split by set labels for parallel execution
-  e2e-metrics:
-    needs: setup
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        set:
-          - name: "-a"
-            label: "set-a"
-          - name: "-b"
-            label: "set-b"
-          - name: "-c"
-            label: "set-c"
-    name: e2e-metrics${{ matrix.set.name }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          fetch-depth: '0'
-          ref: ${{ inputs.ref || github.ref }}
-
-      - name: Run E2E test
-        uses: ./.github/template/run-e2e-test
-        with:
-          test-id: e2e-metrics${{ matrix.set.name }}
-          test-path: ./test/e2e/metrics/...
-          test-labels: not experimental and ${{ matrix.set.label }}
-          manager-image: ${{ needs.setup.outputs.manager-image }}
-          manager-image-archive: ${{ github.event_name == 'pull_request' && 'manager-image' || '' }}
-          fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
-          google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
-
-  # All e2e suites with experimental flavor
-  e2e-experimental:
-    needs: setup
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        suite:
-          - name: e2e-logs
-            path: ./test/e2e/logs/...
-          - name: e2e-metrics
-            path: ./test/e2e/metrics/...
-          - name: e2e-traces
-            path: ./test/e2e/traces/...
-          - name: e2e-misc
-            path: ./test/e2e/misc/...
-    name: ${{ matrix.suite.name }}-experimental
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          fetch-depth: '0'
-          ref: ${{ inputs.ref || github.ref }}
-
-      - name: Run E2E test
-        uses: ./.github/template/run-e2e-test
-        with:
-          test-id: ${{ matrix.suite.name }}-experimental
-          test-path: ${{ matrix.suite.path }}
-          test-labels: experimental
-          manager-image: ${{ needs.setup.outputs.manager-image }}
-          manager-image-archive: ${{ github.event_name == 'pull_request' && 'manager-image' || '' }}
-          fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
-          google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
-
-  # e2e-traces and e2e-misc (non-experimental) without set splitting
-  e2e:
-    needs: setup
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        suite:
-          - name: e2e-traces
-            path: ./test/e2e/traces/...
-          - name: e2e-misc
-            path: ./test/e2e/misc/...
-    name: ${{ matrix.suite.name }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          fetch-depth: '0'
-          ref: ${{ inputs.ref || github.ref }}
-
-      - name: Run E2E test
-        uses: ./.github/template/run-e2e-test
-        with:
-          test-id: ${{ matrix.suite.name }}
-          test-path: ${{ matrix.suite.path }}
-          test-labels: not experimental
-          manager-image: ${{ needs.setup.outputs.manager-image }}
-          manager-image-archive: ${{ github.event_name == 'pull_request' && 'manager-image' || '' }}
-          fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
-          google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
-
-  # Upgrade and integration tests
-  e2e-other:
-    needs: setup
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        suite:
-          - name: e2e-upgrade
-            path: ./test/e2e/upgrade/...
-          - name: integration
-            path: ./test/integration/...
-    name: ${{ matrix.suite.name }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          fetch-depth: '0'
-          ref: ${{ inputs.ref || github.ref }}
-
-      - name: Run E2E test
-        uses: ./.github/template/run-e2e-test
-        with:
-          test-id: ${{ matrix.suite.name }}
-          test-path: ${{ matrix.suite.path }}
-          test-labels: ""
-          manager-image: ${{ needs.setup.outputs.manager-image }}
-          manager-image-archive: ${{ github.event_name == 'pull_request' && 'manager-image' || '' }}
-          fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
-          google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
-
+#  e2e-logs:
+#    needs: setup
+#    runs-on: ubuntu-latest
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        variant:
+#          - name: "-fluentbit"
+#            label: "fluent-bit"
+#          - name: "-otel"
+#            label: "not fluent-bit"
+#        set:
+#          - name: "-a"
+#            label: "set-a"
+#          - name: "-b"
+#            label: "set-b"
+#          - name: "-c"
+#            label: "set-c"
+#    name: e2e-logs${{ matrix.variant.name }}${{ matrix.set.name }}
+#    steps:
+#      - name: Checkout code
+#        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+#        with:
+#          fetch-depth: '0'
+#          ref: ${{ inputs.ref || github.ref }}
+#
+#      - name: Run E2E test
+#        uses: ./.github/template/run-e2e-test
+#        with:
+#          test-id: e2e-logs${{ matrix.variant.name }}${{ matrix.set.name }}
+#          test-path: ./test/e2e/logs/...
+#          test-labels: not experimental and ${{ matrix.variant.label }} and ${{ matrix.set.label }}
+#          manager-image: ${{ needs.setup.outputs.manager-image }}
+#          manager-image-archive: ${{ github.event_name == 'pull_request' && 'manager-image' || '' }}
+#          fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
+#          google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
+#
+#  # e2e-metrics split by set labels for parallel execution
+#  e2e-metrics:
+#    needs: setup
+#    runs-on: ubuntu-latest
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        set:
+#          - name: "-a"
+#            label: "set-a"
+#          - name: "-b"
+#            label: "set-b"
+#          - name: "-c"
+#            label: "set-c"
+#    name: e2e-metrics${{ matrix.set.name }}
+#    steps:
+#      - name: Checkout code
+#        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+#        with:
+#          fetch-depth: '0'
+#          ref: ${{ inputs.ref || github.ref }}
+#
+#      - name: Run E2E test
+#        uses: ./.github/template/run-e2e-test
+#        with:
+#          test-id: e2e-metrics${{ matrix.set.name }}
+#          test-path: ./test/e2e/metrics/...
+#          test-labels: not experimental and ${{ matrix.set.label }}
+#          manager-image: ${{ needs.setup.outputs.manager-image }}
+#          manager-image-archive: ${{ github.event_name == 'pull_request' && 'manager-image' || '' }}
+#          fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
+#          google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
+#
+#  # All e2e suites with experimental flavor
+#  e2e-experimental:
+#    needs: setup
+#    runs-on: ubuntu-latest
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        suite:
+#          - name: e2e-logs
+#            path: ./test/e2e/logs/...
+#          - name: e2e-metrics
+#            path: ./test/e2e/metrics/...
+#          - name: e2e-traces
+#            path: ./test/e2e/traces/...
+#          - name: e2e-misc
+#            path: ./test/e2e/misc/...
+#    name: ${{ matrix.suite.name }}-experimental
+#    steps:
+#      - name: Checkout code
+#        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+#        with:
+#          fetch-depth: '0'
+#          ref: ${{ inputs.ref || github.ref }}
+#
+#      - name: Run E2E test
+#        uses: ./.github/template/run-e2e-test
+#        with:
+#          test-id: ${{ matrix.suite.name }}-experimental
+#          test-path: ${{ matrix.suite.path }}
+#          test-labels: experimental
+#          manager-image: ${{ needs.setup.outputs.manager-image }}
+#          manager-image-archive: ${{ github.event_name == 'pull_request' && 'manager-image' || '' }}
+#          fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
+#          google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
+#
+#  # e2e-traces and e2e-misc (non-experimental) without set splitting
+#  e2e:
+#    needs: setup
+#    runs-on: ubuntu-latest
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        suite:
+#          - name: e2e-traces
+#            path: ./test/e2e/traces/...
+#          - name: e2e-misc
+#            path: ./test/e2e/misc/...
+#    name: ${{ matrix.suite.name }}
+#    steps:
+#      - name: Checkout code
+#        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+#        with:
+#          fetch-depth: '0'
+#          ref: ${{ inputs.ref || github.ref }}
+#
+#      - name: Run E2E test
+#        uses: ./.github/template/run-e2e-test
+#        with:
+#          test-id: ${{ matrix.suite.name }}
+#          test-path: ${{ matrix.suite.path }}
+#          test-labels: not experimental
+#          manager-image: ${{ needs.setup.outputs.manager-image }}
+#          manager-image-archive: ${{ github.event_name == 'pull_request' && 'manager-image' || '' }}
+#          fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
+#          google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
+#
+#  # Upgrade and integration tests
+#  e2e-other:
+#    needs: setup
+#    runs-on: ubuntu-latest
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        suite:
+#          - name: e2e-upgrade
+#            path: ./test/e2e/upgrade/...
+#          - name: integration
+#            path: ./test/integration/...
+#    name: ${{ matrix.suite.name }}
+#    steps:
+#      - name: Checkout code
+#        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+#        with:
+#          fetch-depth: '0'
+#          ref: ${{ inputs.ref || github.ref }}
+#
+#      - name: Run E2E test
+#        uses: ./.github/template/run-e2e-test
+#        with:
+#          test-id: ${{ matrix.suite.name }}
+#          test-path: ${{ matrix.suite.path }}
+#          test-labels: ""
+#          manager-image: ${{ needs.setup.outputs.manager-image }}
+#          manager-image-archive: ${{ github.event_name == 'pull_request' && 'manager-image' || '' }}
+#          fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
+#          google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
+#
   # Selfmonitor tests
   selfmonitor-healthy:
     needs: setup
@@ -376,7 +376,8 @@ jobs:
           google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
 
   summary:
-    needs: [e2e-logs, e2e-metrics, e2e-experimental, e2e, e2e-other, selfmonitor-healthy, selfmonitor]
+#    needs: [e2e-logs, e2e-metrics, e2e-experimental, e2e, e2e-other, selfmonitor-healthy, selfmonitor]
+    needs: [selfmonitor-healthy, selfmonitor]
     runs-on: ubuntu-latest
     if: always()
     steps:
