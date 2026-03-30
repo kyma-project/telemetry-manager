@@ -14,6 +14,15 @@ func UpdateOrDelete() ctrlpredicate.Predicate {
 	}
 }
 
+func CreateOrUpdateOrDelete() ctrlpredicate.Predicate {
+	return ctrlpredicate.Funcs{
+		CreateFunc:  func(e event.CreateEvent) bool { return true },
+		DeleteFunc:  func(e event.DeleteEvent) bool { return true },
+		UpdateFunc:  func(e event.UpdateEvent) bool { return true },
+		GenericFunc: func(e event.GenericEvent) bool { return false },
+	}
+}
+
 // OwnedResourceChanged is a predicate for watching owned resources. It detects external changes
 // to spec or metadata (e.g. by users) so the controller can reconcile them back to the desired state.
 // It ignores create events (owned resources are created by the controller itself) and reacts only
