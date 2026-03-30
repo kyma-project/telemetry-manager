@@ -383,7 +383,7 @@ func assertFlowDegraded(t *testing.T, component, pipelineName string, expectedRe
 
 // degradedReasons builds the expected condition transition sequence: each reason with status False.
 func degradedReasons(reasons ...string) []assert.ReasonStatus {
-	result := []assert.ReasonStatus{}
+	result := make([]assert.ReasonStatus, 0, len(reasons))
 	for _, r := range reasons {
 		result = append(result, assert.ReasonStatus{Reason: r, Status: metav1.ConditionFalse})
 	}

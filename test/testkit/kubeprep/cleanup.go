@@ -76,7 +76,7 @@ func CleanupFluentBitHostPath(ctx context.Context, k8sClient client.Client) erro
 		return fmt.Errorf("get hostpath cleanup daemonset: %w", err)
 	}
 
-	ds := fluentBitHostPathCleanupDaemonSet(kymaSystemNamespace)
+	ds := fluentBitHostPathCleanupDaemonSet()
 	if err := k8sClient.Create(ctx, ds); err != nil {
 		return fmt.Errorf("create hostpath cleanup daemonset: %w", err)
 	}
@@ -154,7 +154,7 @@ func waitUntil(ctx context.Context, timeout, interval time.Duration, done func()
 	}
 }
 
-func fluentBitHostPathCleanupDaemonSet(namespace string) *appsv1.DaemonSet {
+func fluentBitHostPathCleanupDaemonSet() *appsv1.DaemonSet {
 	const volumeName = "hostpath"
 
 	grace := int64(60)
@@ -162,7 +162,7 @@ func fluentBitHostPathCleanupDaemonSet(namespace string) *appsv1.DaemonSet {
 	return &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fluentBitHostPathCleanupDSName,
-			Namespace: namespace,
+			Namespace: kymaSystemNamespace,
 		},
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
