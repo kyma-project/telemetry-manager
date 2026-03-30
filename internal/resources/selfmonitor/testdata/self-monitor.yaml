@@ -91,7 +91,7 @@ spec:
         - --log.level=warn
         env:
         - name: GOMEMLIMIT
-          value: "251658240"
+          value: "150994880"
         livenessProbe:
           failureThreshold: 5
           httpGet:
@@ -114,10 +114,10 @@ spec:
           timeoutSeconds: 3
         resources:
           limits:
-            memory: 300Mi
+            memory: 180Mi
           requests:
-            cpu: 50m
-            memory: 100Mi
+            cpu: 10m
+            memory: 50Mi
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
