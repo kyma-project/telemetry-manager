@@ -102,7 +102,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	err = r.doReconcile(ctx, &telemetry)
+	err = r.doReconcile(ctx, &telemetry, overrideConfig.Global.LogLevel)
 	if statusErr := r.updateStatus(ctx, &telemetry); statusErr != nil {
 		if err != nil {
 			err = fmt.Errorf("failed while updating status: %w: %w", statusErr, err)
@@ -116,7 +116,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	return ctrl.Result{Requeue: requeue}, err
 }
 
-func (r *Reconciler) doReconcile(ctx context.Context, telemetry *operatorv1beta1.Telemetry) error {
+func (r *Reconciler) doReconcile(ctx context.Context, telemetry *operatorv1beta1.Telemetry, logLevel string) error {
 	if err := r.handleFinalizer(ctx, telemetry); err != nil {
 		return fmt.Errorf("failed to manage finalizer: %w", err)
 	}
@@ -125,14 +125,14 @@ func (r *Reconciler) doReconcile(ctx context.Context, telemetry *operatorv1beta1
 		return fmt.Errorf("failed to reconcile webhook: %w", err)
 	}
 
-	if err := r.reconcileSelfMonitor(ctx, telemetry); err != nil {
+	if err := r.reconcileSelfMonitor(ctx, telemetry, logLevel); err != nil {
 		return fmt.Errorf("failed to reconcile self-monitor deployment: %w", err)
 	}
 
 	return nil
 }
 
-func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry *operatorv1beta1.Telemetry) error {
+func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry *operatorv1beta1.Telemetry, logLevel string) error {
 	pipelinesPresent, err := r.checkPipelineExist(ctx)
 	if err != nil {
 		return err
@@ -174,6 +174,7 @@ func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry *operat
 			PrometheusConfigFileName: selfMonitorConfigFileName,
 			PrometheusConfigPath:     selfMonitorConfigPath,
 			PrometheusConfigYAML:     string(prometheusConfigYAML),
+			LogLevel:                 logLevel,
 		},
 	); err != nil {
 		return fmt.Errorf("failed to apply self-monitor resources: %w", err)

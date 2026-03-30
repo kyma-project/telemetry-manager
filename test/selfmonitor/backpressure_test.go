@@ -113,6 +113,7 @@ func TestBackpressure(t *testing.T) {
 			}
 
 			suite.SetupTestWithOptions(t, labels, opts...)
+			enableDebugLogging(t)
 
 			pipelineName := fmt.Sprintf("selfmonitor-%s", tc.name)
 
@@ -167,6 +168,7 @@ func TestBackpressure(t *testing.T) {
 			resources = append(resources, gen(genNs)...)
 
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
+			logDiagnosticsOnFailure(t, tc.component)
 
 			assert.DeploymentReady(t, kitkyma.SelfMonitorName)
 

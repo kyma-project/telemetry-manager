@@ -88,6 +88,7 @@ spec:
         - --config.file=/dummy/dummy-config.yaml
         - --storage.tsdb.path=/prometheus/
         - --log.format=json
+        - --log.level=warn
         env:
         - name: GOMEMLIMIT
           value: "251658240"

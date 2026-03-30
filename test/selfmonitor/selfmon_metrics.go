@@ -13,7 +13,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	commonlabels "github.com/kyma-project/telemetry-manager/internal/resources/common"
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	selfmonports "github.com/kyma-project/telemetry-manager/internal/selfmonitor/ports"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -166,7 +167,7 @@ func logScrapeEndpoints(t *testing.T) {
 	if err := suite.K8sClient.List(t.Context(), &epList,
 		client.InNamespace(kitkyma.SystemNamespaceName),
 		client.MatchingLabels{
-			commonlabels.LabelKeyTelemetrySelfMonitor: commonlabels.LabelValueTelemetrySelfMonitor,
+			commonresources.LabelKeyTelemetrySelfMonitor: commonresources.LabelValueTelemetrySelfMonitor,
 		},
 	); err != nil {
 		t.Logf("  endpoints list error: %v", err)
@@ -323,4 +324,47 @@ func queryPrometheus(ctx context.Context, query string) (string, error) {
 	}
 
 	return sb.String(), nil
+}
+
+// logSelfMonitorPodLogs fetches and logs the last lines of the selfmonitor Prometheus container logs.
+// It never fails the test.
+func logSelfMonitorPodLogs(t *testing.T) {
+	t.Helper()
+
+	var podList corev1.PodList
+	if err := suite.K8sClient.List(t.Context(), &podList,
+		client.InNamespace(kitkyma.SystemNamespaceName),
+		client.MatchingLabels{commonresources.LabelKeyK8sName: names.SelfMonitor},
+	); err != nil {
+		t.Logf("selfmon pod list error: %v", err)
+		return
+	}
+
+	t.Logf("--- selfmonitor pod logs (count: %d) ---", len(podList.Items))
+
+	for i := range podList.Items {
+		pod := &podList.Items[i]
+
+		logURL := fmt.Sprintf("%s/api/v1/namespaces/%s/pods/%s/log?container=%s&tailLines=100",
+			suite.ProxyClient.APIServerURL(),
+			pod.Namespace,
+			pod.Name,
+			names.SelfMonitorContainerName,
+		)
+
+		resp, err := suite.ProxyClient.GetWithContext(t.Context(), logURL)
+		if err != nil {
+			t.Logf("  pod %s: log fetch error: %v", pod.Name, err)
+			continue
+		}
+		defer resp.Body.Close()
+
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			t.Logf("  pod %s: read error: %v", pod.Name, err)
+			continue
+		}
+
+		t.Logf("  pod %s logs:\n%s", pod.Name, string(body))
+	}
 }

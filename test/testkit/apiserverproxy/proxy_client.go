@@ -50,6 +50,10 @@ func (a Client) Token() string {
 	return "Bearer " + a.bearerToken
 }
 
+func (a Client) APIServerURL() string {
+	return a.apiURL
+}
+
 // ProxyURLForService composes a proxy url for a service.
 func (a Client) ProxyURLForService(namespace, service, path string, port int32) string {
 	return fmt.Sprintf(

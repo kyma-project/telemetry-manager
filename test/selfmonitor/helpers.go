@@ -17,6 +17,8 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
+	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/faultbackend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
@@ -221,6 +223,7 @@ func logComponentWorkloads(t *testing.T, component string) {
 			t.Logf("  deployment %s: get error: %v", name.Name, err)
 			return
 		}
+
 		t.Logf("  deployment %s: ready=%d/%d", name.Name, d.Status.ReadyReplicas, d.Status.Replicas)
 	}
 
@@ -230,6 +233,7 @@ func logComponentWorkloads(t *testing.T, component string) {
 			t.Logf("  daemonset %s: get error: %v", name.Name, err)
 			return
 		}
+
 		t.Logf("  daemonset %s: ready=%d/%d", name.Name, ds.Status.NumberReady, ds.Status.DesiredNumberScheduled)
 	}
 
@@ -426,4 +430,46 @@ func degradedReasons(reasons ...string) []assert.ReasonStatus {
 	}
 
 	return result
+}
+
+// enableDebugLogging applies the telemetry-overrides ConfigMap with logLevel: debug
+// and annotates the Telemetry CR to trigger an immediate reconciliation, so the selfmonitor
+// Prometheus container picks up the --log.level=debug flag without waiting for the next
+// natural reconciliation cycle.
+// The ConfigMap is automatically deleted after the test completes.
+func enableDebugLogging(t *testing.T) {
+	t.Helper()
+
+	overrides := kitk8sobjects.NewOverrides().WithLogLevel(kitk8sobjects.DEBUG).WithPaused(false).K8sObject()
+	Expect(kitk8s.CreateObjects(t, overrides)).To(Succeed())
+
+	// Annotate the Telemetry CR to force a reconciliation so the manager picks up the new log level.
+	var telemetry operatorv1beta1.Telemetry
+	Expect(suite.K8sClient.Get(t.Context(), kitkyma.TelemetryName, &telemetry)).To(Succeed())
+
+	if telemetry.Annotations == nil {
+		telemetry.Annotations = make(map[string]string)
+	}
+
+	telemetry.Annotations["selfmonitor-test/log-level"] = "debug"
+	Expect(suite.K8sClient.Update(t.Context(), &telemetry)).To(Succeed())
+}
+
+// logDiagnosticsOnFailure registers a cleanup function that prints selfmonitor diagnostics
+// if the test has failed. It must be called after CreateObjects so that it runs (in LIFO order)
+// before the pipeline resources are deleted, while the selfmonitor is still running.
+func logDiagnosticsOnFailure(t *testing.T, component string) {
+	t.Helper()
+
+	t.Cleanup(func() {
+		if !t.Failed() {
+			return
+		}
+
+		logComponentWorkloads(t, component)
+		logSelfMonitorMetrics(t, component)
+		logSelfMonitorTargets(t)
+		logScrapeEndpoints(t)
+		logSelfMonitorPodLogs(t)
+	})
 }

@@ -100,6 +100,7 @@ func TestHealthy(t *testing.T) {
 			}
 
 			suite.SetupTestWithOptions(t, labels, opts...)
+			enableDebugLogging(t)
 
 			pipelineName := fmt.Sprintf("selfmonitor-%s", tc.name)
 
@@ -121,6 +122,7 @@ func TestHealthy(t *testing.T) {
 			resources = append(resources, backend.K8sObjects()...)
 
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
+			logDiagnosticsOnFailure(t, tc.component)
 
 			assert.BackendReachable(t, backend)
 			assert.DeploymentReady(t, kitkyma.SelfMonitorName)
