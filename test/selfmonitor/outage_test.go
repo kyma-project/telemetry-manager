@@ -103,7 +103,7 @@ func TestOutage(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			labels := []string{suite.LabelSelfMonitor, tc.component, suite.LabelOutage}
 
-			opts := []kubeprep.Option{kubeprep.WithGatewayReplicas(1), kubeprep.WithSelfMonitorAPIServerEgress()}
+			opts := []kubeprep.Option{kubeprep.WithGatewayReplicas(1)}
 			if tc.useIstio {
 				opts = append(opts, kubeprep.WithIstio())
 			}

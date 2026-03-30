@@ -33,10 +33,6 @@ type Config struct {
 	// GatewayReplicas sets the number of replicas for all gateways via the Telemetry CR's static scaling spec.
 	// Zero means use the manager default (2).
 	GatewayReplicas int32
-	// AllowSelfMonitorAPIServerEgress adds a test-only NetworkPolicy that allows the selfmonitor
-	// Prometheus pod to reach the Kubernetes API server on port 443 for kubernetes SD target discovery.
-	// Required for selfmonitor tests where the deny-all policy would otherwise block SD watch connections.
-	AllowSelfMonitorAPIServerEgress bool
 }
 
 // Option is a functional option for configuring cluster setup
@@ -151,15 +147,6 @@ func WithForceFreshInstall() Option {
 func WithGatewayReplicas(replicas int32) Option {
 	return func(c *Config) {
 		c.GatewayReplicas = replicas
-	}
-}
-
-// WithSelfMonitorAPIServerEgress adds a test-only NetworkPolicy that allows the selfmonitor
-// Prometheus pod egress to port 443 for Kubernetes SD target discovery.
-// Use this in selfmonitor test suites where the deny-all policy would block API server watch connections.
-func WithSelfMonitorAPIServerEgress() Option {
-	return func(c *Config) {
-		c.AllowSelfMonitorAPIServerEgress = true
 	}
 }
 

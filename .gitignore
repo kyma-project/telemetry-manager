@@ -56,3 +56,4 @@ dependencies/mock-backend/mock-backend
 # PR review loop (Claude skill) — local reviewer/implementer hand-off; never commit
 .pr-review-loop/
 review-loop.diff
+review-loop.bak.diff

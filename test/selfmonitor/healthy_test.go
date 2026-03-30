@@ -94,7 +94,7 @@ func TestHealthy(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			labels := []string{suite.LabelSelfMonitor, tc.component, suite.LabelHealthy}
 
-			opts := []kubeprep.Option{kubeprep.WithGatewayReplicas(1), kubeprep.WithSelfMonitorAPIServerEgress()}
+			opts := []kubeprep.Option{kubeprep.WithGatewayReplicas(1)}
 			if isFluentBit(tc.component) {
 				opts = append(opts, kubeprep.WithOverrideFIPSMode(false), kubeprep.WithFluentBitHostPathCleanup())
 			}
