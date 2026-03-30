@@ -23,13 +23,13 @@ import (
 // logSelfMonitorMetrics queries the self-monitor Prometheus instant query API for all
 // metrics relevant to the given component and logs their current values for diagnostics.
 // It never fails the test.
-func logSelfMonitorMetrics(t *testing.T, component string) {
+func logSelfMonitorMetrics(t *testing.T, ctx context.Context, component string) {
 	t.Helper()
 
 	t.Logf("--- self-monitor metrics [%s] ---", time.Now().Format(time.TimeOnly))
 
 	for _, query := range metricsForComponent(component) {
-		value, err := queryPrometheus(t.Context(), query)
+		value, err := queryPrometheus(ctx, query)
 		if err != nil {
 			t.Logf("selfmon metric query failed [%s]: %v", query, err)
 			continue
@@ -136,10 +136,10 @@ func metricsForComponent(component string) []string {
 // logSelfMonitorTargets queries the self-monitor Prometheus targets API and logs
 // all discovered scrape targets (active and dropped) with their health status.
 // It never fails the test.
-func logSelfMonitorTargets(t *testing.T) {
+func logSelfMonitorTargets(t *testing.T, ctx context.Context) {
 	t.Helper()
 
-	active, dropped, err := queryPrometheusTargets(t.Context())
+	active, dropped, err := queryPrometheusTargets(ctx)
 	if err != nil {
 		t.Logf("selfmon targets query failed: %v", err)
 		return
@@ -160,11 +160,11 @@ func logSelfMonitorTargets(t *testing.T) {
 // self-monitor label, so we can see whether targets are missing because k8s
 // Endpoints don't exist yet or because Prometheus SD isn't discovering them.
 // It never fails the test.
-func logScrapeEndpoints(t *testing.T) {
+func logScrapeEndpoints(t *testing.T, ctx context.Context) {
 	t.Helper()
 
 	var epList corev1.EndpointsList
-	if err := suite.K8sClient.List(t.Context(), &epList,
+	if err := suite.K8sClient.List(ctx, &epList,
 		client.InNamespace(kitkyma.SystemNamespaceName),
 		client.MatchingLabels{
 			commonresources.LabelKeyTelemetrySelfMonitor: commonresources.LabelValueTelemetrySelfMonitor,
@@ -328,11 +328,11 @@ func queryPrometheus(ctx context.Context, query string) (string, error) {
 
 // logSelfMonitorPodLogs fetches and logs the last lines of the selfmonitor Prometheus container logs.
 // It never fails the test.
-func logSelfMonitorPodLogs(t *testing.T) {
+func logSelfMonitorPodLogs(t *testing.T, ctx context.Context) {
 	t.Helper()
 
 	var podList corev1.PodList
-	if err := suite.K8sClient.List(t.Context(), &podList,
+	if err := suite.K8sClient.List(ctx, &podList,
 		client.InNamespace(kitkyma.SystemNamespaceName),
 		client.MatchingLabels{commonresources.LabelKeyK8sName: names.SelfMonitor},
 	); err != nil {
@@ -352,7 +352,7 @@ func logSelfMonitorPodLogs(t *testing.T) {
 			names.SelfMonitorContainerName,
 		)
 
-		resp, err := suite.ProxyClient.GetWithContext(t.Context(), logURL)
+		resp, err := suite.ProxyClient.GetWithContext(ctx, logURL)
 		if err != nil {
 			t.Logf("  pod %s: log fetch error: %v", pod.Name, err)
 			continue

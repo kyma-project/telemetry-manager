@@ -1,6 +1,7 @@
 package selfmonitor
 
 import (
+	"context"
 	"net/http"
 	"testing"
 	"time"
@@ -212,14 +213,14 @@ func promMetricGeneratorHighLoad() func(ns string) []client.Object {
 
 // logComponentWorkloads logs the ready/desired replica counts for the gateway and agent
 // workloads relevant to the given component. Never fails the test.
-func logComponentWorkloads(t *testing.T, component string) {
+func logComponentWorkloads(t *testing.T, ctx context.Context, component string) {
 	t.Helper()
 
 	t.Logf("--- component workloads [%s] ---", component)
 
 	logDeployment := func(name types.NamespacedName) {
 		var d appsv1.Deployment
-		if err := suite.K8sClient.Get(t.Context(), name, &d); err != nil {
+		if err := suite.K8sClient.Get(ctx, name, &d); err != nil {
 			t.Logf("  deployment %s: get error: %v", name.Name, err)
 			return
 		}
@@ -229,7 +230,7 @@ func logComponentWorkloads(t *testing.T, component string) {
 
 	logDaemonSet := func(name types.NamespacedName) {
 		var ds appsv1.DaemonSet
-		if err := suite.K8sClient.Get(t.Context(), name, &ds); err != nil {
+		if err := suite.K8sClient.Get(ctx, name, &ds); err != nil {
 			t.Logf("  daemonset %s: get error: %v", name.Name, err)
 			return
 		}
@@ -326,9 +327,9 @@ func assertSelfMonitorRateNonZero(t *testing.T, component string) {
 	t.Helper()
 
 	Eventually(func() bool {
-		logScrapeEndpoints(t)
-		logSelfMonitorTargets(t)
-		logComponentWorkloads(t, component)
+		logScrapeEndpoints(t, t.Context())
+		logSelfMonitorTargets(t, t.Context())
+		logComponentWorkloads(t, t.Context(), component)
 		t.Logf("--- rate baseline check [%s] ---", time.Now().Format(time.TimeOnly))
 
 		for _, query := range metricsForComponent(component) {
@@ -369,9 +370,9 @@ func assertPipelineConditionTransition(t *testing.T, component, pipelineName str
 			exp.Reason, exp.Status, alertConditionDescription(exp.Reason, component), component)
 
 		Eventually(func(g Gomega) assert.ReasonStatus {
-			logSelfMonitorTargets(t)
-			logComponentWorkloads(t, component)
-			logSelfMonitorMetrics(t, component)
+			logSelfMonitorTargets(t, t.Context())
+			logComponentWorkloads(t, t.Context(), component)
+			logSelfMonitorMetrics(t, t.Context(), component)
 
 			switch component {
 			case suite.LabelLogAgent, suite.LabelLogGateway, suite.LabelFluentBit:
@@ -466,10 +467,11 @@ func logDiagnosticsOnFailure(t *testing.T, component string) {
 			return
 		}
 
-		logComponentWorkloads(t, component)
-		logSelfMonitorMetrics(t, component)
-		logSelfMonitorTargets(t)
-		logScrapeEndpoints(t)
-		logSelfMonitorPodLogs(t)
+		ctx := context.Background()
+		logComponentWorkloads(t, ctx, component)
+		logSelfMonitorMetrics(t, ctx, component)
+		logSelfMonitorTargets(t, ctx)
+		logScrapeEndpoints(t, ctx)
+		logSelfMonitorPodLogs(t, ctx)
 	})
 }
