@@ -56,7 +56,7 @@ Before running the release workflow, complete the following tasks:
    - Create a new [GitHub milestone](https://github.com/kyma-project/telemetry-manager/milestones) for the next version.
 
 2. **Release Component Dependencies**:  Release the following component dependencies to produce the required Docker images
-    - [directory-size-exporter](https://github.com/kyma-project/telemetry-manager/actions/workflows/build-directory-size-reporter-image.yml) - Produces image tags like `v20260302-12345678`
+   - [directory-size-exporter](https://github.com/kyma-project/telemetry-manager/actions/workflows/build-directory-size-reporter-image.yml) - Produces image tags like `v20260302-12345678`
    - [telemetry-self-monitor](https://github.com/kyma-project/telemetry-manager/actions/workflows/build-self-monitor-image.yml) - Produces image tags like `v20260302-bbf32a3b`
    - [opentelemetry-collector-components](https://github.com/kyma-project/opentelemetry-collector-components) - Version format: **`{OCC_VERSION}`**-**`{TELEMETRY_VERSION}`**, such as `0.100.0-1.2.3`
 
