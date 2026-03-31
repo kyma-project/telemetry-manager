@@ -8,15 +8,15 @@ The Telemetry module follows the principle of least privilege for network traffi
 
 Each Telemetry component has a dedicated set of NetworkPolicies that control the allowed traffic. The following items describe the policies in the diagram:
 
-- All Telemetry module Pods can send DNS queries on port 53 to any IP, including DNS services, and on port 8053 to kube-dns.
-- All Telemetry module Pods can communicate with any IP on port 443, including the Kubernetes API server.
+- All Telemetry module Pods can send DNS queries to any IP on port 53, including DNS services, and to kube-dns on port 8053.
+- All Telemetry module Pods can connect to any IP on port 443, including the Kubernetes API server.
 - Any Pod in the cluster can send OTLP data to the log, metric, and trace gateways on ports 4317 for gRPC and 4318 for HTTP.
-- Pods labeled with `networking.kyma-project.io/metrics-scraping: allowed` can scrape metrics from all Telemetry components, including Telemetry Manager, on their respective metrics ports.
-- The self monitor scrapes metrics from the gateways, agents, and Fluent Bit on their metrics ports: 8888 for OTel Collectors, and 2020 and 2021 for Fluent Bit.
-- Telemetry Manager queries the self monitor on port 9090.
-- All gateways and agents have unrestricted egress to forward telemetry data to external or in-cluster backends.
-- The self monitor sends alerts to Telemetry Manager on port 9443.
-- The Kubernetes API server and any Pod can reach Telemetry Manager on port 9443 for admission and conversion webhooks.
+- Pods with the `networking.kyma-project.io/metrics-scraping: allowed` label can scrape metrics from all Telemetry components, including Telemetry Manager, on their respective metrics ports.
+- The self monitor can scrape metrics from the gateways, agents, and Fluent Bit on ports 8888 for OTel Collectors, and 2020 and 2021 for Fluent Bit.
+- Telemetry Manager can query the self monitor on port 9090.
+- All gateways and agents can forward telemetry data to external or in-cluster backends on any port.
+- The self monitor can send alerts to Telemetry Manager on port 9443.
+- The Kubernetes API server and any Pod can reach Telemetry Manager for webhooks on port 9443.
 
 ## Telemetry Manager Policies
 
