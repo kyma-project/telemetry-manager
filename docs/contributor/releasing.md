@@ -56,7 +56,7 @@ In the telemetry-manager repository, go to **Actions**, select [Telemetry Releas
 | **module_release**         | Trigger module release for experimental and fast channels after the main release |                      |
 
 To test the release process without creating actual tags or releases, set `dry_run` to `true`. This setting validates the workflow and catches any issues before you perform the real release.
-The `force` option re-creates an existing release by deleting the existing tag and release before creating a new one. Use this option with caution. It overwrites the existing release.
+The `force` option recreates an existing release by deleting the existing tag and release before creating a new one. Use this option with caution. It overwrites the existing release.
 The `module_release` option controls whether the workflow automatically triggers module releases for the experimental and fast channels after the workflow creates the main release. By default, the workflow creates module releases for the experimental and fast channels. Set this option to `false` to skip module releases or to trigger them manually later.
 
 > [!CAUTION]
@@ -83,7 +83,7 @@ If validation fails, the workflow stops and reports the error.
 
 ### Step 3: Release Branch Preparation
 
-The workflow checks whether a `release-X.Y` branch already exists to determine the release type and handles branch preparation:
+To determine the release type, the workflow checks if a `release-X.Y` branch already exists and handles branch preparation:
 
 - For a minor or major release: The `release-X.Y` branch does not exist, so the workflow creates it from the `main` branch.
 - For a patch release: The `release-X.Y` branch already exists, so the workflow uses the existing branch.
@@ -132,7 +132,7 @@ After all tests pass, the workflow creates the release by performing the followi
 
 ### Step 7: Module Releases (Conditional)
 
-If `module_release` is set to `true` (the default), the workflow triggers module releases after the workflow creates the GitHub release.
+If `module_release` is set to `true` (the default), the workflow triggers module releases after it created the GitHub release.
 
 **Fast Channel**:
 - Triggers `module-release.yml` workflow
