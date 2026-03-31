@@ -144,14 +144,6 @@ The PR contains the following changes:
 
 After you merge the PR, the workflow resumes.
 
-> [!WARNING]
-> The release workflow waits up to 120 minutes for you to merge the PR. If you do not merge it within this time, the workflow times out and fails.
-
-To review the PR, use the checklist in the PR description to verify the following conditions:
-- Version numbers are correct
-- Generated files are up to date
-- No unintended changes
-
 ### 6. Automatic Testing
 
 After you merge the PR, the release workflow automatically runs the following tests:
