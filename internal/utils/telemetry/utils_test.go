@@ -248,12 +248,7 @@ func TestGetClusterNameFromTelemetry(t *testing.T) {
 
 			fakeClient := clientBuilder.Build()
 
-			opts := Options{
-				Client:                    fakeClient,
-				DefaultTelemetryNamespace: testNamespace,
-			}
-
-			result := GetClusterNameFromTelemetry(ctx, opts)
+			result := GetClusterNameFromTelemetry(ctx, fakeClient, testNamespace)
 			assert.Equal(t, tt.expectedResult, result)
 		})
 	}
@@ -350,12 +345,7 @@ func TestGetServiceEnrichmentFromTelemetryOrDefault(t *testing.T) {
 
 			fakeClient := clientBuilder.Build()
 
-			opts := Options{
-				Client:                    fakeClient,
-				DefaultTelemetryNamespace: testNamespace,
-			}
-
-			result := GetServiceEnrichmentFromTelemetryOrDefault(ctx, opts)
+			result := GetServiceEnrichmentFromTelemetryOrDefault(ctx, fakeClient, testNamespace)
 			assert.Equal(t, tt.expectedResult, result)
 		})
 	}

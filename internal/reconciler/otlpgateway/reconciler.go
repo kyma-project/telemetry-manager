@@ -360,12 +360,7 @@ func (r *Reconciler) fetchMetricPipelines(ctx context.Context, refs []otelcollec
 // buildCollectorConfig builds OTel Collector configuration from TracePipeline, LogPipeline, and MetricPipeline CRs.
 func (r *Reconciler) buildCollectorConfig(ctx context.Context, tracePipelines []telemetryv1beta1.TracePipeline, logPipelines []telemetryv1beta1.LogPipeline, metricPipelines []telemetryv1beta1.MetricPipeline) (*common.Config, common.EnvVars, error) {
 	shootInfo := k8sutils.GetGardenerShootInfo(ctx, r.Client)
-	telemetryOptions := telemetryutils.Options{
-		SignalType:                common.SignalTypeTrace,
-		Client:                    r.Client,
-		DefaultTelemetryNamespace: r.globals.DefaultTelemetryNamespace(),
-	}
-	clusterName := telemetryutils.GetClusterNameFromTelemetry(ctx, telemetryOptions)
+	clusterName := telemetryutils.GetClusterNameFromTelemetry(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
 
 	clusterUID, err := k8sutils.GetClusterUID(ctx, r.Client)
 	if err != nil {
@@ -389,7 +384,7 @@ func (r *Reconciler) buildCollectorConfig(ctx context.Context, tracePipelines []
 			CloudProvider: shootInfo.CloudProvider,
 		},
 		Enrichments:       enrichments,
-		ServiceEnrichment: telemetryutils.GetServiceEnrichmentFromTelemetryOrDefault(ctx, telemetryOptions),
+		ServiceEnrichment: telemetryutils.GetServiceEnrichmentFromTelemetryOrDefault(ctx, r.Client, r.globals.DefaultTelemetryNamespace()),
 		ModuleVersion:     r.globals.Version(),
 		GatewayNamespace:  r.globals.TargetNamespace(),
 	})

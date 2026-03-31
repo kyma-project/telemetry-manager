@@ -208,14 +208,7 @@ func (r *OTLPGatewayController) mapTelemetryChanges(ctx context.Context, object 
 		return nil
 	}
 
-	return []reconcile.Request{
-		{
-			NamespacedName: types.NamespacedName{
-				Name:      names.OTLPGatewayPipelinesSyncConfigMap,
-				Namespace: object.GetNamespace(),
-			},
-		},
-	}
+	return r.enqueueConfigMap()
 }
 
 // mapOwnedResourceChanges enqueues a reconciliation request for the OTLP Gateway coordination ConfigMap
@@ -223,15 +216,7 @@ func (r *OTLPGatewayController) mapTelemetryChanges(ctx context.Context, object 
 // This ensures the reconciler can restore the desired state of gateway resources.
 func (r *OTLPGatewayController) mapOwnedResourceChanges(ctx context.Context, object client.Object) []reconcile.Request {
 	logf.FromContext(ctx).V(1).Info("owned resource changed, triggering OTLP gateway reconciliation", "resource", object.GetName())
-
-	return []reconcile.Request{
-		{
-			NamespacedName: types.NamespacedName{
-				Name:      names.OTLPGatewayPipelinesSyncConfigMap,
-				Namespace: object.GetNamespace(),
-			},
-		},
-	}
+	return r.enqueueConfigMap()
 }
 
 // mapNodeChanges updates the node size tracker when a Node is added, removed, or modified.
@@ -248,6 +233,11 @@ func (r *OTLPGatewayController) mapNodeChanges(ctx context.Context, object clien
 		return nil
 	}
 
+	return r.enqueueConfigMap()
+}
+
+// enqueueConfigMap returns a reconcile request for the OTLP Gateway coordination ConfigMap.
+func (r *OTLPGatewayController) enqueueConfigMap() []reconcile.Request {
 	return []reconcile.Request{
 		{
 			NamespacedName: types.NamespacedName{

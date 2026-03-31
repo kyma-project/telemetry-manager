@@ -192,6 +192,7 @@ func logPipelineOwnedResourceTypes(isIstioActive, vpaCRDExists bool) []client.Ob
 		&networkingv1.NetworkPolicy{},
 	}
 
+	// TODO: PeerAuthentication watch should be moved to agent controllers after migration.
 	// Only watch PeerAuthentication CR if Istio is active
 	// otherwise, manager will have errors if the PeerAuthentication CRD is not present in the cluster
 	if isIstioActive {
@@ -225,7 +226,6 @@ func (r *LogPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		return fmt.Errorf("failed to create discovery client: %w", err)
 	}
 
-	// TODO: PeerAuthentication watch should be moved to agent controllers after migration.
 	isIstioActive, err := istiostatus.NewChecker(discoveryClient).IsIstioActive(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to check Istio status: %w", err)

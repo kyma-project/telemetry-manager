@@ -326,12 +326,7 @@ func (r *Reconciler) reconcileAgent(ctx context.Context, pipeline *telemetryv1be
 	}
 
 	shootInfo := k8sutils.GetGardenerShootInfo(ctx, r.Client)
-	telemetryOptions := telemetryutils.Options{
-		SignalType:                common.SignalTypeLog,
-		Client:                    r.Client,
-		DefaultTelemetryNamespace: r.globals.DefaultTelemetryNamespace(),
-	}
-	clusterName := telemetryutils.GetClusterNameFromTelemetry(ctx, telemetryOptions)
+	clusterName := telemetryutils.GetClusterNameFromTelemetry(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
 
 	clusterUID, err := k8sutils.GetClusterUID(ctx, r.Client)
 	if err != nil {
@@ -354,7 +349,7 @@ func (r *Reconciler) reconcileAgent(ctx context.Context, pipeline *telemetryv1be
 			CloudProvider: shootInfo.CloudProvider,
 		},
 		Enrichments:       enrichments,
-		ServiceEnrichment: telemetryutils.GetServiceEnrichmentFromTelemetryOrDefault(ctx, telemetryOptions),
+		ServiceEnrichment: telemetryutils.GetServiceEnrichmentFromTelemetryOrDefault(ctx, r.Client, r.globals.DefaultTelemetryNamespace()),
 		VpaActive:         vpaCRDExists && isVpaEnabled,
 	})
 	if err != nil {
