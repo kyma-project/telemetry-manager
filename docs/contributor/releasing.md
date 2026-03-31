@@ -50,7 +50,10 @@ Ensure you have the following permissions:
 
 Before running the release workflow, complete the following tasks:
 
-1. **Milestone Verification**: Close all issues in the [GitHub milestone](https://github.com/kyma-project/telemetry-manager/milestones) for the version and close the milestone. Create a new [GitHub milestone](https://github.com/kyma-project/telemetry-manager/milestones) for the next version.
+1. **Milestone Verification**:
+   - Close all issues in the [GitHub milestone](https://github.com/kyma-project/telemetry-manager/milestones) for the version.
+   - Close the milestone.
+   - Create a new [GitHub milestone](https://github.com/kyma-project/telemetry-manager/milestones) for the next version.
 
 2. **Component Releases**: Release the following component dependencies:
     - [directory-size-exporter](https://github.com/kyma-project/telemetry-manager/actions/workflows/build-directory-size-reporter-image.yml) - Produces image tags like `v20260302-12345678`
@@ -126,16 +129,20 @@ To determine the release type, the workflow checks if a `release-X.Y` branch alr
 
 The workflow creates a pull request (PR) against the release branch that updates all version numbers and image tags for the new release.
 
-First, the workflow updates the following variables in the `.env` file with the values you provide:
-  - `ENV_HELM_RELEASE_VERSION=`**`{VERSION}`**
-  - `ENV_MANAGER_IMAGE` tag to **`{VERSION}`**
-  - `ENV_OTEL_COLLECTOR_IMAGE` tag to **`{OCC_IMAGE_VERSION}`**
-  - `ENV_SELFMONITOR_IMAGE` tag to **`{SELF_MONITOR_IMAGE_TAG}`**
-  - `ENV_FLUENTBIT_EXPORTER_IMAGE` tag to **`{DIR_SIZE_IMAGE_TAG}`**
-Next, the workflow runs the `make generate` command to apply these changes to all auto-generated files, such as the Helm chart manifests.
+The workflow updates the release branch through the following steps:
+
+1. Updates the following variables in the `.env` file:
+   - `ENV_HELM_RELEASE_VERSION=`**`{VERSION}`**
+   - `ENV_MANAGER_IMAGE` tag to **`{VERSION}`**
+   - `ENV_OTEL_COLLECTOR_IMAGE` tag to **`{OCC_IMAGE_VERSION}`**
+   - `ENV_SELFMONITOR_IMAGE` tag to **`{SELF_MONITOR_IMAGE_TAG}`**
+   - `ENV_FLUENTBIT_EXPORTER_IMAGE` tag to **`{DIR_SIZE_IMAGE_TAG}`**
+
+2. Runs the `make generate` command to apply these changes to all auto-generated files, such as the Helm chart manifests.
 
 > [!WARNING]
-> If you do not merge the PR within 120 minutes, the workflow times out and fails. The workflow waits up to 120 minutes for you to review and merge the PR.
+> The workflow waits up to 120 minutes for you to merge the PR. If you do not merge it within this time, the workflow times out and fails.
+
 To review the PR, use the checklist in the PR description to verify the following conditions:
 - Version numbers are correct
 - Generated files are up to date
@@ -168,17 +175,12 @@ After all tests pass, the workflow creates the release by performing the followi
 
 If `module_release` is set to `true` (the default), the workflow triggers module releases after it creates the GitHub release.
 
-**Fast Channel**:
-- Triggers `module-release.yml` workflow
-- Channel: `fast`
-- Auto-merge: enabled
-- Creates PR in `kyma/module-manifests` repository
+The workflow triggers module releases for the following channels:
 
-**Experimental Channel**:
-- Triggers `module-release.yml` workflow
-- Channel: `experimental`
-- Auto-merge: enabled
-- Creates PR in `kyma/module-manifests` repository
+| Channel      | Workflow             | Auto-merge | Target Repository       |
+|--------------|----------------------|------------|-------------------------|
+| Fast         | `module-release.yml` | Enabled    | `kyma/module-manifests` |
+| Experimental | `module-release.yml` | Enabled    | `kyma/module-manifests` |
 
 ### Step 8: Regular Channel (Manual)
 
@@ -245,7 +247,11 @@ Check the pull requests for both experimental and fast channels in the [module-m
 **Symptom:** The workflow fails because the GitHub tag already exists.
 
 **Solution:**
-Rerun the workflow with force mode to re-create the release. Caution: This overwrites the existing release if it exists.
+
+Rerun the workflow with force mode to re-create the release.
+
+> [!CAUTION]
+> This overwrites the existing release if it exists.
 
 ### Version Bump PR Times Out
 
