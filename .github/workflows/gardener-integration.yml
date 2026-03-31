@@ -155,7 +155,7 @@ jobs:
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         if: ${{ !cancelled() }}
         with:
-          name: ${{ github.job }}-${{ matrix.k8s_version }}-report
+          name: gardener-${{ github.job }}-${{ matrix.k8s_version }}-report
           path: junit-report*.xml
 
       - name: Print pods on failure
@@ -200,6 +200,8 @@ jobs:
       - name: Generate test summary
         if: needs.check-trigger.outputs.run-gardener-tests == 'true'
         uses: "./.github/template/test-summary"
+        with:
+          artifact-prefix: "gardener-"
 
       - name: Check workflow status
         run: |

@@ -180,6 +180,7 @@ jobs:
           manager-image-archive: ${{ github.event_name == 'pull_request' && 'manager-image' || '' }}
           fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
           google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
+          artifact-prefix: "pr-"
 
   # e2e-metrics split by set labels for parallel execution
   e2e-metrics:
@@ -213,6 +214,7 @@ jobs:
           manager-image-archive: ${{ github.event_name == 'pull_request' && 'manager-image' || '' }}
           fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
           google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
+          artifact-prefix: "pr-"
 
   # All e2e suites with experimental flavor
   e2e-experimental:
@@ -248,6 +250,7 @@ jobs:
           manager-image-archive: ${{ github.event_name == 'pull_request' && 'manager-image' || '' }}
           fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
           google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
+          artifact-prefix: "pr-"
 
   # e2e-traces and e2e-misc (non-experimental) without set splitting
   e2e:
@@ -279,6 +282,7 @@ jobs:
           manager-image-archive: ${{ github.event_name == 'pull_request' && 'manager-image' || '' }}
           fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
           google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
+          artifact-prefix: "pr-"
 
   # Upgrade and integration tests
   e2e-other:
@@ -310,6 +314,7 @@ jobs:
           manager-image-archive: ${{ github.event_name == 'pull_request' && 'manager-image' || '' }}
           fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
           google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
+          artifact-prefix: "pr-"
 
   # Selfmonitor tests
   selfmonitor:
@@ -353,6 +358,7 @@ jobs:
           manager-image-archive: ${{ github.event_name == 'pull_request' && 'manager-image' || '' }}
           fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
           google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
+          artifact-prefix: "pr-"
 
   summary:
     needs: [e2e-logs, e2e-metrics, e2e-experimental, e2e, e2e-other, selfmonitor]
@@ -365,3 +371,5 @@ jobs:
 
       - name: Generate test summary
         uses: "./.github/template/test-summary"
+        with:
+          artifact-prefix: "pr-"
