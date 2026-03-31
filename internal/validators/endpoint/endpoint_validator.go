@@ -37,7 +37,7 @@ var (
 	ErrUnsupportedScheme  = errors.New("missing or unsupported protocol scheme")
 	ErrGRPCOAuth2NoTLS    = errors.New("OAuth2 requires TLS when using gRPC protocol")
 	ErrHTTPWithTLS        = errors.New("HTTP scheme with TLS not allowed")
-	ErrGRPCWithPath       = errors.New("path in endpoint not allowed with gRPC protocol")
+	ErrGRPCWithPath = errors.New("gRPC endpoints cannot contain paths")
 )
 
 type EndpointInvalidError struct {
