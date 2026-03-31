@@ -2,7 +2,6 @@ package faultbackend
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -135,7 +134,7 @@ func (fb *FaultBackend) EnableFaults(t *testing.T) {
 	proxyURL := suite.ProxyClient.ProxyURLForService(fb.namespace, fb.name, "config", configPort)
 
 	gomega.Eventually(func(g gomega.Gomega) {
-		resp, postErr := suite.ProxyClient.Post(context.Background(), proxyURL, "application/json", bytes.NewReader(body))
+		resp, postErr := suite.ProxyClient.Post(t.Context(), proxyURL, "application/json", bytes.NewReader(body))
 		g.Expect(postErr).NotTo(gomega.HaveOccurred())
 		resp.Body.Close()
 		g.Expect(resp.StatusCode).To(gomega.Equal(http.StatusOK))

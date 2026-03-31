@@ -151,7 +151,7 @@ func buildPipeline(component, pipelineName, includeNs string, backend pipelineBa
 //   - metric-agent: Prometheus metric endpoint (scraped by the agent)
 //   - traces: telemetrygen sending OTLP traces
 //
-// The defaultRate (100) is sufficient for outage/backpressure tests that are driven by fault
+// The defaultRate (1000) is sufficient for outage/backpressure tests that are driven by fault
 // percentage: even a moderate flow will trigger the self-monitor condition when the fault
 // fraction is high enough. Tests that require higher throughput (e.g. fluent-bit buffer filling)
 // override the generator explicitly in the test table via tc.generator.
