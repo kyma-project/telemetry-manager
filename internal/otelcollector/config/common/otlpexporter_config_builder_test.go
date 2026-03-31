@@ -11,15 +11,15 @@ import (
 )
 
 func TestExporterIDHTTP(t *testing.T) {
-	require.Equal(t, "otlp_http/test", ExporterID("http", "test"))
+	require.Equal(t, "otlp_http/trace-test", ExporterID("http", "test", string(SignalTypeTrace)))
 }
 
 func TestExporterIDGRPC(t *testing.T) {
-	require.Equal(t, "otlp_grpc/test", ExporterID("grpc", "test"))
+	require.Equal(t, "otlp_grpc/trace-test", ExporterID("grpc", "test", string(SignalTypeTrace)))
 }
 
 func TestExorterIDDefault(t *testing.T) {
-	require.Equal(t, "otlp_grpc/test", ExporterID("", "test"))
+	require.Equal(t, "otlp_grpc/trace-test", ExporterID("", "test", string(SignalTypeTrace)))
 }
 
 func TestMakeExporterConfig(t *testing.T) {
@@ -27,15 +27,15 @@ func TestMakeExporterConfig(t *testing.T) {
 		Endpoint: telemetryv1beta1.ValueType{Value: "otlp-endpoint"},
 	}
 
-	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512, SignalTypeTrace)
+	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512, SignalTypeTrace, "")
 	otlpExporterConfig, envVars, err := cb.OTLPExporter(t.Context())
 	require.NoError(t, err)
 	require.NotNil(t, envVars)
 
-	require.NotNil(t, envVars["OTLP_ENDPOINT_TEST"])
-	require.Equal(t, envVars["OTLP_ENDPOINT_TEST"], []byte("otlp-endpoint"))
+	require.NotNil(t, envVars["OTLP_ENDPOINT_TRACE_TEST"])
+	require.Equal(t, envVars["OTLP_ENDPOINT_TRACE_TEST"], []byte("otlp-endpoint"))
 
-	require.Equal(t, "${OTLP_ENDPOINT_TEST}", otlpExporterConfig.Endpoint)
+	require.Equal(t, "${OTLP_ENDPOINT_TRACE_TEST}", otlpExporterConfig.Endpoint)
 	require.True(t, otlpExporterConfig.SendingQueue.Enabled)
 	require.Equal(t, 512, otlpExporterConfig.SendingQueue.QueueSize)
 
@@ -52,15 +52,15 @@ func TestMakeExporterConfigTraceWithPath(t *testing.T) {
 		Protocol: "http",
 	}
 
-	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512, SignalTypeTrace)
+	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512, SignalTypeTrace, "")
 	otlpExporterConfig, envVars, err := cb.OTLPExporter(t.Context())
 	require.NoError(t, err)
 	require.NotNil(t, envVars)
 
-	require.NotNil(t, envVars["OTLP_ENDPOINT_TEST"])
-	require.Equal(t, envVars["OTLP_ENDPOINT_TEST"], []byte("otlp-endpoint/v1/test"))
+	require.NotNil(t, envVars["OTLP_ENDPOINT_TRACE_TEST"])
+	require.Equal(t, envVars["OTLP_ENDPOINT_TRACE_TEST"], []byte("otlp-endpoint/v1/test"))
 
-	require.Equal(t, "${OTLP_ENDPOINT_TEST}", otlpExporterConfig.TracesEndpoint)
+	require.Equal(t, "${OTLP_ENDPOINT_TRACE_TEST}", otlpExporterConfig.TracesEndpoint)
 	require.Empty(t, otlpExporterConfig.Endpoint)
 }
 
@@ -71,15 +71,15 @@ func TestMakeExporterConfigMetricWithPath(t *testing.T) {
 		Protocol: "http",
 	}
 
-	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512, SignalTypeMetric)
+	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512, SignalTypeMetric, "")
 	otlpExporterConfig, envVars, err := cb.OTLPExporter(t.Context())
 	require.NoError(t, err)
 	require.NotNil(t, envVars)
 
-	require.NotNil(t, envVars["OTLP_ENDPOINT_TEST"])
-	require.Equal(t, envVars["OTLP_ENDPOINT_TEST"], []byte("otlp-endpoint/v1/test"))
+	require.NotNil(t, envVars["OTLP_ENDPOINT_METRIC_TEST"])
+	require.Equal(t, envVars["OTLP_ENDPOINT_METRIC_TEST"], []byte("otlp-endpoint/v1/test"))
 
-	require.Equal(t, "${OTLP_ENDPOINT_TEST}", otlpExporterConfig.MetricsEndpoint)
+	require.Equal(t, "${OTLP_ENDPOINT_METRIC_TEST}", otlpExporterConfig.MetricsEndpoint)
 	require.Empty(t, otlpExporterConfig.Endpoint)
 }
 
@@ -94,18 +94,18 @@ func TestMakeExporterConfigWithBasicAuth(t *testing.T) {
 		},
 	}
 
-	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512, SignalTypeTrace)
+	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512, SignalTypeTrace, "")
 	otlpExporterConfig, envVars, err := cb.OTLPExporter(t.Context())
 	require.NoError(t, err)
 	require.NotNil(t, envVars)
 
 	require.Equal(t, 1, len(otlpExporterConfig.Headers))
-	require.Equal(t, "${BASIC_AUTH_HEADER_TEST}", otlpExporterConfig.Headers["Authorization"])
+	require.Equal(t, "${BASIC_AUTH_HEADER_TRACE_TEST}", otlpExporterConfig.Headers["Authorization"])
 
-	require.NotNil(t, envVars["BASIC_AUTH_HEADER_TEST"])
+	require.NotNil(t, envVars["BASIC_AUTH_HEADER_TRACE_TEST"])
 
 	base64UserPass := base64.StdEncoding.EncodeToString([]byte("testuser:testpass"))
-	require.Equal(t, envVars["BASIC_AUTH_HEADER_TEST"], []byte("Basic "+base64UserPass))
+	require.Equal(t, envVars["BASIC_AUTH_HEADER_TRACE_TEST"], []byte("Basic "+base64UserPass))
 }
 
 func TestMakeExporterConfigWithOAuth2(t *testing.T) {
@@ -120,7 +120,7 @@ func TestMakeExporterConfigWithOAuth2(t *testing.T) {
 		},
 	}
 
-	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512, SignalTypeTrace)
+	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512, SignalTypeTrace, "")
 	otlpExporterConfig, envVars, err := cb.OTLPExporter(t.Context())
 	require.NoError(t, err)
 	require.NotNil(t, envVars)
@@ -143,13 +143,13 @@ func TestMakeExporterConfigWithCustomHeaders(t *testing.T) {
 		Headers:  headers,
 	}
 
-	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512, SignalTypeTrace)
+	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512, SignalTypeTrace, "")
 	otlpExporterConfig, envVars, err := cb.OTLPExporter(t.Context())
 	require.NoError(t, err)
 	require.NotNil(t, envVars)
 
 	require.Equal(t, 1, len(otlpExporterConfig.Headers))
-	require.Equal(t, "${HEADER_TEST_AUTHORIZATION}", otlpExporterConfig.Headers["Authorization"])
+	require.Equal(t, "${HEADER_TRACE_TEST_AUTHORIZATION}", otlpExporterConfig.Headers["Authorization"])
 }
 
 func TestMakeExporterConfigWithTLSInsecure(t *testing.T) {
@@ -161,7 +161,7 @@ func TestMakeExporterConfigWithTLSInsecure(t *testing.T) {
 		TLS:      tls,
 	}
 
-	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512, SignalTypeTrace)
+	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512, SignalTypeTrace, "")
 	otlpExporterConfig, envVars, err := cb.OTLPExporter(t.Context())
 	require.NoError(t, err)
 	require.NotNil(t, envVars)
@@ -179,14 +179,14 @@ func TestMakeExporterConfigWithTLSInsecureSkipVerify(t *testing.T) {
 		TLS:      tls,
 	}
 
-	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512, SignalTypeTrace)
+	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512, SignalTypeTrace, "")
 	otlpExporterConfig, envVars, err := cb.OTLPExporter(t.Context())
 	require.NoError(t, err)
 	require.NotNil(t, envVars)
 
 	require.False(t, otlpExporterConfig.TLS.Insecure)
 	require.True(t, otlpExporterConfig.TLS.InsecureSkipVerify)
-	require.Nil(t, envVars["TLS_CONFIG_CA_TEST"])
+	require.Nil(t, envVars["TLS_CONFIG_CA_TRACE_TEST"])
 }
 
 func TestMakeExporterConfigWithmTLS(t *testing.T) {
@@ -208,23 +208,23 @@ func TestMakeExporterConfigWithmTLS(t *testing.T) {
 		TLS:      tls,
 	}
 
-	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512, SignalTypeTrace)
+	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512, SignalTypeTrace, "")
 	otlpExporterConfig, envVars, err := cb.OTLPExporter(t.Context())
 	require.NoError(t, err)
 	require.NotNil(t, envVars)
 
 	require.False(t, otlpExporterConfig.TLS.Insecure)
 	require.False(t, otlpExporterConfig.TLS.InsecureSkipVerify)
-	require.Equal(t, "${OTLP_TLS_CA_PEM_TEST}", otlpExporterConfig.TLS.CAPem)
-	require.Equal(t, "${OTLP_TLS_CERT_PEM_TEST}", otlpExporterConfig.TLS.CertPem)
-	require.Equal(t, "${OTLP_TLS_KEY_PEM_TEST}", otlpExporterConfig.TLS.KeyPem)
+	require.Equal(t, "${OTLP_TLS_CA_PEM_TRACE_TEST}", otlpExporterConfig.TLS.CAPem)
+	require.Equal(t, "${OTLP_TLS_CERT_PEM_TRACE_TEST}", otlpExporterConfig.TLS.CertPem)
+	require.Equal(t, "${OTLP_TLS_KEY_PEM_TRACE_TEST}", otlpExporterConfig.TLS.KeyPem)
 
-	require.NotNil(t, envVars["OTLP_TLS_CA_PEM_TEST"])
-	require.NotNil(t, envVars["OTLP_TLS_CERT_PEM_TEST"])
-	require.NotNil(t, envVars["OTLP_TLS_KEY_PEM_TEST"])
-	require.Equal(t, envVars["OTLP_TLS_CA_PEM_TEST"], []byte("test ca cert pem"))
-	require.Equal(t, envVars["OTLP_TLS_CERT_PEM_TEST"], []byte("test client cert pem"))
-	require.Equal(t, envVars["OTLP_TLS_KEY_PEM_TEST"], []byte("test client key pem"))
+	require.NotNil(t, envVars["OTLP_TLS_CA_PEM_TRACE_TEST"])
+	require.NotNil(t, envVars["OTLP_TLS_CERT_PEM_TRACE_TEST"])
+	require.NotNil(t, envVars["OTLP_TLS_KEY_PEM_TRACE_TEST"])
+	require.Equal(t, envVars["OTLP_TLS_CA_PEM_TRACE_TEST"], []byte("test ca cert pem"))
+	require.Equal(t, envVars["OTLP_TLS_CERT_PEM_TRACE_TEST"], []byte("test client cert pem"))
+	require.Equal(t, envVars["OTLP_TLS_KEY_PEM_TRACE_TEST"], []byte("test client key pem"))
 }
 
 func TestMakeExporterConfigCompression(t *testing.T) {
@@ -252,7 +252,7 @@ func TestMakeExporterConfigCompression(t *testing.T) {
 				Compression: tt.compression,
 			}
 
-			cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512, SignalTypeTrace)
+			cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512, SignalTypeTrace, "")
 			otlpExporterConfig, envVars, err := cb.OTLPExporter(t.Context())
 			require.NoError(t, err)
 			require.NotNil(t, envVars)

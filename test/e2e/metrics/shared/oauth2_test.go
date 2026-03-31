@@ -107,7 +107,7 @@ func TestOAuth2(t *testing.T) {
 
 			assert.DeploymentReady(t, oauth2server.NamespacedName())
 			assert.BackendReachable(t, backend)
-			assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
+			assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 
 			if suite.ExpectAgent(tc.labels...) {
 				assert.DaemonSetReady(t, kitkyma.MetricAgentName)

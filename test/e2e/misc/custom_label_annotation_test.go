@@ -56,14 +56,14 @@ func TestLabelAnnotation(t *testing.T) {
 				}
 			},
 			assert: func(t *testing.T, ns string, backend *kitbackend.Backend, pipelineName string) {
-				assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
+				assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 				assert.DaemonSetReady(t, kitkyma.LogAgentName)
 				assert.OTelLogPipelineHealthy(t, pipelineName)
 				assert.OTelLogsFromNamespaceDelivered(t, backend, ns)
 
 				// OTLP Gateway should have workload labels/annotations
-				assert.DaemonSetHasLabel(t, kitkyma.TelemetryOTLPGatewayName, workloadLabel)
-				assert.DaemonSetHasAnnotation(t, kitkyma.TelemetryOTLPGatewayName, workloadAnnotation)
+				assert.DaemonSetHasLabel(t, kitkyma.OTLPGatewayName, workloadLabel)
+				assert.DaemonSetHasAnnotation(t, kitkyma.OTLPGatewayName, workloadAnnotation)
 
 				var gwSelector = client.ListOptions{
 					LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": "telemetry-otlp-gateway"}),
@@ -141,14 +141,14 @@ func TestLabelAnnotation(t *testing.T) {
 				}
 			},
 			assert: func(t *testing.T, ns string, backend *kitbackend.Backend, pipelineName string) {
-				assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
+				assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 				assert.DaemonSetReady(t, kitkyma.MetricAgentName)
 				assert.MetricPipelineHealthy(t, pipelineName)
 				assert.MetricsFromNamespaceDelivered(t, backend, ns, prommetricgen.CustomMetricNames())
 
 				// OTLP Gateway should have workload labels/annotations
-				assert.DaemonSetHasLabel(t, kitkyma.TelemetryOTLPGatewayName, workloadLabel)
-				assert.DaemonSetHasAnnotation(t, kitkyma.TelemetryOTLPGatewayName, workloadAnnotation)
+				assert.DaemonSetHasLabel(t, kitkyma.OTLPGatewayName, workloadLabel)
+				assert.DaemonSetHasAnnotation(t, kitkyma.OTLPGatewayName, workloadAnnotation)
 
 				var gwSelector = client.ListOptions{
 					LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": "telemetry-otlp-gateway"}),
@@ -187,13 +187,13 @@ func TestLabelAnnotation(t *testing.T) {
 				}
 			},
 			assert: func(t *testing.T, ns string, backend *kitbackend.Backend, pipelineName string) {
-				assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
+				assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 				assert.TracePipelineHealthy(t, pipelineName)
 				assert.TracesFromNamespaceDelivered(t, backend, ns)
 
 				// OTLP Gateway should have workload labels/annotations
-				assert.DaemonSetHasLabel(t, kitkyma.TelemetryOTLPGatewayName, workloadLabel)
-				assert.DaemonSetHasAnnotation(t, kitkyma.TelemetryOTLPGatewayName, workloadAnnotation)
+				assert.DaemonSetHasLabel(t, kitkyma.OTLPGatewayName, workloadLabel)
+				assert.DaemonSetHasAnnotation(t, kitkyma.OTLPGatewayName, workloadAnnotation)
 
 				var selector = client.ListOptions{
 					LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": "telemetry-otlp-gateway"}),

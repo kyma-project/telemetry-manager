@@ -79,7 +79,7 @@ func TestMultiPipelineFanout_Agent(t *testing.T) {
 
 	assert.BackendReachable(t, backendRuntime)
 	assert.BackendReachable(t, backendPrometheus)
-	assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
+	assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 	assert.MetricPipelineHealthy(t, pipelineRuntimeName)
 	assert.MetricPipelineHealthy(t, pipelinePrometheusName)
 	assert.MetricsFromNamespaceDelivered(t, backendRuntime, genNs, runtime.DefaultMetricsNames)
@@ -195,7 +195,7 @@ func TestMultiPipelineFanout_Gateway(t *testing.T) {
 
 	assert.BackendReachable(t, backend1)
 	assert.BackendReachable(t, backend2)
-	assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
+	assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 	assert.MetricPipelineHealthy(t, pipeline1Name)
 	assert.MetricPipelineHealthy(t, pipeline2Name)
 

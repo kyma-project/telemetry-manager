@@ -50,7 +50,7 @@ func TestHealthy(t *testing.T) {
 				}
 			},
 			assert: func(t *testing.T, ns string, backend *kitbackend.Backend, pipelineName string) {
-				assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
+				assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 				assert.DaemonSetReady(t, kitkyma.LogAgentName)
 				assert.OTelLogPipelineHealthy(t, pipelineName)
 				assert.OTelLogsFromNamespaceDelivered(t, backend, ns)
@@ -75,7 +75,7 @@ func TestHealthy(t *testing.T) {
 				}
 			},
 			assert: func(t *testing.T, ns string, backend *kitbackend.Backend, pipelineName string) {
-				assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
+				assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 				assert.OTelLogPipelineHealthy(t, pipelineName)
 				assert.OTelLogsFromNamespaceDelivered(t, backend, ns)
 				assert.LogPipelineSelfMonitorIsHealthy(t, suite.K8sClient, pipelineName)
@@ -122,7 +122,7 @@ func TestHealthy(t *testing.T) {
 				}
 			},
 			assert: func(t *testing.T, ns string, backend *kitbackend.Backend, pipelineName string) {
-				assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
+				assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 				assert.MetricPipelineHealthy(t, pipelineName)
 				assert.MetricsFromNamespaceDelivered(t, backend, ns, telemetrygen.MetricNames)
 				assert.MetricPipelineSelfMonitorIsHealthy(t, suite.K8sClient, pipelineName)
@@ -149,7 +149,7 @@ func TestHealthy(t *testing.T) {
 				}
 			},
 			assert: func(t *testing.T, ns string, backend *kitbackend.Backend, pipelineName string) {
-				assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
+				assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 				assert.DaemonSetReady(t, kitkyma.MetricAgentName)
 				assert.MetricPipelineHealthy(t, pipelineName)
 				assert.MetricsFromNamespaceDelivered(t, backend, ns, prommetricgen.CustomMetricNames())
@@ -173,7 +173,7 @@ func TestHealthy(t *testing.T) {
 				}
 			},
 			assert: func(t *testing.T, ns string, backend *kitbackend.Backend, pipelineName string) {
-				assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
+				assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 				assert.TracePipelineHealthy(t, pipelineName)
 				assert.TracesFromNamespaceDelivered(t, backend, ns)
 				assert.TracePipelineSelfMonitorIsHealthy(t, suite.K8sClient, pipelineName)

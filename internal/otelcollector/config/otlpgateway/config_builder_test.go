@@ -29,6 +29,109 @@ func TestBuild(t *testing.T) {
 		serviceEnrichment string
 		moduleVersion     string
 	}{
+		// Log-specific test cases
+		{
+			name:           "log-single pipeline only",
+			goldenFileName: "log-single-pipeline.yaml",
+			moduleVersion:  "1.0.0",
+			logPipelines: []telemetryv1beta1.LogPipeline{
+				testutils.NewLogPipelineBuilder().WithName("test-log").WithOTLPOutput().Build(),
+			},
+		},
+		// Metric-specific test cases
+		{
+			name:           "metric-single pipeline only",
+			goldenFileName: "metric-single-pipeline.yaml",
+			moduleVersion:  "1.0.0",
+			metricPipelines: []telemetryv1beta1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().WithName("test-metric").WithOTLPInput(true).WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+			},
+		},
+		{
+			name:           "metric-pipeline with OTLP input disabled",
+			goldenFileName: "metric-otlp-disabled.yaml",
+			moduleVersion:  "1.0.0",
+			metricPipelines: []telemetryv1beta1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().
+					WithName("test-metric").
+					WithOTLPInput(false).
+					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).
+					Build(),
+			},
+		},
+		{
+			name:           "metric-pipeline with namespace filters",
+			goldenFileName: "metric-namespace-filters.yaml",
+			moduleVersion:  "1.0.0",
+			metricPipelines: []telemetryv1beta1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().
+					WithName("test-metric").
+					WithOTLPInput(true, testutils.IncludeNamespaces("monitoring", "observability"), testutils.ExcludeNamespaces("kube-system", "istio-system")).
+					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).
+					Build(),
+			},
+		},
+		{
+			name:           "metric-pipeline with OTLP only input",
+			goldenFileName: "metric-otlp-only.yaml",
+			moduleVersion:  "1.0.0",
+			metricPipelines: []telemetryv1beta1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().
+					WithName("test-metric").
+					WithOTLPInput(true).
+					WithRuntimeInput(false).
+					WithPrometheusInput(false).
+					WithIstioInput(false).
+					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).
+					Build(),
+			},
+		},
+		{
+			name:           "metric-comprehensive setup",
+			goldenFileName: "metric-comprehensive.yaml",
+			moduleVersion:  "1.0.0",
+			metricPipelines: []telemetryv1beta1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().
+					WithName("cls").
+					WithOTLPInput(true, testutils.IncludeNamespaces("apps-cls")).
+					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).
+					WithTransform(telemetryv1beta1.TransformSpec{
+						Conditions: []string{"IsMatch(body, \".*error.*\")"},
+						Statements: []string{
+							"set(attributes[\"metric.status\"], \"error\")",
+							"set(body, \"transformed-cls\")",
+						},
+					}).
+					WithFilter(telemetryv1beta1.FilterSpec{
+						Conditions: []string{"metric.type == METRIC_DATA_TYPE_SUMMARY"},
+					}).
+					Build(),
+				testutils.NewMetricPipelineBuilder().
+					WithName("dynatrace").
+					WithOTLPInput(true, testutils.IncludeNamespaces("apps-dynatrace")).
+					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).
+					WithTransform(telemetryv1beta1.TransformSpec{
+						Conditions: []string{"IsMatch(body, \".*error.*\")"},
+						Statements: []string{
+							"set(attributes[\"metric.status\"], \"error\")",
+							"set(body, \"transformed-dynatrace\")",
+						},
+					}).
+					WithFilter(telemetryv1beta1.FilterSpec{
+						Conditions: []string{"metric.type == METRIC_DATA_TYPE_HISTOGRAM"},
+					}).
+					Build(),
+			},
+		},
+		// Trace-specific test cases
+		{
+			name:           "trace-single pipeline only",
+			goldenFileName: "trace-single-pipeline.yaml",
+			tracePipelines: []telemetryv1beta1.TracePipeline{
+				testutils.NewTracePipelineBuilder().WithName("test-trace").Build(),
+			},
+		},
+		// Comprehensive test cases
 		{
 			name:           "single pipeline",
 			goldenFileName: "single-pipeline.yaml",
@@ -39,29 +142,6 @@ func TestBuild(t *testing.T) {
 			logPipelines: []telemetryv1beta1.LogPipeline{
 				testutils.NewLogPipelineBuilder().WithName("test-log").WithOTLPOutput().Build(),
 			},
-			metricPipelines: []telemetryv1beta1.MetricPipeline{
-				testutils.NewMetricPipelineBuilder().WithName("test-metric").WithOTLPInput(true).WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
-			},
-		},
-		{
-			name:           "trace-single pipeline only",
-			goldenFileName: "trace-single-pipeline.yaml",
-			tracePipelines: []telemetryv1beta1.TracePipeline{
-				testutils.NewTracePipelineBuilder().WithName("test-trace").Build(),
-			},
-		},
-		{
-			name:           "log-single pipeline only",
-			goldenFileName: "log-single-pipeline.yaml",
-			moduleVersion:  "1.0.0",
-			logPipelines: []telemetryv1beta1.LogPipeline{
-				testutils.NewLogPipelineBuilder().WithName("test-log").WithOTLPOutput().Build(),
-			},
-		},
-		{
-			name:           "metric-single pipeline only",
-			goldenFileName: "metric-single-pipeline.yaml",
-			moduleVersion:  "1.0.0",
 			metricPipelines: []telemetryv1beta1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().WithName("test-metric").WithOTLPInput(true).WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
 			},
@@ -406,83 +486,6 @@ func TestBuild(t *testing.T) {
 				testutils.NewLogPipelineBuilder().WithName("test-log-2").WithOTLPOutput().Build(),
 			},
 		},
-		// Metric-specific test cases
-		{
-			name:           "metric-pipeline with OTLP input disabled",
-			goldenFileName: "metric-otlp-disabled.yaml",
-			moduleVersion:  "1.0.0",
-			metricPipelines: []telemetryv1beta1.MetricPipeline{
-				testutils.NewMetricPipelineBuilder().
-					WithName("test-metric").
-					WithOTLPInput(false).
-					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).
-					Build(),
-			},
-		},
-		{
-			name:           "metric-pipeline with namespace filters",
-			goldenFileName: "metric-namespace-filters.yaml",
-			moduleVersion:  "1.0.0",
-			metricPipelines: []telemetryv1beta1.MetricPipeline{
-				testutils.NewMetricPipelineBuilder().
-					WithName("test-metric").
-					WithOTLPInput(true, testutils.IncludeNamespaces("monitoring", "observability"), testutils.ExcludeNamespaces("kube-system", "istio-system")).
-					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).
-					Build(),
-			},
-		},
-		{
-			name:           "metric-pipeline with OTLP only input",
-			goldenFileName: "metric-otlp-only.yaml",
-			moduleVersion:  "1.0.0",
-			metricPipelines: []telemetryv1beta1.MetricPipeline{
-				testutils.NewMetricPipelineBuilder().
-					WithName("test-metric").
-					WithOTLPInput(true).
-					WithRuntimeInput(false).
-					WithPrometheusInput(false).
-					WithIstioInput(false).
-					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).
-					Build(),
-			},
-		},
-		{
-			name:           "metric-comprehensive setup",
-			goldenFileName: "metric-comprehensive.yaml",
-			moduleVersion:  "1.0.0",
-			metricPipelines: []telemetryv1beta1.MetricPipeline{
-				testutils.NewMetricPipelineBuilder().
-					WithName("cls").
-					WithOTLPInput(true, testutils.IncludeNamespaces("apps-cls")).
-					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).
-					WithTransform(telemetryv1beta1.TransformSpec{
-						Conditions: []string{"IsMatch(body, \".*error.*\")"},
-						Statements: []string{
-							"set(attributes[\"metric.status\"], \"error\")",
-							"set(body, \"transformed-cls\")",
-						},
-					}).
-					WithFilter(telemetryv1beta1.FilterSpec{
-						Conditions: []string{"metric.type == METRIC_DATA_TYPE_SUMMARY"},
-					}).
-					Build(),
-				testutils.NewMetricPipelineBuilder().
-					WithName("dynatrace").
-					WithOTLPInput(true, testutils.IncludeNamespaces("apps-dynatrace")).
-					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).
-					WithTransform(telemetryv1beta1.TransformSpec{
-						Conditions: []string{"IsMatch(body, \".*error.*\")"},
-						Statements: []string{
-							"set(attributes[\"metric.status\"], \"error\")",
-							"set(body, \"transformed-dynatrace\")",
-						},
-					}).
-					WithFilter(telemetryv1beta1.FilterSpec{
-						Conditions: []string{"metric.type == METRIC_DATA_TYPE_HISTOGRAM"},
-					}).
-					Build(),
-			},
-		},
 		{
 			name:           "all-signals-multi-backend",
 			goldenFileName: "all-signals-multi-backend.yaml",
@@ -498,6 +501,33 @@ func TestBuild(t *testing.T) {
 			metricPipelines: []telemetryv1beta1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().WithName("metric-backend-1").WithOTLPInput(true).WithOTLPOutput(testutils.OTLPEndpoint("https://backend-1.example.com")).Build(),
 				testutils.NewMetricPipelineBuilder().WithName("metric-backend-2").WithOTLPInput(true).WithOTLPOutput(testutils.OTLPEndpoint("https://backend-2.example.com")).Build(),
+			},
+		},
+		{
+			name:           "pipeline with snappy compression",
+			goldenFileName: "compression.yaml",
+			moduleVersion:  "1.0.0",
+			tracePipelines: []telemetryv1beta1.TracePipeline{
+				testutils.NewTracePipelineBuilder().
+					WithName("test-trace").
+					WithOTLPOutput(
+						testutils.OTLPCompression(telemetryv1beta1.OTLPCompressionSnappy),
+					).Build(),
+			},
+			logPipelines: []telemetryv1beta1.LogPipeline{
+				testutils.NewLogPipelineBuilder().
+					WithName("test-log").
+					WithOTLPOutput(
+						testutils.OTLPCompression(telemetryv1beta1.OTLPCompressionSnappy),
+					).Build(),
+			},
+			metricPipelines: []telemetryv1beta1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().
+					WithName("test-metric").
+					WithOTLPInput(true).
+					WithOTLPOutput(
+						testutils.OTLPCompression(telemetryv1beta1.OTLPCompressionSnappy),
+					).Build(),
 			},
 		},
 	}

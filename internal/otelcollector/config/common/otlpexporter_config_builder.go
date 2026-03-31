@@ -21,36 +21,39 @@ type OTLPExporterConfigBuilder struct {
 	pipelineName string
 	queueSize    int
 	signalType   SignalType
+	namePrefix   string
 }
 
 type EnvVars map[string][]byte
 
-func NewOTLPExporterConfigBuilder(reader client.Reader, otlpOutput *telemetryv1beta1.OTLPOutput, pipelineName string, queueSize int, signalType SignalType) *OTLPExporterConfigBuilder {
+func NewOTLPExporterConfigBuilder(reader client.Reader, otlpOutput *telemetryv1beta1.OTLPOutput, pipelineName string, queueSize int, signalType SignalType, namePrefix string) *OTLPExporterConfigBuilder {
 	return &OTLPExporterConfigBuilder{
 		reader:       reader,
 		otlpOutput:   otlpOutput,
 		pipelineName: pipelineName,
 		queueSize:    queueSize,
 		signalType:   signalType,
+		namePrefix:   namePrefix,
 	}
 }
 
 func (cb *OTLPExporterConfigBuilder) OTLPExporter(ctx context.Context) (*OTLPExporterConfig, EnvVars, error) {
-	envVars, err := makeOTLPExporterEnvVars(ctx, cb.reader, cb.otlpOutput, cb.pipelineName)
+	envVars, err := makeOTLPExporterEnvVars(ctx, cb.reader, cb.otlpOutput, cb.pipelineName, cb.signalType)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to make env vars: %w", err)
 	}
 
-	exporter := otlpExporter(cb.otlpOutput, cb.pipelineName, envVars, cb.queueSize, cb.signalType)
+	exporter := otlpExporter(cb.otlpOutput, cb.pipelineName, envVars, cb.queueSize, cb.signalType, cb.namePrefix)
 
 	return exporter, envVars, nil
 }
 
-func otlpExporter(otlpOutput *telemetryv1beta1.OTLPOutput, pipelineName string, envVars map[string][]byte, queueSize int, signalType SignalType) *OTLPExporterConfig {
-	headers := headers(otlpOutput, pipelineName)
-	otlpEndpointVariable := formatEnvVarKey(otlpEndpointVariablePrefix, pipelineName)
+func otlpExporter(otlpOutput *telemetryv1beta1.OTLPOutput, pipelineName string, envVars map[string][]byte, queueSize int, signalType SignalType, namePrefix string) *OTLPExporterConfig {
+	qualifiedName := prefixedName(namePrefix, pipelineName)
+	headers := headers(otlpOutput, signalType, pipelineName)
+	otlpEndpointVariable := formatEnvVarKey(otlpEndpointVariablePrefix, signalType, pipelineName)
 	otlpEndpointValue := string(envVars[otlpEndpointVariable])
-	tls := tls(otlpOutput, otlpEndpointValue, pipelineName)
+	tls := tls(otlpOutput, otlpEndpointValue, signalType, pipelineName)
 
 	sendingQueue := SendingQueue{
 		Enabled: false,
@@ -96,22 +99,40 @@ func otlpExporter(otlpOutput *telemetryv1beta1.OTLPOutput, pipelineName string, 
 
 	if otlpOutput.Authentication != nil && otlpOutput.Authentication.OAuth2 != nil {
 		otlpExporter.Auth = Auth{
-			Authenticator: fmt.Sprintf(ComponentIDOAuth2Extension, pipelineName),
+			Authenticator: fmt.Sprintf(ComponentIDOAuth2Extension, qualifiedName),
 		}
 	}
 
 	return &otlpExporter
 }
 
-func ExporterID(protocol telemetryv1beta1.OTLPProtocol, pipelineName string) string {
+func ExporterID(protocol telemetryv1beta1.OTLPProtocol, pipelineName, namePrefix string) string {
+	qualifiedName := prefixedName(namePrefix, pipelineName)
 	if protocol == telemetryv1beta1.OTLPProtocolHTTP {
-		return fmt.Sprintf(ComponentIDOTLPHTTPExporter, pipelineName)
+		return fmt.Sprintf(ComponentIDOTLPHTTPExporter, qualifiedName)
 	}
 
-	return fmt.Sprintf(ComponentIDOTLPGRPCExporter, pipelineName)
+	return fmt.Sprintf(ComponentIDOTLPGRPCExporter, qualifiedName)
 }
 
-func tls(output *telemetryv1beta1.OTLPOutput, otlpEndpointValue, pipelineName string) TLS {
+// prefixedName returns "prefix-name" when prefix is non-empty, or just "name" when prefix is empty.
+func prefixedName(namePrefix, pipelineName string) string {
+	if namePrefix == "" {
+		return pipelineName
+	}
+
+	return namePrefix + "-" + pipelineName
+}
+
+func UserDefinedTransformProcessorID(pipelineName, namePrefix string) string {
+	return fmt.Sprintf(ComponentIDUserDefinedTransformProcessor, prefixedName(namePrefix, "user-defined-"+pipelineName))
+}
+
+func UserDefinedFilterProcessorID(pipelineName, namePrefix string) string {
+	return fmt.Sprintf(ComponentIDUserDefinedFilterProcessor, prefixedName(namePrefix, "user-defined-"+pipelineName))
+}
+
+func tls(output *telemetryv1beta1.OTLPOutput, otlpEndpointValue string, signalType SignalType, pipelineName string) TLS {
 	var tls TLS
 
 	tls.Insecure = isInsecureOutput(otlpEndpointValue)
@@ -126,30 +147,30 @@ func tls(output *telemetryv1beta1.OTLPOutput, otlpEndpointValue, pipelineName st
 
 	tls.InsecureSkipVerify = output.TLS.InsecureSkipVerify
 	if sharedtypesutils.IsValid(output.TLS.CA) {
-		tls.CAPem = fmt.Sprintf("${%s}", formatEnvVarKey(tlsConfigCaVariablePrefix, pipelineName))
+		tls.CAPem = fmt.Sprintf("${%s}", formatEnvVarKey(tlsConfigCaVariablePrefix, signalType, pipelineName))
 	}
 
 	if sharedtypesutils.IsValid(output.TLS.Cert) {
-		tls.CertPem = fmt.Sprintf("${%s}", formatEnvVarKey(tlsConfigCertVariablePrefix, pipelineName))
+		tls.CertPem = fmt.Sprintf("${%s}", formatEnvVarKey(tlsConfigCertVariablePrefix, signalType, pipelineName))
 	}
 
 	if sharedtypesutils.IsValid(output.TLS.Key) {
-		tls.KeyPem = fmt.Sprintf("${%s}", formatEnvVarKey(tlsConfigKeyVariablePrefix, pipelineName))
+		tls.KeyPem = fmt.Sprintf("${%s}", formatEnvVarKey(tlsConfigKeyVariablePrefix, signalType, pipelineName))
 	}
 
 	return tls
 }
 
-func headers(output *telemetryv1beta1.OTLPOutput, pipelineName string) map[string]string {
+func headers(output *telemetryv1beta1.OTLPOutput, signalType SignalType, pipelineName string) map[string]string {
 	headers := make(map[string]string)
 
 	if isBasicAuthEnabled(output.Authentication) {
-		basicAuthHeaderVariable := formatEnvVarKey(basicAuthHeaderVariablePrefix, pipelineName)
+		basicAuthHeaderVariable := formatEnvVarKey(basicAuthHeaderVariablePrefix, signalType, pipelineName)
 		headers["Authorization"] = fmt.Sprintf("${%s}", basicAuthHeaderVariable)
 	}
 
 	for _, header := range output.Headers {
-		headers[header.Name] = fmt.Sprintf("${%s}", formatHeaderEnvVarKey(header, pipelineName))
+		headers[header.Name] = fmt.Sprintf("${%s}", formatHeaderEnvVarKey(header, signalType, pipelineName))
 	}
 
 	return headers

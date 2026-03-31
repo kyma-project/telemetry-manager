@@ -115,10 +115,10 @@ const (
 	ComponentIDK8sAttributesProcessor                  = "k8s_attributes"
 	ComponentIDServiceEnrichmentProcessor              = "service_enrichment"
 	ComponentIDIstioNoiseFilterProcessor               = "istio_noise_filter"
-	ComponentIDUserDefinedFilterProcessor              = "filter/user-defined-%s" // dynamically filled with pipeline name
+	ComponentIDUserDefinedFilterProcessor              = "filter/%s" // dynamically filled; use UserDefinedFilterProcessorID()
 	ComponentIDSetInstrumentationScopeKymaProcessor    = "transform/set-instrumentation-scope-kyma"
 	ComponentIDSetInstrumentationScopeRuntimeProcessor = "transform/set-instrumentation-scope-runtime"
-	ComponentIDUserDefinedTransformProcessor           = "transform/user-defined-%s" // dynamically filled with pipeline name
+	ComponentIDUserDefinedTransformProcessor           = "transform/%s" // dynamically filled; use UserDefinedTransformProcessorID()
 	ComponentIDInsertClusterAttributesProcessor        = "transform/insert-cluster-attributes"
 	ComponentIDDropKymaAttributesProcessor             = "transform/drop-kyma-attributes"
 	ComponentIDDropUnknownServiceNameProcessor         = "transform/drop-unknown-service-name"

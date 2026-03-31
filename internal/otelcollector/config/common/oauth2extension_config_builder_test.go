@@ -10,7 +10,7 @@ import (
 )
 
 func TestOAuth2ExtensionID(t *testing.T) {
-	require.Equal(t, "oauth2client/test", OAuth2ExtensionID("test"))
+	require.Equal(t, "oauth2client/trace-test", OAuth2ExtensionID("test", string(SignalTypeTrace)))
 }
 
 func TestMakeExtensionConfig(t *testing.T) {
@@ -25,16 +25,16 @@ func TestMakeExtensionConfig(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, envVars)
 
-	require.NotNil(t, envVars["OAUTH2_TOKEN_URL_TEST"])
-	require.Equal(t, envVars["OAUTH2_TOKEN_URL_TEST"], []byte("token-url"))
+	require.NotNil(t, envVars["OAUTH2_TOKEN_URL_TRACE_TEST"])
+	require.Equal(t, envVars["OAUTH2_TOKEN_URL_TRACE_TEST"], []byte("token-url"))
 
-	require.NotNil(t, envVars["OAUTH2_CLIENT_ID_TEST"])
-	require.Equal(t, envVars["OAUTH2_CLIENT_ID_TEST"], []byte("client-id"))
+	require.NotNil(t, envVars["OAUTH2_CLIENT_ID_TRACE_TEST"])
+	require.Equal(t, envVars["OAUTH2_CLIENT_ID_TRACE_TEST"], []byte("client-id"))
 
-	require.NotNil(t, envVars["OAUTH2_CLIENT_SECRET_TEST"])
-	require.Equal(t, envVars["OAUTH2_CLIENT_SECRET_TEST"], []byte("client-secret"))
+	require.NotNil(t, envVars["OAUTH2_CLIENT_SECRET_TRACE_TEST"])
+	require.Equal(t, envVars["OAUTH2_CLIENT_SECRET_TRACE_TEST"], []byte("client-secret"))
 
-	require.Equal(t, "${OAUTH2_TOKEN_URL_TEST}", oauth2ExtensionConfig.TokenURL)
-	require.Equal(t, "${OAUTH2_CLIENT_ID_TEST}", oauth2ExtensionConfig.ClientID)
-	require.Equal(t, "${OAUTH2_CLIENT_SECRET_TEST}", oauth2ExtensionConfig.ClientSecret)
+	require.Equal(t, "${OAUTH2_TOKEN_URL_TRACE_TEST}", oauth2ExtensionConfig.TokenURL)
+	require.Equal(t, "${OAUTH2_CLIENT_ID_TRACE_TEST}", oauth2ExtensionConfig.ClientID)
+	require.Equal(t, "${OAUTH2_CLIENT_SECRET_TRACE_TEST}", oauth2ExtensionConfig.ClientSecret)
 }

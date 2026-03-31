@@ -276,7 +276,7 @@ processors:
                 - IsMatch(body, ".*error.*")
 exporters:
     otlp_grpc/test1:
-        endpoint: ${OTLP_ENDPOINT_TEST1}
+        endpoint: ${OTLP_ENDPOINT_METRIC_TEST1}
         compression: gzip
         sending_queue:
             enabled: true

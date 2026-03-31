@@ -27,11 +27,11 @@ service:
                 - service_enrichment
                 - transform/drop-kyma-attributes
                 - istio_enrichment
-                - transform/user-defined-test-log
-                - filter/user-defined-test-log
+                - transform/log-user-defined-test-log
+                - filter/log-user-defined-test-log
                 - batch
             exporters:
-                - otlp_grpc/test-log
+                - otlp_grpc/log-test-log
         metrics/enrichment:
             receivers:
                 - forward/input
@@ -62,11 +62,11 @@ service:
                 - forward/enrichment
             processors:
                 - transform/drop-kyma-attributes
-                - transform/user-defined-test-metric
-                - filter/user-defined-test-metric
+                - transform/metric-user-defined-test-metric
+                - filter/metric-user-defined-test-metric
                 - batch
             exporters:
-                - otlp_grpc/test-metric
+                - otlp_grpc/metric-test-metric
         traces/test-trace:
             receivers:
                 - otlp
@@ -77,11 +77,11 @@ service:
                 - transform/insert-cluster-attributes
                 - service_enrichment
                 - transform/drop-kyma-attributes
-                - transform/user-defined-test-trace
-                - filter/user-defined-test-trace
+                - transform/trace-user-defined-test-trace
+                - filter/trace-user-defined-test-trace
                 - batch
             exporters:
-                - otlp_grpc/test-trace
+                - otlp_grpc/trace-test-trace
     telemetry:
         metrics:
             readers:
@@ -127,17 +127,17 @@ processors:
         send_batch_size: 512
         timeout: 10s
         send_batch_max_size: 512
-    filter/user-defined-test-log:
+    filter/log-user-defined-test-log:
         error_mode: ignore
         log_conditions:
             - conditions:
                 - IsMatch(log.attributes["foo"], ".*bar.*")
-    filter/user-defined-test-metric:
+    filter/metric-user-defined-test-metric:
         error_mode: ignore
         metric_conditions:
             - conditions:
                 - metric.type == METRIC_DATA_TYPE_SUMMARY
-    filter/user-defined-test-trace:
+    filter/trace-user-defined-test-trace:
         error_mode: ignore
         trace_conditions:
             - conditions:
@@ -206,6 +206,22 @@ processors:
                 - set(resource.attributes["k8s.cluster.name"], "${KUBERNETES_SERVICE_HOST}") where resource.attributes["k8s.cluster.name"] == nil or resource.attributes["k8s.cluster.name"] == ""
                 - set(resource.attributes["k8s.cluster.uid"], "") where resource.attributes["k8s.cluster.uid"] == nil or resource.attributes["k8s.cluster.uid"] == ""
                 - set(resource.attributes["cloud.provider"], "test-cloud-provider") where resource.attributes["cloud.provider"] == nil or resource.attributes["cloud.provider"] == ""
+    transform/log-user-defined-test-log:
+        error_mode: ignore
+        log_statements:
+            - statements:
+                - set(attributes["log.level"], "error")
+                - set(body, "transformed2")
+              conditions:
+                - IsMatch(body, ".*error.*")
+    transform/metric-user-defined-test-metric:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - set(attributes["metric.status"], "error")
+                - set(body, "transformed2")
+              conditions:
+                - IsMatch(body, ".*error.*")
     transform/set-instrumentation-scope-kyma:
         error_mode: ignore
         metric_statements:
@@ -229,23 +245,7 @@ processors:
                 - set(log.observed_time, Now())
               conditions:
                 - log.observed_time_unix_nano == 0
-    transform/user-defined-test-log:
-        error_mode: ignore
-        log_statements:
-            - statements:
-                - set(attributes["log.level"], "error")
-                - set(body, "transformed2")
-              conditions:
-                - IsMatch(body, ".*error.*")
-    transform/user-defined-test-metric:
-        error_mode: ignore
-        metric_statements:
-            - statements:
-                - set(attributes["metric.status"], "error")
-                - set(body, "transformed2")
-              conditions:
-                - IsMatch(body, ".*error.*")
-    transform/user-defined-test-trace:
+    transform/trace-user-defined-test-trace:
         error_mode: ignore
         trace_statements:
             - statements:
@@ -254,8 +254,8 @@ processors:
               conditions:
                 - IsMatch(body, ".*error.*")
 exporters:
-    otlp_grpc/test-log:
-        endpoint: ${OTLP_ENDPOINT_TEST_LOG}
+    otlp_grpc/log-test-log:
+        endpoint: ${OTLP_ENDPOINT_LOG_TEST_LOG}
         compression: gzip
         sending_queue:
             enabled: true
@@ -265,8 +265,8 @@ exporters:
             initial_interval: 5s
             max_interval: 30s
             max_elapsed_time: 300s
-    otlp_grpc/test-metric:
-        endpoint: ${OTLP_ENDPOINT_TEST_METRIC}
+    otlp_grpc/metric-test-metric:
+        endpoint: ${OTLP_ENDPOINT_METRIC_TEST_METRIC}
         compression: gzip
         sending_queue:
             enabled: true
@@ -276,8 +276,8 @@ exporters:
             initial_interval: 5s
             max_interval: 30s
             max_elapsed_time: 300s
-    otlp_grpc/test-trace:
-        endpoint: ${OTLP_ENDPOINT_TEST_TRACE}
+    otlp_grpc/trace-test-trace:
+        endpoint: ${OTLP_ENDPOINT_TRACE_TEST_TRACE}
         compression: gzip
         sending_queue:
             enabled: true

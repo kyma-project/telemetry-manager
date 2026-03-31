@@ -88,7 +88,7 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 
 			assert.BackendReachable(t, backend)
 
-			assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
+			assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 			assert.DaemonSetReady(t, kitkyma.MetricAgentName)
 
 			t.Log("Asserting all pipelines are healthy")

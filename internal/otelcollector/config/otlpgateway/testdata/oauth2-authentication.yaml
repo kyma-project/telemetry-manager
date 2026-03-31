@@ -11,22 +11,22 @@ extensions:
         auth_type: serviceAccount
         lease_name: telemetry-metric-gateway-kymastats
         lease_namespace: kyma-system
-    oauth2client/test-log:
-        token_url: ${OAUTH2_TOKEN_URL_TEST_LOG}
-        client_id: ${OAUTH2_CLIENT_ID_TEST_LOG}
-        client_secret: ${OAUTH2_CLIENT_SECRET_TEST_LOG}
+    oauth2client/log-test-log:
+        token_url: ${OAUTH2_TOKEN_URL_LOG_TEST_LOG}
+        client_id: ${OAUTH2_CLIENT_ID_LOG_TEST_LOG}
+        client_secret: ${OAUTH2_CLIENT_SECRET_LOG_TEST_LOG}
         scopes:
             - logs
-    oauth2client/test-metric:
-        token_url: ${OAUTH2_TOKEN_URL_TEST_METRIC}
-        client_id: ${OAUTH2_CLIENT_ID_TEST_METRIC}
-        client_secret: ${OAUTH2_CLIENT_SECRET_TEST_METRIC}
+    oauth2client/metric-test-metric:
+        token_url: ${OAUTH2_TOKEN_URL_METRIC_TEST_METRIC}
+        client_id: ${OAUTH2_CLIENT_ID_METRIC_TEST_METRIC}
+        client_secret: ${OAUTH2_CLIENT_SECRET_METRIC_TEST_METRIC}
         scopes:
             - metrics
-    oauth2client/test-trace:
-        token_url: ${OAUTH2_TOKEN_URL_TEST_TRACE}
-        client_id: ${OAUTH2_CLIENT_ID_TEST_TRACE}
-        client_secret: ${OAUTH2_CLIENT_SECRET_TEST_TRACE}
+    oauth2client/trace-test-trace:
+        token_url: ${OAUTH2_TOKEN_URL_TRACE_TEST_TRACE}
+        client_id: ${OAUTH2_CLIENT_ID_TRACE_TEST_TRACE}
+        client_secret: ${OAUTH2_CLIENT_SECRET_TRACE_TEST_TRACE}
         scopes:
             - traces
     pprof:
@@ -47,7 +47,7 @@ service:
                 - istio_enrichment
                 - batch
             exporters:
-                - otlp_http/test-log
+                - otlp_http/log-test-log
         metrics/enrichment:
             receivers:
                 - forward/input
@@ -80,7 +80,7 @@ service:
                 - transform/drop-kyma-attributes
                 - batch
             exporters:
-                - otlp_http/test-metric
+                - otlp_http/metric-test-metric
         traces/test-trace:
             receivers:
                 - otlp
@@ -93,7 +93,7 @@ service:
                 - transform/drop-kyma-attributes
                 - batch
             exporters:
-                - otlp_http/test-trace
+                - otlp_http/trace-test-trace
     telemetry:
         metrics:
             readers:
@@ -109,10 +109,10 @@ service:
         - health_check
         - pprof
         - cgroupruntime
-        - oauth2client/test-trace
-        - oauth2client/test-log
+        - oauth2client/trace-test-trace
+        - oauth2client/log-test-log
         - k8s_leader_elector
-        - oauth2client/test-metric
+        - oauth2client/metric-test-metric
 receivers:
     kymastats:
         auth_type: serviceAccount
@@ -230,8 +230,8 @@ processors:
               conditions:
                 - log.observed_time_unix_nano == 0
 exporters:
-    otlp_http/test-log:
-        endpoint: ${OTLP_ENDPOINT_TEST_LOG}
+    otlp_http/log-test-log:
+        endpoint: ${OTLP_ENDPOINT_LOG_TEST_LOG}
         compression: gzip
         sending_queue:
             enabled: true
@@ -242,9 +242,9 @@ exporters:
             max_interval: 30s
             max_elapsed_time: 300s
         auth:
-            authenticator: oauth2client/test-log
-    otlp_http/test-metric:
-        endpoint: ${OTLP_ENDPOINT_TEST_METRIC}
+            authenticator: oauth2client/log-test-log
+    otlp_http/metric-test-metric:
+        endpoint: ${OTLP_ENDPOINT_METRIC_TEST_METRIC}
         tls:
             insecure: true
         compression: gzip
@@ -257,9 +257,9 @@ exporters:
             max_interval: 30s
             max_elapsed_time: 300s
         auth:
-            authenticator: oauth2client/test-metric
-    otlp_http/test-trace:
-        endpoint: ${OTLP_ENDPOINT_TEST_TRACE}
+            authenticator: oauth2client/metric-test-metric
+    otlp_http/trace-test-trace:
+        endpoint: ${OTLP_ENDPOINT_TRACE_TEST_TRACE}
         compression: gzip
         sending_queue:
             enabled: true
@@ -270,7 +270,7 @@ exporters:
             max_interval: 30s
             max_elapsed_time: 300s
         auth:
-            authenticator: oauth2client/test-trace
+            authenticator: oauth2client/trace-test-trace
 connectors:
     forward/enrichment: {}
     forward/input: {}

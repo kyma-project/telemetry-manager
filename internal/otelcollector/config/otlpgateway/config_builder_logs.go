@@ -255,6 +255,7 @@ func (b *Builder) addLogOTLPExporter(builder *common.ComponentBuilder[*telemetry
 				lp.Name,
 				queueSize,
 				common.SignalTypeLog,
+				string(common.SignalTypeLog),
 			)
 
 			return otlpExporterBuilder.OTLPExporter(ctx)
@@ -264,7 +265,7 @@ func (b *Builder) addLogOTLPExporter(builder *common.ComponentBuilder[*telemetry
 
 //nolint:dupl // Acceptable duplication - trace and log OAuth2 extensions follow same pattern
 func (b *Builder) addLogOAuth2Extension(ctx context.Context, builder *common.ComponentBuilder[*telemetryv1beta1.LogPipeline], pipeline *telemetryv1beta1.LogPipeline) error {
-	oauth2ExtensionID := common.OAuth2ExtensionID(pipeline.Name)
+	oauth2ExtensionID := common.OAuth2ExtensionID(pipeline.Name, string(common.SignalTypeLog))
 
 	oauth2ExtensionConfig, oauth2ExtensionEnvVars, err := common.NewOAuth2ExtensionConfigBuilder(
 		b.Reader,
@@ -292,19 +293,19 @@ func formatLogServicePipelineID(lp *telemetryv1beta1.LogPipeline) string {
 }
 
 func formatNamespaceFilterID(lp *telemetryv1beta1.LogPipeline) string {
-	return fmt.Sprintf(common.ComponentIDNamespaceFilterProcessor, lp.Name)
+	return fmt.Sprintf(common.ComponentIDNamespaceFilterProcessor, string(common.SignalTypeLog)+"-"+lp.Name)
 }
 
 func formatLogUserDefinedTransformProcessorID(lp *telemetryv1beta1.LogPipeline) string {
-	return fmt.Sprintf(common.ComponentIDUserDefinedTransformProcessor, lp.Name)
+	return common.UserDefinedTransformProcessorID(lp.Name, string(common.SignalTypeLog))
 }
 
 func formatLogUserDefinedFilterProcessorID(lp *telemetryv1beta1.LogPipeline) string {
-	return fmt.Sprintf(common.ComponentIDUserDefinedFilterProcessor, lp.Name)
+	return common.UserDefinedFilterProcessorID(lp.Name, string(common.SignalTypeLog))
 }
 
 func formatLogOTLPExporterID(lp *telemetryv1beta1.LogPipeline) string {
-	return common.ExporterID(lp.Spec.Output.OTLP.Protocol, lp.Name)
+	return common.ExporterID(lp.Spec.Output.OTLP.Protocol, lp.Name, string(common.SignalTypeLog))
 }
 
 func namespaceFilterProcessor(namespaceSelector *telemetryv1beta1.NamespaceSelector) *common.FilterProcessorConfig {

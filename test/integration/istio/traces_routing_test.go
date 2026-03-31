@@ -89,7 +89,7 @@ func TestTracesRouting(t *testing.T) {
 	assertAppIsRunning(t, istiofiedAppNs, map[string]string{"app.kubernetes.io/name": "metric-producer"})
 	assertSidecarPresent(t, istiofiedAppNs, map[string]string{"app.kubernetes.io/name": "metric-producer"})
 	assertAppIsRunning(t, appNs, map[string]string{"app.kubernetes.io/name": "metric-producer"})
-	assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
+	assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 	assert.TracePipelineHealthy(t, pipeline1Name)
 	assert.TracePipelineHealthy(t, pipeline2Name)
 

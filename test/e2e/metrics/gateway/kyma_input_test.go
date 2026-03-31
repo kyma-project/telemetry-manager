@@ -65,7 +65,7 @@ func TestKymaInput(t *testing.T) {
 
 	assert.BackendReachable(t, backendKymaOnly)
 	assert.BackendReachable(t, backendKymaAndOtlp)
-	assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
+	assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 
 	if suite.DebugObjectsEnabled() {
 		objects := []client.Object{

@@ -44,11 +44,11 @@ service:
             receivers:
                 - forward/enrichment
             processors:
-                - filter/test-metric-filter-by-namespace-otlp-input
+                - filter/metric-test-metric-filter-by-namespace-otlp-input
                 - transform/drop-kyma-attributes
                 - batch
             exporters:
-                - otlp_grpc/test-metric
+                - otlp_grpc/metric-test-metric
     telemetry:
         metrics:
             readers:
@@ -94,7 +94,7 @@ processors:
         send_batch_size: 1024
         timeout: 10s
         send_batch_max_size: 1024
-    filter/test-metric-filter-by-namespace-otlp-input:
+    filter/metric-test-metric-filter-by-namespace-otlp-input:
         error_mode: ignore
         metric_conditions:
             - conditions:
@@ -178,8 +178,8 @@ processors:
             - statements:
                 - set(resource.attributes["kyma.input.name"], "otlp")
 exporters:
-    otlp_grpc/test-metric:
-        endpoint: ${OTLP_ENDPOINT_TEST_METRIC}
+    otlp_grpc/metric-test-metric:
+        endpoint: ${OTLP_ENDPOINT_METRIC_TEST_METRIC}
         compression: gzip
         sending_queue:
             enabled: true

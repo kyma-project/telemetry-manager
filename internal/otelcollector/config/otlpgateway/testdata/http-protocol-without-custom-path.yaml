@@ -29,7 +29,7 @@ service:
                 - istio_enrichment
                 - batch
             exporters:
-                - otlp_http/test-log
+                - otlp_http/log-test-log
         metrics/enrichment:
             receivers:
                 - forward/input
@@ -62,7 +62,7 @@ service:
                 - transform/drop-kyma-attributes
                 - batch
             exporters:
-                - otlp_http/test-metric
+                - otlp_http/metric-test-metric
         traces/test-trace:
             receivers:
                 - otlp
@@ -75,7 +75,7 @@ service:
                 - transform/drop-kyma-attributes
                 - batch
             exporters:
-                - otlp_http/test-trace
+                - otlp_http/trace-test-trace
     telemetry:
         metrics:
             readers:
@@ -209,8 +209,8 @@ processors:
               conditions:
                 - log.observed_time_unix_nano == 0
 exporters:
-    otlp_http/test-log:
-        endpoint: ${OTLP_ENDPOINT_TEST_LOG}
+    otlp_http/log-test-log:
+        endpoint: ${OTLP_ENDPOINT_LOG_TEST_LOG}
         compression: gzip
         sending_queue:
             enabled: true
@@ -220,8 +220,8 @@ exporters:
             initial_interval: 5s
             max_interval: 30s
             max_elapsed_time: 300s
-    otlp_http/test-metric:
-        endpoint: ${OTLP_ENDPOINT_TEST_METRIC}
+    otlp_http/metric-test-metric:
+        endpoint: ${OTLP_ENDPOINT_METRIC_TEST_METRIC}
         tls:
             insecure: true
         compression: gzip
@@ -233,8 +233,8 @@ exporters:
             initial_interval: 5s
             max_interval: 30s
             max_elapsed_time: 300s
-    otlp_http/test-trace:
-        endpoint: ${OTLP_ENDPOINT_TEST_TRACE}
+    otlp_http/trace-test-trace:
+        endpoint: ${OTLP_ENDPOINT_TRACE_TEST_TRACE}
         compression: gzip
         sending_queue:
             enabled: true
