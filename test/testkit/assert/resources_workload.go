@@ -98,23 +98,6 @@ func DaemonSetReady(t *testing.T, name types.NamespacedName) {
 	isReady(t, isDaemonSetReady, name, "DaemonSet")
 }
 
-// DaemonSetRolloutComplete waits for a DaemonSet to fully complete a rolling update,
-// ensuring all pods are updated and running with the latest configuration.
-func DaemonSetRolloutComplete(t *testing.T, name types.NamespacedName) {
-	t.Helper()
-	Eventually(func(g Gomega) {
-		var daemonSet appsv1.DaemonSet
-		err := suite.K8sClient.Get(t.Context(), name, &daemonSet)
-		g.Expect(err).NotTo(HaveOccurred())
-
-		desired := daemonSet.Status.DesiredNumberScheduled
-		g.Expect(desired).NotTo(BeZero(), "DaemonSet has no scheduled pods")
-		g.Expect(daemonSet.Status.NumberReady).To(Equal(desired), "Not all DaemonSet pods are ready")
-		g.Expect(daemonSet.Status.UpdatedNumberScheduled).To(Equal(desired), "Not all DaemonSet pods are updated")
-		g.Expect(daemonSet.Status.NumberUnavailable).To(BeZero(), "Some DaemonSet pods are unavailable")
-	}, 2*periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
-}
-
 func DaemonSetNotFound(t *testing.T, name types.NamespacedName) {
 	t.Helper()
 	Eventually(func(g Gomega) {
