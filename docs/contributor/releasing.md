@@ -3,28 +3,28 @@
 This document describes the automated release process for Telemetry Manager using GitHub Actions workflows.
 
 <!-- TOC -->
-  * [Overview](#overview)
-  * [Prerequisites](#prerequisites)
-  * [Release to Experimental and Fast Channel](#release-to-experimental-and-fast-channel)
-    * [1. Prepare the Release](#1-prepare-the-release)
-    * [2. Start the Release Workflow](#2-start-the-release-workflow)
-    * [3. Automatic Validation](#3-automatic-validation)
-    * [4. Automatic Branch Creation](#4-automatic-branch-creation)
-    * [5. Review and Merge the Version Bump PR](#5-review-and-merge-the-version-bump-pr)
-    * [6. Automatic Testing](#6-automatic-testing)
-    * [7. Automatic Tag and Release Creation](#7-automatic-tag-and-release-creation)
-    * [8. Automatic Module Releases](#8-automatic-module-releases)
-    * [9. Verify the Release](#9-verify-the-release)
-  * [Release to the Regular Channel](#release-to-the-regular-channel)
-  * [Monitor Release Progress](#monitor-release-progress)
-    * [Workflow Status](#workflow-status)
-    * [Module Release Status](#module-release-status)
-  * [Troubleshooting](#troubleshooting)
-    * [Milestone Validation Error](#milestone-validation-error)
-    * [Docker Image Not Found](#docker-image-not-found)
-    * [GitHub Tag Already Exists](#github-tag-already-exists)
-    * [Version Bump PR Times Out](#version-bump-pr-times-out)
-  * [Related Workflows](#related-workflows)
+* [Overview](#overview)
+* [Prerequisites](#prerequisites)
+* [Release to Experimental and Fast Channel](#release-to-experimental-and-fast-channel)
+  * [1. Prepare the Release](#1-prepare-the-release)
+  * [2. Start the Release Workflow](#2-start-the-release-workflow)
+  * [3. Automatic Validation](#3-automatic-validation)
+  * [4. Automatic Branch Creation](#4-automatic-branch-creation)
+  * [5. Review and Merge the Version Bump PR](#5-review-and-merge-the-version-bump-pr)
+  * [6. Automatic Testing](#6-automatic-testing)
+  * [7. Automatic Tag and Release Creation](#7-automatic-tag-and-release-creation)
+  * [8. Automatic Module Releases](#8-automatic-module-releases)
+  * [9. Verify the Release](#9-verify-the-release)
+* [Release to the Regular Channel](#release-to-the-regular-channel)
+* [Monitor Release Progress](#monitor-release-progress)
+  * [Workflow Status](#workflow-status)
+  * [Module Release Status](#module-release-status)
+* [Troubleshooting](#troubleshooting)
+  * [Milestone Validation Error](#milestone-validation-error)
+  * [Docker Image Not Found](#docker-image-not-found)
+  * [GitHub Tag Already Exists](#github-tag-already-exists)
+  * [Version Bump PR Times Out](#version-bump-pr-times-out)
+* [Related Workflows](#related-workflows)
 <!-- TOC -->
 
 ## Overview
@@ -55,9 +55,9 @@ Before running the release workflow, complete the following tasks:
    - Create a new [GitHub milestone](https://github.com/kyma-project/telemetry-manager/milestones) for the next version.
 
 2. **Release Component Dependencies**:  Release the following component dependencies to produce the required Docker images
-   - [directory-size-exporter](https://github.com/kyma-project/telemetry-manager/actions/workflows/build-directory-size-reporter-image.yml) - Produces image tags like `v20260302-12345678`
-   - [telemetry-self-monitor](https://github.com/kyma-project/telemetry-manager/actions/workflows/build-self-monitor-image.yml) - Produces image tags like `v20260302-bbf32a3b`
-   - [opentelemetry-collector-components](https://github.com/kyma-project/opentelemetry-collector-components) - Version format: **`{OCC_VERSION}`**-**`{TELEMETRY_VERSION}`**, such as `0.100.0-1.2.3`
+   - [Build Directory Size Exporter Image](https://github.com/kyma-project/telemetry-manager/actions/workflows/build-directory-size-reporter-image.yml) - Produces image tags like `v20260302-12345678`
+   - [Build Self Monitor Image](https://github.com/kyma-project/telemetry-manager/actions/workflows/build-self-monitor-image.yml) - Produces image tags like `v20260302-bbf32a3b`
+   - [OpenTelemetry Collector Components Create Release](https://github.com/kyma-project/opentelemetry-collector-components/actions/workflows/create-release.yaml) - Version format: **`{OCC_VERSION}`**-**`{TELEMETRY_VERSION}`**, such as `0.100.0-1.2.3`
 
 3. **Verify Docker Image Availability**: After the component releases complete, verify that all required Docker images are available in the registry
    ```bash
@@ -203,7 +203,7 @@ In the telemetry-manager repository, go to **Actions**, select [Telemetry Module
 
 ### Workflow Status
 
-Monitor the release workflow at: [Actions > Telemetry Release](https://github.com/kyma-project/telemetry-manager/actions/workflows/release.yml)
+Monitor the release workflow at: [Actions > Telemetry Manager Release](https://github.com/kyma-project/telemetry-manager/actions/workflows/release.yml)
 
 **Key Jobs**:
 1. `validate-and-prepare-branch`: Validation and branch setup
