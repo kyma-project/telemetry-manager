@@ -258,7 +258,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git checkout -b "${RELEASE_BRANCH}"
-          git push origin "${RELEASE_BRANCH}"
+          git push origin "${but }"
           echo "Created branch ${RELEASE_BRANCH}"
 
   prepare-release:
@@ -450,6 +450,7 @@ jobs:
       - name: Create and push release tag
         if: ${{ inputs.dry_run != true }}
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ github.event.inputs.version }}
           RELEASE_BRANCH: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
         run: |
