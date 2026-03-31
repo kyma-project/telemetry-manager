@@ -74,7 +74,7 @@ Before running the release workflow, complete the following tasks:
 
 ### Step 1: Start Release Workflow
 
-In the telemetry-manager repository, go to **Actions**, select [Telemetry Release](https://github.com/kyma-project/telemetry-manager/actions/workflows/release.yml), and run the workflow with the following inputs:
+In the telemetry-manager repository, go to **Actions**, select [Telemetry Release](https://github.com/kyma-project/telemetry-manager/actions/workflows/release.yml), and run the release workflow with the following inputs:
 
 
 | Input                      | Description                                                                      | Example              |
@@ -97,7 +97,7 @@ Consider using force mode for the following purposes:
 
 ### Step 2: Validate Workflow Inputs
 
-The workflow automatically validates the following conditions:
+The release workflow automatically validates the following conditions:
 
 - The version format follows semantic versioning (`X.Y.Z`)
 - The OCC version format matches the expected pattern (`X.Y.Z-A.B.C`)
@@ -114,16 +114,16 @@ If validation fails, the release workflow stops and reports the error.
 
 ### Step 3: Prepare Release Branch
 
-To determine the release type, the workflow checks if a `release-X.Y` branch already exists and handles branch preparation:
+To determine the release type, the release workflow checks if a `release-X.Y` branch already exists and handles branch preparation:
 
-- For a minor or major release: The `release-X.Y` branch does not exist, so the workflow creates it from the `main` branch.
-- For a patch release: The `release-X.Y` branch already exists, so the workflow uses the existing branch.
+- For a minor or major release: The `release-X.Y` branch does not exist, so the release workflow creates it from the `main` branch.
+- For a patch release: The `release-X.Y` branch already exists, so the release workflow uses the existing branch.
 
 ### Step 4: Create Version Bump PR
 
-The workflow creates a pull request (PR) against the release branch that updates all version numbers and image tags for the new release.
+The release workflow creates a pull request (PR) against the release branch that updates all version numbers and image tags for the new release.
 
-The workflow updates the release branch through the following steps:
+The release workflow updates the release branch through the following steps:
 
 1. Updates the following variables in the `.env` file:
    - `ENV_HELM_RELEASE_VERSION=`**`{VERSION}`**
@@ -135,7 +135,7 @@ The workflow updates the release branch through the following steps:
 2. Runs the `make generate` command to apply these changes to all auto-generated files, such as the Helm chart manifests.
 
 > [!WARNING]
-> The workflow waits up to 120 minutes for you to merge the PR. If you do not merge it within this time, the workflow times out and fails.
+> The release workflow waits up to 120 minutes for you to merge the PR. If you do not merge it within this time, the workflow times out and fails.
 
 To review the PR, use the checklist in the PR description to verify the following conditions:
 - Version numbers are correct
@@ -151,16 +151,16 @@ After you merge the PR, the release workflow automatically runs the following te
 3. **Gardener Integration Tests**: Tests on Gardener-managed clusters
 4. **Release Report Upload**: Compliance report upload
 
-All tests must pass before the workflow proceeds to release creation.
+All tests must pass before the release workflow proceeds to release creation.
 
 ### Step 6: Create Release Tag and GitHub Release
 
-After all tests pass, the workflow creates the release by performing the following actions:
+After all tests pass, the release workflow creates the release by performing the following actions:
 
 1. Creates annotated Git tag: **`{VERSION}`**
 2. Pushes the tag to trigger the following processes:
-   - The workflow uses `build-manager-image.yml` to build and push the Docker image
-   - The workflow uses goreleaser to create the release
+   - The release workflow uses `build-manager-image.yml` to build and push the Docker image
+   - The release workflow uses goreleaser to create the release
 3. Packages Helm chart
 4. Uploads Helm chart to the GitHub release
 5. Updates `gh-pages` branch with Helm repository index
@@ -219,16 +219,16 @@ Check the pull requests for both experimental and fast channels in the [module-m
 
 ### Milestone Validation Error
 
-**Symptom:** The workflow fails with a milestone validation error.
+**Symptom:** The release workflow fails with a milestone validation error.
 
 **Solution:**
 1. Go to [Milestones](https://github.com/kyma-project/telemetry-manager/milestones) and close any open issues.
 2. With all issues closed, close the milestone for the release version.
-3. Rerun the workflow.
+3. Rerun the release workflow.
 
 ### Docker Image Not Found
 
-**Symptom:** The workflow fails because a Docker image was not found.
+**Symptom:** The release workflow fails because a Docker image was not found.
 
 **Solution:**
 1. Check that the image exists in the registry.
@@ -238,21 +238,21 @@ Check the pull requests for both experimental and fast channels in the [module-m
 
 ### GitHub Tag Already Exists
 
-**Symptom:** The workflow fails because the GitHub tag already exists.
+**Symptom:** The release workflow fails because the GitHub tag already exists.
 
 **Solution:**
-Rerun the workflow with force mode to re-create the release.
+Rerun the release workflow with force mode to re-create the release.
 
 > [!CAUTION]
 > This overwrites the existing release if it exists.
 
 ### Version Bump PR Times Out
 
-**Symptom:** The workflow fails because the PR was not merged within 120 minutes.
+**Symptom:** The release workflow fails because the PR was not merged within 120 minutes.
 
 **Solution:**
 1. Review and merge the PR manually.
-2. In the telemetry-manager repository, go to **Actions** and rerun the workflow.
+2. In the telemetry-manager repository, go to **Actions** and rerun the release workflow.
 
 ## Post-Release Tasks
 
