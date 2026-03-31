@@ -9,7 +9,7 @@ The Telemetry module provides an [OTel Collector](https://opentelemetry.io/docs/
 3. An application (exposing logs in OTLP) sends logs to the OTLP Gateway using the `telemetry-otlp-logs` service. The Service uses node-local routing, so data is always received by the gateway instance on the same node. Istio is configured to push access logs with OTLP as well.
 4. The OTLP Gateway and agent discover the metadata and enrich all received data with metadata of the source by communicating with the Kubernetes APIServer. Furthermore, they filter data according to the pipeline configuration.
 5. Telemetry Manager configures the agent and the OTLP Gateway according to the LogPipeline resource specification, including the target backend. Also, it observes the logs flow to the backend and reports problems in the LogPipeline status.
-6. The OTLP Gateway and log agent send the data to the observability backend that's specified in your LogPipeline resource - either within your cluster, or, if authentication is set up, to an external observability backend.
+6. The OTLP Gateway and agent send the data to the observability backend that's specified in your LogPipeline resource - either within your cluster, or, if authentication is set up, to an external observability backend.
 7. You can analyze the logs data with your preferred backend.
 
 ## Telemetry Manager
