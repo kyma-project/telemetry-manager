@@ -5,7 +5,7 @@ This document describes the automated release process for Telemetry Manager usin
 <!-- TOC -->
   * [Overview](#overview)
   * [Prerequisites](#prerequisites)
-  * [Release Telemetry Manager](#release-telemetry-manager)
+  * [Release to Experimental and Fast Channel](#release-to-experimental-and-fast-channel)
     * [1. Prepare the Release](#1-prepare-the-release)
     * [2. Start the Release Workflow](#2-start-the-release-workflow)
     * [3. Automatic Validation](#3-automatic-validation)
@@ -43,7 +43,7 @@ Ensure you have the following permissions:
 - Write access to the telemetry-manager repository
 - Access to merge PRs on the release branch
 
-## Release Telemetry Manager
+## Release to Experimental and Fast Channel
 
 ### 1. Prepare the Release
 
