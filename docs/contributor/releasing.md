@@ -160,7 +160,7 @@ After all tests pass, the release workflow creates the release by performing the
 1. Creates annotated Git tag: **`{VERSION}`**
 2. Pushes the tag to trigger the following processes:
    - The release workflow uses `build-manager-image.yml` to build and push the Docker image
-   - The release workflow uses goreleaser to create the release
+   - It uses goreleaser to create the release
 3. Packages Helm chart
 4. Uploads Helm chart to the GitHub release
 5. Updates `gh-pages` branch with Helm repository index
@@ -171,10 +171,10 @@ If `module_release` is set to `true` (the default), the workflow triggers module
 
 The workflow triggers module releases for the following channels:
 
-| Channel      | Auto-merge | Target Repository       |
-|--------------|------------|-------------------------|
-| fast         | Enabled    | `kyma/module-manifests` |
-| experimental | Enabled    | `kyma/module-manifests` |
+| Channel        | Auto-merge | Target Repository       |
+|----------------|------------|-------------------------|
+| `fast`         | Enabled    | `kyma/module-manifests` |
+| `experimental` | Enabled    | `kyma/module-manifests` |
 
 ### Step 8: Release to Regular Channel (Manual)
 
