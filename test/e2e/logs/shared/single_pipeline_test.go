@@ -71,42 +71,69 @@ func TestSinglePipeline_OTel(t *testing.T) {
 		},
 	}
 
+	protocols := []struct {
+		name     string
+		protocol telemetryv1beta1.OTLPProtocol
+		endpoint func(backend *kitbackend.Backend) string
+	}{
+		{
+			name:     "grpc",
+			protocol: "grpc",
+			endpoint: func(b *kitbackend.Backend) string { return b.EndpointHTTP() },
+		},
+		{
+			name:     "grpc-trailing-slash",
+			protocol: "grpc",
+			endpoint: func(b *kitbackend.Backend) string { return b.EndpointHTTP() + "/" },
+		},
+		{
+			name:     "http",
+			protocol: "http",
+			endpoint: func(b *kitbackend.Backend) string { return b.EndpointOTLPHTTP() },
+		},
+	}
+
 	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			suite.SetupTestWithOptions(t, tc.labels, tc.opts...)
+		for _, proto := range protocols {
+			t.Run(tc.name+"/"+proto.name, func(t *testing.T) {
+				suite.SetupTestWithOptions(t, tc.labels, tc.opts...)
 
-			var (
-				uniquePrefix = unique.Prefix(tc.name)
-				pipelineName = uniquePrefix()
-				backendNs    = uniquePrefix("backend")
-				genNs        = uniquePrefix("gen")
-			)
+				var (
+					uniquePrefix = unique.Prefix(tc.name, proto.name)
+					pipelineName = uniquePrefix()
+					backendNs    = uniquePrefix("backend")
+					genNs        = uniquePrefix("gen")
+				)
 
-			backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel)
+				backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel)
 
-			pipeline := testutils.NewLogPipelineBuilder().
-				WithName(pipelineName).
-				WithInput(tc.inputBuilder(genNs)).
-				WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
-				Build()
+				pipeline := testutils.NewLogPipelineBuilder().
+					WithName(pipelineName).
+					WithInput(tc.inputBuilder(genNs)).
+					WithOTLPOutput(
+						testutils.OTLPEndpoint(proto.endpoint(backend)),
+						testutils.OTLPProtocol(proto.protocol),
+					).
+					Build()
 
-			resources := []client.Object{
-				kitk8sobjects.NewNamespace(backendNs).K8sObject(),
-				kitk8sobjects.NewNamespace(genNs).K8sObject(),
-				&pipeline,
-				tc.logGeneratorBuilder(genNs),
-			}
-			resources = append(resources, backend.K8sObjects()...)
+				resources := []client.Object{
+					kitk8sobjects.NewNamespace(backendNs).K8sObject(),
+					kitk8sobjects.NewNamespace(genNs).K8sObject(),
+					&pipeline,
+					tc.logGeneratorBuilder(genNs),
+				}
+				resources = append(resources, backend.K8sObjects()...)
 
-			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
+				Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
-			assert.BackendReachable(t, backend)
+				assert.BackendReachable(t, backend)
 
-			tc.readinessCheckFunc(t, tc.resourceName)
+				tc.readinessCheckFunc(t, tc.resourceName)
 
-			assert.OTelLogPipelineHealthy(t, pipelineName)
-			assert.OTelLogsFromNamespaceDelivered(t, backend, genNs)
-		})
+				assert.OTelLogPipelineHealthy(t, pipelineName)
+				assert.OTelLogsFromNamespaceDelivered(t, backend, genNs)
+			})
+		}
 	}
 }
 
