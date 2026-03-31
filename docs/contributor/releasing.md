@@ -8,13 +8,13 @@ This document describes the automated release process for Telemetry Manager usin
   * [Release Telemetry Manager](#release-telemetry-manager)
     * [Pre-Release Preparation](#pre-release-preparation)
     * [Step 1: Start Release Workflow](#step-1-start-release-workflow)
-    * [Step 2: Workflow Validation Phase](#step-2-workflow-validation-phase)
-    * [Step 3: Release Branch Preparation](#step-3-release-branch-preparation)
-    * [Step 4: Version Bump PR](#step-4-version-bump-pr)
-    * [Step 5: Automated Testing](#step-5-automated-testing)
-    * [Step 6: Release Tag and GitHub Release](#step-6-release-tag-and-github-release)
-    * [Step 7: Module Releases (Conditional)](#step-7-module-releases-conditional)
-    * [Step 8: Regular Channel (Manual)](#step-8-regular-channel-manual)
+    * [Step 2: Validate Workflow Inputs](#step-2-validate-workflow-inputs)
+    * [Step 3: Prepare Release Branch](#step-3-prepare-release-branch)
+    * [Step 4: Create Version Bump PR](#step-4-create-version-bump-pr)
+    * [Step 5: Run Automated Tests](#step-5-run-automated-tests)
+    * [Step 6: Create Release Tag and GitHub Release](#step-6-create-release-tag-and-github-release)
+    * [Step 7: Trigger Module Releases (Conditional)](#step-7-trigger-module-releases-conditional)
+    * [Step 8: Release to Regular Channel (Manual)](#step-8-release-to-regular-channel-manual)
   * [Release Channels](#release-channels)
   * [Monitor Release Progress](#monitor-release-progress)
     * [Workflow Status](#workflow-status)
@@ -95,7 +95,7 @@ Consider using force mode for the following purposes:
 - Updating release assets
 - Correcting version metadata
 
-### Step 2: Workflow Validation Phase
+### Step 2: Validate Workflow Inputs
 
 The workflow automatically validates the following conditions:
 
@@ -112,14 +112,14 @@ The workflow automatically validates the following conditions:
 
 If validation fails, the release workflow stops and reports the error.
 
-### Step 3: Release Branch Preparation
+### Step 3: Prepare Release Branch
 
 To determine the release type, the workflow checks if a `release-X.Y` branch already exists and handles branch preparation:
 
 - For a minor or major release: The `release-X.Y` branch does not exist, so the workflow creates it from the `main` branch.
 - For a patch release: The `release-X.Y` branch already exists, so the workflow uses the existing branch.
 
-### Step 4: Version Bump PR
+### Step 4: Create Version Bump PR
 
 The workflow creates a pull request (PR) against the release branch that updates all version numbers and image tags for the new release.
 
@@ -142,7 +142,7 @@ To review the PR, use the checklist in the PR description to verify the followin
 - Generated files are up to date
 - No unintended changes
 
-### Step 5: Automated Testing
+### Step 5: Run Automated Tests
 
 After you merge the PR, the release workflow automatically runs the following tests:
 
@@ -153,7 +153,7 @@ After you merge the PR, the release workflow automatically runs the following te
 
 All tests must pass before the workflow proceeds to release creation.
 
-### Step 6: Release Tag and GitHub Release
+### Step 6: Create Release Tag and GitHub Release
 
 After all tests pass, the workflow creates the release by performing the following actions:
 
@@ -165,7 +165,7 @@ After all tests pass, the workflow creates the release by performing the followi
 4. Uploads Helm chart to the GitHub release
 5. Updates `gh-pages` branch with Helm repository index
 
-### Step 7: Module Releases (Conditional)
+### Step 7: Trigger Module Releases (Conditional)
 
 If `module_release` is set to `true` (the default), the workflow triggers module releases after it creates the GitHub release.
 
@@ -176,7 +176,7 @@ The workflow triggers module releases for the following channels:
 | fast         | Enabled    | `kyma/module-manifests` |
 | experimental | Enabled    | `kyma/module-manifests` |
 
-### Step 8: Regular Channel (Manual)
+### Step 8: Release to Regular Channel (Manual)
 
 To release to the regular channel, manually trigger the module release workflow:
 
