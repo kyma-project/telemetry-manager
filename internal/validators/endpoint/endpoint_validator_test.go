@@ -21,6 +21,7 @@ const (
 	errMsgUnsupportedScheme     = "missing or unsupported protocol scheme"
 	errMsgGRPCOAuth2NoTLS       = "OAuth2 requires TLS when using gRPC protocol"
 	errMsgHTTPWithTLS           = "HTTP scheme with TLS not allowed"
+	errMsgGRPCWithPath          = "gRPC endpoints cannot contain paths"
 )
 
 var testScenarios = []struct {
@@ -37,11 +38,18 @@ var testScenarios = []struct {
 	errMsgFluentdHTTP string
 }{
 	{
+		name:     "with scheme: endpoint with trailing slash and port",
+		endpoint: "https://foo.bar:4317/",
+
+		errOTLPGRPC:    ErrGRPCWithPath,
+		errMsgOTLPGRPC: errMsgGRPCWithPath,
+	},
+	{
 		name:     "with scheme: valid endpoint with path and port",
 		endpoint: "https://foo.bar:4317/foo/bar",
 
-		errOTLPGRPC:    nil,
-		errMsgOTLPGRPC: "",
+		errOTLPGRPC:    ErrGRPCWithPath,
+		errMsgOTLPGRPC: errMsgGRPCWithPath,
 
 		errOTLPHTTP:    nil,
 		errMsgOTLPHTTP: "",
@@ -53,8 +61,8 @@ var testScenarios = []struct {
 		name:     "with scheme: valid endpoint with path, query params, and port",
 		endpoint: "https://foo.bar:4317/ingest?token=abc&query=param",
 
-		errOTLPGRPC:    nil,
-		errMsgOTLPGRPC: "",
+		errOTLPGRPC:    ErrGRPCWithPath,
+		errMsgOTLPGRPC: errMsgGRPCWithPath,
 
 		errOTLPHTTP:    nil,
 		errMsgOTLPHTTP: "",
@@ -66,8 +74,8 @@ var testScenarios = []struct {
 		name:     "with IPv4: valid IPv4 endpoint with path and port",
 		endpoint: "https://10.108.183.198:4317/foo/bar",
 
-		errOTLPGRPC:    nil,
-		errMsgOTLPGRPC: "",
+		errOTLPGRPC:    ErrGRPCWithPath,
+		errMsgOTLPGRPC: errMsgGRPCWithPath,
 
 		errOTLPHTTP:    nil,
 		errMsgOTLPHTTP: "",
@@ -79,8 +87,8 @@ var testScenarios = []struct {
 		name:     "with IPv6: valid IPv6 endpoint with path and port",
 		endpoint: "https://[2001:0db8:85a3:0000:0000:8a2e:0370:7334]:4317/foo/bar",
 
-		errOTLPGRPC:    nil,
-		errMsgOTLPGRPC: "",
+		errOTLPGRPC:    ErrGRPCWithPath,
+		errMsgOTLPGRPC: errMsgGRPCWithPath,
 
 		errOTLPHTTP:    nil,
 		errMsgOTLPHTTP: "",
