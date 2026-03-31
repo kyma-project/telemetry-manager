@@ -14,11 +14,11 @@ on:
   push:
     branches:
       - "main"
-      - "release-[0-9]+.[0-9]+"
+      - "release-*"
   pull_request:
     branches:
       - "main"
-      - "release-[0-9]+.[0-9]+"
+      - "release-*"
   schedule:
     - cron: '35 7 * * 1'
 
