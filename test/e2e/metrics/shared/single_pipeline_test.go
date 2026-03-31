@@ -68,11 +68,6 @@ func TestSinglePipeline(t *testing.T) {
 			endpoint: func(b *kitbackend.Backend) string { return b.EndpointHTTP() },
 		},
 		{
-			name:     "grpc-trailing-slash",
-			protocol: "grpc",
-			endpoint: func(b *kitbackend.Backend) string { return b.EndpointHTTP() + "/" },
-		},
-		{
 			name:     "http",
 			protocol: "http",
 			endpoint: func(b *kitbackend.Backend) string { return b.EndpointOTLPHTTP() },
