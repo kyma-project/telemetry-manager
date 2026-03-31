@@ -21,7 +21,7 @@ const (
 	errMsgUnsupportedScheme     = "missing or unsupported protocol scheme"
 	errMsgGRPCOAuth2NoTLS       = "OAuth2 requires TLS when using gRPC protocol"
 	errMsgHTTPWithTLS           = "HTTP scheme with TLS not allowed"
-	errMsgGRPCWithPath          = "path in endpoint not allowed with gRPC protocol"
+	errMsgGRPCWithPath          = "gRPC endpoints cannot contain paths"
 )
 
 var testScenarios = []struct {
