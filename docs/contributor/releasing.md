@@ -6,16 +6,15 @@ This document describes the automated release process for Telemetry Manager usin
   * [Overview](#overview)
   * [Prerequisites](#prerequisites)
   * [Release Telemetry Manager](#release-telemetry-manager)
-    * [Pre-Release Preparation](#pre-release-preparation)
-    * [Step 1: Start Release Workflow](#step-1-start-release-workflow)
-    * [Step 2: Validate Workflow Inputs](#step-2-validate-workflow-inputs)
-    * [Step 3: Prepare Release Branch](#step-3-prepare-release-branch)
-    * [Step 4: Create Version Bump PR](#step-4-create-version-bump-pr)
-    * [Step 5: Run Automated Tests](#step-5-run-automated-tests)
-    * [Step 6: Create Release Tag and GitHub Release](#step-6-create-release-tag-and-github-release)
-    * [Step 7: Trigger Module Releases (Conditional)](#step-7-trigger-module-releases-conditional)
-    * [Step 8: Release to Regular Channel (Manual)](#step-8-release-to-regular-channel-manual)
-  * [Release Channels](#release-channels)
+    * [1. Prepare the Release](#1-prepare-the-release)
+    * [2. Start the Release Workflow](#2-start-the-release-workflow)
+    * [3. Automatic Validation](#3-automatic-validation)
+    * [4. Automatic Branch Creation](#4-automatic-branch-creation)
+    * [5. Review and Merge the Version Bump PR](#5-review-and-merge-the-version-bump-pr)
+    * [6. Automatic Testing](#6-automatic-testing)
+    * [7. Automatic Tag and Release Creation](#7-automatic-tag-and-release-creation)
+    * [8. Automatic Module Releases](#8-automatic-module-releases)
+  * [Release to the Regular Channel](#release-to-the-regular-channel)
   * [Monitor Release Progress](#monitor-release-progress)
     * [Workflow Status](#workflow-status)
     * [Module Release Status](#module-release-status)
@@ -24,7 +23,7 @@ This document describes the automated release process for Telemetry Manager usin
     * [Docker Image Not Found](#docker-image-not-found)
     * [GitHub Tag Already Exists](#github-tag-already-exists)
     * [Version Bump PR Times Out](#version-bump-pr-times-out)
-  * [Post-Release Tasks](#post-release-tasks)
+    * [9. Verify the Release](#9-verify-the-release)
   * [Related Workflows](#related-workflows)
 <!-- TOC -->
 
@@ -133,27 +132,17 @@ The PR contains the following changes:
 
 - Updated variables in the `.env` file:
 
-  | Variable | New value |
-  |---|---|
-  | `ENV_HELM_RELEASE_VERSION` | `{VERSION}` |
-  | `ENV_MANAGER_IMAGE` tag | `{VERSION}` |
-  | `ENV_OTEL_COLLECTOR_IMAGE` tag | `{OCC_IMAGE_VERSION}` |
-  | `ENV_SELFMONITOR_IMAGE` tag | `{SELF_MONITOR_IMAGE_TAG}` |
-  | `ENV_FLUENTBIT_EXPORTER_IMAGE` tag | `{DIR_SIZE_IMAGE_TAG}` |
+  | Variable                           | New value                  |
+  |------------------------------------|----------------------------|
+  | `ENV_HELM_RELEASE_VERSION`         | `{VERSION}`                |
+  | `ENV_MANAGER_IMAGE` tag            | `{VERSION}`                |
+  | `ENV_OTEL_COLLECTOR_IMAGE` tag     | `{OCC_IMAGE_VERSION}`      |
+  | `ENV_SELFMONITOR_IMAGE` tag        | `{SELF_MONITOR_IMAGE_TAG}` |
+  | `ENV_FLUENTBIT_EXPORTER_IMAGE` tag | `{DIR_SIZE_IMAGE_TAG}`     |
 
 - Generated files (such as Helm chart manifests) updated by `make generate`.
 
 After you merge the PR, the workflow resumes.
-
-
-1. Updates the following variables in the `.env` file:
-   - `ENV_HELM_RELEASE_VERSION=`**`{VERSION}`**
-   - `ENV_MANAGER_IMAGE` tag to **`{VERSION}`**
-   - `ENV_OTEL_COLLECTOR_IMAGE` tag to **`{OCC_IMAGE_VERSION}`**
-   - `ENV_SELFMONITOR_IMAGE` tag to **`{SELF_MONITOR_IMAGE_TAG}`**
-   - `ENV_FLUENTBIT_EXPORTER_IMAGE` tag to **`{DIR_SIZE_IMAGE_TAG}`**
-
-2. Runs the `make generate` command to apply these changes to all auto-generated files, such as the Helm chart manifests.
 
 > [!WARNING]
 > The release workflow waits up to 120 minutes for you to merge the PR. If you do not merge it within this time, the workflow times out and fails.
@@ -206,14 +195,6 @@ In the telemetry-manager repository, go to **Actions**, select [Telemetry Module
    - **channel**: `regular`
    - **dry_run**: `false`
    - **auto_merge**: `true` or `false` for manual merge
-
-## Release Channels
-
-| Channel        | Purpose              | Update Frequency  | Trigger                            |
-|----------------|----------------------|-------------------|------------------------------------|
-| `experimental` | Testing new features | Every release     | Automatic (if module_release=true) |
-| `fast`         | Early adopters       | Every release     | Automatic (if module_release=true) |
-| `regular`      | Stable production    | Selected releases | Manual                             |
 
 ## Monitor Release Progress
 
