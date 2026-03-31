@@ -55,12 +55,12 @@ Before running the release workflow, complete the following tasks:
    - Close the milestone.
    - Create a new [GitHub milestone](https://github.com/kyma-project/telemetry-manager/milestones) for the next version.
 
-2. **Component Releases**: Release the following component dependencies:
-   - [directory-size-exporter](https://github.com/kyma-project/telemetry-manager/actions/workflows/build-directory-size-reporter-image.yml) - Produces image tags like `v20260302-12345678`
+2. **Release Component Dependencies**:  Release the following component dependencies to produce the required Docker images
+    - [directory-size-exporter](https://github.com/kyma-project/telemetry-manager/actions/workflows/build-directory-size-reporter-image.yml) - Produces image tags like `v20260302-12345678`
    - [telemetry-self-monitor](https://github.com/kyma-project/telemetry-manager/actions/workflows/build-self-monitor-image.yml) - Produces image tags like `v20260302-bbf32a3b`
    - [opentelemetry-collector-components](https://github.com/kyma-project/opentelemetry-collector-components) - Version format: **`{OCC_VERSION}`**-**`{TELEMETRY_VERSION}`**, such as `0.100.0-1.2.3`
 
-3. **Docker Image Availability**: Verify that the required Docker images exist:
+3. **Verify Docker Image Availability**: After the component releases complete, verify that all required Docker images are available in the registry
    ```bash
    # Check OCC image
    docker manifest inspect europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:**{OCC_VERSION}**
@@ -257,12 +257,12 @@ Rerun the release workflow with force mode to re-create the release.
 ## Post-Release Tasks
 
 After the release completes, perform the following tasks:
-  - To verify the release, check [Releases](https://github.com/kyma-project/telemetry-manager/releases). A successful release produces the following artifacts:
-    - Git tag: **`{VERSION}`**
-    - GitHub release with auto-generated changelog
-    - Docker image: `europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:`**`{VERSION}`**
-    - Helm chart: `telemetry-`**`{VERSION}`**`.tgz`, attached to GitHub release
-    - Module manifest PRs in `kyma/module-manifests` repository (only if `module_release=true`)
+- To verify the release, check [Releases](https://github.com/kyma-project/telemetry-manager/releases). A successful release produces the following artifacts:
+  - Git tag: **`{VERSION}`**
+  - GitHub release with auto-generated changelog
+  - Docker image: `europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:`**`{VERSION}`**
+  - Helm chart: `telemetry-`**`{VERSION}`**`.tgz`, attached to GitHub release
+  - Module manifest PRs in `kyma/module-manifests` repository (only if `module_release=true`)
   - Review the auto-generated release notes. If you cherry-picked commits for the release, some changes might appear duplicated. Edit the release notes to correct this.
 
 ## Related Workflows
