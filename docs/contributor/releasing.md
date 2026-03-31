@@ -14,6 +14,7 @@ This document describes the automated release process for Telemetry Manager usin
     * [6. Automatic Testing](#6-automatic-testing)
     * [7. Automatic Tag and Release Creation](#7-automatic-tag-and-release-creation)
     * [8. Automatic Module Releases](#8-automatic-module-releases)
+    * [9. Verify the Release](#9-verify-the-release)
   * [Release to the Regular Channel](#release-to-the-regular-channel)
   * [Monitor Release Progress](#monitor-release-progress)
     * [Workflow Status](#workflow-status)
@@ -23,7 +24,6 @@ This document describes the automated release process for Telemetry Manager usin
     * [Docker Image Not Found](#docker-image-not-found)
     * [GitHub Tag Already Exists](#github-tag-already-exists)
     * [Version Bump PR Times Out](#version-bump-pr-times-out)
-    * [9. Verify the Release](#9-verify-the-release)
   * [Related Workflows](#related-workflows)
 <!-- TOC -->
 
@@ -178,6 +178,17 @@ The workflow triggers module releases for the following channels:
 | `fast`         | Enabled    | `kyma/module-manifests` |
 | `experimental` | Enabled    | `kyma/module-manifests` |
 
+### 9. Verify the Release
+
+After the release completes, perform the following tasks:
+- To verify the release, check [Releases](https://github.com/kyma-project/telemetry-manager/releases). A successful release produces the following artifacts:
+    - Git tag: **`{VERSION}`**
+    - GitHub release with auto-generated changelog
+    - Docker image: `europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:`**`{VERSION}`**
+    - Helm chart: `telemetry-`**`{VERSION}`**`.tgz`, attached to GitHub release
+    - Module manifest PRs in `kyma/module-manifests` repository (only if `module_release=true`)
+    - Review the auto-generated release notes. If you cherry-picked commits for the release, some changes might appear duplicated. Edit the release notes to correct this.
+
 ## Release to the Regular Channel
 
 To release to the regular channel, manually trigger the module release workflow:
@@ -247,17 +258,6 @@ Rerun the release workflow with force mode to re-create the release.
 **Solution:**
 1. Review and merge the PR manually.
 2. In the telemetry-manager repository, go to **Actions** and rerun the release workflow.
-
-### 9. Verify the Release
-
-After the release completes, perform the following tasks:
-- To verify the release, check [Releases](https://github.com/kyma-project/telemetry-manager/releases). A successful release produces the following artifacts:
-  - Git tag: **`{VERSION}`**
-  - GitHub release with auto-generated changelog
-  - Docker image: `europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:`**`{VERSION}`**
-  - Helm chart: `telemetry-`**`{VERSION}`**`.tgz`, attached to GitHub release
-  - Module manifest PRs in `kyma/module-manifests` repository (only if `module_release=true`)
-  - Review the auto-generated release notes. If you cherry-picked commits for the release, some changes might appear duplicated. Edit the release notes to correct this.
 
 ## Related Workflows
 
