@@ -56,9 +56,9 @@ Before running the release workflow, complete the following tasks:
    - Create a new [GitHub milestone](https://github.com/kyma-project/telemetry-manager/milestones) for the next version.
 
 2. **Component Releases**: Release the following component dependencies:
-    - [directory-size-exporter](https://github.com/kyma-project/telemetry-manager/actions/workflows/build-directory-size-reporter-image.yml) - Produces image tags like `v20260302-12345678`
-    - [telemetry-self-monitor](https://github.com/kyma-project/telemetry-manager/actions/workflows/build-self-monitor-image.yml) - Produces image tags like `v20260302-bbf32a3b`
-    - [opentelemetry-collector-components](https://github.com/kyma-project/opentelemetry-collector-components) - Version format: **`{OCC_VERSION}`**-**`{TELEMETRY_VERSION}`**, such as `0.100.0-1.2.3`
+   - [directory-size-exporter](https://github.com/kyma-project/telemetry-manager/actions/workflows/build-directory-size-reporter-image.yml) - Produces image tags like `v20260302-12345678`
+   - [telemetry-self-monitor](https://github.com/kyma-project/telemetry-manager/actions/workflows/build-self-monitor-image.yml) - Produces image tags like `v20260302-bbf32a3b`
+   - [opentelemetry-collector-components](https://github.com/kyma-project/opentelemetry-collector-components) - Version format: **`{OCC_VERSION}`**-**`{TELEMETRY_VERSION}`**, such as `0.100.0-1.2.3`
 
 3. **Docker Image Availability**: Verify that the required Docker images exist:
    ```bash
@@ -87,12 +87,6 @@ In the telemetry-manager repository, go to **Actions**, select [Telemetry Releas
 | **force**                  | Recreate existing release (use with caution)                                     |                      |
 | **module_release**         | Trigger module release for experimental and fast channels after the main release |                      |
 
-**Input Options:**
-
-- **dry_run**: Set to `true` to test the release process without creating actual tags or releases. This validates the workflow and catches any issues before you perform the real release.
-- **force**: Recreates an existing release by deleting the existing tag and release before creating a new one. Use this option with caution, as it overwrites the existing release.
-- **module_release**: Controls whether the workflow automatically triggers module releases for the experimental and fast channels after it creates the main release. By default, the workflow creates module releases for these channels. Set to `false` to skip module releases or trigger them manually later.
-
 > [!CAUTION]
 > Force mode deletes the existing release and tag before recreating them. Use it only when necessary and communicate with the team beforehand.
 
@@ -116,7 +110,7 @@ The workflow automatically validates the following conditions:
 > [!NOTE]
 > The tag conflict check is skipped if force mode is enabled.
 
-If validation fails, the workflow stops and reports the error.
+If validation fails, the release workflow stops and reports the error.
 
 ### Step 3: Release Branch Preparation
 
@@ -150,7 +144,7 @@ To review the PR, use the checklist in the PR description to verify the followin
 
 ### Step 5: Automated Testing
 
-After you merge the PR, the workflow automatically runs the following tests:
+After you merge the PR, the release workflow automatically runs the following tests:
 
 1. **Unit Tests**: Full test suite
 2. **PR Integration Tests**: End-to-end integration tests
@@ -177,10 +171,10 @@ If `module_release` is set to `true` (the default), the workflow triggers module
 
 The workflow triggers module releases for the following channels:
 
-| Channel      | Workflow             | Auto-merge | Target Repository       |
-|--------------|----------------------|------------|-------------------------|
-| Fast         | `module-release.yml` | Enabled    | `kyma/module-manifests` |
-| Experimental | `module-release.yml` | Enabled    | `kyma/module-manifests` |
+| Channel      | Auto-merge | Target Repository       |
+|--------------|------------|-------------------------|
+| fast         | Enabled    | `kyma/module-manifests` |
+| experimental | Enabled    | `kyma/module-manifests` |
 
 ### Step 8: Regular Channel (Manual)
 
@@ -247,7 +241,6 @@ Check the pull requests for both experimental and fast channels in the [module-m
 **Symptom:** The workflow fails because the GitHub tag already exists.
 
 **Solution:**
-
 Rerun the workflow with force mode to re-create the release.
 
 > [!CAUTION]
