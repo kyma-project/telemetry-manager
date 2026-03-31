@@ -121,7 +121,29 @@ To determine the release type, the release workflow checks if a `release-X.Y` br
 
 ### 5. Review and Merge the Version Bump PR
 
-The release workflow creates a PR against the release branch that updates the following version numbers and image tags for the new release.
+When the release branch is ready, the workflow prepares the version updates and creates a pull request (PR) for your review. The workflow then pauses and waits for you to merge this PR before it can proceed.
+
+> [!WARNING]
+> The workflow fails if you do not merge the PR within 120 minutes.
+
+1. Review the PR. Use the checklist in the PR description to verify that version numbers are correct, generated files are up to date, and no unintended changes are present.
+2. Merge the PR into the release branch.
+
+The PR contains the following changes:
+
+- Updated variables in the `.env` file:
+
+  | Variable | New value |
+  |---|---|
+  | `ENV_HELM_RELEASE_VERSION` | `{VERSION}` |
+  | `ENV_MANAGER_IMAGE` tag | `{VERSION}` |
+  | `ENV_OTEL_COLLECTOR_IMAGE` tag | `{OCC_IMAGE_VERSION}` |
+  | `ENV_SELFMONITOR_IMAGE` tag | `{SELF_MONITOR_IMAGE_TAG}` |
+  | `ENV_FLUENTBIT_EXPORTER_IMAGE` tag | `{DIR_SIZE_IMAGE_TAG}` |
+
+- Generated files (such as Helm chart manifests) updated by `make generate`.
+
+After you merge the PR, the workflow resumes.
 
 
 1. Updates the following variables in the `.env` file:
