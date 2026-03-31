@@ -38,6 +38,10 @@ var testScenarios = []struct {
 	errMsgFluentdHTTP string
 }{
 	{
+		name:     "with scheme: valid endpoint with trailing slash and port",
+		endpoint: "https://foo.bar:4317/",
+	},
+	{
 		name:     "with scheme: valid endpoint with path and port",
 		endpoint: "https://foo.bar:4317/foo/bar",
 

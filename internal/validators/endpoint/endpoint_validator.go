@@ -187,6 +187,7 @@ func validateSchemeHTTP(scheme string) error {
 }
 
 func validateGRPCPath(path string) error {
+	// Allow empty path and bare trailing slash: url.Parse returns "/" for "host:port/" and "" for "host:port", both meaning no path.
 	if path != "" && path != "/" {
 		return &EndpointInvalidError{Err: ErrGRPCWithPath}
 	}
