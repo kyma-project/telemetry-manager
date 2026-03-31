@@ -2,6 +2,32 @@
 
 This document describes the automated release process for Telemetry Manager using GitHub Actions workflows.
 
+<!-- TOC -->
+  * [Overview](#overview)
+  * [Prerequisites](#prerequisites)
+  * [Release Telemetry Manager](#release-telemetry-manager)
+    * [Pre-Release Preparation](#pre-release-preparation)
+    * [Step 1: Start Release Workflow](#step-1-start-release-workflow)
+    * [Step 2: Workflow Validation Phase](#step-2-workflow-validation-phase)
+    * [Step 3: Release Branch Preparation](#step-3-release-branch-preparation)
+    * [Step 4: Version Bump PR](#step-4-version-bump-pr)
+    * [Step 5: Automated Testing](#step-5-automated-testing)
+    * [Step 6: Release Tag and GitHub Release](#step-6-release-tag-and-github-release)
+    * [Step 7: Module Releases (Conditional)](#step-7-module-releases-conditional)
+    * [Step 8: Regular Channel (Manual)](#step-8-regular-channel-manual)
+  * [Release Channels](#release-channels)
+  * [Monitor Release Progress](#monitor-release-progress)
+    * [Workflow Status](#workflow-status)
+    * [Module Release Status](#module-release-status)
+  * [Troubleshooting](#troubleshooting)
+    * [Milestone Validation Error](#milestone-validation-error)
+    * [Docker Image Not Found](#docker-image-not-found)
+    * [GitHub Tag Already Exists](#github-tag-already-exists)
+    * [Version Bump PR Times Out](#version-bump-pr-times-out)
+  * [Post-Release Tasks](#post-release-tasks)
+  * [Related Workflows](#related-workflows)
+<!-- TOC -->
+
 ## Overview
 
 The release process uses GitHub Actions workflows to automate the following tasks:
@@ -11,16 +37,25 @@ The release process uses GitHub Actions workflows to automate the following task
 - GitHub release creation
 - Module manifest updates for multiple channels
 
-![Release Workflow](./assets/auditable-release-final.drawio.svg)
-
 ## Prerequisites
+
+Ensure you have the following permissions:
+
+- Write access to the telemetry-manager repository
+- Access to merge PRs on the release branch
+
+## Release Telemetry Manager
+
+### Pre-Release Preparation
+
+Before running the release workflow, complete the following tasks:
 
 1. **Milestone Verification**: Close all issues in the [GitHub milestone](https://github.com/kyma-project/telemetry-manager/milestones) for the version and close the milestone. Create a new [GitHub milestone](https://github.com/kyma-project/telemetry-manager/milestones) for the next version.
 
 2. **Component Releases**: Release the following component dependencies:
-   - [directory-size-exporter](https://github.com/kyma-project/telemetry-manager/actions/workflows/build-directory-size-reporter-image.yml) - Produces image tags like `v20260302-12345678`
-   - [telemetry-self-monitor](https://github.com/kyma-project/telemetry-manager/actions/workflows/build-self-monitor-image.yml) - Produces image tags like `v20260302-bbf32a3b`
-   - [opentelemetry-collector-components](https://github.com/kyma-project/opentelemetry-collector-components) - Version format: **`{OCC_VERSION}`**-**`{TELEMETRY_VERSION}`**, such as `0.100.0-1.2.3`
+    - [directory-size-exporter](https://github.com/kyma-project/telemetry-manager/actions/workflows/build-directory-size-reporter-image.yml) - Produces image tags like `v20260302-12345678`
+    - [telemetry-self-monitor](https://github.com/kyma-project/telemetry-manager/actions/workflows/build-self-monitor-image.yml) - Produces image tags like `v20260302-bbf32a3b`
+    - [opentelemetry-collector-components](https://github.com/kyma-project/opentelemetry-collector-components) - Version format: **`{OCC_VERSION}`**-**`{TELEMETRY_VERSION}`**, such as `0.100.0-1.2.3`
 
 3. **Docker Image Availability**: Verify that the required Docker images exist:
    ```bash
@@ -34,30 +69,26 @@ The release process uses GitHub Actions workflows to automate the following task
    docker manifest inspect europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:**{SELF_MONITOR_TAG}**
    ```
 
-4. **Access Requirements**: Ensure you have the following permissions:
-   - Write access to the telemetry-manager repository
-   - Access to merge PRs on the release branch
-
-## Release Steps
-
 ### Step 1: Start Release Workflow
 
 In the telemetry-manager repository, go to **Actions**, select [Telemetry Release](https://github.com/kyma-project/telemetry-manager/actions/workflows/release.yml), and run the workflow with the following inputs:
 
 
-| Input                      | Description                                                             | Example              |
-|----------------------------|-------------------------------------------------------------------------|----------------------|
-| **version**                | Release version in X.Y.Z format                                         | `1.2.3`              |
-| **occ_image_version**      | OCC image version in X.Y.Z-A.B.C format                                 | `0.100.0-1.2.3`      |
-| **self_monitor_image_tag** | Self-monitor image tag in vYYYYMMDD-HASH format                         | `v20260302-bbf32a3b` |
-| **dir_size_image_tag**     | Directory size exporter image tag in vYYYYMMDD-HASH format              | `v20260302-12345678` |
-| **dry_run**                | Test the release process without creating tags/releases                 |                      |
-| **force**                  | Recreate existing release (use with caution)                            |                      |
+| Input                      | Description                                                                      | Example              |
+|----------------------------|----------------------------------------------------------------------------------|----------------------|
+| **version**                | Release version in X.Y.Z format                                                  | `1.2.3`              |
+| **occ_image_version**      | OCC image version in X.Y.Z-A.B.C format                                          | `0.100.0-1.2.3`      |
+| **self_monitor_image_tag** | Self-monitor image tag in vYYYYMMDD-HASH format                                  | `v20260302-bbf32a3b` |
+| **dir_size_image_tag**     | Directory size exporter image tag in vYYYYMMDD-HASH format                       | `v20260302-12345678` |
+| **dry_run**                | Test the release process without creating tags/releases                          |                      |
+| **force**                  | Recreate existing release (use with caution)                                     |                      |
 | **module_release**         | Trigger module release for experimental and fast channels after the main release |                      |
 
-To test the release process without creating actual tags or releases, set `dry_run` to `true`. This setting validates the workflow and catches any issues before you perform the real release.
-The `force` option recreates an existing release by deleting the existing tag and release before creating a new one. Use this option with caution. It overwrites the existing release.
-The `module_release` option controls whether the workflow automatically triggers module releases for the experimental and fast channels after the workflow creates the main release. By default, the workflow creates module releases for the experimental and fast channels. Set this option to `false` to skip module releases or to trigger them manually later.
+**Input Options:**
+
+- **dry_run**: Set to `true` to test the release process without creating actual tags or releases. This validates the workflow and catches any issues before you perform the real release.
+- **force**: Recreates an existing release by deleting the existing tag and release before creating a new one. Use this option with caution, as it overwrites the existing release.
+- **module_release**: Controls whether the workflow automatically triggers module releases for the experimental and fast channels after it creates the main release. By default, the workflow creates module releases for these channels. Set to `false` to skip module releases or trigger them manually later.
 
 > [!CAUTION]
 > Force mode deletes the existing release and tag before recreating them. Use it only when necessary and communicate with the team beforehand.
@@ -71,13 +102,16 @@ Consider using force mode for the following purposes:
 
 The workflow automatically validates the following conditions:
 
-- The version format follows semantic versioning (`X.Y.Z`).
-- The OCC version format matches the expected pattern (`X.Y.Z-A.B.C`).
-- The image tag format matches the expected pattern (`vYYYYMMDD-HASH`).
-- All required Docker images exist in the registry.
-- The milestone exists, is closed, and has no open issues.
-- No existing release or tag conflicts with the target version. This check is skipped if force mode is enabled.
-- The release branch exists for a patch release, or a new branch is needed for a minor/major release.
+- The version format follows semantic versioning (`X.Y.Z`)
+- The OCC version format matches the expected pattern (`X.Y.Z-A.B.C`)
+- The image tag format matches the expected pattern (`vYYYYMMDD-HASH`)
+- All required Docker images exist in the registry
+- The milestone exists, is closed, and has no open issues
+- No existing release or tag conflicts with the target version
+- The release branch exists for a patch release, or a new branch is needed for a minor/major release
+
+> [!NOTE]
+> The tag conflict check is skipped if force mode is enabled.
 
 If validation fails, the workflow stops and reports the error.
 
@@ -132,7 +166,7 @@ After all tests pass, the workflow creates the release by performing the followi
 
 ### Step 7: Module Releases (Conditional)
 
-If `module_release` is set to `true` (the default), the workflow triggers module releases after it created the GitHub release.
+If `module_release` is set to `true` (the default), the workflow triggers module releases after it creates the GitHub release.
 
 **Fast Channel**:
 - Triggers `module-release.yml` workflow
@@ -145,9 +179,6 @@ If `module_release` is set to `true` (the default), the workflow triggers module
 - Channel: `experimental`
 - Auto-merge: enabled
 - Creates PR in `kyma/module-manifests` repository
-
-> [!NOTE]
-> To manually trigger module releases later or skip them entirely, set `module_release` to `false`.
 
 ### Step 8: Regular Channel (Manual)
 
@@ -190,7 +221,7 @@ Check the pull requests for both experimental and fast channels in the [module-m
 
 ## Troubleshooting
 
-### Workflow Validation Failures
+### Milestone Validation Error
 
 **Symptom:** The workflow fails with a milestone validation error.
 
@@ -199,28 +230,28 @@ Check the pull requests for both experimental and fast channels in the [module-m
 2. With all issues closed, close the milestone for the release version.
 3. Rerun the workflow.
 
-**Symptom**: The workflow fails because a Docker image was not found.
+### Docker Image Not Found
 
-**Solution**:
+**Symptom:** The workflow fails because a Docker image was not found.
+
+**Solution:**
 1. Check that the image exists in the registry.
 2. Check that the image tag format matches the expected pattern.
 3. If the image is missing, build the missing image by running the corresponding workflow, and wait for the workflow to complete.
 4. Rerun the release workflow.
 
-**Symptom**: The workflow fails because the tag already exists.
+### GitHub Tag Already Exists
 
-**Solution**:
-1. To check the existing tags, run: `git tag -l` **`{VERSION}`**
-2. If the tag is a leftover from a failed release attempt, remove the existing tag manually.
-3. Rerun the release workflow.
+**Symptom:** The workflow fails because the GitHub tag already exists.
 
-Alternatively, rerun the workflow with force mode to re-create the release. Caution: This overwrites the existing release if it exists.
+**Solution:**
+Rerun the workflow with force mode to re-create the release. Caution: This overwrites the existing release if it exists.
 
 ### Version Bump PR Times Out
 
-**Cause**:
-The workflow waits for a maximum of 120 minutes for you to merge the PR. If you do not merge the PR within 120 minutes, the workflow fails.
-**Solution**:
+**Symptom:** The workflow fails because the PR was not merged within 120 minutes.
+
+**Solution:**
 1. Review and merge the PR manually.
 2. In the telemetry-manager repository, go to **Actions** and rerun the workflow.
 
@@ -232,12 +263,10 @@ After the release completes, perform the following tasks:
     - GitHub release with auto-generated changelog
     - Docker image: `europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:`**`{VERSION}`**
     - Helm chart: `telemetry-`**`{VERSION}`**`.tgz`, attached to GitHub release
-    - Module manifest PRs in the `kyma/module-manifests` repository for experimental and fast channels if `module_release=true`
+    - Module manifest PRs in `kyma/module-manifests` repository (only if `module_release=true`)
   - Review the auto-generated release notes. If you cherry-picked commits for the release, some changes might appear duplicated. Edit the release notes to correct this.
 
 ## Related Workflows
 
 - [Module Release Workflow](https://github.com/kyma-project/telemetry-manager/actions/workflows/module-release.yml)
-  - ![Module Release Workflow](./assets/auditable-release-module-release.drawio.svg)
 - [Management Plane Chart Release Workflow](https://github.com/kyma-project/telemetry-manager/actions/workflows/mpc-release.yml) 
-  - ![Management Plane Chart Release Workflow](./assets/auditable-release-mpc-release.drawio.svg)

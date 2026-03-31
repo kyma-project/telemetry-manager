@@ -1,4 +1,4 @@
-name: Telemetry Release
+name: Telemetry Manager Release
 
 on:
   workflow_dispatch:
