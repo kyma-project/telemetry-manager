@@ -12,9 +12,13 @@ name: CodeQL Advanced Scanning
 #
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - "main"
+      - "release-*"
   pull_request:
-    branches: [ "main" ]
+    branches:
+      - "main"
+      - "release-*"
   schedule:
     - cron: '35 7 * * 1'
 
