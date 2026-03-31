@@ -46,7 +46,7 @@ Ensure you have the following permissions:
 
 ## Release Telemetry Manager
 
-### Pre-Release Preparation
+### 1. Prepare the Release
 
 Before running the release workflow, complete the following tasks:
 
@@ -72,7 +72,7 @@ Before running the release workflow, complete the following tasks:
    docker manifest inspect europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:**{SELF_MONITOR_TAG}**
    ```
 
-### Step 1: Start Release Workflow
+### 2. Start the Release Workflow
 
 In the telemetry-manager repository, go to **Actions**, select [Telemetry Release](https://github.com/kyma-project/telemetry-manager/actions/workflows/release.yml), and run the release workflow with the following inputs:
 
@@ -95,7 +95,7 @@ Consider using force mode for the following purposes:
 - Updating release assets
 - Correcting version metadata
 
-### Step 2: Validate Workflow Inputs
+### 3. Automatic Validation
 
 The release workflow automatically validates the following conditions:
 
@@ -112,18 +112,17 @@ The release workflow automatically validates the following conditions:
 
 If validation fails, the release workflow stops and reports the error.
 
-### Step 3: Prepare Release Branch
+### 4. Automatic Branch Creation
 
 To determine the release type, the release workflow checks if a `release-X.Y` branch already exists and handles branch preparation:
 
 - For a minor or major release: The `release-X.Y` branch does not exist, so the release workflow creates it from the `main` branch.
 - For a patch release: The `release-X.Y` branch already exists, so the release workflow uses the existing branch.
 
-### Step 4: Create Version Bump PR
+### 5. Review and Merge the Version Bump PR
 
-The release workflow creates a pull request (PR) against the release branch that updates all version numbers and image tags for the new release.
+The release workflow creates a PR against the release branch that updates the following version numbers and image tags for the new release.
 
-The release workflow updates the release branch through the following steps:
 
 1. Updates the following variables in the `.env` file:
    - `ENV_HELM_RELEASE_VERSION=`**`{VERSION}`**
@@ -142,7 +141,7 @@ To review the PR, use the checklist in the PR description to verify the followin
 - Generated files are up to date
 - No unintended changes
 
-### Step 5: Run Automated Tests
+### 6. Automatic Testing
 
 After you merge the PR, the release workflow automatically runs the following tests:
 
@@ -153,7 +152,7 @@ After you merge the PR, the release workflow automatically runs the following te
 
 All tests must pass before the release workflow proceeds to release creation.
 
-### Step 6: Create Release Tag and GitHub Release
+### 7. Automatic Tag and Release Creation
 
 After all tests pass, the release workflow creates the release by performing the following actions:
 
@@ -165,7 +164,7 @@ After all tests pass, the release workflow creates the release by performing the
 4. Uploads Helm chart to the GitHub release
 5. Updates `gh-pages` branch with Helm repository index
 
-### Step 7: Trigger Module Releases (Conditional)
+### 8. Automatic Module Releases
 
 If `module_release` is set to `true` (the default), the workflow triggers module releases after it creates the GitHub release.
 
@@ -176,7 +175,7 @@ The workflow triggers module releases for the following channels:
 | `fast`         | Enabled    | `kyma/module-manifests` |
 | `experimental` | Enabled    | `kyma/module-manifests` |
 
-### Step 8: Release to Regular Channel (Manual)
+## Release to the Regular Channel
 
 To release to the regular channel, manually trigger the module release workflow:
 
@@ -254,7 +253,7 @@ Rerun the release workflow with force mode to re-create the release.
 1. Review and merge the PR manually.
 2. In the telemetry-manager repository, go to **Actions** and rerun the release workflow.
 
-## Post-Release Tasks
+### 9. Verify the Release
 
 After the release completes, perform the following tasks:
 - To verify the release, check [Releases](https://github.com/kyma-project/telemetry-manager/releases). A successful release produces the following artifacts:
