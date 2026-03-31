@@ -2,21 +2,21 @@
 
 The Telemetry module follows the principle of least privilege for network traffic. Telemetry Manager creates [NetworkPolicies](https://kubernetes.io/docs/concepts/services-networking/network-policies/) for each component it manages, restricting ingress and egress traffic to only the required connections.
 
-![Network Policies](./../assets/networkpolicies.drawio.svg)
+![Network Policies](../assets/networkpolicies.drawio.svg)
 
 ## Overview
 
-Each Telemetry component has a dedicated set of NetworkPolicies that control the allowed traffic. The following list describes the policies in the diagram:
+Each Telemetry component has a dedicated set of NetworkPolicies that control the allowed traffic. The following items describe the policies in the diagram:
 
-1. All Telemetry module Pods can send DNS queries on port 53 to any IP (including DNS services) and on port 8053 to kube-dns.
-1. All Telemetry module Pods can communicate with any IP on port 443 (including Kubernetes API Server).
-1. Any Pod in the cluster can send OTLP data to the log, metric, and trace gateways on ports 4317 (gRPC) and 4318 (HTTP).
-1. Pods labeled with `networking.kyma-project.io/metrics-scraping: allowed` can scrape metrics from all Telemetry components including the Telemetry Manager on their respective metrics ports.
-1. The self monitor scrapes metrics from the gateways, agents, and Fluent Bit on their metrics ports (8888 for OTel Collectors, 2020 and 2021 for Fluent Bit).
-1. Telemetry Manager queries the self monitor on port 9090.
-1. All gateways and agents have unrestricted egress to forward telemetry data to external or in-cluster backends.
-1. The self monitor sends alerts to Telemetry Manager on port 9443.
-1. The Kubernetes API server and any Pod can reach Telemetry Manager on port 9443 for admission and conversion webhooks.
+- All Telemetry module Pods can send DNS queries on port 53 to any IP, including DNS services, and on port 8053 to kube-dns.
+- All Telemetry module Pods can communicate with any IP on port 443, including the Kubernetes API server.
+- Any Pod in the cluster can send OTLP data to the log, metric, and trace gateways on ports 4317 for gRPC and 4318 for HTTP.
+- Pods labeled with `networking.kyma-project.io/metrics-scraping: allowed` can scrape metrics from all Telemetry components, including Telemetry Manager, on their respective metrics ports.
+- The self monitor scrapes metrics from the gateways, agents, and Fluent Bit on their metrics ports: 8888 for OTel Collectors, and 2020 and 2021 for Fluent Bit.
+- Telemetry Manager queries the self monitor on port 9090.
+- All gateways and agents have unrestricted egress to forward telemetry data to external or in-cluster backends.
+- The self monitor sends alerts to Telemetry Manager on port 9443.
+- The Kubernetes API server and any Pod can reach Telemetry Manager on port 9443 for admission and conversion webhooks.
 
 ## Telemetry Manager Policies
 
@@ -32,7 +32,7 @@ Telemetry Manager has the following NetworkPolicies, deployed with the Helm char
 
 ## Gateway Policies
 
-Each gateway (log, metric, trace) has two NetworkPolicies that Telemetry Manager creates dynamically:
+The log, metric, and trace gateways each have two NetworkPolicies that Telemetry Manager creates dynamically:
 
 | Policy                          | Direction | Source / Destination | Port |
 |---------------------------------|---|---|---|
@@ -64,7 +64,7 @@ Fluent Bit has two NetworkPolicies:
 
 ## Self Monitor Policies
 
-The self monitor (Prometheus) has two NetworkPolicies:
+The self monitor, based on Prometheus, has two NetworkPolicies:
 
 | Policy | Direction | Source / Destination                                             | Port |
 |---|---|------------------------------------------------------------------|---|
@@ -77,4 +77,4 @@ The self monitor (Prometheus) has two NetworkPolicies:
 
 ## Istio Sidecar Metrics
 
-When Istio is installed, an additional port (15090) is opened in the metrics ingress policies for the gateways, agents, and Fluent Bit. This port exposes Istio Envoy sidecar telemetry and is accessible to Pods with the `networking.kyma-project.io/metrics-scraping: allowed` label.
+When Istio is installed, the metrics ingress policies for the gateways, agents, and Fluent Bit include an additional port 15090. This port exposes Istio Envoy sidecar telemetry to Pods with the `networking.kyma-project.io/metrics-scraping: allowed` label.
