@@ -1,5 +1,7 @@
 name: Telemetry Module Release
 
+run-name: "Module Release version ${{ inputs.version }} to ${{ inputs.channel }} channel, dry-run: ${{ inputs.dry_run }}, auto-merge: ${{ inputs.auto_merge }}"
+
 permissions:
   contents: read
 
