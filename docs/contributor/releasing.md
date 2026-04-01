@@ -62,7 +62,7 @@ Before running the release workflow, complete the following tasks:
 3. **Verify Docker Image Availability**: After the component releases complete, verify that all required Docker images are available in the registry:
    ```bash
    # Check OCC image
-   docker manifest inspect europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:**{OCC_VERSION}**
+   docker manifest inspect europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:**{OCC_VERSION}-{TELEMETRY_VERSION}**
 
    # Check directory-size-exporter image
    docker manifest inspect europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:**{DIR_SIZE_TAG}**
