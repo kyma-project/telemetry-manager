@@ -54,12 +54,12 @@ Before running the release workflow, complete the following tasks:
    - Close the milestone.
    - Create a new [GitHub milestone](https://github.com/kyma-project/telemetry-manager/milestones) for the next version.
 
-2. **Release Component Dependencies**:  Release the following component dependencies to produce the required Docker images
+2. **Release Component Dependencies**: Release the following component dependencies to produce the required Docker images
    - [Build Directory Size Exporter Image](https://github.com/kyma-project/telemetry-manager/actions/workflows/build-directory-size-reporter-image.yml) - Produces image tags like `v20260302-12345678`
    - [Build Self Monitor Image](https://github.com/kyma-project/telemetry-manager/actions/workflows/build-self-monitor-image.yml) - Produces image tags like `v20260302-bbf32a3b`
    - [OpenTelemetry Collector Components Create Release](https://github.com/kyma-project/opentelemetry-collector-components/actions/workflows/create-release.yaml) - Version format: **`{OCC_VERSION}`**-**`{TELEMETRY_VERSION}`**, such as `0.100.0-1.2.3`
 
-3. **Verify Docker Image Availability**: After the component releases complete, verify that all required Docker images are available in the registry
+3. **Verify Docker Image Availability**: After the component releases complete, verify that all required Docker images are available in the registry:
    ```bash
    # Check OCC image
    docker manifest inspect europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:**{OCC_VERSION}**
@@ -187,7 +187,7 @@ After the release completes, perform the following tasks:
     - Docker image: `europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:`**`{VERSION}`**
     - Helm chart: `telemetry-`**`{VERSION}`**`.tgz`, attached to GitHub release
     - Module manifest PRs in `kyma/module-manifests` repository (only if `module_release=true`)
-    - Review the auto-generated release notes. If you cherry-picked commits for the release, some changes might appear duplicated. Edit the release notes to correct this.
+  - Review the auto-generated release notes. If you cherry-picked commits for the release, some changes might appear duplicated. Edit the release notes to correct this.
 
 ## Release to the Regular Channel
 
@@ -246,7 +246,7 @@ Check the pull requests for both experimental and fast channels in the [module-m
 **Symptom:** The release workflow fails because the GitHub tag already exists.
 
 **Solution:**
-Rerun the release workflow with force mode to re-create the release.
+Rerun the release workflow with force mode to recreate the release.
 
 > [!CAUTION]
 > This overwrites the existing release if it exists.
