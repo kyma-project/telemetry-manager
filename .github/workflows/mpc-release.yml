@@ -1,5 +1,7 @@
 name: Management Plane Chart Release
 
+run-name: "MPC Release ${{ inputs.target_chart }} version ${{ inputs.version }}, dry-run: ${{ inputs.dry_run }}, auto-merge: ${{ inputs.auto_merge }}"
+
 permissions:
   contents: read
 
