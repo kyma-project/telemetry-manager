@@ -37,6 +37,7 @@ var (
 	ErrUnsupportedScheme  = errors.New("missing or unsupported protocol scheme")
 	ErrGRPCOAuth2NoTLS    = errors.New("OAuth2 requires TLS when using gRPC protocol")
 	ErrHTTPWithTLS        = errors.New("HTTP scheme with TLS not allowed")
+	ErrGRPCWithPath       = errors.New("gRPC endpoints cannot contain paths")
 )
 
 type EndpointInvalidError struct {
@@ -85,6 +86,13 @@ func (v *Validator) Validate(ctx context.Context, params EndpointValidationParam
 	// scheme validation
 	if params.Protocol == OTLPProtocolHTTP {
 		if err := validateSchemeHTTP(u.Scheme); err != nil {
+			return err
+		}
+	}
+
+	// path validation for gRPC
+	if params.Protocol == OTLPProtocolGRPC {
+		if err := validateGRPCPath(u.Path); err != nil {
 			return err
 		}
 	}
@@ -173,6 +181,15 @@ func validatePort(hostport string, allowMissing bool) error {
 func validateSchemeHTTP(scheme string) error {
 	if scheme != "http" && scheme != "https" {
 		return &EndpointInvalidError{Err: ErrUnsupportedScheme}
+	}
+
+	return nil
+}
+
+func validateGRPCPath(path string) error {
+	// OTel Collector's gRPC exporter does not accept any path, including trailing slashes.
+	if path != "" {
+		return &EndpointInvalidError{Err: ErrGRPCWithPath}
 	}
 
 	return nil

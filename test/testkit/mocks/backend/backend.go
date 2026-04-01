@@ -99,6 +99,11 @@ func (b *Backend) EndpointHTTP() string {
 	return fmt.Sprintf("http://%s", addr)
 }
 
+func (b *Backend) EndpointOTLPHTTP() string {
+	addr := net.JoinHostPort(b.Host(), strconv.Itoa(int(otlpHTTPPort)))
+	return fmt.Sprintf("http://%s", addr)
+}
+
 func (b *Backend) EndpointHTTPS() string {
 	addr := net.JoinHostPort(b.Host(), strconv.Itoa(int(b.Port())))
 	return fmt.Sprintf("https://%s", addr)
