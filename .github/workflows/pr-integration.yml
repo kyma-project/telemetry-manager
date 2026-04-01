@@ -11,7 +11,6 @@ on:
   push:
     branches:
       - "main"
-      - "release-*"
     paths:
       - "**/go.mod"
       - "**/go.sum"
