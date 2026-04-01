@@ -165,11 +165,6 @@ func (ad *ApplierDeleter) makeRole() *rbacv1.Role {
 				Resources: []string{"services", "endpoints", "pods"},
 				Verbs:     []string{"get", "list", "watch"},
 			},
-			{
-				APIGroups: []string{"discovery.k8s.io"},
-				Resources: []string{"endpointslices"},
-				Verbs:     []string{"get", "list", "watch"},
-			},
 		},
 	}
 

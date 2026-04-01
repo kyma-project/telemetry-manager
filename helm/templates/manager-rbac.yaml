@@ -284,14 +284,6 @@ rules:
       - get
       - list
       - watch
-  - apiGroups:
-      - discovery.k8s.io
-    resources:
-      - endpointslices
-    verbs:
-      - get
-      - list
-      - watch
 
   ################################
   # Policy rules for trace-gateway
