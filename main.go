@@ -265,11 +265,11 @@ func setupControllersAndWebhooks(mgr manager.Manager, globals config.Global, env
 		return fmt.Errorf("failed to add secret watch stop runnable: %w", err)
 	}
 
-	if err := setupTracePipelineController(globals, envCfg, mgr, tracePipelineReconcileChan, secretWatchClient, nodeSizeTracker); err != nil {
+	if err := setupTracePipelineController(globals, envCfg, mgr, tracePipelineReconcileChan, secretWatchClient); err != nil {
 		return fmt.Errorf("failed to enable trace pipeline controller: %w", err)
 	}
 
-	if err := setupOTLPGatewayController(globals, envCfg, mgr, otlpGatewayReconcileChan); err != nil {
+	if err := setupOTLPGatewayController(globals, envCfg, mgr, otlpGatewayReconcileChan, nodeSizeTracker); err != nil {
 		return fmt.Errorf("failed to enable OTLP gateway controller: %w", err)
 	}
 
@@ -539,7 +539,7 @@ func setupLogPipelineController(globals config.Global, cfg envConfig, mgr manage
 	return nil
 }
 
-func setupTracePipelineController(globals config.Global, envCfg envConfig, mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent, secretWatchClient *secretwatch.Client, nodeSizeTracker *nodesize.Tracker) error {
+func setupTracePipelineController(globals config.Global, envCfg envConfig, mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent, secretWatchClient *secretwatch.Client) error {
 	setupLog.Info("Setting up tracepipeline controller")
 
 	tracePipelineController, err := telemetrycontrollers.NewTracePipelineController(
@@ -551,7 +551,6 @@ func setupTracePipelineController(globals config.Global, envCfg envConfig, mgr m
 		mgr.GetClient(),
 		reconcileTriggerChan,
 		secretWatchClient,
-		nodeSizeTracker,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create tracepipeline controller: %w", err)
@@ -564,7 +563,7 @@ func setupTracePipelineController(globals config.Global, envCfg envConfig, mgr m
 	return nil
 }
 
-func setupOTLPGatewayController(globals config.Global, envCfg envConfig, mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent) error {
+func setupOTLPGatewayController(globals config.Global, envCfg envConfig, mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent, nodeSizeTracker *nodesize.Tracker) error {
 	setupLog.Info("Setting up OTLP gateway controller")
 
 	otlpGatewayController, err := telemetrycontrollers.NewOTLPGatewayController(
@@ -576,6 +575,7 @@ func setupOTLPGatewayController(globals config.Global, envCfg envConfig, mgr man
 		},
 		mgr.GetClient(),
 		reconcileTriggerChan,
+		nodeSizeTracker,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create OTLP gateway controller: %w", err)

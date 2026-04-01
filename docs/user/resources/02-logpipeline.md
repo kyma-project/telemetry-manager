@@ -60,7 +60,7 @@ spec:
 status:
   conditions:
   - lastTransitionTime: "2025-06-13T08:58:38Z"
-    message: Log gateway Deployment is ready
+    message: OTLP Gateway is ready
     observedGeneration: 4
     reason: GatewayReady
     status: "True"

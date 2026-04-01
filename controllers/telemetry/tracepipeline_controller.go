@@ -36,7 +36,6 @@ import (
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/config"
-	"github.com/kyma-project/telemetry-manager/internal/nodesize"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
@@ -59,7 +58,6 @@ type TracePipelineController struct {
 	reconciler           *tracepipeline.Reconciler
 	secretWatchClient    *secretwatch.Client
 	pipelineLockName     types.NamespacedName
-	nodeSizeTracker      *nodesize.Tracker
 }
 
 type TracePipelineControllerConfig struct {
@@ -69,7 +67,7 @@ type TracePipelineControllerConfig struct {
 	OTelCollectorImage string
 }
 
-func NewTracePipelineController(config TracePipelineControllerConfig, client client.Client, reconcileTriggerChan <-chan event.GenericEvent, secretWatchClient *secretwatch.Client, nodeSizeTracker *nodesize.Tracker) (*TracePipelineController, error) {
+func NewTracePipelineController(config TracePipelineControllerConfig, client client.Client, reconcileTriggerChan <-chan event.GenericEvent, secretWatchClient *secretwatch.Client) (*TracePipelineController, error) {
 	pipelineCount := resourcelock.MaxPipelineCount
 
 	if config.UnlimitedPipelines() {
@@ -141,7 +139,6 @@ func NewTracePipelineController(config TracePipelineControllerConfig, client cli
 			Name:      names.TracePipelineLock,
 			Namespace: config.TargetNamespace(),
 		},
-		nodeSizeTracker: nodeSizeTracker,
 	}, nil
 }
 
@@ -159,7 +156,7 @@ func (r *TracePipelineController) SetupWithManager(mgr ctrl.Manager) error {
 	// Watch OTLP Gateway DaemonSet to update GatewayHealthy condition when gateway status changes
 	b.Watches(
 		&appsv1.DaemonSet{}, // OTLP Gateway DaemonSet
-		handler.EnqueueRequestsFromMapFunc(r.mapOTLPGatewayToAllPipelines),
+		handler.EnqueueRequestsFromMapFunc(r.mapOTLPGatewayChanges),
 		ctrlbuilder.WithPredicates(ctrlpredicate.NewPredicateFuncs(func(object client.Object) bool {
 			return object.GetName() == names.OTLPGateway &&
 				object.GetNamespace() == r.pipelineLockName.Namespace
@@ -170,7 +167,7 @@ func (r *TracePipelineController) SetupWithManager(mgr ctrl.Manager) error {
 	// This ensures that when a pipeline is deleted and frees up a slot, waiting pipelines get reconciled
 	b.Watches(
 		&corev1.ConfigMap{}, // Pipeline lock ConfigMap
-		handler.EnqueueRequestsFromMapFunc(r.mapLockConfigMapToAllPipelines),
+		handler.EnqueueRequestsFromMapFunc(r.mapLockConfigMapChanges),
 		ctrlbuilder.WithPredicates(ctrlpredicate.NewPredicateFuncs(func(object client.Object) bool {
 			return object.GetName() == r.pipelineLockName.Name && object.GetNamespace() == r.pipelineLockName.Namespace
 		})),
@@ -183,31 +180,28 @@ func (r *TracePipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		ctrlbuilder.WithPredicates(predicateutils.UpdateOrDelete()),
 	)
 
-	// Watch for changes in Nodes to track smallest node memory and trigger reconciliation of all pipelines if it changes
-	b.Watches(
-		&corev1.Node{},
-		handler.EnqueueRequestsFromMapFunc(r.mapNodeChanges),
-	)
-
 	return b.Complete(r)
 }
 
-// mapLockConfigMapToAllPipelines enqueues reconciliation requests for all TracePipelines
-// when the lock ConfigMap changes. This ensures that pipelines that were previously rejected
-// due to max pipeline limit get a chance to acquire the lock when slots become available.
-func (r *TracePipelineController) mapLockConfigMapToAllPipelines(ctx context.Context, object client.Object) []reconcile.Request {
+// mapLockConfigMapChanges enqueues reconciliation requests for all TracePipelines when the pipeline lock
+// ConfigMap changes. This ensures that pipelines previously rejected due to the max pipeline limit get
+// reconciled when slots become available.
+func (r *TracePipelineController) mapLockConfigMapChanges(ctx context.Context, object client.Object) []reconcile.Request {
 	logf.FromContext(ctx).V(1).Info("Pipeline lock ConfigMap changed, triggering reconciliation of all TracePipelines")
 	return r.enqueueAllPipelines(ctx)
 }
 
-// mapOTLPGatewayToAllPipelines enqueues reconciliation requests for all TracePipelines
-// when the OTLP Gateway DaemonSet changes. This ensures that GatewayHealthy status conditions
-// are updated to reflect the current gateway state.
-func (r *TracePipelineController) mapOTLPGatewayToAllPipelines(ctx context.Context, object client.Object) []reconcile.Request {
+// mapOTLPGatewayChanges enqueues reconciliation requests for all TracePipelines when the OTLP Gateway
+// DaemonSet changes. This ensures that the GatewayHealthy status condition is updated to reflect the
+// current gateway state.
+func (r *TracePipelineController) mapOTLPGatewayChanges(ctx context.Context, object client.Object) []reconcile.Request {
 	logf.FromContext(ctx).V(1).Info("OTLP Gateway DaemonSet changed, triggering reconciliation of all TracePipelines")
 	return r.enqueueAllPipelines(ctx)
 }
 
+// mapPodChanges enqueues reconciliation requests for all TracePipelines when a relevant Pod
+// (OTLP Gateway) is updated or deleted. This ensures that the TelemetryFlowHealthy status condition
+// is updated based on the current pod state.
 func (r *TracePipelineController) mapPodChanges(ctx context.Context, object client.Object) []reconcile.Request {
 	pod, ok := object.(*corev1.Pod)
 	if !ok {
@@ -216,20 +210,6 @@ func (r *TracePipelineController) mapPodChanges(ctx context.Context, object clie
 	}
 
 	if !isPodFrom(pod, names.OTLPGateway) {
-		return nil
-	}
-
-	return r.enqueueAllPipelines(ctx)
-}
-
-func (r *TracePipelineController) mapNodeChanges(ctx context.Context, object client.Object) []reconcile.Request {
-	changed, err := r.nodeSizeTracker.UpdateSmallestMemory(ctx)
-	if err != nil {
-		logf.FromContext(ctx).Error(err, "Unable to update smallest node memory")
-		return nil
-	}
-
-	if !changed {
 		return nil
 	}
 

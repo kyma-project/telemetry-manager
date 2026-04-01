@@ -226,11 +226,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 		return nil
 	}
 
-	telemetryOptions := telemetryutils.Options{
-		Client:                    r.Client,
-		DefaultTelemetryNamespace: r.globals.DefaultTelemetryNamespace(),
-	}
-	clusterName := telemetryutils.GetClusterNameFromTelemetry(ctx, telemetryOptions)
+	clusterName := telemetryutils.GetClusterNameFromTelemetry(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
 
 	config, err := r.agentConfigBuilder.Build(ctx, reconcilablePipelines, clusterName)
 	if err != nil {
