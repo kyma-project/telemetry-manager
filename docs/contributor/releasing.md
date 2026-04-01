@@ -182,12 +182,12 @@ The workflow triggers module releases for the following channels:
 
 After the release completes, perform the following tasks:
 - To verify the release, check [Releases](https://github.com/kyma-project/telemetry-manager/releases). A successful release produces the following artifacts:
-    - Git tag: **`{VERSION}`**
-    - GitHub release with auto-generated changelog
-    - Docker image: `europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:`**`{VERSION}`**
-    - Helm chart: `telemetry-`**`{VERSION}`**`.tgz`, attached to GitHub release
-    - Module manifest PRs in `kyma/module-manifests` repository (only if `module_release=true`)
-  - Review the auto-generated release notes. If you cherry-picked commits for the release, some changes might appear duplicated. Edit the release notes to correct this.
+  - Git tag: **`{VERSION}`**
+  - GitHub release with auto-generated changelog
+  - Docker image: `europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:`**`{VERSION}`**
+  - Helm chart: `telemetry-`**`{VERSION}`**`.tgz`, attached to GitHub release
+  - Module manifest PRs in `kyma/module-manifests` repository (only if `module_release=true`)
+- Review the auto-generated release notes. If you cherry-picked commits for the release, some changes might appear duplicated. Edit the release notes to correct this.
 
 ## Release to the Regular Channel
 
