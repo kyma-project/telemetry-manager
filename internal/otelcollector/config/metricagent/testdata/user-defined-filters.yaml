@@ -287,7 +287,7 @@ processors:
                 - set(resource.attributes["kyma.input.name"], "runtime")
 exporters:
     otlp_grpc/test1:
-        endpoint: ${OTLP_ENDPOINT_METRIC_TEST1}
+        endpoint: ${OTLP_ENDPOINT_TEST1}
         compression: gzip
         sending_queue:
             enabled: true
@@ -298,7 +298,7 @@ exporters:
             max_interval: 30s
             max_elapsed_time: 300s
     otlp_grpc/test2:
-        endpoint: ${OTLP_ENDPOINT_METRIC_TEST2}
+        endpoint: ${OTLP_ENDPOINT_TEST2}
         compression: gzip
         sending_queue:
             enabled: true

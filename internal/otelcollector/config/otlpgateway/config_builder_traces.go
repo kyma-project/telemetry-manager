@@ -215,10 +215,8 @@ func (b *Builder) addTraceOTLPExporter(builder *common.ComponentBuilder[*telemet
 			otlpExporterBuilder := common.NewOTLPExporterConfigBuilder(
 				b.Reader,
 				tp.Spec.Output.OTLP,
-				tp.Name,
+				common.PipelineRef{Name: tp.Name, SignalType: common.SignalTypeTrace},
 				queueSize,
-				common.SignalTypeTrace,
-				string(common.SignalTypeTrace),
 			)
 
 			return otlpExporterBuilder.OTLPExporter(ctx)
@@ -228,13 +226,13 @@ func (b *Builder) addTraceOTLPExporter(builder *common.ComponentBuilder[*telemet
 
 //nolint:dupl // Acceptable duplication - trace and log OAuth2 extensions follow same pattern
 func (b *Builder) addTraceOAuth2Extension(ctx context.Context, builder *common.ComponentBuilder[*telemetryv1beta1.TracePipeline], pipeline *telemetryv1beta1.TracePipeline) error {
-	oauth2ExtensionID := common.OAuth2ExtensionID(pipeline.Name, string(common.SignalTypeTrace))
+	pipelineRef := common.PipelineRef{Name: pipeline.Name, SignalType: common.SignalTypeTrace}
+	oauth2ExtensionID := common.OAuth2ExtensionID(pipelineRef)
 
 	oauth2ExtensionConfig, oauth2ExtensionEnvVars, err := common.NewOAuth2ExtensionConfigBuilder(
 		b.Reader,
 		pipeline.Spec.Output.OTLP.Authentication.OAuth2,
-		pipeline.Name,
-		common.SignalTypeTrace,
+		pipelineRef,
 	).OAuth2Extension(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to build OAuth2 extension for pipeline %s: %w", pipeline.Name, err)
@@ -256,13 +254,13 @@ func formatTraceServicePipelineID(tp *telemetryv1beta1.TracePipeline) string {
 }
 
 func formatTraceUserDefinedTransformProcessorID(tp *telemetryv1beta1.TracePipeline) string {
-	return common.UserDefinedTransformProcessorID(tp.Name, string(common.SignalTypeTrace))
+	return common.UserDefinedTransformProcessorID(common.PipelineRef{Name: tp.Name, SignalType: common.SignalTypeTrace})
 }
 
 func formatTraceUserDefinedFilterProcessorID(tp *telemetryv1beta1.TracePipeline) string {
-	return common.UserDefinedFilterProcessorID(tp.Name, string(common.SignalTypeTrace))
+	return common.UserDefinedFilterProcessorID(common.PipelineRef{Name: tp.Name, SignalType: common.SignalTypeTrace})
 }
 
 func formatTraceOTLPExporterID(tp *telemetryv1beta1.TracePipeline) string {
-	return common.ExporterID(tp.Spec.Output.OTLP.Protocol, tp.Name, string(common.SignalTypeTrace))
+	return common.ExporterID(tp.Spec.Output.OTLP.Protocol, common.PipelineRef{Name: tp.Name, SignalType: common.SignalTypeTrace})
 }

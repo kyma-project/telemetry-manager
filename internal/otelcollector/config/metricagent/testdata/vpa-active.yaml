@@ -260,7 +260,7 @@ processors:
                 - set(resource.attributes["kyma.input.name"], "runtime")
 exporters:
     otlp_grpc/test:
-        endpoint: ${OTLP_ENDPOINT_METRIC_TEST}
+        endpoint: ${OTLP_ENDPOINT_TEST}
         tls:
             insecure: true
         compression: gzip

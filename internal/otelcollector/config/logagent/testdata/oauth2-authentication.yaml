@@ -11,9 +11,9 @@ extensions:
     health_check:
         endpoint: ${MY_POD_IP}:13133
     oauth2client/test:
-        token_url: ${OAUTH2_TOKEN_URL_LOG_TEST}
-        client_id: ${OAUTH2_CLIENT_ID_LOG_TEST}
-        client_secret: ${OAUTH2_CLIENT_SECRET_LOG_TEST}
+        token_url: ${OAUTH2_TOKEN_URL_TEST}
+        client_id: ${OAUTH2_CLIENT_ID_TEST}
+        client_secret: ${OAUTH2_CLIENT_SECRET_TEST}
         scopes:
             - logs
     pprof:
@@ -238,7 +238,7 @@ processors:
                 - set(scope.name, "io.kyma-project.telemetry/runtime")
 exporters:
     otlp_http/test:
-        endpoint: ${OTLP_ENDPOINT_LOG_TEST}
+        endpoint: ${OTLP_ENDPOINT_TEST}
         compression: gzip
         retry_on_failure:
             enabled: true

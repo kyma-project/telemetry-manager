@@ -27,10 +27,10 @@ service:
                 - service_enrichment
                 - transform/drop-kyma-attributes
                 - istio_enrichment
-                - transform/log-user-defined-test-log-1
+                - transform/logpipeline-user-defined-test-log-1
                 - batch
             exporters:
-                - otlp_grpc/log-test-log-1
+                - otlp_grpc/logpipeline-test-log-1
         logs/test-log-2:
             receivers:
                 - otlp
@@ -43,10 +43,10 @@ service:
                 - service_enrichment
                 - transform/drop-kyma-attributes
                 - istio_enrichment
-                - transform/log-user-defined-test-log-2
+                - transform/logpipeline-user-defined-test-log-2
                 - batch
             exporters:
-                - otlp_grpc/log-test-log-2
+                - otlp_grpc/logpipeline-test-log-2
         metrics/enrichment:
             receivers:
                 - forward/input
@@ -77,19 +77,19 @@ service:
                 - forward/enrichment
             processors:
                 - transform/drop-kyma-attributes
-                - transform/metric-user-defined-test-metric-1
+                - transform/metricpipeline-user-defined-test-metric-1
                 - batch
             exporters:
-                - otlp_grpc/metric-test-metric-1
+                - otlp_grpc/metricpipeline-test-metric-1
         metrics/test-metric-2-output:
             receivers:
                 - forward/enrichment
             processors:
                 - transform/drop-kyma-attributes
-                - transform/metric-user-defined-test-metric-2
+                - transform/metricpipeline-user-defined-test-metric-2
                 - batch
             exporters:
-                - otlp_grpc/metric-test-metric-2
+                - otlp_grpc/metricpipeline-test-metric-2
         traces/test-trace-1:
             receivers:
                 - otlp
@@ -100,10 +100,10 @@ service:
                 - transform/insert-cluster-attributes
                 - service_enrichment
                 - transform/drop-kyma-attributes
-                - transform/trace-user-defined-test-trace-1
+                - transform/tracepipeline-user-defined-test-trace-1
                 - batch
             exporters:
-                - otlp_grpc/trace-test-trace-1
+                - otlp_grpc/tracepipeline-test-trace-1
         traces/test-trace-2:
             receivers:
                 - otlp
@@ -114,10 +114,10 @@ service:
                 - transform/insert-cluster-attributes
                 - service_enrichment
                 - transform/drop-kyma-attributes
-                - transform/trace-user-defined-test-trace-2
+                - transform/tracepipeline-user-defined-test-trace-2
                 - batch
             exporters:
-                - otlp_grpc/trace-test-trace-2
+                - otlp_grpc/tracepipeline-test-trace-2
     telemetry:
         metrics:
             readers:
@@ -227,7 +227,7 @@ processors:
                 - set(resource.attributes["k8s.cluster.name"], "${KUBERNETES_SERVICE_HOST}") where resource.attributes["k8s.cluster.name"] == nil or resource.attributes["k8s.cluster.name"] == ""
                 - set(resource.attributes["k8s.cluster.uid"], "") where resource.attributes["k8s.cluster.uid"] == nil or resource.attributes["k8s.cluster.uid"] == ""
                 - set(resource.attributes["cloud.provider"], "test-cloud-provider") where resource.attributes["cloud.provider"] == nil or resource.attributes["cloud.provider"] == ""
-    transform/log-user-defined-test-log-1:
+    transform/logpipeline-user-defined-test-log-1:
         error_mode: ignore
         log_statements:
             - statements:
@@ -235,7 +235,7 @@ processors:
                 - set(body, "transformed1")
               conditions:
                 - IsMatch(body, ".*error.*")
-    transform/log-user-defined-test-log-2:
+    transform/logpipeline-user-defined-test-log-2:
         error_mode: ignore
         log_statements:
             - statements:
@@ -243,7 +243,7 @@ processors:
                 - set(body, "transformed2")
               conditions:
                 - IsMatch(body, ".*error.*")
-    transform/metric-user-defined-test-metric-1:
+    transform/metricpipeline-user-defined-test-metric-1:
         error_mode: ignore
         metric_statements:
             - statements:
@@ -251,7 +251,7 @@ processors:
                 - set(body, "transformed1")
               conditions:
                 - IsMatch(body, ".*error.*")
-    transform/metric-user-defined-test-metric-2:
+    transform/metricpipeline-user-defined-test-metric-2:
         error_mode: ignore
         metric_statements:
             - statements:
@@ -282,7 +282,7 @@ processors:
                 - set(log.observed_time, Now())
               conditions:
                 - log.observed_time_unix_nano == 0
-    transform/trace-user-defined-test-trace-1:
+    transform/tracepipeline-user-defined-test-trace-1:
         error_mode: ignore
         trace_statements:
             - statements:
@@ -290,7 +290,7 @@ processors:
                 - set(body, "transformed1")
               conditions:
                 - IsMatch(body, ".*error.*")
-    transform/trace-user-defined-test-trace-2:
+    transform/tracepipeline-user-defined-test-trace-2:
         error_mode: ignore
         trace_statements:
             - statements:
@@ -299,8 +299,8 @@ processors:
               conditions:
                 - IsMatch(body, ".*error.*")
 exporters:
-    otlp_grpc/log-test-log-1:
-        endpoint: ${OTLP_ENDPOINT_LOG_TEST_LOG_1}
+    otlp_grpc/logpipeline-test-log-1:
+        endpoint: ${OTLP_ENDPOINT_LOGPIPELINE_TEST_LOG_1}
         compression: gzip
         sending_queue:
             enabled: true
@@ -310,8 +310,8 @@ exporters:
             initial_interval: 5s
             max_interval: 30s
             max_elapsed_time: 300s
-    otlp_grpc/log-test-log-2:
-        endpoint: ${OTLP_ENDPOINT_LOG_TEST_LOG_2}
+    otlp_grpc/logpipeline-test-log-2:
+        endpoint: ${OTLP_ENDPOINT_LOGPIPELINE_TEST_LOG_2}
         compression: gzip
         sending_queue:
             enabled: true
@@ -321,8 +321,8 @@ exporters:
             initial_interval: 5s
             max_interval: 30s
             max_elapsed_time: 300s
-    otlp_grpc/metric-test-metric-1:
-        endpoint: ${OTLP_ENDPOINT_METRIC_TEST_METRIC_1}
+    otlp_grpc/metricpipeline-test-metric-1:
+        endpoint: ${OTLP_ENDPOINT_METRICPIPELINE_TEST_METRIC_1}
         compression: gzip
         sending_queue:
             enabled: true
@@ -332,8 +332,8 @@ exporters:
             initial_interval: 5s
             max_interval: 30s
             max_elapsed_time: 300s
-    otlp_grpc/metric-test-metric-2:
-        endpoint: ${OTLP_ENDPOINT_METRIC_TEST_METRIC_2}
+    otlp_grpc/metricpipeline-test-metric-2:
+        endpoint: ${OTLP_ENDPOINT_METRICPIPELINE_TEST_METRIC_2}
         compression: gzip
         sending_queue:
             enabled: true
@@ -343,8 +343,8 @@ exporters:
             initial_interval: 5s
             max_interval: 30s
             max_elapsed_time: 300s
-    otlp_grpc/trace-test-trace-1:
-        endpoint: ${OTLP_ENDPOINT_TRACE_TEST_TRACE_1}
+    otlp_grpc/tracepipeline-test-trace-1:
+        endpoint: ${OTLP_ENDPOINT_TRACEPIPELINE_TEST_TRACE_1}
         compression: gzip
         sending_queue:
             enabled: true
@@ -354,8 +354,8 @@ exporters:
             initial_interval: 5s
             max_interval: 30s
             max_elapsed_time: 300s
-    otlp_grpc/trace-test-trace-2:
-        endpoint: ${OTLP_ENDPOINT_TRACE_TEST_TRACE_2}
+    otlp_grpc/tracepipeline-test-trace-2:
+        endpoint: ${OTLP_ENDPOINT_TRACEPIPELINE_TEST_TRACE_2}
         compression: gzip
         sending_queue:
             enabled: true

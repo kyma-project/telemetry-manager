@@ -379,7 +379,7 @@ processors:
                 - IsMatch(body, ".*error.*")
 exporters:
     otlp_grpc/test1:
-        endpoint: ${OTLP_ENDPOINT_LOG_TEST1}
+        endpoint: ${OTLP_ENDPOINT_TEST1}
         tls:
             insecure: true
         compression: gzip
@@ -389,7 +389,7 @@ exporters:
             max_interval: 30s
             max_elapsed_time: 300s
     otlp_grpc/test2:
-        endpoint: ${OTLP_ENDPOINT_LOG_TEST2}
+        endpoint: ${OTLP_ENDPOINT_TEST2}
         tls:
             insecure: true
         compression: gzip

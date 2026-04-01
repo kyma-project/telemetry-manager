@@ -29,7 +29,7 @@ service:
                 - istio_enrichment
                 - batch
             exporters:
-                - otlp_grpc/log-log-backend-1
+                - otlp_grpc/logpipeline-log-backend-1
         logs/log-backend-2:
             receivers:
                 - otlp
@@ -44,7 +44,7 @@ service:
                 - istio_enrichment
                 - batch
             exporters:
-                - otlp_grpc/log-log-backend-2
+                - otlp_grpc/logpipeline-log-backend-2
         metrics/enrichment:
             receivers:
                 - forward/input
@@ -77,7 +77,7 @@ service:
                 - transform/drop-kyma-attributes
                 - batch
             exporters:
-                - otlp_grpc/metric-metric-backend-1
+                - otlp_grpc/metricpipeline-metric-backend-1
         metrics/metric-backend-2-output:
             receivers:
                 - forward/enrichment
@@ -85,7 +85,7 @@ service:
                 - transform/drop-kyma-attributes
                 - batch
             exporters:
-                - otlp_grpc/metric-metric-backend-2
+                - otlp_grpc/metricpipeline-metric-backend-2
         traces/trace-backend-1:
             receivers:
                 - otlp
@@ -98,7 +98,7 @@ service:
                 - transform/drop-kyma-attributes
                 - batch
             exporters:
-                - otlp_grpc/trace-trace-backend-1
+                - otlp_grpc/tracepipeline-trace-backend-1
         traces/trace-backend-2:
             receivers:
                 - otlp
@@ -111,7 +111,7 @@ service:
                 - transform/drop-kyma-attributes
                 - batch
             exporters:
-                - otlp_grpc/trace-trace-backend-2
+                - otlp_grpc/tracepipeline-trace-backend-2
     telemetry:
         metrics:
             readers:
@@ -245,8 +245,8 @@ processors:
               conditions:
                 - log.observed_time_unix_nano == 0
 exporters:
-    otlp_grpc/log-log-backend-1:
-        endpoint: ${OTLP_ENDPOINT_LOG_LOG_BACKEND_1}
+    otlp_grpc/logpipeline-log-backend-1:
+        endpoint: ${OTLP_ENDPOINT_LOGPIPELINE_LOG_BACKEND_1}
         compression: gzip
         sending_queue:
             enabled: true
@@ -256,8 +256,8 @@ exporters:
             initial_interval: 5s
             max_interval: 30s
             max_elapsed_time: 300s
-    otlp_grpc/log-log-backend-2:
-        endpoint: ${OTLP_ENDPOINT_LOG_LOG_BACKEND_2}
+    otlp_grpc/logpipeline-log-backend-2:
+        endpoint: ${OTLP_ENDPOINT_LOGPIPELINE_LOG_BACKEND_2}
         compression: gzip
         sending_queue:
             enabled: true
@@ -267,8 +267,8 @@ exporters:
             initial_interval: 5s
             max_interval: 30s
             max_elapsed_time: 300s
-    otlp_grpc/metric-metric-backend-1:
-        endpoint: ${OTLP_ENDPOINT_METRIC_METRIC_BACKEND_1}
+    otlp_grpc/metricpipeline-metric-backend-1:
+        endpoint: ${OTLP_ENDPOINT_METRICPIPELINE_METRIC_BACKEND_1}
         compression: gzip
         sending_queue:
             enabled: true
@@ -278,8 +278,8 @@ exporters:
             initial_interval: 5s
             max_interval: 30s
             max_elapsed_time: 300s
-    otlp_grpc/metric-metric-backend-2:
-        endpoint: ${OTLP_ENDPOINT_METRIC_METRIC_BACKEND_2}
+    otlp_grpc/metricpipeline-metric-backend-2:
+        endpoint: ${OTLP_ENDPOINT_METRICPIPELINE_METRIC_BACKEND_2}
         compression: gzip
         sending_queue:
             enabled: true
@@ -289,8 +289,8 @@ exporters:
             initial_interval: 5s
             max_interval: 30s
             max_elapsed_time: 300s
-    otlp_grpc/trace-trace-backend-1:
-        endpoint: ${OTLP_ENDPOINT_TRACE_TRACE_BACKEND_1}
+    otlp_grpc/tracepipeline-trace-backend-1:
+        endpoint: ${OTLP_ENDPOINT_TRACEPIPELINE_TRACE_BACKEND_1}
         compression: gzip
         sending_queue:
             enabled: true
@@ -300,8 +300,8 @@ exporters:
             initial_interval: 5s
             max_interval: 30s
             max_elapsed_time: 300s
-    otlp_grpc/trace-trace-backend-2:
-        endpoint: ${OTLP_ENDPOINT_TRACE_TRACE_BACKEND_2}
+    otlp_grpc/tracepipeline-trace-backend-2:
+        endpoint: ${OTLP_ENDPOINT_TRACEPIPELINE_TRACE_BACKEND_2}
         compression: gzip
         sending_queue:
             enabled: true

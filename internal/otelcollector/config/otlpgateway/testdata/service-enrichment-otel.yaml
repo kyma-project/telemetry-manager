@@ -29,7 +29,7 @@ service:
                 - istio_enrichment
                 - batch
             exporters:
-                - otlp_grpc/log-test-log
+                - otlp_grpc/logpipeline-test-log
         metrics/enrichment:
             receivers:
                 - forward/input
@@ -62,7 +62,7 @@ service:
                 - transform/drop-kyma-attributes
                 - batch
             exporters:
-                - otlp_grpc/metric-test-metric
+                - otlp_grpc/metricpipeline-test-metric
         traces/test-trace:
             receivers:
                 - otlp
@@ -76,7 +76,7 @@ service:
                 - transform/drop-kyma-attributes
                 - batch
             exporters:
-                - otlp_grpc/trace-test-trace
+                - otlp_grpc/tracepipeline-test-trace
     telemetry:
         metrics:
             readers:
@@ -216,8 +216,8 @@ processors:
               conditions:
                 - log.observed_time_unix_nano == 0
 exporters:
-    otlp_grpc/log-test-log:
-        endpoint: ${OTLP_ENDPOINT_LOG_TEST_LOG}
+    otlp_grpc/logpipeline-test-log:
+        endpoint: ${OTLP_ENDPOINT_LOGPIPELINE_TEST_LOG}
         compression: gzip
         sending_queue:
             enabled: true
@@ -227,8 +227,8 @@ exporters:
             initial_interval: 5s
             max_interval: 30s
             max_elapsed_time: 300s
-    otlp_grpc/metric-test-metric:
-        endpoint: ${OTLP_ENDPOINT_METRIC_TEST_METRIC}
+    otlp_grpc/metricpipeline-test-metric:
+        endpoint: ${OTLP_ENDPOINT_METRICPIPELINE_TEST_METRIC}
         compression: gzip
         sending_queue:
             enabled: true
@@ -238,8 +238,8 @@ exporters:
             initial_interval: 5s
             max_interval: 30s
             max_elapsed_time: 300s
-    otlp_grpc/trace-test-trace:
-        endpoint: ${OTLP_ENDPOINT_TRACE_TEST_TRACE}
+    otlp_grpc/tracepipeline-test-trace:
+        endpoint: ${OTLP_ENDPOINT_TRACEPIPELINE_TEST_TRACE}
         compression: gzip
         sending_queue:
             enabled: true

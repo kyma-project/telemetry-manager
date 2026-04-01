@@ -23,7 +23,7 @@ service:
                 - transform/drop-kyma-attributes
                 - batch
             exporters:
-                - otlp_grpc/trace-test-trace
+                - otlp_grpc/tracepipeline-test-trace
     telemetry:
         metrics:
             readers:
@@ -114,8 +114,8 @@ processors:
                 - set(resource.attributes["k8s.cluster.uid"], "") where resource.attributes["k8s.cluster.uid"] == nil or resource.attributes["k8s.cluster.uid"] == ""
                 - set(resource.attributes["cloud.provider"], "test-cloud-provider") where resource.attributes["cloud.provider"] == nil or resource.attributes["cloud.provider"] == ""
 exporters:
-    otlp_grpc/trace-test-trace:
-        endpoint: ${OTLP_ENDPOINT_TRACE_TEST_TRACE}
+    otlp_grpc/tracepipeline-test-trace:
+        endpoint: ${OTLP_ENDPOINT_TRACEPIPELINE_TEST_TRACE}
         compression: gzip
         sending_queue:
             enabled: true

@@ -11,9 +11,9 @@ extensions:
         auth_type: serviceAccount
         lease_name: telemetry-metric-agent-k8scluster
     oauth2client/test:
-        token_url: ${OAUTH2_TOKEN_URL_METRIC_TEST}
-        client_id: ${OAUTH2_CLIENT_ID_METRIC_TEST}
-        client_secret: ${OAUTH2_CLIENT_SECRET_METRIC_TEST}
+        token_url: ${OAUTH2_TOKEN_URL_TEST}
+        client_id: ${OAUTH2_CLIENT_ID_TEST}
+        client_secret: ${OAUTH2_CLIENT_SECRET_TEST}
         scopes:
             - metrics
     pprof:
@@ -128,7 +128,7 @@ processors:
                 - set(resource.attributes["k8s.cluster.uid"], "") where resource.attributes["k8s.cluster.uid"] == nil or resource.attributes["k8s.cluster.uid"] == ""
 exporters:
     otlp_http/test:
-        endpoint: ${OTLP_ENDPOINT_METRIC_TEST}
+        endpoint: ${OTLP_ENDPOINT_TEST}
         tls:
             insecure: true
         compression: gzip

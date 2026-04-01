@@ -373,7 +373,7 @@ processors:
                 - set(scope.name, "io.kyma-project.telemetry/runtime")
 exporters:
     otlp_grpc/test1:
-        endpoint: ${OTLP_ENDPOINT_LOG_TEST1}
+        endpoint: ${OTLP_ENDPOINT_TEST1}
         compression: gzip
         retry_on_failure:
             enabled: true
@@ -381,7 +381,7 @@ exporters:
             max_interval: 30s
             max_elapsed_time: 300s
     otlp_grpc/test2:
-        endpoint: ${OTLP_ENDPOINT_LOG_TEST2}
+        endpoint: ${OTLP_ENDPOINT_TEST2}
         compression: gzip
         retry_on_failure:
             enabled: true
