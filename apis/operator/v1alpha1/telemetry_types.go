@@ -125,11 +125,10 @@ type LogSpec struct {
 // GatewaySpec defines settings of a gateway.
 //
 // Deprecated: Gateway scaling configuration is no longer supported. The gateway now runs as a DaemonSet.
-// +kubebuilder:validation:XValidation:rule="!has(self.scaling) || (!has(self.scaling.type) && !has(self.scaling.static))",message="Gateway scaling is deprecated and must not be set. The gateway runs as a DaemonSet that scales automatically with cluster nodes."
 type GatewaySpec struct {
 	// Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.
 	//
-	// Deprecated: This field is no longer supported and must not be set.
+	// Deprecated: This field is no longer supported. Setting it will have no effect.
 	// +kubebuilder:validation:Optional
 	Scaling *Scaling `json:"scaling,omitempty"`
 }
