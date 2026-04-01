@@ -837,7 +837,7 @@ func (b *Builder) addOTLPExporter(queueSize int) buildComponentFunc {
 			otlpExporterBuilder := common.NewOTLPExporterConfigBuilder(
 				b.Reader,
 				mp.Spec.Output.OTLP,
-				common.PipelineRef{Name: mp.Name},
+				common.PipelineRef{Name: mp.Name, Type: common.SignalTypeMetric},
 				queueSize,
 			)
 

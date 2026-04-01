@@ -75,17 +75,17 @@ func otlpExporter(otlpOutput *telemetryv1beta1.OTLPOutput, pipelineRef PipelineR
 		},
 	}
 
-	if len(otlpOutput.Path) > 0 && SignalTypeMetric == pipelineRef.SignalType {
+	if len(otlpOutput.Path) > 0 && SignalTypeMetric == pipelineRef.Type {
 		exporter.Endpoint = ""
 		exporter.MetricsEndpoint = fmt.Sprintf("${%s}", otlpEndpointVariable)
 	}
 
-	if len(otlpOutput.Path) > 0 && SignalTypeTrace == pipelineRef.SignalType {
+	if len(otlpOutput.Path) > 0 && SignalTypeTrace == pipelineRef.Type {
 		exporter.Endpoint = ""
 		exporter.TracesEndpoint = fmt.Sprintf("${%s}", otlpEndpointVariable)
 	}
 
-	if len(otlpOutput.Path) > 0 && SignalTypeLog == pipelineRef.SignalType {
+	if len(otlpOutput.Path) > 0 && SignalTypeLog == pipelineRef.Type {
 		exporter.Endpoint = ""
 		exporter.LogsEndpoint = fmt.Sprintf("${%s}", otlpEndpointVariable)
 	}

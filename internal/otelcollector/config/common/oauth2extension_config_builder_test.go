@@ -10,7 +10,7 @@ import (
 )
 
 func TestOAuth2ExtensionID(t *testing.T) {
-	require.Equal(t, "oauth2client/tracepipeline-test", OAuth2ExtensionID(PipelineRef{Name: "test", SignalType: SignalTypeTrace}))
+	require.Equal(t, "oauth2client/tracepipeline-test", OAuth2ExtensionID(PipelineRef{Name: "test", Type: SignalTypeTrace, UseTypePrefix: true}))
 }
 
 func TestOAuth2ExtensionIDNoPrefix(t *testing.T) {
@@ -24,7 +24,7 @@ func TestMakeExtensionConfig(t *testing.T) {
 		ClientSecret: telemetryv1beta1.ValueType{Value: "client-secret"},
 	}
 
-	ref := PipelineRef{Name: "test", SignalType: SignalTypeTrace}
+	ref := PipelineRef{Name: "test", Type: SignalTypeTrace, UseTypePrefix: true}
 	cb := NewOAuth2ExtensionConfigBuilder(fake.NewClientBuilder().Build(), oauth2Options, ref)
 	oauth2ExtensionConfig, envVars, err := cb.OAuth2Extension(t.Context())
 	require.NoError(t, err)

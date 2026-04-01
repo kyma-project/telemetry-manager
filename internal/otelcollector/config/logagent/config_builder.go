@@ -207,7 +207,7 @@ func (b *Builder) addOTLPExporter() buildComponentFunc {
 			otlpExporterBuilder := common.NewOTLPExporterConfigBuilder(
 				b.Reader,
 				lp.Spec.Output.OTLP,
-				common.PipelineRef{Name: lp.Name},
+				common.PipelineRef{Name: lp.Name, Type: common.SignalTypeLog},
 				0, // queue size is set to 0 for now, as the queue is disabled
 			)
 

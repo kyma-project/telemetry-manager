@@ -201,6 +201,7 @@ func matchesRule(labelSet map[string]string, unprefixedRuleName string, pipeline
 	// Strip the signal-type component prefix that the OTLP Gateway config adds to OTel component names.
 	// For agents, the prefix is absent so strings.TrimPrefix is a no-op.
 	effectivePipelineName := strings.TrimPrefix(pipelineNameLabel, otelComponentPrefix(t))
+
 	return effectivePipelineName == pipelineName
 }
 
