@@ -2,11 +2,11 @@
 
 ## Overview
 
-| Category| |
-| - | - |
-| Signal types | traces |
+| Category     |                   |
+| ------------ | ----------------- |
+| Signal types | traces            |
 | Backend type | custom in-cluster |
-| OTLP-native | yes |
+| OTLP-native  | yes               |
 
 Learn how to use [Jaeger](https://github.com/jaegertracing/helm-charts/tree/main/charts/jaeger) as a tracing backend with Kyma's [TracePipeline](../../collecting-traces/README.md).
 
@@ -68,7 +68,7 @@ kubectl -n $K8S_NAMESPACE rollout status deploy $HELM_JAEGER_RELEASE
 
 ### Activate a TracePipeline
 
-To configure the Kyma trace gateway with the deployed Jaeger instance as the backend, create a new [TracePipeline](../../collecting-traces/README.md) with the following command:
+To configure the OTLP Gateway with the deployed Jaeger instance as the backend, create a new [TracePipeline](../../collecting-traces/README.md), with the following command:
 
 ```bash
 cat <<EOF | kubectl -n $K8S_NAMESPACE apply -f -

@@ -1,16 +1,16 @@
 # Metrics Architecture
 
-The Telemetry module provides a central Deployment of an [OTel Collector](https://opentelemetry.io/docs/collector/) acting as a gateway, and an optional DaemonSet acting as an agent. The gateway exposes endpoints that receive OTLP metrics from your applications, while the agent pulls metrics from Prometheus-annotated endpoints. To control their behavior and data destination, you define a MetricPipeline.
+The Telemetry module provides an [OTel Collector](https://opentelemetry.io/docs/collector/) running as a node-local DaemonSet (the OTLP Gateway), and an optional DaemonSet acting as an agent. The gateway exposes endpoints that receive OTLP metrics from your applications, while the agent pulls metrics from Prometheus-annotated endpoints. To control their behavior and data destination, you define a MetricPipeline.
 
 ![Architecture](./../assets/metrics-arch.drawio.svg)
 
-1. An application (exposing metrics in [OTLP](https://opentelemetry.io/docs/specs/otlp/)) sends metrics to the central metric gateway using the `telemetry-otlp-metrics` service.
+1. An application (exposing metrics in [OTLP](https://opentelemetry.io/docs/specs/otlp/)) sends metrics to the OTLP Gateway using the `telemetry-otlp-metrics` service. The Service uses node-local routing, so data is always received by the gateway instance on the same node.
 2. An application (exposing metrics in [Prometheus](https://prometheus.io/docs/instrumenting/exposition_formats) protocol) activates the agent to scrape the metrics with an annotation-based configuration.
 3. Additionally, you can activate the agent to pull metrics of each Istio sidecar.
 4. The agent supports collecting metrics from the Kubelet and Kubernetes APIServer.
-5. The gateway and the agent discover the metadata and enrich all received data with typical metadata of the source by communicating with the Kubernetes APIServer. Furthermore, they filter data according to the pipeline configuration.
-6. Telemetry Manager configures the agent and gateway according to the MetricPipeline resource specification, including the target backend for the metric gateway. Also, it observes the metrics flow to the backend and reports problems in the MetricPipeline status.
-7. The gateway and the agent send the data to the observability backend that's specified in your MetricPipeline resource - either within your cluster, or, if authentication is set up, to an external observability backend.
+5. The OTLP Gateway and the agent discover the metadata and enrich all received data with typical metadata of the source by communicating with the Kubernetes APIServer. Furthermore, they filter data according to the pipeline configuration.
+6. Telemetry Manager configures the agent and the OTLP Gateway according to the MetricPipeline resource specification, including the target backend. Also, it observes the metrics flow to the backend and reports problems in the MetricPipeline status.
+7. The OTLP Gateway and the agent send the data to the observability backend that's specified in your MetricPipeline resource - either within your cluster, or, if authentication is set up, to an external observability backend.
 8. You can analyze the metric data with your preferred observability backend.
 
 ## Telemetry Manager
@@ -20,13 +20,13 @@ The MetricPipeline resource is watched by Telemetry Manager, which is responsibl
 ![Manager resources](./../assets/metrics-resources.drawio.svg)
 
 1. Telemetry Manager watches all MetricPipeline resources and related Secrets.
-2. Furthermore, Telemetry Manager takes care of the full lifecycle of the gateway Deployment and the agent DaemonSet. Only if you defined a MetricPipeline, the gateway and agent are deployed.
-3. Whenever the user configuration changes, Telemetry Manager validates it and generates a single configuration for the gateway and agent.
-4. Referenced Secrets are copied into one Secret that is mounted to the gateway as well.
+2. Furthermore, Telemetry Manager takes care of the full lifecycle of the OTLP Gateway DaemonSet and the agent DaemonSet. The OTLP Gateway is deployed when any pipeline resource exists. The agent is deployed only if a MetricPipeline configures an input that requires it.
+3. Whenever the user configuration changes, Telemetry Manager validates it and generates a single configuration for the OTLP Gateway and agent.
+4. Referenced Secrets are copied into one Secret that is mounted to the OTLP Gateway as well.
 
-## Metric Gateway
+## OTLP Gateway
 
-In your cluster, the metric gateway is the central component to which all applications can send their individual metrics. The gateway collects, enriches, and dispatches the data to the configured backend. For more information, see [Set Up the OTLP Input](./../otlp-input.md).
+In your cluster, the OTLP Gateway is the central component to which all applications can send their individual metrics. The gateway collects, enriches, and dispatches the data to the configured backend. The OTLP Gateway handles all signal types (traces, metrics, and logs) in a single unified DaemonSet. For more information, see [Set Up the OTLP Input](./../otlp-input.md).
 
 ## Metric Agent
 

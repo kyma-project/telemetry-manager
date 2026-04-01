@@ -1,16 +1,16 @@
 # Logs Architecture
 
-The Telemetry module provides a central Deployment of an [OTel Collector](https://opentelemetry.io/docs/collector/) acting as a gateway, and an optional DaemonSet acting as an agent. The gateway exposes endpoints that receive OTLP logs from your applications, while the agent collects container logs from each node. To control their behavior and data destination, you define a LogPipeline.
+The Telemetry module provides an [OTel Collector](https://opentelemetry.io/docs/collector/) running as a node-local DaemonSet (the OTLP Gateway), and an optional DaemonSet acting as an agent. The gateway exposes endpoints that receive OTLP logs from your applications, while the agent collects container logs from each node. To control their behavior and data destination, you define a LogPipeline.
 
 ![Architecture](./../assets/logs-arch.drawio.svg)
 
 1. Application containers print JSON logs to the `stdout/stderr` channel and are stored by the Kubernetes container runtime under the `var/log` directory and its subdirectories at the related node. Istio is configured to write access logs to `stdout` as well.
 2. If you choose to use the agent, an OTel Collector runs as a [DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/) (one instance per node), detects any new log files in the folder, and tails and parses them.
-3. An application (exposing logs in OTLP) sends logs to the central log gateway using the `telemetry-otlp-logs` service. Istio is configured to push access logs with OTLP as well.
-4. The gateway and agent discover the metadata and enrich all received data with metadata of the source by communicating with the Kubernetes APIServer. Furthermore, they filter data according to the pipeline configuration.
-5. Telemetry Manager configures the agent and gateway according to the LogPipeline resource specification, including the target backend. Also, it observes the logs flow to the backend and reports problems in the LogPipeline status.
-8. The log agent and gateway send the data to the observability backend that's specified in your LogPipeline resource - either within your cluster, or, if authentication is set up, to an external observability backend.
-9. You can analyze the logs data with your preferred backend.
+3. An application (exposing logs in OTLP) sends logs to the OTLP Gateway using the `telemetry-otlp-logs` service. The Service uses node-local routing, so data is always received by the gateway instance on the same node. Istio is configured to push access logs with OTLP as well.
+4. The OTLP Gateway and agent discover the metadata and enrich all received data with metadata of the source by communicating with the Kubernetes APIServer. Furthermore, they filter data according to the pipeline configuration.
+5. Telemetry Manager configures the agent and the OTLP Gateway according to the LogPipeline resource specification, including the target backend. Also, it observes the logs flow to the backend and reports problems in the LogPipeline status.
+6. The OTLP Gateway and agent send the data to the observability backend that's specified in your LogPipeline resource - either within your cluster, or, if authentication is set up, to an external observability backend.
+7. You can analyze the logs data with your preferred backend.
 
 ## Telemetry Manager
 
@@ -19,13 +19,13 @@ The LogPipeline resource is watched by Telemetry Manager, which is responsible f
 ![Manager resources](./../assets/logs-resources.drawio.svg)
 
 1. Telemetry Manager watches all LogPipeline resources and related Secrets.
-2. Furthermore, Telemetry Manager takes care of the full lifecycle of the gateway Deployment and the agent DaemonSet. Only if you defined a LogPipeline, the gateway and agent are deployed.
-3. Whenever the user configuration changes, Telemetry Manager validates it and generates a single configuration for the gateway and agent.
-4. Referenced Secrets are copied into one Secret that is mounted to the gateway as well.
+2. Furthermore, Telemetry Manager takes care of the full lifecycle of the OTLP Gateway DaemonSet and the agent DaemonSet. The OTLP Gateway is deployed when any pipeline resource exists. The agent is deployed only if a LogPipeline configures an input that requires it.
+3. Whenever the user configuration changes, Telemetry Manager validates it and generates a single configuration for the OTLP Gateway and agent.
+4. Referenced Secrets are copied into one Secret that is mounted to the OTLP Gateway as well.
 
-## Log Gateway
+## OTLP Gateway
 
-In your cluster, the log gateway is the central component to which all components can send their individual logs. The gateway collects, enriches, and dispatches the data to the configured backend. For more information, see [Set Up the OTLP Input](./../otlp-input.md).
+In your cluster, the OTLP Gateway is the central component to which all components can send their individual logs. The gateway collects, enriches, and dispatches the data to the configured backend. The OTLP Gateway handles all signal types (traces, metrics, and logs) in a single unified DaemonSet. For more information, see [Set Up the OTLP Input](./../otlp-input.md).
 
 ## Log Agent
 

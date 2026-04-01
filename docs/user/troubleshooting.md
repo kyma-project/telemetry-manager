@@ -23,7 +23,7 @@ If you can't find a solution, don't hesitate to create a [GitHub issue](https://
    - If the status is `GatewayAllTelemetryDataDropped`, the problem is with the gateway.
    - If the status is `AgentAllTelemetryDataDropped`, the problem is with the agent.
 2. To check the failing component's logs, call `kubectl logs -n kyma-system {POD_NAME}`:
-   - For the gateway, check Pod `telemetry-(log|trace|metric)-gateway`.
+   - For the gateway, check Pod `telemetry-otlp-gateway`.
    - For the agent, check Pod `telemetry-(log|metric)-agent`.
    Look for errors related to authentication, connectivity, and DNS.
 3. Check if the backend is up and reachable.
@@ -46,7 +46,7 @@ This status indicates that the telemetry gateway or agent is successfully sendin
 ### Solution
 
 1. Check the error logs for the affected Pod by calling `kubectl logs -n kyma-system {POD_NAME}`:
-   - For **GatewaySomeTelemetryDataDropped**, check Pod `telemetry-(log|trace|metric)-gateway`.
+   - For **GatewaySomeTelemetryDataDropped**, check Pod `telemetry-otlp-gateway`.
    - For **AgentSomeTelemetryDataDropped**, check Pod `telemetry-(log|metric)-agent`.
 2. Go to your observability backend and investigate potential causes.
 3. If the backend is limiting the rate by refusing data, try the following options:
@@ -67,7 +67,7 @@ The gateway is receiving data faster than it can process and forward it.
 
 ### Solution
 
-Manually scale out the capacity by increasing the number of replicas for the affected gateway. For details, see [Telemetry CRD](https://kyma-project.io/#/telemetry-manager/user/01-manager?id=module-configuration).
+The OTLP Gateway runs as a DaemonSet and scales automatically with the number of cluster nodes. If the gateway is still throttling, consider reducing the volume of telemetry data by applying filters or disabling unused inputs in your pipeline configuration.
 
 ### Custom Spans Don’t Arrive at the Backend, but Istio Spans Do
 

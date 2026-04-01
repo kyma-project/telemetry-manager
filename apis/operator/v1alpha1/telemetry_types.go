@@ -123,13 +123,19 @@ type LogSpec struct {
 }
 
 // GatewaySpec defines settings of a gateway.
+//
+// Deprecated: Gateway scaling configuration is no longer supported. The gateway now runs as a DaemonSet.
 type GatewaySpec struct {
 	// Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.
+	//
+	// Deprecated: This field is no longer supported. Setting it will have no effect.
 	// +kubebuilder:validation:Optional
-	Scaling Scaling `json:"scaling"`
+	Scaling *Scaling `json:"scaling,omitempty"`
 }
 
 // Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.
+//
+// Deprecated: Gateway scaling is no longer supported. The gateway now runs as a DaemonSet.
 type Scaling struct {
 	// Type of scaling strategy. Default is none, using a fixed amount of replicas.
 	// +optional

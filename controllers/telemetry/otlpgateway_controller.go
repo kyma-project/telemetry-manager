@@ -27,6 +27,7 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/types"
+	autoscalingvpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -42,12 +43,14 @@ import (
 	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
+	"github.com/kyma-project/telemetry-manager/internal/nodesize"
 	otlpgatewayconfig "github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpgateway" //nolint:importas // needed to disambiguate from reconciler package
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	otlpgatewayreconciler "github.com/kyma-project/telemetry-manager/internal/reconciler/otlpgateway" //nolint:importas // needed to disambiguate from config package
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	predicateutils "github.com/kyma-project/telemetry-manager/internal/utils/predicate"
+	"github.com/kyma-project/telemetry-manager/internal/vpastatus"
 )
 
 // OTLPGatewayController reconciles the OTLP Gateway DaemonSet based on pipeline references
@@ -56,6 +59,7 @@ type OTLPGatewayController struct {
 
 	reconcileTriggerChan <-chan event.GenericEvent
 	reconciler           *otlpgatewayreconciler.Reconciler
+	nodeSizeTracker      *nodesize.Tracker
 }
 
 type OTLPGatewayControllerConfig struct {
@@ -66,7 +70,7 @@ type OTLPGatewayControllerConfig struct {
 	OTLPGatewayPriorityClassName string
 }
 
-func NewOTLPGatewayController(config OTLPGatewayControllerConfig, client client.Client, reconcileTriggerChan <-chan event.GenericEvent) (*OTLPGatewayController, error) {
+func NewOTLPGatewayController(config OTLPGatewayControllerConfig, client client.Client, reconcileTriggerChan <-chan event.GenericEvent, nodeSizeTracker *nodesize.Tracker) (*OTLPGatewayController, error) {
 	discoveryClient, err := discovery.NewDiscoveryClientForConfig(config.RestConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create discovery client: %w", err)
@@ -91,11 +95,48 @@ func NewOTLPGatewayController(config OTLPGatewayControllerConfig, client client.
 		Client:               client,
 		reconcileTriggerChan: reconcileTriggerChan,
 		reconciler:           reconciler,
+		nodeSizeTracker:      nodeSizeTracker,
 	}, nil
 }
 
 func (r *OTLPGatewayController) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	return r.reconciler.Reconcile(ctx, req)
+}
+
+// otlpGatewayOwnedResourceTypes returns the list of Kubernetes resource types that are
+// managed (created/updated/deleted) by the OTLP Gateway reconciler and must be watched for changes.
+func otlpGatewayOwnedResourceTypes(isIstioActive, vpaCRDExists bool) []client.Object {
+	resources := []client.Object{
+		&appsv1.DaemonSet{},
+		&corev1.ConfigMap{},
+		&corev1.Secret{},
+		&corev1.Service{},
+		&corev1.ServiceAccount{},
+		&rbacv1.ClusterRole{},
+		&rbacv1.ClusterRoleBinding{},
+		&rbacv1.Role{},
+		&rbacv1.RoleBinding{},
+		&networkingv1.NetworkPolicy{},
+	}
+
+	// Only watch PeerAuthentication CR if Istio is active
+	// otherwise, manager will have errors if the PeerAuthentication CRD is not present in the cluster
+	if isIstioActive {
+		resources = append(resources,
+			&istiosecurityclientv1.PeerAuthentication{},
+			&istionetworkingclientv1.DestinationRule{},
+		)
+	}
+
+	// Only watch VPA CR if VPA CRD exists in the cluster
+	// otherwise, manager will have errors if the VPA CRD is not present in the cluster
+	// NOTE: controller needs to watch VPA CR even if the annotation to enable VPA is not present in Telemetry CR,
+	// because the annotation can be added later and this function is only called once during the setup of the controller.
+	if vpaCRDExists {
+		resources = append(resources, &autoscalingvpav1.VerticalPodAutoscaler{})
+	}
+
+	return resources
 }
 
 func (r *OTLPGatewayController) SetupWithManager(mgr ctrl.Manager) error {
@@ -113,108 +154,96 @@ func (r *OTLPGatewayController) SetupWithManager(mgr ctrl.Manager) error {
 		source.Channel(r.reconcileTriggerChan, &handler.EnqueueRequestForObject{}),
 	)
 
-	// Watch owned resources (DaemonSet and associated resources)
-	ownedResourceTypesToWatch := []client.Object{
-		&appsv1.DaemonSet{},           // OTLP Gateway DaemonSet
-		&corev1.ConfigMap{},           // OTel Collector config
-		&corev1.Secret{},              // TLS certificates and credentials
-		&corev1.Service{},             // Collector service endpoints
-		&corev1.ServiceAccount{},      // Identity for k8s API access
-		&rbacv1.ClusterRole{},         // Permissions for k8s metadata collection
-		&rbacv1.ClusterRoleBinding{},  // Binds ClusterRole to ServiceAccount
-		&rbacv1.Role{},                // Namespace-scoped permissions for leader election
-		&rbacv1.RoleBinding{},         // Binds Role to ServiceAccount
-		&networkingv1.NetworkPolicy{}, // Network access control
-	}
+	ctx := context.Background()
 
 	discoveryClient, err := discovery.NewDiscoveryClientForConfig(mgr.GetConfig())
 	if err != nil {
 		return fmt.Errorf("failed to create discovery client: %w", err)
 	}
 
-	isIstioActive, err := istiostatus.NewChecker(discoveryClient).IsIstioActive(context.Background())
+	isIstioActive, err := istiostatus.NewChecker(discoveryClient).IsIstioActive(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to check Istio status: %w", err)
 	}
 
-	if isIstioActive {
-		ownedResourceTypesToWatch = append(ownedResourceTypesToWatch, &istiosecurityclientv1.PeerAuthentication{}) // Istio mTLS policy
+	vpaCRDExists, err := vpastatus.NewChecker(mgr.GetConfig()).VpaCRDExists(ctx, r.Client)
+	if err != nil {
+		return fmt.Errorf("failed to check VPA status: %w", err)
 	}
 
-	for _, resource := range ownedResourceTypesToWatch {
+	for _, resource := range otlpGatewayOwnedResourceTypes(isIstioActive, vpaCRDExists) {
 		b = b.Watches(
 			resource,
-			handler.EnqueueRequestsFromMapFunc(r.mapOwnedResourceToConfigMap),
+			handler.EnqueueRequestsFromMapFunc(r.mapOwnedResourceChanges),
 			ctrlbuilder.WithPredicates(predicateutils.OwnedResourceChanged()),
 		)
 	}
 
 	// Watch Telemetry CR
 	// React to spec changes (tracked by generation) and annotation changes on the Telemetry CR.
-	// Annotations carry configuration like VPA opt-in that affect pipeline resources.
+	// Annotations carry configuration like VPA opt-in that affect gateway resources.
 	// Status-only updates are ignored to avoid unnecessary reconciliation loops.
 	b.Watches(
 		&operatorv1beta1.Telemetry{},
-		handler.EnqueueRequestsFromMapFunc(r.mapTelemetryToConfigMap),
+		handler.EnqueueRequestsFromMapFunc(r.mapTelemetryChanges),
 		ctrlbuilder.WithPredicates(ctrlpredicate.Or(ctrlpredicate.GenerationChangedPredicate{}, ctrlpredicate.AnnotationChangedPredicate{})),
 	)
 
-	// Watch Istio resources if present
-	if isIstioPresent(mgr.GetClient()) {
-		b = b.Watches(
-			&istiosecurityclientv1.PeerAuthentication{}, // Istio mTLS policy
-			handler.EnqueueRequestsFromMapFunc(r.mapOwnedResourceToConfigMap),
-			ctrlbuilder.WithPredicates(predicateutils.OwnedResourceChanged()),
-		)
-		b = b.Watches(
-			&istionetworkingclientv1.DestinationRule{}, // Istio traffic routing rules
-			handler.EnqueueRequestsFromMapFunc(r.mapOwnedResourceToConfigMap),
-			ctrlbuilder.WithPredicates(predicateutils.OwnedResourceChanged()),
-		)
-	}
+	// Watch for changes in Nodes to track smallest node memory and trigger reconciliation if it changes
+	b.Watches(
+		&corev1.Node{},
+		handler.EnqueueRequestsFromMapFunc(r.mapNodeChanges),
+	)
 
 	return b.Complete(r)
 }
 
-// mapTelemetryToConfigMap creates a reconcile request for the OTLP Gateway Pipelines Sync ConfigMap when Telemetry CR changes.
-func (r *OTLPGatewayController) mapTelemetryToConfigMap(ctx context.Context, object client.Object) []reconcile.Request {
+// mapTelemetryChanges enqueues a reconciliation request for the OTLP Gateway coordination ConfigMap
+// when the Telemetry CR changes. This ensures the gateway configuration reflects updated module-level
+// settings such as VPA opt-in annotations.
+func (r *OTLPGatewayController) mapTelemetryChanges(ctx context.Context, object client.Object) []reconcile.Request {
 	_, ok := object.(*operatorv1beta1.Telemetry)
 	if !ok {
 		logf.FromContext(ctx).V(1).Error(nil, "Unexpected type: expected Telemetry")
 		return nil
 	}
 
-	namespace := object.GetNamespace()
-
-	return []reconcile.Request{
-		{
-			NamespacedName: types.NamespacedName{
-				Name:      names.OTLPGatewayPipelinesSyncConfigMap,
-				Namespace: namespace,
-			},
-		},
-	}
+	return r.enqueueConfigMap()
 }
 
-// mapOwnedResourceToConfigMap maps owned resource changes to reconcile requests for the ConfigMap.
-func (r *OTLPGatewayController) mapOwnedResourceToConfigMap(ctx context.Context, object client.Object) []reconcile.Request {
-	namespace := object.GetNamespace()
-
+// mapOwnedResourceChanges enqueues a reconciliation request for the OTLP Gateway coordination ConfigMap
+// when an owned resource (DaemonSet, ConfigMap, Secret, Service, etc.) is externally modified.
+// This ensures the reconciler can restore the desired state of gateway resources.
+func (r *OTLPGatewayController) mapOwnedResourceChanges(ctx context.Context, object client.Object) []reconcile.Request {
 	logf.FromContext(ctx).V(1).Info("owned resource changed, triggering OTLP gateway reconciliation", "resource", object.GetName())
+	return r.enqueueConfigMap()
+}
 
+// mapNodeChanges updates the node size tracker when a Node is added, removed, or modified.
+// If the smallest node memory changes, it enqueues a reconciliation request for the OTLP Gateway
+// coordination ConfigMap so that resource requirements can be recalculated.
+func (r *OTLPGatewayController) mapNodeChanges(ctx context.Context, object client.Object) []reconcile.Request {
+	changed, err := r.nodeSizeTracker.UpdateSmallestMemory(ctx)
+	if err != nil {
+		logf.FromContext(ctx).Error(err, "Unable to update smallest node memory")
+		return nil
+	}
+
+	if !changed {
+		return nil
+	}
+
+	return r.enqueueConfigMap()
+}
+
+// enqueueConfigMap returns a reconcile request for the OTLP Gateway coordination ConfigMap.
+func (r *OTLPGatewayController) enqueueConfigMap() []reconcile.Request {
 	return []reconcile.Request{
 		{
 			NamespacedName: types.NamespacedName{
 				Name:      names.OTLPGatewayPipelinesSyncConfigMap,
-				Namespace: namespace,
+				Namespace: r.reconciler.Globals().TargetNamespace(),
 			},
 		},
 	}
-}
-
-// isIstioPresent checks if Istio CRDs are installed in the cluster.
-func isIstioPresent(c client.Client) bool {
-	// Try to list PeerAuthentication resources - if it fails, Istio is not present
-	var peerAuths istiosecurityclientv1.PeerAuthenticationList
-	return c.List(context.Background(), &peerAuths) == nil
 }

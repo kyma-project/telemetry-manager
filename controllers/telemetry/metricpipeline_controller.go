@@ -261,7 +261,7 @@ func (r *MetricPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 	// Watch OTLP Gateway DaemonSet to update GatewayHealthy condition when gateway status changes
 	b.Watches(
 		&appsv1.DaemonSet{}, // OTLP Gateway DaemonSet
-		handler.EnqueueRequestsFromMapFunc(r.mapOTLPGatewayToAllPipelines),
+		handler.EnqueueRequestsFromMapFunc(r.mapOTLPGatewayChanges),
 		ctrlbuilder.WithPredicates(ctrlpredicate.NewPredicateFuncs(func(object client.Object) bool {
 			return object.GetName() == names.OTLPGateway &&
 				object.GetNamespace() == r.pipelineLockName.Namespace
@@ -272,7 +272,7 @@ func (r *MetricPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 	// This ensures that when a pipeline is deleted and frees up a slot, waiting pipelines get reconciled
 	b.Watches(
 		&corev1.ConfigMap{}, // Pipeline lock ConfigMap
-		handler.EnqueueRequestsFromMapFunc(r.mapLockConfigMapToAllPipelines),
+		handler.EnqueueRequestsFromMapFunc(r.mapLockConfigMapChanges),
 		ctrlbuilder.WithPredicates(ctrlpredicate.NewPredicateFuncs(func(object client.Object) bool {
 			return object.GetName() == r.pipelineLockName.Name && object.GetNamespace() == r.pipelineLockName.Namespace
 		})),
@@ -305,22 +305,24 @@ func (r *MetricPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 	return b.Complete(r)
 }
 
-// mapLockConfigMapToAllPipelines enqueues reconciliation requests for all MetricPipelines
-// when the lock ConfigMap changes. This ensures that pipelines that were previously rejected
-// due to max pipeline limit get a chance to acquire the lock when slots become available.
-func (r *MetricPipelineController) mapLockConfigMapToAllPipelines(ctx context.Context, object client.Object) []reconcile.Request {
+// mapLockConfigMapChanges enqueues reconciliation requests for all MetricPipelines when the pipeline lock
+// ConfigMap changes. This ensures that pipelines previously rejected due to the max pipeline limit get
+// reconciled when slots become available.
+func (r *MetricPipelineController) mapLockConfigMapChanges(ctx context.Context, object client.Object) []reconcile.Request {
 	logf.FromContext(ctx).V(1).Info("Pipeline lock ConfigMap changed, triggering reconciliation of all MetricPipelines")
 	return r.enqueueAllPipelines(ctx)
 }
 
-// mapOTLPGatewayToAllPipelines enqueues reconciliation requests for all MetricPipelines
-// when the OTLP Gateway DaemonSet changes. This ensures that GatewayHealthy status conditions
-// are updated to reflect the current gateway state.
-func (r *MetricPipelineController) mapOTLPGatewayToAllPipelines(ctx context.Context, object client.Object) []reconcile.Request {
+// mapOTLPGatewayChanges enqueues reconciliation requests for all MetricPipelines when the OTLP Gateway
+// DaemonSet changes. This ensures that the GatewayHealthy status condition is updated to reflect the
+// current gateway state.
+func (r *MetricPipelineController) mapOTLPGatewayChanges(ctx context.Context, object client.Object) []reconcile.Request {
 	logf.FromContext(ctx).V(1).Info("OTLP Gateway DaemonSet changed, triggering reconciliation of all MetricPipelines")
 	return r.enqueueAllPipelines(ctx)
 }
 
+// mapTelemetryChanges enqueues reconciliation requests for all MetricPipelines when the Telemetry CR
+// changes. This ensures pipelines reflect updated module-level settings such as VPA opt-in annotations.
 func (r *MetricPipelineController) mapTelemetryChanges(ctx context.Context, object client.Object) []reconcile.Request {
 	_, ok := object.(*operatorv1beta1.Telemetry)
 	if !ok {
@@ -331,6 +333,9 @@ func (r *MetricPipelineController) mapTelemetryChanges(ctx context.Context, obje
 	return r.enqueueAllPipelines(ctx)
 }
 
+// mapPodChanges enqueues reconciliation requests for all MetricPipelines when a relevant Pod
+// (OTLP Gateway or Metric Agent) is updated or deleted. This ensures that the TelemetryFlowHealthy
+// status condition is updated based on the current pod state.
 func (r *MetricPipelineController) mapPodChanges(ctx context.Context, object client.Object) []reconcile.Request {
 	pod, ok := object.(*corev1.Pod)
 	if !ok {
@@ -345,6 +350,9 @@ func (r *MetricPipelineController) mapPodChanges(ctx context.Context, object cli
 	return r.enqueueAllPipelines(ctx)
 }
 
+// mapNodeChanges updates the node size tracker when a Node is added, removed, or modified.
+// If the smallest node memory changes, it enqueues reconciliation requests for all MetricPipelines
+// so that resource requirements can be recalculated.
 func (r *MetricPipelineController) mapNodeChanges(ctx context.Context, object client.Object) []reconcile.Request {
 	changed, err := r.nodeSizeTracker.UpdateSmallestMemory(ctx)
 	if err != nil {

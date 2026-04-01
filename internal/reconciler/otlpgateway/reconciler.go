@@ -202,6 +202,11 @@ func (r *Reconciler) processConfigAndBuildResources(ctx context.Context, tracePi
 func (r *Reconciler) doReconcile(ctx context.Context) error {
 	log := logf.FromContext(ctx)
 
+	// Clean up legacy per-signal gateway resources (from pre-OTLP-Gateway architecture)
+	if err := r.cleanupLegacyGateways(ctx); err != nil {
+		return fmt.Errorf("failed to clean up legacy gateways: %w", err)
+	}
+
 	config, err := otelcollector.ReadOTLPGatewayConfig(ctx, r.Client, r.globals.TargetNamespace())
 	if err != nil {
 		return fmt.Errorf("failed to read configmap: %w", err)
@@ -355,12 +360,7 @@ func (r *Reconciler) fetchMetricPipelines(ctx context.Context, refs []otelcollec
 // buildCollectorConfig builds OTel Collector configuration from TracePipeline, LogPipeline, and MetricPipeline CRs.
 func (r *Reconciler) buildCollectorConfig(ctx context.Context, tracePipelines []telemetryv1beta1.TracePipeline, logPipelines []telemetryv1beta1.LogPipeline, metricPipelines []telemetryv1beta1.MetricPipeline) (*common.Config, common.EnvVars, error) {
 	shootInfo := k8sutils.GetGardenerShootInfo(ctx, r.Client)
-	telemetryOptions := telemetryutils.Options{
-		SignalType:                common.SignalTypeTrace,
-		Client:                    r.Client,
-		DefaultTelemetryNamespace: r.globals.DefaultTelemetryNamespace(),
-	}
-	clusterName := telemetryutils.GetClusterNameFromTelemetry(ctx, telemetryOptions)
+	clusterName := telemetryutils.GetClusterNameFromTelemetry(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
 
 	clusterUID, err := k8sutils.GetClusterUID(ctx, r.Client)
 	if err != nil {
@@ -384,8 +384,29 @@ func (r *Reconciler) buildCollectorConfig(ctx context.Context, tracePipelines []
 			CloudProvider: shootInfo.CloudProvider,
 		},
 		Enrichments:       enrichments,
-		ServiceEnrichment: telemetryutils.GetServiceEnrichmentFromTelemetryOrDefault(ctx, telemetryOptions),
+		ServiceEnrichment: telemetryutils.GetServiceEnrichmentFromTelemetryOrDefault(ctx, r.Client, r.globals.DefaultTelemetryNamespace()),
 		ModuleVersion:     r.globals.Version(),
 		GatewayNamespace:  r.globals.TargetNamespace(),
 	})
+}
+
+// TODO: Remove after first roll-out
+// cleanupLegacyGateways removes leftover resources from the old per-signal gateway Deployments
+// (telemetry-trace-gateway, telemetry-metric-gateway, telemetry-log-gateway) that existed before
+// the centralized OTLP Gateway architecture. This is idempotent and safe on clusters where
+// old resources don't exist.
+func (r *Reconciler) cleanupLegacyGateways(ctx context.Context) error {
+	isIstioActive, err := r.istioStatusChecker.IsIstioActive(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to check Istio status: %w", err)
+	}
+
+	ns := r.globals.TargetNamespace()
+	for _, gatewayName := range []string{names.TraceGateway, names.MetricGateway, names.LogGateway} {
+		if err := otelcollector.DeleteLegacyGatewayResources(ctx, r.Client, ns, gatewayName, isIstioActive); err != nil {
+			return fmt.Errorf("failed to delete legacy gateway %s: %w", gatewayName, err)
+		}
+	}
+
+	return nil
 }
