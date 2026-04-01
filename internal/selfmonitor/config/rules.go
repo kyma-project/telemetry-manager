@@ -150,6 +150,21 @@ func ruleNamePrefix(t pipelineType) string {
 	return ""
 }
 
+// otelComponentPrefix returns the OTel component name prefix used by the OTLP Gateway for the given pipeline type.
+// Agents use no prefix (PipelineRef with empty SignalType), so this prefix is absent in agent alert labels.
+func otelComponentPrefix(t pipelineType) string {
+	switch t {
+	case typeMetricPipeline:
+		return "metricpipeline-"
+	case typeTracePipeline:
+		return "tracepipeline-"
+	case typeLogPipeline:
+		return "logpipeline-"
+	}
+
+	return ""
+}
+
 const (
 	RulesAny = "any"
 )
@@ -183,7 +198,10 @@ func matchesRule(labelSet map[string]string, unprefixedRuleName string, pipeline
 		return true
 	}
 
-	return pipelineNameLabel == pipelineName
+	// Strip the signal-type component prefix that the OTLP Gateway config adds to OTel component names.
+	// For agents, the prefix is absent so strings.TrimPrefix is a no-op.
+	effectivePipelineName := strings.TrimPrefix(pipelineNameLabel, otelComponentPrefix(t))
+	return effectivePipelineName == pipelineName
 }
 
 func matchesRuleName(labelSet map[string]string, unprefixedRuleName string, t pipelineType) bool {

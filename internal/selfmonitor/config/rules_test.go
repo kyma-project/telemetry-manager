@@ -168,6 +168,26 @@ func TestMatchesMetricPipelineRule(t *testing.T) {
 			pipelineName:       "otlp/testPipeline",
 			expectedResult:     false,
 		},
+		{
+			name: "rule name matches and pipeline_name has gateway prefix (metricpipeline-)",
+			labelSet: map[string]string{
+				"alertname":     "MetricGatewayAllDataDropped",
+				"pipeline_name": "metricpipeline-testPipeline",
+			},
+			unprefixedRuleName: "GatewayAllDataDropped",
+			pipelineName:       "testPipeline",
+			expectedResult:     true,
+		},
+		{
+			name: "rule name matches but pipeline_name has wrong signal prefix (tracepipeline- on metric check)",
+			labelSet: map[string]string{
+				"alertname":     "MetricGatewayAllDataDropped",
+				"pipeline_name": "tracepipeline-testPipeline",
+			},
+			unprefixedRuleName: "GatewayAllDataDropped",
+			pipelineName:       "testPipeline",
+			expectedResult:     false,
+		},
 	}
 
 	for _, test := range tests {
@@ -244,6 +264,26 @@ func TestMatchesTracePipelineRule(t *testing.T) {
 			pipelineName:       "otlp/testPipeline",
 			expectedResult:     false,
 		},
+		{
+			name: "rule name matches and pipeline_name has gateway prefix (tracepipeline-)",
+			labelSet: map[string]string{
+				"alertname":     "TraceGatewayAllDataDropped",
+				"pipeline_name": "tracepipeline-testPipeline",
+			},
+			unprefixedRuleName: "GatewayAllDataDropped",
+			pipelineName:       "testPipeline",
+			expectedResult:     true,
+		},
+		{
+			name: "rule name matches but pipeline_name has wrong signal prefix (metricpipeline- on trace check)",
+			labelSet: map[string]string{
+				"alertname":     "TraceGatewayAllDataDropped",
+				"pipeline_name": "metricpipeline-testPipeline",
+			},
+			unprefixedRuleName: "GatewayAllDataDropped",
+			pipelineName:       "testPipeline",
+			expectedResult:     false,
+		},
 	}
 
 	for _, test := range tests {
@@ -318,6 +358,26 @@ func TestMatchesOtelLogPipelineRule(t *testing.T) {
 			},
 			unprefixedRuleName: RulesAny,
 			pipelineName:       "otlp/testPipeline",
+			expectedResult:     false,
+		},
+		{
+			name: "rule name matches and pipeline_name has gateway prefix (logpipeline-)",
+			labelSet: map[string]string{
+				"alertname":     "LogGatewayAllDataDropped",
+				"pipeline_name": "logpipeline-testPipeline",
+			},
+			unprefixedRuleName: "GatewayAllDataDropped",
+			pipelineName:       "testPipeline",
+			expectedResult:     true,
+		},
+		{
+			name: "rule name matches but pipeline_name has wrong signal prefix (metricpipeline- on log check)",
+			labelSet: map[string]string{
+				"alertname":     "LogGatewayAllDataDropped",
+				"pipeline_name": "metricpipeline-testPipeline",
+			},
+			unprefixedRuleName: "GatewayAllDataDropped",
+			pipelineName:       "testPipeline",
 			expectedResult:     false,
 		},
 	}
