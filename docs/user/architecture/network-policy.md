@@ -12,7 +12,7 @@ Each Telemetry component has a dedicated set of NetworkPolicies that control the
 - All Telemetry module Pods can connect to any IP on port 443, including the Kubernetes API server.
 - Any Pod in the cluster can send OTLP data to the log, metric, and trace gateways on ports 4317 for gRPC and 4318 for HTTP.
 - Pods with the `networking.kyma-project.io/metrics-scraping: allowed` label can scrape metrics from all Telemetry components, including Telemetry Manager, on their respective metrics ports.
-- The self monitor can scrape metrics from the gateways, agents, and Fluent Bit on ports 8888 for OTel Collectors, and 2020 and 2021 for Fluent Bit.
+- The self monitor can scrape metrics from the gateways, agents, and Fluent Bit on ports 8888 for OTel Collectors, and 2020 for Fluent Bit.
 - Telemetry Manager can query the self monitor on port 9090.
 - All gateways and agents can forward telemetry data to external or in-cluster backends on any port.
 - The self monitor can send alerts to Telemetry Manager on port 9443.
