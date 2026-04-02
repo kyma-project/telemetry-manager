@@ -350,8 +350,6 @@ For easier access from the Kyma dashboard, add links to new navigation under **D
 
 To see the health of the Kyma Telemetry module and its related pipelines, import the file [Telemetry Module Status](./telemetry-resource-metrics.json) as a Dynatrace dashboard. For details, see [Importing Dashboards](https://docs.dynatrace.com/docs/analyze-explore-automate/dashboards-classic/dashboards/dashboard-json#import-dashboard).
 
-For details about adding attributes to the allow list, see [Configure resource and scope attributes to be added as dimensions](https://docs.dynatrace.com/docs/ingest-from/opentelemetry/otlp-api/ingest-otlp-metrics/configure-otlp-metrics#allow-list).
-
 ## Use Dynatrace Alerts
 
 To send alerts about the Kyma Telemetry module status to your preferred backend system, create Dynatrace alerts based on certain metric events:
