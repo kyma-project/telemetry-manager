@@ -18,7 +18,7 @@ For a quick check, you can inspect the `status` of a pipeline resource directly.
 1. Run `kubectl get` for the pipeline that you want to inspect:
    - For LogPipeline: `kubectl get logpipeline <your-pipeline-name>`
    - For TracePipeline: `kubectl get tracepipeline <your-pipeline-name>`
-   - For MetricPipeline: `kubectl get tracepipeline <your-pipeline-name>`
+   - For MetricPipeline: `kubectl get metricpipeline <your-pipeline-name>`
 2. Review the output. A healthy pipeline shows `True` for all status conditions.
 
     ```txt
@@ -77,9 +77,15 @@ If there are issues with one of the pipelines, see [Troubleshooting for the Tele
 ### Deprecated Attributes
 
 > [!WARNING]
-> The following attributes were previously documented but are deprecated and will be removed in a future release. Use the specific metric attributes listed above instead.
+> The following resource attributes are deprecated and will be removed in a future release. Update your dashboards and alert rules to use the replacement `metric.attributes.*` attributes.
 
-Deprecated metric resource attributes:
+| Deprecated Resource Attribute | Replacement Metric Attribute |
+| :--- | :--- |
+| `k8s.resource.name` | `metric.attributes.name` |
+| `k8s.resource.namespace` | `metric.attributes.namespace` |
+| `k8s.resource.group` | `metric.attributes.group` |
+| `k8s.resource.version` | `metric.attributes.version` |
+| `k8s.resource.kind` | `metric.attributes.kind` |
 - `k8s.resource.name` use `metric.attributes.name`
 - `k8s.resource.namespace` use `metric.attributes.namespace`
 - `k8s.resource.group` use `metric.attributes.group`
