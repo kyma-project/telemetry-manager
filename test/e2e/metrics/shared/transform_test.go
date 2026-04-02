@@ -13,7 +13,7 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	"github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
+	metricmatchers "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
@@ -47,9 +47,9 @@ func TestTransform(t *testing.T) {
 			transformSpec: telemetryv1beta1.TransformSpec{
 				Statements: []string{"set(datapoint.attributes[\"system\"], \"false\") where not IsMatch(resource.attributes[\"k8s.namespace.name\"], \".*-system\")"},
 			},
-			assertion: metric.HaveFlatMetrics(ContainElement(SatisfyAll(
-				metric.HaveResourceAttributes(Not(HaveKeyWithValue("k8s.namespace.name", "kyma-system"))),
-				metric.HaveMetricAttributes(HaveKeyWithValue("system", "false")),
+			assertion: metricmatchers.HaveFlatMetrics(ContainElement(SatisfyAll(
+				metricmatchers.HaveResourceAttributes(Not(HaveKeyWithValue("k8s.namespace.name", "kyma-system"))),
+				metricmatchers.HaveMetricAttributes(HaveKeyWithValue("system", "false")),
 			))),
 			expectAgent: true,
 		},
@@ -70,8 +70,8 @@ func TestTransform(t *testing.T) {
 				Conditions: []string{"metric.type != \"\""},
 				Statements: []string{"set(metric.description, \"FooMetric\")"},
 			},
-			assertion: metric.HaveFlatMetrics(ContainElement(SatisfyAll(
-				metric.HaveDescription(Equal("FooMetric")),
+			assertion: metricmatchers.HaveFlatMetrics(ContainElement(SatisfyAll(
+				metricmatchers.HaveDescription(Equal("FooMetric")),
 			))),
 			expectAgent: true,
 		},
@@ -93,9 +93,9 @@ func TestTransform(t *testing.T) {
 					"set(metric.description, \"test passed\")",
 				},
 			},
-			assertion: metric.HaveFlatMetrics(ContainElement(SatisfyAll(
-				metric.HaveResourceAttributes(HaveKeyWithValue("test", "passed")),
-				metric.HaveDescription(Equal("test passed")),
+			assertion: metricmatchers.HaveFlatMetrics(ContainElement(SatisfyAll(
+				metricmatchers.HaveResourceAttributes(HaveKeyWithValue("test", "passed")),
+				metricmatchers.HaveDescription(Equal("test passed")),
 			))),
 			expectAgent: true,
 		},
@@ -113,9 +113,9 @@ func TestTransform(t *testing.T) {
 			transformSpec: telemetryv1beta1.TransformSpec{
 				Statements: []string{"set(datapoint.attributes[\"system\"], \"false\") where not IsMatch(resource.attributes[\"k8s.namespace.name\"], \".*-system\")"},
 			},
-			assertion: metric.HaveFlatMetrics(ContainElement(SatisfyAll(
-				metric.HaveResourceAttributes(Not(HaveKeyWithValue("k8s.namespace.name", "kyma-system"))),
-				metric.HaveMetricAttributes(HaveKeyWithValue("system", "false")),
+			assertion: metricmatchers.HaveFlatMetrics(ContainElement(SatisfyAll(
+				metricmatchers.HaveResourceAttributes(Not(HaveKeyWithValue("k8s.namespace.name", "kyma-system"))),
+				metricmatchers.HaveMetricAttributes(HaveKeyWithValue("system", "false")),
 			))),
 		},
 		{
@@ -133,8 +133,8 @@ func TestTransform(t *testing.T) {
 				Conditions: []string{"metric.type != \"\""},
 				Statements: []string{"set(metric.description, \"FooMetric\")"},
 			},
-			assertion: metric.HaveFlatMetrics(ContainElement(SatisfyAll(
-				metric.HaveDescription(Equal("FooMetric")),
+			assertion: metricmatchers.HaveFlatMetrics(ContainElement(SatisfyAll(
+				metricmatchers.HaveDescription(Equal("FooMetric")),
 			))),
 		},
 		{
@@ -153,9 +153,9 @@ func TestTransform(t *testing.T) {
 					"set(metric.description, \"test passed\")",
 				},
 			},
-			assertion: metric.HaveFlatMetrics(ContainElement(SatisfyAll(
-				metric.HaveResourceAttributes(HaveKeyWithValue("test", "passed")),
-				metric.HaveDescription(Equal("test passed")),
+			assertion: metricmatchers.HaveFlatMetrics(ContainElement(SatisfyAll(
+				metricmatchers.HaveResourceAttributes(HaveKeyWithValue("test", "passed")),
+				metricmatchers.HaveDescription(Equal("test passed")),
 			))),
 		},
 	}
