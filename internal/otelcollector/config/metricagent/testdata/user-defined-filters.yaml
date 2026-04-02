@@ -45,10 +45,10 @@ service:
                 - transform/insert-cluster-attributes
                 - transform/drop-skip-enrichment-attribute
                 - transform/drop-kyma-attributes
-                - filter/user-defined-test1
+                - filter/metricpipeline-user-defined-test1
                 - batch
             exporters:
-                - otlp_grpc/test1
+                - otlp_grpc/metricpipeline-test1
         metrics/output-test2:
             receivers:
                 - routing/enrichment
@@ -58,10 +58,10 @@ service:
                 - transform/insert-cluster-attributes
                 - transform/drop-skip-enrichment-attribute
                 - transform/drop-kyma-attributes
-                - filter/user-defined-test2
+                - filter/metricpipeline-user-defined-test2
                 - batch
             exporters:
-                - otlp_grpc/test2
+                - otlp_grpc/metricpipeline-test2
     telemetry:
         metrics:
             readers:
@@ -179,14 +179,14 @@ processors:
         metric_conditions:
             - conditions:
                 - IsMatch(metric.name, "^k8s.node.network.*") and not(IsMatch(datapoint.attributes["interface"], "^(eth|en).*"))
-    filter/user-defined-test1:
+    filter/metricpipeline-user-defined-test1:
         error_mode: ignore
         metric_conditions:
             - conditions:
                 - HasAttrOnDatapoint("http.method","GET"
             - conditions:
                 - datapoint.flags == kyma
-    filter/user-defined-test2:
+    filter/metricpipeline-user-defined-test2:
         error_mode: ignore
         metric_conditions:
             - conditions:
@@ -286,8 +286,8 @@ processors:
             - statements:
                 - set(resource.attributes["kyma.input.name"], "runtime")
 exporters:
-    otlp_grpc/test1:
-        endpoint: ${OTLP_ENDPOINT_TEST1}
+    otlp_grpc/metricpipeline-test1:
+        endpoint: ${OTLP_ENDPOINT_METRICPIPELINE_TEST1}
         compression: gzip
         sending_queue:
             enabled: true
@@ -297,8 +297,8 @@ exporters:
             initial_interval: 5s
             max_interval: 30s
             max_elapsed_time: 300s
-    otlp_grpc/test2:
-        endpoint: ${OTLP_ENDPOINT_TEST2}
+    otlp_grpc/metricpipeline-test2:
+        endpoint: ${OTLP_ENDPOINT_METRICPIPELINE_TEST2}
         compression: gzip
         sending_queue:
             enabled: true

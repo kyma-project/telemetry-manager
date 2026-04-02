@@ -252,22 +252,22 @@ func formatBasicAuthHeader(username string, password string) string {
 }
 
 // formatEnvVarKey builds an environment variable key for a pipeline.
-// Example: UseTypePrefix=true  → "PREFIX_TRACEPIPELINE_PIPELINENAME"
-// Example: UseTypePrefix=false → "PREFIX_PIPELINENAME"
+// Example: Type="trace" → "PREFIX_TRACEPIPELINE_PIPELINENAME"
+// Example: Type=""      → "PREFIX_PIPELINENAME"
 func formatEnvVarKey(prefix string, pipelineRef PipelineRef) string {
-	if pipelineRef.UseTypePrefix {
-		return fmt.Sprintf("%s_%s_%s", prefix, sanitizeEnvVarName(pipelineRef.typePrefix()), sanitizeEnvVarName(pipelineRef.Name))
+	if tp := pipelineRef.typePrefix(); tp != "" {
+		return fmt.Sprintf("%s_%s_%s", prefix, sanitizeEnvVarName(tp), sanitizeEnvVarName(pipelineRef.Name))
 	}
 
 	return fmt.Sprintf("%s_%s", prefix, sanitizeEnvVarName(pipelineRef.Name))
 }
 
 // formatHeaderEnvVarKey builds an environment variable key for a custom header.
-// Example: UseTypePrefix=true  → "HEADER_TRACEPIPELINE_PIPELINENAME_HEADERNAME"
-// Example: UseTypePrefix=false → "HEADER_PIPELINENAME_HEADERNAME"
+// Example: Type="trace" → "HEADER_TRACEPIPELINE_PIPELINENAME_HEADERNAME"
+// Example: Type=""      → "HEADER_PIPELINENAME_HEADERNAME"
 func formatHeaderEnvVarKey(header telemetryv1beta1.Header, pipelineRef PipelineRef) string {
-	if pipelineRef.UseTypePrefix {
-		return fmt.Sprintf("HEADER_%s_%s_%s", sanitizeEnvVarName(pipelineRef.typePrefix()), sanitizeEnvVarName(pipelineRef.Name), sanitizeEnvVarName(header.Name))
+	if tp := pipelineRef.typePrefix(); tp != "" {
+		return fmt.Sprintf("HEADER_%s_%s_%s", sanitizeEnvVarName(tp), sanitizeEnvVarName(pipelineRef.Name), sanitizeEnvVarName(header.Name))
 	}
 
 	return fmt.Sprintf("HEADER_%s_%s", sanitizeEnvVarName(pipelineRef.Name), sanitizeEnvVarName(header.Name))

@@ -217,12 +217,12 @@ func (b *Builder) addOTLPExporter() buildComponentFunc {
 }
 
 func (b *Builder) addOAuth2Extension(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) error {
-	oauth2ExtensionID := common.OAuth2ExtensionID(common.PipelineRef{Name: pipeline.Name})
+	oauth2ExtensionID := common.OAuth2ExtensionID(common.PipelineRef{Name: pipeline.Name, Type: common.SignalTypeLog})
 
 	oauth2ExtensionConfig, oauth2ExtensionEnvVars, err := common.NewOAuth2ExtensionConfigBuilder(
 		b.Reader,
 		pipeline.Spec.Output.OTLP.Authentication.OAuth2,
-		common.PipelineRef{Name: pipeline.Name},
+		common.PipelineRef{Name: pipeline.Name, Type: common.SignalTypeLog},
 	).OAuth2Extension(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to build OAuth2 extension for pipeline %s: %w", pipeline.Name, err)
@@ -246,13 +246,13 @@ func formatFileLogReceiverID(lp *telemetryv1beta1.LogPipeline) string {
 }
 
 func formatUserDefinedTransformProcessorID(lp *telemetryv1beta1.LogPipeline) string {
-	return common.UserDefinedTransformProcessorID(common.PipelineRef{Name: lp.Name})
+	return common.UserDefinedTransformProcessorID(common.PipelineRef{Name: lp.Name, Type: common.SignalTypeLog})
 }
 
 func formatUserDefinedFilterProcessorID(lp *telemetryv1beta1.LogPipeline) string {
-	return common.UserDefinedFilterProcessorID(common.PipelineRef{Name: lp.Name})
+	return common.UserDefinedFilterProcessorID(common.PipelineRef{Name: lp.Name, Type: common.SignalTypeLog})
 }
 
 func formatOTLPExporterID(lp *telemetryv1beta1.LogPipeline) string {
-	return common.ExporterID(lp.Spec.Output.OTLP.Protocol, common.PipelineRef{Name: lp.Name})
+	return common.ExporterID(lp.Spec.Output.OTLP.Protocol, common.PipelineRef{Name: lp.Name, Type: common.SignalTypeLog})
 }

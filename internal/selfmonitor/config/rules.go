@@ -33,6 +33,7 @@ const (
 
 	labelService      = "service"
 	labelPipelineName = "pipeline_name"
+	labelPipelineType = "pipeline_type"
 
 	// OTel Collector rule labels
 
@@ -150,16 +151,16 @@ func ruleNamePrefix(t pipelineType) string {
 	return ""
 }
 
-// otelComponentPrefix returns the OTel component name prefix used by the OTLP Gateway for the given pipeline type.
-// Agents use no prefix (PipelineRef with empty SignalType), so this prefix is absent in agent alert labels.
-func otelComponentPrefix(t pipelineType) string {
+// pipelineComponentType returns the value of the pipeline_type Prometheus label for the given pipeline type.
+// It matches the <signaltype>pipeline prefix extracted from OTel exporter component IDs by the selfmonitor relabeling.
+func pipelineComponentType(t pipelineType) string {
 	switch t {
 	case typeMetricPipeline:
-		return "metricpipeline-"
+		return "metricpipeline"
 	case typeTracePipeline:
-		return "tracepipeline-"
+		return "tracepipeline"
 	case typeLogPipeline:
-		return "logpipeline-"
+		return "logpipeline"
 	}
 
 	return ""
@@ -170,19 +171,19 @@ const (
 )
 
 // MatchesMetricPipelineRule checks if the given alert label set matches the expected rule name (or RulesAny) and pipeline name for a metric pipeline.
-// If the alert does not have an exporter label, it should be matched by all pipelines.
+// If the alert does not have a pipeline_name label, it should be matched by all pipelines.
 func MatchesMetricPipelineRule(labelSet map[string]string, unprefixedRuleName string, pipelineName string) bool {
 	return matchesRule(labelSet, unprefixedRuleName, pipelineName, typeMetricPipeline)
 }
 
 // MatchesTracePipelineRule checks if the given alert label set matches the expected rule name (or RulesAny) and pipeline name for a trace pipeline.
-// If the alert does not have an exporter label, it should be matched by all pipelines.
+// If the alert does not have a pipeline_name label, it should be matched by all pipelines.
 func MatchesTracePipelineRule(labelSet map[string]string, unprefixedRuleName string, pipelineName string) bool {
 	return matchesRule(labelSet, unprefixedRuleName, pipelineName, typeTracePipeline)
 }
 
 // MatchesLogPipelineRule checks if the given alert label set matches the expected rule name (or RulesAny) and pipeline name for a log pipeline.
-// If the alert does not have an exporter label, it should be matched by all pipelines.
+// If the alert does not have a pipeline_name label, it should be matched by all pipelines.
 func MatchesLogPipelineRule(labelSet map[string]string, unprefixedRuleName string, pipelineName string) bool {
 	return matchesRule(labelSet, unprefixedRuleName, pipelineName, typeLogPipeline)
 }
@@ -194,15 +195,19 @@ func matchesRule(labelSet map[string]string, unprefixedRuleName string, pipeline
 
 	pipelineNameLabel, hasLabel := labelSet[labelPipelineName]
 	if !hasLabel {
-		// If the alert does not have an exporter label, it should be matched by all pipelines
+		// If the alert does not have a pipeline_name label, it should be matched by all pipelines
 		return true
 	}
 
-	// Strip the signal-type component prefix that the OTLP Gateway config adds to OTel component names.
-	// For agents, the prefix is absent so strings.TrimPrefix is a no-op.
-	effectivePipelineName := strings.TrimPrefix(pipelineNameLabel, otelComponentPrefix(t))
+	// If pipeline_type is present, verify it matches the expected type to correctly distinguish
+	// alerts from the centralized OTLP Gateway (which co-hosts all signal types in one OTel config).
+	if pipelineTypeLabel, hasTypeLabel := labelSet[labelPipelineType]; hasTypeLabel {
+		if pipelineTypeLabel != pipelineComponentType(t) {
+			return false
+		}
+	}
 
-	return effectivePipelineName == pipelineName
+	return pipelineNameLabel == pipelineName
 }
 
 func matchesRuleName(labelSet map[string]string, unprefixedRuleName string, t pipelineType) bool {

@@ -215,7 +215,7 @@ func (b *Builder) addTraceOTLPExporter(builder *common.ComponentBuilder[*telemet
 			otlpExporterBuilder := common.NewOTLPExporterConfigBuilder(
 				b.Reader,
 				tp.Spec.Output.OTLP,
-				common.PipelineRef{Name: tp.Name, Type: common.SignalTypeTrace, UseTypePrefix: true},
+				common.PipelineRef{Name: tp.Name, Type: common.SignalTypeTrace},
 				queueSize,
 			)
 
@@ -226,7 +226,7 @@ func (b *Builder) addTraceOTLPExporter(builder *common.ComponentBuilder[*telemet
 
 //nolint:dupl // Acceptable duplication - trace and log OAuth2 extensions follow same pattern
 func (b *Builder) addTraceOAuth2Extension(ctx context.Context, builder *common.ComponentBuilder[*telemetryv1beta1.TracePipeline], pipeline *telemetryv1beta1.TracePipeline) error {
-	pipelineRef := common.PipelineRef{Name: pipeline.Name, Type: common.SignalTypeTrace, UseTypePrefix: true}
+	pipelineRef := common.PipelineRef{Name: pipeline.Name, Type: common.SignalTypeTrace}
 	oauth2ExtensionID := common.OAuth2ExtensionID(pipelineRef)
 
 	oauth2ExtensionConfig, oauth2ExtensionEnvVars, err := common.NewOAuth2ExtensionConfigBuilder(
@@ -254,13 +254,13 @@ func formatTraceServicePipelineID(tp *telemetryv1beta1.TracePipeline) string {
 }
 
 func formatTraceUserDefinedTransformProcessorID(tp *telemetryv1beta1.TracePipeline) string {
-	return common.UserDefinedTransformProcessorID(common.PipelineRef{Name: tp.Name, Type: common.SignalTypeTrace, UseTypePrefix: true})
+	return common.UserDefinedTransformProcessorID(common.PipelineRef{Name: tp.Name, Type: common.SignalTypeTrace})
 }
 
 func formatTraceUserDefinedFilterProcessorID(tp *telemetryv1beta1.TracePipeline) string {
-	return common.UserDefinedFilterProcessorID(common.PipelineRef{Name: tp.Name, Type: common.SignalTypeTrace, UseTypePrefix: true})
+	return common.UserDefinedFilterProcessorID(common.PipelineRef{Name: tp.Name, Type: common.SignalTypeTrace})
 }
 
 func formatTraceOTLPExporterID(tp *telemetryv1beta1.TracePipeline) string {
-	return common.ExporterID(tp.Spec.Output.OTLP.Protocol, common.PipelineRef{Name: tp.Name, Type: common.SignalTypeTrace, UseTypePrefix: true})
+	return common.ExporterID(tp.Spec.Output.OTLP.Protocol, common.PipelineRef{Name: tp.Name, Type: common.SignalTypeTrace})
 }

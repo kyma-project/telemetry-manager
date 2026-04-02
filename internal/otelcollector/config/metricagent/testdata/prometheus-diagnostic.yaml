@@ -44,7 +44,7 @@ service:
                 - transform/drop-kyma-attributes
                 - batch
             exporters:
-                - otlp_grpc/test
+                - otlp_grpc/metricpipeline-test
     telemetry:
         metrics:
             readers:
@@ -253,8 +253,8 @@ processors:
             - statements:
                 - set(resource.attributes["kyma.input.name"], "prometheus")
 exporters:
-    otlp_grpc/test:
-        endpoint: ${OTLP_ENDPOINT_TEST}
+    otlp_grpc/metricpipeline-test:
+        endpoint: ${OTLP_ENDPOINT_METRICPIPELINE_TEST}
         compression: gzip
         sending_queue:
             enabled: true
