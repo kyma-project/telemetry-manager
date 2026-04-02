@@ -4,18 +4,6 @@ import testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 
 type Option func(*Backend)
 
-func WithDropFromSourceLabel(label map[string]string) Option {
-	return func(b *Backend) {
-		b.dropFromSourceLabel = label
-	}
-}
-
-func WithAbortFaultInjection(abortFaultPercentage float64) Option {
-	return func(b *Backend) {
-		b.abortFaultPercentage = abortFaultPercentage
-	}
-}
-
 func WithName(name string) Option {
 	return func(b *Backend) {
 		b.name = name

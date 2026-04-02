@@ -16,6 +16,33 @@ metadata:
   namespace: kyma-system
 `
 
+	telemetryCRWithGatewayReplicasYAML = `---
+apiVersion: operator.kyma-project.io/v1beta1
+kind: Telemetry
+metadata:
+  name: default
+  namespace: kyma-system
+spec:
+  log:
+    gateway:
+      scaling:
+        type: Static
+        static:
+          replicas: %d
+  metric:
+    gateway:
+      scaling:
+        type: Static
+        static:
+          replicas: %d
+  trace:
+    gateway:
+      scaling:
+        type: Static
+        static:
+          replicas: %d
+`
+
 	networkPolicyYAML = `---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -69,12 +96,17 @@ metadata:
 
 // deployTestPrerequisites deploys test fixtures required for e2e tests
 // Must be called AFTER manager deployment (needs Telemetry CRD)
-func deployTestPrerequisites(t TestingT, k8sClient client.Client) error {
+func deployTestPrerequisites(t TestingT, k8sClient client.Client, cfg Config) error {
 	ctx := t.Context()
 
 	t.Log("Deploying test prerequisites...")
 
-	if err := applyYAML(ctx, k8sClient, telemetryCRYAML); err != nil {
+	telemetryYAML := telemetryCRYAML
+	if cfg.GatewayReplicas > 0 {
+		telemetryYAML = fmt.Sprintf(telemetryCRWithGatewayReplicasYAML, cfg.GatewayReplicas, cfg.GatewayReplicas, cfg.GatewayReplicas)
+	}
+
+	if err := applyYAML(ctx, k8sClient, telemetryYAML); err != nil {
 		return fmt.Errorf("failed to apply Telemetry CR: %w", err)
 	}
 

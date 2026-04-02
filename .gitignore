@@ -50,4 +50,10 @@ telemetry-manager-experimental.yaml
 # The default Telemetry CR which is installed by the lifecycle-manager
 telemetry-default-cr.yaml
 dependencies/sample-app/vendor
+dependencies/mock-backend/mock-backend
 .vscode
+
+# PR review loop (Claude skill) — local reviewer/implementer hand-off; never commit
+.pr-review-loop/
+review-loop.diff
+review-loop.bak.diff
