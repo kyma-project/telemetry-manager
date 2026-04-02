@@ -2,7 +2,6 @@ package assert
 
 import (
 	"testing"
-	"time"
 
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -97,7 +96,7 @@ func TracePipelineConditionReasonsTransition(t *testing.T, pipelineName, condTyp
 			}
 
 			return ReasonStatus{Reason: currCond.Reason, Status: currCond.Status}
-		}, 10*time.Minute, periodic.DefaultInterval).Should(Equal(expected), "expected reason %s[%s] of type %s not reached", expected.Reason, expected.Status, condType)
+		}, periodic.FlowHealthConditionTransitionTimeout, periodic.DefaultInterval).Should(Equal(expected), "expected reason %s[%s] of type %s not reached", expected.Reason, expected.Status, condType)
 
 		t.Logf("Transitioned to [%s]%s\n", currCond.Status, currCond.Reason)
 	}
@@ -112,6 +111,7 @@ func TracePipelineSelfMonitorIsHealthy(t *testing.T, k8sClient client.Client, pi
 
 		key := types.NamespacedName{Name: pipelineName}
 		g.Expect(k8sClient.Get(t.Context(), key, &pipeline)).To(Succeed())
-		g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeFlowHealthy)).To(BeTrueBecause("Flow not healthy"))
+		cond := meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeFlowHealthy)
+		g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeFlowHealthy)).To(BeTrueBecause("FlowHealthy condition: %v", cond))
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }

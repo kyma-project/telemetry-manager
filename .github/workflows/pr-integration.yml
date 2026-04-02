@@ -11,7 +11,6 @@ on:
   push:
     branches:
       - "main"
-      - "release-*"
     paths:
       - "**/go.mod"
       - "**/go.sum"
@@ -65,6 +64,7 @@ env:
   E2E_TEST_TIMEOUT: 60m
   # FIPS images are only available on push/schedule (not on PR due to registry restrictions)
   FIPS_IMAGE_AVAILABLE: ${{ github.event_name != 'pull_request' }}
+  ARTIFACT_PREFIX: "pr-"
 
 jobs:
   setup:
@@ -180,6 +180,7 @@ jobs:
           manager-image-archive: ${{ github.event_name == 'pull_request' && 'manager-image' || '' }}
           fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
           google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
+          artifact-prefix: ${{ env.ARTIFACT_PREFIX }}
 
   # e2e-metrics split by set labels for parallel execution
   e2e-metrics:
@@ -213,6 +214,7 @@ jobs:
           manager-image-archive: ${{ github.event_name == 'pull_request' && 'manager-image' || '' }}
           fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
           google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
+          artifact-prefix: ${{ env.ARTIFACT_PREFIX }}
 
   # All e2e suites with experimental flavor
   e2e-experimental:
@@ -248,6 +250,7 @@ jobs:
           manager-image-archive: ${{ github.event_name == 'pull_request' && 'manager-image' || '' }}
           fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
           google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
+          artifact-prefix: ${{ env.ARTIFACT_PREFIX }}
 
   # e2e-traces and e2e-misc (non-experimental) without set splitting
   e2e:
@@ -279,6 +282,7 @@ jobs:
           manager-image-archive: ${{ github.event_name == 'pull_request' && 'manager-image' || '' }}
           fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
           google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
+          artifact-prefix: ${{ env.ARTIFACT_PREFIX }}
 
   # Upgrade and integration tests
   e2e-other:
@@ -310,8 +314,31 @@ jobs:
           manager-image-archive: ${{ github.event_name == 'pull_request' && 'manager-image' || '' }}
           fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
           google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
+          artifact-prefix: ${{ env.ARTIFACT_PREFIX }}
 
   # Selfmonitor tests
+  selfmonitor-healthy:
+    needs: setup
+    runs-on: ubuntu-latest
+    name: selfmonitor-healthy
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: '0'
+          ref: ${{ inputs.ref || github.ref }}
+
+      - name: Run E2E test
+        uses: ./.github/template/run-e2e-test
+        with:
+          test-id: selfmonitor-healthy
+          test-path: ./test/selfmonitor/...
+          test-labels: healthy
+          manager-image: ${{ needs.setup.outputs.manager-image }}
+          manager-image-archive: ${{ github.event_name == 'pull_request' && 'manager-image' || '' }}
+          fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
+          google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
+
   selfmonitor:
     needs: setup
     runs-on: ubuntu-latest
@@ -319,7 +346,6 @@ jobs:
       fail-fast: false
       matrix:
         scenario:
-          - healthy
           - backpressure
           - outage
         component:
@@ -353,9 +379,10 @@ jobs:
           manager-image-archive: ${{ github.event_name == 'pull_request' && 'manager-image' || '' }}
           fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
           google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
+          artifact-prefix: ${{ env.ARTIFACT_PREFIX }}
 
   summary:
-    needs: [e2e-logs, e2e-metrics, e2e-experimental, e2e, e2e-other, selfmonitor]
+    needs: [e2e-logs, e2e-metrics, e2e-experimental, e2e, e2e-other, selfmonitor-healthy, selfmonitor]
     runs-on: ubuntu-latest
     if: always()
     steps:
@@ -365,3 +392,5 @@ jobs:
 
       - name: Generate test summary
         uses: "./.github/template/test-summary"
+        with:
+          artifact-prefix: ${{ env.ARTIFACT_PREFIX }}

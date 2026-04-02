@@ -3,260 +3,117 @@ package selfmonitor
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	. "github.com/onsi/gomega"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
-	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdoutloggen"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/faultbackend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
+const bufferFillingUpRate = 60 * defaultRate
+
 func TestBackpressure(t *testing.T) {
 	tests := []struct {
-		name       string
-		component  string
-		pipeline   func(pipelineName, includeNs string, backend *kitbackend.Backend) client.Object
-		generator  func(ns string) []client.Object
-		assertions func(t *testing.T, pipelineName string)
+		name            string
+		component       string
+		faultOpts       []faultbackend.Option
+		generator       func(ns string) []client.Object
+		expectedReasons []assert.ReasonStatus
+		// useIstio indicates that this test case requires Istio fault injection via VirtualService
+		// rather than the faultbackend. Used for metric-agent, where the VS selectively blocks only
+		// agent→gateway traffic without affecting the gateway's own backend traffic.
+		useIstio bool
 	}{
 		{
-			name:      "log-agent",
-			component: suite.LabelLogAgent,
-			pipeline: func(pipelineName, includeNs string, backend *kitbackend.Backend) client.Object {
-				p := testutils.NewLogPipelineBuilder().
-					WithName(pipelineName).
-					WithInput(testutils.BuildLogPipelineRuntimeInput(testutils.IncludeNamespaces(includeNs))).
-					WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
-					Build()
-
-				return &p
-			},
-			generator: func(ns string) []client.Object {
-				return []client.Object{
-					stdoutloggen.NewDeployment(ns, stdoutloggen.WithRate(4000)).K8sObject(),
-				}
-			},
-			assertions: func(t *testing.T, pipelineName string) {
-				assert.DeploymentReady(t, kitkyma.LogGatewayName)
-				assert.DaemonSetReady(t, kitkyma.LogAgentName)
-				assert.OTelLogPipelineHealthy(t, pipelineName)
-				assert.LogPipelineConditionReasonsTransition(t, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
-					{Reason: conditions.ReasonSelfMonFlowHealthy, Status: metav1.ConditionTrue},
-					{Reason: conditions.ReasonSelfMonAgentSomeDataDropped, Status: metav1.ConditionFalse},
-				})
-				assert.TelemetryHasState(t, operatorv1beta1.StateWarning)
-				assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
-					Type:   conditions.TypeLogComponentsHealthy,
-					Status: metav1.ConditionFalse,
-					Reason: conditions.ReasonSelfMonAgentSomeDataDropped,
-				})
-			},
+			name:            "log-agent",
+			component:       suite.LabelLogAgent,
+			faultOpts:       faultNonRetryableErr(faultPercentageThirty),
+			expectedReasons: degradedReasons(conditions.ReasonSelfMonAgentSomeDataDropped),
 		},
 		{
-			name:      "log-gateway",
-			component: suite.LabelLogGateway,
-			pipeline: func(pipelineName, includeNs string, backend *kitbackend.Backend) client.Object {
-				p := testutils.NewLogPipelineBuilder().
-					WithName(pipelineName).
-					WithInput(testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))).
-					WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
-					Build()
-
-				return &p
-			},
-			generator: func(ns string) []client.Object {
-				return []client.Object{
-					telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeLogs,
-						telemetrygen.WithRate(800),
-						telemetrygen.WithWorkers(5)).
-						K8sObject(),
-				}
-			},
-			assertions: func(t *testing.T, pipelineName string) {
-				assert.DeploymentReady(t, kitkyma.LogGatewayName)
-				assert.OTelLogPipelineHealthy(t, pipelineName)
-				assert.LogPipelineConditionReasonsTransition(t, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
-					{Reason: conditions.ReasonSelfMonFlowHealthy, Status: metav1.ConditionTrue},
-					{Reason: conditions.ReasonSelfMonGatewaySomeDataDropped, Status: metav1.ConditionFalse},
-				})
-				assert.TelemetryHasState(t, operatorv1beta1.StateWarning)
-				assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
-					Type:   conditions.TypeLogComponentsHealthy,
-					Status: metav1.ConditionFalse,
-					Reason: conditions.ReasonSelfMonGatewaySomeDataDropped,
-				})
-			},
+			name:            "log-gateway",
+			component:       suite.LabelLogGateway,
+			faultOpts:       faultNonRetryableErr(faultPercentageThirty),
+			expectedReasons: degradedReasons(conditions.ReasonSelfMonGatewaySomeDataDropped),
 		},
 		{
-			name:      "fluent-bit",
+			// HTTP 429 is retryable for Fluent Bit: the output plugin retries, so requests accumulate
+			// in the Fluent Bit buffer → BufferFillingUp alert.
+			//
+			// 98% of requests receive HTTP 429 (retryable); Fluent Bit retries them but they never drain.
+			// The remaining 2% succeed (HTTP 200), but those responses are delayed by 3 s, which limits
+			// the successful drain throughput to ≈0.02 × (1/3 s) batches/s — far below the incoming
+			// rate of bufferFillingUpRate (6000 lines/s). As a result the queue fills faster than it
+			// empties, triggering the BufferFillingUp alert before SomeDataDropped.
+			//
+			// The delay is intentionally on the 200 path (successful drain), not the 429 path (retry):
+			// slowing down the rare successful responses is sufficient to prevent the queue from clearing,
+			// while keeping the retry loop fast enough to exercise the queue pressure code path.
+			name:      "fluent-bit-buffer-filling-up",
 			component: suite.LabelFluentBit,
-			pipeline: func(pipelineName, includeNs string, backend *kitbackend.Backend) client.Object {
-				p := testutils.NewLogPipelineBuilder().
-					WithName(pipelineName).
-					WithRuntimeInput(true, testutils.IncludeNamespaces(includeNs)).
-					WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
-					Build()
-
-				return &p
-			},
-			generator: func(ns string) []client.Object {
-				return []client.Object{stdoutloggen.NewDeployment(ns, stdoutloggen.WithRate(6000)).K8sObject()}
-			},
-			assertions: func(t *testing.T, pipelineName string) {
-				assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
-				assert.FluentBitLogPipelineHealthy(t, pipelineName)
-				assert.LogPipelineConditionReasonsTransition(t, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
-					{Reason: conditions.ReasonSelfMonFlowHealthy, Status: metav1.ConditionTrue},
-					{Reason: conditions.ReasonSelfMonAgentBufferFillingUp, Status: metav1.ConditionFalse},
-					{Reason: conditions.ReasonSelfMonAgentSomeDataDropped, Status: metav1.ConditionFalse},
-				})
-				assert.TelemetryHasState(t, operatorv1beta1.StateWarning)
-				assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
-					Type:   conditions.TypeLogComponentsHealthy,
-					Status: metav1.ConditionFalse,
-					Reason: conditions.ReasonSelfMonAgentSomeDataDropped,
-				})
-			},
+			faultOpts: append(faultRetryableErr(faultPercentageNinetyEight),
+				faultbackend.WithDelay(200, 3*time.Second),
+			),
+			generator:       stdoutLogGenerator(bufferFillingUpRate),
+			expectedReasons: degradedReasons(conditions.ReasonSelfMonAgentBufferFillingUp),
 		},
 		{
-			name:      "metric-gateway",
-			component: suite.LabelMetricGateway,
-			pipeline: func(pipelineName, includeNs string, backend *kitbackend.Backend) client.Object {
-				p := testutils.NewMetricPipelineBuilder().
-					WithName(pipelineName).
-					WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
-					Build()
-
-				return &p
-			},
-			generator: func(ns string) []client.Object {
-				return []client.Object{
-					telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeMetrics,
-						telemetrygen.WithRate(800),
-						telemetrygen.WithWorkers(5)).
-						K8sObject(),
-				}
-			},
-			assertions: func(t *testing.T, pipelineName string) {
-				assert.DeploymentReady(t, kitkyma.MetricGatewayName)
-				assert.MetricPipelineHealthy(t, pipelineName)
-				assert.MetricPipelineConditionReasonsTransition(t, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
-					{Reason: conditions.ReasonSelfMonFlowHealthy, Status: metav1.ConditionTrue},
-					{Reason: conditions.ReasonSelfMonGatewaySomeDataDropped, Status: metav1.ConditionFalse},
-				})
-				assert.TelemetryHasState(t, operatorv1beta1.StateWarning)
-				assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
-					Type:   conditions.TypeMetricComponentsHealthy,
-					Status: metav1.ConditionFalse,
-					Reason: conditions.ReasonSelfMonGatewaySomeDataDropped,
-				})
-			},
+			// HTTP 400 is non-retryable for Fluent Bit: data is dropped immediately without filling the queue → SomeDataDropped.
+			name:            "fluent-bit-data-dropped",
+			component:       suite.LabelFluentBit,
+			faultOpts:       faultNonRetryableErr(faultPercentageThirty),
+			expectedReasons: degradedReasons(conditions.ReasonSelfMonAgentSomeDataDropped),
 		},
 		{
-			name:      "metric-agent",
-			component: suite.LabelMetricAgent,
-			pipeline: func(pipelineName, includeNs string, backend *kitbackend.Backend) client.Object {
-				p := testutils.NewMetricPipelineBuilder().
-					WithName(pipelineName).
-					WithPrometheusInput(true, testutils.IncludeNamespaces(includeNs)).
-					WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
-					Build()
-
-				return &p
-			},
-			generator: func(ns string) []client.Object {
-				metricProducer := prommetricgen.New(ns)
-
-				return []client.Object{
-					metricProducer.Pod().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).WithAvalancheHighLoad().K8sObject(),
-					metricProducer.Service().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
-				}
-			},
-			assertions: func(t *testing.T, pipelineName string) {
-				assert.DeploymentReady(t, kitkyma.MetricGatewayName)
-				assert.DaemonSetReady(t, kitkyma.MetricAgentName)
-				assert.MetricPipelineHealthy(t, pipelineName)
-				assert.MetricPipelineConditionReasonsTransition(t, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
-					{Reason: conditions.ReasonSelfMonFlowHealthy, Status: metav1.ConditionTrue},
-					{Reason: conditions.ReasonSelfMonAgentSomeDataDropped, Status: metav1.ConditionFalse},
-				})
-				assert.TelemetryHasState(t, operatorv1beta1.StateWarning)
-				assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
-					Type:   conditions.TypeMetricComponentsHealthy,
-					Status: metav1.ConditionFalse,
-					Reason: conditions.ReasonSelfMonAgentSomeDataDropped,
-				})
-			},
+			name:            "metric-gateway",
+			component:       suite.LabelMetricGateway,
+			faultOpts:       faultNonRetryableErr(faultPercentageThirty),
+			expectedReasons: degradedReasons(conditions.ReasonSelfMonGatewaySomeDataDropped),
 		},
 		{
-			name:      "traces",
-			component: suite.LabelTraces,
-			pipeline: func(pipelineName, includeNs string, backend *kitbackend.Backend) client.Object {
-				p := testutils.NewTracePipelineBuilder().
-					WithName(pipelineName).
-					WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
-					Build()
-
-				return &p
-			},
-			generator: func(ns string) []client.Object {
-				return []client.Object{
-					telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeTraces,
-						telemetrygen.WithRate(800),
-						telemetrygen.WithWorkers(5)).
-						K8sObject(),
-				}
-			},
-			assertions: func(t *testing.T, pipelineName string) {
-				assert.DeploymentReady(t, kitkyma.TraceGatewayName)
-				assert.TracePipelineHealthy(t, pipelineName)
-				assert.TracePipelineConditionReasonsTransition(t, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
-					{Reason: conditions.ReasonSelfMonFlowHealthy, Status: metav1.ConditionTrue},
-					{Reason: conditions.ReasonSelfMonGatewaySomeDataDropped, Status: metav1.ConditionFalse},
-				})
-				assert.TelemetryHasState(t, operatorv1beta1.StateWarning)
-				assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
-					Type:   conditions.TypeTraceComponentsHealthy,
-					Status: metav1.ConditionFalse,
-					Reason: conditions.ReasonSelfMonGatewaySomeDataDropped,
-				})
-			},
+			// Metric agent and gateway (using kyma stats receiver) both export data to the same backend.
+			// Faulting the backend would affect both, masking the agent-specific alert.
+			// An Istio VirtualService with a source-label match on telemetry-metric-agent pods
+			// blocks only the agent→gateway leg, leaving the gateway's own backend traffic healthy.
+			name:            "metric-agent",
+			component:       suite.LabelMetricAgent,
+			generator:       promMetricGeneratorHighLoad(),
+			expectedReasons: degradedReasons(conditions.ReasonSelfMonAgentSomeDataDropped),
+			useIstio:        true,
+		},
+		{
+			name:            "traces",
+			component:       suite.LabelTraces,
+			faultOpts:       faultNonRetryableErr(faultPercentageThirty),
+			expectedReasons: degradedReasons(conditions.ReasonSelfMonGatewaySomeDataDropped),
 		},
 	}
 
-	// Tests run once per test case. FIPS mode is determined by environment (FIPS_IMAGE_AVAILABLE).
-	// FluentBit tests always run in no-FIPS mode via WithOverrideFIPSMode(false).
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			// Labels: selfmonitor + component + scenario
-			labels := []string{
-				suite.LabelSelfMonitor,
-				tc.component,
-				suite.LabelBackpressure,
+			labels := []string{suite.LabelSelfMonitor, tc.component, suite.LabelBackpressure}
+
+			opts := []kubeprep.Option{kubeprep.WithGatewayReplicas(1)}
+			if tc.useIstio {
+				opts = append(opts, kubeprep.WithIstio())
 			}
 
-			// Backpressure tests need Istio for traffic simulation
-			opts := []kubeprep.Option{kubeprep.WithIstio()}
-
-			// FluentBit doesn't support FIPS mode
 			if isFluentBit(tc.component) {
-				opts = append(opts, kubeprep.WithOverrideFIPSMode(false))
+				opts = append(opts, kubeprep.WithOverrideFIPSMode(false), kubeprep.WithFluentBitHostPathCleanup())
 			}
 
 			suite.SetupTestWithOptions(t, labels, opts...)
+			enableDebugLogging(t)
 
 			pipelineName := fmt.Sprintf("selfmonitor-%s", tc.name)
 
@@ -264,35 +121,64 @@ func TestBackpressure(t *testing.T) {
 				uniquePrefix = unique.Prefix(tc.name)
 				backendNs    = uniquePrefix("backend")
 				genNs        = uniquePrefix("gen")
-				backend      *kitbackend.Backend
 			)
 
-			if tc.component == suite.LabelMetricAgent {
-				// Metric agent and gateway (using kyma stats receiver) both send data to backend
-				// We want to simulate backpressure only on agent, so block some percentage of traffic only from agent.
-				backend = kitbackend.New(backendNs, signalTypeForComponent(tc.component), kitbackend.WithAbortFaultInjection(95),
-					kitbackend.WithDropFromSourceLabel(map[string]string{"app.kubernetes.io/name": "telemetry-metric-agent"}))
-			} else {
-				backend = kitbackend.New(backendNs, signalTypeForComponent(tc.component), kitbackend.WithAbortFaultInjection(85))
+			gen := tc.generator
+			if gen == nil {
+				gen = defaultGenerator(tc.component)
 			}
 
-			pipeline := tc.pipeline(pipelineName, genNs, backend)
-			generator := tc.generator(genNs)
+			var (
+				pipeline     client.Object
+				resources    []client.Object
+				faultEnabler FaultEnabler
+			)
 
-			resources := []client.Object{
+			resources = append(resources,
 				kitk8sobjects.NewNamespace(backendNs).K8sObject(),
 				kitk8sobjects.NewNamespace(genNs).K8sObject(),
-				pipeline,
+			)
+
+			if tc.useIstio {
+				// Use a regular backend and inject faults via a VirtualService that targets only
+				// telemetry-metric-agent pods, leaving the gateway's backend traffic unaffected.
+				// sourceLabels is an Istio selector (not a runtime match): the VS config is only
+				// pushed to sidecars of pods matching the label, so the gateway never sees it.
+				backend := kitbackend.New(backendNs, signalTypeForComponent(tc.component))
+				pipeline = buildPipeline(tc.component, pipelineName, genNs, backend)
+				resources = append(resources, backend.K8sObjects()...)
+				faultEnabler = newIstioFaultEnabler(
+					"fault-injection", backendNs, backend.Name(),
+					faultPercentageThirty,
+					map[string]string{"app.kubernetes.io/name": "telemetry-metric-agent"},
+				)
+			} else {
+				fbOpts := tc.faultOpts
+				if isFluentBit(tc.component) {
+					fbOpts = append(fbOpts, faultbackend.WithFluentBitPort())
+				}
+
+				fb := faultbackend.New(backendNs, fbOpts...)
+				pipeline = buildPipeline(tc.component, pipelineName, genNs, fb)
+				resources = append(resources, fb.K8sObjects()...)
+				faultEnabler = fb
 			}
-			resources = append(resources, generator...)
-			resources = append(resources, backend.K8sObjects()...)
+
+			resources = append(resources, pipeline)
+			resources = append(resources, gen(genNs)...)
 
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
+			logDiagnosticsOnFailure(t, tc.component)
 
-			assert.BackendReachable(t, backend)
 			assert.DeploymentReady(t, kitkyma.SelfMonitorName)
+			assertSelfMonitorHasActiveTargets(t)
+			assertComponentReady(t, tc.component)
+			assertPipelineHealthy(t, tc.component, pipelineName)
+			t.Log("Pipeline is healthy, enabling faults")
 
-			tc.assertions(t, pipeline.GetName())
+			faultEnabler.EnableFaults(t)
+
+			assertFlowDegraded(t, tc.component, pipelineName, tc.expectedReasons)
 		})
 	}
 }

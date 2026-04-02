@@ -6,6 +6,10 @@ inputs:
     description: Path where reports will be downloaded
     required: false
     default: "reports"
+  artifact-prefix:
+    description: Prefix filter for artifact names (e.g., "pr-", "gardener-")
+    required: false
+    default: ""
 
 runs:
   using: "composite"
@@ -25,7 +29,7 @@ runs:
       uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
       with:
         path: "${{ inputs.reports-path }}"
-        pattern: "*-report"
+        pattern: "${{ inputs.artifact-prefix }}*-report"
         merge-multiple: true
 
     - name: Cleanup test reports
@@ -40,7 +44,7 @@ runs:
         done
 
     - name: Publish test reports to GitHub summary
-      uses: mikepenz/action-junit-report@49b2ca06f62aa7ef83ae6769a2179271e160d8e4 # v6.3.1
+      uses: mikepenz/action-junit-report@bccf2e31636835cf0874589931c4116687171386 # v6.4.0
       if: always()
       with:
         report_paths: "${{ inputs.reports-path }}/junit-report*.xml"
