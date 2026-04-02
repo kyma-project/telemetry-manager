@@ -79,7 +79,7 @@ If there are issues with one of the pipelines, see [Troubleshooting for the Tele
 > [!WARNING]
 > The following attributes were previously documented but are deprecated and will be removed in a future release. Use the specific metric attributes listed above instead.
 
-**Deprecated metric resource attributes**:
+Deprecated metric resource attributes:
 - `k8s.resource.name` use `metric.attributes.name`
 - `k8s.resource.namespace` use `metric.attributes.namespace`
 - `k8s.resource.group` use `metric.attributes.group`
