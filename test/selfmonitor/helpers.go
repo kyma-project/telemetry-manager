@@ -1,0 +1,573 @@
+package selfmonitor
+
+import (
+	"context"
+	"net/http"
+	"testing"
+
+	. "github.com/onsi/gomega"
+	appsv1 "k8s.io/api/apps/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
+	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
+	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
+	logmatchers "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
+	"github.com/kyma-project/telemetry-manager/test/testkit/matchers/log/fluentbit"
+	metricmatchers "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
+	tracematchers "github.com/kyma-project/telemetry-manager/test/testkit/matchers/trace"
+	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/faultbackend"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdoutloggen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
+)
+
+const (
+	defaultRate = 1000
+
+	faultPercentageAll         float64 = 100
+	faultPercentageThirty      float64 = 30
+	faultPercentageNinetyEight float64 = 98
+)
+
+// HTTP status codes used for fault injection.
+//
+// Retryability differs between OTel Collector and Fluent Bit (summarized for tests; exact
+// sets follow the collector/Fluent Bit versions wired into Kyma — see exporter and output plugin docs if in doubt):
+//
+//	OTel Collector retryable codes: 429, 502, 503, 504
+//	OTel Collector non-retryable codes: everything else, including 400 and 500
+//
+//	Fluent Bit retryable codes: 408, 429, 5xx
+//	Fluent Bit non-retryable codes: 4xx (except 408 and 429)
+//
+// HTTP 400 is non-retryable for both OTel Collector and Fluent Bit, so it is used
+// as the universal non-retryable status code.
+// HTTP 429 is retryable for both, so it is used as the universal retryable status code.
+//
+// Fault backends use the fault-backend container (test/testkit/mocks/faultbackend) to return
+// these codes at configurable percentages: faultNonRetryableErr → 400, faultRetryableErr → 429.
+const (
+	retryableErrCode    = http.StatusTooManyRequests
+	nonRetryableErrCode = http.StatusBadRequest
+)
+
+// faultNonRetryableErr returns FaultBackend options that reject requests with HTTP 400 at the given percentage.
+// HTTP 400 is non-retryable for both OTel Collector and Fluent Bit, so rejected data is
+// dropped immediately without retry.
+func faultNonRetryableErr(percentage float64) []faultbackend.Option {
+	return []faultbackend.Option{faultbackend.WithStatusCodeAndPercentage(nonRetryableErrCode, percentage)}
+}
+
+func faultRetryableErr(percentage float64) []faultbackend.Option {
+	return []faultbackend.Option{faultbackend.WithStatusCodeAndPercentage(retryableErrCode, percentage)}
+}
+
+// pipelineBackend is satisfied by both *backend.Backend and *faultbackend.FaultBackend,
+// allowing buildPipeline to work with either.
+type pipelineBackend interface {
+	EndpointHTTP() string
+	Host() string
+	Port() int32
+}
+
+func buildPipeline(component, pipelineName, includeNs string, backend pipelineBackend) client.Object {
+	switch component {
+	case suite.LabelLogAgent:
+		p := testutils.NewLogPipelineBuilder().
+			WithName(pipelineName).
+			WithInput(testutils.BuildLogPipelineRuntimeInput(testutils.IncludeNamespaces(includeNs))).
+			WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
+			Build()
+
+		return &p
+
+	case suite.LabelLogGateway:
+		p := testutils.NewLogPipelineBuilder().
+			WithName(pipelineName).
+			WithInput(testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))).
+			WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
+			Build()
+
+		return &p
+
+	case suite.LabelFluentBit:
+		p := testutils.NewLogPipelineBuilder().
+			WithName(pipelineName).
+			WithRuntimeInput(true, testutils.IncludeNamespaces(includeNs)).
+			WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
+			Build()
+
+		return &p
+
+	case suite.LabelMetricGateway:
+		p := testutils.NewMetricPipelineBuilder().
+			WithName(pipelineName).
+			WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
+			Build()
+
+		return &p
+
+	case suite.LabelMetricAgent:
+		p := testutils.NewMetricPipelineBuilder().
+			WithName(pipelineName).
+			WithPrometheusInput(true, testutils.IncludeNamespaces(includeNs)).
+			WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
+			Build()
+
+		return &p
+
+	case suite.LabelTraces:
+		p := testutils.NewTracePipelineBuilder().
+			WithName(pipelineName).
+			WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
+			Build()
+
+		return &p
+
+	default:
+		panic("unknown component: " + component)
+	}
+}
+
+// Generator factories
+
+// defaultGenerator returns the standard telemetry generator for a component at defaultRate.
+// Each component type uses the generator matching its pipeline input:
+//   - log-agent / fluent-bit: stdout log generator (runtime input reads container logs)
+//   - log-gateway: telemetrygen sending OTLP logs
+//   - metric-gateway: telemetrygen sending OTLP metrics
+//   - metric-agent: Prometheus metric endpoint (scraped by the agent)
+//   - traces: telemetrygen sending OTLP traces
+//
+// The defaultRate (1000) is sufficient for outage/backpressure tests that are driven by fault
+// percentage: even a moderate flow will trigger the self-monitor condition when the fault
+// fraction is high enough. Tests that require higher throughput (e.g. fluent-bit buffer filling)
+// override the generator explicitly in the test table via tc.generator.
+func defaultGenerator(component string) func(ns string) []client.Object {
+	switch component {
+	case suite.LabelLogAgent, suite.LabelFluentBit:
+		return stdoutLogGenerator(defaultRate)
+	case suite.LabelLogGateway:
+		return otelGenerator(telemetrygen.SignalTypeLogs)
+	case suite.LabelMetricGateway:
+		return otelGenerator(telemetrygen.SignalTypeMetrics)
+	case suite.LabelMetricAgent:
+		return promMetricGenerator()
+	case suite.LabelTraces:
+		return otelGenerator(telemetrygen.SignalTypeTraces)
+	default:
+		panic("unknown component: " + component)
+	}
+}
+
+func stdoutLogGenerator(rate int) func(ns string) []client.Object {
+	return func(ns string) []client.Object {
+		return []client.Object{stdoutloggen.NewDeployment(ns, stdoutloggen.WithRate(rate)).K8sObject()}
+	}
+}
+
+func otelGenerator(signalType telemetrygen.SignalType, opts ...telemetrygen.Option) func(ns string) []client.Object {
+	return func(ns string) []client.Object {
+		allOpts := []telemetrygen.Option{telemetrygen.WithRate(defaultRate), telemetrygen.WithWorkers(1)}
+		allOpts = append(allOpts, opts...)
+
+		return []client.Object{telemetrygen.NewDeployment(ns, signalType, allOpts...).K8sObject()}
+	}
+}
+
+func promMetricGenerator() func(ns string) []client.Object {
+	return func(ns string) []client.Object {
+		metricProducer := prommetricgen.New(ns)
+
+		return []client.Object{
+			metricProducer.Pod().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
+			metricProducer.Service().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
+		}
+	}
+}
+
+// promMetricGeneratorHighLoad produces high-volume Prometheus metrics via the Avalanche load generator.
+// Required for metric-agent fault-injection tests (backpressure/outage): the self-monitor rules fire
+// only when both drop and sent rates are non-zero, which needs enough throughput to stay above zero
+// in the Prometheus scrape window even when a large fraction of exports are faulted.
+func promMetricGeneratorHighLoad() func(ns string) []client.Object {
+	return func(ns string) []client.Object {
+		metricProducer := prommetricgen.New(ns)
+
+		return []client.Object{
+			metricProducer.Pod().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).WithAvalancheHighLoad().K8sObject(),
+			metricProducer.Service().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
+		}
+	}
+}
+
+// Assertion helpers
+
+// logComponentWorkloads logs the ready/desired replica counts for the gateway and agent
+// workloads relevant to the given component. Never fails the test.
+func logComponentWorkloads(t *testing.T, ctx context.Context, component string) {
+	t.Helper()
+
+	t.Logf("--- component workloads [%s] ---", component)
+
+	logDeployment := func(name types.NamespacedName) {
+		var d appsv1.Deployment
+		if err := suite.K8sClient.Get(ctx, name, &d); err != nil {
+			t.Logf("  deployment %s: get error: %v", name.Name, err)
+			return
+		}
+
+		t.Logf("  deployment %s: ready=%d/%d", name.Name, d.Status.ReadyReplicas, d.Status.Replicas)
+	}
+
+	logDaemonSet := func(name types.NamespacedName) {
+		var ds appsv1.DaemonSet
+		if err := suite.K8sClient.Get(ctx, name, &ds); err != nil {
+			t.Logf("  daemonset %s: get error: %v", name.Name, err)
+			return
+		}
+
+		t.Logf("  daemonset %s: ready=%d/%d", name.Name, ds.Status.NumberReady, ds.Status.DesiredNumberScheduled)
+	}
+
+	switch component {
+	case suite.LabelLogAgent:
+		logDeployment(kitkyma.LogGatewayName)
+		logDaemonSet(kitkyma.LogAgentName)
+	case suite.LabelLogGateway:
+		logDeployment(kitkyma.LogGatewayName)
+	case suite.LabelFluentBit:
+		logDaemonSet(kitkyma.FluentBitDaemonSetName)
+	case suite.LabelMetricGateway:
+		logDeployment(kitkyma.MetricGatewayName)
+	case suite.LabelMetricAgent:
+		logDeployment(kitkyma.MetricGatewayName)
+		logDaemonSet(kitkyma.MetricAgentName)
+	case suite.LabelTraces:
+		logDeployment(kitkyma.TraceGatewayName)
+	}
+}
+
+func componentConditionType(component string) string {
+	switch component {
+	case suite.LabelLogAgent, suite.LabelLogGateway, suite.LabelFluentBit:
+		return conditions.TypeLogComponentsHealthy
+	case suite.LabelMetricAgent, suite.LabelMetricGateway:
+		return conditions.TypeMetricComponentsHealthy
+	case suite.LabelTraces:
+		return conditions.TypeTraceComponentsHealthy
+	default:
+		panic("unknown component: " + component)
+	}
+}
+
+func assertComponentReady(t *testing.T, component string) {
+	t.Helper()
+
+	switch component {
+	case suite.LabelLogAgent:
+		assert.DeploymentReady(t, kitkyma.LogGatewayName)
+		assert.DaemonSetReady(t, kitkyma.LogAgentName)
+	case suite.LabelLogGateway:
+		assert.DeploymentReady(t, kitkyma.LogGatewayName)
+	case suite.LabelFluentBit:
+		assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
+	case suite.LabelMetricGateway:
+		assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+	case suite.LabelMetricAgent:
+		assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+		assert.DaemonSetReady(t, kitkyma.MetricAgentName)
+	case suite.LabelTraces:
+		assert.DeploymentReady(t, kitkyma.TraceGatewayName)
+	default:
+		panic("unknown component: " + component)
+	}
+}
+
+func assertPipelineHealthy(t *testing.T, component, pipelineName string) {
+	t.Helper()
+
+	t.Logf("Waiting for pipeline %s to be healthy — watching self-monitor metrics for component %s", pipelineName, component)
+
+	switch component {
+	case suite.LabelLogAgent, suite.LabelLogGateway:
+		assert.OTelLogPipelineHealthy(t, pipelineName)
+		assert.LogPipelineSelfMonitorIsHealthy(t, suite.K8sClient, pipelineName)
+	case suite.LabelFluentBit:
+		assert.FluentBitLogPipelineHealthy(t, pipelineName)
+		assert.LogPipelineSelfMonitorIsHealthy(t, suite.K8sClient, pipelineName)
+	case suite.LabelMetricGateway, suite.LabelMetricAgent:
+		assert.MetricPipelineHealthy(t, pipelineName)
+		assert.MetricPipelineSelfMonitorIsHealthy(t, suite.K8sClient, pipelineName)
+	case suite.LabelTraces:
+		assert.TracePipelineHealthy(t, pipelineName)
+		assert.TracePipelineSelfMonitorIsHealthy(t, suite.K8sClient, pipelineName)
+	default:
+		panic("unknown component: " + component)
+	}
+
+	logSelfMonitorMetrics(t, t.Context(), component, "")
+}
+
+func assertPipelineConditionTransition(t *testing.T, component, pipelineName string, expectedReasons []assert.ReasonStatus) {
+	t.Helper()
+
+	condType := conditions.TypeFlowHealthy
+	key := types.NamespacedName{Name: pipelineName}
+
+	var currCond *metav1.Condition
+
+	for _, exp := range expectedReasons {
+		t.Logf("Waiting for condition %s[%s] (%s) — watching self-monitor metrics for component %s",
+			exp.Reason, exp.Status, alertConditionDescription(exp.Reason, component), component)
+
+		Eventually(func(g Gomega) assert.ReasonStatus {
+			logSelfMonitorMetrics(t, t.Context(), component, alertConditionDescription(exp.Reason, component))
+			logComponentWorkloads(t, t.Context(), component)
+
+			switch component {
+			case suite.LabelLogAgent, suite.LabelLogGateway, suite.LabelFluentBit:
+				var pipeline telemetryv1beta1.LogPipeline
+				g.Expect(suite.K8sClient.Get(t.Context(), key, &pipeline)).To(Succeed())
+				currCond = meta.FindStatusCondition(pipeline.Status.Conditions, condType)
+			case suite.LabelMetricGateway, suite.LabelMetricAgent:
+				var pipeline telemetryv1beta1.MetricPipeline
+				g.Expect(suite.K8sClient.Get(t.Context(), key, &pipeline)).To(Succeed())
+				currCond = meta.FindStatusCondition(pipeline.Status.Conditions, condType)
+			case suite.LabelTraces:
+				var pipeline telemetryv1beta1.TracePipeline
+				g.Expect(suite.K8sClient.Get(t.Context(), key, &pipeline)).To(Succeed())
+				currCond = meta.FindStatusCondition(pipeline.Status.Conditions, condType)
+			default:
+				panic("unknown component: " + component)
+			}
+
+			if currCond == nil {
+				return assert.ReasonStatus{}
+			}
+
+			return assert.ReasonStatus{Reason: currCond.Reason, Status: currCond.Status}
+		}, periodic.FlowHealthConditionTransitionTimeout, periodic.SelfmonitorQueryInterval).Should(
+			Equal(exp),
+			"expected reason %s[%s] of type %s not reached", exp.Reason, exp.Status, condType,
+		)
+
+		t.Logf("Transitioned to [%s]%s\n", currCond.Status, currCond.Reason)
+	}
+}
+
+// assertFlowDegraded runs the standard assertion sequence for backpressure/outage tests:
+// condition transition and telemetry warning state. Call assertComponentReady and
+// assertPipelineHealthy before enabling faults, then call this function.
+func assertFlowDegraded(t *testing.T, component, pipelineName string, expectedReasons []assert.ReasonStatus) {
+	t.Helper()
+
+	assertPipelineConditionTransition(t, component, pipelineName, expectedReasons)
+
+	finalReason := expectedReasons[len(expectedReasons)-1].Reason
+
+	assert.TelemetryHasState(t, operatorv1beta1.StateWarning)
+	assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
+		Type:   componentConditionType(component),
+		Status: metav1.ConditionFalse,
+		Reason: finalReason,
+	})
+}
+
+// degradedReasons builds the expected condition transition sequence: each reason with status False.
+func degradedReasons(reasons ...string) []assert.ReasonStatus {
+	result := make([]assert.ReasonStatus, 0, len(reasons))
+	for _, r := range reasons {
+		result = append(result, assert.ReasonStatus{Reason: r, Status: metav1.ConditionFalse})
+	}
+
+	return result
+}
+
+// enableDebugLogging applies the telemetry-overrides ConfigMap with logLevel: debug
+// and annotates the Telemetry CR to trigger an immediate reconciliation, so the selfmonitor
+// Prometheus container picks up the --log.level=debug flag without waiting for the next
+// natural reconciliation cycle.
+// The ConfigMap is automatically deleted after the test completes.
+func enableDebugLogging(t *testing.T) {
+	t.Helper()
+
+	overrides := kitk8sobjects.NewOverrides().WithLogLevel(kitk8sobjects.DEBUG).WithPaused(false).K8sObject()
+	Expect(kitk8s.CreateObjects(t, overrides)).To(Succeed())
+
+	// Annotate the Telemetry CR to force a reconciliation so the manager picks up the new log level.
+	var telemetry operatorv1beta1.Telemetry
+	Expect(suite.K8sClient.Get(t.Context(), kitkyma.TelemetryName, &telemetry)).To(Succeed())
+
+	if telemetry.Annotations == nil {
+		telemetry.Annotations = make(map[string]string)
+	}
+
+	telemetry.Annotations["selfmonitor-test/log-level"] = "debug"
+	Expect(suite.K8sClient.Update(t.Context(), &telemetry)).To(Succeed())
+}
+
+// logDiagnosticsOnFailure registers a cleanup function that prints selfmonitor diagnostics
+// if the test has failed. It must be called after CreateObjects so that it runs (in LIFO order)
+// before the pipeline resources are deleted, while the selfmonitor is still running.
+func logDiagnosticsOnFailure(t *testing.T, component string) {
+	t.Helper()
+
+	t.Cleanup(func() {
+		if !t.Failed() {
+			return
+		}
+
+		ctx := context.Background()
+		logComponentWorkloads(t, ctx, component)
+		logSelfMonitorMetrics(t, ctx, component, "")
+		logSelfMonitorTargets(t, ctx)
+		logScrapeEndpoints(t, ctx)
+		logSelfMonitorPodLogs(t, ctx)
+	})
+}
+
+// healthyEntry groups the resources needed to assert that a single component
+// consistently delivers data and keeps its pipeline FlowHealthy.
+type healthyEntry struct {
+	component    string
+	backend      *kitbackend.Backend
+	pipelineName string
+	genNs        string
+}
+
+// assertAllHealthyConsistently checks, in a single Consistently loop, that:
+//   - every backend keeps receiving telemetry data from its generator namespace, and
+//   - every pipeline's FlowHealthy condition remains True.
+//
+// Call this after the individual Eventually-based checks (assertPipelineHealthy +
+// data-delivery) have already confirmed a healthy baseline.
+func assertAllHealthyConsistently(t *testing.T, entries []healthyEntry) {
+	t.Helper()
+
+	t.Logf("Asserting all pipelines and backends stay healthy consistently for %s", periodic.HealthyConsistentlyTimeout)
+
+	Consistently(func(g Gomega) {
+		for _, e := range entries {
+			assertDataDeliveredNow(g, t, e)
+			assertFlowHealthyNow(g, t, e.component, e.pipelineName)
+		}
+	}, periodic.HealthyConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
+}
+
+// assertDataDeliveredEventually waits until the backend holds at least one telemetry
+// record from the generator namespace. Call this before assertAllHealthyConsistently
+// to ensure data is already flowing before the sustained observation window begins.
+func assertDataDeliveredEventually(t *testing.T, e healthyEntry) {
+	t.Helper()
+
+	t.Logf("Waiting for data to flow from component %s to backend", e.component)
+
+	Eventually(func(g Gomega) {
+		assertDataDeliveredNow(g, t, e)
+	}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+}
+
+// assertDataDeliveredNow checks in the current Consistently tick that the backend holds
+// at least one telemetry record from the generator namespace.
+func assertDataDeliveredNow(g Gomega, t *testing.T, e healthyEntry) {
+	t.Helper()
+
+	queryURL := suite.ProxyClient.ProxyURLForService(
+		e.backend.Namespace(), e.backend.Name(),
+		kitbackend.QueryPath, kitbackend.QueryPort,
+	)
+
+	resp, err := suite.ProxyClient.GetWithContext(t.Context(), queryURL)
+	g.Expect(err).NotTo(HaveOccurred(), "component %s: backend query failed", e.component)
+
+	defer resp.Body.Close()
+
+	g.Expect(resp).To(HaveHTTPStatus(http.StatusOK), "component %s: backend returned non-200", e.component)
+
+	switch e.component {
+	case suite.LabelLogAgent, suite.LabelLogGateway:
+		g.Expect(resp).To(HaveHTTPBody(
+			logmatchers.HaveFlatLogs(ContainElement(logmatchers.HaveResourceAttributes(
+				HaveKeyWithValue("k8s.namespace.name", e.genNs),
+			))),
+		), "component %s: no OTel logs from namespace %s", e.component, e.genNs)
+
+	case suite.LabelFluentBit:
+		g.Expect(resp).To(HaveHTTPBody(
+			fluentbit.HaveFlatLogs(ContainElement(fluentbit.HaveNamespace(Equal(e.genNs)))),
+		), "component %s: no FluentBit logs from namespace %s", e.component, e.genNs)
+
+	case suite.LabelMetricGateway:
+		g.Expect(resp).To(HaveHTTPBody(
+			metricmatchers.HaveFlatMetrics(ContainElement(SatisfyAll(
+				metricmatchers.HaveName(BeElementOf(telemetrygen.MetricNames)),
+				metricmatchers.HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", e.genNs)),
+			))),
+		), "component %s: no metrics from namespace %s", e.component, e.genNs)
+
+	case suite.LabelMetricAgent:
+		g.Expect(resp).To(HaveHTTPBody(
+			metricmatchers.HaveFlatMetrics(ContainElement(SatisfyAll(
+				metricmatchers.HaveName(BeElementOf(prommetricgen.CustomMetricNames())),
+				metricmatchers.HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", e.genNs)),
+			))),
+		), "component %s: no Prometheus metrics from namespace %s", e.component, e.genNs)
+
+	case suite.LabelTraces:
+		g.Expect(resp).To(HaveHTTPBody(
+			tracematchers.HaveFlatTraces(ContainElement(
+				tracematchers.HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", e.genNs)),
+			)),
+		), "component %s: no traces from namespace %s", e.component, e.genNs)
+	}
+}
+
+// assertFlowHealthyNow checks in the current Consistently tick that the pipeline's
+// FlowHealthy condition is True.
+func assertFlowHealthyNow(g Gomega, t *testing.T, component, pipelineName string) {
+	t.Helper()
+
+	key := types.NamespacedName{Name: pipelineName}
+
+	switch component {
+	case suite.LabelLogAgent, suite.LabelLogGateway, suite.LabelFluentBit:
+		var pipeline telemetryv1beta1.LogPipeline
+		g.Expect(suite.K8sClient.Get(t.Context(), key, &pipeline)).To(Succeed())
+		cond := meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeFlowHealthy)
+		g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeFlowHealthy)).To(
+			BeTrueBecause("component %s: FlowHealthy condition: %v", component, cond),
+		)
+
+	case suite.LabelMetricGateway, suite.LabelMetricAgent:
+		var pipeline telemetryv1beta1.MetricPipeline
+		g.Expect(suite.K8sClient.Get(t.Context(), key, &pipeline)).To(Succeed())
+		cond := meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeFlowHealthy)
+		g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeFlowHealthy)).To(
+			BeTrueBecause("component %s: FlowHealthy condition: %v", component, cond),
+		)
+
+	case suite.LabelTraces:
+		var pipeline telemetryv1beta1.TracePipeline
+		g.Expect(suite.K8sClient.Get(t.Context(), key, &pipeline)).To(Succeed())
+		cond := meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeFlowHealthy)
+		g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeFlowHealthy)).To(
+			BeTrueBecause("component %s: FlowHealthy condition: %v", component, cond),
+		)
+
+	default:
+		panic("unknown component: " + component)
+	}
+}

@@ -317,6 +317,28 @@ jobs:
           artifact-prefix: ${{ env.ARTIFACT_PREFIX }}
 
   # Selfmonitor tests
+  selfmonitor-healthy:
+    needs: setup
+    runs-on: ubuntu-latest
+    name: selfmonitor-healthy
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: '0'
+          ref: ${{ inputs.ref || github.ref }}
+
+      - name: Run E2E test
+        uses: ./.github/template/run-e2e-test
+        with:
+          test-id: selfmonitor-healthy
+          test-path: ./test/selfmonitor/...
+          test-labels: healthy
+          manager-image: ${{ needs.setup.outputs.manager-image }}
+          manager-image-archive: ${{ github.event_name == 'pull_request' && 'manager-image' || '' }}
+          fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
+          google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
+
   selfmonitor:
     needs: setup
     runs-on: ubuntu-latest
@@ -324,7 +346,6 @@ jobs:
       fail-fast: false
       matrix:
         scenario:
-          - healthy
           - backpressure
           - outage
         component:
@@ -361,7 +382,7 @@ jobs:
           artifact-prefix: ${{ env.ARTIFACT_PREFIX }}
 
   summary:
-    needs: [e2e-logs, e2e-metrics, e2e-experimental, e2e, e2e-other, selfmonitor]
+    needs: [e2e-logs, e2e-metrics, e2e-experimental, e2e, e2e-other, selfmonitor-healthy, selfmonitor]
     runs-on: ubuntu-latest
     if: always()
     steps:
