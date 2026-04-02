@@ -80,14 +80,9 @@ If there are issues with one of the pipelines, see [Troubleshooting for the Tele
 > The following resource attributes are deprecated and will be removed in a future release. Update your dashboards and alert rules to use the replacement `metric.attributes.*` attributes.
 
 | Deprecated Resource Attribute | Replacement Metric Attribute |
-| :--- | :--- |
-| `k8s.resource.name` | `metric.attributes.name` |
-| `k8s.resource.namespace` | `metric.attributes.namespace` |
-| `k8s.resource.group` | `metric.attributes.group` |
-| `k8s.resource.version` | `metric.attributes.version` |
-| `k8s.resource.kind` | `metric.attributes.kind` |
-- `k8s.resource.name` use `metric.attributes.name`
-- `k8s.resource.namespace` use `metric.attributes.namespace`
-- `k8s.resource.group` use `metric.attributes.group`
-- `k8s.resource.version` use `metric.attributes.version`
-- `k8s.resource.kind` use `metric.attributes.kind`
+|:------------------------------| :--- |
+| `k8s.resource.name`           | `metric.attributes.name` |
+| `k8s.resource.namespace.name` | `metric.attributes.namespace` |
+| `k8s.resource.group`          | `metric.attributes.group` |
+| `k8s.resource.version`        | `metric.attributes.version` |
+| `k8s.resource.kind`           | `metric.attributes.kind` |
