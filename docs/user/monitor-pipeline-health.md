@@ -26,7 +26,7 @@ For a quick check, you can inspect the `status` of a pipeline resource directly.
     backend   True                      True              True
     ```
 
-3. If any condition is `False`, investigate problem and fix it.
+3. If any condition is `False`, investigate the problem and fix it.
 
 To understand the meaning of each status condition, see the detailed reference for each pipeline type:
 
@@ -36,7 +36,7 @@ To understand the meaning of each status condition, see the detailed reference f
 
 ## Set Up Health Monitoring and Alerts
 
-For production environments, set up continuous monitoring by exporting the health metrics to your observability backend, where you can create dashboards and configure alerts using alert rules. For an example, see [Integrate With SAP Cloud Logging](./integration/sap-cloud-logging/README.md)
+For production environments, set up continuous monitoring by exporting the health metrics to your observability backend, where you can create dashboards and configure alerts. For an example, see [Integrate With SAP Cloud Logging](./integration/sap-cloud-logging/README.md).
 
 > [!WARNING] 
 > Do not scrape the metrics endpoint of the OpenTelemetry Collector instances. These metrics are an internal implementation detail and are subject to breaking changes when the underlying Collector is updated. For stable health monitoring, rely on the status conditions of your LogPipeline, MetricPipeline, or TracePipeline custom resources.
@@ -51,19 +51,37 @@ The Telemetry module emits the following metrics for health monitoring:
   - `metric.attributes.type`: The type of the status condition
   - `metric.attributes.status`: The status of the condition
   - `metric.attributes.reason`: A programmatic identifier indicating the reason for the condition's last transition
+  - `metric.attributes.name`: The name of the resource
+  - `metric.attributes.namespace`: The namespace of the resource
+  - `metric.attributes.group`: The API group of the resource
+  - `metric.attributes.version`: The API version of the resource
+  - `metric.attributes.kind`: The kind of the resource
 - `kyma.resource.status.state`: Represents the overall state of the main `Telemetry` resource.
   Values: `1` ("Ready") or `0` ("Not Ready")
-  Specific attributes: `state`: The value of the `status.state` field
-- Additionally, the following attributes are attached to all health metrics to identify the source resource:
-  - `k8s.resource.group`: The group of the resource
-  - `k8s.resource.version`: The version of the resource
-  - `k8s.resource.kind`: The kind of the resource
-  - `k8s.resource.name`: The name of the resource
+  Specific attributes: 
+  - `metric.attributes.state`: The value of the `status.state` field
+  - `metric.attributes.name`: The name of the resource
+  - `metric.attributes.namespace`: The namespace of the resource
+  - `metric.attributes.group`: The API group of the resource
+  - `metric.attributes.version`: The API version of the resource
+  - `metric.attributes.kind`: The kind of the resource
 
 To create an alert, define a rule that triggers on a specific metric value. For example, to create an alert that fires if a pipeline's `TelemetryFlowHealthy` condition becomes "False" (indicating data flow issues), use the following PromQL query:
 
 ```txt
-min by (k8s_resource_name) ((kyma_resource_status_conditions{type="TelemetryFlowHealthy",k8s_resource_kind="metricpipelines"})) == 0
+min by (name) ((kyma_resource_status_conditions{type="TelemetryFlowHealthy", kind="metricpipelines"})) == 0
 ```
 
 If there are issues with one of the pipelines, see [Troubleshooting for the Telemetry Module](troubleshooting.md).
+
+### Deprecated Attributes
+
+> [!WARNING]
+> The following attributes were previously documented but are deprecated and will be removed in a future release. Use the specific metric attributes listed above instead.
+
+**Deprecated metric resource attributes**:
+- `k8s.resource.name` use `metric.attributes.name`
+- `k8s.resource.namespace` use `metric.attributes.namespace`
+- `k8s.resource.group` use `metric.attributes.group`
+- `k8s.resource.version` use `metric.attributes.version`
+- `k8s.resource.kind` use `metric.attributes.kind`
