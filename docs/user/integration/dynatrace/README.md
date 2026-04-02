@@ -348,15 +348,9 @@ For easier access from the Kyma dashboard, add links to new navigation under **D
 
 ## Use Dynatrace Dashboards
 
-1. To see the health of the Kyma Telemetry module and its related pipelines, import the file [Telemetry Module Status](./telemetry-resource-metrics.json) as a Dynatrace dashboard. For details, see [Importing Dashboards](https://docs.dynatrace.com/docs/analyze-explore-automate/dashboards-classic/dashboards/dashboard-json#import-dashboard).
+To see the health of the Kyma Telemetry module and its related pipelines, import the file [Telemetry Module Status](./telemetry-resource-metrics.json) as a Dynatrace dashboard. For details, see [Importing Dashboards](https://docs.dynatrace.com/docs/analyze-explore-automate/dashboards-classic/dashboards/dashboard-json#import-dashboard).
 
-2. Add the following custom resource attributes to the allow list of OpenTelemetry metrics resource attributes:
-   - `k8s.resource.name`
-   - `k8s.resource.group`
-   - `k8s.resource.kind`
-   - `k8s.resource.version`
-
-   For details about adding attributes to the allow list, see [Configure resource and scope attributes to be added as dimensions](https://docs.dynatrace.com/docs/ingest-from/opentelemetry/otlp-api/ingest-otlp-metrics/configure-otlp-metrics#allow-list).
+For details about adding attributes to the allow list, see [Configure resource and scope attributes to be added as dimensions](https://docs.dynatrace.com/docs/ingest-from/opentelemetry/otlp-api/ingest-otlp-metrics/configure-otlp-metrics#allow-list).
 
 ## Use Dynatrace Alerts
 
