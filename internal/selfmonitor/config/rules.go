@@ -193,8 +193,8 @@ func matchesRule(labelSet map[string]string, unprefixedRuleName string, pipeline
 		return false
 	}
 
-	pipelineNameLabel, hasLabel := labelSet[labelPipelineName]
-	if !hasLabel {
+	pipelineNameLabel, hasNameLabel := labelSet[labelPipelineName]
+	if !hasNameLabel {
 		// If the alert does not have a pipeline_name label, it should be matched by all pipelines
 		return true
 	}

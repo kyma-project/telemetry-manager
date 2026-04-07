@@ -92,6 +92,28 @@ func TestMatchesLogPipelineRule(t *testing.T) {
 			pipelineName:       "testPipeline",
 			expectedResult:     false,
 		},
+		{
+			name: "rule name matches and pipeline_type is logpipeline",
+			labelSet: map[string]string{
+				"alertname":     "LogFluentBitBufferInUse",
+				"pipeline_name": "testPipeline",
+				"pipeline_type": "logpipeline",
+			},
+			unprefixedRuleName: "FluentBitBufferInUse",
+			pipelineName:       "testPipeline",
+			expectedResult:     true,
+		},
+		{
+			name: "rule name matches but pipeline_type is for a different signal (metricpipeline on log check)",
+			labelSet: map[string]string{
+				"alertname":     "LogFluentBitBufferInUse",
+				"pipeline_name": "testPipeline",
+				"pipeline_type": "metricpipeline",
+			},
+			unprefixedRuleName: "FluentBitBufferInUse",
+			pipelineName:       "testPipeline",
+			expectedResult:     false,
+		},
 	}
 
 	for _, test := range tests {

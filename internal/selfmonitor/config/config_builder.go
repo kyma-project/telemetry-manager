@@ -103,6 +103,7 @@ func makeScrapeConfig(scrapeNamespace string) []ScrapeConfig {
 				// The following relabel configs add artificial pipeline_name and pipeline_type labels to the Fluent Bit and OTel Collector metrics to simplify pipeline matching.
 				// For Fluent Bit metrics, the pipeline_name is based on the name label. Note that a regex group matching Kubernetes resource names (alphanumerical chars and hyphens) is used to extract the pipeline name.
 				// It allows to filter out timeseries with technical names (storage_backend.0, tail.0, etc.)
+				// For Fluent Bit metrics, the pipeline_type is always logpipeline.
 				// For OTel Collector metrics, the exporter label has the format [otlp_grpc|otlp_http]/<signaltype>pipeline-<pipeline_name>.
 				// The pipeline_type label captures the <signaltype>pipeline part (e.g. metricpipeline, tracepipeline, logpipeline).
 				// The pipeline_name label captures the bare pipeline name, with the <signaltype>pipeline- prefix stripped.
@@ -113,17 +114,24 @@ func makeScrapeConfig(scrapeNamespace string) []ScrapeConfig {
 					TargetLabel:  "pipeline_name",
 				},
 				{
-					SourceLabels: []string{"__name__", "exporter"},
+					SourceLabels: []string{"__name__", "name"},
 					Action:       Replace,
-					Regex:        `otelcol_.+;.+/((metric|trace|log)pipeline)-.+`,
+					Regex:        "fluentbit_.+;([a-zA-Z0-9-]+)",
 					TargetLabel:  "pipeline_type",
-					Replacement:  "$1",
+					Replacement:  "logpipeline",
 				},
 				{
 					SourceLabels: []string{"__name__", "exporter"},
 					Action:       Replace,
 					Regex:        `otelcol_.+;.+/(?:(?:metric|trace|log)pipeline-)?([a-zA-Z0-9-]+)`,
 					TargetLabel:  "pipeline_name",
+				},
+				{
+					SourceLabels: []string{"__name__", "exporter"},
+					Action:       Replace,
+					Regex:        `otelcol_.+;.+/((metric|trace|log)pipeline)-.+`,
+					TargetLabel:  "pipeline_type",
+					Replacement:  "$1",
 				},
 			},
 			KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{{
