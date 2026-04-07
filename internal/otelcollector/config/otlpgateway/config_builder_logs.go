@@ -295,11 +295,13 @@ func formatNamespaceFilterID(lp *telemetryv1beta1.LogPipeline) string {
 }
 
 func formatLogUserDefinedTransformProcessorID(lp *telemetryv1beta1.LogPipeline) string {
-	return common.UserDefinedTransformProcessorID(common.LogPipelineRef(lp))
+	ref := common.LogPipelineRef(lp)
+	return fmt.Sprintf(common.ComponentIDUserDefinedTransformProcessor, ref.TypePrefix(), ref.Name())
 }
 
 func formatLogUserDefinedFilterProcessorID(lp *telemetryv1beta1.LogPipeline) string {
-	return common.UserDefinedFilterProcessorID(common.LogPipelineRef(lp))
+	ref := common.LogPipelineRef(lp)
+	return fmt.Sprintf(common.ComponentIDUserDefinedFilterProcessor, ref.TypePrefix(), ref.Name())
 }
 
 func formatLogOTLPExporterID(lp *telemetryv1beta1.LogPipeline) string {

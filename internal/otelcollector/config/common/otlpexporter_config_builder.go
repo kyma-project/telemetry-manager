@@ -107,14 +107,6 @@ func ExporterID(protocol telemetryv1beta1.OTLPProtocol, pipelineRef PipelineRef)
 	return fmt.Sprintf(ComponentIDOTLPGRPCExporter, pipelineRef.qualifiedName())
 }
 
-func UserDefinedTransformProcessorID(pipelineRef PipelineRef) string {
-	return fmt.Sprintf(ComponentIDUserDefinedTransformProcessor, pipelineRef.typePrefix(), pipelineRef.name)
-}
-
-func UserDefinedFilterProcessorID(pipelineRef PipelineRef) string {
-	return fmt.Sprintf(ComponentIDUserDefinedFilterProcessor, pipelineRef.typePrefix(), pipelineRef.name)
-}
-
 func tls(output *telemetryv1beta1.OTLPOutput, otlpEndpointValue string, pipelineRef PipelineRef) TLS {
 	var tls TLS
 

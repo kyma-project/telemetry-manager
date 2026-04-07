@@ -254,11 +254,13 @@ func formatTraceServicePipelineID(tp *telemetryv1beta1.TracePipeline) string {
 }
 
 func formatTraceUserDefinedTransformProcessorID(tp *telemetryv1beta1.TracePipeline) string {
-	return common.UserDefinedTransformProcessorID(common.TracePipelineRef(tp))
+	ref := common.TracePipelineRef(tp)
+	return fmt.Sprintf(common.ComponentIDUserDefinedTransformProcessor, ref.TypePrefix(), ref.Name())
 }
 
 func formatTraceUserDefinedFilterProcessorID(tp *telemetryv1beta1.TracePipeline) string {
-	return common.UserDefinedFilterProcessorID(common.TracePipelineRef(tp))
+	ref := common.TracePipelineRef(tp)
+	return fmt.Sprintf(common.ComponentIDUserDefinedFilterProcessor, ref.TypePrefix(), ref.Name())
 }
 
 func formatTraceOTLPExporterID(tp *telemetryv1beta1.TracePipeline) string {

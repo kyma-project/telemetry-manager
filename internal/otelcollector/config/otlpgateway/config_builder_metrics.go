@@ -437,11 +437,13 @@ func formatMetricOTLPExporterID(pipeline *telemetryv1beta1.MetricPipeline) strin
 }
 
 func formatMetricUserDefinedTransformProcessorID(mp *telemetryv1beta1.MetricPipeline) string {
-	return common.UserDefinedTransformProcessorID(common.MetricPipelineRef(mp))
+	ref := common.MetricPipelineRef(mp)
+	return fmt.Sprintf(common.ComponentIDUserDefinedTransformProcessor, ref.TypePrefix(), ref.Name())
 }
 
 func formatMetricUserDefinedFilterProcessorID(mp *telemetryv1beta1.MetricPipeline) string {
-	return common.UserDefinedFilterProcessorID(common.MetricPipelineRef(mp))
+	ref := common.MetricPipelineRef(mp)
+	return fmt.Sprintf(common.ComponentIDUserDefinedFilterProcessor, ref.TypePrefix(), ref.Name())
 }
 
 func shouldEnableMetricOAuth2(mp *telemetryv1beta1.MetricPipeline) bool {

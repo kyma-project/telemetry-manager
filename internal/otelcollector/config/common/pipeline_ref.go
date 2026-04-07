@@ -20,9 +20,13 @@ func TracePipelineRef(tp *telemetryv1beta1.TracePipeline) PipelineRef {
 	return PipelineRef{name: tp.Name, signalType: SignalTypeTrace}
 }
 
-// typePrefix returns "<signalType>pipeline".
+func (r PipelineRef) Name() string {
+	return r.name
+}
+
+// TypePrefix returns "<signalType>pipeline".
 // Example: signalType="trace" → "tracepipeline"
-func (r PipelineRef) typePrefix() string {
+func (r PipelineRef) TypePrefix() string {
 	if r.signalType == "" {
 		return ""
 	}
@@ -33,7 +37,7 @@ func (r PipelineRef) typePrefix() string {
 // qualifiedName returns the pipeline name, prefixed with the signal type.
 // Example: signalType="trace", name="my-pipeline" → "tracepipeline-my-pipeline"
 func (r PipelineRef) qualifiedName() string {
-	prefix := r.typePrefix()
+	prefix := r.TypePrefix()
 	if prefix == "" {
 		return r.name
 	}
