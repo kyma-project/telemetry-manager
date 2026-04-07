@@ -75,17 +75,17 @@ func otlpExporter(otlpOutput *telemetryv1beta1.OTLPOutput, pipelineRef PipelineR
 		},
 	}
 
-	if len(otlpOutput.Path) > 0 && SignalTypeMetric == pipelineRef.Type {
+	if len(otlpOutput.Path) > 0 && SignalTypeMetric == pipelineRef.signalType {
 		exporter.Endpoint = ""
 		exporter.MetricsEndpoint = fmt.Sprintf("${%s}", otlpEndpointVariable)
 	}
 
-	if len(otlpOutput.Path) > 0 && SignalTypeTrace == pipelineRef.Type {
+	if len(otlpOutput.Path) > 0 && SignalTypeTrace == pipelineRef.signalType {
 		exporter.Endpoint = ""
 		exporter.TracesEndpoint = fmt.Sprintf("${%s}", otlpEndpointVariable)
 	}
 
-	if len(otlpOutput.Path) > 0 && SignalTypeLog == pipelineRef.Type {
+	if len(otlpOutput.Path) > 0 && SignalTypeLog == pipelineRef.signalType {
 		exporter.Endpoint = ""
 		exporter.LogsEndpoint = fmt.Sprintf("${%s}", otlpEndpointVariable)
 	}
@@ -108,21 +108,11 @@ func ExporterID(protocol telemetryv1beta1.OTLPProtocol, pipelineRef PipelineRef)
 }
 
 func UserDefinedTransformProcessorID(pipelineRef PipelineRef) string {
-	segment := ProcessorNameUserDefined + "-" + pipelineRef.Name
-	if prefix := pipelineRef.typePrefix(); prefix != "" {
-		segment = prefix + "-" + segment
-	}
-
-	return TransformProcessorType + "/" + segment
+	return fmt.Sprintf(ComponentIDUserDefinedTransformProcessor, pipelineRef.typePrefix(), pipelineRef.name)
 }
 
 func UserDefinedFilterProcessorID(pipelineRef PipelineRef) string {
-	segment := ProcessorNameUserDefined + "-" + pipelineRef.Name
-	if prefix := pipelineRef.typePrefix(); prefix != "" {
-		segment = prefix + "-" + segment
-	}
-
-	return FilterProcessorType + "/" + segment
+	return fmt.Sprintf(ComponentIDUserDefinedFilterProcessor, pipelineRef.typePrefix(), pipelineRef.name)
 }
 
 func tls(output *telemetryv1beta1.OTLPOutput, otlpEndpointValue string, pipelineRef PipelineRef) TLS {

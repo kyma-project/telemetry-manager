@@ -837,7 +837,7 @@ func (b *Builder) addOTLPExporter(queueSize int) buildComponentFunc {
 			otlpExporterBuilder := common.NewOTLPExporterConfigBuilder(
 				b.Reader,
 				mp.Spec.Output.OTLP,
-				common.PipelineRef{Name: mp.Name, Type: common.SignalTypeMetric},
+				common.MetricPipelineRef(mp),
 				queueSize,
 			)
 
@@ -937,12 +937,12 @@ func inputRoutingConnector(outputPipelineIDs []string) common.RoutingConnectorCo
 // Authentication extensions
 
 func (b *Builder) addOAuth2Extension(ctx context.Context, pipeline *telemetryv1beta1.MetricPipeline) error {
-	oauth2ExtensionID := common.OAuth2ExtensionID(common.PipelineRef{Name: pipeline.Name, Type: common.SignalTypeMetric})
+	oauth2ExtensionID := common.OAuth2ExtensionID(common.MetricPipelineRef(pipeline))
 
 	oauth2ExtensionConfig, oauth2ExtensionEnvVars, err := common.NewOAuth2ExtensionConfigBuilder(
 		b.Reader,
 		pipeline.Spec.Output.OTLP.Authentication.OAuth2,
-		common.PipelineRef{Name: pipeline.Name, Type: common.SignalTypeMetric},
+		common.MetricPipelineRef(pipeline),
 	).OAuth2Extension(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to build OAuth2 extension for pipeline %s: %w", pipeline.Name, err)
@@ -969,7 +969,7 @@ func formatOutputMetricServicePipelineID(mp *telemetryv1beta1.MetricPipeline) st
 }
 
 func formatOTLPExporterID(pipeline *telemetryv1beta1.MetricPipeline) string {
-	return common.ExporterID(pipeline.Spec.Output.OTLP.Protocol, common.PipelineRef{Name: pipeline.Name, Type: common.SignalTypeMetric})
+	return common.ExporterID(pipeline.Spec.Output.OTLP.Protocol, common.MetricPipelineRef(pipeline))
 }
 
 func formatNamespaceFilterID(pipelineName string, inputSourceType common.InputSourceType) string {
@@ -1220,9 +1220,9 @@ func metricNameConditionsWithIsMatch(metrics []string) []string {
 }
 
 func formatUserDefinedTransformProcessorID(mp *telemetryv1beta1.MetricPipeline) string {
-	return common.UserDefinedTransformProcessorID(common.PipelineRef{Name: mp.Name, Type: common.SignalTypeMetric})
+	return common.UserDefinedTransformProcessorID(common.MetricPipelineRef(mp))
 }
 
 func formatUserDefinedFilterProcessorID(mp *telemetryv1beta1.MetricPipeline) string {
-	return common.UserDefinedFilterProcessorID(common.PipelineRef{Name: mp.Name, Type: common.SignalTypeMetric})
+	return common.UserDefinedFilterProcessorID(common.MetricPipelineRef(mp))
 }

@@ -1,30 +1,42 @@
 package common
 
+import telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+
 // PipelineRef identifies a pipeline for component ID and environment variable generation.
 type PipelineRef struct {
-	Name string
-	Type SignalType
+	name       string
+	signalType SignalType
 }
 
-// typePrefix returns "<signalType>pipeline" when Type is set, or an empty string otherwise.
-// Example: Type="trace" → "tracepipeline"
-// Example: Type=""      → ""
+func LogPipelineRef(lp *telemetryv1beta1.LogPipeline) PipelineRef {
+	return PipelineRef{name: lp.Name, signalType: SignalTypeLog}
+}
+
+func MetricPipelineRef(mp *telemetryv1beta1.MetricPipeline) PipelineRef {
+	return PipelineRef{name: mp.Name, signalType: SignalTypeMetric}
+}
+
+func TracePipelineRef(tp *telemetryv1beta1.TracePipeline) PipelineRef {
+	return PipelineRef{name: tp.Name, signalType: SignalTypeTrace}
+}
+
+// typePrefix returns "<signalType>pipeline".
+// Example: signalType="trace" → "tracepipeline"
 func (r PipelineRef) typePrefix() string {
-	if r.Type == "" {
+	if r.signalType == "" {
 		return ""
 	}
 
-	return string(r.Type) + "pipeline"
+	return string(r.signalType) + "pipeline"
 }
 
-// qualifiedName returns the pipeline name, prefixed with the signal type when Type is set.
-// Example: Type="trace", Name="my-pipeline" → "tracepipeline-my-pipeline"
-// Example: Type="",      Name="my-pipeline" → "my-pipeline"
+// qualifiedName returns the pipeline name, prefixed with the signal type.
+// Example: signalType="trace", name="my-pipeline" → "tracepipeline-my-pipeline"
 func (r PipelineRef) qualifiedName() string {
 	prefix := r.typePrefix()
 	if prefix == "" {
-		return r.Name
+		return r.name
 	}
 
-	return prefix + "-" + r.Name
+	return prefix + "-" + r.name
 }

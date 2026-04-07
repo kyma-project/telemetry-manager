@@ -55,13 +55,13 @@ scrape_configs:
           replacement: logpipeline
           action: replace
         - source_labels: [__name__, exporter]
+          regex: otelcol_.+;.+/(?:(?:metric|trace|log)pipeline-)?([a-zA-Z0-9-]+)
+          target_label: pipeline_name
+          action: replace
+        - source_labels: [__name__, exporter]
           regex: otelcol_.+;.+/((metric|trace|log)pipeline)-.+
           target_label: pipeline_type
           replacement: $1
-          action: replace
-        - source_labels: [__name__, exporter]
-          regex: otelcol_.+;.+/(?:(?:metric|trace|log)pipeline-)?([a-zA-Z0-9-]+)
-          target_label: pipeline_name
           action: replace
       kubernetes_sd_configs:
         - role: endpoints

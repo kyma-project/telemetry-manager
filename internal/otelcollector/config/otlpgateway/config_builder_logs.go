@@ -252,7 +252,7 @@ func (b *Builder) addLogOTLPExporter(builder *common.ComponentBuilder[*telemetry
 			otlpExporterBuilder := common.NewOTLPExporterConfigBuilder(
 				b.Reader,
 				lp.Spec.Output.OTLP,
-				common.PipelineRef{Name: lp.Name, Type: common.SignalTypeLog},
+				common.LogPipelineRef(lp),
 				queueSize,
 			)
 
@@ -263,7 +263,7 @@ func (b *Builder) addLogOTLPExporter(builder *common.ComponentBuilder[*telemetry
 
 //nolint:dupl // Acceptable duplication - trace and log OAuth2 extensions follow same pattern
 func (b *Builder) addLogOAuth2Extension(ctx context.Context, builder *common.ComponentBuilder[*telemetryv1beta1.LogPipeline], pipeline *telemetryv1beta1.LogPipeline) error {
-	pipelineRef := common.PipelineRef{Name: pipeline.Name, Type: common.SignalTypeLog}
+	pipelineRef := common.LogPipelineRef(pipeline)
 	oauth2ExtensionID := common.OAuth2ExtensionID(pipelineRef)
 
 	oauth2ExtensionConfig, oauth2ExtensionEnvVars, err := common.NewOAuth2ExtensionConfigBuilder(
@@ -295,15 +295,15 @@ func formatNamespaceFilterID(lp *telemetryv1beta1.LogPipeline) string {
 }
 
 func formatLogUserDefinedTransformProcessorID(lp *telemetryv1beta1.LogPipeline) string {
-	return common.UserDefinedTransformProcessorID(common.PipelineRef{Name: lp.Name, Type: common.SignalTypeLog})
+	return common.UserDefinedTransformProcessorID(common.LogPipelineRef(lp))
 }
 
 func formatLogUserDefinedFilterProcessorID(lp *telemetryv1beta1.LogPipeline) string {
-	return common.UserDefinedFilterProcessorID(common.PipelineRef{Name: lp.Name, Type: common.SignalTypeLog})
+	return common.UserDefinedFilterProcessorID(common.LogPipelineRef(lp))
 }
 
 func formatLogOTLPExporterID(lp *telemetryv1beta1.LogPipeline) string {
-	return common.ExporterID(lp.Spec.Output.OTLP.Protocol, common.PipelineRef{Name: lp.Name, Type: common.SignalTypeLog})
+	return common.ExporterID(lp.Spec.Output.OTLP.Protocol, common.LogPipelineRef(lp))
 }
 
 func namespaceFilterProcessor(namespaceSelector *telemetryv1beta1.NamespaceSelector) *common.FilterProcessorConfig {

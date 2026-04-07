@@ -5,25 +5,30 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
 
+func traceRefTest() PipelineRef {
+	return TracePipelineRef(&telemetryv1beta1.TracePipeline{ObjectMeta: metav1.ObjectMeta{Name: "test"}})
+}
+
+func metricRefTest() PipelineRef {
+	return MetricPipelineRef(&telemetryv1beta1.MetricPipeline{ObjectMeta: metav1.ObjectMeta{Name: "test"}})
+}
+
 func TestExporterIDHTTP(t *testing.T) {
-	require.Equal(t, "otlp_http/tracepipeline-test", ExporterID("http", PipelineRef{Name: "test", Type: SignalTypeTrace}))
+	require.Equal(t, "otlp_http/tracepipeline-test", ExporterID("http", traceRefTest()))
 }
 
 func TestExporterIDGRPC(t *testing.T) {
-	require.Equal(t, "otlp_grpc/tracepipeline-test", ExporterID("grpc", PipelineRef{Name: "test", Type: SignalTypeTrace}))
+	require.Equal(t, "otlp_grpc/tracepipeline-test", ExporterID("grpc", traceRefTest()))
 }
 
 func TestExorterIDDefault(t *testing.T) {
-	require.Equal(t, "otlp_grpc/tracepipeline-test", ExporterID("", PipelineRef{Name: "test", Type: SignalTypeTrace}))
-}
-
-func TestExporterIDNoPrefix(t *testing.T) {
-	require.Equal(t, "otlp_grpc/test", ExporterID("grpc", PipelineRef{Name: "test"}))
+	require.Equal(t, "otlp_grpc/tracepipeline-test", ExporterID("", traceRefTest()))
 }
 
 func TestMakeExporterConfig(t *testing.T) {
@@ -31,8 +36,7 @@ func TestMakeExporterConfig(t *testing.T) {
 		Endpoint: telemetryv1beta1.ValueType{Value: "otlp-endpoint"},
 	}
 
-	ref := PipelineRef{Name: "test", Type: SignalTypeTrace}
-	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, ref, 512)
+	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, traceRefTest(), 512)
 	otlpExporterConfig, envVars, err := cb.OTLPExporter(t.Context())
 	require.NoError(t, err)
 	require.NotNil(t, envVars)
@@ -57,8 +61,7 @@ func TestMakeExporterConfigTraceWithPath(t *testing.T) {
 		Protocol: "http",
 	}
 
-	ref := PipelineRef{Name: "test", Type: SignalTypeTrace}
-	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, ref, 512)
+	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, traceRefTest(), 512)
 	otlpExporterConfig, envVars, err := cb.OTLPExporter(t.Context())
 	require.NoError(t, err)
 	require.NotNil(t, envVars)
@@ -77,8 +80,7 @@ func TestMakeExporterConfigMetricWithPath(t *testing.T) {
 		Protocol: "http",
 	}
 
-	ref := PipelineRef{Name: "test", Type: SignalTypeMetric}
-	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, ref, 512)
+	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, metricRefTest(), 512)
 	otlpExporterConfig, envVars, err := cb.OTLPExporter(t.Context())
 	require.NoError(t, err)
 	require.NotNil(t, envVars)
@@ -101,8 +103,7 @@ func TestMakeExporterConfigWithBasicAuth(t *testing.T) {
 		},
 	}
 
-	ref := PipelineRef{Name: "test", Type: SignalTypeTrace}
-	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, ref, 512)
+	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, traceRefTest(), 512)
 	otlpExporterConfig, envVars, err := cb.OTLPExporter(t.Context())
 	require.NoError(t, err)
 	require.NotNil(t, envVars)
@@ -128,8 +129,7 @@ func TestMakeExporterConfigWithOAuth2(t *testing.T) {
 		},
 	}
 
-	ref := PipelineRef{Name: "test", Type: SignalTypeTrace}
-	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, ref, 512)
+	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, traceRefTest(), 512)
 	otlpExporterConfig, envVars, err := cb.OTLPExporter(t.Context())
 	require.NoError(t, err)
 	require.NotNil(t, envVars)
@@ -152,8 +152,7 @@ func TestMakeExporterConfigWithCustomHeaders(t *testing.T) {
 		Headers:  headers,
 	}
 
-	ref := PipelineRef{Name: "test", Type: SignalTypeTrace}
-	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, ref, 512)
+	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, traceRefTest(), 512)
 	otlpExporterConfig, envVars, err := cb.OTLPExporter(t.Context())
 	require.NoError(t, err)
 	require.NotNil(t, envVars)
@@ -171,8 +170,7 @@ func TestMakeExporterConfigWithTLSInsecure(t *testing.T) {
 		TLS:      tls,
 	}
 
-	ref := PipelineRef{Name: "test", Type: SignalTypeTrace}
-	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, ref, 512)
+	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, traceRefTest(), 512)
 	otlpExporterConfig, envVars, err := cb.OTLPExporter(t.Context())
 	require.NoError(t, err)
 	require.NotNil(t, envVars)
@@ -190,8 +188,7 @@ func TestMakeExporterConfigWithTLSInsecureSkipVerify(t *testing.T) {
 		TLS:      tls,
 	}
 
-	ref := PipelineRef{Name: "test", Type: SignalTypeTrace}
-	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, ref, 512)
+	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, traceRefTest(), 512)
 	otlpExporterConfig, envVars, err := cb.OTLPExporter(t.Context())
 	require.NoError(t, err)
 	require.NotNil(t, envVars)
@@ -220,8 +217,7 @@ func TestMakeExporterConfigWithmTLS(t *testing.T) {
 		TLS:      tls,
 	}
 
-	ref := PipelineRef{Name: "test", Type: SignalTypeTrace}
-	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, ref, 512)
+	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, traceRefTest(), 512)
 	otlpExporterConfig, envVars, err := cb.OTLPExporter(t.Context())
 	require.NoError(t, err)
 	require.NotNil(t, envVars)
@@ -265,8 +261,7 @@ func TestMakeExporterConfigCompression(t *testing.T) {
 				Compression: tt.compression,
 			}
 
-			ref := PipelineRef{Name: "test", Type: SignalTypeTrace}
-			cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, ref, 512)
+			cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, traceRefTest(), 512)
 			otlpExporterConfig, envVars, err := cb.OTLPExporter(t.Context())
 			require.NoError(t, err)
 			require.NotNil(t, envVars)

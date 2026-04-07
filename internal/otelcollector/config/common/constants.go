@@ -115,9 +115,8 @@ const (
 	ComponentIDK8sAttributesProcessor                  = "k8s_attributes"
 	ComponentIDServiceEnrichmentProcessor              = "service_enrichment"
 	ComponentIDIstioNoiseFilterProcessor               = "istio_noise_filter"
-	ProcessorNameUserDefined                           = "user-defined"
-	FilterProcessorType                                = "filter"
-	TransformProcessorType                             = "transform"
+	ComponentIDUserDefinedFilterProcessor              = "filter/%s-user-defined-%s"    // dynamically filled with pipeline type prefix and pipeline name suffix
+	ComponentIDUserDefinedTransformProcessor           = "transform/%s-user-defined-%s" // dynamically filled with pipeline type prefix and pipeline name suffix
 	ComponentIDSetInstrumentationScopeKymaProcessor    = "transform/set-instrumentation-scope-kyma"
 	ComponentIDSetInstrumentationScopeRuntimeProcessor = "transform/set-instrumentation-scope-runtime"
 	ComponentIDInsertClusterAttributesProcessor        = "transform/insert-cluster-attributes"
