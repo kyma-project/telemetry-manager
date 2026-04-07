@@ -39,7 +39,7 @@ var (
 	storageVolumeSize = resource.MustParse("1000Mi")
 	cpuRequest        = resource.MustParse("10m")
 	memoryRequest     = resource.MustParse("50Mi")
-	memoryLimit       = resource.MustParse("180Mi")
+	memoryLimit       = resource.MustParse("512Mi")
 )
 
 type ApplierDeleter struct {
