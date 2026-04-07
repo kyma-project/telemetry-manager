@@ -169,10 +169,16 @@ func logSelfMonitorTargets(t *testing.T, ctx context.Context) {
 // scrape target. This guards against flakiness caused by the Prometheus kubernetes SD
 // watch-list failing during API server startup — if SD never connects, no targets are
 // discovered and no metrics are ever scraped.
-// If no targets are found within 1 minute, the selfmonitor pod is restarted once: a fresh
-// network namespace picks up all iptables/CNI rules that were not yet ready at initial pod start.
+// The function polls for targets in multiple rounds. Each round waits 30 seconds, and if
+// no targets appear, the selfmonitor pod is restarted to obtain a fresh network namespace
+// that picks up all iptables/CNI rules that may not have been ready at initial pod start.
 func assertSelfMonitorHasActiveTargets(t *testing.T) {
 	t.Helper()
+
+	const (
+		maxRestarts       = 3
+		pollRoundDuration = 30 * time.Second
+	)
 
 	hasActiveTargets := func() bool {
 		active, _, err := queryPrometheusTargets(t.Context())
@@ -191,25 +197,24 @@ func assertSelfMonitorHasActiveTargets(t *testing.T) {
 		return true
 	}
 
-	// First, poll for up to 1 minute. If no targets appear, restart the pod to recover
-	// from a potential CNI/iptables race where the pod's network namespace was set up
-	// before k3s had fully programmed the kubernetes ClusterIP DNAT rules.
-	deadline := time.Now().Add(time.Minute)
-	for time.Now().Before(deadline) {
-		if hasActiveTargets() {
-			return
+	for attempt := range maxRestarts {
+		deadline := time.Now().Add(pollRoundDuration)
+		for time.Now().Before(deadline) {
+			if hasActiveTargets() {
+				return
+			}
+
+			time.Sleep(periodic.SelfmonitorQueryInterval)
 		}
 
-		time.Sleep(periodic.SelfmonitorQueryInterval)
+		t.Logf("No active targets after round %d/%d, restarting selfmonitor pod", attempt+1, maxRestarts)
+		restartSelfMonitorPod(t)
 	}
 
-	t.Log("No active targets after 1 minute, restarting selfmonitor pod to recover from potential CNI/iptables race")
-	restartSelfMonitorPod(t)
-
-	// Now wait the full timeout for targets to appear after restart.
-	Eventually(hasActiveTargets, periodic.SelfmonitorRateBaselineTimeout, periodic.SelfmonitorQueryInterval).Should(
+	// Final wait after the last restart.
+	Eventually(hasActiveTargets, pollRoundDuration, periodic.SelfmonitorQueryInterval).Should(
 		BeTrue(),
-		"prometheus service discovery never discovered any targets",
+		"prometheus service discovery never discovered any targets after %d pod restarts", maxRestarts,
 	)
 }
 
