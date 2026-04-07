@@ -27,8 +27,8 @@ const (
 	ComponentIDK8sAttributesProcessor                  = "k8s_attributes"
 	ComponentIDServiceEnrichmentProcessor              = "service_enrichment"
 	ComponentIDIstioNoiseFilterProcessor               = "istio_noise_filter"
-	ComponentIDUserDefinedFilterProcessor              = "filter/%s-user-defined-%s"    // dynamically filled with pipeline type prefix and pipeline name suffix
-	ComponentIDUserDefinedTransformProcessor           = "transform/%s-user-defined-%s" // dynamically filled with pipeline type prefix and pipeline name suffix
+	ComponentIDUserDefinedFilterProcessor              = "filter/%s-user-defined-%s"    // dynamically filled with pipeline type prefix and pipeline name suffix (example: filter/tracepipeline-user-defined-mypipeline)
+	ComponentIDUserDefinedTransformProcessor           = "transform/%s-user-defined-%s" // dynamically filled with pipeline type prefix and pipeline name suffix (example: transform/tracepipeline-user-defined-mypipeline)
 	ComponentIDSetInstrumentationScopeKymaProcessor    = "transform/set-instrumentation-scope-kyma"
 	ComponentIDSetInstrumentationScopeRuntimeProcessor = "transform/set-instrumentation-scope-runtime"
 	ComponentIDInsertClusterAttributesProcessor        = "transform/insert-cluster-attributes"
@@ -43,7 +43,7 @@ const (
 
 	// Log-Specific Processors
 
-	ComponentIDNamespaceFilterProcessor       = "filter/%s-filter-by-namespace" // dynamically filled with pipeline name
+	ComponentIDNamespaceFilterProcessor       = "filter/%s-filter-by-namespace" // dynamically filled with pipeline name (example: filter/mypipeline-filter-by-namespace)
 	ComponentIDSetObservedTimeIfZeroProcessor = "transform/set-observed-time-if-zero"
 	ComponentIDIstioEnrichmentProcessor       = "istio_enrichment"
 
@@ -54,7 +54,7 @@ const (
 	ComponentIDDropIfInputSourceIstioProcessor             = "filter/drop-if-input-source-istio"
 	ComponentIDDropIfInputSourceOTLPProcessor              = "filter/drop-if-input-source-otlp"
 	ComponentIDDropEnvoyMetricsIfDisabledProcessor         = "filter/drop-envoy-metrics-if-disabled"
-	ComponentIDNamespacePerInputFilterProcessor            = "filter/%s-filter-by-namespace-%s-input" // dynamically filled with pipeline name and input source
+	ComponentIDNamespacePerInputFilterProcessor            = "filter/%s-filter-by-namespace-%s-input" // dynamically filled with pipeline name and input source (example: filter/mypipeline-filter-by-namespace-otlp-input)
 	ComponentIDDropRuntimePodMetricsProcessor              = "filter/drop-runtime-pod-metrics"
 	ComponentIDDropRuntimeContainerMetricsProcessor        = "filter/drop-runtime-container-metrics"
 	ComponentIDDropRuntimeNodeMetricsProcessor             = "filter/drop-runtime-node-metrics"
@@ -81,8 +81,8 @@ const (
 	// EXPORTERS
 	// ================================================================================
 
-	ComponentIDOTLPHTTPExporter = "otlp_http/%s" // dynamically filled with pipeline name
-	ComponentIDOTLPGRPCExporter = "otlp_grpc/%s" // dynamically filled with pipeline name
+	ComponentIDOTLPHTTPExporter = "otlp_http/%s" // dynamically filled with pipeline type and name (example: otlp_http/metricpipeline-mypipeline)
+	ComponentIDOTLPGRPCExporter = "otlp_grpc/%s" // dynamically filled with pipeline type and name (example: otlp_grpc/metricpipeline-mypipeline)
 	ComponentIDOTLPExporter     = "otlp"         // static OTLP exporter
 
 	// ================================================================================
@@ -91,7 +91,6 @@ const (
 
 	ComponentIDEnrichmentConnector             = "forward/enrichment"
 	ComponentIDInputConnector                  = "forward/input"
-	ComponentIDRoutingConnector                = "routing/%s" // dynamically filled with pipeline name
 	ComponentIDEnrichmentRoutingConnector      = "routing/enrichment"
 	ComponentIDRuntimeInputRoutingConnector    = "routing/runtime-input"
 	ComponentIDPrometheusInputRoutingConnector = "routing/prometheus-input"
@@ -105,6 +104,6 @@ const (
 	ComponentIDFileStorageExtension      = "file_storage"
 	ComponentIDHealthCheckExtension      = "health_check"
 	ComponentIDPprofExtension            = "pprof"
-	ComponentIDOAuth2Extension           = "oauth2client/%s" // dynamically filled with pipeline name
+	ComponentIDOAuth2Extension           = "oauth2client/%s" // dynamically filled with pipeline type and name (example: oauth2client/logpipeline-mypipeline)
 	ComponentIDCGroupRuntimeExtension    = "cgroupruntime"
 )
