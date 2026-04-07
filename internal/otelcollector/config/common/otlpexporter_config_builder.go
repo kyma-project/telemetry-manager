@@ -99,7 +99,7 @@ func otlpExporter(otlpOutput *telemetryv1beta1.OTLPOutput, pipelineRef PipelineR
 	return &exporter
 }
 
-func ExporterID(protocol telemetryv1beta1.OTLPProtocol, pipelineRef PipelineRef) string {
+func OTLPExporterID(protocol telemetryv1beta1.OTLPProtocol, pipelineRef PipelineRef) string {
 	if protocol == telemetryv1beta1.OTLPProtocolHTTP {
 		return fmt.Sprintf(ComponentIDOTLPHTTPExporter, pipelineRef.qualifiedName())
 	}

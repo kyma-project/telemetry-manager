@@ -969,7 +969,7 @@ func formatOutputMetricServicePipelineID(mp *telemetryv1beta1.MetricPipeline) st
 }
 
 func formatOTLPExporterID(pipeline *telemetryv1beta1.MetricPipeline) string {
-	return common.ExporterID(pipeline.Spec.Output.OTLP.Protocol, common.MetricPipelineRef(pipeline))
+	return common.OTLPExporterID(pipeline.Spec.Output.OTLP.Protocol, common.MetricPipelineRef(pipeline))
 }
 
 func formatNamespaceFilterID(pipelineName string, inputSourceType common.InputSourceType) string {
