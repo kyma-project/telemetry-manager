@@ -43,7 +43,7 @@ const (
 
 	// Log-Specific Processors
 
-	ComponentIDNamespaceFilterProcessor       = "filter/%s-filter-by-namespace" // dynamically filled with pipeline name (example: filter/mypipeline-filter-by-namespace)
+	ComponentIDNamespaceFilterProcessor       = "filter/%s-filter-by-namespace" // dynamically filled with log pipeline name (example: filter/mylogpipeline-filter-by-namespace)
 	ComponentIDSetObservedTimeIfZeroProcessor = "transform/set-observed-time-if-zero"
 	ComponentIDIstioEnrichmentProcessor       = "istio_enrichment"
 
@@ -54,7 +54,7 @@ const (
 	ComponentIDDropIfInputSourceIstioProcessor             = "filter/drop-if-input-source-istio"
 	ComponentIDDropIfInputSourceOTLPProcessor              = "filter/drop-if-input-source-otlp"
 	ComponentIDDropEnvoyMetricsIfDisabledProcessor         = "filter/drop-envoy-metrics-if-disabled"
-	ComponentIDNamespacePerInputFilterProcessor            = "filter/%s-filter-by-namespace-%s-input" // dynamically filled with pipeline name and input source (example: filter/mypipeline-filter-by-namespace-otlp-input)
+	ComponentIDNamespacePerInputFilterProcessor            = "filter/%s-filter-by-namespace-%s-input" // dynamically filled with metric pipeline name and input source (example: filter/mymetricpipeline-filter-by-namespace-otlp-input)
 	ComponentIDDropRuntimePodMetricsProcessor              = "filter/drop-runtime-pod-metrics"
 	ComponentIDDropRuntimeContainerMetricsProcessor        = "filter/drop-runtime-container-metrics"
 	ComponentIDDropRuntimeNodeMetricsProcessor             = "filter/drop-runtime-node-metrics"
