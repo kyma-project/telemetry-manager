@@ -291,7 +291,7 @@ func formatLogServicePipelineID(lp *telemetryv1beta1.LogPipeline) string {
 }
 
 func formatNamespaceFilterID(lp *telemetryv1beta1.LogPipeline) string {
-	return fmt.Sprintf(common.ComponentIDNamespaceFilterProcessor, string(common.SignalTypeLog)+"pipeline-"+lp.Name)
+	return fmt.Sprintf(common.ComponentIDNamespaceFilterProcessor, lp.Name)
 }
 
 func formatLogUserDefinedTransformProcessorID(lp *telemetryv1beta1.LogPipeline) string {

@@ -274,9 +274,7 @@ func (b *Builder) addMetricDropOTLPIfInputDisabledProcessor(builder *common.Comp
 
 func (b *Builder) addMetricOTLPNamespaceFilterProcessor(builder *common.ComponentBuilder[*telemetryv1beta1.MetricPipeline]) buildMetricComponentFunc {
 	return builder.AddProcessor(
-		func(mp *telemetryv1beta1.MetricPipeline) string {
-			return formatMetricOTLPNamespaceFilterID(mp.Name)
-		},
+		formatMetricOTLPNamespaceFilterID,
 		func(mp *telemetryv1beta1.MetricPipeline) any {
 			input := mp.Spec.Input
 			if !sharedtypesutils.IsOTLPInputEnabled(input.OTLP) || input.OTLP == nil || !metricShouldFilterByNamespace(input.OTLP.Namespaces) {
@@ -428,8 +426,8 @@ func formatMetricOutputServicePipelineID(mp *telemetryv1beta1.MetricPipeline) st
 	return fmt.Sprintf("metrics/%s-output", mp.Name)
 }
 
-func formatMetricOTLPNamespaceFilterID(pipelineName string) string {
-	return fmt.Sprintf(common.ComponentIDNamespacePerInputFilterProcessor, string(common.SignalTypeMetric)+"pipeline-"+pipelineName, common.InputSourceOTLP)
+func formatMetricOTLPNamespaceFilterID(mp *telemetryv1beta1.MetricPipeline) string {
+	return fmt.Sprintf(common.ComponentIDNamespacePerInputFilterProcessor, mp.Name, common.InputSourceOTLP)
 }
 
 func formatMetricOTLPExporterID(pipeline *telemetryv1beta1.MetricPipeline) string {

@@ -19,7 +19,7 @@ service:
                 - transform/set-observed-time-if-zero
                 - k8s_attributes
                 - istio_noise_filter
-                - filter/logpipeline-test-log-filter-by-namespace
+                - filter/test-log-filter-by-namespace
                 - transform/insert-cluster-attributes
                 - service_enrichment
                 - transform/drop-kyma-attributes
@@ -54,7 +54,7 @@ processors:
         send_batch_size: 512
         timeout: 10s
         send_batch_max_size: 512
-    filter/logpipeline-test-log-filter-by-namespace:
+    filter/test-log-filter-by-namespace:
         error_mode: ignore
         log_conditions:
             - conditions:
