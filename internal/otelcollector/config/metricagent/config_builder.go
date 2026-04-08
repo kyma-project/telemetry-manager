@@ -937,7 +937,7 @@ func inputRoutingConnector(outputPipelineIDs []string) common.RoutingConnectorCo
 // Authentication extensions
 
 func (b *Builder) addOAuth2Extension(ctx context.Context, pipeline *telemetryv1beta1.MetricPipeline) error {
-	oauth2ExtensionID := common.OAuth2ExtensionID(common.MetricPipelineRef(pipeline))
+	oauth2ExtensionID := common.ComponentIDOAuth2Extension(common.MetricPipelineRef(pipeline))
 
 	oauth2ExtensionConfig, oauth2ExtensionEnvVars, err := common.NewOAuth2ExtensionConfigBuilder(
 		b.Reader,

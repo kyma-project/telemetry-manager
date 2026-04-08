@@ -47,7 +47,3 @@ func oauth2Extension(oauth2Options *telemetryv1beta1.OAuth2Options, pipelineRef 
 		Params:       oauth2Options.Params,
 	}
 }
-
-func OAuth2ExtensionID(pipelineRef PipelineRef) string {
-	return ComponentIDOAuth2Extension(pipelineRef.qualifiedName())
-}

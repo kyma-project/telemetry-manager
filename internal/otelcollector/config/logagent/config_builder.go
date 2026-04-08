@@ -217,7 +217,7 @@ func (b *Builder) addOTLPExporter() buildComponentFunc {
 }
 
 func (b *Builder) addOAuth2Extension(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) error {
-	oauth2ExtensionID := common.OAuth2ExtensionID(common.LogPipelineRef(pipeline))
+	oauth2ExtensionID := common.ComponentIDOAuth2Extension(common.LogPipelineRef(pipeline))
 
 	oauth2ExtensionConfig, oauth2ExtensionEnvVars, err := common.NewOAuth2ExtensionConfigBuilder(
 		b.Reader,

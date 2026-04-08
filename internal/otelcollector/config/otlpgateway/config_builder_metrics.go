@@ -361,7 +361,7 @@ func (b *Builder) addMetricOTLPExporter(builder *common.ComponentBuilder[*teleme
 //nolint:dupl // Acceptable duplication - metric, trace and log OAuth2 extensions follow same pattern
 func (b *Builder) addMetricOAuth2Extension(ctx context.Context, builder *common.ComponentBuilder[*telemetryv1beta1.MetricPipeline], pipeline *telemetryv1beta1.MetricPipeline) error {
 	pipelineRef := common.MetricPipelineRef(pipeline)
-	oauth2ExtensionID := common.OAuth2ExtensionID(pipelineRef)
+	oauth2ExtensionID := common.ComponentIDOAuth2Extension(pipelineRef)
 
 	oauth2ExtensionConfig, oauth2ExtensionEnvVars, err := common.NewOAuth2ExtensionConfigBuilder(
 		b.Reader,

@@ -92,7 +92,7 @@ func otlpExporter(otlpOutput *telemetryv1beta1.OTLPOutput, pipelineRef PipelineR
 
 	if otlpOutput.Authentication != nil && otlpOutput.Authentication.OAuth2 != nil {
 		exporter.Auth = Auth{
-			Authenticator: ComponentIDOAuth2Extension(pipelineRef.qualifiedName()),
+			Authenticator: ComponentIDOAuth2Extension(pipelineRef),
 		}
 	}
 

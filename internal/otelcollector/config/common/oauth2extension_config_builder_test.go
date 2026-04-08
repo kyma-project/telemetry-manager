@@ -12,7 +12,7 @@ import (
 
 func TestOAuth2ExtensionID(t *testing.T) {
 	ref := TracePipelineRef(&telemetryv1beta1.TracePipeline{ObjectMeta: metav1.ObjectMeta{Name: "test"}})
-	require.Equal(t, "oauth2client/tracepipeline-test", OAuth2ExtensionID(ref))
+	require.Equal(t, "oauth2client/tracepipeline-test", ComponentIDOAuth2Extension(ref))
 }
 
 func TestMakeExtensionConfig(t *testing.T) {

@@ -181,6 +181,6 @@ const ComponentIDCGroupRuntimeExtension ComponentID = "cgroupruntime"
 // Pipeline name is included in the component ID to keep it unique across pipelines.
 //
 // Example: oauth2client/logpipeline-mypipeline
-func ComponentIDOAuth2Extension(qualifiedName string) ComponentID {
-	return fmt.Sprintf("oauth2client/%s", qualifiedName)
+func ComponentIDOAuth2Extension(pipelineRef PipelineRef) ComponentID {
+	return fmt.Sprintf("oauth2client/%s", pipelineRef.qualifiedName())
 }
