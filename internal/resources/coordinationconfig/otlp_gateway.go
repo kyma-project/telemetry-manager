@@ -1,4 +1,4 @@
-package otelcollector
+package coordinationconfig
 
 import (
 	"context"

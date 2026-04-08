@@ -20,6 +20,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/logagent"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
+	"github.com/kyma-project/telemetry-manager/internal/resources/coordinationconfig"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
@@ -219,7 +220,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 	if isPipelineReconcilable {
 		// Collect secret references and their current versions
 		secretRefs := secretref.GetSecretRefsLogPipeline(pipeline)
-		secretVersions := otelcollector.CollectSecretVersions(ctx, r.Client, secretRefs)
+		secretVersions := coordinationconfig.CollectSecretVersions(ctx, r.Client, secretRefs)
 
 		// Write current pipeline reference to OTLP Gateway Pipelines Sync ConfigMap
 		logf.FromContext(ctx).V(1).Info("Writing pipeline reference to OTLP Gateway Pipelines Sync ConfigMap",
@@ -227,7 +228,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 			"generation", pipeline.Generation,
 			"secretCount", len(secretVersions))
 
-		if err := otelcollector.WritePipelineReference(ctx, r.Client, r.globals.TargetNamespace(), common.SignalTypeLog, otelcollector.PipelineReferenceInput{
+		if err := coordinationconfig.WritePipelineReference(ctx, r.Client, r.globals.TargetNamespace(), common.SignalTypeLog, coordinationconfig.PipelineReferenceInput{
 			Name:           pipeline.Name,
 			Generation:     pipeline.Generation,
 			SecretVersions: secretVersions,
@@ -239,7 +240,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 		// Remove current pipeline reference from OTLP Gateway Pipelines Sync ConfigMap
 		logf.FromContext(ctx).V(1).Info("Removing pipeline reference from OTLP Gateway Pipelines Sync ConfigMap", "pipeline", pipeline.Name)
 
-		if err := otelcollector.RemovePipelineReference(ctx, r.Client, r.globals.TargetNamespace(), common.SignalTypeLog, pipeline.Name); err != nil {
+		if err := coordinationconfig.RemovePipelineReference(ctx, r.Client, r.globals.TargetNamespace(), common.SignalTypeLog, pipeline.Name); err != nil {
 			return fmt.Errorf("failed to remove pipeline reference from OTLP Gateway Pipelines Sync ConfigMap: %w", err)
 		}
 	}

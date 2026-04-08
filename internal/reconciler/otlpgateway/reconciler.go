@@ -35,6 +35,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpgateway"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
+	"github.com/kyma-project/telemetry-manager/internal/resources/coordinationconfig"
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
@@ -160,7 +161,7 @@ func (r *Reconciler) ensureConfigMapExists(ctx context.Context) error {
 			Namespace: r.globals.TargetNamespace(),
 		},
 		Data: map[string]string{
-			otelcollector.ConfigMapDataKey: "TracePipeline: []\n",
+			coordinationconfig.ConfigMapDataKey: "TracePipeline: []\n",
 		},
 	}
 
@@ -207,7 +208,7 @@ func (r *Reconciler) doReconcile(ctx context.Context) error {
 		return fmt.Errorf("failed to clean up legacy gateways: %w", err)
 	}
 
-	config, err := otelcollector.ReadOTLPGatewayConfig(ctx, r.Client, r.globals.TargetNamespace())
+	config, err := coordinationconfig.ReadOTLPGatewayConfig(ctx, r.Client, r.globals.TargetNamespace())
 	if err != nil {
 		return fmt.Errorf("failed to read configmap: %w", err)
 	}
@@ -258,7 +259,7 @@ func (r *Reconciler) doReconcile(ctx context.Context) error {
 // fetchTracePipelines fetches TracePipeline CRs from references.
 //
 //nolint:dupl // Acceptable duplication - generic approach adds complexity without significant benefit
-func (r *Reconciler) fetchTracePipelines(ctx context.Context, refs []otelcollector.PipelineReference) ([]telemetryv1beta1.TracePipeline, error) {
+func (r *Reconciler) fetchTracePipelines(ctx context.Context, refs []coordinationconfig.PipelineReference) ([]telemetryv1beta1.TracePipeline, error) {
 	log := logf.FromContext(ctx)
 	pipelines := make([]telemetryv1beta1.TracePipeline, 0, len(refs))
 
@@ -292,7 +293,7 @@ func (r *Reconciler) fetchTracePipelines(ctx context.Context, refs []otelcollect
 // fetchLogPipelines fetches LogPipeline CRs from references.
 //
 //nolint:dupl // Acceptable duplication - generic approach adds complexity without significant benefit
-func (r *Reconciler) fetchLogPipelines(ctx context.Context, refs []otelcollector.PipelineReference) ([]telemetryv1beta1.LogPipeline, error) {
+func (r *Reconciler) fetchLogPipelines(ctx context.Context, refs []coordinationconfig.PipelineReference) ([]telemetryv1beta1.LogPipeline, error) {
 	log := logf.FromContext(ctx)
 	pipelines := make([]telemetryv1beta1.LogPipeline, 0, len(refs))
 
@@ -326,7 +327,7 @@ func (r *Reconciler) fetchLogPipelines(ctx context.Context, refs []otelcollector
 // fetchMetricPipelines fetches MetricPipeline CRs from references.
 //
 //nolint:dupl // Acceptable duplication - generic approach adds complexity without significant benefit
-func (r *Reconciler) fetchMetricPipelines(ctx context.Context, refs []otelcollector.PipelineReference) ([]telemetryv1beta1.MetricPipeline, error) {
+func (r *Reconciler) fetchMetricPipelines(ctx context.Context, refs []coordinationconfig.PipelineReference) ([]telemetryv1beta1.MetricPipeline, error) {
 	log := logf.FromContext(ctx)
 	pipelines := make([]telemetryv1beta1.MetricPipeline, 0, len(refs))
 
