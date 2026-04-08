@@ -21,52 +21,42 @@ override:
   # Temporarily decrease coverage threshold for certain packages, we need to increase the coverage and remove these entries from the list
   - threshold: 87
     path: ^internal/istiostatus$
-  - threshold: 87
-    path: ^internal/otelcollector/config/otlpexporter$
-  - threshold: 88
-    path: ^internal/otelcollector/config/trace/gateway$
-  - threshold: 77
+  - threshold: 89
     path: ^internal/reconciler/logpipeline/fluentbit$
-  - threshold: 0
-    path: ^internal/reconciler/logpipeline/otel$
-  - threshold: 82
-    path: ^internal/reconciler/logpipeline$
   - threshold: 77
+    path: ^internal/reconciler/logpipeline/otel$
+  - threshold: 83
+    path: ^internal/reconciler/logpipeline$
+  - threshold: 83
     path: ^internal/reconciler/metricpipeline$
-  - threshold: 60
+  - threshold: 63
     path: ^internal/reconciler/telemetry$
-  - threshold: 79
+  - threshold: 81
     path: ^internal/reconciler/tracepipeline$
   - threshold: 80
     path: ^internal/reconciler/otlpgateway$
-  - threshold: 74
+  - threshold: 79
     path: ^internal/resources/fluentbit$
-  - threshold: 83
+  - threshold: 84
     path: ^internal/resources/otelcollector$
-  - threshold: 78
-    path: ^internal/resources/selfmonitor$
   - threshold: 80
-    path: ^internal/validators/secretref$
-  - threshold: 75
+    path: ^internal/resources/selfmonitor$
+  - threshold: 78
     path: ^internal/resourcelock$
   - threshold: 85
     path: ^internal/secretwatch$
   - threshold: 83
     path: ^internal/webhookcert$
-  - threshold: 74
+  - threshold: 81
     path: ^webhook/logpipeline/v1alpha1$
-  - threshold: 84
+  - threshold: 87
     path: ^webhook/logpipeline/v1beta1$
   - threshold: 82
     path: ^webhook/utils$
-  - threshold: 80
+  - threshold: 89
     path: ^internal/utils/logpipeline$
-  - threshold: 75
+  - threshold: 86
     path: ^webhook/tracepipeline/v1alpha1$
-  - threshold: 75
-    path: ^webhook/tracepipeline/v1beta1$
-  - threshold: 88
-    path: ^internal/validators/ottl$
 
 # Holds regexp rules which will exclude matched files or packages from coverage statistics
 exclude:
@@ -83,6 +73,7 @@ exclude:
     - ^internal/utils/test # some functions in testutils are being used in e2e tests only
     - ^internal/utils/fuzzing # only used for fuzz tests
     - ^internal/metrics$ # metrics package only contains metric definitions, no logic to test
+
 
 # NOTES:
 # - symbol `/` in all path regexps will be replaced by

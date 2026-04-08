@@ -8,7 +8,6 @@ on:
   push:
     branches:
       - "main"
-      - "release-*"
       - "feature-new-centralized-arch" # TODO: Remove after merging feature branch
     paths-ignore:
       - "docs/**"
@@ -21,7 +20,7 @@ on:
   pull_request_target:
     types: [labeled, opened, synchronize, reopened]
   workflow_dispatch:
-# This is reused in release.yml. So we use workflow_call
+  # This is reused in release.yml. So we use workflow_call
   workflow_call:
     inputs:
       ref:
@@ -32,6 +31,9 @@ on:
         description: "Image tag to use for the tests"
         type: string
         required: false
+
+env:
+  ARTIFACT_PREFIX: "gardener-"
 
 jobs:
   check-trigger:
@@ -45,9 +47,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TRIGGER_LABEL="test-on-gardener"
-          
+
           echo "Trigger label: $TRIGGER_LABEL"
-          
+
           if [[ "${{ github.event_name }}" == "pull_request_target" ]]; then
             echo "PR event detected"
             LABELS=$(gh pr view ${{ github.event.number }} --repo ${{ github.repository }} --json labels --template '{{range .labels}}{{.name}} {{end}}')
@@ -69,13 +71,13 @@ jobs:
     strategy:
       fail-fast: false # if one version is not working, continue tests on other versions
       matrix:
-        k8s_version: [1.33,1.34]
+        k8s_version: [1.33, 1.34]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          fetch-depth: '0'
+          fetch-depth: "0"
           ref: ${{ inputs.ref || github.ref }}
 
       - name: Setup Golang
@@ -156,7 +158,7 @@ jobs:
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         if: ${{ !cancelled() }}
         with:
-          name: ${{ github.job }}-${{ matrix.k8s_version }}-report
+          name: ${{ env.ARTIFACT_PREFIX }}${{ github.job }}-${{ matrix.k8s_version }}-report
           path: junit-report*.xml
 
       - name: Print pods on failure
@@ -195,12 +197,14 @@ jobs:
         if: needs.check-trigger.outputs.run-gardener-tests == 'true'
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          fetch-depth: '0'
+          fetch-depth: "0"
           ref: ${{ inputs.ref || github.ref }}
 
       - name: Generate test summary
         if: needs.check-trigger.outputs.run-gardener-tests == 'true'
         uses: "./.github/template/test-summary"
+        with:
+          artifact-prefix: ${{ env.ARTIFACT_PREFIX }}
 
       - name: Check workflow status
         run: |
@@ -217,4 +221,3 @@ jobs:
             echo "✗ Gardener tests failed"
             exit 1
           fi
-

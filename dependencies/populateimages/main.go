@@ -24,6 +24,7 @@ const (
 	SelfMonitorImage                 = "{{ .ENV_SELFMONITOR_IMAGE }}"
 	SelfMonitorFIPSImage             = "{{ .ENV_SELFMONITOR_FIPS_IMAGE }}"
 	FaultBackendImage                = "{{ .ENV_FAULT_BACKEND_IMAGE }}"
+	AlpineImage                      = "{{ .ENV_ALPINE_IMAGE }}"
 )
 `,
 }
@@ -115,6 +116,7 @@ func generateSecScanConfig(data map[string]string) error {
 		"dependencies/populateimages/**",
 		"dependencies/sample-app/**",
 		"dependencies/stdout-log-generator/**",
+		"dependencies/fault-backend/**",
 		"internal/tools/**",
 		"apis/telemetry/v1alpha1/zz_generated.conversion.go",
 	}

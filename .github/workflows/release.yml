@@ -1,4 +1,4 @@
-name: Telemetry Release
+name: Telemetry Manager Release
 
 on:
   workflow_dispatch:
@@ -30,6 +30,11 @@ on:
         description: 'Force release creation (re-create existing release, skip validation checks)'
         required: false
         default: false
+        type: boolean
+      module_release:
+        description: 'Whether to trigger module release workflow after this release (only for experimental and fast channels)'
+        required: false
+        default: true
         type: boolean
 
 run-name: "Release Telemetry version ${{ inputs.version }} with OCC image ${{ inputs.occ_image_version }}, dry-run: ${{ inputs.dry_run }}, force mode: ${{ inputs.force }}"
@@ -371,7 +376,7 @@ jobs:
           PR_URL=$(gh pr create \
             --base "${RELEASE_BRANCH}" \
             --head "${BUMP_BRANCH}" \
-            --title "chore: release preparation: Bump version to ${VERSION}" \
+            --title "chore: release preparation: bump version to ${VERSION}" \
             --body "${PR_BODY}" \
             --label "area/release" \
             --label "kind/chore")
@@ -445,6 +450,7 @@ jobs:
       - name: Create and push release tag
         if: ${{ inputs.dry_run != true }}
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ github.event.inputs.version }}
           RELEASE_BRANCH: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
         run: |
@@ -631,6 +637,35 @@ jobs:
         run: |
           echo "::notice::DRY RUN: Skipping gh-pages Helm chart metadata update"
           echo "Would have updated index.yaml on gh-pages branch"
+
+      - name: Trigger module release for fast channel
+        if: ${{ inputs.dry_run != true && inputs.module_release == true }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Triggering module release for fast channel..."
+          gh workflow run module-release.yml \
+            --ref "${{ github.ref_name }}" \
+            -f version="${{ inputs.version }}" \
+            -f channel="fast" \
+            -f dry_run="false" \
+            -f auto_merge="true"
+          echo "Module release workflow triggered for fast channel"
+
+      - name: Trigger module release for experimental channel
+        if: ${{ inputs.dry_run != true && inputs.module_release == true }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Triggering module release for experimental channel..."
+          gh workflow run module-release.yml \
+            --ref "${{ github.ref_name }}" \
+            -f version="${{ inputs.version }}" \
+            -f channel="experimental" \
+            -f dry_run="false" \
+            -f auto_merge="true"
+          echo "Module release workflow triggered for experimental channel"
+
       - name: Release success summary
         if: ${{ success() && inputs.dry_run != true }}
         run: |
@@ -643,16 +678,24 @@ jobs:
           - **Branch**: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
           - **OCC Image**: ${{ github.event.inputs.occ_image_version }}
           - **Helm Chart**: \`${HELM_CHART}\`
-          
+
           ### Docker Images
           \`\`\`
           europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:${{ inputs.version }}
           \`\`\`
 
+          ### Module Releases
+          Module release workflows have been triggered for:
+          - **Fast channel**: Auto-merge enabled
+          - **Experimental channel**: Auto-merge enabled
+
+          Monitor the workflow runs at: https://github.com/${{ github.repository }}/actions/workflows/module-release.yml
+
           ### What's Next?
           1. Verify the release at the URL above
-          2. Announce the release to the team
-          3. Update external documentation if needed
+          2. Monitor the module release PRs
+          3. Announce the release to the team
+          4. Update external documentation if needed
 
           EOF
       - name: Dry run summary

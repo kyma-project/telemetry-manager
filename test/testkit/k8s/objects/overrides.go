@@ -20,6 +20,7 @@ type Level string
 const (
 	DEBUG Level = "debug"
 	INFO  Level = "info"
+	WARN  Level = "warn"
 )
 
 const overridesTemplate = `global:

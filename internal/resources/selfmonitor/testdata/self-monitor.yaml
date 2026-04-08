@@ -88,9 +88,10 @@ spec:
         - --config.file=/dummy/dummy-config.yaml
         - --storage.tsdb.path=/prometheus/
         - --log.format=json
+        - --log.level=warn
         env:
         - name: GOMEMLIMIT
-          value: "150994880"
+          value: "429496720"
         livenessProbe:
           failureThreshold: 5
           httpGet:
@@ -113,7 +114,7 @@ spec:
           timeoutSeconds: 3
         resources:
           limits:
-            memory: 180Mi
+            memory: 512Mi
           requests:
             cpu: 10m
             memory: 50Mi

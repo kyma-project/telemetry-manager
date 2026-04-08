@@ -27,6 +27,10 @@ inputs:
     description: Google Cloud credentials JSON (required when fips-image-available is true)
     required: false
     default: ""
+  artifact-prefix:
+    description: Prefix for artifact names (e.g., "pr-", "gardener-")
+    required: false
+    default: ""
 
 runs:
   using: "composite"
@@ -95,7 +99,7 @@ runs:
       if: always()
       uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
       with:
-        name: ${{ inputs.test-id }}-report
+        name: ${{ inputs.artifact-prefix }}${{ inputs.test-id }}-report
         path: junit-report-*.xml
 
     - name: Print pods on failure
