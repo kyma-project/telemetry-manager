@@ -34,7 +34,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
 
-// TestConfigMapUpdate verifies that valid pipelines are written to the OTLP Gateway Pipelines Sync ConfigMap
+// TestConfigMapUpdate verifies that valid pipelines are written to the OTLP Gateway Coordination ConfigMap
 func TestConfigMapUpdate(t *testing.T) {
 	tests := []struct {
 		name              string

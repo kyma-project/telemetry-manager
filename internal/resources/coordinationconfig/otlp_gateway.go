@@ -48,7 +48,7 @@ type PipelineReferenceInput struct {
 	SecretVersions map[string]string
 }
 
-// ReadOTLPGatewayConfig reads and parses the OTLP Gateway Pipelines Sync ConfigMap.
+// ReadOTLPGatewayConfig reads and parses the OTLP Gateway Coordination ConfigMap.
 // Returns an empty configuration if the ConfigMap doesn't exist.
 func ReadOTLPGatewayConfig(ctx context.Context, c client.Client, namespace string) (*OTLPGatewayConfigMap, error) {
 	var cm corev1.ConfigMap
@@ -62,7 +62,7 @@ func ReadOTLPGatewayConfig(ctx context.Context, c client.Client, namespace strin
 			return &OTLPGatewayConfigMap{}, nil
 		}
 
-		return nil, fmt.Errorf("failed to get otlp gateway pipelines sync configmap: %w", err)
+		return nil, fmt.Errorf("failed to get otlp gateway coordination configmap: %w", err)
 	}
 
 	yamlData, ok := cm.Data[ConfigMapDataKey]
@@ -108,9 +108,9 @@ func CollectSecretVersions(ctx context.Context, c client.Client, refs []telemetr
 	return versions
 }
 
-// WritePipelineReference adds or updates a pipeline reference of any type.
+// AddPipelineReference adds or updates a pipeline reference of any type.
 // Uses optimistic locking with retry to handle concurrent updates safely.
-func WritePipelineReference(ctx context.Context, c client.Client, namespace string, pipelineType common.SignalType, input PipelineReferenceInput) error {
+func AddPipelineReference(ctx context.Context, c client.Client, namespace string, pipelineType common.SignalType, input PipelineReferenceInput) error {
 	return updateConfigMapWithRetry(ctx, c, namespace, func(config *OTLPGatewayConfigMap) error {
 		pipelineSlice := getPipelineSlice(config, pipelineType)
 		if pipelineSlice == nil {

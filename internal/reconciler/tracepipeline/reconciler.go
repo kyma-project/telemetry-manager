@@ -165,9 +165,9 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			return ctrl.Result{}, err
 		}
 
-		// Remove pipeline reference from OTLP Gateway Pipelines Sync ConfigMap
+		// Remove pipeline reference from OTLP Gateway Coordination ConfigMap
 		if err := coordinationconfig.RemovePipelineReference(ctx, r.Client, r.globals.TargetNamespace(), common.SignalTypeTrace, req.Name); err != nil {
-			return ctrl.Result{}, fmt.Errorf("failed to remove pipeline reference from OTLP Gateway Pipelines Sync ConfigMap: %w", err)
+			return ctrl.Result{}, fmt.Errorf("failed to remove pipeline reference from OTLP Gateway Coordination ConfigMap: %w", err)
 		}
 
 		return ctrl.Result{}, nil
@@ -210,8 +210,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 }
 
 // doReconcile performs the main reconciliation logic for a TracePipeline.
-// It validates the pipeline and writes it to the OTLP Gateway Pipelines Sync ConfigMap if reconcilable,
-// or removes it from the OTLP Gateway Pipelines Sync ConfigMap if not reconcilable.
+// It validates the pipeline and writes it to the OTLP Gateway Coordination ConfigMap if reconcilable,
+// or removes it from the OTLP Gateway Coordination ConfigMap if not reconcilable.
 func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1.TracePipeline) error {
 	if err := r.pipelineLock.TryAcquireLock(ctx, pipeline); err != nil {
 		if errors.Is(err, resourcelock.ErrMaxPipelinesExceeded) {
@@ -242,13 +242,13 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 		secretRefs := secretref.GetSecretRefsTracePipeline(pipeline)
 		secretVersions := coordinationconfig.CollectSecretVersions(ctx, r.Client, secretRefs)
 
-		// Write current pipeline reference to OTLP Gateway Pipelines Sync ConfigMap
-		logf.FromContext(ctx).V(1).Info("Writing pipeline reference to OTLP Gateway Pipelines Sync ConfigMap",
+		// Write current pipeline reference to OTLP Gateway Coordination ConfigMap
+		logf.FromContext(ctx).V(1).Info("Writing pipeline reference to OTLP Gateway Coordination ConfigMap",
 			"pipeline", pipeline.Name,
 			"generation", pipeline.Generation,
 			"secretCount", len(secretVersions))
 
-		if err := coordinationconfig.WritePipelineReference(ctx, r.Client, r.globals.TargetNamespace(), common.SignalTypeTrace, coordinationconfig.PipelineReferenceInput{
+		if err := coordinationconfig.AddPipelineReference(ctx, r.Client, r.globals.TargetNamespace(), common.SignalTypeTrace, coordinationconfig.PipelineReferenceInput{
 			Name:           pipeline.Name,
 			Generation:     pipeline.Generation,
 			SecretVersions: secretVersions,
@@ -257,11 +257,11 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 			return fmt.Errorf("failed to write pipeline reference to ConfigMap: %w", err)
 		}
 	} else {
-		// Remove current pipeline reference from OTLP Gateway Pipelines Sync ConfigMap
-		logf.FromContext(ctx).V(1).Info("Removing pipeline reference from OTLP Gateway Pipelines Sync ConfigMap", "pipeline", pipeline.Name)
+		// Remove current pipeline reference from OTLP Gateway Coordination ConfigMap
+		logf.FromContext(ctx).V(1).Info("Removing pipeline reference from OTLP Gateway Coordination ConfigMap", "pipeline", pipeline.Name)
 
 		if err := coordinationconfig.RemovePipelineReference(ctx, r.Client, r.globals.TargetNamespace(), common.SignalTypeTrace, pipeline.Name); err != nil {
-			return fmt.Errorf("failed to remove pipeline reference from OTLP Gateway Pipelines Sync ConfigMap: %w", err)
+			return fmt.Errorf("failed to remove pipeline reference from OTLP Gateway Coordination ConfigMap: %w", err)
 		}
 	}
 

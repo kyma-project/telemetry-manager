@@ -222,13 +222,13 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 		secretRefs := secretref.GetSecretRefsLogPipeline(pipeline)
 		secretVersions := coordinationconfig.CollectSecretVersions(ctx, r.Client, secretRefs)
 
-		// Write current pipeline reference to OTLP Gateway Pipelines Sync ConfigMap
-		logf.FromContext(ctx).V(1).Info("Writing pipeline reference to OTLP Gateway Pipelines Sync ConfigMap",
+		// Write current pipeline reference to OTLP Gateway Coordination ConfigMap
+		logf.FromContext(ctx).V(1).Info("Writing pipeline reference to OTLP Gateway Coordination ConfigMap",
 			"pipeline", pipeline.Name,
 			"generation", pipeline.Generation,
 			"secretCount", len(secretVersions))
 
-		if err := coordinationconfig.WritePipelineReference(ctx, r.Client, r.globals.TargetNamespace(), common.SignalTypeLog, coordinationconfig.PipelineReferenceInput{
+		if err := coordinationconfig.AddPipelineReference(ctx, r.Client, r.globals.TargetNamespace(), common.SignalTypeLog, coordinationconfig.PipelineReferenceInput{
 			Name:           pipeline.Name,
 			Generation:     pipeline.Generation,
 			SecretVersions: secretVersions,
@@ -237,11 +237,11 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 			return fmt.Errorf("failed to write pipeline reference to ConfigMap: %w", err)
 		}
 	} else {
-		// Remove current pipeline reference from OTLP Gateway Pipelines Sync ConfigMap
-		logf.FromContext(ctx).V(1).Info("Removing pipeline reference from OTLP Gateway Pipelines Sync ConfigMap", "pipeline", pipeline.Name)
+		// Remove current pipeline reference from OTLP Gateway Coordination ConfigMap
+		logf.FromContext(ctx).V(1).Info("Removing pipeline reference from OTLP Gateway Coordination ConfigMap", "pipeline", pipeline.Name)
 
 		if err := coordinationconfig.RemovePipelineReference(ctx, r.Client, r.globals.TargetNamespace(), common.SignalTypeLog, pipeline.Name); err != nil {
-			return fmt.Errorf("failed to remove pipeline reference from OTLP Gateway Pipelines Sync ConfigMap: %w", err)
+			return fmt.Errorf("failed to remove pipeline reference from OTLP Gateway Coordination ConfigMap: %w", err)
 		}
 	}
 

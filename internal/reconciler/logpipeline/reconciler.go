@@ -115,9 +115,9 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			return ctrl.Result{}, err
 		}
 
-		// Remove pipeline reference from OTLP Gateway Pipelines Sync ConfigMap
+		// Remove pipeline reference from OTLP Gateway Coordination ConfigMap
 		if err := coordinationconfig.RemovePipelineReference(ctx, r.Client, r.globals.TargetNamespace(), common.SignalTypeLog, req.Name); err != nil {
-			return ctrl.Result{}, fmt.Errorf("failed to remove pipeline reference from OTLP Gateway Pipelines Sync ConfigMap: %w", err)
+			return ctrl.Result{}, fmt.Errorf("failed to remove pipeline reference from OTLP Gateway Coordination ConfigMap: %w", err)
 		}
 
 		return ctrl.Result{}, nil
