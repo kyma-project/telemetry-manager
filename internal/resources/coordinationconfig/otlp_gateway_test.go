@@ -75,7 +75,7 @@ func TestReadOTLPGatewayConfig_EmptyConfigMap(t *testing.T) {
 
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.OTLPGatewayPipelinesSyncConfigMap,
+			Name:      names.OTLPGatewayCoordinationConfigMap,
 			Namespace: "kyma-system",
 		},
 		Data: map[string]string{},
@@ -104,7 +104,7 @@ func TestReadOTLPGatewayConfig_WithPipelines(t *testing.T) {
 
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.OTLPGatewayPipelinesSyncConfigMap,
+			Name:      names.OTLPGatewayCoordinationConfigMap,
 			Namespace: "kyma-system",
 		},
 		Data: map[string]string{
@@ -142,7 +142,7 @@ func TestReadOTLPGatewayConfig_InvalidYAML(t *testing.T) {
 
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.OTLPGatewayPipelinesSyncConfigMap,
+			Name:      names.OTLPGatewayCoordinationConfigMap,
 			Namespace: "kyma-system",
 		},
 		Data: map[string]string{
@@ -174,7 +174,7 @@ metricPipelines:
 
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.OTLPGatewayPipelinesSyncConfigMap,
+			Name:      names.OTLPGatewayCoordinationConfigMap,
 			Namespace: "kyma-system",
 		},
 		Data: map[string]string{
@@ -248,7 +248,7 @@ func TestWritePipelineReference_AddToExistingConfigMap(t *testing.T) {
 
 			cm := &corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      names.OTLPGatewayPipelinesSyncConfigMap,
+					Name:      names.OTLPGatewayCoordinationConfigMap,
 					Namespace: "kyma-system",
 				},
 				Data: map[string]string{
@@ -304,7 +304,7 @@ func TestWritePipelineReference_UpdateExisting(t *testing.T) {
 
 			cm := &corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      names.OTLPGatewayPipelinesSyncConfigMap,
+					Name:      names.OTLPGatewayCoordinationConfigMap,
 					Namespace: "kyma-system",
 				},
 				Data: map[string]string{
@@ -346,7 +346,7 @@ func TestWritePipelineReference_InvalidYAMLInExisting(t *testing.T) {
 
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.OTLPGatewayPipelinesSyncConfigMap,
+			Name:      names.OTLPGatewayCoordinationConfigMap,
 			Namespace: "kyma-system",
 		},
 		Data: map[string]string{
@@ -379,7 +379,7 @@ func TestWritePipelineReference_UpdateError(t *testing.T) {
 
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.OTLPGatewayPipelinesSyncConfigMap,
+			Name:      names.OTLPGatewayCoordinationConfigMap,
 			Namespace: "kyma-system",
 		},
 		Data: map[string]string{
@@ -411,7 +411,7 @@ func TestRemovePipelineReference_RemoveFromExisting(t *testing.T) {
 
 			cm := &corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      names.OTLPGatewayPipelinesSyncConfigMap,
+					Name:      names.OTLPGatewayCoordinationConfigMap,
 					Namespace: "kyma-system",
 				},
 				Data: map[string]string{
@@ -449,7 +449,7 @@ func TestRemovePipelineReference_Idempotent(t *testing.T) {
 
 			cm := &corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      names.OTLPGatewayPipelinesSyncConfigMap,
+					Name:      names.OTLPGatewayCoordinationConfigMap,
 					Namespace: "kyma-system",
 				},
 				Data: map[string]string{
@@ -487,7 +487,7 @@ func TestRemovePipelineReference_RemoveAll(t *testing.T) {
 
 			cm := &corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      names.OTLPGatewayPipelinesSyncConfigMap,
+					Name:      names.OTLPGatewayCoordinationConfigMap,
 					Namespace: "kyma-system",
 				},
 				Data: map[string]string{
@@ -851,6 +851,7 @@ func TestWritePipelineReferenceWithSecretVersions(t *testing.T) {
 // but still performs the actual create so the second loop iteration finds the object via Get.
 type alreadyExistsOnFirstCreateClient struct {
 	client.Client
+
 	createCalled bool
 }
 
@@ -872,6 +873,7 @@ func (c *alreadyExistsOnFirstCreateClient) Create(ctx context.Context, obj clien
 // conflictOnFirstUpdateClient returns Conflict on the first Update call, succeeds on subsequent calls.
 type conflictOnFirstUpdateClient struct {
 	client.Client
+
 	updateCalled bool
 }
 
@@ -914,7 +916,7 @@ func TestWritePipelineReference_ConflictRetry(t *testing.T) {
 
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.OTLPGatewayPipelinesSyncConfigMap,
+			Name:      names.OTLPGatewayCoordinationConfigMap,
 			Namespace: "kyma-system",
 		},
 		Data: map[string]string{
@@ -935,7 +937,7 @@ func TestWritePipelineReference_MaxRetriesExhausted(t *testing.T) {
 
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.OTLPGatewayPipelinesSyncConfigMap,
+			Name:      names.OTLPGatewayCoordinationConfigMap,
 			Namespace: "kyma-system",
 		},
 		Data: map[string]string{

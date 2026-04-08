@@ -54,7 +54,7 @@ func ReadOTLPGatewayConfig(ctx context.Context, c client.Client, namespace strin
 	var cm corev1.ConfigMap
 
 	err := c.Get(ctx, types.NamespacedName{
-		Name:      names.OTLPGatewayPipelinesSyncConfigMap,
+		Name:      names.OTLPGatewayCoordinationConfigMap,
 		Namespace: namespace,
 	}, &cm)
 	if err != nil {
@@ -230,7 +230,7 @@ func getConfigMap(ctx context.Context, c client.Client, namespace string) (*core
 	var cm corev1.ConfigMap
 
 	err := c.Get(ctx, types.NamespacedName{
-		Name:      names.OTLPGatewayPipelinesSyncConfigMap,
+		Name:      names.OTLPGatewayCoordinationConfigMap,
 		Namespace: namespace,
 	}, &cm)
 	if err != nil {
@@ -268,7 +268,7 @@ func parseConfig(cm *corev1.ConfigMap, exists bool) (OTLPGatewayConfigMap, error
 func createConfigMap(ctx context.Context, c client.Client, namespace, yamlData string) error {
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.OTLPGatewayPipelinesSyncConfigMap,
+			Name:      names.OTLPGatewayCoordinationConfigMap,
 			Namespace: namespace,
 		},
 		Data: map[string]string{
