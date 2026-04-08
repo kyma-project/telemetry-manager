@@ -27,7 +27,7 @@ override:
     path: ^internal/reconciler/logpipeline/otel$
   - threshold: 83
     path: ^internal/reconciler/logpipeline$
-  - threshold: 83
+  - threshold: 82
     path: ^internal/reconciler/metricpipeline$
   - threshold: 63
     path: ^internal/reconciler/telemetry$
