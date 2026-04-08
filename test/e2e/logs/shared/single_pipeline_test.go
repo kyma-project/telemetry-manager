@@ -73,7 +73,7 @@ func TestSinglePipeline_OTel(t *testing.T) {
 	for _, tc := range tests {
 		for _, proto := range protocols {
 			t.Run(tc.name+"/"+proto.name, func(t *testing.T) {
-				suite.SetupTestWithOptions(t, tc.labels, tc.opts...)
+				suite.SetupTestWithOptions(t, tc.labels)
 
 				var (
 					uniquePrefix = unique.Prefix(tc.name, proto.name)
