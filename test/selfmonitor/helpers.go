@@ -222,16 +222,6 @@ func logComponentWorkloads(t *testing.T, ctx context.Context, component string) 
 
 	t.Logf("--- component workloads [%s] ---", component)
 
-	logDeployment := func(name types.NamespacedName) {
-		var d appsv1.Deployment
-		if err := suite.K8sClient.Get(ctx, name, &d); err != nil {
-			t.Logf("  deployment %s: get error: %v", name.Name, err)
-			return
-		}
-
-		t.Logf("  deployment %s: ready=%d/%d", name.Name, d.Status.ReadyReplicas, d.Status.Replicas)
-	}
-
 	logDaemonSet := func(name types.NamespacedName) {
 		var ds appsv1.DaemonSet
 		if err := suite.K8sClient.Get(ctx, name, &ds); err != nil {
@@ -244,19 +234,19 @@ func logComponentWorkloads(t *testing.T, ctx context.Context, component string) 
 
 	switch component {
 	case suite.LabelLogAgent:
-		logDeployment(kitkyma.LogGatewayName)
+		logDaemonSet(kitkyma.OTLPGatewayName)
 		logDaemonSet(kitkyma.LogAgentName)
 	case suite.LabelLogGateway:
-		logDeployment(kitkyma.LogGatewayName)
+		logDaemonSet(kitkyma.OTLPGatewayName)
 	case suite.LabelFluentBit:
 		logDaemonSet(kitkyma.FluentBitDaemonSetName)
 	case suite.LabelMetricGateway:
-		logDeployment(kitkyma.MetricGatewayName)
+		logDaemonSet(kitkyma.OTLPGatewayName)
 	case suite.LabelMetricAgent:
-		logDeployment(kitkyma.MetricGatewayName)
+		logDaemonSet(kitkyma.OTLPGatewayName)
 		logDaemonSet(kitkyma.MetricAgentName)
 	case suite.LabelTraces:
-		logDeployment(kitkyma.TraceGatewayName)
+		logDaemonSet(kitkyma.OTLPGatewayName)
 	}
 }
 
@@ -278,19 +268,19 @@ func assertComponentReady(t *testing.T, component string) {
 
 	switch component {
 	case suite.LabelLogAgent:
-		assert.DeploymentReady(t, kitkyma.LogGatewayName)
+		assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 		assert.DaemonSetReady(t, kitkyma.LogAgentName)
 	case suite.LabelLogGateway:
-		assert.DeploymentReady(t, kitkyma.LogGatewayName)
+		assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 	case suite.LabelFluentBit:
 		assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
 	case suite.LabelMetricGateway:
-		assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+		assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 	case suite.LabelMetricAgent:
-		assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+		assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 		assert.DaemonSetReady(t, kitkyma.MetricAgentName)
 	case suite.LabelTraces:
-		assert.DeploymentReady(t, kitkyma.TraceGatewayName)
+		assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 	default:
 		panic("unknown component: " + component)
 	}
