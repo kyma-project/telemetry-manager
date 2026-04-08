@@ -32,7 +32,10 @@ The OTLP Gateway is based on an [OTel Collector](https://opentelemetry.io/docs/c
 
 Applications can send data to the gateway using these service endpoints:
 
-- Logs/Metrics/Traces: `http://telemetry-otlp.kyma-system:4317` (gRPC) or `http://telemetry-otlp.kyma-system:4318` (HTTP)
+- Logs/Metrics/Traces: `http://telemetry-otlp.kyma-system:4317` (gRPC) or `http://telemetry-otlp.kyma-system:4318` (HTTP) [Preferred]
+- Logs: `http://telemetry-otlp-logs.kyma-system:4317` (gRPC) or `http://telemetry-otlp-logs.kyma-system:4318` (HTTP)
+- Metrics: `http://telemetry-otlp-metrics.kyma-system:4317` (gRPC) or `http://telemetry-otlp-metrics.kyma-system:4318` (HTTP)
+- Traces: `http://telemetry-otlp-traces.kyma-system:4317` (gRPC) or `http://telemetry-otlp-traces.kyma-system:4318` (HTTP)
 
 Agents run as [DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/) and pull data from the respective node.
 
