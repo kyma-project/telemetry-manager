@@ -16,17 +16,6 @@ on:
         labeled,
         milestoned,
       ]
-  pull_request_target:
-    types:
-      [
-        opened,
-        synchronize,
-        reopened,
-        ready_for_review,
-        edited,
-        labeled,
-        milestoned,
-      ]
   workflow_run:
     branches-ignore:
       - main
@@ -37,8 +26,6 @@ on:
 
 jobs:
   all-checks:
-    # Skip if pull_request_target from a fork (security risk)
-    if: github.event_name != 'pull_request_target' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     permissions:
       checks: read # Required for checking the status of actions

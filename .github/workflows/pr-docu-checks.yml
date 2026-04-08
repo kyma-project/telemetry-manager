@@ -13,28 +13,14 @@ on:
       - "OWNERS"
       - "CODEOWNERS"
       - "external-images.yaml"
-  pull_request_target:
-    types: [opened, synchronize, reopened, ready_for_review]
-    branches:
-      - "main"
-      - "release-*"
-    paths-ignore:
-      - "dependencies/**"
-      - "OWNERS"
-      - "CODEOWNERS"
-      - "external-images.yaml"
   workflow_dispatch:
 
 jobs:
   verify-manifests:
-    # Skip if pull_request_target from a fork (security risk)
-    if: github.event_name != 'pull_request_target' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Setup Golang
         uses: "./.github/template/setup-golang"
@@ -43,14 +29,10 @@ jobs:
         run: make crd-docs-gen manifests-experimental check-clean
 
   markdown-link-check:
-    # Skip if pull_request_target from a fork (security risk)
-    if: github.event_name != 'pull_request_target' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
       - name: Install Node.js
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:

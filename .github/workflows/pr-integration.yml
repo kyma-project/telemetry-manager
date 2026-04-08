@@ -47,27 +47,6 @@ on:
       - "Makefile"
       - "hack/make/*.mk"
       - "helm/**"
-  pull_request_target:
-    types: [opened, synchronize, reopened, ready_for_review]
-    branches:
-      - "main"
-      - "release-*"
-    paths:
-      - "**/go.mod"
-      - "**/go.sum"
-      - "**.go"
-      - "config/**"
-      - "!config/busola/**"
-      - "!**_test.go"
-      - "!docs/**"
-      - "test/**.go"
-      - ".github/workflows/pr-integration.yml"
-      - ".github/template/**"
-      - ".env"
-      - ".k3d-kyma.yaml"
-      - "Makefile"
-      - "hack/make/*.mk"
-      - "helm/**"
 
   workflow_dispatch:
 # This is reused on release.yml so workflow_call is used.
@@ -84,13 +63,11 @@ on:
 env:
   E2E_TEST_TIMEOUT: 60m
   # FIPS images are only available on push/schedule (not on PR due to registry restrictions)
-  FIPS_IMAGE_AVAILABLE: ${{ github.event_name != 'pull_request' && github.event_name != 'pull_request_target' }}
+  FIPS_IMAGE_AVAILABLE: ${{ github.event_name != 'pull_request' }}
   ARTIFACT_PREFIX: "pr-"
 
 jobs:
   setup:
-    # Skip if pull_request_target from a fork (security risk)
-    if: github.event_name != 'pull_request_target' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     outputs:
       manager-image: ${{ steps.set-env.outputs.manager-image }}
@@ -99,14 +76,14 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: '0'
-          ref: ${{ inputs.ref || github.event.pull_request.head.sha || github.ref }}
+          ref: ${{ inputs.ref || github.ref }}
 
       - name: Set up Docker Buildx
-        if: github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
+        if: github.event_name == 'pull_request'
         uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
 
       - name: Build image
-        if: github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
+        if: github.event_name == 'pull_request'
         uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294 # v7.0.0
         with:
           context: .
@@ -116,12 +93,12 @@ jobs:
           build-args: BUILD_COMMIT_SHA=${{ github.event.pull_request.head.sha }}
 
       - name: Save and upload image artifact
-        if: github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
+        if: github.event_name == 'pull_request'
         shell: bash
         run: docker save telemetry-manager:pr | zstd -T0 -3 > /tmp/manager-image.tar.zst
 
       - name: Upload image artifact
-        if: github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
+        if: github.event_name == 'pull_request'
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: manager-image
@@ -131,7 +108,7 @@ jobs:
       - name: Prepare environment variables
         id: set-env
         run: |
-          if [[ "${{ github.event_name }}" == "pull_request" || "${{ github.event_name }}" == "pull_request_target" ]]; then
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
             MANAGER_IMAGE="telemetry-manager:pr"
             echo "manager-image=$MANAGER_IMAGE" >> $GITHUB_OUTPUT
             echo "Manager image: $MANAGER_IMAGE"
@@ -158,7 +135,7 @@ jobs:
           fi
 
       - name: Wait for image to be built
-        if: github.event_name != 'pull_request' && github.event_name != 'pull_request_target'
+        if: github.event_name != 'pull_request'
         shell: bash
         run: make wait-for-image
         env:
@@ -168,8 +145,6 @@ jobs:
 
   # e2e-logs split by fluent-bit vs otel AND by set labels for parallel execution
   e2e-logs:
-    # Skip if pull_request_target from a fork (security risk)
-    if: github.event_name != 'pull_request_target' || github.event.pull_request.head.repo.full_name == github.repository
     needs: setup
     runs-on: ubuntu-latest
     strategy:
@@ -193,7 +168,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: '0'
-          ref: ${{ inputs.ref || github.event.pull_request.head.sha || github.ref }}
+          ref: ${{ inputs.ref || github.ref }}
 
       - name: Run E2E test
         uses: ./.github/template/run-e2e-test
@@ -202,15 +177,13 @@ jobs:
           test-path: ./test/e2e/logs/...
           test-labels: not experimental and ${{ matrix.variant.label }} and ${{ matrix.set.label }}
           manager-image: ${{ needs.setup.outputs.manager-image }}
-          manager-image-archive: ${{ (github.event_name == 'pull_request' || github.event_name == 'pull_request_target') && 'manager-image' || '' }}
+          manager-image-archive: ${{ github.event_name == 'pull_request' && 'manager-image' || '' }}
           fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
           google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
           artifact-prefix: ${{ env.ARTIFACT_PREFIX }}
 
   # e2e-metrics split by set labels for parallel execution
   e2e-metrics:
-    # Skip if pull_request_target from a fork (security risk)
-    if: github.event_name != 'pull_request_target' || github.event.pull_request.head.repo.full_name == github.repository
     needs: setup
     runs-on: ubuntu-latest
     strategy:
@@ -229,7 +202,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: '0'
-          ref: ${{ inputs.ref || github.event.pull_request.head.sha || github.ref }}
+          ref: ${{ inputs.ref || github.ref }}
 
       - name: Run E2E test
         uses: ./.github/template/run-e2e-test
@@ -238,15 +211,13 @@ jobs:
           test-path: ./test/e2e/metrics/...
           test-labels: not experimental and ${{ matrix.set.label }}
           manager-image: ${{ needs.setup.outputs.manager-image }}
-          manager-image-archive: ${{ (github.event_name == 'pull_request' || github.event_name == 'pull_request_target') && 'manager-image' || '' }}
+          manager-image-archive: ${{ github.event_name == 'pull_request' && 'manager-image' || '' }}
           fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
           google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
           artifact-prefix: ${{ env.ARTIFACT_PREFIX }}
 
   # All e2e suites with experimental flavor
   e2e-experimental:
-    # Skip if pull_request_target from a fork (security risk)
-    if: github.event_name != 'pull_request_target' || github.event.pull_request.head.repo.full_name == github.repository
     needs: setup
     runs-on: ubuntu-latest
     strategy:
@@ -267,7 +238,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: '0'
-          ref: ${{ inputs.ref || github.event.pull_request.head.sha || github.ref }}
+          ref: ${{ inputs.ref || github.ref }}
 
       - name: Run E2E test
         uses: ./.github/template/run-e2e-test
@@ -276,15 +247,13 @@ jobs:
           test-path: ${{ matrix.suite.path }}
           test-labels: experimental
           manager-image: ${{ needs.setup.outputs.manager-image }}
-          manager-image-archive: ${{ (github.event_name == 'pull_request' || github.event_name == 'pull_request_target') && 'manager-image' || '' }}
+          manager-image-archive: ${{ github.event_name == 'pull_request' && 'manager-image' || '' }}
           fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
           google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
           artifact-prefix: ${{ env.ARTIFACT_PREFIX }}
 
   # e2e-traces and e2e-misc (non-experimental) without set splitting
   e2e:
-    # Skip if pull_request_target from a fork (security risk)
-    if: github.event_name != 'pull_request_target' || github.event.pull_request.head.repo.full_name == github.repository
     needs: setup
     runs-on: ubuntu-latest
     strategy:
@@ -301,7 +270,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: '0'
-          ref: ${{ inputs.ref || github.event.pull_request.head.sha || github.ref }}
+          ref: ${{ inputs.ref || github.ref }}
 
       - name: Run E2E test
         uses: ./.github/template/run-e2e-test
@@ -310,15 +279,13 @@ jobs:
           test-path: ${{ matrix.suite.path }}
           test-labels: not experimental
           manager-image: ${{ needs.setup.outputs.manager-image }}
-          manager-image-archive: ${{ (github.event_name == 'pull_request' || github.event_name == 'pull_request_target') && 'manager-image' || '' }}
+          manager-image-archive: ${{ github.event_name == 'pull_request' && 'manager-image' || '' }}
           fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
           google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
           artifact-prefix: ${{ env.ARTIFACT_PREFIX }}
 
   # Upgrade and integration tests
   e2e-other:
-    # Skip if pull_request_target from a fork (security risk)
-    if: github.event_name != 'pull_request_target' || github.event.pull_request.head.repo.full_name == github.repository
     needs: setup
     runs-on: ubuntu-latest
     strategy:
@@ -335,7 +302,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: '0'
-          ref: ${{ inputs.ref || github.event.pull_request.head.sha || github.ref }}
+          ref: ${{ inputs.ref || github.ref }}
 
       - name: Run E2E test
         uses: ./.github/template/run-e2e-test
@@ -344,15 +311,13 @@ jobs:
           test-path: ${{ matrix.suite.path }}
           test-labels: ""
           manager-image: ${{ needs.setup.outputs.manager-image }}
-          manager-image-archive: ${{ (github.event_name == 'pull_request' || github.event_name == 'pull_request_target') && 'manager-image' || '' }}
+          manager-image-archive: ${{ github.event_name == 'pull_request' && 'manager-image' || '' }}
           fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
           google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
           artifact-prefix: ${{ env.ARTIFACT_PREFIX }}
 
   # Selfmonitor tests
   selfmonitor-healthy:
-    # Skip if pull_request_target from a fork (security risk)
-    if: github.event_name != 'pull_request_target' || github.event.pull_request.head.repo.full_name == github.repository
     needs: setup
     runs-on: ubuntu-latest
     name: selfmonitor-healthy
@@ -361,7 +326,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: '0'
-          ref: ${{ inputs.ref || github.event.pull_request.head.sha || github.ref }}
+          ref: ${{ inputs.ref || github.ref }}
 
       - name: Run E2E test
         uses: ./.github/template/run-e2e-test
@@ -370,13 +335,11 @@ jobs:
           test-path: ./test/selfmonitor/...
           test-labels: healthy
           manager-image: ${{ needs.setup.outputs.manager-image }}
-          manager-image-archive: ${{ (github.event_name == 'pull_request' || github.event_name == 'pull_request_target') && 'manager-image' || '' }}
+          manager-image-archive: ${{ github.event_name == 'pull_request' && 'manager-image' || '' }}
           fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
           google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
 
   selfmonitor:
-    # Skip if pull_request_target from a fork (security risk)
-    if: github.event_name != 'pull_request_target' || github.event.pull_request.head.repo.full_name == github.repository
     needs: setup
     runs-on: ubuntu-latest
     strategy:
@@ -404,7 +367,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: '0'
-          ref: ${{ inputs.ref || github.event.pull_request.head.sha || github.ref }}
+          ref: ${{ inputs.ref || github.ref }}
 
       - name: Run E2E test
         uses: ./.github/template/run-e2e-test
@@ -413,7 +376,7 @@ jobs:
           test-path: ./test/selfmonitor/...
           test-labels: ${{ matrix.scenario }} and ${{ matrix.component.label }}
           manager-image: ${{ needs.setup.outputs.manager-image }}
-          manager-image-archive: ${{ (github.event_name == 'pull_request' || github.event_name == 'pull_request_target') && 'manager-image' || '' }}
+          manager-image-archive: ${{ github.event_name == 'pull_request' && 'manager-image' || '' }}
           fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
           google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
           artifact-prefix: ${{ env.ARTIFACT_PREFIX }}
@@ -421,8 +384,7 @@ jobs:
   summary:
     needs: [e2e-logs, e2e-metrics, e2e-experimental, e2e, e2e-other, selfmonitor-healthy, selfmonitor]
     runs-on: ubuntu-latest
-    # Skip if pull_request_target from a fork (security risk)
-    if: always() && (github.event_name != 'pull_request_target' || github.event.pull_request.head.repo.full_name == github.repository)
+    if: always()
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
