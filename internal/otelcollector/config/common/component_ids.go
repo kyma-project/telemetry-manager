@@ -55,16 +55,16 @@ const ComponentIDSetKymaInputNameOTLPProcessor ComponentID = "transform/set-kyma
 // Pipeline type and name are included in the component ID to keep it unique across pipelines.
 //
 // Example: filter/tracepipeline-user-defined-mypipeline
-func ComponentIDUserDefinedFilterProcessor(pipelineTypePrefix, pipelineName string) ComponentID {
-	return fmt.Sprintf("filter/%s-user-defined-%s", pipelineTypePrefix, pipelineName)
+func ComponentIDUserDefinedFilterProcessor(pipelineRef PipelineRef) ComponentID {
+	return fmt.Sprintf("filter/%s-user-defined-%s", pipelineRef.TypePrefix(), pipelineRef.Name())
 }
 
 // ComponentIDUserDefinedTransformProcessor generates a component ID for the user-defined transform processor.
 // Pipeline type and name are included in the component ID to keep it unique across pipelines.
 //
 // Example: transform/tracepipeline-user-defined-mypipeline
-func ComponentIDUserDefinedTransformProcessor(pipelineTypePrefix, pipelineName string) ComponentID {
-	return fmt.Sprintf("transform/%s-user-defined-%s", pipelineTypePrefix, pipelineName)
+func ComponentIDUserDefinedTransformProcessor(pipelineRef PipelineRef) ComponentID {
+	return fmt.Sprintf("transform/%s-user-defined-%s", pipelineRef.TypePrefix(), pipelineRef.Name())
 }
 
 // LOG-SPECIFIC PROCESSORS ========================================================
@@ -132,28 +132,16 @@ const ComponentIDDropIstioServiceEnrichmentProcessor ComponentID = "transform/dr
 // EXPORTERS
 // ================================================================================
 
-// ComponentIDOTLPHTTPExporter generates a component ID for the OTLP HTTP exporter.
+// ComponentIDOTLPExporter generates a component ID for the OTLP gRPC or HTTP exporter based on the protocol.
 // Pipeline name is included in the component ID to keep it unique across pipelines.
 //
-// Example: otlp_http/metricpipeline-mypipeline
-func ComponentIDOTLPHTTPExporter(qualifiedName string) ComponentID {
-	return fmt.Sprintf("otlp_http/%s", qualifiedName)
-}
-
-// ComponentIDOTLPGRPCExporter generates a component ID for the OTLP gRPC exporter.
-// Pipeline name is included in the component ID to keep it unique across pipelines.
-//
-// Example: otlp_grpc/metricpipeline-mypipeline
-func ComponentIDOTLPGRPCExporter(qualifiedName string) ComponentID {
-	return fmt.Sprintf("otlp_grpc/%s", qualifiedName)
-}
-
+// Example: otlp_grpc/metricpipeline-mypipeline, otlp_http/logpipeline-mypipeline
 func ComponentIDOTLPExporter(protocol telemetryv1beta1.OTLPProtocol, pipelineRef PipelineRef) ComponentID {
 	if protocol == telemetryv1beta1.OTLPProtocolHTTP {
-		return ComponentIDOTLPHTTPExporter(pipelineRef.qualifiedName())
+		return fmt.Sprintf("otlp_http/%s", pipelineRef.qualifiedName())
 	}
 
-	return ComponentIDOTLPGRPCExporter(pipelineRef.qualifiedName())
+	return fmt.Sprintf("otlp_grpc/%s", pipelineRef.qualifiedName())
 }
 
 // ================================================================================

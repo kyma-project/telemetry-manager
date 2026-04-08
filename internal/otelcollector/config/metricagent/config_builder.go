@@ -1220,11 +1220,9 @@ func metricNameConditionsWithIsMatch(metrics []string) []string {
 }
 
 func formatUserDefinedTransformProcessorID(mp *telemetryv1beta1.MetricPipeline) string {
-	ref := common.MetricPipelineRef(mp)
-	return common.ComponentIDUserDefinedTransformProcessor(ref.TypePrefix(), ref.Name())
+	return common.ComponentIDUserDefinedTransformProcessor(common.MetricPipelineRef(mp))
 }
 
 func formatUserDefinedFilterProcessorID(mp *telemetryv1beta1.MetricPipeline) string {
-	ref := common.MetricPipelineRef(mp)
-	return common.ComponentIDUserDefinedFilterProcessor(ref.TypePrefix(), ref.Name())
+	return common.ComponentIDUserDefinedFilterProcessor(common.MetricPipelineRef(mp))
 }
