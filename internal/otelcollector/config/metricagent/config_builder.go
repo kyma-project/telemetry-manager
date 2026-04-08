@@ -973,7 +973,7 @@ func formatOTLPExporterID(pipeline *telemetryv1beta1.MetricPipeline) string {
 }
 
 func formatNamespaceFilterID(pipelineName string, inputSourceType common.InputSourceType) string {
-	return fmt.Sprintf(common.ComponentIDNamespacePerInputFilterProcessor, pipelineName, inputSourceType)
+	return common.ComponentIDNamespacePerInputFilterProcessor(pipelineName, inputSourceType)
 }
 
 // Helper functions for getting pipelines by input source
@@ -1221,10 +1221,10 @@ func metricNameConditionsWithIsMatch(metrics []string) []string {
 
 func formatUserDefinedTransformProcessorID(mp *telemetryv1beta1.MetricPipeline) string {
 	ref := common.MetricPipelineRef(mp)
-	return fmt.Sprintf(common.ComponentIDUserDefinedTransformProcessor, ref.TypePrefix(), ref.Name())
+	return common.ComponentIDUserDefinedTransformProcessor(ref.TypePrefix(), ref.Name())
 }
 
 func formatUserDefinedFilterProcessorID(mp *telemetryv1beta1.MetricPipeline) string {
 	ref := common.MetricPipelineRef(mp)
-	return fmt.Sprintf(common.ComponentIDUserDefinedFilterProcessor, ref.TypePrefix(), ref.Name())
+	return common.ComponentIDUserDefinedFilterProcessor(ref.TypePrefix(), ref.Name())
 }

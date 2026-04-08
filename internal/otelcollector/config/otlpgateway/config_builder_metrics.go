@@ -427,7 +427,7 @@ func formatMetricOutputServicePipelineID(mp *telemetryv1beta1.MetricPipeline) st
 }
 
 func formatMetricOTLPNamespaceFilterID(mp *telemetryv1beta1.MetricPipeline) string {
-	return fmt.Sprintf(common.ComponentIDNamespacePerInputFilterProcessor, mp.Name, common.InputSourceOTLP)
+	return common.ComponentIDNamespacePerInputFilterProcessor(mp.Name, common.InputSourceOTLP)
 }
 
 func formatMetricOTLPExporterID(pipeline *telemetryv1beta1.MetricPipeline) string {
@@ -436,12 +436,12 @@ func formatMetricOTLPExporterID(pipeline *telemetryv1beta1.MetricPipeline) strin
 
 func formatMetricUserDefinedTransformProcessorID(mp *telemetryv1beta1.MetricPipeline) string {
 	ref := common.MetricPipelineRef(mp)
-	return fmt.Sprintf(common.ComponentIDUserDefinedTransformProcessor, ref.TypePrefix(), ref.Name())
+	return common.ComponentIDUserDefinedTransformProcessor(ref.TypePrefix(), ref.Name())
 }
 
 func formatMetricUserDefinedFilterProcessorID(mp *telemetryv1beta1.MetricPipeline) string {
 	ref := common.MetricPipelineRef(mp)
-	return fmt.Sprintf(common.ComponentIDUserDefinedFilterProcessor, ref.TypePrefix(), ref.Name())
+	return common.ComponentIDUserDefinedFilterProcessor(ref.TypePrefix(), ref.Name())
 }
 
 func shouldEnableMetricOAuth2(mp *telemetryv1beta1.MetricPipeline) bool {

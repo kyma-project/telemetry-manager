@@ -92,7 +92,7 @@ func otlpExporter(otlpOutput *telemetryv1beta1.OTLPOutput, pipelineRef PipelineR
 
 	if otlpOutput.Authentication != nil && otlpOutput.Authentication.OAuth2 != nil {
 		exporter.Auth = Auth{
-			Authenticator: fmt.Sprintf(ComponentIDOAuth2Extension, pipelineRef.qualifiedName()),
+			Authenticator: ComponentIDOAuth2Extension(pipelineRef.qualifiedName()),
 		}
 	}
 
@@ -101,10 +101,10 @@ func otlpExporter(otlpOutput *telemetryv1beta1.OTLPOutput, pipelineRef PipelineR
 
 func OTLPExporterID(protocol telemetryv1beta1.OTLPProtocol, pipelineRef PipelineRef) string {
 	if protocol == telemetryv1beta1.OTLPProtocolHTTP {
-		return fmt.Sprintf(ComponentIDOTLPHTTPExporter, pipelineRef.qualifiedName())
+		return ComponentIDOTLPHTTPExporter(pipelineRef.qualifiedName())
 	}
 
-	return fmt.Sprintf(ComponentIDOTLPGRPCExporter, pipelineRef.qualifiedName())
+	return ComponentIDOTLPGRPCExporter(pipelineRef.qualifiedName())
 }
 
 func tls(output *telemetryv1beta1.OTLPOutput, otlpEndpointValue string, pipelineRef PipelineRef) TLS {
