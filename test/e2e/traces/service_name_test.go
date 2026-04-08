@@ -64,7 +64,7 @@ func TestServiceName(t *testing.T) {
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.BackendReachable(t, backend)
-	assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
+	assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 	assert.TracePipelineHealthy(t, pipelineName)
 
 	verifyServiceNameAttr := func(givenPodPrefix, expectedServiceName string) {

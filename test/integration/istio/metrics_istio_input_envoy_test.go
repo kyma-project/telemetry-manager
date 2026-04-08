@@ -55,7 +55,7 @@ func TestMetricsIstioInputEnvoy(t *testing.T) {
 
 	assert.BackendReachable(t, backend)
 	assert.DaemonSetReady(t, kitkyma.MetricAgentName)
-	assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
+	assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 
 	assert.BackendDataEventuallyMatches(t, backend,
 		HaveFlatMetrics(

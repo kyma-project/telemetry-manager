@@ -68,7 +68,7 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 			logGeneratorBuilder: func(ns string) client.Object {
 				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeLogs).K8sObject()
 			},
-			resourceName: kitkyma.TelemetryOTLPGatewayName,
+			resourceName: kitkyma.OTLPGatewayName,
 		},
 	}
 

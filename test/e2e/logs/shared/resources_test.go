@@ -44,7 +44,7 @@ func TestResources_OTel(t *testing.T) {
 			assert.NewResource(&corev1.Secret{}, kitkyma.LogAgentSecretName),
 
 			// Gateway resources
-			assert.NewResource(&appsv1.DaemonSet{}, kitkyma.TelemetryOTLPGatewayName),
+			assert.NewResource(&appsv1.DaemonSet{}, kitkyma.OTLPGatewayName),
 			assert.NewResource(&corev1.Service{}, kitkyma.TelemetryOTLPMetricsService),
 			assert.NewResource(&corev1.ServiceAccount{}, kitkyma.TelemetryOTLPServiceAccount),
 			assert.NewResource(&rbacv1.ClusterRole{}, kitkyma.TelemetryOTLPClusterRole),

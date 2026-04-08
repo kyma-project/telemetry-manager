@@ -75,7 +75,7 @@ func TestLogsUpgrade(t *testing.T) {
 
 	// Existing pipelines
 	t.Log("Validating existing log pipeline after upgrade...")
-	assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
+	assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 	assert.OTelLogPipelineHealthy(t, pipelineName)
 	assert.BackendReachable(t, backend)
 	assert.OTelLogsFromNamespaceDelivered(t, backend, genNs)
@@ -100,7 +100,7 @@ func TestLogsUpgrade(t *testing.T) {
 
 	// ==== NEW PIPELINES ====
 	t.Log("Validating log pipeline creation after upgrade...")
-	assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
+	assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 	assert.OTelLogPipelineHealthy(t, pipelineNameAfter)
 	assert.BackendReachable(t, backendAfter)
 	assert.OTelLogsFromNamespaceDelivered(t, backendAfter, genNs)

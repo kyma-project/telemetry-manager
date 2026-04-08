@@ -21,22 +21,22 @@ service:
             processors:
                 - filter/cls-filter-by-namespace-otlp-input
                 - transform/drop-kyma-attributes
-                - transform/user-defined-cls
-                - filter/user-defined-cls
+                - transform/metricpipeline-user-defined-cls
+                - filter/metricpipeline-user-defined-cls
                 - batch
             exporters:
-                - otlp_grpc/cls
+                - otlp_grpc/metricpipeline-cls
         metrics/dynatrace-output:
             receivers:
                 - forward/enrichment
             processors:
                 - filter/dynatrace-filter-by-namespace-otlp-input
                 - transform/drop-kyma-attributes
-                - transform/user-defined-dynatrace
-                - filter/user-defined-dynatrace
+                - transform/metricpipeline-user-defined-dynatrace
+                - filter/metricpipeline-user-defined-dynatrace
                 - batch
             exporters:
-                - otlp_grpc/dynatrace
+                - otlp_grpc/metricpipeline-dynatrace
         metrics/enrichment:
             receivers:
                 - forward/input
@@ -117,12 +117,12 @@ processors:
         metric_conditions:
             - conditions:
                 - not(resource.attributes["kyma.input.name"] == "kyma") and resource.attributes["k8s.namespace.name"] != nil and not(resource.attributes["k8s.namespace.name"] == "apps-dynatrace")
-    filter/user-defined-cls:
+    filter/metricpipeline-user-defined-cls:
         error_mode: ignore
         metric_conditions:
             - conditions:
                 - metric.type == METRIC_DATA_TYPE_SUMMARY
-    filter/user-defined-dynatrace:
+    filter/metricpipeline-user-defined-dynatrace:
         error_mode: ignore
         metric_conditions:
             - conditions:
@@ -188,6 +188,22 @@ processors:
                 - set(resource.attributes["k8s.cluster.name"], "${KUBERNETES_SERVICE_HOST}") where resource.attributes["k8s.cluster.name"] == nil or resource.attributes["k8s.cluster.name"] == ""
                 - set(resource.attributes["k8s.cluster.uid"], "") where resource.attributes["k8s.cluster.uid"] == nil or resource.attributes["k8s.cluster.uid"] == ""
                 - set(resource.attributes["cloud.provider"], "test-cloud-provider") where resource.attributes["cloud.provider"] == nil or resource.attributes["cloud.provider"] == ""
+    transform/metricpipeline-user-defined-cls:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - set(attributes["metric.status"], "error")
+                - set(body, "transformed-cls")
+              conditions:
+                - IsMatch(body, ".*error.*")
+    transform/metricpipeline-user-defined-dynatrace:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - set(attributes["metric.status"], "error")
+                - set(body, "transformed-dynatrace")
+              conditions:
+                - IsMatch(body, ".*error.*")
     transform/set-instrumentation-scope-kyma:
         error_mode: ignore
         metric_statements:
@@ -204,25 +220,9 @@ processors:
         metric_statements:
             - statements:
                 - set(resource.attributes["kyma.input.name"], "otlp")
-    transform/user-defined-cls:
-        error_mode: ignore
-        metric_statements:
-            - statements:
-                - set(attributes["metric.status"], "error")
-                - set(body, "transformed-cls")
-              conditions:
-                - IsMatch(body, ".*error.*")
-    transform/user-defined-dynatrace:
-        error_mode: ignore
-        metric_statements:
-            - statements:
-                - set(attributes["metric.status"], "error")
-                - set(body, "transformed-dynatrace")
-              conditions:
-                - IsMatch(body, ".*error.*")
 exporters:
-    otlp_grpc/cls:
-        endpoint: ${OTLP_ENDPOINT_CLS}
+    otlp_grpc/metricpipeline-cls:
+        endpoint: ${OTLP_ENDPOINT_METRICPIPELINE_CLS}
         compression: gzip
         sending_queue:
             enabled: true
@@ -232,8 +232,8 @@ exporters:
             initial_interval: 5s
             max_interval: 30s
             max_elapsed_time: 300s
-    otlp_grpc/dynatrace:
-        endpoint: ${OTLP_ENDPOINT_DYNATRACE}
+    otlp_grpc/metricpipeline-dynatrace:
+        endpoint: ${OTLP_ENDPOINT_METRICPIPELINE_DYNATRACE}
         compression: gzip
         sending_queue:
             enabled: true

@@ -24,9 +24,9 @@ service:
                 - transform/insert-cluster-attributes
                 - service_enrichment
                 - transform/drop-kyma-attributes
-                - filter/user-defined-test1
+                - filter/logpipeline-user-defined-test1
             exporters:
-                - otlp_grpc/test1
+                - otlp_grpc/logpipeline-test1
         logs/test2:
             receivers:
                 - filelog/test2
@@ -37,9 +37,9 @@ service:
                 - transform/insert-cluster-attributes
                 - service_enrichment
                 - transform/drop-kyma-attributes
-                - filter/user-defined-test2
+                - filter/logpipeline-user-defined-test2
             exporters:
-                - otlp_grpc/test2
+                - otlp_grpc/logpipeline-test2
     telemetry:
         metrics:
             readers:
@@ -294,12 +294,12 @@ receivers:
             - id: noop
               type: noop
 processors:
-    filter/user-defined-test1:
+    filter/logpipeline-user-defined-test1:
         error_mode: ignore
         log_conditions:
             - conditions:
                 - IsMatch(log.attributes["foo"], ".*bar.*")
-    filter/user-defined-test2:
+    filter/logpipeline-user-defined-test2:
         error_mode: ignore
         log_conditions:
             - conditions:
@@ -372,16 +372,16 @@ processors:
                 - set(scope.version, "main")
                 - set(scope.name, "io.kyma-project.telemetry/runtime")
 exporters:
-    otlp_grpc/test1:
-        endpoint: ${OTLP_ENDPOINT_TEST1}
+    otlp_grpc/logpipeline-test1:
+        endpoint: ${OTLP_ENDPOINT_LOGPIPELINE_TEST1}
         compression: gzip
         retry_on_failure:
             enabled: true
             initial_interval: 5s
             max_interval: 30s
             max_elapsed_time: 300s
-    otlp_grpc/test2:
-        endpoint: ${OTLP_ENDPOINT_TEST2}
+    otlp_grpc/logpipeline-test2:
+        endpoint: ${OTLP_ENDPOINT_LOGPIPELINE_TEST2}
         compression: gzip
         retry_on_failure:
             enabled: true

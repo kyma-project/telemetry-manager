@@ -50,7 +50,7 @@ func TestBackpressure(t *testing.T) {
 				}
 			},
 			assertions: func(t *testing.T, pipelineName string) {
-				assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
+				assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 				assert.DaemonSetReady(t, kitkyma.LogAgentName)
 				assert.OTelLogPipelineHealthy(t, pipelineName)
 				assert.LogPipelineConditionReasonsTransition(t, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
@@ -86,7 +86,7 @@ func TestBackpressure(t *testing.T) {
 				}
 			},
 			assertions: func(t *testing.T, pipelineName string) {
-				assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
+				assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 				assert.OTelLogPipelineHealthy(t, pipelineName)
 				assert.LogPipelineConditionReasonsTransition(t, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
 					{Reason: conditions.ReasonSelfMonFlowHealthy, Status: metav1.ConditionTrue},
@@ -151,7 +151,7 @@ func TestBackpressure(t *testing.T) {
 				}
 			},
 			assertions: func(t *testing.T, pipelineName string) {
-				assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
+				assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 				assert.MetricPipelineHealthy(t, pipelineName)
 				assert.MetricPipelineConditionReasonsTransition(t, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
 					{Reason: conditions.ReasonSelfMonFlowHealthy, Status: metav1.ConditionTrue},
@@ -186,7 +186,7 @@ func TestBackpressure(t *testing.T) {
 				}
 			},
 			assertions: func(t *testing.T, pipelineName string) {
-				assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
+				assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 				assert.DaemonSetReady(t, kitkyma.MetricAgentName)
 				assert.MetricPipelineHealthy(t, pipelineName)
 				assert.MetricPipelineConditionReasonsTransition(t, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
@@ -221,7 +221,7 @@ func TestBackpressure(t *testing.T) {
 				}
 			},
 			assertions: func(t *testing.T, pipelineName string) {
-				assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
+				assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 				assert.TracePipelineHealthy(t, pipelineName)
 				assert.TracePipelineConditionReasonsTransition(t, pipelineName, conditions.TypeFlowHealthy, []assert.ReasonStatus{
 					{Reason: conditions.ReasonSelfMonFlowHealthy, Status: metav1.ConditionTrue},

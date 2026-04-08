@@ -207,9 +207,8 @@ func (b *Builder) addOTLPExporter() buildComponentFunc {
 			otlpExporterBuilder := common.NewOTLPExporterConfigBuilder(
 				b.Reader,
 				lp.Spec.Output.OTLP,
-				lp.Name,
+				common.LogPipelineRef(lp),
 				0, // queue size is set to 0 for now, as the queue is disabled
-				common.SignalTypeLog,
 			)
 
 			return otlpExporterBuilder.OTLPExporter(ctx)
@@ -218,13 +217,12 @@ func (b *Builder) addOTLPExporter() buildComponentFunc {
 }
 
 func (b *Builder) addOAuth2Extension(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) error {
-	oauth2ExtensionID := common.OAuth2ExtensionID(pipeline.Name)
+	oauth2ExtensionID := common.ComponentIDOAuth2Extension(common.LogPipelineRef(pipeline))
 
 	oauth2ExtensionConfig, oauth2ExtensionEnvVars, err := common.NewOAuth2ExtensionConfigBuilder(
 		b.Reader,
 		pipeline.Spec.Output.OTLP.Authentication.OAuth2,
-		pipeline.Name,
-		common.SignalTypeTrace,
+		common.LogPipelineRef(pipeline),
 	).OAuth2Extension(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to build OAuth2 extension for pipeline %s: %w", pipeline.Name, err)
@@ -244,17 +242,17 @@ func formatLogServicePipelineID(lp *telemetryv1beta1.LogPipeline) string {
 }
 
 func formatFileLogReceiverID(lp *telemetryv1beta1.LogPipeline) string {
-	return fmt.Sprintf(common.ComponentIDFileLogReceiver, lp.Name)
+	return common.ComponentIDFileLogReceiver(lp.Name)
 }
 
 func formatUserDefinedTransformProcessorID(lp *telemetryv1beta1.LogPipeline) string {
-	return fmt.Sprintf(common.ComponentIDUserDefinedTransformProcessor, lp.Name)
+	return common.ComponentIDUserDefinedTransformProcessor(common.LogPipelineRef(lp))
 }
 
 func formatUserDefinedFilterProcessorID(lp *telemetryv1beta1.LogPipeline) string {
-	return fmt.Sprintf(common.ComponentIDUserDefinedFilterProcessor, lp.Name)
+	return common.ComponentIDUserDefinedFilterProcessor(common.LogPipelineRef(lp))
 }
 
 func formatOTLPExporterID(lp *telemetryv1beta1.LogPipeline) string {
-	return common.ExporterID(lp.Spec.Output.OTLP.Protocol, lp.Name)
+	return common.ComponentIDOTLPExporter(lp.Spec.Output.OTLP.Protocol, common.LogPipelineRef(lp))
 }

@@ -165,7 +165,7 @@ func TestServiceEnrichment_OTel(t *testing.T) {
 			}
 
 			assert.BackendReachable(t, backend)
-			assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
+			assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 			assert.OTelLogPipelineHealthy(t, pipelineName)
 			assert.OTelLogsFromNamespaceDelivered(t, backend, genNs)
 

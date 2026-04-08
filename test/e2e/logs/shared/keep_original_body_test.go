@@ -103,7 +103,7 @@ func TestKeepOriginalBody_OTel(t *testing.T) {
 
 	assert.BackendReachable(t, backendKeepOriginal)
 	assert.BackendReachable(t, backendDropOriginal)
-	assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
+	assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 	assert.DaemonSetReady(t, kitkyma.LogAgentName)
 	assert.OTelLogPipelineHealthy(t, pipelineKeepOriginalName)
 	assert.OTelLogPipelineHealthy(t, pipelineDropOriginalName)

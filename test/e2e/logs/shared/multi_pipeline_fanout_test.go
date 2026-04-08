@@ -90,7 +90,7 @@ func TestMultiPipelineFanout_OTel(t *testing.T) {
 
 			assert.BackendReachable(t, backend1)
 			assert.BackendReachable(t, backend2)
-			assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
+			assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 			assert.OTelLogPipelineHealthy(t, pipeline1.Name)
 			assert.OTelLogPipelineHealthy(t, pipeline2.Name)
 			assert.OTelLogsFromNamespaceDelivered(t, backend1, genNs)

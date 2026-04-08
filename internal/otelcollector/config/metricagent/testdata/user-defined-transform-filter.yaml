@@ -45,11 +45,11 @@ service:
                 - transform/insert-cluster-attributes
                 - transform/drop-skip-enrichment-attribute
                 - transform/drop-kyma-attributes
-                - transform/user-defined-test1
-                - filter/user-defined-test1
+                - transform/metricpipeline-user-defined-test1
+                - filter/metricpipeline-user-defined-test1
                 - batch
             exporters:
-                - otlp_grpc/test1
+                - otlp_grpc/metricpipeline-test1
     telemetry:
         metrics:
             readers:
@@ -167,7 +167,7 @@ processors:
         metric_conditions:
             - conditions:
                 - IsMatch(metric.name, "^k8s.node.network.*") and not(IsMatch(datapoint.attributes["interface"], "^(eth|en).*"))
-    filter/user-defined-test1:
+    filter/metricpipeline-user-defined-test1:
         error_mode: ignore
         metric_conditions:
             - conditions:
@@ -253,6 +253,14 @@ processors:
                 - IsMatch(metric.name, "^k8s.daemonset.*")
                 - IsMatch(metric.name, "^k8s.deployment.*")
                 - IsMatch(metric.name, "^k8s.job.*")
+    transform/metricpipeline-user-defined-test1:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - set(attributes["log.level"], "error")
+                - set(body, "transformed2")
+              conditions:
+                - IsMatch(body, ".*error.*")
     transform/set-instrumentation-scope-runtime:
         error_mode: ignore
         metric_statements:
@@ -266,17 +274,9 @@ processors:
         metric_statements:
             - statements:
                 - set(resource.attributes["kyma.input.name"], "runtime")
-    transform/user-defined-test1:
-        error_mode: ignore
-        metric_statements:
-            - statements:
-                - set(attributes["log.level"], "error")
-                - set(body, "transformed2")
-              conditions:
-                - IsMatch(body, ".*error.*")
 exporters:
-    otlp_grpc/test1:
-        endpoint: ${OTLP_ENDPOINT_TEST1}
+    otlp_grpc/metricpipeline-test1:
+        endpoint: ${OTLP_ENDPOINT_METRICPIPELINE_TEST1}
         compression: gzip
         sending_queue:
             enabled: true

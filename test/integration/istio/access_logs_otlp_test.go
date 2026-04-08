@@ -70,7 +70,7 @@ func TestAccessLogsOTLP(t *testing.T) {
 	}
 	assert.PodsReady(t, listOptions)
 	assert.OTelLogPipelineHealthy(t, pipelineName)
-	assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
+	assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 
 	Eventually(func(g Gomega) {
 		resp, err := suite.ProxyClient.Get(metricPodURL)

@@ -25,7 +25,7 @@ service:
                 - service_enrichment
                 - transform/drop-kyma-attributes
             exporters:
-                - otlp_http/test
+                - otlp_http/logpipeline-test
     telemetry:
         metrics:
             readers:
@@ -230,8 +230,8 @@ processors:
                 - set(scope.version, "main")
                 - set(scope.name, "io.kyma-project.telemetry/runtime")
 exporters:
-    otlp_http/test:
-        logs_endpoint: ${OTLP_ENDPOINT_TEST}
+    otlp_http/logpipeline-test:
+        logs_endpoint: ${OTLP_ENDPOINT_LOGPIPELINE_TEST}
         compression: gzip
         retry_on_failure:
             enabled: true

@@ -274,9 +274,7 @@ func (b *Builder) addMetricDropOTLPIfInputDisabledProcessor(builder *common.Comp
 
 func (b *Builder) addMetricOTLPNamespaceFilterProcessor(builder *common.ComponentBuilder[*telemetryv1beta1.MetricPipeline]) buildMetricComponentFunc {
 	return builder.AddProcessor(
-		func(mp *telemetryv1beta1.MetricPipeline) string {
-			return formatMetricOTLPNamespaceFilterID(mp.Name)
-		},
+		formatMetricOTLPNamespaceFilterID,
 		func(mp *telemetryv1beta1.MetricPipeline) any {
 			input := mp.Spec.Input
 			if !sharedtypesutils.IsOTLPInputEnabled(input.OTLP) || input.OTLP == nil || !metricShouldFilterByNamespace(input.OTLP.Namespaces) {
@@ -347,9 +345,8 @@ func (b *Builder) addMetricOTLPExporter(builder *common.ComponentBuilder[*teleme
 			otlpExporterBuilder := common.NewOTLPExporterConfigBuilder(
 				b.Reader,
 				mp.Spec.Output.OTLP,
-				mp.Name,
+				common.MetricPipelineRef(mp),
 				queueSize,
-				common.SignalTypeMetric,
 			)
 
 			return otlpExporterBuilder.OTLPExporter(ctx)
@@ -363,13 +360,13 @@ func (b *Builder) addMetricOTLPExporter(builder *common.ComponentBuilder[*teleme
 
 //nolint:dupl // Acceptable duplication - metric, trace and log OAuth2 extensions follow same pattern
 func (b *Builder) addMetricOAuth2Extension(ctx context.Context, builder *common.ComponentBuilder[*telemetryv1beta1.MetricPipeline], pipeline *telemetryv1beta1.MetricPipeline) error {
-	oauth2ExtensionID := common.OAuth2ExtensionID(pipeline.Name)
+	pipelineRef := common.MetricPipelineRef(pipeline)
+	oauth2ExtensionID := common.ComponentIDOAuth2Extension(pipelineRef)
 
 	oauth2ExtensionConfig, oauth2ExtensionEnvVars, err := common.NewOAuth2ExtensionConfigBuilder(
 		b.Reader,
 		pipeline.Spec.Output.OTLP.Authentication.OAuth2,
-		pipeline.Name,
-		common.SignalTypeMetric,
+		pipelineRef,
 	).OAuth2Extension(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to build OAuth2 extension for pipeline %s: %w", pipeline.Name, err)
@@ -429,20 +426,20 @@ func formatMetricOutputServicePipelineID(mp *telemetryv1beta1.MetricPipeline) st
 	return fmt.Sprintf("metrics/%s-output", mp.Name)
 }
 
-func formatMetricOTLPNamespaceFilterID(pipelineName string) string {
-	return fmt.Sprintf(common.ComponentIDNamespacePerInputFilterProcessor, pipelineName, common.InputSourceOTLP)
+func formatMetricOTLPNamespaceFilterID(mp *telemetryv1beta1.MetricPipeline) string {
+	return common.ComponentIDNamespacePerInputFilterProcessor(mp.Name, common.InputSourceOTLP)
 }
 
 func formatMetricOTLPExporterID(pipeline *telemetryv1beta1.MetricPipeline) string {
-	return common.ExporterID(pipeline.Spec.Output.OTLP.Protocol, pipeline.Name)
+	return common.ComponentIDOTLPExporter(pipeline.Spec.Output.OTLP.Protocol, common.MetricPipelineRef(pipeline))
 }
 
 func formatMetricUserDefinedTransformProcessorID(mp *telemetryv1beta1.MetricPipeline) string {
-	return fmt.Sprintf(common.ComponentIDUserDefinedTransformProcessor, mp.Name)
+	return common.ComponentIDUserDefinedTransformProcessor(common.MetricPipelineRef(mp))
 }
 
 func formatMetricUserDefinedFilterProcessorID(mp *telemetryv1beta1.MetricPipeline) string {
-	return fmt.Sprintf(common.ComponentIDUserDefinedFilterProcessor, mp.Name)
+	return common.ComponentIDUserDefinedFilterProcessor(common.MetricPipelineRef(mp))
 }
 
 func shouldEnableMetricOAuth2(mp *telemetryv1beta1.MetricPipeline) bool {
