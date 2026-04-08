@@ -66,9 +66,12 @@ func ComponentIDUserDefinedTransformProcessor(pipelineTypePrefix, pipelineName s
 // LOG-SPECIFIC PROCESSORS ========================================================
 
 // ComponentIDNamespaceFilterProcessor generates a component ID for the namespace filter processor specific to a log pipeline.
-// This namespace filter component ID is specific to log pipelines, since we deploy them as single instances of OTel pipelines,
-// each having its own namespace filter processor.
 // Pipeline name is included in the component ID to keep it unique across pipelines.
+//
+// Explanation:
+// Log pipelines have two possible inputs (runtime and OTLP): runtime namespace filtering is handled directly in the filelog
+// receiver via path patterns, so only OTLP input requires a dedicated namespace filter processor.
+// This means each log pipeline has at most one such processor, so the input type does not need to be part of the component ID.
 //
 // Example: filter/mylogpipeline-filter-by-namespace
 func ComponentIDNamespaceFilterProcessor(pipelineName string) ComponentID {
@@ -86,10 +89,13 @@ const ComponentIDDropIfInputSourceIstioProcessor ComponentID = "filter/drop-if-i
 const ComponentIDDropIfInputSourceOTLPProcessor ComponentID = "filter/drop-if-input-source-otlp"
 const ComponentIDDropEnvoyMetricsIfDisabledProcessor ComponentID = "filter/drop-envoy-metrics-if-disabled"
 
-// ComponentIDNamespacePerInputFilterProcessor generates a component ID for the OTel namespace filter processor specific to a metric pipeline.
-// This namespace filter processor is specific to metric pipelines, since each metric output pipeline can contain multiple namespace
-// filter processors — one per enabled input type (e.g. runtime, prometheus, istio, etc.).
+// ComponentIDNamespacePerInputFilterProcessor generates a component ID for the namespace filter processor specific to a metric pipeline.
 // Pipeline name and input type are included in the component ID to keep it unique across pipelines and inputs.
+//
+// Explanation:
+// Metric pipelines have four possible inputs (runtime, prometheus, istio, OTLP): each output OTel Collector service pipeline can contain
+// multiple namespace filter processors, one per input type.
+// This means the component ID needs to include both the pipeline name and the input type to keep it unique.
 //
 // Example: filter/mypipeline-filter-by-namespace-otlp-input
 func ComponentIDNamespacePerInputFilterProcessor(pipelineName string, inputSource InputSourceType) ComponentID {
