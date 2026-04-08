@@ -28,7 +28,7 @@ const (
 	OTLPMetricsService = telemetryPrefix + "otlp-metrics"
 	OTLPTracesService  = telemetryPrefix + "otlp-traces"
 	OTLPLogsService    = telemetryPrefix + "otlp-logs"
-	OTLPService        = telemetryPrefix + "otlp-gateway"
+	OTLPService        = telemetryPrefix + "otlp"
 
 	OTLPGatewayPipelinesSyncConfigMap = OTLPGateway + "-pipelines"
 
