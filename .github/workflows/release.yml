@@ -492,7 +492,40 @@ jobs:
 
           echo "✓ Successfully created and pushed tag ${VERSION} from ${RELEASE_BRANCH}"
 
-      - name: Skip tag creation (dry run)
+      - name: Trigger image build workflow
+        if: ${{ inputs.dry_run != true }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ github.event.inputs.version }}
+          RELEASE_BRANCH: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
+        run: |
+          echo "Triggering build-manager-image workflow for tag ${VERSION}..."
+
+          # Wait briefly for tag to propagate to GitHub API
+          echo "Waiting for tag to propagate..."
+          for i in {1..12}; do
+            if git ls-remote --tags origin | grep -q "refs/tags/${VERSION}$"; then
+              echo "✓ Tag ${VERSION} found in remote"
+              break
+            fi
+            if [ $i -eq 12 ]; then
+              echo "::warning::Tag not found after 60s, proceeding anyway..."
+            fi
+            echo "Waiting... ($i/12)"
+            sleep 5
+          done
+
+          # Trigger the build workflow
+          gh workflow run build-manager-image.yml \
+            --ref "${VERSION}" \
+            -f tag="${VERSION}" \
+            -f ref="${VERSION}" \
+            -f triggered_by_release=true
+
+          echo "✓ Build workflow triggered for tag ${VERSION}"
+          echo "Monitor build progress at: https://github.com/${{ github.repository }}/actions/workflows/build-manager-image.yml"
+
+      - name: Skip tag creation and build trigger (dry run)
         if: ${{ inputs.dry_run == true }}
         env:
           VERSION: ${{ github.event.inputs.version }}
@@ -500,6 +533,7 @@ jobs:
         run: |
           echo "::notice::DRY RUN: Skipping tag creation for ${VERSION} on ${RELEASE_BRANCH}"
           echo "Would have created and pushed tag: ${VERSION}"
+          echo "Would have triggered build-manager-image workflow"
 
   unit-tests:
     runs-on: ubuntu-latest
