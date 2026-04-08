@@ -17,6 +17,8 @@ const ComponentIDPrometheusAppServicesReceiver ComponentID = "prometheus/app-ser
 const ComponentIDPrometheusIstioReceiver ComponentID = "prometheus/istio"
 
 // ComponentIDFileLogReceiver generates a component ID for the filelog receiver specific to a log pipeline.
+// Pipeline name is included in the component ID to keep it unique across pipelines.
+//
 // Example: filelog/mylogpipeline
 func ComponentIDFileLogReceiver(pipelineName string) ComponentID {
 	return fmt.Sprintf("filelog/%s", pipelineName)
@@ -46,12 +48,16 @@ const ComponentIDSetKymaInputNameKymaProcessor ComponentID = "transform/set-kyma
 const ComponentIDSetKymaInputNameOTLPProcessor ComponentID = "transform/set-kyma-input-name-otlp"
 
 // ComponentIDUserDefinedFilterProcessor generates a component ID for the user-defined filter processor.
+// Pipeline type and name are included in the component ID to keep it unique across pipelines.
+//
 // Example: filter/tracepipeline-user-defined-mypipeline
 func ComponentIDUserDefinedFilterProcessor(pipelineTypePrefix, pipelineName string) ComponentID {
 	return fmt.Sprintf("filter/%s-user-defined-%s", pipelineTypePrefix, pipelineName)
 }
 
 // ComponentIDUserDefinedTransformProcessor generates a component ID for the user-defined transform processor.
+// Pipeline type and name are included in the component ID to keep it unique across pipelines.
+// 
 // Example: transform/tracepipeline-user-defined-mypipeline
 func ComponentIDUserDefinedTransformProcessor(pipelineTypePrefix, pipelineName string) ComponentID {
 	return fmt.Sprintf("transform/%s-user-defined-%s", pipelineTypePrefix, pipelineName)
@@ -60,7 +66,10 @@ func ComponentIDUserDefinedTransformProcessor(pipelineTypePrefix, pipelineName s
 // LOG-SPECIFIC PROCESSORS ========================================================
 
 // ComponentIDNamespaceFilterProcessor generates a component ID for the namespace filter processor specific to a log pipeline.
-// This namespace filter component ID is specific to log pipelines, since we deploy them as single instances of OTel pipelines, each having its own namespace filter processor.
+// This namespace filter component ID is specific to log pipelines, since we deploy them as single instances of OTel pipelines,
+// each having its own namespace filter processor.
+// Pipeline name is included in the component ID to keep it unique across pipelines.
+//
 // Example: filter/mylogpipeline-filter-by-namespace
 func ComponentIDNamespaceFilterProcessor(pipelineName string) ComponentID {
 	return fmt.Sprintf("filter/%s-filter-by-namespace", pipelineName)
@@ -78,7 +87,10 @@ const ComponentIDDropIfInputSourceOTLPProcessor ComponentID = "filter/drop-if-in
 const ComponentIDDropEnvoyMetricsIfDisabledProcessor ComponentID = "filter/drop-envoy-metrics-if-disabled"
 
 // ComponentIDNamespacePerInputFilterProcessor generates a component ID for the OTel namespace filter processor specific to a metric pipeline.
-// This namespace filter processor is specific to metric pipelines, since we deploy them as separate instances of OTel pipelines, each having its own namespace filter processor, corresponding to its input type.
+// This namespace filter processor is specific to metric pipelines, since each metric output pipeline can contain multiple namespace
+// filter processors — one per enabled input type (e.g. runtime, prometheus, istio, etc.).
+// Pipeline name and input type are included in the component ID to keep it unique across pipelines and inputs.
+//
 // Example: filter/mypipeline-filter-by-namespace-otlp-input
 func ComponentIDNamespacePerInputFilterProcessor(pipelineName string, inputSource InputSourceType) ComponentID {
 	return fmt.Sprintf("filter/%s-filter-by-namespace-%s-input", pipelineName, inputSource)
@@ -111,12 +123,16 @@ const ComponentIDDropIstioServiceEnrichmentProcessor ComponentID = "transform/dr
 // ================================================================================
 
 // ComponentIDOTLPHTTPExporter generates a component ID for the OTLP HTTP exporter.
+// Pipeline name is included in the component ID to keep it unique across pipelines.
+//
 // Example: otlp_http/metricpipeline-mypipeline
 func ComponentIDOTLPHTTPExporter(qualifiedName string) ComponentID {
 	return fmt.Sprintf("otlp_http/%s", qualifiedName)
 }
 
 // ComponentIDOTLPGRPCExporter generates a component ID for the OTLP gRPC exporter.
+// Pipeline name is included in the component ID to keep it unique across pipelines.
+//
 // Example: otlp_grpc/metricpipeline-mypipeline
 func ComponentIDOTLPGRPCExporter(qualifiedName string) ComponentID {
 	return fmt.Sprintf("otlp_grpc/%s", qualifiedName)
@@ -146,6 +162,8 @@ const ComponentIDPprofExtension ComponentID = "pprof"
 const ComponentIDCGroupRuntimeExtension ComponentID = "cgroupruntime"
 
 // ComponentIDOAuth2Extension generates a component ID for the OAuth2 client extension.
+// Pipeline name is included in the component ID to keep it unique across pipelines.
+//
 // Example: oauth2client/logpipeline-mypipeline
 func ComponentIDOAuth2Extension(qualifiedName string) ComponentID {
 	return fmt.Sprintf("oauth2client/%s", qualifiedName)
