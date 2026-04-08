@@ -264,5 +264,5 @@ func formatTraceUserDefinedFilterProcessorID(tp *telemetryv1beta1.TracePipeline)
 }
 
 func formatTraceOTLPExporterID(tp *telemetryv1beta1.TracePipeline) string {
-	return common.OTLPExporterID(tp.Spec.Output.OTLP.Protocol, common.TracePipelineRef(tp))
+	return common.ComponentIDOTLPExporter(tp.Spec.Output.OTLP.Protocol, common.TracePipelineRef(tp))
 }

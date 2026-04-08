@@ -256,5 +256,5 @@ func formatUserDefinedFilterProcessorID(lp *telemetryv1beta1.LogPipeline) string
 }
 
 func formatOTLPExporterID(lp *telemetryv1beta1.LogPipeline) string {
-	return common.OTLPExporterID(lp.Spec.Output.OTLP.Protocol, common.LogPipelineRef(lp))
+	return common.ComponentIDOTLPExporter(lp.Spec.Output.OTLP.Protocol, common.LogPipelineRef(lp))
 }

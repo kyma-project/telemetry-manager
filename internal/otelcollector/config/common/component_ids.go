@@ -1,6 +1,10 @@
 package common
 
-import "fmt"
+import (
+	"fmt"
+
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+)
 
 type ComponentID = string
 
@@ -57,7 +61,7 @@ func ComponentIDUserDefinedFilterProcessor(pipelineTypePrefix, pipelineName stri
 
 // ComponentIDUserDefinedTransformProcessor generates a component ID for the user-defined transform processor.
 // Pipeline type and name are included in the component ID to keep it unique across pipelines.
-// 
+//
 // Example: transform/tracepipeline-user-defined-mypipeline
 func ComponentIDUserDefinedTransformProcessor(pipelineTypePrefix, pipelineName string) ComponentID {
 	return fmt.Sprintf("transform/%s-user-defined-%s", pipelineTypePrefix, pipelineName)
@@ -144,7 +148,13 @@ func ComponentIDOTLPGRPCExporter(qualifiedName string) ComponentID {
 	return fmt.Sprintf("otlp_grpc/%s", qualifiedName)
 }
 
-const ComponentIDOTLPExporter ComponentID = "otlp"
+func ComponentIDOTLPExporter(protocol telemetryv1beta1.OTLPProtocol, pipelineRef PipelineRef) ComponentID {
+	if protocol == telemetryv1beta1.OTLPProtocolHTTP {
+		return ComponentIDOTLPHTTPExporter(pipelineRef.qualifiedName())
+	}
+
+	return ComponentIDOTLPGRPCExporter(pipelineRef.qualifiedName())
+}
 
 // ================================================================================
 // CONNECTORS

@@ -305,7 +305,7 @@ func formatLogUserDefinedFilterProcessorID(lp *telemetryv1beta1.LogPipeline) str
 }
 
 func formatLogOTLPExporterID(lp *telemetryv1beta1.LogPipeline) string {
-	return common.OTLPExporterID(lp.Spec.Output.OTLP.Protocol, common.LogPipelineRef(lp))
+	return common.ComponentIDOTLPExporter(lp.Spec.Output.OTLP.Protocol, common.LogPipelineRef(lp))
 }
 
 func namespaceFilterProcessor(namespaceSelector *telemetryv1beta1.NamespaceSelector) *common.FilterProcessorConfig {

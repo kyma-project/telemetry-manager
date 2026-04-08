@@ -99,14 +99,6 @@ func otlpExporter(otlpOutput *telemetryv1beta1.OTLPOutput, pipelineRef PipelineR
 	return &exporter
 }
 
-func OTLPExporterID(protocol telemetryv1beta1.OTLPProtocol, pipelineRef PipelineRef) string {
-	if protocol == telemetryv1beta1.OTLPProtocolHTTP {
-		return ComponentIDOTLPHTTPExporter(pipelineRef.qualifiedName())
-	}
-
-	return ComponentIDOTLPGRPCExporter(pipelineRef.qualifiedName())
-}
-
 func tls(output *telemetryv1beta1.OTLPOutput, otlpEndpointValue string, pipelineRef PipelineRef) TLS {
 	var tls TLS
 

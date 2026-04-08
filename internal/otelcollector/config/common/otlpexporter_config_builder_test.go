@@ -20,15 +20,15 @@ func metricRefTest() PipelineRef {
 }
 
 func TestExporterIDHTTP(t *testing.T) {
-	require.Equal(t, "otlp_http/tracepipeline-test", OTLPExporterID("http", traceRefTest()))
+	require.Equal(t, "otlp_http/tracepipeline-test", ComponentIDOTLPExporter("http", traceRefTest()))
 }
 
 func TestExporterIDGRPC(t *testing.T) {
-	require.Equal(t, "otlp_grpc/tracepipeline-test", OTLPExporterID("grpc", traceRefTest()))
+	require.Equal(t, "otlp_grpc/tracepipeline-test", ComponentIDOTLPExporter("grpc", traceRefTest()))
 }
 
 func TestExorterIDDefault(t *testing.T) {
-	require.Equal(t, "otlp_grpc/tracepipeline-test", OTLPExporterID("", traceRefTest()))
+	require.Equal(t, "otlp_grpc/tracepipeline-test", ComponentIDOTLPExporter("", traceRefTest()))
 }
 
 func TestMakeExporterConfig(t *testing.T) {
