@@ -25,6 +25,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpgateway"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
+	"github.com/kyma-project/telemetry-manager/internal/resources/coordinationconfig"
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
@@ -117,7 +118,7 @@ func newDefaultMocks() *mocks {
 func newReconcileRequest() ctrl.Request {
 	return ctrl.Request{
 		NamespacedName: types.NamespacedName{
-			Name:      names.OTLPGatewayPipelinesSyncConfigMap,
+			Name:      names.OTLPGatewayCoordinationConfigMap,
 			Namespace: "kyma-system",
 		},
 	}
@@ -139,11 +140,11 @@ func TestReconcile_ConfigMapCreatedIfNotExists(t *testing.T) {
 	var cm corev1.ConfigMap
 
 	err = fakeClient.Get(ctx, types.NamespacedName{
-		Name:      names.OTLPGatewayPipelinesSyncConfigMap,
+		Name:      names.OTLPGatewayCoordinationConfigMap,
 		Namespace: "kyma-system",
 	}, &cm)
 	require.NoError(t, err)
-	assert.Contains(t, cm.Data, otelcollector.ConfigMapDataKey)
+	assert.Contains(t, cm.Data, coordinationconfig.ConfigMapDataKey)
 }
 
 func TestReconcile_NoPipelines_DeletesGateway(t *testing.T) {
@@ -151,11 +152,11 @@ func TestReconcile_NoPipelines_DeletesGateway(t *testing.T) {
 
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.OTLPGatewayPipelinesSyncConfigMap,
+			Name:      names.OTLPGatewayCoordinationConfigMap,
 			Namespace: "kyma-system",
 		},
 		Data: map[string]string{
-			otelcollector.ConfigMapDataKey: "tracePipelines: []",
+			coordinationconfig.ConfigMapDataKey: "tracePipelines: []",
 		},
 	}
 
@@ -182,11 +183,11 @@ func TestReconcile_SinglePipeline_DeploysGateway(t *testing.T) {
 
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.OTLPGatewayPipelinesSyncConfigMap,
+			Name:      names.OTLPGatewayCoordinationConfigMap,
 			Namespace: "kyma-system",
 		},
 		Data: map[string]string{
-			otelcollector.ConfigMapDataKey: "tracePipelines:\n- name: test-pipeline\n  generation: 1",
+			coordinationconfig.ConfigMapDataKey: "tracePipelines:\n- name: test-pipeline\n  generation: 1",
 		},
 	}
 
@@ -216,11 +217,11 @@ func TestReconcile_GenerationMismatch_SkipsPipeline(t *testing.T) {
 
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.OTLPGatewayPipelinesSyncConfigMap,
+			Name:      names.OTLPGatewayCoordinationConfigMap,
 			Namespace: "kyma-system",
 		},
 		Data: map[string]string{
-			otelcollector.ConfigMapDataKey: "tracePipelines:\n- name: test-pipeline\n  generation: 1",
+			coordinationconfig.ConfigMapDataKey: "tracePipelines:\n- name: test-pipeline\n  generation: 1",
 		},
 	}
 
@@ -251,11 +252,11 @@ func TestReconcile_PipelineDeleted_SkipsPipeline(t *testing.T) {
 
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.OTLPGatewayPipelinesSyncConfigMap,
+			Name:      names.OTLPGatewayCoordinationConfigMap,
 			Namespace: "kyma-system",
 		},
 		Data: map[string]string{
-			otelcollector.ConfigMapDataKey: "tracePipelines:\n- name: test-pipeline\n  generation: 1",
+			coordinationconfig.ConfigMapDataKey: "tracePipelines:\n- name: test-pipeline\n  generation: 1",
 		},
 	}
 
@@ -286,11 +287,11 @@ func TestReconcile_MultiplePipelines_AggregatesConfig(t *testing.T) {
 
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.OTLPGatewayPipelinesSyncConfigMap,
+			Name:      names.OTLPGatewayCoordinationConfigMap,
 			Namespace: "kyma-system",
 		},
 		Data: map[string]string{
-			otelcollector.ConfigMapDataKey: "tracePipelines:\n- name: pipeline-1\n  generation: 1\n- name: pipeline-2\n  generation: 1",
+			coordinationconfig.ConfigMapDataKey: "tracePipelines:\n- name: pipeline-1\n  generation: 1\n- name: pipeline-2\n  generation: 1",
 		},
 	}
 
@@ -318,11 +319,11 @@ func TestReconcile_MissingPipeline_SkipsGracefully(t *testing.T) {
 
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.OTLPGatewayPipelinesSyncConfigMap,
+			Name:      names.OTLPGatewayCoordinationConfigMap,
 			Namespace: "kyma-system",
 		},
 		Data: map[string]string{
-			otelcollector.ConfigMapDataKey: "tracePipelines:\n- name: missing-pipeline\n  generation: 1",
+			coordinationconfig.ConfigMapDataKey: "tracePipelines:\n- name: missing-pipeline\n  generation: 1",
 		},
 	}
 
@@ -349,11 +350,11 @@ func TestReconcile_IstioEnabled_PassesFlag(t *testing.T) {
 
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.OTLPGatewayPipelinesSyncConfigMap,
+			Name:      names.OTLPGatewayCoordinationConfigMap,
 			Namespace: "kyma-system",
 		},
 		Data: map[string]string{
-			otelcollector.ConfigMapDataKey: "tracePipelines:\n- name: test-pipeline\n  generation: 1",
+			coordinationconfig.ConfigMapDataKey: "tracePipelines:\n- name: test-pipeline\n  generation: 1",
 		},
 	}
 
@@ -383,7 +384,7 @@ func TestFetchTracePipelines_NotFound(t *testing.T) {
 
 	sut := newTestReconciler(fakeClient, mocks)
 
-	refs := []otelcollector.PipelineReference{
+	refs := []coordinationconfig.PipelineReference{
 		{Name: "missing-pipeline", Generation: 1},
 	}
 
@@ -405,7 +406,7 @@ func TestFetchTracePipelines_GenerationMismatch(t *testing.T) {
 
 	sut := newTestReconciler(fakeClient, mocks)
 
-	refs := []otelcollector.PipelineReference{
+	refs := []coordinationconfig.PipelineReference{
 		{Name: "test-pipeline", Generation: 3},
 	}
 
@@ -429,7 +430,7 @@ func TestFetchTracePipelines_DeletionTimestamp(t *testing.T) {
 
 	sut := newTestReconciler(fakeClient, mocks)
 
-	refs := []otelcollector.PipelineReference{
+	refs := []coordinationconfig.PipelineReference{
 		{Name: "test-pipeline", Generation: 1},
 	}
 
@@ -451,7 +452,7 @@ func TestFetchTracePipelines_Success(t *testing.T) {
 
 	sut := newTestReconciler(fakeClient, mocks)
 
-	refs := []otelcollector.PipelineReference{
+	refs := []coordinationconfig.PipelineReference{
 		{Name: "test-pipeline", Generation: 1},
 	}
 
@@ -471,7 +472,7 @@ func TestFetchTracePipelines_GetError(t *testing.T) {
 
 	sut.Client = &errorClient{err: assert.AnError}
 
-	refs := []otelcollector.PipelineReference{
+	refs := []coordinationconfig.PipelineReference{
 		{Name: "test-pipeline", Generation: 1},
 	}
 
@@ -538,11 +539,11 @@ func TestReconcile_LogPipeline_DeploysGateway(t *testing.T) {
 
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.OTLPGatewayPipelinesSyncConfigMap,
+			Name:      names.OTLPGatewayCoordinationConfigMap,
 			Namespace: "kyma-system",
 		},
 		Data: map[string]string{
-			otelcollector.ConfigMapDataKey: "logPipelines:\n- name: test-log-pipeline\n  generation: 1",
+			coordinationconfig.ConfigMapDataKey: "logPipelines:\n- name: test-log-pipeline\n  generation: 1",
 		},
 	}
 
@@ -577,11 +578,11 @@ func TestReconcile_TraceAndLogPipelines_DeploysUnifiedGateway(t *testing.T) {
 
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.OTLPGatewayPipelinesSyncConfigMap,
+			Name:      names.OTLPGatewayCoordinationConfigMap,
 			Namespace: "kyma-system",
 		},
 		Data: map[string]string{
-			otelcollector.ConfigMapDataKey: "tracePipelines:\n- name: test-trace-pipeline\n  generation: 1\nlogPipelines:\n- name: test-log-pipeline\n  generation: 1",
+			coordinationconfig.ConfigMapDataKey: "tracePipelines:\n- name: test-trace-pipeline\n  generation: 1\nlogPipelines:\n- name: test-log-pipeline\n  generation: 1",
 		},
 	}
 
@@ -610,7 +611,7 @@ func TestFetchLogPipelines_NotFound(t *testing.T) {
 	mocks := newDefaultMocks()
 	sut := newTestReconciler(fakeClient, mocks)
 
-	refs := []otelcollector.PipelineReference{
+	refs := []coordinationconfig.PipelineReference{
 		{Name: "non-existent", Generation: 1},
 	}
 
@@ -631,7 +632,7 @@ func TestFetchLogPipelines_GenerationMismatch(t *testing.T) {
 	mocks := newDefaultMocks()
 	sut := newTestReconciler(fakeClient, mocks)
 
-	refs := []otelcollector.PipelineReference{
+	refs := []coordinationconfig.PipelineReference{
 		{Name: pipeline.Name, Generation: pipeline.Generation + 1}, // Different generation
 	}
 
@@ -655,7 +656,7 @@ func TestFetchLogPipelines_DeletionTimestamp(t *testing.T) {
 	mocks := newDefaultMocks()
 	sut := newTestReconciler(fakeClient, mocks)
 
-	refs := []otelcollector.PipelineReference{
+	refs := []coordinationconfig.PipelineReference{
 		{Name: pipeline.Name, Generation: pipeline.Generation},
 	}
 
@@ -676,7 +677,7 @@ func TestFetchLogPipelines_Success(t *testing.T) {
 	mocks := newDefaultMocks()
 	sut := newTestReconciler(fakeClient, mocks)
 
-	refs := []otelcollector.PipelineReference{
+	refs := []coordinationconfig.PipelineReference{
 		{Name: pipeline.Name, Generation: pipeline.Generation},
 	}
 
@@ -694,7 +695,7 @@ func TestFetchLogPipelines_GetError(t *testing.T) {
 
 	sut.Client = &errorClient{err: assert.AnError}
 
-	refs := []otelcollector.PipelineReference{
+	refs := []coordinationconfig.PipelineReference{
 		{Name: "test-log", Generation: 1},
 	}
 
@@ -713,11 +714,11 @@ func TestReconcile_OnlyLogPipelines_DeploysGateway(t *testing.T) {
 
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.OTLPGatewayPipelinesSyncConfigMap,
+			Name:      names.OTLPGatewayCoordinationConfigMap,
 			Namespace: "kyma-system",
 		},
 		Data: map[string]string{
-			otelcollector.ConfigMapDataKey: "logPipelines:\n- name: test-log\n  generation: 1",
+			coordinationconfig.ConfigMapDataKey: "logPipelines:\n- name: test-log\n  generation: 1",
 		},
 	}
 
@@ -785,11 +786,11 @@ func TestOverrideFunctionality(t *testing.T) {
 
 			cm := &corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      names.OTLPGatewayPipelinesSyncConfigMap,
+					Name:      names.OTLPGatewayCoordinationConfigMap,
 					Namespace: "kyma-system",
 				},
 				Data: map[string]string{
-					otelcollector.ConfigMapDataKey: "tracePipelines:\n- name: test-pipeline\n  generation: 1",
+					coordinationconfig.ConfigMapDataKey: "tracePipelines:\n- name: test-pipeline\n  generation: 1",
 				},
 			}
 
@@ -878,7 +879,7 @@ func TestFetchMetricPipelines_NotFound(t *testing.T) {
 	mocks := newDefaultMocks()
 	sut := newTestReconciler(fakeClient, mocks)
 
-	refs := []otelcollector.PipelineReference{
+	refs := []coordinationconfig.PipelineReference{
 		{Name: "non-existent", Generation: 1},
 	}
 
@@ -898,7 +899,7 @@ func TestFetchMetricPipelines_GenerationMismatch(t *testing.T) {
 	mocks := newDefaultMocks()
 	sut := newTestReconciler(fakeClient, mocks)
 
-	refs := []otelcollector.PipelineReference{
+	refs := []coordinationconfig.PipelineReference{
 		{Name: pipeline.Name, Generation: pipeline.Generation + 1},
 	}
 
@@ -921,7 +922,7 @@ func TestFetchMetricPipelines_DeletionTimestamp(t *testing.T) {
 	mocks := newDefaultMocks()
 	sut := newTestReconciler(fakeClient, mocks)
 
-	refs := []otelcollector.PipelineReference{
+	refs := []coordinationconfig.PipelineReference{
 		{Name: pipeline.Name, Generation: pipeline.Generation},
 	}
 
@@ -941,7 +942,7 @@ func TestFetchMetricPipelines_Success(t *testing.T) {
 	mocks := newDefaultMocks()
 	sut := newTestReconciler(fakeClient, mocks)
 
-	refs := []otelcollector.PipelineReference{
+	refs := []coordinationconfig.PipelineReference{
 		{Name: pipeline.Name, Generation: pipeline.Generation},
 	}
 
@@ -960,7 +961,7 @@ func TestFetchMetricPipelines_GetError(t *testing.T) {
 
 	sut.Client = &errorClient{err: assert.AnError}
 
-	refs := []otelcollector.PipelineReference{
+	refs := []coordinationconfig.PipelineReference{
 		{Name: "test-metric", Generation: 1},
 	}
 
@@ -978,11 +979,11 @@ func TestReconcile_MetricPipeline_DeploysGateway(t *testing.T) {
 
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.OTLPGatewayPipelinesSyncConfigMap,
+			Name:      names.OTLPGatewayCoordinationConfigMap,
 			Namespace: "kyma-system",
 		},
 		Data: map[string]string{
-			otelcollector.ConfigMapDataKey: "metricPipelines:\n- name: test-metric-pipeline\n  generation: 1",
+			coordinationconfig.ConfigMapDataKey: "metricPipelines:\n- name: test-metric-pipeline\n  generation: 1",
 		},
 	}
 

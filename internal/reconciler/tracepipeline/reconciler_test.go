@@ -34,7 +34,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
 
-// TestConfigMapUpdate verifies that valid pipelines are written to the OTLP Gateway Pipelines Sync ConfigMap
+// TestConfigMapUpdate verifies that valid pipelines are written to the OTLP Gateway Coordination ConfigMap
 func TestConfigMapUpdate(t *testing.T) {
 	tests := []struct {
 		name              string
@@ -75,7 +75,7 @@ func TestConfigMapUpdate(t *testing.T) {
 			var configMap corev1.ConfigMap
 
 			err = fakeClient.Get(context.Background(), types.NamespacedName{
-				Name:      names.OTLPGatewayPipelinesSyncConfigMap,
+				Name:      names.OTLPGatewayCoordinationConfigMap,
 				Namespace: "default",
 			}, &configMap)
 
@@ -187,7 +187,7 @@ func TestSecretReferenceValidation(t *testing.T) {
 			var configMap corev1.ConfigMap
 
 			err = fakeClient.Get(context.Background(), types.NamespacedName{
-				Name:      names.OTLPGatewayPipelinesSyncConfigMap,
+				Name:      names.OTLPGatewayCoordinationConfigMap,
 				Namespace: "default",
 			}, &configMap)
 
@@ -247,7 +247,7 @@ func TestMaxPipelineLimit(t *testing.T) {
 	var configMap corev1.ConfigMap
 
 	err = fakeClient.Get(context.Background(), types.NamespacedName{
-		Name:      names.OTLPGatewayPipelinesSyncConfigMap,
+		Name:      names.OTLPGatewayCoordinationConfigMap,
 		Namespace: "default",
 	}, &configMap)
 	if err == nil {
@@ -423,7 +423,7 @@ func TestTLSCertificateValidation(t *testing.T) {
 			var configMap corev1.ConfigMap
 
 			err = fakeClient.Get(context.Background(), types.NamespacedName{
-				Name:      names.OTLPGatewayPipelinesSyncConfigMap,
+				Name:      names.OTLPGatewayCoordinationConfigMap,
 				Namespace: "default",
 			}, &configMap)
 
@@ -505,7 +505,7 @@ func TestOTTLSpecValidation(t *testing.T) {
 			var configMap corev1.ConfigMap
 
 			err = fakeClient.Get(context.Background(), types.NamespacedName{
-				Name:      names.OTLPGatewayPipelinesSyncConfigMap,
+				Name:      names.OTLPGatewayCoordinationConfigMap,
 				Namespace: "default",
 			}, &configMap)
 			if err == nil {
@@ -652,7 +652,7 @@ func TestConfigMapRemoval(t *testing.T) {
 	var configMap corev1.ConfigMap
 
 	err = fakeClient.Get(context.Background(), types.NamespacedName{
-		Name:      names.OTLPGatewayPipelinesSyncConfigMap,
+		Name:      names.OTLPGatewayCoordinationConfigMap,
 		Namespace: "default",
 	}, &configMap)
 	if err == nil {
@@ -804,7 +804,7 @@ func TestDeletingPipeline(t *testing.T) {
 	var configMap corev1.ConfigMap
 
 	err = fakeClient.Get(context.Background(), types.NamespacedName{
-		Name:      names.OTLPGatewayPipelinesSyncConfigMap,
+		Name:      names.OTLPGatewayCoordinationConfigMap,
 		Namespace: "default",
 	}, &configMap)
 	if err == nil {

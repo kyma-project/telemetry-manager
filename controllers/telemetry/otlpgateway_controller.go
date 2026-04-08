@@ -144,7 +144,7 @@ func (r *OTLPGatewayController) SetupWithManager(mgr ctrl.Manager) error {
 	b := ctrl.NewControllerManagedBy(mgr).For(&corev1.ConfigMap{},
 		ctrlbuilder.WithPredicates(
 			ctrlpredicate.NewPredicateFuncs(func(obj client.Object) bool {
-				return obj.GetName() == names.OTLPGatewayPipelinesSyncConfigMap
+				return obj.GetName() == names.OTLPGatewayCoordinationConfigMap
 			}),
 		),
 	)
@@ -241,7 +241,7 @@ func (r *OTLPGatewayController) enqueueConfigMap() []reconcile.Request {
 	return []reconcile.Request{
 		{
 			NamespacedName: types.NamespacedName{
-				Name:      names.OTLPGatewayPipelinesSyncConfigMap,
+				Name:      names.OTLPGatewayCoordinationConfigMap,
 				Namespace: r.reconciler.Globals().TargetNamespace(),
 			},
 		},
