@@ -283,7 +283,11 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 	if isPipelineReconcilable {
 		// Collect secret references and their current versions
 		secretRefs := secretref.GetSecretRefsMetricPipeline(pipeline)
-		secretVersions := coordinationconfig.CollectSecretVersions(ctx, r.Client, secretRefs)
+
+		secretVersions, err := coordinationconfig.CollectSecretVersions(ctx, r.Client, secretRefs)
+		if err != nil {
+			return fmt.Errorf("failed to collect secret versions: %w", err)
+		}
 
 		// Write current pipeline reference to OTLP Gateway Coordination ConfigMap
 		logf.FromContext(ctx).V(1).Info("Writing pipeline reference to OTLP Gateway Coordination ConfigMap",

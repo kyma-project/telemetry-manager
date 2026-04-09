@@ -80,8 +80,8 @@ func ReadOTLPGatewayConfig(ctx context.Context, c client.Client, namespace strin
 
 // CollectSecretVersions fetches the resourceVersion for each secret reference.
 // Returns a map of "namespace/name" -> resourceVersion.
-// Missing or inaccessible secrets are omitted from the map.
-func CollectSecretVersions(ctx context.Context, c client.Client, refs []telemetryv1beta1.SecretKeyRef) map[string]string {
+// Secrets that are not found (404) are skipped. Any other error is returned.
+func CollectSecretVersions(ctx context.Context, c client.Client, refs []telemetryv1beta1.SecretKeyRef) (map[string]string, error) {
 	versions := make(map[string]string)
 	seen := make(map[types.NamespacedName]bool)
 
@@ -97,15 +97,18 @@ func CollectSecretVersions(ctx context.Context, c client.Client, refs []telemetr
 
 		var secret corev1.Secret
 		if err := c.Get(ctx, key, &secret); err != nil {
-			// Secret doesn't exist or can't be read - skip it
-			continue
+			if apierrors.IsNotFound(err) {
+				continue
+			}
+
+			return nil, fmt.Errorf("failed to get secret %s/%s: %w", ref.Namespace, ref.Name, err)
 		}
 
 		mapKey := fmt.Sprintf("%s/%s", ref.Namespace, ref.Name)
 		versions[mapKey] = secret.ResourceVersion
 	}
 
-	return versions
+	return versions, nil
 }
 
 // AddPipelineReference adds or updates a pipeline reference of any type.

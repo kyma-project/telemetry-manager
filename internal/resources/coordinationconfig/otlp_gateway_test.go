@@ -670,13 +670,14 @@ func TestCollectSecretVersions(t *testing.T) {
 			},
 		}
 
-		versions := CollectSecretVersions(context.Background(), fakeClient, refs)
+		versions, err := CollectSecretVersions(context.Background(), fakeClient, refs)
 
+		require.NoError(t, err)
 		require.Len(t, versions, 1)
 		require.Equal(t, "12345", versions["kyma-system/my-secret"])
 	})
 
-	t.Run("SkipsMissingSecret", func(t *testing.T) {
+	t.Run("SkipsNotFoundSecret", func(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
 
 		refs := []telemetryv1beta1.SecretKeyRef{
@@ -687,9 +688,22 @@ func TestCollectSecretVersions(t *testing.T) {
 			},
 		}
 
-		versions := CollectSecretVersions(context.Background(), fakeClient, refs)
+		versions, err := CollectSecretVersions(context.Background(), fakeClient, refs)
 
+		require.NoError(t, err)
 		require.Empty(t, versions)
+	})
+
+	t.Run("ReturnsErrorOnNonNotFoundGetFailure", func(t *testing.T) {
+		refs := []telemetryv1beta1.SecretKeyRef{
+			{Name: "my-secret", Namespace: "kyma-system", Key: "endpoint"},
+		}
+
+		errClient := &errorGetClient{}
+
+		_, err := CollectSecretVersions(context.Background(), errClient, refs)
+
+		require.Error(t, err)
 	})
 
 	t.Run("DeduplicatesByNamespace", func(t *testing.T) {
@@ -720,8 +734,9 @@ func TestCollectSecretVersions(t *testing.T) {
 			},
 		}
 
-		versions := CollectSecretVersions(context.Background(), fakeClient, refs)
+		versions, err := CollectSecretVersions(context.Background(), fakeClient, refs)
 
+		require.NoError(t, err)
 		require.Len(t, versions, 1)
 		require.Equal(t, "12345", versions["kyma-system/my-secret"])
 	})
@@ -749,8 +764,9 @@ func TestCollectSecretVersions(t *testing.T) {
 			{Name: "secret2", Namespace: "default", Key: "key2"},
 		}
 
-		versions := CollectSecretVersions(context.Background(), fakeClient, refs)
+		versions, err := CollectSecretVersions(context.Background(), fakeClient, refs)
 
+		require.NoError(t, err)
 		require.Len(t, versions, 2)
 		require.Equal(t, "111", versions["kyma-system/secret1"])
 		require.Equal(t, "222", versions["default/secret2"])
