@@ -10,7 +10,7 @@ Each Telemetry component has a dedicated set of NetworkPolicies that control the
 
 1. All Telemetry module Pods can send DNS queries to any IP on port 53, including DNS services, and to kube-dns on port 8053.
 2. All Telemetry module Pods can connect to any IP on port 443, including the Kubernetes API server.
-3. Any Pod in the cluster can send OTLP data to the log, metric, and trace gateways on ports 4317 for gRPC and 4318 for HTTP.
+3. Any Pod in the cluster can send OTLP data to the OTLP gateway on ports 4317 for gRPC and 4318 for HTTP.
 4. Pods with the `networking.kyma-project.io/metrics-scraping: allowed` label can scrape metrics from all Telemetry components, including Telemetry Manager, on their respective metrics ports.
 5. The self monitor can scrape metrics from the gateways, agents, and Fluent Bit on ports 8888 for OTel Collectors, and 2020 for Fluent Bit.
 6. Telemetry Manager can query the self monitor on port 9090.
@@ -32,7 +32,7 @@ Telemetry Manager has the following NetworkPolicies, deployed with the Helm char
 
 ## Gateway Policies
 
-The log, metric, and trace gateways each have two NetworkPolicies that Telemetry Manager creates dynamically:
+The OTLP gateway has two NetworkPolicies that Telemetry Manager creates dynamically:
 
 | Policy                          | Direction | Source / Destination | Port |
 |---------------------------------|---|---|---|
