@@ -40,8 +40,8 @@ By default, this minimal pipeline enables the following types of log collection:
 
 - **Application logs**: Collects `stdout` and `stderr` logs from all containers running in non-system namespaces (such as `kyma-system` and `kube-system`).
 - **OTLP logs**: Activates cluster-internal endpoints to receive logs in the OTLP format. Your applications can push logs directly to these URLs:
-  - gRPC: `http://telemetry-otlp-logs.kyma-system:4317`
-  - HTTP: `http://telemetry-otlp-logs.kyma-system:4318`
+  - gRPC: `http://telemetry-otlp.kyma-system:4317`
+  - HTTP: `http://telemetry-otlp.kyma-system:4318`
 
 ## Configure Log Collection
 

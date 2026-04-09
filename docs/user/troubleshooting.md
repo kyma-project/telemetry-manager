@@ -69,7 +69,7 @@ An OTLP Gateway instance is receiving data faster than it can process and forwar
 
 Identify the node where the throttling occurs and reduce the telemetry data sent to its OTLP Gateway instance. If the gateway is still throttling, consider reducing the volume of telemetry data by applying filters or disabling unused inputs in your pipeline configuration.
 
-### Custom Spans Don’t Arrive at the Backend, but Istio Spans Do
+## Custom Spans Don’t Arrive at the Backend, but Istio Spans Do
 
 ### Symptom
 
@@ -202,7 +202,7 @@ This usually happens for one of the following reasons:
 
 If you get a generic EOF error instead of a specific error message, there's usually a syntax error in your OTTL transformation or filter rules. It occurs when the parser cannot diagnose the error precisely.
 
-The following example uses the incorrect function name `isMatch` (it should be `IsMatch`, because he parser is case-sensitive):
+The following example uses the incorrect function name `isMatch` (it should be `IsMatch`, because the parser is case-sensitive):
 ```yaml
 # ...
 filter:

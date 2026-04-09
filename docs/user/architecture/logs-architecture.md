@@ -8,7 +8,7 @@ The OTLP Gateway is a DaemonSet with one instance per node that receives OTLP lo
 
 1. Application containers print JSON logs to the `stdout/stderr` channel and are stored by the Kubernetes container runtime under the `var/log` directory and its subdirectories at the related node. Istio is configured to write access logs to `stdout` as well.
 2. If you choose to use the agent, an OTel Collector runs as a [DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/) (one instance per node), detects any new log files in the folder, and tails and parses them.
-3. An application (exposing logs in OTLP) sends logs to the OTLP Gateway using the `telemetry-otlp-logs` service. Because the Service uses node-local routing, the OTLP Gateway instance on the same node always receives the data. Istio is configured to push access logs with OTLP as well.
+3. An application (exposing logs in OTLP) sends logs to the OTLP Gateway using the `telemetry-otlp` service. Because the Service uses node-local routing, the OTLP Gateway instance on the same node always receives the data. Istio is configured to push access logs with OTLP as well.
 4. The OTLP Gateway and Log Agent discover the metadata and enrich all received data with metadata of the source by communicating with the Kubernetes APIServer. Furthermore, they filter data according to the pipeline configuration.
 5. Telemetry Manager configures the Log Agent and the OTLP Gateway according to the LogPipeline resource specification, including the target backend. Also, it observes the logs flow to the backend and reports problems in the LogPipeline status.
 6. The OTLP Gateway and Log Agent send the data to the observability backend that's specified in your LogPipeline resource - either within your cluster, or, if authentication is set up, to an external observability backend.
@@ -31,4 +31,4 @@ In your cluster, the OTLP Gateway is the central component to which all componen
 
 ## Log Agent
 
-If you configure a feature in the `input` section of your LogPipeline, an additional DaemonSet is deployed acting as an agent. The agent is based on an [OTel Collector](https://opentelemetry.io/docs/collector/) and encompasses the collection and conversion of logs from the container runtime. Hereby, the workload container just prints the structured log to the `stdout/stderr` channel. The agent picks them up, parses and enriches them, and sends all data in OTLP to the configured backend.
+If you enable a log input in your `LogPipeline`, Telemetry Manager deploys a Log Agent. This agent is an [OTel Collector](https://opentelemetry.io/docs/collector/)-based DaemonSet that collects and converts logs from the container runtime. When your workload containers write structured logs to `stdout` or `stderr`, the agent collects, parses, and enriches them. Finally, it sends the logs in OTLP format to the backend you configured in the pipeline.

@@ -1,12 +1,12 @@
 # Metrics Architecture
 
-For metrics collection, the Telemetry module provides the OTLP Gateway and an optional Metric Agent. To control their behaviour and data destination, you define a MetricPipeline.
+For metrics collection, the Telemetry module provides the OTLP Gateway and an optional Metric Agent. To control their behavior and data destination, you define a MetricPipeline.
 
 The OTLP Gateway is a DaemonSet with one instance per node that receives OTLP metrics pushed from your applications. The Metric Agent is a DaemonSet that pulls metrics from Prometheus-annotated endpoints.  For details, see [OTLP Gateway](README.md#otlp-gateway) and [Agents](README.md#agents).
 
 ![Architecture](./../assets/metrics-arch.drawio.svg)
 
-1. An application (exposing metrics in [OTLP](https://opentelemetry.io/docs/specs/otlp/)) sends metrics to the OTLP Gateway using the `telemetry-otlp-metrics` service. Because the Service uses node-local routing, the OTLP Gateway instance on the same node always receives the data. 
+1. An application (exposing metrics in [OTLP](https://opentelemetry.io/docs/specs/otlp/)) sends metrics to the OTLP Gateway using the `telemetry-otlp` service. Because the Service uses node-local routing, the OTLP Gateway instance on the same node always receives the data. 
 2. An application (exposing metrics in [Prometheus](https://prometheus.io/docs/instrumenting/exposition_formats) protocol) activates the agent to scrape the metrics with an annotation-based configuration.
 3. Additionally, you can activate the agent to pull metrics of each Istio sidecar.
 4. The agent supports collecting metrics from the Kubelet and Kubernetes APIServer.
@@ -17,7 +17,7 @@ The OTLP Gateway is a DaemonSet with one instance per node that receives OTLP me
 
 ## Telemetry Manager
 
-The MetricPipeline resource is watched by Telemetry Manager, which is responsible for generating the configurations for the OTLP Gateway and the metric agent.
+The MetricPipeline resource is watched by Telemetry Manager, which is responsible for generating the configurations for the OTLP Gateway and the Metric Agent.
 
 ![Manager resources](./../assets/metrics-resources.drawio.svg)
 
@@ -32,4 +32,4 @@ In your cluster, the OTLP Gateway is the central component to which all applicat
 
 ## Metric Agent
 
-If a MetricPipeline configures a feature in the `input` section, an additional DaemonSet is deployed acting as an agent. The agent is also based on an [OTel Collector](https://opentelemetry.io/docs/collector/) and encompasses the collection and conversion of Prometheus-based metrics. Hereby, the workload puts a `prometheus.io/scrape` annotation on the specification of the Pod or service, and the agent collects it.
+If you enable a metric input in your `MetricPipeline`, Telemetry Manager deploys a Metric Agent. This agent is an [OTel Collector](https://opentelemetry.io/docs/collector/)-based DaemonSet that collects and converts Prometheus-based metrics. To have the agent scrape your workload, you add a `prometheus.io/scrape` annotation to the Pod or Service specification. The agent then automatically discovers and collects metrics from the annotated endpoints.

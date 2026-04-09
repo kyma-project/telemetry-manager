@@ -7,7 +7,7 @@ The OTLP Gateway is a DaemonSet with one instance per node that receives OTLP tr
 ![Architecture](./../assets/traces-arch.drawio.svg)
 
 1. An end-to-end request is triggered and populated across the distributed application. Every involved component propagates the trace context using the [W3C Trace Context](https://www.w3.org/TR/trace-context/) protocol.
-2. After contributing a new span to the trace, the involved components send the related span data ([OTLP](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/otlp.md)) to the OTLP Gateway using the `telemetry-otlp-traces` service. Because the Service uses node-local routing, the OTLP Gateway instance on the same node always receives the data. 
+2. After contributing a new span to the trace, the involved components send the related span data ([OTLP](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/otlp.md)) to the OTLP Gateway using the `telemetry-otlp` service. Because the Service uses node-local routing, the OTLP Gateway instance on the same node always receives the data. 
 3. Istio sends the related span data to the OTLP Gateway as well.
 4. The OTLP Gateway discovers metadata that's typical for sources running on Kubernetes, like Pod identifiers, and then enriches the span data with that metadata.
 5. Telemetry Manager configures the gateway according to the TracePipeline resource, including the target backend. Also, it observes the trace flow to the backend and reports problems in the TracePipeline status.

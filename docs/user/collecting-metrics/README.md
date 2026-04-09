@@ -41,8 +41,8 @@ output:
 By default, this minimal pipeline collects the following types of metrics:
 
 - OTLP Metrics: Activates cluster-internal endpoints to receive metrics in the OTLP format. Your applications can push metrics directly to these URLs:
-  - gRPC: `http://telemetry-otlp-metrics.kyma-system:4317`
-  - HTTP: `http://telemetry-otlp-metrics.kyma-system:4318`
+  - gRPC: `http://telemetry-otlp.kyma-system:4317`
+  - HTTP: `http://telemetry-otlp.kyma-system:4318`
 - Health Metrics: Collects health and performance metrics about the Telemetry module's components. This input is always active and cannot be disabled. For details, see [Monitor Pipeline Health](../monitor-pipeline-health.md).
 
 To collect metrics from Kyma modules like Istio, Eventing, or Serverless, enable additional inputs.

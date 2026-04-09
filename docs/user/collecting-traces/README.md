@@ -39,8 +39,8 @@ By default, this minimal pipeline collects push-based OTLP traces of any contain
 
 It activates cluster-internal endpoints to receive traces in the OTLP format. Applications can push traces directly to these URLs:
 
-- gRPC: `http://telemetry-otlp-traces.kyma-system:4317`
-- HTTP: `http://telemetry-otlp-traces.kyma-system:4318`
+- gRPC: `http://telemetry-otlp.kyma-system:4317`
+- HTTP: `http://telemetry-otlp.kyma-system:4318`
 
 ## Configure Trace Collection
 
