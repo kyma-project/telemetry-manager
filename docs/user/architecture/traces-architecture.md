@@ -1,11 +1,13 @@
 # Traces Architecture
 
-The Telemetry module provides an [OTel Collector](https://opentelemetry.io/docs/collector/) running as a node-local DaemonSet (the OTLP Gateway) in the cluster. The gateway exposes endpoints that receive trace data from your applications and the service mesh. To control the gateway's behavior and data destination, you define a TracePipeline.
+For trace collection, the Telemetry module provides the OTLP Gateway. To control its behavior and data destination, you define a TracePipeline.
+
+The OTLP Gateway is a DaemonSet with one instance per node that receives OTLP traces pushed from your applications. For details, see [OTLP Gateway](link to README#otlp-gateway).
 
 ![Architecture](./../assets/traces-arch.drawio.svg)
 
 1. An end-to-end request is triggered and populated across the distributed application. Every involved component propagates the trace context using the [W3C Trace Context](https://www.w3.org/TR/trace-context/) protocol.
-2. After contributing a new span to the trace, the involved components send the related span data ([OTLP](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/otlp.md)) to the OTLP Gateway using the `telemetry-otlp-traces` service. The Service uses node-local routing, so data is always received by the gateway instance on the same node.
+2. After contributing a new span to the trace, the involved components send the related span data ([OTLP](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/otlp.md)) to the OTLP Gateway using the `telemetry-otlp-traces` service. Because the Service uses node-local routing, the OTLP Gateway instance on the same node always receives the data. 
 3. Istio sends the related span data to the OTLP Gateway as well.
 4. The OTLP Gateway discovers metadata that's typical for sources running on Kubernetes, like Pod identifiers, and then enriches the span data with that metadata.
 5. Telemetry Manager configures the gateway according to the TracePipeline resource, including the target backend. Also, it observes the trace flow to the backend and reports problems in the TracePipeline status.
@@ -14,14 +16,14 @@ The Telemetry module provides an [OTel Collector](https://opentelemetry.io/docs/
 
 ## Telemetry Manager
 
-The TracePipeline resource is watched by Telemetry Manager, which is responsible for generating the custom parts of the OTel Collector configuration.
+The TracePipeline resource is watched by Telemetry Manager, which is responsible for generating the custom parts of the OTLP Gateway configuration.
 
 ![Manager resources](./../assets/traces-resources.drawio.svg)
 
 1. Telemetry Manager watches all TracePipeline resources and related Secrets.
 2. Furthermore, Telemetry Manager takes care of the full lifecycle of the OTLP Gateway DaemonSet. The gateway is deployed when any pipeline resource exists (TracePipeline, LogPipeline, or MetricPipeline).
 3. Whenever the configuration changes, it validates the configuration and generates a new configuration for OTel Collector, where a ConfigMap for the configuration is generated.
-4. Referenced Secrets are copied into one Secret that is mounted to the OTel Collector as well.
+4. Referenced Secrets are copied into a single Secret that is mounted to the OTLP Gateway Pods.
 
 ## OTLP Gateway
 

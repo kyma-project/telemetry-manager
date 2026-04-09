@@ -11,7 +11,7 @@ A MetricPipeline is a Kubernetes custom resource (CR) that configures metric col
 
 The pipeline enriches all collected metrics with Kubernetes metadata. It also transforms non-OTLP formats (like Prometheus) into the OTLP standard before sending them to your chosen backend.
 
-Metrics collection is optional. If no pipeline resource exists, the metric collection components are not deployed.
+Metrics collection is optional. If you don't create a MetricPipeline, no metrics are collected.
 
 ## Prerequisites
 

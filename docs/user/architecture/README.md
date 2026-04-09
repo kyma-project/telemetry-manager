@@ -1,6 +1,6 @@
 # Architecture
 
-The Telemetry module consists of a manager component, which continuosly watches the user-provided pipeline resources and deploys the respective OTel Collectors. Learn more about the architecture and how the components interact.
+The Telemetry module consists of a manager component, which continuously watches the user-provided pipeline resources and deploys the respective OTel Collectors. Learn more about the architecture and how the components interact.
 
 ## Overview
 
@@ -19,12 +19,12 @@ Telemetry Manager, the core component of the module, is a Kubernetes [operator](
 
 1. Watch the module configuration for changes and sync the module status to it.
 2. Watch the user-created Kubernetes resources LogPipeline, TracePipeline, and MetricPipeline. In these resources, you specify what data of a signal type to collect and where to ship it.
-3. Manage the lifecycle of the self monitor, the OTLP Gateway, and the signal-specific agents (that is, the Log Agent and Metric Agent).
+3. Manage the lifecycle of the self monitor and of the components handling the incoming telemetry data: the OTLP Gateway and the signal-specific agents.
    The OTLP Gateway is deployed when you create any pipeline resource (LogPipeline, TracePipeline, or MetricPipeline).
 
 ![Manager](./../assets/manager-resources.drawio.svg)
 
-## OTLP Gateway and Agents
+## OTLP Gateway
 
 The OTLP Gateway and signal-specific agents (that is, the Log Agent and Metric Agent) handle the incoming telemetry data. Telemetry Manager deploys them based on your pipeline configuration.
 
@@ -37,14 +37,18 @@ Applications can send data to the gateway using these service endpoints:
 - Metrics: `http://telemetry-otlp-metrics.kyma-system:4317` (gRPC) or `http://telemetry-otlp-metrics.kyma-system:4318` (HTTP)
 - Traces: `http://telemetry-otlp-traces.kyma-system:4317` (gRPC) or `http://telemetry-otlp-traces.kyma-system:4318` (HTTP)
 
-Agents run as [DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/) and pull data from the respective node.
+## Agents
 
-- **Log Agent**: Collects logs from the stdout/stderr output of all containers on a node. For details, see [Logs Architecture](./logs-architecture.md). As an alternative to the OTLP-based log feature, you can use a log agent based on a [Fluent Bit](https://fluentbit.io/) installation running as a DaemonSet. It reads all containers’ logs in the runtime and ships them according to your LogPipeline configuration. For details, see [Application Logs (Fluent Bit)](./../02-logs.md).
+Agents collect telemetry data directly from each node in your cluster. Unlike the OTLP Gateway, which receives pushed data, agents actively pull data from sources on the node. 
+
+Depending on your LogPipeline and MetricPipeline configuration, Telemetry Manager deploys the following agents as an [OTel Collector](https://opentelemetry.io/docs/collector/)-based [DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/):
+
+- The Log Agent collects logs from the stdout/stderr output of all containers on a node. For details, see [Logs Architecture](./logs-architecture.md).
 - **Metric Agent**: Scrapes Prometheus-annotated workloads on each node. For details, see [Metrics Architecture](./metrics-architecture.md).
 
 ## Self Monitor
 
-The Telemetry module includes a [Prometheus](https://prometheus.io/)-based self-monitor that collects and evaluates health metrics from the OTLP Gateway and agents. Telemetry Manager uses this data to report the current health status in your pipeline resources.
+The Telemetry module includes a [Prometheus](https://prometheus.io/)-based self-monitor that collects and evaluates health metrics from the OTLP Gateway and signal-specific agents. Telemetry Manager uses this data to report the current health status in your pipeline resources.
 
 You can also use these health metrics in your own observability backend to set up alerts and dashboards for your telemetry pipelines. For details, see [Monitor Pipeline Health](./../monitor-pipeline-health.md).
 

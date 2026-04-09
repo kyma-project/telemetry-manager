@@ -4,14 +4,14 @@ With the Telemetry module, you can observe and debug your applications by collec
 
 ## Overview
 
-A LogPipeline is a Kubernetes custom resource (CR) that configures log collection for your cluster. When you create a LogPipeline, the Telemetry Manager automatically deploys the necessary components (for details, see [Logs Architecture](./../architecture/README.md)):
+A LogPipeline is a Kubernetes custom resource (CR) that configures log collection for your cluster. When you create a LogPipeline, the Telemetry Manager automatically deploys the necessary components (for details, see [Logs Architecture](./../architecture/logs-architecture.md)):
 
 - The **OTLP Gateway** provides a central OTLP endpoint for receiving logs pushed from your applications.
 - A **log agent** that runs on each cluster node to collect logs written to `stdout` and `stderr` by your application containers.
 
 The pipeline enriches all collected logs with Kubernetes metadata and transforms them into the OTLP format before sending them to your chosen backend.
 
-Log collection is optional. If you don't create a LogPipeline, the log collection components are not deployed.
+Log collection is optional. If you don't create a LogPipeline, no logs are collected.
 
 ## Prerequisites
 
@@ -56,7 +56,7 @@ You can customize your LogPipeline using the available parameters and attributes
 
 - **Throughput**:
   - When pushing OTLP logs of an average size of 2KB to the OTLP Gateway, the Telemetry module can process approximately 12,000 logs per second (LPS) per node. The OTLP Gateway runs as a DaemonSet and scales automatically with the number of cluster nodes.
-  - The log agent, running one instance per node, handles tailing logs from stdout using the **runtime** input. When writing logs of an average size of 2KB to stdout, a single log agent instance can process approximately 9,000 LPS.
+  - The Log Agent, running one instance per node, handles tailing logs from stdout using the **runtime** input. When writing logs of an average size of 2KB to stdout, a single log agent instance can process approximately 9,000 LPS.
 - **Unavailability of Output**: For up to 5 minutes, a retry for data is attempted when the destination is unavailable. After that, data is dropped.
 - **No Guaranteed Delivery**: The used buffers are volatile. If the gateway or agent instances crash, logs data can be lost.
 - **Multiple LogPipeline Support**: The maximum amount of LogPipeline resources is 5.
