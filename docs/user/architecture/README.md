@@ -31,10 +31,8 @@ The OTLP Gateway is based on an [OTel Collector](https://opentelemetry.io/docs/c
 
 Applications can send data to the gateway using these service endpoints:
 
-- Logs/Metrics/Traces: `http://telemetry-otlp.kyma-system:4317` (gRPC) or `http://telemetry-otlp.kyma-system:4318` (HTTP) [Preferred]
-- Logs: `http://telemetry-otlp-logs.kyma-system:4317` (gRPC) or `http://telemetry-otlp-logs.kyma-system:4318` (HTTP)
-- Metrics: `http://telemetry-otlp-metrics.kyma-system:4317` (gRPC) or `http://telemetry-otlp-metrics.kyma-system:4318` (HTTP)
-- Traces: `http://telemetry-otlp-traces.kyma-system:4317` (gRPC) or `http://telemetry-otlp-traces.kyma-system:4318` (HTTP)
+- gRPC: `http://telemetry-otlp.kyma-system:4317`
+- HTTP: `http://telemetry-otlp.kyma-system:4318`
 
 ## Agents
 
@@ -43,7 +41,7 @@ Agents collect telemetry data directly from each node in your cluster. Unlike th
 Depending on your LogPipeline and MetricPipeline configuration, Telemetry Manager deploys the following agents as an [OTel Collector](https://opentelemetry.io/docs/collector/)-based [DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/):
 
 - The Log Agent collects logs from the stdout/stderr output of all containers on a node. For details, see [Logs Architecture](./logs-architecture.md).
-- **Metric Agent**: Scrapes Prometheus-annotated workloads on each node. For details, see [Metrics Architecture](./metrics-architecture.md).
+- The Metric Agent scrapes Prometheus-annotated workloads on each node. For details, see [Metrics Architecture](./metrics-architecture.md).
 
 ## Self Monitor
 

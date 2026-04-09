@@ -52,9 +52,9 @@ You can adjust the TracePipeline using runtime configuration with the available 
 
 ## Limitations
 
-- **Throughput**: Assuming an average span with 40 attributes with 64 characters, the maximum throughput is 4200 span/sec ~= 15.000.000 spans/hour. If this limit is exceeded, spans are refused. The OTLP Gateway runs as a DaemonSet and scales automatically with the number of cluster nodes.
+- **Throughput**: Assuming an average span with 40 attributes with 64 characters, the maximum throughput is 4200 span/sec ~= 15.000.000 spans/hour. If this limit is exceeded, spans are refused. The OTLP Gateway runs one instance per cluster node.
 - **Unavailability of Output**: For up to 5 minutes, a retry for data is attempted when the destination is unavailable. After that, data is dropped.
-- **No Guaranteed Delivery**: The used buffers are volatile. If the OTel Collector instance crashes, trace data can be lost.
+- **No Guaranteed Delivery**: The used buffers are volatile. If any gateway instance crashes, trace data can be lost.
 - **Multiple TracePipeline Support**: The maximum amount of TracePipeline resources is 5.
 - **System Span Filtering**: System-related spans reported by Istio are filtered out without the opt-out option, for example:
   - Any communication of applications to the OTLP Gateway

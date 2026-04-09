@@ -97,11 +97,11 @@ For details on the available parameters, see [Telemetry Custom Resource](../reso
 
 ## Limitations
 
-- **Throughput**: Assuming an average metric with 20 metric data points and 10 labels, the default OTLP Gateway setup has a maximum throughput of 34K metric data points/sec per node. If more data is sent to the gateway, it is refused. The OTLP Gateway runs as a DaemonSet and scales automatically with the number of cluster nodes.
+- **Throughput**: Assuming an average metric with 20 metric data points and 10 labels, the default OTLP Gateway setup has a maximum throughput of 34K metric data points/sec per node. If more data is sent to the gateway, it is refused. The OTLP Gateway runs one instance per cluster node.
 - **Scraping**: The metric **agent** enforces the following limits when scraping metrics from applications and Istio proxies:
   - **Timeseries limit**: 50000 timeseries per scrape
   - **Request body size limit**: 20 MB per scrape
   If a scrape exceeds either limit, the metric agent drops the scrape and logs a warning message. To resolve this issue, try reducing the number of exported metrics.
 - **Unavailability of Output**: For up to 5 minutes, a retry for data is attempted when the destination is unavailable. After that, data is dropped.
-- **No Guaranteed Delivery**: The used buffers are volatile. If the gateway or agent instances crash, metric data can be lost.
+- **No Guaranteed Delivery**: The used buffers are volatile. If any gateway or agent instance crashes, metric data can be lost.
 - **Multiple MetricPipeline Support**: The maximum amount of MetricPipeline resources is 5.

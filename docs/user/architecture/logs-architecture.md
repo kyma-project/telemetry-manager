@@ -1,6 +1,8 @@
 # Logs Architecture
 
-The Telemetry module provides an [OTel Collector](https://opentelemetry.io/docs/collector/) running as a node-local DaemonSet (the OTLP Gateway), and an optional DaemonSet acting as an agent. The gateway exposes endpoints that receive OTLP logs from your applications, while the agent collects container logs from each node. To control their behavior and data destination, you define a LogPipeline.
+For log collection, the Telemetry module provides the OTLP Gateway and an optional Log Agent. To control their behavior and data destination, you define a LogPipeline.
+
+The OTLP Gateway is a DaemonSet with one instance per node that receives OTLP logs pushed from your applications. The Log Agent is a DaemonSet that pulls container logs from each node. For details, see [OTLP Gateway](README.md#otlp-gateway) and [Agents](README.md#agents).
 
 ![Architecture](./../assets/logs-arch.drawio.svg)
 

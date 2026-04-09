@@ -55,8 +55,8 @@ You can customize your LogPipeline using the available parameters and attributes
 ## Limitations
 
 - **Throughput**:
-  - When pushing OTLP logs of an average size of 2KB to the OTLP Gateway, the Telemetry module can process approximately 12,000 logs per second (LPS) per node. The OTLP Gateway runs as a DaemonSet and scales automatically with the number of cluster nodes.
+  - When pushing OTLP logs of an average size of 2KB to the OTLP Gateway, the Telemetry module can process approximately 12,000 logs per second (LPS) per node. The OTLP Gateway runs one instance per cluster node.
   - The Log Agent, running one instance per node, handles tailing logs from stdout using the **runtime** input. When writing logs of an average size of 2KB to stdout, a single log agent instance can process approximately 9,000 LPS.
 - **Unavailability of Output**: For up to 5 minutes, a retry for data is attempted when the destination is unavailable. After that, data is dropped.
-- **No Guaranteed Delivery**: The used buffers are volatile. If the gateway or agent instances crash, logs data can be lost.
+- **No Guaranteed Delivery**: The used buffers are volatile. If any gateway or agent instance crashes, logs data can be lost.
 - **Multiple LogPipeline Support**: The maximum amount of LogPipeline resources is 5.

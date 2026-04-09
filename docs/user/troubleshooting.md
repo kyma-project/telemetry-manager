@@ -63,11 +63,11 @@ In the pipeline status, the `TelemetryFlowHealthy` condition has status **Gatewa
 
 ### Cause
 
-The gateway is receiving data faster than it can process and forward it.
+An OTLP Gateway instance is receiving data faster than it can process and forward it.
 
 ### Solution
 
-The OTLP Gateway runs as a DaemonSet and scales automatically with the number of cluster nodes. If the gateway is still throttling, consider reducing the volume of telemetry data by applying filters or disabling unused inputs in your pipeline configuration.
+Identify the node where the throttling occurs and reduce the telemetry data sent to its OTLP Gateway instance. If the gateway is still throttling, consider reducing the volume of telemetry data by applying filters or disabling unused inputs in your pipeline configuration.
 
 ### Custom Spans Don’t Arrive at the Backend, but Istio Spans Do
 
