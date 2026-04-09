@@ -145,7 +145,7 @@ jobs:
           fi
       - name: Check if milestone exists and is closed
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
           VERSION: ${{ github.event.inputs.version }}
         run: |
           echo "Checking milestone for version ${VERSION}..."
@@ -173,7 +173,7 @@ jobs:
       - name: Check if release already exists
         if: ${{ inputs.force != true }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
           VERSION: ${{ github.event.inputs.version }}
         run: |
           echo "Checking if release ${VERSION} already exists..."
@@ -186,7 +186,7 @@ jobs:
       - name: Delete existing release (force mode)
         if: ${{ inputs.force == true }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
           VERSION: ${{ github.event.inputs.version }}
         run: |
           echo "FORCE MODE: Checking for existing release ${VERSION}..."
@@ -272,6 +272,7 @@ jobs:
       - name: Checkout release branch
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
+          token: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
           ref: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
           fetch-depth: 0
 
@@ -334,7 +335,7 @@ jobs:
       - name: Create Pull Request
         id: create-pr
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
           VERSION: ${{ github.event.inputs.version }}
           RELEASE_BRANCH: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
           OCC_IMAGE_VERSION: ${{ github.event.inputs.occ_image_version }}
@@ -389,7 +390,7 @@ jobs:
 
       - name: Wait for PR to be merged
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
           RELEASE_BRANCH: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
         timeout-minutes: 120
         run: |
@@ -435,7 +436,7 @@ jobs:
         if: always()
         continue-on-error: true
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
           VERSION: ${{ github.event.inputs.version }}
         run: |
           BUMP_BRANCH="rel-prep-${VERSION}"
@@ -450,7 +451,7 @@ jobs:
       - name: Create and push release tag
         if: ${{ inputs.dry_run != true }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
           VERSION: ${{ github.event.inputs.version }}
           RELEASE_BRANCH: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
         run: |
@@ -492,40 +493,7 @@ jobs:
 
           echo "✓ Successfully created and pushed tag ${VERSION} from ${RELEASE_BRANCH}"
 
-      - name: Trigger image build workflow
-        if: ${{ inputs.dry_run != true }}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ github.event.inputs.version }}
-          RELEASE_BRANCH: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
-        run: |
-          echo "Triggering build-manager-image workflow for tag ${VERSION}..."
-
-          # Wait briefly for tag to propagate to GitHub API
-          echo "Waiting for tag to propagate..."
-          for i in {1..12}; do
-            if git ls-remote --tags origin | grep -q "refs/tags/${VERSION}$"; then
-              echo "✓ Tag ${VERSION} found in remote"
-              break
-            fi
-            if [ $i -eq 12 ]; then
-              echo "::warning::Tag not found after 60s, proceeding anyway..."
-            fi
-            echo "Waiting... ($i/12)"
-            sleep 5
-          done
-
-          # Trigger the build workflow
-          gh workflow run build-manager-image.yml \
-            --ref "${VERSION}" \
-            -f tag="${VERSION}" \
-            -f ref="${VERSION}" \
-            -f triggered_by_release=true
-
-          echo "✓ Build workflow triggered for tag ${VERSION}"
-          echo "Monitor build progress at: https://github.com/${{ github.repository }}/actions/workflows/build-manager-image.yml"
-
-      - name: Skip tag creation and build trigger (dry run)
+      - name: Skip tag creation (dry run)
         if: ${{ inputs.dry_run == true }}
         env:
           VERSION: ${{ github.event.inputs.version }}
@@ -533,7 +501,6 @@ jobs:
         run: |
           echo "::notice::DRY RUN: Skipping tag creation for ${VERSION} on ${RELEASE_BRANCH}"
           echo "Would have created and pushed tag: ${VERSION}"
-          echo "Would have triggered build-manager-image workflow"
 
   unit-tests:
     runs-on: ubuntu-latest
@@ -607,7 +574,7 @@ jobs:
       - name: Verify we're on the merged PR commit
         if: ${{ inputs.force != true }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ needs.prepare-release.outputs.pr-number }}
         run: |
           MERGE_SHA=$(gh pr view "${PR_NUMBER}" --json mergeCommit --jq .mergeCommit.oid)
@@ -626,7 +593,7 @@ jobs:
         if: ${{ inputs.dry_run != true }}
         run: hack/release.sh ${{ inputs.version }}
         env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          GITHUB_TOKEN: "${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}"
           GORELEASER_CURRENT_TAG: "${{ inputs.version }}"
 
       - name: Skip GitHub release (dry run)
@@ -644,7 +611,7 @@ jobs:
       - name: Upload Helm chart to release
         if: ${{ inputs.dry_run != true }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
         run: |
           [[ ! -e ${HELM_CHART} ]] && echo "::error ::Packaged Helm chart does not exist" && exit 1
           gh release upload ${{ inputs.version }} --clobber ${HELM_CHART}
@@ -675,7 +642,7 @@ jobs:
       - name: Trigger module release for fast channel
         if: ${{ inputs.dry_run != true && inputs.module_release == true }}
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
         run: |
           echo "Triggering module release for fast channel..."
           gh workflow run module-release.yml \
@@ -689,7 +656,7 @@ jobs:
       - name: Trigger module release for experimental channel
         if: ${{ inputs.dry_run != true && inputs.module_release == true }}
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
         run: |
           echo "Triggering module release for experimental channel..."
           gh workflow run module-release.yml \

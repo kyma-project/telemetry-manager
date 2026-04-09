@@ -4,21 +4,6 @@ permissions:
   contents: read
 
 on:
-  workflow_dispatch:
-    inputs:
-      tag:
-        description: 'Tag to build (e.g., 1.2.3)'
-        required: true
-        type: string
-      ref:
-        description: 'Git ref to checkout (tag, branch, or SHA)'
-        required: false
-        type: string
-      triggered_by_release:
-        description: 'Internal: triggered by release workflow'
-        required: false
-        type: boolean
-        default: false
   merge_group:
   pull_request_target:
     types: [opened, synchronize, reopened, ready_for_review]
@@ -35,7 +20,6 @@ on:
   push:
     branches:
       - "main"
-      - "release-[0-9]+.[0-9]+"
     tags:
       - "[0-9]+.[0-9]+.[0-9]+"
     paths-ignore:
@@ -56,34 +40,7 @@ jobs:
       - name: Create tags
         id: create-tags
         run: |
-          if [[ $GITHUB_EVENT_NAME == 'workflow_dispatch' ]]; then
-            # Triggered by release workflow or manually from UI
-            TAG="${{ inputs.tag }}"
-            REF="${{ inputs.ref || inputs.tag }}"
-            echo "Building tag: $TAG (workflow_dispatch)"
-            if [[ "${{ inputs.triggered_by_release }}" == "true" ]]; then
-              echo "Triggered by: release workflow"
-            else
-              echo "Triggered by: manual dispatch"
-            fi
-            {
-              echo "tags<<EOTAGS"
-              echo "$TAG"
-              echo "$TAG-experimental"
-              echo "EOTAGS"
-            } >> "$GITHUB_OUTPUT"
-          elif [[ $GITHUB_EVENT_NAME == 'push' && "${{ startsWith(github.ref, 'refs/tags/') }}" == "true" ]]; then
-            # Triggered by actual tag push (manual tag push with non-GITHUB_TOKEN credentials)
-            echo "Building tag: ${{ github.ref_name }} (push event - manual tag)"
-            {
-              echo "tags<<EOTAGS"
-              echo "${{ github.ref_name }}"
-              echo "${{ github.ref_name }}-experimental"
-              echo "EOTAGS"
-            } >> "$GITHUB_OUTPUT"
-          elif [[ $GITHUB_EVENT_NAME == 'push' ]]; then
-            # Triggered by branch push
-            echo "Building branch: ${{ github.ref_name }} (push event)"
+          if [[ $GITHUB_EVENT_NAME == 'push' ]]; then
             {
               echo "tags<<EOTAGS"
               echo "${{ github.ref_name }}"
@@ -91,15 +48,12 @@ jobs:
               echo "EOTAGS"
             } >> "$GITHUB_OUTPUT"
           elif [[ $GITHUB_EVENT_NAME == 'merge_group' ]]; then
-            echo "Building merge group: ${{ github.event.merge_group.head_sha }}"
             {
               echo "tags<<EOTAGS"
               echo "${{ github.event.merge_group.head_sha }}"
               echo "EOTAGS"
             } >> "$GITHUB_OUTPUT"
           else
-            # Pull request
-            echo "Building PR: ${{ github.event.pull_request.number }}"
             {
               echo "tags<<EOTAGS"
               echo "PR-${{ github.event.pull_request.number }}"
