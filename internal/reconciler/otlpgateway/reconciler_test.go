@@ -124,18 +124,20 @@ func newReconcileRequest() ctrl.Request {
 	}
 }
 
-func TestReconcile_ConfigMapCreatedIfNotExists(t *testing.T) {
+func TestReconcile_MissingConfigMap_DeletesGateway(t *testing.T) {
 	ctx := context.Background()
-	fakeClient := newTestClient(t)
+	fakeClient := newTestClient(t) // no ConfigMap pre-created
 	mocks := newDefaultMocks()
 
 	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false, nil)
-	mocks.gatewayApplierDeleter.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mocks.gatewayApplierDeleter.On("DeleteResources", mock.Anything, mock.Anything, false).Return(nil)
 
 	sut := newTestReconciler(fakeClient, mocks)
 
 	_, err := sut.Reconcile(ctx, newReconcileRequest())
 	require.NoError(t, err)
+
+	mocks.gatewayApplierDeleter.AssertCalled(t, "DeleteResources", mock.Anything, mock.Anything, false)
 
 	var cm corev1.ConfigMap
 
@@ -143,8 +145,7 @@ func TestReconcile_ConfigMapCreatedIfNotExists(t *testing.T) {
 		Name:      names.OTLPGatewayCoordinationConfigMap,
 		Namespace: "kyma-system",
 	}, &cm)
-	require.NoError(t, err)
-	assert.Contains(t, cm.Data, coordinationconfig.ConfigMapDataKey)
+	require.True(t, apierrors.IsNotFound(err), "ConfigMap should not be created by the OTLP gateway reconciler")
 }
 
 func TestReconcile_NoPipelines_DeletesGateway(t *testing.T) {
