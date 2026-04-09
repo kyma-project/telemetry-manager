@@ -6,7 +6,6 @@ import (
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 )
 
@@ -54,16 +53,7 @@ func (b *Builder) addTraceOTLPReceiver(builder *common.ComponentBuilder[*telemet
 	return builder.AddReceiver(
 		builder.StaticComponentID(common.ComponentIDOTLPReceiver),
 		func(tp *telemetryv1beta1.TracePipeline) any {
-			return &common.OTLPReceiverConfig{
-				Protocols: common.ReceiverProtocols{
-					HTTP: common.Endpoint{
-						Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, ports.OTLPHTTP),
-					},
-					GRPC: common.Endpoint{
-						Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, ports.OTLPGRPC),
-					},
-				},
-			}
+			return buildOTLPReceiverConfig()
 		},
 	)
 }
@@ -73,11 +63,7 @@ func (b *Builder) addTraceMemoryLimiterProcessor(builder *common.ComponentBuilde
 	return builder.AddProcessor(
 		builder.StaticComponentID(common.ComponentIDMemoryLimiterProcessor),
 		func(tp *telemetryv1beta1.TracePipeline) any {
-			return &common.MemoryLimiterConfig{
-				CheckInterval:        "1s",
-				LimitPercentage:      75,
-				SpikeLimitPercentage: 15,
-			}
+			return buildMemoryLimiterConfig()
 		},
 	)
 }
@@ -118,8 +104,7 @@ func (b *Builder) addTraceK8sAttributesProcessor(builder *common.ComponentBuilde
 	return builder.AddProcessor(
 		builder.StaticComponentID(common.ComponentIDK8sAttributesProcessor),
 		func(tp *telemetryv1beta1.TracePipeline) any {
-			useOTelServiceEnrichment := opts.ServiceEnrichment == commonresources.AnnotationValueTelemetryServiceEnrichmentOtel
-			return common.K8sAttributesProcessor(opts.Enrichments, useOTelServiceEnrichment)
+			return buildK8sAttributesProcessorConfig(opts)
 		},
 	)
 }
@@ -128,7 +113,7 @@ func (b *Builder) addTraceIstioNoiseFilterProcessor(builder *common.ComponentBui
 	return builder.AddProcessor(
 		builder.StaticComponentID(common.ComponentIDIstioNoiseFilterProcessor),
 		func(tp *telemetryv1beta1.TracePipeline) any {
-			return &common.IstioNoiseFilterProcessorConfig{}
+			return buildIstioNoiseFilterProcessorConfig()
 		},
 	)
 }
@@ -147,11 +132,7 @@ func (b *Builder) addTraceServiceEnrichmentProcessor(builder *common.ComponentBu
 	return builder.AddProcessor(
 		builder.StaticComponentID(common.ComponentIDServiceEnrichmentProcessor),
 		func(tp *telemetryv1beta1.TracePipeline) any {
-			if opts.ServiceEnrichment == commonresources.AnnotationValueTelemetryServiceEnrichmentOtel {
-				return nil
-			}
-
-			return common.ResolveServiceName()
+			return buildServiceEnrichmentProcessorConfig(opts)
 		},
 	)
 }

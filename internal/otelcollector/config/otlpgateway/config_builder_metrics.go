@@ -6,7 +6,6 @@ import (
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	sharedtypesutils "github.com/kyma-project/telemetry-manager/internal/utils/sharedtypes"
 )
@@ -99,16 +98,7 @@ func (b *Builder) addMetricOTLPReceiver(builder *common.ComponentBuilder[*teleme
 	return builder.AddReceiver(
 		builder.StaticComponentID(common.ComponentIDOTLPReceiver),
 		func(mp *telemetryv1beta1.MetricPipeline) any {
-			return &common.OTLPReceiverConfig{
-				Protocols: common.ReceiverProtocols{
-					HTTP: common.Endpoint{
-						Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, ports.OTLPHTTP),
-					},
-					GRPC: common.Endpoint{
-						Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, ports.OTLPGRPC),
-					},
-				},
-			}
+			return buildOTLPReceiverConfig()
 		},
 	)
 }
@@ -169,11 +159,7 @@ func (b *Builder) addMetricMemoryLimiterProcessor(builder *common.ComponentBuild
 	return builder.AddProcessor(
 		builder.StaticComponentID(common.ComponentIDMemoryLimiterProcessor),
 		func(mp *telemetryv1beta1.MetricPipeline) any {
-			return &common.MemoryLimiterConfig{
-				CheckInterval:        "1s",
-				LimitPercentage:      75,
-				SpikeLimitPercentage: 15,
-			}
+			return buildMemoryLimiterConfig()
 		},
 	)
 }
@@ -204,8 +190,7 @@ func (b *Builder) addMetricK8sAttributesProcessor(builder *common.ComponentBuild
 	return builder.AddProcessor(
 		builder.StaticComponentID(common.ComponentIDK8sAttributesProcessor),
 		func(mp *telemetryv1beta1.MetricPipeline) any {
-			useOTelServiceEnrichment := opts.ServiceEnrichment == commonresources.AnnotationValueTelemetryServiceEnrichmentOtel
-			return common.K8sAttributesProcessor(opts.Enrichments, useOTelServiceEnrichment)
+			return buildK8sAttributesProcessorConfig(opts)
 		},
 	)
 }
@@ -214,11 +199,7 @@ func (b *Builder) addMetricServiceEnrichmentProcessor(builder *common.ComponentB
 	return builder.AddProcessor(
 		builder.StaticComponentID(common.ComponentIDServiceEnrichmentProcessor),
 		func(mp *telemetryv1beta1.MetricPipeline) any {
-			if opts.ServiceEnrichment == commonresources.AnnotationValueTelemetryServiceEnrichmentOtel {
-				return nil
-			}
-
-			return common.ResolveServiceName()
+			return buildServiceEnrichmentProcessorConfig(opts)
 		},
 	)
 }
