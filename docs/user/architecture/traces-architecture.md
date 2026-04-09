@@ -21,8 +21,8 @@ The TracePipeline resource is watched by Telemetry Manager, which is responsible
 ![Manager resources](./../assets/traces-resources.drawio.svg)
 
 1. Telemetry Manager watches all TracePipeline resources and related Secrets.
-2. Furthermore, Telemetry Manager takes care of the full lifecycle of the OTLP Gateway DaemonSet. The gateway is deployed when any pipeline resource exists (TracePipeline, LogPipeline, or MetricPipeline).
-3. Whenever the configuration changes, it validates the configuration and generates a new configuration for OTel Collector, where a ConfigMap for the configuration is generated.
+2. Furthermore, Telemetry Manager takes care of the full lifecycle of the OTLP Gateway DaemonSet.
+3. Whenever the configuration changes, Telemetry Manager validates it and generates a new configuration for the OTLP Gateway, which is stored in a ConfigMap.
 4. Referenced Secrets are copied into a single Secret that is mounted to the OTLP Gateway Pods.
 
 ## OTLP Gateway

@@ -20,13 +20,12 @@ Telemetry Manager, the core component of the module, is a Kubernetes [operator](
 1. Watch the module configuration for changes and sync the module status to it.
 2. Watch the user-created Kubernetes resources LogPipeline, TracePipeline, and MetricPipeline. In these resources, you specify what data of a signal type to collect and where to ship it.
 3. Manage the lifecycle of the self monitor and of the components handling the incoming telemetry data: the OTLP Gateway and the signal-specific agents.
-   The OTLP Gateway is deployed when you create any pipeline resource (LogPipeline, TracePipeline, or MetricPipeline).
 
 ![Manager](./../assets/manager-resources.drawio.svg)
 
 ## OTLP Gateway
 
-The OTLP Gateway and signal-specific agents (that is, the Log Agent and Metric Agent) handle the incoming telemetry data. Telemetry Manager deploys them based on your pipeline configuration.
+If at least one valid pipeline of any type (LogPipeline, TracePipeline, or MetricPipeline) exists, Telemetry Manager deploys the OTLP Gateway.
 
 The OTLP Gateway is based on an [OTel Collector](https://opentelemetry.io/docs/collector/) [DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/) running one instance per cluster node. It acts as the central endpoint to which your applications push telemetry data in the OTLP format. The gateway enriches and filters the data, and then dispatches it to the backends configured in your pipeline resources. The gateway handles all signal types (logs, traces, and metrics) in a single unified component.
 

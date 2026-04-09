@@ -8,7 +8,7 @@ A TracePipeline is a Kubernetes custom resource (CR) that configures trace colle
 
 The pipeline enriches all collected traces with Kubernetes metadata before sending them to your chosen backend.
 
-Trace collection is optional. If you don't create a TracePipeline, you don't collect traces.
+Trace collection is optional. If you don't create a TracePipeline, no traces are collected.
 
 ## Prerequisites
 

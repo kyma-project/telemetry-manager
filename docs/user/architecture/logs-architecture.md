@@ -14,7 +14,7 @@ The Telemetry module provides an [OTel Collector](https://opentelemetry.io/docs/
 
 ## Telemetry Manager
 
-The LogPipeline resource is watched by Telemetry Manager, which is responsible for generating the custom parts of the OTel Collector configuration.
+The LogPipeline resource is watched by Telemetry Manager, which is responsible for generating the configurations for the OTLP Gateway and the Log Agent.
 
 ![Manager resources](./../assets/logs-resources.drawio.svg)
 
