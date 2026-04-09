@@ -67,7 +67,7 @@ An OTLP Gateway instance is receiving data faster than it can process and forwar
 
 ### Solution
 
-Identify the node where the throttling occurs and reduce the telemetry data sent to its OTLP Gateway instance. If the gateway is still throttling, consider reducing the volume of telemetry data by applying filters or disabling unused inputs in your pipeline configuration.
+Reduce the volume of telemetry data, either by rebalancing workloads across nodes or reconfiguring your pipeline(s) to filter out unused inputs and irrelevant data.
 
 ## Custom Spans Don’t Arrive at the Backend, but Istio Spans Do
 
