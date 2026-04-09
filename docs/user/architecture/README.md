@@ -27,7 +27,7 @@ Telemetry Manager, the core component of the module, is a Kubernetes [operator](
 
 If at least one valid pipeline of any type (LogPipeline, TracePipeline, or MetricPipeline) exists, Telemetry Manager deploys the OTLP Gateway.
 
-The OTLP Gateway is based on an [OTel Collector](https://opentelemetry.io/docs/collector/) [DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/) running one instance per cluster node. It acts as the central endpoint to which your applications push telemetry data in the OTLP format. The gateway enriches and filters the data, and then dispatches it to the backends configured in your pipeline resources. The gateway handles all signal types (logs, traces, and metrics) in a single unified component.
+The OTLP Gateway acts as the central endpoint where your applications push telemetry data (logs, traces, and metrics) using the OTLP format. It enriches and filters this data, then dispatches it to the backends you configure in your pipeline resources. The gateway runs as an [OTel Collector](https://opentelemetry.io/docs/collector/)-based [DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/) with one instance per cluster node.
 
 Applications can send data to the gateway using these service endpoints:
 
