@@ -267,12 +267,14 @@ func DropUnknownServiceNameProcessorStatements() []TransformProcessorStatements 
 // incorrectly take priority over pod annotations (resource.opentelemetry.io/*).
 // The annotations were extracted to temporary kyma.otel.annotation.* attributes by the k8sattributes
 // processor; this step restores them as the final service attribute values and deletes the temp attrs.
+// Empty annotation values are treated as "not set" — the restore only fires for non-empty values so
+// that the k8sattributes fallback chain (label → pod name) can produce a better result.
 func RestoreOtelServiceAnnotationsProcessorStatements() []TransformProcessorStatements {
 	restoreAndClean := func(serviceAttr, annotationAttr string) []string {
 		return []string{
 			JoinWithWhere(
 				fmt.Sprintf("set(%s, %s)", ResourceAttribute(serviceAttr), ResourceAttribute(annotationAttr)),
-				ResourceAttributeIsNotNil(annotationAttr),
+				JoinWithAnd(ResourceAttributeIsNotNil(annotationAttr), ResourceAttributeNotEquals(annotationAttr, "")),
 			),
 			DeleteResourceAttribute(annotationAttr),
 		}
