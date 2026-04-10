@@ -32,6 +32,15 @@ func TestServiceEnrichment(t *testing.T) {
 		podWithUnknownServiceName          = "pod-with-unknown-service"
 		podWithUnknownServicePatternName   = "pod-with-unknown-service-pattern"
 		podWithCustomServiceAttributesName = "pod-with-custom-service"
+		podWithAnnotationPriorityName      = "pod-with-annotation-priority"
+
+		// labels
+		labelK8sName      = "app.kubernetes.io/name"
+		labelK8sInstance  = "app.kubernetes.io/instance"
+		labelK8sVersion   = "app.kubernetes.io/version"
+		labelServiceName  = "label-service-name"
+		labelInstanceName = "label-instance-name"
+		labelVersion      = "label-version"
 
 		// misc
 		unknownService          = "unknown_service"
@@ -75,6 +84,12 @@ func TestServiceEnrichment(t *testing.T) {
 		telemetrygen.WithServiceVersion(customServiceVersion),
 		telemetrygen.WithServiceInstanceID(customServiceInstanceID),
 	)
+	// Pod with conflicting k8s labels (lower priority) and telemetrygen service attributes (higher priority).
+	// Tests that annotation/OTLP-resource-attribute values win over app.kubernetes.io/* pod labels.
+	podSpecWithAnnotationPriority := telemetrygen.PodSpec(telemetrygen.SignalTypeTraces,
+		telemetrygen.WithServiceName(customServiceName),
+		telemetrygen.WithServiceVersion(customServiceVersion),
+	)
 
 	// Enable OTel service enrichment strategy
 	// TODO(TeodorSAP): Remove this block after deprecation period ends and OTel strategy becomes default enrichment strategy
@@ -95,6 +110,11 @@ func TestServiceEnrichment(t *testing.T) {
 		kitk8sobjects.NewPod(podWithUnknownServiceName, genNs).WithPodSpec(podSpecWithUnknownServiceName).K8sObject(),
 		kitk8sobjects.NewPod(podWithUnknownServicePatternName, genNs).WithPodSpec(podSpecWithUnknownServiceNamePattern).K8sObject(),
 		kitk8sobjects.NewPod(podWithCustomServiceAttributesName, genNs).WithPodSpec(podSpecWithCustomServiceAttributes).K8sObject(),
+		kitk8sobjects.NewPod(podWithAnnotationPriorityName, genNs).
+			WithLabel(labelK8sName, labelServiceName).
+			WithLabel(labelK8sInstance, labelInstanceName).
+			WithLabel(labelK8sVersion, labelVersion).
+			WithPodSpec(podSpecWithAnnotationPriority).K8sObject(),
 	}
 	resources = append(resources, backend.K8sObjects()...)
 
@@ -126,6 +146,12 @@ func TestServiceEnrichment(t *testing.T) {
 		ServiceNamespace:  customServiceNamespace,
 		ServiceVersion:    customServiceVersion,
 		ServiceInstanceID: customServiceInstanceID,
+	})
+
+	// Annotation-level service attributes should take priority over app.kubernetes.io/* pod labels
+	verifyServiceAttributes(t, backend, podWithAnnotationPriorityName, ServiceAttributes{
+		ServiceName:    customServiceName,
+		ServiceVersion: customServiceVersion,
 	})
 
 	// Verify that temporary kyma resource attributes are removed from the spans
