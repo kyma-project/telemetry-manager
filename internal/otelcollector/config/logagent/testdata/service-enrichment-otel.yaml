@@ -22,6 +22,7 @@ service:
                 - transform/set-instrumentation-scope-runtime
                 - transform/drop-unknown-service-name
                 - k8s_attributes
+                - transform/restore-otel-service-attrs
                 - transform/insert-cluster-attributes
                 - transform/drop-kyma-attributes
             exporters:
@@ -193,6 +194,13 @@ processors:
                 - from: node
                   key: kubernetes.io/arch
                   tag_name: host.arch
+            annotations:
+                - from: pod
+                  key: resource.opentelemetry.io/service.name
+                  tag_name: kyma.otel.annotation.service.name
+                - from: pod
+                  key: resource.opentelemetry.io/service.version
+                  tag_name: kyma.otel.annotation.service.version
             otel_annotations: true
             deployment_name_from_replicaset: true
         pod_association:
@@ -225,6 +233,14 @@ processors:
                 - set(resource.attributes["k8s.cluster.name"], "test-cluster") where resource.attributes["k8s.cluster.name"] == nil or resource.attributes["k8s.cluster.name"] == ""
                 - set(resource.attributes["k8s.cluster.uid"], "") where resource.attributes["k8s.cluster.uid"] == nil or resource.attributes["k8s.cluster.uid"] == ""
                 - set(resource.attributes["cloud.provider"], "azure") where resource.attributes["cloud.provider"] == nil or resource.attributes["cloud.provider"] == ""
+    transform/restore-otel-service-attrs:
+        error_mode: ignore
+        log_statements:
+            - statements:
+                - set(resource.attributes["service.name"], resource.attributes["kyma.otel.annotation.service.name"]) where resource.attributes["kyma.otel.annotation.service.name"] != nil
+                - delete_key(resource.attributes, "kyma.otel.annotation.service.name")
+                - set(resource.attributes["service.version"], resource.attributes["kyma.otel.annotation.service.version"]) where resource.attributes["kyma.otel.annotation.service.version"] != nil
+                - delete_key(resource.attributes, "kyma.otel.annotation.service.version")
     transform/set-instrumentation-scope-runtime:
         error_mode: ignore
         log_statements:
