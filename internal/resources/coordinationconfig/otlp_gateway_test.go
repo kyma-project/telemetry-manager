@@ -670,13 +670,14 @@ func TestCollectSecretVersions(t *testing.T) {
 			},
 		}
 
-		versions := CollectSecretVersions(context.Background(), fakeClient, refs)
+		versions, err := CollectSecretVersions(context.Background(), fakeClient, refs)
 
+		require.NoError(t, err)
 		require.Len(t, versions, 1)
 		require.Equal(t, "12345", versions["kyma-system/my-secret"])
 	})
 
-	t.Run("SkipsMissingSecret", func(t *testing.T) {
+	t.Run("SkipsNotFoundSecret", func(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
 
 		refs := []telemetryv1beta1.SecretKeyRef{
@@ -687,9 +688,22 @@ func TestCollectSecretVersions(t *testing.T) {
 			},
 		}
 
-		versions := CollectSecretVersions(context.Background(), fakeClient, refs)
+		versions, err := CollectSecretVersions(context.Background(), fakeClient, refs)
 
+		require.NoError(t, err)
 		require.Empty(t, versions)
+	})
+
+	t.Run("ReturnsErrorOnNonNotFoundGetFailure", func(t *testing.T) {
+		refs := []telemetryv1beta1.SecretKeyRef{
+			{Name: "my-secret", Namespace: "kyma-system", Key: "endpoint"},
+		}
+
+		errClient := &errorGetClient{}
+
+		_, err := CollectSecretVersions(context.Background(), errClient, refs)
+
+		require.Error(t, err)
 	})
 
 	t.Run("DeduplicatesByNamespace", func(t *testing.T) {
@@ -720,8 +734,9 @@ func TestCollectSecretVersions(t *testing.T) {
 			},
 		}
 
-		versions := CollectSecretVersions(context.Background(), fakeClient, refs)
+		versions, err := CollectSecretVersions(context.Background(), fakeClient, refs)
 
+		require.NoError(t, err)
 		require.Len(t, versions, 1)
 		require.Equal(t, "12345", versions["kyma-system/my-secret"])
 	})
@@ -749,8 +764,9 @@ func TestCollectSecretVersions(t *testing.T) {
 			{Name: "secret2", Namespace: "default", Key: "key2"},
 		}
 
-		versions := CollectSecretVersions(context.Background(), fakeClient, refs)
+		versions, err := CollectSecretVersions(context.Background(), fakeClient, refs)
 
+		require.NoError(t, err)
 		require.Len(t, versions, 2)
 		require.Equal(t, "111", versions["kyma-system/secret1"])
 		require.Equal(t, "222", versions["default/secret2"])
@@ -847,70 +863,7 @@ func TestWritePipelineReferenceWithSecretVersions(t *testing.T) {
 	})
 }
 
-// alreadyExistsOnFirstCreateClient returns AlreadyExists on the first Create call,
-// but still performs the actual create so the second loop iteration finds the object via Get.
-type alreadyExistsOnFirstCreateClient struct {
-	client.Client
-
-	createCalled bool
-}
-
-func (c *alreadyExistsOnFirstCreateClient) Get(ctx context.Context, key types.NamespacedName, obj client.Object, opts ...client.GetOption) error {
-	return c.Client.Get(ctx, key, obj, opts...)
-}
-
-func (c *alreadyExistsOnFirstCreateClient) Create(ctx context.Context, obj client.Object, opts ...client.CreateOption) error {
-	if !c.createCalled {
-		c.createCalled = true
-		_ = c.Client.Create(ctx, obj, opts...)
-
-		return apierrors.NewAlreadyExists(schema.GroupResource{Resource: "configmaps"}, obj.GetName())
-	}
-
-	return c.Client.Create(ctx, obj, opts...)
-}
-
-// conflictOnFirstUpdateClient returns Conflict on the first Update call, succeeds on subsequent calls.
-type conflictOnFirstUpdateClient struct {
-	client.Client
-
-	updateCalled bool
-}
-
-func (c *conflictOnFirstUpdateClient) Update(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error {
-	if !c.updateCalled {
-		c.updateCalled = true
-
-		return apierrors.NewConflict(schema.GroupResource{Resource: "configmaps"}, obj.GetName(), fmt.Errorf("resource version mismatch"))
-	}
-
-	return c.Client.Update(ctx, obj, opts...)
-}
-
-// alwaysConflictUpdateClient always returns Conflict on Update to exhaust all retries.
-type alwaysConflictUpdateClient struct {
-	client.Client
-}
-
-func (c *alwaysConflictUpdateClient) Update(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error {
-	return apierrors.NewConflict(schema.GroupResource{Resource: "configmaps"}, obj.GetName(), fmt.Errorf("resource version mismatch"))
-}
-
-func TestWritePipelineReference_AlreadyExistsRetry(t *testing.T) {
-	scheme := runtime.NewScheme()
-	_ = corev1.AddToScheme(scheme)
-
-	innerFake := fake.NewClientBuilder().WithScheme(scheme).Build()
-	c := &alreadyExistsOnFirstCreateClient{Client: innerFake}
-
-	// First attempt: Create returns AlreadyExists (but object is stored); second attempt: Get still returns NotFound
-	// so it tries to Create again — this time it delegates to the real fake which returns AlreadyExists (object exists).
-	// The retry loop should handle this gracefully.
-	err := AddPipelineReference(context.Background(), c, "kyma-system", common.SignalTypeTrace, PipelineReferenceInput{Name: "my-pipeline", Generation: 1})
-	require.NoError(t, err)
-}
-
-func TestWritePipelineReference_ConflictRetry(t *testing.T) {
+func TestWritePipelineReference_ConflictReturnsError(t *testing.T) {
 	scheme := runtime.NewScheme()
 	_ = corev1.AddToScheme(scheme)
 
@@ -925,30 +878,18 @@ func TestWritePipelineReference_ConflictRetry(t *testing.T) {
 	}
 
 	innerFake := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cm).Build()
-	c := &conflictOnFirstUpdateClient{Client: innerFake}
-
-	err := AddPipelineReference(context.Background(), c, "kyma-system", common.SignalTypeTrace, PipelineReferenceInput{Name: "my-pipeline", Generation: 1})
-	require.NoError(t, err)
-}
-
-func TestWritePipelineReference_MaxRetriesExhausted(t *testing.T) {
-	scheme := runtime.NewScheme()
-	_ = corev1.AddToScheme(scheme)
-
-	cm := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.OTLPGatewayCoordinationConfigMap,
-			Namespace: "kyma-system",
-		},
-		Data: map[string]string{
-			ConfigMapDataKey: "tracePipelines: []",
-		},
-	}
-
-	innerFake := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cm).Build()
-	c := &alwaysConflictUpdateClient{Client: innerFake}
+	c := &conflictOnUpdateClient{Client: innerFake}
 
 	err := AddPipelineReference(context.Background(), c, "kyma-system", common.SignalTypeTrace, PipelineReferenceInput{Name: "my-pipeline", Generation: 1})
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "failed to update configmap after 5 attempts")
+	require.True(t, apierrors.IsConflict(err))
+}
+
+// conflictOnUpdateClient always returns Conflict on Update.
+type conflictOnUpdateClient struct {
+	client.Client
+}
+
+func (c *conflictOnUpdateClient) Update(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error {
+	return apierrors.NewConflict(schema.GroupResource{Resource: "configmaps"}, obj.GetName(), fmt.Errorf("resource version mismatch"))
 }

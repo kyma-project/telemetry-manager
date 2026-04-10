@@ -2,12 +2,15 @@ package otlpgateway
 
 import (
 	"context"
+	"fmt"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 )
 
 type buildTraceComponentFunc = common.BuildComponentFunc[*telemetryv1beta1.TracePipeline]
@@ -69,4 +72,51 @@ func (b *Builder) Build(ctx context.Context, opts BuildOptions) (*common.Config,
 	}
 
 	return config, envVars, nil
+}
+
+// ================================================================================
+// SHARED COMPONENT CONFIG BUILDERS
+// ================================================================================
+
+// otlpReceiverConfig returns the shared OTLP receiver configuration used by all signal types.
+//
+//nolint:mnd // port numbers are defined in the ports package
+func otlpReceiverConfig() *common.OTLPReceiverConfig {
+	return &common.OTLPReceiverConfig{
+		Protocols: common.ReceiverProtocols{
+			HTTP: common.Endpoint{Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, ports.OTLPHTTP)},
+			GRPC: common.Endpoint{Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, ports.OTLPGRPC)},
+		},
+	}
+}
+
+// memoryLimiterConfig returns the shared memory limiter configuration used by all signal types.
+//
+//nolint:mnd // hardcoded memory limiter values
+func memoryLimiterConfig() *common.MemoryLimiterConfig {
+	return &common.MemoryLimiterConfig{
+		CheckInterval:        "1s",
+		LimitPercentage:      75,
+		SpikeLimitPercentage: 15,
+	}
+}
+
+// k8sAttributesProcessorConfig returns the shared K8s attributes processor configuration.
+func k8sAttributesProcessorConfig(opts BuildOptions) any {
+	useOTelServiceEnrichment := opts.ServiceEnrichment == commonresources.AnnotationValueTelemetryServiceEnrichmentOtel
+	return common.K8sAttributesProcessor(opts.Enrichments, useOTelServiceEnrichment)
+}
+
+// serviceEnrichmentProcessorConfig returns the shared service enrichment processor configuration.
+func serviceEnrichmentProcessorConfig(opts BuildOptions) any {
+	if opts.ServiceEnrichment == commonresources.AnnotationValueTelemetryServiceEnrichmentOtel {
+		return nil
+	}
+
+	return common.ResolveServiceName()
+}
+
+// istioNoiseFilterProcessorConfig returns the shared Istio noise filter processor configuration.
+func istioNoiseFilterProcessorConfig() *common.IstioNoiseFilterProcessorConfig {
+	return &common.IstioNoiseFilterProcessorConfig{}
 }

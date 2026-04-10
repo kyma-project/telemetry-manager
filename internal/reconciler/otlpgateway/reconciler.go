@@ -21,9 +21,7 @@ import (
 	"fmt"
 
 	"gopkg.in/yaml.v3"
-	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -128,48 +126,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		}
 	}
 
-	if err := r.ensureConfigMapExists(ctx); err != nil {
-		return ctrl.Result{}, err
-	}
-
 	if err := r.doReconcile(ctx); err != nil {
 		return ctrl.Result{}, err
 	}
 
 	return ctrl.Result{}, nil
-}
-
-// ensureConfigMapExists creates the coordination ConfigMap if it doesn't exist.
-func (r *Reconciler) ensureConfigMapExists(ctx context.Context) error {
-	var cm corev1.ConfigMap
-
-	err := r.Get(ctx, types.NamespacedName{
-		Name:      names.OTLPGatewayCoordinationConfigMap,
-		Namespace: r.globals.TargetNamespace(),
-	}, &cm)
-	if err == nil {
-		return nil
-	}
-
-	if !apierrors.IsNotFound(err) {
-		return fmt.Errorf("failed to get configmap: %w", err)
-	}
-
-	cm = corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.OTLPGatewayCoordinationConfigMap,
-			Namespace: r.globals.TargetNamespace(),
-		},
-		Data: map[string]string{
-			coordinationconfig.ConfigMapDataKey: "TracePipeline: []\n",
-		},
-	}
-
-	if err := r.Create(ctx, &cm); err != nil && !apierrors.IsAlreadyExists(err) {
-		return fmt.Errorf("failed to create configmap: %w", err)
-	}
-
-	return nil
 }
 
 // processConfigAndBuildResources handles config building and resource deployment.

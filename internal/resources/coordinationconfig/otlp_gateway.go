@@ -10,7 +10,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
@@ -20,9 +19,6 @@ import (
 const (
 	// ConfigMapDataKey is the key in the ConfigMap data that contains the pipeline references
 	ConfigMapDataKey = "pipelines.yaml"
-
-	// maxRetries is the maximum number of retry attempts for ConfigMap updates
-	maxRetries = 5
 )
 
 // OTLPGatewayConfigMap represents the structure of the OTLP Gateway coordination ConfigMap.
@@ -80,8 +76,8 @@ func ReadOTLPGatewayConfig(ctx context.Context, c client.Client, namespace strin
 
 // CollectSecretVersions fetches the resourceVersion for each secret reference.
 // Returns a map of "namespace/name" -> resourceVersion.
-// Missing or inaccessible secrets are omitted from the map.
-func CollectSecretVersions(ctx context.Context, c client.Client, refs []telemetryv1beta1.SecretKeyRef) map[string]string {
+// Secrets that are not found (404) are skipped. Any other error is returned.
+func CollectSecretVersions(ctx context.Context, c client.Client, refs []telemetryv1beta1.SecretKeyRef) (map[string]string, error) {
 	versions := make(map[string]string)
 	seen := make(map[types.NamespacedName]bool)
 
@@ -97,21 +93,24 @@ func CollectSecretVersions(ctx context.Context, c client.Client, refs []telemetr
 
 		var secret corev1.Secret
 		if err := c.Get(ctx, key, &secret); err != nil {
-			// Secret doesn't exist or can't be read - skip it
-			continue
+			if apierrors.IsNotFound(err) {
+				continue
+			}
+
+			return nil, fmt.Errorf("failed to get secret %s/%s: %w", ref.Namespace, ref.Name, err)
 		}
 
 		mapKey := fmt.Sprintf("%s/%s", ref.Namespace, ref.Name)
 		versions[mapKey] = secret.ResourceVersion
 	}
 
-	return versions
+	return versions, nil
 }
 
 // AddPipelineReference adds or updates a pipeline reference of any type.
-// Uses optimistic locking with retry to handle concurrent updates safely.
+// Uses optimistic locking to handle concurrent updates safely.
 func AddPipelineReference(ctx context.Context, c client.Client, namespace string, pipelineType common.SignalType, input PipelineReferenceInput) error {
-	return updateConfigMapWithRetry(ctx, c, namespace, func(config *OTLPGatewayConfigMap) error {
+	return applyConfigUpdate(ctx, c, namespace, func(config *OTLPGatewayConfigMap) error {
 		pipelineSlice := getPipelineSlice(config, pipelineType)
 		if pipelineSlice == nil {
 			return fmt.Errorf("invalid pipeline type: %s", pipelineType)
@@ -136,9 +135,9 @@ func AddPipelineReference(ctx context.Context, c client.Client, namespace string
 }
 
 // RemovePipelineReference removes a pipeline reference of any type.
-// Uses optimistic locking with retry. Idempotent operation.
+// Uses optimistic locking to handle concurrent updates safely.
 func RemovePipelineReference(ctx context.Context, c client.Client, namespace string, pipelineType common.SignalType, name string) error {
-	return updateConfigMapWithRetry(ctx, c, namespace, func(config *OTLPGatewayConfigMap) error {
+	return applyConfigUpdate(ctx, c, namespace, func(config *OTLPGatewayConfigMap) error {
 		pipelineSlice := getPipelineSlice(config, pipelineType)
 		if pipelineSlice == nil {
 			return fmt.Errorf("invalid pipeline type: %s", pipelineType)
@@ -172,57 +171,33 @@ func getPipelineSlice(config *OTLPGatewayConfigMap, pipelineType common.SignalTy
 	}
 }
 
-// updateConfigMapWithRetry implements optimistic locking with retry.
-// Retries on 409 Conflict errors with fresh data.
-func updateConfigMapWithRetry(ctx context.Context, c client.Client, namespace string, updateFn func(*OTLPGatewayConfigMap) error) error {
-	log := logf.FromContext(ctx)
-
-	for attempt := range maxRetries {
-		cm, exists, err := getConfigMap(ctx, c, namespace)
-		if err != nil {
-			return err
-		}
-
-		config, err := parseConfig(cm, exists)
-		if err != nil {
-			return err
-		}
-
-		if err := updateFn(&config); err != nil {
-			return fmt.Errorf("update function failed: %w", err)
-		}
-
-		yamlData, err := yaml.Marshal(&config)
-		if err != nil {
-			return fmt.Errorf("failed to marshal config: %w", err)
-		}
-
-		if !exists {
-			if err := createConfigMap(ctx, c, namespace, string(yamlData)); err != nil {
-				if apierrors.IsAlreadyExists(err) {
-					log.V(1).Info("configmap created by another controller, retrying", "attempt", attempt+1)
-					continue
-				}
-
-				return err
-			}
-
-			return nil
-		}
-
-		if err := updateConfigMap(ctx, c, cm, string(yamlData)); err != nil {
-			if apierrors.IsConflict(err) {
-				log.V(1).Info("configmap update conflict, retrying", "attempt", attempt+1)
-				continue
-			}
-
-			return err
-		}
-
-		return nil
+// applyConfigUpdate reads the coordination ConfigMap, applies updateFn to it, and writes it back.
+// Errors are returned directly and propagated to the caller's reconciliation loop.
+func applyConfigUpdate(ctx context.Context, c client.Client, namespace string, updateFn func(*OTLPGatewayConfigMap) error) error {
+	cm, exists, err := getConfigMap(ctx, c, namespace)
+	if err != nil {
+		return err
 	}
 
-	return fmt.Errorf("failed to update configmap after %d attempts", maxRetries)
+	config, err := parseConfig(cm, exists)
+	if err != nil {
+		return err
+	}
+
+	if err := updateFn(&config); err != nil {
+		return fmt.Errorf("update function failed: %w", err)
+	}
+
+	yamlData, err := yaml.Marshal(&config)
+	if err != nil {
+		return fmt.Errorf("failed to marshal config: %w", err)
+	}
+
+	if !exists {
+		return createConfigMap(ctx, c, namespace, string(yamlData))
+	}
+
+	return updateConfigMap(ctx, c, cm, string(yamlData))
 }
 
 // getConfigMap fetches the ConfigMap and returns whether it exists
