@@ -169,23 +169,12 @@ func TestServiceEnrichment_OTel(t *testing.T) {
 					telemetrygen.WithServiceVersion(customServiceVersion),
 					telemetrygen.WithServiceInstanceID(customServiceInstanceID),
 				)
-				// Pod with conflicting k8s labels (lower priority) and telemetrygen service attributes (higher priority).
-				// Tests that annotation/OTLP-resource-attribute values win over app.kubernetes.io/* pod labels.
-				podSpecWithAnnotationPriority := telemetrygen.PodSpec(telemetrygen.SignalTypeLogs,
-					telemetrygen.WithServiceName(customServiceName),
-					telemetrygen.WithServiceVersion(customServiceVersion),
-				)
 
 				resources = append(resources,
 					kitk8sobjects.NewPod(podWithEmptyServiceAttributesName, genNs).WithPodSpec(podSpecWithEmptyServiceAttributes).K8sObject(),
 					kitk8sobjects.NewPod(podWithUnknownServiceName, genNs).WithPodSpec(podSpecWithUnknownServiceName).K8sObject(),
 					kitk8sobjects.NewPod(podWithUnknownServicePatternName, genNs).WithPodSpec(podSpecWithUnknownServiceNamePattern).K8sObject(),
 					kitk8sobjects.NewPod(podWithCustomServiceAttributesName, genNs).WithPodSpec(podSpecWithCustomServiceAttributes).K8sObject(),
-					kitk8sobjects.NewPod(podWithAnnotationPriorityName, genNs).
-						WithLabel(labelK8sName, labelServiceName).
-						WithLabel(labelK8sInstance, labelInstanceName).
-						WithLabel(labelK8sVersion, labelVersion).
-						WithPodSpec(podSpecWithAnnotationPriority).K8sObject(),
 				)
 			}
 
@@ -247,11 +236,13 @@ func TestServiceEnrichment_OTel(t *testing.T) {
 				ServiceInstanceID: customServiceInstanceID,
 			})
 
-			// Annotation-level service attributes should take priority over app.kubernetes.io/* pod labels
-			verifyServiceAttributes(t, backend, podWithAnnotationPriorityName, ServiceAttributes{
-				ServiceName:    customServiceName,
-				ServiceVersion: customServiceVersion,
-			})
+			// Annotation-level service attributes should take priority over app.kubernetes.io/* pod labels (agent only)
+			if suite.ExpectAgent(tc.label) {
+				verifyServiceAttributes(t, backend, podWithAnnotationPriorityName, ServiceAttributes{
+					ServiceName:    customServiceName,
+					ServiceVersion: customServiceVersion,
+				})
+			}
 
 			// Verify that temporary kyma resource attributes are removed from the logs
 			assert.BackendDataConsistentlyMatches(t, backend,

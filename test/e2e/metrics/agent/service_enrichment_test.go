@@ -18,6 +18,7 @@ import (
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdoutloggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -35,13 +36,14 @@ func TestServiceEnrichment(t *testing.T) {
 		podWithCustomServiceAttributesName = "pod-with-custom-service"
 		podWithAnnotationPriorityName      = "pod-with-annotation-priority"
 
-		// labels
+		// annotation keys
+		annotationServiceName    = "resource.opentelemetry.io/service.name"
+		annotationServiceVersion = "resource.opentelemetry.io/service.version"
+
+		// label keys
 		labelK8sName     = "app.kubernetes.io/name"
 		labelK8sInstance = "app.kubernetes.io/instance"
 		labelK8sVersion  = "app.kubernetes.io/version"
-		labelServiceName        = "label-service-name"
-		labelInstanceName       = "label-instance-name"
-		labelVersion            = "label-version"
 
 		// misc
 		unknownService          = "unknown_service"
@@ -50,6 +52,9 @@ func TestServiceEnrichment(t *testing.T) {
 		customServiceNamespace  = "custom-namespace"
 		customServiceVersion    = "v1.2.3"
 		customServiceInstanceID = "instance-1234"
+		labelServiceName        = "label-service-name"
+		labelInstanceName       = "label-instance-name"
+		labelVersion            = "label-version"
 	)
 
 	var (
@@ -65,7 +70,7 @@ func TestServiceEnrichment(t *testing.T) {
 
 	pipeline := testutils.NewMetricPipelineBuilder().
 		WithName(pipelineName).
-		WithRuntimeInput(true, testutils.IncludeNamespaces(kitkyma.SystemNamespaceName)).
+		WithRuntimeInput(true, testutils.IncludeNamespaces(kitkyma.SystemNamespaceName, genNs)).
 		WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 		Build()
 
@@ -86,12 +91,10 @@ func TestServiceEnrichment(t *testing.T) {
 		telemetrygen.WithServiceVersion(customServiceVersion),
 		telemetrygen.WithServiceInstanceID(customServiceInstanceID),
 	)
-	// Pod with conflicting k8s labels (lower priority) and telemetrygen service attributes (higher priority).
-	// Tests that annotation/OTLP-resource-attribute values win over app.kubernetes.io/* pod labels.
-	podSpecWithAnnotationPriority := telemetrygen.PodSpec(telemetrygen.SignalTypeMetrics,
-		telemetrygen.WithServiceName(customServiceName),
-		telemetrygen.WithServiceVersion(customServiceVersion),
-	)
+	// Simple running pod (no OTLP metrics) — scraped via kubelet stats by the metric agent.
+	// OTel annotations provide the high-priority service attributes; k8s labels are the competing lower priority.
+	// Tests that the agent's k8sattributes enrichment respects annotation > label priority.
+	podSpecWithAnnotationPriority := stdoutloggen.PodSpec()
 
 	// Enable OTel service enrichment strategy
 	// TODO(TeodorSAP): Remove this block after deprecation period ends and OTel strategy becomes default enrichment strategy
@@ -113,6 +116,8 @@ func TestServiceEnrichment(t *testing.T) {
 		kitk8sobjects.NewPod(podWithUnknownServicePatternName, genNs).WithPodSpec(podSpecWithUnknownServiceNamePattern).K8sObject(),
 		kitk8sobjects.NewPod(podWithCustomServiceAttributesName, genNs).WithPodSpec(podSpecWithCustomServiceAttributes).K8sObject(),
 		kitk8sobjects.NewPod(podWithAnnotationPriorityName, genNs).
+			WithAnnotation(annotationServiceName, customServiceName).
+			WithAnnotation(annotationServiceVersion, customServiceVersion).
 			WithLabel(labelK8sName, labelServiceName).
 			WithLabel(labelK8sInstance, labelInstanceName).
 			WithLabel(labelK8sVersion, labelVersion).
