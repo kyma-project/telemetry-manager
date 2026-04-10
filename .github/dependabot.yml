@@ -9,6 +9,8 @@ updates:
     labels:
       - area/dependency
       - kind/chore
+    exclude-paths:
+      - "docs/**"
 
   # Internal tools Go module
   - package-ecosystem: gomod
