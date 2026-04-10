@@ -98,7 +98,7 @@ func (b *Builder) addMetricOTLPReceiver(builder *common.ComponentBuilder[*teleme
 	return builder.AddReceiver(
 		builder.StaticComponentID(common.ComponentIDOTLPReceiver),
 		func(mp *telemetryv1beta1.MetricPipeline) any {
-			return buildOTLPReceiverConfig()
+			return otlpReceiverConfig()
 		},
 	)
 }
@@ -159,7 +159,7 @@ func (b *Builder) addMetricMemoryLimiterProcessor(builder *common.ComponentBuild
 	return builder.AddProcessor(
 		builder.StaticComponentID(common.ComponentIDMemoryLimiterProcessor),
 		func(mp *telemetryv1beta1.MetricPipeline) any {
-			return buildMemoryLimiterConfig()
+			return memoryLimiterConfig()
 		},
 	)
 }
@@ -190,7 +190,7 @@ func (b *Builder) addMetricK8sAttributesProcessor(builder *common.ComponentBuild
 	return builder.AddProcessor(
 		builder.StaticComponentID(common.ComponentIDK8sAttributesProcessor),
 		func(mp *telemetryv1beta1.MetricPipeline) any {
-			return buildK8sAttributesProcessorConfig(opts)
+			return k8sAttributesProcessorConfig(opts)
 		},
 	)
 }
@@ -199,7 +199,7 @@ func (b *Builder) addMetricServiceEnrichmentProcessor(builder *common.ComponentB
 	return builder.AddProcessor(
 		builder.StaticComponentID(common.ComponentIDServiceEnrichmentProcessor),
 		func(mp *telemetryv1beta1.MetricPipeline) any {
-			return buildServiceEnrichmentProcessorConfig(opts)
+			return serviceEnrichmentProcessorConfig(opts)
 		},
 	)
 }

@@ -53,7 +53,7 @@ func (b *Builder) addTraceOTLPReceiver(builder *common.ComponentBuilder[*telemet
 	return builder.AddReceiver(
 		builder.StaticComponentID(common.ComponentIDOTLPReceiver),
 		func(tp *telemetryv1beta1.TracePipeline) any {
-			return buildOTLPReceiverConfig()
+			return otlpReceiverConfig()
 		},
 	)
 }
@@ -63,7 +63,7 @@ func (b *Builder) addTraceMemoryLimiterProcessor(builder *common.ComponentBuilde
 	return builder.AddProcessor(
 		builder.StaticComponentID(common.ComponentIDMemoryLimiterProcessor),
 		func(tp *telemetryv1beta1.TracePipeline) any {
-			return buildMemoryLimiterConfig()
+			return memoryLimiterConfig()
 		},
 	)
 }
@@ -104,7 +104,7 @@ func (b *Builder) addTraceK8sAttributesProcessor(builder *common.ComponentBuilde
 	return builder.AddProcessor(
 		builder.StaticComponentID(common.ComponentIDK8sAttributesProcessor),
 		func(tp *telemetryv1beta1.TracePipeline) any {
-			return buildK8sAttributesProcessorConfig(opts)
+			return k8sAttributesProcessorConfig(opts)
 		},
 	)
 }
@@ -113,7 +113,7 @@ func (b *Builder) addTraceIstioNoiseFilterProcessor(builder *common.ComponentBui
 	return builder.AddProcessor(
 		builder.StaticComponentID(common.ComponentIDIstioNoiseFilterProcessor),
 		func(tp *telemetryv1beta1.TracePipeline) any {
-			return buildIstioNoiseFilterProcessorConfig()
+			return istioNoiseFilterProcessorConfig()
 		},
 	)
 }
@@ -132,7 +132,7 @@ func (b *Builder) addTraceServiceEnrichmentProcessor(builder *common.ComponentBu
 	return builder.AddProcessor(
 		builder.StaticComponentID(common.ComponentIDServiceEnrichmentProcessor),
 		func(tp *telemetryv1beta1.TracePipeline) any {
-			return buildServiceEnrichmentProcessorConfig(opts)
+			return serviceEnrichmentProcessorConfig(opts)
 		},
 	)
 }

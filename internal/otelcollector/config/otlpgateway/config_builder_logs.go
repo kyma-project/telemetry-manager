@@ -59,7 +59,7 @@ func (b *Builder) addLogOTLPReceiver(builder *common.ComponentBuilder[*telemetry
 	return builder.AddReceiver(
 		builder.StaticComponentID(common.ComponentIDOTLPReceiver),
 		func(lp *telemetryv1beta1.LogPipeline) any {
-			return buildOTLPReceiverConfig()
+			return otlpReceiverConfig()
 		},
 	)
 }
@@ -69,7 +69,7 @@ func (b *Builder) addLogMemoryLimiterProcessor(builder *common.ComponentBuilder[
 	return builder.AddProcessor(
 		builder.StaticComponentID(common.ComponentIDMemoryLimiterProcessor),
 		func(lp *telemetryv1beta1.LogPipeline) any {
-			return buildMemoryLimiterConfig()
+			return memoryLimiterConfig()
 		},
 	)
 }
@@ -103,7 +103,7 @@ func (b *Builder) addLogK8sAttributesProcessor(builder *common.ComponentBuilder[
 	return builder.AddProcessor(
 		builder.StaticComponentID(common.ComponentIDK8sAttributesProcessor),
 		func(lp *telemetryv1beta1.LogPipeline) any {
-			return buildK8sAttributesProcessorConfig(opts)
+			return k8sAttributesProcessorConfig(opts)
 		},
 	)
 }
@@ -112,7 +112,7 @@ func (b *Builder) addLogIstioNoiseFilterProcessor(builder *common.ComponentBuild
 	return builder.AddProcessor(
 		builder.StaticComponentID(common.ComponentIDIstioNoiseFilterProcessor),
 		func(lp *telemetryv1beta1.LogPipeline) any {
-			return buildIstioNoiseFilterProcessorConfig()
+			return istioNoiseFilterProcessorConfig()
 		},
 	)
 }
@@ -158,7 +158,7 @@ func (b *Builder) addLogServiceEnrichmentProcessor(builder *common.ComponentBuil
 	return builder.AddProcessor(
 		builder.StaticComponentID(common.ComponentIDServiceEnrichmentProcessor),
 		func(lp *telemetryv1beta1.LogPipeline) any {
-			return buildServiceEnrichmentProcessorConfig(opts)
+			return serviceEnrichmentProcessorConfig(opts)
 		},
 	)
 }

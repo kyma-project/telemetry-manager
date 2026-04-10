@@ -78,10 +78,10 @@ func (b *Builder) Build(ctx context.Context, opts BuildOptions) (*common.Config,
 // SHARED COMPONENT CONFIG BUILDERS
 // ================================================================================
 
-// buildOTLPReceiverConfig returns the shared OTLP receiver configuration used by all signal types.
+// otlpReceiverConfig returns the shared OTLP receiver configuration used by all signal types.
 //
 //nolint:mnd // port numbers are defined in the ports package
-func buildOTLPReceiverConfig() *common.OTLPReceiverConfig {
+func otlpReceiverConfig() *common.OTLPReceiverConfig {
 	return &common.OTLPReceiverConfig{
 		Protocols: common.ReceiverProtocols{
 			HTTP: common.Endpoint{Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, ports.OTLPHTTP)},
@@ -90,10 +90,10 @@ func buildOTLPReceiverConfig() *common.OTLPReceiverConfig {
 	}
 }
 
-// buildMemoryLimiterConfig returns the shared memory limiter configuration used by all signal types.
+// memoryLimiterConfig returns the shared memory limiter configuration used by all signal types.
 //
 //nolint:mnd // hardcoded memory limiter values
-func buildMemoryLimiterConfig() *common.MemoryLimiterConfig {
+func memoryLimiterConfig() *common.MemoryLimiterConfig {
 	return &common.MemoryLimiterConfig{
 		CheckInterval:        "1s",
 		LimitPercentage:      75,
@@ -101,14 +101,14 @@ func buildMemoryLimiterConfig() *common.MemoryLimiterConfig {
 	}
 }
 
-// buildK8sAttributesProcessorConfig returns the shared K8s attributes processor configuration.
-func buildK8sAttributesProcessorConfig(opts BuildOptions) any {
+// k8sAttributesProcessorConfig returns the shared K8s attributes processor configuration.
+func k8sAttributesProcessorConfig(opts BuildOptions) any {
 	useOTelServiceEnrichment := opts.ServiceEnrichment == commonresources.AnnotationValueTelemetryServiceEnrichmentOtel
 	return common.K8sAttributesProcessor(opts.Enrichments, useOTelServiceEnrichment)
 }
 
-// buildServiceEnrichmentProcessorConfig returns the shared service enrichment processor configuration.
-func buildServiceEnrichmentProcessorConfig(opts BuildOptions) any {
+// serviceEnrichmentProcessorConfig returns the shared service enrichment processor configuration.
+func serviceEnrichmentProcessorConfig(opts BuildOptions) any {
 	if opts.ServiceEnrichment == commonresources.AnnotationValueTelemetryServiceEnrichmentOtel {
 		return nil
 	}
@@ -116,7 +116,7 @@ func buildServiceEnrichmentProcessorConfig(opts BuildOptions) any {
 	return common.ResolveServiceName()
 }
 
-// buildIstioNoiseFilterProcessorConfig returns the shared Istio noise filter processor configuration.
-func buildIstioNoiseFilterProcessorConfig() *common.IstioNoiseFilterProcessorConfig {
+// istioNoiseFilterProcessorConfig returns the shared Istio noise filter processor configuration.
+func istioNoiseFilterProcessorConfig() *common.IstioNoiseFilterProcessorConfig {
 	return &common.IstioNoiseFilterProcessorConfig{}
 }
