@@ -108,7 +108,7 @@ func CollectSecretVersions(ctx context.Context, c client.Client, refs []telemetr
 }
 
 // AddPipelineReference adds or updates a pipeline reference of any type.
-// Uses optimistic locking with retry to handle concurrent updates safely.
+// Uses optimistic locking to handle concurrent updates safely.
 func AddPipelineReference(ctx context.Context, c client.Client, namespace string, pipelineType common.SignalType, input PipelineReferenceInput) error {
 	return applyConfigUpdate(ctx, c, namespace, func(config *OTLPGatewayConfigMap) error {
 		pipelineSlice := getPipelineSlice(config, pipelineType)
@@ -135,7 +135,7 @@ func AddPipelineReference(ctx context.Context, c client.Client, namespace string
 }
 
 // RemovePipelineReference removes a pipeline reference of any type.
-// Uses optimistic locking with retry. Idempotent operation.
+// Uses optimistic locking to handle concurrent updates safely.
 func RemovePipelineReference(ctx context.Context, c client.Client, namespace string, pipelineType common.SignalType, name string) error {
 	return applyConfigUpdate(ctx, c, namespace, func(config *OTLPGatewayConfigMap) error {
 		pipelineSlice := getPipelineSlice(config, pipelineType)
