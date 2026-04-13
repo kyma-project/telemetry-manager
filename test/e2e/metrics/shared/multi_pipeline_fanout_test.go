@@ -111,8 +111,7 @@ func TestMultiPipelineFanout_Agent(t *testing.T) {
 				ContainElement(HaveScopeVersion(
 					SatisfyAny(
 						ContainSubstring("main"),
-						ContainSubstring("1."),
-						ContainSubstring("PR-"),
+						MatchRegexp("[0-9]+.[0-9]+.[0-9]+"),
 					))),
 			),
 		)),
@@ -147,8 +146,7 @@ func TestMultiPipelineFanout_Agent(t *testing.T) {
 				ContainElement(HaveScopeVersion(
 					SatisfyAny(
 						ContainSubstring("main"),
-						ContainSubstring("1."),
-						ContainSubstring("PR-"),
+						MatchRegexp("[0-9]+.[0-9]+.[0-9]+"),
 					),
 				)),
 			),
@@ -213,8 +211,7 @@ func checkInstrumentationScopeAndVersion(t *testing.T, g Gomega, body []byte, sc
 				HaveScopeVersion(
 					SatisfyAny(
 						ContainSubstring("main"),
-						ContainSubstring("1."),
-						ContainSubstring("PR-"),
+						MatchRegexp("[0-9]+.[0-9]+.[0-9]+"),
 					)),
 			)),
 	)), "scope '%v' must be sent to the given backend", scope)
