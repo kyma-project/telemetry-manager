@@ -74,12 +74,11 @@ func (v *Validator) Validate(ctx context.Context, params EndpointValidationParam
 	}
 
 	// port validation for all protocols
-	var allowMissingPort bool
-	if params.Protocol == FluentdProtocolHTTP || params.Protocol == OTLPProtocolHTTP {
-		// Fluentd HTTP allows missing port (will use default)
-		allowMissingPort = true
-	} else {
-		// OTLP gRPC requires explicit port
+	// Fluentd HTTP allows missing port (will use default)
+	var allowMissingPort = true
+
+	// OTLP gRPC requires port to be specified
+	if params.Protocol == OTLPProtocolGRPC {
 		allowMissingPort = false
 	}
 
@@ -180,6 +179,7 @@ func validatePort(hostport string, allowMissing bool) error {
 		return nil
 	}
 
+	// In case OTLP GRPC it is important to pass the port.
 	if _, err := strconv.Atoi(port); port == "" || err != nil {
 		return &EndpointInvalidError{Err: ErrPortMissing}
 	}
