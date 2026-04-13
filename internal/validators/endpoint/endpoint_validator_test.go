@@ -14,14 +14,15 @@ import (
 )
 
 const (
-	errMsgEndpointInvalid       = "parse \"%s\": first path segment in URL cannot contain colon"
-	errMsgEndpointResolveFailed = "failed to resolve value"
-	errMsgPortInvalid           = "parse \"%s\": invalid port \":%s\" after host"
-	errMsgPortMissing           = "missing port"
-	errMsgUnsupportedScheme     = "missing or unsupported protocol scheme"
-	errMsgGRPCOAuth2NoTLS       = "OAuth2 requires TLS when using gRPC protocol"
-	errMsgHTTPWithTLS           = "HTTP scheme with TLS not allowed"
-	errMsgGRPCWithPath          = "gRPC endpoints cannot contain paths"
+	errMsgEndpointInvalid           = "parse \"%s\": first path segment in URL cannot contain colon"
+	errMsgEndpointResolveFailed     = "failed to resolve value"
+	errMsgPortInvalid               = "parse \"%s\": invalid port \":%s\" after host"
+	errMsgPortInvalidMultipleColons = "address %s: too many colons in address"
+	errMsgPortMissing               = "missing port"
+	errMsgUnsupportedScheme         = "missing or unsupported protocol scheme"
+	errMsgGRPCOAuth2NoTLS           = "OAuth2 requires TLS when using gRPC protocol"
+	errMsgHTTPWithTLS               = "HTTP scheme with TLS not allowed"
+	errMsgGRPCWithPath              = "gRPC endpoints cannot contain paths"
 )
 
 var testScenarios = []struct {
@@ -296,13 +297,13 @@ var testScenarios = []struct {
 		endpoint: "example.com:80:80",
 
 		errOTLPGRPC:    nil,
-		errMsgOTLPGRPC: fmt.Sprintf(errMsgPortInvalid, "example.com:80:80", "80:80"),
+		errMsgOTLPGRPC: fmt.Sprintf(errMsgPortInvalidMultipleColons, "example.com:80:80"),
 
 		errOTLPHTTP:    nil,
-		errMsgOTLPHTTP: fmt.Sprintf(errMsgPortInvalid, "example.com:80:80", "80:80"),
+		errMsgOTLPHTTP: fmt.Sprintf(errMsgPortInvalidMultipleColons, "example.com:80:80"),
 
 		errFluentdHTTP:    nil,
-		errMsgFluentdHTTP: fmt.Sprintf(errMsgPortInvalid, "example.com:80:80", "80:80"),
+		errMsgFluentdHTTP: fmt.Sprintf(errMsgPortInvalidMultipleColons, "example.com:80:80"),
 	},
 	{
 		name:     "with scheme: invalid segmented port",
