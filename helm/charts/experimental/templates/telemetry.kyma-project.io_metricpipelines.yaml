@@ -639,8 +639,7 @@ spec:
                                 - message: tokenURL' missing
                                   rule: (self.value != '' ) || (has(self.valueFrom))
                                 - message: '''tokenURL'' must be a valid URL'
-                                  rule: '(self.value != '''' ) ? (isURL(self.value))
-                                    : true'
+                                  rule: 'has(self.value) ? isURL(self.value) : true'
                                 - message: Only one of 'value' or 'valueFrom' can
                                     be set
                                   rule: '!(has(self.value) && size(self.value) > 0
@@ -1629,8 +1628,7 @@ spec:
                                 type: object
                                 x-kubernetes-validations:
                                 - message: '''tokenURL'' must be a valid URL'
-                                  rule: '(self.value != '''' ) ? (isURL(self.value))
-                                    : true'
+                                  rule: 'has(self.value) ? isURL(self.value) : true'
                                 - message: Exactly one of 'value' or 'valueFrom' must
                                     be set
                                   rule: has(self.value) != has(self.valueFrom)

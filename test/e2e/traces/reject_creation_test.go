@@ -15,6 +15,37 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
+func TestAcceptTracePipelineCreation(t *testing.T) {
+	tests := []struct {
+		name     string
+		pipeline telemetryv1beta1.TracePipeline
+	}{
+		{
+			name: "otlp-output-oauth2-from-secret",
+			pipeline: testutils.NewTracePipelineBuilder().
+				WithOTLPOutput(
+					testutils.OTLPEndpoint("example.com:4317"),
+					testutils.OTLPOAuth2(
+						testutils.OAuth2ClientIDFromSecret("my-secret", "my-namespace", "client-id"),
+						testutils.OAuth2ClientSecretFromSecret("my-secret", "my-namespace", "client-secret"),
+						testutils.OAuth2TokenURLFromSecret("my-secret", "my-namespace", "token-url"),
+					),
+				).
+				Build(),
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			suite.SetupTest(t, suite.LabelMisc)
+
+			tc.pipeline.Name = tc.name
+
+			resources := []client.Object{&tc.pipeline}
+			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
+		})
+	}
+}
+
 func TestRejectTracePipelineCreation(t *testing.T) {
 	const (
 		backendHost = "example.com"
