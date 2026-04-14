@@ -20,12 +20,12 @@ const ComponentIDPrometheusAppPodsReceiver ComponentID = "prometheus/app-pods"
 const ComponentIDPrometheusAppServicesReceiver ComponentID = "prometheus/app-services"
 const ComponentIDPrometheusIstioReceiver ComponentID = "prometheus/istio"
 
-// ComponentIDFileLogReceiver generates a component ID for the filelog receiver specific to a log pipeline.
+// ComponentIDFileLogReceiver generates a component ID for the file_log receiver specific to a log pipeline.
 // Pipeline name is included in the component ID to keep it unique across pipelines.
 //
-// Example: filelog/mylogpipeline
+// Example: file_log/mylogpipeline
 func ComponentIDFileLogReceiver(pipelineName string) ComponentID {
-	return fmt.Sprintf("filelog/%s", pipelineName)
+	return fmt.Sprintf("file_log/%s", pipelineName)
 }
 
 // ================================================================================
@@ -164,7 +164,7 @@ const ComponentIDK8sLeaderElectorExtension ComponentID = "k8s_leader_elector"
 const ComponentIDFileStorageExtension ComponentID = "file_storage"
 const ComponentIDHealthCheckExtension ComponentID = "health_check"
 const ComponentIDPprofExtension ComponentID = "pprof"
-const ComponentIDCGroupRuntimeExtension ComponentID = "cgroupruntime"
+const ComponentIDCGroupRuntimeExtension ComponentID = "cgroup_runtime"
 
 // ComponentIDOAuth2Extension generates a component ID for the OAuth2 client extension.
 // Pipeline name is included in the component ID to keep it unique across pipelines.

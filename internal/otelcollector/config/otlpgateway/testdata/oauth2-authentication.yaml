@@ -1,5 +1,5 @@
 extensions:
-    cgroupruntime:
+    cgroup_runtime:
         gomaxprocs:
             enabled: false
         gomemlimit:
@@ -108,7 +108,7 @@ service:
     extensions:
         - health_check
         - pprof
-        - cgroupruntime
+        - cgroup_runtime
         - oauth2client/tracepipeline-test-trace
         - oauth2client/logpipeline-test-log
         - k8s_leader_elector
