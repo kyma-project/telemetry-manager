@@ -71,6 +71,10 @@ const (
 const (
 	kymaK8sIOAppName                   = "kyma.kubernetes_io_app_name"
 	kymaAppName                        = "kyma.app_name"
+	kymaOtelAnnotationServiceName      = "kyma.otel.annotation.service.name"
+	kymaOtelAnnotationServiceVersion   = "kyma.otel.annotation.service.version"
+	otelAnnotationKeyServiceName       = "resource.opentelemetry.io/service.name"
+	otelAnnotationKeyServiceVersion    = "resource.opentelemetry.io/service.version"
 	defaultTransformProcessorErrorMode = "ignore"
 	defaultFilterProcessorErrorMode    = "ignore"
 )

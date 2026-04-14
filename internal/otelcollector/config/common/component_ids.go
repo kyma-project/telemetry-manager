@@ -44,6 +44,7 @@ const ComponentIDSetInstrumentationScopeRuntimeProcessor ComponentID = "transfor
 const ComponentIDInsertClusterAttributesProcessor ComponentID = "transform/insert-cluster-attributes"
 const ComponentIDDropKymaAttributesProcessor ComponentID = "transform/drop-kyma-attributes"
 const ComponentIDDropUnknownServiceNameProcessor ComponentID = "transform/drop-unknown-service-name"
+const ComponentIDRestoreOtelServiceAttrsProcessor ComponentID = "transform/restore-otel-service-attrs"
 
 const ComponentIDSetKymaInputNameRuntimeProcessor ComponentID = "transform/set-kyma-input-name-runtime"
 const ComponentIDSetKymaInputNameIstioProcessor ComponentID = "transform/set-kyma-input-name-istio"
