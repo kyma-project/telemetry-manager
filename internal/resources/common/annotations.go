@@ -1,7 +1,6 @@
 package common
 
 const (
-
 	AnnotationKeyChecksumConfig = "checksum/config"
 
 	AnnotationKeyIstioIncludeInboundPorts      = "traffic.sidecar.istio.io/includeInboundPorts"
