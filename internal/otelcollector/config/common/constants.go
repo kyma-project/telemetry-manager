@@ -71,6 +71,10 @@ const (
 const (
 	kymaK8sIOAppName                   = "kyma.kubernetes_io_app_name"
 	kymaAppName                        = "kyma.app_name"
+	kymaOtelAnnotationServiceName      = "kyma.otel.annotation.service.name"
+	kymaOtelAnnotationServiceVersion   = "kyma.otel.annotation.service.version"
+	otelAnnotationKeyServiceName       = "resource.opentelemetry.io/service.name"
+	otelAnnotationKeyServiceVersion    = "resource.opentelemetry.io/service.version"
 	defaultTransformProcessorErrorMode = "ignore"
 	defaultFilterProcessorErrorMode    = "ignore"
 )
@@ -96,7 +100,7 @@ const (
 	// ================================================================================
 
 	ComponentIDOTLPReceiver                  = "otlp"
-	ComponentIDFileLogReceiver               = "filelog/%s" // dynamically filled with pipeline name
+	ComponentIDFileLogReceiver               = "file_log/%s" // dynamically filled with pipeline name
 	ComponentIDKymaStatsReceiver             = "kymastats"
 	ComponentIDK8sClusterReceiver            = "k8s_cluster"
 	ComponentIDKubeletStatsReceiver          = "kubeletstats"
@@ -164,6 +168,7 @@ const (
 	// Trace-Specific Processors
 
 	ComponentIDDropIstioServiceEnrichmentProcessor = "transform/drop-istio-service-enrichment"
+	ComponentIDRestoreOtelServiceAttrsProcessor    = "transform/restore-otel-service-attrs"
 
 	// ================================================================================
 	// EXPORTERS
@@ -194,5 +199,5 @@ const (
 	ComponentIDHealthCheckExtension      = "health_check"
 	ComponentIDPprofExtension            = "pprof"
 	ComponentIDOAuth2Extension           = "oauth2client/%s" // dynamically filled with pipeline name
-	ComponentIDCGroupRuntimeExtension    = "cgroupruntime"
+	ComponentIDCGroupRuntimeExtension    = "cgroup_runtime"
 )
