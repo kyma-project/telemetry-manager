@@ -96,7 +96,7 @@ func metricsForComponent(component string) []string {
 			`sum by (pipeline_name) (rate(otelcol_exporter_sent_log_records_total{` + svc + `}[5m]))`,
 		}
 	case suite.LabelLogGateway:
-		svc := `service="telemetry-log-gateway-metrics"`
+		svc := fmt.Sprintf(`service="%s"`, names.OTLPGatewayMetricsService)
 
 		return []string{
 			`sum by (pipeline_name) (rate(otelcol_exporter_send_failed_log_records_total{` + svc + `}[5m]))`,
@@ -113,7 +113,7 @@ func metricsForComponent(component string) []string {
 			`max by (pipeline_name) (fluentbit_input_storage_chunks_down{` + svc + `})`,
 		}
 	case suite.LabelMetricGateway:
-		svc := `service="telemetry-metric-gateway-metrics"`
+		svc := fmt.Sprintf(`service="%s"`, names.OTLPGatewayMetricsService)
 
 		return []string{
 			`sum by (pipeline_name) (rate(otelcol_exporter_send_failed_metric_points_total{` + svc + `}[5m]))`,
@@ -129,7 +129,7 @@ func metricsForComponent(component string) []string {
 			`sum by (pipeline_name) (rate(otelcol_exporter_sent_metric_points_total{` + svc + `}[5m]))`,
 		}
 	case suite.LabelTraces:
-		svc := `service="telemetry-trace-gateway-metrics"`
+		svc := fmt.Sprintf(`service="%s"`, names.OTLPGatewayMetricsService)
 
 		return []string{
 			`sum by (pipeline_name) (rate(otelcol_exporter_send_failed_spans_total{` + svc + `}[5m]))`,
