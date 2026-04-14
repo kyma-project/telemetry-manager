@@ -169,6 +169,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1beta1.Metric
 		b.addReceiverForInputRouter(common.ComponentIDIstioInputRoutingConnector, pipelinesWithIstioInput, inputs.istio),
 		b.addDropUnknownServiceNameProcessor(opts),
 		b.addK8sAttributesProcessor(opts),
+		b.addRestoreOtelServiceAttrsProcessor(opts),
 		b.addServiceEnrichmentProcessor(opts),
 		b.addExporterForEnrichmentRouter(pipelinesWithRuntimeInput, pipelinesWithPrometheusInput, pipelinesWithIstioInput),
 	); err != nil {
@@ -409,6 +410,19 @@ func (b *Builder) addK8sAttributesProcessor(opts BuildOptions) buildComponentFun
 		func(mp *telemetryv1beta1.MetricPipeline) any {
 			useOTelServiceEnrichment := opts.ServiceEnrichment == commonresources.AnnotationValueTelemetryServiceEnrichmentOtel
 			return common.K8sAttributesProcessor(opts.Enrichments, useOTelServiceEnrichment)
+		},
+	)
+}
+
+func (b *Builder) addRestoreOtelServiceAttrsProcessor(opts BuildOptions) buildComponentFunc {
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDRestoreOtelServiceAttrsProcessor),
+		func(mp *telemetryv1beta1.MetricPipeline) any {
+			if opts.ServiceEnrichment != commonresources.AnnotationValueTelemetryServiceEnrichmentOtel {
+				return nil
+			}
+
+			return common.MetricTransformProcessor(common.RestoreOtelServiceAnnotationsProcessorStatements())
 		},
 	)
 }
