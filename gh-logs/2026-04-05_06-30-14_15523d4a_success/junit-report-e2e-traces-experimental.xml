@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="47" failures="0" errors="0" time="49.074991">
+	<testsuite tests="47" failures="0" skipped="43" time="49.075000" name="github.com/kyma-project/telemetry-manager/test/e2e/traces" timestamp="2026-04-05T06:31:47Z">
+		<properties>
+			<property name="go.version" value="go1.26.1 linux/amd64"></property>
+		</properties>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestEndpointInvalid" time="0.000000">
+			<skipped message="=== RUN   TestEndpointInvalid&#xA;    suite.go:313: Label filter expression: &#34;experimental&#34;, test labels: [traces set-a]&#xA;2026/04/05 06:31:47 evaluating test labels: [traces set-a]&#xA;    suite.go:313: Test skipped: label filter &#39;experimental&#39; not satisfied&#xA;--- SKIP: TestEndpointInvalid (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestEndpointWithPathValidation" time="0.000000">
+			<skipped message="=== RUN   TestEndpointWithPathValidation&#xA;    suite.go:313: Label filter expression: &#34;experimental&#34;, test labels: [traces set-b]&#xA;2026/04/05 06:31:47 evaluating test labels: [traces set-b]&#xA;    suite.go:313: Test skipped: label filter &#39;experimental&#39; not satisfied&#xA;--- SKIP: TestEndpointWithPathValidation (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestEnrichmentValuesEmpty" time="0.000000">
+			<skipped message="=== RUN   TestEnrichmentValuesEmpty&#xA;    suite.go:313: Label filter expression: &#34;experimental&#34;, test labels: [traces set-a]&#xA;2026/04/05 06:31:47 evaluating test labels: [traces set-a]&#xA;    suite.go:313: Test skipped: label filter &#39;experimental&#39; not satisfied&#xA;--- SKIP: TestEnrichmentValuesEmpty (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestEnrichmentValuesPredefined" time="0.000000">
+			<skipped message="=== RUN   TestEnrichmentValuesPredefined&#xA;    suite.go:313: Label filter expression: &#34;experimental&#34;, test labels: [traces set-b]&#xA;2026/04/05 06:31:47 evaluating test labels: [traces set-b]&#xA;    suite.go:313: Test skipped: label filter &#39;experimental&#39; not satisfied&#xA;--- SKIP: TestEnrichmentValuesPredefined (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestExtractLabels" time="0.000000">
+			<skipped message="=== RUN   TestExtractLabels&#xA;    suite.go:313: Label filter expression: &#34;experimental&#34;, test labels: [traces set-b]&#xA;2026/04/05 06:31:47 evaluating test labels: [traces set-b]&#xA;    suite.go:313: Test skipped: label filter &#39;experimental&#39; not satisfied&#xA;--- SKIP: TestExtractLabels (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestFilterInvalid" time="0.000000">
+			<skipped message="=== RUN   TestFilterInvalid&#xA;    suite.go:313: Label filter expression: &#34;experimental&#34;, test labels: [traces set-a]&#xA;2026/04/05 06:31:47 evaluating test labels: [traces set-a]&#xA;    suite.go:313: Test skipped: label filter &#39;experimental&#39; not satisfied&#xA;--- SKIP: TestFilterInvalid (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestFilter" time="0.000000">
+			<skipped message="=== RUN   TestFilter&#xA;    suite.go:313: Label filter expression: &#34;experimental&#34;, test labels: [traces set-b]&#xA;2026/04/05 06:31:47 evaluating test labels: [traces set-b]&#xA;    suite.go:313: Test skipped: label filter &#39;experimental&#39; not satisfied&#xA;--- SKIP: TestFilter (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestMTLSAboutToExpireCert" time="0.000000">
+			<skipped message="=== RUN   TestMTLSAboutToExpireCert&#xA;    suite.go:313: Label filter expression: &#34;experimental&#34;, test labels: [traces mtls set-b]&#xA;2026/04/05 06:31:47 evaluating test labels: [traces mtls set-b]&#xA;    suite.go:313: Test skipped: label filter &#39;experimental&#39; not satisfied&#xA;--- SKIP: TestMTLSAboutToExpireCert (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestMTLSCertKeyPairDontMatch" time="0.000000">
+			<skipped message="=== RUN   TestMTLSCertKeyPairDontMatch&#xA;    suite.go:313: Label filter expression: &#34;experimental&#34;, test labels: [traces mtls set-c]&#xA;2026/04/05 06:31:47 evaluating test labels: [traces mtls set-c]&#xA;    suite.go:313: Test skipped: label filter &#39;experimental&#39; not satisfied&#xA;--- SKIP: TestMTLSCertKeyPairDontMatch (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestMTLSExpiredCert" time="0.000000">
+			<skipped message="=== RUN   TestMTLSExpiredCert&#xA;    suite.go:313: Label filter expression: &#34;experimental&#34;, test labels: [traces mtls set-a]&#xA;2026/04/05 06:31:47 evaluating test labels: [traces mtls set-a]&#xA;    suite.go:313: Test skipped: label filter &#39;experimental&#39; not satisfied&#xA;--- SKIP: TestMTLSExpiredCert (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestMTLSInvalidCA" time="0.000000">
+			<skipped message="=== RUN   TestMTLSInvalidCA&#xA;    suite.go:313: Label filter expression: &#34;experimental&#34;, test labels: [traces mtls set-b]&#xA;2026/04/05 06:31:47 evaluating test labels: [traces mtls set-b]&#xA;    suite.go:313: Test skipped: label filter &#39;experimental&#39; not satisfied&#xA;--- SKIP: TestMTLSInvalidCA (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestMTLSInvalidCert" time="0.000000">
+			<skipped message="=== RUN   TestMTLSInvalidCert&#xA;    suite.go:313: Label filter expression: &#34;experimental&#34;, test labels: [traces mtls set-a]&#xA;2026/04/05 06:31:47 evaluating test labels: [traces mtls set-a]&#xA;    suite.go:313: Test skipped: label filter &#39;experimental&#39; not satisfied&#xA;--- SKIP: TestMTLSInvalidCert (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestMTLS" time="0.000000">
+			<skipped message="=== RUN   TestMTLS&#xA;    suite.go:313: Label filter expression: &#34;experimental&#34;, test labels: [traces mtls set-c]&#xA;2026/04/05 06:31:47 evaluating test labels: [traces mtls set-c]&#xA;    suite.go:313: Test skipped: label filter &#39;experimental&#39; not satisfied&#xA;--- SKIP: TestMTLS (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestMultiPipelineBroken" time="0.000000">
+			<skipped message="=== RUN   TestMultiPipelineBroken&#xA;    suite.go:313: Label filter expression: &#34;experimental&#34;, test labels: [traces set-c]&#xA;2026/04/05 06:31:47 evaluating test labels: [traces set-c]&#xA;    suite.go:313: Test skipped: label filter &#39;experimental&#39; not satisfied&#xA;--- SKIP: TestMultiPipelineBroken (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestMultiPipelineFanout" time="0.000000">
+			<skipped message="=== RUN   TestMultiPipelineFanout&#xA;    suite.go:313: Label filter expression: &#34;experimental&#34;, test labels: [traces set-b]&#xA;2026/04/05 06:31:47 evaluating test labels: [traces set-b]&#xA;    suite.go:313: Test skipped: label filter &#39;experimental&#39; not satisfied&#xA;--- SKIP: TestMultiPipelineFanout (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestMultiPipelineMaxPipeline/max-pipeline-limit" time="0.000000">
+			<skipped message="=== RUN   TestMultiPipelineMaxPipeline/max-pipeline-limit&#xA;    suite.go:313: Label filter expression: &#34;experimental&#34;, test labels: [traces max-pipeline set-c]&#xA;2026/04/05 06:31:47 evaluating test labels: [traces max-pipeline set-c]&#xA;    suite.go:313: Test skipped: label filter &#39;experimental&#39; not satisfied&#xA;--- SKIP: TestMultiPipelineMaxPipeline/max-pipeline-limit (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestNoisyFilters" time="0.000000">
+			<skipped message="=== RUN   TestNoisyFilters&#xA;    suite.go:313: Label filter expression: &#34;experimental&#34;, test labels: [traces set-a]&#xA;2026/04/05 06:32:36 evaluating test labels: [traces set-a]&#xA;    suite.go:313: Test skipped: label filter &#39;experimental&#39; not satisfied&#xA;--- SKIP: TestNoisyFilters (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestOAuth2" time="0.000000">
+			<skipped message="=== RUN   TestOAuth2&#xA;    suite.go:313: Label filter expression: &#34;experimental&#34;, test labels: [traces oauth2 set-a]&#xA;2026/04/05 06:32:36 evaluating test labels: [traces oauth2 set-a]&#xA;    suite.go:313: Test skipped: label filter &#39;experimental&#39; not satisfied&#xA;--- SKIP: TestOAuth2 (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestRejectTracePipelineCreation/no-output" time="0.000000">
+			<skipped message="=== RUN   TestRejectTracePipelineCreation/no-output&#xA;    suite.go:313: Label filter expression: &#34;experimental&#34;, test labels: [misc set-b]&#xA;2026/04/05 06:32:36 evaluating test labels: [misc set-b]&#xA;    suite.go:313: Test skipped: label filter &#39;experimental&#39; not satisfied&#xA;--- SKIP: TestRejectTracePipelineCreation/no-output (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestRejectTracePipelineCreation/valuefrom-accepts-only-one-option" time="0.000000">
+			<skipped message="=== RUN   TestRejectTracePipelineCreation/valuefrom-accepts-only-one-option&#xA;    suite.go:313: Label filter expression: &#34;experimental&#34;, test labels: [misc set-a]&#xA;2026/04/05 06:32:36 evaluating test labels: [misc set-a]&#xA;    suite.go:313: Test skipped: label filter &#39;experimental&#39; not satisfied&#xA;--- SKIP: TestRejectTracePipelineCreation/valuefrom-accepts-only-one-option (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestRejectTracePipelineCreation/secretkeyref-requires-key" time="0.000000">
+			<skipped message="=== RUN   TestRejectTracePipelineCreation/secretkeyref-requires-key&#xA;    suite.go:313: Label filter expression: &#34;experimental&#34;, test labels: [misc set-a]&#xA;2026/04/05 06:32:36 evaluating test labels: [misc set-a]&#xA;    suite.go:313: Test skipped: label filter &#39;experimental&#39; not satisfied&#xA;--- SKIP: TestRejectTracePipelineCreation/secretkeyref-requires-key (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestRejectTracePipelineCreation/secretkeyref-requires-namespace" time="0.000000">
+			<skipped message="=== RUN   TestRejectTracePipelineCreation/secretkeyref-requires-namespace&#xA;    suite.go:313: Label filter expression: &#34;experimental&#34;, test labels: [misc set-b]&#xA;2026/04/05 06:32:36 evaluating test labels: [misc set-b]&#xA;    suite.go:313: Test skipped: label filter &#39;experimental&#39; not satisfied&#xA;--- SKIP: TestRejectTracePipelineCreation/secretkeyref-requires-namespace (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestRejectTracePipelineCreation/secretkeyref-requires-name" time="0.000000">
+			<skipped message="=== RUN   TestRejectTracePipelineCreation/secretkeyref-requires-name&#xA;    suite.go:313: Label filter expression: &#34;experimental&#34;, test labels: [misc set-b]&#xA;2026/04/05 06:32:36 evaluating test labels: [misc set-b]&#xA;    suite.go:313: Test skipped: label filter &#39;experimental&#39; not satisfied&#xA;--- SKIP: TestRejectTracePipelineCreation/secretkeyref-requires-name (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestRejectTracePipelineCreation/otlp-output-with-default-proto-and-path" time="0.000000">
+			<skipped message="=== RUN   TestRejectTracePipelineCreation/otlp-output-with-default-proto-and-path&#xA;    suite.go:313: Label filter expression: &#34;experimental&#34;, test labels: [misc set-c]&#xA;2026/04/05 06:32:36 evaluating test labels: [misc set-c]&#xA;    suite.go:313: Test skipped: label filter &#39;experimental&#39; not satisfied&#xA;--- SKIP: TestRejectTracePipelineCreation/otlp-output-with-default-proto-and-path (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestRejectTracePipelineCreation/otlp-output-with-grpc-proto-and-path" time="0.000000">
+			<skipped message="=== RUN   TestRejectTracePipelineCreation/otlp-output-with-grpc-proto-and-path&#xA;    suite.go:313: Label filter expression: &#34;experimental&#34;, test labels: [misc set-b]&#xA;2026/04/05 06:32:36 evaluating test labels: [misc set-b]&#xA;    suite.go:313: Test skipped: label filter &#39;experimental&#39; not satisfied&#xA;--- SKIP: TestRejectTracePipelineCreation/otlp-output-with-grpc-proto-and-path (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestRejectTracePipelineCreation/otlp-output-with-non-valid-proto" time="0.000000">
+			<skipped message="=== RUN   TestRejectTracePipelineCreation/otlp-output-with-non-valid-proto&#xA;    suite.go:313: Label filter expression: &#34;experimental&#34;, test labels: [misc set-b]&#xA;2026/04/05 06:32:36 evaluating test labels: [misc set-b]&#xA;    suite.go:313: Test skipped: label filter &#39;experimental&#39; not satisfied&#xA;--- SKIP: TestRejectTracePipelineCreation/otlp-output-with-non-valid-proto (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestRejectTracePipelineCreation/otlp-output-basic-auth-secretref-missing-password-key" time="0.000000">
+			<skipped message="=== RUN   TestRejectTracePipelineCreation/otlp-output-basic-auth-secretref-missing-password-key&#xA;    suite.go:313: Label filter expression: &#34;experimental&#34;, test labels: [misc set-a]&#xA;2026/04/05 06:32:36 evaluating test labels: [misc set-a]&#xA;    suite.go:313: Test skipped: label filter &#39;experimental&#39; not satisfied&#xA;--- SKIP: TestRejectTracePipelineCreation/otlp-output-basic-auth-secretref-missing-password-key (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestRejectTracePipelineCreation/otlp-output-basic-auth-secretref-missing-user-key" time="0.000000">
+			<skipped message="=== RUN   TestRejectTracePipelineCreation/otlp-output-basic-auth-secretref-missing-user-key&#xA;    suite.go:313: Label filter expression: &#34;experimental&#34;, test labels: [misc set-a]&#xA;2026/04/05 06:32:36 evaluating test labels: [misc set-a]&#xA;    suite.go:313: Test skipped: label filter &#39;experimental&#39; not satisfied&#xA;--- SKIP: TestRejectTracePipelineCreation/otlp-output-basic-auth-secretref-missing-user-key (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestRejectTracePipelineCreation/otlp-output-tls-missing-key" time="0.000000">
+			<skipped message="=== RUN   TestRejectTracePipelineCreation/otlp-output-tls-missing-key&#xA;    suite.go:313: Label filter expression: &#34;experimental&#34;, test labels: [misc set-b]&#xA;2026/04/05 06:32:36 evaluating test labels: [misc set-b]&#xA;    suite.go:313: Test skipped: label filter &#39;experimental&#39; not satisfied&#xA;--- SKIP: TestRejectTracePipelineCreation/otlp-output-tls-missing-key (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestRejectTracePipelineCreation/otlp-output-tls-missing-cert" time="0.000000">
+			<skipped message="=== RUN   TestRejectTracePipelineCreation/otlp-output-tls-missing-cert&#xA;    suite.go:313: Label filter expression: &#34;experimental&#34;, test labels: [misc set-b]&#xA;2026/04/05 06:32:36 evaluating test labels: [misc set-b]&#xA;    suite.go:313: Test skipped: label filter &#39;experimental&#39; not satisfied&#xA;--- SKIP: TestRejectTracePipelineCreation/otlp-output-tls-missing-cert (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestRejectTracePipelineCreation/otlp-output-oauth2-invalid-token-url" time="0.000000">
+			<skipped message="=== RUN   TestRejectTracePipelineCreation/otlp-output-oauth2-invalid-token-url&#xA;    suite.go:313: Label filter expression: &#34;experimental&#34;, test labels: [misc set-c]&#xA;2026/04/05 06:32:36 evaluating test labels: [misc set-c]&#xA;    suite.go:313: Test skipped: label filter &#39;experimental&#39; not satisfied&#xA;--- SKIP: TestRejectTracePipelineCreation/otlp-output-oauth2-invalid-token-url (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestRejectTracePipelineCreation/otlp-output-oauth2-missing-client-id" time="0.000000">
+			<skipped message="=== RUN   TestRejectTracePipelineCreation/otlp-output-oauth2-missing-client-id&#xA;    suite.go:313: Label filter expression: &#34;experimental&#34;, test labels: [misc set-c]&#xA;2026/04/05 06:32:36 evaluating test labels: [misc set-c]&#xA;    suite.go:313: Test skipped: label filter &#39;experimental&#39; not satisfied&#xA;--- SKIP: TestRejectTracePipelineCreation/otlp-output-oauth2-missing-client-id (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestRejectTracePipelineCreation/otlp-output-oauth2-insecure" time="0.000000">
+			<skipped message="=== RUN   TestRejectTracePipelineCreation/otlp-output-oauth2-insecure&#xA;    suite.go:313: Label filter expression: &#34;experimental&#34;, test labels: [misc set-a]&#xA;2026/04/05 06:32:36 evaluating test labels: [misc set-a]&#xA;    suite.go:313: Test skipped: label filter &#39;experimental&#39; not satisfied&#xA;--- SKIP: TestRejectTracePipelineCreation/otlp-output-oauth2-insecure (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestResources" time="0.000000">
+			<skipped message="=== RUN   TestResources&#xA;    suite.go:313: Label filter expression: &#34;experimental&#34;, test labels: [traces set-b]&#xA;2026/04/05 06:32:36 evaluating test labels: [traces set-b]&#xA;    suite.go:313: Test skipped: label filter &#39;experimental&#39; not satisfied&#xA;--- SKIP: TestResources (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestSecretMissing" time="0.000000">
+			<skipped message="=== RUN   TestSecretMissing&#xA;    suite.go:313: Label filter expression: &#34;experimental&#34;, test labels: [traces set-a]&#xA;2026/04/05 06:32:36 evaluating test labels: [traces set-a]&#xA;    suite.go:313: Test skipped: label filter &#39;experimental&#39; not satisfied&#xA;--- SKIP: TestSecretMissing (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestSecretRotation" time="0.000000">
+			<skipped message="=== RUN   TestSecretRotation&#xA;    suite.go:313: Label filter expression: &#34;experimental&#34;, test labels: [traces set-c]&#xA;2026/04/05 06:32:36 evaluating test labels: [traces set-c]&#xA;    suite.go:313: Test skipped: label filter &#39;experimental&#39; not satisfied&#xA;--- SKIP: TestSecretRotation (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestServiceEnrichment" time="0.000000">
+			<skipped message="=== RUN   TestServiceEnrichment&#xA;    suite.go:313: Label filter expression: &#34;experimental&#34;, test labels: [traces set-a]&#xA;2026/04/05 06:32:36 evaluating test labels: [traces set-a]&#xA;    suite.go:313: Test skipped: label filter &#39;experimental&#39; not satisfied&#xA;--- SKIP: TestServiceEnrichment (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestServiceName" time="0.000000">
+			<skipped message="=== RUN   TestServiceName&#xA;    suite.go:313: Label filter expression: &#34;experimental&#34;, test labels: [traces set-a]&#xA;2026/04/05 06:32:36 evaluating test labels: [traces set-a]&#xA;    suite.go:313: Test skipped: label filter &#39;experimental&#39; not satisfied&#xA;--- SKIP: TestServiceName (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestSinglePipeline/grpc" time="0.000000">
+			<skipped message="=== RUN   TestSinglePipeline/grpc&#xA;    suite.go:313: Label filter expression: &#34;experimental&#34;, test labels: [traces set-a]&#xA;2026/04/05 06:32:36 evaluating test labels: [traces set-a]&#xA;    suite.go:313: Test skipped: label filter &#39;experimental&#39; not satisfied&#xA;--- SKIP: TestSinglePipeline/grpc (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestSinglePipeline/http" time="0.000000">
+			<skipped message="=== RUN   TestSinglePipeline/http&#xA;    suite.go:313: Label filter expression: &#34;experimental&#34;, test labels: [traces set-c]&#xA;2026/04/05 06:32:36 evaluating test labels: [traces set-c]&#xA;    suite.go:313: Test skipped: label filter &#39;experimental&#39; not satisfied&#xA;--- SKIP: TestSinglePipeline/http (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestSinglePipelineV1Alpha1" time="0.000000">
+			<skipped message="=== RUN   TestSinglePipelineV1Alpha1&#xA;    suite.go:313: Label filter expression: &#34;experimental&#34;, test labels: [traces set-a]&#xA;2026/04/05 06:32:36 evaluating test labels: [traces set-a]&#xA;    suite.go:313: Test skipped: label filter &#39;experimental&#39; not satisfied&#xA;--- SKIP: TestSinglePipelineV1Alpha1 (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestTransformInvalid" time="0.000000">
+			<skipped message="=== RUN   TestTransformInvalid&#xA;    suite.go:313: Label filter expression: &#34;experimental&#34;, test labels: [traces set-a]&#xA;2026/04/05 06:32:36 evaluating test labels: [traces set-a]&#xA;    suite.go:313: Test skipped: label filter &#39;experimental&#39; not satisfied&#xA;--- SKIP: TestTransformInvalid (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestTransform" time="0.000000">
+			<skipped message="=== RUN   TestTransform&#xA;    suite.go:313: Label filter expression: &#34;experimental&#34;, test labels: [traces set-c]&#xA;2026/04/05 06:32:36 evaluating test labels: [traces set-c]&#xA;    suite.go:313: Test skipped: label filter &#39;experimental&#39; not satisfied&#xA;--- SKIP: TestTransform (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestMultiPipelineMaxPipeline/unlimited-pipelines-experimental" time="49.050000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestMultiPipelineMaxPipeline" time="49.050000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestRejectTracePipelineCreation" time="0.000000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestSinglePipeline" time="0.000000"></testcase>
+	</testsuite>
+</testsuites>

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="23" failures="0" errors="0" time="373.947885">
+	<testsuite tests="23" failures="0" time="373.948000" name="github.com/kyma-project/telemetry-manager/test/e2e/misc" timestamp="2026-04-07T15:34:31Z">
+		<properties>
+			<property name="go.version" value="go1.26.1 linux/amd64"></property>
+		</properties>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/misc" name="TestLabelAnnotation/logs-otel" time="36.510000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/misc" name="TestLabelAnnotation/logs" time="26.170000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/misc" name="TestLabelAnnotation/metrics" time="19.280000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/misc" name="TestLabelAnnotation/traces" time="16.840000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/misc" name="TestLabelAnnotation" time="98.810000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/misc" name="TestManager" time="20.110000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/misc" name="TestOverrides" time="81.570000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/misc" name="TestRBACPermissions" time="26.500000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/misc" name="TestRBACRoles/view_role" time="0.000000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/misc" name="TestRBACRoles/view_role_namespace-scoped" time="0.000000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/misc" name="TestRBACRoles/edit_role" time="0.000000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/misc" name="TestRBACRoles" time="1.470000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/misc" name="TestTelemetryLogs" time="61.570000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/misc" name="TestRejectTelemetryCRCreation/global_metric_collection_interval_zero" time="1.440000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/misc" name="TestRejectTelemetryCRCreation/global_metric_collection_interval_negative" time="1.470000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/misc" name="TestRejectTelemetryCRCreation/runtime_collection_interval_zero" time="1.630000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/misc" name="TestRejectTelemetryCRCreation/prometheus_collection_interval_zero" time="1.730000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/misc" name="TestRejectTelemetryCRCreation/istio_collection_interval_zero" time="1.530000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/misc" name="TestRejectTelemetryCRCreation" time="27.880000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/misc" name="TestTelemetryResources" time="34.590000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/misc" name="TestTelemetry" time="13.100000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/misc" name="TestTelemetryWarning" time="3.800000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/misc" name="TestTelemetryDeletionBlocking" time="4.530000"></testcase>
+	</testsuite>
+</testsuites>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="5" failures="0" errors="0" time="525.447424">
+	<testsuite tests="5" failures="0" time="525.447000" name="github.com/kyma-project/telemetry-manager/test/e2e/upgrade" timestamp="2026-04-04T21:12:04Z">
+		<properties>
+			<property name="go.version" value="go1.26.1 linux/amd64"></property>
+		</properties>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/upgrade" name="TestLogsFluentBitUpgrade" time="131.270000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/upgrade" name="TestLogsUpgrade" time="86.180000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/upgrade" name="TestMetricsUpgrade" time="102.570000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/upgrade" name="TestStorageMigration" time="77.180000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/upgrade" name="TestTracesUpgrade" time="128.199000"></testcase>
+	</testsuite>
+</testsuites>

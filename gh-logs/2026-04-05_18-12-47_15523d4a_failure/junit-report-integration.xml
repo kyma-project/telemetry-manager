@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="11" failures="0" errors="0" time="570.623100">
+	<testsuite tests="11" failures="0" time="570.623000" name="github.com/kyma-project/telemetry-manager/test/integration/istio" timestamp="2026-04-05T18:14:25Z">
+		<properties>
+			<property name="go.version" value="go1.26.1 linux/amd64"></property>
+		</properties>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/integration/istio" name="TestAccessLogsOTLP/istio" time="97.910000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/integration/istio" name="TestAccessLogsOTLP/istio-experimental" time="71.510000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/integration/istio" name="TestAccessLogsOTLP" time="169.420000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/integration/istio" name="TestAccessLogsFluentBit" time="51.910000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/integration/istio" name="TestMetricsEnvoyMultiPipeline" time="67.890000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/integration/istio" name="TestMetricsIstioInputEnvoy" time="35.380000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/integration/istio" name="TestMetricsIstioInput" time="69.030000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/integration/istio" name="TestMetricsIstioSamePort" time="30.620000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/integration/istio" name="TestMetricsOTLPInput" time="23.660000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/integration/istio" name="TestMetricsPrometheusInput" time="96.660000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/integration/istio" name="TestTracesRouting" time="26.010000"></testcase>
+	</testsuite>
+</testsuites>

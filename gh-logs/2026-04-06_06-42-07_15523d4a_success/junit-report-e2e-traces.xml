@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="50" failures="0" errors="0" time="556.675495">
+	<testsuite tests="50" failures="0" skipped="1" time="556.675000" name="github.com/kyma-project/telemetry-manager/test/e2e/traces" timestamp="2026-04-06T06:43:40Z">
+		<properties>
+			<property name="go.version" value="go1.26.1 linux/amd64"></property>
+		</properties>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestMultiPipelineMaxPipeline/unlimited-pipelines-experimental" time="0.000000">
+			<skipped message="=== RUN   TestMultiPipelineMaxPipeline/unlimited-pipelines-experimental&#xA;    suite.go:313: Label filter expression: &#34;not experimental&#34;, test labels: [traces max-pipeline experimental set-c]&#xA;2026/04/06 06:47:42 evaluating test labels: [traces max-pipeline experimental set-c]&#xA;    suite.go:313: Test skipped: label filter &#39;not experimental&#39; not satisfied&#xA;--- SKIP: TestMultiPipelineMaxPipeline/unlimited-pipelines-experimental (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestEndpointInvalid" time="20.810000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestEndpointWithPathValidation" time="1.650000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestEnrichmentValuesEmpty" time="33.400000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestEnrichmentValuesPredefined" time="26.140000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestExtractLabels" time="14.970000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestFilterInvalid" time="1.610000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestFilter" time="15.440000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestMTLSAboutToExpireCert" time="16.219000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestMTLSCertKeyPairDontMatch" time="3.260000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestMTLSExpiredCert" time="32.790000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestMTLSInvalidCA" time="2.990000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestMTLSInvalidCert" time="3.210000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestMTLS" time="15.880000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestMultiPipelineBroken" time="15.850000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestMultiPipelineFanout" time="16.760000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestMultiPipelineMaxPipeline/max-pipeline-limit" time="20.650000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestMultiPipelineMaxPipeline" time="20.650000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestNoisyFilters" time="30.570000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestOAuth2" time="30.310000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestRejectTracePipelineCreation/no-output" time="1.840000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestRejectTracePipelineCreation/valuefrom-accepts-only-one-option" time="1.690000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestRejectTracePipelineCreation/secretkeyref-requires-key" time="1.880000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestRejectTracePipelineCreation/secretkeyref-requires-namespace" time="1.690000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestRejectTracePipelineCreation/secretkeyref-requires-name" time="1.690000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestRejectTracePipelineCreation/otlp-output-with-default-proto-and-path" time="1.680000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestRejectTracePipelineCreation/otlp-output-with-grpc-proto-and-path" time="1.750000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestRejectTracePipelineCreation/otlp-output-with-non-valid-proto" time="1.680000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestRejectTracePipelineCreation/otlp-output-basic-auth-secretref-missing-password-key" time="1.730000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestRejectTracePipelineCreation/otlp-output-basic-auth-secretref-missing-user-key" time="1.710000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestRejectTracePipelineCreation/otlp-output-tls-missing-key" time="1.690000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestRejectTracePipelineCreation/otlp-output-tls-missing-cert" time="1.720000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestRejectTracePipelineCreation/otlp-output-oauth2-invalid-token-url" time="1.680000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestRejectTracePipelineCreation/otlp-output-oauth2-missing-client-id" time="1.690000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestRejectTracePipelineCreation/otlp-output-oauth2-insecure" time="1.730000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestRejectTracePipelineCreation" time="25.850000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestResources" time="43.960000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestSecretMissing" time="3.930000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestSecretRotation" time="49.250000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestServiceEnrichment" time="16.760000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestServiceName" time="16.200000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestSinglePipeline/grpc" time="17.030000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestSinglePipeline/http" time="17.060000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestSinglePipeline" time="34.090000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestSinglePipelineV1Alpha1" time="16.990000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestTransformInvalid" time="1.860000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestTransform/with-where" time="14.730000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestTransform/cond-and-stmts" time="14.110000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestTransform/infer-context" time="14.160000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/traces" name="TestTransform" time="45.260000"></testcase>
+	</testsuite>
+</testsuites>

@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="76" failures="0" errors="0" time="704.075496">
+	<testsuite tests="6" failures="0" skipped="3" time="186.211000" name="github.com/kyma-project/telemetry-manager/test/e2e/metrics/agent" timestamp="2026-04-07T09:29:43Z">
+		<properties>
+			<property name="go.version" value="go1.26.1 linux/amd64"></property>
+		</properties>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/agent" name="TestPrometheusInputDiagnosticMetric" time="0.000000">
+			<skipped message="=== RUN   TestPrometheusInputDiagnosticMetric&#xA;    suite.go:313: Label filter expression: &#34;not experimental and set-c&#34;, test labels: [metric-agent set-b]&#xA;2026/04/07 09:29:43 evaluating test labels: [metric-agent set-b]&#xA;    suite.go:313: Test skipped: label filter &#39;not experimental and set-c&#39; not satisfied&#xA;--- SKIP: TestPrometheusInputDiagnosticMetric (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/agent" name="TestRuntimeNodeNamespace" time="0.000000">
+			<skipped message="=== RUN   TestRuntimeNodeNamespace&#xA;    suite.go:313: Label filter expression: &#34;not experimental and set-c&#34;, test labels: [metric-agent set-a]&#xA;2026/04/07 09:32:31 evaluating test labels: [metric-agent set-a]&#xA;    suite.go:313: Test skipped: label filter &#39;not experimental and set-c&#39; not satisfied&#xA;--- SKIP: TestRuntimeNodeNamespace (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/agent" name="TestServiceName" time="0.000000">
+			<skipped message="=== RUN   TestServiceName&#xA;    suite.go:313: Label filter expression: &#34;not experimental and set-c&#34;, test labels: [metric-agent set-a]&#xA;2026/04/07 09:32:50 evaluating test labels: [metric-agent set-a]&#xA;    suite.go:313: Test skipped: label filter &#39;not experimental and set-c&#39; not satisfied&#xA;--- SKIP: TestServiceName (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/agent" name="TestPrometheusInput" time="84.340000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/agent" name="TestRuntimeInput" time="83.460000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/agent" name="TestServiceEnrichment" time="18.390000"></testcase>
+	</testsuite>
+	<testsuite tests="3" failures="0" skipped="2" time="27.127000" name="github.com/kyma-project/telemetry-manager/test/e2e/metrics/gateway" timestamp="2026-04-07T09:32:51Z">
+		<properties>
+			<property name="go.version" value="go1.26.1 linux/amd64"></property>
+		</properties>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/gateway" name="TestEnrichmentValuesPredefined" time="0.000000">
+			<skipped message="=== RUN   TestEnrichmentValuesPredefined&#xA;    suite.go:313: Label filter expression: &#34;not experimental and set-c&#34;, test labels: [metric-gateway set-b]&#xA;2026/04/07 09:33:18 evaluating test labels: [metric-gateway set-b]&#xA;    suite.go:313: Test skipped: label filter &#39;not experimental and set-c&#39; not satisfied&#xA;--- SKIP: TestEnrichmentValuesPredefined (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/gateway" name="TestKymaInput" time="0.000000">
+			<skipped message="=== RUN   TestKymaInput&#xA;    suite.go:313: Label filter expression: &#34;not experimental and set-c&#34;, test labels: [metric-gateway set-b]&#xA;2026/04/07 09:33:18 evaluating test labels: [metric-gateway set-b]&#xA;    suite.go:313: Test skipped: label filter &#39;not experimental and set-c&#39; not satisfied&#xA;--- SKIP: TestKymaInput (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/gateway" name="TestEnrichmentValuesEmpty" time="27.110000"></testcase>
+	</testsuite>
+	<testsuite tests="10" failures="0" skipped="8" time="35.233000" name="github.com/kyma-project/telemetry-manager/test/e2e/metrics/misc" timestamp="2026-04-07T09:33:20Z">
+		<properties>
+			<property name="go.version" value="go1.26.1 linux/amd64"></property>
+		</properties>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/misc" name="TestDisabledInput" time="0.000000">
+			<skipped message="=== RUN   TestDisabledInput&#xA;    suite.go:313: Label filter expression: &#34;not experimental and set-c&#34;, test labels: [metrics misc set-b]&#xA;2026/04/07 09:33:20 evaluating test labels: [metrics misc set-b]&#xA;    suite.go:313: Test skipped: label filter &#39;not experimental and set-c&#39; not satisfied&#xA;--- SKIP: TestDisabledInput (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/misc" name="TestEndpointInvalid" time="0.000000">
+			<skipped message="=== RUN   TestEndpointInvalid&#xA;    suite.go:313: Label filter expression: &#34;not experimental and set-c&#34;, test labels: [metrics misc set-b]&#xA;2026/04/07 09:33:20 evaluating test labels: [metrics misc set-b]&#xA;    suite.go:313: Test skipped: label filter &#39;not experimental and set-c&#39; not satisfied&#xA;--- SKIP: TestEndpointInvalid (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/misc" name="TestFilterInvalid" time="0.000000">
+			<skipped message="=== RUN   TestFilterInvalid&#xA;    suite.go:313: Label filter expression: &#34;not experimental and set-c&#34;, test labels: [metrics misc set-a]&#xA;2026/04/07 09:33:20 evaluating test labels: [metrics misc set-a]&#xA;    suite.go:313: Test skipped: label filter &#39;not experimental and set-c&#39; not satisfied&#xA;--- SKIP: TestFilterInvalid (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/misc" name="TestMTLSInvalidCA" time="0.000000">
+			<skipped message="=== RUN   TestMTLSInvalidCA&#xA;    suite.go:313: Label filter expression: &#34;not experimental and set-c&#34;, test labels: [metrics misc mtls set-b]&#xA;2026/04/07 09:33:55 evaluating test labels: [metrics misc mtls set-b]&#xA;    suite.go:313: Test skipped: label filter &#39;not experimental and set-c&#39; not satisfied&#xA;--- SKIP: TestMTLSInvalidCA (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/misc" name="TestMTLSInvalidCert" time="0.000000">
+			<skipped message="=== RUN   TestMTLSInvalidCert&#xA;    suite.go:313: Label filter expression: &#34;not experimental and set-c&#34;, test labels: [metrics misc mtls set-a]&#xA;2026/04/07 09:33:55 evaluating test labels: [metrics misc mtls set-a]&#xA;    suite.go:313: Test skipped: label filter &#39;not experimental and set-c&#39; not satisfied&#xA;--- SKIP: TestMTLSInvalidCert (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/misc" name="TestMTLSMissingKey" time="0.000000">
+			<skipped message="=== RUN   TestMTLSMissingKey&#xA;    suite.go:313: Label filter expression: &#34;not experimental and set-c&#34;, test labels: [metrics misc set-b]&#xA;2026/04/07 09:33:55 evaluating test labels: [metrics misc set-b]&#xA;    suite.go:313: Test skipped: label filter &#39;not experimental and set-c&#39; not satisfied&#xA;--- SKIP: TestMTLSMissingKey (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/misc" name="TestRejectPipelineCreation" time="0.000000">
+			<skipped message="=== RUN   TestRejectPipelineCreation&#xA;    suite.go:313: Label filter expression: &#34;not experimental and set-c&#34;, test labels: [metrics misc set-b]&#xA;2026/04/07 09:33:55 evaluating test labels: [metrics misc set-b]&#xA;    suite.go:313: Test skipped: label filter &#39;not experimental and set-c&#39; not satisfied&#xA;--- SKIP: TestRejectPipelineCreation (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/misc" name="TestTransformInvalid" time="0.000000">
+			<skipped message="=== RUN   TestTransformInvalid&#xA;    suite.go:313: Label filter expression: &#34;not experimental and set-c&#34;, test labels: [metrics misc set-a]&#xA;2026/04/07 09:33:55 evaluating test labels: [metrics misc set-a]&#xA;    suite.go:313: Test skipped: label filter &#39;not experimental and set-c&#39; not satisfied&#xA;--- SKIP: TestTransformInvalid (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/misc" name="TestMTLSCertKeyPairDontMatch" time="2.970000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/misc" name="TestMTLSExpiredCert" time="32.240000"></testcase>
+	</testsuite>
+	<testsuite tests="57" failures="0" skipped="26" time="450.939000" name="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" timestamp="2026-04-07T09:33:57Z">
+		<properties>
+			<property name="go.version" value="go1.26.1 linux/amd64"></property>
+		</properties>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestCustomClusterName/agent" time="0.000000">
+			<skipped message="=== RUN   TestCustomClusterName/agent&#xA;    suite.go:313: Label filter expression: &#34;not experimental and set-c&#34;, test labels: [metric-agent set-a]&#xA;2026/04/07 09:34:31 evaluating test labels: [metric-agent set-a]&#xA;    suite.go:313: Test skipped: label filter &#39;not experimental and set-c&#39; not satisfied&#xA;--- SKIP: TestCustomClusterName/agent (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestEndpointWithPathValidation/agent" time="0.000000">
+			<skipped message="=== RUN   TestEndpointWithPathValidation/agent&#xA;    suite.go:313: Label filter expression: &#34;not experimental and set-c&#34;, test labels: [metric-agent set-a]&#xA;2026/04/07 09:34:47 evaluating test labels: [metric-agent set-a]&#xA;    suite.go:313: Test skipped: label filter &#39;not experimental and set-c&#39; not satisfied&#xA;--- SKIP: TestEndpointWithPathValidation/agent (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestEndpointWithPathValidation/gateway" time="0.000000">
+			<skipped message="=== RUN   TestEndpointWithPathValidation/gateway&#xA;    suite.go:313: Label filter expression: &#34;not experimental and set-c&#34;, test labels: [metric-gateway set-a]&#xA;2026/04/07 09:34:47 evaluating test labels: [metric-gateway set-a]&#xA;    suite.go:313: Test skipped: label filter &#39;not experimental and set-c&#39; not satisfied&#xA;--- SKIP: TestEndpointWithPathValidation/gateway (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestExtractLabels/gateway" time="0.000000">
+			<skipped message="=== RUN   TestExtractLabels/gateway&#xA;    suite.go:313: Label filter expression: &#34;not experimental and set-c&#34;, test labels: [metric-gateway set-a]&#xA;2026/04/07 09:35:06 evaluating test labels: [metric-gateway set-a]&#xA;    suite.go:313: Test skipped: label filter &#39;not experimental and set-c&#39; not satisfied&#xA;--- SKIP: TestExtractLabels/gateway (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestFilter/agent" time="0.000000">
+			<skipped message="=== RUN   TestFilter/agent&#xA;    suite.go:313: Label filter expression: &#34;not experimental and set-c&#34;, test labels: [metric-agent set-a]&#xA;2026/04/07 09:35:06 evaluating test labels: [metric-agent set-a]&#xA;    suite.go:313: Test skipped: label filter &#39;not experimental and set-c&#39; not satisfied&#xA;--- SKIP: TestFilter/agent (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestFilter/gateway" time="0.000000">
+			<skipped message="=== RUN   TestFilter/gateway&#xA;    suite.go:313: Label filter expression: &#34;not experimental and set-c&#34;, test labels: [metric-gateway set-a]&#xA;2026/04/07 09:35:06 evaluating test labels: [metric-gateway set-a]&#xA;    suite.go:313: Test skipped: label filter &#39;not experimental and set-c&#39; not satisfied&#xA;--- SKIP: TestFilter/gateway (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestMTLS/agent" time="0.000000">
+			<skipped message="=== RUN   TestMTLS/agent&#xA;    suite.go:313: Label filter expression: &#34;not experimental and set-c&#34;, test labels: [metric-agent mtls set-b]&#xA;2026/04/07 09:35:41 evaluating test labels: [metric-agent mtls set-b]&#xA;    suite.go:313: Test skipped: label filter &#39;not experimental and set-c&#39; not satisfied&#xA;--- SKIP: TestMTLS/agent (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestMTLS/gateway" time="0.000000">
+			<skipped message="=== RUN   TestMTLS/gateway&#xA;    suite.go:313: Label filter expression: &#34;not experimental and set-c&#34;, test labels: [metric-gateway mtls set-b]&#xA;2026/04/07 09:35:41 evaluating test labels: [metric-gateway mtls set-b]&#xA;    suite.go:313: Test skipped: label filter &#39;not experimental and set-c&#39; not satisfied&#xA;--- SKIP: TestMTLS/gateway (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestMultiPipelineBroken/agent" time="0.000000">
+			<skipped message="=== RUN   TestMultiPipelineBroken/agent&#xA;    suite.go:313: Label filter expression: &#34;not experimental and set-c&#34;, test labels: [metric-agent set-b]&#xA;2026/04/07 09:35:41 evaluating test labels: [metric-agent set-b]&#xA;    suite.go:313: Test skipped: label filter &#39;not experimental and set-c&#39; not satisfied&#xA;--- SKIP: TestMultiPipelineBroken/agent (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestMultiPipelineBroken/gateway" time="0.000000">
+			<skipped message="=== RUN   TestMultiPipelineBroken/gateway&#xA;    suite.go:313: Label filter expression: &#34;not experimental and set-c&#34;, test labels: [metric-gateway set-a]&#xA;2026/04/07 09:35:41 evaluating test labels: [metric-gateway set-a]&#xA;    suite.go:313: Test skipped: label filter &#39;not experimental and set-c&#39; not satisfied&#xA;--- SKIP: TestMultiPipelineBroken/gateway (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestMultiPipelineMaxPipeline/max-pipeline-limit" time="0.000000">
+			<skipped message="=== RUN   TestMultiPipelineMaxPipeline/max-pipeline-limit&#xA;    suite.go:313: Label filter expression: &#34;not experimental and set-c&#34;, test labels: [metrics max-pipeline set-b]&#xA;2026/04/07 09:37:41 evaluating test labels: [metrics max-pipeline set-b]&#xA;    suite.go:313: Test skipped: label filter &#39;not experimental and set-c&#39; not satisfied&#xA;--- SKIP: TestMultiPipelineMaxPipeline/max-pipeline-limit (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestMultiPipelineMaxPipeline/unlimited-pipelines-experimental" time="0.000000">
+			<skipped message="=== RUN   TestMultiPipelineMaxPipeline/unlimited-pipelines-experimental&#xA;    suite.go:313: Label filter expression: &#34;not experimental and set-c&#34;, test labels: [metrics max-pipeline experimental set-c]&#xA;2026/04/07 09:37:41 evaluating test labels: [metrics max-pipeline experimental set-c]&#xA;    suite.go:313: Test skipped: label filter &#39;not experimental and set-c&#39; not satisfied&#xA;--- SKIP: TestMultiPipelineMaxPipeline/unlimited-pipelines-experimental (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestNamespaceSelector/agent" time="0.000000">
+			<skipped message="=== RUN   TestNamespaceSelector/agent&#xA;    suite.go:313: Label filter expression: &#34;not experimental and set-c&#34;, test labels: [metric-agent set-b]&#xA;2026/04/07 09:37:41 evaluating test labels: [metric-agent set-b]&#xA;    suite.go:313: Test skipped: label filter &#39;not experimental and set-c&#39; not satisfied&#xA;--- SKIP: TestNamespaceSelector/agent (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestNamespaceSelector/gateway" time="0.000000">
+			<skipped message="=== RUN   TestNamespaceSelector/gateway&#xA;    suite.go:313: Label filter expression: &#34;not experimental and set-c&#34;, test labels: [metric-gateway set-a]&#xA;2026/04/07 09:37:41 evaluating test labels: [metric-gateway set-a]&#xA;    suite.go:313: Test skipped: label filter &#39;not experimental and set-c&#39; not satisfied&#xA;--- SKIP: TestNamespaceSelector/gateway (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestOAuth2/gateway" time="0.000000">
+			<skipped message="=== RUN   TestOAuth2/gateway&#xA;    suite.go:313: Label filter expression: &#34;not experimental and set-c&#34;, test labels: [metric-gateway oauth2 set-a]&#xA;2026/04/07 09:38:15 evaluating test labels: [metric-gateway oauth2 set-a]&#xA;    suite.go:313: Test skipped: label filter &#39;not experimental and set-c&#39; not satisfied&#xA;--- SKIP: TestOAuth2/gateway (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestSecretMissing/agent" time="0.000000">
+			<skipped message="=== RUN   TestSecretMissing/agent&#xA;    suite.go:313: Label filter expression: &#34;not experimental and set-c&#34;, test labels: [metric-agent set-a]&#xA;2026/04/07 09:39:45 evaluating test labels: [metric-agent set-a]&#xA;    suite.go:313: Test skipped: label filter &#39;not experimental and set-c&#39; not satisfied&#xA;--- SKIP: TestSecretMissing/agent (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestSecretMissing/gateway" time="0.000000">
+			<skipped message="=== RUN   TestSecretMissing/gateway&#xA;    suite.go:313: Label filter expression: &#34;not experimental and set-c&#34;, test labels: [metric-gateway set-b]&#xA;2026/04/07 09:39:45 evaluating test labels: [metric-gateway set-b]&#xA;    suite.go:313: Test skipped: label filter &#39;not experimental and set-c&#39; not satisfied&#xA;--- SKIP: TestSecretMissing/gateway (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestSecretRotation/gateway" time="0.000000">
+			<skipped message="=== RUN   TestSecretRotation/gateway&#xA;    suite.go:313: Label filter expression: &#34;not experimental and set-c&#34;, test labels: [metric-gateway set-b]&#xA;2026/04/07 09:40:15 evaluating test labels: [metric-gateway set-b]&#xA;    suite.go:313: Test skipped: label filter &#39;not experimental and set-c&#39; not satisfied&#xA;--- SKIP: TestSecretRotation/gateway (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestSinglePipeline/agent/grpc" time="0.000000">
+			<skipped message="=== RUN   TestSinglePipeline/agent/grpc&#xA;    suite.go:313: Label filter expression: &#34;not experimental and set-c&#34;, test labels: [metric-agent set-a]&#xA;2026/04/07 09:40:15 evaluating test labels: [metric-agent set-a]&#xA;    suite.go:313: Test skipped: label filter &#39;not experimental and set-c&#39; not satisfied&#xA;--- SKIP: TestSinglePipeline/agent/grpc (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestSinglePipeline/gateway/grpc" time="0.000000">
+			<skipped message="=== RUN   TestSinglePipeline/gateway/grpc&#xA;    suite.go:313: Label filter expression: &#34;not experimental and set-c&#34;, test labels: [metric-gateway set-a]&#xA;2026/04/07 09:40:34 evaluating test labels: [metric-gateway set-a]&#xA;    suite.go:313: Test skipped: label filter &#39;not experimental and set-c&#39; not satisfied&#xA;--- SKIP: TestSinglePipeline/gateway/grpc (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestSinglePipeline/gateway/http" time="0.000000">
+			<skipped message="=== RUN   TestSinglePipeline/gateway/http&#xA;    suite.go:313: Label filter expression: &#34;not experimental and set-c&#34;, test labels: [metric-gateway set-b]&#xA;2026/04/07 09:40:34 evaluating test labels: [metric-gateway set-b]&#xA;    suite.go:313: Test skipped: label filter &#39;not experimental and set-c&#39; not satisfied&#xA;--- SKIP: TestSinglePipeline/gateway/http (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestSinglePipelineV1Alpha1/gateway" time="0.000000">
+			<skipped message="=== RUN   TestSinglePipelineV1Alpha1/gateway&#xA;    suite.go:313: Label filter expression: &#34;not experimental and set-c&#34;, test labels: [metric-gateway set-a]&#xA;2026/04/07 09:40:51 evaluating test labels: [metric-gateway set-a]&#xA;    suite.go:313: Test skipped: label filter &#39;not experimental and set-c&#39; not satisfied&#xA;--- SKIP: TestSinglePipelineV1Alpha1/gateway (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestTransform/agent-infer-context" time="0.000000">
+			<skipped message="=== RUN   TestTransform/agent-infer-context&#xA;    suite.go:313: Label filter expression: &#34;not experimental and set-c&#34;, test labels: [metric-agent set-b]&#xA;2026/04/07 09:41:27 evaluating test labels: [metric-agent set-b]&#xA;    suite.go:313: Test skipped: label filter &#39;not experimental and set-c&#39; not satisfied&#xA;--- SKIP: TestTransform/agent-infer-context (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestTransform/gateway-with-where" time="0.000000">
+			<skipped message="=== RUN   TestTransform/gateway-with-where&#xA;    suite.go:313: Label filter expression: &#34;not experimental and set-c&#34;, test labels: [metric-gateway set-b]&#xA;2026/04/07 09:41:27 evaluating test labels: [metric-gateway set-b]&#xA;    suite.go:313: Test skipped: label filter &#39;not experimental and set-c&#39; not satisfied&#xA;--- SKIP: TestTransform/gateway-with-where (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestTransform/gateway-cond-and-stmts" time="0.000000">
+			<skipped message="=== RUN   TestTransform/gateway-cond-and-stmts&#xA;    suite.go:313: Label filter expression: &#34;not experimental and set-c&#34;, test labels: [metric-gateway set-a]&#xA;2026/04/07 09:41:27 evaluating test labels: [metric-gateway set-a]&#xA;    suite.go:313: Test skipped: label filter &#39;not experimental and set-c&#39; not satisfied&#xA;--- SKIP: TestTransform/gateway-cond-and-stmts (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestTransform/gateway-infer-context" time="0.000000">
+			<skipped message="=== RUN   TestTransform/gateway-infer-context&#xA;    suite.go:313: Label filter expression: &#34;not experimental and set-c&#34;, test labels: [metric-gateway set-a]&#xA;2026/04/07 09:41:27 evaluating test labels: [metric-gateway set-a]&#xA;    suite.go:313: Test skipped: label filter &#39;not experimental and set-c&#39; not satisfied&#xA;--- SKIP: TestTransform/gateway-infer-context (0.00s)&#xA;"></skipped>
+		</testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestCloudProviderAttributes/agent" time="17.350000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestCloudProviderAttributes/gateway" time="16.780000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestCloudProviderAttributes" time="34.130000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestCustomClusterName/gateway" time="16.510000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestCustomClusterName" time="16.510000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestEndpointWithPathValidation" time="0.000000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestExtractLabels/agent" time="18.460000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestExtractLabels" time="18.470000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestFilter" time="0.000000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestMTLSAboutToExpireCert/agent" time="18.780000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestMTLSAboutToExpireCert/gateway" time="16.870000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestMTLSAboutToExpireCert" time="35.650000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestMTLS" time="0.000000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestMultiPipelineBroken" time="0.000000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestMultiPipelineFanout_Agent" time="100.260000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestMultiPipelineFanout_Gateway" time="19.430000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestMultiPipelineMaxPipeline" time="0.000000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestNamespaceSelector" time="0.000000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestOAuth2/agent" time="34.010000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestOAuth2" time="34.010000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestResources" time="89.980000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestSecretMissing" time="0.000000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestSecretRotation/agent" time="30.150000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestSecretRotation" time="30.150000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestSinglePipeline/agent/http" time="18.810000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestSinglePipeline" time="18.810000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestSinglePipelineV1Alpha1/agent" time="17.300000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestSinglePipelineV1Alpha1" time="17.300000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestTransform/agent-with-where" time="18.560000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestTransform/agent-cond-and-stmts" time="17.640000"></testcase>
+		<testcase classname="github.com/kyma-project/telemetry-manager/test/e2e/metrics/shared" name="TestTransform" time="36.200000"></testcase>
+	</testsuite>
+</testsuites>
