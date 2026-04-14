@@ -163,19 +163,19 @@ func GetServiceEnrichmentFromTelemetryOrDefault(ctx context.Context, opts Option
 }
 
 // IsVpaEnabledInTelemetry checks if VPA is enabled via the "telemetry.kyma-project.io/enable-vpa" annotation on the Telemetry CR.
-// Returns true only if the annotation is explicitly set to "true", otherwise returns false.
+// Returns true by default, and false only if the annotation is explicitly set to "false".
 func IsVpaEnabledInTelemetry(ctx context.Context, client client.Client, telemetryNamespace string) bool {
 	telemetry, err := GetDefaultTelemetryInstance(ctx, client, telemetryNamespace)
 	if err != nil {
-		logf.FromContext(ctx).V(1).Error(err, "Failed to get telemetry: VPA will not be enabled")
-		return false
+		logf.FromContext(ctx).V(1).Error(err, "Failed to get telemetry: VPA will be enabled by default")
+		return true
 	}
 
 	if telemetry.Annotations != nil {
 		if value, ok := telemetry.Annotations[commonresources.AnnotationKeyEnableVPA]; ok {
-			return value == commonresources.AnnotationValueTrue
+			return value != commonresources.AnnotationValueFalse
 		}
 	}
 
-	return false
+	return true
 }
