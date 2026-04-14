@@ -46,6 +46,7 @@ func K8sAttributesProcessor(enrichments *operatorv1beta1.EnrichmentSpec, useOTel
 		Extract: ExtractK8sMetadata{
 			Metadata:                     k8sAttributes,
 			Labels:                       append(extractLabels(useOTelServiceEnrichment), extractPodLabels(enrichments)...),
+			Annotations:                  extractOtelServiceAnnotations(useOTelServiceEnrichment),
 			OTelAnnotations:              useOTelServiceEnrichment,
 			DeploymentNameFromReplicaset: useOTelServiceEnrichment,
 		},
@@ -95,6 +96,20 @@ func extractLabels(useOTelServiceEnrichment bool) []ExtractLabel {
 	}
 
 	return extractLabels
+}
+
+// extractOtelServiceAnnotations returns annotation extraction config for service attributes in OTel mode.
+// The extracted values are stored in temporary kyma.* attributes so a subsequent restore step can
+// re-apply them after the k8sattributes processor's (buggy) label-over-annotation resolution.
+func extractOtelServiceAnnotations(useOTelServiceEnrichment bool) []ExtractLabel {
+	if !useOTelServiceEnrichment {
+		return nil
+	}
+
+	return []ExtractLabel{
+		{From: "pod", Key: otelAnnotationKeyServiceName, TagName: kymaOtelAnnotationServiceName},
+		{From: "pod", Key: otelAnnotationKeyServiceVersion, TagName: kymaOtelAnnotationServiceVersion},
+	}
 }
 
 func extractPodLabels(enrichments *operatorv1beta1.EnrichmentSpec) []ExtractLabel {
@@ -244,6 +259,31 @@ func DropUnknownServiceNameProcessorStatements() []TransformProcessorStatements 
 			),
 		},
 	}}
+}
+
+// RestoreOtelServiceAnnotationsProcessorStatements creates processor statements that re-apply OTel pod
+// annotation values for service.name and service.version after the k8sattributes processor runs.
+// This is a workaround for a bug in the k8sattributes processor where pod labels (app.kubernetes.io/*)
+// incorrectly take priority over pod annotations (resource.opentelemetry.io/*).
+// The annotations were extracted to temporary kyma.otel.annotation.* attributes by the k8sattributes
+// processor; this step restores them as the final service attribute values and deletes the temp attrs.
+// Empty annotation values are treated as "not set" — the restore only fires for non-empty values so
+// that the k8sattributes fallback chain (label → pod name) can produce a better result.
+func RestoreOtelServiceAnnotationsProcessorStatements() []TransformProcessorStatements {
+	restoreAndClean := func(serviceAttr, annotationAttr string) []string {
+		return []string{
+			JoinWithWhere(
+				fmt.Sprintf("set(%s, %s)", ResourceAttribute(serviceAttr), ResourceAttribute(annotationAttr)),
+				JoinWithAnd(ResourceAttributeIsNotNil(annotationAttr), ResourceAttributeNotEquals(annotationAttr, "")),
+			),
+			DeleteResourceAttribute(annotationAttr),
+		}
+	}
+
+	stmts := restoreAndClean("service.name", kymaOtelAnnotationServiceName)
+	stmts = append(stmts, restoreAndClean("service.version", kymaOtelAnnotationServiceVersion)...)
+
+	return []TransformProcessorStatements{{Statements: stmts}}
 }
 
 // InstrumentationScopeProcessor creates a transform processor for instrumentation scope
