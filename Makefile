@@ -66,6 +66,7 @@ PROMLINTER       := $(TOOLS_BIN_DIR)/promlinter
 GOMPLATE         := $(TOOLS_BIN_DIR)/gomplate
 HELM             := $(TOOLS_BIN_DIR)/helm
 KUBECONFORM      := $(TOOLS_BIN_DIR)/kubeconform
+SETUP_ENVTEST    := $(TOOLS_BIN_DIR)/setup-envtest
 KUBECTL          := kubectl
 
 POPULATE_IMAGES  := $(TOOLS_BIN_DIR)/populate-images
@@ -235,6 +236,17 @@ test: manifests generate fmt vet tidy ## Run all unit tests
 check-coverage: $(GO_TEST_COVERAGE) ## Check test coverage against thresholds
 	go test $$(go list ./... | grep -v /test/) -short -coverprofile=cover.out -covermode=atomic -coverpkg=./...
 	$(GO_TEST_COVERAGE) --config=./.testcoverage.yml
+
+ENVTEST_K8S_VERSION ?= 1.35.x
+KUBEBUILDER_ASSETS  = $(shell $(SETUP_ENVTEST) use -i -p path $(ENVTEST_K8S_VERSION) 2>/dev/null)
+
+.PHONY: setup-envtest
+setup-envtest: $(SETUP_ENVTEST) ## Download envtest binaries (etcd, kube-apiserver, kubectl)
+	$(SETUP_ENVTEST) use $(ENVTEST_K8S_VERSION)
+
+.PHONY: envtest
+envtest: $(SETUP_ENVTEST) ## Run envtest-based tests
+	KUBEBUILDER_ASSETS="$(KUBEBUILDER_ASSETS)" go test -count=1 ./test/envtest/...
 
 .PHONY: update-golden-files
 update-golden-files: ## Update all golden files for config builder tests
