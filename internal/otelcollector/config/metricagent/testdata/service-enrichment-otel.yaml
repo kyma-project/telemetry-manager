@@ -20,6 +20,7 @@ service:
             processors:
                 - transform/drop-unknown-service-name
                 - k8s_attributes
+                - transform/restore-otel-service-attrs
             exporters:
                 - routing/enrichment
         metrics/input-runtime:
@@ -195,6 +196,13 @@ processors:
                 - from: node
                   key: kubernetes.io/arch
                   tag_name: host.arch
+            annotations:
+                - from: pod
+                  key: resource.opentelemetry.io/service.name
+                  tag_name: kyma.otel.annotation.service.name
+                - from: pod
+                  key: resource.opentelemetry.io/service.version
+                  tag_name: kyma.otel.annotation.service.version
             otel_annotations: true
             deployment_name_from_replicaset: true
         pod_association:
@@ -247,6 +255,14 @@ processors:
                 - IsMatch(metric.name, "^k8s.daemonset.*")
                 - IsMatch(metric.name, "^k8s.deployment.*")
                 - IsMatch(metric.name, "^k8s.job.*")
+    transform/restore-otel-service-attrs:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - set(resource.attributes["service.name"], resource.attributes["kyma.otel.annotation.service.name"]) where resource.attributes["kyma.otel.annotation.service.name"] != nil and resource.attributes["kyma.otel.annotation.service.name"] != ""
+                - delete_key(resource.attributes, "kyma.otel.annotation.service.name")
+                - set(resource.attributes["service.version"], resource.attributes["kyma.otel.annotation.service.version"]) where resource.attributes["kyma.otel.annotation.service.version"] != nil and resource.attributes["kyma.otel.annotation.service.version"] != ""
+                - delete_key(resource.attributes, "kyma.otel.annotation.service.version")
     transform/set-instrumentation-scope-runtime:
         error_mode: ignore
         metric_statements:

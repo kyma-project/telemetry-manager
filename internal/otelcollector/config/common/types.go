@@ -185,6 +185,7 @@ type K8sAttributesProcessorConfig struct {
 type ExtractK8sMetadata struct {
 	Metadata                     []string       `yaml:"metadata"`
 	Labels                       []ExtractLabel `yaml:"labels"`
+	Annotations                  []ExtractLabel `yaml:"annotations,omitempty"`
 	OTelAnnotations              bool           `yaml:"otel_annotations,omitempty"`
 	DeploymentNameFromReplicaset bool           `yaml:"deployment_name_from_replicaset,omitempty"`
 }
