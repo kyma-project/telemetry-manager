@@ -10,10 +10,10 @@ extensions:
         directory: /tmp/telemetry-log-agent/file-log-receiver
     health_check:
         endpoint: ${MY_POD_IP}:13133
-    oauth2client/test:
-        token_url: ${OAUTH2_TOKEN_URL_TEST}
-        client_id: ${OAUTH2_CLIENT_ID_TEST}
-        client_secret: ${OAUTH2_CLIENT_SECRET_TEST}
+    oauth2client/logpipeline-test:
+        token_url: ${OAUTH2_TOKEN_URL_LOGPIPELINE_TEST}
+        client_id: ${OAUTH2_CLIENT_ID_LOGPIPELINE_TEST}
+        client_secret: ${OAUTH2_CLIENT_SECRET_LOGPIPELINE_TEST}
         scopes:
             - logs
     pprof:
@@ -31,7 +31,7 @@ service:
                 - service_enrichment
                 - transform/drop-kyma-attributes
             exporters:
-                - otlp_http/test
+                - otlp_http/logpipeline-test
     telemetry:
         metrics:
             readers:
@@ -48,7 +48,7 @@ service:
         - pprof
         - cgroup_runtime
         - file_storage
-        - oauth2client/test
+        - oauth2client/logpipeline-test
 receivers:
     file_log/test:
         exclude:
@@ -237,8 +237,8 @@ processors:
                 - set(scope.version, "main")
                 - set(scope.name, "io.kyma-project.telemetry/runtime")
 exporters:
-    otlp_http/test:
-        endpoint: ${OTLP_ENDPOINT_TEST}
+    otlp_http/logpipeline-test:
+        endpoint: ${OTLP_ENDPOINT_LOGPIPELINE_TEST}
         compression: gzip
         retry_on_failure:
             enabled: true
@@ -246,4 +246,4 @@ exporters:
             max_interval: 30s
             max_elapsed_time: 300s
         auth:
-            authenticator: oauth2client/test
+            authenticator: oauth2client/logpipeline-test

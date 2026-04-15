@@ -8,6 +8,7 @@ on:
   push:
     branches:
       - "main"
+      - "feature-new-centralized-arch" # TODO: Remove after merging feature branch
     paths-ignore:
       - "docs/**"
       - "dependencies/**"
@@ -19,7 +20,7 @@ on:
   pull_request_target:
     types: [labeled, opened, synchronize, reopened]
   workflow_dispatch:
-# This is reused in release.yml. So we use workflow_call
+  # This is reused in release.yml. So we use workflow_call
   workflow_call:
     inputs:
       ref:
@@ -46,9 +47,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TRIGGER_LABEL="test-on-gardener"
-          
+
           echo "Trigger label: $TRIGGER_LABEL"
-          
+
           if [[ "${{ github.event_name }}" == "pull_request_target" ]]; then
             echo "PR event detected"
             LABELS=$(gh pr view ${{ github.event.number }} --repo ${{ github.repository }} --json labels --template '{{range .labels}}{{.name}} {{end}}')
@@ -76,7 +77,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          fetch-depth: '0'
+          fetch-depth: "0"
           ref: ${{ inputs.ref || github.ref }}
 
       - name: Setup Golang
@@ -196,7 +197,7 @@ jobs:
         if: needs.check-trigger.outputs.run-gardener-tests == 'true'
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          fetch-depth: '0'
+          fetch-depth: "0"
           ref: ${{ inputs.ref || github.ref }}
 
       - name: Generate test summary
@@ -220,4 +221,3 @@ jobs:
             echo "✗ Gardener tests failed"
             exit 1
           fi
-

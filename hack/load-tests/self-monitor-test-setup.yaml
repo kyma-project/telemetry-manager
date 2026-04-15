@@ -15,19 +15,7 @@ metadata:
     app.kubernetes.io/created-by: telemetry-manager
   name: default
   namespace: kyma-system
-spec:
-  trace:
-    gateway:
-      scaling:
-        type: "Static"
-        static:
-          replicas: 4
-  metric:
-    gateway:
-      scaling:
-        type: "Static"
-        static:
-          replicas: 4
+spec: {}
 ---
 apiVersion: telemetry.kyma-project.io/v1alpha1
 kind: LogPipeline

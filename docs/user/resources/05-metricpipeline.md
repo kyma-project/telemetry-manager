@@ -45,7 +45,7 @@ status:
     status: "True"
     type: AgentHealthy
   - lastTransitionTime: "2024-01-08T10:40:18Z"
-    message: "Metric gateway Deployment is ready"
+    message: "OTLP Gateway is ready"
     observedGeneration: 1
     reason: GatewayReady
     status: "True"
@@ -383,7 +383,7 @@ The status of the MetricPipeline is determined by the condition types `GatewayHe
 
 | Condition Type         | Condition Status | Condition Reason                | Condition Message                                                                                                                                                                                                                                                                                                                       |
 | ---------------------- | ---------------- | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GatewayHealthy         | True             | GatewayReady                    | Metric gateway Deployment is ready                                                                                                                                                                                                                                                                                                      |
+| GatewayHealthy         | True             | GatewayReady                    | OTLP Gateway is ready                                                                                                                                                                                                                                                                                                      |
 | GatewayHealthy         | True             | RolloutInProgress               | Pods are being started/updated                                                                                                                                                                                                                                                                                                          |
 | GatewayHealthy         | False            | GatewayNotReady                 | No Pods deployed                                                                                                                                                                                                                                                                                                                        |
 | GatewayHealthy         | False            | GatewayNotReady                 | Failed to list ReplicaSets: `reason`                                                                                                                                                                                                                                                                                                    |

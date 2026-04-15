@@ -4,13 +4,15 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
 
 func TestOAuth2ExtensionID(t *testing.T) {
-	require.Equal(t, "oauth2client/test", OAuth2ExtensionID("test"))
+	ref := TracePipelineRef(&telemetryv1beta1.TracePipeline{ObjectMeta: metav1.ObjectMeta{Name: "test"}})
+	require.Equal(t, "oauth2client/tracepipeline-test", ComponentIDOAuth2Extension(ref))
 }
 
 func TestMakeExtensionConfig(t *testing.T) {
@@ -20,21 +22,22 @@ func TestMakeExtensionConfig(t *testing.T) {
 		ClientSecret: telemetryv1beta1.ValueType{Value: "client-secret"},
 	}
 
-	cb := NewOAuth2ExtensionConfigBuilder(fake.NewClientBuilder().Build(), oauth2Options, "test", SignalTypeTrace)
+	ref := TracePipelineRef(&telemetryv1beta1.TracePipeline{ObjectMeta: metav1.ObjectMeta{Name: "test"}})
+	cb := NewOAuth2ExtensionConfigBuilder(fake.NewClientBuilder().Build(), oauth2Options, ref)
 	oauth2ExtensionConfig, envVars, err := cb.OAuth2Extension(t.Context())
 	require.NoError(t, err)
 	require.NotNil(t, envVars)
 
-	require.NotNil(t, envVars["OAUTH2_TOKEN_URL_TEST"])
-	require.Equal(t, envVars["OAUTH2_TOKEN_URL_TEST"], []byte("token-url"))
+	require.NotNil(t, envVars["OAUTH2_TOKEN_URL_TRACEPIPELINE_TEST"])
+	require.Equal(t, envVars["OAUTH2_TOKEN_URL_TRACEPIPELINE_TEST"], []byte("token-url"))
 
-	require.NotNil(t, envVars["OAUTH2_CLIENT_ID_TEST"])
-	require.Equal(t, envVars["OAUTH2_CLIENT_ID_TEST"], []byte("client-id"))
+	require.NotNil(t, envVars["OAUTH2_CLIENT_ID_TRACEPIPELINE_TEST"])
+	require.Equal(t, envVars["OAUTH2_CLIENT_ID_TRACEPIPELINE_TEST"], []byte("client-id"))
 
-	require.NotNil(t, envVars["OAUTH2_CLIENT_SECRET_TEST"])
-	require.Equal(t, envVars["OAUTH2_CLIENT_SECRET_TEST"], []byte("client-secret"))
+	require.NotNil(t, envVars["OAUTH2_CLIENT_SECRET_TRACEPIPELINE_TEST"])
+	require.Equal(t, envVars["OAUTH2_CLIENT_SECRET_TRACEPIPELINE_TEST"], []byte("client-secret"))
 
-	require.Equal(t, "${OAUTH2_TOKEN_URL_TEST}", oauth2ExtensionConfig.TokenURL)
-	require.Equal(t, "${OAUTH2_CLIENT_ID_TEST}", oauth2ExtensionConfig.ClientID)
-	require.Equal(t, "${OAUTH2_CLIENT_SECRET_TEST}", oauth2ExtensionConfig.ClientSecret)
+	require.Equal(t, "${OAUTH2_TOKEN_URL_TRACEPIPELINE_TEST}", oauth2ExtensionConfig.TokenURL)
+	require.Equal(t, "${OAUTH2_CLIENT_ID_TRACEPIPELINE_TEST}", oauth2ExtensionConfig.ClientID)
+	require.Equal(t, "${OAUTH2_CLIENT_SECRET_TRACEPIPELINE_TEST}", oauth2ExtensionConfig.ClientSecret)
 }

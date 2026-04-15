@@ -102,7 +102,7 @@ func TestTraceComponentsCheck(t *testing.T) {
 				Type:    conditions.TypeTraceComponentsHealthy,
 				Status:  "False",
 				Reason:  "GatewayNotReady",
-				Message: "Trace gateway Deployment is not ready",
+				Message: "OTLP gateway DaemonSet is not ready",
 			},
 		},
 		{
@@ -234,7 +234,7 @@ func TestTraceComponentsCheck(t *testing.T) {
 				Type:    conditions.TypeTraceComponentsHealthy,
 				Status:  "False",
 				Reason:  "GatewayThrottling",
-				Message: "Trace gateway is unable to receive spans at current rate. See troubleshooting: " + conditions.LinkGatewayThrottling,
+				Message: "OTLP gateway is unable to receive spans at current rate. See troubleshooting: " + conditions.LinkGatewayThrottling,
 			},
 		},
 		{

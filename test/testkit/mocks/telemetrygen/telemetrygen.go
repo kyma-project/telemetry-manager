@@ -149,7 +149,7 @@ func PodSpec(signalType SignalType, opts ...Option) corev1.PodSpec {
 	case SignalTypeLogs:
 		gatewayPushURL = "telemetry-otlp-logs.kyma-system:4317"
 	case SignalTypeCentralLogs:
-		gatewayPushURL = "telemetry-otlp-gateway.kyma-system:4317"
+		gatewayPushURL = "telemetry-otlp.kyma-system:4317"
 	}
 
 	switch signalType {

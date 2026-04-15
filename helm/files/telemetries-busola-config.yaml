@@ -85,30 +85,19 @@ details: |-
             header: Last transition time
             type: TraceComponentsHealthy
   body:
-    - name: Logs
+    - name: Gateway Scaling (Deprecated)
       widget: Panel
-      visibility: $exists(spec.log.gateway.scaling.static.replicas)
+      visibility: >-
+        $exists(spec.log.gateway.scaling.static.replicas) or
+        $exists(spec.trace.gateway.scaling.static.replicas) or
+        $exists(spec.metric.gateway.scaling.static.replicas) or
+        $exists(spec.log.gateway.scaling.type) or
+        $exists(spec.trace.gateway.scaling.type) or
+        $exists(spec.metric.gateway.scaling.type)
       children:
-      - name: Gateway Replicas
-        source: spec.log.gateway.scaling.static.replicas
-      - name: Scaling Type
-        source: spec.log.gateway.scaling.type
-    - name: Traces
-      widget: Panel
-      visibility: $exists(spec.trace.gateway.scaling.static.replicas)
-      children:
-      - name: Gateway Replicas
-        source: spec.trace.gateway.scaling.static.replicas
-      - name: Scaling Type
-        source: spec.trace.gateway.scaling.type
-    - name: Metrics
-      widget: Panel
-      visibility: $exists(spec.metric.gateway.scaling.static.replicas)
-      children:
-      - name: Gateway Replicas
-        source: spec.metric.gateway.scaling.static.replicas
-      - name: Scaling Type
-        source: spec.metric.gateway.scaling.type
+      - widget: Alert
+        severity: warning
+        source: "'Gateway scaling configuration is deprecated and no longer supported. The gateway now runs as a DaemonSet that scales automatically with cluster nodes. Remove the gateway.scaling configuration from your Telemetry CR.'"
     - name: Enrichments
       visibility: $exists(spec.enrichments)
       widget: Panel
@@ -133,141 +122,6 @@ details: |-
       - source: metricPipelines
       - source: tracePipelines
 form: |
-  - advanced: true
-    defaultExpanded: false
-    readOnly: false
-    decodable: false
-    path: spec.log
-    name: Logs
-    widget: FormGroup
-    children:
-      - advanced: true
-        defaultExpanded: false
-        readOnly: false
-        decodable: false
-        path: gateway
-        name: Gateway
-        widget: FormGroup
-        children:
-          - advanced: true
-            defaultExpanded: false
-            readOnly: false
-            decodable: false
-            path: scaling
-            name: Scaling
-            widget: FormGroup
-            children:
-              - path: type
-                override: false
-                enum:
-                  - None
-              - advanced: true
-                defaultExpanded: false
-                readOnly: false
-                decodable: false
-                visibility: "$item.spec.log.gateway.scaling.type = 'Static'"
-                path: static
-                name: Static
-                widget: FormGroup
-                children:
-                  - advanced: true
-                    defaultExpanded: false
-                    readOnly: false
-                    decodable: false
-                    path: replicas
-                    name: Replicas
-                    simple: false
-                    widget: Number
-  - advanced: true
-    defaultExpanded: false
-    readOnly: false
-    decodable: false
-    path: spec.trace
-    name: Traces
-    widget: FormGroup
-    children:
-      - advanced: true
-        defaultExpanded: false
-        readOnly: false
-        decodable: false
-        path: gateway
-        name: Gateway
-        widget: FormGroup
-        children:
-          - advanced: true
-            defaultExpanded: false
-            readOnly: false
-            decodable: false
-            path: scaling
-            name: Scaling
-            widget: FormGroup
-            children:
-              - path: type
-                override: false
-                enum:
-                  - None
-              - advanced: true
-                defaultExpanded: false
-                readOnly: false
-                decodable: false
-                visibility: "$item.spec.trace.gateway.scaling.type = 'Static'"
-                path: static
-                name: Static
-                widget: FormGroup
-                children:
-                  - advanced: true
-                    defaultExpanded: false
-                    readOnly: false
-                    decodable: false
-                    path: replicas
-                    name: Replicas
-                    simple: false
-                    widget: Number
-  - advanced: true
-    defaultExpanded: false
-    readOnly: false
-    decodable: false
-    path: spec.metric
-    name: Metrics
-    widget: FormGroup
-    children:
-      - advanced: true
-        defaultExpanded: false
-        readOnly: false
-        decodable: false
-        path: gateway
-        name: Gateway
-        widget: FormGroup
-        children:
-          - advanced: true
-            defaultExpanded: false
-            readOnly: false
-            decodable: false
-            path: scaling
-            name: Scaling
-            widget: FormGroup
-            children:
-              - path: type
-                override: false
-                enum:
-                  - None
-              - advanced: true
-                defaultExpanded: false
-                readOnly: false
-                decodable: false
-                visibility: "$item.spec.metric.gateway.scaling.type = 'Static'"
-                path: static
-                name: Static
-                widget: FormGroup
-                children:
-                  - advanced: true
-                    defaultExpanded: false
-                    readOnly: false
-                    decodable: false
-                    path: replicas
-                    name: Replicas
-                    simple: false
-                    widget: Number
   - path: spec.enrichments
     name: Enrichments
     widget: FormGroup
