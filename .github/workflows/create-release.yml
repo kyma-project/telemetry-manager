@@ -32,7 +32,7 @@ on:
         default: false
         type: boolean
       module_release:
-        description: 'Whether to trigger module release workflow after this release (only for experimental and fast channels)'
+        description: 'Whether to trigger submit module workflow after this release (only for experimental, dev, and fast channels)'
         required: false
         default: true
         type: boolean
@@ -374,37 +374,22 @@ jobs:
           EOF
           )"
 
+          # Get milestone number for the version
+          MILESTONE_NUMBER=$(gh api "repos/${{ github.repository }}/milestones?state=all&direction=desc&per_page=100" --jq ".[] | select(.title == \"${VERSION}\") | .number")
+          
           PR_URL=$(gh pr create \
             --base "${RELEASE_BRANCH}" \
             --head "${BUMP_BRANCH}" \
             --title "chore: release preparation: bump version to ${VERSION}" \
             --body "${PR_BODY}" \
             --label "area/release" \
-            --label "kind/chore")
-
-
+            --label "kind/chore" \
+            --milestone "${MILESTONE_NUMBER}")
+          
           PR_NUMBER=$(echo "${PR_URL}" | grep -o '[0-9]*$')
           echo "pr-number=${PR_NUMBER}" >> $GITHUB_OUTPUT
           echo "Created PR #${PR_NUMBER}: ${PR_URL}"
           echo "PR_NUMBER=${PR_NUMBER}" >> $GITHUB_ENV
-
-      - name: Assign PR to milestone
-        env:
-          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
-          VERSION: ${{ github.event.inputs.version }}
-        run: |
-          PR_NUMBER="${{ steps.create-pr.outputs.pr-number }}"
-          echo "Assigning PR #${PR_NUMBER} to milestone ${VERSION}..."
-
-          # Get milestone number for the version
-          MILESTONE_NUMBER=$(gh api "repos/${{ github.repository }}/milestones?state=all&direction=desc&per_page=100" --jq ".[] | select(.title == \"${VERSION}\") | .number")
-
-          if [ -z "$MILESTONE_NUMBER" ]; then
-            echo "::warning::Could not find milestone ${VERSION}"
-          else
-            gh pr edit "${PR_NUMBER}" --milestone "${MILESTONE_NUMBER}"
-            echo "Assigned PR #${PR_NUMBER} to milestone ${VERSION}"
-          fi
 
       - name: Wait for PR to be merged
         env:
