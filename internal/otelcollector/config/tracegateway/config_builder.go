@@ -3,6 +3,8 @@ package tracegateway
 import (
 	"context"
 	"fmt"
+	"slices"
+	"strings"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -29,6 +31,11 @@ type BuildOptions struct {
 }
 
 func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1beta1.TracePipeline, opts BuildOptions) (*common.Config, common.EnvVars, error) {
+	// Sort pipelines to ensure consistent order and checksum for generated ConfigMap
+	slices.SortFunc(pipelines, func(a, b telemetryv1beta1.TracePipeline) int {
+		return strings.Compare(a.Name, b.Name)
+	})
+
 	b.Config = common.NewConfig()
 	b.EnvVars = make(common.EnvVars)
 
