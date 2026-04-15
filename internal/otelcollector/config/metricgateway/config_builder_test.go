@@ -247,3 +247,50 @@ func TestBuildConfig(t *testing.T) {
 		})
 	}
 }
+
+func TestBuildConfigShuffled(t *testing.T) {
+	fakeClient := fake.NewClientBuilder().Build()
+	sut := Builder{Reader: fakeClient}
+
+	buildOptions := BuildOptions{
+		Cluster: common.ClusterOptions{
+			ClusterName:   "${KUBERNETES_SERVICE_HOST}",
+			CloudProvider: "test-cloud-provider",
+		},
+	}
+
+	pipelines := []telemetryv1beta1.MetricPipeline{
+		testutils.NewMetricPipelineBuilder().
+			WithName("calm-sandbox").
+			WithOTLPOutput(testutils.OTLPProtocol("http")).
+			WithOAuth2(
+				testutils.OAuth2ClientID("sandbox-client-id"),
+				testutils.OAuth2ClientSecret("sandbox-client-secret"),
+				testutils.OAuth2TokenURL("https://auth.example.com/oauth2/token"),
+				testutils.OAuth2Scopes([]string{"metrics"}),
+			).Build(),
+		testutils.NewMetricPipelineBuilder().
+			WithName("calm-france").
+			WithOTLPOutput(testutils.OTLPProtocol("http")).
+			WithOAuth2(
+				testutils.OAuth2ClientID("france-client-id"),
+				testutils.OAuth2ClientSecret("france-client-secret"),
+				testutils.OAuth2TokenURL("https://auth.france.example.com/oauth2/token"),
+				testutils.OAuth2Scopes([]string{"metrics"}),
+			).Build(),
+	}
+
+	config1, _, err := sut.Build(t.Context(), []telemetryv1beta1.MetricPipeline{pipelines[0], pipelines[1]}, buildOptions)
+	require.NoError(t, err)
+
+	config2, _, err := sut.Build(t.Context(), []telemetryv1beta1.MetricPipeline{pipelines[1], pipelines[0]}, buildOptions)
+	require.NoError(t, err)
+
+	config1YAML, err := yaml.Marshal(config1)
+	require.NoError(t, err, "failed to marshal config1")
+
+	config2YAML, err := yaml.Marshal(config2)
+	require.NoError(t, err, "failed to marshal config2")
+
+	require.Equal(t, string(config1YAML), string(config2YAML), "config should be equal regardless of pipeline order")
+}
