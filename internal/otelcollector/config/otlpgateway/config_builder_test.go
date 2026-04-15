@@ -576,65 +576,65 @@ func TestBuildConfigShuffled(t *testing.T) {
 
 	tracePipelines := []telemetryv1beta1.TracePipeline{
 		testutils.NewTracePipelineBuilder().
-			WithName("calm-sandbox").
+			WithName("pipeline-1").
 			WithOTLPOutput(testutils.OTLPProtocol("http")).
 			WithOAuth2(
-				testutils.OAuth2ClientID("sandbox-client-id"),
-				testutils.OAuth2ClientSecret("sandbox-client-secret"),
+				testutils.OAuth2ClientID("pipeline-1-client-id"),
+				testutils.OAuth2ClientSecret("pipeline-1-client-secret"),
 				testutils.OAuth2TokenURL("https://auth.example.com/oauth2/token"),
 				testutils.OAuth2Scopes([]string{"traces"}),
 			).Build(),
 		testutils.NewTracePipelineBuilder().
-			WithName("calm-france").
+			WithName("pipeline-2").
 			WithOTLPOutput(testutils.OTLPProtocol("http")).
 			WithOAuth2(
-				testutils.OAuth2ClientID("france-client-id"),
-				testutils.OAuth2ClientSecret("france-client-secret"),
-				testutils.OAuth2TokenURL("https://auth.france.example.com/oauth2/token"),
+				testutils.OAuth2ClientID("pipeline-2-client-id"),
+				testutils.OAuth2ClientSecret("pipeline-2-client-secret"),
+				testutils.OAuth2TokenURL("https://auth2.example.com/oauth2/token"),
 				testutils.OAuth2Scopes([]string{"traces"}),
 			).Build(),
 	}
 
 	logPipelines := []telemetryv1beta1.LogPipeline{
 		testutils.NewLogPipelineBuilder().
-			WithName("log-sandbox").
+			WithName("pipeline-1").
 			WithOTLPOutput(testutils.OTLPProtocol("http")).
 			WithOAuth2(
-				testutils.OAuth2ClientID("log-sandbox-client-id"),
-				testutils.OAuth2ClientSecret("log-sandbox-client-secret"),
+				testutils.OAuth2ClientID("pipeline-1-client-id"),
+				testutils.OAuth2ClientSecret("pipeline-1-client-secret"),
 				testutils.OAuth2TokenURL("https://auth.example.com/oauth2/token"),
 				testutils.OAuth2Scopes([]string{"logs"}),
 			).Build(),
 		testutils.NewLogPipelineBuilder().
-			WithName("log-france").
+			WithName("pipeline-2").
 			WithOTLPOutput(testutils.OTLPProtocol("http")).
 			WithOAuth2(
-				testutils.OAuth2ClientID("log-france-client-id"),
-				testutils.OAuth2ClientSecret("log-france-client-secret"),
-				testutils.OAuth2TokenURL("https://auth.france.example.com/oauth2/token"),
+				testutils.OAuth2ClientID("pipeline-2-client-id"),
+				testutils.OAuth2ClientSecret("pipeline-2-client-secret"),
+				testutils.OAuth2TokenURL("https://auth2.example.com/oauth2/token"),
 				testutils.OAuth2Scopes([]string{"logs"}),
 			).Build(),
 	}
 
 	metricPipelines := []telemetryv1beta1.MetricPipeline{
 		testutils.NewMetricPipelineBuilder().
-			WithName("metric-sandbox").
+			WithName("pipeline-1").
 			WithOTLPInput(true).
 			WithOTLPOutput(testutils.OTLPProtocol("http")).
 			WithOAuth2(
-				testutils.OAuth2ClientID("metric-sandbox-client-id"),
-				testutils.OAuth2ClientSecret("metric-sandbox-client-secret"),
+				testutils.OAuth2ClientID("pipeline-1-client-id"),
+				testutils.OAuth2ClientSecret("pipeline-1-client-secret"),
 				testutils.OAuth2TokenURL("https://auth.example.com/oauth2/token"),
 				testutils.OAuth2Scopes([]string{"metrics"}),
 			).Build(),
 		testutils.NewMetricPipelineBuilder().
-			WithName("metric-france").
+			WithName("pipeline-2").
 			WithOTLPInput(true).
 			WithOTLPOutput(testutils.OTLPProtocol("http")).
 			WithOAuth2(
-				testutils.OAuth2ClientID("metric-france-client-id"),
-				testutils.OAuth2ClientSecret("metric-france-client-secret"),
-				testutils.OAuth2TokenURL("https://auth.france.example.com/oauth2/token"),
+				testutils.OAuth2ClientID("pipeline-2-client-id"),
+				testutils.OAuth2ClientSecret("pipeline-2-client-secret"),
+				testutils.OAuth2TokenURL("https://auth2.example.com/oauth2/token"),
 				testutils.OAuth2Scopes([]string{"metrics"}),
 			).Build(),
 	}
