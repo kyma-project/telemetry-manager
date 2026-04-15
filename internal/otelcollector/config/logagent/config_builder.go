@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"slices"
+	"strings"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -37,6 +39,11 @@ type BuildOptions struct {
 }
 
 func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1beta1.LogPipeline, opts BuildOptions) (*common.Config, common.EnvVars, error) {
+	// Sort pipelines to ensure consistent order and checksum for generated ConfigMap
+	slices.SortFunc(pipelines, func(a, b telemetryv1beta1.LogPipeline) int {
+		return strings.Compare(a.Name, b.Name)
+	})
+
 	b.Config = common.NewConfig()
 	if opts.VpaActive {
 		b.Config.DisableGoMemLimit()
@@ -63,6 +70,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1beta1.LogPip
 			b.addSetInstrumentationScopeToRuntimeProcessor(opts),
 			b.addDropUnknownServiceNameProcessor(opts),
 			b.addK8sAttributesProcessor(opts),
+			b.addRestoreOtelServiceAttrsProcessor(opts),
 			b.addInsertClusterAttributesProcessor(opts),
 			b.addServiceEnrichmentProcessor(opts),
 			// Kyma attributes are dropped before user-defined transform and filter processors
@@ -135,6 +143,19 @@ func (b *Builder) addK8sAttributesProcessor(opts BuildOptions) buildComponentFun
 		func(lp *telemetryv1beta1.LogPipeline) any {
 			useOTelServiceEnrichment := opts.ServiceEnrichment == commonresources.AnnotationValueTelemetryServiceEnrichmentOtel
 			return common.K8sAttributesProcessor(opts.Enrichments, useOTelServiceEnrichment)
+		},
+	)
+}
+
+func (b *Builder) addRestoreOtelServiceAttrsProcessor(opts BuildOptions) buildComponentFunc {
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDRestoreOtelServiceAttrsProcessor),
+		func(lp *telemetryv1beta1.LogPipeline) any {
+			if opts.ServiceEnrichment != commonresources.AnnotationValueTelemetryServiceEnrichmentOtel {
+				return nil
+			}
+
+			return common.LogTransformProcessor(common.RestoreOtelServiceAnnotationsProcessorStatements())
 		},
 	)
 }

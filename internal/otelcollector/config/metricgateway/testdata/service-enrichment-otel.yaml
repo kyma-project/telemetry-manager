@@ -1,5 +1,5 @@
 extensions:
-    cgroupruntime:
+    cgroup_runtime:
         gomaxprocs:
             enabled: false
         gomemlimit:
@@ -61,7 +61,7 @@ service:
     extensions:
         - health_check
         - pprof
-        - cgroupruntime
+        - cgroup_runtime
         - k8s_leader_elector
 receivers:
     kymastats:
@@ -122,6 +122,13 @@ processors:
                 - from: node
                   key: kubernetes.io/arch
                   tag_name: host.arch
+            annotations:
+                - from: pod
+                  key: resource.opentelemetry.io/service.name
+                  tag_name: kyma.otel.annotation.service.name
+                - from: pod
+                  key: resource.opentelemetry.io/service.version
+                  tag_name: kyma.otel.annotation.service.version
             otel_annotations: true
             deployment_name_from_replicaset: true
         pod_association:
