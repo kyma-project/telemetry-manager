@@ -499,7 +499,9 @@ func TestBuildConfigShuffled(t *testing.T) {
 	pipelines := []telemetryv1beta1.MetricPipeline{
 		testutils.NewMetricPipelineBuilder().
 			WithName("pipeline-1").
-			WithRuntimeInput(true).
+			WithRuntimeInput(true, testutils.IncludeNamespaces("default")).
+			WithPrometheusInput(true, testutils.ExcludeNamespaces("kube-system")).
+			WithIstioInput(false).
 			WithOTLPOutput(testutils.OTLPProtocol("http")).
 			WithOAuth2(
 				testutils.OAuth2ClientID("pipeline-1-client-id"),
@@ -509,7 +511,9 @@ func TestBuildConfigShuffled(t *testing.T) {
 			).Build(),
 		testutils.NewMetricPipelineBuilder().
 			WithName("pipeline-2").
-			WithRuntimeInput(true).
+			WithRuntimeInput(false).
+			WithPrometheusInput(false).
+			WithIstioInput(true).
 			WithOTLPOutput(testutils.OTLPProtocol("http")).
 			WithOAuth2(
 				testutils.OAuth2ClientID("pipeline-2-client-id"),
@@ -517,12 +521,22 @@ func TestBuildConfigShuffled(t *testing.T) {
 				testutils.OAuth2TokenURL("https://auth2.example.com/oauth2/token"),
 				testutils.OAuth2Scopes([]string{"metrics"}),
 			).Build(),
+		testutils.NewMetricPipelineBuilder().
+			WithName("pipeline-3").
+			WithRuntimeInput(true).
+			WithPrometheusInput(false).
+			WithIstioInput(false).
+			WithOTLPOutput(testutils.OTLPEndpoint("https://backend.example.com")).
+			Build(),
 	}
 
-	config1, _, err := sut.Build(t.Context(), []telemetryv1beta1.MetricPipeline{pipelines[0], pipelines[1]}, buildOptions)
+	config1, _, err := sut.Build(t.Context(), []telemetryv1beta1.MetricPipeline{pipelines[0], pipelines[1], pipelines[2]}, buildOptions)
 	require.NoError(t, err)
 
-	config2, _, err := sut.Build(t.Context(), []telemetryv1beta1.MetricPipeline{pipelines[1], pipelines[0]}, buildOptions)
+	config2, _, err := sut.Build(t.Context(), []telemetryv1beta1.MetricPipeline{pipelines[1], pipelines[0], pipelines[2]}, buildOptions)
+	require.NoError(t, err)
+
+	config3, _, err := sut.Build(t.Context(), []telemetryv1beta1.MetricPipeline{pipelines[2], pipelines[1], pipelines[0]}, buildOptions)
 	require.NoError(t, err)
 
 	config1YAML, err := yaml.Marshal(config1)
@@ -531,5 +545,10 @@ func TestBuildConfigShuffled(t *testing.T) {
 	config2YAML, err := yaml.Marshal(config2)
 	require.NoError(t, err, "failed to marshal config2")
 
+	config3YAML, err := yaml.Marshal(config3)
+	require.NoError(t, err, "failed to marshal config3")
+
 	require.Equal(t, string(config1YAML), string(config2YAML), "config should be equal regardless of pipeline order")
+	require.Equal(t, string(config2YAML), string(config3YAML), "config should be equal regardless of pipeline order")
+	require.Equal(t, string(config1YAML), string(config3YAML), "config should be equal regardless of pipeline order")
 }
