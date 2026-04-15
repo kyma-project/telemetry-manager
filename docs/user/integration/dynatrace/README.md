@@ -236,7 +236,6 @@ We recommend direct integration with the Dynatrace server. This approach reduces
     > [!WARNING]
     > Be cautious when you configure the **randomSamplingPercentage**:
     > - Could cause high volume of traces.
-    > - The Kyma trace gateway component does not scale automatically.
 
 1. To find traces from your Kyma cluster in the Dynatrace UI, go to **Applications & Microservices** > **Distributed traces**.
 
@@ -249,7 +248,7 @@ To start ingesting custom and Istio metrics, deploy a MetricPipeline. The config
 
 Depending on your metrics source and temporality, choose one of the following methods:
 
-- Ingest cumulative metrics using the Dynatrace OTel Collector for transformation. This solution is recommended as it often cumulative metrics cannot be avoided and it will provide the most flexibility. However, it will increase the number of additional components processing the data in the cluster (OTel Collector, ActiveGate) leading to increased resource consumption and increased chance of lossing data.
+- Ingest cumulative metrics using the Dynatrace OTel Collector for transformation. This solution is recommended because cumulative metrics often cannot be avoided, and it provides the most flexibility. However, this approach increases the number of components processing data in the cluster (such as the Dynatrace OTel Collector and ActiveGate), which leads to higher resource consumption and a greater chance of losing data.
 
   1. Deploy the [MetricPipeline](./../../collecting-metrics/README.md) that ships to the Dynatrace OTel Collector:
 
@@ -330,7 +329,7 @@ Depending on your metrics source and temporality, choose one of the following me
         EOF
         ```
 
-  1. Start pushing metrics to the metric gateway using [delta aggregation temporality.](https://docs.dynatrace.com/docs/ingest-from/opentelemetry/otlp-api/ingest-otlp-metrics/about-metrics-ingest#aggregation-temporality)
+  1. Start pushing metrics to the OTLP Gateway using [delta aggregation temporality.](https://docs.dynatrace.com/docs/ingest-from/opentelemetry/otlp-api/ingest-otlp-metrics/about-metrics-ingest#aggregation-temporality)
 
   1. To find metrics from your Kyma cluster in the Dynatrace UI, go to **Observe & Explore** > **Metrics**.
 

@@ -26,7 +26,7 @@ service:
                 - transform/insert-cluster-attributes
                 - transform/drop-kyma-attributes
             exporters:
-                - otlp_grpc/test
+                - otlp_grpc/logpipeline-test
     telemetry:
         metrics:
             readers:
@@ -248,8 +248,8 @@ processors:
                 - set(scope.version, "main")
                 - set(scope.name, "io.kyma-project.telemetry/runtime")
 exporters:
-    otlp_grpc/test:
-        endpoint: ${OTLP_ENDPOINT_TEST}
+    otlp_grpc/logpipeline-test:
+        endpoint: ${OTLP_ENDPOINT_LOGPIPELINE_TEST}
         tls:
             insecure: true
         compression: gzip

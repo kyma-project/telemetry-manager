@@ -56,6 +56,27 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) erro
 	return allErrors
 }
 
+func (r *Reconciler) setGatewayHealthyCondition(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) {
+	// Only set GatewayHealthy condition for OTLP input pipelines
+	if pipeline.Spec.Input.OTLP == nil {
+		// For runtime input, GatewayHealthy is not applicable - remove condition if present
+		meta.RemoveStatusCondition(&pipeline.Status.Conditions, conditions.TypeGatewayHealthy)
+		return
+	}
+
+	condition := commonstatus.GetGatewayHealthyCondition(ctx,
+		r.gatewayProber,
+		types.NamespacedName{
+			Name:      names.OTLPGateway,
+			Namespace: r.globals.TargetNamespace(),
+		},
+		r.errToMessageConverter,
+		commonstatus.SignalTypeOtelLogs)
+
+	condition.ObservedGeneration = pipeline.Generation
+	meta.SetStatusCondition(&pipeline.Status.Conditions, *condition)
+}
+
 func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) error {
 	status, reason, err := r.evaluateFlowHealthCondition(ctx, pipeline)
 
@@ -78,23 +99,34 @@ func (r *Reconciler) evaluateFlowHealthCondition(ctx context.Context, pipeline *
 		return metav1.ConditionFalse, conditions.ReasonSelfMonConfigNotGenerated, nil
 	}
 
-	// Probe gateway flow health
-	gatewayProbeResult, err := r.gatewayFlowHealthProber.Probe(ctx, pipeline.Name)
-	if err != nil {
-		return metav1.ConditionUnknown, conditions.ReasonSelfMonGatewayProbingFailed, fmt.Errorf("failed to probe gateway flow health: %w", err)
+	// Probe agent flow health (if pipeline uses runtime input)
+	var agentReason string
+
+	if requiresAgentProbing(pipeline) && r.agentFlowHealthProber != nil {
+		agentProbeResult, err := r.agentFlowHealthProber.Probe(ctx, pipeline.Name)
+		if err != nil {
+			return metav1.ConditionUnknown, conditions.ReasonSelfMonAgentProbingFailed, fmt.Errorf("failed to probe agent flow health: %w", err)
+		}
+
+		logf.FromContext(ctx).V(1).Info("Probed agent flow health", "result", agentProbeResult)
+		agentReason = agentFlowHealthReasonFor(agentProbeResult)
 	}
 
-	logf.FromContext(ctx).V(1).Info("Probed gateway flow health", "result", gatewayProbeResult)
+	// Probe gateway flow health (if pipeline uses OTLP input)
+	var gatewayReason string
 
-	// Probe agent flow health
-	agentProbeResult, err := r.agentFlowHealthProber.Probe(ctx, pipeline.Name)
-	if err != nil {
-		return metav1.ConditionUnknown, conditions.ReasonSelfMonAgentProbingFailed, fmt.Errorf("failed to probe agent flow health: %w", err)
+	if requiresGatewayProbing(pipeline) && r.gatewayFlowHealthProber != nil {
+		gatewayProbeResult, err := r.gatewayFlowHealthProber.Probe(ctx, pipeline.Name)
+		if err != nil {
+			return metav1.ConditionUnknown, conditions.ReasonSelfMonGatewayProbingFailed, fmt.Errorf("failed to probe gateway flow health: %w", err)
+		}
+
+		logf.FromContext(ctx).V(1).Info("Probed gateway flow health", "result", gatewayProbeResult)
+		gatewayReason = gatewayFlowHealthReasonFor(gatewayProbeResult)
 	}
 
-	logf.FromContext(ctx).V(1).Info("Probed agent flow health", "result", agentProbeResult)
-
-	reason := flowHealthReasonFor(gatewayProbeResult, agentProbeResult)
+	// Combine results: worst status wins
+	reason := combineFlowHealthReasons(agentReason, gatewayReason)
 	if reason == conditions.ReasonSelfMonFlowHealthy {
 		return metav1.ConditionTrue, reason, nil
 	}
@@ -102,14 +134,66 @@ func (r *Reconciler) evaluateFlowHealthCondition(ctx context.Context, pipeline *
 	return metav1.ConditionFalse, reason, nil
 }
 
-func flowHealthReasonFor(gatewayProbeResult prober.OTelGatewayProbeResult, agentProbeResult prober.OTelAgentProbeResult) string {
+// requiresGatewayProbing returns true if the pipeline uses OTLP input
+func requiresGatewayProbing(pipeline *telemetryv1beta1.LogPipeline) bool {
+	return pipeline.Spec.Input.OTLP != nil
+}
+
+// requiresAgentProbing returns true if the pipeline uses runtime input
+func requiresAgentProbing(pipeline *telemetryv1beta1.LogPipeline) bool {
+	return pipeline.Spec.Input.Runtime != nil
+}
+
+// gatewayFlowHealthReasonFor maps gateway probe results to condition reasons
+func gatewayFlowHealthReasonFor(probeResult prober.OTelGatewayProbeResult) string {
 	switch {
-	case gatewayProbeResult.AllDataDropped:
+	case probeResult.AllDataDropped:
 		return conditions.ReasonSelfMonGatewayAllDataDropped
-	case gatewayProbeResult.SomeDataDropped:
+	case probeResult.SomeDataDropped:
 		return conditions.ReasonSelfMonGatewaySomeDataDropped
-	case gatewayProbeResult.Throttling:
+	case probeResult.Throttling:
 		return conditions.ReasonSelfMonGatewayThrottling
+	default:
+		return conditions.ReasonSelfMonFlowHealthy
+	}
+}
+
+// combineFlowHealthReasons returns the worst health reason between agent and gateway
+func combineFlowHealthReasons(agentReason, gatewayReason string) string {
+	// Priority: AllDataDropped > SomeDataDropped > BufferFilling > Throttling > Healthy
+	reasons := []string{agentReason, gatewayReason}
+
+	for _, reason := range reasons {
+		if reason == conditions.ReasonSelfMonAgentAllDataDropped ||
+			reason == conditions.ReasonSelfMonGatewayAllDataDropped {
+			return reason
+		}
+	}
+
+	for _, reason := range reasons {
+		if reason == conditions.ReasonSelfMonAgentSomeDataDropped ||
+			reason == conditions.ReasonSelfMonGatewaySomeDataDropped {
+			return reason
+		}
+	}
+
+	for _, reason := range reasons {
+		if reason == conditions.ReasonSelfMonAgentBufferFillingUp {
+			return reason
+		}
+	}
+
+	for _, reason := range reasons {
+		if reason == conditions.ReasonSelfMonGatewayThrottling {
+			return reason
+		}
+	}
+
+	return conditions.ReasonSelfMonFlowHealthy
+}
+
+func agentFlowHealthReasonFor(agentProbeResult prober.OTelAgentProbeResult) string {
+	switch {
 	case agentProbeResult.AllDataDropped:
 		return conditions.ReasonSelfMonAgentAllDataDropped
 	case agentProbeResult.SomeDataDropped:
@@ -135,23 +219,6 @@ func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *tel
 			commonstatus.SignalTypeOtelLogs)
 	}
 
-	condition.ObservedGeneration = pipeline.Generation
-	meta.SetStatusCondition(&pipeline.Status.Conditions, *condition)
-}
-
-func (r *Reconciler) setGatewayHealthyCondition(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) {
-	resourceName := func() string {
-		if r.globals.DeployOTLPGateway() {
-			return names.OTLPGateway
-		}
-
-		return names.LogGateway
-	}()
-
-	condition := commonstatus.GetGatewayHealthyCondition(ctx,
-		r.gatewayProber, types.NamespacedName{Name: resourceName, Namespace: r.globals.TargetNamespace()},
-		r.errToMessageConverter,
-		commonstatus.SignalTypeOtelLogs)
 	condition.ObservedGeneration = pipeline.Generation
 	meta.SetStatusCondition(&pipeline.Status.Conditions, *condition)
 }

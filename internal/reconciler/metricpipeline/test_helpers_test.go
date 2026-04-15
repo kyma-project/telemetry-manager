@@ -187,13 +187,6 @@ func newTestReconciler(client client.Client, opts ...any) (*testReconciler, func
 	agentApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
 	agentApplierDeleter.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
 
-	gatewayConfigBuilder := &mocks.GatewayConfigBuilder{}
-	gatewayConfigBuilder.On("Build", mock.Anything, mock.Anything, mock.Anything).Return(&common.Config{}, nil, nil).Maybe()
-
-	gatewayApplierDeleter := &mocks.GatewayApplierDeleter{}
-	gatewayApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
-	gatewayApplierDeleter.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
-
 	gatewayFlowHealthProber := &mocks.GatewayFlowHealthProber{}
 	gatewayFlowHealthProber.On("Probe", mock.Anything, mock.Anything).Return(prober.OTelGatewayProbeResult{}, nil).Maybe()
 
@@ -217,9 +210,7 @@ func newTestReconciler(client client.Client, opts ...any) (*testReconciler, func
 		WithAgentConfigBuilder(agentConfigBuilder),
 		WithAgentApplierDeleter(agentApplierDeleter),
 		WithAgentProber(commonStatusStubs.NewDaemonSetProber(nil)),
-		WithGatewayConfigBuilder(gatewayConfigBuilder),
-		WithGatewayApplierDeleter(gatewayApplierDeleter),
-		WithGatewayProber(commonStatusStubs.NewDeploymentSetProber(nil)),
+		WithGatewayProber(commonStatusStubs.NewDaemonSetProber(nil)),
 		WithGatewayFlowHealthProber(gatewayFlowHealthProber),
 		WithAgentFlowHealthProber(agentFlowHealthProber),
 		WithIstioStatusChecker(&stubs.IstioStatusChecker{IsActive: false}),
@@ -307,24 +298,6 @@ func withAgentConfigBuilderAssert(mockBuilder *mocks.AgentConfigBuilder) testOpt
 func withAgentApplierDeleterAssert(mockApplierDeleter *mocks.AgentApplierDeleter) testOption {
 	return testOptionFunc(func(tr *testReconciler) {
 		tr.agentApplierDeleter = mockApplierDeleter
-		registerMockForAssertion(tr.mockRegistry, mockApplierDeleter)
-	})
-}
-
-// withGatewayConfigBuilderAssert registers a GatewayConfigBuilder mock for auto-assertion using AssertExpectations.
-// Use this when you set up expectations with On().Times(), On().Once(), etc.
-// If you don't set up any On() calls, AssertExpectations will fail (which is correct - you should set expectations).
-func withGatewayConfigBuilderAssert(mockBuilder *mocks.GatewayConfigBuilder) testOption {
-	return testOptionFunc(func(tr *testReconciler) {
-		tr.gatewayConfigBuilder = mockBuilder
-		registerMockForAssertion(tr.mockRegistry, mockBuilder)
-	})
-}
-
-// withGatewayApplierDeleterAssert registers a GatewayApplierDeleter mock for auto-assertion.
-func withGatewayApplierDeleterAssert(mockApplierDeleter *mocks.GatewayApplierDeleter) testOption {
-	return testOptionFunc(func(tr *testReconciler) {
-		tr.gatewayApplierDeleter = mockApplierDeleter
 		registerMockForAssertion(tr.mockRegistry, mockApplierDeleter)
 	})
 }

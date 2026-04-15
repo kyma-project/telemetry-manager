@@ -105,7 +105,7 @@ func TestCustomClusterName(t *testing.T) {
 			Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
 
 			assert.BackendReachable(t, backend)
-			assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+			assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 
 			if suite.ExpectAgent(tc.labels...) {
 				assert.DaemonSetReady(t, kitkyma.MetricAgentName)

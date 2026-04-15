@@ -32,7 +32,7 @@ spec:
 status:
   conditions:
   - lastTransitionTime: "2024-02-29T01:18:28Z"
-    message: Trace gateway Deployment is ready
+    message: OTLP Gateway is ready
     observedGeneration: 1
     reason: GatewayReady
     status: "True"
@@ -283,7 +283,7 @@ The status of the TracePipeline is determined by the condition types `GatewayHea
 
 | Condition Type         | Condition Status | Condition Reason                | Condition Message                                                                                                                                                                                                                                                                                                                       |
 | ---------------------- | ---------------- | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GatewayHealthy         | True             | GatewayReady                    | Trace gateway Deployment is ready                                                                                                                                                                                                                                                                                                       |
+| GatewayHealthy         | True             | GatewayReady                    | OTLP Gateway is ready                                                                                                                                                                                                                                                                                                       |
 | GatewayHealthy         | True             | RolloutInProgress               | Pods are being started/updated                                                                                                                                                                                                                                                                                                          |
 | GatewayHealthy         | False            | GatewayNotReady                 | No Pods deployed                                                                                                                                                                                                                                                                                                                        |
 | GatewayHealthy         | False            | GatewayNotReady                 | Failed to list ReplicaSets: `reason`                                                                                                                                                                                                                                                                                                    |
