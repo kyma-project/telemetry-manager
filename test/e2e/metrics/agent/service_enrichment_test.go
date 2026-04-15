@@ -128,7 +128,7 @@ func TestServiceEnrichment(t *testing.T) {
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.BackendReachable(t, backend)
-	assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+	assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 	assert.DaemonSetReady(t, kitkyma.MetricAgentName)
 	assert.MetricPipelineHealthy(t, pipelineName)
 	assert.MetricsFromNamespaceDelivered(t, backend, genNs, telemetrygen.MetricNames)
@@ -165,8 +165,8 @@ func TestServiceEnrichment(t *testing.T) {
 
 	assert.BackendDataEventuallyMatches(t, backend,
 		HaveFlatMetrics(
-			ContainElement(HaveResourceAttributes(HaveKeyWithValue("service.name", names.MetricGateway))),
-		), assert.WithOptionalDescription("Should have metrics with service.name set to telemetry-metric-gateway"),
+			ContainElement(HaveResourceAttributes(HaveKeyWithValue("service.name", names.OTLPGateway))),
+		), assert.WithOptionalDescription("Should have metrics with service.name set to telemetry-otlp-gateway"),
 	)
 
 	assert.BackendDataEventuallyMatches(t, backend,

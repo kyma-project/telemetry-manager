@@ -74,7 +74,7 @@ func TestTracesRouting(t *testing.T) {
 		kitk8sobjects.NewNamespace(appNs).K8sObject(),
 		&istioTracePipeline,
 		&tracePipeline,
-		traceGatewayExternalService.K8sObject(kitk8sobjects.WithLabel("app.kubernetes.io/name", "telemetry-trace-gateway")),
+		traceGatewayExternalService.K8sObject(kitk8sobjects.WithLabel("app.kubernetes.io/name", "telemetry-otlp-gateway")),
 		app.Pod().K8sObject(),
 		istiofiedApp.Pod().K8sObject(),
 	}
@@ -89,7 +89,7 @@ func TestTracesRouting(t *testing.T) {
 	assertAppIsRunning(t, istiofiedAppNs, map[string]string{"app.kubernetes.io/name": "metric-producer"})
 	assertSidecarPresent(t, istiofiedAppNs, map[string]string{"app.kubernetes.io/name": "metric-producer"})
 	assertAppIsRunning(t, appNs, map[string]string{"app.kubernetes.io/name": "metric-producer"})
-	assert.DeploymentReady(t, kitkyma.TraceGatewayName)
+	assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 	assert.TracePipelineHealthy(t, pipeline1Name)
 	assert.TracePipelineHealthy(t, pipeline2Name)
 

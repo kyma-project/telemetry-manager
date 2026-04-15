@@ -56,20 +56,20 @@ func TestLabelAnnotation(t *testing.T) {
 				}
 			},
 			assert: func(t *testing.T, ns string, backend *kitbackend.Backend, pipelineName string) {
-				assert.DeploymentReady(t, kitkyma.LogGatewayName)
+				assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 				assert.DaemonSetReady(t, kitkyma.LogAgentName)
 				assert.OTelLogPipelineHealthy(t, pipelineName)
 				assert.OTelLogsFromNamespaceDelivered(t, backend, ns)
 
-				// Gateway should have workload labels/annotations
-				assert.DeploymentHasLabel(t, kitkyma.LogGatewayName, workloadLabel)
-				assert.DeploymentHasAnnotation(t, kitkyma.LogGatewayName, workloadAnnotation)
+				// OTLP Gateway should have workload labels/annotations
+				assert.DaemonSetHasLabel(t, kitkyma.OTLPGatewayName, workloadLabel)
+				assert.DaemonSetHasAnnotation(t, kitkyma.OTLPGatewayName, workloadAnnotation)
 
 				var gwSelector = client.ListOptions{
-					LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": "telemetry-log-gateway"}),
+					LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": "telemetry-otlp-gateway"}),
 					Namespace:     kitkyma.SystemNamespaceName,
 				}
-				// Gateway pods should have only pod-specific labels/annotations (not workload-level ones)
+				// OTLP Gateway pods should have only pod-specific labels/annotations (not workload-level ones)
 				assert.PodsHaveAnnotation(t, gwSelector, workloadPodAnnotation)
 				assert.PodsHaveLabel(t, gwSelector, workloadPodLabel)
 
@@ -141,20 +141,20 @@ func TestLabelAnnotation(t *testing.T) {
 				}
 			},
 			assert: func(t *testing.T, ns string, backend *kitbackend.Backend, pipelineName string) {
-				assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+				assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 				assert.DaemonSetReady(t, kitkyma.MetricAgentName)
 				assert.MetricPipelineHealthy(t, pipelineName)
 				assert.MetricsFromNamespaceDelivered(t, backend, ns, prommetricgen.CustomMetricNames())
 
-				// Gateway should have workload labels/annotations
-				assert.DeploymentHasLabel(t, kitkyma.MetricGatewayName, workloadLabel)
-				assert.DeploymentHasAnnotation(t, kitkyma.MetricGatewayName, workloadAnnotation)
+				// OTLP Gateway should have workload labels/annotations
+				assert.DaemonSetHasLabel(t, kitkyma.OTLPGatewayName, workloadLabel)
+				assert.DaemonSetHasAnnotation(t, kitkyma.OTLPGatewayName, workloadAnnotation)
 
 				var gwSelector = client.ListOptions{
-					LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": "telemetry-metric-gateway"}),
+					LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": "telemetry-otlp-gateway"}),
 					Namespace:     kitkyma.SystemNamespaceName,
 				}
-				// Gateway pods should have only pod-specific labels/annotations (not workload-level ones)
+				// OTLP Gateway pods should have only pod-specific labels/annotations (not workload-level ones)
 				assert.PodsHaveAnnotation(t, gwSelector, workloadPodAnnotation)
 				assert.PodsHaveLabel(t, gwSelector, workloadPodLabel)
 
@@ -187,19 +187,19 @@ func TestLabelAnnotation(t *testing.T) {
 				}
 			},
 			assert: func(t *testing.T, ns string, backend *kitbackend.Backend, pipelineName string) {
-				assert.DeploymentReady(t, kitkyma.TraceGatewayName)
+				assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 				assert.TracePipelineHealthy(t, pipelineName)
 				assert.TracesFromNamespaceDelivered(t, backend, ns)
 
-				// Gateway should have workload labels/annotations
-				assert.DeploymentHasLabel(t, kitkyma.TraceGatewayName, workloadLabel)
-				assert.DeploymentHasAnnotation(t, kitkyma.TraceGatewayName, workloadAnnotation)
+				// OTLP Gateway should have workload labels/annotations
+				assert.DaemonSetHasLabel(t, kitkyma.OTLPGatewayName, workloadLabel)
+				assert.DaemonSetHasAnnotation(t, kitkyma.OTLPGatewayName, workloadAnnotation)
 
 				var selector = client.ListOptions{
-					LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": "telemetry-trace-gateway"}),
+					LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": "telemetry-otlp-gateway"}),
 					Namespace:     kitkyma.SystemNamespaceName,
 				}
-				// Gateway pods should have only pod-specific labels/annotations (not workload-level ones)
+				// OTLP Gateway pods should have only pod-specific labels/annotations (not workload-level ones)
 				assert.PodsHaveAnnotation(t, selector, workloadPodAnnotation)
 				assert.PodsHaveLabel(t, selector, workloadPodLabel)
 			},

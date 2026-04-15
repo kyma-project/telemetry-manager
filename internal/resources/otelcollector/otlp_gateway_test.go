@@ -29,6 +29,10 @@ func TestOTLPGateway_ApplyResources(t *testing.T) {
 		config.WithAdditionalWorkloadAnnotations(map[string]string{"test-anno-key": "test-anno-value"}),
 		config.WithClusterTrustBundleName("trustBundle"),
 	)
+	globalsWithFIPS := config.NewGlobal(
+		config.WithTargetNamespace("kyma-system"),
+		config.WithOperateInFIPSMode(true),
+	)
 	image := "opentelemetry/collector:dummy"
 	priorityClassName := "normal"
 
@@ -55,6 +59,11 @@ func TestOTLPGateway_ApplyResources(t *testing.T) {
 			istioEnabled:   true,
 			goldenFilePath: "testdata/otlp-gateway-istio.yaml",
 		},
+		{
+			name:           "OTLP gateway with FIPS mode enabled",
+			sut:            NewOTLPGatewayApplierDeleter(globalsWithFIPS, image, priorityClassName),
+			goldenFilePath: "testdata/otlp-gateway-fips-enabled.yaml",
+		},
 	}
 
 	for _, tt := range tests {
@@ -64,6 +73,7 @@ func TestOTLPGateway_ApplyResources(t *testing.T) {
 			scheme := runtime.NewScheme()
 			utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 			utilruntime.Must(istionetworkingclientv1.AddToScheme(scheme))
+			utilruntime.Must(istiosecurityclientv1.AddToScheme(scheme))
 			utilruntime.Must(v1alpha3.AddToScheme(scheme))
 
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithInterceptorFuncs(interceptor.Funcs{
