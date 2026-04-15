@@ -1,5 +1,5 @@
 extensions:
-    cgroupruntime:
+    cgroup_runtime:
         gomaxprocs:
             enabled: false
         gomemlimit:
@@ -73,10 +73,10 @@ service:
                 - transform/insert-cluster-attributes
                 - transform/drop-skip-enrichment-attribute
                 - transform/drop-kyma-attributes
-                - transform/user-defined-test
+                - transform/metricpipeline-user-defined-test
                 - batch
             exporters:
-                - otlp_grpc/test
+                - otlp_grpc/metricpipeline-test
     telemetry:
         metrics:
             readers:
@@ -91,7 +91,7 @@ service:
     extensions:
         - health_check
         - pprof
-        - cgroupruntime
+        - cgroup_runtime
         - k8s_leader_elector
 receivers:
     k8s_cluster:
@@ -414,6 +414,13 @@ processors:
                 - IsMatch(metric.name, "^k8s.daemonset.*")
                 - IsMatch(metric.name, "^k8s.deployment.*")
                 - IsMatch(metric.name, "^k8s.job.*")
+    transform/metricpipeline-user-defined-test:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - set(attributes["environment"], "prod")
+              conditions:
+                - resource.attributes["k8s.namespace.name"] == "production"
     transform/set-instrumentation-scope-istio:
         error_mode: ignore
         metric_statements:
@@ -449,16 +456,9 @@ processors:
         metric_statements:
             - statements:
                 - set(resource.attributes["kyma.input.name"], "runtime")
-    transform/user-defined-test:
-        error_mode: ignore
-        metric_statements:
-            - statements:
-                - set(attributes["environment"], "prod")
-              conditions:
-                - resource.attributes["k8s.namespace.name"] == "production"
 exporters:
-    otlp_grpc/test:
-        endpoint: ${OTLP_ENDPOINT_TEST}
+    otlp_grpc/metricpipeline-test:
+        endpoint: ${OTLP_ENDPOINT_METRICPIPELINE_TEST}
         compression: gzip
         sending_queue:
             enabled: true

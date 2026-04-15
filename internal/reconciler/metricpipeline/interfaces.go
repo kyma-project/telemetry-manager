@@ -12,7 +12,6 @@ import (
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metricagent"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metricgateway"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
@@ -28,14 +27,6 @@ type AgentConfigBuilder interface {
 	Build(ctx context.Context, pipelines []telemetryv1beta1.MetricPipeline, options metricagent.BuildOptions) (*common.Config, common.EnvVars, error)
 }
 
-// GatewayConfigBuilder builds OpenTelemetry Collector configuration for the metric gateway from MetricPipeline resources.
-// The gateway receives metrics from agents and forwards them to external backends.
-type GatewayConfigBuilder interface {
-	// Build constructs the collector configuration and environment variables from the provided pipelines and build options.
-	// Returns the complete gateway configuration, environment variables, and any error encountered during the build process.
-	Build(ctx context.Context, pipelines []telemetryv1beta1.MetricPipeline, options metricgateway.BuildOptions) (*common.Config, common.EnvVars, error)
-}
-
 // AgentApplierDeleter manages the lifecycle of metric agent Kubernetes resources.
 // The agent runs as a DaemonSet on each cluster node to collect metrics.
 type AgentApplierDeleter interface {
@@ -45,17 +36,6 @@ type AgentApplierDeleter interface {
 	// DeleteResources removes the metric agent resources from the cluster.
 	// This cleans up all agent-related Kubernetes resources.
 	DeleteResources(ctx context.Context, c client.Client, vpaCRDExists bool) error
-}
-
-// GatewayApplierDeleter manages the lifecycle of metric gateway Kubernetes resources.
-// The gateway receives metrics from agents and forwards them to external backends.
-type GatewayApplierDeleter interface {
-	// ApplyResources creates or updates the metric gateway resources in the cluster.
-	// This includes the Deployment, Service, ConfigMap, ServiceAccount, and related resources.
-	ApplyResources(ctx context.Context, c client.Client, opts otelcollector.GatewayApplyOptions) error
-	// DeleteResources removes the metric gateway resources from the cluster.
-	// The isIstioActive flag determines whether Istio-specific resources should also be cleaned up.
-	DeleteResources(ctx context.Context, c client.Client, isIstioActive bool) error
 }
 
 // PipelineLock manages exclusive access to pipeline resources to enforce maximum pipeline limits.

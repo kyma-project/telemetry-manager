@@ -1,5 +1,5 @@
 extensions:
-    cgroupruntime:
+    cgroup_runtime:
         gomaxprocs:
             enabled: false
         gomemlimit:
@@ -44,7 +44,7 @@ service:
                 - transform/drop-kyma-attributes
                 - batch
             exporters:
-                - otlp_grpc/test
+                - otlp_grpc/metricpipeline-test
     telemetry:
         metrics:
             readers:
@@ -59,7 +59,7 @@ service:
     extensions:
         - health_check
         - pprof
-        - cgroupruntime
+        - cgroup_runtime
         - k8s_leader_elector
 receivers:
     prometheus/istio:
@@ -184,8 +184,8 @@ processors:
             - statements:
                 - set(resource.attributes["kyma.input.name"], "istio")
 exporters:
-    otlp_grpc/test:
-        endpoint: ${OTLP_ENDPOINT_TEST}
+    otlp_grpc/metricpipeline-test:
+        endpoint: ${OTLP_ENDPOINT_METRICPIPELINE_TEST}
         tls:
             insecure: true
         compression: gzip

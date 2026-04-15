@@ -104,31 +104,11 @@ func withRoleBinding() RBACOption {
 	}
 }
 
-func makeTraceGatewayRBAC(namespace string) rbac {
-	return *newRBAC(
-		types.NamespacedName{Name: names.TraceGateway, Namespace: namespace},
-		commonresources.LabelValueK8sComponentGateway,
-		withClusterRole(withK8sAttributeRules()),
-		withClusterRoleBinding(),
-	)
-}
-
 func makeMetricAgentRBAC(namespace string) rbac {
 	return *newRBAC(
 		types.NamespacedName{Name: names.MetricAgent, Namespace: namespace},
 		commonresources.LabelValueK8sComponentAgent,
 		withClusterRole(withKubeletStatsRules(), withPrometheusRules(), withK8sClusterRules()),
-		withClusterRoleBinding(),
-		withRole(withLeaderElectionRules()),
-		withRoleBinding(),
-	)
-}
-
-func makeMetricGatewayRBAC(namespace string) rbac {
-	return *newRBAC(
-		types.NamespacedName{Name: names.MetricGateway, Namespace: namespace},
-		commonresources.LabelValueK8sComponentGateway,
-		withClusterRole(withK8sAttributeRules(), withKymaStatsRules()),
 		withClusterRoleBinding(),
 		withRole(withLeaderElectionRules()),
 		withRoleBinding(),
@@ -144,21 +124,14 @@ func makeLogAgentRBAC(namespace string) rbac {
 	)
 }
 
-func makeLogGatewayRBAC(namespace string) rbac {
-	return *newRBAC(
-		types.NamespacedName{Name: names.LogGateway, Namespace: namespace},
-		commonresources.LabelValueK8sComponentGateway,
-		withClusterRole(withK8sAttributeRules()),
-		withClusterRoleBinding(),
-	)
-}
-
 func makeOTLPGatewayRBAC(namespace string) rbac {
 	return *newRBAC(
 		types.NamespacedName{Name: names.OTLPGateway, Namespace: namespace},
 		commonresources.LabelValueK8sComponentGateway,
-		withClusterRole(withK8sAttributeRules()),
+		withClusterRole(withK8sAttributeRules(), withKymaStatsRules()),
 		withClusterRoleBinding(),
+		withRole(withLeaderElectionRules()),
+		withRoleBinding(),
 	)
 }
 

@@ -169,6 +169,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1beta1.Metric
 		b.addReceiverForInputRouter(common.ComponentIDIstioInputRoutingConnector, pipelinesWithIstioInput, inputs.istio),
 		b.addDropUnknownServiceNameProcessor(opts),
 		b.addK8sAttributesProcessor(opts),
+		b.addRestoreOtelServiceAttrsProcessor(opts),
 		b.addServiceEnrichmentProcessor(opts),
 		b.addExporterForEnrichmentRouter(pipelinesWithRuntimeInput, pipelinesWithPrometheusInput, pipelinesWithIstioInput),
 	); err != nil {
@@ -409,6 +410,19 @@ func (b *Builder) addK8sAttributesProcessor(opts BuildOptions) buildComponentFun
 		func(mp *telemetryv1beta1.MetricPipeline) any {
 			useOTelServiceEnrichment := opts.ServiceEnrichment == commonresources.AnnotationValueTelemetryServiceEnrichmentOtel
 			return common.K8sAttributesProcessor(opts.Enrichments, useOTelServiceEnrichment)
+		},
+	)
+}
+
+func (b *Builder) addRestoreOtelServiceAttrsProcessor(opts BuildOptions) buildComponentFunc {
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDRestoreOtelServiceAttrsProcessor),
+		func(mp *telemetryv1beta1.MetricPipeline) any {
+			if opts.ServiceEnrichment != commonresources.AnnotationValueTelemetryServiceEnrichmentOtel {
+				return nil
+			}
+
+			return common.MetricTransformProcessor(common.RestoreOtelServiceAnnotationsProcessorStatements())
 		},
 	)
 }
@@ -837,9 +851,8 @@ func (b *Builder) addOTLPExporter(queueSize int) buildComponentFunc {
 			otlpExporterBuilder := common.NewOTLPExporterConfigBuilder(
 				b.Reader,
 				mp.Spec.Output.OTLP,
-				mp.Name,
+				common.MetricPipelineRef(mp),
 				queueSize,
-				common.SignalTypeMetric,
 			)
 
 			return otlpExporterBuilder.OTLPExporter(ctx)
@@ -938,13 +951,12 @@ func inputRoutingConnector(outputPipelineIDs []string) common.RoutingConnectorCo
 // Authentication extensions
 
 func (b *Builder) addOAuth2Extension(ctx context.Context, pipeline *telemetryv1beta1.MetricPipeline) error {
-	oauth2ExtensionID := common.OAuth2ExtensionID(pipeline.Name)
+	oauth2ExtensionID := common.ComponentIDOAuth2Extension(common.MetricPipelineRef(pipeline))
 
 	oauth2ExtensionConfig, oauth2ExtensionEnvVars, err := common.NewOAuth2ExtensionConfigBuilder(
 		b.Reader,
 		pipeline.Spec.Output.OTLP.Authentication.OAuth2,
-		pipeline.Name,
-		common.SignalTypeTrace,
+		common.MetricPipelineRef(pipeline),
 	).OAuth2Extension(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to build OAuth2 extension for pipeline %s: %w", pipeline.Name, err)
@@ -971,11 +983,11 @@ func formatOutputMetricServicePipelineID(mp *telemetryv1beta1.MetricPipeline) st
 }
 
 func formatOTLPExporterID(pipeline *telemetryv1beta1.MetricPipeline) string {
-	return common.ExporterID(pipeline.Spec.Output.OTLP.Protocol, pipeline.Name)
+	return common.ComponentIDOTLPExporter(pipeline.Spec.Output.OTLP.Protocol, common.MetricPipelineRef(pipeline))
 }
 
 func formatNamespaceFilterID(pipelineName string, inputSourceType common.InputSourceType) string {
-	return fmt.Sprintf(common.ComponentIDNamespacePerInputFilterProcessor, pipelineName, inputSourceType)
+	return common.ComponentIDNamespacePerInputFilterProcessor(pipelineName, inputSourceType)
 }
 
 // Helper functions for getting pipelines by input source
@@ -1222,9 +1234,9 @@ func metricNameConditionsWithIsMatch(metrics []string) []string {
 }
 
 func formatUserDefinedTransformProcessorID(mp *telemetryv1beta1.MetricPipeline) string {
-	return fmt.Sprintf(common.ComponentIDUserDefinedTransformProcessor, mp.Name)
+	return common.ComponentIDUserDefinedTransformProcessor(common.MetricPipelineRef(mp))
 }
 
 func formatUserDefinedFilterProcessorID(mp *telemetryv1beta1.MetricPipeline) string {
-	return fmt.Sprintf(common.ComponentIDUserDefinedFilterProcessor, mp.Name)
+	return common.ComponentIDUserDefinedFilterProcessor(common.MetricPipelineRef(mp))
 }

@@ -33,6 +33,8 @@ logging:
 metrics:
   paused: {{ PAUSED }}
 telemetry:
+  paused: {{ PAUSED }}
+otlpGateway:
   paused: {{ PAUSED }}`
 
 type Overrides struct {
