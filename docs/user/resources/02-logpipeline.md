@@ -67,7 +67,7 @@ status:
     type: GatewayHealthy
   - lastTransitionTime: "2025-03-30T20:32:39Z"
     message: LogPipeline specification is successfully applied to the configuration
-      of Log gateway
+      of OTLP gateway
     observedGeneration: 4
     reason: GatewayConfigured
     status: "True"

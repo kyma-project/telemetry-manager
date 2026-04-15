@@ -110,7 +110,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 				Type:    conditions.TypeMetricComponentsHealthy,
 				Status:  "False",
 				Reason:  "GatewayNotReady",
-				Message: "Metric gateway Deployment is not ready",
+				Message: "OTLP gateway DaemonSet is not ready",
 			},
 		},
 		{
@@ -206,7 +206,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 				Type:    conditions.TypeMetricComponentsHealthy,
 				Status:  "False",
 				Reason:  "GatewayNotReady",
-				Message: "Metric gateway Deployment is not ready",
+				Message: "OTLP gateway DaemonSet is not ready",
 			},
 		},
 		{
@@ -267,7 +267,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 				Type:    conditions.TypeMetricComponentsHealthy,
 				Status:  "False",
 				Reason:  "GatewayThrottling",
-				Message: "Metric gateway is unable to receive metrics at current rate. See troubleshooting: " + conditions.LinkGatewayThrottling,
+				Message: "OTLP gateway is unable to receive metrics at current rate. See troubleshooting: " + conditions.LinkGatewayThrottling,
 			},
 		},
 		{
@@ -288,7 +288,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 				Type:    conditions.TypeMetricComponentsHealthy,
 				Status:  "False",
 				Reason:  "GatewayThrottling",
-				Message: "Metric gateway is unable to receive metrics at current rate. See troubleshooting: " + conditions.LinkGatewayThrottling,
+				Message: "OTLP gateway is unable to receive metrics at current rate. See troubleshooting: " + conditions.LinkGatewayThrottling,
 			},
 		},
 		{

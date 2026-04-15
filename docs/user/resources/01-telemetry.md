@@ -38,6 +38,9 @@ Status:
     logs:
       grpc: http://telemetry-otlp-logs.kyma-system:4317
       http: http://telemetry-otlp-logs.kyma-system:4318
+    otlp:
+      grpc: http://telemetry-otlp.kyma-system:4317
+      http: http://telemetry-otlp.kyma-system:4318
   conditions:
     - lastTransitionTime: "2023-09-01T15:28:28Z"
       message: All log components are running
@@ -83,14 +86,14 @@ For details, see the [Telemetry specification file](https://github.com/kyma-proj
 | **enrichments.&#x200b;extractPodLabels.&#x200b;key**  | string | Key specifies the exact label key to be used. |
 | **enrichments.&#x200b;extractPodLabels.&#x200b;keyPrefix**  | string | KeyPrefix specifies a prefix for label keys to be used. |
 | **log**  | object | Log configures module settings specific to the log features. This field is optional. |
-| **log.&#x200b;gateway**  | object | Gateway configures the log gateway. |
+| **log.&#x200b;gateway**  | object | Gateway configures the log gateway (deprecated). |
 | **log.&#x200b;gateway.&#x200b;scaling**  | object | Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.  Deprecated: This field is no longer supported. Setting it will have no effect. |
 | **log.&#x200b;gateway.&#x200b;scaling.&#x200b;static**  | object | Static is a scaling strategy enabling you to define a custom amount of replicas to be used for the gateway. Present only if Type = StaticScalingStrategyType. |
 | **log.&#x200b;gateway.&#x200b;scaling.&#x200b;static.&#x200b;replicas**  | integer | Replicas defines a static number of Pods to run the gateway. Minimum is 1. |
 | **log.&#x200b;gateway.&#x200b;scaling.&#x200b;type**  | string | Type of scaling strategy. Default is none, using a fixed amount of replicas. |
 | **metric**  | object | Metric configures module settings specific to the metric features. This field is optional. |
 | **metric.&#x200b;collectionInterval**  | string | CollectionInterval defines the default scrape interval for all pull-based metric inputs (runtime, prometheus, istio). The value is a duration string (for example, "30s", "1m", "5m"). Default is 30s. |
-| **metric.&#x200b;gateway**  | object | Gateway configures the metric gateway. |
+| **metric.&#x200b;gateway**  | object | Gateway configures the metric gateway (deprecated). |
 | **metric.&#x200b;gateway.&#x200b;scaling**  | object | Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.  Deprecated: This field is no longer supported. Setting it will have no effect. |
 | **metric.&#x200b;gateway.&#x200b;scaling.&#x200b;static**  | object | Static is a scaling strategy enabling you to define a custom amount of replicas to be used for the gateway. Present only if Type = StaticScalingStrategyType. |
 | **metric.&#x200b;gateway.&#x200b;scaling.&#x200b;static.&#x200b;replicas**  | integer | Replicas defines a static number of Pods to run the gateway. Minimum is 1. |
@@ -102,7 +105,7 @@ For details, see the [Telemetry specification file](https://github.com/kyma-proj
 | **metric.&#x200b;runtime**  | object | Runtime configures collection settings specific to runtime metrics input. |
 | **metric.&#x200b;runtime.&#x200b;collectionInterval**  | string | CollectionInterval defines the scrape interval for this specific input, overriding the global metric.collectionInterval. The value is a duration string (for example, "30s", "1m", "5m"). Minimum is 1s. |
 | **trace**  | object | Trace configures module settings specific to the trace features. This field is optional. |
-| **trace.&#x200b;gateway**  | object | Gateway configures the trace gateway. |
+| **trace.&#x200b;gateway**  | object | Gateway configures the trace gateway (deprecated). |
 | **trace.&#x200b;gateway.&#x200b;scaling**  | object | Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.  Deprecated: This field is no longer supported. Setting it will have no effect. |
 | **trace.&#x200b;gateway.&#x200b;scaling.&#x200b;static**  | object | Static is a scaling strategy enabling you to define a custom amount of replicas to be used for the gateway. Present only if Type = StaticScalingStrategyType. |
 | **trace.&#x200b;gateway.&#x200b;scaling.&#x200b;static.&#x200b;replicas**  | integer | Replicas defines a static number of Pods to run the gateway. Minimum is 1. |
@@ -119,14 +122,17 @@ For details, see the [Telemetry specification file](https://github.com/kyma-proj
 | **conditions.&#x200b;reason** (required) | string | reason contains a programmatic identifier indicating the reason for the condition's last transition. Producers of specific condition types may define expected values and meanings for this field, and whether the values are considered a guaranteed API. The value should be a CamelCase string. This field may not be empty. |
 | **conditions.&#x200b;status** (required) | string | status of the condition, one of True, False, Unknown. |
 | **conditions.&#x200b;type** (required) | string | type of condition in CamelCase or in foo.example.com/CamelCase. |
-| **endpoints**  | object | Endpoints for log, trace, and metric gateway. |
-| **endpoints.&#x200b;logs**  | object | Logs contains the endpoints for log gateway supporting OTLP. |
+| **endpoints**  | object | Endpoints for the OTLP gateway. |
+| **endpoints.&#x200b;logs**  | object | Logs contains the OTLP endpoints for log signal type. |
 | **endpoints.&#x200b;logs.&#x200b;grpc**  | string | gRPC endpoint for OTLP. |
 | **endpoints.&#x200b;logs.&#x200b;http**  | string | HTTP endpoint for OTLP. |
-| **endpoints.&#x200b;metrics**  | object | Metrics contains the endpoints for metric gateway supporting OTLP. |
+| **endpoints.&#x200b;metrics**  | object | Metrics contains the OTLP endpoints for metric signal type. |
 | **endpoints.&#x200b;metrics.&#x200b;grpc**  | string | gRPC endpoint for OTLP. |
 | **endpoints.&#x200b;metrics.&#x200b;http**  | string | HTTP endpoint for OTLP. |
-| **endpoints.&#x200b;traces**  | object | Traces contains the endpoints for trace gateway supporting OTLP. |
+| **endpoints.&#x200b;otlp**  | object | OTLP contains the unified OTLP endpoints for all signal types. |
+| **endpoints.&#x200b;otlp.&#x200b;grpc**  | string | gRPC endpoint for OTLP. |
+| **endpoints.&#x200b;otlp.&#x200b;http**  | string | HTTP endpoint for OTLP. |
+| **endpoints.&#x200b;traces**  | object | Traces contains the OTLP endpoints for trace signal type. |
 | **endpoints.&#x200b;traces.&#x200b;grpc**  | string | gRPC endpoint for OTLP. |
 | **endpoints.&#x200b;traces.&#x200b;http**  | string | HTTP endpoint for OTLP. |
 | **state** (required) | string | State signifies current state of Module CR. Value can be one of these three: "Ready", "Deleting", or "Warning". |
@@ -146,14 +152,14 @@ For details, see the [Telemetry specification file](https://github.com/kyma-proj
 | **enrichments.&#x200b;extractPodLabels.&#x200b;key**  | string | Key specifies the exact label key to be used. |
 | **enrichments.&#x200b;extractPodLabels.&#x200b;keyPrefix**  | string | KeyPrefix specifies a prefix for label keys to be used. |
 | **log**  | object | Log configures module settings specific to the log features. This field is optional. |
-| **log.&#x200b;gateway**  | object | Gateway configures the log gateway. |
+| **log.&#x200b;gateway**  | object | Gateway configures the log gateway (deprecated). |
 | **log.&#x200b;gateway.&#x200b;scaling**  | object | Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.  Deprecated: This field is no longer supported. Setting it will have no effect. |
 | **log.&#x200b;gateway.&#x200b;scaling.&#x200b;static**  | object | Static is a scaling strategy enabling you to define a custom amount of replicas to be used for the gateway. Present only if Type = StaticScalingStrategyType. |
 | **log.&#x200b;gateway.&#x200b;scaling.&#x200b;static.&#x200b;replicas**  | integer | Replicas defines a static number of Pods to run the gateway. Minimum is 1. |
 | **log.&#x200b;gateway.&#x200b;scaling.&#x200b;type**  | string | Type of scaling strategy. Default is none, using a fixed amount of replicas. |
 | **metric**  | object | Metric configures module settings specific to the metric features. This field is optional. |
 | **metric.&#x200b;collectionInterval**  | string | CollectionInterval defines the default collection/scrape interval for all pull-based metric inputs (runtime, prometheus, istio). The value is a duration string (for example, "30s", "1m", "5m"). Default is 30s. |
-| **metric.&#x200b;gateway**  | object | Gateway configures the metric gateway. |
+| **metric.&#x200b;gateway**  | object | Gateway configures the metric gateway (deprecated). |
 | **metric.&#x200b;gateway.&#x200b;scaling**  | object | Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.  Deprecated: This field is no longer supported. Setting it will have no effect. |
 | **metric.&#x200b;gateway.&#x200b;scaling.&#x200b;static**  | object | Static is a scaling strategy enabling you to define a custom amount of replicas to be used for the gateway. Present only if Type = StaticScalingStrategyType. |
 | **metric.&#x200b;gateway.&#x200b;scaling.&#x200b;static.&#x200b;replicas**  | integer | Replicas defines a static number of Pods to run the gateway. Minimum is 1. |
@@ -165,7 +171,7 @@ For details, see the [Telemetry specification file](https://github.com/kyma-proj
 | **metric.&#x200b;runtime**  | object | Runtime configures collection settings specific to runtime metrics input. |
 | **metric.&#x200b;runtime.&#x200b;collectionInterval**  | string | CollectionInterval defines the collection/scrape interval for this specific input, overriding the global metric.collectionInterval. The value is a duration string (for example, "30s", "1m", "5m"). Minimum is 1s. |
 | **trace**  | object | Trace configures module settings specific to the trace features. This field is optional. |
-| **trace.&#x200b;gateway**  | object | Gateway configures the trace gateway. |
+| **trace.&#x200b;gateway**  | object | Gateway configures the trace gateway (deprecated). |
 | **trace.&#x200b;gateway.&#x200b;scaling**  | object | Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.  Deprecated: This field is no longer supported. Setting it will have no effect. |
 | **trace.&#x200b;gateway.&#x200b;scaling.&#x200b;static**  | object | Static is a scaling strategy enabling you to define a custom amount of replicas to be used for the gateway. Present only if Type = StaticScalingStrategyType. |
 | **trace.&#x200b;gateway.&#x200b;scaling.&#x200b;static.&#x200b;replicas**  | integer | Replicas defines a static number of Pods to run the gateway. Minimum is 1. |
@@ -182,14 +188,17 @@ For details, see the [Telemetry specification file](https://github.com/kyma-proj
 | **conditions.&#x200b;reason** (required) | string | reason contains a programmatic identifier indicating the reason for the condition's last transition. Producers of specific condition types may define expected values and meanings for this field, and whether the values are considered a guaranteed API. The value should be a CamelCase string. This field may not be empty. |
 | **conditions.&#x200b;status** (required) | string | status of the condition, one of True, False, Unknown. |
 | **conditions.&#x200b;type** (required) | string | type of condition in CamelCase or in foo.example.com/CamelCase. |
-| **endpoints**  | object | Endpoints for log, trace, and metric gateway. |
-| **endpoints.&#x200b;logs**  | object | Logs contains the endpoints for log gateway supporting OTLP. |
+| **endpoints**  | object | Endpoints for the OTLP gateway. |
+| **endpoints.&#x200b;logs**  | object | Logs contains the OTLP endpoints for log signal type. |
 | **endpoints.&#x200b;logs.&#x200b;grpc**  | string | gRPC endpoint for OTLP. |
 | **endpoints.&#x200b;logs.&#x200b;http**  | string | HTTP endpoint for OTLP. |
-| **endpoints.&#x200b;metrics**  | object | Metrics contains the endpoints for metric gateway supporting OTLP. |
+| **endpoints.&#x200b;metrics**  | object | Metrics contains the OTLP endpoints for metric signal type. |
 | **endpoints.&#x200b;metrics.&#x200b;grpc**  | string | gRPC endpoint for OTLP. |
 | **endpoints.&#x200b;metrics.&#x200b;http**  | string | HTTP endpoint for OTLP. |
-| **endpoints.&#x200b;traces**  | object | Traces contains the endpoints for trace gateway supporting OTLP. |
+| **endpoints.&#x200b;otlp**  | object | OTLP contains the unified OTLP endpoints for all signal types. |
+| **endpoints.&#x200b;otlp.&#x200b;grpc**  | string | gRPC endpoint for OTLP. |
+| **endpoints.&#x200b;otlp.&#x200b;http**  | string | HTTP endpoint for OTLP. |
+| **endpoints.&#x200b;traces**  | object | Traces contains the OTLP endpoints for trace signal type. |
 | **endpoints.&#x200b;traces.&#x200b;grpc**  | string | gRPC endpoint for OTLP. |
 | **endpoints.&#x200b;traces.&#x200b;http**  | string | HTTP endpoint for OTLP. |
 | **state** (required) | string | State signifies current state of Module CR. Value can be one of these three: "Ready", "Deleting", or "Warning". |
@@ -240,7 +249,7 @@ The state of the trace components is determined by the status condition of type 
 | False            | TLSConfigurationInvalid         | TLS configuration invalid                                                                                                                                                                                                                                                                                                               |
 | False            | ValidationFailed                | Pipeline validation failed due to an error from the Kubernetes API server                                                                                                                                                                                                                                                               |
 | False            | GatewayAllTelemetryDataDropped  | Backend is not reachable or rejecting spans. All spans are dropped. See troubleshooting: [No Spans Arrive at the Backend](https://kyma-project.io/#/telemetry-manager/user/03-traces?id=no-spans-arrive-at-the-backend)                                                                                                                 |
-| False            | GatewayThrottling               | Trace gateway is unable to receive spans at current rate. See troubleshooting: [Gateway Throttling](https://kyma-project.io/#/telemetry-manager/user/03-traces?id=gateway-throttling)                                                                                                                                                   |
+| False            | GatewayThrottling               | OTLP gateway is unable to receive spans at current rate. See troubleshooting: [Gateway Throttling](https://kyma-project.io/#/telemetry-manager/user/03-traces?id=gateway-throttling)                                                                                                                                                   |
 | False            | GatewaySomeTelemetryDataDropped | Backend is reachable, but rejecting spans. Some spans are dropped. [No All Spans Arrive at the Backend](https://kyma-project.io/#/telemetry-manager/user/03-traces?id=not-all-spans-arrive-at-the-backend)                                                                                                                              |
 | False            | OTTLSpecInvalid                 | OTTL specification is invalid, <FilterSpec/TransformSpec>: `reason`. Fix the syntax error indicated by the message or see troubleshooting: [OTTL Spec Invalid with Unspecific Error Message](https://kyma-project.io/external-content/telemetry-manager/docs/user/troubleshooting.html#ottl-spec-invalid-with-unspecific-error-message) |
 
@@ -263,7 +272,7 @@ The state of the metric components is determined by the status condition of type
 | False            | TLSConfigurationInvalid         | TLS configuration invalid                                                                                                                                                                                                                                                                                                               |
 | False            | ValidationFailed                | Pipeline validation failed due to an error from the Kubernetes API server                                                                                                                                                                                                                                                               |
 | False            | GatewayAllTelemetryDataDropped  | Backend is not reachable or rejecting metrics. All metrics are dropped. See troubleshooting: [No Metrics Arrive at the Backend](https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=no-metrics-arrive-at-the-backend)                                                                                                        |
-| False            | GatewayThrottling               | Metric gateway is unable to receive metrics at current rate. See troubleshooting: [Gateway Throttling](https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=gateway-throttling)                                                                                                                                               |
+| False            | GatewayThrottling               | OTLP gateway is unable to receive metrics at current rate. See troubleshooting: [Gateway Throttling](https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=gateway-throttling)                                                                                                                                               |
 | False            | GatewaySomeTelemetryDataDropped | Backend is reachable, but rejecting metrics. Some metrics are dropped. See troubleshooting: [No All Metrics Arrive at the Backend](https://kyma-project.io/#/telemetry-manager/user/04-metrics?id=not-all-metrics-arrive-at-the-backend)                                                                                                |
 | False            | OTTLSpecInvalid                 | OTTL specification is invalid, <FilterSpec/TransformSpec>: `reason`. Fix the syntax error indicated by the message or see troubleshooting: [OTTL Spec Invalid with Unspecific Error Message](https://kyma-project.io/external-content/telemetry-manager/docs/user/troubleshooting.html#ottl-spec-invalid-with-unspecific-error-message) |
 

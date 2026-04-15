@@ -40,25 +40,25 @@ func TestGatewayHealthCondition(t *testing.T) {
 		expectedMsg    string
 	}{
 		{
-			name:           "metric gateway deployment is not ready",
+			name:           "OTLP gateway daemonset is not ready",
 			proberError:    &workloadstatus.PodIsPendingError{ContainerName: "foo", Message: "Error"},
 			expectedStatus: metav1.ConditionFalse,
 			expectedReason: conditions.ReasonGatewayNotReady,
 			expectedMsg:    "Pod is in the pending state because container: foo is not running due to: Error. Please check the container: foo logs.",
 		},
 		{
-			name:           "metric gateway prober fails",
-			proberError:    workloadstatus.ErrDeploymentFetching,
+			name:           "OTLP gateway prober fails",
+			proberError:    workloadstatus.ErrDaemonSetFetching,
 			expectedStatus: metav1.ConditionFalse,
 			expectedReason: conditions.ReasonGatewayNotReady,
-			expectedMsg:    "Failed to get Deployment",
+			expectedMsg:    "Failed to get DaemonSet",
 		},
 		{
-			name:           "metric gateway deployment is ready",
+			name:           "OTLP gateway daemonset is ready",
 			proberError:    nil,
 			expectedStatus: metav1.ConditionTrue,
 			expectedReason: conditions.ReasonGatewayReady,
-			expectedMsg:    "Metric gateway Deployment is ready",
+			expectedMsg:    "OTLP gateway DaemonSet is ready",
 		},
 	}
 
@@ -184,7 +184,7 @@ func TestSecretReferenceValidation(t *testing.T) {
 			conditions.TypeConfigurationGenerated,
 			metav1.ConditionTrue,
 			conditions.ReasonGatewayConfigured,
-			"MetricPipeline specification is successfully applied to the configuration of Metric gateway")
+			"MetricPipeline specification is successfully applied to the configuration of OTLP gateway")
 
 		assertAll(t)
 	})
@@ -215,7 +215,7 @@ func TestSecretReferenceValidation(t *testing.T) {
 			conditions.TypeFlowHealthy,
 			metav1.ConditionFalse,
 			conditions.ReasonSelfMonConfigNotGenerated,
-			"No metrics delivered to backend because MetricPipeline specification is not applied to the configuration of Metric gateway. Check the 'ConfigurationGenerated' condition for more details",
+			"No metrics delivered to backend because MetricPipeline specification is not applied to the configuration of OTLP gateway. Check the 'ConfigurationGenerated' condition for more details",
 		)
 		assertAll(t)
 	})
@@ -256,7 +256,7 @@ func TestMaxPipelineLimit(t *testing.T) {
 		conditions.TypeFlowHealthy,
 		metav1.ConditionFalse,
 		conditions.ReasonSelfMonConfigNotGenerated,
-		"No metrics delivered to backend because MetricPipeline specification is not applied to the configuration of Metric gateway. Check the 'ConfigurationGenerated' condition for more details",
+		"No metrics delivered to backend because MetricPipeline specification is not applied to the configuration of OTLP gateway. Check the 'ConfigurationGenerated' condition for more details",
 	)
 	assertAll(t)
 }
@@ -293,7 +293,7 @@ func TestGatewayFlowHealthCondition(t *testing.T) {
 			},
 			expectedStatus:  metav1.ConditionFalse,
 			expectedReason:  conditions.ReasonSelfMonGatewayThrottling,
-			expectedMessage: "Metric gateway is unable to receive metrics at current rate. See troubleshooting: " + conditions.LinkGatewayThrottling,
+			expectedMessage: "OTLP gateway is unable to receive metrics at current rate. See troubleshooting: " + conditions.LinkGatewayThrottling,
 		},
 		{
 			name: "some data dropped",
@@ -558,7 +558,7 @@ func TestTLSCertificateValidation(t *testing.T) {
 					conditions.TypeFlowHealthy,
 					metav1.ConditionFalse,
 					conditions.ReasonSelfMonConfigNotGenerated,
-					"No metrics delivered to backend because MetricPipeline specification is not applied to the configuration of Metric gateway. Check the 'ConfigurationGenerated' condition for more details",
+					"No metrics delivered to backend because MetricPipeline specification is not applied to the configuration of OTLP gateway. Check the 'ConfigurationGenerated' condition for more details",
 				)
 			}
 
@@ -613,7 +613,7 @@ func TestOTTLSpecValidation(t *testing.T) {
 				conditions.TypeFlowHealthy,
 				metav1.ConditionFalse,
 				conditions.ReasonSelfMonConfigNotGenerated,
-				"No metrics delivered to backend because MetricPipeline specification is not applied to the configuration of Metric gateway. Check the 'ConfigurationGenerated' condition for more details",
+				"No metrics delivered to backend because MetricPipeline specification is not applied to the configuration of OTLP gateway. Check the 'ConfigurationGenerated' condition for more details",
 			)
 			assertAll(t)
 		})
@@ -680,7 +680,7 @@ func TestAPIServerFailureHandling(t *testing.T) {
 				conditions.TypeFlowHealthy,
 				metav1.ConditionFalse,
 				conditions.ReasonSelfMonConfigNotGenerated,
-				"No metrics delivered to backend because MetricPipeline specification is not applied to the configuration of Metric gateway. Check the 'ConfigurationGenerated' condition for more details",
+				"No metrics delivered to backend because MetricPipeline specification is not applied to the configuration of OTLP gateway. Check the 'ConfigurationGenerated' condition for more details",
 			)
 			assertAll(t)
 		})

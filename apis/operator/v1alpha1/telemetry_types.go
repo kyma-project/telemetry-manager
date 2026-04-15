@@ -74,7 +74,7 @@ type TelemetrySpec struct {
 
 // MetricSpec configures module settings specific to the metric features.
 type MetricSpec struct {
-	// Gateway configures the metric gateway.
+	// Gateway configures the metric gateway (deprecated).
 	// +kubebuilder:validation:Optional
 	Gateway GatewaySpec `json:"gateway"`
 
@@ -110,14 +110,14 @@ type MetricInputSpec struct {
 
 // TraceSpec configures module settings specific to the trace features.
 type TraceSpec struct {
-	// Gateway configures the trace gateway.
+	// Gateway configures the trace gateway (deprecated).
 	// +kubebuilder:validation:Optional
 	Gateway GatewaySpec `json:"gateway"`
 }
 
 // LogSpec configures module settings specific to the log features.
 type LogSpec struct {
-	// Gateway configures the log gateway.
+	// Gateway configures the log gateway (deprecated).
 	// +kubebuilder:validation:Optional
 	Gateway GatewaySpec `json:"gateway"`
 }
@@ -207,7 +207,7 @@ type TelemetryStatus struct {
 	// +kubebuilder:validation:Optional
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 
-	// Endpoints for log, trace, and metric gateway.
+	// Endpoints for the OTLP gateway.
 	// +kubebuilder:validation:Optional
 	Endpoints GatewayEndpoints `json:"endpoints"`
 }
@@ -238,18 +238,23 @@ type Status struct {
 	State State `json:"state"`
 }
 
+// GatewayEndpoints contains the OTLP endpoints of the unified gateway.
 type GatewayEndpoints struct {
-	// Logs contains the endpoints for log gateway supporting OTLP.
+	// Logs contains the OTLP endpoints for log signal type.
 	// +kubebuilder:validation:Optional
 	Logs *OTLPEndpoints `json:"logs,omitempty"`
 
-	// Traces contains the endpoints for trace gateway supporting OTLP.
+	// Traces contains the OTLP endpoints for trace signal type.
 	// +kubebuilder:validation:Optional
 	Traces *OTLPEndpoints `json:"traces,omitempty"`
 
-	// Metrics contains the endpoints for metric gateway supporting OTLP.
+	// Metrics contains the OTLP endpoints for metric signal type.
 	// +kubebuilder:validation:Optional
 	Metrics *OTLPEndpoints `json:"metrics,omitempty"`
+
+	// OTLP contains the unified OTLP endpoints for all signal types.
+	// +kubebuilder:validation:Optional
+	OTLP *OTLPEndpoints `json:"otlp,omitempty"`
 }
 
 type OTLPEndpoints struct {

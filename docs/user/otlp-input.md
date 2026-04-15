@@ -25,6 +25,11 @@ Use the following environment variables to set the OTLP endpoint for each signal
 - Logs gRPC: `export OTEL_EXPORTER_OTLP_LOGS_ENDPOINT="http://telemetry-otlp-logs.kyma-system:4317"`
 - Logs HTTP: `export OTEL_EXPORTER_OTLP_LOGS_ENDPOINT="http://telemetry-otlp-logs.kyma-system:4318/v1/logs"`
 
+Alternatively, use the harmonized `telemetry-otlp` endpoint, which accepts all signal types:
+
+- gRPC: `export OTEL_EXPORTER_OTLP_ENDPOINT="http://telemetry-otlp.kyma-system:4317"`
+- HTTP: `export OTEL_EXPORTER_OTLP_ENDPOINT="http://telemetry-otlp.kyma-system:4318"`
+
 > [!NOTE]
 > If your cluster uses Istio, communication with these endpoints is automatically secured with mTLS. For details, see [Istio Integration](./architecture/istio-integration.md).
 
@@ -49,6 +54,9 @@ The output shows the available endpoints and the pipeline health under the statu
     logs:
       grpc: http://telemetry-otlp-logs.kyma-system:4317
       http: http://telemetry-otlp-logs.kyma-system:4318
+    otlp:
+      grpc: http://telemetry-otlp.kyma-system:4317
+      http: http://telemetry-otlp.kyma-system:4318
 ```
 
 ## Route Specific Inputs to Different Backends

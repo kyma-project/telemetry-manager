@@ -41,7 +41,6 @@ var (
 )
 
 // OTLPGatewayApplierDeleter manages the unified OTLP gateway deployed as a DaemonSet.
-// It wraps a GatewayApplierDeleter and adds logic to handle migration from the old log gateway deployment.
 type OTLPGatewayApplierDeleter struct {
 	globals config.Global
 
