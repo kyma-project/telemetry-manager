@@ -1,4 +1,4 @@
-name: Telemetry Manager Release
+name: Create Release
 
 on:
   workflow_dispatch:
@@ -388,6 +388,24 @@ jobs:
           echo "Created PR #${PR_NUMBER}: ${PR_URL}"
           echo "PR_NUMBER=${PR_NUMBER}" >> $GITHUB_ENV
 
+      - name: Assign PR to milestone
+        env:
+          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
+          VERSION: ${{ github.event.inputs.version }}
+        run: |
+          PR_NUMBER="${{ steps.create-pr.outputs.pr-number }}"
+          echo "Assigning PR #${PR_NUMBER} to milestone ${VERSION}..."
+
+          # Get milestone number for the version
+          MILESTONE_NUMBER=$(gh api "repos/${{ github.repository }}/milestones?state=all&direction=desc&per_page=100" --jq ".[] | select(.title == \"${VERSION}\") | .number")
+
+          if [ -z "$MILESTONE_NUMBER" ]; then
+            echo "::warning::Could not find milestone ${VERSION}"
+          else
+            gh pr edit "${PR_NUMBER}" --milestone "${MILESTONE_NUMBER}"
+            echo "✓ Assigned PR #${PR_NUMBER} to milestone ${VERSION}"
+          fi
+
       - name: Wait for PR to be merged
         env:
           GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
@@ -639,13 +657,27 @@ jobs:
           echo "::notice::DRY RUN: Skipping gh-pages Helm chart metadata update"
           echo "Would have updated index.yaml on gh-pages branch"
 
+      - name: Trigger module release for dev channel
+        if: ${{ inputs.dry_run != true && inputs.module_release == true }}
+        env:
+          GH_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Triggering module release for dev channel..."
+          gh workflow run submit-module.yml \
+            --ref "${{ github.ref_name }}" \
+            -f version="${{ inputs.version }}" \
+            -f channel="dev" \
+            -f dry_run="false" \
+            -f auto_merge="true"
+          echo "Module release workflow triggered for dev channel"
+
       - name: Trigger module release for fast channel
         if: ${{ inputs.dry_run != true && inputs.module_release == true }}
         env:
           GH_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
         run: |
           echo "Triggering module release for fast channel..."
-          gh workflow run module-release.yml \
+          gh workflow run submit-module.yml \
             --ref "${{ github.ref_name }}" \
             -f version="${{ inputs.version }}" \
             -f channel="fast" \
@@ -659,7 +691,7 @@ jobs:
           GH_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
         run: |
           echo "Triggering module release for experimental channel..."
-          gh workflow run module-release.yml \
+          gh workflow run submit-module.yml \
             --ref "${{ github.ref_name }}" \
             -f version="${{ inputs.version }}" \
             -f channel="experimental" \
@@ -687,10 +719,11 @@ jobs:
 
           ### Module Releases
           Module release workflows have been triggered for:
+          - **Dev channel**: Auto-merge enabled
           - **Fast channel**: Auto-merge enabled
           - **Experimental channel**: Auto-merge enabled
 
-          Monitor the workflow runs at: https://github.com/${{ github.repository }}/actions/workflows/module-release.yml
+          Monitor the workflow runs at: https://github.com/${{ github.repository }}/actions/workflows/submit-module.yml
 
           ### What's Next?
           1. Verify the release at the URL above

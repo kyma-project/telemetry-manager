@@ -49,7 +49,7 @@ on:
       - "helm/**"
 
   workflow_dispatch:
-# This is reused on release.yml so workflow_call is used.
+# This is reused on create-release.yml so workflow_call is used.
   workflow_call:
     inputs:
       ref:
