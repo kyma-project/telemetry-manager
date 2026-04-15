@@ -403,7 +403,7 @@ jobs:
             echo "::warning::Could not find milestone ${VERSION}"
           else
             gh pr edit "${PR_NUMBER}" --milestone "${MILESTONE_NUMBER}"
-            echo "✓ Assigned PR #${PR_NUMBER} to milestone ${VERSION}"
+            echo "Assigned PR #${PR_NUMBER} to milestone ${VERSION}"
           fi
 
       - name: Wait for PR to be merged
