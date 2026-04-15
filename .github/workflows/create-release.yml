@@ -374,9 +374,6 @@ jobs:
           EOF
           )"
 
-          # Get milestone number for the version
-          MILESTONE_NUMBER=$(gh api "repos/${{ github.repository }}/milestones?state=all&direction=desc&per_page=100" --jq ".[] | select(.title == \"${VERSION}\") | .number")
-          
           PR_URL=$(gh pr create \
             --base "${RELEASE_BRANCH}" \
             --head "${BUMP_BRANCH}" \
@@ -384,8 +381,8 @@ jobs:
             --body "${PR_BODY}" \
             --label "area/release" \
             --label "kind/chore" \
-            --milestone "${MILESTONE_NUMBER}")
-          
+            --milestone "${VERSION}")
+
           PR_NUMBER=$(echo "${PR_URL}" | grep -o '[0-9]*$')
           echo "pr-number=${PR_NUMBER}" >> $GITHUB_OUTPUT
           echo "Created PR #${PR_NUMBER}: ${PR_URL}"
