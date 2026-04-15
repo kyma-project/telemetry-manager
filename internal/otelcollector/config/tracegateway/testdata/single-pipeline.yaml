@@ -1,5 +1,5 @@
 extensions:
-    cgroupruntime:
+    cgroup_runtime:
         gomaxprocs:
             enabled: false
         gomemlimit:
@@ -38,7 +38,7 @@ service:
     extensions:
         - health_check
         - pprof
-        - cgroupruntime
+        - cgroup_runtime
 receivers:
     otlp:
         protocols:

@@ -1,5 +1,5 @@
 extensions:
-    cgroupruntime:
+    cgroup_runtime:
         gomaxprocs:
             enabled: false
         gomemlimit:
@@ -16,7 +16,7 @@ service:
     pipelines:
         logs/test:
             receivers:
-                - filelog/test
+                - file_log/test
             processors:
                 - memory_limiter
                 - transform/set-instrumentation-scope-runtime
@@ -40,10 +40,10 @@ service:
     extensions:
         - health_check
         - pprof
-        - cgroupruntime
+        - cgroup_runtime
         - file_storage
 receivers:
-    filelog/test:
+    file_log/test:
         exclude:
             - /var/log/pods/kyma-system_telemetry-fluent-bit-*/fluent-bit/*.log
             - /var/log/pods/kyma-system_telemetry-log-agent-*/collector/*.log

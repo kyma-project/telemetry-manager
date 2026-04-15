@@ -100,7 +100,7 @@ const (
 	// ================================================================================
 
 	ComponentIDOTLPReceiver                  = "otlp"
-	ComponentIDFileLogReceiver               = "filelog/%s" // dynamically filled with pipeline name
+	ComponentIDFileLogReceiver               = "file_log/%s" // dynamically filled with pipeline name
 	ComponentIDKymaStatsReceiver             = "kymastats"
 	ComponentIDK8sClusterReceiver            = "k8s_cluster"
 	ComponentIDKubeletStatsReceiver          = "kubeletstats"
@@ -199,5 +199,5 @@ const (
 	ComponentIDHealthCheckExtension      = "health_check"
 	ComponentIDPprofExtension            = "pprof"
 	ComponentIDOAuth2Extension           = "oauth2client/%s" // dynamically filled with pipeline name
-	ComponentIDCGroupRuntimeExtension    = "cgroupruntime"
+	ComponentIDCGroupRuntimeExtension    = "cgroup_runtime"
 )

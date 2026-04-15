@@ -1,5 +1,5 @@
 extensions:
-    cgroupruntime:
+    cgroup_runtime:
         gomaxprocs:
             enabled: false
         gomemlimit:
@@ -46,7 +46,7 @@ service:
     extensions:
         - health_check
         - pprof
-        - cgroupruntime
+        - cgroup_runtime
         - oauth2client/test
 receivers:
     otlp:
