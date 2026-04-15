@@ -564,3 +564,102 @@ func TestBuild(t *testing.T) {
 		})
 	}
 }
+
+func TestBuildConfigShuffled(t *testing.T) {
+	fakeClient := fake.NewClientBuilder().Build()
+	sut := Builder{Reader: fakeClient}
+
+	clusterOpts := common.ClusterOptions{
+		ClusterName:   "${KUBERNETES_SERVICE_HOST}",
+		CloudProvider: "test-cloud-provider",
+	}
+
+	tracePipelines := []telemetryv1beta1.TracePipeline{
+		testutils.NewTracePipelineBuilder().
+			WithName("calm-sandbox").
+			WithOTLPOutput(testutils.OTLPProtocol("http")).
+			WithOAuth2(
+				testutils.OAuth2ClientID("sandbox-client-id"),
+				testutils.OAuth2ClientSecret("sandbox-client-secret"),
+				testutils.OAuth2TokenURL("https://auth.example.com/oauth2/token"),
+				testutils.OAuth2Scopes([]string{"traces"}),
+			).Build(),
+		testutils.NewTracePipelineBuilder().
+			WithName("calm-france").
+			WithOTLPOutput(testutils.OTLPProtocol("http")).
+			WithOAuth2(
+				testutils.OAuth2ClientID("france-client-id"),
+				testutils.OAuth2ClientSecret("france-client-secret"),
+				testutils.OAuth2TokenURL("https://auth.france.example.com/oauth2/token"),
+				testutils.OAuth2Scopes([]string{"traces"}),
+			).Build(),
+	}
+
+	logPipelines := []telemetryv1beta1.LogPipeline{
+		testutils.NewLogPipelineBuilder().
+			WithName("log-sandbox").
+			WithOTLPOutput(testutils.OTLPProtocol("http")).
+			WithOAuth2(
+				testutils.OAuth2ClientID("log-sandbox-client-id"),
+				testutils.OAuth2ClientSecret("log-sandbox-client-secret"),
+				testutils.OAuth2TokenURL("https://auth.example.com/oauth2/token"),
+				testutils.OAuth2Scopes([]string{"logs"}),
+			).Build(),
+		testutils.NewLogPipelineBuilder().
+			WithName("log-france").
+			WithOTLPOutput(testutils.OTLPProtocol("http")).
+			WithOAuth2(
+				testutils.OAuth2ClientID("log-france-client-id"),
+				testutils.OAuth2ClientSecret("log-france-client-secret"),
+				testutils.OAuth2TokenURL("https://auth.france.example.com/oauth2/token"),
+				testutils.OAuth2Scopes([]string{"logs"}),
+			).Build(),
+	}
+
+	metricPipelines := []telemetryv1beta1.MetricPipeline{
+		testutils.NewMetricPipelineBuilder().
+			WithName("metric-sandbox").
+			WithOTLPInput(true).
+			WithOTLPOutput(testutils.OTLPProtocol("http")).
+			WithOAuth2(
+				testutils.OAuth2ClientID("metric-sandbox-client-id"),
+				testutils.OAuth2ClientSecret("metric-sandbox-client-secret"),
+				testutils.OAuth2TokenURL("https://auth.example.com/oauth2/token"),
+				testutils.OAuth2Scopes([]string{"metrics"}),
+			).Build(),
+		testutils.NewMetricPipelineBuilder().
+			WithName("metric-france").
+			WithOTLPInput(true).
+			WithOTLPOutput(testutils.OTLPProtocol("http")).
+			WithOAuth2(
+				testutils.OAuth2ClientID("metric-france-client-id"),
+				testutils.OAuth2ClientSecret("metric-france-client-secret"),
+				testutils.OAuth2TokenURL("https://auth.france.example.com/oauth2/token"),
+				testutils.OAuth2Scopes([]string{"metrics"}),
+			).Build(),
+	}
+
+	config1, _, err := sut.Build(t.Context(), BuildOptions{
+		Cluster:         clusterOpts,
+		TracePipelines:  []telemetryv1beta1.TracePipeline{tracePipelines[0], tracePipelines[1]},
+		LogPipelines:    []telemetryv1beta1.LogPipeline{logPipelines[0], logPipelines[1]},
+		MetricPipelines: []telemetryv1beta1.MetricPipeline{metricPipelines[0], metricPipelines[1]},
+	})
+	require.NoError(t, err)
+
+	config2, _, err := sut.Build(t.Context(), BuildOptions{
+		Cluster:         clusterOpts,
+		TracePipelines:  []telemetryv1beta1.TracePipeline{tracePipelines[1], tracePipelines[0]},
+		LogPipelines:    []telemetryv1beta1.LogPipeline{logPipelines[1], logPipelines[0]},
+		MetricPipelines: []telemetryv1beta1.MetricPipeline{metricPipelines[1], metricPipelines[0]},
+	})
+	require.NoError(t, err)
+
+	config1YAML, err := yaml.Marshal(config1)
+	require.NoError(t, err, "failed to marshal config1")
+
+	config2YAML, err := yaml.Marshal(config2)
+	require.NoError(t, err, "failed to marshal config2")
+
+	require.Equal(t, string(config1YAML), string(config2YAML), "config should be equal regardless of pipeline order")
+}

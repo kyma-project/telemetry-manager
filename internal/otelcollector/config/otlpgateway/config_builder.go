@@ -3,6 +3,8 @@ package otlpgateway
 import (
 	"context"
 	"fmt"
+	"slices"
+	"strings"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -41,6 +43,8 @@ type BuildOptions struct {
 
 // Build creates OTel Collector configuration from TracePipeline, LogPipeline, and MetricPipeline CRs.
 func (b *Builder) Build(ctx context.Context, opts BuildOptions) (*common.Config, common.EnvVars, error) {
+	b.sortPipelinesByName(&opts)
+
 	config := common.NewConfig()
 	envVars := make(common.EnvVars)
 
@@ -72,6 +76,19 @@ func (b *Builder) Build(ctx context.Context, opts BuildOptions) (*common.Config,
 	}
 
 	return config, envVars, nil
+}
+
+// sortPipelinesByName sorts pipelines by name to ensure consistent order and checksum for generated ConfigMap
+func (b *Builder) sortPipelinesByName(opts *BuildOptions) {
+	slices.SortFunc(opts.LogPipelines, func(a, b telemetryv1beta1.LogPipeline) int {
+		return strings.Compare(a.Name, b.Name)
+	})
+	slices.SortFunc(opts.TracePipelines, func(a, b telemetryv1beta1.TracePipeline) int {
+		return strings.Compare(a.Name, b.Name)
+	})
+	slices.SortFunc(opts.MetricPipelines, func(a, b telemetryv1beta1.MetricPipeline) int {
+		return strings.Compare(a.Name, b.Name)
+	})
 }
 
 // ================================================================================
