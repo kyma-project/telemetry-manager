@@ -11,7 +11,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 )
 
@@ -159,197 +158,6 @@ func TestDefaultTelemetryInstanceNotFound(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestGetReplicaCountFromTelemetry(t *testing.T) {
-	const (
-		testNamespace   = "kyma-system"
-		defaultReplicas = int32(2)
-	)
-
-	scheme := runtime.NewScheme()
-	_ = operatorv1beta1.AddToScheme(scheme)
-
-	tests := []struct {
-		name           string
-		telemetry      *operatorv1beta1.Telemetry
-		signalType     common.SignalType
-		expectedResult int32
-	}{
-		{
-			name:           "telemetry not found returns default",
-			telemetry:      nil,
-			signalType:     common.SignalTypeTrace,
-			expectedResult: defaultReplicas,
-		},
-		{
-			name: "trace gateway with static scaling returns configured replicas",
-			telemetry: &operatorv1beta1.Telemetry{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "default",
-					Namespace: testNamespace,
-				},
-				Spec: operatorv1beta1.TelemetrySpec{
-					Trace: &operatorv1beta1.TraceSpec{
-						Gateway: operatorv1beta1.GatewaySpec{
-							Scaling: operatorv1beta1.Scaling{
-								Type: operatorv1beta1.StaticScalingStrategyType,
-								Static: &operatorv1beta1.StaticScaling{
-									Replicas: 5,
-								},
-							},
-						},
-					},
-				},
-			},
-			signalType:     common.SignalTypeTrace,
-			expectedResult: 5,
-		},
-		{
-			name: "log gateway with static scaling returns configured replicas",
-			telemetry: &operatorv1beta1.Telemetry{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "default",
-					Namespace: testNamespace,
-				},
-				Spec: operatorv1beta1.TelemetrySpec{
-					Log: &operatorv1beta1.LogSpec{
-						Gateway: operatorv1beta1.GatewaySpec{
-							Scaling: operatorv1beta1.Scaling{
-								Type: operatorv1beta1.StaticScalingStrategyType,
-								Static: &operatorv1beta1.StaticScaling{
-									Replicas: 3,
-								},
-							},
-						},
-					},
-				},
-			},
-			signalType:     common.SignalTypeLog,
-			expectedResult: 3,
-		},
-		{
-			name: "metric gateway with static scaling returns configured replicas",
-			telemetry: &operatorv1beta1.Telemetry{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "default",
-					Namespace: testNamespace,
-				},
-				Spec: operatorv1beta1.TelemetrySpec{
-					Metric: &operatorv1beta1.MetricSpec{
-						Gateway: operatorv1beta1.GatewaySpec{
-							Scaling: operatorv1beta1.Scaling{
-								Type: operatorv1beta1.StaticScalingStrategyType,
-								Static: &operatorv1beta1.StaticScaling{
-									Replicas: 4,
-								},
-							},
-						},
-					},
-				},
-			},
-			signalType:     common.SignalTypeMetric,
-			expectedResult: 4,
-		},
-		{
-			name: "gateway spec nil returns default",
-			telemetry: &operatorv1beta1.Telemetry{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "default",
-					Namespace: testNamespace,
-				},
-				Spec: operatorv1beta1.TelemetrySpec{},
-			},
-			signalType:     common.SignalTypeTrace,
-			expectedResult: defaultReplicas,
-		},
-		{
-			name: "static scaling nil returns default",
-			telemetry: &operatorv1beta1.Telemetry{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "default",
-					Namespace: testNamespace,
-				},
-				Spec: operatorv1beta1.TelemetrySpec{
-					Trace: &operatorv1beta1.TraceSpec{
-						Gateway: operatorv1beta1.GatewaySpec{
-							Scaling: operatorv1beta1.Scaling{
-								Type: operatorv1beta1.StaticScalingStrategyType,
-							},
-						},
-					},
-				},
-			},
-			signalType:     common.SignalTypeTrace,
-			expectedResult: defaultReplicas,
-		},
-		{
-			name: "replicas zero returns default",
-			telemetry: &operatorv1beta1.Telemetry{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "default",
-					Namespace: testNamespace,
-				},
-				Spec: operatorv1beta1.TelemetrySpec{
-					Trace: &operatorv1beta1.TraceSpec{
-						Gateway: operatorv1beta1.GatewaySpec{
-							Scaling: operatorv1beta1.Scaling{
-								Type: operatorv1beta1.StaticScalingStrategyType,
-								Static: &operatorv1beta1.StaticScaling{
-									Replicas: 0,
-								},
-							},
-						},
-					},
-				},
-			},
-			signalType:     common.SignalTypeTrace,
-			expectedResult: defaultReplicas,
-		},
-		{
-			name: "non-static scaling type returns default",
-			telemetry: &operatorv1beta1.Telemetry{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "default",
-					Namespace: testNamespace,
-				},
-				Spec: operatorv1beta1.TelemetrySpec{
-					Trace: &operatorv1beta1.TraceSpec{
-						Gateway: operatorv1beta1.GatewaySpec{
-							Scaling: operatorv1beta1.Scaling{
-								Type: "",
-							},
-						},
-					},
-				},
-			},
-			signalType:     common.SignalTypeTrace,
-			expectedResult: defaultReplicas,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			ctx := t.Context()
-
-			clientBuilder := fake.NewClientBuilder().WithScheme(scheme)
-			if tt.telemetry != nil {
-				clientBuilder = clientBuilder.WithObjects(tt.telemetry)
-			}
-
-			fakeClient := clientBuilder.Build()
-
-			opts := Options{
-				SignalType:                tt.signalType,
-				Client:                    fakeClient,
-				DefaultTelemetryNamespace: testNamespace,
-				DefaultReplicas:           defaultReplicas,
-			}
-
-			result := GetReplicaCountFromTelemetry(ctx, opts)
-			assert.Equal(t, tt.expectedResult, result)
-		})
-	}
-}
-
 func TestGetClusterNameFromTelemetry(t *testing.T) {
 	const (
 		testNamespace      = "kyma-system"
@@ -440,12 +248,7 @@ func TestGetClusterNameFromTelemetry(t *testing.T) {
 
 			fakeClient := clientBuilder.Build()
 
-			opts := Options{
-				Client:                    fakeClient,
-				DefaultTelemetryNamespace: testNamespace,
-			}
-
-			result := GetClusterNameFromTelemetry(ctx, opts)
+			result := GetClusterNameFromTelemetry(ctx, fakeClient, testNamespace)
 			assert.Equal(t, tt.expectedResult, result)
 		})
 	}
@@ -542,12 +345,7 @@ func TestGetServiceEnrichmentFromTelemetryOrDefault(t *testing.T) {
 
 			fakeClient := clientBuilder.Build()
 
-			opts := Options{
-				Client:                    fakeClient,
-				DefaultTelemetryNamespace: testNamespace,
-			}
-
-			result := GetServiceEnrichmentFromTelemetryOrDefault(ctx, opts)
+			result := GetServiceEnrichmentFromTelemetryOrDefault(ctx, fakeClient, testNamespace)
 			assert.Equal(t, tt.expectedResult, result)
 		})
 	}

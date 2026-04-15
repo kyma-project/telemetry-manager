@@ -232,20 +232,6 @@ type FilterProcessorConfig struct {
 	Traces    []telemetryv1beta1.FilterSpec `yaml:"trace_conditions,omitempty"`
 }
 
-type FilterProcessorMetrics struct {
-	Metric    []string `yaml:"metric,omitempty"`
-	Datapoint []string `yaml:"datapoint,omitempty"`
-}
-
-type FilterProcessorTraces struct {
-	Span      []string `yaml:"span,omitempty"`
-	SpanEvent []string `yaml:"spanevent,omitempty"`
-}
-
-type FilterProcessorLogs struct {
-	Log []string `yaml:"log_record,omitempty"`
-}
-
 // =============================================================================
 // CONNECTOR TYPES
 // =============================================================================

@@ -1,7 +1,6 @@
 package shared
 
 import (
-	"fmt"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -13,6 +12,7 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
+	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdoutloggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
@@ -24,7 +24,6 @@ func TestMultiPipelineFanout_OTel(t *testing.T) {
 	tests := []struct {
 		name                string
 		labels              []string
-		opts                []kubeprep.Option
 		inputBuilder        func(includeNs string) telemetryv1beta1.LogPipelineInput
 		logGeneratorBuilder func(ns string) client.Object
 	}{
@@ -48,22 +47,11 @@ func TestMultiPipelineFanout_OTel(t *testing.T) {
 				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeLogs).K8sObject()
 			},
 		},
-		{
-			name:   fmt.Sprintf("%s-%s", suite.LabelLogGateway, suite.LabelExperimental),
-			labels: []string{suite.LabelLogGateway},
-			opts:   []kubeprep.Option{kubeprep.WithExperimental()},
-			inputBuilder: func(includeNs string) telemetryv1beta1.LogPipelineInput {
-				return testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
-			},
-			logGeneratorBuilder: func(ns string) client.Object {
-				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeCentralLogs).K8sObject()
-			},
-		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			suite.SetupTestWithOptions(t, tc.labels, tc.opts...)
+			suite.SetupTest(t, tc.labels...)
 
 			var (
 				uniquePrefix  = unique.Prefix(tc.name)
@@ -102,6 +90,7 @@ func TestMultiPipelineFanout_OTel(t *testing.T) {
 
 			assert.BackendReachable(t, backend1)
 			assert.BackendReachable(t, backend2)
+			assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 			assert.OTelLogPipelineHealthy(t, pipeline1.Name)
 			assert.OTelLogPipelineHealthy(t, pipeline2.Name)
 			assert.OTelLogsFromNamespaceDelivered(t, backend1, genNs)

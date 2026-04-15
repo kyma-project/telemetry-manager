@@ -218,7 +218,7 @@ func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 			Expect(kitk8s.CreateObjects(t, &additionalPipeline)).To(Succeed())
 
 			if tc.experimental {
-				assert.DaemonSetReady(t, kitkyma.TelemetryOTLPGatewayName)
+				assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 
 				t.Log("Experimental mode: unlimited pipelines enabled, additional pipeline should be healthy")
 				assert.OTelLogPipelineHealthy(t, additionalPipelineName)
@@ -226,7 +226,7 @@ func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {
 				t.Log("Verifying logs are delivered for all pipelines")
 				assert.OTelLogsFromNamespaceDelivered(t, backend, genNs)
 			} else {
-				assert.DeploymentReady(t, kitkyma.LogGatewayName)
+				assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 
 				t.Log("Normal mode: verifying max pipeline limit is enforced")
 				assert.LogPipelineHasCondition(t, additionalPipelineName, metav1.Condition{
