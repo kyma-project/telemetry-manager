@@ -35,7 +35,7 @@ metadata:
     app.kubernetes.io/name: telemetry-otlp-gateway
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
-  name: telemetry-otlp-gateway
+  name: telemetry-otlp
   namespace: kyma-system
 spec:
   internalTrafficPolicy: Local
@@ -111,6 +111,62 @@ status:
   loadBalancer: {}
 ---
 apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: gateway
+    app.kubernetes.io/managed-by: telemetry-manager
+    app.kubernetes.io/name: telemetry-otlp-gateway
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
+  name: telemetry-otlp-metrics
+  namespace: kyma-system
+spec:
+  internalTrafficPolicy: Local
+  ports:
+  - name: grpc-collector
+    port: 4317
+    protocol: TCP
+    targetPort: 4317
+  - name: http-collector
+    port: 4318
+    protocol: TCP
+    targetPort: 4318
+  selector:
+    app.kubernetes.io/name: telemetry-otlp-gateway
+  type: ClusterIP
+status:
+  loadBalancer: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: gateway
+    app.kubernetes.io/managed-by: telemetry-manager
+    app.kubernetes.io/name: telemetry-otlp-gateway
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
+  name: telemetry-otlp-traces
+  namespace: kyma-system
+spec:
+  internalTrafficPolicy: Local
+  ports:
+  - name: grpc-collector
+    port: 4317
+    protocol: TCP
+    targetPort: 4317
+  - name: http-collector
+    port: 4318
+    protocol: TCP
+    targetPort: 4318
+  selector:
+    app.kubernetes.io/name: telemetry-otlp-gateway
+  type: ClusterIP
+status:
+  loadBalancer: {}
+---
+apiVersion: v1
 kind: ServiceAccount
 metadata:
   labels:
@@ -155,6 +211,10 @@ spec:
         sidecar.istio.io/inject: "true"
         telemetry.kyma-project.io/log-export: "true"
         telemetry.kyma-project.io/log-ingest: "true"
+        telemetry.kyma-project.io/metric-export: "true"
+        telemetry.kyma-project.io/metric-ingest: "true"
+        telemetry.kyma-project.io/trace-export: "true"
+        telemetry.kyma-project.io/trace-ingest: "true"
     spec:
       affinity:
         podAntiAffinity:
@@ -266,10 +326,10 @@ metadata:
     app.kubernetes.io/name: telemetry-otlp-gateway
     app.kubernetes.io/part-of: telemetry
     kyma-project.io/module: telemetry
-  name: telemetry-otlp-gateway
+  name: telemetry-otlp
   namespace: kyma-system
 spec:
-  host: telemetry-otlp-gateway.kyma-system.svc.cluster.local
+  host: telemetry-otlp.kyma-system.svc.cluster.local
   trafficPolicy:
     tls: {}
 status: {}
@@ -287,6 +347,40 @@ metadata:
   namespace: kyma-system
 spec:
   host: telemetry-otlp-logs.kyma-system.svc.cluster.local
+  trafficPolicy:
+    tls: {}
+status: {}
+---
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  labels:
+    app.kubernetes.io/component: gateway
+    app.kubernetes.io/managed-by: telemetry-manager
+    app.kubernetes.io/name: telemetry-otlp-gateway
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
+  name: telemetry-otlp-metrics
+  namespace: kyma-system
+spec:
+  host: telemetry-otlp-metrics.kyma-system.svc.cluster.local
+  trafficPolicy:
+    tls: {}
+status: {}
+---
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  labels:
+    app.kubernetes.io/component: gateway
+    app.kubernetes.io/managed-by: telemetry-manager
+    app.kubernetes.io/name: telemetry-otlp-gateway
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
+  name: telemetry-otlp-traces
+  namespace: kyma-system
+spec:
+  host: telemetry-otlp-traces.kyma-system.svc.cluster.local
   trafficPolicy:
     tls: {}
 status: {}
@@ -377,6 +471,38 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - operator.kyma-project.io
+  resources:
+  - telemetries
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - telemetry.kyma-project.io
+  resources:
+  - metricpipelines
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - telemetry.kyma-project.io
+  resources:
+  - tracepipelines
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - telemetry.kyma-project.io
+  resources:
+  - logpipelines
+  verbs:
+  - get
+  - list
+  - watch
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -397,4 +523,68 @@ subjects:
 - kind: ServiceAccount
   name: telemetry-otlp-gateway
   namespace: kyma-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    app.kubernetes.io/component: gateway
+    app.kubernetes.io/managed-by: telemetry-manager
+    app.kubernetes.io/name: telemetry-otlp-gateway
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
+  name: telemetry-otlp-gateway
+  namespace: kyma-system
+rules:
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/component: gateway
+    app.kubernetes.io/managed-by: telemetry-manager
+    app.kubernetes.io/name: telemetry-otlp-gateway
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
+  name: telemetry-otlp-gateway
+  namespace: kyma-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: telemetry-otlp-gateway
+subjects:
+- kind: ServiceAccount
+  name: telemetry-otlp-gateway
+  namespace: kyma-system
+---
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  labels:
+    app.kubernetes.io/component: gateway
+    app.kubernetes.io/managed-by: telemetry-manager
+    app.kubernetes.io/name: telemetry-otlp-gateway
+    app.kubernetes.io/part-of: telemetry
+    kyma-project.io/module: telemetry
+  name: telemetry-otlp-gateway
+  namespace: kyma-system
+spec:
+  mtls:
+    mode: PERMISSIVE
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: telemetry-otlp-gateway
+status: {}
 ---

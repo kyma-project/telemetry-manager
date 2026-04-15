@@ -65,12 +65,12 @@ func TestKymaInput(t *testing.T) {
 
 	assert.BackendReachable(t, backendKymaOnly)
 	assert.BackendReachable(t, backendKymaAndOtlp)
-	assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+	assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 
 	if suite.DebugObjectsEnabled() {
 		objects := []client.Object{
 			&pipelineWithKymaOnly,
-			kitk8sobjects.NewConfigMap(names.MetricGateway, kitkyma.SystemNamespaceName).K8sObject(),
+			kitk8sobjects.NewConfigMap(names.OTLPGateway, kitkyma.SystemNamespaceName).K8sObject(),
 		}
 		Expect(kitk8s.ObjectsToFile(t, objects...)).To(Succeed())
 	}

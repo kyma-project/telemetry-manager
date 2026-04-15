@@ -84,7 +84,7 @@ func TestExtractLabels(t *testing.T) {
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.BackendReachable(t, backend)
-	assert.DeploymentReady(t, kitkyma.TraceGatewayName)
+	assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 	assert.TracePipelineHealthy(t, pipelineName)
 
 	// Verify that at least one trace entry contains the expected labels, rather than requiring all entries to match.
