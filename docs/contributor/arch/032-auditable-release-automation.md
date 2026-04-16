@@ -88,7 +88,7 @@ This approach provides the following benefits:
 
 ### Module Release Workflow
 
-After entering the release version and channel, the Release Master triggers a dedicated GitHub workflow to publish the module release. The workflow creates the module configuration, assigns the release channel, and opens pull requests to update the `dev`, `fast`, `experimental`, and `regular` channels.
+After entering the release version and channel, the Release Master triggers a dedicated GitHub workflow to publish the module release. The workflow creates the module configuration, assigns the release channel, and opens pull requests to update the dev, fast, experimental, and regular channels.
 
 ![Module Release Workflow](./../assets/auditable-release-module-release.drawio.svg)
 
