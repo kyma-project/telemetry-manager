@@ -18,9 +18,9 @@ ENV PATH=/go/bin:$PATH
 
 RUN mkdir -p ${GOPATH}/src ${GOPATH}/bin
 WORKDIR /
-RUN curl -LO https://github.com/prometheus/prometheus/archive/refs/tags/v${PROMETHEUS_VERSION}.tar.gz
-RUN tar xvzf v${PROMETHEUS_VERSION}.tar.gz
-RUN mv /prometheus-${PROMETHEUS_VERSION} /prometheus
+RUN curl -LO https://github.com/prometheus/prometheus/archive/refs/heads/main.tar.gz
+RUN tar xvzf main.tar.gz
+RUN mv /prometheus-main /prometheus
 
 WORKDIR /prometheus
 COPY plugins.yml plugins.yml
