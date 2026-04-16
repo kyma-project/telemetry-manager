@@ -10,7 +10,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
-	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 )
 
 const systemNamespace = "kyma-system"
@@ -75,7 +74,10 @@ func logTelemetryManagerPodLogs(t *testing.T, ctx context.Context) {
 	var podList corev1.PodList
 	if err := K8sClient.List(ctx, &podList,
 		client.InNamespace(systemNamespace),
-		client.MatchingLabels{commonresources.LabelKeyK8sName: names.ManagerName},
+		client.MatchingLabels{
+			commonresources.LabelKeyK8sName:    "manager",
+			commonresources.LabelKeyKymaModule: commonresources.LabelValueKymaModule,
+		},
 	); err != nil {
 		t.Logf("telemetry-manager pod list error: %v", err)
 		return
