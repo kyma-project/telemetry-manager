@@ -74,15 +74,21 @@ func TestOAuth2(t *testing.T) {
 				kitbackend.WithOIDCAuth(oauth2server.IssuerURL(), oauth2server.Audience()),
 			)
 
+			oauth2Secret := kitk8sobjects.NewOpaqueSecret("oauth2", kitkyma.DefaultNamespaceName,
+				kitk8sobjects.WithStringData("client-id", "the-mock-does-not-verify"),
+				kitk8sobjects.WithStringData("client-secret", "the-mock-does-not-verify"),
+				kitk8sobjects.WithStringData("token-url", oauth2server.TokenEndpoint()),
+			)
+
 			pipeline := testutils.NewLogPipelineBuilder().
 				WithName(pipelineName).
 				WithInput(tc.inputBuilder(genNs)).
 				WithOTLPOutput(
 					testutils.OTLPEndpoint(backend.EndpointHTTPS()),
 					testutils.OTLPOAuth2(
-						testutils.OAuth2ClientID("the-mock-does-not-verify"),
-						testutils.OAuth2ClientSecret("the-mock-does-not-verify"),
-						testutils.OAuth2TokenURL(oauth2server.TokenEndpoint()),
+						testutils.OAuth2ClientIDFromSecret(oauth2Secret.Name(), oauth2Secret.Namespace(), "client-id"),
+						testutils.OAuth2ClientSecretFromSecret(oauth2Secret.Name(), oauth2Secret.Namespace(), "client-secret"),
+						testutils.OAuth2TokenURLFromSecret(oauth2Secret.Name(), oauth2Secret.Namespace(), "token-url"),
 						testutils.OAuth2Params(map[string]string{"grant_type": "client_credentials"}),
 					),
 					testutils.OTLPClientTLSFromString(serverCerts.CaCertPem.String()),
@@ -92,6 +98,7 @@ func TestOAuth2(t *testing.T) {
 			resources := []client.Object{
 				kitk8sobjects.NewNamespace(backendNs).K8sObject(),
 				kitk8sobjects.NewNamespace(genNs).K8sObject(),
+				oauth2Secret.K8sObject(),
 				&pipeline,
 				tc.logGeneratorBuilder(genNs),
 			}
