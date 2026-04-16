@@ -76,15 +76,15 @@ Before running the release workflow, complete the following tasks:
 In the telemetry-manager repository, go to **Actions**, select [Create Release](https://github.com/kyma-project/telemetry-manager/actions/workflows/create-release.yml), and run the release workflow with the following inputs:
 
 
-| Input                      | Description                                                                      | Example              |
-|----------------------------|----------------------------------------------------------------------------------|----------------------|
-| **version**                | Release version in X.Y.Z format                                                  | `1.2.3`              |
-| **occ_image_version**      | OCC image version in X.Y.Z-A.B.C format                                          | `0.100.0-1.2.3`      |
-| **self_monitor_image_tag** | Self-monitor image tag in vYYYYMMDD-HASH format                                  | `v20260302-bbf32a3b` |
-| **dir_size_image_tag**     | Directory size exporter image tag in vYYYYMMDD-HASH format                       | `v20260302-12345678` |
-| **dry_run**                | Test the release process without creating tags/releases                          |                      |
-| **force**                  | Recreate existing release (use with caution)                                     |                      |
-| **module_release**         | Trigger module release for dev, fast, and experimental channels after the main release |                      |
+| Input                      | Description                                                                               | Example              |
+|----------------------------|-------------------------------------------------------------------------------------------|----------------------|
+| **version**                | Release version in X.Y.Z format                                                           | `1.2.3`              |
+| **occ_image_version**      | OCC image version in X.Y.Z-A.B.C format                                                   | `0.100.0-1.2.3`      |
+| **self_monitor_image_tag** | Self-monitor image tag in vYYYYMMDD-HASH format                                           | `v20260302-bbf32a3b` |
+| **dir_size_image_tag**     | Directory size exporter image tag in vYYYYMMDD-HASH format                                | `v20260302-12345678` |
+| **dry_run**                | Test the release process without creating tags/releases                                   |                      |
+| **force**                  | Recreate existing release (use with caution)                                              |                      |
+| **module_release**         | Trigger module submission for dev, fast, and experimental channels after the main release |                      |
 
 > [!CAUTION]
 > Force mode deletes the existing release and tag before recreating them. Use it only when necessary and communicate with the team beforehand.

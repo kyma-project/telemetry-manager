@@ -639,7 +639,7 @@ jobs:
           echo "::notice::DRY RUN: Skipping gh-pages Helm chart metadata update"
           echo "Would have updated index.yaml on gh-pages branch"
 
-      - name: Trigger module release for dev channel
+      - name: Trigger module submission for dev channel
         if: ${{ inputs.dry_run != true && inputs.module_release == true }}
         env:
           GH_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
@@ -653,7 +653,7 @@ jobs:
             -f auto_merge="true"
           echo "Module release workflow triggered for dev channel"
 
-      - name: Trigger module release for fast channel
+      - name: Trigger module submission for fast channel
         if: ${{ inputs.dry_run != true && inputs.module_release == true }}
         env:
           GH_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
@@ -667,7 +667,7 @@ jobs:
             -f auto_merge="true"
           echo "Module release workflow triggered for fast channel"
 
-      - name: Trigger module release for experimental channel
+      - name: Trigger module submission for experimental channel
         if: ${{ inputs.dry_run != true && inputs.module_release == true }}
         env:
           GH_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
