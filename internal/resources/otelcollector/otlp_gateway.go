@@ -138,25 +138,8 @@ func (o *OTLPGatewayApplierDeleter) ApplyResources(ctx context.Context, c client
 		return fmt.Errorf("failed to create daemonset: %w", err)
 	}
 
-	// Create/update/delete VPA CR only if VPA CRD exists in cluster
-	if opts.VpaCRDExists {
-		if opts.VpaEnabled {
-			vpa := makeVPA(name, "DaemonSet", o.baseMemoryRequest, opts.VPAMaxAllowedMemory)
-			if err := k8sutils.CreateOrUpdateVPA(ctx, labelerClient, vpa); err != nil {
-				return fmt.Errorf("failed to create VPA: %w", err)
-			}
-		} else {
-			// If VPA is disabled, ensure that any existing VPA is cleaned up
-			vpa := &autoscalingvpav1.VerticalPodAutoscaler{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      name.Name,
-					Namespace: name.Namespace,
-				},
-			}
-			if err := k8sutils.DeleteObject(ctx, c, vpa); err != nil {
-				return fmt.Errorf("failed to delete VPA: %w", err)
-			}
-		}
+	if err := o.applyVPA(ctx, c, labelerClient, name, opts); err != nil {
+		return err
 	}
 
 	if err := k8sutils.CreateOrUpdateService(ctx, labelerClient, o.makeOTLPService()); err != nil {
@@ -278,6 +261,35 @@ func (o *OTLPGatewayApplierDeleter) DeleteResources(ctx context.Context, c clien
 	}
 
 	return allErrors
+}
+
+// applyVPA creates, updates, or deletes the VPA resource based on configuration.
+func (o *OTLPGatewayApplierDeleter) applyVPA(ctx context.Context, c client.Client, labelerClient client.Client, name types.NamespacedName, opts GatewayApplyOptions) error {
+	if !opts.VpaCRDExists {
+		return nil
+	}
+
+	if opts.VpaEnabled {
+		vpa := makeVPA(name, "DaemonSet", o.baseMemoryRequest, opts.VPAMaxAllowedMemory)
+		if err := k8sutils.CreateOrUpdateVPA(ctx, labelerClient, vpa); err != nil {
+			return fmt.Errorf("failed to create VPA: %w", err)
+		}
+
+		return nil
+	}
+
+	// If VPA is disabled, ensure that any existing VPA is cleaned up
+	vpa := &autoscalingvpav1.VerticalPodAutoscaler{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name.Name,
+			Namespace: name.Namespace,
+		},
+	}
+	if err := k8sutils.DeleteObject(ctx, c, vpa); err != nil {
+		return fmt.Errorf("failed to delete VPA: %w", err)
+	}
+
+	return nil
 }
 
 func (o *OTLPGatewayApplierDeleter) makeDestinationRule(name string) *istionetworkingclientv1.DestinationRule {
