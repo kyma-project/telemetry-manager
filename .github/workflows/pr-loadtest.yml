@@ -24,10 +24,10 @@ on:
         description: "Duration of the test in seconds"
         required: true
         default: "1200"
-      selfmonitor_image:
-        type: string
-        description: "Self-monitor image override (optional, defaults to the production image)"
-        required: false
+      selfmonitor_pr_image:
+        type: boolean
+        description: "Use self-monitor image built from the PR"
+        default: false
 
 run-name: "Load Test for ${{ inputs.image }} on PR-${{ inputs.pr_number }}"
 
@@ -96,8 +96,8 @@ jobs:
 
       - name: Deploy telemetry
         run: |
-          if [ -n "${{ github.event.inputs.selfmonitor_image }}" ]; then
-            export SELF_MONITOR_IMAGE="${{ github.event.inputs.selfmonitor_image }}"
+          if [ "${{ github.event.inputs.selfmonitor_pr_image }}" = "true" ]; then
+            export SELF_MONITOR_IMAGE="europe-docker.pkg.dev/kyma-project/dev/tpi/telemetry-self-monitor:PR-${{ github.event.inputs.pr_number }}"
           fi
           hack/deploy-telemetry.sh
 
