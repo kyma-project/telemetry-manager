@@ -1,4 +1,4 @@
-name: Check Release Branch
+name: Validate Release Branch
 
 permissions:
   contents: read
