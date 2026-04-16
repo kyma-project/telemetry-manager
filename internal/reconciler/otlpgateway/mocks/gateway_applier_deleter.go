@@ -103,16 +103,16 @@ func (_c *GatewayApplierDeleter_ApplyResources_Call) RunAndReturn(run func(ctx c
 }
 
 // DeleteResources provides a mock function for the type GatewayApplierDeleter
-func (_mock *GatewayApplierDeleter) DeleteResources(ctx context.Context, c client.Client, isIstioActive bool) error {
-	ret := _mock.Called(ctx, c, isIstioActive)
+func (_mock *GatewayApplierDeleter) DeleteResources(ctx context.Context, c client.Client, isIstioActive bool, vpaCRDExists bool) error {
+	ret := _mock.Called(ctx, c, isIstioActive, vpaCRDExists)
 
 	if len(ret) == 0 {
 		panic("no return value specified for DeleteResources")
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, client.Client, bool) error); ok {
-		r0 = returnFunc(ctx, c, isIstioActive)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, client.Client, bool, bool) error); ok {
+		r0 = returnFunc(ctx, c, isIstioActive, vpaCRDExists)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -128,11 +128,12 @@ type GatewayApplierDeleter_DeleteResources_Call struct {
 //   - ctx context.Context
 //   - c client.Client
 //   - isIstioActive bool
-func (_e *GatewayApplierDeleter_Expecter) DeleteResources(ctx interface{}, c interface{}, isIstioActive interface{}) *GatewayApplierDeleter_DeleteResources_Call {
-	return &GatewayApplierDeleter_DeleteResources_Call{Call: _e.mock.On("DeleteResources", ctx, c, isIstioActive)}
+//   - vpaCRDExists bool
+func (_e *GatewayApplierDeleter_Expecter) DeleteResources(ctx interface{}, c interface{}, isIstioActive interface{}, vpaCRDExists interface{}) *GatewayApplierDeleter_DeleteResources_Call {
+	return &GatewayApplierDeleter_DeleteResources_Call{Call: _e.mock.On("DeleteResources", ctx, c, isIstioActive, vpaCRDExists)}
 }
 
-func (_c *GatewayApplierDeleter_DeleteResources_Call) Run(run func(ctx context.Context, c client.Client, isIstioActive bool)) *GatewayApplierDeleter_DeleteResources_Call {
+func (_c *GatewayApplierDeleter_DeleteResources_Call) Run(run func(ctx context.Context, c client.Client, isIstioActive bool, vpaCRDExists bool)) *GatewayApplierDeleter_DeleteResources_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -146,10 +147,15 @@ func (_c *GatewayApplierDeleter_DeleteResources_Call) Run(run func(ctx context.C
 		if args[2] != nil {
 			arg2 = args[2].(bool)
 		}
+		var arg3 bool
+		if args[3] != nil {
+			arg3 = args[3].(bool)
+		}
 		run(
 			arg0,
 			arg1,
 			arg2,
+			arg3,
 		)
 	})
 	return _c
@@ -160,7 +166,7 @@ func (_c *GatewayApplierDeleter_DeleteResources_Call) Return(err error) *Gateway
 	return _c
 }
 
-func (_c *GatewayApplierDeleter_DeleteResources_Call) RunAndReturn(run func(ctx context.Context, c client.Client, isIstioActive bool) error) *GatewayApplierDeleter_DeleteResources_Call {
+func (_c *GatewayApplierDeleter_DeleteResources_Call) RunAndReturn(run func(ctx context.Context, c client.Client, isIstioActive bool, vpaCRDExists bool) error) *GatewayApplierDeleter_DeleteResources_Call {
 	_c.Call.Return(run)
 	return _c
 }

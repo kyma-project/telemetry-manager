@@ -11,6 +11,7 @@ import (
 	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -35,6 +36,8 @@ type mocks struct {
 	gatewayApplierDeleter *mockGatewayApplierDeleter
 	configBuilder         *mockOTLPGatewayConfigBuilder
 	istioStatusChecker    *mockIstioStatusChecker
+	vpaStatusChecker      *mockVpaStatusChecker
+	nodeSizeTracker       *mockNodeSizeTracker
 }
 
 type mockGatewayApplierDeleter struct {
@@ -46,8 +49,8 @@ func (m *mockGatewayApplierDeleter) ApplyResources(ctx context.Context, c client
 	return args.Error(0)
 }
 
-func (m *mockGatewayApplierDeleter) DeleteResources(ctx context.Context, c client.Client, isIstioActive bool) error {
-	args := m.Called(ctx, c, isIstioActive)
+func (m *mockGatewayApplierDeleter) DeleteResources(ctx context.Context, c client.Client, isIstioActive bool, vpaCRDExists bool) error {
+	args := m.Called(ctx, c, isIstioActive, vpaCRDExists)
 	return args.Error(0)
 }
 
@@ -71,6 +74,24 @@ type mockIstioStatusChecker struct {
 func (m *mockIstioStatusChecker) IsIstioActive(ctx context.Context) (bool, error) {
 	args := m.Called(ctx)
 	return args.Bool(0), args.Error(1)
+}
+
+type mockVpaStatusChecker struct {
+	mock.Mock
+}
+
+func (m *mockVpaStatusChecker) VpaCRDExists(ctx context.Context, c client.Client) (bool, error) {
+	args := m.Called(ctx, c)
+	return args.Bool(0), args.Error(1)
+}
+
+type mockNodeSizeTracker struct {
+	mock.Mock
+}
+
+func (m *mockNodeSizeTracker) VPAMaxAllowedMemory() resource.Quantity {
+	args := m.Called()
+	return args.Get(0).(resource.Quantity)
 }
 
 func newTestClient(t *testing.T, objs ...client.Object) client.Client {
@@ -104,6 +125,8 @@ func newTestReconciler(fakeClient client.Client, mocks *mocks) *Reconciler {
 		gatewayApplierDeleter: mocks.gatewayApplierDeleter,
 		configBuilder:         mocks.configBuilder,
 		istioStatusChecker:    mocks.istioStatusChecker,
+		vpaStatusChecker:      mocks.vpaStatusChecker,
+		nodeSizeTracker:       mocks.nodeSizeTracker,
 	}
 }
 
@@ -112,6 +135,8 @@ func newDefaultMocks() *mocks {
 		gatewayApplierDeleter: &mockGatewayApplierDeleter{},
 		configBuilder:         &mockOTLPGatewayConfigBuilder{},
 		istioStatusChecker:    &mockIstioStatusChecker{},
+		vpaStatusChecker:      &mockVpaStatusChecker{},
+		nodeSizeTracker:       &mockNodeSizeTracker{},
 	}
 }
 
@@ -130,14 +155,15 @@ func TestReconcile_MissingConfigMap_DeletesGateway(t *testing.T) {
 	mocks := newDefaultMocks()
 
 	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false, nil)
-	mocks.gatewayApplierDeleter.On("DeleteResources", mock.Anything, mock.Anything, false).Return(nil)
+	mocks.vpaStatusChecker.On("VpaCRDExists", mock.Anything, mock.Anything).Return(false, nil)
+	mocks.gatewayApplierDeleter.On("DeleteResources", mock.Anything, mock.Anything, false, false).Return(nil)
 
 	sut := newTestReconciler(fakeClient, mocks)
 
 	_, err := sut.Reconcile(ctx, newReconcileRequest())
 	require.NoError(t, err)
 
-	mocks.gatewayApplierDeleter.AssertCalled(t, "DeleteResources", mock.Anything, mock.Anything, false)
+	mocks.gatewayApplierDeleter.AssertCalled(t, "DeleteResources", mock.Anything, mock.Anything, false, false)
 
 	var cm corev1.ConfigMap
 
@@ -165,14 +191,15 @@ func TestReconcile_NoPipelines_DeletesGateway(t *testing.T) {
 	mocks := newDefaultMocks()
 
 	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false, nil)
-	mocks.gatewayApplierDeleter.On("DeleteResources", mock.Anything, mock.Anything, false).Return(nil)
+	mocks.vpaStatusChecker.On("VpaCRDExists", mock.Anything, mock.Anything).Return(false, nil)
+	mocks.gatewayApplierDeleter.On("DeleteResources", mock.Anything, mock.Anything, false, false).Return(nil)
 
 	sut := newTestReconciler(fakeClient, mocks)
 
 	_, err := sut.Reconcile(ctx, newReconcileRequest())
 	require.NoError(t, err)
 
-	mocks.gatewayApplierDeleter.AssertCalled(t, "DeleteResources", mock.Anything, mock.Anything, false)
+	mocks.gatewayApplierDeleter.AssertCalled(t, "DeleteResources", mock.Anything, mock.Anything, false, false)
 }
 
 func TestReconcile_SinglePipeline_DeploysGateway(t *testing.T) {
@@ -196,6 +223,8 @@ func TestReconcile_SinglePipeline_DeploysGateway(t *testing.T) {
 	mocks := newDefaultMocks()
 
 	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false, nil)
+	mocks.vpaStatusChecker.On("VpaCRDExists", mock.Anything, mock.Anything).Return(false, nil)
+	mocks.nodeSizeTracker.On("VPAMaxAllowedMemory").Return(resource.Quantity{})
 	mocks.configBuilder.On("Build", mock.Anything, mock.Anything, mock.Anything).Return(&common.Config{}, common.EnvVars{}, nil)
 	mocks.gatewayApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
@@ -230,14 +259,15 @@ func TestReconcile_GenerationMismatch_SkipsPipeline(t *testing.T) {
 	mocks := newDefaultMocks()
 
 	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false, nil)
-	mocks.gatewayApplierDeleter.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mocks.vpaStatusChecker.On("VpaCRDExists", mock.Anything, mock.Anything).Return(false, nil)
+	mocks.gatewayApplierDeleter.On("DeleteResources", mock.Anything, mock.Anything, false, false).Return(nil)
 
 	sut := newTestReconciler(fakeClient, mocks)
 
 	_, err := sut.Reconcile(ctx, newReconcileRequest())
 	require.NoError(t, err)
 
-	mocks.gatewayApplierDeleter.AssertCalled(t, "DeleteResources", mock.Anything, mock.Anything, mock.Anything)
+	mocks.gatewayApplierDeleter.AssertCalled(t, "DeleteResources", mock.Anything, mock.Anything, false, false)
 	mocks.configBuilder.AssertNotCalled(t, "Build", mock.Anything, mock.Anything, mock.Anything)
 }
 
@@ -265,14 +295,15 @@ func TestReconcile_PipelineDeleted_SkipsPipeline(t *testing.T) {
 	mocks := newDefaultMocks()
 
 	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false, nil)
-	mocks.gatewayApplierDeleter.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mocks.vpaStatusChecker.On("VpaCRDExists", mock.Anything, mock.Anything).Return(false, nil)
+	mocks.gatewayApplierDeleter.On("DeleteResources", mock.Anything, mock.Anything, false, false).Return(nil)
 
 	sut := newTestReconciler(fakeClient, mocks)
 
 	_, err := sut.Reconcile(ctx, newReconcileRequest())
 	require.NoError(t, err)
 
-	mocks.gatewayApplierDeleter.AssertCalled(t, "DeleteResources", mock.Anything, mock.Anything, mock.Anything)
+	mocks.gatewayApplierDeleter.AssertCalled(t, "DeleteResources", mock.Anything, mock.Anything, false, false)
 }
 
 func TestReconcile_MultiplePipelines_AggregatesConfig(t *testing.T) {
@@ -300,6 +331,8 @@ func TestReconcile_MultiplePipelines_AggregatesConfig(t *testing.T) {
 	mocks := newDefaultMocks()
 
 	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false, nil)
+	mocks.vpaStatusChecker.On("VpaCRDExists", mock.Anything, mock.Anything).Return(false, nil)
+	mocks.nodeSizeTracker.On("VPAMaxAllowedMemory").Return(resource.Quantity{})
 	mocks.configBuilder.On("Build", mock.Anything, mock.MatchedBy(func(opts otlpgateway.BuildOptions) bool {
 		return len(opts.TracePipelines) == 2
 	})).Return(&common.Config{}, common.EnvVars{}, nil)
@@ -332,14 +365,15 @@ func TestReconcile_MissingPipeline_SkipsGracefully(t *testing.T) {
 	mocks := newDefaultMocks()
 
 	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false, nil)
-	mocks.gatewayApplierDeleter.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mocks.vpaStatusChecker.On("VpaCRDExists", mock.Anything, mock.Anything).Return(false, nil)
+	mocks.gatewayApplierDeleter.On("DeleteResources", mock.Anything, mock.Anything, false, false).Return(nil)
 
 	sut := newTestReconciler(fakeClient, mocks)
 
 	_, err := sut.Reconcile(ctx, newReconcileRequest())
 	require.NoError(t, err)
 
-	mocks.gatewayApplierDeleter.AssertCalled(t, "DeleteResources", mock.Anything, mock.Anything, mock.Anything)
+	mocks.gatewayApplierDeleter.AssertCalled(t, "DeleteResources", mock.Anything, mock.Anything, false, false)
 }
 
 func TestReconcile_IstioEnabled_PassesFlag(t *testing.T) {
@@ -363,6 +397,8 @@ func TestReconcile_IstioEnabled_PassesFlag(t *testing.T) {
 	mocks := newDefaultMocks()
 
 	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(true, nil)
+	mocks.vpaStatusChecker.On("VpaCRDExists", mock.Anything, mock.Anything).Return(false, nil)
+	mocks.nodeSizeTracker.On("VPAMaxAllowedMemory").Return(resource.Quantity{})
 	mocks.configBuilder.On("Build", mock.Anything, mock.Anything, mock.Anything).Return(&common.Config{}, common.EnvVars{}, nil)
 	mocks.gatewayApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.MatchedBy(func(opts otelcollector.GatewayApplyOptions) bool {
 		return opts.IstioEnabled == true
@@ -552,6 +588,8 @@ func TestReconcile_LogPipeline_DeploysGateway(t *testing.T) {
 	mocks := newDefaultMocks()
 
 	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false, nil)
+	mocks.vpaStatusChecker.On("VpaCRDExists", mock.Anything, mock.Anything).Return(false, nil)
+	mocks.nodeSizeTracker.On("VPAMaxAllowedMemory").Return(resource.Quantity{})
 	mocks.configBuilder.On("Build", mock.Anything, mock.Anything).Return(&common.Config{}, common.EnvVars{}, nil)
 	mocks.gatewayApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
@@ -591,6 +629,8 @@ func TestReconcile_TraceAndLogPipelines_DeploysUnifiedGateway(t *testing.T) {
 	mocks := newDefaultMocks()
 
 	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false, nil)
+	mocks.vpaStatusChecker.On("VpaCRDExists", mock.Anything, mock.Anything).Return(false, nil)
+	mocks.nodeSizeTracker.On("VPAMaxAllowedMemory").Return(resource.Quantity{})
 	mocks.configBuilder.On("Build", mock.Anything, mock.Anything).Return(&common.Config{}, common.EnvVars{}, nil)
 	mocks.gatewayApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
@@ -727,6 +767,8 @@ func TestReconcile_OnlyLogPipelines_DeploysGateway(t *testing.T) {
 	mocks := newDefaultMocks()
 
 	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false, nil)
+	mocks.vpaStatusChecker.On("VpaCRDExists", mock.Anything, mock.Anything).Return(false, nil)
+	mocks.nodeSizeTracker.On("VPAMaxAllowedMemory").Return(resource.Quantity{})
 	mocks.configBuilder.On("Build", mock.Anything, mock.Anything).Return(&common.Config{}, common.EnvVars{}, nil)
 	mocks.gatewayApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
@@ -799,6 +841,8 @@ func TestOverrideFunctionality(t *testing.T) {
 			mocks := newDefaultMocks()
 
 			mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false, nil)
+			mocks.vpaStatusChecker.On("VpaCRDExists", mock.Anything, mock.Anything).Return(false, nil)
+			mocks.nodeSizeTracker.On("VPAMaxAllowedMemory").Return(resource.Quantity{})
 
 			if tt.expectReconcile {
 				mocks.configBuilder.On("Build", mock.Anything, mock.Anything).Return(&common.Config{}, common.EnvVars{}, nil)
@@ -992,6 +1036,8 @@ func TestReconcile_MetricPipeline_DeploysGateway(t *testing.T) {
 	mocks := newDefaultMocks()
 
 	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false, nil)
+	mocks.vpaStatusChecker.On("VpaCRDExists", mock.Anything, mock.Anything).Return(false, nil)
+	mocks.nodeSizeTracker.On("VPAMaxAllowedMemory").Return(resource.Quantity{})
 	mocks.configBuilder.On("Build", mock.Anything, mock.Anything).Return(&common.Config{}, common.EnvVars{}, nil)
 	mocks.gatewayApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 

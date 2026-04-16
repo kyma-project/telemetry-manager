@@ -50,6 +50,8 @@ type Reconciler struct {
 	gatewayApplierDeleter GatewayApplierDeleter
 	configBuilder         OTLPGatewayConfigBuilder
 	istioStatusChecker    IstioStatusChecker
+	vpaStatusChecker      VpaStatusChecker
+	nodeSizeTracker       NodeSizeTracker
 	overridesHandler      *overrides.Handler
 }
 
@@ -81,6 +83,20 @@ func WithConfigBuilder(builder OTLPGatewayConfigBuilder) Option {
 func WithIstioStatusChecker(checker IstioStatusChecker) Option {
 	return func(r *Reconciler) {
 		r.istioStatusChecker = checker
+	}
+}
+
+// WithVpaStatusChecker sets the VPA status checker.
+func WithVpaStatusChecker(checker VpaStatusChecker) Option {
+	return func(r *Reconciler) {
+		r.vpaStatusChecker = checker
+	}
+}
+
+// WithNodeSizeTracker sets the node size tracker.
+func WithNodeSizeTracker(tracker NodeSizeTracker) Option {
+	return func(r *Reconciler) {
+		r.nodeSizeTracker = tracker
 	}
 }
 
@@ -150,11 +166,22 @@ func (r *Reconciler) processConfigAndBuildResources(ctx context.Context, tracePi
 		return fmt.Errorf("failed to check Istio status: %w", err)
 	}
 
+	vpaCRDExists, err := r.vpaStatusChecker.VpaCRDExists(ctx, r.Client)
+	if err != nil {
+		return fmt.Errorf("failed to check VPA CRD: %w", err)
+	}
+
+	vpaEnabled := telemetryutils.IsVpaEnabledInTelemetry(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
+	vpaMaxAllowedMemory := r.nodeSizeTracker.VPAMaxAllowedMemory()
+
 	opts := otelcollector.GatewayApplyOptions{
 		CollectorConfigYAML:            string(collectorConfigYAML),
 		CollectorEnvVars:               collectorEnvVars,
 		IstioEnabled:                   isIstioActive,
 		ResourceRequirementsMultiplier: len(tracePipelines) + len(logPipelines) + len(metricPipelines),
+		VpaCRDExists:                   vpaCRDExists,
+		VpaEnabled:                     vpaEnabled,
+		VPAMaxAllowedMemory:            vpaMaxAllowedMemory,
 	}
 
 	return r.gatewayApplierDeleter.ApplyResources(ctx, r.Client, opts)
@@ -198,7 +225,12 @@ func (r *Reconciler) doReconcile(ctx context.Context) error {
 			return fmt.Errorf("failed to check Istio status: %w", err)
 		}
 
-		if err := r.gatewayApplierDeleter.DeleteResources(ctx, r.Client, isIstioActive); err != nil {
+		vpaCRDExists, err := r.vpaStatusChecker.VpaCRDExists(ctx, r.Client)
+		if err != nil {
+			return fmt.Errorf("failed to check VPA CRD: %w", err)
+		}
+
+		if err := r.gatewayApplierDeleter.DeleteResources(ctx, r.Client, isIstioActive, vpaCRDExists); err != nil {
 			return fmt.Errorf("failed to delete gateway: %w", err)
 		}
 
@@ -363,9 +395,14 @@ func (r *Reconciler) cleanupLegacyGateways(ctx context.Context) error {
 		return fmt.Errorf("failed to check Istio status: %w", err)
 	}
 
+	vpaCRDExists, err := r.vpaStatusChecker.VpaCRDExists(ctx, r.Client)
+	if err != nil {
+		return fmt.Errorf("failed to check VPA CRD: %w", err)
+	}
+
 	ns := r.globals.TargetNamespace()
 	for _, gatewayName := range []string{names.TraceGateway, names.MetricGateway, names.LogGateway} {
-		if err := otelcollector.DeleteLegacyGatewayResources(ctx, r.Client, ns, gatewayName, isIstioActive); err != nil {
+		if err := otelcollector.DeleteLegacyGatewayResources(ctx, r.Client, ns, gatewayName, isIstioActive, vpaCRDExists); err != nil {
 			return fmt.Errorf("failed to delete legacy gateway %s: %w", gatewayName, err)
 		}
 	}

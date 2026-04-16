@@ -39,7 +39,7 @@ func TestOTLPGateway_ApplyResources(t *testing.T) {
 	// Interface for testing both gateway types
 	type gatewayApplierDeleter interface {
 		ApplyResources(ctx context.Context, c client.Client, opts GatewayApplyOptions) error
-		DeleteResources(ctx context.Context, c client.Client, isIstioActive bool) error
+		DeleteResources(ctx context.Context, c client.Client, isIstioActive bool, vpaCRDExists bool) error
 	}
 
 	tests := []struct {
@@ -118,7 +118,7 @@ func TestOTLPGateway_DeleteResources(t *testing.T) {
 	// Interface for testing both gateway types
 	type gatewayApplierDeleter interface {
 		ApplyResources(ctx context.Context, c client.Client, opts GatewayApplyOptions) error
-		DeleteResources(ctx context.Context, c client.Client, isIstioActive bool) error
+		DeleteResources(ctx context.Context, c client.Client, isIstioActive bool, vpaCRDExists bool) error
 	}
 
 	tests := []struct {
@@ -159,7 +159,7 @@ func TestOTLPGateway_DeleteResources(t *testing.T) {
 			})
 			require.NoError(t, err)
 
-			err = tt.sut.DeleteResources(t.Context(), fakeClient, tt.istioEnabled)
+			err = tt.sut.DeleteResources(t.Context(), fakeClient, tt.istioEnabled, false)
 			require.NoError(t, err)
 
 			for i := range created {
