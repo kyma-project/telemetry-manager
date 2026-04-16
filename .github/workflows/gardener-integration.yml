@@ -19,7 +19,7 @@ on:
   pull_request_target:
     types: [labeled, opened, synchronize, reopened]
   workflow_dispatch:
-  # This is reused in release.yml. So we use workflow_call
+  # This is reused in create-release.yml. So we use workflow_call
   workflow_call:
     inputs:
       ref:

@@ -37,7 +37,7 @@ fi
 #   update-releases <version> <channel>     Update module-releases.yaml
 #   create-pr <version> <channel> <output-file>  Create or reuse PR for release
 #
-# Channels: regular, fast, experimental
+# Channels: regular, fast, experimental, dev
 
 COMMAND="${1:-}"
 
@@ -218,11 +218,11 @@ MODULE_RELEASES="${MODULE_DIR}/module-releases.yaml"
 validate_channel() {
   local channel="$1"
   case "${channel}" in
-    regular|fast|experimental)
+    regular|fast|experimental|dev)
       # valid channel
       ;;
     *)
-      echo "::error::Invalid channel '${channel}'. Allowed channels are: regular, fast, experimental." >&2
+      echo "::error::Invalid channel '${channel}'. Allowed channels are: regular, fast, experimental, dev." >&2
       exit 1
       ;;
   esac
@@ -352,8 +352,8 @@ setup_folder() {
   local version="$1"
   local channel="$2"
 
-  # For fast and regular channels
-  if [ "${channel}" = "fast" ] || [ "${channel}" = "regular" ]; then
+  # For dev, fast and regular channels
+  if [ "${channel}" = "dev" ] || [ "${channel}" = "fast" ] || [ "${channel}" = "regular" ]; then
     setup_folder_common "${version}" "${channel}" "" '^[0-9]+\.[0-9]+\.[0-9]+$' "regular"
   elif [ "${channel}" = "experimental" ]; then
     setup_folder_common "${version}" "${channel}" "-experimental" '^[0-9]+\.[0-9]+\.[0-9]+-experimental$' "experimental"
@@ -531,7 +531,7 @@ create_pr() {
     echo ""
     echo "Arguments:"
     echo "  version      - Version being released (e.g., 1.2.3)"
-    echo "  channel      - Release channel (regular, fast, experimental)"
+    echo "  channel      - Release channel (regular, fast, experimental, dev)"
     echo "  output-file  - File to write PR URL and number"
     exit 1
   fi
