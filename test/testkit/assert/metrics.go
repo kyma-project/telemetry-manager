@@ -136,6 +136,7 @@ func MetricPipelineSelfMonitorIsHealthy(t *testing.T, k8sClient client.Client, p
 		key := types.NamespacedName{Name: pipelineName}
 		g.Expect(k8sClient.Get(t.Context(), key, &pipeline)).To(Succeed())
 		cond := meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeFlowHealthy)
+		t.Logf("FlowHealthy condition: %v", cond)
 		g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeFlowHealthy)).To(BeTrueBecause("FlowHealthy condition: %v", cond))
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }

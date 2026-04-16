@@ -101,16 +101,3 @@ runs:
       with:
         name: ${{ inputs.artifact-prefix }}${{ inputs.test-id }}-report
         path: junit-report-*.xml
-
-    - name: Print pods on failure
-      if: failure()
-      shell: bash
-      run: |
-        echo "::group::Pod overview"
-        kubectl get pods -A
-        echo "::endgroup::"
-        for pod in $(kubectl get pods -n kyma-system -o name 2>/dev/null); do
-          echo "::group::Logs $pod"
-          kubectl logs -n kyma-system $pod --all-containers 2>/dev/null || true
-          echo "::endgroup::"
-        done
