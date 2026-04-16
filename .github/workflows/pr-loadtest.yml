@@ -24,6 +24,10 @@ on:
         description: "Duration of the test in seconds"
         required: true
         default: "1200"
+      selfmonitor_image:
+        type: string
+        description: "Self-monitor image override (optional, defaults to the production image)"
+        required: false
 
 run-name: "Load Test for ${{ inputs.image }} on PR-${{ inputs.pr_number }}"
 
@@ -91,7 +95,11 @@ jobs:
           GARDENER_MAX_NODES: 2
 
       - name: Deploy telemetry
-        run: hack/deploy-telemetry.sh
+        run: |
+          if [ -n "${{ github.event.inputs.selfmonitor_image }}" ]; then
+            export SELF_MONITOR_IMAGE="${{ github.event.inputs.selfmonitor_image }}"
+          fi
+          hack/deploy-telemetry.sh
 
       - name: Deploy Istio module
         run: hack/deploy-istio.sh
