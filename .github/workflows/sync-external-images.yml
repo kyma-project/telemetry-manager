@@ -13,7 +13,6 @@ on:
     types: [opened, edited, synchronize, reopened, ready_for_review]
     branches:
       - main
-      - "feature-new-centralized-arch" # TODO: Remove after merging feature branch
     paths:
       - "external-images.yaml"
 
