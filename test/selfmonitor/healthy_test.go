@@ -103,6 +103,7 @@ func TestHealthy(t *testing.T) {
 		assertDataDeliveredEventually(t, e)
 	}
 
+	t.Fail()
 	// Verify that data delivery and FlowHealthy conditions remain stable together for 3 minutes.
 	assertAllHealthyConsistently(t, entries)
 }

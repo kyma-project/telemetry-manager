@@ -328,6 +328,14 @@ func SetupTestWithOptions(t *testing.T, labels []string, opts ...kubeprep.Option
 	if !cfg.SkipManagedResourceCleanup {
 		t.Cleanup(func() {
 			ctx := context.Background()
+
+			// Dump resource YAMLs before waiting for managed resources to be deleted:
+			// at this point pipelines have just been deleted but the manager-created
+			// workloads (gateways, agents, selfmonitor) are still present.
+			if t.Failed() {
+				dumpResourceYAML(t, ctx, TestArtifactsDir(t))
+			}
+
 			kubeprep.WaitForManagedResourceCleanup(ctx, K8sClient)
 
 			if cfg.CleanupFluentBitHostPath {
