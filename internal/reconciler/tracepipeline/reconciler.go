@@ -197,6 +197,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	if allErrors != nil {
+		var probingFailed *errortypes.FlowHealthProbingFailedError
+		if errors.As(allErrors, &probingFailed) {
+			return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
+		}
+
 		return ctrl.Result{}, allErrors
 	}
 

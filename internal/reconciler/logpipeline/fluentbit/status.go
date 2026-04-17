@@ -150,7 +150,7 @@ func (r *Reconciler) evaluateFlowHealthCondition(ctx context.Context, pipeline *
 
 	probeResult, err := r.flowHealthProber.Probe(ctx, pipeline.Name)
 	if err != nil {
-		return metav1.ConditionUnknown, conditions.ReasonSelfMonAgentProbingFailed, fmt.Errorf("failed to probe flow health: %w", err)
+		return metav1.ConditionUnknown, conditions.ReasonSelfMonAgentProbingFailed, &errortypes.FlowHealthProbingFailedError{Err: fmt.Errorf("failed to probe flow health: %w", err)}
 	}
 
 	logf.FromContext(ctx).V(1).Info("Probed flow health", "result", probeResult)
