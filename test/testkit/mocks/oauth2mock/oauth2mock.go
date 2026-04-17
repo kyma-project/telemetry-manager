@@ -73,8 +73,9 @@ func (o *OAuth2Authenticator) buildResources() {
 	podSpec := corev1.PodSpec{
 		Containers: []corev1.Container{
 			{
-				Name:  "oauth2-mock",
-				Image: oauth2MockImage,
+				Name:            "oauth2-mock",
+				Image:           oauth2MockImage,
+				ImagePullPolicy: corev1.PullIfNotPresent,
 				Ports: []corev1.ContainerPort{
 					{
 						ContainerPort: 8080,

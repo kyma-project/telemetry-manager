@@ -22,8 +22,9 @@ func sourcePodSpec() corev1.PodSpec {
 	return corev1.PodSpec{
 		Containers: []corev1.Container{
 			{
-				Name:  "source",
-				Image: curlImage,
+				Name:            "source",
+				Image:           curlImage,
+				ImagePullPolicy: corev1.PullIfNotPresent,
 				Command: []string{
 					"/bin/sh",
 					"-c",
@@ -38,8 +39,9 @@ func destinationPodSpec() corev1.PodSpec {
 	return corev1.PodSpec{
 		Containers: []corev1.Container{
 			{
-				Name:  "destination",
-				Image: nginxImage,
+				Name:            "destination",
+				Image:           nginxImage,
+				ImagePullPolicy: corev1.PullIfNotPresent,
 				Ports: []corev1.ContainerPort{
 					{
 						ContainerPort: destinationPort,

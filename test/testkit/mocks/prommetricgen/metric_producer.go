@@ -276,9 +276,10 @@ func (p *Pod) K8sObject() *corev1.Pod {
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
 				{
-					Name:  "metric-producer",
-					Image: p.image,
-					Args:  p.args,
+					Name:            "metric-producer",
+					Image:           p.image,
+					ImagePullPolicy: corev1.PullIfNotPresent,
+					Args:            p.args,
 					Ports: []corev1.ContainerPort{
 						{
 							Name:          metricsPortName,
