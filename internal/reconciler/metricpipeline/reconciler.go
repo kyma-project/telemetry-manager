@@ -245,6 +245,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if allErrors != nil {
 		var probingFailed *errortypes.FlowHealthProbingFailedError
 		if errors.As(allErrors, &probingFailed) {
+			logf.FromContext(ctx).V(1).Info("Flow health probing failed, requeueing", "error", probingFailed)
 			return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
 		}
 
