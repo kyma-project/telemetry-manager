@@ -197,7 +197,7 @@ function wait_for_rollout() {
     local namespace=$1
     local resource=$2
     local label=${3:-$(echo "$resource" | sed 's|.*/||')}
-    if ! kubectl -n "$namespace" rollout status "$resource" --timeout=60s; then
+    if ! kubectl -n "$namespace" rollout status "$resource" --timeout=90s; then
         echo -e "\nERROR: Rollout timed out for $resource in namespace $namespace"
         echo -e "\nPod status:"
         kubectl -n "$namespace" get pods -o wide
