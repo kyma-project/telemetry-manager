@@ -309,7 +309,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 				Type:    conditions.TypeMetricComponentsHealthy,
 				Status:  "False",
 				Reason:  "AgentAllTelemetryDataDropped",
-				Message: "Backend is not reachable or rejecting metrics. All metrics are dropped. See troubleshooting: " + conditions.LinkNoDataArriveAtBackend,
+				Message: "Backend is not reachable or rejecting metrics. All metrics are dropped in Metric agent. See troubleshooting: " + conditions.LinkNoDataArriveAtBackend,
 			},
 		},
 		{

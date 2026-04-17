@@ -320,7 +320,7 @@ func TestFlowHealthCondition(t *testing.T) {
 			},
 			expectedStatus:  metav1.ConditionFalse,
 			expectedReason:  conditions.ReasonSelfMonGatewaySomeDataDropped,
-			expectedMessage: "Backend is reachable, but rejecting spans. Some spans are dropped. See troubleshooting: " + conditions.LinkNotAllDataArriveAtBackend,
+			expectedMessage: "Backend is reachable, but rejecting spans. Some spans are dropped in OTLP gateway. See troubleshooting: " + conditions.LinkNotAllDataArriveAtBackend,
 		},
 		{
 			name: "all data dropped",
@@ -329,7 +329,7 @@ func TestFlowHealthCondition(t *testing.T) {
 			},
 			expectedStatus:  metav1.ConditionFalse,
 			expectedReason:  conditions.ReasonSelfMonGatewayAllDataDropped,
-			expectedMessage: "Backend is not reachable or rejecting spans. All spans are dropped. See troubleshooting: " + conditions.LinkNoDataArriveAtBackend,
+			expectedMessage: "Backend is not reachable or rejecting spans. All spans are dropped in OTLP gateway. See troubleshooting: " + conditions.LinkNoDataArriveAtBackend,
 		},
 	}
 

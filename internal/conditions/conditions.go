@@ -78,15 +78,17 @@ const (
 )
 
 var commonMessages = map[string]string{
-	ReasonGatewayNotReady:             "OTLP gateway DaemonSet is not ready",
-	ReasonGatewayReady:                "OTLP gateway DaemonSet is ready",
-	ReasonNoPipelineDeployed:          "No pipelines have been deployed",
+	ReasonTLSConfigurationInvalid: "TLS configuration invalid: %s",
+	ReasonValidationFailed:        "Pipeline validation failed due to an error from the Kubernetes API server",
+	ReasonOTTLSpecInvalid:         "OTTL specification is invalid, %s. Fix the syntax error indicated by the message or see troubleshooting: " + LinkOTTLSpecInvalid,
+
+	ReasonGatewayNotReady:    "OTLP gateway DaemonSet is not ready",
+	ReasonGatewayReady:       "OTLP gateway DaemonSet is ready",
+	ReasonNoPipelineDeployed: "No pipelines have been deployed",
+
 	ReasonSelfMonFlowHealthy:          "No problems detected in the telemetry flow",
 	ReasonSelfMonGatewayProbingFailed: "Could not determine the health of the telemetry flow because the self monitor probing of gateway failed",
 	ReasonSelfMonAgentProbingFailed:   "Could not determine the health of the telemetry flow because the self monitor probing of agent failed",
-	ReasonTLSConfigurationInvalid:     "TLS configuration invalid: %s",
-	ReasonValidationFailed:            "Pipeline validation failed due to an error from the Kubernetes API server",
-	ReasonOTTLSpecInvalid:             "OTTL specification is invalid, %s. Fix the syntax error indicated by the message or see troubleshooting: " + LinkOTTLSpecInvalid,
 }
 
 var commonLogPipelineMessages = map[string]string{
@@ -112,40 +114,40 @@ var otelLogPipelineMessages = map[string]string{
 
 	ReasonGatewayConfigured: "LogPipeline specification is successfully applied to the configuration of OTLP gateway",
 
-	ReasonSelfMonGatewayAllDataDropped:  "Backend is not reachable or rejecting logs. All logs are dropped in OTLP gateway. See troubleshooting: " + LinkNoDataArriveAtBackend,
 	ReasonSelfMonAgentAllDataDropped:    "Backend is not reachable or rejecting logs. All logs are dropped in Log agent. See troubleshooting: " + LinkNoDataArriveAtBackend,
-	ReasonSelfMonGatewaySomeDataDropped: "Backend is reachable, but rejecting logs. Some logs are dropped in OTLP gateway. See troubleshooting: " + LinkNotAllDataArriveAtBackend,
 	ReasonSelfMonAgentSomeDataDropped:   "Backend is reachable, but rejecting logs. Some logs are dropped in Log agent. See troubleshooting: " + LinkNotAllDataArriveAtBackend,
-	ReasonSelfMonGatewayThrottling:      "OTLP gateway is unable to receive logs at current rate. See troubleshooting: " + LinkGatewayThrottling,
 	ReasonSelfMonConfigNotGenerated:     "No logs delivered to backend because LogPipeline specification is not applied to the configuration of Log agent and OTLP gateway. Check the 'ConfigurationGenerated' condition for more details",
+	ReasonSelfMonGatewayAllDataDropped:  "Backend is not reachable or rejecting logs. All logs are dropped in OTLP gateway. See troubleshooting: " + LinkNoDataArriveAtBackend,
+	ReasonSelfMonGatewaySomeDataDropped: "Backend is reachable, but rejecting logs. Some logs are dropped in OTLP gateway. See troubleshooting: " + LinkNotAllDataArriveAtBackend,
+	ReasonSelfMonGatewayThrottling:      "OTLP gateway is unable to receive logs at current rate. See troubleshooting: " + LinkGatewayThrottling,
 }
 
 var tracePipelineMessages = map[string]string{
-	ReasonComponentsRunning: "All trace components are running",
-	ReasonEndpointInvalid:   "OTLP output endpoint invalid: %s",
+	ReasonEndpointInvalid: "OTLP output endpoint invalid: %s",
 
+	ReasonComponentsRunning: "All trace components are running",
 	ReasonGatewayConfigured: "TracePipeline specification is successfully applied to the configuration of OTLP gateway",
 
-	ReasonSelfMonGatewayAllDataDropped:  "Backend is not reachable or rejecting spans. All spans are dropped. See troubleshooting: " + LinkNoDataArriveAtBackend,
 	ReasonSelfMonConfigNotGenerated:     "No spans delivered to backend because TracePipeline specification is not applied to the configuration of OTLP gateway. Check the 'ConfigurationGenerated' condition for more details",
+	ReasonSelfMonGatewayAllDataDropped:  "Backend is not reachable or rejecting spans. All spans are dropped in OTLP gateway. See troubleshooting: " + LinkNoDataArriveAtBackend,
+	ReasonSelfMonGatewaySomeDataDropped: "Backend is reachable, but rejecting spans. Some spans are dropped in OTLP gateway. See troubleshooting: " + LinkNotAllDataArriveAtBackend,
 	ReasonSelfMonGatewayThrottling:      "OTLP gateway is unable to receive spans at current rate. See troubleshooting: " + LinkGatewayThrottling,
-	ReasonSelfMonGatewaySomeDataDropped: "Backend is reachable, but rejecting spans. Some spans are dropped. See troubleshooting: " + LinkNotAllDataArriveAtBackend,
 }
 
 var metricPipelineMessages = map[string]string{
+	ReasonEndpointInvalid: "OTLP output endpoint invalid: %s",
+
 	ReasonAgentNotReady:     "Metric agent DaemonSet is not ready",
 	ReasonAgentReady:        "Metric agent DaemonSet is ready",
 	ReasonComponentsRunning: "All metric components are running",
-	ReasonEndpointInvalid:   "OTLP output endpoint invalid: %s",
-
 	ReasonGatewayConfigured: "MetricPipeline specification is successfully applied to the configuration of OTLP gateway",
 
-	ReasonSelfMonGatewayAllDataDropped:  "Backend is not reachable or rejecting metrics. All metrics are dropped. See troubleshooting: " + LinkNoDataArriveAtBackend,
-	ReasonSelfMonAgentAllDataDropped:    "Backend is not reachable or rejecting metrics. All metrics are dropped. See troubleshooting: " + LinkNoDataArriveAtBackend,
+	ReasonSelfMonAgentAllDataDropped:    "Backend is not reachable or rejecting metrics. All metrics are dropped in Metric agent. See troubleshooting: " + LinkNoDataArriveAtBackend,
+	ReasonSelfMonAgentSomeDataDropped:   "Backend is reachable, but rejecting metrics. Some metrics are dropped in Metric agent. See troubleshooting: " + LinkNotAllDataArriveAtBackend,
 	ReasonSelfMonConfigNotGenerated:     "No metrics delivered to backend because MetricPipeline specification is not applied to the configuration of OTLP gateway. Check the 'ConfigurationGenerated' condition for more details",
+	ReasonSelfMonGatewayAllDataDropped:  "Backend is not reachable or rejecting metrics. All metrics are dropped in OTLP gateway. See troubleshooting: " + LinkNoDataArriveAtBackend,
+	ReasonSelfMonGatewaySomeDataDropped: "Backend is reachable, but rejecting metrics. Some metrics are dropped in OTLP gateway. See troubleshooting: " + LinkNotAllDataArriveAtBackend,
 	ReasonSelfMonGatewayThrottling:      "OTLP gateway is unable to receive metrics at current rate. See troubleshooting: " + LinkGatewayThrottling,
-	ReasonSelfMonGatewaySomeDataDropped: "Backend is reachable, but rejecting metrics. Some metrics are dropped. See troubleshooting: " + LinkNotAllDataArriveAtBackend,
-	ReasonSelfMonAgentSomeDataDropped:   "Backend is reachable, but rejecting metrics. Some metrics are dropped. See troubleshooting: " + LinkNotAllDataArriveAtBackend,
 }
 
 func MessageForOtelLogPipeline(reason string) string {
