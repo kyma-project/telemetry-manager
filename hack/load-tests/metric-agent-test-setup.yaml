@@ -1,4 +1,4 @@
-apiVersion: telemetry.kyma-project.io/v1alpha1
+apiVersion: telemetry.kyma-project.io/v1beta1
 kind: MetricPipeline
 metadata:
   name: load-test-1
