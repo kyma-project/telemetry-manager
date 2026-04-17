@@ -3,6 +3,7 @@
 # standard bash error handling
 set -o nounset  # treat unset variables as an error and exit immediately.
 set -o errexit  # exit immediately when a command fails.
+set -E          # ensure ERR trap is inherited by functions, command substitutions, and subshells.
 set -o pipefail # prevents errors in a pipeline from being masked
 
 source .env
@@ -194,10 +195,11 @@ function wait_for_resources() {
 }
 
 function wait_for_rollout() {
+    echo -e "\nWaiting for rollout of $2 in namespace $1"
     local namespace=$1
     local resource=$2
     local label=${3:-$(echo "$resource" | sed 's|.*/||')}
-    if ! kubectl -n "$namespace" rollout status "$resource" --timeout=90s; then
+    if ! kubectl -n "$namespace" rollout status "$resource" --timeout=60s; then
         echo -e "\nERROR: Rollout timed out for $resource in namespace $namespace"
         echo -e "\nPod status:"
         kubectl -n "$namespace" get pods -o wide
