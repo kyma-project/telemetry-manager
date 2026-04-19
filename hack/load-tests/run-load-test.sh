@@ -3,7 +3,7 @@
 # standard bash error handling
 set -o nounset  # treat unset variables as an error and exit immediately.
 set -o errexit  # exit immediately when a command fails.
-set -E          # needs to be set if we want the ERR trap
+set -E          # ensure ERR trap is inherited by functions, command substitutions, and subshells.
 set -o pipefail # prevents errors in a pipeline from being masked
 
 source .env
@@ -195,6 +195,7 @@ function wait_for_resources() {
 }
 
 function wait_for_rollout() {
+    echo -e "\nWaiting for rollout of $2 in namespace $1"
     local namespace=$1
     local resource=$2
     local label=${3:-$(echo "$resource" | sed 's|.*/||')}
