@@ -26,7 +26,7 @@ const (
 	AnnotationKeyTelemetryServiceEnrichment             = "telemetry.kyma-project.io/service-enrichment"
 	AnnotationValueTelemetryServiceEnrichmentOtel       = "otel"
 	AnnotationValueTelemetryServiceEnrichmentKymaLegacy = "kyma-legacy"
-	AnnotationValueTelemetryServiceEnrichmentDefault    = AnnotationValueTelemetryServiceEnrichmentOtel
+	AnnotationValueTelemetryServiceEnrichmentDefault    = AnnotationValueTelemetryServiceEnrichmentKymaLegacy
 
 	AnnotationKeyEnableVPA = "telemetry.kyma-project.io/enable-vpa"
 )
