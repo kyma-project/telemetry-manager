@@ -69,6 +69,7 @@ spec:
             - "90m"
             - --rate
             - "LOG_RATE"
+            - --batch=false
             - --body
             - '{"foo":"LOG_CONTENT"}'
           imagePullPolicy: IfNotPresent
