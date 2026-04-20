@@ -366,6 +366,7 @@ deploy-no-fips: manifests $(HELM) ## Deploy telemetry manager with FIPS mode dis
 		--set manager.container.image.repository=${MANAGER_IMAGE} \
 		--set manager.container.image.pullPolicy="Always" \
 		--set manager.container.env.operateInFipsMode=false \
+		--set manager.container.env.selfMonitorImage=${SELF_MONITOR_IMAGE} \
 		--namespace kyma-system \
 	| kubectl apply -f -
 
