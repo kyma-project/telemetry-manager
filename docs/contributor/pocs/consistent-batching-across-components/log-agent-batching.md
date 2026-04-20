@@ -35,11 +35,11 @@ When both sizers are set to the same unit, the `queue_size` must not be smaller 
 
 Even though the `sending_queue` and `batch` can use different sizers, `requests` and `items` respectively, the `queue_size` must still be greater than or equal to the batch `min_size` in practice. The following scenario illustrates why.
 
-The `SynchronousLogEmitter` can produce very small batches, as small as a single log record per request, because each reader emits independently. Consider a worst-case scenario where 1,024 Pods each produce 1 log per second. Each log becomes a separate single-record request in the queue.
+The `SynchronousLogEmitter` can produce very small batches, as small as a single log record per request, because each reader emits independently. Consider a worst-case scenario where 1024 Pods each produce 1 log per second. Each log becomes a separate single-record request in the queue.
 
 If `queue_size` is smaller than `min_size`, for example `queue_size: 1000` with `min_size: 1024`, the batcher stalls:
 
-1. The queue fills up to its capacity of `1000` requests, holding 1,000 log records with one record per request.
+1. The queue fills up to its capacity of `1000` requests, holding 1000 log records with one record per request.
 2. The batcher needs `1024` records to reach `min_size` and flush, but the queue can hold only `1000`.
 3. The `flush_timeout` has not elapsed yet, so a time-based flush does not trigger either.
 4. New requests cannot enter the queue because it is full, and the batcher cannot drain the queue because the batch is not large enough to flush.
