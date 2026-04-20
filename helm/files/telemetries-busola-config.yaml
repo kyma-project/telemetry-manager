@@ -26,13 +26,21 @@ details: |-
         source: status.endpoints
         fullWidth: true
         children:
-          - name: Traces GRPC
+          - name: OTLP GRPC
+            source: otlp.grpc
+          - name: OTLP HTTP
+            source: otlp.http
+          - name: Logs GRPC (Deprecated)
+            source: logs.grpc
+          - name: Logs HTTP (Deprecated)
+            source: logs.http
+          - name: Traces GRPC (Deprecated)
             source: traces.grpc
-          - name: Traces HTTP
+          - name: Traces HTTP (Deprecated)
             source: traces.http
-          - name: Metrics GRPC
+          - name: Metrics GRPC (Deprecated)
             source: metrics.grpc
-          - name: Metrics HTTP
+          - name: Metrics HTTP (Deprecated)
             source: metrics.http
       - name: Condition details
         widget: ConditionList
