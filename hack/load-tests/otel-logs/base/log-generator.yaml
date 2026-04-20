@@ -69,6 +69,7 @@ spec:
             - "90m"
             - --rate
             - "LOG_RATE_PLACEHOLDER"
+            - --batch=false
             - --body
             - '{"foo":"LOG_CONTENT_PLACEHOLDER"}'
           imagePullPolicy: IfNotPresent

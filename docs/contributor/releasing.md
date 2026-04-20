@@ -5,7 +5,7 @@ This document describes the automated release process for Telemetry Manager usin
 <!-- TOC -->
 * [Overview](#overview)
 * [Prerequisites](#prerequisites)
-* [Release to Experimental and Fast Channel](#release-to-experimental-and-fast-channel)
+* [Release to Dev, Fast, and Experimental Channels](#release-to-dev-fast-and-experimental-channels)
   * [1. Prepare the Release](#1-prepare-the-release)
   * [2. Start the Release Workflow](#2-start-the-release-workflow)
   * [3. Automatic Validation](#3-automatic-validation)
@@ -43,7 +43,7 @@ Ensure you have the following permissions:
 - Write access to the telemetry-manager repository
 - Access to merge PRs on the release branch
 
-## Release to Experimental and Fast Channel
+## Release to Dev, Fast, and Experimental Channels
 
 ### 1. Prepare the Release
 
@@ -73,18 +73,18 @@ Before running the release workflow, complete the following tasks:
 
 ### 2. Start the Release Workflow
 
-In the telemetry-manager repository, go to **Actions**, select [Telemetry Release](https://github.com/kyma-project/telemetry-manager/actions/workflows/release.yml), and run the release workflow with the following inputs:
+In the telemetry-manager repository, go to **Actions**, select [Create Release](https://github.com/kyma-project/telemetry-manager/actions/workflows/create-release.yml), and run the release workflow with the following inputs:
 
 
-| Input                      | Description                                                                      | Example              |
-|----------------------------|----------------------------------------------------------------------------------|----------------------|
-| **version**                | Release version in X.Y.Z format                                                  | `1.2.3`              |
-| **occ_image_version**      | OCC image version in X.Y.Z-A.B.C format                                          | `0.100.0-1.2.3`      |
-| **self_monitor_image_tag** | Self-monitor image tag in vYYYYMMDD-HASH format                                  | `v20260302-bbf32a3b` |
-| **dir_size_image_tag**     | Directory size exporter image tag in vYYYYMMDD-HASH format                       | `v20260302-12345678` |
-| **dry_run**                | Test the release process without creating tags/releases                          |                      |
-| **force**                  | Recreate existing release (use with caution)                                     |                      |
-| **module_release**         | Trigger module release for experimental and fast channels after the main release |                      |
+| Input                      | Description                                                                               | Example              |
+|----------------------------|-------------------------------------------------------------------------------------------|----------------------|
+| **version**                | Release version in X.Y.Z format                                                           | `1.2.3`              |
+| **occ_image_version**      | OCC image version in X.Y.Z-A.B.C format                                                   | `0.100.0-1.2.3`      |
+| **self_monitor_image_tag** | Self-monitor image tag in vYYYYMMDD-HASH format                                           | `v20260302-bbf32a3b` |
+| **dir_size_image_tag**     | Directory size exporter image tag in vYYYYMMDD-HASH format                                | `v20260302-12345678` |
+| **dry_run**                | Test the release process without creating tags/releases                                   |                      |
+| **force**                  | Recreate existing release (use with caution)                                              |                      |
+| **module_release**         | Trigger module submission for dev, fast, and experimental channels after the main release |                      |
 
 > [!CAUTION]
 > Force mode deletes the existing release and tag before recreating them. Use it only when necessary and communicate with the team beforehand.
@@ -193,7 +193,7 @@ After the release completes, perform the following tasks:
 
 To release to the regular channel, manually trigger the module release workflow:
 
-In the telemetry-manager repository, go to **Actions**, select [Telemetry Module Release](https://github.com/kyma-project/telemetry-manager/actions/workflows/module-release.yml), and run the workflow with the following inputs:
+In the telemetry-manager repository, go to **Actions**, select [Submit Module](https://github.com/kyma-project/telemetry-manager/actions/workflows/submit-module.yml), and run the workflow with the following inputs:
    - **version**: **`{VERSION}`**, such as `1.2.3`
    - **channel**: `regular`
    - **dry_run**: `false`
@@ -203,7 +203,7 @@ In the telemetry-manager repository, go to **Actions**, select [Telemetry Module
 
 ### Workflow Status
 
-Monitor the release workflow at: [Actions > Telemetry Manager Release](https://github.com/kyma-project/telemetry-manager/actions/workflows/release.yml)
+Monitor the release workflow at: [Actions > Create Release](https://github.com/kyma-project/telemetry-manager/actions/workflows/create-release.yml)
 
 **Key Jobs**:
 1. `validate-and-prepare-branch`: Validation and branch setup
@@ -216,9 +216,9 @@ Monitor the release workflow at: [Actions > Telemetry Manager Release](https://g
 
 ### Module Release Status
 
-Monitor module releases at: [Actions > Telemetry Module Release](https://github.com/kyma-project/telemetry-manager/actions/workflows/module-release.yml)
+Monitor module releases at: [Actions > Submit Module](https://github.com/kyma-project/telemetry-manager/actions/workflows/submit-module.yml)
 
-Check the pull requests for both experimental and fast channels in the [module-manifests repository](https://github.tools.sap/kyma/module-manifests/pulls).
+Check the pull requests for dev, fast, and experimental channels in the [module-manifests repository](https://github.tools.sap/kyma/module-manifests/pulls).
 
 ## Troubleshooting
 
@@ -261,5 +261,5 @@ Rerun the release workflow with force mode to recreate the release.
 
 ## Related Workflows
 
-- [Module Release Workflow](https://github.com/kyma-project/telemetry-manager/actions/workflows/module-release.yml)
-- [Management Plane Chart Release Workflow](https://github.com/kyma-project/telemetry-manager/actions/workflows/mpc-release.yml) 
+- [Submit Module Workflow](https://github.com/kyma-project/telemetry-manager/actions/workflows/submit-module.yml)
+- [KCP Rollout Workflow](https://github.com/kyma-project/telemetry-manager/actions/workflows/kcp-rollout.yml) 
