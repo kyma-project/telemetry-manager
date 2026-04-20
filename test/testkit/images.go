@@ -7,7 +7,7 @@ const (
 	DefaultTelemetryGenImage         = "ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.149.0"
 	DefaultOTelCollectorContribImage = "otel/opentelemetry-collector-contrib:latest"
 	DefaultOTelCollectorImage        = "europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:main"
-	SelfMonitorImage                 = "europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:main"
+	SelfMonitorImage                 = "europe-docker.pkg.dev/kyma-project/dev/tpi/telemetry-self-monitor:PR-3406"
 	SelfMonitorFIPSImage             = "europe-docker.pkg.dev/kyma-project/restricted-prod/sap.com/prometheus-fips:3.10.0"
 	FaultBackendImage                = "europe-docker.pkg.dev/kyma-project/prod/fault-backend:main"
 	AlpineImage                      = "europe-docker.pkg.dev/kyma-project/prod/external/library/alpine:3.23.3"

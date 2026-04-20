@@ -105,7 +105,7 @@ func (r *Reconciler) evaluateFlowHealthCondition(ctx context.Context, pipeline *
 	if requiresAgentProbing(pipeline) && r.agentFlowHealthProber != nil {
 		agentProbeResult, err := r.agentFlowHealthProber.Probe(ctx, pipeline.Name)
 		if err != nil {
-			return metav1.ConditionUnknown, conditions.ReasonSelfMonAgentProbingFailed, fmt.Errorf("failed to probe agent flow health: %w", err)
+			return metav1.ConditionUnknown, conditions.ReasonSelfMonAgentProbingFailed, &errortypes.FlowHealthProbingFailedError{Err: fmt.Errorf("failed to probe agent flow health: %w", err)}
 		}
 
 		logf.FromContext(ctx).V(1).Info("Probed agent flow health", "result", agentProbeResult)
@@ -118,7 +118,7 @@ func (r *Reconciler) evaluateFlowHealthCondition(ctx context.Context, pipeline *
 	if requiresGatewayProbing(pipeline) && r.gatewayFlowHealthProber != nil {
 		gatewayProbeResult, err := r.gatewayFlowHealthProber.Probe(ctx, pipeline.Name)
 		if err != nil {
-			return metav1.ConditionUnknown, conditions.ReasonSelfMonGatewayProbingFailed, fmt.Errorf("failed to probe gateway flow health: %w", err)
+			return metav1.ConditionUnknown, conditions.ReasonSelfMonGatewayProbingFailed, &errortypes.FlowHealthProbingFailedError{Err: fmt.Errorf("failed to probe gateway flow health: %w", err)}
 		}
 
 		logf.FromContext(ctx).V(1).Info("Probed gateway flow health", "result", gatewayProbeResult)

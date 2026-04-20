@@ -102,15 +102,30 @@ runs:
         name: ${{ inputs.artifact-prefix }}${{ inputs.test-id }}-report
         path: junit-report-*.xml
 
-    - name: Print pods on failure
+    - name: Upload test artifacts
+      if: always()
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      with:
+        name: ${{ inputs.artifact-prefix }}${{ inputs.test-id }}-artifacts
+        path: test-artifacts/
+        if-no-files-found: ignore
+
+    - name: Print test artifacts on failure
       if: failure()
       shell: bash
       run: |
-        echo "::group::Pod overview"
-        kubectl get pods -A
-        echo "::endgroup::"
-        for pod in $(kubectl get pods -n kyma-system -o name 2>/dev/null); do
-          echo "::group::Logs $pod"
-          kubectl logs -n kyma-system $pod --all-containers 2>/dev/null || true
+        if [ ! -d test-artifacts ] || [ -z "$(ls -A test-artifacts)" ]; then
+          echo "No test artifacts found."
+          exit 0
+        fi
+        for dir in test-artifacts/*/; do
+          test_name=$(basename "$dir")
+          echo "::group::${test_name}"
+          for f in "${dir}"*.txt "${dir}"*.yaml; do
+            [ -f "$f" ] || continue
+            echo "--- $(basename "$f") ---"
+            cat "$f"
+            echo ""
+          done
           echo "::endgroup::"
         done

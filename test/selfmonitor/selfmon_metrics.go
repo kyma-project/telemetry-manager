@@ -388,7 +388,7 @@ func queryPrometheus(ctx context.Context, query string) (string, error) {
 	return sb.String(), nil
 }
 
-// logSelfMonitorPodLogs fetches and logs the last lines of the selfmonitor Prometheus container logs.
+// logSelfMonitorPodLogs fetches the selfmonitor Prometheus container logs and writes them to a file.
 // It never fails the test.
 func logSelfMonitorPodLogs(t *testing.T, ctx context.Context) {
 	t.Helper()
@@ -402,12 +402,12 @@ func logSelfMonitorPodLogs(t *testing.T, ctx context.Context) {
 		return
 	}
 
-	t.Logf("--- selfmonitor pod logs (count: %d) ---", len(podList.Items))
+	var sb strings.Builder
 
 	for i := range podList.Items {
 		pod := &podList.Items[i]
 
-		logURL := fmt.Sprintf("%s/api/v1/namespaces/%s/pods/%s/log?container=%s&tailLines=100",
+		logURL := fmt.Sprintf("%s/api/v1/namespaces/%s/pods/%s/log?container=%s",
 			suite.ProxyClient.APIServerURL(),
 			pod.Namespace,
 			pod.Name,
@@ -416,19 +416,22 @@ func logSelfMonitorPodLogs(t *testing.T, ctx context.Context) {
 
 		resp, err := suite.ProxyClient.GetWithContext(ctx, logURL)
 		if err != nil {
-			t.Logf("  pod %s: log fetch error: %v", pod.Name, err)
+			fmt.Fprintf(&sb, "pod %s: log fetch error: %v\n", pod.Name, err)
 			continue
 		}
 		defer resp.Body.Close()
 
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
-			t.Logf("  pod %s: read error: %v", pod.Name, err)
+			fmt.Fprintf(&sb, "pod %s: read error: %v\n", pod.Name, err)
 			continue
 		}
 
-		t.Logf("  pod %s logs:\n%s", pod.Name, string(body))
+		fmt.Fprintf(&sb, "=== pod %s ===\n%s\n", pod.Name, string(body))
 	}
+
+	dir := suite.TestArtifactsDir(t)
+	suite.WriteArtifact(t, dir, "selfmonitor-logs.txt", sb.String())
 }
 
 // restartSelfMonitorPod deletes all selfmonitor pods, causing the Deployment to recreate them

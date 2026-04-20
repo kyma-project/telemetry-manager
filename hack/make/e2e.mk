@@ -30,7 +30,7 @@ e2e-test: $(GOTESTSUM) $(K3D) ## Run E2E tests (use E2E_TEST_PATH, E2E_TEST_LABE
 	@echo "  Test ID: $(E2E_TEST_ID)"
 	@echo "  Timeout: $(E2E_TEST_TIMEOUT)"
 	@echo "  Run filter: $(E2E_TEST_RUN)"
-	$(GOTESTSUM) \
+	TEST_ARTIFACTS_DIR=$(CURDIR)/test-artifacts $(GOTESTSUM) \
 		--format $(GOTESTSUM_FORMAT) \
 		--hide-summary=skipped \
 		--junitfile junit-report-$(E2E_TEST_ID).xml \

@@ -2,6 +2,7 @@ package assert
 
 import (
 	"testing"
+	"time"
 
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -15,6 +16,7 @@ import (
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
+	"github.com/kyma-project/telemetry-manager/test/testkit/tlog"
 )
 
 func TracesFromNamespaceDelivered(t *testing.T, backend *kitbackend.Backend, namespace string) {
@@ -57,7 +59,7 @@ func TracePipelineHealthy(t *testing.T, pipelineName string) {
 		configGenerated := meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeConfigurationGenerated)
 		g.Expect(configGenerated).NotTo(BeNil())
 		g.Expect(configGenerated.Status).To(Equal(metav1.ConditionTrue), "Configuration not generated. Reason: %s. Message: %s", configGenerated.Reason, configGenerated.Message)
-	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+	}, periodic.EventuallyTimeout, 2*time.Second).Should(Succeed())
 }
 
 func TracePipelineHasCondition(t *testing.T, pipelineName string, expectedCond metav1.Condition) {
@@ -72,7 +74,7 @@ func TracePipelineHasCondition(t *testing.T, pipelineName string, expectedCond m
 		g.Expect(condition).NotTo(BeNil())
 		g.Expect(condition.Reason).To(Equal(expectedCond.Reason))
 		g.Expect(condition.Status).To(Equal(expectedCond.Status))
-	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+	}, periodic.EventuallyTimeout, 2*time.Second).Should(Succeed())
 }
 
 //nolint:dupl //LogPipelineConditionReasonsTransition,TracePipelineConditionReasonsTransition, MetricPipelineConditionReasonsTransition have similarities, but they are not the same
@@ -96,7 +98,7 @@ func TracePipelineConditionReasonsTransition(t *testing.T, pipelineName, condTyp
 			}
 
 			return ReasonStatus{Reason: currCond.Reason, Status: currCond.Status}
-		}, periodic.FlowHealthConditionTransitionTimeout, periodic.DefaultInterval).Should(Equal(expected), "expected reason %s[%s] of type %s not reached", expected.Reason, expected.Status, condType)
+		}, periodic.FlowHealthConditionTransitionTimeout, 2*time.Second).Should(Equal(expected), "expected reason %s[%s] of type %s not reached", expected.Reason, expected.Status, condType)
 
 		t.Logf("Transitioned to [%s]%s\n", currCond.Status, currCond.Reason)
 	}
@@ -112,6 +114,7 @@ func TracePipelineSelfMonitorIsHealthy(t *testing.T, k8sClient client.Client, pi
 		key := types.NamespacedName{Name: pipelineName}
 		g.Expect(k8sClient.Get(t.Context(), key, &pipeline)).To(Succeed())
 		cond := meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeFlowHealthy)
+		tlog.Logf(t, "FlowHealthy condition: %v", cond)
 		g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeFlowHealthy)).To(BeTrueBecause("FlowHealthy condition: %v", cond))
-	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+	}, periodic.EventuallyTimeout, periodic.SelfmonitorQueryInterval).Should(Succeed())
 }

@@ -15,6 +15,7 @@ import (
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
+	"github.com/kyma-project/telemetry-manager/test/testkit/tlog"
 )
 
 func MetricsFromNamespaceDelivered(t *testing.T, backend *kitbackend.Backend, namespace string, metricNames []string) {
@@ -136,6 +137,7 @@ func MetricPipelineSelfMonitorIsHealthy(t *testing.T, k8sClient client.Client, p
 		key := types.NamespacedName{Name: pipelineName}
 		g.Expect(k8sClient.Get(t.Context(), key, &pipeline)).To(Succeed())
 		cond := meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeFlowHealthy)
+		tlog.Logf(t, "FlowHealthy condition: %v", cond)
 		g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeFlowHealthy)).To(BeTrueBecause("FlowHealthy condition: %v", cond))
-	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+	}, periodic.EventuallyTimeout, periodic.SelfmonitorQueryInterval).Should(Succeed())
 }

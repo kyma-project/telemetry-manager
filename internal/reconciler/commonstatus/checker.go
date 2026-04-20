@@ -49,10 +49,14 @@ func GetGatewayHealthyCondition(ctx context.Context, prober Prober, namespacedNa
 	}
 
 	if workloadstatus.IsRolloutInProgressError(err) {
+		logf.FromContext(ctx).V(1).Info("Rollout in progress - set condition as healthy")
+
 		status = metav1.ConditionTrue
 		reason = conditions.ReasonRolloutInProgress
 		msg = errToMsgCon.Convert(err)
 	}
+
+	logf.FromContext(ctx).V(1).Info("All good - set condition as healthy")
 
 	return &metav1.Condition{
 		Type:    conditions.TypeGatewayHealthy,

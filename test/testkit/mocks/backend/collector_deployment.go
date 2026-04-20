@@ -81,9 +81,10 @@ func (d *collectorDeploymentBuilder) K8sObject(opts ...testkit.OptFunc) *appsv1.
 func (d *collectorDeploymentBuilder) containers() []corev1.Container {
 	containers := []corev1.Container{
 		{
-			Name:  "otel-collector",
-			Image: testkit.DefaultOTelCollectorContribImage,
-			Args:  []string{"--config=/etc/collector/config.yaml"},
+			Name:            "otel-collector",
+			Image:           testkit.DefaultOTelCollectorContribImage,
+			ImagePullPolicy: corev1.PullIfNotPresent,
+			Args:            []string{"--config=/etc/collector/config.yaml"},
 			SecurityContext: &corev1.SecurityContext{
 				RunAsUser: ptr.To[int64](101),
 			},
@@ -104,8 +105,9 @@ func (d *collectorDeploymentBuilder) containers() []corev1.Container {
 			},
 		},
 		{
-			Name:  "web",
-			Image: nginxImage,
+			Name:            "web",
+			Image:           nginxImage,
+			ImagePullPolicy: corev1.PullIfNotPresent,
 			VolumeMounts: []corev1.VolumeMount{
 				{Name: "data", MountPath: "/usr/share/nginx/html"},
 			},
@@ -114,8 +116,9 @@ func (d *collectorDeploymentBuilder) containers() []corev1.Container {
 
 	if d.signalType == SignalTypeLogsFluentBit {
 		containers = append(containers, corev1.Container{
-			Name:  "fluentd",
-			Image: fluentDImage,
+			Name:            "fluentd",
+			Image:           fluentDImage,
+			ImagePullPolicy: corev1.PullIfNotPresent,
 			Ports: []corev1.ContainerPort{
 				{ContainerPort: 9880, Name: "http-log", Protocol: corev1.ProtocolTCP},
 			},

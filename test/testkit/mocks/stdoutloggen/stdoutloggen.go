@@ -91,7 +91,7 @@ func PodSpec(opts ...Option) corev1.PodSpec {
 					"--rate",
 					"10",
 				},
-				ImagePullPolicy: corev1.PullAlways,
+				ImagePullPolicy: corev1.PullIfNotPresent,
 				Resources: corev1.ResourceRequirements{
 					Requests: corev1.ResourceList{
 						corev1.ResourceCPU:    resource.MustParse("100m"),
