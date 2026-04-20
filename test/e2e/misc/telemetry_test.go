@@ -72,17 +72,17 @@ func assertTelemetryCRExistsAndHasCorrectEndpointsInStatus(logGRPCEndpoint, logH
 		var telemetry operatorv1beta1.Telemetry
 		g.Expect(suite.K8sClient.Get(suite.Ctx, kitkyma.TelemetryName, &telemetry)).Should(Succeed())
 
-		g.Expect(telemetry.Status.Endpoints.Logs).ShouldNot(BeNil())
-		g.Expect(telemetry.Status.Endpoints.Logs.GRPC).Should(Equal(logGRPCEndpoint))
-		g.Expect(telemetry.Status.Endpoints.Logs.HTTP).Should(Equal(logHTTPEndpoint))
+		g.Expect(telemetry.Status.Endpoints.Logs).ShouldNot(BeNil())                  //nolint:staticcheck // test file
+		g.Expect(telemetry.Status.Endpoints.Logs.GRPC).Should(Equal(logGRPCEndpoint)) //nolint:staticcheck // test file
+		g.Expect(telemetry.Status.Endpoints.Logs.HTTP).Should(Equal(logHTTPEndpoint)) //nolint:staticcheck // test file
 
-		g.Expect(telemetry.Status.Endpoints.Traces).ShouldNot(BeNil())
-		g.Expect(telemetry.Status.Endpoints.Traces.GRPC).Should(Equal(traceGRPCEndpoint))
-		g.Expect(telemetry.Status.Endpoints.Traces.HTTP).Should(Equal(traceHTTPEndpoint))
+		g.Expect(telemetry.Status.Endpoints.Traces).ShouldNot(BeNil())                    //nolint:staticcheck // test file
+		g.Expect(telemetry.Status.Endpoints.Traces.GRPC).Should(Equal(traceGRPCEndpoint)) //nolint:staticcheck // test file
+		g.Expect(telemetry.Status.Endpoints.Traces.HTTP).Should(Equal(traceHTTPEndpoint)) //nolint:staticcheck // test file
 
-		g.Expect(telemetry.Status.Endpoints.Metrics).ShouldNot(BeNil())
-		g.Expect(telemetry.Status.Endpoints.Metrics.GRPC).Should(Equal(metricGRPCEndpoint))
-		g.Expect(telemetry.Status.Endpoints.Metrics.HTTP).Should(Equal(metricHTTPEndpoint))
+		g.Expect(telemetry.Status.Endpoints.Metrics).ShouldNot(BeNil())                     //nolint:staticcheck // test file
+		g.Expect(telemetry.Status.Endpoints.Metrics.GRPC).Should(Equal(metricGRPCEndpoint)) //nolint:staticcheck // test file
+		g.Expect(telemetry.Status.Endpoints.Metrics.HTTP).Should(Equal(metricHTTPEndpoint)) //nolint:staticcheck // test file
 
 		g.Expect(telemetry.Status.Endpoints.OTLP).ShouldNot(BeNil())
 		g.Expect(telemetry.Status.Endpoints.OTLP.GRPC).Should(Equal(otlpGRPCEndpoint))

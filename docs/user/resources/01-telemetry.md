@@ -123,16 +123,16 @@ For details, see the [Telemetry specification file](https://github.com/kyma-proj
 | **conditions.&#x200b;status** (required) | string | status of the condition, one of True, False, Unknown. |
 | **conditions.&#x200b;type** (required) | string | type of condition in CamelCase or in foo.example.com/CamelCase. |
 | **endpoints**  | object | Endpoints for the OTLP gateway. |
-| **endpoints.&#x200b;logs**  | object | Logs contains the OTLP endpoints for log signal type. |
+| **endpoints.&#x200b;logs**  | object | Logs contains the OTLP endpoints for log signal type.  Deprecated: The logs endpoint is deprecated and automatically redirects to the unified OTLP endpoint. Use the OTLP endpoint instead for all signal types. |
 | **endpoints.&#x200b;logs.&#x200b;grpc**  | string | gRPC endpoint for OTLP. |
 | **endpoints.&#x200b;logs.&#x200b;http**  | string | HTTP endpoint for OTLP. |
-| **endpoints.&#x200b;metrics**  | object | Metrics contains the OTLP endpoints for metric signal type. |
+| **endpoints.&#x200b;metrics**  | object | Metrics contains the OTLP endpoints for metric signal type.  Deprecated: The metrics endpoint is deprecated and automatically redirects to the unified OTLP endpoint. Use the OTLP endpoint instead for all signal types. |
 | **endpoints.&#x200b;metrics.&#x200b;grpc**  | string | gRPC endpoint for OTLP. |
 | **endpoints.&#x200b;metrics.&#x200b;http**  | string | HTTP endpoint for OTLP. |
 | **endpoints.&#x200b;otlp**  | object | OTLP contains the unified OTLP endpoints for all signal types. |
 | **endpoints.&#x200b;otlp.&#x200b;grpc**  | string | gRPC endpoint for OTLP. |
 | **endpoints.&#x200b;otlp.&#x200b;http**  | string | HTTP endpoint for OTLP. |
-| **endpoints.&#x200b;traces**  | object | Traces contains the OTLP endpoints for trace signal type. |
+| **endpoints.&#x200b;traces**  | object | Traces contains the OTLP endpoints for trace signal type.  Deprecated: The traces endpoint is deprecated and automatically redirects to the unified OTLP endpoint. Use the OTLP endpoint instead for all signal types. |
 | **endpoints.&#x200b;traces.&#x200b;grpc**  | string | gRPC endpoint for OTLP. |
 | **endpoints.&#x200b;traces.&#x200b;http**  | string | HTTP endpoint for OTLP. |
 | **state** (required) | string | State signifies current state of Module CR. Value can be one of these three: "Ready", "Deleting", or "Warning". |
@@ -189,16 +189,16 @@ For details, see the [Telemetry specification file](https://github.com/kyma-proj
 | **conditions.&#x200b;status** (required) | string | status of the condition, one of True, False, Unknown. |
 | **conditions.&#x200b;type** (required) | string | type of condition in CamelCase or in foo.example.com/CamelCase. |
 | **endpoints**  | object | Endpoints for the OTLP gateway. |
-| **endpoints.&#x200b;logs**  | object | Logs contains the OTLP endpoints for log signal type. |
+| **endpoints.&#x200b;logs**  | object | Logs contains the OTLP endpoints for log signal type.  Deprecated: The logs endpoint is deprecated and automatically redirects to the unified OTLP endpoint. Use the OTLP endpoint instead for all signal types. |
 | **endpoints.&#x200b;logs.&#x200b;grpc**  | string | gRPC endpoint for OTLP. |
 | **endpoints.&#x200b;logs.&#x200b;http**  | string | HTTP endpoint for OTLP. |
-| **endpoints.&#x200b;metrics**  | object | Metrics contains the OTLP endpoints for metric signal type. |
+| **endpoints.&#x200b;metrics**  | object | Metrics contains the OTLP endpoints for metric signal type.  Deprecated: The metrics endpoint is deprecated and automatically redirects to the unified OTLP endpoint. Use the OTLP endpoint instead for all signal types. |
 | **endpoints.&#x200b;metrics.&#x200b;grpc**  | string | gRPC endpoint for OTLP. |
 | **endpoints.&#x200b;metrics.&#x200b;http**  | string | HTTP endpoint for OTLP. |
 | **endpoints.&#x200b;otlp**  | object | OTLP contains the unified OTLP endpoints for all signal types. |
 | **endpoints.&#x200b;otlp.&#x200b;grpc**  | string | gRPC endpoint for OTLP. |
 | **endpoints.&#x200b;otlp.&#x200b;http**  | string | HTTP endpoint for OTLP. |
-| **endpoints.&#x200b;traces**  | object | Traces contains the OTLP endpoints for trace signal type. |
+| **endpoints.&#x200b;traces**  | object | Traces contains the OTLP endpoints for trace signal type.  Deprecated: The traces endpoint is deprecated and automatically redirects to the unified OTLP endpoint. Use the OTLP endpoint instead for all signal types. |
 | **endpoints.&#x200b;traces.&#x200b;grpc**  | string | gRPC endpoint for OTLP. |
 | **endpoints.&#x200b;traces.&#x200b;http**  | string | HTTP endpoint for OTLP. |
 | **state** (required) | string | State signifies current state of Module CR. Value can be one of these three: "Ready", "Deleting", or "Warning". |

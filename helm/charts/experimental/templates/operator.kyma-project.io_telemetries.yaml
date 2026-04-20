@@ -316,7 +316,11 @@ spec:
                 description: Endpoints for the OTLP gateway.
                 properties:
                   logs:
-                    description: Logs contains the OTLP endpoints for log signal type.
+                    description: |-
+                      Logs contains the OTLP endpoints for log signal type.
+
+                      Deprecated: The logs endpoint is deprecated and automatically redirects to the unified OTLP endpoint.
+                      Use the OTLP endpoint instead for all signal types.
                     properties:
                       grpc:
                         description: gRPC endpoint for OTLP.
@@ -326,8 +330,11 @@ spec:
                         type: string
                     type: object
                   metrics:
-                    description: Metrics contains the OTLP endpoints for metric signal
-                      type.
+                    description: |-
+                      Metrics contains the OTLP endpoints for metric signal type.
+
+                      Deprecated: The metrics endpoint is deprecated and automatically redirects to the unified OTLP endpoint.
+                      Use the OTLP endpoint instead for all signal types.
                     properties:
                       grpc:
                         description: gRPC endpoint for OTLP.
@@ -348,8 +355,11 @@ spec:
                         type: string
                     type: object
                   traces:
-                    description: Traces contains the OTLP endpoints for trace signal
-                      type.
+                    description: |-
+                      Traces contains the OTLP endpoints for trace signal type.
+
+                      Deprecated: The traces endpoint is deprecated and automatically redirects to the unified OTLP endpoint.
+                      Use the OTLP endpoint instead for all signal types.
                     properties:
                       grpc:
                         description: gRPC endpoint for OTLP.
@@ -665,7 +675,11 @@ spec:
                 description: Endpoints for the OTLP gateway.
                 properties:
                   logs:
-                    description: Logs contains the OTLP endpoints for log signal type.
+                    description: |-
+                      Logs contains the OTLP endpoints for log signal type.
+
+                      Deprecated: The logs endpoint is deprecated and automatically redirects to the unified OTLP endpoint.
+                      Use the OTLP endpoint instead for all signal types.
                     properties:
                       grpc:
                         description: gRPC endpoint for OTLP.
@@ -675,8 +689,11 @@ spec:
                         type: string
                     type: object
                   metrics:
-                    description: Metrics contains the OTLP endpoints for metric signal
-                      type.
+                    description: |-
+                      Metrics contains the OTLP endpoints for metric signal type.
+
+                      Deprecated: The metrics endpoint is deprecated and automatically redirects to the unified OTLP endpoint.
+                      Use the OTLP endpoint instead for all signal types.
                     properties:
                       grpc:
                         description: gRPC endpoint for OTLP.
@@ -697,8 +714,11 @@ spec:
                         type: string
                     type: object
                   traces:
-                    description: Traces contains the OTLP endpoints for trace signal
-                      type.
+                    description: |-
+                      Traces contains the OTLP endpoints for trace signal type.
+
+                      Deprecated: The traces endpoint is deprecated and automatically redirects to the unified OTLP endpoint.
+                      Use the OTLP endpoint instead for all signal types.
                     properties:
                       grpc:
                         description: gRPC endpoint for OTLP.

@@ -241,7 +241,7 @@ type Status struct {
 // GatewayEndpoints contains the OTLP endpoints of the unified gateway.
 type GatewayEndpoints struct {
 	// Logs contains the OTLP endpoints for log signal type.
-	// 
+	//
 	// Deprecated: The logs endpoint is deprecated and automatically redirects to the unified OTLP endpoint.
 	// Use the OTLP endpoint instead for all signal types.
 	// +kubebuilder:validation:Optional
@@ -249,14 +249,14 @@ type GatewayEndpoints struct {
 
 	// Traces contains the OTLP endpoints for trace signal type.
 	// +kubebuilder:validation:Optional
-	// 
+	//
 	// Deprecated: The traces endpoint is deprecated and automatically redirects to the unified OTLP endpoint.
 	// Use the OTLP endpoint instead for all signal types.
 	Traces *OTLPEndpoints `json:"traces,omitempty"`
 
 	// Metrics contains the OTLP endpoints for metric signal type.
 	// +kubebuilder:validation:Optional
-	// 
+	//
 	// Deprecated: The metrics endpoint is deprecated and automatically redirects to the unified OTLP endpoint.
 	// Use the OTLP endpoint instead for all signal types.
 	Metrics *OTLPEndpoints `json:"metrics,omitempty"`
