@@ -228,20 +228,6 @@ The VPA CRD is not installed in your cluster.
 
 Install the Vertical Pod Autoscaler in your cluster. For installation instructions, see the [official VPA documentation](https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler).
 
-## Components Restarting Frequently
-
-### Symptom
-
-Telemetry components restart frequently after enabling VPA.
-
-### Cause
-
-VPA is adjusting memory resources, which can trigger Pod restarts.
-
-### Solution
-
-VPA uses the `InPlaceOrRecreate` update mode, which attempts to update resources without restarting Pods. However, if in-place updates are not possible, VPA recreates the Pods. This behavior is normal during the initial adjustment period. After VPA learns your workload patterns, restarts become less frequent.
-
 ## Memory Limits Too Restrictive
 
 ### Symptom
@@ -250,11 +236,14 @@ Telemetry components are running out of memory despite VPA being enabled.
 
 ### Cause
 
-The calculated maxAllowed memory (30% of smallest node) might be insufficient for your telemetry volume.
+The calculated maxAllowed memory (30% of smallest Node) might be insufficient for your telemetry volume.
 
 ### Solution
 
-Consider one of these options:
+If data is not arriving at your backend, see [Not All Data Arrive at the Backend](#not-all-data-arrive-at-the-backend) to check for backend-side issues first.
+
+If data is arriving but components are running out of memory, consider one of these options:
+
 - Add nodes with more memory to increase the maxAllowed calculation.
 - Reduce telemetry volume by applying filters in your pipelines (see [Filter Logs](./filter-and-process/filter-logs.md), [Filter Traces](./filter-and-process/filter-traces.md), [Filter Metrics](./filter-and-process/filter-metrics.md)).
-- Disable VPA and configure static resource limits based on your requirements.
+- Disable VPA, which causes the system to use static resource configuration with a fixed multiplier (see [Manage Automatic Resource Scaling](./manage-pipeline-resources.md)).
