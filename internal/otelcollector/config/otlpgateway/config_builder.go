@@ -39,6 +39,8 @@ type BuildOptions struct {
 	ModuleVersion string
 	// GatewayNamespace is needed for the K8sLeaderElector extension used by the KymaStats receiver in metric pipelines
 	GatewayNamespace string
+	// VpaActive indicates whether VPA is active (VPA CRD exists and VPA is enabled via annotation in Telemetry CR).
+	VpaActive bool
 }
 
 // Build creates OTel Collector configuration from TracePipeline, LogPipeline, and MetricPipeline CRs.
@@ -47,6 +49,10 @@ func (b *Builder) Build(ctx context.Context, opts BuildOptions) (*common.Config,
 
 	config := common.NewConfig()
 	envVars := make(common.EnvVars)
+
+	if opts.VpaActive {
+		config.DisableGoMemLimit()
+	}
 
 	// Build trace pipelines
 	traceBuilder := common.ComponentBuilder[*telemetryv1beta1.TracePipeline]{
