@@ -53,7 +53,7 @@ func TestConfigMapUpdate(t *testing.T) {
 			expectWritten:     true,
 			expectedConfigGen: metav1.ConditionTrue,
 			expectedReason:    conditions.ReasonGatewayConfigured,
-			expectedMessage:   "TracePipeline specification is successfully applied to the configuration of OTLP gateway",
+			expectedMessage:   "TracePipeline specification is successfully applied to the configuration of OTLP Gateway",
 		},
 	}
 
@@ -151,7 +151,7 @@ func TestSecretReferenceValidation(t *testing.T) {
 			expectConfigGenerated: true,
 			expectedConfigStatus:  metav1.ConditionTrue,
 			expectedConfigReason:  conditions.ReasonGatewayConfigured,
-			expectedConfigMessage: "TracePipeline specification is successfully applied to the configuration of OTLP gateway",
+			expectedConfigMessage: "TracePipeline specification is successfully applied to the configuration of OTLP Gateway",
 		},
 	}
 
@@ -216,7 +216,7 @@ func TestSecretReferenceValidation(t *testing.T) {
 					conditions.TypeFlowHealthy,
 					metav1.ConditionFalse,
 					conditions.ReasonSelfMonConfigNotGenerated,
-					"No spans delivered to backend because TracePipeline specification is not applied to the configuration of OTLP gateway. Check the 'ConfigurationGenerated' condition for more details")
+					"No spans delivered to backend because TracePipeline specification is not applied to the configuration of OTLP Gateway. Check the 'ConfigurationGenerated' condition for more details")
 			}
 
 			flowHealthProberStub.AssertExpectations(t)
@@ -271,7 +271,7 @@ func TestMaxPipelineLimit(t *testing.T) {
 		conditions.TypeFlowHealthy,
 		metav1.ConditionFalse,
 		conditions.ReasonSelfMonConfigNotGenerated,
-		"No spans delivered to backend because TracePipeline specification is not applied to the configuration of OTLP gateway. Check the 'ConfigurationGenerated' condition for more details",
+		"No spans delivered to backend because TracePipeline specification is not applied to the configuration of OTLP Gateway. Check the 'ConfigurationGenerated' condition for more details",
 	)
 
 	pipelineLockStub.AssertExpectations(t)
@@ -311,7 +311,7 @@ func TestFlowHealthCondition(t *testing.T) {
 			},
 			expectedStatus:  metav1.ConditionFalse,
 			expectedReason:  conditions.ReasonSelfMonGatewayThrottling,
-			expectedMessage: "OTLP gateway is unable to receive spans at current rate. See troubleshooting: " + conditions.LinkGatewayThrottling,
+			expectedMessage: "OTLP Gateway is unable to receive spans at current rate. See troubleshooting: " + conditions.LinkGatewayThrottling,
 		},
 		{
 			name: "some data dropped",
@@ -320,7 +320,7 @@ func TestFlowHealthCondition(t *testing.T) {
 			},
 			expectedStatus:  metav1.ConditionFalse,
 			expectedReason:  conditions.ReasonSelfMonGatewaySomeDataDropped,
-			expectedMessage: "Backend is reachable, but rejecting spans. Some spans are dropped in OTLP gateway. See troubleshooting: " + conditions.LinkNotAllDataArriveAtBackend,
+			expectedMessage: "Backend is reachable, but rejecting spans. Some spans are dropped in OTLP Gateway. See troubleshooting: " + conditions.LinkNotAllDataArriveAtBackend,
 		},
 		{
 			name: "all data dropped",
@@ -329,7 +329,7 @@ func TestFlowHealthCondition(t *testing.T) {
 			},
 			expectedStatus:  metav1.ConditionFalse,
 			expectedReason:  conditions.ReasonSelfMonGatewayAllDataDropped,
-			expectedMessage: "Backend is not reachable or rejecting spans. All spans are dropped in OTLP gateway. See troubleshooting: " + conditions.LinkNoDataArriveAtBackend,
+			expectedMessage: "Backend is not reachable or rejecting spans. All spans are dropped in OTLP Gateway. See troubleshooting: " + conditions.LinkNoDataArriveAtBackend,
 		},
 	}
 
@@ -452,7 +452,7 @@ func TestTLSCertificateValidation(t *testing.T) {
 					conditions.TypeFlowHealthy,
 					metav1.ConditionFalse,
 					conditions.ReasonSelfMonConfigNotGenerated,
-					"No spans delivered to backend because TracePipeline specification is not applied to the configuration of OTLP gateway. Check the 'ConfigurationGenerated' condition for more details",
+					"No spans delivered to backend because TracePipeline specification is not applied to the configuration of OTLP Gateway. Check the 'ConfigurationGenerated' condition for more details",
 				)
 			}
 
@@ -529,7 +529,7 @@ func TestOTTLSpecValidation(t *testing.T) {
 				conditions.TypeFlowHealthy,
 				metav1.ConditionFalse,
 				conditions.ReasonSelfMonConfigNotGenerated,
-				"No spans delivered to backend because TracePipeline specification is not applied to the configuration of OTLP gateway. Check the 'ConfigurationGenerated' condition for more details",
+				"No spans delivered to backend because TracePipeline specification is not applied to the configuration of OTLP Gateway. Check the 'ConfigurationGenerated' condition for more details",
 			)
 
 			flowHealthProberStub.AssertExpectations(t)
@@ -623,7 +623,7 @@ func TestAPIServerFailureHandling(t *testing.T) {
 				conditions.TypeFlowHealthy,
 				metav1.ConditionFalse,
 				conditions.ReasonSelfMonConfigNotGenerated,
-				"No spans delivered to backend because TracePipeline specification is not applied to the configuration of OTLP gateway. Check the 'ConfigurationGenerated' condition for more details",
+				"No spans delivered to backend because TracePipeline specification is not applied to the configuration of OTLP Gateway. Check the 'ConfigurationGenerated' condition for more details",
 			)
 
 			flowHealthProberStub.AssertExpectations(t)

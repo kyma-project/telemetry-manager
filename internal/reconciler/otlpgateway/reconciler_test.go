@@ -145,7 +145,7 @@ func TestReconcile_MissingConfigMap_DeletesGateway(t *testing.T) {
 		Name:      names.OTLPGatewayCoordinationConfigMap,
 		Namespace: "kyma-system",
 	}, &cm)
-	require.True(t, apierrors.IsNotFound(err), "ConfigMap should not be created by the OTLP gateway reconciler")
+	require.True(t, apierrors.IsNotFound(err), "ConfigMap should not be created by the OTLP Gateway reconciler")
 }
 
 func TestReconcile_NoPipelines_DeletesGateway(t *testing.T) {

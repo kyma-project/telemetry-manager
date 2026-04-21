@@ -25,7 +25,7 @@ type AgentFlowHealthProber interface {
 	Probe(ctx context.Context, pipelineName string) (prober.OTelAgentProbeResult, error)
 }
 
-// GatewayFlowHealthProber checks the health of log data flow through the OTLP gateway.
+// GatewayFlowHealthProber checks the health of log data flow through the OTLP Gateway.
 // It probes whether logs are successfully flowing from the gateway to the backend.
 type GatewayFlowHealthProber interface {
 	// Probe checks if logs are flowing correctly through the gateway for a specific pipeline.

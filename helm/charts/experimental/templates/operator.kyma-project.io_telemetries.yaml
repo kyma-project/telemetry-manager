@@ -313,7 +313,7 @@ spec:
                   type: object
                 type: array
               endpoints:
-                description: Endpoints for the OTLP gateway.
+                description: Endpoints for the OTLP Gateway.
                 properties:
                   logs:
                     description: |-
@@ -672,7 +672,7 @@ spec:
                   type: object
                 type: array
               endpoints:
-                description: Endpoints for the OTLP gateway.
+                description: Endpoints for the OTLP Gateway.
                 properties:
                   logs:
                     description: |-

@@ -207,7 +207,7 @@ type TelemetryStatus struct {
 	// +kubebuilder:validation:Optional
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 
-	// Endpoints for the OTLP gateway.
+	// Endpoints for the OTLP Gateway.
 	// +kubebuilder:validation:Optional
 	Endpoints GatewayEndpoints `json:"endpoints"`
 }

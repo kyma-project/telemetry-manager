@@ -60,14 +60,14 @@ spec:
 status:
   conditions:
   - lastTransitionTime: "2025-06-13T08:58:38Z"
-    message: OTLP gateway DaemonSet is ready
+    message: OTLP Gateway DaemonSet is ready
     observedGeneration: 4
     reason: GatewayReady
     status: "True"
     type: GatewayHealthy
   - lastTransitionTime: "2025-03-30T20:32:39Z"
     message: LogPipeline specification is successfully applied to the configuration
-      of OTLP gateway
+      of OTLP Gateway
     observedGeneration: 4
     reason: GatewayConfigured
     status: "True"
