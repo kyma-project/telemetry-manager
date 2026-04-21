@@ -395,14 +395,9 @@ func (r *Reconciler) cleanupLegacyGateways(ctx context.Context) error {
 		return fmt.Errorf("failed to check Istio status: %w", err)
 	}
 
-	vpaCRDExists, err := r.vpaStatusChecker.VpaCRDExists(ctx, r.Client)
-	if err != nil {
-		return fmt.Errorf("failed to check VPA CRD: %w", err)
-	}
-
 	ns := r.globals.TargetNamespace()
 	for _, gatewayName := range []string{names.TraceGateway, names.MetricGateway, names.LogGateway} {
-		if err := otelcollector.DeleteLegacyGatewayResources(ctx, r.Client, ns, gatewayName, isIstioActive, vpaCRDExists); err != nil {
+		if err := otelcollector.DeleteLegacyGatewayResources(ctx, r.Client, ns, gatewayName, isIstioActive); err != nil {
 			return fmt.Errorf("failed to delete legacy gateway %s: %w", gatewayName, err)
 		}
 	}

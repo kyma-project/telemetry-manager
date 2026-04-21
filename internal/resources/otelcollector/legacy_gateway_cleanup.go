@@ -11,7 +11,6 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	autoscalingvpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
@@ -24,7 +23,7 @@ import (
 // per-signal gateway Deployments (telemetry-trace-gateway, telemetry-metric-gateway, telemetry-log-gateway).
 // This is needed for clusters upgrading from the old architecture to the centralized OTLP Gateway DaemonSet.
 // The function is idempotent — it safely ignores resources that don't exist.
-func DeleteLegacyGatewayResources(ctx context.Context, c client.Client, namespace string, gatewayName string, isIstioActive bool, vpaCRDExists bool) error {
+func DeleteLegacyGatewayResources(ctx context.Context, c client.Client, namespace string, gatewayName string, isIstioActive bool) error {
 	name := types.NamespacedName{Name: gatewayName, Namespace: namespace}
 
 	var allErrors error
@@ -68,14 +67,6 @@ func DeleteLegacyGatewayResources(ctx context.Context, c client.Client, namespac
 		peerAuth := istiosecurityclientv1.PeerAuthentication{ObjectMeta: objectMeta}
 		if err := k8sutils.DeleteObject(ctx, c, &peerAuth); err != nil {
 			allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete legacy gateway peer authentication %s: %w", gatewayName, err))
-		}
-	}
-
-	// Delete VPA if VPA CRD exists
-	if vpaCRDExists {
-		vpa := autoscalingvpav1.VerticalPodAutoscaler{ObjectMeta: objectMeta}
-		if err := k8sutils.DeleteObject(ctx, c, &vpa); err != nil {
-			allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete legacy gateway VPA %s: %w", gatewayName, err))
 		}
 	}
 
