@@ -214,7 +214,7 @@ filter:
 
 Review the syntax of your transform and filter rules and ensure that the names of [OTTL functions](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/ottl/ottlfuncs/README.md) are spelled correctly (for example, `IsMatch()` instead of `isMatch()`).
 
-## VPA Not Creating Resources
+## VPA Resources Are Not Created
 
 ### Symptom
 
