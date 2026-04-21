@@ -1,15 +1,15 @@
 # Investigate Exporter Batcher Configuration with Synchronous Log Emitter in Stanza
 
-This investigation determines the ideal exporter batcher configuration after enabling the `SynchronousLogEmitter`. The [stanza-filelog-batching](stanza-filelog-batching.md) investigation recommends this change.
+This investigation determines the ideal exporter batcher configuration after enabling the `SynchronousLogEmitter`. The [stanza-filelog-batching](01-stanza-filelog-batching.md) investigation recommends this change.
 
 The chosen configuration must satisfy the following criteria:
 
-- **Batch size** must match other components, that is, `1024` records with a `10s` flush timeout.
+- **Batch size** must be large enough to avoid sending too many small requests to the backend, but small enough to stay within the backend's maximum payload size.
 - **Throughput** must remain the same before and after enabling the `SynchronousLogEmitter`.
 - **Resource consumption** must remain the same before and after enabling the `SynchronousLogEmitter`.
 - **Backpressure** must propagate back to the receiver.
 
-## Understand the Architecture
+## Understand the Exporter Batcher Architecture
 
 The exporter batcher uses a pull-based batching model with the following data path:
 
@@ -29,9 +29,7 @@ The `sending_queue` and the `batch` each have an independent `sizer` setting tha
 - The `batch` defaults to the `items` sizer. This means `min_size` and `max_size` count individual log records.
 - The `bytes` sizer is also available. It measures the serialized byte size of each request. This gives precise control over memory usage and batch payload sizes but requires serializing every request to calculate its size.
 
-When both sizers are set to the same unit, the `queue_size` must not be smaller than the batch `min_size`. Even when the sizers differ, this constraint matters in practice. See [Set `queue_size` to at Least Batch `min_size`](#set-queue_size-to-at-least-batch-min_size) for a detailed explanation.
-
-### Set `queue_size` to at Least Batch `min_size`
+When both sizers are set to the same unit, the `queue_size` must not be smaller than the batch `min_size`.
 
 Even though the `sending_queue` and `batch` can use different sizers, `requests` and `items` respectively, the `queue_size` must still be greater than or equal to the batch `min_size` in practice. The following scenario illustrates why.
 

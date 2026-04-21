@@ -17,7 +17,7 @@ The `filelog` receiver uses the stanza framework to tail log files. The data pat
 
 1. **FileConsumer** in `fileconsumer/` polls the filesystem every `200ms`, configurable with `poll_interval`. For each matched file, a `Reader` goroutine scans new lines since the last poll.
 
-2. **Reader batching** - The reader accumulates tokens, that is, scanned lines, into a slice capped at `DefaultMaxBatchSize = 100`. When it reaches EOF or hits `100` tokens, it calls `emitFunc`, a callback wired to `Input.emitBatch`. There is no minimum batch size and no flush timer at this level. If a file has 3 new lines, the batch is 3. If it has 0, nothing is emitted.
+2. **Reader batching** - The reader accumulates tokens, that is, scanned lines, into a slice capped at `DefaultMaxBatchSize = 100`. When it reaches EOF or hits `100` tokens, it calls `emitFunc`, a callback wired to `Input.emitBatch`. There is no minimum batch size and no flush timer at this level.
 
 3. **Input.emitBatch** - Converts raw `[][]byte` tokens into `[]*entry.Entry` and calls `WriteBatch`, pushing the batch to the first operator in the stanza pipeline.
 
@@ -227,12 +227,12 @@ With the `SynchronousLogEmitter`, each reader's batch immediately becomes a sepa
 ### Compare Pipeline Flow Before and After Feature Gate
 
 <p>
-<img src="../assets/pipeline_batching_emitter.svg" alt="pipeline-flow-batch" width="600" />
+<img src="assets/pipeline_batching_emitter.svg" alt="pipeline-flow-batch" width="600" />
 <em>Pipeline Flow with BatchingLogEmitter</em>
 </p>
 
 <p>
-<img src="../assets/pipeline_sync_emitter.svg" alt="pipeline-flow-sync" width="600" />
+<img src="assets/pipeline_sync_emitter.svg" alt="pipeline-flow-sync" width="600" />
 <em>Pipeline Flow with SynchronousLogEmitter</em>
 </p>
 
