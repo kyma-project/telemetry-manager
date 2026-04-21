@@ -12,7 +12,7 @@ date: 2026-04-17
 
 The MetricPipeline **runtime** input collects Kubernetes infrastructure metrics about user workloads. It is an abstraction over two OpenTelemetry Collector receivers:
 
-- The [kubeletstatsreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/kubeletstatsreceiver) runs as an agent on each Node and scrapes the Kubelet API for real-time resource usage metrics: CPU, memory, filesystem, and network statistics for Pods, containers, Nodes, and volumes.
+- The [kubeletstatsreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/kubeletstatsreceiver) scrapes the Kubelet API for real-time resource usage metrics: CPU, memory, filesystem, and network statistics for Pods, containers, Nodes, and volumes.
 - The [k8sclusterreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sclusterreceiver) connects to the Kubernetes API server and collects cluster-level state metrics: replica counts for Deployments, DaemonSets, StatefulSets, and Jobs; container request/limit values; Pod phase; and similar metadata-driven metrics.
 
 Together, these receivers provide a comprehensive view of Kubernetes resource health and utilization. The runtime input abstracts over both, presenting a unified set of metrics organized by resource type.
@@ -45,14 +45,14 @@ Both receivers offer metric selection, but through different mechanisms:
 The **kubeletstats receiver** provides two levels of control:
 
 - **Metric groups**: A `metric_groups` list that enables or disables entire resource categories (`container`, `pod`, `node`, `volume`). This is the coarse-grained toggle — the runtime input's `resources` section maps directly to this mechanism.
-- **Per-metric toggles**: A `metrics` map where each metric name can be individually set to `enabled: true` or `enabled: false`. The receiver defines a default enabled/disabled state for each metric. Currently, the operator hardcodes specific overrides here (for example, enabling `container.cpu.usage` and `k8s.pod.cpu.usage`, disabling `k8s.node.cpu.time` and `k8s.node.memory.page_faults`).
+- **Per-metric toggles**: A `metrics` map where each metric name can be individually set to `enabled: true` or `enabled: false`. The receiver defines a default enabled/disabled state for each metric. Currently, Telemetry Manager hardcodes specific overrides here (for example, enabling `container.cpu.usage` and `k8s.pod.cpu.usage`, disabling `k8s.node.cpu.time` and `k8s.node.memory.page_faults`).
 
 The **k8s_cluster receiver** provides:
 
-- **Per-metric toggles**: A `metrics` map, identical in concept to kubeletstats. The operator uses this to disable metrics it considers outside the curated set (for example, `k8s.container.storage_request`, `k8s.namespace.phase`, all HPA and ReplicaSet metrics).
+- **Per-metric toggles**: A `metrics` map, identical in concept to kubeletstats. Telemetry Manager uses this to disable metrics it considers outside the curated set (for example, `k8s.container.storage_request`, `k8s.namespace.phase`, all HPA and ReplicaSet metrics).
 - **Config-driven metric families**: Special configuration options like `node_conditions_to_report` and `allocatable_types_to_report` that control entire families of dynamically named metrics. These do not follow the standard per-metric toggle pattern and are out of scope for this ADR.
 
-Both receivers use the same underlying mechanism for optional metrics: each metric has a default state (enabled or disabled) defined in the receiver metadata, and the operator can override any of them. The optional metrics discussed in this ADR are those that both receivers define as disabled by default.
+The two receivers are heterogeneous in their metric selection mechanisms. Despite this, Telemetry Manager normalizes everything into per-metric `enabled: true/false` toggles in the generated receiver configuration. The optional metrics discussed in this ADR are those that both receivers define as disabled by default.
 
 ### The Problem: Default Set vs Optional Metrics
 
@@ -91,6 +91,14 @@ The following metrics are disabled by default in the kubeletstats receiver:
 | Container | `container.uptime`                        | Time the container has been running                 |
 | Node      | `k8s.node.uptime`                         | Time the Node has been running                      |
 
+The following metrics are enabled by default upstream but explicitly suppressed by Telemetry Manager as part of the curated default set:
+
+| Resource  | Metric                                    | Description                                        |
+|-----------|-------------------------------------------|----------------------------------------------------|
+| Node      | `k8s.node.cpu.time`                       | Cumulative CPU time spent by the Node               |
+| Node      | `k8s.node.memory.major_page_faults`       | Node memory major page faults                       |
+| Node      | `k8s.node.memory.page_faults`             | Node memory page faults                             |
+
 ### k8s_cluster Receiver: Optional Metrics
 
 The following metrics are disabled by default in the k8s_cluster receiver:
@@ -101,6 +109,28 @@ The following metrics are disabled by default in the k8s_cluster receiver:
 | Container | `k8s.container.status.reason`             | Reason: CrashLoopBackOff, OOMKilled, and others    |
 | Pod       | `k8s.pod.status_reason`                   | Status reason: Evicted, NodeLost, Shutdown, and others |
 | Node      | `k8s.node.condition`                      | Condition: Ready, MemoryPressure, DiskPressure, PIDPressure |
+
+The following metrics are enabled by default upstream but explicitly suppressed by Telemetry Manager as part of the curated default set:
+
+| Resource               | Metric                                    | Description                                        |
+|------------------------|-------------------------------------------|----------------------------------------------------|
+| Container              | `k8s.container.storage_request`           | Storage resource request                            |
+| Container              | `k8s.container.storage_limit`             | Storage resource limit                              |
+| Container              | `k8s.container.ephemeralstorage_request`  | Ephemeral storage resource request                  |
+| Container              | `k8s.container.ephemeralstorage_limit`    | Ephemeral storage resource limit                    |
+| Container              | `k8s.container.ready`                     | Whether the container passed its readiness probe    |
+| Namespace              | `k8s.namespace.phase`                     | Current phase of the namespace                      |
+| HPA                    | `k8s.hpa.current_replicas`               | Current number of replicas managed by the HPA       |
+| HPA                    | `k8s.hpa.desired_replicas`               | Desired number of replicas managed by the HPA       |
+| HPA                    | `k8s.hpa.min_replicas`                   | Minimum number of replicas for the HPA              |
+| HPA                    | `k8s.hpa.max_replicas`                   | Maximum number of replicas for the HPA              |
+| ReplicaSet             | `k8s.replicaset.available`               | Number of available replicas                        |
+| ReplicaSet             | `k8s.replicaset.desired`                 | Number of desired replicas                          |
+| ReplicationController  | `k8s.replication_controller.available`    | Number of available replicas                        |
+| ReplicationController  | `k8s.replication_controller.desired`      | Number of desired replicas                          |
+| ResourceQuota          | `k8s.resource_quota.hard_limit`           | Upper limit for a resource in a namespace           |
+| ResourceQuota          | `k8s.resource_quota.used`                 | Usage for a resource in a namespace                 |
+| CronJob                | `k8s.cronjob.active_jobs`                | Number of actively running jobs for a CronJob       |
 
 > [!NOTE]
 > The k8s_cluster receiver also has config-driven metric families (`k8s.node.allocatable_*`, `k8s.node.condition_*`) that use a different configuration mechanism than the standard per-metric toggle. These are out of scope for this ADR.
@@ -164,13 +194,13 @@ Additional specific issues:
 - The set of valid group names varies per resource type, adding validation complexity
 - If upstream metrics are renamed or moved to a different subcategory, the group abstraction breaks
 
-### Option C: Allowed List of Metric Names Per Resource
+### Option C: Allowed List of Metric Names
 
-Add an `additionalMetrics` list field that accepts specific upstream metric names:
+Add an `additionalMetrics` list field at the runtime input level that accepts specific upstream metric names:
 
 ```yaml
-resources:
-  pod:
+input:
+  runtime:
     enabled: true
     additionalMetrics:
       - k8s.pod.cpu_request_utilization
@@ -221,21 +251,15 @@ spec:
   input:
     runtime:
       enabled: true
-      resources:
-        pod:
-          enabled: true
-          additionalMetrics:
-            - k8s.pod.cpu_request_utilization
-            - k8s.pod.cpu_limit_utilization
-            - k8s.pod.memory_request_utilization
-            - k8s.pod.memory_limit_utilization
-        container:
-          enabled: true
-          additionalMetrics:
-            - k8s.container.cpu_request_utilization
-            - k8s.container.cpu_limit_utilization
-            - k8s.container.memory_request_utilization
-            - k8s.container.memory_limit_utilization
+      additionalMetrics:
+        - k8s.pod.cpu_request_utilization
+        - k8s.pod.cpu_limit_utilization
+        - k8s.pod.memory_request_utilization
+        - k8s.pod.memory_limit_utilization
+        - k8s.container.cpu_request_utilization
+        - k8s.container.cpu_limit_utilization
+        - k8s.container.memory_request_utilization
+        - k8s.container.memory_limit_utilization
   output:
     otlp:
       endpoint:
@@ -245,16 +269,22 @@ spec:
 ### Type Changes
 
 ```go
-type MetricPipelineRuntimeInputResource struct {
-    // Enabled specifies that the runtime metrics for the resource type
-    // are collected. The default is true.
+type MetricPipelineRuntimeInput struct {
+    // Enabled specifies if the 'runtime' input is enabled. The default is false.
     // +kubebuilder:validation:Optional
     Enabled *bool `json:"enabled,omitempty"`
 
-    // AdditionalMetrics specifies optional upstream metric names to
-    // collect in addition to the default curated set. Each entry must
-    // be a valid metric name for this resource type. Unknown names are
-    // rejected by the validating webhook.
+    // Namespaces specifies from which namespaces metrics are collected.
+    // +kubebuilder:validation:Optional
+    Namespaces *NamespaceSelector `json:"namespaces,omitempty"`
+
+    // Resources configures the Kubernetes resource types for which metrics are collected.
+    // +kubebuilder:validation:Optional
+    Resources *MetricPipelineRuntimeInputResources `json:"resources,omitempty"`
+
+    // AdditionalMetrics specifies optional upstream metric names to collect
+    // in addition to the default curated set. Each entry must be a valid
+    // optional metric name. Unknown names are rejected by the validating webhook.
     // +kubebuilder:validation:Optional
     AdditionalMetrics []string `json:"additionalMetrics,omitempty"`
 }
@@ -262,20 +292,32 @@ type MetricPipelineRuntimeInputResource struct {
 
 ### Validation
 
-A validating webhook rejects unknown metric names at admission time. The operator maintains a hardcoded allow-list per resource type, derived from the upstream receiver metadata:
+A validating webhook rejects unknown metric names at admission time. Telemetry Manager maintains a hardcoded allow-list derived from the upstream receiver metadata. The following metric names are valid entries for `additionalMetrics`:
 
-| Resource    | Allowed values for `additionalMetrics`                                                                  | Source          |
-|-------------|--------------------------------------------------------------------------------------------------------|-----------------|
-| Pod         | `k8s.pod.cpu_request_utilization`, `k8s.pod.cpu_limit_utilization`, `k8s.pod.cpu.node.utilization`, `k8s.pod.memory_request_utilization`, `k8s.pod.memory_limit_utilization`, `k8s.pod.memory.node.utilization`, `k8s.pod.uptime`, `k8s.pod.volume.usage`, `k8s.pod.status_reason` | kubeletstats, k8s_cluster |
-| Container   | `k8s.container.cpu_request_utilization`, `k8s.container.cpu_limit_utilization`, `k8s.container.cpu.node.utilization`, `k8s.container.memory_request_utilization`, `k8s.container.memory_limit_utilization`, `k8s.container.memory.node.utilization`, `container.uptime`, `k8s.container.status.state`, `k8s.container.status.reason` | kubeletstats, k8s_cluster |
-| Node        | `k8s.node.uptime`, `k8s.node.condition`                                                               | kubeletstats, k8s_cluster |
-| Volume      | —                                                                                                      | —               |
-| Deployment  | —                                                                                                      | —               |
-| DaemonSet   | —                                                                                                      | —               |
-| StatefulSet | —                                                                                                      | —               |
-| Job         | —                                                                                                      | —               |
+| Metric                                      | Resource  | Source          |
+|---------------------------------------------|-----------|-----------------|
+| `k8s.pod.cpu_request_utilization`           | Pod       | kubeletstats    |
+| `k8s.pod.cpu_limit_utilization`             | Pod       | kubeletstats    |
+| `k8s.pod.cpu.node.utilization`              | Pod       | kubeletstats    |
+| `k8s.pod.memory_request_utilization`        | Pod       | kubeletstats    |
+| `k8s.pod.memory_limit_utilization`          | Pod       | kubeletstats    |
+| `k8s.pod.memory.node.utilization`           | Pod       | kubeletstats    |
+| `k8s.pod.uptime`                            | Pod       | kubeletstats    |
+| `k8s.pod.volume.usage`                      | Pod       | kubeletstats    |
+| `k8s.pod.status_reason`                     | Pod       | k8s_cluster     |
+| `k8s.container.cpu_request_utilization`     | Container | kubeletstats    |
+| `k8s.container.cpu_limit_utilization`       | Container | kubeletstats    |
+| `k8s.container.cpu.node.utilization`        | Container | kubeletstats    |
+| `k8s.container.memory_request_utilization`  | Container | kubeletstats    |
+| `k8s.container.memory_limit_utilization`    | Container | kubeletstats    |
+| `k8s.container.memory.node.utilization`     | Container | kubeletstats    |
+| `container.uptime`                          | Container | kubeletstats    |
+| `k8s.container.status.state`                | Container | k8s_cluster     |
+| `k8s.container.status.reason`               | Container | k8s_cluster     |
+| `k8s.node.uptime`                           | Node      | kubeletstats    |
+| `k8s.node.condition`                        | Node      | k8s_cluster     |
 
-Resource types that have no optional metrics upstream (volume, Deployment, DaemonSet, StatefulSet, Job) reject any value in `additionalMetrics`.
+Any metric name not in this list is rejected. The webhook also rejects metrics whose corresponding resource type is disabled in `resources` (for example, listing `k8s.pod.uptime` while `pod.enabled` is `false`).
 
 ## Consequences
 
