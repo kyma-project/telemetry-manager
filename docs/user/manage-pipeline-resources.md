@@ -83,7 +83,7 @@ When you upgrade the Telemetry module to a version with VPA support, VPA activat
 
 ## Result
 
-When VPA is disabled, Telemetry components use static resource configurations, scaling memory requests based on the number of active pipelines using a fixed multiplier.
+When VPA is disabled, Telemetry components use static resource configurations.
 
 ## Next Steps
 

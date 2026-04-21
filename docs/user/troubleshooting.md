@@ -246,4 +246,4 @@ If data is arriving but components are running out of memory, consider one of th
 
 - Add nodes with more memory to increase the maxAllowed calculation.
 - Reduce telemetry volume by applying filters in your pipelines (see [Filter Logs](./filter-and-process/filter-logs.md), [Filter Traces](./filter-and-process/filter-traces.md), [Filter Metrics](./filter-and-process/filter-metrics.md)).
-- Disable VPA, which causes the system to use static resource configuration with a fixed multiplier (see [Manage Automatic Resource Scaling](./manage-pipeline-resources.md)).
+- Disable VPA, which causes the system to use static resource (see [Manage Automatic Resource Scaling](./manage-pipeline-resources.md)).
