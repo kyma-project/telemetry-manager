@@ -152,7 +152,7 @@ In this phase, we update the default Telemetry CR so that newly created resource
 - **New Telemetry resources**: Annotation set to `otel` (uses new processor).
 - **Existing Telemetry resources (annotation unset)**: Use `servicenameenrichment` processor (preserves existing behavior).
 
-**Monitoring Adoption**
+**Monitoring Adoption:**
 To track the adoption of the new processor during phases 2 and 3, the Telemetry Manager exports a new metric:
 
 ```go
