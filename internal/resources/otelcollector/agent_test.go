@@ -81,7 +81,7 @@ func TestAgent_ApplyResources(t *testing.T) {
 			vpaMaxAllowedMemory: resource.Quantity{}, // zero, must be clamped min allowed memory
 		},
 		{
-			name: "log agent",
+			name: "Log Agent",
 			sut:  NewLogAgentApplierDeleter(globals, collectorImage, priorityClassName),
 			collectorEnvVars: map[string][]byte{
 				"DUMMY_ENV_VAR": []byte("foo"),
@@ -89,7 +89,7 @@ func TestAgent_ApplyResources(t *testing.T) {
 			goldenFilePath: "testdata/log-agent.yaml",
 		},
 		{
-			name: "log agent with istio",
+			name: "Log Agent with istio",
 			sut:  NewLogAgentApplierDeleter(globals, collectorImage, priorityClassName),
 			collectorEnvVars: map[string][]byte{
 				"DUMMY_ENV_VAR": []byte("foo"),
@@ -98,7 +98,7 @@ func TestAgent_ApplyResources(t *testing.T) {
 			goldenFilePath: "testdata/log-agent-istio.yaml",
 		},
 		{
-			name: "log agent with FIPS mode enabled",
+			name: "Log Agent with FIPS mode enabled",
 			sut:  NewLogAgentApplierDeleter(globalsWithFIPS, collectorImage, priorityClassName),
 			collectorEnvVars: map[string][]byte{
 				"DUMMY_ENV_VAR": []byte("foo"),
@@ -106,7 +106,7 @@ func TestAgent_ApplyResources(t *testing.T) {
 			goldenFilePath: "testdata/log-agent-fips-enabled.yaml",
 		},
 		{
-			name: "log agent with VPA",
+			name: "Log Agent with VPA",
 			sut:  NewLogAgentApplierDeleter(globals, collectorImage, priorityClassName),
 			collectorEnvVars: map[string][]byte{
 				"DUMMY_ENV_VAR": []byte("foo"),
@@ -189,7 +189,7 @@ func TestAgent_DeleteResources(t *testing.T) {
 			sut:  NewMetricAgentApplierDeleter(globals, image, priorityClassName),
 		},
 		{
-			name: "log agent",
+			name: "Log Agent",
 			sut:  NewLogAgentApplierDeleter(globals, image, priorityClassName),
 		},
 	}

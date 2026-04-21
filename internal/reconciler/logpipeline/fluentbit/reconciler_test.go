@@ -358,7 +358,7 @@ func TestAgentHealthCondition(t *testing.T) {
 		expectedMessage string
 	}{
 		{
-			name:            "log agent is not ready",
+			name:            "Log Agent is not ready",
 			proberError:     workloadstatus.ErrDaemonSetNotFound,
 			errorConverter:  &conditions.ErrorToMessageConverter{},
 			expectedStatus:  metav1.ConditionFalse,
@@ -366,7 +366,7 @@ func TestAgentHealthCondition(t *testing.T) {
 			expectedMessage: "DaemonSet is not yet created",
 		},
 		{
-			name:            "log agent is ready",
+			name:            "Log Agent is ready",
 			proberError:     nil,
 			errorConverter:  &conditions.ErrorToMessageConverter{},
 			expectedStatus:  metav1.ConditionTrue,
@@ -374,7 +374,7 @@ func TestAgentHealthCondition(t *testing.T) {
 			expectedMessage: "Log agent DaemonSet is ready",
 		},
 		{
-			name:            "log agent prober fails",
+			name:            "Log Agent prober fails",
 			proberError:     workloadstatus.ErrDaemonSetFetching,
 			errorConverter:  &conditions.ErrorToMessageConverter{},
 			expectedStatus:  metav1.ConditionFalse,

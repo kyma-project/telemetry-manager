@@ -58,7 +58,7 @@ func TestDisabledInput_OTel(t *testing.T) {
 	assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 	assert.OTelLogPipelineHealthy(t, pipelineName)
 
-	// If Runtime input is disabled, THEN the log agent must not be deployed
+	// If Runtime input is disabled, THEN the Log Agent must not be deployed
 	Eventually(func(g Gomega) {
 		var daemonSet appsv1.DaemonSet
 

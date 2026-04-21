@@ -158,7 +158,7 @@ In the LogPipeline status, the `TelemetryFlowHealthy` condition has status **Age
 
 ### Cause
 
-The backend ingestion rate is too low compared to the export rate of the log agent, causing data to accumulate in its buffer.
+The backend ingestion rate is too low compared to the export rate of the Log Agent, causing data to accumulate in its buffer.
 
 ### Solution
 

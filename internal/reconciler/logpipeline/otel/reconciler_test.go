@@ -32,7 +32,7 @@ func TestAgentHealthCondition(t *testing.T) {
 		expectedCondition metav1.Condition
 	}{
 		{
-			name:            "log agent daomonset is not ready",
+			name:            "Log Agent daomonset is not ready",
 			agentProberStub: commonStatusStubs.NewDaemonSetProber(&workloadstatus.PodIsPendingError{Message: "Error"}),
 			expectedCondition: metav1.Condition{
 				Type:    conditions.TypeAgentHealthy,
@@ -42,7 +42,7 @@ func TestAgentHealthCondition(t *testing.T) {
 			},
 		},
 		{
-			name:            "log agent daemonset is ready",
+			name:            "Log Agent daemonset is ready",
 			agentProberStub: commonStatusStubs.NewDaemonSetProber(nil),
 			expectedCondition: metav1.Condition{
 				Type:    conditions.TypeAgentHealthy,
