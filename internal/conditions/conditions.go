@@ -92,9 +92,9 @@ var commonMessages = map[string]string{
 }
 
 var commonLogPipelineMessages = map[string]string{
-	ReasonAgentConfigured:       "LogPipeline specification is successfully applied to the configuration of Log agent",
-	ReasonAgentNotReady:         "Log agent DaemonSet is not ready",
-	ReasonAgentReady:            "Log agent DaemonSet is ready",
+	ReasonAgentConfigured:       "LogPipeline specification is successfully applied to the configuration of Log Agent",
+	ReasonAgentNotReady:         "Log Agent DaemonSet is not ready",
+	ReasonAgentReady:            "Log Agent DaemonSet is ready",
 	ReasonComponentsRunning:     "All log components are running",
 	ReasonNoFluentbitInFipsMode: "HTTP/custom output types are not supported when FIPS mode is enabled",
 }
@@ -104,7 +104,7 @@ var fluentBitLogPipelineMessages = map[string]string{
 
 	ReasonSelfMonAgentAllDataDropped:  "Backend is not reachable or rejecting logs. All logs are dropped. See troubleshooting: " + LinkFluentBitNoLogsArriveAtBackend,
 	ReasonSelfMonAgentBufferFillingUp: "Buffer nearing capacity. Incoming log rate exceeds export rate. See troubleshooting: " + LinkFluenBitBufferFillingUp,
-	ReasonSelfMonConfigNotGenerated:   "No logs delivered to backend because LogPipeline specification is not applied to the configuration of Log agent. Check the 'ConfigurationGenerated' condition for more details",
+	ReasonSelfMonConfigNotGenerated:   "No logs delivered to backend because LogPipeline specification is not applied to the configuration of Log Agent. Check the 'ConfigurationGenerated' condition for more details",
 	ReasonSelfMonAgentNoLogsDelivered: "Backend is not reachable or rejecting logs. Logs are buffered and not yet dropped. See troubleshooting: " + LinkFluentBitNoLogsArriveAtBackend,
 	ReasonSelfMonAgentSomeDataDropped: "Backend is reachable, but rejecting logs. Some logs are dropped. See troubleshooting: " + LinkFluentBitNotAllLogsArriveAtBackend,
 }
@@ -114,9 +114,9 @@ var otelLogPipelineMessages = map[string]string{
 
 	ReasonGatewayConfigured: "LogPipeline specification is successfully applied to the configuration of OTLP Gateway",
 
-	ReasonSelfMonAgentAllDataDropped:    "Backend is not reachable or rejecting logs. All logs are dropped in Log agent. See troubleshooting: " + LinkNoDataArriveAtBackend,
-	ReasonSelfMonAgentSomeDataDropped:   "Backend is reachable, but rejecting logs. Some logs are dropped in Log agent. See troubleshooting: " + LinkNotAllDataArriveAtBackend,
-	ReasonSelfMonConfigNotGenerated:     "No logs delivered to backend because LogPipeline specification is not applied to the configuration of Log agent and OTLP Gateway. Check the 'ConfigurationGenerated' condition for more details",
+	ReasonSelfMonAgentAllDataDropped:    "Backend is not reachable or rejecting logs. All logs are dropped in Log Agent. See troubleshooting: " + LinkNoDataArriveAtBackend,
+	ReasonSelfMonAgentSomeDataDropped:   "Backend is reachable, but rejecting logs. Some logs are dropped in Log Agent. See troubleshooting: " + LinkNotAllDataArriveAtBackend,
+	ReasonSelfMonConfigNotGenerated:     "No logs delivered to backend because LogPipeline specification is not applied to the configuration of Log Agent and OTLP Gateway. Check the 'ConfigurationGenerated' condition for more details",
 	ReasonSelfMonGatewayAllDataDropped:  "Backend is not reachable or rejecting logs. All logs are dropped in OTLP Gateway. See troubleshooting: " + LinkNoDataArriveAtBackend,
 	ReasonSelfMonGatewaySomeDataDropped: "Backend is reachable, but rejecting logs. Some logs are dropped in OTLP Gateway. See troubleshooting: " + LinkNotAllDataArriveAtBackend,
 	ReasonSelfMonGatewayThrottling:      "OTLP Gateway is unable to receive logs at current rate. See troubleshooting: " + LinkGatewayThrottling,
@@ -137,13 +137,13 @@ var tracePipelineMessages = map[string]string{
 var metricPipelineMessages = map[string]string{
 	ReasonEndpointInvalid: "OTLP output endpoint invalid: %s",
 
-	ReasonAgentNotReady:     "Metric agent DaemonSet is not ready",
-	ReasonAgentReady:        "Metric agent DaemonSet is ready",
+	ReasonAgentNotReady:     "Metric Agent DaemonSet is not ready",
+	ReasonAgentReady:        "Metric Agent DaemonSet is ready",
 	ReasonComponentsRunning: "All metric components are running",
 	ReasonGatewayConfigured: "MetricPipeline specification is successfully applied to the configuration of OTLP Gateway",
 
-	ReasonSelfMonAgentAllDataDropped:    "Backend is not reachable or rejecting metrics. All metrics are dropped in Metric agent. See troubleshooting: " + LinkNoDataArriveAtBackend,
-	ReasonSelfMonAgentSomeDataDropped:   "Backend is reachable, but rejecting metrics. Some metrics are dropped in Metric agent. See troubleshooting: " + LinkNotAllDataArriveAtBackend,
+	ReasonSelfMonAgentAllDataDropped:    "Backend is not reachable or rejecting metrics. All metrics are dropped in Metric Agent. See troubleshooting: " + LinkNoDataArriveAtBackend,
+	ReasonSelfMonAgentSomeDataDropped:   "Backend is reachable, but rejecting metrics. Some metrics are dropped in Metric Agent. See troubleshooting: " + LinkNotAllDataArriveAtBackend,
 	ReasonSelfMonConfigNotGenerated:     "No metrics delivered to backend because MetricPipeline specification is not applied to the configuration of OTLP Gateway. Check the 'ConfigurationGenerated' condition for more details",
 	ReasonSelfMonGatewayAllDataDropped:  "Backend is not reachable or rejecting metrics. All metrics are dropped in OTLP Gateway. See troubleshooting: " + LinkNoDataArriveAtBackend,
 	ReasonSelfMonGatewaySomeDataDropped: "Backend is reachable, but rejecting metrics. Some metrics are dropped in OTLP Gateway. See troubleshooting: " + LinkNotAllDataArriveAtBackend,

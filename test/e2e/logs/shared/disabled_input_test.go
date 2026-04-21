@@ -63,7 +63,7 @@ func TestDisabledInput_OTel(t *testing.T) {
 		var daemonSet appsv1.DaemonSet
 
 		err := suite.K8sClient.Get(t.Context(), kitkyma.LogAgentName, &daemonSet)
-		g.Expect(apierrors.IsNotFound(err)).To(BeTrue(), "Log agent DaemonSet must not exist")
+		g.Expect(apierrors.IsNotFound(err)).To(BeTrue(), "Log Agent DaemonSet must not exist")
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).To(Succeed())
 
 	// If OTLP input is disabled, THEN the logs pushed to the gateway should not be sent to the backend

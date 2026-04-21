@@ -48,7 +48,7 @@ func TestAgentHealthCondition(t *testing.T) {
 				Type:    conditions.TypeAgentHealthy,
 				Status:  metav1.ConditionTrue,
 				Reason:  conditions.ReasonAgentReady,
-				Message: "Log agent DaemonSet is ready",
+				Message: "Log Agent DaemonSet is ready",
 			},
 		},
 	}
@@ -99,7 +99,7 @@ func TestAgentFlowHealthCondition(t *testing.T) {
 			},
 			expectedStatus:  metav1.ConditionFalse,
 			expectedReason:  conditions.ReasonSelfMonAgentSomeDataDropped,
-			expectedMessage: "Backend is reachable, but rejecting logs. Some logs are dropped in Log agent. See troubleshooting: " + conditions.LinkNotAllDataArriveAtBackend,
+			expectedMessage: "Backend is reachable, but rejecting logs. Some logs are dropped in Log Agent. See troubleshooting: " + conditions.LinkNotAllDataArriveAtBackend,
 		},
 		{
 			name: "all data dropped",
@@ -108,7 +108,7 @@ func TestAgentFlowHealthCondition(t *testing.T) {
 			},
 			expectedStatus:  metav1.ConditionFalse,
 			expectedReason:  conditions.ReasonSelfMonAgentAllDataDropped,
-			expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped in Log agent. See troubleshooting: " + conditions.LinkNoDataArriveAtBackend,
+			expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped in Log Agent. See troubleshooting: " + conditions.LinkNoDataArriveAtBackend,
 		},
 		{
 			name: "all data dropped shadows other problems",
@@ -117,7 +117,7 @@ func TestAgentFlowHealthCondition(t *testing.T) {
 			},
 			expectedStatus:  metav1.ConditionFalse,
 			expectedReason:  conditions.ReasonSelfMonAgentAllDataDropped,
-			expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped in Log agent. See troubleshooting: " + conditions.LinkNoDataArriveAtBackend,
+			expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped in Log Agent. See troubleshooting: " + conditions.LinkNoDataArriveAtBackend,
 		},
 	}
 	for _, tt := range tests {
