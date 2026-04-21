@@ -270,7 +270,7 @@ func (o *OTLPGatewayApplierDeleter) applyVPA(ctx context.Context, c client.Clien
 	}
 
 	if opts.VpaEnabled {
-		vpa := makeVPA(name, "DaemonSet", o.baseMemoryRequest, opts.VPAMaxAllowedMemory)
+		vpa := makeVPA(name, o.baseMemoryRequest, opts.VPAMaxAllowedMemory)
 		if err := k8sutils.CreateOrUpdateVPA(ctx, labelerClient, vpa); err != nil {
 			return fmt.Errorf("failed to create VPA: %w", err)
 		}

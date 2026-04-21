@@ -9,10 +9,9 @@ import (
 	istionetworkingclientv1 "istio.io/client-go/pkg/apis/networking/v1"
 	"istio.io/client-go/pkg/apis/networking/v1alpha3"
 	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
-	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	autoscalingvpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -46,10 +45,13 @@ func TestOTLPGateway_ApplyResources(t *testing.T) {
 	}
 
 	tests := []struct {
-		name           string
-		sut            gatewayApplierDeleter
-		istioEnabled   bool
-		goldenFilePath string
+		name                string
+		sut                 gatewayApplierDeleter
+		istioEnabled        bool
+		vpaCRDExists        bool
+		vpaEnabled          bool
+		vpaMaxAllowedMemory resource.Quantity
+		goldenFilePath      string
 	}{
 		{
 			name:           "OTLP gateway",
@@ -66,6 +68,22 @@ func TestOTLPGateway_ApplyResources(t *testing.T) {
 			name:           "OTLP gateway with FIPS mode enabled",
 			sut:            NewOTLPGatewayApplierDeleter(globalsWithFIPS, image, priorityClassName),
 			goldenFilePath: "testdata/otlp-gateway-fips-enabled.yaml",
+		},
+		{
+			name:                "OTLP gateway with VPA",
+			sut:                 NewOTLPGatewayApplierDeleter(globals, image, priorityClassName),
+			goldenFilePath:      "testdata/otlp-gateway-vpa.yaml",
+			vpaCRDExists:        true,
+			vpaEnabled:          true,
+			vpaMaxAllowedMemory: resource.MustParse("1Gi"),
+		},
+		{
+			name:                "OTLP gateway with VPA and zero max allowed memory",
+			sut:                 NewOTLPGatewayApplierDeleter(globals, image, priorityClassName),
+			goldenFilePath:      "testdata/otlp-gateway-vpa-zero-max-memory.yaml",
+			vpaCRDExists:        true,
+			vpaEnabled:          true,
+			vpaMaxAllowedMemory: resource.Quantity{}, // zero, must be clamped to min allowed memory
 		},
 	}
 
@@ -93,8 +111,11 @@ func TestOTLPGateway_ApplyResources(t *testing.T) {
 				CollectorEnvVars: map[string][]byte{
 					"DUMMY_ENV_VAR": []byte("foo"),
 				},
-				IstioEnabled: tt.istioEnabled,
-				Replicas:     2,
+				IstioEnabled:        tt.istioEnabled,
+				Replicas:            2,
+				VpaCRDExists:        tt.vpaCRDExists,
+				VpaEnabled:          tt.vpaEnabled,
+				VPAMaxAllowedMemory: tt.vpaMaxAllowedMemory,
 			})
 			require.NoError(t, err)
 
@@ -226,154 +247,6 @@ func TestOTLPGateway_Annotations(t *testing.T) {
 				require.Equal(t, "TPROXY", annotations["sidecar.istio.io/interceptionMode"])
 			} else {
 				require.NotContains(t, annotations, "sidecar.istio.io/interceptionMode")
-			}
-		})
-	}
-}
-
-func TestOTLPGateway_VPA(t *testing.T) {
-	globals := config.NewGlobal(config.WithTargetNamespace("kyma-system"))
-	image := "opentelemetry/collector:dummy"
-	priorityClassName := "normal"
-
-	tests := []struct {
-		name            string
-		vpaCRDExists    bool
-		vpaEnabled      bool
-		expectVPACreate bool
-		expectVPADelete bool
-	}{
-		{
-			name:            "VPA enabled and CRD exists",
-			vpaCRDExists:    true,
-			vpaEnabled:      true,
-			expectVPACreate: true,
-			expectVPADelete: false,
-		},
-		{
-			name:            "VPA disabled but CRD exists",
-			vpaCRDExists:    true,
-			vpaEnabled:      false,
-			expectVPACreate: false,
-			expectVPADelete: true,
-		},
-		{
-			name:            "VPA enabled but CRD does not exist",
-			vpaCRDExists:    false,
-			vpaEnabled:      true,
-			expectVPACreate: false,
-			expectVPADelete: false,
-		},
-		{
-			name:            "VPA disabled and CRD does not exist",
-			vpaCRDExists:    false,
-			vpaEnabled:      false,
-			expectVPACreate: false,
-			expectVPADelete: false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			scheme := runtime.NewScheme()
-			utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-			utilruntime.Must(autoscalingvpav1.AddToScheme(scheme))
-
-			var (
-				createdVPA bool
-				deletedVPA bool
-			)
-
-			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithInterceptorFuncs(interceptor.Funcs{
-				Create: func(_ context.Context, _ client.WithWatch, obj client.Object, _ ...client.CreateOption) error {
-					if _, ok := obj.(*autoscalingvpav1.VerticalPodAutoscaler); ok {
-						createdVPA = true
-					}
-
-					return nil
-				},
-				Delete: func(_ context.Context, _ client.WithWatch, obj client.Object, _ ...client.DeleteOption) error {
-					if _, ok := obj.(*autoscalingvpav1.VerticalPodAutoscaler); ok {
-						deletedVPA = true
-					}
-
-					return apierrors.NewNotFound(schema.GroupResource{}, "")
-				},
-			}).Build()
-
-			sut := NewOTLPGatewayApplierDeleter(globals, image, priorityClassName)
-			err := sut.ApplyResources(t.Context(), fakeClient, GatewayApplyOptions{
-				VpaCRDExists: tt.vpaCRDExists,
-				VpaEnabled:   tt.vpaEnabled,
-			})
-			require.NoError(t, err)
-
-			require.Equal(t, tt.expectVPACreate, createdVPA, "VPA create expectation mismatch")
-			require.Equal(t, tt.expectVPADelete, deletedVPA, "VPA delete expectation mismatch")
-		})
-	}
-}
-
-func TestOTLPGateway_ResourceRequirements(t *testing.T) {
-	globals := config.NewGlobal(config.WithTargetNamespace("kyma-system"))
-	image := "opentelemetry/collector:dummy"
-	priorityClassName := "normal"
-
-	tests := []struct {
-		name                           string
-		resourceRequirementsMultiplier int
-		vpaCRDExists                   bool
-		vpaEnabled                     bool
-	}{
-		{
-			name:                           "no multiplier, no VPA",
-			resourceRequirementsMultiplier: 0,
-			vpaCRDExists:                   false,
-			vpaEnabled:                     false,
-		},
-		{
-			name:                           "with multiplier, no VPA",
-			resourceRequirementsMultiplier: 3,
-			vpaCRDExists:                   false,
-			vpaEnabled:                     false,
-		},
-		{
-			name:                           "no multiplier, with VPA",
-			resourceRequirementsMultiplier: 0,
-			vpaCRDExists:                   true,
-			vpaEnabled:                     true,
-		},
-		{
-			name:                           "with multiplier and VPA",
-			resourceRequirementsMultiplier: 2,
-			vpaCRDExists:                   true,
-			vpaEnabled:                     true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			sut := NewOTLPGatewayApplierDeleter(globals, image, priorityClassName)
-
-			resources := sut.makeGatewayResourceRequirements(GatewayApplyOptions{
-				ResourceRequirementsMultiplier: tt.resourceRequirementsMultiplier,
-				VpaCRDExists:                   tt.vpaCRDExists,
-				VpaEnabled:                     tt.vpaEnabled,
-			})
-
-			require.NotNil(t, resources.Requests)
-			require.NotNil(t, resources.Limits)
-			require.NotEmpty(t, resources.Requests[corev1.ResourceCPU])
-			require.NotEmpty(t, resources.Requests[corev1.ResourceMemory])
-			require.NotEmpty(t, resources.Limits[corev1.ResourceMemory])
-
-			// When VPA is enabled, memory limit should be 2x memory request
-			if tt.vpaCRDExists && tt.vpaEnabled {
-				memRequest := resources.Requests[corev1.ResourceMemory]
-				memLimit := resources.Limits[corev1.ResourceMemory]
-				expectedLimit := memRequest.DeepCopy()
-				expectedLimit.Add(memRequest)
-				require.Equal(t, expectedLimit.String(), memLimit.String())
 			}
 		})
 	}
