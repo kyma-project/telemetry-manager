@@ -292,32 +292,7 @@ type MetricPipelineRuntimeInput struct {
 
 ### Validation
 
-A validating webhook rejects unknown metric names at admission time. Telemetry Manager maintains a hardcoded allow-list derived from the upstream receiver metadata. The following metric names are valid entries for `additionalMetrics`:
-
-| Metric                                      | Resource  | Source          |
-|---------------------------------------------|-----------|-----------------|
-| `k8s.pod.cpu_request_utilization`           | Pod       | kubeletstats    |
-| `k8s.pod.cpu_limit_utilization`             | Pod       | kubeletstats    |
-| `k8s.pod.cpu.node.utilization`              | Pod       | kubeletstats    |
-| `k8s.pod.memory_request_utilization`        | Pod       | kubeletstats    |
-| `k8s.pod.memory_limit_utilization`          | Pod       | kubeletstats    |
-| `k8s.pod.memory.node.utilization`           | Pod       | kubeletstats    |
-| `k8s.pod.uptime`                            | Pod       | kubeletstats    |
-| `k8s.pod.volume.usage`                      | Pod       | kubeletstats    |
-| `k8s.pod.status_reason`                     | Pod       | k8s_cluster     |
-| `k8s.container.cpu_request_utilization`     | Container | kubeletstats    |
-| `k8s.container.cpu_limit_utilization`       | Container | kubeletstats    |
-| `k8s.container.cpu.node.utilization`        | Container | kubeletstats    |
-| `k8s.container.memory_request_utilization`  | Container | kubeletstats    |
-| `k8s.container.memory_limit_utilization`    | Container | kubeletstats    |
-| `k8s.container.memory.node.utilization`     | Container | kubeletstats    |
-| `container.uptime`                          | Container | kubeletstats    |
-| `k8s.container.status.state`                | Container | k8s_cluster     |
-| `k8s.container.status.reason`               | Container | k8s_cluster     |
-| `k8s.node.uptime`                           | Node      | kubeletstats    |
-| `k8s.node.condition`                        | Node      | k8s_cluster     |
-
-Any metric name not in this list is rejected. The webhook also rejects metrics whose corresponding resource type is disabled in `resources` (for example, listing `k8s.pod.uptime` while `pod.enabled` is `false`).
+A validating webhook rejects unknown metric names at admission time. Telemetry Manager maintains a hardcoded allow-list derived from the upstream receiver metadata. 
 
 ## Consequences
 
