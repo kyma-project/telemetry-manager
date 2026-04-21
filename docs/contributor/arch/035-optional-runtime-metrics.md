@@ -12,7 +12,7 @@ date: 2026-04-17
 
 The MetricPipeline **runtime** input collects Kubernetes infrastructure metrics about user workloads. It is an abstraction over two OpenTelemetry Collector receivers:
 
-- The [kubeletstatsreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/kubeletstatsreceiver) scrapes the Kubelet API for real-time resource usage metrics: CPU, memory, filesystem, and network statistics for Pods, containers, Nodes, and volumes.
+- The [kubeletstatsreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/kubeletstatsreceiver) pulls Node, Pod, container, and volume metrics from the API server on a kubelet.
 - The [k8sclusterreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sclusterreceiver) connects to the Kubernetes API server and collects cluster-level state metrics: replica counts for Deployments, DaemonSets, StatefulSets, and Jobs; container request/limit values; Pod phase; and similar metadata-driven metrics.
 
 Together, these receivers provide a comprehensive view of Kubernetes resource health and utilization. The runtime input abstracts over both, presenting a unified set of metrics organized by resource type.
