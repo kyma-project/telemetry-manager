@@ -319,8 +319,8 @@ spec:
                     description: |-
                       Logs contains the OTLP endpoints for log signal type.
 
-                      Deprecated: The logs endpoint is deprecated and automatically redirects to the unified OTLP endpoint.
-                      Use the OTLP endpoint instead for all signal types.
+                      Deprecated: These logs endpoints are deprecated and automatically redirect to the unified OTLP endpoints.
+                      Use the unified OTLP endpoints instead for all signal types.
                     properties:
                       grpc:
                         description: gRPC endpoint for OTLP.
@@ -333,8 +333,8 @@ spec:
                     description: |-
                       Metrics contains the OTLP endpoints for metric signal type.
 
-                      Deprecated: The metrics endpoint is deprecated and automatically redirects to the unified OTLP endpoint.
-                      Use the OTLP endpoint instead for all signal types.
+                      Deprecated: These metrics endpoints are deprecated and automatically redirect to the unified OTLP endpoints.
+                      Use the unified OTLP endpoints instead for all signal types.
                     properties:
                       grpc:
                         description: gRPC endpoint for OTLP.
@@ -345,7 +345,7 @@ spec:
                     type: object
                   otlp:
                     description: OTLP contains the unified OTLP endpoints for all
-                      signal types.
+                      signal types (logs, traces, metrics).
                     properties:
                       grpc:
                         description: gRPC endpoint for OTLP.
@@ -358,8 +358,8 @@ spec:
                     description: |-
                       Traces contains the OTLP endpoints for trace signal type.
 
-                      Deprecated: The traces endpoint is deprecated and automatically redirects to the unified OTLP endpoint.
-                      Use the OTLP endpoint instead for all signal types.
+                      Deprecated: These traces endpoints are deprecated and automatically redirect to the unified OTLP endpoints.
+                      Use the unified OTLP endpoints instead for all signal types.
                     properties:
                       grpc:
                         description: gRPC endpoint for OTLP.
@@ -678,8 +678,8 @@ spec:
                     description: |-
                       Logs contains the OTLP endpoints for log signal type.
 
-                      Deprecated: The logs endpoint is deprecated and automatically redirects to the unified OTLP endpoint.
-                      Use the OTLP endpoint instead for all signal types.
+                      Deprecated: These logs endpoints are deprecated and automatically redirect to the unified OTLP endpoints.
+                      Use the unified OTLP endpoints instead for all signal types.
                     properties:
                       grpc:
                         description: gRPC endpoint for OTLP.
@@ -692,8 +692,8 @@ spec:
                     description: |-
                       Metrics contains the OTLP endpoints for metric signal type.
 
-                      Deprecated: The metrics endpoint is deprecated and automatically redirects to the unified OTLP endpoint.
-                      Use the OTLP endpoint instead for all signal types.
+                      Deprecated: These metrics endpoints are deprecated and automatically redirect to the unified OTLP endpoints.
+                      Use the unified OTLP endpoints instead for all signal types.
                     properties:
                       grpc:
                         description: gRPC endpoint for OTLP.
@@ -704,7 +704,7 @@ spec:
                     type: object
                   otlp:
                     description: OTLP contains the unified OTLP endpoints for all
-                      signal types.
+                      signal types (logs, traces, metrics).
                     properties:
                       grpc:
                         description: gRPC endpoint for OTLP.
@@ -717,8 +717,8 @@ spec:
                     description: |-
                       Traces contains the OTLP endpoints for trace signal type.
 
-                      Deprecated: The traces endpoint is deprecated and automatically redirects to the unified OTLP endpoint.
-                      Use the OTLP endpoint instead for all signal types.
+                      Deprecated: These traces endpoints are deprecated and automatically redirect to the unified OTLP endpoints.
+                      Use the unified OTLP endpoints instead for all signal types.
                     properties:
                       grpc:
                         description: gRPC endpoint for OTLP.
