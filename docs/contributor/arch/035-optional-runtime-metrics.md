@@ -66,7 +66,7 @@ This ADR proposes an API extension that gives users explicit opt-in control over
 
 ### Upstream Receiver Stability
 
-Both receivers are at **beta** stability for metrics. Individual optional metrics are at **development** stability, meaning their names or semantics can change without a formal deprecation cycle. However, beta-level receivers generally provide a deprecation notice before breaking changes.
+Both receivers are at **beta** stability for metrics. The beta guarantee covers the receiver's configuration surface and core behavior — breaking changes require a deprecation notice, typically one minor release in advance. However, individual optional metrics are at **development** stability, which is independent of the receiver-level guarantee. Development-stability metrics can be renamed, have their semantics changed, or be removed in any collector release without prior notice. In practice, arbitrary churn is unlikely because the OTel community avoids gratuitous renames, but coordinated semantic convention alignment efforts can cause batched changes.
 
 ### kubeletstats Receiver: Optional Metrics
 
