@@ -152,8 +152,8 @@ In this phase, we update the default Telemetry CR so that newly created resource
 - **New Telemetry resources**: Annotation set to `otel` (uses new processor).
 - **Existing Telemetry resources (annotation unset)**: Use `servicenameenrichment` processor (preserves existing behavior).
 
-**Monitoring Adoption Rates**
-To track the adoption of the new processor during phases 2 and 3, the Telemetry Manager must export a new metric:
+**Monitoring Adoption**
+To track the adoption of the new processor during phases 2 and 3, the Telemetry Manager exports a new metric:
 
 ```go
 ServiceEnrichmentProcessorUsage = promauto.With(registry).NewGaugeVec(
@@ -179,7 +179,9 @@ count(telemetry_service_enrichment_processor_usage{processor_type="unset"})
 
 #### Phase 3: Deprecation with Backward Compatibility
 
-In this phase, the default behavior changes: resources with unset annotations now use the `k8sattributes` processor. However, users that need more time for migration can still explicitly choose the legacy `servicenameenrichment` processor. This will all be tracked using the `telemetry_service_enrichment_processor_usage` metric suggested in the previous phase.
+In this phase, the default behavior changes: resources with unset annotations now use the `k8sattributes` processor. However, users that need more time for migration can still explicitly choose the legacy `servicenameenrichment` processor.
+
+To monitor clusters that still use the legacy processor, we continue using the `telemetry_service_enrichment_processor_usage` metric introduced in phase 2.
 
 **Default Behavior (Annotation Unset):**
 - **All Telemetry resources**: Use `k8sattributes` processor by default.
