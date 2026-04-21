@@ -24,207 +24,150 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 )
 
-func TestApplyCommonResources_ErrorHandling(t *testing.T) {
+// makeFailingClient creates a fake client that fails for specific object types
+func makeFailingClient(scheme *runtime.Scheme, failType string) client.Client {
+	shouldFail := func(obj client.Object) bool {
+		switch failType {
+		case "serviceaccount":
+			_, ok := obj.(*corev1.ServiceAccount)
+			return ok
+		case "clusterrole":
+			_, ok := obj.(*rbacv1.ClusterRole)
+			return ok
+		case "clusterrolebinding":
+			_, ok := obj.(*rbacv1.ClusterRoleBinding)
+			return ok
+		case "role":
+			_, ok := obj.(*rbacv1.Role)
+			return ok
+		case "rolebinding":
+			_, ok := obj.(*rbacv1.RoleBinding)
+			return ok
+		case "service":
+			svc, ok := obj.(*corev1.Service)
+			return ok && svc.Name != ""
+		}
+
+		return false
+	}
+
+	return fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithInterceptorFuncs(interceptor.Funcs{
+			Create: func(ctx context.Context, c client.WithWatch, obj client.Object, opts ...client.CreateOption) error {
+				if shouldFail(obj) {
+					return errors.New(failType + " error")
+				}
+
+				return c.Create(ctx, obj, opts...)
+			},
+			Update: func(ctx context.Context, c client.WithWatch, obj client.Object, opts ...client.UpdateOption) error {
+				if shouldFail(obj) {
+					return errors.New(failType + " error")
+				}
+
+				return c.Update(ctx, obj, opts...)
+			},
+		}).
+		Build()
+}
+
+func TestApplyCommonResources_ServiceAccountError(t *testing.T) {
 	scheme := runtime.NewScheme()
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
-	tests := []struct {
-		name          string
-		rbac          rbac
-		expectError   bool
-		errorContains string
-		setupClient   func() client.Client
-	}{
-		{
-			name: "service account creation fails",
-			rbac: rbac{},
-			setupClient: func() client.Client {
-				return fake.NewClientBuilder().
-					WithScheme(scheme).
-					WithInterceptorFuncs(interceptor.Funcs{
-						Create: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.CreateOption) error {
-							if _, ok := obj.(*corev1.ServiceAccount); ok {
-								return errors.New("service account error")
-							}
+	c := makeFailingClient(scheme, "serviceaccount")
+	name := types.NamespacedName{Name: "test", Namespace: "test-ns"}
 
-							return client.Create(ctx, obj, opts...)
-						},
-					}).
-					Build()
-			},
-			expectError:   true,
-			errorContains: "failed to create service account",
-		},
-		{
-			name: "cluster role creation fails",
-			rbac: rbac{
-				clusterRole: &rbacv1.ClusterRole{
-					ObjectMeta: metav1.ObjectMeta{Name: "test-cr"},
-				},
-			},
-			setupClient: func() client.Client {
-				return fake.NewClientBuilder().
-					WithScheme(scheme).
-					WithInterceptorFuncs(interceptor.Funcs{
-						Create: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.CreateOption) error {
-							if _, ok := obj.(*rbacv1.ClusterRole); ok {
-								return errors.New("cluster role error")
-							}
+	err := applyCommonResources(context.Background(), c, name, rbac{})
 
-							return client.Create(ctx, obj, opts...)
-						},
-						Update: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.UpdateOption) error {
-							if _, ok := obj.(*rbacv1.ClusterRole); ok {
-								return errors.New("cluster role error")
-							}
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "failed to create service account")
+}
 
-							return client.Update(ctx, obj, opts...)
-						},
-					}).
-					Build()
-			},
-			expectError:   true,
-			errorContains: "failed to create cluster role",
-		},
-		{
-			name: "cluster role binding creation fails",
-			rbac: rbac{
-				clusterRoleBinding: &rbacv1.ClusterRoleBinding{
-					ObjectMeta: metav1.ObjectMeta{Name: "test-crb"},
-				},
-			},
-			setupClient: func() client.Client {
-				return fake.NewClientBuilder().
-					WithScheme(scheme).
-					WithInterceptorFuncs(interceptor.Funcs{
-						Create: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.CreateOption) error {
-							if _, ok := obj.(*rbacv1.ClusterRoleBinding); ok {
-								return errors.New("cluster role binding error")
-							}
+func TestApplyCommonResources_ClusterRoleError(t *testing.T) {
+	scheme := runtime.NewScheme()
+	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
-							return client.Create(ctx, obj, opts...)
-						},
-						Update: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.UpdateOption) error {
-							if _, ok := obj.(*rbacv1.ClusterRoleBinding); ok {
-								return errors.New("cluster role binding error")
-							}
-
-							return client.Update(ctx, obj, opts...)
-						},
-					}).
-					Build()
-			},
-			expectError:   true,
-			errorContains: "failed to create cluster role binding",
-		},
-		{
-			name: "role creation fails",
-			rbac: rbac{
-				role: &rbacv1.Role{
-					ObjectMeta: metav1.ObjectMeta{Name: "test-role", Namespace: "test-ns"},
-				},
-			},
-			setupClient: func() client.Client {
-				return fake.NewClientBuilder().
-					WithScheme(scheme).
-					WithInterceptorFuncs(interceptor.Funcs{
-						Create: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.CreateOption) error {
-							if _, ok := obj.(*rbacv1.Role); ok {
-								return errors.New("role error")
-							}
-
-							return client.Create(ctx, obj, opts...)
-						},
-						Update: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.UpdateOption) error {
-							if _, ok := obj.(*rbacv1.Role); ok {
-								return errors.New("role error")
-							}
-
-							return client.Update(ctx, obj, opts...)
-						},
-					}).
-					Build()
-			},
-			expectError:   true,
-			errorContains: "failed to create role",
-		},
-		{
-			name: "role binding creation fails",
-			rbac: rbac{
-				roleBinding: &rbacv1.RoleBinding{
-					ObjectMeta: metav1.ObjectMeta{Name: "test-rb", Namespace: "test-ns"},
-				},
-			},
-			setupClient: func() client.Client {
-				return fake.NewClientBuilder().
-					WithScheme(scheme).
-					WithInterceptorFuncs(interceptor.Funcs{
-						Create: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.CreateOption) error {
-							if _, ok := obj.(*rbacv1.RoleBinding); ok {
-								return errors.New("role binding error")
-							}
-
-							return client.Create(ctx, obj, opts...)
-						},
-						Update: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.UpdateOption) error {
-							if _, ok := obj.(*rbacv1.RoleBinding); ok {
-								return errors.New("role binding error")
-							}
-
-							return client.Update(ctx, obj, opts...)
-						},
-					}).
-					Build()
-			},
-			expectError:   true,
-			errorContains: "failed to create role binding",
-		},
-		{
-			name: "metrics service creation fails",
-			rbac: rbac{},
-			setupClient: func() client.Client {
-				return fake.NewClientBuilder().
-					WithScheme(scheme).
-					WithInterceptorFuncs(interceptor.Funcs{
-						Create: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.CreateOption) error {
-							if svc, ok := obj.(*corev1.Service); ok && svc.Name != "" {
-								return errors.New("service error")
-							}
-
-							return client.Create(ctx, obj, opts...)
-						},
-						Update: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.UpdateOption) error {
-							if svc, ok := obj.(*corev1.Service); ok && svc.Name != "" {
-								return errors.New("service error")
-							}
-
-							return client.Update(ctx, obj, opts...)
-						},
-					}).
-					Build()
-			},
-			expectError:   true,
-			errorContains: "failed to create metrics service",
+	c := makeFailingClient(scheme, "clusterrole")
+	name := types.NamespacedName{Name: "test", Namespace: "test-ns"}
+	testRBAC := rbac{
+		clusterRole: &rbacv1.ClusterRole{
+			ObjectMeta: metav1.ObjectMeta{Name: "test-cr"},
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			c := tt.setupClient()
-			name := types.NamespacedName{Name: "test", Namespace: "test-ns"}
-			err := applyCommonResources(context.Background(), c, name, tt.rbac)
+	err := applyCommonResources(context.Background(), c, name, testRBAC)
 
-			if tt.expectError {
-				require.Error(t, err)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "failed to create cluster role")
+}
 
-				if tt.errorContains != "" {
-					require.Contains(t, err.Error(), tt.errorContains)
-				}
-			} else {
-				require.NoError(t, err)
-			}
-		})
+func TestApplyCommonResources_ClusterRoleBindingError(t *testing.T) {
+	scheme := runtime.NewScheme()
+	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+
+	c := makeFailingClient(scheme, "clusterrolebinding")
+	name := types.NamespacedName{Name: "test", Namespace: "test-ns"}
+	testRBAC := rbac{
+		clusterRoleBinding: &rbacv1.ClusterRoleBinding{
+			ObjectMeta: metav1.ObjectMeta{Name: "test-crb"},
+		},
 	}
+
+	err := applyCommonResources(context.Background(), c, name, testRBAC)
+
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "failed to create cluster role binding")
+}
+
+func TestApplyCommonResources_RoleError(t *testing.T) {
+	scheme := runtime.NewScheme()
+	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+
+	c := makeFailingClient(scheme, "role")
+	name := types.NamespacedName{Name: "test", Namespace: "test-ns"}
+	testRBAC := rbac{
+		role: &rbacv1.Role{
+			ObjectMeta: metav1.ObjectMeta{Name: "test-role", Namespace: "test-ns"},
+		},
+	}
+
+	err := applyCommonResources(context.Background(), c, name, testRBAC)
+
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "failed to create role")
+}
+
+func TestApplyCommonResources_RoleBindingError(t *testing.T) {
+	scheme := runtime.NewScheme()
+	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+
+	c := makeFailingClient(scheme, "rolebinding")
+	name := types.NamespacedName{Name: "test", Namespace: "test-ns"}
+	testRBAC := rbac{
+		roleBinding: &rbacv1.RoleBinding{
+			ObjectMeta: metav1.ObjectMeta{Name: "test-rb", Namespace: "test-ns"},
+		},
+	}
+
+	err := applyCommonResources(context.Background(), c, name, testRBAC)
+
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "failed to create role binding")
+}
+
+func TestApplyCommonResources_MetricsServiceError(t *testing.T) {
+	scheme := runtime.NewScheme()
+	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+
+	c := makeFailingClient(scheme, "service")
+	name := types.NamespacedName{Name: "test", Namespace: "test-ns"}
+
+	err := applyCommonResources(context.Background(), c, name, rbac{})
+
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "failed to create metrics service")
 }
 
 func TestDeleteCommonResources_ErrorHandling(t *testing.T) {
