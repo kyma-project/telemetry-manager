@@ -14,6 +14,7 @@ import (
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
+	"github.com/kyma-project/telemetry-manager/internal/pipelines"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
@@ -71,7 +72,7 @@ func (r *Reconciler) setGatewayHealthyCondition(ctx context.Context, pipeline *t
 			Namespace: r.globals.TargetNamespace(),
 		},
 		r.errToMessageConverter,
-		commonstatus.SignalTypeOtelLogs)
+		pipelines.SignalTypeLog)
 
 	condition.ObservedGeneration = pipeline.Generation
 	meta.SetStatusCondition(&pipeline.Status.Conditions, *condition)
@@ -216,7 +217,7 @@ func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *tel
 			r.agentProber,
 			types.NamespacedName{Name: names.LogAgent, Namespace: r.globals.TargetNamespace()},
 			r.errToMessageConverter,
-			commonstatus.SignalTypeOtelLogs)
+			pipelines.SignalTypeLog)
 	}
 
 	condition.ObservedGeneration = pipeline.Generation

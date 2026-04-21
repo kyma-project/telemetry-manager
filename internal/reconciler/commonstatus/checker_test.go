@@ -9,6 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/internal/pipelines"
 	commonStatusStubs "github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus/stubs"
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
@@ -63,7 +64,7 @@ func TestTracesGetHealthCondition(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(tt.proberErr)
-			actualCondition := GetGatewayHealthyCondition(t.Context(), gatewayProberStub, types.NamespacedName{}, &conditions.ErrorToMessageConverter{}, SignalTypeTraces)
+			actualCondition := GetGatewayHealthyCondition(t.Context(), gatewayProberStub, types.NamespacedName{}, &conditions.ErrorToMessageConverter{}, pipelines.SignalTypeTrace)
 			require.True(t, validateCondition(t, tt.expectedCondition, actualCondition))
 		})
 	}
@@ -151,8 +152,8 @@ func TestMetricsGetHealthCondition(t *testing.T) {
 			agentProberStub := commonStatusStubs.NewDaemonSetProber(tt.proberAgentErr)
 			gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(tt.preberGatewayErr)
 
-			actualAgentCondition := GetAgentHealthyCondition(t.Context(), agentProberStub, types.NamespacedName{}, &conditions.ErrorToMessageConverter{}, SignalTypeMetrics)
-			actualGatewayCondition := GetGatewayHealthyCondition(t.Context(), gatewayProberStub, types.NamespacedName{}, &conditions.ErrorToMessageConverter{}, SignalTypeMetrics)
+			actualAgentCondition := GetAgentHealthyCondition(t.Context(), agentProberStub, types.NamespacedName{}, &conditions.ErrorToMessageConverter{}, pipelines.SignalTypeMetric)
+			actualGatewayCondition := GetGatewayHealthyCondition(t.Context(), gatewayProberStub, types.NamespacedName{}, &conditions.ErrorToMessageConverter{}, pipelines.SignalTypeMetric)
 
 			require.True(t, validateCondition(t, tt.expectedAgentCondition, actualAgentCondition))
 			require.True(t, validateCondition(t, tt.expectedGatewayCondition, actualGatewayCondition))
@@ -210,7 +211,7 @@ func TestLogsGetHealthCondition(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			agentProberStub := commonStatusStubs.NewDaemonSetProber(tt.proberErr)
-			actualCondition := GetAgentHealthyCondition(t.Context(), agentProberStub, types.NamespacedName{}, &conditions.ErrorToMessageConverter{}, SignalTypeLogs)
+			actualCondition := GetAgentHealthyCondition(t.Context(), agentProberStub, types.NamespacedName{}, &conditions.ErrorToMessageConverter{}, pipelines.SignalTypeLogFluentBit)
 			require.True(t, validateCondition(t, tt.expectedCondition, actualCondition))
 		})
 	}

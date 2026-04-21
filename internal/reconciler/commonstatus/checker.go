@@ -8,14 +8,8 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/internal/pipelines"
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
-)
-
-const (
-	SignalTypeTraces   = "traces"
-	SignalTypeMetrics  = "metrics"
-	SignalTypeLogs     = "logs"
-	SignalTypeOtelLogs = "otel-logs"
 )
 
 type Prober interface {
@@ -27,15 +21,15 @@ type ErrorToMessageConverter interface {
 }
 
 //nolint:dupl // abstracting the common code will still have duplicates
-func GetGatewayHealthyCondition(ctx context.Context, prober Prober, namespacedName types.NamespacedName, errToMsgCon ErrorToMessageConverter, signalType string) *metav1.Condition {
+func GetGatewayHealthyCondition(ctx context.Context, prober Prober, namespacedName types.NamespacedName, errToMsgCon ErrorToMessageConverter, signalType pipelines.SignalType) *metav1.Condition {
 	status := metav1.ConditionTrue
 	reason := conditions.ReasonGatewayReady
 	msg := conditions.MessageForTracePipeline(reason)
 
-	switch signalType {
-	case SignalTypeMetrics:
+	switch signalType { //nolint:exhaustive // no gateway for FluentBit + trace already handled
+	case pipelines.SignalTypeMetric:
 		msg = conditions.MessageForMetricPipeline(reason)
-	case SignalTypeOtelLogs:
+	case pipelines.SignalTypeLog:
 		msg = conditions.MessageForOtelLogPipeline(reason)
 	}
 
@@ -63,15 +57,15 @@ func GetGatewayHealthyCondition(ctx context.Context, prober Prober, namespacedNa
 }
 
 //nolint:dupl // abstracting the common code will still have duplicates and would complicate the code.
-func GetAgentHealthyCondition(ctx context.Context, prober Prober, namespacedName types.NamespacedName, errToMsgCon ErrorToMessageConverter, signalType string) *metav1.Condition {
+func GetAgentHealthyCondition(ctx context.Context, prober Prober, namespacedName types.NamespacedName, errToMsgCon ErrorToMessageConverter, signalType pipelines.SignalType) *metav1.Condition {
 	status := metav1.ConditionTrue
 	reason := conditions.ReasonAgentReady
 	msg := conditions.MessageForFluentBitLogPipeline(reason)
 
-	switch signalType {
-	case SignalTypeMetrics:
+	switch signalType { //nolint:exhaustive // no agent for trace + FluentBit already handled
+	case pipelines.SignalTypeMetric:
 		msg = conditions.MessageForMetricPipeline(reason)
-	case SignalTypeOtelLogs:
+	case pipelines.SignalTypeLog:
 		msg = conditions.MessageForOtelLogPipeline(reason)
 	}
 
