@@ -152,8 +152,7 @@ In this phase, we update the default Telemetry CR so that newly created resource
 - **New Telemetry resources**: Annotation set to `otel` (uses new processor).
 - **Existing Telemetry resources (annotation unset)**: Use `servicenameenrichment` processor (preserves existing behavior).
 
-#### Monitoring Adoption Rates
-
+**Monitoring Adoption Rates**
 To track the adoption of the new processor during phases 2 and 3, the Telemetry Manager must export a new metric:
 
 ```go
@@ -180,7 +179,7 @@ count(telemetry_service_enrichment_processor_usage{processor_type="unset"})
 
 #### Phase 3: Deprecation with Backward Compatibility
 
-In this phase, the default behavior changes: resources with unset annotations now use the `k8sattributes` processor. However, users that need more time for migration can still explicitly choose the legacy `servicenameenrichment` processor.
+In this phase, the default behavior changes: resources with unset annotations now use the `k8sattributes` processor. However, users that need more time for migration can still explicitly choose the legacy `servicenameenrichment` processor. This will all be tracked using the `telemetry_service_enrichment_processor_usage` metric suggested in the previous phase.
 
 **Default Behavior (Annotation Unset):**
 - **All Telemetry resources**: Use `k8sattributes` processor by default.
@@ -211,9 +210,9 @@ In the final phase, we remove the annotation-based selection mechanism and all r
 **Deliverables:**
 - Change the default behavior to always use the new enrichment logic.
 - Remove unused configuration, code, and monitoring metric (for example, reconcilers, config builders).
-- Delete `service_name` end-to-end tests and adapt `service_enrichment` tests according to the comments.
+- Remove the `service_name` end-to-end tests for the legacy processor. Adapt the `service_enrichment` tests to validate `k8sattributes` processor behavior exclusively, as indicated by inline code comments in the test source files.
 - Archive and remove the `servicenameenrichment` processor from our OCC (OpenTelemetry Collector Components) repository.
-- Delete the deprecation process documentation.
+- Update user documentation to remove all information related to the phased migration, such as deprecation notices and the `kyma-legacy` option.
 
 **Default Behavior:**
 - **All Telemetry resources**: Use OTel's `k8sattributes` processor exclusively.
