@@ -321,7 +321,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 	reconcilablePipelinesRequiringAgents := r.getPipelinesRequiringAgents(reconcilablePipelines)
 
 	if len(reconcilablePipelinesRequiringAgents) == 0 {
-		logf.FromContext(ctx).V(1).Info("cleaning up metric agent resources: no metric pipelines require an agent")
+		logf.FromContext(ctx).V(1).Info("cleaning up Metric Agent resources: no metric pipelines require an agent")
 
 		vpaCRDExists, err := r.vpaStatusChecker.VpaCRDExists(ctx, r.Client)
 		if err != nil {

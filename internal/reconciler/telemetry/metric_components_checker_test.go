@@ -292,7 +292,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 			},
 		},
 		{
-			name: "should not be healthy if telemetry flow probing enabled and metric agent flow is not healthy",
+			name: "should not be healthy if telemetry flow probing enabled and Metric Agent flow is not healthy",
 			pipelines: []telemetryv1beta1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
 					WithStatusCondition(healthyGatewayCond).

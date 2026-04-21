@@ -48,24 +48,24 @@ func TestAgent_ApplyResources(t *testing.T) {
 		vpaMaxAllowedMemory resource.Quantity
 	}{
 		{
-			name:           "metric agent",
+			name:           "Metric Agent",
 			sut:            NewMetricAgentApplierDeleter(globals, collectorImage, priorityClassName),
 			goldenFilePath: "testdata/metric-agent.yaml",
 		},
 		{
-			name:           "metric agent with istio",
+			name:           "Metric Agent with istio",
 			sut:            NewMetricAgentApplierDeleter(globals, collectorImage, priorityClassName),
 			istioEnabled:   true,
 			backendPorts:   []string{"4317", "9090"},
 			goldenFilePath: "testdata/metric-agent-istio.yaml",
 		},
 		{
-			name:           "metric agent with FIPS mode enabled",
+			name:           "Metric Agent with FIPS mode enabled",
 			sut:            NewMetricAgentApplierDeleter(globalsWithFIPS, collectorImage, priorityClassName),
 			goldenFilePath: "testdata/metric-agent-fips-enabled.yaml",
 		},
 		{
-			name:                "metric agent with VPA",
+			name:                "Metric Agent with VPA",
 			sut:                 NewMetricAgentApplierDeleter(globals, collectorImage, priorityClassName),
 			goldenFilePath:      "testdata/metric-agent-vpa.yaml",
 			vpaCRDExists:        true,
@@ -73,7 +73,7 @@ func TestAgent_ApplyResources(t *testing.T) {
 			vpaMaxAllowedMemory: resource.MustParse("1Gi"),
 		},
 		{
-			name:                "metric agent with VPA and zero max allowed memory",
+			name:                "Metric Agent with VPA and zero max allowed memory",
 			sut:                 NewMetricAgentApplierDeleter(globals, collectorImage, priorityClassName),
 			goldenFilePath:      "testdata/metric-agent-vpa-zero-max-memory.yaml",
 			vpaCRDExists:        true,
@@ -185,7 +185,7 @@ func TestAgent_DeleteResources(t *testing.T) {
 		sut  *AgentApplierDeleter
 	}{
 		{
-			name: "metric agent",
+			name: "Metric Agent",
 			sut:  NewMetricAgentApplierDeleter(globals, image, priorityClassName),
 		},
 		{

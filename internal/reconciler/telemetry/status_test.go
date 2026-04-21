@@ -308,7 +308,7 @@ func TestUpdateStatus(t *testing.T) {
 			},
 		},
 		{
-			name: "metric agent is unhealthy",
+			name: "Metric Agent is unhealthy",
 			config: &Config{
 				Global: config.NewGlobal(config.WithTargetNamespace("telemetry-system")),
 			},

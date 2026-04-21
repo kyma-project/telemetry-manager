@@ -115,7 +115,7 @@ type envConfig struct {
 	FluentBitExporterImage string `env:"FLUENT_BIT_EXPORTER_IMAGE"`
 	// FluentBitImage is the image used for the Fluent Bit Log Agent.
 	FluentBitImage string `env:"FLUENT_BIT_IMAGE"`
-	// OTelCollectorImage is the image used all OpenTelemetry Collector based components (metric agent, Log Agent, OTLP Gateway).
+	// OTelCollectorImage is the image used all OpenTelemetry Collector based components (Metric Agent, Log Agent, OTLP Gateway).
 	OTelCollectorImage string `env:"OTEL_COLLECTOR_IMAGE"`
 	// SelfMonitorImage is the image used for the self-monitoring deployment. This is a customized Prometheus image.
 	SelfMonitorImage string `env:"SELF_MONITOR_IMAGE"`

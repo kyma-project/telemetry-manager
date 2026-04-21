@@ -46,7 +46,7 @@ type BuildOptions struct {
 	CollectionIntervals telemetryutils.MetricCollectionIntervals
 }
 
-// inputSources represents the enabled input sources for the telemetry metric agent.
+// inputSources represents the enabled input sources for the telemetry Metric Agent.
 type inputSources struct {
 	runtime          bool
 	runtimeResources runtimeResourceSources

@@ -117,17 +117,17 @@ For example, in low-traffic environments (for development or testing) or for low
 
 ### Cause
 
-There's a configuration or network issue between the metric agent and your application, such as:
+There's a configuration or network issue between the Metric Agent and your application, such as:
 
 - The Service that exposes your metrics port doesn't specify the application protocol.
-- The workload is not configured to use STRICT mTLS mode, which the metric agent uses by default.
+- The workload is not configured to use STRICT mTLS mode, which the Metric Agent uses by default.
 - A deny-all NetworkPolicy in your application's namespace prevents the agent from scraping metrics from annotated workloads.
 
 ### Solution
 
 - Define the application protocol in the Service port definition by either prefixing the port name with the protocol, or define the appProtocol attribute.
 - If the issue is with mTLS, either configure your workload to use STRICT mTLS, or switch to unencrypted scraping by adding the prometheus.io/scheme: "http" annotation to your workload.
-- Create a new NetworkPolicy to explicitly allow ingress traffic from the metric agent; such as the following example:
+- Create a new NetworkPolicy to explicitly allow ingress traffic from the Metric Agent; such as the following example:
 
   ```yaml
   apiVersion: networking.k8s.io/v1

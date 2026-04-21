@@ -103,21 +103,21 @@ func TestAgentHealthCondition(t *testing.T) {
 		expectedMsg    string
 	}{
 		{
-			name:           "metric agent daemonset is not ready",
+			name:           "Metric Agent daemonset is not ready",
 			proberError:    &workloadstatus.PodIsPendingError{Message: "Error"},
 			expectedStatus: metav1.ConditionFalse,
 			expectedReason: conditions.ReasonAgentNotReady,
 			expectedMsg:    "Pod is in the pending state because container:  is not running due to: Error. Please check the container:  logs.",
 		},
 		{
-			name:           "metric agent prober fails",
+			name:           "Metric Agent prober fails",
 			proberError:    workloadstatus.ErrDaemonSetNotFound,
 			expectedStatus: metav1.ConditionFalse,
 			expectedReason: conditions.ReasonAgentNotReady,
 			expectedMsg:    workloadstatus.ErrDaemonSetNotFound.Error(),
 		},
 		{
-			name:           "metric agent daemonset is ready",
+			name:           "Metric Agent daemonset is ready",
 			proberError:    nil,
 			expectedStatus: metav1.ConditionTrue,
 			expectedReason: conditions.ReasonAgentReady,
