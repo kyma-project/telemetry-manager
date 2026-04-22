@@ -12,7 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
+	"github.com/kyma-project/telemetry-manager/internal/pipelines"
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 )
 
@@ -109,7 +109,7 @@ func CollectSecretVersions(ctx context.Context, c client.Client, refs []telemetr
 
 // AddPipelineReference adds or updates a pipeline reference of any type.
 // Uses optimistic locking to handle concurrent updates safely.
-func AddPipelineReference(ctx context.Context, c client.Client, namespace string, pipelineType common.SignalType, input PipelineReferenceInput) error {
+func AddPipelineReference(ctx context.Context, c client.Client, namespace string, pipelineType pipelines.SignalType, input PipelineReferenceInput) error {
 	return applyConfigUpdate(ctx, c, namespace, func(config *OTLPGatewayConfigMap) error {
 		pipelineSlice := getPipelineSlice(config, pipelineType)
 		if pipelineSlice == nil {
@@ -136,7 +136,7 @@ func AddPipelineReference(ctx context.Context, c client.Client, namespace string
 
 // RemovePipelineReference removes a pipeline reference of any type.
 // Uses optimistic locking to handle concurrent updates safely.
-func RemovePipelineReference(ctx context.Context, c client.Client, namespace string, pipelineType common.SignalType, name string) error {
+func RemovePipelineReference(ctx context.Context, c client.Client, namespace string, pipelineType pipelines.SignalType, name string) error {
 	return applyConfigUpdate(ctx, c, namespace, func(config *OTLPGatewayConfigMap) error {
 		pipelineSlice := getPipelineSlice(config, pipelineType)
 		if pipelineSlice == nil {
@@ -158,13 +158,13 @@ func RemovePipelineReference(ctx context.Context, c client.Client, namespace str
 }
 
 // getPipelineSlice returns a pointer to the appropriate pipeline slice based on type.
-func getPipelineSlice(config *OTLPGatewayConfigMap, pipelineType common.SignalType) *[]PipelineReference {
-	switch pipelineType {
-	case common.SignalTypeTrace:
+func getPipelineSlice(config *OTLPGatewayConfigMap, pipelineType pipelines.SignalType) *[]PipelineReference {
+	switch pipelineType { //nolint:exhaustive // no gateway for FluentBit
+	case pipelines.SignalTypeTrace:
 		return &config.TracePipelineReferences
-	case common.SignalTypeLog:
+	case pipelines.SignalTypeLog:
 		return &config.LogPipelineReferences
-	case common.SignalTypeMetric:
+	case pipelines.SignalTypeMetric:
 		return &config.MetricPipelineReferences
 	default:
 		return nil

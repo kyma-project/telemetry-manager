@@ -37,6 +37,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
+	"github.com/kyma-project/telemetry-manager/internal/pipelines"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
@@ -96,12 +97,12 @@ func NewTracePipelineController(config TracePipelineControllerConfig, client cli
 		return nil, err
 	}
 
-	transformSpecValidator, err := ottl.NewTransformSpecValidator(ottl.SignalTypeTrace)
+	transformSpecValidator, err := ottl.NewTransformSpecValidator(pipelines.SignalTypeTrace)
 	if err != nil {
 		return nil, err
 	}
 
-	filterSpecValidator, err := ottl.NewFilterSpecValidator(ottl.SignalTypeTrace)
+	filterSpecValidator, err := ottl.NewFilterSpecValidator(pipelines.SignalTypeTrace)
 	if err != nil {
 		return nil, err
 	}

@@ -1,4 +1,4 @@
-package common
+package pipelines
 
 import telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 
@@ -24,6 +24,10 @@ func (r PipelineRef) Name() string {
 	return r.name
 }
 
+func (r PipelineRef) SignalType() SignalType {
+	return r.signalType
+}
+
 // TypePrefix returns "<signalType>pipeline".
 // Example: signalType="trace" → "tracepipeline"
 func (r PipelineRef) TypePrefix() string {
@@ -34,9 +38,9 @@ func (r PipelineRef) TypePrefix() string {
 	return string(r.signalType) + "pipeline"
 }
 
-// qualifiedName returns the pipeline name, prefixed with the signal type.
+// QualifiedName returns the pipeline name, prefixed with the signal type.
 // Example: signalType="trace", name="my-pipeline" → "tracepipeline-my-pipeline"
-func (r PipelineRef) qualifiedName() string {
+func (r PipelineRef) QualifiedName() string {
 	prefix := r.TypePrefix()
 	if prefix == "" {
 		return r.name

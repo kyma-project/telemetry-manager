@@ -47,6 +47,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/nodesize"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metricagent"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
+	"github.com/kyma-project/telemetry-manager/internal/pipelines"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
@@ -117,12 +118,12 @@ func NewMetricPipelineController(config MetricPipelineControllerConfig, client c
 		return nil, err
 	}
 
-	transformSpecValidator, err := ottl.NewTransformSpecValidator(ottl.SignalTypeMetric)
+	transformSpecValidator, err := ottl.NewTransformSpecValidator(pipelines.SignalTypeMetric)
 	if err != nil {
 		return nil, err
 	}
 
-	filterSpecValidator, err := ottl.NewFilterSpecValidator(ottl.SignalTypeMetric)
+	filterSpecValidator, err := ottl.NewFilterSpecValidator(pipelines.SignalTypeMetric)
 	if err != nil {
 		return nil, err
 	}

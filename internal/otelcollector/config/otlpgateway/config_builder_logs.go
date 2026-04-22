@@ -6,6 +6,7 @@ import (
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
+	"github.com/kyma-project/telemetry-manager/internal/pipelines"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	sharedtypesutils "github.com/kyma-project/telemetry-manager/internal/utils/sharedtypes"
 )
@@ -233,7 +234,7 @@ func (b *Builder) addLogOTLPExporter(builder *common.ComponentBuilder[*telemetry
 			otlpExporterBuilder := common.NewOTLPExporterConfigBuilder(
 				b.Reader,
 				lp.Spec.Output.OTLP,
-				common.LogPipelineRef(lp),
+				pipelines.LogPipelineRef(lp),
 				queueSize,
 			)
 
@@ -244,7 +245,7 @@ func (b *Builder) addLogOTLPExporter(builder *common.ComponentBuilder[*telemetry
 
 //nolint:dupl // Acceptable duplication - trace and log OAuth2 extensions follow same pattern
 func (b *Builder) addLogOAuth2Extension(ctx context.Context, builder *common.ComponentBuilder[*telemetryv1beta1.LogPipeline], pipeline *telemetryv1beta1.LogPipeline) error {
-	pipelineRef := common.LogPipelineRef(pipeline)
+	pipelineRef := pipelines.LogPipelineRef(pipeline)
 	oauth2ExtensionID := common.ComponentIDOAuth2Extension(pipelineRef)
 
 	oauth2ExtensionConfig, oauth2ExtensionEnvVars, err := common.NewOAuth2ExtensionConfigBuilder(
@@ -276,15 +277,15 @@ func formatNamespaceFilterID(lp *telemetryv1beta1.LogPipeline) string {
 }
 
 func formatLogUserDefinedTransformProcessorID(lp *telemetryv1beta1.LogPipeline) string {
-	return common.ComponentIDUserDefinedTransformProcessor(common.LogPipelineRef(lp))
+	return common.ComponentIDUserDefinedTransformProcessor(pipelines.LogPipelineRef(lp))
 }
 
 func formatLogUserDefinedFilterProcessorID(lp *telemetryv1beta1.LogPipeline) string {
-	return common.ComponentIDUserDefinedFilterProcessor(common.LogPipelineRef(lp))
+	return common.ComponentIDUserDefinedFilterProcessor(pipelines.LogPipelineRef(lp))
 }
 
 func formatLogOTLPExporterID(lp *telemetryv1beta1.LogPipeline) string {
-	return common.ComponentIDOTLPExporter(lp.Spec.Output.OTLP.Protocol, common.LogPipelineRef(lp))
+	return common.ComponentIDOTLPExporter(lp.Spec.Output.OTLP.Protocol, pipelines.LogPipelineRef(lp))
 }
 
 func namespaceFilterProcessor(namespaceSelector *telemetryv1beta1.NamespaceSelector) *common.FilterProcessorConfig {
