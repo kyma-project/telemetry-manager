@@ -213,3 +213,37 @@ filter:
 ### Solution
 
 Review the syntax of your transform and filter rules and ensure that the names of [OTTL functions](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/ottl/ottlfuncs/README.md) are spelled correctly (for example, `IsMatch()` instead of `isMatch()`).
+
+## VPA Resources Are Not Created
+
+### Symptom
+
+VPA resources are not created even though VPA is enabled.
+
+### Cause 
+
+The VPA CRD is not installed in your cluster.
+
+### Solution
+
+Install the Vertical Pod Autoscaler in your cluster. For installation instructions, see the [official VPA documentation](https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler).
+
+## Memory Limits Too Restrictive
+
+### Symptom
+
+Telemetry components are running out of memory despite VPA being enabled.
+
+### Cause
+
+The calculated maxAllowed memory (30% of smallest Node) might be insufficient for your telemetry volume.
+
+### Solution
+
+If data is not arriving at your backend, see [Not All Data Arrive at the Backend](#not-all-data-arrive-at-the-backend) to check for backend-side issues first.
+
+If data is arriving but components are running out of memory, consider one of these options:
+
+- Add nodes with more memory to increase the maxAllowed calculation.
+- Reduce telemetry volume by applying filters in your pipelines (see [Filter Logs](./filter-and-process/filter-logs.md), [Filter Traces](./filter-and-process/filter-traces.md), [Filter Metrics](./filter-and-process/filter-metrics.md)).
+- Disable VPA, which causes the system to use static resource (see [Manage Automatic Resource Scaling](./manage-pipeline-resources.md)).

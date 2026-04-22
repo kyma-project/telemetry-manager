@@ -26,30 +26,31 @@ const (
 const (
 	// Common reasons
 
-	ReasonAgentNotReady                 = "AgentNotReady"
-	ReasonAgentReady                    = "AgentReady"
-	ReasonEndpointInvalid               = "EndpointInvalid"
-	ReasonGatewayConfigured             = "GatewayConfigured"
-	ReasonGatewayNotReady               = "GatewayNotReady"
-	ReasonGatewayReady                  = "GatewayReady"
-	ReasonMaxPipelinesExceeded          = "MaxPipelinesExceeded"
-	ReasonReferencedSecretMissing       = "ReferencedSecretMissing"
-	ReasonSelfMonFlowHealthy            = "FlowHealthy"
-	ReasonSelfMonGatewayAllDataDropped  = "GatewayAllTelemetryDataDropped"
-	ReasonSelfMonAgentAllDataDropped    = "AgentAllTelemetryDataDropped"
-	ReasonSelfMonGatewaySomeDataDropped = "GatewaySomeTelemetryDataDropped"
-	ReasonSelfMonAgentSomeDataDropped   = "AgentSomeTelemetryDataDropped"
-	ReasonSelfMonAgentBufferFillingUp   = "AgentBufferFillingUp"
-	ReasonSelfMonGatewayProbingFailed   = "GatewayProbingFailed"
-	ReasonSelfMonAgentProbingFailed     = "AgentProbingFailed"
-	ReasonSelfMonGatewayThrottling      = "GatewayThrottling"
-	ReasonSelfMonConfigNotGenerated     = "ConfigurationNotGenerated"
-	ReasonTLSCertificateAboutToExpire   = "TLSCertificateAboutToExpire"
-	ReasonTLSCertificateExpired         = "TLSCertificateExpired"
-	ReasonTLSConfigurationInvalid       = "TLSConfigurationInvalid"
-	ReasonValidationFailed              = "ValidationFailed"
-	ReasonRolloutInProgress             = "RolloutInProgress"
-	ReasonOTTLSpecInvalid               = "OTTLSpecInvalid"
+	ReasonAgentNotReady                    = "AgentNotReady"
+	ReasonAgentReady                       = "AgentReady"
+	ReasonEndpointInvalid                  = "EndpointInvalid"
+	ReasonGatewayConfigured                = "GatewayConfigured"
+	ReasonGatewayNotReady                  = "GatewayNotReady"
+	ReasonGatewayReady                     = "GatewayReady"
+	ReasonMaxPipelinesExceeded             = "MaxPipelinesExceeded"
+	ReasonReferencedSecretMissing          = "ReferencedSecretMissing"
+	ReasonSelfMonFlowHealthy               = "FlowHealthy"
+	ReasonSelfMonGatewayAllDataDropped     = "GatewayAllTelemetryDataDropped"
+	ReasonSelfMonAgentAllDataDropped       = "AgentAllTelemetryDataDropped"
+	ReasonSelfMonGatewaySomeDataDropped    = "GatewaySomeTelemetryDataDropped"
+	ReasonSelfMonAgentSomeDataDropped      = "AgentSomeTelemetryDataDropped"
+	ReasonSelfMonAgentBufferFillingUp      = "AgentBufferFillingUp"
+	ReasonSelfMonGatewayProbingFailed      = "GatewayProbingFailed"
+	ReasonSelfMonAgentProbingFailed        = "AgentProbingFailed"
+	ReasonSelfMonGatewayThrottling         = "GatewayThrottling"
+	ReasonSelfMonConfigNotGenerated        = "ConfigurationNotGenerated"
+	ReasonGatewayConfigurationNotGenerated = "GatewayConfigurationNotGenerated"
+	ReasonTLSCertificateAboutToExpire      = "TLSCertificateAboutToExpire"
+	ReasonTLSCertificateExpired            = "TLSCertificateExpired"
+	ReasonTLSConfigurationInvalid          = "TLSConfigurationInvalid"
+	ReasonValidationFailed                 = "ValidationFailed"
+	ReasonRolloutInProgress                = "RolloutInProgress"
+	ReasonOTTLSpecInvalid                  = "OTTLSpecInvalid"
 
 	// Telemetry reasons
 
@@ -109,9 +110,10 @@ var otelLogPipelineMessages = map[string]string{
 	ReasonEndpointInvalid: "OTLP output endpoint invalid: %s",
 
 	// TODO: Merge to a single message after MetricGateway has been refactored too
-	ReasonGatewayConfigured: "LogPipeline specification is successfully applied to the configuration of OTLP gateway",
-	ReasonGatewayNotReady:   "OTLP gateway DaemonSet is not ready",
-	ReasonGatewayReady:      "OTLP gateway DaemonSet is ready",
+	ReasonGatewayConfigured:                "LogPipeline specification is successfully applied to the configuration of OTLP gateway",
+	ReasonGatewayNotReady:                  "OTLP gateway DaemonSet is not ready",
+	ReasonGatewayReady:                     "OTLP gateway DaemonSet is ready",
+	ReasonGatewayConfigurationNotGenerated: "This LogPipeline's specification is not applied to the configuration of the OTLP gateway. Check the 'ConfigurationGenerated' condition for more details",
 
 	ReasonSelfMonGatewayAllDataDropped:  "Backend is not reachable or rejecting logs. All logs are dropped in OTLP gateway. See troubleshooting: " + LinkNoDataArriveAtBackend,
 	ReasonSelfMonAgentAllDataDropped:    "Backend is not reachable or rejecting logs. All logs are dropped in Log agent. See troubleshooting: " + LinkNoDataArriveAtBackend,
@@ -126,9 +128,10 @@ var tracePipelineMessages = map[string]string{
 	ReasonEndpointInvalid:   "OTLP output endpoint invalid: %s",
 
 	// TODO: Merge to a single message after MetricGateway has been refactored too
-	ReasonGatewayConfigured: "TracePipeline specification is successfully applied to the configuration of OTLP gateway",
-	ReasonGatewayNotReady:   "OTLP gateway DaemonSet is not ready",
-	ReasonGatewayReady:      "OTLP gateway DaemonSet is ready",
+	ReasonGatewayConfigured:                "TracePipeline specification is successfully applied to the configuration of OTLP gateway",
+	ReasonGatewayNotReady:                  "OTLP gateway DaemonSet is not ready",
+	ReasonGatewayReady:                     "OTLP gateway DaemonSet is ready",
+	ReasonGatewayConfigurationNotGenerated: "This TracePipeline's specification is not applied to the configuration of the OTLP gateway. Check the 'ConfigurationGenerated' condition for more details",
 
 	ReasonSelfMonGatewayAllDataDropped:  "Backend is not reachable or rejecting spans. All spans are dropped. See troubleshooting: " + LinkNoDataArriveAtBackend,
 	ReasonSelfMonConfigNotGenerated:     "No spans delivered to backend because TracePipeline specification is not applied to the configuration of OTLP gateway. Check the 'ConfigurationGenerated' condition for more details",
@@ -143,9 +146,10 @@ var metricPipelineMessages = map[string]string{
 	ReasonEndpointInvalid:   "OTLP output endpoint invalid: %s",
 
 	// TODO: Merge to a single message after MetricGateway has been refactored too
-	ReasonGatewayConfigured: "MetricPipeline specification is successfully applied to the configuration of Metric gateway",
-	ReasonGatewayNotReady:   "Metric gateway Deployment is not ready",
-	ReasonGatewayReady:      "Metric gateway Deployment is ready",
+	ReasonGatewayConfigured:                "MetricPipeline specification is successfully applied to the configuration of Metric gateway",
+	ReasonGatewayNotReady:                  "Metric gateway Deployment is not ready",
+	ReasonGatewayReady:                     "Metric gateway Deployment is ready",
+	ReasonGatewayConfigurationNotGenerated: "This MetricPipeline's specification is not applied to the configuration of the OTLP gateway. Check the 'ConfigurationGenerated' condition for more details",
 
 	ReasonSelfMonGatewayAllDataDropped:  "Backend is not reachable or rejecting metrics. All metrics are dropped. See troubleshooting: " + LinkNoDataArriveAtBackend,
 	ReasonSelfMonAgentAllDataDropped:    "Backend is not reachable or rejecting metrics. All metrics are dropped. See troubleshooting: " + LinkNoDataArriveAtBackend,
