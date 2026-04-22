@@ -285,7 +285,7 @@ func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1
 }
 
 func (r *Reconciler) trackServiceAttributesEnrichmentStrategy(ctx context.Context) {
-	enrichmentStrategy := telemetryutils.GetServiceEnrichmentFromTelemetryOrDefault(ctx, r.Client, r.config.Global.DefaultTelemetryNamespace())
+	enrichmentStrategy := telemetryutils.GetServiceEnrichmentFromTelemetryOrDefault(ctx, r.Client, r.config.DefaultTelemetryNamespace())
 
 	// Reset all strategies to 0 before setting the current one to 1. This is to ensure that only the active strategy is set to 1
 	metrics.ServiceAttributesEnrichmentStrategy.WithLabelValues(commonresources.AnnotationValueTelemetryServiceEnrichmentOtel).Set(0)
