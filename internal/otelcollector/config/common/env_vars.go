@@ -12,6 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+	"github.com/kyma-project/telemetry-manager/internal/pipelines"
 	sharedtypesutils "github.com/kyma-project/telemetry-manager/internal/utils/sharedtypes"
 )
 
@@ -30,7 +31,7 @@ const (
 // Env Vars Builders
 // =============================================================================
 
-func makeOTLPExporterEnvVars(ctx context.Context, c client.Reader, output *telemetryv1beta1.OTLPOutput, pipelineRef PipelineRef) (map[string][]byte, error) {
+func makeOTLPExporterEnvVars(ctx context.Context, c client.Reader, output *telemetryv1beta1.OTLPOutput, pipelineRef pipelines.PipelineRef) (map[string][]byte, error) {
 	var err error
 
 	secretData := make(map[string][]byte)
@@ -58,7 +59,7 @@ func makeOTLPExporterEnvVars(ctx context.Context, c client.Reader, output *telem
 	return secretData, nil
 }
 
-func makeOAuth2ExtensionEnvVars(ctx context.Context, c client.Reader, oauth2Options *telemetryv1beta1.OAuth2Options, pipelineRef PipelineRef) (map[string][]byte, error) {
+func makeOAuth2ExtensionEnvVars(ctx context.Context, c client.Reader, oauth2Options *telemetryv1beta1.OAuth2Options, pipelineRef pipelines.PipelineRef) (map[string][]byte, error) {
 	var err error
 
 	secretData := make(map[string][]byte)
@@ -81,7 +82,7 @@ func makeOAuth2ExtensionEnvVars(ctx context.Context, c client.Reader, oauth2Opti
 	return secretData, nil
 }
 
-func makeBasicAuthEnvVar(ctx context.Context, c client.Reader, secretData map[string][]byte, output *telemetryv1beta1.OTLPOutput, pipelineRef PipelineRef) error {
+func makeBasicAuthEnvVar(ctx context.Context, c client.Reader, secretData map[string][]byte, output *telemetryv1beta1.OTLPOutput, pipelineRef pipelines.PipelineRef) error {
 	if isBasicAuthEnabled(output.Authentication) {
 		username, err := sharedtypesutils.ResolveValue(ctx, c, output.Authentication.Basic.User)
 		if err != nil {
@@ -101,7 +102,7 @@ func makeBasicAuthEnvVar(ctx context.Context, c client.Reader, secretData map[st
 	return nil
 }
 
-func makeOTLPEndpointEnvVar(ctx context.Context, c client.Reader, secretData map[string][]byte, output *telemetryv1beta1.OTLPOutput, pipelineRef PipelineRef) error {
+func makeOTLPEndpointEnvVar(ctx context.Context, c client.Reader, secretData map[string][]byte, output *telemetryv1beta1.OTLPOutput, pipelineRef pipelines.PipelineRef) error {
 	otlpEndpointVariable := formatEnvVarKey(otlpEndpointVariablePrefix, pipelineRef)
 
 	endpointURL, err := resolveEndpointURL(ctx, c, output)
@@ -114,7 +115,7 @@ func makeOTLPEndpointEnvVar(ctx context.Context, c client.Reader, secretData map
 	return err
 }
 
-func makeHeaderEnvVar(ctx context.Context, c client.Reader, secretData map[string][]byte, output *telemetryv1beta1.OTLPOutput, pipelineRef PipelineRef) error {
+func makeHeaderEnvVar(ctx context.Context, c client.Reader, secretData map[string][]byte, output *telemetryv1beta1.OTLPOutput, pipelineRef pipelines.PipelineRef) error {
 	for _, header := range output.Headers {
 		key := formatHeaderEnvVarKey(header, pipelineRef)
 
@@ -129,7 +130,7 @@ func makeHeaderEnvVar(ctx context.Context, c client.Reader, secretData map[strin
 	return nil
 }
 
-func makeTLSEnvVar(ctx context.Context, c client.Reader, secretData map[string][]byte, output *telemetryv1beta1.OTLPOutput, pipelineRef PipelineRef) error {
+func makeTLSEnvVar(ctx context.Context, c client.Reader, secretData map[string][]byte, output *telemetryv1beta1.OTLPOutput, pipelineRef pipelines.PipelineRef) error {
 	if output.TLS != nil {
 		if sharedtypesutils.IsValid(output.TLS.CA) {
 			ca, err := sharedtypesutils.ResolveValue(ctx, c, *output.TLS.CA)
@@ -167,7 +168,7 @@ func makeTLSEnvVar(ctx context.Context, c client.Reader, secretData map[string][
 	return nil
 }
 
-func makeTokenURLEnvVar(ctx context.Context, c client.Reader, secretData map[string][]byte, oauth2Options *telemetryv1beta1.OAuth2Options, pipelineRef PipelineRef) error {
+func makeTokenURLEnvVar(ctx context.Context, c client.Reader, secretData map[string][]byte, oauth2Options *telemetryv1beta1.OAuth2Options, pipelineRef pipelines.PipelineRef) error {
 	if oauth2Options != nil && sharedtypesutils.IsValid(&oauth2Options.TokenURL) {
 		tokenURL, err := sharedtypesutils.ResolveValue(ctx, c, oauth2Options.TokenURL)
 		if err != nil {
@@ -181,7 +182,7 @@ func makeTokenURLEnvVar(ctx context.Context, c client.Reader, secretData map[str
 	return nil
 }
 
-func makeClientIDEnvVar(ctx context.Context, c client.Reader, secretData map[string][]byte, oauth2Options *telemetryv1beta1.OAuth2Options, pipelineRef PipelineRef) error {
+func makeClientIDEnvVar(ctx context.Context, c client.Reader, secretData map[string][]byte, oauth2Options *telemetryv1beta1.OAuth2Options, pipelineRef pipelines.PipelineRef) error {
 	if oauth2Options != nil && sharedtypesutils.IsValid(&oauth2Options.ClientID) {
 		clientID, err := sharedtypesutils.ResolveValue(ctx, c, oauth2Options.ClientID)
 		if err != nil {
@@ -195,7 +196,7 @@ func makeClientIDEnvVar(ctx context.Context, c client.Reader, secretData map[str
 	return nil
 }
 
-func makeClientSecretEnvVar(ctx context.Context, c client.Reader, secretData map[string][]byte, oauth2Options *telemetryv1beta1.OAuth2Options, pipelineRef PipelineRef) error {
+func makeClientSecretEnvVar(ctx context.Context, c client.Reader, secretData map[string][]byte, oauth2Options *telemetryv1beta1.OAuth2Options, pipelineRef pipelines.PipelineRef) error {
 	if oauth2Options != nil && sharedtypesutils.IsValid(&oauth2Options.ClientSecret) {
 		clientSecret, err := sharedtypesutils.ResolveValue(ctx, c, oauth2Options.ClientSecret)
 		if err != nil {
@@ -253,7 +254,7 @@ func formatBasicAuthHeader(username string, password string) string {
 
 // formatEnvVarKey builds an environment variable key for a pipeline.
 // Example: Type="trace" → "PREFIX_TRACEPIPELINE_PIPELINENAME"
-func formatEnvVarKey(prefix string, pipelineRef PipelineRef) string {
+func formatEnvVarKey(prefix string, pipelineRef pipelines.PipelineRef) string {
 	if tp := pipelineRef.TypePrefix(); tp != "" {
 		return fmt.Sprintf("%s_%s_%s", prefix, sanitizeEnvVarName(tp), sanitizeEnvVarName(pipelineRef.Name()))
 	}
@@ -263,7 +264,7 @@ func formatEnvVarKey(prefix string, pipelineRef PipelineRef) string {
 
 // formatHeaderEnvVarKey builds an environment variable key for a custom header.
 // Example: signalType="trace" → "HEADER_TRACEPIPELINE_PIPELINENAME_HEADERNAME"
-func formatHeaderEnvVarKey(header telemetryv1beta1.Header, pipelineRef PipelineRef) string {
+func formatHeaderEnvVarKey(header telemetryv1beta1.Header, pipelineRef pipelines.PipelineRef) string {
 	if tp := pipelineRef.TypePrefix(); tp != "" {
 		return fmt.Sprintf("HEADER_%s_%s_%s", sanitizeEnvVarName(tp), sanitizeEnvVarName(pipelineRef.Name()), sanitizeEnvVarName(header.Name))
 	}

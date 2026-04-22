@@ -2,7 +2,6 @@ package ottl
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottldatapoint"
@@ -28,23 +27,6 @@ func (e *InvalidOTTLSpecError) Error() string {
 func IsInvalidOTTLSpecError(err error) bool {
 	var errInvalidTransformSpec *InvalidOTTLSpecError
 	return errors.As(err, &errInvalidTransformSpec)
-}
-
-type SignalType string
-
-const (
-	SignalTypeLog    SignalType = "log"
-	SignalTypeMetric SignalType = "metric"
-	SignalTypeTrace  SignalType = "trace"
-)
-
-func (s SignalType) Validate() error {
-	switch s {
-	case SignalTypeLog, SignalTypeMetric, SignalTypeTrace:
-		return nil
-	default:
-		return fmt.Errorf("invalid SignalType: %s", s)
-	}
 }
 
 // NOTE: The following statements apply to OTel Collector Contrib v0.136.0 and may change in future versions.
