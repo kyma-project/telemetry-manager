@@ -1,4 +1,4 @@
-name: Telemetry Module Release
+name: Submit Module
 
 run-name: "Module Release version ${{ inputs.version }} to ${{ inputs.channel }} channel, dry-run: ${{ inputs.dry_run }}, auto-merge: ${{ inputs.auto_merge }}"
 
@@ -17,13 +17,14 @@ on:
         required: true
         type: string
       channel:
-        description: 'Release channel (regular, fast, experimental)'
+        description: 'Release channel (regular, fast, experimental, dev)'
         required: true
         type: choice
         options:
           - regular
           - fast
           - experimental
+          - dev
       dry_run:
         description: 'Dry run mode (skip PR creation and push)'
         required: false
@@ -41,7 +42,7 @@ on:
         required: true
         type: string
       channel:
-        description: 'Release channel (regular, fast, experimental)'
+        description: 'Release channel (regular, fast, experimental, dev)'
         required: true
         type: string
       dry_run:
@@ -81,12 +82,12 @@ jobs:
           echo "Validating release channel..."
           echo "Channel: ${CHANNEL}"
           case "${CHANNEL}" in
-            regular|fast|experimental)
+            regular|fast|experimental|dev)
               echo "Channel valid: ${CHANNEL}"
               ;;
             *)
               echo "::error::Invalid channel: ${CHANNEL}"
-              echo "Allowed values: regular, fast, experimental"
+              echo "Allowed values: regular, fast, experimental, dev"
               exit 1
               ;;
           esac
