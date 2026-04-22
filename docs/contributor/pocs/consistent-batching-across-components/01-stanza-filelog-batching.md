@@ -2,7 +2,7 @@
 
 ## Provide Context
 
-This investigation examines the `stanza.synchronousLogEmitter` feature gate, introduced in v0.122.0 at alpha stage, in the OpenTelemetry Collector's `filelog` receiver. The gate prevents data loss on non-graceful shutdown by replacing the asynchronous `BatchingLogEmitter` with a synchronous passthrough emitter at the adapter level.
+This investigation examines the `stanza.synchronousLogEmitter` feature gate, introduced in v0.122.0 at alpha stage, in the OpenTelemetry Collector's stanza package (used by the `filelogreceiver`). The gate prevents data loss on non-graceful shutdown by replacing the asynchronous `BatchingLogEmitter` with a synchronous passthrough emitter at the adapter level.
 
 This investigation targets collector version 0.149.0, tailing Kubernetes CRI container logs in the `/var/log/pods/` directory structure.
 
