@@ -432,6 +432,7 @@ func (o *OTLPGatewayApplierDeleter) makeGatewayResourceRequirements(opts Gateway
 	// This replaces the calculated memory limit with a value based on the memory request.
 	// For more details, check the ADR: https://github.com/kyma-project/telemetry-manager/blob/main/docs/contributor/arch/032-vertical-pod-autoscaler-VPA-architecture.md
 	if opts.VpaCRDExists && opts.VpaEnabled {
+		memoryRequest = o.baseMemoryRequest.DeepCopy()
 		vpaMemoryLimit := o.baseMemoryRequest.DeepCopy()
 		vpaMemoryLimit.Add(memoryRequest)
 		memoryLimit = vpaMemoryLimit
