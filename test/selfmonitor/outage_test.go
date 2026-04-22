@@ -77,7 +77,7 @@ func TestOutage(t *testing.T) {
 			skipHealthyBaseline: true,
 		},
 		{
-			// Metric Agent and gateway (using kyma stats receiver) both export data to the same backend.
+			// Metric Agent and OTLP Gateway (using kyma stats receiver) both export data to the same backend.
 			// Faulting the backend would affect both, masking the agent-specific alert.
 			// An Istio VirtualService with a source-label match on telemetry-metric-agent pods
 			// blocks all requests from the agent→gateway leg, leaving the gateway's own backend traffic healthy.
