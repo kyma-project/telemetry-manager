@@ -18,6 +18,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	autoscalingvpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -137,6 +138,10 @@ func (o *OTLPGatewayApplierDeleter) ApplyResources(ctx context.Context, c client
 		return fmt.Errorf("failed to create daemonset: %w", err)
 	}
 
+	if err := o.applyVPA(ctx, c, labelerClient, name, opts); err != nil {
+		return err
+	}
+
 	if err := k8sutils.CreateOrUpdateService(ctx, labelerClient, o.makeOTLPService()); err != nil {
 		return fmt.Errorf("failed to create otlp service: %w", err)
 	}
@@ -174,7 +179,7 @@ func (o *OTLPGatewayApplierDeleter) ApplyResources(ctx context.Context, c client
 }
 
 // DeleteResources removes all OTLP gateway resources.
-func (o *OTLPGatewayApplierDeleter) DeleteResources(ctx context.Context, c client.Client, isIstioActive bool) error {
+func (o *OTLPGatewayApplierDeleter) DeleteResources(ctx context.Context, c client.Client, isIstioActive bool, vpaCRDExists bool) error {
 	// Attempt to clean up as many resources as possible and avoid early return when one of the deletions fails
 	var allErrors error = nil
 
@@ -209,6 +214,13 @@ func (o *OTLPGatewayApplierDeleter) DeleteResources(ctx context.Context, c clien
 	daemonSet := appsv1.DaemonSet{ObjectMeta: objectMeta}
 	if err := k8sutils.DeleteObject(ctx, c, &daemonSet); err != nil {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete daemonset: %w", err))
+	}
+
+	if vpaCRDExists {
+		vpa := autoscalingvpav1.VerticalPodAutoscaler{ObjectMeta: objectMeta}
+		if err := k8sutils.DeleteObject(ctx, c, &vpa); err != nil {
+			allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete VPA: %w", err))
+		}
 	}
 
 	// Delete the OTLP service
@@ -249,6 +261,35 @@ func (o *OTLPGatewayApplierDeleter) DeleteResources(ctx context.Context, c clien
 	}
 
 	return allErrors
+}
+
+// applyVPA creates, updates, or deletes the VPA resource based on configuration.
+func (o *OTLPGatewayApplierDeleter) applyVPA(ctx context.Context, c client.Client, labelerClient client.Client, name types.NamespacedName, opts GatewayApplyOptions) error {
+	if !opts.VpaCRDExists {
+		return nil
+	}
+
+	if opts.VpaEnabled {
+		vpa := makeVPA(name, o.baseMemoryRequest, opts.VPAMaxAllowedMemory)
+		if err := k8sutils.CreateOrUpdateVPA(ctx, labelerClient, vpa); err != nil {
+			return fmt.Errorf("failed to create VPA: %w", err)
+		}
+
+		return nil
+	}
+
+	// If VPA is disabled, ensure that any existing VPA is cleaned up
+	vpa := &autoscalingvpav1.VerticalPodAutoscaler{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name.Name,
+			Namespace: name.Namespace,
+		},
+	}
+	if err := k8sutils.DeleteObject(ctx, c, vpa); err != nil {
+		return fmt.Errorf("failed to delete VPA: %w", err)
+	}
+
+	return nil
 }
 
 func (o *OTLPGatewayApplierDeleter) makeDestinationRule(name string) *istionetworkingclientv1.DestinationRule {
@@ -387,6 +428,16 @@ func (o *OTLPGatewayApplierDeleter) makeGatewayResourceRequirements(opts Gateway
 		cpuRequest.Add(o.dynamicCPURequest)
 	}
 
+	// When VPA is active, override the memory limit to 2x the memory request so the VPA can scale within a tighter range.
+	// This replaces the calculated memory limit with a value based on the memory request.
+	// For more details, check the ADR: https://github.com/kyma-project/telemetry-manager/blob/main/docs/contributor/arch/032-vertical-pod-autoscaler-VPA-architecture.md
+	if opts.VpaCRDExists && opts.VpaEnabled {
+		memoryRequest = o.baseMemoryRequest.DeepCopy()
+		vpaMemoryLimit := o.baseMemoryRequest.DeepCopy()
+		vpaMemoryLimit.Add(memoryRequest)
+		memoryLimit = vpaMemoryLimit
+	}
+
 	resources := corev1.ResourceRequirements{
 		Requests: map[corev1.ResourceName]resource.Quantity{
 			corev1.ResourceCPU:    cpuRequest,
@@ -438,6 +489,9 @@ type GatewayApplyOptions struct {
 	// This value is multiplied with a base resource requirement to calculate the actual CPU and memory limits.
 	// A value of 1 applies the base limits; values greater than 1 increase those limits proportionally.
 	ResourceRequirementsMultiplier int
+	VpaCRDExists                   bool
+	VpaEnabled                     bool
+	VPAMaxAllowedMemory            resource.Quantity
 }
 
 func makePodAffinity(labels map[string]string) corev1.Affinity {

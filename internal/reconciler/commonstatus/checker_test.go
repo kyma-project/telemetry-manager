@@ -15,13 +15,15 @@ import (
 
 func TestTracesGetHealthCondition(t *testing.T) {
 	tests := []struct {
-		name              string
-		proberErr         error
-		expectedCondition *metav1.Condition
+		name                  string
+		proberErr             error
+		configGeneratedStatus metav1.ConditionStatus
+		expectedCondition     *metav1.Condition
 	}{
 		{
-			name:      "Test GetHealthCondition with signal type traces",
-			proberErr: nil,
+			name:                  "Test GetHealthCondition with signal type traces",
+			proberErr:             nil,
+			configGeneratedStatus: metav1.ConditionTrue,
 			expectedCondition: &metav1.Condition{
 				Type:    conditions.TypeGatewayHealthy,
 				Status:  metav1.ConditionTrue,
@@ -30,8 +32,9 @@ func TestTracesGetHealthCondition(t *testing.T) {
 			},
 		},
 		{
-			name:      "Test GetHealthCondition with signal type traces and error",
-			proberErr: workloadstatus.ErrDeploymentFetching,
+			name:                  "Test GetHealthCondition with signal type traces and error",
+			proberErr:             workloadstatus.ErrDeploymentFetching,
+			configGeneratedStatus: metav1.ConditionTrue,
 			expectedCondition: &metav1.Condition{
 				Type:    conditions.TypeGatewayHealthy,
 				Status:  metav1.ConditionFalse,
@@ -40,8 +43,9 @@ func TestTracesGetHealthCondition(t *testing.T) {
 			},
 		},
 		{
-			name:      "Test GetHealthCondition with signal type traces and rollout in progress error",
-			proberErr: &workloadstatus.RolloutInProgressError{},
+			name:                  "Test GetHealthCondition with signal type traces and rollout in progress error",
+			proberErr:             &workloadstatus.RolloutInProgressError{},
+			configGeneratedStatus: metav1.ConditionTrue,
 			expectedCondition: &metav1.Condition{
 				Type:    conditions.TypeGatewayHealthy,
 				Status:  metav1.ConditionTrue,
@@ -50,8 +54,9 @@ func TestTracesGetHealthCondition(t *testing.T) {
 			},
 		},
 		{
-			name:      "Test GetHealthCondition with signal type traces and wrapped error",
-			proberErr: fmt.Errorf("new error: %w", &workloadstatus.PodIsPendingError{ContainerName: "foo", Message: "foo"}),
+			name:                  "Test GetHealthCondition with signal type traces and wrapped error",
+			proberErr:             fmt.Errorf("new error: %w", &workloadstatus.PodIsPendingError{ContainerName: "foo", Message: "foo"}),
+			configGeneratedStatus: metav1.ConditionTrue,
 			expectedCondition: &metav1.Condition{
 				Type:    conditions.TypeGatewayHealthy,
 				Status:  metav1.ConditionFalse,
@@ -59,11 +64,22 @@ func TestTracesGetHealthCondition(t *testing.T) {
 				Message: "Pod is in the pending state because container: foo is not running due to: foo. Please check the container: foo logs.",
 			},
 		},
+		{
+			name:                  "Test GetHealthCondition with signal type traces and config not generated",
+			proberErr:             nil,
+			configGeneratedStatus: metav1.ConditionFalse,
+			expectedCondition: &metav1.Condition{
+				Type:    conditions.TypeGatewayHealthy,
+				Status:  metav1.ConditionFalse,
+				Reason:  conditions.ReasonGatewayConfigurationNotGenerated,
+				Message: conditions.MessageForTracePipeline(conditions.ReasonGatewayConfigurationNotGenerated),
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(tt.proberErr)
-			actualCondition := GetGatewayHealthyCondition(t.Context(), gatewayProberStub, types.NamespacedName{}, &conditions.ErrorToMessageConverter{}, SignalTypeTraces)
+			actualCondition := GetGatewayHealthyCondition(t.Context(), gatewayProberStub, types.NamespacedName{}, &conditions.ErrorToMessageConverter{}, SignalTypeTraces, tt.configGeneratedStatus)
 			require.True(t, validateCondition(t, tt.expectedCondition, actualCondition))
 		})
 	}
@@ -74,13 +90,15 @@ func TestMetricsGetHealthCondition(t *testing.T) {
 		name                     string
 		proberAgentErr           error
 		preberGatewayErr         error
+		configGeneratedStatus    metav1.ConditionStatus
 		expectedAgentCondition   *metav1.Condition
 		expectedGatewayCondition *metav1.Condition
 	}{
 		{
-			name:             "Test GetHealthCondition with signal type metrics",
-			proberAgentErr:   nil,
-			preberGatewayErr: nil,
+			name:                  "Test GetHealthCondition with signal type metrics",
+			proberAgentErr:        nil,
+			preberGatewayErr:      nil,
+			configGeneratedStatus: metav1.ConditionTrue,
 			expectedGatewayCondition: &metav1.Condition{
 				Type:    conditions.TypeGatewayHealthy,
 				Status:  metav1.ConditionTrue,
@@ -95,9 +113,10 @@ func TestMetricsGetHealthCondition(t *testing.T) {
 			},
 		},
 		{
-			name:             "Test GetHealthCondition with signal type metrics and error",
-			proberAgentErr:   workloadstatus.ErrDaemonSetNotFound,
-			preberGatewayErr: workloadstatus.ErrDeploymentFetching,
+			name:                  "Test GetHealthCondition with signal type metrics and error",
+			proberAgentErr:        workloadstatus.ErrDaemonSetNotFound,
+			preberGatewayErr:      workloadstatus.ErrDeploymentFetching,
+			configGeneratedStatus: metav1.ConditionTrue,
 			expectedGatewayCondition: &metav1.Condition{
 				Type:    conditions.TypeGatewayHealthy,
 				Status:  metav1.ConditionFalse,
@@ -112,9 +131,10 @@ func TestMetricsGetHealthCondition(t *testing.T) {
 			},
 		},
 		{
-			name:             "Test GetHealthCondition with signal type metrics and rollout in progress error",
-			proberAgentErr:   &workloadstatus.RolloutInProgressError{},
-			preberGatewayErr: &workloadstatus.RolloutInProgressError{},
+			name:                  "Test GetHealthCondition with signal type metrics and rollout in progress error",
+			proberAgentErr:        &workloadstatus.RolloutInProgressError{},
+			preberGatewayErr:      &workloadstatus.RolloutInProgressError{},
+			configGeneratedStatus: metav1.ConditionTrue,
 			expectedGatewayCondition: &metav1.Condition{
 				Type:    conditions.TypeGatewayHealthy,
 				Status:  metav1.ConditionTrue,
@@ -129,9 +149,10 @@ func TestMetricsGetHealthCondition(t *testing.T) {
 			},
 		},
 		{
-			name:             "Test GetHealthCondition with signal type metrics and wrapped error",
-			proberAgentErr:   fmt.Errorf("new error: %w", &workloadstatus.PodIsFailingError{Message: "foo"}),
-			preberGatewayErr: fmt.Errorf("new error: %w", &workloadstatus.PodIsPendingError{ContainerName: "foo", Message: "fooMessage"}),
+			name:                  "Test GetHealthCondition with signal type metrics and wrapped error",
+			proberAgentErr:        fmt.Errorf("new error: %w", &workloadstatus.PodIsFailingError{Message: "foo"}),
+			preberGatewayErr:      fmt.Errorf("new error: %w", &workloadstatus.PodIsPendingError{ContainerName: "foo", Message: "fooMessage"}),
+			configGeneratedStatus: metav1.ConditionTrue,
 			expectedGatewayCondition: &metav1.Condition{
 				Type:    conditions.TypeGatewayHealthy,
 				Status:  metav1.ConditionFalse,
@@ -145,6 +166,24 @@ func TestMetricsGetHealthCondition(t *testing.T) {
 				Message: "Pod is in the failed state due to: foo",
 			},
 		},
+		{
+			name:                  "Test GetHealthCondition with signal type metrics and config not generated",
+			proberAgentErr:        nil,
+			preberGatewayErr:      nil,
+			configGeneratedStatus: metav1.ConditionFalse,
+			expectedGatewayCondition: &metav1.Condition{
+				Type:    conditions.TypeGatewayHealthy,
+				Status:  metav1.ConditionFalse,
+				Reason:  conditions.ReasonGatewayConfigurationNotGenerated,
+				Message: conditions.MessageForMetricPipeline(conditions.ReasonGatewayConfigurationNotGenerated),
+			},
+			expectedAgentCondition: &metav1.Condition{
+				Type:    conditions.TypeAgentHealthy,
+				Status:  metav1.ConditionTrue,
+				Reason:  conditions.ReasonAgentReady,
+				Message: conditions.MessageForMetricPipeline(conditions.ReasonAgentReady),
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -152,10 +191,49 @@ func TestMetricsGetHealthCondition(t *testing.T) {
 			gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(tt.preberGatewayErr)
 
 			actualAgentCondition := GetAgentHealthyCondition(t.Context(), agentProberStub, types.NamespacedName{}, &conditions.ErrorToMessageConverter{}, SignalTypeMetrics)
-			actualGatewayCondition := GetGatewayHealthyCondition(t.Context(), gatewayProberStub, types.NamespacedName{}, &conditions.ErrorToMessageConverter{}, SignalTypeMetrics)
+			actualGatewayCondition := GetGatewayHealthyCondition(t.Context(), gatewayProberStub, types.NamespacedName{}, &conditions.ErrorToMessageConverter{}, SignalTypeMetrics, tt.configGeneratedStatus)
 
 			require.True(t, validateCondition(t, tt.expectedAgentCondition, actualAgentCondition))
 			require.True(t, validateCondition(t, tt.expectedGatewayCondition, actualGatewayCondition))
+		})
+	}
+}
+
+func TestOtelLogsGatewayHealthCondition(t *testing.T) {
+	tests := []struct {
+		name                  string
+		proberErr             error
+		configGeneratedStatus metav1.ConditionStatus
+		expectedCondition     *metav1.Condition
+	}{
+		{
+			name:                  "Test GetGatewayHealthyCondition with signal type otel-logs",
+			proberErr:             nil,
+			configGeneratedStatus: metav1.ConditionTrue,
+			expectedCondition: &metav1.Condition{
+				Type:    conditions.TypeGatewayHealthy,
+				Status:  metav1.ConditionTrue,
+				Reason:  conditions.ReasonGatewayReady,
+				Message: conditions.MessageForOtelLogPipeline(conditions.ReasonGatewayReady),
+			},
+		},
+		{
+			name:                  "Test GetGatewayHealthyCondition with signal type otel-logs and config not generated",
+			proberErr:             nil,
+			configGeneratedStatus: metav1.ConditionFalse,
+			expectedCondition: &metav1.Condition{
+				Type:    conditions.TypeGatewayHealthy,
+				Status:  metav1.ConditionFalse,
+				Reason:  conditions.ReasonGatewayConfigurationNotGenerated,
+				Message: conditions.MessageForOtelLogPipeline(conditions.ReasonGatewayConfigurationNotGenerated),
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(tt.proberErr)
+			actualCondition := GetGatewayHealthyCondition(t.Context(), gatewayProberStub, types.NamespacedName{}, &conditions.ErrorToMessageConverter{}, SignalTypeOtelLogs, tt.configGeneratedStatus)
+			require.True(t, validateCondition(t, tt.expectedCondition, actualCondition))
 		})
 	}
 }
