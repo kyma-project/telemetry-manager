@@ -228,6 +228,8 @@ Categorizing metrics by resource type is a strong and future-proof abstraction â
 
 The allowed list trades abstraction for transparency. Users specify exactly which metrics they want, using the same names they already use in dashboards and alerting rules. The coupling to upstream names is real, but that coupling already exists at every other layer of the user's observability stack.
 
+Glob-style prefix matching (for example, `k8s.pod.*`) is deferred. A usage metric tracks adoption of `additionalMetrics` to inform whether prefix matching is needed later.
+
 ### Handling Upstream Breaking Changes
 
 None of the three options protect against breaking changes in the upstream receivers. Both receivers are at beta stability, and the optional metrics themselves are at development stability. If a metric is renamed or removed upstream:
