@@ -368,6 +368,10 @@ func (r *Reconciler) buildCollectorConfig(ctx context.Context, tracePipelines []
 		enrichments = t.Spec.Enrichments
 	}
 
+	vpaCRDExists, _ := r.vpaStatusChecker.VpaCRDExists(ctx, r.Client)
+
+	vpaEnabled := telemetryutils.IsVpaEnabledInTelemetry(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
+
 	return r.configBuilder.Build(ctx, otlpgateway.BuildOptions{
 		LogPipelines:    logPipelines,
 		TracePipelines:  tracePipelines,
@@ -381,6 +385,7 @@ func (r *Reconciler) buildCollectorConfig(ctx context.Context, tracePipelines []
 		ServiceEnrichment: telemetryutils.GetServiceEnrichmentFromTelemetryOrDefault(ctx, r.Client, r.globals.DefaultTelemetryNamespace()),
 		ModuleVersion:     r.globals.Version(),
 		GatewayNamespace:  r.globals.TargetNamespace(),
+		VpaActive:         vpaCRDExists && vpaEnabled,
 	})
 }
 
