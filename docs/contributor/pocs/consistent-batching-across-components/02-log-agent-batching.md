@@ -48,9 +48,9 @@ The queue stays fully occupied until the `flush_timeout` expires. At that point,
 
 The backend services impose payload size and rate limits that constrain the batch configuration.
 
-| Backend           | Maximum Payload Size                                            | Rate Limit                                                                         |
-|-------------------|-----------------------------------------------------------------|------------------------------------------------------------------------------------|
-| SAP Cloud Logging | `4 MiB` per request. Requests exceeding this limit return `413` | 100 x 2 KiB logs/s for Standard plan, 1,000 x 2 KiB logs/s for Large plan         |
+| Backend           | Maximum Payload Size                                            | Rate Limit                                                                                |
+|-------------------|-----------------------------------------------------------------|-------------------------------------------------------------------------------------------|
+| SAP Cloud Logging | `4 MiB` per request. Requests exceeding this limit return `413` | 100 x 2 KiB logs/s for Standard plan, 1000 x 2 KiB logs/s for Large plan                 |
 | SAP Cloud ALM     | `1 MB` for JSON payloads, `150 KB` for protobuf binary payloads | `100` requests/minute for production plans, `100` requests/24 hours for development plans |
 
 These limits mean that the exporter batcher must produce batches small enough to stay within the maximum payload size of each backend.
@@ -66,7 +66,7 @@ The existing log agent uses the `BatchingLogEmitter`, which coalesces log record
 Each queue slot holds one request, and each request contains up to `100` log records. With an average log record size of ~2 KB, the theoretical maximum memory the queue consumes is:
 
 ```
-2 KB/record x 100 records/request x 1,000 requests = 200 MB
+2 KB/record x 100 records/request x 1000 requests = 200 MB
 ```
 
 ### Preserve the Memory Footprint After Enabling the SynchronousLogEmitter
@@ -75,61 +75,69 @@ The `SynchronousLogEmitter` also produces batches of up to `100` records, but it
 
 ## Evaluate Configuration Options
 
-This section tests three configuration approaches and compares their behavior against the baseline. Each approach uses 100 logs/s per Pod with 10 Pods over 300s.
+This section tests three exporter batcher configurations and compares their behavior against the baseline. All tests use 100 logs/s per Pod with 10 Pods over 300s. The stanza pipeline inserts the original log into the `log.original` field, duplicating the content into the log body. As a result, original 2 KB logs become ~4 KB after the pipeline.
 
-### Test the Items Sizer with Batch Size 1024
+The following table summarizes the results across all configurations:
+
+| Category    | Metric                          | Baseline                                                  | Items 1024/1024                                              | Items 1024/512                                                        | Bytes 200MB/2-4MB                                                 |
+|-------------|---------------------------------|-----------------------------------------------------------|--------------------------------------------------------------|-----------------------------------------------------------------------|-------------------------------------------------------------------|
+| Description |                                 | Batching emitter only, no exporter batcher                | Batching emitter + queue=1024, batch=1024                    | Batching emitter + queue=1024, batch=512                              | Batching emitter + queue=200MB, batch=2-4MB                       |
+| Input       | Queue capacity                  | 1000 requests                                             | 1024 requests                                                | 1024 requests                                                         | 200 MB                                                            |
+|             | Batch min size                  | N/A                                                       | 1024 records                                                 | 512 records                                                           | 2 MB                                                              |
+|             | Batch max size                  | N/A                                                       | 1024 records                                                 | 512 records                                                           | 4 MB                                                              |
+| Output      | Records accepted                | 75602                                                     | 75602                                                        | 75602                                                                 | 75602                                                             |
+|             | Records sent successfully       | 75602                                                     | 850                                                          | 75602                                                                 | 75602                                                             |
+|             | Records lost                    | 0                                                         | 74752                                                        | 0                                                                     | 0                                                                 |
+|             | gRPC calls (OK)                 | 1235                                                      | 1                                                            | 148                                                                   | 156                                                               |
+|             | gRPC calls (RESOURCE_EXHAUSTED) | 0                                                         | 73                                                           | 0                                                                     | 0                                                                 |
+|             | Avg records/gRPC call           | ~61                                                       | ~850                                                         | ~511                                                                  | ~485                                                              |
+|             | Avg bytes/gRPC call             | ~273 KB                                                   | N/A                                                          | ~2.28 MB                                                              | ~2.17 MB                                                          |
+|             | CPU total                       | 41.16s                                                    | 38.56s                                                       | 39.34s                                                                | 39.09s                                                            |
+|             | CPU rate                        | ~116 ms/s                                                 | ~109 ms/s                                                    | ~110 ms/s                                                             | ~109 ms/s                                                         |
+|             | RSS                             | 240 MB                                                    | 334 MB                                                       | 252 MB                                                                | 256 MB                                                            |
+|             | `heap_alloc`                    | 59.3 MB                                                   | 137.9 MB                                                     | 81.9 MB                                                               | 71.5 MB                                                           |
+|             | `total_alloc`                   | 2.490 GB                                                  | 3.137 GB                                                     | 2.760 GB                                                              | 2.790 GB                                                          |
+|             | `total_alloc` rate              | ~7.0 MB/s                                                 | ~8.9 MB/s                                                    | ~7.7 MB/s                                                             | ~7.8 MB/s                                                         |
+| Conclusion  |                                 | Stable, 1 gRPC call per emitter flush, no data loss       | Batch size ~4 MB exceeded backend limit. 74752 records lost. | ~9x fewer gRPC calls, no data loss, slightly higher RSS than baseline | ~9x fewer gRPC calls, predictable memory bound, no data loss      |
+
+The following subsections analyze each configuration in detail.
+
+### Items Sizer with Batch Size 1024
 
 The following configuration uses the `items` sizer and aligns batch sizes with other components:
 
-| Parameter                             | Value                | Rationale                                                                                                                                           |
-|---------------------------------------|----------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
-| `sending_queue::sizer`                | `requests` (default) | Each queue slot holds one request, regardless of how many records it contains.                                                                      |
-| `sending_queue::queue_size`           | `1024`               | Provides sufficient buffer for incoming batches. See [Set `queue_size` to at Least Batch `min_size`](#set-queue_size-to-at-least-batch-min_size).   |
-| `sending_queue::batch::sizer`         | `items` (default)    | The batcher counts individual log records when deciding whether to flush.                                                                           |
-| `sending_queue::batch::min_size`      | `1024`               | Matches the batch size used by other components.                                                                                                    |
-| `sending_queue::batch::max_size`      | `1024`               | Matches the batch size used by other components.                                                                                                    |
-| `sending_queue::batch::flush_timeout` | `10s`                | Matches the flush interval used by other components.                                                                                                |
+| Parameter                             | Value                | Rationale                                                                          |
+|---------------------------------------|----------------------|------------------------------------------------------------------------------------|
+| `sending_queue::sizer`                | `requests` (default) | Each queue slot holds one request, regardless of how many records it contains.     |
+| `sending_queue::queue_size`           | `1024`               | Provides sufficient buffer for incoming batches.                                   |
+| `sending_queue::batch::sizer`         | `items` (default)    | The batcher counts individual log records when deciding whether to flush.          |
+| `sending_queue::batch::min_size`      | `1024`               | Matches the batch size used by other components.                                   |
+| `sending_queue::batch::max_size`      | `1024`               | Matches the batch size used by other components.                                   |
+| `sending_queue::batch::flush_timeout` | `10s`                | Matches the flush interval used by other components.                               |
 
 The same assumptions as the baseline apply, that is, 2 KB per record and up to 100 records per request from the `SynchronousLogEmitter`. The maximum queue memory is:
 
 ```
-2 KB/record x 100 records/request x 1,024 requests ≈ 205 MB
+2 KB/record x 100 records/request x 1024 requests ≈ 205 MB
 ```
 
 This is within an acceptable range of the original 200 MB baseline.
 
-**Problem: batch payload exceeds backend limits.** The stanza pipeline inserts the original log into the `log.original` field, duplicating the content into the log body. As a result, original 2 KB logs become ~4 KB after the pipeline. With a `max_size` of `1024` records, each batch reaches approximately:
+**Problem: batch payload exceeds backend limits.** With a `max_size` of `1024` records, each batch reaches approximately:
 
 ```
-~4 KB/record x 1,024 records ≈ 4 MB
+~4 KB/record x 1024 records ≈ 4 MB
 ```
 
-This exceeds the SAP Cloud Logging maximum payload size of `4 MiB` and the default gRPC maximum request size, causing the backend to reject these batches.
+This exceeds the SAP Cloud Logging maximum payload size of `4 MiB` and the default gRPC maximum request size. As the comparison table shows, 73 gRPC calls return `RESOURCE_EXHAUSTED` and 74752 out of 75602 records are lost. RSS and `heap_alloc` are also significantly higher than the baseline because the batcher accumulates large batches that it cannot deliver.
 
-### Test the Items Sizer with Batch Size 512
+### Items Sizer with Batch Size 512
 
-Reducing `min_size` and `max_size` to `512` keeps batches within backend payload limits. The test results are the following:
-
-**100 logs/s per Pod, 10 Pods, 300s**
-
-| Metric                     | Receiver + exporter batcher | Receiver batching only |
-|----------------------------|-----------------------------|------------------------|
-| Batches enqueued           | 1,372                       | 1,411                  |
-| Avg records/batch enqueued | 58.9                        | 57.2                   |
-| gRPC calls                 | 158                         | 1,411                  |
-| Avg records/gRPC call      | ~511                        | ~57                    |
-| Avg bytes/gRPC call        | ~257 KB                     | ~250 KB                |
-| CPU total                  | 31.0s                       | 31.95s                 |
-| CPU rate                   | ~93.2 ms/s                  | ~96.1 ms/s             |
-| RSS                        | 267 MB                      | 243 MB                 |
-| `total_alloc`              | 2.984 GB                    | 2.703 GB               |
-| `total_alloc` rate         | ~9.2 MB/s                   | ~8.1 MB/s              |
-
-gRPC calls drop from 1,411 to 158, a 9x reduction, with the exporter batcher assembling ~511 records per call compared to ~57. CPU and memory are essentially equivalent. RSS is slightly higher with the exporter batcher, approximately 24 MB more, likely because the batcher holds a larger in-flight buffer. The difference is small and within normal variation.
+Reducing `min_size` and `max_size` to `512` keeps batches within backend payload limits. As the comparison table shows, gRPC calls drop from 1235 to 148, approximately a 9x reduction, with the exporter batcher assembling ~511 records per call compared to ~61 in the baseline. CPU and memory are essentially equivalent to the baseline. RSS is slightly higher, approximately 12 MB more, likely because the batcher holds a larger in-flight buffer. The difference is small and within normal variation.
 
 This configuration solves the payload size issue, but it does not directly control memory usage. The `items` sizer counts records without knowing their byte size, so memory consumption depends on the actual size of the logs passing through the pipeline.
 
-### Test the Bytes Sizer
+### Bytes Sizer
 
 The `bytes` sizer measures the serialized byte size of each request, giving direct control over both queue memory and batch payload sizes. The OpenTelemetry documentation notes that the `bytes` sizer is the least performant of the three sizers because it must serialize every request to calculate its size. The `items` sizer only counts records, and the `requests` sizer does not need to perform any calculation.
 
@@ -137,38 +145,20 @@ Testing both sizers under the same conditions shows no meaningful difference in 
 
 The following configuration uses the `bytes` sizer to bound queue memory and respect backend payload limits:
 
-| Parameter                             | Value    | Rationale                                                                                                          |
-|---------------------------------------|----------|--------------------------------------------------------------------------------------------------------------------|
-| `sending_queue::sizer`                | `bytes`  | Bounds the queue memory usage to a fixed byte limit.                                                               |
-| `sending_queue::queue_size`           | `200 MB` | Preserves the ~200 MB memory envelope of the existing log agent.                                                   |
-| `sending_queue::batch::sizer`         | `bytes`  | The batcher measures the serialized byte size of log records when deciding whether to flush.                        |
-| `sending_queue::batch::min_size`      | `2 MB`   | With an average log size of ~2 KB, each batch holds approximately 1,000 log records.                               |
-| `sending_queue::batch::max_size`      | `4 MB`   | Matches the maximum payload size limit for SAP Cloud Logging and gRPC requests. Records exceeding this limit are split. |
-| `sending_queue::batch::flush_timeout` | `10s`    | Matches the flush interval used by other components.                                                               |
+| Parameter                             | Value    | Rationale                                                                                                                |
+|---------------------------------------|----------|--------------------------------------------------------------------------------------------------------------------------|
+| `sending_queue::sizer`                | `bytes`  | Bounds the queue memory usage to a fixed byte limit.                                                                     |
+| `sending_queue::queue_size`           | `200 MB` | Preserves the ~200 MB memory envelope of the existing log agent.                                                         |
+| `sending_queue::batch::sizer`         | `bytes`  | The batcher measures the serialized byte size of log records when deciding whether to flush.                              |
+| `sending_queue::batch::min_size`      | `2 MB`   | With an average log size of ~2 KB, each batch holds approximately 1000 log records.                                      |
+| `sending_queue::batch::max_size`      | `4 MB`   | Matches the maximum payload size limit for SAP Cloud Logging and gRPC requests. Records exceeding this limit are split.  |
+| `sending_queue::batch::flush_timeout` | `10s`    | Matches the flush interval used by other components.                                                                     |
 
-The test results with this configuration are the following:
-
-**100 logs/s per Pod, 10 Pods, 300s**
-
-| Metric                     | Receiver + exporter batcher (bytes sizer) | Receiver batching only |
-|----------------------------|-------------------------------------------|------------------------|
-| Batches enqueued           | 1,507                                     | 1,543                  |
-| Avg records/batch enqueued | 52.1                                      | 50.8                   |
-| gRPC calls                 | 166                                       | 1,543                  |
-| Avg records/gRPC call      | ~472                                      | ~50.8                  |
-| Avg bytes/gRPC call        | ~2.1 MB                                   | ~222 KB                |
-| CPU total                  | 26.06s                                    | 28.79s                 |
-| CPU rate                   | ~77.3 ms/s                                | ~85.5 ms/s             |
-| RSS                        | 267 MB                                    | 242 MB                 |
-| `heap_alloc`               | 88.6 MB                                   | 49.3 MB                |
-| `total_alloc`              | 2.926 GB                                  | 2.667 GB               |
-| `total_alloc` rate         | ~8.7 MB/s                                 | ~7.9 MB/s              |
-
-gRPC calls drop from 1,543 to 166, approximately 9x, with the bytes batcher assembling ~2.1 MB per call compared to ~222 KB. CPU is slightly lower with the exporter batcher. RSS and `heap_alloc` are higher, which is expected because the batcher holds a larger in-flight buffer to accumulate to its byte threshold before flushing.
+As the comparison table shows, gRPC calls drop from 1235 to 156, approximately 9x, with the bytes batcher assembling ~2.17 MB per call compared to ~273 KB in the baseline. CPU is slightly lower with the exporter batcher. RSS and `heap_alloc` are slightly higher, which is expected because the batcher holds a larger in-flight buffer to accumulate to its byte threshold before flushing. No records are lost.
 
 Other components currently use `batchprocessor`, which does not support sizers other than `items`. Using sizers other than `items` would require migrating all other components to the exporter batcher. The [batch processor migration ADR](../../arch/029-batch-processor-migration-to-exporterhelper.md) investigates this migration and identifies certain risks and unwanted behavior.
 
-## Draw Conclusions
+## Conclusions
 
 The batching configuration cannot be consistent across all components because other components use `batchprocessor` with the `items` sizer. The log agent benefits from using the `bytes` sizer to bound queue memory usage and control batch sizes based on payload size. Tests show little to no performance degradation from introducing the exporter batcher.
 
