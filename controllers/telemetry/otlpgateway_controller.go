@@ -89,6 +89,8 @@ func NewOTLPGatewayController(config OTLPGatewayControllerConfig, client client.
 		),
 		otlpgatewayreconciler.WithConfigBuilder(&otlpgatewayconfig.Builder{Reader: client}),
 		otlpgatewayreconciler.WithIstioStatusChecker(istiostatus.NewChecker(discoveryClient)),
+		otlpgatewayreconciler.WithVpaStatusChecker(vpastatus.NewChecker(config.RestConfig)),
+		otlpgatewayreconciler.WithNodeSizeTracker(nodeSizeTracker),
 	)
 
 	return &OTLPGatewayController{
@@ -189,7 +191,7 @@ func (r *OTLPGatewayController) SetupWithManager(mgr ctrl.Manager) error {
 		ctrlbuilder.WithPredicates(ctrlpredicate.Or(ctrlpredicate.GenerationChangedPredicate{}, ctrlpredicate.AnnotationChangedPredicate{})),
 	)
 
-	// Watch for changes in Nodes to track smallest node memory and trigger reconciliation if it changes
+	// Watch for changes in Nodes to track the smallest node memory and trigger reconciliation if it changes
 	b.Watches(
 		&corev1.Node{},
 		handler.EnqueueRequestsFromMapFunc(r.mapNodeChanges),
