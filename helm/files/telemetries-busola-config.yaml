@@ -91,7 +91,7 @@ details: |-
       children:
       - widget: Alert
         severity: warning
-        source: "'The legacy strategy for service name enrichment is going to be deprecated and will be removed in future releases. To avoid disruptions, please migrate to the new OpenTelemetry-based enrichment strategy by adding the annotation `telemetry.kyma-project.io/service-enrichment: otel` to your Telemetry CR. For more details, check https://kyma-project.io/external-content/telemetry-manager/docs/user/filter-and-process/automatic-data-enrichment.html#service-attributes.'"
+        source: "'The legacy strategy for service name enrichment will be deprecated. To avoid disruptions, migrate to the new OTel-based enrichment strategy by adding the annotation `telemetry.kyma-project.io/service-enrichment: otel` to your Telemetry CR. For more details, check https://kyma-project.io/external-content/telemetry-manager/docs/user/filter-and-process/automatic-data-enrichment.html#service-attributes.'"
     - name: Gateway Scaling (Deprecated)
       widget: Panel
       visibility: >-
