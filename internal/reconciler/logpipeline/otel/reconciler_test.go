@@ -16,6 +16,7 @@ import (
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/metrics"
+	"github.com/kyma-project/telemetry-manager/internal/pipelines"
 	commonStatusStubs "github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus/stubs"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/otel/mocks"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/stubs"
@@ -605,7 +606,7 @@ func TestPipelineInfoTracking(t *testing.T) {
 			}
 
 			fakeClient := newTestClient(t, objs...)
-			validator, _ := ottl.NewTransformSpecValidator(ottl.SignalTypeLog)
+			validator, _ := ottl.NewTransformSpecValidator(pipelines.SignalTypeLog)
 			sut := newTestReconciler(fakeClient, WithPipelineValidator(newTestValidator(WithTransformSpecValidator(validator))))
 
 			result := reconcileAndGet(t, fakeClient, sut, tt.pipeline.Name)

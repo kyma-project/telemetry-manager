@@ -7,7 +7,7 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
-	"github.com/kyma-project/telemetry-manager/internal/validators/ottl"
+	"github.com/kyma-project/telemetry-manager/internal/pipelines"
 )
 
 func TestValidateFilterTransform(t *testing.T) {
@@ -15,7 +15,7 @@ func TestValidateFilterTransform(t *testing.T) {
 
 	tests := []struct {
 		name                      string
-		signalType                ottl.SignalType
+		signalType                pipelines.SignalType
 		filterSpec                []telemetryv1beta1.FilterSpec
 		transformSpec             []telemetryv1beta1.TransformSpec
 		expectErr                 bool
@@ -23,13 +23,13 @@ func TestValidateFilterTransform(t *testing.T) {
 	}{
 		{
 			name:          "empty specs",
-			signalType:    ottl.SignalTypeMetric,
+			signalType:    pipelines.SignalTypeMetric,
 			filterSpec:    nil,
 			transformSpec: nil,
 		},
 		{
 			name:       "valid filters and transforms",
-			signalType: ottl.SignalTypeMetric,
+			signalType: pipelines.SignalTypeMetric,
 			filterSpec: []telemetryv1beta1.FilterSpec{
 				{
 					Conditions: []string{
@@ -50,7 +50,7 @@ func TestValidateFilterTransform(t *testing.T) {
 		},
 		{
 			name:                      "invalid signal type",
-			signalType:                ottl.SignalType("invalid"),
+			signalType:                pipelines.SignalType("invalid"),
 			filterSpec:                []telemetryv1beta1.FilterSpec{},
 			transformSpec:             []telemetryv1beta1.TransformSpec{},
 			expectErr:                 true,
@@ -58,7 +58,7 @@ func TestValidateFilterTransform(t *testing.T) {
 		},
 		{
 			name:       "filter validation fails",
-			signalType: ottl.SignalTypeMetric,
+			signalType: pipelines.SignalTypeMetric,
 			filterSpec: []telemetryv1beta1.FilterSpec{
 				{
 					Conditions: []string{
@@ -71,7 +71,7 @@ func TestValidateFilterTransform(t *testing.T) {
 		},
 		{
 			name:       "transform validation fails",
-			signalType: ottl.SignalTypeMetric,
+			signalType: pipelines.SignalTypeMetric,
 			filterSpec: nil,
 			transformSpec: []telemetryv1beta1.TransformSpec{
 				{
@@ -84,7 +84,7 @@ func TestValidateFilterTransform(t *testing.T) {
 		},
 		{
 			name:       "both filter and transform validation fail",
-			signalType: ottl.SignalTypeMetric,
+			signalType: pipelines.SignalTypeMetric,
 			filterSpec: []telemetryv1beta1.FilterSpec{
 				{
 					Conditions: []string{"bad filter"},
