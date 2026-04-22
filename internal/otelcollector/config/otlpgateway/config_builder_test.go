@@ -28,7 +28,23 @@ func TestBuild(t *testing.T) {
 		metricPipelines   []telemetryv1beta1.MetricPipeline
 		serviceEnrichment string
 		moduleVersion     string
+		vpaActive         bool
 	}{
+		{
+			name:           "gateway with VPA active - all signals",
+			goldenFileName: "vpa-active-all-signals.yaml",
+			vpaActive:      true,
+			moduleVersion:  "1.0.0",
+			tracePipelines: []telemetryv1beta1.TracePipeline{
+				testutils.NewTracePipelineBuilder().WithName("test-trace").Build(),
+			},
+			logPipelines: []telemetryv1beta1.LogPipeline{
+				testutils.NewLogPipelineBuilder().WithName("test-log").WithOTLPOutput().Build(),
+			},
+			metricPipelines: []telemetryv1beta1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().WithName("test-metric").WithOTLPInput(true).WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+			},
+		},
 		// Log-specific test cases
 		{
 			name:           "log-single pipeline only",
@@ -545,6 +561,7 @@ func TestBuild(t *testing.T) {
 				ServiceEnrichment: tt.serviceEnrichment,
 				ModuleVersion:     tt.moduleVersion,
 				GatewayNamespace:  "kyma-system",
+				VpaActive:         tt.vpaActive,
 			}
 
 			config, _, err := sut.Build(context.Background(), buildOptions)
