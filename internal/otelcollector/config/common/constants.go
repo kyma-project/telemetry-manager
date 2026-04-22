@@ -7,14 +7,6 @@ const (
 	EnvVarGoDebug         = "GODEBUG"
 )
 
-type SignalType string
-
-const (
-	SignalTypeMetric SignalType = "metric"
-	SignalTypeTrace  SignalType = "trace"
-	SignalTypeLog    SignalType = "log"
-)
-
 const (
 	AttributeActionInsert = "insert"
 	AttributeActionDelete = "delete"

@@ -6,6 +6,7 @@ import (
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
+	"github.com/kyma-project/telemetry-manager/internal/pipelines"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	sharedtypesutils "github.com/kyma-project/telemetry-manager/internal/utils/sharedtypes"
 )
@@ -326,7 +327,7 @@ func (b *Builder) addMetricOTLPExporter(builder *common.ComponentBuilder[*teleme
 			otlpExporterBuilder := common.NewOTLPExporterConfigBuilder(
 				b.Reader,
 				mp.Spec.Output.OTLP,
-				common.MetricPipelineRef(mp),
+				pipelines.MetricPipelineRef(mp),
 				queueSize,
 			)
 
@@ -341,7 +342,7 @@ func (b *Builder) addMetricOTLPExporter(builder *common.ComponentBuilder[*teleme
 
 //nolint:dupl // Acceptable duplication - metric, trace and log OAuth2 extensions follow same pattern
 func (b *Builder) addMetricOAuth2Extension(ctx context.Context, builder *common.ComponentBuilder[*telemetryv1beta1.MetricPipeline], pipeline *telemetryv1beta1.MetricPipeline) error {
-	pipelineRef := common.MetricPipelineRef(pipeline)
+	pipelineRef := pipelines.MetricPipelineRef(pipeline)
 	oauth2ExtensionID := common.ComponentIDOAuth2Extension(pipelineRef)
 
 	oauth2ExtensionConfig, oauth2ExtensionEnvVars, err := common.NewOAuth2ExtensionConfigBuilder(
@@ -412,15 +413,15 @@ func formatMetricOTLPNamespaceFilterID(mp *telemetryv1beta1.MetricPipeline) stri
 }
 
 func formatMetricOTLPExporterID(pipeline *telemetryv1beta1.MetricPipeline) string {
-	return common.ComponentIDOTLPExporter(pipeline.Spec.Output.OTLP.Protocol, common.MetricPipelineRef(pipeline))
+	return common.ComponentIDOTLPExporter(pipeline.Spec.Output.OTLP.Protocol, pipelines.MetricPipelineRef(pipeline))
 }
 
 func formatMetricUserDefinedTransformProcessorID(mp *telemetryv1beta1.MetricPipeline) string {
-	return common.ComponentIDUserDefinedTransformProcessor(common.MetricPipelineRef(mp))
+	return common.ComponentIDUserDefinedTransformProcessor(pipelines.MetricPipelineRef(mp))
 }
 
 func formatMetricUserDefinedFilterProcessorID(mp *telemetryv1beta1.MetricPipeline) string {
-	return common.ComponentIDUserDefinedFilterProcessor(common.MetricPipelineRef(mp))
+	return common.ComponentIDUserDefinedFilterProcessor(pipelines.MetricPipelineRef(mp))
 }
 
 func shouldEnableMetricOAuth2(mp *telemetryv1beta1.MetricPipeline) bool {

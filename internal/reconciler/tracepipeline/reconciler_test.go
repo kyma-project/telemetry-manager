@@ -23,6 +23,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	"github.com/kyma-project/telemetry-manager/internal/metrics"
+	"github.com/kyma-project/telemetry-manager/internal/pipelines"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline/mocks"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline/stubs"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
@@ -747,7 +748,7 @@ func TestPipelineInfoTracking(t *testing.T) {
 				PipelineProbeResult: prober.PipelineProbeResult{Healthy: true},
 			}, nil).Maybe()
 
-			validator, _ := ottl.NewTransformSpecValidator(ottl.SignalTypeTrace)
+			validator, _ := ottl.NewTransformSpecValidator(pipelines.SignalTypeTrace)
 			sut := testReconcilerWithValidator(fakeClient, flowHealthProberStub, WithTransformSpecValidator(validator))
 
 			_, err := sut.Reconcile(context.Background(), requestFor(tt.pipeline.Name))
