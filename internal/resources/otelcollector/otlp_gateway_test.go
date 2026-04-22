@@ -45,13 +45,14 @@ func TestOTLPGateway_ApplyResources(t *testing.T) {
 	}
 
 	tests := []struct {
-		name                string
-		sut                 gatewayApplierDeleter
-		istioEnabled        bool
-		vpaCRDExists        bool
-		vpaEnabled          bool
-		vpaMaxAllowedMemory resource.Quantity
-		goldenFilePath      string
+		name                           string
+		sut                            gatewayApplierDeleter
+		istioEnabled                   bool
+		vpaCRDExists                   bool
+		vpaEnabled                     bool
+		vpaMaxAllowedMemory            resource.Quantity
+		goldenFilePath                 string
+		resourceRequirementsMultiplier int
 	}{
 		{
 			name:           "OTLP gateway",
@@ -85,6 +86,15 @@ func TestOTLPGateway_ApplyResources(t *testing.T) {
 			vpaEnabled:          true,
 			vpaMaxAllowedMemory: resource.Quantity{}, // zero, must be clamped to min allowed memory
 		},
+		{
+			name:                           "OTLP gateway multi instance with VPA",
+			sut:                            NewOTLPGatewayApplierDeleter(globals, image, priorityClassName),
+			goldenFilePath:                 "testdata/otlp-multi-instance-gateway-vpa.yaml",
+			vpaCRDExists:                   true,
+			vpaEnabled:                     true,
+			vpaMaxAllowedMemory:            resource.MustParse("1Gi"),
+			resourceRequirementsMultiplier: 3,
+		},
 	}
 
 	for _, tt := range tests {
@@ -111,11 +121,12 @@ func TestOTLPGateway_ApplyResources(t *testing.T) {
 				CollectorEnvVars: map[string][]byte{
 					"DUMMY_ENV_VAR": []byte("foo"),
 				},
-				IstioEnabled:        tt.istioEnabled,
-				Replicas:            2,
-				VpaCRDExists:        tt.vpaCRDExists,
-				VpaEnabled:          tt.vpaEnabled,
-				VPAMaxAllowedMemory: tt.vpaMaxAllowedMemory,
+				IstioEnabled:                   tt.istioEnabled,
+				Replicas:                       2,
+				VpaCRDExists:                   tt.vpaCRDExists,
+				VpaEnabled:                     tt.vpaEnabled,
+				VPAMaxAllowedMemory:            tt.vpaMaxAllowedMemory,
+				ResourceRequirementsMultiplier: tt.resourceRequirementsMultiplier,
 			})
 			require.NoError(t, err)
 
