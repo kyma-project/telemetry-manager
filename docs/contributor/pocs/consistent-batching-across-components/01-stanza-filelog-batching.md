@@ -159,8 +159,6 @@ With the exporter batcher configured, or at high enough throughput, the feature 
 
 - **Crash safety** - The synchronous emitter has no in-memory buffer that can lose data. However, the exporter batcher itself has an in-memory buffer with entries waiting for the `200ms` flush, which is also lost on non-graceful shutdown. A persistent queue with `sending_queue.storage: file_storage/...` mitigates this.
 
-- **Backpressure** - The synchronous emitter propagates backpressure from the exporter to the file readers. The batching emitter does not.
-
 - **CPU under queue saturation** - The synchronous emitter uses ~47% less CPU when the queue is full, because the batching emitter's flusher goroutine spins on failed `Offer` calls.
 
 ### Finding 5: The Collector Resource Consumption Changes with the Feature Gate Under Heavy Load
