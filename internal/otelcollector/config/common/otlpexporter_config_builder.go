@@ -8,6 +8,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+	"github.com/kyma-project/telemetry-manager/internal/pipelines"
 	sharedtypesutils "github.com/kyma-project/telemetry-manager/internal/utils/sharedtypes"
 )
 
@@ -18,13 +19,13 @@ import (
 type OTLPExporterConfigBuilder struct {
 	reader      client.Reader
 	otlpOutput  *telemetryv1beta1.OTLPOutput
-	pipelineRef PipelineRef
+	pipelineRef pipelines.PipelineRef
 	queueSize   int
 }
 
 type EnvVars map[string][]byte
 
-func NewOTLPExporterConfigBuilder(reader client.Reader, otlpOutput *telemetryv1beta1.OTLPOutput, pipelineRef PipelineRef, queueSize int) *OTLPExporterConfigBuilder {
+func NewOTLPExporterConfigBuilder(reader client.Reader, otlpOutput *telemetryv1beta1.OTLPOutput, pipelineRef pipelines.PipelineRef, queueSize int) *OTLPExporterConfigBuilder {
 	return &OTLPExporterConfigBuilder{
 		reader:      reader,
 		otlpOutput:  otlpOutput,
@@ -44,7 +45,7 @@ func (cb *OTLPExporterConfigBuilder) OTLPExporter(ctx context.Context) (*OTLPExp
 	return exporter, envVars, nil
 }
 
-func otlpExporter(otlpOutput *telemetryv1beta1.OTLPOutput, pipelineRef PipelineRef, envVars map[string][]byte, queueSize int) *OTLPExporterConfig {
+func otlpExporter(otlpOutput *telemetryv1beta1.OTLPOutput, pipelineRef pipelines.PipelineRef, envVars map[string][]byte, queueSize int) *OTLPExporterConfig {
 	otlpEndpointVariable := formatEnvVarKey(otlpEndpointVariablePrefix, pipelineRef)
 	otlpEndpointValue := string(envVars[otlpEndpointVariable])
 
@@ -75,17 +76,17 @@ func otlpExporter(otlpOutput *telemetryv1beta1.OTLPOutput, pipelineRef PipelineR
 		},
 	}
 
-	if len(otlpOutput.Path) > 0 && SignalTypeMetric == pipelineRef.signalType {
+	if len(otlpOutput.Path) > 0 && pipelines.SignalTypeMetric == pipelineRef.SignalType() {
 		exporter.Endpoint = ""
 		exporter.MetricsEndpoint = fmt.Sprintf("${%s}", otlpEndpointVariable)
 	}
 
-	if len(otlpOutput.Path) > 0 && SignalTypeTrace == pipelineRef.signalType {
+	if len(otlpOutput.Path) > 0 && pipelines.SignalTypeTrace == pipelineRef.SignalType() {
 		exporter.Endpoint = ""
 		exporter.TracesEndpoint = fmt.Sprintf("${%s}", otlpEndpointVariable)
 	}
 
-	if len(otlpOutput.Path) > 0 && SignalTypeLog == pipelineRef.signalType {
+	if len(otlpOutput.Path) > 0 && pipelines.SignalTypeLog == pipelineRef.SignalType() {
 		exporter.Endpoint = ""
 		exporter.LogsEndpoint = fmt.Sprintf("${%s}", otlpEndpointVariable)
 	}
@@ -99,7 +100,7 @@ func otlpExporter(otlpOutput *telemetryv1beta1.OTLPOutput, pipelineRef PipelineR
 	return &exporter
 }
 
-func tls(output *telemetryv1beta1.OTLPOutput, otlpEndpointValue string, pipelineRef PipelineRef) TLS {
+func tls(output *telemetryv1beta1.OTLPOutput, otlpEndpointValue string, pipelineRef pipelines.PipelineRef) TLS {
 	var tls TLS
 
 	tls.Insecure = isInsecureOutput(otlpEndpointValue)
@@ -128,7 +129,7 @@ func tls(output *telemetryv1beta1.OTLPOutput, otlpEndpointValue string, pipeline
 	return tls
 }
 
-func headers(output *telemetryv1beta1.OTLPOutput, pipelineRef PipelineRef) map[string]string {
+func headers(output *telemetryv1beta1.OTLPOutput, pipelineRef pipelines.PipelineRef) map[string]string {
 	headers := make(map[string]string)
 
 	if isBasicAuthEnabled(output.Authentication) {

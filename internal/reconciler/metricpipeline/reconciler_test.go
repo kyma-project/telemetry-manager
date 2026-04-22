@@ -19,6 +19,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	"github.com/kyma-project/telemetry-manager/internal/metrics"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
+	"github.com/kyma-project/telemetry-manager/internal/pipelines"
 	commonStatusStubs "github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus/stubs"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline/mocks"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline/stubs"
@@ -1155,7 +1156,7 @@ func TestUsageTracking(t *testing.T) {
 			}
 
 			fakeClient := newTestClient(t, objs...)
-			validator, _ := ottl.NewTransformSpecValidator(ottl.SignalTypeMetric)
+			validator, _ := ottl.NewTransformSpecValidator(pipelines.SignalTypeMetric)
 			sut, assertAll := newTestReconciler(fakeClient, WithPipelineValidator(newTestValidator(WithTransformSpecValidator(validator))))
 
 			result := reconcileAndGet(t, fakeClient, sut, tt.pipeline.Name)
