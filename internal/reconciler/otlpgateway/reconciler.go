@@ -368,7 +368,10 @@ func (r *Reconciler) buildCollectorConfig(ctx context.Context, tracePipelines []
 		enrichments = t.Spec.Enrichments
 	}
 
-	vpaCRDExists, _ := r.vpaStatusChecker.VpaCRDExists(ctx, r.Client)
+	vpaCRDExists, err := r.vpaStatusChecker.VpaCRDExists(ctx, r.Client)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to get VPA CRD: %w", err)
+	}
 
 	vpaEnabled := telemetryutils.IsVpaEnabledInTelemetry(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
 
