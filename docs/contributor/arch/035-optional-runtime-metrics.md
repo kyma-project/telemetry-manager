@@ -1,6 +1,6 @@
 ---
 title: Optional Runtime Metrics
-status: Proposed
+status: Accepted
 date: 2026-04-17
 ---
 
@@ -62,84 +62,11 @@ Both upstream receivers define additional metrics that are disabled by default. 
 
 This ADR proposes an API extension that gives users explicit opt-in control over individual optional metrics, without changing the default behavior for existing users.
 
-## Background: Upstream Optional Metrics
+## Considered Alternatives
 
-### Upstream Receiver Stability
-
-Both receivers are at **beta** stability for metrics. The beta guarantee covers the receiver's configuration surface and core behavior — breaking changes require a deprecation notice, typically one minor release in advance. However, individual optional metrics are at **development** stability, which is independent of the receiver-level guarantee. Development-stability metrics can be renamed, have their semantics changed, or be removed in any collector release without prior notice. In practice, arbitrary churn is unlikely because the OTel community avoids gratuitous renames, but coordinated semantic convention alignment efforts can cause batched changes.
-
-### kubeletstats Receiver: Optional Metrics
-
-The following metrics are disabled by default in the kubeletstats receiver:
-
-| Resource  | Metric                                    | Description                                        |
-|-----------|-------------------------------------------|----------------------------------------------------|
-| Pod       | `k8s.pod.cpu_request_utilization`         | CPU usage as a ratio of container requests          |
-| Pod       | `k8s.pod.cpu_limit_utilization`           | CPU usage as a ratio of container limits            |
-| Pod       | `k8s.pod.cpu.node.utilization`            | CPU usage as a ratio of node capacity               |
-| Pod       | `k8s.pod.memory_request_utilization`      | Memory usage as a ratio of container requests       |
-| Pod       | `k8s.pod.memory_limit_utilization`        | Memory usage as a ratio of container limits         |
-| Pod       | `k8s.pod.memory.node.utilization`         | Memory usage as a ratio of node capacity            |
-| Pod       | `k8s.pod.uptime`                          | Time the Pod has been running                       |
-| Pod       | `k8s.pod.volume.usage`                    | Bytes used in the Pod volume                        |
-| Container | `k8s.container.cpu_request_utilization`   | CPU usage as a ratio of container requests          |
-| Container | `k8s.container.cpu_limit_utilization`     | CPU usage as a ratio of container limits            |
-| Container | `k8s.container.cpu.node.utilization`      | CPU usage as a ratio of node capacity               |
-| Container | `k8s.container.memory_request_utilization`| Memory usage as a ratio of container requests       |
-| Container | `k8s.container.memory_limit_utilization`  | Memory usage as a ratio of container limits         |
-| Container | `k8s.container.memory.node.utilization`   | Memory usage as a ratio of node capacity            |
-| Container | `container.uptime`                        | Time the container has been running                 |
-| Node      | `k8s.node.uptime`                         | Time the Node has been running                      |
-
-The following metrics are enabled by default upstream but explicitly suppressed by Telemetry Manager as part of the curated default set:
-
-| Resource  | Metric                                    | Description                                        |
-|-----------|-------------------------------------------|----------------------------------------------------|
-| Node      | `k8s.node.cpu.time`                       | Cumulative CPU time spent by the Node               |
-| Node      | `k8s.node.memory.major_page_faults`       | Node memory major page faults                       |
-| Node      | `k8s.node.memory.page_faults`             | Node memory page faults                             |
-
-### k8s_cluster Receiver: Optional Metrics
-
-The following metrics are disabled by default in the k8s_cluster receiver:
-
-| Resource  | Metric                                    | Description                                        |
-|-----------|-------------------------------------------|----------------------------------------------------|
-| Container | `k8s.container.status.state`              | Current state: running, waiting, or terminated      |
-| Container | `k8s.container.status.reason`             | Reason: CrashLoopBackOff, OOMKilled, and others    |
-| Pod       | `k8s.pod.status_reason`                   | Status reason: Evicted, NodeLost, Shutdown, and others |
-| Node      | `k8s.node.condition`                      | Condition: Ready, MemoryPressure, DiskPressure, PIDPressure |
-
-The following metrics are enabled by default upstream but explicitly suppressed by Telemetry Manager as part of the curated default set:
-
-| Resource               | Metric                                    | Description                                        |
-|------------------------|-------------------------------------------|----------------------------------------------------|
-| Container              | `k8s.container.storage_request`           | Storage resource request                            |
-| Container              | `k8s.container.storage_limit`             | Storage resource limit                              |
-| Container              | `k8s.container.ephemeralstorage_request`  | Ephemeral storage resource request                  |
-| Container              | `k8s.container.ephemeralstorage_limit`    | Ephemeral storage resource limit                    |
-| Container              | `k8s.container.ready`                     | Whether the container passed its readiness probe    |
-| Namespace              | `k8s.namespace.phase`                     | Current phase of the namespace                      |
-| HPA                    | `k8s.hpa.current_replicas`               | Current number of replicas managed by the HPA       |
-| HPA                    | `k8s.hpa.desired_replicas`               | Desired number of replicas managed by the HPA       |
-| HPA                    | `k8s.hpa.min_replicas`                   | Minimum number of replicas for the HPA              |
-| HPA                    | `k8s.hpa.max_replicas`                   | Maximum number of replicas for the HPA              |
-| ReplicaSet             | `k8s.replicaset.available`               | Number of available replicas                        |
-| ReplicaSet             | `k8s.replicaset.desired`                 | Number of desired replicas                          |
-| ReplicationController  | `k8s.replication_controller.available`    | Number of available replicas                        |
-| ReplicationController  | `k8s.replication_controller.desired`      | Number of desired replicas                          |
-| ResourceQuota          | `k8s.resource_quota.hard_limit`           | Upper limit for a resource in a namespace           |
-| ResourceQuota          | `k8s.resource_quota.used`                 | Usage for a resource in a namespace                 |
-| CronJob                | `k8s.cronjob.active_jobs`                | Number of actively running jobs for a CronJob       |
-
-> [!NOTE]
-> The k8s_cluster receiver also has config-driven metric families (`k8s.node.allocatable_*`, `k8s.node.condition_*`) that use a different configuration mechanism than the standard per-metric toggle. These are out of scope for this ADR.
-
-## API Location: MetricPipeline vs Telemetry CR
+### API Location: MetricPipeline vs Telemetry CR
 
 The optional metrics configuration belongs in the **MetricPipeline** CR, not the Telemetry CR. The existing `resources` section in the runtime input already provides per-resource-type metric selection at the MetricPipeline level. Adding optional metric selection in the same location keeps the API consistent: all decisions about which runtime metrics to collect live in one place.
-
-## Considered Alternatives
 
 ### Option A: Metric Set Enum Per Resource
 
@@ -178,7 +105,6 @@ resources:
 - Curated groups can be documented with cost impact
 
 **Cons:**
-
 The core problem with this approach is that it introduces a second layer of categorization below resource type, and that layer is weak. The existing `resources` section works well because resource type is a natural, stable boundary — every metric has a clear resource affinity, and users reason about observability this way. Subcategories within a resource type do not have this property.
 
 Consider the full set of optional metrics for Pod: `k8s.pod.cpu_request_utilization`, `k8s.pod.cpu_limit_utilization`, `k8s.pod.cpu.node.utilization`, `k8s.pod.memory_request_utilization`, `k8s.pod.memory_limit_utilization`, `k8s.pod.memory.node.utilization`, `k8s.pod.uptime`, `k8s.pod.volume.usage`, and `k8s.pod.status_reason`. Only the first six form a coherent "utilization" group. The remaining three are unrelated to each other:
