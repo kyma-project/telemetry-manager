@@ -90,25 +90,13 @@ The container parser's internal `BatchingLogEmitter` pre-coalesces entries from 
 
 Test configuration: all stanza operators removed, raw fileconsumer to adapter emitter to exporter.
 
-**Low throughput: 1 log/s per Pod, 10 Pods, 300s**
+Low throughput: 1 log/s per Pod, 10 Pods, 300s (2,930 lines written). High throughput: 100 logs/s per Pod, 10 Pods, 2146s, queue saturated (147,956 lines written).
 
-Total lines written: 2930
-
-| Metric                             | Sync  | Batching |
-|------------------------------------|-------|----------|
-| Export requests (rpc_server count) | 2,930 | 297      |
-| Records delivered                  | 2930  | 2930     |
-| Avg records / filelog batch        | 1.0   | 9.8      |
-
-**High throughput: 100 logs/s per Pod, 10 Pods, 2146s, queue saturated**
-
-Total lines written: 147956
-
-| Metric                             | Sync   | Batching |
-|------------------------------------|--------|----------|
-| Export requests (rpc_server count) | 2389   | 2259     |
-| Records delivered                  | 147256 | 146656   |
-| Avg records / filelog batch        | 61.6   | 65       |
+| Metric                             | Low: Sync | Low: Batching | High: Sync | High: Batching |
+|------------------------------------|-----------|---------------|------------|----------------|
+| Export requests (rpc_server count) | 2,930     | 297           | 2,389      | 2,259          |
+| Records delivered                  | 2,930     | 2,930         | 147,256    | 146,656        |
+| Avg records / filelog batch        | 1.0       | 9.8           | 61.6       | 65             |
 
 At low throughput, readers rarely fill their 100-entry batch, so the `SynchronousLogEmitter` passes through many small batches while the `BatchingLogEmitter` coalesces them, producing a ~10x difference in export requests.
 
@@ -133,25 +121,16 @@ Test configuration:
 
 gRPC call count converges between emitter modes in two distinct scenarios:
 
-**Low throughput: 1 log/s per Pod, 10 Pods, 300s**
+Low throughput: 1 log/s per Pod, 10 Pods, 300s. High throughput: 100 logs/s per Pod, 10 Pods, 300s, queue saturated.
 
-| Metric                                 | Sync   | Batching |
-|----------------------------------------|--------|----------|
-| Total batches                          | 2,930  | 297      |
-| Avg records / filelog batch            | 1.0    | 9.9      |
-| **Export requests (rpc_server count)** | **30** | **30**   |
-| Avg records / exporter batch           | 97.6   | 97.6     |
+| Metric                                 | Low: Sync  | Low: Batching | High: Sync | High: Batching |
+|----------------------------------------|------------|---------------|------------|----------------|
+| Total batches                          | 2,930      | 297           | 2,389      | 2,259          |
+| Avg records / filelog batch            | 1.0        | 9.9           | 61.6       | 65             |
+| **Export requests (rpc_server count)** | **30**     | **30**        | **148**    | **148**        |
+| Avg records / exporter batch           | 97.6       | 97.6          | 994        | 992            |
 
-The batcher's `flush_timeout` accumulates whatever arrives within `10s` and sends it as one request, coalescing 2,930 individual queue items into 30 gRPC calls, or about 98 log records per batch.
-
-**High throughput: 100 logs/s per Pod, 10 Pods, 300s, queue saturated**
-
-| Metric                                 | Sync    | Batching |
-|----------------------------------------|---------|----------|
-| Total batches                          | 2389    | 2259     |
-| Avg records / filelog batch            | 61.6    | 65       |
-| **Export requests (rpc_server count)** | **148** | **148**  |
-| Avg records / exporter batch           | 994     | 992      |
+The batcher's `flush_timeout` accumulates whatever arrives within 10s and sends it as one request, coalescing 2,930 individual queue items into 30 gRPC calls (~98 records each) at low throughput. Under saturation, both modes converge to identical export behavior.
 
 At high throughput, readers saturate at ~100 entries per batch regardless of emitter mode, so the difference in batch count collapses and gRPC calls converge naturally.
 
@@ -165,27 +144,18 @@ With the exporter batcher configured, or at high enough throughput, the feature 
 
 The `synchronousLogEmitter` feature gate does not affect the resource consumption of the collector by any substantial amount. CPU and memory usage stays relatively similar under low load.
 
-**Low throughput: 1 log/s per Pod, 10 Pods, 300s**
+Low throughput: 1 log/s per Pod, 10 Pods, 300s. 
 
-| Metric                      | Sync (gate on) | Batching (gate off) |
-|-----------------------------|----------------|---------------------|
-| Queue batch send size count | 2,930          | 293                 |
-| Queue batch send size avg   | 1.0            | 10.0                |
-| gRPC calls                  | 30             | 30                  |
-| CPU total                   | 7.03s          | 6.90s               |
-| `total_alloc`               | 438 MB         | 420 MB              |
-| `total_alloc` rate          | ~1.30 MB/s     | ~1.24 MB/s          |
+High throughput: 50 logs/s per Pod, 10 Pods, 1286s, queue saturated.
 
-**High throughput: 50 logs/s per Pod, 10 Pods, 1286s, queue saturated**
-
-| Metric                      | Sync (gate on) | Batching (gate off) |
-|-----------------------------|----------------|---------------------|
-| Queue batch send size count | 1,495          | 1,344               |
-| Queue batch send size avg   | 88.5           | 99.4                |
-| gRPC calls                  | 96             | 95                  |
-| CPU total                   | 2.99s          | 4.82s               |
-| `total_alloc`               | 256 MB         | 228 MB              |
-| `total_alloc` rate          | ~199 KB/s      | ~177 KB/s           |
+| Metric                      | Low: Sync (gate on)  | Low: Batching (gate off)   | High: Sync (gate on)  | High: Batching (gate off)  |
+|-----------------------------|----------------------|----------------------------|-----------------------|----------------------------|
+| Queue batch send size count | 2,930                | 293                        | 1,495                 | 1,344                      |
+| Queue batch send size avg   | 1.0                  | 10.0                       | 88.5                  | 99.4                       |
+| gRPC calls                  | 30                   | 30                         | 96                    | 95                         |
+| CPU total                   | 7.03s                | 6.90s                      | 2.99s                 | 4.82s                      |
+| `total_alloc`               | 438 MB               | 420 MB                     | 256 MB                | 228 MB                     |
+| `total_alloc` rate          | ~1.30 MB/s           | ~1.24 MB/s                 | ~199 KB/s             | ~177 KB/s                  |
 
 At low throughput, both emitter modes are virtually identical in resource consumption. The small differences of 1.3% CPU and 4% allocation are within noise and do not constitute a meaningful finding.
 
