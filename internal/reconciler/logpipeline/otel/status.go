@@ -65,6 +65,7 @@ func (r *Reconciler) setGatewayHealthyCondition(ctx context.Context, pipeline *t
 		return
 	}
 
+	configStatus, _, _ := r.evaluateConfigGeneratedCondition(ctx, pipeline)
 	condition := commonstatus.GetGatewayHealthyCondition(ctx,
 		r.gatewayProber,
 		types.NamespacedName{
@@ -72,7 +73,8 @@ func (r *Reconciler) setGatewayHealthyCondition(ctx context.Context, pipeline *t
 			Namespace: r.globals.TargetNamespace(),
 		},
 		r.errToMessageConverter,
-		pipelines.SignalTypeLog)
+		pipelines.SignalTypeLog,
+		configStatus)
 
 	condition.ObservedGeneration = pipeline.Generation
 	meta.SetStatusCondition(&pipeline.Status.Conditions, *condition)

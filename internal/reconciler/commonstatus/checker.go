@@ -21,7 +21,25 @@ type ErrorToMessageConverter interface {
 }
 
 //nolint:dupl // abstracting the common code will still have duplicates
-func GetGatewayHealthyCondition(ctx context.Context, prober Prober, namespacedName types.NamespacedName, errToMsgCon ErrorToMessageConverter, signalType pipelines.SignalType) *metav1.Condition {
+func GetGatewayHealthyCondition(ctx context.Context, prober Prober, namespacedName types.NamespacedName, errToMsgCon ErrorToMessageConverter, signalType pipelines.SignalType, configGeneratedStatus metav1.ConditionStatus) *metav1.Condition {
+	if configGeneratedStatus == metav1.ConditionFalse {
+		msg := conditions.MessageForTracePipeline(conditions.ReasonGatewayConfigurationNotGenerated)
+
+		switch signalType { //nolint:exhaustive // no gateway for FluentBit + trace already handled
+		case pipelines.SignalTypeMetric:
+			msg = conditions.MessageForMetricPipeline(conditions.ReasonGatewayConfigurationNotGenerated)
+		case pipelines.SignalTypeLog:
+			msg = conditions.MessageForOtelLogPipeline(conditions.ReasonGatewayConfigurationNotGenerated)
+		}
+
+		return &metav1.Condition{
+			Type:    conditions.TypeGatewayHealthy,
+			Status:  metav1.ConditionFalse,
+			Reason:  conditions.ReasonGatewayConfigurationNotGenerated,
+			Message: msg,
+		}
+	}
+
 	status := metav1.ConditionTrue
 	reason := conditions.ReasonGatewayReady
 	msg := conditions.MessageForTracePipeline(reason)
