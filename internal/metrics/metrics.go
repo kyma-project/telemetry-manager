@@ -9,12 +9,12 @@ import (
 )
 
 const (
-	defaultNamespace           = "telemetry"
-	subsystemPipelines         = "pipelines"
-	subsystemSelfMonitorProber = "self_monitor_prober"
-	subsystemSecretWatch       = "secret_watch"
-	subsystemNodeSize          = "node_size"
-	subsystemServiceEnrichment = "service_enrichment"
+	defaultNamespace                     = "telemetry"
+	subsystemPipelines                   = "pipelines"
+	subsystemSelfMonitorProber           = "self_monitor_prober"
+	subsystemSecretWatch                 = "secret_watch"
+	subsystemNodeSize                    = "node_size"
+	subsystemServiceAttributesEnrichment = "service_attributes_enrichment"
 )
 
 const (
@@ -220,14 +220,14 @@ var (
 		},
 	)
 
-	ServiceEnrichmentStrategy = promauto.With(registry).NewGaugeVec(
+	ServiceAttributesEnrichmentStrategy = promauto.With(registry).NewGaugeVec(
 		prometheus.GaugeOpts{
 			Namespace: defaultNamespace,
-			Subsystem: subsystemServiceEnrichment,
-			Name:      "service_enrichment_strategy",
-			Help:      "Service enrichment strategy used for telemetry data (either 'otel' for OpenTelemetry enrichment or 'kyma-legacy' for legacy Kyma enrichment)",
+			Subsystem: subsystemServiceAttributesEnrichment,
+			Name:      "strategy",
+			Help:      "Service attributes enrichment strategy used for telemetry data (either 'otel' for OpenTelemetry enrichment or 'kyma-legacy' for legacy Kyma enrichment)",
 		},
-		[]string{"service_enrichment_strategy"},
+		[]string{"strategy"},
 	)
 )
 
