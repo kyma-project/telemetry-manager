@@ -16,16 +16,7 @@ To send data from your application, first instrument your code using an [OTel SD
 
 It's recommended that you configure the exporter's destination by setting the standard [environment variables](https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter/#otel_exporter_otlp_traces_endpoint) in your application's deployment. This method avoids hardcoding endpoints in your application code.
 
-Use the following environment variables to set the OTLP endpoint for each signal type:
-
-- Traces gRPC: `export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT="http://telemetry-otlp-traces.kyma-system:4317"`
-- Traces HTTP: `export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT="http://telemetry-otlp-traces.kyma-system:4318/v1/traces"`
-- Metrics gRPC: `export OTEL_EXPORTER_OTLP_METRICS_ENDPOINT="http://telemetry-otlp-metrics.kyma-system:4317"`
-- Metrics HTTP: `export OTEL_EXPORTER_OTLP_METRICS_ENDPOINT="http://telemetry-otlp-metrics.kyma-system:4318/v1/metrics"`
-- Logs gRPC: `export OTEL_EXPORTER_OTLP_LOGS_ENDPOINT="http://telemetry-otlp-logs.kyma-system:4317"`
-- Logs HTTP: `export OTEL_EXPORTER_OTLP_LOGS_ENDPOINT="http://telemetry-otlp-logs.kyma-system:4318/v1/logs"`
-
-Alternatively, use the harmonized `telemetry-otlp` endpoint, which accepts all signal types:
+Use the following environment variable to set the harmonized OTLP endpoint, which accepts all signal types:
 
 - gRPC: `export OTEL_EXPORTER_OTLP_ENDPOINT="http://telemetry-otlp.kyma-system:4317"`
 - HTTP: `export OTEL_EXPORTER_OTLP_ENDPOINT="http://telemetry-otlp.kyma-system:4318"`
