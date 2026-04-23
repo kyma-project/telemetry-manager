@@ -387,11 +387,11 @@ func TestOTLPGateway_MakeGatewayResourceRequirements(t *testing.T) {
 				ResourceRequirementsMultiplier: 3,
 			},
 			validateCPU: func(t *testing.T, resources corev1.ResourceRequirements) {
+				// CPU should scale: 100m (base) + 3×100m (dynamic) = 400m
 				expectedCPURequest := sut.baseCPURequest.DeepCopy()
 				for range 3 {
 					expectedCPURequest.Add(sut.dynamicCPURequest)
 				}
-
 				require.True(t, expectedCPURequest.Equal(resources.Requests[corev1.ResourceCPU]))
 			},
 		},
@@ -421,6 +421,76 @@ func TestOTLPGateway_MakeGatewayResourceRequirements(t *testing.T) {
 				expectedMemoryLimit := sut.baseMemoryLimit.DeepCopy()
 				expectedMemoryLimit.Add(sut.dynamicMemoryLimit)
 				require.True(t, expectedMemoryLimit.Equal(resources.Limits[corev1.ResourceMemory]))
+			},
+		},
+		{
+			name: "VPA max memory cap applied - memory limit capped at 2x VPAMaxAllowedMemory",
+			opts: GatewayApplyOptions{
+				ResourceRequirementsMultiplier: 10, // Would result in very high memory
+				VpaCRDExists:                   true,
+				VpaEnabled:                     false,
+				VPAMaxAllowedMemory:            resource.MustParse("1Gi"),
+			},
+			validateMemory: func(t *testing.T, resources corev1.ResourceRequirements) {
+				// With 10 pipelines: 750Mi + (10 × 1000Mi) = 10.75Gi
+				// But capped at 2 × 1Gi = 2Gi
+				maxCap := resource.MustParse("2Gi")
+				memoryLimit := resources.Limits[corev1.ResourceMemory]
+				require.True(t, memoryLimit.Cmp(maxCap) <= 0, "Memory limit %s should not exceed cap %s", memoryLimit.String(), maxCap.String())
+				require.True(t, maxCap.Equal(memoryLimit), "Memory limit should be capped at 2Gi")
+			},
+		},
+		{
+			name: "VPA max memory cap not applied - calculated limit below cap",
+			opts: GatewayApplyOptions{
+				ResourceRequirementsMultiplier: 1,
+				VpaCRDExists:                   true,
+				VpaEnabled:                     false,
+				VPAMaxAllowedMemory:            resource.MustParse("10Gi"), // Very high cap
+			},
+			validateMemory: func(t *testing.T, resources corev1.ResourceRequirements) {
+				// With 1 pipeline: 750Mi + 1000Mi = 1750Mi
+				// This is well below 2×10Gi cap, so uses calculated value
+				expectedMemoryLimit := sut.baseMemoryLimit.DeepCopy()
+				expectedMemoryLimit.Add(sut.dynamicMemoryLimit)
+				memoryLimit := resources.Limits[corev1.ResourceMemory]
+				require.True(t, expectedMemoryLimit.Equal(memoryLimit))
+			},
+		},
+		{
+			name: "VPA enabled and capped - memory limit is min(2x request, 2x VPAMaxAllowed)",
+			opts: GatewayApplyOptions{
+				ResourceRequirementsMultiplier: 0,
+				VpaCRDExists:                   true,
+				VpaEnabled:                     true,
+				VPAMaxAllowedMemory:            resource.MustParse("128Mi"),
+			},
+			validateMemory: func(t *testing.T, resources corev1.ResourceRequirements) {
+				// VPA enabled: limit = 2 × request = 2 × 128Mi = 256Mi
+				// VPA cap: 2 × 128Mi = 256Mi
+				// Both same, so limit should be 256Mi
+				expectedLimit := resource.MustParse("256Mi")
+				memoryLimit := resources.Limits[corev1.ResourceMemory]
+				require.True(t, expectedLimit.Equal(memoryLimit))
+			},
+		},
+		{
+			name: "VPA max memory zero - no capping applied",
+			opts: GatewayApplyOptions{
+				ResourceRequirementsMultiplier: 3,
+				VpaCRDExists:                   true,
+				VpaEnabled:                     false,
+				VPAMaxAllowedMemory:            resource.Quantity{}, // Zero value
+			},
+			validateMemory: func(t *testing.T, resources corev1.ResourceRequirements) {
+				// Zero VPAMaxAllowedMemory means no capping
+				// Should use calculated limit: 750Mi + (3 × 1000Mi) = 3750Mi
+				expectedMemoryLimit := sut.baseMemoryLimit.DeepCopy()
+				for range 3 {
+					expectedMemoryLimit.Add(sut.dynamicMemoryLimit)
+				}
+				memoryLimit := resources.Limits[corev1.ResourceMemory]
+				require.True(t, expectedMemoryLimit.Equal(memoryLimit))
 			},
 		},
 	}
