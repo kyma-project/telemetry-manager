@@ -8,10 +8,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+	"github.com/kyma-project/telemetry-manager/internal/pipelines"
 )
 
 func TestOAuth2ExtensionID(t *testing.T) {
-	ref := TracePipelineRef(&telemetryv1beta1.TracePipeline{ObjectMeta: metav1.ObjectMeta{Name: "test"}})
+	ref := pipelines.TracePipelineRef(&telemetryv1beta1.TracePipeline{ObjectMeta: metav1.ObjectMeta{Name: "test"}})
 	require.Equal(t, "oauth2client/tracepipeline-test", ComponentIDOAuth2Extension(ref))
 }
 
@@ -22,7 +23,7 @@ func TestMakeExtensionConfig(t *testing.T) {
 		ClientSecret: telemetryv1beta1.ValueType{Value: "client-secret"},
 	}
 
-	ref := TracePipelineRef(&telemetryv1beta1.TracePipeline{ObjectMeta: metav1.ObjectMeta{Name: "test"}})
+	ref := pipelines.TracePipelineRef(&telemetryv1beta1.TracePipeline{ObjectMeta: metav1.ObjectMeta{Name: "test"}})
 	cb := NewOAuth2ExtensionConfigBuilder(fake.NewClientBuilder().Build(), oauth2Options, ref)
 	oauth2ExtensionConfig, envVars, err := cb.OAuth2Extension(t.Context())
 	require.NoError(t, err)
