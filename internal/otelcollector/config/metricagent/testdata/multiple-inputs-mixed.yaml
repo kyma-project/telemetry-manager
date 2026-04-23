@@ -1,5 +1,5 @@
 extensions:
-    cgroupruntime:
+    cgroup_runtime:
         gomaxprocs:
             enabled: false
         gomemlimit:
@@ -75,7 +75,7 @@ service:
                 - transform/drop-kyma-attributes
                 - batch
             exporters:
-                - otlp_grpc/test1
+                - otlp_grpc/metricpipeline-test1
         metrics/output-test2:
             receivers:
                 - routing/enrichment
@@ -88,7 +88,7 @@ service:
                 - transform/drop-kyma-attributes
                 - batch
             exporters:
-                - otlp_grpc/test2
+                - otlp_grpc/metricpipeline-test2
         metrics/output-test3:
             receivers:
                 - routing/enrichment
@@ -100,7 +100,7 @@ service:
                 - transform/drop-kyma-attributes
                 - batch
             exporters:
-                - otlp_grpc/test3
+                - otlp_grpc/metricpipeline-test3
     telemetry:
         metrics:
             readers:
@@ -115,7 +115,7 @@ service:
     extensions:
         - health_check
         - pprof
-        - cgroupruntime
+        - cgroup_runtime
         - k8s_leader_elector
 receivers:
     k8s_cluster:
@@ -484,8 +484,8 @@ processors:
             - statements:
                 - set(resource.attributes["kyma.input.name"], "runtime")
 exporters:
-    otlp_grpc/test1:
-        endpoint: ${OTLP_ENDPOINT_TEST1}
+    otlp_grpc/metricpipeline-test1:
+        endpoint: ${OTLP_ENDPOINT_METRICPIPELINE_TEST1}
         compression: gzip
         sending_queue:
             enabled: true
@@ -495,8 +495,8 @@ exporters:
             initial_interval: 5s
             max_interval: 30s
             max_elapsed_time: 300s
-    otlp_grpc/test2:
-        endpoint: ${OTLP_ENDPOINT_TEST2}
+    otlp_grpc/metricpipeline-test2:
+        endpoint: ${OTLP_ENDPOINT_METRICPIPELINE_TEST2}
         compression: gzip
         sending_queue:
             enabled: true
@@ -506,8 +506,8 @@ exporters:
             initial_interval: 5s
             max_interval: 30s
             max_elapsed_time: 300s
-    otlp_grpc/test3:
-        endpoint: ${OTLP_ENDPOINT_TEST3}
+    otlp_grpc/metricpipeline-test3:
+        endpoint: ${OTLP_ENDPOINT_METRICPIPELINE_TEST3}
         compression: gzip
         sending_queue:
             enabled: true

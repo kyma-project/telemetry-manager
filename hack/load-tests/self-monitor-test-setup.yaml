@@ -4,7 +4,7 @@ metadata:
   name: self-monitor-load-test
 
 ---
-apiVersion: operator.kyma-project.io/v1alpha1
+apiVersion: operator.kyma-project.io/v1beta1
 kind: Telemetry
 metadata:
   labels:
@@ -15,25 +15,16 @@ metadata:
     app.kubernetes.io/created-by: telemetry-manager
   name: default
   namespace: kyma-system
-spec:
-  trace:
-    gateway:
-      scaling:
-        type: "Static"
-        static:
-          replicas: 4
-  metric:
-    gateway:
-      scaling:
-        type: "Static"
-        static:
-          replicas: 4
+spec: {}
 ---
-apiVersion: telemetry.kyma-project.io/v1alpha1
+apiVersion: telemetry.kyma-project.io/v1beta1
 kind: LogPipeline
 metadata:
   name: load-test-1
 spec:
+  input:
+    runtime:
+      enabled: true
   output:
     http:
       dedot: true
@@ -42,16 +33,19 @@ spec:
         value: telemetry-receiver.self-monitor-load-test
       port: "9880"
       tls:
-        disabled: true
-        skipCertificateValidation: true
+        insecure: true
+        insecureSkipVerify: true
       uri: "/"
 
 ---
-apiVersion: telemetry.kyma-project.io/v1alpha1
+apiVersion: telemetry.kyma-project.io/v1beta1
 kind: LogPipeline
 metadata:
   name: load-test-2
 spec:
+  input:
+    runtime:
+      enabled: true
   output:
     http:
       dedot: true
@@ -60,16 +54,19 @@ spec:
         value: telemetry-receiver.self-monitor-load-test
       port: "9880"
       tls:
-        disabled: true
-        skipCertificateValidation: true
+        insecure: true
+        insecureSkipVerify: true
       uri: "/"
 
 ---
-apiVersion: telemetry.kyma-project.io/v1alpha1
+apiVersion: telemetry.kyma-project.io/v1beta1
 kind: LogPipeline
 metadata:
   name: load-test-3
 spec:
+  input:
+    runtime:
+      enabled: true
   output:
     http:
       dedot: true
@@ -78,12 +75,12 @@ spec:
         value: telemetry-receiver.self-monitor-load-test
       port: "9880"
       tls:
-        disabled: true
-        skipCertificateValidation: true
+        insecure: true
+        insecureSkipVerify: true
       uri: "/"
 
 ---
-apiVersion: telemetry.kyma-project.io/v1alpha1
+apiVersion: telemetry.kyma-project.io/v1beta1
 kind: MetricPipeline
 metadata:
   name: load-test-1
@@ -104,7 +101,7 @@ spec:
         value: http://telemetry-receiver.self-monitor-load-test:4317
 
 ---
-apiVersion: telemetry.kyma-project.io/v1alpha1
+apiVersion: telemetry.kyma-project.io/v1beta1
 kind: MetricPipeline
 metadata:
   name: load-test-2
@@ -125,7 +122,7 @@ spec:
         value: http://telemetry-receiver.self-monitor-load-test:4317
 
 ---
-apiVersion: telemetry.kyma-project.io/v1alpha1
+apiVersion: telemetry.kyma-project.io/v1beta1
 kind: MetricPipeline
 metadata:
   name: load-test-3
@@ -147,7 +144,7 @@ spec:
 
 ---
 
-apiVersion: telemetry.kyma-project.io/v1alpha1
+apiVersion: telemetry.kyma-project.io/v1beta1
 kind: TracePipeline
 metadata:
   name: load-test-1
@@ -161,7 +158,7 @@ spec:
         value: http://telemetry-receiver.self-monitor-load-test:4317
 
 ---
-apiVersion: telemetry.kyma-project.io/v1alpha1
+apiVersion: telemetry.kyma-project.io/v1beta1
 kind: TracePipeline
 metadata:
   name: load-test-2
@@ -175,7 +172,7 @@ spec:
         value: http://telemetry-receiver.self-monitor-load-test:4317
 
 ---
-apiVersion: telemetry.kyma-project.io/v1alpha1
+apiVersion: telemetry.kyma-project.io/v1beta1
 kind: TracePipeline
 metadata:
   name: load-test-3
@@ -375,6 +372,7 @@ spec:
             - "10000000"
             - --interval
             - "30s"
+            - --batch=false
             - --telemetry-attributes
             - "key1=\"SimSimulates a client generating metrics. (Stability level: Development)\""
             - --telemetry-attributes
@@ -399,9 +397,9 @@ spec:
           name: telemetrygen
           resources:
             limits:
-              memory: 256Mi
+              memory: 300Mi
             requests:
-              memory: 256Mi
+              memory: 300Mi
 
 ---
 apiVersion: apps/v1

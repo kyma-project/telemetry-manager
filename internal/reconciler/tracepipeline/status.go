@@ -14,6 +14,7 @@ import (
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
+	"github.com/kyma-project/telemetry-manager/internal/pipelines"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
@@ -23,6 +24,8 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 )
 
+// updateStatus updates the status of a TracePipeline resource.
+// It sets the GatewayHealthy, ConfigurationGenerated and TelemetryFlowHealthy conditions.
 func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) error {
 	var pipeline telemetryv1beta1.TracePipeline
 	if err := r.Get(ctx, types.NamespacedName{Name: pipelineName}, &pipeline); err != nil {
@@ -56,10 +59,17 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) erro
 }
 
 func (r *Reconciler) setGatewayHealthyCondition(ctx context.Context, pipeline *telemetryv1beta1.TracePipeline) {
+	configStatus, _, _ := r.evaluateConfigGeneratedCondition(ctx, pipeline)
 	condition := commonstatus.GetGatewayHealthyCondition(ctx,
-		r.gatewayProber, types.NamespacedName{Name: names.TraceGateway, Namespace: r.globals.TargetNamespace()},
+		r.gatewayProber,
+		types.NamespacedName{
+			Name:      names.OTLPGateway,
+			Namespace: r.globals.TargetNamespace(),
+		},
 		r.errToMsgConverter,
-		commonstatus.SignalTypeTraces)
+		pipelines.SignalTypeTrace,
+		configStatus)
+
 	condition.ObservedGeneration = pipeline.Generation
 	meta.SetStatusCondition(&pipeline.Status.Conditions, *condition)
 }

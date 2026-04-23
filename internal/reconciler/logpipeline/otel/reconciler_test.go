@@ -16,6 +16,7 @@ import (
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/metrics"
+	"github.com/kyma-project/telemetry-manager/internal/pipelines"
 	commonStatusStubs "github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus/stubs"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/otel/mocks"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/stubs"
@@ -24,61 +25,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/validators/ottl"
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
-
-func TestGatewayHealthCondition(t *testing.T) {
-	tests := []struct {
-		name              string
-		gatewayProberStub *commonStatusStubs.DeploymentSetProber
-		expectedCondition metav1.Condition
-	}{
-		{
-			name: "log gateway probing failed",
-			gatewayProberStub: commonStatusStubs.NewDeploymentSetProber(
-				workloadstatus.ErrDeploymentFetching,
-			),
-			expectedCondition: metav1.Condition{
-				Type:    conditions.TypeGatewayHealthy,
-				Status:  metav1.ConditionFalse,
-				Reason:  conditions.ReasonGatewayNotReady,
-				Message: "Failed to get Deployment",
-			},
-		},
-		{
-			name: "log gateway deployment is not ready",
-			gatewayProberStub: commonStatusStubs.NewDeploymentSetProber(
-				&workloadstatus.PodIsPendingError{ContainerName: "foo", Message: "Error"},
-			),
-			expectedCondition: metav1.Condition{
-				Type:    conditions.TypeGatewayHealthy,
-				Status:  metav1.ConditionFalse,
-				Reason:  conditions.ReasonGatewayNotReady,
-				Message: "Pod is in the pending state because container: foo is not running due to: Error. Please check the container: foo logs.",
-			},
-		},
-		{
-			name:              "log gateway deployment is ready",
-			gatewayProberStub: commonStatusStubs.NewDeploymentSetProber(nil),
-			expectedCondition: metav1.Condition{
-				Type:    conditions.TypeGatewayHealthy,
-				Status:  metav1.ConditionTrue,
-				Reason:  conditions.ReasonGatewayReady,
-				Message: "Log gateway Deployment is ready",
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput().Build()
-			fakeClient := newTestClient(t, &pipeline)
-
-			sut := newTestReconciler(fakeClient,
-				WithGatewayProber(tt.gatewayProberStub))
-			result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
-			require.NoError(t, result.err)
-			requireHasStatusConditionObject(t, result.pipeline, tt.expectedCondition)
-		})
-	}
-}
 
 func TestAgentHealthCondition(t *testing.T) {
 	tests := []struct {
@@ -118,108 +64,6 @@ func TestAgentHealthCondition(t *testing.T) {
 			require.NoError(t, result.err)
 
 			requireHasStatusConditionObject(t, result.pipeline, tt.expectedCondition)
-		})
-	}
-}
-
-func TestGatewayFlowHealthCondition(t *testing.T) {
-	tests := []struct {
-		name            string
-		probe           prober.OTelGatewayProbeResult
-		probeErr        error
-		expectedStatus  metav1.ConditionStatus
-		expectedReason  string
-		expectedMessage string
-	}{
-		{
-			name:            "prober fails",
-			probeErr:        assert.AnError,
-			expectedStatus:  metav1.ConditionUnknown,
-			expectedReason:  conditions.ReasonSelfMonGatewayProbingFailed,
-			expectedMessage: "Could not determine the health of the telemetry flow because the self monitor probing of gateway failed",
-		},
-		{
-			name: "healthy",
-			probe: prober.OTelGatewayProbeResult{
-				PipelineProbeResult: prober.PipelineProbeResult{Healthy: true},
-			},
-			expectedStatus:  metav1.ConditionTrue,
-			expectedReason:  conditions.ReasonSelfMonFlowHealthy,
-			expectedMessage: "No problems detected in the telemetry flow",
-		},
-		{
-			name: "throttling",
-			probe: prober.OTelGatewayProbeResult{
-				Throttling: true,
-			},
-			expectedStatus:  metav1.ConditionFalse,
-			expectedReason:  conditions.ReasonSelfMonGatewayThrottling,
-			expectedMessage: "Log gateway is unable to receive logs at current rate. See troubleshooting: " + conditions.LinkGatewayThrottling,
-		},
-		{
-			name: "some data dropped",
-			probe: prober.OTelGatewayProbeResult{
-				PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
-			},
-			expectedStatus:  metav1.ConditionFalse,
-			expectedReason:  conditions.ReasonSelfMonGatewaySomeDataDropped,
-			expectedMessage: "Backend is reachable, but rejecting logs. Some logs are dropped in Log gateway. See troubleshooting: " + conditions.LinkNotAllDataArriveAtBackend,
-		},
-		{
-			name: "some data dropped shadows other problems",
-			probe: prober.OTelGatewayProbeResult{
-				PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
-				Throttling:          true,
-			},
-			expectedStatus:  metav1.ConditionFalse,
-			expectedReason:  conditions.ReasonSelfMonGatewaySomeDataDropped,
-			expectedMessage: "Backend is reachable, but rejecting logs. Some logs are dropped in Log gateway. See troubleshooting: " + conditions.LinkNotAllDataArriveAtBackend,
-		},
-		{
-			name: "all data dropped",
-			probe: prober.OTelGatewayProbeResult{
-				PipelineProbeResult: prober.PipelineProbeResult{AllDataDropped: true},
-			},
-			expectedStatus:  metav1.ConditionFalse,
-			expectedReason:  conditions.ReasonSelfMonGatewayAllDataDropped,
-			expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped in Log gateway. See troubleshooting: " + conditions.LinkNoDataArriveAtBackend,
-		},
-		{
-			name: "all data dropped shadows other problems",
-			probe: prober.OTelGatewayProbeResult{
-				PipelineProbeResult: prober.PipelineProbeResult{AllDataDropped: true},
-				Throttling:          true,
-			},
-			expectedStatus:  metav1.ConditionFalse,
-			expectedReason:  conditions.ReasonSelfMonGatewayAllDataDropped,
-			expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped in Log gateway. See troubleshooting: " + conditions.LinkNoDataArriveAtBackend,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).WithRuntimeInput(true).Build()
-			fakeClient := newTestClient(t, &pipeline)
-
-			// Only override the gateway flow health prober to inject test scenario
-			gatewayFlowHeathProber := &mocks.GatewayFlowHealthProber{}
-			gatewayFlowHeathProber.On("Probe", mock.Anything, pipeline.Name).Return(tt.probe, tt.probeErr)
-
-			sut := newTestReconciler(fakeClient,
-				WithGatewayFlowHealthProber(gatewayFlowHeathProber))
-			result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
-
-			if tt.probeErr != nil {
-				require.Error(t, result.err)
-			} else {
-				require.NoError(t, result.err)
-			}
-
-			requireHasStatusCondition(t, result.pipeline,
-				conditions.TypeFlowHealthy,
-				tt.expectedStatus,
-				tt.expectedReason,
-				tt.expectedMessage,
-			)
 		})
 	}
 }
@@ -288,6 +132,108 @@ func TestAgentFlowHealthCondition(t *testing.T) {
 
 			sut := newTestReconciler(fakeClient,
 				WithAgentFlowHealthProber(agentFlowHealthProber))
+			result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
+
+			if tt.probeErr != nil {
+				require.Error(t, result.err)
+			} else {
+				require.NoError(t, result.err)
+			}
+
+			requireHasStatusCondition(t, result.pipeline,
+				conditions.TypeFlowHealthy,
+				tt.expectedStatus,
+				tt.expectedReason,
+				tt.expectedMessage,
+			)
+		})
+	}
+}
+
+func TestGatewayFlowHealthCondition(t *testing.T) {
+	tests := []struct {
+		name            string
+		probe           prober.OTelGatewayProbeResult
+		probeErr        error
+		expectedStatus  metav1.ConditionStatus
+		expectedReason  string
+		expectedMessage string
+	}{
+		{
+			name:            "prober fails",
+			probeErr:        assert.AnError,
+			expectedStatus:  metav1.ConditionUnknown,
+			expectedReason:  conditions.ReasonSelfMonGatewayProbingFailed,
+			expectedMessage: "Could not determine the health of the telemetry flow because the self monitor probing of gateway failed",
+		},
+		{
+			name: "healthy",
+			probe: prober.OTelGatewayProbeResult{
+				PipelineProbeResult: prober.PipelineProbeResult{Healthy: true},
+			},
+			expectedStatus:  metav1.ConditionTrue,
+			expectedReason:  conditions.ReasonSelfMonFlowHealthy,
+			expectedMessage: "No problems detected in the telemetry flow",
+		},
+		{
+			name: "throttling",
+			probe: prober.OTelGatewayProbeResult{
+				Throttling: true,
+			},
+			expectedStatus:  metav1.ConditionFalse,
+			expectedReason:  conditions.ReasonSelfMonGatewayThrottling,
+			expectedMessage: "OTLP gateway is unable to receive logs at current rate. See troubleshooting: " + conditions.LinkGatewayThrottling,
+		},
+		{
+			name: "some data dropped",
+			probe: prober.OTelGatewayProbeResult{
+				PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
+			},
+			expectedStatus:  metav1.ConditionFalse,
+			expectedReason:  conditions.ReasonSelfMonGatewaySomeDataDropped,
+			expectedMessage: "Backend is reachable, but rejecting logs. Some logs are dropped in OTLP gateway. See troubleshooting: " + conditions.LinkNotAllDataArriveAtBackend,
+		},
+		{
+			name: "some data dropped shadows other problems",
+			probe: prober.OTelGatewayProbeResult{
+				PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
+				Throttling:          true,
+			},
+			expectedStatus:  metav1.ConditionFalse,
+			expectedReason:  conditions.ReasonSelfMonGatewaySomeDataDropped,
+			expectedMessage: "Backend is reachable, but rejecting logs. Some logs are dropped in OTLP gateway. See troubleshooting: " + conditions.LinkNotAllDataArriveAtBackend,
+		},
+		{
+			name: "all data dropped",
+			probe: prober.OTelGatewayProbeResult{
+				PipelineProbeResult: prober.PipelineProbeResult{AllDataDropped: true},
+			},
+			expectedStatus:  metav1.ConditionFalse,
+			expectedReason:  conditions.ReasonSelfMonGatewayAllDataDropped,
+			expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped in OTLP gateway. See troubleshooting: " + conditions.LinkNoDataArriveAtBackend,
+		},
+		{
+			name: "all data dropped shadows other problems",
+			probe: prober.OTelGatewayProbeResult{
+				PipelineProbeResult: prober.PipelineProbeResult{AllDataDropped: true},
+				Throttling:          true,
+			},
+			expectedStatus:  metav1.ConditionFalse,
+			expectedReason:  conditions.ReasonSelfMonGatewayAllDataDropped,
+			expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped in OTLP gateway. See troubleshooting: " + conditions.LinkNoDataArriveAtBackend,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			pipeline := testutils.NewLogPipelineBuilder().WithName("pipeline").WithOTLPOutput(testutils.OTLPEndpoint("http://localhost")).WithOTLPInput(true).Build()
+			fakeClient := newTestClient(t, &pipeline)
+
+			// Only override the gateway flow health prober to inject test scenario
+			gatewayFlowHeathProber := &mocks.GatewayFlowHealthProber{}
+			gatewayFlowHeathProber.On("Probe", mock.Anything, pipeline.Name).Return(tt.probe, tt.probeErr)
+
+			sut := newTestReconciler(fakeClient,
+				WithGatewayFlowHealthProber(gatewayFlowHeathProber))
 			result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
 
 			if tt.probeErr != nil {
@@ -660,7 +606,7 @@ func TestPipelineInfoTracking(t *testing.T) {
 			}
 
 			fakeClient := newTestClient(t, objs...)
-			validator, _ := ottl.NewTransformSpecValidator(ottl.SignalTypeLog)
+			validator, _ := ottl.NewTransformSpecValidator(pipelines.SignalTypeLog)
 			sut := newTestReconciler(fakeClient, WithPipelineValidator(newTestValidator(WithTransformSpecValidator(validator))))
 
 			result := reconcileAndGet(t, fakeClient, sut, tt.pipeline.Name)

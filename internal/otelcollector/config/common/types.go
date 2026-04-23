@@ -185,6 +185,7 @@ type K8sAttributesProcessorConfig struct {
 type ExtractK8sMetadata struct {
 	Metadata                     []string       `yaml:"metadata"`
 	Labels                       []ExtractLabel `yaml:"labels"`
+	Annotations                  []ExtractLabel `yaml:"annotations,omitempty"`
 	OTelAnnotations              bool           `yaml:"otel_annotations,omitempty"`
 	DeploymentNameFromReplicaset bool           `yaml:"deployment_name_from_replicaset,omitempty"`
 }
@@ -229,20 +230,6 @@ type FilterProcessorConfig struct {
 	Metrics   []telemetryv1beta1.FilterSpec `yaml:"metric_conditions,omitempty"`
 	Logs      []telemetryv1beta1.FilterSpec `yaml:"log_conditions,omitempty"`
 	Traces    []telemetryv1beta1.FilterSpec `yaml:"trace_conditions,omitempty"`
-}
-
-type FilterProcessorMetrics struct {
-	Metric    []string `yaml:"metric,omitempty"`
-	Datapoint []string `yaml:"datapoint,omitempty"`
-}
-
-type FilterProcessorTraces struct {
-	Span      []string `yaml:"span,omitempty"`
-	SpanEvent []string `yaml:"spanevent,omitempty"`
-}
-
-type FilterProcessorLogs struct {
-	Log []string `yaml:"log_record,omitempty"`
 }
 
 // =============================================================================

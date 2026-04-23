@@ -109,7 +109,7 @@ func TestMetricsIstioInput(t *testing.T) {
 
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
-	assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+	assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 	assert.DaemonSetReady(t, kitkyma.MetricAgentName)
 	assert.BackendReachable(t, metricBackend)
 	assert.BackendReachable(t, logBackend)
@@ -149,7 +149,7 @@ func TestMetricsIstioInput(t *testing.T) {
 	assert.MetricsFromNamespaceNotDelivered(t, metricBackend, app2Ns)
 
 	assert.BackendDataConsistentlyMatches(t, metricBackend, HaveFlatMetrics(
-		Not(ContainElement(HaveMetricAttributes(HaveKeyWithValue("destination_workload", "telemetry-log-gateway")))),
+		Not(ContainElement(HaveMetricAttributes(HaveKeyWithValue("destination_workload", "telemetry-otlp-gateway")))),
 	))
 
 	assert.BackendDataConsistentlyMatches(t, metricBackend, HaveFlatMetrics(

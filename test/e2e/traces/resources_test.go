@@ -31,17 +31,17 @@ func TestResources(t *testing.T) {
 		pipelineName     = uniquePrefix()
 		secretName       = uniquePrefix()
 		gatewayResources = []assert.Resource{
-			assert.NewResource(&appsv1.Deployment{}, kitkyma.TraceGatewayName),
-			assert.NewResource(&corev1.Service{}, kitkyma.TraceGatewayMetricsService),
-			assert.NewResource(&corev1.ServiceAccount{}, kitkyma.TraceGatewayServiceAccount),
-			assert.NewResource(&rbacv1.ClusterRole{}, kitkyma.TraceGatewayClusterRole),
-			assert.NewResource(&rbacv1.ClusterRoleBinding{}, kitkyma.TraceGatewayClusterRoleBinding),
-			assert.NewResource(&networkingv1.NetworkPolicy{}, kitkyma.TraceGatewayNetworkPolicy),
-			assert.NewResource(&corev1.Secret{}, kitkyma.TraceGatewaySecretName),
-			assert.NewResource(&corev1.ConfigMap{}, kitkyma.TraceGatewayConfigMap),
-			assert.NewResource(&corev1.Service{}, kitkyma.TraceGatewayOTLPService),
+			assert.NewResource(&appsv1.DaemonSet{}, kitkyma.OTLPGatewayName),
+			assert.NewResource(&corev1.Service{}, kitkyma.TelemetryOTLPMetricsService),
+			assert.NewResource(&corev1.ServiceAccount{}, kitkyma.TelemetryOTLPServiceAccount),
+			assert.NewResource(&rbacv1.ClusterRole{}, kitkyma.TelemetryOTLPClusterRole),
+			assert.NewResource(&rbacv1.ClusterRoleBinding{}, kitkyma.TelemetryOTLPClusterRoleBinding),
+			assert.NewResource(&networkingv1.NetworkPolicy{}, kitkyma.TelemetryOTLPNetworkPolicy),
+			assert.NewResource(&corev1.Secret{}, kitkyma.TelemetryOTLPSecretName),
+			assert.NewResource(&corev1.ConfigMap{}, kitkyma.TelemetryOTLPConfigMap),
+			assert.NewResource(&corev1.Service{}, kitkyma.TelemetryOTLPTraceService),
 			// TODO(skhalash): Re-enable after fixing the istiod deployment timeout issue in the test
-			// assert.NewResource(&istiosecurityclientv1.PeerAuthentication{}, kitkyma.TraceGatewayPeerAuthentication),
+			// assert.NewResource(&istiosecurityclientv1.PeerAuthentication{}, kitkyma.TelemetryOTLPPeerAuthentication),
 		}
 	)
 

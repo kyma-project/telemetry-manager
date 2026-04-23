@@ -1,5 +1,5 @@
 extensions:
-    cgroupruntime:
+    cgroup_runtime:
         gomaxprocs:
             enabled: false
         gomemlimit:
@@ -16,7 +16,7 @@ service:
     pipelines:
         logs/test1:
             receivers:
-                - filelog/test1
+                - file_log/test1
             processors:
                 - memory_limiter
                 - transform/set-instrumentation-scope-runtime
@@ -24,10 +24,10 @@ service:
                 - transform/insert-cluster-attributes
                 - service_enrichment
                 - transform/drop-kyma-attributes
-                - transform/user-defined-test1
-                - filter/user-defined-test1
+                - transform/logpipeline-user-defined-test1
+                - filter/logpipeline-user-defined-test1
             exporters:
-                - otlp_grpc/test1
+                - otlp_grpc/logpipeline-test1
     telemetry:
         metrics:
             readers:
@@ -42,10 +42,10 @@ service:
     extensions:
         - health_check
         - pprof
-        - cgroupruntime
+        - cgroup_runtime
         - file_storage
 receivers:
-    filelog/test1:
+    file_log/test1:
         exclude:
             - /var/log/pods/kyma-system_telemetry-fluent-bit-*/fluent-bit/*.log
             - /var/log/pods/kyma-system_telemetry-log-agent-*/collector/*.log
@@ -164,7 +164,7 @@ receivers:
             - id: noop
               type: noop
 processors:
-    filter/user-defined-test1:
+    filter/logpipeline-user-defined-test1:
         error_mode: ignore
         log_conditions:
             - conditions:
@@ -230,13 +230,7 @@ processors:
                 - set(resource.attributes["k8s.cluster.name"], "test-cluster") where resource.attributes["k8s.cluster.name"] == nil or resource.attributes["k8s.cluster.name"] == ""
                 - set(resource.attributes["k8s.cluster.uid"], "") where resource.attributes["k8s.cluster.uid"] == nil or resource.attributes["k8s.cluster.uid"] == ""
                 - set(resource.attributes["cloud.provider"], "azure") where resource.attributes["cloud.provider"] == nil or resource.attributes["cloud.provider"] == ""
-    transform/set-instrumentation-scope-runtime:
-        error_mode: ignore
-        log_statements:
-            - statements:
-                - set(scope.version, "main")
-                - set(scope.name, "io.kyma-project.telemetry/runtime")
-    transform/user-defined-test1:
+    transform/logpipeline-user-defined-test1:
         error_mode: ignore
         log_statements:
             - statements:
@@ -244,9 +238,15 @@ processors:
                 - set(body, "transformed1")
               conditions:
                 - IsMatch(body, ".*error.*")
+    transform/set-instrumentation-scope-runtime:
+        error_mode: ignore
+        log_statements:
+            - statements:
+                - set(scope.version, "main")
+                - set(scope.name, "io.kyma-project.telemetry/runtime")
 exporters:
-    otlp_grpc/test1:
-        endpoint: ${OTLP_ENDPOINT_TEST1}
+    otlp_grpc/logpipeline-test1:
+        endpoint: ${OTLP_ENDPOINT_LOGPIPELINE_TEST1}
         compression: gzip
         retry_on_failure:
             enabled: true

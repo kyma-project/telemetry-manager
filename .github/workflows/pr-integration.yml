@@ -49,7 +49,7 @@ on:
       - "helm/**"
 
   workflow_dispatch:
-# This is reused on release.yml so workflow_call is used.
+# This is reused on create-release.yml so workflow_call is used.
   workflow_call:
     inputs:
       ref:
@@ -118,6 +118,13 @@ jobs:
           elif [[ "${{ inputs.image_tag }}" ]]; then
             IMAGE_REPO="europe-docker.pkg.dev/kyma-project/prod/telemetry-manager"
             IMAGE_TAG="${{ inputs.image_tag }}"
+          elif [[ "${{ github.event_name }}" == "schedule" ]]; then
+            # Use the image configured in .env (e.g. telemetry-manager:main)
+            source .env
+            MANAGER_IMAGE="$ENV_MANAGER_IMAGE"
+            echo "manager-image=$MANAGER_IMAGE" >> $GITHUB_OUTPUT
+            echo "Manager image: $MANAGER_IMAGE"
+            exit 0
           else
             IMAGE_REPO="europe-docker.pkg.dev/kyma-project/prod/telemetry-manager"
 
@@ -135,7 +142,7 @@ jobs:
           fi
 
       - name: Wait for image to be built
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && github.event_name != 'schedule'
         shell: bash
         run: make wait-for-image
         env:

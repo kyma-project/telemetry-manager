@@ -10,8 +10,10 @@ import (
 	"istio.io/client-go/pkg/apis/networking/v1alpha3"
 	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	autoscalingvpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -29,20 +31,28 @@ func TestOTLPGateway_ApplyResources(t *testing.T) {
 		config.WithAdditionalWorkloadAnnotations(map[string]string{"test-anno-key": "test-anno-value"}),
 		config.WithClusterTrustBundleName("trustBundle"),
 	)
+	globalsWithFIPS := config.NewGlobal(
+		config.WithTargetNamespace("kyma-system"),
+		config.WithOperateInFIPSMode(true),
+	)
 	image := "opentelemetry/collector:dummy"
 	priorityClassName := "normal"
 
 	// Interface for testing both gateway types
 	type gatewayApplierDeleter interface {
 		ApplyResources(ctx context.Context, c client.Client, opts GatewayApplyOptions) error
-		DeleteResources(ctx context.Context, c client.Client, isIstioActive bool) error
+		DeleteResources(ctx context.Context, c client.Client, isIstioActive bool, vpaCRDExists bool) error
 	}
 
 	tests := []struct {
-		name           string
-		sut            gatewayApplierDeleter
-		istioEnabled   bool
-		goldenFilePath string
+		name                           string
+		sut                            gatewayApplierDeleter
+		istioEnabled                   bool
+		vpaCRDExists                   bool
+		vpaEnabled                     bool
+		vpaMaxAllowedMemory            resource.Quantity
+		goldenFilePath                 string
+		resourceRequirementsMultiplier int
 	}{
 		{
 			name:           "OTLP gateway",
@@ -55,6 +65,36 @@ func TestOTLPGateway_ApplyResources(t *testing.T) {
 			istioEnabled:   true,
 			goldenFilePath: "testdata/otlp-gateway-istio.yaml",
 		},
+		{
+			name:           "OTLP gateway with FIPS mode enabled",
+			sut:            NewOTLPGatewayApplierDeleter(globalsWithFIPS, image, priorityClassName),
+			goldenFilePath: "testdata/otlp-gateway-fips-enabled.yaml",
+		},
+		{
+			name:                "OTLP gateway with VPA",
+			sut:                 NewOTLPGatewayApplierDeleter(globals, image, priorityClassName),
+			goldenFilePath:      "testdata/otlp-gateway-vpa.yaml",
+			vpaCRDExists:        true,
+			vpaEnabled:          true,
+			vpaMaxAllowedMemory: resource.MustParse("1Gi"),
+		},
+		{
+			name:                "OTLP gateway with VPA and zero max allowed memory",
+			sut:                 NewOTLPGatewayApplierDeleter(globals, image, priorityClassName),
+			goldenFilePath:      "testdata/otlp-gateway-vpa-zero-max-memory.yaml",
+			vpaCRDExists:        true,
+			vpaEnabled:          true,
+			vpaMaxAllowedMemory: resource.Quantity{}, // zero, must be clamped to min allowed memory
+		},
+		{
+			name:                           "OTLP gateway multi instance with VPA",
+			sut:                            NewOTLPGatewayApplierDeleter(globals, image, priorityClassName),
+			goldenFilePath:                 "testdata/otlp-multi-instance-gateway-vpa.yaml",
+			vpaCRDExists:                   true,
+			vpaEnabled:                     true,
+			vpaMaxAllowedMemory:            resource.MustParse("1Gi"),
+			resourceRequirementsMultiplier: 3,
+		},
 	}
 
 	for _, tt := range tests {
@@ -64,7 +104,9 @@ func TestOTLPGateway_ApplyResources(t *testing.T) {
 			scheme := runtime.NewScheme()
 			utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 			utilruntime.Must(istionetworkingclientv1.AddToScheme(scheme))
+			utilruntime.Must(istiosecurityclientv1.AddToScheme(scheme))
 			utilruntime.Must(v1alpha3.AddToScheme(scheme))
+			utilruntime.Must(autoscalingvpav1.AddToScheme(scheme))
 
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithInterceptorFuncs(interceptor.Funcs{
 				Create: func(_ context.Context, c client.WithWatch, obj client.Object, _ ...client.CreateOption) error {
@@ -79,8 +121,12 @@ func TestOTLPGateway_ApplyResources(t *testing.T) {
 				CollectorEnvVars: map[string][]byte{
 					"DUMMY_ENV_VAR": []byte("foo"),
 				},
-				IstioEnabled: tt.istioEnabled,
-				Replicas:     2,
+				IstioEnabled:                   tt.istioEnabled,
+				Replicas:                       2,
+				VpaCRDExists:                   tt.vpaCRDExists,
+				VpaEnabled:                     tt.vpaEnabled,
+				VPAMaxAllowedMemory:            tt.vpaMaxAllowedMemory,
+				ResourceRequirementsMultiplier: tt.resourceRequirementsMultiplier,
 			})
 			require.NoError(t, err)
 
@@ -108,7 +154,7 @@ func TestOTLPGateway_DeleteResources(t *testing.T) {
 	// Interface for testing both gateway types
 	type gatewayApplierDeleter interface {
 		ApplyResources(ctx context.Context, c client.Client, opts GatewayApplyOptions) error
-		DeleteResources(ctx context.Context, c client.Client, isIstioActive bool) error
+		DeleteResources(ctx context.Context, c client.Client, isIstioActive bool, vpaCRDExists bool) error
 	}
 
 	tests := []struct {
@@ -136,6 +182,7 @@ func TestOTLPGateway_DeleteResources(t *testing.T) {
 			utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 			utilruntime.Must(istiosecurityclientv1.AddToScheme(scheme))
 			utilruntime.Must(istionetworkingclientv1.AddToScheme(scheme))
+			utilruntime.Must(autoscalingvpav1.AddToScheme(scheme))
 
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithInterceptorFuncs(interceptor.Funcs{
 				Create: func(ctx context.Context, c client.WithWatch, obj client.Object, _ ...client.CreateOption) error {
@@ -146,10 +193,12 @@ func TestOTLPGateway_DeleteResources(t *testing.T) {
 
 			err := tt.sut.ApplyResources(t.Context(), fakeClient, GatewayApplyOptions{
 				IstioEnabled: tt.istioEnabled,
+				VpaCRDExists: true,
+				VpaEnabled:   true,
 			})
 			require.NoError(t, err)
 
-			err = tt.sut.DeleteResources(t.Context(), fakeClient, tt.istioEnabled)
+			err = tt.sut.DeleteResources(t.Context(), fakeClient, tt.istioEnabled, true)
 			require.NoError(t, err)
 
 			for i := range created {

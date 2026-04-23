@@ -1,5 +1,5 @@
 extensions:
-    cgroupruntime:
+    cgroup_runtime:
         gomaxprocs:
             enabled: false
         gomemlimit:
@@ -16,7 +16,7 @@ service:
     pipelines:
         logs/test1:
             receivers:
-                - filelog/test1
+                - file_log/test1
             processors:
                 - memory_limiter
                 - transform/set-instrumentation-scope-runtime
@@ -24,12 +24,12 @@ service:
                 - transform/insert-cluster-attributes
                 - service_enrichment
                 - transform/drop-kyma-attributes
-                - transform/user-defined-test1
+                - transform/logpipeline-user-defined-test1
             exporters:
-                - otlp_grpc/test1
+                - otlp_grpc/logpipeline-test1
         logs/test2:
             receivers:
-                - filelog/test2
+                - file_log/test2
             processors:
                 - memory_limiter
                 - transform/set-instrumentation-scope-runtime
@@ -37,9 +37,9 @@ service:
                 - transform/insert-cluster-attributes
                 - service_enrichment
                 - transform/drop-kyma-attributes
-                - transform/user-defined-test2
+                - transform/logpipeline-user-defined-test2
             exporters:
-                - otlp_grpc/test2
+                - otlp_grpc/logpipeline-test2
     telemetry:
         metrics:
             readers:
@@ -54,10 +54,10 @@ service:
     extensions:
         - health_check
         - pprof
-        - cgroupruntime
+        - cgroup_runtime
         - file_storage
 receivers:
-    filelog/test1:
+    file_log/test1:
         exclude:
             - /var/log/pods/kyma-system_telemetry-fluent-bit-*/fluent-bit/*.log
             - /var/log/pods/kyma-system_telemetry-log-agent-*/collector/*.log
@@ -175,7 +175,7 @@ receivers:
               field: attributes["trace_flags"]
             - id: noop
               type: noop
-    filelog/test2:
+    file_log/test2:
         exclude:
             - /var/log/pods/kyma-system_telemetry-fluent-bit-*/fluent-bit/*.log
             - /var/log/pods/kyma-system_telemetry-log-agent-*/collector/*.log
@@ -355,13 +355,7 @@ processors:
                 - set(resource.attributes["k8s.cluster.name"], "test-cluster") where resource.attributes["k8s.cluster.name"] == nil or resource.attributes["k8s.cluster.name"] == ""
                 - set(resource.attributes["k8s.cluster.uid"], "") where resource.attributes["k8s.cluster.uid"] == nil or resource.attributes["k8s.cluster.uid"] == ""
                 - set(resource.attributes["cloud.provider"], "azure") where resource.attributes["cloud.provider"] == nil or resource.attributes["cloud.provider"] == ""
-    transform/set-instrumentation-scope-runtime:
-        error_mode: ignore
-        log_statements:
-            - statements:
-                - set(scope.version, "main")
-                - set(scope.name, "io.kyma-project.telemetry/runtime")
-    transform/user-defined-test1:
+    transform/logpipeline-user-defined-test1:
         error_mode: ignore
         log_statements:
             - statements:
@@ -369,7 +363,7 @@ processors:
                 - set(body, "transformed1")
               conditions:
                 - IsMatch(body, ".*error.*")
-    transform/user-defined-test2:
+    transform/logpipeline-user-defined-test2:
         error_mode: ignore
         log_statements:
             - statements:
@@ -377,9 +371,15 @@ processors:
                 - set(body, "transformed2")
               conditions:
                 - IsMatch(body, ".*error.*")
+    transform/set-instrumentation-scope-runtime:
+        error_mode: ignore
+        log_statements:
+            - statements:
+                - set(scope.version, "main")
+                - set(scope.name, "io.kyma-project.telemetry/runtime")
 exporters:
-    otlp_grpc/test1:
-        endpoint: ${OTLP_ENDPOINT_TEST1}
+    otlp_grpc/logpipeline-test1:
+        endpoint: ${OTLP_ENDPOINT_LOGPIPELINE_TEST1}
         tls:
             insecure: true
         compression: gzip
@@ -388,8 +388,8 @@ exporters:
             initial_interval: 5s
             max_interval: 30s
             max_elapsed_time: 300s
-    otlp_grpc/test2:
-        endpoint: ${OTLP_ENDPOINT_TEST2}
+    otlp_grpc/logpipeline-test2:
+        endpoint: ${OTLP_ENDPOINT_LOGPIPELINE_TEST2}
         tls:
             insecure: true
         compression: gzip

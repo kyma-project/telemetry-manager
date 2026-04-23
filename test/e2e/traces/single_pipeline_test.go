@@ -68,11 +68,11 @@ func TestSinglePipeline(t *testing.T) {
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 			assert.BackendReachable(t, backend)
-			assert.DeploymentReady(t, kitkyma.TraceGatewayName)
+			assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 			assert.TracePipelineHealthy(t, pipelineName)
 			assert.TracesFromNamespaceDelivered(t, backend, genNs)
 
-			gatewayMetricsURL := suite.ProxyClient.ProxyURLForService(kitkyma.TraceGatewayMetricsService.Namespace, kitkyma.TraceGatewayMetricsService.Name, "metrics", ports.Metrics)
+			gatewayMetricsURL := suite.ProxyClient.ProxyURLForService(kitkyma.TelemetryOTLPMetricsService.Namespace, kitkyma.TelemetryOTLPMetricsService.Name, "metrics", ports.Metrics)
 			assert.EmitsOTelCollectorMetrics(t, gatewayMetricsURL)
 		})
 	}

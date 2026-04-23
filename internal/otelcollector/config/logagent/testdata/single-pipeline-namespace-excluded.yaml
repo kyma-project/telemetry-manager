@@ -1,5 +1,5 @@
 extensions:
-    cgroupruntime:
+    cgroup_runtime:
         gomaxprocs:
             enabled: false
         gomemlimit:
@@ -16,7 +16,7 @@ service:
     pipelines:
         logs/test:
             receivers:
-                - filelog/test
+                - file_log/test
             processors:
                 - memory_limiter
                 - transform/set-instrumentation-scope-runtime
@@ -25,7 +25,7 @@ service:
                 - service_enrichment
                 - transform/drop-kyma-attributes
             exporters:
-                - otlp_grpc/test
+                - otlp_grpc/logpipeline-test
     telemetry:
         metrics:
             readers:
@@ -40,10 +40,10 @@ service:
     extensions:
         - health_check
         - pprof
-        - cgroupruntime
+        - cgroup_runtime
         - file_storage
 receivers:
-    filelog/test:
+    file_log/test:
         exclude:
             - /var/log/pods/kyma-system_telemetry-fluent-bit-*/fluent-bit/*.log
             - /var/log/pods/kyma-system_telemetry-log-agent-*/collector/*.log
@@ -229,8 +229,8 @@ processors:
                 - set(scope.version, "main")
                 - set(scope.name, "io.kyma-project.telemetry/runtime")
 exporters:
-    otlp_grpc/test:
-        endpoint: ${OTLP_ENDPOINT_TEST}
+    otlp_grpc/logpipeline-test:
+        endpoint: ${OTLP_ENDPOINT_LOGPIPELINE_TEST}
         compression: gzip
         retry_on_failure:
             enabled: true

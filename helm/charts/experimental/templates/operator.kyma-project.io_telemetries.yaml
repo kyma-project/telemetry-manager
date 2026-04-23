@@ -104,9 +104,10 @@ spec:
                     description: Gateway configures the log gateway.
                     properties:
                       scaling:
-                        description: Scaling defines which strategy is used for scaling
-                          the gateway, with detailed configuration options for each
-                          strategy type.
+                        description: |-
+                          Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.
+
+                          Deprecated: This field is no longer supported. Setting it will have no effect.
                         properties:
                           static:
                             description: |-
@@ -146,9 +147,10 @@ spec:
                     description: Gateway configures the metric gateway.
                     properties:
                       scaling:
-                        description: Scaling defines which strategy is used for scaling
-                          the gateway, with detailed configuration options for each
-                          strategy type.
+                        description: |-
+                          Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.
+
+                          Deprecated: This field is no longer supported. Setting it will have no effect.
                         properties:
                           static:
                             description: |-
@@ -221,9 +223,10 @@ spec:
                     description: Gateway configures the trace gateway.
                     properties:
                       scaling:
-                        description: Scaling defines which strategy is used for scaling
-                          the gateway, with detailed configuration options for each
-                          strategy type.
+                        description: |-
+                          Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.
+
+                          Deprecated: This field is no longer supported. Setting it will have no effect.
                         properties:
                           static:
                             description: |-
@@ -440,9 +443,10 @@ spec:
                     description: Gateway configures the log gateway.
                     properties:
                       scaling:
-                        description: Scaling defines which strategy is used for scaling
-                          the gateway, with detailed configuration options for each
-                          strategy type.
+                        description: |-
+                          Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.
+
+                          Deprecated: This field is no longer supported. Setting it will have no effect.
                         properties:
                           static:
                             description: |-
@@ -482,9 +486,10 @@ spec:
                     description: Gateway configures the metric gateway.
                     properties:
                       scaling:
-                        description: Scaling defines which strategy is used for scaling
-                          the gateway, with detailed configuration options for each
-                          strategy type.
+                        description: |-
+                          Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.
+
+                          Deprecated: This field is no longer supported. Setting it will have no effect.
                         properties:
                           static:
                             description: |-
@@ -557,9 +562,10 @@ spec:
                     description: Gateway configures the trace gateway.
                     properties:
                       scaling:
-                        description: Scaling defines which strategy is used for scaling
-                          the gateway, with detailed configuration options for each
-                          strategy type.
+                        description: |-
+                          Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.
+
+                          Deprecated: This field is no longer supported. Setting it will have no effect.
                         properties:
                           static:
                             description: |-

@@ -1,5 +1,5 @@
 extensions:
-    cgroupruntime:
+    cgroup_runtime:
         gomaxprocs:
             enabled: false
         gomemlimit:
@@ -10,10 +10,10 @@ extensions:
     k8s_leader_elector:
         auth_type: serviceAccount
         lease_name: telemetry-metric-agent-k8scluster
-    oauth2client/test:
-        token_url: ${OAUTH2_TOKEN_URL_TEST}
-        client_id: ${OAUTH2_CLIENT_ID_TEST}
-        client_secret: ${OAUTH2_CLIENT_SECRET_TEST}
+    oauth2client/metricpipeline-test:
+        token_url: ${OAUTH2_TOKEN_URL_METRICPIPELINE_TEST}
+        client_id: ${OAUTH2_CLIENT_ID_METRICPIPELINE_TEST}
+        client_secret: ${OAUTH2_CLIENT_SECRET_METRICPIPELINE_TEST}
         scopes:
             - metrics
     pprof:
@@ -36,7 +36,7 @@ service:
                 - transform/drop-kyma-attributes
                 - batch
             exporters:
-                - otlp_http/test
+                - otlp_http/metricpipeline-test
     telemetry:
         metrics:
             readers:
@@ -51,9 +51,9 @@ service:
     extensions:
         - health_check
         - pprof
-        - cgroupruntime
+        - cgroup_runtime
         - k8s_leader_elector
-        - oauth2client/test
+        - oauth2client/metricpipeline-test
 receivers: {}
 processors:
     batch:
@@ -127,8 +127,8 @@ processors:
                 - set(resource.attributes["k8s.cluster.name"], "") where resource.attributes["k8s.cluster.name"] == nil or resource.attributes["k8s.cluster.name"] == ""
                 - set(resource.attributes["k8s.cluster.uid"], "") where resource.attributes["k8s.cluster.uid"] == nil or resource.attributes["k8s.cluster.uid"] == ""
 exporters:
-    otlp_http/test:
-        endpoint: ${OTLP_ENDPOINT_TEST}
+    otlp_http/metricpipeline-test:
+        endpoint: ${OTLP_ENDPOINT_METRICPIPELINE_TEST}
         tls:
             insecure: true
         compression: gzip
@@ -141,7 +141,7 @@ exporters:
             max_interval: 30s
             max_elapsed_time: 300s
         auth:
-            authenticator: oauth2client/test
+            authenticator: oauth2client/metricpipeline-test
 connectors:
     routing/enrichment:
         default_pipelines: []

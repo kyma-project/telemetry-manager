@@ -23,7 +23,7 @@ If you can't find a solution, don't hesitate to create a [GitHub issue](https://
    - If the status is `GatewayAllTelemetryDataDropped`, the problem is with the gateway.
    - If the status is `AgentAllTelemetryDataDropped`, the problem is with the agent.
 2. To check the failing component's logs, call `kubectl logs -n kyma-system {POD_NAME}`:
-   - For the gateway, check Pod `telemetry-(log|trace|metric)-gateway`.
+   - For the gateway, check Pod `telemetry-otlp-gateway`.
    - For the agent, check Pod `telemetry-(log|metric)-agent`.
    Look for errors related to authentication, connectivity, and DNS.
 3. Check if the backend is up and reachable.
@@ -46,7 +46,7 @@ This status indicates that the telemetry gateway or agent is successfully sendin
 ### Solution
 
 1. Check the error logs for the affected Pod by calling `kubectl logs -n kyma-system {POD_NAME}`:
-   - For **GatewaySomeTelemetryDataDropped**, check Pod `telemetry-(log|trace|metric)-gateway`.
+   - For **GatewaySomeTelemetryDataDropped**, check Pod `telemetry-otlp-gateway`.
    - For **AgentSomeTelemetryDataDropped**, check Pod `telemetry-(log|metric)-agent`.
 2. Go to your observability backend and investigate potential causes.
 3. If the backend is limiting the rate by refusing data, try the following options:
@@ -63,13 +63,13 @@ In the pipeline status, the `TelemetryFlowHealthy` condition has status **Gatewa
 
 ### Cause
 
-The gateway is receiving data faster than it can process and forward it.
+An OTLP Gateway instance is receiving data faster than it can process and forward it.
 
 ### Solution
 
-Manually scale out the capacity by increasing the number of replicas for the affected gateway. For details, see [Telemetry CRD](https://kyma-project.io/#/telemetry-manager/user/01-manager?id=module-configuration).
+Reduce the volume of telemetry data, either by rebalancing workloads across nodes or reconfiguring your pipeline(s) to filter out unused inputs and irrelevant data.
 
-### Custom Spans Don’t Arrive at the Backend, but Istio Spans Do
+## Custom Spans Don’t Arrive at the Backend, but Istio Spans Do
 
 ### Symptom
 
@@ -202,7 +202,7 @@ This usually happens for one of the following reasons:
 
 If you get a generic EOF error instead of a specific error message, there's usually a syntax error in your OTTL transformation or filter rules. It occurs when the parser cannot diagnose the error precisely.
 
-The following example uses the incorrect function name `isMatch` (it should be `IsMatch`, because he parser is case-sensitive):
+The following example uses the incorrect function name `isMatch` (it should be `IsMatch`, because the parser is case-sensitive):
 ```yaml
 # ...
 filter:
@@ -213,3 +213,37 @@ filter:
 ### Solution
 
 Review the syntax of your transform and filter rules and ensure that the names of [OTTL functions](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/ottl/ottlfuncs/README.md) are spelled correctly (for example, `IsMatch()` instead of `isMatch()`).
+
+## VPA Resources Are Not Created
+
+### Symptom
+
+VPA resources are not created even though VPA is enabled.
+
+### Cause 
+
+The VPA CRD is not installed in your cluster.
+
+### Solution
+
+Install the Vertical Pod Autoscaler in your cluster. For installation instructions, see the [official VPA documentation](https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler).
+
+## Memory Limits Too Restrictive
+
+### Symptom
+
+Telemetry components are running out of memory despite VPA being enabled.
+
+### Cause
+
+The calculated maxAllowed memory (30% of smallest Node) might be insufficient for your telemetry volume.
+
+### Solution
+
+If data is not arriving at your backend, see [Not All Data Arrive at the Backend](#not-all-data-arrive-at-the-backend) to check for backend-side issues first.
+
+If data is arriving but components are running out of memory, consider one of these options:
+
+- Add nodes with more memory to increase the maxAllowed calculation.
+- Reduce telemetry volume by applying filters in your pipelines (see [Filter Logs](./filter-and-process/filter-logs.md), [Filter Traces](./filter-and-process/filter-traces.md), [Filter Metrics](./filter-and-process/filter-metrics.md)).
+- Disable VPA, which causes the system to use static resource (see [Manage Automatic Resource Scaling](./manage-pipeline-resources.md)).

@@ -1,7 +1,6 @@
 package shared
 
 import (
-	"fmt"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -14,7 +13,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
-	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
@@ -28,14 +26,12 @@ func TestTransform_OTel(t *testing.T) {
 	tests := []struct {
 		testName            string
 		labels              []string
-		opts                []kubeprep.Option
 		name                string
 		input               telemetryv1beta1.LogPipelineInput
 		logGeneratorBuilder func(ns string) client.Object
 		transformSpec       telemetryv1beta1.TransformSpec
 		assertion           gomegatypes.GomegaMatcher
 		resourceName        types.NamespacedName
-		readinessCheckFunc  func(t *testing.T, name types.NamespacedName)
 	}{
 		{
 			testName: suite.LabelLogAgent,
@@ -52,8 +48,7 @@ func TestTransform_OTel(t *testing.T) {
 				HaveResourceAttributes(Not(HaveKeyWithValue("k8s.namespace.name", "kyma-system"))),
 				HaveAttributes(HaveKeyWithValue("system", "false")),
 			))),
-			resourceName:       kitkyma.LogAgentName,
-			readinessCheckFunc: assert.DaemonSetReady,
+			resourceName: kitkyma.LogAgentName,
 		},
 		{
 			testName: suite.LabelLogAgent,
@@ -75,8 +70,7 @@ func TestTransform_OTel(t *testing.T) {
 				HaveResourceAttributes(HaveKeyWithValue("test", "passed")),
 				HaveAttributes(HaveKeyWithValue("name", "InfoLogs")),
 			))),
-			resourceName:       kitkyma.LogAgentName,
-			readinessCheckFunc: assert.DaemonSetReady,
+			resourceName: kitkyma.LogAgentName,
 		}, {
 			testName: suite.LabelLogAgent,
 			labels:   []string{suite.LabelLogAgent},
@@ -95,8 +89,7 @@ func TestTransform_OTel(t *testing.T) {
 			assertion: HaveFlatLogs(ContainElement(SatisfyAll(
 				HaveSeverityText(Equal("INFO")),
 			))),
-			resourceName:       kitkyma.LogAgentName,
-			readinessCheckFunc: assert.DaemonSetReady,
+			resourceName: kitkyma.LogAgentName,
 		},
 		{
 			testName: suite.LabelLogGateway,
@@ -113,8 +106,7 @@ func TestTransform_OTel(t *testing.T) {
 				HaveResourceAttributes(Not(HaveKeyWithValue("k8s.namespace.name", "kyma-system"))),
 				HaveAttributes(HaveKeyWithValue("system", "false")),
 			))),
-			resourceName:       kitkyma.LogGatewayName,
-			readinessCheckFunc: assert.DeploymentReady,
+			resourceName: kitkyma.OTLPGatewayName,
 		}, {
 			testName: suite.LabelLogGateway,
 			labels:   []string{suite.LabelLogGateway},
@@ -132,8 +124,7 @@ func TestTransform_OTel(t *testing.T) {
 				HaveResourceAttributes(HaveKeyWithValue("test", "passed")),
 				HaveAttributes(HaveKeyWithValue("name", "InfoLogs")),
 			))),
-			resourceName:       kitkyma.LogGatewayName,
-			readinessCheckFunc: assert.DeploymentReady,
+			resourceName: kitkyma.OTLPGatewayName,
 		}, {
 			testName: suite.LabelLogGateway,
 			labels:   []string{suite.LabelLogGateway},
@@ -149,71 +140,13 @@ func TestTransform_OTel(t *testing.T) {
 			assertion: HaveFlatLogs(ContainElement(SatisfyAll(
 				HaveSeverityText(Equal("INFO")),
 			))),
-			resourceName:       kitkyma.LogGatewayName,
-			readinessCheckFunc: assert.DeploymentReady,
-		},
-		{
-			testName: fmt.Sprintf("%s-%s", suite.LabelLogGateway, suite.LabelExperimental),
-			labels:   []string{suite.LabelLogGateway},
-			opts:     []kubeprep.Option{kubeprep.WithExperimental()},
-			name:     "with-where",
-			input:    testutils.BuildLogPipelineOTLPInput(),
-			logGeneratorBuilder: func(ns string) client.Object {
-				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeCentralLogs).K8sObject()
-			},
-			transformSpec: telemetryv1beta1.TransformSpec{
-				Statements: []string{"set(log.attributes[\"system\"], \"false\") where not IsMatch(resource.attributes[\"k8s.namespace.name\"], \".*-system\")"},
-			},
-			assertion: HaveFlatLogs(ContainElement(SatisfyAll(
-				HaveResourceAttributes(Not(HaveKeyWithValue("k8s.namespace.name", "kyma-system"))),
-				HaveAttributes(HaveKeyWithValue("system", "false")),
-			))),
-			resourceName:       kitkyma.TelemetryOTLPGatewayName,
-			readinessCheckFunc: assert.DaemonSetReady,
-		}, {
-			testName: fmt.Sprintf("%s-%s", suite.LabelLogGateway, suite.LabelExperimental),
-			labels:   []string{suite.LabelLogGateway},
-			opts:     []kubeprep.Option{kubeprep.WithExperimental()},
-			name:     "infer-context",
-			input:    testutils.BuildLogPipelineOTLPInput(),
-			logGeneratorBuilder: func(ns string) client.Object {
-				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeCentralLogs).K8sObject()
-			},
-			transformSpec: telemetryv1beta1.TransformSpec{
-				Statements: []string{"set(resource.attributes[\"test\"], \"passed\")",
-					"set(log.attributes[\"name\"], \"InfoLogs\")",
-				},
-			},
-			assertion: HaveFlatLogs(ContainElement(SatisfyAll(
-				HaveResourceAttributes(HaveKeyWithValue("test", "passed")),
-				HaveAttributes(HaveKeyWithValue("name", "InfoLogs")),
-			))),
-			resourceName:       kitkyma.TelemetryOTLPGatewayName,
-			readinessCheckFunc: assert.DaemonSetReady,
-		}, {
-			testName: fmt.Sprintf("%s-%s", suite.LabelLogGateway, suite.LabelExperimental),
-			labels:   []string{suite.LabelLogGateway},
-			opts:     []kubeprep.Option{kubeprep.WithExperimental()},
-			name:     "cond-and-stmts",
-			input:    testutils.BuildLogPipelineOTLPInput(),
-			logGeneratorBuilder: func(ns string) client.Object {
-				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeCentralLogs).K8sObject()
-			},
-			transformSpec: telemetryv1beta1.TransformSpec{
-				Conditions: []string{"log.severity_text == \"info\" or log.severity_text == \"Info\""},
-				Statements: []string{"set(log.severity_text, ToUpperCase(log.severity_text))"},
-			},
-			assertion: HaveFlatLogs(ContainElement(SatisfyAll(
-				HaveSeverityText(Equal("INFO")),
-			))),
-			resourceName:       kitkyma.TelemetryOTLPGatewayName,
-			readinessCheckFunc: assert.DaemonSetReady,
+			resourceName: kitkyma.OTLPGatewayName,
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.testName, func(t *testing.T) {
-			suite.SetupTestWithOptions(t, tc.labels, tc.opts...)
+			suite.SetupTest(t, tc.labels...)
 
 			var (
 				uniquePrefix      = unique.Prefix(tc.testName, tc.name)
@@ -244,7 +177,7 @@ func TestTransform_OTel(t *testing.T) {
 
 			assert.BackendReachable(t, backend)
 
-			tc.readinessCheckFunc(t, tc.resourceName)
+			assert.DaemonSetReady(t, tc.resourceName)
 
 			assert.OTelLogPipelineHealthy(t, pipelineNameValue)
 

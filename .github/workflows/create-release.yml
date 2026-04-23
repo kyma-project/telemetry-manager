@@ -1,0 +1,749 @@
+name: Create Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 1.2.3)'
+        required: true
+        type: string
+      occ_image_version:
+        description: 'OCC Image Version (e.g., 0.1.0-0.2.0)'
+        required: true
+        type: string
+      self_monitor_image_tag:
+        description: 'Self-Monitor image tag to use in release (e.g., v20260302-bbf32a3b)'
+        required: true
+        default: ""
+        type: string
+      dir_size_image_tag:
+        description: 'Directory Size Exporter image tag to use in release (e.g., v20260302-12345678)'
+        required: true
+        default: ""
+        type: string
+      dry_run:
+        description: 'Perform a dry run without creating a release'
+        required: false
+        default: false
+        type: boolean
+      force:
+        description: 'Force release creation (re-create existing release, skip validation checks)'
+        required: false
+        default: false
+        type: boolean
+      module_release:
+        description: 'Whether to trigger submit module workflow after this release (only for experimental, dev, and fast channels)'
+        required: false
+        default: true
+        type: boolean
+
+run-name: "Release Telemetry version ${{ inputs.version }} with OCC image ${{ inputs.occ_image_version }}, dry-run: ${{ inputs.dry_run }}, force mode: ${{ inputs.force }}"
+
+permissions:
+  contents: write
+  issues: read
+  actions: read
+  pull-requests: write
+
+jobs:
+  validate-and-prepare-branch:
+    runs-on: ubuntu-latest
+    outputs:
+      release-branch: ${{ steps.determine-branch.outputs.release-branch }}
+      is-patch: ${{ steps.determine-branch.outputs.is-patch }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+      - name: Validate version format
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+          OCC_IMAGE_VERSION: ${{ github.event.inputs.occ_image_version }}
+          SELF_MONITOR_IMAGE_TAG: ${{ github.event.inputs.self_monitor_image_tag }}
+          DIR_SIZE_IMAGE_TAG: ${{ github.event.inputs.dir_size_image_tag }}
+        run: |
+          echo "Validating version formats..."
+
+          # Validate release version format (X.Y.Z)
+          if ! [[ "${VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Invalid version format: ${VERSION}"
+            echo "Expected format: X.Y.Z (e.g., 1.2.3)"
+            exit 1
+          fi
+          echo "✓ Release version format valid: ${VERSION}"
+
+          # Validate OCC image version format (X.Y.Z-A.B.C)
+          if ! [[ "${OCC_IMAGE_VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+-[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Invalid OCC image version format: ${OCC_IMAGE_VERSION}"
+            echo "Expected format: X.Y.Z-A.B.C (e.g., 1.2.3-4.5.6)"
+            exit 1
+          fi
+          echo "✓ OCC image version format valid: ${OCC_IMAGE_VERSION}"
+
+          # Validate self-monitor image tag format (vYYYYMMDD-hash)
+          if [ -n "${SELF_MONITOR_IMAGE_TAG}" ]; then
+            if ! [[ "${SELF_MONITOR_IMAGE_TAG}" =~ ^v[0-9]{8}-[a-f0-9]{8}$ ]]; then
+              echo "::error::Invalid self-monitor image tag format: ${SELF_MONITOR_IMAGE_TAG}"
+              echo "Expected format: vYYYYMMDD-HASH (e.g., v20260302-bbf32a3b)"
+              exit 1
+            fi
+            echo "✓ Self-monitor image tag format valid: ${SELF_MONITOR_IMAGE_TAG}"
+          else
+            echo "::warning::Self-monitor image tag is empty, using default"
+          fi
+
+          # Validate dir-size image tag format (vYYYYMMDD-hash)
+          if [ -n "${DIR_SIZE_IMAGE_TAG}" ]; then
+            if ! [[ "${DIR_SIZE_IMAGE_TAG}" =~ ^v[0-9]{8}-[a-f0-9]{8}$ ]]; then
+              echo "::error::Invalid dir-size image tag format: ${DIR_SIZE_IMAGE_TAG}"
+              echo "Expected format: vYYYYMMDD-HASH (e.g., v20260302-12345678)"
+              exit 1
+            fi
+            echo "✓ Dir-size image tag format valid: ${DIR_SIZE_IMAGE_TAG}"
+          else
+            echo "::warning::Dir-size image tag is empty, using default"
+          fi
+          
+          # Check if OCC Docker image exists
+          echo "Checking if OCC Docker image exists..."
+          OCC_IMAGE_REPO="europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector"
+          OCC_IMAGE_FULL="${OCC_IMAGE_REPO}:${OCC_IMAGE_VERSION}"
+
+          if docker manifest inspect "${OCC_IMAGE_FULL}" > /dev/null 2>&1; then
+            echo "OCC Docker image exists: ${OCC_IMAGE_FULL}"
+          else
+            echo "::error::OCC Docker image does not exist: ${OCC_IMAGE_FULL}"
+            echo "Please verify the image has been built and pushed to the registry"
+            exit 1
+          fi
+          
+          # Check if Directory Size Exporter Docker image exists
+          echo "Checking if Directory Size Exporter Docker image exists..."
+          DSE_IMAGE_REPO="europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter"
+          DSE_IMAGE_FULL="${DSE_IMAGE_REPO}:${DIR_SIZE_IMAGE_TAG}"
+
+          if docker manifest inspect "${DSE_IMAGE_FULL}" > /dev/null 2>&1; then
+            echo "Directory Size Exporter Docker image exists: ${DSE_IMAGE_FULL}"
+          else
+            echo "::error::Directory Size Exporter Docker image does not exist: ${DSE_IMAGE_FULL}"
+            echo "Please verify the image has been built and pushed to the registry"
+            exit 1
+          fi
+          
+          # Check if Self Monitor Docker image exists
+          echo "Checking if Self Monitor Docker image exists..."
+          SELF_MONITOR_IMAGE_REPO="europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor"
+          SELF_MONITOR_FULL="${SELF_MONITOR_IMAGE_REPO}:${SELF_MONITOR_IMAGE_TAG}"
+
+          if docker manifest inspect "${SELF_MONITOR_FULL}" > /dev/null 2>&1; then
+            echo "Self Monitor Docker image exists: ${SELF_MONITOR_FULL}"
+          else
+            echo "::error::Self Monitor Docker image does not exist: ${SELF_MONITOR_FULL}"
+            echo "Please verify the image has been built and pushed to the registry"
+            exit 1
+          fi
+      - name: Check if milestone exists and is closed
+        env:
+          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
+          VERSION: ${{ github.event.inputs.version }}
+        run: |
+          echo "Checking milestone for version ${VERSION}..."
+          MILESTONE=$(gh api "repos/${{ github.repository }}/milestones?state=all&direction=desc&per_page=100" --jq ".[] | select(.title == \"${VERSION}\")")
+
+          if [ -z "$MILESTONE" ]; then
+            echo "Milestone ${VERSION} does not exist. Please create it first."
+            exit 1
+          fi
+
+          STATE=$(echo "$MILESTONE" | jq -r '.state')
+          if [ "$STATE" != "closed" ]; then
+            echo "Milestone ${VERSION} is still open. Please close the milestone before releasing."
+            exit 1
+          fi
+
+          OPEN_ISSUES=$(echo "$MILESTONE" | jq -r '.open_issues')
+          if [ "$OPEN_ISSUES" -gt 0 ]; then
+            echo "Milestone ${VERSION} has ${OPEN_ISSUES} open issue(s). Please close all issues before releasing."
+            exit 1
+          fi
+
+          echo "Milestone ${VERSION} exists, is closed, and has no open issues."
+
+      - name: Check if release already exists
+        if: ${{ inputs.force != true }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
+          VERSION: ${{ github.event.inputs.version }}
+        run: |
+          echo "Checking if release ${VERSION} already exists..."
+          if gh release view "${VERSION}" --repo "${{ github.repository }}" > /dev/null 2>&1; then
+            echo "Release ${VERSION} already exists. Please choose a different version."
+            exit 1
+          fi
+          echo "Release ${VERSION} does not exist yet."
+
+      - name: Delete existing release (force mode)
+        if: ${{ inputs.force == true }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
+          VERSION: ${{ github.event.inputs.version }}
+        run: |
+          echo "FORCE MODE: Checking for existing release ${VERSION}..."
+          if gh release view "${VERSION}" --repo "${{ github.repository }}" > /dev/null 2>&1; then
+            echo "::warning::Deleting existing release ${VERSION}"
+            gh release delete "${VERSION}" --repo "${{ github.repository }}" --yes --cleanup-tag
+            echo "✓ Deleted existing release ${VERSION}"
+          else
+            echo "No existing release found for ${VERSION}"
+          fi
+
+      - name: Check if tag already exists
+        if: ${{ inputs.force != true }}
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+        run: |
+          echo "Checking if tag ${VERSION} already exists..."
+          git fetch --tags
+          if git rev-parse "${VERSION}" >/dev/null 2>&1; then
+            echo "::error::Tag ${VERSION} already exists in the repository."
+            echo "Existing tags:"
+            git tag -l "${VERSION}"
+            echo "Please choose a different version or delete the existing tag first."
+            exit 1
+          fi
+          echo "✓ Tag ${VERSION} does not exist yet."
+
+      - name: Delete existing tag (force mode)
+        if: ${{ inputs.force == true }}
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+        run: |
+          echo "FORCE MODE: Checking for existing tag ${VERSION}..."
+          git fetch --tags
+          if git rev-parse "${VERSION}" >/dev/null 2>&1; then
+            echo "::warning::Deleting existing tag ${VERSION}"
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git tag -d "${VERSION}"
+            git push origin ":refs/tags/${VERSION}"
+            echo "✓ Deleted existing tag ${VERSION}"
+          else
+            echo "No existing tag found for ${VERSION}"
+          fi
+
+      - name: Determine release branch and type
+        id: determine-branch
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+        run: |
+          RELEASE_BRANCH="release-$(echo ${VERSION} | cut -d. -f1-2)"
+          echo "release-branch=${RELEASE_BRANCH}" >> $GITHUB_OUTPUT
+
+          git fetch origin "${RELEASE_BRANCH}" 2>/dev/null || true
+          if git rev-parse --verify "origin/${RELEASE_BRANCH}" > /dev/null 2>&1; then
+            echo "is-patch=true" >> $GITHUB_OUTPUT
+            echo "Patch release detected. Branch ${RELEASE_BRANCH} exists."
+          else
+            echo "is-patch=false" >> $GITHUB_OUTPUT
+            echo "Minor/Major release detected. Branch ${RELEASE_BRANCH} will be created."
+          fi
+
+      - name: Create release branch (if minor/major release)
+        if: steps.determine-branch.outputs.is-patch == 'false'
+        env:
+          RELEASE_BRANCH: ${{ steps.determine-branch.outputs.release-branch }}
+        run: |
+          echo "Creating release branch ${RELEASE_BRANCH} from main..."
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "${RELEASE_BRANCH}"
+          git push origin "${RELEASE_BRANCH}"
+          echo "Created branch ${RELEASE_BRANCH}"
+
+  prepare-release:
+    if: ${{ inputs.force != true }}
+    needs: validate-and-prepare-branch
+    runs-on: ubuntu-latest
+    outputs:
+      release-tag: ${{ github.event.inputs.version }}
+      pr-number: ${{ steps.create-pr.outputs.pr-number }}
+    steps:
+      - name: Checkout release branch
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          token: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
+          ref: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
+          fetch-depth: 0
+
+      - name: Setup Golang
+        uses: "./.github/template/setup-golang"
+
+      - name: Create version bump branch
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+          RELEASE_BRANCH: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
+        run: |
+          BUMP_BRANCH="rel-prep-${VERSION}"
+          echo "Creating version bump branch ${BUMP_BRANCH}..."
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "${BUMP_BRANCH}"
+          echo "BUMP_BRANCH=${BUMP_BRANCH}" >> $GITHUB_ENV
+
+      - name: Bump version in files
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+          OCC_IMAGE_VERSION: ${{ github.event.inputs.occ_image_version }}
+          SELF_MONITOR_IMAGE_TAG: ${{ github.event.inputs.self_monitor_image_tag }}
+          DIR_SIZE_IMAGE_TAG: ${{ github.event.inputs.dir_size_image_tag }}
+        run: |
+          echo "Bumping version to ${VERSION}..."
+
+          if [ -f .env ]; then
+            sed -i.bak "s/ENV_HELM_RELEASE_VERSION=.*/ENV_HELM_RELEASE_VERSION=${VERSION}/" .env && rm .env.bak
+            echo "Updated ENV_HELM_RELEASE_VERSION in .env"
+
+            sed -i.bak "s|ENV_MANAGER_IMAGE=\(.*\):.*|ENV_MANAGER_IMAGE=\1:${VERSION}|" .env && rm .env.bak
+            echo "Updated ENV_MANAGER_IMAGE tag in .env"
+
+            sed -i.bak 's|ENV_OTEL_COLLECTOR_IMAGE="\([^:]*\):[^"]*"|ENV_OTEL_COLLECTOR_IMAGE="\1:'"${OCC_IMAGE_VERSION}"'"|' .env && rm .env.bak
+            echo "Updated ENV_OTEL_COLLECTOR_IMAGE tag in .env"
+
+            sed -i.bak 's|ENV_SELFMONITOR_IMAGE="\([^:]*\):[^"]*"|ENV_SELFMONITOR_IMAGE="\1:'"${SELF_MONITOR_IMAGE_TAG}"'"|' .env && rm .env.bak
+            echo "Updated ENV_SELFMONITOR_IMAGE tag in .env"
+          
+            sed -i.bak 's|ENV_FLUENTBIT_EXPORTER_IMAGE="\([^:]*\):[^"]*"|ENV_FLUENTBIT_EXPORTER_IMAGE="\1:'"${DIR_SIZE_IMAGE_TAG}"'"|' .env && rm .env.bak
+            echo "Updated ENV_FLUENTBIT_EXPORTER_IMAGE tag in .env"
+
+            make generate
+          fi
+
+      - name: Commit and push version bump
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+        run: |
+          git add .
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Bump version to ${VERSION}"
+            git push origin "${BUMP_BRANCH}"
+            echo "Committed and pushed version bump to ${BUMP_BRANCH}"
+          fi
+
+      - name: Create Pull Request
+        id: create-pr
+        env:
+          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
+          VERSION: ${{ github.event.inputs.version }}
+          RELEASE_BRANCH: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
+          OCC_IMAGE_VERSION: ${{ github.event.inputs.occ_image_version }}
+          SELF_MONITOR_IMAGE_TAG: ${{ github.event.inputs.self_monitor_image_tag }}
+          DIR_SIZE_IMAGE_TAG: ${{ github.event.inputs.dir_size_image_tag }}
+        run: |
+          # Build changes list dynamically
+          CHANGES="- Updated \`ENV_HELM_RELEASE_VERSION\` to \`${VERSION}\`
+          - Updated \`ENV_MANAGER_IMAGE\` tag to \`${VERSION}\`
+          - Updated \`ENV_OTEL_COLLECTOR_IMAGE\` tag to \`${OCC_IMAGE_VERSION}\`"
+
+          if [ -n "${SELF_MONITOR_IMAGE_TAG}" ]; then
+            CHANGES="${CHANGES}
+          - Updated \`ENV_SELFMONITOR_IMAGE\` tag to \`${SELF_MONITOR_IMAGE_TAG}\`"
+          fi
+
+          if [ -n "${DIR_SIZE_IMAGE_TAG}" ]; then
+            CHANGES="${CHANGES}
+          - Updated \`ENV_FLUENTBIT_EXPORTER_IMAGE\` tag to \`${DIR_SIZE_IMAGE_TAG}\`"
+          fi
+
+          PR_BODY="$(cat <<EOF
+          ## Release Preparation for ${VERSION}
+
+          This PR prepares the release branch for version **${VERSION}**.
+
+          ### Changes
+          ${CHANGES}
+
+          ### Review Checklist
+          - [ ] Version numbers are correct
+          - [ ] Generated files are up to date
+          - [ ] No unintended changes
+
+          **Merge this PR to continue with the release workflow.**
+          EOF
+          )"
+
+          PR_URL=$(gh pr create \
+            --base "${RELEASE_BRANCH}" \
+            --head "${BUMP_BRANCH}" \
+            --title "chore: release preparation: bump version to ${VERSION}" \
+            --body "${PR_BODY}" \
+            --label "area/release" \
+            --label "kind/chore" \
+            --milestone "${VERSION}")
+
+          PR_NUMBER=$(echo "${PR_URL}" | grep -o '[0-9]*$')
+          echo "pr-number=${PR_NUMBER}" >> $GITHUB_OUTPUT
+          echo "Created PR #${PR_NUMBER}: ${PR_URL}"
+          echo "PR_NUMBER=${PR_NUMBER}" >> $GITHUB_ENV
+
+      - name: Wait for PR to be merged
+        env:
+          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
+          RELEASE_BRANCH: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
+        timeout-minutes: 120
+        run: |
+          PR_NUMBER="${{ steps.create-pr.outputs.pr-number }}"
+          echo "Waiting for PR #${PR_NUMBER} to be merged (timeout: 120 minutes)..."
+
+          MAX_ATTEMPTS=60 
+          ATTEMPT=0
+
+          while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+            PR_STATE=$(gh pr view "${PR_NUMBER}" --json state --jq .state)
+
+            if [ "$PR_STATE" = "MERGED" ]; then
+              MERGED_BRANCH=$(gh pr view "${PR_NUMBER}" --json baseRefName --jq .baseRefName)
+              if [ "$MERGED_BRANCH" != "$RELEASE_BRANCH" ]; then
+                echo "::error::PR was merged to ${MERGED_BRANCH} instead of ${RELEASE_BRANCH}"
+                exit 1
+              fi
+              echo "✓ PR #${PR_NUMBER} has been merged to ${RELEASE_BRANCH}!"
+              break
+            elif [ "$PR_STATE" = "CLOSED" ]; then
+              echo "::error::PR #${PR_NUMBER} was closed without merging"
+              exit 1
+            fi
+
+            echo "Attempt $((ATTEMPT + 1))/${MAX_ATTEMPTS}: PR state is ${PR_STATE}, waiting..."
+            sleep 120
+            ATTEMPT=$((ATTEMPT + 1))
+          done
+
+          if [ $ATTEMPT -ge $MAX_ATTEMPTS ]; then
+            echo "::error::Timeout: PR #${PR_NUMBER} was not merged within 120 minutes"
+            exit 1
+          fi
+
+          echo "Updating local branch with merged changes..."
+          git fetch origin "${RELEASE_BRANCH}"
+          git checkout "${RELEASE_BRANCH}"
+          git pull origin "${RELEASE_BRANCH}"
+          echo "✓ Release branch updated with merged changes"
+
+      - name: Clean up bump branch
+        if: always()
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
+          VERSION: ${{ github.event.inputs.version }}
+        run: |
+          BUMP_BRANCH="rel-prep-${VERSION}"
+          echo "Cleaning up bump branch ${BUMP_BRANCH}..."
+
+          if git ls-remote --heads origin "${BUMP_BRANCH}" | grep -q "${BUMP_BRANCH}"; then
+            git push origin --delete "${BUMP_BRANCH}"
+            echo "✓ Deleted bump branch ${BUMP_BRANCH}"
+          else
+            echo "Bump branch ${BUMP_BRANCH} not found on remote (may already be deleted)"
+          fi
+      - name: Create and push release tag
+        if: ${{ inputs.dry_run != true }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
+          VERSION: ${{ github.event.inputs.version }}
+          RELEASE_BRANCH: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
+        run: |
+          echo "Creating release tag ${VERSION} on release branch ${RELEASE_BRANCH}..."
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Ensure we're on the release branch
+          git checkout "${RELEASE_BRANCH}"
+
+          # Fetch latest changes from remote
+          echo "Fetching latest changes from origin/${RELEASE_BRANCH}..."
+          git fetch origin "${RELEASE_BRANCH}"
+
+          # Check if local branch is behind remote
+          LOCAL_COMMIT=$(git rev-parse HEAD)
+          REMOTE_COMMIT=$(git rev-parse "origin/${RELEASE_BRANCH}")
+
+          if [ "$LOCAL_COMMIT" != "$REMOTE_COMMIT" ]; then
+            echo "Local branch is behind remote. Updating..."
+            git reset --hard "origin/${RELEASE_BRANCH}"
+            echo "✓ Branch updated to latest commit: ${REMOTE_COMMIT}"
+          else
+            echo "✓ Branch is already up-to-date with remote"
+          fi
+
+          # Verify we're on the correct commit
+          CURRENT_COMMIT=$(git rev-parse HEAD)
+          echo "Current commit: ${CURRENT_COMMIT}"
+
+          # Create annotated tag
+          git tag -a "${VERSION}" -m "Release ${VERSION}"
+          echo "Created tag ${VERSION} at commit ${CURRENT_COMMIT}"
+
+          # Push tag to origin
+          git push origin "${VERSION}"
+          echo "✓ Pushed tag ${VERSION} to origin"
+
+          echo "✓ Successfully created and pushed tag ${VERSION} from ${RELEASE_BRANCH}"
+
+      - name: Skip tag creation (dry run)
+        if: ${{ inputs.dry_run == true }}
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+          RELEASE_BRANCH: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
+        run: |
+          echo "::notice::DRY RUN: Skipping tag creation for ${VERSION} on ${RELEASE_BRANCH}"
+          echo "Would have created and pushed tag: ${VERSION}"
+
+  unit-tests:
+    runs-on: ubuntu-latest
+    needs:
+      - validate-and-prepare-branch
+      - prepare-release
+    if: always() && !cancelled() && needs.validate-and-prepare-branch.result == 'success'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
+          fetch-depth: 0
+
+      - name: Setup Golang
+        uses: "./.github/template/setup-golang"
+
+      - name: Run tests
+        run: make test
+
+  run-pr-integration:
+    needs:
+      - validate-and-prepare-branch
+      - prepare-release
+    if: always() && !cancelled() && needs.validate-and-prepare-branch.result == 'success'
+    uses: ./.github/workflows/pr-integration.yml
+    with:
+      image_tag: ${{ inputs.version }}
+      ref: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
+    secrets: inherit
+
+  run-gardener-integration:
+    needs:
+      - validate-and-prepare-branch
+      - prepare-release
+    if: always() && !cancelled() && needs.validate-and-prepare-branch.result == 'success'
+    uses: ./.github/workflows/gardener-integration.yml
+    with:
+      image_tag: ${{ inputs.version }}
+      ref: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
+    secrets: inherit
+
+  upload-release-report:
+    needs:
+      - run-pr-integration
+      - run-gardener-integration
+      - unit-tests
+    uses: kyma-project/compliancy/.github/workflows/notify-release-report.yml@main
+    with:
+      release_version: ${{ github.event.inputs.version }}
+    secrets: inherit
+
+  create-release:
+    needs:
+      - validate-and-prepare-branch
+      - prepare-release
+      - upload-release-report
+      - unit-tests
+    if: always() && !cancelled() && needs.validate-and-prepare-branch.result == 'success' && needs.upload-release-report.result == 'success'
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    env:
+      KYMA_TELEMETRY_MANAGER_REPO: ${{ github.repository }}
+    steps:
+      - name: Checkout release tag
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
+          fetch-depth: 0
+      - name: Verify we're on the merged PR commit
+        if: ${{ inputs.force != true }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ needs.prepare-release.outputs.pr-number }}
+        run: |
+          MERGE_SHA=$(gh pr view "${PR_NUMBER}" --json mergeCommit --jq .mergeCommit.oid)
+          CURRENT_SHA=$(git rev-parse HEAD)
+
+          if [ "$MERGE_SHA" != "$CURRENT_SHA" ]; then
+            echo "::warning::Expected commit ${MERGE_SHA} but got ${CURRENT_SHA}"
+            echo "Release branch may have additional commits after PR merge"
+          fi
+
+      - name: Install tools
+        shell: bash
+        run: make install-tools
+
+      - name: Release
+        if: ${{ inputs.dry_run != true }}
+        run: hack/release.sh ${{ inputs.version }}
+        env:
+          GITHUB_TOKEN: "${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}"
+          GORELEASER_CURRENT_TAG: "${{ inputs.version }}"
+
+      - name: Skip GitHub release (dry run)
+        if: ${{ inputs.dry_run == true }}
+        run: |
+          echo "::notice::DRY RUN: Skipping GitHub release creation"
+          echo "Would have run: hack/release.sh ${{ inputs.version }}"
+
+      - name: Package Helm chart
+        run: |
+          OUTPUT=$(helm package ./helm -d ./)
+          FILENAME=$(echo $OUTPUT | grep -o '[^ ]*.tgz')
+          echo "HELM_CHART=$FILENAME" >> $GITHUB_ENV
+
+      - name: Upload Helm chart to release
+        if: ${{ inputs.dry_run != true }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
+        run: |
+          [[ ! -e ${HELM_CHART} ]] && echo "::error ::Packaged Helm chart does not exist" && exit 1
+          gh release upload ${{ inputs.version }} --clobber ${HELM_CHART}
+
+      - name: Skip Helm chart upload (dry run)
+        if: ${{ inputs.dry_run == true }}
+        run: |
+          echo "::notice::DRY RUN: Skipping Helm chart upload"
+          echo "Would have uploaded: ${HELM_CHART}"
+
+      - name: Commit and push Helm chart metadata
+        if: ${{ inputs.dry_run != true }}
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout gh-pages
+          helm repo index --url https://github.com/${{ github.repository }}/releases/download/${{ inputs.version }} --merge ./index.yaml ./
+          git add index.yaml
+          git commit -m "Update Helm chart metadata for ${{ inputs.version }}"
+          git push origin gh-pages
+
+      - name: Skip gh-pages update (dry run)
+        if: ${{ inputs.dry_run == true }}
+        run: |
+          echo "::notice::DRY RUN: Skipping gh-pages Helm chart metadata update"
+          echo "Would have updated index.yaml on gh-pages branch"
+
+      - name: Trigger module submission for dev channel
+        if: ${{ inputs.dry_run != true && inputs.module_release == true }}
+        env:
+          GH_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Triggering module release for dev channel..."
+          gh workflow run submit-module.yml \
+            --ref "${{ github.ref_name }}" \
+            -f version="${{ inputs.version }}" \
+            -f channel="dev" \
+            -f dry_run="false" \
+            -f auto_merge="true"
+          echo "Module release workflow triggered for dev channel"
+
+      - name: Trigger module submission for fast channel
+        if: ${{ inputs.dry_run != true && inputs.module_release == true }}
+        env:
+          GH_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Triggering module release for fast channel..."
+          gh workflow run submit-module.yml \
+            --ref "${{ github.ref_name }}" \
+            -f version="${{ inputs.version }}" \
+            -f channel="fast" \
+            -f dry_run="false" \
+            -f auto_merge="true"
+          echo "Module release workflow triggered for fast channel"
+
+      - name: Trigger module submission for experimental channel
+        if: ${{ inputs.dry_run != true && inputs.module_release == true }}
+        env:
+          GH_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Triggering module release for experimental channel..."
+          gh workflow run submit-module.yml \
+            --ref "${{ github.ref_name }}" \
+            -f version="${{ inputs.version }}" \
+            -f channel="experimental" \
+            -f dry_run="false" \
+            -f auto_merge="true"
+          echo "Module release workflow triggered for experimental channel"
+
+      - name: Release success summary
+        if: ${{ success() && inputs.dry_run != true }}
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY <<EOF
+          ##  Release ${{ inputs.version }} Published Successfully!
+
+          ### Release Information
+          - **Release**: https://github.com/${{ github.repository }}/releases/tag/${{ inputs.version }}
+          - **Version**: ${{ inputs.version }}
+          - **Branch**: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
+          - **OCC Image**: ${{ github.event.inputs.occ_image_version }}
+          - **Helm Chart**: \`${HELM_CHART}\`
+
+          ### Docker Images
+          \`\`\`
+          europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:${{ inputs.version }}
+          \`\`\`
+
+          ### Module Releases
+          Module release workflows have been triggered for:
+          - **Dev channel**: Auto-merge enabled
+          - **Fast channel**: Auto-merge enabled
+          - **Experimental channel**: Auto-merge enabled
+
+          Monitor the workflow runs at: https://github.com/${{ github.repository }}/actions/workflows/submit-module.yml
+
+          ### What's Next?
+          1. Verify the release at the URL above
+          2. Monitor the module release PRs
+          3. Announce the release to the team
+          4. Update external documentation if needed
+
+          EOF
+      - name: Dry run summary
+        if: ${{ inputs.dry_run == true }}
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY <<EOF
+          ## Dry Run Summary
+
+          **Version**: ${{ inputs.version }}
+          **Release Branch**: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
+          **OCC Image**: ${{ github.event.inputs.occ_image_version }}
+
+          ### Completed (Dry Run)
+          - Version validation
+          - Milestone verification
+          - Release branch preparation
+          - Version bump in .env
+          - make generate
+          - Commit to release branch
+          - Docker image build
+          - Unit tests
+          - PR integration tests
+          - Gardener integration tests
+          - Release report upload
+          - Helm chart packaging
+
+          ### Skipped (Dry Run)
+          - Git tag creation
+          - GitHub release creation
+          - Helm chart upload to release
+          - gh-pages update
+
+          ---
+          **To create the actual release**, re-run this workflow with `dry_run` set to `false`.
+          EOF
