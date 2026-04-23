@@ -63,8 +63,16 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 					},
 				},
 			},
-			errorMsg: "Exactly one of 'value' or 'valueFrom' must be set",
+			errorMsg: "Only one of 'value' or 'valueFrom' can be set",
 			field:    "spec.output.otlp.endpoint",
+		},
+		{
+			name: "otlp-output-missing-endpoint",
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithOTLPOutput().
+				Build(),
+			errorMsg: "'endpoint' must have 'value' or 'valueFrom' set",
+			field:    "spec.output.otlp",
 		},
 		{
 			name: "secretkeyref-requires-key",
@@ -188,6 +196,28 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			field:    "spec.output.otlp.authentication.basic.user.valueFrom.secretKeyRef.key",
 		},
 		{
+			name: "otlp-output-basic-auth-missing-user",
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithOTLPOutput(
+					testutils.OTLPEndpoint(backenEndpoint),
+					testutils.OTLPBasicAuth("", "password"),
+				).
+				Build(),
+			errorMsg: "'user' must have 'value' or 'valueFrom' set",
+			field:    "spec.output.otlp.authentication.basic",
+		},
+		{
+			name: "otlp-output-basic-auth-missing-password",
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithOTLPOutput(
+					testutils.OTLPEndpoint(backenEndpoint),
+					testutils.OTLPBasicAuth("user", ""),
+				).
+				Build(),
+			errorMsg: "'password' must have 'value' or 'valueFrom' set",
+			field:    "spec.output.otlp.authentication.basic",
+		},
+		{
 			name: "otlp-output-tls-missing-key",
 			pipeline: testutils.NewLogPipelineBuilder().
 				WithOTLPOutput(
@@ -241,9 +271,48 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 					),
 				).
 				Build(),
-			errorMsg: "Exactly one of 'value' or 'valueFrom' must be set",
-			field:    "spec.output.otlp.authentication.oauth2.clientID",
+			errorMsg: "'clientID' must have 'value' or 'valueFrom' set",
+			field:    "spec.output.otlp.authentication.oauth2",
 			causes:   1,
+		},
+		{
+			name: "otlp-output-oauth2-missing-token-url",
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithOTLPOutput(
+					testutils.OTLPEndpoint(backenEndpoint),
+					testutils.OTLPOAuth2(
+						testutils.OAuth2ClientID("clientid"),
+						testutils.OAuth2ClientSecret("clientsecret"),
+					),
+				).
+				Build(),
+			errorMsg: "'tokenURL' must have 'value' or 'valueFrom' set",
+			field:    "spec.output.otlp.authentication.oauth2",
+		},
+		{
+			name: "otlp-output-oauth2-missing-client-secret",
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithOTLPOutput(
+					testutils.OTLPEndpoint(backenEndpoint),
+					testutils.OTLPOAuth2(
+						testutils.OAuth2ClientID("clientid"),
+						testutils.OAuth2TokenURL("https://auth.example.com/token"),
+					),
+				).
+				Build(),
+			errorMsg: "'clientSecret' must have 'value' or 'valueFrom' set",
+			field:    "spec.output.otlp.authentication.oauth2",
+		},
+		{
+			name: "otlp-output-missing-header-value",
+			pipeline: testutils.NewLogPipelineBuilder().
+				WithOTLPOutput(
+					testutils.OTLPEndpoint(backenEndpoint),
+					testutils.OTLPCustomHeader("X-Custom", "", ""),
+				).
+				Build(),
+			errorMsg: "Header must have 'value' or 'valueFrom' set",
+			field:    "spec.output.otlp.headers[0]",
 		},
 		{
 			name: "otlp-output-oauth2-insecure",
@@ -322,6 +391,18 @@ func TestRejectLogPipelineCreation(t *testing.T) {
 			causes:   2,
 		},
 		// http output
+		{
+			name: "http-output-missing-host",
+			pipeline: telemetryv1beta1.LogPipeline{
+				Spec: telemetryv1beta1.LogPipelineSpec{
+					Output: telemetryv1beta1.LogPipelineOutput{
+						FluentBitHTTP: &telemetryv1beta1.FluentBitHTTPOutput{},
+					},
+				},
+			},
+			errorMsg: "'host' must have 'value' or 'valueFrom' set",
+			field:    "spec.output.http",
+		},
 		{
 			name: "http-output-tls-missing-key",
 			pipeline: testutils.NewLogPipelineBuilder().

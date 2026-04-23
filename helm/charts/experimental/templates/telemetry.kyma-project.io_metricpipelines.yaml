@@ -1424,9 +1424,9 @@ spec:
                                     type: object
                                 type: object
                                 x-kubernetes-validations:
-                                - message: Exactly one of 'value' or 'valueFrom' must
+                                - message: Only one of 'value' or 'valueFrom' can
                                     be set
-                                  rule: has(self.value) != has(self.valueFrom)
+                                  rule: '!(has(self.value) && has(self.valueFrom))'
                               user:
                                 description: User contains the basic auth username
                                   or a Secret reference.
@@ -1470,13 +1470,20 @@ spec:
                                     type: object
                                 type: object
                                 x-kubernetes-validations:
-                                - message: Exactly one of 'value' or 'valueFrom' must
+                                - message: Only one of 'value' or 'valueFrom' can
                                     be set
-                                  rule: has(self.value) != has(self.valueFrom)
+                                  rule: '!(has(self.value) && has(self.valueFrom))'
                             required:
                             - password
                             - user
                             type: object
+                            x-kubernetes-validations:
+                            - message: '''user'' must have ''value'' or ''valueFrom''
+                                set'
+                              rule: has(self.user.value) || has(self.user.valueFrom)
+                            - message: '''password'' must have ''value'' or ''valueFrom''
+                                set'
+                              rule: has(self.password.value) || has(self.password.valueFrom)
                           oauth2:
                             description: OAuth2 activates `OAuth2` authentication
                               for the destination providing relevant Secrets.
@@ -1524,9 +1531,9 @@ spec:
                                     type: object
                                 type: object
                                 x-kubernetes-validations:
-                                - message: Exactly one of 'value' or 'valueFrom' must
+                                - message: Only one of 'value' or 'valueFrom' can
                                     be set
-                                  rule: has(self.value) != has(self.valueFrom)
+                                  rule: '!(has(self.value) && has(self.valueFrom))'
                               clientSecret:
                                 description: ClientSecret contains the OAuth2 client
                                   secret or a Secret reference.
@@ -1570,9 +1577,9 @@ spec:
                                     type: object
                                 type: object
                                 x-kubernetes-validations:
-                                - message: Exactly one of 'value' or 'valueFrom' must
+                                - message: Only one of 'value' or 'valueFrom' can
                                     be set
-                                  rule: has(self.value) != has(self.valueFrom)
+                                  rule: '!(has(self.value) && has(self.valueFrom))'
                               params:
                                 additionalProperties:
                                   type: string
@@ -1629,14 +1636,24 @@ spec:
                                 x-kubernetes-validations:
                                 - message: '''tokenURL'' must be a valid URL'
                                   rule: 'has(self.value) ? isURL(self.value) : true'
-                                - message: Exactly one of 'value' or 'valueFrom' must
+                                - message: Only one of 'value' or 'valueFrom' can
                                     be set
-                                  rule: has(self.value) != has(self.valueFrom)
+                                  rule: '!(has(self.value) && has(self.valueFrom))'
                             required:
                             - clientID
                             - clientSecret
                             - tokenURL
                             type: object
+                            x-kubernetes-validations:
+                            - message: '''tokenURL'' must have ''value'' or ''valueFrom''
+                                set'
+                              rule: has(self.tokenURL.value) || has(self.tokenURL.valueFrom)
+                            - message: '''clientID'' must have ''value'' or ''valueFrom''
+                                set'
+                              rule: has(self.clientID.value) || has(self.clientID.valueFrom)
+                            - message: '''clientSecret'' must have ''value'' or ''valueFrom''
+                                set'
+                              rule: has(self.clientSecret.value) || has(self.clientSecret.valueFrom)
                         type: object
                         x-kubernetes-validations:
                         - message: Only one authentication method can be specified
@@ -1694,8 +1711,8 @@ spec:
                             type: object
                         type: object
                         x-kubernetes-validations:
-                        - message: Exactly one of 'value' or 'valueFrom' must be set
-                          rule: has(self.value) != has(self.valueFrom)
+                        - message: Only one of 'value' or 'valueFrom' can be set
+                          rule: '!(has(self.value) && has(self.valueFrom))'
                       headers:
                         description: Headers defines custom headers to be added to
                           outgoing HTTP or gRPC requests.
@@ -1750,9 +1767,10 @@ spec:
                           - name
                           type: object
                           x-kubernetes-validations:
-                          - message: Exactly one of 'value' or 'valueFrom' must be
-                              set
-                            rule: has(self.value) != has(self.valueFrom)
+                          - message: Header must have 'value' or 'valueFrom' set
+                            rule: has(self.value) || has(self.valueFrom)
+                          - message: Only one of 'value' or 'valueFrom' can be set
+                            rule: '!(has(self.value) && has(self.valueFrom))'
                         type: array
                       path:
                         description: Path defines OTLP export URL path (only for the
@@ -1812,9 +1830,8 @@ spec:
                                 type: object
                             type: object
                             x-kubernetes-validations:
-                            - message: Exactly one of 'value' or 'valueFrom' must
-                                be set
-                              rule: has(self.value) != has(self.valueFrom)
+                            - message: Only one of 'value' or 'valueFrom' can be set
+                              rule: '!(has(self.value) && has(self.valueFrom))'
                           cert:
                             description: Defines a client certificate to use when
                               using TLS. The certificate must be provided in PEM format.
@@ -1857,9 +1874,8 @@ spec:
                                 type: object
                             type: object
                             x-kubernetes-validations:
-                            - message: Exactly one of 'value' or 'valueFrom' must
-                                be set
-                              rule: has(self.value) != has(self.valueFrom)
+                            - message: Only one of 'value' or 'valueFrom' can be set
+                              rule: '!(has(self.value) && has(self.valueFrom))'
                           insecure:
                             description: Insecure defines whether to send requests
                               using plaintext instead of TLS.
@@ -1910,9 +1926,8 @@ spec:
                                 type: object
                             type: object
                             x-kubernetes-validations:
-                            - message: Exactly one of 'value' or 'valueFrom' must
-                                be set
-                              rule: has(self.value) != has(self.valueFrom)
+                            - message: Only one of 'value' or 'valueFrom' can be set
+                              rule: '!(has(self.value) && has(self.valueFrom))'
                         type: object
                         x-kubernetes-validations:
                         - message: Can define either both 'cert' and 'key', or neither
@@ -1929,6 +1944,9 @@ spec:
                       rule: '(has(self.authentication) && has(self.authentication.oauth2)
                         && self.protocol == ''grpc'' && has(self.tls)) ? !(has(self.tls.insecure)
                         && self.tls.insecure == true) : true'
+                    - message: '''endpoint'' must have ''value'' or ''valueFrom''
+                        set'
+                      rule: has(self.endpoint.value) || has(self.endpoint.valueFrom)
                 required:
                 - otlp
                 type: object
