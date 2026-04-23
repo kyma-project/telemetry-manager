@@ -243,3 +243,13 @@ spec:
       targetPort: 4318
   selector:
     app.kubernetes.io/name: trace-receiver
+
+---
+apiVersion: operator.kyma-project.io/v1beta1
+kind: Telemetry
+metadata:
+  name: default
+  namespace: kyma-system
+  annotations:
+    telemetry.kyma-project.io/enable-vpa: "false"
+spec:
