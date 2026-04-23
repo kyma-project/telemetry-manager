@@ -60,13 +60,11 @@ Within each resource type, the runtime input exposes only a curated subset of th
 
 Both upstream receivers define additional metrics that are disabled by default. Users have requested access to some of these metrics — in particular, CPU and memory utilization ratios relative to requests and limits (see [#3336](https://github.com/kyma-project/telemetry-manager/issues/3336)). Today, computing these ratios requires complex calculations in downstream systems (for example, joining usage metrics with limit metrics and computing the ratio in query language), which adds significant operational overhead.
 
-This ADR proposes an API extension that gives users explicit opt-in control over individual optional metrics, without changing the default behavior for existing users.
-
-## Considered Alternatives
-
-### API Location: MetricPipeline vs Telemetry CR
+This ADR proposes an API extension that gives users explicit opt-in control over individual optional metrics without changing the default behavior for existing users.
 
 The optional metrics configuration belongs in the **MetricPipeline** CR, not the Telemetry CR. The existing `resources` section in the runtime input already provides per-resource-type metric selection at the MetricPipeline level. Adding optional metric selection in the same location keeps the API consistent: all decisions about which runtime metrics to collect live in one place.
+
+## Considered Options
 
 ### Option A: Metric Set Enum Per Resource
 
@@ -154,7 +152,7 @@ Categorizing metrics by resource type is a strong and future-proof abstraction �
 
 The allowed list trades abstraction for transparency. Users specify exactly which metrics they want, using the same names they already use in dashboards and alerting rules. The coupling to upstream names is real, but that coupling already exists at every other layer of the user's observability stack.
 
-Glob-style prefix matching (for example, `k8s.pod.*`) is deferred. A usage metric tracks adoption of `additionalMetrics` to inform whether prefix matching is needed later.
+Glob-style prefix matching (for example, `k8s.pod.*`) is deferred to a future ADR. A usage metric tracks adoption of `additionalMetrics` to inform whether prefix matching becomes necessary.
 
 ### Handling Upstream Breaking Changes
 
@@ -166,9 +164,9 @@ None of the three options protect against breaking changes in the upstream recei
 
 To detect these changes early, we add consistency tests that verify the allow-list matches the metrics defined in the upstream receiver metadata. These tests fail when we bump the collector version and a metric has been renamed or removed, giving us a clear signal to update the allow-list and communicate the change.
 
-## Proposed API
+### API Design
 
-### MetricPipeline Example
+#### MetricPipeline Example
 
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1beta1
@@ -194,7 +192,7 @@ spec:
         value: "https://backend.example.com:4317"
 ```
 
-### Type Changes
+#### Type Changes
 
 ```go
 type MetricPipelineRuntimeInput struct {
@@ -218,13 +216,13 @@ type MetricPipelineRuntimeInput struct {
 }
 ```
 
-### Validation
+#### Validation
 
 A validating webhook rejects unknown metric names at admission time. Telemetry Manager maintains a hardcoded allow-list derived from the upstream receiver metadata. 
 
 ## Consequences
 
-### Positive
+### Positive Consequences
 
 - Users can enable exactly the metrics they need without paying for unnecessary backend storage.
 - The default behavior does not change — existing MetricPipeline CRs continue to work without modification.
@@ -232,7 +230,7 @@ A validating webhook rejects unknown metric names at admission time. Telemetry M
 - The allow-list is easy to extend when new optional metrics appear upstream.
 - Consistency tests catch upstream metric renames or removals early during collector version bumps.
 
-### Negative
+### Negative Consequences
 
 - Users must know the exact upstream metric names. The documentation must list all allowed values per resource type.
 - If upstream renames a metric, users must update their MetricPipeline CRs. This is a breaking change that requires customer notification and migration guidance.
