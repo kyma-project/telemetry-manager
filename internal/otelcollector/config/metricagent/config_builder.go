@@ -12,6 +12,7 @@ import (
 	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
+	"github.com/kyma-project/telemetry-manager/internal/pipelines"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	metricpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/metricpipeline"
 	telemetryutils "github.com/kyma-project/telemetry-manager/internal/utils/telemetry"
@@ -851,7 +852,7 @@ func (b *Builder) addOTLPExporter(queueSize int) buildComponentFunc {
 			otlpExporterBuilder := common.NewOTLPExporterConfigBuilder(
 				b.Reader,
 				mp.Spec.Output.OTLP,
-				common.MetricPipelineRef(mp),
+				pipelines.MetricPipelineRef(mp),
 				queueSize,
 			)
 
@@ -951,12 +952,12 @@ func inputRoutingConnector(outputPipelineIDs []string) common.RoutingConnectorCo
 // Authentication extensions
 
 func (b *Builder) addOAuth2Extension(ctx context.Context, pipeline *telemetryv1beta1.MetricPipeline) error {
-	oauth2ExtensionID := common.ComponentIDOAuth2Extension(common.MetricPipelineRef(pipeline))
+	oauth2ExtensionID := common.ComponentIDOAuth2Extension(pipelines.MetricPipelineRef(pipeline))
 
 	oauth2ExtensionConfig, oauth2ExtensionEnvVars, err := common.NewOAuth2ExtensionConfigBuilder(
 		b.Reader,
 		pipeline.Spec.Output.OTLP.Authentication.OAuth2,
-		common.MetricPipelineRef(pipeline),
+		pipelines.MetricPipelineRef(pipeline),
 	).OAuth2Extension(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to build OAuth2 extension for pipeline %s: %w", pipeline.Name, err)
@@ -983,7 +984,7 @@ func formatOutputMetricServicePipelineID(mp *telemetryv1beta1.MetricPipeline) st
 }
 
 func formatOTLPExporterID(pipeline *telemetryv1beta1.MetricPipeline) string {
-	return common.ComponentIDOTLPExporter(pipeline.Spec.Output.OTLP.Protocol, common.MetricPipelineRef(pipeline))
+	return common.ComponentIDOTLPExporter(pipeline.Spec.Output.OTLP.Protocol, pipelines.MetricPipelineRef(pipeline))
 }
 
 func formatNamespaceFilterID(pipelineName string, inputSourceType common.InputSourceType) string {
@@ -1234,9 +1235,9 @@ func metricNameConditionsWithIsMatch(metrics []string) []string {
 }
 
 func formatUserDefinedTransformProcessorID(mp *telemetryv1beta1.MetricPipeline) string {
-	return common.ComponentIDUserDefinedTransformProcessor(common.MetricPipelineRef(mp))
+	return common.ComponentIDUserDefinedTransformProcessor(pipelines.MetricPipelineRef(mp))
 }
 
 func formatUserDefinedFilterProcessorID(mp *telemetryv1beta1.MetricPipeline) string {
-	return common.ComponentIDUserDefinedFilterProcessor(common.MetricPipelineRef(mp))
+	return common.ComponentIDUserDefinedFilterProcessor(pipelines.MetricPipelineRef(mp))
 }

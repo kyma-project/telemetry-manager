@@ -30,7 +30,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	"github.com/kyma-project/telemetry-manager/internal/metrics"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
+	"github.com/kyma-project/telemetry-manager/internal/pipelines"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/coordinationconfig"
@@ -164,7 +164,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		}
 
 		// Remove pipeline reference from OTLP Gateway Coordination ConfigMap
-		if err := coordinationconfig.RemovePipelineReference(ctx, r.Client, r.globals.TargetNamespace(), common.SignalTypeTrace, req.Name); err != nil {
+		if err := coordinationconfig.RemovePipelineReference(ctx, r.Client, r.globals.TargetNamespace(), pipelines.SignalTypeTrace, req.Name); err != nil {
 			return ctrl.Result{}, fmt.Errorf("failed to remove pipeline reference from OTLP Gateway Coordination ConfigMap: %w", err)
 		}
 
@@ -250,7 +250,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 			"generation", pipeline.Generation,
 			"secretCount", len(secretVersions))
 
-		if err := coordinationconfig.AddPipelineReference(ctx, r.Client, r.globals.TargetNamespace(), common.SignalTypeTrace, coordinationconfig.PipelineReferenceInput{
+		if err := coordinationconfig.AddPipelineReference(ctx, r.Client, r.globals.TargetNamespace(), pipelines.SignalTypeTrace, coordinationconfig.PipelineReferenceInput{
 			Name:           pipeline.Name,
 			Generation:     pipeline.Generation,
 			SecretVersions: secretVersions,
@@ -262,7 +262,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 		// Remove current pipeline reference from OTLP Gateway Coordination ConfigMap
 		logf.FromContext(ctx).V(1).Info("Removing pipeline reference from OTLP Gateway Coordination ConfigMap", "pipeline", pipeline.Name)
 
-		if err := coordinationconfig.RemovePipelineReference(ctx, r.Client, r.globals.TargetNamespace(), common.SignalTypeTrace, pipeline.Name); err != nil {
+		if err := coordinationconfig.RemovePipelineReference(ctx, r.Client, r.globals.TargetNamespace(), pipelines.SignalTypeTrace, pipeline.Name); err != nil {
 			return fmt.Errorf("failed to remove pipeline reference from OTLP Gateway Coordination ConfigMap: %w", err)
 		}
 	}
