@@ -27,7 +27,7 @@ The gateway determines the service name based on the following hierarchy of labe
 > However, if you choose to use the OTel enrichment strategy, be aware of [these OTel-specific edge case limitations](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/k8sattributesprocessor/README.md#configuring-recommended-resource-attributes).
 
 > [!WARNING]
-> The legacy strategy for service name enrichment will be deprecated. To avoid disruptions, migrate to the new OTel-based enrichment strategy by adding the annotation `telemetry.kyma-project.io/service-enrichment: otel` to your Telemetry CR.
+> The legacy strategy for service name enrichment is deprecated. To avoid disruptions, migrate to the new OTel-based enrichment strategy by adding the annotation `telemetry.kyma-project.io/service-enrichment: otel` to your Telemetry CR.
 
 
 ## Kubernetes Metadata
