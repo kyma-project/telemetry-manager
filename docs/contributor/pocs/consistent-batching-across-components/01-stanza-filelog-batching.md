@@ -17,7 +17,7 @@ The `filelog` receiver uses the stanza framework to tail log files. The data pat
 
 1. **FileConsumer** in `fileconsumer/` polls the filesystem every `200ms`, configurable with `poll_interval`. For each matched file, a `Reader` goroutine scans new lines since the last poll.
 
-2. **Reader batching** - The reader accumulates tokens, that is, scanned lines, into a slice capped at `DefaultMaxBatchSize = 100`. When it reaches EOF or hits `100` tokens, it calls `emitFunc`, a callback wired to `Input.emitBatch`. There is no minimum batch size and no flush timer at this level.
+2. **Reader batching** - The reader accumulates tokens (scanned lines) into a slice capped at `DefaultMaxBatchSize = 100`. When it reaches EOF or hits `100` tokens, it calls `emitFunc`, a callback wired to `Input.emitBatch`. There is no minimum batch size and no flush timer at this level.
 
 3. **Input.emitBatch** - Converts raw `[][]byte` tokens into `[]*entry.Entry` and calls `WriteBatch`, pushing the batch to the first operator in the stanza pipeline.
 
@@ -38,16 +38,16 @@ When you configure the `container` operator, used for CRI log format parsing, it
 ```
 
 - The **recombine** operator holds `P` partial lines until a matching `F` final line arrives, then flushes the combined entry.
-- The **internal BatchingLogEmitter** named `criLogEmitter` is hardcoded as `helper.NewBatchingLogEmitter(set, p.consumeEntries)` with default settings of a `100`-entry buffer and `100ms` flush timer. It does not check the `stanza.synchronousLogEmitter` feature gate.
+- The container parser hardcodes the internal `BatchingLogEmitter`, named `criLogEmitter`, as `helper.NewBatchingLogEmitter(set, p.consumeEntries)` with a default 100-entry buffer and a 100ms flush timer. It does not check the `stanza.synchronousLogEmitter` feature gate.
 - The recombine operator also has a background timer called `forceFlushTimeout` that force-flushes incomplete partial lines using `Write` singular to the `criLogEmitter`.
 
-This internal emitter is the same `BatchingLogEmitter` type used at the adapter level, with the same struct, the same package `operator/helper`, and the same async buffer behavior.
+This internal emitter uses the same `BatchingLogEmitter` type as the adapter, with the same struct, package (`operator/helper`), and asynchronous buffer behavior.
 
 ## Describe the Test Methodology
 
 All tests ran with Docker containers on a local machine tailing simulated Pod logs from a log generator using the `filelog` receiver. The backend was a separate OTel Collector instance with an OTLP gRPC receiver.
 
-The following metrics were observed:
+We observed the following metrics:
 
 - `rpc_server_call_duration_seconds_count` - Number of export gRPC calls to the backend
 - `otelcol_exporter_sent_log_records_total` - Total records delivered
@@ -76,7 +76,7 @@ Test setup:
 - 10 Pods
 - 1 log/s per Pod
 
-Multiple tests on v0.149.0 with the full operator chain, including the container parser, showed identical results between the two emitter modes:
+Multiple tests on v0.149.0 with the full operator chain (including the container parser) produced identical results for both emitter modes:
 
 | Metric                             | Synchronous | Batching |
 |------------------------------------|-------------|----------|
@@ -100,11 +100,11 @@ Low throughput: 1 log/s per Pod, 10 Pods, 300s (2,930 lines written). High throu
 
 At low throughput, readers rarely fill their 100-entry batch, so the `SynchronousLogEmitter` passes through many small batches while the `BatchingLogEmitter` coalesces them, producing a ~10x difference in export requests.
 
-At high throughput, readers saturate at ~100 entries per batch regardless of emitter mode, collapsing the difference. The number of records delivered differs due to backpressure and lost data.
+At high throughput, readers saturate at ~100 entries per batch regardless of emitter mode, collapsing the difference. The number of records delivered differs due to backpressure causing data loss.
 
 ### Finding 3: The Container Parser's Internal Emitter Is a Blind Spot for the Feature Gate
 
-The `stanza.synchronousLogEmitter` feature gate is only checked in one place, `adapter/factory.go` line 79. The container parser hardcodes `helper.NewBatchingLogEmitter` in `operator/parser/container/config.go` line 84 without checking the gate.
+The code checks the `stanza.synchronousLogEmitter` feature gate in only one place: `adapter/factory.go` line 79. The container parser hardcodes `helper.NewBatchingLogEmitter` in `operator/parser/container/config.go` line 84 without checking the gate.
 
 This means the following:
 
@@ -159,7 +159,7 @@ High throughput: 50 logs/s per Pod, 10 Pods, 1286s, queue saturated.
 
 At low throughput, both emitter modes are virtually identical in resource consumption. The small differences of 1.3% CPU and 4% allocation are within noise and do not constitute a meaningful finding.
 
-At high throughput with a saturated queue, CPU usage is 61% higher on the batching emitter, 2.99s compared to 4.82s. This is consistent across two independent runs and is attributable to the batching emitter's flusher goroutine repeatedly waking up every `100ms`, acquiring the buffer lock, and attempting `Offer` against a full queue, doing real work that produces nothing. The sync emitter has no such goroutine. Backpressure is absorbed by the reader goroutines blocking, which costs no CPU.
+At high throughput with a saturated queue, CPU usage is 61% higher on the batching emitter (2.99s compared to 4.82s). This behavior is consistent across two independent runs. It occurs because the batching emitter's flusher goroutine repeatedly wakes up every 100ms, acquires the buffer lock, and attempts to call `Offer` against a full queue, which performs work but produces no result. The sync emitter has no such goroutine. Backpressure is absorbed by the reader goroutines blocking, which costs no CPU.
 
 The `total_alloc` rate is slightly higher on sync under saturation, 199 compared to 177 KB/s, but the difference is small and negligible.
 
@@ -176,7 +176,7 @@ The `BatchingLogEmitter` has two flush triggers:
 - **Size** - When `ProcessBatch` or `Process` appends entries and the buffer reaches `maxBatchSize` with a default of `100`, it flushes immediately on the calling goroutine.
 - **Time** - A background goroutine ticks every `flushInterval` with a default of `100ms` and flushes whatever has accumulated, even if it is just 1 entry.
 
-On graceful shutdown with `Stop`, the flusher does a final flush with a 5-second timeout context. On non-graceful shutdown such as SIGKILL or OOM, the buffer is lost.
+On graceful shutdown (`Stop`), the flusher performs a final flush with a 5-second timeout context. On non-graceful shutdown (such as SIGKILL or OOM), the buffer is lost.
 
 ### Understand FileConsumer Reader Batching
 
@@ -208,7 +208,7 @@ Without the feature gate, on the left, the container parser's internal `Batching
 
 With the feature gate enabled, on the right, the container parser still runs `BatchingLogEmitter` internally, but the adapter delivers entries synchronously to the next consumer instead of batching them into a buffer.
 
-The `BatchingLogEmitter` used internally by the container parser behaves exactly the same as the one in the adapter. In the left diagram, the second `BatchingLogEmitter` therefore has little additional effect.
+The `BatchingLogEmitter` that the container parser uses internally behaves exactly like the one in the adapter. In the left diagram, the second `BatchingLogEmitter` therefore has little additional effect.
 
 ## Conclusions
 
@@ -224,7 +224,7 @@ Enabling the synchronous emitter significantly increases the number of export re
 
 The exporter batcher `sending_queue.batch` makes the feature gate choice irrelevant to backend behavior. With the batcher enabled, both emitter modes produce the same number of gRPC requests and the same batch sizes at the wire level. The feature gate remains useful for crash safety and backpressure semantics, but has no impact on export request count or backend load.
 
-Additionally, enabling the `SynchronousLogEmitter` with an exporter batcher reduces CPU usage under high load scenarios as shown in [Finding 5](#finding-5-the-collector-resource-consumption-changes-with-the-feature-gate-under-heavy-load).
+Additionally, combining the `SynchronousLogEmitter` with an exporter batcher reduces CPU usage under high load (see [Finding 5](#finding-5-the-collector-resource-consumption-changes-with-the-feature-gate-under-heavy-load)).
 
 For maximum data safety, combine the feature gate with a persistent queue:
 

@@ -17,7 +17,7 @@ The exporter batcher uses a pull-based batching model with the following data pa
 2. **Consume** - The queue's consumers call the batcher's `Consume()` method to pull requests and accumulate them into batches.
 3. **Flush** - The batcher maintains a `currentBatch` and flushes it when the batch reaches the minimum size or the flush timeout expires.
 
-Requests entering the queue come directly from the previous component in the OTel pipeline. The batcher then re-batches these requests into larger batches on the consumer side.
+Requests enter the queue directly from the previous component in the OTel pipeline. The batcher then re-batches these requests into larger batches on the consumer side.
 
 ### Configure the Exporter Batcher
 
@@ -29,9 +29,9 @@ The `sending_queue` and the `batch` each have an independent `sizer` setting tha
 - The `batch` defaults to the `items` sizer. This means `min_size` and `max_size` count individual log records.
 - The `bytes` sizer is also available. It measures the serialized byte size of each request. This gives precise control over memory usage and batch payload sizes but requires serializing every request to calculate its size.
 
-When both sizers are set to the same unit, the `queue_size` must not be smaller than the batch `min_size`.
+When both sizers use the same unit, `queue_size` must be greater than or equal to the batch `min_size`.
 
-Even though the `sending_queue` and `batch` can use different sizers, `requests` and `items` respectively, the `queue_size` must still be greater than or equal to the batch `min_size` in practice. The following scenario illustrates why.
+Even though the `sending_queue` and `batch` can use different sizers (`requests` and `items` respectively), in practice, `queue_size` must still be greater than or equal to the batch `min_size`. The following scenario illustrates why:
 
 The `SynchronousLogEmitter` can produce very small batches, as small as a single log record per request, because each reader emits independently. Consider a worst-case scenario where 1024 Pods each produce 1 log per second. Each log becomes a separate single-record request in the queue.
 
@@ -42,7 +42,7 @@ If `queue_size` is smaller than `min_size`, for example `queue_size: 1000` with 
 3. The `flush_timeout` has not elapsed yet, so a time-based flush does not trigger either.
 4. New requests cannot enter the queue because it is full, and the batcher cannot drain the queue because the batch is not large enough to flush.
 
-The queue stays fully occupied until the `flush_timeout` expires. At that point, the batcher flushes whatever it has accumulated. During this window, all incoming requests block. Setting `queue_size` to at least `min_size`, in this case `1024`, prevents this bottleneck.
+The queue stays fully occupied until the `flush_timeout` expires and the batcher flushes whatever it has accumulated. During this window, all incoming requests block. Setting `queue_size` to at least `min_size`, in this case `1024`, prevents this bottleneck.
 
 ## Identify Backend Requirements
 
@@ -51,7 +51,7 @@ The backend services impose payload size and rate limits that constrain the batc
 | Backend           | Maximum Payload Size                                            | Rate Limit                                                                                |
 |-------------------|-----------------------------------------------------------------|-------------------------------------------------------------------------------------------|
 | SAP Cloud Logging | `4 MiB` per request. Requests exceeding this limit return `413` | 100 x 2 KiB logs/s for Standard plan, 1000 x 2 KiB logs/s for Large plan                 |
-| SAP Cloud ALM     | `1 MB` for JSON payloads, `150 KB` for protobuf binary payloads | `100` requests/minute for production plans, `100` requests/24 hours for development plans |
+| SAP Cloud ALM     | `1 MB` for JSON payloads, `150 KB` for Protobuf binary payloads | `100` requests/minute for production plans, `100` requests/24 hours for development plans |
 
 These limits mean that the exporter batcher must produce batches small enough to stay within the maximum payload size of each backend.
 
@@ -115,7 +115,9 @@ The following configuration uses the `items` sizer and aligns batch sizes with o
 | `sending_queue::batch::max_size`      | `1024`               | Matches the batch size used by other components.                                   |
 | `sending_queue::batch::flush_timeout` | `10s`                | Matches the flush interval used by other components.                               |
 
-The same assumptions as the baseline apply, that is, 2 KB per record and up to 100 records per request from the `SynchronousLogEmitter`. The maximum queue memory is:
+The same assumptions as the baseline apply: 2 KB per record and up to 100 records per request from the `SynchronousLogEmitter`.
+
+The maximum queue memory is:
 
 ```
 2 KB/record x 100 records/request x 1024 requests ≈ 205 MB
@@ -162,7 +164,7 @@ Other components currently use `batchprocessor`, which does not support sizers o
 
 The batching configuration cannot be consistent across all components because other components use `batchprocessor` with the `items` sizer. The log agent benefits from using the `bytes` sizer to bound queue memory usage and control batch sizes based on payload size. Tests show little to no performance degradation from introducing the exporter batcher.
 
-The recommended configuration uses the `bytes` sizer to ensure that batches exceeding `4 MB` are split and batches of approximately `2 MB` are flushed:
+The recommended configuration uses the `bytes` sizer to split batches that exceed 4 MB and to flush batches of approximately 2 MB:
 
 ```yaml
 sending_queue:
