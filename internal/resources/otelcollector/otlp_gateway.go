@@ -50,12 +50,10 @@ type OTLPGatewayApplierDeleter struct {
 	otlpServiceName string
 	rbac            rbac
 
-	baseMemoryLimit      resource.Quantity
-	dynamicMemoryLimit   resource.Quantity
-	baseCPURequest       resource.Quantity
-	dynamicCPURequest    resource.Quantity
-	baseMemoryRequest    resource.Quantity
-	dynamicMemoryRequest resource.Quantity
+	baseMemoryLimit    resource.Quantity
+	dynamicMemoryLimit resource.Quantity
+	baseCPURequest     resource.Quantity
+	baseMemoryRequest  resource.Quantity
 
 	podOpts       []commonresources.PodSpecOption
 	containerOpts []commonresources.ContainerOption

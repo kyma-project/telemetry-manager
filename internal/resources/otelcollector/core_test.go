@@ -389,9 +389,7 @@ func TestOTLPGateway_MakeGatewayResourceRequirements(t *testing.T) {
 			validateCPU: func(t *testing.T, resources corev1.ResourceRequirements) {
 				// CPU should scale: 100m (base) + 3×100m (dynamic) = 400m
 				expectedCPURequest := sut.baseCPURequest.DeepCopy()
-				for range 3 {
-					expectedCPURequest.Add(sut.dynamicCPURequest)
-				}
+
 				require.True(t, expectedCPURequest.Equal(resources.Requests[corev1.ResourceCPU]))
 			},
 		},
@@ -453,6 +451,7 @@ func TestOTLPGateway_MakeGatewayResourceRequirements(t *testing.T) {
 				// This is well below 2×10Gi cap, so uses calculated value
 				expectedMemoryLimit := sut.baseMemoryLimit.DeepCopy()
 				expectedMemoryLimit.Add(sut.dynamicMemoryLimit)
+
 				memoryLimit := resources.Limits[corev1.ResourceMemory]
 				require.True(t, expectedMemoryLimit.Equal(memoryLimit))
 			},
@@ -489,6 +488,7 @@ func TestOTLPGateway_MakeGatewayResourceRequirements(t *testing.T) {
 				for range 3 {
 					expectedMemoryLimit.Add(sut.dynamicMemoryLimit)
 				}
+
 				memoryLimit := resources.Limits[corev1.ResourceMemory]
 				require.True(t, expectedMemoryLimit.Equal(memoryLimit))
 			},
