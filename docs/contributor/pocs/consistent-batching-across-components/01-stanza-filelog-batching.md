@@ -136,7 +136,7 @@ At high throughput, readers saturate at ~100 entries per batch regardless of emi
 
 With the exporter batcher configured, or at high enough throughput, the feature gate is irrelevant to what the backend observes. The only remaining distinctions between emitter modes are the following:
 
-- **Crash safety** - The synchronous emitter has no in-memory buffer that can lose data. However, the exporter batcher itself has an in-memory buffer with entries waiting for the `200ms` flush, which is also lost on non-graceful shutdown. A persistent queue with `sending_queue.storage: file_storage/...` mitigates this.
+- **Crash safety** - The synchronous emitter has no in-memory buffer that can lose data. However, the exporter batcher itself holds an in-memory buffer of entries, and this buffer is also lost on non-graceful shutdown. A persistent queue with `sending_queue.storage: file_storage/...` mitigates this.
 
 - **CPU under queue saturation** - The synchronous emitter uses ~47% less CPU when the queue is full, because the batching emitter's flusher goroutine spins on failed `Offer` calls.
 
