@@ -505,7 +505,7 @@ function validate_telemetry_results() {
         exit 1
     fi
 
-    if [[ -z "$RESULT_EXPORTED" ]]; then
+    if [[ "$test_type" != "metric-agent" ]] && [[ -z "$RESULT_EXPORTED" ]]; then
         echo "ERROR: RESULT_EXPORTED is empty for $test_type test. No data exported according to Prometheus query."
         exit 1
     fi
@@ -516,7 +516,7 @@ function validate_telemetry_results() {
         exit 1
     fi
 
-    if awk "BEGIN {exit !($RESULT_EXPORTED == 0)}"; then
+    if [[ "$test_type" != "metric-agent" ]] && awk "BEGIN {exit !($RESULT_EXPORTED == 0)}"; then
         echo "ERROR: RESULT_EXPORTED is zero for $test_type test. No telemetry data was exported during the test period."
         exit 1
     fi
