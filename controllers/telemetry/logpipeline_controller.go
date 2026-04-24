@@ -48,6 +48,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/nodesize"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/logagent"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
+	"github.com/kyma-project/telemetry-manager/internal/pipelines"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
 	logpipelinefluentbit "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/fluentbit"
 	logpipelineotel "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/otel"
@@ -405,12 +406,12 @@ func configureFluentBitReconciler(config LogPipelineControllerConfig, client cli
 
 //nolint:unparam // error is always nil: An error could be returned after implementing the IstioStatusChecker (TODO)
 func configureOTelReconciler(config LogPipelineControllerConfig, client client.Client, pipelineLock logpipelineotel.PipelineLock, gatewayFlowHealthProber *prober.OTelGatewayProber, agentFlowHealthProber *prober.OTelAgentProber, nodeSizeTracker *nodesize.Tracker) (*logpipelineotel.Reconciler, error) {
-	transformSpecValidator, err := ottl.NewTransformSpecValidator(ottl.SignalTypeLog)
+	transformSpecValidator, err := ottl.NewTransformSpecValidator(pipelines.SignalTypeLog)
 	if err != nil {
 		return nil, err
 	}
 
-	filterSpecValidator, err := ottl.NewFilterSpecValidator(ottl.SignalTypeLog)
+	filterSpecValidator, err := ottl.NewFilterSpecValidator(pipelines.SignalTypeLog)
 	if err != nil {
 		return nil, err
 	}

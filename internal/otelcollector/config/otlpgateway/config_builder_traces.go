@@ -6,6 +6,7 @@ import (
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
+	"github.com/kyma-project/telemetry-manager/internal/pipelines"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 )
 
@@ -196,7 +197,7 @@ func (b *Builder) addTraceOTLPExporter(builder *common.ComponentBuilder[*telemet
 			otlpExporterBuilder := common.NewOTLPExporterConfigBuilder(
 				b.Reader,
 				tp.Spec.Output.OTLP,
-				common.TracePipelineRef(tp),
+				pipelines.TracePipelineRef(tp),
 				queueSize,
 			)
 
@@ -207,7 +208,7 @@ func (b *Builder) addTraceOTLPExporter(builder *common.ComponentBuilder[*telemet
 
 //nolint:dupl // Acceptable duplication - trace and log OAuth2 extensions follow same pattern
 func (b *Builder) addTraceOAuth2Extension(ctx context.Context, builder *common.ComponentBuilder[*telemetryv1beta1.TracePipeline], pipeline *telemetryv1beta1.TracePipeline) error {
-	pipelineRef := common.TracePipelineRef(pipeline)
+	pipelineRef := pipelines.TracePipelineRef(pipeline)
 	oauth2ExtensionID := common.ComponentIDOAuth2Extension(pipelineRef)
 
 	oauth2ExtensionConfig, oauth2ExtensionEnvVars, err := common.NewOAuth2ExtensionConfigBuilder(
@@ -235,13 +236,13 @@ func formatTraceServicePipelineID(tp *telemetryv1beta1.TracePipeline) string {
 }
 
 func formatTraceUserDefinedTransformProcessorID(tp *telemetryv1beta1.TracePipeline) string {
-	return common.ComponentIDUserDefinedTransformProcessor(common.TracePipelineRef(tp))
+	return common.ComponentIDUserDefinedTransformProcessor(pipelines.TracePipelineRef(tp))
 }
 
 func formatTraceUserDefinedFilterProcessorID(tp *telemetryv1beta1.TracePipeline) string {
-	return common.ComponentIDUserDefinedFilterProcessor(common.TracePipelineRef(tp))
+	return common.ComponentIDUserDefinedFilterProcessor(pipelines.TracePipelineRef(tp))
 }
 
 func formatTraceOTLPExporterID(tp *telemetryv1beta1.TracePipeline) string {
-	return common.ComponentIDOTLPExporter(tp.Spec.Output.OTLP.Protocol, common.TracePipelineRef(tp))
+	return common.ComponentIDOTLPExporter(tp.Spec.Output.OTLP.Protocol, pipelines.TracePipelineRef(tp))
 }

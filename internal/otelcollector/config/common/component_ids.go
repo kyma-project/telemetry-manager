@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+	"github.com/kyma-project/telemetry-manager/internal/pipelines"
 )
 
 type ComponentID = string
@@ -56,7 +57,7 @@ const ComponentIDSetKymaInputNameOTLPProcessor ComponentID = "transform/set-kyma
 // Pipeline type and name are included in the component ID to keep it unique across pipelines.
 //
 // Example: filter/tracepipeline-user-defined-mypipeline
-func ComponentIDUserDefinedFilterProcessor(pipelineRef PipelineRef) ComponentID {
+func ComponentIDUserDefinedFilterProcessor(pipelineRef pipelines.PipelineRef) ComponentID {
 	return fmt.Sprintf("filter/%s-user-defined-%s", pipelineRef.TypePrefix(), pipelineRef.Name())
 }
 
@@ -64,7 +65,7 @@ func ComponentIDUserDefinedFilterProcessor(pipelineRef PipelineRef) ComponentID 
 // Pipeline type and name are included in the component ID to keep it unique across pipelines.
 //
 // Example: transform/tracepipeline-user-defined-mypipeline
-func ComponentIDUserDefinedTransformProcessor(pipelineRef PipelineRef) ComponentID {
+func ComponentIDUserDefinedTransformProcessor(pipelineRef pipelines.PipelineRef) ComponentID {
 	return fmt.Sprintf("transform/%s-user-defined-%s", pipelineRef.TypePrefix(), pipelineRef.Name())
 }
 
@@ -137,12 +138,12 @@ const ComponentIDDropIstioServiceEnrichmentProcessor ComponentID = "transform/dr
 // Pipeline name is included in the component ID to keep it unique across pipelines.
 //
 // Example: otlp_grpc/metricpipeline-mypipeline, otlp_http/logpipeline-mypipeline
-func ComponentIDOTLPExporter(protocol telemetryv1beta1.OTLPProtocol, pipelineRef PipelineRef) ComponentID {
+func ComponentIDOTLPExporter(protocol telemetryv1beta1.OTLPProtocol, pipelineRef pipelines.PipelineRef) ComponentID {
 	if protocol == telemetryv1beta1.OTLPProtocolHTTP {
-		return fmt.Sprintf("otlp_http/%s", pipelineRef.qualifiedName())
+		return fmt.Sprintf("otlp_http/%s", pipelineRef.QualifiedName())
 	}
 
-	return fmt.Sprintf("otlp_grpc/%s", pipelineRef.qualifiedName())
+	return fmt.Sprintf("otlp_grpc/%s", pipelineRef.QualifiedName())
 }
 
 // ================================================================================
@@ -170,6 +171,6 @@ const ComponentIDCGroupRuntimeExtension ComponentID = "cgroup_runtime"
 // Pipeline name is included in the component ID to keep it unique across pipelines.
 //
 // Example: oauth2client/logpipeline-mypipeline
-func ComponentIDOAuth2Extension(pipelineRef PipelineRef) ComponentID {
-	return fmt.Sprintf("oauth2client/%s", pipelineRef.qualifiedName())
+func ComponentIDOAuth2Extension(pipelineRef pipelines.PipelineRef) ComponentID {
+	return fmt.Sprintf("oauth2client/%s", pipelineRef.QualifiedName())
 }

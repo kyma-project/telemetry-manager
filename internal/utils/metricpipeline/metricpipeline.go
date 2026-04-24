@@ -128,7 +128,7 @@ func OTLPOutputPorts(ctx context.Context, c client.Reader, allPipelines []teleme
 		}
 
 		// List of ports needs to be sorted
-		// Otherwise, metric agent will continuously restart, because in each reconciliation we can have the ports list in a different order
+		// Otherwise, Metric Agent will continuously restart, because in each reconciliation we can have the ports list in a different order
 		slices.Sort(backendPorts)
 		// Remove duplication in ports in case multiple backends are defined with the same port
 		backendPorts = slices.Compact(backendPorts)
