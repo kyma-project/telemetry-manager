@@ -236,7 +236,7 @@ Telemetry components are running out of memory despite VPA being enabled.
 
 ### Cause
 
-The calculated maxAllowed memory (15% of smallest Node) might be insufficient for your telemetry volume.
+The calculated maxAllowed memory (30% of smallest Node) might be insufficient for your telemetry volume.
 
 ### Solution
 
