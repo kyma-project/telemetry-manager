@@ -17,10 +17,13 @@ import (
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/k8sclients"
+	"github.com/kyma-project/telemetry-manager/internal/metrics"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
 	selfmonitorconfig "github.com/kyma-project/telemetry-manager/internal/selfmonitor/config"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
+	telemetryutils "github.com/kyma-project/telemetry-manager/internal/utils/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
 )
 
@@ -117,6 +120,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 }
 
 func (r *Reconciler) doReconcile(ctx context.Context, telemetry *operatorv1beta1.Telemetry, logLevel string) error {
+	r.trackServiceAttributesEnrichmentStrategy(ctx)
+
 	if err := r.handleFinalizer(ctx, telemetry); err != nil {
 		return fmt.Errorf("failed to manage finalizer: %w", err)
 	}
@@ -277,4 +282,14 @@ func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1
 	}
 
 	return nil
+}
+
+func (r *Reconciler) trackServiceAttributesEnrichmentStrategy(ctx context.Context) {
+	enrichmentStrategy := telemetryutils.GetServiceEnrichmentFromTelemetryOrDefault(ctx, r.Client, r.config.DefaultTelemetryNamespace())
+
+	// Reset all strategies to 0 before setting the current one to 1. This is to ensure that only the active strategy is set to 1
+	metrics.ServiceAttributesEnrichmentStrategy.WithLabelValues(commonresources.AnnotationValueTelemetryServiceEnrichmentOtel).Set(0)
+	metrics.ServiceAttributesEnrichmentStrategy.WithLabelValues(commonresources.AnnotationValueTelemetryServiceEnrichmentKymaLegacy).Set(0)
+
+	metrics.ServiceAttributesEnrichmentStrategy.WithLabelValues(enrichmentStrategy).Set(1)
 }
