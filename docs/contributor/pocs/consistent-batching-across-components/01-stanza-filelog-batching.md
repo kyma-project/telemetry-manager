@@ -13,7 +13,7 @@ Reference issue: https://github.com/open-telemetry/opentelemetry-collector-contr
 
 ## Understand the Architecture
 
-The `filelog` receiver uses the stanza framework to tail log files. The data path is:
+The `filelog` receiver uses the stanza framework to tail log files. The data path is the following:
 
 1. **FileConsumer** in `fileconsumer/` polls the filesystem every `200ms`, configurable with `poll_interval`. For each matched file, a `Reader` goroutine scans new lines since the last poll.
 
@@ -104,7 +104,7 @@ At high throughput, readers saturate at ~100 entries per batch regardless of emi
 
 ### Finding 3: The Container Parser's Internal Emitter Is a Blind Spot for the Feature Gate
 
-The code checks the `stanza.synchronousLogEmitter` feature gate in only one place: `adapter/factory.go` line 79. The container parser hardcodes `helper.NewBatchingLogEmitter` in `operator/parser/container/config.go` line 84 without checking the gate.
+The code checks the `stanza.synchronousLogEmitter` feature gate only in `adapter/factory.go` line 79. The container parser hardcodes `helper.NewBatchingLogEmitter` in `operator/parser/container/config.go` line 84 without checking the gate.
 
 This means the following:
 
