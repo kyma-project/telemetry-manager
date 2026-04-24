@@ -35,6 +35,6 @@ type VpaStatusChecker interface {
 
 // NodeSizeTracker tracks node sizes and provides VPA memory calculations.
 type NodeSizeTracker interface {
-	// VPAMaxAllowedMemory returns 30% of the smallest allocatable memory, rounded down to the nearest KiB.
+	// VPAMaxAllowedMemory returns 15% of the smallest allocatable memory, rounded down to the nearest KiB.
 	VPAMaxAllowedMemory() resource.Quantity
 }
