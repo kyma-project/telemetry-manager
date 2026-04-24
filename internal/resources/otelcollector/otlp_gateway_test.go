@@ -55,18 +55,18 @@ func TestOTLPGateway_ApplyResources(t *testing.T) {
 		resourceRequirementsMultiplier int
 	}{
 		{
-			name:           "OTLP gateway",
+			name:           "OTLP Gateway",
 			sut:            NewOTLPGatewayApplierDeleter(globals, image, priorityClassName),
 			goldenFilePath: "testdata/otlp-gateway.yaml",
 		},
 		{
-			name:           "OTLP gateway with istio",
+			name:           "OTLP Gateway with istio",
 			sut:            NewOTLPGatewayApplierDeleter(globals, image, priorityClassName),
 			istioEnabled:   true,
 			goldenFilePath: "testdata/otlp-gateway-istio.yaml",
 		},
 		{
-			name:           "OTLP gateway with FIPS mode enabled",
+			name:           "OTLP Gateway with FIPS mode enabled",
 			sut:            NewOTLPGatewayApplierDeleter(globalsWithFIPS, image, priorityClassName),
 			goldenFilePath: "testdata/otlp-gateway-fips-enabled.yaml",
 		},
@@ -168,7 +168,7 @@ func TestOTLPGateway_DeleteResources(t *testing.T) {
 			sut:  NewOTLPGatewayApplierDeleter(globals, image, priorityClassName),
 		},
 		{
-			name:         "OTLP gateway  with istio",
+			name:         "OTLP Gateway  with istio",
 			sut:          NewOTLPGatewayApplierDeleter(globals, image, priorityClassName),
 			istioEnabled: true,
 		},

@@ -17,7 +17,7 @@ Log collection is optional. If you don't create a LogPipeline, no logs are colle
 
 - Before you can collect logs from a component, it must emit the logs. Typically, it uses a logger framework for the used language runtime (like Node.js) and prints them to the `stdout` or `stderr` channel (see [Kubernetes: How nodes handle container logs](https://kubernetes.io/docs/concepts/cluster-administration/logging/#how-nodes-handle-container-logs)). Alternatively, you can use the [OTel SDK](https://opentelemetry.io/docs/languages/) to use the [push-based OTLP format](https://opentelemetry.io/docs/specs/otlp/).
 
-- If you want to emit the logs to the `stdout/stderr` channel, use structured logs in a JSON format with a logger library like log4J. With that, the log agent can parse your log and enrich all JSON attributes as log attributes, and a backend can use that.
+- If you want to emit the logs to the `stdout/stderr` channel, use structured logs in a JSON format with a logger library like log4J. With that, the Log Agent can parse your log and enrich all JSON attributes as log attributes, and a backend can use that.
 
 - If you prefer the push-based alternative with OTLP, also use a logger library like log4J. However, you must additionally instrument that logger and bridge it to the OTel SDK. For details, see [OpenTelemetry: New First-Party Application Logs](https://opentelemetry.io/docs/specs/otel/logs/#new-first-party-application-logs).
 
@@ -56,7 +56,7 @@ You can customize your LogPipeline using the available parameters and attributes
 
 - **Throughput**:
   - When pushing OTLP logs of an average size of 2KB to the OTLP Gateway, the Telemetry module can process approximately 12,000 logs per second (LPS) per node. The OTLP Gateway runs one instance per cluster node.
-  - The Log Agent, running one instance per node, handles tailing logs from stdout using the **runtime** input. When writing logs of an average size of 2KB to stdout, a single log agent instance can process approximately 9,000 LPS.
+  - The Log Agent, running one instance per node, handles tailing logs from stdout using the **runtime** input. When writing logs of an average size of 2KB to stdout, a single Log Agent instance can process approximately 9,000 LPS.
 - **Unavailability of Output**: For up to 5 minutes, a retry for data is attempted when the destination is unavailable. After that, data is dropped.
 - **No Guaranteed Delivery**: The used buffers are volatile. If any gateway or agent instance crashes, logs data can be lost.
 - **Multiple LogPipeline Support**: The maximum amount of LogPipeline resources is 5.
