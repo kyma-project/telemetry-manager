@@ -85,6 +85,13 @@ details: |-
             header: Last transition time
             type: TraceComponentsHealthy
   body:
+    - name: Deprecation of legacy strategy for service name enrichment
+      widget: Panel
+      visibility: $not($lookup(metadata.annotations, "telemetry.kyma-project.io/service-enrichment") = "otel")
+      children:
+      - widget: Alert
+        severity: warning
+        source: "'The legacy strategy for service name enrichment is deprecated. To avoid disruptions, migrate to the new OTel-based enrichment strategy by adding the annotation `telemetry.kyma-project.io/service-enrichment: otel` to your Telemetry CR. For more details, check https://kyma-project.io/external-content/telemetry-manager/docs/user/filter-and-process/automatic-data-enrichment.html#service-attributes.'"
     - name: Gateway Scaling (Deprecated)
       widget: Panel
       visibility: >-
