@@ -419,6 +419,15 @@ func (o *OTLPGatewayApplierDeleter) makeGatewayResourceRequirements(opts Gateway
 		memoryLimit.Add(o.dynamicMemoryLimit)
 	}
 
+	if !opts.VPAMaxAllowedMemory.IsZero() {
+		maxMemoryCap := opts.VPAMaxAllowedMemory.DeepCopy()
+		maxMemoryCap.Add(opts.VPAMaxAllowedMemory) // 2x VPAMaxAllowedMemory
+
+		if memoryLimit.Cmp(maxMemoryCap) > 0 {
+			memoryLimit = maxMemoryCap
+		}
+	}
+
 	// When VPA is active, override the memory limit to 2x the memory request so the VPA can scale within a tighter range.
 	// This replaces the calculated memory limit with a value based on the memory request.
 	// For more details, check the ADR: https://github.com/kyma-project/telemetry-manager/blob/main/docs/contributor/arch/032-vertical-pod-autoscaler-VPA-architecture.md
@@ -427,18 +436,6 @@ func (o *OTLPGatewayApplierDeleter) makeGatewayResourceRequirements(opts Gateway
 		vpaMemoryLimit := o.baseMemoryRequest.DeepCopy()
 		vpaMemoryLimit.Add(memoryRequest)
 		memoryLimit = vpaMemoryLimit
-	}
-
-	// Cap memory limit at 2x VPAMaxAllowedMemory when VPAMaxAllowedMemory value is available 
-	// This ensures the pod memory limit doesn't exceed what VPA can scale to,
-	// preventing OOM scenarios where VPA recommendations are capped but pod limit is higher
-	if !opts.VPAMaxAllowedMemory.IsZero() {
-		maxMemoryCap := opts.VPAMaxAllowedMemory.DeepCopy()
-		maxMemoryCap.Add(opts.VPAMaxAllowedMemory) // 2x VPAMaxAllowedMemory
-
-		if memoryLimit.Cmp(maxMemoryCap) > 0 {
-			memoryLimit = maxMemoryCap
-		}
 	}
 
 	resources := corev1.ResourceRequirements{
