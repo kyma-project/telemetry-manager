@@ -126,7 +126,7 @@ func (r *Reconciler) Globals() *config.Global {
 
 // Reconcile reconciles the OTLP Gateway DaemonSet based on the coordination ConfigMap.
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logf.FromContext(ctx).V(1).Info("reconciling OTLP gateway")
+	logf.FromContext(ctx).V(1).Info("reconciling OTLP Gateway")
 
 	// Load overrides and check if OTLP Gateway is paused
 	if r.overridesHandler != nil {

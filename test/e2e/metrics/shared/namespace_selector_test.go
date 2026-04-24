@@ -140,7 +140,7 @@ func TestNamespaceSelector(t *testing.T) {
 			assert.BackendReachable(t, backend2)
 			assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 
-			// get the content of the configmap used for the metric gateway
+			// get the content of the ConfigMap used for the OTLP Gateway
 			if suite.DebugObjectsEnabled() {
 				objects := []client.Object{
 					&includePipeline,
