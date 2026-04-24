@@ -44,7 +44,6 @@ packages:
   github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline:
     interfaces:
       FlowHealthProber:
-      OverridesHandler:
       PipelineLock:
       PipelineSyncer:
   github.com/kyma-project/telemetry-manager/internal/reconciler/otlpgateway:
