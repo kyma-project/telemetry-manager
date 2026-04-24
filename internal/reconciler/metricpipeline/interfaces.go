@@ -19,7 +19,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
 
-// AgentConfigBuilder builds OpenTelemetry Collector configuration for the metric agent from MetricPipeline resources.
+// AgentConfigBuilder builds OpenTelemetry Collector configuration for the Metric Agent from MetricPipeline resources.
 // The agent runs as a DaemonSet and collects metrics from each node in the cluster.
 type AgentConfigBuilder interface {
 	// Build constructs the collector configuration and environment variables from the provided pipelines and build options.
@@ -27,13 +27,13 @@ type AgentConfigBuilder interface {
 	Build(ctx context.Context, pipelines []telemetryv1beta1.MetricPipeline, options metricagent.BuildOptions) (*common.Config, common.EnvVars, error)
 }
 
-// AgentApplierDeleter manages the lifecycle of metric agent Kubernetes resources.
+// AgentApplierDeleter manages the lifecycle of Metric Agent Kubernetes resources.
 // The agent runs as a DaemonSet on each cluster node to collect metrics.
 type AgentApplierDeleter interface {
-	// ApplyResources creates or updates the metric agent resources in the cluster.
+	// ApplyResources creates or updates the Metric Agent resources in the cluster.
 	// This includes the DaemonSet, ConfigMap, ServiceAccount, and related resources.
 	ApplyResources(ctx context.Context, c client.Client, opts otelcollector.AgentApplyOptions) error
-	// DeleteResources removes the metric agent resources from the cluster.
+	// DeleteResources removes the Metric Agent resources from the cluster.
 	// This cleans up all agent-related Kubernetes resources.
 	DeleteResources(ctx context.Context, c client.Client, vpaCRDExists bool) error
 }
