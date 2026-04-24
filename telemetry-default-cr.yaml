@@ -5,3 +5,5 @@ apiVersion: operator.kyma-project.io/v1beta1
 kind: Telemetry
 metadata:
   name: default
+  annotations:
+    telemetry.kyma-project.io/service-enrichment: otel
