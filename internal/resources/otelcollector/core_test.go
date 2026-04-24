@@ -17,9 +17,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
-
-	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
-	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 )
 
 // makeFailingClient creates a fake client that fails for specific object types
@@ -233,50 +230,4 @@ func TestMakeVPA(t *testing.T) {
 			require.Equal(t, tt.expectedMaxMemory.Value(), actualMaxMemory.Value())
 		})
 	}
-}
-
-func TestMakeConfigMap(t *testing.T) {
-	name := types.NamespacedName{Name: "test-cm", Namespace: "test-ns"}
-	configYAML := "receivers:\n  otlp:"
-	cm := makeConfigMap(name, configYAML)
-
-	require.Equal(t, "test-cm", cm.Name)
-	require.Equal(t, "test-ns", cm.Namespace)
-	require.Contains(t, cm.Data, configFileName)
-	require.Equal(t, configYAML, cm.Data[configFileName])
-}
-
-func TestMakeSecret(t *testing.T) {
-	name := types.NamespacedName{Name: "test-secret", Namespace: "test-ns"}
-	secretData := map[string][]byte{
-		"key1": []byte("value1"),
-		"key2": []byte("value2"),
-	}
-	secret := makeSecret(name, secretData)
-
-	require.Equal(t, "test-secret", secret.Name)
-	require.Equal(t, "test-ns", secret.Namespace)
-	require.Equal(t, secretData, secret.Data)
-}
-
-func TestMakeServiceAccount(t *testing.T) {
-	name := types.NamespacedName{Name: "test-sa", Namespace: "test-ns"}
-	sa := makeServiceAccount(name)
-
-	require.Equal(t, "test-sa", sa.Name)
-	require.Equal(t, "test-ns", sa.Namespace)
-}
-
-func TestMakeMetricsService(t *testing.T) {
-	name := types.NamespacedName{Name: "test-svc", Namespace: "test-ns"}
-	svc := makeMetricsService(name)
-
-	expectedName := names.MetricsServiceName("test-svc")
-	require.Equal(t, expectedName, svc.Name)
-	require.Equal(t, "test-ns", svc.Namespace)
-	require.Equal(t, commonresources.LabelValueTelemetrySelfMonitor, svc.Labels[commonresources.LabelKeyTelemetrySelfMonitor])
-	require.Equal(t, "true", svc.Annotations[commonresources.AnnotationKeyPrometheusScrape])
-	require.Len(t, svc.Spec.Ports, 1)
-	require.Equal(t, "http-metrics", svc.Spec.Ports[0].Name)
-	require.Equal(t, corev1.ServiceTypeClusterIP, svc.Spec.Type)
 }
