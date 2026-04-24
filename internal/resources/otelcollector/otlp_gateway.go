@@ -429,7 +429,7 @@ func (o *OTLPGatewayApplierDeleter) makeGatewayResourceRequirements(opts Gateway
 		memoryLimit = vpaMemoryLimit
 	}
 
-	// Cap memory limit at 2x VPAMaxAllowedMemory when VPA is configured
+	// Cap memory limit at 2x VPAMaxAllowedMemory when VPAMaxAllowedMemory value is available 
 	// This ensures the pod memory limit doesn't exceed what VPA can scale to,
 	// preventing OOM scenarios where VPA recommendations are capped but pod limit is higher
 	if !opts.VPAMaxAllowedMemory.IsZero() {
