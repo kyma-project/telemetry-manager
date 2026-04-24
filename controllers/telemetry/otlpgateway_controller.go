@@ -217,7 +217,7 @@ func (r *OTLPGatewayController) mapTelemetryChanges(ctx context.Context, object 
 // when an owned resource (DaemonSet, ConfigMap, Secret, Service, etc.) is externally modified.
 // This ensures the reconciler can restore the desired state of gateway resources.
 func (r *OTLPGatewayController) mapOwnedResourceChanges(ctx context.Context, object client.Object) []reconcile.Request {
-	logf.FromContext(ctx).V(1).Info("owned resource changed, triggering OTLP gateway reconciliation", "resource", object.GetName())
+	logf.FromContext(ctx).V(1).Info("owned resource changed, triggering OTLP Gateway reconciliation", "resource", object.GetName())
 	return r.enqueueConfigMap()
 }
 

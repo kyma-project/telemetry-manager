@@ -110,7 +110,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 				Type:    conditions.TypeMetricComponentsHealthy,
 				Status:  "False",
 				Reason:  "GatewayNotReady",
-				Message: "Metric gateway Deployment is not ready",
+				Message: "OTLP Gateway DaemonSet is not ready",
 			},
 		},
 		{
@@ -137,7 +137,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 				Type:    conditions.TypeMetricComponentsHealthy,
 				Status:  "False",
 				Reason:  "AgentNotReady",
-				Message: "Metric agent DaemonSet is not ready",
+				Message: "Metric Agent DaemonSet is not ready",
 			},
 		},
 		{
@@ -206,7 +206,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 				Type:    conditions.TypeMetricComponentsHealthy,
 				Status:  "False",
 				Reason:  "GatewayNotReady",
-				Message: "Metric gateway Deployment is not ready",
+				Message: "OTLP Gateway DaemonSet is not ready",
 			},
 		},
 		{
@@ -267,7 +267,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 				Type:    conditions.TypeMetricComponentsHealthy,
 				Status:  "False",
 				Reason:  "GatewayThrottling",
-				Message: "Metric gateway is unable to receive metrics at current rate. See troubleshooting: " + conditions.LinkGatewayThrottling,
+				Message: "OTLP Gateway is unable to receive metrics at current rate. See troubleshooting: " + conditions.LinkGatewayThrottling,
 			},
 		},
 		{
@@ -288,11 +288,11 @@ func TestMetricComponentsCheck(t *testing.T) {
 				Type:    conditions.TypeMetricComponentsHealthy,
 				Status:  "False",
 				Reason:  "GatewayThrottling",
-				Message: "Metric gateway is unable to receive metrics at current rate. See troubleshooting: " + conditions.LinkGatewayThrottling,
+				Message: "OTLP Gateway is unable to receive metrics at current rate. See troubleshooting: " + conditions.LinkGatewayThrottling,
 			},
 		},
 		{
-			name: "should not be healthy if telemetry flow probing enabled and metric agent flow is not healthy",
+			name: "should not be healthy if telemetry flow probing enabled and Metric Agent flow is not healthy",
 			pipelines: []telemetryv1beta1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
 					WithStatusCondition(healthyGatewayCond).
@@ -309,7 +309,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 				Type:    conditions.TypeMetricComponentsHealthy,
 				Status:  "False",
 				Reason:  "AgentAllTelemetryDataDropped",
-				Message: "Backend is not reachable or rejecting metrics. All metrics are dropped. See troubleshooting: " + conditions.LinkNoDataArriveAtBackend,
+				Message: "Backend is not reachable or rejecting metrics. All metrics are dropped in Metric Agent. See troubleshooting: " + conditions.LinkNoDataArriveAtBackend,
 			},
 		},
 		{

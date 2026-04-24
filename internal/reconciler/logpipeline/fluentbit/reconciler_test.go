@@ -69,7 +69,7 @@ func TestMaxPipelineLimit(t *testing.T) {
 		conditions.TypeFlowHealthy,
 		metav1.ConditionFalse,
 		conditions.ReasonSelfMonConfigNotGenerated,
-		"No logs delivered to backend because LogPipeline specification is not applied to the configuration of Log agent. Check the 'ConfigurationGenerated' condition for more details")
+		"No logs delivered to backend because LogPipeline specification is not applied to the configuration of Log Agent. Check the 'ConfigurationGenerated' condition for more details")
 }
 
 func TestTLSCertificateValidation(t *testing.T) {
@@ -167,7 +167,7 @@ func TestTLSCertificateValidation(t *testing.T) {
 					conditions.TypeFlowHealthy,
 					metav1.ConditionFalse,
 					conditions.ReasonSelfMonConfigNotGenerated,
-					"No logs delivered to backend because LogPipeline specification is not applied to the configuration of Log agent. Check the 'ConfigurationGenerated' condition for more details")
+					"No logs delivered to backend because LogPipeline specification is not applied to the configuration of Log Agent. Check the 'ConfigurationGenerated' condition for more details")
 			}
 		})
 	}
@@ -286,7 +286,7 @@ func TestSecretReferenceValidation(t *testing.T) {
 			expectErr: errors.New("server error"),
 			conditions: []conditionCheck{
 				{conditions.TypeConfigurationGenerated, metav1.ConditionFalse, conditions.ReasonValidationFailed, "Pipeline validation failed due to an error from the Kubernetes API server"},
-				{conditions.TypeFlowHealthy, metav1.ConditionFalse, conditions.ReasonSelfMonConfigNotGenerated, "No logs delivered to backend because LogPipeline specification is not applied to the configuration of Log agent. Check the 'ConfigurationGenerated' condition for more details"},
+				{conditions.TypeFlowHealthy, metav1.ConditionFalse, conditions.ReasonSelfMonConfigNotGenerated, "No logs delivered to backend because LogPipeline specification is not applied to the configuration of Log Agent. Check the 'ConfigurationGenerated' condition for more details"},
 			},
 		},
 		{
@@ -298,7 +298,7 @@ func TestSecretReferenceValidation(t *testing.T) {
 			secretErr: fmt.Errorf("%w: Secret 'some-secret' of Namespace 'some-namespace'", secretref.ErrSecretRefNotFound),
 			conditions: []conditionCheck{
 				{conditions.TypeConfigurationGenerated, metav1.ConditionFalse, conditions.ReasonReferencedSecretMissing, "One or more referenced Secrets are missing: Secret 'some-secret' of Namespace 'some-namespace'"},
-				{conditions.TypeFlowHealthy, metav1.ConditionFalse, conditions.ReasonSelfMonConfigNotGenerated, "No logs delivered to backend because LogPipeline specification is not applied to the configuration of Log agent. Check the 'ConfigurationGenerated' condition for more details"},
+				{conditions.TypeFlowHealthy, metav1.ConditionFalse, conditions.ReasonSelfMonConfigNotGenerated, "No logs delivered to backend because LogPipeline specification is not applied to the configuration of Log Agent. Check the 'ConfigurationGenerated' condition for more details"},
 			},
 		},
 		{
@@ -319,7 +319,7 @@ func TestSecretReferenceValidation(t *testing.T) {
 			},
 			secretErr: nil,
 			conditions: []conditionCheck{
-				{conditions.TypeConfigurationGenerated, metav1.ConditionTrue, conditions.ReasonAgentConfigured, "LogPipeline specification is successfully applied to the configuration of Log agent"},
+				{conditions.TypeConfigurationGenerated, metav1.ConditionTrue, conditions.ReasonAgentConfigured, "LogPipeline specification is successfully applied to the configuration of Log Agent"},
 			},
 		},
 	}
@@ -358,7 +358,7 @@ func TestAgentHealthCondition(t *testing.T) {
 		expectedMessage string
 	}{
 		{
-			name:            "log agent is not ready",
+			name:            "Log Agent is not ready",
 			proberError:     workloadstatus.ErrDaemonSetNotFound,
 			errorConverter:  &conditions.ErrorToMessageConverter{},
 			expectedStatus:  metav1.ConditionFalse,
@@ -366,15 +366,15 @@ func TestAgentHealthCondition(t *testing.T) {
 			expectedMessage: "DaemonSet is not yet created",
 		},
 		{
-			name:            "log agent is ready",
+			name:            "Log Agent is ready",
 			proberError:     nil,
 			errorConverter:  &conditions.ErrorToMessageConverter{},
 			expectedStatus:  metav1.ConditionTrue,
 			expectedReason:  conditions.ReasonAgentReady,
-			expectedMessage: "Log agent DaemonSet is ready",
+			expectedMessage: "Log Agent DaemonSet is ready",
 		},
 		{
-			name:            "log agent prober fails",
+			name:            "Log Agent prober fails",
 			proberError:     workloadstatus.ErrDaemonSetFetching,
 			errorConverter:  &conditions.ErrorToMessageConverter{},
 			expectedStatus:  metav1.ConditionFalse,
@@ -544,7 +544,7 @@ func TestFIPSMode(t *testing.T) {
 			expectReconcilable: true,
 			verifyResources:    true,
 			conditions: []conditionCheck{
-				{conditions.TypeConfigurationGenerated, metav1.ConditionTrue, conditions.ReasonAgentConfigured, "LogPipeline specification is successfully applied to the configuration of Log agent"},
+				{conditions.TypeConfigurationGenerated, metav1.ConditionTrue, conditions.ReasonAgentConfigured, "LogPipeline specification is successfully applied to the configuration of Log Agent"},
 			},
 		},
 		{
@@ -554,7 +554,7 @@ func TestFIPSMode(t *testing.T) {
 			expectReconcilable: true,
 			verifyResources:    true,
 			conditions: []conditionCheck{
-				{conditions.TypeConfigurationGenerated, metav1.ConditionTrue, conditions.ReasonAgentConfigured, "LogPipeline specification is successfully applied to the configuration of Log agent"},
+				{conditions.TypeConfigurationGenerated, metav1.ConditionTrue, conditions.ReasonAgentConfigured, "LogPipeline specification is successfully applied to the configuration of Log Agent"},
 			},
 		},
 		{
@@ -565,7 +565,7 @@ func TestFIPSMode(t *testing.T) {
 			verifyResources:    true,
 			conditions: []conditionCheck{
 				{conditions.TypeConfigurationGenerated, metav1.ConditionFalse, conditions.ReasonNoFluentbitInFipsMode, "HTTP/custom output types are not supported when FIPS mode is enabled"},
-				{conditions.TypeFlowHealthy, metav1.ConditionFalse, conditions.ReasonSelfMonConfigNotGenerated, "No logs delivered to backend because LogPipeline specification is not applied to the configuration of Log agent. Check the 'ConfigurationGenerated' condition for more details"},
+				{conditions.TypeFlowHealthy, metav1.ConditionFalse, conditions.ReasonSelfMonConfigNotGenerated, "No logs delivered to backend because LogPipeline specification is not applied to the configuration of Log Agent. Check the 'ConfigurationGenerated' condition for more details"},
 			},
 		},
 		{
@@ -576,7 +576,7 @@ func TestFIPSMode(t *testing.T) {
 			verifyResources:    true,
 			conditions: []conditionCheck{
 				{conditions.TypeConfigurationGenerated, metav1.ConditionFalse, conditions.ReasonNoFluentbitInFipsMode, "HTTP/custom output types are not supported when FIPS mode is enabled"},
-				{conditions.TypeFlowHealthy, metav1.ConditionFalse, conditions.ReasonSelfMonConfigNotGenerated, "No logs delivered to backend because LogPipeline specification is not applied to the configuration of Log agent. Check the 'ConfigurationGenerated' condition for more details"},
+				{conditions.TypeFlowHealthy, metav1.ConditionFalse, conditions.ReasonSelfMonConfigNotGenerated, "No logs delivered to backend because LogPipeline specification is not applied to the configuration of Log Agent. Check the 'ConfigurationGenerated' condition for more details"},
 			},
 		},
 		{

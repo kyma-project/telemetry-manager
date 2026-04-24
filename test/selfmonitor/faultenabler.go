@@ -25,7 +25,7 @@ type istioFaultEnabler struct {
 }
 
 // newIstioFaultEnabler creates an istioFaultEnabler that injects a gRPC INVALID_ARGUMENT fault.
-// A gRPC status fault is used because the metric agent communicates with the backend over gRPC
+// A gRPC status fault is used because the Metric Agent communicates with the backend over gRPC
 // (port 4317). Using an HTTP abort on gRPC traffic produces a transport-level error that the
 // OTel gRPC exporter does not count as send_failed, so the self-monitor alert never fires.
 // INVALID_ARGUMENT is a non-retryable gRPC status code, causing the exporter to drop data

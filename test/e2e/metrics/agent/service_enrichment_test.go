@@ -91,7 +91,7 @@ func TestServiceEnrichment(t *testing.T) {
 		telemetrygen.WithServiceVersion(customServiceVersion),
 		telemetrygen.WithServiceInstanceID(customServiceInstanceID),
 	)
-	// Simple running pod (no OTLP metrics) — scraped via kubelet stats by the metric agent.
+	// Simple running pod (no OTLP metrics) — scraped via kubelet stats by the Metric Agent.
 	// OTel annotations provide the high-priority service attributes; k8s labels are the competing lower priority.
 	// Tests that the agent's k8sattributes enrichment respects annotation > label priority.
 	podSpecWithAnnotationPriority := stdoutloggen.PodSpec()

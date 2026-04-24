@@ -64,7 +64,7 @@ type AgentApplyOptions struct {
 	VPAMaxAllowedMemory resource.Quantity
 	CollectorConfigYAML string
 	CollectorEnvVars    map[string][]byte
-	// BackendPorts is needed only for the metric agent to set the value of the annotation "traffic.sidecar.istio.io/includeOutboundPorts"
+	// BackendPorts is needed only for the Metric Agent to set the value of the annotation "traffic.sidecar.istio.io/includeOutboundPorts"
 	BackendPorts []string
 }
 
