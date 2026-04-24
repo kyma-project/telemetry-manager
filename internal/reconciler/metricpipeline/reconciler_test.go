@@ -19,6 +19,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	"github.com/kyma-project/telemetry-manager/internal/metrics"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
+	"github.com/kyma-project/telemetry-manager/internal/pipelines"
 	commonStatusStubs "github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus/stubs"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline/mocks"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline/stubs"
@@ -40,25 +41,25 @@ func TestGatewayHealthCondition(t *testing.T) {
 		expectedMsg    string
 	}{
 		{
-			name:           "metric gateway deployment is not ready",
+			name:           "OTLP Gateway DaemonSet is not ready",
 			proberError:    &workloadstatus.PodIsPendingError{ContainerName: "foo", Message: "Error"},
 			expectedStatus: metav1.ConditionFalse,
 			expectedReason: conditions.ReasonGatewayNotReady,
 			expectedMsg:    "Pod is in the pending state because container: foo is not running due to: Error. Please check the container: foo logs.",
 		},
 		{
-			name:           "metric gateway prober fails",
-			proberError:    workloadstatus.ErrDeploymentFetching,
+			name:           "OTLP Gateway prober fails",
+			proberError:    workloadstatus.ErrDaemonSetFetching,
 			expectedStatus: metav1.ConditionFalse,
 			expectedReason: conditions.ReasonGatewayNotReady,
-			expectedMsg:    "Failed to get Deployment",
+			expectedMsg:    "Failed to get DaemonSet",
 		},
 		{
-			name:           "metric gateway deployment is ready",
+			name:           "OTLP Gateway DaemonSet is ready",
 			proberError:    nil,
 			expectedStatus: metav1.ConditionTrue,
 			expectedReason: conditions.ReasonGatewayReady,
-			expectedMsg:    "Metric gateway Deployment is ready",
+			expectedMsg:    "OTLP Gateway DaemonSet is ready",
 		},
 	}
 
@@ -103,25 +104,25 @@ func TestAgentHealthCondition(t *testing.T) {
 		expectedMsg    string
 	}{
 		{
-			name:           "metric agent daemonset is not ready",
+			name:           "Metric Agent daemonset is not ready",
 			proberError:    &workloadstatus.PodIsPendingError{Message: "Error"},
 			expectedStatus: metav1.ConditionFalse,
 			expectedReason: conditions.ReasonAgentNotReady,
 			expectedMsg:    "Pod is in the pending state because container:  is not running due to: Error. Please check the container:  logs.",
 		},
 		{
-			name:           "metric agent prober fails",
+			name:           "Metric Agent prober fails",
 			proberError:    workloadstatus.ErrDaemonSetNotFound,
 			expectedStatus: metav1.ConditionFalse,
 			expectedReason: conditions.ReasonAgentNotReady,
 			expectedMsg:    workloadstatus.ErrDaemonSetNotFound.Error(),
 		},
 		{
-			name:           "metric agent daemonset is ready",
+			name:           "Metric Agent daemonset is ready",
 			proberError:    nil,
 			expectedStatus: metav1.ConditionTrue,
 			expectedReason: conditions.ReasonAgentReady,
-			expectedMsg:    "Metric agent DaemonSet is ready",
+			expectedMsg:    "Metric Agent DaemonSet is ready",
 		},
 	}
 
@@ -184,7 +185,7 @@ func TestSecretReferenceValidation(t *testing.T) {
 			conditions.TypeConfigurationGenerated,
 			metav1.ConditionTrue,
 			conditions.ReasonGatewayConfigured,
-			"MetricPipeline specification is successfully applied to the configuration of Metric gateway")
+			"MetricPipeline specification is successfully applied to the configuration of OTLP Gateway")
 
 		assertAll(t)
 	})
@@ -215,7 +216,7 @@ func TestSecretReferenceValidation(t *testing.T) {
 			conditions.TypeFlowHealthy,
 			metav1.ConditionFalse,
 			conditions.ReasonSelfMonConfigNotGenerated,
-			"No metrics delivered to backend because MetricPipeline specification is not applied to the configuration of Metric gateway. Check the 'ConfigurationGenerated' condition for more details",
+			"No metrics delivered to backend because MetricPipeline specification is not applied to the configuration of OTLP Gateway. Check the 'ConfigurationGenerated' condition for more details",
 		)
 		assertAll(t)
 	})
@@ -256,7 +257,7 @@ func TestMaxPipelineLimit(t *testing.T) {
 		conditions.TypeFlowHealthy,
 		metav1.ConditionFalse,
 		conditions.ReasonSelfMonConfigNotGenerated,
-		"No metrics delivered to backend because MetricPipeline specification is not applied to the configuration of Metric gateway. Check the 'ConfigurationGenerated' condition for more details",
+		"No metrics delivered to backend because MetricPipeline specification is not applied to the configuration of OTLP Gateway. Check the 'ConfigurationGenerated' condition for more details",
 	)
 	assertAll(t)
 }
@@ -293,7 +294,7 @@ func TestGatewayFlowHealthCondition(t *testing.T) {
 			},
 			expectedStatus:  metav1.ConditionFalse,
 			expectedReason:  conditions.ReasonSelfMonGatewayThrottling,
-			expectedMessage: "Metric gateway is unable to receive metrics at current rate. See troubleshooting: " + conditions.LinkGatewayThrottling,
+			expectedMessage: "OTLP Gateway is unable to receive metrics at current rate. See troubleshooting: " + conditions.LinkGatewayThrottling,
 		},
 		{
 			name: "some data dropped",
@@ -302,7 +303,7 @@ func TestGatewayFlowHealthCondition(t *testing.T) {
 			},
 			expectedStatus:  metav1.ConditionFalse,
 			expectedReason:  conditions.ReasonSelfMonGatewaySomeDataDropped,
-			expectedMessage: "Backend is reachable, but rejecting metrics. Some metrics are dropped. See troubleshooting: " + conditions.LinkNotAllDataArriveAtBackend,
+			expectedMessage: "Backend is reachable, but rejecting metrics. Some metrics are dropped in OTLP Gateway. See troubleshooting: " + conditions.LinkNotAllDataArriveAtBackend,
 		},
 		{
 			name: "some data dropped shadows other problems",
@@ -312,7 +313,7 @@ func TestGatewayFlowHealthCondition(t *testing.T) {
 			},
 			expectedStatus:  metav1.ConditionFalse,
 			expectedReason:  conditions.ReasonSelfMonGatewaySomeDataDropped,
-			expectedMessage: "Backend is reachable, but rejecting metrics. Some metrics are dropped. See troubleshooting: " + conditions.LinkNotAllDataArriveAtBackend,
+			expectedMessage: "Backend is reachable, but rejecting metrics. Some metrics are dropped in OTLP Gateway. See troubleshooting: " + conditions.LinkNotAllDataArriveAtBackend,
 		},
 		{
 			name: "all data dropped",
@@ -321,7 +322,7 @@ func TestGatewayFlowHealthCondition(t *testing.T) {
 			},
 			expectedStatus:  metav1.ConditionFalse,
 			expectedReason:  conditions.ReasonSelfMonGatewayAllDataDropped,
-			expectedMessage: "Backend is not reachable or rejecting metrics. All metrics are dropped. See troubleshooting: " + conditions.LinkNoDataArriveAtBackend,
+			expectedMessage: "Backend is not reachable or rejecting metrics. All metrics are dropped in OTLP Gateway. See troubleshooting: " + conditions.LinkNoDataArriveAtBackend,
 		},
 		{
 			name: "all data dropped shadows other problems",
@@ -331,7 +332,7 @@ func TestGatewayFlowHealthCondition(t *testing.T) {
 			},
 			expectedStatus:  metav1.ConditionFalse,
 			expectedReason:  conditions.ReasonSelfMonGatewayAllDataDropped,
-			expectedMessage: "Backend is not reachable or rejecting metrics. All metrics are dropped. See troubleshooting: " + conditions.LinkNoDataArriveAtBackend,
+			expectedMessage: "Backend is not reachable or rejecting metrics. All metrics are dropped in OTLP Gateway. See troubleshooting: " + conditions.LinkNoDataArriveAtBackend,
 		},
 	}
 
@@ -403,7 +404,7 @@ func TestAgentFlowHealthCondition(t *testing.T) {
 			},
 			expectedStatus:  metav1.ConditionFalse,
 			expectedReason:  conditions.ReasonSelfMonAgentSomeDataDropped,
-			expectedMessage: "Backend is reachable, but rejecting metrics. Some metrics are dropped. See troubleshooting: " + conditions.LinkNotAllDataArriveAtBackend,
+			expectedMessage: "Backend is reachable, but rejecting metrics. Some metrics are dropped in Metric Agent. See troubleshooting: " + conditions.LinkNotAllDataArriveAtBackend,
 		},
 		{
 			name: "all data dropped",
@@ -412,7 +413,7 @@ func TestAgentFlowHealthCondition(t *testing.T) {
 			},
 			expectedStatus:  metav1.ConditionFalse,
 			expectedReason:  conditions.ReasonSelfMonAgentAllDataDropped,
-			expectedMessage: "Backend is not reachable or rejecting metrics. All metrics are dropped. See troubleshooting: " + conditions.LinkNoDataArriveAtBackend,
+			expectedMessage: "Backend is not reachable or rejecting metrics. All metrics are dropped in Metric Agent. See troubleshooting: " + conditions.LinkNoDataArriveAtBackend,
 		},
 		{
 			name: "all data dropped shadows other problems",
@@ -421,7 +422,7 @@ func TestAgentFlowHealthCondition(t *testing.T) {
 			},
 			expectedStatus:  metav1.ConditionFalse,
 			expectedReason:  conditions.ReasonSelfMonAgentAllDataDropped,
-			expectedMessage: "Backend is not reachable or rejecting metrics. All metrics are dropped. See troubleshooting: " + conditions.LinkNoDataArriveAtBackend,
+			expectedMessage: "Backend is not reachable or rejecting metrics. All metrics are dropped in Metric Agent. See troubleshooting: " + conditions.LinkNoDataArriveAtBackend,
 		},
 	}
 	for _, tt := range tests {
@@ -558,7 +559,7 @@ func TestTLSCertificateValidation(t *testing.T) {
 					conditions.TypeFlowHealthy,
 					metav1.ConditionFalse,
 					conditions.ReasonSelfMonConfigNotGenerated,
-					"No metrics delivered to backend because MetricPipeline specification is not applied to the configuration of Metric gateway. Check the 'ConfigurationGenerated' condition for more details",
+					"No metrics delivered to backend because MetricPipeline specification is not applied to the configuration of OTLP Gateway. Check the 'ConfigurationGenerated' condition for more details",
 				)
 			}
 
@@ -613,7 +614,7 @@ func TestOTTLSpecValidation(t *testing.T) {
 				conditions.TypeFlowHealthy,
 				metav1.ConditionFalse,
 				conditions.ReasonSelfMonConfigNotGenerated,
-				"No metrics delivered to backend because MetricPipeline specification is not applied to the configuration of Metric gateway. Check the 'ConfigurationGenerated' condition for more details",
+				"No metrics delivered to backend because MetricPipeline specification is not applied to the configuration of OTLP Gateway. Check the 'ConfigurationGenerated' condition for more details",
 			)
 			assertAll(t)
 		})
@@ -680,7 +681,7 @@ func TestAPIServerFailureHandling(t *testing.T) {
 				conditions.TypeFlowHealthy,
 				metav1.ConditionFalse,
 				conditions.ReasonSelfMonConfigNotGenerated,
-				"No metrics delivered to backend because MetricPipeline specification is not applied to the configuration of Metric gateway. Check the 'ConfigurationGenerated' condition for more details",
+				"No metrics delivered to backend because MetricPipeline specification is not applied to the configuration of OTLP Gateway. Check the 'ConfigurationGenerated' condition for more details",
 			)
 			assertAll(t)
 		})
@@ -1155,7 +1156,7 @@ func TestUsageTracking(t *testing.T) {
 			}
 
 			fakeClient := newTestClient(t, objs...)
-			validator, _ := ottl.NewTransformSpecValidator(ottl.SignalTypeMetric)
+			validator, _ := ottl.NewTransformSpecValidator(pipelines.SignalTypeMetric)
 			sut, assertAll := newTestReconciler(fakeClient, WithPipelineValidator(newTestValidator(WithTransformSpecValidator(validator))))
 
 			result := reconcileAndGet(t, fakeClient, sut, tt.pipeline.Name)

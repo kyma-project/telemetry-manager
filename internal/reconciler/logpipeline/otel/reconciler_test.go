@@ -16,6 +16,7 @@ import (
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/metrics"
+	"github.com/kyma-project/telemetry-manager/internal/pipelines"
 	commonStatusStubs "github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus/stubs"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/otel/mocks"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/stubs"
@@ -32,7 +33,7 @@ func TestAgentHealthCondition(t *testing.T) {
 		expectedCondition metav1.Condition
 	}{
 		{
-			name:            "log agent daomonset is not ready",
+			name:            "Log Agent daomonset is not ready",
 			agentProberStub: commonStatusStubs.NewDaemonSetProber(&workloadstatus.PodIsPendingError{Message: "Error"}),
 			expectedCondition: metav1.Condition{
 				Type:    conditions.TypeAgentHealthy,
@@ -42,13 +43,13 @@ func TestAgentHealthCondition(t *testing.T) {
 			},
 		},
 		{
-			name:            "log agent daemonset is ready",
+			name:            "Log Agent daemonset is ready",
 			agentProberStub: commonStatusStubs.NewDaemonSetProber(nil),
 			expectedCondition: metav1.Condition{
 				Type:    conditions.TypeAgentHealthy,
 				Status:  metav1.ConditionTrue,
 				Reason:  conditions.ReasonAgentReady,
-				Message: "Log agent DaemonSet is ready",
+				Message: "Log Agent DaemonSet is ready",
 			},
 		},
 	}
@@ -99,7 +100,7 @@ func TestAgentFlowHealthCondition(t *testing.T) {
 			},
 			expectedStatus:  metav1.ConditionFalse,
 			expectedReason:  conditions.ReasonSelfMonAgentSomeDataDropped,
-			expectedMessage: "Backend is reachable, but rejecting logs. Some logs are dropped in Log agent. See troubleshooting: " + conditions.LinkNotAllDataArriveAtBackend,
+			expectedMessage: "Backend is reachable, but rejecting logs. Some logs are dropped in Log Agent. See troubleshooting: " + conditions.LinkNotAllDataArriveAtBackend,
 		},
 		{
 			name: "all data dropped",
@@ -108,7 +109,7 @@ func TestAgentFlowHealthCondition(t *testing.T) {
 			},
 			expectedStatus:  metav1.ConditionFalse,
 			expectedReason:  conditions.ReasonSelfMonAgentAllDataDropped,
-			expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped in Log agent. See troubleshooting: " + conditions.LinkNoDataArriveAtBackend,
+			expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped in Log Agent. See troubleshooting: " + conditions.LinkNoDataArriveAtBackend,
 		},
 		{
 			name: "all data dropped shadows other problems",
@@ -117,7 +118,7 @@ func TestAgentFlowHealthCondition(t *testing.T) {
 			},
 			expectedStatus:  metav1.ConditionFalse,
 			expectedReason:  conditions.ReasonSelfMonAgentAllDataDropped,
-			expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped in Log agent. See troubleshooting: " + conditions.LinkNoDataArriveAtBackend,
+			expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped in Log Agent. See troubleshooting: " + conditions.LinkNoDataArriveAtBackend,
 		},
 	}
 	for _, tt := range tests {
@@ -181,7 +182,7 @@ func TestGatewayFlowHealthCondition(t *testing.T) {
 			},
 			expectedStatus:  metav1.ConditionFalse,
 			expectedReason:  conditions.ReasonSelfMonGatewayThrottling,
-			expectedMessage: "OTLP gateway is unable to receive logs at current rate. See troubleshooting: " + conditions.LinkGatewayThrottling,
+			expectedMessage: "OTLP Gateway is unable to receive logs at current rate. See troubleshooting: " + conditions.LinkGatewayThrottling,
 		},
 		{
 			name: "some data dropped",
@@ -190,7 +191,7 @@ func TestGatewayFlowHealthCondition(t *testing.T) {
 			},
 			expectedStatus:  metav1.ConditionFalse,
 			expectedReason:  conditions.ReasonSelfMonGatewaySomeDataDropped,
-			expectedMessage: "Backend is reachable, but rejecting logs. Some logs are dropped in OTLP gateway. See troubleshooting: " + conditions.LinkNotAllDataArriveAtBackend,
+			expectedMessage: "Backend is reachable, but rejecting logs. Some logs are dropped in OTLP Gateway. See troubleshooting: " + conditions.LinkNotAllDataArriveAtBackend,
 		},
 		{
 			name: "some data dropped shadows other problems",
@@ -200,7 +201,7 @@ func TestGatewayFlowHealthCondition(t *testing.T) {
 			},
 			expectedStatus:  metav1.ConditionFalse,
 			expectedReason:  conditions.ReasonSelfMonGatewaySomeDataDropped,
-			expectedMessage: "Backend is reachable, but rejecting logs. Some logs are dropped in OTLP gateway. See troubleshooting: " + conditions.LinkNotAllDataArriveAtBackend,
+			expectedMessage: "Backend is reachable, but rejecting logs. Some logs are dropped in OTLP Gateway. See troubleshooting: " + conditions.LinkNotAllDataArriveAtBackend,
 		},
 		{
 			name: "all data dropped",
@@ -209,7 +210,7 @@ func TestGatewayFlowHealthCondition(t *testing.T) {
 			},
 			expectedStatus:  metav1.ConditionFalse,
 			expectedReason:  conditions.ReasonSelfMonGatewayAllDataDropped,
-			expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped in OTLP gateway. See troubleshooting: " + conditions.LinkNoDataArriveAtBackend,
+			expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped in OTLP Gateway. See troubleshooting: " + conditions.LinkNoDataArriveAtBackend,
 		},
 		{
 			name: "all data dropped shadows other problems",
@@ -219,7 +220,7 @@ func TestGatewayFlowHealthCondition(t *testing.T) {
 			},
 			expectedStatus:  metav1.ConditionFalse,
 			expectedReason:  conditions.ReasonSelfMonGatewayAllDataDropped,
-			expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped in OTLP gateway. See troubleshooting: " + conditions.LinkNoDataArriveAtBackend,
+			expectedMessage: "Backend is not reachable or rejecting logs. All logs are dropped in OTLP Gateway. See troubleshooting: " + conditions.LinkNoDataArriveAtBackend,
 		},
 	}
 	for _, tt := range tests {
@@ -605,7 +606,7 @@ func TestPipelineInfoTracking(t *testing.T) {
 			}
 
 			fakeClient := newTestClient(t, objs...)
-			validator, _ := ottl.NewTransformSpecValidator(ottl.SignalTypeLog)
+			validator, _ := ottl.NewTransformSpecValidator(pipelines.SignalTypeLog)
 			sut := newTestReconciler(fakeClient, WithPipelineValidator(newTestValidator(WithTransformSpecValidator(validator))))
 
 			result := reconcileAndGet(t, fakeClient, sut, tt.pipeline.Name)

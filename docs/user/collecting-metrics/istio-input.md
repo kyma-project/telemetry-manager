@@ -21,7 +21,7 @@ By default, the **istio** input is disabled. If you are using Istio, enable the 
       enabled: true
 ```
 
-With this, the metric agent starts collecting all Istio metrics from Istio sidecars from all namespaces (including system namespaces).
+With this, the Metric Agent starts collecting all Istio metrics from Istio sidecars from all namespaces (including system namespaces).
 
 > [!TIP]
 > To validate or debug your configuration, use diagnostic metrics (see [Collect Diagnostic Metrics](#collect-diagnostic-metrics)).
@@ -30,7 +30,7 @@ With this, the metric agent starts collecting all Istio metrics from Istio sidec
 
 ## Collect Envoy Metrics
 
-By default, the metric agent collects only Istio metrics (prefixed with `istio_`) and ignores Envoy metrics (prefixed with `envoy_`).
+By default, the Metric Agent collects only Istio metrics (prefixed with `istio_`) and ignores Envoy metrics (prefixed with `envoy_`).
 
 Envoy metrics help you understand the performance and behavior of your Envoy proxy, providing details like request rates, latencies, and error counts. For details, see [Envoy metrics](https://www.envoyproxy.io/docs/envoy/latest/configuration/upstream/cluster_manager/cluster_stats) and [server metrics](https://www.envoyproxy.io/docs/envoy/latest/configuration/observability/statistics).
 
@@ -63,7 +63,7 @@ To use diagnostic metrics, enable the **diagnosticMetrics** for the input in you
         enabled: true
 ```
 
-When enabled, the metric agent generates metrics about its own scrape jobs, such as the following:
+When enabled, the Metric Agent generates metrics about its own scrape jobs, such as the following:
 
 - `up`: The scraping was successful
 - `scrape_duration_seconds`: Duration of the scrape
