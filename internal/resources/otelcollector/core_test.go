@@ -189,7 +189,7 @@ func TestDeleteCommonResources_ErrorHandling(t *testing.T) {
 	})
 }
 
-func TestMakeVPA(t *testing.T) {
+func TestMakeVPA_Clamping_Max_Min(t *testing.T) {
 	tests := []struct {
 		name              string
 		minAllowedMemory  resource.Quantity
