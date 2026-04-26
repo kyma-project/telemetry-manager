@@ -48,3 +48,6 @@ dependencies/mock-backend/mock-backend
 .pr-review-loop/
 review-loop.diff
 review-loop.bak.diff
+
+# Local GitHub Actions logs (downloaded for analysis, not for version control)
+gh-logs/
