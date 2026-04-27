@@ -56,7 +56,7 @@ The two receivers are heterogeneous in their metric selection mechanisms. Despit
 
 ### The Problem: Default Set vs Optional Metrics
 
-Within each resource type, the runtime input exposes only a curated subset of the metrics available from the upstream receivers. This minimal default set is an intentional design decision driven by backend storage costs — every additional metric creates time series that users pay for at the backend (for example, SAP Cloud Logging). The full list of default metrics per resource type is documented in [Runtime Metrics](../../user/collecting-metrics/runtime-metrics.md).
+Within each resource type, the runtime input exposes only a curated subset of the metrics available from the upstream receivers. This minimal default set is an intentional design decision driven by backend storage costs. Every additional metric creates a time series that users pay for at the backend (for example, SAP Cloud Logging). The full list of default metrics per resource type is documented in [Runtime Metrics](../../user/collecting-metrics/runtime-metrics.md).
 
 Both upstream receivers define additional metrics that are disabled by default. Users have requested access to some of these metrics — in particular, CPU and memory utilization ratios relative to requests and limits (see [#3336](https://github.com/kyma-project/telemetry-manager/issues/3336)). Today, computing these ratios requires complex calculations in downstream systems (for example, joining usage metrics with limit metrics and computing the ratio in query language), which adds significant operational overhead.
 
@@ -135,7 +135,7 @@ input:
 
 **Pros:**
 - Maximum user control — users enable exactly the metrics they need, nothing more
-- No intermediate abstraction layer that can become inconsistent with upstream
+- No intermediate abstraction layer that can become inconsistent with the upstream
 - Metric names are the same names users see in their backend dashboards and alerting rules — no translation needed
 - Every optional metric is addressable, regardless of whether it fits a logical group
 - No taxonomy problem: adding a new optional metric upstream only requires adding it to the validation allow-list
@@ -152,11 +152,11 @@ Categorizing metrics by resource type is a strong and future-proof abstraction �
 
 The allowed list trades abstraction for transparency. Users specify exactly which metrics they want, using the same names they already use in dashboards and alerting rules. The coupling to upstream names is real, but that coupling already exists at every other layer of the user's observability stack.
 
-Glob-style prefix matching (for example, `k8s.pod.*`) is deferred to a future ADR. A usage metric tracks adoption of `additionalMetrics` to inform whether prefix matching becomes necessary.
+Glob-style prefix matching (for example, `k8s.pod.*`) is deferred to a future ADR. A usage metric tracks the adoption of `additionalMetrics` to inform whether prefix matching becomes necessary.
 
 ### Handling Upstream Breaking Changes
 
-None of the three options protect against breaking changes in the upstream receivers. Both receivers are at beta stability, and the optional metrics themselves are at development stability. If a metric is renamed or removed upstream:
+None of the three options protects against breaking changes in the upstream receivers. Both receivers are at beta stability, and the optional metrics themselves are at development stability. If a metric is renamed or removed upstream:
 
 1. We must update the validation allow-list to reflect the new names.
 2. We must notify users about the change and provide migration guidance.
