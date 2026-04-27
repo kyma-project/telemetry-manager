@@ -12,7 +12,7 @@ By default, the Telemetry module adjusts memory resources for the OTLP Gateway a
 The Telemetry module configures VPA with the following settings:
 
 - Memory limits are set to 2x the memory request.
-- Maximum allowed memory is calculated as 30% of the smallest Node's allocatable memory, rounded down to the nearest KiB.
+- [maxAllowed](https://kubernetes.io/docs/concepts/workloads/autoscaling/vertical-pod-autoscale/#minallowed-and-maxallowed) memory is calculated as 15% of the smallest Node's allocatable memory, rounded down to the nearest KiB. The `maxAllowed` memory is the maximum value that can be recommended by the VPA for the memory request.
 
 When you upgrade the Telemetry module to a version with VPA support, VPA activates for existing Telemetry components. This triggers a one-time restart of Telemetry components as VPA applies its initial resource recommendations. During the initial adjustment period, you might observe Pod restarts as VPA learns your workload patterns. This is normal behavior.
 
