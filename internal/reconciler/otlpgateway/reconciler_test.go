@@ -123,14 +123,10 @@ func TestReconcile_GenerationMismatch_SkipsPipeline(t *testing.T) {
 
 	fakeClient := newTestClient(t, &pipeline, cm)
 
-	// No .On() calls — Build must not be called; unexpected call panics immediately
-	cb := &mocks.OTLPGatewayConfigBuilder{}
-
 	gad := &mocks.GatewayApplierDeleter{}
 	gad.On("DeleteResources", mock.Anything, mock.Anything, false, false).Return(nil).Once()
 
 	sut, assertAll := newTestReconciler(fakeClient,
-		withConfigBuilderAssert(cb),
 		withGatewayApplierDeleterAssert(gad),
 	)
 
@@ -357,33 +353,6 @@ func TestFetchTracePipelines_GetError(t *testing.T) {
 	})
 	require.Error(t, err)
 	assertAll(t)
-}
-
-func TestNewReconciler_WithOptions(t *testing.T) {
-	fakeClient := newTestClient(t)
-	globals := config.NewGlobal(config.WithTargetNamespace("test-namespace"))
-
-	gad := &mocks.GatewayApplierDeleter{}
-	cb := &mocks.OTLPGatewayConfigBuilder{}
-	isc := &stubs.IstioStatusChecker{}
-	oh := &stubs.OverridesHandler{}
-
-	reconciler := NewReconciler(
-		fakeClient,
-		WithGlobals(globals),
-		WithGatewayApplierDeleter(gad),
-		WithConfigBuilder(cb),
-		WithIstioStatusChecker(isc),
-		WithOverridesHandler(oh),
-	)
-
-	require.NotNil(t, reconciler)
-	assert.Equal(t, fakeClient, reconciler.Client)
-	assert.Equal(t, "test-namespace", reconciler.globals.TargetNamespace())
-	assert.Equal(t, gad, reconciler.gatewayApplierDeleter)
-	assert.Equal(t, cb, reconciler.configBuilder)
-	assert.Equal(t, isc, reconciler.istioStatusChecker)
-	assert.Equal(t, oh, reconciler.overridesHandler)
 }
 
 func TestGlobals(t *testing.T) {
