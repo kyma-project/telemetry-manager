@@ -1717,6 +1717,8 @@ spec:
                         description: Headers defines custom headers to be added to
                           outgoing HTTP or gRPC requests.
                         items:
+                          description: Header defines custom headers to be added to
+                            outgoing HTTP or gRPC requests.
                           properties:
                             name:
                               description: Name defines the header name.

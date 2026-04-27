@@ -126,7 +126,7 @@ type OAuth2Options struct {
 	Params map[string]string `json:"params,omitempty"`
 }
 
-// Headers defines custom headers to be added to outgoing HTTP or gRPC requests.
+// Header defines custom headers to be added to outgoing HTTP or gRPC requests.
 // +kubebuilder:validation:XValidation:rule="has(self.value) || has(self.valueFrom)",message="Header must have 'value' or 'valueFrom' set"
 type Header struct {
 	// Defines the header value.
