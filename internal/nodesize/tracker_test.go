@@ -118,8 +118,8 @@ func TestUpdateSmallestMemory_NodeWithoutAllocatableMemory_IsSkipped(t *testing.
 
 func TestVPAMaxAllowedMemory(t *testing.T) {
 	// 4Gi = 4294967296 bytes
-	// 30% = 1288490188.8 → rounded to 1288490189
-	// Floor to KiB: (1288490189 / 1024) * 1024 = 1288489984
+	// 15% = 644245094.4 → rounded to 644245094
+	// Floor to KiB: (644245094 / 1024) * 1024 = 644244480
 	tracker := newTracker(makeNode("node1", resource.MustParse("4Gi")))
 
 	_, err := tracker.UpdateSmallestMemory(context.Background())
@@ -127,6 +127,6 @@ func TestVPAMaxAllowedMemory(t *testing.T) {
 
 	vpa := tracker.VPAMaxAllowedMemory()
 
-	expected := *resource.NewQuantity(1288489984, resource.BinarySI)
+	expected := *resource.NewQuantity(644244480, resource.BinarySI)
 	assert.Equal(t, expected, vpa)
 }
