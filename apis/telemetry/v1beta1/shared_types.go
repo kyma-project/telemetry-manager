@@ -91,6 +91,7 @@ type AuthenticationOptions struct {
 	OAuth2 *OAuth2Options `json:"oauth2,omitempty"`
 }
 
+// BasicAuthOptions contains options for `Basic` authentication.
 // +kubebuilder:validation:XValidation:rule="has(self.user.value) || has(self.user.valueFrom)",message="'user' must have 'value' or 'valueFrom' set"
 // +kubebuilder:validation:XValidation:rule="has(self.password.value) || has(self.password.valueFrom)",message="'password' must have 'value' or 'valueFrom' set"
 type BasicAuthOptions struct {
@@ -102,6 +103,7 @@ type BasicAuthOptions struct {
 	Password ValueType `json:"password"`
 }
 
+// OAuth2Options contains options for `OAuth2` authentication.
 // +kubebuilder:validation:XValidation:rule="has(self.tokenURL.value) || has(self.tokenURL.valueFrom)",message="'tokenURL' must have 'value' or 'valueFrom' set"
 // +kubebuilder:validation:XValidation:rule="has(self.clientID.value) || has(self.clientID.valueFrom)",message="'clientID' must have 'value' or 'valueFrom' set"
 // +kubebuilder:validation:XValidation:rule="has(self.clientSecret.value) || has(self.clientSecret.valueFrom)",message="'clientSecret' must have 'value' or 'valueFrom' set"
@@ -124,6 +126,7 @@ type OAuth2Options struct {
 	Params map[string]string `json:"params,omitempty"`
 }
 
+// Headers defines custom headers to be added to outgoing HTTP or gRPC requests.
 // +kubebuilder:validation:XValidation:rule="has(self.value) || has(self.valueFrom)",message="Header must have 'value' or 'valueFrom' set"
 type Header struct {
 	// Defines the header value.
