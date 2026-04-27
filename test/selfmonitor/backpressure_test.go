@@ -81,7 +81,7 @@ func TestBackpressure(t *testing.T) {
 			expectedReasons: degradedReasons(conditions.ReasonSelfMonGatewaySomeDataDropped),
 		},
 		{
-			// Metric agent and gateway (using kyma stats receiver) both export data to the same backend.
+			// Metric Agent and OTLP Gateway (using kyma stats receiver) both export data to the same backend.
 			// Faulting the backend would affect both, masking the agent-specific alert.
 			// An Istio VirtualService with a source-label match on telemetry-metric-agent pods
 			// blocks only the agent→gateway leg, leaving the gateway's own backend traffic healthy.

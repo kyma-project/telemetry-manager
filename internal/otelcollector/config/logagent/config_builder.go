@@ -12,6 +12,7 @@ import (
 	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
+	"github.com/kyma-project/telemetry-manager/internal/pipelines"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 )
@@ -228,7 +229,7 @@ func (b *Builder) addOTLPExporter() buildComponentFunc {
 			otlpExporterBuilder := common.NewOTLPExporterConfigBuilder(
 				b.Reader,
 				lp.Spec.Output.OTLP,
-				common.LogPipelineRef(lp),
+				pipelines.LogPipelineRef(lp),
 				0, // queue size is set to 0 for now, as the queue is disabled
 			)
 
@@ -238,12 +239,12 @@ func (b *Builder) addOTLPExporter() buildComponentFunc {
 }
 
 func (b *Builder) addOAuth2Extension(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) error {
-	oauth2ExtensionID := common.ComponentIDOAuth2Extension(common.LogPipelineRef(pipeline))
+	oauth2ExtensionID := common.ComponentIDOAuth2Extension(pipelines.LogPipelineRef(pipeline))
 
 	oauth2ExtensionConfig, oauth2ExtensionEnvVars, err := common.NewOAuth2ExtensionConfigBuilder(
 		b.Reader,
 		pipeline.Spec.Output.OTLP.Authentication.OAuth2,
-		common.LogPipelineRef(pipeline),
+		pipelines.LogPipelineRef(pipeline),
 	).OAuth2Extension(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to build OAuth2 extension for pipeline %s: %w", pipeline.Name, err)
@@ -267,13 +268,13 @@ func formatFileLogReceiverID(lp *telemetryv1beta1.LogPipeline) string {
 }
 
 func formatUserDefinedTransformProcessorID(lp *telemetryv1beta1.LogPipeline) string {
-	return common.ComponentIDUserDefinedTransformProcessor(common.LogPipelineRef(lp))
+	return common.ComponentIDUserDefinedTransformProcessor(pipelines.LogPipelineRef(lp))
 }
 
 func formatUserDefinedFilterProcessorID(lp *telemetryv1beta1.LogPipeline) string {
-	return common.ComponentIDUserDefinedFilterProcessor(common.LogPipelineRef(lp))
+	return common.ComponentIDUserDefinedFilterProcessor(pipelines.LogPipelineRef(lp))
 }
 
 func formatOTLPExporterID(lp *telemetryv1beta1.LogPipeline) string {
-	return common.ComponentIDOTLPExporter(lp.Spec.Output.OTLP.Protocol, common.LogPipelineRef(lp))
+	return common.ComponentIDOTLPExporter(lp.Spec.Output.OTLP.Protocol, pipelines.LogPipelineRef(lp))
 }

@@ -1,6 +1,6 @@
 # Transformation to OTLP Logs
 
-Learn how the log agent processes the original container logs and transforms them into structured OpenTelemetry (OTLP) log records.
+Learn how the Log Agent processes the original container logs and transforms them into structured OpenTelemetry (OTLP) log records.
 
 ## Original Log Message
 
@@ -17,7 +17,7 @@ The following example shows a container `myContainer` in Pod `myPod`, running in
 
 ## Log Tailing
 
-The log agent reads the log message from a log file managed by the container runtime. The file name contains namespace, Pod, and container information that becomes available later as log attributes. The raw log record looks like the following example:
+The Log Agent reads the log message from a log file managed by the container runtime. The file name contains namespace, Pod, and container information that becomes available later as log attributes. The raw log record looks like the following example:
 
 ```json
 {
@@ -85,7 +85,7 @@ Typically, a log message includes a log level in the `level` field. Based on thi
 
 ## Trace Parsing
 
-OTLP natively attaches trace context to log records. If possible, the log agent parses the following log attributes according to the [W3C-Tracecontext specification](https://www.w3.org/TR/trace-context/#traceparent-header):
+OTLP natively attaches trace context to log records. If possible, the Log Agent parses the following log attributes according to the [W3C-Tracecontext specification](https://www.w3.org/TR/trace-context/#traceparent-header):
 
 * `trace_id`
 * `span_id`

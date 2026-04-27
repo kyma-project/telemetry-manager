@@ -12,7 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
+	"github.com/kyma-project/telemetry-manager/internal/pipelines"
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 )
 
@@ -58,7 +58,7 @@ func ReadOTLPGatewayConfig(ctx context.Context, c client.Client, namespace strin
 			return &OTLPGatewayConfigMap{}, nil
 		}
 
-		return nil, fmt.Errorf("failed to get otlp gateway coordination configmap: %w", err)
+		return nil, fmt.Errorf("failed to get OTLP Gateway coordination ConfigMap: %w", err)
 	}
 
 	yamlData, ok := cm.Data[ConfigMapDataKey]
@@ -68,7 +68,7 @@ func ReadOTLPGatewayConfig(ctx context.Context, c client.Client, namespace strin
 
 	var config OTLPGatewayConfigMap
 	if err := yaml.Unmarshal([]byte(yamlData), &config); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal configmap data: %w", err)
+		return nil, fmt.Errorf("failed to unmarshal ConfigMap data: %w", err)
 	}
 
 	return &config, nil
@@ -109,7 +109,7 @@ func CollectSecretVersions(ctx context.Context, c client.Client, refs []telemetr
 
 // AddPipelineReference adds or updates a pipeline reference of any type.
 // Uses optimistic locking to handle concurrent updates safely.
-func AddPipelineReference(ctx context.Context, c client.Client, namespace string, pipelineType common.SignalType, input PipelineReferenceInput) error {
+func AddPipelineReference(ctx context.Context, c client.Client, namespace string, pipelineType pipelines.SignalType, input PipelineReferenceInput) error {
 	return applyConfigUpdate(ctx, c, namespace, func(config *OTLPGatewayConfigMap) error {
 		pipelineSlice := getPipelineSlice(config, pipelineType)
 		if pipelineSlice == nil {
@@ -136,7 +136,7 @@ func AddPipelineReference(ctx context.Context, c client.Client, namespace string
 
 // RemovePipelineReference removes a pipeline reference of any type.
 // Uses optimistic locking to handle concurrent updates safely.
-func RemovePipelineReference(ctx context.Context, c client.Client, namespace string, pipelineType common.SignalType, name string) error {
+func RemovePipelineReference(ctx context.Context, c client.Client, namespace string, pipelineType pipelines.SignalType, name string) error {
 	return applyConfigUpdate(ctx, c, namespace, func(config *OTLPGatewayConfigMap) error {
 		pipelineSlice := getPipelineSlice(config, pipelineType)
 		if pipelineSlice == nil {
@@ -158,13 +158,13 @@ func RemovePipelineReference(ctx context.Context, c client.Client, namespace str
 }
 
 // getPipelineSlice returns a pointer to the appropriate pipeline slice based on type.
-func getPipelineSlice(config *OTLPGatewayConfigMap, pipelineType common.SignalType) *[]PipelineReference {
-	switch pipelineType {
-	case common.SignalTypeTrace:
+func getPipelineSlice(config *OTLPGatewayConfigMap, pipelineType pipelines.SignalType) *[]PipelineReference {
+	switch pipelineType { //nolint:exhaustive // no gateway for FluentBit
+	case pipelines.SignalTypeTrace:
 		return &config.TracePipelineReferences
-	case common.SignalTypeLog:
+	case pipelines.SignalTypeLog:
 		return &config.LogPipelineReferences
-	case common.SignalTypeMetric:
+	case pipelines.SignalTypeMetric:
 		return &config.MetricPipelineReferences
 	default:
 		return nil
@@ -213,7 +213,7 @@ func getConfigMap(ctx context.Context, c client.Client, namespace string) (*core
 			return nil, false, nil
 		}
 
-		return nil, false, fmt.Errorf("failed to get configmap: %w", err)
+		return nil, false, fmt.Errorf("failed to get ConfigMap: %w", err)
 	}
 
 	return &cm, true, nil
@@ -233,7 +233,7 @@ func parseConfig(cm *corev1.ConfigMap, exists bool) (OTLPGatewayConfigMap, error
 	}
 
 	if err := yaml.Unmarshal([]byte(yamlData), &config); err != nil {
-		return config, fmt.Errorf("failed to unmarshal configmap: %w", err)
+		return config, fmt.Errorf("failed to unmarshal ConfigMap: %w", err)
 	}
 
 	return config, nil
@@ -252,7 +252,7 @@ func createConfigMap(ctx context.Context, c client.Client, namespace, yamlData s
 	}
 
 	if err := c.Create(ctx, cm); err != nil {
-		return fmt.Errorf("failed to create configmap: %w", err)
+		return fmt.Errorf("failed to create ConfigMap: %w", err)
 	}
 
 	return nil
@@ -267,7 +267,7 @@ func updateConfigMap(ctx context.Context, c client.Client, cm *corev1.ConfigMap,
 	cm.Data[ConfigMapDataKey] = yamlData
 
 	if err := c.Update(ctx, cm); err != nil {
-		return fmt.Errorf("failed to update configmap: %w", err)
+		return fmt.Errorf("failed to update ConfigMap: %w", err)
 	}
 
 	return nil
