@@ -13,10 +13,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
-	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	logpipelinemocks "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/mocks"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/stubs"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry/mocks"
 )
 
 // reconcileResult holds the result of a reconciliation operation for test assertions.
@@ -54,15 +52,12 @@ func reconcile(t *testing.T, reconciler *Reconciler, pipelineName string) reconc
 //   - Reconcilers: None registered by default (provide via options)
 func newTestReconciler(client client.Client, opts ...Option) *Reconciler {
 	// Set up default mocks
-	overridesHandler := &mocks.OverridesHandler{}
-	overridesHandler.On("LoadOverrides", mock.Anything).Return(&overrides.Config{}, nil)
-
 	pipelineSync := &logpipelinemocks.PipelineSyncer{}
 	pipelineSync.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
 
 	// Build default options with mocked dependencies
 	allOpts := []Option{
-		WithOverridesHandler(overridesHandler),
+		WithOverridesHandler(&stubs.OverridesHandler{}),
 		WithPipelineSyncer(pipelineSync),
 		WithSecretWatcher(stubs.NewSecretWatcher(nil)),
 	}
