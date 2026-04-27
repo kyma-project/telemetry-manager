@@ -67,9 +67,13 @@ func TestRejectPipelineCreation(t *testing.T) {
 		},
 		{
 			name: "otlp-output-missing-endpoint",
-			pipeline: testutils.NewMetricPipelineBuilder().
-				WithOTLPOutput().
-				Build(),
+			pipeline: telemetryv1beta1.MetricPipeline{
+				Spec: telemetryv1beta1.MetricPipelineSpec{
+					Output: telemetryv1beta1.MetricPipelineOutput{
+						OTLP: &telemetryv1beta1.OTLPOutput{},
+					},
+				},
+			},
 			errorMsg: "'endpoint' must have 'value' or 'valueFrom' set",
 			field:    "spec.output.otlp",
 		},
