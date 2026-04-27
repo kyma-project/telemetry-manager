@@ -82,10 +82,10 @@ const (
 	LabelKeyTelemetryMetricExport = "telemetry.kyma-project.io/metric-export"
 	// NOTE: The labels "telemetry.kyma-project.io/metric-scrape" and "networking.kyma-project.io/metrics-scraping" have similar names, but different purposes as described below:
 
-	// LabelKeyTelemetryMetricScrape can be used by a NetworkPolicy to allow the metric agent to scrape metrics from user workloads in a deny-all ingress traffic setup
+	// LabelKeyTelemetryMetricScrape can be used by a NetworkPolicy to allow the Metric Agent to scrape metrics from user workloads in a deny-all ingress traffic setup
 	// Check https://kyma-project.io/external-content/telemetry-manager/docs/user/troubleshooting.html#metricpipeline-failed-to-scrape-prometheus-endpoint for the troubleshooting guide using this label
 	LabelKeyTelemetryMetricScrape = "telemetry.kyma-project.io/metric-scrape"
-	// LabelKeyTelemetryMetricsScraping is required to allow the metric agent to scrape metrics from Kyma modules
+	// LabelKeyTelemetryMetricsScraping is required to allow the Metric Agent to scrape metrics from Kyma modules
 	// Check https://github.com/kyma-project/kyma/issues/18818 for more details
 	LabelKeyTelemetryMetricsScraping   = "networking.kyma-project.io/metrics-scraping"
 	LabelValueTelemetryMetricsScraping = "allowed"

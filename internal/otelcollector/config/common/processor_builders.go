@@ -303,7 +303,7 @@ func InstrumentationScopeProcessor(instrumentationScopeVersion string, inputSour
 }
 
 // KymaInputNameProcessorStatements creates processor statements for the transform processor that sets the custom `kyma.input.name` attribute
-// the attribute is mainly used for routing purpose in the metric agent configuration
+// the attribute is mainly used for routing purpose in the Metric Agent configuration
 func KymaInputNameProcessorStatements(inputSource InputSourceType) []TransformProcessorStatements {
 	return []TransformProcessorStatements{{
 		Statements: []string{

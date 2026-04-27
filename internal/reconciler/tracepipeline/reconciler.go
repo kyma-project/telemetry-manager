@@ -139,8 +139,6 @@ func New(opts ...Option) *Reconciler {
 	return r
 }
 
-// Reconcile reconciles a TracePipeline resource by ensuring the trace gateway is properly configured and deployed.
-// It handles pipeline locking, validation, and status updates.
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logf.FromContext(ctx).V(1).Info("Reconciling TracePipeline")
 
