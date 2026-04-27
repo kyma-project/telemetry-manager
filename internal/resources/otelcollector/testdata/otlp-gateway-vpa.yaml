@@ -261,10 +261,10 @@ spec:
             port: 13133
         resources:
           limits:
-            memory: 64Mi
+            memory: 256Mi
           requests:
             cpu: 100m
-            memory: 32Mi
+            memory: 128Mi
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -336,7 +336,7 @@ spec:
       maxAllowed:
         memory: 1Gi
       minAllowed:
-        memory: 32Mi
+        memory: 128Mi
   targetRef:
     apiVersion: apps/v1
     kind: DaemonSet
