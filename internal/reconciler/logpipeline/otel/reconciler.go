@@ -259,7 +259,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 	var reconcilablePipelinesRequiringAgents = r.getPipelinesRequiringAgents(reconcilablePipelines)
 
 	if len(reconcilablePipelinesRequiringAgents) == 0 {
-		logf.FromContext(ctx).V(1).Info("cleaning up log agent resources: no log pipelines require an agent")
+		logf.FromContext(ctx).V(1).Info("cleaning up Log Agent resources: no log pipelines require an agent")
 
 		vpaCRDExists, err := r.vpaStatusChecker.VpaCRDExists(ctx, r.Client)
 		if err != nil {
@@ -275,7 +275,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 
 	if len(reconcilablePipelinesRequiringAgents) > 0 {
 		if err := r.reconcileAgent(ctx, pipeline, reconcilablePipelinesRequiringAgents); err != nil {
-			return fmt.Errorf("failed to reconcile log agent: %w", err)
+			return fmt.Errorf("failed to reconcile Log Agent: %w", err)
 		}
 	}
 

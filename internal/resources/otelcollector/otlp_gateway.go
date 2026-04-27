@@ -41,8 +41,7 @@ var (
 	otlpGatewayDynamicMemoryRequest = resource.MustParse("0")
 )
 
-// OTLPGatewayApplierDeleter manages the unified OTLP gateway deployed as a DaemonSet.
-// It wraps a GatewayApplierDeleter and adds logic to handle migration from the old log gateway deployment.
+// OTLPGatewayApplierDeleter manages the unified OTLP Gateway deployed as a DaemonSet.
 type OTLPGatewayApplierDeleter struct {
 	globals config.Global
 
@@ -63,9 +62,9 @@ type OTLPGatewayApplierDeleter struct {
 	containerOpts []commonresources.ContainerOption
 }
 
-// NewOTLPGatewayApplierDeleter creates a new OTLPGatewayApplierDeleter that manages the OTLP gateway DaemonSet.
+// NewOTLPGatewayApplierDeleter creates a new OTLPGatewayApplierDeleter that manages the OTLP Gateway DaemonSet.
 //
-//nolint:dupl // repeating the code as we this would be deleted when we implement all signals in OTLP gateway
+//nolint:dupl // repeating the code as we this would be deleted when we implement all signals in OTLP Gateway
 func NewOTLPGatewayApplierDeleter(globals config.Global, image, priorityClassName string) *OTLPGatewayApplierDeleter {
 	extraLabels := map[string]string{
 		commonresources.LabelKeyTelemetryTraceIngest:  commonresources.LabelValueTrue,
@@ -102,7 +101,7 @@ func NewOTLPGatewayApplierDeleter(globals config.Global, image, priorityClassNam
 	}
 }
 
-// ApplyResources creates or updates the OTLP gateway DaemonSet and Legacy otlp logs service.
+// ApplyResources creates or updates the OTLP Gateway DaemonSet and Legacy otlp logs service.
 func (o *OTLPGatewayApplierDeleter) ApplyResources(ctx context.Context, c client.Client, opts GatewayApplyOptions) error {
 	var (
 		name = types.NamespacedName{Namespace: o.globals.TargetNamespace(), Name: o.baseName}
@@ -178,7 +177,7 @@ func (o *OTLPGatewayApplierDeleter) ApplyResources(ctx context.Context, c client
 	return nil
 }
 
-// DeleteResources removes all OTLP gateway resources.
+// DeleteResources removes all OTLP Gateway resources.
 func (o *OTLPGatewayApplierDeleter) DeleteResources(ctx context.Context, c client.Client, isIstioActive bool, vpaCRDExists bool) error {
 	// Attempt to clean up as many resources as possible and avoid early return when one of the deletions fails
 	var allErrors error = nil
@@ -350,7 +349,7 @@ func (o *OTLPGatewayApplierDeleter) makeOTLPService() *corev1.Service {
 	return service
 }
 
-// makeLegacyOTLPService creates a service with a legacy name that points to the unified OTLP gateway
+// makeLegacyOTLPService creates a service with a legacy name that points to the unified OTLP Gateway
 func (o *OTLPGatewayApplierDeleter) makeLegacyOTLPService(legacyServiceName string) *corev1.Service {
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -393,7 +392,7 @@ func (o *OTLPGatewayApplierDeleter) makeGatewayDaemonSet(configChecksum string, 
 
 // makeGatewayPodSpec creates the pod spec for gateway (Deployment or DaemonSet)
 //
-//nolint:dupl // repeating the code as we this would be deleted when we implement all signals in OTLP gateway
+//nolint:dupl // repeating the code as we this would be deleted when we implement all signals in OTLP Gateway
 func (o *OTLPGatewayApplierDeleter) makeGatewayPodSpec(opts GatewayApplyOptions) corev1.PodSpec {
 	resources := o.makeGatewayResourceRequirements(opts)
 

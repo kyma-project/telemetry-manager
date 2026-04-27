@@ -139,7 +139,7 @@ function setup_metric() {
 }
 
 function setup_metric_agent() {
-    echo -e "Deploying metric agent test setup"
+    echo -e "Deploying Metric Agent test setup"
     sed -e "s|OTEL_IMAGE|$OTEL_IMAGE|g" hack/load-tests/metric-agent-test-setup.yaml | sed -e "s|TELEMETRY_GEN_IMAGE|$TELEMETRY_GEN_IMAGE|g" | kubectl apply -f -
 
     if [[ "$BACKPRESSURE_TEST" == "true" ]]; then
