@@ -133,7 +133,7 @@ func TestReadOTLPGatewayConfig_GetError(t *testing.T) {
 
 	_, err := ReadOTLPGatewayConfig(context.Background(), errorClient, "kyma-system")
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "failed to get otlp gateway coordination configmap")
+	require.Contains(t, err.Error(), "failed to get OTLP Gateway coordination ConfigMap")
 }
 
 func TestReadOTLPGatewayConfig_InvalidYAML(t *testing.T) {
@@ -154,7 +154,7 @@ func TestReadOTLPGatewayConfig_InvalidYAML(t *testing.T) {
 
 	_, err := ReadOTLPGatewayConfig(context.Background(), fakeClient, "kyma-system")
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "failed to unmarshal configmap")
+	require.Contains(t, err.Error(), "failed to unmarshal ConfigMap")
 }
 
 func TestMultipleSignalTypes(t *testing.T) {
@@ -337,7 +337,7 @@ func TestWritePipelineReference_GetError(t *testing.T) {
 
 	err := AddPipelineReference(context.Background(), errorClient, "kyma-system", pipelines.SignalTypeTrace, PipelineReferenceInput{Name: "my-pipeline", Generation: 1})
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "failed to get configmap")
+	require.Contains(t, err.Error(), "failed to get ConfigMap")
 }
 
 func TestWritePipelineReference_InvalidYAMLInExisting(t *testing.T) {
@@ -358,7 +358,7 @@ func TestWritePipelineReference_InvalidYAMLInExisting(t *testing.T) {
 
 	err := AddPipelineReference(context.Background(), fakeClient, "kyma-system", pipelines.SignalTypeTrace, PipelineReferenceInput{Name: "my-pipeline", Generation: 1})
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "failed to unmarshal configmap")
+	require.Contains(t, err.Error(), "failed to unmarshal ConfigMap")
 }
 
 func TestWritePipelineReference_CreateError(t *testing.T) {
@@ -370,7 +370,7 @@ func TestWritePipelineReference_CreateError(t *testing.T) {
 
 	err := AddPipelineReference(context.Background(), errorClient, "kyma-system", pipelines.SignalTypeTrace, PipelineReferenceInput{Name: "my-pipeline", Generation: 1})
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "failed to create configmap")
+	require.Contains(t, err.Error(), "failed to create ConfigMap")
 }
 
 func TestWritePipelineReference_UpdateError(t *testing.T) {
@@ -392,7 +392,7 @@ func TestWritePipelineReference_UpdateError(t *testing.T) {
 
 	err := AddPipelineReference(context.Background(), errorClient, "kyma-system", pipelines.SignalTypeTrace, PipelineReferenceInput{Name: "my-pipeline", Generation: 1})
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "failed to update configmap")
+	require.Contains(t, err.Error(), "failed to update ConfigMap")
 }
 
 func TestRemovePipelineReference_RemoveFromExisting(t *testing.T) {

@@ -7,7 +7,7 @@ With the Telemetry module, you can collect metrics from your workloads and Kuber
 A MetricPipeline is a Kubernetes custom resource (CR) that configures metric collection for your cluster. When you create a MetricPipeline, it automatically provisions the necessary components (for details, see [Metrics Architecture](../architecture/metrics-architecture.md)):
 
 - The OTLP Gateway provides a central OTLP endpoint for receiving metrics pushed from applications.
-- A metric agent runs on each cluster node to pull (scrape) metrics from applications and Kubernetes resources.
+- A Metric Agent runs on each cluster node to pull (scrape) metrics from applications and Kubernetes resources.
 
 The pipeline enriches all collected metrics with Kubernetes metadata. It also transforms non-OTLP formats (like Prometheus) into the OTLP standard before sending them to your chosen backend.
 
@@ -61,7 +61,7 @@ You can adjust the MetricPipeline using runtime configuration with the available
 
 ## Configure Collection Interval
 
-By default, the metric agent scrapes all pull-based inputs (Prometheus, Istio, and runtime) every 30 seconds. You can change this interval in the Telemetry CR.
+By default, the Metric Agent scrapes all pull-based inputs (Prometheus, Istio, and runtime) every 30 seconds. You can change this interval in the Telemetry CR.
 
 To set a global collection interval that applies to all pull-based inputs, use the **metric.collectionInterval** field:
 
@@ -101,7 +101,7 @@ For details on the available parameters, see [Telemetry Custom Resource](../reso
 - **Scraping**: The metric **agent** enforces the following limits when scraping metrics from applications and Istio proxies:
   - **Timeseries limit**: 50000 timeseries per scrape
   - **Request body size limit**: 20 MB per scrape
-  If a scrape exceeds either limit, the metric agent drops the scrape and logs a warning message. To resolve this issue, try reducing the number of exported metrics.
+  If a scrape exceeds either limit, the Metric Agent drops the scrape and logs a warning message. To resolve this issue, try reducing the number of exported metrics.
 - **Unavailability of Output**: For up to 5 minutes, a retry for data is attempted when the destination is unavailable. After that, data is dropped.
 - **No Guaranteed Delivery**: The used buffers are volatile. If any gateway or agent instance crashes, metric data can be lost.
 - **Multiple MetricPipeline Support**: The maximum amount of MetricPipeline resources is 5.
