@@ -16,7 +16,7 @@ manager:
       high-priority-class-name: "telemetry-priority-class-high"
       normal-priority-class-name: "telemetry-priority-class"
     env:
-      alpineImage: europe-docker.pkg.dev/kyma-project/prod/external/library/alpine:3.23.3
+      alpineImage: europe-docker.pkg.dev/kyma-project/prod/external/library/alpine:3.23.4
       appLogLevel: info
       fluentBitExporterImage: europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:main
       fluentBitImage: europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluent-bit:4.2.3

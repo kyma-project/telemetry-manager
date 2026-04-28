@@ -7,7 +7,7 @@ bdba:
   - europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:main
   - europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:main
   - europe-docker.pkg.dev/kyma-project/restricted-prod/sap.com/prometheus-fips:3.11.2
-  - europe-docker.pkg.dev/kyma-project/prod/external/library/alpine:3.23.3
+  - europe-docker.pkg.dev/kyma-project/prod/external/library/alpine:3.23.4
 mend:
   language: golang-mod
   exclude:
