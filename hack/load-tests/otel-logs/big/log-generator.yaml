@@ -74,3 +74,8 @@ spec:
             - '{"foo":"LOG_CONTENT"}'
           imagePullPolicy: IfNotPresent
           name: telemetrygen
+          resources:
+            limits:
+              memory: 512Mi
+            requests:
+              memory: 512Mi
