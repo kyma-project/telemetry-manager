@@ -15,8 +15,7 @@ import (
 	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/metrics"
-	"github.com/kyma-project/telemetry-manager/internal/overrides"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry/mocks"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry/stubs"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 )
 
@@ -44,8 +43,7 @@ func TestReconcile(t *testing.T) {
 		WithScheme(scheme).
 		Build()
 
-	overridesHandlerStub := &mocks.OverridesHandler{}
-	overridesHandlerStub.On("LoadOverrides", t.Context()).Return(&overrides.Config{}, nil)
+	overridesHandlerStub := &stubs.OverridesHandler{}
 
 	sut := Reconciler{
 		Client:           fakeClient,

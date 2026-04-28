@@ -16,8 +16,8 @@ import (
 	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/config"
-	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry/mocks"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry/stubs"
 )
 
 // newTestScheme creates a runtime.Scheme with all types needed by the telemetry reconciler.
@@ -68,8 +68,7 @@ func reconcileAndGet(t *testing.T, sut *Reconciler, name, namespace string) {
 func newTestReconciler(t *testing.T, fakeClient client.Client) *Reconciler {
 	t.Helper()
 
-	overridesHandler := &mocks.OverridesHandler{}
-	overridesHandler.On("LoadOverrides", mock.Anything).Return(&overrides.Config{}, nil).Maybe()
+	overridesHandler := &stubs.OverridesHandler{}
 
 	healthChecker := &mocks.ComponentHealthChecker{}
 	healthChecker.On("Check", mock.Anything, mock.Anything).Return(&metav1.Condition{
