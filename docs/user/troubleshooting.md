@@ -246,4 +246,50 @@ If data is arriving but components are running out of memory, consider one of th
 
 - Add nodes with more memory to increase the maxAllowed calculation.
 - Reduce telemetry volume by applying filters in your pipelines (see [Filter Logs](./filter-and-process/filter-logs.md), [Filter Traces](./filter-and-process/filter-traces.md), [Filter Metrics](./filter-and-process/filter-metrics.md)).
-- Disable VPA, which causes the system to use static resource (see [Manage Automatic Resource Scaling](./manage-pipeline-resources.md)).
+- Disable VPA, which causes the system to use static resources (see [Disable Automatic Resource Scaling](#disable-automatic-resource-scaling)).
+
+## Disable Automatic Resource Scaling
+
+### Symptom
+
+You need predictable resource allocation for telemetry components, or VPA is causing unwanted Pod restarts.
+
+### Cause
+
+By default, the Telemetry module uses Vertical Pod Autoscaler (VPA) to adjust memory resources for the OTLP Gateway and agents. VPA dynamically changes resource requests and limits, which can cause Pod restarts during the adjustment period.
+
+### Solution
+
+To disable automatic resource scaling:
+
+1. Edit the Telemetry resource:
+
+   ```bash
+   kubectl edit telemetry default -n kyma-system
+   ```
+
+2. Add or change the `telemetry.kyma-project.io/enable-vpa` annotation under `metadata.annotations` to `"false"`:
+
+   ```yaml
+   apiVersion: operator.kyma-project.io/v1beta1
+   kind: Telemetry
+   metadata:
+     name: default
+     namespace: kyma-system
+     annotations:
+       telemetry.kyma-project.io/enable-vpa: "false"
+   spec:
+     # your telemetry configuration
+   ```
+
+3. Save your changes.
+
+4. Verify the configuration by listing VPA resources in the `kyma-system` namespace:
+
+   ```bash
+   kubectl get vpa -n kyma-system
+   ```
+
+   If automatic scaling is disabled, no VPA resources appear in the namespace.
+
+5. To re-enable automatic scaling, remove the annotation or change its value to `"true"`.
