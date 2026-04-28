@@ -18,7 +18,7 @@ require (
 	golang.org/x/tools v0.44.0
 	gotest.tools/gotestsum v1.13.0
 	helm.sh/helm/v4 v4.1.4
-	k8s.io/code-generator v0.35.3
+	k8s.io/code-generator v0.35.4
 	sigs.k8s.io/controller-tools v0.20.1
 )
 
@@ -194,7 +194,7 @@ require (
 	github.com/go-errors/errors v1.5.1 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
 	github.com/go-git/go-billy/v5 v5.8.0 // indirect
-	github.com/go-git/go-git/v5 v5.17.1 // indirect
+	github.com/go-git/go-git/v5 v5.18.0 // indirect
 	github.com/go-gorp/gorp/v3 v3.1.0 // indirect
 	github.com/go-ini/ini v1.67.0 // indirect
 	github.com/go-jose/go-jose/v4 v4.1.4 // indirect
@@ -505,7 +505,7 @@ require (
 	honnef.co/go/tools v0.7.0 // indirect
 	k8s.io/api v0.35.1 // indirect
 	k8s.io/apiextensions-apiserver v0.35.1 // indirect
-	k8s.io/apimachinery v0.35.3 // indirect
+	k8s.io/apimachinery v0.35.4 // indirect
 	k8s.io/apiserver v0.35.1 // indirect
 	k8s.io/cli-runtime v0.35.1 // indirect
 	k8s.io/client-go v0.35.1 // indirect

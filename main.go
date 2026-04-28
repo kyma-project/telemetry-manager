@@ -113,9 +113,9 @@ const (
 type envConfig struct {
 	// FluentBitExporterImage is the image used for the Fluent Bit exporter.
 	FluentBitExporterImage string `env:"FLUENT_BIT_EXPORTER_IMAGE"`
-	// FluentBitImage is the image used for the Fluent Bit log agent.
+	// FluentBitImage is the image used for the Fluent Bit Log Agent.
 	FluentBitImage string `env:"FLUENT_BIT_IMAGE"`
-	// OTelCollectorImage is the image used all OpenTelemetry Collector based components (metric agent, log agent, metric gateway, log gateway, trace gateway).
+	// OTelCollectorImage is the image used all OpenTelemetry Collector based components (Metric Agent, Log Agent, OTLP Gateway).
 	OTelCollectorImage string `env:"OTEL_COLLECTOR_IMAGE"`
 	// SelfMonitorImage is the image used for the self-monitoring deployment. This is a customized Prometheus image.
 	SelfMonitorImage string `env:"SELF_MONITOR_IMAGE"`
@@ -270,7 +270,7 @@ func setupControllersAndWebhooks(mgr manager.Manager, globals config.Global, env
 	}
 
 	if err := setupOTLPGatewayController(globals, envCfg, mgr, otlpGatewayReconcileChan, nodeSizeTracker); err != nil {
-		return fmt.Errorf("failed to enable OTLP gateway controller: %w", err)
+		return fmt.Errorf("failed to enable OTLP Gateway controller: %w", err)
 	}
 
 	if err := setupMetricPipelineController(globals, envCfg, mgr, metricPipelineReconcileChan, secretWatchClient, nodeSizeTracker); err != nil {
@@ -447,7 +447,7 @@ func parseFlags() {
 	flag.Var(&additionalWorkloadPodLabels, "additional-workload-pod-label", "Additional label to add to all created workload pods in key=value format")
 	flag.Var(&additionalWorkloadPodAnnotations, "additional-workload-pod-annotation", "Additional annotation to add to all created workload pods in key=value format")
 
-	flag.BoolVar(&deployOTLPGateway, "deploy-otlp-gateway", false, "Enable deploying unified OTLP gateway")
+	flag.BoolVar(&deployOTLPGateway, "deploy-otlp-gateway", false, "Enable deploying unified OTLP Gateway")
 	flag.BoolVar(&unlimitedPipelines, "unlimited-pipelines", false, "Allow unlimited number of OTEL pipelines")
 
 	flag.Parse()
@@ -564,7 +564,7 @@ func setupTracePipelineController(globals config.Global, envCfg envConfig, mgr m
 }
 
 func setupOTLPGatewayController(globals config.Global, envCfg envConfig, mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent, nodeSizeTracker *nodesize.Tracker) error {
-	setupLog.Info("Setting up OTLP gateway controller")
+	setupLog.Info("Setting up OTLP Gateway controller")
 
 	otlpGatewayController, err := telemetrycontrollers.NewOTLPGatewayController(
 		telemetrycontrollers.OTLPGatewayControllerConfig{
@@ -578,11 +578,11 @@ func setupOTLPGatewayController(globals config.Global, envCfg envConfig, mgr man
 		nodeSizeTracker,
 	)
 	if err != nil {
-		return fmt.Errorf("failed to create OTLP gateway controller: %w", err)
+		return fmt.Errorf("failed to create OTLP Gateway controller: %w", err)
 	}
 
 	if err := otlpGatewayController.SetupWithManager(mgr); err != nil {
-		return fmt.Errorf("failed to setup OTLP gateway controller: %w", err)
+		return fmt.Errorf("failed to setup OTLP Gateway controller: %w", err)
 	}
 
 	return nil

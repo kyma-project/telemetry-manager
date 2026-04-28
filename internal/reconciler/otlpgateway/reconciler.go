@@ -32,7 +32,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpgateway"
-	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/resources/coordinationconfig"
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
@@ -52,7 +51,7 @@ type Reconciler struct {
 	istioStatusChecker    IstioStatusChecker
 	vpaStatusChecker      VpaStatusChecker
 	nodeSizeTracker       NodeSizeTracker
-	overridesHandler      *overrides.Handler
+	overridesHandler      OverridesHandler
 }
 
 // Option configures the Reconciler during initialization.
@@ -101,7 +100,7 @@ func WithNodeSizeTracker(tracker NodeSizeTracker) Option {
 }
 
 // WithOverridesHandler sets the overrides handler.
-func WithOverridesHandler(handler *overrides.Handler) Option {
+func WithOverridesHandler(handler OverridesHandler) Option {
 	return func(r *Reconciler) {
 		r.overridesHandler = handler
 	}
@@ -127,7 +126,7 @@ func (r *Reconciler) Globals() *config.Global {
 
 // Reconcile reconciles the OTLP Gateway DaemonSet based on the coordination ConfigMap.
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logf.FromContext(ctx).V(1).Info("reconciling OTLP gateway")
+	logf.FromContext(ctx).V(1).Info("reconciling OTLP Gateway")
 
 	// Load overrides and check if OTLP Gateway is paused
 	if r.overridesHandler != nil {
