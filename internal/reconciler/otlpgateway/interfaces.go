@@ -8,6 +8,7 @@ import (
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpgateway"
+	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 )
 
@@ -37,4 +38,9 @@ type VpaStatusChecker interface {
 type NodeSizeTracker interface {
 	// VPAMaxAllowedMemory returns 15% of the smallest allocatable memory, rounded down to the nearest KiB.
 	VPAMaxAllowedMemory() resource.Quantity
+}
+
+// OverridesHandler loads the override configuration for the OTLP Gateway.
+type OverridesHandler interface {
+	LoadOverrides(ctx context.Context) (*overrides.Config, error)
 }

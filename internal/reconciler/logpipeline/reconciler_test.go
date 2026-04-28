@@ -16,10 +16,8 @@ import (
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/config"
-	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	logpipelinemocks "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/mocks"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/stubs"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry/mocks"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
@@ -109,12 +107,7 @@ func TestRegisterAndCallRegisteredReconciler(t *testing.T) {
 func TestReconcile_PausedOverride(t *testing.T) {
 	fakeClient := newTestClient(t)
 
-	overridesHandler := &mocks.OverridesHandler{}
-	overridesHandler.On("LoadOverrides", mock.Anything).Return(&overrides.Config{
-		Logging: overrides.LoggingConfig{Paused: true},
-	}, nil)
-
-	rec := newTestReconciler(fakeClient, WithOverridesHandler(overridesHandler))
+	rec := newTestReconciler(fakeClient, WithOverridesHandler(&stubs.OverridesHandler{Paused: true}))
 
 	result := reconcile(t, rec, "nonexistent-pipeline")
 	require.NoError(t, result.err)
@@ -146,10 +139,7 @@ func TestReconcile_UnsupportedOutputType(t *testing.T) {
 func TestReconcile_LoadingOverridesFails(t *testing.T) {
 	fakeClient := newTestClient(t)
 
-	overridesHandler := &mocks.OverridesHandler{}
-	overridesHandler.On("LoadOverrides", mock.Anything).Return(nil, fmt.Errorf("error loading overrides"))
-
-	rec := newTestReconciler(fakeClient, WithOverridesHandler(overridesHandler))
+	rec := newTestReconciler(fakeClient, WithOverridesHandler(&stubs.OverridesHandler{Err: fmt.Errorf("error loading overrides")}))
 
 	result := reconcile(t, rec, "nonexistent-pipeline")
 	require.Error(t, result.err)

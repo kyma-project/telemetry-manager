@@ -19,7 +19,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
-	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	commonStatusStubs "github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus/stubs"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline/mocks"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline/stubs"
@@ -193,9 +192,6 @@ func newTestReconciler(client client.Client, opts ...any) (*testReconciler, func
 	agentFlowHealthProber := &mocks.AgentFlowHealthProber{}
 	agentFlowHealthProber.On("Probe", mock.Anything, mock.Anything).Return(prober.OTelAgentProbeResult{}, nil).Maybe()
 
-	overridesHandler := &mocks.OverridesHandler{}
-	overridesHandler.On("LoadOverrides", mock.Anything).Return(&overrides.Config{}, nil).Maybe()
-
 	pipelineLock := &mocks.PipelineLock{}
 	pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil).Maybe()
 	pipelineLock.On("IsLockHolder", mock.Anything, mock.Anything).Return(nil).Maybe()
@@ -216,7 +212,7 @@ func newTestReconciler(client client.Client, opts ...any) (*testReconciler, func
 		WithIstioStatusChecker(&stubs.IstioStatusChecker{IsActive: false}),
 		WithVpaStatusChecker(&stubs.VpaStatusChecker{CRDExists: false}),
 		WithNodeSizeTracker(&stubs.NodeSizeTracker{}),
-		WithOverridesHandler(overridesHandler),
+		WithOverridesHandler(&stubs.OverridesHandler{}),
 		WithPipelineLock(pipelineLock),
 		WithPipelineSyncer(pipelineSync),
 		WithPipelineValidator(newTestValidator()),
