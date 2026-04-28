@@ -363,22 +363,22 @@ func TestIsVpaEnabledInTelemetry(t *testing.T) {
 		expected  bool
 	}{
 		{
-			name:      "telemetry not found returns false",
+			name:      "telemetry not found returns true (default enabled)",
 			telemetry: nil,
-			expected:  false,
+			expected:  true,
 		},
 		{
-			name: "annotations nil returns false",
+			name: "annotations nil returns true (default enabled)",
 			telemetry: &operatorv1beta1.Telemetry{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "default",
 					Namespace: testNamespace,
 				},
 			},
-			expected: false,
+			expected: true,
 		},
 		{
-			name: "annotation key not present returns false",
+			name: "annotation key not present returns true (default enabled)",
 			telemetry: &operatorv1beta1.Telemetry{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "default",
@@ -388,7 +388,7 @@ func TestIsVpaEnabledInTelemetry(t *testing.T) {
 					},
 				},
 			},
-			expected: false,
+			expected: true,
 		},
 		{
 			name: "annotation value true returns true",
@@ -404,7 +404,7 @@ func TestIsVpaEnabledInTelemetry(t *testing.T) {
 			expected: true,
 		},
 		{
-			name: "annotation value false returns false",
+			name: "annotation value false returns false (explicitly disabled)",
 			telemetry: &operatorv1beta1.Telemetry{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "default",
@@ -417,7 +417,7 @@ func TestIsVpaEnabledInTelemetry(t *testing.T) {
 			expected: false,
 		},
 		{
-			name: "annotation value invalid returns false",
+			name: "annotation value invalid returns true (default enabled)",
 			telemetry: &operatorv1beta1.Telemetry{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "default",
@@ -427,7 +427,7 @@ func TestIsVpaEnabledInTelemetry(t *testing.T) {
 					},
 				},
 			},
-			expected: false,
+			expected: true,
 		},
 	}
 

@@ -9,12 +9,13 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+	"github.com/kyma-project/telemetry-manager/internal/pipelines"
 	"github.com/kyma-project/telemetry-manager/internal/validators/ottl"
 )
 
 var errFailedToCreatePipeline = errors.New("failed to create pipeline")
 
-func ValidateFilterTransform(ctx context.Context, signalType ottl.SignalType, filterSpec []telemetryv1beta1.FilterSpec, transformSpec []telemetryv1beta1.TransformSpec) error {
+func ValidateFilterTransform(ctx context.Context, signalType pipelines.SignalType, filterSpec []telemetryv1beta1.FilterSpec, transformSpec []telemetryv1beta1.TransformSpec) error {
 	filterValidator, err := ottl.NewFilterSpecValidator(signalType)
 	if err != nil {
 		logf.FromContext(ctx).V(1).Error(err, "Failed to instantiate FilterSpec validator")

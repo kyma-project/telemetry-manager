@@ -25,7 +25,7 @@ type AgentFlowHealthProber interface {
 	Probe(ctx context.Context, pipelineName string) (prober.OTelAgentProbeResult, error)
 }
 
-// GatewayFlowHealthProber checks the health of log data flow through the OTLP gateway.
+// GatewayFlowHealthProber checks the health of log data flow through the OTLP Gateway.
 // It probes whether logs are successfully flowing from the gateway to the backend.
 type GatewayFlowHealthProber interface {
 	// Probe checks if logs are flowing correctly through the gateway for a specific pipeline.
@@ -48,11 +48,11 @@ type VpaStatusChecker interface {
 
 // NodeSizeTracker tracks node sizes and provides VPA memory calculations.
 type NodeSizeTracker interface {
-	// VPAMaxAllowedMemory returns 30% of the smallest allocatable memory, rounded down to the nearest KiB.
+	// VPAMaxAllowedMemory returns 15% of the smallest allocatable memory, rounded down to the nearest KiB.
 	VPAMaxAllowedMemory() resource.Quantity
 }
 
-// AgentConfigBuilder builds the OTel Collector configuration for the log agent.
+// AgentConfigBuilder builds the OTel Collector configuration for the Log Agent.
 // The agent runs as a DaemonSet and collects logs from application containers.
 type AgentConfigBuilder interface {
 	// Build generates the collector configuration, environment variables, and any errors encountered.
@@ -60,7 +60,7 @@ type AgentConfigBuilder interface {
 	Build(ctx context.Context, pipelines []telemetryv1beta1.LogPipeline, options logagent.BuildOptions) (*common.Config, common.EnvVars, error)
 }
 
-// AgentApplierDeleter manages the lifecycle of log agent Kubernetes resources.
+// AgentApplierDeleter manages the lifecycle of Log Agent Kubernetes resources.
 // It handles both creation/updates and cleanup of agent DaemonSets, ConfigMaps, and related resources.
 type AgentApplierDeleter interface {
 	// ApplyResources creates or updates all agent resources using the provided configuration.

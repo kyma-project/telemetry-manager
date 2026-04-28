@@ -18,6 +18,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	autoscalingvpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -32,16 +33,13 @@ import (
 )
 
 var (
-	otlpGatewayBaseMemoryLimit      = resource.MustParse("500Mi")
-	otlpGatewayDynamicMemoryLimit   = resource.MustParse("1500Mi")
-	otlpGatewayBaseCPURequest       = resource.MustParse("100m")
-	otlpGatewayDynamicCPURequest    = resource.MustParse("100m")
-	otlpGatewayBaseMemoryRequest    = resource.MustParse("32Mi")
-	otlpGatewayDynamicMemoryRequest = resource.MustParse("0")
+	otlpGatewayBaseMemoryLimit    = resource.MustParse("750Mi")
+	otlpGatewayDynamicMemoryLimit = resource.MustParse("1000Mi")
+	otlpGatewayBaseCPURequest     = resource.MustParse("100m")
+	otlpGatewayBaseMemoryRequest  = resource.MustParse("128Mi")
 )
 
-// OTLPGatewayApplierDeleter manages the unified OTLP gateway deployed as a DaemonSet.
-// It wraps a GatewayApplierDeleter and adds logic to handle migration from the old log gateway deployment.
+// OTLPGatewayApplierDeleter manages the unified OTLP Gateway deployed as a DaemonSet.
 type OTLPGatewayApplierDeleter struct {
 	globals config.Global
 
@@ -51,20 +49,18 @@ type OTLPGatewayApplierDeleter struct {
 	otlpServiceName string
 	rbac            rbac
 
-	baseMemoryLimit      resource.Quantity
-	dynamicMemoryLimit   resource.Quantity
-	baseCPURequest       resource.Quantity
-	dynamicCPURequest    resource.Quantity
-	baseMemoryRequest    resource.Quantity
-	dynamicMemoryRequest resource.Quantity
+	baseMemoryLimit    resource.Quantity
+	dynamicMemoryLimit resource.Quantity
+	baseCPURequest     resource.Quantity
+	baseMemoryRequest  resource.Quantity
 
 	podOpts       []commonresources.PodSpecOption
 	containerOpts []commonresources.ContainerOption
 }
 
-// NewOTLPGatewayApplierDeleter creates a new OTLPGatewayApplierDeleter that manages the OTLP gateway DaemonSet.
+// NewOTLPGatewayApplierDeleter creates a new OTLPGatewayApplierDeleter that manages the OTLP Gateway DaemonSet.
 //
-//nolint:dupl // repeating the code as we this would be deleted when we implement all signals in OTLP gateway
+//nolint:dupl // repeating the code as we this would be deleted when we implement all signals in OTLP Gateway
 func NewOTLPGatewayApplierDeleter(globals config.Global, image, priorityClassName string) *OTLPGatewayApplierDeleter {
 	extraLabels := map[string]string{
 		commonresources.LabelKeyTelemetryTraceIngest:  commonresources.LabelValueTrue,
@@ -77,18 +73,16 @@ func NewOTLPGatewayApplierDeleter(globals config.Global, image, priorityClassNam
 	}
 
 	return &OTLPGatewayApplierDeleter{
-		globals:              globals,
-		baseName:             names.OTLPGateway,
-		extraPodLabels:       extraLabels,
-		image:                image,
-		otlpServiceName:      names.OTLPService,
-		rbac:                 makeOTLPGatewayRBAC(globals.TargetNamespace()),
-		baseMemoryLimit:      otlpGatewayBaseMemoryLimit,
-		dynamicMemoryLimit:   otlpGatewayDynamicMemoryLimit,
-		baseCPURequest:       otlpGatewayBaseCPURequest,
-		dynamicCPURequest:    otlpGatewayDynamicCPURequest,
-		baseMemoryRequest:    otlpGatewayBaseMemoryRequest,
-		dynamicMemoryRequest: otlpGatewayDynamicMemoryRequest,
+		globals:            globals,
+		baseName:           names.OTLPGateway,
+		extraPodLabels:     extraLabels,
+		image:              image,
+		otlpServiceName:    names.OTLPService,
+		rbac:               makeOTLPGatewayRBAC(globals.TargetNamespace()),
+		baseMemoryLimit:    otlpGatewayBaseMemoryLimit,
+		dynamicMemoryLimit: otlpGatewayDynamicMemoryLimit,
+		baseCPURequest:     otlpGatewayBaseCPURequest,
+		baseMemoryRequest:  otlpGatewayBaseMemoryRequest,
 		podOpts: []commonresources.PodSpecOption{
 			commonresources.WithPriorityClass(priorityClassName),
 			commonresources.WithAffinity(makePodAffinity(commonresources.DefaultSelector(names.OTLPGateway))),
@@ -101,7 +95,7 @@ func NewOTLPGatewayApplierDeleter(globals config.Global, image, priorityClassNam
 	}
 }
 
-// ApplyResources creates or updates the OTLP gateway DaemonSet and Legacy otlp logs service.
+// ApplyResources creates or updates the OTLP Gateway DaemonSet and Legacy otlp logs service.
 func (o *OTLPGatewayApplierDeleter) ApplyResources(ctx context.Context, c client.Client, opts GatewayApplyOptions) error {
 	var (
 		name = types.NamespacedName{Namespace: o.globals.TargetNamespace(), Name: o.baseName}
@@ -135,6 +129,10 @@ func (o *OTLPGatewayApplierDeleter) ApplyResources(ctx context.Context, c client
 
 	if err := k8sutils.CreateOrUpdateDaemonSet(ctx, labelerClient, o.makeGatewayDaemonSet(configChecksum, opts)); err != nil {
 		return fmt.Errorf("failed to create daemonset: %w", err)
+	}
+
+	if err := o.applyVPA(ctx, c, labelerClient, name, opts); err != nil {
+		return err
 	}
 
 	if err := k8sutils.CreateOrUpdateService(ctx, labelerClient, o.makeOTLPService()); err != nil {
@@ -173,8 +171,8 @@ func (o *OTLPGatewayApplierDeleter) ApplyResources(ctx context.Context, c client
 	return nil
 }
 
-// DeleteResources removes all OTLP gateway resources.
-func (o *OTLPGatewayApplierDeleter) DeleteResources(ctx context.Context, c client.Client, isIstioActive bool) error {
+// DeleteResources removes all OTLP Gateway resources.
+func (o *OTLPGatewayApplierDeleter) DeleteResources(ctx context.Context, c client.Client, isIstioActive bool, vpaCRDExists bool) error {
 	// Attempt to clean up as many resources as possible and avoid early return when one of the deletions fails
 	var allErrors error = nil
 
@@ -209,6 +207,13 @@ func (o *OTLPGatewayApplierDeleter) DeleteResources(ctx context.Context, c clien
 	daemonSet := appsv1.DaemonSet{ObjectMeta: objectMeta}
 	if err := k8sutils.DeleteObject(ctx, c, &daemonSet); err != nil {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete daemonset: %w", err))
+	}
+
+	if vpaCRDExists {
+		vpa := autoscalingvpav1.VerticalPodAutoscaler{ObjectMeta: objectMeta}
+		if err := k8sutils.DeleteObject(ctx, c, &vpa); err != nil {
+			allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete VPA: %w", err))
+		}
 	}
 
 	// Delete the OTLP service
@@ -249,6 +254,35 @@ func (o *OTLPGatewayApplierDeleter) DeleteResources(ctx context.Context, c clien
 	}
 
 	return allErrors
+}
+
+// applyVPA creates, updates, or deletes the VPA resource based on configuration.
+func (o *OTLPGatewayApplierDeleter) applyVPA(ctx context.Context, c client.Client, labelerClient client.Client, name types.NamespacedName, opts GatewayApplyOptions) error {
+	if !opts.VpaCRDExists {
+		return nil
+	}
+
+	if opts.VpaEnabled {
+		vpa := makeVPA(name, o.baseMemoryRequest, opts.VPAMaxAllowedMemory)
+		if err := k8sutils.CreateOrUpdateVPA(ctx, labelerClient, vpa); err != nil {
+			return fmt.Errorf("failed to create VPA: %w", err)
+		}
+
+		return nil
+	}
+
+	// If VPA is disabled, ensure that any existing VPA is cleaned up
+	vpa := &autoscalingvpav1.VerticalPodAutoscaler{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name.Name,
+			Namespace: name.Namespace,
+		},
+	}
+	if err := k8sutils.DeleteObject(ctx, c, vpa); err != nil {
+		return fmt.Errorf("failed to delete VPA: %w", err)
+	}
+
+	return nil
 }
 
 func (o *OTLPGatewayApplierDeleter) makeDestinationRule(name string) *istionetworkingclientv1.DestinationRule {
@@ -309,7 +343,7 @@ func (o *OTLPGatewayApplierDeleter) makeOTLPService() *corev1.Service {
 	return service
 }
 
-// makeLegacyOTLPService creates a service with a legacy name that points to the unified OTLP gateway
+// makeLegacyOTLPService creates a service with a legacy name that points to the unified OTLP Gateway
 func (o *OTLPGatewayApplierDeleter) makeLegacyOTLPService(legacyServiceName string) *corev1.Service {
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -352,7 +386,7 @@ func (o *OTLPGatewayApplierDeleter) makeGatewayDaemonSet(configChecksum string, 
 
 // makeGatewayPodSpec creates the pod spec for gateway (Deployment or DaemonSet)
 //
-//nolint:dupl // repeating the code as we this would be deleted when we implement all signals in OTLP gateway
+//nolint:dupl // repeating the code as we this would be deleted when we implement all signals in OTLP Gateway
 func (o *OTLPGatewayApplierDeleter) makeGatewayPodSpec(opts GatewayApplyOptions) corev1.PodSpec {
 	resources := o.makeGatewayResourceRequirements(opts)
 
@@ -382,9 +416,26 @@ func (o *OTLPGatewayApplierDeleter) makeGatewayResourceRequirements(opts Gateway
 	cpuRequest := o.baseCPURequest.DeepCopy()
 
 	for range opts.ResourceRequirementsMultiplier {
-		memoryRequest.Add(o.dynamicMemoryRequest)
 		memoryLimit.Add(o.dynamicMemoryLimit)
-		cpuRequest.Add(o.dynamicCPURequest)
+	}
+
+	if !opts.VPAMaxAllowedMemory.IsZero() {
+		maxMemoryCap := opts.VPAMaxAllowedMemory.DeepCopy()
+		maxMemoryCap.Add(opts.VPAMaxAllowedMemory) // 2x VPAMaxAllowedMemory
+
+		if memoryLimit.Cmp(maxMemoryCap) > 0 {
+			memoryLimit = maxMemoryCap
+		}
+	}
+
+	// When VPA is active, override the memory limit to 2x the memory request so the VPA can scale within a tighter range.
+	// This replaces the calculated memory limit with a value based on the memory request.
+	// For more details, check the ADR: https://github.com/kyma-project/telemetry-manager/blob/main/docs/contributor/arch/032-vertical-pod-autoscaler-VPA-architecture.md
+	if opts.VpaCRDExists && opts.VpaEnabled {
+		memoryRequest = o.baseMemoryRequest.DeepCopy()
+		vpaMemoryLimit := o.baseMemoryRequest.DeepCopy()
+		vpaMemoryLimit.Add(memoryRequest)
+		memoryLimit = vpaMemoryLimit
 	}
 
 	resources := corev1.ResourceRequirements{
@@ -438,6 +489,9 @@ type GatewayApplyOptions struct {
 	// This value is multiplied with a base resource requirement to calculate the actual CPU and memory limits.
 	// A value of 1 applies the base limits; values greater than 1 increase those limits proportionally.
 	ResourceRequirementsMultiplier int
+	VpaCRDExists                   bool
+	VpaEnabled                     bool
+	VPAMaxAllowedMemory            resource.Quantity
 }
 
 func makePodAffinity(labels map[string]string) corev1.Affinity {

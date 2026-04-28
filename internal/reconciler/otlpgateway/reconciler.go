@@ -32,7 +32,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpgateway"
-	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/resources/coordinationconfig"
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
@@ -50,7 +49,9 @@ type Reconciler struct {
 	gatewayApplierDeleter GatewayApplierDeleter
 	configBuilder         OTLPGatewayConfigBuilder
 	istioStatusChecker    IstioStatusChecker
-	overridesHandler      *overrides.Handler
+	vpaStatusChecker      VpaStatusChecker
+	nodeSizeTracker       NodeSizeTracker
+	overridesHandler      OverridesHandler
 }
 
 // Option configures the Reconciler during initialization.
@@ -84,8 +85,22 @@ func WithIstioStatusChecker(checker IstioStatusChecker) Option {
 	}
 }
 
+// WithVpaStatusChecker sets the VPA status checker.
+func WithVpaStatusChecker(checker VpaStatusChecker) Option {
+	return func(r *Reconciler) {
+		r.vpaStatusChecker = checker
+	}
+}
+
+// WithNodeSizeTracker sets the node size tracker.
+func WithNodeSizeTracker(tracker NodeSizeTracker) Option {
+	return func(r *Reconciler) {
+		r.nodeSizeTracker = tracker
+	}
+}
+
 // WithOverridesHandler sets the overrides handler.
-func WithOverridesHandler(handler *overrides.Handler) Option {
+func WithOverridesHandler(handler OverridesHandler) Option {
 	return func(r *Reconciler) {
 		r.overridesHandler = handler
 	}
@@ -111,7 +126,7 @@ func (r *Reconciler) Globals() *config.Global {
 
 // Reconcile reconciles the OTLP Gateway DaemonSet based on the coordination ConfigMap.
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logf.FromContext(ctx).V(1).Info("reconciling OTLP gateway")
+	logf.FromContext(ctx).V(1).Info("reconciling OTLP Gateway")
 
 	// Load overrides and check if OTLP Gateway is paused
 	if r.overridesHandler != nil {
@@ -150,11 +165,22 @@ func (r *Reconciler) processConfigAndBuildResources(ctx context.Context, tracePi
 		return fmt.Errorf("failed to check Istio status: %w", err)
 	}
 
+	vpaCRDExists, err := r.vpaStatusChecker.VpaCRDExists(ctx, r.Client)
+	if err != nil {
+		return fmt.Errorf("failed to check VPA CRD: %w", err)
+	}
+
+	vpaEnabled := telemetryutils.IsVpaEnabledInTelemetry(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
+	vpaMaxAllowedMemory := r.nodeSizeTracker.VPAMaxAllowedMemory()
+
 	opts := otelcollector.GatewayApplyOptions{
 		CollectorConfigYAML:            string(collectorConfigYAML),
 		CollectorEnvVars:               collectorEnvVars,
 		IstioEnabled:                   isIstioActive,
 		ResourceRequirementsMultiplier: len(tracePipelines) + len(logPipelines) + len(metricPipelines),
+		VpaCRDExists:                   vpaCRDExists,
+		VpaEnabled:                     vpaEnabled,
+		VPAMaxAllowedMemory:            vpaMaxAllowedMemory,
 	}
 
 	return r.gatewayApplierDeleter.ApplyResources(ctx, r.Client, opts)
@@ -198,7 +224,12 @@ func (r *Reconciler) doReconcile(ctx context.Context) error {
 			return fmt.Errorf("failed to check Istio status: %w", err)
 		}
 
-		if err := r.gatewayApplierDeleter.DeleteResources(ctx, r.Client, isIstioActive); err != nil {
+		vpaCRDExists, err := r.vpaStatusChecker.VpaCRDExists(ctx, r.Client)
+		if err != nil {
+			return fmt.Errorf("failed to check VPA CRD: %w", err)
+		}
+
+		if err := r.gatewayApplierDeleter.DeleteResources(ctx, r.Client, isIstioActive, vpaCRDExists); err != nil {
 			return fmt.Errorf("failed to delete gateway: %w", err)
 		}
 
@@ -336,6 +367,13 @@ func (r *Reconciler) buildCollectorConfig(ctx context.Context, tracePipelines []
 		enrichments = t.Spec.Enrichments
 	}
 
+	vpaCRDExists, err := r.vpaStatusChecker.VpaCRDExists(ctx, r.Client)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to get VPA CRD: %w", err)
+	}
+
+	vpaEnabled := telemetryutils.IsVpaEnabledInTelemetry(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
+
 	return r.configBuilder.Build(ctx, otlpgateway.BuildOptions{
 		LogPipelines:    logPipelines,
 		TracePipelines:  tracePipelines,
@@ -349,6 +387,7 @@ func (r *Reconciler) buildCollectorConfig(ctx context.Context, tracePipelines []
 		ServiceEnrichment: telemetryutils.GetServiceEnrichmentFromTelemetryOrDefault(ctx, r.Client, r.globals.DefaultTelemetryNamespace()),
 		ModuleVersion:     r.globals.Version(),
 		GatewayNamespace:  r.globals.TargetNamespace(),
+		VpaActive:         vpaCRDExists && vpaEnabled,
 	})
 }
 

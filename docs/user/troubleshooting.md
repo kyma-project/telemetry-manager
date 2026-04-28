@@ -117,17 +117,17 @@ For example, in low-traffic environments (for development or testing) or for low
 
 ### Cause
 
-There's a configuration or network issue between the metric agent and your application, such as:
+There's a configuration or network issue between the Metric Agent and your application, such as:
 
 - The Service that exposes your metrics port doesn't specify the application protocol.
-- The workload is not configured to use STRICT mTLS mode, which the metric agent uses by default.
+- The workload is not configured to use STRICT mTLS mode, which the Metric Agent uses by default.
 - A deny-all NetworkPolicy in your application's namespace prevents the agent from scraping metrics from annotated workloads.
 
 ### Solution
 
 - Define the application protocol in the Service port definition by either prefixing the port name with the protocol, or define the appProtocol attribute.
 - If the issue is with mTLS, either configure your workload to use STRICT mTLS, or switch to unencrypted scraping by adding the prometheus.io/scheme: "http" annotation to your workload.
-- Create a new NetworkPolicy to explicitly allow ingress traffic from the metric agent; such as the following example:
+- Create a new NetworkPolicy to explicitly allow ingress traffic from the Metric Agent; such as the following example:
 
   ```yaml
   apiVersion: networking.k8s.io/v1
@@ -158,7 +158,7 @@ In the LogPipeline status, the `TelemetryFlowHealthy` condition has status **Age
 
 ### Cause
 
-The backend ingestion rate is too low compared to the export rate of the log agent, causing data to accumulate in its buffer.
+The backend ingestion rate is too low compared to the export rate of the Log Agent, causing data to accumulate in its buffer.
 
 ### Solution
 
@@ -213,3 +213,37 @@ filter:
 ### Solution
 
 Review the syntax of your transform and filter rules and ensure that the names of [OTTL functions](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/ottl/ottlfuncs/README.md) are spelled correctly (for example, `IsMatch()` instead of `isMatch()`).
+
+## VPA Resources Are Not Created
+
+### Symptom
+
+VPA resources are not created even though VPA is enabled.
+
+### Cause 
+
+The VPA CRD is not installed in your cluster.
+
+### Solution
+
+Install the Vertical Pod Autoscaler in your cluster. For installation instructions, see the [official VPA documentation](https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler).
+
+## Memory Limits Too Restrictive
+
+### Symptom
+
+Telemetry components are running out of memory despite VPA being enabled.
+
+### Cause
+
+The calculated maxAllowed memory (15% of smallest Node) might be insufficient for your telemetry volume.
+
+### Solution
+
+If data is not arriving at your backend, see [Not All Data Arrive at the Backend](#not-all-data-arrive-at-the-backend) to check for backend-side issues first.
+
+If data is arriving but components are running out of memory, consider one of these options:
+
+- Add nodes with more memory to increase the maxAllowed calculation.
+- Reduce telemetry volume by applying filters in your pipelines (see [Filter Logs](./filter-and-process/filter-logs.md), [Filter Traces](./filter-and-process/filter-traces.md), [Filter Metrics](./filter-and-process/filter-metrics.md)).
+- Disable VPA, which causes the system to use static resource (see [Manage Automatic Resource Scaling](./manage-pipeline-resources.md)).

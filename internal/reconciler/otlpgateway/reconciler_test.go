@@ -2,142 +2,40 @@ package otlpgateway
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpgateway"
-	"github.com/kyma-project/telemetry-manager/internal/overrides"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/otlpgateway/mocks"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/otlpgateway/stubs"
 	"github.com/kyma-project/telemetry-manager/internal/resources/coordinationconfig"
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
-type mocks struct {
-	gatewayApplierDeleter *mockGatewayApplierDeleter
-	configBuilder         *mockOTLPGatewayConfigBuilder
-	istioStatusChecker    *mockIstioStatusChecker
-}
-
-type mockGatewayApplierDeleter struct {
-	mock.Mock
-}
-
-func (m *mockGatewayApplierDeleter) ApplyResources(ctx context.Context, c client.Client, opts otelcollector.GatewayApplyOptions) error {
-	args := m.Called(ctx, c, opts)
-	return args.Error(0)
-}
-
-func (m *mockGatewayApplierDeleter) DeleteResources(ctx context.Context, c client.Client, isIstioActive bool) error {
-	args := m.Called(ctx, c, isIstioActive)
-	return args.Error(0)
-}
-
-type mockOTLPGatewayConfigBuilder struct {
-	mock.Mock
-}
-
-func (m *mockOTLPGatewayConfigBuilder) Build(ctx context.Context, opts otlpgateway.BuildOptions) (*common.Config, common.EnvVars, error) {
-	args := m.Called(ctx, opts)
-	if args.Get(0) == nil {
-		return nil, nil, args.Error(2)
-	}
-
-	return args.Get(0).(*common.Config), args.Get(1).(common.EnvVars), args.Error(2)
-}
-
-type mockIstioStatusChecker struct {
-	mock.Mock
-}
-
-func (m *mockIstioStatusChecker) IsIstioActive(ctx context.Context) (bool, error) {
-	args := m.Called(ctx)
-	return args.Bool(0), args.Error(1)
-}
-
-func newTestClient(t *testing.T, objs ...client.Object) client.Client {
-	scheme := runtime.NewScheme()
-	require.NoError(t, clientgoscheme.AddToScheme(scheme))
-	require.NoError(t, telemetryv1beta1.AddToScheme(scheme))
-	require.NoError(t, istiosecurityclientv1.AddToScheme(scheme))
-
-	kymaSystemNamespace := &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "kyma-system",
-		},
-	}
-
-	kubeSystemNamespace := &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "kube-system",
-			UID:  "test-cluster-id",
-		},
-	}
-
-	allObjs := append([]client.Object{kymaSystemNamespace, kubeSystemNamespace}, objs...)
-
-	return fake.NewClientBuilder().WithScheme(scheme).WithObjects(allObjs...).WithStatusSubresource(objs...).Build()
-}
-
-func newTestReconciler(fakeClient client.Client, mocks *mocks) *Reconciler {
-	return &Reconciler{
-		Client:                fakeClient,
-		globals:               config.NewGlobal(config.WithTargetNamespace("kyma-system")),
-		gatewayApplierDeleter: mocks.gatewayApplierDeleter,
-		configBuilder:         mocks.configBuilder,
-		istioStatusChecker:    mocks.istioStatusChecker,
-	}
-}
-
-func newDefaultMocks() *mocks {
-	return &mocks{
-		gatewayApplierDeleter: &mockGatewayApplierDeleter{},
-		configBuilder:         &mockOTLPGatewayConfigBuilder{},
-		istioStatusChecker:    &mockIstioStatusChecker{},
-	}
-}
-
-func newReconcileRequest() ctrl.Request {
-	return ctrl.Request{
-		NamespacedName: types.NamespacedName{
-			Name:      names.OTLPGatewayCoordinationConfigMap,
-			Namespace: "kyma-system",
-		},
-	}
-}
-
 func TestReconcile_MissingConfigMap_DeletesGateway(t *testing.T) {
 	ctx := context.Background()
 	fakeClient := newTestClient(t) // no ConfigMap pre-created
-	mocks := newDefaultMocks()
 
-	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false, nil)
-	mocks.gatewayApplierDeleter.On("DeleteResources", mock.Anything, mock.Anything, false).Return(nil)
+	gad := &mocks.GatewayApplierDeleter{}
+	gad.On("DeleteResources", mock.Anything, mock.Anything, false, false).Return(nil).Once()
 
-	sut := newTestReconciler(fakeClient, mocks)
+	sut, assertAll := newTestReconciler(fakeClient,
+		withGatewayApplierDeleterAssert(gad),
+	)
 
 	_, err := sut.Reconcile(ctx, newReconcileRequest())
 	require.NoError(t, err)
-
-	mocks.gatewayApplierDeleter.AssertCalled(t, "DeleteResources", mock.Anything, mock.Anything, false)
 
 	var cm corev1.ConfigMap
 
@@ -145,7 +43,9 @@ func TestReconcile_MissingConfigMap_DeletesGateway(t *testing.T) {
 		Name:      names.OTLPGatewayCoordinationConfigMap,
 		Namespace: "kyma-system",
 	}, &cm)
-	require.True(t, apierrors.IsNotFound(err), "ConfigMap should not be created by the OTLP gateway reconciler")
+	require.True(t, apierrors.IsNotFound(err), "ConfigMap should not be created by the OTLP Gateway reconciler")
+
+	assertAll(t)
 }
 
 func TestReconcile_NoPipelines_DeletesGateway(t *testing.T) {
@@ -162,17 +62,18 @@ func TestReconcile_NoPipelines_DeletesGateway(t *testing.T) {
 	}
 
 	fakeClient := newTestClient(t, cm)
-	mocks := newDefaultMocks()
 
-	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false, nil)
-	mocks.gatewayApplierDeleter.On("DeleteResources", mock.Anything, mock.Anything, false).Return(nil)
+	gad := &mocks.GatewayApplierDeleter{}
+	gad.On("DeleteResources", mock.Anything, mock.Anything, false, false).Return(nil).Once()
 
-	sut := newTestReconciler(fakeClient, mocks)
+	sut, assertAll := newTestReconciler(fakeClient,
+		withGatewayApplierDeleterAssert(gad),
+	)
 
 	_, err := sut.Reconcile(ctx, newReconcileRequest())
 	require.NoError(t, err)
 
-	mocks.gatewayApplierDeleter.AssertCalled(t, "DeleteResources", mock.Anything, mock.Anything, false)
+	assertAll(t)
 }
 
 func TestReconcile_SinglePipeline_DeploysGateway(t *testing.T) {
@@ -193,19 +94,13 @@ func TestReconcile_SinglePipeline_DeploysGateway(t *testing.T) {
 	}
 
 	fakeClient := newTestClient(t, &pipeline, cm)
-	mocks := newDefaultMocks()
 
-	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false, nil)
-	mocks.configBuilder.On("Build", mock.Anything, mock.Anything, mock.Anything).Return(&common.Config{}, common.EnvVars{}, nil)
-	mocks.gatewayApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
-	sut := newTestReconciler(fakeClient, mocks)
+	sut, assertAll := newTestReconciler(fakeClient)
 
 	_, err := sut.Reconcile(ctx, newReconcileRequest())
 	require.NoError(t, err)
 
-	mocks.configBuilder.AssertCalled(t, "Build", mock.Anything, mock.Anything, mock.Anything)
-	mocks.gatewayApplierDeleter.AssertCalled(t, "ApplyResources", mock.Anything, mock.Anything, mock.Anything)
+	assertAll(t)
 }
 
 func TestReconcile_GenerationMismatch_SkipsPipeline(t *testing.T) {
@@ -227,18 +122,18 @@ func TestReconcile_GenerationMismatch_SkipsPipeline(t *testing.T) {
 	}
 
 	fakeClient := newTestClient(t, &pipeline, cm)
-	mocks := newDefaultMocks()
 
-	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false, nil)
-	mocks.gatewayApplierDeleter.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	gad := &mocks.GatewayApplierDeleter{}
+	gad.On("DeleteResources", mock.Anything, mock.Anything, false, false).Return(nil).Once()
 
-	sut := newTestReconciler(fakeClient, mocks)
+	sut, assertAll := newTestReconciler(fakeClient,
+		withGatewayApplierDeleterAssert(gad),
+	)
 
 	_, err := sut.Reconcile(ctx, newReconcileRequest())
 	require.NoError(t, err)
 
-	mocks.gatewayApplierDeleter.AssertCalled(t, "DeleteResources", mock.Anything, mock.Anything, mock.Anything)
-	mocks.configBuilder.AssertNotCalled(t, "Build", mock.Anything, mock.Anything, mock.Anything)
+	assertAll(t)
 }
 
 func TestReconcile_PipelineDeleted_SkipsPipeline(t *testing.T) {
@@ -262,17 +157,18 @@ func TestReconcile_PipelineDeleted_SkipsPipeline(t *testing.T) {
 	}
 
 	fakeClient := newTestClient(t, &pipeline, cm)
-	mocks := newDefaultMocks()
 
-	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false, nil)
-	mocks.gatewayApplierDeleter.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	gad := &mocks.GatewayApplierDeleter{}
+	gad.On("DeleteResources", mock.Anything, mock.Anything, false, false).Return(nil).Once()
 
-	sut := newTestReconciler(fakeClient, mocks)
+	sut, assertAll := newTestReconciler(fakeClient,
+		withGatewayApplierDeleterAssert(gad),
+	)
 
 	_, err := sut.Reconcile(ctx, newReconcileRequest())
 	require.NoError(t, err)
 
-	mocks.gatewayApplierDeleter.AssertCalled(t, "DeleteResources", mock.Anything, mock.Anything, mock.Anything)
+	assertAll(t)
 }
 
 func TestReconcile_MultiplePipelines_AggregatesConfig(t *testing.T) {
@@ -297,22 +193,20 @@ func TestReconcile_MultiplePipelines_AggregatesConfig(t *testing.T) {
 	}
 
 	fakeClient := newTestClient(t, &pipeline1, &pipeline2, cm)
-	mocks := newDefaultMocks()
 
-	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false, nil)
-	mocks.configBuilder.On("Build", mock.Anything, mock.MatchedBy(func(opts otlpgateway.BuildOptions) bool {
+	cb := &mocks.OTLPGatewayConfigBuilder{}
+	cb.On("Build", mock.Anything, mock.MatchedBy(func(opts otlpgateway.BuildOptions) bool {
 		return len(opts.TracePipelines) == 2
-	})).Return(&common.Config{}, common.EnvVars{}, nil)
-	mocks.gatewayApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	})).Return(&common.Config{}, common.EnvVars{}, nil).Once()
 
-	sut := newTestReconciler(fakeClient, mocks)
+	sut, assertAll := newTestReconciler(fakeClient,
+		withConfigBuilderAssert(cb),
+	)
 
 	_, err := sut.Reconcile(ctx, newReconcileRequest())
 	require.NoError(t, err)
 
-	mocks.configBuilder.AssertCalled(t, "Build", mock.Anything, mock.MatchedBy(func(opts otlpgateway.BuildOptions) bool {
-		return len(opts.TracePipelines) == 2
-	}))
+	assertAll(t)
 }
 
 func TestReconcile_MissingPipeline_SkipsGracefully(t *testing.T) {
@@ -329,17 +223,18 @@ func TestReconcile_MissingPipeline_SkipsGracefully(t *testing.T) {
 	}
 
 	fakeClient := newTestClient(t, cm)
-	mocks := newDefaultMocks()
 
-	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false, nil)
-	mocks.gatewayApplierDeleter.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	gad := &mocks.GatewayApplierDeleter{}
+	gad.On("DeleteResources", mock.Anything, mock.Anything, false, false).Return(nil).Once()
 
-	sut := newTestReconciler(fakeClient, mocks)
+	sut, assertAll := newTestReconciler(fakeClient,
+		withGatewayApplierDeleterAssert(gad),
+	)
 
 	_, err := sut.Reconcile(ctx, newReconcileRequest())
 	require.NoError(t, err)
 
-	mocks.gatewayApplierDeleter.AssertCalled(t, "DeleteResources", mock.Anything, mock.Anything, mock.Anything)
+	assertAll(t)
 }
 
 func TestReconcile_IstioEnabled_PassesFlag(t *testing.T) {
@@ -360,38 +255,34 @@ func TestReconcile_IstioEnabled_PassesFlag(t *testing.T) {
 	}
 
 	fakeClient := newTestClient(t, &pipeline, cm)
-	mocks := newDefaultMocks()
 
-	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(true, nil)
-	mocks.configBuilder.On("Build", mock.Anything, mock.Anything, mock.Anything).Return(&common.Config{}, common.EnvVars{}, nil)
-	mocks.gatewayApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.MatchedBy(func(opts otelcollector.GatewayApplyOptions) bool {
+	gad := &mocks.GatewayApplierDeleter{}
+	gad.On("ApplyResources", mock.Anything, mock.Anything, mock.MatchedBy(func(opts otelcollector.GatewayApplyOptions) bool {
 		return opts.IstioEnabled == true
-	})).Return(nil)
+	})).Return(nil).Once()
 
-	sut := newTestReconciler(fakeClient, mocks)
+	sut, assertAll := newTestReconciler(fakeClient,
+		withGatewayApplierDeleterAssert(gad),
+		WithIstioStatusChecker(&stubs.IstioStatusChecker{IsActive: true}),
+	)
 
 	_, err := sut.Reconcile(ctx, newReconcileRequest())
 	require.NoError(t, err)
 
-	mocks.gatewayApplierDeleter.AssertCalled(t, "ApplyResources", mock.Anything, mock.Anything, mock.MatchedBy(func(opts otelcollector.GatewayApplyOptions) bool {
-		return opts.IstioEnabled == true
-	}))
+	assertAll(t)
 }
 
 func TestFetchTracePipelines_NotFound(t *testing.T) {
 	ctx := context.Background()
-	fakeClient := newTestClient(t)
-	mocks := newDefaultMocks()
 
-	sut := newTestReconciler(fakeClient, mocks)
+	sut, assertAll := newTestReconciler(newTestClient(t))
 
-	refs := []coordinationconfig.PipelineReference{
+	pipelines, err := sut.fetchTracePipelines(ctx, []coordinationconfig.PipelineReference{
 		{Name: "missing-pipeline", Generation: 1},
-	}
-
-	pipelines, err := sut.fetchTracePipelines(ctx, refs)
+	})
 	require.NoError(t, err)
 	assert.Empty(t, pipelines)
+	assertAll(t)
 }
 
 func TestFetchTracePipelines_GenerationMismatch(t *testing.T) {
@@ -402,18 +293,14 @@ func TestFetchTracePipelines_GenerationMismatch(t *testing.T) {
 		Build()
 	pipeline.Generation = 5
 
-	fakeClient := newTestClient(t, &pipeline)
-	mocks := newDefaultMocks()
+	sut, assertAll := newTestReconciler(newTestClient(t, &pipeline))
 
-	sut := newTestReconciler(fakeClient, mocks)
-
-	refs := []coordinationconfig.PipelineReference{
+	pipelines, err := sut.fetchTracePipelines(ctx, []coordinationconfig.PipelineReference{
 		{Name: "test-pipeline", Generation: 3},
-	}
-
-	pipelines, err := sut.fetchTracePipelines(ctx, refs)
+	})
 	require.NoError(t, err)
 	assert.Empty(t, pipelines)
+	assertAll(t)
 }
 
 func TestFetchTracePipelines_DeletionTimestamp(t *testing.T) {
@@ -426,18 +313,14 @@ func TestFetchTracePipelines_DeletionTimestamp(t *testing.T) {
 	pipeline.DeletionTimestamp = &now
 	pipeline.Finalizers = []string{"test-finalizer"}
 
-	fakeClient := newTestClient(t, &pipeline)
-	mocks := newDefaultMocks()
+	sut, assertAll := newTestReconciler(newTestClient(t, &pipeline))
 
-	sut := newTestReconciler(fakeClient, mocks)
-
-	refs := []coordinationconfig.PipelineReference{
+	pipelines, err := sut.fetchTracePipelines(ctx, []coordinationconfig.PipelineReference{
 		{Name: "test-pipeline", Generation: 1},
-	}
-
-	pipelines, err := sut.fetchTracePipelines(ctx, refs)
+	})
 	require.NoError(t, err)
 	assert.Empty(t, pipelines)
+	assertAll(t)
 }
 
 func TestFetchTracePipelines_Success(t *testing.T) {
@@ -448,74 +331,28 @@ func TestFetchTracePipelines_Success(t *testing.T) {
 		Build()
 	pipeline.Generation = 1
 
-	fakeClient := newTestClient(t, &pipeline)
-	mocks := newDefaultMocks()
+	sut, assertAll := newTestReconciler(newTestClient(t, &pipeline))
 
-	sut := newTestReconciler(fakeClient, mocks)
-
-	refs := []coordinationconfig.PipelineReference{
+	pipelines, err := sut.fetchTracePipelines(ctx, []coordinationconfig.PipelineReference{
 		{Name: "test-pipeline", Generation: 1},
-	}
-
-	pipelines, err := sut.fetchTracePipelines(ctx, refs)
+	})
 	require.NoError(t, err)
 	require.Len(t, pipelines, 1)
 	assert.Equal(t, "test-pipeline", pipelines[0].Name)
+	assertAll(t)
 }
 
 func TestFetchTracePipelines_GetError(t *testing.T) {
 	ctx := context.Background()
 
-	fakeClient := newTestClient(t)
-	mocks := newDefaultMocks()
+	sut, assertAll := newTestReconciler(newTestClient(t))
+	sut.Client = &stubs.ErrorClient{Err: assert.AnError}
 
-	sut := newTestReconciler(fakeClient, mocks)
-
-	sut.Client = &errorClient{err: assert.AnError}
-
-	refs := []coordinationconfig.PipelineReference{
+	_, err := sut.fetchTracePipelines(ctx, []coordinationconfig.PipelineReference{
 		{Name: "test-pipeline", Generation: 1},
-	}
-
-	_, err := sut.fetchTracePipelines(ctx, refs)
+	})
 	require.Error(t, err)
-}
-
-type errorClient struct {
-	client.Client
-
-	err error
-}
-
-func (c *errorClient) Get(_ context.Context, _ client.ObjectKey, _ client.Object, _ ...client.GetOption) error {
-	return c.err
-}
-
-func TestNewReconciler_WithOptions(t *testing.T) {
-	fakeClient := newTestClient(t)
-	globals := config.NewGlobal(config.WithTargetNamespace("test-namespace"))
-
-	gad := &mockGatewayApplierDeleter{}
-	cb := &mockOTLPGatewayConfigBuilder{}
-	isc := &mockIstioStatusChecker{}
-	oh := overrides.New(globals, fakeClient)
-
-	reconciler := NewReconciler(
-		fakeClient,
-		WithGlobals(globals),
-		WithGatewayApplierDeleter(gad),
-		WithConfigBuilder(cb),
-		WithIstioStatusChecker(isc),
-		WithOverridesHandler(oh),
-	)
-
-	require.NotNil(t, reconciler)
-	assert.Equal(t, fakeClient, reconciler.Client)
-	assert.Equal(t, "test-namespace", reconciler.globals.TargetNamespace())
-	assert.Equal(t, gad, reconciler.gatewayApplierDeleter)
-	assert.Equal(t, cb, reconciler.configBuilder)
-	assert.Equal(t, isc, reconciler.istioStatusChecker)
-	assert.Equal(t, oh, reconciler.overridesHandler)
+	assertAll(t)
 }
 
 func TestGlobals(t *testing.T) {
@@ -549,19 +386,13 @@ func TestReconcile_LogPipeline_DeploysGateway(t *testing.T) {
 	}
 
 	fakeClient := newTestClient(t, &logPipeline, cm)
-	mocks := newDefaultMocks()
 
-	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false, nil)
-	mocks.configBuilder.On("Build", mock.Anything, mock.Anything).Return(&common.Config{}, common.EnvVars{}, nil)
-	mocks.gatewayApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
-	sut := newTestReconciler(fakeClient, mocks)
+	sut, assertAll := newTestReconciler(fakeClient)
 
 	_, err := sut.Reconcile(ctx, newReconcileRequest())
 	require.NoError(t, err)
 
-	mocks.configBuilder.AssertCalled(t, "Build", mock.Anything, mock.Anything)
-	mocks.gatewayApplierDeleter.AssertCalled(t, "ApplyResources", mock.Anything, mock.Anything, mock.Anything)
+	assertAll(t)
 }
 
 func TestReconcile_TraceAndLogPipelines_DeploysUnifiedGateway(t *testing.T) {
@@ -588,37 +419,34 @@ func TestReconcile_TraceAndLogPipelines_DeploysUnifiedGateway(t *testing.T) {
 	}
 
 	fakeClient := newTestClient(t, &tracePipeline, &logPipeline, cm)
-	mocks := newDefaultMocks()
 
-	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false, nil)
-	mocks.configBuilder.On("Build", mock.Anything, mock.Anything).Return(&common.Config{}, common.EnvVars{}, nil)
-	mocks.gatewayApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	cb := &mocks.OTLPGatewayConfigBuilder{}
+	cb.On("Build", mock.Anything, mock.MatchedBy(func(opts otlpgateway.BuildOptions) bool {
+		return len(opts.TracePipelines) == 1 && len(opts.LogPipelines) == 1
+	})).Return(&common.Config{}, common.EnvVars{}, nil).Once()
 
-	sut := newTestReconciler(fakeClient, mocks)
+	sut, assertAll := newTestReconciler(fakeClient,
+		withConfigBuilderAssert(cb),
+	)
 
 	_, err := sut.Reconcile(ctx, newReconcileRequest())
 	require.NoError(t, err)
 
-	// Verify config was built with both pipelines
-	mocks.configBuilder.AssertCalled(t, "Build", mock.Anything, mock.MatchedBy(func(opts otlpgateway.BuildOptions) bool {
-		return len(opts.TracePipelines) == 1 && len(opts.LogPipelines) == 1
-	}))
+	assertAll(t)
 }
 
 // Tests for log pipeline scenarios
 func TestFetchLogPipelines_NotFound(t *testing.T) {
 	ctx := context.Background()
-	fakeClient := newTestClient(t)
-	mocks := newDefaultMocks()
-	sut := newTestReconciler(fakeClient, mocks)
 
-	refs := []coordinationconfig.PipelineReference{
+	sut, assertAll := newTestReconciler(newTestClient(t))
+
+	pipelines, err := sut.fetchLogPipelines(ctx, []coordinationconfig.PipelineReference{
 		{Name: "non-existent", Generation: 1},
-	}
-
-	pipelines, err := sut.fetchLogPipelines(ctx, refs)
+	})
 	require.NoError(t, err)
 	assert.Empty(t, pipelines)
+	assertAll(t)
 }
 
 func TestFetchLogPipelines_GenerationMismatch(t *testing.T) {
@@ -629,17 +457,14 @@ func TestFetchLogPipelines_GenerationMismatch(t *testing.T) {
 		WithOTLPOutput().
 		Build()
 
-	fakeClient := newTestClient(t, &pipeline)
-	mocks := newDefaultMocks()
-	sut := newTestReconciler(fakeClient, mocks)
+	sut, assertAll := newTestReconciler(newTestClient(t, &pipeline))
 
-	refs := []coordinationconfig.PipelineReference{
-		{Name: pipeline.Name, Generation: pipeline.Generation + 1}, // Different generation
-	}
-
-	pipelines, err := sut.fetchLogPipelines(ctx, refs)
+	pipelines, err := sut.fetchLogPipelines(ctx, []coordinationconfig.PipelineReference{
+		{Name: pipeline.Name, Generation: pipeline.Generation + 1},
+	})
 	require.NoError(t, err)
 	assert.Empty(t, pipelines)
+	assertAll(t)
 }
 
 func TestFetchLogPipelines_DeletionTimestamp(t *testing.T) {
@@ -653,17 +478,14 @@ func TestFetchLogPipelines_DeletionTimestamp(t *testing.T) {
 	pipeline.DeletionTimestamp = &now
 	pipeline.Finalizers = []string{"test-finalizer"} // Need finalizer for fake client
 
-	fakeClient := newTestClient(t, &pipeline)
-	mocks := newDefaultMocks()
-	sut := newTestReconciler(fakeClient, mocks)
+	sut, assertAll := newTestReconciler(newTestClient(t, &pipeline))
 
-	refs := []coordinationconfig.PipelineReference{
+	pipelines, err := sut.fetchLogPipelines(ctx, []coordinationconfig.PipelineReference{
 		{Name: pipeline.Name, Generation: pipeline.Generation},
-	}
-
-	pipelines, err := sut.fetchLogPipelines(ctx, refs)
+	})
 	require.NoError(t, err)
 	assert.Empty(t, pipelines)
+	assertAll(t)
 }
 
 func TestFetchLogPipelines_Success(t *testing.T) {
@@ -674,34 +496,28 @@ func TestFetchLogPipelines_Success(t *testing.T) {
 		WithOTLPOutput().
 		Build()
 
-	fakeClient := newTestClient(t, &pipeline)
-	mocks := newDefaultMocks()
-	sut := newTestReconciler(fakeClient, mocks)
+	sut, assertAll := newTestReconciler(newTestClient(t, &pipeline))
 
-	refs := []coordinationconfig.PipelineReference{
+	pipelines, err := sut.fetchLogPipelines(ctx, []coordinationconfig.PipelineReference{
 		{Name: pipeline.Name, Generation: pipeline.Generation},
-	}
-
-	pipelines, err := sut.fetchLogPipelines(ctx, refs)
+	})
 	require.NoError(t, err)
 	require.Len(t, pipelines, 1)
 	assert.Equal(t, pipeline.Name, pipelines[0].Name)
+	assertAll(t)
 }
 
 func TestFetchLogPipelines_GetError(t *testing.T) {
 	ctx := context.Background()
-	fakeClient := newTestClient(t)
-	mocks := newDefaultMocks()
-	sut := newTestReconciler(fakeClient, mocks)
 
-	sut.Client = &errorClient{err: assert.AnError}
+	sut, assertAll := newTestReconciler(newTestClient(t))
+	sut.Client = &stubs.ErrorClient{Err: assert.AnError}
 
-	refs := []coordinationconfig.PipelineReference{
+	_, err := sut.fetchLogPipelines(ctx, []coordinationconfig.PipelineReference{
 		{Name: "test-log", Generation: 1},
-	}
-
-	_, err := sut.fetchLogPipelines(ctx, refs)
+	})
 	require.Error(t, err)
+	assertAll(t)
 }
 
 func TestReconcile_OnlyLogPipelines_DeploysGateway(t *testing.T) {
@@ -724,24 +540,20 @@ func TestReconcile_OnlyLogPipelines_DeploysGateway(t *testing.T) {
 	}
 
 	fakeClient := newTestClient(t, &logPipeline, cm)
-	mocks := newDefaultMocks()
 
-	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false, nil)
-	mocks.configBuilder.On("Build", mock.Anything, mock.Anything).Return(&common.Config{}, common.EnvVars{}, nil)
-	mocks.gatewayApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	cb := &mocks.OTLPGatewayConfigBuilder{}
+	cb.On("Build", mock.Anything, mock.MatchedBy(func(opts otlpgateway.BuildOptions) bool {
+		return len(opts.TracePipelines) == 0 && len(opts.LogPipelines) == 1
+	})).Return(&common.Config{}, common.EnvVars{}, nil).Once()
 
-	sut := newTestReconciler(fakeClient, mocks)
+	sut, assertAll := newTestReconciler(fakeClient,
+		withConfigBuilderAssert(cb),
+	)
 
 	_, err := sut.Reconcile(ctx, newReconcileRequest())
 	require.NoError(t, err)
 
-	// Verify config was built with only log pipelines
-	mocks.configBuilder.AssertCalled(t, "Build", mock.Anything, mock.MatchedBy(func(opts otlpgateway.BuildOptions) bool {
-		return len(opts.TracePipelines) == 0 && len(opts.LogPipelines) == 1
-	}))
-
-	// Verify gateway resources were applied
-	mocks.gatewayApplierDeleter.AssertCalled(t, "ApplyResources", mock.Anything, mock.Anything, mock.Anything)
+	assertAll(t)
 }
 
 // TestOverrideFunctionality verifies that OTLP Gateway respects override configuration
@@ -796,26 +608,17 @@ func TestOverrideFunctionality(t *testing.T) {
 			}
 
 			fakeClient := newTestClient(t, &pipeline, cm)
-			mocks := newDefaultMocks()
 
-			mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false, nil)
+			gad := &mocks.GatewayApplierDeleter{}
 
 			if tt.expectReconcile {
-				mocks.configBuilder.On("Build", mock.Anything, mock.Anything).Return(&common.Config{}, common.EnvVars{}, nil)
-				mocks.gatewayApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				gad.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
 			}
 
-			sut := newTestReconciler(fakeClient, mocks)
-
-			// Create override handler with test client that returns specific override config
-			switch {
-			case tt.overrideError != nil:
-				sut.overridesHandler = overrides.New(sut.globals, &overrideConfigErrorClient{err: tt.overrideError})
-			case tt.paused:
-				sut.overridesHandler = overrides.New(sut.globals, newOverrideConfigClient(t, true))
-			default:
-				sut.overridesHandler = overrides.New(sut.globals, newOverrideConfigClient(t, false))
-			}
+			sut, assertAll := newTestReconciler(fakeClient,
+				withGatewayApplierDeleterAssert(gad),
+				WithOverridesHandler(&stubs.OverridesHandler{Paused: tt.paused, Err: tt.overrideError}),
+			)
 
 			_, err := sut.Reconcile(ctx, newReconcileRequest())
 
@@ -825,68 +628,23 @@ func TestOverrideFunctionality(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			if tt.expectResourcesDeploy {
-				mocks.gatewayApplierDeleter.AssertCalled(t, "ApplyResources", mock.Anything, mock.Anything, mock.Anything)
-			} else {
-				mocks.gatewayApplierDeleter.AssertNotCalled(t, "ApplyResources", mock.Anything, mock.Anything, mock.Anything)
-			}
+			assertAll(t)
 		})
 	}
-}
-
-// newOverrideConfigClient creates a fake client that returns override ConfigMap with specified pause state
-func newOverrideConfigClient(t *testing.T, paused bool) client.Client {
-	pausedStr := "false"
-	if paused {
-		pausedStr = "true"
-	}
-
-	overrideConfig := fmt.Sprintf(`otlpGateway:
-  paused: %s`, pausedStr)
-
-	overridesCM := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.OverrideConfigMap,
-			Namespace: "kyma-system",
-		},
-		Data: map[string]string{
-			"overrides": overrideConfig,
-		},
-	}
-
-	return newTestClient(t, overridesCM)
-}
-
-// overrideConfigErrorClient is a client that returns errors when fetching override ConfigMap
-type overrideConfigErrorClient struct {
-	client.Client
-
-	err error
-}
-
-func (c *overrideConfigErrorClient) Get(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
-	if cm, ok := obj.(*corev1.ConfigMap); ok && key.Name == names.OverrideConfigMap {
-		_ = cm
-		return c.err
-	}
-
-	return apierrors.NewNotFound(schema.GroupResource{}, key.Name)
 }
 
 // Tests for metric pipeline fetch scenarios
 func TestFetchMetricPipelines_NotFound(t *testing.T) {
 	ctx := context.Background()
-	fakeClient := newTestClient(t)
-	mocks := newDefaultMocks()
-	sut := newTestReconciler(fakeClient, mocks)
 
-	refs := []coordinationconfig.PipelineReference{
+	sut, assertAll := newTestReconciler(newTestClient(t))
+
+	pipelines, err := sut.fetchMetricPipelines(ctx, []coordinationconfig.PipelineReference{
 		{Name: "non-existent", Generation: 1},
-	}
-
-	pipelines, err := sut.fetchMetricPipelines(ctx, refs)
+	})
 	require.NoError(t, err)
 	assert.Empty(t, pipelines)
+	assertAll(t)
 }
 
 func TestFetchMetricPipelines_GenerationMismatch(t *testing.T) {
@@ -896,17 +654,14 @@ func TestFetchMetricPipelines_GenerationMismatch(t *testing.T) {
 		WithName("test-metric").
 		Build()
 
-	fakeClient := newTestClient(t, &pipeline)
-	mocks := newDefaultMocks()
-	sut := newTestReconciler(fakeClient, mocks)
+	sut, assertAll := newTestReconciler(newTestClient(t, &pipeline))
 
-	refs := []coordinationconfig.PipelineReference{
+	pipelines, err := sut.fetchMetricPipelines(ctx, []coordinationconfig.PipelineReference{
 		{Name: pipeline.Name, Generation: pipeline.Generation + 1},
-	}
-
-	pipelines, err := sut.fetchMetricPipelines(ctx, refs)
+	})
 	require.NoError(t, err)
 	assert.Empty(t, pipelines)
+	assertAll(t)
 }
 
 func TestFetchMetricPipelines_DeletionTimestamp(t *testing.T) {
@@ -919,17 +674,14 @@ func TestFetchMetricPipelines_DeletionTimestamp(t *testing.T) {
 	pipeline.DeletionTimestamp = &now
 	pipeline.Finalizers = []string{"test-finalizer"}
 
-	fakeClient := newTestClient(t, &pipeline)
-	mocks := newDefaultMocks()
-	sut := newTestReconciler(fakeClient, mocks)
+	sut, assertAll := newTestReconciler(newTestClient(t, &pipeline))
 
-	refs := []coordinationconfig.PipelineReference{
+	pipelines, err := sut.fetchMetricPipelines(ctx, []coordinationconfig.PipelineReference{
 		{Name: pipeline.Name, Generation: pipeline.Generation},
-	}
-
-	pipelines, err := sut.fetchMetricPipelines(ctx, refs)
+	})
 	require.NoError(t, err)
 	assert.Empty(t, pipelines)
+	assertAll(t)
 }
 
 func TestFetchMetricPipelines_Success(t *testing.T) {
@@ -939,35 +691,28 @@ func TestFetchMetricPipelines_Success(t *testing.T) {
 		WithName("test-metric").
 		Build()
 
-	fakeClient := newTestClient(t, &pipeline)
-	mocks := newDefaultMocks()
-	sut := newTestReconciler(fakeClient, mocks)
+	sut, assertAll := newTestReconciler(newTestClient(t, &pipeline))
 
-	refs := []coordinationconfig.PipelineReference{
+	pipelines, err := sut.fetchMetricPipelines(ctx, []coordinationconfig.PipelineReference{
 		{Name: pipeline.Name, Generation: pipeline.Generation},
-	}
-
-	pipelines, err := sut.fetchMetricPipelines(ctx, refs)
+	})
 	require.NoError(t, err)
 	require.Len(t, pipelines, 1)
 	assert.Equal(t, pipeline.Name, pipelines[0].Name)
+	assertAll(t)
 }
 
 func TestFetchMetricPipelines_GetError(t *testing.T) {
 	ctx := context.Background()
 
-	fakeClient := newTestClient(t)
-	mocks := newDefaultMocks()
-	sut := newTestReconciler(fakeClient, mocks)
+	sut, assertAll := newTestReconciler(newTestClient(t))
+	sut.Client = &stubs.ErrorClient{Err: assert.AnError}
 
-	sut.Client = &errorClient{err: assert.AnError}
-
-	refs := []coordinationconfig.PipelineReference{
+	_, err := sut.fetchMetricPipelines(ctx, []coordinationconfig.PipelineReference{
 		{Name: "test-metric", Generation: 1},
-	}
-
-	_, err := sut.fetchMetricPipelines(ctx, refs)
+	})
 	require.Error(t, err)
+	assertAll(t)
 }
 
 func TestReconcile_MetricPipeline_DeploysGateway(t *testing.T) {
@@ -989,19 +734,18 @@ func TestReconcile_MetricPipeline_DeploysGateway(t *testing.T) {
 	}
 
 	fakeClient := newTestClient(t, &metricPipeline, cm)
-	mocks := newDefaultMocks()
 
-	mocks.istioStatusChecker.On("IsIstioActive", mock.Anything).Return(false, nil)
-	mocks.configBuilder.On("Build", mock.Anything, mock.Anything).Return(&common.Config{}, common.EnvVars{}, nil)
-	mocks.gatewayApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	cb := &mocks.OTLPGatewayConfigBuilder{}
+	cb.On("Build", mock.Anything, mock.MatchedBy(func(opts otlpgateway.BuildOptions) bool {
+		return len(opts.MetricPipelines) == 1
+	})).Return(&common.Config{}, common.EnvVars{}, nil).Once()
 
-	sut := newTestReconciler(fakeClient, mocks)
+	sut, assertAll := newTestReconciler(fakeClient,
+		withConfigBuilderAssert(cb),
+	)
 
 	_, err := sut.Reconcile(ctx, newReconcileRequest())
 	require.NoError(t, err)
 
-	mocks.configBuilder.AssertCalled(t, "Build", mock.Anything, mock.MatchedBy(func(opts otlpgateway.BuildOptions) bool {
-		return len(opts.MetricPipelines) == 1
-	}))
-	mocks.gatewayApplierDeleter.AssertCalled(t, "ApplyResources", mock.Anything, mock.Anything, mock.Anything)
+	assertAll(t)
 }

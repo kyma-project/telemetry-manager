@@ -9,14 +9,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+	"github.com/kyma-project/telemetry-manager/internal/pipelines"
 )
 
-func traceRefTest() PipelineRef {
-	return TracePipelineRef(&telemetryv1beta1.TracePipeline{ObjectMeta: metav1.ObjectMeta{Name: "test"}})
+func traceRefTest() pipelines.PipelineRef {
+	return pipelines.TracePipelineRef(&telemetryv1beta1.TracePipeline{ObjectMeta: metav1.ObjectMeta{Name: "test"}})
 }
 
-func metricRefTest() PipelineRef {
-	return MetricPipelineRef(&telemetryv1beta1.MetricPipeline{ObjectMeta: metav1.ObjectMeta{Name: "test"}})
+func metricRefTest() pipelines.PipelineRef {
+	return pipelines.MetricPipelineRef(&telemetryv1beta1.MetricPipeline{ObjectMeta: metav1.ObjectMeta{Name: "test"}})
 }
 
 func TestExporterIDHTTP(t *testing.T) {

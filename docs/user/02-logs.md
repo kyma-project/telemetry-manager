@@ -7,14 +7,14 @@ With application logs, you can debug an application and derive the internal stat
 
 ## Overview
 
-The Telemetry module provides the [Fluent Bit](https://fluentbit.io/) log agent for the collection and shipment of application logs of any container running in Kyma runtime.
+The Telemetry module provides the [Fluent Bit](https://fluentbit.io/) Log Agent for the collection and shipment of application logs of any container running in Kyma runtime.
 
-You can configure the log agent with external systems using runtime configuration with a dedicated Kubernetes API ([CRD](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#customresourcedefinitions)) named `LogPipeline`. With the LogPipeline's HTTP output, you can natively integrate with vendors that support this output, or with any vendor using a Fluentd integration.
+You can configure the Log Agent with external systems using runtime configuration with a dedicated Kubernetes API ([CRD](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#customresourcedefinitions)) named `LogPipeline`. With the LogPipeline's HTTP output, you can natively integrate with vendors that support this output, or with any vendor using a Fluentd integration.
 
 The feature is optional, if you don't want to use the Logs feature, simply don't set up a LogPipeline.
 
 <!--- custom output/unsupported mode is not part of Help Portal docs --->
-If you want more flexibility than provided by the proprietary protocol, you can run the agent in the [unsupported mode](#unsupported-mode), using the full vendor-specific output options of Fluent Bit. If you need advanced configuration options, you can also bring your own log agent.
+If you want more flexibility than provided by the proprietary protocol, you can run the agent in the [unsupported mode](#unsupported-mode), using the full vendor-specific output options of Fluent Bit. If you need advanced configuration options, you can also bring your own Log Agent.
 
 ## Prerequisites
 
@@ -30,7 +30,7 @@ In the Kyma cluster, the Telemetry module provides a DaemonSet of [Fluent Bit](h
 2. Fluent Bit runs as a [DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/) (one instance per Node), detects any new log files in the folder, and tails them using a filesystem buffer for reliability.
 3. Fluent Bit discovers additional Pod metadata, such as Pod annotations and labels.
 4. Telemetry Manager configures Fluent Bit with your output configuration, observes the log flow, and reports problems in the LogPipeline status.
-5. The log agent sends the data to the observability system that's specified in your `LogPipeline` resource - either within the Kyma cluster, or, if authentication is set up, to an external observability backend. You can use the integration with HTTP to integrate a system directly or with an additional Fluentd installation.
+5. The Log Agent sends the data to the observability system that's specified in your `LogPipeline` resource - either within the Kyma cluster, or, if authentication is set up, to an external observability backend. You can use the integration with HTTP to integrate a system directly or with an additional Fluentd installation.
 6. To analyze and visualize your logs, access the internal or external observability system.
 
 ### Telemetry Manager
@@ -474,12 +474,12 @@ For LogPipelines that use an HTTP output, the following attributes are enriched 
 The enriched timestamp attributes have the following meaning:
 
 - **time**: The time when the container runtime captured the log on `stdout/stderr`, which is very close to the time when the log originated in the application.
-- **date**: The time when the log agent processed the log, which is later than the value in `time`.
+- **date**: The time when the Log Agent processed the log, which is later than the value in `time`.
 - **@timestamp**: Contains the same value as **time**, optimized for SAP Cloud Logging integration.
 
 ## Operations
 
-The Telemetry module ensures that the log agent instances are operational and healthy at any time, for example, with buffering and retries. However, there may be situations when the instances drop logs, or cannot handle the log load.
+The Telemetry module ensures that the Log Agent instances are operational and healthy at any time, for example, with buffering and retries. However, there may be situations when the instances drop logs, or cannot handle the log load.
 
 To detect and fix such situations, check the [pipeline status](./resources/02-logpipeline.md#logpipeline-status) and check out [Troubleshooting](#troubleshooting). If you have set up [pipeline health monitoring](./monitor-pipeline-health.md), check the alerts and reports in an integrated backend like [SAP Cloud Logging](./integration/sap-cloud-logging/README.md#use-sap-cloud-logging-alerts).
 

@@ -69,7 +69,13 @@ spec:
             - "90m"
             - --rate
             - "LOG_RATE_PLACEHOLDER"
+            - --batch=false
             - --body
             - '{"foo":"LOG_CONTENT_PLACEHOLDER"}'
           imagePullPolicy: IfNotPresent
           name: telemetrygen
+          resources:
+            limits:
+              memory: 512Mi
+            requests:
+              memory: 512Mi
