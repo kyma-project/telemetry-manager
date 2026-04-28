@@ -54,7 +54,7 @@ func TestDisabledInput(t *testing.T) {
 	assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 	assert.MetricPipelineHealthy(t, pipelineName)
 
-	// If Runtime input is disabled, THEN the metric agent must not be deployed
+	// If Runtime input is disabled, THEN the Metric Agent must not be deployed
 	assert.DaemonSetNotFound(t, kitkyma.MetricAgentName)
 	assert.MetricPipelineHasCondition(t, pipelineName, metav1.Condition{
 		Type:   conditions.TypeAgentHealthy,
