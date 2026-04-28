@@ -397,9 +397,9 @@ spec:
           name: telemetrygen
           resources:
             limits:
-              memory: 300Mi
+              memory: 512Mi
             requests:
-              memory: 300Mi
+              memory: 512Mi
 
 ---
 apiVersion: apps/v1
