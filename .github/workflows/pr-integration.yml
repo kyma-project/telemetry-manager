@@ -68,7 +68,7 @@ env:
 
 jobs:
   setup:
-    runs-on: ubuntu-latest
+    runs-on: telemetry-4core
     outputs:
       manager-image: ${{ steps.set-env.outputs.manager-image }}
     steps:
@@ -153,7 +153,7 @@ jobs:
   # e2e-logs split by fluent-bit vs otel AND by set labels for parallel execution
   e2e-logs:
     needs: setup
-    runs-on: ubuntu-latest
+    runs-on: telemetry-4core
     strategy:
       fail-fast: false
       matrix:
@@ -192,7 +192,7 @@ jobs:
   # e2e-metrics split by set labels for parallel execution
   e2e-metrics:
     needs: setup
-    runs-on: ubuntu-latest
+    runs-on: telemetry-4core
     strategy:
       fail-fast: false
       matrix:
@@ -226,7 +226,7 @@ jobs:
   # All e2e suites with experimental flavor
   e2e-experimental:
     needs: setup
-    runs-on: ubuntu-latest
+    runs-on: telemetry-4core
     strategy:
       fail-fast: false
       matrix:
@@ -262,7 +262,7 @@ jobs:
   # e2e-traces and e2e-misc (non-experimental) without set splitting
   e2e:
     needs: setup
-    runs-on: ubuntu-latest
+    runs-on: telemetry-4core
     strategy:
       fail-fast: false
       matrix:
@@ -294,7 +294,7 @@ jobs:
   # Upgrade and integration tests
   e2e-other:
     needs: setup
-    runs-on: ubuntu-latest
+    runs-on: telemetry-4core
     strategy:
       fail-fast: false
       matrix:
@@ -326,7 +326,7 @@ jobs:
   # Selfmonitor tests
   selfmonitor-healthy:
     needs: setup
-    runs-on: ubuntu-latest
+    runs-on: telemetry-4core
     name: selfmonitor-healthy
     steps:
       - name: Checkout code
@@ -348,7 +348,7 @@ jobs:
 
   selfmonitor:
     needs: setup
-    runs-on: ubuntu-latest
+    runs-on: telemetry-4core
     strategy:
       fail-fast: false
       matrix:
@@ -390,7 +390,7 @@ jobs:
 
   summary:
     needs: [e2e-logs, e2e-metrics, e2e-experimental, e2e, e2e-other, selfmonitor-healthy, selfmonitor]
-    runs-on: ubuntu-latest
+    runs-on: telemetry-4core
     if: always()
     steps:
       - name: Checkout code

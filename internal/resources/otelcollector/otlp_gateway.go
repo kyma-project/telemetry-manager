@@ -33,12 +33,10 @@ import (
 )
 
 var (
-	otlpGatewayBaseMemoryLimit      = resource.MustParse("500Mi")
-	otlpGatewayDynamicMemoryLimit   = resource.MustParse("1500Mi")
-	otlpGatewayBaseCPURequest       = resource.MustParse("100m")
-	otlpGatewayDynamicCPURequest    = resource.MustParse("100m")
-	otlpGatewayBaseMemoryRequest    = resource.MustParse("32Mi")
-	otlpGatewayDynamicMemoryRequest = resource.MustParse("0")
+	otlpGatewayBaseMemoryLimit    = resource.MustParse("750Mi")
+	otlpGatewayDynamicMemoryLimit = resource.MustParse("1000Mi")
+	otlpGatewayBaseCPURequest     = resource.MustParse("100m")
+	otlpGatewayBaseMemoryRequest  = resource.MustParse("128Mi")
 )
 
 // OTLPGatewayApplierDeleter manages the unified OTLP Gateway deployed as a DaemonSet.
@@ -51,12 +49,10 @@ type OTLPGatewayApplierDeleter struct {
 	otlpServiceName string
 	rbac            rbac
 
-	baseMemoryLimit      resource.Quantity
-	dynamicMemoryLimit   resource.Quantity
-	baseCPURequest       resource.Quantity
-	dynamicCPURequest    resource.Quantity
-	baseMemoryRequest    resource.Quantity
-	dynamicMemoryRequest resource.Quantity
+	baseMemoryLimit    resource.Quantity
+	dynamicMemoryLimit resource.Quantity
+	baseCPURequest     resource.Quantity
+	baseMemoryRequest  resource.Quantity
 
 	podOpts       []commonresources.PodSpecOption
 	containerOpts []commonresources.ContainerOption
@@ -77,18 +73,16 @@ func NewOTLPGatewayApplierDeleter(globals config.Global, image, priorityClassNam
 	}
 
 	return &OTLPGatewayApplierDeleter{
-		globals:              globals,
-		baseName:             names.OTLPGateway,
-		extraPodLabels:       extraLabels,
-		image:                image,
-		otlpServiceName:      names.OTLPService,
-		rbac:                 makeOTLPGatewayRBAC(globals.TargetNamespace()),
-		baseMemoryLimit:      otlpGatewayBaseMemoryLimit,
-		dynamicMemoryLimit:   otlpGatewayDynamicMemoryLimit,
-		baseCPURequest:       otlpGatewayBaseCPURequest,
-		dynamicCPURequest:    otlpGatewayDynamicCPURequest,
-		baseMemoryRequest:    otlpGatewayBaseMemoryRequest,
-		dynamicMemoryRequest: otlpGatewayDynamicMemoryRequest,
+		globals:            globals,
+		baseName:           names.OTLPGateway,
+		extraPodLabels:     extraLabels,
+		image:              image,
+		otlpServiceName:    names.OTLPService,
+		rbac:               makeOTLPGatewayRBAC(globals.TargetNamespace()),
+		baseMemoryLimit:    otlpGatewayBaseMemoryLimit,
+		dynamicMemoryLimit: otlpGatewayDynamicMemoryLimit,
+		baseCPURequest:     otlpGatewayBaseCPURequest,
+		baseMemoryRequest:  otlpGatewayBaseMemoryRequest,
 		podOpts: []commonresources.PodSpecOption{
 			commonresources.WithPriorityClass(priorityClassName),
 			commonresources.WithAffinity(makePodAffinity(commonresources.DefaultSelector(names.OTLPGateway))),
@@ -422,9 +416,16 @@ func (o *OTLPGatewayApplierDeleter) makeGatewayResourceRequirements(opts Gateway
 	cpuRequest := o.baseCPURequest.DeepCopy()
 
 	for range opts.ResourceRequirementsMultiplier {
-		memoryRequest.Add(o.dynamicMemoryRequest)
 		memoryLimit.Add(o.dynamicMemoryLimit)
-		cpuRequest.Add(o.dynamicCPURequest)
+	}
+
+	if !opts.VPAMaxAllowedMemory.IsZero() {
+		maxMemoryCap := opts.VPAMaxAllowedMemory.DeepCopy()
+		maxMemoryCap.Add(opts.VPAMaxAllowedMemory) // 2x VPAMaxAllowedMemory
+
+		if memoryLimit.Cmp(maxMemoryCap) > 0 {
+			memoryLimit = maxMemoryCap
+		}
 	}
 
 	// When VPA is active, override the memory limit to 2x the memory request so the VPA can scale within a tighter range.
