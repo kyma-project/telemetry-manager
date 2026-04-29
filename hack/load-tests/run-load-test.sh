@@ -199,7 +199,7 @@ function wait_for_rollout() {
     local namespace=$1
     local resource=$2
     local label=${3:-$(echo "$resource" | sed 's|.*/||')}
-    if ! kubectl -n "$namespace" rollout status "$resource" --timeout=60s; then
+    if ! kubectl -n "$namespace" rollout status "$resource" --timeout=90s; then
         echo -e "\nERROR: Rollout timed out for $resource in namespace $namespace"
         echo -e "\nPod status:"
         kubectl -n "$namespace" get pods -o wide
@@ -216,22 +216,22 @@ function wait_for_prometheus_resources() {
 }
 
 function wait_for_trace_resources() {
+    wait_for_rollout ${TRACE_NAMESPACE} "deployment/trace-receiver"
     wait_for_rollout kyma-system "daemonset/telemetry-otlp-gateway"
     wait_for_rollout ${TRACE_NAMESPACE} "deployment/trace-load-generator"
-    wait_for_rollout ${TRACE_NAMESPACE} "deployment/trace-receiver"
 }
 
 function wait_for_metric_resources() {
+    wait_for_rollout ${METRIC_NAMESPACE} "deployment/metric-receiver"
     wait_for_rollout kyma-system "daemonset/telemetry-otlp-gateway"
     wait_for_rollout ${METRIC_NAMESPACE} "deployment/metric-load-generator"
-    wait_for_rollout ${METRIC_NAMESPACE} "deployment/metric-receiver"
 }
 
 function wait_for_metric_agent_resources() {
+    wait_for_rollout ${METRIC_NAMESPACE} "deployment/metric-receiver"
     wait_for_rollout kyma-system "daemonset/telemetry-otlp-gateway"
     wait_for_rollout kyma-system "daemonset/telemetry-metric-agent"
     wait_for_rollout ${METRIC_NAMESPACE} "deployment/metric-agent-load-generator"
-    wait_for_rollout ${METRIC_NAMESPACE} "deployment/metric-receiver"
 }
 
 function wait_for_fluentbit_resources() {
@@ -247,10 +247,10 @@ function wait_for_otel_log_resources() {
 }
 
 function wait_for_selfmonitor_resources() {
+  wait_for_rollout ${SELF_MONITOR_NAMESPACE} "deployment/telemetry-receiver"
     wait_for_rollout kyma-system "daemonset/telemetry-otlp-gateway"
     wait_for_rollout kyma-system "daemonset/telemetry-metric-agent"
     wait_for_rollout kyma-system "daemonset/telemetry-fluent-bit" "fluent-bit"
-    wait_for_rollout ${SELF_MONITOR_NAMESPACE} "deployment/telemetry-receiver"
     wait_for_rollout ${SELF_MONITOR_NAMESPACE} "deployment/trace-load-generator"
     wait_for_rollout ${SELF_MONITOR_NAMESPACE} "deployment/metric-load-generator"
     wait_for_rollout ${SELF_MONITOR_NAMESPACE} "deployment/metric-agent-load-generator"
