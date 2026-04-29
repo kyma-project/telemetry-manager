@@ -381,7 +381,7 @@ func (aad *AgentApplierDeleter) fluentBitReadinessProbe() *corev1.Probe {
 	return &corev1.Probe{
 		ProbeHandler: corev1.ProbeHandler{
 			HTTPGet: &corev1.HTTPGetAction{
-				Path: "/api/v2/health",
+				Path: "/",
 				Port: intstr.FromString("http"),
 			},
 		},

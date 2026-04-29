@@ -267,7 +267,7 @@ spec:
           name: http
         readinessProbe:
           httpGet:
-            path: /api/v2/health
+            path: /
             port: http
         resources:
           limits:
