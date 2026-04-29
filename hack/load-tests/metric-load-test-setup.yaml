@@ -52,6 +52,7 @@ spec:
           args:
           - metrics
           - --otlp-insecure
+          - --allow-export-failures
           - --otlp-endpoint
           - "telemetry-otlp-metrics.kyma-system:4317"
           - --otlp-attributes
