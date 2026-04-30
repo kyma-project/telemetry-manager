@@ -33,7 +33,7 @@ on:
         description: "Skip deletion of test resources and cluster after test execution"
         default: false
 
-run-name: "Load Test for ${{ inputs.image }} on PR-${{ inputs.pr_number }} (scripts from ${{ github.ref_name }})"
+run-name: "Load Test for ${{ inputs.image }} on PR-${{ inputs.pr_number }}"
 
 env:
   MANAGER_IMAGE: europe-docker.pkg.dev/kyma-project/dev/telemetry-manager:PR-${{ github.event.inputs.pr_number }}
@@ -47,7 +47,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          ref: ${{ github.ref }}
+          ref: "refs/pull/${{ github.event.inputs.pr_number }}/head"
           repository: ${{ github.repository }}
       - id: set-matrix
         run: |
@@ -70,7 +70,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          ref: ${{ github.ref }}
+          ref: "refs/pull/${{ github.event.inputs.pr_number }}/head"
           repository: ${{ github.repository }}
 
       - name: Setup Golang
@@ -138,7 +138,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          ref: ${{ github.ref }}
+          ref: "refs/pull/${{ github.event.inputs.pr_number }}/head"
           repository: ${{ github.repository }}
       - name: Download results
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
