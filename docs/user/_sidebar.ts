@@ -53,6 +53,7 @@ export default [
       { text: 'Traces Architecture', link: './architecture/traces-architecture' },
       { text: 'Metrics Architecture', link: './architecture/metrics-architecture' },
       { text: 'Istio Integration', link: './architecture/istio-integration' },
+      { text: 'Network Policies', link: './architecture/network-policy'},
     ]
   },
   {
