@@ -62,8 +62,20 @@ func TestRejectPipelineCreation(t *testing.T) {
 					},
 				},
 			},
-			errorMsg: "Exactly one of 'value' or 'valueFrom' must be set",
+			errorMsg: "Only one of 'value' or 'valueFrom' can be set",
 			field:    "spec.output.otlp.endpoint",
+		},
+		{
+			name: "otlp-output-missing-endpoint",
+			pipeline: telemetryv1beta1.MetricPipeline{
+				Spec: telemetryv1beta1.MetricPipelineSpec{
+					Output: telemetryv1beta1.MetricPipelineOutput{
+						OTLP: &telemetryv1beta1.OTLPOutput{},
+					},
+				},
+			},
+			errorMsg: "'endpoint' must have 'value' or 'valueFrom' set",
+			field:    "spec.output.otlp",
 		},
 		{
 			name: "secretkeyref-requires-key",
@@ -187,6 +199,28 @@ func TestRejectPipelineCreation(t *testing.T) {
 			field:    "spec.output.otlp.authentication.basic.user.valueFrom.secretKeyRef.key",
 		},
 		{
+			name: "otlp-output-basic-auth-missing-user",
+			pipeline: testutils.NewMetricPipelineBuilder().
+				WithOTLPOutput(
+					testutils.OTLPEndpoint(backendEndpoint),
+					testutils.OTLPBasicAuth("", "password"),
+				).
+				Build(),
+			errorMsg: "'user' must have 'value' or 'valueFrom' set",
+			field:    "spec.output.otlp.authentication.basic",
+		},
+		{
+			name: "otlp-output-basic-auth-missing-password",
+			pipeline: testutils.NewMetricPipelineBuilder().
+				WithOTLPOutput(
+					testutils.OTLPEndpoint(backendEndpoint),
+					testutils.OTLPBasicAuth("user", ""),
+				).
+				Build(),
+			errorMsg: "'password' must have 'value' or 'valueFrom' set",
+			field:    "spec.output.otlp.authentication.basic",
+		},
+		{
 			name: "otlp-output-tls-missing-key",
 			pipeline: testutils.NewMetricPipelineBuilder().
 				WithOTLPOutput(
@@ -240,8 +274,47 @@ func TestRejectPipelineCreation(t *testing.T) {
 					),
 				).
 				Build(),
-			errorMsg: "Invalid value: \"object\": Exactly one of 'value' or 'valueFrom' must be set",
-			field:    "spec.output.otlp.authentication.oauth2.clientID",
+			errorMsg: "'clientID' must have 'value' or 'valueFrom' set",
+			field:    "spec.output.otlp.authentication.oauth2",
+		},
+		{
+			name: "otlp-output-oauth2-missing-token-url",
+			pipeline: testutils.NewMetricPipelineBuilder().
+				WithOTLPOutput(
+					testutils.OTLPEndpoint(backendEndpoint),
+					testutils.OTLPOAuth2(
+						testutils.OAuth2ClientID("clientid"),
+						testutils.OAuth2ClientSecret("clientsecret"),
+					),
+				).
+				Build(),
+			errorMsg: "'tokenURL' must have 'value' or 'valueFrom' set",
+			field:    "spec.output.otlp.authentication.oauth2",
+		},
+		{
+			name: "otlp-output-oauth2-missing-client-secret",
+			pipeline: testutils.NewMetricPipelineBuilder().
+				WithOTLPOutput(
+					testutils.OTLPEndpoint(backendEndpoint),
+					testutils.OTLPOAuth2(
+						testutils.OAuth2ClientID("clientid"),
+						testutils.OAuth2TokenURL("https://auth.example.com/token"),
+					),
+				).
+				Build(),
+			errorMsg: "'clientSecret' must have 'value' or 'valueFrom' set",
+			field:    "spec.output.otlp.authentication.oauth2",
+		},
+		{
+			name: "otlp-output-missing-header-value",
+			pipeline: testutils.NewMetricPipelineBuilder().
+				WithOTLPOutput(
+					testutils.OTLPEndpoint(backendEndpoint),
+					testutils.OTLPCustomHeader("X-Custom", "", ""),
+				).
+				Build(),
+			errorMsg: "Header must have 'value' or 'valueFrom' set",
+			field:    "spec.output.otlp.headers[0]",
 		},
 		{
 			name: "otlp-output-oauth2-insecure",
