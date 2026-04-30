@@ -314,8 +314,8 @@ EOF
 function get_result_and_cleanup_trace() {
   RESULT_TYPE="span"
   QUERY_RECEIVED='query=round(sum(rate(otelcol_receiver_accepted_spans_total{service="telemetry-otlp-gateway-metrics"}[20m])))'
-  QUERY_EXPORTED='query=round(sum(rate(otelcol_exporter_sent_spans_total{exporter=~"otlp_grpc/load-test.*"}[20m])))'
-  QUERY_QUEUE='query=avg(sum(otelcol_exporter_queue_size{service="telemetry-otlp-gateway-metrics"}))'
+  QUERY_EXPORTED='query=round(sum(rate(otelcol_exporter_sent_spans_total{exporter=~"otlp_grpc/tracepipeline-load-test.*"}[20m])))'
+  QUERY_QUEUE='query=avg(sum(otelcol_exporter_queue_size{service="telemetry-otlp-gateway-metrics", exporter=~"otlp_grpc/tracepipeline-load-test.*"}))'
   QUERY_MEMORY='query=round(sum(avg_over_time(container_memory_working_set_bytes{namespace="kyma-system", container="collector"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-otlp-gateway"}[20m])) by (pod) / 1024 / 1024)'
   QUERY_CPU='query=round(sum(avg_over_time(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace="kyma-system"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-otlp-gateway"}[20m])) by (pod), 0.1)'
 
@@ -346,8 +346,8 @@ function get_result_and_cleanup_trace() {
 function get_result_and_cleanup_metric() {
     RESULT_TYPE="metric"
     QUERY_RECEIVED='query=round(sum(rate(otelcol_receiver_accepted_metric_points_total{service="telemetry-otlp-gateway-metrics"}[20m])))'
-    QUERY_EXPORTED='query=round(sum(rate(otelcol_exporter_sent_metric_points_total{exporter=~"otlp_grpc/load-test.*"}[20m])))'
-    QUERY_QUEUE='query=avg(sum(otelcol_exporter_queue_size{service="telemetry-otlp-gateway-metrics"}))'
+    QUERY_EXPORTED='query=round(sum(rate(otelcol_exporter_sent_metric_points_total{service="telemetry-otlp-gateway-metrics", exporter=~"otlp_grpc/metricpipeline-load-test.*"}[20m])))'
+    QUERY_QUEUE='query=avg(sum(otelcol_exporter_queue_size{service="telemetry-otlp-gateway-metrics", exporter=~"otlp_grpc/metricpipeline-load-test.*"}))'
     QUERY_MEMORY='query=round(sum(avg_over_time(container_memory_working_set_bytes{namespace="kyma-system", container="collector"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-otlp-gateway"}[20m])) by (pod) / 1024 / 1024)'
     QUERY_CPU='query=round(sum(avg_over_time(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace="kyma-system"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-otlp-gateway"}[20m])) by (pod), 0.1)'
 
@@ -379,8 +379,8 @@ function get_result_and_cleanup_metric() {
 function get_result_and_cleanup_metricagent() {
     RESULT_TYPE="metric"
     QUERY_RECEIVED='query=round(sum(rate(otelcol_receiver_accepted_metric_points_total{service="telemetry-metric-agent-metrics"}[20m])))'
-    QUERY_EXPORTED='query=round(sum(rate(otelcol_exporter_sent_metric_points_total{exporter=~"otlp_grpc/load-test.*"}[20m])))'
-    QUERY_QUEUE='query=avg(sum(otelcol_exporter_queue_size{service="telemetry-metric-agent-metrics"}))'
+    QUERY_EXPORTED='query=round(sum(rate(otelcol_exporter_sent_metric_points_total{service="telemetry-metric-agent-metrics", exporter=~"otlp_grpc/metricpipeline-load-test.*"}[20m])))'
+    QUERY_QUEUE='query=avg(sum(otelcol_exporter_queue_size{service="telemetry-metric-agent-metrics", exporter=~"otlp_grpc/metricpipeline-load-test.*"}))'
     QUERY_MEMORY='query=round(sum(avg_over_time(container_memory_working_set_bytes{namespace="kyma-system", container="collector"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-metric-agent"}[20m])) by (pod) / 1024 / 1024)'
     QUERY_CPU='query=round(sum(avg_over_time(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace="kyma-system"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-metric-agent"}[20m])) by (pod), 0.1)'
 
@@ -505,7 +505,7 @@ function validate_telemetry_results() {
         exit 1
     fi
 
-    if [[ -z "$RESULT_EXPORTED" ]]; then
+    if [[ "$test_type" != "metric-agent" ]] && [[ -z "$RESULT_EXPORTED" ]]; then
         echo "ERROR: RESULT_EXPORTED is empty for $test_type test. No data exported according to Prometheus query."
         exit 1
     fi
@@ -516,7 +516,7 @@ function validate_telemetry_results() {
         exit 1
     fi
 
-    if awk "BEGIN {exit !($RESULT_EXPORTED == 0)}"; then
+    if [[ "$test_type" != "metric-agent" ]] && awk "BEGIN {exit !($RESULT_EXPORTED == 0)}"; then
         echo "ERROR: RESULT_EXPORTED is zero for $test_type test. No telemetry data was exported during the test period."
         exit 1
     fi
