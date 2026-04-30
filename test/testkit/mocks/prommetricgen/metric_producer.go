@@ -238,6 +238,7 @@ func (p *Pod) WithLabels(labels map[string]string) *Pod {
 	return p
 }
 
+// WithAvalancheHighLoad configures high-volume metric generation.
 // The total response size must stay below the metric agent's body_size_limit (20MB).
 func (p *Pod) WithAvalancheHighLoad() *Pod {
 	p.image = avalancheImage
