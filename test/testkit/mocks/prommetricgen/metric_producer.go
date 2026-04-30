@@ -238,12 +238,13 @@ func (p *Pod) WithLabels(labels map[string]string) *Pod {
 	return p
 }
 
+// The total response size must stay below the metric agent's body_size_limit (20MB).
 func (p *Pod) WithAvalancheHighLoad() *Pod {
 	p.image = avalancheImage
 	p.args = []string{
-		"--gauge-metric-count=" + strconv.Itoa(int(160)),
-		"--counter-metric-count=" + strconv.Itoa(int(100)),
-		"--histogram-metric-count=" + strconv.Itoa(int(50)),
+		"--gauge-metric-count=" + strconv.Itoa(int(80)),
+		"--counter-metric-count=" + strconv.Itoa(int(50)),
+		"--histogram-metric-count=" + strconv.Itoa(int(25)),
 		"--port=" + strconv.Itoa(int(p.metricsPort)),
 	}
 
