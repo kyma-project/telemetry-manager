@@ -1175,6 +1175,7 @@ func autoConvert_v1alpha1_MetricPipelineRuntimeInput_To_v1beta1_MetricPipelineRu
 	out.Enabled = (*bool)(unsafe.Pointer(in.Enabled))
 	out.Namespaces = (*v1beta1.NamespaceSelector)(unsafe.Pointer(in.Namespaces))
 	out.Resources = (*v1beta1.MetricPipelineRuntimeInputResources)(unsafe.Pointer(in.Resources))
+	out.AdditionalMetrics = *(*[]string)(unsafe.Pointer(&in.AdditionalMetrics))
 	return nil
 }
 
@@ -1182,6 +1183,7 @@ func autoConvert_v1beta1_MetricPipelineRuntimeInput_To_v1alpha1_MetricPipelineRu
 	out.Enabled = (*bool)(unsafe.Pointer(in.Enabled))
 	out.Namespaces = (*NamespaceSelector)(unsafe.Pointer(in.Namespaces))
 	out.Resources = (*MetricPipelineRuntimeInputResources)(unsafe.Pointer(in.Resources))
+	out.AdditionalMetrics = *(*[]string)(unsafe.Pointer(&in.AdditionalMetrics))
 	return nil
 }
 
