@@ -103,12 +103,20 @@ func (b *Builder) sortPipelinesByName(opts *BuildOptions) {
 
 // otlpReceiverConfig returns the shared OTLP receiver configuration used by all signal types.
 //
-//nolint:mnd // port numbers are defined in the ports package
+//nolint:mnd // port numbers are defined in the ports package, hardcoded time configuration
 func otlpReceiverConfig() *common.OTLPReceiverConfig {
 	return &common.OTLPReceiverConfig{
 		Protocols: common.ReceiverProtocols{
-			HTTP: common.Endpoint{Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, ports.OTLPHTTP)},
-			GRPC: common.Endpoint{Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, ports.OTLPGRPC)},
+			HTTP: common.HTTPEndpoint{Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, ports.OTLPHTTP)},
+			GRPC: common.GRPCEndpoint{
+				Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, ports.OTLPGRPC),
+				KeepAlive: common.KeepAlive{
+					ServerParams: common.ServerParams{
+						Time:    "300s",
+						Timeout: "20s",
+					},
+				},
+			},
 		},
 	}
 }

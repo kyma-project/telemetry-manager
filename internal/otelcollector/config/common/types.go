@@ -110,12 +110,29 @@ type OTLPReceiverConfig struct {
 }
 
 type ReceiverProtocols struct {
-	HTTP Endpoint `yaml:"http,omitempty"`
-	GRPC Endpoint `yaml:"grpc,omitempty"`
+	HTTP HTTPEndpoint `yaml:"http,omitempty"`
+	GRPC GRPCEndpoint `yaml:"grpc,omitempty"`
 }
 
-type Endpoint struct {
+type HTTPEndpoint struct {
 	Endpoint string `yaml:"endpoint,omitempty"`
+}
+
+type GRPCEndpoint struct {
+	Endpoint  string    `yaml:"endpoint,omitempty"`
+	KeepAlive KeepAlive `yaml:"keepalive,omitempty"`
+}
+
+type KeepAlive struct {
+	ServerParams ServerParams `yaml:"server_parameters,omitempty"`
+}
+
+type ServerParams struct {
+	MaxConnIdle     string `yaml:"max_connection_idle"`
+	MaxConnAge      string `yaml:"max_connection_age"`
+	MaxConnAgeGrace string `yaml:"max_connection_age_grace"`
+	Time            string `yaml:"time"`
+	Timeout         string `yaml:"timeout"`
 }
 
 // =============================================================================
