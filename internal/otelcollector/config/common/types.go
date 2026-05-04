@@ -133,11 +133,11 @@ type KeepAlive struct {
 }
 
 type ServerParams struct {
-	MaxConnIdle     string `yaml:"max_connection_idle"`
-	MaxConnAge      string `yaml:"max_connection_age"`
-	MaxConnAgeGrace string `yaml:"max_connection_age_grace"`
-	Time            string `yaml:"time"`
-	Timeout         string `yaml:"timeout"`
+	MaxConnIdle     string `yaml:"max_connection_idle,omitempty"`
+	MaxConnAge      string `yaml:"max_connection_age,omitempty"`
+	MaxConnAgeGrace string `yaml:"max_connection_age_grace,omitempty"`
+	Time            string `yaml:"time,omitempty"`
+	Timeout         string `yaml:"timeout,omitempty"`
 }
 
 // =============================================================================
