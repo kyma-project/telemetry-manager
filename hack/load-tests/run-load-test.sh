@@ -537,7 +537,7 @@ function validate_telemetry_results() {
         exit 1
     fi
 
-    if [[ "$test_type" != "metric-agent" ]] && [[ "$BACKPRESSURE" != "true" ]] && [[ -z "$RESULT_EXPORTED" ]]; then
+    if [[ "$test_type" != "metric-agent" ]] && [[ "$BACKPRESSURE_TEST" != "true" ]] && [[ -z "$RESULT_EXPORTED" ]]; then
         echo "ERROR: RESULT_EXPORTED is empty for $test_type test. No data exported according to Prometheus query."
         exit 1
     fi
@@ -548,7 +548,7 @@ function validate_telemetry_results() {
         exit 1
     fi
 
-    if [[ "$test_type" != "metric-agent" ]] && [[ "$BACKPRESSURE" != "true" ]] && awk "BEGIN {exit !($RESULT_EXPORTED == 0)}"; then
+    if [[ "$test_type" != "metric-agent" ]] && [[ "$BACKPRESSURE_TEST" != "true" ]] && awk "BEGIN {exit !($RESULT_EXPORTED == 0)}"; then
         echo "ERROR: RESULT_EXPORTED is zero for $test_type test. No telemetry data was exported during the test period."
         exit 1
     fi
