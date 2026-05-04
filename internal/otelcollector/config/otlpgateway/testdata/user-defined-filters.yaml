@@ -155,11 +155,9 @@ receivers:
     otlp:
         protocols:
             http:
-                endpoint:
-                    endpoint: ${MY_POD_IP}:4318
+                endpoint: ${MY_POD_IP}:4318
             grpc:
-                endpoint:
-                    endpoint: ${MY_POD_IP}:4317
+                endpoint: ${MY_POD_IP}:4317
                 keepalive:
                     server_parameters:
                         time: 300s

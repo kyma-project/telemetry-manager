@@ -119,11 +119,11 @@ type Endpoint struct {
 }
 
 type HTTPConfig struct {
-	Endpoint
+	Endpoint `yaml:",inline"`
 }
 
 type GRPCConfig struct {
-	Endpoint
+	Endpoint `yaml:",inline"`
 
 	KeepAlive KeepAlive `yaml:"keepalive,omitempty"`
 }
