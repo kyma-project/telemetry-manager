@@ -60,15 +60,15 @@ On average, memory usage for gateway instances is ~150MB for a single Pod, and C
 
 ## Test Results: Agent
 
-| Version/Test       | Single-Pipeline (ci-metric-ag) | | | | | Single-Pipeline Backpressure (ci-metric-ag-b) | | | | |
-|--------------------|--|--|--|--|--|--|--|--|--|--|
-| Version            | Receiver Accepted Metric/sec | Exporter Exported Metric/sec | Exporter Queue Size | Pod Memory Usage(MB) | Pod CPU Usage | Receiver Accepted Metric/sec | Exporter Exported Metric/sec | Exporter Queue Size | Pod Memory Usage(MB) | Pod CPU Usage |
-| 0.92               | 20123 | 20137 | 0 | 704, 747 | 0.2, 0.2 | 19952 | 15234 | 0 | 751, 736 | 0.3, 0.2 |
-| 0.93               | 19949 | 19946 | 0 | 704, 729 | 0.2, 0.2 | 16699 | 16591 | 107 | 852, 771 | 0.2, 0.2 |
-| 0.94               | 19957 | 19950 | 0 | 727, 736 | 0.2, 0.4 | 19825 | 19824 | 0 | 1046, 1090 | 0.2, 0.2 |
-| 0.95               | 19648 | 19645 | 0 | 707, 734 | 0.3, 0.2 | 19717 | 19818 | 0 | 657, 996 | 0.2, 0.3 |
-| 0.96               | 19937 | 19905 | 29 | 749, 699 | 0.2, 0.2 | 19843 | 19766 | 70 | 840, 995 | 0.2, 0.2 |
-| 0.97               | 20120 | 20122 | 0 | 937, 996 | 0.2, 0.2 | 19667 | 19665 | 0 | 900, 961 | 0.3, 0.2 |
+| Version/Test | Single-Pipeline (ci-metric-ag) | | | | | Single-Pipeline Backpressure (ci-metric-ag-b) | | | | |
+| -- | -- | -- | -- | -- | -- | -- | -- | -- | -- | -- |
+| Version | Receiver Accepted Metric/sec | Exporter Exported Metric/sec | Exporter Queue Size | Pod Memory Usage(MB) | Pod CPU Usage | Receiver Accepted Metric/sec | Exporter Exported Metric/sec | Exporter Queue Size | Pod Memory Usage(MB) | Pod CPU Usage |
+| 0.92 | 20123 | 20137 | 0 | 704, 747 | 0.2, 0.2 | 19952 | 15234 | 0 | 751, 736 | 0.3, 0.2 |
+| 0.93 | 19949 | 19946 | 0 | 704, 729 | 0.2, 0.2 | 16699 | 16591 | 107 | 852, 771 | 0.2, 0.2 |
+| 0.94 | 19957 | 19950 | 0 | 727, 736 | 0.2, 0.4 | 19825 | 19824 | 0 | 1046, 1090 | 0.2, 0.2 |
+| 0.95 | 19648 | 19645 | 0 | 707, 734 | 0.3, 0.2 | 19717 | 19818 | 0 | 657, 996 | 0.2, 0.3 |
+| 0.96 | 19937 | 19905 | 29 | 749, 699 | 0.2, 0.2 | 19843 | 19766 | 70 | 840, 995 | 0.2, 0.2 |
+| 0.97 | 20120 | 20122 | 0 | 937, 996 | 0.2, 0.2 | 19667 | 19665 | 0 | 900, 961 | 0.3, 0.2 |
 | 0.97 w. GOMEMLIMIT | 219981 | 19980 | 0 | 802, 689 | 0.2, 0.2 | 19736 | 19743 | 0 | 783, 862 | 0.2, 0.2 |
 | 0.99               | 20139 | 20138 | 0 | 749, 792 | 0.2, 0.2 | 20170 | 20155 | 6 | 721, 730 | 0.2, 0.2 |
 | 0.100.0            | 20067 | 20049 | 9 | 704, 700 | 0.2, 0.2 | 20011 | 20011 | 0 | 780, 704 | 0.2, 0.2 |
