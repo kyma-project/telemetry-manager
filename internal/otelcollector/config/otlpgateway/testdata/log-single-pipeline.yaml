@@ -45,9 +45,18 @@ receivers:
     otlp:
         protocols:
             http:
-                endpoint: ${MY_POD_IP}:4318
+                endpoint:
+                    endpoint: ${MY_POD_IP}:4318
             grpc:
-                endpoint: ${MY_POD_IP}:4317
+                endpoint:
+                    endpoint: ${MY_POD_IP}:4317
+                keepalive:
+                    server_parameters:
+                        max_connection_idle: ""
+                        max_connection_age: ""
+                        max_connection_age_grace: ""
+                        time: 300s
+                        timeout: 20s
 processors:
     batch:
         send_batch_size: 512

@@ -107,9 +107,14 @@ func (b *Builder) sortPipelinesByName(opts *BuildOptions) {
 func otlpReceiverConfig() *common.OTLPReceiverConfig {
 	return &common.OTLPReceiverConfig{
 		Protocols: common.ReceiverProtocols{
-			HTTP: common.HTTPEndpoint{Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, ports.OTLPHTTP)},
-			GRPC: common.GRPCEndpoint{
-				Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, ports.OTLPGRPC),
+			HTTP: common.HTTPConfig{
+				Endpoint: common.Endpoint{
+					Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, ports.OTLPHTTP)},
+			},
+			GRPC: common.GRPCConfig{
+				Endpoint: common.Endpoint{
+					Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, ports.OTLPGRPC),
+				},
 				KeepAlive: common.KeepAlive{
 					ServerParams: common.ServerParams{
 						Time:    "300s",

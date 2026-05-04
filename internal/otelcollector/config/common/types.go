@@ -110,16 +110,21 @@ type OTLPReceiverConfig struct {
 }
 
 type ReceiverProtocols struct {
-	HTTP HTTPEndpoint `yaml:"http,omitempty"`
-	GRPC GRPCEndpoint `yaml:"grpc,omitempty"`
+	HTTP HTTPConfig `yaml:"http,omitempty"`
+	GRPC GRPCConfig `yaml:"grpc,omitempty"`
 }
 
-type HTTPEndpoint struct {
+type Endpoint struct {
 	Endpoint string `yaml:"endpoint,omitempty"`
 }
 
-type GRPCEndpoint struct {
-	Endpoint  string    `yaml:"endpoint,omitempty"`
+type HTTPConfig struct {
+	Endpoint
+}
+
+type GRPCConfig struct {
+	Endpoint
+
 	KeepAlive KeepAlive `yaml:"keepalive,omitempty"`
 }
 
