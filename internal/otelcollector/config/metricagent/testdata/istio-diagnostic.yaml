@@ -67,6 +67,7 @@ receivers:
             scrape_configs:
                 - job_name: istio-proxy
                   sample_limit: 50000
+                  body_size_limit: 20MB
                   scrape_interval: 30s
                   metrics_path: /stats/prometheus
                   relabel_configs:
