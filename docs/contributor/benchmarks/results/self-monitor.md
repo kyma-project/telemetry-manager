@@ -11,7 +11,7 @@ of the self-monitor Pods.
 ## Results
 
 | Version/Test | Default (ci-self-monitor) | | | | | |
-|--|--|--|--|--|--|--|
+| -- | -- | -- | -- | -- | -- | -- |
 | Version | Scrape Samples/sec | Total Series Created | WAL Storage Size/bytes | Head Chunk Storage Size in bytes | Pod Memory Usage(MB) | Pod CPU Usage |
 | 2.45.5 | 15.4 | 157 | - | 131072 | 62 | 0 |
 | 2.45.5(new) | 15.4 | 325 | 127633 | 0 | 43 | 0 |
