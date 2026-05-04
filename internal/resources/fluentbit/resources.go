@@ -369,8 +369,7 @@ func (aad *AgentApplierDeleter) makeDaemonSet(namespace string, checksum string)
 func (aad *AgentApplierDeleter) fluentBitLivenessProbe() *corev1.Probe {
 	return &corev1.Probe{
 		ProbeHandler: corev1.ProbeHandler{
-			HTTPGet: &corev1.HTTPGetAction{
-				Path: "/",
+			TCPSocket: &corev1.TCPSocketAction{
 				Port: intstr.FromString("http"),
 			},
 		},
@@ -380,8 +379,7 @@ func (aad *AgentApplierDeleter) fluentBitLivenessProbe() *corev1.Probe {
 func (aad *AgentApplierDeleter) fluentBitReadinessProbe() *corev1.Probe {
 	return &corev1.Probe{
 		ProbeHandler: corev1.ProbeHandler{
-			HTTPGet: &corev1.HTTPGetAction{
-				Path: "/api/v1/health",
+			TCPSocket: &corev1.TCPSocketAction{
 				Port: intstr.FromString("http"),
 			},
 		},
