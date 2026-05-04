@@ -46,7 +46,7 @@ templates['logs-otel'] = (
 )
 templates['logs-fluentbit'] = (
     "\n"
-    "| Version/Test | Single-Pipeline (ci-logs) | | | | | | Multi-Pipeline (ci-logs-m) | | | | | | | Single-Pipeline Backpressure (ci-logs-b) | | | | | | | Multi-Pipeline Backpressure (ci-logs-mb) | | | | | | | "
+    "| Version/Test | Single-Pipeline (ci-logs) | | | | | | | Multi-Pipeline (ci-logs-m) | | | | | | | Single-Pipeline Backpressure (ci-logs-b) | | | | | | | Multi-Pipeline Backpressure (ci-logs-mb) | | | | | | "
     "|\n"
     "| -- | -- | -- | -- | -- | -- | -- | -- | -- | -- | -- | -- | -- | -- | -- | -- | -- | -- | -- | -- | -- | -- | -- | -- | -- | -- | -- | -- | -- "
     "|\n"
