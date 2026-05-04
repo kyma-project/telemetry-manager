@@ -42,10 +42,6 @@ var K8sClusterReceiverMetrics = []string{
 	"k8s.statefulset.desired_pods",
 	"k8s.statefulset.ready_pods",
 	"k8s.statefulset.updated_pods",
-	"openshift.appliedclusterquota.limit",
-	"openshift.appliedclusterquota.used",
-	"openshift.clusterquota.limit",
-	"openshift.clusterquota.used",
 
 	// Optional metrics
 	"k8s.container.status.reason",
