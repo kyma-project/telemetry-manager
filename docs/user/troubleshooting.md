@@ -248,7 +248,7 @@ If data is arriving but components are running out of memory, consider one of th
 - Reduce telemetry volume by applying filters in your pipelines (see [Filter Logs](./filter-and-process/filter-logs.md), [Filter Traces](./filter-and-process/filter-traces.md), [Filter Metrics](./filter-and-process/filter-metrics.md)).
 - Disable VPA, which causes the system to use static resources (see [Disable Automatic Resource Scaling](#disable-automatic-resource-scaling)).
 
-## Disable Automatic Resource Scaling
+## Agent or Gateway Unhealthy
 
 ### Symptom
 
@@ -260,7 +260,7 @@ By default, the Telemetry module uses Vertical Pod Autoscaler (VPA) to adjust me
 
 ### Solution
 
-To disable automatic resource scaling:
+1. To verify if the component is unhealthy because of OOM, [do this].
 
 1. Edit the Telemetry resource:
 
