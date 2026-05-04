@@ -11,7 +11,7 @@ In backpressure scenarios, the behaviour is different: The expected CPU usage sh
 ## Results
 
 | Version/Test | Single-Pipeline (ci-traces) | | | | | Multi-Pipeline (ci-traces-m) | | | | | Single-Pipeline Backpressure (ci-traces-b) | | | | | Multi-Pipeline Backpressure (ci-traces-mb) | | | | |
-| -------------------- | -- | -- | -- | -- | -- | -- | -- | -- | -- | -- | -- | -- | -- | -- | -- | -- | -- | -- | -- | -- |
+| -- | -- | -- | -- | -- | -- | -- | -- | -- | -- | -- | -- | -- | -- | -- | -- | -- | -- | -- | -- | -- |
 | Version | Receiver Accepted Spans/sec | Exporter Exported Spans/sec | Exporter Queue Size | Pod Memory Usage(MB) | Pod CPU Usage | Receiver Accepted Spans/sec | Exporter Exported Spans/sec | Exporter Queue Size | Pod Memory Usage(MB) | Pod CPU Usage | Receiver Accepted Spans/sec | Exporter Exported Spans/sec | Exporter Queue Size | Pod Memory Usage(MB) | Pod CPU Usage | Receiver Accepted Spans/sec | Exporter Exported Spans/sec | Exporter Queue Size | Pod Memory Usage(MB) | Pod CPU Usage |
 | 0.91 | 19815 | 19815 | 0 | 137,139 | 1,1 | 13158 | 38929 | 0 | 117,98 | 1.3,1.3 | 9574 | 1280 | 509 | 1929,1726 | 0.7,0.7 | 9663 | 1331 | 510 | 2029,1686 | 0.7,0.7 |
 | 0.92 | 21146 | 21146 | 0 | 72,50 | 1,1 | 12757 | 38212 | 0 | 90,111 | 1.3,1.1 | 3293 | 2918 | 204 | 866,873 | 0.6,0.6 | 9694 | 1399 | 510 | 1730,1796 | 0.7,0.7 |
