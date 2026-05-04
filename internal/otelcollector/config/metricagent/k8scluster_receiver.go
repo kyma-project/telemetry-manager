@@ -14,8 +14,8 @@ func k8sClusterReceiver(runtimeResources runtimeResourceSources, collectionInter
 	}
 }
 
-func k8sClusterMetricsToDrop(runtimeResources runtimeResourceSources) K8sClusterMetricsToDrop {
-	metricsToDrop := K8sClusterMetricsToDrop{}
+func k8sClusterMetricsToDrop(runtimeResources runtimeResourceSources) K8sClusterMetrics {
+	metricsToDrop := K8sClusterMetrics{}
 
 	//nolint:dupl // repeating the code as we want to test the metrics are disabled correctly
 	metricsToDrop.K8sClusterDefaultMetricsToDrop = &K8sClusterDefaultMetricsToDrop{

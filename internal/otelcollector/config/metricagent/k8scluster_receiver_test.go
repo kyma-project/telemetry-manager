@@ -36,7 +36,7 @@ func TestK8sClusterReceiverConfig(t *testing.T) {
 	tests := []struct {
 		name                  string
 		pipeline              telemetryv1beta1.MetricPipeline
-		expectedMetricsToDrop K8sClusterMetricsToDrop
+		expectedMetricsToDrop K8sClusterMetrics
 	}{
 		{
 			name: "default resources enabled",
@@ -113,8 +113,8 @@ func TestK8sClusterReceiverConfig(t *testing.T) {
 	}
 }
 
-func getExpectedK8sClusterMetricsToDrop(disabledMetricResource metricResource) K8sClusterMetricsToDrop {
-	metricsToDrop := K8sClusterMetricsToDrop{}
+func getExpectedK8sClusterMetricsToDrop(disabledMetricResource metricResource) K8sClusterMetrics {
+	metricsToDrop := K8sClusterMetrics{}
 
 	//nolint:dupl // repeating the code as we want to test the metrics are disabled correctly
 	defaultMetricsToDrop := &K8sClusterDefaultMetricsToDrop{

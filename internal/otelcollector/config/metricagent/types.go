@@ -51,7 +51,7 @@ const (
 	MetricGroupTypeVolume    MetricGroupType = "volume"
 )
 
-type K8sClusterMetricsToDrop struct {
+type K8sClusterMetrics struct {
 	*K8sClusterDefaultMetricsToDrop     `yaml:",inline,omitempty"`
 	*K8sClusterPodMetricsToDrop         `yaml:",inline,omitempty"`
 	*K8sClusterContainerMetricsToDrop   `yaml:",inline,omitempty"`
@@ -128,11 +128,11 @@ type K8sClusterContainerMetricsToDrop struct {
 }
 
 type K8sClusterReceiverConfig struct {
-	AuthType               string                  `yaml:"auth_type"`
-	CollectionInterval     string                  `yaml:"collection_interval"`
-	NodeConditionsToReport []string                `yaml:"node_conditions_to_report"`
-	Metrics                K8sClusterMetricsToDrop `yaml:"metrics"`
-	K8sLeaderElector       string                  `yaml:"k8s_leader_elector"`
+	AuthType               string            `yaml:"auth_type"`
+	CollectionInterval     string            `yaml:"collection_interval"`
+	NodeConditionsToReport []string          `yaml:"node_conditions_to_report"`
+	Metrics                K8sClusterMetrics `yaml:"metrics"`
+	K8sLeaderElector       string            `yaml:"k8s_leader_elector"`
 }
 
 type PrometheusReceiverConfig struct {
