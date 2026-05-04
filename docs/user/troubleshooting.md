@@ -285,4 +285,4 @@ As a workaround, you can disable VPA so that the system uses static resource lim
   
      If VPA is disabled, no VPA resources appear in the namespace.
   
-5. If you disabled VPA temporarily for debugging, you can re-enable it later by removing the annotation or setting its value to `"true"`.
+  5. If you disabled VPA temporarily for debugging, you can re-enable it later by removing the annotation or setting its value to `"true"`.
