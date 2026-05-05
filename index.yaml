@@ -2,6 +2,36 @@ apiVersion: v1
 entries:
   telemetry-manager:
   - apiVersion: v2
+    appVersion: 1.63.0
+    created: "2026-05-05T18:06:53.713912824Z"
+    dependencies:
+    - condition: experimental.enabled
+      name: experimental
+      repository: ""
+      version: 1.63.0
+    - condition: default.enabled
+      name: default
+      repository: ""
+      version: 1.63.0
+    description: Kyma Telemetry Manager Helm Chart
+    digest: 86563aefd26bd1acdec05eaaeec7abd71cab9342aa3606a1ea37ca2e6eb21581
+    keywords:
+    - kyma
+    - telemetry
+    - observability
+    - monitoring
+    - logging
+    - tracing
+    - opentelemetry
+    maintainers:
+    - name: kyma-project.io
+      url: https://kyma-project.io
+    name: telemetry-manager
+    type: application
+    urls:
+    - https://github.com/kyma-project/telemetry-manager/releases/download/1.63.0/telemetry-manager-1.63.0.tgz
+    version: 1.63.0
+  - apiVersion: v2
     appVersion: 1.62.1
     created: "2026-04-15T10:12:04.867389583Z"
     dependencies:
@@ -781,4 +811,4 @@ entries:
     urls:
     - https://github.com/kyma-project/telemetry-manager/releases/download/0.0.1/telemetry-manager-0.0.1.tgz
     version: 0.0.1
-generated: "2026-04-15T10:12:04.863845377Z"
+generated: "2026-05-05T18:06:53.710525273Z"
