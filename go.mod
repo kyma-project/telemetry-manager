@@ -3,13 +3,13 @@ module github.com/kyma-project/telemetry-manager
 go 1.26.2
 
 require (
-	github.com/caarlos0/env/v11 v11.4.0
+	github.com/caarlos0/env/v11 v11.4.1
 	github.com/expr-lang/expr v1.17.8
 	github.com/go-logr/logr v1.4.3
 	github.com/go-logr/zapr v1.3.0
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
-	github.com/onsi/gomega v1.39.1
+	github.com/onsi/gomega v1.40.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl v0.150.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor v0.150.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor v0.150.0

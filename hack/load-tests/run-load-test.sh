@@ -26,6 +26,7 @@ LOG_RATE=1000
 PROMAPI=""
 DOMAIN=""
 OVERLAY=""
+SKIP_CLEANUP="false"
 
 function help() {
     echo "Usage: $0 -m <max_pipeline> -b <backpressure_test> -n <test_name> -t <test_target> -d <test_duration> -r <log_rate> -s <log_size>"
@@ -38,10 +39,11 @@ function help() {
     echo "  -r <log_rate>             Rate of log generation in logs-otel test"
     echo "  -s <log_size>             Size of log in logs-otel test"
     echo "  -o <config>               Use alternative overlay (batch) for logs-otel test"
+    echo "  -k                        Skip cleanup/deletion of test resources after test execution"
     exit 1
 }
 
-while getopts m:b:n:t:d:r:s:o: flag; do
+while getopts m:b:n:t:d:r:s:o:k flag; do
     case "$flag" in
         m) MAX_PIPELINE="${OPTARG}" ;;
         b) BACKPRESSURE_TEST="${OPTARG}" ;;
@@ -51,6 +53,7 @@ while getopts m:b:n:t:d:r:s:o: flag; do
         r) LOG_RATE=${OPTARG} ;;
         s) LOG_SIZE=${OPTARG} ;;
         o) OVERLAY=${OPTARG} ;;
+        k) SKIP_CLEANUP="true" ;;
         *) help ;;
     esac
 done
@@ -75,6 +78,7 @@ function print_config() {
     echo "  Log Rate: $LOG_RATE"
     echo "  Log Size: $LOG_SIZE"
     echo "  Overlay: $OVERLAY"
+    echo "  Skip Cleanup: $SKIP_CLEANUP"
     echo "  Results File: $RESULTS_FILE"
 }
 
@@ -307,15 +311,19 @@ EOF
 
     echo "$template" | jq . | tee -a "$RESULTS_FILE"
 
-    helm delete -n "$PROMETHEUS_NAMESPACE" "$HELM_PROM_RELEASE"
-    kubectl delete namespace "$PROMETHEUS_NAMESPACE"
+    if [[ "$SKIP_CLEANUP" == "false" ]]; then
+      helm delete -n "$PROMETHEUS_NAMESPACE" "$HELM_PROM_RELEASE"
+      kubectl delete namespace "$PROMETHEUS_NAMESPACE"
+    else
+      echo -e "Skipping cleanup of Prometheus stack (SKIP_CLEANUP=true)"
+    fi
 }
 
 function get_result_and_cleanup_trace() {
   RESULT_TYPE="span"
   QUERY_RECEIVED='query=round(sum(rate(otelcol_receiver_accepted_spans_total{service="telemetry-otlp-gateway-metrics"}[20m])))'
-  QUERY_EXPORTED='query=round(sum(rate(otelcol_exporter_sent_spans_total{exporter=~"otlp_grpc/load-test.*"}[20m])))'
-  QUERY_QUEUE='query=avg(sum(otelcol_exporter_queue_size{service="telemetry-otlp-gateway-metrics"}))'
+  QUERY_EXPORTED='query=round(sum(rate(otelcol_exporter_sent_spans_total{exporter=~"otlp_grpc/tracepipeline-load-test.*"}[20m])))'
+  QUERY_QUEUE='query=avg(sum(otelcol_exporter_queue_size{service="telemetry-otlp-gateway-metrics", exporter=~"otlp_grpc/tracepipeline-load-test.*"}))'
   QUERY_MEMORY='query=round(sum(avg_over_time(container_memory_working_set_bytes{namespace="kyma-system", container="collector"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-otlp-gateway"}[20m])) by (pod) / 1024 / 1024)'
   QUERY_CPU='query=round(sum(avg_over_time(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace="kyma-system"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-otlp-gateway"}[20m])) by (pod), 0.1)'
 
@@ -333,21 +341,25 @@ function get_result_and_cleanup_trace() {
     kill %1
   fi
 
-  if [[ "$MAX_PIPELINE" == "true" ]]; then
-    kubectl delete -f hack/load-tests/trace-max-pipeline.yaml
-  fi
-  if [[ "$BACKPRESSURE_TEST" == "true" ]]; then
-    kubectl delete -f hack/load-tests/trace-backpressure-config.yaml
-  fi
+  if [[ "$SKIP_CLEANUP" == "false" ]]; then
+    if [[ "$MAX_PIPELINE" == "true" ]]; then
+      kubectl delete -f hack/load-tests/trace-max-pipeline.yaml
+    fi
+    if [[ "$BACKPRESSURE_TEST" == "true" ]]; then
+      kubectl delete -f hack/load-tests/trace-backpressure-config.yaml
+    fi
 
-  kubectl delete -f hack/load-tests/trace-load-test-setup.yaml
+    kubectl delete -f hack/load-tests/trace-load-test-setup.yaml
+  else
+    echo -e "Skipping cleanup of test resources (SKIP_CLEANUP=true)"
+  fi
 }
 
 function get_result_and_cleanup_metric() {
     RESULT_TYPE="metric"
     QUERY_RECEIVED='query=round(sum(rate(otelcol_receiver_accepted_metric_points_total{service="telemetry-otlp-gateway-metrics"}[20m])))'
-    QUERY_EXPORTED='query=round(sum(rate(otelcol_exporter_sent_metric_points_total{exporter=~"otlp_grpc/load-test.*"}[20m])))'
-    QUERY_QUEUE='query=avg(sum(otelcol_exporter_queue_size{service="telemetry-otlp-gateway-metrics"}))'
+    QUERY_EXPORTED='query=round(sum(rate(otelcol_exporter_sent_metric_points_total{service="telemetry-otlp-gateway-metrics", exporter=~"otlp_grpc/metricpipeline-load-test.*"}[20m])))'
+    QUERY_QUEUE='query=avg(sum(otelcol_exporter_queue_size{service="telemetry-otlp-gateway-metrics", exporter=~"otlp_grpc/metricpipeline-load-test.*"}))'
     QUERY_MEMORY='query=round(sum(avg_over_time(container_memory_working_set_bytes{namespace="kyma-system", container="collector"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-otlp-gateway"}[20m])) by (pod) / 1024 / 1024)'
     QUERY_CPU='query=round(sum(avg_over_time(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace="kyma-system"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-otlp-gateway"}[20m])) by (pod), 0.1)'
 
@@ -365,22 +377,26 @@ function get_result_and_cleanup_metric() {
       kill %1
     fi
 
-    if [[ "$MAX_PIPELINE" == "true" ]]; then
-      kubectl delete -f hack/load-tests/metric-max-pipeline.yaml
-    fi
+    if [[ "$SKIP_CLEANUP" == "false" ]]; then
+      if [[ "$MAX_PIPELINE" == "true" ]]; then
+        kubectl delete -f hack/load-tests/metric-max-pipeline.yaml
+      fi
 
-    if [[ "$BACKPRESSURE_TEST" == "true" ]]; then
-      kubectl delete -f hack/load-tests/metric-backpressure-config.yaml
-    fi
+      if [[ "$BACKPRESSURE_TEST" == "true" ]]; then
+        kubectl delete -f hack/load-tests/metric-backpressure-config.yaml
+      fi
 
-    kubectl delete -f hack/load-tests/metric-load-test-setup.yaml
+      kubectl delete -f hack/load-tests/metric-load-test-setup.yaml
+    else
+      echo -e "Skipping cleanup of test resources (SKIP_CLEANUP=true)"
+    fi
 }
 
 function get_result_and_cleanup_metricagent() {
     RESULT_TYPE="metric"
     QUERY_RECEIVED='query=round(sum(rate(otelcol_receiver_accepted_metric_points_total{service="telemetry-metric-agent-metrics"}[20m])))'
-    QUERY_EXPORTED='query=round(sum(rate(otelcol_exporter_sent_metric_points_total{exporter=~"otlp_grpc/load-test.*"}[20m])))'
-    QUERY_QUEUE='query=avg(sum(otelcol_exporter_queue_size{service="telemetry-metric-agent-metrics"}))'
+    QUERY_EXPORTED='query=round(sum(rate(otelcol_exporter_sent_metric_points_total{service="telemetry-metric-agent-metrics", exporter=~"otlp_grpc/metricpipeline-load-test.*"}[20m])))'
+    QUERY_QUEUE='query=avg(sum(otelcol_exporter_queue_size{service="telemetry-metric-agent-metrics", exporter=~"otlp_grpc/metricpipeline-load-test.*"}))'
     QUERY_MEMORY='query=round(sum(avg_over_time(container_memory_working_set_bytes{namespace="kyma-system", container="collector"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-metric-agent"}[20m])) by (pod) / 1024 / 1024)'
     QUERY_CPU='query=round(sum(avg_over_time(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace="kyma-system"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-metric-agent"}[20m])) by (pod), 0.1)'
 
@@ -399,10 +415,14 @@ function get_result_and_cleanup_metricagent() {
       kill %1
     fi
 
-    if [[ "$BACKPRESSURE_TEST" == "true" ]]; then
-      kubectl delete -f hack/load-tests/metric-agent-backpressure-config.yaml
+    if [[ "$SKIP_CLEANUP" == "false" ]]; then
+      if [[ "$BACKPRESSURE_TEST" == "true" ]]; then
+        kubectl delete -f hack/load-tests/metric-agent-backpressure-config.yaml
+      fi
+      kubectl delete -f hack/load-tests/metric-agent-test-setup.yaml
+    else
+      echo -e "Skipping cleanup of test resources (SKIP_CLEANUP=true)"
     fi
-    kubectl delete -f hack/load-tests/metric-agent-test-setup.yaml
 }
 
 function get_result_and_cleanup_log_otel() {
@@ -428,10 +448,14 @@ function get_result_and_cleanup_log_otel() {
     kill %1
   fi
 
-  if [[ "$OVERLAY" == "batch" ]]; then
-    kubectl delete -k hack/load-tests/otel-logs/batch
+  if [[ "$SKIP_CLEANUP" == "false" ]]; then
+    if [[ "$OVERLAY" == "batch" ]]; then
+      kubectl delete -k hack/load-tests/otel-logs/batch
+    else
+      kubectl delete -k hack/load-tests/otel-logs/base
+    fi
   else
-    kubectl delete -k hack/load-tests/otel-logs/base
+    echo -e "Skipping cleanup of test resources (SKIP_CLEANUP=true)"
   fi
 }
 
@@ -462,14 +486,18 @@ function get_result_and_cleanup_fluentbit() {
     kill %1
   fi
 
-  if [[ "$MAX_PIPELINE" == "true" ]]; then
-    kubectl delete -f hack/load-tests/log-fluentbit-max-pipeline.yaml
-  fi
-  if [[ "$BACKPRESSURE_TEST" == "true" ]]; then
-    kubectl delete -f hack/load-tests/log-fluentbit-backpressure-config.yaml
-  fi
+  if [[ "$SKIP_CLEANUP" == "false" ]]; then
+    if [[ "$MAX_PIPELINE" == "true" ]]; then
+      kubectl delete -f hack/load-tests/log-fluentbit-max-pipeline.yaml
+    fi
+    if [[ "$BACKPRESSURE_TEST" == "true" ]]; then
+      kubectl delete -f hack/load-tests/log-fluentbit-backpressure-config.yaml
+    fi
 
-  kubectl delete -f hack/load-tests/log-fluentbit-test-setup.yaml
+    kubectl delete -f hack/load-tests/log-fluentbit-test-setup.yaml
+  else
+    echo -e "Skipping cleanup of test resources (SKIP_CLEANUP=true)"
+  fi
 }
 
 function get_result_and_cleanup_selfmonitor() {
@@ -493,7 +521,11 @@ function get_result_and_cleanup_selfmonitor() {
       kill %1
     fi
 
-    kubectl delete -f hack/load-tests/self-monitor-test-setup.yaml
+    if [[ "$SKIP_CLEANUP" == "false" ]]; then
+      kubectl delete -f hack/load-tests/self-monitor-test-setup.yaml
+    else
+      echo -e "Skipping cleanup of test resources (SKIP_CLEANUP=true)"
+    fi
 }
 
 
@@ -505,7 +537,7 @@ function validate_telemetry_results() {
         exit 1
     fi
 
-    if [[ -z "$RESULT_EXPORTED" ]]; then
+    if [[ "$test_type" != "metric-agent" ]] && [[ "$BACKPRESSURE_TEST" != "true" ]] && [[ -z "$RESULT_EXPORTED" ]]; then
         echo "ERROR: RESULT_EXPORTED is empty for $test_type test. No data exported according to Prometheus query."
         exit 1
     fi
@@ -516,7 +548,7 @@ function validate_telemetry_results() {
         exit 1
     fi
 
-    if awk "BEGIN {exit !($RESULT_EXPORTED == 0)}"; then
+    if [[ "$test_type" != "metric-agent" ]] && [[ "$BACKPRESSURE_TEST" != "true" ]] && awk "BEGIN {exit !($RESULT_EXPORTED == 0)}"; then
         echo "ERROR: RESULT_EXPORTED is zero for $test_type test. No telemetry data was exported during the test period."
         exit 1
     fi
@@ -532,7 +564,7 @@ wait_for_resources
 echo -e "Test setup is ready, starting test"
 
 for (( c=$TEST_DURATION; c>=0; c=c-60 ))
-do  
+do
   echo "Time remaining: $c seconds"
   sleep 60
 

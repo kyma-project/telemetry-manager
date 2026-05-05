@@ -148,6 +148,7 @@ type LogPipelineOutput struct {
 }
 
 // FluentBitHTTPOutput configures an HTTP-based output compatible with the Fluent Bit HTTP output plugin.
+// +kubebuilder:validation:XValidation:rule="has(self.host.value) || has(self.host.valueFrom)",message="'host' must have 'value' or 'valueFrom' set"
 type FluentBitHTTPOutput struct {
 	// Host defines the host of the HTTP backend.
 	// +kubebuilder:validation:Required
