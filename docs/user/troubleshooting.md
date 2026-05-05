@@ -223,7 +223,6 @@ VPA resources are not created even though VPA is enabled.
 ### Cause
 
 The Vertical Pod Autoscaler (VPA) CRD is not installed in your cluster.
- 
 
 ### Solution
 
