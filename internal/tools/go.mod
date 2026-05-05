@@ -6,7 +6,7 @@ require (
 	github.com/g4s8/envdoc v1.10.0
 	github.com/golangci/golangci-lint/v2 v2.12.1
 	github.com/google/yamlfmt v0.21.0
-	github.com/hairyhenderson/gomplate/v5 v5.0.0
+	github.com/hairyhenderson/gomplate/v5 v5.1.0
 	github.com/itchyny/gojq v0.12.19
 	github.com/k3d-io/k3d/v5 v5.8.3
 	github.com/kyma-project/kyma/hack/table-gen v0.0.0-20250404123224-5afb7a10791b
