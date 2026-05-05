@@ -6,7 +6,7 @@ The Telemetry module follows the principle of least privilege for network traffi
 
 ## Overview
 
-Each Telemetry component has a dedicated set of NetworkPolicies that control the allowed traffic. The following items describe the policies in the diagram:
+Each Telemetry component has a dedicated set of NetworkPolicies that control the allowed traffic.
 
 1. All Telemetry module Pods can send DNS queries to any IP on port 53, including DNS services, and to kube-dns on port 8053.
 2. All Telemetry module Pods can connect to any IP on port 443, including the Kubernetes API server.
