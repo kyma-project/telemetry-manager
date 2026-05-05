@@ -380,8 +380,7 @@ jobs:
             --title "chore: release preparation: bump version to ${VERSION}" \
             --body "${PR_BODY}" \
             --label "area/release" \
-            --label "kind/chore" \
-            --milestone "${VERSION}")
+            --label "kind/chore")
 
           PR_NUMBER=$(echo "${PR_URL}" | grep -o '[0-9]*$')
           echo "pr-number=${PR_NUMBER}" >> $GITHUB_OUTPUT
