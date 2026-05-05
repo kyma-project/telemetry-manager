@@ -90,51 +90,51 @@ type K8sClusterDefaultMetricsToDrop struct {
 }
 
 type K8sClusterStatefulSetMetricsToDrop struct {
-	K8sStatefulSetCurrentPods Metric `yaml:"k8s.statefulset.current_pods"`
-	K8sStatefulSetDesiredPods Metric `yaml:"k8s.statefulset.desired_pods"`
-	K8sStatefulSetReadyPods   Metric `yaml:"k8s.statefulset.ready_pods"`
-	K8sStatefulSetUpdatedPods Metric `yaml:"k8s.statefulset.updated_pods"`
+	K8sStatefulSetCurrentPods Metric `yaml:"k8s.statefulset.current_pods,omitempty"`
+	K8sStatefulSetDesiredPods Metric `yaml:"k8s.statefulset.desired_pods,omitempty"`
+	K8sStatefulSetReadyPods   Metric `yaml:"k8s.statefulset.ready_pods,omitempty"`
+	K8sStatefulSetUpdatedPods Metric `yaml:"k8s.statefulset.updated_pods,omitempty"`
 }
 
 type K8sClusterJobMetricsToDrop struct {
-	K8sJobActivePods            Metric `yaml:"k8s.job.active_pods"`
-	K8sJobDesiredSuccessfulPods Metric `yaml:"k8s.job.desired_successful_pods"`
-	K8sJobFailedPods            Metric `yaml:"k8s.job.failed_pods"`
-	K8sJobMaxParallelPods       Metric `yaml:"k8s.job.max_parallel_pods"`
-	K8sJobSuccessfulPods        Metric `yaml:"k8s.job.successful_pods"`
+	K8sJobActivePods            Metric `yaml:"k8s.job.active_pods,omitempty"`
+	K8sJobDesiredSuccessfulPods Metric `yaml:"k8s.job.desired_successful_pods,omitempty"`
+	K8sJobFailedPods            Metric `yaml:"k8s.job.failed_pods,omitempty"`
+	K8sJobMaxParallelPods       Metric `yaml:"k8s.job.max_parallel_pods,omitempty"`
+	K8sJobSuccessfulPods        Metric `yaml:"k8s.job.successful_pods,omitempty"`
 }
 
 type K8sClusterDeploymentMetricsToDrop struct {
-	K8sDeploymentAvailable Metric `yaml:"k8s.deployment.available"`
-	K8sDeploymentDesired   Metric `yaml:"k8s.deployment.desired"`
+	K8sDeploymentAvailable Metric `yaml:"k8s.deployment.available,omitempty"`
+	K8sDeploymentDesired   Metric `yaml:"k8s.deployment.desired,omitempty"`
 }
 
 type K8sClusterDaemonSetMetricsToDrop struct {
-	K8sDaemonSetCurrentScheduledNodes Metric `yaml:"k8s.daemonset.current_scheduled_nodes"`
-	K8sDaemonSetDesiredScheduledNodes Metric `yaml:"k8s.daemonset.desired_scheduled_nodes"`
-	K8sDaemonSetMisscheduledNodes     Metric `yaml:"k8s.daemonset.misscheduled_nodes"`
-	K8sDaemonSetReadyNodes            Metric `yaml:"k8s.daemonset.ready_nodes"`
+	K8sDaemonSetCurrentScheduledNodes Metric `yaml:"k8s.daemonset.current_scheduled_nodes,omitempty"`
+	K8sDaemonSetDesiredScheduledNodes Metric `yaml:"k8s.daemonset.desired_scheduled_nodes,omitempty"`
+	K8sDaemonSetMisscheduledNodes     Metric `yaml:"k8s.daemonset.misscheduled_nodes,omitempty"`
+	K8sDaemonSetReadyNodes            Metric `yaml:"k8s.daemonset.ready_nodes,omitempty"`
 }
 
 type K8sClusterPodMetricsToDrop struct {
-	K8sPodPhase Metric `yaml:"k8s.pod.phase"`
+	K8sPodPhase Metric `yaml:"k8s.pod.phase,omitempty"`
 }
 
 type K8sClusterContainerMetricsToDrop struct {
-	K8sContainerCPURequest    Metric `yaml:"k8s.container.cpu_request"`
-	K8sContainerCPULimit      Metric `yaml:"k8s.container.cpu_limit"`
-	K8sContainerMemoryRequest Metric `yaml:"k8s.container.memory_request"`
-	K8sContainerMemoryLimit   Metric `yaml:"k8s.container.memory_limit"`
-	K8sContainerRestarts      Metric `yaml:"k8s.container.restarts"`
+	K8sContainerCPURequest    Metric `yaml:"k8s.container.cpu_request,omitempty"`
+	K8sContainerCPULimit      Metric `yaml:"k8s.container.cpu_limit,omitempty"`
+	K8sContainerMemoryRequest Metric `yaml:"k8s.container.memory_request,omitempty"`
+	K8sContainerMemoryLimit   Metric `yaml:"k8s.container.memory_limit,omitempty"`
+	K8sContainerRestarts      Metric `yaml:"k8s.container.restarts,omitempty"`
 }
 
 type K8sClusterOptionalMetrics struct {
-	K8sContainerStatusReason           Metric `yaml:"k8s.container.status.reason"`
-	K8sContainerStatusState            Metric `yaml:"k8s.container.status.state"`
-	K8sNodeCondition                   Metric `yaml:"k8s.node.condition"`
-	K8sPodStatusReason                 Metric `yaml:"k8s.pod.status_reason"`
-	K8sServiceEndpointCount            Metric `yaml:"k8s.service.endpoint.count"`
-	K8sServiceLoadBalancerIngressCount Metric `yaml:"k8s.service.load_balancer.ingress.count"`
+	K8sContainerStatusReason           Metric `yaml:"k8s.container.status.reason,omitempty"`
+	K8sContainerStatusState            Metric `yaml:"k8s.container.status.state,omitempty"`
+	K8sNodeCondition                   Metric `yaml:"k8s.node.condition,omitempty"`
+	K8sPodStatusReason                 Metric `yaml:"k8s.pod.status_reason,omitempty"`
+	K8sServiceEndpointCount            Metric `yaml:"k8s.service.endpoint.count,omitempty"`
+	K8sServiceLoadBalancerIngressCount Metric `yaml:"k8s.service.load_balancer.ingress.count,omitempty"`
 }
 
 type K8sClusterReceiverConfig struct {
