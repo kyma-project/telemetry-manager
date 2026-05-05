@@ -112,10 +112,12 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1beta1.Metric
 	pipelinesWithPrometheusInput := getPipelinesWithPrometheusInput(pipelines)
 	pipelinesWithIstioInput := getPipelinesWithIstioInput(pipelines)
 
+	k8sClusterAdditionalMetrics, _ := getRuntimeAdditionalMetrics(pipelines)
+
 	if inputs.runtime {
 		if err := b.AddServicePipeline(ctx, nil, "metrics/input-runtime",
 			b.addKubeletStatsReceiver(inputs.runtimeResources, opts.CollectionIntervals.Runtime),
-			b.addK8sClusterReceiver(inputs.runtimeResources, opts.CollectionIntervals.Runtime),
+			b.addK8sClusterReceiver(inputs.runtimeResources, k8sClusterAdditionalMetrics, opts.CollectionIntervals.Runtime),
 			b.addMemoryLimiterProcessor(),
 			b.addFilterDropNonPVCVolumesMetricsProcessor(inputs.runtimeResources),
 			b.addFilterDropVirtualNetworkInterfacesProcessor(),
@@ -238,11 +240,11 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1beta1.Metric
 
 // Receiver builders
 
-func (b *Builder) addK8sClusterReceiver(runtimeResources runtimeResourceSources, collectionInterval time.Duration) buildComponentFunc {
+func (b *Builder) addK8sClusterReceiver(runtimeResources runtimeResourceSources, k8sClusterAdditionalMetrics []string, collectionInterval time.Duration) buildComponentFunc {
 	return b.AddReceiver(
 		b.StaticComponentID(common.ComponentIDK8sClusterReceiver),
 		func(*telemetryv1beta1.MetricPipeline) any {
-			return k8sClusterReceiver(runtimeResources, collectionInterval)
+			return k8sClusterReceiver(runtimeResources, k8sClusterAdditionalMetrics, collectionInterval)
 		},
 	)
 }
@@ -1172,6 +1174,37 @@ func shouldFilterByNamespace(namespaceSelector *telemetryv1beta1.NamespaceSelect
 
 func shouldEnableOAuth2(tp *telemetryv1beta1.MetricPipeline) bool {
 	return tp.Spec.Output.OTLP.Authentication != nil && tp.Spec.Output.OTLP.Authentication.OAuth2 != nil
+}
+
+func getRuntimeAdditionalMetrics(pipelines []telemetryv1beta1.MetricPipeline) ([]string, []string) {
+	seenK8sClusterMetrics := make(map[string]struct{})
+	seenKubeletStatsMetrics := make(map[string]struct{})
+	var k8sClusterAdditionalMetrics, kubeletStatsAdditionalMetrics []string
+
+	for i := range pipelines {
+		input := pipelines[i].Spec.Input
+		if !metricpipelineutils.IsRuntimeInputEnabled(input) {
+			continue
+		}
+
+		for _, m := range input.Runtime.AdditionalMetrics {
+			if slices.Contains(K8sClusterReceiverMetrics, m) {
+				if _, seen := seenK8sClusterMetrics[m]; !seen {
+					seenK8sClusterMetrics[m] = struct{}{}
+					k8sClusterAdditionalMetrics = append(k8sClusterAdditionalMetrics, m)
+				}
+			}
+
+			if slices.Contains(KubeletStatsReceiverMetrics, m) {
+				if _, seen := seenKubeletStatsMetrics[m]; !seen {
+					seenKubeletStatsMetrics[m] = struct{}{}
+					kubeletStatsAdditionalMetrics = append(kubeletStatsAdditionalMetrics, m)
+				}
+			}
+		}
+	}
+
+	return k8sClusterAdditionalMetrics, kubeletStatsAdditionalMetrics
 }
 
 // Processor configuration functions (merged from processors.go)

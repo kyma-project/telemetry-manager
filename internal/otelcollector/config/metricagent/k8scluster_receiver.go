@@ -4,7 +4,7 @@ import (
 	"time"
 )
 
-func k8sClusterReceiver(runtimeResources runtimeResourceSources, collectionInterval time.Duration, additionalMetrics []string) *K8sClusterReceiverConfig {
+func k8sClusterReceiver(runtimeResources runtimeResourceSources, additionalMetrics []string, collectionInterval time.Duration) *K8sClusterReceiverConfig {
 	return &K8sClusterReceiverConfig{
 		AuthType:               "serviceAccount",
 		CollectionInterval:     collectionInterval.String(),
