@@ -59,6 +59,7 @@ spec:
             - --severity-text
             - fatal
             - --otlp-insecure
+            - --allow-export-failures
             - --otlp-endpoint
             - "log-gateway:4317"
             - --otlp-attributes
@@ -74,3 +75,8 @@ spec:
             - '{"foo":"LOG_CONTENT_PLACEHOLDER"}'
           imagePullPolicy: IfNotPresent
           name: telemetrygen
+          resources:
+            limits:
+              memory: 512Mi
+            requests:
+              memory: 512Mi

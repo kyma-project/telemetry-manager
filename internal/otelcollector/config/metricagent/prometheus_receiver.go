@@ -60,6 +60,7 @@ func prometheusServicesReceiverConfig(opts BuildOptions, collectionInterval time
 	baseScrapeConfig := Scrape{
 		ScrapeInterval:             collectionInterval,
 		SampleLimit:                sampleLimit,
+		BodySizeLimit:              bodySizeLimit,
 		KubernetesDiscoveryConfigs: discoveryConfigWithNodeSelector(RoleEndpoints),
 	}
 
@@ -154,6 +155,7 @@ func prometheusIstioReceiverConfig(envoyMetricsEnabled bool, collectionInterval 
 				{
 					JobName:                    "istio-proxy",
 					SampleLimit:                sampleLimit,
+					BodySizeLimit:              bodySizeLimit,
 					MetricsPath:                "/stats/prometheus",
 					ScrapeInterval:             collectionInterval,
 					KubernetesDiscoveryConfigs: discoveryConfigWithNodeSelector(RolePod),

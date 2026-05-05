@@ -1,7 +1,7 @@
 package v1beta1
 
 // ValueType represents either a direct value or a reference to a value stored in a Secret.
-// +kubebuilder:validation:XValidation:rule="has(self.value) != has(self.valueFrom)",message="Exactly one of 'value' or 'valueFrom' must be set"
+// +kubebuilder:validation:XValidation:rule="!(has(self.value) && has(self.valueFrom))",message="Only one of 'value' or 'valueFrom' can be set"
 type ValueType struct {
 	// Value as plain text.
 	// +kubebuilder:validation:Optional
@@ -53,6 +53,7 @@ const (
 // OTLPOutput OTLP output configuration
 // +kubebuilder:validation:XValidation:rule="(has(self.path) && size(self.path) > 0) ? self.protocol == 'http' : true",message="Path is only available with HTTP protocol"
 // +kubebuilder:validation:XValidation:rule="(has(self.authentication) && has(self.authentication.oauth2) && self.protocol == 'grpc' && has(self.tls)) ? !(has(self.tls.insecure) && self.tls.insecure == true) : true",message="OAuth2 authentication requires TLS when using gRPC protocol"
+// +kubebuilder:validation:XValidation:rule="has(self.endpoint.value) || has(self.endpoint.valueFrom)",message="'endpoint' must have 'value' or 'valueFrom' set"
 type OTLPOutput struct {
 	// Protocol defines the OTLP protocol (`http` or `grpc`). Default is `grpc`.
 	// +kubebuilder:validation:Optional
@@ -90,6 +91,9 @@ type AuthenticationOptions struct {
 	OAuth2 *OAuth2Options `json:"oauth2,omitempty"`
 }
 
+// BasicAuthOptions contains options for `Basic` authentication.
+// +kubebuilder:validation:XValidation:rule="has(self.user.value) || has(self.user.valueFrom)",message="'user' must have 'value' or 'valueFrom' set"
+// +kubebuilder:validation:XValidation:rule="has(self.password.value) || has(self.password.valueFrom)",message="'password' must have 'value' or 'valueFrom' set"
 type BasicAuthOptions struct {
 	// User contains the basic auth username or a Secret reference.
 	// +kubebuilder:validation:Required
@@ -99,6 +103,10 @@ type BasicAuthOptions struct {
 	Password ValueType `json:"password"`
 }
 
+// OAuth2Options contains options for `OAuth2` authentication.
+// +kubebuilder:validation:XValidation:rule="has(self.tokenURL.value) || has(self.tokenURL.valueFrom)",message="'tokenURL' must have 'value' or 'valueFrom' set"
+// +kubebuilder:validation:XValidation:rule="has(self.clientID.value) || has(self.clientID.valueFrom)",message="'clientID' must have 'value' or 'valueFrom' set"
+// +kubebuilder:validation:XValidation:rule="has(self.clientSecret.value) || has(self.clientSecret.valueFrom)",message="'clientSecret' must have 'value' or 'valueFrom' set"
 type OAuth2Options struct {
 	// TokenURL contains the OAuth2 token endpoint URL or a Secret reference.
 	// +kubebuilder:validation:Required
@@ -118,6 +126,8 @@ type OAuth2Options struct {
 	Params map[string]string `json:"params,omitempty"`
 }
 
+// Header defines custom headers to be added to outgoing HTTP or gRPC requests.
+// +kubebuilder:validation:XValidation:rule="has(self.value) || has(self.valueFrom)",message="Header must have 'value' or 'valueFrom' set"
 type Header struct {
 	// Defines the header value.
 	ValueType `json:",inline"`
