@@ -251,9 +251,6 @@ To resolve the issue, reduce memory pressure:
 - Reduce telemetry volume by applying filters in your pipelines (see [Filter Logs](./filter-and-process/filter-logs.md), [Filter Traces](./filter-and-process/filter-traces.md), [Filter Metrics](./filter-and-process/filter-metrics.md)).
 
 As a workaround, you can disable VPA so that the system uses static resource limits:
-
-- Add nodes with more memory to increase the maxAllowed calculation.
-- Reduce telemetry volume by applying filters in your pipelines (see [Filter Logs](./filter-and-process/filter-logs.md), [Filter Traces](./filter-and-process/filter-traces.md), [Filter Metrics](./filter-and-process/filter-metrics.md)).
 - Disable VPA so that the system uses static resource limits:
   1. Edit the Telemetry resource:
   
