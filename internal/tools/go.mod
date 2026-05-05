@@ -18,7 +18,7 @@ require (
 	golang.org/x/tools v0.44.0
 	gotest.tools/gotestsum v1.13.0
 	helm.sh/helm/v4 v4.1.4
-	k8s.io/code-generator v0.35.4
+	k8s.io/code-generator v0.36.0
 	sigs.k8s.io/controller-tools v0.20.1
 )
 
