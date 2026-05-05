@@ -387,7 +387,7 @@ jobs:
           echo "Created PR #${PR_NUMBER}: ${PR_URL}"
           echo "PR_NUMBER=${PR_NUMBER}" >> $GITHUB_ENV
 
-          # Assign milestone to PR
+          # The closed milestone can't be assigned as part of PR creation call, milestone assigned after PR creation via updating PR with milestone
           echo "Assigning milestone ${VERSION} to PR #${PR_NUMBER}..."
           MILESTONE_NUMBER=$(gh api "repos/${{ github.repository }}/milestones?state=all&direction=desc&per_page=100" --jq ".[] | select(.title == \"${VERSION}\") | .number")
           if [ -n "$MILESTONE_NUMBER" ]; then
