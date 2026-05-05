@@ -37,7 +37,11 @@ tls.crt
 tls.csr
 tls.key
 
-.claude
+.claude/*
+!.claude/cve-triage/
+.claude/cve-triage/*
+!.claude/cve-triage/context.md
+!.claude/cve-triage/history.md
 CLAUDE.local.md
 
 dependencies/sample-app/vendor
