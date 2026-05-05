@@ -1,7 +1,6 @@
 package metricagent
 
 // Kubeletstats receiver metric name constants.
-// Source: https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/kubeletstatsreceiver/documentation.md
 const (
 	// Default metrics
 	metricContainerCPUTime              = "container.cpu.time"
@@ -55,10 +54,6 @@ const (
 	metricK8sContainerMemNodeUtilization    = "k8s.container.memory.node.utilization"
 	metricK8sContainerMemLimitUtilization   = "k8s.container.memory_limit_utilization"
 	metricK8sContainerMemRequestUtilization = "k8s.container.memory_request_utilization"
-	metricK8sNodeSysContainerCPUTime        = "k8s.node.system_container.cpu.time"
-	metricK8sNodeSysContainerCPUUsage       = "k8s.node.system_container.cpu.usage"
-	metricK8sNodeSysContainerMemUsage       = "k8s.node.system_container.memory.usage"
-	metricK8sNodeSysContainerMemWorkingSet  = "k8s.node.system_container.memory.working_set"
 	metricK8sNodeUptime                     = "k8s.node.uptime"
 	metricK8sPodCPUNodeUtilization          = "k8s.pod.cpu.node.utilization"
 	metricK8sPodCPULimitUtilization         = "k8s.pod.cpu_limit_utilization"
@@ -124,10 +119,6 @@ var KubeletStatsReceiverMetrics = []string{
 	metricK8sContainerMemNodeUtilization,
 	metricK8sContainerMemLimitUtilization,
 	metricK8sContainerMemRequestUtilization,
-	metricK8sNodeSysContainerCPUTime,
-	metricK8sNodeSysContainerCPUUsage,
-	metricK8sNodeSysContainerMemUsage,
-	metricK8sNodeSysContainerMemWorkingSet,
 	metricK8sNodeUptime,
 	metricK8sPodCPUNodeUtilization,
 	metricK8sPodCPULimitUtilization,

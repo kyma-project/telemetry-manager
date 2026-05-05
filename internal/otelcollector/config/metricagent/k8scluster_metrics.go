@@ -1,7 +1,6 @@
 package metricagent
 
 // K8s cluster receiver metric name constants (excluding openshift specific metrics).
-// Source: https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/k8sclusterreceiver/documentation.md
 const (
 	// Default metrics
 	metricK8sContainerCPULimit              = "k8s.container.cpu_limit"
