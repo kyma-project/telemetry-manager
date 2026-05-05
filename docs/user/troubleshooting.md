@@ -228,7 +228,7 @@ The Vertical Pod Autoscaler (VPA) CRD is not installed in your cluster.
 
 Install the VPA CRD in your cluster (see [Vertical Pod Autoscaler](https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler)).
 
-## Memory Limits Too Restrictive
+## Telemetry Components Run Out of Memory
 
 ### Symptom
 
@@ -236,15 +236,14 @@ Telemetry components are running out of memory despite VPA being enabled.
 
 ### Cause
 
-The calculated `maxAllowed` memory (15% of smallest Node) might be insufficient for your telemetry volume.
+The memory limits are too restrictive for your telemetry volume. VPA calculates limits based on the smallest node in your cluster, which might not provide enough memory for high-volume telemetry workloads.
 
 ### Solution
 
 If no data arrives at your backend, first check for backend-side issues (see [Not All Data Arrive at the Backend](#not-all-data-arrive-at-the-backend)).
 
-If data arrives but components run out of memory, consider one of the following options:
+If data arrives but components run out of memory, reduce memory pressure:
 
-To resolve the issue, reduce memory pressure:
 
 - Add nodes with more memory to increase the calculated `maxAllowed` value.
 - Reduce telemetry volume by applying filters in your pipelines (see [Filter Logs](./filter-and-process/filter-logs.md), [Filter Traces](./filter-and-process/filter-traces.md), [Filter Metrics](./filter-and-process/filter-metrics.md)).
