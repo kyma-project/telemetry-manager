@@ -222,21 +222,6 @@ func enableK8sClusterAdditionalMetrics(metrics *K8sClusterMetrics, additionalMet
 		case metricK8sNodeCondition:
 			initOptionalMetrics(metrics)
 			metrics.K8sNodeCondition.Enabled = true
-		case metricK8sPVStatusPhase:
-			initOptionalMetrics(metrics)
-			metrics.K8sPersistentVolumeStatusPhase.Enabled = true
-		case metricK8sPVStorageCapacity:
-			initOptionalMetrics(metrics)
-			metrics.K8sPersistentVolumeStorageCapacity.Enabled = true
-		case metricK8sPVCStatusPhase:
-			initOptionalMetrics(metrics)
-			metrics.K8sPersistentVolumeClaimStatusPhase.Enabled = true
-		case metricK8sPVCStorageCapacity:
-			initOptionalMetrics(metrics)
-			metrics.K8sPersistentVolumeClaimStorageCap.Enabled = true
-		case metricK8sPVCStorageRequest:
-			initOptionalMetrics(metrics)
-			metrics.K8sPersistentVolumeClaimStorageReq.Enabled = true
 		case metricK8sPodStatusReason:
 			initOptionalMetrics(metrics)
 			metrics.K8sPodStatusReason.Enabled = true

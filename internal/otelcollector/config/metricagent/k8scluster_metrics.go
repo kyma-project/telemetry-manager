@@ -47,11 +47,6 @@ const (
 	metricK8sContainerStatusReason = "k8s.container.status.reason"
 	metricK8sContainerStatusState  = "k8s.container.status.state"
 	metricK8sNodeCondition         = "k8s.node.condition"
-	metricK8sPVStatusPhase         = "k8s.persistentvolume.status.phase"
-	metricK8sPVStorageCapacity     = "k8s.persistentvolume.storage.capacity"
-	metricK8sPVCStatusPhase        = "k8s.persistentvolumeclaim.status.phase"
-	metricK8sPVCStorageCapacity    = "k8s.persistentvolumeclaim.storage.capacity"
-	metricK8sPVCStorageRequest     = "k8s.persistentvolumeclaim.storage.request"
 	metricK8sPodStatusReason       = "k8s.pod.status_reason"
 	metricK8sServiceEndpointCount  = "k8s.service.endpoint.count"
 	metricK8sServiceLBIngressCount = "k8s.service.load_balancer.ingress.count"
@@ -103,11 +98,6 @@ var K8sClusterReceiverMetrics = []string{
 	metricK8sContainerStatusReason,
 	metricK8sContainerStatusState,
 	metricK8sNodeCondition,
-	metricK8sPVStatusPhase,
-	metricK8sPVStorageCapacity,
-	metricK8sPVCStatusPhase,
-	metricK8sPVCStorageCapacity,
-	metricK8sPVCStorageRequest,
 	metricK8sPodStatusReason,
 	metricK8sServiceEndpointCount,
 	metricK8sServiceLBIngressCount,

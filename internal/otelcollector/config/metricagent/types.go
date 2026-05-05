@@ -129,17 +129,12 @@ type K8sClusterContainerMetricsToDrop struct {
 }
 
 type K8sClusterOptionalMetrics struct {
-	K8sContainerStatusReason            Metric `yaml:"k8s.container.status.reason"`
-	K8sContainerStatusState             Metric `yaml:"k8s.container.status.state"`
-	K8sNodeCondition                    Metric `yaml:"k8s.node.condition"`
-	K8sPersistentVolumeStatusPhase      Metric `yaml:"k8s.persistentvolume.status.phase"`
-	K8sPersistentVolumeStorageCapacity  Metric `yaml:"k8s.persistentvolume.storage.capacity"`
-	K8sPersistentVolumeClaimStatusPhase Metric `yaml:"k8s.persistentvolumeclaim.status.phase"`
-	K8sPersistentVolumeClaimStorageCap  Metric `yaml:"k8s.persistentvolumeclaim.storage.capacity"`
-	K8sPersistentVolumeClaimStorageReq  Metric `yaml:"k8s.persistentvolumeclaim.storage.request"`
-	K8sPodStatusReason                  Metric `yaml:"k8s.pod.status_reason"`
-	K8sServiceEndpointCount             Metric `yaml:"k8s.service.endpoint.count"`
-	K8sServiceLoadBalancerIngressCount  Metric `yaml:"k8s.service.load_balancer.ingress.count"`
+	K8sContainerStatusReason           Metric `yaml:"k8s.container.status.reason"`
+	K8sContainerStatusState            Metric `yaml:"k8s.container.status.state"`
+	K8sNodeCondition                   Metric `yaml:"k8s.node.condition"`
+	K8sPodStatusReason                 Metric `yaml:"k8s.pod.status_reason"`
+	K8sServiceEndpointCount            Metric `yaml:"k8s.service.endpoint.count"`
+	K8sServiceLoadBalancerIngressCount Metric `yaml:"k8s.service.load_balancer.ingress.count"`
 }
 
 type K8sClusterReceiverConfig struct {
