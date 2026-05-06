@@ -391,7 +391,7 @@ jobs:
           echo "Assigning milestone ${VERSION} to PR #${PR_NUMBER}..."
           MILESTONE_NUMBER=$(gh api "repos/${{ github.repository }}/milestones?state=all&direction=desc&per_page=100" --jq ".[] | select(.title == \"${VERSION}\") | .number")
           if [ -n "$MILESTONE_NUMBER" ]; then
-            gh pr edit "${PR_NUMBER}" --milestone "${MILESTONE_NUMBER}"
+            gh api "repos/${{ github.repository }}/issues/${PR_NUMBER}" -X PATCH -f milestone="${MILESTONE_NUMBER}"
             echo "Assigned milestone ${VERSION} to PR #${PR_NUMBER}"
           else
             echo "Warning could not find milestone ${VERSION} to assign to PR"
