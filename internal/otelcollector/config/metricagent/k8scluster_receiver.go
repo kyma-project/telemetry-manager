@@ -108,7 +108,7 @@ func enableK8sClusterAdditionalMetrics(metrics *K8sClusterMetrics, additionalMet
 			metrics.K8sContainerStorageRequest.Enabled = true
 		case metricK8sContainerStorageLimit:
 			metrics.K8sContainerStorageLimit.Enabled = true
-		case metricK8sContainerEphemeralStorageReq:
+		case metricK8sContainerEphemeralStorageRequest:
 			metrics.K8sContainerEphemeralStorageRequest.Enabled = true
 		case metricK8sContainerEphemeralStorageLimit:
 			metrics.K8sContainerEphemeralStorageLimit.Enabled = true
