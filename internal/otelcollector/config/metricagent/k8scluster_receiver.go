@@ -79,6 +79,7 @@ func disableK8sClusterMetrics(metrics *K8sClusterMetrics, runtimeResources runti
 			K8sJobDesiredSuccessfulPods: Metric{false},
 			K8sJobFailedPods:            Metric{false},
 			K8sJobMaxParallelPods:       Metric{false},
+			K8sJobSuccessfulPods:        Metric{false},
 		}
 	}
 
