@@ -65,9 +65,8 @@ const (
 	metricK8sPodVolumeUsage                 = "k8s.pod.volume.usage"
 )
 
-// KubeletStatsReceiverMetrics contains all metric names that can be emitted by the kubeletstats receiver.
-var KubeletStatsReceiverMetrics = []string{
-	// Default metrics
+// kubeletStatsContainerMetrics contains metrics related to container resources.
+var kubeletStatsContainerMetrics = []string{
 	metricContainerCPUTime,
 	metricContainerCPUUsage,
 	metricContainerFSAvailable,
@@ -79,19 +78,24 @@ var KubeletStatsReceiverMetrics = []string{
 	metricContainerMemoryRSS,
 	metricContainerMemoryUsage,
 	metricContainerMemoryWorkingSet,
-	metricK8sNodeCPUTime,
+}
+
+// kubeletStatsNodeMetrics contains curated list of metrics related to node resources.
+var kubeletStatsNodeMetrics = []string{
 	metricK8sNodeCPUUsage,
 	metricK8sNodeFSAvailable,
 	metricK8sNodeFSCapacity,
 	metricK8sNodeFSUsage,
 	metricK8sNodeMemoryAvailable,
-	metricK8sNodeMemoryMajorPageFaults,
-	metricK8sNodeMemoryPageFaults,
 	metricK8sNodeMemoryRSS,
 	metricK8sNodeMemoryUsage,
 	metricK8sNodeMemoryWorkingSet,
 	metricK8sNodeNetworkErrors,
 	metricK8sNodeNetworkIO,
+}
+
+// kubeletStatsPodMetrics contains metrics related to pod resources.
+var kubeletStatsPodMetrics = []string{
 	metricK8sPodCPUTime,
 	metricK8sPodCPUUsage,
 	metricK8sPodFSAvailable,
@@ -105,13 +109,25 @@ var KubeletStatsReceiverMetrics = []string{
 	metricK8sPodMemoryWorkingSet,
 	metricK8sPodNetworkErrors,
 	metricK8sPodNetworkIO,
+}
+
+// kubeletStatsVolumeMetrics contains metrics related to volume resources.
+var kubeletStatsVolumeMetrics = []string{
 	metricK8sVolumeAvailable,
 	metricK8sVolumeCapacity,
 	metricK8sVolumeInodes,
 	metricK8sVolumeInodesFree,
 	metricK8sVolumeInodesUsed,
+}
 
-	// Optional metrics
+// kubeletStatsExtraMetrics contains metrics that are disabled by default and optional metrics.
+var kubeletStatsExtraMetrics = []string{
+	// Upstream default metrics that are disabled by default in the kubeletStats receiver
+	metricK8sNodeCPUTime,
+	metricK8sNodeMemoryMajorPageFaults,
+	metricK8sNodeMemoryPageFaults,
+
+	// Upstream optional metrics
 	metricContainerUptime,
 	metricK8sContainerCPUNodeUtilization,
 	metricK8sContainerCPULimitUtilization,
@@ -129,3 +145,12 @@ var KubeletStatsReceiverMetrics = []string{
 	metricK8sPodUptime,
 	metricK8sPodVolumeUsage,
 }
+
+// KubeletStatsReceiverMetrics contains all metric names that can be emitted by the kubeletStats receiver.
+var KubeletStatsReceiverMetrics = concatSlices(
+	kubeletStatsContainerMetrics,
+	kubeletStatsNodeMetrics,
+	kubeletStatsPodMetrics,
+	kubeletStatsVolumeMetrics,
+	kubeletStatsExtraMetrics,
+)

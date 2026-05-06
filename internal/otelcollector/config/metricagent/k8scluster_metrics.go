@@ -98,7 +98,7 @@ var k8sClusterReceiverDaemonsetMetrics = []string{
 
 // k8sClusterReceiverExtraMetrics contains metrics that are disabled by default and optional metrics.
 var k8sClusterReceiverExtraMetrics = []string{
-	// Upstream default metrics that are disabled by default in the K8sClusterReceiver
+	// Upstream default metrics that are disabled by default in the k8sCluster receiver
 	metricK8sContainerStorageRequest,
 	metricK8sContainerStorageLimit,
 	metricK8sContainerEphemeralStorageRequest,
