@@ -65,8 +65,8 @@ var k8sClusterReceiverContainerMetrics = []string{
 	metricK8sContainerRestarts,
 }
 
-// k8sClusterReceiverStatefulsetMetrics contains metrics related to statefulset resources.
-var k8sClusterReceiverStatefulsetMetrics = []string{
+// k8sClusterReceiverStatefulSetMetrics contains metrics related to statefulset resources.
+var k8sClusterReceiverStatefulSetMetrics = []string{
 	metricK8sStatefulSetCurrentPods,
 	metricK8sStatefulSetDesiredPods,
 	metricK8sStatefulSetReadyPods,
@@ -88,8 +88,8 @@ var k8sClusterReceiverDeploymentMetrics = []string{
 	metricK8sDeploymentDesired,
 }
 
-// k8sClusterReceiverDaemonsetMetrics contains metrics related to daemonset resources.
-var k8sClusterReceiverDaemonsetMetrics = []string{
+// k8sClusterReceiverDaemonSetMetrics contains metrics related to daemonset resources.
+var k8sClusterReceiverDaemonSetMetrics = []string{
 	metricK8sDaemonSetCurrentScheduledNodes,
 	metricK8sDaemonSetDesiredScheduledNodes,
 	metricK8sDaemonSetMisscheduledNodes,
@@ -130,10 +130,10 @@ var k8sClusterReceiverExtraMetrics = []string{
 var K8sClusterReceiverMetrics = concatSlices(
 	k8sClusterReceiverPodMetrics,
 	k8sClusterReceiverContainerMetrics,
-	k8sClusterReceiverStatefulsetMetrics,
+	k8sClusterReceiverStatefulSetMetrics,
 	k8sClusterReceiverJobMetrics,
 	k8sClusterReceiverDeploymentMetrics,
-	k8sClusterReceiverDaemonsetMetrics,
+	k8sClusterReceiverDaemonSetMetrics,
 	k8sClusterReceiverExtraMetrics,
 )
 

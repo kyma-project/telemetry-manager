@@ -65,8 +65,8 @@ const (
 	metricK8sPodVolumeUsage                 = "k8s.pod.volume.usage"
 )
 
-// kubeletStatsContainerMetrics contains metrics related to container resources.
-var kubeletStatsContainerMetrics = []string{
+// kubeletStatsReceiverContainerMetrics contains metrics related to container resources.
+var kubeletStatsReceiverContainerMetrics = []string{
 	metricContainerCPUTime,
 	metricContainerCPUUsage,
 	metricContainerFSAvailable,
@@ -80,8 +80,8 @@ var kubeletStatsContainerMetrics = []string{
 	metricContainerMemoryWorkingSet,
 }
 
-// kubeletStatsNodeMetrics contains curated list of metrics related to node resources.
-var kubeletStatsNodeMetrics = []string{
+// kubeletStatsReceiverNodeMetrics contains curated list of metrics related to node resources.
+var kubeletStatsReceiverNodeMetrics = []string{
 	metricK8sNodeCPUUsage,
 	metricK8sNodeFSAvailable,
 	metricK8sNodeFSCapacity,
@@ -94,8 +94,8 @@ var kubeletStatsNodeMetrics = []string{
 	metricK8sNodeNetworkIO,
 }
 
-// kubeletStatsPodMetrics contains metrics related to pod resources.
-var kubeletStatsPodMetrics = []string{
+// kubeletStatsReceiverPodMetrics contains metrics related to pod resources.
+var kubeletStatsReceiverPodMetrics = []string{
 	metricK8sPodCPUTime,
 	metricK8sPodCPUUsage,
 	metricK8sPodFSAvailable,
@@ -111,8 +111,8 @@ var kubeletStatsPodMetrics = []string{
 	metricK8sPodNetworkIO,
 }
 
-// kubeletStatsVolumeMetrics contains metrics related to volume resources.
-var kubeletStatsVolumeMetrics = []string{
+// kubeletStatsReceiverVolumeMetrics contains metrics related to volume resources.
+var kubeletStatsReceiverVolumeMetrics = []string{
 	metricK8sVolumeAvailable,
 	metricK8sVolumeCapacity,
 	metricK8sVolumeInodes,
@@ -121,7 +121,7 @@ var kubeletStatsVolumeMetrics = []string{
 }
 
 // kubeletStatsExtraMetrics contains metrics that are disabled by default and optional metrics.
-var kubeletStatsExtraMetrics = []string{
+var kubeletStatsReceiverExtraMetrics = []string{
 	// Upstream default metrics that are disabled by default in the kubeletStats receiver
 	metricK8sNodeCPUTime,
 	metricK8sNodeMemoryMajorPageFaults,
@@ -148,9 +148,9 @@ var kubeletStatsExtraMetrics = []string{
 
 // KubeletStatsReceiverMetrics contains all metric names that can be emitted by the kubeletStats receiver.
 var KubeletStatsReceiverMetrics = concatSlices(
-	kubeletStatsContainerMetrics,
-	kubeletStatsNodeMetrics,
-	kubeletStatsPodMetrics,
-	kubeletStatsVolumeMetrics,
-	kubeletStatsExtraMetrics,
+	kubeletStatsReceiverContainerMetrics,
+	kubeletStatsReceiverNodeMetrics,
+	kubeletStatsReceiverPodMetrics,
+	kubeletStatsReceiverVolumeMetrics,
+	kubeletStatsReceiverExtraMetrics,
 )

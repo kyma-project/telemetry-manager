@@ -758,18 +758,19 @@ func (b *Builder) addDropRuntimeJobMetricsProcessor() buildComponentFunc {
 	)
 }
 
-// addDropAdditionalRuntimeMetricsProcessor adds a filter processor to drop runtime additional metrics which are not part of the additional metrics specified in the pipeline.
-// This is needed because the kubeletStats and k8sCluster receivers emit the union of additional metrics specified in all pipelines.
-func (b *Builder) addDropAdditionalRuntimeMetricsProcessor(additionalMetrics []string) buildComponentFunc {
+// addDropAdditionalRuntimeMetricsProcessor adds a filter processor to drop runtime additional metrics excluding those specified in the pipeline and those related to enabled runtime resource inputs.
+// This is needed because the kubeletStats and k8sCluster receivers emit the union of additional metrics specified in ALL pipelines.
+func (b *Builder) addDropAdditionalRuntimeMetricsProcessor(allAdditionalMetrics []string) buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDDropRuntimeAdditionalMetricsProcessor),
 		func(mp *telemetryv1beta1.MetricPipeline) any {
-			if !metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) || len(additionalMetrics) == 0 {
+			if !metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) || len(allAdditionalMetrics) == 0 {
 				return nil
 			}
 
-			metricsToDrop := excludePipelineAdditionalMetrics(additionalMetrics, mp.Spec.Input.Runtime.AdditionalMetrics)
-			if len(metricsToDrop) == 0 {
+			additionalMetricsToDrop := additionalMetricsToDrop(allAdditionalMetrics, mp.Spec.Input.Runtime.AdditionalMetrics, mp.Spec.Input)
+
+			if len(additionalMetricsToDrop) == 0 {
 				return nil
 			}
 
@@ -777,7 +778,7 @@ func (b *Builder) addDropAdditionalRuntimeMetricsProcessor(additionalMetrics []s
 				{
 					Conditions: []string{common.JoinWithAnd(
 						common.KymaInputNameEquals(common.InputSourceRuntime),
-						common.JoinWithOr(nameConditions(metricsToDrop)...),
+						common.JoinWithOr(nameConditions(additionalMetricsToDrop)...),
 					)},
 				},
 			})
@@ -785,12 +786,48 @@ func (b *Builder) addDropAdditionalRuntimeMetricsProcessor(additionalMetrics []s
 	)
 }
 
-// excludePipelineAdditionalMetrics returns the metrics that are in allAdditionalMetrics but not in pipelineAdditionalMetrics.
-func excludePipelineAdditionalMetrics(allAdditionalMetrics, pipelineAdditionalMetrics []string) []string {
+// additionalMetricsToDrop determines which additional runtime metrics should be dropped for a given pipeline based on the additionalmetrics specified in the pipeline and the enabled runtime resource inputs.
+func additionalMetricsToDrop(allAdditionalMetrics []string, pipelineAdditionalMetrics []string, metricPipelineInput telemetryv1beta1.MetricPipelineInput) []string {
+	excludedMetrics := pipelineAdditionalMetrics
+
+	if metricpipelineutils.IsRuntimePodInputEnabled(metricPipelineInput) {
+		podMetrics := append(k8sClusterReceiverPodMetrics, kubeletStatsReceiverPodMetrics...)
+		excludedMetrics = append(excludedMetrics, podMetrics...)
+	}
+
+	if metricpipelineutils.IsRuntimeContainerInputEnabled(metricPipelineInput) {
+		containerMetrics := append(k8sClusterReceiverContainerMetrics, kubeletStatsReceiverContainerMetrics...)
+		excludedMetrics = append(excludedMetrics, containerMetrics...)
+	}
+
+	if metricpipelineutils.IsRuntimeNodeInputEnabled(metricPipelineInput) {
+		excludedMetrics = append(excludedMetrics, kubeletStatsReceiverNodeMetrics...)
+	}
+
+	if metricpipelineutils.IsRuntimeVolumeInputEnabled(metricPipelineInput) {
+		excludedMetrics = append(excludedMetrics, kubeletStatsReceiverVolumeMetrics...)
+	}
+
+	if metricpipelineutils.IsRuntimeDeploymentInputEnabled(metricPipelineInput) {
+		excludedMetrics = append(excludedMetrics, k8sClusterReceiverDeploymentMetrics...)
+	}
+
+	if metricpipelineutils.IsRuntimeDaemonSetInputEnabled(metricPipelineInput) {
+		excludedMetrics = append(excludedMetrics, k8sClusterReceiverDaemonSetMetrics...)
+	}
+
+	if metricpipelineutils.IsRuntimeStatefulSetInputEnabled(metricPipelineInput) {
+		excludedMetrics = append(excludedMetrics, k8sClusterReceiverStatefulSetMetrics...)
+	}
+
+	if metricpipelineutils.IsRuntimeJobInputEnabled(metricPipelineInput) {
+		excludedMetrics = append(excludedMetrics, k8sClusterReceiverJobMetrics...)
+	}
+
 	var metricsToDrop []string
 
 	for _, m := range allAdditionalMetrics {
-		if !slices.Contains(pipelineAdditionalMetrics, m) {
+		if !slices.Contains(excludedMetrics, m) {
 			metricsToDrop = append(metricsToDrop, m)
 		}
 	}
