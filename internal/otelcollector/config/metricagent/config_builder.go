@@ -112,7 +112,8 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1beta1.Metric
 	pipelinesWithPrometheusInput := getPipelinesWithPrometheusInput(pipelines)
 	pipelinesWithIstioInput := getPipelinesWithIstioInput(pipelines)
 
-	k8sClusterAdditionalMetrics, _ := getRuntimeAdditionalMetrics(pipelines)
+	k8sClusterAdditionalMetrics, kubeletStatsAdditionalMetrics := getRuntimeAdditionalMetrics(pipelines)
+	runtimeAdditionalMetrics := append(k8sClusterAdditionalMetrics, kubeletStatsAdditionalMetrics...)
 
 	if inputs.runtime {
 		if err := b.AddServicePipeline(ctx, nil, "metrics/input-runtime",
@@ -210,6 +211,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1beta1.Metric
 			b.addDropRuntimeDaemonSetMetricsProcessor(),
 			b.addDropRuntimeStatefulSetMetricsProcessor(),
 			b.addDropRuntimeJobMetricsProcessor(),
+			b.addDropAdditionalRuntimeMetricsProcessor(runtimeAdditionalMetrics),
 			// Diagnostic metric filters
 			b.addDropPrometheusDiagnosticMetricsProcessor(),
 			b.addDropIstioDiagnosticMetricsProcessor(),
@@ -754,6 +756,46 @@ func (b *Builder) addDropRuntimeJobMetricsProcessor() buildComponentFunc {
 			})
 		},
 	)
+}
+
+// addDropAdditionalRuntimeMetricsProcessor adds a filter processor to drop runtime additional metrics which are not part of the additional metrics specified in the pipeline.
+// This is needed because the kubeletStats and k8sCluster receivers emit the union of additional metrics specified in all pipelines.
+func (b *Builder) addDropAdditionalRuntimeMetricsProcessor(additionalMetrics []string) buildComponentFunc {
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDDropRuntimeAdditionalMetricsProcessor),
+		func(mp *telemetryv1beta1.MetricPipeline) any {
+			if !metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) || len(additionalMetrics) == 0 {
+				return nil
+			}
+
+			metricsToDrop := excludePipelineAdditionalMetrics(additionalMetrics, mp.Spec.Input.Runtime.AdditionalMetrics)
+			if len(metricsToDrop) == 0 {
+				return nil
+			}
+
+			return common.MetricFilterProcessor([]telemetryv1beta1.FilterSpec{
+				{
+					Conditions: []string{common.JoinWithAnd(
+						common.KymaInputNameEquals(common.InputSourceRuntime),
+						common.JoinWithOr(nameConditions(metricsToDrop)...),
+					)},
+				},
+			})
+		},
+	)
+}
+
+// excludePipelineAdditionalMetrics returns the metrics that are in allAdditionalMetrics but not in pipelineAdditionalMetrics.
+func excludePipelineAdditionalMetrics(allAdditionalMetrics, pipelineAdditionalMetrics []string) []string {
+	var metricsToDrop []string
+
+	for _, m := range allAdditionalMetrics {
+		if !slices.Contains(pipelineAdditionalMetrics, m) {
+			metricsToDrop = append(metricsToDrop, m)
+		}
+	}
+
+	return metricsToDrop
 }
 
 // Diagnostic metric filter processors
