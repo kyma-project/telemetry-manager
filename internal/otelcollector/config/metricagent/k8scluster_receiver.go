@@ -42,6 +42,7 @@ func disableK8sClusterMetrics(metrics *K8sClusterMetrics, runtimeResources runti
 		K8sReplicationControllerDesired:     Metric{Enabled: false},
 		K8sResourceQuotaHardLimit:           Metric{Enabled: false},
 		K8sResourceQuotaUsed:                Metric{Enabled: false},
+		K8sCronJobActiveJobs:                Metric{Enabled: false},
 	}
 
 	// The following metrics are enabled by default in the K8sClusterReceiver. If we disable these resources in
