@@ -117,191 +117,253 @@ func disableKubeletStatsMetrics(metrics *KubeletStatsMetrics, runtimeResources r
 
 func enableKubeletStatsAdditionalMetrics(metrics *KubeletStatsMetrics, additionalMetrics []string) {
 	for _, m := range additionalMetrics {
-		switch m {
-		// KubeletStatsDefaultMetricsToDrop
-		case metricK8sNodeCPUTime:
-			metrics.K8sNodeCPUTime.Enabled = true
-		case metricK8sNodeMemoryMajorPageFaults:
-			metrics.K8sNodeMemoryMajorPageFaults.Enabled = true
-		case metricK8sNodeMemoryPageFaults:
-			metrics.K8sNodeMemoryPageFaults.Enabled = true
-
-		// KubeletStatsPodMetrics
-		case metricK8sPodCPUTime:
-			initKubeletStatsPodMetrics(metrics)
-			metrics.K8sPodCPUTime.Enabled = true
-		case metricK8sPodCPUUsage:
-			initKubeletStatsPodMetrics(metrics)
-			metrics.K8sPodCPUUsage.Enabled = true
-		case metricK8sPodFSAvailable:
-			initKubeletStatsPodMetrics(metrics)
-			metrics.K8sPodFSAvailable.Enabled = true
-		case metricK8sPodFSCapacity:
-			initKubeletStatsPodMetrics(metrics)
-			metrics.K8sPodFSCapacity.Enabled = true
-		case metricK8sPodFSUsage:
-			initKubeletStatsPodMetrics(metrics)
-			metrics.K8sPodFSUsage.Enabled = true
-		case metricK8sPodMemoryAvailable:
-			initKubeletStatsPodMetrics(metrics)
-			metrics.K8sPodMemoryAvailable.Enabled = true
-		case metricK8sPodMemoryMajorPageFaults:
-			initKubeletStatsPodMetrics(metrics)
-			metrics.K8sPodMemoryMajorPageFault.Enabled = true
-		case metricK8sPodMemoryPageFaults:
-			initKubeletStatsPodMetrics(metrics)
-			metrics.K8sPodMemoryPageFaults.Enabled = true
-		case metricK8sPodMemoryRSS:
-			initKubeletStatsPodMetrics(metrics)
-			metrics.K8sPodMemoryRSS.Enabled = true
-		case metricK8sPodMemoryUsage:
-			initKubeletStatsPodMetrics(metrics)
-			metrics.K8sPodMemoryUsage.Enabled = true
-		case metricK8sPodMemoryWorkingSet:
-			initKubeletStatsPodMetrics(metrics)
-			metrics.K8sPodMemoryWorkingSet.Enabled = true
-		case metricK8sPodNetworkErrors:
-			initKubeletStatsPodMetrics(metrics)
-			metrics.K8sPodNetworkErrors.Enabled = true
-		case metricK8sPodNetworkIO:
-			initKubeletStatsPodMetrics(metrics)
-			metrics.K8sPodNetworkIO.Enabled = true
-
-		// KubeletStatsContainerMetrics
-		case metricContainerCPUTime:
-			initKubeletStatsContainerMetrics(metrics)
-			metrics.ContainerCPUTime.Enabled = true
-		case metricContainerCPUUsage:
-			initKubeletStatsContainerMetrics(metrics)
-			metrics.ContainerCPUUsage.Enabled = true
-		case metricContainerFSAvailable:
-			initKubeletStatsContainerMetrics(metrics)
-			metrics.ContainerFSAvailable.Enabled = true
-		case metricContainerFSCapacity:
-			initKubeletStatsContainerMetrics(metrics)
-			metrics.ContainerFSCapacity.Enabled = true
-		case metricContainerFSUsage:
-			initKubeletStatsContainerMetrics(metrics)
-			metrics.ContainerFSUsage.Enabled = true
-		case metricContainerMemoryAvailable:
-			initKubeletStatsContainerMetrics(metrics)
-			metrics.ContainerMemoryAvailable.Enabled = true
-		case metricContainerMemoryMajorPageFault:
-			initKubeletStatsContainerMetrics(metrics)
-			metrics.ContainerMemoryMajorPageFault.Enabled = true
-		case metricContainerMemoryPageFaults:
-			initKubeletStatsContainerMetrics(metrics)
-			metrics.ContainerMemoryPageFaults.Enabled = true
-		case metricContainerMemoryRSS:
-			initKubeletStatsContainerMetrics(metrics)
-			metrics.ContainerMemoryRSS.Enabled = true
-		case metricContainerMemoryUsage:
-			initKubeletStatsContainerMetrics(metrics)
-			metrics.ContainerMemoryUsage.Enabled = true
-		case metricContainerMemoryWorkingSet:
-			initKubeletStatsContainerMetrics(metrics)
-			metrics.ContainerMemoryWorkingSet.Enabled = true
-
-		// KubeletStatsNodeMetrics
-		case metricK8sNodeCPUUsage:
-			initKubeletStatsNodeMetrics(metrics)
-			metrics.K8sNodeCPUUsage.Enabled = true
-		case metricK8sNodeFSAvailable:
-			initKubeletStatsNodeMetrics(metrics)
-			metrics.K8sNodeFSAvailable.Enabled = true
-		case metricK8sNodeFSCapacity:
-			initKubeletStatsNodeMetrics(metrics)
-			metrics.K8sNodeFSCapacity.Enabled = true
-		case metricK8sNodeFSUsage:
-			initKubeletStatsNodeMetrics(metrics)
-			metrics.K8sNodeFSUsage.Enabled = true
-		case metricK8sNodeMemoryAvailable:
-			initKubeletStatsNodeMetrics(metrics)
-			metrics.K8sNodeMemoryAvailable.Enabled = true
-		case metricK8sNodeMemoryRSS:
-			initKubeletStatsNodeMetrics(metrics)
-			metrics.K8sNodeMemoryRSS.Enabled = true
-		case metricK8sNodeMemoryUsage:
-			initKubeletStatsNodeMetrics(metrics)
-			metrics.K8sNodeMemoryUsage.Enabled = true
-		case metricK8sNodeMemoryWorkingSet:
-			initKubeletStatsNodeMetrics(metrics)
-			metrics.K8sNodeMemoryWorkingSet.Enabled = true
-		case metricK8sNodeNetworkErrors:
-			initKubeletStatsNodeMetrics(metrics)
-			metrics.K8sNodeNetworkErrors.Enabled = true
-		case metricK8sNodeNetworkIO:
-			initKubeletStatsNodeMetrics(metrics)
-			metrics.K8sNodeNetworkIO.Enabled = true
-
-		// KubeletStatsVolumeMetrics
-		case metricK8sVolumeAvailable:
-			initKubeletStatsVolumeMetrics(metrics)
-			metrics.K8sVolumeAvailable.Enabled = true
-		case metricK8sVolumeCapacity:
-			initKubeletStatsVolumeMetrics(metrics)
-			metrics.K8sVolumeCapacity.Enabled = true
-		case metricK8sVolumeInodes:
-			initKubeletStatsVolumeMetrics(metrics)
-			metrics.K8sVolumeInodes.Enabled = true
-		case metricK8sVolumeInodesFree:
-			initKubeletStatsVolumeMetrics(metrics)
-			metrics.K8sVolumeInodesFree.Enabled = true
-		case metricK8sVolumeInodesUsed:
-			initKubeletStatsVolumeMetrics(metrics)
-			metrics.K8sVolumeInodesUsed.Enabled = true
-
-		// KubeletStatsOptionalMetrics
-		case metricContainerUptime:
-			initKubeletStatsOptionalMetrics(metrics)
-			metrics.ContainerUptime.Enabled = true
-		case metricK8sContainerCPUNodeUtilization:
-			initKubeletStatsOptionalMetrics(metrics)
-			metrics.K8sContainerCPUNodeUtilization.Enabled = true
-		case metricK8sContainerCPULimitUtilization:
-			initKubeletStatsOptionalMetrics(metrics)
-			metrics.K8sContainerCPULimitUtilization.Enabled = true
-		case metricK8sContainerCPURequestUtilization:
-			initKubeletStatsOptionalMetrics(metrics)
-			metrics.K8sContainerCPURequestUtilization.Enabled = true
-		case metricK8sContainerMemNodeUtilization:
-			initKubeletStatsOptionalMetrics(metrics)
-			metrics.K8sContainerMemNodeUtilization.Enabled = true
-		case metricK8sContainerMemLimitUtilization:
-			initKubeletStatsOptionalMetrics(metrics)
-			metrics.K8sContainerMemLimitUtilization.Enabled = true
-		case metricK8sContainerMemRequestUtilization:
-			initKubeletStatsOptionalMetrics(metrics)
-			metrics.K8sContainerMemRequestUtilization.Enabled = true
-		case metricK8sNodeUptime:
-			initKubeletStatsOptionalMetrics(metrics)
-			metrics.K8sNodeUptime.Enabled = true
-		case metricK8sPodCPUNodeUtilization:
-			initKubeletStatsOptionalMetrics(metrics)
-			metrics.K8sPodCPUNodeUtilization.Enabled = true
-		case metricK8sPodCPULimitUtilization:
-			initKubeletStatsOptionalMetrics(metrics)
-			metrics.K8sPodCPULimitUtilization.Enabled = true
-		case metricK8sPodCPURequestUtilization:
-			initKubeletStatsOptionalMetrics(metrics)
-			metrics.K8sPodCPURequestUtilization.Enabled = true
-		case metricK8sPodMemNodeUtilization:
-			initKubeletStatsOptionalMetrics(metrics)
-			metrics.K8sPodMemNodeUtilization.Enabled = true
-		case metricK8sPodMemLimitUtilization:
-			initKubeletStatsOptionalMetrics(metrics)
-			metrics.K8sPodMemLimitUtilization.Enabled = true
-		case metricK8sPodMemRequestUtilization:
-			initKubeletStatsOptionalMetrics(metrics)
-			metrics.K8sPodMemRequestUtilization.Enabled = true
-		case metricK8sPodUptime:
-			initKubeletStatsOptionalMetrics(metrics)
-			metrics.K8sPodUptime.Enabled = true
-		case metricK8sPodVolumeUsage:
-			initKubeletStatsOptionalMetrics(metrics)
-			metrics.K8sPodVolumeUsage.Enabled = true
+		if enabler, ok := kubeletStatsMetricEnablers[m]; ok {
+			enabler(metrics)
 		}
 	}
+}
+
+var kubeletStatsMetricEnablers = map[string]func(*KubeletStatsMetrics){
+	// KubeletStatsDefaultMetricsToDrop
+	metricK8sNodeCPUTime: func(m *KubeletStatsMetrics) {
+		m.K8sNodeCPUTime.Enabled = true
+	},
+	metricK8sNodeMemoryMajorPageFaults: func(m *KubeletStatsMetrics) {
+		m.K8sNodeMemoryMajorPageFaults.Enabled = true
+	},
+	metricK8sNodeMemoryPageFaults: func(m *KubeletStatsMetrics) {
+		m.K8sNodeMemoryPageFaults.Enabled = true
+	},
+
+	// KubeletStatsPodMetrics
+	metricK8sPodCPUTime: func(m *KubeletStatsMetrics) {
+		initKubeletStatsPodMetrics(m)
+		m.K8sPodCPUTime.Enabled = true
+	},
+	metricK8sPodCPUUsage: func(m *KubeletStatsMetrics) {
+		initKubeletStatsPodMetrics(m)
+		m.K8sPodCPUUsage.Enabled = true
+	},
+	metricK8sPodFSAvailable: func(m *KubeletStatsMetrics) {
+		initKubeletStatsPodMetrics(m)
+		m.K8sPodFSAvailable.Enabled = true
+	},
+	metricK8sPodFSCapacity: func(m *KubeletStatsMetrics) {
+		initKubeletStatsPodMetrics(m)
+		m.K8sPodFSCapacity.Enabled = true
+	},
+	metricK8sPodFSUsage: func(m *KubeletStatsMetrics) {
+		initKubeletStatsPodMetrics(m)
+		m.K8sPodFSUsage.Enabled = true
+	},
+	metricK8sPodMemoryAvailable: func(m *KubeletStatsMetrics) {
+		initKubeletStatsPodMetrics(m)
+		m.K8sPodMemoryAvailable.Enabled = true
+	},
+	metricK8sPodMemoryMajorPageFaults: func(m *KubeletStatsMetrics) {
+		initKubeletStatsPodMetrics(m)
+		m.K8sPodMemoryMajorPageFault.Enabled = true
+	},
+	metricK8sPodMemoryPageFaults: func(m *KubeletStatsMetrics) {
+		initKubeletStatsPodMetrics(m)
+		m.K8sPodMemoryPageFaults.Enabled = true
+	},
+	metricK8sPodMemoryRSS: func(m *KubeletStatsMetrics) {
+		initKubeletStatsPodMetrics(m)
+		m.K8sPodMemoryRSS.Enabled = true
+	},
+	metricK8sPodMemoryUsage: func(m *KubeletStatsMetrics) {
+		initKubeletStatsPodMetrics(m)
+		m.K8sPodMemoryUsage.Enabled = true
+	},
+	metricK8sPodMemoryWorkingSet: func(m *KubeletStatsMetrics) {
+		initKubeletStatsPodMetrics(m)
+		m.K8sPodMemoryWorkingSet.Enabled = true
+	},
+	metricK8sPodNetworkErrors: func(m *KubeletStatsMetrics) {
+		initKubeletStatsPodMetrics(m)
+		m.K8sPodNetworkErrors.Enabled = true
+	},
+	metricK8sPodNetworkIO: func(m *KubeletStatsMetrics) {
+		initKubeletStatsPodMetrics(m)
+		m.K8sPodNetworkIO.Enabled = true
+	},
+
+	// KubeletStatsContainerMetrics
+	metricContainerCPUTime: func(m *KubeletStatsMetrics) {
+		initKubeletStatsContainerMetrics(m)
+		m.ContainerCPUTime.Enabled = true
+	},
+	metricContainerCPUUsage: func(m *KubeletStatsMetrics) {
+		initKubeletStatsContainerMetrics(m)
+		m.ContainerCPUUsage.Enabled = true
+	},
+	metricContainerFSAvailable: func(m *KubeletStatsMetrics) {
+		initKubeletStatsContainerMetrics(m)
+		m.ContainerFSAvailable.Enabled = true
+	},
+	metricContainerFSCapacity: func(m *KubeletStatsMetrics) {
+		initKubeletStatsContainerMetrics(m)
+		m.ContainerFSCapacity.Enabled = true
+	},
+	metricContainerFSUsage: func(m *KubeletStatsMetrics) {
+		initKubeletStatsContainerMetrics(m)
+		m.ContainerFSUsage.Enabled = true
+	},
+	metricContainerMemoryAvailable: func(m *KubeletStatsMetrics) {
+		initKubeletStatsContainerMetrics(m)
+		m.ContainerMemoryAvailable.Enabled = true
+	},
+	metricContainerMemoryMajorPageFault: func(m *KubeletStatsMetrics) {
+		initKubeletStatsContainerMetrics(m)
+		m.ContainerMemoryMajorPageFault.Enabled = true
+	},
+	metricContainerMemoryPageFaults: func(m *KubeletStatsMetrics) {
+		initKubeletStatsContainerMetrics(m)
+		m.ContainerMemoryPageFaults.Enabled = true
+	},
+	metricContainerMemoryRSS: func(m *KubeletStatsMetrics) {
+		initKubeletStatsContainerMetrics(m)
+		m.ContainerMemoryRSS.Enabled = true
+	},
+	metricContainerMemoryUsage: func(m *KubeletStatsMetrics) {
+		initKubeletStatsContainerMetrics(m)
+		m.ContainerMemoryUsage.Enabled = true
+	},
+	metricContainerMemoryWorkingSet: func(m *KubeletStatsMetrics) {
+		initKubeletStatsContainerMetrics(m)
+		m.ContainerMemoryWorkingSet.Enabled = true
+	},
+
+	// KubeletStatsNodeMetrics
+	metricK8sNodeCPUUsage: func(m *KubeletStatsMetrics) {
+		initKubeletStatsNodeMetrics(m)
+		m.K8sNodeCPUUsage.Enabled = true
+	},
+	metricK8sNodeFSAvailable: func(m *KubeletStatsMetrics) {
+		initKubeletStatsNodeMetrics(m)
+		m.K8sNodeFSAvailable.Enabled = true
+	},
+	metricK8sNodeFSCapacity: func(m *KubeletStatsMetrics) {
+		initKubeletStatsNodeMetrics(m)
+		m.K8sNodeFSCapacity.Enabled = true
+	},
+	metricK8sNodeFSUsage: func(m *KubeletStatsMetrics) {
+		initKubeletStatsNodeMetrics(m)
+		m.K8sNodeFSUsage.Enabled = true
+	},
+	metricK8sNodeMemoryAvailable: func(m *KubeletStatsMetrics) {
+		initKubeletStatsNodeMetrics(m)
+		m.K8sNodeMemoryAvailable.Enabled = true
+	},
+	metricK8sNodeMemoryRSS: func(m *KubeletStatsMetrics) {
+		initKubeletStatsNodeMetrics(m)
+		m.K8sNodeMemoryRSS.Enabled = true
+	},
+	metricK8sNodeMemoryUsage: func(m *KubeletStatsMetrics) {
+		initKubeletStatsNodeMetrics(m)
+		m.K8sNodeMemoryUsage.Enabled = true
+	},
+	metricK8sNodeMemoryWorkingSet: func(m *KubeletStatsMetrics) {
+		initKubeletStatsNodeMetrics(m)
+		m.K8sNodeMemoryWorkingSet.Enabled = true
+	},
+	metricK8sNodeNetworkErrors: func(m *KubeletStatsMetrics) {
+		initKubeletStatsNodeMetrics(m)
+		m.K8sNodeNetworkErrors.Enabled = true
+	},
+	metricK8sNodeNetworkIO: func(m *KubeletStatsMetrics) {
+		initKubeletStatsNodeMetrics(m)
+		m.K8sNodeNetworkIO.Enabled = true
+	},
+
+	// KubeletStatsVolumeMetrics
+	metricK8sVolumeAvailable: func(m *KubeletStatsMetrics) {
+		initKubeletStatsVolumeMetrics(m)
+		m.K8sVolumeAvailable.Enabled = true
+	},
+	metricK8sVolumeCapacity: func(m *KubeletStatsMetrics) {
+		initKubeletStatsVolumeMetrics(m)
+		m.K8sVolumeCapacity.Enabled = true
+	},
+	metricK8sVolumeInodes: func(m *KubeletStatsMetrics) {
+		initKubeletStatsVolumeMetrics(m)
+		m.K8sVolumeInodes.Enabled = true
+	},
+	metricK8sVolumeInodesFree: func(m *KubeletStatsMetrics) {
+		initKubeletStatsVolumeMetrics(m)
+		m.K8sVolumeInodesFree.Enabled = true
+	},
+	metricK8sVolumeInodesUsed: func(m *KubeletStatsMetrics) {
+		initKubeletStatsVolumeMetrics(m)
+		m.K8sVolumeInodesUsed.Enabled = true
+	},
+
+	// KubeletStatsOptionalMetrics
+	metricContainerUptime: func(m *KubeletStatsMetrics) {
+		initKubeletStatsOptionalMetrics(m)
+		m.ContainerUptime.Enabled = true
+	},
+	metricK8sContainerCPUNodeUtilization: func(m *KubeletStatsMetrics) {
+		initKubeletStatsOptionalMetrics(m)
+		m.K8sContainerCPUNodeUtilization.Enabled = true
+	},
+	metricK8sContainerCPULimitUtilization: func(m *KubeletStatsMetrics) {
+		initKubeletStatsOptionalMetrics(m)
+		m.K8sContainerCPULimitUtilization.Enabled = true
+	},
+	metricK8sContainerCPURequestUtilization: func(m *KubeletStatsMetrics) {
+		initKubeletStatsOptionalMetrics(m)
+		m.K8sContainerCPURequestUtilization.Enabled = true
+	},
+	metricK8sContainerMemNodeUtilization: func(m *KubeletStatsMetrics) {
+		initKubeletStatsOptionalMetrics(m)
+		m.K8sContainerMemNodeUtilization.Enabled = true
+	},
+	metricK8sContainerMemLimitUtilization: func(m *KubeletStatsMetrics) {
+		initKubeletStatsOptionalMetrics(m)
+		m.K8sContainerMemLimitUtilization.Enabled = true
+	},
+	metricK8sContainerMemRequestUtilization: func(m *KubeletStatsMetrics) {
+		initKubeletStatsOptionalMetrics(m)
+		m.K8sContainerMemRequestUtilization.Enabled = true
+	},
+	metricK8sNodeUptime: func(m *KubeletStatsMetrics) {
+		initKubeletStatsOptionalMetrics(m)
+		m.K8sNodeUptime.Enabled = true
+	},
+	metricK8sPodCPUNodeUtilization: func(m *KubeletStatsMetrics) {
+		initKubeletStatsOptionalMetrics(m)
+		m.K8sPodCPUNodeUtilization.Enabled = true
+	},
+	metricK8sPodCPULimitUtilization: func(m *KubeletStatsMetrics) {
+		initKubeletStatsOptionalMetrics(m)
+		m.K8sPodCPULimitUtilization.Enabled = true
+	},
+	metricK8sPodCPURequestUtilization: func(m *KubeletStatsMetrics) {
+		initKubeletStatsOptionalMetrics(m)
+		m.K8sPodCPURequestUtilization.Enabled = true
+	},
+	metricK8sPodMemNodeUtilization: func(m *KubeletStatsMetrics) {
+		initKubeletStatsOptionalMetrics(m)
+		m.K8sPodMemNodeUtilization.Enabled = true
+	},
+	metricK8sPodMemLimitUtilization: func(m *KubeletStatsMetrics) {
+		initKubeletStatsOptionalMetrics(m)
+		m.K8sPodMemLimitUtilization.Enabled = true
+	},
+	metricK8sPodMemRequestUtilization: func(m *KubeletStatsMetrics) {
+		initKubeletStatsOptionalMetrics(m)
+		m.K8sPodMemRequestUtilization.Enabled = true
+	},
+	metricK8sPodUptime: func(m *KubeletStatsMetrics) {
+		initKubeletStatsOptionalMetrics(m)
+		m.K8sPodUptime.Enabled = true
+	},
+	metricK8sPodVolumeUsage: func(m *KubeletStatsMetrics) {
+		initKubeletStatsOptionalMetrics(m)
+		m.K8sPodVolumeUsage.Enabled = true
+	},
 }
 
 func initKubeletStatsPodMetrics(metrics *KubeletStatsMetrics) {

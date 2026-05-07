@@ -102,139 +102,187 @@ func disableK8sClusterMetrics(metrics *K8sClusterMetrics, runtimeResources runti
 
 func enableK8sClusterAdditionalMetrics(metrics *K8sClusterMetrics, additionalMetrics []string) {
 	for _, m := range additionalMetrics {
-		switch m {
-		// K8sClusterDefaultMetricsToDrop
-		case metricK8sContainerStorageRequest:
-			metrics.K8sContainerStorageRequest.Enabled = true
-		case metricK8sContainerStorageLimit:
-			metrics.K8sContainerStorageLimit.Enabled = true
-		case metricK8sContainerEphemeralStorageRequest:
-			metrics.K8sContainerEphemeralStorageRequest.Enabled = true
-		case metricK8sContainerEphemeralStorageLimit:
-			metrics.K8sContainerEphemeralStorageLimit.Enabled = true
-		case metricK8sContainerReady:
-			metrics.K8sContainerReady.Enabled = true
-		case metricK8sNamespacePhase:
-			metrics.K8sNamespacePhase.Enabled = true
-		case metricK8sHPACurrentReplicas:
-			metrics.K8sHPACurrentReplicas.Enabled = true
-		case metricK8sHPADesiredReplicas:
-			metrics.K8sHPADesiredReplicas.Enabled = true
-		case metricK8sHPAMinReplicas:
-			metrics.K8sHPAMinReplicas.Enabled = true
-		case metricK8sHPAMaxReplicas:
-			metrics.K8sHPAMaxReplicas.Enabled = true
-		case metricK8sReplicaSetAvailable:
-			metrics.K8sReplicaSetAvailable.Enabled = true
-		case metricK8sReplicaSetDesired:
-			metrics.K8sReplicaSetDesired.Enabled = true
-		case metricK8sReplicationControllerAvailable:
-			metrics.K8sReplicationControllerAvailable.Enabled = true
-		case metricK8sReplicationControllerDesired:
-			metrics.K8sReplicationControllerDesired.Enabled = true
-		case metricK8sResourceQuotaHardLimit:
-			metrics.K8sResourceQuotaHardLimit.Enabled = true
-		case metricK8sResourceQuotaUsed:
-			metrics.K8sResourceQuotaUsed.Enabled = true
-		case metricK8sCronJobActiveJobs:
-			metrics.K8sCronJobActiveJobs.Enabled = true
-
-		// K8sClusterPodMetrics
-		case metricK8sPodPhase:
-			initPodMetrics(metrics)
-			metrics.K8sPodPhase.Enabled = true
-
-		// K8sClusterContainerMetrics
-		case metricK8sContainerCPURequest:
-			initContainerMetrics(metrics)
-			metrics.K8sContainerCPURequest.Enabled = true
-		case metricK8sContainerCPULimit:
-			initContainerMetrics(metrics)
-			metrics.K8sContainerCPULimit.Enabled = true
-		case metricK8sContainerMemoryRequest:
-			initContainerMetrics(metrics)
-			metrics.K8sContainerMemoryRequest.Enabled = true
-		case metricK8sContainerMemoryLimit:
-			initContainerMetrics(metrics)
-			metrics.K8sContainerMemoryLimit.Enabled = true
-		case metricK8sContainerRestarts:
-			initContainerMetrics(metrics)
-			metrics.K8sContainerRestarts.Enabled = true
-
-		// K8sClusterStatefulSetMetrics
-		case metricK8sStatefulSetCurrentPods:
-			initStatefulSetMetrics(metrics)
-			metrics.K8sStatefulSetCurrentPods.Enabled = true
-		case metricK8sStatefulSetDesiredPods:
-			initStatefulSetMetrics(metrics)
-			metrics.K8sStatefulSetDesiredPods.Enabled = true
-		case metricK8sStatefulSetReadyPods:
-			initStatefulSetMetrics(metrics)
-			metrics.K8sStatefulSetReadyPods.Enabled = true
-		case metricK8sStatefulSetUpdatedPods:
-			initStatefulSetMetrics(metrics)
-			metrics.K8sStatefulSetUpdatedPods.Enabled = true
-
-		// K8sClusterJobMetrics
-		case metricK8sJobActivePods:
-			initJobMetrics(metrics)
-			metrics.K8sJobActivePods.Enabled = true
-		case metricK8sJobDesiredSuccessfulPods:
-			initJobMetrics(metrics)
-			metrics.K8sJobDesiredSuccessfulPods.Enabled = true
-		case metricK8sJobFailedPods:
-			initJobMetrics(metrics)
-			metrics.K8sJobFailedPods.Enabled = true
-		case metricK8sJobMaxParallelPods:
-			initJobMetrics(metrics)
-			metrics.K8sJobMaxParallelPods.Enabled = true
-		case metricK8sJobSuccessfulPods:
-			initJobMetrics(metrics)
-			metrics.K8sJobSuccessfulPods.Enabled = true
-
-		// K8sClusterDeploymentMetrics
-		case metricK8sDeploymentAvailable:
-			initDeploymentMetrics(metrics)
-			metrics.K8sDeploymentAvailable.Enabled = true
-		case metricK8sDeploymentDesired:
-			initDeploymentMetrics(metrics)
-			metrics.K8sDeploymentDesired.Enabled = true
-
-		// K8sClusterDaemonSetMetrics
-		case metricK8sDaemonSetCurrentScheduledNodes:
-			initDaemonSetMetrics(metrics)
-			metrics.K8sDaemonSetCurrentScheduledNodes.Enabled = true
-		case metricK8sDaemonSetDesiredScheduledNodes:
-			initDaemonSetMetrics(metrics)
-			metrics.K8sDaemonSetDesiredScheduledNodes.Enabled = true
-		case metricK8sDaemonSetMisscheduledNodes:
-			initDaemonSetMetrics(metrics)
-			metrics.K8sDaemonSetMisscheduledNodes.Enabled = true
-		case metricK8sDaemonSetReadyNodes:
-			initDaemonSetMetrics(metrics)
-			metrics.K8sDaemonSetReadyNodes.Enabled = true
-
-		// K8sClusterOptionalMetrics
-		case metricK8sContainerStatusReason:
-			initOptionalMetrics(metrics)
-			metrics.K8sContainerStatusReason.Enabled = true
-		case metricK8sContainerStatusState:
-			initOptionalMetrics(metrics)
-			metrics.K8sContainerStatusState.Enabled = true
-		case metricK8sNodeCondition:
-			initOptionalMetrics(metrics)
-			metrics.K8sNodeCondition.Enabled = true
-		case metricK8sPodStatusReason:
-			initOptionalMetrics(metrics)
-			metrics.K8sPodStatusReason.Enabled = true
-		case metricK8sServiceEndpointCount:
-			initOptionalMetrics(metrics)
-			metrics.K8sServiceEndpointCount.Enabled = true
-		case metricK8sServiceLBIngressCount:
-			initOptionalMetrics(metrics)
-			metrics.K8sServiceLoadBalancerIngressCount.Enabled = true
+		if enabler, ok := k8sClusterMetricEnablers[m]; ok {
+			enabler(metrics)
 		}
 	}
+}
+
+var k8sClusterMetricEnablers = map[string]func(*K8sClusterMetrics){
+	// K8sClusterDefaultMetricsToDrop
+	metricK8sContainerStorageRequest: func(m *K8sClusterMetrics) {
+		m.K8sContainerStorageRequest.Enabled = true
+	},
+	metricK8sContainerStorageLimit: func(m *K8sClusterMetrics) {
+		m.K8sContainerStorageLimit.Enabled = true
+	},
+	metricK8sContainerEphemeralStorageRequest: func(m *K8sClusterMetrics) {
+		m.K8sContainerEphemeralStorageRequest.Enabled = true
+	},
+	metricK8sContainerEphemeralStorageLimit: func(m *K8sClusterMetrics) {
+		m.K8sContainerEphemeralStorageLimit.Enabled = true
+	},
+	metricK8sContainerReady: func(m *K8sClusterMetrics) {
+		m.K8sContainerReady.Enabled = true
+	},
+	metricK8sNamespacePhase: func(m *K8sClusterMetrics) {
+		m.K8sNamespacePhase.Enabled = true
+	},
+	metricK8sHPACurrentReplicas: func(m *K8sClusterMetrics) {
+		m.K8sHPACurrentReplicas.Enabled = true
+	},
+	metricK8sHPADesiredReplicas: func(m *K8sClusterMetrics) {
+		m.K8sHPADesiredReplicas.Enabled = true
+	},
+	metricK8sHPAMinReplicas: func(m *K8sClusterMetrics) {
+		m.K8sHPAMinReplicas.Enabled = true
+	},
+	metricK8sHPAMaxReplicas: func(m *K8sClusterMetrics) {
+		m.K8sHPAMaxReplicas.Enabled = true
+	},
+	metricK8sReplicaSetAvailable: func(m *K8sClusterMetrics) {
+		m.K8sReplicaSetAvailable.Enabled = true
+	},
+	metricK8sReplicaSetDesired: func(m *K8sClusterMetrics) {
+		m.K8sReplicaSetDesired.Enabled = true
+	},
+	metricK8sReplicationControllerAvailable: func(m *K8sClusterMetrics) {
+		m.K8sReplicationControllerAvailable.Enabled = true
+	},
+	metricK8sReplicationControllerDesired: func(m *K8sClusterMetrics) {
+		m.K8sReplicationControllerDesired.Enabled = true
+	},
+	metricK8sResourceQuotaHardLimit: func(m *K8sClusterMetrics) {
+		m.K8sResourceQuotaHardLimit.Enabled = true
+	},
+	metricK8sResourceQuotaUsed: func(m *K8sClusterMetrics) {
+		m.K8sResourceQuotaUsed.Enabled = true
+	},
+	metricK8sCronJobActiveJobs: func(m *K8sClusterMetrics) {
+		m.K8sCronJobActiveJobs.Enabled = true
+	},
+
+	// K8sClusterPodMetrics
+	metricK8sPodPhase: func(m *K8sClusterMetrics) {
+		initPodMetrics(m)
+		m.K8sPodPhase.Enabled = true
+	},
+
+	// K8sClusterContainerMetrics
+	metricK8sContainerCPURequest: func(m *K8sClusterMetrics) {
+		initContainerMetrics(m)
+		m.K8sContainerCPURequest.Enabled = true
+	},
+	metricK8sContainerCPULimit: func(m *K8sClusterMetrics) {
+		initContainerMetrics(m)
+		m.K8sContainerCPULimit.Enabled = true
+	},
+	metricK8sContainerMemoryRequest: func(m *K8sClusterMetrics) {
+		initContainerMetrics(m)
+		m.K8sContainerMemoryRequest.Enabled = true
+	},
+	metricK8sContainerMemoryLimit: func(m *K8sClusterMetrics) {
+		initContainerMetrics(m)
+		m.K8sContainerMemoryLimit.Enabled = true
+	},
+	metricK8sContainerRestarts: func(m *K8sClusterMetrics) {
+		initContainerMetrics(m)
+		m.K8sContainerRestarts.Enabled = true
+	},
+
+	// K8sClusterStatefulSetMetrics
+	metricK8sStatefulSetCurrentPods: func(m *K8sClusterMetrics) {
+		initStatefulSetMetrics(m)
+		m.K8sStatefulSetCurrentPods.Enabled = true
+	},
+	metricK8sStatefulSetDesiredPods: func(m *K8sClusterMetrics) {
+		initStatefulSetMetrics(m)
+		m.K8sStatefulSetDesiredPods.Enabled = true
+	},
+	metricK8sStatefulSetReadyPods: func(m *K8sClusterMetrics) {
+		initStatefulSetMetrics(m)
+		m.K8sStatefulSetReadyPods.Enabled = true
+	},
+	metricK8sStatefulSetUpdatedPods: func(m *K8sClusterMetrics) {
+		initStatefulSetMetrics(m)
+		m.K8sStatefulSetUpdatedPods.Enabled = true
+	},
+
+	// K8sClusterJobMetrics
+	metricK8sJobActivePods: func(m *K8sClusterMetrics) {
+		initJobMetrics(m)
+		m.K8sJobActivePods.Enabled = true
+	},
+	metricK8sJobDesiredSuccessfulPods: func(m *K8sClusterMetrics) {
+		initJobMetrics(m)
+		m.K8sJobDesiredSuccessfulPods.Enabled = true
+	},
+	metricK8sJobFailedPods: func(m *K8sClusterMetrics) {
+		initJobMetrics(m)
+		m.K8sJobFailedPods.Enabled = true
+	},
+	metricK8sJobMaxParallelPods: func(m *K8sClusterMetrics) {
+		initJobMetrics(m)
+		m.K8sJobMaxParallelPods.Enabled = true
+	},
+	metricK8sJobSuccessfulPods: func(m *K8sClusterMetrics) {
+		initJobMetrics(m)
+		m.K8sJobSuccessfulPods.Enabled = true
+	},
+
+	// K8sClusterDeploymentMetrics
+	metricK8sDeploymentAvailable: func(m *K8sClusterMetrics) {
+		initDeploymentMetrics(m)
+		m.K8sDeploymentAvailable.Enabled = true
+	},
+	metricK8sDeploymentDesired: func(m *K8sClusterMetrics) {
+		initDeploymentMetrics(m)
+		m.K8sDeploymentDesired.Enabled = true
+	},
+
+	// K8sClusterDaemonSetMetrics
+	metricK8sDaemonSetCurrentScheduledNodes: func(m *K8sClusterMetrics) {
+		initDaemonSetMetrics(m)
+		m.K8sDaemonSetCurrentScheduledNodes.Enabled = true
+	},
+	metricK8sDaemonSetDesiredScheduledNodes: func(m *K8sClusterMetrics) {
+		initDaemonSetMetrics(m)
+		m.K8sDaemonSetDesiredScheduledNodes.Enabled = true
+	},
+	metricK8sDaemonSetMisscheduledNodes: func(m *K8sClusterMetrics) {
+		initDaemonSetMetrics(m)
+		m.K8sDaemonSetMisscheduledNodes.Enabled = true
+	},
+	metricK8sDaemonSetReadyNodes: func(m *K8sClusterMetrics) {
+		initDaemonSetMetrics(m)
+		m.K8sDaemonSetReadyNodes.Enabled = true
+	},
+
+	// K8sClusterOptionalMetrics
+	metricK8sContainerStatusReason: func(m *K8sClusterMetrics) {
+		initOptionalMetrics(m)
+		m.K8sContainerStatusReason.Enabled = true
+	},
+	metricK8sContainerStatusState: func(m *K8sClusterMetrics) {
+		initOptionalMetrics(m)
+		m.K8sContainerStatusState.Enabled = true
+	},
+	metricK8sNodeCondition: func(m *K8sClusterMetrics) {
+		initOptionalMetrics(m)
+		m.K8sNodeCondition.Enabled = true
+	},
+	metricK8sPodStatusReason: func(m *K8sClusterMetrics) {
+		initOptionalMetrics(m)
+		m.K8sPodStatusReason.Enabled = true
+	},
+	metricK8sServiceEndpointCount: func(m *K8sClusterMetrics) {
+		initOptionalMetrics(m)
+		m.K8sServiceEndpointCount.Enabled = true
+	},
+	metricK8sServiceLBIngressCount: func(m *K8sClusterMetrics) {
+		initOptionalMetrics(m)
+		m.K8sServiceLoadBalancerIngressCount.Enabled = true
+	},
 }
 
 func initPodMetrics(metrics *K8sClusterMetrics) {
