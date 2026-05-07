@@ -51,6 +51,7 @@ const (
 	ReasonValidationFailed                 = "ValidationFailed"
 	ReasonRolloutInProgress                = "RolloutInProgress"
 	ReasonOTTLSpecInvalid                  = "OTTLSpecInvalid"
+	ReasonRuntimeAdditionalMetricInvalid   = "RuntimeAdditionalMetricInvalid"
 
 	// Telemetry reasons
 

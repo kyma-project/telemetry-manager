@@ -57,6 +57,7 @@ import (
 	predicateutils "github.com/kyma-project/telemetry-manager/internal/utils/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
 	"github.com/kyma-project/telemetry-manager/internal/validators/ottl"
+	"github.com/kyma-project/telemetry-manager/internal/validators/runtimemetrics"
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 	"github.com/kyma-project/telemetry-manager/internal/vpastatus"
@@ -135,6 +136,7 @@ func NewMetricPipelineController(config MetricPipelineControllerConfig, client c
 		metricpipeline.WithValidatorPipelineLock(pipelineLock),
 		metricpipeline.WithTransformSpecValidator(transformSpecValidator),
 		metricpipeline.WithFilterSpecValidator(filterSpecValidator),
+		metricpipeline.WithRuntimeAdditionalMetricsValidator(&runtimemetrics.Validator{}),
 	)
 
 	discoveryClient, err := discovery.NewDiscoveryClientForConfig(config.RestConfig)

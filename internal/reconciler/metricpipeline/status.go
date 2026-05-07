@@ -21,6 +21,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
 	"github.com/kyma-project/telemetry-manager/internal/validators/ottl"
+	"github.com/kyma-project/telemetry-manager/internal/validators/runtimemetrics"
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 )
 
@@ -125,6 +126,12 @@ func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipel
 		return metav1.ConditionFalse,
 			conditions.ReasonOTTLSpecInvalid,
 			fmt.Sprintf(conditions.MessageForMetricPipeline(conditions.ReasonOTTLSpecInvalid), err.Error())
+	}
+
+	if runtimemetrics.IsInvalidAdditionalMetricError(err) {
+		return metav1.ConditionFalse,
+			conditions.ReasonRuntimeAdditionalMetricInvalid,
+			conditions.ConvertErrToMsg(err)
 	}
 
 	var APIRequestFailed *errortypes.APIRequestFailedError

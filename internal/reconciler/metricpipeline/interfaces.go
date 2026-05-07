@@ -130,6 +130,15 @@ type SecretRefValidator interface {
 	ValidateMetricPipeline(ctx context.Context, pipeline *telemetryv1beta1.MetricPipeline) error
 }
 
+// RuntimeAdditionalMetricsValidator validates runtime additional metrics in MetricPipeline resources.
+// It ensures that runtime additional metrics are correctly defined and supported.
+type RuntimeAdditionalMetricsValidator interface {
+	// Validate checks if the runtime additional metrics are valid.
+	// It verifies that the metrics are supported and correctly configured.
+	// Returns an error if any metric is invalid.
+	Validate(pipeline *telemetryv1beta1.MetricPipeline) error
+}
+
 // TransformSpecValidator validates transform specifications in metric pipeline configurations.
 // It ensures that metric transformations are correctly defined and syntactically valid.
 type TransformSpecValidator interface {

@@ -10,12 +10,13 @@ import (
 
 // Validator validates MetricPipeline resources by checking endpoints, TLS certificates, secret references, and pipeline locks.
 type Validator struct {
-	EndpointValidator      EndpointValidator
-	TLSCertValidator       TLSCertValidator
-	SecretRefValidator     SecretRefValidator
-	PipelineLock           PipelineLock
-	TransformSpecValidator TransformSpecValidator
-	FilterSpecValidator    FilterSpecValidator
+	EndpointValidator                 EndpointValidator
+	TLSCertValidator                  TLSCertValidator
+	SecretRefValidator                SecretRefValidator
+	PipelineLock                      PipelineLock
+	TransformSpecValidator            TransformSpecValidator
+	FilterSpecValidator               FilterSpecValidator
+	RuntimeAdditionalMetricsValidator RuntimeAdditionalMetricsValidator
 }
 
 // ValidatorOption configures the Validator during initialization.
@@ -60,6 +61,13 @@ func WithTransformSpecValidator(validator TransformSpecValidator) ValidatorOptio
 func WithFilterSpecValidator(validator FilterSpecValidator) ValidatorOption {
 	return func(v *Validator) {
 		v.FilterSpecValidator = validator
+	}
+}
+
+// WithRuntimeAdditionalMetricsValidator sets the runtime additional metrics validator for the Validator.
+func WithRuntimeAdditionalMetricsValidator(validator RuntimeAdditionalMetricsValidator) ValidatorOption {
+	return func(v *Validator) {
+		v.RuntimeAdditionalMetricsValidator = validator
 	}
 }
 
@@ -116,6 +124,10 @@ func (v *Validator) validate(ctx context.Context, pipeline *telemetryv1beta1.Met
 	}
 
 	if err := v.FilterSpecValidator.Validate(pipeline.Spec.Filters); err != nil {
+		return err
+	}
+
+	if err := v.RuntimeAdditionalMetricsValidator.Validate(pipeline); err != nil {
 		return err
 	}
 
