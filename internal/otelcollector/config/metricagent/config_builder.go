@@ -925,6 +925,7 @@ func additionalMetricsToDrop(allAdditionalMetrics []string, pipelineAdditionalMe
 
 func getRuntimeAdditionalResourceMetrics(pipelineAdditionalMetrics []string, resourceMetricPattern string) []string {
 	resourceMetricRegex := regexp.MustCompile(resourceMetricPattern)
+
 	var resourceMetrics []string
 
 	for _, m := range pipelineAdditionalMetrics {
@@ -1359,6 +1360,7 @@ func shouldEnableOAuth2(tp *telemetryv1beta1.MetricPipeline) bool {
 func getRuntimeAdditionalMetrics(pipelines []telemetryv1beta1.MetricPipeline) ([]string, []string) {
 	seenK8sClusterMetrics := make(map[string]struct{})
 	seenKubeletStatsMetrics := make(map[string]struct{})
+
 	var k8sClusterAdditionalMetrics, kubeletStatsAdditionalMetrics []string
 
 	for i := range pipelines {
