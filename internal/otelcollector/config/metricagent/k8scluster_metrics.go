@@ -1,5 +1,7 @@
 package metricagent
 
+import "slices"
+
 // K8s cluster receiver metric name constants (excluding openshift specific metrics).
 const (
 	// Upstream default metrics
@@ -127,7 +129,7 @@ var k8sClusterReceiverExtraMetrics = []string{
 }
 
 // K8sClusterReceiverMetrics contains all metric names that can be emitted by the k8sCluster receiver.
-var K8sClusterReceiverMetrics = concatSlices(
+var K8sClusterReceiverMetrics = slices.Concat(
 	k8sClusterReceiverPodMetrics,
 	k8sClusterReceiverContainerMetrics,
 	k8sClusterReceiverStatefulSetMetrics,
@@ -136,13 +138,3 @@ var K8sClusterReceiverMetrics = concatSlices(
 	k8sClusterReceiverDaemonSetMetrics,
 	k8sClusterReceiverExtraMetrics,
 )
-
-func concatSlices(slices ...[]string) []string {
-	var result []string
-
-	for _, s := range slices {
-		result = append(result, s...)
-	}
-
-	return result
-}

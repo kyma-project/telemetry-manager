@@ -1,5 +1,7 @@
 package metricagent
 
+import "slices"
+
 // Kubeletstats receiver metric name constants.
 const (
 	// Default metrics
@@ -147,7 +149,7 @@ var kubeletStatsReceiverExtraMetrics = []string{
 }
 
 // KubeletStatsReceiverMetrics contains all metric names that can be emitted by the kubeletStats receiver.
-var KubeletStatsReceiverMetrics = concatSlices(
+var KubeletStatsReceiverMetrics = slices.Concat(
 	kubeletStatsReceiverContainerMetrics,
 	kubeletStatsReceiverNodeMetrics,
 	kubeletStatsReceiverPodMetrics,
