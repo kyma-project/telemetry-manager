@@ -155,6 +155,88 @@ cumulativetodelta:
   initial_value: auto
 ```
 
+## Performance Testing
+
+To quantify the resource overhead and throughput impact of the `cumulativetodelta` processor, we ran two benchmark scenarios: a low-cardinality OTLP push test (simulating the gateway) and a high-cardinality Istio scrape test (simulating the metric agent). In both scenarios, two identical collectors run side by side — Collector A (baseline, no `cumulativetodelta`) and Collector B (with `cumulativetodelta`, `max_staleness: 20m`, `initial_value: auto`). No `metricstarttimeprocessor` is used in either collector.
+
+**Metrics collected:**
+- **CPU**: `rate(otelcol_process_cpu_seconds_total[1m])` — 1-minute CPU rate sampled at each interval
+- **Memory (RSS)**: `otelcol_process_memory_rss_bytes` — instantaneous gauge of Resident Set Size. RSS is used instead of heap because it represents the total physical memory the process occupies, which is what the OOM killer evaluates and what determines whether a pod exceeds its memory limit.
+- **Throughput**: `rate(otelcol_receiver_accepted_metric_points_total[1m])` and `rate(otelcol_exporter_sent_metric_points_total[1m])`
+- **Peak values**: Maximum observed value across all samples in the measurement window
+
+### Test 1: telemetrygen (OTLP Push, Low Cardinality)
+
+**Scenario:** Simulates the OTLP gateway receiving cumulative Sum metrics from application SDKs.
+
+**Load:**
+- telemetrygen pushes cumulative Sum metrics via OTLP gRPC
+- ~1 unique time series per generator (low cardinality)
+- Three load levels: 40 pts/s (low), 100 pts/s (medium), 200 pts/s (high)
+- Each phase runs for 180 seconds, preceded by a 60-second warm-up
+- 3 runs per phase, results averaged
+
+**Collector configuration:**
+- Baseline (A): `otlp → memory_limiter → batch → otlp/sink`
+- CumToDelta (B): `otlp → memory_limiter → cumulativetodelta → batch → otlp/sink`
+
+**Results:**
+
+| Phase | Metric | Baseline (A) | CumToDelta (B) | Difference |
+|-------|--------|--------------|----------------|------------|
+| LOW (40 pts/s) | Recv Throughput | 40.0 pts/s | 40.0 pts/s | +0.0% |
+| | Export Sent | 38.3 pts/s | 39.0 pts/s | +2.0% |
+| | CPU | 2.2m | 2.2m | -2.5% |
+| | Memory (RSS) | 181.4 MiB | 182.8 MiB | +0.8% |
+| MEDIUM (100 pts/s) | Recv Throughput | 99.8 pts/s | 99.8 pts/s | -0.0% |
+| | Export Sent | 96.8 pts/s | 99.0 pts/s | +2.4% |
+| | CPU | 3.1m | 3.2m | +4.3% |
+| | Memory (RSS) | 186.5 MiB | 189.5 MiB | +1.6% |
+| HIGH (200 pts/s) | Recv Throughput | 199.8 pts/s | 200.0 pts/s | +0.1% |
+| | Export Sent | 198.3 pts/s | 198.9 pts/s | +0.3% |
+| | CPU | 4.4m | 4.6m | +4.8% |
+| | Memory (RSS) | 191.0 MiB | 192.8 MiB | +1.0% |
+
+No failed exports or refused points in either collector across all phases.
+
+**Conclusion:** With low cardinality, the `cumulativetodelta` processor adds negligible overhead — less than 5% CPU increase and less than 2% memory increase at all load levels. Throughput is unaffected.
+
+### Test 2: Istio High-Cardinality with Pod Churn
+
+**Scenario:** Simulates the metric agent scraping Istio sidecar metrics under realistic pod churn conditions.
+
+**Load:**
+- 15 nginx pods with Istio sidecars (each exposing ~300 envoy/Istio metrics)
+- Pod churn: CronJob deletes all pods every 5 minutes (new pods get new IPs → new label combinations → cardinality growth)
+- Traffic generation: 60 parallel curl clients every minute creating cross-pod HTTP traffic (generating `istio_requests_total` and related metrics with unique source/destination pairs)
+- Scrape interval: 15 seconds
+- Measurement duration: 15 minutes (15 samples at 60-second intervals)
+
+**Collector configuration:**
+- Baseline (A): `prometheus → memory_limiter → batch → otlp/sink`
+- CumToDelta (B): `prometheus → memory_limiter → cumulativetodelta → batch → otlp/sink`
+
+Both collectors scrape the same set of pods using Kubernetes service discovery targeting `istio-proxy` containers on port 15090.
+
+**Results (averages over 15 minutes):**
+
+| Metric | Baseline (A) | CumToDelta (B) | Difference |
+|--------|--------------|----------------|------------|
+| Recv Throughput | 365.8 pts/s | 361.8 pts/s | -1.1% |
+| Export Sent | 363.7 pts/s | 252.3 pts/s | -30.6% |
+| CPU (avg) | 20m | 20m | -1.3% |
+| Memory RSS (avg) | 250.2 MiB | 267.7 MiB | +7.0% |
+| Peak CPU | 39m | 40m | +0.9% |
+| Peak Memory RSS | 259.6 MiB | 289.7 MiB | +11.6% |
+
+**Key observations:**
+
+1. **30.6% fewer exported points** — The traffic-generator pods live approximately 24 seconds with a 15-second scrape interval, resulting in only 1-2 scrapes per pod before it terminates. With `initial_value: auto`, the first scrape is dropped (no previous value to compute delta from). For pods with only 1 scrape, 100% of their data is lost. For pods with 2 scrapes, 50% is lost. The long-lived churn-server pods (5-minute lifetime, ~20 scrapes) lose only ~5% to first-point drops.
+2. **+7% average memory / +11.6% peak memory** — The per-series state map grows with every unique metric series. Pod churn creates new series continuously (new pod IP → new label combination), and these persist in the state map until `max_staleness` evicts them. Over 15 minutes, Collector B's memory grew from 259 MiB to 303 MiB (versus A: 256 MiB to 272 MiB).
+3. **CPU is essentially unchanged** — Delta computation (subtraction) is cheap per-point. The CPU overhead is negligible even with high cardinality.
+
+**Note on the 30.6% drop:** This reflects a worst-case workload pattern with extremely short-lived pods. In production clusters without aggressive pod churn, the drop rate is much lower. The long-lived churn-server pods demonstrate the normal case: ~5% first-point loss, which is negligible.
+
 ## Consequences
 
 - Dynatrace receives delta metrics and no longer rejects cumulative sums
