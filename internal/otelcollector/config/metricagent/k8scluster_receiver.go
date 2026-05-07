@@ -45,8 +45,8 @@ func disableK8sClusterMetrics(metrics *K8sClusterMetrics, runtimeResources runti
 		K8sCronJobActiveJobs:                Metric{Enabled: false},
 	}
 
-	// The following metrics are enabled by default in the K8sClusterReceiver. If we disable these resources in
-	// pipeline config we need to disable the corresponding metrics in the K8sClusterReceiver.
+	// The following metrics are enabled by default in the K8sClusterReceiver.
+	// If the resource selectors are disabled, we need to disable the corresponding metrics in the K8sClusterReceiver.
 
 	if !runtimeResources.pod {
 		metrics.K8sClusterPodMetrics = &K8sClusterPodMetrics{
@@ -161,7 +161,7 @@ func enableK8sClusterAdditionalMetrics(metrics *K8sClusterMetrics, additionalMet
 			initContainerMetrics(metrics)
 			metrics.K8sContainerRestarts.Enabled = true
 
-		// K8sClusterStatefulSetMetricsToDrop
+		// K8sClusterStatefulSetMetrics
 		case metricK8sStatefulSetCurrentPods:
 			initStatefulSetMetrics(metrics)
 			metrics.K8sStatefulSetCurrentPods.Enabled = true
@@ -175,7 +175,7 @@ func enableK8sClusterAdditionalMetrics(metrics *K8sClusterMetrics, additionalMet
 			initStatefulSetMetrics(metrics)
 			metrics.K8sStatefulSetUpdatedPods.Enabled = true
 
-		// K8sClusterJobMetricsToDrop
+		// K8sClusterJobMetrics
 		case metricK8sJobActivePods:
 			initJobMetrics(metrics)
 			metrics.K8sJobActivePods.Enabled = true

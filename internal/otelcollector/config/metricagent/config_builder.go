@@ -118,7 +118,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1beta1.Metric
 
 	if inputs.runtime {
 		if err := b.AddServicePipeline(ctx, nil, "metrics/input-runtime",
-			b.addKubeletStatsReceiver(inputs.runtimeResources, opts.CollectionIntervals.Runtime),
+			b.addKubeletStatsReceiver(inputs.runtimeResources, kubeletStatsAdditionalMetrics, opts.CollectionIntervals.Runtime),
 			b.addK8sClusterReceiver(inputs.runtimeResources, k8sClusterAdditionalMetrics, opts.CollectionIntervals.Runtime),
 			b.addMemoryLimiterProcessor(),
 			b.addFilterDropNonPVCVolumesMetricsProcessor(inputs.runtimeResources),
@@ -252,11 +252,11 @@ func (b *Builder) addK8sClusterReceiver(runtimeResources runtimeResourceSources,
 	)
 }
 
-func (b *Builder) addKubeletStatsReceiver(runtimeResources runtimeResourceSources, collectionInterval time.Duration) buildComponentFunc {
+func (b *Builder) addKubeletStatsReceiver(runtimeResources runtimeResourceSources, kubeletStatsAdditionalMetrics []string, collectionInterval time.Duration) buildComponentFunc {
 	return b.AddReceiver(
 		b.StaticComponentID(common.ComponentIDKubeletStatsReceiver),
 		func(*telemetryv1beta1.MetricPipeline) any {
-			return kubeletStatsReceiver(runtimeResources, collectionInterval)
+			return kubeletStatsReceiver(runtimeResources, kubeletStatsAdditionalMetrics, collectionInterval)
 		},
 	)
 }

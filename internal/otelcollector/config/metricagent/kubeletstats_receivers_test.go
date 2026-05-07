@@ -82,9 +82,11 @@ func TestKubeletStatsReceiverConfig(t *testing.T) {
 				InsecureSkipVerify: true,
 				MetricGroups:       test.expectedMetricGroups,
 				Metrics: KubeletStatsMetrics{
-					K8sNodeCPUTime:               Metric{Enabled: false},
-					K8sNodeMemoryMajorPageFaults: Metric{Enabled: false},
-					K8sNodeMemoryPageFaults:      Metric{Enabled: false},
+					KubeletStatsDefaultMetricsToDrop: &KubeletStatsDefaultMetricsToDrop{
+						K8sNodeCPUTime:               Metric{Enabled: false},
+						K8sNodeMemoryMajorPageFaults: Metric{Enabled: false},
+						K8sNodeMemoryPageFaults:      Metric{Enabled: false},
+					},
 				},
 				ResourceAttributes: KubeletStatsResourceAttributes{
 					AWSVolumeID:            Metric{Enabled: false},
