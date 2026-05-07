@@ -34,9 +34,6 @@ type Metric struct {
 }
 
 type KubeletStatsMetrics struct {
-	ContainerCPUUsage            Metric `yaml:"container.cpu.usage"`
-	K8sPodCPUUsage               Metric `yaml:"k8s.pod.cpu.usage"`
-	K8sNodeCPUUsage              Metric `yaml:"k8s.node.cpu.usage"`
 	K8sNodeCPUTime               Metric `yaml:"k8s.node.cpu.time"`
 	K8sNodeMemoryMajorPageFaults Metric `yaml:"k8s.node.memory.major_page_faults"`
 	K8sNodeMemoryPageFaults      Metric `yaml:"k8s.node.memory.page_faults"`

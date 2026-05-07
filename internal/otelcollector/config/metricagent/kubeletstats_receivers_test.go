@@ -82,9 +82,6 @@ func TestKubeletStatsReceiverConfig(t *testing.T) {
 				InsecureSkipVerify: true,
 				MetricGroups:       test.expectedMetricGroups,
 				Metrics: KubeletStatsMetrics{
-					ContainerCPUUsage:            Metric{Enabled: true},
-					K8sPodCPUUsage:               Metric{Enabled: true},
-					K8sNodeCPUUsage:              Metric{Enabled: true},
 					K8sNodeCPUTime:               Metric{Enabled: false},
 					K8sNodeMemoryMajorPageFaults: Metric{Enabled: false},
 					K8sNodeMemoryPageFaults:      Metric{Enabled: false},
