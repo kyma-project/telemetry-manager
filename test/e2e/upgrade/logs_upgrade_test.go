@@ -62,7 +62,7 @@ func TestLogsUpgrade(t *testing.T) {
 
 	// === VALIDATE OLD VERSION ===
 	t.Log("Validating log pipeline with old version...")
-	assert.DeploymentReady(t, kitkyma.LogGatewayName)
+	assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 	assert.OTelLogPipelineHealthy(t, pipelineName)
 	assert.BackendReachable(t, backend)
 	assert.OTelLogsFromNamespaceDelivered(t, backend, genNs)
