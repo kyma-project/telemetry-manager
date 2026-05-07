@@ -163,6 +163,8 @@ processors:
     k8s_attributes:
         auth_type: serviceAccount
         passthrough: false
+        filter:
+            node_from_env_var: MY_NODE_NAME
         extract:
             metadata:
                 - k8s.pod.name
