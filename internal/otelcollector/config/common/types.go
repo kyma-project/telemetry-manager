@@ -176,10 +176,15 @@ type MemoryLimiterConfig struct {
 }
 
 type K8sAttributesProcessorConfig struct {
-	AuthType       string             `yaml:"auth_type"`
-	Passthrough    bool               `yaml:"passthrough"`
-	Extract        ExtractK8sMetadata `yaml:"extract"`
-	PodAssociation []PodAssociations  `yaml:"pod_association"`
+	AuthType       string                    `yaml:"auth_type"`
+	Passthrough    bool                      `yaml:"passthrough"`
+	Filter         K8sAttributesFilterConfig `yaml:"filter"`
+	Extract        ExtractK8sMetadata        `yaml:"extract"`
+	PodAssociation []PodAssociations         `yaml:"pod_association"`
+}
+
+type K8sAttributesFilterConfig struct {
+	NodeFromEnvVar string `yaml:"node_from_env_var"`
 }
 
 type ExtractK8sMetadata struct {
