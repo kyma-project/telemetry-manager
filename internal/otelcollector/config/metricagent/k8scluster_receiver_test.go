@@ -135,34 +135,34 @@ func getExpectedK8sClusterMetricsToDrop(disabledMetricResource metricResource) K
 		K8sResourceQuotaHardLimit:           Metric{Enabled: false},
 		K8sResourceQuotaUsed:                Metric{Enabled: false},
 	}
-	podMetricsToDrop := &K8sClusterPodMetricsToDrop{
+	podMetricsToDrop := &K8sClusterPodMetrics{
 		K8sPodPhase: Metric{false},
 	}
-	containerMetricsToDrop := &K8sClusterContainerMetricsToDrop{
+	containerMetricsToDrop := &K8sClusterContainerMetrics{
 		K8sContainerCPURequest:    Metric{false},
 		K8sContainerCPULimit:      Metric{false},
 		K8sContainerMemoryRequest: Metric{false},
 		K8sContainerMemoryLimit:   Metric{false},
 		K8sContainerRestarts:      Metric{false},
 	}
-	statefulMetricsToDrop := &K8sClusterStatefulSetMetricsToDrop{
+	statefulMetricsToDrop := &K8sClusterStatefulSetMetrics{
 		K8sStatefulSetCurrentPods: Metric{false},
 		K8sStatefulSetDesiredPods: Metric{false},
 		K8sStatefulSetReadyPods:   Metric{false},
 		K8sStatefulSetUpdatedPods: Metric{false},
 	}
-	jobMetricsToDrop := &K8sClusterJobMetricsToDrop{
+	jobMetricsToDrop := &K8sClusterJobMetrics{
 		K8sJobActivePods:            Metric{false},
 		K8sJobDesiredSuccessfulPods: Metric{false},
 		K8sJobFailedPods:            Metric{false},
 		K8sJobMaxParallelPods:       Metric{false},
 		K8sJobSuccessfulPods:        Metric{false},
 	}
-	deploymentMetricsToDrop := &K8sClusterDeploymentMetricsToDrop{
+	deploymentMetricsToDrop := &K8sClusterDeploymentMetrics{
 		K8sDeploymentAvailable: Metric{false},
 		K8sDeploymentDesired:   Metric{false},
 	}
-	daemonSetMetricsToDrop := &K8sClusterDaemonSetMetricsToDrop{
+	daemonSetMetricsToDrop := &K8sClusterDaemonSetMetrics{
 		K8sDaemonSetCurrentScheduledNodes: Metric{false},
 		K8sDaemonSetDesiredScheduledNodes: Metric{false},
 		K8sDaemonSetMisscheduledNodes:     Metric{false},
@@ -172,27 +172,27 @@ func getExpectedK8sClusterMetricsToDrop(disabledMetricResource metricResource) K
 	metricsToDrop.K8sClusterDefaultMetricsToDrop = defaultMetricsToDrop
 
 	if disabledMetricResource == pod {
-		metricsToDrop.K8sClusterPodMetricsToDrop = podMetricsToDrop
+		metricsToDrop.K8sClusterPodMetrics = podMetricsToDrop
 	}
 
 	if disabledMetricResource == container {
-		metricsToDrop.K8sClusterContainerMetricsToDrop = containerMetricsToDrop
+		metricsToDrop.K8sClusterContainerMetrics = containerMetricsToDrop
 	}
 
 	if disabledMetricResource == statefulset {
-		metricsToDrop.K8sClusterStatefulSetMetricsToDrop = statefulMetricsToDrop
+		metricsToDrop.K8sClusterStatefulSetMetrics = statefulMetricsToDrop
 	}
 
 	if disabledMetricResource == job {
-		metricsToDrop.K8sClusterJobMetricsToDrop = jobMetricsToDrop
+		metricsToDrop.K8sClusterJobMetrics = jobMetricsToDrop
 	}
 
 	if disabledMetricResource == deployment {
-		metricsToDrop.K8sClusterDeploymentMetricsToDrop = deploymentMetricsToDrop
+		metricsToDrop.K8sClusterDeploymentMetrics = deploymentMetricsToDrop
 	}
 
 	if disabledMetricResource == daemonset {
-		metricsToDrop.K8sClusterDaemonSetMetricsToDrop = daemonSetMetricsToDrop
+		metricsToDrop.K8sClusterDaemonSetMetrics = daemonSetMetricsToDrop
 	}
 
 	return metricsToDrop

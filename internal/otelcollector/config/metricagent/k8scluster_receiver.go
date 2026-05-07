@@ -49,13 +49,13 @@ func disableK8sClusterMetrics(metrics *K8sClusterMetrics, runtimeResources runti
 	// pipeline config we need to disable the corresponding metrics in the K8sClusterReceiver.
 
 	if !runtimeResources.pod {
-		metrics.K8sClusterPodMetricsToDrop = &K8sClusterPodMetricsToDrop{
+		metrics.K8sClusterPodMetrics = &K8sClusterPodMetrics{
 			K8sPodPhase: Metric{false},
 		}
 	}
 
 	if !runtimeResources.container {
-		metrics.K8sClusterContainerMetricsToDrop = &K8sClusterContainerMetricsToDrop{
+		metrics.K8sClusterContainerMetrics = &K8sClusterContainerMetrics{
 			K8sContainerCPURequest:    Metric{false},
 			K8sContainerCPULimit:      Metric{false},
 			K8sContainerMemoryRequest: Metric{false},
@@ -65,7 +65,7 @@ func disableK8sClusterMetrics(metrics *K8sClusterMetrics, runtimeResources runti
 	}
 
 	if !runtimeResources.statefulset {
-		metrics.K8sClusterStatefulSetMetricsToDrop = &K8sClusterStatefulSetMetricsToDrop{
+		metrics.K8sClusterStatefulSetMetrics = &K8sClusterStatefulSetMetrics{
 			K8sStatefulSetCurrentPods: Metric{false},
 			K8sStatefulSetDesiredPods: Metric{false},
 			K8sStatefulSetReadyPods:   Metric{false},
@@ -74,7 +74,7 @@ func disableK8sClusterMetrics(metrics *K8sClusterMetrics, runtimeResources runti
 	}
 
 	if !runtimeResources.job {
-		metrics.K8sClusterJobMetricsToDrop = &K8sClusterJobMetricsToDrop{
+		metrics.K8sClusterJobMetrics = &K8sClusterJobMetrics{
 			K8sJobActivePods:            Metric{false},
 			K8sJobDesiredSuccessfulPods: Metric{false},
 			K8sJobFailedPods:            Metric{false},
@@ -84,14 +84,14 @@ func disableK8sClusterMetrics(metrics *K8sClusterMetrics, runtimeResources runti
 	}
 
 	if !runtimeResources.deployment {
-		metrics.K8sClusterDeploymentMetricsToDrop = &K8sClusterDeploymentMetricsToDrop{
+		metrics.K8sClusterDeploymentMetrics = &K8sClusterDeploymentMetrics{
 			K8sDeploymentAvailable: Metric{false},
 			K8sDeploymentDesired:   Metric{false},
 		}
 	}
 
 	if !runtimeResources.daemonset {
-		metrics.K8sClusterDaemonSetMetricsToDrop = &K8sClusterDaemonSetMetricsToDrop{
+		metrics.K8sClusterDaemonSetMetrics = &K8sClusterDaemonSetMetrics{
 			K8sDaemonSetCurrentScheduledNodes: Metric{false},
 			K8sDaemonSetDesiredScheduledNodes: Metric{false},
 			K8sDaemonSetMisscheduledNodes:     Metric{false},
@@ -139,12 +139,12 @@ func enableK8sClusterAdditionalMetrics(metrics *K8sClusterMetrics, additionalMet
 		case metricK8sCronJobActiveJobs:
 			metrics.K8sCronJobActiveJobs.Enabled = true
 
-		// K8sClusterPodMetricsToDrop
+		// K8sClusterPodMetrics
 		case metricK8sPodPhase:
 			initPodMetrics(metrics)
 			metrics.K8sPodPhase.Enabled = true
 
-		// K8sClusterContainerMetricsToDrop
+		// K8sClusterContainerMetrics
 		case metricK8sContainerCPURequest:
 			initContainerMetrics(metrics)
 			metrics.K8sContainerCPURequest.Enabled = true
@@ -192,7 +192,7 @@ func enableK8sClusterAdditionalMetrics(metrics *K8sClusterMetrics, additionalMet
 			initJobMetrics(metrics)
 			metrics.K8sJobSuccessfulPods.Enabled = true
 
-		// K8sClusterDeploymentMetricsToDrop
+		// K8sClusterDeploymentMetrics
 		case metricK8sDeploymentAvailable:
 			initDeploymentMetrics(metrics)
 			metrics.K8sDeploymentAvailable.Enabled = true
@@ -200,7 +200,7 @@ func enableK8sClusterAdditionalMetrics(metrics *K8sClusterMetrics, additionalMet
 			initDeploymentMetrics(metrics)
 			metrics.K8sDeploymentDesired.Enabled = true
 
-		// K8sClusterDaemonSetMetricsToDrop
+		// K8sClusterDaemonSetMetrics
 		case metricK8sDaemonSetCurrentScheduledNodes:
 			initDaemonSetMetrics(metrics)
 			metrics.K8sDaemonSetCurrentScheduledNodes.Enabled = true
@@ -238,38 +238,38 @@ func enableK8sClusterAdditionalMetrics(metrics *K8sClusterMetrics, additionalMet
 }
 
 func initPodMetrics(metrics *K8sClusterMetrics) {
-	if metrics.K8sClusterPodMetricsToDrop == nil {
-		metrics.K8sClusterPodMetricsToDrop = &K8sClusterPodMetricsToDrop{}
+	if metrics.K8sClusterPodMetrics == nil {
+		metrics.K8sClusterPodMetrics = &K8sClusterPodMetrics{}
 	}
 }
 
 func initContainerMetrics(metrics *K8sClusterMetrics) {
-	if metrics.K8sClusterContainerMetricsToDrop == nil {
-		metrics.K8sClusterContainerMetricsToDrop = &K8sClusterContainerMetricsToDrop{}
+	if metrics.K8sClusterContainerMetrics == nil {
+		metrics.K8sClusterContainerMetrics = &K8sClusterContainerMetrics{}
 	}
 }
 
 func initStatefulSetMetrics(metrics *K8sClusterMetrics) {
-	if metrics.K8sClusterStatefulSetMetricsToDrop == nil {
-		metrics.K8sClusterStatefulSetMetricsToDrop = &K8sClusterStatefulSetMetricsToDrop{}
+	if metrics.K8sClusterStatefulSetMetrics == nil {
+		metrics.K8sClusterStatefulSetMetrics = &K8sClusterStatefulSetMetrics{}
 	}
 }
 
 func initJobMetrics(metrics *K8sClusterMetrics) {
-	if metrics.K8sClusterJobMetricsToDrop == nil {
-		metrics.K8sClusterJobMetricsToDrop = &K8sClusterJobMetricsToDrop{}
+	if metrics.K8sClusterJobMetrics == nil {
+		metrics.K8sClusterJobMetrics = &K8sClusterJobMetrics{}
 	}
 }
 
 func initDeploymentMetrics(metrics *K8sClusterMetrics) {
-	if metrics.K8sClusterDeploymentMetricsToDrop == nil {
-		metrics.K8sClusterDeploymentMetricsToDrop = &K8sClusterDeploymentMetricsToDrop{}
+	if metrics.K8sClusterDeploymentMetrics == nil {
+		metrics.K8sClusterDeploymentMetrics = &K8sClusterDeploymentMetrics{}
 	}
 }
 
 func initDaemonSetMetrics(metrics *K8sClusterMetrics) {
-	if metrics.K8sClusterDaemonSetMetricsToDrop == nil {
-		metrics.K8sClusterDaemonSetMetricsToDrop = &K8sClusterDaemonSetMetricsToDrop{}
+	if metrics.K8sClusterDaemonSetMetrics == nil {
+		metrics.K8sClusterDaemonSetMetrics = &K8sClusterDaemonSetMetrics{}
 	}
 }
 

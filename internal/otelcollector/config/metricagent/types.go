@@ -49,14 +49,14 @@ const (
 )
 
 type K8sClusterMetrics struct {
-	*K8sClusterDefaultMetricsToDrop     `yaml:",inline,omitempty"`
-	*K8sClusterPodMetricsToDrop         `yaml:",inline,omitempty"`
-	*K8sClusterContainerMetricsToDrop   `yaml:",inline,omitempty"`
-	*K8sClusterStatefulSetMetricsToDrop `yaml:",inline,omitempty"`
-	*K8sClusterJobMetricsToDrop         `yaml:",inline,omitempty"`
-	*K8sClusterDeploymentMetricsToDrop  `yaml:",inline,omitempty"`
-	*K8sClusterDaemonSetMetricsToDrop   `yaml:",inline,omitempty"`
-	*K8sClusterOptionalMetrics          `yaml:",inline,omitempty"`
+	*K8sClusterDefaultMetricsToDrop `yaml:",inline,omitempty"`
+	*K8sClusterPodMetrics           `yaml:",inline,omitempty"`
+	*K8sClusterContainerMetrics     `yaml:",inline,omitempty"`
+	*K8sClusterStatefulSetMetrics   `yaml:",inline,omitempty"`
+	*K8sClusterJobMetrics           `yaml:",inline,omitempty"`
+	*K8sClusterDeploymentMetrics    `yaml:",inline,omitempty"`
+	*K8sClusterDaemonSetMetrics     `yaml:",inline,omitempty"`
+	*K8sClusterOptionalMetrics      `yaml:",inline,omitempty"`
 }
 
 type K8sClusterDefaultMetricsToDrop struct {
@@ -86,14 +86,14 @@ type K8sClusterDefaultMetricsToDrop struct {
 	K8sCronJobActiveJobs Metric `yaml:"k8s.cronjob.active_jobs"`
 }
 
-type K8sClusterStatefulSetMetricsToDrop struct {
+type K8sClusterStatefulSetMetrics struct {
 	K8sStatefulSetCurrentPods Metric `yaml:"k8s.statefulset.current_pods,omitempty"`
 	K8sStatefulSetDesiredPods Metric `yaml:"k8s.statefulset.desired_pods,omitempty"`
 	K8sStatefulSetReadyPods   Metric `yaml:"k8s.statefulset.ready_pods,omitempty"`
 	K8sStatefulSetUpdatedPods Metric `yaml:"k8s.statefulset.updated_pods,omitempty"`
 }
 
-type K8sClusterJobMetricsToDrop struct {
+type K8sClusterJobMetrics struct {
 	K8sJobActivePods            Metric `yaml:"k8s.job.active_pods,omitempty"`
 	K8sJobDesiredSuccessfulPods Metric `yaml:"k8s.job.desired_successful_pods,omitempty"`
 	K8sJobFailedPods            Metric `yaml:"k8s.job.failed_pods,omitempty"`
@@ -101,23 +101,23 @@ type K8sClusterJobMetricsToDrop struct {
 	K8sJobSuccessfulPods        Metric `yaml:"k8s.job.successful_pods,omitempty"`
 }
 
-type K8sClusterDeploymentMetricsToDrop struct {
+type K8sClusterDeploymentMetrics struct {
 	K8sDeploymentAvailable Metric `yaml:"k8s.deployment.available,omitempty"`
 	K8sDeploymentDesired   Metric `yaml:"k8s.deployment.desired,omitempty"`
 }
 
-type K8sClusterDaemonSetMetricsToDrop struct {
+type K8sClusterDaemonSetMetrics struct {
 	K8sDaemonSetCurrentScheduledNodes Metric `yaml:"k8s.daemonset.current_scheduled_nodes,omitempty"`
 	K8sDaemonSetDesiredScheduledNodes Metric `yaml:"k8s.daemonset.desired_scheduled_nodes,omitempty"`
 	K8sDaemonSetMisscheduledNodes     Metric `yaml:"k8s.daemonset.misscheduled_nodes,omitempty"`
 	K8sDaemonSetReadyNodes            Metric `yaml:"k8s.daemonset.ready_nodes,omitempty"`
 }
 
-type K8sClusterPodMetricsToDrop struct {
+type K8sClusterPodMetrics struct {
 	K8sPodPhase Metric `yaml:"k8s.pod.phase,omitempty"`
 }
 
-type K8sClusterContainerMetricsToDrop struct {
+type K8sClusterContainerMetrics struct {
 	K8sContainerCPURequest    Metric `yaml:"k8s.container.cpu_request,omitempty"`
 	K8sContainerCPULimit      Metric `yaml:"k8s.container.cpu_limit,omitempty"`
 	K8sContainerMemoryRequest Metric `yaml:"k8s.container.memory_request,omitempty"`
