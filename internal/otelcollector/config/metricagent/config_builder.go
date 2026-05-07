@@ -3,6 +3,7 @@ package metricagent
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"slices"
 	"strings"
 	"time"
@@ -597,6 +598,8 @@ func namespacesConditions(namespaces []string) []string {
 
 // Runtime resource filter processors
 
+// addDropRuntimePodMetricsProcessor drops pod metrics from the runtime input if runtime input is enabled but pod metrics scraping is disabled.
+// Additional pod metrics specified in the pipeline configuration are excluded from dropping.
 func (b *Builder) addDropRuntimePodMetricsProcessor() buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDDropRuntimePodMetricsProcessor),
@@ -605,18 +608,29 @@ func (b *Builder) addDropRuntimePodMetricsProcessor() buildComponentFunc {
 				return nil
 			}
 
+			const podMetricPattern = `^k8s[.]pod[.].*`
+
+			conditions := []string{
+				common.KymaInputNameEquals(common.InputSourceRuntime),
+				common.IsMatch("metric.name", podMetricPattern),
+			}
+
+			additionalPodMetrics := getRuntimeAdditionalResourceMetrics(mp.Spec.Input.Runtime.AdditionalMetrics, podMetricPattern)
+			if len(additionalPodMetrics) > 0 {
+				conditions = append(conditions, common.Not(common.JoinWithOr(nameConditions(additionalPodMetrics)...)))
+			}
+
 			return common.MetricFilterProcessor([]telemetryv1beta1.FilterSpec{
 				{
-					Conditions: []string{common.JoinWithAnd(
-						common.KymaInputNameEquals(common.InputSourceRuntime),
-						common.IsMatch("metric.name", "^k8s.pod.*"),
-					)},
+					Conditions: []string{common.JoinWithAnd(conditions...)},
 				},
 			})
 		},
 	)
 }
 
+// addDropRuntimeContainerMetricsProcessor drops container metrics from the runtime input if runtime input is enabled but container metrics scraping is disabled.
+// Additional container metrics specified in the pipeline configuration are excluded from dropping.
 func (b *Builder) addDropRuntimeContainerMetricsProcessor() buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDDropRuntimeContainerMetricsProcessor),
@@ -625,19 +639,29 @@ func (b *Builder) addDropRuntimeContainerMetricsProcessor() buildComponentFunc {
 				return nil
 			}
 
-			return common.MetricFilterProcessor(
-				[]telemetryv1beta1.FilterSpec{
-					{
-						Conditions: []string{common.JoinWithAnd(
-							common.KymaInputNameEquals(common.InputSourceRuntime),
-							common.IsMatch("metric.name", "(^k8s.container.*)|(^container.*)"),
-						)},
-					},
-				})
+			const containerMetricPattern = `(^k8s[.]container[.].*)|(^container[.].*)`
+
+			conditions := []string{
+				common.KymaInputNameEquals(common.InputSourceRuntime),
+				common.IsMatch("metric.name", containerMetricPattern),
+			}
+
+			additionalContainerMetrics := getRuntimeAdditionalResourceMetrics(mp.Spec.Input.Runtime.AdditionalMetrics, containerMetricPattern)
+			if len(additionalContainerMetrics) > 0 {
+				conditions = append(conditions, common.Not(common.JoinWithOr(nameConditions(additionalContainerMetrics)...)))
+			}
+
+			return common.MetricFilterProcessor([]telemetryv1beta1.FilterSpec{
+				{
+					Conditions: []string{common.JoinWithAnd(conditions...)},
+				},
+			})
 		},
 	)
 }
 
+// addDropRuntimeNodeMetricsProcessor drops node metrics from the runtime input if runtime input is enabled but node metrics scraping is disabled.
+// Additional node metrics specified in the pipeline configuration are excluded from dropping.
 func (b *Builder) addDropRuntimeNodeMetricsProcessor() buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDDropRuntimeNodeMetricsProcessor),
@@ -646,18 +670,29 @@ func (b *Builder) addDropRuntimeNodeMetricsProcessor() buildComponentFunc {
 				return nil
 			}
 
+			const nodeMetricPattern = `^k8s[.]node[.].*`
+
+			conditions := []string{
+				common.KymaInputNameEquals(common.InputSourceRuntime),
+				common.IsMatch("metric.name", nodeMetricPattern),
+			}
+
+			additionalNodeMetrics := getRuntimeAdditionalResourceMetrics(mp.Spec.Input.Runtime.AdditionalMetrics, nodeMetricPattern)
+			if len(additionalNodeMetrics) > 0 {
+				conditions = append(conditions, common.Not(common.JoinWithOr(nameConditions(additionalNodeMetrics)...)))
+			}
+
 			return common.MetricFilterProcessor([]telemetryv1beta1.FilterSpec{
 				{
-					Conditions: []string{common.JoinWithAnd(
-						common.KymaInputNameEquals(common.InputSourceRuntime),
-						common.IsMatch("metric.name", "^k8s.node.*"),
-					)},
+					Conditions: []string{common.JoinWithAnd(conditions...)},
 				},
 			})
 		},
 	)
 }
 
+// addDropRuntimeVolumeMetricsProcessor drops volume metrics from the runtime input if runtime input is enabled but volume metrics scraping is disabled.
+// Additional volume metrics specified in the pipeline configuration are excluded from dropping.
 func (b *Builder) addDropRuntimeVolumeMetricsProcessor() buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDDropRuntimeVolumeMetricsProcessor),
@@ -666,18 +701,29 @@ func (b *Builder) addDropRuntimeVolumeMetricsProcessor() buildComponentFunc {
 				return nil
 			}
 
+			const volumeMetricPattern = `^k8s[.]volume[.].*`
+
+			conditions := []string{
+				common.KymaInputNameEquals(common.InputSourceRuntime),
+				common.IsMatch("metric.name", volumeMetricPattern),
+			}
+
+			additionalVolumeMetrics := getRuntimeAdditionalResourceMetrics(mp.Spec.Input.Runtime.AdditionalMetrics, volumeMetricPattern)
+			if len(additionalVolumeMetrics) > 0 {
+				conditions = append(conditions, common.Not(common.JoinWithOr(nameConditions(additionalVolumeMetrics)...)))
+			}
+
 			return common.MetricFilterProcessor([]telemetryv1beta1.FilterSpec{
 				{
-					Conditions: []string{common.JoinWithAnd(
-						common.KymaInputNameEquals(common.InputSourceRuntime),
-						common.IsMatch("metric.name", "^k8s.volume.*"),
-					)},
+					Conditions: []string{common.JoinWithAnd(conditions...)},
 				},
 			})
 		},
 	)
 }
 
+// addDropRuntimeDeploymentMetricsProcessor drops deployment metrics from the runtime input if runtime input is enabled but deployment metrics scraping is disabled.
+// Additional deployment metrics specified in the pipeline configuration are excluded from dropping.
 func (b *Builder) addDropRuntimeDeploymentMetricsProcessor() buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDDropRuntimeDeploymentMetricsProcessor),
@@ -686,18 +732,29 @@ func (b *Builder) addDropRuntimeDeploymentMetricsProcessor() buildComponentFunc 
 				return nil
 			}
 
+			const deploymentMetricPattern = `^k8s[.]deployment[.].*`
+
+			conditions := []string{
+				common.KymaInputNameEquals(common.InputSourceRuntime),
+				common.IsMatch("metric.name", deploymentMetricPattern),
+			}
+
+			additionalDeploymentMetrics := getRuntimeAdditionalResourceMetrics(mp.Spec.Input.Runtime.AdditionalMetrics, deploymentMetricPattern)
+			if len(additionalDeploymentMetrics) > 0 {
+				conditions = append(conditions, common.Not(common.JoinWithOr(nameConditions(additionalDeploymentMetrics)...)))
+			}
+
 			return common.MetricFilterProcessor([]telemetryv1beta1.FilterSpec{
 				{
-					Conditions: []string{common.JoinWithAnd(
-						common.KymaInputNameEquals(common.InputSourceRuntime),
-						common.IsMatch("metric.name", "^k8s.deployment.*"),
-					)},
+					Conditions: []string{common.JoinWithAnd(conditions...)},
 				},
 			})
 		},
 	)
 }
 
+// addDropRuntimeDaemonSetMetricsProcessor drops daemonset metrics from the runtime input if runtime input is enabled but daemonset metrics scraping is disabled.
+// Additional daemonset metrics specified in the pipeline configuration are excluded from dropping.
 func (b *Builder) addDropRuntimeDaemonSetMetricsProcessor() buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDDropRuntimeDaemonSetMetricsProcessor),
@@ -706,18 +763,29 @@ func (b *Builder) addDropRuntimeDaemonSetMetricsProcessor() buildComponentFunc {
 				return nil
 			}
 
+			const daemonsetMetricPattern = `^k8s[.]daemonset[.].*`
+
+			conditions := []string{
+				common.KymaInputNameEquals(common.InputSourceRuntime),
+				common.IsMatch("metric.name", daemonsetMetricPattern),
+			}
+
+			additionalDaemonSetMetrics := getRuntimeAdditionalResourceMetrics(mp.Spec.Input.Runtime.AdditionalMetrics, daemonsetMetricPattern)
+			if len(additionalDaemonSetMetrics) > 0 {
+				conditions = append(conditions, common.Not(common.JoinWithOr(nameConditions(additionalDaemonSetMetrics)...)))
+			}
+
 			return common.MetricFilterProcessor([]telemetryv1beta1.FilterSpec{
 				{
-					Conditions: []string{common.JoinWithAnd(
-						common.KymaInputNameEquals(common.InputSourceRuntime),
-						common.IsMatch("metric.name", "^k8s.daemonset.*"),
-					)},
+					Conditions: []string{common.JoinWithAnd(conditions...)},
 				},
 			})
 		},
 	)
 }
 
+// addDropRuntimeStatefulSetMetricsProcessor drops statefulset metrics from the runtime input if runtime input is enabled but statefulset metrics scraping is disabled.
+// Additional statefulset metrics specified in the pipeline configuration are excluded from dropping.
 func (b *Builder) addDropRuntimeStatefulSetMetricsProcessor() buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDDropRuntimeStatefulSetMetricsProcessor),
@@ -726,18 +794,29 @@ func (b *Builder) addDropRuntimeStatefulSetMetricsProcessor() buildComponentFunc
 				return nil
 			}
 
+			const statefulsetMetricPattern = `^k8s[.]statefulset[.].*`
+
+			conditions := []string{
+				common.KymaInputNameEquals(common.InputSourceRuntime),
+				common.IsMatch("metric.name", statefulsetMetricPattern),
+			}
+
+			additionalStatefulSetMetrics := getRuntimeAdditionalResourceMetrics(mp.Spec.Input.Runtime.AdditionalMetrics, statefulsetMetricPattern)
+			if len(additionalStatefulSetMetrics) > 0 {
+				conditions = append(conditions, common.Not(common.JoinWithOr(nameConditions(additionalStatefulSetMetrics)...)))
+			}
+
 			return common.MetricFilterProcessor([]telemetryv1beta1.FilterSpec{
 				{
-					Conditions: []string{common.JoinWithAnd(
-						common.KymaInputNameEquals(common.InputSourceRuntime),
-						common.IsMatch("metric.name", "^k8s.statefulset.*"),
-					)},
+					Conditions: []string{common.JoinWithAnd(conditions...)},
 				},
 			})
 		},
 	)
 }
 
+// addDropRuntimeJobMetricsProcessor drops job metrics from the runtime input if runtime input is enabled but job metrics scraping is disabled.
+// Additional job metrics specified in the pipeline configuration are excluded from dropping.
 func (b *Builder) addDropRuntimeJobMetricsProcessor() buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDDropRuntimeJobMetricsProcessor),
@@ -746,12 +825,21 @@ func (b *Builder) addDropRuntimeJobMetricsProcessor() buildComponentFunc {
 				return nil
 			}
 
+			const jobMetricPattern = `^k8s[.]job[.].*`
+
+			conditions := []string{
+				common.KymaInputNameEquals(common.InputSourceRuntime),
+				common.IsMatch("metric.name", jobMetricPattern),
+			}
+
+			additionalJobMetrics := getRuntimeAdditionalResourceMetrics(mp.Spec.Input.Runtime.AdditionalMetrics, jobMetricPattern)
+			if len(additionalJobMetrics) > 0 {
+				conditions = append(conditions, common.Not(common.JoinWithOr(nameConditions(additionalJobMetrics)...)))
+			}
+
 			return common.MetricFilterProcessor([]telemetryv1beta1.FilterSpec{
 				{
-					Conditions: []string{common.JoinWithAnd(
-						common.KymaInputNameEquals(common.InputSourceRuntime),
-						common.IsMatch("metric.name", "^k8s.job.*"),
-					)},
+					Conditions: []string{common.JoinWithAnd(conditions...)},
 				},
 			})
 		},
@@ -833,6 +921,19 @@ func additionalMetricsToDrop(allAdditionalMetrics []string, pipelineAdditionalMe
 	}
 
 	return metricsToDrop
+}
+
+func getRuntimeAdditionalResourceMetrics(pipelineAdditionalMetrics []string, resourceMetricPattern string) []string {
+	resourceMetricRegex := regexp.MustCompile(resourceMetricPattern)
+	var resourceMetrics []string
+
+	for _, m := range pipelineAdditionalMetrics {
+		if resourceMetricRegex.MatchString(m) {
+			resourceMetrics = append(resourceMetrics, m)
+		}
+	}
+
+	return resourceMetrics
 }
 
 // Diagnostic metric filter processors
