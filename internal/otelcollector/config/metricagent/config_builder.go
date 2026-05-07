@@ -114,7 +114,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1beta1.Metric
 	pipelinesWithIstioInput := getPipelinesWithIstioInput(pipelines)
 
 	k8sClusterAdditionalMetrics, kubeletStatsAdditionalMetrics := getRuntimeAdditionalMetrics(pipelines)
-	runtimeAdditionalMetrics := append(k8sClusterAdditionalMetrics, kubeletStatsAdditionalMetrics...)
+	runtimeAdditionalMetrics := slices.Concat(k8sClusterAdditionalMetrics, kubeletStatsAdditionalMetrics)
 
 	if inputs.runtime {
 		if err := b.AddServicePipeline(ctx, nil, "metrics/input-runtime",
@@ -600,6 +600,8 @@ func namespacesConditions(namespaces []string) []string {
 
 // addDropRuntimePodMetricsProcessor drops pod metrics from the runtime input if runtime input is enabled but pod metrics scraping is disabled.
 // Additional pod metrics specified in the pipeline configuration are excluded from dropping.
+//
+//nolint:dupl // Similar logic is used in other resource filter processors, but they are not identical
 func (b *Builder) addDropRuntimePodMetricsProcessor() buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDDropRuntimePodMetricsProcessor),
@@ -631,6 +633,8 @@ func (b *Builder) addDropRuntimePodMetricsProcessor() buildComponentFunc {
 
 // addDropRuntimeContainerMetricsProcessor drops container metrics from the runtime input if runtime input is enabled but container metrics scraping is disabled.
 // Additional container metrics specified in the pipeline configuration are excluded from dropping.
+//
+//nolint:dupl // Similar logic is used in other resource filter processors, but they are not identical
 func (b *Builder) addDropRuntimeContainerMetricsProcessor() buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDDropRuntimeContainerMetricsProcessor),
@@ -662,6 +666,8 @@ func (b *Builder) addDropRuntimeContainerMetricsProcessor() buildComponentFunc {
 
 // addDropRuntimeNodeMetricsProcessor drops node metrics from the runtime input if runtime input is enabled but node metrics scraping is disabled.
 // Additional node metrics specified in the pipeline configuration are excluded from dropping.
+//
+//nolint:dupl // Similar logic is used in other resource filter processors, but they are not identical
 func (b *Builder) addDropRuntimeNodeMetricsProcessor() buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDDropRuntimeNodeMetricsProcessor),
@@ -693,6 +699,8 @@ func (b *Builder) addDropRuntimeNodeMetricsProcessor() buildComponentFunc {
 
 // addDropRuntimeVolumeMetricsProcessor drops volume metrics from the runtime input if runtime input is enabled but volume metrics scraping is disabled.
 // Additional volume metrics specified in the pipeline configuration are excluded from dropping.
+//
+//nolint:dupl // Similar logic is used in other resource filter processors, but they are not identical
 func (b *Builder) addDropRuntimeVolumeMetricsProcessor() buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDDropRuntimeVolumeMetricsProcessor),
@@ -724,6 +732,8 @@ func (b *Builder) addDropRuntimeVolumeMetricsProcessor() buildComponentFunc {
 
 // addDropRuntimeDeploymentMetricsProcessor drops deployment metrics from the runtime input if runtime input is enabled but deployment metrics scraping is disabled.
 // Additional deployment metrics specified in the pipeline configuration are excluded from dropping.
+//
+//nolint:dupl // Similar logic is used in other resource filter processors, but they are not identical
 func (b *Builder) addDropRuntimeDeploymentMetricsProcessor() buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDDropRuntimeDeploymentMetricsProcessor),
@@ -755,6 +765,8 @@ func (b *Builder) addDropRuntimeDeploymentMetricsProcessor() buildComponentFunc 
 
 // addDropRuntimeDaemonSetMetricsProcessor drops daemonset metrics from the runtime input if runtime input is enabled but daemonset metrics scraping is disabled.
 // Additional daemonset metrics specified in the pipeline configuration are excluded from dropping.
+//
+//nolint:dupl // Similar logic is used in other resource filter processors, but they are not identical
 func (b *Builder) addDropRuntimeDaemonSetMetricsProcessor() buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDDropRuntimeDaemonSetMetricsProcessor),
@@ -786,6 +798,8 @@ func (b *Builder) addDropRuntimeDaemonSetMetricsProcessor() buildComponentFunc {
 
 // addDropRuntimeStatefulSetMetricsProcessor drops statefulset metrics from the runtime input if runtime input is enabled but statefulset metrics scraping is disabled.
 // Additional statefulset metrics specified in the pipeline configuration are excluded from dropping.
+//
+//nolint:dupl // Similar logic is used in other resource filter processors, but they are not identical
 func (b *Builder) addDropRuntimeStatefulSetMetricsProcessor() buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDDropRuntimeStatefulSetMetricsProcessor),
@@ -817,6 +831,8 @@ func (b *Builder) addDropRuntimeStatefulSetMetricsProcessor() buildComponentFunc
 
 // addDropRuntimeJobMetricsProcessor drops job metrics from the runtime input if runtime input is enabled but job metrics scraping is disabled.
 // Additional job metrics specified in the pipeline configuration are excluded from dropping.
+//
+//nolint:dupl // Similar logic is used in other resource filter processors, but they are not identical
 func (b *Builder) addDropRuntimeJobMetricsProcessor() buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDDropRuntimeJobMetricsProcessor),
@@ -879,12 +895,12 @@ func additionalMetricsToDrop(allAdditionalMetrics []string, pipelineAdditionalMe
 	excludedMetrics := pipelineAdditionalMetrics
 
 	if metricpipelineutils.IsRuntimePodInputEnabled(metricPipelineInput) {
-		podMetrics := append(k8sClusterReceiverPodMetrics, kubeletStatsReceiverPodMetrics...)
+		podMetrics := slices.Concat(k8sClusterReceiverPodMetrics, kubeletStatsReceiverPodMetrics)
 		excludedMetrics = append(excludedMetrics, podMetrics...)
 	}
 
 	if metricpipelineutils.IsRuntimeContainerInputEnabled(metricPipelineInput) {
-		containerMetrics := append(k8sClusterReceiverContainerMetrics, kubeletStatsReceiverContainerMetrics...)
+		containerMetrics := slices.Concat(k8sClusterReceiverContainerMetrics, kubeletStatsReceiverContainerMetrics)
 		excludedMetrics = append(excludedMetrics, containerMetrics...)
 	}
 
