@@ -2,21 +2,35 @@
 
 The Telemetry module follows the principle of least privilege for network traffic. Telemetry Manager creates [NetworkPolicies](https://kubernetes.io/docs/concepts/services-networking/network-policies/) for each component it manages, restricting ingress and egress traffic to only the required connections.
 
-![Network Policies](../assets/networkpolicies.drawio.svg)
-
 ## Overview
 
 Each Telemetry component has a dedicated set of NetworkPolicies that control the allowed traffic.
 
-1. All Telemetry module Pods can send DNS queries to any IP on port 53, including DNS services, and to kube-dns on port 8053.
-2. All Telemetry module Pods can connect to any IP on port 443, including the Kubernetes API server.
-3. Any Pod in the cluster can send OTLP data to the OTLP gateway on ports 4317 for gRPC and 4318 for HTTP.
-4. Pods with the `networking.kyma-project.io/metrics-scraping: allowed` label can scrape metrics from all Telemetry components, including Telemetry Manager, on their respective metrics ports.
-5. The self monitor can scrape metrics from the gateways, agents, and Fluent Bit on ports 8888 for OTel Collectors, and 2020 for Fluent Bit.
-6. Telemetry Manager can query the self monitor on port 9090.
-7. All gateways and agents can forward telemetry data to external or in-cluster backends on any port.
-8. The self monitor can send alerts to Telemetry Manager on port 9443.
-9. The Kubernetes API server and any Pod can reach Telemetry Manager for webhooks on port 9443.
+![Network Policies](assets/networkpolicies.drawio.svg)
+
+### Ingress Traffic
+
+Traffic from external sources or cluster Pods into Telemetry components:
+
+1. Any Pod in the cluster can send OTLP data to the gateways on ports 4317 for gRPC and 4318 for HTTP.
+2. Pods with the `networking.kyma-project.io/metrics-scraping: allowed` label can scrape metrics from all Telemetry components on their respective metrics ports.
+3. The Kubernetes API server and any Pod can reach Telemetry Manager for webhooks on port 9443.
+
+### Internal Traffic
+
+Communication between Telemetry components:
+
+4. The self monitor can scrape metrics from the gateways and agents on ports 8888 for OTel Collectors. {not sure we still want to mention FluentBit in the diagram}
+5. Telemetry Manager can query the self monitor on port 9090.
+6. The self monitor can send alerts to Telemetry Manager on port 9443.
+
+### Egress Traffic
+
+Telemetry components connecting to external or cluster services:
+
+7. All Telemetry module Pods can send DNS queries to any IP on port 53, including DNS services, and to kube-dns on port 8053.
+8. All Telemetry module Pods can connect to any IP on port 443, including the Kubernetes API server.
+9. The gateways and agents can forward telemetry data to external or in-cluster backends on any port.
 
 ## Telemetry Manager Policies
 
