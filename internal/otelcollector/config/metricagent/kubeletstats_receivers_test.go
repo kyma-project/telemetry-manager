@@ -83,9 +83,9 @@ func TestKubeletStatsReceiverConfig(t *testing.T) {
 				MetricGroups:       test.expectedMetricGroups,
 				Metrics: KubeletStatsMetrics{
 					KubeletStatsDefaultMetricsToDrop: &KubeletStatsDefaultMetricsToDrop{
-						K8sNodeCPUTime:               Metric{Enabled: false},
-						K8sNodeMemoryMajorPageFaults: Metric{Enabled: false},
-						K8sNodeMemoryPageFaults:      Metric{Enabled: false},
+						K8sNodeCPUTime:               &Metric{Enabled: false},
+						K8sNodeMemoryMajorPageFaults: &Metric{Enabled: false},
+						K8sNodeMemoryPageFaults:      &Metric{Enabled: false},
 					},
 				},
 				ResourceAttributes: KubeletStatsResourceAttributes{
