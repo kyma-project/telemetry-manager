@@ -49,7 +49,7 @@ metrics/output:
     - batch
 ```
 
-This placement is not applied to the shared enrichment pipeline since it would unnecessarily convert metrics for all backends.
+This placement is not applied to the shared enrichment pipeline because it would unnecessarily convert metrics for all backends.
 
 #### Rationale
 
@@ -97,37 +97,33 @@ This parameter controls how long the processor retains per-series state after th
 
 The processor maintains one state entry per unique metric series. Memory consumption scales linearly with the number of active series.
 
-**Impact per input type (metric agent):**
+The following table shows the impact per input type for the metric agent:
 
 | Input                              | Series stability                                                        | Memory concern                                                                      | Recommendation                                                  |
 |------------------------------------|-------------------------------------------------------------------------|-------------------------------------------------------------------------------------|-----------------------------------------------------------------|
-| Prometheus (annotated workloads)   | Stable — long-lived pods, known scrape interval                         | Controllable — set based on scrape interval                                         | 2-3x scrape interval                                            |
-| Istio (sidecar metrics)            | Unstable — high cardinality, pod churn creates new series constantly    | High — state map grows with every unique source/dest/pod/response_code combination  | Hard to tune — short evicts too early, long causes memory bloat |
-| Runtime (kubeletstats, k8scluster) | Very stable — one series per node/pod, changes only on lifecycle events | Low — bounded by cluster size                                                       | Can be generous                                                 |
+| Prometheus (annotated workloads)   | Stable – long-lived pods, known scrape interval                         | Controllable – set based on scrape interval                                         | 2-3x scrape interval                                            |
+| Istio (sidecar metrics)            | Unstable – high cardinality, pod churn creates new series constantly    | High – state map grows with every unique source/dest/pod/response_code combination  | Hard to tune – short evicts too early, long causes memory bloat |
+| Runtime (kubeletstats, k8scluster) | Very stable – one series per node/pod, changes only on lifecycle events | Low – bounded by cluster size                                                       | Can be generous                                                 |
 
-**Impact per input type (OTLP gateway):**
+The following table shows the impact per input type for the OTLP gateway:
 
 | Input                          | Series stability                                       | Memory concern                               | Recommendation               |
 |--------------------------------|--------------------------------------------------------|----------------------------------------------|------------------------------|
-| OTLP receiver (push from apps) | Unknown — no control over what sends or how often      | Unbounded — any app can send any cardinality | Impossible to tune precisely |
+| OTLP receiver (push from apps) | Unknown – no control over what sends or how often      | Unbounded – any app can send any cardinality | Impossible to tune precisely |
 | Kyma stats receiver            | Unaffected, sends Gauge metrics                        | None                                         | Unaffected                   |
 
-Since `cumulativetodelta` has one `max_staleness` per component (not per input), use the most generous value that is acceptable for memory.
+Because `cumulativetodelta` has one `max_staleness` per component (not per input), use the most generous value that is acceptable for memory:
 
-- **Metric agent:** `max_staleness: 4 * max collection/scrape_interval` — accommodates jitters between scrapes and 3 missed scrapes.
-- **OTLP gateway:** `max_staleness: 1h` (default) — no scrape interval to base it on, accommodates infrequent OTLP pushers
+- **Metric agent:** `max_staleness: 4 * max collection/scrape_interval` – accommodates jitters between scrapes and 3 missed scrapes.
+- **OTLP gateway:** `max_staleness: 1h` (default) – no scrape interval to base it on, accommodates infrequent OTLP pushers.
 
-**Scrape Intervals**
-
-All metric agent inputs default to a 30-second collection/scrape interval. The interval is configurable per-input through the Telemetry CR. The `max_staleness` must be recomputed if the user configures a longer interval.
-
-As a reference, the Dynatrace OTel Collector Documentation uses [25 hours](https://docs.dynatrace.com/docs/ingest-from/opentelemetry/collector/use-cases/prometheus) in its example configurations.
+All metric agent inputs default to a 30-second collection/scrape interval. The interval is configurable per-input through the Telemetry CR. The `max_staleness` must be recomputed if the user configures a longer interval. As a reference, the Dynatrace OTel Collector documentation uses [25 hours](https://docs.dynatrace.com/docs/ingest-from/opentelemetry/collector/use-cases/prometheus) in its example configurations.
 
 #### `initial_value`
 
 The processor works by subtracting consecutive readings. If you see `1000` at 10:00 and `1070` at 10:01, the delta is 70. But the very first reading has nothing to subtract from. The `initial_value` setting determines what happens with that first point.
 
-The three options:
+The `initial_value` setting has three options:
 
 - **`drop`**: Always discards the first observed value. Guarantees no double-counting but loses one data point per series.
 - **`auto`**: Uses the metric's `StartTimestamp` to decide. If the counter started after the processor (meaning it is a genuinely new series), keeps the first point. Otherwise, drops it. The logic:
@@ -141,16 +137,16 @@ The three options:
 **Decision: Use `auto` for both metric agent and OTLP gateway.**
 
 The metric agent has multiple inputs with different StartTimestamp behaviors:
-- Prometheus receiver sets `StartTimestamp=0` since `auto` drops first point (same as `drop`)
+- Prometheus receiver sets `StartTimestamp=0`, so `auto` drops the first point (same as `drop`)
 - kubeletstats and k8scluster receivers set proper StartTimestamps → `auto` can keep the first point for pods that started after the collector
 
-Since `cumulativetodelta` has one `initial_value` per pipeline, `auto` handles both correctly: drops when it cannot trust the timestamp, keeps when it can.
+Because `cumulativetodelta` has one `initial_value` per pipeline, `auto` handles both correctly: drops when it cannot trust the timestamp, keeps when it can.
 
 For the OTLP gateway, OTel SDKs set proper StartTimestamps, so `auto` can preserve first data points from new pods that start after the collector is already running.
 
 ### `metricstarttimeprocessor` Is Not Needed
 
-The `metricstarttimeprocessor` (with `true_reset_point` strategy) rebases cumulative values to start from 0 and sets StartTimestamp. We verified experimentally that it has **no effect** on `cumulativetodelta` output.
+The `metricstarttimeprocessor` (with `true_reset_point` strategy) rebases cumulative values to start from 0 and sets StartTimestamp. Experimental verification shows that it has **no effect** on `cumulativetodelta` output.
 
 **Test setup:** Two collectors scraping the same static counter pod (incrementing by 10/s, scraped every 10s):
 
@@ -175,7 +171,7 @@ Without `metricstarttimeprocessor`, `cumulativetodelta` sees the raw values:
 With `metricstarttimeprocessor`, the values are rebased but deltas are identical:
 - `100 - 0 = 100`, `200 - 100 = 100`, `300 - 200 = 100`
 
-The constant offset disappears in subtraction. Additionally:
+The constant offset disappears in subtraction. The following points further confirm that `metricstarttimeprocessor` adds no value:
 - `cumulativetodelta` overwrites StartTimestamp with the previous scrape time, making the timestamp set by `metricstarttimeprocessor` irrelevant
 - The 1970 epoch StartTimestamp problem does not exist in delta output
 - Counter reset detection is value-based (`value < prevValue`), not StartTimestamp-based
@@ -200,7 +196,7 @@ One data point is lost per restart per metric series. This is unavoidable regard
 
 ```yaml
 cumulativetodelta:
-  max_staleness: 4 * max(scrape_intervals) s/m/h # don't forget to add the unit, currently without any units it's in nanoseconds
+  max_staleness: 2m  # 4 × 30s; unit suffix (s/m/h) is required, otherwise interpreted as nanoseconds
   initial_value: auto
 ```
 
@@ -214,11 +210,13 @@ cumulativetodelta:
 
 ## Performance Testing
 
-To quantify the resource overhead and throughput impact of the `cumulativetodelta` processor, we ran two benchmark scenarios: a low-cardinality OTLP push test (simulating the gateway) and a high-cardinality Istio scrape test (simulating the metric agent). In both scenarios, two identical collectors run side by side — Collector A (baseline, no `cumulativetodelta`) and Collector B (with `cumulativetodelta`, `max_staleness: 20m`, `initial_value: auto`). No `metricstarttimeprocessor` is used in either collector.
+To quantify the resource overhead and throughput impact of the `cumulativetodelta` processor, two benchmark scenarios compare a low-cardinality OTLP push test (simulating the gateway) and a high-cardinality Istio scrape test (simulating the metric agent). In both scenarios, two identical collectors run side by side – Collector A (baseline, no `cumulativetodelta`) and Collector B (with `cumulativetodelta`, `max_staleness: 20m`, `initial_value: auto`). Neither collector uses `metricstarttimeprocessor`.
 
-**Metrics collected:**
-- **CPU**: `rate(otelcol_process_cpu_seconds_total[1m])` — 1-minute CPU rate sampled at each interval
-- **Memory (RSS)**: `otelcol_process_memory_rss_bytes` — instantaneous gauge of Resident Set Size. RSS is used instead of heap because it represents the total physical memory the process occupies, which is what the OOM killer evaluates and what determines whether a pod exceeds its memory limit.
+> **Note:** The performance tests used `max_staleness: 20m` (a deliberately generous value to avoid premature eviction during testing). The final production configuration uses `2m` based on the `4 × max(scrape_intervals)` formula.
+
+The following metrics are collected:
+- **CPU**: `rate(otelcol_process_cpu_seconds_total[1m])` – 1-minute CPU rate sampled at each interval
+- **Memory (RSS)**: `otelcol_process_memory_rss_bytes` – instantaneous gauge of Resident Set Size. RSS is used instead of heap because it represents the total physical memory the process occupies, which is what the OOM killer evaluates and what determines whether a pod exceeds its memory limit.
 - **Throughput**: `rate(otelcol_receiver_accepted_metric_points_total[1m])` and `rate(otelcol_exporter_sent_metric_points_total[1m])`
 - **Peak values**: Maximum observed value across all samples in the measurement window
 
@@ -231,7 +229,7 @@ To quantify the resource overhead and throughput impact of the `cumulativetodelt
 - ~1 unique time series per generator (low cardinality)
 - Three load levels: 40 pts/s (low), 100 pts/s (medium), 200 pts/s (high)
 - Each phase runs for 180 seconds, preceded by a 60-second warm-up
-- 3 runs per phase, results averaged
+- Three runs per phase, results averaged
 
 **Collector configuration:**
 - Baseline (A): `otlp → memory_limiter → batch → otlp/sink`
@@ -256,7 +254,7 @@ To quantify the resource overhead and throughput impact of the `cumulativetodelt
 
 No failed exports or refused points in either collector across all phases.
 
-**Conclusion:** With low cardinality, the `cumulativetodelta` processor adds negligible overhead — less than 5% CPU increase and less than 2% memory increase at all load levels. Throughput is unaffected.
+**Conclusion:** With low cardinality, the `cumulativetodelta` processor adds negligible overhead – less than 5% CPU increase and less than 2% memory increase at all load levels. Throughput is unaffected.
 
 ### Test 2: Istio High-Cardinality with Pod Churn
 
@@ -288,17 +286,17 @@ Both collectors scrape the same set of pods using Kubernetes service discovery t
 
 **Key observations:**
 
-1. **30.6% fewer exported points** — The traffic-generator pods live approximately 24 seconds with a 15-second scrape interval, resulting in only 1-2 scrapes per pod before it terminates. With `initial_value: auto`, the first scrape is dropped (no previous value to compute delta from). For pods with only 1 scrape, 100% of their data is lost. For pods with 2 scrapes, 50% is lost. The long-lived churn-server pods (5-minute lifetime, ~20 scrapes) lose only ~5% to first-point drops.
-2. **+7% average memory / +11.6% peak memory** — The per-series state map grows with every unique metric series. Pod churn creates new series continuously (new pod IP → new label combination), and these persist in the state map until `max_staleness` evicts them. Over 15 minutes, Collector B's memory grew from 259 MiB to 303 MiB (versus A: 256 MiB to 272 MiB).
-3. **CPU is essentially unchanged** — Delta computation (subtraction) is cheap per-point. The CPU overhead is negligible even with high cardinality.
+1. **30.6% fewer exported points** – The traffic-generator pods live approximately 24 seconds with a 15-second scrape interval, resulting in only one to two scrapes per pod before it terminates. With `initial_value: auto`, the first scrape is dropped (no previous value to compute delta from). For pods with only one scrape, 100% of their data is lost. For pods with two scrapes, 50% is lost. The long-lived churn-server pods (5-minute lifetime, ~20 scrapes) lose only ~5% to first-point drops.
+2. **+7% average memory / +11.6% peak memory** – The per-series state map grows with every unique metric series. Pod churn creates new series continuously (new pod IP → new label combination), and these persist in the state map until `max_staleness` evicts them. Over 15 minutes, Collector B's memory grew from 259 MiB to 303 MiB (versus A: 256 MiB to 272 MiB).
+3. **CPU is essentially unchanged** – Delta computation (subtraction) is cheap per-point. The CPU overhead is negligible even with high cardinality.
 
 **Note on the 30.6% drop:** This reflects a worst-case workload pattern with extremely short-lived pods. In production clusters without aggressive pod churn, the drop rate is much lower. The long-lived churn-server pods demonstrate the normal case: ~5% first-point loss, which is negligible.
 
 ## Consequences
 
 - Dynatrace receives delta metrics and no longer rejects cumulative sums
-- One data point is lost per metric series per pod lifecycle (first-point drop) — negligible for long-lived pods, more significant for short-lived pods
+- One data point is lost per metric series per pod lifecycle (first-point drop) – negligible for long-lived pods, more significant for short-lived pods
 - The metric agent's memory consumption increases proportionally to the number of active metric series (per-series state map)
 - High pod churn (for example, Istio with frequent restarts) causes temporary memory growth until stale series are evicted after `max_staleness`
 - `metricstarttimeprocessor` is not included in the pipeline, reducing CPU overhead
-- User-defined transforms in `MetricPipeline` operate on cumulative metrics (since `cumulativetodelta` runs after them in the Dynatrace pipeline). Transforms that modify metric identity attributes based on data point values or timestamps can silently break delta calculation. This constraint must be documented in user-facing `MetricPipeline` documentation, with examples of safe and unsafe transform patterns.
+- User-defined transforms in `MetricPipeline` operate on cumulative metrics (because `cumulativetodelta` runs after them in the Dynatrace pipeline). Transforms that modify metric identity attributes based on data point values or timestamps can silently break delta calculation. This constraint must be documented in user-facing `MetricPipeline` documentation, with examples of safe and unsafe transform patterns.
