@@ -85,7 +85,7 @@ The OpenTelemetry (OTel) SDK version used in your application is incompatible wi
 2. Investigate whether it's compatible with the OTel Collector version.
 3. If necessary, upgrade to a supported SDK version.
 
-### Observability Backend Shows Fewer Traces than Expected
+## Observability Backend Shows Fewer Traces than Expected
 
 ### Symptom
 
@@ -103,7 +103,7 @@ For example, in low-traffic environments (for development or testing) or for low
 
 - Alternatively, to trace a single request, force sampling by adding a traceparent HTTP header to your client request. This header contains a sampled flag that instructs the system to capture the trace, bypassing the global sampling rate (see [Trace Context: Sampled Flag](https://www.w3.org/TR/trace-context/#sampled-flag)).
 
-### MetricPipeline: Failed to Scrape Prometheus Endpoint
+## MetricPipeline: Failed to Scrape Prometheus Endpoint
 
 ### Symptom
 
@@ -220,15 +220,15 @@ Review the syntax of your transform and filter rules and ensure that the names o
 
 VPA resources are not created even though VPA is enabled.
 
-### Cause 
+### Cause
 
-The VPA CRD is not installed in your cluster.
+The Vertical Pod Autoscaler (VPA) CRD is not installed in your cluster.
 
 ### Solution
 
-Install the Vertical Pod Autoscaler in your cluster. For installation instructions, see the [official VPA documentation](https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler).
+Install the VPA CRD in your cluster (see [Vertical Pod Autoscaler](https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler)).
 
-## Memory Limits Too Restrictive
+## Telemetry Components Run Out of Memory
 
 ### Symptom
 
@@ -236,14 +236,47 @@ Telemetry components are running out of memory despite VPA being enabled.
 
 ### Cause
 
-The calculated maxAllowed memory (15% of smallest Node) might be insufficient for your telemetry volume.
+The memory limits are too restrictive for your telemetry volume. VPA calculates limits based on the smallest node in your cluster, which might not provide enough memory for high-volume telemetry workloads.
 
 ### Solution
 
-If data is not arriving at your backend, see [Not All Data Arrive at the Backend](#not-all-data-arrive-at-the-backend) to check for backend-side issues first.
+If no data arrives at your backend, first check for backend-side issues (see [Not All Data Arrive at the Backend](#not-all-data-arrive-at-the-backend)).
 
-If data is arriving but components are running out of memory, consider one of these options:
+If data arrives but components run out of memory, reduce memory pressure:
 
-- Add nodes with more memory to increase the maxAllowed calculation.
+
+- Add nodes with more memory to increase the calculated `maxAllowed` value.
 - Reduce telemetry volume by applying filters in your pipelines (see [Filter Logs](./filter-and-process/filter-logs.md), [Filter Traces](./filter-and-process/filter-traces.md), [Filter Metrics](./filter-and-process/filter-metrics.md)).
-- Disable VPA, which causes the system to use static resource (see [Manage Automatic Resource Scaling](./manage-pipeline-resources.md)).
+
+As a workaround, you can disable VPA so that the system uses static resource limits:
+  1. Edit the Telemetry resource:
+  
+     ```bash
+     kubectl edit telemetry default -n kyma-system
+     ```
+  
+  2. Add or change the `telemetry.kyma-project.io/enable-vpa` annotation under `metadata.annotations` to `"false"`:
+  
+     ```yaml
+     apiVersion: operator.kyma-project.io/v1beta1
+     kind: Telemetry
+     metadata:
+       name: default
+       namespace: kyma-system
+       annotations:
+         telemetry.kyma-project.io/enable-vpa: "false"
+     spec:
+       # your telemetry configuration
+     ```
+  
+  3. Save your changes.
+  
+  4. Verify the configuration by listing VPA resources in the `kyma-system` namespace:
+  
+     ```bash
+     kubectl get vpa -n kyma-system
+     ```
+  
+     If VPA is disabled, no VPA resources appear in the namespace.
+  
+  5. If you disabled VPA temporarily for debugging, you can re-enable it later by removing the annotation or setting its value to `"true"`.

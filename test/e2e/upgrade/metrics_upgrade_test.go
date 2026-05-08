@@ -62,7 +62,7 @@ func TestMetricsUpgrade(t *testing.T) {
 
 	// === VALIDATE OLD VERSION ===
 	t.Log("Validating metric pipeline with old version...")
-	assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+	assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 	assert.MetricPipelineHealthy(t, pipelineName)
 	assert.BackendReachable(t, backend)
 	assert.MetricsFromNamespaceDelivered(t, backend, genNs, telemetrygen.MetricNames)

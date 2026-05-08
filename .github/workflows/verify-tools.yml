@@ -1,0 +1,37 @@
+name: Verify Tools Installation
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+    branches:
+      - main
+      - 'release-*'
+    paths:
+      - 'internal/tools/**'
+  push:
+    branches:
+      - main
+      - 'release-*'
+    paths:
+      - 'internal/tools/**'
+
+jobs:
+  verify-tools:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Golang
+        uses: "./.github/template/setup-golang"
+
+      - name: Verify tools installation
+        run: make install-tools
+
+      - name: Verify tools are functional
+        run: |
+          echo "Verifying installed tools..."
+          ls -la ./bin/
+          echo "✓ Tools installed successfully"
