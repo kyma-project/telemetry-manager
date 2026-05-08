@@ -107,28 +107,15 @@ All metric agent inputs default to a 30-second collection/scrape interval. The i
 
 #### `initial_value`
 
-The processor works by subtracting consecutive readings. If you see `1000` at 10:00 and `1070` at 10:01, the delta is 70. But the very first reading has nothing to subtract from. The `initial_value` setting determines what happens with that first point.
-
-The `initial_value` setting has three options:
-
-- **`drop`**: Always discards the first observed value. Guarantees no double-counting but loses one data point per series.
-- **`auto`**: Uses the metric's `StartTimestamp` to decide. If the counter started after the processor (meaning it is a genuinely new series), keeps the first point. Otherwise, drops it. The logic:
-  ```
-  if StartTimestamp < processor_start_time → drop (counter predates collector)
-  if ObservedTimestamp == StartTimestamp   → drop (first observation ever)
-  otherwise                               → keep
-  ```
-- **`keep`**: Always sends the first observed value as the delta. Correct only when the collector's lifecycle is tied to the metric source (for example, sidecar deployments).
+The [`initial_value`](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/cumulativetodeltaprocessor#configuration) setting controls what happens with the first observed data point of a series (which has no previous value to subtract from). Options are `drop`, `auto`, and `keep`.
 
 **Decision: Use `auto` for both metric agent and OTLP gateway.**
 
-The metric agent has multiple inputs with different StartTimestamp behaviors:
+`auto` uses the metric's `StartTimestamp` to decide whether to keep or drop the first point. This works well because the metric agent has mixed inputs:
 - Prometheus receiver sets `StartTimestamp=0`, so `auto` drops the first point (same as `drop`)
 - kubeletstats and k8scluster receivers set proper StartTimestamps → `auto` can keep the first point for pods that started after the collector
 
-Because `cumulativetodelta` has one `initial_value` per pipeline, `auto` handles both correctly: drops when it cannot trust the timestamp, keeps when it can.
-
-For the OTLP gateway, OTel SDKs set proper StartTimestamps, so `auto` can preserve first data points from new pods that start after the collector is already running.
+For the OTLP gateway, OTel SDKs set proper StartTimestamps, so `auto` preserves first data points from new pods that start after the collector is already running.
 
 ### `metricstarttimeprocessor` Is Not Needed
 
