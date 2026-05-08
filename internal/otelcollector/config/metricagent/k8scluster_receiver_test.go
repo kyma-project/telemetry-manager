@@ -134,6 +134,7 @@ func getExpectedK8sClusterMetricsToDrop(disabledMetricResource metricResource) K
 		K8sReplicationControllerDesired:     &Metric{Enabled: false},
 		K8sResourceQuotaHardLimit:           &Metric{Enabled: false},
 		K8sResourceQuotaUsed:                &Metric{Enabled: false},
+		K8sCronJobActiveJobs:                &Metric{Enabled: false},
 	}
 	podMetricsToDrop := &K8sClusterPodMetrics{
 		K8sPodPhase: &Metric{false},
