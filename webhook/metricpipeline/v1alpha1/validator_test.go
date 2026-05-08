@@ -6,7 +6,6 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"k8s.io/utils/ptr"
 )
 
 func TestMetricPipelineValidator_ValidateCreate_ValidateUpdate(t *testing.T) {
@@ -58,7 +57,7 @@ func TestMetricPipelineValidator_ValidateCreate_ValidateUpdate(t *testing.T) {
 				Spec: telemetryv1alpha1.MetricPipelineSpec{
 					Input: telemetryv1alpha1.MetricPipelineInput{
 						Runtime: &telemetryv1alpha1.MetricPipelineRuntimeInput{
-							Enabled:           ptr.To(true),
+							Enabled:           new(true),
 							AdditionalMetrics: []string{"k8s.container.memory_request_utilization", "k8s.container.status.state"},
 						},
 					},
@@ -72,7 +71,7 @@ func TestMetricPipelineValidator_ValidateCreate_ValidateUpdate(t *testing.T) {
 				Spec: telemetryv1alpha1.MetricPipelineSpec{
 					Input: telemetryv1alpha1.MetricPipelineInput{
 						Runtime: &telemetryv1alpha1.MetricPipelineRuntimeInput{
-							Enabled:           ptr.To(true),
+							Enabled:           new(true),
 							AdditionalMetrics: []string{"invalid.metric.name"},
 						},
 					},
