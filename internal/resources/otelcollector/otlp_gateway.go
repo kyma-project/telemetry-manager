@@ -398,6 +398,7 @@ func (o *OTLPGatewayApplierDeleter) makeGatewayPodSpec(opts GatewayApplyOptions)
 
 	podOptions := make([]commonresources.PodSpecOption, 0)
 	podOptions = append(podOptions, o.podOpts...)
+	podOptions = append(podOptions, commonresources.WithTolerations(commonresources.CriticalDaemonSetTolerations))
 	podOptions = append(podOptions, commonresources.WithImagePullSecretName(o.globals.ImagePullSecretName()),
 		commonresources.WithClusterTrustBundleVolume(o.globals.ClusterTrustBundleName()),
 	)
