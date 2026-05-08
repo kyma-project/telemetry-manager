@@ -16,7 +16,7 @@ func kubeletStatsReceiver(runtimeResources runtimeResourceSources, additionalMet
 		InsecureSkipVerify: true,
 		Endpoint:           fmt.Sprintf("https://${%s}:%d", common.EnvVarCurrentNodeName, portKubelet),
 		// include all metrics groups, then enable/disable individual metrics based on resource selectors and additional metrics.
-		MetricGroups: []MetricGroupType{MetricGroupTypeNode, MetricGroupTypePod, MetricGroupTypeContainer, MetricGroupTypeVolume},
+		MetricGroups: []MetricGroupType{MetricGroupTypeContainer, MetricGroupTypePod, MetricGroupTypeNode, MetricGroupTypeVolume},
 		Metrics:      kubeletStatsMetrics(runtimeResources, additionalMetrics),
 		// These resource attributes have been deprecated by OTel and will be removed in future versions.
 		// The volume types associated with them have already been removed for the K8S versions that we use (v1.28+).
