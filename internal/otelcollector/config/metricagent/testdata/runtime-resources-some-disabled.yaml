@@ -125,18 +125,71 @@ receivers:
         insecure_skip_verify: true
         metric_groups:
             - container
+            - pod
+            - node
+            - volume
         metrics:
-            container.cpu.usage:
-                enabled: true
-            k8s.pod.cpu.usage:
-                enabled: true
-            k8s.node.cpu.usage:
-                enabled: true
             k8s.node.cpu.time:
                 enabled: false
             k8s.node.memory.major_page_faults:
                 enabled: false
             k8s.node.memory.page_faults:
+                enabled: false
+            k8s.pod.cpu.time:
+                enabled: false
+            k8s.pod.cpu.usage:
+                enabled: false
+            k8s.pod.filesystem.available:
+                enabled: false
+            k8s.pod.filesystem.capacity:
+                enabled: false
+            k8s.pod.filesystem.usage:
+                enabled: false
+            k8s.pod.memory.available:
+                enabled: false
+            k8s.pod.memory.major_page_faults:
+                enabled: false
+            k8s.pod.memory.page_faults:
+                enabled: false
+            k8s.pod.memory.rss:
+                enabled: false
+            k8s.pod.memory.usage:
+                enabled: false
+            k8s.pod.memory.working_set:
+                enabled: false
+            k8s.pod.network.errors:
+                enabled: false
+            k8s.pod.network.io:
+                enabled: false
+            k8s.node.cpu.usage:
+                enabled: false
+            k8s.node.filesystem.available:
+                enabled: false
+            k8s.node.filesystem.capacity:
+                enabled: false
+            k8s.node.filesystem.usage:
+                enabled: false
+            k8s.node.memory.available:
+                enabled: false
+            k8s.node.memory.rss:
+                enabled: false
+            k8s.node.memory.usage:
+                enabled: false
+            k8s.node.memory.working_set:
+                enabled: false
+            k8s.node.network.errors:
+                enabled: false
+            k8s.node.network.io:
+                enabled: false
+            k8s.volume.available:
+                enabled: false
+            k8s.volume.capacity:
+                enabled: false
+            k8s.volume.inodes:
+                enabled: false
+            k8s.volume.inodes.free:
+                enabled: false
+            k8s.volume.inodes.used:
                 enabled: false
         resource_attributes:
             aws.volume.id:
@@ -169,22 +222,22 @@ processors:
         error_mode: ignore
         metric_conditions:
             - conditions:
-                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(metric.name, "^k8s.daemonset.*")
+                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(metric.name, "^k8s[.]daemonset[.].*")
     filter/drop-runtime-node-metrics:
         error_mode: ignore
         metric_conditions:
             - conditions:
-                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(metric.name, "^k8s.node.*")
+                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(metric.name, "^k8s[.]node[.].*")
     filter/drop-runtime-pod-metrics:
         error_mode: ignore
         metric_conditions:
             - conditions:
-                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(metric.name, "^k8s.pod.*")
+                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(metric.name, "^k8s[.]pod[.].*")
     filter/drop-runtime-volume-metrics:
         error_mode: ignore
         metric_conditions:
             - conditions:
-                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(metric.name, "^k8s.volume.*")
+                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(metric.name, "^k8s[.]volume[.].*")
     filter/drop-virtual-network-interfaces:
         error_mode: ignore
         metric_conditions:
