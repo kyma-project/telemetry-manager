@@ -380,6 +380,16 @@ func (b *MetricPipelineBuilder) WithRuntimeInputStatefulSetMetrics(enable bool) 
 	return b
 }
 
+func (b *MetricPipelineBuilder) WithRuntimeInputAdditionalMetrics(metrics ...string) *MetricPipelineBuilder {
+	if b.inRuntime == nil {
+		b.inRuntime = &telemetryv1beta1.MetricPipelineRuntimeInput{}
+	}
+
+	b.inRuntime.AdditionalMetrics = append(b.inRuntime.AdditionalMetrics, metrics...)
+
+	return b
+}
+
 func (b *MetricPipelineBuilder) WithOTLPOutput(opts ...OTLPOutputOption) *MetricPipelineBuilder {
 	for _, opt := range opts {
 		opt(b.outOTLP)
