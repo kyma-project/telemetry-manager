@@ -59,31 +59,17 @@ The placement decision trades off two failure modes:
 
 **Placing after user transforms** keeps the per-series state map smaller (only tracks what survives filtering) and matches conventional placement in other OTel deployments (for example, Dynatrace's documented Kubernetes monitoring configuration). The risk is that user OTTL can make delta calculation behave unexpectedly.
 
-#### Series Identity and Why Transform Order Matters
+#### Series Identity and Transform Order
 
-`cumulativetodelta` identifies a metric series by the combination of its name and the full set of attributes. Any change to the attribute set produces what the processor sees as a new series, triggering first-observation handling. When this happens mid-stream:
+`cumulativetodelta` identifies a metric series by the combination of its name and the full set of attributes (see [processor documentation](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/cumulativetodeltaprocessor)). Any change to the attribute set produces a new series, causing a one-interval data gap.
 
-- The previous series stays in the state map until `max_staleness` evicts it (memory waste, not data loss)
-- The "new" series produces no delta on its first observation under `initial_value: auto` or `drop`
-- The next observation establishes a new baseline, and deltas resume correctly from there
-
-If a user transform causes a series to flip identity repeatedly (for example, by toggling an attribute based on the metric value), each flip costs one interval of data. This is the silent-failure mode that placement-after exposes.
-
-#### Constraints on User Transforms
-
-To avoid breaking delta calculation, user-defined transforms in `MetricPipeline` must follow these rules:
-
-1. **Conditions must reference stable per-series attributes only.** Do not condition on data point values.
-
-2. **Do not modify attributes that are part of metric identity.** Adding a new attribute is generally safe if it has a constant value per series. Setting an existing identity attribute to a new value mid-stream is not safe.
-
-**Examples:**
+Because user transforms run before `cumulativetodelta`, they must not modify identity attributes based on data point values or timestamps. Conditions must reference stable per-series attributes only:
 
 ```yaml
 # Safe: condition on stable attribute
 - set(attributes["team"], "platform") where attributes["k8s.namespace.name"] == "kyma-system"
 
-# Unsafe: condition on data point value
+# Unsafe: condition on data point value - separates metric series
 - set(attributes["load"], "high") where value > 10000
 ```
 
@@ -146,37 +132,9 @@ For the OTLP gateway, OTel SDKs set proper StartTimestamps, so `auto` can preser
 
 ### `metricstarttimeprocessor` Is Not Needed
 
-The `metricstarttimeprocessor` (with `true_reset_point` strategy) rebases cumulative values to start from 0 and sets StartTimestamp. Experimental verification shows that it has **no effect** on `cumulativetodelta` output.
+The [`metricstarttimeprocessor`](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/metricstarttimeprocessor) (with `true_reset_point` strategy) rebases cumulative values to start from 0 and sets StartTimestamp. Experimental verification shows that it has **no effect** on `cumulativetodelta` output – both produce identical delta values because the constant offset disappears in subtraction, and `cumulativetodelta` overwrites StartTimestamp with its own value regardless.
 
-**Test setup:** Two collectors scraping the same static counter pod (incrementing by 10/s, scraped every 10s):
-
-| Pipeline | Config |
-|----------|--------|
-| Collector C | `prometheus → cumulativetodelta → debug` |
-| Collector D | `prometheus → metricstarttime (true_reset_point) → cumulativetodelta → debug` |
-
-**Results:** Both produced identical delta values (100.0 per interval) across 64 data points, with both `initial_value: drop` and `initial_value: auto`.
-
-**Why the deltas are identical:**
-
-```
-Raw from Prometheus:        500, 600, 700, 800  (cumulative since pod start)
-After metricstarttime:        0, 100, 200, 300  (cumulative since first observation, rebased to 0)
-After cumulativetodelta:         100, 100, 100  (delta per scrape interval)
-```
-
-Without `metricstarttimeprocessor`, `cumulativetodelta` sees the raw values:
-- `600 - 500 = 100`, `700 - 600 = 100`, `800 - 700 = 100`
-
-With `metricstarttimeprocessor`, the values are rebased but deltas are identical:
-- `100 - 0 = 100`, `200 - 100 = 100`, `300 - 200 = 100`
-
-The constant offset disappears in subtraction. The following points further confirm that `metricstarttimeprocessor` adds no value:
-- `cumulativetodelta` overwrites StartTimestamp with the previous scrape time, making the timestamp set by `metricstarttimeprocessor` irrelevant
-- The 1970 epoch StartTimestamp problem does not exist in delta output
-- Counter reset detection is value-based (`value < prevValue`), not StartTimestamp-based
-
-**Decision:** Omit `metricstarttimeprocessor` from both pipelines. It adds CPU and memory overhead with no benefit when converting to delta.
+**Decision:** Omit `metricstarttimeprocessor` from both pipelines. It adds CPU and memory overhead with no benefit when converting to delta. Test data is available in `otel-perf-test/results/`.
 
 ### Counter Resets
 
