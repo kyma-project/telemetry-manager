@@ -200,7 +200,7 @@ One data point is lost per restart per metric series. This is unavoidable regard
 
 ```yaml
 cumulativetodelta:
-  max_staleness: 4 * max(scrape_intervals) s/m/h
+  max_staleness: 4 * max(scrape_intervals) s/m/h # don't forget to add the unit, currently without any units it's in nanoseconds
   initial_value: auto
 ```
 
