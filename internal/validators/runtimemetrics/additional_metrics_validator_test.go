@@ -33,14 +33,14 @@ func TestValidate(t *testing.T) {
 			name: "valid kubeletstats metric",
 			pipeline: testutils.NewMetricPipelineBuilder().
 				WithRuntimeInput(true).
-				WithRuntimeInputAdditionalMetrics("k8s.node.cpu.time").
+				WithRuntimeInputAdditionalMetrics("k8s.container.memory_request_utilization").
 				Build(),
 		},
 		{
 			name: "valid k8scluster metric",
 			pipeline: testutils.NewMetricPipelineBuilder().
 				WithRuntimeInput(true).
-				WithRuntimeInputAdditionalMetrics("k8s.deployment.available").
+				WithRuntimeInputAdditionalMetrics("k8s.container.status.state").
 				Build(),
 		},
 		{
@@ -55,14 +55,14 @@ func TestValidate(t *testing.T) {
 			name: "multiple valid metrics",
 			pipeline: testutils.NewMetricPipelineBuilder().
 				WithRuntimeInput(true).
-				WithRuntimeInputAdditionalMetrics("k8s.node.cpu.time", "k8s.deployment.available", "container.cpu.time").
+				WithRuntimeInputAdditionalMetrics("k8s.container.memory_request_utilization", "k8s.container.status.state").
 				Build(),
 		},
 		{
 			name: "mix of valid and invalid metrics",
 			pipeline: testutils.NewMetricPipelineBuilder().
 				WithRuntimeInput(true).
-				WithRuntimeInputAdditionalMetrics("k8s.node.cpu.time", "invalid.metric.name").
+				WithRuntimeInputAdditionalMetrics("k8s.container.memory_request_utilization", "invalid.metric.name").
 				Build(),
 			expectErr: true,
 		},
