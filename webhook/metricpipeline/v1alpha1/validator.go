@@ -43,7 +43,9 @@ func validate(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) (
 
 	// validate runtime additional metrics
 	v1beta1MetricPipeline := &telemetryv1beta1.MetricPipeline{}
-	pipeline.ConvertTo(v1beta1MetricPipeline)
+	if err := pipeline.ConvertTo(v1beta1MetricPipeline); err != nil {
+		return nil, err
+	}
 
 	runtimeAdditionalMetricsValidator := &runtimemetrics.Validator{}
 	if err := runtimeAdditionalMetricsValidator.Validate(v1beta1MetricPipeline); err != nil {
