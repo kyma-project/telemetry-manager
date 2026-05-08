@@ -62,4 +62,40 @@ See a summary of the types of information you can gather for each resource:
 | statefulset | Number of desired, current, and ready Pods                              |
 | job         | Counts of active, successful, and failed Pods                           |
 
-To learn which specific metrics are collected from which source (`kubletstatsreceiver` or `k8sclusterreceiver`), see [Runtime Metrics](runtime-metrics.md).
+To learn which specific metrics are collected from which source (`kubeletstatsreceiver` or `k8sclusterreceiver`), see [Runtime Metrics](runtime-metrics.md#runtime-metrics).
+
+## Collect Additional Metrics
+
+The metric agent can also collect any metric which can be emitted from `kubeletstatsreceiver` or `k8sclusterreceiver`. To enable the collection of any of these metrics, add the desired metrics to the **additionalMetrics** list in the **runtime** input.
+
+The following example collects `k8s.pod.memory_request_utilization` metric (from `kubeletstatsreceiver`) and `k8s.container.status.state` metric (from `k8sclusterreceiver`):
+
+  ```yaml
+  ...
+    input:
+      runtime:
+        enabled: true
+        additionalMetrics:
+          - k8s.pod.memory_request_utilization
+          - k8s.container.status.state
+  ```
+
+To learn which metrics can be added to the **additionalMetrics** list, see [Runtime Additional Metrics](runtime-metrics.md#runtime-additional-metrics)
+
+
+
+Note that the **additionalMetrics** list overrules the **resources** section. For example, you can disable the **pod** metrics in the **runtime** input, but still add a specific pod metric in the **additionalMetrics** list and this metric will be collected.
+
+The following example collects the `k8s.pod.memory_request_utilization` metric even though the **pod** metrics are disabled:
+
+  ```yaml
+  ...
+    input:
+      runtime:
+        enabled: true
+        resources:
+          pod:
+            enabled: false
+        additionalMetrics:
+          - k8s.pod.memory_request_utilization
+  ```
