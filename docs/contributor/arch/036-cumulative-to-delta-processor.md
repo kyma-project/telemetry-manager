@@ -55,7 +55,7 @@ This placement is not applied to the shared enrichment pipeline because it would
 
 The placement decision trades off two failure modes:
 
-Placing before user transforms guarantees delta correctness regardless of user OTTL but holds state for series the user will later filter out, increasing memory consumption.
+Placing before user transforms guarantees delta correctness regardless of user OTTL but holds state for series the user will later filter out, increasing memory consumption. Additionally, users cannot provide transform statements and conditions based on cumulative metrics.
 
 Placing after user transforms keeps the per-series state map smaller (only tracks what survives filtering) and matches conventional placement in other OTel deployments (for example, Dynatrace's documented Kubernetes monitoring configuration). The risk is that user OTTL can make delta calculation behave unexpectedly.
 
