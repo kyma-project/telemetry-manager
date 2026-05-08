@@ -34,6 +34,59 @@ A Prometheus **Counter** corresponds to an OTel monotonic cumulative Sum.
 
 ## Decision
 
+### Placement in the Pipeline
+
+The pipeline contains both operator-controlled processors (filters and transforms applied by the platform) and user-controlled processors (transforms and filters defined in the user's `MetricPipeline` custom resource). `cumulativetodelta` is placed **after** the user-controlled processors:
+
+```yaml
+metrics/output:
+  processors:
+    - filter/dynatrace-filter-by-namespace-otlp-input    # operator-controlled
+    - transform/drop-kyma-attributes                      # operator-controlled
+    - transform/metricpipeline-user-defined-dynatrace    # user-controlled
+    - filter/metricpipeline-user-defined-dynatrace       # user-controlled
+    - cumulativetodelta                                   # placed after user processors
+    - batch
+```
+
+This placement is not applied to the shared enrichment pipeline since it would unnecessarily convert metrics for all backends.
+
+#### Rationale
+
+The placement decision trades off two failure modes:
+
+**Placing before user transforms** guarantees delta correctness regardless of user OTTL but holds state for series the user will later filter out, increasing memory consumption.
+
+**Placing after user transforms** keeps the per-series state map smaller (only tracks what survives filtering) and matches conventional placement in other OTel deployments (for example, Dynatrace's documented Kubernetes monitoring configuration). The risk is that user OTTL can make delta calculation behave unexpectedly.
+
+#### Series Identity and Why Transform Order Matters
+
+`cumulativetodelta` identifies a metric series by the combination of its name and the full set of attributes. Any change to the attribute set produces what the processor sees as a new series, triggering first-observation handling. When this happens mid-stream:
+
+- The previous series stays in the state map until `max_staleness` evicts it (memory waste, not data loss)
+- The "new" series produces no delta on its first observation under `initial_value: auto` or `drop`
+- The next observation establishes a new baseline, and deltas resume correctly from there
+
+If a user transform causes a series to flip identity repeatedly (for example, by toggling an attribute based on the metric value), each flip costs one interval of data. This is the silent-failure mode that placement-after exposes.
+
+#### Constraints on User Transforms
+
+To avoid breaking delta calculation, user-defined transforms in `MetricPipeline` must follow these rules:
+
+1. **Conditions must reference stable per-series attributes only.** Do not condition on data point values.
+
+2. **Do not modify attributes that are part of metric identity.** Adding a new attribute is generally safe if it has a constant value per series. Setting an existing identity attribute to a new value mid-stream is not safe.
+
+**Examples:**
+
+```yaml
+# Safe: condition on stable attribute
+- set(attributes["team"], "platform") where attributes["k8s.namespace.name"] == "kyma-system"
+
+# Unsafe: condition on data point value
+- set(attributes["load"], "high") where value > 10000
+```
+
 ### Configuration
 
 Two configuration parameters require decisions: `max_staleness` and `initial_value`.
@@ -59,12 +112,16 @@ The processor maintains one state entry per unique metric series. Memory consump
 | OTLP receiver (push from apps) | Unknown — no control over what sends or how often      | Unbounded — any app can send any cardinality | Impossible to tune precisely |
 | Kyma stats receiver            | Unaffected, sends Gauge metrics                        | None                                         | Unaffected                   |
 
-Since `cumulativetodelta` has one `max_staleness` per component (not per input), use the most generous value that is acceptable for memory:
+Since `cumulativetodelta` has one `max_staleness` per component (not per input), use the most generous value that is acceptable for memory.
 
-- **Metric agent:** `max_staleness: 20m` — accommodates Istio pod churn (5-minute restarts) while limiting stale series accumulation
+- **Metric agent:** `max_staleness: 4 * max collection/scrape_interval` — accommodates jitters between scrapes and 3 missed scrapes.
 - **OTLP gateway:** `max_staleness: 1h` (default) — no scrape interval to base it on, accommodates infrequent OTLP pushers
 
-As a reference, the Dynatrace OTel Collector Documentation uses [25 hours](https://docs.dynatrace.com/docs/ingest-from/opentelemetry/collector/use-cases/prometheus) as its example configurations.
+**Scrape Intervals**
+
+All metric agent inputs default to a 30-second collection/scrape interval. The interval is configurable per-input through the Telemetry CR. The `max_staleness` must be recomputed if the user configures a longer interval.
+
+As a reference, the Dynatrace OTel Collector Documentation uses [25 hours](https://docs.dynatrace.com/docs/ingest-from/opentelemetry/collector/use-cases/prometheus) in its example configurations.
 
 #### `initial_value`
 
@@ -143,7 +200,7 @@ One data point is lost per restart per metric series. This is unavoidable regard
 
 ```yaml
 cumulativetodelta:
-  max_staleness: 20m
+  max_staleness: 4 * max(scrape_intervals)
   initial_value: auto
 ```
 
@@ -244,4 +301,4 @@ Both collectors scrape the same set of pods using Kubernetes service discovery t
 - The metric agent's memory consumption increases proportionally to the number of active metric series (per-series state map)
 - High pod churn (for example, Istio with frequent restarts) causes temporary memory growth until stale series are evicted after `max_staleness`
 - `metricstarttimeprocessor` is not included in the pipeline, reducing CPU overhead
-- The `max_staleness` configuration can be exposed as a configurable parameter in the MetricPipeline CR for edge cases with extreme pod churn
+- User-defined transforms in `MetricPipeline` operate on cumulative metrics (since `cumulativetodelta` runs after them in the Dynatrace pipeline). Transforms that modify metric identity attributes based on data point values or timestamps can silently break delta calculation. This constraint must be documented in user-facing `MetricPipeline` documentation, with examples of safe and unsafe transform patterns.
