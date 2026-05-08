@@ -12,7 +12,7 @@ import (
 
 var (
 	validRuntimeMetrics = append(metricagent.KubeletStatsReceiverMetrics, metricagent.K8sClusterReceiverMetrics...)
-	docuLink            = "https://kyma-project.io/external-content/telemetry-manager/docs/user/collecting-metrics/runtime-metrics.html#runtime-metrics"
+	docuLink            = "https://kyma-project.io/external-content/telemetry-manager/docs/user/collecting-metrics/runtime-metrics.html#runtime-additional-metrics"
 )
 
 type InvalidAdditionalMetricError struct {
@@ -44,7 +44,7 @@ func (v *Validator) Validate(mp *telemetryv1beta1.MetricPipeline) error {
 	for _, m := range additionalMetrics {
 		if !slices.Contains(validRuntimeMetrics, m) {
 			return &InvalidAdditionalMetricError{
-				Err: fmt.Errorf("invalid runtime additional metric: %s. For the list of valid runtime metrics, check documentation: %s", m, docuLink),
+				Err: fmt.Errorf("invalid runtime additional metric: %s. For the list of valid runtime additional metrics, check documentation: %s", m, docuLink),
 			}
 		}
 	}
