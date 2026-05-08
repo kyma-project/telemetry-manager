@@ -140,77 +140,77 @@ type K8sClusterMetrics struct {
 
 type K8sClusterDefaultMetricsToDrop struct {
 	// Disable some Container metrics by default
-	K8sContainerStorageRequest          Metric `yaml:"k8s.container.storage_request"`
-	K8sContainerStorageLimit            Metric `yaml:"k8s.container.storage_limit"`
-	K8sContainerEphemeralStorageRequest Metric `yaml:"k8s.container.ephemeralstorage_request"`
-	K8sContainerEphemeralStorageLimit   Metric `yaml:"k8s.container.ephemeralstorage_limit"`
-	K8sContainerReady                   Metric `yaml:"k8s.container.ready"`
+	K8sContainerStorageRequest          *Metric `yaml:"k8s.container.storage_request"`
+	K8sContainerStorageLimit            *Metric `yaml:"k8s.container.storage_limit"`
+	K8sContainerEphemeralStorageRequest *Metric `yaml:"k8s.container.ephemeralstorage_request"`
+	K8sContainerEphemeralStorageLimit   *Metric `yaml:"k8s.container.ephemeralstorage_limit"`
+	K8sContainerReady                   *Metric `yaml:"k8s.container.ready"`
 	// Disable Namespace metrics by default
-	K8sNamespacePhase Metric `yaml:"k8s.namespace.phase"`
+	K8sNamespacePhase *Metric `yaml:"k8s.namespace.phase"`
 	// Disable HPA metrics by default
-	K8sHPACurrentReplicas Metric `yaml:"k8s.hpa.current_replicas"`
-	K8sHPADesiredReplicas Metric `yaml:"k8s.hpa.desired_replicas"`
-	K8sHPAMinReplicas     Metric `yaml:"k8s.hpa.min_replicas"`
-	K8sHPAMaxReplicas     Metric `yaml:"k8s.hpa.max_replicas"`
+	K8sHPACurrentReplicas *Metric `yaml:"k8s.hpa.current_replicas"`
+	K8sHPADesiredReplicas *Metric `yaml:"k8s.hpa.desired_replicas"`
+	K8sHPAMinReplicas     *Metric `yaml:"k8s.hpa.min_replicas"`
+	K8sHPAMaxReplicas     *Metric `yaml:"k8s.hpa.max_replicas"`
 	// Disable ReplicaSet metrics by default
-	K8sReplicaSetAvailable Metric `yaml:"k8s.replicaset.available"`
-	K8sReplicaSetDesired   Metric `yaml:"k8s.replicaset.desired"`
+	K8sReplicaSetAvailable *Metric `yaml:"k8s.replicaset.available"`
+	K8sReplicaSetDesired   *Metric `yaml:"k8s.replicaset.desired"`
 	// Disable Replication Controller metrics by default
-	K8sReplicationControllerAvailable Metric `yaml:"k8s.replication_controller.available"`
-	K8sReplicationControllerDesired   Metric `yaml:"k8s.replication_controller.desired"`
+	K8sReplicationControllerAvailable *Metric `yaml:"k8s.replication_controller.available"`
+	K8sReplicationControllerDesired   *Metric `yaml:"k8s.replication_controller.desired"`
 	// Disable Resource Quota metrics by default
-	K8sResourceQuotaHardLimit Metric `yaml:"k8s.resource_quota.hard_limit"`
-	K8sResourceQuotaUsed      Metric `yaml:"k8s.resource_quota.used"`
+	K8sResourceQuotaHardLimit *Metric `yaml:"k8s.resource_quota.hard_limit"`
+	K8sResourceQuotaUsed      *Metric `yaml:"k8s.resource_quota.used"`
 	// Disable Cronjob metrics by default
-	K8sCronJobActiveJobs Metric `yaml:"k8s.cronjob.active_jobs"`
+	K8sCronJobActiveJobs *Metric `yaml:"k8s.cronjob.active_jobs"`
 }
 
 type K8sClusterStatefulSetMetrics struct {
-	K8sStatefulSetCurrentPods Metric `yaml:"k8s.statefulset.current_pods,omitempty"`
-	K8sStatefulSetDesiredPods Metric `yaml:"k8s.statefulset.desired_pods,omitempty"`
-	K8sStatefulSetReadyPods   Metric `yaml:"k8s.statefulset.ready_pods,omitempty"`
-	K8sStatefulSetUpdatedPods Metric `yaml:"k8s.statefulset.updated_pods,omitempty"`
+	K8sStatefulSetCurrentPods *Metric `yaml:"k8s.statefulset.current_pods,omitempty"`
+	K8sStatefulSetDesiredPods *Metric `yaml:"k8s.statefulset.desired_pods,omitempty"`
+	K8sStatefulSetReadyPods   *Metric `yaml:"k8s.statefulset.ready_pods,omitempty"`
+	K8sStatefulSetUpdatedPods *Metric `yaml:"k8s.statefulset.updated_pods,omitempty"`
 }
 
 type K8sClusterJobMetrics struct {
-	K8sJobActivePods            Metric `yaml:"k8s.job.active_pods,omitempty"`
-	K8sJobDesiredSuccessfulPods Metric `yaml:"k8s.job.desired_successful_pods,omitempty"`
-	K8sJobFailedPods            Metric `yaml:"k8s.job.failed_pods,omitempty"`
-	K8sJobMaxParallelPods       Metric `yaml:"k8s.job.max_parallel_pods,omitempty"`
-	K8sJobSuccessfulPods        Metric `yaml:"k8s.job.successful_pods,omitempty"`
+	K8sJobActivePods            *Metric `yaml:"k8s.job.active_pods,omitempty"`
+	K8sJobDesiredSuccessfulPods *Metric `yaml:"k8s.job.desired_successful_pods,omitempty"`
+	K8sJobFailedPods            *Metric `yaml:"k8s.job.failed_pods,omitempty"`
+	K8sJobMaxParallelPods       *Metric `yaml:"k8s.job.max_parallel_pods,omitempty"`
+	K8sJobSuccessfulPods        *Metric `yaml:"k8s.job.successful_pods,omitempty"`
 }
 
 type K8sClusterDeploymentMetrics struct {
-	K8sDeploymentAvailable Metric `yaml:"k8s.deployment.available,omitempty"`
-	K8sDeploymentDesired   Metric `yaml:"k8s.deployment.desired,omitempty"`
+	K8sDeploymentAvailable *Metric `yaml:"k8s.deployment.available,omitempty"`
+	K8sDeploymentDesired   *Metric `yaml:"k8s.deployment.desired,omitempty"`
 }
 
 type K8sClusterDaemonSetMetrics struct {
-	K8sDaemonSetCurrentScheduledNodes Metric `yaml:"k8s.daemonset.current_scheduled_nodes,omitempty"`
-	K8sDaemonSetDesiredScheduledNodes Metric `yaml:"k8s.daemonset.desired_scheduled_nodes,omitempty"`
-	K8sDaemonSetMisscheduledNodes     Metric `yaml:"k8s.daemonset.misscheduled_nodes,omitempty"`
-	K8sDaemonSetReadyNodes            Metric `yaml:"k8s.daemonset.ready_nodes,omitempty"`
+	K8sDaemonSetCurrentScheduledNodes *Metric `yaml:"k8s.daemonset.current_scheduled_nodes,omitempty"`
+	K8sDaemonSetDesiredScheduledNodes *Metric `yaml:"k8s.daemonset.desired_scheduled_nodes,omitempty"`
+	K8sDaemonSetMisscheduledNodes     *Metric `yaml:"k8s.daemonset.misscheduled_nodes,omitempty"`
+	K8sDaemonSetReadyNodes            *Metric `yaml:"k8s.daemonset.ready_nodes,omitempty"`
 }
 
 type K8sClusterPodMetrics struct {
-	K8sPodPhase Metric `yaml:"k8s.pod.phase,omitempty"`
+	K8sPodPhase *Metric `yaml:"k8s.pod.phase,omitempty"`
 }
 
 type K8sClusterContainerMetrics struct {
-	K8sContainerCPURequest    Metric `yaml:"k8s.container.cpu_request,omitempty"`
-	K8sContainerCPULimit      Metric `yaml:"k8s.container.cpu_limit,omitempty"`
-	K8sContainerMemoryRequest Metric `yaml:"k8s.container.memory_request,omitempty"`
-	K8sContainerMemoryLimit   Metric `yaml:"k8s.container.memory_limit,omitempty"`
-	K8sContainerRestarts      Metric `yaml:"k8s.container.restarts,omitempty"`
+	K8sContainerCPURequest    *Metric `yaml:"k8s.container.cpu_request,omitempty"`
+	K8sContainerCPULimit      *Metric `yaml:"k8s.container.cpu_limit,omitempty"`
+	K8sContainerMemoryRequest *Metric `yaml:"k8s.container.memory_request,omitempty"`
+	K8sContainerMemoryLimit   *Metric `yaml:"k8s.container.memory_limit,omitempty"`
+	K8sContainerRestarts      *Metric `yaml:"k8s.container.restarts,omitempty"`
 }
 
 type K8sClusterOptionalMetrics struct {
-	K8sContainerStatusReason           Metric `yaml:"k8s.container.status.reason,omitempty"`
-	K8sContainerStatusState            Metric `yaml:"k8s.container.status.state,omitempty"`
-	K8sNodeCondition                   Metric `yaml:"k8s.node.condition,omitempty"`
-	K8sPodStatusReason                 Metric `yaml:"k8s.pod.status_reason,omitempty"`
-	K8sServiceEndpointCount            Metric `yaml:"k8s.service.endpoint.count,omitempty"`
-	K8sServiceLoadBalancerIngressCount Metric `yaml:"k8s.service.load_balancer.ingress.count,omitempty"`
+	K8sContainerStatusReason           *Metric `yaml:"k8s.container.status.reason,omitempty"`
+	K8sContainerStatusState            *Metric `yaml:"k8s.container.status.state,omitempty"`
+	K8sNodeCondition                   *Metric `yaml:"k8s.node.condition,omitempty"`
+	K8sPodStatusReason                 *Metric `yaml:"k8s.pod.status_reason,omitempty"`
+	K8sServiceEndpointCount            *Metric `yaml:"k8s.service.endpoint.count,omitempty"`
+	K8sServiceLoadBalancerIngressCount *Metric `yaml:"k8s.service.load_balancer.ingress.count,omitempty"`
 }
 
 type K8sClusterReceiverConfig struct {

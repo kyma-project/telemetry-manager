@@ -118,55 +118,55 @@ func getExpectedK8sClusterMetricsToDrop(disabledMetricResource metricResource) K
 
 	//nolint:dupl // repeating the code as we want to test the metrics are disabled correctly
 	defaultMetricsToDrop := &K8sClusterDefaultMetricsToDrop{
-		K8sContainerStorageRequest:          Metric{Enabled: false},
-		K8sContainerStorageLimit:            Metric{Enabled: false},
-		K8sContainerEphemeralStorageRequest: Metric{Enabled: false},
-		K8sContainerEphemeralStorageLimit:   Metric{Enabled: false},
-		K8sContainerReady:                   Metric{Enabled: false},
-		K8sNamespacePhase:                   Metric{Enabled: false},
-		K8sHPACurrentReplicas:               Metric{Enabled: false},
-		K8sHPADesiredReplicas:               Metric{Enabled: false},
-		K8sHPAMinReplicas:                   Metric{Enabled: false},
-		K8sHPAMaxReplicas:                   Metric{Enabled: false},
-		K8sReplicaSetAvailable:              Metric{Enabled: false},
-		K8sReplicaSetDesired:                Metric{Enabled: false},
-		K8sReplicationControllerAvailable:   Metric{Enabled: false},
-		K8sReplicationControllerDesired:     Metric{Enabled: false},
-		K8sResourceQuotaHardLimit:           Metric{Enabled: false},
-		K8sResourceQuotaUsed:                Metric{Enabled: false},
+		K8sContainerStorageRequest:          &Metric{Enabled: false},
+		K8sContainerStorageLimit:            &Metric{Enabled: false},
+		K8sContainerEphemeralStorageRequest: &Metric{Enabled: false},
+		K8sContainerEphemeralStorageLimit:   &Metric{Enabled: false},
+		K8sContainerReady:                   &Metric{Enabled: false},
+		K8sNamespacePhase:                   &Metric{Enabled: false},
+		K8sHPACurrentReplicas:               &Metric{Enabled: false},
+		K8sHPADesiredReplicas:               &Metric{Enabled: false},
+		K8sHPAMinReplicas:                   &Metric{Enabled: false},
+		K8sHPAMaxReplicas:                   &Metric{Enabled: false},
+		K8sReplicaSetAvailable:              &Metric{Enabled: false},
+		K8sReplicaSetDesired:                &Metric{Enabled: false},
+		K8sReplicationControllerAvailable:   &Metric{Enabled: false},
+		K8sReplicationControllerDesired:     &Metric{Enabled: false},
+		K8sResourceQuotaHardLimit:           &Metric{Enabled: false},
+		K8sResourceQuotaUsed:                &Metric{Enabled: false},
 	}
 	podMetricsToDrop := &K8sClusterPodMetrics{
-		K8sPodPhase: Metric{false},
+		K8sPodPhase: &Metric{false},
 	}
 	containerMetricsToDrop := &K8sClusterContainerMetrics{
-		K8sContainerCPURequest:    Metric{false},
-		K8sContainerCPULimit:      Metric{false},
-		K8sContainerMemoryRequest: Metric{false},
-		K8sContainerMemoryLimit:   Metric{false},
-		K8sContainerRestarts:      Metric{false},
+		K8sContainerCPURequest:    &Metric{false},
+		K8sContainerCPULimit:      &Metric{false},
+		K8sContainerMemoryRequest: &Metric{false},
+		K8sContainerMemoryLimit:   &Metric{false},
+		K8sContainerRestarts:      &Metric{false},
 	}
 	statefulMetricsToDrop := &K8sClusterStatefulSetMetrics{
-		K8sStatefulSetCurrentPods: Metric{false},
-		K8sStatefulSetDesiredPods: Metric{false},
-		K8sStatefulSetReadyPods:   Metric{false},
-		K8sStatefulSetUpdatedPods: Metric{false},
+		K8sStatefulSetCurrentPods: &Metric{false},
+		K8sStatefulSetDesiredPods: &Metric{false},
+		K8sStatefulSetReadyPods:   &Metric{false},
+		K8sStatefulSetUpdatedPods: &Metric{false},
 	}
 	jobMetricsToDrop := &K8sClusterJobMetrics{
-		K8sJobActivePods:            Metric{false},
-		K8sJobDesiredSuccessfulPods: Metric{false},
-		K8sJobFailedPods:            Metric{false},
-		K8sJobMaxParallelPods:       Metric{false},
-		K8sJobSuccessfulPods:        Metric{false},
+		K8sJobActivePods:            &Metric{false},
+		K8sJobDesiredSuccessfulPods: &Metric{false},
+		K8sJobFailedPods:            &Metric{false},
+		K8sJobMaxParallelPods:       &Metric{false},
+		K8sJobSuccessfulPods:        &Metric{false},
 	}
 	deploymentMetricsToDrop := &K8sClusterDeploymentMetrics{
-		K8sDeploymentAvailable: Metric{false},
-		K8sDeploymentDesired:   Metric{false},
+		K8sDeploymentAvailable: &Metric{false},
+		K8sDeploymentDesired:   &Metric{false},
 	}
 	daemonSetMetricsToDrop := &K8sClusterDaemonSetMetrics{
-		K8sDaemonSetCurrentScheduledNodes: Metric{false},
-		K8sDaemonSetDesiredScheduledNodes: Metric{false},
-		K8sDaemonSetMisscheduledNodes:     Metric{false},
-		K8sDaemonSetReadyNodes:            Metric{false},
+		K8sDaemonSetCurrentScheduledNodes: &Metric{false},
+		K8sDaemonSetDesiredScheduledNodes: &Metric{false},
+		K8sDaemonSetMisscheduledNodes:     &Metric{false},
+		K8sDaemonSetReadyNodes:            &Metric{false},
 	}
 
 	metricsToDrop.K8sClusterDefaultMetricsToDrop = defaultMetricsToDrop
