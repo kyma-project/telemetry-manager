@@ -103,7 +103,7 @@ Because `cumulativetodelta` has one `max_staleness` per component (not per input
 - **Metric agent:** `max_staleness: 4 * max collection/scrape_interval` – accommodates jitters between scrapes and 3 missed scrapes.
 - **OTLP gateway:** `max_staleness: 1h` (default) – no scrape interval to base it on, accommodates infrequent OTLP pushers.
 
-All metric agent inputs default to a 30-second collection/scrape interval. The interval is configurable per-input through the Telemetry CR. The `max_staleness` must be recomputed if the user configures a longer interval. As a reference, the Dynatrace OTel Collector documentation uses [25 hours](https://docs.dynatrace.com/docs/ingest-from/opentelemetry/collector/use-cases/prometheus) in its example configurations.
+All metric agent inputs default to a 30-second collection/scrape interval. The interval is configurable per-input through the Telemetry CR. The `max_staleness` must be recomputed if the user configures a longer interval.
 
 #### `initial_value`
 
