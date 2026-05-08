@@ -126,6 +126,7 @@ func newTestValidator(opts ...ValidatorOption) *Validator {
 		WithValidatorPipelineLock(pipelineLock),
 		WithTransformSpecValidator(stubs.NewTransformSpecValidator(nil)),
 		WithFilterSpecValidator(stubs.NewFilterSpecValidator(nil)),
+		WithRuntimeAdditionalMetricsValidator(stubs.NewRuntimeAdditionalMetricsValidator(nil)),
 	}
 
 	allOpts = append(allOpts, opts...)
