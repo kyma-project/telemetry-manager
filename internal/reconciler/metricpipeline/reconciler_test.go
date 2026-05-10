@@ -27,6 +27,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/internal/validators/ottl"
+	"github.com/kyma-project/telemetry-manager/internal/validators/runtimemetrics"
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
@@ -619,6 +620,44 @@ func TestOTTLSpecValidation(t *testing.T) {
 			assertAll(t)
 		})
 	}
+}
+
+func TestRuntimeAdditionalMetricValidation(t *testing.T) {
+	pipeline := testutils.NewMetricPipelineBuilder().
+		WithRuntimeInput(true).
+		WithRuntimeInputAdditionalMetrics("invalid.metric.name").
+		Build()
+	fakeClient := newTestClient(t, &pipeline)
+
+	customValidator := newTestValidator(
+		WithRuntimeAdditionalMetricsValidator(stubs.NewRuntimeAdditionalMetricsValidator(
+			&runtimemetrics.InvalidAdditionalMetricError{Err: fmt.Errorf("invalid runtime additional metric: invalid.metric.name")},
+		)),
+	)
+
+	sut, assertAll := newTestReconciler(
+		fakeClient,
+		WithPipelineValidator(customValidator),
+	)
+
+	result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
+	require.NoError(t, result.err)
+
+	requireHasStatusCondition(t, result.pipeline,
+		conditions.TypeConfigurationGenerated,
+		metav1.ConditionFalse,
+		conditions.ReasonRuntimeAdditionalMetricInvalid,
+		"Invalid runtime additional metric: invalid.metric.name",
+	)
+
+	requireHasStatusCondition(t, result.pipeline,
+		conditions.TypeFlowHealthy,
+		metav1.ConditionFalse,
+		conditions.ReasonSelfMonConfigNotGenerated,
+		"No metrics delivered to backend because MetricPipeline specification is not applied to the configuration of OTLP Gateway. Check the 'ConfigurationGenerated' condition for more details",
+	)
+
+	assertAll(t)
 }
 
 func TestAPIServerFailureHandling(t *testing.T) {
