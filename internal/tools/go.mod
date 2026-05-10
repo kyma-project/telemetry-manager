@@ -4,7 +4,7 @@ go 1.26.2
 
 require (
 	github.com/g4s8/envdoc v1.10.0
-	github.com/golangci/golangci-lint/v2 v2.12.1
+	github.com/golangci/golangci-lint/v2 v2.12.2
 	github.com/google/yamlfmt v0.21.0
 	github.com/hairyhenderson/gomplate/v5 v5.1.0
 	github.com/itchyny/gojq v0.12.19
@@ -410,7 +410,7 @@ require (
 	github.com/rubenv/sql-migrate v1.8.1 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/ryancurrah/gomodguard v1.4.1 // indirect
-	github.com/ryancurrah/gomodguard/v2 v2.1.0 // indirect
+	github.com/ryancurrah/gomodguard/v2 v2.1.3 // indirect
 	github.com/ryanrolds/sqlclosecheck v0.6.0 // indirect
 	github.com/ryanuber/go-glob v1.0.0 // indirect
 	github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06 // indirect
@@ -451,7 +451,7 @@ require (
 	github.com/ultraware/funlen v0.2.0 // indirect
 	github.com/ultraware/whitespace v0.2.0 // indirect
 	github.com/uudashr/gocognit v1.2.1 // indirect
-	github.com/uudashr/iface v1.4.1 // indirect
+	github.com/uudashr/iface v1.4.2 // indirect
 	github.com/vbatts/tar-split v0.11.3 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
