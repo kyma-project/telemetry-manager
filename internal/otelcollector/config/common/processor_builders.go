@@ -43,6 +43,9 @@ func K8sAttributesProcessor(enrichments *operatorv1beta1.EnrichmentSpec, useOTel
 	return &K8sAttributesProcessorConfig{
 		AuthType:    "serviceAccount",
 		Passthrough: false,
+		Filter: K8sAttributesFilterConfig{
+			NodeFromEnvVar: EnvVarCurrentNodeName,
+		},
 		Extract: ExtractK8sMetadata{
 			Metadata:                     k8sAttributes,
 			Labels:                       append(extractLabels(useOTelServiceEnrichment), extractPodLabels(enrichments)...),
