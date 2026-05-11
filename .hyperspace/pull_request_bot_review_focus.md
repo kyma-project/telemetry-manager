@@ -16,7 +16,7 @@
 - Verify that pipeline validation logic lives in `internal/validators/` not in controllers
 - Flag direct use of `client.Update` where `client.Patch` (status subresource) should be used for status updates
 - Check that golden file tests are updated (`make update-golden-files`) when config builders change
-- Verify test helpers are placed in `test/testkit/` not duplicated inline in test files
+- Verify that e2e and integration test helpers are placed in `test/testkit/` not duplicated inline in test files; unit-test helpers in `internal/utils/test/` are also acceptable
 
 ## Documentation Checks
 
