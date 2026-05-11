@@ -19,6 +19,7 @@
       "auto_generate_summary": false,
       "auto_insert_summary": false,
       "use_custom_summarize_prompt": true,
+      "use_custom_summarize_output_template": true,
       "excluded_paths": [
         "test/**",
         "**/*_test.go"

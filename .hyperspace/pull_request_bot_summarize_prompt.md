@@ -1,5 +1,7 @@
 Summarize this pull request for the telemetry-manager project — a Kubernetes operator that manages telemetry pipelines (logs, metrics, traces) in Kyma clusters using OpenTelemetry Collectors and Fluent Bit.
 
+Do not include a file-by-file list of changes. All change details belong in the "Key changes" section below.
+
 Always include all of the following sections in this exact order. Only the sections marked as "(optional)" may be omitted when not applicable.
 
 ## What changed
@@ -16,9 +18,6 @@ Bullet points covering the most important code changes. For each point, mention 
 
 ## Notes for reviewers
 Highlight anything non-obvious: tricky logic, deliberate trade-offs, areas needing extra scrutiny, or follow-up issues.
-
-## Release Notes Input
-See instructions below.
 
 ## Release Notes Input
 Required — always include this section. Describe any user-facing changes introduced by this PR for the release notes.
