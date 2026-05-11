@@ -3,6 +3,7 @@ package metricagent
 import (
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -241,6 +242,19 @@ func TestBuildConfig(t *testing.T) {
 					WithRuntimeInputJobMetrics(true).
 					WithPrometheusInput(false).
 					WithIstioInput(false).
+					Build(),
+			},
+		},
+		{
+			name:           "pipeline with all runtime additional metrics",
+			goldenFileName: "all-runtime-additional-metrics.yaml",
+			pipelines: []telemetryv1beta1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().
+					WithName("test").
+					WithRuntimeInput(true).
+					WithRuntimeInputAdditionalMetrics(
+						slices.Concat(KubeletStatsReceiverMetrics, K8sClusterReceiverMetrics)...,
+					).
 					Build(),
 			},
 		},

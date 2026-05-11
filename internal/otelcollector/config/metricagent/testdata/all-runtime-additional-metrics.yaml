@@ -1,0 +1,452 @@
+extensions:
+    cgroup_runtime:
+        gomaxprocs:
+            enabled: false
+        gomemlimit:
+            enabled: true
+            ratio: 0.8
+    health_check:
+        endpoint: ${MY_POD_IP}:13133
+    k8s_leader_elector:
+        auth_type: serviceAccount
+        lease_name: telemetry-metric-agent-k8scluster
+    pprof:
+        endpoint: 127.0.0.1:1777
+service:
+    pipelines:
+        metrics/enrichment-conditional:
+            receivers:
+                - routing/runtime-input
+            processors:
+                - k8s_attributes
+                - service_enrichment
+            exporters:
+                - routing/enrichment
+        metrics/input-runtime:
+            receivers:
+                - kubeletstats
+                - k8s_cluster
+            processors:
+                - memory_limiter
+                - filter/drop-non-pvc-volumes-metrics
+                - filter/drop-virtual-network-interfaces
+                - transform/drop-service-name
+                - transform/insert-skip-enrichment-attribute
+                - transform/set-instrumentation-scope-runtime
+                - transform/set-kyma-input-name-runtime
+            exporters:
+                - routing/runtime-input
+        metrics/output-test:
+            receivers:
+                - routing/enrichment
+                - routing/runtime-input
+            processors:
+                - filter/drop-envoy-metrics-if-disabled
+                - transform/insert-cluster-attributes
+                - transform/drop-skip-enrichment-attribute
+                - transform/drop-kyma-attributes
+                - batch
+            exporters:
+                - otlp_grpc/metricpipeline-test
+    telemetry:
+        metrics:
+            readers:
+                - pull:
+                    exporter:
+                        prometheus:
+                            host: ${MY_POD_IP}
+                            port: 8888
+        logs:
+            level: info
+            encoding: json
+    extensions:
+        - health_check
+        - pprof
+        - cgroup_runtime
+        - k8s_leader_elector
+receivers:
+    k8s_cluster:
+        auth_type: serviceAccount
+        collection_interval: 30s
+        node_conditions_to_report: []
+        metrics:
+            k8s.container.storage_request:
+                enabled: true
+            k8s.container.storage_limit:
+                enabled: true
+            k8s.container.ephemeralstorage_request:
+                enabled: true
+            k8s.container.ephemeralstorage_limit:
+                enabled: true
+            k8s.container.ready:
+                enabled: true
+            k8s.namespace.phase:
+                enabled: true
+            k8s.hpa.current_replicas:
+                enabled: true
+            k8s.hpa.desired_replicas:
+                enabled: true
+            k8s.hpa.min_replicas:
+                enabled: true
+            k8s.hpa.max_replicas:
+                enabled: true
+            k8s.replicaset.available:
+                enabled: true
+            k8s.replicaset.desired:
+                enabled: true
+            k8s.replication_controller.available:
+                enabled: true
+            k8s.replication_controller.desired:
+                enabled: true
+            k8s.resource_quota.hard_limit:
+                enabled: true
+            k8s.resource_quota.used:
+                enabled: true
+            k8s.cronjob.active_jobs:
+                enabled: true
+            k8s.pod.phase:
+                enabled: true
+            k8s.container.cpu_request:
+                enabled: true
+            k8s.container.cpu_limit:
+                enabled: true
+            k8s.container.memory_request:
+                enabled: true
+            k8s.container.memory_limit:
+                enabled: true
+            k8s.container.restarts:
+                enabled: true
+            k8s.statefulset.current_pods:
+                enabled: true
+            k8s.statefulset.desired_pods:
+                enabled: true
+            k8s.statefulset.ready_pods:
+                enabled: true
+            k8s.statefulset.updated_pods:
+                enabled: true
+            k8s.job.active_pods:
+                enabled: true
+            k8s.job.desired_successful_pods:
+                enabled: true
+            k8s.job.failed_pods:
+                enabled: true
+            k8s.job.max_parallel_pods:
+                enabled: true
+            k8s.job.successful_pods:
+                enabled: true
+            k8s.deployment.available:
+                enabled: true
+            k8s.deployment.desired:
+                enabled: true
+            k8s.daemonset.current_scheduled_nodes:
+                enabled: true
+            k8s.daemonset.desired_scheduled_nodes:
+                enabled: true
+            k8s.daemonset.misscheduled_nodes:
+                enabled: true
+            k8s.daemonset.ready_nodes:
+                enabled: true
+            k8s.container.status.reason:
+                enabled: true
+            k8s.container.status.state:
+                enabled: true
+            k8s.node.condition:
+                enabled: true
+            k8s.pod.status_reason:
+                enabled: true
+            k8s.service.endpoint.count:
+                enabled: true
+            k8s.service.load_balancer.ingress.count:
+                enabled: true
+        k8s_leader_elector: k8s_leader_elector
+    kubeletstats:
+        collection_interval: 30s
+        auth_type: serviceAccount
+        endpoint: https://${MY_NODE_NAME}:10250
+        insecure_skip_verify: true
+        metric_groups:
+            - container
+            - pod
+            - node
+            - volume
+        metrics:
+            k8s.node.cpu.time:
+                enabled: true
+            k8s.node.memory.major_page_faults:
+                enabled: true
+            k8s.node.memory.page_faults:
+                enabled: true
+            k8s.pod.cpu.time:
+                enabled: true
+            k8s.pod.cpu.usage:
+                enabled: true
+            k8s.pod.filesystem.available:
+                enabled: true
+            k8s.pod.filesystem.capacity:
+                enabled: true
+            k8s.pod.filesystem.usage:
+                enabled: true
+            k8s.pod.memory.available:
+                enabled: true
+            k8s.pod.memory.major_page_faults:
+                enabled: true
+            k8s.pod.memory.page_faults:
+                enabled: true
+            k8s.pod.memory.rss:
+                enabled: true
+            k8s.pod.memory.usage:
+                enabled: true
+            k8s.pod.memory.working_set:
+                enabled: true
+            k8s.pod.network.errors:
+                enabled: true
+            k8s.pod.network.io:
+                enabled: true
+            container.cpu.time:
+                enabled: true
+            container.cpu.usage:
+                enabled: true
+            container.filesystem.available:
+                enabled: true
+            container.filesystem.capacity:
+                enabled: true
+            container.filesystem.usage:
+                enabled: true
+            container.memory.available:
+                enabled: true
+            container.memory.major_page_faults:
+                enabled: true
+            container.memory.page_faults:
+                enabled: true
+            container.memory.rss:
+                enabled: true
+            container.memory.usage:
+                enabled: true
+            container.memory.working_set:
+                enabled: true
+            k8s.node.cpu.usage:
+                enabled: true
+            k8s.node.filesystem.available:
+                enabled: true
+            k8s.node.filesystem.capacity:
+                enabled: true
+            k8s.node.filesystem.usage:
+                enabled: true
+            k8s.node.memory.available:
+                enabled: true
+            k8s.node.memory.rss:
+                enabled: true
+            k8s.node.memory.usage:
+                enabled: true
+            k8s.node.memory.working_set:
+                enabled: true
+            k8s.node.network.errors:
+                enabled: true
+            k8s.node.network.io:
+                enabled: true
+            k8s.volume.available:
+                enabled: true
+            k8s.volume.capacity:
+                enabled: true
+            k8s.volume.inodes:
+                enabled: true
+            k8s.volume.inodes.free:
+                enabled: true
+            k8s.volume.inodes.used:
+                enabled: true
+            container.uptime:
+                enabled: true
+            k8s.container.cpu.node.utilization:
+                enabled: true
+            k8s.container.cpu_limit_utilization:
+                enabled: true
+            k8s.container.cpu_request_utilization:
+                enabled: true
+            k8s.container.memory.node.utilization:
+                enabled: true
+            k8s.container.memory_limit_utilization:
+                enabled: true
+            k8s.container.memory_request_utilization:
+                enabled: true
+            k8s.node.uptime:
+                enabled: true
+            k8s.pod.cpu.node.utilization:
+                enabled: true
+            k8s.pod.cpu_limit_utilization:
+                enabled: true
+            k8s.pod.cpu_request_utilization:
+                enabled: true
+            k8s.pod.memory.node.utilization:
+                enabled: true
+            k8s.pod.memory_limit_utilization:
+                enabled: true
+            k8s.pod.memory_request_utilization:
+                enabled: true
+            k8s.pod.uptime:
+                enabled: true
+            k8s.pod.volume.usage:
+                enabled: true
+        resource_attributes:
+            aws.volume.id:
+                enabled: false
+            fs.type:
+                enabled: false
+            gce.pd.name:
+                enabled: false
+            glusterfs.endpoints.name:
+                enabled: false
+            glusterfs.path:
+                enabled: false
+            partition:
+                enabled: false
+        extra_metadata_labels:
+            - k8s.volume.type
+        collect_all_network_interfaces:
+            node: true
+processors:
+    batch:
+        send_batch_size: 1024
+        timeout: 10s
+        send_batch_max_size: 1024
+    filter/drop-envoy-metrics-if-disabled:
+        error_mode: ignore
+        metric_conditions:
+            - conditions:
+                - IsMatch(metric.name, "^envoy_.*") and resource.attributes["kyma.input.name"] == "istio"
+    filter/drop-non-pvc-volumes-metrics:
+        error_mode: ignore
+        metric_conditions:
+            - conditions:
+                - resource.attributes["k8s.volume.name"] != nil and resource.attributes["k8s.volume.type"] != "persistentVolumeClaim"
+    filter/drop-virtual-network-interfaces:
+        error_mode: ignore
+        metric_conditions:
+            - conditions:
+                - IsMatch(metric.name, "^k8s.node.network.*") and not(IsMatch(datapoint.attributes["interface"], "^(eth|en).*"))
+    k8s_attributes:
+        auth_type: serviceAccount
+        passthrough: false
+        filter:
+            node_from_env_var: MY_NODE_NAME
+        extract:
+            metadata:
+                - k8s.pod.name
+                - k8s.node.name
+                - k8s.namespace.name
+                - k8s.deployment.name
+                - k8s.statefulset.name
+                - k8s.daemonset.name
+                - k8s.cronjob.name
+                - k8s.job.name
+            labels:
+                - from: pod
+                  key: app.kubernetes.io/name
+                  tag_name: kyma.kubernetes_io_app_name
+                - from: pod
+                  key: app
+                  tag_name: kyma.app_name
+                - from: node
+                  key: topology.kubernetes.io/region
+                  tag_name: cloud.region
+                - from: node
+                  key: topology.kubernetes.io/zone
+                  tag_name: cloud.availability_zone
+                - from: node
+                  key: node.kubernetes.io/instance-type
+                  tag_name: host.type
+                - from: node
+                  key: kubernetes.io/arch
+                  tag_name: host.arch
+        pod_association:
+            - sources:
+                - from: resource_attribute
+                  name: k8s.pod.ip
+            - sources:
+                - from: resource_attribute
+                  name: k8s.pod.uid
+            - sources:
+                - from: connection
+    memory_limiter:
+        check_interval: 1s
+        limit_percentage: 75
+        spike_limit_percentage: 15
+    service_enrichment:
+        resource_attributes:
+            - kyma.kubernetes_io_app_name
+            - kyma.app_name
+    transform/drop-kyma-attributes:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - delete_matching_keys(resource.attributes, "kyma.*")
+    transform/drop-service-name:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - delete_key(resource.attributes, "service.name")
+    transform/drop-skip-enrichment-attribute:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - delete_key(resource.attributes, "io.kyma-project.telemetry.skip_enrichment")
+    transform/insert-cluster-attributes:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - set(resource.attributes["k8s.cluster.name"], "") where resource.attributes["k8s.cluster.name"] == nil or resource.attributes["k8s.cluster.name"] == ""
+                - set(resource.attributes["k8s.cluster.uid"], "") where resource.attributes["k8s.cluster.uid"] == nil or resource.attributes["k8s.cluster.uid"] == ""
+    transform/insert-skip-enrichment-attribute:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - set(resource.attributes["io.kyma-project.telemetry.skip_enrichment"], "true")
+              conditions:
+                - IsMatch(metric.name, "^k8s.node.*")
+                - IsMatch(metric.name, "^k8s.statefulset.*")
+                - IsMatch(metric.name, "^k8s.daemonset.*")
+                - IsMatch(metric.name, "^k8s.deployment.*")
+                - IsMatch(metric.name, "^k8s.job.*")
+    transform/set-instrumentation-scope-runtime:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - set(scope.version, "main") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver"
+                - set(scope.name, "io.kyma-project.telemetry/runtime") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver"
+                - set(scope.version, "main") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver"
+                - set(scope.name, "io.kyma-project.telemetry/runtime") where scope.name == "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver"
+    transform/set-kyma-input-name-runtime:
+        error_mode: ignore
+        metric_statements:
+            - statements:
+                - set(resource.attributes["kyma.input.name"], "runtime")
+exporters:
+    otlp_grpc/metricpipeline-test:
+        endpoint: ${OTLP_ENDPOINT_METRICPIPELINE_TEST}
+        tls:
+            insecure: true
+        compression: gzip
+        sending_queue:
+            enabled: true
+            queue_size: 256
+        retry_on_failure:
+            enabled: true
+            initial_interval: 5s
+            max_interval: 30s
+            max_elapsed_time: 300s
+connectors:
+    routing/enrichment:
+        default_pipelines: []
+        error_mode: ignore
+        table:
+            - statement: route() where resource.attributes["kyma.input.name"] == "runtime"
+              pipelines:
+                - metrics/output-test
+              context: metric
+    routing/runtime-input:
+        default_pipelines:
+            - metrics/enrichment-conditional
+        error_mode: ignore
+        table:
+            - statement: route() where attributes["io.kyma-project.telemetry.skip_enrichment"] == "true"
+              pipelines:
+                - metrics/output-test
