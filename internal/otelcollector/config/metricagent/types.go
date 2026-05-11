@@ -14,8 +14,6 @@ type KubeletStatsReceiverConfig struct {
 	ResourceAttributes          KubeletStatsResourceAttributes `yaml:"resource_attributes"`
 	ExtraMetadataLabels         []string                       `yaml:"extra_metadata_labels,omitempty"`
 	CollectAllNetworkInterfaces NetworkInterfacesEnabler       `yaml:"collect_all_network_interfaces"`
-	Node                        string                         `yaml:"node"`
-	K8sApiConfig                K8sAPIConfig                   `yaml:"k8s_api_config"`
 }
 
 type KubeletStatsResourceAttributes struct {
@@ -29,10 +27,6 @@ type KubeletStatsResourceAttributes struct {
 
 type NetworkInterfacesEnabler struct {
 	NodeMetrics bool `yaml:"node"`
-}
-
-type K8sAPIConfig struct {
-	AuthType string `yaml:"auth_type"`
 }
 
 type Metric struct {
