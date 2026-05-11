@@ -1,24 +1,27 @@
 Summarize this pull request for the telemetry-manager project — a Kubernetes operator that manages telemetry pipelines (logs, metrics, traces) in Kyma clusters using OpenTelemetry Collectors and Fluent Bit.
 
-Structure the summary as follows:
+Always include all of the following sections in this exact order. Only the sections marked as "(optional)" may be omitted when not applicable.
 
 ## What changed
 One or two sentences describing the change at a high level.
 
 ## Affected signal types
-List which pipeline types are affected: logs, metrics, traces, or all. Omit this section entirely if the change is infrastructure (build, CI, dependencies), tooling, or operator-level with no signal-specific impact.
+(optional) List which pipeline types are affected: logs, metrics, traces, or all. Omit this section entirely if the change is infrastructure (build, CI, dependencies), tooling, or operator-level with no signal-specific impact.
 
 ## Key changes
 Bullet points covering the most important code changes. For each point, mention the relevant package or component (e.g. `internal/reconciler/metricpipeline`, `internal/otelcollector/config`, `controllers/telemetry`).
 
 ## Breaking changes
-List any breaking changes to CRD fields, API types, or behavior. If none, omit this section.
+(optional) List any breaking changes to CRD fields, API types, or behavior. Omit this section if there are none.
 
 ## Notes for reviewers
 Highlight anything non-obvious: tricky logic, deliberate trade-offs, areas needing extra scrutiny, or follow-up issues.
 
 ## Release Notes Input
-Required. Describe any user-facing changes introduced by this PR for the release notes.
+See instructions below.
+
+## Release Notes Input
+Required — always include this section. Describe any user-facing changes introduced by this PR for the release notes.
 
 User-facing changes include (but are not limited to):
 - New or changed pipeline behavior (logs, metrics, traces)
