@@ -18,7 +18,7 @@ type runtimeAdditionalMetricsResources struct {
 func kubeletStatsReceiver(runtimeResources runtimeResourceSources, additionalMetrics []string, collectionInterval time.Duration) *KubeletStatsReceiverConfig {
 	const portKubelet = 10250
 
-	runtimeAdditionalMetricsResources := runtimeAdditionalMetricsResources{
+	runtimeAdditionalMetricsResourcesConfig := runtimeAdditionalMetricsResources{
 		pod:       len(getRuntimeAdditionalResourceMetrics(additionalMetrics, podMetricPattern)) > 0,
 		container: len(getRuntimeAdditionalResourceMetrics(additionalMetrics, containerMetricPattern)) > 0,
 		node:      len(getRuntimeAdditionalResourceMetrics(additionalMetrics, nodeMetricPattern)) > 0,
@@ -30,8 +30,8 @@ func kubeletStatsReceiver(runtimeResources runtimeResourceSources, additionalMet
 		AuthType:           "serviceAccount",
 		InsecureSkipVerify: true,
 		Endpoint:           fmt.Sprintf("https://${%s}:%d", common.EnvVarCurrentNodeName, portKubelet),
-		MetricGroups:       kubeletStatsMetricGroups(runtimeResources, runtimeAdditionalMetricsResources),
-		Metrics:            kubeletStatsMetrics(runtimeResources, runtimeAdditionalMetricsResources, additionalMetrics),
+		MetricGroups:       kubeletStatsMetricGroups(runtimeResources, runtimeAdditionalMetricsResourcesConfig),
+		Metrics:            kubeletStatsMetrics(runtimeResources, runtimeAdditionalMetricsResourcesConfig, additionalMetrics),
 		// These resource attributes have been deprecated by OTel and will be removed in future versions.
 		// The volume types associated with them have already been removed for the K8S versions that we use (v1.28+).
 		// See: https://github.com/open-telemetry/opentelemetry-collector-contrib/pull/45896
