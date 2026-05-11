@@ -47,12 +47,6 @@ func kubeletStatsReceiver(runtimeResources runtimeResourceSources, additionalMet
 		CollectAllNetworkInterfaces: NetworkInterfacesEnabler{
 			NodeMetrics: true,
 		},
-		// In order to collect k8s.{container,pod}.{cpu,memory}.node.utilization metrics, the "node" and the "k8s_api_config" fields must be set
-		// For more details, check https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/kubeletstatsreceiver#collect-k8scontainerpodcpumemorynodeutilization-as-ratio-of-total-nodes-capacity
-		Node: fmt.Sprintf("${%s}", common.EnvVarCurrentNodeName),
-		K8sApiConfig: K8sAPIConfig{
-			AuthType: "serviceAccount",
-		},
 	}
 }
 
