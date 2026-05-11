@@ -19,7 +19,17 @@ import (
 	telemetryutils "github.com/kyma-project/telemetry-manager/internal/utils/telemetry"
 )
 
-const enrichmentServicePipelineID = "metrics/enrichment-conditional"
+const (
+	enrichmentServicePipelineID = "metrics/enrichment-conditional"
+	podMetricPattern            = `^k8s[.]pod[.].*`
+	containerMetricPattern      = `(^k8s[.]container[.].*)|(^container[.].*)`
+	nodeMetricPattern           = `^k8s[.]node[.].*`
+	volumeMetricPattern         = `^k8s[.]volume[.].*`
+	deploymentMetricPattern     = `^k8s[.]deployment[.].*`
+	daemonsetMetricPattern      = `^k8s[.]daemonset[.].*`
+	statefulsetMetricPattern    = `^k8s[.]statefulset[.].*`
+	jobMetricPattern            = `^k8s[.]job[.].*`
+)
 
 var diagnosticMetricNames = []string{"up", "scrape_duration_seconds", "scrape_samples_scraped", "scrape_samples_post_metric_relabeling", "scrape_series_added"}
 
@@ -610,8 +620,6 @@ func (b *Builder) addDropRuntimePodMetricsProcessor() buildComponentFunc {
 				return nil
 			}
 
-			const podMetricPattern = `^k8s[.]pod[.].*`
-
 			conditions := []string{
 				common.KymaInputNameEquals(common.InputSourceRuntime),
 				common.IsMatch("metric.name", podMetricPattern),
@@ -642,8 +650,6 @@ func (b *Builder) addDropRuntimeContainerMetricsProcessor() buildComponentFunc {
 			if !metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) || metricpipelineutils.IsRuntimeContainerInputEnabled(mp.Spec.Input) {
 				return nil
 			}
-
-			const containerMetricPattern = `(^k8s[.]container[.].*)|(^container[.].*)`
 
 			conditions := []string{
 				common.KymaInputNameEquals(common.InputSourceRuntime),
@@ -676,8 +682,6 @@ func (b *Builder) addDropRuntimeNodeMetricsProcessor() buildComponentFunc {
 				return nil
 			}
 
-			const nodeMetricPattern = `^k8s[.]node[.].*`
-
 			conditions := []string{
 				common.KymaInputNameEquals(common.InputSourceRuntime),
 				common.IsMatch("metric.name", nodeMetricPattern),
@@ -708,8 +712,6 @@ func (b *Builder) addDropRuntimeVolumeMetricsProcessor() buildComponentFunc {
 			if !metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) || metricpipelineutils.IsRuntimeVolumeInputEnabled(mp.Spec.Input) {
 				return nil
 			}
-
-			const volumeMetricPattern = `^k8s[.]volume[.].*`
 
 			conditions := []string{
 				common.KymaInputNameEquals(common.InputSourceRuntime),
@@ -742,8 +744,6 @@ func (b *Builder) addDropRuntimeDeploymentMetricsProcessor() buildComponentFunc 
 				return nil
 			}
 
-			const deploymentMetricPattern = `^k8s[.]deployment[.].*`
-
 			conditions := []string{
 				common.KymaInputNameEquals(common.InputSourceRuntime),
 				common.IsMatch("metric.name", deploymentMetricPattern),
@@ -774,8 +774,6 @@ func (b *Builder) addDropRuntimeDaemonSetMetricsProcessor() buildComponentFunc {
 			if !metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) || metricpipelineutils.IsRuntimeDaemonSetInputEnabled(mp.Spec.Input) {
 				return nil
 			}
-
-			const daemonsetMetricPattern = `^k8s[.]daemonset[.].*`
 
 			conditions := []string{
 				common.KymaInputNameEquals(common.InputSourceRuntime),
@@ -808,8 +806,6 @@ func (b *Builder) addDropRuntimeStatefulSetMetricsProcessor() buildComponentFunc
 				return nil
 			}
 
-			const statefulsetMetricPattern = `^k8s[.]statefulset[.].*`
-
 			conditions := []string{
 				common.KymaInputNameEquals(common.InputSourceRuntime),
 				common.IsMatch("metric.name", statefulsetMetricPattern),
@@ -840,8 +836,6 @@ func (b *Builder) addDropRuntimeJobMetricsProcessor() buildComponentFunc {
 			if !metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) || metricpipelineutils.IsRuntimeJobInputEnabled(mp.Spec.Input) {
 				return nil
 			}
-
-			const jobMetricPattern = `^k8s[.]job[.].*`
 
 			conditions := []string{
 				common.KymaInputNameEquals(common.InputSourceRuntime),
@@ -939,12 +933,12 @@ func additionalMetricsToDrop(allAdditionalMetrics []string, pipelineAdditionalMe
 	return metricsToDrop
 }
 
-func getRuntimeAdditionalResourceMetrics(pipelineAdditionalMetrics []string, resourceMetricPattern string) []string {
+func getRuntimeAdditionalResourceMetrics(additionalMetrics []string, resourceMetricPattern string) []string {
 	resourceMetricRegex := regexp.MustCompile(resourceMetricPattern)
 
 	var resourceMetrics []string
 
-	for _, m := range pipelineAdditionalMetrics {
+	for _, m := range additionalMetrics {
 		if resourceMetricRegex.MatchString(m) {
 			resourceMetrics = append(resourceMetrics, m)
 		}

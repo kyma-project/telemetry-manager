@@ -7,17 +7,31 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 )
 
+// runtimeAdditionalMetricsResources indicates if runtime additional metrics contain metrics related to a specific Kubernetes resource.
+type runtimeAdditionalMetricsResources struct {
+	pod       bool
+	container bool
+	node      bool
+	volume    bool
+}
+
 func kubeletStatsReceiver(runtimeResources runtimeResourceSources, additionalMetrics []string, collectionInterval time.Duration) *KubeletStatsReceiverConfig {
 	const portKubelet = 10250
+
+	runtimeAdditionalMetricsResources := runtimeAdditionalMetricsResources{
+		pod:       len(getRuntimeAdditionalResourceMetrics(additionalMetrics, podMetricPattern)) > 0,
+		container: len(getRuntimeAdditionalResourceMetrics(additionalMetrics, containerMetricPattern)) > 0,
+		node:      len(getRuntimeAdditionalResourceMetrics(additionalMetrics, nodeMetricPattern)) > 0,
+		volume:    len(getRuntimeAdditionalResourceMetrics(additionalMetrics, volumeMetricPattern)) > 0,
+	}
 
 	return &KubeletStatsReceiverConfig{
 		CollectionInterval: collectionInterval.String(),
 		AuthType:           "serviceAccount",
 		InsecureSkipVerify: true,
 		Endpoint:           fmt.Sprintf("https://${%s}:%d", common.EnvVarCurrentNodeName, portKubelet),
-		// include all metrics groups, then enable/disable individual metrics based on resource selectors and additional metrics.
-		MetricGroups: []MetricGroupType{MetricGroupTypeContainer, MetricGroupTypePod, MetricGroupTypeNode, MetricGroupTypeVolume},
-		Metrics:      kubeletStatsMetrics(runtimeResources, additionalMetrics),
+		MetricGroups:       kubeletStatsMetricGroups(runtimeResources, runtimeAdditionalMetricsResources),
+		Metrics:            kubeletStatsMetrics(runtimeResources, runtimeAdditionalMetricsResources, additionalMetrics),
 		// These resource attributes have been deprecated by OTel and will be removed in future versions.
 		// The volume types associated with them have already been removed for the K8S versions that we use (v1.28+).
 		// See: https://github.com/open-telemetry/opentelemetry-collector-contrib/pull/45896
@@ -42,26 +56,47 @@ func kubeletStatsReceiver(runtimeResources runtimeResourceSources, additionalMet
 	}
 }
 
-func kubeletStatsMetrics(runtimeResources runtimeResourceSources, additionalMetrics []string) KubeletStatsMetrics {
+func kubeletStatsMetricGroups(runtimeResources runtimeResourceSources, runtimeAdditionalMetricsResources runtimeAdditionalMetricsResources) []MetricGroupType {
+	var metricGroups []MetricGroupType
+
+	if runtimeResources.container || runtimeAdditionalMetricsResources.container {
+		metricGroups = append(metricGroups, MetricGroupTypeContainer)
+	}
+
+	if runtimeResources.pod || runtimeAdditionalMetricsResources.pod {
+		metricGroups = append(metricGroups, MetricGroupTypePod)
+	}
+
+	if runtimeResources.node || runtimeAdditionalMetricsResources.node {
+		metricGroups = append(metricGroups, MetricGroupTypeNode)
+	}
+
+	if runtimeResources.volume || runtimeAdditionalMetricsResources.volume {
+		metricGroups = append(metricGroups, MetricGroupTypeVolume)
+	}
+
+	return metricGroups
+}
+
+func kubeletStatsMetrics(runtimeResources runtimeResourceSources, runtimeAdditionalMetricsResources runtimeAdditionalMetricsResources, additionalMetrics []string) KubeletStatsMetrics {
 	metrics := KubeletStatsMetrics{}
 
-	disableKubeletStatsMetrics(&metrics, runtimeResources)
+	disableKubeletStatsMetrics(&metrics, runtimeResources, runtimeAdditionalMetricsResources)
 	enableKubeletStatsAdditionalMetrics(&metrics, additionalMetrics)
 
 	return metrics
 }
 
-func disableKubeletStatsMetrics(metrics *KubeletStatsMetrics, runtimeResources runtimeResourceSources) {
+func disableKubeletStatsMetrics(metrics *KubeletStatsMetrics, runtimeResources runtimeResourceSources, runtimeAdditionalMetricsResources runtimeAdditionalMetricsResources) {
 	metrics.KubeletStatsDefaultMetricsToDrop = &KubeletStatsDefaultMetricsToDrop{
 		K8sNodeCPUTime:               &Metric{Enabled: false},
 		K8sNodeMemoryMajorPageFaults: &Metric{Enabled: false},
 		K8sNodeMemoryPageFaults:      &Metric{Enabled: false},
 	}
 
-	// The following metrics are enabled by default in the KubeletStatsReceiver.
-	// If the resource selectors are disabled, we need to disable the corresponding metrics in the KubeletStatsReceiver.
-
-	if !runtimeResources.pod {
+	// If pod metrics are disabled, but additional metrics contain pod-related metrics, we need to explicitly disable the default pod metrics.
+	// This is needed because the "pod" metric group will be added to the "metric_groups" field of the receiver.
+	if !runtimeResources.pod && runtimeAdditionalMetricsResources.pod {
 		metrics.KubeletStatsPodMetrics = &KubeletStatsPodMetrics{
 			K8sPodCPUTime:              &Metric{false},
 			K8sPodCPUUsage:             &Metric{false},
@@ -79,7 +114,9 @@ func disableKubeletStatsMetrics(metrics *KubeletStatsMetrics, runtimeResources r
 		}
 	}
 
-	if !runtimeResources.container {
+	// If container metrics are disabled, but additional metrics contain container-related metrics, we need to explicitly disable the default container metrics.
+	// This is needed because the "container" metric group will be added to the "metric_groups" field of the receiver.
+	if !runtimeResources.container && runtimeAdditionalMetricsResources.container {
 		metrics.KubeletStatsContainerMetrics = &KubeletStatsContainerMetrics{
 			ContainerCPUTime:              &Metric{false},
 			ContainerCPUUsage:             &Metric{false},
@@ -95,7 +132,9 @@ func disableKubeletStatsMetrics(metrics *KubeletStatsMetrics, runtimeResources r
 		}
 	}
 
-	if !runtimeResources.node {
+	// If node metrics are disabled, but additional metrics contain node-related metrics, we need to explicitly disable the default node metrics.
+	// This is needed because the "node" metric group will be added to the "metric_groups" field of the receiver.
+	if !runtimeResources.node && runtimeAdditionalMetricsResources.node {
 		metrics.KubeletStatsNodeMetrics = &KubeletStatsNodeMetrics{
 			K8sNodeCPUUsage:         &Metric{false},
 			K8sNodeFSAvailable:      &Metric{false},
@@ -110,7 +149,9 @@ func disableKubeletStatsMetrics(metrics *KubeletStatsMetrics, runtimeResources r
 		}
 	}
 
-	if !runtimeResources.volume {
+	// If volume metrics are disabled, but additional metrics contain volume-related metrics, we need to explicitly disable the default volume metrics.
+	// This is needed because the "volume" metric group will be added to the "metric_groups" field of the receiver.
+	if !runtimeResources.volume && runtimeAdditionalMetricsResources.volume {
 		metrics.KubeletStatsVolumeMetrics = &KubeletStatsVolumeMetrics{
 			K8sVolumeAvailable:  &Metric{false},
 			K8sVolumeCapacity:   &Metric{false},
