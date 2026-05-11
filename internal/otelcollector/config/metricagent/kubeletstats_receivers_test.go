@@ -21,20 +21,14 @@ func TestKubeletStatsReceiverConfig(t *testing.T) {
 
 	t.Run("runtime input enabled verify kubeletStatsReceiver", func(t *testing.T) {
 		tests := []struct {
-			name            string
-			pipeline        telemetryv1beta1.MetricPipeline
-			expectedMetrics KubeletStatsMetrics
+			name                 string
+			pipeline             telemetryv1beta1.MetricPipeline
+			expectedMetricGroups []MetricGroupType
 		}{
 			{
-				name:     "default resources enabled",
-				pipeline: testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).Build(),
-				expectedMetrics: KubeletStatsMetrics{
-					KubeletStatsDefaultMetricsToDrop: &KubeletStatsDefaultMetricsToDrop{
-						K8sNodeCPUTime:               &Metric{Enabled: false},
-						K8sNodeMemoryMajorPageFaults: &Metric{Enabled: false},
-						K8sNodeMemoryPageFaults:      &Metric{Enabled: false},
-					},
-				},
+				name:                 "default resources enabled",
+				pipeline:             testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).Build(),
+				expectedMetricGroups: []MetricGroupType{MetricGroupTypeContainer, MetricGroupTypePod, MetricGroupTypeNode, MetricGroupTypeVolume},
 			},
 			{
 				name: "only pod metrics disabled",
@@ -42,28 +36,7 @@ func TestKubeletStatsReceiverConfig(t *testing.T) {
 					WithRuntimeInput(true).
 					WithRuntimeInputPodMetrics(false).
 					Build(),
-				expectedMetrics: KubeletStatsMetrics{
-					KubeletStatsDefaultMetricsToDrop: &KubeletStatsDefaultMetricsToDrop{
-						K8sNodeCPUTime:               &Metric{Enabled: false},
-						K8sNodeMemoryMajorPageFaults: &Metric{Enabled: false},
-						K8sNodeMemoryPageFaults:      &Metric{Enabled: false},
-					},
-					KubeletStatsPodMetrics: &KubeletStatsPodMetrics{
-						K8sPodCPUTime:              &Metric{false},
-						K8sPodCPUUsage:             &Metric{false},
-						K8sPodFSAvailable:          &Metric{false},
-						K8sPodFSCapacity:           &Metric{false},
-						K8sPodFSUsage:              &Metric{false},
-						K8sPodMemoryAvailable:      &Metric{false},
-						K8sPodMemoryMajorPageFault: &Metric{false},
-						K8sPodMemoryPageFaults:     &Metric{false},
-						K8sPodMemoryRSS:            &Metric{false},
-						K8sPodMemoryUsage:          &Metric{false},
-						K8sPodMemoryWorkingSet:     &Metric{false},
-						K8sPodNetworkErrors:        &Metric{false},
-						K8sPodNetworkIO:            &Metric{false},
-					},
-				},
+				expectedMetricGroups: []MetricGroupType{MetricGroupTypeContainer, MetricGroupTypeNode, MetricGroupTypeVolume},
 			},
 			{
 				name: "only container metrics disabled",
@@ -71,26 +44,7 @@ func TestKubeletStatsReceiverConfig(t *testing.T) {
 					WithRuntimeInput(true).
 					WithRuntimeInputContainerMetrics(false).
 					Build(),
-				expectedMetrics: KubeletStatsMetrics{
-					KubeletStatsDefaultMetricsToDrop: &KubeletStatsDefaultMetricsToDrop{
-						K8sNodeCPUTime:               &Metric{Enabled: false},
-						K8sNodeMemoryMajorPageFaults: &Metric{Enabled: false},
-						K8sNodeMemoryPageFaults:      &Metric{Enabled: false},
-					},
-					KubeletStatsContainerMetrics: &KubeletStatsContainerMetrics{
-						ContainerCPUTime:              &Metric{false},
-						ContainerCPUUsage:             &Metric{false},
-						ContainerFSAvailable:          &Metric{false},
-						ContainerFSCapacity:           &Metric{false},
-						ContainerFSUsage:              &Metric{false},
-						ContainerMemoryAvailable:      &Metric{false},
-						ContainerMemoryMajorPageFault: &Metric{false},
-						ContainerMemoryPageFaults:     &Metric{false},
-						ContainerMemoryRSS:            &Metric{false},
-						ContainerMemoryUsage:          &Metric{false},
-						ContainerMemoryWorkingSet:     &Metric{false},
-					},
-				},
+				expectedMetricGroups: []MetricGroupType{MetricGroupTypePod, MetricGroupTypeNode, MetricGroupTypeVolume},
 			},
 			{
 				name: "only node metrics disabled",
@@ -98,25 +52,7 @@ func TestKubeletStatsReceiverConfig(t *testing.T) {
 					WithRuntimeInput(true).
 					WithRuntimeInputNodeMetrics(false).
 					Build(),
-				expectedMetrics: KubeletStatsMetrics{
-					KubeletStatsDefaultMetricsToDrop: &KubeletStatsDefaultMetricsToDrop{
-						K8sNodeCPUTime:               &Metric{Enabled: false},
-						K8sNodeMemoryMajorPageFaults: &Metric{Enabled: false},
-						K8sNodeMemoryPageFaults:      &Metric{Enabled: false},
-					},
-					KubeletStatsNodeMetrics: &KubeletStatsNodeMetrics{
-						K8sNodeCPUUsage:         &Metric{false},
-						K8sNodeFSAvailable:      &Metric{false},
-						K8sNodeFSCapacity:       &Metric{false},
-						K8sNodeFSUsage:          &Metric{false},
-						K8sNodeMemoryAvailable:  &Metric{false},
-						K8sNodeMemoryRSS:        &Metric{false},
-						K8sNodeMemoryUsage:      &Metric{false},
-						K8sNodeMemoryWorkingSet: &Metric{false},
-						K8sNodeNetworkErrors:    &Metric{false},
-						K8sNodeNetworkIO:        &Metric{false},
-					},
-				},
+				expectedMetricGroups: []MetricGroupType{MetricGroupTypeContainer, MetricGroupTypePod, MetricGroupTypeVolume},
 			},
 			{
 				name: "only volume metrics disabled",
@@ -124,20 +60,7 @@ func TestKubeletStatsReceiverConfig(t *testing.T) {
 					WithRuntimeInput(true).
 					WithRuntimeInputVolumeMetrics(false).
 					Build(),
-				expectedMetrics: KubeletStatsMetrics{
-					KubeletStatsDefaultMetricsToDrop: &KubeletStatsDefaultMetricsToDrop{
-						K8sNodeCPUTime:               &Metric{Enabled: false},
-						K8sNodeMemoryMajorPageFaults: &Metric{Enabled: false},
-						K8sNodeMemoryPageFaults:      &Metric{Enabled: false},
-					},
-					KubeletStatsVolumeMetrics: &KubeletStatsVolumeMetrics{
-						K8sVolumeAvailable:  &Metric{false},
-						K8sVolumeCapacity:   &Metric{false},
-						K8sVolumeInodes:     &Metric{false},
-						K8sVolumeInodesFree: &Metric{false},
-						K8sVolumeInodesUsed: &Metric{false},
-					},
-				},
+				expectedMetricGroups: []MetricGroupType{MetricGroupTypeContainer, MetricGroupTypePod, MetricGroupTypeNode},
 			},
 		}
 
@@ -157,8 +80,14 @@ func TestKubeletStatsReceiverConfig(t *testing.T) {
 				AuthType:           "serviceAccount",
 				Endpoint:           "https://${MY_NODE_NAME}:10250",
 				InsecureSkipVerify: true,
-				MetricGroups:       []MetricGroupType{MetricGroupTypeContainer, MetricGroupTypePod, MetricGroupTypeNode, MetricGroupTypeVolume},
-				Metrics:            test.expectedMetrics,
+				MetricGroups:       test.expectedMetricGroups,
+				Metrics: KubeletStatsMetrics{
+					KubeletStatsDefaultMetricsToDrop: &KubeletStatsDefaultMetricsToDrop{
+						K8sNodeCPUTime:               &Metric{Enabled: false},
+						K8sNodeMemoryMajorPageFaults: &Metric{Enabled: false},
+						K8sNodeMemoryPageFaults:      &Metric{Enabled: false},
+					},
+				},
 				ResourceAttributes: KubeletStatsResourceAttributes{
 					AWSVolumeID:            Metric{Enabled: false},
 					FSType:                 Metric{Enabled: false},
