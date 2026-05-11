@@ -125,71 +125,12 @@ receivers:
         insecure_skip_verify: true
         metric_groups:
             - container
-            - pod
-            - node
-            - volume
         metrics:
             k8s.node.cpu.time:
                 enabled: false
             k8s.node.memory.major_page_faults:
                 enabled: false
             k8s.node.memory.page_faults:
-                enabled: false
-            k8s.pod.cpu.time:
-                enabled: false
-            k8s.pod.cpu.usage:
-                enabled: false
-            k8s.pod.filesystem.available:
-                enabled: false
-            k8s.pod.filesystem.capacity:
-                enabled: false
-            k8s.pod.filesystem.usage:
-                enabled: false
-            k8s.pod.memory.available:
-                enabled: false
-            k8s.pod.memory.major_page_faults:
-                enabled: false
-            k8s.pod.memory.page_faults:
-                enabled: false
-            k8s.pod.memory.rss:
-                enabled: false
-            k8s.pod.memory.usage:
-                enabled: false
-            k8s.pod.memory.working_set:
-                enabled: false
-            k8s.pod.network.errors:
-                enabled: false
-            k8s.pod.network.io:
-                enabled: false
-            k8s.node.cpu.usage:
-                enabled: false
-            k8s.node.filesystem.available:
-                enabled: false
-            k8s.node.filesystem.capacity:
-                enabled: false
-            k8s.node.filesystem.usage:
-                enabled: false
-            k8s.node.memory.available:
-                enabled: false
-            k8s.node.memory.rss:
-                enabled: false
-            k8s.node.memory.usage:
-                enabled: false
-            k8s.node.memory.working_set:
-                enabled: false
-            k8s.node.network.errors:
-                enabled: false
-            k8s.node.network.io:
-                enabled: false
-            k8s.volume.available:
-                enabled: false
-            k8s.volume.capacity:
-                enabled: false
-            k8s.volume.inodes:
-                enabled: false
-            k8s.volume.inodes.free:
-                enabled: false
-            k8s.volume.inodes.used:
                 enabled: false
         resource_attributes:
             aws.volume.id:
@@ -208,9 +149,6 @@ receivers:
             - k8s.volume.type
         collect_all_network_interfaces:
             node: true
-        node: ${MY_NODE_NAME}
-        k8s_api_config:
-            auth_type: serviceAccount
 processors:
     batch:
         send_batch_size: 1024
