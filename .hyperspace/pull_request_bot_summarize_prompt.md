@@ -6,7 +6,7 @@ Structure the summary as follows:
 One or two sentences describing the change at a high level.
 
 ## Affected signal types
-List which pipeline types are affected: logs, metrics, traces, or all. If the change is infrastructure (build, CI, dependencies) or operator-level, state that instead.
+List which pipeline types are affected: logs, metrics, traces, or all. Omit this section entirely if the change is infrastructure (build, CI, dependencies), tooling, or operator-level with no signal-specific impact.
 
 ## Key changes
 Bullet points covering the most important code changes. For each point, mention the relevant package or component (e.g. `internal/reconciler/metricpipeline`, `internal/otelcollector/config`, `controllers/telemetry`).
