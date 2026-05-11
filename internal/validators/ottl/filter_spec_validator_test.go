@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+	"github.com/kyma-project/telemetry-manager/internal/pipelines"
 )
 
 type filterTestCase struct {
@@ -17,17 +18,17 @@ type filterTestCase struct {
 }
 
 func TestFilterValidator(t *testing.T) {
-	for _, signalType := range []SignalType{SignalTypeLog, SignalTypeMetric, SignalTypeTrace} {
+	for _, signalType := range []pipelines.SignalType{pipelines.SignalTypeLog, pipelines.SignalTypeMetric, pipelines.SignalTypeTrace} {
 		runFilterValidatorTestCases(t, "resource", signalType, filterResourceContextTestCases())
 		runFilterValidatorTestCases(t, "scope", signalType, filterScopeContextTestCases())
 	}
 
-	runFilterValidatorTestCases(t, "span", SignalTypeTrace, filterSpanContextTestCases())
-	runFilterValidatorTestCases(t, "spanevent", SignalTypeTrace, filterSpanEventContextTestCases())
-	runFilterValidatorTestCases(t, "log", SignalTypeLog, filterLogContextTestCases())
-	runFilterValidatorTestCases(t, "metric", SignalTypeMetric, filterMetricContextTestCases())
-	runFilterValidatorTestCases(t, "datapoint", SignalTypeMetric, filterDataPointContextTestCases())
-	runFilterValidatorTestCases(t, "mixed", SignalTypeMetric, filterMixedMetricContextTestCases())
+	runFilterValidatorTestCases(t, "span", pipelines.SignalTypeTrace, filterSpanContextTestCases())
+	runFilterValidatorTestCases(t, "spanevent", pipelines.SignalTypeTrace, filterSpanEventContextTestCases())
+	runFilterValidatorTestCases(t, "log", pipelines.SignalTypeLog, filterLogContextTestCases())
+	runFilterValidatorTestCases(t, "metric", pipelines.SignalTypeMetric, filterMetricContextTestCases())
+	runFilterValidatorTestCases(t, "datapoint", pipelines.SignalTypeMetric, filterDataPointContextTestCases())
+	runFilterValidatorTestCases(t, "mixed", pipelines.SignalTypeMetric, filterMixedMetricContextTestCases())
 
 	t.Run("invalid signal type", func(t *testing.T) {
 		_, err := NewFilterSpecValidator("invalid_signal")
@@ -35,7 +36,7 @@ func TestFilterValidator(t *testing.T) {
 	})
 }
 
-func runFilterValidatorTestCases(t *testing.T, context string, signalType SignalType, tests []filterTestCase) {
+func runFilterValidatorTestCases(t *testing.T, context string, signalType pipelines.SignalType, tests []filterTestCase) {
 	t.Helper()
 
 	t.Run(fmt.Sprintf("%s/%s context", signalType, context), func(t *testing.T) {

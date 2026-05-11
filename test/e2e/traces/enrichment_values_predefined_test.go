@@ -70,7 +70,7 @@ func TestEnrichmentValuesPredefined(t *testing.T) {
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.BackendReachable(t, backend)
-	assert.DeploymentReady(t, kitkyma.TraceGatewayName)
+	assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 	assert.TracePipelineHealthy(t, pipelineName)
 	assert.TracesFromNamespaceDelivered(t, backend, genNs)
 

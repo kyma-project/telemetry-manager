@@ -1,0 +1,76 @@
+name: otelcollector
+services:
+  otelcol-with-featuregate:
+    image: otel/opentelemetry-collector-contrib:0.149.0
+    command: ["--config", "/etc/otelcol-contrib/config.yaml", "--feature-gates", "stanza.synchronousLogEmitter"]
+    volumes:
+      - type: bind
+        source: ./baseline.yaml # put your config here
+        target: /etc/otelcol-contrib/config.yaml
+      - type: bind
+        source: ./testdata/var
+        target: /var
+    ports:
+      - 8888:8888
+      - 1777:1777
+
+  otelcol-no-featuregate:
+    image: otel/opentelemetry-collector-contrib:0.149.0
+    command: ["--config", "/etc/otelcol-contrib/config.yaml"]
+    volumes:
+      - type: bind
+        source: ./batch-bytes-sizer.yaml # put your config here
+        target: /etc/otelcol-contrib/config.yaml
+      - type: bind
+        source: ./testdata/var
+        target: /var
+    ports:
+      - 8889:8888
+      - 1778:1777
+
+  otelcol-backend:
+    image: otel/opentelemetry-collector-contrib:0.149.0
+    command: ["--config", "/etc/otelcol-contrib/config.yaml"]
+    volumes:
+      - type: bind
+        source: ./backend-config.yaml
+        target: /etc/otelcol-contrib/config.yaml
+    ports:
+      - 4317:4317
+      - 4318:4318
+      - 8890:8888
+
+  otelcol-backend-no-featuregate:
+    image: otel/opentelemetry-collector-contrib:0.149.0
+    command: ["--config", "/etc/otelcol-contrib/config.yaml"]
+    volumes:
+      - type: bind
+        source: ./backend-no-featuregate-config.yaml
+        target: /etc/otelcol-contrib/config.yaml
+    ports:
+      - 4319:4317
+      - 4320:4318
+      - 8891:8888
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - type: bind
+        source: ./prometheus.yml
+        target: /etc/prometheus/prometheus.yml
+    ports:
+      - 9090:9090
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - 3000:3000
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+    volumes:
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - prometheus
+
+volumes:
+  grafana-data:

@@ -84,11 +84,11 @@ This approach provides the following benefits:
 
 7. The system creates an official GitHub release entry for the release tag and attaches release artifacts and binaries.
 
-8. After the GitHub release is published, the system automatically creates pull requests to bump the module version in the experimental and fast channels.
+8. After the GitHub release is published, the system automatically creates pull requests to bump the module version in the dev, fast, and experimental channels.
 
 ### Module Release Workflow
 
-After entering the release version and channel, the Release Master triggers a dedicated GitHub workflow to publish the module release. The workflow creates the module configuration, assigns the release channel, and opens pull requests to update the `experimental`, `fast`, and `regular` channels.
+After entering the release version and channel, the Release Master triggers a dedicated GitHub workflow to publish the module release. The workflow creates the module configuration, assigns the release channel, and opens pull requests to update the dev, fast, experimental, and regular channels.
 
 ![Module Release Workflow](./../assets/auditable-release-module-release.drawio.svg)
 
@@ -109,7 +109,7 @@ The proposed solution ensures auditability through the following mechanisms:
 
 1. Single Source of Truth: By running all test suites (unit, E2E, Gardener, and upgrade) against a single release Docker image built from the release branch, we guarantee that the tested artifact is identical to the deployed artifact, with verifiable image digest matching.
 2. Complete Traceability: All test execution reports are collected and archived to GCP storage with 12-month retention, providing a complete audit trail of the quality gates each release has passed.
-3. Automated Governance: The release workflow enforces the required approval gates and milestone closures, while automatically generating release artifacts and propagating changes through the experimental, fast, and regular channels using pull requests.
+3. Automated Governance: The release workflow enforces the required approval gates and milestone closures, while automatically generating release artifacts and propagating changes through the dev, fast, experimental, and regular channels using pull requests.
 
 This approach eliminates the gap where separate images were built for testing and production, preventing digest mismatches that compromise audit integrity. The parallel execution of test suites minimizes release cycle time while maintaining comprehensive coverage. The automated creation of module releases and management plane chart updates ensures consistency across the release ecosystem.
 

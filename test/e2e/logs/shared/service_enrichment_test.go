@@ -55,18 +55,29 @@ func TestServiceEnrichment_OTel(t *testing.T) {
 				podWithUnknownServiceName          = "pod-with-unknown-service"
 				podWithUnknownServicePatternName   = "pod-with-unknown-service-pattern"
 				podWithCustomServiceAttributesName = "pod-with-custom-service"
+				podWithAnnotationPriorityName      = "pod-with-annotation-priority"
 
-				// misc
-				unknownService              = "unknown_service"
-				unknownServicePattern       = "unknown_service:bash"
+				// annotations
 				annotationServiceName       = "resource.opentelemetry.io/service.name"
 				annotationServiceNamespace  = "resource.opentelemetry.io/service.namespace"
 				annotationServiceVersion    = "resource.opentelemetry.io/service.version"
 				annotationServiceInstanceID = "resource.opentelemetry.io/service.instance.id"
-				customServiceName           = "custom-service"
-				customServiceNamespace      = "custom-namespace"
-				customServiceVersion        = "v1.2.3"
-				customServiceInstanceID     = "instance-1234"
+
+				// labels
+				labelK8sName      = "app.kubernetes.io/name"
+				labelK8sInstance  = "app.kubernetes.io/instance"
+				labelK8sVersion   = "app.kubernetes.io/version"
+				labelServiceName  = "label-service-name"
+				labelInstanceName = "label-instance-name"
+				labelVersion      = "label-version"
+
+				// misc
+				unknownService          = "unknown_service"
+				unknownServicePattern   = "unknown_service:bash"
+				customServiceName       = "custom-service"
+				customServiceNamespace  = "custom-namespace"
+				customServiceVersion    = "v1.2.3"
+				customServiceInstanceID = "instance-1234"
 			)
 
 			var (
@@ -130,6 +141,15 @@ func TestServiceEnrichment_OTel(t *testing.T) {
 						WithAnnotation(annotationServiceVersion, customServiceVersion).
 						WithAnnotation(annotationServiceInstanceID, customServiceInstanceID).
 						WithPodSpec(podSpecLogs).K8sObject(),
+					// Pod with conflicting k8s labels (lower priority) and OTel annotations (higher priority).
+					// Tests that annotation values win over app.kubernetes.io/* pod labels.
+					kitk8sobjects.NewPod(podWithAnnotationPriorityName, genNs).
+						WithAnnotation(annotationServiceName, customServiceName).
+						WithAnnotation(annotationServiceVersion, customServiceVersion).
+						WithLabel(labelK8sName, labelServiceName).
+						WithLabel(labelK8sInstance, labelInstanceName).
+						WithLabel(labelK8sVersion, labelVersion).
+						WithPodSpec(podSpecLogs).K8sObject(),
 				)
 			} else {
 				// Configure generator pods for gateway test
@@ -160,14 +180,12 @@ func TestServiceEnrichment_OTel(t *testing.T) {
 
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
-			assert.DeploymentReady(t, kitkyma.LogGatewayName)
-
 			if suite.ExpectAgent(tc.label) {
 				assert.DaemonSetReady(t, kitkyma.LogAgentName)
 			}
 
 			assert.BackendReachable(t, backend)
-			assert.DeploymentReady(t, kitkyma.LogGatewayName)
+			assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 			assert.OTelLogPipelineHealthy(t, pipelineName)
 			assert.OTelLogsFromNamespaceDelivered(t, backend, genNs)
 
@@ -215,6 +233,14 @@ func TestServiceEnrichment_OTel(t *testing.T) {
 				ServiceVersion:    customServiceVersion,
 				ServiceInstanceID: customServiceInstanceID,
 			})
+
+			// Annotation-level service attributes should take priority over app.kubernetes.io/* pod labels (agent only)
+			if suite.ExpectAgent(tc.label) {
+				verifyServiceAttributes(t, backend, podWithAnnotationPriorityName, ServiceAttributes{
+					ServiceName:    customServiceName,
+					ServiceVersion: customServiceVersion,
+				})
+			}
 
 			// Verify that temporary kyma resource attributes are removed from the logs
 			assert.BackendDataConsistentlyMatches(t, backend,

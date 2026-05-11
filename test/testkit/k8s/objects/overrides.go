@@ -20,6 +20,7 @@ type Level string
 const (
 	DEBUG Level = "debug"
 	INFO  Level = "info"
+	WARN  Level = "warn"
 )
 
 const overridesTemplate = `global:
@@ -32,6 +33,8 @@ logging:
 metrics:
   paused: {{ PAUSED }}
 telemetry:
+  paused: {{ PAUSED }}
+otlpGateway:
   paused: {{ PAUSED }}`
 
 type Overrides struct {

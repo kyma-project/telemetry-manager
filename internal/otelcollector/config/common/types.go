@@ -176,15 +176,21 @@ type MemoryLimiterConfig struct {
 }
 
 type K8sAttributesProcessorConfig struct {
-	AuthType       string             `yaml:"auth_type"`
-	Passthrough    bool               `yaml:"passthrough"`
-	Extract        ExtractK8sMetadata `yaml:"extract"`
-	PodAssociation []PodAssociations  `yaml:"pod_association"`
+	AuthType       string                    `yaml:"auth_type"`
+	Passthrough    bool                      `yaml:"passthrough"`
+	Filter         K8sAttributesFilterConfig `yaml:"filter"`
+	Extract        ExtractK8sMetadata        `yaml:"extract"`
+	PodAssociation []PodAssociations         `yaml:"pod_association"`
+}
+
+type K8sAttributesFilterConfig struct {
+	NodeFromEnvVar string `yaml:"node_from_env_var"`
 }
 
 type ExtractK8sMetadata struct {
 	Metadata                     []string       `yaml:"metadata"`
 	Labels                       []ExtractLabel `yaml:"labels"`
+	Annotations                  []ExtractLabel `yaml:"annotations,omitempty"`
 	OTelAnnotations              bool           `yaml:"otel_annotations,omitempty"`
 	DeploymentNameFromReplicaset bool           `yaml:"deployment_name_from_replicaset,omitempty"`
 }
@@ -229,20 +235,6 @@ type FilterProcessorConfig struct {
 	Metrics   []telemetryv1beta1.FilterSpec `yaml:"metric_conditions,omitempty"`
 	Logs      []telemetryv1beta1.FilterSpec `yaml:"log_conditions,omitempty"`
 	Traces    []telemetryv1beta1.FilterSpec `yaml:"trace_conditions,omitempty"`
-}
-
-type FilterProcessorMetrics struct {
-	Metric    []string `yaml:"metric,omitempty"`
-	Datapoint []string `yaml:"datapoint,omitempty"`
-}
-
-type FilterProcessorTraces struct {
-	Span      []string `yaml:"span,omitempty"`
-	SpanEvent []string `yaml:"spanevent,omitempty"`
-}
-
-type FilterProcessorLogs struct {
-	Log []string `yaml:"log_record,omitempty"`
 }
 
 // =============================================================================

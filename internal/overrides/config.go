@@ -1,11 +1,12 @@
 package overrides
 
 type Config struct {
-	Global    GlobalConfig    `yaml:"global,omitempty"`
-	Tracing   TracingConfig   `yaml:"tracing,omitempty"`
-	Logging   LoggingConfig   `yaml:"logging,omitempty"`
-	Metrics   MetricConfig    `yaml:"metrics,omitempty"`
-	Telemetry TelemetryConfig `yaml:"telemetry,omitempty"`
+	Global      GlobalConfig      `yaml:"global,omitempty"`
+	Tracing     TracingConfig     `yaml:"tracing,omitempty"`
+	Logging     LoggingConfig     `yaml:"logging,omitempty"`
+	Metrics     MetricConfig      `yaml:"metrics,omitempty"`
+	Telemetry   TelemetryConfig   `yaml:"telemetry,omitempty"`
+	OTLPGateway OTLPGatewayConfig `yaml:"otlpGateway,omitempty"`
 }
 
 type GlobalConfig struct {
@@ -26,5 +27,9 @@ type MetricConfig struct {
 }
 
 type TelemetryConfig struct {
+	Paused bool `yaml:"paused,omitempty"`
+}
+
+type OTLPGatewayConfig struct {
 	Paused bool `yaml:"paused,omitempty"`
 }

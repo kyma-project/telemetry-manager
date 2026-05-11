@@ -14,13 +14,14 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+	"github.com/kyma-project/telemetry-manager/internal/pipelines"
 )
 
 type FilterSpecValidator struct {
 	parserCollection *genericParserCollection
 }
 
-func NewFilterSpecValidator(signalType SignalType) (*FilterSpecValidator, error) {
+func NewFilterSpecValidator(signalType pipelines.SignalType) (*FilterSpecValidator, error) {
 	if err := signalType.Validate(); err != nil {
 		return nil, err
 	}
@@ -56,11 +57,11 @@ func (v *FilterSpecValidator) ValidateConditions(conditions []string) error {
 	return nil
 }
 
-func newFilterParserCollectionOpts(signalType SignalType) []genericParserCollectionOption {
+func newFilterParserCollectionOpts(signalType pipelines.SignalType) []genericParserCollectionOption {
 	var opts []genericParserCollectionOption
 
-	switch signalType {
-	case SignalTypeTrace:
+	switch signalType { //nolint:exhaustive // no OTTL for FluentBit
+	case pipelines.SignalTypeTrace:
 		opts = append(opts,
 			// Since context inference is not available in the filter processor yet,
 			// we set the context to span as the minimum required context.
@@ -70,14 +71,14 @@ func newFilterParserCollectionOpts(signalType SignalType) []genericParserCollect
 				ottl.WithConditionConverter(nopConditionConverter[*ottlspan.TransformContext]),
 			),
 		)
-	case SignalTypeLog:
+	case pipelines.SignalTypeLog:
 		opts = append(opts,
 			withLogParser(
 				ottl.CreateFactoryMap(filterprocessor.DefaultLogFunctionsNew()...),
 				ottl.WithConditionConverter(nopConditionConverter[*ottllog.TransformContext]),
 			),
 		)
-	case SignalTypeMetric:
+	case pipelines.SignalTypeMetric:
 		opts = append(opts,
 			// Since context inference is not available in the filter processor yet,
 			// we set the context to datapoint as the minimum required context.

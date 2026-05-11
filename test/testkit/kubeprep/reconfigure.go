@@ -45,7 +45,7 @@ func SetupCluster(t TestingT, k8sClient client.Client, cfg Config) error {
 	}
 
 	// Deploy test prerequisites if enabled
-	if err := ensureTestPrerequisites(t, k8sClient, cfg.DeployPrerequisites); err != nil {
+	if err := ensureTestPrerequisites(t, k8sClient, cfg); err != nil {
 		return fmt.Errorf("failed to ensure test prerequisites: %w", err)
 	}
 
@@ -56,13 +56,13 @@ func SetupCluster(t TestingT, k8sClient client.Client, cfg Config) error {
 
 // ensureTestPrerequisites deploys test prerequisites if enabled.
 // Server-side apply is idempotent, so this is safe to call multiple times.
-func ensureTestPrerequisites(t TestingT, k8sClient client.Client, deploy bool) error {
-	if !deploy {
+func ensureTestPrerequisites(t TestingT, k8sClient client.Client, cfg Config) error {
+	if !cfg.DeployPrerequisites {
 		t.Log("Skipping test prerequisites deployment")
 		return nil
 	}
 
-	return deployTestPrerequisites(t, k8sClient)
+	return deployTestPrerequisites(t, k8sClient, cfg)
 }
 
 // ensureManagerDeployed ensures the telemetry manager is deployed with the desired configuration.

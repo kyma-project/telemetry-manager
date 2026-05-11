@@ -1,0 +1,34 @@
+name: Setup Git Authentication
+description: Configure git authentication using GitHub CLI for secure repository access
+inputs:
+  token:
+    description: 'GitHub token for authentication'
+    required: true
+  host:
+    description: 'GitHub host (e.g., github.tools.sap)'
+    required: false
+    default: 'github.tools.sap'
+runs:
+  using: composite
+  steps:
+    - name: Configure git authentication
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        GH_HOST: ${{ inputs.host }}
+      run: |
+        echo "Configuring git authentication for ${GH_HOST}..."
+
+        # Login to specific GitHub Enterprise host
+        echo "${GH_TOKEN}" | gh auth login --hostname "${GH_HOST}" --with-token
+
+        # Configure git credential helper for that host
+        gh auth setup-git --hostname "${GH_HOST}"
+
+        # Verify authentication succeeded
+        if ! gh auth status --hostname "${GH_HOST}" 2>/dev/null; then
+          echo "::error::Failed to authenticate to ${GH_HOST}"
+          exit 1
+        fi
+
+        echo "✓ Git authentication configured for ${GH_HOST}"

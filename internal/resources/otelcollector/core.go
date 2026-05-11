@@ -181,7 +181,7 @@ func makeMetricsService(name types.NamespacedName) *corev1.Service {
 	}
 }
 
-func makeVPA(name types.NamespacedName, targetRefKind string, minAllowedMemory, maxAllowedMemory resource.Quantity) *autoscalingvpav1.VerticalPodAutoscaler {
+func makeVPA(name types.NamespacedName, minAllowedMemory, maxAllowedMemory resource.Quantity) *autoscalingvpav1.VerticalPodAutoscaler {
 	if maxAllowedMemory.Cmp(minAllowedMemory) < 0 {
 		maxAllowedMemory = minAllowedMemory
 	}
@@ -197,7 +197,7 @@ func makeVPA(name types.NamespacedName, targetRefKind string, minAllowedMemory, 
 		Spec: autoscalingvpav1.VerticalPodAutoscalerSpec{
 			TargetRef: &autoscalingv1.CrossVersionObjectReference{
 				APIVersion: "apps/v1",
-				Kind:       targetRefKind,
+				Kind:       "DaemonSet",
 				Name:       name.Name,
 			},
 			UpdatePolicy: &autoscalingvpav1.PodUpdatePolicy{

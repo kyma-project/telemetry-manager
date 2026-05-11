@@ -319,11 +319,16 @@ func TestValidateSuccess(t *testing.T) {
 func TestGettersForOptionalFields(t *testing.T) {
 	labels := map[string]string{"l1": "v1"}
 	annotations := map[string]string{"a1": "v1"}
+	podLabels := map[string]string{"pod-l1": "pod-v1"}
+	podAnnotations := map[string]string{"pod-a1": "pod-v1"}
+
 	g := NewGlobal(
 		WithImagePullSecretName("my-secret"),
 		WithClusterTrustBundleName("trust-bundle"),
 		WithAdditionalWorkloadLabels(labels),
 		WithAdditionalWorkloadAnnotations(annotations),
+		WithAdditionalWorkloadPodLabels(podLabels),
+		WithAdditionalWorkloadPodAnnotations(podAnnotations),
 		WithDeployOTLPGateway(false),
 		WithUnlimitedPipelines(true),
 	)
@@ -332,6 +337,21 @@ func TestGettersForOptionalFields(t *testing.T) {
 	require.Equal(t, "trust-bundle", g.ClusterTrustBundleName())
 	require.Equal(t, labels, g.AdditionalWorkloadLabels())
 	require.Equal(t, annotations, g.AdditionalWorkloadAnnotations())
+	require.Equal(t, podLabels, g.AdditionalWorkloadPodLabels())
+	require.Equal(t, podAnnotations, g.AdditionalWorkloadPodAnnotations())
 	require.False(t, g.DeployOTLPGateway())
 	require.True(t, g.UnlimitedPipelines())
+}
+
+func TestAdditionalMetadataGettersReturnEmptyMapsWhenNotSet(t *testing.T) {
+	g := NewGlobal(
+		WithTargetNamespace("kyma-system"),
+		WithManagerNamespace("kube-system"),
+		WithVersion("v1.2.3"),
+	)
+
+	require.Nil(t, g.AdditionalWorkloadLabels())
+	require.Nil(t, g.AdditionalWorkloadAnnotations())
+	require.Nil(t, g.AdditionalWorkloadPodLabels())
+	require.Nil(t, g.AdditionalWorkloadPodAnnotations())
 }

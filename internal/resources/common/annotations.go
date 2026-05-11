@@ -1,9 +1,6 @@
 package common
 
 const (
-	// AnnotationValueTrue can be used in all annotations that require "true" as value
-	AnnotationValueTrue = "true"
-
 	AnnotationKeyChecksumConfig = "checksum/config"
 
 	AnnotationKeyIstioIncludeInboundPorts      = "traffic.sidecar.istio.io/includeInboundPorts"
@@ -29,4 +26,5 @@ const (
 	AnnotationValueTelemetryServiceEnrichmentDefault    = AnnotationValueTelemetryServiceEnrichmentKymaLegacy
 
 	AnnotationKeyEnableVPA = "telemetry.kyma-project.io/enable-vpa"
+	AnnotationValueFalse   = "false"
 )

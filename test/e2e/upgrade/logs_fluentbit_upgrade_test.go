@@ -73,7 +73,7 @@ func TestLogsFluentBitUpgrade(t *testing.T) {
 
 	// === VALIDATE AFTER UPGRADE ===
 
-	// ==== EXISTING PIPELINES ====
+	// Existing pipelines
 	t.Log("Validating existing FluentBit log pipeline after upgrade...")
 	assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
 	assert.FluentBitLogPipelineHealthy(t, pipelineName)

@@ -1,0 +1,32 @@
+{
+  "charts": {
+    "Telemetry": {
+      "chart_name": "Telemetry",
+      "base_branch": "chart/telemetry",
+      "branch_prefix": "bump-telemetry",
+      "chart_dir": "telemetry",
+      "update_command": "yq -i '.appVersion = \"{{VERSION}}\"' telemetry/Chart.yaml && yq -i '(.dependencies[] | select(.name == \"telemetry-manager\") | .version) = \"{{VERSION}}\"' telemetry/Chart.yaml",
+      "verify_command": "yq -r '.appVersion' telemetry/Chart.yaml",
+      "verify_field": "appVersion",
+      "commit_title": "Bump Telemetry to {{VERSION}}",
+      "pr_title": "Bump Telemetry to {{VERSION}}",
+      "pr_body": "Bump Telemetry chart to version {{VERSION}}",
+      "summary_title": "Telemetry Chart Release Summary",
+      "summary_details": "Verify chart changes are correct"
+    },
+    "RMO": {
+      "chart_name": "RMO",
+      "base_branch": "chart/runtime-monitoring-operator",
+      "branch_prefix": "bump-rmo-occ",
+      "chart_dir": "runtime-monitoring-operator",
+      "update_command": "yq -i '.config.rma.image.otelCollector.tag = \"{{VERSION}}\"' runtime-monitoring-operator/values.yaml",
+      "verify_command": "yq -r '.config.rma.image.otelCollector.tag' runtime-monitoring-operator/values.yaml",
+      "verify_field": "OTel Collector tag",
+      "commit_title": "Bump RMO OTel Collector to {{VERSION}}",
+      "pr_title": "Bump RMO OTel Collector to {{VERSION}}",
+      "pr_body": "Bump RMO OTel Collector version to {{VERSION}}",
+      "summary_title": "RMO OTel Collector Release Summary",
+      "summary_details": "Verify OTel Collector version changes are correct"
+    }
+  }
+}

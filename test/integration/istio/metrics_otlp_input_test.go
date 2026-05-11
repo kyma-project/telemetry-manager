@@ -60,7 +60,7 @@ func TestMetricsOTLPInput(t *testing.T) {
 
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
-	assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+	assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 	assert.BackendReachable(t, backend)
 	assert.BackendReachable(t, istiofiedBackend)
 

@@ -9,11 +9,12 @@ import (
 )
 
 const (
-	defaultNamespace           = "telemetry"
-	subsystemPipelines         = "pipelines"
-	subsystemSelfMonitorProber = "self_monitor_prober"
-	subsystemSecretWatch       = "secret_watch"
-	subsystemNodeSize          = "node_size"
+	defaultNamespace                     = "telemetry"
+	subsystemPipelines                   = "pipelines"
+	subsystemSelfMonitorProber           = "self_monitor_prober"
+	subsystemSecretWatch                 = "secret_watch"
+	subsystemNodeSize                    = "node_size"
+	subsystemServiceAttributesEnrichment = "service_attributes_enrichment"
 )
 
 const (
@@ -217,6 +218,16 @@ var (
 			Name:      "smallest_memory_bytes",
 			Help:      "The allocatable memory in bytes of the smallest node in the cluster.",
 		},
+	)
+
+	ServiceAttributesEnrichmentStrategy = promauto.With(registry).NewGaugeVec(
+		prometheus.GaugeOpts{
+			Namespace: defaultNamespace,
+			Subsystem: subsystemServiceAttributesEnrichment,
+			Name:      "strategy",
+			Help:      "Service attributes enrichment strategy used for telemetry data (either 'otel' for OpenTelemetry enrichment or 'kyma-legacy' for legacy Kyma enrichment)",
+		},
+		[]string{"strategy"},
 	)
 )
 

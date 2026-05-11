@@ -15,13 +15,14 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+	"github.com/kyma-project/telemetry-manager/internal/pipelines"
 )
 
 type TransformSpecValidator struct {
 	parserCollection *genericParserCollection
 }
 
-func NewTransformSpecValidator(signalType SignalType) (*TransformSpecValidator, error) {
+func NewTransformSpecValidator(signalType pipelines.SignalType) (*TransformSpecValidator, error) {
 	if err := signalType.Validate(); err != nil {
 		return nil, err
 	}
@@ -61,11 +62,11 @@ func (v *TransformSpecValidator) ValidateStatementsAndConditions(statements, con
 	return nil
 }
 
-func newTransformParserCollectionOpts(signalType SignalType) []genericParserCollectionOption {
+func newTransformParserCollectionOpts(signalType pipelines.SignalType) []genericParserCollectionOption {
 	var opts []genericParserCollectionOption
 
-	switch signalType {
-	case SignalTypeLog:
+	switch signalType { //nolint:exhaustive // no OTTL for FluentBit
+	case pipelines.SignalTypeLog:
 		opts = []genericParserCollectionOption{
 			withLogParser(
 				ottl.CreateFactoryMap(transformprocessor.DefaultLogFunctionsNew()...),
@@ -73,7 +74,7 @@ func newTransformParserCollectionOpts(signalType SignalType) []genericParserColl
 				ottl.WithConditionConverter(nopConditionConverter[*ottllog.TransformContext]),
 			),
 		}
-	case SignalTypeMetric:
+	case pipelines.SignalTypeMetric:
 		opts = []genericParserCollectionOption{
 			withMetricParser(
 				ottl.CreateFactoryMap(transformprocessor.DefaultMetricFunctionsNew()...),
@@ -86,7 +87,7 @@ func newTransformParserCollectionOpts(signalType SignalType) []genericParserColl
 				ottl.WithConditionConverter(nopConditionConverter[*ottldatapoint.TransformContext]),
 			),
 		}
-	case SignalTypeTrace:
+	case pipelines.SignalTypeTrace:
 		opts = []genericParserCollectionOption{
 			withSpanParser(
 				ottl.CreateFactoryMap(transformprocessor.DefaultSpanFunctionsNew()...),

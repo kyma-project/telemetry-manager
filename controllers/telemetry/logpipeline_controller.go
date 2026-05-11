@@ -35,6 +35,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	ctrlpredicate "sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
@@ -46,8 +47,8 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
 	"github.com/kyma-project/telemetry-manager/internal/nodesize"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/logagent"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/loggateway"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
+	"github.com/kyma-project/telemetry-manager/internal/pipelines"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
 	logpipelinefluentbit "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/fluentbit"
 	logpipelineotel "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/otel"
@@ -75,21 +76,20 @@ type LogPipelineController struct {
 	reconcileTriggerChan <-chan event.GenericEvent
 	reconciler           *logpipeline.Reconciler
 	secretWatchClient    *secretwatch.Client
+	pipelineLockName     types.NamespacedName
 	nodeSizeTracker      *nodesize.Tracker
 }
 
 type LogPipelineControllerConfig struct {
 	config.Global
 
-	ExporterImage                string
-	FluentBitImage               string
-	OTelCollectorImage           string
-	ChownInitContainerImage      string
-	FluentBitPriorityClassName   string
-	LogGatewayPriorityClassName  string
-	LogAgentPriorityClassName    string
-	OTLPGatewayPriorityClassName string
-	RestConfig                   *rest.Config
+	ExporterImage              string
+	FluentBitImage             string
+	OTelCollectorImage         string
+	ChownInitContainerImage    string
+	FluentBitPriorityClassName string
+	LogAgentPriorityClassName  string
+	RestConfig                 *rest.Config
 }
 
 func NewLogPipelineController(config LogPipelineControllerConfig, client client.Client, reconcileTriggerChan <-chan event.GenericEvent, secretWatchClient *secretwatch.Client, nodeSizeTracker *nodesize.Tracker) (*LogPipelineController, error) {
@@ -130,12 +130,12 @@ func NewLogPipelineController(config LogPipelineControllerConfig, client client.
 		return nil, err
 	}
 
-	gatewayFlowHealthProber, err := prober.NewOTelLogGatewayProber(types.NamespacedName{Name: names.SelfMonitor, Namespace: config.TargetNamespace()})
+	agentFlowHealthProber, err := prober.NewOTelLogAgentProber(types.NamespacedName{Name: names.SelfMonitor, Namespace: config.TargetNamespace()})
 	if err != nil {
 		return nil, err
 	}
 
-	agentFlowHealthProber, err := prober.NewOTelLogAgentProber(types.NamespacedName{Name: names.SelfMonitor, Namespace: config.TargetNamespace()})
+	gatewayFlowHealthProber, err := prober.NewOTelLogGatewayProber(types.NamespacedName{Name: names.SelfMonitor, Namespace: config.TargetNamespace()})
 	if err != nil {
 		return nil, err
 	}
@@ -152,6 +152,7 @@ func NewLogPipelineController(config LogPipelineControllerConfig, client client.
 
 	reconciler := logpipeline.New(
 		client,
+		logpipeline.WithGlobals(config.Global),
 		logpipeline.WithOverridesHandler(overrides.New(config.Global, client)),
 		logpipeline.WithPipelineSyncer(pipelineSyncer),
 		logpipeline.WithReconcilers(fluentBitReconciler, otelReconciler),
@@ -164,12 +165,52 @@ func NewLogPipelineController(config LogPipelineControllerConfig, client client.
 		reconcileTriggerChan: reconcileTriggerChan,
 		reconciler:           reconciler,
 		secretWatchClient:    secretWatchClient,
-		nodeSizeTracker:      nodeSizeTracker,
+		pipelineLockName: types.NamespacedName{
+			Name:      names.LogPipelineLock,
+			Namespace: config.TargetNamespace(),
+		},
+		nodeSizeTracker: nodeSizeTracker,
 	}, nil
 }
 
 func (r *LogPipelineController) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	return r.reconciler.Reconcile(ctx, req)
+}
+
+// TODO: Mainly for FluentBit and Log Agent reconciliation, should be moved to agent controllers after migration.
+// logPipelineOwnedResourceTypes returns the list of Kubernetes resource types that are
+// managed (created/updated/deleted) by the LogPipeline reconciler and must be watched for changes.
+func logPipelineOwnedResourceTypes(isIstioActive, vpaCRDExists bool) []client.Object {
+	resources := []client.Object{
+		&appsv1.DaemonSet{},
+		&appsv1.Deployment{},
+		&corev1.ConfigMap{},
+		&corev1.Secret{},
+		&corev1.Service{},
+		&corev1.ServiceAccount{},
+		&rbacv1.ClusterRole{},
+		&rbacv1.ClusterRoleBinding{},
+		&networkingv1.NetworkPolicy{},
+	}
+
+	// TODO: PeerAuthentication watch should be moved to agent controllers after migration.
+	// Only watch PeerAuthentication CR if Istio is active
+	// otherwise, manager will have errors if the PeerAuthentication CRD is not present in the cluster
+	if isIstioActive {
+		resources = append(resources,
+			&istiosecurityclientv1.PeerAuthentication{},
+		)
+	}
+
+	// Only watch VPA CR if VPA CRD exists in the cluster
+	// otherwise, manager will have errors if the VPA CRD is not present in the cluster
+	// NOTE: controller needs to watch VPA CR even if the annotation to enable VPA is not present in Telemetry CR,
+	// because the annotation can be added later and this function is only called once during the setup of the controller.
+	if vpaCRDExists {
+		resources = append(resources, &autoscalingvpav1.VerticalPodAutoscaler{})
+	}
+
+	return resources
 }
 
 func (r *LogPipelineController) SetupWithManager(mgr ctrl.Manager) error {
@@ -178,19 +219,6 @@ func (r *LogPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 	b.WatchesRawSource(
 		source.Channel(r.reconcileTriggerChan, &handler.EnqueueRequestForObject{}),
 	)
-
-	ownedResourceTypesToWatch := []client.Object{
-		&appsv1.DaemonSet{},
-		&appsv1.Deployment{},
-		&corev1.ConfigMap{},
-		&corev1.Pod{},
-		&corev1.Secret{},
-		&corev1.Service{},
-		&corev1.ServiceAccount{},
-		&rbacv1.ClusterRole{},
-		&rbacv1.ClusterRoleBinding{},
-		&networkingv1.NetworkPolicy{},
-	}
 
 	ctx := context.Background()
 
@@ -209,24 +237,11 @@ func (r *LogPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		return fmt.Errorf("failed to check VPA status: %w", err)
 	}
 
-	// Only watch PeerAuthentication CR if Istio is active
-	// otherwise, manager will have errors if the PeerAuthentication CRD is not present in the cluster
-	if isIstioActive {
-		ownedResourceTypesToWatch = append(ownedResourceTypesToWatch, &istiosecurityclientv1.PeerAuthentication{})
-	}
-
-	// Only watch VPA CR if VPA CRD exists in the cluster
-	// otherwise, manager will have errors if the VPA CRD is not present in the cluster
-	// NOTE: controller needs to watch VPA CR even if the annotation to enable VPA is not present in Telemetry CR,
-	// because the annotation can be added later and this function is only called once during the setup of the controller.
-	if vpaCRDExists {
-		ownedResourceTypesToWatch = append(ownedResourceTypesToWatch, &autoscalingvpav1.VerticalPodAutoscaler{})
-	}
-
-	for _, resource := range ownedResourceTypesToWatch {
+	for _, resource := range logPipelineOwnedResourceTypes(isIstioActive, vpaCRDExists) {
 		b = b.Watches(
 			resource,
-			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(),
+			handler.EnqueueRequestForOwner(
+				mgr.GetClient().Scheme(),
 				mgr.GetRESTMapper(),
 				&telemetryv1beta1.LogPipeline{},
 			),
@@ -234,17 +249,92 @@ func (r *LogPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		)
 	}
 
-	return b.Watches(
+	// TODO: Watching the Telemetry CR should be entirely moved to the OTLP Gateway and Agents Controllers (remove this after the refactoring to LogAgent and FluentBit Controllers is done)
+	// Watch Telemetry CR
+	// React to spec changes (tracked by generation) and annotation changes on the Telemetry CR.
+	// Annotations carry configuration like VPA opt-in that affect pipeline resources.
+	// Status-only updates are ignored to avoid unnecessary reconciliation loops.
+	b.Watches(
 		&operatorv1beta1.Telemetry{},
 		handler.EnqueueRequestsFromMapFunc(r.mapTelemetryChanges),
-		ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete()),
-	).Watches(
+		ctrlbuilder.WithPredicates(ctrlpredicate.Or(ctrlpredicate.GenerationChangedPredicate{}, ctrlpredicate.AnnotationChangedPredicate{})),
+	)
+
+	// Watch for changes in Pods of interest (OTLP Gateway, Fluent Bit, Log Agent) to trigger reconciliation of owning pipelines.
+	b.Watches(
+		&corev1.Pod{},
+		handler.EnqueueRequestsFromMapFunc(r.mapPodChanges),
+		ctrlbuilder.WithPredicates(predicateutils.UpdateOrDelete()),
+	)
+
+	// Watch for changes in Nodes to track smallest node memory and trigger reconciliation of all pipelines if it changes
+	b.Watches(
 		&corev1.Node{},
 		handler.EnqueueRequestsFromMapFunc(r.mapNodeChanges),
-		ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete()),
-	).Complete(r)
+	)
+
+	// Watch OTLP Gateway DaemonSet to update GatewayHealthy condition for OTLP input pipelines
+	b.Watches(
+		&appsv1.DaemonSet{}, // OTLP Gateway DaemonSet
+		handler.EnqueueRequestsFromMapFunc(r.mapOTLPGatewayChanges),
+		ctrlbuilder.WithPredicates(ctrlpredicate.NewPredicateFuncs(func(object client.Object) bool {
+			return object.GetName() == names.OTLPGateway &&
+				object.GetNamespace() == r.pipelineLockName.Namespace
+		})),
+	)
+
+	// Watch the pipeline lock ConfigMap to trigger reconciliation of all pipelines when lock changes
+	// This ensures that when a pipeline is deleted and frees up a slot, waiting pipelines get reconciled
+	b.Watches(
+		&corev1.ConfigMap{}, // Pipeline lock ConfigMap
+		handler.EnqueueRequestsFromMapFunc(r.mapLockConfigMapChanges),
+		ctrlbuilder.WithPredicates(ctrlpredicate.NewPredicateFuncs(func(object client.Object) bool {
+			return object.GetName() == r.pipelineLockName.Name && object.GetNamespace() == r.pipelineLockName.Namespace
+		})),
+	)
+
+	return b.Complete(r)
 }
 
+// mapLockConfigMapChanges enqueues reconciliation requests for all LogPipelines when the pipeline lock
+// ConfigMap changes. This ensures that pipelines previously rejected due to the max pipeline limit get
+// reconciled when slots become available.
+func (r *LogPipelineController) mapLockConfigMapChanges(ctx context.Context, object client.Object) []reconcile.Request {
+	logf.FromContext(ctx).V(1).Info("Pipeline lock ConfigMap changed, triggering reconciliation of all LogPipelines")
+	return r.enqueueAllPipelines(ctx)
+}
+
+// mapOTLPGatewayChanges enqueues reconciliation requests for LogPipelines with OTLP output when the
+// OTLP Gateway DaemonSet changes. This ensures that the GatewayHealthy status condition is updated to
+// reflect the current gateway state for pipelines that use the gateway.
+func (r *LogPipelineController) mapOTLPGatewayChanges(ctx context.Context, object client.Object) []reconcile.Request {
+	logf.FromContext(ctx).V(1).Info("OTLP Gateway DaemonSet changed, triggering reconciliation of LogPipelines with OTLP input")
+
+	var pipelineList telemetryv1beta1.LogPipelineList
+	if err := r.List(ctx, &pipelineList); err != nil {
+		logf.FromContext(ctx).Error(err, "Failed to list LogPipelines")
+		return []reconcile.Request{}
+	}
+
+	requests := make([]reconcile.Request, 0)
+
+	for i := range pipelineList.Items {
+		pipeline := &pipelineList.Items[i]
+		// Only reconcile pipelines with OTLP input (gateway-based)
+		if pipeline.Spec.Input.OTLP != nil {
+			requests = append(requests, reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name: pipeline.Name,
+				},
+			})
+		}
+	}
+
+	return requests
+}
+
+// mapTelemetryChanges enqueues reconciliation requests for all LogPipelines when the Telemetry CR
+// changes. This ensures pipelines reflect updated module-level settings such as VPA opt-in annotations.
 func (r *LogPipelineController) mapTelemetryChanges(ctx context.Context, object client.Object) []reconcile.Request {
 	_, ok := object.(*operatorv1beta1.Telemetry)
 	if !ok {
@@ -252,12 +342,24 @@ func (r *LogPipelineController) mapTelemetryChanges(ctx context.Context, object 
 		return nil
 	}
 
-	requests, err := r.createRequestsForAllPipelines(ctx)
-	if err != nil {
-		logf.FromContext(ctx).Error(err, "Unable to create reconcile requests")
+	return r.enqueueAllPipelines(ctx)
+}
+
+// mapPodChanges enqueues reconciliation requests for all LogPipelines when a relevant Pod
+// (Fluent Bit, Log Agent, or OTLP Gateway) is updated or deleted. This ensures that the
+// TelemetryFlowHealthy status condition is updated based on the current pod state.
+func (r *LogPipelineController) mapPodChanges(ctx context.Context, object client.Object) []reconcile.Request {
+	pod, ok := object.(*corev1.Pod)
+	if !ok {
+		logf.FromContext(ctx).V(1).Error(nil, "Unexpected type: expected Pod")
+		return nil
 	}
 
-	return requests
+	if !isPodFrom(pod, names.FluentBit, names.LogAgent, names.OTLPGateway) {
+		return nil
+	}
+
+	return r.enqueueAllPipelines(ctx)
 }
 
 func configureFluentBitReconciler(config LogPipelineControllerConfig, client client.Client, flowHealthProber *prober.FluentBitProber, pipelineLock logpipelinefluentbit.PipelineLock) (*logpipelinefluentbit.Reconciler, error) {
@@ -304,12 +406,12 @@ func configureFluentBitReconciler(config LogPipelineControllerConfig, client cli
 
 //nolint:unparam // error is always nil: An error could be returned after implementing the IstioStatusChecker (TODO)
 func configureOTelReconciler(config LogPipelineControllerConfig, client client.Client, pipelineLock logpipelineotel.PipelineLock, gatewayFlowHealthProber *prober.OTelGatewayProber, agentFlowHealthProber *prober.OTelAgentProber, nodeSizeTracker *nodesize.Tracker) (*logpipelineotel.Reconciler, error) {
-	transformSpecValidator, err := ottl.NewTransformSpecValidator(ottl.SignalTypeLog)
+	transformSpecValidator, err := ottl.NewTransformSpecValidator(pipelines.SignalTypeLog)
 	if err != nil {
 		return nil, err
 	}
 
-	filterSpecValidator, err := ottl.NewFilterSpecValidator(ottl.SignalTypeLog)
+	filterSpecValidator, err := ottl.NewFilterSpecValidator(pipelines.SignalTypeLog)
 	if err != nil {
 		return nil, err
 	}
@@ -332,29 +434,10 @@ func configureOTelReconciler(config LogPipelineControllerConfig, client client.C
 		Reader: client,
 	}
 
-	prober := func() logpipelineotel.Prober {
-		if config.DeployOTLPGateway() {
-			return &workloadstatus.DaemonSetProber{Client: client}
-		}
-
-		return &workloadstatus.DeploymentProber{Client: client}
-	}()
-
 	agentApplierDeleter := otelcollector.NewLogAgentApplierDeleter(
 		config.Global,
 		config.OTelCollectorImage,
 		config.LogAgentPriorityClassName)
-
-	gatewayAppliedDeleter := otelcollector.NewLogGatewayApplierDeleter(
-		config.Global,
-		config.OTelCollectorImage,
-		config.LogGatewayPriorityClassName)
-
-	// Create OTLP gateway applier deleter for DaemonSet mode
-	otlpGatewayApplierDeleter := otelcollector.NewOTLPGatewayApplierDeleter(
-		config.Global,
-		config.OTelCollectorImage,
-		config.OTLPGatewayPriorityClassName)
 
 	otelReconciler := logpipelineotel.New(
 		logpipelineotel.WithClient(client),
@@ -363,15 +446,11 @@ func configureOTelReconciler(config LogPipelineControllerConfig, client client.C
 		logpipelineotel.WithAgentApplierDeleter(agentApplierDeleter),
 		logpipelineotel.WithAgentConfigBuilder(agentConfigBuilder),
 		logpipelineotel.WithAgentFlowHealthProber(agentFlowHealthProber),
+		logpipelineotel.WithGatewayFlowHealthProber(gatewayFlowHealthProber),
+		logpipelineotel.WithGatewayProber(&workloadstatus.DaemonSetProber{Client: client}),
 		logpipelineotel.WithAgentProber(&workloadstatus.DaemonSetProber{Client: client}),
 
 		logpipelineotel.WithErrorToMessageConverter(&conditions.ErrorToMessageConverter{}),
-
-		logpipelineotel.WithGatewayApplierDeleter(gatewayAppliedDeleter),
-		logpipelineotel.WithOTLPGatewayApplierDeleter(otlpGatewayApplierDeleter),
-		logpipelineotel.WithGatewayConfigBuilder(&loggateway.Builder{Reader: client}),
-		logpipelineotel.WithGatewayFlowHealthProber(gatewayFlowHealthProber),
-		logpipelineotel.WithGatewayProber(prober),
 
 		logpipelineotel.WithIstioStatusChecker(istiostatus.NewChecker(discoveryClient)),
 		logpipelineotel.WithVpaStatusChecker(vpastatus.NewChecker(config.RestConfig)),
@@ -383,6 +462,9 @@ func configureOTelReconciler(config LogPipelineControllerConfig, client client.C
 	return otelReconciler, nil
 }
 
+// mapNodeChanges updates the node size tracker when a Node is added, removed, or modified.
+// If the smallest node memory changes, it enqueues reconciliation requests for all LogPipelines
+// so that resource requirements can be recalculated.
 func (r *LogPipelineController) mapNodeChanges(ctx context.Context, object client.Object) []reconcile.Request {
 	changed, err := r.nodeSizeTracker.UpdateSmallestMemory(ctx)
 	if err != nil {
@@ -394,29 +476,25 @@ func (r *LogPipelineController) mapNodeChanges(ctx context.Context, object clien
 		return nil
 	}
 
-	requests, err := r.createRequestsForAllPipelines(ctx)
-	if err != nil {
-		logf.FromContext(ctx).Error(err, "Unable to create reconcile requests")
+	return r.enqueueAllPipelines(ctx)
+}
+
+// enqueueAllPipelines lists all LogPipelines and returns a reconcile request for each one.
+func (r *LogPipelineController) enqueueAllPipelines(ctx context.Context) []reconcile.Request {
+	var pipelineList telemetryv1beta1.LogPipelineList
+	if err := r.List(ctx, &pipelineList); err != nil {
+		logf.FromContext(ctx).Error(err, "Failed to list LogPipelines")
+		return []reconcile.Request{}
+	}
+
+	requests := make([]reconcile.Request, len(pipelineList.Items))
+	for i := range pipelineList.Items {
+		requests[i] = reconcile.Request{
+			NamespacedName: types.NamespacedName{
+				Name: pipelineList.Items[i].Name,
+			},
+		}
 	}
 
 	return requests
-}
-
-func (r *LogPipelineController) createRequestsForAllPipelines(ctx context.Context) ([]reconcile.Request, error) {
-	var pipelines telemetryv1beta1.LogPipelineList
-
-	var requests []reconcile.Request
-
-	err := r.List(ctx, &pipelines)
-	if err != nil {
-		return nil, fmt.Errorf("failed to list LogPipelines: %w", err)
-	}
-
-	for i := range pipelines.Items {
-		var pipeline = pipelines.Items[i]
-
-		requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
-	}
-
-	return requests, nil
 }

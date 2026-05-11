@@ -79,7 +79,7 @@ func TestMultiPipelineFanout_Agent(t *testing.T) {
 
 	assert.BackendReachable(t, backendRuntime)
 	assert.BackendReachable(t, backendPrometheus)
-	assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+	assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 	assert.MetricPipelineHealthy(t, pipelineRuntimeName)
 	assert.MetricPipelineHealthy(t, pipelinePrometheusName)
 	assert.MetricsFromNamespaceDelivered(t, backendRuntime, genNs, runtime.DefaultMetricsNames)
@@ -111,8 +111,7 @@ func TestMultiPipelineFanout_Agent(t *testing.T) {
 				ContainElement(HaveScopeVersion(
 					SatisfyAny(
 						ContainSubstring("main"),
-						ContainSubstring("1."),
-						ContainSubstring("PR-"),
+						MatchRegexp("[0-9]+.[0-9]+.[0-9]+"),
 					))),
 			),
 		)),
@@ -147,8 +146,7 @@ func TestMultiPipelineFanout_Agent(t *testing.T) {
 				ContainElement(HaveScopeVersion(
 					SatisfyAny(
 						ContainSubstring("main"),
-						ContainSubstring("1."),
-						ContainSubstring("PR-"),
+						MatchRegexp("[0-9]+.[0-9]+.[0-9]+"),
 					),
 				)),
 			),
@@ -195,7 +193,7 @@ func TestMultiPipelineFanout_Gateway(t *testing.T) {
 
 	assert.BackendReachable(t, backend1)
 	assert.BackendReachable(t, backend2)
-	assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+	assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 	assert.MetricPipelineHealthy(t, pipeline1Name)
 	assert.MetricPipelineHealthy(t, pipeline2Name)
 
@@ -213,8 +211,7 @@ func checkInstrumentationScopeAndVersion(t *testing.T, g Gomega, body []byte, sc
 				HaveScopeVersion(
 					SatisfyAny(
 						ContainSubstring("main"),
-						ContainSubstring("1."),
-						ContainSubstring("PR-"),
+						MatchRegexp("[0-9]+.[0-9]+.[0-9]+"),
 					)),
 			)),
 	)), "scope '%v' must be sent to the given backend", scope)

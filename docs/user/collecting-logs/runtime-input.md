@@ -11,7 +11,7 @@ To collect logs that your applications write to `stdout` and `stderr`, create a 
 
 Use the **runtime** input section to restrict or specify which resources you want to include. You can define the namespaces to include in the input collection, exclude namespaces from the input collection, or choose that only system namespaces are included. For details, see [LogPipeline: Custom Resource Parameters](https://kyma-project.io/#/telemetry-manager/user/resources/02-logpipeline?id=custom-resource-parameters).
 
-When you apply the LogPipeline resource to your Kubernetes cluster, a log agent is deployed and starts collecting the log data, transforms them to OTLP, and sends them to your backend. For details, see [Transformation to OTLP Logs](../filter-and-process/transformation-to-otlp-logs.md).
+When you apply the LogPipeline resource to your Kubernetes cluster, a Log Agent is deployed and starts collecting the log data, transforms them to OTLP, and sends them to your backend. For details, see [Transformation to OTLP Logs](../filter-and-process/transformation-to-otlp-logs.md).
 
 ## Enable or Disable Log Collection
 
@@ -31,7 +31,7 @@ By default, input is collected from all namespaces, except the system namespaces
 
 ## Discard the Original Log Body
 
-By default, the log agent preserves the original JSON log message by moving it to the **attributes."log.original"** field after parsing. For details, see [Transformation to OTLP Logs](../filter-and-process/transformation-to-otlp-logs.md).
+By default, the Log Agent preserves the original JSON log message by moving it to the **attributes."log.original"** field after parsing. For details, see [Transformation to OTLP Logs](../filter-and-process/transformation-to-otlp-logs.md).
 
 To reduce data volume, you can disable this behavior. Set the parameter to `false` to discard the original JSON string after its contents are parsed into attributes.
 

@@ -1,7 +1,6 @@
 package shared
 
 import (
-	"fmt"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -27,11 +26,9 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 	tests := []struct {
 		name                string
 		labels              []string
-		opts                []kubeprep.Option
 		inputBuilder        func(includeNss, excludeNss []string) telemetryv1beta1.LogPipelineInput
 		logGeneratorBuilder func(ns string) client.Object
 		resourceName        types.NamespacedName
-		readinessCheckFunc  func(t *testing.T, name types.NamespacedName)
 	}{
 		{
 			name:   suite.LabelLogAgent,
@@ -51,8 +48,7 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 			logGeneratorBuilder: func(ns string) client.Object {
 				return stdoutloggen.NewDeployment(ns).K8sObject()
 			},
-			resourceName:       kitkyma.LogAgentName,
-			readinessCheckFunc: assert.DaemonSetReady,
+			resourceName: kitkyma.LogAgentName,
 		},
 		{
 			name:   suite.LabelLogGateway,
@@ -72,36 +68,13 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 			logGeneratorBuilder: func(ns string) client.Object {
 				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeLogs).K8sObject()
 			},
-			resourceName:       kitkyma.LogGatewayName,
-			readinessCheckFunc: assert.DeploymentReady,
-		},
-		{
-			name:   fmt.Sprintf("%s-%s", suite.LabelLogGateway, suite.LabelExperimental),
-			labels: []string{suite.LabelLogGateway},
-			opts:   []kubeprep.Option{kubeprep.WithExperimental()},
-			inputBuilder: func(includeNss, excludeNss []string) telemetryv1beta1.LogPipelineInput {
-				var opts []testutils.NamespaceSelectorOptions
-				if len(includeNss) > 0 {
-					opts = append(opts, testutils.IncludeNamespaces(includeNss...))
-				}
-
-				if len(excludeNss) > 0 {
-					opts = append(opts, testutils.ExcludeNamespaces(excludeNss...))
-				}
-
-				return testutils.BuildLogPipelineOTLPInput(opts...)
-			},
-			logGeneratorBuilder: func(ns string) client.Object {
-				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeCentralLogs).K8sObject()
-			},
-			resourceName:       kitkyma.TelemetryOTLPGatewayName,
-			readinessCheckFunc: assert.DaemonSetReady,
+			resourceName: kitkyma.OTLPGatewayName,
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			suite.SetupTestWithOptions(t, tc.labels, tc.opts...)
+			suite.SetupTest(t, tc.labels...)
 
 			var (
 				uniquePrefix        = unique.Prefix(tc.name)
@@ -160,7 +133,7 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 			assert.BackendReachable(t, backend1)
 			assert.BackendReachable(t, backend2)
 
-			tc.readinessCheckFunc(t, tc.resourceName)
+			assert.DaemonSetReady(t, tc.resourceName)
 
 			assert.OTelLogPipelineHealthy(t, includePipelineName)
 			assert.OTelLogPipelineHealthy(t, excludePipelineName)

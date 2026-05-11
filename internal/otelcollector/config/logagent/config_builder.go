@@ -4,12 +4,15 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"slices"
+	"strings"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
+	"github.com/kyma-project/telemetry-manager/internal/pipelines"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 )
@@ -37,6 +40,11 @@ type BuildOptions struct {
 }
 
 func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1beta1.LogPipeline, opts BuildOptions) (*common.Config, common.EnvVars, error) {
+	// Sort pipelines to ensure consistent order and checksum for generated ConfigMap
+	slices.SortFunc(pipelines, func(a, b telemetryv1beta1.LogPipeline) int {
+		return strings.Compare(a.Name, b.Name)
+	})
+
 	b.Config = common.NewConfig()
 	if opts.VpaActive {
 		b.Config.DisableGoMemLimit()
@@ -63,6 +71,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1beta1.LogPip
 			b.addSetInstrumentationScopeToRuntimeProcessor(opts),
 			b.addDropUnknownServiceNameProcessor(opts),
 			b.addK8sAttributesProcessor(opts),
+			b.addRestoreOtelServiceAttrsProcessor(opts),
 			b.addInsertClusterAttributesProcessor(opts),
 			b.addServiceEnrichmentProcessor(opts),
 			// Kyma attributes are dropped before user-defined transform and filter processors
@@ -139,6 +148,19 @@ func (b *Builder) addK8sAttributesProcessor(opts BuildOptions) buildComponentFun
 	)
 }
 
+func (b *Builder) addRestoreOtelServiceAttrsProcessor(opts BuildOptions) buildComponentFunc {
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDRestoreOtelServiceAttrsProcessor),
+		func(lp *telemetryv1beta1.LogPipeline) any {
+			if opts.ServiceEnrichment != commonresources.AnnotationValueTelemetryServiceEnrichmentOtel {
+				return nil
+			}
+
+			return common.LogTransformProcessor(common.RestoreOtelServiceAnnotationsProcessorStatements())
+		},
+	)
+}
+
 func (b *Builder) addInsertClusterAttributesProcessor(opts BuildOptions) buildComponentFunc {
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDInsertClusterAttributesProcessor),
@@ -207,9 +229,8 @@ func (b *Builder) addOTLPExporter() buildComponentFunc {
 			otlpExporterBuilder := common.NewOTLPExporterConfigBuilder(
 				b.Reader,
 				lp.Spec.Output.OTLP,
-				lp.Name,
+				pipelines.LogPipelineRef(lp),
 				0, // queue size is set to 0 for now, as the queue is disabled
-				common.SignalTypeLog,
 			)
 
 			return otlpExporterBuilder.OTLPExporter(ctx)
@@ -218,13 +239,12 @@ func (b *Builder) addOTLPExporter() buildComponentFunc {
 }
 
 func (b *Builder) addOAuth2Extension(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) error {
-	oauth2ExtensionID := common.OAuth2ExtensionID(pipeline.Name)
+	oauth2ExtensionID := common.ComponentIDOAuth2Extension(pipelines.LogPipelineRef(pipeline))
 
 	oauth2ExtensionConfig, oauth2ExtensionEnvVars, err := common.NewOAuth2ExtensionConfigBuilder(
 		b.Reader,
 		pipeline.Spec.Output.OTLP.Authentication.OAuth2,
-		pipeline.Name,
-		common.SignalTypeTrace,
+		pipelines.LogPipelineRef(pipeline),
 	).OAuth2Extension(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to build OAuth2 extension for pipeline %s: %w", pipeline.Name, err)
@@ -244,17 +264,17 @@ func formatLogServicePipelineID(lp *telemetryv1beta1.LogPipeline) string {
 }
 
 func formatFileLogReceiverID(lp *telemetryv1beta1.LogPipeline) string {
-	return fmt.Sprintf(common.ComponentIDFileLogReceiver, lp.Name)
+	return common.ComponentIDFileLogReceiver(lp.Name)
 }
 
 func formatUserDefinedTransformProcessorID(lp *telemetryv1beta1.LogPipeline) string {
-	return fmt.Sprintf(common.ComponentIDUserDefinedTransformProcessor, lp.Name)
+	return common.ComponentIDUserDefinedTransformProcessor(pipelines.LogPipelineRef(lp))
 }
 
 func formatUserDefinedFilterProcessorID(lp *telemetryv1beta1.LogPipeline) string {
-	return fmt.Sprintf(common.ComponentIDUserDefinedFilterProcessor, lp.Name)
+	return common.ComponentIDUserDefinedFilterProcessor(pipelines.LogPipelineRef(lp))
 }
 
 func formatOTLPExporterID(lp *telemetryv1beta1.LogPipeline) string {
-	return common.ExporterID(lp.Spec.Output.OTLP.Protocol, lp.Name)
+	return common.ComponentIDOTLPExporter(lp.Spec.Output.OTLP.Protocol, pipelines.LogPipelineRef(lp))
 }

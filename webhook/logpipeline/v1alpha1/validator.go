@@ -10,12 +10,12 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
-	"github.com/kyma-project/telemetry-manager/internal/validators/ottl"
+	"github.com/kyma-project/telemetry-manager/internal/pipelines"
 	webhookutils "github.com/kyma-project/telemetry-manager/webhook/utils"
 )
 
 const (
-	migrationGuideLink = "https://kyma-project.io/#/telemetry-manager/docs/user/integrate-otlp-backend/migration-to-otlp-logs.html"
+	migrationGuideLink = "https://kyma-project.io/#/telemetry-manager/user/integrate-otlp-backend/migration-to-otlp-logs"
 )
 
 type validator struct {
@@ -79,7 +79,7 @@ func validate(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) (adm
 }
 
 func validateFilterTransform(ctx context.Context, filterSpec []telemetryv1beta1.FilterSpec, transformSpec []telemetryv1beta1.TransformSpec) error {
-	err := webhookutils.ValidateFilterTransform(ctx, ottl.SignalTypeLog, filterSpec, transformSpec)
+	err := webhookutils.ValidateFilterTransform(ctx, pipelines.SignalTypeLog, filterSpec, transformSpec)
 	if err != nil {
 		return fmt.Errorf(conditions.MessageForOtelLogPipeline(conditions.ReasonOTTLSpecInvalid), err.Error())
 	}

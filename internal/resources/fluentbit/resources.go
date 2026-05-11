@@ -286,7 +286,7 @@ func (aad *AgentApplierDeleter) makeDaemonSet(namespace string, checksum string)
 	// Pod labels need default labels explicitly since the labeler only sets top-level object labels
 	podLabels := make(map[string]string)
 	maps.Copy(podLabels, defaultFluentBitLabels())
-	maps.Copy(podLabels, aad.globals.AdditionalWorkloadLabels())
+	maps.Copy(podLabels, aad.globals.AdditionalWorkloadPodLabels())
 	podLabels[commonresources.LabelKeyIstioInject] = commonresources.LabelValueTrue
 	podLabels[commonresources.LabelKeyTelemetryLogExport] = commonresources.LabelValueTrue
 
@@ -294,9 +294,9 @@ func (aad *AgentApplierDeleter) makeDaemonSet(namespace string, checksum string)
 	resourceAnnotations := make(map[string]string)
 	maps.Copy(resourceAnnotations, aad.globals.AdditionalWorkloadAnnotations())
 
-	// Pod annotations: additional annotations from globals + checksum and Istio annotations
+	// Pod annotations: only pod-specific annotations from globals + checksum and Istio annotations
 	podAnnotations := make(map[string]string)
-	maps.Copy(podAnnotations, aad.globals.AdditionalWorkloadAnnotations())
+	maps.Copy(podAnnotations, aad.globals.AdditionalWorkloadPodAnnotations())
 	podAnnotations[commonresources.AnnotationKeyChecksumConfig] = checksum
 	podAnnotations[commonresources.AnnotationKeyIstioExcludeInboundPorts] = fmt.Sprintf("%v,%v", fbports.HTTP, fbports.ExporterMetrics)
 
@@ -369,8 +369,7 @@ func (aad *AgentApplierDeleter) makeDaemonSet(namespace string, checksum string)
 func (aad *AgentApplierDeleter) fluentBitLivenessProbe() *corev1.Probe {
 	return &corev1.Probe{
 		ProbeHandler: corev1.ProbeHandler{
-			HTTPGet: &corev1.HTTPGetAction{
-				Path: "/",
+			TCPSocket: &corev1.TCPSocketAction{
 				Port: intstr.FromString("http"),
 			},
 		},
@@ -380,8 +379,7 @@ func (aad *AgentApplierDeleter) fluentBitLivenessProbe() *corev1.Probe {
 func (aad *AgentApplierDeleter) fluentBitReadinessProbe() *corev1.Probe {
 	return &corev1.Probe{
 		ProbeHandler: corev1.ProbeHandler{
-			HTTPGet: &corev1.HTTPGetAction{
-				Path: "/api/v1/health",
+			TCPSocket: &corev1.TCPSocketAction{
 				Port: intstr.FromString("http"),
 			},
 		},

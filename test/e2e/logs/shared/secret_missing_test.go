@@ -1,7 +1,6 @@
 package shared
 
 import (
-	"fmt"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -25,7 +24,6 @@ func TestSecretMissing_OTel(t *testing.T) {
 	tests := []struct {
 		name   string
 		labels []string
-		opts   []kubeprep.Option
 		input  telemetryv1beta1.LogPipelineInput
 	}{
 		{
@@ -38,17 +36,11 @@ func TestSecretMissing_OTel(t *testing.T) {
 			labels: []string{suite.LabelLogGateway},
 			input:  testutils.BuildLogPipelineOTLPInput(),
 		},
-		{
-			name:   fmt.Sprintf("%s-%s", suite.LabelLogGateway, suite.LabelExperimental),
-			labels: []string{suite.LabelLogGateway},
-			opts:   []kubeprep.Option{kubeprep.WithExperimental()},
-			input:  testutils.BuildLogPipelineOTLPInput(),
-		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			suite.SetupTestWithOptions(t, tc.labels, tc.opts...)
+			suite.SetupTest(t, tc.labels...)
 
 			const (
 				endpointKey   = "logs-endpoint"

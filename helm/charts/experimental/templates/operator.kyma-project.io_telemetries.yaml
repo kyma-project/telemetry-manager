@@ -101,12 +101,13 @@ spec:
                   This field is optional.
                 properties:
                   gateway:
-                    description: Gateway configures the log gateway.
+                    description: Gateway configures the log gateway (deprecated).
                     properties:
                       scaling:
-                        description: Scaling defines which strategy is used for scaling
-                          the gateway, with detailed configuration options for each
-                          strategy type.
+                        description: |-
+                          Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.
+
+                          Deprecated: This field is no longer supported. Setting it will have no effect.
                         properties:
                           static:
                             description: |-
@@ -136,19 +137,20 @@ spec:
                   collectionInterval:
                     description: |-
                       CollectionInterval defines the default collection/scrape interval for all pull-based metric inputs (runtime, prometheus, istio).
-                      The value is a duration string (for example, "30s", "1m", "5m"). Minimum is 1s. Default is 30s.
+                      The value is a duration string (for example, "30s", "1m", "5m"). Default is 30s.
                     format: duration
                     type: string
                     x-kubernetes-validations:
                     - message: '''collectionInterval'' must be greater than 0'
                       rule: self > duration('0s')
                   gateway:
-                    description: Gateway configures the metric gateway.
+                    description: Gateway configures the metric gateway (deprecated).
                     properties:
                       scaling:
-                        description: Scaling defines which strategy is used for scaling
-                          the gateway, with detailed configuration options for each
-                          strategy type.
+                        description: |-
+                          Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.
+
+                          Deprecated: This field is no longer supported. Setting it will have no effect.
                         properties:
                           static:
                             description: |-
@@ -218,12 +220,13 @@ spec:
                   features. This field is optional.
                 properties:
                   gateway:
-                    description: Gateway configures the trace gateway.
+                    description: Gateway configures the trace gateway (deprecated).
                     properties:
                       scaling:
-                        description: Scaling defines which strategy is used for scaling
-                          the gateway, with detailed configuration options for each
-                          strategy type.
+                        description: |-
+                          Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.
+
+                          Deprecated: This field is no longer supported. Setting it will have no effect.
                         properties:
                           static:
                             description: |-
@@ -310,11 +313,14 @@ spec:
                   type: object
                 type: array
               endpoints:
-                description: Endpoints for log, trace, and metric gateway.
+                description: Endpoints for the OTLP Gateway.
                 properties:
                   logs:
-                    description: Logs contains the endpoints for log gateway supporting
-                      OTLP.
+                    description: |-
+                      Logs contains the OTLP endpoints for log signal type.
+
+                      Deprecated: These logs endpoints are deprecated and automatically redirect to the unified OTLP endpoints.
+                      Use the unified OTLP endpoints instead for all signal types.
                     properties:
                       grpc:
                         description: gRPC endpoint for OTLP.
@@ -324,8 +330,22 @@ spec:
                         type: string
                     type: object
                   metrics:
-                    description: Metrics contains the endpoints for metric gateway
-                      supporting OTLP.
+                    description: |-
+                      Metrics contains the OTLP endpoints for metric signal type.
+
+                      Deprecated: These metrics endpoints are deprecated and automatically redirect to the unified OTLP endpoints.
+                      Use the unified OTLP endpoints instead for all signal types.
+                    properties:
+                      grpc:
+                        description: gRPC endpoint for OTLP.
+                        type: string
+                      http:
+                        description: HTTP endpoint for OTLP.
+                        type: string
+                    type: object
+                  otlp:
+                    description: OTLP contains the unified OTLP endpoints for all
+                      signal types (logs, traces, metrics).
                     properties:
                       grpc:
                         description: gRPC endpoint for OTLP.
@@ -335,8 +355,11 @@ spec:
                         type: string
                     type: object
                   traces:
-                    description: Traces contains the endpoints for trace gateway supporting
-                      OTLP.
+                    description: |-
+                      Traces contains the OTLP endpoints for trace signal type.
+
+                      Deprecated: These traces endpoints are deprecated and automatically redirect to the unified OTLP endpoints.
+                      Use the unified OTLP endpoints instead for all signal types.
                     properties:
                       grpc:
                         description: gRPC endpoint for OTLP.
@@ -437,12 +460,13 @@ spec:
                   This field is optional.
                 properties:
                   gateway:
-                    description: Gateway configures the log gateway.
+                    description: Gateway configures the log gateway (deprecated).
                     properties:
                       scaling:
-                        description: Scaling defines which strategy is used for scaling
-                          the gateway, with detailed configuration options for each
-                          strategy type.
+                        description: |-
+                          Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.
+
+                          Deprecated: This field is no longer supported. Setting it will have no effect.
                         properties:
                           static:
                             description: |-
@@ -472,19 +496,20 @@ spec:
                   collectionInterval:
                     description: |-
                       CollectionInterval defines the default scrape interval for all pull-based metric inputs (runtime, prometheus, istio).
-                      The value is a duration string (for example, "30s", "1m", "5m"). Minimum is 1s. Default is 30s.
+                      The value is a duration string (for example, "30s", "1m", "5m"). Default is 30s.
                     format: duration
                     type: string
                     x-kubernetes-validations:
                     - message: '''collectionInterval'' must be greater than 0'
                       rule: self > duration('0s')
                   gateway:
-                    description: Gateway configures the metric gateway.
+                    description: Gateway configures the metric gateway (deprecated).
                     properties:
                       scaling:
-                        description: Scaling defines which strategy is used for scaling
-                          the gateway, with detailed configuration options for each
-                          strategy type.
+                        description: |-
+                          Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.
+
+                          Deprecated: This field is no longer supported. Setting it will have no effect.
                         properties:
                           static:
                             description: |-
@@ -554,12 +579,13 @@ spec:
                   features. This field is optional.
                 properties:
                   gateway:
-                    description: Gateway configures the trace gateway.
+                    description: Gateway configures the trace gateway (deprecated).
                     properties:
                       scaling:
-                        description: Scaling defines which strategy is used for scaling
-                          the gateway, with detailed configuration options for each
-                          strategy type.
+                        description: |-
+                          Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.
+
+                          Deprecated: This field is no longer supported. Setting it will have no effect.
                         properties:
                           static:
                             description: |-
@@ -646,11 +672,14 @@ spec:
                   type: object
                 type: array
               endpoints:
-                description: Endpoints for log, trace, and metric gateway.
+                description: Endpoints for the OTLP Gateway.
                 properties:
                   logs:
-                    description: Logs contains the endpoints for log gateway supporting
-                      OTLP.
+                    description: |-
+                      Logs contains the OTLP endpoints for log signal type.
+
+                      Deprecated: These logs endpoints are deprecated and automatically redirect to the unified OTLP endpoints.
+                      Use the unified OTLP endpoints instead for all signal types.
                     properties:
                       grpc:
                         description: gRPC endpoint for OTLP.
@@ -660,8 +689,22 @@ spec:
                         type: string
                     type: object
                   metrics:
-                    description: Metrics contains the endpoints for metric gateway
-                      supporting OTLP.
+                    description: |-
+                      Metrics contains the OTLP endpoints for metric signal type.
+
+                      Deprecated: These metrics endpoints are deprecated and automatically redirect to the unified OTLP endpoints.
+                      Use the unified OTLP endpoints instead for all signal types.
+                    properties:
+                      grpc:
+                        description: gRPC endpoint for OTLP.
+                        type: string
+                      http:
+                        description: HTTP endpoint for OTLP.
+                        type: string
+                    type: object
+                  otlp:
+                    description: OTLP contains the unified OTLP endpoints for all
+                      signal types (logs, traces, metrics).
                     properties:
                       grpc:
                         description: gRPC endpoint for OTLP.
@@ -671,8 +714,11 @@ spec:
                         type: string
                     type: object
                   traces:
-                    description: Traces contains the endpoints for trace gateway supporting
-                      OTLP.
+                    description: |-
+                      Traces contains the OTLP endpoints for trace signal type.
+
+                      Deprecated: These traces endpoints are deprecated and automatically redirect to the unified OTLP endpoints.
+                      Use the unified OTLP endpoints instead for all signal types.
                     properties:
                       grpc:
                         description: gRPC endpoint for OTLP.

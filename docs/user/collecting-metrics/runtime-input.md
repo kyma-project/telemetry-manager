@@ -13,7 +13,7 @@ By default, the **runtime** input is disabled. If you want to monitor your Kuber
       enabled: true
 ```
 
-With this, the metric agent starts collecting all runtime metrics from all resources (Pod, container, Node, Volume, DaemonSet, Deployment, StatefulSet, and Job).
+With this, the Metric Agent starts collecting all runtime metrics from all resources (Pod, container, Node, Volume, DaemonSet, Deployment, StatefulSet, and Job).
 
 > [!TIP]
 > To select metrics from specific namespaces or to include system namespaces, see [Filter Metrics](../filter-and-process/filter-metrics.md).

@@ -1,0 +1,63 @@
+extensions:
+  cgroupruntime:
+    gomaxprocs:
+      enabled: false
+    gomemlimit:
+      enabled: true
+      ratio: 0.8
+  health_check:
+    endpoint: 0.0.0.0:13133
+  pprof:
+    endpoint: 127.0.0.1:1777
+service:
+  pipelines:
+    logs/test:
+      receivers:
+        - filelog/test
+      exporters:
+        - otlp_grpc/test
+  telemetry:
+    metrics:
+      level: detailed
+      readers:
+        - pull:
+            exporter:
+              prometheus:
+                host: 0.0.0.0
+                port: 8888
+    logs:
+      level: info
+      encoding: json
+  extensions:
+    - health_check
+    - pprof
+    - cgroupruntime
+receivers:
+  filelog/test:
+    exclude:
+      - /var/log/pods/kyma-system_telemetry-fluent-bit-*/fluent-bit/*.log
+      - /var/log/pods/kyma-system_telemetry-log-agent-*/collector/*.log
+      - /var/log/pods/kyma-system_*system-logs-agent-*/collector/*.log
+      - /var/log/pods/kyma-system_*system-logs-collector-*/collector/*.log
+      - /var/log/pods/kyma-system_*/*/*.log
+      - /var/log/pods/kube-system_*/*/*.log
+      - /var/log/pods/istio-system_*/*/*.log
+    include:
+      - /var/log/pods/*_*/*/*.log
+    include_file_name: false
+    include_file_path: true
+    start_at: beginning
+    retry_on_failure:
+      enabled: true
+      initial_interval: 5s
+      max_interval: 30s
+      max_elapsed_time: 300s
+exporters:
+  otlp_grpc/test:
+    endpoint: http://otelcol-backend:4317
+    tls:
+      insecure: true
+    compression: gzip
+    retry_on_failure:
+      enabled: false
+

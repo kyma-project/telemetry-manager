@@ -23,7 +23,7 @@ If you can't find a solution, don't hesitate to create a [GitHub issue](https://
    - If the status is `GatewayAllTelemetryDataDropped`, the problem is with the gateway.
    - If the status is `AgentAllTelemetryDataDropped`, the problem is with the agent.
 2. To check the failing component's logs, call `kubectl logs -n kyma-system {POD_NAME}`:
-   - For the gateway, check Pod `telemetry-(log|trace|metric)-gateway`.
+   - For the gateway, check Pod `telemetry-otlp-gateway`.
    - For the agent, check Pod `telemetry-(log|metric)-agent`.
    Look for errors related to authentication, connectivity, and DNS.
 3. Check if the backend is up and reachable.
@@ -46,7 +46,7 @@ This status indicates that the telemetry gateway or agent is successfully sendin
 ### Solution
 
 1. Check the error logs for the affected Pod by calling `kubectl logs -n kyma-system {POD_NAME}`:
-   - For **GatewaySomeTelemetryDataDropped**, check Pod `telemetry-(log|trace|metric)-gateway`.
+   - For **GatewaySomeTelemetryDataDropped**, check Pod `telemetry-otlp-gateway`.
    - For **AgentSomeTelemetryDataDropped**, check Pod `telemetry-(log|metric)-agent`.
 2. Go to your observability backend and investigate potential causes.
 3. If the backend is limiting the rate by refusing data, try the following options:
@@ -63,13 +63,13 @@ In the pipeline status, the `TelemetryFlowHealthy` condition has status **Gatewa
 
 ### Cause
 
-The gateway is receiving data faster than it can process and forward it.
+An OTLP Gateway instance is receiving data faster than it can process and forward it.
 
 ### Solution
 
-Manually scale out the capacity by increasing the number of replicas for the affected gateway. For details, see [Telemetry CRD](https://kyma-project.io/#/telemetry-manager/user/01-manager?id=module-configuration).
+Reduce the volume of telemetry data, either by rebalancing workloads across nodes or reconfiguring your pipeline(s) to filter out unused inputs and irrelevant data.
 
-### Custom Spans Don’t Arrive at the Backend, but Istio Spans Do
+## Custom Spans Don’t Arrive at the Backend, but Istio Spans Do
 
 ### Symptom
 
@@ -85,7 +85,7 @@ The OpenTelemetry (OTel) SDK version used in your application is incompatible wi
 2. Investigate whether it's compatible with the OTel Collector version.
 3. If necessary, upgrade to a supported SDK version.
 
-### Observability Backend Shows Fewer Traces than Expected
+## Observability Backend Shows Fewer Traces than Expected
 
 ### Symptom
 
@@ -103,7 +103,7 @@ For example, in low-traffic environments (for development or testing) or for low
 
 - Alternatively, to trace a single request, force sampling by adding a traceparent HTTP header to your client request. This header contains a sampled flag that instructs the system to capture the trace, bypassing the global sampling rate (see [Trace Context: Sampled Flag](https://www.w3.org/TR/trace-context/#sampled-flag)).
 
-### MetricPipeline: Failed to Scrape Prometheus Endpoint
+## MetricPipeline: Failed to Scrape Prometheus Endpoint
 
 ### Symptom
 
@@ -117,17 +117,17 @@ For example, in low-traffic environments (for development or testing) or for low
 
 ### Cause
 
-There's a configuration or network issue between the metric agent and your application, such as:
+There's a configuration or network issue between the Metric Agent and your application, such as:
 
 - The Service that exposes your metrics port doesn't specify the application protocol.
-- The workload is not configured to use STRICT mTLS mode, which the metric agent uses by default.
+- The workload is not configured to use STRICT mTLS mode, which the Metric Agent uses by default.
 - A deny-all NetworkPolicy in your application's namespace prevents the agent from scraping metrics from annotated workloads.
 
 ### Solution
 
 - Define the application protocol in the Service port definition by either prefixing the port name with the protocol, or define the appProtocol attribute.
 - If the issue is with mTLS, either configure your workload to use STRICT mTLS, or switch to unencrypted scraping by adding the prometheus.io/scheme: "http" annotation to your workload.
-- Create a new NetworkPolicy to explicitly allow ingress traffic from the metric agent; such as the following example:
+- Create a new NetworkPolicy to explicitly allow ingress traffic from the Metric Agent; such as the following example:
 
   ```yaml
   apiVersion: networking.k8s.io/v1
@@ -158,7 +158,7 @@ In the LogPipeline status, the `TelemetryFlowHealthy` condition has status **Age
 
 ### Cause
 
-The backend ingestion rate is too low compared to the export rate of the log agent, causing data to accumulate in its buffer.
+The backend ingestion rate is too low compared to the export rate of the Log Agent, causing data to accumulate in its buffer.
 
 ### Solution
 
@@ -202,7 +202,7 @@ This usually happens for one of the following reasons:
 
 If you get a generic EOF error instead of a specific error message, there's usually a syntax error in your OTTL transformation or filter rules. It occurs when the parser cannot diagnose the error precisely.
 
-The following example uses the incorrect function name `isMatch` (it should be `IsMatch`, because he parser is case-sensitive):
+The following example uses the incorrect function name `isMatch` (it should be `IsMatch`, because the parser is case-sensitive):
 ```yaml
 # ...
 filter:
@@ -213,3 +213,70 @@ filter:
 ### Solution
 
 Review the syntax of your transform and filter rules and ensure that the names of [OTTL functions](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/ottl/ottlfuncs/README.md) are spelled correctly (for example, `IsMatch()` instead of `isMatch()`).
+
+## VPA Resources Are Not Created
+
+### Symptom
+
+VPA resources are not created even though VPA is enabled.
+
+### Cause
+
+The Vertical Pod Autoscaler (VPA) CRD is not installed in your cluster.
+
+### Solution
+
+Install the VPA CRD in your cluster (see [Vertical Pod Autoscaler](https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler)).
+
+## Telemetry Components Run Out of Memory
+
+### Symptom
+
+Telemetry components are running out of memory despite VPA being enabled.
+
+### Cause
+
+The memory limits are too restrictive for your telemetry volume. VPA calculates limits based on the smallest node in your cluster, which might not provide enough memory for high-volume telemetry workloads.
+
+### Solution
+
+If no data arrives at your backend, first check for backend-side issues (see [Not All Data Arrive at the Backend](#not-all-data-arrive-at-the-backend)).
+
+If data arrives but components run out of memory, reduce memory pressure:
+
+
+- Add nodes with more memory to increase the calculated `maxAllowed` value.
+- Reduce telemetry volume by applying filters in your pipelines (see [Filter Logs](./filter-and-process/filter-logs.md), [Filter Traces](./filter-and-process/filter-traces.md), [Filter Metrics](./filter-and-process/filter-metrics.md)).
+
+As a workaround, you can disable VPA so that the system uses static resource limits:
+  1. Edit the Telemetry resource:
+  
+     ```bash
+     kubectl edit telemetry default -n kyma-system
+     ```
+  
+  2. Add or change the `telemetry.kyma-project.io/enable-vpa` annotation under `metadata.annotations` to `"false"`:
+  
+     ```yaml
+     apiVersion: operator.kyma-project.io/v1beta1
+     kind: Telemetry
+     metadata:
+       name: default
+       namespace: kyma-system
+       annotations:
+         telemetry.kyma-project.io/enable-vpa: "false"
+     spec:
+       # your telemetry configuration
+     ```
+  
+  3. Save your changes.
+  
+  4. Verify the configuration by listing VPA resources in the `kyma-system` namespace:
+  
+     ```bash
+     kubectl get vpa -n kyma-system
+     ```
+  
+     If VPA is disabled, no VPA resources appear in the namespace.
+  
+  5. If you disabled VPA temporarily for debugging, you can re-enable it later by removing the annotation or setting its value to `"true"`.

@@ -42,6 +42,7 @@ export default [
     ]
   },
   { text: 'Monitor Pipeline Health', link: './monitor-pipeline-health' },
+  { text: 'Manage Pipeline Resources', link: './manage-pipeline-resources' },
   { text: 'Troubleshooting the Telemetry Module', link: './troubleshooting' },
   {
     text: 'Architecture',

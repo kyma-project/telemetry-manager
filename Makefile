@@ -9,6 +9,7 @@ SELF_MONITOR_IMAGE ?= $(ENV_SELFMONITOR_IMAGE)
 SELF_MONITOR_FIPS_IMAGE ?= $(ENV_SELFMONITOR_FIPS_IMAGE)
 K3S_IMAGE ?= $(ENV_K3S_IMAGE)
 ALPINE_IMAGE ?= $(ENV_ALPINE_IMAGE)
+FAULT_BACKEND_IMAGE ?= $(ENV_FAULT_BACKEND_IMAGE)
 HELM_RELEASE_VERSION ?= $(ENV_HELM_RELEASE_VERSION)
 
 # Operating system architecture
@@ -287,6 +288,18 @@ docker-build-selfmonitor: ## Build docker image for telemetry self-monitor
 docker-push-selfmonitor: ## Push docker image for telemetry self-monitor
 	docker push ${SELF_MONITOR_IMAGE}
 
+.PHONY: docker-build-fault-backend
+docker-build-fault-backend: ## Build docker image for the fault backend
+	docker build -t ${FAULT_BACKEND_IMAGE} dependencies/fault-backend
+
+.PHONY: docker-push-fault-backend
+docker-push-fault-backend: ## Push docker image for the fault backend
+	docker push ${FAULT_BACKEND_IMAGE}
+
+.PHONY: k3d-import-fault-backend
+k3d-import-fault-backend: ## Import the fault backend image into the K3D cluster
+	k3d image import ${FAULT_BACKEND_IMAGE} -c kyma
+
 .PHONY: docker-pull-self-monitor-fips-image
 docker-pull-self-monitor-fips-image: ## Pull the Self-Monitor FIPS image
 	docker pull ${SELF_MONITOR_FIPS_IMAGE}
@@ -353,6 +366,7 @@ deploy-no-fips: manifests $(HELM) ## Deploy telemetry manager with FIPS mode dis
 		--set manager.container.image.repository=${MANAGER_IMAGE} \
 		--set manager.container.image.pullPolicy="Always" \
 		--set manager.container.env.operateInFipsMode=false \
+		--set manager.container.env.selfMonitorImage=${SELF_MONITOR_IMAGE} \
 		--namespace kyma-system \
 	| kubectl apply -f -
 
@@ -389,8 +403,8 @@ deploy-experimental-no-fips: manifests-experimental $(HELM) ## Deploy telemetry 
 		--namespace kyma-system \
 	| kubectl apply -f -
 
-.PHONY: deploy-custom-labels-annotations-no-fips
-deploy-custom-labels-annotations-no-fips: manifests $(HELM) ## Deploy telemetry manager with custom labels and annotations, and FIPS mode disabled
+.PHONY: deploy-with-all-custom-metadata-no-fips
+deploy-with-all-custom-metadata-no-fips: manifests $(HELM) ## Deploy telemetry manager with custom labels and annotations, and FIPS mode disabled
 	$(HELM) template telemetry helm \
 		--set experimental.enabled=false \
 		--set default.enabled=true\
@@ -398,8 +412,14 @@ deploy-custom-labels-annotations-no-fips: manifests $(HELM) ## Deploy telemetry 
 		--set manager.container.image.repository=${MANAGER_IMAGE} \
 		--set manager.container.image.pullPolicy="Always" \
 		--set manager.container.env.operateInFipsMode=false \
-		--set additionalMetadata.labels.my-meta-label="foo" \
-		--set additionalMetadata.annotations.my-meta-annotation="bar" \
+		--set manager.labels.my-manager-label="manager-value" \
+		--set manager.annotations.my-manager-annotation="manager-annotation-value" \
+		--set manager.pod.labels.my-manager-pod-label="manager-pod-value" \
+		--set manager.pod.annotations.my-manager-pod-annotation="manager-pod-annotation-value" \
+		--set managedResources.workload.labels.my-workload-label="workload-value" \
+		--set managedResources.workload.annotations.my-workload-annotation="workload-annotation-value" \
+		--set managedResources.workload.pod.labels.my-pod-label="pod-value" \
+		--set managedResources.workload.pod.annotations.my-pod-annotation="pod-annotation-value" \
 		--namespace kyma-system \
 	| kubectl apply -f -
 

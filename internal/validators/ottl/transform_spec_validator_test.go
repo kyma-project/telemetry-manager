@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+	"github.com/kyma-project/telemetry-manager/internal/pipelines"
 )
 
 type transformTestCase struct {
@@ -18,17 +19,17 @@ type transformTestCase struct {
 }
 
 func TestTransformValidator(t *testing.T) {
-	for _, signalType := range []SignalType{SignalTypeLog, SignalTypeMetric, SignalTypeTrace} {
+	for _, signalType := range []pipelines.SignalType{pipelines.SignalTypeLog, pipelines.SignalTypeMetric, pipelines.SignalTypeTrace} {
 		runTransformValidatorTestCases(t, "resource", signalType, transformResourceContextTestCases())
 		runTransformValidatorTestCases(t, "scope", signalType, transformScopeContextTestCases())
 	}
 
-	runTransformValidatorTestCases(t, "span", SignalTypeTrace, transformSpanContextTestCases())
-	runTransformValidatorTestCases(t, "spanevent", SignalTypeTrace, transformSpanEventContextTestCases())
-	runTransformValidatorTestCases(t, "log", SignalTypeLog, transformLogContextTestCases())
-	runTransformValidatorTestCases(t, "metric", SignalTypeMetric, transformMetricContextTestCases())
-	runTransformValidatorTestCases(t, "datapoint", SignalTypeMetric, transformDataPointContextTestCases())
-	runTransformValidatorTestCases(t, "mixed", SignalTypeMetric, transformMixedMetricContextTestCases())
+	runTransformValidatorTestCases(t, "span", pipelines.SignalTypeTrace, transformSpanContextTestCases())
+	runTransformValidatorTestCases(t, "spanevent", pipelines.SignalTypeTrace, transformSpanEventContextTestCases())
+	runTransformValidatorTestCases(t, "log", pipelines.SignalTypeLog, transformLogContextTestCases())
+	runTransformValidatorTestCases(t, "metric", pipelines.SignalTypeMetric, transformMetricContextTestCases())
+	runTransformValidatorTestCases(t, "datapoint", pipelines.SignalTypeMetric, transformDataPointContextTestCases())
+	runTransformValidatorTestCases(t, "mixed", pipelines.SignalTypeMetric, transformMixedMetricContextTestCases())
 
 	t.Run("invalid signal type", func(t *testing.T) {
 		_, err := NewTransformSpecValidator("invalid_signal")
@@ -36,7 +37,7 @@ func TestTransformValidator(t *testing.T) {
 	})
 }
 
-func runTransformValidatorTestCases(t *testing.T, context string, signalType SignalType, tests []transformTestCase) {
+func runTransformValidatorTestCases(t *testing.T, context string, signalType pipelines.SignalType, tests []transformTestCase) {
 	t.Helper()
 
 	t.Run(fmt.Sprintf("%s/%s context", signalType, context), func(t *testing.T) {

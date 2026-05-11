@@ -498,23 +498,36 @@ func TestBuildConfigShuffled(t *testing.T) {
 
 	pipelines := []telemetryv1beta1.MetricPipeline{
 		testutils.NewMetricPipelineBuilder().
-			WithName("test1").
+			WithName("pipeline-1").
 			WithRuntimeInput(true, testutils.IncludeNamespaces("default")).
 			WithPrometheusInput(true, testutils.ExcludeNamespaces("kube-system")).
 			WithIstioInput(false).
-			WithOTLPOutput(testutils.OTLPEndpoint("https://foo")).Build(),
+			WithOTLPOutput(testutils.OTLPProtocol("http")).
+			WithOAuth2(
+				testutils.OAuth2ClientID("pipeline-1-client-id"),
+				testutils.OAuth2ClientSecret("pipeline-1-client-secret"),
+				testutils.OAuth2TokenURL("https://auth.example.com/oauth2/token"),
+				testutils.OAuth2Scopes([]string{"metrics"}),
+			).Build(),
 		testutils.NewMetricPipelineBuilder().
-			WithName("test2").
+			WithName("pipeline-2").
 			WithRuntimeInput(false).
 			WithPrometheusInput(false).
 			WithIstioInput(true).
-			WithOTLPOutput(testutils.OTLPEndpoint("https://foo")).Build(),
+			WithOTLPOutput(testutils.OTLPProtocol("http")).
+			WithOAuth2(
+				testutils.OAuth2ClientID("pipeline-2-client-id"),
+				testutils.OAuth2ClientSecret("pipeline-2-client-secret"),
+				testutils.OAuth2TokenURL("https://auth2.example.com/oauth2/token"),
+				testutils.OAuth2Scopes([]string{"metrics"}),
+			).Build(),
 		testutils.NewMetricPipelineBuilder().
-			WithName("test3").
+			WithName("pipeline-3").
 			WithRuntimeInput(true).
 			WithPrometheusInput(false).
 			WithIstioInput(false).
-			WithOTLPOutput(testutils.OTLPEndpoint("https://bar")).Build(),
+			WithOTLPOutput(testutils.OTLPEndpoint("https://backend.example.com")).
+			Build(),
 	}
 
 	config1, _, err := sut.Build(t.Context(), []telemetryv1beta1.MetricPipeline{pipelines[0], pipelines[1], pipelines[2]}, buildOptions)
@@ -535,7 +548,7 @@ func TestBuildConfigShuffled(t *testing.T) {
 	config3YAML, err := yaml.Marshal(config3)
 	require.NoError(t, err, "failed to marshal config3")
 
-	require.Equal(t, string(config1YAML), string(config2YAML), "config1 and config2 should be equal regardless of pipeline order")
-	require.Equal(t, string(config2YAML), string(config3YAML), "config2 and config3 should be equal regardless of pipeline order")
-	require.Equal(t, string(config1YAML), string(config3YAML), "config1 and config3 should be equal regardless of pipeline order")
+	require.Equal(t, string(config1YAML), string(config2YAML), "config should be equal regardless of pipeline order")
+	require.Equal(t, string(config2YAML), string(config3YAML), "config should be equal regardless of pipeline order")
+	require.Equal(t, string(config1YAML), string(config3YAML), "config should be equal regardless of pipeline order")
 }

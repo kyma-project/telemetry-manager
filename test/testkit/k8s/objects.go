@@ -11,6 +11,7 @@ import (
 
 	"github.com/onsi/gomega"
 	"gopkg.in/yaml.v3"
+	istionetworkingclientv1 "istio.io/client-go/pkg/apis/networking/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -51,6 +52,7 @@ func createObjects(t *testing.T, resources ...client.Object) error {
 	t.Helper()
 
 	namespaces, others, pipelines := sortObjects(resources)
+	others = prioritizeVirtualServicesFirst(others)
 
 	// First: create namespaces and wait for them to be ready
 	for _, namespace := range namespaces {
@@ -161,6 +163,25 @@ func sortObjects(resources []client.Object) ([]client.Object, []client.Object, [
 	}
 
 	return namespaces, others, pipelines
+}
+
+// prioritizeVirtualServicesFirst moves Istio VirtualServices to the front of the slice so mesh
+// rules (e.g. fault injection) exist before Deployments start and pods can emit traffic.
+func prioritizeVirtualServicesFirst(others []client.Object) []client.Object {
+	var (
+		virtualServices []client.Object
+		rest            []client.Object
+	)
+
+	for _, r := range others {
+		if _, ok := r.(*istionetworkingclientv1.VirtualService); ok {
+			virtualServices = append(virtualServices, r)
+		} else {
+			rest = append(rest, r)
+		}
+	}
+
+	return append(virtualServices, rest...)
 }
 
 // DeleteObjects deletes k8s objects passed as a slice.

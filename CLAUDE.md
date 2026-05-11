@@ -6,6 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Telemetry Manager is a Kubernetes operator (built with Kubebuilder) that manages telemetry pipelines for logs, traces, and metrics in Kyma clusters. It deploys and configures OpenTelemetry Collectors and Fluent Bit agents based on user-defined pipeline CRDs.
 
+## Agent skills (Claude Code)
+
+Project skills live under **`.claude/skills/`** — e.g. **`.claude/skills/e2e/SKILL.md`** (local E2E runs) and **`.claude/skills/pr-review-loop/SKILL.md`** (merge-base/GitHub PR context, **`.pr-review-loop/*.md`** hand-off, implementer commits, loop until approved).
+
 ## Common Commands
 
 ### Build and Development
@@ -115,6 +119,36 @@ make update-golden-files  # Update golden files for config builder tests
 ## Environment Configuration
 
 The `.env` file contains default image versions and configuration. Key environment variables for the manager are defined in `main.go` (envConfig struct).
+
+## PR Title Convention
+
+PR titles must follow the [Conventional Commits](https://www.conventionalcommits.org/) format, enforced by the `amannn/action-semantic-pull-request` GitHub Action.
+
+**Format:** `<type>: <subject>` or `<type>(<scope>): <subject>`
+
+**Allowed types:** `deps`, `chore`, `docs`, `feat`, `fix`, `test`
+
+**Rules:**
+- The subject (text after the colon) must **not** start with an uppercase character
+- Scopes are optional (`requireScope: false`)
+
+**Examples:**
+```
+feat: add retry logic to log pipeline reconciler
+fix: resolve race condition in metric exporter
+docs: update architecture diagrams
+chore: bump Go version to 1.23
+test: add e2e tests for trace pipeline validation
+deps: update controller-runtime to v0.19
+feat(metrics): support histogram aggregation
+```
+
+**Label mapping:** The PR title prefix automatically sets a `kind/` label:
+- `fix` → `kind/bug`
+- `feat` → `kind/feature`
+- `docs` → `kind/docs`
+- `chore` → `kind/chore`
+- `test` → `kind/test`
 
 ## Documentation Guidelines
 

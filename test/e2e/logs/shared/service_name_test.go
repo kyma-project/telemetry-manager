@@ -1,7 +1,6 @@
 package shared
 
 import (
-	"fmt"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -13,7 +12,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
-	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
@@ -25,14 +23,12 @@ import (
 
 func TestServiceName_OTel(t *testing.T) {
 	tests := []struct {
-		name               string
-		labels             []string
-		opts               []kubeprep.Option
-		inputBuilder       func(includeNs string) telemetryv1beta1.LogPipelineInput
-		expectAgent        bool
-		resourceName       types.NamespacedName
-		readinessCheckFunc func(t *testing.T, name types.NamespacedName)
-		genSignalType      telemetrygen.SignalType
+		name          string
+		labels        []string
+		inputBuilder  func(includeNs string) telemetryv1beta1.LogPipelineInput
+		expectAgent   bool
+		resourceName  types.NamespacedName
+		genSignalType telemetrygen.SignalType
 	}{
 		{
 			name:   suite.LabelLogAgent,
@@ -40,9 +36,8 @@ func TestServiceName_OTel(t *testing.T) {
 			inputBuilder: func(includeNs string) telemetryv1beta1.LogPipelineInput {
 				return testutils.BuildLogPipelineRuntimeInput(testutils.IncludeNamespaces(includeNs))
 			},
-			expectAgent:        true,
-			resourceName:       kitkyma.LogAgentName,
-			readinessCheckFunc: assert.DaemonSetReady,
+			expectAgent:  true,
+			resourceName: kitkyma.LogAgentName,
 		},
 		{
 			name:   suite.LabelLogGateway,
@@ -50,28 +45,15 @@ func TestServiceName_OTel(t *testing.T) {
 			inputBuilder: func(includeNs string) telemetryv1beta1.LogPipelineInput {
 				return testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
 			},
-			expectAgent:        false,
-			resourceName:       kitkyma.LogGatewayName,
-			readinessCheckFunc: assert.DeploymentReady,
-			genSignalType:      telemetrygen.SignalTypeLogs,
-		},
-		{
-			name:   fmt.Sprintf("%s-%s", suite.LabelLogGateway, suite.LabelExperimental),
-			labels: []string{suite.LabelLogGateway},
-			opts:   []kubeprep.Option{kubeprep.WithExperimental()},
-			inputBuilder: func(includeNs string) telemetryv1beta1.LogPipelineInput {
-				return testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
-			},
-			expectAgent:        false,
-			resourceName:       kitkyma.TelemetryOTLPGatewayName,
-			readinessCheckFunc: assert.DaemonSetReady,
-			genSignalType:      telemetrygen.SignalTypeCentralLogs,
+			expectAgent:   false,
+			resourceName:  kitkyma.OTLPGatewayName,
+			genSignalType: telemetrygen.SignalTypeLogs,
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			suite.SetupTestWithOptions(t, tc.labels, tc.opts...)
+			suite.SetupTest(t, tc.labels...)
 
 			const (
 				jobName               = "job"
@@ -143,7 +125,7 @@ func TestServiceName_OTel(t *testing.T) {
 
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
-			tc.readinessCheckFunc(t, tc.resourceName)
+			assert.DaemonSetReady(t, tc.resourceName)
 
 			assert.BackendReachable(t, backend)
 			assert.OTelLogPipelineHealthy(t, pipelineName)

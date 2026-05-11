@@ -81,6 +81,23 @@ func TestDropUnknownServiceNameProcessorStatements(t *testing.T) {
 	require.ElementsMatch(expectedProcessorStatements, processorStatements, "Attributes should match")
 }
 
+func TestRestoreOtelServiceAnnotationsProcessorStatements(t *testing.T) {
+	require := require.New(t)
+
+	expectedProcessorStatements := []TransformProcessorStatements{{
+		Statements: []string{
+			"set(resource.attributes[\"service.name\"], resource.attributes[\"kyma.otel.annotation.service.name\"]) where resource.attributes[\"kyma.otel.annotation.service.name\"] != nil and resource.attributes[\"kyma.otel.annotation.service.name\"] != \"\"",
+			"delete_key(resource.attributes, \"kyma.otel.annotation.service.name\")",
+			"set(resource.attributes[\"service.version\"], resource.attributes[\"kyma.otel.annotation.service.version\"]) where resource.attributes[\"kyma.otel.annotation.service.version\"] != nil and resource.attributes[\"kyma.otel.annotation.service.version\"] != \"\"",
+			"delete_key(resource.attributes, \"kyma.otel.annotation.service.version\")",
+		},
+	}}
+
+	processorStatements := RestoreOtelServiceAnnotationsProcessorStatements()
+
+	require.ElementsMatch(expectedProcessorStatements, processorStatements)
+}
+
 func TestTransformedInstrumentationScope(t *testing.T) {
 	instrumentationScopeVersion := "main"
 	tests := []struct {

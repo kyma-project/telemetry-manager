@@ -24,7 +24,7 @@ By default, the **prometheus** input is disabled. If your applications emit Prom
 
 ## Enable Metrics Collection With Annotations
 
-The metric agent automatically discovers Prometheus endpoints in your cluster by looking for specific annotations on your Kubernetes Services or Pods.
+The Metric Agent automatically discovers Prometheus endpoints in your cluster by looking for specific annotations on your Kubernetes Services or Pods.
 
 To enable automatic metrics collection, apply the following annotations. If your Pod has an Istio sidecar, annotate the Service. Otherwise, annotate the Pod directly.
 
@@ -68,7 +68,7 @@ If your application is part of an Istio service mesh, you must consider service 
 - Istio must be able to identify the **appProtocol** from the Service port definition. Otherwise, Istio may block the scrape request.
   You must either prefix the port name with the protocol like in `http-metrics`, or explicitly define the **appProtocol** attribute.
 
-- The metric agent can scrape endpoints from workloads that enforce mutual TLS (mTLS). For scraping through HTTPS, Istio must configure the workload using STRICT mTLS mode.
+- The Metric Agent can scrape endpoints from workloads that enforce mutual TLS (mTLS). For scraping through HTTPS, Istio must configure the workload using STRICT mTLS mode.
   If you can't use STRICT mTLS mode, you can set up scraping through plain HTTP by adding the following annotation to your Service: `prometheus.io/scheme: http`. For related troubleshooting, see [MetricPipeline: Failed to Scrape Prometheus Endpoint](../troubleshooting.md#metricpipeline-failed-to-scrape-prometheus-endpoint).
 
 ## Collect Diagnostic Metrics
@@ -89,7 +89,7 @@ To use diagnostic metrics, enable the **diagnosticMetrics** for the input in you
         enabled: true
 ```
 
-When enabled, the metric agent generates metrics about its own scrape jobs, such as the following:
+When enabled, the Metric Agent generates metrics about its own scrape jobs, such as the following:
 
 - `up`: The scraping was successful
 - `scrape_duration_seconds`: Duration of the scrape

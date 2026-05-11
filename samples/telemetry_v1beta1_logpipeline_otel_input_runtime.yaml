@@ -102,6 +102,7 @@ spec:
       - image: mingrammer/flog:latest
         name: flog
         args:
+        - -d=50ms
         - -b=64
         - -f=json
         - -l

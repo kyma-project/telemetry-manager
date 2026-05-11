@@ -1,0 +1,41 @@
+name: Validate Semantic Version
+description: Validate that a version string follows semantic versioning format
+inputs:
+  version:
+    description: 'Version string to validate'
+    required: true
+  allow-suffix:
+    description: 'Whether to allow version suffixes (e.g., -experimental)'
+    required: false
+    default: 'false'
+  format-description:
+    description: 'Description of expected format for error messages'
+    required: false
+    default: 'X.Y.Z (e.g., 1.2.3)'
+runs:
+  using: composite
+  steps:
+    - name: Validate version format
+      shell: bash
+      run: |
+        VERSION="${{ inputs.version }}"
+        ALLOW_SUFFIX="${{ inputs.allow-suffix }}"
+        FORMAT_DESC="${{ inputs.format-description }}"
+
+        echo "Validating version format: ${VERSION}"
+
+        # Choose regex pattern based on whether suffix is allowed
+        if [ "${ALLOW_SUFFIX}" = "true" ]; then
+          PATTERN='^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?$'
+        else
+          PATTERN='^[0-9]+\.[0-9]+\.[0-9]+$'
+        fi
+
+        # Validate version format
+        if ! echo "${VERSION}" | grep -qE "${PATTERN}"; then
+          echo "::error::Invalid semantic version format: ${VERSION}"
+          echo "Expected format: ${FORMAT_DESC}"
+          exit 1
+        fi
+
+        echo "✓ Version format valid: ${VERSION}"

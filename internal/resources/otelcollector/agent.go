@@ -64,7 +64,7 @@ type AgentApplyOptions struct {
 	VPAMaxAllowedMemory resource.Quantity
 	CollectorConfigYAML string
 	CollectorEnvVars    map[string][]byte
-	// BackendPorts is needed only for the metric agent to set the value of the annotation "traffic.sidecar.istio.io/includeOutboundPorts"
+	// BackendPorts is needed only for the Metric Agent to set the value of the annotation "traffic.sidecar.istio.io/includeOutboundPorts"
 	BackendPorts []string
 }
 
@@ -104,6 +104,7 @@ func NewLogAgentApplierDeleter(globals config.Global, collectorImage, priorityCl
 		containerOpts: []commonresources.ContainerOption{
 			commonresources.WithResources(collectorResources),
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentPodIP, fieldPathPodIP),
+			commonresources.WithEnvVarFromField(common.EnvVarCurrentNodeName, fieldPathNodeName),
 			commonresources.WithFIPSGoDebugEnvVar(globals.OperateInFIPSMode()),
 			commonresources.WithVolumeMounts(collectorVolumeMounts),
 			commonresources.WithRunAsGroup(commonresources.GroupRoot),
@@ -186,7 +187,7 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 	// Create/update/delete VPA CR only if VPA CRD exists in cluster
 	if opts.VpaCRDExists {
 		if opts.VpaEnabled {
-			vpa := makeVPA(name, "DaemonSet", agentMemoryRequest, opts.VPAMaxAllowedMemory)
+			vpa := makeVPA(name, agentMemoryRequest, opts.VPAMaxAllowedMemory)
 			if err := k8sutils.CreateOrUpdateVPA(ctx, labelerClient, vpa); err != nil {
 				return fmt.Errorf("failed to create VPA: %w", err)
 			}

@@ -33,14 +33,14 @@ func TestTelemetry(t *testing.T) {
 		backendNs    = uniquePrefix("trace-backend")
 		genNs        = uniquePrefix("gen")
 
-		traceGRPCEndpoint = "http://telemetry-otlp-traces.kyma-system:4317"
-		traceHTTPEndpoint = "http://telemetry-otlp-traces.kyma-system:4318"
-
-		metricGRPCEndpoint = "http://telemetry-otlp-metrics.kyma-system:4317"
-		metricHTTPEndpoint = "http://telemetry-otlp-metrics.kyma-system:4318"
-
-		logGRPCEndpoint = "http://telemetry-otlp-logs.kyma-system:4317"
-		logHTTPEndpoint = "http://telemetry-otlp-logs.kyma-system:4318"
+		traceGRPCEndpoint  = fmt.Sprintf("http://%s.%s:%d", names.OTLPTracesService, kitkyma.SystemNamespaceName, 4317)
+		traceHTTPEndpoint  = fmt.Sprintf("http://%s.%s:%d", names.OTLPTracesService, kitkyma.SystemNamespaceName, 4318)
+		metricGRPCEndpoint = fmt.Sprintf("http://%s.%s:%d", names.OTLPMetricsService, kitkyma.SystemNamespaceName, 4317)
+		metricHTTPEndpoint = fmt.Sprintf("http://%s.%s:%d", names.OTLPMetricsService, kitkyma.SystemNamespaceName, 4318)
+		logGRPCEndpoint    = fmt.Sprintf("http://%s.%s:%d", names.OTLPLogsService, kitkyma.SystemNamespaceName, 4317)
+		logHTTPEndpoint    = fmt.Sprintf("http://%s.%s:%d", names.OTLPLogsService, kitkyma.SystemNamespaceName, 4318)
+		otlpGRPCEndpoint   = fmt.Sprintf("http://%s.%s:%d", names.OTLPService, kitkyma.SystemNamespaceName, 4317)
+		otlpHTTPEndpoint   = fmt.Sprintf("http://%s.%s:%d", names.OTLPService, kitkyma.SystemNamespaceName, 4318)
 	)
 
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeTraces)
@@ -61,28 +61,32 @@ func TestTelemetry(t *testing.T) {
 
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
-	assertTelemetryCRExistsAndHasCorrectEndpointsInStatus(logGRPCEndpoint, logHTTPEndpoint, traceGRPCEndpoint, traceHTTPEndpoint, metricGRPCEndpoint, metricHTTPEndpoint)
+	assertTelemetryCRExistsAndHasCorrectEndpointsInStatus(logGRPCEndpoint, logHTTPEndpoint, traceGRPCEndpoint, traceHTTPEndpoint, metricGRPCEndpoint, metricHTTPEndpoint, otlpGRPCEndpoint, otlpHTTPEndpoint)
 	assertValidatingWebhookConfiguration()
 	assertWebhookCA()
 	assertWebhookSecretReconcilation()
 }
 
-func assertTelemetryCRExistsAndHasCorrectEndpointsInStatus(logGRPCEndpoint string, logHTTPEndpoint string, traceGRPCEndpoint string, traceHTTPEndpoint string, metricGRPCEndpoint string, metricHTTPEndpoint string) bool {
+func assertTelemetryCRExistsAndHasCorrectEndpointsInStatus(logGRPCEndpoint, logHTTPEndpoint, traceGRPCEndpoint, traceHTTPEndpoint, metricGRPCEndpoint, metricHTTPEndpoint, otlpGRPCEndpoint, otlpHTTPEndpoint string) bool {
 	return Eventually(func(g Gomega) {
 		var telemetry operatorv1beta1.Telemetry
 		g.Expect(suite.K8sClient.Get(suite.Ctx, kitkyma.TelemetryName, &telemetry)).Should(Succeed())
 
-		g.Expect(telemetry.Status.Endpoints.Logs).ShouldNot(BeNil())
-		g.Expect(telemetry.Status.Endpoints.Logs.GRPC).Should(Equal(logGRPCEndpoint))
-		g.Expect(telemetry.Status.Endpoints.Logs.HTTP).Should(Equal(logHTTPEndpoint))
+		g.Expect(telemetry.Status.Endpoints.Logs).ShouldNot(BeNil())                  //nolint:staticcheck // test file
+		g.Expect(telemetry.Status.Endpoints.Logs.GRPC).Should(Equal(logGRPCEndpoint)) //nolint:staticcheck // test file
+		g.Expect(telemetry.Status.Endpoints.Logs.HTTP).Should(Equal(logHTTPEndpoint)) //nolint:staticcheck // test file
 
-		g.Expect(telemetry.Status.Endpoints.Traces).ShouldNot(BeNil())
-		g.Expect(telemetry.Status.Endpoints.Traces.GRPC).Should(Equal(traceGRPCEndpoint))
-		g.Expect(telemetry.Status.Endpoints.Traces.HTTP).Should(Equal(traceHTTPEndpoint))
+		g.Expect(telemetry.Status.Endpoints.Traces).ShouldNot(BeNil())                    //nolint:staticcheck // test file
+		g.Expect(telemetry.Status.Endpoints.Traces.GRPC).Should(Equal(traceGRPCEndpoint)) //nolint:staticcheck // test file
+		g.Expect(telemetry.Status.Endpoints.Traces.HTTP).Should(Equal(traceHTTPEndpoint)) //nolint:staticcheck // test file
 
-		g.Expect(telemetry.Status.Endpoints.Metrics).ShouldNot(BeNil())
-		g.Expect(telemetry.Status.Endpoints.Metrics.GRPC).Should(Equal(metricGRPCEndpoint))
-		g.Expect(telemetry.Status.Endpoints.Metrics.HTTP).Should(Equal(metricHTTPEndpoint))
+		g.Expect(telemetry.Status.Endpoints.Metrics).ShouldNot(BeNil())                     //nolint:staticcheck // test file
+		g.Expect(telemetry.Status.Endpoints.Metrics.GRPC).Should(Equal(metricGRPCEndpoint)) //nolint:staticcheck // test file
+		g.Expect(telemetry.Status.Endpoints.Metrics.HTTP).Should(Equal(metricHTTPEndpoint)) //nolint:staticcheck // test file
+
+		g.Expect(telemetry.Status.Endpoints.OTLP).ShouldNot(BeNil())
+		g.Expect(telemetry.Status.Endpoints.OTLP.GRPC).Should(Equal(otlpGRPCEndpoint))
+		g.Expect(telemetry.Status.Endpoints.OTLP.HTTP).Should(Equal(otlpHTTPEndpoint))
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 

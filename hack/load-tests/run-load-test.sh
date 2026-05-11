@@ -3,7 +3,7 @@
 # standard bash error handling
 set -o nounset  # treat unset variables as an error and exit immediately.
 set -o errexit  # exit immediately when a command fails.
-set -E          # needs to be set if we want the ERR trap
+set -E          # ensure ERR trap is inherited by functions, command substitutions, and subshells.
 set -o pipefail # prevents errors in a pipeline from being masked
 
 source .env
@@ -26,6 +26,7 @@ LOG_RATE=1000
 PROMAPI=""
 DOMAIN=""
 OVERLAY=""
+SKIP_CLEANUP="false"
 
 function help() {
     echo "Usage: $0 -m <max_pipeline> -b <backpressure_test> -n <test_name> -t <test_target> -d <test_duration> -r <log_rate> -s <log_size>"
@@ -38,10 +39,11 @@ function help() {
     echo "  -r <log_rate>             Rate of log generation in logs-otel test"
     echo "  -s <log_size>             Size of log in logs-otel test"
     echo "  -o <config>               Use alternative overlay (batch) for logs-otel test"
+    echo "  -k                        Skip cleanup/deletion of test resources after test execution"
     exit 1
 }
 
-while getopts m:b:n:t:d:r:s:o: flag; do
+while getopts m:b:n:t:d:r:s:o:k flag; do
     case "$flag" in
         m) MAX_PIPELINE="${OPTARG}" ;;
         b) BACKPRESSURE_TEST="${OPTARG}" ;;
@@ -51,6 +53,7 @@ while getopts m:b:n:t:d:r:s:o: flag; do
         r) LOG_RATE=${OPTARG} ;;
         s) LOG_SIZE=${OPTARG} ;;
         o) OVERLAY=${OPTARG} ;;
+        k) SKIP_CLEANUP="true" ;;
         *) help ;;
     esac
 done
@@ -75,6 +78,7 @@ function print_config() {
     echo "  Log Rate: $LOG_RATE"
     echo "  Log Size: $LOG_SIZE"
     echo "  Overlay: $OVERLAY"
+    echo "  Skip Cleanup: $SKIP_CLEANUP"
     echo "  Results File: $RESULTS_FILE"
 }
 
@@ -139,7 +143,7 @@ function setup_metric() {
 }
 
 function setup_metric_agent() {
-    echo -e "Deploying metric agent test setup"
+    echo -e "Deploying Metric Agent test setup"
     sed -e "s|OTEL_IMAGE|$OTEL_IMAGE|g" hack/load-tests/metric-agent-test-setup.yaml | sed -e "s|TELEMETRY_GEN_IMAGE|$TELEMETRY_GEN_IMAGE|g" | kubectl apply -f -
 
     if [[ "$BACKPRESSURE_TEST" == "true" ]]; then
@@ -194,50 +198,66 @@ function wait_for_resources() {
   echo -e "\nAll resources are ready\n"
 }
 
+function wait_for_rollout() {
+    echo -e "\nWaiting for rollout of $2 in namespace $1"
+    local namespace=$1
+    local resource=$2
+    local label=${3:-$(echo "$resource" | sed 's|.*/||')}
+    if ! kubectl -n "$namespace" rollout status "$resource" --timeout=90s; then
+        echo -e "\nERROR: Rollout timed out for $resource in namespace $namespace"
+        echo -e "\nPod status:"
+        kubectl -n "$namespace" get pods -o wide
+        echo -e "\nPod descriptions:"
+        kubectl -n "$namespace" describe pods -l "app.kubernetes.io/name=$label"
+        echo -e "\nPod logs:"
+        kubectl -n "$namespace" logs -l "app.kubernetes.io/name=$label" --tail=50 --all-containers
+        exit 1
+    fi
+}
+
 function wait_for_prometheus_resources() {
-    kubectl -n "$PROMETHEUS_NAMESPACE" rollout status statefulset prometheus-prometheus-kube-prometheus-prometheus --timeout=60s
+    wait_for_rollout "$PROMETHEUS_NAMESPACE" "statefulset/prometheus-prometheus-kube-prometheus-prometheus"
 }
 
 function wait_for_trace_resources() {
-    kubectl -n kyma-system rollout status deployment telemetry-trace-gateway --timeout=60s
-    kubectl -n ${TRACE_NAMESPACE} rollout status deployment trace-load-generator --timeout=60s
-    kubectl -n ${TRACE_NAMESPACE} rollout status deployment trace-receiver --timeout=60s
+    wait_for_rollout ${TRACE_NAMESPACE} "deployment/trace-receiver"
+    wait_for_rollout kyma-system "daemonset/telemetry-otlp-gateway"
+    wait_for_rollout ${TRACE_NAMESPACE} "deployment/trace-load-generator"
 }
 
 function wait_for_metric_resources() {
-    kubectl -n kyma-system rollout status deployment telemetry-metric-gateway --timeout=60s
-    kubectl -n ${METRIC_NAMESPACE} rollout status deployment metric-load-generator --timeout=60s
-    kubectl -n ${METRIC_NAMESPACE} rollout status deployment metric-receiver --timeout=60s
+    wait_for_rollout ${METRIC_NAMESPACE} "deployment/metric-receiver"
+    wait_for_rollout kyma-system "daemonset/telemetry-otlp-gateway"
+    wait_for_rollout ${METRIC_NAMESPACE} "deployment/metric-load-generator"
 }
 
 function wait_for_metric_agent_resources() {
-    kubectl -n kyma-system rollout status deployment telemetry-metric-gateway --timeout=60s
-    kubectl -n kyma-system rollout status daemonset telemetry-metric-agent --timeout=60s
-    kubectl -n ${METRIC_NAMESPACE} rollout status deployment metric-agent-load-generator --timeout=60s
-    kubectl -n ${METRIC_NAMESPACE} rollout status deployment metric-receiver --timeout=60s
+    wait_for_rollout ${METRIC_NAMESPACE} "deployment/metric-receiver"
+    wait_for_rollout kyma-system "daemonset/telemetry-otlp-gateway"
+    wait_for_rollout kyma-system "daemonset/telemetry-metric-agent"
+    wait_for_rollout ${METRIC_NAMESPACE} "deployment/metric-agent-load-generator"
 }
 
 function wait_for_fluentbit_resources() {
-    kubectl -n ${LOG_NAMESPACE} rollout status deployment log-receiver --timeout=60s
-    kubectl -n kyma-system rollout status daemonset telemetry-fluent-bit --timeout=60s
-    kubectl -n ${LOG_NAMESPACE} rollout status deployment log-load-generator --timeout=60s
+    wait_for_rollout ${LOG_NAMESPACE} "deployment/log-receiver"
+    wait_for_rollout kyma-system "daemonset/telemetry-fluent-bit" "fluent-bit"
+    wait_for_rollout ${LOG_NAMESPACE} "deployment/log-load-generator"
 }
 
 function wait_for_otel_log_resources() {
-    kubectl -n ${LOG_NAMESPACE} rollout status deployment log-receiver --timeout=60s
-    kubectl -n ${LOG_NAMESPACE} rollout status deployment log-gateway --timeout=60s
-    kubectl -n ${LOG_NAMESPACE} rollout status deployment log-load-generator --timeout=60s
+    wait_for_rollout ${LOG_NAMESPACE} "deployment/log-receiver"
+    wait_for_rollout ${LOG_NAMESPACE} "deployment/log-gateway"
+    wait_for_rollout ${LOG_NAMESPACE} "deployment/log-load-generator"
 }
 
 function wait_for_selfmonitor_resources() {
-    kubectl -n kyma-system rollout status deployment telemetry-trace-gateway --timeout=60s
-    kubectl -n kyma-system rollout status deployment telemetry-metric-gateway --timeout=60s
-    kubectl -n kyma-system rollout status daemonset telemetry-metric-agent --timeout=60s
-    kubectl -n kyma-system rollout status daemonset telemetry-fluent-bit --timeout=60s
-    kubectl -n ${SELF_MONITOR_NAMESPACE} rollout status deployment telemetry-receiver --timeout=60s
-    kubectl -n ${SELF_MONITOR_NAMESPACE} rollout status deployment trace-load-generator --timeout=60s
-    kubectl -n ${SELF_MONITOR_NAMESPACE} rollout status deployment metric-load-generator --timeout=60s
-    kubectl -n ${SELF_MONITOR_NAMESPACE} rollout status deployment metric-agent-load-generator --timeout=60s
+  wait_for_rollout ${SELF_MONITOR_NAMESPACE} "deployment/telemetry-receiver"
+    wait_for_rollout kyma-system "daemonset/telemetry-otlp-gateway"
+    wait_for_rollout kyma-system "daemonset/telemetry-metric-agent"
+    wait_for_rollout kyma-system "daemonset/telemetry-fluent-bit" "fluent-bit"
+    wait_for_rollout ${SELF_MONITOR_NAMESPACE} "deployment/trace-load-generator"
+    wait_for_rollout ${SELF_MONITOR_NAMESPACE} "deployment/metric-load-generator"
+    wait_for_rollout ${SELF_MONITOR_NAMESPACE} "deployment/metric-agent-load-generator"
 }
 
 function cleanup() {
@@ -291,24 +311,28 @@ EOF
 
     echo "$template" | jq . | tee -a "$RESULTS_FILE"
 
-    helm delete -n "$PROMETHEUS_NAMESPACE" "$HELM_PROM_RELEASE"
-    kubectl delete namespace "$PROMETHEUS_NAMESPACE"
+    if [[ "$SKIP_CLEANUP" == "false" ]]; then
+      helm delete -n "$PROMETHEUS_NAMESPACE" "$HELM_PROM_RELEASE"
+      kubectl delete namespace "$PROMETHEUS_NAMESPACE"
+    else
+      echo -e "Skipping cleanup of Prometheus stack (SKIP_CLEANUP=true)"
+    fi
 }
 
 function get_result_and_cleanup_trace() {
   RESULT_TYPE="span"
-  QUERY_RECEIVED='query=round(sum(rate(otelcol_receiver_accepted_spans_total{service="telemetry-trace-gateway-metrics"}[20m])))'
-  QUERY_EXPORTED='query=round(sum(rate(otelcol_exporter_sent_spans_total{exporter=~"otlp_grpc/load-test.*"}[20m])))'
-  QUERY_QUEUE='query=avg(sum(otelcol_exporter_queue_size{service="telemetry-trace-gateway-metrics"}))'
-  QUERY_MEMORY='query=round(sum(avg_over_time(container_memory_working_set_bytes{namespace="kyma-system", container="collector"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-trace-gateway"}[20m])) by (pod) / 1024 / 1024)'
-  QUERY_CPU='query=round(sum(avg_over_time(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace="kyma-system"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-trace-gateway"}[20m])) by (pod), 0.1)'
+  QUERY_RECEIVED='query=round(sum(rate(otelcol_receiver_accepted_spans_total{service="telemetry-otlp-gateway-metrics"}[20m])))'
+  QUERY_EXPORTED='query=round(sum(rate(otelcol_exporter_sent_spans_total{exporter=~"otlp_grpc/tracepipeline-load-test.*"}[20m])))'
+  QUERY_QUEUE='query=avg(sum(otelcol_exporter_queue_size{service="telemetry-otlp-gateway-metrics", exporter=~"otlp_grpc/tracepipeline-load-test.*"}))'
+  QUERY_MEMORY='query=round(sum(avg_over_time(container_memory_working_set_bytes{namespace="kyma-system", container="collector"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-otlp-gateway"}[20m])) by (pod) / 1024 / 1024)'
+  QUERY_CPU='query=round(sum(avg_over_time(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace="kyma-system"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-otlp-gateway"}[20m])) by (pod), 0.1)'
 
   RESULT_RECEIVED=$(curl -fs --data-urlencode "$QUERY_RECEIVED" $PROMAPI | jq -r '.data.result[] | .value[1]')
   RESULT_EXPORTED=$(curl -fs --data-urlencode "$QUERY_EXPORTED" $PROMAPI | jq -r '.data.result[] | .value[1]')
   RESULT_QUEUE=$(curl -fs --data-urlencode "$QUERY_QUEUE" $PROMAPI | jq -r '.data.result[] | .value[1]')
   RESULT_MEMORY=$(curl -fs --data-urlencode "$QUERY_MEMORY" $PROMAPI | jq -r '.data.result[] | .value[1]' | paste -sd,)
   RESULT_CPU=$(curl -fs --data-urlencode "$QUERY_CPU" $PROMAPI | jq -r '.data.result[] | .value[1]' | paste -sd,)
-  RESULT_RESTARTS_COLLECTOR=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=telemetry-trace-gateway -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq -s 'add')
+  RESULT_RESTARTS_COLLECTOR=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=telemetry-otlp-gateway -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq -s 'add')
 
   validate_telemetry_results "trace"
 
@@ -317,30 +341,34 @@ function get_result_and_cleanup_trace() {
     kill %1
   fi
 
-  if [[ "$MAX_PIPELINE" == "true" ]]; then
-    kubectl delete -f hack/load-tests/trace-max-pipeline.yaml
-  fi
-  if [[ "$BACKPRESSURE_TEST" == "true" ]]; then
-    kubectl delete -f hack/load-tests/trace-backpressure-config.yaml
-  fi
+  if [[ "$SKIP_CLEANUP" == "false" ]]; then
+    if [[ "$MAX_PIPELINE" == "true" ]]; then
+      kubectl delete -f hack/load-tests/trace-max-pipeline.yaml
+    fi
+    if [[ "$BACKPRESSURE_TEST" == "true" ]]; then
+      kubectl delete -f hack/load-tests/trace-backpressure-config.yaml
+    fi
 
-  kubectl delete -f hack/load-tests/trace-load-test-setup.yaml
+    kubectl delete -f hack/load-tests/trace-load-test-setup.yaml
+  else
+    echo -e "Skipping cleanup of test resources (SKIP_CLEANUP=true)"
+  fi
 }
 
 function get_result_and_cleanup_metric() {
     RESULT_TYPE="metric"
-    QUERY_RECEIVED='query=round(sum(rate(otelcol_receiver_accepted_metric_points_total{service="telemetry-metric-gateway-metrics"}[20m])))'
-    QUERY_EXPORTED='query=round(sum(rate(otelcol_exporter_sent_metric_points_total{exporter=~"otlp_grpc/load-test.*"}[20m])))'
-    QUERY_QUEUE='query=avg(sum(otelcol_exporter_queue_size{service="telemetry-metric-gateway-metrics"}))'
-    QUERY_MEMORY='query=round(sum(avg_over_time(container_memory_working_set_bytes{namespace="kyma-system", container="collector"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-metric-gateway"}[20m])) by (pod) / 1024 / 1024)'
-    QUERY_CPU='query=round(sum(avg_over_time(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace="kyma-system"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-metric-gateway"}[20m])) by (pod), 0.1)'
+    QUERY_RECEIVED='query=round(sum(rate(otelcol_receiver_accepted_metric_points_total{service="telemetry-otlp-gateway-metrics"}[20m])))'
+    QUERY_EXPORTED='query=round(sum(rate(otelcol_exporter_sent_metric_points_total{service="telemetry-otlp-gateway-metrics", exporter=~"otlp_grpc/metricpipeline-load-test.*"}[20m])))'
+    QUERY_QUEUE='query=avg(sum(otelcol_exporter_queue_size{service="telemetry-otlp-gateway-metrics", exporter=~"otlp_grpc/metricpipeline-load-test.*"}))'
+    QUERY_MEMORY='query=round(sum(avg_over_time(container_memory_working_set_bytes{namespace="kyma-system", container="collector"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-otlp-gateway"}[20m])) by (pod) / 1024 / 1024)'
+    QUERY_CPU='query=round(sum(avg_over_time(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace="kyma-system"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-otlp-gateway"}[20m])) by (pod), 0.1)'
 
     RESULT_RECEIVED=$(curl -fs --data-urlencode "$QUERY_RECEIVED" $PROMAPI | jq -r '.data.result[] | .value[1]')
     RESULT_EXPORTED=$(curl -fs --data-urlencode "$QUERY_EXPORTED" $PROMAPI | jq -r '.data.result[] | .value[1]')
     RESULT_QUEUE=$(curl -fs --data-urlencode "$QUERY_QUEUE" $PROMAPI | jq -r '.data.result[] | .value[1]')
     RESULT_MEMORY=$(curl -fs --data-urlencode "$QUERY_MEMORY" $PROMAPI | jq -r '.data.result[] | .value[1]' | paste -sd,)
     RESULT_CPU=$(curl -fs --data-urlencode "$QUERY_CPU" $PROMAPI | jq -r '.data.result[] | .value[1]' | paste -sd,)
-    RESULT_RESTARTS_GATEWAY=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=telemetry-metric-gateway -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq -s 'add')
+    RESULT_RESTARTS_GATEWAY=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=telemetry-otlp-gateway -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq -s 'add')
 
     validate_telemetry_results "metric"
 
@@ -349,22 +377,26 @@ function get_result_and_cleanup_metric() {
       kill %1
     fi
 
-    if [[ "$MAX_PIPELINE" == "true" ]]; then
-      kubectl delete -f hack/load-tests/metric-max-pipeline.yaml
-    fi
+    if [[ "$SKIP_CLEANUP" == "false" ]]; then
+      if [[ "$MAX_PIPELINE" == "true" ]]; then
+        kubectl delete -f hack/load-tests/metric-max-pipeline.yaml
+      fi
 
-    if [[ "$BACKPRESSURE_TEST" == "true" ]]; then
-      kubectl delete -f hack/load-tests/metric-backpressure-config.yaml
-    fi
+      if [[ "$BACKPRESSURE_TEST" == "true" ]]; then
+        kubectl delete -f hack/load-tests/metric-backpressure-config.yaml
+      fi
 
-    kubectl delete -f hack/load-tests/metric-load-test-setup.yaml
+      kubectl delete -f hack/load-tests/metric-load-test-setup.yaml
+    else
+      echo -e "Skipping cleanup of test resources (SKIP_CLEANUP=true)"
+    fi
 }
 
 function get_result_and_cleanup_metricagent() {
     RESULT_TYPE="metric"
     QUERY_RECEIVED='query=round(sum(rate(otelcol_receiver_accepted_metric_points_total{service="telemetry-metric-agent-metrics"}[20m])))'
-    QUERY_EXPORTED='query=round(sum(rate(otelcol_exporter_sent_metric_points_total{exporter=~"otlp_grpc/load-test.*"}[20m])))'
-    QUERY_QUEUE='query=avg(sum(otelcol_exporter_queue_size{service="telemetry-metric-agent-metrics"}))'
+    QUERY_EXPORTED='query=round(sum(rate(otelcol_exporter_sent_metric_points_total{service="telemetry-metric-agent-metrics", exporter=~"otlp_grpc/metricpipeline-load-test.*"}[20m])))'
+    QUERY_QUEUE='query=avg(sum(otelcol_exporter_queue_size{service="telemetry-metric-agent-metrics", exporter=~"otlp_grpc/metricpipeline-load-test.*"}))'
     QUERY_MEMORY='query=round(sum(avg_over_time(container_memory_working_set_bytes{namespace="kyma-system", container="collector"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-metric-agent"}[20m])) by (pod) / 1024 / 1024)'
     QUERY_CPU='query=round(sum(avg_over_time(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace="kyma-system"}[20m]) * on(namespace,pod) group_left(workload) avg_over_time(namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-metric-agent"}[20m])) by (pod), 0.1)'
 
@@ -373,7 +405,7 @@ function get_result_and_cleanup_metricagent() {
     RESULT_QUEUE=$(curl -fs --data-urlencode "$QUERY_QUEUE" $PROMAPI | jq -r '.data.result[] | .value[1]')
     RESULT_MEMORY=$(curl -fs --data-urlencode "$QUERY_MEMORY" $PROMAPI | jq -r '.data.result[] | .value[1]' | paste -sd,)
     RESULT_CPU=$(curl -fs --data-urlencode "$QUERY_CPU" $PROMAPI | jq -r '.data.result[] | .value[1]' | paste -sd,)
-    RESULT_RESTARTS_GATEWAY=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=telemetry-metric-gateway -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq -s 'add')
+    RESULT_RESTARTS_GATEWAY=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=telemetry-otlp-gateway -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq -s 'add')
     RESULT_RESTARTS_AGENT=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=telemetry-metric-agent -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq -s 'add')
 
     validate_telemetry_results "metric-agent"
@@ -383,10 +415,14 @@ function get_result_and_cleanup_metricagent() {
       kill %1
     fi
 
-    if [[ "$BACKPRESSURE_TEST" == "true" ]]; then
-      kubectl delete -f hack/load-tests/metric-agent-backpressure-config.yaml
+    if [[ "$SKIP_CLEANUP" == "false" ]]; then
+      if [[ "$BACKPRESSURE_TEST" == "true" ]]; then
+        kubectl delete -f hack/load-tests/metric-agent-backpressure-config.yaml
+      fi
+      kubectl delete -f hack/load-tests/metric-agent-test-setup.yaml
+    else
+      echo -e "Skipping cleanup of test resources (SKIP_CLEANUP=true)"
     fi
-    kubectl delete -f hack/load-tests/metric-agent-test-setup.yaml
 }
 
 function get_result_and_cleanup_log_otel() {
@@ -412,10 +448,14 @@ function get_result_and_cleanup_log_otel() {
     kill %1
   fi
 
-  if [[ "$OVERLAY" == "batch" ]]; then
-    kubectl delete -k hack/load-tests/otel-logs/batch
+  if [[ "$SKIP_CLEANUP" == "false" ]]; then
+    if [[ "$OVERLAY" == "batch" ]]; then
+      kubectl delete -k hack/load-tests/otel-logs/batch
+    else
+      kubectl delete -k hack/load-tests/otel-logs/base
+    fi
   else
-    kubectl delete -k hack/load-tests/otel-logs/base
+    echo -e "Skipping cleanup of test resources (SKIP_CLEANUP=true)"
   fi
 }
 
@@ -446,14 +486,18 @@ function get_result_and_cleanup_fluentbit() {
     kill %1
   fi
 
-  if [[ "$MAX_PIPELINE" == "true" ]]; then
-    kubectl delete -f hack/load-tests/log-fluentbit-max-pipeline.yaml
-  fi
-  if [[ "$BACKPRESSURE_TEST" == "true" ]]; then
-    kubectl delete -f hack/load-tests/log-fluentbit-backpressure-config.yaml
-  fi
+  if [[ "$SKIP_CLEANUP" == "false" ]]; then
+    if [[ "$MAX_PIPELINE" == "true" ]]; then
+      kubectl delete -f hack/load-tests/log-fluentbit-max-pipeline.yaml
+    fi
+    if [[ "$BACKPRESSURE_TEST" == "true" ]]; then
+      kubectl delete -f hack/load-tests/log-fluentbit-backpressure-config.yaml
+    fi
 
-  kubectl delete -f hack/load-tests/log-fluentbit-test-setup.yaml
+    kubectl delete -f hack/load-tests/log-fluentbit-test-setup.yaml
+  else
+    echo -e "Skipping cleanup of test resources (SKIP_CLEANUP=true)"
+  fi
 }
 
 function get_result_and_cleanup_selfmonitor() {
@@ -477,7 +521,11 @@ function get_result_and_cleanup_selfmonitor() {
       kill %1
     fi
 
-    kubectl delete -f hack/load-tests/self-monitor-test-setup.yaml
+    if [[ "$SKIP_CLEANUP" == "false" ]]; then
+      kubectl delete -f hack/load-tests/self-monitor-test-setup.yaml
+    else
+      echo -e "Skipping cleanup of test resources (SKIP_CLEANUP=true)"
+    fi
 }
 
 
@@ -489,7 +537,7 @@ function validate_telemetry_results() {
         exit 1
     fi
 
-    if [[ -z "$RESULT_EXPORTED" ]]; then
+    if [[ "$test_type" != "metric-agent" ]] && [[ "$BACKPRESSURE_TEST" != "true" ]] && [[ -z "$RESULT_EXPORTED" ]]; then
         echo "ERROR: RESULT_EXPORTED is empty for $test_type test. No data exported according to Prometheus query."
         exit 1
     fi
@@ -500,7 +548,7 @@ function validate_telemetry_results() {
         exit 1
     fi
 
-    if awk "BEGIN {exit !($RESULT_EXPORTED == 0)}"; then
+    if [[ "$test_type" != "metric-agent" ]] && [[ "$BACKPRESSURE_TEST" != "true" ]] && awk "BEGIN {exit !($RESULT_EXPORTED == 0)}"; then
         echo "ERROR: RESULT_EXPORTED is zero for $test_type test. No telemetry data was exported during the test period."
         exit 1
     fi
@@ -516,7 +564,7 @@ wait_for_resources
 echo -e "Test setup is ready, starting test"
 
 for (( c=$TEST_DURATION; c>=0; c=c-60 ))
-do  
+do
   echo "Time remaining: $c seconds"
   sleep 60
 

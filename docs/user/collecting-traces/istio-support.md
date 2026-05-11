@@ -11,7 +11,7 @@ To get an end-to-end view of requests in your service mesh, configure Istio to s
 
 By default, Istio traces are disabled because they can generate a high volume of data. To collect them, you create an [Istio](https://istio.io/latest/docs/reference/config/telemetry/) `Telemetry` resource in the `istio-system` namespace. When you enable this feature, the Istio proxy sidecars automatically propagate the trace context and report spans for traffic between your services.
 
-The Istio module provides a preconfigured [extension provider](https://istio.io/latest/docs/tasks/observability/telemetry/) called `kyma-traces` to send this data to the Telemetry module's trace gateway.
+The Istio module provides a preconfigured [extension provider](https://istio.io/latest/docs/tasks/observability/telemetry/) called `kyma-traces` to send this data to the Telemetry module's OTLP Gateway.
 
 Istio plays a key role in distributed tracing. Its [Ingress Gateway](https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-control/) is typically where external requests enter your cluster. If a request doesn't have a trace context, Istio adds it. Furthermore, every component within the Istio service mesh runs an Istio proxy, which propagates the trace context and creates span data. When you enable Istio tracing, and it manages trace propagation in your application, you get a complete picture of a trace, because every component automatically contributes span data. Also, Istio tracing is preconfigured to use the vendor-neutral [W3C Trace Context](https://www.w3.org/TR/trace-context/) protocol.
 

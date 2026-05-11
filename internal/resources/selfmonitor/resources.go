@@ -39,7 +39,7 @@ var (
 	storageVolumeSize = resource.MustParse("1000Mi")
 	cpuRequest        = resource.MustParse("10m")
 	memoryRequest     = resource.MustParse("50Mi")
-	memoryLimit       = resource.MustParse("180Mi")
+	memoryLimit       = resource.MustParse("512Mi")
 )
 
 type ApplierDeleter struct {
@@ -52,6 +52,7 @@ type ApplyOptions struct {
 	PrometheusConfigFileName string
 	PrometheusConfigPath     string
 	PrometheusConfigYAML     string
+	LogLevel                 string
 }
 
 func (ad *ApplierDeleter) DeleteResources(ctx context.Context, c client.Client) error {
@@ -125,7 +126,7 @@ func (ad *ApplierDeleter) ApplyResources(ctx context.Context, c client.Client, o
 	}
 
 	checksum := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, nil)
-	if err := k8sutils.CreateOrUpdateDeployment(ctx, labelerClient, ad.makeDeployment(checksum, opts.PrometheusConfigPath, opts.PrometheusConfigFileName)); err != nil {
+	if err := k8sutils.CreateOrUpdateDeployment(ctx, labelerClient, ad.makeDeployment(checksum, opts.PrometheusConfigPath, opts.PrometheusConfigFileName, opts.LogLevel)); err != nil {
 		return fmt.Errorf("failed to create sel-monitor deployment: %w", err)
 	}
 
@@ -200,7 +201,7 @@ func (ad *ApplierDeleter) makeConfigMap(prometheusConfigFileName, prometheusConf
 	}
 }
 
-func (ad *ApplierDeleter) makeDeployment(configChecksum, configPath, configFile string) *appsv1.Deployment {
+func (ad *ApplierDeleter) makeDeployment(configChecksum, configPath, configFile, logLevel string) *appsv1.Deployment {
 	var replicas int32 = 1
 
 	// Resource labels: only additional labels from globals; default labels are applied by the labeler
@@ -210,7 +211,7 @@ func (ad *ApplierDeleter) makeDeployment(configChecksum, configPath, configFile 
 	// Pod labels: need default labels explicitly since the labeler only sets top-level object labels
 	podLabels := make(map[string]string)
 	maps.Copy(podLabels, commonresources.DefaultLabels(names.SelfMonitor, commonresources.LabelValueK8sComponentMonitor))
-	maps.Copy(podLabels, ad.Config.AdditionalWorkloadLabels())
+	maps.Copy(podLabels, ad.Config.AdditionalWorkloadPodLabels())
 	podLabels[commonresources.LabelKeyIstioInject] = commonresources.LabelValueFalse
 	podLabels[commonresources.LabelKeyTelemetryMetricsScraping] = commonresources.LabelValueTelemetryMetricsScraping
 
@@ -218,12 +219,12 @@ func (ad *ApplierDeleter) makeDeployment(configChecksum, configPath, configFile 
 	resourceAnnotations := make(map[string]string)
 	maps.Copy(resourceAnnotations, ad.Config.AdditionalWorkloadAnnotations())
 
-	// Pod annotations: additional annotations plus config checksum
+	// Pod annotations: only pod-specific annotations plus config checksum
 	podAnnotations := make(map[string]string)
-	maps.Copy(podAnnotations, ad.Config.AdditionalWorkloadAnnotations())
+	maps.Copy(podAnnotations, ad.Config.AdditionalWorkloadPodAnnotations())
 	podAnnotations[commonresources.AnnotationKeyChecksumConfig] = configChecksum
 
-	podSpec := ad.makePodSpec(ad.Config.Image, configPath, configFile)
+	podSpec := ad.makePodSpec(ad.Config.Image, configPath, configFile, logLevel)
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -248,8 +249,12 @@ func (ad *ApplierDeleter) makeDeployment(configChecksum, configPath, configFile 
 	}
 }
 
-func (ad *ApplierDeleter) makePodSpec(image, configPath, configFile string) corev1.PodSpec {
+func (ad *ApplierDeleter) makePodSpec(image, configPath, configFile, logLevel string) corev1.PodSpec {
 	var defaultMode int32 = 420
+
+	if logLevel == "" {
+		logLevel = "warn"
+	}
 
 	args := []string{
 		"--storage.tsdb.retention.time=" + retentionTime,
@@ -257,6 +262,7 @@ func (ad *ApplierDeleter) makePodSpec(image, configPath, configFile string) core
 		"--config.file=" + configPath + configFile,
 		"--storage.tsdb.path=" + storagePath,
 		"--log.format=" + logFormat,
+		"--log.level=" + logLevel,
 	}
 
 	volumes := []corev1.Volume{
@@ -368,11 +374,11 @@ func (ad *ApplierDeleter) makeNetworkPolicies() []*networkingv1.NetworkPolicy {
 		commonresources.WithEgressToPods(map[string]string{
 			commonresources.LabelKeyK8sName: "fluent-bit",
 		}, []int32{fbports.HTTP}),
-		// Allow egress to metric agent for scraping metrics
+		// Allow egress to Metric Agent for scraping metrics
 		commonresources.WithEgressToPods(map[string]string{
 			commonresources.LabelKeyK8sName: "telemetry-metric-agent",
 		}, []int32{ports.Metrics}),
-		// Allow egress to log agent for scraping metrics
+		// Allow egress to Log Agent for scraping metrics
 		commonresources.WithEgressToPods(map[string]string{
 			commonresources.LabelKeyK8sName: "telemetry-log-agent",
 		}, []int32{ports.Metrics}),

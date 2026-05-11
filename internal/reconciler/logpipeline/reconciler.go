@@ -10,7 +10,10 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+	"github.com/kyma-project/telemetry-manager/internal/config"
+	"github.com/kyma-project/telemetry-manager/internal/pipelines"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
+	"github.com/kyma-project/telemetry-manager/internal/resources/coordinationconfig"
 	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 )
@@ -22,6 +25,7 @@ var (
 type Reconciler struct {
 	client.Client
 
+	globals          config.Global
 	overridesHandler OverridesHandler
 	reconcilers      map[logpipelineutils.Mode]LogPipelineReconciler
 
@@ -31,6 +35,13 @@ type Reconciler struct {
 
 // Option is a functional option for configuring a Reconciler.
 type Option func(*Reconciler)
+
+// WithGlobals sets the global configuration.
+func WithGlobals(globals config.Global) Option {
+	return func(r *Reconciler) {
+		r.globals = globals
+	}
+}
 
 // WithOverridesHandler sets the overrides handler.
 func WithOverridesHandler(handler OverridesHandler) Option {
@@ -102,6 +113,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		// Pipeline was deleted, clean up secret watchers
 		if err := r.secretWatcher.RemoveFromWatchers(ctx, req.Name, telemetryv1beta1.GroupVersion.WithKind("LogPipeline")); err != nil {
 			return ctrl.Result{}, err
+		}
+
+		// Remove pipeline reference from OTLP Gateway Coordination ConfigMap
+		if err := coordinationconfig.RemovePipelineReference(ctx, r.Client, r.globals.TargetNamespace(), pipelines.SignalTypeLog, req.Name); err != nil {
+			return ctrl.Result{}, fmt.Errorf("failed to remove pipeline reference from OTLP Gateway Coordination ConfigMap: %w", err)
 		}
 
 		return ctrl.Result{}, nil

@@ -104,7 +104,7 @@ func TestLogComponentsCheck(t *testing.T) {
 				Type:    conditions.TypeLogComponentsHealthy,
 				Status:  "False",
 				Reason:  "AgentNotReady",
-				Message: "Log agent DaemonSet is not ready",
+				Message: "Log Agent DaemonSet is not ready",
 			},
 		},
 		{

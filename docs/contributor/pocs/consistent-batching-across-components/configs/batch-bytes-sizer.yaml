@@ -1,0 +1,171 @@
+extensions:
+  cgroupruntime:
+    gomaxprocs:
+      enabled: false
+    gomemlimit:
+      enabled: true
+      ratio: 0.8
+  health_check:
+    endpoint: 0.0.0.0:13133
+  pprof:
+    endpoint: 0.0.0.0:1777
+service:
+  pipelines:
+    logs/test:
+      receivers:
+        - filelog/test
+      exporters:
+        - otlp_grpc/test
+  telemetry:
+    metrics:
+      level: detailed
+      readers:
+        - pull:
+            exporter:
+              prometheus:
+                host: 0.0.0.0
+                port: 8888
+    logs:
+      level: info
+      encoding: json
+  extensions:
+    - health_check
+    - pprof
+    - cgroupruntime
+receivers:
+  filelog/test:
+    exclude:
+      - /var/log/pods/kyma-system_telemetry-fluent-bit-*/fluent-bit/*.log
+      - /var/log/pods/kyma-system_telemetry-log-agent-*/collector/*.log
+      - /var/log/pods/kyma-system_*system-logs-agent-*/collector/*.log
+      - /var/log/pods/kyma-system_*system-logs-collector-*/collector/*.log
+      - /var/log/pods/kyma-system_*/*/*.log
+      - /var/log/pods/kube-system_*/*/*.log
+      - /var/log/pods/istio-system_*/*/*.log
+    include:
+      - /var/log/pods/*_*/*/*.log
+    include_file_name: false
+    include_file_path: true
+    start_at: beginning
+    retry_on_failure:
+      enabled: true
+      initial_interval: 5s
+      max_interval: 30s
+      max_elapsed_time: 300s
+    operators:
+      - id: containerd-parser
+        type: container
+        add_metadata_from_file_path: true
+        format: containerd
+      - id: move-to-log-stream
+        type: move
+        from: attributes["stream"]
+        to: attributes["log.iostream"]
+        if: attributes["stream"] != nil
+      - id: drop-attribute-log-tag
+        type: remove
+        field: attributes["logtag"]
+      - id: body-router
+        type: router
+        routes:
+          - expr: body matches '^{.*}$'
+            output: json-parser
+        default: noop
+      - id: json-parser
+        type: json_parser
+        parse_from: body
+        parse_to: attributes
+      - id: move-body-to-attributes-log-original
+        type: move
+        from: body
+        to: attributes["log.original"]
+      - id: move-message-to-body
+        type: move
+        from: attributes["message"]
+        to: body
+        if: attributes["message"] != nil
+      - id: move-msg-to-body
+        type: move
+        from: attributes["msg"]
+        to: body
+        if: attributes["msg"] != nil
+      - id: parse-level
+        type: severity_parser
+        if: attributes["level"] != nil
+        parse_from: attributes["level"]
+      - id: remove-level
+        type: remove
+        if: attributes["level"] != nil
+        field: attributes["level"]
+      - id: parse-log-level
+        type: severity_parser
+        if: attributes["log.level"] != nil
+        parse_from: attributes["log.level"]
+      - id: remove-log-level
+        type: remove
+        if: attributes["log.level"] != nil
+        field: attributes["log.level"]
+      - id: trace-router
+        type: router
+        routes:
+          - expr: attributes["trace_id"] != nil
+            output: trace-parser
+          - expr: attributes["traceparent"] != nil and attributes["traceparent"] matches '^[0-9a-f]{2}-(?P<trace_id>[0-9a-f]{32})-(?P<span_id>[0-9a-f]{16})-(?P<trace_flags>[0-9a-f]{2})$'
+            output: trace-parent-parser
+        default: noop
+      - id: trace-parent-parser
+        type: regex_parser
+        parse_from: attributes["traceparent"]
+        regex: ^[0-9a-f]{2}-(?P<trace_id>[0-9a-f]{32})-(?P<span_id>[0-9a-f]{16})-(?P<trace_flags>[0-9a-f]{2})$
+        trace:
+          trace_id:
+            parse_from: attributes["trace_id"]
+          span_id:
+            parse_from: attributes["span_id"]
+          trace_flags:
+            parse_from: attributes["trace_flags"]
+        output: remove-trace-parent
+      - id: trace-parser
+        type: trace_parser
+        trace_id:
+          parse_from: attributes["trace_id"]
+        span_id:
+          parse_from: attributes["span_id"]
+        trace_flags:
+          parse_from: attributes["trace_flags"]
+        output: remove-trace-id
+      - id: remove-trace-parent
+        type: remove
+        field: attributes["traceparent"]
+      - id: remove-trace-id
+        type: remove
+        if: attributes["trace_id"] != nil
+        field: attributes["trace_id"]
+      - id: remove-span-id
+        type: remove
+        if: attributes["span_id"] != nil
+        field: attributes["span_id"]
+      - id: remove-trace-flags
+        type: remove
+        if: attributes["trace_flags"] != nil
+        field: attributes["trace_flags"]
+      - id: noop
+        type: noop
+exporters:
+  otlp_grpc/test:
+    endpoint: http://otelcol-backend:4317
+    sending_queue:
+      queue_size: 200000000 # 200 MB
+      sizer: bytes
+      batch:
+        sizer: bytes
+        min_size: 2000000 # 2 MB
+        max_size: 4000000 # 4 MB (OTel and CLS limits)
+        flush_timeout: 10s
+    tls:
+      insecure: true
+    compression: gzip
+    retry_on_failure:
+      enabled: false
+
+

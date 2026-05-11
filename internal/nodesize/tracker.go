@@ -14,7 +14,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/metrics"
 )
 
-const vpaMaxAllowedMemoryFraction = 0.3
+const vpaMaxAllowedMemoryFraction = 0.15
 
 type Tracker struct {
 	mu             sync.RWMutex
@@ -68,17 +68,17 @@ func (t *Tracker) SmallestMemory() resource.Quantity {
 	return t.smallestMemory.DeepCopy()
 }
 
-// VPAMaxAllowedMemory returns 30% of the smallest allocatable memory,
+// VPAMaxAllowedMemory returns 15% of the smallest allocatable memory,
 // rounded down to the nearest KiB. This value is intended to be used as
 // the maxAllowed memory in a VPA resource policy.
 func (t *Tracker) VPAMaxAllowedMemory() resource.Quantity {
 	smallest := t.SmallestMemory()
 
-	thirtyPercent := int64(math.Round(float64(smallest.Value()) * vpaMaxAllowedMemoryFraction))
+	fifteenPercent := int64(math.Round(float64(smallest.Value()) * vpaMaxAllowedMemoryFraction))
 
 	const kib = 1024
 
-	roundedToKiB := (thirtyPercent / kib) * kib
+	roundedToKiB := (fifteenPercent / kib) * kib
 
 	return *resource.NewQuantity(roundedToKiB, resource.BinarySI)
 }

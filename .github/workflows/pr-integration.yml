@@ -11,7 +11,6 @@ on:
   push:
     branches:
       - "main"
-      - "release-*"
     paths:
       - "**/go.mod"
       - "**/go.sum"
@@ -50,7 +49,7 @@ on:
       - "helm/**"
 
   workflow_dispatch:
-# This is reused on release.yml so workflow_call is used.
+# This is reused on create-release.yml so workflow_call is used.
   workflow_call:
     inputs:
       ref:
@@ -65,10 +64,11 @@ env:
   E2E_TEST_TIMEOUT: 60m
   # FIPS images are only available on push/schedule (not on PR due to registry restrictions)
   FIPS_IMAGE_AVAILABLE: ${{ github.event_name != 'pull_request' }}
+  ARTIFACT_PREFIX: "pr-"
 
 jobs:
   setup:
-    runs-on: ubuntu-latest
+    runs-on: telemetry-4core
     outputs:
       manager-image: ${{ steps.set-env.outputs.manager-image }}
     steps:
@@ -84,7 +84,7 @@ jobs:
 
       - name: Build image
         if: github.event_name == 'pull_request'
-        uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294 # v7.0.0
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
         with:
           context: .
           platforms: linux/amd64
@@ -99,7 +99,7 @@ jobs:
 
       - name: Upload image artifact
         if: github.event_name == 'pull_request'
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: manager-image
           path: /tmp/manager-image.tar.zst
@@ -118,6 +118,13 @@ jobs:
           elif [[ "${{ inputs.image_tag }}" ]]; then
             IMAGE_REPO="europe-docker.pkg.dev/kyma-project/prod/telemetry-manager"
             IMAGE_TAG="${{ inputs.image_tag }}"
+          elif [[ "${{ github.event_name }}" == "schedule" ]]; then
+            # Use the image configured in .env (e.g. telemetry-manager:main)
+            source .env
+            MANAGER_IMAGE="$ENV_MANAGER_IMAGE"
+            echo "manager-image=$MANAGER_IMAGE" >> $GITHUB_OUTPUT
+            echo "Manager image: $MANAGER_IMAGE"
+            exit 0
           else
             IMAGE_REPO="europe-docker.pkg.dev/kyma-project/prod/telemetry-manager"
 
@@ -135,7 +142,7 @@ jobs:
           fi
 
       - name: Wait for image to be built
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && github.event_name != 'schedule'
         shell: bash
         run: make wait-for-image
         env:
@@ -146,7 +153,7 @@ jobs:
   # e2e-logs split by fluent-bit vs otel AND by set labels for parallel execution
   e2e-logs:
     needs: setup
-    runs-on: ubuntu-latest
+    runs-on: telemetry-4core
     strategy:
       fail-fast: false
       matrix:
@@ -180,11 +187,12 @@ jobs:
           manager-image-archive: ${{ github.event_name == 'pull_request' && 'manager-image' || '' }}
           fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
           google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
+          artifact-prefix: ${{ env.ARTIFACT_PREFIX }}
 
   # e2e-metrics split by set labels for parallel execution
   e2e-metrics:
     needs: setup
-    runs-on: ubuntu-latest
+    runs-on: telemetry-4core
     strategy:
       fail-fast: false
       matrix:
@@ -213,11 +221,12 @@ jobs:
           manager-image-archive: ${{ github.event_name == 'pull_request' && 'manager-image' || '' }}
           fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
           google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
+          artifact-prefix: ${{ env.ARTIFACT_PREFIX }}
 
   # All e2e suites with experimental flavor
   e2e-experimental:
     needs: setup
-    runs-on: ubuntu-latest
+    runs-on: telemetry-4core
     strategy:
       fail-fast: false
       matrix:
@@ -248,11 +257,12 @@ jobs:
           manager-image-archive: ${{ github.event_name == 'pull_request' && 'manager-image' || '' }}
           fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
           google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
+          artifact-prefix: ${{ env.ARTIFACT_PREFIX }}
 
   # e2e-traces and e2e-misc (non-experimental) without set splitting
   e2e:
     needs: setup
-    runs-on: ubuntu-latest
+    runs-on: telemetry-4core
     strategy:
       fail-fast: false
       matrix:
@@ -279,11 +289,12 @@ jobs:
           manager-image-archive: ${{ github.event_name == 'pull_request' && 'manager-image' || '' }}
           fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
           google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
+          artifact-prefix: ${{ env.ARTIFACT_PREFIX }}
 
   # Upgrade and integration tests
   e2e-other:
     needs: setup
-    runs-on: ubuntu-latest
+    runs-on: telemetry-4core
     strategy:
       fail-fast: false
       matrix:
@@ -310,16 +321,38 @@ jobs:
           manager-image-archive: ${{ github.event_name == 'pull_request' && 'manager-image' || '' }}
           fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
           google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
+          artifact-prefix: ${{ env.ARTIFACT_PREFIX }}
 
   # Selfmonitor tests
+  selfmonitor-healthy:
+    needs: setup
+    runs-on: telemetry-4core
+    name: selfmonitor-healthy
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: '0'
+          ref: ${{ inputs.ref || github.ref }}
+
+      - name: Run E2E test
+        uses: ./.github/template/run-e2e-test
+        with:
+          test-id: selfmonitor-healthy
+          test-path: ./test/selfmonitor/...
+          test-labels: healthy
+          manager-image: ${{ needs.setup.outputs.manager-image }}
+          manager-image-archive: ${{ github.event_name == 'pull_request' && 'manager-image' || '' }}
+          fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
+          google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
+
   selfmonitor:
     needs: setup
-    runs-on: ubuntu-latest
+    runs-on: telemetry-4core
     strategy:
       fail-fast: false
       matrix:
         scenario:
-          - healthy
           - backpressure
           - outage
         component:
@@ -353,10 +386,11 @@ jobs:
           manager-image-archive: ${{ github.event_name == 'pull_request' && 'manager-image' || '' }}
           fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
           google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
+          artifact-prefix: ${{ env.ARTIFACT_PREFIX }}
 
   summary:
-    needs: [e2e-logs, e2e-metrics, e2e-experimental, e2e, e2e-other, selfmonitor]
-    runs-on: ubuntu-latest
+    needs: [e2e-logs, e2e-metrics, e2e-experimental, e2e, e2e-other, selfmonitor-healthy, selfmonitor]
+    runs-on: telemetry-4core
     if: always()
     steps:
       - name: Checkout code
@@ -365,3 +399,5 @@ jobs:
 
       - name: Generate test summary
         uses: "./.github/template/test-summary"
+        with:
+          artifact-prefix: ${{ env.ARTIFACT_PREFIX }}
