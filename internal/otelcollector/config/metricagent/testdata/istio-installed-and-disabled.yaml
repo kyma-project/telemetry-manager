@@ -153,6 +153,9 @@ receivers:
             - k8s.volume.type
         collect_all_network_interfaces:
             node: true
+        node: ${MY_NODE_NAME}
+        k8s_api_config:
+            auth_type: serviceAccount
     prometheus/app-pods:
         config:
             scrape_configs:
