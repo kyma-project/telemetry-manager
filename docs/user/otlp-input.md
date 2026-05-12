@@ -36,15 +36,6 @@ The output shows the available endpoints and the pipeline health under the statu
 
 ```yaml
   endpoints:
-    metrics:
-      grpc: http://telemetry-otlp-metrics.kyma-system:4317
-      http: http://telemetry-otlp-metrics.kyma-system:4318
-    traces:
-      grpc: http://telemetry-otlp-traces.kyma-system:4317
-      http: http://telemetry-otlp-traces.kyma-system:4318
-    logs:
-      grpc: http://telemetry-otlp-logs.kyma-system:4317
-      http: http://telemetry-otlp-logs.kyma-system:4318
     otlp:
       grpc: http://telemetry-otlp.kyma-system:4317
       http: http://telemetry-otlp.kyma-system:4318
