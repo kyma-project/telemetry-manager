@@ -34,7 +34,7 @@ func NewMetricPipelineBuilder() *MetricPipelineBuilder {
 	return &MetricPipelineBuilder{
 		randSource: rand.NewSource(time.Now().UnixNano()),
 		outOTLP: &telemetryv1beta1.MetricPipelineOTLPOutput{
-			OTLPOutput: &telemetryv1beta1.OTLPOutput{
+			OTLPOutput: telemetryv1beta1.OTLPOutput{
 				Endpoint: telemetryv1beta1.ValueType{Value: "http://localhost:4317"},
 			},
 		},
@@ -384,7 +384,7 @@ func (b *MetricPipelineBuilder) WithRuntimeInputStatefulSetMetrics(enable bool) 
 
 func (b *MetricPipelineBuilder) WithMetricPipelineOTLPOutput(opts ...OTLPOutputOption) *MetricPipelineBuilder {
 	for _, opt := range opts {
-		opt(b.outOTLP.OTLPOutput)
+		opt(&b.outOTLP.OTLPOutput)
 	}
 
 	return b

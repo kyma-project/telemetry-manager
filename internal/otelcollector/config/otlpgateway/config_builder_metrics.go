@@ -326,7 +326,7 @@ func (b *Builder) addMetricOTLPExporter(builder *common.ComponentBuilder[*teleme
 		func(ctx context.Context, mp *telemetryv1beta1.MetricPipeline) (any, common.EnvVars, error) {
 			otlpExporterBuilder := common.NewOTLPExporterConfigBuilder(
 				b.Reader,
-				mp.Spec.Output.OTLP.OTLPOutput,
+				&mp.Spec.Output.OTLP.OTLPOutput,
 				pipelines.MetricPipelineRef(mp),
 				queueSize,
 			)
