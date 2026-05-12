@@ -29,6 +29,7 @@ User-facing changes include, but are not limited to:
 - Changes to OTel Collector or Fluent Bit configuration
 - Deprecations or removals (deletions) of features or APIs
 - Changes that require user action (migration steps, config updates)
+- Changes that have a recommended (optional) user action (opt-in improvements, early adoption steps)
 - RBAC or permission changes
 - Service name or endpoint changes (breaks users hardcoding addresses)
 - Workload kind changes (Deployment ↔ DaemonSet; affects HPA, PDB, external selectors)
@@ -43,3 +44,5 @@ If the change affects only specific signal types, start with the appropriate sco
 If this PR has no user-facing changes (tests, docs, internal refactoring), write "None".
 
 If this PR deprecates or removes a feature, describe what is deprecated or removed, why, and what users must migrate to.
+
+If this PR introduces a feature where users should take an optional action (for example, enabling a new capability, adopting a new approach early, or updating dashboards), describe the recommended action and why it is beneficial.
