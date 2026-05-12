@@ -36,7 +36,9 @@ func TestDefault(t *testing.T) {
 			input: &telemetryv1beta1.MetricPipeline{
 				Spec: telemetryv1beta1.MetricPipelineSpec{
 					Output: telemetryv1beta1.MetricPipelineOutput{
-						OTLP: &telemetryv1beta1.OTLPOutput{},
+						OTLP: &telemetryv1beta1.MetricPipelineOTLPOutput{
+							OTLPOutput: telemetryv1beta1.OTLPOutput{},
+						},
 					},
 				},
 			},
@@ -49,8 +51,11 @@ func TestDefault(t *testing.T) {
 						},
 					},
 					Output: telemetryv1beta1.MetricPipelineOutput{
-						OTLP: &telemetryv1beta1.OTLPOutput{
-							Protocol: telemetryv1beta1.OTLPProtocolGRPC,
+						OTLP: &telemetryv1beta1.MetricPipelineOTLPOutput{
+							OTLPOutput: telemetryv1beta1.OTLPOutput{
+								Protocol: telemetryv1beta1.OTLPProtocolGRPC,
+							},
+							Temporality: new(telemetryv1beta1.TemporalityCumulative),
 						},
 					},
 				},
@@ -66,8 +71,10 @@ func TestDefault(t *testing.T) {
 						},
 					},
 					Output: telemetryv1beta1.MetricPipelineOutput{
-						OTLP: &telemetryv1beta1.OTLPOutput{
-							Protocol: telemetryv1beta1.OTLPProtocolHTTP,
+						OTLP: &telemetryv1beta1.MetricPipelineOTLPOutput{
+							OTLPOutput: telemetryv1beta1.OTLPOutput{
+								Protocol: telemetryv1beta1.OTLPProtocolHTTP,
+							},
 						},
 					},
 				},
@@ -80,8 +87,11 @@ func TestDefault(t *testing.T) {
 						},
 					},
 					Output: telemetryv1beta1.MetricPipelineOutput{
-						OTLP: &telemetryv1beta1.OTLPOutput{
-							Protocol: telemetryv1beta1.OTLPProtocolHTTP,
+						OTLP: &telemetryv1beta1.MetricPipelineOTLPOutput{
+							OTLPOutput: telemetryv1beta1.OTLPOutput{
+								Protocol: telemetryv1beta1.OTLPProtocolHTTP,
+							},
+							Temporality: new(telemetryv1beta1.TemporalityCumulative),
 						},
 					},
 				},

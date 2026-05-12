@@ -94,6 +94,10 @@ func (md defaulter) Default(ctx context.Context, pipeline *telemetryv1beta1.Metr
 		pipeline.Spec.Output.OTLP.Protocol = md.DefaultOTLPOutputProtocol
 	}
 
+	if pipeline.Spec.Output.OTLP != nil && pipeline.Spec.Output.OTLP.Temporality == nil {
+		pipeline.Spec.Output.OTLP.Temporality = new(telemetryv1beta1.TemporalityCumulative)
+	}
+
 	return nil
 }
 

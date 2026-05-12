@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/namespaces"
 )
 
@@ -35,7 +36,7 @@ func TestDefault(t *testing.T) {
 			input: &telemetryv1alpha1.MetricPipeline{
 				Spec: telemetryv1alpha1.MetricPipelineSpec{
 					Output: telemetryv1alpha1.MetricPipelineOutput{
-						OTLP: &telemetryv1alpha1.OTLPOutput{},
+						OTLP: &telemetryv1alpha1.MetricPipelineOTLPOutput{},
 					},
 				},
 			},
@@ -47,8 +48,11 @@ func TestDefault(t *testing.T) {
 						},
 					},
 					Output: telemetryv1alpha1.MetricPipelineOutput{
-						OTLP: &telemetryv1alpha1.OTLPOutput{
-							Protocol: telemetryv1alpha1.OTLPProtocolGRPC,
+						OTLP: &telemetryv1alpha1.MetricPipelineOTLPOutput{
+							OTLPOutput: telemetryv1alpha1.OTLPOutput{
+								Protocol: telemetryv1alpha1.OTLPProtocolGRPC,
+							},
+							Temporality: new(telemetryv1beta1.TemporalityCumulative),
 						},
 					},
 				},
@@ -64,8 +68,10 @@ func TestDefault(t *testing.T) {
 						},
 					},
 					Output: telemetryv1alpha1.MetricPipelineOutput{
-						OTLP: &telemetryv1alpha1.OTLPOutput{
-							Protocol: telemetryv1alpha1.OTLPProtocolHTTP,
+						OTLP: &telemetryv1alpha1.MetricPipelineOTLPOutput{
+							OTLPOutput: telemetryv1alpha1.OTLPOutput{
+								Protocol: telemetryv1alpha1.OTLPProtocolHTTP,
+							},
 						},
 					},
 				},
@@ -78,8 +84,11 @@ func TestDefault(t *testing.T) {
 						},
 					},
 					Output: telemetryv1alpha1.MetricPipelineOutput{
-						OTLP: &telemetryv1alpha1.OTLPOutput{
-							Protocol: telemetryv1alpha1.OTLPProtocolHTTP,
+						OTLP: &telemetryv1alpha1.MetricPipelineOTLPOutput{
+							OTLPOutput: telemetryv1alpha1.OTLPOutput{
+								Protocol: telemetryv1alpha1.OTLPProtocolHTTP,
+							},
+							Temporality: new(telemetryv1beta1.TemporalityCumulative),
 						},
 					},
 				},
