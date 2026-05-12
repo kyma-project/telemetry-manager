@@ -22,3 +22,60 @@ Describe user-facing changes, or write "None" if there are none.
 Do not add any other sections, headings, or text outside of this structure.
 Do not wrap your response in a code block.
 Do not include a title or PR number at the top.
+
+---
+
+## Examples
+
+### Example 1: Feature with grouped key changes and release notes
+
+## What Changed
+
+Configures the `k8sattributes` processor with a node filter across all OTel Collector pipelines so each collector instance only watches pods on its own node instead of all pods cluster-wide. On large clusters this reduces per-instance memory from ~300 MB to ~15–30 MB.
+
+## Affected Signal Types
+
+Logs, Metrics, Traces
+
+## Key Changes
+
+Processor configuration:
+- **`internal/otelcollector/config/common/processor_builders.go`**: Adds `filter.node_from_env_var: MY_NODE_NAME` to the `k8sattributes` processor builder so all collector types pick up the node filter.
+- **`internal/otelcollector/config/common/types.go`**: Extends the `K8sAttributesConfig` struct with the new filter field.
+
+Resource generation:
+- **`internal/resources/otelcollector/agent.go`**: Injects the `MY_NODE_NAME` environment variable (sourced from `spec.nodeName`) into each agent DaemonSet so the filter has a value at runtime.
+
+Golden files:
+- **`internal/otelcollector/config/logagent/testdata/`**, **`internal/otelcollector/config/metricagent/testdata/`**, **`internal/otelcollector/config/otlpgateway/testdata/`**, **`internal/resources/otelcollector/testdata/`**: Updated to reflect the new processor and environment variable in all collector configurations.
+
+## Notes for Reviewers
+
+The node filter is only effective for DaemonSet deployments. The OTLP gateway was recently converted from a Deployment to a DaemonSet; applying the filter there was the primary motivation for this change. Any future reversion to a Deployment would make the filter a no-op rather than incorrect, so no guard is needed.
+
+## Release Notes Input
+
+Metrics, Traces, Logs: The `k8sattributes` processor now limits each collector instance's Kubernetes informer watch to pods on its own node. This reduces memory consumption significantly on large clusters (from ~300 MB to ~15–30 MB per instance on a 200-node cluster).
+
+We recommend reviewing your VPA or resource limit settings for OTel Collector DaemonSets after this change — limits sized for the old cluster-wide watch may now be over-provisioned.
+
+---
+
+### Example 2: Small fix with no release notes
+
+## What Changed
+
+Adds `NoExecute` and `NoSchedule` tolerations to the OTLP gateway DaemonSet so its pods are scheduled on tainted nodes, matching the existing behavior of the OTel agent and Fluent Bit DaemonSets.
+
+## Key Changes
+
+- **`internal/resources/otelcollector/otlp_gateway.go`**: Adds critical tolerations to the DaemonSet pod spec.
+- **`internal/resources/otelcollector/testdata/`**: Updates golden files to include the new tolerations in all OTLP gateway variants.
+
+## Notes for Reviewers
+
+The tolerations were already present on the metric and log agent DaemonSets; this was an oversight when the OTLP gateway was converted from a Deployment to a DaemonSet.
+
+## Release Notes Input
+
+None.
