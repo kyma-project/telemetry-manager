@@ -27,7 +27,7 @@ User-facing changes include, but are not limited to:
 - New or changed CRD fields or API
 - New or changed metrics, attributes, or resource enrichment
 - Changes to OTel Collector or Fluent Bit configuration
-- Deprecations or removals of features or APIs
+- Deprecations or removals (deletions) of features or APIs
 - Changes that require user action (migration steps, config updates)
 - RBAC or permission changes
 - Service name or endpoint changes (breaks users hardcoding addresses)
