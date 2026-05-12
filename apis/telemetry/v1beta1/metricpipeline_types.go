@@ -177,7 +177,7 @@ type MetricPipelineOutput struct {
 }
 
 type MetricPipelineOTLPOutput struct {
-	*OTLPOutput `json:",inline"`
+	OTLPOutput `json:",inline"`
 
 	// Temporality defines the context in which the metric sum was calculated (`cumulative` or `delta`). The default is `cumulative`.
 	// +kubebuilder:validation:Optional

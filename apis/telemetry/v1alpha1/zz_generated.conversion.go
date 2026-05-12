@@ -1122,14 +1122,8 @@ func Convert_v1beta1_MetricPipelineList_To_v1alpha1_MetricPipelineList(in *v1bet
 }
 
 func autoConvert_v1alpha1_MetricPipelineOTLPOutput_To_v1beta1_MetricPipelineOTLPOutput(in *MetricPipelineOTLPOutput, out *v1beta1.MetricPipelineOTLPOutput, s conversion.Scope) error {
-	if in.OTLPOutput != nil {
-		in, out := &in.OTLPOutput, &out.OTLPOutput
-		*out = new(v1beta1.OTLPOutput)
-		if err := Convert_v1alpha1_OTLPOutput_To_v1beta1_OTLPOutput(*in, *out, s); err != nil {
-			return err
-		}
-	} else {
-		out.OTLPOutput = nil
+	if err := Convert_v1alpha1_OTLPOutput_To_v1beta1_OTLPOutput(&in.OTLPOutput, &out.OTLPOutput, s); err != nil {
+		return err
 	}
 	out.Temporality = (*v1beta1.TemporalityType)(unsafe.Pointer(in.Temporality))
 	return nil
@@ -1141,14 +1135,8 @@ func Convert_v1alpha1_MetricPipelineOTLPOutput_To_v1beta1_MetricPipelineOTLPOutp
 }
 
 func autoConvert_v1beta1_MetricPipelineOTLPOutput_To_v1alpha1_MetricPipelineOTLPOutput(in *v1beta1.MetricPipelineOTLPOutput, out *MetricPipelineOTLPOutput, s conversion.Scope) error {
-	if in.OTLPOutput != nil {
-		in, out := &in.OTLPOutput, &out.OTLPOutput
-		*out = new(OTLPOutput)
-		if err := Convert_v1beta1_OTLPOutput_To_v1alpha1_OTLPOutput(*in, *out, s); err != nil {
-			return err
-		}
-	} else {
-		out.OTLPOutput = nil
+	if err := Convert_v1beta1_OTLPOutput_To_v1alpha1_OTLPOutput(&in.OTLPOutput, &out.OTLPOutput, s); err != nil {
+		return err
 	}
 	out.Temporality = (*v1beta1.TemporalityType)(unsafe.Pointer(in.Temporality))
 	return nil
