@@ -20,7 +20,16 @@ Bullet points covering the most important code changes. Format each bullet as **
 Highlight anything non-obvious: tricky logic, deliberate trade-offs, areas that need extra scrutiny, or follow-up issues.
 
 ## Release Notes Input
-Always include this section. Describe any user-facing changes introduced by this PR for the release notes.
+
+Always include this section. If this PR has no user-facing changes (tests, docs, internal refactoring), write "None".
+
+Structure the content using these three subsections, and include only the subsections that apply:
+
+**Required Changes:** Actions users must take — migration steps, config updates, API changes, deprecation removals. Use this for anything that breaks existing behavior or requires user intervention.
+
+**Recommended Changes:** Optional actions users should consider — enabling a new capability, updating dashboards, adopting a new approach early. Use this when the change is beneficial but users can continue without acting.
+
+Followed by a plain description of the user-facing change itself (new behavior, new CRD fields, new metrics, etc.).
 
 User-facing changes include, but are not limited to:
 - New or changed pipeline behavior (logs, metrics, traces)
@@ -28,21 +37,13 @@ User-facing changes include, but are not limited to:
 - New or changed metrics, attributes, or resource enrichment
 - Changes to OTel Collector or Fluent Bit configuration
 - Deprecations or removals (deletions) of features or APIs
-- Changes that require user action (migration steps, config updates)
-- Changes that have a recommended (optional) user action (opt-in improvements, early adoption steps)
 - RBAC or permission changes
 - Service name or endpoint changes (breaks users hardcoding addresses)
 - Workload kind changes (Deployment ↔ DaemonSet; affects HPA, PDB, external selectors)
 
-If the change affects only specific signal types, start with the appropriate scope prefix:
+If the change affects only specific signal types, prefix the section content with:
 - `Logs:` — log pipelines only
 - `Metrics:` — metric pipelines only
 - `Traces:` — trace pipelines only
 - `Logs and Metrics:`, `Logs and Traces:`, `Metrics and Traces:` — two signal types
 - No prefix — all signal types or non-signal-specific
-
-If this PR has no user-facing changes (tests, docs, internal refactoring), write "None".
-
-If this PR deprecates or removes a feature, describe what is deprecated or removed, why, and what users must migrate to.
-
-If this PR introduces a feature where users should take an optional action (for example, enabling a new capability, adopting a new approach early, or updating dashboards), describe the recommended action and why it is beneficial.

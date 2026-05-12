@@ -19,6 +19,12 @@ Highlight anything non-obvious: tricky logic, deliberate trade-offs, areas that 
 ## Release Notes Input
 Describe user-facing changes, or write "None" if there are none.
 
+**Required Changes:** Actions users must take (omit if none).
+
+**Recommended Changes:** Optional actions users should consider (omit if none).
+
+Plain description of the user-facing change itself.
+
 Do not add any other sections, headings, or text outside of this structure.
 Do not wrap your response in a code block.
 Do not include a title or PR number at the top.
@@ -57,7 +63,7 @@ The node filter is only effective for DaemonSet deployments. The OTLP gateway wa
 
 Metrics, Traces, Logs: The `k8sattributes` processor now limits each collector instance's Kubernetes informer watch to pods on its own node. This reduces memory consumption significantly on large clusters (from ~300 MB to ~15–30 MB per instance on a 200-node cluster).
 
-We recommend reviewing your VPA or resource limit settings for OTel Collector DaemonSets after this change — limits sized for the old cluster-wide watch may now be over-provisioned.
+**Recommended Changes:** Review your VPA or resource limit settings for OTel Collector DaemonSets — limits sized for the old cluster-wide watch may now be over-provisioned.
 
 ---
 
