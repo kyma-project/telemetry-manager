@@ -26,7 +26,7 @@ Use the following environment variable to set the harmonized OTLP endpoint, whic
 
 ## Verify the Endpoints
 
-To see whether you've set up your gateways and their push endpoints successfully, check the status of the default `Telemetry` resource:
+To see whether you've set up your OTLP gateway and its push endpoints successfully, check the status of the default `Telemetry` resource:
 
 ```sh
 kubectl -n kyma-system get telemetries.operator.kyma-project.io default -oyaml
