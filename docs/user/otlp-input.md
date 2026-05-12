@@ -4,7 +4,7 @@ Use the default OTLP input to collect telemetry data from your instrumented appl
 
 ## Overview
 
-When you create any LogPipeline, TracePipeline, or MetricPipeline, the Telemetry module automatically deploys the OTLP gateway. This opens a stable, cluster-internal [OTLP](https://opentelemetry.io/docs/specs/otel/protocol/) endpoint, ready to receive data from your applications.
+When you create any LogPipeline, TracePipeline, or MetricPipeline, the Telemetry module automatically deploys the OTLP Gateway. This opens a stable, cluster-internal [OTLP](https://opentelemetry.io/docs/specs/otel/protocol/) endpoint, ready to receive data from your applications.
 
 The endpoint listens on port `4317` for gRPC (default) and on port `4318` for HTTP.
 
@@ -26,7 +26,7 @@ Use the following environment variable to set the harmonized OTLP endpoint, whic
 
 ## Verify the Endpoints
 
-To see whether you've set up your OTLP gateway and its push endpoints successfully, check the status of the default `Telemetry` resource:
+To see whether you've set up your OTLP Gateway and its push endpoints successfully, check the status of the default `Telemetry` resource:
 
 ```sh
 kubectl -n kyma-system get telemetries.operator.kyma-project.io default -oyaml
