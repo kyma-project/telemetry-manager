@@ -39,6 +39,8 @@ User-facing changes include, but are not limited to:
 - New or changed metrics, attributes, or resource enrichment
 - Changes to OTel Collector or Fluent Bit configuration
 - Deprecations or removals (deletions) of features or APIs
+- Changes that require user action (migration steps, config updates)
+- Changes that have a recommended (optional) user action (opt-in improvements, early adoption steps)
 - RBAC or permission changes
 - Service name or endpoint changes (breaks users hardcoding addresses)
 - Workload kind changes (Deployment ↔ DaemonSet; affects HPA, PDB, external selectors)
