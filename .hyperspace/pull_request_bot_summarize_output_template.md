@@ -1,6 +1,6 @@
 {{summary}}
 
-## Key changes
+## Key Changes
 {{code_changes}}
 
 ## Release Notes Input

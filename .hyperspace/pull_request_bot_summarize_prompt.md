@@ -2,27 +2,27 @@ Summarize this pull request for the telemetry-manager project — a Kubernetes o
 
 Do not include a file-by-file list of changes. All change details belong in the "Key changes" section below.
 
-Always include all of the following sections in this exact order. Only the sections marked as "(optional)" may be omitted when not applicable.
+Include all sections listed here, in this exact order. You can omit only sections marked as "(optional)" when they are not applicable.
 
-## What changed
+## What Changed
 One or two sentences describing the change at a high level.
 
-## Affected signal types
+## Affected Signal Types
 (optional) List which pipeline types are affected: logs, metrics, traces, or all. Omit this section entirely if the change is infrastructure (build, CI, dependencies), tooling, or operator-level with no signal-specific impact.
 
-## Key changes
-Bullet points covering the most important code changes. For each point, mention the relevant package or component (e.g. `internal/reconciler/metricpipeline`, `internal/otelcollector/config`, `controllers/telemetry`).
+## Key Changes
+Bullet points covering the most important code changes. For each point, mention the relevant package or component (for example, `internal/reconciler/metricpipeline`, `internal/otelcollector/config`, `controllers/telemetry`).
 
-## Breaking changes
+## Breaking Changes
 (optional) List any breaking changes to CRD fields, API types, or behavior. Omit this section if there are none.
 
-## Notes for reviewers
-Highlight anything non-obvious: tricky logic, deliberate trade-offs, areas needing extra scrutiny, or follow-up issues.
+## Notes for Reviewers
+Highlight anything non-obvious: tricky logic, deliberate trade-offs, areas that need extra scrutiny, or follow-up issues.
 
 ## Release Notes Input
-Required — always include this section. Describe any user-facing changes introduced by this PR for the release notes.
+Always include this section. Describe any user-facing changes introduced by this PR for the release notes.
 
-User-facing changes include (but are not limited to):
+User-facing changes include, but are not limited to:
 - New or changed pipeline behavior (logs, metrics, traces)
 - New or changed CRD fields or API
 - New or changed metrics, attributes, or resource enrichment
@@ -42,4 +42,4 @@ If the change affects only specific signal types, start with the appropriate sco
 
 If this PR has no user-facing changes (tests, docs, internal refactoring), write "None".
 
-If this PR deprecates or removes a feature, describe what is deprecated/removed, why, and what users should migrate to.
+If this PR deprecates or removes a feature, describe what is deprecated or removed, why, and what users must migrate to.
