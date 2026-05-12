@@ -14,7 +14,7 @@ If you don't provide a service name, or if its value follows the pattern `unknow
 Be aware of [these OTel-specific edge case limitations](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/k8sattributesprocessor/README.md#configuring-recommended-resource-attributes).
 
 > [!WARNING]
-> The legacy strategy for service name enrichment is deprecated and will be removed soon. The legacy strategy is active if the annotation `telemetry.kyma-project.io/service-enrichment` is set to `kyma-legacy` or is missing on the Telemetry CR. It determines the service name based on the following hierarchy:
+> The legacy strategy for service name enrichment is deprecated and will be removed in a future release. The legacy strategy is active if the annotation `telemetry.kyma-project.io/service-enrichment` is set to `kyma-legacy` or is missing on the Telemetry CR. It determines the service name based on the following hierarchy:
 > 1. `app.kubernetes.io/name`: Pod label value
 > 2. `app`: Pod label value
 > 3. Deployment/DaemonSet/StatefulSet/Job name
