@@ -4,7 +4,8 @@ Format your response using the following structure. Include only the sections li
 One or two sentences describing the change at a high level.
 
 ## Affected Signal Types
-(optional) List which pipeline types are affected: logs, metrics, traces, or all.
+(optional) List which pipeline types are affected: logs, metrics, traces, or all. Omit this section entirely if the change is infrastructure (build, CI, dependencies), tooling, or operator-level with no signal-specific impact.
+
 
 ## Key Changes
 - **`package/or/file`**: Description of what changed and why.
