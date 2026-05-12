@@ -12,18 +12,6 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
-type metricResource string
-
-const (
-	pod         metricResource = "pod"
-	container   metricResource = "container"
-	statefulset metricResource = "statefulset"
-	job         metricResource = "job"
-	deployment  metricResource = "deployment"
-	daemonset   metricResource = "daemonset"
-	none        metricResource = "none"
-)
-
 func TestK8sClusterReceiverConfig(t *testing.T) {
 	ctx := context.Background()
 	fakeClient := fake.NewClientBuilder().Build()
@@ -31,12 +19,10 @@ func TestK8sClusterReceiverConfig(t *testing.T) {
 		Reader: fakeClient,
 	}
 
-	agentNamespace := "test-namespace"
-
 	tests := []struct {
-		name                  string
-		pipeline              telemetryv1beta1.MetricPipeline
-		expectedMetricsToDrop K8sClusterMetrics
+		name            string
+		pipeline        telemetryv1beta1.MetricPipeline
+		expectedMetrics K8sClusterMetrics
 	}{
 		{
 			name: "default resources enabled",
@@ -44,7 +30,9 @@ func TestK8sClusterReceiverConfig(t *testing.T) {
 				WithRuntimeInput(true).
 				Build(),
 
-			expectedMetricsToDrop: getExpectedK8sClusterMetricsToDrop(none),
+			expectedMetrics: K8sClusterMetrics{
+				K8sClusterDefaultMetricsToDrop: getExpectedK8sClusterDefaultMetricsToDrop(),
+			},
 		},
 		{
 			name: "only pod metrics disabled",
@@ -52,7 +40,12 @@ func TestK8sClusterReceiverConfig(t *testing.T) {
 				WithRuntimeInput(true).
 				WithRuntimeInputPodMetrics(false).
 				Build(),
-			expectedMetricsToDrop: getExpectedK8sClusterMetricsToDrop(pod),
+			expectedMetrics: K8sClusterMetrics{
+				K8sClusterDefaultMetricsToDrop: getExpectedK8sClusterDefaultMetricsToDrop(),
+				K8sClusterPodMetrics: &K8sClusterPodMetrics{
+					K8sPodPhase: &Metric{false},
+				},
+			},
 		},
 		{
 			name: "only container metrics disabled",
@@ -60,7 +53,16 @@ func TestK8sClusterReceiverConfig(t *testing.T) {
 				WithRuntimeInput(true).
 				WithRuntimeInputContainerMetrics(false).
 				Build(),
-			expectedMetricsToDrop: getExpectedK8sClusterMetricsToDrop(container),
+			expectedMetrics: K8sClusterMetrics{
+				K8sClusterDefaultMetricsToDrop: getExpectedK8sClusterDefaultMetricsToDrop(),
+				K8sClusterContainerMetrics: &K8sClusterContainerMetrics{
+					K8sContainerCPURequest:    &Metric{false},
+					K8sContainerCPULimit:      &Metric{false},
+					K8sContainerMemoryRequest: &Metric{false},
+					K8sContainerMemoryLimit:   &Metric{false},
+					K8sContainerRestarts:      &Metric{false},
+				},
+			},
 		},
 		{
 			name: "only statefulset metrics disabled",
@@ -68,35 +70,66 @@ func TestK8sClusterReceiverConfig(t *testing.T) {
 				WithRuntimeInput(true).
 				WithRuntimeInputStatefulSetMetrics(false).
 				Build(),
-			expectedMetricsToDrop: getExpectedK8sClusterMetricsToDrop(statefulset),
+			expectedMetrics: K8sClusterMetrics{
+				K8sClusterDefaultMetricsToDrop: getExpectedK8sClusterDefaultMetricsToDrop(),
+				K8sClusterStatefulSetMetrics: &K8sClusterStatefulSetMetrics{
+					K8sStatefulSetCurrentPods: &Metric{false},
+					K8sStatefulSetDesiredPods: &Metric{false},
+					K8sStatefulSetReadyPods:   &Metric{false},
+					K8sStatefulSetUpdatedPods: &Metric{false},
+				},
+			},
 		}, {
 			name: "only job metrics disabled",
 			pipeline: testutils.NewMetricPipelineBuilder().
 				WithRuntimeInput(true).
 				WithRuntimeInputJobMetrics(false).
 				Build(),
-			expectedMetricsToDrop: getExpectedK8sClusterMetricsToDrop(job),
+			expectedMetrics: K8sClusterMetrics{
+				K8sClusterDefaultMetricsToDrop: getExpectedK8sClusterDefaultMetricsToDrop(),
+				K8sClusterJobMetrics: &K8sClusterJobMetrics{
+					K8sJobActivePods:            &Metric{false},
+					K8sJobDesiredSuccessfulPods: &Metric{false},
+					K8sJobFailedPods:            &Metric{false},
+					K8sJobMaxParallelPods:       &Metric{false},
+					K8sJobSuccessfulPods:        &Metric{false},
+				},
+			},
 		}, {
 			name: "only deployment metrics disabled",
 			pipeline: testutils.NewMetricPipelineBuilder().
 				WithRuntimeInput(true).
 				WithRuntimeInputDeploymentMetrics(false).
 				Build(),
-			expectedMetricsToDrop: getExpectedK8sClusterMetricsToDrop(deployment),
+			expectedMetrics: K8sClusterMetrics{
+				K8sClusterDefaultMetricsToDrop: getExpectedK8sClusterDefaultMetricsToDrop(),
+				K8sClusterDeploymentMetrics: &K8sClusterDeploymentMetrics{
+					K8sDeploymentAvailable: &Metric{false},
+					K8sDeploymentDesired:   &Metric{false},
+				},
+			},
 		}, {
 			name: "only daemonset metrics disabled",
 			pipeline: testutils.NewMetricPipelineBuilder().
 				WithRuntimeInput(true).
 				WithRuntimeInputDaemonSetMetrics(false).
 				Build(),
-			expectedMetricsToDrop: getExpectedK8sClusterMetricsToDrop(daemonset),
+			expectedMetrics: K8sClusterMetrics{
+				K8sClusterDefaultMetricsToDrop: getExpectedK8sClusterDefaultMetricsToDrop(),
+				K8sClusterDaemonSetMetrics: &K8sClusterDaemonSetMetrics{
+					K8sDaemonSetCurrentScheduledNodes: &Metric{false},
+					K8sDaemonSetDesiredScheduledNodes: &Metric{false},
+					K8sDaemonSetMisscheduledNodes:     &Metric{false},
+					K8sDaemonSetReadyNodes:            &Metric{false},
+				},
+			},
 		},
 	}
+
 	for _, test := range tests {
 		collectorConfig, _, err := sut.Build(ctx, []telemetryv1beta1.MetricPipeline{
 			test.pipeline,
 		}, BuildOptions{
-			AgentNamespace:      agentNamespace,
 			CollectionIntervals: telemetryutils.ResolveMetricCollectionIntervals(nil),
 		})
 		require.NoError(t, err)
@@ -104,20 +137,21 @@ func TestK8sClusterReceiverConfig(t *testing.T) {
 		require.NotContains(t, collectorConfig.Receivers, "prometheus/app-pods")
 		require.NotContains(t, collectorConfig.Receivers, "prometheus/istio")
 
+		expectedK8sClusterReceiverConfig := &K8sClusterReceiverConfig{
+			AuthType:               "serviceAccount",
+			CollectionInterval:     "30s",
+			NodeConditionsToReport: []string{},
+			K8sLeaderElector:       "k8s_leader_elector",
+			Metrics:                test.expectedMetrics,
+		}
+
 		require.Contains(t, collectorConfig.Receivers, "k8s_cluster")
-		k8sClusterReceiver := collectorConfig.Receivers["k8s_cluster"].(*K8sClusterReceiverConfig)
-		require.Equal(t, "serviceAccount", k8sClusterReceiver.AuthType)
-		require.Equal(t, "30s", k8sClusterReceiver.CollectionInterval)
-		require.Len(t, k8sClusterReceiver.NodeConditionsToReport, 0)
-		require.Equal(t, test.expectedMetricsToDrop, k8sClusterReceiver.Metrics)
+		require.Equal(t, expectedK8sClusterReceiverConfig, collectorConfig.Receivers["k8s_cluster"].(*K8sClusterReceiverConfig))
 	}
 }
 
-func getExpectedK8sClusterMetricsToDrop(disabledMetricResource metricResource) K8sClusterMetrics {
-	metricsToDrop := K8sClusterMetrics{}
-
-	//nolint:dupl // repeating the code as we want to test the metrics are disabled correctly
-	defaultMetricsToDrop := &K8sClusterDefaultMetricsToDrop{
+func getExpectedK8sClusterDefaultMetricsToDrop() *K8sClusterDefaultMetricsToDrop {
+	return &K8sClusterDefaultMetricsToDrop{
 		K8sContainerStorageRequest:          &Metric{Enabled: false},
 		K8sContainerStorageLimit:            &Metric{Enabled: false},
 		K8sContainerEphemeralStorageRequest: &Metric{Enabled: false},
@@ -136,65 +170,4 @@ func getExpectedK8sClusterMetricsToDrop(disabledMetricResource metricResource) K
 		K8sResourceQuotaUsed:                &Metric{Enabled: false},
 		K8sCronJobActiveJobs:                &Metric{Enabled: false},
 	}
-	podMetricsToDrop := &K8sClusterPodMetrics{
-		K8sPodPhase: &Metric{false},
-	}
-	containerMetricsToDrop := &K8sClusterContainerMetrics{
-		K8sContainerCPURequest:    &Metric{false},
-		K8sContainerCPULimit:      &Metric{false},
-		K8sContainerMemoryRequest: &Metric{false},
-		K8sContainerMemoryLimit:   &Metric{false},
-		K8sContainerRestarts:      &Metric{false},
-	}
-	statefulMetricsToDrop := &K8sClusterStatefulSetMetrics{
-		K8sStatefulSetCurrentPods: &Metric{false},
-		K8sStatefulSetDesiredPods: &Metric{false},
-		K8sStatefulSetReadyPods:   &Metric{false},
-		K8sStatefulSetUpdatedPods: &Metric{false},
-	}
-	jobMetricsToDrop := &K8sClusterJobMetrics{
-		K8sJobActivePods:            &Metric{false},
-		K8sJobDesiredSuccessfulPods: &Metric{false},
-		K8sJobFailedPods:            &Metric{false},
-		K8sJobMaxParallelPods:       &Metric{false},
-		K8sJobSuccessfulPods:        &Metric{false},
-	}
-	deploymentMetricsToDrop := &K8sClusterDeploymentMetrics{
-		K8sDeploymentAvailable: &Metric{false},
-		K8sDeploymentDesired:   &Metric{false},
-	}
-	daemonSetMetricsToDrop := &K8sClusterDaemonSetMetrics{
-		K8sDaemonSetCurrentScheduledNodes: &Metric{false},
-		K8sDaemonSetDesiredScheduledNodes: &Metric{false},
-		K8sDaemonSetMisscheduledNodes:     &Metric{false},
-		K8sDaemonSetReadyNodes:            &Metric{false},
-	}
-
-	metricsToDrop.K8sClusterDefaultMetricsToDrop = defaultMetricsToDrop
-
-	if disabledMetricResource == pod {
-		metricsToDrop.K8sClusterPodMetrics = podMetricsToDrop
-	}
-
-	if disabledMetricResource == container {
-		metricsToDrop.K8sClusterContainerMetrics = containerMetricsToDrop
-	}
-
-	if disabledMetricResource == statefulset {
-		metricsToDrop.K8sClusterStatefulSetMetrics = statefulMetricsToDrop
-	}
-
-	if disabledMetricResource == job {
-		metricsToDrop.K8sClusterJobMetrics = jobMetricsToDrop
-	}
-
-	if disabledMetricResource == deployment {
-		metricsToDrop.K8sClusterDeploymentMetrics = deploymentMetricsToDrop
-	}
-
-	if disabledMetricResource == daemonset {
-		metricsToDrop.K8sClusterDaemonSetMetrics = daemonSetMetricsToDrop
-	}
-
-	return metricsToDrop
 }
