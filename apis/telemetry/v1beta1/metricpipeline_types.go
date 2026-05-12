@@ -13,7 +13,7 @@ type TemporalityType string
 
 const (
 	TemporalityCumulative TemporalityType = "cumulative"
-	TemporalityDelta                      = "delta"
+	TemporalityDelta      TemporalityType = "delta"
 )
 
 // MetricPipelineList contains a list of MetricPipeline.
