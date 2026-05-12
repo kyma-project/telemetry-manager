@@ -9,6 +9,13 @@ func init() {
 	SchemeBuilder.Register(&MetricPipeline{}, &MetricPipelineList{})
 }
 
+type TemporalityType string
+
+const (
+	TemporalityCumulative TemporalityType = "cumulative"
+	TemporalityDelta                      = "delta"
+)
+
 // MetricPipelineList contains a list of MetricPipeline.
 // +kubebuilder:object:root=true
 type MetricPipelineList struct {
@@ -164,9 +171,19 @@ type MetricPipelineIstioInputDiagnosticMetrics struct {
 
 // MetricPipelineOutput defines the output configuration section.
 type MetricPipelineOutput struct {
-	// OTLP output defines an output using the OpenTelemetry protocol.
+	// MetricPipline OTLP output defines an metric pipeline output using the OpenTelemetry protocol.
 	// +kubebuilder:validation:Required
-	OTLP *OTLPOutput `json:"otlp"`
+	OTLP *MetricPipelineOTLPOutput `json:"otlp"`
+}
+
+type MetricPipelineOTLPOutput struct {
+	*OTLPOutput `json:",inline"`
+
+	// Temporality defines the context in which the metric sum was calculated (`cumulative` or `delta`). The default is `cumulative`.
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=cumulative
+	// +kubebuilder:validation:Enum=cumulative;delta
+	Temporality TemporalityType `json:"temporality"`
 }
 
 // MetricPipelineStatus defines the observed state of MetricPipeline.
