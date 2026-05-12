@@ -20,9 +20,9 @@ Highlight anything non-obvious: tricky logic, deliberate trade-offs, areas that 
 ## Release Notes Input
 Describe user-facing changes, or write "None" if there are none.
 
-**Required Changes:** Actions users must take (omit if none).
+**Required Action:** Actions users must take (omit if none).
 
-**Recommended Changes:** Optional actions users should consider (omit if none).
+**Recommended Action:** Optional actions users should consider (omit if none).
 
 Plain description of the user-facing change itself.
 
@@ -59,6 +59,7 @@ Golden Files:
 ## Notes for Reviewers
 
 The node filter is only effective for DaemonSet deployments. The OTLP gateway was recently converted from a Deployment to a DaemonSet; applying the filter there was the primary motivation for this change. Any future reversion to a Deployment would make the filter a no-op rather than incorrect, so no guard is needed.
+
 ## Release Notes Input
 
 **Recommended Action:** Review your VPA or resource limit settings for OTel Collector DaemonSets — limits sized for the old cluster-wide watch may now be over-provisioned.
