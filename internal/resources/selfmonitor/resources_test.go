@@ -143,7 +143,6 @@ func TestDeleteSelfMonitorResources(t *testing.T) {
 			utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 			utilruntime.Must(autoscalingvpav1.AddToScheme(scheme))
 
-
 			fakeClient := fake.NewClientBuilder().
 				WithScheme(scheme).
 				WithInterceptorFuncs(interceptor.Funcs{
@@ -180,6 +179,7 @@ func TestDeleteSelfMonitorResources(t *testing.T) {
 			// Verify VPA was created if enabled
 			if tt.vpaCRDExists && tt.vpaEnabled {
 				var vpa autoscalingvpav1.VerticalPodAutoscaler
+
 				err = fakeClient.Get(t.Context(), types.NamespacedName{
 					Name:      names.SelfMonitor,
 					Namespace: namespace,
@@ -199,6 +199,7 @@ func TestDeleteSelfMonitorResources(t *testing.T) {
 			// Specifically verify VPA is deleted if it was created
 			if tt.vpaCRDExists {
 				var vpa autoscalingvpav1.VerticalPodAutoscaler
+
 				err = fakeClient.Get(t.Context(), types.NamespacedName{
 					Name:      names.SelfMonitor,
 					Namespace: namespace,
