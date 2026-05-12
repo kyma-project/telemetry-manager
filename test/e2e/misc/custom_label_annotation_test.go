@@ -127,7 +127,7 @@ func TestLabelAnnotation(t *testing.T) {
 				p := testutils.NewMetricPipelineBuilder().
 					WithName("custom-metric-agent").
 					WithPrometheusInput(true, testutils.IncludeNamespaces(includeNs)).
-					WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
+					WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 					Build()
 
 				return &p

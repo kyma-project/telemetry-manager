@@ -57,7 +57,7 @@ func TestSecretMissing(t *testing.T) {
 			pipeline := testutils.NewMetricPipelineBuilder().
 				WithName(pipelineName).
 				WithInput(tc.input).
-				WithOTLPOutput(testutils.OTLPEndpointFromSecret(
+				WithMetricPipelineOTLPOutput(testutils.OTLPEndpointFromSecret(
 					secret.Name(),
 					secret.Namespace(),
 					endpointKey,

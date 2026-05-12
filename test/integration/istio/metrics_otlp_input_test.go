@@ -34,12 +34,12 @@ func TestMetricsOTLPInput(t *testing.T) {
 
 	metricPipeline := testutils.NewMetricPipelineBuilder().
 		WithName(pipeline1Name).
-		WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
+		WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 		Build()
 
 	metricPipelineIstiofiedBackend := testutils.NewMetricPipelineBuilder().
 		WithName(pipeline2Name).
-		WithOTLPOutput(testutils.OTLPEndpoint(istiofiedBackend.EndpointHTTP())).
+		WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint(istiofiedBackend.EndpointHTTP())).
 		Build()
 
 	peerAuth := kitk8sobjects.NewPeerAuthentication(kitbackend.DefaultName, istiofiedBackendNs)

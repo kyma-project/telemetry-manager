@@ -40,7 +40,7 @@ func TestMetricsIstioInputEnvoy(t *testing.T) {
 		WithName(pipelineName).
 		WithIstioInput(true, testutils.IncludeNamespaces(app1Ns)).
 		WithIstioInputEnvoyMetrics(true).
-		WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
+		WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 		Build()
 
 	resources := []client.Object{

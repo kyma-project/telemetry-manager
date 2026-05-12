@@ -144,7 +144,7 @@ func TestRejectPipelineCreation(t *testing.T) {
 		{
 			name: "otlp-output-with-default-proto-and-path",
 			pipeline: testutils.NewMetricPipelineBuilder().
-				WithOTLPOutput(
+				WithMetricPipelineOTLPOutput(
 					testutils.OTLPEndpoint(backendEndpoint),
 					testutils.OTLPEndpointPath("/v1/dummy"),
 				).
@@ -155,7 +155,7 @@ func TestRejectPipelineCreation(t *testing.T) {
 		{
 			name: "otlp-output-with-grpc-proto-and-path",
 			pipeline: testutils.NewMetricPipelineBuilder().
-				WithOTLPOutput(
+				WithMetricPipelineOTLPOutput(
 					testutils.OTLPEndpoint(backendEndpoint),
 					testutils.OTLPEndpointPath("/v1/dummy"),
 					testutils.OTLPProtocol("grpc"),
@@ -167,7 +167,7 @@ func TestRejectPipelineCreation(t *testing.T) {
 		{
 			name: "otlp-output-with-non-valid-proto",
 			pipeline: testutils.NewMetricPipelineBuilder().
-				WithOTLPOutput(
+				WithMetricPipelineOTLPOutput(
 					testutils.OTLPEndpoint(backendEndpoint),
 					testutils.OTLPProtocol("icke"),
 				).
@@ -179,7 +179,7 @@ func TestRejectPipelineCreation(t *testing.T) {
 		{
 			name: "otlp-output-basic-auth-secretref-missing-password-key",
 			pipeline: testutils.NewMetricPipelineBuilder().
-				WithOTLPOutput(
+				WithMetricPipelineOTLPOutput(
 					testutils.OTLPEndpoint(backendEndpoint),
 					testutils.OTLPBasicAuthFromSecret("name", "namespace", "user", ""),
 				).
@@ -190,7 +190,7 @@ func TestRejectPipelineCreation(t *testing.T) {
 		{
 			name: "otlp-output-basic-auth-secretref-missing-user-key",
 			pipeline: testutils.NewMetricPipelineBuilder().
-				WithOTLPOutput(
+				WithMetricPipelineOTLPOutput(
 					testutils.OTLPEndpoint(backendEndpoint),
 					testutils.OTLPBasicAuthFromSecret("name", "namespace", "", "password"),
 				).
@@ -201,7 +201,7 @@ func TestRejectPipelineCreation(t *testing.T) {
 		{
 			name: "otlp-output-basic-auth-missing-user",
 			pipeline: testutils.NewMetricPipelineBuilder().
-				WithOTLPOutput(
+				WithMetricPipelineOTLPOutput(
 					testutils.OTLPEndpoint(backendEndpoint),
 					testutils.OTLPBasicAuth("", "password"),
 				).
@@ -212,7 +212,7 @@ func TestRejectPipelineCreation(t *testing.T) {
 		{
 			name: "otlp-output-basic-auth-missing-password",
 			pipeline: testutils.NewMetricPipelineBuilder().
-				WithOTLPOutput(
+				WithMetricPipelineOTLPOutput(
 					testutils.OTLPEndpoint(backendEndpoint),
 					testutils.OTLPBasicAuth("user", ""),
 				).
@@ -223,7 +223,7 @@ func TestRejectPipelineCreation(t *testing.T) {
 		{
 			name: "otlp-output-tls-missing-key",
 			pipeline: testutils.NewMetricPipelineBuilder().
-				WithOTLPOutput(
+				WithMetricPipelineOTLPOutput(
 					testutils.OTLPEndpoint(backendEndpoint),
 					testutils.OTLPClientTLS(&telemetryv1beta1.OutputTLS{
 						CA:   &telemetryv1beta1.ValueType{Value: "myCACert"},
@@ -237,7 +237,7 @@ func TestRejectPipelineCreation(t *testing.T) {
 		{
 			name: "otlp-output-tls-missing-cert",
 			pipeline: testutils.NewMetricPipelineBuilder().
-				WithOTLPOutput(
+				WithMetricPipelineOTLPOutput(
 					testutils.OTLPEndpoint(backendEndpoint),
 					testutils.OTLPClientTLS(&telemetryv1beta1.OutputTLS{
 						CA:  &telemetryv1beta1.ValueType{Value: "myCACert"},
@@ -251,7 +251,7 @@ func TestRejectPipelineCreation(t *testing.T) {
 		{
 			name: "otlp-output-oauth2-invalid-token-url",
 			pipeline: testutils.NewMetricPipelineBuilder().
-				WithOTLPOutput(
+				WithMetricPipelineOTLPOutput(
 					testutils.OTLPEndpoint(backendEndpoint),
 					testutils.OTLPOAuth2(
 						testutils.OAuth2ClientSecret("clientsecret"),
@@ -266,7 +266,7 @@ func TestRejectPipelineCreation(t *testing.T) {
 		{
 			name: "otlp-output-oauth2-missing-client-id",
 			pipeline: testutils.NewMetricPipelineBuilder().
-				WithOTLPOutput(
+				WithMetricPipelineOTLPOutput(
 					testutils.OTLPEndpoint(backendEndpoint),
 					testutils.OTLPOAuth2(
 						testutils.OAuth2ClientSecret("clientsecret"),
@@ -280,7 +280,7 @@ func TestRejectPipelineCreation(t *testing.T) {
 		{
 			name: "otlp-output-oauth2-missing-token-url",
 			pipeline: testutils.NewMetricPipelineBuilder().
-				WithOTLPOutput(
+				WithMetricPipelineOTLPOutput(
 					testutils.OTLPEndpoint(backendEndpoint),
 					testutils.OTLPOAuth2(
 						testutils.OAuth2ClientID("clientid"),
@@ -294,7 +294,7 @@ func TestRejectPipelineCreation(t *testing.T) {
 		{
 			name: "otlp-output-oauth2-missing-client-secret",
 			pipeline: testutils.NewMetricPipelineBuilder().
-				WithOTLPOutput(
+				WithMetricPipelineOTLPOutput(
 					testutils.OTLPEndpoint(backendEndpoint),
 					testutils.OTLPOAuth2(
 						testutils.OAuth2ClientID("clientid"),
@@ -308,7 +308,7 @@ func TestRejectPipelineCreation(t *testing.T) {
 		{
 			name: "otlp-output-missing-header-value",
 			pipeline: testutils.NewMetricPipelineBuilder().
-				WithOTLPOutput(
+				WithMetricPipelineOTLPOutput(
 					testutils.OTLPEndpoint(backendEndpoint),
 					testutils.OTLPCustomHeader("X-Custom", "", ""),
 				).
@@ -319,7 +319,7 @@ func TestRejectPipelineCreation(t *testing.T) {
 		{
 			name: "otlp-output-oauth2-insecure",
 			pipeline: testutils.NewMetricPipelineBuilder().
-				WithOTLPOutput(
+				WithMetricPipelineOTLPOutput(
 					testutils.OTLPEndpoint(backendEndpoint),
 					testutils.OTLPOAuth2(
 						testutils.OAuth2ClientID("clientid"),
@@ -342,7 +342,7 @@ func TestRejectPipelineCreation(t *testing.T) {
 					testutils.ExcludeNamespaces("ns1"),
 					testutils.IncludeNamespaces("ns2"),
 				).
-				WithOTLPOutput().
+				WithMetricPipelineOTLPOutput().
 				Build(),
 			errorMsg: "Only one of 'include' or 'exclude' can be defined",
 			field:    "spec.input.otlp.namespaces",
@@ -353,7 +353,7 @@ func TestRejectPipelineCreation(t *testing.T) {
 				WithOTLPInput(true,
 					testutils.IncludeNamespaces("aa!"),
 				).
-				WithOTLPOutput().
+				WithMetricPipelineOTLPOutput().
 				Build(),
 			errorMsg: "should match",
 			field:    "spec.input.otlp.namespaces.include[0]",
@@ -364,7 +364,7 @@ func TestRejectPipelineCreation(t *testing.T) {
 				WithOTLPInput(true,
 					testutils.ExcludeNamespaces("aa!"),
 				).
-				WithOTLPOutput().
+				WithMetricPipelineOTLPOutput().
 				Build(),
 			errorMsg: "should match",
 			field:    "spec.input.otlp.namespaces.exclude[0]",
@@ -376,7 +376,7 @@ func TestRejectPipelineCreation(t *testing.T) {
 				WithPrometheusInput(true,
 					testutils.IncludeNamespaces("aa-"),
 				).
-				WithOTLPOutput().
+				WithMetricPipelineOTLPOutput().
 				Build(),
 			errorMsg: "should match",
 			field:    "spec.input.prometheus.namespaces.include[0]",
@@ -387,7 +387,7 @@ func TestRejectPipelineCreation(t *testing.T) {
 				WithPrometheusInput(true,
 					testutils.ExcludeNamespaces("-aa"),
 				).
-				WithOTLPOutput().
+				WithMetricPipelineOTLPOutput().
 				Build(),
 			errorMsg: "should match",
 			field:    "spec.input.prometheus.namespaces.exclude[0]",
@@ -399,7 +399,7 @@ func TestRejectPipelineCreation(t *testing.T) {
 				WithIstioInput(true,
 					testutils.IncludeNamespaces("#"),
 				).
-				WithOTLPOutput().
+				WithMetricPipelineOTLPOutput().
 				Build(),
 			errorMsg: "should match",
 			field:    "spec.input.istio.namespaces.include[0]",
@@ -410,7 +410,7 @@ func TestRejectPipelineCreation(t *testing.T) {
 				WithIstioInput(true,
 					testutils.ExcludeNamespaces("/"),
 				).
-				WithOTLPOutput().
+				WithMetricPipelineOTLPOutput().
 				Build(),
 			errorMsg: "should match",
 			field:    "spec.input.istio.namespaces.exclude[0]",
@@ -422,7 +422,7 @@ func TestRejectPipelineCreation(t *testing.T) {
 				WithRuntimeInput(true,
 					testutils.IncludeNamespaces("aa", "bb", "??"),
 				).
-				WithOTLPOutput().
+				WithMetricPipelineOTLPOutput().
 				Build(),
 			errorMsg: "should match",
 			field:    "spec.input.runtime.namespaces.include[2]",
@@ -433,7 +433,7 @@ func TestRejectPipelineCreation(t *testing.T) {
 				WithRuntimeInput(true,
 					testutils.ExcludeNamespaces("öö", "aa", "bb"),
 				).
-				WithOTLPOutput().
+				WithMetricPipelineOTLPOutput().
 				Build(),
 			errorMsg: "should match",
 			field:    "spec.input.runtime.namespaces.exclude[0]",

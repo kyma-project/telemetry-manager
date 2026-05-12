@@ -88,7 +88,7 @@ func TestOAuth2(t *testing.T) {
 			pipeline := testutils.NewMetricPipelineBuilder().
 				WithName(pipelineName).
 				WithInput(tc.inputBuilder(genNs)).
-				WithOTLPOutput(
+				WithMetricPipelineOTLPOutput(
 					testutils.OTLPEndpoint(backend.EndpointHTTPS()),
 					testutils.OTLPOAuth2(
 						testutils.OAuth2ClientIDFromSecret(oauth2Secret.Name(), oauth2Secret.Namespace(), "client-id"),

@@ -114,7 +114,7 @@ func buildPipeline(component, pipelineName, includeNs string, backend pipelineBa
 	case suite.LabelMetricGateway:
 		p := testutils.NewMetricPipelineBuilder().
 			WithName(pipelineName).
-			WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
+			WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 			Build()
 
 		return &p
@@ -123,7 +123,7 @@ func buildPipeline(component, pipelineName, includeNs string, backend pipelineBa
 		p := testutils.NewMetricPipelineBuilder().
 			WithName(pipelineName).
 			WithPrometheusInput(true, testutils.IncludeNamespaces(includeNs)).
-			WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
+			WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 			Build()
 
 		return &p

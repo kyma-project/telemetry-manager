@@ -90,7 +90,7 @@ func TestSinglePipeline(t *testing.T) {
 				pipeline := testutils.NewMetricPipelineBuilder().
 					WithName(pipelineName).
 					WithInput(tc.inputBuilder(genNs)).
-					WithOTLPOutput(
+					WithMetricPipelineOTLPOutput(
 						testutils.OTLPEndpoint(proto.endpoint(backend)),
 						testutils.OTLPProtocol(proto.protocol),
 					).

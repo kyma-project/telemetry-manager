@@ -71,7 +71,7 @@ func TestServiceEnrichment(t *testing.T) {
 	pipeline := testutils.NewMetricPipelineBuilder().
 		WithName(pipelineName).
 		WithRuntimeInput(true, testutils.IncludeNamespaces(kitkyma.SystemNamespaceName, genNs)).
-		WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
+		WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 		Build()
 
 	// Configure generator pods

@@ -36,7 +36,7 @@ func TestEndpointInvalid(t *testing.T) {
 
 	pipelineInvalidEndpoint := testutils.NewMetricPipelineBuilder().
 		WithName(pipelineNameValue).
-		WithOTLPOutput(
+		WithMetricPipelineOTLPOutput(
 			testutils.OTLPEndpoint(invalidEndpoint),
 		).
 		Build()
@@ -44,12 +44,12 @@ func TestEndpointInvalid(t *testing.T) {
 	secret := kitk8sobjects.NewOpaqueSecret(secretName, kitkyma.DefaultNamespaceName, kitk8sobjects.WithStringData(endpointKey, invalidEndpoint))
 	pipelineInvalidEndpointValueFrom := testutils.NewMetricPipelineBuilder().
 		WithName(pipelineNameValueFromSecret).
-		WithOTLPOutput(testutils.OTLPEndpointFromSecret(secret.Name(), secret.Namespace(), endpointKey)).
+		WithMetricPipelineOTLPOutput(testutils.OTLPEndpointFromSecret(secret.Name(), secret.Namespace(), endpointKey)).
 		Build()
 
 	pipelineMissingPortHTTP := testutils.NewMetricPipelineBuilder().
 		WithName(pipelineNameMissingPortHTTP).
-		WithOTLPOutput(
+		WithMetricPipelineOTLPOutput(
 			testutils.OTLPEndpoint(missingPortEndpoint),
 			testutils.OTLPProtocol("http"),
 		).

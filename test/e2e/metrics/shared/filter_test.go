@@ -55,7 +55,7 @@ func TestFilter(t *testing.T) {
 			pipeline := testutils.NewMetricPipelineBuilder().
 				WithName(pipelineName).
 				WithInput(tc.inputBuilder(genNs)).
-				WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
+				WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 				WithTransform(telemetryv1beta1.TransformSpec{
 					Statements: []string{"set(datapoint.attributes[\"test\"], \"passed\")"},
 				}).
