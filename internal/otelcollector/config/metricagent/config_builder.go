@@ -19,6 +19,7 @@ import (
 )
 
 const enrichmentServicePipelineID = "metrics/enrichment-conditional"
+const maxStalenessMultiplier = 4 //nolint:mnd // Tolerate max 3 scrape failures and additional timing jitter
 
 var diagnosticMetricNames = []string{"up", "scrape_duration_seconds", "scrape_samples_scraped", "scrape_samples_post_metric_relabeling", "scrape_series_added"}
 
@@ -45,6 +46,7 @@ type BuildOptions struct {
 	VpaActive bool
 	// CollectionIntervals contains the resolved collection intervals for each pull-based metric input type.
 	CollectionIntervals telemetryutils.MetricCollectionIntervals
+	Temporality         telemetryv1beta1.TemporalityType
 }
 
 // inputSources represents the enabled input sources for the telemetry Metric Agent.
@@ -225,6 +227,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1beta1.Metric
 			b.addDropKymaAttributesProcessor(),
 			b.addUserDefinedTransformProcessor(),
 			b.addUserDefinedFilterProcessor(),
+			b.addCumulativeToDeltaProcessor(opts),
 			b.addBatchProcessor(), // always last
 			// OTLP exporter
 			b.addOTLPExporter(queueSize),
@@ -828,6 +831,21 @@ func (b *Builder) addDropEnvoyMetricsIfDisabledProcessor() buildComponentFunc {
 	)
 }
 
+func (b *Builder) addCumulativeToDeltaProcessor(opts BuildOptions) buildComponentFunc {
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDCumulativeToDeltaProcessor),
+		func(mp *telemetryv1beta1.MetricPipeline) any {
+			if opts.Temporality == telemetryv1beta1.TemporalityDelta {
+				return &common.CumulativeToDeltaProcessorConfig{
+					MaxStaleness: maxStalenessMultiplier * opts.CollectionIntervals.Max(),
+					InitialValue: "auto",
+				}
+			}
+			return nil
+		},
+	)
+}
+
 //nolint:mnd // hardcoded values
 func (b *Builder) addBatchProcessor() buildComponentFunc {
 	return b.AddProcessor(
@@ -851,7 +869,7 @@ func (b *Builder) addOTLPExporter(queueSize int) buildComponentFunc {
 		func(ctx context.Context, mp *telemetryv1beta1.MetricPipeline) (any, common.EnvVars, error) {
 			otlpExporterBuilder := common.NewOTLPExporterConfigBuilder(
 				b.Reader,
-				mp.Spec.Output.OTLP,
+				mp.Spec.Output.OTLP.OTLPOutput,
 				pipelines.MetricPipelineRef(mp),
 				queueSize,
 			)

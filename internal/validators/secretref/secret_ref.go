@@ -103,7 +103,7 @@ func GetSecretRefsTracePipeline(tp *telemetryv1beta1.TracePipeline) []telemetryv
 }
 
 func GetSecretRefsMetricPipeline(mp *telemetryv1beta1.MetricPipeline) []telemetryv1beta1.SecretKeyRef {
-	return getSecretRefsInOTLPOutput(mp.Spec.Output.OTLP)
+	return getSecretRefsInOTLPOutput(mp.Spec.Output.OTLP.OTLPOutput)
 }
 
 func GetSecretRefsLogPipeline(lp *telemetryv1beta1.LogPipeline) []telemetryv1beta1.SecretKeyRef {

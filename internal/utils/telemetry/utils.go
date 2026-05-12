@@ -23,6 +23,10 @@ type MetricCollectionIntervals struct {
 	Istio      time.Duration
 }
 
+func (mci *MetricCollectionIntervals) Max() time.Duration {
+	return max(mci.Runtime, mci.Prometheus, mci.Istio)
+}
+
 // ResolveMetricCollectionIntervals computes the effective collection interval for each input type
 // from the Telemetry CR MetricSpec, following the precedence:
 // input-specific override > metric.collectionInterval > 30s default.

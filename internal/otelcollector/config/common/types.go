@@ -1,6 +1,10 @@
 package common
 
-import telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+import (
+	"time"
+
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+)
 
 // =============================================================================
 // BASE CONFIGURATION TYPES
@@ -185,6 +189,11 @@ type K8sAttributesProcessorConfig struct {
 
 type K8sAttributesFilterConfig struct {
 	NodeFromEnvVar string `yaml:"node_from_env_var"`
+}
+
+type CumulativeToDeltaProcessorConfig struct {
+	MaxStaleness time.Duration `yaml:"max_staleness"`
+	InitialValue string        `yaml:"initial_value"`
 }
 
 type ExtractK8sMetadata struct {

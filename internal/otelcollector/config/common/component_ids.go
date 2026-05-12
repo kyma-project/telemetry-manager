@@ -38,6 +38,7 @@ func ComponentIDFileLogReceiver(pipelineName string) ComponentID {
 const ComponentIDBatchProcessor ComponentID = "batch"
 const ComponentIDMemoryLimiterProcessor ComponentID = "memory_limiter"
 const ComponentIDK8sAttributesProcessor ComponentID = "k8s_attributes"
+const ComponentIDCumulativeToDeltaProcessor ComponentID = "cumulativetodelta"
 const ComponentIDServiceEnrichmentProcessor ComponentID = "service_enrichment"
 const ComponentIDIstioNoiseFilterProcessor ComponentID = "istio_noise_filter"
 const ComponentIDSetInstrumentationScopeKymaProcessor ComponentID = "transform/set-instrumentation-scope-kyma"
