@@ -34,11 +34,11 @@ Do not include a title or PR number at the top.
 
 ## Examples
 
-### Example 1: Feature with grouped key changes and release notes
+### Example 1: Feature with Grouped Key Changes and Release Notes
 
 ## What Changed
 
-Configures the `k8sattributes` processor with a node filter across all OTel Collector pipelines so each collector instance only watches pods on its own node instead of all pods cluster-wide. On large clusters this reduces per-instance memory from ~300 MB to ~15–30 MB.
+Configures the `k8sattributes` processor with a node filter across all OTel Collector pipelines so each collector instance only watches Pods on its own Node instead of all Pods cluster-wide. On large clusters this reduces per-instance memory from ~300 MB to ~15–30 MB.
 
 ## Affected Signal Types
 
@@ -63,20 +63,20 @@ The node filter is only effective for DaemonSet deployments. The OTLP gateway wa
 
 **Recommended Changes:** Review your VPA or resource limit settings for OTel Collector DaemonSets — limits sized for the old cluster-wide watch may now be over-provisioned.
 
-Metrics, Traces, Logs: The `k8sattributes` processor now limits each collector instance's Kubernetes informer watch to pods on its own node. This reduces memory consumption significantly on large clusters (from ~300 MB to ~15–30 MB per instance on a 200-node cluster).
+Metrics, Traces, Logs: The `k8sattributes` processor now limits each collector instance's Kubernetes informer watch to Pods on its own Node. This reduces memory consumption significantly on large clusters (from ~300 MB to ~15–30 MB per instance on a 200-node cluster).
 
 
 ---
 
-### Example 2: Small fix with no release notes
+### Example 2: Small Fix with No Release Notes
 
 ## What Changed
 
-Adds `NoExecute` and `NoSchedule` tolerations to the OTLP gateway DaemonSet so its pods are scheduled on tainted nodes, matching the existing behavior of the OTel agent and Fluent Bit DaemonSets.
+Adds `NoExecute` and `NoSchedule` tolerations to the OTLP gateway DaemonSet so its Pods are scheduled on tainted Nodes, matching the existing behavior of the OTel agent and Fluent Bit DaemonSets.
 
 ## Key Changes
 
-- **`internal/resources/otelcollector/otlp_gateway.go`**: Adds critical tolerations to the DaemonSet pod spec.
+- **`internal/resources/otelcollector/otlp_gateway.go`**: Adds critical tolerations to the DaemonSet Pod spec.
 - **`internal/resources/otelcollector/testdata/`**: Updates golden files to include the new tolerations in all OTLP gateway variants.
 
 ## Notes for Reviewers
