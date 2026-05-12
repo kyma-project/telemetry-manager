@@ -18,7 +18,7 @@ One or two sentences describing the change at a high level.
 Bullet points covering the most important code changes. Format each bullet as **`path/to/file-or-package`**: description, where the path is the most relevant file, package, or component (for example, `internal/reconciler/metricpipeline`, `internal/otelcollector/config`, `controllers/telemetry`). Use the file path for small changes, the package path for larger changes spanning multiple files.
 
 ## Breaking Changes
-(optional) List any breaking changes to CRD fields, API types, or behavior. Omit this section if there are none.
+(optional) List any breaking changes to CRD fields, API types, or behavior. Omit this section entirely if there are none — do not write "None".
 
 ## Notes for Reviewers
 Highlight anything non-obvious: tricky logic, deliberate trade-offs, areas that need extra scrutiny, or follow-up issues.
@@ -35,7 +35,7 @@ Structure the content using these three subsections, and include only the subsec
 
 Followed by a plain description of the user-facing change itself (new behavior, new CRD fields, new metrics, etc.).
 
-If this PR has no user-facing changes (tests, docs, internal refactoring), write "None" and omit all subsections.
+If this PR has no user-facing changes (tests, docs, internal refactoring), write only the word "None" — no explanation, no additional sentences.
 
 User-facing changes include, but are not limited to:
 - New or changed pipeline behavior (logs, metrics, traces)

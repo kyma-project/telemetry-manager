@@ -12,7 +12,7 @@ One or two sentences describing the change at a high level.
 - **`package/or/file`**: Description of what changed and why.
 
 ## Breaking Changes
-(optional) Any breaking changes to CRD fields, API types, or behavior.
+(optional) Any breaking changes to CRD fields, API types, or behavior. Omit this section entirely if there are none — do not write "None".
 
 ## Notes for Reviewers
 Highlight anything non-obvious: tricky logic, deliberate trade-offs, areas that need extra scrutiny, or follow-up issues.
