@@ -464,7 +464,7 @@ func TestMetricPipeline_GetSecretRefs(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			sut := telemetryv1beta1.MetricPipeline{ObjectMeta: metav1.ObjectMeta{Name: test.pipelineName}, Spec: telemetryv1beta1.MetricPipelineSpec{Output: telemetryv1beta1.MetricPipelineOutput{OTLP: &telemetryv1beta1.MetricPipelineOTLPOutput{OTLPOutput: test.given, Temporality: telemetryv1beta1.TemporalityCumulative}}}}
+			sut := telemetryv1beta1.MetricPipeline{ObjectMeta: metav1.ObjectMeta{Name: test.pipelineName}, Spec: telemetryv1beta1.MetricPipelineSpec{Output: telemetryv1beta1.MetricPipelineOutput{OTLP: &telemetryv1beta1.MetricPipelineOTLPOutput{OTLPOutput: *test.given}}}}
 			actual := GetSecretRefsMetricPipeline(&sut)
 			require.ElementsMatch(t, test.expected, actual)
 		})
