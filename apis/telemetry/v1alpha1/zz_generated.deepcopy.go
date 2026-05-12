@@ -21,6 +21,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -653,6 +654,11 @@ func (in *MetricPipelineOTLPOutput) DeepCopyInto(out *MetricPipelineOTLPOutput) 
 		in, out := &in.OTLPOutput, &out.OTLPOutput
 		*out = new(OTLPOutput)
 		(*in).DeepCopyInto(*out)
+	}
+	if in.Temporality != nil {
+		in, out := &in.Temporality, &out.Temporality
+		*out = new(v1beta1.TemporalityType)
+		**out = **in
 	}
 }
 

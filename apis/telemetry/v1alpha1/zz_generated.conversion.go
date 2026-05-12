@@ -1131,7 +1131,7 @@ func autoConvert_v1alpha1_MetricPipelineOTLPOutput_To_v1beta1_MetricPipelineOTLP
 	} else {
 		out.OTLPOutput = nil
 	}
-	out.Temporality = v1beta1.TemporalityType(in.Temporality)
+	out.Temporality = (*v1beta1.TemporalityType)(unsafe.Pointer(in.Temporality))
 	return nil
 }
 
@@ -1150,7 +1150,7 @@ func autoConvert_v1beta1_MetricPipelineOTLPOutput_To_v1alpha1_MetricPipelineOTLP
 	} else {
 		out.OTLPOutput = nil
 	}
-	out.Temporality = v1beta1.TemporalityType(in.Temporality)
+	out.Temporality = (*v1beta1.TemporalityType)(unsafe.Pointer(in.Temporality))
 	return nil
 }
 

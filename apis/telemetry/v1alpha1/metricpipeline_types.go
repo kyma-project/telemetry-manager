@@ -177,7 +177,7 @@ type MetricPipelineOTLPOutput struct {
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=cumulative
 	// +kubebuilder:validation:Enum=cumulative;delta
-	Temporality v1beta1.TemporalityType `json:"temporality"`
+	Temporality *v1beta1.TemporalityType `json:"temporality,omitempty"`
 }
 
 // MetricPipelineStatus defines the observed state of MetricPipeline.

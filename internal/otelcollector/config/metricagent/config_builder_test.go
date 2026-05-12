@@ -41,7 +41,7 @@ func TestBuildConfig(t *testing.T) {
 					WithRuntimeInput(true).
 					WithPrometheusInput(false).
 					WithIstioInput(false).
-					WithOTLPOutput().
+					WithMetricPipelineOTLPOutput().
 					Build(),
 			},
 		},
@@ -55,7 +55,7 @@ func TestBuildConfig(t *testing.T) {
 					WithRuntimeInput(true).
 					WithPrometheusInput(false).
 					WithIstioInput(false).
-					WithOTLPOutput().
+					WithMetricPipelineOTLPOutput().
 					Build(),
 			},
 		},
@@ -172,7 +172,7 @@ func TestBuildConfig(t *testing.T) {
 					WithName("test").
 					WithIstioInput(true).
 					WithIstioInputDiagnosticMetrics(true).
-					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+					WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
 			},
 		},
 		{
@@ -183,7 +183,7 @@ func TestBuildConfig(t *testing.T) {
 					WithName("test").
 					WithPrometheusInput(true).
 					WithPrometheusInputDiagnosticMetrics(true).
-					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+					WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
 			},
 		},
 		{
@@ -221,7 +221,7 @@ func TestBuildConfig(t *testing.T) {
 					WithRuntimeInputDaemonSetMetrics(false).
 					WithRuntimeInputStatefulSetMetrics(false).
 					WithRuntimeInputJobMetrics(false).
-					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+					WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
 			},
 		},
 		{
@@ -251,7 +251,7 @@ func TestBuildConfig(t *testing.T) {
 				testutils.NewMetricPipelineBuilder().
 					WithName("test").
 					WithRuntimeInput(true).
-					WithOTLPOutput(
+					WithMetricPipelineOTLPOutput(
 						testutils.OTLPProtocol("http"),
 						testutils.OTLPEndpointPath("v2/otlp/v1/metrics"),
 					).Build(),
@@ -264,7 +264,7 @@ func TestBuildConfig(t *testing.T) {
 				testutils.NewMetricPipelineBuilder().
 					WithName("test").
 					WithRuntimeInput(true).
-					WithOTLPOutput(
+					WithMetricPipelineOTLPOutput(
 						testutils.OTLPProtocol("http"),
 					).Build(),
 			},
@@ -284,7 +284,7 @@ func TestBuildConfig(t *testing.T) {
 					WithIstioInput(true).
 					WithIstioInputEnvoyMetrics(true).
 					WithOTLPInput(true, testutils.IncludeNamespaces("apps")).
-					WithOTLPOutput(testutils.OTLPEndpoint("https://backend.example.com")).
+					WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("https://backend.example.com")).
 					WithTransform(telemetryv1beta1.TransformSpec{
 						Conditions: []string{"resource.attributes[\"k8s.namespace.name\"] == \"production\""},
 						Statements: []string{"set(attributes[\"environment\"], \"prod\")"},
@@ -301,7 +301,7 @@ func TestBuildConfig(t *testing.T) {
 						testutils.IncludeNamespaces("monitoring", "observability"),
 						testutils.ExcludeNamespaces("kube-system", "istio-system"),
 					).
-					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+					WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
 			},
 		},
 		{
@@ -314,7 +314,7 @@ func TestBuildConfig(t *testing.T) {
 						testutils.IncludeNamespaces("monitoring", "observability"),
 						testutils.ExcludeNamespaces("kube-system", "istio-system"),
 					).
-					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+					WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
 			},
 		},
 		{
@@ -327,7 +327,7 @@ func TestBuildConfig(t *testing.T) {
 						testutils.IncludeNamespaces("monitoring", "observability"),
 						testutils.ExcludeNamespaces("kube-system", "istio-system"),
 					).
-					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+					WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
 			},
 		},
 		{
@@ -337,7 +337,7 @@ func TestBuildConfig(t *testing.T) {
 				testutils.NewMetricPipelineBuilder().
 					WithName("test").
 					WithIstioInput(true).
-					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
+					WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
 			},
 		},
 		{
@@ -349,19 +349,19 @@ func TestBuildConfig(t *testing.T) {
 					WithRuntimeInput(true, testutils.IncludeNamespaces("default")).
 					WithPrometheusInput(true, testutils.ExcludeNamespaces("kube-system")).
 					WithIstioInput(false).
-					WithOTLPOutput(testutils.OTLPEndpoint("https://foo")).Build(),
+					WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("https://foo")).Build(),
 				testutils.NewMetricPipelineBuilder().
 					WithName("test2").
 					WithRuntimeInput(false).
 					WithPrometheusInput(false).
 					WithIstioInput(true).
-					WithOTLPOutput(testutils.OTLPEndpoint("https://foo")).Build(),
+					WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("https://foo")).Build(),
 				testutils.NewMetricPipelineBuilder().
 					WithName("test3").
 					WithRuntimeInput(true).
 					WithPrometheusInput(false).
 					WithIstioInput(false).
-					WithOTLPOutput(testutils.OTLPEndpoint("https://bar")).Build(),
+					WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("https://bar")).Build(),
 			},
 		},
 		{
@@ -371,7 +371,7 @@ func TestBuildConfig(t *testing.T) {
 				testutils.NewMetricPipelineBuilder().
 					WithName("test1").
 					WithRuntimeInput(true).
-					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).
+					WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("https://localhost")).
 					WithTransform(telemetryv1beta1.TransformSpec{
 						Conditions: []string{"IsMatch(body, \".*error.*\")"},
 						Statements: []string{
@@ -382,7 +382,7 @@ func TestBuildConfig(t *testing.T) {
 				testutils.NewMetricPipelineBuilder().
 					WithName("test2").
 					WithRuntimeInput(true).
-					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).
+					WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("https://localhost")).
 					WithTransform(telemetryv1beta1.TransformSpec{
 						Conditions: []string{"IsMatch(body, \".*error.*\")"},
 						Statements: []string{
@@ -399,7 +399,7 @@ func TestBuildConfig(t *testing.T) {
 				testutils.NewMetricPipelineBuilder().
 					WithName("test1").
 					WithRuntimeInput(true).
-					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).
+					WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("https://localhost")).
 					WithFilter(telemetryv1beta1.FilterSpec{
 						Conditions: []string{"HasAttrOnDatapoint(\"http.method\",\"GET\""},
 					}).
@@ -409,7 +409,7 @@ func TestBuildConfig(t *testing.T) {
 				testutils.NewMetricPipelineBuilder().
 					WithName("test2").
 					WithRuntimeInput(true).
-					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).
+					WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("https://localhost")).
 					WithFilter(telemetryv1beta1.FilterSpec{
 						Conditions: []string{"metric.type == METRIC_DATA_TYPE_GAUGE"},
 					}).Build(),
@@ -422,7 +422,7 @@ func TestBuildConfig(t *testing.T) {
 				testutils.NewMetricPipelineBuilder().
 					WithName("test1").
 					WithRuntimeInput(true).
-					WithOTLPOutput(testutils.OTLPEndpoint("https://localhost")).
+					WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("https://localhost")).
 					WithFilter(telemetryv1beta1.FilterSpec{
 						Conditions: []string{"metric.type == METRIC_DATA_TYPE_SUMMARY"},
 					}).WithTransform(telemetryv1beta1.TransformSpec{
@@ -441,7 +441,7 @@ func TestBuildConfig(t *testing.T) {
 				testutils.NewMetricPipelineBuilder().
 					WithName("test").
 					WithOTLPInput(true).
-					WithOTLPOutput(
+					WithMetricPipelineOTLPOutput(
 						testutils.OTLPProtocol("http"),
 					).
 					WithOAuth2(
@@ -502,7 +502,7 @@ func TestBuildConfigShuffled(t *testing.T) {
 			WithRuntimeInput(true, testutils.IncludeNamespaces("default")).
 			WithPrometheusInput(true, testutils.ExcludeNamespaces("kube-system")).
 			WithIstioInput(false).
-			WithOTLPOutput(testutils.OTLPProtocol("http")).
+			WithMetricPipelineOTLPOutput(testutils.OTLPProtocol("http")).
 			WithOAuth2(
 				testutils.OAuth2ClientID("pipeline-1-client-id"),
 				testutils.OAuth2ClientSecret("pipeline-1-client-secret"),
@@ -514,7 +514,7 @@ func TestBuildConfigShuffled(t *testing.T) {
 			WithRuntimeInput(false).
 			WithPrometheusInput(false).
 			WithIstioInput(true).
-			WithOTLPOutput(testutils.OTLPProtocol("http")).
+			WithMetricPipelineOTLPOutput(testutils.OTLPProtocol("http")).
 			WithOAuth2(
 				testutils.OAuth2ClientID("pipeline-2-client-id"),
 				testutils.OAuth2ClientSecret("pipeline-2-client-secret"),
@@ -526,7 +526,7 @@ func TestBuildConfigShuffled(t *testing.T) {
 			WithRuntimeInput(true).
 			WithPrometheusInput(false).
 			WithIstioInput(false).
-			WithOTLPOutput(testutils.OTLPEndpoint("https://backend.example.com")).
+			WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("https://backend.example.com")).
 			Build(),
 	}
 
