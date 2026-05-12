@@ -138,9 +138,11 @@ func createMetricPipelineWithBackend(backendNs, pipelineName string) (*kitbacken
 				},
 			},
 			Output: telemetryv1alpha1.MetricPipelineOutput{
-				OTLP: &telemetryv1alpha1.OTLPOutput{
-					Endpoint: telemetryv1alpha1.ValueType{
-						Value: backend.EndpointHTTP(),
+				OTLP: &telemetryv1alpha1.MetricPipelineOTLPOutput{
+					OTLPOutput: telemetryv1alpha1.OTLPOutput{
+						Endpoint: telemetryv1alpha1.ValueType{
+							Value: backend.EndpointHTTP(),
+						},
 					},
 				},
 			},
