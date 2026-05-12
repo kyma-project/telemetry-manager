@@ -46,14 +46,14 @@ Logs, Metrics, Traces
 
 ## Key Changes
 
-Processor configuration:
+Processor Configuration:
 - **`internal/otelcollector/config/common/processor_builders.go`**: Adds `filter.node_from_env_var: MY_NODE_NAME` to the `k8sattributes` processor builder so all collector types pick up the node filter.
 - **`internal/otelcollector/config/common/types.go`**: Extends the `K8sAttributesConfig` struct with the new filter field.
 
-Resource generation:
+Resource Generation:
 - **`internal/resources/otelcollector/agent.go`**: Injects the `MY_NODE_NAME` environment variable (sourced from `spec.nodeName`) into each agent DaemonSet so the filter has a value at runtime.
 
-Golden files:
+Golden Files:
 - **`internal/otelcollector/config/logagent/testdata/`**, **`internal/otelcollector/config/metricagent/testdata/`**, **`internal/otelcollector/config/otlpgateway/testdata/`**, **`internal/resources/otelcollector/testdata/`**: Updated to reflect the new processor and environment variable in all collector configurations.
 
 ## Notes for Reviewers
