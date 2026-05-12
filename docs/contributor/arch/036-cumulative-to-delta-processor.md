@@ -14,7 +14,7 @@ Dynatrace rejects metrics with `MONOTONIC_CUMULATIVE_SUM` temporality. The metri
 the endpoint only accepts the delta aggregation temporality for MONOTONIC_CUMULATIVE_SUM
 ```
 
-The OpenTelemetry Collector provides the [cumulativetodelta](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/cumulativetodeltaprocessor) processor for this purpose. This ADR documents the configuration decisions for integrating this processor into the metric agent and OTLP gateway pipelines.
+The OpenTelemetry Collector provides the [cumulativetodelta](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/cumulativetodeltaprocessor) processor for this purpose. [ADR 024](024-dynatrace-cummulative-to-delta-support.md) decided to expose temporality configuration under `spec.output.otlp` in the MetricPipeline API. This ADR refines the implementation by documenting the processor configuration and pipeline placement decisions for the metric agent and OTLP gateway.
 
 See [#3440](https://github.com/kyma-project/telemetry-manager/issues/3440) for more information.
 
@@ -32,11 +32,41 @@ In OpenTelemetry, a **Sum** has two key properties:
 
 A Prometheus **Counter** corresponds to an OTel monotonic cumulative Sum.
 
+## Considered Options
+
+The pipeline contains both operator-controlled processors (filters and transforms applied by the platform) and user-controlled processors (transforms and filters defined in the user's `MetricPipeline` custom resource). The key decision is where to place `cumulativetodelta` relative to user-controlled processors.
+
+### Option A: Before User Transforms
+
+Place `cumulativetodelta` before user-controlled transforms and filters. User OTTL statements operate on delta metrics.
+
+**Pros:**
+- Guarantees delta correctness regardless of user OTTL — no risk of user transforms breaking delta calculation
+- Series identity is stable by the time `cumulativetodelta` processes metrics
+
+**Cons:**
+- Holds per-series state for metrics the user will later filter out, increasing memory consumption
+- Users cannot write transform statements and conditions based on cumulative metric values
+- Contradicts conventional placement in other OTel deployments (for example, Dynatrace's documented Kubernetes monitoring configuration)
+
+### Option B: After User Transforms
+
+Place `cumulativetodelta` after user-controlled transforms and filters. User OTTL statements operate on cumulative metrics.
+
+**Pros:**
+- Keeps the per-series state map smaller (only tracks series that survive user filtering)
+- Matches conventional placement in other OTel deployments
+- Users can write transform conditions based on cumulative metric values
+
+**Cons:**
+- User OTTL that modifies identity attributes (metric name or attribute set) based on data point values can break delta calculation
+- Requires documenting safe transform patterns for users
+
 ## Decision
 
 ### Placement in the Pipeline
 
-The pipeline contains both operator-controlled processors (filters and transforms applied by the platform) and user-controlled processors (transforms and filters defined in the user's `MetricPipeline` custom resource). `cumulativetodelta` is placed **after** the user-controlled processors:
+We choose **Option B: after user transforms**. The memory savings and alignment with established OTel patterns outweigh the risk of user OTTL interference, which is mitigated through documentation of safe transform patterns.
 
 ```yaml
 metrics/output:
@@ -50,14 +80,6 @@ metrics/output:
 ```
 
 This placement is not applied to the shared enrichment pipeline because it would unnecessarily convert metrics for all backends.
-
-#### Rationale
-
-The placement decision trades off two failure modes:
-
-Placing before user transforms guarantees delta correctness regardless of user OTTL but holds state for series the user will later filter out, increasing memory consumption. Additionally, users cannot provide transform statements and conditions based on cumulative metrics.
-
-Placing after user transforms keeps the per-series state map smaller (only tracks what survives filtering) and matches conventional placement in other OTel deployments (for example, Dynatrace's documented Kubernetes monitoring configuration). The risk is that user OTTL can make delta calculation behave unexpectedly.
 
 #### Series Identity and Transform Order
 
@@ -103,7 +125,7 @@ Because `cumulativetodelta` has one `max_staleness` per component (not per input
 - **Metric agent:** `max_staleness: 4 * max collection/scrape_interval` – accommodates jitters between scrapes and 3 missed scrapes.
 - **OTLP gateway:** `max_staleness: 1h` (default) – no scrape interval to base it on, accommodates infrequent OTLP pushers.
 
-All metric agent inputs default to a 30-second collection/scrape interval. The interval is configurable per-input through the Telemetry CR. The `max_staleness` must be recomputed if the user configures a longer interval.
+All metric agent inputs default to a 30-second collection/scrape interval. The interval is configurable per-input through the Telemetry CR. The reconciler dynamically computes `max_staleness` as `4 * max(configured intervals)` when building the OTel Collector configuration, so it adjusts automatically when a user changes the collection interval.
 
 #### `initial_value`
 
@@ -153,9 +175,11 @@ cumulativetodelta:
   initial_value: auto
 ```
 
-## Performance Testing
+### Performance Testing
 
 To quantify the resource overhead and throughput impact of the `cumulativetodelta` processor, two benchmark scenarios compare a low-cardinality OTLP push test (simulating the gateway) and a high-cardinality Istio scrape test (simulating the metric agent). In both scenarios, two identical collectors run side by side – Collector A (baseline, no `cumulativetodelta`) and Collector B (with `cumulativetodelta`, `max_staleness: 20m`, `initial_value: auto`). Neither collector uses `metricstarttimeprocessor`.
+
+**Test environment:** local k3d cluster using `otel/opentelemetry-collector-contrib:0.150.0`.
 
 > **Note:** The performance tests used `max_staleness: 20m` (a deliberately generous value to avoid premature eviction during testing). The final production configuration uses `2m` based on the `4 × max(scrape_intervals)` formula.
 
@@ -165,7 +189,7 @@ The following metrics are collected:
 - **Throughput**: `rate(otelcol_receiver_accepted_metric_points_total[1m])` and `rate(otelcol_exporter_sent_metric_points_total[1m])`
 - **Peak values**: Maximum observed value across all samples in the measurement window
 
-### Test 1: telemetrygen (OTLP Push, Low Cardinality)
+#### Test 1: telemetrygen (OTLP Push, Low Cardinality)
 
 **Scenario:** Simulates the OTLP gateway receiving cumulative Sum metrics from application SDKs.
 
@@ -201,7 +225,7 @@ No failed exports or refused points in either collector across all phases.
 
 **Conclusion:** With low cardinality, the `cumulativetodelta` processor adds negligible overhead – less than 5% CPU increase and less than 2% memory increase at all load levels. Throughput is unaffected.
 
-### Test 2: Istio High-Cardinality with Pod Churn
+#### Test 2: Istio High-Cardinality with Pod Churn
 
 **Scenario:** Simulates the metric agent scraping Istio sidecar metrics under realistic pod churn conditions.
 
@@ -239,9 +263,14 @@ Both collectors scrape the same set of pods using Kubernetes service discovery t
 
 ## Consequences
 
-- Dynatrace receives delta metrics and no longer rejects cumulative sums
-- One data point is lost per metric series per pod lifecycle (first-point drop) – negligible for long-lived pods, more significant for short-lived pods
-- The metric agent's memory consumption increases proportionally to the number of active metric series (per-series state map)
-- High pod churn (for example, Istio with frequent restarts) causes temporary memory growth until stale series are evicted after `max_staleness`
-- `metricstarttimeprocessor` is not included in the pipeline, reducing CPU overhead
+### Positive Consequences
+
+- Dynatrace receives delta metrics and no longer rejects cumulative sums.
+- The pipeline configuration is consistent with Dynatrace's documented OTel deployment patterns, reducing the maintenance burden of a non-standard setup.
+
+### Negative Consequences
+
+- One data point is lost per metric series per pod lifecycle (first-point drop) — negligible for long-lived pods, more significant for short-lived pods.
+- The metric agent's memory consumption increases proportionally to the number of active metric series (per-series state map).
+- High pod churn (for example, Istio with frequent restarts) causes temporary memory growth until stale series are evicted after `max_staleness`.
 - User-defined transforms in `MetricPipeline` operate on cumulative metrics (because `cumulativetodelta` runs after them in the Dynatrace pipeline). Transforms that modify metric identity attributes based on data point values or timestamps can silently break delta calculation. This constraint must be documented in user-facing `MetricPipeline` documentation, with examples of safe and unsafe transform patterns.
