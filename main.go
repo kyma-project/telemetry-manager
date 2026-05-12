@@ -498,8 +498,7 @@ func setupTelemetryController(globals config.Global, cfg envConfig, webhookCertC
 			SelfMonitorPriorityClassName:      normalPriorityClassName,
 			WebhookCert:                       webhookCertConfig,
 		},
-		mgr.GetClient(),
-		mgr.GetScheme(),
+		mgr,
 	)
 
 	if err := telemetryController.SetupWithManager(mgr); err != nil {

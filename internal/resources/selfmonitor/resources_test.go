@@ -58,6 +58,8 @@ func TestApplySelfMonitorResources(t *testing.T) {
 		PrometheusConfigFileName: configFileName,
 		PrometheusConfigPath:     configPath,
 		PrometheusConfigYAML:     prometheusConfigYAML,
+		VpaCRDExists:             false,
+		VpaEnabled:               false,
 	}
 	err := sut.ApplyResources(ctx, client, opts)
 	require.NoError(t, err)
@@ -98,11 +100,13 @@ func TestDeleteSelfMonitorResources(t *testing.T) {
 		PrometheusConfigFileName: configFileName,
 		PrometheusConfigPath:     configPath,
 		PrometheusConfigYAML:     prometheusConfigYAML,
+		VpaCRDExists:             false,
+		VpaEnabled:               false,
 	}
 	err := sut.ApplyResources(t.Context(), fakeClient, opts)
 	require.NoError(t, err)
 
-	err = sut.DeleteResources(t.Context(), fakeClient)
+	err = sut.DeleteResources(t.Context(), fakeClient, false)
 	require.NoError(t, err)
 
 	for i := range created {

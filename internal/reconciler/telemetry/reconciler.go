@@ -7,6 +7,7 @@ import (
 	"gopkg.in/yaml.v3"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -49,9 +50,17 @@ type OverridesHandler interface {
 	LoadOverrides(ctx context.Context) (*overrides.Config, error)
 }
 
+type VpaStatusChecker interface {
+	VpaCRDExists(ctx context.Context, client client.Client) (bool, error)
+}
+
+type NodeSizeTracker interface {
+	VPAMaxAllowedMemory() resource.Quantity
+}
+
 type SelfMonitorApplierDeleter interface {
 	ApplyResources(ctx context.Context, c client.Client, opts selfmonitor.ApplyOptions) error
-	DeleteResources(ctx context.Context, c client.Client) error
+	DeleteResources(ctx context.Context, c client.Client, vpaCRDExists bool) error
 }
 
 type Reconciler struct {
@@ -63,6 +72,8 @@ type Reconciler struct {
 	healthCheckers            healthCheckers
 	overridesHandler          OverridesHandler
 	selfMonitorApplierDeleter SelfMonitorApplierDeleter
+	vpaStatusChecker          VpaStatusChecker
+	nodeSizeTracker           NodeSizeTracker
 }
 
 func New(
@@ -71,6 +82,8 @@ func New(
 	client client.Client,
 	overridesHandler OverridesHandler,
 	selfMonitorApplierDeleter SelfMonitorApplierDeleter,
+	vpaStatusChecker VpaStatusChecker,
+	nodeSizeTracker NodeSizeTracker,
 ) *Reconciler {
 	return &Reconciler{
 		config: config,
@@ -83,6 +96,8 @@ func New(
 		},
 		overridesHandler:          overridesHandler,
 		selfMonitorApplierDeleter: selfMonitorApplierDeleter,
+		vpaStatusChecker:          vpaStatusChecker,
+		nodeSizeTracker:           nodeSizeTracker,
 	}
 }
 
@@ -143,8 +158,13 @@ func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry *operat
 		return err
 	}
 
+	vpaCRDExists, err := r.vpaStatusChecker.VpaCRDExists(ctx, r.Client)
+	if err != nil {
+		return fmt.Errorf("failed to check VPA CRD existence: %w", err)
+	}
+
 	if !pipelinesPresent {
-		if err := r.selfMonitorApplierDeleter.DeleteResources(ctx, r.Client); err != nil {
+		if err := r.selfMonitorApplierDeleter.DeleteResources(ctx, r.Client, vpaCRDExists); err != nil {
 			return fmt.Errorf("failed to delete self-monitor resources: %w", err)
 		}
 
@@ -170,6 +190,9 @@ func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry *operat
 		return fmt.Errorf("failed to marshal rules: %w", err)
 	}
 
+	isVpaEnabled := telemetryutils.IsVpaEnabledInTelemetry(ctx, r.Client, r.config.DefaultTelemetryNamespace())
+	vpaMaxAllowedMemory := r.nodeSizeTracker.VPAMaxAllowedMemory()
+
 	if err := r.selfMonitorApplierDeleter.ApplyResources(
 		ctx,
 		k8sclients.NewOwnerReferenceSetter(r.Client, telemetry),
@@ -180,6 +203,9 @@ func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry *operat
 			PrometheusConfigPath:     selfMonitorConfigPath,
 			PrometheusConfigYAML:     string(prometheusConfigYAML),
 			LogLevel:                 logLevel,
+			VpaCRDExists:             vpaCRDExists,
+			VpaEnabled:               isVpaEnabled,
+			VPAMaxAllowedMemory:      vpaMaxAllowedMemory,
 		},
 	); err != nil {
 		return fmt.Errorf("failed to apply self-monitor resources: %w", err)

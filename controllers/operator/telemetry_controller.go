@@ -25,7 +25,6 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlbuilder "sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -36,11 +35,13 @@ import (
 	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/config"
+	"github.com/kyma-project/telemetry-manager/internal/nodesize"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
 	predicateutils "github.com/kyma-project/telemetry-manager/internal/utils/predicate"
+	"github.com/kyma-project/telemetry-manager/internal/vpastatus"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
 )
 
@@ -60,7 +61,14 @@ type TelemetryControllerConfig struct {
 	WebhookCert                       webhookcert.Config
 }
 
-func NewTelemetryController(config TelemetryControllerConfig, client client.Client, scheme *runtime.Scheme) *TelemetryController {
+func NewTelemetryController(config TelemetryControllerConfig, mgr ctrl.Manager) *TelemetryController {
+	client := mgr.GetClient()
+	scheme := mgr.GetScheme()
+	restConfig := mgr.GetConfig()
+
+	nodeSizeTracker := nodesize.NewTracker(client)
+	vpaStatusChecker := vpastatus.NewChecker(restConfig)
+
 	reconciler := telemetry.New(
 		telemetry.Config{
 			Global:                            config.Global,
@@ -77,6 +85,8 @@ func NewTelemetryController(config TelemetryControllerConfig, client client.Clie
 				PriorityClassName: config.SelfMonitorPriorityClassName,
 			},
 		},
+		vpaStatusChecker,
+		nodeSizeTracker,
 	)
 
 	return &TelemetryController{

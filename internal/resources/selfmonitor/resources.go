@@ -6,6 +6,7 @@ import (
 	"maps"
 
 	appsv1 "k8s.io/api/apps/v1"
+	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -13,6 +14,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	autoscalingvpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
@@ -53,9 +55,12 @@ type ApplyOptions struct {
 	PrometheusConfigPath     string
 	PrometheusConfigYAML     string
 	LogLevel                 string
+	VpaCRDExists             bool
+	VpaEnabled               bool
+	VPAMaxAllowedMemory      resource.Quantity
 }
 
-func (ad *ApplierDeleter) DeleteResources(ctx context.Context, c client.Client) error {
+func (ad *ApplierDeleter) DeleteResources(ctx context.Context, c client.Client, vpaCRDExists bool) error {
 	objectMeta := metav1.ObjectMeta{
 		Name:      names.SelfMonitor,
 		Namespace: ad.Config.TargetNamespace(),
@@ -93,6 +98,13 @@ func (ad *ApplierDeleter) DeleteResources(ctx context.Context, c client.Client) 
 		return err
 	}
 
+	if vpaCRDExists {
+		vpa := autoscalingvpav1.VerticalPodAutoscaler{ObjectMeta: objectMeta}
+		if err := k8sutils.DeleteObject(ctx, c, &vpa); err != nil {
+			return fmt.Errorf("failed to delete VPA: %w", err)
+		}
+	}
+
 	return nil
 }
 
@@ -126,8 +138,29 @@ func (ad *ApplierDeleter) ApplyResources(ctx context.Context, c client.Client, o
 	}
 
 	checksum := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, nil)
-	if err := k8sutils.CreateOrUpdateDeployment(ctx, labelerClient, ad.makeDeployment(checksum, opts.PrometheusConfigPath, opts.PrometheusConfigFileName, opts.LogLevel)); err != nil {
+	if err := k8sutils.CreateOrUpdateDeployment(ctx, labelerClient, ad.makeDeployment(checksum, opts.PrometheusConfigPath, opts.PrometheusConfigFileName, opts.LogLevel, opts)); err != nil {
 		return fmt.Errorf("failed to create sel-monitor deployment: %w", err)
+	}
+
+	// Create/update/delete VPA CR only if VPA CRD exists in cluster
+	if opts.VpaCRDExists {
+		if opts.VpaEnabled {
+			vpa := ad.makeVPA(opts.VPAMaxAllowedMemory)
+			if err := k8sutils.CreateOrUpdateVPA(ctx, labelerClient, vpa); err != nil {
+				return fmt.Errorf("failed to create VPA: %w", err)
+			}
+		} else {
+			// If VPA is disabled, ensure that any existing VPA is cleaned up
+			vpa := &autoscalingvpav1.VerticalPodAutoscaler{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      names.SelfMonitor,
+					Namespace: ad.Config.TargetNamespace(),
+				},
+			}
+			if err := k8sutils.DeleteObject(ctx, c, vpa); err != nil {
+				return fmt.Errorf("failed to delete VPA: %w", err)
+			}
+		}
 	}
 
 	if err := k8sutils.CreateOrUpdateService(ctx, labelerClient, ad.makeService(selfmonports.PrometheusPort)); err != nil {
@@ -201,7 +234,7 @@ func (ad *ApplierDeleter) makeConfigMap(prometheusConfigFileName, prometheusConf
 	}
 }
 
-func (ad *ApplierDeleter) makeDeployment(configChecksum, configPath, configFile, logLevel string) *appsv1.Deployment {
+func (ad *ApplierDeleter) makeDeployment(configChecksum, configPath, configFile, logLevel string, opts ApplyOptions) *appsv1.Deployment {
 	var replicas int32 = 1
 
 	// Resource labels: only additional labels from globals; default labels are applied by the labeler
@@ -224,7 +257,7 @@ func (ad *ApplierDeleter) makeDeployment(configChecksum, configPath, configFile,
 	maps.Copy(podAnnotations, ad.Config.AdditionalWorkloadPodAnnotations())
 	podAnnotations[commonresources.AnnotationKeyChecksumConfig] = configChecksum
 
-	podSpec := ad.makePodSpec(ad.Config.Image, configPath, configFile, logLevel)
+	podSpec := ad.makePodSpec(ad.Config.Image, configPath, configFile, logLevel, opts)
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -234,7 +267,7 @@ func (ad *ApplierDeleter) makeDeployment(configChecksum, configPath, configFile,
 			Annotations: resourceAnnotations,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: new(replicas),
+			Replicas: &replicas,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: commonresources.DefaultSelector(names.SelfMonitor),
 			},
@@ -249,7 +282,7 @@ func (ad *ApplierDeleter) makeDeployment(configChecksum, configPath, configFile,
 	}
 }
 
-func (ad *ApplierDeleter) makePodSpec(image, configPath, configFile, logLevel string) corev1.PodSpec {
+func (ad *ApplierDeleter) makePodSpec(image, configPath, configFile, logLevel string, opts ApplyOptions) corev1.PodSpec {
 	var defaultMode int32 = 420
 
 	if logLevel == "" {
@@ -318,31 +351,51 @@ func (ad *ApplierDeleter) makePodSpec(image, configPath, configFile, logLevel st
 		SuccessThreshold: 1, //nolint:mnd // 5 failures
 	}
 
+	// Calculate resource requirements based on VPA settings
+	currentMemoryLimit := memoryLimit
+	currentMemoryRequest := memoryRequest
+
+	// When VPA is active, override the memory limit to 2x the memory request so the VPA can scale within a tighter range.
+	// This replaces the default high memory limit (memoryLimit) set at the package level.
+	// For more details, check the ADR: https://github.com/kyma-project/telemetry-manager/blob/main/docs/contributor/arch/032-vertical-pod-autoscaler-VPA-architecture.md
+	if opts.VpaCRDExists && opts.VpaEnabled {
+		vpaMemoryLimit := memoryRequest.DeepCopy()
+		vpaMemoryLimit.Add(memoryRequest)
+		currentMemoryLimit = vpaMemoryLimit
+	}
+
 	resources := commonresources.MakeResourceRequirements(
-		memoryLimit,
-		memoryRequest,
+		currentMemoryLimit,
+		currentMemoryRequest,
 		cpuRequest,
 	)
 
-	opts := []commonresources.PodSpecOption{
+	podSpecOpts := []commonresources.PodSpecOption{
 		commonresources.WithVolumes(volumes),
 		commonresources.WithPodRunAsUser(commonresources.UserDefault),
 		commonresources.WithPriorityClass(ad.Config.PriorityClassName),
 		commonresources.WithTerminationGracePeriodSeconds(300), //nolint:mnd // 300 seconds
 		commonresources.WithImagePullSecretName(ad.Config.ImagePullSecretName()),
-
-		commonresources.WithContainer(names.SelfMonitorContainerName, image,
-			commonresources.WithArgs(args),
-			commonresources.WithPort("http-web", selfmonports.PrometheusPort),
-			commonresources.WithVolumeMounts(volumeMounts),
-			commonresources.WithProbes(liveness, readiness),
-			commonresources.WithResources(resources),
-			commonresources.WithRunAsUser(commonresources.UserDefault),
-			commonresources.WithGoMemLimitEnvVar(memoryLimit),
-		),
 	}
 
-	return commonresources.MakePodSpec(names.SelfMonitor, opts...)
+	containerOpts := []commonresources.ContainerOption{
+		commonresources.WithArgs(args),
+		commonresources.WithPort("http-web", selfmonports.PrometheusPort),
+		commonresources.WithVolumeMounts(volumeMounts),
+		commonresources.WithProbes(liveness, readiness),
+		commonresources.WithResources(resources),
+		commonresources.WithRunAsUser(commonresources.UserDefault),
+	}
+
+	// Only set GOMEMLIMIT when VPA is not active
+	// When VPA is active, let Go runtime use the container memory limit automatically
+	if !opts.VpaCRDExists || !opts.VpaEnabled {
+		containerOpts = append(containerOpts, commonresources.WithGoMemLimitEnvVar(currentMemoryLimit))
+	}
+
+	podSpecOpts = append(podSpecOpts, commonresources.WithContainer(names.SelfMonitorContainerName, image, containerOpts...))
+
+	return commonresources.MakePodSpec(names.SelfMonitor, podSpecOpts...)
 }
 
 func (ad *ApplierDeleter) makeService(port int32) *corev1.Service {
@@ -412,5 +465,50 @@ func (ad *ApplierDeleter) selfMonitorName() types.NamespacedName {
 	return types.NamespacedName{
 		Name:      names.SelfMonitor,
 		Namespace: ad.Config.TargetNamespace(),
+	}
+}
+
+func (ad *ApplierDeleter) makeVPA(maxAllowedMemory resource.Quantity) *autoscalingvpav1.VerticalPodAutoscaler {
+	minAllowedMemory := memoryRequest
+
+	if maxAllowedMemory.Cmp(minAllowedMemory) < 0 {
+		maxAllowedMemory = minAllowedMemory
+	}
+
+	updateMode := autoscalingvpav1.UpdateModeInPlaceOrRecreate
+	controlledValues := autoscalingvpav1.ContainerControlledValuesRequestsAndLimits
+
+	return &autoscalingvpav1.VerticalPodAutoscaler{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      names.SelfMonitor,
+			Namespace: ad.Config.TargetNamespace(),
+		},
+		Spec: autoscalingvpav1.VerticalPodAutoscalerSpec{
+			TargetRef: &autoscalingv1.CrossVersionObjectReference{
+				APIVersion: "apps/v1",
+				Kind:       "Deployment",
+				Name:       names.SelfMonitor,
+			},
+			UpdatePolicy: &autoscalingvpav1.PodUpdatePolicy{
+				UpdateMode: &updateMode,
+			},
+			ResourcePolicy: &autoscalingvpav1.PodResourcePolicy{
+				ContainerPolicies: []autoscalingvpav1.ContainerResourcePolicy{
+					{
+						ContainerName: names.SelfMonitorContainerName,
+						ControlledResources: &[]corev1.ResourceName{
+							corev1.ResourceMemory,
+						},
+						MinAllowed: corev1.ResourceList{
+							corev1.ResourceMemory: minAllowedMemory,
+						},
+						MaxAllowed: corev1.ResourceList{
+							corev1.ResourceMemory: maxAllowedMemory,
+						},
+						ControlledValues: &controlledValues,
+					},
+				},
+			},
+		},
 	}
 }
