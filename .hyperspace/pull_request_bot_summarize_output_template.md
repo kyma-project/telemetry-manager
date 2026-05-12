@@ -61,7 +61,7 @@ Golden Files:
 The node filter is only effective for DaemonSet deployments. The OTLP gateway was recently converted from a Deployment to a DaemonSet; applying the filter there was the primary motivation for this change. Any future reversion to a Deployment would make the filter a no-op rather than incorrect, so no guard is needed.
 ## Release Notes Input
 
-**Recommended Changes:** Review your VPA or resource limit settings for OTel Collector DaemonSets — limits sized for the old cluster-wide watch may now be over-provisioned.
+**Recommended Action:** Review your VPA or resource limit settings for OTel Collector DaemonSets — limits sized for the old cluster-wide watch may now be over-provisioned.
 
 Metrics, Traces, Logs: The `k8sattributes` processor now limits each collector instance's Kubernetes informer watch to Pods on its own Node. This reduces memory consumption significantly on large clusters (from ~300 MB to ~15–30 MB per instance on a 200-node cluster).
 
