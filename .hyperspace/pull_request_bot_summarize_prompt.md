@@ -2,6 +2,10 @@ Summarize this pull request for the telemetry-manager project — a Kubernetes o
 
 Do not include a file-by-file list of changes. All change details belong in the "Key changes" section below.
 
+## Writing Style
+
+Write in active voice and present tense. Use plain, precise language — avoid marketing words like "allows you to", "enables you to", "leverage", or "utilize"; prefer "you can" or "use". State the purpose before the instruction ("To [purpose], [instruction].") and the condition before the conclusion ("If [condition], [instruction]."). Avoid ambiguous words: use "because" (not "as"/"since" for causation), "after"/"when" (not "once"), "must" (not "should" for requirements), "we recommend" (not "should" for recommendations), "can" (not "may" for ability). Avoid Latin abbreviations ("i.e.", "e.g."); use "that means" or "for example" instead. Do not use parentheses; use lists instead. Use Title Case for headings. Treat Kubernetes resource kinds as proper nouns and write them in CamelCase (for example, Pod, Namespace, ConfigMap, DaemonSet, CustomResourceDefinition).
+
 Include all sections listed here, in this exact order. You can omit only sections marked as "(optional)" when they are not applicable.
 
 ## What Changed
