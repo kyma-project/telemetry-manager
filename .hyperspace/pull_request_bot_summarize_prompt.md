@@ -25,11 +25,13 @@ Always include this section. If this PR has no user-facing changes (tests, docs,
 
 Structure the content using these three subsections, and include only the subsections that apply:
 
-**Required Changes:** Actions users must take — migration steps, config updates, API changes, deprecation removals. Use this for anything that breaks existing behavior or requires user intervention.
+**Required Changes:** Actions users must take — migration steps, config updates, API changes, deprecation removals. Use this for anything that breaks existing behavior or requires user intervention. If this PR deprecates or removes a feature, describe what is deprecated or removed, why, and what users must migrate to.
 
 **Recommended Changes:** Optional actions users should consider — enabling a new capability, updating dashboards, adopting a new approach early. Use this when the change is beneficial but users can continue without acting.
 
 Followed by a plain description of the user-facing change itself (new behavior, new CRD fields, new metrics, etc.).
+
+If this PR has no user-facing changes (tests, docs, internal refactoring), write "None" and omit all subsections.
 
 User-facing changes include, but are not limited to:
 - New or changed pipeline behavior (logs, metrics, traces)
