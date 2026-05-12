@@ -159,8 +159,10 @@ func TestMigrateMetricPipelines(t *testing.T) {
 		},
 		Spec: telemetryv1beta1.MetricPipelineSpec{
 			Output: telemetryv1beta1.MetricPipelineOutput{
-				OTLP: &telemetryv1beta1.OTLPOutput{
-					Endpoint: telemetryv1beta1.ValueType{Value: "http://example.com"},
+				OTLP: &telemetryv1beta1.MetricPipelineOTLPOutput{
+					OTLPOutput: &telemetryv1beta1.OTLPOutput{
+						Endpoint: telemetryv1beta1.ValueType{Value: "http://example.com"},
+					},
 				},
 			},
 		},
