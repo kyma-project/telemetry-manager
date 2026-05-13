@@ -26,7 +26,9 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	autoscalingvpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
+	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlbuilder "sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -62,13 +64,10 @@ type TelemetryControllerConfig struct {
 	SelfMonitorImage                  string
 	SelfMonitorPriorityClassName      string
 	WebhookCert                       webhookcert.Config
+	RestConfig                        *rest.Config
 }
 
-func NewTelemetryController(config TelemetryControllerConfig, mgr ctrl.Manager, nodeSizeTracker *nodesize.Tracker) *TelemetryController {
-	client := mgr.GetClient()
-	scheme := mgr.GetScheme()
-	restConfig := mgr.GetConfig()
-
+func NewTelemetryController(config TelemetryControllerConfig, client client.Client, scheme *runtime.Scheme, nodeSizeTracker *nodesize.Tracker) *TelemetryController {
 	reconciler := telemetry.New(
 		telemetry.Config{
 			Global:                            config.Global,
@@ -85,7 +84,7 @@ func NewTelemetryController(config TelemetryControllerConfig, mgr ctrl.Manager, 
 				PriorityClassName: config.SelfMonitorPriorityClassName,
 			},
 		},
-		telemetry.WithVpaStatusChecker(vpastatus.NewChecker(restConfig)),
+		telemetry.WithVpaStatusChecker(vpastatus.NewChecker(config.RestConfig)),
 		telemetry.WithNodeSizeTracker(nodeSizeTracker),
 	)
 

@@ -497,8 +497,10 @@ func setupTelemetryController(globals config.Global, cfg envConfig, webhookCertC
 			SelfMonitorImage:                  selectedSelfMonitorImage,
 			SelfMonitorPriorityClassName:      normalPriorityClassName,
 			WebhookCert:                       webhookCertConfig,
+			RestConfig:                        mgr.GetConfig(),
 		},
-		mgr,
+		mgr.GetClient(),
+		mgr.GetScheme(),
 		nodeSizeTracker,
 	)
 
