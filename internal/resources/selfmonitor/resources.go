@@ -291,8 +291,6 @@ func (ad *ApplierDeleter) makePodSpec(image, configPath, configFile, logLevel st
 		"--storage.tsdb.path=" + storagePath,
 		"--log.format=" + logFormat,
 		"--log.level=" + logLevel,
-		"--auto-gomemlimit=true",
-		"--auto-gomemlimit.ratio=0.8",
 	}
 
 	volumes := []corev1.Volume{

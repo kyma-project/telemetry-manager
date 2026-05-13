@@ -89,8 +89,6 @@ spec:
         - --storage.tsdb.path=/prometheus/
         - --log.format=json
         - --log.level=warn
-        - --auto-gomemlimit=true
-        - --auto-gomemlimit.ratio=0.8
         livenessProbe:
           failureThreshold: 5
           httpGet:
