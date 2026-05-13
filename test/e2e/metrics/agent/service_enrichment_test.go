@@ -35,6 +35,7 @@ func TestServiceEnrichment(t *testing.T) {
 		podWithUnknownServicePatternName   = "pod-with-unknown-service-pattern"
 		podWithCustomServiceAttributesName = "pod-with-custom-service"
 		podWithAnnotationPriorityName      = "pod-with-annotation-priority"
+		podWithAnnotationPriorityOTLPName  = "pod-with-annotation-priority-otlp"
 
 		// annotation keys
 		annotationServiceName    = "resource.opentelemetry.io/service.name"
@@ -95,6 +96,12 @@ func TestServiceEnrichment(t *testing.T) {
 	// OTel annotations provide the high-priority service attributes; k8s labels are the competing lower priority.
 	// Tests that the agent's k8sattributes enrichment respects annotation > label priority.
 	podSpecWithAnnotationPriority := stdoutloggen.PodSpec()
+	// Pushes OTLP metrics through the gateway with empty service.name so k8sattributes enriches from pod metadata.
+	// OTel annotations provide the high-priority service attributes; k8s labels are the competing lower priority.
+	// Tests that the gateway's restore processor ensures annotation > label priority for OTLP-pushed metrics.
+	podSpecWithAnnotationPriorityOTLP := telemetrygen.PodSpec(telemetrygen.SignalTypeMetrics,
+		telemetrygen.WithServiceName(""),
+	)
 
 	// Enable OTel service enrichment strategy
 	// TODO(TeodorSAP): Remove this block after deprecation period ends and OTel strategy becomes default enrichment strategy
@@ -122,6 +129,12 @@ func TestServiceEnrichment(t *testing.T) {
 			WithLabel(labelK8sInstance, labelInstanceName).
 			WithLabel(labelK8sVersion, labelVersion).
 			WithPodSpec(podSpecWithAnnotationPriority).K8sObject(),
+		kitk8sobjects.NewPod(podWithAnnotationPriorityOTLPName, genNs).
+			WithAnnotation(annotationServiceName, customServiceName).
+			WithAnnotation(annotationServiceVersion, customServiceVersion).
+			WithLabel(labelK8sName, labelServiceName).
+			WithLabel(labelK8sVersion, labelVersion).
+			WithPodSpec(podSpecWithAnnotationPriorityOTLP).K8sObject(),
 	}
 	resources = append(resources, backend.K8sObjects()...)
 
@@ -159,6 +172,12 @@ func TestServiceEnrichment(t *testing.T) {
 
 	// Annotation-level service attributes should take priority over app.kubernetes.io/* pod labels
 	verifyServiceAttributes(t, backend, podWithAnnotationPriorityName, ServiceAttributes{
+		ServiceName:    customServiceName,
+		ServiceVersion: customServiceVersion,
+	})
+
+	// Annotation-level service attributes should take priority for OTLP-pushed metrics through the gateway
+	verifyServiceAttributes(t, backend, podWithAnnotationPriorityOTLPName, ServiceAttributes{
 		ServiceName:    customServiceName,
 		ServiceVersion: customServiceVersion,
 	})
