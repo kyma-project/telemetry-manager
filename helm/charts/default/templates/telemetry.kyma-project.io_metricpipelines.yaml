@@ -371,7 +371,7 @@ spec:
                   You must specify exactly one output per pipeline.
                 properties:
                   otlp:
-                    description: MetricPipline OTLP output defines a metric pipeline
+                    description: MetricPipeline OTLP output defines a metric pipeline
                       output using the OpenTelemetry protocol.
                     properties:
                       authentication:
@@ -1379,7 +1379,7 @@ spec:
                   You must specify exactly one output per pipeline.
                 properties:
                   otlp:
-                    description: MetricPipline OTLP output defines a metric pipeline
+                    description: MetricPipeline OTLP output defines a metric pipeline
                       output using the OpenTelemetry protocol.
                     properties:
                       authentication:

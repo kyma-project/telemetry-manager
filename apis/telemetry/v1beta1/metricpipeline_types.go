@@ -171,7 +171,7 @@ type MetricPipelineIstioInputDiagnosticMetrics struct {
 
 // MetricPipelineOutput defines the output configuration section.
 type MetricPipelineOutput struct {
-	// MetricPipline OTLP output defines a metric pipeline output using the OpenTelemetry protocol.
+	// MetricPipeline OTLP output defines a metric pipeline output using the OpenTelemetry protocol.
 	// +kubebuilder:validation:Required
 	OTLP *MetricPipelineOTLPOutput `json:"otlp"`
 }
