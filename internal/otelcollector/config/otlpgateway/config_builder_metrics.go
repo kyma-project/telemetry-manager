@@ -8,6 +8,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/pipelines"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
+	metricpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/metricpipeline"
 	sharedtypesutils "github.com/kyma-project/telemetry-manager/internal/utils/sharedtypes"
 )
 
@@ -325,7 +326,7 @@ func (b *Builder) addMetricCumulativeToDeltaProcessor(builder *common.ComponentB
 	return builder.AddProcessor(
 		builder.StaticComponentID(common.ComponentIDCumulativeToDeltaProcessor),
 		func(mp *telemetryv1beta1.MetricPipeline) any {
-			if mp.Spec.Output.OTLP != nil && mp.Spec.Output.OTLP.Temporality != nil && *mp.Spec.Output.OTLP.Temporality == telemetryv1beta1.TemporalityDelta {
+			if metricpipelineutils.IsDeltaTemporality(mp.Spec.Output) {
 				return &common.CumulativeToDeltaProcessorConfig{
 					InitialValue: "auto",
 				}

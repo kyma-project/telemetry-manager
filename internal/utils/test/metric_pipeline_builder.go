@@ -31,12 +31,15 @@ type MetricPipelineBuilder struct {
 }
 
 func NewMetricPipelineBuilder() *MetricPipelineBuilder {
+	defaultTemporality := telemetryv1beta1.TemporalityCumulative
+
 	return &MetricPipelineBuilder{
 		randSource: rand.NewSource(time.Now().UnixNano()),
 		outOTLP: &telemetryv1beta1.MetricPipelineOTLPOutput{
 			OTLPOutput: telemetryv1beta1.OTLPOutput{
 				Endpoint: telemetryv1beta1.ValueType{Value: "http://localhost:4317"},
 			},
+			Temporality: &defaultTemporality,
 		},
 	}
 }

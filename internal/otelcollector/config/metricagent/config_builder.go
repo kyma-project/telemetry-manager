@@ -834,7 +834,7 @@ func (b *Builder) addCumulativeToDeltaProcessor(opts BuildOptions) buildComponen
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDCumulativeToDeltaProcessor),
 		func(mp *telemetryv1beta1.MetricPipeline) any {
-			if mp.Spec.Output.OTLP != nil && mp.Spec.Output.OTLP.Temporality != nil && *mp.Spec.Output.OTLP.Temporality == telemetryv1beta1.TemporalityDelta {
+			if metricpipelineutils.IsDeltaTemporality(mp.Spec.Output) {
 				return &common.CumulativeToDeltaProcessorConfig{
 					MaxStaleness: maxStalenessMultiplier * opts.CollectionIntervals.Max(),
 					InitialValue: "auto",
