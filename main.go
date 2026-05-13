@@ -481,7 +481,7 @@ func setupAdmissionsWebhooks(mgr manager.Manager) error {
 	return nil
 }
 
-func setupTelemetryController(globals config.Global, cfg envConfig, webhookCertConfig webhookcert.Config, mgr manager.Manager) error {
+func setupTelemetryController(globals config.Global, cfg envConfig, webhookCertConfig webhookcert.Config, mgr manager.Manager, nodeSizeTracker *nodesize.Tracker) error {
 	setupLog.Info("Setting up telemetry controller")
 
 	selectedSelfMonitorImage := cfg.SelfMonitorImage
@@ -499,6 +499,7 @@ func setupTelemetryController(globals config.Global, cfg envConfig, webhookCertC
 			WebhookCert:                       webhookCertConfig,
 		},
 		mgr,
+		nodeSizeTracker,
 	)
 
 	if err := telemetryController.SetupWithManager(mgr); err != nil {

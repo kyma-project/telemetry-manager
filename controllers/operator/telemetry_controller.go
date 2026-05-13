@@ -18,6 +18,7 @@ package operator
 
 import (
 	"context"
+	"fmt"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -25,6 +26,7 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	autoscalingvpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlbuilder "sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -61,13 +63,10 @@ type TelemetryControllerConfig struct {
 	WebhookCert                       webhookcert.Config
 }
 
-func NewTelemetryController(config TelemetryControllerConfig, mgr ctrl.Manager) *TelemetryController {
+func NewTelemetryController(config TelemetryControllerConfig, mgr ctrl.Manager, nodeSizeTracker *nodesize.Tracker) *TelemetryController {
 	client := mgr.GetClient()
 	scheme := mgr.GetScheme()
 	restConfig := mgr.GetConfig()
-
-	nodeSizeTracker := nodesize.NewTracker(client)
-	vpaStatusChecker := vpastatus.NewChecker(restConfig)
 
 	reconciler := telemetry.New(
 		telemetry.Config{
@@ -85,8 +84,8 @@ func NewTelemetryController(config TelemetryControllerConfig, mgr ctrl.Manager) 
 				PriorityClassName: config.SelfMonitorPriorityClassName,
 			},
 		},
-		vpaStatusChecker,
-		nodeSizeTracker,
+		telemetry.WithVpaStatusChecker(vpastatus.NewChecker(restConfig)),
+		telemetry.WithNodeSizeTracker(nodeSizeTracker),
 	)
 
 	return &TelemetryController{
@@ -102,8 +101,8 @@ func (r *TelemetryController) Reconcile(ctx context.Context, req ctrl.Request) (
 
 // telemetryOwnedResourceTypes returns the list of Kubernetes resource types that are always
 // managed (created/updated/deleted) by the Telemetry reconciler and must be watched for changes.
-func telemetryOwnedResourceTypes() []client.Object {
-	return []client.Object{
+func telemetryOwnedResourceTypes(vpaCRDExists bool) []client.Object {
+	resources := []client.Object{
 		&appsv1.Deployment{},
 		&corev1.ConfigMap{},
 		&corev1.Secret{},
@@ -113,12 +112,25 @@ func telemetryOwnedResourceTypes() []client.Object {
 		&rbacv1.RoleBinding{},
 		&networkingv1.NetworkPolicy{},
 	}
+
+	if vpaCRDExists {
+		resources = append(resources, &autoscalingvpav1.VerticalPodAutoscaler{})
+	}
+
+	return resources
 }
 
 func (r *TelemetryController) SetupWithManager(mgr ctrl.Manager) error {
 	b := ctrl.NewControllerManagedBy(mgr).For(&operatorv1beta1.Telemetry{})
 
-	ownedResourceTypesToWatch := telemetryOwnedResourceTypes()
+	ctx := context.Background()
+
+	vpaCRDExists, err := vpastatus.NewChecker(mgr.GetConfig()).VpaCRDExists(ctx, r.Client)
+	if err != nil {
+		return fmt.Errorf("failed to check VPA status: %w", err)
+	}
+
+	ownedResourceTypesToWatch := telemetryOwnedResourceTypes(vpaCRDExists)
 
 	for _, resource := range ownedResourceTypesToWatch {
 		b = b.Watches(

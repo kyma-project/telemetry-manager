@@ -77,14 +77,15 @@ type Reconciler struct {
 	nodeSizeTracker           NodeSizeTracker
 }
 
+type Option func(*Reconciler)
+
 func New(
 	config Config,
 	scheme *runtime.Scheme,
 	client client.Client,
 	overridesHandler OverridesHandler,
 	selfMonitorApplierDeleter SelfMonitorApplierDeleter,
-	vpaStatusChecker VpaStatusChecker,
-	nodeSizeTracker NodeSizeTracker,
+	opts ...Option,
 ) *Reconciler {
 	return &Reconciler{
 		config: config,
@@ -97,8 +98,6 @@ func New(
 		},
 		overridesHandler:          overridesHandler,
 		selfMonitorApplierDeleter: selfMonitorApplierDeleter,
-		vpaStatusChecker:          vpaStatusChecker,
-		nodeSizeTracker:           nodeSizeTracker,
 	}
 }
 
@@ -319,4 +318,18 @@ func (r *Reconciler) trackServiceAttributesEnrichmentStrategy(ctx context.Contex
 	metrics.ServiceAttributesEnrichmentStrategy.WithLabelValues(commonresources.AnnotationValueTelemetryServiceEnrichmentKymaLegacy).Set(0)
 
 	metrics.ServiceAttributesEnrichmentStrategy.WithLabelValues(enrichmentStrategy).Set(1)
+}
+
+// WithVpaStatusChecker sets the VPA status checker.
+func WithVpaStatusChecker(checker VpaStatusChecker) Option {
+	return func(r *Reconciler) {
+		r.vpaStatusChecker = checker
+	}
+}
+
+// WithNodeSizeTracker sets the node size tracker.
+func WithNodeSizeTracker(tracker NodeSizeTracker) Option {
+	return func(r *Reconciler) {
+		r.nodeSizeTracker = tracker
+	}
 }
