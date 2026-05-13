@@ -15,6 +15,7 @@ type FlatMetric struct {
 	Name, Description, ScopeName, ScopeVersion            string
 	ResourceAttributes, ScopeAttributes, MetricAttributes map[string]string
 	Type                                                  string
+	AggregationTemporality                                string
 }
 
 func unmarshalMetrics(jsonMetrics []byte) ([]pmetric.Metrics, error) {
@@ -48,17 +49,19 @@ func flattenMetrics(md pmetric.Metrics) []FlatMetric {
 			for k := range scopeMetrics.Metrics().Len() {
 				metric := scopeMetrics.Metrics().At(k)
 				dataPointsAttributes := getAttributesPerDataPoint(metric)
+				aggregationTemporality := getAggregationTemporality(metric)
 
 				for l := range dataPointsAttributes {
 					flatMetrics = append(flatMetrics, FlatMetric{
-						Name:               metric.Name(),
-						Description:        metric.Description(),
-						ScopeName:          scopeMetrics.Scope().Name(),
-						ScopeVersion:       scopeMetrics.Scope().Version(),
-						ResourceAttributes: attributesToMap(resourceMetrics.Resource().Attributes()),
-						ScopeAttributes:    attributesToMap(scopeMetrics.Scope().Attributes()),
-						MetricAttributes:   attributesToMap(dataPointsAttributes[l]),
-						Type:               metric.Type().String(),
+						Name:                   metric.Name(),
+						Description:            metric.Description(),
+						ScopeName:              scopeMetrics.Scope().Name(),
+						ScopeVersion:           scopeMetrics.Scope().Version(),
+						ResourceAttributes:     attributesToMap(resourceMetrics.Resource().Attributes()),
+						ScopeAttributes:        attributesToMap(scopeMetrics.Scope().Attributes()),
+						MetricAttributes:       attributesToMap(dataPointsAttributes[l]),
+						Type:                   metric.Type().String(),
+						AggregationTemporality: aggregationTemporality,
 					})
 				}
 			}
@@ -104,4 +107,15 @@ func getAttributesPerDataPoint(m pmetric.Metric) []pcommon.Map {
 	}
 
 	return attrsPerDataPoint
+}
+
+func getAggregationTemporality(m pmetric.Metric) string {
+	switch m.Type() {
+	case pmetric.MetricTypeSum:
+		return m.Sum().AggregationTemporality().String()
+	case pmetric.MetricTypeHistogram:
+		return m.Histogram().AggregationTemporality().String()
+	default:
+		return ""
+	}
 }

@@ -546,6 +546,38 @@ func TestBuild(t *testing.T) {
 					).Build(),
 			},
 		},
+		{
+			name:           "metric-pipeline with delta temporality",
+			goldenFileName: "metric-delta-temporality.yaml",
+			moduleVersion:  "1.0.0",
+			metricPipelines: []telemetryv1beta1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().
+					WithName("test-metric").
+					WithOTLPInput(true).
+					WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("https://localhost")).
+					WithTemporality(telemetryv1beta1.TemporalityDelta).
+					Build(),
+			},
+		},
+		{
+			name:           "metric-mixed temporality pipelines",
+			goldenFileName: "metric-mixed-temporality.yaml",
+			moduleVersion:  "1.0.0",
+			metricPipelines: []telemetryv1beta1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().
+					WithName("delta-pipeline").
+					WithOTLPInput(true).
+					WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("https://backend-delta.example.com")).
+					WithTemporality(telemetryv1beta1.TemporalityDelta).
+					Build(),
+				testutils.NewMetricPipelineBuilder().
+					WithName("cumulative-pipeline").
+					WithOTLPInput(true).
+					WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("https://backend-cumulative.example.com")).
+					WithTemporality(telemetryv1beta1.TemporalityCumulative).
+					Build(),
+			},
+		},
 	}
 
 	for _, tt := range tests {

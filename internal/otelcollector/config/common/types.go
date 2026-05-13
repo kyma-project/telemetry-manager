@@ -192,7 +192,7 @@ type K8sAttributesFilterConfig struct {
 }
 
 type CumulativeToDeltaProcessorConfig struct {
-	MaxStaleness time.Duration `yaml:"max_staleness"`
+	MaxStaleness time.Duration `yaml:"max_staleness,omitempty"`
 	InitialValue string        `yaml:"initial_value"`
 }
 

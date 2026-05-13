@@ -81,6 +81,7 @@ func (b *Builder) buildMetricPipelines(ctx context.Context, builder *common.Comp
 			b.addMetricDropKymaAttributesProcessor(builder),
 			b.addMetricUserDefinedTransformProcessor(builder),
 			b.addMetricUserDefinedFilterProcessor(builder),
+			b.addMetricCumulativeToDeltaProcessor(builder),
 			b.addMetricBatchProcessor(builder),
 			b.addMetricOTLPExporter(builder, queueSize),
 		); err != nil {
@@ -302,6 +303,21 @@ func (b *Builder) addMetricUserDefinedFilterProcessor(builder *common.ComponentB
 			}
 
 			return common.MetricFilterProcessor(mp.Spec.Filters)
+		},
+	)
+}
+
+func (b *Builder) addMetricCumulativeToDeltaProcessor(builder *common.ComponentBuilder[*telemetryv1beta1.MetricPipeline]) buildMetricComponentFunc {
+	return builder.AddProcessor(
+		builder.StaticComponentID(common.ComponentIDCumulativeToDeltaProcessor),
+		func(mp *telemetryv1beta1.MetricPipeline) any {
+			if mp.Spec.Output.OTLP != nil && mp.Spec.Output.OTLP.Temporality != nil && *mp.Spec.Output.OTLP.Temporality == telemetryv1beta1.TemporalityDelta {
+				return &common.CumulativeToDeltaProcessorConfig{
+					InitialValue: "auto",
+				}
+			}
+
+			return nil
 		},
 	)
 }
