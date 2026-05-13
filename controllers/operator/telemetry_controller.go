@@ -326,5 +326,6 @@ func (r *TelemetryController) mapVPAChanges(ctx context.Context, object client.O
 	}
 
 	logf.FromContext(ctx).V(1).Info("Self-monitor VPA changed, triggering reconciliation", "vpa", vpa.Name)
+
 	return r.createTelemetryRequests(ctx)
 }
