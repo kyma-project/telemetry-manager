@@ -23,6 +23,7 @@ service:
                 - transform/set-observed-time-if-zero
                 - transform/drop-unknown-service-name
                 - k8s_attributes
+                - transform/restore-otel-service-attrs
                 - istio_noise_filter
                 - transform/insert-cluster-attributes
                 - transform/drop-kyma-attributes
@@ -38,6 +39,7 @@ service:
                 - transform/set-instrumentation-scope-kyma
                 - transform/drop-unknown-service-name
                 - k8s_attributes
+                - transform/restore-otel-service-attrs
                 - transform/insert-cluster-attributes
             exporters:
                 - forward/enrichment
@@ -71,6 +73,7 @@ service:
                 - transform/drop-istio-service-enrichment
                 - transform/drop-unknown-service-name
                 - k8s_attributes
+                - transform/restore-otel-service-attrs
                 - istio_noise_filter
                 - transform/insert-cluster-attributes
                 - transform/drop-kyma-attributes
@@ -186,21 +189,63 @@ processors:
                 - delete_matching_keys(resource.attributes, "service.*") where span.attributes["component"] == "proxy"
     transform/drop-kyma-attributes:
         error_mode: ignore
+        log_statements:
+            - statements:
+                - delete_matching_keys(resource.attributes, "kyma.*")
+        metric_statements:
+            - statements:
+                - delete_matching_keys(resource.attributes, "kyma.*")
         trace_statements:
             - statements:
                 - delete_matching_keys(resource.attributes, "kyma.*")
     transform/drop-unknown-service-name:
         error_mode: ignore
+        log_statements:
+            - statements:
+                - delete_key(resource.attributes, "service.name") where resource.attributes["service.name"] != nil and HasPrefix(resource.attributes["service.name"], "unknown_service")
+        metric_statements:
+            - statements:
+                - delete_key(resource.attributes, "service.name") where resource.attributes["service.name"] != nil and HasPrefix(resource.attributes["service.name"], "unknown_service")
         trace_statements:
             - statements:
                 - delete_key(resource.attributes, "service.name") where resource.attributes["service.name"] != nil and HasPrefix(resource.attributes["service.name"], "unknown_service")
     transform/insert-cluster-attributes:
         error_mode: ignore
+        log_statements:
+            - statements:
+                - set(resource.attributes["k8s.cluster.name"], "${KUBERNETES_SERVICE_HOST}") where resource.attributes["k8s.cluster.name"] == nil or resource.attributes["k8s.cluster.name"] == ""
+                - set(resource.attributes["k8s.cluster.uid"], "") where resource.attributes["k8s.cluster.uid"] == nil or resource.attributes["k8s.cluster.uid"] == ""
+                - set(resource.attributes["cloud.provider"], "test-cloud-provider") where resource.attributes["cloud.provider"] == nil or resource.attributes["cloud.provider"] == ""
+        metric_statements:
+            - statements:
+                - set(resource.attributes["k8s.cluster.name"], "${KUBERNETES_SERVICE_HOST}") where resource.attributes["k8s.cluster.name"] == nil or resource.attributes["k8s.cluster.name"] == ""
+                - set(resource.attributes["k8s.cluster.uid"], "") where resource.attributes["k8s.cluster.uid"] == nil or resource.attributes["k8s.cluster.uid"] == ""
+                - set(resource.attributes["cloud.provider"], "test-cloud-provider") where resource.attributes["cloud.provider"] == nil or resource.attributes["cloud.provider"] == ""
         trace_statements:
             - statements:
                 - set(resource.attributes["k8s.cluster.name"], "${KUBERNETES_SERVICE_HOST}") where resource.attributes["k8s.cluster.name"] == nil or resource.attributes["k8s.cluster.name"] == ""
                 - set(resource.attributes["k8s.cluster.uid"], "") where resource.attributes["k8s.cluster.uid"] == nil or resource.attributes["k8s.cluster.uid"] == ""
                 - set(resource.attributes["cloud.provider"], "test-cloud-provider") where resource.attributes["cloud.provider"] == nil or resource.attributes["cloud.provider"] == ""
+    transform/restore-otel-service-attrs:
+        error_mode: ignore
+        log_statements:
+            - statements:
+                - set(resource.attributes["service.name"], resource.attributes["kyma.otel.annotation.service.name"]) where resource.attributes["kyma.otel.annotation.service.name"] != nil and resource.attributes["kyma.otel.annotation.service.name"] != ""
+                - delete_key(resource.attributes, "kyma.otel.annotation.service.name")
+                - set(resource.attributes["service.version"], resource.attributes["kyma.otel.annotation.service.version"]) where resource.attributes["kyma.otel.annotation.service.version"] != nil and resource.attributes["kyma.otel.annotation.service.version"] != ""
+                - delete_key(resource.attributes, "kyma.otel.annotation.service.version")
+        metric_statements:
+            - statements:
+                - set(resource.attributes["service.name"], resource.attributes["kyma.otel.annotation.service.name"]) where resource.attributes["kyma.otel.annotation.service.name"] != nil and resource.attributes["kyma.otel.annotation.service.name"] != ""
+                - delete_key(resource.attributes, "kyma.otel.annotation.service.name")
+                - set(resource.attributes["service.version"], resource.attributes["kyma.otel.annotation.service.version"]) where resource.attributes["kyma.otel.annotation.service.version"] != nil and resource.attributes["kyma.otel.annotation.service.version"] != ""
+                - delete_key(resource.attributes, "kyma.otel.annotation.service.version")
+        trace_statements:
+            - statements:
+                - set(resource.attributes["service.name"], resource.attributes["kyma.otel.annotation.service.name"]) where resource.attributes["kyma.otel.annotation.service.name"] != nil and resource.attributes["kyma.otel.annotation.service.name"] != ""
+                - delete_key(resource.attributes, "kyma.otel.annotation.service.name")
+                - set(resource.attributes["service.version"], resource.attributes["kyma.otel.annotation.service.version"]) where resource.attributes["kyma.otel.annotation.service.version"] != nil and resource.attributes["kyma.otel.annotation.service.version"] != ""
+                - delete_key(resource.attributes, "kyma.otel.annotation.service.version")
     transform/set-instrumentation-scope-kyma:
         error_mode: ignore
         metric_statements:
