@@ -83,7 +83,7 @@ func TestCumulativeToDelta(t *testing.T) {
 			resources := []client.Object{
 				kitk8sobjects.NewNamespace(backendNs).K8sObject(),
 				kitk8sobjects.NewNamespace(genNs).K8sObject(),
-				&pipeline,
+				new(pipeline),
 			}
 			resources = append(resources, tc.generatorBuilder(genNs)...)
 			resources = append(resources, backend.K8sObjects()...)
@@ -163,11 +163,11 @@ func TestCumulativeToDeltaMixedPipelines(t *testing.T) {
 			suite.SetupTest(t, tc.labels...)
 
 			var (
-				uniquePrefix      = unique.Prefix(tc.name)
-				pipelineDelta     = uniquePrefix("delta")
-				pipelineCumul     = uniquePrefix("cumul")
-				backendNs         = uniquePrefix("backend")
-				genNs             = uniquePrefix("gen")
+				uniquePrefix  = unique.Prefix(tc.name)
+				pipelineDelta = uniquePrefix("delta")
+				pipelineCumul = uniquePrefix("cumul")
+				backendNs     = uniquePrefix("backend")
+				genNs         = uniquePrefix("gen")
 			)
 
 			backendDelta := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics, kitbackend.WithName("backend-delta"))
@@ -189,8 +189,8 @@ func TestCumulativeToDeltaMixedPipelines(t *testing.T) {
 			resources := []client.Object{
 				kitk8sobjects.NewNamespace(backendNs).K8sObject(),
 				kitk8sobjects.NewNamespace(genNs).K8sObject(),
-				&pipelineWithDelta,
-				&pipelineWithCumulative,
+				new(pipelineWithDelta),
+				new(pipelineWithCumulative),
 			}
 			resources = append(resources, tc.generatorBuilder(genNs)...)
 			resources = append(resources, backendDelta.K8sObjects()...)
@@ -245,7 +245,7 @@ func TestCumulativeToDeltaGaugeUnaffected(t *testing.T) {
 			name:   "agent",
 			labels: []string{suite.LabelMetricAgent},
 			inputBuilder: func(includeNs string) telemetryv1beta1.MetricPipelineInput {
-				return testutils.BuildMetricPipelineRuntimeInput(testutils.IncludeNamespaces(includeNs))
+				return testutils.BuildMetricPipelineAgentInput(false, true, false, testutils.IncludeNamespaces(includeNs))
 			},
 			generatorBuilder: func(ns string) []client.Object {
 				generator := prommetricgen.New(ns)
@@ -295,7 +295,7 @@ func TestCumulativeToDeltaGaugeUnaffected(t *testing.T) {
 			resources := []client.Object{
 				kitk8sobjects.NewNamespace(backendNs).K8sObject(),
 				kitk8sobjects.NewNamespace(genNs).K8sObject(),
-				&pipeline,
+				new(pipeline),
 			}
 			resources = append(resources, tc.generatorBuilder(genNs)...)
 			resources = append(resources, backend.K8sObjects()...)

@@ -116,4 +116,3 @@ func HaveAggregationTemporality(matcher gomegatypes.GomegaMatcher) gomegatypes.G
 		return fm.AggregationTemporality
 	}, matcher)
 }
-
