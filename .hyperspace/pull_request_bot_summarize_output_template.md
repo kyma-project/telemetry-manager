@@ -7,9 +7,13 @@ One or two sentences describing the change at a high level.
 (optional) List which pipeline types are affected: logs, metrics, traces, or all. Omit this section entirely if the change is infrastructure (build, CI, dependencies), tooling, or operator-level with no signal-specific impact.
 
 
-## Key Changes
-- **`package/or/file`**: Description of what changed and why.
-- **`package/or/file`**: Description of what changed and why.
+<details>
+<summary>Key Changes</summary>
+
+- **`component-or-package`**: Description of what changed and why.
+- **`component-or-package`**: Description of what changed and why.
+
+</details>
 
 ## Breaking Changes
 (optional) Any breaking changes to CRD fields, API types, or behavior. Omit this section entirely if there are none — do not write "None".
@@ -44,17 +48,13 @@ Configures the `k8sattributes` processor with a node filter across all OTel Coll
 
 Logs, Metrics, Traces
 
-## Key Changes
+<details>
+<summary>Key Changes</summary>
 
-Processor Configuration:
-- **`internal/otelcollector/config/common/processor_builders.go`**: Adds `filter.node_from_env_var: MY_NODE_NAME` to the `k8sattributes` processor builder so all collector types pick up the node filter.
-- **`internal/otelcollector/config/common/types.go`**: Extends the `K8sAttributesConfig` struct with the new filter field.
+- **`internal/otelcollector/config/common`**: Adds `filter.node_from_env_var: MY_NODE_NAME` to the `k8sattributes` processor builder and extends the `K8sAttributesConfig` struct with the new filter field.
+- **`internal/resources/otelcollector`**: Injects the `MY_NODE_NAME` environment variable (sourced from `spec.nodeName`) into each agent DaemonSet so the filter has a value at runtime.
 
-Resource Generation:
-- **`internal/resources/otelcollector/agent.go`**: Injects the `MY_NODE_NAME` environment variable (sourced from `spec.nodeName`) into each agent DaemonSet so the filter has a value at runtime.
-
-Golden Files:
-- **`internal/otelcollector/config/logagent/testdata/`**, **`internal/otelcollector/config/metricagent/testdata/`**, **`internal/otelcollector/config/otlpgateway/testdata/`**, **`internal/resources/otelcollector/testdata/`**: Updated to reflect the new processor and environment variable in all collector configurations.
+</details>
 
 ## Notes for Reviewers
 
@@ -75,10 +75,12 @@ Metrics, Traces, Logs: The `k8sattributes` processor now limits each collector i
 
 Adds `NoExecute` and `NoSchedule` tolerations to the OTLP gateway DaemonSet so its Pods are scheduled on tainted Nodes, matching the existing behavior of the OTel agent and Fluent Bit DaemonSets.
 
-## Key Changes
+<details>
+<summary>Key Changes</summary>
 
-- **`internal/resources/otelcollector/otlp_gateway.go`**: Adds critical tolerations to the DaemonSet Pod spec.
-- **`internal/resources/otelcollector/testdata/`**: Updates golden files to include the new tolerations in all OTLP gateway variants.
+- **`internal/resources/otelcollector`**: Adds `NoExecute` and `NoSchedule` tolerations to the OTLP gateway DaemonSet Pod spec.
+
+</details>
 
 ## Notes for Reviewers
 
