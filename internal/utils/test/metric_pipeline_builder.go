@@ -390,6 +390,11 @@ func (b *MetricPipelineBuilder) WithMetricPipelineOTLPOutput(opts ...OTLPOutputO
 	return b
 }
 
+func (b *MetricPipelineBuilder) WithTemporality(temporality telemetryv1beta1.TemporalityType) *MetricPipelineBuilder {
+	b.outOTLP.Temporality = &temporality
+	return b
+}
+
 func (b *MetricPipelineBuilder) WithOAuth2(opts ...OAuth2Option) *MetricPipelineBuilder {
 	if b.oauth2 == nil {
 		b.oauth2 = &telemetryv1beta1.OAuth2Options{}

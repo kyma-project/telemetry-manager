@@ -46,7 +46,6 @@ type BuildOptions struct {
 	VpaActive bool
 	// CollectionIntervals contains the resolved collection intervals for each pull-based metric input type.
 	CollectionIntervals telemetryutils.MetricCollectionIntervals
-	Temporality         telemetryv1beta1.TemporalityType
 }
 
 // inputSources represents the enabled input sources for the telemetry Metric Agent.
@@ -835,7 +834,7 @@ func (b *Builder) addCumulativeToDeltaProcessor(opts BuildOptions) buildComponen
 	return b.AddProcessor(
 		b.StaticComponentID(common.ComponentIDCumulativeToDeltaProcessor),
 		func(mp *telemetryv1beta1.MetricPipeline) any {
-			if opts.Temporality == telemetryv1beta1.TemporalityDelta {
+			if mp.Spec.Output.OTLP != nil && mp.Spec.Output.OTLP.Temporality != nil && *mp.Spec.Output.OTLP.Temporality == telemetryv1beta1.TemporalityDelta {
 				return &common.CumulativeToDeltaProcessorConfig{
 					MaxStaleness: maxStalenessMultiplier * opts.CollectionIntervals.Max(),
 					InitialValue: "auto",

@@ -452,6 +452,64 @@ func TestBuildConfig(t *testing.T) {
 					).Build(),
 			},
 		},
+		{
+			name:           "pipeline with delta temporality",
+			goldenFileName: "delta-temporality.yaml",
+			pipelines: []telemetryv1beta1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().
+					WithName("test").
+					WithRuntimeInput(true).
+					WithPrometheusInput(false).
+					WithIstioInput(false).
+					WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("https://localhost")).
+					WithTemporality(telemetryv1beta1.TemporalityDelta).
+					Build(),
+			},
+		},
+		{
+			name:           "multiple pipelines with delta temporality",
+			goldenFileName: "delta-temporality-multiple-pipelines.yaml",
+			pipelines: []telemetryv1beta1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().
+					WithName("test1").
+					WithRuntimeInput(true).
+					WithPrometheusInput(false).
+					WithIstioInput(false).
+					WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("https://backend1.example.com")).
+					WithTemporality(telemetryv1beta1.TemporalityDelta).
+					Build(),
+				testutils.NewMetricPipelineBuilder().
+					WithName("test2").
+					WithRuntimeInput(false).
+					WithPrometheusInput(true).
+					WithIstioInput(false).
+					WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("https://backend2.example.com")).
+					WithTemporality(telemetryv1beta1.TemporalityDelta).
+					Build(),
+			},
+		},
+		{
+			name:           "mixed temporality pipelines",
+			goldenFileName: "mixed-temporality.yaml",
+			pipelines: []telemetryv1beta1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().
+					WithName("test-delta").
+					WithRuntimeInput(true).
+					WithPrometheusInput(false).
+					WithIstioInput(false).
+					WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("https://backend-delta.example.com")).
+					WithTemporality(telemetryv1beta1.TemporalityDelta).
+					Build(),
+				testutils.NewMetricPipelineBuilder().
+					WithName("test-cumulative").
+					WithRuntimeInput(true).
+					WithPrometheusInput(false).
+					WithIstioInput(false).
+					WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("https://backend-cumulative.example.com")).
+					WithTemporality(telemetryv1beta1.TemporalityCumulative).
+					Build(),
+			},
+		},
 	}
 
 	for _, tt := range tests {
