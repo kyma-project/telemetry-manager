@@ -34,6 +34,7 @@ func (b *Builder) buildTracePipelines(ctx context.Context, builder *common.Compo
 			b.addDropIstioServiceEnrichmentProcessor(builder, opts),
 			b.addTraceDropUnknownServiceNameProcessor(builder, opts),
 			b.addTraceK8sAttributesProcessor(builder, opts),
+			b.addTraceRestoreOtelServiceAttrsProcessor(builder, opts),
 			b.addTraceIstioNoiseFilterProcessor(builder),
 			b.addTraceInsertClusterAttributesProcessor(builder, opts),
 			b.addTraceServiceEnrichmentProcessor(builder, opts),
@@ -96,7 +97,7 @@ func (b *Builder) addTraceDropUnknownServiceNameProcessor(builder *common.Compon
 				return nil
 			}
 
-			return common.TraceTransformProcessor(common.DropUnknownServiceNameProcessorStatements())
+			return common.AllSignalsTransformProcessor(common.DropUnknownServiceNameProcessorStatements())
 		},
 	)
 }
@@ -106,6 +107,19 @@ func (b *Builder) addTraceK8sAttributesProcessor(builder *common.ComponentBuilde
 		builder.StaticComponentID(common.ComponentIDK8sAttributesProcessor),
 		func(tp *telemetryv1beta1.TracePipeline) any {
 			return k8sAttributesProcessorConfig(opts)
+		},
+	)
+}
+
+func (b *Builder) addTraceRestoreOtelServiceAttrsProcessor(builder *common.ComponentBuilder[*telemetryv1beta1.TracePipeline], opts BuildOptions) buildTraceComponentFunc {
+	return builder.AddProcessor(
+		builder.StaticComponentID(common.ComponentIDRestoreOtelServiceAttrsProcessor),
+		func(tp *telemetryv1beta1.TracePipeline) any {
+			if opts.ServiceEnrichment != commonresources.AnnotationValueTelemetryServiceEnrichmentOtel {
+				return nil
+			}
+
+			return common.AllSignalsTransformProcessor(common.RestoreOtelServiceAnnotationsProcessorStatements())
 		},
 	)
 }
@@ -124,7 +138,7 @@ func (b *Builder) addTraceInsertClusterAttributesProcessor(builder *common.Compo
 		builder.StaticComponentID(common.ComponentIDInsertClusterAttributesProcessor),
 		func(tp *telemetryv1beta1.TracePipeline) any {
 			transformStatements := common.InsertClusterAttributesProcessorStatements(opts.Cluster)
-			return common.TraceTransformProcessor(transformStatements)
+			return common.AllSignalsTransformProcessor(transformStatements)
 		},
 	)
 }
@@ -143,7 +157,7 @@ func (b *Builder) addTraceDropKymaAttributesProcessor(builder *common.ComponentB
 		builder.StaticComponentID(common.ComponentIDDropKymaAttributesProcessor),
 		func(tp *telemetryv1beta1.TracePipeline) any {
 			transformStatements := common.DropKymaAttributesProcessorStatements()
-			return common.TraceTransformProcessor(transformStatements)
+			return common.AllSignalsTransformProcessor(transformStatements)
 		},
 	)
 }
