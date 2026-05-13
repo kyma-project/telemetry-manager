@@ -50,8 +50,9 @@ import (
 type TelemetryController struct {
 	client.Client
 
-	config     TelemetryControllerConfig
-	reconciler *telemetry.Reconciler
+	config          TelemetryControllerConfig
+	reconciler      *telemetry.Reconciler
+	nodeSizeTracker *nodesize.Tracker
 }
 
 type TelemetryControllerConfig struct {
@@ -89,9 +90,10 @@ func NewTelemetryController(config TelemetryControllerConfig, mgr ctrl.Manager, 
 	)
 
 	return &TelemetryController{
-		Client:     client,
-		config:     config,
-		reconciler: reconciler,
+		Client:          client,
+		config:          config,
+		reconciler:      reconciler,
+		nodeSizeTracker: nodeSizeTracker,
 	}
 }
 
@@ -168,6 +170,10 @@ func (r *TelemetryController) SetupWithManager(mgr ctrl.Manager) error {
 		Watches(
 			&telemetryv1beta1.MetricPipeline{},
 			handler.EnqueueRequestsFromMapFunc(r.mapMetricPipeline),
+		).
+		Watches(
+			&corev1.Node{},
+			handler.EnqueueRequestsFromMapFunc(r.mapNodeChanges),
 		)
 
 	return b.Complete(r)
@@ -278,4 +284,21 @@ func (r *TelemetryController) createTelemetryRequests(ctx context.Context) []rec
 	}
 
 	return requests
+}
+
+// mapNodeChanges updates the node size tracker when a Node is added, removed, or modified.
+// If the smallest node memory or node count changes, it enqueues a reconciliation request
+// for all Telemetry CRs so that self-monitor VPA max memory can be recalculated.
+func (r *TelemetryController) mapNodeChanges(ctx context.Context, object client.Object) []reconcile.Request {
+	changed, err := r.nodeSizeTracker.UpdateSmallestMemory(ctx)
+	if err != nil {
+		logf.FromContext(ctx).Error(err, "Unable to update smallest node memory")
+		return nil
+	}
+
+	if !changed {
+		return nil
+	}
+
+	return r.createTelemetryRequests(ctx)
 }

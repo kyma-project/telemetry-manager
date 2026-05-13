@@ -283,7 +283,7 @@ func setupControllersAndWebhooks(mgr manager.Manager, globals config.Global, env
 
 	webhookCertConfig := createWebhookConfig(globals)
 
-	if err := setupTelemetryController(globals, envCfg, webhookCertConfig, mgr); err != nil {
+	if err := setupTelemetryController(globals, envCfg, webhookCertConfig, mgr, nodeSizeTracker); err != nil {
 		return fmt.Errorf("failed to enable telemetry module controller: %w", err)
 	}
 
