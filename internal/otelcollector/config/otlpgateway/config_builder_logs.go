@@ -35,6 +35,7 @@ func (b *Builder) buildLogPipelines(ctx context.Context, builder *common.Compone
 			b.addSetObsTimeIfZeroProcessor(builder),
 			b.addLogDropUnknownServiceNameProcessor(builder, opts),
 			b.addLogK8sAttributesProcessor(builder, opts),
+			b.addLogRestoreOtelServiceAttrsProcessor(builder, opts),
 			b.addLogIstioNoiseFilterProcessor(builder),
 			b.addDropIfInputSourceOTLPProcessor(builder),
 			b.addNamespaceFilterProcessor(builder),
@@ -95,7 +96,7 @@ func (b *Builder) addLogDropUnknownServiceNameProcessor(builder *common.Componen
 				return nil // Kyma legacy enrichment selected, skip this processor
 			}
 
-			return common.LogTransformProcessor(common.DropUnknownServiceNameProcessorStatements())
+			return common.AllSignalsTransformProcessor(common.DropUnknownServiceNameProcessorStatements())
 		},
 	)
 }
@@ -105,6 +106,19 @@ func (b *Builder) addLogK8sAttributesProcessor(builder *common.ComponentBuilder[
 		builder.StaticComponentID(common.ComponentIDK8sAttributesProcessor),
 		func(lp *telemetryv1beta1.LogPipeline) any {
 			return k8sAttributesProcessorConfig(opts)
+		},
+	)
+}
+
+func (b *Builder) addLogRestoreOtelServiceAttrsProcessor(builder *common.ComponentBuilder[*telemetryv1beta1.LogPipeline], opts BuildOptions) buildLogComponentFunc {
+	return builder.AddProcessor(
+		builder.StaticComponentID(common.ComponentIDRestoreOtelServiceAttrsProcessor),
+		func(lp *telemetryv1beta1.LogPipeline) any {
+			if opts.ServiceEnrichment != commonresources.AnnotationValueTelemetryServiceEnrichmentOtel {
+				return nil
+			}
+
+			return common.AllSignalsTransformProcessor(common.RestoreOtelServiceAnnotationsProcessorStatements())
 		},
 	)
 }
@@ -150,7 +164,7 @@ func (b *Builder) addLogInsertClusterAttributesProcessor(builder *common.Compone
 		builder.StaticComponentID(common.ComponentIDInsertClusterAttributesProcessor),
 		func(lp *telemetryv1beta1.LogPipeline) any {
 			transformStatements := common.InsertClusterAttributesProcessorStatements(opts.Cluster)
-			return common.LogTransformProcessor(transformStatements)
+			return common.AllSignalsTransformProcessor(transformStatements)
 		},
 	)
 }
@@ -169,7 +183,7 @@ func (b *Builder) addLogDropKymaAttributesProcessor(builder *common.ComponentBui
 		builder.StaticComponentID(common.ComponentIDDropKymaAttributesProcessor),
 		func(lp *telemetryv1beta1.LogPipeline) any {
 			transformStatements := common.DropKymaAttributesProcessorStatements()
-			return common.LogTransformProcessor(transformStatements)
+			return common.AllSignalsTransformProcessor(transformStatements)
 		},
 	)
 }

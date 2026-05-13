@@ -15,7 +15,7 @@ One or two sentences describing the change at a high level.
 (optional) List which pipeline types are affected: logs, metrics, traces, or all. Omit this section entirely if the change is infrastructure (build, CI, dependencies), tooling, or operator-level with no signal-specific impact.
 
 ## Key Changes
-Bullet points covering the most important code changes. Format each bullet as **`path/to/file-or-package`**: description, where the path is the most relevant file, package, or component (for example, `internal/reconciler/metricpipeline`, `internal/otelcollector/config`, `controllers/telemetry`). Use the file path for small changes, the package path for larger changes spanning multiple files.
+One bullet per logical component or area changed. Use the package or component path (for example, `internal/reconciler/metricpipeline`, `internal/otelcollector/config`, `controllers/telemetry`) — never individual file paths. Keep each bullet to one sentence. Do not mention test data, golden file updates, or mock regeneration unless they are the only thing that changed.
 
 ## Breaking Changes
 (optional) List any breaking changes to CRD fields, API types, or behavior. Omit this section entirely if there are none — do not write "None".
