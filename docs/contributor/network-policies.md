@@ -46,7 +46,7 @@ Telemetry Manager has the following NetworkPolicies, deployed with the Helm char
 
 ## Gateway Policies
 
-The OTLP gateway has two NetworkPolicies that Telemetry Manager creates dynamically:
+The OTLP Gateway has two NetworkPolicies that Telemetry Manager creates dynamically:
 
 | Policy                          | Direction | Source / Destination | Port |
 |---------------------------------|---|---|---|
@@ -65,7 +65,7 @@ Each OTel Collector agent (log agent, metric agent) has two NetworkPolicies:
 | General | Egress | Any destination | Unrestricted |
 | Metrics | Ingress | Pods with `networking.kyma-project.io/metrics-scraping: allowed` | 8888 |
 
-The unrestricted egress is required because agents forward collected data to the configured backend, which can be any in-cluster or external destination.
+Agents need this unrestricted egress to forward collected data to the configured backend, which can be any in-cluster or external destination.
 
 ## Fluent Bit Policies
 
@@ -91,4 +91,4 @@ The self monitor, based on Prometheus, has two NetworkPolicies:
 
 ## Istio Sidecar Metrics
 
-When Istio is installed, the metrics ingress policies for the gateways, agents, and Fluent Bit include an additional port 15090. This port exposes Istio Envoy sidecar telemetry to Pods with the `networking.kyma-project.io/metrics-scraping: allowed` label.
+When Istio is installed, Telemetry Manager adds port 15090 to the metrics ingress policies for the gateways, agents, and Fluent Bit. This port exposes Istio Envoy sidecar telemetry to Pods with the `networking.kyma-project.io/metrics-scraping: allowed` label.
