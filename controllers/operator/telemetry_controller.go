@@ -135,15 +135,23 @@ func (r *TelemetryController) SetupWithManager(mgr ctrl.Manager) error {
 	ownedResourceTypesToWatch := telemetryOwnedResourceTypes(vpaCRDExists)
 
 	for _, resource := range ownedResourceTypesToWatch {
-		b = b.Watches(
-			resource,
-			handler.EnqueueRequestForOwner(
-				mgr.GetClient().Scheme(),
-				mgr.GetRESTMapper(),
-				&operatorv1beta1.Telemetry{},
-			),
-			ctrlbuilder.WithPredicates(predicateutils.OwnedResourceChanged()),
-		)
+		// VPA needs special handling to ensure it's recreated after deletion
+		if _, isVPA := resource.(*autoscalingvpav1.VerticalPodAutoscaler); isVPA {
+			b = b.Watches(
+				resource,
+				handler.EnqueueRequestsFromMapFunc(r.mapVPAChanges),
+			)
+		} else {
+			b = b.Watches(
+				resource,
+				handler.EnqueueRequestForOwner(
+					mgr.GetClient().Scheme(),
+					mgr.GetRESTMapper(),
+					&operatorv1beta1.Telemetry{},
+				),
+				ctrlbuilder.WithPredicates(predicateutils.OwnedResourceChanged()),
+			)
+		}
 	}
 
 	b = b.
@@ -300,5 +308,23 @@ func (r *TelemetryController) mapNodeChanges(ctx context.Context, object client.
 		return nil
 	}
 
+	return r.createTelemetryRequests(ctx)
+}
+
+// mapVPAChanges handles VPA resource changes (create, update, delete) for self-monitor.
+// This ensures the VPA is recreated if manually deleted and updated when node count changes.
+func (r *TelemetryController) mapVPAChanges(ctx context.Context, object client.Object) []reconcile.Request {
+	vpa, ok := object.(*autoscalingvpav1.VerticalPodAutoscaler)
+	if !ok {
+		logf.FromContext(ctx).Error(nil, "Unable to cast object to VerticalPodAutoscaler")
+		return nil
+	}
+
+	// Only handle self-monitor VPA
+	if vpa.Name != names.SelfMonitor {
+		return nil
+	}
+
+	logf.FromContext(ctx).V(1).Info("Self-monitor VPA changed, triggering reconciliation", "vpa", vpa.Name)
 	return r.createTelemetryRequests(ctx)
 }

@@ -87,7 +87,7 @@ func New(
 	selfMonitorApplierDeleter SelfMonitorApplierDeleter,
 	opts ...Option,
 ) *Reconciler {
-	return &Reconciler{
+	r := &Reconciler{
 		config: config,
 		scheme: scheme,
 		Client: client,
@@ -99,6 +99,12 @@ func New(
 		overridesHandler:          overridesHandler,
 		selfMonitorApplierDeleter: selfMonitorApplierDeleter,
 	}
+
+	for _, opt := range opts {
+		opt(r)
+	}
+
+	return r
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
