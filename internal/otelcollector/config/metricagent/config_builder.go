@@ -841,6 +841,7 @@ func (b *Builder) addCumulativeToDeltaProcessor(opts BuildOptions) buildComponen
 					InitialValue: "auto",
 				}
 			}
+
 			return nil
 		},
 	)

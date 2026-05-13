@@ -72,7 +72,7 @@ func TestRejectPipelineCreation(t *testing.T) {
 			pipeline: telemetryv1beta1.MetricPipeline{
 				Spec: telemetryv1beta1.MetricPipelineSpec{
 					Output: telemetryv1beta1.MetricPipelineOutput{
-						OTLP: &telemetryv1beta1.OTLPOutput{},
+						OTLP: &telemetryv1beta1.MetricPipelineOTLPOutput{},
 					},
 				},
 			},
@@ -84,12 +84,14 @@ func TestRejectPipelineCreation(t *testing.T) {
 			pipeline: telemetryv1beta1.MetricPipeline{
 				Spec: telemetryv1beta1.MetricPipelineSpec{
 					Output: telemetryv1beta1.MetricPipelineOutput{
-						OTLP: &telemetryv1beta1.OTLPOutput{
-							Endpoint: telemetryv1beta1.ValueType{
-								ValueFrom: &telemetryv1beta1.ValueFromSource{
-									SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
-										Name:      "name",
-										Namespace: "namespace",
+						OTLP: &telemetryv1beta1.MetricPipelineOTLPOutput{
+							OTLPOutput: telemetryv1beta1.OTLPOutput{
+								Endpoint: telemetryv1beta1.ValueType{
+									ValueFrom: &telemetryv1beta1.ValueFromSource{
+										SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
+											Name:      "name",
+											Namespace: "namespace",
+										},
 									},
 								},
 							},

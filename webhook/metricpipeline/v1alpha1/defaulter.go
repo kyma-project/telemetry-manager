@@ -6,7 +6,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+	telemetryvbeta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
 
 // +kubebuilder:object:generate=false
@@ -89,7 +89,7 @@ func (md defaulter) Default(ctx context.Context, pipeline *telemetryv1alpha1.Met
 	}
 
 	if pipeline.Spec.Output.OTLP != nil && pipeline.Spec.Output.OTLP.Temporality == nil {
-		pipeline.Spec.Output.OTLP.Temporality = new(v1beta1.TemporalityCumulative)
+		pipeline.Spec.Output.OTLP.Temporality = new(telemetryvbeta1.TemporalityCumulative)
 	}
 
 	return nil
