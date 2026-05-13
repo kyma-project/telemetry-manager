@@ -167,7 +167,7 @@ func TestSelfMonitorVPAMaxAllowedMemory(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			nodes := make([]corev1.Node, tt.nodeCount)
-			for i := 0; i < tt.nodeCount; i++ {
+			for i := range tt.nodeCount {
 				nodes[i] = makeNode("node"+string(rune(i)), resource.MustParse("4Gi"))
 			}
 

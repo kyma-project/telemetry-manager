@@ -389,12 +389,6 @@ func (ad *ApplierDeleter) makePodSpec(image, configPath, configFile, logLevel st
 		commonresources.WithRunAsUser(commonresources.UserDefault),
 	}
 
-	// Only set GOMEMLIMIT when VPA is not active
-	// When VPA is active, let Go runtime use the container memory limit automatically
-	if !opts.VpaCRDExists || !opts.VpaEnabled {
-		containerOpts = append(containerOpts, commonresources.WithGoMemLimitEnvVar(currentMemoryLimit))
-	}
-
 	podSpecOpts = append(podSpecOpts, commonresources.WithContainer(names.SelfMonitorContainerName, image, containerOpts...))
 
 	return commonresources.MakePodSpec(names.SelfMonitor, podSpecOpts...)

@@ -43,6 +43,7 @@ func (t *Tracker) UpdateSmallestMemory(ctx context.Context) (bool, error) {
 	defer t.mu.Unlock()
 
 	changed := false
+
 	if t.smallestMemory == nil || t.smallestMemory.Cmp(newSmallest) != 0 {
 		logf.FromContext(ctx).Info("Smallest node allocatable memory changed",
 			"previous", t.smallestMemory,
@@ -51,6 +52,7 @@ func (t *Tracker) UpdateSmallestMemory(ctx context.Context) (bool, error) {
 
 		t.smallestMemory = &newSmallest
 		metrics.NodeSmallestMemoryBytes.Set(float64(newSmallest.Value()))
+
 		changed = true
 	}
 
@@ -103,7 +105,7 @@ func (t *Tracker) SelfMonitorVPAMaxAllowedMemory() resource.Quantity {
 	perNodeMemory := resource.MustParse("16Mi")
 
 	maxAllowedMemory := baseMemory.DeepCopy()
-	for i := 0; i < t.nodeCount; i++ {
+	for range t.nodeCount {
 		maxAllowedMemory.Add(perNodeMemory)
 	}
 
