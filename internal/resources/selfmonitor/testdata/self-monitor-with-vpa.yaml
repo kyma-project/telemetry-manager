@@ -111,10 +111,10 @@ spec:
           timeoutSeconds: 3
         resources:
           limits:
-            memory: 100Mi
+            memory: 64Mi
           requests:
             cpu: 10m
-            memory: 50Mi
+            memory: 32Mi
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -169,9 +169,9 @@ spec:
       - memory
       controlledValues: RequestsAndLimits
       maxAllowed:
-        memory: 128Mi
+        memory: 64Mi
       minAllowed:
-        memory: 50Mi
+        memory: 32Mi
   targetRef:
     apiVersion: apps/v1
     kind: Deployment

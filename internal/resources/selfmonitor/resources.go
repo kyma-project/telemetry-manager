@@ -40,7 +40,7 @@ const (
 var (
 	storageVolumeSize = resource.MustParse("1000Mi")
 	cpuRequest        = resource.MustParse("10m")
-	memoryRequest     = resource.MustParse("50Mi")
+	memoryRequest     = resource.MustParse("32Mi")
 	memoryLimit       = resource.MustParse("512Mi")
 )
 
@@ -296,6 +296,7 @@ func (ad *ApplierDeleter) makePodSpec(image, configPath, configFile, logLevel st
 		"--storage.tsdb.path=" + storagePath,
 		"--log.format=" + logFormat,
 		"--log.level=" + logLevel,
+		"--auto-gomemlimit=true",
 	}
 
 	volumes := []corev1.Volume{

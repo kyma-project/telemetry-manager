@@ -49,7 +49,7 @@ func TestApplySelfMonitorResources(t *testing.T) {
 			name:         "with VPA enabled",
 			vpaEnabled:   true,
 			vpaCRDExists: true,
-			vpaMaxMemory: "128Mi",
+			vpaMaxMemory: "64Mi", // 2 nodes: 32Mi base + 2*16Mi
 			goldenFile:   "testdata/self-monitor-with-vpa.yaml",
 		},
 	}

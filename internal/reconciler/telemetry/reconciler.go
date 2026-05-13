@@ -56,6 +56,7 @@ type VpaStatusChecker interface {
 
 type NodeSizeTracker interface {
 	VPAMaxAllowedMemory() resource.Quantity
+	SelfMonitorVPAMaxAllowedMemory() resource.Quantity
 }
 
 type SelfMonitorApplierDeleter interface {
@@ -191,7 +192,7 @@ func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry *operat
 	}
 
 	isVpaEnabled := telemetryutils.IsVpaEnabledInTelemetry(ctx, r.Client, r.config.DefaultTelemetryNamespace())
-	vpaMaxAllowedMemory := r.nodeSizeTracker.VPAMaxAllowedMemory()
+	vpaMaxAllowedMemory := r.nodeSizeTracker.SelfMonitorVPAMaxAllowedMemory()
 
 	if err := r.selfMonitorApplierDeleter.ApplyResources(
 		ctx,

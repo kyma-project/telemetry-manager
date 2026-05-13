@@ -19,6 +19,7 @@ const vpaMaxAllowedMemoryFraction = 0.15
 type Tracker struct {
 	mu             sync.RWMutex
 	smallestMemory *resource.Quantity
+	nodeCount      int
 	reader         client.Reader
 }
 
@@ -36,24 +37,33 @@ func (t *Tracker) UpdateSmallestMemory(ctx context.Context) (bool, error) {
 	}
 
 	newSmallest := computeSmallestAllocatableMemory(nodeList.Items)
+	newNodeCount := len(nodeList.Items)
 
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	if t.smallestMemory != nil && t.smallestMemory.Cmp(newSmallest) == 0 {
-		return false, nil
+	changed := false
+	if t.smallestMemory == nil || t.smallestMemory.Cmp(newSmallest) != 0 {
+		logf.FromContext(ctx).Info("Smallest node allocatable memory changed",
+			"previous", t.smallestMemory,
+			"current", newSmallest.String(),
+		)
+
+		t.smallestMemory = &newSmallest
+		metrics.NodeSmallestMemoryBytes.Set(float64(newSmallest.Value()))
+		changed = true
 	}
 
-	logf.FromContext(ctx).Info("Smallest node allocatable memory changed",
-		"previous", t.smallestMemory,
-		"current", newSmallest.String(),
-	)
+	if t.nodeCount != newNodeCount {
+		logf.FromContext(ctx).Info("Node count changed",
+			"previous", t.nodeCount,
+			"current", newNodeCount,
+		)
+		t.nodeCount = newNodeCount
+		changed = true
+	}
 
-	t.smallestMemory = &newSmallest
-
-	metrics.NodeSmallestMemoryBytes.Set(float64(newSmallest.Value()))
-
-	return true, nil
+	return changed, nil
 }
 
 // SmallestMemory returns the current smallest allocatable memory.
@@ -81,6 +91,23 @@ func (t *Tracker) VPAMaxAllowedMemory() resource.Quantity {
 	roundedToKiB := (fifteenPercent / kib) * kib
 
 	return *resource.NewQuantity(roundedToKiB, resource.BinarySI)
+}
+
+// SelfMonitorVPAMaxAllowedMemory returns the max allowed memory for self-monitor VPA
+// based on node count: base 32Mi + 16Mi per node.
+func (t *Tracker) SelfMonitorVPAMaxAllowedMemory() resource.Quantity {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+
+	baseMemory := resource.MustParse("32Mi")
+	perNodeMemory := resource.MustParse("16Mi")
+
+	maxAllowedMemory := baseMemory.DeepCopy()
+	for i := 0; i < t.nodeCount; i++ {
+		maxAllowedMemory.Add(perNodeMemory)
+	}
+
+	return maxAllowedMemory
 }
 
 func computeSmallestAllocatableMemory(nodes []corev1.Node) resource.Quantity {
