@@ -76,6 +76,13 @@ func (md defaulter) Default(ctx context.Context, pipeline *telemetryv1alpha1.Met
 		}
 	}
 
+	md.applyOTLPInputDefaults(pipeline)
+	md.applyOTLPOutputDefaults(pipeline)
+
+	return nil
+}
+
+func (md defaulter) applyOTLPInputDefaults(pipeline *telemetryv1alpha1.MetricPipeline) {
 	if pipeline.Spec.Input.OTLP == nil {
 		pipeline.Spec.Input.OTLP = &telemetryv1alpha1.OTLPInput{}
 	}
@@ -83,7 +90,9 @@ func (md defaulter) Default(ctx context.Context, pipeline *telemetryv1alpha1.Met
 	if pipeline.Spec.Input.OTLP.Namespaces == nil {
 		pipeline.Spec.Input.OTLP.Namespaces = &telemetryv1alpha1.NamespaceSelector{}
 	}
+}
 
+func (md defaulter) applyOTLPOutputDefaults(pipeline *telemetryv1alpha1.MetricPipeline) {
 	if pipeline.Spec.Output.OTLP != nil && pipeline.Spec.Output.OTLP.Protocol == "" {
 		pipeline.Spec.Output.OTLP.Protocol = md.DefaultOTLPOutputProtocol
 	}
@@ -91,8 +100,6 @@ func (md defaulter) Default(ctx context.Context, pipeline *telemetryv1alpha1.Met
 	if pipeline.Spec.Output.OTLP != nil && pipeline.Spec.Output.OTLP.Temporality == nil {
 		pipeline.Spec.Output.OTLP.Temporality = new(telemetryv1beta1.TemporalityCumulative)
 	}
-
-	return nil
 }
 
 func (md defaulter) applyRuntimeInputResourceDefaults(pipeline *telemetryv1alpha1.MetricPipeline) {
