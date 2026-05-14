@@ -21,10 +21,11 @@ func SetupWithManager(mgr ctrl.Manager) error {
 				StatefulSet: true,
 				Job:         true,
 			},
-			OTLPInputEnabled:          true,
-			DefaultOTLPOutputProtocol: telemetryv1beta1.OTLPProtocolGRPC,
-			DiagnosticMetricsEnabled:  false,
-			EnvoyMetricsEnabled:       false,
+			OTLPInputEnabled:             true,
+			DefaultOTLPOutputProtocol:    telemetryv1beta1.OTLPProtocolGRPC,
+			DefaultOTLPOutputTemporality: telemetryv1beta1.TemporalityCumulative,
+			DiagnosticMetricsEnabled:     false,
+			EnvoyMetricsEnabled:          false,
 		}).
 		WithValidator(&validator{}).
 		Complete()

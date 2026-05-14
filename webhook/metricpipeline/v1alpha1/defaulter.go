@@ -13,11 +13,12 @@ import (
 var _ admission.Defaulter[*telemetryv1alpha1.MetricPipeline] = &defaulter{}
 
 type defaulter struct {
-	ExcludeNamespaces         []string
-	RuntimeInputResources     runtimeInputResourceDefaults
-	DefaultOTLPOutputProtocol string
-	DiagnosticMetricsEnabled  bool
-	EnvoyMetricsEnabled       bool
+	ExcludeNamespaces            []string
+	RuntimeInputResources        runtimeInputResourceDefaults
+	DefaultOTLPOutputProtocol    string
+	DefaultOTLPOutputTemporality telemetryv1beta1.TemporalityType
+	DiagnosticMetricsEnabled     bool
+	EnvoyMetricsEnabled          bool
 }
 
 type runtimeInputResourceDefaults struct {
@@ -98,7 +99,7 @@ func (md defaulter) applyOTLPOutputDefaults(pipeline *telemetryv1alpha1.MetricPi
 	}
 
 	if pipeline.Spec.Output.OTLP != nil && pipeline.Spec.Output.OTLP.Temporality == nil {
-		pipeline.Spec.Output.OTLP.Temporality = new(telemetryv1beta1.TemporalityCumulative)
+		pipeline.Spec.Output.OTLP.Temporality = &md.DefaultOTLPOutputTemporality
 	}
 }
 

@@ -23,7 +23,8 @@ func TestDefault(t *testing.T) {
 			StatefulSet: true,
 			Job:         true,
 		},
-		DefaultOTLPOutputProtocol: telemetryv1alpha1.OTLPProtocolGRPC,
+		DefaultOTLPOutputProtocol:    telemetryv1alpha1.OTLPProtocolGRPC,
+		DefaultOTLPOutputTemporality: telemetryv1beta1.TemporalityCumulative,
 	}
 
 	tests := []struct {
@@ -524,6 +525,35 @@ func TestDefault(t *testing.T) {
 								Exclude: namespaces.System(),
 							},
 							DiagnosticMetrics: &telemetryv1alpha1.MetricPipelineIstioInputDiagnosticMetrics{Enabled: new(true)},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "should not override existing temporality",
+			input: &telemetryv1alpha1.MetricPipeline{
+				Spec: telemetryv1alpha1.MetricPipelineSpec{
+					Output: telemetryv1alpha1.MetricPipelineOutput{
+						OTLP: &telemetryv1alpha1.MetricPipelineOTLPOutput{
+							Temporality: new(telemetryv1beta1.TemporalityDelta),
+						},
+					},
+				},
+			},
+			expected: &telemetryv1alpha1.MetricPipeline{
+				Spec: telemetryv1alpha1.MetricPipelineSpec{
+					Input: telemetryv1alpha1.MetricPipelineInput{
+						OTLP: &telemetryv1alpha1.OTLPInput{
+							Namespaces: &telemetryv1alpha1.NamespaceSelector{},
+						},
+					},
+					Output: telemetryv1alpha1.MetricPipelineOutput{
+						OTLP: &telemetryv1alpha1.MetricPipelineOTLPOutput{
+							OTLPOutput: telemetryv1alpha1.OTLPOutput{
+								Protocol: telemetryv1alpha1.OTLPProtocolGRPC,
+							},
+							Temporality: new(telemetryv1beta1.TemporalityDelta),
 						},
 					},
 				},

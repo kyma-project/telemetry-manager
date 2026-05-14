@@ -4,6 +4,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/namespaces"
 )
 
@@ -21,9 +22,10 @@ func SetupWithManager(mgr ctrl.Manager) error {
 				StatefulSet: true,
 				Job:         true,
 			},
-			DefaultOTLPOutputProtocol: telemetryv1alpha1.OTLPProtocolGRPC,
-			DiagnosticMetricsEnabled:  false,
-			EnvoyMetricsEnabled:       false,
+			DefaultOTLPOutputProtocol:    telemetryv1alpha1.OTLPProtocolGRPC,
+			DefaultOTLPOutputTemporality: telemetryv1beta1.TemporalityCumulative,
+			DiagnosticMetricsEnabled:     false,
+			EnvoyMetricsEnabled:          false,
 		}).
 		WithValidator(&validator{}).
 		Complete()
