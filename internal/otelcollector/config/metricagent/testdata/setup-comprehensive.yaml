@@ -86,6 +86,9 @@ service:
                         prometheus:
                             host: ${MY_POD_IP}
                             port: 8888
+                            without_scope_info: false
+                            without_type_suffix: false
+                            without_units: false
         logs:
             level: info
             encoding: json

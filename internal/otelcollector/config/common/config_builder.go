@@ -27,8 +27,11 @@ func defaultService() ServiceConfig {
 					Pull: PullMetricReader{
 						Exporter: MetricExporter{
 							Prometheus: PrometheusMetricExporter{
-								Host: fmt.Sprintf("${%s}", EnvVarCurrentPodIP),
-								Port: ports.Metrics,
+								Host:              fmt.Sprintf("${%s}", EnvVarCurrentPodIP),
+								Port:              ports.Metrics,
+								WithoutScopeInfo:  false,
+								WithoutTypeSuffix: false,
+								WithoutUnits:      false,
 							},
 						},
 					},

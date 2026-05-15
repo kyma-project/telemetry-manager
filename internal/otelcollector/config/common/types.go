@@ -87,8 +87,11 @@ type MetricExporter struct {
 }
 
 type PrometheusMetricExporter struct {
-	Host string `yaml:"host"`
-	Port int32  `yaml:"port"`
+	Host              string `yaml:"host"`
+	Port              int32  `yaml:"port"`
+	WithoutScopeInfo  bool   `yaml:"without_scope_info"`
+	WithoutTypeSuffix bool   `yaml:"without_type_suffix"`
+	WithoutUnits      bool   `yaml:"without_units"`
 }
 
 type Logs struct {
