@@ -258,7 +258,7 @@ func TestRejectTracePipelineCreation(t *testing.T) {
 					),
 				).
 				Build(),
-			errorMsg: "Invalid value: \"object\": 'tokenURL' must be a valid URL",
+			errorMsg: "Invalid value: 'tokenURL' must be a valid URL",
 			field:    "spec.output.otlp.authentication.oauth2.tokenURL",
 		},
 		{
