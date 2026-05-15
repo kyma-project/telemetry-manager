@@ -291,7 +291,7 @@ To start ingesting custom and Istio metrics, deploy a MetricPipeline. The config
                             name: dynakube
                             namespace: ${DYNATRACE_NS}
                             key: apiurl
-                    path: v2/otlp/v1/traces
+                    path: v2/otlp/v1/metrics
                     headers:
                     - name: Authorization
                       prefix: Api-Token
