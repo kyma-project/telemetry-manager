@@ -400,6 +400,8 @@ details: |-
               children:
                 - name: Protocol
                   source: spec.output.otlp.protocol
+                - name: Temporality
+                  source: spec.output.otlp.temporality
   resourceGraph:
     colorVariant: 2
     dataSources:
@@ -618,6 +620,13 @@ form: |
             children:
               - name: Value
                 widget: Text
+          - name: Temporality
+            path: temporality
+            simple: true
+            widget: FormGroup
+            children:
+              - name: value
+                widget: text
           - name: Authentication
             path: authentication
             widget: FormGroup
