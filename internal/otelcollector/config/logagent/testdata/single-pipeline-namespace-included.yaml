@@ -5,6 +5,7 @@ extensions:
         gomemlimit:
             enabled: true
             ratio: 0.8
+            refresh_interval: 30s
     file_storage:
         create_directory: true
         directory: /tmp/telemetry-log-agent/file-log-receiver
