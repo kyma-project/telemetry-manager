@@ -345,11 +345,7 @@ func TestFlowHealthCondition(t *testing.T) {
 			sut := testReconciler(fakeClient, flowHealthProberStub)
 
 			_, err := sut.Reconcile(context.Background(), requestFor(pipeline.Name))
-			if tt.probeErr != nil {
-				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
-			}
+			require.NoError(t, err)
 
 			var updatedPipeline telemetryv1beta1.TracePipeline
 

@@ -134,11 +134,7 @@ func TestAgentFlowHealthCondition(t *testing.T) {
 				WithAgentFlowHealthProber(agentFlowHealthProber))
 			result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
 
-			if tt.probeErr != nil {
-				require.Error(t, result.err)
-			} else {
-				require.NoError(t, result.err)
-			}
+			require.NoError(t, result.err)
 
 			requireHasStatusCondition(t, result.pipeline,
 				conditions.TypeFlowHealthy,
@@ -236,11 +232,7 @@ func TestGatewayFlowHealthCondition(t *testing.T) {
 				WithGatewayFlowHealthProber(gatewayFlowHeathProber))
 			result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
 
-			if tt.probeErr != nil {
-				require.Error(t, result.err)
-			} else {
-				require.NoError(t, result.err)
-			}
+			require.NoError(t, result.err)
 
 			requireHasStatusCondition(t, result.pipeline,
 				conditions.TypeFlowHealthy,

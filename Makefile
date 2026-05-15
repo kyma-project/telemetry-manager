@@ -272,6 +272,11 @@ build-dependencies: $(BUILD_DEPENDENCY_TARGETS) ## Build custom tools in depende
 docker-build: ## Build docker image with the manager
 	docker build -t ${MANAGER_IMAGE} .
 
+.PHONY: docker-build-local
+docker-build-local: ## Build and import manager image into the local K3D cluster
+	docker build -t telemetry-manager:latest .
+	k3d image import telemetry-manager:latest -c kyma
+
 .PHONY: docker-push
 docker-push: ## Push docker image with the manager
 	docker push ${MANAGER_IMAGE}

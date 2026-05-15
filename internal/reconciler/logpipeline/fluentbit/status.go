@@ -50,7 +50,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) erro
 	r.setFluentBitConfigGeneratedCondition(ctx, &pipeline)
 
 	if err := r.setFlowHealthCondition(ctx, &pipeline); err != nil {
-		allErrors = errors.Join(allErrors, err)
+		logf.FromContext(ctx).Error(err, "Failed to set flow health condition")
 	}
 
 	if err := r.Status().Update(ctx, &pipeline); err != nil {
