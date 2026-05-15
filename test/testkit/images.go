@@ -6,7 +6,7 @@ package testkit
 const (
 	DefaultTelemetryGenImage         = "ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.150.0"
 	DefaultOTelCollectorContribImage = "otel/opentelemetry-collector-contrib:latest"
-	DefaultOTelCollectorImage        = "europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.150.0-1.63.0"
+	DefaultOTelCollectorImage        = "europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.150.0-1.63.4"
 	SelfMonitorImage                 = "europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:v20260430-87ba5cf7"
 	SelfMonitorFIPSImage             = "europe-docker.pkg.dev/kyma-project/restricted-prod/sap.com/prometheus-fips:3.11.3"
 	FaultBackendImage                = "europe-docker.pkg.dev/kyma-project/prod/fault-backend:main"
