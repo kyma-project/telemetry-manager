@@ -25,7 +25,7 @@ service:
                 - routing/enrichment
         metrics/input-runtime:
             receivers:
-                - kubeletstats
+                - kubelet_stats
                 - k8s_cluster
             processors:
                 - memory_limiter
@@ -110,7 +110,7 @@ receivers:
             k8s.cronjob.active_jobs:
                 enabled: false
         k8s_leader_elector: k8s_leader_elector
-    kubeletstats:
+    kubelet_stats:
         collection_interval: 30s
         auth_type: serviceAccount
         endpoint: https://${MY_NODE_NAME}:10250
