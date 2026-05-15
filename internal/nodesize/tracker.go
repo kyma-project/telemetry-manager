@@ -14,7 +14,12 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/metrics"
 )
 
-const vpaMaxAllowedMemoryFraction = 0.15
+const (
+	vpaMaxAllowedMemoryFraction = 0.15
+	selfMonitorBaseMemory       = "32Mi"
+	selfMonitorPerNodeMemory    = "16Mi"
+	selfMonitorMaxCap           = "512Mi"
+)
 
 type Tracker struct {
 	mu             sync.RWMutex
@@ -96,17 +101,23 @@ func (t *Tracker) VPAMaxAllowedMemory() resource.Quantity {
 }
 
 // SelfMonitorVPAMaxAllowedMemory returns the max allowed memory for self-monitor VPA
-// based on node count: base 32Mi + 16Mi per node.
+// based on node count: base 32Mi + 16Mi per node, capped at 512Mi.
 func (t *Tracker) SelfMonitorVPAMaxAllowedMemory() resource.Quantity {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
-	baseMemory := resource.MustParse("32Mi")
-	perNodeMemory := resource.MustParse("16Mi")
+	baseMemory := resource.MustParse(selfMonitorBaseMemory)
+	perNodeMemory := resource.MustParse(selfMonitorPerNodeMemory)
+	maxCap := resource.MustParse(selfMonitorMaxCap)
 
 	maxAllowedMemory := baseMemory.DeepCopy()
 	for range t.nodeCount {
 		maxAllowedMemory.Add(perNodeMemory)
+	}
+
+	// Cap at 512Mi
+	if maxAllowedMemory.Cmp(maxCap) > 0 {
+		return maxCap
 	}
 
 	return maxAllowedMemory

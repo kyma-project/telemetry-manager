@@ -162,6 +162,21 @@ func TestSelfMonitorVPAMaxAllowedMemory(t *testing.T) {
 			nodeCount: 10,
 			expected:  "192Mi", // 32Mi + 160Mi
 		},
+		{
+			name:      "30 nodes (exactly at cap)",
+			nodeCount: 30,
+			expected:  "512Mi", // 32Mi + 480Mi = 512Mi (at cap)
+		},
+		{
+			name:      "50 nodes (exceeds cap)",
+			nodeCount: 50,
+			expected:  "512Mi", // 32Mi + 800Mi = 832Mi, capped at 512Mi
+		},
+		{
+			name:      "100 nodes (well above cap)",
+			nodeCount: 100,
+			expected:  "512Mi", // 32Mi + 1600Mi = 1632Mi, capped at 512Mi
+		},
 	}
 
 	for _, tt := range tests {
