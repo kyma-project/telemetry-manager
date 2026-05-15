@@ -536,7 +536,7 @@ func (r *Reconciler) calculateRequeueAfterDuration(ctx context.Context, pipeline
 
 	var errCertAboutToExpire *tlscert.CertAboutToExpireError
 	if errors.As(err, &errCertAboutToExpire) {
-		duration := time.Until(errCertAboutToExpire.Expiry)
+		duration := max(time.Until(errCertAboutToExpire.Expiry), time.Second)
 		return &duration
 	}
 
