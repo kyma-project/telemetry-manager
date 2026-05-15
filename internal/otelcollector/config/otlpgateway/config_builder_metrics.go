@@ -57,6 +57,7 @@ func (b *Builder) buildMetricPipelines(ctx context.Context, builder *common.Comp
 		b.addMetricSetInstrumentationScopeToKymaProcessor(builder, opts),
 		b.addMetricDropUnknownServiceNameProcessor(builder, opts),
 		b.addMetricK8sAttributesProcessor(builder, opts),
+		b.addMetricRestoreOtelServiceAttrsProcessor(builder, opts),
 		b.addMetricServiceEnrichmentProcessor(builder, opts),
 		b.addMetricInsertClusterAttributesProcessor(builder, opts),
 		b.addMetricExporterForEnrichmentForwarder(builder),
@@ -182,7 +183,7 @@ func (b *Builder) addMetricDropUnknownServiceNameProcessor(builder *common.Compo
 				return nil
 			}
 
-			return common.MetricTransformProcessor(common.DropUnknownServiceNameProcessorStatements())
+			return common.AllSignalsTransformProcessor(common.DropUnknownServiceNameProcessorStatements())
 		},
 	)
 }
@@ -192,6 +193,19 @@ func (b *Builder) addMetricK8sAttributesProcessor(builder *common.ComponentBuild
 		builder.StaticComponentID(common.ComponentIDK8sAttributesProcessor),
 		func(mp *telemetryv1beta1.MetricPipeline) any {
 			return k8sAttributesProcessorConfig(opts)
+		},
+	)
+}
+
+func (b *Builder) addMetricRestoreOtelServiceAttrsProcessor(builder *common.ComponentBuilder[*telemetryv1beta1.MetricPipeline], opts BuildOptions) buildMetricComponentFunc {
+	return builder.AddProcessor(
+		builder.StaticComponentID(common.ComponentIDRestoreOtelServiceAttrsProcessor),
+		func(mp *telemetryv1beta1.MetricPipeline) any {
+			if opts.ServiceEnrichment != commonresources.AnnotationValueTelemetryServiceEnrichmentOtel {
+				return nil
+			}
+
+			return common.AllSignalsTransformProcessor(common.RestoreOtelServiceAnnotationsProcessorStatements())
 		},
 	)
 }
@@ -210,7 +224,7 @@ func (b *Builder) addMetricInsertClusterAttributesProcessor(builder *common.Comp
 		builder.StaticComponentID(common.ComponentIDInsertClusterAttributesProcessor),
 		func(mp *telemetryv1beta1.MetricPipeline) any {
 			transformStatements := common.InsertClusterAttributesProcessorStatements(opts.Cluster)
-			return common.MetricTransformProcessor(transformStatements)
+			return common.AllSignalsTransformProcessor(transformStatements)
 		},
 	)
 }
@@ -273,7 +287,7 @@ func (b *Builder) addMetricDropKymaAttributesProcessor(builder *common.Component
 		builder.StaticComponentID(common.ComponentIDDropKymaAttributesProcessor),
 		func(mp *telemetryv1beta1.MetricPipeline) any {
 			transformStatements := common.DropKymaAttributesProcessorStatements()
-			return common.MetricTransformProcessor(transformStatements)
+			return common.AllSignalsTransformProcessor(transformStatements)
 		},
 	)
 }
