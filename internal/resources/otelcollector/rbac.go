@@ -184,7 +184,7 @@ func withKubeletStatsRules() ClusterRoleOption {
 	// policy rules needed for the kubeletstatsreceiver component
 	kubeletStatsRules := []rbacv1.PolicyRule{{
 		APIGroups: []string{""},
-		Resources: []string{"nodes", "nodes/stats", "nodes/proxy"},
+		Resources: []string{"nodes", "nodes/stats", "nodes/proxy", "persistentvolumeclaims", "persistentvolumes"},
 		Verbs:     []string{"get", "list", "watch"},
 	}}
 
