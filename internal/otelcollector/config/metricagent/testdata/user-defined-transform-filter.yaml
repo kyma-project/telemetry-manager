@@ -141,6 +141,9 @@ receivers:
             - k8s.volume.type
         collect_all_network_interfaces:
             node: true
+        node: ${MY_NODE_NAME}
+        k8s_api_config:
+            auth_type: serviceAccount
 processors:
     batch:
         send_batch_size: 1024
@@ -155,7 +158,7 @@ processors:
         error_mode: ignore
         metric_conditions:
             - conditions:
-                - resource.attributes["k8s.volume.name"] != nil and resource.attributes["k8s.volume.type"] != "persistentVolumeClaim"
+                - resource.attributes["k8s.volume.name"] != nil and (resource.attributes["k8s.volume.type"] == "configMap" or resource.attributes["k8s.volume.type"] == "downwardAPI" or resource.attributes["k8s.volume.type"] == "emptyDir" or resource.attributes["k8s.volume.type"] == "secret")
     filter/drop-virtual-network-interfaces:
         error_mode: ignore
         metric_conditions:
