@@ -272,6 +272,8 @@ rules:
   - nodes
   - nodes/stats
   - nodes/proxy
+  - persistentvolumeclaims
+  - persistentvolumes
   verbs:
   - get
   - list
