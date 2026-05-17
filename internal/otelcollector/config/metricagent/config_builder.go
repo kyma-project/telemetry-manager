@@ -1431,7 +1431,12 @@ func dropNonPVCVolumesMetricsProcessor() *common.FilterProcessorConfig {
 		{
 			Conditions: []string{common.JoinWithAnd(
 				common.ResourceAttributeIsNotNil("k8s.volume.name"),
-				common.ResourceAttributeNotEquals("k8s.volume.type", "persistentVolumeClaim"),
+				common.JoinWithOr(
+					common.ResourceAttributeEquals("k8s.volume.type", "configMap"),
+					common.ResourceAttributeEquals("k8s.volume.type", "downwardAPI"),
+					common.ResourceAttributeEquals("k8s.volume.type", "emptyDir"),
+					common.ResourceAttributeEquals("k8s.volume.type", "secret"),
+				),
 			)},
 		},
 	})
