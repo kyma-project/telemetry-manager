@@ -4,9 +4,9 @@ Use the default OTLP input to collect telemetry data from your instrumented appl
 
 ## Overview
 
-When you create any LogPipeline, TracePipeline, or MetricPipeline, the Telemetry module automatically deploys the respective gateway. This opens a stable, cluster-internal [OTLP](https://opentelemetry.io/docs/specs/otel/protocol/) endpoint for each signal type, ready to receive data from your applications.
+When you create any LogPipeline, TracePipeline, or MetricPipeline, the Telemetry module automatically deploys the OTLP Gateway. This opens a stable, cluster-internal [OTLP](https://opentelemetry.io/docs/specs/otel/protocol/) endpoint, ready to receive data from your applications.
 
-Each endpoint listens on port `4317` for gRPC (default) and on port `4318` for HTTP.
+The endpoint listens on port `4317` for gRPC (default) and on port `4318` for HTTP.
 
 ![OTLP Input](./assets/otlp-input.drawio.svg)
 
@@ -26,7 +26,7 @@ Use the following environment variable to set the harmonized OTLP endpoint, whic
 
 ## Verify the Endpoints
 
-To see whether you've set up your gateways and their push endpoints successfully, check the status of the default `Telemetry` resource:
+To see whether you've set up your OTLP Gateway and its push endpoints successfully, check the status of the default `Telemetry` resource:
 
 ```sh
 kubectl -n kyma-system get telemetries.operator.kyma-project.io default -oyaml
@@ -36,15 +36,6 @@ The output shows the available endpoints and the pipeline health under the statu
 
 ```yaml
   endpoints:
-    metrics:
-      grpc: http://telemetry-otlp-metrics.kyma-system:4317
-      http: http://telemetry-otlp-metrics.kyma-system:4318
-    traces:
-      grpc: http://telemetry-otlp-traces.kyma-system:4317
-      http: http://telemetry-otlp-traces.kyma-system:4318
-    logs:
-      grpc: http://telemetry-otlp-logs.kyma-system:4317
-      http: http://telemetry-otlp-logs.kyma-system:4318
     otlp:
       grpc: http://telemetry-otlp.kyma-system:4317
       http: http://telemetry-otlp.kyma-system:4318
