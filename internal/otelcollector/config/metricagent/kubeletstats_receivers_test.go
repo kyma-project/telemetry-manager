@@ -297,6 +297,10 @@ func TestKubeletStatsReceiverConfig(t *testing.T) {
 			CollectAllNetworkInterfaces: NetworkInterfacesEnabler{
 				NodeMetrics: true,
 			},
+			Node: "${MY_NODE_NAME}",
+			K8sApiConfig: K8sAPIConfig{
+				AuthType: "serviceAccount",
+			},
 		}
 
 		require.Contains(t, collectorConfig.Receivers, "kubeletstats")
