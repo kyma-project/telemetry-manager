@@ -249,7 +249,7 @@ func TestBuildConfig(t *testing.T) {
 			goldenFileName: "runtime-additional-metrics.yaml",
 			pipelines: []telemetryv1beta1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
-					WithName("test").
+					WithName("test1").
 					WithRuntimeInput(true).
 					WithRuntimeInputPodMetrics(false).
 					WithRuntimeInputContainerMetrics(false).
@@ -280,6 +280,33 @@ func TestBuildConfig(t *testing.T) {
 						"k8s.deployment.available",
 						// a default k8scluster daemonset metric
 						"k8s.daemonset.current_scheduled_nodes",
+
+						// an optional kubeletstats container metric only in test1 pipeline
+						"k8s.container.cpu_limit_utilization",
+						// an optional kubeletstats container metric only in test1 pipeline
+						"k8s.container.cpu_request_utilization",
+						// an optional kubeletstats node metric in both test1 and test2 pipelines
+						"k8s.node.uptime",
+					).
+					Build(),
+				testutils.NewMetricPipelineBuilder().
+					WithName("test2").
+					WithRuntimeInput(true).
+					WithRuntimeInputPodMetrics(true).
+					WithRuntimeInputContainerMetrics(true).
+					WithRuntimeInputNodeMetrics(true).
+					WithRuntimeInputVolumeMetrics(true).
+					WithRuntimeInputDeploymentMetrics(true).
+					WithRuntimeInputDaemonSetMetrics(true).
+					WithRuntimeInputStatefulSetMetrics(true).
+					WithRuntimeInputJobMetrics(true).
+					WithRuntimeInputAdditionalMetrics(
+						// an optional kubeletstats pod metric only in test2 pipeline
+						"k8s.pod.cpu_limit_utilization",
+						// an optional kubeletstats pod metric only in test2 pipeline
+						"k8s.pod.cpu_request_utilization",
+						// an optional kubeletstats node metric in both test1 and test2 pipelines
+						"k8s.node.uptime",
 					).
 					Build(),
 			},
