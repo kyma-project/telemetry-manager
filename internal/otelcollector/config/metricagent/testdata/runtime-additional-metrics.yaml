@@ -28,7 +28,6 @@ service:
                 - k8s_cluster
             processors:
                 - memory_limiter
-                - filter/drop-non-pvc-volumes-metrics
                 - filter/drop-virtual-network-interfaces
                 - transform/drop-service-name
                 - transform/insert-skip-enrichment-attribute
@@ -41,6 +40,14 @@ service:
                 - routing/enrichment
                 - routing/runtime-input
             processors:
+                - filter/drop-runtime-pod-metrics
+                - filter/drop-runtime-container-metrics
+                - filter/drop-runtime-node-metrics
+                - filter/drop-runtime-volume-metrics
+                - filter/drop-runtime-deployment-metrics
+                - filter/drop-runtime-daemonset-metrics
+                - filter/drop-runtime-statefulset-metrics
+                - filter/drop-runtime-job-metrics
                 - filter/drop-envoy-metrics-if-disabled
                 - transform/insert-cluster-attributes
                 - transform/drop-skip-enrichment-attribute
@@ -71,93 +78,81 @@ receivers:
         node_conditions_to_report: []
         metrics:
             k8s.container.storage_request:
-                enabled: true
+                enabled: false
             k8s.container.storage_limit:
-                enabled: true
+                enabled: false
             k8s.container.ephemeralstorage_request:
-                enabled: true
+                enabled: false
             k8s.container.ephemeralstorage_limit:
-                enabled: true
+                enabled: false
             k8s.container.ready:
-                enabled: true
+                enabled: false
             k8s.namespace.phase:
-                enabled: true
+                enabled: false
             k8s.hpa.current_replicas:
-                enabled: true
+                enabled: false
             k8s.hpa.desired_replicas:
-                enabled: true
+                enabled: false
             k8s.hpa.min_replicas:
-                enabled: true
+                enabled: false
             k8s.hpa.max_replicas:
-                enabled: true
+                enabled: false
             k8s.replicaset.available:
-                enabled: true
+                enabled: false
             k8s.replicaset.desired:
-                enabled: true
+                enabled: false
             k8s.replication_controller.available:
-                enabled: true
+                enabled: false
             k8s.replication_controller.desired:
-                enabled: true
+                enabled: false
             k8s.resource_quota.hard_limit:
-                enabled: true
+                enabled: false
             k8s.resource_quota.used:
-                enabled: true
+                enabled: false
             k8s.cronjob.active_jobs:
-                enabled: true
+                enabled: false
             k8s.pod.phase:
                 enabled: true
             k8s.container.cpu_request:
                 enabled: true
             k8s.container.cpu_limit:
-                enabled: true
+                enabled: false
             k8s.container.memory_request:
-                enabled: true
+                enabled: false
             k8s.container.memory_limit:
-                enabled: true
+                enabled: false
             k8s.container.restarts:
-                enabled: true
+                enabled: false
             k8s.statefulset.current_pods:
                 enabled: true
             k8s.statefulset.desired_pods:
-                enabled: true
+                enabled: false
             k8s.statefulset.ready_pods:
-                enabled: true
+                enabled: false
             k8s.statefulset.updated_pods:
-                enabled: true
+                enabled: false
             k8s.job.active_pods:
                 enabled: true
             k8s.job.desired_successful_pods:
-                enabled: true
+                enabled: false
             k8s.job.failed_pods:
-                enabled: true
+                enabled: false
             k8s.job.max_parallel_pods:
-                enabled: true
+                enabled: false
             k8s.job.successful_pods:
-                enabled: true
+                enabled: false
             k8s.deployment.available:
                 enabled: true
             k8s.deployment.desired:
-                enabled: true
+                enabled: false
             k8s.daemonset.current_scheduled_nodes:
                 enabled: true
             k8s.daemonset.desired_scheduled_nodes:
-                enabled: true
+                enabled: false
             k8s.daemonset.misscheduled_nodes:
-                enabled: true
+                enabled: false
             k8s.daemonset.ready_nodes:
-                enabled: true
-            k8s.container.status.reason:
-                enabled: true
-            k8s.container.status.state:
-                enabled: true
-            k8s.node.condition:
-                enabled: true
-            k8s.pod.status_reason:
-                enabled: true
-            k8s.service.endpoint.count:
-                enabled: true
-            k8s.service.load_balancer.ingress.count:
-                enabled: true
+                enabled: false
         k8s_leader_elector: k8s_leader_elector
     kubeletstats:
         collection_interval: 30s
@@ -171,121 +166,89 @@ receivers:
             - volume
         metrics:
             k8s.node.cpu.time:
-                enabled: true
+                enabled: false
             k8s.node.memory.major_page_faults:
-                enabled: true
+                enabled: false
             k8s.node.memory.page_faults:
-                enabled: true
+                enabled: false
             k8s.pod.cpu.time:
                 enabled: true
             k8s.pod.cpu.usage:
-                enabled: true
+                enabled: false
             k8s.pod.filesystem.available:
-                enabled: true
+                enabled: false
             k8s.pod.filesystem.capacity:
-                enabled: true
+                enabled: false
             k8s.pod.filesystem.usage:
-                enabled: true
+                enabled: false
             k8s.pod.memory.available:
-                enabled: true
+                enabled: false
             k8s.pod.memory.major_page_faults:
-                enabled: true
+                enabled: false
             k8s.pod.memory.page_faults:
-                enabled: true
+                enabled: false
             k8s.pod.memory.rss:
-                enabled: true
+                enabled: false
             k8s.pod.memory.usage:
-                enabled: true
+                enabled: false
             k8s.pod.memory.working_set:
-                enabled: true
+                enabled: false
             k8s.pod.network.errors:
-                enabled: true
+                enabled: false
             k8s.pod.network.io:
-                enabled: true
+                enabled: false
             container.cpu.time:
                 enabled: true
             container.cpu.usage:
-                enabled: true
+                enabled: false
             container.filesystem.available:
-                enabled: true
+                enabled: false
             container.filesystem.capacity:
-                enabled: true
+                enabled: false
             container.filesystem.usage:
-                enabled: true
+                enabled: false
             container.memory.available:
-                enabled: true
+                enabled: false
             container.memory.major_page_faults:
-                enabled: true
+                enabled: false
             container.memory.page_faults:
-                enabled: true
+                enabled: false
             container.memory.rss:
-                enabled: true
+                enabled: false
             container.memory.usage:
-                enabled: true
+                enabled: false
             container.memory.working_set:
-                enabled: true
+                enabled: false
             k8s.node.cpu.usage:
                 enabled: true
             k8s.node.filesystem.available:
-                enabled: true
+                enabled: false
             k8s.node.filesystem.capacity:
-                enabled: true
+                enabled: false
             k8s.node.filesystem.usage:
-                enabled: true
+                enabled: false
             k8s.node.memory.available:
-                enabled: true
+                enabled: false
             k8s.node.memory.rss:
-                enabled: true
+                enabled: false
             k8s.node.memory.usage:
-                enabled: true
+                enabled: false
             k8s.node.memory.working_set:
-                enabled: true
+                enabled: false
             k8s.node.network.errors:
-                enabled: true
+                enabled: false
             k8s.node.network.io:
-                enabled: true
+                enabled: false
             k8s.volume.available:
                 enabled: true
             k8s.volume.capacity:
-                enabled: true
+                enabled: false
             k8s.volume.inodes:
-                enabled: true
+                enabled: false
             k8s.volume.inodes.free:
-                enabled: true
+                enabled: false
             k8s.volume.inodes.used:
-                enabled: true
-            container.uptime:
-                enabled: true
-            k8s.container.cpu.node.utilization:
-                enabled: true
-            k8s.container.cpu_limit_utilization:
-                enabled: true
-            k8s.container.cpu_request_utilization:
-                enabled: true
-            k8s.container.memory.node.utilization:
-                enabled: true
-            k8s.container.memory_limit_utilization:
-                enabled: true
-            k8s.container.memory_request_utilization:
-                enabled: true
-            k8s.node.uptime:
-                enabled: true
-            k8s.pod.cpu.node.utilization:
-                enabled: true
-            k8s.pod.cpu_limit_utilization:
-                enabled: true
-            k8s.pod.cpu_request_utilization:
-                enabled: true
-            k8s.pod.memory.node.utilization:
-                enabled: true
-            k8s.pod.memory_limit_utilization:
-                enabled: true
-            k8s.pod.memory_request_utilization:
-                enabled: true
-            k8s.pod.uptime:
-                enabled: true
-            k8s.pod.volume.usage:
-                enabled: true
+                enabled: false
         resource_attributes:
             aws.volume.id:
                 enabled: false
@@ -316,11 +279,46 @@ processors:
         metric_conditions:
             - conditions:
                 - IsMatch(metric.name, "^envoy_.*") and resource.attributes["kyma.input.name"] == "istio"
-    filter/drop-non-pvc-volumes-metrics:
+    filter/drop-runtime-container-metrics:
         error_mode: ignore
         metric_conditions:
             - conditions:
-                - resource.attributes["k8s.volume.name"] != nil and (resource.attributes["k8s.volume.type"] == "configMap" or resource.attributes["k8s.volume.type"] == "downwardAPI" or resource.attributes["k8s.volume.type"] == "emptyDir" or resource.attributes["k8s.volume.type"] == "secret")
+                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(metric.name, "(^k8s[.]container[.].*)|(^container[.].*)") and not(metric.name == "container.cpu.time" or metric.name == "k8s.container.cpu_request")
+    filter/drop-runtime-daemonset-metrics:
+        error_mode: ignore
+        metric_conditions:
+            - conditions:
+                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(metric.name, "^k8s[.]daemonset[.].*") and not(metric.name == "k8s.daemonset.current_scheduled_nodes")
+    filter/drop-runtime-deployment-metrics:
+        error_mode: ignore
+        metric_conditions:
+            - conditions:
+                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(metric.name, "^k8s[.]deployment[.].*") and not(metric.name == "k8s.deployment.available")
+    filter/drop-runtime-job-metrics:
+        error_mode: ignore
+        metric_conditions:
+            - conditions:
+                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(metric.name, "^k8s[.]job[.].*") and not(metric.name == "k8s.job.active_pods")
+    filter/drop-runtime-node-metrics:
+        error_mode: ignore
+        metric_conditions:
+            - conditions:
+                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(metric.name, "^k8s[.]node[.].*") and not(metric.name == "k8s.node.cpu.usage")
+    filter/drop-runtime-pod-metrics:
+        error_mode: ignore
+        metric_conditions:
+            - conditions:
+                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(metric.name, "^k8s[.]pod[.].*") and not(metric.name == "k8s.pod.cpu.time" or metric.name == "k8s.pod.phase")
+    filter/drop-runtime-statefulset-metrics:
+        error_mode: ignore
+        metric_conditions:
+            - conditions:
+                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(metric.name, "^k8s[.]statefulset[.].*") and not(metric.name == "k8s.statefulset.current_pods")
+    filter/drop-runtime-volume-metrics:
+        error_mode: ignore
+        metric_conditions:
+            - conditions:
+                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(metric.name, "^k8s[.]volume[.].*") and not(metric.name == "k8s.volume.available")
     filter/drop-virtual-network-interfaces:
         error_mode: ignore
         metric_conditions:

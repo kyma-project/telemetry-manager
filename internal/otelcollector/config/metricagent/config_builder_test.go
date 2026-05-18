@@ -3,7 +3,6 @@ package metricagent
 import (
 	"os"
 	"path/filepath"
-	"slices"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -246,14 +245,41 @@ func TestBuildConfig(t *testing.T) {
 			},
 		},
 		{
-			name:           "pipeline with all runtime additional metrics",
-			goldenFileName: "all-runtime-additional-metrics.yaml",
+			name:           "pipelines with runtime additional metrics",
+			goldenFileName: "runtime-additional-metrics.yaml",
 			pipelines: []telemetryv1beta1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
 					WithName("test").
 					WithRuntimeInput(true).
+					WithRuntimeInputPodMetrics(false).
+					WithRuntimeInputContainerMetrics(false).
+					WithRuntimeInputNodeMetrics(false).
+					WithRuntimeInputVolumeMetrics(false).
+					WithRuntimeInputDeploymentMetrics(false).
+					WithRuntimeInputDaemonSetMetrics(false).
+					WithRuntimeInputStatefulSetMetrics(false).
+					WithRuntimeInputJobMetrics(false).
 					WithRuntimeInputAdditionalMetrics(
-						slices.Concat(KubeletStatsReceiverMetrics, K8sClusterReceiverMetrics)...,
+						// a default kubeletstats container metric
+						"container.cpu.time",
+						// a default kubeletstats pod metric
+						"k8s.pod.cpu.time",
+						// a default kubeletstats node metric
+						"k8s.node.cpu.usage",
+						// a default kubeletstats volume metric
+						"k8s.volume.available",
+						// a default k8scluster pod metric
+						"k8s.pod.phase",
+						// a default k8scluster container metric
+						"k8s.container.cpu_request",
+						// a default k8scluster statefulset metric
+						"k8s.statefulset.current_pods",
+						// a default k8scluster job metric
+						"k8s.job.active_pods",
+						// a default k8scluster deployment metric
+						"k8s.deployment.available",
+						// a default k8scluster daemonset metric
+						"k8s.daemonset.current_scheduled_nodes",
 					).
 					Build(),
 			},
