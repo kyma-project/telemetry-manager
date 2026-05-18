@@ -58,7 +58,7 @@ func TestPrometheusReceiverConfig(t *testing.T) {
 				})
 				require.NoError(t, err)
 
-				require.NotContains(t, collectorConfig.Receivers, "kubeletstats")
+				require.NotContains(t, collectorConfig.Receivers, "kubelet_stats")
 				require.NotContains(t, collectorConfig.Receivers, "prometheus/istio")
 
 				require.Contains(t, collectorConfig.Receivers, "prometheus/app-pods")
@@ -89,7 +89,7 @@ func TestPrometheusReceiverConfig(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		require.NotContains(t, collectorConfig.Receivers, "kubeletstats")
+		require.NotContains(t, collectorConfig.Receivers, "kubelet_stats")
 		require.NotContains(t, collectorConfig.Receivers, "prometheus/app-pods")
 		require.Contains(t, collectorConfig.Receivers, "prometheus/istio")
 		prometheusIstio := collectorConfig.Receivers["prometheus/istio"].(*PrometheusReceiverConfig)
@@ -106,7 +106,7 @@ func TestPrometheusReceiverConfig(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		require.NotContains(t, collectorConfig.Receivers, "kubeletstats")
+		require.NotContains(t, collectorConfig.Receivers, "kubelet_stats")
 		require.NotContains(t, collectorConfig.Receivers, "prometheus/app-pods")
 		require.Contains(t, collectorConfig.Receivers, "prometheus/istio")
 		prometheusIstio := collectorConfig.Receivers["prometheus/istio"].(*PrometheusReceiverConfig)
