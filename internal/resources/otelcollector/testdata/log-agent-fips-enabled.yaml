@@ -102,6 +102,11 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.podIP
+        - name: MY_NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
         - name: GODEBUG
           value: fips140=only,tlsmlkem=0
         envFrom:

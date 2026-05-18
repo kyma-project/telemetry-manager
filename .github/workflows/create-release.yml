@@ -380,13 +380,22 @@ jobs:
             --title "chore: release preparation: bump version to ${VERSION}" \
             --body "${PR_BODY}" \
             --label "area/release" \
-            --label "kind/chore" \
-            --milestone "${VERSION}")
+            --label "kind/chore")
 
           PR_NUMBER=$(echo "${PR_URL}" | grep -o '[0-9]*$')
           echo "pr-number=${PR_NUMBER}" >> $GITHUB_OUTPUT
           echo "Created PR #${PR_NUMBER}: ${PR_URL}"
           echo "PR_NUMBER=${PR_NUMBER}" >> $GITHUB_ENV
+
+          # The closed milestone can't be assigned as part of PR creation call, milestone assigned after PR creation via updating PR with milestone
+          echo "Assigning milestone ${VERSION} to PR #${PR_NUMBER}..."
+          MILESTONE_NUMBER=$(gh api "repos/${{ github.repository }}/milestones?state=all&direction=desc&per_page=100" --jq ".[] | select(.title == \"${VERSION}\") | .number")
+          if [ -n "$MILESTONE_NUMBER" ]; then
+            gh api "repos/${{ github.repository }}/issues/${PR_NUMBER}" -X PATCH -f milestone="${MILESTONE_NUMBER}"
+            echo "Assigned milestone ${VERSION} to PR #${PR_NUMBER}"
+          else
+            echo "Warning could not find milestone ${VERSION} to assign to PR"
+          fi
 
       - name: Wait for PR to be merged
         env:

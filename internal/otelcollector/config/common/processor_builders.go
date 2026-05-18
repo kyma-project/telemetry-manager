@@ -43,6 +43,9 @@ func K8sAttributesProcessor(enrichments *operatorv1beta1.EnrichmentSpec, useOTel
 	return &K8sAttributesProcessorConfig{
 		AuthType:    "serviceAccount",
 		Passthrough: false,
+		Filter: K8sAttributesFilterConfig{
+			NodeFromEnvVar: EnvVarCurrentNodeName,
+		},
 		Extract: ExtractK8sMetadata{
 			Metadata:                     k8sAttributes,
 			Labels:                       append(extractLabels(useOTelServiceEnrichment), extractPodLabels(enrichments)...),
@@ -202,6 +205,20 @@ func TraceTransformProcessor(statements []TransformProcessorStatements) *Transfo
 	return &TransformProcessorConfig{
 		ErrorMode:       defaultTransformProcessorErrorMode,
 		TraceStatements: statements,
+	}
+}
+
+// AllSignalsTransformProcessor creates a TransformProcessorConfig that applies the same statements to
+// all three signal types (logs, metrics, traces). Use this for processors with static component IDs
+// that are shared across signal-type builders, since ComponentBuilder stores only the first-registered
+// config: populating all three statement sets ensures the processor works regardless of which signal
+// type happens to register first.
+func AllSignalsTransformProcessor(statements []TransformProcessorStatements) *TransformProcessorConfig {
+	return &TransformProcessorConfig{
+		ErrorMode:        defaultTransformProcessorErrorMode,
+		LogStatements:    statements,
+		MetricStatements: statements,
+		TraceStatements:  statements,
 	}
 }
 

@@ -50,8 +50,9 @@ type CGroupRuntimeGoMaxProcs struct {
 }
 
 type CGroupRuntimeGoMemLimit struct {
-	Enabled bool    `yaml:"enabled"`
-	Ratio   float64 `yaml:"ratio,omitempty"`
+	Enabled         bool    `yaml:"enabled"`
+	Ratio           float64 `yaml:"ratio,omitempty"`
+	RefreshInterval string  `yaml:"refresh_interval,omitempty"`
 }
 
 // =============================================================================
@@ -86,8 +87,11 @@ type MetricExporter struct {
 }
 
 type PrometheusMetricExporter struct {
-	Host string `yaml:"host"`
-	Port int32  `yaml:"port"`
+	Host              string `yaml:"host"`
+	Port              int32  `yaml:"port"`
+	WithoutScopeInfo  bool   `yaml:"without_scope_info"`
+	WithoutTypeSuffix bool   `yaml:"without_type_suffix"`
+	WithoutUnits      bool   `yaml:"without_units"`
 }
 
 type Logs struct {
@@ -176,10 +180,15 @@ type MemoryLimiterConfig struct {
 }
 
 type K8sAttributesProcessorConfig struct {
-	AuthType       string             `yaml:"auth_type"`
-	Passthrough    bool               `yaml:"passthrough"`
-	Extract        ExtractK8sMetadata `yaml:"extract"`
-	PodAssociation []PodAssociations  `yaml:"pod_association"`
+	AuthType       string                    `yaml:"auth_type"`
+	Passthrough    bool                      `yaml:"passthrough"`
+	Filter         K8sAttributesFilterConfig `yaml:"filter"`
+	Extract        ExtractK8sMetadata        `yaml:"extract"`
+	PodAssociation []PodAssociations         `yaml:"pod_association"`
+}
+
+type K8sAttributesFilterConfig struct {
+	NodeFromEnvVar string `yaml:"node_from_env_var"`
 }
 
 type ExtractK8sMetadata struct {

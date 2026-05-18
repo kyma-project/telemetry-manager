@@ -175,6 +175,14 @@ func TestServiceEnrichment_OTel(t *testing.T) {
 					kitk8sobjects.NewPod(podWithUnknownServiceName, genNs).WithPodSpec(podSpecWithUnknownServiceName).K8sObject(),
 					kitk8sobjects.NewPod(podWithUnknownServicePatternName, genNs).WithPodSpec(podSpecWithUnknownServiceNamePattern).K8sObject(),
 					kitk8sobjects.NewPod(podWithCustomServiceAttributesName, genNs).WithPodSpec(podSpecWithCustomServiceAttributes).K8sObject(),
+					// Pod with conflicting k8s labels (lower priority) and OTel annotations (higher priority).
+					// Tests that the gateway's restore processor ensures annotation > label priority for OTLP-pushed logs.
+					kitk8sobjects.NewPod(podWithAnnotationPriorityName, genNs).
+						WithAnnotation(annotationServiceName, customServiceName).
+						WithAnnotation(annotationServiceVersion, customServiceVersion).
+						WithLabel(labelK8sName, labelServiceName).
+						WithLabel(labelK8sVersion, labelVersion).
+						WithPodSpec(telemetrygen.PodSpec(telemetrygen.SignalTypeLogs, telemetrygen.WithServiceName(""))).K8sObject(),
 				)
 			}
 
@@ -234,13 +242,11 @@ func TestServiceEnrichment_OTel(t *testing.T) {
 				ServiceInstanceID: customServiceInstanceID,
 			})
 
-			// Annotation-level service attributes should take priority over app.kubernetes.io/* pod labels (agent only)
-			if suite.ExpectAgent(tc.label) {
-				verifyServiceAttributes(t, backend, podWithAnnotationPriorityName, ServiceAttributes{
-					ServiceName:    customServiceName,
-					ServiceVersion: customServiceVersion,
-				})
-			}
+			// Annotation-level service attributes should take priority over app.kubernetes.io/* pod labels
+			verifyServiceAttributes(t, backend, podWithAnnotationPriorityName, ServiceAttributes{
+				ServiceName:    customServiceName,
+				ServiceVersion: customServiceVersion,
+			})
 
 			// Verify that temporary kyma resource attributes are removed from the logs
 			assert.BackendDataConsistentlyMatches(t, backend,

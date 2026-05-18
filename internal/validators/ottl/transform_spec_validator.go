@@ -69,7 +69,7 @@ func newTransformParserCollectionOpts(signalType pipelines.SignalType) []generic
 	case pipelines.SignalTypeLog:
 		opts = []genericParserCollectionOption{
 			withLogParser(
-				ottl.CreateFactoryMap(transformprocessor.DefaultLogFunctionsNew()...),
+				ottl.CreateFactoryMap(transformprocessor.DefaultLogFunctions()...),
 				ottl.WithStatementConverter(nopStatementConverter[*ottllog.TransformContext]),
 				ottl.WithConditionConverter(nopConditionConverter[*ottllog.TransformContext]),
 			),
@@ -77,12 +77,12 @@ func newTransformParserCollectionOpts(signalType pipelines.SignalType) []generic
 	case pipelines.SignalTypeMetric:
 		opts = []genericParserCollectionOption{
 			withMetricParser(
-				ottl.CreateFactoryMap(transformprocessor.DefaultMetricFunctionsNew()...),
+				ottl.CreateFactoryMap(transformprocessor.DefaultMetricFunctions()...),
 				ottl.WithStatementConverter(nopStatementConverter[*ottlmetric.TransformContext]),
 				ottl.WithConditionConverter(nopConditionConverter[*ottlmetric.TransformContext]),
 			),
 			withDataPointParser(
-				ottl.CreateFactoryMap(transformprocessor.DefaultDataPointFunctionsNew()...),
+				ottl.CreateFactoryMap(transformprocessor.DefaultDataPointFunctions()...),
 				ottl.WithStatementConverter(nopStatementConverter[*ottldatapoint.TransformContext]),
 				ottl.WithConditionConverter(nopConditionConverter[*ottldatapoint.TransformContext]),
 			),
@@ -90,12 +90,12 @@ func newTransformParserCollectionOpts(signalType pipelines.SignalType) []generic
 	case pipelines.SignalTypeTrace:
 		opts = []genericParserCollectionOption{
 			withSpanParser(
-				ottl.CreateFactoryMap(transformprocessor.DefaultSpanFunctionsNew()...),
+				ottl.CreateFactoryMap(transformprocessor.DefaultSpanFunctions()...),
 				ottl.WithStatementConverter(nopStatementConverter[*ottlspan.TransformContext]),
 				ottl.WithConditionConverter(nopConditionConverter[*ottlspan.TransformContext]),
 			),
 			withSpanEventParser(
-				ottl.CreateFactoryMap(transformprocessor.DefaultSpanEventFunctionsNew()...),
+				ottl.CreateFactoryMap(transformprocessor.DefaultSpanEventFunctions()...),
 				ottl.WithStatementConverter(nopStatementConverter[*ottlspanevent.TransformContext]),
 				ottl.WithConditionConverter(nopConditionConverter[*ottlspanevent.TransformContext]),
 			),

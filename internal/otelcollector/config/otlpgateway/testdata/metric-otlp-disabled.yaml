@@ -5,6 +5,7 @@ extensions:
         gomemlimit:
             enabled: true
             ratio: 0.8
+            refresh_interval: 30s
     health_check:
         endpoint: ${MY_POD_IP}:13133
     k8s_leader_elector:
@@ -57,6 +58,9 @@ service:
                         prometheus:
                             host: ${MY_POD_IP}
                             port: 8888
+                            without_scope_info: false
+                            without_type_suffix: false
+                            without_units: false
         logs:
             level: info
             encoding: json
@@ -102,6 +106,8 @@ processors:
     k8s_attributes:
         auth_type: serviceAccount
         passthrough: false
+        filter:
+            node_from_env_var: MY_NODE_NAME
         extract:
             metadata:
                 - k8s.pod.name
@@ -150,12 +156,28 @@ processors:
             - kyma.app_name
     transform/drop-kyma-attributes:
         error_mode: ignore
+        log_statements:
+            - statements:
+                - delete_matching_keys(resource.attributes, "kyma.*")
         metric_statements:
+            - statements:
+                - delete_matching_keys(resource.attributes, "kyma.*")
+        trace_statements:
             - statements:
                 - delete_matching_keys(resource.attributes, "kyma.*")
     transform/insert-cluster-attributes:
         error_mode: ignore
+        log_statements:
+            - statements:
+                - set(resource.attributes["k8s.cluster.name"], "${KUBERNETES_SERVICE_HOST}") where resource.attributes["k8s.cluster.name"] == nil or resource.attributes["k8s.cluster.name"] == ""
+                - set(resource.attributes["k8s.cluster.uid"], "") where resource.attributes["k8s.cluster.uid"] == nil or resource.attributes["k8s.cluster.uid"] == ""
+                - set(resource.attributes["cloud.provider"], "test-cloud-provider") where resource.attributes["cloud.provider"] == nil or resource.attributes["cloud.provider"] == ""
         metric_statements:
+            - statements:
+                - set(resource.attributes["k8s.cluster.name"], "${KUBERNETES_SERVICE_HOST}") where resource.attributes["k8s.cluster.name"] == nil or resource.attributes["k8s.cluster.name"] == ""
+                - set(resource.attributes["k8s.cluster.uid"], "") where resource.attributes["k8s.cluster.uid"] == nil or resource.attributes["k8s.cluster.uid"] == ""
+                - set(resource.attributes["cloud.provider"], "test-cloud-provider") where resource.attributes["cloud.provider"] == nil or resource.attributes["cloud.provider"] == ""
+        trace_statements:
             - statements:
                 - set(resource.attributes["k8s.cluster.name"], "${KUBERNETES_SERVICE_HOST}") where resource.attributes["k8s.cluster.name"] == nil or resource.attributes["k8s.cluster.name"] == ""
                 - set(resource.attributes["k8s.cluster.uid"], "") where resource.attributes["k8s.cluster.uid"] == nil or resource.attributes["k8s.cluster.uid"] == ""

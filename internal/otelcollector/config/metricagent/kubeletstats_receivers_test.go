@@ -200,8 +200,8 @@ func TestKubeletStatsReceiverConfig(t *testing.T) {
 				},
 			}
 
-			require.Contains(t, collectorConfig.Receivers, "kubeletstats")
-			require.Equal(t, expectedKubeletStatsReceiverConfig, *collectorConfig.Receivers["kubeletstats"].(*KubeletStatsReceiverConfig))
+			require.Contains(t, collectorConfig.Receivers, "kubelet_stats")
+			require.Equal(t, expectedKubeletStatsReceiverConfig, *collectorConfig.Receivers["kubelet_stats"].(*KubeletStatsReceiverConfig))
 		}
 	})
 }

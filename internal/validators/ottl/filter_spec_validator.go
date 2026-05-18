@@ -67,14 +67,14 @@ func newFilterParserCollectionOpts(signalType pipelines.SignalType) []genericPar
 			// we set the context to span as the minimum required context.
 			// Span event context is not supported.
 			withSpanParser(
-				ottl.CreateFactoryMap(filterprocessor.DefaultSpanFunctionsNew()...),
+				ottl.CreateFactoryMap(filterprocessor.DefaultSpanFunctions()...),
 				ottl.WithConditionConverter(nopConditionConverter[*ottlspan.TransformContext]),
 			),
 		)
 	case pipelines.SignalTypeLog:
 		opts = append(opts,
 			withLogParser(
-				ottl.CreateFactoryMap(filterprocessor.DefaultLogFunctionsNew()...),
+				ottl.CreateFactoryMap(filterprocessor.DefaultLogFunctions()...),
 				ottl.WithConditionConverter(nopConditionConverter[*ottllog.TransformContext]),
 			),
 		)
@@ -89,7 +89,7 @@ func newFilterParserCollectionOpts(signalType pipelines.SignalType) []genericPar
 				ottl.WithConditionConverter(nopConditionConverter[*ottlmetric.TransformContext]),
 			),
 			withDataPointParser(
-				ottl.CreateFactoryMap(filterprocessor.DefaultDataPointFunctionsNew()...),
+				ottl.CreateFactoryMap(filterprocessor.DefaultDataPointFunctions()...),
 				ottl.WithConditionConverter(nopConditionConverter[*ottldatapoint.TransformContext]),
 			),
 		)

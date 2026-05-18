@@ -104,6 +104,7 @@ func NewLogAgentApplierDeleter(globals config.Global, collectorImage, priorityCl
 		containerOpts: []commonresources.ContainerOption{
 			commonresources.WithResources(collectorResources),
 			commonresources.WithEnvVarFromField(common.EnvVarCurrentPodIP, fieldPathPodIP),
+			commonresources.WithEnvVarFromField(common.EnvVarCurrentNodeName, fieldPathNodeName),
 			commonresources.WithFIPSGoDebugEnvVar(globals.OperateInFIPSMode()),
 			commonresources.WithVolumeMounts(collectorVolumeMounts),
 			commonresources.WithRunAsGroup(commonresources.GroupRoot),

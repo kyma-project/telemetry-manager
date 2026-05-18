@@ -13,13 +13,11 @@ type ErrorToMessageConverter struct {
 // Convert converts an error to a user-friendly message. The message can be
 // enhanced by adding additional context which would be useful for the user.
 func (etc *ErrorToMessageConverter) Convert(err error) string {
-	var pns *workloadstatus.PodIsNotScheduledError
-	if errors.As(err, &pns) {
+	if pns, ok := errors.AsType[*workloadstatus.PodIsNotScheduledError](err); ok {
 		return fmt.Sprintf(podIsNotScheduled, pns.Message)
 	}
 
-	var pipe *workloadstatus.PodIsPendingError
-	if errors.As(err, &pipe) {
+	if pipe, ok := errors.AsType[*workloadstatus.PodIsPendingError](err); ok {
 		if pipe.Reason == "" {
 			return fmt.Sprintf(podIsPending, pipe.ContainerName, pipe.Message, pipe.ContainerName)
 		}
@@ -27,23 +25,19 @@ func (etc *ErrorToMessageConverter) Convert(err error) string {
 		return fmt.Sprintf(podIsPending, pipe.ContainerName, pipe.Reason, pipe.ContainerName)
 	}
 
-	var pfe *workloadstatus.PodIsFailingError
-	if errors.As(err, &pfe) {
+	if pfe, ok := errors.AsType[*workloadstatus.PodIsFailingError](err); ok {
 		return fmt.Sprintf(podIsFailed, pfe.Message)
 	}
 
-	var ripe *workloadstatus.RolloutInProgressError
-	if errors.As(err, &ripe) {
+	if ripe, _ := errors.AsType[*workloadstatus.RolloutInProgressError](err); ripe != nil {
 		return podRolloutInProgress
 	}
 
-	var ftlr *workloadstatus.FailedToListReplicaSetError
-	if errors.As(err, &ftlr) {
+	if ftlr, ok := errors.AsType[*workloadstatus.FailedToListReplicaSetError](err); ok {
 		return ConvertErrToMsg(ftlr.ErrorObj)
 	}
 
-	var ftfr *workloadstatus.FailedToFetchReplicaSetError
-	if errors.As(err, &ftfr) {
+	if ftfr, ok := errors.AsType[*workloadstatus.FailedToFetchReplicaSetError](err); ok {
 		return ConvertErrToMsg(ftfr.ErroObj)
 	}
 
