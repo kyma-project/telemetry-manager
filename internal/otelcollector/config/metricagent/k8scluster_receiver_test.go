@@ -124,6 +124,137 @@ func TestK8sClusterReceiverConfig(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "Additional metrics overrule resource selectors",
+			pipeline: testutils.NewMetricPipelineBuilder().
+				WithRuntimeInput(true).
+				WithRuntimeInputPodMetrics(false).
+				WithRuntimeInputContainerMetrics(false).
+				WithRuntimeInputStatefulSetMetrics(false).
+				WithRuntimeInputJobMetrics(false).
+				WithRuntimeInputDeploymentMetrics(false).
+				WithRuntimeInputDaemonSetMetrics(false).
+				WithRuntimeInputAdditionalMetrics(
+					// a default pod metric
+					"k8s.pod.phase",
+					// a default container metric
+					"k8s.container.cpu_request",
+					// a default statefulset metric
+					"k8s.statefulset.current_pods",
+					// a default job metric
+					"k8s.job.active_pods",
+					// a default deployment metric
+					"k8s.deployment.available",
+					// a default daemonset metric
+					"k8s.daemonset.current_scheduled_nodes",
+				).
+				Build(),
+			expectedMetrics: K8sClusterMetrics{
+				K8sClusterDefaultMetricsToDrop: getExpectedK8sClusterDefaultMetricsToDrop(),
+				K8sClusterPodMetrics: &K8sClusterPodMetrics{
+					K8sPodPhase: &Metric{true},
+				},
+				K8sClusterContainerMetrics: &K8sClusterContainerMetrics{
+					K8sContainerCPURequest:    &Metric{true},
+					K8sContainerCPULimit:      &Metric{false},
+					K8sContainerMemoryRequest: &Metric{false},
+					K8sContainerMemoryLimit:   &Metric{false},
+					K8sContainerRestarts:      &Metric{false},
+				},
+				K8sClusterStatefulSetMetrics: &K8sClusterStatefulSetMetrics{
+					K8sStatefulSetCurrentPods: &Metric{true},
+					K8sStatefulSetDesiredPods: &Metric{false},
+					K8sStatefulSetReadyPods:   &Metric{false},
+					K8sStatefulSetUpdatedPods: &Metric{false},
+				},
+				K8sClusterJobMetrics: &K8sClusterJobMetrics{
+					K8sJobActivePods:            &Metric{true},
+					K8sJobDesiredSuccessfulPods: &Metric{false},
+					K8sJobFailedPods:            &Metric{false},
+					K8sJobMaxParallelPods:       &Metric{false},
+					K8sJobSuccessfulPods:        &Metric{false},
+				},
+				K8sClusterDeploymentMetrics: &K8sClusterDeploymentMetrics{
+					K8sDeploymentAvailable: &Metric{true},
+					K8sDeploymentDesired:   &Metric{false},
+				},
+				K8sClusterDaemonSetMetrics: &K8sClusterDaemonSetMetrics{
+					K8sDaemonSetCurrentScheduledNodes: &Metric{true},
+					K8sDaemonSetDesiredScheduledNodes: &Metric{false},
+					K8sDaemonSetMisscheduledNodes:     &Metric{false},
+					K8sDaemonSetReadyNodes:            &Metric{false},
+				},
+			},
+		},
+		{
+			name: "all additional metrics are provided",
+			pipeline: testutils.NewMetricPipelineBuilder().
+				WithRuntimeInput(true).
+				WithRuntimeInputAdditionalMetrics(K8sClusterReceiverMetrics...).
+				Build(),
+			expectedMetrics: K8sClusterMetrics{
+				K8sClusterDefaultMetricsToDrop: &K8sClusterDefaultMetricsToDrop{
+					K8sContainerStorageRequest:          &Metric{Enabled: true},
+					K8sContainerStorageLimit:            &Metric{Enabled: true},
+					K8sContainerEphemeralStorageRequest: &Metric{Enabled: true},
+					K8sContainerEphemeralStorageLimit:   &Metric{Enabled: true},
+					K8sContainerReady:                   &Metric{Enabled: true},
+					K8sNamespacePhase:                   &Metric{Enabled: true},
+					K8sHPACurrentReplicas:               &Metric{Enabled: true},
+					K8sHPADesiredReplicas:               &Metric{Enabled: true},
+					K8sHPAMinReplicas:                   &Metric{Enabled: true},
+					K8sHPAMaxReplicas:                   &Metric{Enabled: true},
+					K8sReplicaSetAvailable:              &Metric{Enabled: true},
+					K8sReplicaSetDesired:                &Metric{Enabled: true},
+					K8sReplicationControllerAvailable:   &Metric{Enabled: true},
+					K8sReplicationControllerDesired:     &Metric{Enabled: true},
+					K8sResourceQuotaHardLimit:           &Metric{Enabled: true},
+					K8sResourceQuotaUsed:                &Metric{Enabled: true},
+					K8sCronJobActiveJobs:                &Metric{Enabled: true},
+				},
+				K8sClusterPodMetrics: &K8sClusterPodMetrics{
+					K8sPodPhase: &Metric{true},
+				},
+				K8sClusterContainerMetrics: &K8sClusterContainerMetrics{
+					K8sContainerCPURequest:    &Metric{true},
+					K8sContainerCPULimit:      &Metric{true},
+					K8sContainerMemoryRequest: &Metric{true},
+					K8sContainerMemoryLimit:   &Metric{true},
+					K8sContainerRestarts:      &Metric{true},
+				},
+				K8sClusterStatefulSetMetrics: &K8sClusterStatefulSetMetrics{
+					K8sStatefulSetCurrentPods: &Metric{true},
+					K8sStatefulSetDesiredPods: &Metric{true},
+					K8sStatefulSetReadyPods:   &Metric{true},
+					K8sStatefulSetUpdatedPods: &Metric{true},
+				},
+				K8sClusterJobMetrics: &K8sClusterJobMetrics{
+					K8sJobActivePods:            &Metric{true},
+					K8sJobDesiredSuccessfulPods: &Metric{true},
+					K8sJobFailedPods:            &Metric{true},
+					K8sJobMaxParallelPods:       &Metric{true},
+					K8sJobSuccessfulPods:        &Metric{true},
+				},
+				K8sClusterDeploymentMetrics: &K8sClusterDeploymentMetrics{
+					K8sDeploymentAvailable: &Metric{true},
+					K8sDeploymentDesired:   &Metric{true},
+				},
+				K8sClusterDaemonSetMetrics: &K8sClusterDaemonSetMetrics{
+					K8sDaemonSetCurrentScheduledNodes: &Metric{true},
+					K8sDaemonSetDesiredScheduledNodes: &Metric{true},
+					K8sDaemonSetMisscheduledNodes:     &Metric{true},
+					K8sDaemonSetReadyNodes:            &Metric{true},
+				},
+				K8sClusterOptionalMetrics: &K8sClusterOptionalMetrics{
+					K8sContainerStatusReason:           &Metric{Enabled: true},
+					K8sContainerStatusState:            &Metric{Enabled: true},
+					K8sNodeCondition:                   &Metric{Enabled: true},
+					K8sPodStatusReason:                 &Metric{Enabled: true},
+					K8sServiceEndpointCount:            &Metric{Enabled: true},
+					K8sServiceLoadBalancerIngressCount: &Metric{Enabled: true},
+				},
+			},
+		},
 	}
 
 	for _, test := range tests {
