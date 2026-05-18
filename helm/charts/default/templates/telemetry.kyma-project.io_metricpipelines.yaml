@@ -767,12 +767,12 @@ spec:
                         - http
                         type: string
                       temporality:
-                        default: cumulative
-                        description: Temporality defines the context in which the
-                          metric sum was calculated (`cumulative` or `delta`). The
-                          default is `cumulative`.
+                        default: preserve
+                        description: Temporality defines the aggregation temporality
+                          of exported metrics ('preserve' or 'delta'). `preserve`
+                          keeps the original temporality. The default is `preserve`.
                         enum:
-                        - cumulative
+                        - preserve
                         - delta
                         type: string
                       tls:
@@ -1796,12 +1796,12 @@ spec:
                         - http
                         type: string
                       temporality:
-                        default: cumulative
-                        description: Temporality defines the context in which the
-                          metric sum was calculated (`cumulative` or `delta`). The
-                          default is `cumulative`.
+                        default: preserve
+                        description: Temporality defines the aggregation temporality
+                          of exported metrics ('preserve' or 'delta'). `preserve`
+                          keeps the original temporality. The default is `preserve`.
                         enum:
-                        - cumulative
+                        - preserve
                         - delta
                         type: string
                       tls:

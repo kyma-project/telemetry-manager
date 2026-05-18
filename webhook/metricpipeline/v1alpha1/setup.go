@@ -23,7 +23,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 				Job:         true,
 			},
 			DefaultOTLPOutputProtocol:    telemetryv1alpha1.OTLPProtocolGRPC,
-			DefaultOTLPOutputTemporality: telemetryv1beta1.TemporalityCumulative,
+			DefaultOTLPOutputTemporality: telemetryv1beta1.TemporalityPreserve,
 			DiagnosticMetricsEnabled:     false,
 			EnvoyMetricsEnabled:          false,
 		}).

@@ -31,7 +31,7 @@ type MetricPipelineBuilder struct {
 }
 
 func NewMetricPipelineBuilder() *MetricPipelineBuilder {
-	defaultTemporality := telemetryv1beta1.TemporalityCumulative
+	defaultTemporality := telemetryv1beta1.TemporalityPreserve
 
 	return &MetricPipelineBuilder{
 		randSource: rand.NewSource(time.Now().UnixNano()),

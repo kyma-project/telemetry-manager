@@ -12,8 +12,8 @@ func init() {
 type TemporalityType string
 
 const (
-	TemporalityCumulative TemporalityType = "cumulative"
-	TemporalityDelta      TemporalityType = "delta"
+	TemporalityPreserve TemporalityType = "preserve"
+	TemporalityDelta    TemporalityType = "delta"
 )
 
 // MetricPipelineList contains a list of MetricPipeline.
@@ -179,10 +179,10 @@ type MetricPipelineOutput struct {
 type MetricPipelineOTLPOutput struct {
 	OTLPOutput `json:",inline"`
 
-	// Temporality defines the context in which the metric sum was calculated (`cumulative` or `delta`). The default is `cumulative`.
+	// Temporality defines the aggregation temporality of exported metrics ('preserve' or 'delta'). `preserve` keeps the original temporality. The default is `preserve`.
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:default=cumulative
-	// +kubebuilder:validation:Enum=cumulative;delta
+	// +kubebuilder:default=preserve
+	// +kubebuilder:validation:Enum=preserve;delta
 	Temporality *TemporalityType `json:"temporality,omitempty"`
 }
 

@@ -182,7 +182,7 @@ For details, see the [MetricPipeline specification file](https://github.com/kyma
 | **output.&#x200b;otlp.&#x200b;headers.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace** (required) | string | Namespace containing the Secret with the referenced value. |
 | **output.&#x200b;otlp.&#x200b;path**  | string | Path defines OTLP export URL path (only for the HTTP protocol). This value overrides auto-appended paths `/v1/logs`, `/v1/metrics`, and `/v1/traces` |
 | **output.&#x200b;otlp.&#x200b;protocol**  | string | Protocol defines the OTLP protocol (`http` or `grpc`). Default is `grpc`. |
-| **output.&#x200b;otlp.&#x200b;temporality**  | string | Temporality defines the context in which the metric sum was calculated (`cumulative` or `delta`). The default is `cumulative`. |
+| **output.&#x200b;otlp.&#x200b;temporality**  | string | Temporality defines the aggregation temporality of exported metrics ('preserve' or 'delta'). `preserve` keeps the original temporality. The default is `preserve`. |
 | **output.&#x200b;otlp.&#x200b;tls**  | object | TLS defines TLS options for the OTLP output. |
 | **output.&#x200b;otlp.&#x200b;tls.&#x200b;ca**  | object | Defines an optional CA certificate for server certificate verification when using TLS. The certificate must be provided in PEM format. |
 | **output.&#x200b;otlp.&#x200b;tls.&#x200b;ca.&#x200b;value**  | string | Value as plain text. |
@@ -337,7 +337,7 @@ For details, see the [MetricPipeline specification file](https://github.com/kyma
 | **output.&#x200b;otlp.&#x200b;headers.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace** (required) | string | Namespace containing the Secret with the referenced value. |
 | **output.&#x200b;otlp.&#x200b;path**  | string | Path defines OTLP export URL path (only for the HTTP protocol). This value overrides auto-appended paths `/v1/logs`, `/v1/metrics`, and `/v1/traces` |
 | **output.&#x200b;otlp.&#x200b;protocol**  | string | Protocol defines the OTLP protocol (`http` or `grpc`). Default is `grpc`. |
-| **output.&#x200b;otlp.&#x200b;temporality**  | string | Temporality defines the context in which the metric sum was calculated (`cumulative` or `delta`). The default is `cumulative`. |
+| **output.&#x200b;otlp.&#x200b;temporality**  | string | Temporality defines the aggregation temporality of exported metrics ('preserve' or 'delta'). `preserve` keeps the original temporality. The default is `preserve`. |
 | **output.&#x200b;otlp.&#x200b;tls**  | object | TLS defines TLS options for the OTLP output. |
 | **output.&#x200b;otlp.&#x200b;tls.&#x200b;ca**  | object | Defines an optional CA certificate for server certificate verification when using TLS. The certificate must be provided in PEM format. |
 | **output.&#x200b;otlp.&#x200b;tls.&#x200b;ca.&#x200b;value**  | string | Value as plain text. |

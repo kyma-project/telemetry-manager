@@ -24,7 +24,7 @@ func TestDefault(t *testing.T) {
 			Job:         true,
 		},
 		DefaultOTLPOutputProtocol:    telemetryv1alpha1.OTLPProtocolGRPC,
-		DefaultOTLPOutputTemporality: telemetryv1beta1.TemporalityCumulative,
+		DefaultOTLPOutputTemporality: telemetryv1beta1.TemporalityPreserve,
 	}
 
 	tests := []struct {
@@ -53,7 +53,7 @@ func TestDefault(t *testing.T) {
 							OTLPOutput: telemetryv1alpha1.OTLPOutput{
 								Protocol: telemetryv1alpha1.OTLPProtocolGRPC,
 							},
-							Temporality: new(telemetryv1beta1.TemporalityCumulative),
+							Temporality: new(telemetryv1beta1.TemporalityPreserve),
 						},
 					},
 				},
@@ -89,7 +89,7 @@ func TestDefault(t *testing.T) {
 							OTLPOutput: telemetryv1alpha1.OTLPOutput{
 								Protocol: telemetryv1alpha1.OTLPProtocolHTTP,
 							},
-							Temporality: new(telemetryv1beta1.TemporalityCumulative),
+							Temporality: new(telemetryv1beta1.TemporalityPreserve),
 						},
 					},
 				},

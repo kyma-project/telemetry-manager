@@ -506,7 +506,7 @@ func TestBuildConfig(t *testing.T) {
 					WithPrometheusInput(false).
 					WithIstioInput(false).
 					WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("https://backend-cumulative.example.com")).
-					WithTemporality(telemetryv1beta1.TemporalityCumulative).
+					WithTemporality(telemetryv1beta1.TemporalityPreserve).
 					Build(),
 			},
 		},
