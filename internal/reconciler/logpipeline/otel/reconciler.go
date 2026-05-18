@@ -315,8 +315,7 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1be
 
 	// Remaining errors imply that the pipeline is not reconcilable
 	// In case that one of the requests to the Kubernetes API server failed, then the pipeline is also considered non-reconcilable and the error is returned to trigger a requeue
-	var APIRequestFailed *errortypes.APIRequestFailedError
-	if errors.As(err, &APIRequestFailed) {
+	if APIRequestFailed, ok := errors.AsType[*errortypes.APIRequestFailedError](err); ok {
 		return false, APIRequestFailed.Err
 	}
 
@@ -457,8 +456,7 @@ func (r *Reconciler) getEndpoint(ctx context.Context, pipeline *telemetryv1beta1
 func (r *Reconciler) calculateRequeueAfterDuration(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) *time.Duration {
 	err := r.pipelineValidator.Validate(ctx, pipeline)
 
-	var errCertAboutToExpire *tlscert.CertAboutToExpireError
-	if errors.As(err, &errCertAboutToExpire) {
+	if errCertAboutToExpire, ok := errors.AsType[*tlscert.CertAboutToExpireError](err); ok {
 		duration := time.Until(errCertAboutToExpire.Expiry)
 		return &duration
 	}
