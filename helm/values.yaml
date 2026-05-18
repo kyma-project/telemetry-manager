@@ -18,7 +18,7 @@ manager:
     env:
       alpineImage: europe-docker.pkg.dev/kyma-project/prod/external/library/alpine:3.23.4
       appLogLevel: info
-      fluentBitExporterImage: europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20260413-7d161633
+      fluentBitExporterImage: europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20260510-6593fbfb
       fluentBitImage: europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluent-bit:5.0.4
       gomemlimit: 300MiB
       otelCollectorImage: europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.150.0-1.63.4
@@ -26,7 +26,7 @@ manager:
       operateInFipsMode: false
       selfMonitorFIPSImage: europe-docker.pkg.dev/kyma-project/restricted-prod/sap.com/prometheus-fips:3.11.3
     image:
-      repository: europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:1.63.4
+      repository: europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:1.63.5
       pullPolicy: "IfNotPresent"
     resources:
       limits:
