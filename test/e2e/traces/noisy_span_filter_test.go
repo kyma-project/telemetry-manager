@@ -67,7 +67,7 @@ func TestNoisyFilters(t *testing.T) {
 	).K8sObject()
 	fluentBitSpansGen := telemetrygen.NewPod(fluentBitSpansNs, telemetrygen.SignalTypeTraces,
 		telemetrygen.WithTelemetryAttribute("component", "proxy"),
-		telemetrygen.WithTelemetryAttribute("istio.canonical_service", "fluent-bit"),
+		telemetrygen.WithTelemetryAttribute("istio.canonical_service", "telemetry-fluent-bit"),
 		telemetrygen.WithResourceAttribute("k8s.namespace.name", kitkyma.SystemNamespaceName),
 	).K8sObject()
 	metricAgentScrapeSpansGen := telemetrygen.NewPod(metricAgentScrapeSpansNs, telemetrygen.SignalTypeTraces,
@@ -156,7 +156,7 @@ func TestNoisyFilters(t *testing.T) {
 			HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", kitkyma.SystemNamespaceName)),
 			HaveSpanAttributes(HaveKeyWithValue("istio.canonical_service", BeElementOf(
 				"telemetry-otlp-gateway",
-				"fluent-bit",
+				"telemetry-fluent-bit",
 				"telemetry-metric-agent",
 			))),
 		),
