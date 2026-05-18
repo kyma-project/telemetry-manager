@@ -387,6 +387,16 @@ jobs:
           echo "Created PR #${PR_NUMBER}: ${PR_URL}"
           echo "PR_NUMBER=${PR_NUMBER}" >> $GITHUB_ENV
 
+          # The closed milestone can't be assigned as part of PR creation call, milestone assigned after PR creation via updating PR with milestone
+          echo "Assigning milestone ${VERSION} to PR #${PR_NUMBER}..."
+          MILESTONE_NUMBER=$(gh api "repos/${{ github.repository }}/milestones?state=all&direction=desc&per_page=100" --jq ".[] | select(.title == \"${VERSION}\") | .number")
+          if [ -n "$MILESTONE_NUMBER" ]; then
+            gh api "repos/${{ github.repository }}/issues/${PR_NUMBER}" -X PATCH -f milestone="${MILESTONE_NUMBER}"
+            echo "Assigned milestone ${VERSION} to PR #${PR_NUMBER}"
+          else
+            echo "Warning could not find milestone ${VERSION} to assign to PR"
+          fi
+
       - name: Wait for PR to be merged
         env:
           GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
