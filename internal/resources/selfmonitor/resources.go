@@ -293,6 +293,10 @@ func (ad *ApplierDeleter) makePodSpec(image, configPath, configFile, logLevel st
 		"--log.level=" + logLevel,
 	}
 
+	if opts.VpaCRDExists && opts.VpaEnabled {
+		args = append(args, "--no-auto-gomemlimit")
+	}
+
 	volumes := []corev1.Volume{
 		{
 			Name: configFileMountName,
