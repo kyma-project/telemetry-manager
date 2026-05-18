@@ -119,8 +119,7 @@ func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipel
 			fmt.Sprintf(conditions.MessageForFluentBitLogPipeline(conditions.ReasonEndpointInvalid), err.Error())
 	}
 
-	var APIRequestFailed *errortypes.APIRequestFailedError
-	if errors.As(err, &APIRequestFailed) {
+	if APIRequestFailed, _ := errors.AsType[*errortypes.APIRequestFailedError](err); APIRequestFailed != nil {
 		return metav1.ConditionFalse, conditions.ReasonValidationFailed, conditions.MessageForFluentBitLogPipeline(conditions.ReasonValidationFailed)
 	}
 
