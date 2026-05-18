@@ -134,8 +134,7 @@ func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipel
 			conditions.ConvertErrToMsg(err)
 	}
 
-	var APIRequestFailed *errortypes.APIRequestFailedError
-	if errors.As(err, &APIRequestFailed) {
+	if APIRequestFailed, _ := errors.AsType[*errortypes.APIRequestFailedError](err); APIRequestFailed != nil {
 		return metav1.ConditionFalse, conditions.ReasonValidationFailed, conditions.MessageForMetricPipeline(conditions.ReasonValidationFailed)
 	}
 

@@ -20,9 +20,6 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
-
-	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/h2c"
 )
 
 const (
@@ -202,13 +199,16 @@ func main() {
 
 			log.Printf("Listening on %s", port)
 
-			// Wrap handler with h2c to support HTTP/2 cleartext with prior knowledge,
-			// which is how gRPC clients (e.g. OTel Collector OTLP exporter) connect.
-			h2cHandler := h2c.NewHandler(handler, &http2.Server{})
+			// Enable HTTP/2 cleartext (h2c) with prior knowledge so gRPC clients
+			// (e.g. OTel Collector OTLP exporter) can connect.
+			protocols := new(http.Protocols)
+			protocols.SetHTTP1(true)
+			protocols.SetUnencryptedHTTP2(true)
 
 			//nolint:gosec // no timeouts needed for test-only fault backend
 			server := &http.Server{
-				Handler: h2cHandler,
+				Handler:   handler,
+				Protocols: protocols,
 			}
 			if err := server.Serve(ln); err != nil {
 				log.Fatalf("Server on %s failed: %v", port, err)
