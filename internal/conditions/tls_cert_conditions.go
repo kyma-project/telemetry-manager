@@ -10,13 +10,11 @@ import (
 )
 
 func EvaluateTLSCertCondition(errValidation error) (status metav1.ConditionStatus, reason, message string) {
-	var errCertExpired *tlscert.CertExpiredError
-	if errors.As(errValidation, &errCertExpired) {
+	if errCertExpired, ok := errors.AsType[*tlscert.CertExpiredError](errValidation); ok {
 		return metav1.ConditionFalse, ReasonTLSCertificateExpired, errCertExpired.Error()
 	}
 
-	var errCertAboutToExpire *tlscert.CertAboutToExpireError
-	if errors.As(errValidation, &errCertAboutToExpire) {
+	if errCertAboutToExpire, ok := errors.AsType[*tlscert.CertAboutToExpireError](errValidation); ok {
 		return metav1.ConditionTrue, ReasonTLSCertificateAboutToExpire, errCertAboutToExpire.Error()
 	}
 
