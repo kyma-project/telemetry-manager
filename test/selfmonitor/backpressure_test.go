@@ -20,7 +20,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-const bufferFillingUpRate = 60 * defaultRate
+const bufferFillingUpRate = 6 * defaultRate
 
 func TestBackpressure(t *testing.T) {
 	tests := []struct {
