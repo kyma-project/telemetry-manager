@@ -106,19 +106,13 @@ func TestKubeletStatsReceiverConfig(t *testing.T) {
 				WithRuntimeInputNodeMetrics(false).
 				WithRuntimeInputVolumeMetrics(false).
 				WithRuntimeInputAdditionalMetrics(
-					// default container metric
+					// a default container metric
 					"container.cpu.time",
-					// optional container metric
-					"k8s.container.cpu_limit_utilization",
-					// default pod metric
+					// a default pod metric
 					"k8s.pod.cpu.time",
-					// optional pod metric
-					"k8s.pod.cpu_limit_utilization",
-					// default node metric
+					// a default node metric
 					"k8s.node.cpu.usage",
-					// optional node metric
-					"k8s.node.uptime",
-					// default volume metric
+					// a default volume metric
 					"k8s.volume.available",
 				).
 				Build(),
@@ -175,11 +169,6 @@ func TestKubeletStatsReceiverConfig(t *testing.T) {
 					K8sVolumeInodes:     &Metric{Enabled: false},
 					K8sVolumeInodesFree: &Metric{Enabled: false},
 					K8sVolumeInodesUsed: &Metric{Enabled: false},
-				},
-				KubeletStatsOptionalMetrics: &KubeletStatsOptionalMetrics{
-					K8sContainerCPULimitUtilization: &Metric{Enabled: true},
-					K8sPodCPULimitUtilization:       &Metric{Enabled: true},
-					K8sNodeUptime:                   &Metric{Enabled: true},
 				},
 			},
 		},
