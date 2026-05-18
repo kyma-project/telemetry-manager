@@ -50,10 +50,6 @@ func (b *Builder) Build(ctx context.Context, opts BuildOptions) (*common.Config,
 	config := common.NewConfig()
 	envVars := make(common.EnvVars)
 
-	if opts.VpaActive {
-		config.DisableGoMemLimit()
-	}
-
 	// Build trace pipelines
 	traceBuilder := common.ComponentBuilder[*telemetryv1beta1.TracePipeline]{
 		Config:  config,
