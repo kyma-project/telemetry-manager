@@ -214,15 +214,15 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1beta1.Metric
 			b.addReceiverForInputRouter(common.ComponentIDPrometheusInputRoutingConnector, pipelinesWithPrometheusInput, prometheusInputEnabled),
 			b.addReceiverForInputRouter(common.ComponentIDIstioInputRoutingConnector, pipelinesWithIstioInput, istioInputEnabled),
 			// Runtime resource filters
-			b.addDropRuntimePodMetricsProcessor(),
-			b.addDropRuntimeContainerMetricsProcessor(),
-			b.addDropRuntimeNodeMetricsProcessor(),
-			b.addDropRuntimeVolumeMetricsProcessor(),
-			b.addDropRuntimeDeploymentMetricsProcessor(),
-			b.addDropRuntimeDaemonSetMetricsProcessor(),
-			b.addDropRuntimeStatefulSetMetricsProcessor(),
-			b.addDropRuntimeJobMetricsProcessor(),
-			b.addDropAdditionalRuntimeMetricsProcessor(runtimeAdditionalMetrics),
+			b.addDropRuntimePodMetricsProcessor(pipeline.Name),
+			b.addDropRuntimeContainerMetricsProcessor(pipeline.Name),
+			b.addDropRuntimeNodeMetricsProcessor(pipeline.Name),
+			b.addDropRuntimeVolumeMetricsProcessor(pipeline.Name),
+			b.addDropRuntimeDeploymentMetricsProcessor(pipeline.Name),
+			b.addDropRuntimeDaemonSetMetricsProcessor(pipeline.Name),
+			b.addDropRuntimeStatefulSetMetricsProcessor(pipeline.Name),
+			b.addDropRuntimeJobMetricsProcessor(pipeline.Name),
+			b.addDropAdditionalRuntimeMetricsProcessor(runtimeAdditionalMetrics, pipeline.Name),
 			// Diagnostic metric filters
 			b.addDropPrometheusDiagnosticMetricsProcessor(),
 			b.addDropIstioDiagnosticMetricsProcessor(),
@@ -612,9 +612,9 @@ func namespacesConditions(namespaces []string) []string {
 // Additional pod metrics specified in the pipeline configuration are excluded from dropping.
 //
 //nolint:dupl // Similar logic is used in other resource filter processors, but they are not identical
-func (b *Builder) addDropRuntimePodMetricsProcessor() buildComponentFunc {
+func (b *Builder) addDropRuntimePodMetricsProcessor(pipelineName string) buildComponentFunc {
 	return b.AddProcessor(
-		b.StaticComponentID(common.ComponentIDDropRuntimePodMetricsProcessor),
+		b.StaticComponentID(common.ComponentIDDropRuntimePodMetricsProcessor+"-"+pipelineName),
 		func(mp *telemetryv1beta1.MetricPipeline) any {
 			if !metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) || metricpipelineutils.IsRuntimePodInputEnabled(mp.Spec.Input) {
 				return nil
@@ -643,9 +643,9 @@ func (b *Builder) addDropRuntimePodMetricsProcessor() buildComponentFunc {
 // Additional container metrics specified in the pipeline configuration are excluded from dropping.
 //
 //nolint:dupl // Similar logic is used in other resource filter processors, but they are not identical
-func (b *Builder) addDropRuntimeContainerMetricsProcessor() buildComponentFunc {
+func (b *Builder) addDropRuntimeContainerMetricsProcessor(pipelineName string) buildComponentFunc {
 	return b.AddProcessor(
-		b.StaticComponentID(common.ComponentIDDropRuntimeContainerMetricsProcessor),
+		b.StaticComponentID(common.ComponentIDDropRuntimeContainerMetricsProcessor+"-"+pipelineName),
 		func(mp *telemetryv1beta1.MetricPipeline) any {
 			if !metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) || metricpipelineutils.IsRuntimeContainerInputEnabled(mp.Spec.Input) {
 				return nil
@@ -674,9 +674,9 @@ func (b *Builder) addDropRuntimeContainerMetricsProcessor() buildComponentFunc {
 // Additional node metrics specified in the pipeline configuration are excluded from dropping.
 //
 //nolint:dupl // Similar logic is used in other resource filter processors, but they are not identical
-func (b *Builder) addDropRuntimeNodeMetricsProcessor() buildComponentFunc {
+func (b *Builder) addDropRuntimeNodeMetricsProcessor(pipelineName string) buildComponentFunc {
 	return b.AddProcessor(
-		b.StaticComponentID(common.ComponentIDDropRuntimeNodeMetricsProcessor),
+		b.StaticComponentID(common.ComponentIDDropRuntimeNodeMetricsProcessor+"-"+pipelineName),
 		func(mp *telemetryv1beta1.MetricPipeline) any {
 			if !metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) || metricpipelineutils.IsRuntimeNodeInputEnabled(mp.Spec.Input) {
 				return nil
@@ -705,9 +705,9 @@ func (b *Builder) addDropRuntimeNodeMetricsProcessor() buildComponentFunc {
 // Additional volume metrics specified in the pipeline configuration are excluded from dropping.
 //
 //nolint:dupl // Similar logic is used in other resource filter processors, but they are not identical
-func (b *Builder) addDropRuntimeVolumeMetricsProcessor() buildComponentFunc {
+func (b *Builder) addDropRuntimeVolumeMetricsProcessor(pipelineName string) buildComponentFunc {
 	return b.AddProcessor(
-		b.StaticComponentID(common.ComponentIDDropRuntimeVolumeMetricsProcessor),
+		b.StaticComponentID(common.ComponentIDDropRuntimeVolumeMetricsProcessor+"-"+pipelineName),
 		func(mp *telemetryv1beta1.MetricPipeline) any {
 			if !metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) || metricpipelineutils.IsRuntimeVolumeInputEnabled(mp.Spec.Input) {
 				return nil
@@ -736,9 +736,9 @@ func (b *Builder) addDropRuntimeVolumeMetricsProcessor() buildComponentFunc {
 // Additional deployment metrics specified in the pipeline configuration are excluded from dropping.
 //
 //nolint:dupl // Similar logic is used in other resource filter processors, but they are not identical
-func (b *Builder) addDropRuntimeDeploymentMetricsProcessor() buildComponentFunc {
+func (b *Builder) addDropRuntimeDeploymentMetricsProcessor(pipelineName string) buildComponentFunc {
 	return b.AddProcessor(
-		b.StaticComponentID(common.ComponentIDDropRuntimeDeploymentMetricsProcessor),
+		b.StaticComponentID(common.ComponentIDDropRuntimeDeploymentMetricsProcessor+"-"+pipelineName),
 		func(mp *telemetryv1beta1.MetricPipeline) any {
 			if !metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) || metricpipelineutils.IsRuntimeDeploymentInputEnabled(mp.Spec.Input) {
 				return nil
@@ -767,9 +767,9 @@ func (b *Builder) addDropRuntimeDeploymentMetricsProcessor() buildComponentFunc 
 // Additional daemonset metrics specified in the pipeline configuration are excluded from dropping.
 //
 //nolint:dupl // Similar logic is used in other resource filter processors, but they are not identical
-func (b *Builder) addDropRuntimeDaemonSetMetricsProcessor() buildComponentFunc {
+func (b *Builder) addDropRuntimeDaemonSetMetricsProcessor(pipelineName string) buildComponentFunc {
 	return b.AddProcessor(
-		b.StaticComponentID(common.ComponentIDDropRuntimeDaemonSetMetricsProcessor),
+		b.StaticComponentID(common.ComponentIDDropRuntimeDaemonSetMetricsProcessor+"-"+pipelineName),
 		func(mp *telemetryv1beta1.MetricPipeline) any {
 			if !metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) || metricpipelineutils.IsRuntimeDaemonSetInputEnabled(mp.Spec.Input) {
 				return nil
@@ -798,9 +798,9 @@ func (b *Builder) addDropRuntimeDaemonSetMetricsProcessor() buildComponentFunc {
 // Additional statefulset metrics specified in the pipeline configuration are excluded from dropping.
 //
 //nolint:dupl // Similar logic is used in other resource filter processors, but they are not identical
-func (b *Builder) addDropRuntimeStatefulSetMetricsProcessor() buildComponentFunc {
+func (b *Builder) addDropRuntimeStatefulSetMetricsProcessor(pipelineName string) buildComponentFunc {
 	return b.AddProcessor(
-		b.StaticComponentID(common.ComponentIDDropRuntimeStatefulSetMetricsProcessor),
+		b.StaticComponentID(common.ComponentIDDropRuntimeStatefulSetMetricsProcessor+"-"+pipelineName),
 		func(mp *telemetryv1beta1.MetricPipeline) any {
 			if !metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) || metricpipelineutils.IsRuntimeStatefulSetInputEnabled(mp.Spec.Input) {
 				return nil
@@ -829,9 +829,9 @@ func (b *Builder) addDropRuntimeStatefulSetMetricsProcessor() buildComponentFunc
 // Additional job metrics specified in the pipeline configuration are excluded from dropping.
 //
 //nolint:dupl // Similar logic is used in other resource filter processors, but they are not identical
-func (b *Builder) addDropRuntimeJobMetricsProcessor() buildComponentFunc {
+func (b *Builder) addDropRuntimeJobMetricsProcessor(pipelineName string) buildComponentFunc {
 	return b.AddProcessor(
-		b.StaticComponentID(common.ComponentIDDropRuntimeJobMetricsProcessor),
+		b.StaticComponentID(common.ComponentIDDropRuntimeJobMetricsProcessor+"-"+pipelineName),
 		func(mp *telemetryv1beta1.MetricPipeline) any {
 			if !metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) || metricpipelineutils.IsRuntimeJobInputEnabled(mp.Spec.Input) {
 				return nil
@@ -858,9 +858,9 @@ func (b *Builder) addDropRuntimeJobMetricsProcessor() buildComponentFunc {
 
 // addDropAdditionalRuntimeMetricsProcessor adds a filter processor to drop runtime additional metrics excluding those specified in the pipeline and those related to enabled runtime resource inputs.
 // This is needed because the kubeletStats and k8sCluster receivers emit the union of additional metrics specified in ALL pipelines.
-func (b *Builder) addDropAdditionalRuntimeMetricsProcessor(allAdditionalMetrics []string) buildComponentFunc {
+func (b *Builder) addDropAdditionalRuntimeMetricsProcessor(allAdditionalMetrics []string, pipelineName string) buildComponentFunc {
 	return b.AddProcessor(
-		b.StaticComponentID(common.ComponentIDDropRuntimeAdditionalMetricsProcessor),
+		b.StaticComponentID(common.ComponentIDDropRuntimeAdditionalMetricsProcessor+"-"+pipelineName),
 		func(mp *telemetryv1beta1.MetricPipeline) any {
 			if !metricpipelineutils.IsRuntimeInputEnabled(mp.Spec.Input) || len(allAdditionalMetrics) == 0 {
 				return nil
