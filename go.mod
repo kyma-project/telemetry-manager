@@ -9,7 +9,7 @@ require (
 	github.com/go-logr/zapr v1.3.0
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
-	github.com/onsi/gomega v1.40.0
+	github.com/onsi/gomega v1.41.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl v0.152.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor v0.152.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor v0.152.0
@@ -22,8 +22,8 @@ require (
 	go.uber.org/zap v1.28.0
 	google.golang.org/protobuf v1.36.11
 	gopkg.in/yaml.v3 v3.0.1
-	istio.io/api v1.29.2
-	istio.io/client-go v1.29.2
+	istio.io/api v1.30.0
+	istio.io/client-go v1.30.0
 	k8s.io/api v0.35.4
 	k8s.io/apiextensions-apiserver v0.35.4
 	k8s.io/apimachinery v0.35.4
