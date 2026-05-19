@@ -271,6 +271,26 @@ var k8sClusterMetricEnablers = map[string]func(*K8sClusterMetrics){
 		initOptionalMetrics(m)
 		m.K8sNodeCondition = &Metric{Enabled: true}
 	},
+	metricK8sPersistentVolumeStatusPhase: func(m *K8sClusterMetrics) {
+		initOptionalMetrics(m)
+		m.K8sPersistentVolumeStatusPhase = &Metric{Enabled: true}
+	},
+	metricK8sPersistentVolumeStorageCapacity: func(m *K8sClusterMetrics) {
+		initOptionalMetrics(m)
+		m.K8sPersistentVolumeStorageCapacity = &Metric{Enabled: true}
+	},
+	metricK8sPersistentVolumeClaimStatusPhase: func(m *K8sClusterMetrics) {
+		initOptionalMetrics(m)
+		m.K8sPersistentVolumeClaimStatusPhase = &Metric{Enabled: true}
+	},
+	metricK8sPersistentVolumeClaimStorageCapacity: func(m *K8sClusterMetrics) {
+		initOptionalMetrics(m)
+		m.K8sPersistentVolumeClaimStorageCapacity = &Metric{Enabled: true}
+	},
+	metricK8sPersistentVolumeClaimStorageRequest: func(m *K8sClusterMetrics) {
+		initOptionalMetrics(m)
+		m.K8sPersistentVolumeClaimStorageRequest = &Metric{Enabled: true}
+	},
 	metricK8sPodStatusReason: func(m *K8sClusterMetrics) {
 		initOptionalMetrics(m)
 		m.K8sPodStatusReason = &Metric{Enabled: true}

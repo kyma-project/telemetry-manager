@@ -45,12 +45,17 @@ const (
 	metricK8sStatefulSetUpdatedPods           = "k8s.statefulset.updated_pods"
 
 	// Upstream optional metrics
-	metricK8sContainerStatusReason = "k8s.container.status.reason"
-	metricK8sContainerStatusState  = "k8s.container.status.state"
-	metricK8sNodeCondition         = "k8s.node.condition"
-	metricK8sPodStatusReason       = "k8s.pod.status_reason"
-	metricK8sServiceEndpointCount  = "k8s.service.endpoint.count"
-	metricK8sServiceLBIngressCount = "k8s.service.load_balancer.ingress.count"
+	metricK8sContainerStatusReason                = "k8s.container.status.reason"
+	metricK8sContainerStatusState                 = "k8s.container.status.state"
+	metricK8sNodeCondition                        = "k8s.node.condition"
+	metricK8sPersistentVolumeStatusPhase          = "k8s.persistentvolume.status.phase"
+	metricK8sPersistentVolumeStorageCapacity      = "k8s.persistentvolume.storage.capacity"
+	metricK8sPersistentVolumeClaimStatusPhase     = "k8s.persistentvolumeclaim.status.phase"
+	metricK8sPersistentVolumeClaimStorageCapacity = "k8s.persistentvolumeclaim.storage.capacity"
+	metricK8sPersistentVolumeClaimStorageRequest  = "k8s.persistentvolumeclaim.storage.request"
+	metricK8sPodStatusReason                      = "k8s.pod.status_reason"
+	metricK8sServiceEndpointCount                 = "k8s.service.endpoint.count"
+	metricK8sServiceLBIngressCount                = "k8s.service.load_balancer.ingress.count"
 )
 
 // k8sClusterReceiverPodMetrics contains metrics related to pod resources.
@@ -123,6 +128,11 @@ var k8sClusterReceiverExtraMetrics = []string{
 	metricK8sContainerStatusReason,
 	metricK8sContainerStatusState,
 	metricK8sNodeCondition,
+	metricK8sPersistentVolumeStatusPhase,
+	metricK8sPersistentVolumeStorageCapacity,
+	metricK8sPersistentVolumeClaimStatusPhase,
+	metricK8sPersistentVolumeClaimStorageCapacity,
+	metricK8sPersistentVolumeClaimStorageRequest,
 	metricK8sPodStatusReason,
 	metricK8sServiceEndpointCount,
 	metricK8sServiceLBIngressCount,

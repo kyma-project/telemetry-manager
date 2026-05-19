@@ -215,12 +215,17 @@ type K8sClusterContainerMetrics struct {
 }
 
 type K8sClusterOptionalMetrics struct {
-	K8sContainerStatusReason           *Metric `yaml:"k8s.container.status.reason,omitempty"`
-	K8sContainerStatusState            *Metric `yaml:"k8s.container.status.state,omitempty"`
-	K8sNodeCondition                   *Metric `yaml:"k8s.node.condition,omitempty"`
-	K8sPodStatusReason                 *Metric `yaml:"k8s.pod.status_reason,omitempty"`
-	K8sServiceEndpointCount            *Metric `yaml:"k8s.service.endpoint.count,omitempty"`
-	K8sServiceLoadBalancerIngressCount *Metric `yaml:"k8s.service.load_balancer.ingress.count,omitempty"`
+	K8sContainerStatusReason                *Metric `yaml:"k8s.container.status.reason,omitempty"`
+	K8sContainerStatusState                 *Metric `yaml:"k8s.container.status.state,omitempty"`
+	K8sNodeCondition                        *Metric `yaml:"k8s.node.condition,omitempty"`
+	K8sPersistentVolumeStatusPhase          *Metric `yaml:"k8s.persistentvolume.status.phase,omitempty"`
+	K8sPersistentVolumeStorageCapacity      *Metric `yaml:"k8s.persistentvolume.storage.capacity,omitempty"`
+	K8sPersistentVolumeClaimStatusPhase     *Metric `yaml:"k8s.persistentvolumeclaim.status.phase,omitempty"`
+	K8sPersistentVolumeClaimStorageCapacity *Metric `yaml:"k8s.persistentvolumeclaim.storage.capacity,omitempty"`
+	K8sPersistentVolumeClaimStorageRequest  *Metric `yaml:"k8s.persistentvolumeclaim.storage.request,omitempty"`
+	K8sPodStatusReason                      *Metric `yaml:"k8s.pod.status_reason,omitempty"`
+	K8sServiceEndpointCount                 *Metric `yaml:"k8s.service.endpoint.count,omitempty"`
+	K8sServiceLoadBalancerIngressCount      *Metric `yaml:"k8s.service.load_balancer.ingress.count,omitempty"`
 }
 
 type K8sClusterReceiverConfig struct {
