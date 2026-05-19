@@ -106,22 +106,26 @@ type KubeletStatsVolumeMetrics struct {
 }
 
 type KubeletStatsOptionalMetrics struct {
-	ContainerUptime                   *Metric `yaml:"container.uptime,omitempty"`
-	K8sContainerCPUNodeUtilization    *Metric `yaml:"k8s.container.cpu.node.utilization,omitempty"`
-	K8sContainerCPULimitUtilization   *Metric `yaml:"k8s.container.cpu_limit_utilization,omitempty"`
-	K8sContainerCPURequestUtilization *Metric `yaml:"k8s.container.cpu_request_utilization,omitempty"`
-	K8sContainerMemNodeUtilization    *Metric `yaml:"k8s.container.memory.node.utilization,omitempty"`
-	K8sContainerMemLimitUtilization   *Metric `yaml:"k8s.container.memory_limit_utilization,omitempty"`
-	K8sContainerMemRequestUtilization *Metric `yaml:"k8s.container.memory_request_utilization,omitempty"`
-	K8sNodeUptime                     *Metric `yaml:"k8s.node.uptime,omitempty"`
-	K8sPodCPUNodeUtilization          *Metric `yaml:"k8s.pod.cpu.node.utilization,omitempty"`
-	K8sPodCPULimitUtilization         *Metric `yaml:"k8s.pod.cpu_limit_utilization,omitempty"`
-	K8sPodCPURequestUtilization       *Metric `yaml:"k8s.pod.cpu_request_utilization,omitempty"`
-	K8sPodMemNodeUtilization          *Metric `yaml:"k8s.pod.memory.node.utilization,omitempty"`
-	K8sPodMemLimitUtilization         *Metric `yaml:"k8s.pod.memory_limit_utilization,omitempty"`
-	K8sPodMemRequestUtilization       *Metric `yaml:"k8s.pod.memory_request_utilization,omitempty"`
-	K8sPodUptime                      *Metric `yaml:"k8s.pod.uptime,omitempty"`
-	K8sPodVolumeUsage                 *Metric `yaml:"k8s.pod.volume.usage,omitempty"`
+	ContainerUptime                        *Metric `yaml:"container.uptime,omitempty"`
+	K8sContainerCPUNodeUtilization         *Metric `yaml:"k8s.container.cpu.node.utilization,omitempty"`
+	K8sContainerCPULimitUtilization        *Metric `yaml:"k8s.container.cpu_limit_utilization,omitempty"`
+	K8sContainerCPURequestUtilization      *Metric `yaml:"k8s.container.cpu_request_utilization,omitempty"`
+	K8sContainerMemNodeUtilization         *Metric `yaml:"k8s.container.memory.node.utilization,omitempty"`
+	K8sContainerMemLimitUtilization        *Metric `yaml:"k8s.container.memory_limit_utilization,omitempty"`
+	K8sContainerMemRequestUtilization      *Metric `yaml:"k8s.container.memory_request_utilization,omitempty"`
+	K8sNodeSystemContainerCPUTime          *Metric `yaml:"k8s.node.system_container.cpu.time,omitempty"`
+	K8sNodeSystemContainerCPUUsage         *Metric `yaml:"k8s.node.system_container.cpu.usage,omitempty"`
+	K8sNodeSystemContainerMemoryUsage      *Metric `yaml:"k8s.node.system_container.memory.usage,omitempty"`
+	K8sNodeSystemContainerMemoryWorkingSet *Metric `yaml:"k8s.node.system_container.memory.working_set,omitempty"`
+	K8sNodeUptime                          *Metric `yaml:"k8s.node.uptime,omitempty"`
+	K8sPodCPUNodeUtilization               *Metric `yaml:"k8s.pod.cpu.node.utilization,omitempty"`
+	K8sPodCPULimitUtilization              *Metric `yaml:"k8s.pod.cpu_limit_utilization,omitempty"`
+	K8sPodCPURequestUtilization            *Metric `yaml:"k8s.pod.cpu_request_utilization,omitempty"`
+	K8sPodMemNodeUtilization               *Metric `yaml:"k8s.pod.memory.node.utilization,omitempty"`
+	K8sPodMemLimitUtilization              *Metric `yaml:"k8s.pod.memory_limit_utilization,omitempty"`
+	K8sPodMemRequestUtilization            *Metric `yaml:"k8s.pod.memory_request_utilization,omitempty"`
+	K8sPodUptime                           *Metric `yaml:"k8s.pod.uptime,omitempty"`
+	K8sPodVolumeUsage                      *Metric `yaml:"k8s.pod.volume.usage,omitempty"`
 }
 
 type MetricGroupType string

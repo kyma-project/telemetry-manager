@@ -375,6 +375,22 @@ var kubeletStatsMetricEnablers = map[string]func(*KubeletStatsMetrics){
 		initKubeletStatsOptionalMetrics(m)
 		m.K8sContainerMemRequestUtilization = &Metric{Enabled: true}
 	},
+	metricK8sNodeSystemContainerCPUTime: func(m *KubeletStatsMetrics) {
+		initKubeletStatsOptionalMetrics(m)
+		m.K8sNodeSystemContainerCPUTime = &Metric{Enabled: true}
+	},
+	metricK8sNodeSystemContainerCPUUsage: func(m *KubeletStatsMetrics) {
+		initKubeletStatsOptionalMetrics(m)
+		m.K8sNodeSystemContainerCPUUsage = &Metric{Enabled: true}
+	},
+	metricK8sNodeSystemContainerMemoryUsage: func(m *KubeletStatsMetrics) {
+		initKubeletStatsOptionalMetrics(m)
+		m.K8sNodeSystemContainerMemoryUsage = &Metric{Enabled: true}
+	},
+	metricK8sNodeSystemContainerMemoryWorkingSet: func(m *KubeletStatsMetrics) {
+		initKubeletStatsOptionalMetrics(m)
+		m.K8sNodeSystemContainerMemoryWorkingSet = &Metric{Enabled: true}
+	},
 	metricK8sNodeUptime: func(m *KubeletStatsMetrics) {
 		initKubeletStatsOptionalMetrics(m)
 		m.K8sNodeUptime = &Metric{Enabled: true}

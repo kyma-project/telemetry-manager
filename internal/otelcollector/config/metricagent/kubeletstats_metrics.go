@@ -49,22 +49,26 @@ const (
 	metricK8sVolumeInodesUsed           = "k8s.volume.inodes.used"
 
 	// Optional metrics
-	metricContainerUptime                   = "container.uptime"
-	metricK8sContainerCPUNodeUtilization    = "k8s.container.cpu.node.utilization"
-	metricK8sContainerCPULimitUtilization   = "k8s.container.cpu_limit_utilization"
-	metricK8sContainerCPURequestUtilization = "k8s.container.cpu_request_utilization"
-	metricK8sContainerMemNodeUtilization    = "k8s.container.memory.node.utilization"
-	metricK8sContainerMemLimitUtilization   = "k8s.container.memory_limit_utilization"
-	metricK8sContainerMemRequestUtilization = "k8s.container.memory_request_utilization"
-	metricK8sNodeUptime                     = "k8s.node.uptime"
-	metricK8sPodCPUNodeUtilization          = "k8s.pod.cpu.node.utilization"
-	metricK8sPodCPULimitUtilization         = "k8s.pod.cpu_limit_utilization"
-	metricK8sPodCPURequestUtilization       = "k8s.pod.cpu_request_utilization"
-	metricK8sPodMemNodeUtilization          = "k8s.pod.memory.node.utilization"
-	metricK8sPodMemLimitUtilization         = "k8s.pod.memory_limit_utilization"
-	metricK8sPodMemRequestUtilization       = "k8s.pod.memory_request_utilization"
-	metricK8sPodUptime                      = "k8s.pod.uptime"
-	metricK8sPodVolumeUsage                 = "k8s.pod.volume.usage"
+	metricContainerUptime                        = "container.uptime"
+	metricK8sContainerCPUNodeUtilization         = "k8s.container.cpu.node.utilization"
+	metricK8sContainerCPULimitUtilization        = "k8s.container.cpu_limit_utilization"
+	metricK8sContainerCPURequestUtilization      = "k8s.container.cpu_request_utilization"
+	metricK8sContainerMemNodeUtilization         = "k8s.container.memory.node.utilization"
+	metricK8sContainerMemLimitUtilization        = "k8s.container.memory_limit_utilization"
+	metricK8sContainerMemRequestUtilization      = "k8s.container.memory_request_utilization"
+	metricK8sNodeSystemContainerCPUTime          = "k8s.node.system_container.cpu.time"
+	metricK8sNodeSystemContainerCPUUsage         = "k8s.node.system_container.cpu.usage"
+	metricK8sNodeSystemContainerMemoryUsage      = "k8s.node.system_container.memory.usage"
+	metricK8sNodeSystemContainerMemoryWorkingSet = "k8s.node.system_container.memory.working_set"
+	metricK8sNodeUptime                          = "k8s.node.uptime"
+	metricK8sPodCPUNodeUtilization               = "k8s.pod.cpu.node.utilization"
+	metricK8sPodCPULimitUtilization              = "k8s.pod.cpu_limit_utilization"
+	metricK8sPodCPURequestUtilization            = "k8s.pod.cpu_request_utilization"
+	metricK8sPodMemNodeUtilization               = "k8s.pod.memory.node.utilization"
+	metricK8sPodMemLimitUtilization              = "k8s.pod.memory_limit_utilization"
+	metricK8sPodMemRequestUtilization            = "k8s.pod.memory_request_utilization"
+	metricK8sPodUptime                           = "k8s.pod.uptime"
+	metricK8sPodVolumeUsage                      = "k8s.pod.volume.usage"
 )
 
 // kubeletStatsReceiverContainerMetrics contains metrics related to container resources.
@@ -137,6 +141,10 @@ var kubeletStatsReceiverExtraMetrics = []string{
 	metricK8sContainerMemNodeUtilization,
 	metricK8sContainerMemLimitUtilization,
 	metricK8sContainerMemRequestUtilization,
+	metricK8sNodeSystemContainerCPUTime,
+	metricK8sNodeSystemContainerCPUUsage,
+	metricK8sNodeSystemContainerMemoryUsage,
+	metricK8sNodeSystemContainerMemoryWorkingSet,
 	metricK8sNodeUptime,
 	metricK8sPodCPUNodeUtilization,
 	metricK8sPodCPULimitUtilization,
