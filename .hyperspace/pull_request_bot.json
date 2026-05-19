@@ -20,10 +20,7 @@
       "auto_insert_summary": false,
       "use_custom_summarize_prompt": true,
       "use_custom_summarize_output_template": true,
-      "excluded_paths": [
-        "test/**",
-        "**/*_test.go"
-      ]
+      "excluded_paths": []
     },
     "review": {
       "auto_generate_review": false,
