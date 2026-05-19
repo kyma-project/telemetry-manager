@@ -15,6 +15,7 @@ on:
       - "OWNERS"
       - "CODEOWNERS"
       - "external-images.yaml"
+      - ".hyperspace/**"
   workflow_dispatch:
 
 jobs:
