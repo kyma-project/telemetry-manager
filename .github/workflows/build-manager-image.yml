@@ -16,6 +16,7 @@ on:
       - "OWNERS"
       - "CODEOWNERS"
       - "external-images.yaml"
+      - ".hyperspace/**"
   push:
     branches:
       - "main"
@@ -28,6 +29,7 @@ on:
       - "OWNERS"
       - "CODEOWNERS"
       - "external-images.yaml"
+      - ".hyperspace/**"
 
 jobs:
   envs:
