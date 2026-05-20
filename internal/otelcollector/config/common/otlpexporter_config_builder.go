@@ -16,6 +16,38 @@ import (
 // OTLP EXPORTER CONFIG BUILDER
 // =============================================================================
 
+// SendingQueue constructors and options
+
+type SendingQueueOption func(*SendingQueue)
+
+func WithSizer(sizer Sizer) SendingQueueOption {
+	return func(sq *SendingQueue) {
+		sq.Sizer = sizer
+	}
+}
+
+func WithBatch(batch Batch) SendingQueueOption {
+	return func(sq *SendingQueue) {
+		sq.Batch = batch
+	}
+}
+
+func NewSendingQueue(queueSize int, opts ...SendingQueueOption) SendingQueue {
+	if queueSize == 0 {
+		return SendingQueue{Enabled: false}
+	}
+
+	sq := SendingQueue{
+		Enabled:   true,
+		QueueSize: queueSize,
+	}
+	for _, opt := range opts {
+		opt(&sq)
+	}
+
+	return sq
+}
+
 type OTLPExporterConfigBuilder struct {
 	reader       client.Reader
 	otlpOutput   *telemetryv1beta1.OTLPOutput

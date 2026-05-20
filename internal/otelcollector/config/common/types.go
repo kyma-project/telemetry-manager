@@ -166,36 +166,6 @@ type SendingQueue struct {
 	Batch     Batch `yaml:"batch,omitempty"`
 }
 
-type SendingQueueOption func(*SendingQueue)
-
-func WithSizer(sizer Sizer) SendingQueueOption {
-	return func(sq *SendingQueue) {
-		sq.Sizer = sizer
-	}
-}
-
-func WithBatch(batch Batch) SendingQueueOption {
-	return func(sq *SendingQueue) {
-		sq.Batch = batch
-	}
-}
-
-func NewSendingQueue(queueSize int, opts ...SendingQueueOption) SendingQueue {
-	sq := SendingQueue{
-		Enabled:   true,
-		QueueSize: queueSize,
-	}
-	for _, opt := range opts {
-		opt(&sq)
-	}
-
-	return sq
-}
-
-func DisabledSendingQueue() SendingQueue {
-	return SendingQueue{Enabled: false}
-}
-
 type Batch struct {
 	MinSize      int           `yaml:"min_size,omitempty"`
 	MaxSize      int           `yaml:"max_size,omitempty"`
