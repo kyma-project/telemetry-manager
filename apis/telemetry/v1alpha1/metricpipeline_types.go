@@ -104,6 +104,11 @@ type MetricPipelineRuntimeInput struct {
 	// Resources configures the Kubernetes resource types for which metrics are collected.
 	// +kubebuilder:validation:Optional
 	Resources *MetricPipelineRuntimeInputResources `json:"resources,omitempty"`
+	// AdditionalMetrics specifies upstream metric names to collect
+	// in addition to the default curated set. Each entry must be a valid
+	// metric name.
+	// +kubebuilder:validation:Optional
+	AdditionalMetrics []string `json:"additionalMetrics,omitempty"`
 }
 
 // MetricPipelineRuntimeInputResources configures the Kubernetes resource types for which metrics are collected.

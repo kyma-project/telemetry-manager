@@ -245,6 +245,73 @@ func TestBuildConfig(t *testing.T) {
 			},
 		},
 		{
+			name:           "pipelines with runtime additional metrics",
+			goldenFileName: "runtime-additional-metrics.yaml",
+			pipelines: []telemetryv1beta1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().
+					WithName("test1").
+					WithRuntimeInput(true).
+					WithRuntimeInputPodMetrics(false).
+					WithRuntimeInputContainerMetrics(false).
+					WithRuntimeInputNodeMetrics(false).
+					WithRuntimeInputVolumeMetrics(false).
+					WithRuntimeInputDeploymentMetrics(false).
+					WithRuntimeInputDaemonSetMetrics(false).
+					WithRuntimeInputStatefulSetMetrics(false).
+					WithRuntimeInputJobMetrics(false).
+					WithRuntimeInputAdditionalMetrics(
+						// a default kubeletstats container metric
+						"container.cpu.time",
+						// a default kubeletstats pod metric
+						"k8s.pod.cpu.time",
+						// a default kubeletstats node metric
+						"k8s.node.cpu.usage",
+						// a default kubeletstats volume metric
+						"k8s.volume.available",
+						// a default k8scluster pod metric
+						"k8s.pod.phase",
+						// a default k8scluster container metric
+						"k8s.container.cpu_request",
+						// a default k8scluster statefulset metric
+						"k8s.statefulset.current_pods",
+						// a default k8scluster job metric
+						"k8s.job.active_pods",
+						// a default k8scluster deployment metric
+						"k8s.deployment.available",
+						// a default k8scluster daemonset metric
+						"k8s.daemonset.current_scheduled_nodes",
+
+						// an optional kubeletstats container metric only in test1 pipeline
+						"k8s.container.cpu_limit_utilization",
+						// an optional kubeletstats container metric only in test1 pipeline
+						"k8s.container.cpu_request_utilization",
+						// an optional kubeletstats node metric in both test1 and test2 pipelines
+						"k8s.node.uptime",
+					).
+					Build(),
+				testutils.NewMetricPipelineBuilder().
+					WithName("test2").
+					WithRuntimeInput(true).
+					WithRuntimeInputPodMetrics(true).
+					WithRuntimeInputContainerMetrics(true).
+					WithRuntimeInputNodeMetrics(true).
+					WithRuntimeInputVolumeMetrics(true).
+					WithRuntimeInputDeploymentMetrics(true).
+					WithRuntimeInputDaemonSetMetrics(true).
+					WithRuntimeInputStatefulSetMetrics(true).
+					WithRuntimeInputJobMetrics(true).
+					WithRuntimeInputAdditionalMetrics(
+						// an optional kubeletstats pod metric only in test2 pipeline
+						"k8s.pod.cpu_limit_utilization",
+						// an optional kubeletstats pod metric only in test2 pipeline
+						"k8s.pod.cpu_request_utilization",
+						// an optional kubeletstats node metric in both test1 and test2 pipelines
+						"k8s.node.uptime",
+					).
+					Build(),
+			},
+		},
+		{
 			name:           "pipeline using HTTP WITH custom 'Path' field",
 			goldenFileName: "http-with-custom-path.yaml",
 			pipelines: []telemetryv1beta1.MetricPipeline{

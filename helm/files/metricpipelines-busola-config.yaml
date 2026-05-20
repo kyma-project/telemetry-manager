@@ -139,6 +139,11 @@ details: |-
               visibility: $exists(spec.input.runtime.namespaces.exclude)
               source: spec.input.runtime.namespaces.exclude
               separator: ', '
+            - name: Additional Metrics
+              widget: JoinedArray
+              visibility: $exists(spec.input.runtime.additionalMetrics)
+              source: spec.input.runtime.additionalMetrics
+              separator: ', '
             - name: Resources
               widget: Panel
               visibility: $exists(spec.input.runtime.resources)
@@ -534,6 +539,12 @@ form: |
             - name: Enable Job Metrics
               path: job.enabled
               simple: true
+          - name: Additional Metrics
+            widget: SimpleList
+            path: additionalMetrics
+            defaultExpanded: true
+            children:
+              - path: '[]'
       - name: OTLP
         path: otlp
         widget: FormGroup
