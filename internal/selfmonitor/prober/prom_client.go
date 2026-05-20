@@ -20,7 +20,7 @@ const (
 
 func newPrometheusClient(selfMonitorName types.NamespacedName) (promv1.API, error) {
 	client, err := api.NewClient(api.Config{
-		Address: fmt.Sprintf("http://%s.%s.svc.cluster.local:%d", selfMonitorName.Name, selfMonitorName.Namespace, selfmonports.PrometheusPort),
+		Address: fmt.Sprintf("http://%s.%s:%d", selfMonitorName.Name, selfMonitorName.Namespace, selfmonports.PrometheusPort),
 		Client:  newInstrumentedClient(),
 	})
 	if err != nil {
