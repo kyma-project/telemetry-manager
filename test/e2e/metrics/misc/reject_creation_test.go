@@ -185,6 +185,16 @@ func TestRejectPipelineCreation(t *testing.T) {
 			field:    "spec.output.otlp.protocol",
 		},
 		{
+			name: "otlp-output-with-invalid-temporality",
+			pipeline: testutils.NewMetricPipelineBuilder().
+				WithMetricPipelineOTLPOutput(
+					testutils.OTLPEndpoint(backendEndpoint),
+				).WithTemporality("random").Build(),
+			errorMsg: "Unsupported value",
+			causes:   2,
+			field:    "spec.output.otlp.temporality",
+		},
+		{
 			name: "otlp-output-basic-auth-secretref-missing-password-key",
 			pipeline: testutils.NewMetricPipelineBuilder().
 				WithMetricPipelineOTLPOutput(
