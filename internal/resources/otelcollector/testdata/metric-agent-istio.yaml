@@ -252,6 +252,9 @@ rules:
   - nodes
   - nodes/stats
   - nodes/proxy
+  - nodes/pods
+  - persistentvolumeclaims
+  - persistentvolumes
   verbs:
   - get
   - list
@@ -281,12 +284,22 @@ rules:
   - namespaces/status
   - nodes
   - nodes/spec
+  - persistentvolumes
+  - persistentvolumeclaims
   - pods
   - pods/status
   - replicationcontrollers
   - replicationcontrollers/status
   - resourcequotas
   - services
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - discovery.k8s.io
+  resources:
+  - endpointslices
   verbs:
   - get
   - list
