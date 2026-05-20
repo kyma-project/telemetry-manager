@@ -12,18 +12,6 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
-type metricResource string
-
-const (
-	pod         metricResource = "pod"
-	container   metricResource = "container"
-	statefulset metricResource = "statefulset"
-	job         metricResource = "job"
-	deployment  metricResource = "deployment"
-	daemonset   metricResource = "daemonset"
-	none        metricResource = "none"
-)
-
 func TestKubeletStatsReceiverConfig(t *testing.T) {
 	ctx := context.Background()
 	fakeClient := fake.NewClientBuilder().Build()
@@ -31,262 +19,284 @@ func TestKubeletStatsReceiverConfig(t *testing.T) {
 		Reader: fakeClient,
 	}
 
-	t.Run("runtime input enabled verify k8sClusterReceiver", func(t *testing.T) {
-		agentNamespace := "test-namespace"
+	tests := []struct {
+		name                 string
+		pipeline             telemetryv1beta1.MetricPipeline
+		expectedMetricGroups []MetricGroupType
+		expectedMetrics      KubeletStatsMetrics
+	}{
+		{
+			name:                 "default resources enabled",
+			pipeline:             testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).Build(),
+			expectedMetricGroups: []MetricGroupType{MetricGroupTypeContainer, MetricGroupTypePod, MetricGroupTypeNode, MetricGroupTypeVolume},
+			expectedMetrics: KubeletStatsMetrics{
+				KubeletStatsDefaultMetricsToDrop: &KubeletStatsDefaultMetricsToDrop{
+					K8sNodeCPUTime:               &Metric{Enabled: false},
+					K8sNodeMemoryMajorPageFaults: &Metric{Enabled: false},
+					K8sNodeMemoryPageFaults:      &Metric{Enabled: false},
+				},
+			},
+		},
+		{
+			name: "only pod metrics disabled",
+			pipeline: testutils.NewMetricPipelineBuilder().
+				WithRuntimeInput(true).
+				WithRuntimeInputPodMetrics(false).
+				Build(),
+			expectedMetricGroups: []MetricGroupType{MetricGroupTypeContainer, MetricGroupTypeNode, MetricGroupTypeVolume},
+			expectedMetrics: KubeletStatsMetrics{
+				KubeletStatsDefaultMetricsToDrop: &KubeletStatsDefaultMetricsToDrop{
+					K8sNodeCPUTime:               &Metric{Enabled: false},
+					K8sNodeMemoryMajorPageFaults: &Metric{Enabled: false},
+					K8sNodeMemoryPageFaults:      &Metric{Enabled: false},
+				},
+			},
+		},
+		{
+			name: "only container metrics disabled",
+			pipeline: testutils.NewMetricPipelineBuilder().
+				WithRuntimeInput(true).
+				WithRuntimeInputContainerMetrics(false).
+				Build(),
+			expectedMetricGroups: []MetricGroupType{MetricGroupTypePod, MetricGroupTypeNode, MetricGroupTypeVolume},
+			expectedMetrics: KubeletStatsMetrics{
+				KubeletStatsDefaultMetricsToDrop: &KubeletStatsDefaultMetricsToDrop{
+					K8sNodeCPUTime:               &Metric{Enabled: false},
+					K8sNodeMemoryMajorPageFaults: &Metric{Enabled: false},
+					K8sNodeMemoryPageFaults:      &Metric{Enabled: false},
+				},
+			},
+		},
+		{
+			name: "only node metrics disabled",
+			pipeline: testutils.NewMetricPipelineBuilder().
+				WithRuntimeInput(true).
+				WithRuntimeInputNodeMetrics(false).
+				Build(),
+			expectedMetricGroups: []MetricGroupType{MetricGroupTypeContainer, MetricGroupTypePod, MetricGroupTypeVolume},
+			expectedMetrics: KubeletStatsMetrics{
+				KubeletStatsDefaultMetricsToDrop: &KubeletStatsDefaultMetricsToDrop{
+					K8sNodeCPUTime:               &Metric{Enabled: false},
+					K8sNodeMemoryMajorPageFaults: &Metric{Enabled: false},
+					K8sNodeMemoryPageFaults:      &Metric{Enabled: false},
+				},
+			},
+		},
+		{
+			name: "only volume metrics disabled",
+			pipeline: testutils.NewMetricPipelineBuilder().
+				WithRuntimeInput(true).
+				WithRuntimeInputVolumeMetrics(false).
+				Build(),
+			expectedMetricGroups: []MetricGroupType{MetricGroupTypeContainer, MetricGroupTypePod, MetricGroupTypeNode},
+			expectedMetrics: KubeletStatsMetrics{
+				KubeletStatsDefaultMetricsToDrop: &KubeletStatsDefaultMetricsToDrop{
+					K8sNodeCPUTime:               &Metric{Enabled: false},
+					K8sNodeMemoryMajorPageFaults: &Metric{Enabled: false},
+					K8sNodeMemoryPageFaults:      &Metric{Enabled: false},
+				},
+			},
+		},
+		{
+			name: "Additional metrics overrule resource selectors",
+			pipeline: testutils.NewMetricPipelineBuilder().
+				WithRuntimeInput(true).
+				WithRuntimeInputContainerMetrics(false).
+				WithRuntimeInputPodMetrics(false).
+				WithRuntimeInputNodeMetrics(false).
+				WithRuntimeInputVolumeMetrics(false).
+				WithRuntimeInputAdditionalMetrics(
+					// a default container metric
+					"container.cpu.time",
+					// a default pod metric
+					"k8s.pod.cpu.time",
+					// a default node metric
+					"k8s.node.cpu.usage",
+					// a default volume metric
+					"k8s.volume.available",
+				).
+				Build(),
+			expectedMetricGroups: []MetricGroupType{MetricGroupTypeContainer, MetricGroupTypePod, MetricGroupTypeNode, MetricGroupTypeVolume},
+			expectedMetrics: KubeletStatsMetrics{
+				KubeletStatsDefaultMetricsToDrop: &KubeletStatsDefaultMetricsToDrop{
+					K8sNodeCPUTime:               &Metric{Enabled: false},
+					K8sNodeMemoryMajorPageFaults: &Metric{Enabled: false},
+					K8sNodeMemoryPageFaults:      &Metric{Enabled: false},
+				},
+				KubeletStatsContainerMetrics: &KubeletStatsContainerMetrics{
+					ContainerCPUTime:              &Metric{Enabled: true},
+					ContainerCPUUsage:             &Metric{Enabled: false},
+					ContainerFSAvailable:          &Metric{Enabled: false},
+					ContainerFSCapacity:           &Metric{Enabled: false},
+					ContainerFSUsage:              &Metric{Enabled: false},
+					ContainerMemoryAvailable:      &Metric{Enabled: false},
+					ContainerMemoryMajorPageFault: &Metric{Enabled: false},
+					ContainerMemoryPageFaults:     &Metric{Enabled: false},
+					ContainerMemoryRSS:            &Metric{Enabled: false},
+					ContainerMemoryUsage:          &Metric{Enabled: false},
+					ContainerMemoryWorkingSet:     &Metric{Enabled: false},
+				},
+				KubeletStatsPodMetrics: &KubeletStatsPodMetrics{
+					K8sPodCPUTime:              &Metric{Enabled: true},
+					K8sPodCPUUsage:             &Metric{Enabled: false},
+					K8sPodFSAvailable:          &Metric{Enabled: false},
+					K8sPodFSCapacity:           &Metric{Enabled: false},
+					K8sPodFSUsage:              &Metric{Enabled: false},
+					K8sPodMemoryAvailable:      &Metric{Enabled: false},
+					K8sPodMemoryMajorPageFault: &Metric{Enabled: false},
+					K8sPodMemoryPageFaults:     &Metric{Enabled: false},
+					K8sPodMemoryRSS:            &Metric{Enabled: false},
+					K8sPodMemoryUsage:          &Metric{Enabled: false},
+					K8sPodMemoryWorkingSet:     &Metric{Enabled: false},
+					K8sPodNetworkErrors:        &Metric{Enabled: false},
+					K8sPodNetworkIO:            &Metric{Enabled: false},
+				},
+				KubeletStatsNodeMetrics: &KubeletStatsNodeMetrics{
+					K8sNodeCPUUsage:         &Metric{Enabled: true},
+					K8sNodeFSAvailable:      &Metric{Enabled: false},
+					K8sNodeFSCapacity:       &Metric{Enabled: false},
+					K8sNodeFSUsage:          &Metric{Enabled: false},
+					K8sNodeMemoryAvailable:  &Metric{Enabled: false},
+					K8sNodeMemoryRSS:        &Metric{Enabled: false},
+					K8sNodeMemoryUsage:      &Metric{Enabled: false},
+					K8sNodeMemoryWorkingSet: &Metric{Enabled: false},
+					K8sNodeNetworkErrors:    &Metric{Enabled: false},
+					K8sNodeNetworkIO:        &Metric{Enabled: false},
+				},
+				KubeletStatsVolumeMetrics: &KubeletStatsVolumeMetrics{
+					K8sVolumeAvailable:  &Metric{Enabled: true},
+					K8sVolumeCapacity:   &Metric{Enabled: false},
+					K8sVolumeInodes:     &Metric{Enabled: false},
+					K8sVolumeInodesFree: &Metric{Enabled: false},
+					K8sVolumeInodesUsed: &Metric{Enabled: false},
+				},
+			},
+		},
+		{
+			name: "all additional metrics are provided",
+			pipeline: testutils.NewMetricPipelineBuilder().
+				WithRuntimeInput(true).
+				WithRuntimeInputAdditionalMetrics(KubeletStatsReceiverMetrics...).
+				Build(),
+			expectedMetricGroups: []MetricGroupType{MetricGroupTypeContainer, MetricGroupTypePod, MetricGroupTypeNode, MetricGroupTypeVolume},
+			expectedMetrics: KubeletStatsMetrics{
+				KubeletStatsDefaultMetricsToDrop: &KubeletStatsDefaultMetricsToDrop{
+					K8sNodeCPUTime:               &Metric{Enabled: true},
+					K8sNodeMemoryMajorPageFaults: &Metric{Enabled: true},
+					K8sNodeMemoryPageFaults:      &Metric{Enabled: true},
+				},
+				KubeletStatsContainerMetrics: &KubeletStatsContainerMetrics{
+					ContainerCPUTime:              &Metric{Enabled: true},
+					ContainerCPUUsage:             &Metric{Enabled: true},
+					ContainerFSAvailable:          &Metric{Enabled: true},
+					ContainerFSCapacity:           &Metric{Enabled: true},
+					ContainerFSUsage:              &Metric{Enabled: true},
+					ContainerMemoryAvailable:      &Metric{Enabled: true},
+					ContainerMemoryMajorPageFault: &Metric{Enabled: true},
+					ContainerMemoryPageFaults:     &Metric{Enabled: true},
+					ContainerMemoryRSS:            &Metric{Enabled: true},
+					ContainerMemoryUsage:          &Metric{Enabled: true},
+					ContainerMemoryWorkingSet:     &Metric{Enabled: true},
+				},
+				KubeletStatsPodMetrics: &KubeletStatsPodMetrics{
+					K8sPodCPUTime:              &Metric{Enabled: true},
+					K8sPodCPUUsage:             &Metric{Enabled: true},
+					K8sPodFSAvailable:          &Metric{Enabled: true},
+					K8sPodFSCapacity:           &Metric{Enabled: true},
+					K8sPodFSUsage:              &Metric{Enabled: true},
+					K8sPodMemoryAvailable:      &Metric{Enabled: true},
+					K8sPodMemoryMajorPageFault: &Metric{Enabled: true},
+					K8sPodMemoryPageFaults:     &Metric{Enabled: true},
+					K8sPodMemoryRSS:            &Metric{Enabled: true},
+					K8sPodMemoryUsage:          &Metric{Enabled: true},
+					K8sPodMemoryWorkingSet:     &Metric{Enabled: true},
+					K8sPodNetworkErrors:        &Metric{Enabled: true},
+					K8sPodNetworkIO:            &Metric{Enabled: true},
+				},
+				KubeletStatsNodeMetrics: &KubeletStatsNodeMetrics{
+					K8sNodeCPUUsage:         &Metric{Enabled: true},
+					K8sNodeFSAvailable:      &Metric{Enabled: true},
+					K8sNodeFSCapacity:       &Metric{Enabled: true},
+					K8sNodeFSUsage:          &Metric{Enabled: true},
+					K8sNodeMemoryAvailable:  &Metric{Enabled: true},
+					K8sNodeMemoryRSS:        &Metric{Enabled: true},
+					K8sNodeMemoryUsage:      &Metric{Enabled: true},
+					K8sNodeMemoryWorkingSet: &Metric{Enabled: true},
+					K8sNodeNetworkErrors:    &Metric{Enabled: true},
+					K8sNodeNetworkIO:        &Metric{Enabled: true},
+				},
+				KubeletStatsVolumeMetrics: &KubeletStatsVolumeMetrics{
+					K8sVolumeAvailable:  &Metric{Enabled: true},
+					K8sVolumeCapacity:   &Metric{Enabled: true},
+					K8sVolumeInodes:     &Metric{Enabled: true},
+					K8sVolumeInodesFree: &Metric{Enabled: true},
+					K8sVolumeInodesUsed: &Metric{Enabled: true},
+				},
+				KubeletStatsOptionalMetrics: &KubeletStatsOptionalMetrics{
+					ContainerUptime:                        &Metric{Enabled: true},
+					K8sContainerCPUNodeUtilization:         &Metric{Enabled: true},
+					K8sContainerCPULimitUtilization:        &Metric{Enabled: true},
+					K8sContainerCPURequestUtilization:      &Metric{Enabled: true},
+					K8sContainerMemNodeUtilization:         &Metric{Enabled: true},
+					K8sContainerMemLimitUtilization:        &Metric{Enabled: true},
+					K8sContainerMemRequestUtilization:      &Metric{Enabled: true},
+					K8sNodeSystemContainerCPUTime:          &Metric{Enabled: true},
+					K8sNodeSystemContainerCPUUsage:         &Metric{Enabled: true},
+					K8sNodeSystemContainerMemoryUsage:      &Metric{Enabled: true},
+					K8sNodeSystemContainerMemoryWorkingSet: &Metric{Enabled: true},
+					K8sNodeUptime:                          &Metric{Enabled: true},
+					K8sPodCPUNodeUtilization:               &Metric{Enabled: true},
+					K8sPodCPULimitUtilization:              &Metric{Enabled: true},
+					K8sPodCPURequestUtilization:            &Metric{Enabled: true},
+					K8sPodMemNodeUtilization:               &Metric{Enabled: true},
+					K8sPodMemLimitUtilization:              &Metric{Enabled: true},
+					K8sPodMemRequestUtilization:            &Metric{Enabled: true},
+					K8sPodUptime:                           &Metric{Enabled: true},
+					K8sPodVolumeUsage:                      &Metric{Enabled: true},
+				},
+			},
+		},
+	}
 
-		tests := []struct {
-			name                  string
-			pipeline              telemetryv1beta1.MetricPipeline
-			expectedMetricsToDrop K8sClusterMetricsToDrop
-		}{
-			{
-				name: "default resources enabled",
-				pipeline: testutils.NewMetricPipelineBuilder().
-					WithRuntimeInput(true).
-					Build(),
+	for _, test := range tests {
+		collectorConfig, _, err := sut.Build(ctx, []telemetryv1beta1.MetricPipeline{
+			test.pipeline,
+		}, BuildOptions{
+			CollectionIntervals: telemetryutils.ResolveMetricCollectionIntervals(nil),
+		})
+		require.NoError(t, err)
 
-				expectedMetricsToDrop: getExpectedK8sClusterMetricsToDrop(none),
+		require.NotContains(t, collectorConfig.Receivers, "prometheus/app-pods")
+		require.NotContains(t, collectorConfig.Receivers, "prometheus/istio")
+
+		expectedKubeletStatsReceiverConfig := KubeletStatsReceiverConfig{
+			CollectionInterval: "30s",
+			AuthType:           "serviceAccount",
+			Endpoint:           "https://${MY_NODE_NAME}:10250",
+			InsecureSkipVerify: true,
+			MetricGroups:       test.expectedMetricGroups,
+			Metrics:            test.expectedMetrics,
+			ResourceAttributes: KubeletStatsResourceAttributes{
+				AWSVolumeID:            Metric{Enabled: false},
+				FSType:                 Metric{Enabled: false},
+				GCEPDName:              Metric{Enabled: false},
+				GlusterFSEndpointsName: Metric{Enabled: false},
+				GlusterFSPath:          Metric{Enabled: false},
+				Partition:              Metric{Enabled: false},
 			},
-			{
-				name: "only pod metrics disabled",
-				pipeline: testutils.NewMetricPipelineBuilder().
-					WithRuntimeInput(true).
-					WithRuntimeInputPodMetrics(false).
-					Build(),
-				expectedMetricsToDrop: getExpectedK8sClusterMetricsToDrop(pod),
+			ExtraMetadataLabels: []string{
+				"k8s.volume.type",
 			},
-			{
-				name: "only container metrics disabled",
-				pipeline: testutils.NewMetricPipelineBuilder().
-					WithRuntimeInput(true).
-					WithRuntimeInputContainerMetrics(false).
-					Build(),
-				expectedMetricsToDrop: getExpectedK8sClusterMetricsToDrop(container),
+			CollectAllNetworkInterfaces: NetworkInterfacesEnabler{
+				NodeMetrics: true,
 			},
-			{
-				name: "only statefulset metrics disabled",
-				pipeline: testutils.NewMetricPipelineBuilder().
-					WithRuntimeInput(true).
-					WithRuntimeInputStatefulSetMetrics(false).
-					Build(),
-				expectedMetricsToDrop: getExpectedK8sClusterMetricsToDrop(statefulset),
-			}, {
-				name: "only job metrics disabled",
-				pipeline: testutils.NewMetricPipelineBuilder().
-					WithRuntimeInput(true).
-					WithRuntimeInputJobMetrics(false).
-					Build(),
-				expectedMetricsToDrop: getExpectedK8sClusterMetricsToDrop(job),
-			}, {
-				name: "only deployment metrics disabled",
-				pipeline: testutils.NewMetricPipelineBuilder().
-					WithRuntimeInput(true).
-					WithRuntimeInputDeploymentMetrics(false).
-					Build(),
-				expectedMetricsToDrop: getExpectedK8sClusterMetricsToDrop(deployment),
-			}, {
-				name: "only daemonset metrics disabled",
-				pipeline: testutils.NewMetricPipelineBuilder().
-					WithRuntimeInput(true).
-					WithRuntimeInputDaemonSetMetrics(false).
-					Build(),
-				expectedMetricsToDrop: getExpectedK8sClusterMetricsToDrop(daemonset),
+			Node: "${MY_NODE_NAME}",
+			K8sApiConfig: K8sAPIConfig{
+				AuthType: "serviceAccount",
 			},
 		}
-		for _, test := range tests {
-			collectorConfig, _, err := sut.Build(ctx, []telemetryv1beta1.MetricPipeline{
-				test.pipeline,
-			}, BuildOptions{
-				AgentNamespace:      agentNamespace,
-				CollectionIntervals: telemetryutils.ResolveMetricCollectionIntervals(nil),
-			})
-			require.NoError(t, err)
 
-			require.NotContains(t, collectorConfig.Receivers, "prometheus/app-pods")
-			require.NotContains(t, collectorConfig.Receivers, "prometheus/istio")
-
-			require.Contains(t, collectorConfig.Receivers, "k8s_cluster")
-			k8sClusterReceiver := collectorConfig.Receivers["k8s_cluster"].(*K8sClusterReceiverConfig)
-			require.Equal(t, "serviceAccount", k8sClusterReceiver.AuthType)
-			require.Equal(t, "30s", k8sClusterReceiver.CollectionInterval)
-			require.Len(t, k8sClusterReceiver.NodeConditionsToReport, 0)
-			require.Equal(t, test.expectedMetricsToDrop, k8sClusterReceiver.Metrics)
-		}
-	})
-
-	t.Run("runtime input enabled verify kubeletStatsReceiver", func(t *testing.T) {
-		tests := []struct {
-			name                 string
-			pipeline             telemetryv1beta1.MetricPipeline
-			expectedMetricGroups []MetricGroupType
-		}{
-			{
-				name:                 "default resources enabled",
-				pipeline:             testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).Build(),
-				expectedMetricGroups: []MetricGroupType{MetricGroupTypeContainer, MetricGroupTypePod, MetricGroupTypeNode, MetricGroupTypeVolume},
-			},
-			{
-				name: "only pod metrics disabled",
-				pipeline: testutils.NewMetricPipelineBuilder().
-					WithRuntimeInput(true).
-					WithRuntimeInputPodMetrics(false).
-					Build(),
-				expectedMetricGroups: []MetricGroupType{MetricGroupTypeContainer, MetricGroupTypeNode, MetricGroupTypeVolume},
-			},
-			{
-				name: "only container metrics disabled",
-				pipeline: testutils.NewMetricPipelineBuilder().
-					WithRuntimeInput(true).
-					WithRuntimeInputContainerMetrics(false).
-					Build(),
-				expectedMetricGroups: []MetricGroupType{MetricGroupTypePod, MetricGroupTypeNode, MetricGroupTypeVolume},
-			},
-			{
-				name: "only node metrics disabled",
-				pipeline: testutils.NewMetricPipelineBuilder().
-					WithRuntimeInput(true).
-					WithRuntimeInputNodeMetrics(false).
-					Build(),
-				expectedMetricGroups: []MetricGroupType{MetricGroupTypeContainer, MetricGroupTypePod, MetricGroupTypeVolume},
-			},
-			{
-				name: "only volume metrics disabled",
-				pipeline: testutils.NewMetricPipelineBuilder().
-					WithRuntimeInput(true).
-					WithRuntimeInputVolumeMetrics(false).
-					Build(),
-				expectedMetricGroups: []MetricGroupType{MetricGroupTypeContainer, MetricGroupTypePod, MetricGroupTypeNode},
-			},
-		}
-
-		for _, test := range tests {
-			collectorConfig, _, err := sut.Build(ctx, []telemetryv1beta1.MetricPipeline{
-				test.pipeline,
-			}, BuildOptions{
-				CollectionIntervals: telemetryutils.ResolveMetricCollectionIntervals(nil),
-			})
-			require.NoError(t, err)
-
-			require.NotContains(t, collectorConfig.Receivers, "prometheus/app-pods")
-			require.NotContains(t, collectorConfig.Receivers, "prometheus/istio")
-
-			expectedKubeletStatsReceiverConfig := KubeletStatsReceiverConfig{
-				CollectionInterval: "30s",
-				AuthType:           "serviceAccount",
-				Endpoint:           "https://${MY_NODE_NAME}:10250",
-				InsecureSkipVerify: true,
-				MetricGroups:       test.expectedMetricGroups,
-				Metrics: KubeletStatsMetrics{
-					ContainerCPUUsage:            Metric{Enabled: true},
-					K8sPodCPUUsage:               Metric{Enabled: true},
-					K8sNodeCPUUsage:              Metric{Enabled: true},
-					K8sNodeCPUTime:               Metric{Enabled: false},
-					K8sNodeMemoryMajorPageFaults: Metric{Enabled: false},
-					K8sNodeMemoryPageFaults:      Metric{Enabled: false},
-				},
-				ResourceAttributes: KubeletStatsResourceAttributes{
-					AWSVolumeID:            Metric{Enabled: false},
-					FSType:                 Metric{Enabled: false},
-					GCEPDName:              Metric{Enabled: false},
-					GlusterFSEndpointsName: Metric{Enabled: false},
-					GlusterFSPath:          Metric{Enabled: false},
-					Partition:              Metric{Enabled: false},
-				},
-				ExtraMetadataLabels: []string{
-					"k8s.volume.type",
-				},
-				CollectAllNetworkInterfaces: NetworkInterfacesEnabler{
-					NodeMetrics: true,
-				},
-			}
-
-			require.Contains(t, collectorConfig.Receivers, "kubelet_stats")
-			require.Equal(t, expectedKubeletStatsReceiverConfig, *collectorConfig.Receivers["kubelet_stats"].(*KubeletStatsReceiverConfig))
-		}
-	})
-}
-
-func getExpectedK8sClusterMetricsToDrop(disabledMetricResource metricResource) K8sClusterMetricsToDrop {
-	metricsToDrop := K8sClusterMetricsToDrop{}
-
-	//nolint:dupl // repeating the code as we want to test the metrics are disabled correctly
-	defaultMetricsToDrop := &K8sClusterDefaultMetricsToDrop{
-		K8sContainerStorageRequest:          Metric{Enabled: false},
-		K8sContainerStorageLimit:            Metric{Enabled: false},
-		K8sContainerEphemeralStorageRequest: Metric{Enabled: false},
-		K8sContainerEphemeralStorageLimit:   Metric{Enabled: false},
-		K8sContainerReady:                   Metric{Enabled: false},
-		K8sNamespacePhase:                   Metric{Enabled: false},
-		K8sHPACurrentReplicas:               Metric{Enabled: false},
-		K8sHPADesiredReplicas:               Metric{Enabled: false},
-		K8sHPAMinReplicas:                   Metric{Enabled: false},
-		K8sHPAMaxReplicas:                   Metric{Enabled: false},
-		K8sReplicaSetAvailable:              Metric{Enabled: false},
-		K8sReplicaSetDesired:                Metric{Enabled: false},
-		K8sReplicationControllerAvailable:   Metric{Enabled: false},
-		K8sReplicationControllerDesired:     Metric{Enabled: false},
-		K8sResourceQuotaHardLimit:           Metric{Enabled: false},
-		K8sResourceQuotaUsed:                Metric{Enabled: false},
+		require.Contains(t, collectorConfig.Receivers, "kubelet_stats")
+		require.Equal(t, expectedKubeletStatsReceiverConfig, *collectorConfig.Receivers["kubelet_stats"].(*KubeletStatsReceiverConfig))
 	}
-	podMetricsToDrop := &K8sClusterPodMetricsToDrop{
-		K8sPodPhase: Metric{false},
-	}
-	containerMetricsToDrop := &K8sClusterContainerMetricsToDrop{
-		K8sContainerCPURequest:    Metric{false},
-		K8sContainerCPULimit:      Metric{false},
-		K8sContainerMemoryRequest: Metric{false},
-		K8sContainerMemoryLimit:   Metric{false},
-		K8sContainerRestarts:      Metric{false},
-	}
-	statefulMetricsToDrop := &K8sClusterStatefulSetMetricsToDrop{
-		K8sStatefulSetCurrentPods: Metric{false},
-		K8sStatefulSetDesiredPods: Metric{false},
-		K8sStatefulSetReadyPods:   Metric{false},
-		K8sStatefulSetUpdatedPods: Metric{false},
-	}
-	jobMetricsToDrop := &K8sClusterJobMetricsToDrop{
-		K8sJobActivePods:            Metric{false},
-		K8sJobDesiredSuccessfulPods: Metric{false},
-		K8sJobFailedPods:            Metric{false},
-		K8sJobMaxParallelPods:       Metric{false},
-		K8sJobSuccessfulPods:        Metric{false},
-	}
-	deploymentMetricsToDrop := &K8sClusterDeploymentMetricsToDrop{
-		K8sDeploymentAvailable: Metric{false},
-		K8sDeploymentDesired:   Metric{false},
-	}
-	daemonSetMetricsToDrop := &K8sClusterDaemonSetMetricsToDrop{
-		K8sDaemonSetCurrentScheduledNodes: Metric{false},
-		K8sDaemonSetDesiredScheduledNodes: Metric{false},
-		K8sDaemonSetMisscheduledNodes:     Metric{false},
-		K8sDaemonSetReadyNodes:            Metric{false},
-	}
-
-	metricsToDrop.K8sClusterDefaultMetricsToDrop = defaultMetricsToDrop
-
-	if disabledMetricResource == pod {
-		metricsToDrop.K8sClusterPodMetricsToDrop = podMetricsToDrop
-	}
-
-	if disabledMetricResource == container {
-		metricsToDrop.K8sClusterContainerMetricsToDrop = containerMetricsToDrop
-	}
-
-	if disabledMetricResource == statefulset {
-		metricsToDrop.K8sClusterStatefulSetMetricsToDrop = statefulMetricsToDrop
-	}
-
-	if disabledMetricResource == job {
-		metricsToDrop.K8sClusterJobMetricsToDrop = jobMetricsToDrop
-	}
-
-	if disabledMetricResource == deployment {
-		metricsToDrop.K8sClusterDeploymentMetricsToDrop = deploymentMetricsToDrop
-	}
-
-	if disabledMetricResource == daemonset {
-		metricsToDrop.K8sClusterDaemonSetMetricsToDrop = daemonSetMetricsToDrop
-	}
-
-	return metricsToDrop
 }
