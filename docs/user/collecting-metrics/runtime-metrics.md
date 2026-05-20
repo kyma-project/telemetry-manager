@@ -162,6 +162,10 @@ The following metrics can be collected from the [kubeletstatsreceiver](https://g
 - `k8s.container.memory.node.utilization`
 - `k8s.container.memory_limit_utilization`
 - `k8s.container.memory_request_utilization`
+- `k8s.node.system_container.cpu.time`
+- `k8s.node.system_container.cpu.usage`
+- `k8s.node.system_container.memory.usage`
+- `k8s.node.system_container.memory.working_set`
 - `k8s.node.uptime`
 - `k8s.pod.cpu.node.utilization`
 - `k8s.pod.cpu_limit_utilization`
@@ -204,6 +208,11 @@ The following metrics can be collected from the [k8sclusterreceiver](https://git
 - `k8s.namespace.phase`
 - `k8s.node.condition`
 - `k8s.pod.phase`
+- `k8s.persistentvolume.status.phase`
+- `k8s.persistentvolume.storage.capacity`
+- `k8s.persistentvolumeclaim.status.phase`
+- `k8s.persistentvolumeclaim.storage.capacity`
+- `k8s.persistentvolumeclaim.storage.request`
 - `k8s.pod.status_reason`
 - `k8s.replicaset.available`
 - `k8s.replicaset.desired`
