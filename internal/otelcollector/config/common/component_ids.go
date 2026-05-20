@@ -116,6 +116,7 @@ const ComponentIDDropRuntimeDeploymentMetricsProcessor ComponentID = "filter/dro
 const ComponentIDDropRuntimeDaemonSetMetricsProcessor ComponentID = "filter/drop-runtime-daemonset-metrics"
 const ComponentIDDropRuntimeStatefulSetMetricsProcessor ComponentID = "filter/drop-runtime-statefulset-metrics"
 const ComponentIDDropRuntimeJobMetricsProcessor ComponentID = "filter/drop-runtime-job-metrics"
+const ComponentIDDropRuntimeAdditionalMetricsProcessor ComponentID = "filter/drop-runtime-additional-metrics"
 const ComponentIDDropPrometheusDiagnosticMetricsProcessor ComponentID = "filter/drop-diagnostic-metrics-if-input-source-prometheus"
 const ComponentIDDropIstioDiagnosticMetricsProcessor ComponentID = "filter/drop-diagnostic-metrics-if-input-source-istio"
 const ComponentIDFilterDropNonPVCVolumesMetricsProcessor ComponentID = "filter/drop-non-pvc-volumes-metrics"

@@ -6,17 +6,18 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
-func TestMetricPipelineValidator_ValidateCreate(t *testing.T) {
+func TestMetricPipelineValidator_ValidateCreate_ValidateUpdate(t *testing.T) {
 	tests := []struct {
 		name      string
-		pipeline  *telemetryv1beta1.MetricPipeline
+		pipeline  telemetryv1beta1.MetricPipeline
 		expectErr bool
 	}{
 		{
-			name: "valid filter",
-			pipeline: &telemetryv1beta1.MetricPipeline{
+			name: "valid ottl filter",
+			pipeline: telemetryv1beta1.MetricPipeline{
 				Spec: telemetryv1beta1.MetricPipelineSpec{
 					Filters: []telemetryv1beta1.FilterSpec{
 						{
@@ -29,8 +30,8 @@ func TestMetricPipelineValidator_ValidateCreate(t *testing.T) {
 			expectErr: false,
 		},
 		{
-			name: "invalid filter - bad OTTL expression",
-			pipeline: &telemetryv1beta1.MetricPipeline{
+			name: "invalid ottl filter - bad OTTL expression",
+			pipeline: telemetryv1beta1.MetricPipeline{
 				Spec: telemetryv1beta1.MetricPipelineSpec{
 					Filters: []telemetryv1beta1.FilterSpec{
 						{
@@ -42,8 +43,8 @@ func TestMetricPipelineValidator_ValidateCreate(t *testing.T) {
 			expectErr: true,
 		},
 		{
-			name: "empty fields - should pass",
-			pipeline: &telemetryv1beta1.MetricPipeline{
+			name: "empty ottl filters and transforms - should pass",
+			pipeline: telemetryv1beta1.MetricPipeline{
 				Spec: telemetryv1beta1.MetricPipelineSpec{
 					Filters:    []telemetryv1beta1.FilterSpec{},
 					Transforms: []telemetryv1beta1.TransformSpec{},
@@ -51,64 +52,20 @@ func TestMetricPipelineValidator_ValidateCreate(t *testing.T) {
 			},
 			expectErr: false,
 		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			validator := &validator{}
-
-			_, err := validator.ValidateCreate(t.Context(), tt.pipeline)
-
-			if tt.expectErr {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-			}
-		})
-	}
-}
-
-func TestMetricPipelineValidator_ValidateUpdate(t *testing.T) {
-	tests := []struct {
-		name        string
-		oldPipeline *telemetryv1beta1.MetricPipeline
-		newPipeline *telemetryv1beta1.MetricPipeline
-		expectErr   bool
-	}{
 		{
-			name: "valid update",
-			oldPipeline: &telemetryv1beta1.MetricPipeline{
-				Spec: telemetryv1beta1.MetricPipelineSpec{
-					Filters: []telemetryv1beta1.FilterSpec{},
-				},
-			},
-			newPipeline: &telemetryv1beta1.MetricPipeline{
-				Spec: telemetryv1beta1.MetricPipelineSpec{
-					Filters: []telemetryv1beta1.FilterSpec{
-						{
-							Conditions: []string{`IsMatch(metric.name, "envoy") == true`},
-						},
-					},
-				},
-			},
+			name: "valid runtime additional metrics",
+			pipeline: testutils.NewMetricPipelineBuilder().
+				WithRuntimeInput(true).
+				WithRuntimeInputAdditionalMetrics("k8s.container.memory_request_utilization", "k8s.container.status.state").
+				Build(),
 			expectErr: false,
 		},
 		{
-			name: "invalid update - bad filter",
-			oldPipeline: &telemetryv1beta1.MetricPipeline{
-				Spec: telemetryv1beta1.MetricPipelineSpec{
-					Filters: []telemetryv1beta1.FilterSpec{},
-				},
-			},
-			newPipeline: &telemetryv1beta1.MetricPipeline{
-				Spec: telemetryv1beta1.MetricPipelineSpec{
-					Filters: []telemetryv1beta1.FilterSpec{
-						{
-							Conditions: []string{`log.severity_number <? SEVERITY_NUMBER_WARN`},
-						},
-					},
-				},
-			},
+			name: "invalid runtime additional metric",
+			pipeline: testutils.NewMetricPipelineBuilder().
+				WithRuntimeInput(true).
+				WithRuntimeInputAdditionalMetrics("invalid.metric.name").
+				Build(),
 			expectErr: true,
 		},
 	}
@@ -117,12 +74,17 @@ func TestMetricPipelineValidator_ValidateUpdate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			validator := &validator{}
 
-			_, err := validator.ValidateUpdate(t.Context(), tt.oldPipeline, tt.newPipeline)
+			_, validateCreateErr := validator.ValidateCreate(t.Context(), &tt.pipeline)
+
+			oldPipeline := &telemetryv1beta1.MetricPipeline{}
+			_, validateUpdateErr := validator.ValidateUpdate(t.Context(), oldPipeline, &tt.pipeline)
 
 			if tt.expectErr {
-				assert.Error(t, err)
+				assert.Error(t, validateCreateErr)
+				assert.Error(t, validateUpdateErr)
 			} else {
-				assert.NoError(t, err)
+				assert.NoError(t, validateCreateErr)
+				assert.NoError(t, validateUpdateErr)
 			}
 		})
 	}
