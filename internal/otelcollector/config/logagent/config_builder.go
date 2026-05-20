@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"time"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -18,6 +19,19 @@ import (
 )
 
 const checkpointVolumePathSubdir = "telemetry-log-agent/file-log-receiver"
+
+// Exporter sending queue configuration constants, see 
+// https://github.com/kyma-project/telemetry-manager/blob/main/docs/contributor/pocs/consistent-batching-across-components/02-log-agent-batching.md.
+const (
+	// maximum queue size in bytes (200 MB)
+	exporterQueueSize = 200_000_000
+	// minimum batch size in bytes (2 MB)
+	exporterBatchMinSize = 2_000_000
+	// maximum batch size in bytes (4 MB)
+	exporterBatchMaxSize = 4_000_000
+	// maximum time before flusing a batch
+	exporterBatchFlushTimeout = 10 * time.Second
+)
 
 type buildComponentFunc = common.BuildComponentFunc[*telemetryv1beta1.LogPipeline]
 
@@ -227,7 +241,14 @@ func (b *Builder) addOTLPExporter() buildComponentFunc {
 				b.Reader,
 				lp.Spec.Output.OTLP,
 				pipelines.LogPipelineRef(lp),
-				0, // queue size is set to 0 for now, as the queue is disabled
+				common.NewSendingQueue(exporterQueueSize,
+					common.WithSizer(common.SizerBytes),
+					common.WithBatch(common.Batch{
+						MinSize:      exporterBatchMinSize,
+						MaxSize:      exporterBatchMaxSize,
+						FlushTimeout: exporterBatchFlushTimeout,
+					}),
+				),
 			)
 
 			return otlpExporterBuilder.OTLPExporter(ctx)

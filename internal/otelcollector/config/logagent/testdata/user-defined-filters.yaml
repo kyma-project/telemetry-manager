@@ -381,6 +381,14 @@ exporters:
     otlp_grpc/logpipeline-test1:
         endpoint: ${OTLP_ENDPOINT_LOGPIPELINE_TEST1}
         compression: gzip
+        sending_queue:
+            enabled: true
+            queue_size: 200000000
+            sizer: bytes
+            batch:
+                min_size: 2000000
+                max_size: 4000000
+                flush_timeout: 10s
         retry_on_failure:
             enabled: true
             initial_interval: 5s
@@ -389,6 +397,14 @@ exporters:
     otlp_grpc/logpipeline-test2:
         endpoint: ${OTLP_ENDPOINT_LOGPIPELINE_TEST2}
         compression: gzip
+        sending_queue:
+            enabled: true
+            queue_size: 200000000
+            sizer: bytes
+            batch:
+                min_size: 2000000
+                max_size: 4000000
+                flush_timeout: 10s
         retry_on_failure:
             enabled: true
             initial_interval: 5s
