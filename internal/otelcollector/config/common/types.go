@@ -54,8 +54,9 @@ type CGroupRuntimeGoMaxProcs struct {
 }
 
 type CGroupRuntimeGoMemLimit struct {
-	Enabled bool    `yaml:"enabled"`
-	Ratio   float64 `yaml:"ratio,omitempty"`
+	Enabled         bool    `yaml:"enabled"`
+	Ratio           float64 `yaml:"ratio,omitempty"`
+	RefreshInterval string  `yaml:"refresh_interval,omitempty"`
 }
 
 // =============================================================================
@@ -90,8 +91,11 @@ type MetricExporter struct {
 }
 
 type PrometheusMetricExporter struct {
-	Host string `yaml:"host"`
-	Port int32  `yaml:"port"`
+	Host              string `yaml:"host"`
+	Port              int32  `yaml:"port"`
+	WithoutScopeInfo  bool   `yaml:"without_scope_info"`
+	WithoutTypeSuffix bool   `yaml:"without_type_suffix"`
+	WithoutUnits      bool   `yaml:"without_units"`
 }
 
 type Logs struct {

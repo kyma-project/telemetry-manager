@@ -46,9 +46,6 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1beta1.LogPip
 	})
 
 	b.Config = common.NewConfig()
-	if opts.VpaActive {
-		b.Config.DisableGoMemLimit()
-	}
 
 	b.AddExtension(common.ComponentIDFileStorageExtension, &common.FileStorageExtensionConfig{
 		CreateDirectory: true,
