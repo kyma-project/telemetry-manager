@@ -2,11 +2,15 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 //nolint:gochecknoinits // SchemeBuilder's registration is required.
 func init() {
-	SchemeBuilder.Register(&TracePipeline{}, &TracePipelineList{})
+	SchemeBuilder.Register(func(scheme *runtime.Scheme) error {
+		scheme.AddKnownTypes(GroupVersion, &TracePipeline{}, &TracePipelineList{})
+		return nil
+	})
 }
 
 // TracePipelineList contains a list of TracePipeline
