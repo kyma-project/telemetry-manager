@@ -17,20 +17,20 @@ import (
 // =============================================================================
 
 type OTLPExporterConfigBuilder struct {
-	reader      client.Reader
-	otlpOutput  *telemetryv1beta1.OTLPOutput
-	pipelineRef pipelines.PipelineRef
-	queueSize   int
+	reader       client.Reader
+	otlpOutput   *telemetryv1beta1.OTLPOutput
+	pipelineRef  pipelines.PipelineRef
+	sendingQueue SendingQueue
 }
 
 type EnvVars map[string][]byte
 
-func NewOTLPExporterConfigBuilder(reader client.Reader, otlpOutput *telemetryv1beta1.OTLPOutput, pipelineRef pipelines.PipelineRef, queueSize int) *OTLPExporterConfigBuilder {
+func NewOTLPExporterConfigBuilder(reader client.Reader, otlpOutput *telemetryv1beta1.OTLPOutput, pipelineRef pipelines.PipelineRef, sendingQueue SendingQueue) *OTLPExporterConfigBuilder {
 	return &OTLPExporterConfigBuilder{
-		reader:      reader,
-		otlpOutput:  otlpOutput,
-		pipelineRef: pipelineRef,
-		queueSize:   queueSize,
+		reader:       reader,
+		otlpOutput:   otlpOutput,
+		pipelineRef:  pipelineRef,
+		sendingQueue: sendingQueue,
 	}
 }
 
@@ -40,22 +40,14 @@ func (cb *OTLPExporterConfigBuilder) OTLPExporter(ctx context.Context) (*OTLPExp
 		return nil, nil, fmt.Errorf("failed to make env vars: %w", err)
 	}
 
-	exporter := otlpExporter(cb.otlpOutput, cb.pipelineRef, envVars, cb.queueSize)
+	exporter := otlpExporter(cb.otlpOutput, cb.pipelineRef, envVars, cb.sendingQueue)
 
 	return exporter, envVars, nil
 }
 
-func otlpExporter(otlpOutput *telemetryv1beta1.OTLPOutput, pipelineRef pipelines.PipelineRef, envVars map[string][]byte, queueSize int) *OTLPExporterConfig {
+func otlpExporter(otlpOutput *telemetryv1beta1.OTLPOutput, pipelineRef pipelines.PipelineRef, envVars map[string][]byte, sendingQueue SendingQueue) *OTLPExporterConfig {
 	otlpEndpointVariable := formatEnvVarKey(otlpEndpointVariablePrefix, pipelineRef)
 	otlpEndpointValue := string(envVars[otlpEndpointVariable])
-
-	sendingQueue := SendingQueue{
-		Enabled: false,
-	}
-	if queueSize != 0 {
-		sendingQueue.QueueSize = queueSize
-		sendingQueue.Enabled = true
-	}
 
 	compression := string(otlpOutput.Compression)
 	if compression == "" {

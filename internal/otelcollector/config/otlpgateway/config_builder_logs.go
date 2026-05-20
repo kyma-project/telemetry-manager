@@ -249,7 +249,7 @@ func (b *Builder) addLogOTLPExporter(builder *common.ComponentBuilder[*telemetry
 				b.Reader,
 				lp.Spec.Output.OTLP,
 				pipelines.LogPipelineRef(lp),
-				queueSize,
+				common.NewSendingQueue(queueSize),
 			)
 
 			return otlpExporterBuilder.OTLPExporter(ctx)

@@ -850,7 +850,7 @@ func (b *Builder) addOTLPExporter(queueSize int) buildComponentFunc {
 				b.Reader,
 				mp.Spec.Output.OTLP,
 				pipelines.MetricPipelineRef(mp),
-				queueSize,
+				common.NewSendingQueue(queueSize),
 			)
 
 			return otlpExporterBuilder.OTLPExporter(ctx)

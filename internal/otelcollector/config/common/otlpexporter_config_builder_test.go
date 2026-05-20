@@ -37,7 +37,7 @@ func TestMakeExporterConfig(t *testing.T) {
 		Endpoint: telemetryv1beta1.ValueType{Value: "otlp-endpoint"},
 	}
 
-	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, traceRefTest(), 512)
+	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, traceRefTest(), NewSendingQueue(512))
 	otlpExporterConfig, envVars, err := cb.OTLPExporter(t.Context())
 	require.NoError(t, err)
 	require.NotNil(t, envVars)
@@ -62,7 +62,7 @@ func TestMakeExporterConfigTraceWithPath(t *testing.T) {
 		Protocol: "http",
 	}
 
-	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, traceRefTest(), 512)
+	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, traceRefTest(), NewSendingQueue(512))
 	otlpExporterConfig, envVars, err := cb.OTLPExporter(t.Context())
 	require.NoError(t, err)
 	require.NotNil(t, envVars)
@@ -81,7 +81,7 @@ func TestMakeExporterConfigMetricWithPath(t *testing.T) {
 		Protocol: "http",
 	}
 
-	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, metricRefTest(), 512)
+	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, metricRefTest(), NewSendingQueue(512))
 	otlpExporterConfig, envVars, err := cb.OTLPExporter(t.Context())
 	require.NoError(t, err)
 	require.NotNil(t, envVars)
@@ -104,7 +104,7 @@ func TestMakeExporterConfigWithBasicAuth(t *testing.T) {
 		},
 	}
 
-	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, traceRefTest(), 512)
+	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, traceRefTest(), NewSendingQueue(512))
 	otlpExporterConfig, envVars, err := cb.OTLPExporter(t.Context())
 	require.NoError(t, err)
 	require.NotNil(t, envVars)
@@ -130,7 +130,7 @@ func TestMakeExporterConfigWithOAuth2(t *testing.T) {
 		},
 	}
 
-	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, traceRefTest(), 512)
+	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, traceRefTest(), NewSendingQueue(512))
 	otlpExporterConfig, envVars, err := cb.OTLPExporter(t.Context())
 	require.NoError(t, err)
 	require.NotNil(t, envVars)
@@ -153,7 +153,7 @@ func TestMakeExporterConfigWithCustomHeaders(t *testing.T) {
 		Headers:  headers,
 	}
 
-	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, traceRefTest(), 512)
+	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, traceRefTest(), NewSendingQueue(512))
 	otlpExporterConfig, envVars, err := cb.OTLPExporter(t.Context())
 	require.NoError(t, err)
 	require.NotNil(t, envVars)
@@ -171,7 +171,7 @@ func TestMakeExporterConfigWithTLSInsecure(t *testing.T) {
 		TLS:      tls,
 	}
 
-	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, traceRefTest(), 512)
+	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, traceRefTest(), NewSendingQueue(512))
 	otlpExporterConfig, envVars, err := cb.OTLPExporter(t.Context())
 	require.NoError(t, err)
 	require.NotNil(t, envVars)
@@ -189,7 +189,7 @@ func TestMakeExporterConfigWithTLSInsecureSkipVerify(t *testing.T) {
 		TLS:      tls,
 	}
 
-	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, traceRefTest(), 512)
+	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, traceRefTest(), NewSendingQueue(512))
 	otlpExporterConfig, envVars, err := cb.OTLPExporter(t.Context())
 	require.NoError(t, err)
 	require.NotNil(t, envVars)
@@ -218,7 +218,7 @@ func TestMakeExporterConfigWithmTLS(t *testing.T) {
 		TLS:      tls,
 	}
 
-	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, traceRefTest(), 512)
+	cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, traceRefTest(), NewSendingQueue(512))
 	otlpExporterConfig, envVars, err := cb.OTLPExporter(t.Context())
 	require.NoError(t, err)
 	require.NotNil(t, envVars)
@@ -262,7 +262,7 @@ func TestMakeExporterConfigCompression(t *testing.T) {
 				Compression: tt.compression,
 			}
 
-			cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, traceRefTest(), 512)
+			cb := NewOTLPExporterConfigBuilder(fake.NewClientBuilder().Build(), output, traceRefTest(), NewSendingQueue(512))
 			otlpExporterConfig, envVars, err := cb.OTLPExporter(t.Context())
 			require.NoError(t, err)
 			require.NotNil(t, envVars)

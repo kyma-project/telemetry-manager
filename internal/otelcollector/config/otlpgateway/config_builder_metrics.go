@@ -342,7 +342,7 @@ func (b *Builder) addMetricOTLPExporter(builder *common.ComponentBuilder[*teleme
 				b.Reader,
 				mp.Spec.Output.OTLP,
 				pipelines.MetricPipelineRef(mp),
-				queueSize,
+				common.NewSendingQueue(queueSize),
 			)
 
 			return otlpExporterBuilder.OTLPExporter(ctx)
