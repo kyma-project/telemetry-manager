@@ -327,6 +327,9 @@ func (b *Builder) addMetricCumulativeToDeltaProcessor(builder *common.ComponentB
 		builder.StaticComponentID(common.ComponentIDCumulativeToDeltaProcessor),
 		func(mp *telemetryv1beta1.MetricPipeline) any {
 			if metricpipelineutils.IsDeltaTemporality(mp.Spec.Output) {
+				// MaxStaleness is intentionally left omitted here (unlike the metric agent builder).
+				// The gateway receives OTLP push traffic with no predictable scrape interval,
+				// so there is no way to derive a staleness duration from.
 				return &common.CumulativeToDeltaProcessorConfig{
 					InitialValue: "auto",
 				}
