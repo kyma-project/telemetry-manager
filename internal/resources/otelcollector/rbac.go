@@ -157,25 +157,31 @@ func withK8sClusterRules() ClusterRoleOption {
 		// policy rules needed for the k8sclusterreceiver component
 		k8sClusterRules := []rbacv1.PolicyRule{{
 			APIGroups: []string{""},
-			Resources: []string{"events", "namespaces", "namespaces/status", "nodes", "nodes/spec", "pods", "pods/status", "replicationcontrollers", "replicationcontrollers/status", "resourcequotas", "services"},
+			Resources: []string{"events", "namespaces", "namespaces/status", "nodes", "nodes/spec", "persistentvolumes", "persistentvolumeclaims", "pods", "pods/status", "replicationcontrollers", "replicationcontrollers/status", "resourcequotas", "services"},
 			Verbs:     []string{"get", "list", "watch"},
-		}, {
-			APIGroups: []string{"apps"},
-			Resources: []string{"daemonsets", "deployments", "replicasets", "statefulsets"},
-			Verbs:     []string{"get", "list", "watch"},
-		}, {
-			APIGroups: []string{"extensions"},
-			Resources: []string{"daemonsets", "deployments", "replicasets"},
-			Verbs:     []string{"get", "list", "watch"},
-		}, {
-			APIGroups: []string{"batch"},
-			Resources: []string{"jobs", "cronjobs"},
-			Verbs:     []string{"get", "list", "watch"},
-		}, {
-			APIGroups: []string{"autoscaling"},
-			Resources: []string{"horizontalpodautoscalers"},
-			Verbs:     []string{"get", "list", "watch"},
-		}}
+		},
+			{
+				APIGroups: []string{"discovery.k8s.io"},
+				Resources: []string{"endpointslices"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+			{
+				APIGroups: []string{"apps"},
+				Resources: []string{"daemonsets", "deployments", "replicasets", "statefulsets"},
+				Verbs:     []string{"get", "list", "watch"},
+			}, {
+				APIGroups: []string{"extensions"},
+				Resources: []string{"daemonsets", "deployments", "replicasets"},
+				Verbs:     []string{"get", "list", "watch"},
+			}, {
+				APIGroups: []string{"batch"},
+				Resources: []string{"jobs", "cronjobs"},
+				Verbs:     []string{"get", "list", "watch"},
+			}, {
+				APIGroups: []string{"autoscaling"},
+				Resources: []string{"horizontalpodautoscalers"},
+				Verbs:     []string{"get", "list", "watch"},
+			}}
 		cr.Rules = append(cr.Rules, k8sClusterRules...)
 	}
 }
@@ -184,7 +190,7 @@ func withKubeletStatsRules() ClusterRoleOption {
 	// policy rules needed for the kubeletstatsreceiver component
 	kubeletStatsRules := []rbacv1.PolicyRule{{
 		APIGroups: []string{""},
-		Resources: []string{"nodes", "nodes/stats", "nodes/proxy", "persistentvolumeclaims", "persistentvolumes"},
+		Resources: []string{"nodes", "nodes/stats", "nodes/proxy", "nodes/pods", "persistentvolumeclaims", "persistentvolumes"},
 		Verbs:     []string{"get", "list", "watch"},
 	}}
 

@@ -172,6 +172,7 @@ rules:
       - nodes/metrics
       - nodes/stats
       - nodes/proxy
+      - nodes/pods
       - nodes/spec
       - services
       - endpoints
@@ -185,6 +186,14 @@ rules:
       - resourcequotas
       - persistentvolumeclaims
       - persistentvolumes
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - discovery.k8s.io
+    resources:
+      - endpointslices
     verbs:
       - get
       - list
