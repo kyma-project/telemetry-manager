@@ -501,11 +501,11 @@ func TestBuildConfig(t *testing.T) {
 					WithTemporality(telemetryv1beta1.TemporalityDelta).
 					Build(),
 				testutils.NewMetricPipelineBuilder().
-					WithName("test-cumulative").
+					WithName("test-preserve").
 					WithRuntimeInput(true).
 					WithPrometheusInput(false).
 					WithIstioInput(false).
-					WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("https://backend-cumulative.example.com")).
+					WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("https://backend-preserve.example.com")).
 					WithTemporality(telemetryv1beta1.TemporalityPreserve).
 					Build(),
 			},

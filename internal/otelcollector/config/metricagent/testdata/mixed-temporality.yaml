@@ -36,18 +36,6 @@ service:
                 - transform/set-kyma-input-name-runtime
             exporters:
                 - routing/runtime-input
-        metrics/output-test-cumulative:
-            receivers:
-                - routing/enrichment
-                - routing/runtime-input
-            processors:
-                - filter/drop-envoy-metrics-if-disabled
-                - transform/insert-cluster-attributes
-                - transform/drop-skip-enrichment-attribute
-                - transform/drop-kyma-attributes
-                - batch
-            exporters:
-                - otlp_grpc/metricpipeline-test-cumulative
         metrics/output-test-delta:
             receivers:
                 - routing/enrichment
@@ -61,6 +49,18 @@ service:
                 - batch
             exporters:
                 - otlp_grpc/metricpipeline-test-delta
+        metrics/output-test-preserve:
+            receivers:
+                - routing/enrichment
+                - routing/runtime-input
+            processors:
+                - filter/drop-envoy-metrics-if-disabled
+                - transform/insert-cluster-attributes
+                - transform/drop-skip-enrichment-attribute
+                - transform/drop-kyma-attributes
+                - batch
+            exporters:
+                - otlp_grpc/metricpipeline-test-preserve
     telemetry:
         metrics:
             readers:
@@ -278,8 +278,8 @@ processors:
             - statements:
                 - set(resource.attributes["kyma.input.name"], "runtime")
 exporters:
-    otlp_grpc/metricpipeline-test-cumulative:
-        endpoint: ${OTLP_ENDPOINT_METRICPIPELINE_TEST_CUMULATIVE}
+    otlp_grpc/metricpipeline-test-delta:
+        endpoint: ${OTLP_ENDPOINT_METRICPIPELINE_TEST_DELTA}
         compression: gzip
         sending_queue:
             enabled: true
@@ -289,8 +289,8 @@ exporters:
             initial_interval: 5s
             max_interval: 30s
             max_elapsed_time: 300s
-    otlp_grpc/metricpipeline-test-delta:
-        endpoint: ${OTLP_ENDPOINT_METRICPIPELINE_TEST_DELTA}
+    otlp_grpc/metricpipeline-test-preserve:
+        endpoint: ${OTLP_ENDPOINT_METRICPIPELINE_TEST_PRESERVE}
         compression: gzip
         sending_queue:
             enabled: true
@@ -307,8 +307,8 @@ connectors:
         table:
             - statement: route() where resource.attributes["kyma.input.name"] == "runtime"
               pipelines:
-                - metrics/output-test-cumulative
                 - metrics/output-test-delta
+                - metrics/output-test-preserve
               context: metric
     routing/runtime-input:
         default_pipelines:
@@ -317,5 +317,5 @@ connectors:
         table:
             - statement: route() where attributes["io.kyma-project.telemetry.skip_enrichment"] == "true"
               pipelines:
-                - metrics/output-test-cumulative
                 - metrics/output-test-delta
+                - metrics/output-test-preserve
