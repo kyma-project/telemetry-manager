@@ -1,6 +1,10 @@
 package common
 
-import telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+import (
+	"time"
+
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+)
 
 type Sizer string
 

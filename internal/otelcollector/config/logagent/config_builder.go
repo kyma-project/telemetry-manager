@@ -20,7 +20,7 @@ import (
 
 const checkpointVolumePathSubdir = "telemetry-log-agent/file-log-receiver"
 
-// Exporter sending queue configuration constants, see 
+// Exporter sending queue configuration constants, see
 // https://github.com/kyma-project/telemetry-manager/blob/main/docs/contributor/pocs/consistent-batching-across-components/02-log-agent-batching.md.
 const (
 	// maximum queue size in bytes (200 MB)
