@@ -20,7 +20,7 @@ import (
 )
 
 const (
-  maxStalenessMultiplier = 4 //nolint:mnd // Tolerate max 3 scrape failures and additional timing jitter
+	maxStalenessMultiplier      = 4 //nolint:mnd // Tolerate max 3 scrape failures and additional timing jitter
 	enrichmentServicePipelineID = "metrics/enrichment-conditional"
 	podMetricPattern            = `^k8s[.]pod[.].*`
 	containerMetricPattern      = `(^k8s[.]container[.].*)|(^container[.].*)`
