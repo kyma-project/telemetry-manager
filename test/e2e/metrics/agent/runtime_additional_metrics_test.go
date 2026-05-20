@@ -35,9 +35,16 @@ func TestRuntimeAdditionalMetrics(t *testing.T) {
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics)
 
 	additionalMetrics := []string{
+		"k8s.container.cpu.node.utilization",
+		"k8s.container.cpu_limit_utilization",
+		"k8s.container.cpu_request_utilization",
+		"k8s.container.memory.node.utilization",
+		"k8s.container.memory_limit_utilization",
+		"k8s.container.memory_request_utilization",
 		"k8s.pod.cpu.node.utilization",
 		"k8s.pod.cpu_limit_utilization",
 		"k8s.pod.cpu_request_utilization",
+		"k8s.pod.memory.node.utilization",
 		"k8s.pod.memory_limit_utilization",
 		"k8s.pod.memory_request_utilization",
 	}
