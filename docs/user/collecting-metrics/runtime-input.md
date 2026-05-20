@@ -66,7 +66,7 @@ To learn which specific metrics are collected from which source (`kubeletstatsre
 
 ## Collect Additional Metrics
 
-The metric agent can also collect any metric which can be emitted from `kubeletstatsreceiver` or `k8sclusterreceiver`. To enable the collection of any of these metrics, add the desired metrics to the **additionalMetrics** list in the **runtime** input.
+You can collect additional metrics emitted from the `kubeletstatsreceiver` or `k8sclusterreceiver`. To collect them, add the metric names to the **additionalMetrics** list in the **runtime** input.
 
 The following example collects `k8s.pod.memory_request_utilization` metric (from `kubeletstatsreceiver`) and `k8s.container.status.state` metric (from `k8sclusterreceiver`):
 
