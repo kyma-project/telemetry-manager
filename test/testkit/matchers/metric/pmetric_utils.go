@@ -117,9 +117,7 @@ func getAggregationTemporality(m pmetric.Metric) string {
 		return m.Histogram().AggregationTemporality().String()
 	case pmetric.MetricTypeExponentialHistogram:
 		return m.ExponentialHistogram().AggregationTemporality().String()
-	case pmetric.MetricTypeGauge, pmetric.MetricTypeSummary, pmetric.MetricTypeEmpty:
+	default:
 		return ""
 	}
-
-	return ""
 }
