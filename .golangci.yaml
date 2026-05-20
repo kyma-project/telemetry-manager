@@ -292,6 +292,9 @@ linters:
       - linters:
           - staticcheck
         text: 'SA1019: .+\.FluentBit.+ is deprecated'
+      - linters:
+          - staticcheck
+        text: 'SA1019: scheme\.Builder is deprecated'
       - path: (.+)\.go$
         text: Using the variable on range scope `tc` in function literal
       - path: (.+)\.go$
