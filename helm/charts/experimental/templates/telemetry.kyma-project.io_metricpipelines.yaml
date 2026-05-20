@@ -245,6 +245,14 @@ spec:
                     description: Runtime input configures collection of Kubernetes
                       runtime metrics.
                     properties:
+                      additionalMetrics:
+                        description: |-
+                          AdditionalMetrics specifies upstream metric names to collect
+                          in addition to the default curated set. Each entry must be a valid
+                          metric name.
+                        items:
+                          type: string
+                        type: array
                       enabled:
                         description: Enabled specifies if the 'runtime' input is enabled.
                           If enabled, runtime metrics are collected. The default is
@@ -1244,6 +1252,14 @@ spec:
                     description: Runtime input configures collection of Kubernetes
                       runtime metrics.
                     properties:
+                      additionalMetrics:
+                        description: |-
+                          AdditionalMetrics specifies upstream metric names to collect
+                          in addition to the default curated set. Each entry must be a valid
+                          metric name.
+                        items:
+                          type: string
+                        type: array
                       enabled:
                         description: Enabled specifies if the 'runtime' input is enabled.
                           If enabled, runtime metrics are collected. The default is
