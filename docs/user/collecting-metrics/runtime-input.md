@@ -80,7 +80,7 @@ The following example collects the metrics `k8s.pod.memory_request_utilization` 
           - k8s.container.status.state
   ```
 
-To learn which metrics can be added to the **additionalMetrics** list, see [Runtime Additional Metrics](runtime-metrics.md#runtime-additional-metrics)
+To learn which metrics can be added to the **additionalMetrics** list, see [Runtime Additional Metrics](runtime-metrics.md#runtime-additional-metrics).
 
 
 
