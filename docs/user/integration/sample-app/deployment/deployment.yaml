@@ -29,10 +29,8 @@ spec:
         - name: http
           containerPort: 8080
         env:
-        - name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
-          value: "http://telemetry-otlp-traces.kyma-system:4317"
-        - name: OTEL_EXPORTER_OTLP_METRICS_ENDPOINT
-          value: "http://telemetry-otlp-metrics.kyma-system:4317"
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "http://telemetry-otlp.kyma-system:4317"
         - name: OTEL_METRICS_EXPORTER
           value: "otlp"
         - name: OTEL_SERVICE_NAME
