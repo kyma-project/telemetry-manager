@@ -26,7 +26,3 @@ options:
       - label: node.kubernetes.io/instance-type=local
         nodeFilters:
           - server:*
-  runtime:
-    servers:
-      memory: "8g"
-      cpus: "2"
