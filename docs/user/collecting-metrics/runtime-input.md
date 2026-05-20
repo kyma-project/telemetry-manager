@@ -68,7 +68,7 @@ To learn which specific metrics are collected from which source (`kubeletstatsre
 
 You can collect additional metrics emitted from the `kubeletstatsreceiver` or `k8sclusterreceiver`. To collect them, add the metric names to the **additionalMetrics** list in the **runtime** input.
 
-The following example collects `k8s.pod.memory_request_utilization` metric (from `kubeletstatsreceiver`) and `k8s.container.status.state` metric (from `k8sclusterreceiver`):
+The following example collects the metrics `k8s.pod.memory_request_utilization` (from `kubeletstatsreceiver`) and `k8s.container.status.state` (from `k8sclusterreceiver`):
 
   ```yaml
   ...
