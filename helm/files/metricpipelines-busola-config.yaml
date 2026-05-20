@@ -625,8 +625,8 @@ form: |
             simple: true
             widget: FormGroup
             children:
-              - name: value
-                widget: text
+              - name: Value
+                widget: Text
           - name: Authentication
             path: authentication
             widget: FormGroup
