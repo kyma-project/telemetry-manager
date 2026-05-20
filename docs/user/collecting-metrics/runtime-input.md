@@ -84,7 +84,7 @@ To learn which metrics can be added to the **additionalMetrics** list, see [Runt
 
 
 
-Note that the **additionalMetrics** list overrules the **resources** section. For example, you can disable the **pod** metrics in the **runtime** input, but still add a specific pod metric in the **additionalMetrics** list and this metric will be collected.
+The **additionalMetrics** list overrides the `resources` section. For example, if you disable **pod** metrics in the **runtime** input but add a specific Pod metric to the **additionalMetrics** list, that specific metric is still collected.
 
 The following example collects the `k8s.pod.memory_request_utilization` metric even though the **pod** metrics are disabled:
 
