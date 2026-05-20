@@ -23,6 +23,8 @@ type MetricCollectionIntervals struct {
 	Istio      time.Duration
 }
 
+// Max returns the largest collection interval out of the three different metric input types.
+// It is used to calculate the `max_staleness` parameter for the `cumulativetodelta` processor.
 func (mci *MetricCollectionIntervals) Max() time.Duration {
 	return max(mci.Runtime, mci.Prometheus, mci.Istio)
 }
