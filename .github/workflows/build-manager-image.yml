@@ -12,10 +12,13 @@ on:
       - "release-[0-9]+.[0-9]+"
     paths-ignore:
       - "docs/**"
+      - "dependencies/**"
       - "**/*.md"
       - "OWNERS"
       - "CODEOWNERS"
       - "external-images.yaml"
+      - "renovate.json"
+      - "sec-scanners-config.yaml"
       - ".hyperspace/**"
   push:
     branches:
@@ -29,6 +32,8 @@ on:
       - "OWNERS"
       - "CODEOWNERS"
       - "external-images.yaml"
+      - "renovate.json"
+      - "sec-scanners-config.yaml"
       - ".hyperspace/**"
 
 jobs:
