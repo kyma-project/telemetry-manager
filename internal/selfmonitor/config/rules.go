@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"strings"
 	"time"
 
@@ -124,18 +123,16 @@ func MakeRules() RuleGroups {
 }
 
 func ruleDataType(t pipelineType) string {
-	var dataTypeSuffix string
-
 	switch t {
 	case typeMetricPipeline:
-		dataTypeSuffix = "metric_points"
+		return "metric_points"
 	case typeTracePipeline:
-		dataTypeSuffix = "spans"
+		return "spans"
 	case typeLogPipeline:
-		dataTypeSuffix = "log_records"
+		return "log_records"
 	}
 
-	return fmt.Sprintf("%s_total", dataTypeSuffix)
+	return ""
 }
 
 func ruleNamePrefix(t pipelineType) string {
