@@ -3,6 +3,8 @@ name: Approval Gate
 on:
   workflow_call:
 
+permissions: {}
+
 jobs:
   approval:
     if: github.event_name == 'pull_request_target'
