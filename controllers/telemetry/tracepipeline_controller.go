@@ -122,6 +122,7 @@ func NewTracePipelineController(config TracePipelineControllerConfig, client cli
 
 		tracepipeline.WithFlowHealthProber(flowHealthProber),
 		tracepipeline.WithGatewayProber(&workloadstatus.DaemonSetProber{Client: client}),
+		tracepipeline.WithSelfMonitorProber(&workloadstatus.DeploymentProber{Client: client}),
 		tracepipeline.WithOverridesHandler(overrides.New(config.Global, client)),
 		tracepipeline.WithErrorToMessageConverter(&conditions.ErrorToMessageConverter{}),
 

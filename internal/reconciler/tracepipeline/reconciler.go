@@ -47,6 +47,7 @@ type Reconciler struct {
 	// Dependencies
 	flowHealthProber  FlowHealthProber
 	gatewayProber     commonstatus.Prober
+	selfMonitorProber commonstatus.Prober
 	overridesHandler  OverridesHandler
 	pipelineLock      PipelineLock
 	pipelineSync      PipelineSyncer
@@ -76,6 +77,13 @@ func WithFlowHealthProber(prober FlowHealthProber) Option {
 func WithGatewayProber(prober commonstatus.Prober) Option {
 	return func(r *Reconciler) {
 		r.gatewayProber = prober
+	}
+}
+
+// WithSelfMonitorProber sets the self-monitor prober for the Reconciler.
+func WithSelfMonitorProber(prober commonstatus.Prober) Option {
+	return func(r *Reconciler) {
+		r.selfMonitorProber = prober
 	}
 }
 
@@ -190,12 +198,20 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to reconcile: %w", err))
 	}
 
-	if err := r.updateStatus(ctx, tracePipeline.Name); err != nil {
+	flowHealthProbingFailed, err := r.updateStatus(ctx, tracePipeline.Name)
+	if err != nil {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to update status: %w", err))
 	}
 
 	if allErrors != nil {
 		return ctrl.Result{}, allErrors
+	}
+
+	// Requeue after a short delay if flow health probing failed (e.g., self-monitor not ready yet).
+	// This ensures the condition transitions from Unknown to True/False once probing succeeds.
+	if flowHealthProbingFailed {
+		logf.FromContext(ctx).V(1).Info("Requeuing reconciliation due to flow health probing failure")
+		return ctrl.Result{RequeueAfter: 5 * time.Second}, nil
 	}
 
 	requeueAfter := r.calculateRequeueAfterDuration(ctx, &tracePipeline)

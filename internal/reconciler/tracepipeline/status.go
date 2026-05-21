@@ -22,24 +22,25 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/validators/endpoint"
 	"github.com/kyma-project/telemetry-manager/internal/validators/ottl"
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
+	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
 // updateStatus updates the status of a TracePipeline resource.
 // It sets the GatewayHealthy, ConfigurationGenerated and TelemetryFlowHealthy conditions.
-func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) error {
+func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) (flowHealthProbingFailed bool, err error) {
 	var pipeline telemetryv1beta1.TracePipeline
 	if err := r.Get(ctx, types.NamespacedName{Name: pipelineName}, &pipeline); err != nil {
 		if apierrors.IsNotFound(err) {
 			logf.FromContext(ctx).V(1).Info("Skipping status update for TracePipeline - not found")
-			return nil
+			return false, nil
 		}
 
-		return fmt.Errorf("failed to get TracePipeline: %w", err)
+		return false, fmt.Errorf("failed to get TracePipeline: %w", err)
 	}
 
 	if pipeline.DeletionTimestamp != nil {
 		logf.FromContext(ctx).V(1).Info("Skipping status update for TracePipeline - marked for deletion")
-		return nil
+		return false, nil
 	}
 
 	var allErrors error = nil
@@ -49,13 +50,14 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) erro
 
 	if err := r.setFlowHealthCondition(ctx, &pipeline); err != nil {
 		logf.FromContext(ctx).Error(err, "Failed to set flow health condition")
+		flowHealthProbingFailed = true
 	}
 
 	if err := r.Status().Update(ctx, &pipeline); err != nil {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to update TracePipeline status: %w", err))
 	}
 
-	return allErrors
+	return flowHealthProbingFailed, allErrors
 }
 
 func (r *Reconciler) setGatewayHealthyCondition(ctx context.Context, pipeline *telemetryv1beta1.TracePipeline) {
@@ -141,6 +143,22 @@ func (r *Reconciler) evaluateFlowHealthCondition(ctx context.Context, pipeline *
 	configGeneratedStatus, _, _ := r.evaluateConfigGeneratedCondition(ctx, pipeline)
 	if configGeneratedStatus == metav1.ConditionFalse {
 		return metav1.ConditionFalse, conditions.ReasonSelfMonConfigNotGenerated, nil
+	}
+
+	// Check if self-monitor deployment is ready before attempting to probe
+	if r.selfMonitorProber != nil {
+		if err := r.selfMonitorProber.IsReady(ctx, types.NamespacedName{
+			Name:      names.SelfMonitor,
+			Namespace: r.globals.TargetNamespace(),
+		}); err != nil {
+			logf.FromContext(ctx).V(1).Info("Self-monitor not ready, skipping flow health probe", "error", err)
+			// Only return error if self-monitor service endpoint exists but probing failed
+			// If self-monitor is not deployed (ErrDeploymentNotFound), don't return error to avoid unnecessary requeue
+			if !errors.Is(err, workloadstatus.ErrDeploymentNotFound) {
+				return metav1.ConditionUnknown, conditions.ReasonSelfMonGatewayProbingFailed, fmt.Errorf("self-monitor deployment not ready: %w", err)
+			}
+			return metav1.ConditionUnknown, conditions.ReasonSelfMonGatewayProbingFailed, nil
+		}
 	}
 
 	probeResult, err := r.flowHealthProber.Probe(ctx, pipeline.Name)

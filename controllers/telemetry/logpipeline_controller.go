@@ -396,6 +396,7 @@ func configureFluentBitReconciler(config LogPipelineControllerConfig, client cli
 
 		logpipelinefluentbit.WithErrorToMessageConverter(&conditions.ErrorToMessageConverter{}),
 		logpipelinefluentbit.WithFlowHealthProber(flowHealthProber),
+		logpipelinefluentbit.WithSelfMonitorProber(&workloadstatus.DeploymentProber{Client: client}),
 		logpipelinefluentbit.WithIstioStatusChecker(istiostatus.NewChecker(discoveryClient)),
 		logpipelinefluentbit.WithPipelineLock(pipelineLock),
 		logpipelinefluentbit.WithPipelineValidator(pipelineValidator),
@@ -448,6 +449,7 @@ func configureOTelReconciler(config LogPipelineControllerConfig, client client.C
 		logpipelineotel.WithAgentFlowHealthProber(agentFlowHealthProber),
 		logpipelineotel.WithGatewayFlowHealthProber(gatewayFlowHealthProber),
 		logpipelineotel.WithGatewayProber(&workloadstatus.DaemonSetProber{Client: client}),
+		logpipelineotel.WithSelfMonitorProber(&workloadstatus.DeploymentProber{Client: client}),
 		logpipelineotel.WithAgentProber(&workloadstatus.DaemonSetProber{Client: client}),
 
 		logpipelineotel.WithErrorToMessageConverter(&conditions.ErrorToMessageConverter{}),

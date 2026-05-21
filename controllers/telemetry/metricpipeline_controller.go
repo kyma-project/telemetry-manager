@@ -155,6 +155,7 @@ func NewMetricPipelineController(config MetricPipelineControllerConfig, client c
 
 		metricpipeline.WithGatewayFlowHealthProber(gatewayFlowHealthProber),
 		metricpipeline.WithGatewayProber(&workloadstatus.DaemonSetProber{Client: client}),
+		metricpipeline.WithSelfMonitorProber(&workloadstatus.DeploymentProber{Client: client}),
 
 		metricpipeline.WithErrorToMessageConverter(&conditions.ErrorToMessageConverter{}),
 		metricpipeline.WithIstioStatusChecker(istiostatus.NewChecker(discoveryClient)),
