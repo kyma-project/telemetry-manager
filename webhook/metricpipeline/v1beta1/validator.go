@@ -9,6 +9,7 @@ import (
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/pipelines"
+	"github.com/kyma-project/telemetry-manager/internal/validators/runtimemetrics"
 	webhookutils "github.com/kyma-project/telemetry-manager/webhook/utils"
 )
 
@@ -30,7 +31,16 @@ func (v *validator) ValidateDelete(_ context.Context, _ *telemetryv1beta1.Metric
 }
 
 func validate(ctx context.Context, pipeline *telemetryv1beta1.MetricPipeline) (admission.Warnings, error) {
-	return nil, validateFilterTransform(ctx, pipeline.Spec.Filters, pipeline.Spec.Transforms)
+	if err := validateFilterTransform(ctx, pipeline.Spec.Filters, pipeline.Spec.Transforms); err != nil {
+		return nil, err
+	}
+
+	runtimeAdditionalMetricsValidator := &runtimemetrics.Validator{}
+	if err := runtimeAdditionalMetricsValidator.Validate(pipeline); err != nil {
+		return nil, err
+	}
+
+	return nil, nil
 }
 
 func validateFilterTransform(ctx context.Context, filterSpec []telemetryv1beta1.FilterSpec, transformSpec []telemetryv1beta1.TransformSpec) error {

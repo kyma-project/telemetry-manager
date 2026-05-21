@@ -5,6 +5,7 @@ extensions:
         gomemlimit:
             enabled: true
             ratio: 0.8
+            refresh_interval: 30s
     health_check:
         endpoint: ${MY_POD_IP}:13133
     k8s_leader_elector:
@@ -24,7 +25,7 @@ service:
                 - routing/enrichment
         metrics/input-runtime:
             receivers:
-                - kubeletstats
+                - kubelet_stats
                 - k8s_cluster
             processors:
                 - memory_limiter
@@ -40,10 +41,10 @@ service:
                 - routing/enrichment
                 - routing/runtime-input
             processors:
-                - filter/drop-runtime-pod-metrics
-                - filter/drop-runtime-node-metrics
-                - filter/drop-runtime-volume-metrics
-                - filter/drop-runtime-daemonset-metrics
+                - filter/drop-runtime-pod-metrics-test
+                - filter/drop-runtime-node-metrics-test
+                - filter/drop-runtime-volume-metrics-test
+                - filter/drop-runtime-daemonset-metrics-test
                 - filter/drop-envoy-metrics-if-disabled
                 - transform/insert-cluster-attributes
                 - transform/drop-skip-enrichment-attribute
@@ -59,6 +60,9 @@ service:
                         prometheus:
                             host: ${MY_POD_IP}
                             port: 8888
+                            without_scope_info: false
+                            without_type_suffix: false
+                            without_units: false
         logs:
             level: info
             encoding: json
@@ -118,7 +122,7 @@ receivers:
             k8s.daemonset.ready_nodes:
                 enabled: false
         k8s_leader_elector: k8s_leader_elector
-    kubeletstats:
+    kubelet_stats:
         collection_interval: 30s
         auth_type: serviceAccount
         endpoint: https://${MY_NODE_NAME}:10250
@@ -126,12 +130,6 @@ receivers:
         metric_groups:
             - container
         metrics:
-            container.cpu.usage:
-                enabled: true
-            k8s.pod.cpu.usage:
-                enabled: true
-            k8s.node.cpu.usage:
-                enabled: true
             k8s.node.cpu.time:
                 enabled: false
             k8s.node.memory.major_page_faults:
@@ -155,6 +153,9 @@ receivers:
             - k8s.volume.type
         collect_all_network_interfaces:
             node: true
+        node: ${MY_NODE_NAME}
+        k8s_api_config:
+            auth_type: serviceAccount
 processors:
     batch:
         send_batch_size: 1024
@@ -165,26 +166,26 @@ processors:
         metric_conditions:
             - conditions:
                 - IsMatch(metric.name, "^envoy_.*") and resource.attributes["kyma.input.name"] == "istio"
-    filter/drop-runtime-daemonset-metrics:
+    filter/drop-runtime-daemonset-metrics-test:
         error_mode: ignore
         metric_conditions:
             - conditions:
-                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(metric.name, "^k8s.daemonset.*")
-    filter/drop-runtime-node-metrics:
+                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(metric.name, "^k8s[.]daemonset[.].*")
+    filter/drop-runtime-node-metrics-test:
         error_mode: ignore
         metric_conditions:
             - conditions:
-                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(metric.name, "^k8s.node.*")
-    filter/drop-runtime-pod-metrics:
+                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(metric.name, "^k8s[.]node[.].*")
+    filter/drop-runtime-pod-metrics-test:
         error_mode: ignore
         metric_conditions:
             - conditions:
-                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(metric.name, "^k8s.pod.*")
-    filter/drop-runtime-volume-metrics:
+                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(metric.name, "^k8s[.]pod[.].*")
+    filter/drop-runtime-volume-metrics-test:
         error_mode: ignore
         metric_conditions:
             - conditions:
-                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(metric.name, "^k8s.volume.*")
+                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(metric.name, "^k8s[.]volume[.].*")
     filter/drop-virtual-network-interfaces:
         error_mode: ignore
         metric_conditions:

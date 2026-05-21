@@ -5,6 +5,7 @@ extensions:
         gomemlimit:
             enabled: true
             ratio: 0.8
+            refresh_interval: 30s
     health_check:
         endpoint: ${MY_POD_IP}:13133
     k8s_leader_elector:
@@ -36,7 +37,7 @@ service:
                 - routing/prometheus-input
         metrics/input-runtime:
             receivers:
-                - kubeletstats
+                - kubelet_stats
                 - k8s_cluster
             processors:
                 - memory_limiter
@@ -70,6 +71,9 @@ service:
                         prometheus:
                             host: ${MY_POD_IP}
                             port: 8888
+                            without_scope_info: false
+                            without_type_suffix: false
+                            without_units: false
         logs:
             level: info
             encoding: json
@@ -119,7 +123,7 @@ receivers:
             k8s.cronjob.active_jobs:
                 enabled: false
         k8s_leader_elector: k8s_leader_elector
-    kubeletstats:
+    kubelet_stats:
         collection_interval: 30s
         auth_type: serviceAccount
         endpoint: https://${MY_NODE_NAME}:10250
@@ -130,12 +134,6 @@ receivers:
             - node
             - volume
         metrics:
-            container.cpu.usage:
-                enabled: true
-            k8s.pod.cpu.usage:
-                enabled: true
-            k8s.node.cpu.usage:
-                enabled: true
             k8s.node.cpu.time:
                 enabled: false
             k8s.node.memory.major_page_faults:
@@ -159,6 +157,9 @@ receivers:
             - k8s.volume.type
         collect_all_network_interfaces:
             node: true
+        node: ${MY_NODE_NAME}
+        k8s_api_config:
+            auth_type: serviceAccount
     prometheus/app-pods:
         config:
             scrape_configs:
@@ -278,7 +279,7 @@ processors:
         error_mode: ignore
         metric_conditions:
             - conditions:
-                - resource.attributes["k8s.volume.name"] != nil and resource.attributes["k8s.volume.type"] != "persistentVolumeClaim"
+                - resource.attributes["k8s.volume.name"] != nil and (resource.attributes["k8s.volume.type"] == "configMap" or resource.attributes["k8s.volume.type"] == "downwardAPI" or resource.attributes["k8s.volume.type"] == "emptyDir" or resource.attributes["k8s.volume.type"] == "secret")
     filter/drop-virtual-network-interfaces:
         error_mode: ignore
         metric_conditions:
