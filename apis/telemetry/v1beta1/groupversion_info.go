@@ -13,7 +13,7 @@ var (
 	GroupVersion = schema.GroupVersion{Group: "telemetry.kyma-project.io", Version: "v1beta1"}
 
 	// SchemeBuilder is used to add go types to the GroupVersionKind scheme
-	SchemeBuilder = &scheme.Builder{GroupVersion: GroupVersion}
+	SchemeBuilder = &scheme.Builder{GroupVersion: GroupVersion} //nolint:staticcheck // scheme.Builder is the standard Kubebuilder-generated pattern for operator API packages
 
 	// AddToScheme adds the types in this group-version to the given scheme.
 	AddToScheme = SchemeBuilder.AddToScheme
