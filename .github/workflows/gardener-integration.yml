@@ -35,7 +35,12 @@ env:
   ARTIFACT_PREFIX: "gardener-"
 
 jobs:
+  approval:
+    uses: ./.github/workflows/approval-gate.yml
+
   check-trigger:
+    needs: [approval]
+    if: always() && (needs.approval.result == 'success' || needs.approval.result == 'skipped')
     runs-on: ubuntu-latest
     outputs:
       run-gardener-tests: ${{ steps.check-label.outputs.run-gardener-tests }}
@@ -65,7 +70,6 @@ jobs:
             echo "run-gardener-tests=true" >> $GITHUB_OUTPUT
           fi
   gardener-integration-test:
-    environment: GitHub-Actions
     needs: check-trigger
     if: needs.check-trigger.outputs.run-gardener-tests == 'true'
     strategy:
