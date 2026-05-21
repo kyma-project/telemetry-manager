@@ -248,7 +248,7 @@ If data arrives but components run out of memory, reduce memory pressure:
 - Add nodes with more memory to increase the calculated `maxAllowed` value.
 - Reduce telemetry volume by applying filters in your pipelines (see [Filter Logs](./filter-and-process/filter-logs.md), [Filter Traces](./filter-and-process/filter-traces.md), [Filter Metrics](./filter-and-process/filter-metrics.md)).
 
-As a workaround, you can disable VPA for pipeline components (metric, trace, and log agents and gateways) so that the system uses static resource limits:
+As a workaround, you can disable VPA so that the system uses static resource limits:
   1. Edit the Telemetry resource:
   
      ```bash
@@ -277,7 +277,6 @@ As a workaround, you can disable VPA for pipeline components (metric, trace, and
      kubectl get vpa -n kyma-system
      ```
   
-     > [!NOTE]
-     > The `telemetry-self-monitor` VPA always remains enabled (if the VPA CRD exists in the cluster) and is not affected by this annotation. Only pipeline component VPAs (such as `telemetry-metric-agent`, `telemetry-trace-gateway`, and `telemetry-fluent-bit`) are disabled.
+     If VPA is disabled, no VPA resources appear in the namespace.
   
   5. If you disabled VPA temporarily for debugging, you can re-enable it later by removing the annotation or setting its value to `"true"`.
