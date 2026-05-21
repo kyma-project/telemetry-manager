@@ -8,11 +8,14 @@ on:
     branches:
       - "main"
       - "release-*"
-    paths-ignore:
-      - "dependencies/**"
-      - "OWNERS"
-      - "CODEOWNERS"
-      - "external-images.yaml"
+    paths:
+      - "docs/**"
+      - "**/*.md"
+      - "apis/**"
+      - "webhook/**"
+      - "config/**"
+      - "helm/**"
+      - ".github/workflows/pr-docu-checks.yml"
   workflow_dispatch:
 
 jobs:
