@@ -832,3 +832,89 @@ func buildLabelValues(pipelineName, endpoint string, enabledFeatures []string) [
 
 	return labelValues
 }
+
+func TestSelfMonitorNotDeployedFlowHealthCondition(t *testing.T) {
+	tests := []struct {
+		name                  string
+		selfMonitorProberErr  error
+		expectedStatus        metav1.ConditionStatus
+		expectedReason        string
+		expectedRequeue       bool
+		expectedRequeueAfter  time.Duration
+	}{
+		{
+			name:                  "self-monitor not deployed",
+			selfMonitorProberErr:  workloadstatus.ErrDeploymentNotFound,
+			expectedStatus:        metav1.ConditionUnknown,
+			expectedReason:        conditions.ReasonSelfMonAgentProbingFailed,
+			expectedRequeue:       false,
+			expectedRequeueAfter:  0,
+		},
+		{
+			name:                  "self-monitor fetch failed",
+			selfMonitorProberErr:  workloadstatus.ErrDeploymentFetching,
+			expectedStatus:        metav1.ConditionUnknown,
+			expectedReason:        conditions.ReasonSelfMonAgentProbingFailed,
+			expectedRequeue:       true,
+			expectedRequeueAfter:  requeueDelayOnFlowHealthProbingFailure,
+		},
+		{
+			name:                  "self-monitor pod pending",
+			selfMonitorProberErr:  &workloadstatus.PodIsPendingError{ContainerName: "self-monitor", Message: "waiting"},
+			expectedStatus:        metav1.ConditionUnknown,
+			expectedReason:        conditions.ReasonSelfMonAgentProbingFailed,
+			expectedRequeue:       true,
+			expectedRequeueAfter:  requeueDelayOnFlowHealthProbingFailure,
+		},
+		{
+			name:                  "self-monitor rollout in progress",
+			selfMonitorProberErr:  &workloadstatus.RolloutInProgressError{},
+			expectedStatus:        metav1.ConditionUnknown,
+			expectedReason:        conditions.ReasonSelfMonAgentProbingFailed,
+			expectedRequeue:       true,
+			expectedRequeueAfter:  requeueDelayOnFlowHealthProbingFailure,
+		},
+		{
+			name:                  "self-monitor ready",
+			selfMonitorProberErr:  nil,
+			expectedStatus:        metav1.ConditionTrue,
+			expectedReason:        conditions.ReasonSelfMonFlowHealthy,
+			expectedRequeue:       false,
+			expectedRequeueAfter:  0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			pipeline := testutils.NewLogPipelineBuilder().Build()
+			testClient := newTestClient(t, &pipeline)
+
+			selfMonitorProber := commonStatusStubs.NewDaemonSetProber(tt.selfMonitorProberErr)
+
+			probeResult := prober.FluentBitProbeResult{}
+			if tt.selfMonitorProberErr == nil {
+				probeResult.Healthy = true
+			}
+
+			flowHealthProber := &logpipelinemocks.FlowHealthProber{}
+			flowHealthProber.On("Probe", mock.Anything, pipeline.Name).Return(probeResult, nil)
+
+			reconciler := newTestReconciler(testClient,
+				WithSelfMonitorProber(selfMonitorProber),
+				WithFlowHealthProber(flowHealthProber))
+
+			result := reconcileAndGet(t, testClient, reconciler, pipeline.Name)
+
+			if tt.expectedRequeue {
+				require.Equal(t, tt.expectedRequeueAfter, result.requeueAfter, "RequeueAfter should match expected")
+			} else {
+				require.NoError(t, result.err)
+				require.Equal(t, time.Duration(0), result.requeueAfter, "Should not requeue")
+			}
+
+			cond := meta.FindStatusCondition(result.pipeline.Status.Conditions, conditions.TypeFlowHealthy)
+			require.Equal(t, tt.expectedStatus, cond.Status, "Flow health condition status should match")
+			require.Equal(t, tt.expectedReason, cond.Reason, "Flow health condition reason should match")
+		})
+	}
+}

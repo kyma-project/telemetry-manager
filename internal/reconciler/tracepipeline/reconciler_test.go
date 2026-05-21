@@ -33,6 +33,12 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/validators/ottl"
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
+	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
+
+	"github.com/kyma-project/telemetry-manager/internal/config"
+	"k8s.io/apimachinery/pkg/api/meta"
+	commonStatusStubs "github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus/stubs"
+	tracepipelinemocks "github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline/mocks"
 )
 
 // TestConfigMapUpdate verifies that valid pipelines are written to the OTLP Gateway Coordination ConfigMap
@@ -853,4 +859,107 @@ func getCondition(pipeline *telemetryv1beta1.TracePipeline, condType string) *me
 	}
 
 	return nil
+}
+
+func TestSelfMonitorNotDeployedFlowHealthCondition(t *testing.T) {
+	ctx := context.Background()
+
+	tests := []struct {
+		name                  string
+		selfMonitorProberErr  error
+		expectedStatus        metav1.ConditionStatus
+		expectedReason        string
+		expectedRequeue       bool
+		expectedRequeueAfter  time.Duration
+	}{
+		{
+			name:                  "self-monitor not deployed",
+			selfMonitorProberErr:  workloadstatus.ErrDeploymentNotFound,
+			expectedStatus:        metav1.ConditionUnknown,
+			expectedReason:        conditions.ReasonSelfMonGatewayProbingFailed,
+			expectedRequeue:       false,
+			expectedRequeueAfter:  0,
+		},
+		{
+			name:                  "self-monitor fetch failed",
+			selfMonitorProberErr:  workloadstatus.ErrDeploymentFetching,
+			expectedStatus:        metav1.ConditionUnknown,
+			expectedReason:        conditions.ReasonSelfMonGatewayProbingFailed,
+			expectedRequeue:       true,
+			expectedRequeueAfter:  requeueDelayOnFlowHealthProbingFailure,
+		},
+		{
+			name:                  "self-monitor pod pending",
+			selfMonitorProberErr:  &workloadstatus.PodIsPendingError{ContainerName: "self-monitor", Message: "waiting"},
+			expectedStatus:        metav1.ConditionUnknown,
+			expectedReason:        conditions.ReasonSelfMonGatewayProbingFailed,
+			expectedRequeue:       true,
+			expectedRequeueAfter:  requeueDelayOnFlowHealthProbingFailure,
+		},
+		{
+			name:                  "self-monitor rollout in progress",
+			selfMonitorProberErr:  &workloadstatus.RolloutInProgressError{},
+			expectedStatus:        metav1.ConditionUnknown,
+			expectedReason:        conditions.ReasonSelfMonGatewayProbingFailed,
+			expectedRequeue:       true,
+			expectedRequeueAfter:  requeueDelayOnFlowHealthProbingFailure,
+		},
+		{
+			name:                  "self-monitor ready",
+			selfMonitorProberErr:  nil,
+			expectedStatus:        metav1.ConditionTrue,
+			expectedReason:        conditions.ReasonSelfMonFlowHealthy,
+			expectedRequeue:       false,
+			expectedRequeueAfter:  0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			pipeline := testutils.NewTracePipelineBuilder().Build()
+			fakeClient := fake.NewClientBuilder().WithScheme(testScheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+			selfMonitorProber := commonStatusStubs.NewDeploymentSetProber(tt.selfMonitorProberErr)
+
+			probeResult := prober.OTelGatewayProbeResult{}
+			if tt.selfMonitorProberErr == nil {
+				probeResult.Healthy = true
+			}
+
+			flowHealthProber := &tracepipelinemocks.FlowHealthProber{}
+			flowHealthProber.On("Probe", mock.Anything, pipeline.Name).Return(probeResult, nil)
+
+			reconciler := New(
+				WithClient(fakeClient),
+				WithGlobals(config.NewGlobal(config.WithTargetNamespace("default"))),
+				WithFlowHealthProber(flowHealthProber),
+				WithSelfMonitorProber(selfMonitorProber),
+				WithGatewayProber(commonStatusStubs.NewDaemonSetProber(nil)),
+				WithOverridesHandler(&stubs.OverridesHandler{}),
+				WithPipelineLock(stubs.NewPipelineLock()),
+				WithPipelineSyncer(&stubs.PipelineSync{}),
+				WithPipelineValidator(newTestValidator()),
+				WithErrorToMessageConverter(&conditions.ErrorToMessageConverter{}),
+				WithSecretWatcher(stubs.NewSecretWatcher(nil)),
+			)
+
+			result, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+
+			if tt.expectedRequeue {
+				require.NoError(t, err, "should not return error when requeuing")
+				require.Equal(t, tt.expectedRequeueAfter, result.RequeueAfter, "RequeueAfter should match expected")
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, time.Duration(0), result.RequeueAfter, "Should not requeue")
+			}
+
+			var updatedPipeline telemetryv1beta1.TracePipeline
+			require.NoError(t, fakeClient.Get(ctx, types.NamespacedName{Name: pipeline.Name}, &updatedPipeline))
+
+			cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeFlowHealthy)
+			require.NotNil(t, cond, "FlowHealthy condition should exist")
+			require.Equal(t, tt.expectedStatus, cond.Status, "Flow health condition status should match")
+			require.Equal(t, tt.expectedReason, cond.Reason, "Flow health condition reason should match")
+		})
+	}
 }

@@ -2,6 +2,7 @@ package fluentbit
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -26,8 +27,9 @@ import (
 
 // reconcileResult holds the result of a reconciliation operation for test assertions.
 type reconcileResult struct {
-	pipeline telemetryv1beta1.LogPipeline
-	err      error
+	pipeline      telemetryv1beta1.LogPipeline
+	err           error
+	requeueAfter  time.Duration
 }
 
 // conditionCheck defines the expected values for a status condition in tests.
@@ -60,12 +62,12 @@ func reconcileAndGet(t *testing.T, client client.Client, reconciler *Reconciler,
 	var pl telemetryv1beta1.LogPipeline
 	require.NoError(t, client.Get(t.Context(), types.NamespacedName{Name: pipelineName}, &pl))
 
-	_, err := reconciler.Reconcile(t.Context(), &pl)
+	result, err := reconciler.Reconcile(t.Context(), &pl)
 
 	var updatedPipeline telemetryv1beta1.LogPipeline
 	require.NoError(t, client.Get(t.Context(), types.NamespacedName{Name: pipelineName}, &updatedPipeline))
 
-	return reconcileResult{pipeline: updatedPipeline, err: err}
+	return reconcileResult{pipeline: updatedPipeline, err: err, requeueAfter: result.RequeueAfter}
 }
 
 // assertCondition verifies that a pipeline has a specific condition with expected values.
