@@ -63,7 +63,7 @@ func TestResources(t *testing.T) {
 		WithName(pipelineName).
 		WithOTLPInput(true).
 		WithRuntimeInput(true).
-		WithOTLPOutput(testutils.OTLPEndpointFromSecret(secret.Name(), secret.Namespace(), endpointKey)).
+		WithMetricPipelineOTLPOutput(testutils.OTLPEndpointFromSecret(secret.Name(), secret.Namespace(), endpointKey)).
 		Build()
 
 	Expect(kitk8s.CreateObjects(t, &pipeline, secret.K8sObject())).To(Succeed())
