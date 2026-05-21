@@ -196,9 +196,9 @@ func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry *operat
 		return fmt.Errorf("failed to marshal rules: %w", err)
 	}
 
-	isVpaEnabled := telemetryutils.IsVpaEnabledInTelemetry(ctx, r.Client, r.config.DefaultTelemetryNamespace())
 	vpaMaxAllowedMemory := r.nodeSizeTracker.SelfMonitorVPAMaxAllowedMemory()
 
+	// Self-monitor VPA is always enabled when VPA CRD exists, independent of the telemetry.kyma-project.io/enable-vpa annotation
 	if err := r.selfMonitorApplierDeleter.ApplyResources(
 		ctx,
 		k8sclients.NewOwnerReferenceSetter(r.Client, telemetry),
@@ -210,7 +210,7 @@ func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry *operat
 			PrometheusConfigYAML:     string(prometheusConfigYAML),
 			LogLevel:                 logLevel,
 			VpaCRDExists:             vpaCRDExists,
-			VpaEnabled:               isVpaEnabled,
+			VpaEnabled:               vpaCRDExists,
 			VPAMaxAllowedMemory:      vpaMaxAllowedMemory,
 		},
 	); err != nil {
