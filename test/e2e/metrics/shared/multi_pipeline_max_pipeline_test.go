@@ -65,7 +65,7 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 				pipeline := testutils.NewMetricPipelineBuilder().
 					WithName(pipelineName).
 					WithRuntimeInput(true).
-					WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
+					WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 					Build()
 				pipelines = append(pipelines, &pipeline)
 			}
@@ -73,7 +73,7 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 			additionalPipeline := testutils.NewMetricPipelineBuilder().
 				WithName(additionalPipelineName).
 				WithRuntimeInput(true).
-				WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
+				WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 				Build()
 
 			resources := []client.Object{

@@ -14,12 +14,13 @@ import (
 var _ admission.Defaulter[*telemetryv1beta1.MetricPipeline] = &defaulter{}
 
 type defaulter struct {
-	ExcludeNamespaces         []string
-	OTLPInputEnabled          bool
-	RuntimeInputResources     runtimeInputResourceDefaults
-	DefaultOTLPOutputProtocol telemetryv1beta1.OTLPProtocol
-	DiagnosticMetricsEnabled  bool
-	EnvoyMetricsEnabled       bool
+	ExcludeNamespaces            []string
+	OTLPInputEnabled             bool
+	RuntimeInputResources        runtimeInputResourceDefaults
+	DefaultOTLPOutputProtocol    telemetryv1beta1.OTLPProtocol
+	DefaultOTLPOutputTemporality telemetryv1beta1.TemporalityType
+	DiagnosticMetricsEnabled     bool
+	EnvoyMetricsEnabled          bool
 }
 
 type runtimeInputResourceDefaults struct {
@@ -78,6 +79,13 @@ func (md defaulter) Default(ctx context.Context, pipeline *telemetryv1beta1.Metr
 		}
 	}
 
+	md.applyOTLPInputDefaults(pipeline)
+	md.applyOTLPOutputDefaults(pipeline)
+
+	return nil
+}
+
+func (md defaulter) applyOTLPInputDefaults(pipeline *telemetryv1beta1.MetricPipeline) {
 	if pipeline.Spec.Input.OTLP == nil {
 		pipeline.Spec.Input.OTLP = &telemetryv1beta1.OTLPInput{}
 	}
@@ -89,12 +97,16 @@ func (md defaulter) Default(ctx context.Context, pipeline *telemetryv1beta1.Metr
 	if ptr.Deref(pipeline.Spec.Input.OTLP.Enabled, false) && pipeline.Spec.Input.OTLP.Namespaces == nil {
 		pipeline.Spec.Input.OTLP.Namespaces = &telemetryv1beta1.NamespaceSelector{}
 	}
+}
 
+func (md defaulter) applyOTLPOutputDefaults(pipeline *telemetryv1beta1.MetricPipeline) {
 	if pipeline.Spec.Output.OTLP != nil && pipeline.Spec.Output.OTLP.Protocol == "" {
 		pipeline.Spec.Output.OTLP.Protocol = md.DefaultOTLPOutputProtocol
 	}
 
-	return nil
+	if pipeline.Spec.Output.OTLP != nil && pipeline.Spec.Output.OTLP.Temporality == nil {
+		pipeline.Spec.Output.OTLP.Temporality = &md.DefaultOTLPOutputTemporality
+	}
 }
 
 func (md defaulter) applyRuntimeInputResourceDefaults(pipeline *telemetryv1beta1.MetricPipeline) {
