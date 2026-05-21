@@ -22,7 +22,7 @@ type MetricPipelineBuilder struct {
 	inIstio      *telemetryv1beta1.MetricPipelineIstioInput
 	inOTLP       *telemetryv1beta1.OTLPInput
 
-	outOTLP *telemetryv1beta1.OTLPOutput
+	outOTLP *telemetryv1beta1.MetricPipelineOTLPOutput
 	oauth2  *telemetryv1beta1.OAuth2Options
 
 	transforms       []telemetryv1beta1.TransformSpec
@@ -31,10 +31,15 @@ type MetricPipelineBuilder struct {
 }
 
 func NewMetricPipelineBuilder() *MetricPipelineBuilder {
+	defaultTemporality := telemetryv1beta1.TemporalityPreserve
+
 	return &MetricPipelineBuilder{
 		randSource: rand.NewSource(time.Now().UnixNano()),
-		outOTLP: &telemetryv1beta1.OTLPOutput{
-			Endpoint: telemetryv1beta1.ValueType{Value: "http://localhost:4317"},
+		outOTLP: &telemetryv1beta1.MetricPipelineOTLPOutput{
+			OTLPOutput: telemetryv1beta1.OTLPOutput{
+				Endpoint: telemetryv1beta1.ValueType{Value: "http://localhost:4317"},
+			},
+			Temporality: &defaultTemporality,
 		},
 	}
 }
@@ -390,11 +395,16 @@ func (b *MetricPipelineBuilder) WithRuntimeInputAdditionalMetrics(metrics ...str
 	return b
 }
 
-func (b *MetricPipelineBuilder) WithOTLPOutput(opts ...OTLPOutputOption) *MetricPipelineBuilder {
+func (b *MetricPipelineBuilder) WithMetricPipelineOTLPOutput(opts ...OTLPOutputOption) *MetricPipelineBuilder {
 	for _, opt := range opts {
-		opt(b.outOTLP)
+		opt(&b.outOTLP.OTLPOutput)
 	}
 
+	return b
+}
+
+func (b *MetricPipelineBuilder) WithTemporality(temporality telemetryv1beta1.TemporalityType) *MetricPipelineBuilder {
+	b.outOTLP.Temporality = &temporality
 	return b
 }
 
