@@ -17,6 +17,7 @@ on:
 
 jobs:
   envs:
+    environment: GitHub-Actions
     runs-on: ubuntu-latest
     outputs:
       build-args: ${{ steps.prepare-envs.outputs.build-args }}
@@ -71,7 +72,7 @@ jobs:
               echo "EOTAGS"
             } >> "$GITHUB_OUTPUT"
           fi
-       
+
   build-image:
     permissions:
       id-token: write # Required for requesting the JWT token

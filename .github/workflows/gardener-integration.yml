@@ -65,6 +65,7 @@ jobs:
             echo "run-gardener-tests=true" >> $GITHUB_OUTPUT
           fi
   gardener-integration-test:
+    environment: GitHub-Actions
     needs: check-trigger
     if: needs.check-trigger.outputs.run-gardener-tests == 'true'
     strategy:

@@ -17,7 +17,12 @@ on:
       - "external-images.yaml"
 
 jobs:
+  approval:
+    uses: ./.github/workflows/approval-gate.yml
+
   sync-external-images:
+    needs: [approval]
+    if: always() && (needs.approval.result == 'success' || needs.approval.result == 'skipped')
     permissions:
       id-token: write # Required for requesting the JWT token
       contents: read
