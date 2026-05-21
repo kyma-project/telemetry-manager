@@ -368,6 +368,105 @@ func TestGatewayFlowHealthCondition(t *testing.T) {
 	}
 }
 
+func TestSelfMonitorNotDeployedFlowHealthCondition(t *testing.T) {
+	tests := []struct {
+		name                   string
+		selfMonitorProberError error
+		expectedStatus         metav1.ConditionStatus
+		expectedReason         string
+		expectRequeue          bool
+	}{
+		{
+			name:                   "self-monitor not deployed - no requeue",
+			selfMonitorProberError: workloadstatus.ErrDeploymentNotFound,
+			expectedStatus:         metav1.ConditionUnknown,
+			expectedReason:         conditions.ReasonSelfMonGatewayProbingFailed,
+			expectRequeue:          false,
+		},
+		{
+			name:                   "self-monitor deployment fetch failed - should requeue",
+			selfMonitorProberError: workloadstatus.ErrDeploymentFetching,
+			expectedStatus:         metav1.ConditionUnknown,
+			expectedReason:         conditions.ReasonSelfMonGatewayProbingFailed,
+			expectRequeue:          true,
+		},
+		{
+			name:                   "self-monitor pod pending - should requeue",
+			selfMonitorProberError: &workloadstatus.PodIsPendingError{ContainerName: "self-monitor", Message: "waiting"},
+			expectedStatus:         metav1.ConditionUnknown,
+			expectedReason:         conditions.ReasonSelfMonGatewayProbingFailed,
+			expectRequeue:          true,
+		},
+		{
+			name:                   "self-monitor rollout in progress - should requeue",
+			selfMonitorProberError: &workloadstatus.RolloutInProgressError{},
+			expectedStatus:         metav1.ConditionUnknown,
+			expectedReason:         conditions.ReasonSelfMonGatewayProbingFailed,
+			expectRequeue:          true,
+		},
+		{
+			name:                   "self-monitor ready - flow health probing succeeds",
+			selfMonitorProberError: nil,
+			expectedStatus:         metav1.ConditionTrue,
+			expectedReason:         conditions.ReasonSelfMonFlowHealthy,
+			expectRequeue:          false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			pipeline := testutils.NewMetricPipelineBuilder().Build()
+			fakeClient := newTestClient(t, &pipeline)
+
+			agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
+			agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
+
+			// Mock gateway and agent flow health probers to return healthy results
+			gatewayFlowHealthProberStub := &mocks.GatewayFlowHealthProber{}
+			gatewayFlowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(
+				prober.OTelGatewayProbeResult{
+					PipelineProbeResult: prober.PipelineProbeResult{Healthy: true},
+				}, nil)
+
+			agentFlowHealthProberStub := &mocks.AgentFlowHealthProber{}
+			agentFlowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(
+				prober.OTelAgentProbeResult{}, nil)
+
+			// Mock self-monitor prober with the test error
+			selfMonitorProberStub := commonStatusStubs.NewDeploymentSetProber(tt.selfMonitorProberError)
+
+			sut, assertAll := newTestReconciler(
+				fakeClient,
+				withAgentApplierDeleterAssert(agentApplierDeleterMock),
+				WithGatewayFlowHealthProber(gatewayFlowHealthProberStub),
+				WithAgentFlowHealthProber(agentFlowHealthProberStub),
+				WithSelfMonitorProber(selfMonitorProberStub),
+			)
+
+			result := reconcileAndGet(t, fakeClient, sut, pipeline.Name)
+			require.NoError(t, result.err)
+
+			// Check if requeue is set correctly
+			if tt.expectRequeue {
+				require.Greater(t, result.result.RequeueAfter.Nanoseconds(), int64(0),
+					"Expected requeue but got RequeueAfter=%v", result.result.RequeueAfter)
+			} else {
+				require.Equal(t, int64(0), result.result.RequeueAfter.Nanoseconds(),
+					"Expected no requeue delay but got RequeueAfter=%v", result.result.RequeueAfter)
+			}
+
+			requireHasStatusCondition(t, result.pipeline,
+				conditions.TypeFlowHealthy,
+				tt.expectedStatus,
+				tt.expectedReason,
+				conditions.MessageForMetricPipeline(tt.expectedReason),
+			)
+
+			assertAll(t)
+		})
+	}
+}
+
 func TestAgentFlowHealthCondition(t *testing.T) {
 	tests := []struct {
 		name            string

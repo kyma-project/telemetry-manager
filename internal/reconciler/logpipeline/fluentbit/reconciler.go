@@ -23,6 +23,10 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
 
+const (
+	requeueDelayOnFlowHealthProbingFailure = 5 * time.Second
+)
+
 // var _ logpipeline.LogPipelineReconciler = &Reconciler{}
 
 type Reconciler struct {
@@ -160,7 +164,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, pipeline *telemetryv1beta1.L
 	// This ensures the condition transitions from Unknown to True/False once probing succeeds.
 	if flowHealthProbingFailed {
 		logf.FromContext(ctx).V(1).Info("Requeuing reconciliation due to flow health probing failure")
-		return ctrl.Result{RequeueAfter: 5 * time.Second}, nil
+		return ctrl.Result{RequeueAfter: requeueDelayOnFlowHealthProbingFailure}, nil
 	}
 
 	requeueAfter := r.calculateRequeueAfterDuration(ctx, pipeline)

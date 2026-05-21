@@ -49,6 +49,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) (flo
 
 	if err := r.setFlowHealthCondition(ctx, &pipeline); err != nil {
 		logf.FromContext(ctx).Error(err, "Failed to set flow health condition")
+
 		flowHealthProbingFailed = true
 	}
 
@@ -116,6 +117,7 @@ func (r *Reconciler) evaluateFlowHealthCondition(ctx context.Context, pipeline *
 			if !errors.Is(err, workloadstatus.ErrDeploymentNotFound) {
 				return metav1.ConditionUnknown, conditions.ReasonSelfMonAgentProbingFailed, fmt.Errorf("self-monitor deployment not ready: %w", err)
 			}
+
 			return metav1.ConditionUnknown, conditions.ReasonSelfMonAgentProbingFailed, nil
 		}
 	}
