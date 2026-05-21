@@ -27,9 +27,9 @@ import (
 
 // reconcileResult holds the result of a reconciliation operation for test assertions.
 type reconcileResult struct {
-	pipeline      telemetryv1beta1.LogPipeline
-	err           error
-	requeueAfter  time.Duration
+	pipeline     telemetryv1beta1.LogPipeline
+	err          error
+	requeueAfter time.Duration
 }
 
 // conditionCheck defines the expected values for a status condition in tests.

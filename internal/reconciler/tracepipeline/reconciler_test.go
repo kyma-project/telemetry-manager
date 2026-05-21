@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -21,9 +22,11 @@ import (
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	"github.com/kyma-project/telemetry-manager/internal/metrics"
 	"github.com/kyma-project/telemetry-manager/internal/pipelines"
+	commonStatusStubs "github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus/stubs"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline/mocks"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline/stubs"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
@@ -34,11 +37,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
-
-	"github.com/kyma-project/telemetry-manager/internal/config"
-	"k8s.io/apimachinery/pkg/api/meta"
-	commonStatusStubs "github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus/stubs"
-	tracepipelinemocks "github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline/mocks"
 )
 
 // TestConfigMapUpdate verifies that valid pipelines are written to the OTLP Gateway Coordination ConfigMap
@@ -865,52 +863,52 @@ func TestSelfMonitorNotDeployedFlowHealthCondition(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		name                  string
-		selfMonitorProberErr  error
-		expectedStatus        metav1.ConditionStatus
-		expectedReason        string
-		expectedRequeue       bool
-		expectedRequeueAfter  time.Duration
+		name                 string
+		selfMonitorProberErr error
+		expectedStatus       metav1.ConditionStatus
+		expectedReason       string
+		expectedRequeue      bool
+		expectedRequeueAfter time.Duration
 	}{
 		{
-			name:                  "self-monitor not deployed",
-			selfMonitorProberErr:  workloadstatus.ErrDeploymentNotFound,
-			expectedStatus:        metav1.ConditionUnknown,
-			expectedReason:        conditions.ReasonSelfMonGatewayProbingFailed,
-			expectedRequeue:       false,
-			expectedRequeueAfter:  0,
+			name:                 "self-monitor not deployed",
+			selfMonitorProberErr: workloadstatus.ErrDeploymentNotFound,
+			expectedStatus:       metav1.ConditionUnknown,
+			expectedReason:       conditions.ReasonSelfMonGatewayProbingFailed,
+			expectedRequeue:      false,
+			expectedRequeueAfter: 0,
 		},
 		{
-			name:                  "self-monitor fetch failed",
-			selfMonitorProberErr:  workloadstatus.ErrDeploymentFetching,
-			expectedStatus:        metav1.ConditionUnknown,
-			expectedReason:        conditions.ReasonSelfMonGatewayProbingFailed,
-			expectedRequeue:       true,
-			expectedRequeueAfter:  requeueDelayOnFlowHealthProbingFailure,
+			name:                 "self-monitor fetch failed",
+			selfMonitorProberErr: workloadstatus.ErrDeploymentFetching,
+			expectedStatus:       metav1.ConditionUnknown,
+			expectedReason:       conditions.ReasonSelfMonGatewayProbingFailed,
+			expectedRequeue:      true,
+			expectedRequeueAfter: requeueDelayOnFlowHealthProbingFailure,
 		},
 		{
-			name:                  "self-monitor pod pending",
-			selfMonitorProberErr:  &workloadstatus.PodIsPendingError{ContainerName: "self-monitor", Message: "waiting"},
-			expectedStatus:        metav1.ConditionUnknown,
-			expectedReason:        conditions.ReasonSelfMonGatewayProbingFailed,
-			expectedRequeue:       true,
-			expectedRequeueAfter:  requeueDelayOnFlowHealthProbingFailure,
+			name:                 "self-monitor pod pending",
+			selfMonitorProberErr: &workloadstatus.PodIsPendingError{ContainerName: "self-monitor", Message: "waiting"},
+			expectedStatus:       metav1.ConditionUnknown,
+			expectedReason:       conditions.ReasonSelfMonGatewayProbingFailed,
+			expectedRequeue:      true,
+			expectedRequeueAfter: requeueDelayOnFlowHealthProbingFailure,
 		},
 		{
-			name:                  "self-monitor rollout in progress",
-			selfMonitorProberErr:  &workloadstatus.RolloutInProgressError{},
-			expectedStatus:        metav1.ConditionUnknown,
-			expectedReason:        conditions.ReasonSelfMonGatewayProbingFailed,
-			expectedRequeue:       true,
-			expectedRequeueAfter:  requeueDelayOnFlowHealthProbingFailure,
+			name:                 "self-monitor rollout in progress",
+			selfMonitorProberErr: &workloadstatus.RolloutInProgressError{},
+			expectedStatus:       metav1.ConditionUnknown,
+			expectedReason:       conditions.ReasonSelfMonGatewayProbingFailed,
+			expectedRequeue:      true,
+			expectedRequeueAfter: requeueDelayOnFlowHealthProbingFailure,
 		},
 		{
-			name:                  "self-monitor ready",
-			selfMonitorProberErr:  nil,
-			expectedStatus:        metav1.ConditionTrue,
-			expectedReason:        conditions.ReasonSelfMonFlowHealthy,
-			expectedRequeue:       false,
-			expectedRequeueAfter:  0,
+			name:                 "self-monitor ready",
+			selfMonitorProberErr: nil,
+			expectedStatus:       metav1.ConditionTrue,
+			expectedReason:       conditions.ReasonSelfMonFlowHealthy,
+			expectedRequeue:      false,
+			expectedRequeueAfter: 0,
 		},
 	}
 
@@ -926,7 +924,7 @@ func TestSelfMonitorNotDeployedFlowHealthCondition(t *testing.T) {
 				probeResult.Healthy = true
 			}
 
-			flowHealthProber := &tracepipelinemocks.FlowHealthProber{}
+			flowHealthProber := &mocks.FlowHealthProber{}
 			flowHealthProber.On("Probe", mock.Anything, pipeline.Name).Return(probeResult, nil)
 
 			reconciler := New(

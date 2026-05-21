@@ -835,52 +835,52 @@ func buildLabelValues(pipelineName, endpoint string, enabledFeatures []string) [
 
 func TestSelfMonitorNotDeployedFlowHealthCondition(t *testing.T) {
 	tests := []struct {
-		name                  string
-		selfMonitorProberErr  error
-		expectedStatus        metav1.ConditionStatus
-		expectedReason        string
-		expectedRequeue       bool
-		expectedRequeueAfter  time.Duration
+		name                 string
+		selfMonitorProberErr error
+		expectedStatus       metav1.ConditionStatus
+		expectedReason       string
+		expectedRequeue      bool
+		expectedRequeueAfter time.Duration
 	}{
 		{
-			name:                  "self-monitor not deployed",
-			selfMonitorProberErr:  workloadstatus.ErrDeploymentNotFound,
-			expectedStatus:        metav1.ConditionUnknown,
-			expectedReason:        conditions.ReasonSelfMonAgentProbingFailed,
-			expectedRequeue:       false,
-			expectedRequeueAfter:  0,
+			name:                 "self-monitor not deployed",
+			selfMonitorProberErr: workloadstatus.ErrDeploymentNotFound,
+			expectedStatus:       metav1.ConditionUnknown,
+			expectedReason:       conditions.ReasonSelfMonAgentProbingFailed,
+			expectedRequeue:      false,
+			expectedRequeueAfter: 0,
 		},
 		{
-			name:                  "self-monitor fetch failed",
-			selfMonitorProberErr:  workloadstatus.ErrDeploymentFetching,
-			expectedStatus:        metav1.ConditionUnknown,
-			expectedReason:        conditions.ReasonSelfMonAgentProbingFailed,
-			expectedRequeue:       true,
-			expectedRequeueAfter:  requeueDelayOnFlowHealthProbingFailure,
+			name:                 "self-monitor fetch failed",
+			selfMonitorProberErr: workloadstatus.ErrDeploymentFetching,
+			expectedStatus:       metav1.ConditionUnknown,
+			expectedReason:       conditions.ReasonSelfMonAgentProbingFailed,
+			expectedRequeue:      true,
+			expectedRequeueAfter: requeueDelayOnFlowHealthProbingFailure,
 		},
 		{
-			name:                  "self-monitor pod pending",
-			selfMonitorProberErr:  &workloadstatus.PodIsPendingError{ContainerName: "self-monitor", Message: "waiting"},
-			expectedStatus:        metav1.ConditionUnknown,
-			expectedReason:        conditions.ReasonSelfMonAgentProbingFailed,
-			expectedRequeue:       true,
-			expectedRequeueAfter:  requeueDelayOnFlowHealthProbingFailure,
+			name:                 "self-monitor pod pending",
+			selfMonitorProberErr: &workloadstatus.PodIsPendingError{ContainerName: "self-monitor", Message: "waiting"},
+			expectedStatus:       metav1.ConditionUnknown,
+			expectedReason:       conditions.ReasonSelfMonAgentProbingFailed,
+			expectedRequeue:      true,
+			expectedRequeueAfter: requeueDelayOnFlowHealthProbingFailure,
 		},
 		{
-			name:                  "self-monitor rollout in progress",
-			selfMonitorProberErr:  &workloadstatus.RolloutInProgressError{},
-			expectedStatus:        metav1.ConditionUnknown,
-			expectedReason:        conditions.ReasonSelfMonAgentProbingFailed,
-			expectedRequeue:       true,
-			expectedRequeueAfter:  requeueDelayOnFlowHealthProbingFailure,
+			name:                 "self-monitor rollout in progress",
+			selfMonitorProberErr: &workloadstatus.RolloutInProgressError{},
+			expectedStatus:       metav1.ConditionUnknown,
+			expectedReason:       conditions.ReasonSelfMonAgentProbingFailed,
+			expectedRequeue:      true,
+			expectedRequeueAfter: requeueDelayOnFlowHealthProbingFailure,
 		},
 		{
-			name:                  "self-monitor ready",
-			selfMonitorProberErr:  nil,
-			expectedStatus:        metav1.ConditionTrue,
-			expectedReason:        conditions.ReasonSelfMonFlowHealthy,
-			expectedRequeue:       false,
-			expectedRequeueAfter:  0,
+			name:                 "self-monitor ready",
+			selfMonitorProberErr: nil,
+			expectedStatus:       metav1.ConditionTrue,
+			expectedReason:       conditions.ReasonSelfMonFlowHealthy,
+			expectedRequeue:      false,
+			expectedRequeueAfter: 0,
 		},
 	}
 
