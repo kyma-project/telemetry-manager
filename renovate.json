@@ -83,6 +83,16 @@
         "https://github.com/open-telemetry/opentelemetry-collector{/,}**",
         "https://github.com/open-telemetry/opentelemetry-collector-contrib{/,}**"
       ]
+    },
+    {
+      "matchManagers": [
+        "gomod"
+      ],
+      "groupName": "All Kubernetes packages",
+      "matchPackagePrefixes": [
+        "k8s.io/",
+        "sigs.k8s.io/"
+      ]
     }
   ],
   "customManagers": [
