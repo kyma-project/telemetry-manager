@@ -20,21 +20,22 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-// TestCumulativeToDelta verifies that the cumulativetodelta processor converts
-// cumulative Sum metrics to delta temporality when configured.
-func TestCumulativeToDelta(t *testing.T) {
+// TestCumulativeToDeltaGaugeUnaffected verifies that Gauge metrics are not affected
+// by the cumulativetodelta processor (Gauges have no aggregation temporality).
+func TestCumulativeToDeltaGaugeUnaffected(t *testing.T) {
 	tests := []struct {
 		name             string
 		labels           []string
 		inputBuilder     func(includeNs string) telemetryv1beta1.MetricPipelineInput
 		generatorBuilder func(ns string) []client.Object
+		metricNames      []string
 		expectAgent      bool
 	}{
 		{
 			name:   "agent",
 			labels: []string{suite.LabelMetricAgent},
 			inputBuilder: func(includeNs string) telemetryv1beta1.MetricPipelineInput {
-				return testutils.BuildMetricPipelineRuntimeInput(testutils.IncludeNamespaces(includeNs))
+				return testutils.BuildMetricPipelineAgentInput(false, true, false, testutils.IncludeNamespaces(includeNs))
 			},
 			generatorBuilder: func(ns string) []client.Object {
 				generator := prommetricgen.New(ns)
@@ -44,6 +45,7 @@ func TestCumulativeToDelta(t *testing.T) {
 					generator.Service().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
 				}
 			},
+			metricNames: []string{prommetricgen.MetricCPUTemperature.Name},
 			expectAgent: true,
 		},
 		{
@@ -54,9 +56,10 @@ func TestCumulativeToDelta(t *testing.T) {
 			},
 			generatorBuilder: func(ns string) []client.Object {
 				return []client.Object{
-					telemetrygen.NewPod(ns, telemetrygen.SignalTypeMetrics, telemetrygen.WithMetricType("Sum")).K8sObject(),
+					telemetrygen.NewPod(ns, telemetrygen.SignalTypeMetrics).K8sObject(),
 				}
 			},
+			metricNames: telemetrygen.MetricNames,
 		},
 	}
 
@@ -98,20 +101,14 @@ func TestCumulativeToDelta(t *testing.T) {
 
 			assert.MetricPipelineHealthy(t, pipelineName)
 
+			// Gauge metrics should still be delivered with no aggregation temporality
 			assert.BackendDataEventuallyMatches(t, backend,
 				metricmatchers.HaveFlatMetrics(ContainElement(SatisfyAll(
-					metricmatchers.HaveType(Equal("Sum")),
-					metricmatchers.HaveAggregationTemporality(Equal("Delta")),
+					metricmatchers.HaveName(BeElementOf(tc.metricNames)),
+					metricmatchers.HaveType(Equal("Gauge")),
+					metricmatchers.HaveAggregationTemporality(BeEmpty()),
 					metricmatchers.HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", genNs)),
 				))),
-			)
-
-			assert.BackendDataConsistentlyMatches(t, backend,
-				metricmatchers.HaveFlatMetrics(Not(ContainElement(SatisfyAll(
-					metricmatchers.HaveType(Equal("Sum")),
-					metricmatchers.HaveAggregationTemporality(Equal("Cumulative")),
-					metricmatchers.HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", genNs)),
-				)))),
 			)
 		})
 	}

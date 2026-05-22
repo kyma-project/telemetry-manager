@@ -20,9 +20,9 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-// TestCumulativeToDelta verifies that the cumulativetodelta processor converts
-// cumulative Sum metrics to delta temporality when configured.
-func TestCumulativeToDelta(t *testing.T) {
+// TestCumulativeToDeltaMixedPipelines verifies that when two pipelines consume the same metrics,
+// the delta pipeline receives Delta temporality while the cumulative pipeline receives Cumulative.
+func TestCumulativeToDeltaMixedPipelines(t *testing.T) {
 	tests := []struct {
 		name             string
 		labels           []string
@@ -65,40 +65,54 @@ func TestCumulativeToDelta(t *testing.T) {
 			suite.SetupTest(t, tc.labels...)
 
 			var (
-				uniquePrefix = unique.Prefix(tc.name)
-				pipelineName = uniquePrefix()
-				backendNs    = uniquePrefix("backend")
-				genNs        = uniquePrefix("gen")
+				uniquePrefix  = unique.Prefix(tc.name)
+				pipelineDelta = uniquePrefix("delta")
+				pipelineCumul = uniquePrefix("cumul")
+				backendNs     = uniquePrefix("backend")
+				genNs         = uniquePrefix("gen")
 			)
 
-			backend := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics)
-			pipeline := testutils.NewMetricPipelineBuilder().
-				WithName(pipelineName).
+			backendDelta := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics, kitbackend.WithName("backend-delta"))
+			backendCumul := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics, kitbackend.WithName("backend-cumul"))
+
+			pipelineWithDelta := testutils.NewMetricPipelineBuilder().
+				WithName(pipelineDelta).
 				WithInput(tc.inputBuilder(genNs)).
 				WithTemporality(telemetryv1beta1.TemporalityDelta).
-				WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
+				WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint(backendDelta.EndpointHTTP())).
+				Build()
+
+			pipelineWithCumulative := testutils.NewMetricPipelineBuilder().
+				WithName(pipelineCumul).
+				WithInput(tc.inputBuilder(genNs)).
+				WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint(backendCumul.EndpointHTTP())).
 				Build()
 
 			resources := []client.Object{
 				kitk8sobjects.NewNamespace(backendNs).K8sObject(),
 				kitk8sobjects.NewNamespace(genNs).K8sObject(),
-				new(pipeline),
+				new(pipelineWithDelta),
+				new(pipelineWithCumulative),
 			}
 			resources = append(resources, tc.generatorBuilder(genNs)...)
-			resources = append(resources, backend.K8sObjects()...)
+			resources = append(resources, backendDelta.K8sObjects()...)
+			resources = append(resources, backendCumul.K8sObjects()...)
 
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
-			assert.BackendReachable(t, backend)
+			assert.BackendReachable(t, backendDelta)
+			assert.BackendReachable(t, backendCumul)
 			assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 
 			if tc.expectAgent {
 				assert.DaemonSetReady(t, kitkyma.MetricAgentName)
 			}
 
-			assert.MetricPipelineHealthy(t, pipelineName)
+			assert.MetricPipelineHealthy(t, pipelineDelta)
+			assert.MetricPipelineHealthy(t, pipelineCumul)
 
-			assert.BackendDataEventuallyMatches(t, backend,
+			// Delta pipeline receives Sum metrics with Delta temporality
+			assert.BackendDataEventuallyMatches(t, backendDelta,
 				metricmatchers.HaveFlatMetrics(ContainElement(SatisfyAll(
 					metricmatchers.HaveType(Equal("Sum")),
 					metricmatchers.HaveAggregationTemporality(Equal("Delta")),
@@ -106,12 +120,13 @@ func TestCumulativeToDelta(t *testing.T) {
 				))),
 			)
 
-			assert.BackendDataConsistentlyMatches(t, backend,
-				metricmatchers.HaveFlatMetrics(Not(ContainElement(SatisfyAll(
+			// Cumulative pipeline receives Sum metrics with Cumulative temporality (no conversion)
+			assert.BackendDataEventuallyMatches(t, backendCumul,
+				metricmatchers.HaveFlatMetrics(ContainElement(SatisfyAll(
 					metricmatchers.HaveType(Equal("Sum")),
 					metricmatchers.HaveAggregationTemporality(Equal("Cumulative")),
 					metricmatchers.HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", genNs)),
-				)))),
+				))),
 			)
 		})
 	}
