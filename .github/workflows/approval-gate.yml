@@ -1,0 +1,15 @@
+name: Approval Gate
+
+on:
+  workflow_call:
+
+permissions: {}
+
+jobs:
+  approval:
+    if: github.event_name == 'pull_request_target'
+    environment: GitHub-Actions
+    runs-on: ubuntu-latest
+    steps:
+      - name: Approval required for pull_request_target
+        run: echo "Manual approval granted for pull_request_target event"
