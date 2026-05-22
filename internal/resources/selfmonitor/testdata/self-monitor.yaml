@@ -89,9 +89,6 @@ spec:
         - --storage.tsdb.path=/prometheus/
         - --log.format=json
         - --log.level=warn
-        env:
-        - name: GOMEMLIMIT
-          value: "429496720"
         livenessProbe:
           failureThreshold: 5
           httpGet:
@@ -117,7 +114,7 @@ spec:
             memory: 512Mi
           requests:
             cpu: 10m
-            memory: 50Mi
+            memory: 32Mi
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:

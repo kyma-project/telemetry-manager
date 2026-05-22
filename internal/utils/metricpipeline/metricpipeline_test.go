@@ -15,10 +15,10 @@ func TestOTLPOutputPort(t *testing.T) {
 
 	t.Run("metric pipelines all have valid endpoints", func(t *testing.T) {
 		metricPipelines := []telemetryv1beta1.MetricPipeline{
-			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithOTLPOutput(testutils.OTLPEndpoint("https://sample.test.com:4317")).Build(),
-			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithOTLPOutput(testutils.OTLPEndpoint("sample.test.com:4318/api/test")).Build(),
-			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithOTLPOutput(testutils.OTLPEndpoint("http://sample.test.com")).Build(),
-			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithOTLPOutput(testutils.OTLPEndpoint("sample.test.com:9090/api/test")).Build(),
+			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("https://sample.test.com:4317")).Build(),
+			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("sample.test.com:4318/api/test")).Build(),
+			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("http://sample.test.com")).Build(),
+			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("sample.test.com:9090/api/test")).Build(),
 		}
 
 		ports, err := OTLPOutputPorts(t.Context(), fakeClient, metricPipelines)
@@ -28,10 +28,10 @@ func TestOTLPOutputPort(t *testing.T) {
 
 	t.Run("some metric pipelines have invalid endpoints", func(t *testing.T) {
 		metricPipelines := []telemetryv1beta1.MetricPipeline{
-			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithOTLPOutput(testutils.OTLPEndpoint("https://sample.test.com:4317")).Build(),
-			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithOTLPOutput(testutils.OTLPEndpoint("://sample.test.com/:4318/api/test")).Build(),
-			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithOTLPOutput(testutils.OTLPEndpoint("sample.test.com")).Build(),
-			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithOTLPOutput(testutils.OTLPEndpoint("sample.test.com:9090/api/test")).Build(),
+			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("https://sample.test.com:4317")).Build(),
+			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("://sample.test.com/:4318/api/test")).Build(),
+			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("sample.test.com")).Build(),
+			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("sample.test.com:9090/api/test")).Build(),
 		}
 
 		ports, err := OTLPOutputPorts(t.Context(), fakeClient, metricPipelines)
@@ -41,10 +41,10 @@ func TestOTLPOutputPort(t *testing.T) {
 
 	t.Run("all metric pipelines have invalid endpoints", func(t *testing.T) {
 		metricPipelines := []telemetryv1beta1.MetricPipeline{
-			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithOTLPOutput(testutils.OTLPEndpoint("sample.test.com")).Build(),
-			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithOTLPOutput(testutils.OTLPEndpoint("sample.test.com/api/test")).Build(),
-			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithOTLPOutput(testutils.OTLPEndpoint("grpc://sample.test.com")).Build(),
-			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithOTLPOutput(testutils.OTLPEndpoint(":9090.sample.test.com/api/test")).Build(),
+			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("sample.test.com")).Build(),
+			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("sample.test.com/api/test")).Build(),
+			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("grpc://sample.test.com")).Build(),
+			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint(":9090.sample.test.com/api/test")).Build(),
 		}
 
 		ports, err := OTLPOutputPorts(t.Context(), fakeClient, metricPipelines)
@@ -54,10 +54,10 @@ func TestOTLPOutputPort(t *testing.T) {
 
 	t.Run("duplicated ports get compacted", func(t *testing.T) {
 		metricPipelines := []telemetryv1beta1.MetricPipeline{
-			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithOTLPOutput(testutils.OTLPEndpoint("https://sample.test.com")).Build(),
-			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithOTLPOutput(testutils.OTLPEndpoint("http://sample.test.com/api/test")).Build(),
-			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithOTLPOutput(testutils.OTLPEndpoint("http://sample.test.com:80")).Build(),
-			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithOTLPOutput(testutils.OTLPEndpoint("sample.test.com:9090/api/test")).Build(),
+			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("https://sample.test.com")).Build(),
+			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("http://sample.test.com/api/test")).Build(),
+			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("http://sample.test.com:80")).Build(),
+			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("sample.test.com:9090/api/test")).Build(),
 		}
 
 		ports, err := OTLPOutputPorts(t.Context(), fakeClient, metricPipelines)
@@ -66,10 +66,10 @@ func TestOTLPOutputPort(t *testing.T) {
 	})
 	t.Run("ports get sorted properly", func(t *testing.T) {
 		metricPipelines := []telemetryv1beta1.MetricPipeline{
-			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithOTLPOutput(testutils.OTLPEndpoint("http://sample.test.com:7070/api/test")).Build(),
-			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithOTLPOutput(testutils.OTLPEndpoint("http://sample.test.com:80")).Build(),
-			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithOTLPOutput(testutils.OTLPEndpoint("sample.test.com:9090/api/test")).Build(),
-			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithOTLPOutput(testutils.OTLPEndpoint("https://sample.test.com:4317")).Build(),
+			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("http://sample.test.com:7070/api/test")).Build(),
+			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("http://sample.test.com:80")).Build(),
+			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("sample.test.com:9090/api/test")).Build(),
+			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("https://sample.test.com:4317")).Build(),
 		}
 
 		ports, err := OTLPOutputPorts(t.Context(), fakeClient, metricPipelines)
@@ -79,7 +79,7 @@ func TestOTLPOutputPort(t *testing.T) {
 
 	t.Run("otlp/http output with no port gets the default port", func(t *testing.T) {
 		metricPipelines := []telemetryv1beta1.MetricPipeline{
-			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithOTLPOutput(testutils.OTLPEndpoint("http://sample.test.com/api/test"), testutils.OTLPProtocol(telemetryv1beta1.OTLPProtocolHTTP)).Build(),
+			testutils.NewMetricPipelineBuilder().WithRuntimeInput(true).WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("http://sample.test.com/api/test"), testutils.OTLPProtocol(telemetryv1beta1.OTLPProtocolHTTP)).Build(),
 		}
 
 		ports, err := OTLPOutputPorts(t.Context(), fakeClient, metricPipelines)

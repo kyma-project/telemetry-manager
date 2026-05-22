@@ -53,7 +53,7 @@ func TestRuntimeAdditionalMetrics(t *testing.T) {
 		WithName(pipelineName).
 		WithRuntimeInput(true, testutils.IncludeNamespaces(includeNs)).
 		WithRuntimeInputAdditionalMetrics(additionalMetrics...).
-		WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
+		WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 		Build()
 
 	podWithRequestsAndLimits := createPodWithRequestsAndLimits(podWithRequestsAndLimitsName, includeNs)

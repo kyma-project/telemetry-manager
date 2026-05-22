@@ -15,10 +15,28 @@ on:
     branches:
       - "main"
       - "release-*"
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+      - "OWNERS"
+      - "CODEOWNERS"
+      - "external-images.yaml"
+      - "sec-scanners-config.yaml"
+      - "renovate.json"
+      - ".hyperspace/**"
   pull_request:
     branches:
       - "main"
       - "release-*"
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+      - "OWNERS"
+      - "CODEOWNERS"
+      - "external-images.yaml"
+      - "sec-scanners-config.yaml"
+      - "renovate.json"
+      - ".hyperspace/**"
   schedule:
     - cron: '35 7 * * 1'
 

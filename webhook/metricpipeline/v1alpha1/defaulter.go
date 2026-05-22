@@ -6,17 +6,19 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
 
 // +kubebuilder:object:generate=false
 var _ admission.Defaulter[*telemetryv1alpha1.MetricPipeline] = &defaulter{}
 
 type defaulter struct {
-	ExcludeNamespaces         []string
-	RuntimeInputResources     runtimeInputResourceDefaults
-	DefaultOTLPOutputProtocol string
-	DiagnosticMetricsEnabled  bool
-	EnvoyMetricsEnabled       bool
+	ExcludeNamespaces            []string
+	RuntimeInputResources        runtimeInputResourceDefaults
+	DefaultOTLPOutputProtocol    string
+	DefaultOTLPOutputTemporality telemetryv1beta1.TemporalityType
+	DiagnosticMetricsEnabled     bool
+	EnvoyMetricsEnabled          bool
 }
 
 type runtimeInputResourceDefaults struct {
@@ -75,6 +77,13 @@ func (md defaulter) Default(ctx context.Context, pipeline *telemetryv1alpha1.Met
 		}
 	}
 
+	md.applyOTLPInputDefaults(pipeline)
+	md.applyOTLPOutputDefaults(pipeline)
+
+	return nil
+}
+
+func (md defaulter) applyOTLPInputDefaults(pipeline *telemetryv1alpha1.MetricPipeline) {
 	if pipeline.Spec.Input.OTLP == nil {
 		pipeline.Spec.Input.OTLP = &telemetryv1alpha1.OTLPInput{}
 	}
@@ -82,12 +91,16 @@ func (md defaulter) Default(ctx context.Context, pipeline *telemetryv1alpha1.Met
 	if pipeline.Spec.Input.OTLP.Namespaces == nil {
 		pipeline.Spec.Input.OTLP.Namespaces = &telemetryv1alpha1.NamespaceSelector{}
 	}
+}
 
+func (md defaulter) applyOTLPOutputDefaults(pipeline *telemetryv1alpha1.MetricPipeline) {
 	if pipeline.Spec.Output.OTLP != nil && pipeline.Spec.Output.OTLP.Protocol == "" {
 		pipeline.Spec.Output.OTLP.Protocol = md.DefaultOTLPOutputProtocol
 	}
 
-	return nil
+	if pipeline.Spec.Output.OTLP != nil && pipeline.Spec.Output.OTLP.Temporality == nil {
+		pipeline.Spec.Output.OTLP.Temporality = &md.DefaultOTLPOutputTemporality
+	}
 }
 
 func (md defaulter) applyRuntimeInputResourceDefaults(pipeline *telemetryv1alpha1.MetricPipeline) {

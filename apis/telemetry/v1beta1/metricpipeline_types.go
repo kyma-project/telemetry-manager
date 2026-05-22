@@ -9,6 +9,13 @@ func init() {
 	SchemeBuilder.Register(&MetricPipeline{}, &MetricPipelineList{})
 }
 
+type TemporalityType string
+
+const (
+	TemporalityPreserve TemporalityType = "preserve"
+	TemporalityDelta    TemporalityType = "delta"
+)
+
 // MetricPipelineList contains a list of MetricPipeline.
 // +kubebuilder:object:root=true
 type MetricPipelineList struct {
@@ -169,9 +176,19 @@ type MetricPipelineIstioInputDiagnosticMetrics struct {
 
 // MetricPipelineOutput defines the output configuration section.
 type MetricPipelineOutput struct {
-	// OTLP output defines an output using the OpenTelemetry protocol.
+	// MetricPipeline OTLP output defines a metric pipeline output using the OpenTelemetry protocol.
 	// +kubebuilder:validation:Required
-	OTLP *OTLPOutput `json:"otlp"`
+	OTLP *MetricPipelineOTLPOutput `json:"otlp"`
+}
+
+type MetricPipelineOTLPOutput struct {
+	OTLPOutput `json:",inline"`
+
+	// Temporality defines the aggregation temporality of exported metrics ('preserve' or 'delta'). `preserve` keeps the original temporality. The default is `preserve`.
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=preserve
+	// +kubebuilder:validation:Enum=preserve;delta
+	Temporality *TemporalityType `json:"temporality,omitempty"`
 }
 
 // MetricPipelineStatus defines the observed state of MetricPipeline.

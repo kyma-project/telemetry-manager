@@ -108,3 +108,11 @@ func HaveDescription(matcher gomegatypes.GomegaMatcher) gomegatypes.GomegaMatche
 		return fm.Description
 	}, matcher)
 }
+
+// HaveAggregationTemporality extracts aggregation temporality from FlatMetric and applies the matcher to it.
+// Only Sum and Histogram metrics have aggregation temporality; for other types it will be an empty string.
+func HaveAggregationTemporality(matcher gomegatypes.GomegaMatcher) gomegatypes.GomegaMatcher {
+	return gomega.WithTransform(func(fm FlatMetric) string {
+		return fm.AggregationTemporality
+	}, matcher)
+}
