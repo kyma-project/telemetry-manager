@@ -64,7 +64,7 @@ func TestTelemetryLogs(t *testing.T) {
 		WithPrometheusInput(true, testutils.IncludeNamespaces(genMetricNs)).
 		WithRuntimeInput(true, testutils.IncludeNamespaces(genMetricNs)).
 		WithIstioInput(true, testutils.IncludeNamespaces(genMetricNs)).
-		WithOTLPOutput(
+		WithMetricPipelineOTLPOutput(
 			testutils.OTLPEndpoint(metricBackend.EndpointHTTP()),
 		).Build()
 

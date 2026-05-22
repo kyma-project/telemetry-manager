@@ -35,13 +35,13 @@ func TestMetricsIstioSamePort(t *testing.T) {
 	metricPipeline := testutils.NewMetricPipelineBuilder().
 		WithName(pipelineName).
 		WithPrometheusInput(true).
-		WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
+		WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 		Build()
 
 	istiofiedMetricPipeline := testutils.NewMetricPipelineBuilder().
 		WithName(istiofiedPipelineName).
 		WithPrometheusInput(true).
-		WithOTLPOutput(testutils.OTLPEndpoint(istiofiedBackend.EndpointHTTP())).
+		WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint(istiofiedBackend.EndpointHTTP())).
 		Build()
 
 	// generators to use the same ports as the backends => test istio communication

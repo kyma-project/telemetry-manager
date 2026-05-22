@@ -4,18 +4,15 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
-	"github.com/kyma-project/telemetry-manager/internal/conditions"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	"github.com/kyma-project/telemetry-manager/test/testkit/metrics/runtime"
+	metricmatchers "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
@@ -23,12 +20,15 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-func TestMultiPipelineBroken(t *testing.T) {
+// TestCumulativeToDeltaMixedPipelines verifies that when two pipelines consume the same metrics,
+// the delta pipeline receives Delta temporality while the cumulative pipeline receives Cumulative.
+func TestCumulativeToDeltaMixedPipelines(t *testing.T) {
 	tests := []struct {
 		name             string
 		labels           []string
 		inputBuilder     func(includeNs string) telemetryv1beta1.MetricPipelineInput
 		generatorBuilder func(ns string) []client.Object
+		expectAgent      bool
 	}{
 		{
 			name:   "agent",
@@ -44,6 +44,7 @@ func TestMultiPipelineBroken(t *testing.T) {
 					generator.Service().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
 				}
 			},
+			expectAgent: true,
 		},
 		{
 			name:   "gateway",
@@ -53,7 +54,7 @@ func TestMultiPipelineBroken(t *testing.T) {
 			},
 			generatorBuilder: func(ns string) []client.Object {
 				return []client.Object{
-					telemetrygen.NewPod(ns, telemetrygen.SignalTypeMetrics).K8sObject(),
+					telemetrygen.NewPod(ns, telemetrygen.SignalTypeMetrics, telemetrygen.WithMetricType("Sum")).K8sObject(),
 				}
 			},
 		},
@@ -64,64 +65,69 @@ func TestMultiPipelineBroken(t *testing.T) {
 			suite.SetupTest(t, tc.labels...)
 
 			var (
-				uniquePrefix        = unique.Prefix(tc.name)
-				healthyPipelineName = uniquePrefix("healthy")
-				brokenPipelineName  = uniquePrefix("broken")
-				backendNs           = uniquePrefix("backend")
-				genNs               = uniquePrefix("gen")
+				uniquePrefix  = unique.Prefix(tc.name)
+				pipelineDelta = uniquePrefix("delta")
+				pipelineCumul = uniquePrefix("cumul")
+				backendNs     = uniquePrefix("backend")
+				genNs         = uniquePrefix("gen")
 			)
 
-			backend := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics)
+			backendDelta := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics, kitbackend.WithName("backend-delta"))
+			backendCumul := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics, kitbackend.WithName("backend-cumul"))
 
-			healthyPipeline := testutils.NewMetricPipelineBuilder().
-				WithName(healthyPipelineName).
+			pipelineWithDelta := testutils.NewMetricPipelineBuilder().
+				WithName(pipelineDelta).
 				WithInput(tc.inputBuilder(genNs)).
-				WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
+				WithTemporality(telemetryv1beta1.TemporalityDelta).
+				WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint(backendDelta.EndpointHTTP())).
 				Build()
 
-			brokenPipeline := testutils.NewMetricPipelineBuilder().
-				WithName(brokenPipelineName).
+			pipelineWithCumulative := testutils.NewMetricPipelineBuilder().
+				WithName(pipelineCumul).
 				WithInput(tc.inputBuilder(genNs)).
-				WithMetricPipelineOTLPOutput(testutils.OTLPEndpointFromSecret("dummy", "dummy", "dummy")). // broken pipeline ref
+				WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint(backendCumul.EndpointHTTP())).
 				Build()
 
 			resources := []client.Object{
 				kitk8sobjects.NewNamespace(backendNs).K8sObject(),
 				kitk8sobjects.NewNamespace(genNs).K8sObject(),
-				&healthyPipeline,
-				&brokenPipeline,
+				new(pipelineWithDelta),
+				new(pipelineWithCumulative),
 			}
 			resources = append(resources, tc.generatorBuilder(genNs)...)
-			resources = append(resources, backend.K8sObjects()...)
+			resources = append(resources, backendDelta.K8sObjects()...)
+			resources = append(resources, backendCumul.K8sObjects()...)
 
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
-			assert.BackendReachable(t, backend)
+			assert.BackendReachable(t, backendDelta)
+			assert.BackendReachable(t, backendCumul)
 			assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 
-			if suite.ExpectAgent(tc.labels...) {
+			if tc.expectAgent {
 				assert.DaemonSetReady(t, kitkyma.MetricAgentName)
 			}
 
-			assert.MetricPipelineHealthy(t, healthyPipelineName)
+			assert.MetricPipelineHealthy(t, pipelineDelta)
+			assert.MetricPipelineHealthy(t, pipelineCumul)
 
-			assert.MetricPipelineHasCondition(t, brokenPipeline.Name, metav1.Condition{
-				Type:   conditions.TypeConfigurationGenerated,
-				Status: metav1.ConditionFalse,
-				Reason: conditions.ReasonReferencedSecretMissing,
-			})
+			// Delta pipeline receives Sum metrics with Delta temporality
+			assert.BackendDataEventuallyMatches(t, backendDelta,
+				metricmatchers.HaveFlatMetrics(ContainElement(SatisfyAll(
+					metricmatchers.HaveType(Equal("Sum")),
+					metricmatchers.HaveAggregationTemporality(Equal("Delta")),
+					metricmatchers.HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", genNs)),
+				))),
+			)
 
-			if suite.ExpectAgent(tc.labels...) {
-				assert.MetricsFromNamespaceDelivered(t, backend, genNs, runtime.DefaultMetricsNames)
-
-				agentMetricsURL := suite.ProxyClient.ProxyURLForService(kitkyma.MetricAgentMetricsService.Namespace, kitkyma.MetricAgentMetricsService.Name, "metrics", ports.Metrics)
-				assert.EmitsOTelCollectorMetrics(t, agentMetricsURL)
-			} else {
-				assert.MetricsFromNamespaceDelivered(t, backend, genNs, telemetrygen.MetricNames)
-
-				gatewayMetricsURL := suite.ProxyClient.ProxyURLForService(kitkyma.TelemetryOTLPMetricsService.Namespace, kitkyma.TelemetryOTLPMetricsService.Name, "metrics", ports.Metrics)
-				assert.EmitsOTelCollectorMetrics(t, gatewayMetricsURL)
-			}
+			// Cumulative pipeline receives Sum metrics with Cumulative temporality (no conversion)
+			assert.BackendDataEventuallyMatches(t, backendCumul,
+				metricmatchers.HaveFlatMetrics(ContainElement(SatisfyAll(
+					metricmatchers.HaveType(Equal("Sum")),
+					metricmatchers.HaveAggregationTemporality(Equal("Cumulative")),
+					metricmatchers.HaveResourceAttributes(HaveKeyWithValue("k8s.namespace.name", genNs)),
+				))),
+			)
 		})
 	}
 }

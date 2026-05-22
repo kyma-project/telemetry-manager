@@ -42,19 +42,19 @@ func TestEndpointWithPathValidation(t *testing.T) {
 			metricPipelineWithGRPCAndWithoutPath := testutils.NewMetricPipelineBuilder().
 				WithName(uniquePrefix("accept-with-grpc-and-no-path")).
 				WithInput(tc.input).
-				WithOTLPOutput(testutils.OTLPEndpoint("mock-endpoint:4817"), testutils.OTLPProtocol("grpc")).
+				WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("mock-endpoint:4817"), testutils.OTLPProtocol("grpc")).
 				Build()
 
 			metricPipelineWithHTTPAndPath := testutils.NewMetricPipelineBuilder().
 				WithName(uniquePrefix("accept-with-http-and-path")).
 				WithInput(tc.input).
-				WithOTLPOutput(testutils.OTLPEndpoint("mock-endpoint:4817"), testutils.OTLPEndpointPath("/v1/mock/metrics"), testutils.OTLPProtocol("http")).
+				WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("mock-endpoint:4817"), testutils.OTLPEndpointPath("/v1/mock/metrics"), testutils.OTLPProtocol("http")).
 				Build()
 
 			metricPipelineWithHTTPAndWithoutPath := testutils.NewMetricPipelineBuilder().
 				WithName(uniquePrefix("accept-with-http-and-no-path")).
 				WithInput(tc.input).
-				WithOTLPOutput(testutils.OTLPEndpoint("mock-endpoint:4817"), testutils.OTLPProtocol("http")).
+				WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("mock-endpoint:4817"), testutils.OTLPProtocol("http")).
 				Build()
 
 			resources := []client.Object{

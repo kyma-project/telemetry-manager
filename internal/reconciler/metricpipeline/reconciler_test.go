@@ -169,7 +169,7 @@ func TestSecretReferenceValidation(t *testing.T) {
 			},
 			Data: map[string][]byte{"user": {}, "password": {}},
 		}
-		pipeline := testutils.NewMetricPipelineBuilder().WithOTLPOutput(testutils.OTLPBasicAuthFromSecret(secret.Name, secret.Namespace, "user", "password")).Build()
+		pipeline := testutils.NewMetricPipelineBuilder().WithMetricPipelineOTLPOutput(testutils.OTLPBasicAuthFromSecret(secret.Name, secret.Namespace, "user", "password")).Build()
 		fakeClient := newTestClient(t, &pipeline)
 
 		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
@@ -192,7 +192,7 @@ func TestSecretReferenceValidation(t *testing.T) {
 	})
 
 	t.Run("referenced secret missing", func(t *testing.T) {
-		pipeline := testutils.NewMetricPipelineBuilder().WithOTLPOutput(testutils.OTLPBasicAuthFromSecret("some-secret", "some-namespace", "user", "password")).Build()
+		pipeline := testutils.NewMetricPipelineBuilder().WithMetricPipelineOTLPOutput(testutils.OTLPBasicAuthFromSecret("some-secret", "some-namespace", "user", "password")).Build()
 		fakeClient := newTestClient(t, &pipeline)
 
 		customValidator := newTestValidator(
@@ -620,7 +620,7 @@ func TestTLSCertificateValidation(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			pipeline := testutils.NewMetricPipelineBuilder().WithOTLPOutput(testutils.OTLPClientMTLSFromString("ca", "fooCert", "fooKey")).Build()
+			pipeline := testutils.NewMetricPipelineBuilder().WithMetricPipelineOTLPOutput(testutils.OTLPClientMTLSFromString("ca", "fooCert", "fooKey")).Build()
 			fakeClient := newTestClient(t, &pipeline)
 
 			agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
@@ -760,7 +760,7 @@ func TestAPIServerFailureHandling(t *testing.T) {
 		{
 			name: "secret reference validation fails",
 			pipeline: testutils.NewMetricPipelineBuilder().
-				WithOTLPOutput(testutils.OTLPBasicAuthFromSecret("some-secret", "some-namespace", "user", "password")).
+				WithMetricPipelineOTLPOutput(testutils.OTLPBasicAuthFromSecret("some-secret", "some-namespace", "user", "password")).
 				Build(),
 			setupValidator: func(serverErr error) *Validator {
 				return newTestValidator(
@@ -821,7 +821,7 @@ func TestAPIServerFailureHandling(t *testing.T) {
 func TestNonReconcilablePipelines(t *testing.T) {
 	pipeline := testutils.NewMetricPipelineBuilder().
 		WithRuntimeInput(true).
-		WithOTLPOutput(testutils.OTLPBasicAuthFromSecret("some-secret", "some-namespace", "user", "password")).
+		WithMetricPipelineOTLPOutput(testutils.OTLPBasicAuthFromSecret("some-secret", "some-namespace", "user", "password")).
 		Build()
 	fakeClient := newTestClient(t, &pipeline)
 
@@ -1082,7 +1082,7 @@ func TestUsageTracking(t *testing.T) {
 			pipeline: testutils.NewMetricPipelineBuilder().
 				WithName("pipeline-1").
 				WithOTLPInput(false).
-				WithOTLPOutput(testutils.OTLPEndpoint("test")).
+				WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("test")).
 				Build(),
 			expectedEndpoint:     "test",
 			expectedFeatureUsage: []string{},
@@ -1095,7 +1095,7 @@ func TestUsageTracking(t *testing.T) {
 				WithTransform(telemetryv1beta1.TransformSpec{
 					Statements: []string{"set(resource.attributes[\"test\"], \"value\")"},
 				}).
-				WithOTLPOutput(testutils.OTLPEndpoint("test")).
+				WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("test")).
 				Build(),
 			expectedEndpoint: "test",
 			expectedFeatureUsage: []string{
@@ -1110,7 +1110,7 @@ func TestUsageTracking(t *testing.T) {
 				WithFilter(telemetryv1beta1.FilterSpec{
 					Conditions: []string{"resource.attributes[\"test\"] == \"value\""},
 				}).
-				WithOTLPOutput(testutils.OTLPEndpoint("test")).
+				WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("test")).
 				Build(),
 			expectedEndpoint: "test",
 			expectedFeatureUsage: []string{
@@ -1128,7 +1128,7 @@ func TestUsageTracking(t *testing.T) {
 				WithFilter(telemetryv1beta1.FilterSpec{
 					Conditions: []string{"resource.attributes[\"test\"] == \"value\""},
 				}).
-				WithOTLPOutput(testutils.OTLPEndpoint("test")).
+				WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("test")).
 				Build(),
 			expectedEndpoint: "test",
 			expectedFeatureUsage: []string{
@@ -1141,7 +1141,7 @@ func TestUsageTracking(t *testing.T) {
 			pipeline: testutils.NewMetricPipelineBuilder().
 				WithName("pipeline-5").
 				WithOTLPInput(true).
-				WithOTLPOutput(testutils.OTLPEndpoint("test")).
+				WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("test")).
 				Build(),
 			expectedEndpoint: "test",
 			expectedFeatureUsage: []string{
@@ -1154,7 +1154,7 @@ func TestUsageTracking(t *testing.T) {
 				WithName("pipeline-6").
 				WithOTLPInput(false).
 				WithRuntimeInput(true).
-				WithOTLPOutput(testutils.OTLPEndpoint("test")).
+				WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("test")).
 				Build(),
 			expectedEndpoint: "test",
 			expectedFeatureUsage: []string{
@@ -1167,7 +1167,7 @@ func TestUsageTracking(t *testing.T) {
 				WithName("pipeline-7").
 				WithOTLPInput(false).
 				WithPrometheusInput(true).
-				WithOTLPOutput(testutils.OTLPEndpoint("test")).
+				WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("test")).
 				Build(),
 			expectedEndpoint: "test",
 			expectedFeatureUsage: []string{
@@ -1180,7 +1180,7 @@ func TestUsageTracking(t *testing.T) {
 				WithName("pipeline-8").
 				WithOTLPInput(false).
 				WithIstioInput(true).
-				WithOTLPOutput(testutils.OTLPEndpoint("test")).
+				WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("test")).
 				Build(),
 			expectedEndpoint: "test",
 			expectedFeatureUsage: []string{
@@ -1195,7 +1195,7 @@ func TestUsageTracking(t *testing.T) {
 				WithPrometheusInput(true).
 				WithIstioInput(true).
 				WithOTLPInput(true).
-				WithOTLPOutput(testutils.OTLPEndpoint("test")).
+				WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("test")).
 				Build(),
 			expectedEndpoint: "test",
 			expectedFeatureUsage: []string{
@@ -1219,7 +1219,7 @@ func TestUsageTracking(t *testing.T) {
 				WithPrometheusInput(true).
 				WithIstioInput(true).
 				WithOTLPInput(true).
-				WithOTLPOutput(testutils.OTLPEndpoint("test")).
+				WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("test")).
 				Build(),
 			expectedEndpoint: "test",
 			expectedFeatureUsage: []string{
@@ -1236,7 +1236,7 @@ func TestUsageTracking(t *testing.T) {
 			pipeline: testutils.NewMetricPipelineBuilder().
 				WithName("pipeline-endpoint-secret").
 				WithOTLPInput(false).
-				WithOTLPOutput(testutils.OTLPEndpointFromSecret("endpoint-secret", "default", "host")).
+				WithMetricPipelineOTLPOutput(testutils.OTLPEndpointFromSecret("endpoint-secret", "default", "host")).
 				Build(),
 			secret: &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
@@ -1255,7 +1255,7 @@ func TestUsageTracking(t *testing.T) {
 			pipeline: testutils.NewMetricPipelineBuilder().
 				WithName("pipeline-endpoint").
 				WithOTLPInput(false).
-				WithOTLPOutput(testutils.OTLPEndpoint("endpoint.example.com")).
+				WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("endpoint.example.com")).
 				Build(),
 			expectedEndpoint:     "endpoint.example.com",
 			expectedFeatureUsage: []string{},
@@ -1265,7 +1265,7 @@ func TestUsageTracking(t *testing.T) {
 			pipeline: testutils.NewMetricPipelineBuilder().
 				WithName("pipeline-non-reconcilable").
 				WithOTLPInput(false).
-				WithOTLPOutput(testutils.OTLPEndpoint("endpoint.example.com")).
+				WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("endpoint.example.com")).
 				WithTransform(telemetryv1beta1.TransformSpec{
 					Statements: []string{"invalid syntax"},
 				}).

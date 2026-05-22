@@ -53,13 +53,13 @@ func TestMultiPipelineFanout_Agent(t *testing.T) {
 		WithRuntimeInputStatefulSetMetrics(false).
 		WithRuntimeInputDaemonSetMetrics(false).
 		WithRuntimeInputJobMetrics(false).
-		WithOTLPOutput(testutils.OTLPEndpoint(backendRuntime.EndpointHTTP())).
+		WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint(backendRuntime.EndpointHTTP())).
 		Build()
 
 	metricPipelinePrometheus := testutils.NewMetricPipelineBuilder().
 		WithName(pipelinePrometheusName).
 		WithPrometheusInput(true, testutils.IncludeNamespaces(genNs)).
-		WithOTLPOutput(testutils.OTLPEndpoint(backendPrometheus.EndpointHTTP())).
+		WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint(backendPrometheus.EndpointHTTP())).
 		Build()
 
 	metricProducer := prommetricgen.New(genNs)
@@ -171,12 +171,12 @@ func TestMultiPipelineFanout_Gateway(t *testing.T) {
 
 	pipeline1 := testutils.NewMetricPipelineBuilder().
 		WithName(pipeline1Name).
-		WithOTLPOutput(testutils.OTLPEndpoint(backend1.EndpointHTTP())).
+		WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint(backend1.EndpointHTTP())).
 		Build()
 
 	pipeline2 := testutils.NewMetricPipelineBuilder().
 		WithName(pipeline2Name).
-		WithOTLPOutput(testutils.OTLPEndpoint(backend2.EndpointHTTP())).
+		WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint(backend2.EndpointHTTP())).
 		Build()
 
 	resources := []client.Object{

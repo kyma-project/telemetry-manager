@@ -25,7 +25,7 @@ func TestTransformInvalid(t *testing.T) {
 		WithTransform(telemetryv1beta1.TransformSpec{
 			Statements: []string{"sset(datapoint.attributes[\"test\"], \"foo\")"},
 		}).
-		WithOTLPOutput(testutils.OTLPEndpoint("https://backend.example.com:4317")).
+		WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("https://backend.example.com:4317")).
 		Build()
 
 	Expect(kitk8s.CreateObjects(t, &pipeline)).ToNot(Succeed())

@@ -46,7 +46,7 @@ func TestMetricsUpgrade(t *testing.T) {
 
 	pipeline := testutils.NewMetricPipelineBuilder().
 		WithName(pipelineName).
-		WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
+		WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 		Build()
 
 	resources := []client.Object{
@@ -86,7 +86,7 @@ func TestMetricsUpgrade(t *testing.T) {
 
 	pipelineAfter := testutils.NewMetricPipelineBuilder().
 		WithName(pipelineNameAfter).
-		WithOTLPOutput(testutils.OTLPEndpoint(backendAfter.EndpointHTTP())).
+		WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint(backendAfter.EndpointHTTP())).
 		Build()
 
 	afterResources := []client.Object{
