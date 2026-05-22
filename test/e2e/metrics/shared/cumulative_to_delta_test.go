@@ -120,7 +120,7 @@ func TestCumulativeToDelta(t *testing.T) {
 
 // TestCumulativeToDeltaMixedPipelines verifies that when two pipelines consume the same metrics,
 // the delta pipeline receives Delta temporality while the cumulative pipeline receives Cumulative.
-func TestCumulativeToDeltaMixedPipelines(t *testing.T) {
+func TestCumulativeToDelta_MixedPipelines(t *testing.T) {
 	tests := []struct {
 		name             string
 		labels           []string
@@ -232,7 +232,7 @@ func TestCumulativeToDeltaMixedPipelines(t *testing.T) {
 
 // TestCumulativeToDeltaGaugeUnaffected verifies that Gauge metrics are not affected
 // by the cumulativetodelta processor (Gauges have no aggregation temporality).
-func TestCumulativeToDeltaGaugeUnaffected(t *testing.T) {
+func TestCumulativeToDelta_GaugeUnaffected(t *testing.T) {
 	tests := []struct {
 		name             string
 		labels           []string
