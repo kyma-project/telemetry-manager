@@ -15,16 +15,13 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	"github.com/kyma-project/telemetry-manager/internal/k8sclients"
 	"github.com/kyma-project/telemetry-manager/internal/metrics"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
 	sharedtypesutils "github.com/kyma-project/telemetry-manager/internal/utils/sharedtypes"
 	telemetryutils "github.com/kyma-project/telemetry-manager/internal/utils/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
-)
-
-const (
-	requeueDelayOnFlowHealthProbingFailure = 5 * time.Second
 )
 
 // var _ logpipeline.LogPipelineReconciler = &Reconciler{}
@@ -164,7 +161,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, pipeline *telemetryv1beta1.L
 	// This ensures the condition transitions from Unknown to True/False once probing succeeds.
 	if flowHealthProbingFailed {
 		logf.FromContext(ctx).V(1).Info("Requeuing reconciliation due to flow health probing failure")
-		return ctrl.Result{RequeueAfter: requeueDelayOnFlowHealthProbingFailure}, nil
+		return ctrl.Result{RequeueAfter: commonstatus.RequeueDelayOnFlowHealthProbingFailure}, nil
 	}
 
 	requeueAfter := r.calculateRequeueAfterDuration(ctx, pipeline)
