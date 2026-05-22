@@ -212,6 +212,11 @@ type K8sAttributesFilterConfig struct {
 	NodeFromEnvVar string `yaml:"node_from_env_var"`
 }
 
+type CumulativeToDeltaProcessorConfig struct {
+	MaxStaleness time.Duration `yaml:"max_staleness,omitempty"`
+	InitialValue string        `yaml:"initial_value"`
+}
+
 type ExtractK8sMetadata struct {
 	Metadata                     []string       `yaml:"metadata"`
 	Labels                       []ExtractLabel `yaml:"labels"`

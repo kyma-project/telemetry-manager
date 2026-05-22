@@ -8,6 +8,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/pipelines"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
+	metricpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/metricpipeline"
 	sharedtypesutils "github.com/kyma-project/telemetry-manager/internal/utils/sharedtypes"
 )
 
@@ -82,6 +83,7 @@ func (b *Builder) buildMetricPipelines(ctx context.Context, builder *common.Comp
 			b.addMetricDropKymaAttributesProcessor(builder),
 			b.addMetricUserDefinedTransformProcessor(builder),
 			b.addMetricUserDefinedFilterProcessor(builder),
+			b.addMetricCumulativeToDeltaProcessor(builder),
 			b.addMetricBatchProcessor(builder),
 			b.addMetricOTLPExporter(builder, queueSize),
 		); err != nil {
@@ -320,6 +322,24 @@ func (b *Builder) addMetricUserDefinedFilterProcessor(builder *common.ComponentB
 	)
 }
 
+func (b *Builder) addMetricCumulativeToDeltaProcessor(builder *common.ComponentBuilder[*telemetryv1beta1.MetricPipeline]) buildMetricComponentFunc {
+	return builder.AddProcessor(
+		builder.StaticComponentID(common.ComponentIDCumulativeToDeltaProcessor),
+		func(mp *telemetryv1beta1.MetricPipeline) any {
+			if metricpipelineutils.IsDeltaTemporality(mp.Spec.Output) {
+				// MaxStaleness is intentionally left omitted here (unlike the metric agent builder).
+				// The gateway receives OTLP push traffic with no predictable scrape interval,
+				// so there is no way to derive a staleness duration from.
+				return &common.CumulativeToDeltaProcessorConfig{
+					InitialValue: "auto",
+				}
+			}
+
+			return nil
+		},
+	)
+}
+
 //nolint:mnd // hardcoded values
 func (b *Builder) addMetricBatchProcessor(builder *common.ComponentBuilder[*telemetryv1beta1.MetricPipeline]) buildMetricComponentFunc {
 	return builder.AddProcessor(
@@ -340,7 +360,7 @@ func (b *Builder) addMetricOTLPExporter(builder *common.ComponentBuilder[*teleme
 		func(ctx context.Context, mp *telemetryv1beta1.MetricPipeline) (any, common.EnvVars, error) {
 			otlpExporterBuilder := common.NewOTLPExporterConfigBuilder(
 				b.Reader,
-				mp.Spec.Output.OTLP,
+				&mp.Spec.Output.OTLP.OTLPOutput,
 				pipelines.MetricPipelineRef(mp),
 				common.NewSendingQueue(queueSize),
 			)

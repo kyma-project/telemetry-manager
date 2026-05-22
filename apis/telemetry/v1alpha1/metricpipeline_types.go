@@ -2,6 +2,8 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
 
 //nolint:gochecknoinits // SchemeBuilder's registration is required.
@@ -167,11 +169,20 @@ type MetricPipelineIstioInputDiagnosticMetrics struct {
 	Enabled *bool `json:"enabled,omitempty"`
 }
 
-// MetricPipelineOutput defines the output configuration section.
 type MetricPipelineOutput struct {
-	// OTLP output defines an output using the OpenTelemetry protocol.
+	// MetricPipeline OTLP output defines a metric pipeline output using the OpenTelemetry protocol.
 	// +kubebuilder:validation:Required
-	OTLP *OTLPOutput `json:"otlp"`
+	OTLP *MetricPipelineOTLPOutput `json:"otlp"`
+}
+
+type MetricPipelineOTLPOutput struct {
+	OTLPOutput `json:",inline"`
+
+	// Temporality defines the aggregation temporality of exported metrics ('preserve' or 'delta'). `preserve` keeps the original temporality. The default is `preserve`.
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=preserve
+	// +kubebuilder:validation:Enum=preserve;delta
+	Temporality *telemetryv1beta1.TemporalityType `json:"temporality,omitempty"`
 }
 
 // MetricPipelineStatus defines the observed state of MetricPipeline.

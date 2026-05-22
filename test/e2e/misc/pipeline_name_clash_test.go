@@ -47,7 +47,7 @@ func TestPipelineNameClash(t *testing.T) {
 
 	metricPipeline := testutils.NewMetricPipelineBuilder().
 		WithName(pipelineName).
-		WithOTLPOutput(testutils.OTLPEndpoint(metricBackend.EndpointHTTP())).
+		WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint(metricBackend.EndpointHTTP())).
 		Build()
 
 	tracePipeline := testutils.NewTracePipelineBuilder().

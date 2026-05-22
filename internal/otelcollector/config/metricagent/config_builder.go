@@ -20,6 +20,7 @@ import (
 )
 
 const (
+	maxStalenessMultiplier      = 4 //nolint:mnd // Tolerate max 3 scrape failures and additional timing jitter
 	enrichmentServicePipelineID = "metrics/enrichment-conditional"
 	podMetricPattern            = `^k8s[.]pod[.].*`
 	containerMetricPattern      = `(^k8s[.]container[.].*)|(^container[.].*)`
@@ -237,6 +238,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1beta1.Metric
 			b.addDropKymaAttributesProcessor(),
 			b.addUserDefinedTransformProcessor(),
 			b.addUserDefinedFilterProcessor(),
+			b.addCumulativeToDeltaProcessor(opts),
 			b.addBatchProcessor(), // always last
 			// OTLP exporter
 			b.addOTLPExporter(queueSize),
@@ -1018,6 +1020,22 @@ func (b *Builder) addDropEnvoyMetricsIfDisabledProcessor() buildComponentFunc {
 	)
 }
 
+func (b *Builder) addCumulativeToDeltaProcessor(opts BuildOptions) buildComponentFunc {
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDCumulativeToDeltaProcessor),
+		func(mp *telemetryv1beta1.MetricPipeline) any {
+			if metricpipelineutils.IsDeltaTemporality(mp.Spec.Output) {
+				return &common.CumulativeToDeltaProcessorConfig{
+					MaxStaleness: maxStalenessMultiplier * opts.CollectionIntervals.Max(),
+					InitialValue: "auto",
+				}
+			}
+
+			return nil
+		},
+	)
+}
+
 //nolint:mnd // hardcoded values
 func (b *Builder) addBatchProcessor() buildComponentFunc {
 	return b.AddProcessor(
@@ -1041,7 +1059,7 @@ func (b *Builder) addOTLPExporter(queueSize int) buildComponentFunc {
 		func(ctx context.Context, mp *telemetryv1beta1.MetricPipeline) (any, common.EnvVars, error) {
 			otlpExporterBuilder := common.NewOTLPExporterConfigBuilder(
 				b.Reader,
-				mp.Spec.Output.OTLP,
+				&mp.Spec.Output.OTLP.OTLPOutput,
 				pipelines.MetricPipelineRef(mp),
 				common.NewSendingQueue(queueSize),
 			)

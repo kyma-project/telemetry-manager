@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.20.1
+    controller-gen.kubebuilder.io/version: v0.21.0
   labels:
     app.kubernetes.io/component: controller
     app.kubernetes.io/managed-by: kyma
@@ -379,8 +379,8 @@ spec:
                   You must specify exactly one output per pipeline.
                 properties:
                   otlp:
-                    description: OTLP output defines an output using the OpenTelemetry
-                      protocol.
+                    description: MetricPipeline OTLP output defines a metric pipeline
+                      output using the OpenTelemetry protocol.
                     properties:
                       authentication:
                         description: Authentication defines authentication options
@@ -773,6 +773,15 @@ spec:
                         enum:
                         - grpc
                         - http
+                        type: string
+                      temporality:
+                        default: preserve
+                        description: Temporality defines the aggregation temporality
+                          of exported metrics ('preserve' or 'delta'). `preserve`
+                          keeps the original temporality. The default is `preserve`.
+                        enum:
+                        - preserve
+                        - delta
                         type: string
                       tls:
                         description: TLS defines TLS options for the OTLP output.
@@ -1386,8 +1395,8 @@ spec:
                   You must specify exactly one output per pipeline.
                 properties:
                   otlp:
-                    description: OTLP output defines an output using the OpenTelemetry
-                      protocol.
+                    description: MetricPipeline OTLP output defines a metric pipeline
+                      output using the OpenTelemetry protocol.
                     properties:
                       authentication:
                         description: Authentication defines authentication options
@@ -1801,6 +1810,15 @@ spec:
                         enum:
                         - grpc
                         - http
+                        type: string
+                      temporality:
+                        default: preserve
+                        description: Temporality defines the aggregation temporality
+                          of exported metrics ('preserve' or 'delta'). `preserve`
+                          keeps the original temporality. The default is `preserve`.
+                        enum:
+                        - preserve
+                        - delta
                         type: string
                       tls:
                         description: TLS defines TLS options for the OTLP output.

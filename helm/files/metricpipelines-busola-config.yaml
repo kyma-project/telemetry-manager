@@ -405,6 +405,8 @@ details: |-
               children:
                 - name: Protocol
                   source: spec.output.otlp.protocol
+                - name: Temporality
+                  source: spec.output.otlp.temporality
   resourceGraph:
     colorVariant: 2
     dataSources:
@@ -624,6 +626,13 @@ form: |
                     enum: $keys($secret.data)
           - name: Protocol
             path: protocol
+            simple: true
+            widget: FormGroup
+            children:
+              - name: Value
+                widget: Text
+          - name: Temporality
+            path: temporality
             simple: true
             widget: FormGroup
             children:

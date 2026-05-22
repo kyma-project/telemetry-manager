@@ -115,6 +115,14 @@ func WithInterval(duration string) Option {
 	}
 }
 
+// WithMetricType sets the metric type for the telemetry generator (e.g. "Sum", "Gauge")
+func WithMetricType(metricType string) Option {
+	return func(spec *corev1.PodSpec) {
+		spec.Containers[0].Args = append(spec.Containers[0].Args, "--metric-type")
+		spec.Containers[0].Args = append(spec.Containers[0].Args, metricType)
+	}
+}
+
 // GetVersion extracts and returns the version of the telemetrygen image
 //
 // Example: "v0.143.0" extracted from "ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.143.0"

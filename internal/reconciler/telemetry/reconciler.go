@@ -7,6 +7,7 @@ import (
 	"gopkg.in/yaml.v3"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -49,9 +50,18 @@ type OverridesHandler interface {
 	LoadOverrides(ctx context.Context) (*overrides.Config, error)
 }
 
+type VpaStatusChecker interface {
+	VpaCRDExists(ctx context.Context, client client.Client) (bool, error)
+}
+
+type NodeSizeTracker interface {
+	VPAMaxAllowedMemory() resource.Quantity
+	SelfMonitorVPAMaxAllowedMemory() resource.Quantity
+}
+
 type SelfMonitorApplierDeleter interface {
 	ApplyResources(ctx context.Context, c client.Client, opts selfmonitor.ApplyOptions) error
-	DeleteResources(ctx context.Context, c client.Client) error
+	DeleteResources(ctx context.Context, c client.Client, vpaCRDExists bool) error
 }
 
 type Reconciler struct {
@@ -63,7 +73,11 @@ type Reconciler struct {
 	healthCheckers            healthCheckers
 	overridesHandler          OverridesHandler
 	selfMonitorApplierDeleter SelfMonitorApplierDeleter
+	vpaStatusChecker          VpaStatusChecker
+	nodeSizeTracker           NodeSizeTracker
 }
+
+type Option func(*Reconciler)
 
 func New(
 	config Config,
@@ -71,8 +85,9 @@ func New(
 	client client.Client,
 	overridesHandler OverridesHandler,
 	selfMonitorApplierDeleter SelfMonitorApplierDeleter,
+	opts ...Option,
 ) *Reconciler {
-	return &Reconciler{
+	r := &Reconciler{
 		config: config,
 		scheme: scheme,
 		Client: client,
@@ -84,6 +99,12 @@ func New(
 		overridesHandler:          overridesHandler,
 		selfMonitorApplierDeleter: selfMonitorApplierDeleter,
 	}
+
+	for _, opt := range opts {
+		opt(r)
+	}
+
+	return r
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -143,8 +164,13 @@ func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry *operat
 		return err
 	}
 
+	vpaCRDExists, err := r.vpaStatusChecker.VpaCRDExists(ctx, r.Client)
+	if err != nil {
+		return fmt.Errorf("failed to check VPA CRD existence: %w", err)
+	}
+
 	if !pipelinesPresent {
-		if err := r.selfMonitorApplierDeleter.DeleteResources(ctx, r.Client); err != nil {
+		if err := r.selfMonitorApplierDeleter.DeleteResources(ctx, r.Client, vpaCRDExists); err != nil {
 			return fmt.Errorf("failed to delete self-monitor resources: %w", err)
 		}
 
@@ -170,6 +196,9 @@ func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry *operat
 		return fmt.Errorf("failed to marshal rules: %w", err)
 	}
 
+	vpaMaxAllowedMemory := r.nodeSizeTracker.SelfMonitorVPAMaxAllowedMemory()
+
+	// Self-monitor VPA is always enabled when VPA CRD exists, independent of the telemetry.kyma-project.io/enable-vpa annotation
 	if err := r.selfMonitorApplierDeleter.ApplyResources(
 		ctx,
 		k8sclients.NewOwnerReferenceSetter(r.Client, telemetry),
@@ -180,6 +209,9 @@ func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry *operat
 			PrometheusConfigPath:     selfMonitorConfigPath,
 			PrometheusConfigYAML:     string(prometheusConfigYAML),
 			LogLevel:                 logLevel,
+			VpaCRDExists:             vpaCRDExists,
+			VpaEnabled:               vpaCRDExists,
+			VPAMaxAllowedMemory:      vpaMaxAllowedMemory,
 		},
 	); err != nil {
 		return fmt.Errorf("failed to apply self-monitor resources: %w", err)
@@ -292,4 +324,18 @@ func (r *Reconciler) trackServiceAttributesEnrichmentStrategy(ctx context.Contex
 	metrics.ServiceAttributesEnrichmentStrategy.WithLabelValues(commonresources.AnnotationValueTelemetryServiceEnrichmentKymaLegacy).Set(0)
 
 	metrics.ServiceAttributesEnrichmentStrategy.WithLabelValues(enrichmentStrategy).Set(1)
+}
+
+// WithVpaStatusChecker sets the VPA status checker.
+func WithVpaStatusChecker(checker VpaStatusChecker) Option {
+	return func(r *Reconciler) {
+		r.vpaStatusChecker = checker
+	}
+}
+
+// WithNodeSizeTracker sets the node size tracker.
+func WithNodeSizeTracker(tracker NodeSizeTracker) Option {
+	return func(r *Reconciler) {
+		r.nodeSizeTracker = tracker
+	}
 }
