@@ -28,7 +28,7 @@ func TestFilterInvalid(t *testing.T) {
 				`attributes["foo"] == "bar"`,                         // invalid condition (missing context prefix)
 			},
 		}).
-		WithOTLPOutput(testutils.OTLPEndpoint("https://backend.example.com:4317")).
+		WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("https://backend.example.com:4317")).
 		Build()
 
 	Expect(kitk8s.CreateObjects(t, &pipeline)).ToNot(Succeed())

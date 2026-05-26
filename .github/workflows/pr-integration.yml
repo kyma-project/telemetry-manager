@@ -68,7 +68,7 @@ env:
 
 jobs:
   setup:
-    runs-on: telemetry-4core
+    runs-on: ubuntu-latest
     outputs:
       manager-image: ${{ steps.set-env.outputs.manager-image }}
     steps:
@@ -84,7 +84,7 @@ jobs:
 
       - name: Build image
         if: github.event_name == 'pull_request'
-        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
         with:
           context: .
           platforms: linux/amd64
@@ -153,7 +153,7 @@ jobs:
   # e2e-logs split by fluent-bit vs otel AND by set labels for parallel execution
   e2e-logs:
     needs: setup
-    runs-on: telemetry-4core
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -192,7 +192,7 @@ jobs:
   # e2e-metrics split by set labels for parallel execution
   e2e-metrics:
     needs: setup
-    runs-on: telemetry-4core
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -226,7 +226,7 @@ jobs:
   # All e2e suites with experimental flavor
   e2e-experimental:
     needs: setup
-    runs-on: telemetry-4core
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -262,7 +262,7 @@ jobs:
   # e2e-traces and e2e-misc (non-experimental) without set splitting
   e2e:
     needs: setup
-    runs-on: telemetry-4core
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -294,7 +294,7 @@ jobs:
   # Upgrade and integration tests
   e2e-other:
     needs: setup
-    runs-on: telemetry-4core
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -390,7 +390,7 @@ jobs:
 
   summary:
     needs: [e2e-logs, e2e-metrics, e2e-experimental, e2e, e2e-other, selfmonitor-healthy, selfmonitor]
-    runs-on: telemetry-4core
+    runs-on: ubuntu-latest
     if: always()
     steps:
       - name: Checkout code

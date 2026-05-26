@@ -23,7 +23,7 @@ func TestRuntimeAdditionalMetricInvalid(t *testing.T) {
 		WithName(pipelineName).
 		WithRuntimeInput(true).
 		WithRuntimeInputAdditionalMetrics("k8s.pod.invalid_metric").
-		WithOTLPOutput(testutils.OTLPEndpoint("https://backend.example.com:4317")).
+		WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("https://backend.example.com:4317")).
 		Build()
 
 	Expect(kitk8s.CreateObjects(t, &pipeline)).ToNot(Succeed())

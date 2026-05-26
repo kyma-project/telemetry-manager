@@ -111,6 +111,10 @@ func IsRuntimeJobInputEnabled(input telemetryv1beta1.MetricPipelineInput) bool {
 	return *input.Runtime.Resources.Job.Enabled
 }
 
+func IsDeltaTemporality(output telemetryv1beta1.MetricPipelineOutput) bool {
+	return *output.OTLP.Temporality == telemetryv1beta1.TemporalityDelta
+}
+
 // OTLPOutputPorts returns the list of ports of the backends defined in all given MetricPipelines
 func OTLPOutputPorts(ctx context.Context, c client.Reader, allPipelines []telemetryv1beta1.MetricPipeline) ([]string, error) {
 	backendPorts := []string{}
