@@ -30,7 +30,9 @@ const (
 	// maximum batch size in bytes (4 MB)
 	exporterBatchMaxSize = 4_000_000
 	// maximum time before flusing a batch
+	// maximum time before flushing a batch
 	exporterBatchFlushTimeout = 10 * time.Second
+
 )
 
 type buildComponentFunc = common.BuildComponentFunc[*telemetryv1beta1.LogPipeline]
