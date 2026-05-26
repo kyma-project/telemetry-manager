@@ -17,7 +17,7 @@ With this, the Metric Agent starts collecting all runtime metrics from all resou
 
 > [!TIP]
 > To select metrics from specific namespaces or to include system namespaces, see [Filter Metrics](../filter-and-process/filter-metrics.md).
-> To change the scrape interval for runtime metrics, see [Configure Collection Interval](README.md#configure-collection-interval)).
+> To change the scrape interval, see [Configure Collection Interval](README.md#configure-collection-interval).
 
 ## Select Resource Types
 
@@ -62,7 +62,7 @@ See a summary of the types of information you can gather for each resource:
 | statefulset | Number of desired, current, and ready Pods                              |
 | job         | Counts of active, successful, and failed Pods                           |
 
-To learn which specific metrics are collected from which source, see [Runtime Metrics](runtime-metrics.md#runtime-metrics).
+To learn which specific metrics are collected from which source (kubeletstatsreceiver or k8sclusterreceiver), see [Runtime Metrics](runtime-metrics.md#runtime-metrics).
 
 ## Collect Additional Metrics
 
@@ -81,8 +81,6 @@ The following example collects the metrics `k8s.pod.memory_request_utilization` 
   ```
 
 To learn which metrics can be added to the **additionalMetrics** list, see [Runtime Additional Metrics](runtime-metrics.md#runtime-additional-metrics).
-
-
 
 The **additionalMetrics** list overrides the `resources` section. For example, if you disable **pod** metrics in the **runtime** input but add a specific Pod metric to the **additionalMetrics** list, that specific metric is still collected.
 
