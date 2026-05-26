@@ -199,8 +199,8 @@
                 <switch>
                     <foreignObject style="overflow: visible; text-align: left;" pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
                         <div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe flex-start; justify-content: unsafe center; width: 178px; height: 1px; padding-top: 17px; margin-left: 501px;">
-                            <div style="box-sizing: border-box; font-size: 0; text-align: center; color: #333333; ">
-                                <div style="display: inline-block; font-size: 15px; font-family: &quot;Helvetica&quot;; color: light-dark(#333333, #c1c1c1); line-height: 1.2; pointer-events: all; white-space: normal; word-wrap: normal; ">
+                            <div style="box-sizing: border-box; font-size: 0; text-align: center; color: #000000; ">
+                                <div style="display: inline-block; font-size: 15px; font-family: &quot;Helvetica&quot;; color: light-dark(#000000, #c1c1c1); line-height: 1.2; pointer-events: all; white-space: normal; word-wrap: normal; ">
                                     <b style="color: light-dark(rgb(0, 0, 0), rgb(237, 237, 237)); font-size: 15px;">
                                         <font style="font-size: 15px;">
                                             External
@@ -217,7 +217,7 @@
                             </div>
                         </div>
                     </foreignObject>
-                    <text x="590" y="32" fill="#333333" font-family="&quot;Helvetica&quot;" font-size="15px" text-anchor="middle">
+                    <text x="590" y="32" fill="#000000" font-family="&quot;Helvetica&quot;" font-size="15px" text-anchor="middle">
                         External...
                     </text>
                 </switch>
