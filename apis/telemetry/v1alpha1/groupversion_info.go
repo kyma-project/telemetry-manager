@@ -23,5 +23,5 @@ var (
 	AddToScheme = SchemeBuilder.AddToScheme
 
 	// localSchemeBuilder is needed for conversion-gen compatibility
-	localSchemeBuilder = SchemeBuilder.SchemeBuilder
+	localSchemeBuilder = &SchemeBuilder
 )
