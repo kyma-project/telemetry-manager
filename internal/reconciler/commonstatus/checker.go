@@ -2,6 +2,7 @@ package commonstatus
 
 import (
 	"context"
+	"fmt"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/pipelines"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	"github.com/kyma-project/telemetry-manager/internal/workloadstatus"
 )
 
@@ -18,6 +20,25 @@ type Prober interface {
 
 type ErrorToMessageConverter interface {
 	Convert(err error) string
+}
+
+// CheckSelfMonitorReadiness checks if the self-monitor deployment is ready before attempting to probe flow health.
+// It returns an error if the self-monitor is not ready, including when it's not deployed.
+// The caller should check if the error is workloadstatus.ErrDeploymentNotFound to decide whether to requeue.
+func CheckSelfMonitorReadiness(ctx context.Context, prober Prober, targetNamespace string, failureReason string) error {
+	if prober == nil {
+		return nil
+	}
+
+	if err := prober.IsReady(ctx, types.NamespacedName{
+		Name:      names.SelfMonitor,
+		Namespace: targetNamespace,
+	}); err != nil {
+		logf.FromContext(ctx).V(1).Info("Self-monitor not ready, skipping flow health probe", "error", err)
+		return fmt.Errorf("self-monitor deployment not ready: %w", err)
+	}
+
+	return nil
 }
 
 //nolint:dupl // abstracting the common code will still have duplicates

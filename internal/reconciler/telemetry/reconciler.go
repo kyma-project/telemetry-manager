@@ -3,6 +3,7 @@ package telemetry
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"gopkg.in/yaml.v3"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -33,6 +34,7 @@ const (
 	selfMonitorConfigPath        = "/etc/prometheus/"
 	selfMonitorConfigFileName    = "prometheus.yml"
 	selfMonitorAlertRuleFileName = "alerting_rules.yml"
+	defaultRequeueAfter          = 30 * time.Second
 )
 
 type Config struct {
@@ -139,7 +141,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, err
 	}
 
-	return ctrl.Result{Requeue: telemetry.Status.State == operatorv1beta1.StateWarning}, nil
+	if telemetry.Status.State == operatorv1beta1.StateWarning {
+		return ctrl.Result{RequeueAfter: defaultRequeueAfter}, nil
+	}
+
+	return ctrl.Result{}, nil
 }
 
 func (r *Reconciler) doReconcile(ctx context.Context, telemetry *operatorv1beta1.Telemetry, logLevel string) error {

@@ -51,7 +51,11 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) (flo
 	if err := r.setFlowHealthCondition(ctx, &pipeline); err != nil {
 		logf.FromContext(ctx).Error(err, "Failed to set flow health condition")
 
-		flowHealthProbingFailed = true
+		// Only trigger requeue if the error is not ErrDeploymentNotFound
+		// (self-monitor not deployed should not cause exponential backoff)
+		if !errors.Is(err, workloadstatus.ErrDeploymentNotFound) {
+			flowHealthProbingFailed = true
+		}
 	}
 
 	if err := r.Status().Update(ctx, &pipeline); err != nil {
@@ -167,20 +171,8 @@ func (r *Reconciler) evaluateFlowHealthCondition(ctx context.Context, pipeline *
 	}
 
 	// Check if self-monitor deployment is ready before attempting to probe
-	if r.selfMonitorProber != nil {
-		if err := r.selfMonitorProber.IsReady(ctx, types.NamespacedName{
-			Name:      names.SelfMonitor,
-			Namespace: r.globals.TargetNamespace(),
-		}); err != nil {
-			logf.FromContext(ctx).V(1).Info("Self-monitor not ready, skipping flow health probe", "error", err)
-			// Only return error if self-monitor service endpoint exists but probing failed
-			// If self-monitor is not deployed (ErrDeploymentNotFound), don't return error to avoid unnecessary requeue
-			if !errors.Is(err, workloadstatus.ErrDeploymentNotFound) {
-				return metav1.ConditionUnknown, conditions.ReasonSelfMonGatewayProbingFailed, fmt.Errorf("self-monitor deployment not ready: %w", err)
-			}
-
-			return metav1.ConditionUnknown, conditions.ReasonSelfMonGatewayProbingFailed, nil
-		}
+	if err := commonstatus.CheckSelfMonitorReadiness(ctx, r.selfMonitorProber, r.globals.TargetNamespace(), conditions.ReasonSelfMonGatewayProbingFailed); err != nil {
+		return metav1.ConditionUnknown, conditions.ReasonSelfMonGatewayProbingFailed, err
 	}
 
 	gatewayProbeResult, err := r.gatewayFlowHealthProber.Probe(ctx, pipeline.Name)

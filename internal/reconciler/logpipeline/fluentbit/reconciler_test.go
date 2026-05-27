@@ -20,6 +20,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
 	"github.com/kyma-project/telemetry-manager/internal/metrics"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus"
 	commonStatusStubs "github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus/stubs"
 	logpipelinefluentbitmocks "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/fluentbit/mocks"
 	logpipelinemocks "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/mocks"
@@ -856,7 +857,7 @@ func TestSelfMonitorNotDeployedFlowHealthCondition(t *testing.T) {
 			expectedStatus:       metav1.ConditionUnknown,
 			expectedReason:       conditions.ReasonSelfMonAgentProbingFailed,
 			expectedRequeue:      true,
-			expectedRequeueAfter: requeueDelayOnFlowHealthProbingFailure,
+			expectedRequeueAfter: commonstatus.RequeueDelayOnFlowHealthProbingFailure,
 		},
 		{
 			name:                 "self-monitor pod pending",
@@ -864,7 +865,7 @@ func TestSelfMonitorNotDeployedFlowHealthCondition(t *testing.T) {
 			expectedStatus:       metav1.ConditionUnknown,
 			expectedReason:       conditions.ReasonSelfMonAgentProbingFailed,
 			expectedRequeue:      true,
-			expectedRequeueAfter: requeueDelayOnFlowHealthProbingFailure,
+			expectedRequeueAfter: commonstatus.RequeueDelayOnFlowHealthProbingFailure,
 		},
 		{
 			name:                 "self-monitor rollout in progress",
@@ -872,7 +873,7 @@ func TestSelfMonitorNotDeployedFlowHealthCondition(t *testing.T) {
 			expectedStatus:       metav1.ConditionUnknown,
 			expectedReason:       conditions.ReasonSelfMonAgentProbingFailed,
 			expectedRequeue:      true,
-			expectedRequeueAfter: requeueDelayOnFlowHealthProbingFailure,
+			expectedRequeueAfter: commonstatus.RequeueDelayOnFlowHealthProbingFailure,
 		},
 		{
 			name:                 "self-monitor ready",
