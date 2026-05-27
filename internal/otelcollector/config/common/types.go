@@ -84,6 +84,7 @@ type Telemetry struct {
 
 type TelemetryMetrics struct {
 	Readers []TelemetryMetricReader `yaml:"readers"`
+	Level   string                  `yaml:"level,omitempty"`
 }
 
 type TelemetryMetricReader struct {
