@@ -25,7 +25,7 @@ type ErrorToMessageConverter interface {
 // CheckSelfMonitorReadiness checks if the self-monitor deployment is ready before attempting to probe flow health.
 // It returns an error if the self-monitor is not ready, including when it's not deployed.
 // The caller should check if the error is workloadstatus.ErrDeploymentNotFound to decide whether to requeue.
-func CheckSelfMonitorReadiness(ctx context.Context, prober Prober, targetNamespace string, failureReason string) error {
+func CheckSelfMonitorReadiness(ctx context.Context, prober Prober, targetNamespace string) error {
 	if prober == nil {
 		return nil
 	}

@@ -42,8 +42,6 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) (flo
 		return false, nil
 	}
 
-	var allErrors error = nil
-
 	r.setAgentHealthyCondition(ctx, &pipeline)
 	r.setGatewayHealthyCondition(ctx, &pipeline)
 	r.setGatewayConfigGeneratedCondition(ctx, &pipeline)
@@ -59,10 +57,10 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) (flo
 	}
 
 	if err := r.Status().Update(ctx, &pipeline); err != nil {
-		allErrors = errors.Join(allErrors, fmt.Errorf("failed to update MetricPipeline status: %w", err))
+		return flowHealthProbingFailed, fmt.Errorf("failed to update MetricPipeline status: %w", err)
 	}
 
-	return flowHealthProbingFailed, allErrors
+	return flowHealthProbingFailed, nil
 }
 
 func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *telemetryv1beta1.MetricPipeline) {
