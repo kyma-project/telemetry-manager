@@ -37,7 +37,12 @@ on:
       - ".hyperspace/**"
 
 jobs:
+  approval:
+    uses: ./.github/workflows/approval-gate.yml
+
   envs:
+    needs: [approval]
+    if: always() && (needs.approval.result == 'success' || needs.approval.result == 'skipped')
     runs-on: ubuntu-latest
     outputs:
       tags: ${{ steps.create-tags.outputs.tags }}
@@ -72,7 +77,8 @@ jobs:
     permissions:
       id-token: write # Required for requesting the JWT token
       contents: read
-    needs: envs
+    needs: [approval, envs]
+    if: ${{ always() && needs.envs.result == 'success' }}
     uses: kyma-project/test-infra/.github/workflows/image-builder.yml@main # Usage: kyma-project/test-infra/.github/workflows/image-builder.yml@main
     with:
       name: telemetry-manager
