@@ -18,7 +18,7 @@ func TestCreateKubernetesFilterKeepAnnotations(t *testing.T) {
     k8s-logging.exclude off
     k8s-logging.parser  on
     keep_log            on
-    kube_tag_prefix     test-logpipeline.var.log.containers.
+    kube_tag_prefix     test-logpipeline.var.log.pods.
     labels              on
     merge_log           on
 
@@ -44,7 +44,7 @@ func TestCreateKubernetesFilterDropLabels(t *testing.T) {
     k8s-logging.exclude off
     k8s-logging.parser  on
     keep_log            on
-    kube_tag_prefix     test-logpipeline.var.log.containers.
+    kube_tag_prefix     test-logpipeline.var.log.pods.
     labels              off
     merge_log           on
 
@@ -70,7 +70,7 @@ func TestCreateKubernetesFilterKeepOriginalBodyTrue(t *testing.T) {
     k8s-logging.exclude off
     k8s-logging.parser  on
     keep_log            on
-    kube_tag_prefix     test-logpipeline.var.log.containers.
+    kube_tag_prefix     test-logpipeline.var.log.pods.
     labels              on
     merge_log           on
 
@@ -96,7 +96,7 @@ func TestCreateKubernetesFilterKeepOriginalBodyFalse(t *testing.T) {
     k8s-logging.exclude off
     k8s-logging.parser  on
     keep_log            off
-    kube_tag_prefix     test-logpipeline.var.log.containers.
+    kube_tag_prefix     test-logpipeline.var.log.pods.
     labels              on
     merge_log           on
 
