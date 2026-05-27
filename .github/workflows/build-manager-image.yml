@@ -77,7 +77,8 @@ jobs:
     permissions:
       id-token: write # Required for requesting the JWT token
       contents: read
-    needs: envs
+    needs: [approval, envs]
+    if: ${{ always() && needs.envs.result == 'success' }}
     uses: kyma-project/test-infra/.github/workflows/image-builder.yml@main # Usage: kyma-project/test-infra/.github/workflows/image-builder.yml@main
     with:
       name: telemetry-manager
