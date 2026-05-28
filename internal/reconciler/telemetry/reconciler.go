@@ -236,10 +236,6 @@ func (r *Reconciler) vpaCRDExists(ctx context.Context) (bool, error) {
 		if apierrors.IsNotFound(err) {
 			return false, nil
 		}
-		// For other errors, check if it's a resource not found error (CRD not installed)
-		if err.Error() == "no matches for kind \"VerticalPodAutoscaler\" in version \"autoscaling.k8s.io/v1\"" {
-			return false, nil
-		}
 
 		return false, err
 	}
