@@ -151,6 +151,7 @@ func TestMergeSectionsConfig(t *testing.T) {
     kube_tag_prefix     foo.var.log.pods.
     labels              on
     merge_log           on
+    regex_parser        k8s-pods
 
 [FILTER]
     name  modify
@@ -269,6 +270,7 @@ func TestMergeSectionsConfigCustomOutput(t *testing.T) {
     kube_tag_prefix     foo.var.log.pods.
     labels              on
     merge_log           on
+    regex_parser        k8s-pods
 
 [OUTPUT]
     name                     stdout

@@ -21,6 +21,7 @@ func TestCreateKubernetesFilterKeepAnnotations(t *testing.T) {
     kube_tag_prefix     test-logpipeline.var.log.pods.
     labels              on
     merge_log           on
+    regex_parser        k8s-pods
 
 `
 	logPipeline := &telemetryv1beta1.LogPipeline{
@@ -47,6 +48,7 @@ func TestCreateKubernetesFilterDropLabels(t *testing.T) {
     kube_tag_prefix     test-logpipeline.var.log.pods.
     labels              off
     merge_log           on
+    regex_parser        k8s-pods
 
 `
 	logPipeline := &telemetryv1beta1.LogPipeline{
@@ -73,6 +75,7 @@ func TestCreateKubernetesFilterKeepOriginalBodyTrue(t *testing.T) {
     kube_tag_prefix     test-logpipeline.var.log.pods.
     labels              on
     merge_log           on
+    regex_parser        k8s-pods
 
 `
 	logPipeline := &telemetryv1beta1.LogPipeline{
@@ -99,6 +102,7 @@ func TestCreateKubernetesFilterKeepOriginalBodyFalse(t *testing.T) {
     kube_tag_prefix     test-logpipeline.var.log.pods.
     labels              on
     merge_log           on
+    regex_parser        k8s-pods
 
 `
 	logPipeline := &telemetryv1beta1.LogPipeline{
