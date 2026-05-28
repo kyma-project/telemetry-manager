@@ -62,7 +62,7 @@ See a summary of the types of information you can gather for each resource:
 | statefulset | Number of desired, current, and ready Pods                              |
 | job         | Counts of active, successful, and failed Pods                           |
 
-To learn which specific metrics are collected from which source (kubeletstatsreceiver or k8sclusterreceiver), see [Runtime Metrics](runtime-metrics.md#runtime-metrics).
+To learn which specific metrics are collected from the `kubeletstatsreceiver` or `k8sclusterreceiver`, see [Runtime Metrics](runtime-metrics.md#runtime-metrics).
 
 ## Collect Additional Metrics
 
