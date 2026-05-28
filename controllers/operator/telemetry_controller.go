@@ -18,7 +18,6 @@ package operator
 
 import (
 	"context"
-	"fmt"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -27,8 +26,6 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	autoscalingvpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
-	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlbuilder "sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -39,22 +36,19 @@ import (
 	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/config"
-	"github.com/kyma-project/telemetry-manager/internal/nodesize"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
 	predicateutils "github.com/kyma-project/telemetry-manager/internal/utils/predicate"
-	"github.com/kyma-project/telemetry-manager/internal/vpastatus"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
 )
 
 type TelemetryController struct {
 	client.Client
 
-	config          TelemetryControllerConfig
-	reconciler      *telemetry.Reconciler
-	nodeSizeTracker *nodesize.Tracker
+	config     TelemetryControllerConfig
+	reconciler *telemetry.Reconciler
 }
 
 type TelemetryControllerConfig struct {
@@ -64,10 +58,9 @@ type TelemetryControllerConfig struct {
 	SelfMonitorImage                  string
 	SelfMonitorPriorityClassName      string
 	WebhookCert                       webhookcert.Config
-	RestConfig                        *rest.Config
 }
 
-func NewTelemetryController(config TelemetryControllerConfig, client client.Client, scheme *runtime.Scheme, nodeSizeTracker *nodesize.Tracker) *TelemetryController {
+func NewTelemetryController(config TelemetryControllerConfig, client client.Client, scheme *runtime.Scheme) *TelemetryController {
 	reconciler := telemetry.New(
 		telemetry.Config{
 			Global:                            config.Global,
@@ -84,15 +77,12 @@ func NewTelemetryController(config TelemetryControllerConfig, client client.Clie
 				PriorityClassName: config.SelfMonitorPriorityClassName,
 			},
 		},
-		telemetry.WithVpaStatusChecker(vpastatus.NewChecker(config.RestConfig)),
-		telemetry.WithNodeSizeTracker(nodeSizeTracker),
 	)
 
 	return &TelemetryController{
-		Client:          client,
-		config:          config,
-		reconciler:      reconciler,
-		nodeSizeTracker: nodeSizeTracker,
+		Client:     client,
+		config:     config,
+		reconciler: reconciler,
 	}
 }
 
@@ -102,8 +92,8 @@ func (r *TelemetryController) Reconcile(ctx context.Context, req ctrl.Request) (
 
 // telemetryOwnedResourceTypes returns the list of Kubernetes resource types that are always
 // managed (created/updated/deleted) by the Telemetry reconciler and must be watched for changes.
-func telemetryOwnedResourceTypes(vpaCRDExists bool) []client.Object {
-	resources := []client.Object{
+func telemetryOwnedResourceTypes() []client.Object {
+	return []client.Object{
 		&appsv1.Deployment{},
 		&corev1.ConfigMap{},
 		&corev1.Secret{},
@@ -113,44 +103,23 @@ func telemetryOwnedResourceTypes(vpaCRDExists bool) []client.Object {
 		&rbacv1.RoleBinding{},
 		&networkingv1.NetworkPolicy{},
 	}
-
-	if vpaCRDExists {
-		resources = append(resources, &autoscalingvpav1.VerticalPodAutoscaler{})
-	}
-
-	return resources
 }
 
 func (r *TelemetryController) SetupWithManager(mgr ctrl.Manager) error {
 	b := ctrl.NewControllerManagedBy(mgr).For(&operatorv1beta1.Telemetry{})
 
-	ctx := context.Background()
-
-	vpaCRDExists, err := vpastatus.NewChecker(mgr.GetConfig()).VpaCRDExists(ctx, r.Client)
-	if err != nil {
-		return fmt.Errorf("failed to check VPA status: %w", err)
-	}
-
-	ownedResourceTypesToWatch := telemetryOwnedResourceTypes(vpaCRDExists)
+	ownedResourceTypesToWatch := telemetryOwnedResourceTypes()
 
 	for _, resource := range ownedResourceTypesToWatch {
-		// VPA needs special handling to ensure it's recreated after deletion
-		if _, isVPA := resource.(*autoscalingvpav1.VerticalPodAutoscaler); isVPA {
-			b = b.Watches(
-				resource,
-				handler.EnqueueRequestsFromMapFunc(r.mapVPAChanges),
-			)
-		} else {
-			b = b.Watches(
-				resource,
-				handler.EnqueueRequestForOwner(
-					mgr.GetClient().Scheme(),
-					mgr.GetRESTMapper(),
-					&operatorv1beta1.Telemetry{},
-				),
-				ctrlbuilder.WithPredicates(predicateutils.OwnedResourceChanged()),
-			)
-		}
+		b = b.Watches(
+			resource,
+			handler.EnqueueRequestForOwner(
+				mgr.GetClient().Scheme(),
+				mgr.GetRESTMapper(),
+				&operatorv1beta1.Telemetry{},
+			),
+			ctrlbuilder.WithPredicates(predicateutils.OwnedResourceChanged()),
+		)
 	}
 
 	b = b.
@@ -177,10 +146,6 @@ func (r *TelemetryController) SetupWithManager(mgr ctrl.Manager) error {
 		Watches(
 			&telemetryv1beta1.MetricPipeline{},
 			handler.EnqueueRequestsFromMapFunc(r.mapMetricPipeline),
-		).
-		Watches(
-			&corev1.Node{},
-			handler.EnqueueRequestsFromMapFunc(r.mapNodeChanges),
 		)
 
 	return b.Complete(r)
@@ -291,40 +256,4 @@ func (r *TelemetryController) createTelemetryRequests(ctx context.Context) []rec
 	}
 
 	return requests
-}
-
-// mapNodeChanges updates the node size tracker when a Node is added, removed, or modified.
-// If the smallest node memory or node count changes, it enqueues a reconciliation request
-// for all Telemetry CRs so that self-monitor VPA max memory can be recalculated.
-func (r *TelemetryController) mapNodeChanges(ctx context.Context, object client.Object) []reconcile.Request {
-	changed, err := r.nodeSizeTracker.UpdateSmallestMemory(ctx)
-	if err != nil {
-		logf.FromContext(ctx).Error(err, "Unable to update smallest node memory")
-		return nil
-	}
-
-	if !changed {
-		return nil
-	}
-
-	return r.createTelemetryRequests(ctx)
-}
-
-// mapVPAChanges handles VPA resource changes (create, update, delete) for self-monitor.
-// This ensures the VPA is recreated if manually deleted and updated when node count changes.
-func (r *TelemetryController) mapVPAChanges(ctx context.Context, object client.Object) []reconcile.Request {
-	vpa, ok := object.(*autoscalingvpav1.VerticalPodAutoscaler)
-	if !ok {
-		logf.FromContext(ctx).Error(nil, "Unable to cast object to VerticalPodAutoscaler")
-		return nil
-	}
-
-	// Only handle self-monitor VPA
-	if vpa.Name != names.SelfMonitor {
-		return nil
-	}
-
-	logf.FromContext(ctx).V(1).Info("Self-monitor VPA changed, triggering reconciliation", "vpa", vpa.Name)
-
-	return r.createTelemetryRequests(ctx)
 }

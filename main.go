@@ -283,7 +283,7 @@ func setupControllersAndWebhooks(mgr manager.Manager, globals config.Global, env
 
 	webhookCertConfig := createWebhookConfig(globals)
 
-	if err := setupTelemetryController(globals, envCfg, webhookCertConfig, mgr, nodeSizeTracker); err != nil {
+	if err := setupTelemetryController(globals, envCfg, webhookCertConfig, mgr); err != nil {
 		return fmt.Errorf("failed to enable telemetry module controller: %w", err)
 	}
 
@@ -481,7 +481,7 @@ func setupAdmissionsWebhooks(mgr manager.Manager) error {
 	return nil
 }
 
-func setupTelemetryController(globals config.Global, cfg envConfig, webhookCertConfig webhookcert.Config, mgr manager.Manager, nodeSizeTracker *nodesize.Tracker) error {
+func setupTelemetryController(globals config.Global, cfg envConfig, webhookCertConfig webhookcert.Config, mgr manager.Manager) error {
 	setupLog.Info("Setting up telemetry controller")
 
 	selectedSelfMonitorImage := cfg.SelfMonitorImage
@@ -497,11 +497,9 @@ func setupTelemetryController(globals config.Global, cfg envConfig, webhookCertC
 			SelfMonitorImage:                  selectedSelfMonitorImage,
 			SelfMonitorPriorityClassName:      normalPriorityClassName,
 			WebhookCert:                       webhookCertConfig,
-			RestConfig:                        mgr.GetConfig(),
 		},
 		mgr.GetClient(),
 		mgr.GetScheme(),
-		nodeSizeTracker,
 	)
 
 	if err := telemetryController.SetupWithManager(mgr); err != nil {
