@@ -7,7 +7,7 @@ import (
 	"gopkg.in/yaml.v3"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	autoscalingvpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
@@ -224,6 +224,7 @@ func (r *Reconciler) cleanupSelfMonitorVPA(ctx context.Context) error {
 	}
 
 	logf.FromContext(ctx).V(1).Info("Successfully cleaned up self-monitor VPA")
+
 	return nil
 }
 
@@ -232,13 +233,14 @@ func (r *Reconciler) vpaCRDExists(ctx context.Context) (bool, error) {
 	var vpaList autoscalingvpav1.VerticalPodAutoscalerList
 	if err := r.List(ctx, &vpaList, client.Limit(1)); err != nil {
 		// If we get a "no matches for kind" error, the CRD doesn't exist
-		if errors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return false, nil
 		}
 		// For other errors, check if it's a resource not found error (CRD not installed)
 		if err.Error() == "no matches for kind \"VerticalPodAutoscaler\" in version \"autoscaling.k8s.io/v1\"" {
 			return false, nil
 		}
+
 		return false, err
 	}
 
