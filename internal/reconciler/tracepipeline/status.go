@@ -149,7 +149,7 @@ func (r *Reconciler) evaluateFlowHealthCondition(ctx context.Context, pipeline *
 	}
 
 	// Check if self-monitor deployment is ready before attempting to probe
-	if err := commonstatus.CheckSelfMonitorReadiness(ctx, r.selfMonitorProber, r.globals.TargetNamespace(), conditions.ReasonSelfMonGatewayProbingFailed); err != nil {
+	if err := commonstatus.CheckSelfMonitorReadiness(ctx, r.selfMonitorProber, r.globals.TargetNamespace()); err != nil {
 		return metav1.ConditionUnknown, conditions.ReasonSelfMonGatewayProbingFailed, err
 	}
 
