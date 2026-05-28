@@ -103,16 +103,16 @@ func (_c *SelfMonitorApplierDeleter_ApplyResources_Call) RunAndReturn(run func(c
 }
 
 // DeleteResources provides a mock function for the type SelfMonitorApplierDeleter
-func (_mock *SelfMonitorApplierDeleter) DeleteResources(ctx context.Context, c client.Client, vpaCRDExists bool) error {
-	ret := _mock.Called(ctx, c, vpaCRDExists)
+func (_mock *SelfMonitorApplierDeleter) DeleteResources(ctx context.Context, c client.Client) error {
+	ret := _mock.Called(ctx, c)
 
 	if len(ret) == 0 {
 		panic("no return value specified for DeleteResources")
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, client.Client, bool) error); ok {
-		r0 = returnFunc(ctx, c, vpaCRDExists)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, client.Client) error); ok {
+		r0 = returnFunc(ctx, c)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -127,12 +127,11 @@ type SelfMonitorApplierDeleter_DeleteResources_Call struct {
 // DeleteResources is a helper method to define mock.On call
 //   - ctx context.Context
 //   - c client.Client
-//   - vpaCRDExists bool
-func (_e *SelfMonitorApplierDeleter_Expecter) DeleteResources(ctx interface{}, c interface{}, vpaCRDExists interface{}) *SelfMonitorApplierDeleter_DeleteResources_Call {
-	return &SelfMonitorApplierDeleter_DeleteResources_Call{Call: _e.mock.On("DeleteResources", ctx, c, vpaCRDExists)}
+func (_e *SelfMonitorApplierDeleter_Expecter) DeleteResources(ctx interface{}, c interface{}) *SelfMonitorApplierDeleter_DeleteResources_Call {
+	return &SelfMonitorApplierDeleter_DeleteResources_Call{Call: _e.mock.On("DeleteResources", ctx, c)}
 }
 
-func (_c *SelfMonitorApplierDeleter_DeleteResources_Call) Run(run func(ctx context.Context, c client.Client, vpaCRDExists bool)) *SelfMonitorApplierDeleter_DeleteResources_Call {
+func (_c *SelfMonitorApplierDeleter_DeleteResources_Call) Run(run func(ctx context.Context, c client.Client)) *SelfMonitorApplierDeleter_DeleteResources_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -142,14 +141,9 @@ func (_c *SelfMonitorApplierDeleter_DeleteResources_Call) Run(run func(ctx conte
 		if args[1] != nil {
 			arg1 = args[1].(client.Client)
 		}
-		var arg2 bool
-		if args[2] != nil {
-			arg2 = args[2].(bool)
-		}
 		run(
 			arg0,
 			arg1,
-			arg2,
 		)
 	})
 	return _c
@@ -160,7 +154,7 @@ func (_c *SelfMonitorApplierDeleter_DeleteResources_Call) Return(err error) *Sel
 	return _c
 }
 
-func (_c *SelfMonitorApplierDeleter_DeleteResources_Call) RunAndReturn(run func(ctx context.Context, c client.Client, vpaCRDExists bool) error) *SelfMonitorApplierDeleter_DeleteResources_Call {
+func (_c *SelfMonitorApplierDeleter_DeleteResources_Call) RunAndReturn(run func(ctx context.Context, c client.Client) error) *SelfMonitorApplierDeleter_DeleteResources_Call {
 	_c.Call.Return(run)
 	return _c
 }
