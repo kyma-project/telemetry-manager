@@ -7,7 +7,10 @@ import (
 	"gopkg.in/yaml.v3"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	autoscalingvpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -20,6 +23,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/metrics"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
 	selfmonitorconfig "github.com/kyma-project/telemetry-manager/internal/selfmonitor/config"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
@@ -126,6 +130,12 @@ func (r *Reconciler) doReconcile(ctx context.Context, telemetry *operatorv1beta1
 		return fmt.Errorf("failed to manage finalizer: %w", err)
 	}
 
+	// Clean up any leftover VPA resources from previous versions
+	if err := r.cleanupSelfMonitorVPA(ctx); err != nil {
+		logf.FromContext(ctx).Error(err, "Failed to cleanup self-monitor VPA, will retry on next reconciliation")
+		// Don't fail the entire reconciliation if VPA cleanup fails
+	}
+
 	if err := r.reconcileWebhook(ctx, telemetry); err != nil {
 		return fmt.Errorf("failed to reconcile webhook: %w", err)
 	}
@@ -186,6 +196,53 @@ func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry *operat
 	}
 
 	return nil
+}
+
+// cleanupSelfMonitorVPA removes any leftover VPA resources for the self-monitor deployment.
+// This is necessary after reverting the VPA feature to ensure no orphaned VPA CRs remain.
+func (r *Reconciler) cleanupSelfMonitorVPA(ctx context.Context) error {
+	// Check if VPA CRD exists in the cluster
+	vpaCRDExists, err := r.vpaCRDExists(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to check VPA CRD existence: %w", err)
+	}
+
+	if !vpaCRDExists {
+		// If VPA CRD doesn't exist, no cleanup needed
+		return nil
+	}
+
+	vpa := &autoscalingvpav1.VerticalPodAutoscaler{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      names.SelfMonitor,
+			Namespace: r.config.TargetNamespace(),
+		},
+	}
+
+	if err := k8sutils.DeleteObject(ctx, r.Client, vpa); err != nil {
+		return fmt.Errorf("failed to delete self-monitor VPA: %w", err)
+	}
+
+	logf.FromContext(ctx).V(1).Info("Successfully cleaned up self-monitor VPA")
+	return nil
+}
+
+// vpaCRDExists checks if the VerticalPodAutoscaler CRD is installed in the cluster
+func (r *Reconciler) vpaCRDExists(ctx context.Context) (bool, error) {
+	var vpaList autoscalingvpav1.VerticalPodAutoscalerList
+	if err := r.List(ctx, &vpaList, client.Limit(1)); err != nil {
+		// If we get a "no matches for kind" error, the CRD doesn't exist
+		if errors.IsNotFound(err) {
+			return false, nil
+		}
+		// For other errors, check if it's a resource not found error (CRD not installed)
+		if err.Error() == "no matches for kind \"VerticalPodAutoscaler\" in version \"autoscaling.k8s.io/v1\"" {
+			return false, nil
+		}
+		return false, err
+	}
+
+	return true, nil
 }
 
 func (r *Reconciler) checkPipelineExist(ctx context.Context) (bool, error) {
