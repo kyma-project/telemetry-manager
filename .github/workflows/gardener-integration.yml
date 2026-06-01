@@ -66,12 +66,12 @@ jobs:
           fi
   approval:
     needs: [check-trigger]
-    if: needs.check-trigger.outputs.run-gardener-tests == 'true'
+    if: needs.check-trigger.outputs.run-gardener-tests == 'true' && github.event_name == 'pull_request_target'
     uses: ./.github/workflows/approval-gate.yml
 
   gardener-integration-test:
-    needs: [approval]
-    if: needs.approval.result == 'success'
+    needs: [check-trigger, approval]
+    if: always() && needs.check-trigger.outputs.run-gardener-tests == 'true'
     environment: github-actions
     strategy:
       fail-fast: false # if one version is not working, continue tests on other versions
