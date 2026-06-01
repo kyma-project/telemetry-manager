@@ -32,7 +32,6 @@ const (
 	// maximum time before flusing a batch
 	// maximum time before flushing a batch
 	exporterBatchFlushTimeout = 10 * time.Second
-
 )
 
 type buildComponentFunc = common.BuildComponentFunc[*telemetryv1beta1.LogPipeline]
