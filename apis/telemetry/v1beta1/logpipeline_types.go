@@ -2,6 +2,7 @@ package v1beta1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 type Mode int
@@ -13,7 +14,10 @@ const (
 
 //nolint:gochecknoinits // SchemeBuilder's registration is required.
 func init() {
-	SchemeBuilder.Register(&LogPipeline{}, &LogPipelineList{})
+	SchemeBuilder.Register(func(scheme *runtime.Scheme) error {
+		scheme.AddKnownTypes(GroupVersion, &LogPipeline{}, &LogPipelineList{})
+		return nil
+	})
 }
 
 // LogPipelineList contains a list of LogPipeline
