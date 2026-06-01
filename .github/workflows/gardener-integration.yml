@@ -70,8 +70,8 @@ jobs:
     uses: ./.github/workflows/approval-gate.yml
 
   gardener-integration-test:
-    needs: [approval]
-    if: needs.approval.result == 'success'
+    needs: [check-trigger, approval]
+    if: always() && needs.check-trigger.outputs.run-gardener-tests == 'true'
     environment: github-actions
     strategy:
       fail-fast: false # if one version is not working, continue tests on other versions
@@ -89,13 +89,11 @@ jobs:
         uses: "./.github/template/setup-golang"
 
       - name: Prepare environment variables
-        env:
-          GITHUB_PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
         run: |
           if [[ "${{ github.event_name }}" == "pull_request_target" ]]; then
             # For PR events, use dev image with PR number
             PR_NUMBER="${{ github.event.number }}"
-            TAG="$GITHUB_PR_HEAD_REF"
+            TAG="PR-${PR_NUMBER}"
             MANAGER_IMAGE="europe-docker.pkg.dev/kyma-project/dev/telemetry-manager:${TAG}"
             echo "Using dev image for PR: $MANAGER_IMAGE"
           elif [[ "${{ inputs.image_tag }}" ]]; then
