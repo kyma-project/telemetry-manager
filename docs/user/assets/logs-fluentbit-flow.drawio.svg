@@ -5,7 +5,7 @@
             <rect x="0" y="0" width="900" height="130" fill="#ffffff" stroke="none" pointer-events="all" style="fill: light-dark(rgb(255, 255, 255), rgb(18, 18, 18));"/>
         </g>
         <g>
-            <rect x="650" y="10" width="240" height="110" rx="16.5" ry="16.5" fill="#4181d6" stroke="#6c8ebf" pointer-events="all" style="fill: light-dark(rgb(65, 129, 214), rgb(84, 139, 212)); stroke: light-dark(rgb(108, 142, 191), rgb(92, 121, 163));"/>
+            <rect x="650" y="10" width="240" height="110" rx="16.5" ry="16.5" fill="#ffffff" stroke="#666666" pointer-events="all" style="fill: light-dark(rgb(255, 255, 255), rgb(18, 18, 18)); stroke: light-dark(rgb(102, 102, 102), rgb(149, 149, 149));"/>
         </g>
         <g>
             <g transform="translate(-0.5 -0.5)">
@@ -49,7 +49,7 @@
             </g>
         </g>
         <g>
-            <rect x="330" y="10" width="240" height="110" rx="16.5" ry="16.5" fill="#4181d6" stroke="#6c8ebf" pointer-events="all" style="fill: light-dark(rgb(65, 129, 214), rgb(84, 139, 212)); stroke: light-dark(rgb(108, 142, 191), rgb(92, 121, 163));"/>
+            <rect x="330" y="10" width="240" height="110" rx="16.5" ry="16.5" fill="#ffffff" stroke="#666666" pointer-events="all" style="fill: light-dark(rgb(255, 255, 255), rgb(18, 18, 18)); stroke: light-dark(rgb(102, 102, 102), rgb(149, 149, 149));"/>
         </g>
         <g>
             <g transform="translate(-0.5 -0.5)">
@@ -106,10 +106,10 @@
             </g>
         </g>
         <g>
-            <path d="M 262 51 L 282 51 L 282 30 L 322 65 L 282 100 L 282 79 L 262 79 L 262 65 Z" fill="#dae8fc" stroke="#6c8ebf" stroke-miterlimit="10" pointer-events="all" style="fill: light-dark(rgb(218, 232, 252), rgb(29, 41, 59)); stroke: light-dark(rgb(108, 142, 191), rgb(92, 121, 163));"/>
+            <path d="M 262 51 L 282 51 L 282 30 L 322 65 L 282 100 L 282 79 L 262 79 L 262 65 Z" fill="#ffffff" stroke="#666666" stroke-miterlimit="10" pointer-events="all" style="fill: light-dark(rgb(255, 255, 255), rgb(29, 41, 59)); stroke: light-dark(rgb(102, 102, 102), rgb(149, 149, 149));"/>
         </g>
         <g>
-            <rect x="10" y="10" width="240" height="110" rx="16.5" ry="16.5" fill="#4181d6" stroke="#6c8ebf" pointer-events="all" style="fill: light-dark(rgb(65, 129, 214), rgb(84, 139, 212)); stroke: light-dark(rgb(108, 142, 191), rgb(92, 121, 163));"/>
+            <rect x="10" y="10" width="240" height="110" rx="16.5" ry="16.5" fill="#ffffff" stroke="#666666" pointer-events="all" style="fill: light-dark(rgb(255, 255, 255), rgb(18, 18, 18)); stroke: light-dark(rgb(102, 102, 102), rgb(149, 149, 149));"/>
         </g>
         <g>
             <g transform="translate(-0.5 -0.5)">
@@ -146,7 +146,7 @@
             </g>
         </g>
         <g>
-            <path d="M 582 51 L 602 51 L 602 30 L 642 65 L 602 100 L 602 79 L 582 79 L 582 65 Z" fill="#dae8fc" stroke="#6c8ebf" stroke-miterlimit="10" pointer-events="all" style="fill: light-dark(rgb(218, 232, 252), rgb(29, 41, 59)); stroke: light-dark(rgb(108, 142, 191), rgb(92, 121, 163));"/>
+            <path d="M 582 51 L 602 51 L 602 30 L 642 65 L 602 100 L 602 79 L 582 79 L 582 65 Z" fill="#ffffff" stroke="#666666" stroke-miterlimit="10" pointer-events="all" style="fill: light-dark(rgb(255, 255, 255), rgb(29, 41, 59)); stroke: light-dark(rgb(102, 102, 102), rgb(149, 149, 149));"/>
         </g>
     </g>
     <switch>

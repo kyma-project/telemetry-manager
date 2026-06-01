@@ -1,8 +1,8 @@
 # Metrics Architecture
 
-For metrics collection, the Telemetry module provides the OTLP Gateway and an optional Metric Agent. To control their behavior and data destination, you define a MetricPipeline.
+For metrics collection, the Telemetry module provides the OTLP Gateway and an optional Metric Agent. To control their behavior and data destination, you define a MetricPipeline. The OTLP Gateway is a DaemonSet with one instance per node that receives OTLP metrics pushed from your applications. The Metric Agent is a DaemonSet that pulls metrics from Prometheus-annotated endpoints.
 
-The OTLP Gateway is a DaemonSet with one instance per node that receives OTLP metrics pushed from your applications. The Metric Agent is a DaemonSet that pulls metrics from Prometheus-annotated endpoints.  For details, see [OTLP Gateway](README.md#otlp-gateway) and [Agents](README.md#agents).
+For details, see [OTLP Gateway](README.md#otlp-gateway) and [Agents](README.md#agents).
 
 ![Architecture](./../assets/metrics-arch.drawio.svg)
 
