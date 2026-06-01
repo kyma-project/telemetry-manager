@@ -35,12 +35,7 @@ env:
   ARTIFACT_PREFIX: "gardener-"
 
 jobs:
-  approval:
-    uses: ./.github/workflows/approval-gate.yml
-
   check-trigger:
-    needs: [approval]
-    if: always() && (needs.approval.result == 'success' || needs.approval.result == 'skipped')
     runs-on: ubuntu-latest
     outputs:
       run-gardener-tests: ${{ steps.check-label.outputs.run-gardener-tests }}
@@ -69,9 +64,14 @@ jobs:
             echo "Not a PR event. Gardener tests will run."
             echo "run-gardener-tests=true" >> $GITHUB_OUTPUT
           fi
-  gardener-integration-test:
-    needs: check-trigger
+  approval:
+    needs: [check-trigger]
     if: needs.check-trigger.outputs.run-gardener-tests == 'true'
+    uses: ./.github/workflows/approval-gate.yml
+
+  gardener-integration-test:
+    needs: [approval]
+    if: needs.approval.result == 'success'
     environment: github-actions
     strategy:
       fail-fast: false # if one version is not working, continue tests on other versions
@@ -174,24 +174,6 @@ jobs:
             echo "=== $pod ==="
             kubectl logs -n kyma-system $pod --all-containers 2>/dev/null || true
           done
-
-      - name: Send slack message on failure
-        uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # v3.0.3
-        if: failure()
-        with:
-          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
-          webhook-type: incoming-webhook
-          payload: |
-            text: ""
-            blocks:
-              - type: "section"
-                text:
-                  type: "mrkdwn"
-                  text: "Workflow <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|*Telemetry ${{ github.workflow }}*> has status *${{ job.status }}*"
-              - type: "section"
-                text:
-                  type: "mrkdwn"
-                  text: "See related <${{ github.event.pull_request.html_url || github.event.head_commit.url }}|commit>"
 
   summary:
     needs: [check-trigger, gardener-integration-test]
