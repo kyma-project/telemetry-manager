@@ -4,7 +4,7 @@ The Telemetry module consists of a manager component, which continuously watches
 
 ## Overview
 
-The Telemetry API provides a robust, pre-configured OpenTelemetry (OTel) Collector setup that abstracts its underlying complexities. This approach delivers several key benefits:
+The Telemetry API provides a robust, preconfigured OpenTelemetry (OTel) Collector setup that abstracts its underlying complexities. This approach delivers several key benefits:
 
 - Compatibility: Maintains stability and functionality even as underlying OTel Collector features evolve, reducing the need for constant updates on your end.
 - Migratability: Facilitates smooth transitions when you switch underlying technologies or architectures.
