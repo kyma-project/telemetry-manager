@@ -7,8 +7,10 @@ import (
 	"gopkg.in/yaml.v3"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	autoscalingvpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -21,6 +23,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/metrics"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
 	selfmonitorconfig "github.com/kyma-project/telemetry-manager/internal/selfmonitor/config"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
@@ -50,18 +53,9 @@ type OverridesHandler interface {
 	LoadOverrides(ctx context.Context) (*overrides.Config, error)
 }
 
-type VpaStatusChecker interface {
-	VpaCRDExists(ctx context.Context, client client.Client) (bool, error)
-}
-
-type NodeSizeTracker interface {
-	VPAMaxAllowedMemory() resource.Quantity
-	SelfMonitorVPAMaxAllowedMemory() resource.Quantity
-}
-
 type SelfMonitorApplierDeleter interface {
 	ApplyResources(ctx context.Context, c client.Client, opts selfmonitor.ApplyOptions) error
-	DeleteResources(ctx context.Context, c client.Client, vpaCRDExists bool) error
+	DeleteResources(ctx context.Context, c client.Client) error
 }
 
 type Reconciler struct {
@@ -73,11 +67,7 @@ type Reconciler struct {
 	healthCheckers            healthCheckers
 	overridesHandler          OverridesHandler
 	selfMonitorApplierDeleter SelfMonitorApplierDeleter
-	vpaStatusChecker          VpaStatusChecker
-	nodeSizeTracker           NodeSizeTracker
 }
-
-type Option func(*Reconciler)
 
 func New(
 	config Config,
@@ -85,9 +75,8 @@ func New(
 	client client.Client,
 	overridesHandler OverridesHandler,
 	selfMonitorApplierDeleter SelfMonitorApplierDeleter,
-	opts ...Option,
 ) *Reconciler {
-	r := &Reconciler{
+	return &Reconciler{
 		config: config,
 		scheme: scheme,
 		Client: client,
@@ -99,12 +88,6 @@ func New(
 		overridesHandler:          overridesHandler,
 		selfMonitorApplierDeleter: selfMonitorApplierDeleter,
 	}
-
-	for _, opt := range opts {
-		opt(r)
-	}
-
-	return r
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -147,6 +130,12 @@ func (r *Reconciler) doReconcile(ctx context.Context, telemetry *operatorv1beta1
 		return fmt.Errorf("failed to manage finalizer: %w", err)
 	}
 
+	// Clean up any leftover VPA resources from previous versions
+	if err := r.cleanupSelfMonitorVPA(ctx); err != nil {
+		logf.FromContext(ctx).Error(err, "Failed to cleanup self-monitor VPA, will retry on next reconciliation")
+		// Don't fail the entire reconciliation if VPA cleanup fails
+	}
+
 	if err := r.reconcileWebhook(ctx, telemetry); err != nil {
 		return fmt.Errorf("failed to reconcile webhook: %w", err)
 	}
@@ -164,13 +153,8 @@ func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry *operat
 		return err
 	}
 
-	vpaCRDExists, err := r.vpaStatusChecker.VpaCRDExists(ctx, r.Client)
-	if err != nil {
-		return fmt.Errorf("failed to check VPA CRD existence: %w", err)
-	}
-
 	if !pipelinesPresent {
-		if err := r.selfMonitorApplierDeleter.DeleteResources(ctx, r.Client, vpaCRDExists); err != nil {
+		if err := r.selfMonitorApplierDeleter.DeleteResources(ctx, r.Client); err != nil {
 			return fmt.Errorf("failed to delete self-monitor resources: %w", err)
 		}
 
@@ -196,9 +180,6 @@ func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry *operat
 		return fmt.Errorf("failed to marshal rules: %w", err)
 	}
 
-	vpaMaxAllowedMemory := r.nodeSizeTracker.SelfMonitorVPAMaxAllowedMemory()
-
-	// Self-monitor VPA is always enabled when VPA CRD exists, independent of the telemetry.kyma-project.io/enable-vpa annotation
 	if err := r.selfMonitorApplierDeleter.ApplyResources(
 		ctx,
 		k8sclients.NewOwnerReferenceSetter(r.Client, telemetry),
@@ -209,15 +190,57 @@ func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry *operat
 			PrometheusConfigPath:     selfMonitorConfigPath,
 			PrometheusConfigYAML:     string(prometheusConfigYAML),
 			LogLevel:                 logLevel,
-			VpaCRDExists:             vpaCRDExists,
-			VpaEnabled:               vpaCRDExists,
-			VPAMaxAllowedMemory:      vpaMaxAllowedMemory,
 		},
 	); err != nil {
 		return fmt.Errorf("failed to apply self-monitor resources: %w", err)
 	}
 
 	return nil
+}
+
+// cleanupSelfMonitorVPA removes any leftover VPA resources for the self-monitor deployment.
+// This is necessary after reverting the VPA feature to ensure no orphaned VPA CRs remain.
+func (r *Reconciler) cleanupSelfMonitorVPA(ctx context.Context) error {
+	// Check if VPA CRD exists in the cluster
+	vpaCRDExists, err := r.vpaCRDExists(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to check VPA CRD existence: %w", err)
+	}
+
+	if !vpaCRDExists {
+		// If VPA CRD doesn't exist, no cleanup needed
+		return nil
+	}
+
+	vpa := &autoscalingvpav1.VerticalPodAutoscaler{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      names.SelfMonitor,
+			Namespace: r.config.TargetNamespace(),
+		},
+	}
+
+	if err := k8sutils.DeleteObject(ctx, r.Client, vpa); err != nil {
+		return fmt.Errorf("failed to delete self-monitor VPA: %w", err)
+	}
+
+	logf.FromContext(ctx).V(1).Info("Successfully cleaned up self-monitor VPA")
+
+	return nil
+}
+
+// vpaCRDExists checks if the VerticalPodAutoscaler CRD is installed in the cluster
+func (r *Reconciler) vpaCRDExists(ctx context.Context) (bool, error) {
+	var vpaList autoscalingvpav1.VerticalPodAutoscalerList
+	if err := r.List(ctx, &vpaList, client.Limit(1)); err != nil {
+		// If we get a "no matches for kind" error, the CRD doesn't exist
+		if apierrors.IsNotFound(err) {
+			return false, nil
+		}
+
+		return false, err
+	}
+
+	return true, nil
 }
 
 func (r *Reconciler) checkPipelineExist(ctx context.Context) (bool, error) {
@@ -324,18 +347,4 @@ func (r *Reconciler) trackServiceAttributesEnrichmentStrategy(ctx context.Contex
 	metrics.ServiceAttributesEnrichmentStrategy.WithLabelValues(commonresources.AnnotationValueTelemetryServiceEnrichmentKymaLegacy).Set(0)
 
 	metrics.ServiceAttributesEnrichmentStrategy.WithLabelValues(enrichmentStrategy).Set(1)
-}
-
-// WithVpaStatusChecker sets the VPA status checker.
-func WithVpaStatusChecker(checker VpaStatusChecker) Option {
-	return func(r *Reconciler) {
-		r.vpaStatusChecker = checker
-	}
-}
-
-// WithNodeSizeTracker sets the node size tracker.
-func WithNodeSizeTracker(tracker NodeSizeTracker) Option {
-	return func(r *Reconciler) {
-		r.nodeSizeTracker = tracker
-	}
 }

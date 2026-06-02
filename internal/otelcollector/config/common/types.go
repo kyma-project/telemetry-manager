@@ -6,6 +6,14 @@ import (
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
 
+type Sizer string
+
+const (
+	SizerBytes    Sizer = "bytes"
+	SizerItems    Sizer = "items"
+	SizerRequests Sizer = "requests"
+)
+
 // =============================================================================
 // BASE CONFIGURATION TYPES
 // =============================================================================
@@ -76,6 +84,7 @@ type Telemetry struct {
 
 type TelemetryMetrics struct {
 	Readers []TelemetryMetricReader `yaml:"readers"`
+	Level   string                  `yaml:"level,omitempty"`
 }
 
 type TelemetryMetricReader struct {
@@ -152,8 +161,17 @@ type TLS struct {
 }
 
 type SendingQueue struct {
-	Enabled   bool `yaml:"enabled"`
-	QueueSize int  `yaml:"queue_size"`
+	Enabled   bool  `yaml:"enabled"`
+	QueueSize int   `yaml:"queue_size"`
+	Sizer     Sizer `yaml:"sizer,omitempty"`
+	Batch     Batch `yaml:"batch,omitempty"`
+}
+
+type Batch struct {
+	MinSize      int           `yaml:"min_size,omitempty"`
+	MaxSize      int           `yaml:"max_size,omitempty"`
+	FlushTimeout time.Duration `yaml:"flush_timeout,omitempty"`
+	Sizer        Sizer         `yaml:"sizer,omitempty"`
 }
 
 type RetryOnFailure struct {

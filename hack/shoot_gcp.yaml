@@ -42,6 +42,3 @@ spec:
     schedules:
       - start: "00 ${HIBERNATION_HOUR} * * *"
         location: "Europe/Berlin"
-  addons:
-    nginxIngress:
-      enabled: false

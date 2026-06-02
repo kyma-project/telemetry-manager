@@ -286,20 +286,21 @@ To start ingesting custom and Istio metrics, deploy a MetricPipeline. The config
                 - set(resource.attributes["k8s.pod.ip"], resource.attributes["ip"]) where resource.attributes["k8s.pod.ip"] == nil
             output:
                 otlp:
-                    valueFrom:
-                        secretKeyRef:
-                            name: dynakube
-                            namespace: ${DYNATRACE_NS}
-                            key: apiurl
+                    endpoint:
+                        valueFrom:
+                            secretKeyRef:
+                                name: dynakube
+                                namespace: ${DYNATRACE_NS}
+                                key: apiurl
                     path: v2/otlp/v1/metrics
                     headers:
-                    - name: Authorization
-                      prefix: Api-Token
-                      valueFrom:
-                          secretKeyRef:
-                              name: dynakube
-                              namespace: ${DYNATRACE_NS}
-                              key: dataIngestToken
+                        - name: Authorization
+                          prefix: Api-Token
+                          valueFrom:
+                              secretKeyRef:
+                                  name: dynakube
+                                  namespace: ${DYNATRACE_NS}
+                                  key: dataIngestToken
                     temporality: delta
                     protocol: http
         EOF

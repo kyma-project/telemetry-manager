@@ -1,8 +1,8 @@
 # Logs Architecture
 
-For log collection, the Telemetry module provides the OTLP Gateway and an optional Log Agent. To control their behavior and data destination, you define a LogPipeline.
+For log collection, the Telemetry module provides the OTLP Gateway and an optional Log Agent. To control their behavior and data destination, you define a LogPipeline. The OTLP Gateway is a DaemonSet with one instance per node that receives OTLP logs pushed from your applications. The Log Agent is a DaemonSet that pulls container logs from each node.
 
-The OTLP Gateway is a DaemonSet with one instance per node that receives OTLP logs pushed from your applications. The Log Agent is a DaemonSet that pulls container logs from each node. For details, see [OTLP Gateway](README.md#otlp-gateway) and [Agents](README.md#agents).
+For details, see [OTLP Gateway](README.md#otlp-gateway) and [Agents](README.md#agents).
 
 ![Architecture](./../assets/logs-arch.drawio.svg)
 
@@ -12,7 +12,7 @@ The OTLP Gateway is a DaemonSet with one instance per node that receives OTLP lo
 4. The OTLP Gateway and Log Agent discover the metadata and enrich all received data with metadata of the source by communicating with the Kubernetes APIServer. Furthermore, they filter data according to the pipeline configuration.
 5. Telemetry Manager configures the Log Agent and the OTLP Gateway according to the LogPipeline resource specification, including the target backend. Also, it observes the logs flow to the backend and reports problems in the LogPipeline status.
 6. The OTLP Gateway and Log Agent send the data to the observability backend that's specified in your LogPipeline resource - either within your cluster, or, if authentication is set up, to an external observability backend.
-7. You can analyze the logs data with your preferred backend.
+7. You can analyze the logs data with your preferred observability backend.
 
 ## Telemetry Manager
 
