@@ -15,7 +15,7 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor v0.152.0
 	github.com/prometheus/client_golang v1.23.2
 	github.com/prometheus/client_model v0.6.2
-	github.com/prometheus/common v0.67.5
+	github.com/prometheus/common v0.68.0
 	github.com/stretchr/testify v1.11.1
 	go.opentelemetry.io/collector/component v1.58.0
 	go.opentelemetry.io/collector/pdata v1.58.0
@@ -115,7 +115,7 @@ require (
 	go.opentelemetry.io/otel/metric v1.43.0 // indirect
 	go.opentelemetry.io/otel/trace v1.43.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	go.yaml.in/yaml/v2 v2.4.3 // indirect
+	go.yaml.in/yaml/v2 v2.4.4 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/exp v0.0.0-20251219203646-944ab1f22d93 // indirect
 	golang.org/x/net v0.53.0 // indirect
