@@ -63,7 +63,7 @@ In the pipeline status, the `TelemetryFlowHealthy` condition has status **Gatewa
 
 ### Cause
 
-An OTLP Gateway instance is receiving data faster than it can process and forward it.
+The OTLP Gateway instance is receiving data faster than it can process and forward it.
 
 ### Solution
 
@@ -85,7 +85,7 @@ The OpenTelemetry (OTel) SDK version used in your application is incompatible wi
 2. Investigate whether it's compatible with the OTel Collector version.
 3. If necessary, upgrade to a supported SDK version.
 
-## Observability Backend Shows Fewer Traces than Expected
+## Too Few Traces Arrive at the Backend
 
 ### Symptom
 
@@ -177,8 +177,8 @@ You have configured a `transform` or `filter` section in your pipeline, but the 
 ### Cause
 
 This usually happens for one of the following reasons:
-* **Incorrect Execution Order**: You're filtering data based on a field's original value, but a transformation rule has already changed it. Transformation rules always run before filter rules.
-* **Condition Never Met**: The condition in your rule is valid (otherwise, you'd see pipeline condition `ConfigurationGenerated`:`False` with the reason `OTTLSpecInvalid`), but never finds a match in the data. This is often due to a case-sensitive value mismatch or a flawed regular expression.
+- **Incorrect Execution Order**: You're filtering data based on a field's original value, but a transformation rule has already changed it. Transformation rules always run before filter rules.
+- **Condition Never Met**: The condition in your rule is valid (otherwise, you'd see pipeline condition `ConfigurationGenerated`:`False` with the reason `OTTLSpecInvalid`), but never finds a match in the data. This is often due to a case-sensitive value mismatch or a flawed regular expression.
 
 ### Solution
 
@@ -243,7 +243,6 @@ The memory limits are too restrictive for your telemetry volume. VPA calculates 
 If no data arrives at your backend, first check for backend-side issues (see [Not All Data Arrive at the Backend](#not-all-data-arrive-at-the-backend)).
 
 If data arrives but components run out of memory, reduce memory pressure:
-
 
 - Add nodes with more memory to increase the calculated `maxAllowed` value.
 - Reduce telemetry volume by applying filters in your pipelines (see [Filter Logs](./filter-and-process/filter-logs.md), [Filter Traces](./filter-and-process/filter-traces.md), [Filter Metrics](./filter-and-process/filter-metrics.md)).

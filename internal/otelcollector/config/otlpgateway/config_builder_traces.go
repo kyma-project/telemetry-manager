@@ -212,7 +212,7 @@ func (b *Builder) addTraceOTLPExporter(builder *common.ComponentBuilder[*telemet
 				b.Reader,
 				tp.Spec.Output.OTLP,
 				pipelines.TracePipelineRef(tp),
-				queueSize,
+				common.NewSendingQueue(queueSize),
 			)
 
 			return otlpExporterBuilder.OTLPExporter(ctx)

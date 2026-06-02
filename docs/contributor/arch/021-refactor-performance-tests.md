@@ -25,7 +25,7 @@ A [POC](../pocs/opentelemetry-testbed/) has been implemented for using the `Load
 
 #### Disadvantages:
 - There is no [DataSender](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/testbed/datasenders) available that writes logs to stdout.
-    - The [FileLogWriter](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/testbed/datasenders/stanza.go) converts OTLP logs to text lines and writes them to a temporary log file. This is not suitable for our Log Agent, because it tails logs that are only written to the stdout.
+    - The [FileLogWriter](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/testbed/datasenders/stanzadatasender/sender.go) converts OTLP logs to text lines and writes them to a temporary log file. This is not suitable for our Log Agent, because it tails logs that are only written to the stdout.
     - The workaround in the POC is to write a custom `stdoutLogGenerator`, which implements the `DataSender` interface. The `stdoutLogGenerator` is very similar to the `FileLogWriter`, but it writes logs to stdout instead of a temporary log file.
 - The receiver used in the mock backend is [listening](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/testbed/testbed/receivers.go#L81) on `127.0.0.1:4317` (localhost only).
     - This works fine for the performance tests in the `opentelemetry-collector-contrib` repo, because these test are executed locally. However, we must test our Telemetry module collectors in a Kubernetes cluster.

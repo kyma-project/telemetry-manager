@@ -21,13 +21,12 @@ Because the data path stays within a single node, Istio sidecars and mTLS are no
 
 The OTLP Gateway's node-local ingestion path provides the following security properties:
 
-- **No cross-node traffic on ingestion**: The Service routes traffic only to the local node's gateway Pod. Telemetry data does not travel over the node-to-node network.
-- **Kernel-level network isolation**: Pod-to-pod communication on the same node uses virtual network interfaces connected through a virtual bridge in the node's root network namespace. To intercept this traffic, an attacker needs root access to the node's network namespace or a man-in-the-middle position, which means the node is already compromised.
-- **No mTLS required for ingestion**: Because the data path stays within a single node, mTLS encryption is not needed. This improves performance by removing the Istio sidecar from the ingestion path, without creating a security risk.
+- No cross-node traffic on ingestion: The Service routes traffic only to the local node's gateway Pod. Telemetry data does not travel over the node-to-node network.
+- Kernel-level network isolation: Pod-to-pod communication on the same node uses virtual network interfaces connected through a virtual bridge in the node's root network namespace. To intercept this traffic, an attacker needs root access to the node's network namespace or a man-in-the-middle position, which means the node is already compromised.
+- No mTLS required for ingestion: Because the data path stays within a single node, mTLS encryption is not needed. This improves performance by removing the Istio sidecar from the ingestion path, without creating a security risk.
 
 > [!NOTE]
 > These properties apply only to the ingestion path (applications pushing data to the OTLP Gateway). For the export path (the OTLP Gateway sending data to your backend), mTLS is still used automatically when the backend is part of the Istio mesh. See [Sending Data to In-Cluster Backends](#sending-data-to-in-cluster-backends).
-
 
 ## Sending Data to In-Cluster Backends
 

@@ -1,8 +1,8 @@
 # Traces Architecture
 
-For trace collection, the Telemetry module provides the OTLP Gateway. To control its behavior and data destination, you define a TracePipeline.
+For trace collection, the Telemetry module provides the OTLP Gateway. To control its behavior and data destination, you define a TracePipeline. The OTLP Gateway is a DaemonSet with one instance per node that receives OTLP traces pushed from your applications.
 
-The OTLP Gateway is a DaemonSet with one instance per node that receives OTLP traces pushed from your applications. For details, see [OTLP Gateway](README.md#otlp-gateway).
+For details, see [OTLP Gateway](README.md#otlp-gateway).
 
 ![Architecture](./../assets/traces-arch.drawio.svg)
 
