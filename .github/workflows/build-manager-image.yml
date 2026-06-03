@@ -6,7 +6,7 @@ permissions:
 on:
   merge_group:
   pull_request_target:
-    types: [opened, synchronize, reopened, ready_for_review]
+    types: [labeled, opened, synchronize, reopened, ready_for_review]
     branches:
       - "main"
       - "release-[0-9]+.[0-9]+"
@@ -37,12 +37,40 @@ on:
       - ".hyperspace/**"
 
 jobs:
+  check-trigger:
+    runs-on: ubuntu-latest
+    outputs:
+      run-build: ${{ steps.check-label.outputs.run-build }}
+    steps:
+      - name: Check if build should run
+        id: check-label
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TRIGGER_LABEL="build-image"
+
+          if [[ "${{ github.event_name }}" == "pull_request_target" ]]; then
+            LABELS=$(gh pr view ${{ github.event.number }} --repo ${{ github.repository }} --json labels --template '{{range .labels}}{{.name}} {{end}}')
+            if [[ "$LABELS" == *"$TRIGGER_LABEL"* ]]; then
+              echo "Label '$TRIGGER_LABEL' found. Build will run."
+              echo "run-build=true" >> $GITHUB_OUTPUT
+            else
+              echo "Label '$TRIGGER_LABEL' not found. Skipping build."
+              echo "run-build=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "Not a PR event. Build will run."
+            echo "run-build=true" >> $GITHUB_OUTPUT
+          fi
+
   approval:
+    needs: [check-trigger]
+    if: needs.check-trigger.outputs.run-build == 'true' && github.event_name == 'pull_request_target'
     uses: ./.github/workflows/approval-gate.yml
 
   envs:
-    needs: [approval]
-    if: always() && (needs.approval.result == 'success' || needs.approval.result == 'skipped')
+    needs: [check-trigger, approval]
+    if: always() && needs.check-trigger.outputs.run-build == 'true' && needs.approval.result != 'failure'
     runs-on: ubuntu-latest
     outputs:
       tags: ${{ steps.create-tags.outputs.tags }}
@@ -77,7 +105,7 @@ jobs:
     permissions:
       id-token: write # Required for requesting the JWT token
       contents: read
-    needs: [approval, envs]
+    needs: [envs]
     if: ${{ always() && needs.envs.result == 'success' }}
     uses: kyma-project/test-infra/.github/workflows/image-builder.yml@main # Usage: kyma-project/test-infra/.github/workflows/image-builder.yml@main
     with:
