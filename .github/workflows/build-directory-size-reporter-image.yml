@@ -7,7 +7,7 @@ on:
   pull_request_target:
     paths:
       - "dependencies/directory-size-exporter/**"
-    types: [labeled, opened, edited, synchronize, reopened, ready_for_review]
+    types: [opened, edited, synchronize, reopened, ready_for_review]
   push:
     branches:
       - main
@@ -17,12 +17,11 @@ on:
 
 jobs:
   approval:
-    if: github.event_name == 'pull_request_target' && contains(github.event.pull_request.labels.*.name, 'build-image')
     uses: ./.github/workflows/approval-gate.yml
 
   envs:
     needs: [approval]
-    if: always() && (github.event_name != 'pull_request_target' || needs.approval.result == 'success')
+    if: always() && (needs.approval.result == 'success' || needs.approval.result == 'skipped')
     runs-on: ubuntu-latest
     outputs:
       tags: ${{ steps.create-tags.outputs.tags }}
