@@ -20,6 +20,7 @@ func createInputSection(pipeline *telemetryv1beta1.LogPipeline, includePath, exc
 	inputBuilder.AddConfigParam("tag", fmt.Sprintf("%s.*", pipeline.Name))
 	inputBuilder.AddConfigParam("skip_long_lines", "on")
 	inputBuilder.AddConfigParam("db", fmt.Sprintf("/data/flb_%s.db", pipeline.Name))
+	inputBuilder.AddConfigParam("db.compare_filename", "on")
 	inputBuilder.AddConfigParam("storage.type", "filesystem")
 	inputBuilder.AddConfigParam("read_from_head", "true")
 	inputBuilder.AddConfigParam("mem_buf_limit", "5MB")
@@ -86,6 +87,6 @@ func createExcludePath(pipeline *telemetryv1beta1.LogPipeline, collectAgentLogs 
 }
 
 func makeLogPath(namespace, pod, container string) string {
-	pathPattern := "/var/log/containers/%s_%s_%s-*.log"
-	return fmt.Sprintf(pathPattern, pod, namespace, container)
+	pathPattern := "/var/log/pods/%s_%s/%s/*.log"
+	return fmt.Sprintf(pathPattern, namespace, pod, container)
 }
