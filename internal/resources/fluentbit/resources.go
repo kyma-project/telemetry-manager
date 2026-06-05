@@ -390,6 +390,7 @@ func (aad *AgentApplierDeleter) fluentBitVolumeMounts() []corev1.VolumeMount {
 	return []corev1.VolumeMount{
 		{MountPath: sharedFluentBitConfigVolumeMountPath, Name: sharedFluentBitConfigVolumeName},
 		{MountPath: configVolumeFluentBitMountPath, Name: configVolumeName, SubPath: "fluent-bit.conf"},
+		{MountPath: "/fluent-bit/etc/parsers.conf", Name: configVolumeName, SubPath: "parsers.conf"},
 		{MountPath: dynamicConfigVolumeMountPath, Name: dynamicConfigVolumeName},
 		{MountPath: luaScriptsVolumeMountPath, Name: luaScriptsVolumeName, SubPath: "filter-script.lua"},
 		{MountPath: varLogVolumeMountPath, Name: varLogVolumeName, ReadOnly: true},
@@ -563,8 +564,15 @@ func makeConfigMap(name types.NamespacedName) *corev1.ConfigMap {
     HTTP_Port {{ HTTP_PORT }}
     storage.path /data/flb-storage/
     storage.metrics on
+    Parsers_File /fluent-bit/etc/parsers.conf
 
 @INCLUDE dynamic/*.conf
+`
+	parsersConfig := `
+[PARSER]
+    Name   k8s-pods
+    Format regex
+    Regex  ^(?<namespace_name>[^_]+)_(?<pod_name>[a-z0-9](?:[-a-z0-9]*[a-z0-9])?(?:\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*)_[a-f0-9\-]{36}\.(?<container_name>[^\.]+)\.\d+\.log$
 `
 	fluentBitConfig = strings.Replace(fluentBitConfig, "{{ HTTP_PORT }}", strconv.Itoa(fbports.HTTP), 1)
 
@@ -575,6 +583,7 @@ func makeConfigMap(name types.NamespacedName) *corev1.ConfigMap {
 		},
 		Data: map[string]string{
 			"fluent-bit.conf": fluentBitConfig,
+			"parsers.conf":    parsersConfig,
 		},
 	}
 }

@@ -37,6 +37,7 @@ func defaultService() ServiceConfig {
 					},
 				},
 			},
+			Level: "detailed",
 		},
 		Logs: Logs{
 			Level:    "info",

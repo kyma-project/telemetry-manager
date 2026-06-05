@@ -69,6 +69,7 @@ const (
 	metricK8sPodMemRequestUtilization            = "k8s.pod.memory_request_utilization"
 	metricK8sPodUptime                           = "k8s.pod.uptime"
 	metricK8sPodVolumeUsage                      = "k8s.pod.volume.usage"
+	metricK8sContainerEphemeralStorageUsage      = "k8s.container.ephemeral_storage.usage"
 )
 
 // kubeletStatsReceiverContainerMetrics contains metrics related to container resources.
@@ -154,6 +155,7 @@ var kubeletStatsReceiverExtraMetrics = []string{
 	metricK8sPodMemRequestUtilization,
 	metricK8sPodUptime,
 	metricK8sPodVolumeUsage,
+	metricK8sContainerEphemeralStorageUsage,
 }
 
 // KubeletStatsReceiverMetrics contains all metric names that can be emitted by the kubeletStats receiver.

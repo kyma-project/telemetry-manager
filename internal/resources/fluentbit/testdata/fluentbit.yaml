@@ -11,8 +11,15 @@ data:
         HTTP_Port 2020
         storage.path /data/flb-storage/
         storage.metrics on
+        Parsers_File /fluent-bit/etc/parsers.conf
 
     @INCLUDE dynamic/*.conf
+  parsers.conf: |2
+
+    [PARSER]
+        Name   k8s-pods
+        Format regex
+        Regex  ^(?<namespace_name>[^_]+)_(?<pod_name>[a-z0-9](?:[-a-z0-9]*[a-z0-9])?(?:\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*)_[a-f0-9\-]{36}\.(?<container_name>[^\.]+)\.\d+\.log$
 kind: ConfigMap
 metadata:
   labels:
@@ -239,7 +246,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 91ba0ed4b08d1118be17c56fb8debd2751c946b444b77ae142a9483b119834e2
+        checksum/config: 00c7d90c95875ea181b638bdb85d7f4e080d1f22f1544c72784ff59d23e318d1
         traffic.sidecar.istio.io/excludeInboundPorts: 2020,2021
       labels:
         app.kubernetes.io/component: agent
@@ -291,6 +298,9 @@ spec:
         - mountPath: /fluent-bit/etc/fluent-bit.conf
           name: config
           subPath: fluent-bit.conf
+        - mountPath: /fluent-bit/etc/parsers.conf
+          name: config
+          subPath: parsers.conf
         - mountPath: /fluent-bit/etc/dynamic/
           name: dynamic-config
         - mountPath: /fluent-bit/scripts/filter-script.lua

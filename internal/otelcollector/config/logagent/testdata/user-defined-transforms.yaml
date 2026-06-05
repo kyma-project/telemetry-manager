@@ -52,6 +52,7 @@ service:
                             without_scope_info: false
                             without_type_suffix: false
                             without_units: false
+            level: detailed
         logs:
             level: info
             encoding: json
@@ -389,6 +390,14 @@ exporters:
         tls:
             insecure: true
         compression: gzip
+        sending_queue:
+            enabled: true
+            queue_size: 200000000
+            sizer: bytes
+            batch:
+                min_size: 2000000
+                max_size: 4000000
+                flush_timeout: 10s
         retry_on_failure:
             enabled: true
             initial_interval: 5s
@@ -399,6 +408,14 @@ exporters:
         tls:
             insecure: true
         compression: gzip
+        sending_queue:
+            enabled: true
+            queue_size: 200000000
+            sizer: bytes
+            batch:
+                min_size: 2000000
+                max_size: 4000000
+                flush_timeout: 10s
         retry_on_failure:
             enabled: true
             initial_interval: 5s
