@@ -7,7 +7,7 @@ on:
   pull_request_target:
     paths:
       - "dependencies/directory-size-exporter/**"
-    types: [labeled, opened, edited, synchronize, reopened, ready_for_review]
+    types: [opened, edited, synchronize, reopened, ready_for_review]
   push:
     branches:
       - main
@@ -17,19 +17,18 @@ on:
 
 jobs:
   approval:
-    if: github.event_name == 'pull_request_target' && contains(github.event.pull_request.labels.*.name, 'build-image')
     uses: ./.github/workflows/approval-gate.yml
 
   envs:
     needs: [approval]
-    if: always() && (github.event_name != 'pull_request_target' || needs.approval.result == 'success')
+    if: always() && (needs.approval.result == 'success' || needs.approval.result == 'skipped')
     runs-on: ubuntu-latest
     outputs:
       tags: ${{ steps.create-tags.outputs.tags }}
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - name: Create tags
         id: create-tags
         run: |
@@ -53,7 +52,8 @@ jobs:
     permissions:
       id-token: write # Required for requesting the JWT token
       contents: read
-    needs: envs
+    needs: [ approval, envs ]
+    if: ${{ always() && needs.envs.result == 'success' }}
     uses: kyma-project/test-infra/.github/workflows/image-builder.yml@main
     with:
       name: directory-size-exporter
