@@ -6,7 +6,7 @@ permissions:
 on:
   merge_group:
   pull_request_target:
-    types: [opened, synchronize, reopened, ready_for_review]
+    types: [labeled, opened, synchronize, reopened, ready_for_review]
     branches:
       - "main"
       - "release-[0-9]+.[0-9]+"
@@ -38,11 +38,12 @@ on:
 
 jobs:
   approval:
+    if: github.event_name == 'pull_request_target' && contains(github.event.pull_request.labels.*.name, 'build-image')
     uses: ./.github/workflows/approval-gate.yml
 
   envs:
     needs: [approval]
-    if: always() && (needs.approval.result == 'success' || needs.approval.result == 'skipped')
+    if: always() && (github.event_name != 'pull_request_target' || needs.approval.result == 'success')
     runs-on: ubuntu-latest
     outputs:
       tags: ${{ steps.create-tags.outputs.tags }}
