@@ -31,13 +31,18 @@ on:
         required: false
         default: false
         type: boolean
+      pre_release:
+        description: 'Create a pre-release (pre-release-x.y.z branch, x.y.z-rc.k tag, GitHub pre-release, DEV channel only)'
+        required: false
+        default: false
+        type: boolean
       module_release:
         description: 'Whether to trigger submit module workflow after this release (only for experimental, dev, and fast channels)'
         required: false
         default: true
         type: boolean
 
-run-name: "Release Telemetry version ${{ inputs.version }} with OCC image ${{ inputs.occ_image_version }}, dry-run: ${{ inputs.dry_run }}, force mode: ${{ inputs.force }}"
+run-name: "Release Telemetry version ${{ inputs.version }} with OCC image ${{ inputs.occ_image_version }}, dry-run: ${{ inputs.dry_run }}, force mode: ${{ inputs.force }}, pre-release: ${{ inputs.pre_release }}"
 
 permissions:
   contents: write
@@ -49,8 +54,9 @@ jobs:
   validate-and-prepare-branch:
     runs-on: ubuntu-latest
     outputs:
-      release-branch: ${{ steps.determine-branch.outputs.release-branch }}
-      is-patch: ${{ steps.determine-branch.outputs.is-patch }}
+      release-branch: ${{ steps.determine-branch.outputs.release-branch || steps.determine-pre-release-branch.outputs.release-branch }}
+      is-patch: ${{ steps.determine-branch.outputs.is-patch || steps.determine-pre-release-branch.outputs.is-patch }}
+      pre-release-tag: ${{ steps.compute-pre-release-tag.outputs.pre-release-tag || steps.compute-pre-release-tag-force.outputs.pre-release-tag }}
     steps:
       - name: Checkout code
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -144,6 +150,7 @@ jobs:
             exit 1
           fi
       - name: Check if milestone exists and is closed
+        if: ${{ inputs.pre_release != true }}
         env:
           GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
           VERSION: ${{ github.event.inputs.version }}
@@ -171,7 +178,7 @@ jobs:
           echo "Milestone ${VERSION} exists, is closed, and has no open issues."
 
       - name: Check if release already exists
-        if: ${{ inputs.force != true }}
+        if: ${{ inputs.force != true && inputs.pre_release != true }}
         env:
           GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
           VERSION: ${{ github.event.inputs.version }}
@@ -199,7 +206,7 @@ jobs:
           fi
 
       - name: Check if tag already exists
-        if: ${{ inputs.force != true }}
+        if: ${{ inputs.force != true && inputs.pre_release != true }}
         env:
           VERSION: ${{ github.event.inputs.version }}
         run: |
@@ -215,7 +222,7 @@ jobs:
           echo "✓ Tag ${VERSION} does not exist yet."
 
       - name: Delete existing tag (force mode)
-        if: ${{ inputs.force == true }}
+        if: ${{ inputs.force == true && inputs.pre_release != true }}
         env:
           VERSION: ${{ github.event.inputs.version }}
         run: |
@@ -232,8 +239,60 @@ jobs:
             echo "No existing tag found for ${VERSION}"
           fi
 
+      - name: Compute pre-release tag
+        id: compute-pre-release-tag
+        if: ${{ inputs.pre_release == true && inputs.force != true }}
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
+        run: |
+          git fetch --tags
+          k=1
+          while git rev-parse "${VERSION}-rc.${k}" >/dev/null 2>&1; do
+            k=$((k + 1))
+          done
+          PRE_TAG="${VERSION}-rc.${k}"
+          echo "pre-release-tag=${PRE_TAG}" >> $GITHUB_OUTPUT
+          echo "Computed pre-release tag: ${PRE_TAG}"
+
+      - name: Compute pre-release tag (force mode)
+        id: compute-pre-release-tag-force
+        if: ${{ inputs.pre_release == true && inputs.force == true }}
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
+        run: |
+          git fetch --tags
+          k=1
+          last_k=-1
+          while git rev-parse "${VERSION}-rc.${k}" >/dev/null 2>&1; do
+            last_k=$k
+            k=$((k + 1))
+          done
+          if [ $last_k -ge 0 ]; then
+            PRE_TAG="${VERSION}-rc.${last_k}"
+            echo "::warning::Force mode: deleting and recreating ${PRE_TAG}"
+            gh release delete "${PRE_TAG}" --repo "${{ github.repository }}" --yes --cleanup-tag 2>/dev/null || true
+          else
+            PRE_TAG="${VERSION}-rc.1"
+          fi
+          echo "pre-release-tag=${PRE_TAG}" >> $GITHUB_OUTPUT
+          echo "Computed pre-release tag (force): ${PRE_TAG}"
+
+      - name: Determine pre-release branch
+        id: determine-pre-release-branch
+        if: ${{ inputs.pre_release == true }}
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+        run: |
+          PRE_BRANCH="pre-release-${VERSION}"
+          echo "release-branch=${PRE_BRANCH}" >> $GITHUB_OUTPUT
+          echo "is-patch=false" >> $GITHUB_OUTPUT
+          echo "Pre-release branch: ${PRE_BRANCH}"
+
       - name: Determine release branch and type
         id: determine-branch
+        if: ${{ inputs.pre_release != true }}
         env:
           VERSION: ${{ github.event.inputs.version }}
         run: |
@@ -250,16 +309,22 @@ jobs:
           fi
 
       - name: Create release branch (if minor/major release)
-        if: steps.determine-branch.outputs.is-patch == 'false'
+        if: steps.determine-branch.outputs.is-patch == 'false' || steps.determine-pre-release-branch.outputs.is-patch == 'false'
         env:
-          RELEASE_BRANCH: ${{ steps.determine-branch.outputs.release-branch }}
+          RELEASE_BRANCH: ${{ steps.determine-branch.outputs.release-branch || steps.determine-pre-release-branch.outputs.release-branch }}
         run: |
-          echo "Creating release branch ${RELEASE_BRANCH} from main..."
+          echo "Checking release branch ${RELEASE_BRANCH}..."
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git checkout -b "${RELEASE_BRANCH}"
-          git push origin "${RELEASE_BRANCH}"
-          echo "Created branch ${RELEASE_BRANCH}"
+          git fetch origin "${RELEASE_BRANCH}" 2>/dev/null || true
+          if git rev-parse --verify "origin/${RELEASE_BRANCH}" > /dev/null 2>&1; then
+            echo "Branch ${RELEASE_BRANCH} already exists on remote, reusing."
+            git checkout "${RELEASE_BRANCH}"
+          else
+            git checkout -b "${RELEASE_BRANCH}"
+            git push origin "${RELEASE_BRANCH}"
+            echo "Created branch ${RELEASE_BRANCH}"
+          fi
 
   prepare-release:
     if: ${{ inputs.force != true }}
@@ -388,13 +453,15 @@ jobs:
           echo "PR_NUMBER=${PR_NUMBER}" >> $GITHUB_ENV
 
           # The closed milestone can't be assigned as part of PR creation call, milestone assigned after PR creation via updating PR with milestone
-          echo "Assigning milestone ${VERSION} to PR #${PR_NUMBER}..."
-          MILESTONE_NUMBER=$(gh api "repos/${{ github.repository }}/milestones?state=all&direction=desc&per_page=100" --jq ".[] | select(.title == \"${VERSION}\") | .number")
-          if [ -n "$MILESTONE_NUMBER" ]; then
-            gh api "repos/${{ github.repository }}/issues/${PR_NUMBER}" -X PATCH -f milestone="${MILESTONE_NUMBER}"
-            echo "Assigned milestone ${VERSION} to PR #${PR_NUMBER}"
-          else
-            echo "Warning could not find milestone ${VERSION} to assign to PR"
+          if [ "${{ inputs.pre_release }}" != "true" ]; then
+            echo "Assigning milestone ${VERSION} to PR #${PR_NUMBER}..."
+            MILESTONE_NUMBER=$(gh api "repos/${{ github.repository }}/milestones?state=all&direction=desc&per_page=100" --jq ".[] | select(.title == \"${VERSION}\") | .number")
+            if [ -n "$MILESTONE_NUMBER" ]; then
+              gh api "repos/${{ github.repository }}/issues/${PR_NUMBER}" -X PATCH -f milestone="${MILESTONE_NUMBER}"
+              echo "Assigned milestone ${VERSION} to PR #${PR_NUMBER}"
+            else
+              echo "Warning could not find milestone ${VERSION} to assign to PR"
+            fi
           fi
 
       - name: Wait for PR to be merged
@@ -458,13 +525,22 @@ jobs:
             echo "Bump branch ${BUMP_BRANCH} not found on remote (may already be deleted)"
           fi
       - name: Create and push release tag
+        id: create-and-push-tag
         if: ${{ inputs.dry_run != true }}
         env:
           GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
           VERSION: ${{ github.event.inputs.version }}
           RELEASE_BRANCH: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
+          PRE_RELEASE_TAG: ${{ needs.validate-and-prepare-branch.outputs.pre-release-tag }}
         run: |
-          echo "Creating release tag ${VERSION} on release branch ${RELEASE_BRANCH}..."
+          if [ "${{ inputs.pre_release }}" = "true" ]; then
+            TAG="${PRE_RELEASE_TAG}"
+            MSG="Pre-release ${TAG}"
+          else
+            TAG="${VERSION}"
+            MSG="Release ${TAG}"
+          fi
+          echo "Creating release tag ${TAG} on release branch ${RELEASE_BRANCH}..."
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -493,23 +569,30 @@ jobs:
           echo "Current commit: ${CURRENT_COMMIT}"
 
           # Create annotated tag
-          git tag -a "${VERSION}" -m "Release ${VERSION}"
-          echo "Created tag ${VERSION} at commit ${CURRENT_COMMIT}"
+          git tag -a "${TAG}" -m "${MSG}"
+          echo "Created tag ${TAG} at commit ${CURRENT_COMMIT}"
 
           # Push tag to origin
-          git push origin "${VERSION}"
-          echo "✓ Pushed tag ${VERSION} to origin"
+          git push origin "${TAG}"
+          echo "✓ Pushed tag ${TAG} to origin"
 
-          echo "✓ Successfully created and pushed tag ${VERSION} from ${RELEASE_BRANCH}"
+          echo "release-tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "✓ Successfully created and pushed tag ${TAG} from ${RELEASE_BRANCH}"
 
       - name: Skip tag creation (dry run)
         if: ${{ inputs.dry_run == true }}
         env:
           VERSION: ${{ github.event.inputs.version }}
           RELEASE_BRANCH: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
+          PRE_RELEASE_TAG: ${{ needs.validate-and-prepare-branch.outputs.pre-release-tag }}
         run: |
-          echo "::notice::DRY RUN: Skipping tag creation for ${VERSION} on ${RELEASE_BRANCH}"
-          echo "Would have created and pushed tag: ${VERSION}"
+          if [ "${{ inputs.pre_release }}" = "true" ]; then
+            TAG="${PRE_RELEASE_TAG}"
+          else
+            TAG="${VERSION}"
+          fi
+          echo "::notice::DRY RUN: Skipping tag creation for ${TAG} on ${RELEASE_BRANCH}"
+          echo "Would have created and pushed tag: ${TAG}"
 
   unit-tests:
     runs-on: ubuntu-latest
@@ -534,7 +617,7 @@ jobs:
     needs:
       - validate-and-prepare-branch
       - prepare-release
-    if: always() && !cancelled() && needs.validate-and-prepare-branch.result == 'success'
+    if: always() && !cancelled() && needs.validate-and-prepare-branch.result == 'success' && inputs.pre_release != true
     uses: ./.github/workflows/pr-integration.yml
     with:
       image_tag: ${{ inputs.version }}
@@ -545,7 +628,7 @@ jobs:
     needs:
       - validate-and-prepare-branch
       - prepare-release
-    if: always() && !cancelled() && needs.validate-and-prepare-branch.result == 'success'
+    if: always() && !cancelled() && needs.validate-and-prepare-branch.result == 'success' && inputs.pre_release != true
     uses: ./.github/workflows/gardener-integration.yml
     with:
       image_tag: ${{ inputs.version }}
@@ -557,6 +640,7 @@ jobs:
       - run-pr-integration
       - run-gardener-integration
       - unit-tests
+    if: always() && !cancelled() && inputs.pre_release != true && needs.unit-tests.result == 'success' && needs.run-pr-integration.result == 'success' && needs.run-gardener-integration.result == 'success'
     uses: kyma-project/compliancy/.github/workflows/notify-release-report.yml@main
     with:
       release_version: ${{ github.event.inputs.version }}
@@ -568,7 +652,7 @@ jobs:
       - prepare-release
       - upload-release-report
       - unit-tests
-    if: always() && !cancelled() && needs.validate-and-prepare-branch.result == 'success' && needs.upload-release-report.result == 'success'
+    if: always() && !cancelled() && needs.validate-and-prepare-branch.result == 'success' && needs.unit-tests.result == 'success' && (needs.upload-release-report.result == 'success' || inputs.pre_release == true)
     permissions:
       contents: write
     runs-on: ubuntu-latest
@@ -600,25 +684,29 @@ jobs:
 
       - name: Release
         if: ${{ inputs.dry_run != true }}
-        run: hack/release.sh ${{ inputs.version }}
+        run: |
+          RELEASE_TAG="${{ inputs.pre_release == true && needs.validate-and-prepare-branch.outputs.pre-release-tag || inputs.version }}"
+          hack/release.sh "${RELEASE_TAG}"
         env:
           GITHUB_TOKEN: "${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}"
-          GORELEASER_CURRENT_TAG: "${{ inputs.version }}"
+          GORELEASER_CURRENT_TAG: "${{ inputs.pre_release == true && needs.validate-and-prepare-branch.outputs.pre-release-tag || inputs.version }}"
 
       - name: Skip GitHub release (dry run)
         if: ${{ inputs.dry_run == true }}
         run: |
+          RELEASE_TAG="${{ inputs.pre_release == true && needs.validate-and-prepare-branch.outputs.pre-release-tag || inputs.version }}"
           echo "::notice::DRY RUN: Skipping GitHub release creation"
-          echo "Would have run: hack/release.sh ${{ inputs.version }}"
+          echo "Would have run: hack/release.sh ${RELEASE_TAG}"
 
       - name: Package Helm chart
+        if: ${{ inputs.pre_release != true }}
         run: |
           OUTPUT=$(helm package ./helm -d ./)
           FILENAME=$(echo $OUTPUT | grep -o '[^ ]*.tgz')
           echo "HELM_CHART=$FILENAME" >> $GITHUB_ENV
 
       - name: Upload Helm chart to release
-        if: ${{ inputs.dry_run != true }}
+        if: ${{ inputs.dry_run != true && inputs.pre_release != true }}
         env:
           GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
         run: |
@@ -626,13 +714,13 @@ jobs:
           gh release upload ${{ inputs.version }} --clobber ${HELM_CHART}
 
       - name: Skip Helm chart upload (dry run)
-        if: ${{ inputs.dry_run == true }}
+        if: ${{ inputs.dry_run == true && inputs.pre_release != true }}
         run: |
           echo "::notice::DRY RUN: Skipping Helm chart upload"
           echo "Would have uploaded: ${HELM_CHART}"
 
       - name: Commit and push Helm chart metadata
-        if: ${{ inputs.dry_run != true }}
+        if: ${{ inputs.dry_run != true && inputs.pre_release != true }}
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
@@ -643,7 +731,7 @@ jobs:
           git push origin gh-pages
 
       - name: Skip gh-pages update (dry run)
-        if: ${{ inputs.dry_run == true }}
+        if: ${{ inputs.dry_run == true && inputs.pre_release != true }}
         run: |
           echo "::notice::DRY RUN: Skipping gh-pages Helm chart metadata update"
           echo "Would have updated index.yaml on gh-pages branch"
@@ -653,17 +741,19 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
         run: |
-          echo "Triggering module release for dev channel..."
+          RELEASE_TAG="${{ inputs.pre_release == true && needs.validate-and-prepare-branch.outputs.pre-release-tag || inputs.version }}"
+          echo "Triggering module release for dev channel (release_tag=${RELEASE_TAG})..."
           gh workflow run submit-module.yml \
             --ref "${{ github.ref_name }}" \
             -f version="${{ inputs.version }}" \
             -f channel="dev" \
             -f dry_run="false" \
-            -f auto_merge="true"
+            -f auto_merge="true" \
+            -f release_tag="${RELEASE_TAG}"
           echo "Module release workflow triggered for dev channel"
 
       - name: Trigger module submission for fast channel
-        if: ${{ inputs.dry_run != true && inputs.module_release == true }}
+        if: ${{ inputs.dry_run != true && inputs.module_release == true && inputs.pre_release != true }}
         env:
           GH_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
         run: |
@@ -677,7 +767,7 @@ jobs:
           echo "Module release workflow triggered for fast channel"
 
       - name: Trigger module submission for experimental channel
-        if: ${{ inputs.dry_run != true && inputs.module_release == true }}
+        if: ${{ inputs.dry_run != true && inputs.module_release == true && inputs.pre_release != true }}
         env:
           GH_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
         run: |
@@ -691,7 +781,7 @@ jobs:
           echo "Module release workflow triggered for experimental channel"
 
       - name: Release success summary
-        if: ${{ success() && inputs.dry_run != true }}
+        if: ${{ success() && inputs.dry_run != true && inputs.pre_release != true }}
         run: |
           cat >> $GITHUB_STEP_SUMMARY <<EOF
           ##  Release ${{ inputs.version }} Published Successfully!
@@ -723,8 +813,47 @@ jobs:
           4. Update external documentation if needed
 
           EOF
+
+      - name: Pre-release success summary
+        if: ${{ success() && inputs.dry_run != true && inputs.pre_release == true }}
+        env:
+          PRE_RELEASE_TAG: ${{ needs.validate-and-prepare-branch.outputs.pre-release-tag }}
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY <<EOF
+          ## Pre-Release ${PRE_RELEASE_TAG} Published Successfully!
+
+          ### Pre-Release Information
+          - **Release**: https://github.com/${{ github.repository }}/releases/tag/${PRE_RELEASE_TAG}
+          - **Pre-Release Tag**: \`${PRE_RELEASE_TAG}\`
+          - **Base Version**: ${{ inputs.version }}
+          - **Branch**: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
+          - **OCC Image**: ${{ github.event.inputs.occ_image_version }}
+
+          ### Docker Images
+          \`\`\`
+          europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:${PRE_RELEASE_TAG}
+          \`\`\`
+
+          ### Module Releases
+          Module release workflow has been triggered for:
+          - **Dev channel**: Auto-merge enabled (with repositoryTag=${PRE_RELEASE_TAG})
+
+          Monitor the workflow runs at: https://github.com/${{ github.repository }}/actions/workflows/submit-module.yml
+
+          ### What's Next? (D-1 Checklist)
+          1. Verify the pre-release at the URL above (marked as pre-release, not latest)
+          2. Trigger CVE triage against \`${PRE_RELEASE_TAG}\` artifacts
+          3. Monitor the DEV channel module release PR
+          4. On release day, check for new commits on \`${{ needs.validate-and-prepare-branch.outputs.release-branch }}\` since this pre-release
+             - **No new commits**: promote this tag to the actual release
+             - **New commits**: run the release workflow normally (without pre_release flag)
+
+          EOF
+
       - name: Dry run summary
         if: ${{ inputs.dry_run == true }}
+        env:
+          PRE_RELEASE_TAG: ${{ needs.validate-and-prepare-branch.outputs.pre-release-tag }}
         run: |
           cat >> $GITHUB_STEP_SUMMARY <<EOF
           ## Dry Run Summary
@@ -732,27 +861,29 @@ jobs:
           **Version**: ${{ inputs.version }}
           **Release Branch**: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
           **OCC Image**: ${{ github.event.inputs.occ_image_version }}
+          **Pre-Release Mode**: ${{ inputs.pre_release }}
+          $([ "${{ inputs.pre_release }}" = "true" ] && echo "**Pre-Release Tag (computed)**: \`${PRE_RELEASE_TAG}\`")
 
           ### Completed (Dry Run)
           - Version validation
-          - Milestone verification
+          $([ "${{ inputs.pre_release }}" != "true" ] && echo "- Milestone verification")
           - Release branch preparation
           - Version bump in .env
           - make generate
           - Commit to release branch
           - Docker image build
           - Unit tests
-          - PR integration tests
+          $([ "${{ inputs.pre_release }}" != "true" ] && echo "- PR integration tests
           - Gardener integration tests
-          - Release report upload
+          - Release report upload")
           - Helm chart packaging
 
           ### Skipped (Dry Run)
           - Git tag creation
           - GitHub release creation
-          - Helm chart upload to release
-          - gh-pages update
+          $([ "${{ inputs.pre_release }}" != "true" ] && echo "- Helm chart upload to release
+          - gh-pages update")
 
           ---
-          **To create the actual release**, re-run this workflow with `dry_run` set to `false`.
+          **To create the actual release**, re-run this workflow with \`dry_run\` set to \`false\`.
           EOF
