@@ -33,7 +33,8 @@ func createKubernetesFilter(pipeline *telemetryv1beta1.LogPipeline) string {
 		AddConfigParam("merge_log", "on").
 		AddConfigParam("k8s-logging.parser", "on").
 		AddConfigParam("k8s-logging.exclude", "off").
-		AddConfigParam("kube_tag_prefix", fmt.Sprintf("%s.var.log.containers.", pipeline.Name)).
+		AddConfigParam("kube_tag_prefix", fmt.Sprintf("%s.var.log.pods.", pipeline.Name)).
+		AddConfigParam("regex_parser", "k8s-pods").
 		AddConfigParam("annotations", fluentBitBool(keepAnnotations)).
 		AddConfigParam("labels", fluentBitBool(keepLabels)).
 		AddConfigParam("buffer_size", "1MB").

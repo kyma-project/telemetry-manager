@@ -1,6 +1,6 @@
 module github.com/kyma-project/telemetry-manager
 
-go 1.26.3
+go 1.26.4
 
 require (
 	github.com/caarlos0/env/v11 v11.4.1
@@ -15,15 +15,15 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor v0.153.0
 	github.com/prometheus/client_golang v1.23.2
 	github.com/prometheus/client_model v0.6.2
-	github.com/prometheus/common v0.68.0
+	github.com/prometheus/common v0.68.1
 	github.com/stretchr/testify v1.11.1
 	go.opentelemetry.io/collector/component v1.59.0
 	go.opentelemetry.io/collector/pdata v1.59.0
 	go.uber.org/zap v1.28.0
 	google.golang.org/protobuf v1.36.12-0.20260120151049-f2248ac996af
 	gopkg.in/yaml.v3 v3.0.1
-	istio.io/api v1.30.0
-	istio.io/client-go v1.30.0
+	istio.io/api v1.30.1
+	istio.io/client-go v1.30.1
 	k8s.io/api v0.36.1
 	k8s.io/apiextensions-apiserver v0.36.1
 	k8s.io/apimachinery v0.36.1
