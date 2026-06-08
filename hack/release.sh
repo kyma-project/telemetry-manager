@@ -25,7 +25,9 @@ function prepare_release_artefacts() {
 get_previous_release_version() {
   # get list of tags in a reverse chronological order excluding dev tags,
   # sort them based on major, minor, patch numerically, grab the first release before the current one
-  TAG_LIST_WITH_PATCH=$(git tag --sort=-creatordate | grep -E "^[0-9]+.[0-9]+.[0-9]$" | sort -t "." -k1,1n -k2,2n -k3,3n | grep -B 1 "${CURRENT_VERSION}" | head -1)
+  # Strip any pre-release suffix (e.g. -rc.1) so the grep works when releasing an rc tag
+  BASE_VERSION=$(echo "${CURRENT_VERSION}" | cut -d'-' -f1)
+  TAG_LIST_WITH_PATCH=$(git tag --sort=-creatordate | grep -E "^[0-9]+.[0-9]+.[0-9]$" | sort -t "." -k1,1n -k2,2n -k3,3n | grep -B 1 "${BASE_VERSION}" | head -1 || true)
   export GORELEASER_PREVIOUS_TAG=${TAG_LIST_WITH_PATCH}
 }
 
