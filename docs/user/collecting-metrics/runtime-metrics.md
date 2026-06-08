@@ -159,6 +159,7 @@ The following metrics can be collected from the [kubeletstatsreceiver](https://g
 - `k8s.container.cpu.node.utilization`
 - `k8s.container.cpu_limit_utilization`
 - `k8s.container.cpu_request_utilization`
+- `k8s.container.ephemeral_storage.usage`
 - `k8s.container.memory.node.utilization`
 - `k8s.container.memory_limit_utilization`
 - `k8s.container.memory_request_utilization`

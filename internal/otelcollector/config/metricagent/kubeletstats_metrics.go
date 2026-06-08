@@ -53,6 +53,7 @@ const (
 	metricK8sContainerCPUNodeUtilization         = "k8s.container.cpu.node.utilization"
 	metricK8sContainerCPULimitUtilization        = "k8s.container.cpu_limit_utilization"
 	metricK8sContainerCPURequestUtilization      = "k8s.container.cpu_request_utilization"
+	metricK8sContainerEphemeralStorageUsage      = "k8s.container.ephemeral_storage.usage"
 	metricK8sContainerMemNodeUtilization         = "k8s.container.memory.node.utilization"
 	metricK8sContainerMemLimitUtilization        = "k8s.container.memory_limit_utilization"
 	metricK8sContainerMemRequestUtilization      = "k8s.container.memory_request_utilization"
@@ -69,7 +70,6 @@ const (
 	metricK8sPodMemRequestUtilization            = "k8s.pod.memory_request_utilization"
 	metricK8sPodUptime                           = "k8s.pod.uptime"
 	metricK8sPodVolumeUsage                      = "k8s.pod.volume.usage"
-	metricK8sContainerEphemeralStorageUsage      = "k8s.container.ephemeral_storage.usage"
 )
 
 // kubeletStatsReceiverContainerMetrics contains metrics related to container resources.
@@ -139,6 +139,7 @@ var kubeletStatsReceiverExtraMetrics = []string{
 	metricK8sContainerCPUNodeUtilization,
 	metricK8sContainerCPULimitUtilization,
 	metricK8sContainerCPURequestUtilization,
+	metricK8sContainerEphemeralStorageUsage,
 	metricK8sContainerMemNodeUtilization,
 	metricK8sContainerMemLimitUtilization,
 	metricK8sContainerMemRequestUtilization,
@@ -155,7 +156,6 @@ var kubeletStatsReceiverExtraMetrics = []string{
 	metricK8sPodMemRequestUtilization,
 	metricK8sPodUptime,
 	metricK8sPodVolumeUsage,
-	metricK8sContainerEphemeralStorageUsage,
 }
 
 // KubeletStatsReceiverMetrics contains all metric names that can be emitted by the kubeletStats receiver.
