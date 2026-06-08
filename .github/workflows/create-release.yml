@@ -56,7 +56,7 @@ jobs:
     outputs:
       release-branch: ${{ steps.determine-branch.outputs.release-branch || steps.determine-pre-release-branch.outputs.release-branch }}
       is-patch: ${{ steps.determine-branch.outputs.is-patch || steps.determine-pre-release-branch.outputs.is-patch }}
-      pre-release-tag: ${{ steps.compute-pre-tag.outputs.pre-release-tag || steps.compute-pre-tag-force.outputs.pre-release-tag }}
+      pre-release-tag: ${{ steps.compute-pre-release-tag.outputs.pre-release-tag || steps.compute-pre-release-tag-force.outputs.pre-release-tag }}
     steps:
       - name: Checkout code
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -240,14 +240,14 @@ jobs:
           fi
 
       - name: Compute pre-release tag
-        id: compute-pre-tag
+        id: compute-pre-release-tag
         if: ${{ inputs.pre_release == true && inputs.force != true }}
         env:
           VERSION: ${{ github.event.inputs.version }}
           GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
         run: |
           git fetch --tags
-          k=0
+          k=1
           while git rev-parse "${VERSION}-rc.${k}" >/dev/null 2>&1; do
             k=$((k + 1))
           done
@@ -256,14 +256,14 @@ jobs:
           echo "Computed pre-release tag: ${PRE_TAG}"
 
       - name: Compute pre-release tag (force mode)
-        id: compute-pre-tag-force
+        id: compute-pre-release-tag-force
         if: ${{ inputs.pre_release == true && inputs.force == true }}
         env:
           VERSION: ${{ github.event.inputs.version }}
           GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
         run: |
           git fetch --tags
-          k=0
+          k=1
           last_k=-1
           while git rev-parse "${VERSION}-rc.${k}" >/dev/null 2>&1; do
             last_k=$k
@@ -274,7 +274,7 @@ jobs:
             echo "::warning::Force mode: deleting and recreating ${PRE_TAG}"
             gh release delete "${PRE_TAG}" --repo "${{ github.repository }}" --yes --cleanup-tag 2>/dev/null || true
           else
-            PRE_TAG="${VERSION}-rc.0"
+            PRE_TAG="${VERSION}-rc.1"
           fi
           echo "pre-release-tag=${PRE_TAG}" >> $GITHUB_OUTPUT
           echo "Computed pre-release tag (force): ${PRE_TAG}"
