@@ -13,7 +13,7 @@ require (
 	github.com/mikefarah/yq/v4 v4.53.2
 	github.com/vektra/mockery/v3 v3.7.0
 	github.com/vladopajic/go-test-coverage/v2 v2.18.8
-	github.com/yannh/kubeconform v0.7.0
+	github.com/yannh/kubeconform v0.8.0
 	github.com/yeya24/promlinter v0.3.0
 	golang.org/x/tools v0.45.0
 	gotest.tools/gotestsum v1.13.0
@@ -524,7 +524,7 @@ require (
 	k8s.io/component-base v0.36.0 // indirect
 	k8s.io/gengo/v2 v2.0.0-20250922181213-ec3ebc5fd46b // indirect
 	k8s.io/klog/v2 v2.140.0 // indirect
-	k8s.io/kube-openapi v0.0.0-20260520065146-aa012df4f4af // indirect
+	k8s.io/kube-openapi v0.0.0-20260603220949-865597e52e25 // indirect
 	k8s.io/kubectl v0.36.0 // indirect
 	k8s.io/utils v0.0.0-20260507154919-ff6756f316d2 // indirect
 	mvdan.cc/gofumpt v0.9.2 // indirect
