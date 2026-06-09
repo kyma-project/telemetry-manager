@@ -8,8 +8,13 @@ import (
 	"strings"
 )
 
+const (
+	argCount   = 3
+	ownerParts = 2
+)
+
 func main() {
-	if len(os.Args) != 3 {
+	if len(os.Args) != argCount {
 		fmt.Fprintf(os.Stderr, "usage: chown <uid:gid> <path>\n")
 		os.Exit(1)
 	}
@@ -21,8 +26,8 @@ func main() {
 }
 
 func run(ownerArg, targetPath string) error {
-	parts := strings.SplitN(ownerArg, ":", 2)
-	if len(parts) != 2 {
+	parts := strings.SplitN(ownerArg, ":", ownerParts)
+	if len(parts) != ownerParts {
 		return fmt.Errorf("invalid owner format %q, expected uid:gid", ownerArg)
 	}
 
@@ -36,10 +41,12 @@ func run(ownerArg, targetPath string) error {
 		return fmt.Errorf("invalid gid %q: %w", parts[1], err)
 	}
 
+	//nolint:gosec // G703/G122: targetPath is a trusted mount path passed by the operator, not user input; Lchown on symlinks is intentional (we own the volume).
 	return filepath.Walk(targetPath, func(path string, _ os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
+
 		return os.Lchown(path, uid, gid)
 	})
 }

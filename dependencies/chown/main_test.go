@@ -43,7 +43,7 @@ func TestRun_WalksRecursively(t *testing.T) {
 	}
 
 	file := filepath.Join(sub, "file.txt")
-	if err := os.WriteFile(file, []byte("data"), 0o644); err != nil {
+	if err := os.WriteFile(file, []byte("data"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 
@@ -60,7 +60,7 @@ func TestRun_Symlink(t *testing.T) {
 	dir := t.TempDir()
 
 	target := filepath.Join(dir, "target.txt")
-	if err := os.WriteFile(target, []byte("data"), 0o644); err != nil {
+	if err := os.WriteFile(target, []byte("data"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 
