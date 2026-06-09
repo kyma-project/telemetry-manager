@@ -300,8 +300,9 @@ jobs:
         env:
           VERSION: ${{ inputs.version }}
           CHANNEL: ${{ inputs.channel }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
-          BRANCH_NAME="bump-telemetry-${VERSION}-${CHANNEL}"
+          BRANCH_NAME="bump-telemetry-${RELEASE_TAG:-${VERSION}}-${CHANNEL}"
 
           # Check if branch exists on remote
           if git ls-remote --heads origin "${BRANCH_NAME}" | grep -q "refs/heads/${BRANCH_NAME}$"; then
@@ -397,6 +398,7 @@ jobs:
           CHANNEL: ${{ inputs.channel }}
           DRY_RUN: ${{ inputs.dry_run }}
           AUTO_MERGE: ${{ inputs.auto_merge }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
           if [ "${CHANNEL}" = "experimental" ]; then
             VERSION_TAG="${VERSION}-experimental"
@@ -413,7 +415,7 @@ jobs:
           **Channel**: ${CHANNEL}
           **Version Tag**: ${VERSION_TAG}
           **Folder**: ${FOLDER_PATH}
-          **Branch**: bump-telemetry-${VERSION}-${CHANNEL}
+          **Branch**: bump-telemetry-${RELEASE_TAG:-${VERSION}}-${CHANNEL}
           **Dry Run**: ${DRY_RUN}
           **Auto-Merge**: ${AUTO_MERGE}
           EOF
