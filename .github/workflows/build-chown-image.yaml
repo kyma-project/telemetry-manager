@@ -27,13 +27,22 @@ jobs:
       tags: ${{ steps.create-tags.outputs.tags }}
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - name: Get commit short SHA
+        id: get-short-sha
+        run: echo "short-sha=$(git rev-parse --short $GITHUB_SHA)" >> $GITHUB_OUTPUT
+
       - name: Create tags
         id: create-tags
         run: |
           if [[ $GITHUB_EVENT_NAME == 'push' || $GITHUB_EVENT_NAME == 'merge_group' ]]; then
+            COMMIT_DATE=$(git show -s --format=%cd --date=format:'v%Y%m%d' $GITHUB_SHA)
             {
               echo "tags<<EOTAGS"
               echo "main"
+              echo "${COMMIT_DATE}-${{ steps.get-short-sha.outputs.short-sha }}"
               echo "EOTAGS"
             } >> "$GITHUB_OUTPUT"
           else
