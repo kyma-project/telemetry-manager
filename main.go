@@ -122,7 +122,7 @@ type envConfig struct {
 	// SelfMonitorFIPSImage is the image used for the self-monitoring deployment in FIPS mode. This is a Prometheus FIPS 140-2 compliant image.
 	SelfMonitorFIPSImage string `env:"SELF_MONITOR_FIPS_IMAGE"`
 	// ChownImage is the image used for the chown init containers.
-	ChownImage string `env:"CHOWN_IMAGE"`
+	ChownImage string `env:"CHOWN_IMAGE" envDefault:""`
 	// ImagePullSecret is the name of the image pull secret to use for pulling images of all created workloads (agents, gateways, self-monitor).
 	ImagePullSecret string `env:"SKR_IMG_PULL_SECRET" envDefault:""`
 	// ManagerNamespace returns the namespace where Telemetry Manager is deployed. In a Kyma setup, this is the same as TargetNamespace.
