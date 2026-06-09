@@ -1,0 +1,60 @@
+name: Build Chown Image
+
+permissions:
+  contents: read
+
+on:
+  pull_request_target:
+    paths:
+      - "dependencies/chown/**"
+    types: [opened, edited, synchronize, reopened, ready_for_review]
+  push:
+    branches:
+      - main
+    paths:
+      - "dependencies/chown/**"
+  workflow_dispatch:
+
+jobs:
+  approval:
+    uses: ./.github/workflows/approval-gate.yml
+
+  envs:
+    needs: [approval]
+    if: always() && (needs.approval.result == 'success' || needs.approval.result == 'skipped')
+    runs-on: ubuntu-latest
+    outputs:
+      tags: ${{ steps.create-tags.outputs.tags }}
+
+    steps:
+      - name: Create tags
+        id: create-tags
+        run: |
+          if [[ $GITHUB_EVENT_NAME == 'push' || $GITHUB_EVENT_NAME == 'merge_group' ]]; then
+            {
+              echo "tags<<EOTAGS"
+              echo "main"
+              echo "EOTAGS"
+            } >> "$GITHUB_OUTPUT"
+          else
+            {
+              echo "tags<<EOTAGS"
+              echo "PR-${{ github.event.pull_request.number }}"
+              echo "${{ github.event.pull_request.head.sha }}"
+              echo "EOTAGS"
+            } >> "$GITHUB_OUTPUT"
+          fi
+
+  build-image:
+    permissions:
+      id-token: write # Required for requesting the JWT token
+      contents: read
+    needs: [ approval, envs ]
+    if: ${{ always() && needs.envs.result == 'success' }}
+    uses: kyma-project/test-infra/.github/workflows/image-builder.yml@main
+    with:
+      name: telemetry-chown
+      dockerfile: Dockerfile
+      context: dependencies/chown
+      tags: ${{ needs.envs.outputs.tags }}
+      platforms: "linux/amd64,linux/arm64"
