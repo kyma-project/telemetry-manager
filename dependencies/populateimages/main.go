@@ -24,7 +24,8 @@ const (
 	SelfMonitorImage                 = "{{ .ENV_SELFMONITOR_IMAGE }}"
 	SelfMonitorFIPSImage             = "{{ .ENV_SELFMONITOR_FIPS_IMAGE }}"
 	FaultBackendImage                = "{{ .ENV_FAULT_BACKEND_IMAGE }}"
-	AlpineImage                      = "{{ .ENV_ALPINE_IMAGE }}"
+	AlpineImage                      = "europe-docker.pkg.dev/kyma-project/prod/external/library/alpine:3.23.4"
+	ChownImage                       = "{{ .ENV_CHOWN_IMAGE }}"
 )
 `,
 }
@@ -104,7 +105,7 @@ func generateSecScanConfig(data map[string]string) error {
 		data["ENV_OTEL_COLLECTOR_IMAGE"],
 		data["ENV_SELFMONITOR_IMAGE"],
 		data["ENV_SELFMONITOR_FIPS_IMAGE"],
-		data["ENV_ALPINE_IMAGE"],
+		data["ENV_CHOWN_IMAGE"],
 	}
 
 	excludes := []string{
