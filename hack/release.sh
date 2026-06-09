@@ -28,6 +28,11 @@ get_previous_release_version() {
   # Strip any pre-release suffix (e.g. -rc.1) so the grep works when releasing an rc tag
   BASE_VERSION=$(echo "${CURRENT_VERSION}" | cut -d'-' -f1)
   TAG_LIST_WITH_PATCH=$(git tag --sort=-creatordate | grep -E "^[0-9]+.[0-9]+.[0-9]$" | sort -t "." -k1,1n -k2,2n -k3,3n | grep -B 1 "${BASE_VERSION}" | head -1 || true)
+  # For rc releases, BASE_VERSION is not yet in the stable tag list.
+  # Fall back to the highest stable tag (the actual previous release).
+  if [ -z "${TAG_LIST_WITH_PATCH}" ]; then
+    TAG_LIST_WITH_PATCH=$(git tag --sort=-creatordate | grep -E "^[0-9]+.[0-9]+.[0-9]$" | sort -t "." -k1,1n -k2,2n -k3,3n | tail -1 || true)
+  fi
   export GORELEASER_PREVIOUS_TAG=${TAG_LIST_WITH_PATCH}
 }
 
