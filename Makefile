@@ -272,6 +272,10 @@ build-dependencies: $(BUILD_DEPENDENCY_TARGETS) ## Build custom tools in depende
 docker-build: ## Build docker image with the manager
 	docker build -t ${MANAGER_IMAGE} .
 
+.PHONY: docker-build-local
+docker-build-local: ## Build docker image for local E2E testing (tagged as telemetry-manager:latest for k3d auto-import)
+	docker build -t telemetry-manager:latest .
+
 .PHONY: docker-push
 docker-push: ## Push docker image with the manager
 	docker push ${MANAGER_IMAGE}
