@@ -32,6 +32,7 @@ on:
     branches:
       - "main"
       - "release-*"
+      - "pre-release-*"
     paths:
       - "**/go.mod"
       - "**/go.sum"
