@@ -10,9 +10,12 @@ set -o pipefail # prevents errors in a pipeline from being masked
 readonly LOCALBIN=${LOCALBIN:-$(pwd)/bin}
 readonly HELM=${HELM:-$LOCALBIN/helm}
 readonly GORELEASER_VERSION="${GORELEASER_VERSION:-$ENV_GORELEASER_VERSION}"
-readonly MANAGER_IMAGE="${MANAGER_IMAGE:-$ENV_MANAGER_IMAGE}"
-readonly MANAGER_IMAGE_EXPERIMENTAL=${MANAGER_IMAGE}-experimental
 readonly CURRENT_VERSION="$1"
+# Extract image repository without tag from ENV_MANAGER_IMAGE
+readonly MANAGER_IMAGE_REPO=$(echo "${ENV_MANAGER_IMAGE}" | cut -d':' -f1)
+# Use CURRENT_VERSION (release tag) as image tag, not the version from .env
+readonly MANAGER_IMAGE="${MANAGER_IMAGE:-${MANAGER_IMAGE_REPO}:${CURRENT_VERSION}}"
+readonly MANAGER_IMAGE_EXPERIMENTAL=${MANAGER_IMAGE}-experimental
 
 function prepare_release_artefacts() {
   echo "Preparing release artefacts"
