@@ -180,6 +180,7 @@ spec:
 - No Istio traffic routing annotations
 - No Istio certificate volume mounts
 - Metric Agent cannot scrape STRICT mTLS workloads (they would need PERMISSIVE mode)
+- No istio metric scrape
 
 
 ### Implementation Impact
@@ -213,7 +214,7 @@ All reconcilers that create or configure telemetry components must respect the `
 
 Additional validation is enforced at the admission webhook level:
 
-- When `istio.enabled: false`, validate that no MetricPipeline relies on scraping STRICT mTLS workloads (since the Metric Agent won't have Istio certificates)
+- When `istio.enabled: false`, validate that no MetricPipeline relies on scraping STRICT mTLS workloads (since the Metric Agent won't have Istio certificates) and no istio metrics scrape allowed
 
 ### Open Questions
 
