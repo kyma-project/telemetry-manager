@@ -124,15 +124,127 @@ No Istio-specific resources are created for the Self-Monitor because it explicit
 ## Summary Table
 
 | Component | Sidecar Injection | Istio Certificates | Special Annotations | Istio-Specific Resources |
-|-----------|-------------------|-------------------|---------------------|--------------------------|
-| OTLP Gateway | ✅ Always enabled | ❌ Not used | ❌ None | PeerAuthentication (PERMISSIVE), DestinationRule (TLS DISABLE) |
-| Metric Agent | ✅ Always enabled | ✅ Always mounted | ✅ Conditional (traffic routing) | None |
-| OTel Log Agent | ✅ Always enabled | ❌ Not used | ❌ None | None |
-| Fluent Bit | ✅ Always enabled | ❌ Not used | ❌ None | None |
-| Self-Monitor | ❌ Always disabled | ❌ Not used | ❌ None | None |
+|-----------|----------------|--------------|-----------------|--------------------------|
+| OTLP Gateway |  Always enabled |  Not used |  None | PeerAuthentication (PERMISSIVE), DestinationRule (TLS DISABLE) |
+| Metric Agent |  Always enabled |  Always mounted |  Conditional (traffic routing) | None |
+| OTel Log Agent | Always enabled |  Not used |  None | None |
+| Fluent Bit |  Always enabled |  Not used |  None | None |
+| Self-Monitor |  Always disabled | Not used |  None | None |
 
 
+## Proposed API
+
+To provide explicit control over Istio integration, we propose adding an `istio` field to the Telemetry CR spec. This field allows users to enable or disable Istio mode globally for all telemetry components.
+
+## User Examples
+
+### Example 1: Explicit Enable (Opt-in)
+
+Force Istio mode on, even if Istio is not detected:
+
+```yaml
+apiVersion: operator.kyma-project.io/v1beta1
+kind: Telemetry
+metadata:
+  name: default
+  namespace: kyma-system
+spec:
+  istio:
+    enabled: true
+  metric:
+    collectionInterval: 30s
+```
+
+**Behavior**: All Istio-specific resources (sidecar injection, PeerAuthentication, DestinationRule, traffic annotations, certificate volumes) are applied unconditionally.
+
+#### Example 2: Explicit Disable (Opt-out)
+
+Force Istio mode off, even if Istio is detected in the cluster:
+
+```yaml
+apiVersion: operator.kyma-project.io/v1beta1
+kind: Telemetry
+metadata:
+  name: default
+  namespace: kyma-system
+spec:
+  istio:
+    enabled: false
+  metric:
+    collectionInterval: 30s
+```
+
+**Behavior**: 
+- No sidecar injection labels (`sidecar.istio.io/inject` set to `"false"`)
+- No PeerAuthentication or DestinationRule resources created
+- No Istio traffic routing annotations
+- No Istio certificate volume mounts
+- Metric Agent cannot scrape STRICT mTLS workloads (they would need PERMISSIVE mode)
 
 
+### Implementation Impact
 
+When `istio.enabled` is set, the reconciliation logic changes as follows:
 
+#### Components Affected
+
+All reconcilers that create or configure telemetry components must respect the `istio.enabled` setting:
+
+1. OTLP Gateway Reconciler
+   - Skip PeerAuthentication creation when Istio mode is off
+   - Skip DestinationRule creation when Istio mode is off
+   - Remove sidecar injection label when Istio mode is off
+
+2. Metric Agent Reconciler
+   - Skip Istio traffic routing annotations when Istio mode is off
+   - Skip certificate volume mounts when Istio mode is off
+   - Remove sidecar injection label when Istio mode is off
+
+3. OTel Log Agent Reconciler
+   - Remove sidecar injection label when Istio mode is off
+
+4. Fluent Bit Reconciler
+   - Remove sidecar injection label when Istio mode is off
+
+5. NetworkPolicy Reconcilers
+   - Omit Istio Envoy port (15090) from ingress rules when Istio mode is off
+
+### Validation
+
+Additional validation is enforced at the admission webhook level:
+
+- When `istio.enabled: false`, validate that no MetricPipeline relies on scraping STRICT mTLS workloads (since the Metric Agent won't have Istio certificates)
+
+### Open Questions
+
+1. Granular control per component: Should the API allow enabling/disabling Istio mode per component (for example, `istio.metricAgent.enabled`)?
+
+2. Ambient mesh support: Should the API distinguish between sidecar mode and ambient mode?
+
+3. Validation of dependent features: Should the reconciler block MetricPipeline creation when `istio.enabled: false` but the pipeline targets STRICT mTLS workloads?
+
+### Migration Path
+
+The proposed API provides a smooth migration path:
+
+#### Phase 1: Explicit Control (Current Proposal)
+- Add `istio.enabled` field with `nil` default (auto-detection)
+- Users can opt out with `enabled: false`
+- Existing installations continue working unchanged
+
+#### Phase 2: Default to OFF (Future)
+- Change reconciler default behavior: when `istio.enabled` is unset, default to `false` instead of auto-detection
+- Users must explicitly set `enabled: true` to enable Istio mode
+- Provide migration tooling or documentation for users transitioning from auto-detection
+
+#### Phase 3: Deprecate Auto-detection (Long-term)
+- Remove auto-detection logic entirely
+- Require explicit `enabled: true` or `enabled: false` (make the field required)
+
+### Backward Compatibility
+
+The three-value logic (`true`, `false`, `nil`) ensures full backward compatibility:
+
+- Existing Telemetry CRs without the `istio` field continue to use auto-detection
+- Users who upgrade to the new API version can explicitly control Istio mode without modifying existing CRs
+- The default behavior (auto-detection when unset) matches the current implementation
