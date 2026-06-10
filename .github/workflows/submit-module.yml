@@ -131,30 +131,31 @@ jobs:
             "europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:${IMAGE_TAG}"
           )
 
-          MISSING_IMAGES=()
+          # For pre-releases (release_tag set) the build-manager-image workflow may still be
+          # running when this job starts. Retry for up to 20 minutes (24 × 50s).
+          MAX_ATTEMPTS=24
+          RETRY_INTERVAL=50
 
           for IMAGE in "${IMAGES[@]}"; do
             echo "Checking image: ${IMAGE}"
-            if docker manifest inspect "${IMAGE}" > /dev/null 2>&1; then
-              echo "  Image exists: ${IMAGE}"
-            else
-              echo "  Image not found: ${IMAGE}"
-              MISSING_IMAGES+=("${IMAGE}")
-            fi
-          done
-
-          if [ ${#MISSING_IMAGES[@]} -gt 0 ]; then
-            echo ""
-            echo "::error::Missing Docker images for image tag ${IMAGE_TAG}"
-            echo "The following images do not exist:"
-            for IMAGE in "${MISSING_IMAGES[@]}"; do
-              echo "  - ${IMAGE}"
+            ATTEMPT=0
+            while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+              if docker manifest inspect "${IMAGE}" > /dev/null 2>&1; then
+                echo "  Image exists: ${IMAGE}"
+                break
+              fi
+              ATTEMPT=$((ATTEMPT + 1))
+              if [ $ATTEMPT -lt $MAX_ATTEMPTS ]; then
+                echo "  Image not found yet (attempt ${ATTEMPT}/${MAX_ATTEMPTS}), retrying in ${RETRY_INTERVAL}s..."
+                sleep $RETRY_INTERVAL
+              else
+                echo ""
+                echo "::error::Image ${IMAGE} did not appear after $((MAX_ATTEMPTS * RETRY_INTERVAL / 60)) minutes."
+                echo "Please ensure the build-manager-image workflow has completed successfully."
+                exit 1
+              fi
             done
-            echo ""
-            echo "Please ensure the build-manager-image workflow has completed successfully"
-            echo "and the images are available in the registry before releasing the module."
-            exit 1
-          fi
+          done
 
           echo ""
           echo "All required Docker images exist for image tag ${IMAGE_TAG}"
@@ -299,8 +300,9 @@ jobs:
         env:
           VERSION: ${{ inputs.version }}
           CHANNEL: ${{ inputs.channel }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
-          BRANCH_NAME="bump-telemetry-${VERSION}-${CHANNEL}"
+          BRANCH_NAME="bump-telemetry-${RELEASE_TAG:-${VERSION}}-${CHANNEL}"
 
           # Check if branch exists on remote
           if git ls-remote --heads origin "${BRANCH_NAME}" | grep -q "refs/heads/${BRANCH_NAME}$"; then
@@ -396,6 +398,7 @@ jobs:
           CHANNEL: ${{ inputs.channel }}
           DRY_RUN: ${{ inputs.dry_run }}
           AUTO_MERGE: ${{ inputs.auto_merge }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
           if [ "${CHANNEL}" = "experimental" ]; then
             VERSION_TAG="${VERSION}-experimental"
@@ -412,7 +415,7 @@ jobs:
           **Channel**: ${CHANNEL}
           **Version Tag**: ${VERSION_TAG}
           **Folder**: ${FOLDER_PATH}
-          **Branch**: bump-telemetry-${VERSION}-${CHANNEL}
+          **Branch**: bump-telemetry-${RELEASE_TAG:-${VERSION}}-${CHANNEL}
           **Dry Run**: ${DRY_RUN}
           **Auto-Merge**: ${AUTO_MERGE}
           EOF

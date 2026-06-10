@@ -19,6 +19,7 @@ on:
       - "!config/busola/**"
       - "!**_test.go"
       - "!docs/**"
+      - "!dependencies/**"
       - "test/**.go"
       - ".github/workflows/pr-integration.yml"
       - ".github/template/**"
@@ -31,6 +32,7 @@ on:
     branches:
       - "main"
       - "release-*"
+      - "pre-release-*"
     paths:
       - "**/go.mod"
       - "**/go.sum"
@@ -39,6 +41,7 @@ on:
       - "!config/busola/**"
       - "!**_test.go"
       - "!docs/**"
+      - "!dependencies/**"
       - "test/**.go"
       - ".github/workflows/pr-integration.yml"
       - ".github/template/**"
