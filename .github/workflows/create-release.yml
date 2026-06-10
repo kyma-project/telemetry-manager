@@ -382,19 +382,15 @@ jobs:
             sed -i.bak "s|ENV_MANAGER_IMAGE=\(.*\):.*|ENV_MANAGER_IMAGE=\1:${RELEASE_TAG}|" .env && rm .env.bak
             echo "Updated ENV_MANAGER_IMAGE tag in .env to ${RELEASE_TAG}"
 
-            # Only update OCC, self-monitor, and fluentbit images for non-pre-releases
-            if [ "${PRE_RELEASE}" != "true" ]; then
-              sed -i.bak 's|ENV_OTEL_COLLECTOR_IMAGE="\([^:]*\):[^"]*"|ENV_OTEL_COLLECTOR_IMAGE="\1:'"${OCC_IMAGE_VERSION}"'"|' .env && rm .env.bak
-              echo "Updated ENV_OTEL_COLLECTOR_IMAGE tag in .env"
+            # Always update OCC, self-monitor, and fluentbit images with stable versions from inputs
+            sed -i.bak 's|ENV_OTEL_COLLECTOR_IMAGE="\([^:]*\):[^"]*"|ENV_OTEL_COLLECTOR_IMAGE="\1:'"${OCC_IMAGE_VERSION}"'"|' .env && rm .env.bak
+            echo "Updated ENV_OTEL_COLLECTOR_IMAGE tag in .env to ${OCC_IMAGE_VERSION}"
 
-              sed -i.bak 's|ENV_SELFMONITOR_IMAGE="\([^:]*\):[^"]*"|ENV_SELFMONITOR_IMAGE="\1:'"${SELF_MONITOR_IMAGE_TAG}"'"|' .env && rm .env.bak
-              echo "Updated ENV_SELFMONITOR_IMAGE tag in .env"
+            sed -i.bak 's|ENV_SELFMONITOR_IMAGE="\([^:]*\):[^"]*"|ENV_SELFMONITOR_IMAGE="\1:'"${SELF_MONITOR_IMAGE_TAG}"'"|' .env && rm .env.bak
+            echo "Updated ENV_SELFMONITOR_IMAGE tag in .env to ${SELF_MONITOR_IMAGE_TAG}"
 
-              sed -i.bak 's|ENV_FLUENTBIT_EXPORTER_IMAGE="\([^:]*\):[^"]*"|ENV_FLUENTBIT_EXPORTER_IMAGE="\1:'"${DIR_SIZE_IMAGE_TAG}"'"|' .env && rm .env.bak
-              echo "Updated ENV_FLUENTBIT_EXPORTER_IMAGE tag in .env"
-            else
-              echo "Pre-release mode: skipping OCC, self-monitor, and fluentbit image updates"
-            fi
+            sed -i.bak 's|ENV_FLUENTBIT_EXPORTER_IMAGE="\([^:]*\):[^"]*"|ENV_FLUENTBIT_EXPORTER_IMAGE="\1:'"${DIR_SIZE_IMAGE_TAG}"'"|' .env && rm .env.bak
+            echo "Updated ENV_FLUENTBIT_EXPORTER_IMAGE tag in .env to ${DIR_SIZE_IMAGE_TAG}"
 
             make generate
           fi
@@ -442,22 +438,17 @@ jobs:
 
           # Build changes list dynamically
           CHANGES="- Updated \`ENV_HELM_RELEASE_VERSION\` to \`${RELEASE_TAG}\`
-          - Updated \`ENV_MANAGER_IMAGE\` tag to \`${RELEASE_TAG}\`"
-
-          # Only add OCC, self-monitor, and fluentbit updates for non-pre-releases
-          if [ "${PRE_RELEASE}" != "true" ]; then
-            CHANGES="${CHANGES}
+          - Updated \`ENV_MANAGER_IMAGE\` tag to \`${RELEASE_TAG}\`
           - Updated \`ENV_OTEL_COLLECTOR_IMAGE\` tag to \`${OCC_IMAGE_VERSION}\`"
 
-            if [ -n "${SELF_MONITOR_IMAGE_TAG}" ]; then
-              CHANGES="${CHANGES}
+          if [ -n "${SELF_MONITOR_IMAGE_TAG}" ]; then
+            CHANGES="${CHANGES}
           - Updated \`ENV_SELFMONITOR_IMAGE\` tag to \`${SELF_MONITOR_IMAGE_TAG}\`"
-            fi
+          fi
 
-            if [ -n "${DIR_SIZE_IMAGE_TAG}" ]; then
-              CHANGES="${CHANGES}
+          if [ -n "${DIR_SIZE_IMAGE_TAG}" ]; then
+            CHANGES="${CHANGES}
           - Updated \`ENV_FLUENTBIT_EXPORTER_IMAGE\` tag to \`${DIR_SIZE_IMAGE_TAG}\`"
-            fi
           fi
 
           PR_BODY="$(cat <<EOF
