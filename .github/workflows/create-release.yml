@@ -362,24 +362,35 @@ jobs:
           OCC_IMAGE_VERSION: ${{ github.event.inputs.occ_image_version }}
           SELF_MONITOR_IMAGE_TAG: ${{ github.event.inputs.self_monitor_image_tag }}
           DIR_SIZE_IMAGE_TAG: ${{ github.event.inputs.dir_size_image_tag }}
+          PRE_RELEASE: ${{ github.event.inputs.pre_release }}
+          PRE_RELEASE_TAG: ${{ needs.validate-and-prepare-branch.outputs.pre-release-tag }}
         run: |
-          echo "Bumping version to ${VERSION}..."
+          # For pre-releases, use the computed RC tag; otherwise use base version
+          if [ "${PRE_RELEASE}" = "true" ]; then
+            RELEASE_TAG="${PRE_RELEASE_TAG}"
+            echo "Pre-release mode: bumping version to ${RELEASE_TAG}..."
+          else
+            RELEASE_TAG="${VERSION}"
+            echo "Bumping version to ${RELEASE_TAG}..."
+          fi
 
           if [ -f .env ]; then
-            sed -i.bak "s/ENV_HELM_RELEASE_VERSION=.*/ENV_HELM_RELEASE_VERSION=${VERSION}/" .env && rm .env.bak
-            echo "Updated ENV_HELM_RELEASE_VERSION in .env"
+            # Always update HELM_RELEASE_VERSION and MANAGER_IMAGE
+            sed -i.bak "s/ENV_HELM_RELEASE_VERSION=.*/ENV_HELM_RELEASE_VERSION=${RELEASE_TAG}/" .env && rm .env.bak
+            echo "Updated ENV_HELM_RELEASE_VERSION in .env to ${RELEASE_TAG}"
 
-            sed -i.bak "s|ENV_MANAGER_IMAGE=\(.*\):.*|ENV_MANAGER_IMAGE=\1:${VERSION}|" .env && rm .env.bak
-            echo "Updated ENV_MANAGER_IMAGE tag in .env"
+            sed -i.bak "s|ENV_MANAGER_IMAGE=\(.*\):.*|ENV_MANAGER_IMAGE=\1:${RELEASE_TAG}|" .env && rm .env.bak
+            echo "Updated ENV_MANAGER_IMAGE tag in .env to ${RELEASE_TAG}"
 
+            # Always update OCC, self-monitor, and fluentbit images with stable versions from inputs
             sed -i.bak 's|ENV_OTEL_COLLECTOR_IMAGE="\([^:]*\):[^"]*"|ENV_OTEL_COLLECTOR_IMAGE="\1:'"${OCC_IMAGE_VERSION}"'"|' .env && rm .env.bak
-            echo "Updated ENV_OTEL_COLLECTOR_IMAGE tag in .env"
+            echo "Updated ENV_OTEL_COLLECTOR_IMAGE tag in .env to ${OCC_IMAGE_VERSION}"
 
             sed -i.bak 's|ENV_SELFMONITOR_IMAGE="\([^:]*\):[^"]*"|ENV_SELFMONITOR_IMAGE="\1:'"${SELF_MONITOR_IMAGE_TAG}"'"|' .env && rm .env.bak
-            echo "Updated ENV_SELFMONITOR_IMAGE tag in .env"
-          
+            echo "Updated ENV_SELFMONITOR_IMAGE tag in .env to ${SELF_MONITOR_IMAGE_TAG}"
+
             sed -i.bak 's|ENV_FLUENTBIT_EXPORTER_IMAGE="\([^:]*\):[^"]*"|ENV_FLUENTBIT_EXPORTER_IMAGE="\1:'"${DIR_SIZE_IMAGE_TAG}"'"|' .env && rm .env.bak
-            echo "Updated ENV_FLUENTBIT_EXPORTER_IMAGE tag in .env"
+            echo "Updated ENV_FLUENTBIT_EXPORTER_IMAGE tag in .env to ${DIR_SIZE_IMAGE_TAG}"
 
             make generate
           fi
@@ -387,12 +398,21 @@ jobs:
       - name: Commit and push version bump
         env:
           VERSION: ${{ github.event.inputs.version }}
+          PRE_RELEASE: ${{ github.event.inputs.pre_release }}
+          PRE_RELEASE_TAG: ${{ needs.validate-and-prepare-branch.outputs.pre-release-tag }}
         run: |
+          # Use pre-release tag for commit message if in pre-release mode
+          if [ "${PRE_RELEASE}" = "true" ]; then
+            RELEASE_TAG="${PRE_RELEASE_TAG}"
+          else
+            RELEASE_TAG="${VERSION}"
+          fi
+
           git add .
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
-            git commit -m "Bump version to ${VERSION}"
+            git commit -m "Bump version to ${RELEASE_TAG}"
             git push origin "${BUMP_BRANCH}"
             echo "Committed and pushed version bump to ${BUMP_BRANCH}"
           fi
@@ -406,10 +426,19 @@ jobs:
           OCC_IMAGE_VERSION: ${{ github.event.inputs.occ_image_version }}
           SELF_MONITOR_IMAGE_TAG: ${{ github.event.inputs.self_monitor_image_tag }}
           DIR_SIZE_IMAGE_TAG: ${{ github.event.inputs.dir_size_image_tag }}
+          PRE_RELEASE: ${{ github.event.inputs.pre_release }}
+          PRE_RELEASE_TAG: ${{ needs.validate-and-prepare-branch.outputs.pre-release-tag }}
         run: |
+          # Use pre-release tag for PR if in pre-release mode
+          if [ "${PRE_RELEASE}" = "true" ]; then
+            RELEASE_TAG="${PRE_RELEASE_TAG}"
+          else
+            RELEASE_TAG="${VERSION}"
+          fi
+
           # Build changes list dynamically
-          CHANGES="- Updated \`ENV_HELM_RELEASE_VERSION\` to \`${VERSION}\`
-          - Updated \`ENV_MANAGER_IMAGE\` tag to \`${VERSION}\`
+          CHANGES="- Updated \`ENV_HELM_RELEASE_VERSION\` to \`${RELEASE_TAG}\`
+          - Updated \`ENV_MANAGER_IMAGE\` tag to \`${RELEASE_TAG}\`
           - Updated \`ENV_OTEL_COLLECTOR_IMAGE\` tag to \`${OCC_IMAGE_VERSION}\`"
 
           if [ -n "${SELF_MONITOR_IMAGE_TAG}" ]; then
@@ -423,9 +452,9 @@ jobs:
           fi
 
           PR_BODY="$(cat <<EOF
-          ## Release Preparation for ${VERSION}
+          ## Release Preparation for ${RELEASE_TAG}
 
-          This PR prepares the release branch for version **${VERSION}**.
+          This PR prepares the release branch for version **${RELEASE_TAG}**.
 
           ### Changes
           ${CHANGES}
@@ -442,7 +471,7 @@ jobs:
           PR_URL=$(gh pr create \
             --base "${RELEASE_BRANCH}" \
             --head "${BUMP_BRANCH}" \
-            --title "chore: release preparation: bump version to ${VERSION}" \
+            --title "chore: release preparation: bump version to ${RELEASE_TAG}" \
             --body "${PR_BODY}" \
             --label "area/release" \
             --label "kind/chore")
