@@ -12,13 +12,13 @@ Telemetry Manager currently auto-detects Istio by checking for Istio CRDs (`*.is
 
 While automatic detection provides convenience, it creates several operational challenges:
 
-- No explicit control: Users cannot disable Istio mode even when it is not needed, resulting in unnecessary resource overhead from sidecar containers, certificate management, and Istio-specific network policies.
+- No explicit control: Users cannot disable Istio mode even if they do not need it, resulting in unnecessary resource overhead from sidecar containers, certificate management, and Istio-specific network policies.
 
 - Unconditional artifacts: Some Istio-related behaviors remain applied unconditionally regardless of detection. For example, all components (except Self-Monitor) always have `sidecar.istio.io/inject: "true"` and the Metric Agent always mounts Istio certificate volumes, even when Istio integration is not required.
 
 - All-or-nothing approach: The current design does not allow granular control. Users cannot selectively enable Istio mode for specific components or use cases (such as backends requiring in-cluster mTLS).
 
-- Migration difficulty: Moving toward an "Istio mode OFF by default" model (tracked in [issue #657](https://github.com/kyma-project/telemetry-manager/issues/657)) requires a backward-compatible transition path that preserves existing behavior while allowing explicit opt-in configuration.
+- Migration difficulty: To move toward an "Istio mode OFF by default" model (tracked in [issue #657](https://github.com/kyma-project/telemetry-manager/issues/657)), the system requires a backward-compatible transition path that preserves existing behavior while allowing explicit opt-in configuration.
 
 The system needs an API mechanism to explicitly enable or disable Istio mode, providing users with control over when and how Istio integration is applied to telemetry components. This addresses [issue #3549](https://github.com/kyma-project/telemetry-manager/issues/3549), which proposes an explicit configuration model that supports eventual migration to an opt-in default while maintaining backward compatibility during the transition.
 
@@ -41,13 +41,13 @@ The OTLP Gateway is deployed as a DaemonSet and serves as the unified ingress po
 
 | Resource | Behavior | Rationale |
 |----------|----------|-----------|
-| Pod Label | `sidecar.istio.io/inject: "true"` | The OTLP Gateway always has Istio sidecar injection enabled to support outbound mTLS communication to in-cluster backends that are part of the Istio mesh. |
+| Pod Label | `sidecar.istio.io/inject: "true"` | The OTLP Gateway always has Istio sidecar injection enabled to support outbound mTLS communication to in-cluster backends in the Istio mesh. |
 
 ##### Conditional (Only When Istio is Detected)
 
 | Resource | Behavior | Rationale |
 |----------|----------|-----------|
-| PeerAuthentication | PERMISSIVE mTLS mode | Allows both plain-text and mTLS connections to the OTLP Gateway. This ensures applications can send data over plain-text (because of node-local ingestion), while still supporting mTLS for any direct cross-namespace access if needed. |
+| PeerAuthentication | PERMISSIVE mTLS mode | This configuration allows both plain-text and mTLS connections to the OTLP Gateway. This ensures applications can send data over plain-text (because of node-local ingestion), while still supporting mTLS for any direct cross-namespace access if needed. |
 | DestinationRule | `TLS mode: DISABLE` for all OTLP Services | The OTLP Gateway receives telemetry data over plain-text on the ingestion path because of node-local routing. Disabling TLS for client connections to these services ensures that other components (such as metric pipelines) can connect without requiring mTLS. |
 | NetworkPolicy (Ingress) | Additionally allows traffic on Istio Envoy telemetry port (15090) | When Istio is present, the sidecar's Envoy proxy exposes metrics that need to be scraped by monitoring systems. |
 
@@ -124,12 +124,12 @@ No Istio-specific resources are created for the Self-Monitor because it explicit
 ## Summary Table
 
 | Component | Sidecar Injection | Istio Certificates | Special Annotations | Istio-Specific Resources |
-|-----------|----------------|--------------|-----------------|--------------------------|
-| OTLP Gateway |  Always enabled |  Not used |  None | PeerAuthentication (PERMISSIVE), DestinationRule (TLS DISABLE) |
-| Metric Agent |  Always enabled |  Always mounted |  Conditional (traffic routing) | None |
-| OTel Log Agent | Always enabled |  Not used |  None | None |
-| Fluent Bit |  Always enabled |  Not used |  None | None |
-| Self-Monitor |  Always disabled | Not used |  None | None |
+|-----------|-------------------|-------------------|---------------------|--------------------------|
+| OTLP Gateway | Always enabled | Not used | None | PeerAuthentication (PERMISSIVE), DestinationRule (TLS DISABLE) |
+| Metric Agent | Always enabled | Always mounted | Conditional (traffic routing) | None |
+| OTel Log Agent | Always enabled | Not used | None | None |
+| Fluent Bit | Always enabled | Not used | None | None |
+| Self-Monitor | Always disabled | Not used | None | None |
 
 
 ## Proposed API
@@ -155,7 +155,7 @@ spec:
     collectionInterval: 30s
 ```
 
-**Behavior**: All Istio-specific resources (sidecar injection, PeerAuthentication, DestinationRule, traffic annotations, certificate volumes) are applied unconditionally.
+**Behavior**: The system applies all Istio-specific resources (sidecar injection, PeerAuthentication, DestinationRule, traffic annotations, certificate volumes) unconditionally.
 
 #### Example 2: Explicit Disable (Opt-out)
 
@@ -175,12 +175,12 @@ spec:
 ```
 
 **Behavior**: 
-- No sidecar injection labels (`sidecar.istio.io/inject` set to `"false"`)
-- No PeerAuthentication or DestinationRule resources created
-- No Istio traffic routing annotations
-- No Istio certificate volume mounts
-- Metric Agent cannot scrape STRICT mTLS workloads (they would need PERMISSIVE mode)
-- No istio metric scrape
+- No sidecar injection labels (`sidecar.istio.io/inject` set to `"false"`).
+- No PeerAuthentication or DestinationRule resources created.
+- No Istio traffic routing annotations.
+- No Istio certificate volume mounts.
+- Metric Agent cannot scrape STRICT mTLS workloads (they would need PERMISSIVE mode).
+- No Istio metric scrape.
 
 
 ### Implementation Impact
@@ -214,7 +214,7 @@ All reconcilers that create or configure telemetry components must respect the `
 
 Additional validation is enforced at the admission webhook level:
 
-- When `istio.enabled: false`, validate that no MetricPipeline relies on scraping STRICT mTLS workloads (since the Metric Agent won't have Istio certificates) and no istio metrics scrape allowed
+- When `istio.enabled: false`, validate that no MetricPipeline scrapes STRICT mTLS workloads (since the Metric Agent won't have Istio certificates) and no Istio metrics scrape is allowed.
 
 ### Open Questions
 
@@ -236,7 +236,7 @@ The proposed API provides a smooth migration path:
 #### Phase 2: Default to OFF (Future)
 - Change reconciler default behavior: when `istio.enabled` is unset, default to `false` instead of auto-detection
 - Users must explicitly set `enabled: true` to enable Istio mode
-- Provide migration tooling or documentation for users transitioning from auto-detection
+- Provide migration tooling or documentation for transitioning from auto-detection
 
 #### Phase 3: Deprecate Auto-detection (Long-term)
 - Remove auto-detection logic entirely
