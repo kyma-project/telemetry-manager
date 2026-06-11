@@ -59,7 +59,7 @@ The Metric Agent is deployed as a DaemonSet and scrapes Prometheus metrics from 
 
 | Resource | Behavior | Rationale |
 |----------|----------|-----------|
-| Pod Label | `sidecar.istio.io/inject: "true"` | The Metric Agent always has Istio sidecar injection enabled to support outbound mTLS communication to in-cluster backends that are part of the Istio mesh. |
+| Pod Label | `sidecar.istio.io/inject: "true"` | The Metric Agent always has Istio sidecar injection enabled to support outbound mTLS communication to in-cluster backends in the Istio mesh. |
 
 ##### Conditional (Only When Istio is Detected)
 
@@ -82,7 +82,7 @@ The OTel Log Agent is deployed as a DaemonSet and collects container logs using 
 
 | Resource | Behavior | Rationale |
 |----------|----------|-----------|
-| Pod Label | `sidecar.istio.io/inject: "true"` | The OTel Log Agent always has Istio sidecar injection enabled to support outbound mTLS communication to in-cluster backends that are part of the Istio mesh. |
+| Pod Label | `sidecar.istio.io/inject: "true"` | The OTel Log Agent always has Istio sidecar injection enabled to support outbound mTLS communication to in-cluster backends in the Istio mesh. |
 
 ##### Conditional (Only When Istio is Detected)
 
@@ -98,7 +98,7 @@ Fluent Bit is deployed as a DaemonSet and provides legacy log collection capabil
 
 | Resource | Behavior | Rationale |
 |----------|----------|-----------|
-| Pod Label | `sidecar.istio.io/inject: "true"` | Fluent Bit always has Istio sidecar injection enabled to support outbound mTLS communication to in-cluster backends that are part of the Istio mesh. |
+| Pod Label | `sidecar.istio.io/inject: "true"` | Fluent Bit always has Istio sidecar injection enabled to support outbound mTLS communication to in-cluster backends in the Istio mesh. |
 
 ##### Conditional (Only When Istio is Detected)
 
@@ -180,7 +180,7 @@ spec:
 - No Istio traffic routing annotations.
 - No Istio certificate volume mounts.
 - Metric Agent cannot scrape STRICT mTLS workloads (they would need PERMISSIVE mode).
-- No Istio metric scrape.
+- Istio metric scraping remains possible if Istio is present in the cluster.
 
 
 ### Implementation Impact
@@ -194,18 +194,18 @@ All reconcilers that create or configure telemetry components must respect the `
 1. OTLP Gateway Reconciler
    - Skip PeerAuthentication creation when Istio mode is off
    - Skip DestinationRule creation when Istio mode is off
-   - Remove sidecar injection label when Istio mode is off
+   - Set sidecar injection label to `false` when Istio mode is off
 
 2. Metric Agent Reconciler
    - Skip Istio traffic routing annotations when Istio mode is off
    - Skip certificate volume mounts when Istio mode is off
-   - Remove sidecar injection label when Istio mode is off
+   - Set sidecar injection label to `false` when Istio mode is off
 
 3. OTel Log Agent Reconciler
-   - Remove sidecar injection label when Istio mode is off
+   - Set sidecar injection label to `false` when Istio mode is off
 
 4. Fluent Bit Reconciler
-   - Remove sidecar injection label when Istio mode is off
+   - Set sidecar injection label to `false` when Istio mode is off
 
 5. NetworkPolicy Reconcilers
    - Omit Istio Envoy port (15090) from ingress rules when Istio mode is off
@@ -214,38 +214,32 @@ All reconcilers that create or configure telemetry components must respect the `
 
 Additional validation is enforced at the admission webhook level:
 
-- When `istio.enabled: false`, validate that no MetricPipeline scrapes STRICT mTLS workloads (since the Metric Agent won't have Istio certificates) and no Istio metrics scrape is allowed.
-
-### Open Questions
-
-1. Granular control per component: Should the API allow enabling/disabling Istio mode per component (for example, `istio.metricAgent.enabled`)?
-
-2. Ambient mesh support: Should the API distinguish between sidecar mode and ambient mode?
-
-3. Validation of dependent features: Should the reconciler block MetricPipeline creation when `istio.enabled: false` but the pipeline targets STRICT mTLS workloads?
+- When `istio.enabled: true`, validate that Istio is installed and required resources are present on the cluster.
 
 ### Migration Path
 
 The proposed API provides a smooth migration path:
 
-#### Phase 1: Explicit Control (Current Proposal)
+#### Phase 1: Explicit Control and Deprecate Auto-detection (Current Proposal)
 - Add `istio.enabled` field with `nil` default (auto-detection)
 - Users can opt out with `enabled: false`
 - Existing installations continue working unchanged
 
-#### Phase 2: Default to OFF (Future)
+#### Phase 2: Default to OFF (Long Term)
 - Change reconciler default behavior: when `istio.enabled` is unset, default to `false` instead of auto-detection
 - Users must explicitly set `enabled: true` to enable Istio mode
 - Provide migration tooling or documentation for transitioning from auto-detection
-
-#### Phase 3: Deprecate Auto-detection (Long-term)
 - Remove auto-detection logic entirely
 - Require explicit `enabled: true` or `enabled: false` (make the field required)
 
-### Backward Compatibility
+Pros:
+- Zero disruption during initial rollout: Existing installations continue working without any configuration changes
+- Gradual migration timeline: Users have time to understand the new API and plan their migration
+- Backward compatible: Phase 1 maintains current behavior while introducing explicit control
+- Low risk: Two-phase approach allows testing and validation before breaking changes
 
-The three-value logic (`true`, `false`, `nil`) ensures full backward compatibility:
-
-- Existing Telemetry CRs without the `istio` field continue to use auto-detection
-- Users who upgrade to the new API version can explicitly control Istio mode without modifying existing CRs
-- The default behavior (auto-detection when unset) matches the current implementation
+Cons:
+- Longer transition period: Auto-detection logic must be maintained through Phase 1
+- Potential confusion: During Phase 1, users might not realize they can explicitly control Istio mode
+- Delayed resource savings: Users who don't need Istio integration continue paying overhead costs until Phase 2
+- Technical debt: Auto-detection code remains in the codebase longer
