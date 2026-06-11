@@ -234,8 +234,9 @@ jobs:
         env:
           VERSION: ${{ inputs.version }}
           CHANNEL: ${{ inputs.channel }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
-          ../telemetry-manager/hack/module-release.sh setup-folder "${VERSION}" "${CHANNEL}"
+          ../telemetry-manager/hack/module-release.sh setup-folder "${VERSION}" "${CHANNEL}" "${RELEASE_TAG}"
 
       - name: Update module-config.yaml
         working-directory: module-manifests

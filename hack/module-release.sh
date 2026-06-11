@@ -32,7 +32,7 @@ fi
 # Commands:
 #   install-yq [version] [install-path]     Install yq with checksum verification
 #   check-duplicate <version> <channel>     Check if version is already released
-#   setup-folder <version> <channel>        Setup version folder (create or reuse)
+#   setup-folder <version> <channel> [release-tag]        Setup version folder (create or reuse)
 #   update-config <version> <channel> [folder] [repository-tag]  Update module-config.yaml
 #   update-releases <version> <channel>     Update module-releases.yaml
 #   create-pr <version> <channel> <output-file> [repository-tag]  Create or reuse PR for release
@@ -47,7 +47,7 @@ if [ -z "${COMMAND}" ]; then
   echo "Commands:"
   echo "  install-yq [version] [install-path]     Install yq"
   echo "  check-duplicate <version> <channel>     Check if version is released"
-  echo "  setup-folder <version> <channel>        Setup version folder"
+  echo "  setup-folder <version> <channel> [release-tag]        Setup version folder"
   echo "  update-config <version> <channel> [folder] [repository-tag]  Update module-config.yaml"
   echo "  update-releases <version> <channel>     Update module-releases.yaml"
   echo "  create-pr <version> <channel> <output-file> [repository-tag]  Create PR"
@@ -351,9 +351,16 @@ setup_folder_common() {
 setup_folder() {
   local version="$1"
   local channel="$2"
+  local release_tag="${3:-}"
 
-  # For dev, fast and regular channels
-  if [ "${channel}" = "dev" ] || [ "${channel}" = "fast" ] || [ "${channel}" = "regular" ]; then
+  # If release_tag is provided (pre-release), use it for the folder suffix
+  if [ -n "${release_tag}" ]; then
+    # Extract the RC suffix (e.g., "1.2.3-rc.1" -> "-rc.1")
+    local folder_suffix="${release_tag#${version}}"
+    local grep_pattern="^[0-9]+\.[0-9]+\.[0-9]+-rc\.[0-9]+$"
+    setup_folder_common "${version}" "${channel}" "${folder_suffix}" "${grep_pattern}" "pre-release"
+  # For dev, fast and regular channels (without release_tag)
+  elif [ "${channel}" = "dev" ] || [ "${channel}" = "fast" ] || [ "${channel}" = "regular" ]; then
     setup_folder_common "${version}" "${channel}" "" '^[0-9]+\.[0-9]+\.[0-9]+$' "regular"
   elif [ "${channel}" = "experimental" ]; then
     setup_folder_common "${version}" "${channel}" "-experimental" '^[0-9]+\.[0-9]+\.[0-9]+-experimental$' "experimental"
@@ -379,7 +386,10 @@ update_config() {
     if [ -n "${TELEMETRY_FOLDER:-}" ]; then
       telemetry_folder="${TELEMETRY_FOLDER}"
     else
-      if [ "${channel}" = "experimental" ]; then
+      # If repository_tag_override is provided (pre-release), use it for folder path
+      if [ -n "${repository_tag_override}" ]; then
+        telemetry_folder="${MODULE_DIR}/${repository_tag_override}"
+      elif [ "${channel}" = "experimental" ]; then
         telemetry_folder="${MODULE_DIR}/${version}-experimental"
       else
         telemetry_folder="${MODULE_DIR}/${version}"
@@ -397,9 +407,17 @@ update_config() {
   echo "Updating ${MODULE_CONFIG}..."
 
   local REPOSITORY_TAG="${repository_tag_override:-${version}}"
-  local VERSION_TAG=$(get_version_tag "${version}" "${channel}")
 
-  echo "Setting version fields to: ${VERSION_TAG}"
+  # For version field: if repository_tag_override is provided (pre-release), use it
+  # Otherwise, use get_version_tag which handles experimental suffix
+  local VERSION_TAG
+  if [ -n "${repository_tag_override}" ]; then
+    VERSION_TAG="${repository_tag_override}"
+  else
+    VERSION_TAG=$(get_version_tag "${version}" "${channel}")
+  fi
+
+  echo "Setting version fields - version: ${VERSION_TAG}, repositoryTag: ${REPOSITORY_TAG}"
 
   # Update version field
   yq -i ".version = \"${VERSION_TAG}\"" "${MODULE_CONFIG}"
@@ -589,10 +607,16 @@ create_pr() {
 
   echo "No existing PR found. Creating new PR..."
 
-  # Determine version tag and folder based on channel
+  local EFFECTIVE_REPOSITORY_TAG="${REPOSITORY_TAG_OVERRIDE:-${VERSION}}"
+
+  # Determine version tag and folder based on channel and whether it's a pre-release
   local VERSION_TAG
   local FOLDER_PATH
-  if [ "${CHANNEL}" = "experimental" ]; then
+  if [ -n "${REPOSITORY_TAG_OVERRIDE}" ]; then
+    # Pre-release: use the full RC tag
+    VERSION_TAG="${REPOSITORY_TAG_OVERRIDE}"
+    FOLDER_PATH="modules/telemetry/${REPOSITORY_TAG_OVERRIDE}"
+  elif [ "${CHANNEL}" = "experimental" ]; then
     VERSION_TAG="${VERSION}-experimental"
     FOLDER_PATH="modules/telemetry/${VERSION}-experimental"
   else
@@ -600,8 +624,15 @@ create_pr() {
     FOLDER_PATH="modules/telemetry/${VERSION}"
   fi
 
+<<<<<<< Updated upstream
   local PR_TITLE="bump telemetry version to ${VERSION} on ${CHANNEL}"
   local EFFECTIVE_REPOSITORY_TAG="${REPOSITORY_TAG_OVERRIDE:-${VERSION}}"
+=======
+  # For module-releases.yaml, use REPOSITORY_TAG_OVERRIDE if provided
+  local MODULE_RELEASES_VERSION="${EFFECTIVE_REPOSITORY_TAG}"
+
+  local PR_TITLE="bump telemetry version to ${EFFECTIVE_REPOSITORY_TAG} on ${CHANNEL}"
+>>>>>>> Stashed changes
   local PR_BODY=$(cat <<EOF
 Bump telemetry version to ${VERSION} on ${CHANNEL} channel.
 
@@ -649,11 +680,11 @@ case "${COMMAND}" in
     check_duplicate "$1" "$2"
     ;;
   setup-folder)
-    if [ $# -ne 2 ]; then
-      echo "Usage: module-release.sh setup-folder <version> <channel>"
+    if [ $# -lt 2 ] || [ $# -gt 3 ]; then
+      echo "Usage: module-release.sh setup-folder <version> <channel> [release-tag]"
       exit 1
     fi
-    setup_folder "$1" "$2"
+    setup_folder "$@"
     ;;
   update-config)
     if [ $# -lt 2 ] || [ $# -gt 4 ]; then
