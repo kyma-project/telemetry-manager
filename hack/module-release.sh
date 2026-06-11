@@ -34,7 +34,7 @@ fi
 #   check-duplicate <version> <channel>     Check if version is already released
 #   setup-folder <version> <channel> [release-tag]        Setup version folder (create or reuse)
 #   update-config <version> <channel> [folder] [repository-tag]  Update module-config.yaml
-#   update-releases <version> <channel>     Update module-releases.yaml
+#   update-releases <version> <channel> [release-tag]     Update module-releases.yaml
 #   create-pr <version> <channel> <output-file> [repository-tag]  Create or reuse PR for release
 #
 # Channels: regular, fast, experimental, dev
@@ -49,7 +49,7 @@ if [ -z "${COMMAND}" ]; then
   echo "  check-duplicate <version> <channel>     Check if version is released"
   echo "  setup-folder <version> <channel> [release-tag]        Setup version folder"
   echo "  update-config <version> <channel> [folder] [repository-tag]  Update module-config.yaml"
-  echo "  update-releases <version> <channel>     Update module-releases.yaml"
+  echo "  update-releases <version> <channel> [release-tag]     Update module-releases.yaml"
   echo "  create-pr <version> <channel> <output-file> [repository-tag]  Create PR"
   echo ""
   echo "Channels: regular, fast, experimental"
@@ -502,6 +502,7 @@ update_config() {
 update_releases() {
   local version="$1"
   local channel="$2"
+  local release_tag_override="${3:-}"
 
   if [ ! -f "${MODULE_RELEASES}" ]; then
     echo "::error::module-releases.yaml not found at ${MODULE_RELEASES}"
@@ -510,7 +511,12 @@ update_releases() {
 
   echo "Updating ${MODULE_RELEASES}..."
 
-  local VERSION_TAG=$(get_version_tag "${version}" "${channel}")
+  # If release_tag_override is provided, use it; otherwise compute VERSION_TAG
+  if [ -n "${release_tag_override}" ]; then
+    local VERSION_TAG="${release_tag_override}"
+  else
+    local VERSION_TAG=$(get_version_tag "${version}" "${channel}")
+  fi
 
   echo "Updating channel '${channel}' to version: ${VERSION_TAG}"
 
@@ -624,17 +630,12 @@ create_pr() {
     FOLDER_PATH="modules/telemetry/${VERSION}"
   fi
 
-<<<<<<< Updated upstream
-  local PR_TITLE="bump telemetry version to ${VERSION} on ${CHANNEL}"
-  local EFFECTIVE_REPOSITORY_TAG="${REPOSITORY_TAG_OVERRIDE:-${VERSION}}"
-=======
   # For module-releases.yaml, use REPOSITORY_TAG_OVERRIDE if provided
   local MODULE_RELEASES_VERSION="${EFFECTIVE_REPOSITORY_TAG}"
 
   local PR_TITLE="bump telemetry version to ${EFFECTIVE_REPOSITORY_TAG} on ${CHANNEL}"
->>>>>>> Stashed changes
   local PR_BODY=$(cat <<EOF
-Bump telemetry version to ${VERSION} on ${CHANNEL} channel.
+Bump telemetry version to ${EFFECTIVE_REPOSITORY_TAG} on ${CHANNEL} channel.
 
 **Changes:**
 - Created/Updated folder: ${FOLDER_PATH}
@@ -642,7 +643,7 @@ Bump telemetry version to ${VERSION} on ${CHANNEL} channel.
   - version: ${VERSION_TAG}
   - repositoryTag: ${EFFECTIVE_REPOSITORY_TAG}
 - Updated module-releases.yaml:
-  - channels.${CHANNEL}.version: ${VERSION_TAG}
+  - channels.${CHANNEL}.version: ${MODULE_RELEASES_VERSION}
 EOF
 )
 
@@ -694,11 +695,11 @@ case "${COMMAND}" in
     update_config "$@"
     ;;
   update-releases)
-    if [ $# -ne 2 ]; then
-      echo "Usage: module-release.sh update-releases <version> <channel>"
+    if [ $# -lt 2 ] || [ $# -gt 3 ]; then
+      echo "Usage: module-release.sh update-releases <version> <channel> [release-tag]"
       exit 1
     fi
-    update_releases "$1" "$2"
+    update_releases "$@"
     ;;
   create-pr)
     if [ $# -lt 3 ] || [ $# -gt 4 ]; then
