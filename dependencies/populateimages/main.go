@@ -37,6 +37,12 @@ type secScanConfig struct {
 	CheckmarxOne checkmarxOne `yaml:"checkmarx-one"`
 }
 
+type componentConfig struct {
+	Name   string   `yaml:"name"`
+	Team   string   `yaml:"team"`
+	Images []string `yaml:"images"`
+}
+
 type mend struct {
 	Language string   `yaml:"language"`
 	Exclude  []string `yaml:"exclude"`
@@ -70,6 +76,10 @@ func run() error {
 
 	if err := generateSecScanConfig(data); err != nil {
 		return fmt.Errorf("error generating sec scan config: %w", err)
+	}
+
+	if err := generateComponentConfig(data); err != nil {
+		return fmt.Errorf("error generating component config: %w", err)
 	}
 
 	return nil
@@ -140,6 +150,39 @@ func generateSecScanConfig(data map[string]string) error {
 
 	err = enc.Encode(secScanCfg)
 	if err != nil {
+		return fmt.Errorf("error encoding: %w", err)
+	}
+
+	return nil
+}
+
+func generateComponentConfig(data map[string]string) error {
+	file, err := os.Create("./component-config.yaml")
+	if err != nil {
+		return fmt.Errorf("error opening/creating file: %w", err)
+	}
+	defer file.Close()
+
+	imgs := []string{
+		data["ENV_MANAGER_IMAGE"],
+		data["ENV_FLUENTBIT_EXPORTER_IMAGE"],
+		data["ENV_FLUENTBIT_IMAGE"],
+		data["ENV_OTEL_COLLECTOR_IMAGE"],
+		data["ENV_SELFMONITOR_IMAGE"],
+		data["ENV_SELFMONITOR_FIPS_IMAGE"],
+		data["ENV_ALPINE_IMAGE"],
+	}
+
+	cfg := componentConfig{
+		Name:   "kyma-project.io/module/telemetry",
+		Team:   "kyma/Huskies",
+		Images: imgs,
+	}
+
+	enc := yaml.NewEncoder(file)
+	enc.SetIndent(TWO)
+
+	if err := enc.Encode(cfg); err != nil {
 		return fmt.Errorf("error encoding: %w", err)
 	}
 
