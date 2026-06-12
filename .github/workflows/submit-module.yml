@@ -120,6 +120,19 @@ jobs:
               ;;
           esac
 
+      - name: Validate pre-release configuration
+        if: ${{ inputs.pre_release == true }}
+        env:
+          CHANNEL: ${{ inputs.channel }}
+        run: |
+          if [ "${CHANNEL}" != "dev" ]; then
+            echo "::error::Pre-releases are only allowed for dev channel"
+            echo "You specified: pre_release=true, channel=${CHANNEL}"
+            echo "Valid configuration: pre_release=true is only supported with channel=dev"
+            exit 1
+          fi
+          echo "✓ Pre-release configuration valid (dev channel)"
+
       - name: Validate tag exists in telemetry-manager
         env:
           VERSION: ${{ inputs.version }}
@@ -232,67 +245,37 @@ jobs:
 
       - name: Check for duplicate version
         # Always check, except for pre-releases (same base version, different rc tag)
+        if: ${{ inputs.pre_release != true }}
         working-directory: module-manifests
         env:
           VERSION: ${{ inputs.version }}
           CHANNEL: ${{ inputs.channel }}
-          PRE_RELEASE: ${{ inputs.pre_release }}
         run: |
-          if [ "${PRE_RELEASE}" = "true" ]; then
-            # Extract base version for duplicate check (remove -rcN suffix)
-            BASE_VERSION=$(echo "${VERSION}" | cut -d'-' -f1)
-            echo "Skipping duplicate check for pre-release submission (version=${VERSION}, base=${BASE_VERSION})"
-          else
-            ../telemetry-manager/hack/module-release.sh check-duplicate "${VERSION}" "${CHANNEL}"
-          fi
+          ../telemetry-manager/hack/module-release.sh check-duplicate "${VERSION}" "${CHANNEL}"
 
       - name: Setup version folder
         working-directory: module-manifests
         env:
           VERSION: ${{ inputs.version }}
           CHANNEL: ${{ inputs.channel }}
-          PRE_RELEASE: ${{ inputs.pre_release }}
         run: |
-          if [ "${PRE_RELEASE}" = "true" ]; then
-            # For pre-releases, VERSION is the full RC tag (e.g., 1.2.3-rc1)
-            # Extract base version and pass VERSION as release_tag
-            BASE_VERSION=$(echo "${VERSION}" | cut -d'-' -f1)
-            ../telemetry-manager/hack/module-release.sh setup-folder "${BASE_VERSION}" "${CHANNEL}" "${VERSION}"
-          else
-            ../telemetry-manager/hack/module-release.sh setup-folder "${VERSION}" "${CHANNEL}"
-          fi
+          ../telemetry-manager/hack/module-release.sh setup-folder "${VERSION}" "${CHANNEL}"
 
       - name: Update module-config.yaml
         working-directory: module-manifests
         env:
           VERSION: ${{ inputs.version }}
           CHANNEL: ${{ inputs.channel }}
-          PRE_RELEASE: ${{ inputs.pre_release }}
         run: |
-          if [ "${PRE_RELEASE}" = "true" ]; then
-            # For pre-releases, VERSION is the full RC tag (e.g., 1.2.3-rc1)
-            # Extract base version and pass VERSION as repository_tag
-            BASE_VERSION=$(echo "${VERSION}" | cut -d'-' -f1)
-            ../telemetry-manager/hack/module-release.sh update-config "${BASE_VERSION}" "${CHANNEL}" "" "${VERSION}"
-          else
-            ../telemetry-manager/hack/module-release.sh update-config "${VERSION}" "${CHANNEL}"
-          fi
+          ../telemetry-manager/hack/module-release.sh update-config "${VERSION}" "${CHANNEL}"
 
       - name: Update module-releases.yaml
         working-directory: module-manifests
         env:
           VERSION: ${{ inputs.version }}
           CHANNEL: ${{ inputs.channel }}
-          PRE_RELEASE: ${{ inputs.pre_release }}
         run: |
-          if [ "${PRE_RELEASE}" = "true" ]; then
-            # For pre-releases, VERSION is the full RC tag (e.g., 1.2.3-rc1)
-            # Extract base version and pass VERSION as release_tag
-            BASE_VERSION=$(echo "${VERSION}" | cut -d'-' -f1)
-            ../telemetry-manager/hack/module-release.sh update-releases "${BASE_VERSION}" "${CHANNEL}" "${VERSION}"
-          else
-            ../telemetry-manager/hack/module-release.sh update-releases "${VERSION}" "${CHANNEL}"
-          fi
+          ../telemetry-manager/hack/module-release.sh update-releases "${VERSION}" "${CHANNEL}"
 
       - name: Verify changes
         working-directory: module-manifests
@@ -373,24 +356,13 @@ jobs:
         env:
           VERSION: ${{ inputs.version }}
           CHANNEL: ${{ inputs.channel }}
-          PRE_RELEASE: ${{ inputs.pre_release }}
           GH_TOKEN: ${{ secrets.HUSKIES_GHTOOLS_TOKEN }}
         run: |
           # Create temporary file for script output
           OUTPUT_FILE=$(mktemp)
 
-          # Run PR creation script
-          # For pre-releases: VERSION is the full RC tag (e.g., 1.2.3-rc1)
-          # For normal releases: VERSION is the base version (e.g., 1.2.3)
-          # Extract base version for pre-releases
-          if [ "${PRE_RELEASE}" = "true" ]; then
-            BASE_VERSION=$(echo "${VERSION}" | cut -d'-' -f1)
-          else
-            BASE_VERSION="${VERSION}"
-          fi
-
-          # Call create-pr with base version, channel, output file, and full version (for pre-releases)
-          ../telemetry-manager/hack/module-release.sh create-pr "${BASE_VERSION}" "${CHANNEL}" "${OUTPUT_FILE}" "${VERSION}"
+          # Run PR creation script with VERSION and CHANNEL
+          ../telemetry-manager/hack/module-release.sh create-pr "${VERSION}" "${CHANNEL}" "${OUTPUT_FILE}"
 
           # Validate output file exists and is not empty
           if [ ! -s "${OUTPUT_FILE}" ]; then
@@ -449,20 +421,16 @@ jobs:
           AUTO_MERGE: ${{ inputs.auto_merge }}
           PRE_RELEASE: ${{ inputs.pre_release }}
         run: |
-          # Determine version tag and folder path based on channel and pre-release status
-          if [ "${PRE_RELEASE}" = "true" ]; then
-            # For pre-releases, VERSION already contains the RC suffix (e.g., 1.2.3-rc1)
-            BASE_VERSION=$(echo "${VERSION}" | cut -d'-' -f1)
-          else
-            BASE_VERSION="${VERSION}"
-          fi
-
+          # Determine version tag and folder path
+          # For experimental channel, append -experimental suffix
+          # For pre-release (VERSION contains -rcN), use as-is
+          # Otherwise, use VERSION as-is
           if [ "${CHANNEL}" = "experimental" ]; then
-            VERSION_TAG="${BASE_VERSION}-experimental"
-            FOLDER_PATH="modules/telemetry/${BASE_VERSION}-experimental"
+            VERSION_TAG="${VERSION}-experimental"
+            FOLDER_PATH="modules/telemetry/${VERSION}-experimental"
           else
-            VERSION_TAG="${BASE_VERSION}"
-            FOLDER_PATH="modules/telemetry/${BASE_VERSION}"
+            VERSION_TAG="${VERSION}"
+            FOLDER_PATH="modules/telemetry/${VERSION}"
           fi
 
           cat >> $GITHUB_STEP_SUMMARY <<EOF

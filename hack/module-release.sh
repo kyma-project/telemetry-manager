@@ -32,10 +32,14 @@ fi
 # Commands:
 #   install-yq [version] [install-path]     Install yq with checksum verification
 #   check-duplicate <version> <channel>     Check if version is already released
-#   setup-folder <version> <channel> [release-tag]        Setup version folder (create or reuse)
-#   update-config <version> <channel> [folder] [repository-tag]  Update module-config.yaml
-#   update-releases <version> <channel> [release-tag]     Update module-releases.yaml
-#   create-pr <version> <channel> <output-file> [repository-tag]  Create or reuse PR for release
+#   setup-folder <version> <channel>        Setup version folder (create or reuse)
+#   update-config <version> <channel> [folder]  Update module-config.yaml
+#   update-releases <version> <channel>     Update module-releases.yaml
+#   create-pr <version> <channel> <output-file>  Create or reuse PR for release
+#
+# Version format:
+#   - Normal release: X.Y.Z (e.g., 1.2.3)
+#   - Pre-release: X.Y.Z-rcN (e.g., 1.2.3-rc1) - only allowed for dev channel
 #
 # Channels: regular, fast, experimental, dev
 
@@ -47,12 +51,16 @@ if [ -z "${COMMAND}" ]; then
   echo "Commands:"
   echo "  install-yq [version] [install-path]     Install yq"
   echo "  check-duplicate <version> <channel>     Check if version is released"
-  echo "  setup-folder <version> <channel> [release-tag]        Setup version folder"
-  echo "  update-config <version> <channel> [folder] [repository-tag]  Update module-config.yaml"
-  echo "  update-releases <version> <channel> [release-tag]     Update module-releases.yaml"
-  echo "  create-pr <version> <channel> <output-file> [repository-tag]  Create PR"
+  echo "  setup-folder <version> <channel>        Setup version folder"
+  echo "  update-config <version> <channel> [folder]  Update module-config.yaml"
+  echo "  update-releases <version> <channel>     Update module-releases.yaml"
+  echo "  create-pr <version> <channel> <output-file>  Create PR"
   echo ""
-  echo "Channels: regular, fast, experimental"
+  echo "Version format:"
+  echo "  - Normal release: X.Y.Z (e.g., 1.2.3)"
+  echo "  - Pre-release: X.Y.Z-rcN (e.g., 1.2.3-rc1) - only allowed for dev channel"
+  echo ""
+  echo "Channels: regular, fast, experimental, dev"
   exit 1
 fi
 
@@ -235,11 +243,20 @@ get_version_tag() {
 
   validate_channel "${channel}"
 
+  # For experimental channel, append -experimental suffix to base version
   if [ "${channel}" = "experimental" ]; then
     echo "${version}-experimental"
   else
+    # For all other channels (regular, fast, dev), use version as-is
+    # This preserves -rcN suffix for pre-releases on dev channel
     echo "${version}"
   fi
+}
+
+# Check if version is a pre-release (contains -rcN suffix)
+is_prerelease() {
+  local version="$1"
+  [[ "${version}" =~ -rc[0-9]+$ ]]
 }
 
 # Sanitize error output to remove potential tokens or sensitive data
@@ -351,22 +368,22 @@ setup_folder_common() {
 setup_folder() {
   local version="$1"
   local channel="$2"
-  local release_tag="${3:-}"
 
-  # If release_tag is provided (pre-release), use it for the folder suffix
-  if [ -n "${release_tag}" ]; then
-    # Extract the RC suffix (e.g., "1.2.3-rc1" -> "-rc1")
-    local folder_suffix="${release_tag#${version}}"
-    local grep_pattern="^[0-9]+\.[0-9]+\.[0-9]+-rc[0-9]+$"
-    setup_folder_common "${version}" "${channel}" "${folder_suffix}" "${grep_pattern}" "pre-release"
-  # For dev, fast and regular channels (without release_tag)
-  elif [ "${channel}" = "dev" ] || [ "${channel}" = "fast" ] || [ "${channel}" = "regular" ]; then
-    setup_folder_common "${version}" "${channel}" "" '^[0-9]+\.[0-9]+\.[0-9]+$' "regular"
+  validate_channel "${channel}"
+
+  # Determine folder suffix and grep pattern based on version and channel
+  if is_prerelease "${version}"; then
+    # Pre-release: use version as-is (e.g., 1.2.3-rc1)
+    # Folder becomes modules/telemetry/1.2.3-rc1
+    setup_folder_common "${version}" "${channel}" "" '^[0-9]+\.[0-9]+\.[0-9]+-rc[0-9]+$' "pre-release"
   elif [ "${channel}" = "experimental" ]; then
+    # Experimental: append -experimental suffix
+    # Folder becomes modules/telemetry/1.2.3-experimental
     setup_folder_common "${version}" "${channel}" "-experimental" '^[0-9]+\.[0-9]+\.[0-9]+-experimental$' "experimental"
   else
-    echo "::error::Unknown channel: ${channel}"
-    exit 1
+    # Regular/fast/dev: use version as-is
+    # Folder becomes modules/telemetry/1.2.3
+    setup_folder_common "${version}" "${channel}" "" '^[0-9]+\.[0-9]+\.[0-9]+$' "regular"
   fi
 
   echo "✓ Setup complete. Folder: ${TELEMETRY_FOLDER}"
@@ -379,16 +396,18 @@ update_config() {
   local version="$1"
   local channel="$2"
   local telemetry_folder="${3:-}"
-  local repository_tag_override="${4:-}"
+
+  validate_channel "${channel}"
 
   # If TELEMETRY_FOLDER is not provided, read from environment or compute it
   if [ -z "${telemetry_folder}" ]; then
     if [ -n "${TELEMETRY_FOLDER:-}" ]; then
       telemetry_folder="${TELEMETRY_FOLDER}"
     else
-      # If repository_tag_override is provided (pre-release), use it for folder path
-      if [ -n "${repository_tag_override}" ]; then
-        telemetry_folder="${MODULE_DIR}/${repository_tag_override}"
+      # Compute folder path based on version and channel
+      if is_prerelease "${version}"; then
+        # Pre-release: use full version including -rcN
+        telemetry_folder="${MODULE_DIR}/${version}"
       elif [ "${channel}" = "experimental" ]; then
         telemetry_folder="${MODULE_DIR}/${version}-experimental"
       else
@@ -406,16 +425,9 @@ update_config() {
 
   echo "Updating ${MODULE_CONFIG}..."
 
-  local REPOSITORY_TAG="${repository_tag_override:-${version}}"
-
-  # For version field: if repository_tag_override is provided (pre-release), use it
-  # Otherwise, use get_version_tag which handles experimental suffix
-  local VERSION_TAG
-  if [ -n "${repository_tag_override}" ]; then
-    VERSION_TAG="${repository_tag_override}"
-  else
-    VERSION_TAG=$(get_version_tag "${version}" "${channel}")
-  fi
+  # Determine version tag and repository tag based on channel
+  local VERSION_TAG=$(get_version_tag "${version}" "${channel}")
+  local REPOSITORY_TAG="${version}"
 
   echo "Setting version fields - version: ${VERSION_TAG}, repositoryTag: ${REPOSITORY_TAG}"
 
@@ -502,7 +514,8 @@ update_config() {
 update_releases() {
   local version="$1"
   local channel="$2"
-  local release_tag_override="${3:-}"
+
+  validate_channel "${channel}"
 
   if [ ! -f "${MODULE_RELEASES}" ]; then
     echo "::error::module-releases.yaml not found at ${MODULE_RELEASES}"
@@ -511,12 +524,8 @@ update_releases() {
 
   echo "Updating ${MODULE_RELEASES}..."
 
-  # If release_tag_override is provided, use it; otherwise compute VERSION_TAG
-  if [ -n "${release_tag_override}" ]; then
-    local VERSION_TAG="${release_tag_override}"
-  else
-    local VERSION_TAG=$(get_version_tag "${version}" "${channel}")
-  fi
+  # Determine version tag based on channel
+  local VERSION_TAG=$(get_version_tag "${version}" "${channel}")
 
   echo "Updating channel '${channel}' to version: ${VERSION_TAG}"
 
@@ -548,20 +557,20 @@ create_pr() {
   local VERSION="${1:-}"
   local CHANNEL="${2:-}"
   local OUTPUT_FILE="${3:-}"
-  local REPOSITORY_TAG_OVERRIDE="${4:-}"
 
-  debug_log "Script inputs: VERSION=${VERSION}, CHANNEL=${CHANNEL}, OUTPUT_FILE=${OUTPUT_FILE}, REPOSITORY_TAG_OVERRIDE=${REPOSITORY_TAG_OVERRIDE}"
+  debug_log "Script inputs: VERSION=${VERSION}, CHANNEL=${CHANNEL}, OUTPUT_FILE=${OUTPUT_FILE}"
 
   if [ -z "${VERSION}" ] || [ -z "${CHANNEL}" ] || [ -z "${OUTPUT_FILE}" ]; then
-    echo "Usage: module-release.sh create-pr <version> <channel> <output-file> [repository-tag]"
+    echo "Usage: module-release.sh create-pr <version> <channel> <output-file>"
     echo ""
     echo "Arguments:"
-    echo "  version          - Version being released (e.g., 1.2.3)"
+    echo "  version          - Version being released (e.g., 1.2.3 or 1.2.3-rc1)"
     echo "  channel          - Release channel (regular, fast, experimental, dev)"
     echo "  output-file      - File to write PR URL and number"
-    echo "  repository-tag   - (optional) Git tag to use as repositoryTag (e.g., 1.2.3-rc1)"
     exit 1
   fi
+
+  validate_channel "${CHANNEL}"
 
   # Validate environment variables
   if [ -z "${GH_TOKEN:-}" ]; then
@@ -576,8 +585,7 @@ create_pr() {
 
   debug_log "Environment: GH_HOST=${GH_HOST}"
 
-  local BRANCH_SUFFIX="${REPOSITORY_TAG_OVERRIDE:-${VERSION}}"
-  local BRANCH_NAME="bump-telemetry-${BRANCH_SUFFIX}-${CHANNEL}"
+  local BRANCH_NAME="bump-telemetry-${VERSION}-${CHANNEL}"
   debug_log "BRANCH_NAME=${BRANCH_NAME}"
 
   # Check if PR already exists
@@ -613,37 +621,28 @@ create_pr() {
 
   echo "No existing PR found. Creating new PR..."
 
-  local EFFECTIVE_REPOSITORY_TAG="${REPOSITORY_TAG_OVERRIDE:-${VERSION}}"
-
-  # Determine version tag and folder based on channel and whether it's a pre-release
-  local VERSION_TAG
+  # Determine version tag and folder based on channel
+  local VERSION_TAG=$(get_version_tag "${VERSION}" "${CHANNEL}")
   local FOLDER_PATH
-  if [ -n "${REPOSITORY_TAG_OVERRIDE}" ]; then
-    # Pre-release: use the full RC tag
-    VERSION_TAG="${REPOSITORY_TAG_OVERRIDE}"
-    FOLDER_PATH="modules/telemetry/${REPOSITORY_TAG_OVERRIDE}"
+  if is_prerelease "${VERSION}"; then
+    FOLDER_PATH="modules/telemetry/${VERSION}"
   elif [ "${CHANNEL}" = "experimental" ]; then
-    VERSION_TAG="${VERSION}-experimental"
     FOLDER_PATH="modules/telemetry/${VERSION}-experimental"
   else
-    VERSION_TAG="${VERSION}"
     FOLDER_PATH="modules/telemetry/${VERSION}"
   fi
 
-  # For module-releases.yaml, use REPOSITORY_TAG_OVERRIDE if provided
-  local MODULE_RELEASES_VERSION="${EFFECTIVE_REPOSITORY_TAG}"
-
-  local PR_TITLE="bump telemetry version to ${EFFECTIVE_REPOSITORY_TAG} on ${CHANNEL}"
+  local PR_TITLE="bump telemetry version to ${VERSION} on ${CHANNEL}"
   local PR_BODY=$(cat <<EOF
-Bump telemetry version to ${EFFECTIVE_REPOSITORY_TAG} on ${CHANNEL} channel.
+Bump telemetry version to ${VERSION} on ${CHANNEL} channel.
 
 **Changes:**
 - Created/Updated folder: ${FOLDER_PATH}
 - Updated module-config.yaml:
   - version: ${VERSION_TAG}
-  - repositoryTag: ${EFFECTIVE_REPOSITORY_TAG}
+  - repositoryTag: ${VERSION}
 - Updated module-releases.yaml:
-  - channels.${CHANNEL}.version: ${MODULE_RELEASES_VERSION}
+  - channels.${CHANNEL}.version: ${VERSION_TAG}
 EOF
 )
 
@@ -681,29 +680,29 @@ case "${COMMAND}" in
     check_duplicate "$1" "$2"
     ;;
   setup-folder)
-    if [ $# -lt 2 ] || [ $# -gt 3 ]; then
-      echo "Usage: module-release.sh setup-folder <version> <channel> [release-tag]"
+    if [ $# -ne 2 ]; then
+      echo "Usage: module-release.sh setup-folder <version> <channel>"
       exit 1
     fi
     setup_folder "$@"
     ;;
   update-config)
-    if [ $# -lt 2 ] || [ $# -gt 4 ]; then
-      echo "Usage: module-release.sh update-config <version> <channel> [folder] [repository-tag]"
+    if [ $# -lt 2 ] || [ $# -gt 3 ]; then
+      echo "Usage: module-release.sh update-config <version> <channel> [folder]"
       exit 1
     fi
     update_config "$@"
     ;;
   update-releases)
-    if [ $# -lt 2 ] || [ $# -gt 3 ]; then
-      echo "Usage: module-release.sh update-releases <version> <channel> [release-tag]"
+    if [ $# -ne 2 ]; then
+      echo "Usage: module-release.sh update-releases <version> <channel>"
       exit 1
     fi
     update_releases "$@"
     ;;
   create-pr)
-    if [ $# -lt 3 ] || [ $# -gt 4 ]; then
-      echo "Usage: module-release.sh create-pr <version> <channel> <output-file> [repository-tag]"
+    if [ $# -ne 3 ]; then
+      echo "Usage: module-release.sh create-pr <version> <channel> <output-file>"
       exit 1
     fi
     create_pr "$@"
@@ -721,7 +720,7 @@ case "${COMMAND}" in
     echo "  update-releases <version> <channel>     Update module-releases.yaml"
     echo "  create-pr <version> <channel> <output-file>  Create PR"
     echo ""
-    echo "Channels: regular, fast, experimental"
+    echo "Channels: regular, fast, experimental, dev"
     exit 1
     ;;
 esac
