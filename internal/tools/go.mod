@@ -11,7 +11,7 @@ require (
 	github.com/k3d-io/k3d/v5 v5.9.0
 	github.com/kyma-project/kyma/hack/table-gen v0.0.0-20250404123224-5afb7a10791b
 	github.com/mikefarah/yq/v4 v4.53.3
-	github.com/vektra/mockery/v3 v3.7.0
+	github.com/vektra/mockery/v3 v3.7.1
 	github.com/vladopajic/go-test-coverage/v2 v2.18.8
 	github.com/yannh/kubeconform v0.8.0
 	github.com/yeya24/promlinter v0.3.0
