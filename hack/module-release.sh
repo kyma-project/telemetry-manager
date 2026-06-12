@@ -33,7 +33,7 @@ fi
 #   install-yq [version] [install-path]     Install yq with checksum verification
 #   check-duplicate <version> <channel>     Check if version is already released
 #   setup-folder <version> <channel>        Setup version folder (create or reuse)
-#   update-config <version> <channel> [folder]  Update module-config.yaml
+#   update-config <version> <channel>  Update module-config.yaml
 #   update-releases <version> <channel>     Update module-releases.yaml
 #   create-pr <version> <channel> <output-file>  Create or reuse PR for release
 #
@@ -395,25 +395,17 @@ setup_folder() {
 update_config() {
   local version="$1"
   local channel="$2"
-  local telemetry_folder="${3:-}"
 
   validate_channel "${channel}"
 
-  # If TELEMETRY_FOLDER is not provided, read from environment or compute it
-  if [ -z "${telemetry_folder}" ]; then
-    if [ -n "${TELEMETRY_FOLDER:-}" ]; then
-      telemetry_folder="${TELEMETRY_FOLDER}"
-    else
-      # Compute folder path based on version and channel
-      if is_prerelease "${version}"; then
-        # Pre-release: use full version including -rcN
-        telemetry_folder="${MODULE_DIR}/${version}"
-      elif [ "${channel}" = "experimental" ]; then
-        telemetry_folder="${MODULE_DIR}/${version}-experimental"
-      else
-        telemetry_folder="${MODULE_DIR}/${version}"
-      fi
-    fi
+  # Compute folder path based on version and channel
+  local telemetry_folder
+  if [ "${channel}" = "experimental" ]; then
+    telemetry_folder="${MODULE_DIR}/${version}-experimental"
+  else
+    # For all other channels (dev, regular, fast), use version as-is
+    # This handles both normal releases (1.2.3) and pre-releases (1.2.3-rc1)
+    telemetry_folder="${MODULE_DIR}/${version}"
   fi
 
   local MODULE_CONFIG="${telemetry_folder}/module-config.yaml"
@@ -624,11 +616,11 @@ create_pr() {
   # Determine version tag and folder based on channel
   local VERSION_TAG=$(get_version_tag "${VERSION}" "${CHANNEL}")
   local FOLDER_PATH
-  if is_prerelease "${VERSION}"; then
-    FOLDER_PATH="modules/telemetry/${VERSION}"
-  elif [ "${CHANNEL}" = "experimental" ]; then
+  if [ "${CHANNEL}" = "experimental" ]; then
     FOLDER_PATH="modules/telemetry/${VERSION}-experimental"
   else
+    # For all other channels (dev, regular, fast), use version as-is
+    # This handles both normal releases (1.2.3) and pre-releases (1.2.3-rc1)
     FOLDER_PATH="modules/telemetry/${VERSION}"
   fi
 
@@ -687,8 +679,8 @@ case "${COMMAND}" in
     setup_folder "$@"
     ;;
   update-config)
-    if [ $# -lt 2 ] || [ $# -gt 3 ]; then
-      echo "Usage: module-release.sh update-config <version> <channel> [folder]"
+    if [ $# -ne 2 ]; then
+      echo "Usage: module-release.sh update-config <version> <channel>"
       exit 1
     fi
     update_config "$@"

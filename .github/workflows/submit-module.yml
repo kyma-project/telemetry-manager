@@ -150,7 +150,6 @@ jobs:
       - name: Validate Docker images exist
         env:
           VERSION: ${{ inputs.version }}
-          PRE_RELEASE: ${{ inputs.pre_release }}
         run: |
           echo "Checking if Docker images exist for image tag ${VERSION}..."
 
