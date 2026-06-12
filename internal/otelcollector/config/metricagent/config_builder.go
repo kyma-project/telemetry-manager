@@ -13,6 +13,7 @@ import (
 	operatorv1beta1 "github.com/kyma-project/telemetry-manager/apis/operator/v1beta1"
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	"github.com/kyma-project/telemetry-manager/internal/pipelines"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	metricpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/metricpipeline"
@@ -22,6 +23,7 @@ import (
 const (
 	maxStalenessMultiplier      = 4 //nolint:mnd // Tolerate max 3 scrape failures and additional timing jitter
 	enrichmentServicePipelineID = "metrics/enrichment-conditional"
+	opsScrapeMetricsPipelineID  = "metrics/ops-scrape-metrics"
 	podMetricPattern            = `^k8s[.]pod[.].*`
 	containerMetricPattern      = `(^k8s[.]container[.].*)|(^container[.].*)`
 	nodeMetricPattern           = `^k8s[.]node[.].*`
@@ -32,7 +34,11 @@ const (
 	jobMetricPattern            = `^k8s[.]job[.].*`
 )
 
-var diagnosticMetricNames = []string{"up", "scrape_duration_seconds", "scrape_samples_scraped", "scrape_samples_post_metric_relabeling", "scrape_series_added"}
+var diagnosticMetricNames = []string{"up", "scrape_duration_seconds", "scrape_timeout_seconds", "scrape_samples_scraped", "scrape_samples_post_metric_relabeling", "scrape_sample_limit", "scrape_series_added", "scrape_body_size_bytes"}
+
+// opsScrapeMetricNames is a subset of diagnosticMetricNames excluding static config values
+// (scrape_timeout_seconds and scrape_sample_limit) that are the same for all targets within a scrape job.
+var opsScrapeMetricNames = []string{"up", "scrape_duration_seconds", "scrape_samples_scraped", "scrape_samples_post_metric_relabeling", "scrape_series_added", "scrape_body_size_bytes"}
 
 type buildComponentFunc = common.BuildComponentFunc[*telemetryv1beta1.MetricPipeline]
 
@@ -184,9 +190,20 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1beta1.Metric
 		b.addK8sAttributesProcessor(opts),
 		b.addRestoreOtelServiceAttrsProcessor(opts),
 		b.addServiceEnrichmentProcessor(opts),
-		b.addExporterForEnrichmentRouter(pipelinesWithRuntimeInput, pipelinesWithPrometheusInput, pipelinesWithIstioInput),
+		b.addExporterForEnrichmentRouter(pipelinesWithRuntimeInput, pipelinesWithPrometheusInput, pipelinesWithIstioInput, inputs.prometheus || inputs.istio),
 	); err != nil {
 		return nil, nil, fmt.Errorf("failed to add enrichment service pipeline: %w", err)
+	}
+
+	// Ops scrape metrics pipeline (always present when prometheus or istio input is active)
+	if inputs.prometheus || inputs.istio {
+		if err := b.AddServicePipeline(ctx, nil, opsScrapeMetricsPipelineID,
+			b.addReceiverForEnrichmentRouter(pipelinesWithRuntimeInput, pipelinesWithPrometheusInput, pipelinesWithIstioInput, inputs.prometheus || inputs.istio),
+			b.addOpsKeepScrapeMetricsProcessor(),
+			b.addOpsScrapeMetricsExporter(),
+		); err != nil {
+			return nil, nil, fmt.Errorf("failed to add ops scrape metrics pipeline: %w", err)
+		}
 	}
 
 	// Output pipelines
@@ -207,7 +224,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1beta1.Metric
 			// Receivers
 			// Metrics are received from either the enrichment pipeline or directly from input pipelines,
 			// depending on whether they have the skip enrichment attribute set.
-			b.addReceiverForEnrichmentRouter(pipelinesWithRuntimeInput, pipelinesWithPrometheusInput, pipelinesWithIstioInput),
+			b.addReceiverForEnrichmentRouter(pipelinesWithRuntimeInput, pipelinesWithPrometheusInput, pipelinesWithIstioInput, inputs.prometheus || inputs.istio),
 			b.addReceiverForInputRouter(common.ComponentIDRuntimeInputRoutingConnector, pipelinesWithRuntimeInput, runtimeInputEnabled),
 			b.addReceiverForInputRouter(common.ComponentIDPrometheusInputRoutingConnector, pipelinesWithPrometheusInput, prometheusInputEnabled),
 			b.addReceiverForInputRouter(common.ComponentIDIstioInputRoutingConnector, pipelinesWithIstioInput, istioInputEnabled),
@@ -989,6 +1006,26 @@ func dropDiagnosticMetricsFilterProcessor(inputSource common.InputSourceType) *c
 	})
 }
 
+func (b *Builder) addOpsKeepScrapeMetricsProcessor() buildComponentFunc {
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDOpsKeepScrapeMetricsProcessor),
+		func(mp *telemetryv1beta1.MetricPipeline) any {
+			return keepScrapeMetricsFilterProcessor()
+		},
+	)
+}
+
+func keepScrapeMetricsFilterProcessor() *common.FilterProcessorConfig {
+	metricNameConditions := nameConditions(opsScrapeMetricNames)
+	dropNonScrapeMetricsExpr := common.Not(common.JoinWithOr(metricNameConditions...))
+
+	return common.MetricFilterProcessor([]telemetryv1beta1.FilterSpec{
+		{
+			Conditions: []string{dropNonScrapeMetricsExpr},
+		},
+	})
+}
+
 func nameConditions(names []string) []string {
 	var nameConditions []string
 	for _, name := range names {
@@ -1069,6 +1106,21 @@ func (b *Builder) addOTLPExporter(queueSize int) buildComponentFunc {
 	)
 }
 
+func (b *Builder) addOpsScrapeMetricsExporter() buildComponentFunc {
+	return b.AddExporter(
+		b.StaticComponentID(common.ComponentIDOpsScrapeMetricsExporter),
+		func(ctx context.Context, mp *telemetryv1beta1.MetricPipeline) (any, common.EnvVars, error) {
+			return &common.PrometheusExporterConfig{
+				Endpoint:         fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, ports.OpsScrapeMetrics),
+				MetricExpiration: "5m",
+				ResourceToTelemetryConversion: &common.ResourceToTelemetryConversion{
+					Enabled: true,
+				},
+			}, nil, nil
+		},
+	)
+}
+
 // Connector builders
 
 func (b *Builder) addExporterForInputRouter(componentID string, outputPipelines []telemetryv1beta1.MetricPipeline) buildComponentFunc {
@@ -1093,16 +1145,16 @@ func (b *Builder) addReceiverForInputRouter(componentID string, outputPipelines 
 	)
 }
 
-func (b *Builder) addExporterForEnrichmentRouter(runtimePipelines, prometheusPipelines, istioPipelines []telemetryv1beta1.MetricPipeline) buildComponentFunc {
+func (b *Builder) addExporterForEnrichmentRouter(runtimePipelines, prometheusPipelines, istioPipelines []telemetryv1beta1.MetricPipeline, includeOpsScrapeMetrics bool) buildComponentFunc {
 	return b.AddExporter(
 		b.StaticComponentID(common.ComponentIDEnrichmentRoutingConnector),
 		func(ctx context.Context, mp *telemetryv1beta1.MetricPipeline) (any, common.EnvVars, error) {
-			return enrichmentRoutingConnector(runtimePipelines, prometheusPipelines, istioPipelines), nil, nil
+			return enrichmentRoutingConnector(runtimePipelines, prometheusPipelines, istioPipelines, includeOpsScrapeMetrics), nil, nil
 		},
 	)
 }
 
-func (b *Builder) addReceiverForEnrichmentRouter(runtimePipelines, prometheusPipelines, istioPipelines []telemetryv1beta1.MetricPipeline) buildComponentFunc {
+func (b *Builder) addReceiverForEnrichmentRouter(runtimePipelines, prometheusPipelines, istioPipelines []telemetryv1beta1.MetricPipeline, includeOpsScrapeMetrics bool) buildComponentFunc {
 	return b.AddReceiver(
 		b.StaticComponentID(common.ComponentIDEnrichmentRoutingConnector),
 		func(mp *telemetryv1beta1.MetricPipeline) any {
@@ -1110,24 +1162,34 @@ func (b *Builder) addReceiverForEnrichmentRouter(runtimePipelines, prometheusPip
 				return nil
 			}
 
-			return enrichmentRoutingConnector(runtimePipelines, prometheusPipelines, istioPipelines)
+			return enrichmentRoutingConnector(runtimePipelines, prometheusPipelines, istioPipelines, includeOpsScrapeMetrics)
 		},
 	)
 }
 
-func enrichmentRoutingConnector(runtimePipelines, prometheusPipelines, istioPipelines []telemetryv1beta1.MetricPipeline) common.RoutingConnectorConfig {
+func enrichmentRoutingConnector(runtimePipelines, prometheusPipelines, istioPipelines []telemetryv1beta1.MetricPipeline, includeOpsScrapeMetrics bool) common.RoutingConnectorConfig {
 	tableEntries := []common.RoutingConnectorTableEntry{}
 
 	if len(runtimePipelines) > 0 {
-		tableEntries = append(tableEntries, enrichmentRoutingConnectorTableEntry(runtimePipelines, common.KymaInputNameEquals(common.InputSourceRuntime)))
+		tableEntries = append(tableEntries, enrichmentRoutingConnectorTableEntry(runtimePipelines, common.KymaInputNameEquals(common.InputSourceRuntime), nil))
 	}
 
 	if len(prometheusPipelines) > 0 {
-		tableEntries = append(tableEntries, enrichmentRoutingConnectorTableEntry(prometheusPipelines, common.KymaInputNameEquals(common.InputSourcePrometheus)))
+		var extraPipelines []string
+		if includeOpsScrapeMetrics {
+			extraPipelines = []string{opsScrapeMetricsPipelineID}
+		}
+
+		tableEntries = append(tableEntries, enrichmentRoutingConnectorTableEntry(prometheusPipelines, common.KymaInputNameEquals(common.InputSourcePrometheus), extraPipelines))
 	}
 
 	if len(istioPipelines) > 0 {
-		tableEntries = append(tableEntries, enrichmentRoutingConnectorTableEntry(istioPipelines, common.KymaInputNameEquals(common.InputSourceIstio)))
+		var extraPipelines []string
+		if includeOpsScrapeMetrics {
+			extraPipelines = []string{opsScrapeMetricsPipelineID}
+		}
+
+		tableEntries = append(tableEntries, enrichmentRoutingConnectorTableEntry(istioPipelines, common.KymaInputNameEquals(common.InputSourceIstio), extraPipelines))
 	}
 
 	return common.RoutingConnectorConfig{
@@ -1136,11 +1198,14 @@ func enrichmentRoutingConnector(runtimePipelines, prometheusPipelines, istioPipe
 	}
 }
 
-func enrichmentRoutingConnectorTableEntry(pipelines []telemetryv1beta1.MetricPipeline, routingCondition string) common.RoutingConnectorTableEntry {
+func enrichmentRoutingConnectorTableEntry(pipelines []telemetryv1beta1.MetricPipeline, routingCondition string, extraPipelines []string) common.RoutingConnectorTableEntry {
+	pipelineIDs := formatOutputPipelineIDs(pipelines)
+	pipelineIDs = append(pipelineIDs, extraPipelines...)
+
 	return common.RoutingConnectorTableEntry{
 		Context:   "metric",
 		Statement: fmt.Sprintf("route() where %s", routingCondition),
-		Pipelines: formatOutputPipelineIDs(pipelines),
+		Pipelines: pipelineIDs,
 	}
 }
 
