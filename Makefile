@@ -9,7 +9,7 @@ SELF_MONITOR_IMAGE ?= $(ENV_SELFMONITOR_IMAGE)
 SELF_MONITOR_FIPS_IMAGE ?= $(ENV_SELFMONITOR_FIPS_IMAGE)
 K3S_IMAGE ?= $(ENV_K3S_IMAGE)
 CHOWN_IMAGE ?= $(ENV_CHOWN_IMAGE)
-FAULT_BACKEND_IMAGE ?= $(ENV_FAULT_BACKEND_IMAGE)
+TEST_FAULT_BACKEND_IMAGE ?= $(ENV_TEST_FAULT_BACKEND_IMAGE)
 HELM_RELEASE_VERSION ?= $(ENV_HELM_RELEASE_VERSION)
 
 # Operating system architecture
@@ -294,15 +294,15 @@ docker-push-selfmonitor: ## Push docker image for telemetry self-monitor
 
 .PHONY: docker-build-fault-backend
 docker-build-fault-backend: ## Build docker image for the fault backend
-	docker build -t ${FAULT_BACKEND_IMAGE} dependencies/fault-backend
+	docker build -t ${TEST_FAULT_BACKEND_IMAGE} dependencies/fault-backend
 
 .PHONY: docker-push-fault-backend
 docker-push-fault-backend: ## Push docker image for the fault backend
-	docker push ${FAULT_BACKEND_IMAGE}
+	docker push ${TEST_FAULT_BACKEND_IMAGE}
 
 .PHONY: k3d-import-fault-backend
 k3d-import-fault-backend: ## Import the fault backend image into the K3D cluster
-	k3d image import ${FAULT_BACKEND_IMAGE} -c kyma
+	k3d image import ${TEST_FAULT_BACKEND_IMAGE} -c kyma
 
 .PHONY: docker-pull-self-monitor-fips-image
 docker-pull-self-monitor-fips-image: ## Pull the Self-Monitor FIPS image
