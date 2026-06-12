@@ -13,7 +13,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to release (e.g., 1.2.3 or 1.2.3-rc.1 for pre-release)'
+        description: 'Version to release (e.g., 1.2.3 or 1.2.3-rc1 for pre-release)'
         required: true
         type: string
       channel:
@@ -36,14 +36,14 @@ on:
         type: boolean
         default: false
       pre_release:
-        description: 'Is this a pre-release (RC)? If true, version field should contain RC tag like 1.2.3-rc.1'
+        description: 'Is this a pre-release (RC)? If true, version field should contain RC tag like 1.2.3-rc1'
         required: false
         type: boolean
         default: false
   workflow_call:
     inputs:
       version:
-        description: 'Version to release (e.g., 1.2.3 or 1.2.3-rc.1 for pre-release)'
+        description: 'Version to release (e.g., 1.2.3 or 1.2.3-rc1 for pre-release)'
         required: true
         type: string
       channel:
@@ -61,7 +61,7 @@ on:
         type: boolean
         default: false
       pre_release:
-        description: 'Is this a pre-release (RC)? If true, version field should contain RC tag like 1.2.3-rc.1'
+        description: 'Is this a pre-release (RC)? If true, version field should contain RC tag like 1.2.3-rc1'
         required: false
         type: boolean
         default: false
@@ -86,10 +86,10 @@ jobs:
           echo "Validating version format..."
 
           if [ "${PRE_RELEASE}" = "true" ]; then
-            # Pre-release: expect X.Y.Z-rc.N format
-            if ! [[ "${VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+-rc\.[0-9]+$ ]]; then
+            # Pre-release: expect X.Y.Z-rcN format
+            if ! [[ "${VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+-rc[0-9]+$ ]]; then
               echo "::error::Invalid pre-release version format: ${VERSION}"
-              echo "Expected format: X.Y.Z-rc.N (e.g., 1.2.3-rc.1)"
+              echo "Expected format: X.Y.Z-rcN (e.g., 1.2.3-rc1)"
               exit 1
             fi
             echo "✓ Pre-release version format valid: ${VERSION}"
@@ -239,7 +239,7 @@ jobs:
           PRE_RELEASE: ${{ inputs.pre_release }}
         run: |
           if [ "${PRE_RELEASE}" = "true" ]; then
-            # Extract base version for duplicate check (remove -rc.X suffix)
+            # Extract base version for duplicate check (remove -rcN suffix)
             BASE_VERSION=$(echo "${VERSION}" | cut -d'-' -f1)
             echo "Skipping duplicate check for pre-release submission (version=${VERSION}, base=${BASE_VERSION})"
           else
@@ -254,7 +254,7 @@ jobs:
           PRE_RELEASE: ${{ inputs.pre_release }}
         run: |
           if [ "${PRE_RELEASE}" = "true" ]; then
-            # For pre-releases, VERSION is the full RC tag (e.g., 1.2.3-rc.1)
+            # For pre-releases, VERSION is the full RC tag (e.g., 1.2.3-rc1)
             # Extract base version and pass VERSION as release_tag
             BASE_VERSION=$(echo "${VERSION}" | cut -d'-' -f1)
             ../telemetry-manager/hack/module-release.sh setup-folder "${BASE_VERSION}" "${CHANNEL}" "${VERSION}"
@@ -270,7 +270,7 @@ jobs:
           PRE_RELEASE: ${{ inputs.pre_release }}
         run: |
           if [ "${PRE_RELEASE}" = "true" ]; then
-            # For pre-releases, VERSION is the full RC tag (e.g., 1.2.3-rc.1)
+            # For pre-releases, VERSION is the full RC tag (e.g., 1.2.3-rc1)
             # Extract base version and pass VERSION as repository_tag
             BASE_VERSION=$(echo "${VERSION}" | cut -d'-' -f1)
             ../telemetry-manager/hack/module-release.sh update-config "${BASE_VERSION}" "${CHANNEL}" "" "${VERSION}"
@@ -286,7 +286,7 @@ jobs:
           PRE_RELEASE: ${{ inputs.pre_release }}
         run: |
           if [ "${PRE_RELEASE}" = "true" ]; then
-            # For pre-releases, VERSION is the full RC tag (e.g., 1.2.3-rc.1)
+            # For pre-releases, VERSION is the full RC tag (e.g., 1.2.3-rc1)
             # Extract base version and pass VERSION as release_tag
             BASE_VERSION=$(echo "${VERSION}" | cut -d'-' -f1)
             ../telemetry-manager/hack/module-release.sh update-releases "${BASE_VERSION}" "${CHANNEL}" "${VERSION}"
@@ -380,7 +380,7 @@ jobs:
           OUTPUT_FILE=$(mktemp)
 
           # Run PR creation script
-          # For pre-releases: VERSION is the full RC tag (e.g., 1.2.3-rc.1)
+          # For pre-releases: VERSION is the full RC tag (e.g., 1.2.3-rc1)
           # For normal releases: VERSION is the base version (e.g., 1.2.3)
           # Extract base version for pre-releases
           if [ "${PRE_RELEASE}" = "true" ]; then
@@ -451,7 +451,7 @@ jobs:
         run: |
           # Determine version tag and folder path based on channel and pre-release status
           if [ "${PRE_RELEASE}" = "true" ]; then
-            # For pre-releases, VERSION already contains the RC suffix (e.g., 1.2.3-rc.1)
+            # For pre-releases, VERSION already contains the RC suffix (e.g., 1.2.3-rc1)
             BASE_VERSION=$(echo "${VERSION}" | cut -d'-' -f1)
           else
             BASE_VERSION="${VERSION}"

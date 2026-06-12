@@ -32,7 +32,7 @@ on:
         default: false
         type: boolean
       pre_release:
-        description: 'Create a pre-release (pre-release-x.y.z branch, x.y.z-rc.k tag, GitHub pre-release, DEV channel only)'
+        description: 'Create a pre-release (pre-release-x.y.z branch, x.y.z-rck tag, GitHub pre-release, DEV channel only)'
         required: false
         default: false
         type: boolean
@@ -248,10 +248,10 @@ jobs:
         run: |
           git fetch --tags
           k=1
-          while git rev-parse "${VERSION}-rc.${k}" >/dev/null 2>&1; do
+          while git rev-parse "${VERSION}-rc${k}" >/dev/null 2>&1; do
             k=$((k + 1))
           done
-          PRE_TAG="${VERSION}-rc.${k}"
+          PRE_TAG="${VERSION}-rc${k}"
           echo "pre-release-tag=${PRE_TAG}" >> $GITHUB_OUTPUT
           echo "Computed pre-release tag: ${PRE_TAG}"
 
@@ -265,16 +265,16 @@ jobs:
           git fetch --tags
           k=1
           last_k=-1
-          while git rev-parse "${VERSION}-rc.${k}" >/dev/null 2>&1; do
+          while git rev-parse "${VERSION}-rc${k}" >/dev/null 2>&1; do
             last_k=$k
             k=$((k + 1))
           done
           if [ $last_k -ge 0 ]; then
-            PRE_TAG="${VERSION}-rc.${last_k}"
+            PRE_TAG="${VERSION}-rc${last_k}"
             echo "::warning::Force mode: deleting and recreating ${PRE_TAG}"
             gh release delete "${PRE_TAG}" --repo "${{ github.repository }}" --yes --cleanup-tag 2>/dev/null || true
           else
-            PRE_TAG="${VERSION}-rc.1"
+            PRE_TAG="${VERSION}-rc1"
           fi
           echo "pre-release-tag=${PRE_TAG}" >> $GITHUB_OUTPUT
           echo "Computed pre-release tag (force): ${PRE_TAG}"

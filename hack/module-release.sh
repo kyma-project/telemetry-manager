@@ -355,9 +355,9 @@ setup_folder() {
 
   # If release_tag is provided (pre-release), use it for the folder suffix
   if [ -n "${release_tag}" ]; then
-    # Extract the RC suffix (e.g., "1.2.3-rc.1" -> "-rc.1")
+    # Extract the RC suffix (e.g., "1.2.3-rc1" -> "-rc1")
     local folder_suffix="${release_tag#${version}}"
-    local grep_pattern="^[0-9]+\.[0-9]+\.[0-9]+-rc\.[0-9]+$"
+    local grep_pattern="^[0-9]+\.[0-9]+\.[0-9]+-rc[0-9]+$"
     setup_folder_common "${version}" "${channel}" "${folder_suffix}" "${grep_pattern}" "pre-release"
   # For dev, fast and regular channels (without release_tag)
   elif [ "${channel}" = "dev" ] || [ "${channel}" = "fast" ] || [ "${channel}" = "regular" ]; then
@@ -481,11 +481,11 @@ update_config() {
     exit 1
   fi
 
-  # Validate repositoryTag format: X.Y.Z (stable) or X.Y.Z-rc.N (pre-release)
-  if ! echo "${CURRENT_REPOSITORY_TAG}" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?$'; then
+  # Validate repositoryTag format: X.Y.Z (stable) or X.Y.Z-rcN (pre-release)
+  if ! echo "${CURRENT_REPOSITORY_TAG}" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(-rc[0-9]+)?$'; then
     echo "::error::Updated repositoryTag has invalid format: ${CURRENT_REPOSITORY_TAG}"
     echo "  File: ${MODULE_CONFIG}"
-    echo "  Expected format: X.Y.Z (e.g., 1.2.3) or X.Y.Z-rc.N (e.g., 1.2.3-rc.0)"
+    echo "  Expected format: X.Y.Z (e.g., 1.2.3) or X.Y.Z-rcN (e.g., 1.2.3-rc1)"
     echo "  This indicates corrupted data or an incorrect yq update"
     exit 1
   fi
@@ -559,7 +559,7 @@ create_pr() {
     echo "  version          - Version being released (e.g., 1.2.3)"
     echo "  channel          - Release channel (regular, fast, experimental, dev)"
     echo "  output-file      - File to write PR URL and number"
-    echo "  repository-tag   - (optional) Git tag to use as repositoryTag (e.g., 1.2.3-rc.0)"
+    echo "  repository-tag   - (optional) Git tag to use as repositoryTag (e.g., 1.2.3-rc1)"
     exit 1
   fi
 
