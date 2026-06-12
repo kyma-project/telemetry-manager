@@ -45,9 +45,9 @@ The release process uses GitHub Actions workflows to automate the following task
 - GitHub release creation
 - Module manifest updates for multiple channels
 
-The process has two phases:
+The process has the following phases:
 
-1. **Pre-release (D-1)**: Run one day before the planned release to validate the release candidate, run all integration tests early, and submit the module to the dev channel. This phase catches issues before release day.
+1. **Pre-release**: One day before the planned release, run this to validate the release candidate, run all integration tests early, and submit the module to the dev channel. This phase catches issues before release day.
 2. **Release**: Run on release day to create the official release and submit the module to all channels.
 
 ## Prerequisites
@@ -57,7 +57,7 @@ Ensure you have the following permissions:
 - Write access to the telemetry-manager repository
 - Access to merge PRs on the release branch
 
-## Pre-Release (D-1)
+## Pre-Release (day before)
 
 Run the pre-release workflow one day before the planned release day. It creates a `{VERSION}-rc.k` tag, runs all integration tests against the release candidate, and submits the module to the dev channel for early validation.
 
@@ -68,7 +68,7 @@ Run the pre-release workflow one day before the planned release day. It creates 
 
 Before running the pre-release workflow, release all component dependencies:
 
-1. **Release OpenTelemetry Collector Components (OCC)**: Follow the [OCC release process](https://github.com/kyma-project/opentelemetry-collector-components/blob/main/docs/contributor/releasing.md). OCC must be released **before** creating the pre-release so the same OCC image version is used for both the pre-release and the release, ensuring consistency.
+1. **Release OpenTelemetry Collector Components (OCC)**: Follow the [OCC release process](https://github.com/kyma-project/opentelemetry-collector-components/blob/main/docs/contributor/releasing.md). You must release OCC **before** creating the pre-release because the same OCC image version is used for both the pre-release and the final release.
 
    > [!IMPORTANT]
    > Do **not** release OCC again on release day. Reuse the same OCC image version that was used for the pre-release.
@@ -138,7 +138,7 @@ All tests must pass before the pre-release is created.
 
 After all tests pass, the workflow creates the GitHub pre-release using GoReleaser. The release is automatically marked as a pre-release based on the `-rc.k` semver suffix.
 
-If `module_release` is set to `true`, the workflow also triggers a module submission to the **dev channel** only (not fast or experimental). The submission uses `release_tag={VERSION}-rc.k` so the module manifest points to the rc image.
+If `module_release` is set to `true`, the workflow also triggers a module submission to the **dev channel** only (not fast or experimental). The submission uses `release_tag={VERSION}-rc.k`, so the module manifest points to the rc image.
 
 To verify the pre-release:
 - Go to [Releases](https://github.com/kyma-project/telemetry-manager/releases) and confirm the release is marked as **Pre-release**.
@@ -165,7 +165,7 @@ Before running the release workflow, complete the following tasks:
    - Close the milestone.
    - Create a new [GitHub milestone](https://github.com/kyma-project/telemetry-manager/milestones) for the next version.
 
-2. **Component Image Versions**: If you ran the pre-release workflow on D-1, all component images are already built. Use the same image versions that were used for the pre-release.
+2. **Component Image Versions**: If you ran the pre-release workflow the day before, all component images are already built. Use the same image versions that were used for the pre-release.
 
    If you are running the release without a prior pre-release, build the component images first:
    - [Build Directory Size Exporter Image](https://github.com/kyma-project/telemetry-manager/actions/workflows/build-directory-size-reporter-image.yml) - Produces image tags like `v20260302-12345678`
@@ -175,13 +175,13 @@ Before running the release workflow, complete the following tasks:
 3. **Verify Docker Image Availability**: Confirm that all required Docker images exist in the registry:
    ```bash
    # Check OCC image
-   docker manifest inspect europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:**{OCC_VERSION}-{TELEMETRY_VERSION}**
+   docker manifest inspect europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:{OCC_VERSION}-{TELEMETRY_VERSION}
 
    # Check directory-size-exporter image
-   docker manifest inspect europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:**{DIR_SIZE_TAG}**
+   docker manifest inspect europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:{DIR_SIZE_TAG}
 
    # Check self-monitor image
-   docker manifest inspect europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:**{SELF_MONITOR_TAG}**
+   docker manifest inspect europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:{SELF_MONITOR_TAG}
    ```
 
 ### 2. Start the Release Workflow
@@ -233,7 +233,7 @@ To determine the release type, the release workflow checks if a `release-X.Y` br
 
 ### 5. Review and Merge the Version Bump PR
 
-When the release branch is ready, the workflow prepares the version updates and creates a pull request (PR) for your review. The workflow then pauses and waits for you to merge this PR before it can proceed.
+When the release branch is ready, the workflow creates a PR with version updates for your review. The workflow then pauses and waits for you to merge this PR before it can proceed.
 
 > [!WARNING]
 > The workflow fails if you do not merge the PR within 120 minutes.
@@ -275,7 +275,7 @@ After all tests pass, the release workflow creates the release by performing the
 1. Creates annotated Git tag: **`{VERSION}`**
 2. Pushes the tag to trigger the following processes:
    - The release workflow uses `build-manager-image.yml` to build and push the Docker image
-   - It uses goreleaser to create the release
+   - It uses GoReleaser to create the release
 3. Packages Helm chart
 4. Uploads Helm chart to the GitHub release
 5. Updates `gh-pages` branch with Helm repository index
