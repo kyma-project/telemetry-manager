@@ -773,14 +773,14 @@ jobs:
           GH_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
         run: |
           RELEASE_TAG="${{ inputs.pre_release == true && needs.validate-and-prepare-branch.outputs.pre-release-tag || inputs.version }}"
-          echo "Triggering module release for dev channel (release_tag=${RELEASE_TAG})..."
+          echo "Triggering module release for dev channel (version=${RELEASE_TAG}, pre_release=${{ inputs.pre_release }})..."
           gh workflow run submit-module.yml \
             --ref "${{ github.ref_name }}" \
-            -f version="${{ inputs.version }}" \
+            -f version="${RELEASE_TAG}" \
             -f channel="dev" \
             -f dry_run="false" \
             -f auto_merge="true" \
-            -f release_tag="${RELEASE_TAG}"
+            -f pre_release="${{ inputs.pre_release }}"
           echo "Module release workflow triggered for dev channel"
 
       - name: Trigger module submission for fast channel
