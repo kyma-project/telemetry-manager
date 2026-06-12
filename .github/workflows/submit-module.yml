@@ -251,8 +251,9 @@ jobs:
         env:
           VERSION: ${{ inputs.version }}
           CHANNEL: ${{ inputs.channel }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
-          ../telemetry-manager/hack/module-release.sh update-releases "${VERSION}" "${CHANNEL}"
+          ../telemetry-manager/hack/module-release.sh update-releases "${VERSION}" "${CHANNEL}" "${RELEASE_TAG}"
 
       - name: Verify changes
         working-directory: module-manifests
