@@ -8,8 +8,8 @@ OTEL_COLLECTOR_IMAGE ?= $(ENV_OTEL_COLLECTOR_IMAGE)
 SELF_MONITOR_IMAGE ?= $(ENV_SELFMONITOR_IMAGE)
 SELF_MONITOR_FIPS_IMAGE ?= $(ENV_SELFMONITOR_FIPS_IMAGE)
 K3S_IMAGE ?= $(ENV_K3S_IMAGE)
-ALPINE_IMAGE ?= $(ENV_ALPINE_IMAGE)
-FAULT_BACKEND_IMAGE ?= $(ENV_FAULT_BACKEND_IMAGE)
+CHOWN_IMAGE ?= $(ENV_CHOWN_IMAGE)
+TEST_FAULT_BACKEND_IMAGE ?= $(ENV_TEST_FAULT_BACKEND_IMAGE)
 HELM_RELEASE_VERSION ?= $(ENV_HELM_RELEASE_VERSION)
 
 # Operating system architecture
@@ -190,7 +190,7 @@ generate: $(CONTROLLER_GEN) $(MOCKERY) $(STRINGER) $(YQ) $(YAMLFMT) $(POPULATE_I
 	$(YQ) eval '.manager.container.env.otelCollectorImage = ${OTEL_COLLECTOR_IMAGE}' -i helm/values.yaml
 	$(YQ) eval '.manager.container.env.selfMonitorImage = ${SELF_MONITOR_IMAGE}' -i helm/values.yaml
 	$(YQ) eval '.manager.container.env.selfMonitorFIPSImage = ${SELF_MONITOR_FIPS_IMAGE}' -i helm/values.yaml
-	$(YQ) eval '.manager.container.env.alpineImage = ${ALPINE_IMAGE}' -i helm/values.yaml
+	$(YQ) eval '.manager.container.env.chownImage = ${CHOWN_IMAGE}' -i helm/values.yaml
 	$(YQ) eval '.manager.container.image.repository = "${MANAGER_IMAGE}"' -i helm/values.yaml
 	$(YQ) eval '.version = "${HELM_RELEASE_VERSION}"' -i helm/Chart.yaml
 	$(YQ) eval '.appVersion = "${HELM_RELEASE_VERSION}"' -i helm/Chart.yaml
@@ -272,6 +272,10 @@ build-dependencies: $(BUILD_DEPENDENCY_TARGETS) ## Build custom tools in depende
 docker-build: ## Build docker image with the manager
 	docker build -t ${MANAGER_IMAGE} .
 
+.PHONY: docker-build-local
+docker-build-local: ## Build docker image for local E2E testing (tagged as telemetry-manager:latest for k3d auto-import)
+	docker build -t telemetry-manager:latest .
+
 .PHONY: docker-push
 docker-push: ## Push docker image with the manager
 	docker push ${MANAGER_IMAGE}
@@ -290,15 +294,15 @@ docker-push-selfmonitor: ## Push docker image for telemetry self-monitor
 
 .PHONY: docker-build-fault-backend
 docker-build-fault-backend: ## Build docker image for the fault backend
-	docker build -t ${FAULT_BACKEND_IMAGE} dependencies/fault-backend
+	docker build -t ${TEST_FAULT_BACKEND_IMAGE} dependencies/fault-backend
 
 .PHONY: docker-push-fault-backend
 docker-push-fault-backend: ## Push docker image for the fault backend
-	docker push ${FAULT_BACKEND_IMAGE}
+	docker push ${TEST_FAULT_BACKEND_IMAGE}
 
 .PHONY: k3d-import-fault-backend
 k3d-import-fault-backend: ## Import the fault backend image into the K3D cluster
-	k3d image import ${FAULT_BACKEND_IMAGE} -c kyma
+	k3d image import ${TEST_FAULT_BACKEND_IMAGE} -c kyma
 
 .PHONY: docker-pull-self-monitor-fips-image
 docker-pull-self-monitor-fips-image: ## Pull the Self-Monitor FIPS image

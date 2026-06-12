@@ -41,12 +41,13 @@ package testkit
 
 const (
 	DefaultTelemetryGenImage         = "{{ .ENV_TEST_TELEMETRYGEN_IMAGE }}"
-	DefaultOTelCollectorContribImage = "{{ .ENV_OTEL_COLLECTOR_CONTRIB_IMAGE }}"
+	DefaultOTelCollectorContribImage = "{{ .ENV_TEST_OTEL_COLLECTOR_CONTRIB_IMAGE }}"
 	DefaultOTelCollectorImage        = "{{ .ENV_OTEL_COLLECTOR_IMAGE }}"
 	SelfMonitorImage                 = "{{ .ENV_SELFMONITOR_IMAGE }}"
 	SelfMonitorFIPSImage             = "{{ .ENV_SELFMONITOR_FIPS_IMAGE }}"
-	FaultBackendImage                = "{{ .ENV_FAULT_BACKEND_IMAGE }}"
-	AlpineImage                      = "{{ .ENV_ALPINE_IMAGE }}"
+	FaultBackendImage                = "{{ .ENV_TEST_FAULT_BACKEND_IMAGE }}"
+	AlpineImage                      = "{{ .ENV_TEST_ALPINE_IMAGE }}"
+	ChownImage                       = "{{ .ENV_CHOWN_IMAGE }}"
 )
 `,
 }
@@ -61,7 +62,7 @@ var prodImageEnvVars = []string{
 	"ENV_OTEL_COLLECTOR_IMAGE",
 	"ENV_SELFMONITOR_IMAGE",
 	"ENV_SELFMONITOR_FIPS_IMAGE",
-	"ENV_ALPINE_IMAGE",
+	"ENV_CHOWN_IMAGE",
 }
 
 var scannerExcludes = []string{
