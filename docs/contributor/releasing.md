@@ -88,13 +88,14 @@ Before running the pre-release workflow, release all component dependencies:
 
 In the telemetry-manager repository, go to **Actions**, select [Create Release](https://github.com/kyma-project/telemetry-manager/actions/workflows/create-release.yml), and run the workflow with the following inputs:
 
-| Input                      | Description                                                      | Example              |
-|----------------------------|------------------------------------------------------------------|----------------------|
-| **version**                | Target release version in X.Y.Z format (not the rc tag)          | `1.2.3`              |
-| **occ_image_version**      | OCC image version in X.Y.Z-A.B.C format                         | `0.100.0-1.2.3`      |
-| **self_monitor_image_tag** | Self-monitor image tag in vYYYYMMDD-HASH format                  | `v20260302-bbf32a3b` |
-| **dir_size_image_tag**     | Directory size exporter image tag in vYYYYMMDD-HASH format       | `v20260302-12345678` |
-| **pre_release**            | Set to `true`                                                    | `true`               |
+| Input                      | Description                                                               | Example              |
+|----------------------------|---------------------------------------------------------------------------|----------------------|
+| **version**                | Target release version in X.Y.Z format (not the rc tag)                   | `1.2.3`              |
+| **occ_image_version**      | OCC image version in X.Y.Z-A.B.C format                                   | `0.100.0-1.2.3`      |
+| **self_monitor_image_tag** | Self-monitor image tag in vYYYYMMDD-HASH format                           | `v20260302-bbf32a3b` |
+| **dir_size_image_tag**     | Directory size exporter image tag in vYYYYMMDD-HASH format                | `v20260302-12345678` |
+| **pre_release**            | Set to `true`                                                             | `true`               |
+| **module_release**         | Trigger module submission for dev channel only (not fast or experimental) | `true`               |
 
 The workflow automatically computes the rc tag (`{VERSION}-rc.1`, `{VERSION}-rc.2`, and so on) by finding the next unused rc number for that version.
 
@@ -288,6 +289,7 @@ The workflow triggers module releases for the following channels:
 
 | Channel        | Auto-merge | Target Repository       |
 |----------------|------------|-------------------------|
+| `dev`          | Enabled    | `kyma/module-manifests` |
 | `fast`         | Enabled    | `kyma/module-manifests` |
 | `experimental` | Enabled    | `kyma/module-manifests` |
 
