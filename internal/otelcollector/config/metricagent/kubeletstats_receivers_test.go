@@ -237,6 +237,7 @@ func TestKubeletStatsReceiverConfig(t *testing.T) {
 					K8sContainerCPUNodeUtilization:         &Metric{Enabled: true},
 					K8sContainerCPULimitUtilization:        &Metric{Enabled: true},
 					K8sContainerCPURequestUtilization:      &Metric{Enabled: true},
+					K8sContainerEphemeralStorageUsage:      &Metric{Enabled: true},
 					K8sContainerMemNodeUtilization:         &Metric{Enabled: true},
 					K8sContainerMemLimitUtilization:        &Metric{Enabled: true},
 					K8sContainerMemRequestUtilization:      &Metric{Enabled: true},

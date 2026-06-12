@@ -22,6 +22,7 @@ changelog:
         - '^.*?chore(\([[:word:]]+\))??!?:.+$'
         - '^(B|b)ump'
 release:
+  prerelease: auto
   extra_files:
     - glob: telemetry-manager.yaml
     - glob: telemetry-manager-experimental.yaml

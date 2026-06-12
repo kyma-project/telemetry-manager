@@ -25,7 +25,27 @@ function prepare_release_artefacts() {
 get_previous_release_version() {
   # get list of tags in a reverse chronological order excluding dev tags,
   # sort them based on major, minor, patch numerically, grab the first release before the current one
-  TAG_LIST_WITH_PATCH=$(git tag --sort=-creatordate | grep -E "^[0-9]+.[0-9]+.[0-9]$" | sort -t "." -k1,1n -k2,2n -k3,3n | grep -B 1 "${CURRENT_VERSION}" | head -1)
+  # Strip any pre-release suffix (e.g. -rc.1) so the grep works when releasing an rc tag
+  BASE_VERSION=$(echo "${CURRENT_VERSION}" | cut -d'-' -f1)
+  TAG_LIST_WITH_PATCH=$(git tag --sort=-creatordate | grep -E "^[0-9]+.[0-9]+.[0-9]$" | sort -t "." -k1,1n -k2,2n -k3,3n | grep -B 1 "${BASE_VERSION}" | head -1 || true)
+  # For rc releases, BASE_VERSION is not yet in the stable tag list.
+  # Fall back to the highest stable tag strictly less than BASE_VERSION
+  # (handles both minor-series rc and patch-series rc where a higher minor already exists).
+  if [ -z "${TAG_LIST_WITH_PATCH}" ]; then
+    TAG_LIST_WITH_PATCH=$(git tag --sort=-creatordate \
+      | grep -E "^[0-9]+\.[0-9]+\.[0-9]+$" \
+      | sort -t "." -k1,1n -k2,2n -k3,3n \
+      | awk -v base="${BASE_VERSION}" '
+          BEGIN { split(base, b, ".") }
+          {
+            split($0, v, ".");
+            if (v[1]+0 < b[1]+0 || \
+                (v[1]+0 == b[1]+0 && v[2]+0 < b[2]+0) || \
+                (v[1]+0 == b[1]+0 && v[2]+0 == b[2]+0 && v[3]+0 < b[3]+0)) last=$0
+          }
+          END { print last }
+        ' || true)
+  fi
   export GORELEASER_PREVIOUS_TAG=${TAG_LIST_WITH_PATCH}
 }
 

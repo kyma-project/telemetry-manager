@@ -35,6 +35,11 @@ on:
         required: false
         type: boolean
         default: false
+      release_tag:
+        description: 'Git tag to use as repositoryTag in module-config.yaml (overrides version, used for pre-releases like x.y.z-rc.0)'
+        required: false
+        type: string
+        default: ''
   workflow_call:
     inputs:
       version:
@@ -55,6 +60,11 @@ on:
         required: false
         type: boolean
         default: false
+      release_tag:
+        description: 'Git tag to use as repositoryTag in module-config.yaml (overrides version, used for pre-releases like x.y.z-rc.0)'
+        required: false
+        type: string
+        default: ''
     secrets:
       HUSKIES_GHTOOLS_TOKEN:
         description: 'GitHub token for accessing github.tools.sap'
@@ -95,55 +105,60 @@ jobs:
       - name: Validate tag exists in telemetry-manager
         env:
           VERSION: ${{ inputs.version }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
-          echo "Checking if tag ${VERSION} exists in telemetry-manager repository..."
+          TAG_TO_CHECK="${RELEASE_TAG:-${VERSION}}"
+          echo "Checking if tag ${TAG_TO_CHECK} exists in telemetry-manager repository..."
 
-          if ! git ls-remote --tags https://github.com/kyma-project/telemetry-manager.git | grep -q "refs/tags/${VERSION}$"; then
-            echo "::error::Tag ${VERSION} does not exist in kyma-project/telemetry-manager repository"
+          if ! git ls-remote --tags https://github.com/kyma-project/telemetry-manager.git | grep -q "refs/tags/${TAG_TO_CHECK}$"; then
+            echo "::error::Tag ${TAG_TO_CHECK} does not exist in kyma-project/telemetry-manager repository"
             echo "Please ensure the tag is created before releasing the module"
             exit 1
           fi
 
-          echo "Tag ${VERSION} exists in telemetry-manager repository"
+          echo "Tag ${TAG_TO_CHECK} exists in telemetry-manager repository"
 
       - name: Validate Docker images exist
         env:
           VERSION: ${{ inputs.version }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
-          echo "Checking if Docker images exist for version ${VERSION}..."
+          IMAGE_TAG="${RELEASE_TAG:-${VERSION}}"
+          echo "Checking if Docker images exist for image tag ${IMAGE_TAG}..."
 
           # List of images to check (manager and self-monitor)
           IMAGES=(
-            "europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:${VERSION}"
+            "europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:${IMAGE_TAG}"
           )
 
-          MISSING_IMAGES=()
+          # For pre-releases (release_tag set) the build-manager-image workflow may still be
+          # running when this job starts. Retry for up to 20 minutes (24 × 50s).
+          MAX_ATTEMPTS=24
+          RETRY_INTERVAL=50
 
           for IMAGE in "${IMAGES[@]}"; do
             echo "Checking image: ${IMAGE}"
-            if docker manifest inspect "${IMAGE}" > /dev/null 2>&1; then
-              echo "  Image exists: ${IMAGE}"
-            else
-              echo "  Image not found: ${IMAGE}"
-              MISSING_IMAGES+=("${IMAGE}")
-            fi
+            ATTEMPT=0
+            while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+              if docker manifest inspect "${IMAGE}" > /dev/null 2>&1; then
+                echo "  Image exists: ${IMAGE}"
+                break
+              fi
+              ATTEMPT=$((ATTEMPT + 1))
+              if [ $ATTEMPT -lt $MAX_ATTEMPTS ]; then
+                echo "  Image not found yet (attempt ${ATTEMPT}/${MAX_ATTEMPTS}), retrying in ${RETRY_INTERVAL}s..."
+                sleep $RETRY_INTERVAL
+              else
+                echo ""
+                echo "::error::Image ${IMAGE} did not appear after $((MAX_ATTEMPTS * RETRY_INTERVAL / 60)) minutes."
+                echo "Please ensure the build-manager-image workflow has completed successfully."
+                exit 1
+              fi
+            done
           done
 
-          if [ ${#MISSING_IMAGES[@]} -gt 0 ]; then
-            echo ""
-            echo "::error::Missing Docker images for version ${VERSION}"
-            echo "The following images do not exist:"
-            for IMAGE in "${MISSING_IMAGES[@]}"; do
-              echo "  - ${IMAGE}"
-            done
-            echo ""
-            echo "Please ensure the build-manager-image workflow has completed successfully"
-            echo "and the images are available in the registry before releasing the module."
-            exit 1
-          fi
-
           echo ""
-          echo "All required Docker images exist for version ${VERSION}"
+          echo "All required Docker images exist for image tag ${IMAGE_TAG}"
 
   release-module:
     name: Release Telemetry Module
@@ -187,7 +202,7 @@ jobs:
       - name: Create or reuse branch
         uses: ./telemetry-manager/.github/template/checkout-or-create-branch
         with:
-          branch-name: bump-telemetry-${{ inputs.version }}-${{ inputs.channel }}
+          branch-name: bump-telemetry-${{ inputs.release_tag || inputs.version }}-${{ inputs.channel }}
           repository-path: module-manifests
 
       - name: Setup Python
@@ -201,13 +216,18 @@ jobs:
           python3 -m pip install semver==3.0.4
 
       - name: Check for duplicate version
-        # Always check, even when reusing branch, to prevent duplicate releases
+        # Always check, except for pre-releases (same base version, different rc tag)
         working-directory: module-manifests
         env:
           VERSION: ${{ inputs.version }}
           CHANNEL: ${{ inputs.channel }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
-          ../telemetry-manager/hack/module-release.sh check-duplicate "${VERSION}" "${CHANNEL}"
+          if [ -n "${RELEASE_TAG}" ]; then
+            echo "Skipping duplicate check for pre-release submission (release_tag=${RELEASE_TAG})"
+          else
+            ../telemetry-manager/hack/module-release.sh check-duplicate "${VERSION}" "${CHANNEL}"
+          fi
 
       - name: Setup version folder
         working-directory: module-manifests
@@ -222,16 +242,18 @@ jobs:
         env:
           VERSION: ${{ inputs.version }}
           CHANNEL: ${{ inputs.channel }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
-          ../telemetry-manager/hack/module-release.sh update-config "${VERSION}" "${CHANNEL}"
+          ../telemetry-manager/hack/module-release.sh update-config "${VERSION}" "${CHANNEL}" "" "${RELEASE_TAG}"
 
       - name: Update module-releases.yaml
         working-directory: module-manifests
         env:
           VERSION: ${{ inputs.version }}
           CHANNEL: ${{ inputs.channel }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
-          ../telemetry-manager/hack/module-release.sh update-releases "${VERSION}" "${CHANNEL}"
+          ../telemetry-manager/hack/module-release.sh update-releases "${VERSION}" "${CHANNEL}" "${RELEASE_TAG}"
 
       - name: Verify changes
         working-directory: module-manifests
@@ -279,8 +301,9 @@ jobs:
         env:
           VERSION: ${{ inputs.version }}
           CHANNEL: ${{ inputs.channel }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
-          BRANCH_NAME="bump-telemetry-${VERSION}-${CHANNEL}"
+          BRANCH_NAME="bump-telemetry-${RELEASE_TAG:-${VERSION}}-${CHANNEL}"
 
           # Check if branch exists on remote
           if git ls-remote --heads origin "${BRANCH_NAME}" | grep -q "refs/heads/${BRANCH_NAME}$"; then
@@ -312,13 +335,14 @@ jobs:
         env:
           VERSION: ${{ inputs.version }}
           CHANNEL: ${{ inputs.channel }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
           GH_TOKEN: ${{ secrets.HUSKIES_GHTOOLS_TOKEN }}
         run: |
           # Create temporary file for script output
           OUTPUT_FILE=$(mktemp)
 
           # Run PR creation script
-          ../telemetry-manager/hack/module-release.sh create-pr "${VERSION}" "${CHANNEL}" "${OUTPUT_FILE}"
+          ../telemetry-manager/hack/module-release.sh create-pr "${VERSION}" "${CHANNEL}" "${OUTPUT_FILE}" "${RELEASE_TAG}"
 
           # Validate output file exists and is not empty
           if [ ! -s "${OUTPUT_FILE}" ]; then
@@ -375,6 +399,7 @@ jobs:
           CHANNEL: ${{ inputs.channel }}
           DRY_RUN: ${{ inputs.dry_run }}
           AUTO_MERGE: ${{ inputs.auto_merge }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
           if [ "${CHANNEL}" = "experimental" ]; then
             VERSION_TAG="${VERSION}-experimental"
@@ -391,7 +416,7 @@ jobs:
           **Channel**: ${CHANNEL}
           **Version Tag**: ${VERSION_TAG}
           **Folder**: ${FOLDER_PATH}
-          **Branch**: bump-telemetry-${VERSION}-${CHANNEL}
+          **Branch**: bump-telemetry-${RELEASE_TAG:-${VERSION}}-${CHANNEL}
           **Dry Run**: ${DRY_RUN}
           **Auto-Merge**: ${AUTO_MERGE}
           EOF

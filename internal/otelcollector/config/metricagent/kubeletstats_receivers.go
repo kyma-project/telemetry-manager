@@ -363,6 +363,10 @@ var kubeletStatsMetricEnablers = map[string]func(*KubeletStatsMetrics){
 		initKubeletStatsOptionalMetrics(m)
 		m.K8sContainerCPURequestUtilization = &Metric{Enabled: true}
 	},
+	metricK8sContainerEphemeralStorageUsage: func(m *KubeletStatsMetrics) {
+		initKubeletStatsOptionalMetrics(m)
+		m.K8sContainerEphemeralStorageUsage = &Metric{Enabled: true}
+	},
 	metricK8sContainerMemNodeUtilization: func(m *KubeletStatsMetrics) {
 		initKubeletStatsOptionalMetrics(m)
 		m.K8sContainerMemNodeUtilization = &Metric{Enabled: true}

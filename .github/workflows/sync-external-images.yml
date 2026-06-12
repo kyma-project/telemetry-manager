@@ -9,12 +9,6 @@ on:
       - main
     paths:
       - "external-images.yaml"
-  pull_request:
-    types: [opened, edited, synchronize, reopened, ready_for_review]
-    branches:
-      - main
-    paths:
-      - "external-images.yaml"
 
 jobs:
   sync-external-images:
