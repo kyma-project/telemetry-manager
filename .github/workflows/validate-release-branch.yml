@@ -7,6 +7,7 @@ on:
   pull_request:
     branches:
       - "release-*"
+      - "pre-release-*"
 jobs:
   validate-envs:
     name: Validate helm/values.yaml and sec-scanners-config.yaml files

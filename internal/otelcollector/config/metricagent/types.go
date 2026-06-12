@@ -110,6 +110,7 @@ type KubeletStatsOptionalMetrics struct {
 	K8sContainerCPUNodeUtilization         *Metric `yaml:"k8s.container.cpu.node.utilization,omitempty"`
 	K8sContainerCPULimitUtilization        *Metric `yaml:"k8s.container.cpu_limit_utilization,omitempty"`
 	K8sContainerCPURequestUtilization      *Metric `yaml:"k8s.container.cpu_request_utilization,omitempty"`
+	K8sContainerEphemeralStorageUsage      *Metric `yaml:"k8s.container.ephemeral_storage.usage,omitempty"`
 	K8sContainerMemNodeUtilization         *Metric `yaml:"k8s.container.memory.node.utilization,omitempty"`
 	K8sContainerMemLimitUtilization        *Metric `yaml:"k8s.container.memory_limit_utilization,omitempty"`
 	K8sContainerMemRequestUtilization      *Metric `yaml:"k8s.container.memory_request_utilization,omitempty"`
