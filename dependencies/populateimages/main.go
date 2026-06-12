@@ -46,7 +46,7 @@ const (
 	SelfMonitorImage                 = "{{ .ENV_SELFMONITOR_IMAGE }}"
 	SelfMonitorFIPSImage             = "{{ .ENV_SELFMONITOR_FIPS_IMAGE }}"
 	FaultBackendImage                = "{{ .ENV_FAULT_BACKEND_IMAGE }}"
-	AlpineImage                      = "europe-docker.pkg.dev/kyma-project/prod/external/library/alpine:3.23.4"
+	AlpineImage                      = "{{ .ENV_TEST_ALPINE_IMAGE }}"
 	ChownImage                       = "{{ .ENV_CHOWN_IMAGE }}"
 )
 `,
