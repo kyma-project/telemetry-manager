@@ -74,7 +74,7 @@ The Metric Agent is deployed as a DaemonSet and scrapes Prometheus metrics from 
 | Volume Mount | Istio certificates volume (`/etc/istio-output-certs`) | The Metric Agent always mounts Istio certificates so it can scrape application metrics that require mTLS (when the application follows a STRICT mTLS policy). |
 
 
-### OTel Log Agent
+#### OTel Log Agent
 
 The OTel Log Agent is deployed as a DaemonSet and collects container logs using file-based collection, then forwards them to configured backends.
 
@@ -106,7 +106,7 @@ Fluent Bit is deployed as a DaemonSet and provides legacy log collection capabil
 |----------|----------|-----------|
 | NetworkPolicy (Ingress) | Additionally allows traffic on Istio Envoy telemetry port (15090) | When Istio is present, the sidecar's Envoy proxy exposes metrics that need to be scraped by monitoring systems. |
 
-### Self-Monitor
+#### Self-Monitor
 
 The Self-Monitor is a Prometheus instance deployed as a Deployment that scrapes metrics from Telemetry components for health monitoring and alerting.
 
@@ -232,13 +232,13 @@ The proposed API provides a smooth migration path:
 - Remove auto-detection logic entirely
 - Require explicit `enabled: true` or `enabled: false` (make the field required)
 
-Pros:
+**Pros:**
 - Zero disruption during initial rollout: Existing installations continue working without any configuration changes
 - Gradual migration timeline: Users have time to understand the new API and plan their migration
 - Backward compatible: Phase 1 maintains current behavior while introducing explicit control
 - Low risk: Two-phase approach allows testing and validation before breaking changes
 
-Cons:
+**Cons:**
 - Longer transition period: Auto-detection logic must be maintained through Phase 1
 - Potential confusion: During Phase 1, users might not realize they can explicitly control Istio mode
 - Delayed resource savings: Users who don't need Istio integration continue paying overhead costs until Phase 2
