@@ -121,8 +121,8 @@ type envConfig struct {
 	SelfMonitorImage string `env:"SELF_MONITOR_IMAGE"`
 	// SelfMonitorFIPSImage is the image used for the self-monitoring deployment in FIPS mode. This is a Prometheus FIPS 140-2 compliant image.
 	SelfMonitorFIPSImage string `env:"SELF_MONITOR_FIPS_IMAGE"`
-	// AlpineImage is the image used for the chown init containers.
-	AlpineImage string `env:"ALPINE_IMAGE"`
+	// ChownImage is the image used for the chown init containers.
+	ChownImage string `env:"CHOWN_IMAGE"`
 	// ImagePullSecret is the name of the image pull secret to use for pulling images of all created workloads (agents, gateways, self-monitor).
 	ImagePullSecret string `env:"SKR_IMG_PULL_SECRET" envDefault:""`
 	// ManagerNamespace returns the namespace where Telemetry Manager is deployed. In a Kyma setup, this is the same as TargetNamespace.
@@ -517,7 +517,7 @@ func setupLogPipelineController(globals config.Global, cfg envConfig, mgr manage
 			Global:                     globals,
 			ExporterImage:              cfg.FluentBitExporterImage,
 			FluentBitImage:             cfg.FluentBitImage,
-			ChownInitContainerImage:    cfg.AlpineImage,
+			ChownInitContainerImage:    cfg.ChownImage,
 			OTelCollectorImage:         cfg.OTelCollectorImage,
 			FluentBitPriorityClassName: highPriorityClassName,
 			LogAgentPriorityClassName:  highPriorityClassName,
