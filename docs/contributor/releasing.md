@@ -3,28 +3,37 @@
 This document describes the automated release process for Telemetry Manager using GitHub Actions workflows.
 
 <!-- TOC -->
-* [Overview](#overview)
-* [Prerequisites](#prerequisites)
-* [Release to Dev, Fast, and Experimental Channels](#release-to-dev-fast-and-experimental-channels)
-  * [1. Prepare the Release](#1-prepare-the-release)
-  * [2. Start the Release Workflow](#2-start-the-release-workflow)
-  * [3. Automatic Validation](#3-automatic-validation)
-  * [4. Automatic Branch Creation](#4-automatic-branch-creation)
-  * [5. Review and Merge the Version Bump PR](#5-review-and-merge-the-version-bump-pr)
-  * [6. Automatic Testing](#6-automatic-testing)
-  * [7. Automatic Tag and Release Creation](#7-automatic-tag-and-release-creation)
-  * [8. Automatic Module Releases](#8-automatic-module-releases)
-  * [9. Verify the Release](#9-verify-the-release)
-* [Release to the Regular Channel](#release-to-the-regular-channel)
-* [Monitor Release Progress](#monitor-release-progress)
-  * [Workflow Status](#workflow-status)
-  * [Module Release Status](#module-release-status)
-* [Troubleshooting](#troubleshooting)
-  * [Milestone Validation Error](#milestone-validation-error)
-  * [Docker Image Not Found](#docker-image-not-found)
-  * [GitHub Tag Already Exists](#github-tag-already-exists)
-  * [Version Bump PR Times Out](#version-bump-pr-times-out)
-* [Related Workflows](#related-workflows)
+* [Release Process](#release-process)
+  * [Overview](#overview)
+  * [Prerequisites](#prerequisites)
+  * [Pre-Release (day before)](#pre-release-day-before)
+    * [1. Prepare the Pre-Release](#1-prepare-the-pre-release)
+    * [2. Start the Pre-Release Workflow](#2-start-the-pre-release-workflow)
+    * [3. Automatic Validation](#3-automatic-validation)
+    * [4. Pre-Release Branch and Version Bump PR](#4-pre-release-branch-and-version-bump-pr)
+    * [5. Automatic Testing](#5-automatic-testing)
+    * [6. Automatic Pre-Release Creation](#6-automatic-pre-release-creation)
+    * [7. On Release Day](#7-on-release-day)
+  * [Release to Dev, Fast, and Experimental Channels](#release-to-dev-fast-and-experimental-channels)
+    * [1. Prepare the Release](#1-prepare-the-release)
+    * [2. Start the Release Workflow](#2-start-the-release-workflow)
+    * [3. Automatic Validation](#3-automatic-validation-1)
+    * [4. Automatic Branch Creation](#4-automatic-branch-creation)
+    * [5. Review and Merge the Version Bump PR](#5-review-and-merge-the-version-bump-pr)
+    * [6. Automatic Testing](#6-automatic-testing)
+    * [7. Automatic Tag and Release Creation](#7-automatic-tag-and-release-creation)
+    * [8. Automatic Module Releases](#8-automatic-module-releases)
+    * [9. Verify the Release](#9-verify-the-release)
+  * [Release to the Regular Channel](#release-to-the-regular-channel)
+  * [Monitor Release Progress](#monitor-release-progress)
+    * [Workflow Status](#workflow-status)
+    * [Module Release Status](#module-release-status)
+  * [Troubleshooting](#troubleshooting)
+    * [Milestone Validation Error](#milestone-validation-error)
+    * [Docker Image Not Found](#docker-image-not-found)
+    * [GitHub Tag Already Exists](#github-tag-already-exists)
+    * [Version Bump PR Times Out](#version-bump-pr-times-out)
+  * [Related Workflows](#related-workflows)
 <!-- TOC -->
 
 ## Overview
@@ -36,12 +45,115 @@ The release process uses GitHub Actions workflows to automate the following task
 - GitHub release creation
 - Module manifest updates for multiple channels
 
+The process has the following phases:
+
+1. **Pre-release**: One day before the planned release, run this to validate the release candidate, run all integration tests early, and submit the module to the dev channel. This phase catches issues before release day.
+2. **Release**: Run on release day to create the official release and submit the module to all channels.
+
 ## Prerequisites
 
 Ensure you have the following permissions:
 
 - Write access to the telemetry-manager repository
 - Access to merge PRs on the release branch
+
+## Pre-Release (day before)
+
+Run the pre-release workflow one day before the planned release day. It creates a `{VERSION}-rc.k` tag, runs all integration tests against the release candidate, and submits the module to the dev channel for early validation.
+
+> [!NOTE]
+> The pre-release does **not** require a closed milestone. Milestone management belongs to the release day workflow.
+
+### 1. Prepare the Pre-Release
+
+Before running the pre-release workflow, release all component dependencies:
+
+1. **Release OpenTelemetry Collector Components (OCC)**: Follow the [OCC release process](https://github.com/kyma-project/opentelemetry-collector-components/blob/main/docs/contributor/releasing.md). You must release OCC **before** creating the pre-release because the same OCC image version is used for both the pre-release and the final release.
+
+   > [!IMPORTANT]
+   > Do **not** release OCC again on release day. Reuse the same OCC image version that was used for the pre-release.
+
+2. **Build component images**: Trigger the following workflows if newer images are needed:
+   - [Build Directory Size Exporter Image](https://github.com/kyma-project/telemetry-manager/actions/workflows/build-directory-size-reporter-image.yml)
+   - [Build Self Monitor Image](https://github.com/kyma-project/telemetry-manager/actions/workflows/build-self-monitor-image.yml)
+
+3. **Verify Docker image availability**: After the component builds complete, confirm the images exist:
+   ```bash
+   docker manifest inspect europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:{OCC_VERSION}-{TELEMETRY_VERSION}
+   docker manifest inspect europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:{DIR_SIZE_TAG}
+   docker manifest inspect europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:{SELF_MONITOR_TAG}
+   ```
+
+### 2. Start the Pre-Release Workflow
+
+In the telemetry-manager repository, go to **Actions**, select [Create Release](https://github.com/kyma-project/telemetry-manager/actions/workflows/create-release.yml), and run the workflow with the following inputs:
+
+| Input                      | Description                                                               | Example              |
+|----------------------------|---------------------------------------------------------------------------|----------------------|
+| **version**                | Target release version in X.Y.Z format (not the rc tag)                   | `1.2.3`              |
+| **occ_image_version**      | OCC image version in X.Y.Z-A.B.C format                                   | `0.100.0-1.2.3`      |
+| **self_monitor_image_tag** | Self-monitor image tag in vYYYYMMDD-HASH format                           | `v20260302-bbf32a3b` |
+| **dir_size_image_tag**     | Directory size exporter image tag in vYYYYMMDD-HASH format                | `v20260302-12345678` |
+| **pre_release**            | Set to `true`                                                             | `true`               |
+| **module_release**         | Trigger module submission for dev channel only (not fast or experimental) | `true`               |
+
+The workflow automatically computes the rc tag (`{VERSION}-rc.1`, `{VERSION}-rc.2`, and so on) by finding the next unused rc number for that version.
+
+### 3. Automatic Validation
+
+The pre-release workflow validates the following conditions:
+
+- The version format follows semantic versioning (`X.Y.Z`)
+- The OCC version format matches the expected pattern (`X.Y.Z-A.B.C`)
+- The image tag format matches the expected pattern (`vYYYYMMDD-HASH`)
+- All required Docker images exist in the registry
+
+> [!NOTE]
+> Milestone checks and tag-conflict checks are skipped for pre-releases. The workflow computes the next rc tag automatically.
+
+### 4. Pre-Release Branch and Version Bump PR
+
+The workflow creates a `pre-release-{VERSION}` branch (for example, `pre-release-1.2.3`) from `main` and opens a version bump PR against that branch. Standard PR checks run automatically on this PR.
+
+The PR contains the same `.env` changes as a regular release. See [Review and Merge the Version Bump PR](#5-review-and-merge-the-version-bump-pr) for the full list of changes.
+
+After you merge the PR, the workflow creates the `{VERSION}-rc.k` tag (for example, `1.2.3-rc.1`) and triggers the Docker image build.
+
+> [!WARNING]
+> The workflow fails if you do not merge the PR within 120 minutes.
+
+### 5. Automatic Testing
+
+After the PR is merged and the rc tag is pushed, the workflow runs:
+
+1. **Unit Tests**: Full test suite
+2. **PR Integration Tests**: End-to-end integration tests against the rc image
+3. **Gardener Integration Tests**: Tests on Gardener-managed clusters against the rc image
+
+> [!NOTE]
+> The integration test jobs wait up to 15 minutes for the rc Docker image to be available before starting (because the Docker image build runs in parallel).
+
+All tests must pass before the pre-release is created.
+
+### 6. Automatic Pre-Release Creation
+
+After all tests pass, the workflow creates the GitHub pre-release using GoReleaser. The release is automatically marked as a pre-release based on the `-rc.k` semver suffix.
+
+If `module_release` is set to `true`, the workflow also triggers a module submission to the **dev channel** only (not fast or experimental). The submission uses `release_tag={VERSION}-rc.k`, so the module manifest points to the rc image.
+
+To verify the pre-release:
+- Go to [Releases](https://github.com/kyma-project/telemetry-manager/releases) and confirm the release is marked as **Pre-release**.
+- Check that the Docker image exists: `europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:{VERSION}-rc.k`
+
+### 7. On Release Day
+
+On release day, check whether any new commits were added to the `pre-release-{VERSION}` branch since the pre-release:
+
+- **No new commits**: The pre-release is the exact state you want to ship. Run the release workflow on the **same component image versions** used for the pre-release.
+- **New commits**: Run the release workflow normally (without `pre_release=true`). The workflow creates a fresh `release-{X.Y}` branch and runs all tests again.
+
+> [!IMPORTANT]
+> Always reuse the same OCC image version (`occ_image_version`) that was used for the pre-release. This ensures the release has the same dependencies that were validated during the pre-release.
 
 ## Release to Dev, Fast, and Experimental Channels
 
@@ -54,21 +166,23 @@ Before running the release workflow, complete the following tasks:
    - Close the milestone.
    - Create a new [GitHub milestone](https://github.com/kyma-project/telemetry-manager/milestones) for the next version.
 
-2. **Release Component Dependencies**: Release the following component dependencies to produce the required Docker images
+2. **Component Image Versions**: If you ran the pre-release workflow the day before, all component images are already built. Use the same image versions that were used for the pre-release.
+
+   If you are running the release without a prior pre-release, build the component images first:
    - [Build Directory Size Exporter Image](https://github.com/kyma-project/telemetry-manager/actions/workflows/build-directory-size-reporter-image.yml) - Produces image tags like `v20260302-12345678`
    - [Build Self Monitor Image](https://github.com/kyma-project/telemetry-manager/actions/workflows/build-self-monitor-image.yml) - Produces image tags like `v20260302-bbf32a3b`
    - [OpenTelemetry Collector Components Create Release](https://github.com/kyma-project/opentelemetry-collector-components/actions/workflows/create-release.yaml) - Version format: **`{OCC_VERSION}`**-**`{TELEMETRY_VERSION}`**, such as `0.100.0-1.2.3`
 
-3. **Verify Docker Image Availability**: After the component releases complete, verify that all required Docker images are available in the registry:
+3. **Verify Docker Image Availability**: Confirm that all required Docker images exist in the registry:
    ```bash
    # Check OCC image
-   docker manifest inspect europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:**{OCC_VERSION}-{TELEMETRY_VERSION}**
+   docker manifest inspect europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:{OCC_VERSION}-{TELEMETRY_VERSION}
 
    # Check directory-size-exporter image
-   docker manifest inspect europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:**{DIR_SIZE_TAG}**
+   docker manifest inspect europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:{DIR_SIZE_TAG}
 
    # Check self-monitor image
-   docker manifest inspect europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:**{SELF_MONITOR_TAG}**
+   docker manifest inspect europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:{SELF_MONITOR_TAG}
    ```
 
 ### 2. Start the Release Workflow
@@ -120,7 +234,7 @@ To determine the release type, the release workflow checks if a `release-X.Y` br
 
 ### 5. Review and Merge the Version Bump PR
 
-When the release branch is ready, the workflow prepares the version updates and creates a pull request (PR) for your review. The workflow then pauses and waits for you to merge this PR before it can proceed.
+When the release branch is ready, the workflow creates a PR with version updates for your review. The workflow then pauses and waits for you to merge this PR before it can proceed.
 
 > [!WARNING]
 > The workflow fails if you do not merge the PR within 120 minutes.
@@ -162,7 +276,7 @@ After all tests pass, the release workflow creates the release by performing the
 1. Creates annotated Git tag: **`{VERSION}`**
 2. Pushes the tag to trigger the following processes:
    - The release workflow uses `build-manager-image.yml` to build and push the Docker image
-   - It uses goreleaser to create the release
+   - It uses GoReleaser to create the release
 3. Packages Helm chart
 4. Uploads Helm chart to the GitHub release
 5. Updates `gh-pages` branch with Helm repository index
@@ -175,6 +289,7 @@ The workflow triggers module releases for the following channels:
 
 | Channel        | Auto-merge | Target Repository       |
 |----------------|------------|-------------------------|
+| `dev`          | Enabled    | `kyma/module-manifests` |
 | `fast`         | Enabled    | `kyma/module-manifests` |
 | `experimental` | Enabled    | `kyma/module-manifests` |
 
