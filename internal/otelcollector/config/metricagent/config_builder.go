@@ -200,6 +200,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1beta1.Metric
 		if err := b.AddServicePipeline(ctx, nil, opsScrapeMetricsPipelineID,
 			b.addReceiverForEnrichmentRouter(pipelinesWithRuntimeInput, pipelinesWithPrometheusInput, pipelinesWithIstioInput, inputs.prometheus || inputs.istio),
 			b.addOpsKeepScrapeMetricsProcessor(),
+			b.addOpsDropHealthyScrapeMetricsProcessor(),
 			b.addOpsScrapeMetricsExporter(),
 		); err != nil {
 			return nil, nil, fmt.Errorf("failed to add ops scrape metrics pipeline: %w", err)
@@ -1022,6 +1023,26 @@ func keepScrapeMetricsFilterProcessor() *common.FilterProcessorConfig {
 	return common.MetricFilterProcessor([]telemetryv1beta1.FilterSpec{
 		{
 			Conditions: []string{dropNonScrapeMetricsExpr},
+		},
+	})
+}
+
+func (b *Builder) addOpsDropHealthyScrapeMetricsProcessor() buildComponentFunc {
+	return b.AddProcessor(
+		b.StaticComponentID(common.ComponentIDOpsDropHealthyScrapeMetricsProcessor),
+		func(mp *telemetryv1beta1.MetricPipeline) any {
+			return dropHealthyScrapeMetricsFilterProcessor()
+		},
+	)
+}
+
+func dropHealthyScrapeMetricsFilterProcessor() *common.FilterProcessorConfig {
+	return common.MetricFilterProcessor([]telemetryv1beta1.FilterSpec{
+		{
+			Conditions: []string{
+				`metric.name == "up" and datapoint.value_int == 1`,
+				`metric.name == "scrape_body_size_bytes" and datapoint.value_double > 0`,
+			},
 		},
 	})
 }

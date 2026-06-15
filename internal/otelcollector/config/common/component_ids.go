@@ -128,6 +128,7 @@ const ComponentIDSetInstrumentationScopePrometheusProcessor ComponentID = "trans
 const ComponentIDSetInstrumentationScopeIstioProcessor ComponentID = "transform/set-instrumentation-scope-istio"
 const ComponentIDInsertSkipEnrichmentAttributeProcessor ComponentID = "transform/insert-skip-enrichment-attribute"
 const ComponentIDOpsKeepScrapeMetricsProcessor ComponentID = "filter/ops-keep-scrape-metrics"
+const ComponentIDOpsDropHealthyScrapeMetricsProcessor ComponentID = "filter/ops-drop-healthy-scrape-metrics"
 
 // TRACE-SPECIFIC PROCESSORS ======================================================
 

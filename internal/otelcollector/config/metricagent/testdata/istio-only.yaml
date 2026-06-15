@@ -39,6 +39,7 @@ service:
                 - routing/enrichment
             processors:
                 - filter/ops-keep-scrape-metrics
+                - filter/ops-drop-healthy-scrape-metrics
             exporters:
                 - prometheus/ops-scrape-metrics
         metrics/output-test:
@@ -121,6 +122,12 @@ processors:
         metric_conditions:
             - conditions:
                 - IsMatch(metric.name, "^envoy_.*") and resource.attributes["kyma.input.name"] == "istio"
+    filter/ops-drop-healthy-scrape-metrics:
+        error_mode: ignore
+        metric_conditions:
+            - conditions:
+                - metric.name == "up" and datapoint.value_int == 1
+                - metric.name == "scrape_body_size_bytes" and datapoint.value_double > 0
     filter/ops-keep-scrape-metrics:
         error_mode: ignore
         metric_conditions:
