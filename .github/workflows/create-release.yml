@@ -21,6 +21,11 @@ on:
         required: true
         default: ""
         type: string
+      chown_image_tag:
+        description: 'Chown image tag to use in release (e.g., v20260302-12345678)'
+        required: true
+        default: ""
+        type: string
       dry_run:
         description: 'Perform a dry run without creating a release'
         required: false
@@ -32,7 +37,7 @@ on:
         default: false
         type: boolean
       pre_release:
-        description: 'Create a pre-release (pre-release-x.y.z branch, x.y.z-rc.k tag, GitHub pre-release, DEV channel only)'
+        description: 'Create a pre-release (pre-release-x.y.z branch, x.y.z-rck tag, GitHub pre-release, DEV channel only)'
         required: false
         default: false
         type: boolean
@@ -68,6 +73,7 @@ jobs:
           OCC_IMAGE_VERSION: ${{ github.event.inputs.occ_image_version }}
           SELF_MONITOR_IMAGE_TAG: ${{ github.event.inputs.self_monitor_image_tag }}
           DIR_SIZE_IMAGE_TAG: ${{ github.event.inputs.dir_size_image_tag }}
+          CHOWN_IMAGE_TAG: ${{ github.event.inputs.chown_image_tag }}
         run: |
           echo "Validating version formats..."
 
@@ -110,6 +116,18 @@ jobs:
           else
             echo "::warning::Dir-size image tag is empty, using default"
           fi
+
+          # Validate chown image tag format (vYYYYMMDD-hash)
+          if [ -n "${CHOWN_IMAGE_TAG}" ]; then
+            if ! [[ "${CHOWN_IMAGE_TAG}" =~ ^v[0-9]{8}-[a-f0-9]{8}$ ]]; then
+              echo "::error::Invalid chown image tag format: ${CHOWN_IMAGE_TAG}"
+              echo "Expected format: vYYYYMMDD-HASH (e.g., v20260302-12345678)"
+              exit 1
+            fi
+            echo "✓ Chown image tag format valid: ${CHOWN_IMAGE_TAG}"
+          else
+            echo "::warning::Chown image tag is empty, using default"
+          fi
           
           # Check if OCC Docker image exists
           echo "Checking if OCC Docker image exists..."
@@ -146,6 +164,19 @@ jobs:
             echo "Self Monitor Docker image exists: ${SELF_MONITOR_FULL}"
           else
             echo "::error::Self Monitor Docker image does not exist: ${SELF_MONITOR_FULL}"
+            echo "Please verify the image has been built and pushed to the registry"
+            exit 1
+          fi
+
+          # Check if Chown Docker image exists
+          echo "Checking if Chown Docker image exists..."
+          CHOWN_IMAGE_REPO="europe-docker.pkg.dev/kyma-project/prod/telemetry-chown"
+          CHOWN_IMAGE_FULL="${CHOWN_IMAGE_REPO}:${CHOWN_IMAGE_TAG}"
+
+          if docker manifest inspect "${CHOWN_IMAGE_FULL}" > /dev/null 2>&1; then
+            echo "Chown Docker image exists: ${CHOWN_IMAGE_FULL}"
+          else
+            echo "::error::Chown Docker image does not exist: ${CHOWN_IMAGE_FULL}"
             echo "Please verify the image has been built and pushed to the registry"
             exit 1
           fi
@@ -248,10 +279,10 @@ jobs:
         run: |
           git fetch --tags
           k=1
-          while git rev-parse "${VERSION}-rc.${k}" >/dev/null 2>&1; do
+          while git rev-parse "${VERSION}-rc${k}" >/dev/null 2>&1; do
             k=$((k + 1))
           done
-          PRE_TAG="${VERSION}-rc.${k}"
+          PRE_TAG="${VERSION}-rc${k}"
           echo "pre-release-tag=${PRE_TAG}" >> $GITHUB_OUTPUT
           echo "Computed pre-release tag: ${PRE_TAG}"
 
@@ -265,16 +296,16 @@ jobs:
           git fetch --tags
           k=1
           last_k=-1
-          while git rev-parse "${VERSION}-rc.${k}" >/dev/null 2>&1; do
+          while git rev-parse "${VERSION}-rc${k}" >/dev/null 2>&1; do
             last_k=$k
             k=$((k + 1))
           done
           if [ $last_k -ge 0 ]; then
-            PRE_TAG="${VERSION}-rc.${last_k}"
+            PRE_TAG="${VERSION}-rc${last_k}"
             echo "::warning::Force mode: deleting and recreating ${PRE_TAG}"
             gh release delete "${PRE_TAG}" --repo "${{ github.repository }}" --yes --cleanup-tag 2>/dev/null || true
           else
-            PRE_TAG="${VERSION}-rc.1"
+            PRE_TAG="${VERSION}-rc1"
           fi
           echo "pre-release-tag=${PRE_TAG}" >> $GITHUB_OUTPUT
           echo "Computed pre-release tag (force): ${PRE_TAG}"
@@ -362,24 +393,39 @@ jobs:
           OCC_IMAGE_VERSION: ${{ github.event.inputs.occ_image_version }}
           SELF_MONITOR_IMAGE_TAG: ${{ github.event.inputs.self_monitor_image_tag }}
           DIR_SIZE_IMAGE_TAG: ${{ github.event.inputs.dir_size_image_tag }}
+          CHOWN_IMAGE_TAG: ${{ github.event.inputs.chown_image_tag }}
+          PRE_RELEASE: ${{ github.event.inputs.pre_release }}
+          PRE_RELEASE_TAG: ${{ needs.validate-and-prepare-branch.outputs.pre-release-tag }}
         run: |
-          echo "Bumping version to ${VERSION}..."
+          # For pre-releases, use the computed RC tag; otherwise use base version
+          if [ "${PRE_RELEASE}" = "true" ]; then
+            RELEASE_TAG="${PRE_RELEASE_TAG}"
+            echo "Pre-release mode: bumping version to ${RELEASE_TAG}..."
+          else
+            RELEASE_TAG="${VERSION}"
+            echo "Bumping version to ${RELEASE_TAG}..."
+          fi
 
           if [ -f .env ]; then
-            sed -i.bak "s/ENV_HELM_RELEASE_VERSION=.*/ENV_HELM_RELEASE_VERSION=${VERSION}/" .env && rm .env.bak
-            echo "Updated ENV_HELM_RELEASE_VERSION in .env"
+            # Always update HELM_RELEASE_VERSION and MANAGER_IMAGE
+            sed -i.bak "s/ENV_HELM_RELEASE_VERSION=.*/ENV_HELM_RELEASE_VERSION=${RELEASE_TAG}/" .env && rm .env.bak
+            echo "Updated ENV_HELM_RELEASE_VERSION in .env to ${RELEASE_TAG}"
 
-            sed -i.bak "s|ENV_MANAGER_IMAGE=\(.*\):.*|ENV_MANAGER_IMAGE=\1:${VERSION}|" .env && rm .env.bak
-            echo "Updated ENV_MANAGER_IMAGE tag in .env"
+            sed -i.bak "s|ENV_MANAGER_IMAGE=\(.*\):.*|ENV_MANAGER_IMAGE=\1:${RELEASE_TAG}|" .env && rm .env.bak
+            echo "Updated ENV_MANAGER_IMAGE tag in .env to ${RELEASE_TAG}"
 
+            # Always update OCC, self-monitor, and fluentbit images with stable versions from inputs
             sed -i.bak 's|ENV_OTEL_COLLECTOR_IMAGE="\([^:]*\):[^"]*"|ENV_OTEL_COLLECTOR_IMAGE="\1:'"${OCC_IMAGE_VERSION}"'"|' .env && rm .env.bak
-            echo "Updated ENV_OTEL_COLLECTOR_IMAGE tag in .env"
+            echo "Updated ENV_OTEL_COLLECTOR_IMAGE tag in .env to ${OCC_IMAGE_VERSION}"
 
             sed -i.bak 's|ENV_SELFMONITOR_IMAGE="\([^:]*\):[^"]*"|ENV_SELFMONITOR_IMAGE="\1:'"${SELF_MONITOR_IMAGE_TAG}"'"|' .env && rm .env.bak
-            echo "Updated ENV_SELFMONITOR_IMAGE tag in .env"
-          
+            echo "Updated ENV_SELFMONITOR_IMAGE tag in .env to ${SELF_MONITOR_IMAGE_TAG}"
+
             sed -i.bak 's|ENV_FLUENTBIT_EXPORTER_IMAGE="\([^:]*\):[^"]*"|ENV_FLUENTBIT_EXPORTER_IMAGE="\1:'"${DIR_SIZE_IMAGE_TAG}"'"|' .env && rm .env.bak
-            echo "Updated ENV_FLUENTBIT_EXPORTER_IMAGE tag in .env"
+            echo "Updated ENV_FLUENTBIT_EXPORTER_IMAGE tag in .env to ${DIR_SIZE_IMAGE_TAG}"
+
+            sed -i.bak 's|ENV_CHOWN_IMAGE="\([^:]*\):[^"]*"|ENV_CHOWN_IMAGE="\1:'"${CHOWN_IMAGE_TAG}"'"|' .env && rm .env.bak
+            echo "Updated ENV_CHOWN_IMAGE tag in .env"
 
             make generate
           fi
@@ -387,12 +433,21 @@ jobs:
       - name: Commit and push version bump
         env:
           VERSION: ${{ github.event.inputs.version }}
+          PRE_RELEASE: ${{ github.event.inputs.pre_release }}
+          PRE_RELEASE_TAG: ${{ needs.validate-and-prepare-branch.outputs.pre-release-tag }}
         run: |
+          # Use pre-release tag for commit message if in pre-release mode
+          if [ "${PRE_RELEASE}" = "true" ]; then
+            RELEASE_TAG="${PRE_RELEASE_TAG}"
+          else
+            RELEASE_TAG="${VERSION}"
+          fi
+
           git add .
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
-            git commit -m "Bump version to ${VERSION}"
+            git commit -m "Bump version to ${RELEASE_TAG}"
             git push origin "${BUMP_BRANCH}"
             echo "Committed and pushed version bump to ${BUMP_BRANCH}"
           fi
@@ -406,10 +461,20 @@ jobs:
           OCC_IMAGE_VERSION: ${{ github.event.inputs.occ_image_version }}
           SELF_MONITOR_IMAGE_TAG: ${{ github.event.inputs.self_monitor_image_tag }}
           DIR_SIZE_IMAGE_TAG: ${{ github.event.inputs.dir_size_image_tag }}
+          CHOWN_IMAGE_TAG: ${{ github.event.inputs.chown_image_tag }}
+          PRE_RELEASE: ${{ github.event.inputs.pre_release }}
+          PRE_RELEASE_TAG: ${{ needs.validate-and-prepare-branch.outputs.pre-release-tag }}
         run: |
+          # Use pre-release tag for PR if in pre-release mode
+          if [ "${PRE_RELEASE}" = "true" ]; then
+            RELEASE_TAG="${PRE_RELEASE_TAG}"
+          else
+            RELEASE_TAG="${VERSION}"
+          fi
+
           # Build changes list dynamically
-          CHANGES="- Updated \`ENV_HELM_RELEASE_VERSION\` to \`${VERSION}\`
-          - Updated \`ENV_MANAGER_IMAGE\` tag to \`${VERSION}\`
+          CHANGES="- Updated \`ENV_HELM_RELEASE_VERSION\` to \`${RELEASE_TAG}\`
+          - Updated \`ENV_MANAGER_IMAGE\` tag to \`${RELEASE_TAG}\`
           - Updated \`ENV_OTEL_COLLECTOR_IMAGE\` tag to \`${OCC_IMAGE_VERSION}\`"
 
           if [ -n "${SELF_MONITOR_IMAGE_TAG}" ]; then
@@ -422,10 +487,15 @@ jobs:
           - Updated \`ENV_FLUENTBIT_EXPORTER_IMAGE\` tag to \`${DIR_SIZE_IMAGE_TAG}\`"
           fi
 
-          PR_BODY="$(cat <<EOF
-          ## Release Preparation for ${VERSION}
+          if [ -n "${CHOWN_IMAGE_TAG}" ]; then
+            CHANGES="${CHANGES}
+          - Updated \`ENV_CHOWN_IMAGE\` tag to \`${CHOWN_IMAGE_TAG}\`"
+          fi
 
-          This PR prepares the release branch for version **${VERSION}**.
+          PR_BODY="$(cat <<EOF
+          ## Release Preparation for ${RELEASE_TAG}
+
+          This PR prepares the release branch for version **${RELEASE_TAG}**.
 
           ### Changes
           ${CHANGES}
@@ -442,7 +512,7 @@ jobs:
           PR_URL=$(gh pr create \
             --base "${RELEASE_BRANCH}" \
             --head "${BUMP_BRANCH}" \
-            --title "chore: release preparation: bump version to ${VERSION}" \
+            --title "chore: release preparation: bump version to ${RELEASE_TAG}" \
             --body "${PR_BODY}" \
             --label "area/release" \
             --label "kind/chore")
@@ -744,14 +814,14 @@ jobs:
           GH_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
         run: |
           RELEASE_TAG="${{ inputs.pre_release == true && needs.validate-and-prepare-branch.outputs.pre-release-tag || inputs.version }}"
-          echo "Triggering module release for dev channel (release_tag=${RELEASE_TAG})..."
+          echo "Triggering module release for dev channel (version=${RELEASE_TAG}, pre_release=${{ inputs.pre_release }})..."
           gh workflow run submit-module.yml \
             --ref "${{ github.ref_name }}" \
-            -f version="${{ inputs.version }}" \
+            -f version="${RELEASE_TAG}" \
             -f channel="dev" \
             -f dry_run="false" \
             -f auto_merge="true" \
-            -f release_tag="${RELEASE_TAG}"
+            -f pre_release="${{ inputs.pre_release }}"
           echo "Module release workflow triggered for dev channel"
 
       - name: Trigger module submission for fast channel

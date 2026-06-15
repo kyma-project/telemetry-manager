@@ -11,4 +11,5 @@ const (
 	SelfMonitorFIPSImage             = "europe-docker.pkg.dev/kyma-project/restricted-prod/sap.com/prometheus-fips:3.11.3"
 	FaultBackendImage                = "europe-docker.pkg.dev/kyma-project/prod/fault-backend:main"
 	AlpineImage                      = "europe-docker.pkg.dev/kyma-project/prod/external/library/alpine:3.23.4"
+	ChownImage                       = "europe-docker.pkg.dev/kyma-project/prod/telemetry-chown:main"
 )
