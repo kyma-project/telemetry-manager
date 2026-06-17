@@ -32,7 +32,8 @@ apiVersion: telemetry.kyma-project.io/v1beta1
 kind: MetricPipeline
 metadata:
   name: backend
-output:
+spec:
+  output:
     otlp:
       endpoint:
         value: http://myEndpoint:4317
@@ -58,6 +59,7 @@ You can adjust the MetricPipeline using runtime configuration with the available
 - Choose from which specific namespaces you want to include or exclude metrics (see [Filter Metrics](../filter-and-process/filter-metrics.md)).
 - Avoid redundancy by dropping push-based OTLP metrics that are sent directly to the OTLP Gateway (see [Route Specific Inputs to Different Backends](./../otlp-input.md#route-specific-inputs-to-different-backends)).
 - Reduce or increase metric collection frequency for all pull-based inputs or for a specific input type by changing the collection interval (see [Configure Collection Interval](#configure-collection-interval)).
+- Convert the temporality of your metrics from cumulative to delta (see [Convert Metrics Temporality](#convert-metrics-temporality)).
 
 ## Configure Collection Interval
 
@@ -94,6 +96,25 @@ spec:
 The input-specific override takes precedence over the global **metric.collectionInterval**, which takes precedence over the default of `30s`.
 
 For details on the available parameters, see [Telemetry Custom Resource](../resources/01-telemetry.md).
+
+## Convert Metrics Temporality
+
+By default, the Metric Agent and OTLP Gateway preserve the temporality of all collected metrics. However, by setting the **output.otlp.temporality** field to `delta`, both components convert cumulative metrics to delta temporality. Existing delta metrics stay as delta metrics, but any ingested metrics with cumulative temporality are converted to delta metrics. As a consequence, the first value is dropped and used as a reference to calculate deltas of the next metric value.
+
+To convert cumulative metrics to delta temporality, use the output-specific **temporality** field:
+
+```yaml
+apiVersion: telemetry.kyma-project.io/v1beta1
+kind: MetricPipeline
+metadata:
+  name: backend
+spec:
+  output:
+    otlp:
+      endpoint:
+        value: http://myEndpoint:4317
+      temporality: delta
+```
 
 ## Limitations
 
