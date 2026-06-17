@@ -114,7 +114,7 @@ spec:
       temporality: delta
 ```
 
-Metrics that already use delta temporality pass through unchanged. The pipeline drops the first data point of each converted series is dropped and uses it as a baseline for calculating subsequent deltas.
+Metrics with delta temporality pass through unchanged. The pipeline drops the first data point of each converted series and uses it as a baseline for calculating subsequent deltas.
 
 > [!NOTE]
 > If you set `temporality: delta` and also use custom transforms or filters, avoid conditions that depend on:
