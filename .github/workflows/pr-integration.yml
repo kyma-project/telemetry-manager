@@ -70,7 +70,24 @@ env:
   ARTIFACT_PREFIX: "pr-"
 
 jobs:
+  check-skip-e2e:
+    runs-on: ubuntu-latest
+    outputs:
+      skip-e2e: ${{ steps.check.outputs.skip-e2e }}
+    steps:
+      - name: Check if E2E tests should be skipped
+        id: check
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" && "${{ github.event.pull_request.user.login }}" == "kyma-telemetry-serviceuser" && ( "${{ github.base_ref }}" == release-* || "${{ github.base_ref }}" == pre-release-* ) ]]; then
+            echo "Skipping E2E tests for automated PR targeting ${{ github.base_ref }}"
+            echo "skip-e2e=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip-e2e=false" >> $GITHUB_OUTPUT
+          fi
+
   setup:
+    needs: check-skip-e2e
+    if: needs.check-skip-e2e.outputs.skip-e2e == 'false'
     runs-on: ubuntu-latest
     outputs:
       manager-image: ${{ steps.set-env.outputs.manager-image }}
@@ -155,7 +172,8 @@ jobs:
 
   # e2e-logs split by fluent-bit vs otel AND by set labels for parallel execution
   e2e-logs:
-    needs: setup
+    needs: [setup, check-skip-e2e]
+    if: needs.check-skip-e2e.outputs.skip-e2e == 'false'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -194,7 +212,8 @@ jobs:
 
   # e2e-metrics split by set labels for parallel execution
   e2e-metrics:
-    needs: setup
+    needs: [setup, check-skip-e2e]
+    if: needs.check-skip-e2e.outputs.skip-e2e == 'false'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -228,7 +247,8 @@ jobs:
 
   # All e2e suites with experimental flavor
   e2e-experimental:
-    needs: setup
+    needs: [setup, check-skip-e2e]
+    if: needs.check-skip-e2e.outputs.skip-e2e == 'false'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -264,7 +284,8 @@ jobs:
 
   # e2e-traces and e2e-misc (non-experimental) without set splitting
   e2e:
-    needs: setup
+    needs: [setup, check-skip-e2e]
+    if: needs.check-skip-e2e.outputs.skip-e2e == 'false'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -296,7 +317,8 @@ jobs:
 
   # Upgrade and integration tests
   e2e-other:
-    needs: setup
+    needs: [setup, check-skip-e2e]
+    if: needs.check-skip-e2e.outputs.skip-e2e == 'false'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -328,7 +350,8 @@ jobs:
 
   # Selfmonitor tests
   selfmonitor-healthy:
-    needs: setup
+    needs: [setup, check-skip-e2e]
+    if: needs.check-skip-e2e.outputs.skip-e2e == 'false'
     runs-on: telemetry-4core
     name: selfmonitor-healthy
     steps:
@@ -350,7 +373,8 @@ jobs:
           google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
 
   selfmonitor:
-    needs: setup
+    needs: [setup, check-skip-e2e]
+    if: needs.check-skip-e2e.outputs.skip-e2e == 'false'
     runs-on: telemetry-4core
     strategy:
       fail-fast: false
@@ -392,15 +416,20 @@ jobs:
           artifact-prefix: ${{ env.ARTIFACT_PREFIX }}
 
   summary:
-    needs: [e2e-logs, e2e-metrics, e2e-experimental, e2e, e2e-other, selfmonitor-healthy, selfmonitor]
+    needs: [check-skip-e2e, e2e-logs, e2e-metrics, e2e-experimental, e2e, e2e-other, selfmonitor-healthy, selfmonitor]
     runs-on: ubuntu-latest
     if: always()
     steps:
       - name: Checkout code
+        if: needs.check-skip-e2e.outputs.skip-e2e == 'false'
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
-
       - name: Generate test summary
+        if: needs.check-skip-e2e.outputs.skip-e2e == 'false'
         uses: "./.github/template/test-summary"
         with:
           artifact-prefix: ${{ env.ARTIFACT_PREFIX }}
+
+      - name: Skip notice
+        if: needs.check-skip-e2e.outputs.skip-e2e == 'true'
+        run: echo "✓ E2E tests were skipped (automated PR targeting release branch)"
