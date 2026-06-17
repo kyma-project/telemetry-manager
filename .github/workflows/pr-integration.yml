@@ -79,11 +79,11 @@ jobs:
         id: check
         run: |
           if [[ "${{ github.event_name }}" == "pull_request" && "${{ github.event.pull_request.user.login }}" == "kyma-telemetry-serviceuser" && ( "${{ github.base_ref }}" == release-* || "${{ github.base_ref }}" == pre-release-* ) ]]; then
-            echo "skip-e2e=true" >> $GITHUB_OUTPUT
             echo "Skipping E2E tests for automated PR targeting ${{ github.base_ref }}"
+            echo "skip-e2e=true" >> $GITHUB_OUTPUT
           else
-            echo "skip-e2e=false" >> $GITHUB_OUTPUT
             echo "E2E tests will run normally because this is NOT an automated PR targeting a release branch"
+            echo "skip-e2e=false" >> $GITHUB_OUTPUT
           fi
 
   setup:
