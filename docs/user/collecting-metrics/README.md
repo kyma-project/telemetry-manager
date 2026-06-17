@@ -99,9 +99,7 @@ For details on the available parameters, see [Telemetry Custom Resource](../reso
 
 ## Convert Metrics Temporality
 
-By default, the Metric Agent and OTLP Gateway preserve the temporality of all collected metrics. However, by setting the **output.otlp.temporality** field to `delta`, both components convert cumulative metrics to delta temporality. Existing delta metrics stay as delta metrics, but any ingested metrics with cumulative temporality are converted to delta metrics. As a consequence, the first value is dropped and used as a reference to calculate deltas of the next metric value.
-
-To convert cumulative metrics to delta temporality, use the output-specific **temporality** field:
+By default, the Metric Agent and OTLP Gateway preserve the temporality of all collected metrics. To convert cumulative metrics to delta temporality, set the output.otlp.temporality field to delta. Delta metrics pass through unchanged. The first value of each converted series is dropped and used as a reference for calculating subsequent deltas. To convert cumulative metrics to delta temporality, use the output-specific **temporality** field:
 
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1beta1
@@ -115,6 +113,9 @@ spec:
         value: http://myEndpoint:4317
       temporality: delta
 ```
+
+> [!NOTE]
+> If you set `temporality: delta` and also use custom transforms or filters, avoid conditions that depend on metric values (such as where value > 10000) or on Kubernetes attributes that change during workload updates (such as k8s.replicaset.name or pod-template-hash). These patterns can cause data gaps.
 
 ## Limitations
 
