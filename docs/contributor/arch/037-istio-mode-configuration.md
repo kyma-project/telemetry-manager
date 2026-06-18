@@ -138,14 +138,14 @@ To provide explicit control over Istio integration, we propose adding an `istio`
 ```yaml
 spec:
   istio:
-    mode: <AUTO | OFF>  # Default: AUTO
+    mode: <Auto | Off>  # Default: Auto
 ```
 
-- **AUTO**: Automatically detect whether Istio integration is needed using:
+- **Auto**: Automatically detect whether Istio integration is needed using:
   - Presence of Istio CRDs (`*.istio.io`) in the cluster
   - Pipeline configurations that require Istio (for example, Metric Agent with Istio input, Prometheus input scraping Istio metrics)
   - Application of Istio-specific resources when both Istio is present and pipelines require it
-- **OFF**: Disable Istio integration regardless of whether Istio is present in the cluster or pipelines require it
+- **Off**: Disable Istio integration regardless of whether Istio is present in the cluster or pipelines require it
 
 ## User Examples
 
@@ -161,12 +161,12 @@ metadata:
   namespace: kyma-system
 spec:
   istio:
-    mode: AUTO  # This is the default
+    mode: Auto  # This is the default
   metric:
     collectionInterval: 30s
 ```
 
-Or simply omit the field (defaults to AUTO):
+Or simply omit the field (defaults to Auto):
 
 ```yaml
 apiVersion: operator.kyma-project.io/v1beta1
@@ -179,18 +179,18 @@ spec:
     collectionInterval: 30s
 ```
 
-**Behavior**: When `mode: AUTO` (or omitted), the system intelligently detects whether Istio integration is needed:
+**Behavior**: When `mode: Auto` (or omitted), the system intelligently detects whether Istio integration is needed:
 
 1. **Istio CRD Detection**: Checks if Istio CRDs (`*.istio.io`) are present in the cluster
 2. **Pipeline Analysis**: Analyzes pipeline configurations to determine if they require Istio:
    - MetricPipelines with Istio input enabled
-   - MetricPipelines with Prometheus input scraping Istio metrics
+   - MetricPipelines with Prometheus input scraping metrics
    - Pipelines targeting in-cluster backends that require mTLS
 3. **Smart Activation**: Applies Istio-specific resources (sidecar injection, PeerAuthentication, DestinationRule, traffic annotations, certificate volumes) only when BOTH conditions are met:
    - Istio is present in the cluster
    - At least one pipeline requires Istio integration
 
-If Istio is not present or no pipelines require it, no Istio-specific configurations are applied.
+If Istio is not present or no pipelines require it, no Istio-specific configurations are applied, like `Off` mode.
 
 ### Example 2: Explicit Disable (Opt-out)
 
@@ -204,29 +204,29 @@ metadata:
   namespace: kyma-system
 spec:
   istio:
-    mode: OFF
+    mode: Off
   metric:
     collectionInterval: 30s
 ```
 
 **Behavior**: 
-- No sidecar injection labels (`sidecar.istio.io/inject` set to `"false"`).
+- Set label `sidecar.istio.io/inject` to `"false"`.
 - No PeerAuthentication or DestinationRule resources created.
 - No Istio traffic routing annotations.
 - No Istio certificate volume mounts.
-- Metric Agent cannot scrape STRICT mTLS workloads (they require PERMISSIVE mode).
+- No Prometheus receiver config `app-service-secure` for metric agent 
 - Istio metric scraping remains possible if Istio is present in the cluster.
 
 > [!WARNING]
-> When Istio mode is set to OFF, the Metric Agent cannot scrape workloads with STRICT mTLS policies because it does not have Istio certificates.
+> When Istio mode is set to Off, the Metric Agent cannot scrape workloads with STRICT mTLS policies because it does not have Istio certificates.
 
 ### Implementation Impact
 
 When `istio.mode` is set, the reconciliation logic changes as follows:
 
-#### Detection Logic for AUTO Mode
+#### Detection Logic for Auto Mode
 
-When `mode: AUTO`, the system performs intelligent detection:
+When `mode: Auto`, the system performs intelligent detection:
 
 1. **Istio CRD Check**: Scan for Istio CRDs (`*.istio.io`) in the cluster
 2. **Pipeline Analysis**: Check if any active pipelines require Istio:
@@ -242,31 +242,31 @@ When `mode: AUTO`, the system performs intelligent detection:
 All reconcilers that create or configure telemetry components must respect the `istio.mode` setting:
 
 1. OTLP Gateway Reconciler
-   - When `mode: AUTO`: Apply Istio resources only if detection logic confirms Istio is needed
-   - When `mode: OFF`: Skip PeerAuthentication creation, skip DestinationRule creation, set sidecar injection label to `false`
+   - When `mode: Auto`: Apply Istio resources only if detection logic confirms Istio is needed
+   - When `mode: Off`: Skip PeerAuthentication creation, skip DestinationRule creation, set sidecar injection label to `false`
 
 2. Metric Agent Reconciler
-   - When `mode: AUTO`: Apply Istio configurations only if detection logic confirms Istio is needed (Istio CRDs present AND pipelines with Istio/Prometheus inputs exist)
-   - When `mode: OFF`: Skip Istio traffic routing annotations, skip certificate volume mounts, set sidecar injection label to `false`
+   - When `mode: Auto`: Apply Istio configurations only if detection logic confirms Istio is needed (Istio CRDs present, pipelines with Istio/Prometheus inputs exist or an In-Cluster backend configured)
+   - When `mode: Off`: Skip Istio traffic routing annotations, skip certificate volume mounts, set sidecar injection label to `false`
 
 3. OTel Log Agent Reconciler
-   - When `mode: AUTO`: Apply sidecar injection only if detection logic confirms Istio is needed
-   - When `mode: OFF`: Set sidecar injection label to `false`
+   - When `mode: Auto`: Apply sidecar injection only if detection logic confirms Istio is needed
+   - When `mode: Off`: Set sidecar injection label to `false`
 
 4. Fluent Bit Reconciler
-   - When `mode: AUTO`: Apply sidecar injection only if detection logic confirms Istio is needed
-   - When `mode: OFF`: Set sidecar injection label to `false`
+   - When `mode: Auto`: Apply sidecar injection only if detection logic confirms Istio is needed
+   - When `mode: Off`: Set sidecar injection label to `false`
 
 5. NetworkPolicy Reconcilers
-   - When `mode: AUTO`: Include Istio Envoy port (15090) in ingress rules only if detection logic confirms Istio is needed
-   - When `mode: OFF`: Omit Istio Envoy port (15090) from ingress rules
+   - When `mode: Auto`: Include Istio Envoy port (15090) in ingress rules only if detection logic confirms Istio is needed
+   - When `mode: Off`: Omit Istio Envoy port (15090) from ingress rules
 
 ### Validation
 
 The admission webhook enforces additional validation:
 
-- When `istio.mode: AUTO`, no additional validation is required (intelligent detection handles both Istio presence and pipeline requirements).
-- When `istio.mode: OFF`, warn users if:
+- When `istio.mode: Auto`, no additional validation is required (intelligent detection handles both Istio presence and pipeline requirements).
+- When `istio.mode: Off`, warn users if:
   - MetricPipelines have `input.istio.enabled` set to `true`
   - MetricPipelines are configured to scrape Istio metrics via Prometheus input
   - Pipelines are configured to scrape STRICT mTLS workloads (Metric Agent does not have Istio certificates)
@@ -275,32 +275,32 @@ The admission webhook enforces additional validation:
 
 The proposed API provides a smooth migration path:
 
-#### Introduce Enum with AUTO Default (Current Proposal)
-- Add `istio.mode` field with `AUTO` as the default value
-- Users can opt out with `mode: OFF`
-- `AUTO` mode intelligently detects both Istio presence AND pipeline requirements (not just Istio CRDs)
-- Existing installations continue working unchanged (default `AUTO` behavior)
-- The enum provides clear semantics: `AUTO` = intelligent auto-detect, `OFF` = explicitly disabled
+#### Introduce Enum with Auto Default (Current Proposal)
+- Add `istio.mode` field with `Auto` as the default value
+- Users can opt out with `mode: Off`
+- `Auto` mode intelligently detects both Istio presence AND pipeline requirements (not just Istio CRDs)
+- Existing installations continue working unchanged (default `Auto` behavior)
+- The enum provides clear semantics: `Auto` = intelligent auto-detect, `Off` = explicitly disabled
 
 **Pros:**
-- Zero disruption during initial rollout: Default `AUTO` matches current auto-detection behavior
+- Zero disruption during initial rollout: Default `Auto` matches current auto-detection behavior
 - Intelligent resource management: Istio integration enabled only when actually needed by pipelines
 - Reduced overhead: Clusters with Istio installed but no Istio-dependent pipelines avoid unnecessary resource usage
-- Clear semantics: `AUTO` vs `OFF` is more explicit than `true` vs `false` vs `nil`
+- Clear semantics: `Auto` vs `Off` is more explicit than `true` vs `false` vs `nil`
 - Extensible: Easy to add new mode values later if needed without breaking changes
-- Backward compatible: Existing installations work unchanged with default `AUTO`
+- Backward compatible: Existing installations work unchanged with default `Auto`
 - Low risk: Enum provides type safety and clear intent
 
 **Cons:**
 - More complex detection logic: Requires analyzing pipeline configurations in addition to CRD presence
 - Dynamic behavior: Istio integration may be enabled/disabled as pipelines are created/deleted
-- Potential confusion: Users might not understand when AUTO enables Istio (though this is more predictable than always-on)
+- Potential confusion: Users might not understand when Auto enables Istio (though this is more predictable than always-on)
 
 ### Backward Compatibility
 
-The enum-based approach with `AUTO` default ensures full backward compatibility:
+The enum-based approach with `Auto` default ensures full backward compatibility:
 
-- Existing Telemetry CRs without the `istio` field continue to use auto-detection (default `mode: AUTO`)
+- Existing Telemetry CRs without the `istio` field continue to use auto-detection (default `mode: Auto`)
 - Users who upgrade to the new API version can explicitly control Istio mode without modifying existing CRs
 - The default behavior (auto-detection when unset) matches the current implementation
 - The enum provides clear semantics that are self-documenting in the API
