@@ -118,10 +118,6 @@ Metrics that already have delta temporality pass through unchanged. The pipeline
 
 > [!NOTE]
 > If you use custom filters with `temporality: delta`, avoid conditions that rely on metric values (for example, `where value > 10000`) or on Kubernetes attributes that change during workload updates, such as `k8s.replicaset.name`. These filter patterns can interrupt the delta calculation and cause data gaps.
-> - Metric values,such as `where value > 10000`
-> - Kubernetes attributes that change during workload updates, such as `k8s.replicaset.name` or `pod-template-hash`
-> 
-> These patterns can cause data gaps.
 
 ## Limitations
 
