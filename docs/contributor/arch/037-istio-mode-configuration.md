@@ -44,7 +44,7 @@ The OTLP Gateway is deployed as a DaemonSet and serves as the unified ingress po
 
 | Resource | Behavior | Rationale |
 |----------|----------|-----------|
-| PeerAuthentication | PERMISSIVE mTLS mode | This configuration supports both plain-text and mTLS connections to the OTLP Gateway. This ensures applications can send data over plain-text (because of node-local ingestion), while still supporting mTLS for any direct cross-namespace access if needed. |
+| PeerAuthentication | PERMISSIVE mTLS mode | This configuration supports both plain-text and mTLS connections to the OTLP Gateway. This ensures applications can send data over plain-text (because of node-local ingestion), while still supporting mTLS communication. |
 | DestinationRule | `TLS mode: DISABLE` for all OTLP Services | To ensure that other components like metric pipelines can connect without requiring mTLS, the OTLP Gateway receives telemetry data over plain-text on the ingestion path because of node-local routing. Disabling TLS for client connections to these services supports this requirement. |
 | NetworkPolicy (Ingress) | Additionally allows traffic on Istio Envoy telemetry port (15090) | When Istio is present, the sidecar's Envoy proxy exposes metrics that need to be scraped by monitoring systems. |
 
