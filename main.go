@@ -571,7 +571,7 @@ func setupOTLPGatewayController(globals config.Global, envCfg envConfig, mgr man
 			Global:                       globals,
 			RestConfig:                   mgr.GetConfig(),
 			OTelCollectorImage:           envCfg.OTelCollectorImage,
-			OTLPGatewayPriorityClassName: normalPriorityClassName,
+			OTLPGatewayPriorityClassName: highPriorityClassName,
 		},
 		mgr.GetClient(),
 		reconcileTriggerChan,
