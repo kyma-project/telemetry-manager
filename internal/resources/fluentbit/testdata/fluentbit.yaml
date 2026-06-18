@@ -350,8 +350,7 @@ spec:
       - name: mySecret
       initContainers:
       - command:
-        - chown
-        - -R
+        - /chown
         - "10001:0"
         - /data
         image: alpine
