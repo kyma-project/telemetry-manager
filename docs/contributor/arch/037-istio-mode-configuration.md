@@ -134,13 +134,24 @@ No Istio-specific resources are created for the Self-Monitor because it explicit
 
 ## Proposed API
 
-To provide explicit control over Istio integration, we propose adding an `istio` field to the Telemetry CR spec. This field allows users to enable or disable Istio mode globally for all telemetry components.
+To provide explicit control over Istio integration, we propose adding an `istio` field to the Telemetry CR spec with an enum-based mode configuration. This field allows users to control Istio mode globally for all telemetry components.
+
+### API Schema
+
+```yaml
+spec:
+  istio:
+    mode: <AUTO | OFF>  # Default: AUTO
+```
+
+- **AUTO**: Automatically detect Istio in the cluster and apply integration when detected
+- **OFF**: Disable Istio integration regardless of whether Istio is present in the cluster
 
 ## User Examples
 
-### Example 1: Explicit Enable (Opt-in)
+### Example 1: Auto-detection (Default Behavior)
 
-Force Istio mode on, even if Istio is not detected:
+Automatically detect Istio and apply integration:
 
 ```yaml
 apiVersion: operator.kyma-project.io/v1beta1
@@ -150,14 +161,27 @@ metadata:
   namespace: kyma-system
 spec:
   istio:
-    enabled: true
+    mode: AUTO  # This is the default
   metric:
     collectionInterval: 30s
 ```
 
-**Behavior**: The system applies all Istio-specific resources (sidecar injection, PeerAuthentication, DestinationRule, traffic annotations, certificate volumes) unconditionally.
+Or simply omit the field (defaults to AUTO):
 
-#### Example 2: Explicit Disable (Opt-out)
+```yaml
+apiVersion: operator.kyma-project.io/v1beta1
+kind: Telemetry
+metadata:
+  name: default
+  namespace: kyma-system
+spec:
+  metric:
+    collectionInterval: 30s
+```
+
+**Behavior**: When `mode: AUTO` (or omitted), the system detects Istio CRDs in the cluster. If Istio is present, it applies all Istio-specific resources (sidecar injection, PeerAuthentication, DestinationRule, traffic annotations, certificate volumes). If Istio is not present, no Istio-specific configurations are applied.
+
+### Example 2: Explicit Disable (Opt-out)
 
 Force Istio mode off, even if Istio is detected in the cluster:
 
@@ -169,7 +193,7 @@ metadata:
   namespace: kyma-system
 spec:
   istio:
-    enabled: false
+    mode: OFF
   metric:
     collectionInterval: 30s
 ```
@@ -185,61 +209,67 @@ spec:
 
 ### Implementation Impact
 
-When `istio.enabled` is set, the reconciliation logic changes as follows:
+When `istio.mode` is set, the reconciliation logic changes as follows:
 
 #### Components Affected
 
-All reconcilers that create or configure telemetry components must respect the `istio.enabled` setting:
+All reconcilers that create or configure telemetry components must respect the `istio.mode` setting:
 
 1. OTLP Gateway Reconciler
-   - Skip PeerAuthentication creation when Istio mode is off
-   - Skip DestinationRule creation when Istio mode is off
-   - Set sidecar injection label to `false` when Istio mode is off
+   - When `mode: AUTO`: Apply Istio resources only if Istio CRDs are detected
+   - When `mode: OFF`: Skip PeerAuthentication creation, skip DestinationRule creation, set sidecar injection label to `false`
 
 2. Metric Agent Reconciler
-   - Skip Istio traffic routing annotations when Istio mode is off
-   - Skip certificate volume mounts when Istio mode is off
-   - Set sidecar injection label to `false` when Istio mode is off
+   - When `mode: AUTO`: Apply Istio configurations only if Istio CRDs are detected
+   - When `mode: OFF`: Skip Istio traffic routing annotations, skip certificate volume mounts, set sidecar injection label to `false`
 
 3. OTel Log Agent Reconciler
-   - Set sidecar injection label to `false` when Istio mode is off
+   - When `mode: AUTO`: Apply sidecar injection only if Istio CRDs are detected
+   - When `mode: OFF`: Set sidecar injection label to `false`
 
 4. Fluent Bit Reconciler
-   - Set sidecar injection label to `false` when Istio mode is off
+   - When `mode: AUTO`: Apply sidecar injection only if Istio CRDs are detected
+   - When `mode: OFF`: Set sidecar injection label to `false`
 
 5. NetworkPolicy Reconcilers
-   - Omit Istio Envoy port (15090) from ingress rules when Istio mode is off
+   - When `mode: AUTO`: Include Istio Envoy port (15090) in ingress rules only if Istio CRDs are detected
+   - When `mode: OFF`: Omit Istio Envoy port (15090) from ingress rules
 
 ### Validation
 
 Additional validation is enforced at the admission webhook level:
 
-- When `istio.enabled: true`, validate that Istio is installed and required resources are present on the cluster.
+- When `istio.mode: AUTO`, no additional validation is required (auto-detection handles the presence check).
+- When `istio.mode: OFF`, warn users if MetricPipelines are configured to scrape STRICT mTLS workloads or Istio metrics.
 
 ### Migration Path
 
 The proposed API provides a smooth migration path:
 
-#### Phase 1: Explicit Control and Deprecate Auto-detection (Current Proposal)
-- Add `istio.enabled` field with `nil` default (auto-detection)
-- Users can opt out with `enabled: false`
-- Existing installations continue working unchanged
-
-#### Phase 2: Default to OFF (Long Term)
-- Change reconciler default behavior: when `istio.enabled` is unset, default to `false` instead of auto-detection
-- Users must explicitly set `enabled: true` to enable Istio mode
-- Provide migration tooling or documentation for transitioning from auto-detection
-- Remove auto-detection logic entirely
-- Require explicit `enabled: true` or `enabled: false` (make the field required)
+#### Introduce Enum with AUTO Default (Current Proposal)
+- Add `istio.mode` field with `AUTO` as the default value
+- Users can opt out with `mode: OFF`
+- Existing installations continue working unchanged (default `AUTO` behavior matches current auto-detection)
+- The enum provides clear semantics: `AUTO` = auto-detect, `OFF` = explicitly disabled
 
 **Pros:**
-- Zero disruption during initial rollout: Existing installations continue working without any configuration changes
-- Gradual migration timeline: Users have time to understand the new API and plan their migration
-- Backward compatible: Phase 1 maintains current behavior while introducing explicit control
-- Low risk: Two-phase approach allows testing and validation before breaking changes
+- Zero disruption during initial rollout: Default `AUTO` matches current auto-detection behavior
+- Clear semantics: `AUTO` vs `OFF` is more explicit than `true` vs `false` vs `nil`
+- Extensible: Easy to add new mode value later if needed without breaking changes
+- Backward compatible: Existing installations work unchanged with default `AUTO`
+- Low risk: Enum provides type safety and clear intent
 
 **Cons:**
-- Longer transition period: Auto-detection logic must be maintained through Phase 1
-- Potential confusion: During Phase 1, users might not realize they can explicitly control Istio mode
-- Delayed resource savings: Users who don't need Istio integration continue paying overhead costs until Phase 2
-- Technical debt: Auto-detection code remains in the codebase longer
+- Auto-detection logic remains active by default (no immediate resource savings for non-Istio users)
+- Users must explicitly set `mode: OFF` to opt out
+- Slightly more verbose than boolean (`mode: OFF` vs `enabled: false`)
+
+### Backward Compatibility
+
+The enum-based approach with `AUTO` default ensures full backward compatibility:
+
+- Existing Telemetry CRs without the `istio` field continue to use auto-detection (default `mode: AUTO`)
+- Users who upgrade to the new API version can explicitly control Istio mode without modifying existing CRs
+- The default behavior (auto-detection when unset) matches the current implementation
+- The enum provides clear semantics that are self-documenting in the API
+

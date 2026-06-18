@@ -2,9 +2,6 @@
 
 When you have the Istio module in your cluster, the Telemetry module automatically integrates with it. It detects the Istio installation and configures the Telemetry components accordingly, enabling secure mTLS communication for outbound data export by default.
 
-> [!NOTE]
-> For detailed information about how each telemetry component integrates with Istio, see [Istio Integration Details](istio-integration-details.md).
-
 ## Receiving Data from Your Applications
 
 The OTLP Gateway runs as a DaemonSet, with one instance on each cluster node. To ensure that telemetry data from your applications stays on the same node, the ingestion Service uses the Kubernetes `internalTrafficPolicy` (see [Service Internal Traffic Policy](https://kubernetes.io/docs/concepts/services-networking/service-traffic-policy/#using-service-internal-traffic-policy)). By setting this policy to `Local`, data that your applications send is always received by the gateway instance on the same node.
