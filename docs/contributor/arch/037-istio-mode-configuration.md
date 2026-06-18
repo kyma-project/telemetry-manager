@@ -10,7 +10,7 @@ date: 2026-06-10
 
 Telemetry Manager currently auto-detects Istio by checking for Istio CRDs (`*.istio.io`) in the cluster and automatically applies Istio-specific resources when detected. This includes sidecar injection labels, PeerAuthentication resources, DestinationRules, traffic routing annotations, and certificate volume mounts across telemetry components (OTLP Gateway, Metric Agent, OTel Log Agent, Fluent Bit, and Self-Monitor).
 
-While automatic detection provides convenience, it creates several operational challenges:
+While automatic detection provides convenience, several operational challenges exist:
 
 - No explicit control: Users cannot disable Istio mode even if they do not need it, resulting in unnecessary resource overhead from sidecar containers, certificate management, and Istio-specific network policies.
 
@@ -44,8 +44,8 @@ The OTLP Gateway is deployed as a DaemonSet and serves as the unified ingress po
 
 | Resource | Behavior | Rationale |
 |----------|----------|-----------|
-| PeerAuthentication | PERMISSIVE mTLS mode | This configuration allows both plain-text and mTLS connections to the OTLP Gateway. This ensures applications can send data over plain-text (because of node-local ingestion), while still supporting mTLS for any direct cross-namespace access if needed. |
-| DestinationRule | `TLS mode: DISABLE` for all OTLP Services | The OTLP Gateway receives telemetry data over plain-text on the ingestion path because of node-local routing. Disabling TLS for client connections to these services ensures that other components (such as metric pipelines) can connect without requiring mTLS. |
+| PeerAuthentication | PERMISSIVE mTLS mode | This configuration supports both plain-text and mTLS connections to the OTLP Gateway. This ensures applications can send data over plain-text (because of node-local ingestion), while still supporting mTLS for any direct cross-namespace access if needed. |
+| DestinationRule | `TLS mode: DISABLE` for all OTLP Services | To ensure that other components like metric pipelines can connect without requiring mTLS, the OTLP Gateway receives telemetry data over plain-text on the ingestion path because of node-local routing. Disabling TLS for client connections to these services supports this requirement. |
 | NetworkPolicy (Ingress) | Additionally allows traffic on Istio Envoy telemetry port (15090) | When Istio is present, the sidecar's Envoy proxy exposes metrics that need to be scraped by monitoring systems. |
 
 #### Metric Agent
@@ -111,7 +111,7 @@ The Self-Monitor is a Prometheus instance deployed as a Deployment that scrapes 
 
 | Resource | Behavior | Rationale |
 |----------|----------|-----------|
-| Pod Label | `sidecar.istio.io/inject: "false"` | The Self-Monitor explicitly disables Istio sidecar injection because it only scrapes metrics from Telemetry components within the same namespace and does not need mTLS. Running without the sidecar reduces resource overhead. |
+| Pod Label | `sidecar.istio.io/inject: "false"` | Because the Self-Monitor only scrapes metrics from Telemetry components within the same namespace and does not need mTLS, it explicitly disables Istio sidecar injection. Running without the sidecar reduces resource overhead. |
 
 
 ##### Conditional (Only When Istio is Detected)
@@ -141,10 +141,10 @@ spec:
     mode: <AUTO | OFF>  # Default: AUTO
 ```
 
-- **AUTO**: Automatically detect whether Istio integration is needed based on:
+- **AUTO**: Automatically detect whether Istio integration is needed using:
   - Presence of Istio CRDs (`*.istio.io`) in the cluster
   - Pipeline configurations that require Istio (for example, Metric Agent with Istio input, Prometheus input scraping Istio metrics)
-  - When both Istio is present AND pipelines need it, apply Istio-specific resources
+  - Application of Istio-specific resources when both Istio is present and pipelines require it
 - **OFF**: Disable Istio integration regardless of whether Istio is present in the cluster or pipelines require it
 
 ## User Examples
@@ -214,8 +214,11 @@ spec:
 - No PeerAuthentication or DestinationRule resources created.
 - No Istio traffic routing annotations.
 - No Istio certificate volume mounts.
-- Metric Agent cannot scrape STRICT mTLS workloads (they would need PERMISSIVE mode).
+- Metric Agent cannot scrape STRICT mTLS workloads (they require PERMISSIVE mode).
 - Istio metric scraping remains possible if Istio is present in the cluster.
+
+> [!WARNING]
+> When Istio mode is set to OFF, the Metric Agent cannot scrape workloads with STRICT mTLS policies because it does not have Istio certificates.
 
 ### Implementation Impact
 
@@ -229,7 +232,7 @@ When `mode: AUTO`, the system performs intelligent detection:
 2. **Pipeline Analysis**: Check if any active pipelines require Istio:
    - MetricPipelines with `input.istio.enabled: true`
    - MetricPipelines with `input.prometheus` scraping Istio metrics (targets with `istio` labels)
-   - Any pipeline targeting in-cluster backends that are part of the Istio mesh
+   - Pipelines targeting in-cluster backends that are part of the Istio mesh
 3. **Decision**: Enable Istio integration only if BOTH conditions are true:
    - Istio CRDs are present
    - At least one pipeline requires Istio integration
@@ -260,13 +263,13 @@ All reconcilers that create or configure telemetry components must respect the `
 
 ### Validation
 
-Additional validation is enforced at the admission webhook level:
+The admission webhook enforces additional validation:
 
 - When `istio.mode: AUTO`, no additional validation is required (intelligent detection handles both Istio presence and pipeline requirements).
 - When `istio.mode: OFF`, warn users if:
-  - MetricPipelines are configured with Istio input enabled (`input.istio.enabled: true`)
+  - MetricPipelines have `input.istio.enabled` set to `true`
   - MetricPipelines are configured to scrape Istio metrics via Prometheus input
-  - Pipelines are configured to scrape STRICT mTLS workloads (Metric Agent won't have Istio certificates)
+  - Pipelines are configured to scrape STRICT mTLS workloads (Metric Agent does not have Istio certificates)
 
 ### Migration Path
 
