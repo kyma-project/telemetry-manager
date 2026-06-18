@@ -206,7 +206,6 @@ spec:
 - Metric Agent cannot scrape STRICT mTLS workloads (they would need PERMISSIVE mode).
 - Istio metric scraping remains possible if Istio is present in the cluster.
 
-
 ### Implementation Impact
 
 When `istio.mode` is set, the reconciliation logic changes as follows:
@@ -234,13 +233,6 @@ All reconcilers that create or configure telemetry components must respect the `
 5. NetworkPolicy Reconcilers
    - When `mode: AUTO`: Include Istio Envoy port (15090) in ingress rules only if Istio CRDs are detected
    - When `mode: OFF`: Omit Istio Envoy port (15090) from ingress rules
-
-### Validation
-
-Additional validation is enforced at the admission webhook level:
-
-- When `istio.mode: AUTO`, no additional validation is required (auto-detection handles the presence check).
-- When `istio.mode: OFF`, warn users if MetricPipelines are configured to scrape STRICT mTLS workloads or Istio metrics.
 
 ### Migration Path
 
