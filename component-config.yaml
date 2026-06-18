@@ -1,7 +1,7 @@
 name: kyma-project.io/module/telemetry
 team: kyma/Huskies
 images:
-  - europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:1.66.0-rc2
+  - europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:1.66.0-rc3
   - europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20260605-0cf1a38e
   - europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluent-bit:5.0.4
   - europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.153.0-1.65.0
