@@ -22,9 +22,6 @@ While automatic detection provides convenience, it creates several operational c
 
 The system needs an API mechanism to explicitly enable or disable Istio mode, providing users with control over when and how Istio integration is applied to telemetry components. This addresses [issue #3549](https://github.com/kyma-project/telemetry-manager/issues/3549), which proposes an explicit configuration model that supports eventual migration to an opt-in default while maintaining backward compatibility during the transition.
 
-See [Istio Integration Details](../../user/architecture/istio-integration-details.md) for a complete mapping of current Istio behaviors across all telemetry components.
-
-
 ## Current Istio Integration
 
 ### Istio Detection
@@ -264,4 +261,3 @@ The enum-based approach with `AUTO` default ensures full backward compatibility:
 - Users who upgrade to the new API version can explicitly control Istio mode without modifying existing CRs
 - The default behavior (auto-detection when unset) matches the current implementation
 - The enum provides clear semantics that are self-documenting in the API
-
