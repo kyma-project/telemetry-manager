@@ -117,7 +117,7 @@ spec:
 Metrics that already have delta temporality pass through unchanged. The pipeline drops the first data point of each converted series and uses it as a baseline for calculating subsequent deltas.
 
 > [!NOTE]
-> If you use custom filters with `temporality: delta`, avoid conditions that rely on metric values (for example, `where value > 10000`) or on Kubernetes attributes that change during workload updates, such as `k8s.replicaset.name`. These filter patterns can interrupt the delta calculation and cause data gaps.
+> If you use custom transforms with `temporality: delta`, avoid conditionally adding, removing, or modifying attributes based on values that change over time, such as Kubernetes attributes that change during workload updates (for example, `k8s.replicaset.name`). These patterns change a metric's identity between scrapes, so the delta calculation cannot find the previous value to subtract from, resulting in data gaps or incorrect values.
 
 ## Limitations
 
