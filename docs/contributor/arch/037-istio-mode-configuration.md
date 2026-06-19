@@ -197,8 +197,6 @@ spec:
    - Istio is present in the cluster
    - At least one pipeline requires Istio integration
 
-If Istio is not present or no pipelines require it, no Istio-specific configurations are applied, like `Off` mode.
-
 ### Example 2: Explicit Disable (Opt-out)
 
 Force Istio mode off, even if Istio is detected in the cluster:
