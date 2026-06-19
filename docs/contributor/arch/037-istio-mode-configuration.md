@@ -44,6 +44,8 @@ The OTLP Gateway is deployed as a DaemonSet and serves as the unified ingress po
 
 | Resource | Behavior | Rationale |
 |----------|----------|-----------|
+| Pod Annotation | `sidecar.istio.io/interceptionMode: TPROXY` | Configures the Istio sidecar to use transparent proxy mode for traffic interception. |
+| Pod Annotation | `traffic.sidecar.istio.io/includeInboundPorts: ""` | Excludes all inbound ports from Istio sidecar interception, ensuring direct access to OTLP ingestion endpoints without mTLS overhead. |
 | PeerAuthentication | PERMISSIVE mTLS mode | This configuration supports both plain-text and mTLS connections to the OTLP Gateway. This ensures applications can send data over plain-text (because of node-local ingestion), while still supporting mTLS communication. |
 | DestinationRule | `TLS mode: DISABLE` for all OTLP Services | To ensure that other components can connect without requiring mTLS, the OTLP Gateway receives telemetry data over plain-text on the ingestion path because of node-local routing. Disabling TLS for client connections to these services supports this requirement. |
 | NetworkPolicy (Ingress) | Additionally allows traffic on Istio Envoy telemetry port (15090) | When Istio is present, the sidecar's Envoy proxy exposes metrics that need to be scraped by monitoring systems. |
@@ -77,9 +79,11 @@ The OTel Log Agent is deployed as a DaemonSet and collects container logs using 
 
 ##### Unconditional (Always Applied)
 
-| Resource | Behavior | Rationale |
-|----------|----------|-----------|
-| Pod Label | `sidecar.istio.io/inject: "true"` | The OTel Log Agent always has Istio sidecar injection enabled to support outbound mTLS communication to in-cluster backends in the Istio mesh. |
+| Resource | Behavior | Rationale                                                                                                                                           |
+|----------|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
+| Pod Label | `sidecar.istio.io/inject: "true"` | The OTel Log Agent always has Istio sidecar injection enabled to support outbound mTLS communication to in-cluster backends in the Istio mesh.      |
+| Pod Annotation | `traffic.sidecar.istio.io/excludeInboundPorts: "8888"` | Excludes the metrics port from Istio sidecar interception, ensuring that the Log Agent's own metrics can be scraped directly without mTLS overhead. |
+
 
 ##### Conditional (Only When Istio is Detected)
 
@@ -99,9 +103,11 @@ Fluent Bit is deployed as a DaemonSet and provides legacy log collection capabil
 
 ##### Conditional (Only When Istio is Detected)
 
-| Resource | Behavior | Rationale |
-|----------|----------|-----------|
-| NetworkPolicy (Ingress) | Additionally allows traffic on Istio Envoy telemetry port (15090) | When Istio is present, the sidecar's Envoy proxy exposes metrics that need to be scraped by monitoring systems. |
+| Resource | Behavior                                                          | Rationale                                                                                                                                           |
+|----------|-------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
+| NetworkPolicy (Ingress) | Additionally allows traffic on Istio Envoy telemetry port (15090) | When Istio is present, the sidecar's Envoy proxy exposes metrics that need to be scraped by monitoring systems.                                     |
+| Pod Annotation | `traffic.sidecar.istio.io/excludeInboundPorts: "2020, 2021"`      | Excludes the metrics port from Istio sidecar interception, ensuring that the FluentBit's own metrics can be scraped directly without mTLS overhead. |
+
 
 #### Self-Monitor
 
@@ -261,15 +267,6 @@ All reconcilers that create or configure telemetry components must respect the `
    - When `mode: Auto`: Include Istio Envoy port (15090) in ingress rules only if detection logic confirms Istio is needed
    - When `mode: Off`: Omit Istio Envoy port (15090) from ingress rules
 
-### Validation
-
-The admission webhook enforces additional validation:
-
-- When `istio.mode: Auto`, no additional validation is required (intelligent detection handles both Istio presence and pipeline requirements).
-- When `istio.mode: Off`, warn users if:
-  - MetricPipelines have `input.istio.enabled` set to `true`
-  - MetricPipelines are configured to scrape Istio metrics via Prometheus input
-  - Pipelines are configured to scrape STRICT mTLS workloads (Metric Agent does not have Istio certificates)
 
 ### Migration Path
 
