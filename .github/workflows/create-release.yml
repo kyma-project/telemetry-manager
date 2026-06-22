@@ -37,7 +37,7 @@ on:
         default: false
         type: boolean
       pre_release:
-        description: 'Create a pre-release (pre-release-x.y.z branch, x.y.z-rc.k tag, GitHub pre-release, DEV channel only)'
+        description: 'Create a pre-release (pre-release-x.y.z branch, x.y.z-rck tag, GitHub pre-release, DEV channel only)'
         required: false
         default: false
         type: boolean
@@ -183,7 +183,7 @@ jobs:
       - name: Check if milestone exists and is closed
         if: ${{ inputs.pre_release != true }}
         env:
-          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
           VERSION: ${{ github.event.inputs.version }}
         run: |
           echo "Checking milestone for version ${VERSION}..."
@@ -211,7 +211,7 @@ jobs:
       - name: Check if release already exists
         if: ${{ inputs.force != true && inputs.pre_release != true }}
         env:
-          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
           VERSION: ${{ github.event.inputs.version }}
         run: |
           echo "Checking if release ${VERSION} already exists..."
@@ -224,7 +224,7 @@ jobs:
       - name: Delete existing release (force mode)
         if: ${{ inputs.force == true }}
         env:
-          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
           VERSION: ${{ github.event.inputs.version }}
         run: |
           echo "FORCE MODE: Checking for existing release ${VERSION}..."
@@ -275,14 +275,14 @@ jobs:
         if: ${{ inputs.pre_release == true && inputs.force != true }}
         env:
           VERSION: ${{ github.event.inputs.version }}
-          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
         run: |
           git fetch --tags
           k=1
-          while git rev-parse "${VERSION}-rc.${k}" >/dev/null 2>&1; do
+          while git rev-parse "${VERSION}-rc${k}" >/dev/null 2>&1; do
             k=$((k + 1))
           done
-          PRE_TAG="${VERSION}-rc.${k}"
+          PRE_TAG="${VERSION}-rc${k}"
           echo "pre-release-tag=${PRE_TAG}" >> $GITHUB_OUTPUT
           echo "Computed pre-release tag: ${PRE_TAG}"
 
@@ -291,21 +291,21 @@ jobs:
         if: ${{ inputs.pre_release == true && inputs.force == true }}
         env:
           VERSION: ${{ github.event.inputs.version }}
-          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
         run: |
           git fetch --tags
           k=1
           last_k=-1
-          while git rev-parse "${VERSION}-rc.${k}" >/dev/null 2>&1; do
+          while git rev-parse "${VERSION}-rc${k}" >/dev/null 2>&1; do
             last_k=$k
             k=$((k + 1))
           done
           if [ $last_k -ge 0 ]; then
-            PRE_TAG="${VERSION}-rc.${last_k}"
+            PRE_TAG="${VERSION}-rc${last_k}"
             echo "::warning::Force mode: deleting and recreating ${PRE_TAG}"
             gh release delete "${PRE_TAG}" --repo "${{ github.repository }}" --yes --cleanup-tag 2>/dev/null || true
           else
-            PRE_TAG="${VERSION}-rc.1"
+            PRE_TAG="${VERSION}-rc1"
           fi
           echo "pre-release-tag=${PRE_TAG}" >> $GITHUB_OUTPUT
           echo "Computed pre-release tag (force): ${PRE_TAG}"
@@ -368,7 +368,7 @@ jobs:
       - name: Checkout release branch
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
-          token: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.WORKFLOW_PAT }}
           ref: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
           fetch-depth: 0
 
@@ -455,7 +455,7 @@ jobs:
       - name: Create Pull Request
         id: create-pr
         env:
-          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
           VERSION: ${{ github.event.inputs.version }}
           RELEASE_BRANCH: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
           OCC_IMAGE_VERSION: ${{ github.event.inputs.occ_image_version }}
@@ -536,7 +536,7 @@ jobs:
 
       - name: Wait for PR to be merged
         env:
-          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
           RELEASE_BRANCH: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
         timeout-minutes: 120
         run: |
@@ -582,7 +582,7 @@ jobs:
         if: always()
         continue-on-error: true
         env:
-          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
           VERSION: ${{ github.event.inputs.version }}
         run: |
           BUMP_BRANCH="rel-prep-${VERSION}"
@@ -598,7 +598,7 @@ jobs:
         id: create-and-push-tag
         if: ${{ inputs.dry_run != true }}
         env:
-          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
           VERSION: ${{ github.event.inputs.version }}
           RELEASE_BRANCH: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
           PRE_RELEASE_TAG: ${{ needs.validate-and-prepare-branch.outputs.pre-release-tag }}
@@ -739,7 +739,7 @@ jobs:
       - name: Verify we're on the merged PR commit
         if: ${{ inputs.force != true }}
         env:
-          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
           PR_NUMBER: ${{ needs.prepare-release.outputs.pr-number }}
         run: |
           MERGE_SHA=$(gh pr view "${PR_NUMBER}" --json mergeCommit --jq .mergeCommit.oid)
@@ -760,7 +760,7 @@ jobs:
           RELEASE_TAG="${{ inputs.pre_release == true && needs.validate-and-prepare-branch.outputs.pre-release-tag || inputs.version }}"
           hack/release.sh "${RELEASE_TAG}"
         env:
-          GITHUB_TOKEN: "${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}"
+          GITHUB_TOKEN: "${{ secrets.WORKFLOW_PAT }}"
           GORELEASER_CURRENT_TAG: "${{ inputs.pre_release == true && needs.validate-and-prepare-branch.outputs.pre-release-tag || inputs.version }}"
 
       - name: Skip GitHub release (dry run)
@@ -780,7 +780,7 @@ jobs:
       - name: Upload Helm chart to release
         if: ${{ inputs.dry_run != true && inputs.pre_release != true }}
         env:
-          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
         run: |
           [[ ! -e ${HELM_CHART} ]] && echo "::error ::Packaged Helm chart does not exist" && exit 1
           gh release upload ${{ inputs.version }} --clobber ${HELM_CHART}
@@ -811,23 +811,23 @@ jobs:
       - name: Trigger module submission for dev channel
         if: ${{ inputs.dry_run != true && inputs.module_release == true }}
         env:
-          GH_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.WORKFLOW_PAT }}
         run: |
           RELEASE_TAG="${{ inputs.pre_release == true && needs.validate-and-prepare-branch.outputs.pre-release-tag || inputs.version }}"
-          echo "Triggering module release for dev channel (release_tag=${RELEASE_TAG})..."
+          echo "Triggering module release for dev channel (version=${RELEASE_TAG}, pre_release=${{ inputs.pre_release }})..."
           gh workflow run submit-module.yml \
             --ref "${{ github.ref_name }}" \
-            -f version="${{ inputs.version }}" \
+            -f version="${RELEASE_TAG}" \
             -f channel="dev" \
             -f dry_run="false" \
             -f auto_merge="true" \
-            -f release_tag="${RELEASE_TAG}"
+            -f pre_release="${{ inputs.pre_release }}"
           echo "Module release workflow triggered for dev channel"
 
       - name: Trigger module submission for fast channel
         if: ${{ inputs.dry_run != true && inputs.module_release == true && inputs.pre_release != true }}
         env:
-          GH_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.WORKFLOW_PAT }}
         run: |
           echo "Triggering module release for fast channel..."
           gh workflow run submit-module.yml \
@@ -841,7 +841,7 @@ jobs:
       - name: Trigger module submission for experimental channel
         if: ${{ inputs.dry_run != true && inputs.module_release == true && inputs.pre_release != true }}
         env:
-          GH_TOKEN: ${{ secrets.WORKFLOW_PAT || secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.WORKFLOW_PAT }}
         run: |
           echo "Triggering module release for experimental channel..."
           gh workflow run submit-module.yml \
