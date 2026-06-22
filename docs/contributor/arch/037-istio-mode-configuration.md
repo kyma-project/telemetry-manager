@@ -155,7 +155,7 @@ spec:
   - All components receive full Istio integration regardless of pipeline configurations.
   - Metric Agent includes the `app-service-secure` Prometheus scrape job for STRICT mTLS workloads.
   - This is the default mode to ensure backward compatibility with existing clusters.
-- **Auto**: Intelligently detect Istio integration requirements on a per-component basis.
+- **Auto**: Automatic detect Istio integration requirements on a per-component basis.
   - The system checks for Istio CRDs (`*.istio.io`) in the cluster.
   - The system analyzes pipeline configurations to determine which components require Istio.
   - The system applies Istio-specific resources only to components that require them based on their configuration.
@@ -252,7 +252,7 @@ spec:
 
 ### Example 2: Per-Component Auto-Detection
 
-Intelligently detect Istio requirements per component:
+Automatically detect Istio requirements per component:
 
 ```yaml
 apiVersion: operator.kyma-project.io/v1beta1
@@ -406,7 +406,7 @@ When `istio.mode` is set, the reconciliation logic changes as follows:
 
 #### Detection Logic for Auto Mode
 
-When `mode: Auto`, the system performs intelligent detection:
+When `mode: Auto`, the system performs automatic detection:
 
 1. **Istio CRD Check**: Scan for Istio CRDs (`*.istio.io`) in the cluster
 2. **Pipeline Analysis**: Check if any active pipelines require Istio:
@@ -456,7 +456,7 @@ The proposed API provides a smooth migration path:
 - Add `istio.mode` field with `On` as the default value
 - Three modes provide flexibility:
   - `On` (default): Enable Istio on all components when Istio is present in the cluster
-  - `Auto`: Intelligent per-component detection based on pipeline requirements
+  - `Auto`: Per-component detection based on pipeline requirements
   - `Off`: Force disable Istio on all components
 - Default `On` ensures existing Istio-enabled clusters continue to work without changes
 - Default `On` is safe for non-Istio clusters (automatically detects absence and skips configurations)
