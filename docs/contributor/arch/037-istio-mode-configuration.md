@@ -155,7 +155,7 @@ spec:
   - All components receive full Istio integration regardless of pipeline configurations.
   - Metric Agent includes the `app-service-secure` Prometheus scrape job for STRICT mTLS workloads.
   - This is the default mode to ensure backward compatibility with existing clusters.
-- **Auto**: Automatic detect Istio integration requirements on a per-component basis.
+- **Auto**: Automatically detect Istio integration requirements on a per-component basis.
   - The system checks for Istio CRDs (`*.istio.io`) in the cluster.
   - The system analyzes pipeline configurations to determine which components require Istio.
   - The system applies Istio-specific resources only to components that require them based on their configuration.
