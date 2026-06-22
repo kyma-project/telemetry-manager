@@ -212,7 +212,7 @@ spec:
 3. **If Istio is not present**:
    - No Istio configurations are applied to any component
    - Components run without Istio sidecars, annotations, or resources
-   - Behaves like `Off` mode automatically
+   - Behaves like `Off` mode
 
 This default mode is safe for both Istio-enabled and non-Istio clusters, providing backward compatibility.
 
@@ -406,7 +406,7 @@ When `istio.mode` is set, the reconciliation logic changes as follows:
 
 #### Detection Logic for Auto Mode
 
-When `mode: Auto`, the system performs automatic detection:
+When `mode: Auto`, the system performs detection for Istio required:
 
 1. **Istio CRD Check**: Scan for Istio CRDs (`*.istio.io`) in the cluster
 2. **Pipeline Analysis**: Check if any active pipelines require Istio:
