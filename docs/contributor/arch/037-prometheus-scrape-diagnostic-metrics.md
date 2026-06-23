@@ -138,15 +138,14 @@ The ops scrape metrics pipeline sits after the enrichment pipeline and before th
 ```
 routing/enrichment ──┬──> metrics/output-{user-pipeline}  (existing)
                      └──> metrics/ops-scrape-metrics       (new, gated by override)
-                            ├─ filter/ops-keep-scrape-metrics
                             └─ prometheus/ops-scrape-metrics (:9090)
 ```
 
-The Prometheus exporter on port 9090 is always present in the OTel Collector config. When the override is disabled, no data flows to it (the pipeline is not connected to the enrichment routing connector). When the override is enabled, the pipeline receives from `routing/enrichment` and filters by metric name to keep only diagnostic metrics.
+The Prometheus exporter on port 9090 is always present in the OTel Collector config. When the override is disabled, no data flows to it (the pipeline is not connected to the enrichment routing connector). When the override is enabled, a routing table entry with `action: copy` matches the 8 diagnostic metric names and copies them to the ops pipeline. The existing routing entries remain unchanged.
 
 The `metrics/ops-scrape-metrics` pipeline always exists in the service config so that the Prometheus exporter starts and listens on port 9090. The gating mechanism is the `routing/enrichment` connector's routing table:
 
-**Override disabled (default)** — the routing connector does not list the ops pipeline:
+**Override disabled (default)** — the routing connector does not route to the ops pipeline:
 
 ```yaml
 connectors:
@@ -158,20 +157,24 @@ connectors:
                   - metrics/output-{user-pipeline}
 ```
 
-**Override enabled** — the routing connector includes the ops pipeline:
+**Override enabled** — the routing connector prepends a copy entry for diagnostic metrics:
 
 ```yaml
 connectors:
     routing/enrichment:
         table:
             - context: metric
-              statement: "route() where ..."
+              statement: "route() where metric.name == \"up\" or ..."
               pipelines:
-                  - metrics/output-{user-pipeline}
                   - metrics/ops-scrape-metrics
+              action: copy
+            - context: metric
+              statement: "route() where ..."
+              pipelines:
+                  - metrics/output-{user-pipeline}
 ```
 
-The pipeline, filter processor, and exporter remain identical in both cases. Only the routing table changes.
+The `action: copy` entry matches only diagnostic metrics and copies them to the ops pipeline without affecting the subsequent routing entries. The ops pipeline has no filter processor — the routing condition itself acts as the filter.
 
 ### Prometheus Exporter Configuration
 
