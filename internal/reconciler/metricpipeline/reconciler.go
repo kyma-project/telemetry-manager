@@ -509,6 +509,10 @@ func (r *Reconciler) trackPipelineInfoMetric(ctx context.Context, pipelines []te
 			features = append(features, metrics.FeatureInputIstio)
 		}
 
+		if metricpipelineutils.IsDeltaTemporality(pipeline.Spec.Output) {
+			features = append(features, metrics.FeatureOutputCumulativeToDelta)
+		}
+
 		// Get endpoint
 		endpoint := r.getEndpoint(ctx, pipeline)
 
