@@ -47,11 +47,10 @@ func K8sAttributesProcessor(enrichments *operatorv1beta1.EnrichmentSpec, useOTel
 			NodeFromEnvVar: EnvVarCurrentNodeName,
 		},
 		Extract: ExtractK8sMetadata{
-			Metadata:                     k8sAttributes,
-			Labels:                       append(extractLabels(useOTelServiceEnrichment), extractPodLabels(enrichments)...),
-			Annotations:                  extractOtelServiceAnnotations(useOTelServiceEnrichment),
-			OTelAnnotations:              useOTelServiceEnrichment,
-			DeploymentNameFromReplicaset: useOTelServiceEnrichment,
+			Metadata:        k8sAttributes,
+			Labels:          append(extractLabels(useOTelServiceEnrichment), extractPodLabels(enrichments)...),
+			Annotations:     extractOtelServiceAnnotations(useOTelServiceEnrichment),
+			OTelAnnotations: useOTelServiceEnrichment,
 		},
 		PodAssociation: podAssociations,
 	}

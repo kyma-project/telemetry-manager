@@ -173,7 +173,6 @@ processors:
                   key: resource.opentelemetry.io/service.version
                   tag_name: kyma.otel.annotation.service.version
             otel_annotations: true
-            deployment_name_from_replicaset: true
         pod_association:
             - sources:
                 - from: resource_attribute

@@ -321,6 +321,9 @@ setup_folder_common() {
   local grep_pattern="$4"
   local channel_desc="$5"
 
+  # Regular release pattern used as fallback for pre-release and experimental
+  local REGULAR_RELEASE_PATTERN='^[0-9]+\.[0-9]+\.[0-9]+$'
+
   local TARGET_FOLDER="${MODULE_DIR}/${version}${folder_suffix}"
 
   # Check if folder already exists
@@ -332,21 +335,33 @@ setup_folder_common() {
     # Find the most recent version folder
     local PREVIOUS_VERSION=$(ls -1 "${MODULE_DIR}" | grep -E "${grep_pattern}" | sort -V | tail -1 || true)
 
+    # If no previous version found and primary pattern differs from fallback, try regular release pattern
+    if [ -z "${PREVIOUS_VERSION}" ] && [ "${grep_pattern}" != "${REGULAR_RELEASE_PATTERN}" ]; then
+      echo "No previous ${channel_desc} version found. Falling back to regular release versions..."
+      PREVIOUS_VERSION=$(ls -1 "${MODULE_DIR}" | grep -E "${REGULAR_RELEASE_PATTERN}" | sort -V | tail -1 || true)
+      if [ -n "${PREVIOUS_VERSION}" ]; then
+        echo "Found fallback version: ${PREVIOUS_VERSION}"
+      fi
+    fi
+
     if [ -z "${PREVIOUS_VERSION}" ]; then
-      echo "::error::No previous ${channel_desc} version found in ${MODULE_DIR}"
+      echo "::error::No previous version found in ${MODULE_DIR}"
       echo "  Searched for pattern: ${grep_pattern}"
+      if [ "${grep_pattern}" != "${REGULAR_RELEASE_PATTERN}" ]; then
+        echo "  Also searched fallback pattern: ${REGULAR_RELEASE_PATTERN}"
+      fi
       echo "  Cannot create new version folder without a previous version to copy from"
-      echo "  Please ensure at least one ${channel_desc} version folder exists"
+      echo "  Please ensure at least one version folder exists"
       ls -1 "${MODULE_DIR}" | head -10
       exit 1
     fi
 
     local PREVIOUS_FOLDER="${MODULE_DIR}/${PREVIOUS_VERSION}"
-    echo "Copying from previous ${channel_desc} version: ${PREVIOUS_VERSION}"
+    echo "Copying from previous version: ${PREVIOUS_VERSION}"
 
     # Validate previous folder has required files
     if [ ! -f "${PREVIOUS_FOLDER}/module-config.yaml" ]; then
-      echo "::error::Previous ${channel_desc} version folder ${PREVIOUS_FOLDER} is invalid (missing module-config.yaml)"
+      echo "::error::Previous version folder ${PREVIOUS_FOLDER} is invalid (missing module-config.yaml)"
       echo "  The folder exists but lacks required configuration file"
       echo "  This folder may have been created incorrectly or is corrupted"
       echo "  Please manually fix the folder or remove it before retrying"
