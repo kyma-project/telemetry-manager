@@ -9,7 +9,7 @@ images:
     tag: "5.9.0"
   - source: "ghcr.io/k3d-io/k3d-proxy@sha256:7be40abfeb6ac9a81d0d4157a7cbf3aacc68a64a1780ca2efb160f1aea915177"
     tag: "5.9.0"
-  - source: "library/registry@sha256:85347ed2ecde64161c7a4788a4d7d3dcc9d6f86f7be95834022e3c6a423a945a"
+  - source: "library/registry@sha256:5620083c96ffb6f6296bbda84b2da7e822ed95d8df10de6434cee19c39fe0e9c"
     tag: "3" # used by k3d
   - source: quay.io/prometheuscommunity/avalanche
     tag: "v0.7.0" # used by the metrics agent test in backpressure scenario to generate metric load
