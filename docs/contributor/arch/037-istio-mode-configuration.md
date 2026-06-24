@@ -48,7 +48,7 @@ The OTLP Gateway is deployed as a DaemonSet and serves as the unified ingress po
 | Pod Annotation          | `traffic.sidecar.istio.io/includeInboundPorts: ""`                | This annotation excludes all input ports from Istio sidecar interception, ensuring direct access to OTLP ingestion endpoints without mTLS overhead. |
 | PeerAuthentication      | PERMISSIVE mTLS mode                                              | This configuration supports both plain-text and mTLS connections to the OTLP Gateway. Applications can send data over plain-text because the ingestion is node-local and can use mTLS communication. |
 | DestinationRule         | `TLS mode: DISABLE` for all OTLP Services                         | Because other components must connect without requiring mTLS, the OTLP Gateway receives telemetry data over plain-text on the ingestion path because of node-local routing. Disabling TLS for client connections to these services supports this requirement. |
-| NetworkPolicy (Ingress) | Additionally allows traffic on Istio Envoy telemetry port (15090) | When Istio is present, the sidecar's Envoy proxy exposes metrics that monitoring systems must scrape.                                                                                                                                                         |
+| NetworkPolicy (Ingress) | Additionally permits traffic on Istio Envoy telemetry port (15090) | When Istio is present, the sidecar's Envoy proxy exposes metrics that monitoring systems must scrape.                                                                                                                                                         |
 
 #### Metric Agent
 
@@ -100,7 +100,7 @@ The OTel Log Agent is deployed as a DaemonSet and collects container logs using 
 
 | Resource                | Behavior                                                          | Rationale                                                                                             |
 |-------------------------|-------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
-| NetworkPolicy (Ingress) | Additionally allows traffic on Istio Envoy telemetry port (15090) | When Istio is present, the sidecar's Envoy proxy exposes metrics that monitoring systems must scrape. |
+| NetworkPolicy (Ingress) | Additionally permits traffic on Istio Envoy telemetry port (15090) | When Istio is present, the sidecar's Envoy proxy exposes metrics that monitoring systems must scrape. |
 
 #### Fluent Bit
 
@@ -116,7 +116,7 @@ Fluent Bit is deployed as a DaemonSet and provides legacy log collection capabil
 
 | Resource                | Behavior                                                          | Rationale                                                                                                                                                      |
 |-------------------------|-------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| NetworkPolicy (Ingress) | Additionally allows traffic on Istio Envoy telemetry port (15090) | When Istio is present, the sidecar's Envoy proxy exposes metrics that monitoring systems must scrape.                                                          |
+| NetworkPolicy (Ingress) | Additionally permits traffic on Istio Envoy telemetry port (15090) | When Istio is present, the sidecar's Envoy proxy exposes metrics that monitoring systems must scrape.                                                          |
 | Pod Annotation          | `traffic.sidecar.istio.io/excludeInboundPorts: "2020, 2021"`      | Excludes the metrics port from Istio sidecar interception, ensuring that monitoring systems can scrape FluentBit's own metrics directly without mTLS overhead. |
 
 
@@ -233,7 +233,7 @@ Enable Istio integration for output **when Istio is present**:
 
 **Traffic Routing Configuration** (when Istio present):
 - The system analyzes each pipeline's output URL to determine which ports need traffic routing through the sidecar
-- **Cluster-internal URLs** (for example, `http://otel-collector.observability.svc.cluster.local:4317`): Backend ports are added to `traffic.sidecar.istio.io/includeOutboundPorts` annotation for mTLS communication
+- **Cluster-internal URLs** (for example, `http://otel-collector.observability.svc.cluster.local:4317`): Backend ports are added to `traffic.sidecar.istio.io/includeOutboundPorts` annotation to enable mTLS communication
 - **External URLs** (for example, `https://logs.external.com`): Backend ports bypass the sidecar (direct connection, no mTLS)
 
 #### Output Mode: Off
@@ -297,7 +297,7 @@ The proposed API provides a two-phase migration path where input remains stable 
 
 **Limitations**:
 - **Global application**: All components share the same input and output settings (cannot enable Istio for only Gateway while disabling for Metric Agent)
-- **URL-based heuristic**: Cluster-internal URL detection may not capture all cases (for example, ServiceEntry-backed services)
+- **URL-based heuristic**: Cluster-internal URL detection might not capture all cases (for example, ServiceEntry-backed services)
 
 **Migration for Existing Clusters**:
 
@@ -319,7 +319,7 @@ For clusters without Istio:
 - Users who need Istio integration for output must explicitly set `output: On` in their Telemetry CR
 
 **Rationale for Keeping Input On**:
-- **Metric Agent input functionality**: The Metric Agent's ability to scrape STRICT mTLS workloads (via Prometheus input) is a valuable feature that users expect to work by default when Istio is present
+- **Metric Agent input functionality**: The Metric Agent's ability to scrape STRICT mTLS workloads using Prometheus input is a valuable feature that users expect to work by default when Istio is present
 - **Gateway input requirements**: The Gateway requires DestinationRule configuration to receive telemetry data correctly in Istio meshes
 - **Minimal overhead when Istio not present**: Input mode only activates when Istio CRDs are detected, so there's no cost in non-Istio clusters
 - **User expectations**: Input features (scraping mTLS workloads, receiving data in mesh) are expected to "just work" when both Istio and Telemetry Manager are installed
