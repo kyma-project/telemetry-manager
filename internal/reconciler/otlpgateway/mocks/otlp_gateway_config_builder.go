@@ -83,7 +83,7 @@ type OTLPGatewayConfigBuilder_Build_Call struct {
 // Build is a helper method to define mock.On call
 //   - ctx context.Context
 //   - opts otlpgateway.BuildOptions
-func (_e *OTLPGatewayConfigBuilder_Expecter) Build(ctx interface{}, opts interface{}) *OTLPGatewayConfigBuilder_Build_Call {
+func (_e *OTLPGatewayConfigBuilder_Expecter) Build(ctx any, opts any) *OTLPGatewayConfigBuilder_Build_Call {
 	return &OTLPGatewayConfigBuilder_Build_Call{Call: _e.mock.On("Build", ctx, opts)}
 }
 

@@ -65,7 +65,7 @@ type AgentApplierDeleter_ApplyResources_Call struct {
 //   - ctx context.Context
 //   - c client.Client
 //   - opts fluentbit.AgentApplyOptions
-func (_e *AgentApplierDeleter_Expecter) ApplyResources(ctx interface{}, c interface{}, opts interface{}) *AgentApplierDeleter_ApplyResources_Call {
+func (_e *AgentApplierDeleter_Expecter) ApplyResources(ctx any, c any, opts any) *AgentApplierDeleter_ApplyResources_Call {
 	return &AgentApplierDeleter_ApplyResources_Call{Call: _e.mock.On("ApplyResources", ctx, c, opts)}
 }
 
@@ -127,7 +127,7 @@ type AgentApplierDeleter_DeleteResources_Call struct {
 // DeleteResources is a helper method to define mock.On call
 //   - ctx context.Context
 //   - c client.Client
-func (_e *AgentApplierDeleter_Expecter) DeleteResources(ctx interface{}, c interface{}) *AgentApplierDeleter_DeleteResources_Call {
+func (_e *AgentApplierDeleter_Expecter) DeleteResources(ctx any, c any) *AgentApplierDeleter_DeleteResources_Call {
 	return &AgentApplierDeleter_DeleteResources_Call{Call: _e.mock.On("DeleteResources", ctx, c)}
 }
 
