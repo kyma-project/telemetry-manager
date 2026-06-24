@@ -35,7 +35,7 @@ const (
 
 	// MetricPipeline features
 
-	FeatureInputPrometheus         = "input-prometheus"
+	FeatureInputPrometheus        = "input-prometheus"
 	FeatureInputIstio             = "input-istio"
 	FeatureOutputDeltaTemporality = "output-delta-temporality"
 
