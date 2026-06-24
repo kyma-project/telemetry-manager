@@ -1097,6 +1097,19 @@ func TestUsageTracking(t *testing.T) {
 			},
 		},
 		{
+			name: "pipeline with delta temporality output",
+			pipeline: testutils.NewMetricPipelineBuilder().
+				WithName("pipeline-delta").
+				WithOTLPInput(false).
+				WithTemporality(telemetryv1beta1.TemporalityDelta).
+				WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("test")).
+				Build(),
+			expectedEndpoint: "test",
+			expectedFeatureUsage: []string{
+				metrics.FeatureOutputDeltaTemporality,
+			},
+		},
+		{
 			name: "pipeline with all inputs",
 			pipeline: testutils.NewMetricPipelineBuilder().
 				WithName("pipeline-9").
@@ -1128,6 +1141,7 @@ func TestUsageTracking(t *testing.T) {
 				WithPrometheusInput(true).
 				WithIstioInput(true).
 				WithOTLPInput(true).
+				WithTemporality(telemetryv1beta1.TemporalityDelta).
 				WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("test")).
 				Build(),
 			expectedEndpoint: "test",
@@ -1138,6 +1152,7 @@ func TestUsageTracking(t *testing.T) {
 				metrics.FeatureInputRuntime,
 				metrics.FeatureInputPrometheus,
 				metrics.FeatureInputIstio,
+				metrics.FeatureOutputDeltaTemporality,
 			},
 		},
 		{
