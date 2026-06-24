@@ -59,7 +59,7 @@ Ensure you have the following permissions:
 
 ## Pre-Release (day before)
 
-Run the pre-release workflow one day before the planned release day. It creates a `{VERSION}-rc.k` tag, runs all integration tests against the release candidate, and submits the module to the dev channel for early validation.
+Run the pre-release workflow one day before the planned release day. It creates a `{VERSION}-rck` tag, runs all integration tests against the release candidate, and submits the module to the dev channel for early validation.
 
 > [!NOTE]
 > The pre-release does **not** require a closed milestone. Milestone management belongs to the release day workflow.
@@ -88,16 +88,16 @@ Before running the pre-release workflow, release all component dependencies:
 
 In the telemetry-manager repository, go to **Actions**, select [Create Release](https://github.com/kyma-project/telemetry-manager/actions/workflows/create-release.yml), and run the workflow with the following inputs:
 
-| Input                      | Description                                                               | Example              |
-|----------------------------|---------------------------------------------------------------------------|----------------------|
-| **version**                | Target release version in X.Y.Z format (not the rc tag)                   | `1.2.3`              |
-| **occ_image_version**      | OCC image version in X.Y.Z-A.B.C format                                   | `0.100.0-1.2.3`      |
-| **self_monitor_image_tag** | Self-monitor image tag in vYYYYMMDD-HASH format                           | `v20260302-bbf32a3b` |
-| **dir_size_image_tag**     | Directory size exporter image tag in vYYYYMMDD-HASH format                | `v20260302-12345678` |
-| **pre_release**            | Set to `true`                                                             | `true`               |
-| **module_release**         | Trigger module submission for dev channel only (not fast or experimental) | `true`               |
+| Input                      | Description                                                                               | Example              |
+|----------------------------|-------------------------------------------------------------------------------------------|----------------------|
+| **version**                | Target release version in X.Y.Z format (not the rc tag)                                   | `1.2.3`              |
+| **occ_image_version**      | OCC image version in X.Y.Z-A.B.C format                                                   | `0.100.0-1.2.3`      |
+| **self_monitor_image_tag** | Self-monitor image tag in vYYYYMMDD-HASH format                                           | `v20260302-bbf32a3b` |
+| **dir_size_image_tag**     | Directory size exporter image tag in vYYYYMMDD-HASH format                                | `v20260302-12345678` |
+| **pre_release**            | Set to `true`                                                                             | `true`               |
+| **module_release**         | Trigger module submission for dev channel only (not fast or experimental). Defaults to `true` | `true`               |
 
-The workflow automatically computes the rc tag (`{VERSION}-rc.1`, `{VERSION}-rc.2`, and so on) by finding the next unused rc number for that version.
+The workflow automatically computes the rc tag (`{VERSION}-rc1`, `{VERSION}-rc2`, and so on) by finding the next unused rc number for that version.
 
 ### 3. Automatic Validation
 
@@ -117,7 +117,7 @@ The workflow creates a `pre-release-{VERSION}` branch (for example, `pre-release
 
 The PR contains the same `.env` changes as a regular release. See [Review and Merge the Version Bump PR](#5-review-and-merge-the-version-bump-pr) for the full list of changes.
 
-After you merge the PR, the workflow creates the `{VERSION}-rc.k` tag (for example, `1.2.3-rc.1`) and triggers the Docker image build.
+After you merge the PR, the workflow creates the `{VERSION}-rck` tag (for example, `1.2.3-rc1`) and triggers the Docker image build.
 
 > [!WARNING]
 > The workflow fails if you do not merge the PR within 120 minutes.
@@ -137,19 +137,19 @@ All tests must pass before the pre-release is created.
 
 ### 6. Automatic Pre-Release Creation
 
-After all tests pass, the workflow creates the GitHub pre-release using GoReleaser. The release is automatically marked as a pre-release based on the `-rc.k` semver suffix.
+After all tests pass, the workflow creates the GitHub pre-release using GoReleaser. The release is automatically marked as a pre-release based on the `-rck` semver suffix.
 
-If `module_release` is set to `true`, the workflow also triggers a module submission to the **dev channel** only (not fast or experimental). The submission uses `release_tag={VERSION}-rc.k`, so the module manifest points to the rc image.
+If `module_release` is set to `true`, the workflow also triggers a module submission to the **dev channel** only (not fast or experimental). The submission uses `release_tag={VERSION}-rck`, so the module manifest points to the rc image.
 
 To verify the pre-release:
 - Go to [Releases](https://github.com/kyma-project/telemetry-manager/releases) and confirm the release is marked as **Pre-release**.
-- Check that the Docker image exists: `europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:{VERSION}-rc.k`
+- Check that the Docker image exists: `europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:{VERSION}-rck`
 
 ### 7. On Release Day
 
 On release day, check whether any new commits were added to the `pre-release-{VERSION}` branch since the pre-release:
 
-- **No new commits**: The pre-release is the exact state you want to ship. Run the release workflow on the **same component image versions** used for the pre-release.
+- **No new commits**: The pre-release is the exact state you want to ship. Run the release workflow on the **same component image versions** used for the pre-release. The release workflow creates the final `release-{X.Y}` branch (a different branch from `pre-release-{VERSION}`) and the official release tag.
 - **New commits**: Run the release workflow normally (without `pre_release=true`). The workflow creates a fresh `release-{X.Y}` branch and runs all tests again.
 
 > [!IMPORTANT]
@@ -293,6 +293,9 @@ The workflow triggers module releases for the following channels:
 | `fast`         | Enabled    | `kyma/module-manifests` |
 | `experimental` | Enabled    | `kyma/module-manifests` |
 
+> [!NOTE]
+> These module submissions create PRs in the `kyma/module-manifests` repository with auto-merge enabled. The PRs are merged automatically after one of the mod-approvers approve the PR and all the checks are passed.
+
 ### 9. Verify the Release
 
 After the release completes, perform the following tasks:
@@ -313,6 +316,9 @@ In the telemetry-manager repository, go to **Actions**, select [Submit Module](h
    - **channel**: `regular`
    - **dry_run**: `false`
    - **auto_merge**: `true` or `false` for manual merge
+
+> [!NOTE]
+> The typical practice is to wait approximately 2 weeks after releasing to the fast and experimental channels before releasing to the regular channel. This allows time to identify and address any issues in production environments.
 
 ## Monitor Release Progress
 
