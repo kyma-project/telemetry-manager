@@ -36,8 +36,8 @@ const (
 	// MetricPipeline features
 
 	FeatureInputPrometheus         = "input-prometheus"
-	FeatureInputIstio              = "input-istio"
-	FeatureOutputCumulativeToDelta = "output-cumulative-to-delta"
+	FeatureInputIstio             = "input-istio"
+	FeatureOutputDeltaTemporality = "output-delta-temporality"
 
 	// FluentBit features
 
@@ -60,7 +60,7 @@ var (
 		FeatureInputRuntime,
 		FeatureInputPrometheus,
 		FeatureInputIstio,
-		FeatureOutputCumulativeToDelta,
+		FeatureOutputDeltaTemporality,
 	}
 
 	LogPipelineFeatures = []string{

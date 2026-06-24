@@ -510,7 +510,7 @@ func (r *Reconciler) trackPipelineInfoMetric(ctx context.Context, pipelines []te
 		}
 
 		if metricpipelineutils.IsDeltaTemporality(pipeline.Spec.Output) {
-			features = append(features, metrics.FeatureOutputCumulativeToDelta)
+			features = append(features, metrics.FeatureOutputDeltaTemporality)
 		}
 
 		// Get endpoint
