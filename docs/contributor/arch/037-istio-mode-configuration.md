@@ -393,5 +393,3 @@ When Phase 2 is implemented, the backward compatibility approach changes only fo
 | Existing Telemetry CR during upgrade | No change                         | User need opt in `output: On`          |
 | Explicit `istio: {output: On}`       | Behavior unchanged                | Behavior unchanged                     |
 | User wants input only                | Must set `output: Off`            | No action needed (default behavior)    |
-
-**Migration ensures no breaking changes**: Automatic migration adds explicit `output: On` to existing Telemetry CRs during Phase 2 upgrade, preserving their current output behavior. Input behavior remains unchanged.
