@@ -85,7 +85,7 @@ type AgentConfigBuilder_Build_Call struct {
 //   - ctx context.Context
 //   - pipelines []v1beta1.LogPipeline
 //   - options logagent.BuildOptions
-func (_e *AgentConfigBuilder_Expecter) Build(ctx interface{}, pipelines interface{}, options interface{}) *AgentConfigBuilder_Build_Call {
+func (_e *AgentConfigBuilder_Expecter) Build(ctx any, pipelines any, options any) *AgentConfigBuilder_Build_Call {
 	return &AgentConfigBuilder_Build_Call{Call: _e.mock.On("Build", ctx, pipelines, options)}
 }
 

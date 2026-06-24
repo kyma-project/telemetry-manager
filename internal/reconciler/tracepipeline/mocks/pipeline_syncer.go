@@ -63,7 +63,7 @@ type PipelineSyncer_TryAcquireLock_Call struct {
 // TryAcquireLock is a helper method to define mock.On call
 //   - ctx context.Context
 //   - owner v1.Object
-func (_e *PipelineSyncer_Expecter) TryAcquireLock(ctx interface{}, owner interface{}) *PipelineSyncer_TryAcquireLock_Call {
+func (_e *PipelineSyncer_Expecter) TryAcquireLock(ctx any, owner any) *PipelineSyncer_TryAcquireLock_Call {
 	return &PipelineSyncer_TryAcquireLock_Call{Call: _e.mock.On("TryAcquireLock", ctx, owner)}
 }
 
