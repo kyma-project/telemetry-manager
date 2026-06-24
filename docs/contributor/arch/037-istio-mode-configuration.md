@@ -158,16 +158,17 @@ The `ingestion` and `export` fields control Istio integration independently acro
 Controls Istio integration for receiving or collecting telemetry data:
 
 - **On** (Default): Enable Istio integration for ingestion paths for components that require it, **only when Istio CRDs are present in the cluster**.
-  - **Gateway**: If Istio CRDs detected, applies DestinationRule (TLS DISABLE) for OTLP services. Enables sidecar injection with traffic routing annotations (exclude inbound ports). If Istio CRDs not present, skips all Istio configurations.
-  - **Metric Agent**: If Istio CRDs detected AND **at least one MetricPipeline has `input.prometheus.enabled: true`**, mounts Istio certificates, configures `app-services-secure` Prometheus scrape job, applies traffic routing annotations for certificate access. Can scrape STRICT mTLS workloads. If Istio CRDs not present OR no MetricPipeline has Prometheus input enabled, skips Istio ingestion configurations.
-  - **Log Agents**: No effect (collect logs from node files, not from workloads requiring mTLS).
+  - **Gateway**: If Istio CRDs detected, applies DestinationRule (TLS DISABLE) for OTLP services. Enables sidecar injection with traffic routing annotations (exclude inbound ports). If Istio CRDs not present, skips all Istio configurations and sets `sidecar.istio.io/inject: "false"`.
+  - **Metric Agent**: If Istio CRDs detected AND **at least one MetricPipeline has `input.prometheus.enabled: true`**, mounts Istio certificates, configures `app-services-secure` Prometheus scrape job, applies traffic routing annotations for certificate access. Can scrape STRICT mTLS workloads. If Istio CRDs not present OR no MetricPipeline has Prometheus input enabled, skips Istio ingestion configurations and sets `sidecar.istio.io/inject: "false"`.
+  - **Log Agents**: No effect (collect logs from node files, not from workloads requiring mTLS). If Istio not required, sets `sidecar.istio.io/inject: "false"`.
   
 - **Off**: Explicitly disable Istio integration for all ingestion paths, regardless of Istio CRD presence.
-  - **Gateway**: No DestinationRule, no sidecar injection.
+  - **Gateway**: No DestinationRule, sets `sidecar.istio.io/inject: "false"`.
   - **Metric Agent**: 
     - No Istio certificates, no `app-services-secure` receiver. Cannot scrape STRICT mTLS workloads.
     - The `app-services` receiver is configured to scrape application services without mTLS only.
-  - **Log Agents**: No effect.
+    - Sets `sidecar.istio.io/inject: "false"`.
+  - **Log Agents**: Sets `sidecar.istio.io/inject: "false"`.
 
 ### Prometheus Input Detection for Metric Agent Ingestion
 
@@ -236,12 +237,12 @@ Controls Istio integration for sending telemetry data to backends:
 
 - **On** (Default): Enable Istio integration for export paths when the pipeline has a cluster-internal output endpoint, **only when Istio CRDs are present in the cluster**.
   - **All Components**: The system checks each pipeline's output URL:
-    - **Cluster-internal URL detected** (for example, `http://otel-collector.observability.svc.cluster.local:4317`): If Istio CRDs present, enables sidecar injection and configures traffic routing annotations to route backend traffic through Istio sidecar for mTLS communication. If Istio CRDs not present, skips Istio configurations.
-    - **External URL detected** (for example, `https://logs.external.com`): Skips Istio sidecar injection and traffic routing for that component (no mTLS needed for external backends).
+    - **Cluster-internal URL detected** (for example, `http://otel-collector.observability.svc.cluster.local:4317`): If Istio CRDs present, enables sidecar injection and configures traffic routing annotations to route backend traffic through Istio sidecar for mTLS communication. If Istio CRDs not present, skips Istio configurations and sets `sidecar.istio.io/inject: "false"`.
+    - **External URL detected** (for example, `https://logs.external.com`): Skips Istio sidecar injection and traffic routing for that component (no mTLS needed for external backends). Sets `sidecar.istio.io/inject: "false"`.
   - **Per-component decision**: Each component (Gateway, Metric Agent, Log Agents) independently checks its pipelines' output URLs and enables Istio only if Istio CRDs are present AND at least one pipeline uses a cluster-internal backend.
   
 - **Off**: Explicitly disable Istio integration for all export paths, regardless of Istio CRD presence.
-  - **All Components**: Sets sidecar injection label to `"false"`. Components cannot send data to STRICT mTLS backends in the Istio mesh, even if they use cluster-internal URLs.
+  - **All Components**: Sets `sidecar.istio.io/inject: "false"`. Components cannot send data to STRICT mTLS backends in the Istio mesh, even if they use cluster-internal URLs.
 
 ### Cluster-Internal URL Detection
 
@@ -304,15 +305,15 @@ Sidecar injection is enabled for a component if **Istio CRDs are present** AND *
 
 Per-component sidecar injection decisions (all require Istio CRDs present):
 
-- **Gateway**: Sidecar enabled if Istio CRDs present AND ((`ingestion: On`) OR (`export: On` AND at least one TracePipeline has cluster-internal output)).
-- **Metric Agent**: Sidecar enabled if Istio CRDs present AND ((`ingestion: On` AND at least one MetricPipeline has `input.prometheus.enabled: true`) OR (`export: On` AND at least one MetricPipeline has cluster-internal output)).
-- **Log Agents**: Sidecar enabled if Istio CRDs present AND (`export: On` AND at least one LogPipeline has cluster-internal output).
+- **Gateway**: Sidecar enabled if Istio CRDs present AND ((`ingestion: On`) OR (`export: On` AND at least one TracePipeline has cluster-internal output)). Otherwise, sets `sidecar.istio.io/inject: "false"`.
+- **Metric Agent**: Sidecar enabled if Istio CRDs present AND ((`ingestion: On` AND at least one MetricPipeline has `input.prometheus.enabled: true`) OR (`export: On` AND at least one MetricPipeline has cluster-internal output)). Otherwise, sets `sidecar.istio.io/inject: "false"`.
+- **Log Agents**: Sidecar enabled if Istio CRDs present AND (`export: On` AND at least one LogPipeline has cluster-internal output). Otherwise, sets `sidecar.istio.io/inject: "false"`.
 
-**Example 1**: If Istio CRDs not present, no components get sidecar injection regardless of configuration.
+**Example 1**: If Istio CRDs not present, no components get sidecar injection regardless of configuration. All components get `sidecar.istio.io/inject: "false"`.
 
-**Example 2**: If Istio CRDs present, `ingestion: Off` and `export: On`, but all pipelines use external URLs (for example, `https://external.com`), then no components get sidecar injection because there are no cluster-internal backends.
+**Example 2**: If Istio CRDs present, `ingestion: Off` and `export: On`, but all pipelines use external URLs (for example, `https://external.com`), then no components get sidecar injection because there are no cluster-internal backends. All components get `sidecar.istio.io/inject: "false"`.
 
-**Example 3**: If Istio CRDs present, `ingestion: On` and `export: Off`, but no MetricPipeline has `input.prometheus.enabled: true`, then the Metric Agent does not get sidecar injection because Prometheus scraping is not enabled (Gateway still gets sidecar for ingestion).
+**Example 3**: If Istio CRDs present, `ingestion: On` and `export: Off`, but no MetricPipeline has `input.prometheus.enabled: true`, then the Metric Agent does not get sidecar injection because Prometheus scraping is not enabled (Gateway still gets sidecar for ingestion). Metric Agent gets `sidecar.istio.io/inject: "false"`.
 
 ## User Examples
 
@@ -358,6 +359,7 @@ spec:
     - All components: Enabled **only for components with cluster-internal output URLs** (sidecar injection, traffic routing for mTLS backends).
 - **If Istio CRDs not present**:
   - All Istio configurations are automatically skipped (safe for non-Istio clusters).
+  - All components get `sidecar.istio.io/inject: "false"`.
 
 This default mode ensures maximum compatibility with Istio mesh backends when Istio is installed, and is safe for non-Istio clusters.
 
@@ -487,7 +489,7 @@ spec:
   - Gateway: Enabled (DestinationRule TLS DISABLE).
   - Metric Agent: Enabled only if Prometheus input is enabled (mounts Istio certificates, `app-services` + `app-services-secure` receivers, can scrape STRICT mTLS workloads).
 - **Export**:
-  - All components: Disabled (sidecar injection disabled, cannot send to STRICT mTLS backends).
+  - All components: Disabled (sets `sidecar.istio.io/inject: "false"`, cannot send to STRICT mTLS backends).
 
 **Use Case**: Your applications use STRICT mTLS policies (need ingestion mTLS), but all backends are external and do not require mTLS (export can be plain-text). This saves resources on export sidecars while maintaining ability to scrape mTLS workloads.
 
@@ -532,10 +534,10 @@ spec:
 
 **Behavior**:
 - **Ingestion**:
-  - Gateway: Disabled (no DestinationRule).
-  - Metric Agent: Disabled for STRICT mTLS scraping (no Istio certificates, no `app-services-secure` receiver).
+  - Gateway: Disabled (no DestinationRule, sets `sidecar.istio.io/inject: "false"`).
+  - Metric Agent: Disabled for STRICT mTLS scraping (no Istio certificates, no `app-services-secure` receiver, sets `sidecar.istio.io/inject: "false"`).
 - **Export**:
-  - All components: Disabled (no sidecar injection).
+  - All components: Disabled (sets `sidecar.istio.io/inject: "false"`).
 
 **Use Case**: Your applications do not use STRICT mTLS policies (don't need certificate-based scraping), and you don't need Istio sidecar integration. This saves resources by not mounting certificates or injecting sidecars.
 
@@ -561,7 +563,15 @@ spec:
 ```
 
 ### Example 5: Enable Export Only with URL Detection
-```
+```yaml
+apiVersion: operator.kyma-project.io/v1beta1
+kind: Telemetry
+metadata:
+  name: default
+  namespace: kyma-system
+spec:
+  istio:
+    ingestion: Off
     export: On
   metric:
     collectionInterval: 30s
@@ -569,10 +579,10 @@ spec:
 
 **Behavior**:
 - **Ingestion**:
-  - Gateway: Disabled (no DestinationRule).
-  - Metric Agent: Disabled (no Istio certificates, no `app-services-secure` job, cannot scrape STRICT mTLS workloads).
+  - Gateway: Disabled (no DestinationRule, sets `sidecar.istio.io/inject: "false"`).
+  - Metric Agent: Disabled (no Istio certificates, no `app-services-secure` job, cannot scrape STRICT mTLS workloads, sets `sidecar.istio.io/inject: "false"`).
 - **Export**:
-  - All components: Enabled only if they have pipelines with cluster-internal output URLs (sidecar injection enabled, traffic routing for mTLS backend communication) if Istio is present.
+  - All components: Enabled only if they have pipelines with cluster-internal output URLs (sidecar injection enabled, traffic routing for mTLS backend communication) if Istio is present. Otherwise, sets `sidecar.istio.io/inject: "false"`.
 
 **Use Case**: Your applications do not use STRICT mTLS policies (ingestion does not need Istio), but your backends are in the Istio mesh and require mTLS (export needs Istio sidecar). Common when using external observability platforms with in-cluster aggregators that have STRICT mTLS.
 
@@ -688,13 +698,13 @@ Sidecar injection is enabled for a component if **either** condition is met (and
 
 Per-component sidecar injection decisions:
 
-- **Gateway**: Sidecar enabled if (`ingestion: On`) OR (`export: On` AND at least one TracePipeline has cluster-internal output).
-- **Metric Agent**: Sidecar enabled if (`ingestion: On` AND at least one MetricPipeline has `input.prometheus.enabled: true`) OR (`export: On` AND at least one MetricPipeline has cluster-internal output).
-- **Log Agents**: Sidecar enabled if (`export: On` AND at least one LogPipeline has cluster-internal output).
+- **Gateway**: Sidecar enabled if (`ingestion: On`) OR (`export: On` AND at least one TracePipeline has cluster-internal output). Otherwise, sets `sidecar.istio.io/inject: "false"`.
+- **Metric Agent**: Sidecar enabled if (`ingestion: On` AND at least one MetricPipeline has `input.prometheus.enabled: true`) OR (`export: On` AND at least one MetricPipeline has cluster-internal output). Otherwise, sets `sidecar.istio.io/inject: "false"`.
+- **Log Agents**: Sidecar enabled if (`export: On` AND at least one LogPipeline has cluster-internal output). Otherwise, sets `sidecar.istio.io/inject: "false"`.
 
-**Example 1**: If `ingestion: Off` and `export: On`, but all pipelines use external URLs (for example, `https://external.com`), then no components get sidecar injection because there are no cluster-internal backends.
+**Example 1**: If `ingestion: Off` and `export: On`, but all pipelines use external URLs (for example, `https://external.com`), then no components get sidecar injection because there are no cluster-internal backends. All components get `sidecar.istio.io/inject: "false"`.
 
-**Example 2**: If `ingestion: On` and `export: Off`, but no MetricPipeline has `input.prometheus.enabled: true`, then the Metric Agent does not get sidecar injection because Prometheus scraping is not enabled (Gateway still gets sidecar for ingestion).
+**Example 2**: If `ingestion: On` and `export: Off`, but no MetricPipeline has `input.prometheus.enabled: true`, then the Metric Agent does not get sidecar injection because Prometheus scraping is not enabled (Gateway still gets sidecar for ingestion). Metric Agent gets `sidecar.istio.io/inject: "false"`.
 
 **Example 3**: If `ingestion: Off` and `export: On`, and one MetricPipeline uses `http://otel-collector.observability.svc.cluster.local:4317`, then the Metric Agent gets sidecar injection with traffic routing annotations for that backend port.
 
@@ -757,21 +767,21 @@ When a component enables Istio for export (cluster-internal URLs detected), the 
 All reconcilers that create or configure telemetry components must respect the `istio` settings:
 
 1. **OTLP Gateway Reconciler**
-   - **Ingestion On**: Check for Istio CRDs. If present, apply DestinationRule (TLS DISABLE), sidecar injection with `includeInboundPorts: ""` annotation. If not present, skip all Istio configurations.
-   - **Ingestion Off**: Skip DestinationRule.
+   - **Ingestion On**: Check for Istio CRDs. If present, apply DestinationRule (TLS DISABLE), sidecar injection with `includeInboundPorts: ""` annotation. If not present, skip all Istio configurations and set `sidecar.istio.io/inject: "false"`.
+   - **Ingestion Off**: Skip DestinationRule, set `sidecar.istio.io/inject: "false"`.
    - **Export On**: 
-     1. Check for Istio CRDs. If not present, skip.
+     1. Check for Istio CRDs. If not present, skip and set `sidecar.istio.io/inject: "false"`.
      2. Scan all TracePipeline `output.otlp.endpoint` values.
      3. If at least one has a cluster-internal URL:
         - Enable sidecar injection (`sidecar.istio.io/inject: "true"`).
         - Apply `traffic.sidecar.istio.io/includeOutboundPorts` with backend ports from cluster-internal URLs.
-     4. If all URLs are external, skip sidecar injection (if ingestion is also Off).
-   - **Export Off**: Set sidecar injection label to `"false"` (if ingestion is also Off).
+     4. If all URLs are external, skip sidecar injection (if ingestion is also Off) and set `sidecar.istio.io/inject: "false"`.
+   - **Export Off**: Set `sidecar.istio.io/inject: "false"` (if ingestion is also Off).
    - **Always**: Configure `istio_enrichment` and `istio_noise_filter` processors in all trace, metric, and log pipelines (independent of ingestion/export settings).
 
 2. **Metric Agent Reconciler**
    - **Ingestion On**: 
-     1. Check for Istio CRDs. If not present, skip all Istio ingestion configurations.
+     1. Check for Istio CRDs. If not present, skip all Istio ingestion configurations and set `sidecar.istio.io/inject: "false"`.
      2. Scan all MetricPipelines for `input.prometheus.enabled: true`.
      3. If at least one MetricPipeline has Prometheus input enabled:
         - Mount Istio certificates (volume mount at `/etc/istio-output-certs`).
@@ -780,41 +790,42 @@ All reconcilers that create or configure telemetry components must respect the `
         - Apply `proxy.istio.io/config` annotation (write certificates to shared volume).
         - Apply `sidecar.istio.io/userVolumeMount` annotation (mount certificate volume into sidecar).
         - Enable sidecar injection (`sidecar.istio.io/inject: "true"`).
-     4. If no MetricPipeline has Prometheus input enabled, skip Istio ingestion configurations.
+     4. If no MetricPipeline has Prometheus input enabled, skip Istio ingestion configurations and set `sidecar.istio.io/inject: "false"`.
    - **Ingestion Off**: 
      1. Skip Istio certificate volume mounts.
      2. Remove `app-services-secure` Prometheus receiver.
      3. Configure `app-services` Prometheus receiver without Istio certificate support.
+     4. Set `sidecar.istio.io/inject: "false"`.
    - **Export On**: 
-     1. Check for Istio CRDs. If not present, skip.
+     1. Check for Istio CRDs. If not present, skip and set `sidecar.istio.io/inject: "false"`.
      2. Scan all MetricPipeline `output.otlp.endpoint` values.
      3. If at least one has a cluster-internal URL:
         - Enable sidecar injection (`sidecar.istio.io/inject: "true"`).
         - Apply `traffic.sidecar.istio.io/includeOutboundPorts` with backend ports from cluster-internal URLs.
-     4. If all URLs are external, skip sidecar injection (if ingestion is also Off or no Prometheus input enabled).
-   - **Export Off**: Set sidecar injection label to `"false"` (if ingestion is also Off or no Prometheus input enabled).
+     4. If all URLs are external, skip sidecar injection (if ingestion is also Off or no Prometheus input enabled) and set `sidecar.istio.io/inject: "false"`.
+   - **Export Off**: Set `sidecar.istio.io/inject: "false"` (if ingestion is also Off or no Prometheus input enabled).
    - **Always**: Configure `istio_enrichment` and `istio_noise_filter` processors in all metric pipelines (independent of ingestion/export settings).
 
 3. **OTel Log Agent Reconciler**
    - **Export On**: 
-     1. Check for Istio CRDs. If not present, skip.
+     1. Check for Istio CRDs. If not present, skip and set `sidecar.istio.io/inject: "false"`.
      2. Scan all LogPipeline `output.http.host` values.
      3. If at least one has a cluster-internal URL:
         - Enable sidecar injection (`sidecar.istio.io/inject: "true"`).
         - Apply `traffic.sidecar.istio.io/includeOutboundPorts` with backend ports from cluster-internal URLs.
-     4. If all URLs are external, skip sidecar injection.
-   - **Export Off**: Set sidecar injection label to `"false"`.
+     4. If all URLs are external, skip sidecar injection and set `sidecar.istio.io/inject: "false"`.
+   - **Export Off**: Set `sidecar.istio.io/inject: "false"`.
    - **Always**: Configure `istio_enrichment` and `istio_noise_filter` processors in all log pipelines (independent of export setting).
 
 4. **Fluent Bit Reconciler**
    - **Export On**: 
-     1. Check for Istio CRDs. If not present, skip.
+     1. Check for Istio CRDs. If not present, skip and set `sidecar.istio.io/inject: "false"`.
      2. Scan all LogPipeline `output.http.host` values.
      3. If at least one has a cluster-internal URL:
         - Enable sidecar injection (`sidecar.istio.io/inject: "true"`).
         - Apply `traffic.sidecar.istio.io/includeOutboundPorts` with backend ports from cluster-internal URLs.
-     4. If all URLs are external, skip sidecar injection.
-   - **Export Off**: Set sidecar injection label to `"false"`.
+     4. If all URLs are external, skip sidecar injection and set `sidecar.istio.io/inject: "false"`.
+   - **Export Off**: Set `sidecar.istio.io/inject: "false"`.
    - **Note**: Fluent Bit does not support OTel processors, so neither `istio_enrichment` nor `istio_noise_filter` are applicable.
 
 5. **NetworkPolicy Reconcilers**
@@ -822,7 +833,7 @@ All reconcilers that create or configure telemetry components must respect the `
    - Sidecar injection is enabled when:
      - Istio CRDs are present AND
      - (`ingestion: On` OR (`export: On` AND at least one pipeline has cluster-internal output))
-   - **Off**: Omit Istio Envoy port from all ingress rules.
+   - **Off**: Omit Istio Envoy port from all ingress rules and ensure `sidecar.istio.io/inject: "false"` is set.
 
 ### Migration Path
 
