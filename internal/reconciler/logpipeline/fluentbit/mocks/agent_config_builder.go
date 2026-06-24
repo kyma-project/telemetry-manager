@@ -76,7 +76,7 @@ type AgentConfigBuilder_Build_Call struct {
 //   - ctx context.Context
 //   - reconcilablePipelines []v1beta1.LogPipeline
 //   - clusterName string
-func (_e *AgentConfigBuilder_Expecter) Build(ctx interface{}, reconcilablePipelines interface{}, clusterName interface{}) *AgentConfigBuilder_Build_Call {
+func (_e *AgentConfigBuilder_Expecter) Build(ctx any, reconcilablePipelines any, clusterName any) *AgentConfigBuilder_Build_Call {
 	return &AgentConfigBuilder_Build_Call{Call: _e.mock.On("Build", ctx, reconcilablePipelines, clusterName)}
 }
 

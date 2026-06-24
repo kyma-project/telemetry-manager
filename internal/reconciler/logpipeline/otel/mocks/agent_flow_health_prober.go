@@ -72,7 +72,7 @@ type AgentFlowHealthProber_Probe_Call struct {
 // Probe is a helper method to define mock.On call
 //   - ctx context.Context
 //   - pipelineName string
-func (_e *AgentFlowHealthProber_Expecter) Probe(ctx interface{}, pipelineName interface{}) *AgentFlowHealthProber_Probe_Call {
+func (_e *AgentFlowHealthProber_Expecter) Probe(ctx any, pipelineName any) *AgentFlowHealthProber_Probe_Call {
 	return &AgentFlowHealthProber_Probe_Call{Call: _e.mock.On("Probe", ctx, pipelineName)}
 }
 

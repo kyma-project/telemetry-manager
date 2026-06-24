@@ -65,7 +65,7 @@ type GatewayApplierDeleter_ApplyResources_Call struct {
 //   - ctx context.Context
 //   - c client.Client
 //   - opts otelcollector.GatewayApplyOptions
-func (_e *GatewayApplierDeleter_Expecter) ApplyResources(ctx interface{}, c interface{}, opts interface{}) *GatewayApplierDeleter_ApplyResources_Call {
+func (_e *GatewayApplierDeleter_Expecter) ApplyResources(ctx any, c any, opts any) *GatewayApplierDeleter_ApplyResources_Call {
 	return &GatewayApplierDeleter_ApplyResources_Call{Call: _e.mock.On("ApplyResources", ctx, c, opts)}
 }
 
@@ -129,7 +129,7 @@ type GatewayApplierDeleter_DeleteResources_Call struct {
 //   - c client.Client
 //   - isIstioActive bool
 //   - vpaCRDExists bool
-func (_e *GatewayApplierDeleter_Expecter) DeleteResources(ctx interface{}, c interface{}, isIstioActive interface{}, vpaCRDExists interface{}) *GatewayApplierDeleter_DeleteResources_Call {
+func (_e *GatewayApplierDeleter_Expecter) DeleteResources(ctx any, c any, isIstioActive any, vpaCRDExists any) *GatewayApplierDeleter_DeleteResources_Call {
 	return &GatewayApplierDeleter_DeleteResources_Call{Call: _e.mock.On("DeleteResources", ctx, c, isIstioActive, vpaCRDExists)}
 }
 
