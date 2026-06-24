@@ -56,22 +56,32 @@ The Metric Agent is deployed as a DaemonSet and scrapes Prometheus metrics from 
 
 ##### Unconditional (Always Applied)
 
-| Resource  | Behavior                          | Rationale                                                                                                                                       |
-|-----------|-----------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|
-| Pod Label | `sidecar.istio.io/inject: "true"` | Istio sidecar injection is always enabled for the Metric Agent to support output mTLS communication to in-cluster backends in the Istio mesh. |
+| Resource                     | Behavior                                                                                                              | Rationale                                                                                                                                                                                 |
+|------------------------------|-----------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Pod Label                    | `sidecar.istio.io/inject: "true"`                                                                                     | Istio sidecar injection is always enabled for the Metric Agent to support output mTLS communication to in-cluster backends in the Istio mesh.                                           |
+| Prometheus Scrape Config     | `app-services` job with relabel config to drop pods with `security.istio.io/tlsMode: istio` label when scheme is `https` | Always configured. Scrapes application services with `prometheus.io/scrape: "true"` annotation. Drops HTTPS targets (STRICT mTLS workloads) to avoid scraping them without certificates. |
+| `app-services` relabel rules | Drops targets with `__scheme__: https`                                                                                | Prevents scraping STRICT mTLS workloads without proper certificates when Istio certificates are not mounted.                                                                             |
 
-##### Conditional (Only When Istio is Detected)
+##### Conditional (Only When Istio is Detected and Prometheus Input Enabled)
 
-| Resource                 | Behavior                                                           | Rationale                                                                                                                                                                                                                                                             |
-|--------------------------|--------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Pod Annotation           | `traffic.sidecar.istio.io/includeOutboundIPRanges: ""`             | Bypasses Istio sidecar interception for most output traffic. Prometheus scraping of Istio control plane and Envoy metrics requires direct access to metric endpoints. These endpoints are not reachable through the sidecar proxy.                                  |
-| Pod Annotation           | `traffic.sidecar.istio.io/includeOutboundPorts: "{backend_ports}"` | Ensures that traffic to configured backends (such as OTLP Gateway, in-cluster Prometheus, or other OTel Collectors) goes through the Istio sidecar for mTLS. The reconciliation loop populates this with the actual backend ports from MetricPipeline configurations. |
-| Pod Annotation           | `traffic.sidecar.istio.io/excludeInboundPorts: "8888"`             | Excludes the metrics port from Istio sidecar interception, ensuring that monitoring systems can scrape the Metric Agent's own metrics directly without mTLS overhead.                                                                                                 |
-| Pod Annotation           | `proxy.istio.io/config`                                            | Configures the Istio sidecar to write TLS certificates to the shared volume at `/etc/istio-output-certs`, which the Metric Agent uses for mTLS scraping of application metrics.                                                                                       |
-| Pod Annotation           | `sidecar.istio.io/userVolumeMount`                                 | Mounts the Istio certificate volume into the Istio sidecar container.                                                                                                                                                                                                 |
-| Prometheus Scrape Config | `app-services-secure` job                                           | Configures scraping for application services with STRICT mTLS policies using Istio certificates. The Metric Agent can scrape workloads in the Istio mesh that require mTLS authentication.                                                                            |
-| NetworkPolicy (Ingress)  | Additionally allows traffic on Istio Envoy telemetry port (15090)  | When Istio is present, the sidecar's Envoy proxy exposes metrics that monitoring systems must scrape.                                                                                                                                                                 |
-| Volume Mount             | Istio certificates volume (`/etc/istio-output-certs`)              | The Metric Agent always mounts Istio certificates to scrape application metrics that require mTLS (when the application follows a STRICT mTLS policy).                                                                                                                |
+| Resource                            | Behavior                                                                                         | Rationale                                                                                                                                                                                                                                                             |
+|-------------------------------------|--------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Pod Annotation                      | `traffic.sidecar.istio.io/includeOutboundIPRanges: ""`                                           | Bypasses Istio sidecar interception for most output traffic. Prometheus scraping of Istio control plane and Envoy metrics requires direct access to metric endpoints. These endpoints are not reachable through the sidecar proxy.                                    |
+| Pod Annotation                      | `traffic.sidecar.istio.io/includeOutboundPorts: "{backend_ports}"`                               | Ensures that traffic to configured backends (such as OTLP Gateway, in-cluster Prometheus, or other OTel Collectors) goes through the Istio sidecar for mTLS. The reconciliation loop populates this with the actual backend ports from MetricPipeline configurations. |
+| Pod Annotation                      | `traffic.sidecar.istio.io/excludeInboundPorts: "8888"`                                           | Excludes the metrics port from Istio sidecar interception, ensuring that monitoring systems can scrape the Metric Agent's own metrics directly without mTLS overhead.                                                                                                 |
+| Pod Annotation                      | `proxy.istio.io/config`                                                                          | Configures the Istio sidecar to write TLS certificates to the shared volume at `/etc/istio-output-certs`, which the Metric Agent uses for mTLS scraping of application metrics.                                                                                       |
+| Pod Annotation                      | `sidecar.istio.io/userVolumeMount`                                                               | Mounts the Istio certificate volume into the Istio sidecar container.                                                                                                                                                                                                 |
+| Prometheus Scrape Config            | `app-services-secure` job with TLS config pointing to `/etc/istio-output-certs`                  | Scrapes application services with STRICT mTLS policies using Istio certificates. Only targets with `__scheme__: https` are kept. The Metric Agent can scrape workloads in the Istio mesh that require mTLS authentication.                                            |
+| `app-services-secure` TLS           | `ca_file`, `cert_file`, `key_file` from `/etc/istio-output-certs/`, `insecure_skip_verify: true` | Uses Istio-provided certificates for mTLS authentication when scraping STRICT mTLS workloads.                                                                                                                                                                         |
+| `app-services-secure` relabel rules | Keeps only targets with `__scheme__: https` (opposite of `app-services`)                         | Ensures this job only scrapes STRICT mTLS workloads, complementing the `app-services` job which handles non-mTLS targets.                                                                                                                                             |
+| NetworkPolicy (Ingress)             | Additionally allows traffic on Istio Envoy telemetry port (15090)                                | When Istio is present, the sidecar's Envoy proxy exposes metrics that monitoring systems must scrape.                                                                                                                                                                 |
+| Volume Mount                        | Istio certificates volume (`/etc/istio-output-certs`)                                            | Mounts Istio certificates to scrape application metrics that require mTLS (when the application follows a STRICT mTLS policy). Only present when Istio is detected and Prometheus input is enabled.                                                                   |
+
+**Key Behavior**: The `app-services` and `app-services-secure` jobs are complementary:
+- `app-services`: Always present, drops `https` targets (STRICT mTLS workloads)
+- `app-services-secure`: Only when Istio detected and Prometheus input enabled, keeps only `https` targets (STRICT mTLS workloads) and uses Istio certificates
+
+This ensures workloads are scraped by exactly one job, preventing duplicate metrics.
 
 
 #### OTel Log Agent
@@ -221,13 +231,57 @@ The system detects cluster-internal URLs using the following patterns:
   - `<service>` (same namespace)
 - **Kubernetes ClusterIP addresses**: IP addresses in the cluster's service CIDR range
 
-When `export: On`, the system scans all active pipelines for each component:
+#### Detection Algorithm
 
-- **Gateway**: Scans all pipeline `output.otlp.endpoint` values
+The cluster-internal URL detection algorithm works as follows:
+
+1. **Extract the host from the URL**:
+   - For OTLP endpoints (`output.otlp.endpoint`): Parse the full URL (for example, `http://otel-collector.observability.svc.cluster.local:4317`)
+   - For HTTP endpoints (`output.http.host`): Use the host value directly (for example, `fluentd.logging.svc.cluster.local`)
+
+2. **Check for Kubernetes DNS patterns**:
+   - Split the host by `.` (dot separator)
+   - Match against Kubernetes DNS patterns:
+     - **Full FQDN** (4+ segments): `<service>.<namespace>.svc.cluster.local` → cluster-internal
+     - **Shortened FQDN** (3 segments): `<service>.<namespace>.svc` → cluster-internal
+     - **Namespace-qualified** (2 segments): `<service>.<namespace>` → cluster-internal
+     - **Single-label** (1 segment): `<service>` → cluster-internal (assumes same namespace)
+   - If the host has more than 4 segments (for example, `api.external.example.com`), it is external
+
+3. **Check for IP addresses**:
+   - Parse the host as an IP address
+   - If it is a valid IP:
+     - Check if it is a loopback address (`127.0.0.0/8`, `::1`) → external (localhost references)
+     - Check if it is a private IP address → cluster-internal candidate
+     - Compare against the cluster's service CIDR range (if available) → cluster-internal
+     - If service CIDR is not available, treat private IPs as potentially cluster-internal
+
+4. **Default for unmatched patterns**:
+   - If the host does not match Kubernetes DNS patterns and is not an IP address in the service CIDR, treat it as external
+
+#### Pipeline Scanning
+
+When `output: On`, the system scans all active pipelines for each component:
+
+- **Gateway**: Scans all TracePipeline `output.otlp.endpoint` values
 - **Metric Agent**: Scans all MetricPipeline `output.otlp.endpoint` values
 - **Log Agents**: Scans all LogPipeline `output.http.host` values
 
-If **at least one** pipeline has a cluster-internal URL, the component enables Istio for export.
+If **at least one** pipeline has a cluster-internal URL, the component enables Istio for output.
+
+#### Detection Examples
+
+| URL                                                          | Detected As      | Reason                                                           |
+|--------------------------------------------------------------|------------------|------------------------------------------------------------------|
+| `http://otel-collector.observability.svc.cluster.local:4317` | Cluster-internal | Full Kubernetes FQDN (5 segments ending in `.svc.cluster.local`) |
+| `http://otel-collector.observability.svc:4317`               | Cluster-internal | Shortened Kubernetes FQDN (3 segments ending in `.svc`)          |
+| `http://otel-collector.observability:4317`                   | Cluster-internal | Namespace-qualified (2 segments)                                 |
+| `http://otel-collector:4317`                                 | Cluster-internal | Single-label service name (same namespace)                       |
+| `http://10.96.0.10:4317`                                     | Cluster-internal | ClusterIP address (in service CIDR range)                        |
+| `https://logs.external.com:443`                              | External         | External domain (3+ segments, not matching `.svc` pattern)       |
+| `https://api.prod.example.com:443`                           | External         | External domain (multi-segment, not Kubernetes DNS)              |
+| `http://localhost:4317`                                      | External         | Loopback address                                                 |
+| `http://127.0.0.1:4317`                                      | External         | Loopback IP address                                              |
 
 #### Edge Cases and Limitations
 
