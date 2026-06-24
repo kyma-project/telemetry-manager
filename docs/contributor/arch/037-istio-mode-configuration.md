@@ -842,7 +842,7 @@ After Phase 1 has been stable and users have had time to explicitly configure th
 
 1. **Announce deprecation**: Provide advance notice (at least 2 releases) that the default will change to `Off`.
 2. **Audit tooling**: Provide a command or script that checks existing clusters for Istio usage and generates recommended Telemetry CR configurations.
-4. **Documentation**: Update all examples and guides to show explicit Istio configuration.
+3. **Documentation**: Update all examples and guides to show explicit Istio configuration.
 
 **Phase 2 Benefits**:
 - **Resource efficiency**: Clusters without Istio requirements do not pay the overhead of sidecar containers and Istio configurations.
