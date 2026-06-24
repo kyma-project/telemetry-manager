@@ -12,7 +12,7 @@ Telemetry Manager currently auto-detects Istio by checking for Istio CRDs (`*.is
 
 Although automatic detection provides convenience, several operational challenges exist:
 
-- No explicit control: Because users cannot disable Istio mode even when not needed, unnecessary resource overhead results from sidecar containers, certificate management, and Istio-specific network policies.
+- No explicit control: Because users cannot disable Istio mode even when not needed, sidecar containers, certificate management, and Istio-specific network policies create unnecessary resource overhead.
 
 - Unconditional artifacts: The system applies some Istio-related behaviors unconditionally regardless of detection. For example, all components (except Self-Monitor) always have `sidecar.istio.io/inject: "true"` and the Metric Agent always mounts Istio certificate volumes, even when Istio integration is not required.
 
@@ -45,8 +45,8 @@ The OTLP Gateway is deployed as a DaemonSet and serves as the unified ingress po
 | Resource                | Behavior                                                          | Rationale                                                                                                                                                                                                                                                     |
 |-------------------------|-------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Pod Annotation          | `sidecar.istio.io/interceptionMode: TPROXY`                       | Configures the Istio sidecar to use transparent proxy mode for traffic interception.                                                                                                                                                                          |
-| Pod Annotation          | `traffic.sidecar.istio.io/includeInboundPorts: ""`                | Excludes all input ports from Istio sidecar interception, ensuring direct access to OTLP ingestion endpoints without mTLS overhead.                                                                                                                         |
-| PeerAuthentication      | PERMISSIVE mTLS mode                                              | This configuration supports both plain-text and mTLS connections to the OTLP Gateway. Applications can send data over plain-text because of node-local ingestion and can use mTLS communication.                                                              |
+| Pod Annotation          | `traffic.sidecar.istio.io/includeInboundPorts: ""`                | This annotation excludes all input ports from Istio sidecar interception, ensuring direct access to OTLP ingestion endpoints without mTLS overhead. |
+| PeerAuthentication      | PERMISSIVE mTLS mode                                              | This configuration supports both plain-text and mTLS connections to the OTLP Gateway. Applications can send data over plain-text because the ingestion is node-local and can use mTLS communication. |
 | DestinationRule         | `TLS mode: DISABLE` for all OTLP Services                         | Because other components must connect without requiring mTLS, the OTLP Gateway receives telemetry data over plain-text on the ingestion path because of node-local routing. Disabling TLS for client connections to these services supports this requirement. |
 | NetworkPolicy (Ingress) | Additionally allows traffic on Istio Envoy telemetry port (15090) | When Istio is present, the sidecar's Envoy proxy exposes metrics that monitoring systems must scrape.                                                                                                                                                         |
 
@@ -60,7 +60,7 @@ The Metric Agent is deployed as a DaemonSet and scrapes Prometheus metrics from 
 |------------------------------|-----------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Pod Label                    | `sidecar.istio.io/inject: "true"`                                                                                     | Istio sidecar injection is always enabled for the Metric Agent to support output mTLS communication to in-cluster backends in the Istio mesh.                                           |
 | Prometheus Scrape Config     | `app-services` job with relabel config to drop pods with `security.istio.io/tlsMode: istio` label when scheme is `https` | Always configured. Scrapes application services with `prometheus.io/scrape: "true"` annotation. Drops HTTPS targets (STRICT mTLS workloads) to avoid scraping them without certificates. |
-| `app-services` relabel rules | Drops targets with `__scheme__: https`                                                                                | Prevents scraping STRICT mTLS workloads without proper certificates when Istio certificates are not mounted.                                                                             |
+| `app-services` relabel rules | Drops targets with `__scheme__: https`                                                                                | Prevents scraping STRICT mTLS workloads without proper certificates if Istio certificates are not mounted. |
 
 ##### Conditional (Only When Istio is Detected and Prometheus Input Enabled)
 
@@ -75,7 +75,7 @@ The Metric Agent is deployed as a DaemonSet and scrapes Prometheus metrics from 
 | `app-services-secure` TLS           | `ca_file`, `cert_file`, `key_file` from `/etc/istio-output-certs/`, `insecure_skip_verify: true` | Uses Istio-provided certificates for mTLS authentication when scraping STRICT mTLS workloads.                                                                                                                                                                         |
 | `app-services-secure` relabel rules | Keeps only targets with `__scheme__: https` (opposite of `app-services`)                         | Ensures this job only scrapes STRICT mTLS workloads, complementing the `app-services` job which handles non-mTLS targets.                                                                                                                                             |
 | NetworkPolicy (Ingress)             | Additionally allows traffic on Istio Envoy telemetry port (15090)                                | When Istio is present, the sidecar's Envoy proxy exposes metrics that monitoring systems must scrape.                                                                                                                                                                 |
-| Volume Mount                        | Istio certificates volume (`/etc/istio-output-certs`)                                            | Mounts Istio certificates to scrape application metrics that require mTLS (when the application follows a STRICT mTLS policy). Only present when Istio is detected and Prometheus input is enabled.                                                                   |
+| Volume Mount                        | Istio certificates volume (`/etc/istio-output-certs`)                                            | The system mounts this volume only when it detects Istio and Prometheus input is enabled. The volume provides Istio certificates to scrape application metrics that require mTLS (when the application follows a STRICT mTLS policy). |
 
 **Key Behavior**: The `app-services` and `app-services-secure` jobs are complementary:
 - `app-services`: Always present, drops `https` targets (STRICT mTLS workloads)
@@ -128,14 +128,14 @@ The Self-Monitor is a Prometheus instance deployed as a Deployment that scrapes 
 
 | Resource  | Behavior                           | Rationale                                                                                                                                                                                                                           |
 |-----------|------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Pod Label | `sidecar.istio.io/inject: "false"` | The Self-Monitor only scrapes metrics from Telemetry components within the same namespace and does not need mTLS. Therefore, it explicitly disables Istio sidecar injection. Running without the sidecar reduces resource overhead. |
+| Pod Label | `sidecar.istio.io/inject: "false"` | The Self-Monitor only scrapes metrics from Telemetry components within the same namespace and does not need mTLS. Because of this, it explicitly disables Istio sidecar injection, which reduces resource overhead. |
 
 
 ##### Conditional (Only When Istio is Detected)
 
-No Istio-specific resources are created for the Self-Monitor because it explicitly disables sidecar injection.
+The system creates no Istio-specific resources for the Self-Monitor because it explicitly disables sidecar injection.
 
-## Summary Table
+### Summary
 
 | Component      | Sidecar Injection | Istio Certificates | Special Annotations           | Istio-Specific Resources       |
 |----------------|-------------------|--------------------|-------------------------------|--------------------------------|
@@ -145,8 +145,9 @@ No Istio-specific resources are created for the Self-Monitor because it explicit
 | Fluent Bit     | Always enabled    | Not used           | None                          | None                           |
 | Self-Monitor   | Always disabled   | Not used           | None                          | None                           |
 
+## Proposed Solution
 
-## Proposed API
+### API Design
 
 To provide explicit control over Istio integration, we propose adding an `istio` field to the Telemetry CR spec with separate input and output controls. This design differentiates between input (receiving or scraping telemetry data) and output (sending telemetry data to backends), while applying globally across all telemetry components.
 
@@ -168,9 +169,13 @@ The `input` and `output` fields control Istio integration independently across a
 Controls Istio integration for receiving or collecting telemetry data:
 
 - **On** (Default): Enable Istio integration for input for components that require it, **only when Istio CRDs are present in the cluster**.
-  - **Gateway**: If Istio CRDs detected, applies DestinationRule (TLS DISABLE) for OTLP services. Enables sidecar injection with traffic routing annotations (exclude input ports). If Istio CRDs not present, skips all Istio configurations and sets `sidecar.istio.io/inject: "false"`.
-  - **Metric Agent**: If Istio CRDs detected and **at least one MetricPipeline has `input.prometheus.enabled: true`**, mounts Istio certificates, configures `app-services-secure` Prometheus scrape job, applies traffic routing annotations for certificate access. Can scrape STRICT mTLS workloads. If Istio CRDs not present or no MetricPipeline has Prometheus input enabled, skips Istio input configurations and sets `sidecar.istio.io/inject: "false"`.
-  - **Log Agents**: No effect (collect logs from node files, not from workloads requiring mTLS). If Istio not required, sets `sidecar.istio.io/inject: "false"`.
+  - **Gateway**: 
+    - If Istio CRDs are detected, the system applies DestinationRule (TLS DISABLE) for OTLP services and enables sidecar injection with traffic routing annotations (exclude input ports).
+    - If Istio CRDs are not present, it skips all Istio configurations and sets `sidecar.istio.io/inject: "false"`.
+  - **Metric Agent**: 
+    - If Istio CRDs are detected and **at least one MetricPipeline has `input.prometheus.enabled: true`**, the system mounts Istio certificates, configures `app-services-secure` Prometheus scrape job, and applies traffic routing annotations for certificate access. The agent can scrape STRICT mTLS workloads.
+    - If Istio CRDs are not present or no MetricPipeline has Prometheus input enabled, it skips Istio input configurations and sets `sidecar.istio.io/inject: "false"`.
+  - **Log Agents**: No effect (collect logs from node files, not from workloads requiring mTLS). If Istio is not required, sets `sidecar.istio.io/inject: "false"`.
   
 - **Off**: Explicitly disable Istio integration for all input, regardless of Istio CRD presence.
   - **Gateway**: No DestinationRule, sets `sidecar.istio.io/inject: "false"`.
@@ -180,7 +185,7 @@ Controls Istio integration for receiving or collecting telemetry data:
     - Sets `sidecar.istio.io/inject: "false"`.
   - **Log Agents**: Sets `sidecar.istio.io/inject: "false"`.
 
-#### Prometheus Input Detection for Metric Agent Input
+### Prometheus Input Detection for Metric Agent Input
 
 When `input: On`, the Metric Agent checks if Istio is needed for input:
 
@@ -213,8 +218,10 @@ Controls Istio integration for sending telemetry data to backends:
 
 - **On** (Default): Enable Istio integration for output when the pipeline has a cluster-internal output endpoint, **only when Istio CRDs are present in the cluster**.
   - **All Components**: The system checks each pipeline's output URL:
-    - **Cluster-internal URL detected** (for example, `http://otel-collector.observability.svc.cluster.local:4317`): If Istio CRDs present, enables sidecar injection and configures traffic routing annotations to route backend traffic through Istio sidecar for mTLS communication. If Istio CRDs not present, skips Istio configurations and sets `sidecar.istio.io/inject: "false"`.
-    - **External URL detected** (for example, `https://logs.external.com`): Skips Istio sidecar injection and traffic routing for that component (no mTLS needed for external backends). Sets `sidecar.istio.io/inject: "false"`.
+    - **Cluster-internal URL detected** (for example, `http://otel-collector.observability.svc.cluster.local:4317`): 
+      - If Istio CRDs are present, the system enables sidecar injection and configures traffic routing annotations to route backend traffic through Istio sidecar for mTLS communication.
+      - If Istio CRDs are not present, it skips Istio configurations and sets `sidecar.istio.io/inject: "false"`.
+    - **External URL detected** (for example, `https://logs.external.com`): The system skips Istio sidecar injection and traffic routing for that component (no mTLS needed for external backends). Sets `sidecar.istio.io/inject: "false"`.
   - **Per-component decision**: Each component (Gateway, Metric Agent, Log Agents) independently checks its pipelines' output URLs and enables Istio only if Istio CRDs are present and at least one pipeline uses a cluster-internal backend.
   
 - **Off**: Explicitly disable Istio integration for all output, regardless of Istio CRD presence.
@@ -304,7 +311,7 @@ spec:
   resolution: DNS
 ```
 
-When a pipeline references `https://external-backend.example.com:443`, the URL detection logic identifies it as an external URL (does not match Kubernetes DNS patterns). However, if a ServiceEntry exists for this host with `location: MESH_INTERNAL` or specific traffic routing policies, Istio might require sidecar injection for proper mTLS handling.
+When a pipeline references `https://external-backend.example.com:443`, the URL detection logic identifies it as an external URL (does not match Kubernetes DNS patterns). However, if a ServiceEntry exists for this host with `location: MESH_INTERNAL` or specific traffic routing policies, Istio may require sidecar injection for proper mTLS handling.
 
 **Why detection is not possible**:
 - ServiceEntry resources are dynamic and can be created, modified, or deleted at any time by users or operators
@@ -314,7 +321,7 @@ When a pipeline references `https://external-backend.example.com:443`, the URL d
   - Create a dependency on Istio networking APIs, increasing complexity and coupling
   - Still miss edge cases where ServiceEntry configurations are ambiguous (for example, MESH_EXTERNAL with specific routing rules)
 
-**Workaround**: If you use ServiceEntry resources to expose external services through the Istio mesh, explicitly set `export: On` in the Telemetry CR to ensure sidecar injection is enabled. The Istio sidecar correctly routes traffic based on ServiceEntry configurations, even if the URL appears external to the detection logic.
+**Workaround**: To ensure sidecar injection is enabled, explicitly set `output: On` in the Telemetry CR if you use ServiceEntry resources to expose external services through the Istio mesh. The Istio sidecar correctly routes traffic based on ServiceEntry configurations, even if the URL appears external to the detection logic.
 
 ### Sidecar Injection Logic
 
@@ -335,334 +342,7 @@ Per-component sidecar injection decisions (all require Istio CRDs present):
 
 **Example 3**: If Istio CRDs present, `input: On` and `output: Off`, but no MetricPipeline has `input.prometheus.enabled: true`, then the Metric Agent does not get sidecar injection because Prometheus scraping is not enabled (Gateway still gets sidecar for input traffic). Metric Agent gets `sidecar.istio.io/inject: "false"`.
 
-## User Examples
-
-### Example 1: Default Behavior (Both Enabled)
-
-Enable Istio for both input and output (this is the default):
-
-```yaml
-apiVersion: operator.kyma-project.io/v1beta1
-kind: Telemetry
-metadata:
-  name: default
-  namespace: kyma-system
-spec:
-  istio:
-    input: On   # This is the default
-    output: On  # This is the default
-  metric:
-    collectionInterval: 30s
-```
-
-Or simply omit the field (defaults to On for both):
-
-```yaml
-apiVersion: operator.kyma-project.io/v1beta1
-kind: Telemetry
-metadata:
-  name: default
-  namespace: kyma-system
-spec:
-  metric:
-    collectionInterval: 30s
-```
-
-**Behavior**: When both `input: On` and `output: On` (or omitted), the system enables Istio integration for all components **only if Istio CRDs are present**:
-
-- **If Istio CRDs present**:
-  - **Input**:
-    - Gateway: Enabled (DestinationRule TLS DISABLE, sidecar injection with exclude input ports).
-    - Metric Agent: Enabled **only if at least one MetricPipeline has `input.prometheus.enabled: true`** (mounts Istio certificates, `app-services-secure` scrape job, can scrape STRICT mTLS workloads).
-    - Log Agents: No effect.
-  - **Output**:
-    - All components: Enabled **only for components with cluster-internal output URLs** (sidecar injection, traffic routing for mTLS backends).
-- **If Istio CRDs not present**:
-  - All Istio configurations are automatically skipped (safe for non-Istio clusters).
-  - All components get `sidecar.istio.io/inject: "false"`.
-
-This default mode ensures maximum compatibility with Istio mesh backends when Istio is installed, and is safe for non-Istio clusters.
-
-**Example Pipeline Configurations**:
-
-Pipeline with Prometheus input enabled (Istio enabled for input):
-```yaml
-apiVersion: telemetry.kyma-project.io/v1beta1
-kind: MetricPipeline
-metadata:
-  name: app-metrics
-spec:
-  input:
-    prometheus:
-      enabled: true
-  output:
-    otlp:
-      endpoint:
-        value: http://otel-collector.observability.svc.cluster.local:4317
-# Result: Metric Agent input has Istio enabled with app-services-secure job (can scrape STRICT mTLS workloads)
-# Result: Metric Agent output has Istio enabled (cluster-internal URL detected)
-```
-
-Pipeline without Prometheus input (Istio disabled for input):
-```yaml
-apiVersion: telemetry.kyma-project.io/v1beta1
-kind: MetricPipeline
-metadata:
-  name: runtime-metrics
-spec:
-  input:
-    runtime:
-      enabled: true
-  output:
-    otlp:
-      endpoint:
-        value: https://metrics.external.com:443
-# Result: Metric Agent input has Istio disabled (no Prometheus input)
-# Result: Metric Agent output has Istio disabled (external URL detected)
-```
-
-Pipeline with cluster-internal output (Istio enabled for output):
-```yaml
-apiVersion: telemetry.kyma-project.io/v1beta1
-kind: LogPipeline
-metadata:
-  name: backend-logs
-spec:
-  output:
-    http:
-      host:
-        value: fluentd.logging.svc.cluster.local
-      port: "8080"
-# Result: Log Agent output has Istio enabled (cluster-internal URL detected)
-```
-
-### Example 2: Disable Both Input and Output
-
-Explicitly disable Istio on all input and output:
-
-```yaml
-apiVersion: operator.kyma-project.io/v1beta1
-kind: Telemetry
-metadata:
-  name: default
-  namespace: kyma-system
-spec:
-  istio:
-    input: Off
-    output: Off
-  metric:
-    collectionInterval: 30s
-```
-
-**Behavior**: 
-- The system sets the label `sidecar.istio.io/inject` to `"false"` for all components.
-- The system does not create DestinationRule resources.
-- The system does not apply Istio traffic routing annotations.
-- The system does not mount Istio certificate volumes.
-- The system does not configure the `app-services-secure` Prometheus receiver for the metric agent.
-- Components cannot communicate with STRICT mTLS backends in the Istio mesh.
-
-**Use Case**: All pipelines send to external backends that do not require mTLS, and no workloads use STRICT mTLS policies. This saves resources by avoiding sidecar overhead.
-
-**Example Pipeline Configuration**:
-
-Even with cluster-internal outputs, Istio is disabled:
-
-```yaml
-apiVersion: telemetry.kyma-project.io/v1beta1
-kind: MetricPipeline
-metadata:
-  name: app-metrics
-spec:
-  input:
-    prometheus:
-      enabled: true
-  output:
-    otlp:
-      endpoint:
-        value: http://otel-collector.observability.svc.cluster.local:4317
-# Result: Metric Agent has sidecar.istio.io/inject: "false"
-# Result: app-services-secure receiver is removed - cannot scrape STRICT mTLS workloads
-# Result: Cannot send to backend if it requires STRICT mTLS
-```
-
-### Example 3: Enable Input Only
-
-Enable Istio for input while disabling output:
-
-```yaml
-apiVersion: operator.kyma-project.io/v1beta1
-kind: Telemetry
-metadata:
-  name: default
-  namespace: kyma-system
-spec:
-  istio:
-    input: On
-    output: Off
-  metric:
-    collectionInterval: 30s
-```
-
-**Behavior**:
-- **Input**:
-  - Gateway: Enabled (DestinationRule TLS DISABLE).
-  - Metric Agent: Enabled only if Prometheus input is enabled (mounts Istio certificates, `app-services` + `app-services-secure` receivers, can scrape STRICT mTLS workloads).
-- **Output**:
-  - All components: Disabled (sets `sidecar.istio.io/inject: "false"`, cannot send to STRICT mTLS backends).
-
-**Use Case**: Your applications use STRICT mTLS policies (need input mTLS), but all backends are external and do not require mTLS (output can be plain-text). This saves resources on output sidecars while maintaining ability to scrape mTLS workloads.
-
-**Example Pipeline Configuration**:
-
-Pipeline with Prometheus input (Istio input enabled):
-```yaml
-apiVersion: telemetry.kyma-project.io/v1beta1
-kind: MetricPipeline
-metadata:
-  name: app-metrics
-spec:
-  input:
-    prometheus:
-      enabled: true
-  output:
-    otlp:
-      endpoint:
-        value: https://metrics.external.com:443
-# Result: Metric Agent input has Istio enabled (Prometheus input detected)
-# Result: Configures both app-services and app-services-secure receivers
-# Result: Metric Agent output has Istio disabled (external URL)
-```
-
-### Example 4: Disable Inbound with Prometheus Input (Istio Proxy Metrics Only)
-
-Disable Istio for input traffic but still collect Istio proxy metrics:
-
-```yaml
-apiVersion: operator.kyma-project.io/v1beta1
-kind: Telemetry
-metadata:
-  name: default
-  namespace: kyma-system
-spec:
-  istio:
-    input: Off
-    output: Off
-  metric:
-    collectionInterval: 30s
-```
-
-**Behavior**:
-- **Input**:
-  - Gateway: Disabled (no DestinationRule, sets `sidecar.istio.io/inject: "false"`).
-  - Metric Agent: Disabled for STRICT mTLS scraping (no Istio certificates, no `app-services-secure` receiver, sets `sidecar.istio.io/inject: "false"`).
-- **Output**:
-  - All components: Disabled (sets `sidecar.istio.io/inject: "false"`).
-
-**Use Case**: Your applications do not use STRICT mTLS policies (don't need certificate-based scraping), and you don't need Istio sidecar integration. This saves resources by not mounting certificates or injecting sidecars.
-
-**Example Pipeline Configuration**:
-
-Pipeline with Prometheus input enabled:
-```yaml
-apiVersion: telemetry.kyma-project.io/v1beta1
-kind: MetricPipeline
-metadata:
-  name: istio-proxy-metrics
-spec:
-  input:
-    prometheus:
-      enabled: true
-  output:
-    otlp:
-      endpoint:
-        value: https://metrics.external.com:443
-# Result: Metric Agent input has Istio disabled (no certificates, no app-services-secure)
-# Result: Cannot scrape STRICT mTLS workloads (no app-services-secure receiver)
-```
-
-### Example 5: Enable Output Only with URL Detection
-```yaml
-apiVersion: operator.kyma-project.io/v1beta1
-kind: Telemetry
-metadata:
-  name: default
-  namespace: kyma-system
-spec:
-  istio:
-    input: Off
-    output: On
-  metric:
-    collectionInterval: 30s
-```
-
-**Behavior**:
-**Behavior**:
-- **Input**:
-  - Gateway: Disabled (no DestinationRule, sets `sidecar.istio.io/inject: "false"`).
-  - Metric Agent: Disabled (no Istio certificates, no `app-services-secure` job, cannot scrape STRICT mTLS workloads, sets `sidecar.istio.io/inject: "false"`).
-- **Output**:
-  - All components: Enabled only if they have pipelines with cluster-internal output URLs (sidecar injection enabled, traffic routing for mTLS backend communication) if Istio is present. Otherwise, sets `sidecar.istio.io/inject: "false"`.
-
-**Use Case**: Your applications do not use STRICT mTLS policies (input does not need Istio), but your backends are in the Istio mesh and require mTLS (output needs Istio sidecar). Common when using external observability platforms with in-cluster aggregators that have STRICT mTLS.
-
-**Example Pipeline Configurations**:
-
-Pipeline with cluster-internal output (Istio enabled for output):
-```yaml
-apiVersion: telemetry.kyma-project.io/v1beta1
-kind: MetricPipeline
-metadata:
-  name: cluster-backend
-spec:
-  output:
-    otlp:
-      endpoint:
-        value: http://otel-collector.observability.svc.cluster.local:4317
-# Result: Metric Agent output has Istio enabled (cluster-internal URL detected)
-# Result: Sidecar injection enabled, traffic to port 4317 routed through Istio sidecar
-```
-
-Pipeline with external output (Istio disabled for output):
-```yaml
-apiVersion: telemetry.kyma-project.io/v1beta1
-kind: MetricPipeline
-metadata:
-  name: external-backend
-spec:
-  output:
-    otlp:
-      endpoint:
-        value: https://metrics.external.com:443
-# Result: Metric Agent output has Istio disabled (external URL detected)
-# Result: No sidecar injection for this pipeline (traffic bypasses Istio)
-```
-
-Mixed pipelines (Istio enabled if at least one is cluster-internal):
-```yaml
-apiVersion: telemetry.kyma-project.io/v1beta1
-kind: MetricPipeline
-metadata:
-  name: mixed-pipeline-1
-spec:
-  output:
-    otlp:
-      endpoint:
-        value: http://otel-collector.observability.svc.cluster.local:4317
----
-apiVersion: telemetry.kyma-project.io/v1beta1
-kind: MetricPipeline
-metadata:
-  name: mixed-pipeline-2
-spec:
-  output:
-    otlp:
-      endpoint:
-        value: https://metrics.external.com:443
-# Result: Metric Agent output has Istio enabled (at least one pipeline has cluster-internal URL)
-# Result: Sidecar injection enabled, traffic to port 4317 routed through Istio, traffic to external.com bypasses Istio
-```
-### Implementation Impact
+### Implementation Strategy
 
 When `istio` fields are set, the reconciliation logic changes as follows:
 
@@ -752,7 +432,7 @@ When a component enables Istio for output (cluster-internal URLs detected), the 
 
 #### Istio Processor Configuration
 
-**Critical**: The `istio_enrichment` and `istio_noise_filter` processor configurations are **independent** from the `input` and `output` mode settings. OTel workloads include these processors in their pipelines as specified below, regardless of Istio mode configuration.
+**Critical**: The `istio_enrichment` and `istio_noise_filter` processor configurations are **independent** from the `input` and `output` mode settings. OTel workloads include these processors in their pipelines according to the specifications below, regardless of Istio mode configuration.
 
 **Configuration per component**:
 
@@ -780,7 +460,7 @@ When a component enables Istio for output (cluster-internal URLs detected), the 
 
 **Rationale**: The `istio_noise_filter` processor provides valuable noise reduction for all signal types. The `istio_enrichment` processor is used by the Gateway to enrich trace, metric, and log data with service mesh context. These processors operate on telemetry data within the OTel pipeline and do not require Istio certificates or sidecar injection.
 
-#### Components Affected
+### Affected Components
 
 All reconcilers that create or configure telemetry components must respect the `istio` settings:
 
@@ -869,11 +549,11 @@ The proposed API provides a smooth two-phase migration path to eventually reach 
 
 **Pros:**
 - **Simplest possible API**: Two boolean-like fields (On/Off) control all components.
-- **Clear separation of concerns**: Input (receiving/scraping data) vs output (sending data to backends) map naturally to telemetry pipeline concepts.
+- **Clear separation of concerns**: Input (receiving/scraping data) vs output (sending data to backends) matches naturally to telemetry pipeline concepts.
 - **Aligns with pipeline terminology**: Matches the existing `input` and `output` sections in pipeline CRDs.
 - **Intelligent output mode**: When `output: On`, the system analyzes pipeline URLs and only enables Istio for components with cluster-internal backends, automatically optimizing resource usage.
 - **Backward compatibility**: Default `On` ensures existing behavior is preserved.
-- **Flexible control**: Users can disable input and/or output independently to save resources when not needed.
+- **Flexible control**: Users can disable input and output independently to save resources when Istio integration is not needed.
 - **Easy to understand**: Explicit On/Off modes with automatic URL-based optimization for output.
 - **Low complexity**: URL detection is straightforward pattern matching; no complex pipeline state tracking needed.
 
