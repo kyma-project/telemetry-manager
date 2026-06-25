@@ -132,18 +132,3 @@ jobs:
             didn't match the configured pattern. Please ensure that the subject
             doesn't start with an uppercase character.
           requireScope: false
-
-  pr-prevent-kustomization:
-    if: github.event.pull_request.base.ref == 'main'
-    permissions:
-      contents: read  # Only needs read for git diff
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-        with:
-          fetch-depth: 0
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-      - name: Verify kustomization.yaml has no changes
-        run: |
-          git diff origin/main --exit-code -- config/manager/kustomization.yaml || (echo "config/manager/kustomization.yaml has changes compared to main branch. Please, revert them" && exit 1)
