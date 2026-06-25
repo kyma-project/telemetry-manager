@@ -35,13 +35,7 @@ func IsValidationError(err error) bool {
 	return errors.As(err, &validationErr)
 }
 
-type Experimental struct {
-	deployOTLPGateway bool
-}
-
 type Global struct {
-	Experimental
-
 	managerNamespace                 string
 	targetNamespace                  string
 	operateInFIPSMode                bool
@@ -117,12 +111,6 @@ func WithAdditionalWorkloadPodAnnotations(annotations map[string]string) Option 
 	}
 }
 
-func WithDeployOTLPGateway(enable bool) Option {
-	return func(g *Global) {
-		g.deployOTLPGateway = enable
-	}
-}
-
 func WithUnlimitedPipelines(enable bool) Option {
 	return func(g *Global) {
 		g.unlimitedPipelines = enable
@@ -180,10 +168,6 @@ func (g *Global) OperateInFIPSMode() bool {
 // Version returns the version of the Telemetry Manager.
 func (g *Global) Version() string {
 	return g.version
-}
-
-func (g *Global) DeployOTLPGateway() bool {
-	return g.deployOTLPGateway
 }
 
 func (g *Global) ImagePullSecretName() string {
