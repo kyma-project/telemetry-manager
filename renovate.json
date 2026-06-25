@@ -93,6 +93,11 @@
         "k8s.io/",
         "sigs.k8s.io/"
       ]
+    },
+    {
+      "groupName": "All k3d packages",
+      "matchPackagePatterns": ["k3d"],
+      "matchDatasources": ["docker", "go"]
     }
   ],
   "customManagers": [
