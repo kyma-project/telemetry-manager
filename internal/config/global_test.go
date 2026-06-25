@@ -329,7 +329,6 @@ func TestGettersForOptionalFields(t *testing.T) {
 		WithAdditionalWorkloadAnnotations(annotations),
 		WithAdditionalWorkloadPodLabels(podLabels),
 		WithAdditionalWorkloadPodAnnotations(podAnnotations),
-		WithDeployOTLPGateway(false),
 		WithUnlimitedPipelines(true),
 	)
 
@@ -339,7 +338,6 @@ func TestGettersForOptionalFields(t *testing.T) {
 	require.Equal(t, annotations, g.AdditionalWorkloadAnnotations())
 	require.Equal(t, podLabels, g.AdditionalWorkloadPodLabels())
 	require.Equal(t, podAnnotations, g.AdditionalWorkloadPodAnnotations())
-	require.False(t, g.DeployOTLPGateway())
 	require.True(t, g.UnlimitedPipelines())
 }
 
