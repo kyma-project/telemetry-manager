@@ -70,7 +70,7 @@ type IstioStatusChecker_IsIstioActive_Call struct {
 
 // IsIstioActive is a helper method to define mock.On call
 //   - ctx context.Context
-func (_e *IstioStatusChecker_Expecter) IsIstioActive(ctx interface{}) *IstioStatusChecker_IsIstioActive_Call {
+func (_e *IstioStatusChecker_Expecter) IsIstioActive(ctx any) *IstioStatusChecker_IsIstioActive_Call {
 	return &IstioStatusChecker_IsIstioActive_Call{Call: _e.mock.On("IsIstioActive", ctx)}
 }
 
