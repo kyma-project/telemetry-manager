@@ -102,9 +102,19 @@ spec:
       - image: mingrammer/flog:latest
         name: flog
         args:
+        - -d=50ms
         - -b=64
         - -f=json
         - -l
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: log-sink-credentials
+  namespace: log-sink-otel
+type: Opaque
+stringData:
+  endpoint: http://log-sink.log-sink-otel:4317
 ---
 apiVersion: telemetry.kyma-project.io/v1beta1
 kind: LogPipeline
@@ -117,6 +127,10 @@ spec:
   output:
     otlp:
       endpoint:
-        value: http://log-sink.log-sink-otel:4317
+        valueFrom:
+          secretKeyRef:
+            name: log-sink-credentials
+            namespace: log-sink-otel
+            key: endpoint
       protocol: grpc
 

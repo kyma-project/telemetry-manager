@@ -16,14 +16,23 @@ const (
 
 // Config contains cluster preparation configuration
 type Config struct {
-	ManagerImage        string   // Required: telemetry manager container image
-	LocalImage          bool     // Image is local (for k3d import and pull policy)
-	InstallIstio        bool     // Install Istio before tests
-	OperateInFIPSMode   bool     // Deploy manager in FIPS mode
-	EnableExperimental  bool     // Enable experimental CRDs
-	HelmValues          []string // Custom helm --set values (e.g., "additionalMetadata.labels.foo=bar")
-	ChartPath           string   // Helm chart path/URL (empty = use local chart)
-	DeployPrerequisites bool     // Deploy test prerequisites (default: true)
+	ManagerImage               string   // Required: telemetry manager container image
+	LocalImage                 bool     // Image is local (for k3d import and pull policy)
+	InstallIstio               bool     // Install Istio before tests
+	OperateInFIPSMode          bool     // Deploy manager in FIPS mode
+	FIPSModeOverridden         bool     // True if FIPS mode was explicitly overridden via WithOverrideFIPSMode
+	EnableExperimental         bool     // Enable experimental CRDs
+	HelmValues                 []string // Custom helm --set values (e.g., "additionalMetadata.labels.foo=bar")
+	ChartPath                  string   // Helm chart path/URL (empty = use local chart)
+	DeployPrerequisites        bool     // Deploy test prerequisites (default: true)
+	SkipManagerRemoval         bool     // Skip manager removal during reconfiguration (for upgrade tests)
+	ForceFreshInstall          bool     // Force complete removal before install (ensures clean API server state)
+	SkipManagedResourceCleanup bool     // Skip waiting for manager-created resources (collectors, selfmonitor) to be deleted at test end
+	// CleanupFluentBitHostPath clears Fluent Bit node buffer paths after managed resource cleanup (WithFluentBitHostPathCleanup).
+	CleanupFluentBitHostPath bool
+	// GatewayReplicas sets the number of replicas for all gateways via the Telemetry CR's static scaling spec.
+	// Zero means use the manager default (2).
+	GatewayReplicas int32
 }
 
 // Option is a functional option for configuring cluster setup
@@ -62,6 +71,82 @@ func WithChartVersion(chartURL string) Option {
 		} else {
 			c.ChartPath = chartURL
 		}
+	}
+}
+
+// WithOverrideFIPSMode overrides the FIPS mode setting for the manager.
+// Use this when a test requires a specific FIPS mode regardless of environment default.
+// Note: This only affects manager behavior, not image availability.
+func WithOverrideFIPSMode(enabled bool) Option {
+	return func(c *Config) {
+		c.OperateInFIPSMode = enabled
+		c.FIPSModeOverridden = true
+	}
+}
+
+// WithIstio configures the cluster to install Istio.
+// This is the preferred way to indicate that a test requires Istio,
+// instead of passing LabelIstio directly.
+func WithIstio() Option {
+	return func(c *Config) {
+		c.InstallIstio = true
+	}
+}
+
+// WithExperimental enables experimental CRDs for the test.
+// This is the preferred way to indicate that a test requires experimental features,
+// instead of passing LabelExperimental directly.
+func WithExperimental() Option {
+	return func(c *Config) {
+		c.EnableExperimental = true
+	}
+}
+
+// WithSkipManagerRemoval prevents manager removal during reconfiguration.
+// Use this for upgrade tests where existing pipelines must be preserved.
+// When set, experimental mode changes and Istio changes will fail instead of
+// removing and reinstalling the manager.
+func WithSkipManagerRemoval() Option {
+	return func(c *Config) {
+		c.SkipManagerRemoval = true
+	}
+}
+
+// WithSkipManagedResourceCleanup disables the default t.Cleanup that waits for all
+// manager-created resources (collectors, selfmonitor, fluent-bit) to be deleted
+// after test pipelines are removed. Use this for tests where waiting for cleanup
+// is unnecessary (e.g., upgrade tests that keep pipelines alive).
+func WithSkipManagedResourceCleanup() Option {
+	return func(c *Config) {
+		c.SkipManagedResourceCleanup = true
+	}
+}
+
+// WithFluentBitHostPathCleanup enables clearing /var/telemetry-fluent-bit on nodes after the test,
+// immediately after WaitForManagedResourceCleanup. Ineffective if WithSkipManagedResourceCleanup is set
+// (no teardown hook is registered). Use for tests that deploy Fluent Bit and need a clean buffer directory.
+func WithFluentBitHostPathCleanup() Option {
+	return func(c *Config) {
+		c.CleanupFluentBitHostPath = true
+	}
+}
+
+// WithForceFreshInstall forces a complete removal of telemetry before installing.
+// This ensures the API server has no knowledge of any previous installation,
+// useful for testing scenarios like storage version migration where a clean
+// state is required instead of an in-place upgrade.
+func WithForceFreshInstall() Option {
+	return func(c *Config) {
+		c.ForceFreshInstall = true
+	}
+}
+
+// WithGatewayReplicas sets the number of replicas for all gateways (log, metric, trace)
+// via the Telemetry CR's static scaling spec. Use this to override the default of 2,
+// for example to reduce resource usage in tests that don't need HA.
+func WithGatewayReplicas(replicas int32) Option {
+	return func(c *Config) {
+		c.GatewayReplicas = replicas
 	}
 }
 

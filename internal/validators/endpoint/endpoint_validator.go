@@ -37,6 +37,7 @@ var (
 	ErrUnsupportedScheme  = errors.New("missing or unsupported protocol scheme")
 	ErrGRPCOAuth2NoTLS    = errors.New("OAuth2 requires TLS when using gRPC protocol")
 	ErrHTTPWithTLS        = errors.New("HTTP scheme with TLS not allowed")
+	ErrGRPCWithPath       = errors.New("gRPC endpoints cannot contain paths")
 )
 
 type EndpointInvalidError struct {
@@ -72,19 +73,34 @@ func (v *Validator) Validate(ctx context.Context, params EndpointValidationParam
 		return err
 	}
 
+	// port validation for all protocols
+	// Fluentd HTTP allows missing port (will use default)
+	var allowMissingPort = true
+
+	// OTLP gRPC requires port to be specified
+	if params.Protocol == OTLPProtocolGRPC {
+		allowMissingPort = false
+	}
+
+	if err := validatePort(u.Host, allowMissingPort); err != nil {
+		return err
+	}
+
 	// early return if protocol is Fluentd => further validation is OTLP-exclusive
 	if params.Protocol == FluentdProtocolHTTP {
 		return nil
 	}
 
-	// port validation
-	if err := validatePort(u.Host, params.Protocol == OTLPProtocolHTTP); err != nil {
-		return err
-	}
-
 	// scheme validation
 	if params.Protocol == OTLPProtocolHTTP {
 		if err := validateSchemeHTTP(u.Scheme); err != nil {
+			return err
+		}
+	}
+
+	// path validation for gRPC
+	if params.Protocol == OTLPProtocolGRPC {
+		if err := validateGRPCPath(u.Path); err != nil {
 			return err
 		}
 	}
@@ -163,6 +179,7 @@ func validatePort(hostport string, allowMissing bool) error {
 		return nil
 	}
 
+	// In case OTLP GRPC it is important to pass the port.
 	if _, err := strconv.Atoi(port); port == "" || err != nil {
 		return &EndpointInvalidError{Err: ErrPortMissing}
 	}
@@ -173,6 +190,15 @@ func validatePort(hostport string, allowMissing bool) error {
 func validateSchemeHTTP(scheme string) error {
 	if scheme != "http" && scheme != "https" {
 		return &EndpointInvalidError{Err: ErrUnsupportedScheme}
+	}
+
+	return nil
+}
+
+func validateGRPCPath(path string) error {
+	// OTel Collector's gRPC exporter does not accept any path, including trailing slashes.
+	if path != "" {
+		return &EndpointInvalidError{Err: ErrGRPCWithPath}
 	}
 
 	return nil

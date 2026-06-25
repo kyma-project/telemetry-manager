@@ -10,6 +10,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
@@ -19,7 +20,7 @@ import (
 )
 
 func TestMetricsIstioInputEnvoy(t *testing.T) {
-	suite.SetupTest(t, suite.LabelGardener, suite.LabelIstio)
+	suite.SetupTestWithOptions(t, []string{suite.LabelGardener}, kubeprep.WithIstio())
 
 	var (
 		uniquePrefix     = unique.Prefix()
@@ -39,7 +40,7 @@ func TestMetricsIstioInputEnvoy(t *testing.T) {
 		WithName(pipelineName).
 		WithIstioInput(true, testutils.IncludeNamespaces(app1Ns)).
 		WithIstioInputEnvoyMetrics(true).
-		WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
+		WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 		Build()
 
 	resources := []client.Object{
@@ -54,7 +55,7 @@ func TestMetricsIstioInputEnvoy(t *testing.T) {
 
 	assert.BackendReachable(t, backend)
 	assert.DaemonSetReady(t, kitkyma.MetricAgentName)
-	assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+	assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 
 	assert.BackendDataEventuallyMatches(t, backend,
 		HaveFlatMetrics(

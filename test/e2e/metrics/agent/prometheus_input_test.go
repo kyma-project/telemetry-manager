@@ -24,7 +24,7 @@ import (
 )
 
 func TestPrometheusInput(t *testing.T) {
-	suite.SetupTest(t, suite.LabelMetricAgentSetB, suite.LabelMetricAgent, suite.LabelSetB)
+	suite.SetupTest(t, suite.LabelMetricAgent)
 
 	var (
 		uniquePrefix = unique.Prefix()
@@ -39,7 +39,7 @@ func TestPrometheusInput(t *testing.T) {
 	pipeline := testutils.NewMetricPipelineBuilder().
 		WithName(pipelineName).
 		WithPrometheusInput(true, testutils.IncludeNamespaces(genNs)).
-		WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
+		WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 		Build()
 
 	resources := []client.Object{
@@ -54,7 +54,7 @@ func TestPrometheusInput(t *testing.T) {
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.BackendReachable(t, backend)
-	assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+	assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 	assert.DaemonSetReady(t, kitkyma.MetricAgentName)
 	assert.MetricPipelineHealthy(t, pipelineName)
 	assert.MetricsFromNamespaceDelivered(t, backend, genNs, prommetricgen.CustomMetricNames())

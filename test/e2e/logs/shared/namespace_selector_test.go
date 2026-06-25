@@ -1,7 +1,6 @@
 package shared
 
 import (
-	"fmt"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -14,6 +13,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdoutloggen"
@@ -29,7 +29,6 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 		inputBuilder        func(includeNss, excludeNss []string) telemetryv1beta1.LogPipelineInput
 		logGeneratorBuilder func(ns string) client.Object
 		resourceName        types.NamespacedName
-		readinessCheckFunc  func(t *testing.T, name types.NamespacedName)
 	}{
 		{
 			name:   suite.LabelLogAgent,
@@ -49,8 +48,7 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 			logGeneratorBuilder: func(ns string) client.Object {
 				return stdoutloggen.NewDeployment(ns).K8sObject()
 			},
-			resourceName:       kitkyma.LogAgentName,
-			readinessCheckFunc: assert.DaemonSetReady,
+			resourceName: kitkyma.LogAgentName,
 		},
 		{
 			name:   suite.LabelLogGateway,
@@ -70,29 +68,7 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 			logGeneratorBuilder: func(ns string) client.Object {
 				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeLogs).K8sObject()
 			},
-			resourceName:       kitkyma.LogGatewayName,
-			readinessCheckFunc: assert.DeploymentReady,
-		},
-		{
-			name:   fmt.Sprintf("%s-%s", suite.LabelLogGateway, suite.LabelExperimental),
-			labels: []string{suite.LabelLogGateway, suite.LabelExperimental},
-			inputBuilder: func(includeNss, excludeNss []string) telemetryv1beta1.LogPipelineInput {
-				var opts []testutils.NamespaceSelectorOptions
-				if len(includeNss) > 0 {
-					opts = append(opts, testutils.IncludeNamespaces(includeNss...))
-				}
-
-				if len(excludeNss) > 0 {
-					opts = append(opts, testutils.ExcludeNamespaces(excludeNss...))
-				}
-
-				return testutils.BuildLogPipelineOTLPInput(opts...)
-			},
-			logGeneratorBuilder: func(ns string) client.Object {
-				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeCentralLogs).K8sObject()
-			},
-			resourceName:       kitkyma.TelemetryOTLPGatewayName,
-			readinessCheckFunc: assert.DaemonSetReady,
+			resourceName: kitkyma.OTLPGatewayName,
 		},
 	}
 
@@ -157,7 +133,7 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 			assert.BackendReachable(t, backend1)
 			assert.BackendReachable(t, backend2)
 
-			tc.readinessCheckFunc(t, tc.resourceName)
+			assert.DaemonSetReady(t, tc.resourceName)
 
 			assert.OTelLogPipelineHealthy(t, includePipelineName)
 			assert.OTelLogPipelineHealthy(t, excludePipelineName)
@@ -169,7 +145,7 @@ func TestNamespaceSelector_OTel(t *testing.T) {
 }
 
 func TestNamespaceSelector_FluentBit(t *testing.T) {
-	suite.SetupTest(t, suite.LabelFluentBit, suite.LabelNoFIPS)
+	suite.SetupTestWithOptions(t, []string{suite.LabelFluentBit}, kubeprep.WithOverrideFIPSMode(false))
 
 	var (
 		uniquePrefix        = unique.Prefix()

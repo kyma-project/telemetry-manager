@@ -113,6 +113,15 @@ spec:
         image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:latest
         name: telemetrygen
 ---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: trace-sink-credentials
+  namespace: trace-sink
+type: Opaque
+stringData:
+  endpoint: http://trace-sink.trace-sink:4317
+---
 apiVersion: telemetry.kyma-project.io/v1beta1
 kind: TracePipeline
 metadata:
@@ -121,5 +130,9 @@ spec:
   output:
     otlp:
       endpoint:
-        value: http://trace-sink.trace-sink:4317
+        valueFrom:
+          secretKeyRef:
+            name: trace-sink-credentials
+            namespace: trace-sink
+            key: endpoint
 

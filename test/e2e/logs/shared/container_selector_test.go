@@ -10,6 +10,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdoutloggen"
@@ -64,7 +65,7 @@ func TestContainerSelector_OTel(t *testing.T) {
 
 	assert.BackendReachable(t, backend1)
 	assert.BackendReachable(t, backend2)
-	assert.DeploymentReady(t, kitkyma.LogGatewayName)
+	assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 	assert.DaemonSetReady(t, kitkyma.LogAgentName)
 	assert.OTelLogPipelineHealthy(t, includePipelineName)
 	assert.OTelLogPipelineHealthy(t, excludePipelineName)
@@ -79,7 +80,7 @@ func TestContainerSelector_OTel(t *testing.T) {
 }
 
 func TestContainerSelector_FluentBit(t *testing.T) {
-	suite.SetupTest(t, suite.LabelFluentBit, suite.LabelNoFIPS)
+	suite.SetupTestWithOptions(t, []string{suite.LabelFluentBit}, kubeprep.WithOverrideFIPSMode(false))
 
 	var (
 		uniquePrefix        = unique.Prefix()

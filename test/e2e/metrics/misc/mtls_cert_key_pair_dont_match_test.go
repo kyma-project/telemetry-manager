@@ -18,7 +18,7 @@ import (
 )
 
 func TestMTLSCertKeyPairDontMatch(t *testing.T) {
-	suite.SetupTest(t, suite.LabelMetricsMisc, suite.LabelMTLS)
+	suite.SetupTest(t, suite.LabelMetrics, suite.LabelMisc, suite.LabelMTLS)
 
 	var (
 		uniquePrefix = unique.Prefix()
@@ -36,7 +36,7 @@ func TestMTLSCertKeyPairDontMatch(t *testing.T) {
 
 	pipeline := testutils.NewMetricPipelineBuilder().
 		WithName(pipelineName).
-		WithOTLPOutput(
+		WithMetricPipelineOTLPOutput(
 			testutils.OTLPEndpoint(backend.EndpointHTTPS()),
 			testutils.OTLPClientMTLSFromString(
 				clientCertsDefault.CaCertPem.String(),

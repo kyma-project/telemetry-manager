@@ -1,4 +1,11 @@
 extensions:
+    cgroup_runtime:
+        gomaxprocs:
+            enabled: false
+        gomemlimit:
+            enabled: true
+            ratio: 0.8
+            refresh_interval: 30s
     health_check:
         endpoint: ${MY_POD_IP}:13133
     k8s_leader_elector:
@@ -12,13 +19,13 @@ service:
             receivers:
                 - routing/runtime-input
             processors:
-                - k8sattributes
+                - k8s_attributes
                 - service_enrichment
             exporters:
                 - routing/enrichment
         metrics/input-runtime:
             receivers:
-                - kubeletstats
+                - kubelet_stats
                 - k8s_cluster
             processors:
                 - memory_limiter
@@ -34,21 +41,21 @@ service:
                 - routing/enrichment
                 - routing/runtime-input
             processors:
-                - filter/drop-runtime-pod-metrics
-                - filter/drop-runtime-container-metrics
-                - filter/drop-runtime-node-metrics
-                - filter/drop-runtime-volume-metrics
-                - filter/drop-runtime-deployment-metrics
-                - filter/drop-runtime-daemonset-metrics
-                - filter/drop-runtime-statefulset-metrics
-                - filter/drop-runtime-job-metrics
+                - filter/drop-runtime-pod-metrics-test
+                - filter/drop-runtime-container-metrics-test
+                - filter/drop-runtime-node-metrics-test
+                - filter/drop-runtime-volume-metrics-test
+                - filter/drop-runtime-deployment-metrics-test
+                - filter/drop-runtime-daemonset-metrics-test
+                - filter/drop-runtime-statefulset-metrics-test
+                - filter/drop-runtime-job-metrics-test
                 - filter/drop-envoy-metrics-if-disabled
                 - transform/insert-cluster-attributes
                 - transform/drop-skip-enrichment-attribute
                 - transform/drop-kyma-attributes
                 - batch
             exporters:
-                - otlp_grpc/test
+                - otlp_grpc/metricpipeline-test
     telemetry:
         metrics:
             readers:
@@ -57,12 +64,17 @@ service:
                         prometheus:
                             host: ${MY_POD_IP}
                             port: 8888
+                            without_scope_info: false
+                            without_type_suffix: false
+                            without_units: false
+            level: detailed
         logs:
             level: info
             encoding: json
     extensions:
         - health_check
         - pprof
+        - cgroup_runtime
         - k8s_leader_elector
 receivers:
     k8s_cluster:
@@ -147,29 +159,39 @@ receivers:
             k8s.daemonset.ready_nodes:
                 enabled: false
         k8s_leader_elector: k8s_leader_elector
-    kubeletstats:
+    kubelet_stats:
         collection_interval: 30s
         auth_type: serviceAccount
         endpoint: https://${MY_NODE_NAME}:10250
         insecure_skip_verify: true
         metric_groups: []
         metrics:
-            container.cpu.usage:
-                enabled: true
-            k8s.pod.cpu.usage:
-                enabled: true
-            k8s.node.cpu.usage:
-                enabled: true
             k8s.node.cpu.time:
                 enabled: false
             k8s.node.memory.major_page_faults:
                 enabled: false
             k8s.node.memory.page_faults:
                 enabled: false
+        resource_attributes:
+            aws.volume.id:
+                enabled: false
+            fs.type:
+                enabled: false
+            gce.pd.name:
+                enabled: false
+            glusterfs.endpoints.name:
+                enabled: false
+            glusterfs.path:
+                enabled: false
+            partition:
+                enabled: false
         extra_metadata_labels:
             - k8s.volume.type
         collect_all_network_interfaces:
             node: true
+        node: ${MY_NODE_NAME}
+        k8s_api_config:
+            auth_type: serviceAccount
 processors:
     batch:
         send_batch_size: 1024
@@ -177,57 +199,59 @@ processors:
         send_batch_max_size: 1024
     filter/drop-envoy-metrics-if-disabled:
         error_mode: ignore
-        metrics:
-            metric:
-                - IsMatch(name, "^envoy_.*") and resource.attributes["kyma.input.name"] == "istio"
-    filter/drop-runtime-container-metrics:
+        metric_conditions:
+            - conditions:
+                - IsMatch(metric.name, "^envoy_.*") and resource.attributes["kyma.input.name"] == "istio"
+    filter/drop-runtime-container-metrics-test:
         error_mode: ignore
-        metrics:
-            metric:
-                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(name, "(^k8s.container.*)|(^container.*)")
-    filter/drop-runtime-daemonset-metrics:
+        metric_conditions:
+            - conditions:
+                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(metric.name, "(^k8s[.]container[.].*)|(^container[.].*)")
+    filter/drop-runtime-daemonset-metrics-test:
         error_mode: ignore
-        metrics:
-            metric:
-                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(name, "^k8s.daemonset.*")
-    filter/drop-runtime-deployment-metrics:
+        metric_conditions:
+            - conditions:
+                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(metric.name, "^k8s[.]daemonset[.].*")
+    filter/drop-runtime-deployment-metrics-test:
         error_mode: ignore
-        metrics:
-            metric:
-                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(name, "^k8s.deployment.*")
-    filter/drop-runtime-job-metrics:
+        metric_conditions:
+            - conditions:
+                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(metric.name, "^k8s[.]deployment[.].*")
+    filter/drop-runtime-job-metrics-test:
         error_mode: ignore
-        metrics:
-            metric:
-                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(name, "^k8s.job.*")
-    filter/drop-runtime-node-metrics:
+        metric_conditions:
+            - conditions:
+                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(metric.name, "^k8s[.]job[.].*")
+    filter/drop-runtime-node-metrics-test:
         error_mode: ignore
-        metrics:
-            metric:
-                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(name, "^k8s.node.*")
-    filter/drop-runtime-pod-metrics:
+        metric_conditions:
+            - conditions:
+                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(metric.name, "^k8s[.]node[.].*")
+    filter/drop-runtime-pod-metrics-test:
         error_mode: ignore
-        metrics:
-            metric:
-                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(name, "^k8s.pod.*")
-    filter/drop-runtime-statefulset-metrics:
+        metric_conditions:
+            - conditions:
+                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(metric.name, "^k8s[.]pod[.].*")
+    filter/drop-runtime-statefulset-metrics-test:
         error_mode: ignore
-        metrics:
-            metric:
-                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(name, "^k8s.statefulset.*")
-    filter/drop-runtime-volume-metrics:
+        metric_conditions:
+            - conditions:
+                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(metric.name, "^k8s[.]statefulset[.].*")
+    filter/drop-runtime-volume-metrics-test:
         error_mode: ignore
-        metrics:
-            metric:
-                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(name, "^k8s.volume.*")
+        metric_conditions:
+            - conditions:
+                - resource.attributes["kyma.input.name"] == "runtime" and IsMatch(metric.name, "^k8s[.]volume[.].*")
     filter/drop-virtual-network-interfaces:
         error_mode: ignore
-        metrics:
-            datapoint:
-                - IsMatch(metric.name, "^k8s.node.network.*") and not(IsMatch(attributes["interface"], "^(eth|en).*"))
-    k8sattributes:
+        metric_conditions:
+            - conditions:
+                - IsMatch(metric.name, "^k8s.node.network.*") and not(IsMatch(datapoint.attributes["interface"], "^(eth|en).*"))
+    k8s_attributes:
         auth_type: serviceAccount
         passthrough: false
+        filter:
+            node_from_env_var: MY_NODE_NAME
         extract:
             metadata:
                 - k8s.pod.name
@@ -320,8 +344,9 @@ processors:
             - statements:
                 - set(resource.attributes["kyma.input.name"], "runtime")
 exporters:
-    otlp_grpc/test:
-        endpoint: ${OTLP_ENDPOINT_TEST}
+    otlp_grpc/metricpipeline-test:
+        endpoint: ${OTLP_ENDPOINT_METRICPIPELINE_TEST}
+        compression: gzip
         sending_queue:
             enabled: true
             queue_size: 256

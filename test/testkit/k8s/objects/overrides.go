@@ -20,6 +20,7 @@ type Level string
 const (
 	DEBUG Level = "debug"
 	INFO  Level = "info"
+	WARN  Level = "warn"
 )
 
 const overridesTemplate = `global:
@@ -32,6 +33,8 @@ logging:
 metrics:
   paused: {{ PAUSED }}
 telemetry:
+  paused: {{ PAUSED }}
+otlpGateway:
   paused: {{ PAUSED }}`
 
 type Overrides struct {
@@ -69,7 +72,7 @@ func (o *Overrides) K8sObject() *corev1.ConfigMap {
 	config = strings.Replace(config, "{{ AGENT_LOGS }}", strconv.FormatBool(o.collectAgentLogs), 1)
 
 	data := make(map[string]string)
-	data["override-config"] = config
+	data["overrides"] = config
 
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{

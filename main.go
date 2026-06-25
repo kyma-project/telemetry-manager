@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"time"
 
 	"github.com/caarlos0/env/v11"
 	"github.com/go-logr/zapr"
@@ -30,14 +29,19 @@ import (
 	"go.uber.org/zap/zapcore"
 	istionetworkingclientv1 "istio.io/client-go/pkg/apis/networking/v1"
 	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	autoscalingvpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
+	"k8s.io/client-go/discovery"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
@@ -57,12 +61,19 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/cliflags"
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/featureflags"
+	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
+	"github.com/kyma-project/telemetry-manager/internal/labelupdater"
 	mgrports "github.com/kyma-project/telemetry-manager/internal/manager/ports"
 	"github.com/kyma-project/telemetry-manager/internal/metrics"
+	"github.com/kyma-project/telemetry-manager/internal/nodesize"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
+	"github.com/kyma-project/telemetry-manager/internal/secretwatch"
 	selfmonitorwebhook "github.com/kyma-project/telemetry-manager/internal/selfmonitor/webhook"
+	"github.com/kyma-project/telemetry-manager/internal/storagemigration"
 	loggerutils "github.com/kyma-project/telemetry-manager/internal/utils/logger"
+	"github.com/kyma-project/telemetry-manager/internal/vpastatus"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
 	logpipelinewebhookv1alpha1 "github.com/kyma-project/telemetry-manager/webhook/logpipeline/v1alpha1"
 	logpipelinewebhookv1beta1 "github.com/kyma-project/telemetry-manager/webhook/logpipeline/v1beta1"
@@ -81,19 +92,20 @@ var (
 	setupLog = ctrl.Log.WithName("setup")
 
 	// Operator flags
-	certDir                 string
-	highPriorityClassName   string
-	normalPriorityClassName string
-	clusterTrustBundleName  string
-	imagePullSecretName     string
-	additionalLabels        cliflags.Map
-	additionalAnnotations   cliflags.Map
-	deployOTLPGateway       bool
-	unlimitedPipelines      bool
+	certDir                          string
+	highPriorityClassName            string
+	normalPriorityClassName          string
+	clusterTrustBundleName           string
+	imagePullSecretName              string
+	additionalWorkloadLabels         cliflags.Map
+	additionalWorkloadAnnotations    cliflags.Map
+	additionalWorkloadPodLabels      cliflags.Map
+	additionalWorkloadPodAnnotations cliflags.Map
+	deployOTLPGateway                bool
+	unlimitedPipelines               bool
 )
 
 const (
-	cacheSyncPeriod    = 1 * time.Minute
 	webhookServiceName = names.ManagerWebhookService
 )
 
@@ -101,16 +113,16 @@ const (
 type envConfig struct {
 	// FluentBitExporterImage is the image used for the Fluent Bit exporter.
 	FluentBitExporterImage string `env:"FLUENT_BIT_EXPORTER_IMAGE"`
-	// FluentBitImage is the image used for the Fluent Bit log agent.
+	// FluentBitImage is the image used for the Fluent Bit Log Agent.
 	FluentBitImage string `env:"FLUENT_BIT_IMAGE"`
-	// OTelCollectorImage is the image used all OpenTelemetry Collector based components (metric agent, log agent, metric gateway, log gateway, trace gateway).
+	// OTelCollectorImage is the image used all OpenTelemetry Collector based components (Metric Agent, Log Agent, OTLP Gateway).
 	OTelCollectorImage string `env:"OTEL_COLLECTOR_IMAGE"`
 	// SelfMonitorImage is the image used for the self-monitoring deployment. This is a customized Prometheus image.
 	SelfMonitorImage string `env:"SELF_MONITOR_IMAGE"`
 	// SelfMonitorFIPSImage is the image used for the self-monitoring deployment in FIPS mode. This is a Prometheus FIPS 140-2 compliant image.
 	SelfMonitorFIPSImage string `env:"SELF_MONITOR_FIPS_IMAGE"`
-	// AlpineImage is the image used for the chown init containers.
-	AlpineImage string `env:"ALPINE_IMAGE"`
+	// ChownImage is the image used for the chown init containers.
+	ChownImage string `env:"CHOWN_IMAGE"`
 	// ImagePullSecret is the name of the image pull secret to use for pulling images of all created workloads (agents, gateways, self-monitor).
 	ImagePullSecret string `env:"SKR_IMG_PULL_SECRET" envDefault:""`
 	// ManagerNamespace returns the namespace where Telemetry Manager is deployed. In a Kyma setup, this is the same as TargetNamespace.
@@ -132,6 +144,7 @@ func init() {
 	utilruntime.Must(istionetworkingclientv1.AddToScheme(scheme))
 	utilruntime.Must(telemetryv1beta1.AddToScheme(scheme))
 	utilruntime.Must(operatorv1beta1.AddToScheme(scheme))
+	utilruntime.Must(autoscalingvpav1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -168,8 +181,10 @@ func run() error {
 		config.WithVersion(build.GitTag()),
 		config.WithImagePullSecretName(imagePullSecretName),
 		config.WithClusterTrustBundleName(clusterTrustBundleName),
-		config.WithAdditionalLabels(additionalLabels),
-		config.WithAdditionalAnnotations(additionalAnnotations),
+		config.WithAdditionalWorkloadLabels(additionalWorkloadLabels),
+		config.WithAdditionalWorkloadAnnotations(additionalWorkloadAnnotations),
+		config.WithAdditionalWorkloadPodLabels(additionalWorkloadPodLabels),
+		config.WithAdditionalWorkloadPodAnnotations(additionalWorkloadPodAnnotations),
 		config.WithDeployOTLPGateway(featureflags.IsEnabled(featureflags.DeployOTLPGateway)),
 		config.WithUnlimitedPipelines(featureflags.IsEnabled(featureflags.UnlimitedPipelineCount)),
 	)
@@ -190,13 +205,29 @@ func run() error {
 		return err
 	}
 
-	err = setupControllersAndWebhooks(mgr, globals, envCfg)
+	nodeSizeTracker := nodesize.NewTracker(mgr.GetClient())
+
+	err = setupControllersAndWebhooks(mgr, globals, envCfg, nodeSizeTracker)
 	if err != nil {
 		return err
 	}
 
-	// +kubebuilder:scaffold:builder
+	// Add storage version migration as a runnable that executes after manager starts.
+	// This ensures webhooks are available for conversion during migration.
+	storageMigrator := storagemigration.New(mgr.GetClient(), setupLog)
+	if err := mgr.Add(storageMigrator); err != nil {
+		return fmt.Errorf("failed to add storage migration runnable: %w", err)
+	}
 
+	// Add label updater to patch the module label onto resources created before
+	// the label-scoped cache was introduced. Without this, the scoped cache
+	// cannot see pre-existing resources and reconciliation fails with AlreadyExists.
+	labelUpdater := labelupdater.New(mgr.GetAPIReader(), mgr.GetClient(), setupLog, globals.TargetNamespace())
+	if err := mgr.Add(labelUpdater); err != nil {
+		return fmt.Errorf("failed to add label updater runnable: %w", err)
+	}
+
+	// +kubebuilder:scaffold:builder
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		return fmt.Errorf("failed to start manager: %w", err)
 	}
@@ -217,22 +248,36 @@ func setupSetupLog() (*zap.Logger, error) {
 	return zapLogger, nil
 }
 
-func setupControllersAndWebhooks(mgr manager.Manager, globals config.Global, envCfg envConfig) error {
+func setupControllersAndWebhooks(mgr manager.Manager, globals config.Global, envCfg envConfig, nodeSizeTracker *nodesize.Tracker) error {
 	var (
 		tracePipelineReconcileChan  = make(chan event.GenericEvent)
 		metricPipelineReconcileChan = make(chan event.GenericEvent)
 		logPipelineReconcileChan    = make(chan event.GenericEvent)
+		otlpGatewayReconcileChan    = make(chan event.GenericEvent)
 	)
 
-	if err := setupTracePipelineController(globals, envCfg, mgr, tracePipelineReconcileChan); err != nil {
+	secretWatchClient, err := secretwatch.NewClient(mgr.GetConfig(), tracePipelineReconcileChan, metricPipelineReconcileChan, logPipelineReconcileChan)
+	if err != nil {
+		return fmt.Errorf("failed to create secret watch client: %w", err)
+	}
+
+	if err := mgr.Add(secretWatchStopRunnable{secretWatchClient}); err != nil {
+		return fmt.Errorf("failed to add secret watch stop runnable: %w", err)
+	}
+
+	if err := setupTracePipelineController(globals, envCfg, mgr, tracePipelineReconcileChan, secretWatchClient); err != nil {
 		return fmt.Errorf("failed to enable trace pipeline controller: %w", err)
 	}
 
-	if err := setupMetricPipelineController(globals, envCfg, mgr, metricPipelineReconcileChan); err != nil {
+	if err := setupOTLPGatewayController(globals, envCfg, mgr, otlpGatewayReconcileChan, nodeSizeTracker); err != nil {
+		return fmt.Errorf("failed to enable OTLP Gateway controller: %w", err)
+	}
+
+	if err := setupMetricPipelineController(globals, envCfg, mgr, metricPipelineReconcileChan, secretWatchClient, nodeSizeTracker); err != nil {
 		return fmt.Errorf("failed to enable metric pipeline controller: %w", err)
 	}
 
-	if err := setupLogPipelineController(globals, envCfg, mgr, logPipelineReconcileChan); err != nil {
+	if err := setupLogPipelineController(globals, envCfg, mgr, logPipelineReconcileChan, secretWatchClient, nodeSizeTracker); err != nil {
 		return fmt.Errorf("failed to enable log pipeline controller: %w", err)
 	}
 
@@ -273,7 +318,77 @@ func setupControllersAndWebhooks(mgr manager.Manager, globals config.Global, env
 }
 
 func setupManager(globals config.Global) (manager.Manager, error) {
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+	restConfig := ctrl.GetConfigOrDie()
+	ctx := context.Background()
+
+	discoveryClient, err := discovery.NewDiscoveryClientForConfig(restConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create discovery client: %w", err)
+	}
+
+	isIstioActive, err := istiostatus.NewChecker(discoveryClient).IsIstioActive(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check Istio status: %w", err)
+	}
+
+	k8sClient, err := client.New(restConfig, client.Options{Scheme: scheme})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create client: %w", err)
+	}
+
+	vpaCRDExists, err := vpastatus.NewChecker(restConfig).VpaCRDExists(ctx, k8sClient)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check VPA status: %w", err)
+	}
+
+	cacheOptions := map[client.Object]cache.ByObject{
+		// Namespace-scoped managed resources: filter by namespace and module label
+		&appsv1.Deployment{}:          scopedByNamespaceAndLabel(globals),
+		&appsv1.DaemonSet{}:           scopedByNamespaceAndLabel(globals),
+		&appsv1.ReplicaSet{}:          scopedByNamespaceAndLabel(globals),
+		&corev1.Node{}:                {},
+		&corev1.Pod{}:                 scopedByNamespaceAndLabel(globals),
+		&corev1.Secret{}:              scopedByNamespaceAndLabel(globals), // only applicable for manager-created secrets, user-created secrets are watched by secretwatch client
+		&corev1.Service{}:             scopedByNamespaceAndLabel(globals),
+		&corev1.ServiceAccount{}:      scopedByNamespaceAndLabel(globals),
+		&networkingv1.NetworkPolicy{}: scopedByNamespaceAndLabel(globals),
+		&rbacv1.Role{}:                scopedByNamespaceAndLabel(globals),
+		&rbacv1.RoleBinding{}:         scopedByNamespaceAndLabel(globals),
+
+		// Default Telemetry CR has no labels: filter by namespace only
+		&operatorv1beta1.Telemetry{}: scopedByNamespace(globals),
+
+		// Cluster-scoped managed resources: filter by label only
+		&rbacv1.ClusterRole{}:                                     scopedByLabel(),
+		&rbacv1.ClusterRoleBinding{}:                              scopedByLabel(),
+		&apiextensionsv1.CustomResourceDefinition{}:               scopedByLabel(),
+		&admissionregistrationv1.ValidatingWebhookConfiguration{}: scopedByLabel(),
+		&admissionregistrationv1.MutatingWebhookConfiguration{}:   scopedByLabel(),
+
+		// configmap: mixed scoping (shoot-info by name in kube-system, managed configmaps and overrides by namespace)
+		// No label filter for target namespace: overrides ConfigMap is user-created without the module label
+		&corev1.ConfigMap{}: {
+			Namespaces: map[string]cache.Config{
+				"kube-system":             {FieldSelector: fields.SelectorFromSet(fields.Set{"metadata.name": "shoot-info"})},
+				globals.TargetNamespace(): {}, // do not apply label filter since overrides ConfigMap does not have module label
+			},
+		},
+	}
+
+	// Only restrict storage of Istio CRs in the cache if Istio is active
+	// otherwise, manager will have errors if the Istio CRD is not present in the cluster
+	if isIstioActive {
+		cacheOptions[&istiosecurityclientv1.PeerAuthentication{}] = scopedByNamespaceAndLabel(globals)
+		cacheOptions[&istionetworkingclientv1.DestinationRule{}] = scopedByNamespaceAndLabel(globals)
+	}
+
+	// Only restrict storage of VPA CRs in the cache if VPA CRD exists in the cluster
+	// otherwise, manager will have errors if the VPA CRD is not present in the cluster
+	if vpaCRDExists {
+		cacheOptions[&autoscalingvpav1.VerticalPodAutoscaler{}] = scopedByNamespaceAndLabel(globals)
+	}
+
+	mgr, err := ctrl.NewManager(restConfig, ctrl.Options{
 		Scheme:                  scheme,
 		Metrics:                 metricsserver.Options{BindAddress: fmt.Sprintf(":%d", mgrports.Metrics)},
 		HealthProbeBindAddress:  fmt.Sprintf(":%d", mgrports.HealthProbe),
@@ -286,21 +401,7 @@ func setupManager(globals config.Global) (manager.Manager, error) {
 			CertDir: certDir,
 		}),
 		Cache: cache.Options{
-			SyncPeriod: new(cacheSyncPeriod),
-
-			// The operator handles various resource that are namespace-scoped, and additionally some resources that are cluster-scoped (clusterroles, clusterrolebindings, etc.).
-			// For namespace-scoped resources we want to restrict the operator permissions to only fetch resources from a given namespace.
-			ByObject: map[client.Object]cache.ByObject{
-				&appsv1.Deployment{}:          {Field: setNamespaceFieldSelector(globals)},
-				&appsv1.ReplicaSet{}:          {Field: setNamespaceFieldSelector(globals)},
-				&appsv1.DaemonSet{}:           {Field: setNamespaceFieldSelector(globals)},
-				&corev1.ConfigMap{}:           {Namespaces: setConfigMapNamespaceFieldSelector(globals)},
-				&corev1.ServiceAccount{}:      {Field: setNamespaceFieldSelector(globals)},
-				&corev1.Service{}:             {Field: setNamespaceFieldSelector(globals)},
-				&networkingv1.NetworkPolicy{}: {Field: setNamespaceFieldSelector(globals)},
-				&corev1.Secret{}:              {Field: setNamespaceFieldSelector(globals)},
-				&operatorv1beta1.Telemetry{}:  {Field: setNamespaceFieldSelector(globals)},
-			},
+			ByObject: cacheOptions,
 		},
 		Client: client.Options{
 			Cache: &client.CacheOptions{
@@ -341,10 +442,12 @@ func parseFlags() {
 	flag.StringVar(&normalPriorityClassName, "normal-priority-class-name", "", "Normal priority class name used by managed Deployments")
 	flag.StringVar(&clusterTrustBundleName, "cluster-trust-bundle-name", "", "The name ClusterTrustBundle resource")
 	flag.StringVar(&imagePullSecretName, "image-pull-secret-name", "", "The image pull secret name to use for pulling images of all created workloads (agents, gateways, self-monitor)")
-	flag.Var(&additionalLabels, "additional-label", "Additional label to add to all created resources in key=value format")
-	flag.Var(&additionalAnnotations, "additional-annotation", "Additional annotation to add to all created resources in key=value format")
+	flag.Var(&additionalWorkloadLabels, "additional-workload-label", "Additional label to add to all created workload resources (DaemonSets, Deployments) in key=value format")
+	flag.Var(&additionalWorkloadAnnotations, "additional-workload-annotation", "Additional annotation to add to all created workload resources (DaemonSets, Deployments) in key=value format")
+	flag.Var(&additionalWorkloadPodLabels, "additional-workload-pod-label", "Additional label to add to all created workload pods in key=value format")
+	flag.Var(&additionalWorkloadPodAnnotations, "additional-workload-pod-annotation", "Additional annotation to add to all created workload pods in key=value format")
 
-	flag.BoolVar(&deployOTLPGateway, "deploy-otlp-gateway", false, "Enable deploying unified OTLP gateway")
+	flag.BoolVar(&deployOTLPGateway, "deploy-otlp-gateway", false, "Enable deploying unified OTLP Gateway")
 	flag.BoolVar(&unlimitedPipelines, "unlimited-pipelines", false, "Allow unlimited number of OTEL pipelines")
 
 	flag.Parse()
@@ -406,24 +509,24 @@ func setupTelemetryController(globals config.Global, cfg envConfig, webhookCertC
 	return nil
 }
 
-func setupLogPipelineController(globals config.Global, cfg envConfig, mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent) error {
+func setupLogPipelineController(globals config.Global, cfg envConfig, mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent, secretWatchClient *secretwatch.Client, nodeSizeTracker *nodesize.Tracker) error {
 	setupLog.Info("Setting up logpipeline controller")
 
 	logPipelineController, err := telemetrycontrollers.NewLogPipelineController(
 		telemetrycontrollers.LogPipelineControllerConfig{
-			Global:                       globals,
-			ExporterImage:                cfg.FluentBitExporterImage,
-			FluentBitImage:               cfg.FluentBitImage,
-			ChownInitContainerImage:      cfg.AlpineImage,
-			OTelCollectorImage:           cfg.OTelCollectorImage,
-			FluentBitPriorityClassName:   highPriorityClassName,
-			LogGatewayPriorityClassName:  normalPriorityClassName,
-			LogAgentPriorityClassName:    highPriorityClassName,
-			OTLPGatewayPriorityClassName: normalPriorityClassName,
-			RestConfig:                   mgr.GetConfig(),
+			Global:                     globals,
+			ExporterImage:              cfg.FluentBitExporterImage,
+			FluentBitImage:             cfg.FluentBitImage,
+			ChownInitContainerImage:    cfg.ChownImage,
+			OTelCollectorImage:         cfg.OTelCollectorImage,
+			FluentBitPriorityClassName: highPriorityClassName,
+			LogAgentPriorityClassName:  highPriorityClassName,
+			RestConfig:                 mgr.GetConfig(),
 		},
 		mgr.GetClient(),
 		reconcileTriggerChan,
+		secretWatchClient,
+		nodeSizeTracker,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create logpipeline controller: %w", err)
@@ -436,18 +539,18 @@ func setupLogPipelineController(globals config.Global, cfg envConfig, mgr manage
 	return nil
 }
 
-func setupTracePipelineController(globals config.Global, envCfg envConfig, mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent) error {
+func setupTracePipelineController(globals config.Global, envCfg envConfig, mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent, secretWatchClient *secretwatch.Client) error {
 	setupLog.Info("Setting up tracepipeline controller")
 
 	tracePipelineController, err := telemetrycontrollers.NewTracePipelineController(
 		telemetrycontrollers.TracePipelineControllerConfig{
-			Global:                        globals,
-			RestConfig:                    mgr.GetConfig(),
-			OTelCollectorImage:            envCfg.OTelCollectorImage,
-			TraceGatewayPriorityClassName: normalPriorityClassName,
+			Global:             globals,
+			RestConfig:         mgr.GetConfig(),
+			OTelCollectorImage: envCfg.OTelCollectorImage,
 		},
 		mgr.GetClient(),
 		reconcileTriggerChan,
+		secretWatchClient,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create tracepipeline controller: %w", err)
@@ -460,19 +563,45 @@ func setupTracePipelineController(globals config.Global, envCfg envConfig, mgr m
 	return nil
 }
 
-func setupMetricPipelineController(globals config.Global, cfg envConfig, mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent) error {
+func setupOTLPGatewayController(globals config.Global, envCfg envConfig, mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent, nodeSizeTracker *nodesize.Tracker) error {
+	setupLog.Info("Setting up OTLP Gateway controller")
+
+	otlpGatewayController, err := telemetrycontrollers.NewOTLPGatewayController(
+		telemetrycontrollers.OTLPGatewayControllerConfig{
+			Global:                       globals,
+			RestConfig:                   mgr.GetConfig(),
+			OTelCollectorImage:           envCfg.OTelCollectorImage,
+			OTLPGatewayPriorityClassName: highPriorityClassName,
+		},
+		mgr.GetClient(),
+		reconcileTriggerChan,
+		nodeSizeTracker,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create OTLP Gateway controller: %w", err)
+	}
+
+	if err := otlpGatewayController.SetupWithManager(mgr); err != nil {
+		return fmt.Errorf("failed to setup OTLP Gateway controller: %w", err)
+	}
+
+	return nil
+}
+
+func setupMetricPipelineController(globals config.Global, cfg envConfig, mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent, secretWatchClient *secretwatch.Client, nodeSizeTracker *nodesize.Tracker) error {
 	setupLog.Info("Setting up metricpipeline controller")
 
 	metricPipelineController, err := telemetrycontrollers.NewMetricPipelineController(
 		telemetrycontrollers.MetricPipelineControllerConfig{
-			Global:                         globals,
-			MetricAgentPriorityClassName:   highPriorityClassName,
-			MetricGatewayPriorityClassName: normalPriorityClassName,
-			OTelCollectorImage:             cfg.OTelCollectorImage,
-			RestConfig:                     mgr.GetConfig(),
+			Global:                       globals,
+			MetricAgentPriorityClassName: highPriorityClassName,
+			OTelCollectorImage:           cfg.OTelCollectorImage,
+			RestConfig:                   mgr.GetConfig(),
 		},
 		mgr.GetClient(),
 		reconcileTriggerChan,
+		secretWatchClient,
+		nodeSizeTracker,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create metricpipeline controller: %w", err)
@@ -529,17 +658,27 @@ func ensureWebhookCert(webhookCertConfig webhookcert.Config, mgr manager.Manager
 	return nil
 }
 
-func setNamespaceFieldSelector(globals config.Global) fields.Selector {
-	return fields.SelectorFromSet(fields.Set{"metadata.namespace": globals.TargetNamespace()})
+func scopedByNamespace(globals config.Global) cache.ByObject {
+	return cache.ByObject{
+		Field: fields.SelectorFromSet(fields.Set{"metadata.namespace": globals.TargetNamespace()}),
+	}
 }
 
-func setConfigMapNamespaceFieldSelector(globals config.Global) map[string]cache.Config {
-	return map[string]cache.Config{
-		"kube-system": {
-			FieldSelector: fields.SelectorFromSet(fields.Set{"metadata.name": "shoot-info"}),
-		},
-		globals.TargetNamespace(): {},
+func scopedByNamespaceAndLabel(globals config.Global) cache.ByObject {
+	return cache.ByObject{
+		Field: fields.SelectorFromSet(fields.Set{"metadata.namespace": globals.TargetNamespace()}),
+		Label: moduleLabelSelector(),
 	}
+}
+
+func scopedByLabel() cache.ByObject {
+	return cache.ByObject{
+		Label: moduleLabelSelector(),
+	}
+}
+
+func moduleLabelSelector() labels.Selector {
+	return labels.SelectorFromSet(labels.Set{commonresources.LabelKeyKymaModule: commonresources.LabelValueKymaModule})
 }
 
 func createWebhookConfig(globals config.Global) webhookcert.Config {
@@ -562,4 +701,16 @@ func createWebhookConfig(globals config.Global) webhookcert.Config {
 			},
 		},
 	)
+}
+
+// secretWatchStopRunnable is a manager.Runnable that stops the secret watch client when the manager stops.
+type secretWatchStopRunnable struct {
+	client *secretwatch.Client
+}
+
+func (r secretWatchStopRunnable) Start(ctx context.Context) error {
+	<-ctx.Done()
+	r.client.Stop(ctx)
+
+	return nil
 }

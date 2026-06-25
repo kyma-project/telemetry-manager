@@ -18,11 +18,15 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 //nolint:gochecknoinits // SchemeBuilder's registration is required.
 func init() {
-	SchemeBuilder.Register(&Telemetry{}, &TelemetryList{})
+	SchemeBuilder.Register(func(scheme *runtime.Scheme) error {
+		scheme.AddKnownTypes(GroupVersion, &Telemetry{}, &TelemetryList{})
+		return nil
+	})
 }
 
 // TelemetryList contains a list of Telemetry
@@ -36,6 +40,7 @@ type TelemetryList struct {
 
 // Telemetry is the Schema for the telemetries API
 // +kubebuilder:object:root=true
+// +kubebuilder:deprecatedversion:warning="operator.kyma-project.io/v1alpha1 Telemetry is deprecated; see https://help.sap.com/docs/btp/sap-business-technology-platform/migrate-telemetry-pipelines-to-v1beta1 for instructions to migrate to operator.kyma-project.io/v1beta1 Telemetry."
 // +kubebuilder:resource:scope=Namespaced,categories={kyma-modules,kyma-telemetry}
 // +kubebuilder:metadata:labels={app.kubernetes.io/component=controller,app.kubernetes.io/managed-by=kyma,app.kubernetes.io/name=telemetry-manager,app.kubernetes.io/part-of=telemetry,kyma-project.io/module=telemetry}
 // +kubebuilder:subresource:status
@@ -73,33 +78,68 @@ type TelemetrySpec struct {
 
 // MetricSpec configures module settings specific to the metric features.
 type MetricSpec struct {
-	// Gateway configures the metric gateway.
+	// Gateway configures the metric gateway (deprecated).
 	// +kubebuilder:validation:Optional
 	Gateway GatewaySpec `json:"gateway"`
+
+	// CollectionInterval defines the default collection/scrape interval for all pull-based metric inputs (runtime, prometheus, istio).
+	// The value is a duration string (for example, "30s", "1m", "5m"). Default is 30s.
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Format=duration
+	// +kubebuilder:validation:XValidation:rule="self > duration('0s')",message="'collectionInterval' must be greater than 0"
+	CollectionInterval *metav1.Duration `json:"collectionInterval,omitempty"`
+
+	// Runtime configures collection settings specific to runtime metrics input.
+	// +kubebuilder:validation:Optional
+	Runtime *MetricInputSpec `json:"runtime,omitempty"`
+
+	// Prometheus configures collection settings specific to Prometheus metrics input.
+	// +kubebuilder:validation:Optional
+	Prometheus *MetricInputSpec `json:"prometheus,omitempty"`
+
+	// Istio configures collection settings specific to Istio metrics input.
+	// +kubebuilder:validation:Optional
+	Istio *MetricInputSpec `json:"istio,omitempty"`
+}
+
+// MetricInputSpec defines collection settings for a specific metric input type.
+type MetricInputSpec struct {
+	// CollectionInterval defines the collection/scrape interval for this specific input, overriding the global metric.collectionInterval.
+	// The value is a duration string (for example, "30s", "1m", "5m"). Minimum is 1s.
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Format=duration
+	// +kubebuilder:validation:XValidation:rule="self > duration('0s')",message="'collectionInterval' must be greater than 0"
+	CollectionInterval *metav1.Duration `json:"collectionInterval,omitempty"`
 }
 
 // TraceSpec configures module settings specific to the trace features.
 type TraceSpec struct {
-	// Gateway configures the trace gateway.
+	// Gateway configures the trace gateway (deprecated).
 	// +kubebuilder:validation:Optional
 	Gateway GatewaySpec `json:"gateway"`
 }
 
 // LogSpec configures module settings specific to the log features.
 type LogSpec struct {
-	// Gateway configures the log gateway.
+	// Gateway configures the log gateway (deprecated).
 	// +kubebuilder:validation:Optional
 	Gateway GatewaySpec `json:"gateway"`
 }
 
 // GatewaySpec defines settings of a gateway.
+//
+// Deprecated: Gateway scaling configuration is no longer supported. The gateway now runs as a DaemonSet.
 type GatewaySpec struct {
 	// Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.
+	//
+	// Deprecated: This field is no longer supported. Setting it will have no effect.
 	// +kubebuilder:validation:Optional
-	Scaling Scaling `json:"scaling"`
+	Scaling *Scaling `json:"scaling,omitempty"`
 }
 
 // Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.
+//
+// Deprecated: Gateway scaling is no longer supported. The gateway now runs as a DaemonSet.
 type Scaling struct {
 	// Type of scaling strategy. Default is none, using a fixed amount of replicas.
 	// +optional
@@ -171,7 +211,7 @@ type TelemetryStatus struct {
 	// +kubebuilder:validation:Optional
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 
-	// Endpoints for log, trace, and metric gateway.
+	// Endpoints for the OTLP Gateway.
 	// +kubebuilder:validation:Optional
 	Endpoints GatewayEndpoints `json:"endpoints"`
 }
@@ -202,18 +242,32 @@ type Status struct {
 	State State `json:"state"`
 }
 
+// GatewayEndpoints contains the OTLP endpoints of the unified gateway.
 type GatewayEndpoints struct {
-	// Logs contains the endpoints for log gateway supporting OTLP.
+	// Logs contains the OTLP endpoints for log signal type.
+	//
+	// Deprecated: These logs endpoints are deprecated and automatically redirect to the unified OTLP endpoints.
+	// Use the unified OTLP endpoints instead for all signal types.
 	// +kubebuilder:validation:Optional
 	Logs *OTLPEndpoints `json:"logs,omitempty"`
 
-	// Traces contains the endpoints for trace gateway supporting OTLP.
+	// Traces contains the OTLP endpoints for trace signal type.
 	// +kubebuilder:validation:Optional
+	//
+	// Deprecated: These traces endpoints are deprecated and automatically redirect to the unified OTLP endpoints.
+	// Use the unified OTLP endpoints instead for all signal types.
 	Traces *OTLPEndpoints `json:"traces,omitempty"`
 
-	// Metrics contains the endpoints for metric gateway supporting OTLP.
+	// Metrics contains the OTLP endpoints for metric signal type.
 	// +kubebuilder:validation:Optional
+	//
+	// Deprecated: These metrics endpoints are deprecated and automatically redirect to the unified OTLP endpoints.
+	// Use the unified OTLP endpoints instead for all signal types.
 	Metrics *OTLPEndpoints `json:"metrics,omitempty"`
+
+	// OTLP contains the unified OTLP endpoints for all signal types (logs, traces, metrics).
+	// +kubebuilder:validation:Optional
+	OTLP *OTLPEndpoints `json:"otlp,omitempty"`
 }
 
 type OTLPEndpoints struct {

@@ -80,7 +80,7 @@ func reconcileAndGet(t *testing.T, client client.Client, reconciler *Reconciler,
 	var pl telemetryv1beta1.LogPipeline
 	require.NoError(t, client.Get(t.Context(), types.NamespacedName{Name: pipelineName}, &pl))
 
-	err := reconciler.Reconcile(t.Context(), &pl)
+	_, err := reconciler.Reconcile(t.Context(), &pl)
 
 	var updatedPipeline telemetryv1beta1.LogPipeline
 	require.NoError(t, client.Get(t.Context(), types.NamespacedName{Name: pipelineName}, &updatedPipeline))
@@ -123,34 +123,28 @@ func newTestValidator(opts ...ValidatorOption) *Validator {
 // Provided options override the defaults.
 func newTestReconciler(client client.Client, opts ...Option) *Reconciler {
 	// Set up default mocked dependencies - all operations succeed by default
-	gatewayConfigBuilderMock := &mocks.GatewayConfigBuilder{}
-	gatewayConfigBuilderMock.On("Build", mock.Anything, mock.Anything, mock.Anything).
-		Return(&common.Config{}, common.EnvVars{}, nil)
-
 	agentConfigBuilderMock := &mocks.AgentConfigBuilder{}
 	agentConfigBuilderMock.On("Build", mock.Anything, mock.Anything, mock.Anything).
 		Return(&common.Config{}, common.EnvVars{}, nil)
 
-	gatewayApplierDeleterMock := &mocks.GatewayApplierDeleter{}
-	gatewayApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	gatewayApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
 	agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
 	agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything).Return(nil)
-
-	gatewayFlowHealthProberMock := &mocks.GatewayFlowHealthProber{}
-	gatewayFlowHealthProberMock.On("Probe", mock.Anything, mock.Anything).
-		Return(prober.OTelGatewayProbeResult{}, nil)
+	agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	agentFlowHealthProberMock := &mocks.AgentFlowHealthProber{}
 	agentFlowHealthProberMock.On("Probe", mock.Anything, mock.Anything).
 		Return(prober.OTelAgentProbeResult{}, nil)
 
-	gatewayProberStub := commonStatusStubs.NewDeploymentSetProber(nil)
+	gatewayFlowHealthProberMock := &mocks.GatewayFlowHealthProber{}
+	gatewayFlowHealthProberMock.On("Probe", mock.Anything, mock.Anything).
+		Return(prober.OTelGatewayProbeResult{}, nil)
+
 	agentProberStub := commonStatusStubs.NewDaemonSetProber(nil)
+	gatewayProberStub := commonStatusStubs.NewDaemonSetProber(nil)
 
 	istioStatusCheckerStub := &stubs.IstioStatusChecker{IsActive: false}
+
+	vpaStatusCheckerStub := &stubs.VpaStatusChecker{CRDExists: false}
 
 	pipelineLock := &mocks.PipelineLock{}
 	pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil)
@@ -166,15 +160,15 @@ func newTestReconciler(client client.Client, opts ...Option) *Reconciler {
 	allOpts := []Option{
 		WithClient(client),
 		WithGlobals(config.NewGlobal(config.WithTargetNamespace("default"), config.WithVersion("1.0.0"))),
-		WithGatewayFlowHealthProber(gatewayFlowHealthProberMock),
 		WithAgentFlowHealthProber(agentFlowHealthProberMock),
+		WithGatewayFlowHealthProber(gatewayFlowHealthProberMock),
+		WithGatewayProber(gatewayProberStub),
 		WithAgentConfigBuilder(agentConfigBuilderMock),
 		WithAgentApplierDeleter(agentApplierDeleterMock),
 		WithAgentProber(agentProberStub),
-		WithGatewayApplierDeleter(gatewayApplierDeleterMock),
-		WithGatewayConfigBuilder(gatewayConfigBuilderMock),
-		WithGatewayProber(gatewayProberStub),
 		WithIstioStatusChecker(istioStatusCheckerStub),
+		WithVpaStatusChecker(vpaStatusCheckerStub),
+		WithNodeSizeTracker(&stubs.NodeSizeTracker{}),
 		WithPipelineLock(pipelineLock),
 		WithPipelineValidator(pipelineValidator),
 		WithErrorToMessageConverter(errToMsg),

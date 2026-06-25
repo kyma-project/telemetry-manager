@@ -29,7 +29,7 @@ import (
 )
 
 func TestRuntimeInput(t *testing.T) {
-	suite.SetupTest(t, suite.LabelGardener, suite.LabelMetricAgentSetB)
+	suite.SetupTest(t, suite.LabelGardener)
 
 	const (
 		podNetworkErrorsMetric  = "k8s.pod.network.errors"
@@ -77,7 +77,7 @@ func TestRuntimeInput(t *testing.T) {
 		WithRuntimeInputStatefulSetMetrics(false).
 		WithRuntimeInputDaemonSetMetrics(false).
 		WithRuntimeInputJobMetrics(false).
-		WithOTLPOutput(testutils.OTLPEndpoint(backendA.EndpointHTTP())).
+		WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint(backendA.EndpointHTTP())).
 		Build()
 	pipelineB := testutils.NewMetricPipelineBuilder().
 		WithName(pipelineNameB).
@@ -90,12 +90,12 @@ func TestRuntimeInput(t *testing.T) {
 		WithRuntimeInputStatefulSetMetrics(true).
 		WithRuntimeInputDaemonSetMetrics(true).
 		WithRuntimeInputJobMetrics(true).
-		WithOTLPOutput(testutils.OTLPEndpoint(backendB.EndpointHTTP())).
+		WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint(backendB.EndpointHTTP())).
 		Build()
 	pipelineC := testutils.NewMetricPipelineBuilder().
 		WithName(pipelineNameC).
 		WithRuntimeInput(true, testutils.IncludeNamespaces(genNs)).
-		WithOTLPOutput(testutils.OTLPEndpoint(backendC.EndpointHTTP())).
+		WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint(backendC.EndpointHTTP())).
 		Build()
 
 	prometheusMetricGen := prommetricgen.New(genNs)
@@ -125,7 +125,7 @@ func TestRuntimeInput(t *testing.T) {
 	assert.MetricPipelineHealthy(t, pipelineNameA)
 	assert.MetricPipelineHealthy(t, pipelineNameB)
 	assert.MetricPipelineHealthy(t, pipelineNameC)
-	assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+	assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 	assert.DaemonSetReady(t, kitkyma.MetricAgentName)
 	assert.BackendReachable(t, backendA)
 	assert.BackendReachable(t, backendB)

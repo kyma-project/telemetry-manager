@@ -1,6 +1,7 @@
 package shared
 
 import (
+	"slices"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -30,7 +31,7 @@ func TestSinglePipelineV1Alpha1(t *testing.T) {
 	}{
 		{
 			name:   "agent",
-			labels: []string{suite.LabelMetricAgentSetC, suite.LabelMetricAgent, suite.LabelSetC},
+			labels: []string{suite.LabelMetricAgent},
 			input: telemetryv1alpha1.MetricPipelineInput{
 				Runtime: &telemetryv1alpha1.MetricPipelineRuntimeInput{
 					Enabled: new(true),
@@ -47,7 +48,7 @@ func TestSinglePipelineV1Alpha1(t *testing.T) {
 		},
 		{
 			name:   "gateway",
-			labels: []string{suite.LabelMetricGatewaySetC, suite.LabelMetricGateway, suite.LabelSetC},
+			labels: []string{suite.LabelMetricGateway},
 			input: telemetryv1alpha1.MetricPipelineInput{
 				OTLP: &telemetryv1alpha1.OTLPInput{},
 			},
@@ -78,9 +79,11 @@ func TestSinglePipelineV1Alpha1(t *testing.T) {
 				Spec: telemetryv1alpha1.MetricPipelineSpec{
 					Input: tc.input,
 					Output: telemetryv1alpha1.MetricPipelineOutput{
-						OTLP: &telemetryv1alpha1.OTLPOutput{
-							Endpoint: telemetryv1alpha1.ValueType{
-								Value: backend.EndpointHTTP(),
+						OTLP: &telemetryv1alpha1.MetricPipelineOTLPOutput{
+							OTLPOutput: telemetryv1alpha1.OTLPOutput{
+								Endpoint: telemetryv1alpha1.ValueType{
+									Value: backend.EndpointHTTP(),
+								},
 							},
 						},
 					},
@@ -98,9 +101,9 @@ func TestSinglePipelineV1Alpha1(t *testing.T) {
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 			assert.BackendReachable(t, backend)
-			assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+			assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 
-			if tc.labels[0] == suite.LabelLogAgent {
+			if slices.Contains(tc.labels, suite.LabelLogAgent) {
 				assert.DaemonSetReady(t, kitkyma.MetricAgentName)
 			}
 
@@ -114,7 +117,7 @@ func TestSinglePipelineV1Alpha1(t *testing.T) {
 			} else {
 				assert.MetricsFromNamespaceDelivered(t, backend, genNs, telemetrygen.MetricNames)
 
-				gatewayMetricsURL := suite.ProxyClient.ProxyURLForService(kitkyma.MetricGatewayMetricsService.Namespace, kitkyma.MetricGatewayMetricsService.Name, "metrics", ports.Metrics)
+				gatewayMetricsURL := suite.ProxyClient.ProxyURLForService(kitkyma.TelemetryOTLPMetricsService.Namespace, kitkyma.TelemetryOTLPMetricsService.Name, "metrics", ports.Metrics)
 				assert.EmitsOTelCollectorMetrics(t, gatewayMetricsURL)
 			}
 		})

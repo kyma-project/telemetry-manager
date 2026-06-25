@@ -11,7 +11,7 @@ import (
 // KUBERNETES ATTRIBUTES PROCESSOR BUILDERS
 // =============================================================================
 
-func K8sAttributesProcessorConfig(enrichments *operatorv1beta1.EnrichmentSpec, useOTelServiceEnrichment bool) *K8sAttributesProcessor {
+func K8sAttributesProcessor(enrichments *operatorv1beta1.EnrichmentSpec, useOTelServiceEnrichment bool) *K8sAttributesProcessorConfig {
 	k8sAttributes := []string{
 		"k8s.pod.name",
 		"k8s.node.name",
@@ -40,14 +40,17 @@ func K8sAttributesProcessorConfig(enrichments *operatorv1beta1.EnrichmentSpec, u
 		},
 	}
 
-	return &K8sAttributesProcessor{
+	return &K8sAttributesProcessorConfig{
 		AuthType:    "serviceAccount",
 		Passthrough: false,
+		Filter: K8sAttributesFilterConfig{
+			NodeFromEnvVar: EnvVarCurrentNodeName,
+		},
 		Extract: ExtractK8sMetadata{
-			Metadata:                     k8sAttributes,
-			Labels:                       append(extractLabels(useOTelServiceEnrichment), extractPodLabels(enrichments)...),
-			OTelAnnotations:              useOTelServiceEnrichment,
-			DeploymentNameFromReplicaset: useOTelServiceEnrichment,
+			Metadata:        k8sAttributes,
+			Labels:          append(extractLabels(useOTelServiceEnrichment), extractPodLabels(enrichments)...),
+			Annotations:     extractOtelServiceAnnotations(useOTelServiceEnrichment),
+			OTelAnnotations: useOTelServiceEnrichment,
 		},
 		PodAssociation: podAssociations,
 	}
@@ -97,6 +100,20 @@ func extractLabels(useOTelServiceEnrichment bool) []ExtractLabel {
 	return extractLabels
 }
 
+// extractOtelServiceAnnotations returns annotation extraction config for service attributes in OTel mode.
+// The extracted values are stored in temporary kyma.* attributes so a subsequent restore step can
+// re-apply them after the k8sattributes processor's (buggy) label-over-annotation resolution.
+func extractOtelServiceAnnotations(useOTelServiceEnrichment bool) []ExtractLabel {
+	if !useOTelServiceEnrichment {
+		return nil
+	}
+
+	return []ExtractLabel{
+		{From: "pod", Key: otelAnnotationKeyServiceName, TagName: kymaOtelAnnotationServiceName},
+		{From: "pod", Key: otelAnnotationKeyServiceVersion, TagName: kymaOtelAnnotationServiceVersion},
+	}
+}
+
 func extractPodLabels(enrichments *operatorv1beta1.EnrichmentSpec) []ExtractLabel {
 	extractPodLabels := make([]ExtractLabel, 0)
 
@@ -124,9 +141,9 @@ func extractPodLabels(enrichments *operatorv1beta1.EnrichmentSpec) []ExtractLabe
 // RESOURCE PROCESSOR BUILDERS
 // =============================================================================
 
-// ResolveServiceNameConfig creates a service enrichment processor configuration
-func ResolveServiceNameConfig() *ServiceEnrichmentProcessor {
-	return &ServiceEnrichmentProcessor{
+// ResolveServiceName creates a service enrichment processor configuration
+func ResolveServiceName() *ServiceEnrichmentProcessorConfig {
+	return &ServiceEnrichmentProcessorConfig{
 		ResourceAttributes: []string{
 			kymaK8sIOAppName,
 			kymaAppName,
@@ -138,73 +155,27 @@ func ResolveServiceNameConfig() *ServiceEnrichmentProcessor {
 // FILTER PROCESSOR BUILDERS
 // =============================================================================
 
-// LogFilterProcessorConfig creates a FilterProcessor for logs with error_mode set to "ignore"
-func LogFilterProcessorConfig(logs FilterProcessorLogs) *FilterProcessor {
-	return &FilterProcessor{
+// LogFilterProcessor creates a FilterProcessorConfig for logs with error_mode set to "ignore"
+func LogFilterProcessor(filters []telemetryv1beta1.FilterSpec) *FilterProcessorConfig {
+	return &FilterProcessorConfig{
 		ErrorMode: defaultFilterProcessorErrorMode,
-		Logs:      logs,
+		Logs:      filters,
 	}
 }
 
-// MetricFilterProcessorConfig creates a FilterProcessor for metrics with the default error mode
-func MetricFilterProcessorConfig(metrics FilterProcessorMetrics) *FilterProcessor {
-	return &FilterProcessor{
+// MetricFilterProcessor creates a FilterProcessorConfig for metrics with the default error mode
+func MetricFilterProcessor(filters []telemetryv1beta1.FilterSpec) *FilterProcessorConfig {
+	return &FilterProcessorConfig{
 		ErrorMode: defaultFilterProcessorErrorMode,
-		Metrics:   metrics,
+		Metrics:   filters,
 	}
 }
 
-// TraceFilterProcessorConfig creates a FilterProcessor for traces with the default error mode
-func TraceFilterProcessorConfig(traces FilterProcessorTraces) *FilterProcessor {
-	return &FilterProcessor{
+// TraceFilterProcessor creates a FilterProcessorConfig for traces with the default error mode
+func TraceFilterProcessor(filters []telemetryv1beta1.FilterSpec) *FilterProcessorConfig {
+	return &FilterProcessorConfig{
 		ErrorMode: defaultFilterProcessorErrorMode,
-		Traces:    traces,
-	}
-}
-
-func FilterSpecsToLogFilterProcessorConfig(specs []telemetryv1beta1.FilterSpec) *FilterProcessor {
-	var mergedConditions []string
-	for _, spec := range specs {
-		mergedConditions = append(mergedConditions, spec.Conditions...)
-	}
-
-	return &FilterProcessor{
-		ErrorMode: defaultFilterProcessorErrorMode,
-		Logs: FilterProcessorLogs{
-			// Use log context as it is the lowest one and it is always present
-			Log: mergedConditions,
-		},
-	}
-}
-
-func FilterSpecsToMetricFilterProcessorConfig(specs []telemetryv1beta1.FilterSpec) *FilterProcessor {
-	var mergedConditions []string
-	for _, spec := range specs {
-		mergedConditions = append(mergedConditions, spec.Conditions...)
-	}
-
-	return &FilterProcessor{
-		ErrorMode: defaultFilterProcessorErrorMode,
-		Metrics: FilterProcessorMetrics{
-			// Use datapoint context as it is the lowest one and it is always present
-			Datapoint: mergedConditions,
-		},
-	}
-}
-
-func FilterSpecsToTraceFilterProcessorConfig(specs []telemetryv1beta1.FilterSpec) *FilterProcessor {
-	var mergedConditions []string
-	for _, spec := range specs {
-		mergedConditions = append(mergedConditions, spec.Conditions...)
-	}
-
-	return &FilterProcessor{
-		ErrorMode: defaultFilterProcessorErrorMode,
-		Traces: FilterProcessorTraces{
-			// Use span as context instead of spanevents, because while more granular, spanevents aren't always present
-			// span event filtering is not supported by user-defined filter until filter processor supports context inference
-			Span: mergedConditions,
-		},
+		Traces:    filters,
 	}
 }
 
@@ -212,27 +183,41 @@ func FilterSpecsToTraceFilterProcessorConfig(specs []telemetryv1beta1.FilterSpec
 // TRANSFORM PROCESSOR BUILDERS
 // =============================================================================
 
-// LogTransformProcessorConfig creates a TransformProcessor for logs with error_mode set to "ignore"
-func LogTransformProcessorConfig(statements []TransformProcessorStatements) *TransformProcessor {
-	return &TransformProcessor{
+// LogTransformProcessor creates a TransformProcessorConfig for logs with error_mode set to "ignore"
+func LogTransformProcessor(statements []TransformProcessorStatements) *TransformProcessorConfig {
+	return &TransformProcessorConfig{
 		ErrorMode:     defaultTransformProcessorErrorMode,
 		LogStatements: statements,
 	}
 }
 
-// MetricTransformProcessorConfig creates a TransformProcessor for metrics with the default error mode
-func MetricTransformProcessorConfig(statements []TransformProcessorStatements) *TransformProcessor {
-	return &TransformProcessor{
+// MetricTransformProcessor creates a TransformProcessorConfig for metrics with the default error mode
+func MetricTransformProcessor(statements []TransformProcessorStatements) *TransformProcessorConfig {
+	return &TransformProcessorConfig{
 		ErrorMode:        defaultTransformProcessorErrorMode,
 		MetricStatements: statements,
 	}
 }
 
-// TraceTransformProcessorConfig creates a TransformProcessor for traces with the default error mode
-func TraceTransformProcessorConfig(statements []TransformProcessorStatements) *TransformProcessor {
-	return &TransformProcessor{
+// TraceTransformProcessor creates a TransformProcessorConfig for traces with the default error mode
+func TraceTransformProcessor(statements []TransformProcessorStatements) *TransformProcessorConfig {
+	return &TransformProcessorConfig{
 		ErrorMode:       defaultTransformProcessorErrorMode,
 		TraceStatements: statements,
+	}
+}
+
+// AllSignalsTransformProcessor creates a TransformProcessorConfig that applies the same statements to
+// all three signal types (logs, metrics, traces). Use this for processors with static component IDs
+// that are shared across signal-type builders, since ComponentBuilder stores only the first-registered
+// config: populating all three statement sets ensures the processor works regardless of which signal
+// type happens to register first.
+func AllSignalsTransformProcessor(statements []TransformProcessorStatements) *TransformProcessorConfig {
+	return &TransformProcessorConfig{
+		ErrorMode:        defaultTransformProcessorErrorMode,
+		LogStatements:    statements,
+		MetricStatements: statements,
+		TraceStatements:  statements,
 	}
 }
 
@@ -292,8 +277,33 @@ func DropUnknownServiceNameProcessorStatements() []TransformProcessorStatements 
 	}}
 }
 
-// InstrumentationScopeProcessorConfig creates a transform processor for instrumentation scope
-func InstrumentationScopeProcessorConfig(instrumentationScopeVersion string, inputSource ...InputSourceType) *TransformProcessor {
+// RestoreOtelServiceAnnotationsProcessorStatements creates processor statements that re-apply OTel pod
+// annotation values for service.name and service.version after the k8sattributes processor runs.
+// This is a workaround for a bug in the k8sattributes processor where pod labels (app.kubernetes.io/*)
+// incorrectly take priority over pod annotations (resource.opentelemetry.io/*).
+// The annotations were extracted to temporary kyma.otel.annotation.* attributes by the k8sattributes
+// processor; this step restores them as the final service attribute values and deletes the temp attrs.
+// Empty annotation values are treated as "not set" — the restore only fires for non-empty values so
+// that the k8sattributes fallback chain (label → pod name) can produce a better result.
+func RestoreOtelServiceAnnotationsProcessorStatements() []TransformProcessorStatements {
+	restoreAndClean := func(serviceAttr, annotationAttr string) []string {
+		return []string{
+			JoinWithWhere(
+				fmt.Sprintf("set(%s, %s)", ResourceAttribute(serviceAttr), ResourceAttribute(annotationAttr)),
+				JoinWithAnd(ResourceAttributeIsNotNil(annotationAttr), ResourceAttributeNotEquals(annotationAttr, "")),
+			),
+			DeleteResourceAttribute(annotationAttr),
+		}
+	}
+
+	stmts := restoreAndClean("service.name", kymaOtelAnnotationServiceName)
+	stmts = append(stmts, restoreAndClean("service.version", kymaOtelAnnotationServiceVersion)...)
+
+	return []TransformProcessorStatements{{Statements: stmts}}
+}
+
+// InstrumentationScopeProcessor creates a transform processor for instrumentation scope
+func InstrumentationScopeProcessor(instrumentationScopeVersion string, inputSource ...InputSourceType) *TransformProcessorConfig {
 	statements := []string{}
 	transformProcessorStatements := []TransformProcessorStatements{}
 
@@ -305,11 +315,11 @@ func InstrumentationScopeProcessorConfig(instrumentationScopeVersion string, inp
 		Statements: statements,
 	})
 
-	return MetricTransformProcessorConfig(transformProcessorStatements)
+	return MetricTransformProcessor(transformProcessorStatements)
 }
 
 // KymaInputNameProcessorStatements creates processor statements for the transform processor that sets the custom `kyma.input.name` attribute
-// the attribute is mainly used for routing purpose in the metric agent configuration
+// the attribute is mainly used for routing purpose in the Metric Agent configuration
 func KymaInputNameProcessorStatements(inputSource InputSourceType) []TransformProcessorStatements {
 	return []TransformProcessorStatements{{
 		Statements: []string{

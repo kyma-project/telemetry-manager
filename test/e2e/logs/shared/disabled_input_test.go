@@ -12,6 +12,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
@@ -54,15 +55,15 @@ func TestDisabledInput_OTel(t *testing.T) {
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.BackendReachable(t, backend)
-	assert.DeploymentReady(t, kitkyma.LogGatewayName)
+	assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 	assert.OTelLogPipelineHealthy(t, pipelineName)
 
-	// If Runtime input is disabled, THEN the log agent must not be deployed
+	// If Runtime input is disabled, THEN the Log Agent must not be deployed
 	Eventually(func(g Gomega) {
 		var daemonSet appsv1.DaemonSet
 
 		err := suite.K8sClient.Get(t.Context(), kitkyma.LogAgentName, &daemonSet)
-		g.Expect(apierrors.IsNotFound(err)).To(BeTrue(), "Log agent DaemonSet must not exist")
+		g.Expect(apierrors.IsNotFound(err)).To(BeTrue(), "Log Agent DaemonSet must not exist")
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).To(Succeed())
 
 	// If OTLP input is disabled, THEN the logs pushed to the gateway should not be sent to the backend
@@ -70,7 +71,7 @@ func TestDisabledInput_OTel(t *testing.T) {
 }
 
 func TestDisabledInput_FluentBit(t *testing.T) {
-	suite.SetupTest(t, suite.LabelFluentBit, suite.LabelNoFIPS)
+	suite.SetupTestWithOptions(t, []string{suite.LabelFluentBit}, kubeprep.WithOverrideFIPSMode(false))
 
 	const (
 		endpointAddress = "localhost"

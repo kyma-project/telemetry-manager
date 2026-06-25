@@ -12,13 +12,14 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
 func TestMTLSExpiredCert_OTel(t *testing.T) {
-	suite.SetupTest(t, suite.LabelLogsMisc, suite.LabelMTLS)
+	suite.SetupTest(t, suite.LabelLogs, suite.LabelMisc, suite.LabelMTLS)
 
 	var (
 		uniquePrefix = unique.Prefix()
@@ -26,21 +27,21 @@ func TestMTLSExpiredCert_OTel(t *testing.T) {
 		backendNs    = uniquePrefix("backend")
 	)
 
-	expiredServerCerts, expiredClientCerts, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).
-		WithExpiredClientCert().
+	serverCerts, clientCerts, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).
+		WithAboutToExpireShortlyClientCert().
 		Build()
 	Expect(err).ToNot(HaveOccurred())
 
-	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithMTLS(*expiredServerCerts))
+	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithMTLS(*serverCerts))
 
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
 		WithOTLPOutput(
 			testutils.OTLPEndpoint(backend.EndpointHTTPS()),
 			testutils.OTLPClientMTLSFromString(
-				expiredClientCerts.CaCertPem.String(),
-				expiredClientCerts.ClientCertPem.String(),
-				expiredClientCerts.ClientKeyPem.String(),
+				clientCerts.CaCertPem.String(),
+				clientCerts.ClientCertPem.String(),
+				clientCerts.ClientKeyPem.String(),
 			)).
 		Build()
 
@@ -50,6 +51,21 @@ func TestMTLSExpiredCert_OTel(t *testing.T) {
 
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
+	// Initially, the certificate is about to expire in a short amount of time
+	assert.LogPipelineHasCondition(t, pipelineName, metav1.Condition{
+		Type:   conditions.TypeConfigurationGenerated,
+		Status: metav1.ConditionTrue,
+		Reason: conditions.ReasonTLSCertificateAboutToExpire,
+	})
+
+	assert.TelemetryHasState(t, operatorv1beta1.StateWarning)
+	assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
+		Type:   conditions.TypeLogComponentsHealthy,
+		Status: metav1.ConditionTrue,
+		Reason: conditions.ReasonTLSCertificateAboutToExpire,
+	})
+
+	// After certificate is expired, reconciliation should be triggered and status updated
 	assert.LogPipelineHasCondition(t, pipelineName, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionFalse,
@@ -71,7 +87,7 @@ func TestMTLSExpiredCert_OTel(t *testing.T) {
 }
 
 func TestMTLSExpiredCert_FluentBit(t *testing.T) {
-	suite.SetupTest(t, suite.LabelFluentBit, suite.LabelNoFIPS)
+	suite.SetupTestWithOptions(t, []string{suite.LabelFluentBit}, kubeprep.WithOverrideFIPSMode(false))
 
 	var (
 		uniquePrefix = unique.Prefix()
@@ -79,12 +95,12 @@ func TestMTLSExpiredCert_FluentBit(t *testing.T) {
 		backendNs    = uniquePrefix("backend")
 	)
 
-	expiredServerCerts, expiredClientCerts, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).
-		WithExpiredClientCert().
+	serverCerts, clientCerts, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).
+		WithAboutToExpireShortlyClientCert().
 		Build()
 	Expect(err).ToNot(HaveOccurred())
 
-	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithMTLS(*expiredServerCerts))
+	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit, kitbackend.WithMTLS(*serverCerts))
 
 	pipeline := testutils.NewLogPipelineBuilder().
 		WithName(pipelineName).
@@ -92,9 +108,9 @@ func TestMTLSExpiredCert_FluentBit(t *testing.T) {
 			testutils.HTTPHost(backend.Host()),
 			testutils.HTTPPort(backend.Port()),
 			testutils.HTTPClientTLSFromString(
-				expiredClientCerts.CaCertPem.String(),
-				expiredClientCerts.ClientCertPem.String(),
-				expiredClientCerts.ClientKeyPem.String(),
+				clientCerts.CaCertPem.String(),
+				clientCerts.ClientCertPem.String(),
+				clientCerts.ClientKeyPem.String(),
 			)).
 		Build()
 
@@ -104,6 +120,21 @@ func TestMTLSExpiredCert_FluentBit(t *testing.T) {
 
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
+	// Initially, the certificate is about to expire in a short amount of time
+	assert.LogPipelineHasCondition(t, pipelineName, metav1.Condition{
+		Type:   conditions.TypeConfigurationGenerated,
+		Status: metav1.ConditionTrue,
+		Reason: conditions.ReasonTLSCertificateAboutToExpire,
+	})
+
+	assert.TelemetryHasState(t, operatorv1beta1.StateWarning)
+	assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
+		Type:   conditions.TypeLogComponentsHealthy,
+		Status: metav1.ConditionTrue,
+		Reason: conditions.ReasonTLSCertificateAboutToExpire,
+	})
+
+	// After certificate is expired, reconciliation should be triggered and status updated
 	assert.LogPipelineHasCondition(t, pipelineName, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionFalse,

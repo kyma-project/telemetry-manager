@@ -24,7 +24,7 @@ For examples using the OTel SDK in a different language, refer to the official [
 ## Prerequisites
 
 - Kyma as the target deployment environment.
-- The [Telemetry module](../../README.md) is [added](https://kyma-project.io/#/02-get-started/01-quick-install).
+- The [Telemetry module](../../README.md) is [added](https://kyma-project.io/02-get-started/01-quick-install).
 
 - [Kubectl version that is within one minor version (older or newer) of `kube-apiserver`](https://kubernetes.io/releases/version-skew-policy/#kubectl).
 

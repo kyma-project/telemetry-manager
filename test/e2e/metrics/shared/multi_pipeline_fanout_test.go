@@ -25,7 +25,7 @@ import (
 )
 
 func TestMultiPipelineFanout_Agent(t *testing.T) {
-	suite.SetupTest(t, suite.LabelMetricAgentSetC, suite.LabelMetricAgent, suite.LabelSetC)
+	suite.SetupTest(t, suite.LabelMetricAgent)
 
 	var (
 		uniquePrefix           = unique.Prefix()
@@ -53,13 +53,13 @@ func TestMultiPipelineFanout_Agent(t *testing.T) {
 		WithRuntimeInputStatefulSetMetrics(false).
 		WithRuntimeInputDaemonSetMetrics(false).
 		WithRuntimeInputJobMetrics(false).
-		WithOTLPOutput(testutils.OTLPEndpoint(backendRuntime.EndpointHTTP())).
+		WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint(backendRuntime.EndpointHTTP())).
 		Build()
 
 	metricPipelinePrometheus := testutils.NewMetricPipelineBuilder().
 		WithName(pipelinePrometheusName).
 		WithPrometheusInput(true, testutils.IncludeNamespaces(genNs)).
-		WithOTLPOutput(testutils.OTLPEndpoint(backendPrometheus.EndpointHTTP())).
+		WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint(backendPrometheus.EndpointHTTP())).
 		Build()
 
 	metricProducer := prommetricgen.New(genNs)
@@ -79,7 +79,7 @@ func TestMultiPipelineFanout_Agent(t *testing.T) {
 
 	assert.BackendReachable(t, backendRuntime)
 	assert.BackendReachable(t, backendPrometheus)
-	assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+	assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 	assert.MetricPipelineHealthy(t, pipelineRuntimeName)
 	assert.MetricPipelineHealthy(t, pipelinePrometheusName)
 	assert.MetricsFromNamespaceDelivered(t, backendRuntime, genNs, runtime.DefaultMetricsNames)
@@ -111,8 +111,7 @@ func TestMultiPipelineFanout_Agent(t *testing.T) {
 				ContainElement(HaveScopeVersion(
 					SatisfyAny(
 						ContainSubstring("main"),
-						ContainSubstring("1."),
-						ContainSubstring("PR-"),
+						MatchRegexp("[0-9]+.[0-9]+.[0-9]+"),
 					))),
 			),
 		)),
@@ -147,8 +146,7 @@ func TestMultiPipelineFanout_Agent(t *testing.T) {
 				ContainElement(HaveScopeVersion(
 					SatisfyAny(
 						ContainSubstring("main"),
-						ContainSubstring("1."),
-						ContainSubstring("PR-"),
+						MatchRegexp("[0-9]+.[0-9]+.[0-9]+"),
 					),
 				)),
 			),
@@ -158,7 +156,7 @@ func TestMultiPipelineFanout_Agent(t *testing.T) {
 }
 
 func TestMultiPipelineFanout_Gateway(t *testing.T) {
-	suite.SetupTest(t, suite.LabelMetricGatewaySetB, suite.LabelMetricGateway, suite.LabelSetB)
+	suite.SetupTest(t, suite.LabelMetricGateway)
 
 	var (
 		uniquePrefix  = unique.Prefix()
@@ -173,12 +171,12 @@ func TestMultiPipelineFanout_Gateway(t *testing.T) {
 
 	pipeline1 := testutils.NewMetricPipelineBuilder().
 		WithName(pipeline1Name).
-		WithOTLPOutput(testutils.OTLPEndpoint(backend1.EndpointHTTP())).
+		WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint(backend1.EndpointHTTP())).
 		Build()
 
 	pipeline2 := testutils.NewMetricPipelineBuilder().
 		WithName(pipeline2Name).
-		WithOTLPOutput(testutils.OTLPEndpoint(backend2.EndpointHTTP())).
+		WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint(backend2.EndpointHTTP())).
 		Build()
 
 	resources := []client.Object{
@@ -195,7 +193,7 @@ func TestMultiPipelineFanout_Gateway(t *testing.T) {
 
 	assert.BackendReachable(t, backend1)
 	assert.BackendReachable(t, backend2)
-	assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+	assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 	assert.MetricPipelineHealthy(t, pipeline1Name)
 	assert.MetricPipelineHealthy(t, pipeline2Name)
 
@@ -213,8 +211,7 @@ func checkInstrumentationScopeAndVersion(t *testing.T, g Gomega, body []byte, sc
 				HaveScopeVersion(
 					SatisfyAny(
 						ContainSubstring("main"),
-						ContainSubstring("1."),
-						ContainSubstring("PR-"),
+						MatchRegexp("[0-9]+.[0-9]+.[0-9]+"),
 					)),
 			)),
 	)), "scope '%v' must be sent to the given backend", scope)

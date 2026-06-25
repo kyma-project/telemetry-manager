@@ -1,7 +1,6 @@
 package shared
 
 import (
-	"fmt"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -22,11 +21,10 @@ import (
 
 func TestFilter_OTel(t *testing.T) {
 	tests := []struct {
-		name               string
-		labels             []string
-		inputBuilder       func(includeNs string) telemetryv1beta1.LogPipelineInput
-		resourceName       types.NamespacedName
-		readinessCheckFunc func(t *testing.T, name types.NamespacedName)
+		name         string
+		labels       []string
+		inputBuilder func(includeNs string) telemetryv1beta1.LogPipelineInput
+		resourceName types.NamespacedName
 	}{
 		{
 			name:   suite.LabelLogAgent,
@@ -34,8 +32,7 @@ func TestFilter_OTel(t *testing.T) {
 			inputBuilder: func(includeNs string) telemetryv1beta1.LogPipelineInput {
 				return testutils.BuildLogPipelineRuntimeInput(testutils.IncludeNamespaces(includeNs))
 			},
-			resourceName:       kitkyma.LogAgentName,
-			readinessCheckFunc: assert.DaemonSetReady,
+			resourceName: kitkyma.LogAgentName,
 		},
 		{
 			name:   suite.LabelLogGateway,
@@ -43,17 +40,7 @@ func TestFilter_OTel(t *testing.T) {
 			inputBuilder: func(includeNs string) telemetryv1beta1.LogPipelineInput {
 				return testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
 			},
-			resourceName:       kitkyma.LogGatewayName,
-			readinessCheckFunc: assert.DeploymentReady,
-		},
-		{
-			name:   fmt.Sprintf("%s-%s", suite.LabelLogGateway, suite.LabelExperimental),
-			labels: []string{suite.LabelLogGateway, suite.LabelExperimental},
-			inputBuilder: func(includeNs string) telemetryv1beta1.LogPipelineInput {
-				return testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
-			},
-			resourceName:       kitkyma.TelemetryOTLPGatewayName,
-			readinessCheckFunc: assert.DaemonSetReady,
+			resourceName: kitkyma.OTLPGatewayName,
 		},
 	}
 
@@ -92,9 +79,7 @@ func TestFilter_OTel(t *testing.T) {
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 			assert.BackendReachable(t, backend)
-
-			tc.readinessCheckFunc(t, tc.resourceName)
-
+			assert.DaemonSetReady(t, tc.resourceName)
 			assert.OTelLogPipelineHealthy(t, pipelineName)
 
 			assert.BackendDataConsistentlyMatches(t, backend, Not(HaveFlatLogs(ContainElement(

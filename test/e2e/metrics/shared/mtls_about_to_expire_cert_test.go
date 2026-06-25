@@ -33,7 +33,7 @@ func TestMTLSAboutToExpireCert(t *testing.T) {
 	}{
 		{
 			name:   "agent",
-			labels: []string{suite.LabelMetricAgentSetA, suite.LabelMetricAgent, suite.LabelSetA},
+			labels: []string{suite.LabelMetricAgent},
 			inputBuilder: func(includeNs string) telemetryv1beta1.MetricPipelineInput {
 				return testutils.BuildMetricPipelineRuntimeInput(testutils.IncludeNamespaces(includeNs))
 			},
@@ -48,7 +48,7 @@ func TestMTLSAboutToExpireCert(t *testing.T) {
 		},
 		{
 			name:   "gateway",
-			labels: []string{suite.LabelMetricGatewaySetA, suite.LabelMetricGateway, suite.LabelSetA},
+			labels: []string{suite.LabelMetricGateway},
 			inputBuilder: func(includeNs string) telemetryv1beta1.MetricPipelineInput {
 				return testutils.BuildMetricPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
 			},
@@ -62,7 +62,7 @@ func TestMTLSAboutToExpireCert(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			suite.SetupTest(t, tc.labels[0], tc.labels[1], tc.labels[2], suite.LabelMTLS)
+			suite.SetupTest(t, append(tc.labels, suite.LabelMTLS)...)
 
 			var (
 				uniquePrefix = unique.Prefix(tc.name)
@@ -81,7 +81,7 @@ func TestMTLSAboutToExpireCert(t *testing.T) {
 			pipeline := testutils.NewMetricPipelineBuilder().
 				WithName(pipelineName).
 				WithInput(tc.inputBuilder(genNs)).
-				WithOTLPOutput(
+				WithMetricPipelineOTLPOutput(
 					testutils.OTLPEndpoint(backend.EndpointHTTPS()),
 					testutils.OTLPClientMTLSFromString(
 						clientCerts.CaCertPem.String(),
@@ -102,7 +102,7 @@ func TestMTLSAboutToExpireCert(t *testing.T) {
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 			assert.BackendReachable(t, backend)
-			assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+			assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 
 			if suite.ExpectAgent(tc.labels...) {
 				assert.DaemonSetReady(t, kitkyma.MetricAgentName)
@@ -131,7 +131,7 @@ func TestMTLSAboutToExpireCert(t *testing.T) {
 			} else {
 				assert.MetricsFromNamespaceDelivered(t, backend, genNs, telemetrygen.MetricNames)
 
-				gatewayMetricsURL := suite.ProxyClient.ProxyURLForService(kitkyma.MetricGatewayMetricsService.Namespace, kitkyma.MetricGatewayMetricsService.Name, "metrics", ports.Metrics)
+				gatewayMetricsURL := suite.ProxyClient.ProxyURLForService(kitkyma.TelemetryOTLPMetricsService.Namespace, kitkyma.TelemetryOTLPMetricsService.Name, "metrics", ports.Metrics)
 				assert.EmitsOTelCollectorMetrics(t, gatewayMetricsURL)
 			}
 		})

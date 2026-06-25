@@ -20,7 +20,7 @@ import (
 )
 
 func TestDisabledInput(t *testing.T) {
-	suite.SetupTest(t, suite.LabelMetricsMisc)
+	suite.SetupTest(t, suite.LabelMetrics, suite.LabelMisc)
 
 	var (
 		uniquePrefix = unique.Prefix()
@@ -37,7 +37,7 @@ func TestDisabledInput(t *testing.T) {
 		WithRuntimeInput(false).
 		WithIstioInput(false).
 		WithOTLPInput(false).
-		WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
+		WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 		Build()
 
 	resources := []client.Object{
@@ -51,10 +51,10 @@ func TestDisabledInput(t *testing.T) {
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.BackendReachable(t, backend)
-	assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+	assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 	assert.MetricPipelineHealthy(t, pipelineName)
 
-	// If Runtime input is disabled, THEN the metric agent must not be deployed
+	// If Runtime input is disabled, THEN the Metric Agent must not be deployed
 	assert.DaemonSetNotFound(t, kitkyma.MetricAgentName)
 	assert.MetricPipelineHasCondition(t, pipelineName, metav1.Condition{
 		Type:   conditions.TypeAgentHealthy,

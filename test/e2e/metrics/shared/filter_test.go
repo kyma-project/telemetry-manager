@@ -26,14 +26,14 @@ func TestFilter(t *testing.T) {
 	}{
 		{
 			name:   "agent",
-			labels: []string{suite.LabelMetricAgentSetC, suite.LabelMetricAgent, suite.LabelSetC},
+			labels: []string{suite.LabelMetricAgent},
 			inputBuilder: func(includeNs string) telemetryv1beta1.MetricPipelineInput {
 				return testutils.BuildMetricPipelineRuntimeInput(testutils.IncludeNamespaces(includeNs))
 			},
 		},
 		{
 			name:   "gateway",
-			labels: []string{suite.LabelMetricGatewaySetC, suite.LabelMetricGateway, suite.LabelSetC},
+			labels: []string{suite.LabelMetricGateway},
 			inputBuilder: func(includeNs string) telemetryv1beta1.MetricPipelineInput {
 				return testutils.BuildMetricPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
 			},
@@ -55,7 +55,7 @@ func TestFilter(t *testing.T) {
 			pipeline := testutils.NewMetricPipelineBuilder().
 				WithName(pipelineName).
 				WithInput(tc.inputBuilder(genNs)).
-				WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
+				WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 				WithTransform(telemetryv1beta1.TransformSpec{
 					Statements: []string{"set(datapoint.attributes[\"test\"], \"passed\")"},
 				}).
@@ -74,7 +74,7 @@ func TestFilter(t *testing.T) {
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 			assert.BackendReachable(t, backend)
-			assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+			assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 
 			if suite.ExpectAgent(tc.labels...) {
 				assert.DaemonSetReady(t, kitkyma.MetricAgentName)

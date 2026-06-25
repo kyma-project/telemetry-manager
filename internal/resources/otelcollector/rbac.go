@@ -35,7 +35,6 @@ func withClusterRole(options ...ClusterRoleOption) RBACOption {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      name.Name,
 				Namespace: name.Namespace,
-				Labels:    commonresources.MakeDefaultLabels(name.Name, r.component),
 			},
 			Rules: []rbacv1.PolicyRule{},
 		}
@@ -53,7 +52,6 @@ func withClusterRoleBinding() RBACOption {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      name.Name,
 				Namespace: name.Namespace,
-				Labels:    commonresources.MakeDefaultLabels(name.Name, r.component),
 			},
 			Subjects: []rbacv1.Subject{{Name: name.Name, Namespace: name.Namespace, Kind: rbacv1.ServiceAccountKind}},
 			RoleRef: rbacv1.RoleRef{
@@ -71,7 +69,6 @@ func withRole(options ...RoleOption) RBACOption {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      name.Name,
 				Namespace: name.Namespace,
-				Labels:    commonresources.MakeDefaultLabels(name.Name, r.component),
 			},
 			Rules: []rbacv1.PolicyRule{},
 		}
@@ -90,7 +87,6 @@ func withRoleBinding() RBACOption {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      name.Name,
 				Namespace: name.Namespace,
-				Labels:    commonresources.MakeDefaultLabels(name.Name, r.component),
 			},
 			Subjects: []rbacv1.Subject{
 				{
@@ -108,31 +104,11 @@ func withRoleBinding() RBACOption {
 	}
 }
 
-func makeTraceGatewayRBAC(namespace string) rbac {
-	return *newRBAC(
-		types.NamespacedName{Name: names.TraceGateway, Namespace: namespace},
-		commonresources.LabelValueK8sComponentGateway,
-		withClusterRole(withK8sAttributeRules()),
-		withClusterRoleBinding(),
-	)
-}
-
 func makeMetricAgentRBAC(namespace string) rbac {
 	return *newRBAC(
 		types.NamespacedName{Name: names.MetricAgent, Namespace: namespace},
 		commonresources.LabelValueK8sComponentAgent,
 		withClusterRole(withKubeletStatsRules(), withPrometheusRules(), withK8sClusterRules()),
-		withClusterRoleBinding(),
-		withRole(withLeaderElectionRules()),
-		withRoleBinding(),
-	)
-}
-
-func makeMetricGatewayRBAC(namespace string) rbac {
-	return *newRBAC(
-		types.NamespacedName{Name: names.MetricGateway, Namespace: namespace},
-		commonresources.LabelValueK8sComponentGateway,
-		withClusterRole(withK8sAttributeRules(), withKymaStatsRules()),
 		withClusterRoleBinding(),
 		withRole(withLeaderElectionRules()),
 		withRoleBinding(),
@@ -148,21 +124,14 @@ func makeLogAgentRBAC(namespace string) rbac {
 	)
 }
 
-func makeLogGatewayRBAC(namespace string) rbac {
-	return *newRBAC(
-		types.NamespacedName{Name: names.LogGateway, Namespace: namespace},
-		commonresources.LabelValueK8sComponentGateway,
-		withClusterRole(withK8sAttributeRules()),
-		withClusterRoleBinding(),
-	)
-}
-
 func makeOTLPGatewayRBAC(namespace string) rbac {
 	return *newRBAC(
 		types.NamespacedName{Name: names.OTLPGateway, Namespace: namespace},
 		commonresources.LabelValueK8sComponentGateway,
-		withClusterRole(withK8sAttributeRules()),
+		withClusterRole(withK8sAttributeRules(), withKymaStatsRules()),
 		withClusterRoleBinding(),
+		withRole(withLeaderElectionRules()),
+		withRoleBinding(),
 	)
 }
 
@@ -188,25 +157,31 @@ func withK8sClusterRules() ClusterRoleOption {
 		// policy rules needed for the k8sclusterreceiver component
 		k8sClusterRules := []rbacv1.PolicyRule{{
 			APIGroups: []string{""},
-			Resources: []string{"events", "namespaces", "namespaces/status", "nodes", "nodes/spec", "pods", "pods/status", "replicationcontrollers", "replicationcontrollers/status", "resourcequotas", "services"},
+			Resources: []string{"events", "namespaces", "namespaces/status", "nodes", "nodes/spec", "persistentvolumes", "persistentvolumeclaims", "pods", "pods/status", "replicationcontrollers", "replicationcontrollers/status", "resourcequotas", "services"},
 			Verbs:     []string{"get", "list", "watch"},
-		}, {
-			APIGroups: []string{"apps"},
-			Resources: []string{"daemonsets", "deployments", "replicasets", "statefulsets"},
-			Verbs:     []string{"get", "list", "watch"},
-		}, {
-			APIGroups: []string{"extensions"},
-			Resources: []string{"daemonsets", "deployments", "replicasets"},
-			Verbs:     []string{"get", "list", "watch"},
-		}, {
-			APIGroups: []string{"batch"},
-			Resources: []string{"jobs", "cronjobs"},
-			Verbs:     []string{"get", "list", "watch"},
-		}, {
-			APIGroups: []string{"autoscaling"},
-			Resources: []string{"horizontalpodautoscalers"},
-			Verbs:     []string{"get", "list", "watch"},
-		}}
+		},
+			{
+				APIGroups: []string{"discovery.k8s.io"},
+				Resources: []string{"endpointslices"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+			{
+				APIGroups: []string{"apps"},
+				Resources: []string{"daemonsets", "deployments", "replicasets", "statefulsets"},
+				Verbs:     []string{"get", "list", "watch"},
+			}, {
+				APIGroups: []string{"extensions"},
+				Resources: []string{"daemonsets", "deployments", "replicasets"},
+				Verbs:     []string{"get", "list", "watch"},
+			}, {
+				APIGroups: []string{"batch"},
+				Resources: []string{"jobs", "cronjobs"},
+				Verbs:     []string{"get", "list", "watch"},
+			}, {
+				APIGroups: []string{"autoscaling"},
+				Resources: []string{"horizontalpodautoscalers"},
+				Verbs:     []string{"get", "list", "watch"},
+			}}
 		cr.Rules = append(cr.Rules, k8sClusterRules...)
 	}
 }
@@ -215,7 +190,7 @@ func withKubeletStatsRules() ClusterRoleOption {
 	// policy rules needed for the kubeletstatsreceiver component
 	kubeletStatsRules := []rbacv1.PolicyRule{{
 		APIGroups: []string{""},
-		Resources: []string{"nodes", "nodes/stats", "nodes/proxy"},
+		Resources: []string{"nodes", "nodes/stats", "nodes/proxy", "nodes/pods", "persistentvolumeclaims", "persistentvolumes"},
 		Verbs:     []string{"get", "list", "watch"},
 	}}
 

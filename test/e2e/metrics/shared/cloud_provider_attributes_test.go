@@ -30,7 +30,7 @@ func TestCloudProviderAttributes(t *testing.T) {
 	}{
 		{
 			name:   "agent",
-			labels: []string{suite.LabelMetricAgentSetA, suite.LabelMetricAgent, suite.LabelSetA},
+			labels: []string{suite.LabelMetricAgent},
 			inputBuilder: func(includeNs string) telemetryv1beta1.MetricPipelineInput {
 				return testutils.BuildMetricPipelineRuntimeInput(testutils.IncludeNamespaces(includeNs))
 			},
@@ -45,7 +45,7 @@ func TestCloudProviderAttributes(t *testing.T) {
 		},
 		{
 			name:   "gateway",
-			labels: []string{suite.LabelMetricGatewaySetA, suite.LabelMetricGateway, suite.LabelSetA},
+			labels: []string{suite.LabelMetricGateway},
 			inputBuilder: func(includeNs string) telemetryv1beta1.MetricPipelineInput {
 				return testutils.BuildMetricPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
 			},
@@ -80,7 +80,7 @@ func TestCloudProviderAttributes(t *testing.T) {
 				WithRuntimeInputStatefulSetMetrics(false).
 				WithRuntimeInputDaemonSetMetrics(false).
 				WithRuntimeInputJobMetrics(false).
-				WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
+				WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 				Build()
 
 			resources := []client.Object{
@@ -94,7 +94,7 @@ func TestCloudProviderAttributes(t *testing.T) {
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 			assert.BackendReachable(t, backend)
-			assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+			assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 
 			if suite.ExpectAgent(tc.labels...) {
 				assert.DaemonSetReady(t, kitkyma.MetricAgentName)

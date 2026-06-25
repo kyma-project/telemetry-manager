@@ -111,6 +111,10 @@ func IsRuntimeJobInputEnabled(input telemetryv1beta1.MetricPipelineInput) bool {
 	return *input.Runtime.Resources.Job.Enabled
 }
 
+func IsDeltaTemporality(output telemetryv1beta1.MetricPipelineOutput) bool {
+	return *output.OTLP.Temporality == telemetryv1beta1.TemporalityDelta
+}
+
 // OTLPOutputPorts returns the list of ports of the backends defined in all given MetricPipelines
 func OTLPOutputPorts(ctx context.Context, c client.Reader, allPipelines []telemetryv1beta1.MetricPipeline) ([]string, error) {
 	backendPorts := []string{}
@@ -128,7 +132,7 @@ func OTLPOutputPorts(ctx context.Context, c client.Reader, allPipelines []teleme
 		}
 
 		// List of ports needs to be sorted
-		// Otherwise, metric agent will continuously restart, because in each reconciliation we can have the ports list in a different order
+		// Otherwise, Metric Agent will continuously restart, because in each reconciliation we can have the ports list in a different order
 		slices.Sort(backendPorts)
 		// Remove duplication in ports in case multiple backends are defined with the same port
 		backendPorts = slices.Compact(backendPorts)

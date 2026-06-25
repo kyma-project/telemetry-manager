@@ -14,13 +14,13 @@ import (
 
 type NetworkPolicyOption func(*networkingv1.NetworkPolicy)
 
-// MakeNetworkPolicy creates a NetworkPolicy with the given name, labels, pod selector, and options.
+// MakeNetworkPolicy creates a NetworkPolicy with the given name, pod selector, and options.
+// Resource labels are applied by the Labeler interceptor at write time.
 // PolicyTypes are automatically derived based on which rules are present:
 // - Ingress type is added only if ingress rules exist
 // - Egress type is added only if egress rules exist
 func MakeNetworkPolicy(
 	name types.NamespacedName,
-	labels map[string]string,
 	selectorLabels map[string]string,
 	opts ...NetworkPolicyOption,
 ) *networkingv1.NetworkPolicy {
@@ -28,7 +28,6 @@ func MakeNetworkPolicy(
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      NetworkPolicyPrefix + name.Name,
 			Namespace: name.Namespace,
-			Labels:    labels,
 		},
 		Spec: networkingv1.NetworkPolicySpec{
 			PodSelector: metav1.LabelSelector{
@@ -59,14 +58,10 @@ func WithNameSuffix(suffix string) func(spec *networkingv1.NetworkPolicy) {
 	}
 }
 
-// WithIngressFromAny allows ingress traffic from any IP (0.0.0.0/0 and ::/0) on the specified TCP ports
-func WithIngressFromAny(ports []int32) NetworkPolicyOption {
+// WithIngressFromAny allows ingress traffic from any source
+func WithIngressFromAny(ports ...int32) NetworkPolicyOption {
 	return func(netpol *networkingv1.NetworkPolicy) {
 		netpol.Spec.Ingress = append(netpol.Spec.Ingress, networkingv1.NetworkPolicyIngressRule{
-			From: []networkingv1.NetworkPolicyPeer{
-				{IPBlock: &networkingv1.IPBlock{CIDR: "0.0.0.0/0"}},
-				{IPBlock: &networkingv1.IPBlock{CIDR: "::/0"}},
-			},
 			Ports: makeNetworkPolicyPorts(ports),
 		})
 	}
@@ -126,15 +121,10 @@ func WithIngressFromPodsInNamespace(namespace string, selector map[string]string
 	}
 }
 
-// WithEgressToAny allows egress traffic to any IP (0.0.0.0/0 and ::/0)
+// WithEgressToAny allows egress traffic to any destination.
 func WithEgressToAny() NetworkPolicyOption {
 	return func(netpol *networkingv1.NetworkPolicy) {
-		netpol.Spec.Egress = append(netpol.Spec.Egress, networkingv1.NetworkPolicyEgressRule{
-			To: []networkingv1.NetworkPolicyPeer{
-				{IPBlock: &networkingv1.IPBlock{CIDR: "0.0.0.0/0"}},
-				{IPBlock: &networkingv1.IPBlock{CIDR: "::/0"}},
-			},
-		})
+		netpol.Spec.Egress = append(netpol.Spec.Egress, networkingv1.NetworkPolicyEgressRule{})
 	}
 }
 

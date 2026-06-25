@@ -4,10 +4,7 @@ metadata:
   name: {{ include "telemetry-manager.fullname" . }}-tracepipelines
   namespace: {{ .Release.Namespace }}
   labels:
-    app.kubernetes.io/component: controller
-    app.kubernetes.io/part-of: telemetry
     busola.io/extension: resource
     busola.io/extension-version: "0.5"
-    kyma-project.io/module: telemetry
-  {{- include "telemetry-manager.labels" . | indent 4 }}
+  {{- include "telemetry-manager.labels" . | nindent 4 }}
 data: {{ .Files.Get "files/tracepipelines-busola-config.yaml" | nindent 2 }}

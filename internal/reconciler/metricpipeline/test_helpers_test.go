@@ -19,7 +19,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
-	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	commonStatusStubs "github.com/kyma-project/telemetry-manager/internal/reconciler/commonstatus/stubs"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline/mocks"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline/stubs"
@@ -127,6 +126,7 @@ func newTestValidator(opts ...ValidatorOption) *Validator {
 		WithValidatorPipelineLock(pipelineLock),
 		WithTransformSpecValidator(stubs.NewTransformSpecValidator(nil)),
 		WithFilterSpecValidator(stubs.NewFilterSpecValidator(nil)),
+		WithRuntimeAdditionalMetricsValidator(stubs.NewRuntimeAdditionalMetricsValidator(nil)),
 	}
 
 	allOpts = append(allOpts, opts...)
@@ -185,23 +185,13 @@ func newTestReconciler(client client.Client, opts ...any) (*testReconciler, func
 
 	agentApplierDeleter := &mocks.AgentApplierDeleter{}
 	agentApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
-	agentApplierDeleter.On("DeleteResources", mock.Anything, mock.Anything).Return(nil).Maybe()
-
-	gatewayConfigBuilder := &mocks.GatewayConfigBuilder{}
-	gatewayConfigBuilder.On("Build", mock.Anything, mock.Anything, mock.Anything).Return(&common.Config{}, nil, nil).Maybe()
-
-	gatewayApplierDeleter := &mocks.GatewayApplierDeleter{}
-	gatewayApplierDeleter.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
-	gatewayApplierDeleter.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
+	agentApplierDeleter.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
 
 	gatewayFlowHealthProber := &mocks.GatewayFlowHealthProber{}
 	gatewayFlowHealthProber.On("Probe", mock.Anything, mock.Anything).Return(prober.OTelGatewayProbeResult{}, nil).Maybe()
 
 	agentFlowHealthProber := &mocks.AgentFlowHealthProber{}
 	agentFlowHealthProber.On("Probe", mock.Anything, mock.Anything).Return(prober.OTelAgentProbeResult{}, nil).Maybe()
-
-	overridesHandler := &mocks.OverridesHandler{}
-	overridesHandler.On("LoadOverrides", mock.Anything).Return(&overrides.Config{}, nil).Maybe()
 
 	pipelineLock := &mocks.PipelineLock{}
 	pipelineLock.On("TryAcquireLock", mock.Anything, mock.Anything).Return(nil).Maybe()
@@ -217,17 +207,18 @@ func newTestReconciler(client client.Client, opts ...any) (*testReconciler, func
 		WithAgentConfigBuilder(agentConfigBuilder),
 		WithAgentApplierDeleter(agentApplierDeleter),
 		WithAgentProber(commonStatusStubs.NewDaemonSetProber(nil)),
-		WithGatewayConfigBuilder(gatewayConfigBuilder),
-		WithGatewayApplierDeleter(gatewayApplierDeleter),
-		WithGatewayProber(commonStatusStubs.NewDeploymentSetProber(nil)),
+		WithGatewayProber(commonStatusStubs.NewDaemonSetProber(nil)),
 		WithGatewayFlowHealthProber(gatewayFlowHealthProber),
 		WithAgentFlowHealthProber(agentFlowHealthProber),
 		WithIstioStatusChecker(&stubs.IstioStatusChecker{IsActive: false}),
-		WithOverridesHandler(overridesHandler),
+		WithVpaStatusChecker(&stubs.VpaStatusChecker{CRDExists: false}),
+		WithNodeSizeTracker(&stubs.NodeSizeTracker{}),
+		WithOverridesHandler(&stubs.OverridesHandler{}),
 		WithPipelineLock(pipelineLock),
 		WithPipelineSyncer(pipelineSync),
 		WithPipelineValidator(newTestValidator()),
 		WithErrorToMessageConverter(&conditions.ErrorToMessageConverter{}),
+		WithSecretWatcher(stubs.NewSecretWatcher(nil)),
 	}
 
 	// Process provided options - collect production Options and test options separately
@@ -304,24 +295,6 @@ func withAgentConfigBuilderAssert(mockBuilder *mocks.AgentConfigBuilder) testOpt
 func withAgentApplierDeleterAssert(mockApplierDeleter *mocks.AgentApplierDeleter) testOption {
 	return testOptionFunc(func(tr *testReconciler) {
 		tr.agentApplierDeleter = mockApplierDeleter
-		registerMockForAssertion(tr.mockRegistry, mockApplierDeleter)
-	})
-}
-
-// withGatewayConfigBuilderAssert registers a GatewayConfigBuilder mock for auto-assertion using AssertExpectations.
-// Use this when you set up expectations with On().Times(), On().Once(), etc.
-// If you don't set up any On() calls, AssertExpectations will fail (which is correct - you should set expectations).
-func withGatewayConfigBuilderAssert(mockBuilder *mocks.GatewayConfigBuilder) testOption {
-	return testOptionFunc(func(tr *testReconciler) {
-		tr.gatewayConfigBuilder = mockBuilder
-		registerMockForAssertion(tr.mockRegistry, mockBuilder)
-	})
-}
-
-// withGatewayApplierDeleterAssert registers a GatewayApplierDeleter mock for auto-assertion.
-func withGatewayApplierDeleterAssert(mockApplierDeleter *mocks.GatewayApplierDeleter) testOption {
-	return testOptionFunc(func(tr *testReconciler) {
-		tr.gatewayApplierDeleter = mockApplierDeleter
 		registerMockForAssertion(tr.mockRegistry, mockApplierDeleter)
 	})
 }

@@ -15,6 +15,9 @@ func TestMain(m *testing.M) {
 	// 1. Auto-detect current cluster state (or use defaults if fresh cluster)
 	// 2. Reconfigure per-test based on test labels
 	// 3. Next test run will detect state and reconfigure as needed - no cleanup required!
+	//
+	// When no pipeline requires them, the manager does not deploy Fluent Bit or the self-monitor;
+	// both are deleted when not needed.
 	if err := suite.BeforeSuiteFunc(); err != nil {
 		log.Printf("Setup failed: %v", err)
 		os.Exit(1)
@@ -23,41 +26,23 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-// labelsForSelfMonitor returns the appropriate labels for a selfmonitor test.
-// It includes:
-// - The combined selfmonitor label (e.g., "selfmonitor-log-agent-healthy")
-// - istio label for backpressure/outage scenarios (they need Istio for traffic simulation)
-// - no-fips label when noFips is true
-func labelsForSelfMonitor(selfMonitorLabelPrefix, selfMonitorLabelSuffix string, noFips bool) []string {
-	// Build the combined label (e.g., "selfmonitor-log-agent-healthy")
-	combinedLabel := selfMonitorLabelPrefix + "-" + selfMonitorLabelSuffix
-
-	labels := []string{combinedLabel}
-
-	// Backpressure and outage tests need Istio for traffic simulation
-	if selfMonitorLabelSuffix == suite.LabelBackpressure ||
-		selfMonitorLabelSuffix == suite.LabelOutage {
-		labels = append(labels, suite.LabelIstio)
-	}
-
-	if noFips {
-		labels = append(labels, suite.LabelNoFIPS)
-	}
-
-	return labels
-}
-
-func signalType(labelPrefix string) kitbackend.SignalType {
-	switch labelPrefix {
-	case suite.LabelSelfMonitorLogAgentPrefix, suite.LabelSelfMonitorLogGatewayPrefix:
+// signalTypeForComponent returns the backend signal type for a component label
+func signalTypeForComponent(component string) kitbackend.SignalType {
+	switch component {
+	case suite.LabelLogAgent, suite.LabelLogGateway:
 		return kitbackend.SignalTypeLogsOTel
-	case suite.LabelSelfMonitorFluentBitPrefix:
+	case suite.LabelFluentBit:
 		return kitbackend.SignalTypeLogsFluentBit
-	case suite.LabelSelfMonitorMetricGatewayPrefix, suite.LabelSelfMonitorMetricAgentPrefix:
+	case suite.LabelMetricAgent, suite.LabelMetricGateway:
 		return kitbackend.SignalTypeMetrics
-	case suite.LabelSelfMonitorTracesPrefix:
+	case suite.LabelTraces:
 		return kitbackend.SignalTypeTraces
 	default:
 		return ""
 	}
+}
+
+// isFluentBit returns true if the component is FluentBit (which doesn't support FIPS mode)
+func isFluentBit(component string) bool {
+	return component == suite.LabelFluentBit
 }

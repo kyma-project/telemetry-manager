@@ -16,6 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	autoscalingvpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
@@ -289,8 +290,26 @@ func CreateOrUpdateDestinationRule(ctx context.Context, c client.Client, desired
 
 	return c.Update(ctx, desired)
 }
+
 func CreateOrUpdateValidatingWebhookConfiguration(ctx context.Context, c client.Client, desired *admissionregistrationv1.ValidatingWebhookConfiguration) error {
 	var existing admissionregistrationv1.ValidatingWebhookConfiguration
+
+	err := c.Get(ctx, types.NamespacedName{Name: desired.Name, Namespace: desired.Namespace}, &existing)
+	if err != nil {
+		if !apierrors.IsNotFound(err) {
+			return err
+		}
+
+		return c.Create(ctx, desired)
+	}
+
+	mergeMetadata(&desired.ObjectMeta, existing.ObjectMeta)
+
+	return c.Update(ctx, desired)
+}
+
+func CreateOrUpdateVPA(ctx context.Context, c client.Client, desired *autoscalingvpav1.VerticalPodAutoscaler) error {
+	var existing autoscalingvpav1.VerticalPodAutoscaler
 
 	err := c.Get(ctx, types.NamespacedName{Name: desired.Name, Namespace: desired.Namespace}, &existing)
 	if err != nil {

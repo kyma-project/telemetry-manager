@@ -8,10 +8,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+	telemetryutils "github.com/kyma-project/telemetry-manager/internal/utils/telemetry"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
-func TestPrometheusReceiver(t *testing.T) {
+func TestPrometheusReceiverConfig(t *testing.T) {
 	ctx := context.Background()
 	fakeClient := fake.NewClientBuilder().Build()
 	sut := Builder{
@@ -52,27 +53,28 @@ func TestPrometheusReceiver(t *testing.T) {
 				collectorConfig, _, err := sut.Build(ctx, []telemetryv1beta1.MetricPipeline{
 					testutils.NewMetricPipelineBuilder().WithPrometheusInput(true).Build(),
 				}, BuildOptions{
-					IstioActive: tt.istioEnabled,
+					IstioActive:         tt.istioEnabled,
+					CollectionIntervals: telemetryutils.ResolveMetricCollectionIntervals(nil),
 				})
 				require.NoError(t, err)
 
-				require.NotContains(t, collectorConfig.Receivers, "kubeletstats")
+				require.NotContains(t, collectorConfig.Receivers, "kubelet_stats")
 				require.NotContains(t, collectorConfig.Receivers, "prometheus/istio")
 
 				require.Contains(t, collectorConfig.Receivers, "prometheus/app-pods")
-				prometheusAppPods := collectorConfig.Receivers["prometheus/app-pods"].(*PrometheusReceiver)
-				require.Len(t, prometheusAppPods.Config.ScrapeConfigs, len(tt.expectedPodScrapeJobs))
+				prometheusAppPods := collectorConfig.Receivers["prometheus/app-pods"].(*PrometheusReceiverConfig)
+				require.Len(t, prometheusAppPods.Prometheus.ScrapeConfigs, len(tt.expectedPodScrapeJobs))
 
-				for i := range prometheusAppPods.Config.ScrapeConfigs {
-					require.Equal(t, tt.expectedPodScrapeJobs[i], prometheusAppPods.Config.ScrapeConfigs[i].JobName)
+				for i := range prometheusAppPods.Prometheus.ScrapeConfigs {
+					require.Equal(t, tt.expectedPodScrapeJobs[i], prometheusAppPods.Prometheus.ScrapeConfigs[i].JobName)
 				}
 
 				require.Contains(t, collectorConfig.Receivers, "prometheus/app-services")
-				prometheusAppServices := collectorConfig.Receivers["prometheus/app-services"].(*PrometheusReceiver)
-				require.Len(t, prometheusAppServices.Config.ScrapeConfigs, len(tt.expectedServiceScrapeJobs))
+				prometheusAppServices := collectorConfig.Receivers["prometheus/app-services"].(*PrometheusReceiverConfig)
+				require.Len(t, prometheusAppServices.Prometheus.ScrapeConfigs, len(tt.expectedServiceScrapeJobs))
 
-				for i := range prometheusAppServices.Config.ScrapeConfigs {
-					require.Equal(t, tt.expectedServiceScrapeJobs[i], prometheusAppServices.Config.ScrapeConfigs[i].JobName)
+				for i := range prometheusAppServices.Prometheus.ScrapeConfigs {
+					require.Equal(t, tt.expectedServiceScrapeJobs[i], prometheusAppServices.Prometheus.ScrapeConfigs[i].JobName)
 				}
 			})
 		}
@@ -82,31 +84,33 @@ func TestPrometheusReceiver(t *testing.T) {
 		collectorConfig, _, err := sut.Build(ctx, []telemetryv1beta1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().WithIstioInput(true).Build(),
 		}, BuildOptions{
-			IstioActive: true,
+			IstioActive:         true,
+			CollectionIntervals: telemetryutils.ResolveMetricCollectionIntervals(nil),
 		})
 		require.NoError(t, err)
 
-		require.NotContains(t, collectorConfig.Receivers, "kubeletstats")
+		require.NotContains(t, collectorConfig.Receivers, "kubelet_stats")
 		require.NotContains(t, collectorConfig.Receivers, "prometheus/app-pods")
 		require.Contains(t, collectorConfig.Receivers, "prometheus/istio")
-		prometheusIstio := collectorConfig.Receivers["prometheus/istio"].(*PrometheusReceiver)
-		require.Len(t, prometheusIstio.Config.ScrapeConfigs, 1)
-		require.Len(t, prometheusIstio.Config.ScrapeConfigs[0].KubernetesDiscoveryConfigs, 1)
+		prometheusIstio := collectorConfig.Receivers["prometheus/istio"].(*PrometheusReceiverConfig)
+		require.Len(t, prometheusIstio.Prometheus.ScrapeConfigs, 1)
+		require.Len(t, prometheusIstio.Prometheus.ScrapeConfigs[0].KubernetesDiscoveryConfigs, 1)
 	})
 
 	t.Run("istio input envoy metrics enabled", func(t *testing.T) {
 		collectorConfig, _, err := sut.Build(ctx, []telemetryv1beta1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().WithIstioInput(true).WithIstioInputEnvoyMetrics(true).Build(),
 		}, BuildOptions{
-			IstioActive: true,
+			IstioActive:         true,
+			CollectionIntervals: telemetryutils.ResolveMetricCollectionIntervals(nil),
 		})
 		require.NoError(t, err)
 
-		require.NotContains(t, collectorConfig.Receivers, "kubeletstats")
+		require.NotContains(t, collectorConfig.Receivers, "kubelet_stats")
 		require.NotContains(t, collectorConfig.Receivers, "prometheus/app-pods")
 		require.Contains(t, collectorConfig.Receivers, "prometheus/istio")
-		prometheusIstio := collectorConfig.Receivers["prometheus/istio"].(*PrometheusReceiver)
-		require.Len(t, prometheusIstio.Config.ScrapeConfigs[0].MetricRelabelConfigs, 1)
-		require.Equal(t, prometheusIstio.Config.ScrapeConfigs[0].MetricRelabelConfigs[0].Regex, "envoy_.*|istio_.*")
+		prometheusIstio := collectorConfig.Receivers["prometheus/istio"].(*PrometheusReceiverConfig)
+		require.Len(t, prometheusIstio.Prometheus.ScrapeConfigs[0].MetricRelabelConfigs, 1)
+		require.Equal(t, prometheusIstio.Prometheus.ScrapeConfigs[0].MetricRelabelConfigs[0].Regex, "envoy_.*|istio_.*")
 	})
 }

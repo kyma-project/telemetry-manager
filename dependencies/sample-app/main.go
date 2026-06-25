@@ -95,7 +95,7 @@ func initMetrics() error {
 	requestURLParamsMeter, err = meter.Int64Counter(
 		"promhttp.metric.handler.requests.url_params",
 		metric.WithDescription("Total number of requests to the /metrics endpoint with URL parameters."),
-		metric.WithUnit("{requests}"),
+		metric.WithUnit("{request}"),
 	)
 	if err != nil {
 		return fmt.Errorf("error creating promhttp.metric.handler.requests.url_params counter: %w", err)
@@ -146,7 +146,7 @@ func forwardHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, err := client.Do(req)
+	res, err := client.Do(req) //nolint:gosec // G704: URL comes from query parameter in sample app
 	if err != nil {
 		handleError(ctx, w, span, err, "exception in client call")
 		return

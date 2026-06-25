@@ -2,12 +2,23 @@ package v1beta1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 //nolint:gochecknoinits // SchemeBuilder's registration is required.
 func init() {
-	SchemeBuilder.Register(&MetricPipeline{}, &MetricPipelineList{})
+	SchemeBuilder.Register(func(scheme *runtime.Scheme) error {
+		scheme.AddKnownTypes(GroupVersion, &MetricPipeline{}, &MetricPipelineList{})
+		return nil
+	})
 }
+
+type TemporalityType string
+
+const (
+	TemporalityPreserve TemporalityType = "preserve"
+	TemporalityDelta    TemporalityType = "delta"
+)
 
 // MetricPipelineList contains a list of MetricPipeline.
 // +kubebuilder:object:root=true
@@ -102,6 +113,11 @@ type MetricPipelineRuntimeInput struct {
 	// Resources configures the Kubernetes resource types for which metrics are collected.
 	// +kubebuilder:validation:Optional
 	Resources *MetricPipelineRuntimeInputResources `json:"resources,omitempty"`
+	// AdditionalMetrics specifies upstream metric names to collect
+	// in addition to the default curated set. Each entry must be a valid
+	// metric name.
+	// +kubebuilder:validation:Optional
+	AdditionalMetrics []string `json:"additionalMetrics,omitempty"`
 }
 
 // MetricPipelineRuntimeInputResources configures the Kubernetes resource types for which metrics are collected.
@@ -164,9 +180,19 @@ type MetricPipelineIstioInputDiagnosticMetrics struct {
 
 // MetricPipelineOutput defines the output configuration section.
 type MetricPipelineOutput struct {
-	// OTLP output defines an output using the OpenTelemetry protocol.
+	// MetricPipeline OTLP output defines a metric pipeline output using the OpenTelemetry protocol.
 	// +kubebuilder:validation:Required
-	OTLP *OTLPOutput `json:"otlp"`
+	OTLP *MetricPipelineOTLPOutput `json:"otlp"`
+}
+
+type MetricPipelineOTLPOutput struct {
+	OTLPOutput `json:",inline"`
+
+	// Temporality defines the aggregation temporality of exported metrics ('preserve' or 'delta'). `preserve` keeps the original temporality. The default is `preserve`.
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=preserve
+	// +kubebuilder:validation:Enum=preserve;delta
+	Temporality *TemporalityType `json:"temporality,omitempty"`
 }
 
 // MetricPipelineStatus defines the observed state of MetricPipeline.

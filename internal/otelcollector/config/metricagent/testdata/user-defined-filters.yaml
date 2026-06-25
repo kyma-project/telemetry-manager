@@ -1,4 +1,11 @@
 extensions:
+    cgroup_runtime:
+        gomaxprocs:
+            enabled: false
+        gomemlimit:
+            enabled: true
+            ratio: 0.8
+            refresh_interval: 30s
     health_check:
         endpoint: ${MY_POD_IP}:13133
     k8s_leader_elector:
@@ -12,13 +19,13 @@ service:
             receivers:
                 - routing/runtime-input
             processors:
-                - k8sattributes
+                - k8s_attributes
                 - service_enrichment
             exporters:
                 - routing/enrichment
         metrics/input-runtime:
             receivers:
-                - kubeletstats
+                - kubelet_stats
                 - k8s_cluster
             processors:
                 - memory_limiter
@@ -39,10 +46,10 @@ service:
                 - transform/insert-cluster-attributes
                 - transform/drop-skip-enrichment-attribute
                 - transform/drop-kyma-attributes
-                - filter/user-defined-test1
+                - filter/metricpipeline-user-defined-test1
                 - batch
             exporters:
-                - otlp_grpc/test1
+                - otlp_grpc/metricpipeline-test1
         metrics/output-test2:
             receivers:
                 - routing/enrichment
@@ -52,10 +59,10 @@ service:
                 - transform/insert-cluster-attributes
                 - transform/drop-skip-enrichment-attribute
                 - transform/drop-kyma-attributes
-                - filter/user-defined-test2
+                - filter/metricpipeline-user-defined-test2
                 - batch
             exporters:
-                - otlp_grpc/test2
+                - otlp_grpc/metricpipeline-test2
     telemetry:
         metrics:
             readers:
@@ -64,12 +71,17 @@ service:
                         prometheus:
                             host: ${MY_POD_IP}
                             port: 8888
+                            without_scope_info: false
+                            without_type_suffix: false
+                            without_units: false
+            level: detailed
         logs:
             level: info
             encoding: json
     extensions:
         - health_check
         - pprof
+        - cgroup_runtime
         - k8s_leader_elector
 receivers:
     k8s_cluster:
@@ -112,7 +124,7 @@ receivers:
             k8s.cronjob.active_jobs:
                 enabled: false
         k8s_leader_elector: k8s_leader_elector
-    kubeletstats:
+    kubelet_stats:
         collection_interval: 30s
         auth_type: serviceAccount
         endpoint: https://${MY_NODE_NAME}:10250
@@ -123,22 +135,32 @@ receivers:
             - node
             - volume
         metrics:
-            container.cpu.usage:
-                enabled: true
-            k8s.pod.cpu.usage:
-                enabled: true
-            k8s.node.cpu.usage:
-                enabled: true
             k8s.node.cpu.time:
                 enabled: false
             k8s.node.memory.major_page_faults:
                 enabled: false
             k8s.node.memory.page_faults:
                 enabled: false
+        resource_attributes:
+            aws.volume.id:
+                enabled: false
+            fs.type:
+                enabled: false
+            gce.pd.name:
+                enabled: false
+            glusterfs.endpoints.name:
+                enabled: false
+            glusterfs.path:
+                enabled: false
+            partition:
+                enabled: false
         extra_metadata_labels:
             - k8s.volume.type
         collect_all_network_interfaces:
             node: true
+        node: ${MY_NODE_NAME}
+        k8s_api_config:
+            auth_type: serviceAccount
 processors:
     batch:
         send_batch_size: 1024
@@ -146,32 +168,36 @@ processors:
         send_batch_max_size: 1024
     filter/drop-envoy-metrics-if-disabled:
         error_mode: ignore
-        metrics:
-            metric:
-                - IsMatch(name, "^envoy_.*") and resource.attributes["kyma.input.name"] == "istio"
+        metric_conditions:
+            - conditions:
+                - IsMatch(metric.name, "^envoy_.*") and resource.attributes["kyma.input.name"] == "istio"
     filter/drop-non-pvc-volumes-metrics:
         error_mode: ignore
-        metrics:
-            metric:
-                - resource.attributes["k8s.volume.name"] != nil and resource.attributes["k8s.volume.type"] != "persistentVolumeClaim"
+        metric_conditions:
+            - conditions:
+                - resource.attributes["k8s.volume.name"] != nil and (resource.attributes["k8s.volume.type"] == "configMap" or resource.attributes["k8s.volume.type"] == "downwardAPI" or resource.attributes["k8s.volume.type"] == "emptyDir" or resource.attributes["k8s.volume.type"] == "secret")
     filter/drop-virtual-network-interfaces:
         error_mode: ignore
-        metrics:
-            datapoint:
-                - IsMatch(metric.name, "^k8s.node.network.*") and not(IsMatch(attributes["interface"], "^(eth|en).*"))
-    filter/user-defined-test1:
+        metric_conditions:
+            - conditions:
+                - IsMatch(metric.name, "^k8s.node.network.*") and not(IsMatch(datapoint.attributes["interface"], "^(eth|en).*"))
+    filter/metricpipeline-user-defined-test1:
         error_mode: ignore
-        metrics:
-            datapoint:
-                - metric.type == METRIC_DATA_TYPE_SUMMARY
-    filter/user-defined-test2:
+        metric_conditions:
+            - conditions:
+                - HasAttrOnDatapoint("http.method","GET"
+            - conditions:
+                - datapoint.flags == kyma
+    filter/metricpipeline-user-defined-test2:
         error_mode: ignore
-        metrics:
-            datapoint:
+        metric_conditions:
+            - conditions:
                 - metric.type == METRIC_DATA_TYPE_GAUGE
-    k8sattributes:
+    k8s_attributes:
         auth_type: serviceAccount
         passthrough: false
+        filter:
+            node_from_env_var: MY_NODE_NAME
         extract:
             metadata:
                 - k8s.pod.name
@@ -264,8 +290,9 @@ processors:
             - statements:
                 - set(resource.attributes["kyma.input.name"], "runtime")
 exporters:
-    otlp_grpc/test1:
-        endpoint: ${OTLP_ENDPOINT_TEST1}
+    otlp_grpc/metricpipeline-test1:
+        endpoint: ${OTLP_ENDPOINT_METRICPIPELINE_TEST1}
+        compression: gzip
         sending_queue:
             enabled: true
             queue_size: 128
@@ -274,8 +301,9 @@ exporters:
             initial_interval: 5s
             max_interval: 30s
             max_elapsed_time: 300s
-    otlp_grpc/test2:
-        endpoint: ${OTLP_ENDPOINT_TEST2}
+    otlp_grpc/metricpipeline-test2:
+        endpoint: ${OTLP_ENDPOINT_METRICPIPELINE_TEST2}
+        compression: gzip
         sending_queue:
             enabled: true
             queue_size: 128

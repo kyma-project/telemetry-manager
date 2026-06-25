@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"gopkg.in/yaml.v3"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
@@ -13,20 +15,21 @@ import (
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
+	"github.com/kyma-project/telemetry-manager/internal/k8sclients"
 	"github.com/kyma-project/telemetry-manager/internal/metrics"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/logagent"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/loggateway"
+	"github.com/kyma-project/telemetry-manager/internal/pipelines"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
+	"github.com/kyma-project/telemetry-manager/internal/resources/coordinationconfig"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
 	sharedtypesutils "github.com/kyma-project/telemetry-manager/internal/utils/sharedtypes"
 	telemetryutils "github.com/kyma-project/telemetry-manager/internal/utils/telemetry"
+	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
-
-const defaultReplicaCount int32 = 2
 
 type Reconciler struct {
 	client.Client
@@ -34,19 +37,18 @@ type Reconciler struct {
 	globals config.Global
 
 	// Dependencies
-	gatewayFlowHealthProber   GatewayFlowHealthProber
-	agentFlowHealthProber     AgentFlowHealthProber
-	agentConfigBuilder        AgentConfigBuilder
-	agentProber               Prober
-	agentApplierDeleter       AgentApplierDeleter
-	gatewayApplierDeleter     GatewayApplierDeleter
-	otlpGatewayApplierDeleter OTLPGatewayApplierDeleter
-	gatewayConfigBuilder      GatewayConfigBuilder
-	gatewayProber             Prober
-	istioStatusChecker        IstioStatusChecker
-	pipelineLock              PipelineLock
-	pipelineValidator         *Validator
-	errToMessageConverter     ErrorToMessageConverter
+	agentFlowHealthProber   AgentFlowHealthProber
+	gatewayFlowHealthProber GatewayFlowHealthProber
+	gatewayProber           Prober
+	agentConfigBuilder      AgentConfigBuilder
+	agentProber             Prober
+	agentApplierDeleter     AgentApplierDeleter
+	istioStatusChecker      IstioStatusChecker
+	vpaStatusChecker        VpaStatusChecker
+	nodeSizeTracker         NodeSizeTracker
+	pipelineLock            PipelineLock
+	pipelineValidator       *Validator
+	errToMessageConverter   ErrorToMessageConverter
 }
 
 // Option is a functional option for configuring a Reconciler.
@@ -59,6 +61,13 @@ func WithGlobals(globals config.Global) Option {
 	}
 }
 
+// WithAgentFlowHealthProber sets the agent flow health prober.
+func WithAgentFlowHealthProber(prober AgentFlowHealthProber) Option {
+	return func(r *Reconciler) {
+		r.agentFlowHealthProber = prober
+	}
+}
+
 // WithGatewayFlowHealthProber sets the gateway flow health prober.
 func WithGatewayFlowHealthProber(prober GatewayFlowHealthProber) Option {
 	return func(r *Reconciler) {
@@ -66,10 +75,10 @@ func WithGatewayFlowHealthProber(prober GatewayFlowHealthProber) Option {
 	}
 }
 
-// WithAgentFlowHealthProber sets the agent flow health prober.
-func WithAgentFlowHealthProber(prober AgentFlowHealthProber) Option {
+// WithGatewayProber sets the gateway prober.
+func WithGatewayProber(prober Prober) Option {
 	return func(r *Reconciler) {
-		r.agentFlowHealthProber = prober
+		r.gatewayProber = prober
 	}
 }
 
@@ -94,38 +103,24 @@ func WithAgentApplierDeleter(applierDeleter AgentApplierDeleter) Option {
 	}
 }
 
-// WithGatewayApplierDeleter sets the gateway applier/deleter.
-func WithGatewayApplierDeleter(applierDeleter GatewayApplierDeleter) Option {
-	return func(r *Reconciler) {
-		r.gatewayApplierDeleter = applierDeleter
-	}
-}
-
-// WithOTLPGatewayApplierDeleter sets the OTLP gateway applier/deleter (for DaemonSet mode).
-func WithOTLPGatewayApplierDeleter(applierDeleter OTLPGatewayApplierDeleter) Option {
-	return func(r *Reconciler) {
-		r.otlpGatewayApplierDeleter = applierDeleter
-	}
-}
-
-// WithGatewayConfigBuilder sets the gateway config builder.
-func WithGatewayConfigBuilder(builder GatewayConfigBuilder) Option {
-	return func(r *Reconciler) {
-		r.gatewayConfigBuilder = builder
-	}
-}
-
-// WithGatewayProber sets the gateway prober.
-func WithGatewayProber(prober Prober) Option {
-	return func(r *Reconciler) {
-		r.gatewayProber = prober
-	}
-}
-
 // WithIstioStatusChecker sets the Istio status checker.
 func WithIstioStatusChecker(checker IstioStatusChecker) Option {
 	return func(r *Reconciler) {
 		r.istioStatusChecker = checker
+	}
+}
+
+// WithVpaStatusChecker sets the VPA status checker.
+func WithVpaStatusChecker(checker VpaStatusChecker) Option {
+	return func(r *Reconciler) {
+		r.vpaStatusChecker = checker
+	}
+}
+
+// WithNodeSizeTracker sets the node size tracker.
+func WithNodeSizeTracker(tracker NodeSizeTracker) Option {
+	return func(r *Reconciler) {
+		r.nodeSizeTracker = tracker
 	}
 }
 
@@ -169,19 +164,30 @@ func New(opts ...Option) *Reconciler {
 	return r
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) error {
-	logf.FromContext(ctx).V(1).Info("Reconciling LogPipeline")
+func (r *Reconciler) Reconcile(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) (ctrl.Result, error) {
+	logf.FromContext(ctx).V(1).Info("Reconciling OTel LogPipeline")
 
-	err := r.doReconcile(ctx, pipeline)
-	if statusErr := r.updateStatus(ctx, pipeline.Name); statusErr != nil {
-		if err != nil {
-			err = fmt.Errorf("failed while updating status: %w: %w", statusErr, err)
-		} else {
-			err = fmt.Errorf("failed to update status: %w", statusErr)
-		}
+	var allErrors error = nil
+
+	if err := r.doReconcile(ctx, pipeline); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to reconcile: %w", err))
 	}
 
-	return err
+	if err := r.updateStatus(ctx, pipeline.Name); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to update status: %w", err))
+	}
+
+	if allErrors != nil {
+		return ctrl.Result{}, allErrors
+	}
+
+	requeueAfter := r.calculateRequeueAfterDuration(ctx, pipeline)
+	if requeueAfter != nil {
+		logf.FromContext(ctx).V(1).Info("Requeuing reconciliation due to certificate about to expire", "RequeueAfter", requeueAfter.String())
+		return ctrl.Result{RequeueAfter: *requeueAfter}, nil
+	}
+
+	return ctrl.Result{}, nil
 }
 
 func (r *Reconciler) SupportedOutput() logpipelineutils.Mode {
@@ -205,6 +211,46 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 
 	r.trackPipelineInfoMetric(ctx, allPipelines)
 
+	// Validate current pipeline
+	isPipelineReconcilable, err := r.isReconcilable(ctx, pipeline)
+	if err != nil {
+		return fmt.Errorf("failed to validate pipeline: %w", err)
+	}
+
+	// Update ConfigMap based on validation result
+	if isPipelineReconcilable {
+		// Collect secret references and their current versions
+		secretRefs := secretref.GetSecretRefsLogPipeline(pipeline)
+
+		secretVersions, err := coordinationconfig.CollectSecretVersions(ctx, r.Client, secretRefs)
+		if err != nil {
+			return fmt.Errorf("failed to collect secret versions: %w", err)
+		}
+
+		// Write current pipeline reference to OTLP Gateway Coordination ConfigMap
+		logf.FromContext(ctx).V(1).Info("Writing pipeline reference to OTLP Gateway Coordination ConfigMap",
+			"pipeline", pipeline.Name,
+			"generation", pipeline.Generation,
+			"secretCount", len(secretVersions))
+
+		if err := coordinationconfig.AddPipelineReference(ctx, r.Client, r.globals.TargetNamespace(), pipelines.SignalTypeLog, coordinationconfig.PipelineReferenceInput{
+			Name:           pipeline.Name,
+			Generation:     pipeline.Generation,
+			SecretVersions: secretVersions,
+		},
+		); err != nil {
+			return fmt.Errorf("failed to write pipeline reference to ConfigMap: %w", err)
+		}
+	} else {
+		// Remove current pipeline reference from OTLP Gateway Coordination ConfigMap
+		logf.FromContext(ctx).V(1).Info("Removing pipeline reference from OTLP Gateway Coordination ConfigMap", "pipeline", pipeline.Name)
+
+		if err := coordinationconfig.RemovePipelineReference(ctx, r.Client, r.globals.TargetNamespace(), pipelines.SignalTypeLog, pipeline.Name); err != nil {
+			return fmt.Errorf("failed to remove pipeline reference from OTLP Gateway Coordination ConfigMap: %w", err)
+		}
+	}
+
+	// Get reconcilable pipelines (for agent deployment)
 	reconcilablePipelines, err := r.getReconcilablePipelines(ctx, allPipelines)
 	if err != nil {
 		return fmt.Errorf("failed to fetch deployable log pipelines: %w", err)
@@ -213,37 +259,23 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 	var reconcilablePipelinesRequiringAgents = r.getPipelinesRequiringAgents(reconcilablePipelines)
 
 	if len(reconcilablePipelinesRequiringAgents) == 0 {
-		logf.FromContext(ctx).V(1).Info("cleaning up log agent resources: no log pipelines require an agent")
+		logf.FromContext(ctx).V(1).Info("cleaning up Log Agent resources: no log pipelines require an agent")
 
-		if err = r.agentApplierDeleter.DeleteResources(ctx, r.Client); err != nil {
-			return fmt.Errorf("failed to delete agent resources: %w", err)
+		vpaCRDExists, err := r.vpaStatusChecker.VpaCRDExists(ctx, r.Client)
+		if err != nil {
+			return fmt.Errorf("failed to check VPA status: %w", err)
 		}
-	}
 
-	if len(reconcilablePipelines) == 0 {
-		logf.FromContext(ctx).V(1).Info("cleaning up log pipeline resources: all log pipelines are non-reconcilable")
-
-		// Use the appropriate applier deleter based on whether we're using DaemonSet mode
-		if r.globals.DeployOTLPGateway() {
-			if err = r.otlpGatewayApplierDeleter.DeleteResources(ctx, r.Client, r.istioStatusChecker.IsIstioActive(ctx)); err != nil {
-				return fmt.Errorf("failed to delete OTLP gateway resources: %w", err)
-			}
-		} else {
-			if err = r.gatewayApplierDeleter.DeleteResources(ctx, r.Client, r.istioStatusChecker.IsIstioActive(ctx)); err != nil {
-				return fmt.Errorf("failed to delete gateway resources: %w", err)
-			}
+		if err = r.agentApplierDeleter.DeleteResources(ctx, r.Client, vpaCRDExists); err != nil {
+			return fmt.Errorf("failed to delete agent resources: %w", err)
 		}
 
 		return nil
 	}
 
-	if err := r.reconcileGateway(ctx, pipeline, reconcilablePipelines); err != nil {
-		return fmt.Errorf("failed to reconcile gateway: %w", err)
-	}
-
 	if len(reconcilablePipelinesRequiringAgents) > 0 {
-		if err := r.reconcileLogAgent(ctx, pipeline, reconcilablePipelinesRequiringAgents); err != nil {
-			return fmt.Errorf("failed to reconcile log agent: %w", err)
+		if err := r.reconcileAgent(ctx, pipeline, reconcilablePipelinesRequiringAgents); err != nil {
+			return fmt.Errorf("failed to reconcile Log Agent: %w", err)
 		}
 	}
 
@@ -256,12 +288,12 @@ func (r *Reconciler) getReconcilablePipelines(ctx context.Context, allPipelines 
 	var reconcilablePipelines []telemetryv1beta1.LogPipeline
 
 	for i := range allPipelines {
-		isReconcilable, err := r.isReconcilable(ctx, &allPipelines[i])
+		isPipelineReconcilable, err := r.isReconcilable(ctx, &allPipelines[i])
 		if err != nil {
 			return nil, err
 		}
 
-		if isReconcilable {
+		if isPipelineReconcilable {
 			reconcilablePipelines = append(reconcilablePipelines, allPipelines[i])
 		}
 	}
@@ -283,84 +315,14 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1be
 
 	// Remaining errors imply that the pipeline is not reconcilable
 	// In case that one of the requests to the Kubernetes API server failed, then the pipeline is also considered non-reconcilable and the error is returned to trigger a requeue
-	var APIRequestFailed *errortypes.APIRequestFailedError
-	if errors.As(err, &APIRequestFailed) {
+	if APIRequestFailed, ok := errors.AsType[*errortypes.APIRequestFailedError](err); ok {
 		return false, APIRequestFailed.Err
 	}
 
 	return false, nil
 }
 
-func (r *Reconciler) reconcileGateway(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline, allPipelines []telemetryv1beta1.LogPipeline) error {
-	shootInfo := k8sutils.GetGardenerShootInfo(ctx, r.Client)
-	telemetryOptions := telemetryutils.Options{
-		SignalType:                common.SignalTypeLog,
-		Client:                    r.Client,
-		DefaultReplicas:           defaultReplicaCount,
-		DefaultTelemetryNamespace: r.globals.DefaultTelemetryNamespace(),
-	}
-	clusterName := telemetryutils.GetClusterNameFromTelemetry(ctx, telemetryOptions)
-
-	clusterUID, err := k8sutils.GetClusterUID(ctx, r.Client)
-	if err != nil {
-		return fmt.Errorf("failed to get kube-system namespace for cluster UID: %w", err)
-	}
-
-	var enrichments *operatorv1beta1.EnrichmentSpec
-
-	t, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
-	if err == nil {
-		enrichments = t.Spec.Enrichments
-	}
-
-	collectorConfig, collectorEnvVars, err := r.gatewayConfigBuilder.Build(ctx, allPipelines, loggateway.BuildOptions{
-		Cluster: common.ClusterOptions{
-			ClusterName:   clusterName,
-			ClusterUID:    clusterUID,
-			CloudProvider: shootInfo.CloudProvider,
-		},
-		Enrichments:       enrichments,
-		ModuleVersion:     r.globals.Version(),
-		ServiceEnrichment: telemetryutils.GetServiceEnrichmentFromTelemetryOrDefault(ctx, telemetryOptions),
-	})
-	if err != nil {
-		return fmt.Errorf("failed to create collector config: %w", err)
-	}
-
-	collectorConfigYAML, err := yaml.Marshal(collectorConfig)
-	if err != nil {
-		return fmt.Errorf("failed to marshal collector config: %w", err)
-	}
-
-	isIstioActive := r.istioStatusChecker.IsIstioActive(ctx)
-
-	opts := otelcollector.GatewayApplyOptions{
-		CollectorConfigYAML:            string(collectorConfigYAML),
-		CollectorEnvVars:               collectorEnvVars,
-		IstioEnabled:                   isIstioActive,
-		Replicas:                       telemetryutils.GetReplicaCountFromTelemetry(ctx, telemetryOptions),
-		ResourceRequirementsMultiplier: len(allPipelines),
-	}
-
-	// Use OTLP gateway applier deleter when in DaemonSet mode, otherwise use regular gateway applier deleter
-	if r.globals.DeployOTLPGateway() && r.otlpGatewayApplierDeleter != nil {
-		if err = r.gatewayApplierDeleter.DeleteResources(ctx, r.Client, r.istioStatusChecker.IsIstioActive(ctx)); err != nil {
-			return fmt.Errorf("failed to delete legacy gateway resources: %w", err)
-		}
-
-		if err = r.otlpGatewayApplierDeleter.ApplyResources(ctx, k8sutils.NewOwnerReferenceSetter(r.Client, pipeline), opts); err != nil {
-			return fmt.Errorf("failed to apply OTLP gateway resources: %w", err)
-		}
-	} else {
-		if err = r.gatewayApplierDeleter.ApplyResources(ctx, k8sutils.NewOwnerReferenceSetter(r.Client, pipeline), opts); err != nil {
-			return fmt.Errorf("failed to apply gateway resources: %w", err)
-		}
-	}
-
-	return nil
-}
-
-func (r *Reconciler) reconcileLogAgent(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline, allPipelines []telemetryv1beta1.LogPipeline) error {
+func (r *Reconciler) reconcileAgent(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline, allPipelines []telemetryv1beta1.LogPipeline) error {
 	var enrichments *operatorv1beta1.EnrichmentSpec
 
 	t, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
@@ -369,18 +331,19 @@ func (r *Reconciler) reconcileLogAgent(ctx context.Context, pipeline *telemetryv
 	}
 
 	shootInfo := k8sutils.GetGardenerShootInfo(ctx, r.Client)
-	telemetryOptions := telemetryutils.Options{
-		SignalType:                common.SignalTypeLog,
-		Client:                    r.Client,
-		DefaultReplicas:           defaultReplicaCount,
-		DefaultTelemetryNamespace: r.globals.DefaultTelemetryNamespace(),
-	}
-	clusterName := telemetryutils.GetClusterNameFromTelemetry(ctx, telemetryOptions)
+	clusterName := telemetryutils.GetClusterNameFromTelemetry(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
 
 	clusterUID, err := k8sutils.GetClusterUID(ctx, r.Client)
 	if err != nil {
 		return fmt.Errorf("failed to get kube-system namespace for cluster UID: %w", err)
 	}
+
+	vpaCRDExists, err := r.vpaStatusChecker.VpaCRDExists(ctx, r.Client)
+	if err != nil {
+		return fmt.Errorf("failed to check VPA status: %w", err)
+	}
+
+	isVpaEnabled := telemetryutils.IsVpaEnabledInTelemetry(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
 
 	agentConfig, envVars, err := r.agentConfigBuilder.Build(ctx, allPipelines, logagent.BuildOptions{
 		InstrumentationScopeVersion: r.globals.Version(),
@@ -391,7 +354,8 @@ func (r *Reconciler) reconcileLogAgent(ctx context.Context, pipeline *telemetryv
 			CloudProvider: shootInfo.CloudProvider,
 		},
 		Enrichments:       enrichments,
-		ServiceEnrichment: telemetryutils.GetServiceEnrichmentFromTelemetryOrDefault(ctx, telemetryOptions),
+		ServiceEnrichment: telemetryutils.GetServiceEnrichmentFromTelemetryOrDefault(ctx, r.Client, r.globals.DefaultTelemetryNamespace()),
+		VpaActive:         vpaCRDExists && isVpaEnabled,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to build agent config: %w", err)
@@ -402,13 +366,21 @@ func (r *Reconciler) reconcileLogAgent(ctx context.Context, pipeline *telemetryv
 		return fmt.Errorf("failed to marshal agent config: %w", err)
 	}
 
-	isIstioActive := r.istioStatusChecker.IsIstioActive(ctx)
+	isIstioActive, err := r.istioStatusChecker.IsIstioActive(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to check Istio status: %w", err)
+	}
+
+	vpaMaxAllowedMemory := r.nodeSizeTracker.VPAMaxAllowedMemory()
 
 	if err := r.agentApplierDeleter.ApplyResources(
 		ctx,
-		k8sutils.NewOwnerReferenceSetter(r.Client, pipeline),
+		k8sclients.NewOwnerReferenceSetter(r.Client, pipeline),
 		otelcollector.AgentApplyOptions{
 			IstioEnabled:        isIstioActive,
+			VpaCRDExists:        vpaCRDExists,
+			VpaEnabled:          isVpaEnabled,
+			VPAMaxAllowedMemory: vpaMaxAllowedMemory,
 			CollectorConfigYAML: string(agentConfigYAML),
 			CollectorEnvVars:    envVars,
 		},
@@ -479,4 +451,15 @@ func (r *Reconciler) getEndpoint(ctx context.Context, pipeline *telemetryv1beta1
 	}
 
 	return string(endpointBytes)
+}
+
+func (r *Reconciler) calculateRequeueAfterDuration(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) *time.Duration {
+	err := r.pipelineValidator.Validate(ctx, pipeline)
+
+	if errCertAboutToExpire, ok := errors.AsType[*tlscert.CertAboutToExpireError](err); ok {
+		duration := time.Until(errCertAboutToExpire.Expiry)
+		return &duration
+	}
+
+	return nil
 }

@@ -1,5 +1,5 @@
 
-apiVersion: telemetry.kyma-project.io/v1alpha1
+apiVersion: telemetry.kyma-project.io/v1beta1
 kind: TracePipeline
 metadata:
   name: load-test-1
@@ -52,6 +52,7 @@ spec:
           args:
           - traces
           - --otlp-insecure
+          - --allow-export-failures
           - --otlp-endpoint
           - "telemetry-otlp-traces.kyma-system:4317"
           - --otlp-attributes
@@ -243,3 +244,13 @@ spec:
       targetPort: 4318
   selector:
     app.kubernetes.io/name: trace-receiver
+
+---
+apiVersion: operator.kyma-project.io/v1beta1
+kind: Telemetry
+metadata:
+  name: default
+  namespace: kyma-system
+  annotations:
+    telemetry.kyma-project.io/enable-vpa: "false"
+spec:

@@ -51,6 +51,7 @@ func TestUpdateStatus(t *testing.T) {
 				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPLogsService).Build()),
 				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPTracesService).Build()),
 				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPMetricsService).Build()),
+				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPService).Build()),
 			},
 			expectedState: operatorv1beta1.StateReady,
 			expectedConditions: []metav1.Condition{
@@ -71,6 +72,10 @@ func TestUpdateStatus(t *testing.T) {
 					GRPC: "http://telemetry-otlp-metrics.telemetry-system:4317",
 					HTTP: "http://telemetry-otlp-metrics.telemetry-system:4318",
 				},
+				OTLP: &operatorv1beta1.OTLPEndpoints{
+					GRPC: "http://telemetry-otlp.telemetry-system:4317",
+					HTTP: "http://telemetry-otlp.telemetry-system:4318",
+				},
 			},
 		},
 		{
@@ -87,6 +92,7 @@ func TestUpdateStatus(t *testing.T) {
 				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPLogsService).Build()),
 				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPTracesService).Build()),
 				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPMetricsService).Build()),
+				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPService).Build()),
 			},
 			expectedConditions: []metav1.Condition{
 				{Type: conditions.TypeLogComponentsHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonAgentNotReady},
@@ -106,6 +112,10 @@ func TestUpdateStatus(t *testing.T) {
 					GRPC: "http://telemetry-otlp-metrics.telemetry-system:4317",
 					HTTP: "http://telemetry-otlp-metrics.telemetry-system:4318",
 				},
+				OTLP: &operatorv1beta1.OTLPEndpoints{
+					GRPC: "http://telemetry-otlp.telemetry-system:4317",
+					HTTP: "http://telemetry-otlp.telemetry-system:4318",
+				},
 			},
 		},
 		{
@@ -121,6 +131,7 @@ func TestUpdateStatus(t *testing.T) {
 				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPLogsService).Build()),
 				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPTracesService).Build()),
 				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPMetricsService).Build()),
+				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPService).Build()),
 			},
 			expectedState: operatorv1beta1.StateWarning,
 			expectedConditions: []metav1.Condition{
@@ -141,6 +152,10 @@ func TestUpdateStatus(t *testing.T) {
 					GRPC: "http://telemetry-otlp-metrics.telemetry-system:4317",
 					HTTP: "http://telemetry-otlp-metrics.telemetry-system:4318",
 				},
+				OTLP: &operatorv1beta1.OTLPEndpoints{
+					GRPC: "http://telemetry-otlp.telemetry-system:4317",
+					HTTP: "http://telemetry-otlp.telemetry-system:4318",
+				},
 			},
 		},
 		{
@@ -156,6 +171,7 @@ func TestUpdateStatus(t *testing.T) {
 				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPLogsService).Build()),
 				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPTracesService).Build()),
 				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPMetricsService).Build()),
+				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPService).Build()),
 			},
 			expectedState: operatorv1beta1.StateWarning,
 			expectedConditions: []metav1.Condition{
@@ -175,6 +191,10 @@ func TestUpdateStatus(t *testing.T) {
 				Metrics: &operatorv1beta1.OTLPEndpoints{
 					GRPC: "http://telemetry-otlp-metrics.telemetry-system:4317",
 					HTTP: "http://telemetry-otlp-metrics.telemetry-system:4318",
+				},
+				OTLP: &operatorv1beta1.OTLPEndpoints{
+					GRPC: "http://telemetry-otlp.telemetry-system:4317",
+					HTTP: "http://telemetry-otlp.telemetry-system:4318",
 				},
 			},
 		},
@@ -228,6 +248,7 @@ func TestUpdateStatus(t *testing.T) {
 				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPLogsService).Build()),
 				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPTracesService).Build()),
 				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPMetricsService).Build()),
+				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPService).Build()),
 			},
 			expectedState: operatorv1beta1.StateDeleting,
 			expectedConditions: []metav1.Condition{
@@ -248,6 +269,10 @@ func TestUpdateStatus(t *testing.T) {
 					GRPC: "http://telemetry-otlp-metrics.telemetry-system:4317",
 					HTTP: "http://telemetry-otlp-metrics.telemetry-system:4318",
 				},
+				OTLP: &operatorv1beta1.OTLPEndpoints{
+					GRPC: "http://telemetry-otlp.telemetry-system:4317",
+					HTTP: "http://telemetry-otlp.telemetry-system:4318",
+				},
 			},
 		},
 		{
@@ -265,7 +290,6 @@ func TestUpdateStatus(t *testing.T) {
 			logsCheckerReturn:    &metav1.Condition{Type: conditions.TypeLogComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			metricsCheckerReturn: &metav1.Condition{Type: conditions.TypeMetricComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			tracesCheckerReturn:  &metav1.Condition{Type: conditions.TypeTraceComponentsHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonComponentsRunning},
-
 			resources: []client.Object{
 				new(testutils.NewTracePipelineBuilder().Build()),
 				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPMetricsService).Build()),
@@ -280,10 +304,11 @@ func TestUpdateStatus(t *testing.T) {
 				Metrics: &operatorv1beta1.OTLPEndpoints{
 					GRPC: "http://telemetry-otlp-metrics.telemetry-system:4317",
 					HTTP: "http://telemetry-otlp-metrics.telemetry-system:4318",
-				}},
+				},
+			},
 		},
 		{
-			name: "metric agent is unhealthy",
+			name: "Metric Agent is unhealthy",
 			config: &Config{
 				Global: config.NewGlobal(config.WithTargetNamespace("telemetry-system")),
 			},
@@ -295,6 +320,7 @@ func TestUpdateStatus(t *testing.T) {
 				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPLogsService).Build()),
 				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPTracesService).Build()),
 				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPMetricsService).Build()),
+				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPService).Build()),
 			},
 			expectedState: operatorv1beta1.StateWarning,
 			expectedConditions: []metav1.Condition{
@@ -315,10 +341,14 @@ func TestUpdateStatus(t *testing.T) {
 					GRPC: "http://telemetry-otlp-metrics.telemetry-system:4317",
 					HTTP: "http://telemetry-otlp-metrics.telemetry-system:4318",
 				},
+				OTLP: &operatorv1beta1.OTLPEndpoints{
+					GRPC: "http://telemetry-otlp.telemetry-system:4317",
+					HTTP: "http://telemetry-otlp.telemetry-system:4318",
+				},
 			},
 		},
 		{
-			name: "only log metric pipeline is defined",
+			name: "only metric pipeline is defined",
 			config: &Config{
 				Global: config.NewGlobal(config.WithTargetNamespace("telemetry-system")),
 			},
@@ -329,6 +359,7 @@ func TestUpdateStatus(t *testing.T) {
 			resources: []client.Object{
 				new(testutils.NewMetricPipelineBuilder().Build()),
 				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPMetricsService).Build()),
+				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPService).Build()),
 			},
 			expectedState: operatorv1beta1.StateWarning,
 			expectedConditions: []metav1.Condition{
@@ -340,6 +371,10 @@ func TestUpdateStatus(t *testing.T) {
 				Metrics: &operatorv1beta1.OTLPEndpoints{
 					GRPC: "http://telemetry-otlp-metrics.telemetry-system:4317",
 					HTTP: "http://telemetry-otlp-metrics.telemetry-system:4318",
+				},
+				OTLP: &operatorv1beta1.OTLPEndpoints{
+					GRPC: "http://telemetry-otlp.telemetry-system:4317",
+					HTTP: "http://telemetry-otlp.telemetry-system:4318",
 				},
 			},
 		},

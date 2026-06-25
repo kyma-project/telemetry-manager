@@ -1,4 +1,11 @@
 extensions:
+    cgroup_runtime:
+        gomaxprocs:
+            enabled: false
+        gomemlimit:
+            enabled: true
+            ratio: 0.8
+            refresh_interval: 30s
     file_storage:
         create_directory: true
         directory: /tmp/telemetry-log-agent/file-log-receiver
@@ -10,30 +17,30 @@ service:
     pipelines:
         logs/test1:
             receivers:
-                - filelog/test1
+                - file_log/test1
             processors:
                 - memory_limiter
                 - transform/set-instrumentation-scope-runtime
-                - k8sattributes
+                - k8s_attributes
                 - transform/insert-cluster-attributes
                 - service_enrichment
                 - transform/drop-kyma-attributes
-                - filter/user-defined-test1
+                - filter/logpipeline-user-defined-test1
             exporters:
-                - otlp_grpc/test1
+                - otlp_grpc/logpipeline-test1
         logs/test2:
             receivers:
-                - filelog/test2
+                - file_log/test2
             processors:
                 - memory_limiter
                 - transform/set-instrumentation-scope-runtime
-                - k8sattributes
+                - k8s_attributes
                 - transform/insert-cluster-attributes
                 - service_enrichment
                 - transform/drop-kyma-attributes
-                - filter/user-defined-test2
+                - filter/logpipeline-user-defined-test2
             exporters:
-                - otlp_grpc/test2
+                - otlp_grpc/logpipeline-test2
     telemetry:
         metrics:
             readers:
@@ -42,15 +49,20 @@ service:
                         prometheus:
                             host: ${MY_POD_IP}
                             port: 8888
+                            without_scope_info: false
+                            without_type_suffix: false
+                            without_units: false
+            level: detailed
         logs:
             level: info
             encoding: json
     extensions:
         - health_check
         - pprof
+        - cgroup_runtime
         - file_storage
 receivers:
-    filelog/test1:
+    file_log/test1:
         exclude:
             - /var/log/pods/kyma-system_telemetry-fluent-bit-*/fluent-bit/*.log
             - /var/log/pods/kyma-system_telemetry-log-agent-*/collector/*.log
@@ -168,7 +180,7 @@ receivers:
               field: attributes["trace_flags"]
             - id: noop
               type: noop
-    filelog/test2:
+    file_log/test2:
         exclude:
             - /var/log/pods/kyma-system_telemetry-fluent-bit-*/fluent-bit/*.log
             - /var/log/pods/kyma-system_telemetry-log-agent-*/collector/*.log
@@ -287,19 +299,21 @@ receivers:
             - id: noop
               type: noop
 processors:
-    filter/user-defined-test1:
+    filter/logpipeline-user-defined-test1:
         error_mode: ignore
-        logs:
-            log_record:
+        log_conditions:
+            - conditions:
                 - IsMatch(log.attributes["foo"], ".*bar.*")
-    filter/user-defined-test2:
+    filter/logpipeline-user-defined-test2:
         error_mode: ignore
-        logs:
-            log_record:
+        log_conditions:
+            - conditions:
                 - IsMatch(log.body, ".*error.*")
-    k8sattributes:
+    k8s_attributes:
         auth_type: serviceAccount
         passthrough: false
+        filter:
+            node_from_env_var: MY_NODE_NAME
         extract:
             metadata:
                 - k8s.pod.name
@@ -365,15 +379,33 @@ processors:
                 - set(scope.version, "main")
                 - set(scope.name, "io.kyma-project.telemetry/runtime")
 exporters:
-    otlp_grpc/test1:
-        endpoint: ${OTLP_ENDPOINT_TEST1}
+    otlp_grpc/logpipeline-test1:
+        endpoint: ${OTLP_ENDPOINT_LOGPIPELINE_TEST1}
+        compression: gzip
+        sending_queue:
+            enabled: true
+            queue_size: 200000000
+            sizer: bytes
+            batch:
+                min_size: 2000000
+                max_size: 4000000
+                flush_timeout: 10s
         retry_on_failure:
             enabled: true
             initial_interval: 5s
             max_interval: 30s
             max_elapsed_time: 300s
-    otlp_grpc/test2:
-        endpoint: ${OTLP_ENDPOINT_TEST2}
+    otlp_grpc/logpipeline-test2:
+        endpoint: ${OTLP_ENDPOINT_LOGPIPELINE_TEST2}
+        compression: gzip
+        sending_queue:
+            enabled: true
+            queue_size: 200000000
+            sizer: bytes
+            batch:
+                min_size: 2000000
+                max_size: 4000000
+                flush_timeout: 10s
         retry_on_failure:
             enabled: true
             initial_interval: 5s

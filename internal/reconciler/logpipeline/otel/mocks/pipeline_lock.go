@@ -63,7 +63,7 @@ type PipelineLock_IsLockHolder_Call struct {
 // IsLockHolder is a helper method to define mock.On call
 //   - ctx context.Context
 //   - owner v1.Object
-func (_e *PipelineLock_Expecter) IsLockHolder(ctx interface{}, owner interface{}) *PipelineLock_IsLockHolder_Call {
+func (_e *PipelineLock_Expecter) IsLockHolder(ctx any, owner any) *PipelineLock_IsLockHolder_Call {
 	return &PipelineLock_IsLockHolder_Call{Call: _e.mock.On("IsLockHolder", ctx, owner)}
 }
 
@@ -120,7 +120,7 @@ type PipelineLock_TryAcquireLock_Call struct {
 // TryAcquireLock is a helper method to define mock.On call
 //   - ctx context.Context
 //   - owner v1.Object
-func (_e *PipelineLock_Expecter) TryAcquireLock(ctx interface{}, owner interface{}) *PipelineLock_TryAcquireLock_Call {
+func (_e *PipelineLock_Expecter) TryAcquireLock(ctx any, owner any) *PipelineLock_TryAcquireLock_Call {
 	return &PipelineLock_TryAcquireLock_Call{Call: _e.mock.On("TryAcquireLock", ctx, owner)}
 }
 

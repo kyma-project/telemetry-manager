@@ -3,13 +3,15 @@ package metricpipeline
 import (
 	"context"
 
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metricagent"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metricgateway"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
@@ -17,7 +19,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/validators/tlscert"
 )
 
-// AgentConfigBuilder builds OpenTelemetry Collector configuration for the metric agent from MetricPipeline resources.
+// AgentConfigBuilder builds OpenTelemetry Collector configuration for the Metric Agent from MetricPipeline resources.
 // The agent runs as a DaemonSet and collects metrics from each node in the cluster.
 type AgentConfigBuilder interface {
 	// Build constructs the collector configuration and environment variables from the provided pipelines and build options.
@@ -25,34 +27,15 @@ type AgentConfigBuilder interface {
 	Build(ctx context.Context, pipelines []telemetryv1beta1.MetricPipeline, options metricagent.BuildOptions) (*common.Config, common.EnvVars, error)
 }
 
-// GatewayConfigBuilder builds OpenTelemetry Collector configuration for the metric gateway from MetricPipeline resources.
-// The gateway receives metrics from agents and forwards them to external backends.
-type GatewayConfigBuilder interface {
-	// Build constructs the collector configuration and environment variables from the provided pipelines and build options.
-	// Returns the complete gateway configuration, environment variables, and any error encountered during the build process.
-	Build(ctx context.Context, pipelines []telemetryv1beta1.MetricPipeline, options metricgateway.BuildOptions) (*common.Config, common.EnvVars, error)
-}
-
-// AgentApplierDeleter manages the lifecycle of metric agent Kubernetes resources.
+// AgentApplierDeleter manages the lifecycle of Metric Agent Kubernetes resources.
 // The agent runs as a DaemonSet on each cluster node to collect metrics.
 type AgentApplierDeleter interface {
-	// ApplyResources creates or updates the metric agent resources in the cluster.
+	// ApplyResources creates or updates the Metric Agent resources in the cluster.
 	// This includes the DaemonSet, ConfigMap, ServiceAccount, and related resources.
 	ApplyResources(ctx context.Context, c client.Client, opts otelcollector.AgentApplyOptions) error
-	// DeleteResources removes the metric agent resources from the cluster.
+	// DeleteResources removes the Metric Agent resources from the cluster.
 	// This cleans up all agent-related Kubernetes resources.
-	DeleteResources(ctx context.Context, c client.Client) error
-}
-
-// GatewayApplierDeleter manages the lifecycle of metric gateway Kubernetes resources.
-// The gateway receives metrics from agents and forwards them to external backends.
-type GatewayApplierDeleter interface {
-	// ApplyResources creates or updates the metric gateway resources in the cluster.
-	// This includes the Deployment, Service, ConfigMap, ServiceAccount, and related resources.
-	ApplyResources(ctx context.Context, c client.Client, opts otelcollector.GatewayApplyOptions) error
-	// DeleteResources removes the metric gateway resources from the cluster.
-	// The isIstioActive flag determines whether Istio-specific resources should also be cleaned up.
-	DeleteResources(ctx context.Context, c client.Client, isIstioActive bool) error
+	DeleteResources(ctx context.Context, c client.Client, vpaCRDExists bool) error
 }
 
 // PipelineLock manages exclusive access to pipeline resources to enforce maximum pipeline limits.
@@ -105,7 +88,19 @@ type OverridesHandler interface {
 type IstioStatusChecker interface {
 	// IsIstioActive returns true if Istio is currently active in the cluster.
 	// This affects whether Istio-specific configurations (like PeerAuthentication) are applied.
-	IsIstioActive(ctx context.Context) bool
+	IsIstioActive(ctx context.Context) (bool, error)
+}
+
+// VpaStatusChecker determines whether Vertical Pod Autoscaler (VPA) is active in the cluster.
+type VpaStatusChecker interface {
+	// VpaCRDExists checks if the VPA CRD exists in the cluster.
+	VpaCRDExists(ctx context.Context, client client.Client) (bool, error)
+}
+
+// NodeSizeTracker tracks node sizes and provides VPA memory calculations.
+type NodeSizeTracker interface {
+	// VPAMaxAllowedMemory returns 15% of the smallest allocatable memory, rounded down to the nearest KiB.
+	VPAMaxAllowedMemory() resource.Quantity
 }
 
 // EndpointValidator validates metric pipeline endpoint configurations.
@@ -135,6 +130,15 @@ type SecretRefValidator interface {
 	ValidateMetricPipeline(ctx context.Context, pipeline *telemetryv1beta1.MetricPipeline) error
 }
 
+// RuntimeAdditionalMetricsValidator validates runtime additional metrics in MetricPipeline resources.
+// It ensures that runtime additional metrics are correctly defined and supported.
+type RuntimeAdditionalMetricsValidator interface {
+	// Validate checks if the runtime additional metrics are valid.
+	// It verifies that the metrics are supported and correctly configured.
+	// Returns an error if any metric is invalid.
+	Validate(pipeline *telemetryv1beta1.MetricPipeline) error
+}
+
 // TransformSpecValidator validates transform specifications in metric pipeline configurations.
 // It ensures that metric transformations are correctly defined and syntactically valid.
 type TransformSpecValidator interface {
@@ -151,4 +155,12 @@ type FilterSpecValidator interface {
 	// It verifies filter syntax, supported operations, and configuration completeness.
 	// Returns an error if any filter is invalid or unsupported.
 	Validate(filters []telemetryv1beta1.FilterSpec) error
+}
+
+// SecretWatcher manages watches on Kubernetes secrets referenced by pipelines.
+type SecretWatcher interface {
+	// SyncWatchers ensures the pipeline watches exactly the given set of secrets.
+	SyncWatchers(ctx context.Context, pipeline client.Object, secrets []types.NamespacedName) error
+	// RemoveFromWatchers removes a pipeline from all watchers by name and GVK.
+	RemoveFromWatchers(ctx context.Context, name string, gvk schema.GroupVersionKind) error
 }

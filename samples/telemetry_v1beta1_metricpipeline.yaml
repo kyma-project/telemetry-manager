@@ -131,6 +131,15 @@ spec:
     app: metric-gen
   type: ClusterIP
 ---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: metric-sink-credentials
+  namespace: metric-sink
+type: Opaque
+stringData:
+  endpoint: http://metric-sink.metric-sink:4317
+---
 apiVersion: telemetry.kyma-project.io/v1beta1
 kind: MetricPipeline
 metadata:
@@ -146,4 +155,8 @@ spec:
   output:
     otlp:
       endpoint:
-        value: http://metric-sink.metric-sink:4317
+        valueFrom:
+          secretKeyRef:
+            name: metric-sink-credentials
+            namespace: metric-sink
+            key: endpoint

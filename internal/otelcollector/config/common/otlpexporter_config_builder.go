@@ -8,6 +8,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+	"github.com/kyma-project/telemetry-manager/internal/pipelines"
 	sharedtypesutils "github.com/kyma-project/telemetry-manager/internal/utils/sharedtypes"
 )
 
@@ -15,55 +16,81 @@ import (
 // OTLP EXPORTER CONFIG BUILDER
 // =============================================================================
 
+// SendingQueue constructors and options
+
+type SendingQueueOption func(*SendingQueue)
+
+func WithSizer(sizer Sizer) SendingQueueOption {
+	return func(sq *SendingQueue) {
+		sq.Sizer = sizer
+	}
+}
+
+func WithBatch(batch Batch) SendingQueueOption {
+	return func(sq *SendingQueue) {
+		sq.Batch = batch
+	}
+}
+
+func NewSendingQueue(queueSize int, opts ...SendingQueueOption) SendingQueue {
+	if queueSize == 0 {
+		return SendingQueue{Enabled: false}
+	}
+
+	sq := SendingQueue{
+		Enabled:   true,
+		QueueSize: queueSize,
+	}
+	for _, opt := range opts {
+		opt(&sq)
+	}
+
+	return sq
+}
+
 type OTLPExporterConfigBuilder struct {
 	reader       client.Reader
 	otlpOutput   *telemetryv1beta1.OTLPOutput
-	pipelineName string
-	queueSize    int
-	signalType   SignalType
+	pipelineRef  pipelines.PipelineRef
+	sendingQueue SendingQueue
 }
 
 type EnvVars map[string][]byte
 
-func NewOTLPExporterConfigBuilder(reader client.Reader, otlpOutput *telemetryv1beta1.OTLPOutput, pipelineName string, queueSize int, signalType SignalType) *OTLPExporterConfigBuilder {
+func NewOTLPExporterConfigBuilder(reader client.Reader, otlpOutput *telemetryv1beta1.OTLPOutput, pipelineRef pipelines.PipelineRef, sendingQueue SendingQueue) *OTLPExporterConfigBuilder {
 	return &OTLPExporterConfigBuilder{
 		reader:       reader,
 		otlpOutput:   otlpOutput,
-		pipelineName: pipelineName,
-		queueSize:    queueSize,
-		signalType:   signalType,
+		pipelineRef:  pipelineRef,
+		sendingQueue: sendingQueue,
 	}
 }
 
-func (cb *OTLPExporterConfigBuilder) OTLPExporterConfig(ctx context.Context) (*OTLPExporter, EnvVars, error) {
-	envVars, err := makeOTLPExporterEnvVars(ctx, cb.reader, cb.otlpOutput, cb.pipelineName)
+func (cb *OTLPExporterConfigBuilder) OTLPExporter(ctx context.Context) (*OTLPExporterConfig, EnvVars, error) {
+	envVars, err := makeOTLPExporterEnvVars(ctx, cb.reader, cb.otlpOutput, cb.pipelineRef)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to make env vars: %w", err)
 	}
 
-	exportersConfig := makeExporterConfig(cb.otlpOutput, cb.pipelineName, envVars, cb.queueSize, cb.signalType)
+	exporter := otlpExporter(cb.otlpOutput, cb.pipelineRef, envVars, cb.sendingQueue)
 
-	return exportersConfig, envVars, nil
+	return exporter, envVars, nil
 }
 
-func makeExporterConfig(otlpOutput *telemetryv1beta1.OTLPOutput, pipelineName string, envVars map[string][]byte, queueSize int, signalType SignalType) *OTLPExporter {
-	headers := makeHeaders(otlpOutput, pipelineName)
-	otlpEndpointVariable := formatEnvVarKey(otlpEndpointVariablePrefix, pipelineName)
+func otlpExporter(otlpOutput *telemetryv1beta1.OTLPOutput, pipelineRef pipelines.PipelineRef, envVars map[string][]byte, sendingQueue SendingQueue) *OTLPExporterConfig {
+	otlpEndpointVariable := formatEnvVarKey(otlpEndpointVariablePrefix, pipelineRef)
 	otlpEndpointValue := string(envVars[otlpEndpointVariable])
-	tlsConfig := makeTLSConfig(otlpOutput, otlpEndpointValue, pipelineName)
 
-	sendingQueue := SendingQueue{
-		Enabled: false,
-	}
-	if queueSize != 0 {
-		sendingQueue.QueueSize = queueSize
-		sendingQueue.Enabled = true
+	compression := string(otlpOutput.Compression)
+	if compression == "" {
+		compression = string(telemetryv1beta1.OTLPCompressionGzip)
 	}
 
-	otlpExporterConfig := OTLPExporter{
+	exporter := OTLPExporterConfig{
 		Endpoint:     fmt.Sprintf("${%s}", otlpEndpointVariable),
-		Headers:      headers,
-		TLS:          tlsConfig,
+		Headers:      headers(otlpOutput, pipelineRef),
+		TLS:          tls(otlpOutput, otlpEndpointValue, pipelineRef),
+		Compression:  compression,
 		SendingQueue: sendingQueue,
 		RetryOnFailure: RetryOnFailure{
 			Enabled:         true,
@@ -73,77 +100,69 @@ func makeExporterConfig(otlpOutput *telemetryv1beta1.OTLPOutput, pipelineName st
 		},
 	}
 
-	if len(otlpOutput.Path) > 0 && SignalTypeMetric == signalType {
-		otlpExporterConfig.Endpoint = ""
-		otlpExporterConfig.MetricsEndpoint = fmt.Sprintf("${%s}", otlpEndpointVariable)
+	if len(otlpOutput.Path) > 0 && pipelines.SignalTypeMetric == pipelineRef.SignalType() {
+		exporter.Endpoint = ""
+		exporter.MetricsEndpoint = fmt.Sprintf("${%s}", otlpEndpointVariable)
 	}
 
-	if len(otlpOutput.Path) > 0 && SignalTypeTrace == signalType {
-		otlpExporterConfig.Endpoint = ""
-		otlpExporterConfig.TracesEndpoint = fmt.Sprintf("${%s}", otlpEndpointVariable)
+	if len(otlpOutput.Path) > 0 && pipelines.SignalTypeTrace == pipelineRef.SignalType() {
+		exporter.Endpoint = ""
+		exporter.TracesEndpoint = fmt.Sprintf("${%s}", otlpEndpointVariable)
 	}
 
-	if len(otlpOutput.Path) > 0 && SignalTypeLog == signalType {
-		otlpExporterConfig.Endpoint = ""
-		otlpExporterConfig.LogsEndpoint = fmt.Sprintf("${%s}", otlpEndpointVariable)
+	if len(otlpOutput.Path) > 0 && pipelines.SignalTypeLog == pipelineRef.SignalType() {
+		exporter.Endpoint = ""
+		exporter.LogsEndpoint = fmt.Sprintf("${%s}", otlpEndpointVariable)
 	}
 
 	if otlpOutput.Authentication != nil && otlpOutput.Authentication.OAuth2 != nil {
-		otlpExporterConfig.Auth = Auth{
-			Authenticator: fmt.Sprintf(ComponentIDOAuth2Extension, pipelineName),
+		exporter.Auth = Auth{
+			Authenticator: ComponentIDOAuth2Extension(pipelineRef),
 		}
 	}
 
-	return &otlpExporterConfig
+	return &exporter
 }
 
-func ExporterID(protocol telemetryv1beta1.OTLPProtocol, pipelineName string) string {
-	if protocol == telemetryv1beta1.OTLPProtocolHTTP {
-		return fmt.Sprintf(ComponentIDOTLPHTTPExporter, pipelineName)
-	}
+func tls(output *telemetryv1beta1.OTLPOutput, otlpEndpointValue string, pipelineRef pipelines.PipelineRef) TLS {
+	var tls TLS
 
-	return fmt.Sprintf(ComponentIDOTLPGRPCExporter, pipelineName)
-}
-
-func makeTLSConfig(output *telemetryv1beta1.OTLPOutput, otlpEndpointValue, pipelineName string) TLS {
-	var cfg TLS
-
-	cfg.Insecure = isInsecureOutput(otlpEndpointValue)
+	tls.Insecure = isInsecureOutput(otlpEndpointValue)
 
 	if output.TLS == nil {
-		return cfg
+		return tls
 	}
 
-	if !cfg.Insecure {
-		cfg.Insecure = output.TLS.Insecure
+	if !tls.Insecure {
+		tls.Insecure = output.TLS.Insecure
 	}
 
-	cfg.InsecureSkipVerify = output.TLS.InsecureSkipVerify
+	tls.InsecureSkipVerify = output.TLS.InsecureSkipVerify
 	if sharedtypesutils.IsValid(output.TLS.CA) {
-		cfg.CAPem = fmt.Sprintf("${%s}", formatEnvVarKey(tlsConfigCaVariablePrefix, pipelineName))
+		tls.CAPem = fmt.Sprintf("${%s}", formatEnvVarKey(tlsConfigCaVariablePrefix, pipelineRef))
 	}
 
 	if sharedtypesutils.IsValid(output.TLS.Cert) {
-		cfg.CertPem = fmt.Sprintf("${%s}", formatEnvVarKey(tlsConfigCertVariablePrefix, pipelineName))
+		tls.CertPem = fmt.Sprintf("${%s}", formatEnvVarKey(tlsConfigCertVariablePrefix, pipelineRef))
 	}
 
 	if sharedtypesutils.IsValid(output.TLS.Key) {
-		cfg.KeyPem = fmt.Sprintf("${%s}", formatEnvVarKey(tlsConfigKeyVariablePrefix, pipelineName))
+		tls.KeyPem = fmt.Sprintf("${%s}", formatEnvVarKey(tlsConfigKeyVariablePrefix, pipelineRef))
 	}
 
-	return cfg
+	return tls
 }
 
-func makeHeaders(output *telemetryv1beta1.OTLPOutput, pipelineName string) map[string]string {
+func headers(output *telemetryv1beta1.OTLPOutput, pipelineRef pipelines.PipelineRef) map[string]string {
 	headers := make(map[string]string)
 
 	if isBasicAuthEnabled(output.Authentication) {
-		basicAuthHeaderVariable := formatEnvVarKey(basicAuthHeaderVariablePrefix, pipelineName)
+		basicAuthHeaderVariable := formatEnvVarKey(basicAuthHeaderVariablePrefix, pipelineRef)
 		headers["Authorization"] = fmt.Sprintf("${%s}", basicAuthHeaderVariable)
 	}
 
 	for _, header := range output.Headers {
-		headers[header.Name] = fmt.Sprintf("${%s}", formatHeaderEnvVarKey(header, pipelineName))
+		headers[header.Name] = fmt.Sprintf("${%s}", formatHeaderEnvVarKey(header, pipelineRef))
 	}
 
 	return headers

@@ -12,6 +12,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
@@ -22,7 +23,7 @@ import (
 )
 
 func TestMetricsIstioInput(t *testing.T) {
-	suite.SetupTest(t, suite.LabelGardener, suite.LabelIstio)
+	suite.SetupTestWithOptions(t, []string{suite.LabelGardener}, kubeprep.WithIstio())
 
 	var (
 		uniquePrefix = unique.Prefix()
@@ -83,7 +84,7 @@ func TestMetricsIstioInput(t *testing.T) {
 		WithName(pipelineName).
 		WithOTLPInput(false).
 		WithIstioInput(true, testutils.IncludeNamespaces(app1Ns)).
-		WithOTLPOutput(testutils.OTLPEndpoint(metricBackend.EndpointHTTP())).
+		WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint(metricBackend.EndpointHTTP())).
 		Build()
 
 	logPipeline := testutils.NewLogPipelineBuilder().
@@ -108,7 +109,7 @@ func TestMetricsIstioInput(t *testing.T) {
 
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
-	assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+	assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 	assert.DaemonSetReady(t, kitkyma.MetricAgentName)
 	assert.BackendReachable(t, metricBackend)
 	assert.BackendReachable(t, logBackend)
@@ -148,7 +149,7 @@ func TestMetricsIstioInput(t *testing.T) {
 	assert.MetricsFromNamespaceNotDelivered(t, metricBackend, app2Ns)
 
 	assert.BackendDataConsistentlyMatches(t, metricBackend, HaveFlatMetrics(
-		Not(ContainElement(HaveMetricAttributes(HaveKeyWithValue("destination_workload", "telemetry-log-gateway")))),
+		Not(ContainElement(HaveMetricAttributes(HaveKeyWithValue("destination_workload", "telemetry-otlp-gateway")))),
 	))
 
 	assert.BackendDataConsistentlyMatches(t, metricBackend, HaveFlatMetrics(

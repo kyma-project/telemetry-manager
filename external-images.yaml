@@ -1,13 +1,15 @@
 images:
-  - source: "fluent/fluent-bit@sha256:906c8ad6e682f72ea3050da8b3e384a07e3b5db8c093173a9ed9adfe0be5c21a"
-    tag: "4.2.3" # used by the kyma telemetry module
-  - source: "rancher/k3s@sha256:bfced830bf3a9b4624e0e569264c7bfebc0700bc36d20a7238faa8646825e36b"
-    tag: "v1.33.7-k3s1" # used by k3d - current k8s version
-  - source: "rancher/k3s@sha256:71abd3a56f57884c62732e0e0d87606052cb5f8555b7db7e8e33c04570b8175c"
-    tag: "v1.34.3-k3s1" # used by k3d - future k8s version
-  - source: "library/registry@sha256:3725021071ec9383eb3d87ddbdff9ed602439b3f7c958c9c2fb941049ea6531d"
+  - source: "fluent/fluent-bit@sha256:4468d776acbde3ea11ec53f3bef29f798affef23acbb40a277ac8f839ab22f3d"
+    tag: "5.0.8" # used by the kyma telemetry module
+  - source: "rancher/k3s@sha256:6a47cea22c4b834d4ba72c89d291696b79ebe406251f90b446e4dff03513dd87"
+    tag: "v1.36.2-k3s1" # used by k3d - current k8s version
+  - source: "rancher/k3s@sha256:6a47cea22c4b834d4ba72c89d291696b79ebe406251f90b446e4dff03513dd87"
+    tag: "v1.36.2-k3s1" # used by k3d - future k8s version
+  - source: "ghcr.io/k3d-io/k3d-tools@sha256:c57abce697e66feeb826922718738fe186b47779312d49d4e51e6fb9b8a6f34d"
+    tag: "5.9.0"
+  - source: "ghcr.io/k3d-io/k3d-proxy@sha256:7be40abfeb6ac9a81d0d4157a7cbf3aacc68a64a1780ca2efb160f1aea915177"
+    tag: "5.9.0"
+  - source: "library/registry@sha256:5620083c96ffb6f6296bbda84b2da7e822ed95d8df10de6434cee19c39fe0e9c"
     tag: "3" # used by k3d
-  - source: "library/alpine@sha256:25109184c71bdad752c8312a8623239686a9a2071e8825f20acb8f2198c3f659"
-    tag: "3.23.3" # used for init containers in log agent and fluentbit
   - source: quay.io/prometheuscommunity/avalanche
     tag: "v0.7.0" # used by the metrics agent test in backpressure scenario to generate metric load

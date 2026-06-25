@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -16,11 +17,25 @@ import (
 //
 // This function is idempotent and safe to call multiple times.
 func SetupCluster(t TestingT, k8sClient client.Client, cfg Config) error {
-	t.Logf("Setting up cluster: istio=%t, fips=%t, experimental=%t, prerequisites=%t, helmValues=%v, chart=%s",
-		cfg.InstallIstio, cfg.OperateInFIPSMode, cfg.EnableExperimental, cfg.DeployPrerequisites, cfg.HelmValues, cfg.ChartPath)
+	t.Logf("Setting up cluster: istio=%t, fips=%t, experimental=%t, prerequisites=%t, forceFresh=%t, helmValues=%v, chart=%s",
+		cfg.InstallIstio, cfg.OperateInFIPSMode, cfg.EnableExperimental, cfg.DeployPrerequisites, cfg.ForceFreshInstall, cfg.HelmValues, cfg.ChartPath)
+
+	// Handle force fresh install - completely remove telemetry first
+	if cfg.ForceFreshInstall {
+		t.Log("Force fresh install requested, removing existing telemetry installation...")
+
+		if err := undeployManager(t, k8sClient); err != nil {
+			t.Logf("Warning: failed to undeploy manager (may not exist): %v", err)
+		}
+
+		// Wait for CRDs to be fully deleted to ensure clean API server state
+		if err := waitForCRDsDeletion(t, k8sClient); err != nil {
+			t.Logf("Warning: failed waiting for CRDs deletion: %v", err)
+		}
+	}
 
 	// Ensure Istio is in the desired state
-	if err := ensureIstioState(t, k8sClient, cfg.InstallIstio); err != nil {
+	if err := ensureIstioState(t, k8sClient, cfg); err != nil {
 		return fmt.Errorf("failed to ensure Istio state: %w", err)
 	}
 
@@ -30,7 +45,7 @@ func SetupCluster(t TestingT, k8sClient client.Client, cfg Config) error {
 	}
 
 	// Deploy test prerequisites if enabled
-	if err := ensureTestPrerequisites(t, k8sClient, cfg.DeployPrerequisites); err != nil {
+	if err := ensureTestPrerequisites(t, k8sClient, cfg); err != nil {
 		return fmt.Errorf("failed to ensure test prerequisites: %w", err)
 	}
 
@@ -41,39 +56,70 @@ func SetupCluster(t TestingT, k8sClient client.Client, cfg Config) error {
 
 // ensureTestPrerequisites deploys test prerequisites if enabled.
 // Server-side apply is idempotent, so this is safe to call multiple times.
-func ensureTestPrerequisites(t TestingT, k8sClient client.Client, deploy bool) error {
-	if !deploy {
+func ensureTestPrerequisites(t TestingT, k8sClient client.Client, cfg Config) error {
+	if !cfg.DeployPrerequisites {
 		t.Log("Skipping test prerequisites deployment")
 		return nil
 	}
 
-	return deployTestPrerequisites(t, k8sClient)
+	return deployTestPrerequisites(t, k8sClient, cfg)
 }
 
 // ensureManagerDeployed ensures the telemetry manager is deployed with the desired configuration.
-// It handles experimental mode changes which require uninstall before reinstall due to CRD conflicts.
+// If values changed, it undeploys first and then deploys fresh to ensure a clean state.
+// If SkipManagerRemoval is set, it skips undeploy and does an in-place upgrade (for upgrade tests).
 func ensureManagerDeployed(t TestingT, k8sClient client.Client, cfg Config) error {
 	ctx := t.Context()
 
-	// Check if experimental mode change requires uninstall first
-	// Switching between experimental and default subcharts requires uninstall
-	// because both subcharts contain CRD templates that conflict
-	currentExperimental := detectExperimentalEnabled(ctx)
-	if currentExperimental != cfg.EnableExperimental && releaseExists(ctx) {
-		t.Logf("Experimental mode change detected (%t -> %t), removing manager first...", currentExperimental, cfg.EnableExperimental)
+	// Check if values changed compared to current release
+	newValues := buildHelmValues(cfg, cfg.ManagerImage)
+	currentValues := getReleaseValues(ctx)
+	valuesChanged := !valuesEqual(currentValues, newValues)
 
-		if err := undeployManager(t, k8sClient); err != nil {
-			return fmt.Errorf("failed to remove manager for experimental mode change: %w", err)
-		}
+	if valuesChanged {
+		newYAML, _ := yaml.Marshal(newValues)
+		t.Logf("Helm values changed.\nCurrent release values:\n%s\nNew values:\n%s", currentValues, string(newYAML))
+	}
 
-		if err := waitForCRDsDeletion(t, k8sClient); err != nil {
-			t.Logf("Warning: failed waiting for CRDs deletion: %v", err)
+	// If values changed and release exists, decide whether to undeploy first
+	if valuesChanged && releaseExists(ctx) {
+		if cfg.SkipManagerRemoval {
+			// Upgrade test: skip undeploy, do in-place upgrade
+			t.Log("Configuration changed, performing in-place upgrade (SkipManagerRemoval set)...")
+		} else {
+			// Normal test: undeploy first for clean slate
+			t.Log("Configuration changed, removing manager first...")
+
+			if err := undeployManager(t, k8sClient); err != nil {
+				return fmt.Errorf("failed to remove manager: %w", err)
+			}
+
+			if err := waitForCRDsDeletion(t, k8sClient); err != nil {
+				t.Logf("Warning: failed waiting for CRDs deletion: %v", err)
+			}
 		}
 	}
 
-	// Deploy/upgrade manager (helm upgrade --install is idempotent)
+	// Deploy manager
 	if err := deployManager(t, k8sClient, cfg); err != nil {
 		return fmt.Errorf("failed to deploy manager: %w", err)
+	}
+
+	// For upgrade tests (SkipManagerRemoval), we need to wait for rollout
+	// since we didn't undeploy first
+	if cfg.SkipManagerRemoval && valuesChanged {
+		t.Log("Waiting for deployment rollout to complete...")
+
+		if err := waitForRolloutComplete(ctx, k8sClient, t, 3*time.Minute); err != nil {
+			return fmt.Errorf("rollout did not complete: %w", err)
+		}
+
+		if err := waitForSinglePod(ctx, k8sClient, t, 1*time.Minute); err != nil {
+			return fmt.Errorf("multiple pods still running: %w", err)
+		}
+
+		t.Logf("Waiting %s for manager to reconcile resources...", reconcileDelay)
+		time.Sleep(reconcileDelay)
 	}
 
 	return nil
@@ -81,7 +127,7 @@ func ensureManagerDeployed(t TestingT, k8sClient client.Client, cfg Config) erro
 
 // ensureIstioState ensures Istio is in the desired state (installed or not installed).
 // It handles cleanup of problematic states and triggers install/uninstall as needed.
-func ensureIstioState(t TestingT, k8sClient client.Client, desiredInstalled bool) error {
+func ensureIstioState(t TestingT, k8sClient client.Client, cfg Config) error {
 	ctx := t.Context()
 
 	// Check current Istio state
@@ -101,8 +147,12 @@ func ensureIstioState(t TestingT, k8sClient client.Client, desiredInstalled bool
 	currentInstalled := istioState == IstioFullyInstalled
 
 	// Handle Istio changes (requires special ordering)
-	if currentInstalled != desiredInstalled {
-		if err := handleIstioChange(t, k8sClient, currentInstalled, desiredInstalled); err != nil {
+	if currentInstalled != cfg.InstallIstio {
+		if cfg.SkipManagerRemoval {
+			return fmt.Errorf("istio state change required (%t -> %t) but SkipManagerRemoval is set", currentInstalled, cfg.InstallIstio)
+		}
+
+		if err := handleIstioChange(t, k8sClient, currentInstalled, cfg.InstallIstio); err != nil {
 			return err
 		}
 	}
@@ -111,9 +161,16 @@ func ensureIstioState(t TestingT, k8sClient client.Client, desiredInstalled bool
 }
 
 // handleIstioChange handles Istio installation/uninstallation.
-// The manager must be removed before Istio changes to avoid webhook/sidecar conflicts.
+// The manager and test prerequisites must be removed before Istio changes to avoid webhook/sidecar/network policy conflicts.
 func handleIstioChange(t TestingT, k8sClient client.Client, currentInstalled, desiredInstalled bool) error {
-	// Remove manager FIRST (prevents conflicts during Istio changes)
+	// Remove test prerequisites FIRST (network policies can block Istio installation)
+	t.Log("Removing test prerequisites before Istio change...")
+
+	if err := removeTestPrerequisites(t, k8sClient); err != nil {
+		t.Logf("Warning: failed to remove test prerequisites: %v", err)
+	}
+
+	// Remove manager (prevents conflicts during Istio changes)
 	t.Log("Removing manager before Istio change...")
 
 	if err := undeployManager(t, k8sClient); err != nil {

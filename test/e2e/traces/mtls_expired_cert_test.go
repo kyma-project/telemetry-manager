@@ -26,21 +26,21 @@ func TestMTLSExpiredCert(t *testing.T) {
 		backendNs    = uniquePrefix("backend")
 	)
 
-	expiredServerCerts, expiredClientCerts, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).
-		WithExpiredClientCert().
+	serverCerts, clientCerts, err := testutils.NewCertBuilder(kitbackend.DefaultName, backendNs).
+		WithAboutToExpireShortlyClientCert().
 		Build()
 	Expect(err).ToNot(HaveOccurred())
 
-	backend := kitbackend.New(backendNs, kitbackend.SignalTypeTraces, kitbackend.WithMTLS(*expiredServerCerts))
+	backend := kitbackend.New(backendNs, kitbackend.SignalTypeTraces, kitbackend.WithMTLS(*serverCerts))
 
 	pipeline := testutils.NewTracePipelineBuilder().
 		WithName(pipelineName).
 		WithOTLPOutput(
 			testutils.OTLPEndpoint(backend.EndpointHTTPS()),
 			testutils.OTLPClientMTLSFromString(
-				expiredClientCerts.CaCertPem.String(),
-				expiredClientCerts.ClientCertPem.String(),
-				expiredClientCerts.ClientKeyPem.String(),
+				clientCerts.CaCertPem.String(),
+				clientCerts.ClientCertPem.String(),
+				clientCerts.ClientKeyPem.String(),
 			),
 		).
 		Build()
@@ -51,6 +51,21 @@ func TestMTLSExpiredCert(t *testing.T) {
 
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
+	// Initially, the certificate is about to expire in a short amount of time
+	assert.TracePipelineHasCondition(t, pipelineName, metav1.Condition{
+		Type:   conditions.TypeConfigurationGenerated,
+		Status: metav1.ConditionTrue,
+		Reason: conditions.ReasonTLSCertificateAboutToExpire,
+	})
+
+	assert.TelemetryHasState(t, operatorv1beta1.StateWarning)
+	assert.TelemetryHasCondition(t, suite.K8sClient, metav1.Condition{
+		Type:   conditions.TypeTraceComponentsHealthy,
+		Status: metav1.ConditionTrue,
+		Reason: conditions.ReasonTLSCertificateAboutToExpire,
+	})
+
+	// After certificate is expired, reconciliation should be triggered and status updated
 	assert.TracePipelineHasCondition(t, pipelineName, metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
 		Status: metav1.ConditionFalse,

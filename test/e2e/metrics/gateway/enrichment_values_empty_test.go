@@ -19,7 +19,7 @@ import (
 )
 
 func TestEnrichmentValuesEmpty(t *testing.T) {
-	suite.SetupTest(t, suite.LabelMetricGatewaySetC, suite.LabelMetricGateway, suite.LabelSetC)
+	suite.SetupTest(t, suite.LabelMetricGateway)
 
 	var (
 		uniquePrefix = unique.Prefix()
@@ -31,7 +31,7 @@ func TestEnrichmentValuesEmpty(t *testing.T) {
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics)
 	pipeline := testutils.NewMetricPipelineBuilder().
 		WithName(pipelineName).
-		WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
+		WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 		Build()
 
 	// All attributes in the enrichment flow are set to empty values
@@ -70,7 +70,7 @@ func TestEnrichmentValuesEmpty(t *testing.T) {
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.BackendReachable(t, backend)
-	assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+	assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 	assert.MetricPipelineHealthy(t, pipelineName)
 	assert.MetricsFromNamespaceDelivered(t, backend, genNs, telemetrygen.MetricNames)
 

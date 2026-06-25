@@ -65,7 +65,7 @@ type SelfMonitorApplierDeleter_ApplyResources_Call struct {
 //   - ctx context.Context
 //   - c client.Client
 //   - opts selfmonitor.ApplyOptions
-func (_e *SelfMonitorApplierDeleter_Expecter) ApplyResources(ctx interface{}, c interface{}, opts interface{}) *SelfMonitorApplierDeleter_ApplyResources_Call {
+func (_e *SelfMonitorApplierDeleter_Expecter) ApplyResources(ctx any, c any, opts any) *SelfMonitorApplierDeleter_ApplyResources_Call {
 	return &SelfMonitorApplierDeleter_ApplyResources_Call{Call: _e.mock.On("ApplyResources", ctx, c, opts)}
 }
 
@@ -127,7 +127,7 @@ type SelfMonitorApplierDeleter_DeleteResources_Call struct {
 // DeleteResources is a helper method to define mock.On call
 //   - ctx context.Context
 //   - c client.Client
-func (_e *SelfMonitorApplierDeleter_Expecter) DeleteResources(ctx interface{}, c interface{}) *SelfMonitorApplierDeleter_DeleteResources_Call {
+func (_e *SelfMonitorApplierDeleter_Expecter) DeleteResources(ctx any, c any) *SelfMonitorApplierDeleter_DeleteResources_Call {
 	return &SelfMonitorApplierDeleter_DeleteResources_Call{Call: _e.mock.On("DeleteResources", ctx, c)}
 }
 

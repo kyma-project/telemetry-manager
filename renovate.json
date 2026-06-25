@@ -1,5 +1,6 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "osvVulnerabilityAlerts": true,
   "extends": [
     "config:recommended",
     ":semanticCommits",
@@ -82,6 +83,21 @@
         "https://github.com/open-telemetry/opentelemetry-collector{/,}**",
         "https://github.com/open-telemetry/opentelemetry-collector-contrib{/,}**"
       ]
+    },
+    {
+      "matchManagers": [
+        "gomod"
+      ],
+      "groupName": "All Kubernetes packages",
+      "matchPackagePrefixes": [
+        "k8s.io/",
+        "sigs.k8s.io/"
+      ]
+    },
+    {
+      "groupName": "All k3d packages",
+      "matchPackagePatterns": ["k3d"],
+      "matchDatasources": ["docker", "go"]
     }
   ],
   "customManagers": [

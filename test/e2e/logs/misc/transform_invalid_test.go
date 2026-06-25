@@ -14,7 +14,7 @@ import (
 
 func TestTransformInvalid(t *testing.T) {
 	// Nothing will be deployed
-	suite.SetupTest(t, suite.LabelLogsMisc)
+	suite.SetupTest(t, suite.LabelLogs, suite.LabelMisc)
 
 	var (
 		uniquePrefix = unique.Prefix()

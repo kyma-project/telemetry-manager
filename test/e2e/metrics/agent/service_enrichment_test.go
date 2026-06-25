@@ -18,6 +18,7 @@ import (
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdoutloggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
@@ -25,7 +26,7 @@ import (
 )
 
 func TestServiceEnrichment(t *testing.T) {
-	suite.SetupTest(t, suite.LabelMetricAgentSetB, suite.LabelMetricAgent, suite.LabelSetB)
+	suite.SetupTest(t, suite.LabelMetricAgent)
 
 	const (
 		// pod names
@@ -33,6 +34,17 @@ func TestServiceEnrichment(t *testing.T) {
 		podWithUnknownServiceName          = "pod-with-unknown-service"
 		podWithUnknownServicePatternName   = "pod-with-unknown-service-pattern"
 		podWithCustomServiceAttributesName = "pod-with-custom-service"
+		podWithAnnotationPriorityName      = "pod-with-annotation-priority"
+		podWithAnnotationPriorityOTLPName  = "pod-with-annotation-priority-otlp"
+
+		// annotation keys
+		annotationServiceName    = "resource.opentelemetry.io/service.name"
+		annotationServiceVersion = "resource.opentelemetry.io/service.version"
+
+		// label keys
+		labelK8sName     = "app.kubernetes.io/name"
+		labelK8sInstance = "app.kubernetes.io/instance"
+		labelK8sVersion  = "app.kubernetes.io/version"
 
 		// misc
 		unknownService          = "unknown_service"
@@ -41,6 +53,9 @@ func TestServiceEnrichment(t *testing.T) {
 		customServiceNamespace  = "custom-namespace"
 		customServiceVersion    = "v1.2.3"
 		customServiceInstanceID = "instance-1234"
+		labelServiceName        = "label-service-name"
+		labelInstanceName       = "label-instance-name"
+		labelVersion            = "label-version"
 	)
 
 	var (
@@ -56,8 +71,8 @@ func TestServiceEnrichment(t *testing.T) {
 
 	pipeline := testutils.NewMetricPipelineBuilder().
 		WithName(pipelineName).
-		WithRuntimeInput(true, testutils.IncludeNamespaces(kitkyma.SystemNamespaceName)).
-		WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
+		WithRuntimeInput(true, testutils.IncludeNamespaces(kitkyma.SystemNamespaceName, genNs)).
+		WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 		Build()
 
 	// Configure generator pods
@@ -76,6 +91,16 @@ func TestServiceEnrichment(t *testing.T) {
 		telemetrygen.WithServiceNamespace(customServiceNamespace),
 		telemetrygen.WithServiceVersion(customServiceVersion),
 		telemetrygen.WithServiceInstanceID(customServiceInstanceID),
+	)
+	// Simple running pod (no OTLP metrics) — scraped via kubelet stats by the Metric Agent.
+	// OTel annotations provide the high-priority service attributes; k8s labels are the competing lower priority.
+	// Tests that the agent's k8sattributes enrichment respects annotation > label priority.
+	podSpecWithAnnotationPriority := stdoutloggen.PodSpec()
+	// Pushes OTLP metrics through the gateway with empty service.name so k8sattributes enriches from pod metadata.
+	// OTel annotations provide the high-priority service attributes; k8s labels are the competing lower priority.
+	// Tests that the gateway's restore processor ensures annotation > label priority for OTLP-pushed metrics.
+	podSpecWithAnnotationPriorityOTLP := telemetrygen.PodSpec(telemetrygen.SignalTypeMetrics,
+		telemetrygen.WithServiceName(""),
 	)
 
 	// Enable OTel service enrichment strategy
@@ -97,13 +122,26 @@ func TestServiceEnrichment(t *testing.T) {
 		kitk8sobjects.NewPod(podWithUnknownServiceName, genNs).WithPodSpec(podSpecWithUnknownServiceName).K8sObject(),
 		kitk8sobjects.NewPod(podWithUnknownServicePatternName, genNs).WithPodSpec(podSpecWithUnknownServiceNamePattern).K8sObject(),
 		kitk8sobjects.NewPod(podWithCustomServiceAttributesName, genNs).WithPodSpec(podSpecWithCustomServiceAttributes).K8sObject(),
+		kitk8sobjects.NewPod(podWithAnnotationPriorityName, genNs).
+			WithAnnotation(annotationServiceName, customServiceName).
+			WithAnnotation(annotationServiceVersion, customServiceVersion).
+			WithLabel(labelK8sName, labelServiceName).
+			WithLabel(labelK8sInstance, labelInstanceName).
+			WithLabel(labelK8sVersion, labelVersion).
+			WithPodSpec(podSpecWithAnnotationPriority).K8sObject(),
+		kitk8sobjects.NewPod(podWithAnnotationPriorityOTLPName, genNs).
+			WithAnnotation(annotationServiceName, customServiceName).
+			WithAnnotation(annotationServiceVersion, customServiceVersion).
+			WithLabel(labelK8sName, labelServiceName).
+			WithLabel(labelK8sVersion, labelVersion).
+			WithPodSpec(podSpecWithAnnotationPriorityOTLP).K8sObject(),
 	}
 	resources = append(resources, backend.K8sObjects()...)
 
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.BackendReachable(t, backend)
-	assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+	assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 	assert.DaemonSetReady(t, kitkyma.MetricAgentName)
 	assert.MetricPipelineHealthy(t, pipelineName)
 	assert.MetricsFromNamespaceDelivered(t, backend, genNs, telemetrygen.MetricNames)
@@ -132,10 +170,22 @@ func TestServiceEnrichment(t *testing.T) {
 		ServiceInstanceID: customServiceInstanceID,
 	})
 
+	// Annotation-level service attributes should take priority over app.kubernetes.io/* pod labels
+	verifyServiceAttributes(t, backend, podWithAnnotationPriorityName, ServiceAttributes{
+		ServiceName:    customServiceName,
+		ServiceVersion: customServiceVersion,
+	})
+
+	// Annotation-level service attributes should take priority for OTLP-pushed metrics through the gateway
+	verifyServiceAttributes(t, backend, podWithAnnotationPriorityOTLPName, ServiceAttributes{
+		ServiceName:    customServiceName,
+		ServiceVersion: customServiceVersion,
+	})
+
 	assert.BackendDataEventuallyMatches(t, backend,
 		HaveFlatMetrics(
-			ContainElement(HaveResourceAttributes(HaveKeyWithValue("service.name", names.MetricGateway))),
-		), assert.WithOptionalDescription("Should have metrics with service.name set to telemetry-metric-gateway"),
+			ContainElement(HaveResourceAttributes(HaveKeyWithValue("service.name", names.OTLPGateway))),
+		), assert.WithOptionalDescription("Should have metrics with service.name set to telemetry-otlp-gateway"),
 	)
 
 	assert.BackendDataEventuallyMatches(t, backend,

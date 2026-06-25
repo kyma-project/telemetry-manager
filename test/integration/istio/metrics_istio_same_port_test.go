@@ -10,6 +10,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
@@ -18,7 +19,7 @@ import (
 )
 
 func TestMetricsIstioSamePort(t *testing.T) {
-	suite.SetupTest(t, suite.LabelGardener, suite.LabelIstio)
+	suite.SetupTestWithOptions(t, []string{suite.LabelGardener}, kubeprep.WithIstio())
 
 	var (
 		uniquePrefix          = unique.Prefix()
@@ -34,13 +35,13 @@ func TestMetricsIstioSamePort(t *testing.T) {
 	metricPipeline := testutils.NewMetricPipelineBuilder().
 		WithName(pipelineName).
 		WithPrometheusInput(true).
-		WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
+		WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 		Build()
 
 	istiofiedMetricPipeline := testutils.NewMetricPipelineBuilder().
 		WithName(istiofiedPipelineName).
 		WithPrometheusInput(true).
-		WithOTLPOutput(testutils.OTLPEndpoint(istiofiedBackend.EndpointHTTP())).
+		WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint(istiofiedBackend.EndpointHTTP())).
 		Build()
 
 	// generators to use the same ports as the backends => test istio communication
@@ -62,7 +63,7 @@ func TestMetricsIstioSamePort(t *testing.T) {
 
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
-	assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+	assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 	assert.DaemonSetReady(t, kitkyma.MetricAgentName)
 	assert.BackendReachable(t, backend)
 	assert.BackendReachable(t, istiofiedBackend)

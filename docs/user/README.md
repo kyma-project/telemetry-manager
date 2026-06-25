@@ -47,6 +47,8 @@ To support telemetry for your applications, the Telemetry module provides the fo
 
 - **Instrumentation Guidance**: To generate telemetry data, you must instrument your code. Based on [Open Telemetry](https://opentelemetry.io/) (OTel), you get community samples on how to instrument your code using the [Open Telemetry SDKs](https://opentelemetry.io/docs/languages/) in most programming languages.
 
+- **Simplified Permission Management**: To manage access to telemetry resources, you can use the module's aggregated ClusterRoles (see [Authorization](#authorization)).
+
 ## Scope
 
 The Telemetry module focuses only on the signals of application logs, distributed traces, and metrics. Other kinds of signals are not considered. Also, audit logs are not in scope.
@@ -76,6 +78,13 @@ To define how to collect, process, and ship a specific signal, use the pipeline 
 - [LogPipeline CRD](./resources/02-logpipeline.md)
 - [TracePipeline CRD](./resources/04-tracepipeline.md)
 - [MetricPipeline CRD](./resources/05-metricpipeline.md)
+
+## Authorization
+
+To assign access permissions to the Telemetry module resources, use the following [aggregated ClusterRoles](https://kubernetes.io/docs/reference/access-authn-authz/rbac/#aggregated-clusterroles):
+
+- `kyma-telemetry-view` to grant read-only access
+- `kyma-telemetry-edit` to grant write access
 
 ## Resource Consumption
 

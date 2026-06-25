@@ -1,0 +1,29 @@
+name: PR Helm Checks
+
+permissions:
+  contents: read
+
+on:
+  merge_group:
+  pull_request:
+    branches:
+      - "main"
+      - "release-*"
+      - "pre-release-*"
+    paths:
+      - "helm/**"
+      - ".github/workflows/pr-helm-checks.yml"
+  workflow_dispatch:
+
+jobs:
+  helm-kubeconform:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - name: Setup Golang
+        uses: "./.github/template/setup-golang"
+
+      - name: Validate Helm templates with kubeconform
+        run: make check-kubeconform

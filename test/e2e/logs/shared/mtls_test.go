@@ -1,7 +1,6 @@
 package shared
 
 import (
-	"fmt"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -13,6 +12,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdoutloggen"
@@ -28,7 +28,6 @@ func TestMTLS_OTel(t *testing.T) {
 		inputBuilder        func(includeNs string) telemetryv1beta1.LogPipelineInput
 		logGeneratorBuilder func(ns string) client.Object
 		resourceName        types.NamespacedName
-		readinessCheckFunc  func(t *testing.T, name types.NamespacedName)
 	}{
 		{
 			name:   suite.LabelLogAgent,
@@ -39,8 +38,7 @@ func TestMTLS_OTel(t *testing.T) {
 			logGeneratorBuilder: func(ns string) client.Object {
 				return stdoutloggen.NewDeployment(ns).K8sObject()
 			},
-			resourceName:       kitkyma.LogAgentName,
-			readinessCheckFunc: assert.DaemonSetReady,
+			resourceName: kitkyma.LogAgentName,
 		},
 		{
 			name:   suite.LabelLogGateway,
@@ -51,20 +49,7 @@ func TestMTLS_OTel(t *testing.T) {
 			logGeneratorBuilder: func(ns string) client.Object {
 				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeLogs).K8sObject()
 			},
-			resourceName:       kitkyma.LogGatewayName,
-			readinessCheckFunc: assert.DeploymentReady,
-		},
-		{
-			name:   fmt.Sprintf("%s-%s", suite.LabelLogGateway, suite.LabelExperimental),
-			labels: []string{suite.LabelLogGateway, suite.LabelExperimental, suite.LabelMTLS},
-			inputBuilder: func(includeNs string) telemetryv1beta1.LogPipelineInput {
-				return testutils.BuildLogPipelineOTLPInput(testutils.IncludeNamespaces(includeNs))
-			},
-			logGeneratorBuilder: func(ns string) client.Object {
-				return telemetrygen.NewDeployment(ns, telemetrygen.SignalTypeCentralLogs).K8sObject()
-			},
-			resourceName:       kitkyma.TelemetryOTLPGatewayName,
-			readinessCheckFunc: assert.DaemonSetReady,
+			resourceName: kitkyma.OTLPGatewayName,
 		},
 	}
 	for _, tc := range tests {
@@ -105,17 +90,15 @@ func TestMTLS_OTel(t *testing.T) {
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 			assert.BackendReachable(t, backend)
+			assert.DaemonSetReady(t, tc.resourceName)
 			assert.OTelLogPipelineHealthy(t, pipelineName)
-
-			tc.readinessCheckFunc(t, tc.resourceName)
-
 			assert.OTelLogsFromNamespaceDelivered(t, backend, genNs)
 		})
 	}
 }
 
 func TestMTLS_FluentBit(t *testing.T) {
-	suite.SetupTest(t, suite.LabelFluentBit, suite.LabelNoFIPS)
+	suite.SetupTestWithOptions(t, []string{suite.LabelFluentBit}, kubeprep.WithOverrideFIPSMode(false))
 
 	var (
 		uniquePrefix = unique.Prefix()

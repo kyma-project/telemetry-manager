@@ -20,7 +20,7 @@ import (
 )
 
 func TestRuntimeNodeNamespace(t *testing.T) {
-	suite.SetupTest(t, suite.LabelMetricAgentSetB, suite.LabelMetricAgent, suite.LabelSetB)
+	suite.SetupTest(t, suite.LabelMetricAgent)
 
 	var (
 		uniquePrefix        = unique.Prefix()
@@ -43,7 +43,7 @@ func TestRuntimeNodeNamespace(t *testing.T) {
 		WithRuntimeInputPodMetrics(false).
 		WithRuntimeInputContainerMetrics(false).
 		WithRuntimeInputVolumeMetrics(false).
-		WithOTLPOutput(testutils.OTLPEndpoint(includeBacked.EndpointHTTP())).
+		WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint(includeBacked.EndpointHTTP())).
 		Build()
 	excludePipeline := testutils.NewMetricPipelineBuilder().
 		WithName(excludePipelineName).
@@ -52,7 +52,7 @@ func TestRuntimeNodeNamespace(t *testing.T) {
 		WithRuntimeInputPodMetrics(false).
 		WithRuntimeInputContainerMetrics(false).
 		WithRuntimeInputVolumeMetrics(false).
-		WithOTLPOutput(testutils.OTLPEndpoint(excludeBackend.EndpointHTTP())).
+		WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint(excludeBackend.EndpointHTTP())).
 		Build()
 
 	includeMetricProducer := prommetricgen.New(includeNs)
@@ -76,7 +76,7 @@ func TestRuntimeNodeNamespace(t *testing.T) {
 
 	assert.BackendReachable(t, includeBacked)
 	assert.BackendReachable(t, excludeBackend)
-	assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+	assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 	assert.DaemonSetReady(t, kitkyma.MetricAgentName)
 	assert.DeploymentReady(t, includeBacked.NamespacedName())
 	assert.DeploymentReady(t, excludeBackend.NamespacedName())

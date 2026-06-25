@@ -130,7 +130,7 @@ func transformExpressionToFunctionCalls(exprStr string) string {
 		}
 
 		label := exprStr[start:i]
-		result.WriteString(fmt.Sprintf("hasLabel(\"%s\")", label))
+		fmt.Fprintf(&result, "hasLabel(\"%s\")", label)
 	}
 
 	return result.String()

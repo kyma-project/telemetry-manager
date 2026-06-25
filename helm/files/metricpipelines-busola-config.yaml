@@ -139,6 +139,11 @@ details: |-
               visibility: $exists(spec.input.runtime.namespaces.exclude)
               source: spec.input.runtime.namespaces.exclude
               separator: ', '
+            - name: Additional Metrics
+              widget: JoinedArray
+              visibility: $exists(spec.input.runtime.additionalMetrics)
+              source: spec.input.runtime.additionalMetrics
+              separator: ', '
             - name: Resources
               widget: Panel
               visibility: $exists(spec.input.runtime.resources)
@@ -400,6 +405,8 @@ details: |-
               children:
                 - name: Protocol
                   source: spec.output.otlp.protocol
+                - name: Temporality
+                  source: spec.output.otlp.temporality
   resourceGraph:
     colorVariant: 2
     dataSources:
@@ -532,6 +539,12 @@ form: |
             - name: Enable Job Metrics
               path: job.enabled
               simple: true
+          - name: Additional Metrics
+            widget: SimpleList
+            path: additionalMetrics
+            defaultExpanded: true
+            children:
+              - path: '[]'
       - name: OTLP
         path: otlp
         widget: FormGroup
@@ -613,6 +626,13 @@ form: |
                     enum: $keys($secret.data)
           - name: Protocol
             path: protocol
+            simple: true
+            widget: FormGroup
+            children:
+              - name: Value
+                widget: Text
+          - name: Temporality
+            path: temporality
             simple: true
             widget: FormGroup
             children:

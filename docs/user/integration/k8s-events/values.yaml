@@ -9,9 +9,9 @@ image:
 
 config:
   exporters:
-    # Configures the exporter to push to Kymas log gateway
+    # Configures the exporter to push to the OTLP Gateway
     otlp:
-      endpoint: telemetry-otlp-logs.kyma-system.svc.cluster.local:4317
+      endpoint: telemetry-otlp.kyma-system.svc.cluster.local:4317
       tls:
         # mTLS will be handled by istio
         insecure: true

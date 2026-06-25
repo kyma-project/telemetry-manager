@@ -92,6 +92,28 @@ func TestMatchesLogPipelineRule(t *testing.T) {
 			pipelineName:       "testPipeline",
 			expectedResult:     false,
 		},
+		{
+			name: "rule name matches and pipeline_type is logpipeline",
+			labelSet: map[string]string{
+				"alertname":     "LogFluentBitBufferInUse",
+				"pipeline_name": "testPipeline",
+				"pipeline_type": "logpipeline",
+			},
+			unprefixedRuleName: "FluentBitBufferInUse",
+			pipelineName:       "testPipeline",
+			expectedResult:     true,
+		},
+		{
+			name: "rule name matches but pipeline_type is for a different signal (metricpipeline on log check)",
+			labelSet: map[string]string{
+				"alertname":     "LogFluentBitBufferInUse",
+				"pipeline_name": "testPipeline",
+				"pipeline_type": "metricpipeline",
+			},
+			unprefixedRuleName: "FluentBitBufferInUse",
+			pipelineName:       "testPipeline",
+			expectedResult:     false,
+		},
 	}
 
 	for _, test := range tests {
@@ -166,6 +188,28 @@ func TestMatchesMetricPipelineRule(t *testing.T) {
 			},
 			unprefixedRuleName: RulesAny,
 			pipelineName:       "otlp/testPipeline",
+			expectedResult:     false,
+		},
+		{
+			name: "rule name matches and pipeline_name has gateway prefix (metricpipeline-)",
+			labelSet: map[string]string{
+				"alertname":     "MetricGatewayAllDataDropped",
+				"pipeline_name": "testPipeline",
+				"pipeline_type": "metricpipeline",
+			},
+			unprefixedRuleName: "GatewayAllDataDropped",
+			pipelineName:       "testPipeline",
+			expectedResult:     true,
+		},
+		{
+			name: "rule name matches but pipeline_type is for a different signal (tracepipeline on metric check)",
+			labelSet: map[string]string{
+				"alertname":     "MetricGatewayAllDataDropped",
+				"pipeline_name": "testPipeline",
+				"pipeline_type": "tracepipeline",
+			},
+			unprefixedRuleName: "GatewayAllDataDropped",
+			pipelineName:       "testPipeline",
 			expectedResult:     false,
 		},
 	}
@@ -244,6 +288,28 @@ func TestMatchesTracePipelineRule(t *testing.T) {
 			pipelineName:       "otlp/testPipeline",
 			expectedResult:     false,
 		},
+		{
+			name: "rule name matches and pipeline_name has gateway prefix (tracepipeline-)",
+			labelSet: map[string]string{
+				"alertname":     "TraceGatewayAllDataDropped",
+				"pipeline_name": "testPipeline",
+				"pipeline_type": "tracepipeline",
+			},
+			unprefixedRuleName: "GatewayAllDataDropped",
+			pipelineName:       "testPipeline",
+			expectedResult:     true,
+		},
+		{
+			name: "rule name matches but pipeline_type is for a different signal (metricpipeline on trace check)",
+			labelSet: map[string]string{
+				"alertname":     "TraceGatewayAllDataDropped",
+				"pipeline_name": "testPipeline",
+				"pipeline_type": "metricpipeline",
+			},
+			unprefixedRuleName: "GatewayAllDataDropped",
+			pipelineName:       "testPipeline",
+			expectedResult:     false,
+		},
 	}
 
 	for _, test := range tests {
@@ -318,6 +384,28 @@ func TestMatchesOtelLogPipelineRule(t *testing.T) {
 			},
 			unprefixedRuleName: RulesAny,
 			pipelineName:       "otlp/testPipeline",
+			expectedResult:     false,
+		},
+		{
+			name: "rule name matches and pipeline_name has gateway prefix (logpipeline-)",
+			labelSet: map[string]string{
+				"alertname":     "LogGatewayAllDataDropped",
+				"pipeline_name": "testPipeline",
+				"pipeline_type": "logpipeline",
+			},
+			unprefixedRuleName: "GatewayAllDataDropped",
+			pipelineName:       "testPipeline",
+			expectedResult:     true,
+		},
+		{
+			name: "rule name matches but pipeline_type is for a different signal (metricpipeline on log check)",
+			labelSet: map[string]string{
+				"alertname":     "LogGatewayAllDataDropped",
+				"pipeline_name": "testPipeline",
+				"pipeline_type": "metricpipeline",
+			},
+			unprefixedRuleName: "GatewayAllDataDropped",
+			pipelineName:       "testPipeline",
 			expectedResult:     false,
 		},
 	}

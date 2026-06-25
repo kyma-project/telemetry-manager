@@ -1,0 +1,32 @@
+## Prometheus values for local development monitoring
+## Deployed via: make deploy-monitoring
+
+server:
+  ## Add the label required by telemetry-manager network policies to allow scraping
+  podLabels:
+    networking.kyma-project.io/metrics-scraping: allowed
+
+  ## Lightweight defaults for local development
+  retention: "2h"
+  persistentVolume:
+    enabled: false
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      memory: 1Gi
+
+## Disable components not needed for local development
+alertmanager:
+  enabled: false
+
+kube-state-metrics:
+  enabled: false
+
+prometheus-node-exporter:
+  enabled: false
+
+prometheus-pushgateway:
+  enabled: false

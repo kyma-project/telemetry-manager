@@ -79,7 +79,6 @@ spec:
           proxyMetadata:
             OUTPUT_CERTS: /etc/istio-output-certs
         sidecar.istio.io/userVolumeMount: '[{"name": "istio-certs", "mountPath": "/etc/istio-output-certs"}]'
-        test-anno-key: test-anno-value
         traffic.sidecar.istio.io/excludeInboundPorts: "8888"
         traffic.sidecar.istio.io/includeOutboundIPRanges: ""
         traffic.sidecar.istio.io/includeOutboundPorts: 4317,9090
@@ -93,7 +92,6 @@ spec:
         sidecar.istio.io/inject: "true"
         telemetry.kyma-project.io/metric-export: "true"
         telemetry.kyma-project.io/metric-scrape: "true"
-        test-label-key: test-label-value
     spec:
       containers:
       - args:
@@ -109,8 +107,6 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: spec.nodeName
-        - name: GOMEMLIMIT
-          value: "1006632960"
         - name: GODEBUG
           value: fips140=off
         envFrom:
@@ -132,7 +128,7 @@ spec:
             memory: 1200Mi
           requests:
             cpu: 15m
-            memory: 50Mi
+            memory: 64Mi
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -202,11 +198,7 @@ metadata:
   namespace: kyma-system
 spec:
   egress:
-  - to:
-    - ipBlock:
-        cidr: 0.0.0.0/0
-    - ipBlock:
-        cidr: ::/0
+  - {}
   podSelector:
     matchLabels:
       app.kubernetes.io/name: telemetry-metric-agent
@@ -260,6 +252,9 @@ rules:
   - nodes
   - nodes/stats
   - nodes/proxy
+  - nodes/pods
+  - persistentvolumeclaims
+  - persistentvolumes
   verbs:
   - get
   - list
@@ -289,12 +284,22 @@ rules:
   - namespaces/status
   - nodes
   - nodes/spec
+  - persistentvolumes
+  - persistentvolumeclaims
   - pods
   - pods/status
   - replicationcontrollers
   - replicationcontrollers/status
   - resourcequotas
   - services
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - discovery.k8s.io
+  resources:
+  - endpointslices
   verbs:
   - get
   - list

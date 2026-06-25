@@ -54,8 +54,9 @@ func TestIsIstioActive(t *testing.T) {
 				},
 			}
 			checker := NewChecker(&discovery)
-			got := checker.IsIstioActive(t.Context())
+			got, err := checker.IsIstioActive(t.Context())
 
+			assert.NoError(t, err)
 			assert.Equal(t, tt.want, got)
 		})
 	}

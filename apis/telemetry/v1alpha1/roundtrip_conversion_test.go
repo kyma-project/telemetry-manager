@@ -116,9 +116,9 @@ func generateValidNamespaceNames(c randfill.Continue) []string {
 
 			switch pos := c.Intn(36); {
 			case pos < 26:
-				r = rune('a' + pos)
+				r = rune('a' + pos) //nolint:gosec // pos is bounded [0,25], no overflow
 			case pos < 36:
-				r = rune('0' + (pos - 26))
+				r = rune('0' + (pos - 26)) //nolint:gosec // pos-26 is bounded [0,9], no overflow
 			}
 			// Hyphens are allowed but not at the beginning or end
 			if j != 0 && j != nameLen-1 && c.Intn(10) < 2 {

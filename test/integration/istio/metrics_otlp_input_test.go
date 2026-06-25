@@ -10,6 +10,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
@@ -18,7 +19,7 @@ import (
 )
 
 func TestMetricsOTLPInput(t *testing.T) {
-	suite.SetupTest(t, suite.LabelGardener, suite.LabelIstio)
+	suite.SetupTestWithOptions(t, []string{suite.LabelGardener}, kubeprep.WithIstio())
 
 	var (
 		uniquePrefix       = unique.Prefix()
@@ -33,12 +34,12 @@ func TestMetricsOTLPInput(t *testing.T) {
 
 	metricPipeline := testutils.NewMetricPipelineBuilder().
 		WithName(pipeline1Name).
-		WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
+		WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 		Build()
 
 	metricPipelineIstiofiedBackend := testutils.NewMetricPipelineBuilder().
 		WithName(pipeline2Name).
-		WithOTLPOutput(testutils.OTLPEndpoint(istiofiedBackend.EndpointHTTP())).
+		WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint(istiofiedBackend.EndpointHTTP())).
 		Build()
 
 	peerAuth := kitk8sobjects.NewPeerAuthentication(kitbackend.DefaultName, istiofiedBackendNs)
@@ -59,7 +60,7 @@ func TestMetricsOTLPInput(t *testing.T) {
 
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
-	assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+	assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 	assert.BackendReachable(t, backend)
 	assert.BackendReachable(t, istiofiedBackend)
 

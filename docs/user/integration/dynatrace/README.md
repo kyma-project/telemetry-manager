@@ -30,7 +30,7 @@ Combined with the Kyma Telemetry module, you can collect custom spans and metric
 ## Prerequisites
 
 - Kyma as the target deployment environment
-- The [Telemetry module](https://kyma-project.io/#/telemetry-manager/user/README) is [added](https://kyma-project.io/#/02-get-started/01-quick-install)
+- The [Telemetry module](https://kyma-project.io/#/telemetry-manager/user/README) is [added](https://kyma-project.io/02-get-started/01-quick-install)
 - Active Dynatrace environment with permissions to create new access tokens
 - Helm 3.x if you want to deploy the [OpenTelemetry sample application](../opentelemetry-demo/README.md)
 
@@ -159,7 +159,7 @@ Next, you set up the ingestion of custom spans and metrics, as well as Istio spa
 ### Ingest Traces
 
 To ingest custom spans, first deploy a TracePipeline. You can then optionally enable the Istio tracing feature to ingest Istio spans.
-We recommend direct integration with the Dynatrace server. This approach reduces the number of components processing your trace data, improving resource efficiency and data shipment resiliency. Alternatively, you can integrate using the Dynatrace OpenTelemetry (OTel) Collector. Apply the same output configuration as described in [Ingest Metrics](#ingest-metrics).
+We recommend direct integration with the Dynatrace server. This approach reduces the number of components processing your trace data, improving resource efficiency and data shipment resiliency. Alternatively, you can integrate using the Dynatrace OpenTelemetry (OTel) Collector.
 
 1. Deploy the [TracePipeline](./../../collecting-traces/README.md):
 
@@ -236,7 +236,6 @@ We recommend direct integration with the Dynatrace server. This approach reduces
     > [!WARNING]
     > Be cautious when you configure the **randomSamplingPercentage**:
     > - Could cause high volume of traces.
-    > - The Kyma trace gateway component does not scale automatically.
 
 1. To find traces from your Kyma cluster in the Dynatrace UI, go to **Applications & Microservices** > **Distributed traces**.
 
@@ -245,13 +244,9 @@ We recommend direct integration with the Dynatrace server. This approach reduces
 To start ingesting custom and Istio metrics, deploy a MetricPipeline. The configuration of this pipeline depends on the aggregation temporality of your metrics.
 
 > [!NOTE]
-> The Dynatrace OpenTelemetry (OTLP) ingest API only accepts metrics with **delta** [aggregation temporality](https://docs.dynatrace.com/docs/ingest-from/opentelemetry/otlp-api/ingest-otlp-metrics/about-metrics-ingest#aggregation-temporality). By contrast, many tools, including the OpenTelemetry SDK and the MetricPipeline `istio` and `prometheus` input, produce metrics with **cumulative** aggregation temporality by default. If your metrics are cumulative, you must use the Dynatrace OTel Collector, which transforms them to delta before sending them to Dynatrace.
+> The Dynatrace OpenTelemetry (OTLP) ingest API only accepts metrics with **delta** [aggregation temporality](https://docs.dynatrace.com/docs/ingest-from/opentelemetry/otlp-api/ingest-otlp-metrics/about-metrics-ingest#aggregation-temporality). By contrast, many tools, including the OpenTelemetry SDK and the MetricPipeline `istio` and `prometheus` input, produce metrics with **cumulative** aggregation temporality by default. If your metrics are cumulative, you must set the temporality field in the MetricPipeline OTLP output to **delta**, which transforms them to delta before sending them to Dynatrace.
 
-Depending on your metrics source and temporality, choose one of the following methods:
-
-- Ingest cumulative metrics using the Dynatrace OTel Collector for transformation. This solution is recommended as it often cumulative metrics cannot be avoided and it will provide the most flexibility. However, it will increase the number of additional components processing the data in the cluster (OTel Collector, ActiveGate) leading to increased resource consumption and increased chance of lossing data.
-
-  1. Deploy the [MetricPipeline](./../../collecting-metrics/README.md) that ships to the Dynatrace OTel Collector:
+  1. Deploy the [MetricPipeline](./../../collecting-metrics/README.md):
 
         ```bash
         cat <<EOF | kubectl apply -f -
@@ -265,50 +260,30 @@ Depending on your metrics source and temporality, choose one of the following me
                     enabled: true
                 prometheus:
                     enabled: true
-            output:
-                otlp:
-                    endpoint:
-                        value: http://dynakube-telemetry-ingest.${DYNATRACE_NS}:4317
-        EOF
-        ```
-
-- If your application pushes OTLP metrics in delta temporality, and you don't use the MetricPipeline's `istio` or `prometheus` inputs, push the metrics directly to Dynatrace. Shipping data directly to the Dynatrace backend prevents unnecessary processing by additional components.
-
-  To use this setup, you must explicitly enable the "delta" aggregation temporality as preferred temporality in your applications. You cannot enable additional inputs for the MetricPipeline because these produce metrics with "cumulative" temporality.
-
-  1. Deploy the [MetricPipeline](./../../collecting-metrics/README.md):
-
-        ```bash
-        cat <<EOF | kubectl apply -f -
-        apiVersion: telemetry.kyma-project.io/v1beta1
-        kind: MetricPipeline
-        metadata:
-            name: dynatrace
-        spec:
-          transform:
-            - statements:
-              - set(resource.attributes["k8s.workload.name"], resource.attributes["k8s.statefulset.name"]) where IsString(resource.attributes["k8s.statefulset.name"])
-              - set(resource.attributes["k8s.workload.name"], resource.attributes["k8s.replicaset.name"]) where IsString(resource.attributes["k8s.replicaset.name"])
-              - set(resource.attributes["k8s.workload.name"], resource.attributes["k8s.job.name"]) where IsString(resource.attributes["k8s.job.name"])
-              - set(resource.attributes["k8s.workload.name"], resource.attributes["k8s.deployment.name"]) where IsString(resource.attributes["k8s.deployment.name"])
-              - set(resource.attributes["k8s.workload.name"], resource.attributes["k8s.daemonset.name"]) where IsString(resource.attributes["k8s.daemonset.name"])
-              - set(resource.attributes["k8s.workload.name"], resource.attributes["k8s.cronjob.name"]) where IsString(resource.attributes["k8s.cronjob.name"])
-              - set(resource.attributes["k8s.workload.kind"], "statefulset") where IsString(resource.attributes["k8s.statefulset.name"])
-              - set(resource.attributes["k8s.workload.kind"], "replicaset") where IsString(resource.attributes["k8s.replicaset.name"])
-              - set(resource.attributes["k8s.workload.kind"], "job") where IsString(resource.attributes["k8s.job.name"])
-              - set(resource.attributes["k8s.workload.kind"], "deployment") where IsString(resource.attributes["k8s.deployment.name"])
-              - set(resource.attributes["k8s.workload.kind"], "daemonset") where IsString(resource.attributes["k8s.daemonset.name"])
-              - set(resource.attributes["k8s.workload.kind"], "cronjob") where IsString(resource.attributes["k8s.cronjob.name"])
-              - set(resource.attributes["dt.kubernetes.workload.name"], resource.attributes["k8s.workload.name"])
-              - set(resource.attributes["dt.kubernetes.workload.kind"], resource.attributes["k8s.workload.kind"])
-              - delete_key(resource.attributes, "k8s.statefulset.name")
-              - delete_key(resource.attributes, "k8s.replicaset.name")
-              - delete_key(resource.attributes, "k8s.job.name")
-              - delete_key(resource.attributes, "k8s.deployment.name")
-              - delete_key(resource.attributes, "k8s.daemonset.name")
-              - delete_key(resource.attributes, "k8s.cronjob.name")
-            - statements:
-              - set(resource.attributes["k8s.pod.ip"], resource.attributes["ip"]) where resource.attributes["k8s.pod.ip"] == nil
+            transform:
+              - statements:
+                - set(resource.attributes["k8s.workload.name"], resource.attributes["k8s.statefulset.name"]) where IsString(resource.attributes["k8s.statefulset.name"])
+                - set(resource.attributes["k8s.workload.name"], resource.attributes["k8s.replicaset.name"]) where IsString(resource.attributes["k8s.replicaset.name"])
+                - set(resource.attributes["k8s.workload.name"], resource.attributes["k8s.job.name"]) where IsString(resource.attributes["k8s.job.name"])
+                - set(resource.attributes["k8s.workload.name"], resource.attributes["k8s.deployment.name"]) where IsString(resource.attributes["k8s.deployment.name"])
+                - set(resource.attributes["k8s.workload.name"], resource.attributes["k8s.daemonset.name"]) where IsString(resource.attributes["k8s.daemonset.name"])
+                - set(resource.attributes["k8s.workload.name"], resource.attributes["k8s.cronjob.name"]) where IsString(resource.attributes["k8s.cronjob.name"])
+                - set(resource.attributes["k8s.workload.kind"], "statefulset") where IsString(resource.attributes["k8s.statefulset.name"])
+                - set(resource.attributes["k8s.workload.kind"], "replicaset") where IsString(resource.attributes["k8s.replicaset.name"])
+                - set(resource.attributes["k8s.workload.kind"], "job") where IsString(resource.attributes["k8s.job.name"])
+                - set(resource.attributes["k8s.workload.kind"], "deployment") where IsString(resource.attributes["k8s.deployment.name"])
+                - set(resource.attributes["k8s.workload.kind"], "daemonset") where IsString(resource.attributes["k8s.daemonset.name"])
+                - set(resource.attributes["k8s.workload.kind"], "cronjob") where IsString(resource.attributes["k8s.cronjob.name"])
+                - set(resource.attributes["dt.kubernetes.workload.name"], resource.attributes["k8s.workload.name"])
+                - set(resource.attributes["dt.kubernetes.workload.kind"], resource.attributes["k8s.workload.kind"])
+                - delete_key(resource.attributes, "k8s.statefulset.name")
+                - delete_key(resource.attributes, "k8s.replicaset.name")
+                - delete_key(resource.attributes, "k8s.job.name")
+                - delete_key(resource.attributes, "k8s.deployment.name")
+                - delete_key(resource.attributes, "k8s.daemonset.name")
+                - delete_key(resource.attributes, "k8s.cronjob.name")
+              - statements:
+                - set(resource.attributes["k8s.pod.ip"], resource.attributes["ip"]) where resource.attributes["k8s.pod.ip"] == nil
             output:
                 otlp:
                     endpoint:
@@ -322,15 +297,14 @@ Depending on your metrics source and temporality, choose one of the following me
                         - name: Authorization
                           prefix: Api-Token
                           valueFrom:
-                            secretKeyRef:
-                              name: dynakube
-                              namespace: ${DYNATRACE_NS}
-                              key: dataIngestToken
+                              secretKeyRef:
+                                  name: dynakube
+                                  namespace: ${DYNATRACE_NS}
+                                  key: dataIngestToken
+                    temporality: delta
                     protocol: http
         EOF
         ```
-
-  1. Start pushing metrics to the metric gateway using [delta aggregation temporality.](https://docs.dynatrace.com/docs/ingest-from/opentelemetry/otlp-api/ingest-otlp-metrics/about-metrics-ingest#aggregation-temporality)
 
   1. To find metrics from your Kyma cluster in the Dynatrace UI, go to **Observe & Explore** > **Metrics**.
 
@@ -348,15 +322,7 @@ For easier access from the Kyma dashboard, add links to new navigation under **D
 
 ## Use Dynatrace Dashboards
 
-1. To see the health of the Kyma Telemetry module and its related pipelines, import the file [Telemetry Module Status](./telemetry-resource-metrics.json) as a Dynatrace dashboard. For details, see [Importing Dashboards](https://docs.dynatrace.com/docs/analyze-explore-automate/dashboards-classic/dashboards/dashboard-json#import-dashboard).
-
-2. Add the following custom resource attributes to the allow list of OpenTelemetry metrics resource attributes:
-   - `k8s.resource.name`
-   - `k8s.resource.group`
-   - `k8s.resource.kind`
-   - `k8s.resource.version`
-
-   For details about adding attributes to the allow list, see [Configure resource and scope attributes to be added as dimensions](https://docs.dynatrace.com/docs/ingest-from/opentelemetry/otlp-api/ingest-otlp-metrics/configure-otlp-metrics#allow-list).
+To see the health of the Kyma Telemetry module and its related pipelines, import the file [Telemetry Module Status](./telemetry-resource-metrics.json) as a Dynatrace dashboard. For details, see [Importing Dashboards](https://docs.dynatrace.com/docs/analyze-explore-automate/dashboards-classic/dashboards/dashboard-json#import-dashboard).
 
 ## Use Dynatrace Alerts
 

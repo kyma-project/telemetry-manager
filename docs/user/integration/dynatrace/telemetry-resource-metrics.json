@@ -152,11 +152,11 @@
           "spaceAggregation": "AUTO",
           "timeAggregation": "DEFAULT",
           "splitBy": [
-            "k8s.resource.name",
+            "name",
             "type",
             "reason"
           ],
-          "metricSelector": "kyma.resource.status.conditions:filter(and(eq(\"k8s.resource.kind\",\"logpipelines\"))):splitBy(\"k8s.resource.name\",\"type\",\"reason\"):sort(value(min,descending)):limit(20)",
+          "metricSelector": "kyma.resource.status.conditions:filter(and(eq(\"kind\",\"logpipelines\"))):splitBy(\"name\",\"type\",\"reason\"):sort(value(min,descending)):limit(20)",
           "rate": "NONE",
           "enabled": true
         }
@@ -232,7 +232,7 @@
         "resolution": ""
       },
       "metricExpressions": [
-        "resolution=Inf&(kyma.resource.status.conditions:filter(and(eq(\"k8s.resource.kind\",logpipelines))):splitBy(\"k8s.resource.name\",type,reason):sort(value(min,descending)):limit(20)):names"
+        "resolution=Inf&(kyma.resource.status.conditions:filter(and(eq(\"kind\",logpipelines))):splitBy(\"name\",type,reason):sort(value(min,descending)):limit(20)):names"
       ]
     },
     {
@@ -256,11 +256,11 @@
           "spaceAggregation": "AUTO",
           "timeAggregation": "DEFAULT",
           "splitBy": [
-            "k8s.resource.name",
+            "name",
             "type",
             "reason"
           ],
-          "metricSelector": "kyma.resource.status.conditions:filter(and(eq(\"k8s.resource.kind\",\"metricpipelines\"))):splitBy(\"k8s.resource.name\",\"type\",\"reason\"):sort(value(min,descending)):limit(20)",
+          "metricSelector": "kyma.resource.status.conditions:filter(and(eq(\"kind\",\"metricpipelines\"))):splitBy(\"name\",\"type\",\"reason\"):sort(value(min,descending)):limit(20)",
           "rate": "NONE",
           "enabled": true
         }
@@ -336,7 +336,7 @@
         "resolution": ""
       },
       "metricExpressions": [
-        "resolution=Inf&(kyma.resource.status.conditions:filter(and(eq(\"k8s.resource.kind\",metricpipelines))):splitBy(\"k8s.resource.name\",type,reason):sort(value(min,descending)):limit(20)):names"
+        "resolution=Inf&(kyma.resource.status.conditions:filter(and(eq(\"kind\",metricpipelines))):splitBy(\"name\",type,reason):sort(value(min,descending)):limit(20)):names"
       ]
     },
     {
@@ -360,11 +360,11 @@
           "spaceAggregation": "AUTO",
           "timeAggregation": "DEFAULT",
           "splitBy": [
-            "k8s.resource.name",
+            "name",
             "type",
             "reason"
           ],
-          "metricSelector": "kyma.resource.status.conditions:filter(and(eq(\"k8s.resource.kind\",\"tracepipelines\"))):splitBy(\"k8s.resource.name\",\"type\",\"reason\"):sort(value(min,descending)):limit(20)",
+          "metricSelector": "kyma.resource.status.conditions:filter(and(eq(\"kind\",\"tracepipelines\"))):splitBy(\"name\",\"type\",\"reason\"):sort(value(min,descending)):limit(20)",
           "rate": "NONE",
           "enabled": true
         }
@@ -440,7 +440,7 @@
         "resolution": ""
       },
       "metricExpressions": [
-        "resolution=Inf&(kyma.resource.status.conditions:filter(and(eq(\"k8s.resource.kind\",tracepipelines))):splitBy(\"k8s.resource.name\",type,reason):sort(value(min,descending)):limit(20)):names"
+        "resolution=Inf&(kyma.resource.status.conditions:filter(and(eq(\"kind\",tracepipelines))):splitBy(\"name\",type,reason):sort(value(min,descending)):limit(20)):names"
       ]
     },
     {
@@ -464,11 +464,11 @@
           "spaceAggregation": "AUTO",
           "timeAggregation": "DEFAULT",
           "splitBy": [
-            "k8s.resource.name",
+            "name",
             "type",
             "reason"
           ],
-          "metricSelector": "kyma.resource.status.conditions:filter(and(eq(\"k8s.resource.kind\",\"telemetries\"))):splitBy(\"k8s.resource.name\",\"type\",\"reason\"):sort(value(min,descending)):limit(20)",
+          "metricSelector": "kyma.resource.status.conditions:filter(and(eq(\"kind\",\"telemetries\"))):splitBy(\"name\",\"type\",\"reason\"):sort(value(min,descending)):limit(20)",
           "rate": "NONE",
           "enabled": true
         }
@@ -544,7 +544,7 @@
         "resolution": ""
       },
       "metricExpressions": [
-        "resolution=Inf&(kyma.resource.status.conditions:filter(and(eq(\"k8s.resource.kind\",telemetries))):splitBy(\"k8s.resource.name\",type,reason):sort(value(min,descending)):limit(20)):names"
+        "resolution=Inf&(kyma.resource.status.conditions:filter(and(eq(\"kind\",telemetries))):splitBy(\"name\",type,reason):sort(value(min,descending)):limit(20)):names"
       ]
     },
     {
@@ -570,7 +570,7 @@
           "splitBy": [
             "type"
           ],
-          "metricSelector": "kyma.resource.status.conditions:filter(eq(\"k8s.resource.kind\",\"telemetries\")):splitBy(\"type\"):min:sort(value(min,descending)):limit(20)",
+          "metricSelector": "kyma.resource.status.conditions:filter(eq(\"kind\",\"telemetries\")):splitBy(\"type\"):min:sort(value(min,descending)):limit(20)",
           "rate": "NONE",
           "enabled": true
         }
@@ -654,7 +654,7 @@
         "resolution": "1m"
       },
       "metricExpressions": [
-        "resolution=1m&(kyma.resource.status.conditions:filter(eq(\"k8s.resource.kind\",telemetries)):splitBy(type):min:sort(value(min,descending)):limit(20)):limit(100):names"
+        "resolution=1m&(kyma.resource.status.conditions:filter(eq(\"kind\",telemetries)):splitBy(type):min:sort(value(min,descending)):limit(20)):limit(100):names"
       ]
     },
     {
@@ -679,9 +679,9 @@
           "timeAggregation": "DEFAULT",
           "splitBy": [
             "type",
-            "k8s.resource.name"
+            "name"
           ],
-          "metricSelector": "kyma.resource.status.conditions:filter(eq(\"k8s.resource.kind\",\"logpipelines\")):splitBy(\"type\",\"k8s.resource.name\"):min:sort(value(min,descending)):limit(20)",
+          "metricSelector": "kyma.resource.status.conditions:filter(eq(\"kind\",\"logpipelines\")):splitBy(\"type\",\"name\"):min:sort(value(min,descending)):limit(20)",
           "rate": "NONE",
           "enabled": true
         }
@@ -765,7 +765,7 @@
         "resolution": "1m"
       },
       "metricExpressions": [
-        "resolution=1m&(kyma.resource.status.conditions:filter(eq(\"k8s.resource.kind\",logpipelines)):splitBy(type,\"k8s.resource.name\"):min:sort(value(min,descending)):limit(20)):limit(100):names"
+        "resolution=1m&(kyma.resource.status.conditions:filter(eq(\"kind\",logpipelines)):splitBy(type,\"name\"):min:sort(value(min,descending)):limit(20)):limit(100):names"
       ]
     },
     {
@@ -790,9 +790,9 @@
           "timeAggregation": "DEFAULT",
           "splitBy": [
             "type",
-            "k8s.resource.name"
+            "name"
           ],
-          "metricSelector": "kyma.resource.status.conditions:filter(eq(\"k8s.resource.kind\",\"tracepipelines\")):splitBy(\"type\",\"k8s.resource.name\"):min:sort(value(min,descending)):limit(20)",
+          "metricSelector": "kyma.resource.status.conditions:filter(eq(\"kind\",\"tracepipelines\")):splitBy(\"type\",\"name\"):min:sort(value(min,descending)):limit(20)",
           "rate": "NONE",
           "enabled": true
         }
@@ -876,7 +876,7 @@
         "resolution": "1m"
       },
       "metricExpressions": [
-        "resolution=1m&(kyma.resource.status.conditions:filter(eq(\"k8s.resource.kind\",tracepipelines)):splitBy(type,\"k8s.resource.name\"):min:sort(value(min,descending)):limit(20)):limit(100):names"
+        "resolution=1m&(kyma.resource.status.conditions:filter(eq(\"kind\",tracepipelines)):splitBy(type,\"name\"):min:sort(value(min,descending)):limit(20)):limit(100):names"
       ]
     },
     {
@@ -900,10 +900,10 @@
           "spaceAggregation": "AUTO",
           "timeAggregation": "DEFAULT",
           "splitBy": [
-            "k8s.resource.name",
+            "name",
             "type"
           ],
-          "metricSelector": "kyma.resource.status.conditions:filter(eq(\"k8s.resource.kind\",\"metricpipelines\")):splitBy(\"k8s.resource.name\",\"type\"):min:sort(value(min,descending)):limit(20)",
+          "metricSelector": "kyma.resource.status.conditions:filter(eq(\"kind\",\"metricpipelines\")):splitBy(\"name\",\"type\"):min:sort(value(min,descending)):limit(20)",
           "rate": "NONE",
           "enabled": true
         }
@@ -987,7 +987,7 @@
         "resolution": ""
       },
       "metricExpressions": [
-        "resolution=null&(kyma.resource.status.conditions:filter(eq(\"k8s.resource.kind\",metricpipelines)):splitBy(\"k8s.resource.name\",type):min:sort(value(min,descending)):limit(20)):limit(100):names"
+        "resolution=null&(kyma.resource.status.conditions:filter(eq(\"kind\",metricpipelines)):splitBy(\"name\",type):min:sort(value(min,descending)):limit(20)):limit(100):names"
       ]
     },
     {
@@ -1011,9 +1011,9 @@
           "spaceAggregation": "AUTO",
           "timeAggregation": "DEFAULT",
           "splitBy": [
-            "k8s.resource.name"
+            "name"
           ],
-          "metricSelector": "kyma.resource.status.conditions:filter(eq(\"k8s.resource.kind\",\"metricpipelines\")):splitBy(\"k8s.resource.name\"):min:sort(value(min,descending)):limit(20)",
+          "metricSelector": "kyma.resource.status.conditions:filter(eq(\"kind\",\"metricpipelines\")):splitBy(\"name\"):min:sort(value(min,descending)):limit(20)",
           "rate": "NONE",
           "enabled": true
         }
@@ -1086,7 +1086,7 @@
         "resolution": ""
       },
       "metricExpressions": [
-        "resolution=Inf&(kyma.resource.status.conditions:filter(eq(\"k8s.resource.kind\",metricpipelines)):splitBy(\"k8s.resource.name\"):min:sort(value(min,descending)):limit(20)):names"
+        "resolution=Inf&(kyma.resource.status.conditions:filter(eq(\"kind\",metricpipelines)):splitBy(\"name\"):min:sort(value(min,descending)):limit(20)):names"
       ]
     },
     {
@@ -1110,9 +1110,9 @@
           "spaceAggregation": "AUTO",
           "timeAggregation": "DEFAULT",
           "splitBy": [
-            "k8s.resource.name"
+            "name"
           ],
-          "metricSelector": "kyma.resource.status.conditions:filter(eq(\"k8s.resource.kind\",\"tracepipelines\")):splitBy(\"k8s.resource.name\"):min:sort(value(min,descending)):limit(20)",
+          "metricSelector": "kyma.resource.status.conditions:filter(eq(\"kind\",\"tracepipelines\")):splitBy(\"name\"):min:sort(value(min,descending)):limit(20)",
           "rate": "NONE",
           "enabled": true
         }
@@ -1185,7 +1185,7 @@
         "resolution": ""
       },
       "metricExpressions": [
-        "resolution=Inf&(kyma.resource.status.conditions:filter(eq(\"k8s.resource.kind\",tracepipelines)):splitBy(\"k8s.resource.name\"):min:sort(value(min,descending)):limit(20)):names"
+        "resolution=Inf&(kyma.resource.status.conditions:filter(eq(\"kind\",tracepipelines)):splitBy(\"name\"):min:sort(value(min,descending)):limit(20)):names"
       ]
     },
     {
@@ -1209,9 +1209,9 @@
           "spaceAggregation": "AUTO",
           "timeAggregation": "DEFAULT",
           "splitBy": [
-            "k8s.resource.name"
+            "name"
           ],
-          "metricSelector": "kyma.resource.status.conditions:filter(eq(\"k8s.resource.kind\",\"logpipelines\")):splitBy(\"k8s.resource.name\"):min:sort(value(min,descending)):limit(20)",
+          "metricSelector": "kyma.resource.status.conditions:filter(eq(\"kind\",\"logpipelines\")):splitBy(\"name\"):min:sort(value(min,descending)):limit(20)",
           "rate": "NONE",
           "enabled": true
         }
@@ -1284,7 +1284,7 @@
         "resolution": ""
       },
       "metricExpressions": [
-        "resolution=Inf&(kyma.resource.status.conditions:filter(eq(\"k8s.resource.kind\",logpipelines)):splitBy(\"k8s.resource.name\"):min:sort(value(min,descending)):limit(20)):names"
+        "resolution=Inf&(kyma.resource.status.conditions:filter(eq(\"kind\",logpipelines)):splitBy(\"name\"):min:sort(value(min,descending)):limit(20)):names"
       ]
     },
     {

@@ -33,7 +33,7 @@ func TestCustomClusterName(t *testing.T) {
 	}{
 		{
 			name:   "agent",
-			labels: []string{suite.LabelMetricAgentSetA, suite.LabelMetricAgent, suite.LabelSetA},
+			labels: []string{suite.LabelMetricAgent},
 			input:  testutils.BuildMetricPipelineRuntimeInput(),
 			generatorBuilder: func(ns string) []client.Object {
 				generator := prommetricgen.New(ns)
@@ -46,7 +46,7 @@ func TestCustomClusterName(t *testing.T) {
 		},
 		{
 			name:   "gateway",
-			labels: []string{suite.LabelMetricGatewaySetA, suite.LabelMetricGateway, suite.LabelSetA},
+			labels: []string{suite.LabelMetricGateway},
 			input:  testutils.BuildMetricPipelineOTLPInput(),
 			generatorBuilder: func(ns string) []client.Object {
 				return []client.Object{
@@ -76,7 +76,7 @@ func TestCustomClusterName(t *testing.T) {
 			pipeline := testutils.NewMetricPipelineBuilder().
 				WithName(pipelineName).
 				WithInput(tc.input).
-				WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
+				WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 				Build()
 
 			kitk8s.PreserveAndScheduleRestoreOfTelemetryResource(t, kitkyma.TelemetryName)
@@ -105,7 +105,7 @@ func TestCustomClusterName(t *testing.T) {
 			Expect(kitk8s.CreateObjects(t, resources...)).Should(Succeed())
 
 			assert.BackendReachable(t, backend)
-			assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+			assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 
 			if suite.ExpectAgent(tc.labels...) {
 				assert.DaemonSetReady(t, kitkyma.MetricAgentName)

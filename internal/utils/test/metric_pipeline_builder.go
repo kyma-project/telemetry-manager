@@ -22,7 +22,7 @@ type MetricPipelineBuilder struct {
 	inIstio      *telemetryv1beta1.MetricPipelineIstioInput
 	inOTLP       *telemetryv1beta1.OTLPInput
 
-	outOTLP *telemetryv1beta1.OTLPOutput
+	outOTLP *telemetryv1beta1.MetricPipelineOTLPOutput
 	oauth2  *telemetryv1beta1.OAuth2Options
 
 	transforms       []telemetryv1beta1.TransformSpec
@@ -31,10 +31,15 @@ type MetricPipelineBuilder struct {
 }
 
 func NewMetricPipelineBuilder() *MetricPipelineBuilder {
+	defaultTemporality := telemetryv1beta1.TemporalityPreserve
+
 	return &MetricPipelineBuilder{
 		randSource: rand.NewSource(time.Now().UnixNano()),
-		outOTLP: &telemetryv1beta1.OTLPOutput{
-			Endpoint: telemetryv1beta1.ValueType{Value: "http://localhost:4317"},
+		outOTLP: &telemetryv1beta1.MetricPipelineOTLPOutput{
+			OTLPOutput: telemetryv1beta1.OTLPOutput{
+				Endpoint: telemetryv1beta1.ValueType{Value: "http://localhost:4317"},
+			},
+			Temporality: &defaultTemporality,
 		},
 	}
 }
@@ -380,11 +385,26 @@ func (b *MetricPipelineBuilder) WithRuntimeInputStatefulSetMetrics(enable bool) 
 	return b
 }
 
-func (b *MetricPipelineBuilder) WithOTLPOutput(opts ...OTLPOutputOption) *MetricPipelineBuilder {
-	for _, opt := range opts {
-		opt(b.outOTLP)
+func (b *MetricPipelineBuilder) WithRuntimeInputAdditionalMetrics(metrics ...string) *MetricPipelineBuilder {
+	if b.inRuntime == nil {
+		b.inRuntime = &telemetryv1beta1.MetricPipelineRuntimeInput{}
 	}
 
+	b.inRuntime.AdditionalMetrics = append(b.inRuntime.AdditionalMetrics, metrics...)
+
+	return b
+}
+
+func (b *MetricPipelineBuilder) WithMetricPipelineOTLPOutput(opts ...OTLPOutputOption) *MetricPipelineBuilder {
+	for _, opt := range opts {
+		opt(&b.outOTLP.OTLPOutput)
+	}
+
+	return b
+}
+
+func (b *MetricPipelineBuilder) WithTemporality(temporality telemetryv1beta1.TemporalityType) *MetricPipelineBuilder {
+	b.outOTLP.Temporality = &temporality
 	return b
 }
 
@@ -429,6 +449,10 @@ func (b *MetricPipelineBuilder) Build() telemetryv1beta1.MetricPipeline {
 	}
 
 	pipeline := telemetryv1beta1.MetricPipeline{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: telemetryv1beta1.GroupVersion.String(),
+			Kind:       "MetricPipeline",
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
 			Labels:      b.labels,

@@ -72,7 +72,7 @@ func TestPrometheusMetricNames(t *testing.T) {
 		t.Fatalf("failed to create metrics trigger request: %v", err)
 	}
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := http.DefaultClient.Do(req) //nolint:gosec // G704: URL from test server
 	if err != nil {
 		t.Fatalf("failed to perform metrics trigger request: %v", err)
 	}
@@ -85,7 +85,7 @@ func TestPrometheusMetricNames(t *testing.T) {
 		t.Fatalf("failed to create metrics fetch request: %v", err)
 	}
 
-	resp, err = http.DefaultClient.Do(req)
+	resp, err = http.DefaultClient.Do(req) //nolint:gosec // G704: URL from test server
 	if err != nil {
 		t.Fatalf("failed to perform metrics fetch request: %v", err)
 	}

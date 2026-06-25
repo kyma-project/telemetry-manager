@@ -41,13 +41,21 @@ type ClientCerts struct {
 	ClientKeyPem  bytes.Buffer
 }
 
+// WithExpiredClientCert sets the client certificate to be already expired 7 days ago.
 func (c *CertBuilder) WithExpiredClientCert() *CertBuilder {
 	c.clientNotAfter = time.Now().AddDate(0, 0, -7)
 	return c
 }
 
+// WithAboutToExpireClientCert sets the client certificate to be about to expire in 7 days.
 func (c *CertBuilder) WithAboutToExpireClientCert() *CertBuilder {
 	c.clientNotAfter = time.Now().AddDate(0, 0, 7)
+	return c
+}
+
+// WithAboutToExpireShortlyClientCert sets the client certificate to be about to expire in 30 seconds.
+func (c *CertBuilder) WithAboutToExpireShortlyClientCert() *CertBuilder {
+	c.clientNotAfter = time.Now().Add(30 * time.Second)
 	return c
 }
 

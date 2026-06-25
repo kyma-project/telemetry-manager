@@ -238,12 +238,14 @@ func (p *Pod) WithLabels(labels map[string]string) *Pod {
 	return p
 }
 
+// WithAvalancheHighLoad configures high-volume metric generation.
+// The total response size must stay below the metric agent's body_size_limit (20MB).
 func (p *Pod) WithAvalancheHighLoad() *Pod {
 	p.image = avalancheImage
 	p.args = []string{
-		"--gauge-metric-count=" + strconv.Itoa(int(160)),
-		"--counter-metric-count=" + strconv.Itoa(int(100)),
-		"--histogram-metric-count=" + strconv.Itoa(int(50)),
+		"--gauge-metric-count=" + strconv.Itoa(int(80)),
+		"--counter-metric-count=" + strconv.Itoa(int(50)),
+		"--histogram-metric-count=" + strconv.Itoa(int(25)),
 		"--port=" + strconv.Itoa(int(p.metricsPort)),
 	}
 
@@ -303,11 +305,11 @@ func (p *Pod) K8sObject() *corev1.Pod {
 					Resources: corev1.ResourceRequirements{
 						Limits: corev1.ResourceList{
 							corev1.ResourceCPU:    resource.MustParse("100m"),
-							corev1.ResourceMemory: resource.MustParse("100Mi"),
+							corev1.ResourceMemory: resource.MustParse("256Mi"),
 						},
 						Requests: corev1.ResourceList{
 							corev1.ResourceCPU:    resource.MustParse("50m"),
-							corev1.ResourceMemory: resource.MustParse("32Mi"),
+							corev1.ResourceMemory: resource.MustParse("64Mi"),
 						},
 					},
 				},

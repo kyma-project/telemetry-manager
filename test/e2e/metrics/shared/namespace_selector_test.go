@@ -31,7 +31,7 @@ func TestNamespaceSelector(t *testing.T) {
 	}{
 		{
 			name:   "agent",
-			labels: []string{suite.LabelMetricAgentSetC, suite.LabelMetricAgent, suite.LabelSetC},
+			labels: []string{suite.LabelMetricAgent},
 			inputBuilder: func(includeNss, excludeNss []string) telemetryv1beta1.MetricPipelineInput {
 				var opts []testutils.NamespaceSelectorOptions
 				if len(includeNss) > 0 {
@@ -54,7 +54,7 @@ func TestNamespaceSelector(t *testing.T) {
 		},
 		{
 			name:   "gateway",
-			labels: []string{suite.LabelMetricGatewaySetB, suite.LabelMetricGateway, suite.LabelSetB},
+			labels: []string{suite.LabelMetricGateway},
 			inputBuilder: func(includeNss, excludeNss []string) telemetryv1beta1.MetricPipelineInput {
 				var opts []testutils.NamespaceSelectorOptions
 				if len(includeNss) > 0 {
@@ -99,7 +99,7 @@ func TestNamespaceSelector(t *testing.T) {
 			includePipeline := testutils.NewMetricPipelineBuilder().
 				WithName(includePipelineName).
 				WithInput(tc.inputBuilder([]string{gen1Ns}, nil)).
-				WithOTLPOutput(testutils.OTLPEndpoint(backend1.EndpointHTTP())).
+				WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint(backend1.EndpointHTTP())).
 				Build()
 
 			// Exclude all namespaces except gen2Ns (gen1Ns and other unrelated namespaces)
@@ -120,7 +120,7 @@ func TestNamespaceSelector(t *testing.T) {
 			excludePipeline := testutils.NewMetricPipelineBuilder().
 				WithName(excludePipelineName).
 				WithInput(tc.inputBuilder(nil, excludeNss)).
-				WithOTLPOutput(testutils.OTLPEndpoint(backend2.EndpointHTTP())).
+				WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint(backend2.EndpointHTTP())).
 				Build()
 
 			resources := []client.Object{
@@ -138,14 +138,14 @@ func TestNamespaceSelector(t *testing.T) {
 
 			assert.BackendReachable(t, backend1)
 			assert.BackendReachable(t, backend2)
-			assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+			assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 
-			// get the content of the configmap used for the metric gateway
+			// get the content of the ConfigMap used for the OTLP Gateway
 			if suite.DebugObjectsEnabled() {
 				objects := []client.Object{
 					&includePipeline,
 					&excludePipeline,
-					kitk8sobjects.NewConfigMap(names.MetricGateway, kitkyma.SystemNamespaceName).K8sObject(),
+					kitk8sobjects.NewConfigMap(names.OTLPGateway, kitkyma.SystemNamespaceName).K8sObject(),
 				}
 				Expect(kitk8s.ObjectsToFile(t, objects...)).To(Succeed())
 			}

@@ -266,7 +266,7 @@ func WithChownInitContainerOpts(checkpointVolumePath string, volumeMounts []core
 	chownUserIDGroupID := fmt.Sprintf("%d:%d", UserDefault, GroupRoot)
 
 	return []ContainerOption{
-		WithCommand([]string{"chown", "-R", chownUserIDGroupID, checkpointVolumePath}),
+		WithCommand([]string{"/chown", chownUserIDGroupID, checkpointVolumePath}),
 		WithRunAsRoot(),
 		WithRunAsUser(0),
 		WithCapabilities("CHOWN"),

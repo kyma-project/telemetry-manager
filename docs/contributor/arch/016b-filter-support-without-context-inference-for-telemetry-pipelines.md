@@ -27,7 +27,7 @@ metadata:
   name: metricpipeline-sample
 spec:
   filter:
-    conditions:
+    - conditions:
       - metric.name == "k8s.pod.phase" and datapoint.count == 4
       - metric.type == METRIC_DATA_TYPE_NONE
   input:

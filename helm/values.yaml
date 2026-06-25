@@ -16,15 +16,15 @@ manager:
       high-priority-class-name: "telemetry-priority-class-high"
       normal-priority-class-name: "telemetry-priority-class"
     env:
-      alpineImage: europe-docker.pkg.dev/kyma-project/prod/external/library/alpine:3.23.2
+      chownImage: europe-docker.pkg.dev/kyma-project/prod/telemetry-chown:main
       appLogLevel: info
-      fluentBitExporterImage: europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20260116-88440ede
-      fluentBitImage: europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluent-bit:4.2.2
+      fluentBitExporterImage: europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:main
+      fluentBitImage: europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluent-bit:5.0.4
       gomemlimit: 300MiB
-      otelCollectorImage: europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.144.0-main
-      selfMonitorImage: europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:3.9.1-0877cc3
-      selfMonitorFIPSImage: europe-docker.pkg.dev/kyma-project/restricted-prod/sap.com/prometheus-fips:3.9.1
+      otelCollectorImage: europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:main
+      selfMonitorImage: europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:main
       operateInFipsMode: false
+      selfMonitorFIPSImage: europe-docker.pkg.dev/kyma-project/restricted-prod/sap.com/prometheus-fips:3.12.0
     image:
       repository: europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:main
       pullPolicy: "IfNotPresent"
@@ -46,6 +46,15 @@ manager:
     runAsNonRoot: true
     seccompProfile:
       type: RuntimeDefault
+  annotations:
+  # custom-deployment-annotation: my-annotation-value
+  labels:
+  # custom-deployment-label: my-value
+  pod:
+    annotations:
+    # custom-pod-annotation: my-pod-annotation-value
+    labels:
+    # custom-pod-label: my-pod-label-value
 managerMetrics:
   ports:
     - name: http-metrics
@@ -56,8 +65,14 @@ managerWebhook:
     - port: 443
       protocol: TCP
       targetPort: 9443
-additionalMetadata:
-  labels:
-  # custom-label: my-value
-  annotations:
-# custom-resource-annotation: my-value
+managedResources:
+  workload:
+    labels:
+    # custom-workload-label: my-value
+    annotations:
+    # custom-workload-annotation: my-value
+    pod:
+      labels:
+      # custom-pod-label: my-value
+      annotations:
+# custom-pod-annotation: my-value

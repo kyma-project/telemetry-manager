@@ -20,7 +20,11 @@ import (
 	"context"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlbuilder "sigs.k8s.io/controller-runtime/pkg/builder"
@@ -34,6 +38,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
 	predicateutils "github.com/kyma-project/telemetry-manager/internal/utils/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
@@ -85,34 +90,68 @@ func (r *TelemetryController) Reconcile(ctx context.Context, req ctrl.Request) (
 	return r.reconciler.Reconcile(ctx, req)
 }
 
+// telemetryOwnedResourceTypes returns the list of Kubernetes resource types that are always
+// managed (created/updated/deleted) by the Telemetry reconciler and must be watched for changes.
+func telemetryOwnedResourceTypes() []client.Object {
+	return []client.Object{
+		&appsv1.Deployment{},
+		&corev1.ConfigMap{},
+		&corev1.Secret{},
+		&corev1.Service{},
+		&corev1.ServiceAccount{},
+		&rbacv1.Role{},
+		&rbacv1.RoleBinding{},
+		&networkingv1.NetworkPolicy{},
+	}
+}
+
 func (r *TelemetryController) SetupWithManager(mgr ctrl.Manager) error {
-	b := ctrl.NewControllerManagedBy(mgr).
-		For(&operatorv1beta1.Telemetry{}).
-		Watches(
-			&corev1.Secret{},
-			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &operatorv1beta1.Telemetry{}),
-			ctrlbuilder.WithPredicates(predicateutils.OwnedResourceChanged())).
+	b := ctrl.NewControllerManagedBy(mgr).For(&operatorv1beta1.Telemetry{})
+
+	ownedResourceTypesToWatch := telemetryOwnedResourceTypes()
+
+	for _, resource := range ownedResourceTypesToWatch {
+		b = b.Watches(
+			resource,
+			handler.EnqueueRequestForOwner(
+				mgr.GetClient().Scheme(),
+				mgr.GetRESTMapper(),
+				&operatorv1beta1.Telemetry{},
+			),
+			ctrlbuilder.WithPredicates(predicateutils.OwnedResourceChanged()),
+		)
+	}
+
+	b = b.
 		Watches(
 			&admissionregistrationv1.ValidatingWebhookConfiguration{},
-			handler.EnqueueRequestsFromMapFunc(r.mapWebhook),
-			ctrlbuilder.WithPredicates(predicateutils.UpdateOrDelete())).
+			handler.EnqueueRequestsFromMapFunc(r.mapValidatingWebhook),
+		).
+		Watches(
+			&admissionregistrationv1.MutatingWebhookConfiguration{},
+			handler.EnqueueRequestsFromMapFunc(r.mapMutatingWebhook),
+		).
+		Watches(
+			&apiextensionsv1.CustomResourceDefinition{},
+			handler.EnqueueRequestsFromMapFunc(r.mapPipelineCRD),
+		).
 		Watches(
 			&telemetryv1beta1.LogPipeline{},
 			handler.EnqueueRequestsFromMapFunc(r.mapLogPipeline),
-			ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete())).
+		).
 		Watches(
 			&telemetryv1beta1.TracePipeline{},
 			handler.EnqueueRequestsFromMapFunc(r.mapTracePipeline),
-			ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete())).
+		).
 		Watches(
 			&telemetryv1beta1.MetricPipeline{},
 			handler.EnqueueRequestsFromMapFunc(r.mapMetricPipeline),
-			ctrlbuilder.WithPredicates(predicateutils.CreateOrUpdateOrDelete()))
+		)
 
 	return b.Complete(r)
 }
 
-func (r *TelemetryController) mapWebhook(ctx context.Context, object client.Object) []reconcile.Request {
+func (r *TelemetryController) mapValidatingWebhook(ctx context.Context, object client.Object) []reconcile.Request {
 	webhook, ok := object.(*admissionregistrationv1.ValidatingWebhookConfiguration)
 	if !ok {
 		logf.FromContext(ctx).Error(nil, "Unable to cast object to ValidatingWebhookConfiguration")
@@ -120,6 +159,35 @@ func (r *TelemetryController) mapWebhook(ctx context.Context, object client.Obje
 	}
 
 	if webhook.Name != r.config.WebhookCert.ValidatingWebhookName.Name {
+		return nil
+	}
+
+	return r.createTelemetryRequests(ctx)
+}
+
+func (r *TelemetryController) mapMutatingWebhook(ctx context.Context, object client.Object) []reconcile.Request {
+	webhook, ok := object.(*admissionregistrationv1.MutatingWebhookConfiguration)
+	if !ok {
+		logf.FromContext(ctx).Error(nil, "Unable to cast object to MutatingWebhookConfiguration")
+		return nil
+	}
+
+	if webhook.Name != r.config.WebhookCert.MutatingWebhookName.Name {
+		return nil
+	}
+
+	return r.createTelemetryRequests(ctx)
+}
+
+func (r *TelemetryController) mapPipelineCRD(ctx context.Context, object client.Object) []reconcile.Request {
+	crd, ok := object.(*apiextensionsv1.CustomResourceDefinition)
+	if !ok {
+		logf.FromContext(ctx).Error(nil, "Unable to cast object to CustomResourceDefinition")
+		return nil
+	}
+
+	// Telemetry controller only patches LogPipeline and MetricPipeline CRDs with conversion webhook configuration
+	if crd.Name != names.LogPipelineCRD && crd.Name != names.MetricPipelineCRD {
 		return nil
 	}
 

@@ -21,7 +21,7 @@ import (
 
 // TODO(TeodorSAP): Remove this test in favor of service_enrichment_test.go once legacy service enrichment strategy is fully deprecated.
 func TestServiceName(t *testing.T) {
-	suite.SetupTest(t, suite.LabelMetricAgentSetB, suite.LabelMetricAgent, suite.LabelSetB)
+	suite.SetupTest(t, suite.LabelMetricAgent)
 
 	const (
 		jobName                                           = "job"
@@ -46,7 +46,7 @@ func TestServiceName(t *testing.T) {
 	pipeline := testutils.NewMetricPipelineBuilder().
 		WithName(pipelineName).
 		WithRuntimeInput(true, testutils.IncludeNamespaces(kitkyma.SystemNamespaceName)).
-		WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
+		WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
 		Build()
 
 	podSpecWithUndefinedService := telemetrygen.PodSpec(telemetrygen.SignalTypeMetrics,
@@ -73,7 +73,7 @@ func TestServiceName(t *testing.T) {
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
 	assert.BackendReachable(t, backend)
-	assert.DeploymentReady(t, kitkyma.MetricGatewayName)
+	assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 	assert.DaemonSetReady(t, kitkyma.MetricAgentName)
 	assert.MetricPipelineHealthy(t, pipelineName)
 	assert.MetricsFromNamespaceDelivered(t, backend, genNs, telemetrygen.MetricNames)
@@ -99,8 +99,8 @@ func TestServiceName(t *testing.T) {
 
 	assert.BackendDataEventuallyMatches(t, backend,
 		HaveFlatMetrics(
-			ContainElement(HaveResourceAttributes(HaveKeyWithValue("service.name", names.MetricGateway))),
-		), assert.WithOptionalDescription("Should have metrics with service.name set to telemetry-metric-gateway"),
+			ContainElement(HaveResourceAttributes(HaveKeyWithValue("service.name", names.OTLPGateway))),
+		), assert.WithOptionalDescription("Should have metrics with service.name set to telemetry-otlp-gateway"),
 	)
 
 	assert.BackendDataEventuallyMatches(t, backend,

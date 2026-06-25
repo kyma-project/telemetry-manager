@@ -21,7 +21,7 @@ Configure the Telemetry module to send logs, metrics, and traces from your clust
 
 ## Prerequisites
 
-- Kyma as the target deployment environment, with the following modules added (see [Quick Install](https://kyma-project.io/#/02-get-started/01-quick-install)):
+- Kyma as the target deployment environment, with the following modules added (see [Quick Install](https://kyma-project.io/02-get-started/01-quick-install)):
   - Telemetry module
   - To collect data from your Istio service mesh: Istio module (default module)
   - SAP BTP Operator module (default module)

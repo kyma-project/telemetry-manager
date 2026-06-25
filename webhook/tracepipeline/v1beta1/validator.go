@@ -8,7 +8,7 @@ import (
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
-	"github.com/kyma-project/telemetry-manager/internal/validators/ottl"
+	"github.com/kyma-project/telemetry-manager/internal/pipelines"
 	webhookutils "github.com/kyma-project/telemetry-manager/webhook/utils"
 )
 
@@ -34,7 +34,7 @@ func validate(ctx context.Context, obj *telemetryv1beta1.TracePipeline) (admissi
 }
 
 func validateFilterTransform(ctx context.Context, filterSpec []telemetryv1beta1.FilterSpec, transformSpec []telemetryv1beta1.TransformSpec) error {
-	err := webhookutils.ValidateFilterTransform(ctx, ottl.SignalTypeTrace, filterSpec, transformSpec)
+	err := webhookutils.ValidateFilterTransform(ctx, pipelines.SignalTypeTrace, filterSpec, transformSpec)
 	if err != nil {
 		return fmt.Errorf(conditions.MessageForTracePipeline(conditions.ReasonOTTLSpecInvalid), err.Error())
 	}

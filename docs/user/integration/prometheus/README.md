@@ -25,7 +25,7 @@ Learn how to configure the Telemetry module to ingest metrics in a custom [Prome
 ## Prerequisites
 
 - Kyma as the target deployment environment.
-- The [Telemetry module](../../README.md) is added. For details, see [Quick Install](https://kyma-project.io/#/02-get-started/01-quick-install). <!-- This link differs for OS and SKR -->
+- The [Telemetry module](../../README.md) is added. For details, see [Quick Install](https://kyma-project.io/02-get-started/01-quick-install). <!-- This link differs for OS and SKR -->
 - If you want to use Istio metrics, make sure that the [Istio module](https://kyma-project.io/#/istio/user/README) is added. This is mandatory for the use with Kiali.
 <!-- markdown-link-check-disable -->
 - Kubernetes CLI (kubectl) (see [Install the Kubernetes Command Line Tool](https://developers.sap.com/tutorials/cp-kyma-download-cli.html)).

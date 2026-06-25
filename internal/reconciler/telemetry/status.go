@@ -102,10 +102,16 @@ func (r *Reconciler) updateGatewayEndpoints(ctx context.Context, telemetry *oper
 		return fmt.Errorf("failed to get metric endpoints: %w", err)
 	}
 
+	otlpEndpoints, err := r.otlpEndpoints(ctx, r.config)
+	if err != nil {
+		return fmt.Errorf("failed to get OTLP endpoints: %w", err)
+	}
+
 	telemetry.Status.Endpoints = operatorv1beta1.GatewayEndpoints{
 		Logs:    logEndpoints,
 		Traces:  traceEndpoints,
 		Metrics: metricEndpoints,
+		OTLP:    otlpEndpoints,
 	}
 
 	return nil
@@ -168,6 +174,32 @@ func (r *Reconciler) metricEndpoints(ctx context.Context, config Config) (*opera
 	return makeOTLPEndpoints(pushEndpoint.Name, pushEndpoint.Namespace), nil
 }
 
+func (r *Reconciler) otlpEndpoints(ctx context.Context, config Config) (*operatorv1beta1.OTLPEndpoints, error) {
+	pushEndpoint := types.NamespacedName{
+		Name:      names.OTLPService,
+		Namespace: config.TargetNamespace(),
+	}
+
+	svcExists, err := r.checkServiceExists(ctx, pushEndpoint)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check if OTLP service endpoints exist: %w", err)
+	}
+
+	// Service has not been created yet, so we return nil.
+	if !svcExists {
+		return nil, nil //nolint:nilnil //it is ok in this context, even if it is not go idiomatic
+	}
+
+	return makeOTLPEndpoints(pushEndpoint.Name, pushEndpoint.Namespace), nil
+}
+
+func makeOTLPEndpoints(serviceName, namespace string) *operatorv1beta1.OTLPEndpoints {
+	return &operatorv1beta1.OTLPEndpoints{
+		GRPC: fmt.Sprintf("http://%s.%s:%d", serviceName, namespace, ports.OTLPGRPC),
+		HTTP: fmt.Sprintf("http://%s.%s:%d", serviceName, namespace, ports.OTLPHTTP),
+	}
+}
+
 func (r *Reconciler) checkServiceExists(ctx context.Context, svcName types.NamespacedName) (bool, error) {
 	var service corev1.Service
 
@@ -182,13 +214,6 @@ func (r *Reconciler) checkServiceExists(ctx context.Context, svcName types.Names
 	}
 
 	return true, nil
-}
-
-func makeOTLPEndpoints(serviceName, namespace string) *operatorv1beta1.OTLPEndpoints {
-	return &operatorv1beta1.OTLPEndpoints{
-		HTTP: fmt.Sprintf("http://%s.%s:%d", serviceName, namespace, ports.OTLPHTTP),
-		GRPC: fmt.Sprintf("http://%s.%s:%d", serviceName, namespace, ports.OTLPGRPC),
-	}
 }
 
 func (r *Reconciler) dependentCRsFound(ctx context.Context) bool {

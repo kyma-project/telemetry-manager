@@ -109,25 +109,26 @@ func TestCreateTimestampModifyFilter(t *testing.T) {
 
 func TestMergeSectionsConfig(t *testing.T) {
 	excludePath := strings.Join([]string{
-		"/var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log",
-		"/var/log/containers/*system-logs-agent-*_kyma-system_collector-*.log",
-		"/var/log/containers/*system-logs-collector-*_kyma-system_collector-*.log",
-		"/var/log/containers/telemetry-log-agent-*_kyma-system_collector-*.log",
-		"/var/log/containers/*_*_container1-*.log",
-		"/var/log/containers/*_*_container2-*.log",
+		"/var/log/pods/kyma-system_telemetry-fluent-bit-*/fluent-bit/*.log",
+		"/var/log/pods/kyma-system_*system-logs-agent-*/collector/*.log",
+		"/var/log/pods/kyma-system_*system-logs-collector-*/collector/*.log",
+		"/var/log/pods/kyma-system_telemetry-log-agent-*/collector/*.log",
+		"/var/log/pods/*_*/container1/*.log",
+		"/var/log/pods/*_*/container2/*.log",
 	}, ",")
 	expected := fmt.Sprintf(`[INPUT]
-    name             tail
-    alias            foo
-    db               /data/flb_foo.db
-    exclude_path     %s
-    mem_buf_limit    5MB
-    multiline.parser cri
-    path             /var/log/containers/*_*_*-*.log
-    read_from_head   true
-    skip_long_lines  on
-    storage.type     filesystem
-    tag              foo.*
+    name                tail
+    alias               foo
+    db                  /data/flb_foo.db
+    db.compare_filename on
+    exclude_path        %s
+    mem_buf_limit       5MB
+    multiline.parser    cri
+    path                /var/log/pods/*_*/*/*.log
+    read_from_head      true
+    skip_long_lines     on
+    storage.type        filesystem
+    tag                 foo.*
 
 [FILTER]
     name             multiline
@@ -147,9 +148,10 @@ func TestMergeSectionsConfig(t *testing.T) {
     k8s-logging.exclude off
     k8s-logging.parser  on
     keep_log            on
-    kube_tag_prefix     foo.var.log.containers.
+    kube_tag_prefix     foo.var.log.pods.
     labels              on
     merge_log           on
+    regex_parser        k8s-pods
 
 [FILTER]
     name  modify
@@ -234,22 +236,23 @@ func TestMergeSectionsConfig(t *testing.T) {
 
 func TestMergeSectionsConfigCustomOutput(t *testing.T) {
 	excludePath := strings.Join([]string{
-		"/var/log/containers/*system-logs-agent-*_kyma-system_collector-*.log",
-		"/var/log/containers/*system-logs-collector-*_kyma-system_collector-*.log",
-		"/var/log/containers/telemetry-log-agent-*_kyma-system_collector-*.log",
+		"/var/log/pods/kyma-system_*system-logs-agent-*/collector/*.log",
+		"/var/log/pods/kyma-system_*system-logs-collector-*/collector/*.log",
+		"/var/log/pods/kyma-system_telemetry-log-agent-*/collector/*.log",
 	}, ",")
 	expected := fmt.Sprintf(`[INPUT]
-    name             tail
-    alias            foo
-    db               /data/flb_foo.db
-    exclude_path     %s
-    mem_buf_limit    5MB
-    multiline.parser cri
-    path             /var/log/containers/*_*_*-*.log
-    read_from_head   true
-    skip_long_lines  on
-    storage.type     filesystem
-    tag              foo.*
+    name                tail
+    alias               foo
+    db                  /data/flb_foo.db
+    db.compare_filename on
+    exclude_path        %s
+    mem_buf_limit       5MB
+    multiline.parser    cri
+    path                /var/log/pods/*_*/*/*.log
+    read_from_head      true
+    skip_long_lines     on
+    storage.type        filesystem
+    tag                 foo.*
 
 [FILTER]
     name   record_modifier
@@ -264,9 +267,10 @@ func TestMergeSectionsConfigCustomOutput(t *testing.T) {
     k8s-logging.exclude off
     k8s-logging.parser  on
     keep_log            on
-    kube_tag_prefix     foo.var.log.containers.
+    kube_tag_prefix     foo.var.log.pods.
     labels              on
     merge_log           on
+    regex_parser        k8s-pods
 
 [OUTPUT]
     name                     stdout

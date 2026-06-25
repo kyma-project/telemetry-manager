@@ -4,17 +4,19 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/errortypes"
+	"github.com/kyma-project/telemetry-manager/internal/k8sclients"
 	"github.com/kyma-project/telemetry-manager/internal/metrics"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
-	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
 	sharedtypesutils "github.com/kyma-project/telemetry-manager/internal/utils/sharedtypes"
 	telemetryutils "github.com/kyma-project/telemetry-manager/internal/utils/telemetry"
@@ -128,19 +130,30 @@ func New(opts ...Option) *Reconciler {
 	return r
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) error {
-	logf.FromContext(ctx).V(1).Info("Reconciling LogPipeline")
+func (r *Reconciler) Reconcile(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) (ctrl.Result, error) {
+	logf.FromContext(ctx).V(1).Info("Reconciling FluentBit LogPipeline")
 
-	err := r.doReconcile(ctx, pipeline)
-	if statusErr := r.updateStatus(ctx, pipeline.Name); statusErr != nil {
-		if err != nil {
-			err = fmt.Errorf("failed while updating status: %w: %w", statusErr, err)
-		} else {
-			err = fmt.Errorf("failed to update status: %w", statusErr)
-		}
+	var allErrors error = nil
+
+	if err := r.doReconcile(ctx, pipeline); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to reconcile: %w", err))
 	}
 
-	return err
+	if err := r.updateStatus(ctx, pipeline.Name); err != nil {
+		allErrors = errors.Join(allErrors, fmt.Errorf("failed to update status: %w", err))
+	}
+
+	if allErrors != nil {
+		return ctrl.Result{}, allErrors
+	}
+
+	requeueAfter := r.calculateRequeueAfterDuration(ctx, pipeline)
+	if requeueAfter != nil {
+		logf.FromContext(ctx).V(1).Info("Requeuing reconciliation due to certificate about to expire", "RequeueAfter", requeueAfter.String())
+		return ctrl.Result{RequeueAfter: *requeueAfter}, nil
+	}
+
+	return ctrl.Result{}, nil
 }
 
 func (r *Reconciler) IsReconcilable(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) (bool, error) {
@@ -173,8 +186,7 @@ func (r *Reconciler) IsReconcilable(ctx context.Context, pipeline *telemetryv1be
 
 	// Remaining errors imply that the pipeline is not reconcilable
 	// In case that one of the requests to the Kubernetes API server failed, then the pipeline is also considered non-reconcilable and the error is returned to trigger a requeue
-	var APIRequestFailed *errortypes.APIRequestFailedError
-	if errors.As(err, &APIRequestFailed) {
+	if APIRequestFailed, ok := errors.AsType[*errortypes.APIRequestFailedError](err); ok {
 		return false, APIRequestFailed.Err
 	}
 
@@ -213,23 +225,24 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 		return nil
 	}
 
-	telemetryOptions := telemetryutils.Options{
-		Client:                    r.Client,
-		DefaultTelemetryNamespace: r.globals.DefaultTelemetryNamespace(),
-	}
-	clusterName := telemetryutils.GetClusterNameFromTelemetry(ctx, telemetryOptions)
+	clusterName := telemetryutils.GetClusterNameFromTelemetry(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
 
 	config, err := r.agentConfigBuilder.Build(ctx, reconcilablePipelines, clusterName)
 	if err != nil {
 		return fmt.Errorf("failed to build fluentbit config: %w", err)
 	}
 
+	isIstioActive, err := r.istioStatusChecker.IsIstioActive(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to check Istio status: %w", err)
+	}
+
 	if err = r.agentApplierDeleter.ApplyResources(
 		ctx,
-		k8sutils.NewOwnerReferenceSetter(r.Client, pipeline),
+		k8sclients.NewOwnerReferenceSetter(r.Client, pipeline),
 		fluentbit.AgentApplyOptions{
 			FluentBitConfig: config,
-			IstioEnabled:    r.istioStatusChecker.IsIstioActive(ctx),
+			IstioEnabled:    isIstioActive,
 		},
 	); err != nil {
 		return err
@@ -244,12 +257,12 @@ func (r *Reconciler) getReconcilablePipelines(ctx context.Context, allPipelines 
 	var reconcilableLogPipelines []telemetryv1beta1.LogPipeline
 
 	for i := range allPipelines {
-		isReconcilable, err := r.IsReconcilable(ctx, &allPipelines[i])
+		isPipelineReconcilable, err := r.IsReconcilable(ctx, &allPipelines[i])
 		if err != nil {
 			return nil, err
 		}
 
-		if isReconcilable {
+		if isPipelineReconcilable {
 			reconcilableLogPipelines = append(reconcilableLogPipelines, allPipelines[i])
 		}
 	}
@@ -309,4 +322,15 @@ func (r *Reconciler) getEndpoint(ctx context.Context, pipeline *telemetryv1beta1
 	}
 
 	return string(endpointBytes)
+}
+
+func (r *Reconciler) calculateRequeueAfterDuration(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) *time.Duration {
+	err := r.pipelineValidator.Validate(ctx, pipeline)
+
+	if errCertAboutToExpire, ok := errors.AsType[*tlscert.CertAboutToExpireError](err); ok {
+		duration := time.Until(errCertAboutToExpire.Expiry)
+		return &duration
+	}
+
+	return nil
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 
@@ -47,6 +48,10 @@ func (a Client) TLSConfig() *tls.Config {
 
 func (a Client) Token() string {
 	return "Bearer " + a.bearerToken
+}
+
+func (a Client) APIServerURL() string {
+	return a.apiURL
 }
 
 // ProxyURLForService composes a proxy url for a service.
@@ -94,5 +99,25 @@ func (a Client) GetWithContext(ctx context.Context, proxyURL string) (*http.Resp
 		req.Header.Set("Authorization", a.bearerToken)
 	}
 
-	return client.Do(req)
+	return client.Do(req) //nolint:gosec // G704: URL is constructed internally from trusted proxy path
+}
+
+// Post performs an HTTPS POST request to the in-cluster resource identifiable by ProxyURLForService or ProxyURLForPod.
+func (a Client) Post(ctx context.Context, proxyURL, contentType string, body io.Reader) (*http.Response, error) {
+	client := &http.Client{Transport: &http.Transport{
+		TLSClientConfig: a.tlsClientConfig,
+	}}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, proxyURL, body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Content-Type", contentType)
+
+	if len(a.bearerToken) > 0 {
+		req.Header.Set("Authorization", a.bearerToken)
+	}
+
+	return client.Do(req) //nolint:gosec // G704: URL is constructed internally from trusted proxy path
 }

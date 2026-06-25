@@ -13,6 +13,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/trace"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
@@ -26,7 +27,7 @@ import (
 // One backend and one app are deployed with Istio sidecar injection enabled (inside the mesh), while the other backend and app are deployed without Istio (outside the mesh).
 // The test validates that traces are correctly routed to the appropriate backends, Istio sidecar injection is functioning as expected, and only the desired spans are present in the collected traces.
 func TestTracesRouting(t *testing.T) {
-	suite.SetupTest(t, suite.LabelGardener, suite.LabelIstio)
+	suite.SetupTestWithOptions(t, []string{suite.LabelGardener}, kubeprep.WithIstio())
 
 	const (
 		appName          = "app"
@@ -73,7 +74,7 @@ func TestTracesRouting(t *testing.T) {
 		kitk8sobjects.NewNamespace(appNs).K8sObject(),
 		&istioTracePipeline,
 		&tracePipeline,
-		traceGatewayExternalService.K8sObject(kitk8sobjects.WithLabel("app.kubernetes.io/name", "telemetry-trace-gateway")),
+		traceGatewayExternalService.K8sObject(kitk8sobjects.WithLabel("app.kubernetes.io/name", "telemetry-otlp-gateway")),
 		app.Pod().K8sObject(),
 		istiofiedApp.Pod().K8sObject(),
 	}
@@ -88,7 +89,7 @@ func TestTracesRouting(t *testing.T) {
 	assertAppIsRunning(t, istiofiedAppNs, map[string]string{"app.kubernetes.io/name": "metric-producer"})
 	assertSidecarPresent(t, istiofiedAppNs, map[string]string{"app.kubernetes.io/name": "metric-producer"})
 	assertAppIsRunning(t, appNs, map[string]string{"app.kubernetes.io/name": "metric-producer"})
-	assert.DeploymentReady(t, kitkyma.TraceGatewayName)
+	assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 	assert.TracePipelineHealthy(t, pipeline1Name)
 	assert.TracePipelineHealthy(t, pipeline2Name)
 

@@ -8,7 +8,7 @@
 | Backend type | custom in-cluster, third-party remote |
 | OTLP-native | yes |
 
-Learn how to collect Kubernetes cluster events and forward them as OTLP  logs to your observability backend. You install and configure a custom [OTel Collector](https://github.com/open-telemetry/opentelemetry-collector) in your Kyma cluster using a provided [Helm chart](https://github.com/open-telemetry/opentelemetry-helm-charts/tree/main/charts/opentelemetry-collector). The collector watches for Kubernetes events, converts them to OTLP logs, and forwards them to the Telemetry module's log gateway for further processing and enrichment.
+Learn how to collect Kubernetes cluster events and forward them as OTLP  logs to your observability backend. You install and configure a custom [OTel Collector](https://github.com/open-telemetry/opentelemetry-collector) in your Kyma cluster using a provided [Helm chart](https://github.com/open-telemetry/opentelemetry-helm-charts/tree/main/charts/opentelemetry-collector). The collector watches for Kubernetes events, converts them to OTLP logs, and forwards them to the Telemetry module's OTLP Gateway for further processing and enrichment.
 
 > Note
 > This guide uses the OpenTelemetry [`k8s-events`](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8seventsreceiver) receiver. It is the recommended, modern receiver for this task because it provides a dedicated attribute scheme optimized for Kubernetes events.
@@ -27,7 +27,7 @@ Learn how to collect Kubernetes cluster events and forward them as OTLP  logs to
 ## Prerequisites
 
 - Kyma as the target deployment environment
-- The [Telemetry module](../../README.md) is [added](https://kyma-project.io/#/02-get-started/01-quick-install)
+- The [Telemetry module](../../README.md) is [added](https://kyma-project.io/02-get-started/01-quick-install)
 - You have set up a `LogPipeline` to send logs to a backend, for example, by following the [SAP CLoud Logging guide](./../sap-cloud-logging/) or [Loki](./../loki/)
 - [Kubectl version that is within one minor version (older or newer) of `kube-apiserver`](https://kubernetes.io/releases/version-skew-policy/#kubectl)
 - Helm 3.x

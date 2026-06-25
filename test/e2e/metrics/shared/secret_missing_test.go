@@ -27,12 +27,12 @@ func TestSecretMissing(t *testing.T) {
 	}{
 		{
 			name:   "agent",
-			labels: []string{suite.LabelMetricAgentSetC, suite.LabelMetricAgent, suite.LabelSetC},
+			labels: []string{suite.LabelMetricAgent},
 			input:  testutils.BuildMetricPipelineRuntimeInput(),
 		},
 		{
 			name:   "gateway",
-			labels: []string{suite.LabelMetricGatewaySetC, suite.LabelMetricGateway, suite.LabelSetC},
+			labels: []string{suite.LabelMetricGateway},
 			input:  testutils.BuildMetricPipelineOTLPInput(),
 		},
 	}
@@ -57,7 +57,7 @@ func TestSecretMissing(t *testing.T) {
 			pipeline := testutils.NewMetricPipelineBuilder().
 				WithName(pipelineName).
 				WithInput(tc.input).
-				WithOTLPOutput(testutils.OTLPEndpointFromSecret(
+				WithMetricPipelineOTLPOutput(testutils.OTLPEndpointFromSecret(
 					secret.Name(),
 					secret.Namespace(),
 					endpointKey,

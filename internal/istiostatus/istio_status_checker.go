@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"k8s.io/client-go/discovery"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 type Checker struct {
@@ -17,17 +16,17 @@ func NewChecker(d discovery.DiscoveryInterface) *Checker {
 }
 
 // IsIstioActive checks if Istio is active on the cluster based on the presence of Istio CRDs
-func (isc *Checker) IsIstioActive(ctx context.Context) bool {
+func (isc *Checker) IsIstioActive(ctx context.Context) (bool, error) {
 	groupList, err := isc.discovery.ServerGroups()
 	if err != nil {
-		logf.FromContext(ctx).Error(err, "error getting group list from server")
+		return false, err
 	}
 
 	for _, group := range groupList.Groups {
 		if strings.Contains(group.Name, ".istio.io") {
-			return true
+			return true, nil
 		}
 	}
 
-	return false
+	return false, nil
 }

@@ -101,6 +101,10 @@ func (b *TracePipelineBuilder) Build() telemetryv1beta1.TracePipeline {
 			Generation: 1,
 			Labels:     b.labels,
 		},
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: telemetryv1beta1.GroupVersion.String(),
+			Kind:       "TracePipeline",
+		},
 		Spec: telemetryv1beta1.TracePipelineSpec{
 			Output: telemetryv1beta1.TracePipelineOutput{
 				OTLP: b.outOTLP,

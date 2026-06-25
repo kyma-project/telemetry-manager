@@ -1,7 +1,6 @@
 package shared
 
 import (
-	"fmt"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -15,6 +14,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/assert"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
+	"github.com/kyma-project/telemetry-manager/test/testkit/kubeprep"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitbackend "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/stdoutloggen"
@@ -31,7 +31,6 @@ func TestMetricsEndpoint_OTel(t *testing.T) {
 		logGeneratorBuilder func(namespace string) client.Object
 		expectAgent         bool
 		resourceName        types.NamespacedName
-		readinessCheckFunc  func(t *testing.T, name types.NamespacedName)
 		metricsService      types.NamespacedName
 	}{
 		{
@@ -41,9 +40,8 @@ func TestMetricsEndpoint_OTel(t *testing.T) {
 			logGeneratorBuilder: func(namespace string) client.Object {
 				return stdoutloggen.NewDeployment(namespace).K8sObject()
 			},
-			resourceName:       kitkyma.LogAgentName,
-			readinessCheckFunc: assert.DaemonSetReady,
-			metricsService:     kitkyma.LogAgentMetricsService,
+			resourceName:   kitkyma.LogAgentName,
+			metricsService: kitkyma.LogAgentMetricsService,
 		},
 		{
 			name:   suite.LabelLogGateway,
@@ -52,20 +50,8 @@ func TestMetricsEndpoint_OTel(t *testing.T) {
 			logGeneratorBuilder: func(namespace string) client.Object {
 				return telemetrygen.NewDeployment(namespace, telemetrygen.SignalTypeLogs).K8sObject()
 			},
-			resourceName:       kitkyma.LogGatewayName,
-			readinessCheckFunc: assert.DeploymentReady,
-			metricsService:     kitkyma.LogGatewayMetricsService,
-		},
-		{
-			name:   fmt.Sprintf("%s-%s", suite.LabelLogGateway, suite.LabelExperimental),
-			labels: []string{suite.LabelLogGateway, suite.LabelExperimental},
-			input:  testutils.BuildLogPipelineOTLPInput(),
-			logGeneratorBuilder: func(namespace string) client.Object {
-				return telemetrygen.NewDeployment(namespace, telemetrygen.SignalTypeCentralLogs).K8sObject()
-			},
-			resourceName:       kitkyma.TelemetryOTLPGatewayName,
-			readinessCheckFunc: assert.DaemonSetReady,
-			metricsService:     kitkyma.TelemetryOTLPMetricsService,
+			resourceName:   kitkyma.OTLPGatewayName,
+			metricsService: kitkyma.TelemetryOTLPMetricsService,
 		},
 	}
 
@@ -97,7 +83,7 @@ func TestMetricsEndpoint_OTel(t *testing.T) {
 
 			Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
-			tc.readinessCheckFunc(t, tc.resourceName)
+			assert.DaemonSetReady(t, tc.resourceName)
 
 			metricsURL := suite.ProxyClient.ProxyURLForService(tc.metricsService.Namespace, tc.metricsService.Name, "metrics", ports.Metrics)
 			assert.EmitsOTelCollectorMetrics(t, metricsURL)
@@ -106,7 +92,7 @@ func TestMetricsEndpoint_OTel(t *testing.T) {
 }
 
 func TestMetricsEndpoint_FluentBit(t *testing.T) {
-	suite.SetupTest(t, suite.LabelFluentBit, suite.LabelNoFIPS)
+	suite.SetupTestWithOptions(t, []string{suite.LabelFluentBit}, kubeprep.WithOverrideFIPSMode(false))
 
 	var (
 		uniquePrefix = unique.Prefix()
