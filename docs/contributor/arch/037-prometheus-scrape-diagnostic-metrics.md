@@ -127,7 +127,7 @@ Expose scrape diagnostic metrics on-demand using the `telemetry-overrides` Confi
 
 - Scrape health metrics are not available for historical trending or capacity planning (only available from the moment of enablement).
 - Incident response requires a manual step: updating the `telemetry-overrides` ConfigMap before diagnostic data becomes available.
-- The metric agent's memory increases when on-demand metrics are enabled in clusters with many scrape targets. Operators must remember to disable the override after investigation.
+- The metric agent's memory increases when on-demand metrics are enabled in clusters with many scrape targets. In testing, 100 scrape targets added approximately 4–5 MB of memory usage (from ~96–99 MB baseline to ~104–107 MB). Operators must remember to disable the override after investigation.
 
 ## Implementation Notes
 
