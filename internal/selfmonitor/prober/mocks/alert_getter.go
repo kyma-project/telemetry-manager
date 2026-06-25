@@ -71,7 +71,7 @@ type AlertGetter_Alerts_Call struct {
 
 // Alerts is a helper method to define mock.On call
 //   - ctx context.Context
-func (_e *AlertGetter_Expecter) Alerts(ctx interface{}) *AlertGetter_Alerts_Call {
+func (_e *AlertGetter_Expecter) Alerts(ctx any) *AlertGetter_Alerts_Call {
 	return &AlertGetter_Alerts_Call{Call: _e.mock.On("Alerts", ctx)}
 }
 

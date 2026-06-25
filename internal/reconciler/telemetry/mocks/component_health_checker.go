@@ -74,7 +74,7 @@ type ComponentHealthChecker_Check_Call struct {
 // Check is a helper method to define mock.On call
 //   - ctx context.Context
 //   - telemetryInDeletion bool
-func (_e *ComponentHealthChecker_Expecter) Check(ctx interface{}, telemetryInDeletion interface{}) *ComponentHealthChecker_Check_Call {
+func (_e *ComponentHealthChecker_Expecter) Check(ctx any, telemetryInDeletion any) *ComponentHealthChecker_Check_Call {
 	return &ComponentHealthChecker_Check_Call{Call: _e.mock.On("Check", ctx, telemetryInDeletion)}
 }
 
