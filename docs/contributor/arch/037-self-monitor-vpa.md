@@ -70,13 +70,7 @@ spec:
       minAllowed:
         memory: 128Mi
       maxAllowed:
-        memory: <see formula below>
-```
-
-VPA manages only the memory request. The `maxAllowed` is computed from the observed cluster node count and caps how high VPA can push the request, so VPA cannot recommend a request that the smallest node could not honor.
-
-```
-maxAllowedMemory = 512MiB
+        memory: 512Mi
 ```
 
 The cap of 512 MiB keeps VPA's request recommendation is the current max memory limit for the self-monitor pod.
