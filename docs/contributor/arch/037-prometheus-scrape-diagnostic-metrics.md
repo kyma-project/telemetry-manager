@@ -22,11 +22,11 @@ See [#2955](https://github.com/kyma-project/telemetry-manager/issues/2955).
 
 The scrape diagnostic metrics themselves are not a cardinality concern in absolute terms. At 8 metrics × n targets, even 300 pods produce only 2,400 series — manageable for any Prometheus instance.
 
-However, we do not control the workload size. We cannot predict how many scrape targets exist, and because the pod count grows, the metric agent's Prometheus exporter must hold more series in memory. The series count scales linearly with cluster size, and each series carries multiple labels from `resource_to_telemetry_conversion` (`k8s_pod_name`, `k8s_namespace_name`, `k8s_node_name`, etc.), which inflates per-series memory cost.
+However, we cannot predict how many scrape targets exist and the series count scales linearly with number of targets. Additionally, each series carries multiple labels from `resource_to_telemetry_conversion` (`k8s_pod_name`, `k8s_namespace_name`, `k8s_node_name`, etc.) and inflates per-series memory cost.
 
 ### Per-Metric Assessment
 
-The metric agent has three Prometheus scrape jobs: `app-pods`, `app-services`, and `istio`.
+The metric agent has four Prometheus scrape jobs: `app-pods`, `app-services`, and `istio`, `app-services-secure`.
 
 | Metric                                   | Decision | Purpose                                                                                           |
 |------------------------------------------|----------|---------------------------------------------------------------------------------------------------|
@@ -41,7 +41,7 @@ The metric agent has three Prometheus scrape jobs: `app-pods`, `app-services`, a
 
 `scrape_timeout_seconds` and `scrape_sample_limit` are static configuration values identical for all targets within a scrape job. They do not provide diagnostic signal but are kept for consistency with the user-facing diagnostic metrics (exposed via `diagnosticMetrics.enabled`) and to avoid maintaining a separate metric name list.
 
-`scrape_samples_post_metric_relabeling` is equal to `scrape_samples_scraped` in `prometheus` input scrape jobs. It is only useful in `istio` input scrape jobs for identifying how many metric series are discarded after relabeling.
+`scrape_samples_post_metric_relabeling` is equal to `scrape_samples_scraped` in `prometheus` input scrape jobs. It is only useful in `istio` and input scrape jobs for identifying how many metric series are discarded after relabeling.
 
 Using a combination of these metrics, we can identify the root cause of scrape failures:
 
@@ -61,12 +61,12 @@ Expose all 8 scrape diagnostic metrics per target to the internal monitoring sys
 
 - Full per-target attribution for debugging
 - No additional pipeline complexity
-- Unbounded cardinality risk — series count scales linearly with cluster size (see [Cardinality](#cardinality))
-- Memory pressure on the metric agent's Prometheus exporter in large clusters
+- Unbounded cardinality risk, see [Cardinality](#cardinality)
+- Memory pressure on the internal monitoring system
 
 ### Option B: Always-On Exposure with Aggregation
 
-Expose aggregated scrape metrics (for example, max per scrape job) to bound cardinality. The pipeline cannot aggregate at scrape time — Prometheus `metric_relabel_configs` only drops, keeps, or rewrites labels. Aggregation happens downstream in the OTel Collector using the `metricstransform` or `transform` processor.
+Expose aggregated scrape metrics (for example, max per scrape job) to bound cardinality. Since Prometheus cannot do any aggregation, this happens downstream in the OTel Collector using the `metricstransform` or `transform` processor.
 
 Per-metric aggregation guidance:
 
@@ -85,7 +85,6 @@ Per-metric aggregation guidance:
 - Loses per-pod attribution — "some target in the istio job has 48,000 samples" but not *which* pod
 - For churn debugging, per-pod detail is required to find the specific proxy
 - Requires `metricstransform` processor in the collector image (dependency)
-- Aggregation dimension choice is not obvious (by job? by namespace? by node?)
 
 ### Option C: On-Demand Exposure via Override (Chosen)
 
@@ -110,9 +109,9 @@ Expose scrape diagnostic metrics on-demand using the `telemetry-overrides` Confi
 
 **Behavior:**
 - By default, port 9090 on the metric agent serves an empty Prometheus metrics response (no series).
-- VMAgent continuously scrapes this endpoint without triggering target-down alerts.
+- The internal monitoring system continuously scrapes this endpoint without triggering target-down alerts.
 - When `metrics.prometheusScrapeMetricsEnabled: true` is set in the `telemetry-overrides` ConfigMap, the metric agent exposes all Prometheus scrape metrics to port 9090.
-- VMAgent picks up the metrics on the next scrape cycle, and they become available in the dashboard.
+- The internal monitoring system picks up the metrics on the next scrape cycle, and they become available in the dashboard.
 
 ## Consequences
 
@@ -121,7 +120,7 @@ Expose scrape diagnostic metrics on-demand using the `telemetry-overrides` Confi
 - No cardinality cost or memory overhead during normal operation.
 - Operators retain full per-target diagnostic detail for incident investigation.
 - Consistent metric name set with the user-facing `diagnosticMetrics.enabled` feature reduces maintenance burden.
-- Port 9090 is always listening, so VMAgent does not generate false target-down alerts.
+- Port 9090 is always listening, so the internal monitoring system does not generate false target-down alerts.
 
 ### Negative
 
