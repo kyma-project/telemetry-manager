@@ -110,7 +110,6 @@ Expose scrape diagnostic metrics on-demand using the `telemetry-overrides` Confi
 - Always-on exposure carries unbounded cardinality risk in clusters with many scrape targets.
 - Aggregation loses per-target attribution, which is essential for debugging scrape failures.
 - On-demand exposure avoids both problems: zero cardinality cost by default, full per-target detail when needed.
-- All 8 diagnostic metrics are kept for consistency with the user-facing `diagnosticMetrics.enabled` feature.
 
 **Behavior:**
 - By default, port 9090 on the metric agent serves an empty Prometheus metrics response (no series).
