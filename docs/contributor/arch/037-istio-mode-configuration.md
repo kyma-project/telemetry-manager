@@ -10,7 +10,7 @@ date: 2026-06-10
 
 Telemetry Manager currently auto-detects Istio by checking for Istio CRDs (`*.istio.io`) in the cluster and automatically applies Istio-specific resources when detected. This includes sidecar injection labels, DestinationRules, traffic routing annotations, and certificate volume mounts across telemetry components (OTLP Gateway, Metric Agent, OTel Log Agent, Fluent Bit, and Self-Monitor).
 
-Although automatic detection provides convenience, several operational challenges exist:
+Automatic detection provides convenience. However, users face several operational challenges:
 
 - No explicit control: Users have no way to disable Istio mode when they don't need it. This causes sidecar containers, certificate management, and Istio-specific network policies to create unnecessary resource overhead.
 
@@ -20,7 +20,7 @@ Although automatic detection provides convenience, several operational challenge
 
 - Migration difficulty: To move toward an "Istio mode OFF by default" model (tracked in [issue #657](https://github.com/kyma-project/telemetry-manager/issues/657)), the system requires a backward-compatible transition path that preserves existing behavior while allowing explicit opt-in configuration.
 
-The system requires an API mechanism to explicitly enable or disable Istio mode, providing users with control over when and how Istio integration is applied to telemetry components. This addresses [issue #3549](https://github.com/kyma-project/telemetry-manager/issues/3549), which proposes an explicit configuration model that supports eventual migration to an opt-in default while maintaining backward compatibility during the transition.
+This proposal adds an API mechanism to explicitly enable or disable Istio mode, providing users with control over when and how Istio integration applies to telemetry components. This addresses [issue #3549](https://github.com/kyma-project/telemetry-manager/issues/3549), which proposes an explicit configuration model that supports eventual migration to an opt-in default while maintaining backward compatibility during the transition.
 
 ## Current Istio Integration
 
@@ -158,13 +158,13 @@ This design uses a single mode field that controls both ingestion (receiving or 
 
 ### Mode Semantics
 
-**`On`**: Enable Istio integration for both ingestion and export **when Istio is present** (CRDs detected). If Istio is not installed, this mode has no effect - no Istio configurations are applied, and no labels are set.
+**`On`**: Enable Istio integration for both ingestion and export **when Istio is present** (CRDs detected). If Istio is not installed, this mode has no effect - the system applies no Istio configurations and sets no labels.
 
-**`IngestOnly`**: Enable Istio integration only for ingestion (Gateway receiving data, Metric Agent scraping mTLS workloads) **when Istio is present**. Disable Istio integration for export (no sidecars for sending data to backends). If Istio is not installed, this mode has no effect.
+**`IngestOnly`**: Enable Istio integration only for ingestion (Gateway receiving data, Metric Agent scraping mTLS workloads) **when Istio is present**. Disable Istio integration for export (no sidecars for sending data to backends). If the cluster does not have Istio installed, this mode has no effect.
 
-**`ExportOnly`**: Enable Istio integration only for export (sending telemetry data to backends) **when Istio is present**. Disable Istio integration for ingestion (no DestinationRules, no mTLS scraping). If Istio is not installed, this mode has no effect.
+**`ExportOnly`**: Enable Istio integration only for export (sending telemetry data to backends) **when Istio is present**. Disable Istio integration for ingestion (no DestinationRules, no mTLS scraping). If the cluster does not have Istio installed, this mode has no effect.
 
-**`Off`**: Explicitly disable Istio integration for both ingestion and export, regardless of whether Istio is present. This sets `sidecar.istio.io/inject: "false"` to ensure components do not use Istio even if it's installed.
+**`Off`**: Explicitly disable Istio integration for both ingestion and export, regardless of whether the cluster has Istio installed. This sets `sidecar.istio.io/inject: "false"` to ensure components do not use Istio even when the cluster has Istio installed.
 
 This makes the API intuitive: `On` means "use Istio if available for everything", `IngestOnly` means "use Istio only for receiving/scraping data", `ExportOnly` means "use Istio only for sending data to backends", and `Off` means "never use Istio".
 
