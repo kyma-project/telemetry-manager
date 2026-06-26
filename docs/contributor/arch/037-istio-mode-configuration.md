@@ -44,7 +44,7 @@ The OTLP Gateway is deployed as a DaemonSet and serves as the unified ingress po
 
 | Resource                | Behavior                                                           | Rationale                                                                                                                                                                                                                                                                                          | 
 |-------------------------|--------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Pod Annotation          | `sidecar.istio.io/interceptionMode: TPROXY`                        | This annotation is ineffective in the current configuration because `includeInboundPorts: ""` disables all inbound interception. TPROXY only affects traffic that is intercepted by the sidecar.                                                                                                   |
+| Pod Annotation          | `sidecar.istio.io/interceptionMode: TPROXY`                        | This annotation is ineffective in the current configuration because `traffic.sidecar.istio.io/includeInboundPorts: ""` disables all inbound interception. TPROXY only affects traffic that is intercepted by the sidecar.                                                                          |
 | Pod Annotation          | `traffic.sidecar.istio.io/includeInboundPorts: ""`                 | The Gateway receives telemetry data on OTLP ports (4317, 4318) from both in-mesh and out-of-mesh clients. Excluding all inbound ports from sidecar interception allows direct connections without requiring mTLS, improving ingestion performance and compatibility.                               | 
 | PeerAuthentication      | PERMISSIVE mTLS mode                                               | The Gateway must accept telemetry from clients that cannot provide mTLS certificates (out-of-mesh workloads, legacy clients). PERMISSIVE mode allows both plain-text and mTLS connections, supporting the Gateway's role as a universal ingress point.                                             |        
 | DestinationRule         | `TLS mode: DISABLE` for all OTLP Services                          | The Gateway Services (OTLP ingress endpoints) use node-local routing where clients connect to the same-node Gateway pod without encryption. Other telemetry components and application workloads must reach these endpoints over plain-text, so TLS is disabled for client-to-Gateway connections. |      
@@ -176,30 +176,30 @@ This section describes how each component behaves under different `istio.mode` c
 
 The OTLP Gateway receives telemetry data on OTLP ports (4317 gRPC, 4318 HTTP) and forwards it to configured backends.
 
-| Mode         | Sidecar Injection | Pod Annotations           | Istio Resources                                      |
-|--------------|-------------------|---------------------------|------------------------------------------------------|
-| `On`         | `inject: "true"`  | `includeInboundPorts: ""` | DestinationRule (TLS DISABLE), NetworkPolicy (15090) |
-| `IngestOnly` | `inject: "false"` | (none)                    | (none)                                               |
-| `ExportOnly` | `inject: "true"`  | `includeInboundPorts: ""` | DestinationRule (TLS DISABLE), NetworkPolicy (15090) |
-| `Off`        | `inject: "false"` | (none)                    | (none)                                               |
+| Mode         | Sidecar Injection                  | Pod Annotations                                   | Istio Resources                                      |
+|--------------|-------------------------------------|---------------------------------------------------|------------------------------------------------------|
+| `On`         | `sidecar.istio.io/inject: "true"`  | `traffic.sidecar.istio.io/includeInboundPorts: ""` | DestinationRule (TLS DISABLE), NetworkPolicy (15090) |
+| `IngestOnly` | `sidecar.istio.io/inject: "false"` | (none)                                            | (none)                                               |
+| `ExportOnly` | `sidecar.istio.io/inject: "true"`  | `traffic.sidecar.istio.io/includeInboundPorts: ""` | DestinationRule (TLS DISABLE), NetworkPolicy (15090) |
+| `Off`        | `sidecar.istio.io/inject: "false"` | (none)                                            | (none)                                               |
 
 #### Metric Agent (Prometheus Input Disabled)
 
-| Mode         | Sidecar Injection | Pod Annotations                                                          | Istio Resources       | Prometheus Receivers |
-|--------------|-------------------|--------------------------------------------------------------------------|-----------------------|----------------------|
-| `On`         | `inject: "true"`  | `excludeInboundPorts: "8888"`, `includeOutboundPorts: "{backend_ports}"` | NetworkPolicy (15090) | (none)               |
-| `IngestOnly` | `inject: "false"` | (none)                                                                   | (none)                | (none)               |
-| `ExportOnly` | `inject: "true"`  | `excludeInboundPorts: "8888"`, `includeOutboundPorts: "{backend_ports}"` | NetworkPolicy (15090) | (none)               |
-| `Off`        | `inject: "false"` | (none)                                                                   | (none)                | (none)               |
+| Mode         | Sidecar Injection                  | Pod Annotations                                                                                                                              | Istio Resources       | Prometheus Receivers |
+|--------------|-------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|-----------------------|----------------------|
+| `On`         | `sidecar.istio.io/inject: "true"`  | `traffic.sidecar.istio.io/excludeInboundPorts: "8888"`, `traffic.sidecar.istio.io/includeOutboundPorts: "{backend_ports}"`                  | NetworkPolicy (15090) | (none)               |
+| `IngestOnly` | `sidecar.istio.io/inject: "false"` | (none)                                                                                                                                       | (none)                | (none)               |
+| `ExportOnly` | `sidecar.istio.io/inject: "true"`  | `traffic.sidecar.istio.io/excludeInboundPorts: "8888"`, `traffic.sidecar.istio.io/includeOutboundPorts: "{backend_ports}"`                  | NetworkPolicy (15090) | (none)               |
+| `Off`        | `sidecar.istio.io/inject: "false"` | (none)                                                                                                                                       | (none)                | (none)               |
 
 #### Metric Agent (Prometheus Input Enabled)
 
-| Mode         | Sidecar Injection | Pod Annotations                                                                                                      | Istio Resources                                           | Prometheus Receivers                                             |
-|--------------|-------------------|----------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------|------------------------------------------------------------------|
-| `On`         | `inject: "true"`  | `excludeInboundPorts: "8888"`, `includeOutboundPorts: "{backend_ports}"`, `proxy.istio.io/config`, `userVolumeMount` | NetworkPolicy (15090), Volume (`/etc/istio-output-certs`) | `app-services` (drops HTTPS), `app-services-secure` (HTTPS mTLS) |
-| `IngestOnly` | `inject: "true"`  | `excludeInboundPorts: "8888"`, `includeOutboundPorts: "{backend_ports}"`, `proxy.istio.io/config`, `userVolumeMount` | NetworkPolicy (15090), Volume (`/etc/istio-output-certs`) | `app-services` (drops HTTPS), `app-services-secure` (HTTPS mTLS) |
-| `ExportOnly` | `inject: "true"`  | `excludeInboundPorts: "8888"`, `includeOutboundPorts: "{backend_ports}"`                                             | NetworkPolicy (15090)                                     | `app-services` (all targets)                                     |
-| `Off`        | `inject: "false"` | (none)                                                                                                               | (none)                                                    | `app-services` (all targets)                                     |
+| Mode         | Sidecar Injection                  | Pod Annotations                                                                                                                                                                                                | Istio Resources                                           | Prometheus Receivers                                             |
+|--------------|-------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------|------------------------------------------------------------------|
+| `On`         | `sidecar.istio.io/inject: "true"`  | `traffic.sidecar.istio.io/excludeInboundPorts: "8888"`, `traffic.sidecar.istio.io/includeOutboundPorts: "{backend_ports}"`, `proxy.istio.io/config`, `sidecar.istio.io/userVolumeMount`                      | NetworkPolicy (15090), Volume (`/etc/istio-output-certs`) | `app-services` (drops HTTPS), `app-services-secure` (HTTPS mTLS) |
+| `IngestOnly` | `sidecar.istio.io/inject: "true"`  | `traffic.sidecar.istio.io/excludeInboundPorts: "8888"`, `traffic.sidecar.istio.io/includeOutboundPorts: "{backend_ports}"`, `proxy.istio.io/config`, `sidecar.istio.io/userVolumeMount`                      | NetworkPolicy (15090), Volume (`/etc/istio-output-certs`) | `app-services` (drops HTTPS), `app-services-secure` (HTTPS mTLS) |
+| `ExportOnly` | `sidecar.istio.io/inject: "true"`  | `traffic.sidecar.istio.io/excludeInboundPorts: "8888"`, `traffic.sidecar.istio.io/includeOutboundPorts: "{backend_ports}"`                                                                                    | NetworkPolicy (15090)                                     | `app-services` (all targets)                                     |
+| `Off`        | `sidecar.istio.io/inject: "false"` | (none)                                                                                                                                                                                                         | (none)                                                    | `app-services` (all targets)                                     |
 
 #### Metric Agent (Istio Input Enabled)  
 
@@ -210,34 +210,34 @@ When at least one MetricPipeline has `input.istio.enabled: true`, the Metric Age
 - **NOT required when**: Mode is `IngestOnly` or `Off` (no sidecar, so annotation has no effect)
 - **Purpose**: Bypasses the sidecar to allow direct access to Istio control plane metrics endpoints (istiod, Envoy sidecars)
 
-| Mode         | Sidecar Injection | Additional Annotations (for Istio scraping)   |
-|--------------|-------------------|-----------------------------------------------|
-| `On`         | `inject: "true"`  | `includeOutboundIPRanges: ""`                 |
-| `IngestOnly` | `inject: "false"` | (none)                                        |
-| `ExportOnly` | `inject: "true"`  | `includeOutboundIPRanges: ""`                 |
-| `Off`        | `inject: "false"` | (none)                                        |
+| Mode         | Sidecar Injection                  | Additional Annotations (for Istio scraping)              |
+|--------------|-------------------------------------|----------------------------------------------------------|
+| `On`         | `sidecar.istio.io/inject: "true"`  | `traffic.sidecar.istio.io/includeOutboundIPRanges: ""`   |
+| `IngestOnly` | `sidecar.istio.io/inject: "false"` | (none)                                                   |
+| `ExportOnly` | `sidecar.istio.io/inject: "true"`  | `traffic.sidecar.istio.io/includeOutboundIPRanges: ""`   |
+| `Off`        | `sidecar.istio.io/inject: "false"` | (none)                                                   |
 
 #### OTel Log Agent
 
 The OTel Log Agent collects container logs using file-based collection and forwards them to backends.
 
-| Mode         |  Sidecar Injection | Pod Annotations               | Istio Resources       |
-|--------------|--------------------|-------------------------------|-----------------------|
-| `On`         |  `inject: "true"`  | `excludeInboundPorts: "8888"` | NetworkPolicy (15090) |
-| `IngestOnly` |  `inject: "false"` | (none)                        | (none)                |
-| `ExportOnly` |  `inject: "true"`  | `excludeInboundPorts: "8888"` | NetworkPolicy (15090) |
-| `Off`        |  `inject: "false"` | (none)                        | (none)                |
+| Mode         |  Sidecar Injection                  | Pod Annotations                                      | Istio Resources       |
+|--------------|--------------------------------------|------------------------------------------------------|-----------------------|
+| `On`         |  `sidecar.istio.io/inject: "true"`  | `traffic.sidecar.istio.io/excludeInboundPorts: "8888"` | NetworkPolicy (15090) |
+| `IngestOnly` |  `sidecar.istio.io/inject: "false"` | (none)                                               | (none)                |
+| `ExportOnly` |  `sidecar.istio.io/inject: "true"`  | `traffic.sidecar.istio.io/excludeInboundPorts: "8888"` | NetworkPolicy (15090) |
+| `Off`        |  `sidecar.istio.io/inject: "false"` | (none)                                               | (none)                |
 
 #### Fluent Bit
 
 Fluent Bit provides legacy log collection capabilities using file-based collection.
 
-| Mode         |  Sidecar Injection | Pod Annotations                     | Istio Resources       |
-|--------------|--------------------|-------------------------------------|-----------------------|
-| `On`         |  `inject: "true"`  | `excludeInboundPorts: "2020, 2021"` | NetworkPolicy (15090) |
-| `IngestOnly` |  `inject: "false"` | (none)                              | (none)                |
-| `ExportOnly` |  `inject: "true"`  | `excludeInboundPorts: "2020, 2021"` | NetworkPolicy (15090) |
-| `Off`        |  `inject: "false"` | (none)                              | (none)                |
+| Mode         |  Sidecar Injection                  | Pod Annotations                                              | Istio Resources       |
+|--------------|--------------------------------------|--------------------------------------------------------------|-----------------------|
+| `On`         |  `sidecar.istio.io/inject: "true"`  | `traffic.sidecar.istio.io/excludeInboundPorts: "2020, 2021"` | NetworkPolicy (15090) |
+| `IngestOnly` |  `sidecar.istio.io/inject: "false"` | (none)                                                       | (none)                |
+| `ExportOnly` |  `sidecar.istio.io/inject: "true"`  | `traffic.sidecar.istio.io/excludeInboundPorts: "2020, 2021"` | NetworkPolicy (15090) |
+| `Off`        |  `sidecar.istio.io/inject: "false"` | (none)                                                       | (none)                |
 
 
 ### Istio Processors
