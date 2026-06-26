@@ -15,7 +15,7 @@ require (
 	github.com/vladopajic/go-test-coverage/v2 v2.18.8
 	github.com/yannh/kubeconform v0.8.0
 	github.com/yeya24/promlinter v0.3.0
-	golang.org/x/tools v0.46.0
+	golang.org/x/tools v0.47.0
 	gotest.tools/gotestsum v1.13.0
 	helm.sh/helm/v4 v4.2.2
 	k8s.io/code-generator v0.36.2
