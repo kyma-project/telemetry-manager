@@ -9,13 +9,12 @@ func _() {
 	// Re-run the stringer command to generate them again.
 	var x [1]struct{}
 	_ = x[placeholder-0]
-	_ = x[DeployOTLPGateway-1]
-	_ = x[UnlimitedPipelineCount-2]
+	_ = x[UnlimitedPipelineCount-1]
 }
 
-const _FeatureFlag_name = "placeholderDeployOTLPGatewayUnlimitedPipelineCount"
+const _FeatureFlag_name = "placeholderUnlimitedPipelineCount"
 
-var _FeatureFlag_index = [...]uint8{0, 11, 28, 50}
+var _FeatureFlag_index = [...]uint8{0, 11, 33}
 
 func (i FeatureFlag) String() string {
 	idx := int(i) - 0
