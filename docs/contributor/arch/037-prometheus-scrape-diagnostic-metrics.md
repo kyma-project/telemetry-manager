@@ -12,21 +12,21 @@ related:
 
 The metric agent's Prometheus receivers produce per-target diagnostic metrics for every scrape operation (`up`, `scrape_duration_seconds`, `scrape_samples_scraped`, `scrape_samples_post_metric_relabeling`, `scrape_series_added`, `scrape_body_size_bytes`, `scrape_timeout_seconds`, `scrape_sample_limit`). These metrics report the health and behavior of individual scrape targets.
 
-### The Problem
+### Problem
 
-These metrics are currently dropped before reaching user backends (controlled by `diagnosticMetrics.enabled` in the MetricPipeline spec) and are not exposed for internal monitoring. We have no visibility into whether scrape targets are healthy, hitting limits, or timing out.
+These metrics are currently dropped before reaching user backends (controlled by `diagnosticMetrics.enabled` in the `MetricPipeline` spec) and are not exposed for internal monitoring. There is no visibility into whether scrape targets are healthy, hitting limits, or timing out.
 
 See [#2955](https://github.com/kyma-project/telemetry-manager/issues/2955).
 
 ### Cardinality
 
-The scrape diagnostic metrics themselves are not a cardinality concern in absolute terms. At 8 metrics × n targets, even 300 pods produce only 2,400 series — manageable for any Prometheus instance.
+The scrape diagnostic metrics themselves are not a cardinality concern in absolute terms. At 8 metrics × n targets, even 300 pods produce only 2,400 series, which is manageable for any Prometheus instance.
 
-However, we cannot predict how many scrape targets exist and the series count scales linearly with number of targets. Additionally, each series carries multiple labels from `resource_to_telemetry_conversion` (`k8s_pod_name`, `k8s_namespace_name`, `k8s_node_name`, etc.) and inflates per-series memory cost.
+However, the number of scrape targets is unpredictable, and the series count scales linearly with the number of targets. Additionally, each series carries multiple labels from `resource_to_telemetry_conversion` (`k8s_pod_name`, `k8s_namespace_name`, `k8s_node_name`, etc.) and inflates per-series memory cost.
 
 ### Per-Metric Assessment
 
-The metric agent has four Prometheus scrape jobs: `app-pods`, `app-services`, and `istio`, `app-services-secure`.
+The metric agent has four Prometheus scrape jobs: `app-pods`, `app-services`, `istio`, and `app-services-secure`.
 
 | Metric                                   | Decision | Purpose                                                                                           |
 |------------------------------------------|----------|---------------------------------------------------------------------------------------------------|
@@ -43,21 +43,23 @@ The metric agent has four Prometheus scrape jobs: `app-pods`, `app-services`, an
 
 `scrape_samples_post_metric_relabeling` is equal to `scrape_samples_scraped` in `prometheus` input scrape jobs. It is only useful in `istio` and input scrape jobs for identifying how many metric series are discarded after relabeling.
 
-Using a combination of these metrics, we can identify the root cause of scrape failures:
+A combination of these metrics identifies the root cause of scrape failures:
 
-| Failure mode                    | `up`   |  `scrape_body_size_bytes` | `scrape_duration_seconds` | `scrape_samples_scraped`  |
-|---------------------------------|--------|---------------------------|---------------------------|---------------------------|
-| Target unreachable              | 0      | 0                         | low                       | 0                         |
-| Scrape timeout                  | 0      | 0                         | ≈ scrape_interval         | 0                         |
-| Body size limit exceeded (20MB) | 0      | -1                        | varies                    | varies                    |
-| Sample limit exceeded (50000)   | 0      | 0                         | varies                    | ≥ 50000                   |
-| Healthy                         | 1      | > 0                       | low                       | > 0                       |
+| Failure mode                    | `up`   | `scrape_body_size_bytes` | `scrape_duration_seconds` | `scrape_samples_scraped`  |
+|---------------------------------|--------|--------------------------|---------------------------|---------------------------|
+| Target unreachable              | 0      | 0                        | low                       | 0                         |
+| Scrape timeout                  | 0      | 0                        | ≈ scrape_interval         | 0                         |
+| Body size limit exceeded (20MB) | 0      | -1                       | varies                    | varies                    |
+| Sample limit exceeded (50000)   | 0      | 0                        | varies                    | ≥ 50000                   |
+| Healthy                         | 1      | > 0                      | low                       | > 0                       |
 
 ## Considered Options
 
 ### Option A: Always-On Exposure (No Aggregation)
 
 Expose all 8 scrape diagnostic metrics per target to the internal monitoring system at all times.
+
+This approach has the following trade-offs:
 
 - Full per-target attribution for debugging
 - No additional pipeline complexity
@@ -66,7 +68,7 @@ Expose all 8 scrape diagnostic metrics per target to the internal monitoring sys
 
 ### Option B: Always-On Exposure with Aggregation
 
-Expose aggregated scrape metrics (for example, max per scrape job) to bound cardinality. Since Prometheus cannot do any aggregation, this happens downstream in the OTel Collector using the `metricstransform` or `transform` processor.
+Expose aggregated scrape metrics (for example, max per scrape job) to bound cardinality. Because Prometheus cannot perform aggregation, this happens downstream in the OpenTelemetry (OTel) Collector using the `metricstransform` or `transform` processor.
 
 Per-metric aggregation guidance:
 
@@ -79,27 +81,30 @@ Per-metric aggregation guidance:
 | `scrape_body_size_bytes`                | Never aggregate   | Aggregation destroys the -1 sentinel meaning                          |
 | `scrape_samples_post_metric_relabeling` | `max`             | Same as `scrape_samples_scraped`                                      |
 
-- Bounded cardinality regardless of cluster size (series count = number of jobs × aggregation groups, not number of pods)
-- Safe for self-monitor ingestion — no risk of OOM from workload growth
-- Reduces metric agent memory because the Prometheus exporter holds fewer series
-- Loses per-pod attribution — "some target in the istio job has 48,000 samples" but not *which* pod
+This approach has the following trade-offs:
+
+- Bounded cardinality regardless of number of targets
+- Safe for self-monitor ingestion
+- Loses per-pod attribution. The result tells you "some target in the istio job has 48,000 samples" but not which pod.
 - For churn debugging, per-pod detail is required to find the specific proxy
-- Requires `metricstransform` processor in the collector image (dependency)
+- Requires additional dependency in the collector image (`metricstransform` processor)
 
 ### Option C: On-Demand Exposure via Override (Chosen)
 
-Expose scrape metrics only when explicitly enabled through the `telemetry-overrides` ConfigMap. On its own, on-demand exposure lets scrape failures go unnoticed until users report missing metrics. To close this gap, the self-monitor continuously evaluates scrape health using aggregated alerting rules and surfaces issues as conditions on the MetricPipeline CR. The self-monitor provides cluster-level detection without per-target cardinality cost, and when it fires, operators enable on-demand metrics for per-target investigation.
+Expose scrape metrics only when explicitly enabled through the `telemetry-overrides` ConfigMap. On its own, on-demand exposure lets scrape failures go unnoticed until users report missing metrics. To close this gap, the self-monitor continuously evaluates scrape health using aggregated alerting rules and surfaces issues as conditions on the `MetricPipeline` CR. The self-monitor provides cluster-level detection without per-target cardinality cost, and when it fires, operators enable on-demand metrics for per-target investigation.
 
-- Zero cardinality cost by default
+This approach has the following trade-offs:
+
+- Zero cost by default
 - Full per-target detail when needed for investigation
 - No additional processor dependencies
-- Self-monitor closes the detection gap — issues are identified before users report them
+- Self-monitor closes the detection gap
 - Requires manual intervention to enable detailed metrics during incidents
-- Metrics are not available for historical analysis (only from the point of enablement)
+- Metrics are not available for historical analysis
 
 ## Decision
 
-Expose scrape diagnostic metrics on-demand using the `telemetry-overrides` ConfigMap. The self-monitor continuously monitors scrape health and alerts on issues. This approach avoids storing unnecessary metric series in the internal monitoring system while still identifying clusters with problems. When the self-monitor detects an issue within a cluster, operators can enable on-demand scrape metrics for detailed investigation. The self monitor implementation will be covered by a separate ADR in the future.
+Expose scrape diagnostic metrics on-demand using the `telemetry-overrides` ConfigMap. The self-monitor continuously monitors scrape health and alerts on issues. This approach avoids storing unnecessary metric series in the internal monitoring system while still identifying clusters with problems. When the self-monitor detects an issue within a cluster, operators can enable on-demand scrape metrics for detailed investigation. A separate ADR covers the self-monitor implementation.
 
 **Rationale:**
 - Always-on exposure carries unbounded cardinality risk in clusters with many scrape targets.
@@ -124,7 +129,7 @@ Expose scrape diagnostic metrics on-demand using the `telemetry-overrides` Confi
 
 ### Negative
 
-- Scrape health metrics are not available for historical trending or capacity planning (only available from the moment of enablement).
+- Scrape health metrics are not available for historical trending (only available from the moment of enablement).
 - Incident response requires a manual step: updating the `telemetry-overrides` ConfigMap before diagnostic data becomes available.
 - The metric agent's memory increases when on-demand metrics are enabled. Testing with 100 scrape targets showed ~4–5 MB additional memory usage. Operators must disable the override after investigation to reclaim memory.
 
@@ -134,17 +139,13 @@ Expose scrape diagnostic metrics on-demand using the `telemetry-overrides` Confi
 
 The ops scrape metrics pipeline sits after the enrichment pipeline and before the output pipelines:
 
-```
-routing/enrichment ──┬──> metrics/output-{user-pipeline}  (existing)
-                     └──> metrics/ops-scrape-metrics       (new, gated by override)
-                            └─ prometheus/ops-scrape-metrics (:9090)
-```
+![Architecture diagram with ops scrape metrics pipeline](../assets/prometheus-scrape-diagnostic-metrics.png)
 
-The Prometheus exporter on port 9090 is always present in the OTel Collector config. When the override is disabled, no data flows to it (the pipeline is not connected to the enrichment routing connector). When the override is enabled, a routing table entry with `action: copy` matches the 8 diagnostic metric names and copies them to the ops pipeline. The existing routing entries remain unchanged.
+The Prometheus exporter on port 9090 is always present in the OTel Collector configuration. When the override is disabled, no data flows to it (the pipeline is not connected to the enrichment routing connector). When the override is enabled, a routing table entry with `action: copy` matches the 8 diagnostic metric names and copies them to the ops pipeline. The existing routing entries remain unchanged.
 
-The `metrics/ops-scrape-metrics` pipeline always exists in the service config so that the Prometheus exporter starts and listens on port 9090. The gating mechanism is the `routing/enrichment` connector's routing table:
+The `metrics/ops-scrape-metrics` pipeline always exists in the service configuration so that the Prometheus exporter starts and listens on port 9090. The gating mechanism is the `routing/enrichment` connector's routing table:
 
-**Override disabled (default)** — the routing connector does not route to the ops pipeline:
+**Override disabled (default):** The routing connector does not route to the ops pipeline.
 
 ```yaml
 connectors:
@@ -156,7 +157,7 @@ connectors:
                   - metrics/output-{user-pipeline}
 ```
 
-**Override enabled** — the routing connector prepends a copy entry for diagnostic metrics:
+**Override enabled:** The routing connector prepends a copy entry for diagnostic metrics.
 
 ```yaml
 connectors:
@@ -173,13 +174,13 @@ connectors:
                   - metrics/output-{user-pipeline}
 ```
 
-The `action: copy` entry matches only diagnostic metrics and copies them to the ops pipeline without affecting the subsequent routing entries. The ops pipeline has no filter processor — the routing condition itself acts as the filter.
+The `action: copy` entry matches only diagnostic metrics and copies them to the ops pipeline without affecting the subsequent routing entries. The ops pipeline has no filter processor: the routing condition itself acts as the filter.
 
 ### Prometheus Exporter Configuration
 
 The Prometheus exporter on port 9090 uses:
-- `resource_to_telemetry_conversion.enabled: true` — promotes OTel resource attributes (like `k8s.pod.name`) to Prometheus metric labels for target identification
-- `metric_expiration: 5m` — automatically removes stale series when a target disappears, preventing unbounded growth from pod churn
+- `resource_to_telemetry_conversion.enabled: true`: Promotes OTel resource attributes such as `k8s.pod.name` to Prometheus metric labels for target identification.
+- `metric_expiration: 5m`: Automatically removes stale series when a target disappears, preventing unbounded growth from pod churn.
 
 ### Network Policy and Istio
 
@@ -187,7 +188,7 @@ Port 9090 is included in the metric agent's network policy ingress rules and exc
 
 ### Override Configuration
 
-The `telemetry-overrides` ConfigMap in the Kyma system namespace controls the feature:
+The `telemetry-overrides` ConfigMap in the `kyma-system` namespace controls the feature:
 
 ```yaml
 apiVersion: v1
@@ -201,4 +202,4 @@ data:
       prometheusScrapeMetricsEnabled: true
 ```
 
-Changing this value triggers a reconciliation that rebuilds the metric agent config with or without the ops pipeline data flow.
+Changing this value triggers a reconciliation that rebuilds the metric agent configuration with or without the ops pipeline data flow.
