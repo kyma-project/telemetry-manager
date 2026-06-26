@@ -101,7 +101,6 @@ var (
 	additionalWorkloadAnnotations    cliflags.Map
 	additionalWorkloadPodLabels      cliflags.Map
 	additionalWorkloadPodAnnotations cliflags.Map
-	deployOTLPGateway                bool
 	unlimitedPipelines               bool
 )
 
@@ -185,7 +184,6 @@ func run() error {
 		config.WithAdditionalWorkloadAnnotations(additionalWorkloadAnnotations),
 		config.WithAdditionalWorkloadPodLabels(additionalWorkloadPodLabels),
 		config.WithAdditionalWorkloadPodAnnotations(additionalWorkloadPodAnnotations),
-		config.WithDeployOTLPGateway(featureflags.IsEnabled(featureflags.DeployOTLPGateway)),
 		config.WithUnlimitedPipelines(featureflags.IsEnabled(featureflags.UnlimitedPipelineCount)),
 	)
 
@@ -431,7 +429,6 @@ func logBuildAndProcessInfo() {
 
 func initializeFeatureFlags() {
 	// Placeholder for future feature flag initializations.
-	featureflags.Set(featureflags.DeployOTLPGateway, deployOTLPGateway)
 	featureflags.Set(featureflags.UnlimitedPipelineCount, unlimitedPipelines)
 }
 
@@ -447,7 +444,6 @@ func parseFlags() {
 	flag.Var(&additionalWorkloadPodLabels, "additional-workload-pod-label", "Additional label to add to all created workload pods in key=value format")
 	flag.Var(&additionalWorkloadPodAnnotations, "additional-workload-pod-annotation", "Additional annotation to add to all created workload pods in key=value format")
 
-	flag.BoolVar(&deployOTLPGateway, "deploy-otlp-gateway", false, "Enable deploying unified OTLP Gateway")
 	flag.BoolVar(&unlimitedPipelines, "unlimited-pipelines", false, "Allow unlimited number of OTEL pipelines")
 
 	flag.Parse()
