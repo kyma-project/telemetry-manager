@@ -12,13 +12,13 @@ The self-monitor is a single-replica Prometheus Deployment that evaluates alert 
 
 Its current static resource allocation (`memoryRequest: 50Mi`, `memoryLimit: 512Mi`) is too coarse: the request is far below steady-state usage, causing poor scheduling bin-packing and wasted reserved capacity.
 
-VPA support was added in [#3511](https://github.com/kyma-project/telemetry-manager/issues/3511) and reverted in [#3579](https://github.com/kyma-project/telemetry-manager/issues/3579) because the pod was OOMKilled on every startup. The root cause was using `controlledValues: RequestsAndLimits` — VPA observed low steady-state memory, shrank both request and limit to match, and the next restart killed the pod before it became ready. This ADR investigates the failure mode and proposes the correct VPA configuration.
+VPA support was added in [#3511](https://github.com/kyma-project/telemetry-manager/issues/3511) and reverted in [#3579](https://github.com/kyma-project/telemetry-manager/issues/3579) because the pod was OOMKilled on every startup. The root cause was using `controlledValues: RequestsAndLimits` (VPA would set both requests and limits) — VPA would start with low request and limits which is not enough for WAL Compression thus running out of memory. This ADR investigates the failure mode and proposes the correct VPA configuration.
 
 See [#3615](https://github.com/kyma-project/telemetry-manager/issues/3615) for more information.
 
 ### Background: Prometheus WAL Startup Spike
 
-When Prometheus starts, it replays its Write-Ahead Log (WAL) to restore in-memory state. The WAL holds all samples from the last two hours (controlled by `--storage.tsdb.min-block-duration`). During replay, Prometheus allocates scratch memory proportional to the WAL size, producing a peak that is typically 2–3x the steady-state working set.
+When Prometheus starts, it replays its Write-Ahead Log (WAL) to restore in-memory state. The WAL holds all samples from the last two hours (controlled by `--storage.tsdb.min-block-duration`). During replay, Prometheus allocates scratch memory proportional to the WAL size, producing a peak that is typically more than the steady-state working set.
 
 For the self-monitor, steady-state memory is low because it scrapes only a handful of targets with short retention. However, after any pod restart, the WAL replay spike still occurs. If VPA has reduced the limit below that spike, the pod is OOMKilled before it is ever ready — and the pod restarts again, in an OOMKill loop.
 
@@ -36,7 +36,7 @@ Steady-state memory is dominated by the time-series cardinality, while the start
 
 ### How Other Projects Handle This
 
-Gardener's Prometheus VPA configuration (`pkg/component/observability/monitoring/prometheus/vpa.go`) uses `controlledValues: RequestsOnly` with `minAllowed.memory: 150Mi` and **no static memory limit** on the container. VPA manages only the memory request for scheduling efficiency, and Prometheus is free to allocate as much memory as the node has available — bounded only by VPA's `maxAllowed` recommendation cap.
+Gardener's Prometheus VPA configuration (`https://github.com/gardener/gardener/blob/master/pkg/component/observability/monitoring/prometheus/vpa.go`) uses `controlledValues: RequestsOnly` with `minAllowed.memory: 150Mi` and **no static memory limit** on the container. VPA manages only the memory request for scheduling efficiency, and Prometheus is free to allocate as much memory as the node has available — bounded only by VPA's `maxAllowed` recommendation cap.
 
 The Prometheus Operator community follows the same pattern. The reasoning: static limits on a workload with a large startup spike either waste reserved capacity (if set high enough to cover the spike) or cause OOMKill loops (if set lower). Removing the limit lets the kernel absorb transient spikes while the scheduler still receives a meaningful request through VPA.
 
@@ -76,19 +76,10 @@ spec:
 VPA manages only the memory request. The `maxAllowed` is computed from the observed cluster node count and caps how high VPA can push the request, so VPA cannot recommend a request that the smallest node could not honor.
 
 ```
-maxAllowedMemory = min(32Mi + nodeCount × 16Mi, 512Mi)
+maxAllowedMemory = 512MiB
 ```
 
-Worked examples:
-
-| Nodes | Formula result | `maxAllowed` |
-|------:|---------------:|-------------:|
-| 1     | 48 MiB         | 48 MiB       |
-| 10    | 192 MiB        | 192 MiB      |
-| 30    | 512 MiB        | 512 MiB      |
-| 100   | 1 632 MiB      | 512 MiB      |
-
-The cap of 512 MiB keeps VPA's request recommendation modest in absolute terms. The base of 32 MiB ensures small clusters still get a usable ceiling that VPA can grow into.
+The cap of 512 MiB keeps VPA's request recommendation is the current max memory limit for the self-monitor pod.
 
 ### Memory Limit
 
@@ -128,16 +119,6 @@ startup := &corev1.Probe{
 
 A `WithStartupProbe` helper must be added to `internal/resources/common/pod_spec.go` alongside the existing `WithProbes`, then wired into the self-monitor container builder.
 
-### Prometheus Version and WAL Flags
-
-The self-monitor ships Prometheus **3.11.3** (built from source in `dependencies/telemetry-self-monitor/Dockerfile`, FIPS variant is `prometheus-fips:3.11.3`).
-
-Two WAL-related flags are evaluated here:
-
-- **`--storage.tsdb.wal-compression`**: enabled by default since Prometheus 2.20. On 3.11.3 it is already on; passing the flag explicitly is a no-op. **No change required.**
-- **`--enable-feature=memory-snapshot-on-shutdown`**: writes an in-memory snapshot to `--storage.tsdb.path` at graceful shutdown so the next start can skip WAL replay. This flag provides no benefit with the self-monitor's `EmptyDir` storage. When a pod is deleted or evicted — by VPA in `Recreate` mode, by a node drain, or after an OOMKill loop — the `EmptyDir` volume is destroyed along with the pod and the snapshot is gone before the replacement pod starts. The only scenario where it could help is a container restart within the same running pod, but OOMKill delivers `SIGKILL` with no opportunity for a graceful write. **Not adopted.** The flag would only become useful if storage were migrated to a PersistentVolume, which this ADR explicitly rejects.
-
-No new flags are added to the argument list.
 
 ### Rejected Alternatives
 
@@ -156,9 +137,6 @@ Issue [#2955](https://github.com/kyma-project/telemetry-manager/issues/2955) tra
 
 When that work lands, a container memory limit may become advisable to bound the worst-case footprint. The recommended approach is a simple percentage of the smallest node's allocatable memory (reusing the existing `nodesize.VPAMaxAllowedMemory()` helper used for OTel components in [ADR 033](033-vertical-pod-autoscaler-VPA-architecture.md)), not a workload-derived formula. The exact percentage should be chosen based on observed memory in production after [#2955](https://github.com/kyma-project/telemetry-manager/issues/2955) is rolled out.
 
-### Sharding
-
-If a single self-monitor instance ever outgrows a node — well beyond what is foreseeable today — the standard Prometheus pattern is to shard by scrape target using `hashmod` relabeling. The scrape configuration is already generated programmatically (`internal/selfmonitor/config/config_builder.go`), and the alert webhook handler already de-duplicates by pipeline name, so the change would be localized. This is not on the near-term roadmap.
 
 ## Consequences
 
@@ -178,91 +156,11 @@ If a single self-monitor instance ever outgrows a node — well beyond what is f
 
 The test plan covers manual cluster verification, a restart stress test that reproduces the original failure mode, and a high-cardinality simulation for large-cluster confidence. Unit tests for the resource builder and reconciler integration tests are implicit deliverables of the implementation PR and are not detailed here.
 
-### Manual Cluster Verification
-
-```bash
-# Provision a cluster and deploy
-make provision-k3d && make deploy-experimental
-
-# Confirm the VPA resource has the correct shape
-kubectl -n kyma-system get vpa telemetry-self-monitor -o yaml
-#   spec.resourcePolicy.containerPolicies[0].controlledValues: RequestsOnly
-#   spec.resourcePolicy.containerPolicies[0].minAllowed.memory: 128Mi
-#   spec.resourcePolicy.containerPolicies[0].maxAllowed.memory: min(32Mi + nodeCount × 16Mi, 512Mi)
-
-# Wait ~5 minutes for VPA to gather metrics, then inspect the recommendation
-kubectl -n kyma-system get vpa telemetry-self-monitor \
-  -o jsonpath='{.status.recommendation.containerRecommendations[0]}'
-
-# Confirm the pod has no memory limit and the request matches VPA's recommendation
-kubectl -n kyma-system get pod -l app.kubernetes.io/name=telemetry-self-monitor \
-  -o jsonpath='{.items[0].spec.containers[0].resources}' | jq
-#   limits.memory must be absent
-#   requests.memory must reflect VPA's recommendation (after the first VPA cycle)
-```
-
 ### Restart Stress Test (Reproduces the Original Failure Mode)
 
-This test reproduces the OOMKill loop that caused the original VPA revert. It requires VPA to be present and to have gathered at least 30 minutes of data, so its recommendation is at or below the observed steady-state.
-
-```bash
-# 1. Run for at least 30 minutes so VPA establishes a steady-state recommendation.
-# 2. Snapshot the VPA recommendation.
-kubectl -n kyma-system get vpa telemetry-self-monitor \
-  -o jsonpath='{.status.recommendation}' > /tmp/vpa-snapshot.json
-
-# 3. Force three hard restarts in succession (simulates OOMKill or node eviction).
-for i in 1 2 3; do
-  kubectl -n kyma-system delete pod -l app.kubernetes.io/name=telemetry-self-monitor --force --grace-period=0
-  kubectl -n kyma-system wait pod -l app.kubernetes.io/name=telemetry-self-monitor --for=condition=Ready --timeout=300s
-done
-
-# 4. Verify no OOMKill events were emitted during the three restarts.
-kubectl -n kyma-system get events \
-  --field-selector reason=OOMKilling,involvedObject.kind=Pod \
-  -o jsonpath='{range .items[*]}{.involvedObject.name}{"\n"}{end}' \
-  | grep telemetry-self-monitor && echo "FAIL: OOMKilled" || echo "PASS"
-
-# 5. Verify the startup probe absorbed WAL replay (look for the startup probe result line).
-kubectl -n kyma-system describe pod -l app.kubernetes.io/name=telemetry-self-monitor \
-  | grep -A3 "Startup:"
-```
-
-**Pass criteria:** All three pods reach `Ready` within 5 minutes, no OOMKill events, and the startup probe shows at least one successful check before the liveness probe took over.
+Restart the self-monitor pod multiple times in a row before the WAL compression completes. The self-monitor pod should have scraped from a simple static target (for example, the synthetic exporter). The test verifies that the pod can start, complete WAL replay, and reach `Ready` without OOMKill.
 
 ### High-Cardinality Scale Simulation
 
-The goal is to inflate the scrape target count on a small test cluster to a level equivalent to a 200+ node production cluster, then observe the self-monitor's memory behavior under load and after a forced restart. The output is a record of actual memory consumption that informs future decisions about whether a memory limit is needed.
+The goal is to inflate the scrape target count on a small test cluster to a level equivalent to a 20+ node production cluster, then observe the self-monitor's memory behavior under load. The output is a record of actual memory consumption that informs future decisions about whether a memory limit is needed and how high should it be.
 
-**Why not just use a large cluster:** The self-monitor's memory scales with the number of active time series, not the number of physical nodes per se. Each OTel Collector pod (agent or gateway) exposes the four key series per pipeline. By deploying many synthetic collector-like pods on a small cluster, each advertising the expected metric labels, we can reproduce the time-series volume of a large cluster without provisioning one.
-
-**Setup:**
-
-1. On a 3-node k3d cluster, create the maximum expected pipeline set: 5 `LogPipeline`, 5 `MetricPipeline`, and 5 `TracePipeline` resources, all pointing at a reachable (but otherwise unused) OTLP endpoint.
-
-2. Deploy a fleet of synthetic scrape targets. These are minimal HTTP servers that expose a static Prometheus metrics page containing the four self-monitor series (`otelcol_exporter_sent_metric_points_total`, `otelcol_exporter_send_failed_metric_points_total`, `otelcol_exporter_enqueue_failed_metric_points_total`, `otelcol_receiver_refused_metric_points_total`) with labels matching the self-monitor's scrape config (for example, `job="telemetry-metric-gateway"`, `kyma_pipeline_name="pipeline-N"`). Use a Deployment with 200 replicas to simulate 200 nodes' worth of collectors.
-
-   A minimal synthetic exporter can be a ConfigMap-mounted Nginx config serving static metric text on port 8888:
-
-   ```yaml
-   # static-metrics.txt (one set per pipeline per collector pod)
-   otelcol_exporter_sent_metric_points_total{pipeline="metric-pipeline-0"} 1000
-   otelcol_exporter_send_failed_metric_points_total{pipeline="metric-pipeline-0"} 0
-   otelcol_exporter_enqueue_failed_metric_points_total{pipeline="metric-pipeline-0"} 0
-   otelcol_receiver_refused_metric_points_total{pipeline="metric-pipeline-0"} 0
-   # ... repeat for all 5 pipelines
-   ```
-
-3. Patch the self-monitor's scrape config (or deploy a `ServiceMonitor`-equivalent) to scrape all 200 replicas. Alternatively, annotate the synthetic pods with `telemetry.kyma-project.io/scrape: "true"` if the self-monitor's scrape config already uses that selector.
-
-**Observation window:**
-
-- Wait 15 minutes for the self-monitor to scrape all targets at least once and for WAL to accumulate.
-- Record steady-state memory: `kubectl top pod -n kyma-system -l app.kubernetes.io/name=telemetry-self-monitor`.
-- Force a hard pod delete and measure peak memory during WAL replay: poll `kubectl top` every 5 seconds for the first 2 minutes after the replacement pod starts.
-- Record the VPA recommendation reached after the run: `kubectl -n kyma-system get vpa telemetry-self-monitor -o jsonpath='{.status.recommendation}'`.
-
-**Pass criteria:**
-
-- The pod must reach `Ready` within the 5-minute startup probe budget without OOMKill across the steady-state run and the restart.
-- The observed peak memory and VPA recommendation must be recorded for use as the production-sizing baseline. There is no upper-bound assertion at this stage — the purpose of the run is to characterize behavior, not to validate against a formula.
