@@ -11,7 +11,7 @@ The following example shows a container `myContainer` in Pod `myPod`, running in
   "level": "warn",
   "message": "This is the original message",
   "tenant": "myTenant",
-  "traceID": "123"
+  "trace_id": "123"
 }
 ```
 
@@ -117,7 +117,7 @@ At this point, before further enrichment, the resulting overall log record looks
   "body": "This is the original message",
   "severityNumber": 13,
   "severityText": "warn",
-  "trace_id": 123
+  "traceId": "123"
 }
 ```
 
