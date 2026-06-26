@@ -67,7 +67,6 @@ spec:
         - --cluster-trust-bundle-name={{ .Values.global.caBundle.name }}
         {{- end }}
         {{- if .Values.experimental.enabled }}
-        - --deploy-otlp-gateway=true
         - --unlimited-pipelines=true
         {{- end }}
         command:
