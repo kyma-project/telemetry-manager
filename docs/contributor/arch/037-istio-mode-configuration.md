@@ -18,7 +18,7 @@ Automatic detection provides convenience. However, users face several operationa
 
 - All-or-nothing approach: The current design does not allow granular control. Users cannot selectively enable Istio mode for specific components or use cases (such as backends requiring in-cluster mTLS).
 
-- Migration difficulty: To move toward an "Istio mode OFF by default" model (tracked in [issue #657](https://github.com/kyma-project/telemetry-manager/issues/657)), the system requires a backward-compatible transition path that preserves existing behavior while allowing explicit opt-in configuration.
+- Migration difficulty: To move toward an "Istio mode off by default" model (tracked in [issue #657](https://github.com/kyma-project/telemetry-manager/issues/657)), the system requires a backward-compatible transition path that preserves existing behavior while allowing explicit opt-in configuration.
 
 This proposal adds an API mechanism to explicitly enable or disable Istio mode, providing users with control over when and how Istio integration applies to telemetry components. This addresses [issue #3549](https://github.com/kyma-project/telemetry-manager/issues/3549), which proposes an explicit configuration model that supports eventual migration to an opt-in default while maintaining backward compatibility during the transition.
 
@@ -301,7 +301,7 @@ For clusters without Istio:
 - Users who need Istio integration for export must explicitly set `mode: On` in their Telemetry CR
 
 **Rationale for Keeping Ingestion Enabled (IngestOnly)**:
-- **Metric Agent ingestion functionality**: The Metric Agent's ability to scrape STRICT mTLS workloads using Prometheus input is a valuable feature that users expect to work by default when Istio is present
+- **Metric Agent ingestion functionality**: The Metric Agent's ability to scrape workloads with Istio STRICT mTLS policies using Prometheus input is a valuable feature that users expect to work by default when Istio is present
 - **Gateway ingestion requirements**: The Gateway requires DestinationRule configuration to receive telemetry data correctly in Istio meshes
 - **Minimal overhead when Istio not present**: Ingestion mode only activates when Istio CRDs are detected, so there's no cost in non-Istio clusters
 - **User expectations**: Ingestion features (scraping mTLS workloads, receiving data in mesh) are expected to "just work" when both Istio and Telemetry Manager are installed
@@ -331,6 +331,10 @@ For clusters without Istio:
 **Timeline**:
 - **Phase 1**: Immediate implementation (`mode: On` default)
 - **Phase 2**: After Phase 1 has been stable (`mode: IngestOnly` default)
+
+## Decision
+
+This proposal implements a single `istio.mode` field with four values (`On`, `IngestOnly`, `ExportOnly`, `Off`) as described in the Proposed Solution section. The migration proceeds in two phases as outlined above, providing explicit control over Istio integration while maintaining backward compatibility during the transition.
 
 ## Summary of Changes
 
