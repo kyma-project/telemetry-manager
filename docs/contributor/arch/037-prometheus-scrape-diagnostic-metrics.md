@@ -61,8 +61,13 @@ Expose all 8 scrape diagnostic metrics per target to the internal monitoring sys
 
 This approach has the following trade-offs:
 
+Pros:
+
 - Full per-target attribution for debugging
 - No additional pipeline complexity
+
+Cons:
+
 - Unbounded cardinality risk, see [Cardinality](#cardinality)
 - Memory pressure on the internal monitoring system
 
@@ -83,8 +88,13 @@ Per-metric aggregation guidance:
 
 This approach has the following trade-offs:
 
+Pros:
+
 - Bounded cardinality regardless of number of targets
 - Safe for self-monitor ingestion
+
+Cons:
+
 - Loses per-pod attribution. The result tells you "some target in the istio job has 48,000 samples" but not which pod.
 - For churn debugging, per-pod detail is required to find the specific proxy
 - Requires additional dependency in the collector image (`metricstransform` processor)
@@ -95,16 +105,21 @@ Expose scrape metrics only when explicitly enabled through the `telemetry-overri
 
 This approach has the following trade-offs:
 
+Pros:
+
 - Zero cost by default
 - Full per-target detail when needed for investigation
 - No additional processor dependencies
 - Self-monitor closes the detection gap
+
+Cons:
+
 - Requires manual intervention to enable detailed metrics during incidents
 - Metrics are not available for historical analysis
 
 ## Decision
 
-Expose scrape diagnostic metrics on-demand using the `telemetry-overrides` ConfigMap. The self-monitor continuously monitors scrape health and alerts on issues. This approach avoids storing unnecessary metric series in the internal monitoring system while still identifying clusters with problems. When the self-monitor detects an issue within a cluster, operators can enable on-demand scrape metrics for detailed investigation. A separate ADR covers the self-monitor implementation.
+Expose scrape diagnostic metrics on-demand using the `telemetry-overrides` ConfigMap. The self-monitor continuously monitors scrape health and alerts on issues. This approach avoids storing unnecessary metric series in the internal monitoring system while still identifying clusters with problems. When the self-monitor detects an issue within a cluster, operators can enable on-demand scrape metrics for detailed investigation. A separate ADR will cover the self-monitor implementation in the future.
 
 **Rationale:**
 - Always-on exposure carries unbounded cardinality risk in clusters with many scrape targets.
