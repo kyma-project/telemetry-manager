@@ -88,7 +88,7 @@ This approach has the following trade-offs:
 - Loses per-pod attribution. The result tells you "some target in the istio job has 48,000 samples" but not which pod.
 - For churn debugging, per-pod detail is required to find the specific proxy
 - Requires additional dependency in the collector image (`metricstransform` processor)
-
+- Enabling the override increases metric agent memory (~4–5 MB per 100 scrape targets); operators must disable it after investigation to reclaim memory.
 ### Option C: On-Demand Exposure via Override (Chosen)
 
 Expose scrape metrics only when explicitly enabled through the `telemetry-overrides` ConfigMap. On its own, on-demand exposure lets scrape failures go unnoticed until users report missing metrics. To close this gap, the self-monitor continuously evaluates scrape health using aggregated alerting rules and surfaces issues as conditions on the `MetricPipeline` CR. The self-monitor provides cluster-level detection without per-target cardinality cost, and when it fires, operators enable on-demand metrics for per-target investigation.
