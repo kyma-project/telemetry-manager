@@ -94,6 +94,7 @@ The OTel Log Agent is deployed as a DaemonSet and collects container logs using 
 |----------------|--------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Pod Label      | `sidecar.istio.io/inject: "true"`                      | The OTel Log Agent forwards collected logs to backends. When backends are in-cluster services within the Istio mesh with STRICT mTLS policies, the Agent needs the sidecar to establish mTLS connections for output.                  |
 | Pod Annotation | `traffic.sidecar.istio.io/excludeInboundPorts: "8888"` | The OTel Log Agent exposes its own Prometheus metrics on port 8888. Monitoring systems (Self-Monitor) need to scrape these metrics directly without requiring mTLS, so this port is excluded from sidecar interception. |
+| OTel Processor          | `istio_noise_filter` (log pipelines)                              | Filters out noisy Istio-related logs (verbose Envoy access logs, internal mesh control plane logs, health check logs) to reduce data volume and improve signal quality for log pipelines.                                                                     |
 
 
 ##### Conditional (Only When Istio is Detected)
@@ -101,7 +102,6 @@ The OTel Log Agent is deployed as a DaemonSet and collects container logs using 
 | Resource                | Behavior                                                          | Rationale                                                                                             |
 |-------------------------|-------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
 | NetworkPolicy (Ingress) | Additionally permits traffic on Istio Envoy telemetry port (15090) | The OTel Log Agent's sidecar exposes Envoy metrics on port 15090. Monitoring systems with the pod label `networking.kyma-project.io/metrics-scraping: allowed` can scrape these metrics to observe the Agent's outbound mTLS connections and sidecar health. |
-| OTel Processor          | `istio_noise_filter` (log pipelines)                              | Filters out noisy Istio-related logs (verbose Envoy access logs, internal mesh control plane logs, health check logs) to reduce data volume and improve signal quality for log pipelines.                                                                     |
 
 #### Fluent Bit
 
