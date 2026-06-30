@@ -138,13 +138,13 @@ The system creates no Istio-specific resources for the Self-Monitor because it e
 
 ### Summary
 
-| Component      | Sidecar Injection | Istio Certificates | Special Annotations           | Istio-Specific Resources       |
-|----------------|-------------------|--------------------|-------------------------------|--------------------------------|
-| OTLP Gateway   | Always enabled    | Not used           | None                          | DestinationRule (TLS DISABLE),PeerAuthentication PERMISSIVE mTLS mode  |
-| Metric Agent   | Always enabled    | Conditional (Prometheus input) | Conditional (traffic routing) | None                           |
-| OTel Log Agent | Always enabled    | Not used           | None                          | None                           |
-| Fluent Bit     | Always enabled    | Not used           | None                          | None                           |
-| Self-Monitor   | Always disabled   | Not used           | None                          | None                           |
+| Component      | Sidecar Injection | Istio Certificates             | Special Annotations           | Istio-Specific Resources                                               |
+|----------------|-------------------|--------------------------------|-------------------------------|------------------------------------------------------------------------|
+| OTLP Gateway   | Always enabled    | Not used                       | None                          | DestinationRule (TLS DISABLE), PeerAuthentication PERMISSIVE mTLS mode |
+| Metric Agent   | Always enabled    | Conditional (Prometheus input) | Conditional (traffic routing) | None                                                                   |
+| OTel Log Agent | Always enabled    | Not used                       | None                          | None                                                                   |
+| Fluent Bit     | Always enabled    | Not used                       | None                          | None                                                                   |
+| Self-Monitor   | Always disabled   | Not used                       | None                          | None                                                                   |
 
 ## Proposed Solution
 
