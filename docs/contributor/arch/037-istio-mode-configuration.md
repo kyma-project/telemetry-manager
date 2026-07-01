@@ -240,12 +240,13 @@ When at least one MetricPipeline has `input.istio.enabled: true`, the Metric Age
 - **Required when**: `input.istio.enabled: true` and sidecar is injected which will happen when trafficInterception is `On`, `ExportOnly`, or `PrometheusInputScrapeOnly` (while Prometheus input is enabled)
 - **Purpose**: Bypasses the sidecar to allow direct access to Istio control plane metrics endpoints (istiod, Envoy sidecars)
 
-| trafficInterception         | Sidecar Injection                  | Additional Annotations (for Istio scraping)            |
-|-----------------------------|------------------------------------|--------------------------------------------------------|
-| `On`                        | `sidecar.istio.io/inject: "true"`  | `traffic.sidecar.istio.io/includeOutboundIPRanges: ""` |
+| trafficInterception                                     | Sidecar Injection                  | Additional Annotations (for Istio scraping)            |
+|---------------------------------------------------------|------------------------------------|--------------------------------------------------------|
+| `On`                                                    | `sidecar.istio.io/inject: "true"`  | `traffic.sidecar.istio.io/includeOutboundIPRanges: ""` |
 | `PrometheusInputScrapeOnly` (Prometheus input disabled) | `sidecar.istio.io/inject: "false"` | (none)                                                 |
-| `ExportOnly`                | `sidecar.istio.io/inject: "true"`  | `traffic.sidecar.istio.io/includeOutboundIPRanges: ""` |
-| `Off`                       | `sidecar.istio.io/inject: "false"` | (none)                                                 |
+| `PrometheusInputScrapeOnly` (Prometheus input enabled)  | `sidecar.istio.io/inject: "true"`  | `traffic.sidecar.istio.io/includeOutboundIPRanges: ""` |
+| `ExportOnly`                                            | `sidecar.istio.io/inject: "true"`  | `traffic.sidecar.istio.io/includeOutboundIPRanges: ""` |
+| `Off`                                                   | `sidecar.istio.io/inject: "false"` | (none)                                                 |
 
 #### OTel Log Agent
 
@@ -274,12 +275,12 @@ Fluent Bit provides legacy log collection capabilities using file-based collecti
 
 **Important**: The `istio_enrichment` and `istio_noise_filter` OTel processors are **independent** from the `trafficInterception` setting. Components configure these processors according to the specifications below, regardless of trafficInterception:
 
-| Component | `istio_enrichment` | `istio_noise_filter` | Notes |
-|-----------|-------------------|---------------------|-------|
-| OTLP Gateway | Log pipelines only (when OTel log agent is used) | All pipelines (logs, traces, metrics) | Enriches logs with service mesh metadata. Filters noisy Istio telemetry. |
-| Metric Agent | Not configured | Metric pipelines | Filters noisy Istio-related metrics. |
-| OTel Log Agent | Not configured | Log pipelines | Filters noisy Istio-related logs. |
-| Fluent Bit | Not applicable | Not applicable | Fluent Bit does not support OTel processors. |
+| Component      | `istio_enrichment`                               | `istio_noise_filter`                  | Notes                                                                    |
+|----------------|--------------------------------------------------|---------------------------------------|--------------------------------------------------------------------------|
+| OTLP Gateway   | Log pipelines only (when OTel log agent is used) | All pipelines (logs, traces, metrics) | Enriches logs with service mesh metadata. Filters noisy Istio telemetry. |
+| Metric Agent   | Not configured                                   | Metric pipelines                      | Filters noisy Istio-related metrics.                                     |
+| OTel Log Agent | Not configured                                   | Not configured                        | Not configured                                                           |
+| Fluent Bit     | Not applicable                                   | Not applicable                        | Fluent Bit does not support OTel processors.                             |
 
 **Rationale**: These processors operate on telemetry data within the OTel pipeline and do not require Istio certificates or sidecar injection. They provide valuable enrichment and noise reduction regardless of whether Istio integration is enabled for ingestion or export.
 
