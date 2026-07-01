@@ -162,7 +162,7 @@ This design uses a single trafficInterception field that controls Metric Agent P
 
 **`On`**: Enable Istio integration for all components (Metric Agent Prometheus scraping, export sidecars for all components) **when Istio is present** (CRDs detected). If Istio is not installed, this mode has no effect - the system applies no Istio configurations and sets no labels.
 
-**`PrometheusInputScrapeOnly`**: Enable Istio integration only for Metric Agent when Prometheus input is enabled to scrape workloads with mTLS (sidecar injection, Istio certificates, mTLS scraping configuration). Disable Istio integration for all other components and for export (no sidecars for sending data to backends). **When Istio is present**. If the cluster does not have Istio installed, this mode has no effect.
+**`PrometheusInputScrapeOnly`**: Enable Istio integration only for Metric Agent when Prometheus input is enabled to scrape workloads with mTLS (sidecar injection, Istio certificates, mTLS scraping configuration). Disables Istio integration for all other components and for export (no sidecars for sending data to backends). Active when Istio is present. If Istio is not installed, this mode has no effect.
 
 **`ExportOnly`**: Enable Istio integration only for export (sending telemetry data to backends) **when Istio is present**. Disable Istio integration for Metric Agent Prometheus scraping (no mTLS scraping). If the cluster does not have Istio installed, this mode has no effect.
 
@@ -255,9 +255,9 @@ Fluent Bit provides legacy log collection capabilities using file-based collecti
 
 **Rationale**: These processors operate on telemetry data within the OTel pipeline and do not require Istio certificates or sidecar injection. They provide valuable enrichment and noise reduction regardless of whether Istio integration is enabled for ingestion or export.
 
-### Migration Path
+### Migration Strategy
 
-The proposed API provides a two-phase migration path where Metric Agent Prometheus scraping capability remains enabled by default while export transitions to opt-in, maintaining backward compatibility during the transition.
+The proposed API provides a two-phase migration path. Metric Agent Prometheus scraping capability stays enabled by default while export becomes opt-in. This maintains backward compatibility during the transition.
 
 #### Phase 1: Introduce API with Default trafficInterception On
 
@@ -295,7 +295,7 @@ For clusters without Istio:
 **Goal**: Make export Istio mode opt-in by default while keeping Metric Agent Prometheus scraping enabled (addresses [issue #657](https://github.com/kyma-project/telemetry-manager/issues/657))
 
 **Changes**:
-- Change `istio.trafficInterception` default from `On` to `PrometheusInputScrapeOnly` (Metric Agent Prometheus scraping remains enabled, export becomes opt-in)
+- Change `istio.trafficInterception` default from `On` to `PrometheusInputScrapeOnly` (keeps Metric Agent Prometheus scraping enabled, makes export opt-in)
 - Users who need Istio integration for export must explicitly set `trafficInterception: On` in their Telemetry CR
 
 **Rationale for Keeping Metric Agent Prometheus Scraping Enabled (PrometheusInputScrapeOnly)**:
@@ -321,7 +321,7 @@ For clusters without Istio:
 **Phase 2 Benefits**:
 - **Resource efficiency for common case**: Most users send to external backends and won't pay sidecar overhead
 - **Explicit export configuration**: Users consciously decide when to integrate with Istio mesh for export
-- **Cleaner defaults**: New clusters start with minimal overhead for export while maintaining Metric Agent Prometheus scraping functionality
+- **Cleaner defaults**: New clusters start with minimal overhead for export and keep Metric Agent Prometheus scraping functionality enabled
 
 **Phase 2 Breaking Changes**:
 - Existing Telemetry CRs without explicit `istio.trafficInterception` configuration will have export Istio disabled after upgrade
