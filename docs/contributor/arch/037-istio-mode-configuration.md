@@ -147,9 +147,9 @@ The system creates no Istio-specific resources for the Self-Monitor because it e
 | Fluent Bit     | Always enabled    | Not used                       | None                          | None                                                                   |
 | Self-Monitor   | Always disabled   | Not used                       | None                          | None                                                                   |
 
-## Considered Options
+## Considered Option
 
-### Option 1: Single `trafficInterception` field with four values
+### Single `trafficInterception` field with four values
 
 Add an `istio.trafficInterception` field to the Telemetry CR spec with four values: `On`, `PrometheusInputScrapeOnly`, `ExportOnly`, `Off`.
 
@@ -163,33 +163,6 @@ Add an `istio.trafficInterception` field to the Telemetry CR spec with four valu
 **Cons:**
 - Global application: All components share the same setting (cannot enable Istio for only Gateway while disabling for Metric Agent)
 - URL-based heuristic for inferring cluster-internal backends might not capture all cases (for example, ServiceEntry-backed services)
-
-### Option 2: Separate fields for scraping and export
-
-Add two boolean fields: `istio.enableScraping` and `istio.enableExport`.
-
-**Pros:**
-- More granular control over scraping vs. export independently
-- Explicit boolean values are clear
-
-**Cons:**
-- More complex API with two fields instead of one
-- Four combinations to understand (`true/true`, `true/false`, `false/true`, `false/false`)
-- Less intuitive than named modes
-- Harder to communicate default behavior and migration path
-
-### Option 3: Per-component Istio configuration
-
-Add per-component fields: `istio.gateway`, `istio.metricAgent`, `istio.logAgent`, etc.
-
-**Pros:**
-- Maximum flexibility - can configure each component independently
-
-**Cons:**
-- Significantly more complex API with many fields
-- Violates simplicity principle
-- Most users don't need per-component control
-- Harder to understand and maintain
 
 ## Decision
 
