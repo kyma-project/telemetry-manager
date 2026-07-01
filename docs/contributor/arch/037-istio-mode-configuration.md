@@ -162,11 +162,10 @@ Add an `istio.trafficInterception` field to the Telemetry CR spec with four valu
 
 **Cons:**
 - Global application: All components share the same setting (cannot enable Istio for only Gateway while disabling for Metric Agent)
-- URL-based heuristic for inferring cluster-internal backends might not capture all cases (for example, ServiceEntry-backed services)
 
 ## Decision
 
-We adopt **Option 1: a single `trafficInterception` field** with four values (`On`, `PrometheusInputScrapeOnly`, `ExportOnly`, `Off`). This design balances simplicity and flexibility.
+We adopt a single `trafficInterception` field with four values (`On`, `PrometheusInputScrapeOnly`, `ExportOnly`, `Off`). This design balances simplicity and flexibility.
 
 **Rationale:**
 - The single-field design is intuitive for users: `On` means "use Istio if available for everything," `PrometheusInputScrapeOnly` means "use Istio only for Metric Agent Prometheus scraping," `ExportOnly` means "use Istio only for export," and `Off` means "never use Istio."
