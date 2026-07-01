@@ -11,7 +11,7 @@ related:
 
 ## Context and Problem Statement
 
-Telemetry Manager currently auto-detects Istio by checking for Istio CRDs (`*.istio.io`) in the cluster and automatically applies Istio-specific resources when detected. This includes sidecar injection labels, DestinationRules, traffic routing annotations, and certificate volume mounts across telemetry components (OTLP Gateway, Metric Agent, OTel Log Agent, Fluent Bit, and Self-Monitor).
+Telemetry Manager currently auto-detects Istio by checking for Istio CustomResourceDefinitions (CRDs) (`*.istio.io`) in the cluster and automatically applies Istio-specific resources when detected. This includes sidecar injection labels, DestinationRules, traffic routing annotations, and certificate volume mounts across telemetry components (OTLP Gateway, Metric Agent, OTel Log Agent, Fluent Bit, and Self-Monitor).
 
 Automatic detection provides convenience. However, users face several operational challenges:
 
@@ -29,7 +29,7 @@ Users need an explicit API mechanism to control when and how Istio integration a
 
 ### Istio Detection
 
-The Telemetry Manager automatically detects Istio by checking for the presence of Istio CRDs (Custom Resource Definitions) in the cluster. Specifically, it looks for API groups matching `*.istio.io`.
+The Telemetry Manager automatically detects Istio by checking for Istio CRDs in the cluster. Specifically, it looks for API groups matching `*.istio.io`.
 
 ### Component Behaviors
 
