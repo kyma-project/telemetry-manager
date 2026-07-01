@@ -21,9 +21,9 @@ Automatic detection provides convenience. However, users face several operationa
 
 - All-or-nothing approach: The current design does not allow granular control. Users cannot selectively enable Istio mode for specific components or use cases (such as backends requiring in-cluster mTLS).
 
-- Migration difficulty: To move toward an "Istio mode off by default" model (tracked in issue #657), the system requires a backward-compatible transition path that preserves existing behavior while allowing explicit opt-in configuration.
+- Migration difficulty: To move toward an "Istio mode off by default" model (tracked in issue [#657](https://github.com/kyma-project/telemetry-manager/issues/657)), the system requires a backward-compatible transition path that preserves existing behavior while allowing explicit opt-in configuration.
 
-Users need an explicit API mechanism to control when and how Istio integration applies to telemetry components. This addresses issue #3549, which proposes an explicit configuration model that supports eventual migration to an opt-in default while maintaining backward compatibility during the transition.
+Users need an explicit API mechanism to control when and how Istio integration applies to telemetry components. This addresses issue [#3549](https://github.com/kyma-project/telemetry-manager/issues/3549), which proposes an explicit configuration model that supports eventual migration to an opt-in default while maintaining backward compatibility during the transition.
 
 ### Current Behavior
 
@@ -170,7 +170,7 @@ We adopt a single `trafficInterception` field with four values (`On`, `Prometheu
 **Rationale:**
 - The single-field design is intuitive for users: `On` means "use Istio if available for everything," `PrometheusInputScrapeOnly` means "use Istio only for Metric Agent Prometheus scraping," `ExportOnly` means "use Istio only for export," and `Off` means "never use Istio."
 - The four values cover all meaningful combinations while keeping the API simple.
-- The two-phase migration provides a backward-compatible transition path that addresses user demand for explicit control (issue #3549) while preserving existing behavior during the transition.
+- The two-phase migration provides a backward-compatible transition path that addresses user demand for explicit control (issue [#3549](https://github.com/kyma-project/telemetry-manager/issues/3549)) while preserving existing behavior during the transition.
 - Metric Agent Prometheus scraping stays enabled by default in Phase 2 because it is a valuable feature with minimal overhead when Prometheus input is not used or when Istio is not present.
 
 The migration proceeds in two phases: Phase 1 introduces the API with a default of `On` (preserving existing behavior), and Phase 2 changes the default to `PrometheusInputScrapeOnly` (making export opt-in while keeping Metric Agent Prometheus scraping enabled by default).
@@ -321,7 +321,7 @@ For clusters without Istio:
 
 #### Phase 2: Change Default trafficInterception to PrometheusInputScrapeOnly
 
-**Goal**: Make export Istio mode opt-in by default while keeping Metric Agent Prometheus scraping enabled (addresses issue #657)
+**Goal**: Make export Istio mode opt-in by default while keeping Metric Agent Prometheus scraping enabled (addresses issue [#657](https://github.com/kyma-project/telemetry-manager/issues/657))
 
 **Changes**:
 - We change the `istio.trafficInterception` default from `On` to `PrometheusInputScrapeOnly` (keeps Metric Agent Prometheus scraping enabled, makes export opt-in)
@@ -363,7 +363,7 @@ For clusters without Istio:
 
 ### Positive Consequences
 
-- **Explicit control**: Users gain explicit control over Istio integration (addresses issue #3549), allowing them to disable Istio mode when not needed
+- **Explicit control**: Users gain explicit control over Istio integration (addresses issue [#3549](https://github.com/kyma-project/telemetry-manager/issues/3549)), allowing them to disable Istio mode when not needed
 - **Backward compatibility**: The two-phase migration preserves existing behavior during Phase 1, preventing unexpected breakage
 - **Resource efficiency**: Phase 2 reduces resource overhead for users who send telemetry to external backends and don't need export Istio mode
 - **Clear semantics**: The four values (`On`, `PrometheusInputScrapeOnly`, `ExportOnly`, `Off`) provide intuitive, self-documenting configuration
