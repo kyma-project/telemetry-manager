@@ -2,6 +2,9 @@
 title: Istio Mode Configuration API
 status: Proposed
 date: 2026-06-10
+related:
+  - https://github.com/kyma-project/telemetry-manager/issues/3549
+  - https://github.com/kyma-project/telemetry-manager/issues/657
 ---
 
 # Istio Mode Configuration API
@@ -18,11 +21,11 @@ Automatic detection provides convenience. However, users face several operationa
 
 - All-or-nothing approach: The current design does not allow granular control. Users cannot selectively enable Istio mode for specific components or use cases (such as backends requiring in-cluster mTLS).
 
-- Migration difficulty: To move toward an "Istio mode off by default" model (tracked in [issue #657](https://github.com/kyma-project/telemetry-manager/issues/657)), the system requires a backward-compatible transition path that preserves existing behavior while allowing explicit opt-in configuration.
+- Migration difficulty: To move toward an "Istio mode off by default" model (tracked in issue #657), the system requires a backward-compatible transition path that preserves existing behavior while allowing explicit opt-in configuration.
 
-This proposal adds an API mechanism to explicitly enable or disable Istio mode, providing users with control over when and how Istio integration applies to telemetry components. This addresses [issue #3549](https://github.com/kyma-project/telemetry-manager/issues/3549), which proposes an explicit configuration model that supports eventual migration to an opt-in default while maintaining backward compatibility during the transition.
+Users need an explicit API mechanism to control when and how Istio integration applies to telemetry components. This addresses issue #3549, which proposes an explicit configuration model that supports eventual migration to an opt-in default while maintaining backward compatibility during the transition.
 
-## Current Istio Integration
+### Current Behavior
 
 ### Istio Detection
 
@@ -144,7 +147,61 @@ The system creates no Istio-specific resources for the Self-Monitor because it e
 | Fluent Bit     | Always enabled    | Not used                       | None                          | None                                                                   |
 | Self-Monitor   | Always disabled   | Not used                       | None                          | None                                                                   |
 
-## Proposed Solution
+## Considered Options
+
+### Option 1: Single `trafficInterception` field with four values
+
+Add an `istio.trafficInterception` field to the Telemetry CR spec with four values: `On`, `PrometheusInputScrapeOnly`, `ExportOnly`, `Off`.
+
+**Pros:**
+- Simple, intuitive API with clear semantics
+- Single field is easier for users to understand than multiple fields
+- Covers all meaningful combinations (everything, scraping-only, export-only, nothing)
+- Backward-compatible migration path through phased default change
+- Natural progression from `On` → `PrometheusInputScrapeOnly` for Phase 2
+
+**Cons:**
+- Global application: All components share the same setting (cannot enable Istio for only Gateway while disabling for Metric Agent)
+- URL-based heuristic for inferring cluster-internal backends might not capture all cases (for example, ServiceEntry-backed services)
+
+### Option 2: Separate fields for scraping and export
+
+Add two boolean fields: `istio.enableScraping` and `istio.enableExport`.
+
+**Pros:**
+- More granular control over scraping vs. export independently
+- Explicit boolean values are clear
+
+**Cons:**
+- More complex API with two fields instead of one
+- Four combinations to understand (`true/true`, `true/false`, `false/true`, `false/false`)
+- Less intuitive than named modes
+- Harder to communicate default behavior and migration path
+
+### Option 3: Per-component Istio configuration
+
+Add per-component fields: `istio.gateway`, `istio.metricAgent`, `istio.logAgent`, etc.
+
+**Pros:**
+- Maximum flexibility - can configure each component independently
+
+**Cons:**
+- Significantly more complex API with many fields
+- Violates simplicity principle
+- Most users don't need per-component control
+- Harder to understand and maintain
+
+## Decision
+
+We adopt **Option 1: a single `trafficInterception` field** with four values (`On`, `PrometheusInputScrapeOnly`, `ExportOnly`, `Off`). This design balances simplicity and flexibility.
+
+**Rationale:**
+- The single-field design is intuitive for users: `On` means "use Istio if available for everything," `PrometheusInputScrapeOnly` means "use Istio only for Metric Agent Prometheus scraping," `ExportOnly` means "use Istio only for export," and `Off` means "never use Istio."
+- The four values cover all meaningful combinations while keeping the API simple.
+- The two-phase migration provides a backward-compatible transition path that addresses user demand for explicit control (issue #3549) while preserving existing behavior during the transition.
+- Metric Agent Prometheus scraping stays enabled by default in Phase 2 because it is a valuable feature with minimal overhead when Prometheus input is not used or when Istio is not present.
+
+The migration proceeds in two phases: Phase 1 introduces the API with a default of `On` (preserving existing behavior), and Phase 2 changes the default to `PrometheusInputScrapeOnly` (making export opt-in while keeping Metric Agent Prometheus scraping enabled by default).
 
 ### API Schema
 
@@ -196,12 +253,12 @@ The OTLP Gateway receives telemetry data on OTLP ports (4317 gRPC, 4318 HTTP) an
 
 #### Metric Agent (Prometheus Input Enabled)
 
-| trafficInterception         | Sidecar Injection                  | Pod Annotations                                                                                                                                                                                                | Istio Resources                                           | Prometheus Receivers                                             |
-|--------------|-------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------|------------------------------------------------------------------|
-| `On`         | `sidecar.istio.io/inject: "true"`  | `traffic.sidecar.istio.io/excludeInboundPorts: "8888"`, `traffic.sidecar.istio.io/includeOutboundPorts: "{backend_ports}"`, `proxy.istio.io/config`, `sidecar.istio.io/userVolumeMount`                      | NetworkPolicy (15090), Volume (`/etc/istio-output-certs`) | `app-services` (drops HTTPS), `app-services-secure` (HTTPS mTLS) |
-| `PrometheusInputScrapeOnly` | `sidecar.istio.io/inject: "true"`  | `traffic.sidecar.istio.io/excludeInboundPorts: "8888"`, `traffic.sidecar.istio.io/includeOutboundPorts: "{backend_ports}"`, `proxy.istio.io/config`, `sidecar.istio.io/userVolumeMount`                      | NetworkPolicy (15090), Volume (`/etc/istio-output-certs`) | `app-services` (drops HTTPS), `app-services-secure` (HTTPS mTLS) |
-| `ExportOnly` | `sidecar.istio.io/inject: "true"`  | `traffic.sidecar.istio.io/excludeInboundPorts: "8888"`, `traffic.sidecar.istio.io/includeOutboundPorts: "{backend_ports}"`                                                                                    | NetworkPolicy (15090)                                     | `app-services` (all targets)                                     |
-| `Off`        | `sidecar.istio.io/inject: "false"` | (none)                                                                                                                                                                                                         | (none)                                                    | `app-services` (all targets)                                     |
+| trafficInterception         | Sidecar Injection                  | Pod Annotations                                                                                                                                                                         | Istio Resources                                           | Prometheus Receivers                                             |
+|-----------------------------|------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------|------------------------------------------------------------------|
+| `On`                        | `sidecar.istio.io/inject: "true"`  | `traffic.sidecar.istio.io/excludeInboundPorts: "8888"`, `traffic.sidecar.istio.io/includeOutboundPorts: "{backend_ports}"`, `proxy.istio.io/config`, `sidecar.istio.io/userVolumeMount` | NetworkPolicy (15090), Volume (`/etc/istio-output-certs`) | `app-services` (drops HTTPS), `app-services-secure` (HTTPS mTLS) |
+| `PrometheusInputScrapeOnly` | `sidecar.istio.io/inject: "true"`  | `traffic.sidecar.istio.io/excludeInboundPorts: "8888"`, `traffic.sidecar.istio.io/includeOutboundPorts: "{backend_ports}"`, `proxy.istio.io/config`, `sidecar.istio.io/userVolumeMount` | NetworkPolicy (15090), Volume (`/etc/istio-output-certs`) | `app-services` (drops HTTPS), `app-services-secure` (HTTPS mTLS) |
+| `ExportOnly`                | `sidecar.istio.io/inject: "true"`  | `traffic.sidecar.istio.io/excludeInboundPorts: "8888"`, `traffic.sidecar.istio.io/includeOutboundPorts: "{backend_ports}"`                                                              | NetworkPolicy (15090)                                     | `app-services` (all targets)                                     |
+| `Off`                       | `sidecar.istio.io/inject: "false"` | (none)                                                                                                                                                                                  | (none)                                                    | `app-services` (all targets)                                     |
 
 #### Metric Agent (Istio Input Enabled)  
 
@@ -264,9 +321,9 @@ The proposed API provides a two-phase migration path. Metric Agent Prometheus sc
 **Goal**: Provide explicit control while preserving existing behavior
 
 **Changes**:
-- Add `istio.trafficInterception` field with `On | PrometheusInputScrapeOnly | ExportOnly | Off` values
-- Default to `On` to ensure backward compatibility with existing behavior
-- Users can explicitly change the trafficInterception to control ingestion and/or export independently
+- We add an `istio.trafficInterception` field with `On | PrometheusInputScrapeOnly | ExportOnly | Off` values
+- The default is `On`, which ensures backward compatibility with existing behavior
+- Users explicitly set the trafficInterception value to control Metric Agent Prometheus scraping and export independently
 
 **Benefits**:
 - **Simple single-field API**: One trafficInterception field controls all Istio integration aspects
@@ -292,11 +349,11 @@ For clusters without Istio:
 
 #### Phase 2: Change Default trafficInterception to PrometheusInputScrapeOnly
 
-**Goal**: Make export Istio mode opt-in by default while keeping Metric Agent Prometheus scraping enabled (addresses [issue #657](https://github.com/kyma-project/telemetry-manager/issues/657))
+**Goal**: Make export Istio mode opt-in by default while keeping Metric Agent Prometheus scraping enabled (addresses issue #657)
 
 **Changes**:
-- Change `istio.trafficInterception` default from `On` to `PrometheusInputScrapeOnly` (keeps Metric Agent Prometheus scraping enabled, makes export opt-in)
-- Users who need Istio integration for export must explicitly set `trafficInterception: On` in their Telemetry CR
+- We change the `istio.trafficInterception` default from `On` to `PrometheusInputScrapeOnly` (keeps Metric Agent Prometheus scraping enabled, makes export opt-in)
+- Users who need Istio integration for export explicitly set `trafficInterception: On` in their Telemetry CR
 
 **Rationale for Keeping Metric Agent Prometheus Scraping Enabled (PrometheusInputScrapeOnly)**:
 - **Metric Agent Prometheus scraping functionality**: The Metric Agent's ability to scrape workloads with Istio STRICT mTLS policies using Prometheus input is a valuable feature that users expect to work by default when Istio is present
@@ -330,11 +387,23 @@ For clusters without Istio:
 - **Phase 1**: Immediate implementation (`trafficInterception: On` default)
 - **Phase 2**: After Phase 1 has been stable (`trafficInterception: PrometheusInputScrapeOnly` default)
 
-## Decision
+## Consequences
 
-This proposal implements a single `istio.trafficInterception` field with four values (`On`, `PrometheusInputScrapeOnly`, `ExportOnly`, `Off`) as described in the Proposed Solution section. The migration proceeds in two phases as outlined above, providing explicit control over Istio integration while maintaining backward compatibility during the transition.
+### Positive Consequences
 
-## Summary of Changes
+- **Explicit control**: Users gain explicit control over Istio integration (addresses issue #3549), allowing them to disable Istio mode when not needed
+- **Backward compatibility**: The two-phase migration preserves existing behavior during Phase 1, preventing unexpected breakage
+- **Resource efficiency**: Phase 2 reduces resource overhead for users who send telemetry to external backends and don't need export Istio mode
+- **Clear semantics**: The four values (`On`, `PrometheusInputScrapeOnly`, `ExportOnly`, `Off`) provide intuitive, self-documenting configuration
+- **Preserved functionality**: Metric Agent Prometheus scraping remains enabled by default in Phase 2, preserving the ability to scrape mTLS workloads without user intervention
+- **Flexible migration path**: Users can optimize their configuration before Phase 2 by explicitly setting `PrometheusInputScrapeOnly` to save sidecar overhead if backends are external
+
+### Negative Consequences
+
+- **Global application**: All components share the same `trafficInterception` setting. Users cannot selectively enable Istio for specific components (for example, enable for Gateway but disable for Metric Agent). This limitation is acceptable because most users need consistent Istio integration across all components.
+- **URL-based heuristic**: The system infers cluster-internal backends from URLs to configure traffic routing annotations, which might not capture all cases (for example, cluster-external URLs routed internally via DNS or ServiceEntry-backed services). Users must understand this limitation when configuring export backends.
+- **Phase 2 breaking change**: Users who rely on implicit export Istio mode must explicitly set `trafficInterception: On` after the Phase 2 upgrade. Migration tooling and advance notice (at least 2 releases) mitigate this risk.
+- **Migration complexity**: The two-phase approach requires careful communication and documentation to ensure users understand the timeline and required actions.
 
 ### Removed Istio Resources
 
