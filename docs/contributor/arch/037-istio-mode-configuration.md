@@ -237,14 +237,13 @@ The OTLP Gateway receives telemetry data on OTLP ports (4317 gRPC, 4318 HTTP) an
 When at least one MetricPipeline has `input.istio.enabled: true`, the Metric Agent scrapes Istio control plane metrics (istiod, Envoy sidecars). This feature is independent of Prometheus input.
 
 **Pod Annotation `traffic.sidecar.istio.io/includeOutboundIPRanges: ""`**:
-- **Required when**: `input.istio.enabled: true` and trafficInterception is `On`, `ExportOnly`, or `PrometheusInputScrapeOnly` (sidecar injected)
-- **NOT required when**: trafficInterception is `PrometheusInputScrapeOnly` or `Off` (no sidecar, so annotation has no effect, no prometheus input enabled)
+- **Required when**: `input.istio.enabled: true` and sidecar is injected which will happen when trafficInterception is `On`, `ExportOnly`, or `PrometheusInputScrapeOnly` (while Prometheus input is enabled)
 - **Purpose**: Bypasses the sidecar to allow direct access to Istio control plane metrics endpoints (istiod, Envoy sidecars)
 
 | trafficInterception         | Sidecar Injection                  | Additional Annotations (for Istio scraping)            |
 |-----------------------------|------------------------------------|--------------------------------------------------------|
 | `On`                        | `sidecar.istio.io/inject: "true"`  | `traffic.sidecar.istio.io/includeOutboundIPRanges: ""` |
-| `PrometheusInputScrapeOnly` | `sidecar.istio.io/inject: "false"` | (none)                                                 |
+| `PrometheusInputScrapeOnly` (Prometheus input disabled) | `sidecar.istio.io/inject: "false"` | (none)                                                 |
 | `ExportOnly`                | `sidecar.istio.io/inject: "true"`  | `traffic.sidecar.istio.io/includeOutboundIPRanges: ""` |
 | `Off`                       | `sidecar.istio.io/inject: "false"` | (none)                                                 |
 
@@ -301,13 +300,11 @@ The proposed API provides a two-phase migration path. Metric Agent Prometheus sc
 - **Simple single-field API**: One trafficInterception field controls all Istio integration aspects
 - **Clear semantics**: `On` (everything), `PrometheusInputScrapeOnly` (only Metric Agent Prometheus scraping), `ExportOnly` (only export sidecars), `Off` (nothing)
 - **Flexible control**: Users can enable Istio for Metric Agent Prometheus scraping only, export only, both, or neither
-- **Intelligent traffic routing**: When export is enabled and Istio is present, the system analyzes pipeline URLs to configure traffic routing annotations (cluster-internal URLs route through sidecar, external URLs bypass)
 - **Backward compatibility**: Default `On` ensures existing behavior is preserved
 - **Natural progression**: Clear path from `On` → `PrometheusInputScrapeOnly` for Phase 2 migration
 
 **Limitations**:
 - **Global application**: All components share the same trafficInterception (cannot enable Istio for only Gateway while disabling for Metric Agent)
-- **URL-based heuristic**: Cluster-internal URL detection might not capture all cases (for example, ServiceEntry-backed services)
 
 **Migration for Existing Clusters**:
 
@@ -341,11 +338,7 @@ For clusters without Istio:
 **Migration Strategy**:
 
 1. **Announce change**: Provide advance notice (at least 2 releases) that the default trafficInterception will change to `PrometheusInputScrapeOnly`
-2. **Audit tooling**: Provide a command or script that checks existing clusters for:
-   - Istio presence
-   - Pipelines with cluster-internal output URLs
-   - Generates recommended Telemetry CR configurations
-3. **Documentation**: Update all examples and guides to show explicit trafficInterception configuration
+2. **Documentation**: Update all examples and guides to show explicit trafficInterception configuration
 
 **Phase 2 Benefits**:
 - **Resource efficiency for common case**: Most users send to external backends and won't pay sidecar overhead
@@ -373,19 +366,18 @@ For clusters without Istio:
 ### Negative Consequences
 
 - **Global application**: All components share the same `trafficInterception` setting. Users cannot selectively enable Istio for specific components (for example, enable for Gateway but disable for Metric Agent). This limitation is acceptable because most users need consistent Istio integration across all components.
-- **URL-based heuristic**: The system infers cluster-internal backends from URLs to configure traffic routing annotations, which might not capture all cases (for example, cluster-external URLs routed internally via DNS or ServiceEntry-backed services). Users must understand this limitation when configuring export backends.
-- **Phase 2 breaking change**: Users who rely on implicit export Istio mode must explicitly set `trafficInterception: On` after the Phase 2 upgrade. Migration tooling and advance notice (at least 2 releases) mitigate this risk.
+- **Phase 2 breaking change**: Users who rely on implicit export Istio mode must explicitly set `trafficInterception: On` after the Phase 2 upgrade. Advance notice (at least 2 releases) mitigate this risk.
 - **Migration complexity**: The two-phase approach requires careful communication and documentation to ensure users understand the timeline and required actions.
 
 ### Removed Istio Resources
 
-The following Istio resources are no longer needed and have been removed from the OTLP Gateway configuration:
+The following Istio resources are no longer needed and should be removed from the OTLP Gateway configuration:
 
 #### PeerAuthentication Resource
 
 **Previous behavior**: The Gateway applied a PeerAuthentication resource with PERMISSIVE mTLS mode when Istio was detected.
 
-**Why it's no longer needed**: The `traffic.sidecar.istio.io/includeInboundPorts: ""` annotation already bypasses all inbound traffic interception by the sidecar. Because the sidecar never intercepts inbound OTLP traffic (ports 4317, 4318), the PeerAuthentication resource has no effect. The Gateway receives all telemetry data directly without mTLS enforcement, making the explicit PERMISSIVE policy redundant.
+**Why it's no longer needed**:  The `traffic.sidecar.istio.io/includeInboundPorts: ""` annotation was added to bypass all inbound traffic interception by the sidecar for better performance. This means that the PeerAuthentication has currently no effect because the traffic goes directly to the application container, bypassing the sidecar entirely. To allow clients inside the service mesh to push telemetry data to the Gateway when it has the sidecar injected, a DestinationRule with `TLS mode: DISABLE` has already been introduced.
 
 **Impact**: Removing this resource simplifies the Gateway configuration without changing behavior. Direct connections to OTLP ports remain plain-text, and the Gateway continues to accept telemetry from both in-mesh and out-of-mesh clients.
 
