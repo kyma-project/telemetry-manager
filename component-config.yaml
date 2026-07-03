@@ -1,10 +1,10 @@
 name: kyma-project.io/module/telemetry
 team: kyma/Huskies
 images:
-  - europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:main
-  - europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:main
+  - europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:1.67.0-rc1
+  - europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20260605-0cf1a38e
   - europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluent-bit:5.0.4
-  - europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:main
-  - europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:main
+  - europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.153.0-1.67.0
+  - europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:v20260625-b6ae649a
   - europe-docker.pkg.dev/kyma-project/restricted-prod/sap.com/prometheus-fips:3.12.0
-  - europe-docker.pkg.dev/kyma-project/prod/telemetry-chown:main
+  - europe-docker.pkg.dev/kyma-project/prod/telemetry-chown:v20260609-7b408c48
