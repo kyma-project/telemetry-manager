@@ -17,7 +17,7 @@ require (
 	github.com/yeya24/promlinter v0.3.0
 	golang.org/x/tools v0.48.0
 	gotest.tools/gotestsum v1.13.0
-	helm.sh/helm/v4 v4.2.2
+	helm.sh/helm/v4 v4.2.3
 	k8s.io/code-generator v0.36.2
 	sigs.k8s.io/controller-tools v0.21.0
 )
