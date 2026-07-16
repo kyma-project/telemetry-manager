@@ -716,15 +716,28 @@ jobs:
       release_version: ${{ github.event.inputs.version }}
     secrets: inherit
 
+  notify-sbom:
+    needs: upload-release-report
+    if: always() && !cancelled() && inputs.pre_release != true && needs.upload-release-report.result == 'success'
+    permissions:
+      id-token: write
+      contents: read
+    uses: kyma-project/compliancy/.github/workflows/notify-component-sbom.yml@main
+    secrets: inherit
+    with:
+      component: kyma-project.io/module/telemetry
+      version: ${{ inputs.version }}
+
   create-release:
     needs:
       - validate-and-prepare-branch
       - prepare-release
       - upload-release-report
+      - notify-sbom
       - unit-tests
       - run-pr-integration
       - run-gardener-integration
-    if: always() && !cancelled() && needs.validate-and-prepare-branch.result == 'success' && needs.unit-tests.result == 'success' && (needs.upload-release-report.result == 'success' || inputs.pre_release == true) && (inputs.pre_release != true || (needs.run-pr-integration.result == 'success' && needs.run-gardener-integration.result == 'success'))
+    if: always() && !cancelled() && needs.validate-and-prepare-branch.result == 'success' && needs.unit-tests.result == 'success' && (needs.upload-release-report.result == 'success' || inputs.pre_release == true) && (needs.notify-sbom.result == 'success' || inputs.pre_release == true) && (inputs.pre_release != true || (needs.run-pr-integration.result == 'success' && needs.run-gardener-integration.result == 'success'))
     permissions:
       contents: write
     runs-on: ubuntu-latest
