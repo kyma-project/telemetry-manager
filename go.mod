@@ -1,6 +1,6 @@
 module github.com/kyma-project/telemetry-manager
 
-go 1.26.4
+go 1.26.5
 
 require (
 	github.com/caarlos0/env/v11 v11.4.1
@@ -15,7 +15,7 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor v0.153.0
 	github.com/prometheus/client_golang v1.23.2
 	github.com/prometheus/client_model v0.6.2
-	github.com/prometheus/common v0.69.0
+	github.com/prometheus/common v0.70.0
 	github.com/stretchr/testify v1.11.1
 	go.opentelemetry.io/collector/component v1.59.0
 	go.opentelemetry.io/collector/pdata v1.59.0
@@ -91,7 +91,7 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/internal/pdatautil v0.153.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatautil v0.153.0 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
-	github.com/prometheus/procfs v0.20.1 // indirect
+	github.com/prometheus/procfs v0.21.0 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
 	github.com/stretchr/objx v0.5.3 // indirect
 	github.com/twmb/murmur3 v1.1.8 // indirect
