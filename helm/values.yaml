@@ -16,17 +16,17 @@ manager:
       high-priority-class-name: "telemetry-priority-class-high"
       normal-priority-class-name: "telemetry-priority-class"
     env:
-      chownImage: europe-docker.pkg.dev/kyma-project/prod/telemetry-chown:main
+      chownImage: europe-docker.pkg.dev/kyma-project/prod/telemetry-chown:v20260714-9f862066
       appLogLevel: info
-      fluentBitExporterImage: europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:main
+      fluentBitExporterImage: europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20260714-9f862066
       fluentBitImage: europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluent-bit:5.0.4
       gomemlimit: 300MiB
-      otelCollectorImage: europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:main
-      selfMonitorImage: europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:main
+      otelCollectorImage: europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:0.154.0-1.68.0
+      selfMonitorImage: europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:v20260625-b6ae649a
       operateInFipsMode: false
       selfMonitorFIPSImage: europe-docker.pkg.dev/kyma-project/restricted-prod/sap.com/prometheus-fips:3.12.0
     image:
-      repository: europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:main
+      repository: europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:1.68.0
       pullPolicy: "IfNotPresent"
     resources:
       limits:
