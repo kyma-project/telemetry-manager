@@ -64,7 +64,7 @@ jobs:
       pre-release-tag: ${{ steps.compute-pre-release-tag.outputs.pre-release-tag || steps.compute-pre-release-tag-force.outputs.pre-release-tag }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
       - name: Validate version format
@@ -366,7 +366,7 @@ jobs:
       pr-number: ${{ steps.create-pr.outputs.pr-number }}
     steps:
       - name: Checkout release branch
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           token: ${{ secrets.WORKFLOW_PAT }}
           ref: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
@@ -672,7 +672,7 @@ jobs:
     if: always() && !cancelled() && needs.validate-and-prepare-branch.result == 'success'
     steps:
       - name: Checkout code
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
           fetch-depth: 0
@@ -745,7 +745,7 @@ jobs:
       KYMA_TELEMETRY_MANAGER_REPO: ${{ github.repository }}
     steps:
       - name: Checkout release tag
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ needs.validate-and-prepare-branch.outputs.release-branch }}
           fetch-depth: 0
