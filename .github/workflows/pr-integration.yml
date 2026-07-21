@@ -94,7 +94,7 @@ jobs:
       manager-image: ${{ steps.set-env.outputs.manager-image }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: '0'
           ref: ${{ inputs.ref || github.ref }}
@@ -194,7 +194,7 @@ jobs:
     name: e2e-logs${{ matrix.variant.name }}${{ matrix.set.name }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: '0'
           ref: ${{ inputs.ref || github.ref }}
@@ -229,7 +229,7 @@ jobs:
     name: e2e-metrics${{ matrix.set.name }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: '0'
           ref: ${{ inputs.ref || github.ref }}
@@ -266,7 +266,7 @@ jobs:
     name: ${{ matrix.suite.name }}-experimental
     steps:
       - name: Checkout code
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: '0'
           ref: ${{ inputs.ref || github.ref }}
@@ -299,7 +299,7 @@ jobs:
     name: ${{ matrix.suite.name }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: '0'
           ref: ${{ inputs.ref || github.ref }}
@@ -332,7 +332,7 @@ jobs:
     name: ${{ matrix.suite.name }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: '0'
           ref: ${{ inputs.ref || github.ref }}
@@ -357,7 +357,7 @@ jobs:
     name: selfmonitor-healthy
     steps:
       - name: Checkout code
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: '0'
           ref: ${{ inputs.ref || github.ref }}
@@ -399,7 +399,7 @@ jobs:
     name: selfmonitor-${{ matrix.scenario }}-${{ matrix.component.name }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: '0'
           ref: ${{ inputs.ref || github.ref }}
@@ -423,7 +423,7 @@ jobs:
     steps:
       - name: Checkout code
         if: needs.check-skip-e2e.outputs.skip-e2e == 'false'
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Generate test summary
         if: needs.check-skip-e2e.outputs.skip-e2e == 'false'
