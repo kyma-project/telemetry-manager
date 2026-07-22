@@ -115,8 +115,8 @@ See how the deprecated fields map to their new OTLP-based counterparts:
          statements:
          - set(log.attributes["tenant"], "myTenant")
      filter:
-       conditions:
-         - log.attributes["path"] == "/healthz/ready"
+       - conditions:
+           - log.attributes["path"] == "/healthz/ready"
      output:
        otlp:
          ...

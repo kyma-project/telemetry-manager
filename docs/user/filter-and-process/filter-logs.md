@@ -93,8 +93,7 @@ By default, application logs from `kube-system`, `istio-system`, and
 You can also filter logs based on the container name with `include` and
 `exclude` filters. These filters apply in addition to any namespace filters.
 
-The following pipeline collects input from all namespaces excluding `kyma-system` and only from the
-`istio-proxy` containers:
+The following pipeline excludes logs from a specific namespace and container:
 
 ```yaml
 ...

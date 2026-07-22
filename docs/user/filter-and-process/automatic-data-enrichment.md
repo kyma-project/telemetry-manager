@@ -1,6 +1,6 @@
 # Automatic Data Enrichment
 
-The Telemetry gateways automatically enrich your data with OTel resource attributes, so you can easily identify the source of the data in your backend.
+The Telemetry module automatically enriches your data with OTel resource attributes, so you can easily identify the source of the data in your backend.
 
 > [!TIP]
 > For custom enrichment, such as adding your own business-specific attributes, see [Transform and Filter with OTTL](./ottl-transform-and-filter/README.md).
@@ -65,7 +65,7 @@ spec:
 
 If data is available, the gateway automatically adds [cloud provider](https://opentelemetry.io/docs/specs/semconv/resource/cloud/) attributes to the telemetry data:
 
-- `cloud.provider`: Cloud provider name
+- `cloud.provider`: Cloud provider name (from the Gardener `shoot-info` ConfigMap in `kube-system`)
 - `cloud.region`: Region where the Node runs (from Node label `topology.kubernetes.io/region`)
 - `cloud.availability_zone`: Zone where the Node runs (from Node label `topology.kubernetes.io/zone`)
 

@@ -81,7 +81,7 @@ After JSON parsing, the OTLP record looks like the following example:
 
 ## Severity Parsing
 
-Typically, a log message includes a log level in the `level` field. Based on this, the agent parses the `level` log attribute with a severity parser. If parsing succeeds, the agent transforms the log attribute into the OTel attributes `severityText` and `severityNumber`.
+Typically, a log message includes a log level in the `level` or `log.level` field. Based on this, the agent parses the matching log attribute with a severity parser. If parsing succeeds, the agent transforms the log attribute into the OTel attributes `severityText` and `severityNumber`.
 
 ## Trace Parsing
 
