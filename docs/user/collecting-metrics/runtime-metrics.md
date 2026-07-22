@@ -5,7 +5,7 @@
 If `pod` metrics are enabled, the following metrics are collected:
 
 - From the [kubeletstatsreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/kubeletstatsreceiver):
-  - `k8s.pod.cpu.capacity`
+  - `k8s.pod.cpu.time`
   - `k8s.pod.cpu.usage`
   - `k8s.pod.filesystem.available`
   - `k8s.pod.filesystem.capacity`
