@@ -53,9 +53,15 @@ status:
   - lastTransitionTime: "2023-12-28T11:27:04Z"
     message: ""
     observedGeneration: 1
-    reason: ConfigurationGenerated
+    reason: GatewayConfigured
     status: "True"
     type: ConfigurationGenerated
+  - lastTransitionTime: "2024-01-09T07:02:16Z"
+    message: No problems detected in the telemetry flow
+    observedGeneration: 1
+    reason: FlowHealthy
+    status: "True"
+    type: TelemetryFlowHealthy
 ```
 
 For further examples, see the [samples](https://github.com/kyma-project/telemetry-manager/tree/main/samples) directory.
