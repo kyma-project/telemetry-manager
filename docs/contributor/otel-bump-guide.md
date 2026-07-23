@@ -105,6 +105,8 @@ After you complete the preparation steps, update the dependency versions in the 
 
 1. In the `telemetry-manager` repository, update the dependency version for `telemetrygen` in the `.env` file.
 2. Run `make generate`. This will update the `telemetrygen` version automatically in other files like the `test/testkit/images.go`.
-3. Create a bump PR that references the merged `opentelemetry-collector-components` PR.
-4. Manually trigger the `PR Load Test` GitHub workflow, and document the performance results of the load test in the [benchmark documentation](./benchmarks/results).
-5. Merge the PR.
+3. Update the dependency versions for `github.com/open-telemetry/opentelemetry-collector-contrib` in the `go.mod` file.
+4. Run `make tidy`.
+5. Create a bump PR that references the merged `opentelemetry-collector-components` PR.
+6. Manually trigger the `PR Load Test` GitHub workflow, and document the performance results of the load test in the [benchmark documentation](./benchmarks/results).
+7. Merge the PR.
