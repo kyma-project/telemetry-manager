@@ -30,7 +30,8 @@ apiVersion: telemetry.kyma-project.io/v1beta1
 kind: LogPipeline
 metadata:
   name: backend
-output:
+spec:
+  output:
     otlp:
       endpoint:
         value: http://myEndpoint:4317

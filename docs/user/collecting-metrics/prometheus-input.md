@@ -36,7 +36,7 @@ To enable automatic metrics collection, apply the following annotations. If your
 | `prometheus.io/scrape` (mandatory) | true, false (no default value)                                   | Set to true to enable scraping for this target.                                                                                    |
 | `prometheus.io/port` (mandatory)   | 8080, 9100 (no default value)                                    | Specify the port on the Pod where your application exposes metrics.                                                                |
 | `prometheus.io/path`               | /metrics (default), /custom_metrics                              | Set the HTTP path for the metrics endpoint.                                                                                        |
-| `prometheus.io/scheme`             | https-metrics (default with Istio), http (default without Istio) | Define the protocol for scraping: Either HTTPS with mTLS, or plain HTTP.                                                           |
+| `prometheus.io/scheme`             | https (default with Istio), http (default without Istio)         | Define the protocol for scraping: Either HTTPS with mTLS, or plain HTTP.                                                           |
 | `prometheus.io/param_<name>`       | Example: format: prometheus (no default)                         | Add a URL parameter to the scrape request. For example, prometheus.io/param_format: prometheus adds ?format=prometheus to the URL. |
 
 For example, see the following `Service` configuration:
