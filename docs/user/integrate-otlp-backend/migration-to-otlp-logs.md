@@ -111,12 +111,12 @@ See how the deprecated fields map to their new OTLP-based counterparts:
    spec:
      transform:
        - conditions:
-         - log.attributes["tenant"] == ""
+           - log.attributes["tenant"] == ""
          statements:
-         - set(log.attributes["tenant"], "myTenant")
+           - set(log.attributes["tenant"], "myTenant")
      filter:
-       conditions:
-         - log.attributes["path"] == "/healthz/ready"
+       - conditions:
+           - log.attributes["path"] == "/healthz/ready"
      output:
        otlp:
          ...
