@@ -139,7 +139,7 @@ Use the Kyma Telemetry module to enable ingestion of the signals from your workl
    apiVersion: telemetry.kyma-project.io/v1beta1
    kind: MetricPipeline
    metadata:
-     name: awsh
+     name: aws
    spec:
      input:
        runtime:

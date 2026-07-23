@@ -207,7 +207,7 @@ The provided `values.yaml` covers the following adjustments:
 1. To remove the MetricPipeline, call kubectl:
 
     ```bash
-    helm delete MetricPipeline prometheus
+    kubectl delete MetricPipeline prometheus
     ```
 
 1. To remove the example app and all its resources from the cluster, run the following command:
