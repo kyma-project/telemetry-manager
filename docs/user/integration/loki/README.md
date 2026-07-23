@@ -66,7 +66,7 @@ helm upgrade --install --create-namespace -n ${K8S_NAMESPACE} ${HELM_LOKI_RELEAS
   --set-string 'loki.podLabels.sidecar\.istio\.io/inject=true' \
   --set 'singleBinary.resources.requests.cpu=1' \
   --set 'loki.auth_enabled=false' \
-  --set 'log.storage.type: filesystem'
+  --set 'loki.storage.type=filesystem'
 ```
 
 The previous command uses an example [values.yaml](https://github.com/grafana/loki/blob/main/production/helm/loki/single-binary-values.yaml) from the Loki repository for setting up Loki in the 'SingleBinary' mode. Additionally, it applies:
@@ -219,7 +219,6 @@ Because Grafana provides a very good Loki integration, you might want to install
 
    ```bash
    helm delete -n ${K8S_NAMESPACE} ${HELM_LOKI_RELEASE}
-   helm delete -n ${K8S_NAMESPACE} promtail
    helm delete -n ${K8S_NAMESPACE} grafana
    ```
 
