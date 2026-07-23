@@ -2149,10 +2149,10 @@ spec:
                         - message: Only one authentication method can be specified
                           rule: '!(has(self.basic) && has(self.oauth2))'
                       compression:
-                        description: Compression defines the compression algorithm
-                          to use when sending data to the OTLP backend. If not set,
-                          `gzip` is used. To disable compression, set this field to
-                          `none`.
+                        description: 'Compression defines the compression algorithm
+                          to use when sending data to the OTLP backend. Supported
+                          values: `none`, `gzip`, `snappy`, `zstd`. If not set, `gzip`
+                          is used. To disable compression, set this field to `none`.'
                         enum:
                         - none
                         - gzip

@@ -26,6 +26,9 @@ For a quick check, you can inspect the `status` of a pipeline resource directly.
     backend   True                      True              True
     ```
 
+    > [!NOTE]
+    > LogPipeline and MetricPipeline resources display an additional `AGENT HEALTHY` column.
+
 3. If any condition is `False`, investigate the problem and fix it.
 
 To understand the meaning of each status condition, see the detailed reference for each pipeline type:

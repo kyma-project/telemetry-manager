@@ -74,7 +74,7 @@ type OTLPOutput struct {
 	// TLS defines TLS options for the OTLP output.
 	// +kubebuilder:validation:Optional
 	TLS *OutputTLS `json:"tls,omitempty"`
-	// Compression defines the compression algorithm to use when sending data to the OTLP backend. If not set, `gzip` is used. To disable compression, set this field to `none`.
+	// Compression defines the compression algorithm to use when sending data to the OTLP backend. Supported values: `none`, `gzip`, `snappy`, `zstd`. If not set, `gzip` is used. To disable compression, set this field to `none`.
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Enum=none;gzip;snappy;zstd
 	Compression OTLPCompressionEncoding `json:"compression,omitempty"`
