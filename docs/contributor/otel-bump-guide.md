@@ -15,7 +15,6 @@ As a maintainer or contributor, follow these steps to update the `opentelemetry-
   - [Implementation](#implementation)
     - [OTel Collector Components](#otel-collector-components)
     - [Telemetry Manager](#telemetry-manager)
-  - [Post-Bump Verification](#post-bump-verification)
 
 ## Preparation
 
