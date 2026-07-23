@@ -35,7 +35,6 @@ Be aware of [these OTel-specific edge case limitations](https://github.com/open-
 - `k8s.cluster.name`: A logical identifier of the cluster, which, by default, is the API Server URL. To set a custom name, configure the `enrichments.cluster.name` field in the Telemetry CRD.
 - `k8s.cluster.uid`: A unique identifier of the cluster, realized by the UID of the `kube-system` namespace.
 - `k8s.node.name`: The Kubernetes Node name to which the emitting Pod is scheduled.
-- `k8s.node.uid`: The Kubernetes Node ID to which the emitting Pod belongs.
 
 ## Pod Label Attributes
 
