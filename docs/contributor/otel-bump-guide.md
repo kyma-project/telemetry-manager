@@ -103,10 +103,10 @@ After you complete the preparation steps, update the dependency versions in the 
 ### Telemetry Manager
 
 1. In the `telemetry-manager` repository, update the dependency version for `telemetrygen` in the `.env` file.
-2. Run `make generate`. This will update the `telemetrygen` version automatically in other files like the `test/testkit/images.go`.
+2. Run `make generate`. This automatically updates the `telemetrygen` version in other files, such as `test/testkit/images.go`.
 3. Update the dependency versions for `github.com/open-telemetry/opentelemetry-collector-contrib` in the `go.mod` file.
 4. Run `make tidy`.
 5. Create a bump PR that references the merged `opentelemetry-collector-components` PR.
-6. Add the `build-image` label to the PR to trigger the `Build Manager Image` workflow and approve the workflow to run. It is needed to build the image from the PR to be able to execute the load tests before merging.
+6. Add the `build-image` label to the PR to trigger the `Build Manager Image` workflow and approve the workflow run. The workflow builds an image from the PR, which is required to run load tests before merging.
 7. After the `Build Manager Image` workflow finishes execution, manually run the `PR Load Test` GitHub workflow, and document the performance results of the load test in the [benchmark documentation](./benchmarks/results).
 8. Merge the PR.
