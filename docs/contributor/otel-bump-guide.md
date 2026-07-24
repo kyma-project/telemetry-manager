@@ -15,7 +15,6 @@ As a maintainer or contributor, follow these steps to update the `opentelemetry-
   - [Implementation](#implementation)
     - [OTel Collector Components](#otel-collector-components)
     - [Telemetry Manager](#telemetry-manager)
-  - [Post-Bump Verification](#post-bump-verification)
 
 ## Preparation
 
@@ -103,19 +102,11 @@ After you complete the preparation steps, update the dependency versions in the 
 
 ### Telemetry Manager
 
-1. In the `telemetry-manager` repository, update the dependency versions for `telemetrygen` in the following files (other dependencies use the main tag, so they don't need to be updated):
-   - `.env`
-   - `go.mod`
-   - `test/testkit/images.go`
-   - `sec-scanners-config.yaml`
-   - `helm/values.yaml`
-2. Run `go mod tidy`.
-3. Run `make generate`.
-4. Create and merge a bump PR that references the merged `opentelemetry-collector-components` PR.
-
-## Post-Bump Verification
-
-After you updated the dependencies, perform the following verification checks:
-
-- [ ] Verify that all tests pass.
-- [ ] Manually trigger the "PR Load Test" GitHub workflow, and document the performance results of the load test in the [benchmark documentation](./benchmarks/results).
+1. In the `telemetry-manager` repository, update the dependency version for `telemetrygen` in the `.env` file.
+2. Run `make generate`. This automatically updates the `telemetrygen` version in other files, such as `test/testkit/images.go`.
+3. Update the dependency versions for `github.com/open-telemetry/opentelemetry-collector-contrib` in the `go.mod` file.
+4. Run `make tidy`.
+5. Create a bump PR that references the merged `opentelemetry-collector-components` PR.
+6. Add the `build-image` label to the PR to trigger the `Build Manager Image` workflow and approve the workflow run. The workflow builds an image from the PR, which is required to run load tests before merging.
+7. After the `Build Manager Image` workflow finishes execution, manually run the `PR Load Test` GitHub workflow, and document the performance results of the load test in the [benchmark documentation](./benchmarks/results).
+8. Merge the PR.
