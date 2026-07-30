@@ -67,6 +67,8 @@ You can set up ingestion of logs from applications and the Istio service mesh to
        input:
          runtime:
            enabled: true
+         otlp:
+           enabled: true
        output:
          otlp:
            endpoint:
