@@ -89,7 +89,7 @@ See how the deprecated fields map to their new OTLP-based counterparts:
    metadata:
      name: my-http-pipeline
    spec:
-     filter:
+     filters:
        - custom: |
          Name    grep
          Exclude path /healthz/ready
