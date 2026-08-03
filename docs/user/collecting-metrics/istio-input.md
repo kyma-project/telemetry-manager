@@ -21,7 +21,7 @@ By default, the **istio** input is disabled. If you are using Istio, enable the 
       enabled: true
 ```
 
-With this, the Metric Agent starts collecting all Istio metrics from Istio sidecars from all Namespaces, excluding system Namespaces (`kyma-system`, `kube-system`, `istio-system`).
+With this, the Metric Agent starts collecting all Istio metrics from Istio sidecars in all namespaces except the system namespaces `kyma-system`, `kube-system`, and `istio-system`.
 
 > [!TIP]
 > To validate or debug your configuration, use diagnostic metrics (see [Collect Diagnostic Metrics](#collect-diagnostic-metrics)).
