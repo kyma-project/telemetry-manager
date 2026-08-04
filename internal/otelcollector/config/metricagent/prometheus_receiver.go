@@ -40,6 +40,7 @@ func prometheusPodsReceiverConfig(collectionInterval time.Duration) *PrometheusR
 		ScrapeInterval:             collectionInterval,
 		SampleLimit:                sampleLimit,
 		BodySizeLimit:              bodySizeLimit,
+		ExtraScrapeMetrics:         true,
 		KubernetesDiscoveryConfigs: discoveryConfigWithNodeSelector(RolePod),
 		JobName:                    appPodsJobName,
 		RelabelConfigs:             prometheusPodsRelabelConfigs(),
@@ -61,6 +62,7 @@ func prometheusServicesReceiverConfig(opts BuildOptions, collectionInterval time
 		ScrapeInterval:             collectionInterval,
 		SampleLimit:                sampleLimit,
 		BodySizeLimit:              bodySizeLimit,
+		ExtraScrapeMetrics:         true,
 		KubernetesDiscoveryConfigs: discoveryConfigWithNodeSelector(RoleEndpoints),
 	}
 
@@ -158,6 +160,7 @@ func prometheusIstioReceiverConfig(envoyMetricsEnabled bool, collectionInterval 
 					BodySizeLimit:              bodySizeLimit,
 					MetricsPath:                "/stats/prometheus",
 					ScrapeInterval:             collectionInterval,
+					ExtraScrapeMetrics:         true,
 					KubernetesDiscoveryConfigs: discoveryConfigWithNodeSelector(RolePod),
 					RelabelConfigs: []Relabel{
 						keepIfRunningOnSameNode(NodeAffiliatedPod),

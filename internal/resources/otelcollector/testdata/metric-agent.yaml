@@ -218,6 +218,8 @@ spec:
     ports:
     - port: 8888
       protocol: TCP
+    - port: 9090
+      protocol: TCP
   podSelector:
     matchLabels:
       app.kubernetes.io/name: telemetry-metric-agent

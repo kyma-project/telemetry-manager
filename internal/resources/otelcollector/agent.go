@@ -49,6 +49,7 @@ type AgentApplierDeleter struct {
 
 	baseName            string
 	extraPodLabels      map[string]string
+	extraMetricsPorts   []int32
 	makeAnnotationsFunc func(configChecksum string, opts AgentApplyOptions) map[string]string
 	image               string
 	rbac                rbac
@@ -125,6 +126,7 @@ func NewMetricAgentApplierDeleter(globals config.Global, image, priorityClassNam
 		globals:             globals,
 		baseName:            names.MetricAgent,
 		extraPodLabels:      extraLabels,
+		extraMetricsPorts:   []int32{ports.OpsScrapeMetrics},
 		makeAnnotationsFunc: makeMetricAgentAnnotations,
 		image:               image,
 		rbac:                makeMetricAgentRBAC(globals.TargetNamespace()),
@@ -172,7 +174,7 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 
 	configChecksum := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, secretsInChecksum)
 
-	networkPolicies := makeAgentNetworkPolicies(name, opts.IstioEnabled)
+	networkPolicies := makeAgentNetworkPolicies(name, opts.IstioEnabled, aad.extraMetricsPorts)
 
 	for _, np := range networkPolicies {
 		if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, labelerClient, np); err != nil {
@@ -291,7 +293,7 @@ func (aad *AgentApplierDeleter) makeAgentDaemonSet(configChecksum string, opts A
 	)
 }
 
-func makeAgentNetworkPolicies(name types.NamespacedName, istioEnabled bool) []*networkingv1.NetworkPolicy {
+func makeAgentNetworkPolicies(name types.NamespacedName, istioEnabled bool, extraMetricsPorts []int32) []*networkingv1.NetworkPolicy {
 	metricsNetworkPolicy := commonresources.MakeNetworkPolicy(
 		name,
 		commonresources.DefaultSelector(name.Name),
@@ -300,7 +302,7 @@ func makeAgentNetworkPolicies(name types.NamespacedName, istioEnabled bool) []*n
 			map[string]string{
 				commonresources.LabelKeyTelemetryMetricsScraping: commonresources.LabelValueTelemetryMetricsScraping,
 			},
-			agentIngressMetricsPorts(istioEnabled)),
+			agentIngressMetricsPorts(istioEnabled, extraMetricsPorts)),
 	)
 	agentNetworkPolicy := commonresources.MakeNetworkPolicy(
 		name,
@@ -325,7 +327,7 @@ func makeMetricAgentAnnotations(configChecksum string, opts AgentApplyOptions) m
 	annotations := map[string]string{commonresources.AnnotationKeyChecksumConfig: configChecksum}
 
 	if opts.IstioEnabled {
-		annotations[commonresources.AnnotationKeyIstioExcludeInboundPorts] = strconv.Itoa(int(ports.Metrics))
+		annotations[commonresources.AnnotationKeyIstioExcludeInboundPorts] = fmt.Sprintf("%d,%d", ports.Metrics, ports.OpsScrapeMetrics)
 		// Provision Istio certificates for Prometheus Receiver running as a part of MetricAgent by injecting a sidecar which will rotate SDS certificates and output them to a volume.
 		annotations[commonresources.AnnotationKeyIstioProxyConfig] = fmt.Sprintf(`# configure an env variable OUTPUT_CERTS to write certificates to the given folder
 proxyMetadata:
@@ -399,8 +401,9 @@ func makeFileLogCheckPointVolumeMount() corev1.VolumeMount {
 	}
 }
 
-func agentIngressMetricsPorts(istioEnabled bool) []int32 {
+func agentIngressMetricsPorts(istioEnabled bool, extraPorts []int32) []int32 {
 	metricsPorts := []int32{ports.Metrics}
+	metricsPorts = append(metricsPorts, extraPorts...)
 
 	if istioEnabled {
 		metricsPorts = append(metricsPorts, ports.IstioEnvoyTelemetry)

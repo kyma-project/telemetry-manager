@@ -79,7 +79,7 @@ spec:
           proxyMetadata:
             OUTPUT_CERTS: /etc/istio-output-certs
         sidecar.istio.io/userVolumeMount: '[{"name": "istio-certs", "mountPath": "/etc/istio-output-certs"}]'
-        traffic.sidecar.istio.io/excludeInboundPorts: "8888"
+        traffic.sidecar.istio.io/excludeInboundPorts: 8888,9090
         traffic.sidecar.istio.io/includeOutboundIPRanges: ""
         traffic.sidecar.istio.io/includeOutboundPorts: 4317,9090
       labels:
@@ -225,6 +225,8 @@ spec:
           networking.kyma-project.io/metrics-scraping: allowed
     ports:
     - port: 8888
+      protocol: TCP
+    - port: 9090
       protocol: TCP
     - port: 15090
       protocol: TCP
