@@ -85,7 +85,7 @@ spec:
     - conditions:
         - log.attributes["timestamp"] != nil
       statements:
-        - set(log.time, Time(log.attributes["timestamp"], "2006-01-02T15:04:05.000Z"))
+        - set(log.time, Time(log.attributes["timestamp"], "%Y-%m-%dT%H:%M:%S.%LZ"))
         - delete_key(log.attributes, "timestamp")
     - conditions:
         - log.attributes["level"] != nil
