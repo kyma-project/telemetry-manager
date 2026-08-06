@@ -65,6 +65,7 @@ export default [
       { text: 'Loki', link: './integration/loki/README' },
       { text: 'Jaeger', link: './integration/jaeger/README' },
       { text: 'Amazon CloudWatch', link: './integration/aws-cloudwatch/README' },
+      { text: 'Kubernetes Events', link: './integration/k8s-events/README' },
       { text: 'OpenTelemetry Demo App', link: './integration/opentelemetry-demo/README' },
       { text: 'Sample App', link: './integration/sample-app/README' },
     ]
