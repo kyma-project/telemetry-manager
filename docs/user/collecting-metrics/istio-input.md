@@ -21,11 +21,11 @@ By default, the **istio** input is disabled. If you are using Istio, enable the 
       enabled: true
 ```
 
-With this, the Metric Agent starts collecting all Istio metrics from Istio sidecars from all namespaces (including system namespaces).
+With this, the Metric Agent starts collecting all Istio metrics from Istio sidecars in all namespaces except the system namespaces `kyma-system`, `kube-system`, and `istio-system`.
 
 > [!TIP]
 > To validate or debug your configuration, use diagnostic metrics (see [Collect Diagnostic Metrics](#collect-diagnostic-metrics)).
-> To select metrics from specific namespaces, see [Filter Metrics](../filter-and-process/filter-metrics.md).
+> To select metrics from specific namespaces or to include system namespaces, see [Filter Metrics](../filter-and-process/filter-metrics.md).
 > To change how often Istio metrics are scraped, configure the collection interval (see [Configure Collection Interval](README.md#configure-collection-interval)).
 
 ## Collect Envoy Metrics
