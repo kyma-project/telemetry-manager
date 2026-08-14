@@ -20,6 +20,7 @@ const (
 	errMsgPortInvalidMultipleColons = "address %s: too many colons in address"
 	errMsgPortMissing               = "missing port"
 	errMsgUnsupportedScheme         = "missing or unsupported protocol scheme"
+	errMsgIncorrectGRPCURI          = "incorrect gRPC URI"
 	errMsgGRPCOAuth2NoTLS           = "OAuth2 requires TLS when using gRPC protocol"
 	errMsgHTTPWithTLS               = "HTTP scheme with TLS not allowed"
 	errMsgGRPCWithPath              = "gRPC endpoints cannot contain paths"
@@ -367,12 +368,68 @@ var testScenarios = []struct {
 		errOTLPHTTP:    ErrUnsupportedScheme,
 		errMsgOTLPHTTP: errMsgUnsupportedScheme,
 
-		errFluentdHTTP:    nil,
-		errMsgFluentdHTTP: "",
+		errFluentdHTTP:    ErrUnsupportedScheme,
+		errMsgFluentdHTTP: errMsgUnsupportedScheme,
 	},
 	{
 		name:     "random scheme: with port",
 		endpoint: "rand://example.com:8080",
+
+		errOTLPGRPC:    ErrUnsupportedScheme,
+		errMsgOTLPGRPC: errMsgUnsupportedScheme,
+
+		errOTLPHTTP:    ErrUnsupportedScheme,
+		errMsgOTLPHTTP: errMsgUnsupportedScheme,
+
+		errFluentdHTTP:    ErrUnsupportedScheme,
+		errMsgFluentdHTTP: errMsgUnsupportedScheme,
+	},
+	{
+		name:     "random scheme: no port",
+		endpoint: "rand://example.com",
+
+		errOTLPGRPC:    ErrUnsupportedScheme,
+		errMsgOTLPGRPC: errMsgUnsupportedScheme,
+
+		errOTLPHTTP:    ErrUnsupportedScheme,
+		errMsgOTLPHTTP: errMsgUnsupportedScheme,
+
+		errFluentdHTTP:    ErrUnsupportedScheme,
+		errMsgFluentdHTTP: errMsgUnsupportedScheme,
+	},
+	{
+		// passthrough:// (double slash) puts the host in the authority, not the path — invalid for gRPC resolver schemes
+		name:     "passthrough scheme double slash: with port",
+		endpoint: "passthrough://example.com:4317",
+
+		errOTLPGRPC:    ErrIncorrectGRPCURI,
+		errMsgOTLPGRPC: errMsgIncorrectGRPCURI,
+
+		errOTLPHTTP:    ErrUnsupportedScheme,
+		errMsgOTLPHTTP: errMsgUnsupportedScheme,
+
+		errFluentdHTTP:    ErrUnsupportedScheme,
+		errMsgFluentdHTTP: errMsgUnsupportedScheme,
+	},
+	{
+		// passthrough:// with no authority — invalid, must be rejected
+		name:     "passthrough scheme double slash: no authority",
+		endpoint: "passthrough://",
+
+		errOTLPGRPC:    ErrPortMissing,
+		errMsgOTLPGRPC: errMsgPortMissing,
+
+		errOTLPHTTP:    ErrPortMissing,
+		errMsgOTLPHTTP: errMsgPortMissing,
+
+		errFluentdHTTP:    ErrPortMissing,
+		errMsgFluentdHTTP: errMsgPortMissing,
+	},
+	{
+		// passthrough:/// (triple slash) — canonical gRPC URI form; url.Parse sets host="" so
+		// the validator must preserve the scheme instead of stripping it via the placeholder path.
+		name:     "passthrough scheme triple slash: with port",
+		endpoint: "passthrough:///example.com:4317",
 
 		errOTLPGRPC:    nil,
 		errMsgOTLPGRPC: "",
@@ -380,21 +437,8 @@ var testScenarios = []struct {
 		errOTLPHTTP:    ErrUnsupportedScheme,
 		errMsgOTLPHTTP: errMsgUnsupportedScheme,
 
-		errFluentdHTTP:    nil,
-		errMsgFluentdHTTP: "",
-	},
-	{
-		name:     "random scheme: no port",
-		endpoint: "rand://example.com",
-
-		errOTLPGRPC:    ErrPortMissing,
-		errMsgOTLPGRPC: errMsgPortMissing,
-
-		errOTLPHTTP:    ErrUnsupportedScheme,
-		errMsgOTLPHTTP: errMsgUnsupportedScheme,
-
-		errFluentdHTTP:    nil,
-		errMsgFluentdHTTP: "",
+		errFluentdHTTP:    ErrUnsupportedScheme,
+		errMsgFluentdHTTP: errMsgUnsupportedScheme,
 	},
 }
 
