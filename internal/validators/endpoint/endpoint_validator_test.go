@@ -20,7 +20,7 @@ const (
 	errMsgPortInvalidMultipleColons = "address %s: too many colons in address"
 	errMsgPortMissing               = "missing port"
 	errMsgUnsupportedScheme         = "missing or unsupported protocol scheme"
-	errMsgIncorrectGRPCURI          = "incorrect gRPC URI"
+	errMsgIncorrectGRPCURI          = "incorrect gRPC URI: use triple-slash form (e.g. passthrough:///host:port)"
 	errMsgGRPCOAuth2NoTLS           = "OAuth2 requires TLS when using gRPC protocol"
 	errMsgHTTPWithTLS               = "HTTP scheme with TLS not allowed"
 	errMsgGRPCWithPath              = "gRPC endpoints cannot contain paths"
@@ -433,6 +433,48 @@ var testScenarios = []struct {
 
 		errOTLPGRPC:    nil,
 		errMsgOTLPGRPC: "",
+
+		errOTLPHTTP:    ErrUnsupportedScheme,
+		errMsgOTLPHTTP: errMsgUnsupportedScheme,
+
+		errFluentdHTTP:    ErrUnsupportedScheme,
+		errMsgFluentdHTTP: errMsgUnsupportedScheme,
+	},
+	{
+		// dns:/// is a valid gRPC resolver scheme — collector passes it verbatim to grpc.NewClient
+		name:     "dns scheme triple slash: with port",
+		endpoint: "dns:///example.com:4317",
+
+		errOTLPGRPC:    nil,
+		errMsgOTLPGRPC: "",
+
+		errOTLPHTTP:    ErrUnsupportedScheme,
+		errMsgOTLPHTTP: errMsgUnsupportedScheme,
+
+		errFluentdHTTP:    ErrUnsupportedScheme,
+		errMsgFluentdHTTP: errMsgUnsupportedScheme,
+	},
+	{
+		// xds:/// is a valid gRPC resolver scheme — collector passes it verbatim to grpc.NewClient
+		name:     "xds scheme triple slash: with port",
+		endpoint: "xds:///example.com:4317",
+
+		errOTLPGRPC:    nil,
+		errMsgOTLPGRPC: "",
+
+		errOTLPHTTP:    ErrUnsupportedScheme,
+		errMsgOTLPHTTP: errMsgUnsupportedScheme,
+
+		errFluentdHTTP:    ErrUnsupportedScheme,
+		errMsgFluentdHTTP: errMsgUnsupportedScheme,
+	},
+	{
+		// grpc:// with a valid port — scheme is rejected after port validation
+		name:     "grpc scheme double slash: with port",
+		endpoint: "grpc://example.com:4317",
+
+		errOTLPGRPC:    ErrUnsupportedScheme,
+		errMsgOTLPGRPC: errMsgUnsupportedScheme,
 
 		errOTLPHTTP:    ErrUnsupportedScheme,
 		errMsgOTLPHTTP: errMsgUnsupportedScheme,

@@ -18,6 +18,12 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
+// TestPassthroughEndpoint verifies that the passthrough:/// gRPC resolver scheme is accepted
+// end-to-end. This scheme bypasses DNS resolution and passes the address directly to the OS,
+// which avoids the Happy Eyeballs IPv6-first behavior introduced by grpc-go v1.77.0 that
+// causes 250ms+ latency penalties or connection failures in IPv4-only environments.
+//
+// The passthrough:/// scheme does not imply TLS, so TLS.Insecure must be set explicitly.
 func TestPassthroughEndpoint(t *testing.T) {
 	suite.SetupTest(t, suite.LabelTraces)
 
