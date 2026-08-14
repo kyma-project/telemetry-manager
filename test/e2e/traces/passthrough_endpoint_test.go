@@ -23,7 +23,8 @@ import (
 // which avoids the Happy Eyeballs IPv6-first behavior introduced by grpc-go v1.77.0 that
 // causes 250ms+ latency penalties or connection failures in IPv4-only environments.
 //
-// The passthrough:/// scheme does not imply TLS, so TLS.Insecure must be set explicitly.
+// Unlike http://, the passthrough:/// scheme defaults to TLS (insecure: false).
+// Use TLS.Insecure: true to connect to a plaintext backend.
 func TestPassthroughEndpoint(t *testing.T) {
 	suite.SetupTest(t, suite.LabelTraces)
 
