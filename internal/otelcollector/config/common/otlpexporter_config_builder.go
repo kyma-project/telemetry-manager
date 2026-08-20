@@ -79,6 +79,7 @@ func NewOTLPExporterConfigBuilder(reader client.Reader, otlpOutput *telemetryv1b
 	for _, opt := range opts {
 		opt(cb)
 	}
+
 	return cb
 }
 

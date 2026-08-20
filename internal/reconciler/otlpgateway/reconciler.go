@@ -360,8 +360,10 @@ func (r *Reconciler) buildCollectorConfig(ctx context.Context, tracePipelines []
 		return nil, nil, fmt.Errorf("failed to get cluster uid: %w", err)
 	}
 
-	var enrichments *operatorv1beta1.EnrichmentSpec
-	var passthroughResolver bool
+	var (
+		enrichments         *operatorv1beta1.EnrichmentSpec
+		passthroughResolver bool
+	)
 
 	t, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
 	if err == nil {

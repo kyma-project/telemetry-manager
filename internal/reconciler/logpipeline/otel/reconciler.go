@@ -323,8 +323,10 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1be
 }
 
 func (r *Reconciler) reconcileAgent(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline, allPipelines []telemetryv1beta1.LogPipeline) error {
-	var enrichments *operatorv1beta1.EnrichmentSpec
-	var passthroughResolver bool
+	var (
+		enrichments         *operatorv1beta1.EnrichmentSpec
+		passthroughResolver bool
+	)
 
 	t, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
 	if err == nil {

@@ -265,10 +265,13 @@ func rewriteAsPassthrough(endpoint []byte) []byte {
 	if strings.HasPrefix(s, "passthrough:///") {
 		return endpoint
 	}
+
 	if strings.HasPrefix(s, "https://") {
 		return endpoint
 	}
+
 	s = strings.TrimPrefix(s, "http://")
+
 	return []byte("passthrough:///" + s)
 }
 

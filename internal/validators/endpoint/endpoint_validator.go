@@ -247,6 +247,7 @@ func indexTripleSlash(s string) int {
 			}
 		}
 	}
+
 	return idx
 }
 
