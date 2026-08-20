@@ -361,10 +361,14 @@ func (r *Reconciler) buildCollectorConfig(ctx context.Context, tracePipelines []
 	}
 
 	var enrichments *operatorv1beta1.EnrichmentSpec
+	var passthroughResolver bool
 
 	t, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
 	if err == nil {
 		enrichments = t.Spec.Enrichments
+		if t.Spec.GRPC != nil {
+			passthroughResolver = t.Spec.GRPC.PassthroughResolver
+		}
 	}
 
 	vpaCRDExists, err := r.vpaStatusChecker.VpaCRDExists(ctx, r.Client)
@@ -383,11 +387,12 @@ func (r *Reconciler) buildCollectorConfig(ctx context.Context, tracePipelines []
 			ClusterUID:    clusterUID,
 			CloudProvider: shootInfo.CloudProvider,
 		},
-		Enrichments:       enrichments,
-		ServiceEnrichment: telemetryutils.GetServiceEnrichmentFromTelemetryOrDefault(ctx, r.Client, r.globals.DefaultTelemetryNamespace()),
-		ModuleVersion:     r.globals.Version(),
-		GatewayNamespace:  r.globals.TargetNamespace(),
-		VpaActive:         vpaCRDExists && vpaEnabled,
+		Enrichments:         enrichments,
+		ServiceEnrichment:   telemetryutils.GetServiceEnrichmentFromTelemetryOrDefault(ctx, r.Client, r.globals.DefaultTelemetryNamespace()),
+		ModuleVersion:       r.globals.Version(),
+		GatewayNamespace:    r.globals.TargetNamespace(),
+		VpaActive:           vpaCRDExists && vpaEnabled,
+		PassthroughResolver: passthroughResolver,
 	})
 }
 

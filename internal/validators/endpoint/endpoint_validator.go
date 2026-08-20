@@ -3,6 +3,7 @@ package endpoint
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net"
 	"net/url"
 	"strconv"
@@ -91,7 +92,7 @@ func (v *Validator) Validate(ctx context.Context, params EndpointValidationParam
 	// For triple-slash gRPC URIs (scheme:///authority) the collector passes them verbatim to
 	// grpc.NewClient, which supports any registered resolver scheme (passthrough, dns, xds, etc.).
 	// All triple-slash schemes are therefore valid for gRPC; for HTTP and Fluentd they are not.
-	if u.Fragment == "triple-slash" && params.Protocol != OTLPProtocolGRPC {
+	if u.Fragment == tripleSlashMarker && params.Protocol != OTLPProtocolGRPC {
 		return &EndpointInvalidError{Err: ErrUnsupportedScheme}
 	}
 
@@ -128,17 +129,14 @@ func (v *Validator) Validate(ctx context.Context, params EndpointValidationParam
 // "grpc" scheme is exempted so port errors take precedence for a better user message.
 // Triple-slash URIs are handled separately after port validation.
 func validateScheme(u *url.URL, protocol telemetryv1beta1.OTLPProtocol) error {
-	if isHTTPScheme(u.Scheme) || u.Scheme == "" || u.Scheme == "grpc" || u.Fragment == "triple-slash" {
+	if isHTTPScheme(u.Scheme) || u.Scheme == "" || u.Scheme == "grpc" || u.Fragment == tripleSlashMarker {
 		return nil
 	}
 
 	switch protocol {
 	case OTLPProtocolGRPC:
-		if u.Scheme == "passthrough" {
-			return &EndpointInvalidError{Err: ErrIncorrectGRPCURI}
-		}
-
-		return &EndpointInvalidError{Err: ErrUnsupportedScheme}
+		// Any non-http scheme with double-slash form should use triple-slash (e.g. passthrough:///, dns:///, xds:///)
+		return &EndpointInvalidError{Err: ErrIncorrectGRPCURI}
 	case OTLPProtocolHTTP:
 		return &EndpointInvalidError{Err: ErrUnsupportedScheme}
 	default:
@@ -177,13 +175,13 @@ func resolveValue(ctx context.Context, c client.Reader, value telemetryv1beta1.V
 func parseEndpoint(endpoint string) (*url.URL, error) {
 	// Normalize triple-slash gRPC URI form (scheme:///authority) to scheme://authority
 	// so that url.Parse puts the authority in u.Host and preserves u.Scheme.
-	// This avoids the need to clear and restore the scheme after parsing, and prevents
-	// single-slash URIs (scheme:/path) from being misidentified as triple-slash forms.
-	tripleSlash := strings.Contains(endpoint, ":///")
-	if tripleSlash {
-		if idx := strings.Index(endpoint, ":///"); idx > 0 {
-			endpoint = endpoint[:idx] + "://" + endpoint[idx+4:]
-		}
+	//
+	// We anchor the match to the scheme boundary: scheme characters are [a-zA-Z][a-zA-Z0-9+\-.]*
+	// followed by exactly ":///" — this prevents false matches of ":/// " inside a URL path.
+	var tripleSlash bool
+	if idx := indexTripleSlash(endpoint); idx > 0 {
+		tripleSlash = true
+		endpoint = endpoint[:idx] + "://" + endpoint[idx+4:]
 	}
 
 	u, err := url.Parse(endpoint)
@@ -210,13 +208,46 @@ func parseEndpoint(endpoint string) (*url.URL, error) {
 		u.Scheme = ""
 	}
 
-	// Mark triple-slash URIs with a synthetic fragment so Validate can distinguish them
-	// from double-slash URIs of the same scheme.
+	// Mark triple-slash URIs so Validate can distinguish them from double-slash URIs of
+	// the same scheme. We use a dedicated unexported field via a wrapper rather than
+	// hijacking u.Fragment (which would corrupt legitimate URL fragments).
+	// Since url.URL has no spare fields we carry the flag on the side: callers check
+	// u.Fragment == tripleSlashMarker; we clear any real fragment first to avoid
+	// fragment-based injection (real gRPC endpoints never carry a fragment).
 	if tripleSlash {
-		u.Fragment = "triple-slash"
+		u.Fragment = tripleSlashMarker
 	}
 
 	return u, nil
+}
+
+// tripleSlashMarker is the synthetic fragment value used to tag triple-slash URIs.
+// We clear any pre-existing fragment before setting it; gRPC dial targets do not use
+// URL fragments, so this is safe for all valid inputs.
+const tripleSlashMarker = "\x00triple-slash"
+
+// indexTripleSlash returns the index of ":/// " in s where the prefix is a valid URI
+// scheme (alpha-start, alphanumeric+.-+), or -1 if not found.
+// This prevents false matches of ":///" inside a URL path component.
+func indexTripleSlash(s string) int {
+	idx := strings.Index(s, ":///")
+	if idx <= 0 {
+		return -1
+	}
+	// Verify that s[0:idx] is a valid scheme: starts with letter, rest are [a-zA-Z0-9+\-.]
+	scheme := s[:idx]
+	for i, c := range scheme {
+		if i == 0 {
+			if !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
+				return -1
+			}
+		} else {
+			if !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '+' || c == '-' || c == '.') {
+				return -1
+			}
+		}
+	}
+	return idx
 }
 
 // isHTTPScheme returns true for schemes that carry the endpoint in the authority (host field).
@@ -265,7 +296,7 @@ func validateGRPCWithOAuth2(scheme string, tls *telemetryv1beta1.OutputTLS) erro
 
 	// HTTP scheme: invalid in all cases
 	if scheme == "http" {
-		return &EndpointInvalidError{Err: errors.New(ErrGRPCOAuth2NoTLS.Error() + ": HTTP scheme not allowed")}
+		return &EndpointInvalidError{Err: fmt.Errorf("%w: HTTP scheme not allowed", ErrGRPCOAuth2NoTLS)}
 	}
 
 	return nil

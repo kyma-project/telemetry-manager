@@ -324,10 +324,14 @@ func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1be
 
 func (r *Reconciler) reconcileAgent(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline, allPipelines []telemetryv1beta1.LogPipeline) error {
 	var enrichments *operatorv1beta1.EnrichmentSpec
+	var passthroughResolver bool
 
 	t, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
 	if err == nil {
 		enrichments = t.Spec.Enrichments
+		if t.Spec.GRPC != nil {
+			passthroughResolver = t.Spec.GRPC.PassthroughResolver
+		}
 	}
 
 	shootInfo := k8sutils.GetGardenerShootInfo(ctx, r.Client)
@@ -353,9 +357,10 @@ func (r *Reconciler) reconcileAgent(ctx context.Context, pipeline *telemetryv1be
 			ClusterUID:    clusterUID,
 			CloudProvider: shootInfo.CloudProvider,
 		},
-		Enrichments:       enrichments,
-		ServiceEnrichment: telemetryutils.GetServiceEnrichmentFromTelemetryOrDefault(ctx, r.Client, r.globals.DefaultTelemetryNamespace()),
-		VpaActive:         vpaCRDExists && isVpaEnabled,
+		Enrichments:         enrichments,
+		ServiceEnrichment:   telemetryutils.GetServiceEnrichmentFromTelemetryOrDefault(ctx, r.Client, r.globals.DefaultTelemetryNamespace()),
+		VpaActive:           vpaCRDExists && isVpaEnabled,
+		PassthroughResolver: passthroughResolver,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to build agent config: %w", err)

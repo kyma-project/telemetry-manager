@@ -375,8 +375,8 @@ var testScenarios = []struct {
 		name:     "random scheme: with port",
 		endpoint: "rand://example.com:8080",
 
-		errOTLPGRPC:    ErrUnsupportedScheme,
-		errMsgOTLPGRPC: errMsgUnsupportedScheme,
+		errOTLPGRPC:    ErrIncorrectGRPCURI,
+		errMsgOTLPGRPC: errMsgIncorrectGRPCURI,
 
 		errOTLPHTTP:    ErrUnsupportedScheme,
 		errMsgOTLPHTTP: errMsgUnsupportedScheme,
@@ -388,8 +388,8 @@ var testScenarios = []struct {
 		name:     "random scheme: no port",
 		endpoint: "rand://example.com",
 
-		errOTLPGRPC:    ErrUnsupportedScheme,
-		errMsgOTLPGRPC: errMsgUnsupportedScheme,
+		errOTLPGRPC:    ErrIncorrectGRPCURI,
+		errMsgOTLPGRPC: errMsgIncorrectGRPCURI,
 
 		errOTLPHTTP:    ErrUnsupportedScheme,
 		errMsgOTLPHTTP: errMsgUnsupportedScheme,
@@ -475,6 +475,20 @@ var testScenarios = []struct {
 
 		errOTLPGRPC:    ErrUnsupportedScheme,
 		errMsgOTLPGRPC: errMsgUnsupportedScheme,
+
+		errOTLPHTTP:    ErrUnsupportedScheme,
+		errMsgOTLPHTTP: errMsgUnsupportedScheme,
+
+		errFluentdHTTP:    ErrUnsupportedScheme,
+		errMsgFluentdHTTP: errMsgUnsupportedScheme,
+	},
+	{
+		// Ensure a user-supplied double-slash scheme doesn't sneak through via some path
+		name:     "dns double slash: with port",
+		endpoint: "dns://example.com:4317",
+
+		errOTLPGRPC:    ErrIncorrectGRPCURI,
+		errMsgOTLPGRPC: errMsgIncorrectGRPCURI,
 
 		errOTLPHTTP:    ErrUnsupportedScheme,
 		errMsgOTLPHTTP: errMsgUnsupportedScheme,
