@@ -160,7 +160,7 @@ type Scaling struct {
 // GRPCSpec configures module-level gRPC transport settings.
 type GRPCSpec struct {
 	// PassthroughResolver configures all OTLP gRPC exporter endpoints to use the passthrough:/// resolver scheme.
-	// Enable this on IPv4-only clusters to avoid connection failures caused by grpc-go's IPv6-first DNS behavior.
+	// Enable this for IPv4 clusters operating in an IPv6 environment to avoid connection failures caused by grpc-go's IPv6-first DNS behavior.
 	// +kubebuilder:validation:Optional
 	PassthroughResolver bool `json:"passthroughResolver,omitempty"`
 }
