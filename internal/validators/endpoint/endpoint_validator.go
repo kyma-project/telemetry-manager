@@ -238,11 +238,11 @@ func indexTripleSlash(s string) int {
 	scheme := s[:idx]
 	for i, c := range scheme {
 		if i == 0 {
-			if !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
+			if (c < 'a' || c > 'z') && (c < 'A' || c > 'Z') {
 				return -1
 			}
 		} else {
-			if !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '+' || c == '-' || c == '.') {
+			if (c < 'a' || c > 'z') && (c < 'A' || c > 'Z') && (c < '0' || c > '9') && c != '+' && c != '-' && c != '.' {
 				return -1
 			}
 		}
