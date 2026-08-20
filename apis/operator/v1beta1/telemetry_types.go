@@ -159,9 +159,8 @@ type Scaling struct {
 
 // GRPCSpec configures module-level gRPC transport settings.
 type GRPCSpec struct {
-	// PassthroughResolver rewrites all OTLP gRPC exporter endpoints to use the passthrough:/// resolver scheme,
-	// bypassing grpc-go's internal DNS resolver. Enable this on IPv4-only clusters to avoid grpc-go's
-	// IPv6-first Happy Eyeballs behavior introduced in grpc-go v1.77.0.
+	// PassthroughResolver configures all OTLP gRPC exporter endpoints to use the passthrough:/// resolver scheme.
+	// Enable this on IPv4-only clusters to avoid connection failures caused by grpc-go's IPv6-first DNS behavior.
 	// +kubebuilder:validation:Optional
 	PassthroughResolver bool `json:"passthroughResolver,omitempty"`
 }
