@@ -413,10 +413,14 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 	}
 
 	var telemetrySpec operatorv1beta1.TelemetrySpec
+	var passthroughResolver bool
 
 	t, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
 	if err == nil {
 		telemetrySpec = t.Spec
+		if t.Spec.GRPC != nil {
+			passthroughResolver = t.Spec.GRPC.PassthroughResolver
+		}
 	}
 
 	vpaCRDExists, err := r.vpaStatusChecker.VpaCRDExists(ctx, r.Client)
@@ -440,7 +444,7 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 		ServiceEnrichment:   telemetryutils.GetServiceEnrichmentFromTelemetryOrDefault(ctx, r.Client, r.globals.DefaultTelemetryNamespace()),
 		VpaActive:           vpaCRDExists && isVpaEnabled,
 		CollectionIntervals: telemetryutils.ResolveMetricCollectionIntervals(telemetrySpec.Metric),
-		PassthroughResolver: telemetrySpec.GRPC != nil && telemetrySpec.GRPC.PassthroughResolver,
+		PassthroughResolver: passthroughResolver,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create collector config: %w", err)

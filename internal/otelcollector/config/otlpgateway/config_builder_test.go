@@ -37,16 +37,16 @@ func TestBuild(t *testing.T) {
 	sut := Builder{Reader: fakeClient}
 
 	tests := []struct {
-		name                    string
-		goldenFileName          string
-		envVarsGoldenFileName   string
-		tracePipelines          []telemetryv1beta1.TracePipeline
-		logPipelines            []telemetryv1beta1.LogPipeline
-		metricPipelines         []telemetryv1beta1.MetricPipeline
-		serviceEnrichment       string
-		moduleVersion           string
-		vpaActive               bool
-		passthroughResolver     bool
+		name                  string
+		goldenFileName        string
+		envVarsGoldenFileName string
+		tracePipelines        []telemetryv1beta1.TracePipeline
+		logPipelines          []telemetryv1beta1.LogPipeline
+		metricPipelines       []telemetryv1beta1.MetricPipeline
+		serviceEnrichment     string
+		moduleVersion         string
+		vpaActive             bool
+		passthroughResolver   bool
 	}{
 		{
 			name:           "gateway with VPA active - all signals",
@@ -686,9 +686,9 @@ func TestBuild(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			buildOptions := BuildOptions{
-				TracePipelines:      tt.tracePipelines,
-				LogPipelines:        tt.logPipelines,
-				MetricPipelines:     tt.metricPipelines,
+				TracePipelines:  tt.tracePipelines,
+				LogPipelines:    tt.logPipelines,
+				MetricPipelines: tt.metricPipelines,
 				Cluster: common.ClusterOptions{
 					ClusterName:   "${KUBERNETES_SERVICE_HOST}",
 					CloudProvider: "test-cloud-provider",

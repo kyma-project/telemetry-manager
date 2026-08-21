@@ -17,47 +17,41 @@ import (
 )
 
 const (
-	basicAuthHeaderVariablePrefix      = "BASIC_AUTH_HEADER"
-	otlpEndpointVariablePrefix         = "OTLP_ENDPOINT"
-	otlpEndpointOriginalVariablePrefix = "OTLP_ENDPOINT_ORIGINAL"
-	tlsConfigCertVariablePrefix        = "OTLP_TLS_CERT_PEM"
-	tlsConfigKeyVariablePrefix         = "OTLP_TLS_KEY_PEM"
-	tlsConfigCaVariablePrefix          = "OTLP_TLS_CA_PEM"
-	oauth2TokenURLVariablePrefix       = "OAUTH2_TOKEN_URL"     //nolint:gosec // G101: This is a variable name prefix, not a credential
-	oauth2ClientIDVariablePrefix       = "OAUTH2_CLIENT_ID"     //nolint:gosec // G101: This is a variable name prefix, not a credential
-	oauth2ClientSecretVariablePrefix   = "OAUTH2_CLIENT_SECRET" //nolint:gosec // G101: This is a variable name prefix, not a credential
+	basicAuthHeaderVariablePrefix    = "BASIC_AUTH_HEADER"
+	otlpEndpointVariablePrefix       = "OTLP_ENDPOINT"
+	tlsConfigCertVariablePrefix      = "OTLP_TLS_CERT_PEM"
+	tlsConfigKeyVariablePrefix       = "OTLP_TLS_KEY_PEM"
+	tlsConfigCaVariablePrefix        = "OTLP_TLS_CA_PEM"
+	oauth2TokenURLVariablePrefix     = "OAUTH2_TOKEN_URL"     //nolint:gosec // G101: This is a variable name prefix, not a credential
+	oauth2ClientIDVariablePrefix     = "OAUTH2_CLIENT_ID"     //nolint:gosec // G101: This is a variable name prefix, not a credential
+	oauth2ClientSecretVariablePrefix = "OAUTH2_CLIENT_SECRET" //nolint:gosec // G101: This is a variable name prefix, not a credential
 )
 
 // =============================================================================
 // Env Vars Builders
 // =============================================================================
 
-func makeOTLPExporterEnvVars(ctx context.Context, c client.Reader, output *telemetryv1beta1.OTLPOutput, pipelineRef pipelines.PipelineRef, passthroughResolver bool) (map[string][]byte, error) {
-	var err error
-
+func makeOTLPExporterEnvVars(ctx context.Context, c client.Reader, output *telemetryv1beta1.OTLPOutput, pipelineRef pipelines.PipelineRef, passthroughResolver bool) (map[string][]byte, string, error) {
 	secretData := make(map[string][]byte)
 
-	err = makeBasicAuthEnvVar(ctx, c, secretData, output, pipelineRef)
-	if err != nil {
-		return nil, err
+	if err := makeBasicAuthEnvVar(ctx, c, secretData, output, pipelineRef); err != nil {
+		return nil, "", err
 	}
 
-	err = makeOTLPEndpointEnvVar(ctx, c, secretData, output, pipelineRef, passthroughResolver)
+	originalEndpointURL, err := makeOTLPEndpointEnvVar(ctx, c, secretData, output, pipelineRef, passthroughResolver)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
-	err = makeHeaderEnvVar(ctx, c, secretData, output, pipelineRef)
-	if err != nil {
-		return nil, err
+	if err := makeHeaderEnvVar(ctx, c, secretData, output, pipelineRef); err != nil {
+		return nil, "", err
 	}
 
-	err = makeTLSEnvVar(ctx, c, secretData, output, pipelineRef)
-	if err != nil {
-		return nil, err
+	if err := makeTLSEnvVar(ctx, c, secretData, output, pipelineRef); err != nil {
+		return nil, "", err
 	}
 
-	return secretData, nil
+	return secretData, string(originalEndpointURL), nil
 }
 
 func makeOAuth2ExtensionEnvVars(ctx context.Context, c client.Reader, oauth2Options *telemetryv1beta1.OAuth2Options, pipelineRef pipelines.PipelineRef) (map[string][]byte, error) {
@@ -103,19 +97,17 @@ func makeBasicAuthEnvVar(ctx context.Context, c client.Reader, secretData map[st
 	return nil
 }
 
-func makeOTLPEndpointEnvVar(ctx context.Context, c client.Reader, secretData map[string][]byte, output *telemetryv1beta1.OTLPOutput, pipelineRef pipelines.PipelineRef, passthroughResolver bool) error {
+func makeOTLPEndpointEnvVar(ctx context.Context, c client.Reader, secretData map[string][]byte, output *telemetryv1beta1.OTLPOutput, pipelineRef pipelines.PipelineRef, passthroughResolver bool) (originalEndpointURL []byte, err error) {
 	otlpEndpointVariable := formatEnvVarKey(otlpEndpointVariablePrefix, pipelineRef)
-	otlpEndpointOriginalVariable := formatEnvVarKey(otlpEndpointOriginalVariablePrefix, pipelineRef)
 
 	endpointURL, originalEndpointURL, err := resolveEndpointURL(ctx, c, output, passthroughResolver)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	secretData[otlpEndpointVariable] = endpointURL
-	secretData[otlpEndpointOriginalVariable] = originalEndpointURL
 
-	return nil
+	return originalEndpointURL, nil
 }
 
 func makeHeaderEnvVar(ctx context.Context, c client.Reader, secretData map[string][]byte, output *telemetryv1beta1.OTLPOutput, pipelineRef pipelines.PipelineRef) error {
@@ -264,7 +256,7 @@ func resolveEndpointURL(ctx context.Context, c client.Reader, output *telemetryv
 func rewriteAsPassthrough(endpoint []byte) []byte {
 	s := strings.TrimSpace(string(endpoint))
 	if strings.HasPrefix(s, "passthrough:///") {
-		return endpoint
+		return []byte(s)
 	}
 
 	s = strings.TrimPrefix(s, "https://")

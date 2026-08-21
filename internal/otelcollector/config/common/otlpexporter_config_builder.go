@@ -84,20 +84,18 @@ func NewOTLPExporterConfigBuilder(reader client.Reader, otlpOutput *telemetryv1b
 }
 
 func (cb *OTLPExporterConfigBuilder) OTLPExporter(ctx context.Context) (*OTLPExporterConfig, EnvVars, error) {
-	envVars, err := makeOTLPExporterEnvVars(ctx, cb.reader, cb.otlpOutput, cb.pipelineRef, cb.passthroughResolver)
+	envVars, originalEndpoint, err := makeOTLPExporterEnvVars(ctx, cb.reader, cb.otlpOutput, cb.pipelineRef, cb.passthroughResolver)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to make env vars: %w", err)
 	}
 
-	exporter := otlpExporter(cb.otlpOutput, cb.pipelineRef, envVars, cb.sendingQueue)
+	exporter := otlpExporter(cb.otlpOutput, cb.pipelineRef, cb.sendingQueue, originalEndpoint)
 
 	return exporter, envVars, nil
 }
 
-func otlpExporter(otlpOutput *telemetryv1beta1.OTLPOutput, pipelineRef pipelines.PipelineRef, envVars map[string][]byte, sendingQueue SendingQueue) *OTLPExporterConfig {
+func otlpExporter(otlpOutput *telemetryv1beta1.OTLPOutput, pipelineRef pipelines.PipelineRef, sendingQueue SendingQueue, originalEndpoint string) *OTLPExporterConfig {
 	otlpEndpointVariable := formatEnvVarKey(otlpEndpointVariablePrefix, pipelineRef)
-	otlpEndpointOriginalVariable := formatEnvVarKey(otlpEndpointOriginalVariablePrefix, pipelineRef)
-	otlpEndpointOriginalValue := string(envVars[otlpEndpointOriginalVariable])
 
 	compression := string(otlpOutput.Compression)
 	if compression == "" {
@@ -107,7 +105,7 @@ func otlpExporter(otlpOutput *telemetryv1beta1.OTLPOutput, pipelineRef pipelines
 	exporter := OTLPExporterConfig{
 		Endpoint:     fmt.Sprintf("${%s}", otlpEndpointVariable),
 		Headers:      headers(otlpOutput, pipelineRef),
-		TLS:          tls(otlpOutput, otlpEndpointOriginalValue, pipelineRef),
+		TLS:          tls(otlpOutput, originalEndpoint, pipelineRef),
 		Compression:  compression,
 		SendingQueue: sendingQueue,
 		RetryOnFailure: RetryOnFailure{
