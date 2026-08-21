@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -48,10 +49,10 @@ func TestUpdateStatus(t *testing.T) {
 			metricsCheckerReturn: &metav1.Condition{Type: conditions.TypeMetricComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			tracesCheckerReturn:  &metav1.Condition{Type: conditions.TypeTraceComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			resources: []client.Object{
-				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPLogsService).Build()),
-				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPTracesService).Build()),
-				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPMetricsService).Build()),
-				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPService).Build()),
+				func() *corev1.Service { s := testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPLogsService).Build(); return &s }(),
+				func() *corev1.Service { s := testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPTracesService).Build(); return &s }(),
+				func() *corev1.Service { s := testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPMetricsService).Build(); return &s }(),
+				func() *corev1.Service { s := testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPService).Build(); return &s }(),
 			},
 			expectedState: operatorv1beta1.StateReady,
 			expectedConditions: []metav1.Condition{
@@ -60,15 +61,15 @@ func TestUpdateStatus(t *testing.T) {
 				{Type: conditions.TypeTraceComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			},
 			expectedEndpoints: operatorv1beta1.GatewayEndpoints{
-				Logs: &operatorv1beta1.OTLPEndpoints{
+				Logs: &operatorv1beta1.OTLPEndpoints{ //nolint:staticcheck // Deprecated field still used for backwards compatibility
 					GRPC: "http://telemetry-otlp-logs.telemetry-system:4317",
 					HTTP: "http://telemetry-otlp-logs.telemetry-system:4318",
 				},
-				Traces: &operatorv1beta1.OTLPEndpoints{
+				Traces: &operatorv1beta1.OTLPEndpoints{ //nolint:staticcheck // Deprecated field still used for backwards compatibility
 					GRPC: "http://telemetry-otlp-traces.telemetry-system:4317",
 					HTTP: "http://telemetry-otlp-traces.telemetry-system:4318",
 				},
-				Metrics: &operatorv1beta1.OTLPEndpoints{
+				Metrics: &operatorv1beta1.OTLPEndpoints{ //nolint:staticcheck // Deprecated field still used for backwards compatibility
 					GRPC: "http://telemetry-otlp-metrics.telemetry-system:4317",
 					HTTP: "http://telemetry-otlp-metrics.telemetry-system:4318",
 				},
@@ -89,10 +90,10 @@ func TestUpdateStatus(t *testing.T) {
 			tracesCheckerReturn:  &metav1.Condition{Type: conditions.TypeTraceComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			expectedState:        operatorv1beta1.StateWarning,
 			resources: []client.Object{
-				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPLogsService).Build()),
-				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPTracesService).Build()),
-				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPMetricsService).Build()),
-				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPService).Build()),
+				func() *corev1.Service { s := testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPLogsService).Build(); return &s }(),
+				func() *corev1.Service { s := testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPTracesService).Build(); return &s }(),
+				func() *corev1.Service { s := testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPMetricsService).Build(); return &s }(),
+				func() *corev1.Service { s := testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPService).Build(); return &s }(),
 			},
 			expectedConditions: []metav1.Condition{
 				{Type: conditions.TypeLogComponentsHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonAgentNotReady},
@@ -100,15 +101,15 @@ func TestUpdateStatus(t *testing.T) {
 				{Type: conditions.TypeTraceComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			},
 			expectedEndpoints: operatorv1beta1.GatewayEndpoints{
-				Logs: &operatorv1beta1.OTLPEndpoints{
+				Logs: &operatorv1beta1.OTLPEndpoints{ //nolint:staticcheck // Deprecated field still used for backwards compatibility
 					GRPC: "http://telemetry-otlp-logs.telemetry-system:4317",
 					HTTP: "http://telemetry-otlp-logs.telemetry-system:4318",
 				},
-				Traces: &operatorv1beta1.OTLPEndpoints{
+				Traces: &operatorv1beta1.OTLPEndpoints{ //nolint:staticcheck // Deprecated field still used for backwards compatibility
 					GRPC: "http://telemetry-otlp-traces.telemetry-system:4317",
 					HTTP: "http://telemetry-otlp-traces.telemetry-system:4318",
 				},
-				Metrics: &operatorv1beta1.OTLPEndpoints{
+				Metrics: &operatorv1beta1.OTLPEndpoints{ //nolint:staticcheck // Deprecated field still used for backwards compatibility
 					GRPC: "http://telemetry-otlp-metrics.telemetry-system:4317",
 					HTTP: "http://telemetry-otlp-metrics.telemetry-system:4318",
 				},
@@ -128,10 +129,10 @@ func TestUpdateStatus(t *testing.T) {
 			metricsCheckerReturn: &metav1.Condition{Type: conditions.TypeMetricComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			tracesCheckerReturn:  &metav1.Condition{Type: conditions.TypeTraceComponentsHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonGatewayNotReady},
 			resources: []client.Object{
-				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPLogsService).Build()),
-				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPTracesService).Build()),
-				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPMetricsService).Build()),
-				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPService).Build()),
+				func() *corev1.Service { s := testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPLogsService).Build(); return &s }(),
+				func() *corev1.Service { s := testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPTracesService).Build(); return &s }(),
+				func() *corev1.Service { s := testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPMetricsService).Build(); return &s }(),
+				func() *corev1.Service { s := testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPService).Build(); return &s }(),
 			},
 			expectedState: operatorv1beta1.StateWarning,
 			expectedConditions: []metav1.Condition{
@@ -140,15 +141,15 @@ func TestUpdateStatus(t *testing.T) {
 				{Type: conditions.TypeTraceComponentsHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonGatewayNotReady},
 			},
 			expectedEndpoints: operatorv1beta1.GatewayEndpoints{
-				Logs: &operatorv1beta1.OTLPEndpoints{
+				Logs: &operatorv1beta1.OTLPEndpoints{ //nolint:staticcheck // Deprecated field still used for backwards compatibility
 					GRPC: "http://telemetry-otlp-logs.telemetry-system:4317",
 					HTTP: "http://telemetry-otlp-logs.telemetry-system:4318",
 				},
-				Traces: &operatorv1beta1.OTLPEndpoints{
+				Traces: &operatorv1beta1.OTLPEndpoints{ //nolint:staticcheck // Deprecated field still used for backwards compatibility
 					GRPC: "http://telemetry-otlp-traces.telemetry-system:4317",
 					HTTP: "http://telemetry-otlp-traces.telemetry-system:4318",
 				},
-				Metrics: &operatorv1beta1.OTLPEndpoints{
+				Metrics: &operatorv1beta1.OTLPEndpoints{ //nolint:staticcheck // Deprecated field still used for backwards compatibility
 					GRPC: "http://telemetry-otlp-metrics.telemetry-system:4317",
 					HTTP: "http://telemetry-otlp-metrics.telemetry-system:4318",
 				},
@@ -168,10 +169,10 @@ func TestUpdateStatus(t *testing.T) {
 			metricsCheckerReturn: &metav1.Condition{Type: conditions.TypeMetricComponentsHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonGatewayNotReady},
 			tracesCheckerReturn:  &metav1.Condition{Type: conditions.TypeTraceComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			resources: []client.Object{
-				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPLogsService).Build()),
-				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPTracesService).Build()),
-				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPMetricsService).Build()),
-				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPService).Build()),
+				func() *corev1.Service { s := testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPLogsService).Build(); return &s }(),
+				func() *corev1.Service { s := testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPTracesService).Build(); return &s }(),
+				func() *corev1.Service { s := testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPMetricsService).Build(); return &s }(),
+				func() *corev1.Service { s := testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPService).Build(); return &s }(),
 			},
 			expectedState: operatorv1beta1.StateWarning,
 			expectedConditions: []metav1.Condition{
@@ -180,15 +181,15 @@ func TestUpdateStatus(t *testing.T) {
 				{Type: conditions.TypeTraceComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			},
 			expectedEndpoints: operatorv1beta1.GatewayEndpoints{
-				Logs: &operatorv1beta1.OTLPEndpoints{
+				Logs: &operatorv1beta1.OTLPEndpoints{ //nolint:staticcheck // Deprecated field still used for backwards compatibility
 					GRPC: "http://telemetry-otlp-logs.telemetry-system:4317",
 					HTTP: "http://telemetry-otlp-logs.telemetry-system:4318",
 				},
-				Traces: &operatorv1beta1.OTLPEndpoints{
+				Traces: &operatorv1beta1.OTLPEndpoints{ //nolint:staticcheck // Deprecated field still used for backwards compatibility
 					GRPC: "http://telemetry-otlp-traces.telemetry-system:4317",
 					HTTP: "http://telemetry-otlp-traces.telemetry-system:4318",
 				},
-				Metrics: &operatorv1beta1.OTLPEndpoints{
+				Metrics: &operatorv1beta1.OTLPEndpoints{ //nolint:staticcheck // Deprecated field still used for backwards compatibility
 					GRPC: "http://telemetry-otlp-metrics.telemetry-system:4317",
 					HTTP: "http://telemetry-otlp-metrics.telemetry-system:4318",
 				},
@@ -245,10 +246,10 @@ func TestUpdateStatus(t *testing.T) {
 			metricsCheckerReturn: &metav1.Condition{Type: conditions.TypeMetricComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			tracesCheckerReturn:  &metav1.Condition{Type: conditions.TypeTraceComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			resources: []client.Object{
-				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPLogsService).Build()),
-				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPTracesService).Build()),
-				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPMetricsService).Build()),
-				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPService).Build()),
+				func() *corev1.Service { s := testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPLogsService).Build(); return &s }(),
+				func() *corev1.Service { s := testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPTracesService).Build(); return &s }(),
+				func() *corev1.Service { s := testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPMetricsService).Build(); return &s }(),
+				func() *corev1.Service { s := testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPService).Build(); return &s }(),
 			},
 			expectedState: operatorv1beta1.StateDeleting,
 			expectedConditions: []metav1.Condition{
@@ -257,15 +258,15 @@ func TestUpdateStatus(t *testing.T) {
 				{Type: conditions.TypeTraceComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			},
 			expectedEndpoints: operatorv1beta1.GatewayEndpoints{
-				Logs: &operatorv1beta1.OTLPEndpoints{
+				Logs: &operatorv1beta1.OTLPEndpoints{ //nolint:staticcheck // Deprecated field still used for backwards compatibility
 					GRPC: "http://telemetry-otlp-logs.telemetry-system:4317",
 					HTTP: "http://telemetry-otlp-logs.telemetry-system:4318",
 				},
-				Traces: &operatorv1beta1.OTLPEndpoints{
+				Traces: &operatorv1beta1.OTLPEndpoints{ //nolint:staticcheck // Deprecated field still used for backwards compatibility
 					GRPC: "http://telemetry-otlp-traces.telemetry-system:4317",
 					HTTP: "http://telemetry-otlp-traces.telemetry-system:4318",
 				},
-				Metrics: &operatorv1beta1.OTLPEndpoints{
+				Metrics: &operatorv1beta1.OTLPEndpoints{ //nolint:staticcheck // Deprecated field still used for backwards compatibility
 					GRPC: "http://telemetry-otlp-metrics.telemetry-system:4317",
 					HTTP: "http://telemetry-otlp-metrics.telemetry-system:4318",
 				},
@@ -291,8 +292,8 @@ func TestUpdateStatus(t *testing.T) {
 			metricsCheckerReturn: &metav1.Condition{Type: conditions.TypeMetricComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			tracesCheckerReturn:  &metav1.Condition{Type: conditions.TypeTraceComponentsHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonComponentsRunning},
 			resources: []client.Object{
-				new(testutils.NewTracePipelineBuilder().Build()),
-				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPMetricsService).Build()),
+				func() *telemetryv1beta1.TracePipeline { p := testutils.NewTracePipelineBuilder().Build(); return &p }(),
+				func() *corev1.Service { s := testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPMetricsService).Build(); return &s }(),
 			},
 			expectedState: operatorv1beta1.StateWarning,
 			expectedConditions: []metav1.Condition{
@@ -301,7 +302,7 @@ func TestUpdateStatus(t *testing.T) {
 				{Type: conditions.TypeTraceComponentsHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonComponentsRunning},
 			},
 			expectedEndpoints: operatorv1beta1.GatewayEndpoints{
-				Metrics: &operatorv1beta1.OTLPEndpoints{
+				Metrics: &operatorv1beta1.OTLPEndpoints{ //nolint:staticcheck // Deprecated field still used for backwards compatibility
 					GRPC: "http://telemetry-otlp-metrics.telemetry-system:4317",
 					HTTP: "http://telemetry-otlp-metrics.telemetry-system:4318",
 				},
@@ -317,10 +318,10 @@ func TestUpdateStatus(t *testing.T) {
 			metricsCheckerReturn: &metav1.Condition{Type: conditions.TypeMetricComponentsHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonAgentNotReady},
 			tracesCheckerReturn:  &metav1.Condition{Type: conditions.TypeTraceComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			resources: []client.Object{
-				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPLogsService).Build()),
-				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPTracesService).Build()),
-				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPMetricsService).Build()),
-				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPService).Build()),
+				func() *corev1.Service { s := testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPLogsService).Build(); return &s }(),
+				func() *corev1.Service { s := testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPTracesService).Build(); return &s }(),
+				func() *corev1.Service { s := testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPMetricsService).Build(); return &s }(),
+				func() *corev1.Service { s := testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPService).Build(); return &s }(),
 			},
 			expectedState: operatorv1beta1.StateWarning,
 			expectedConditions: []metav1.Condition{
@@ -329,15 +330,15 @@ func TestUpdateStatus(t *testing.T) {
 				{Type: conditions.TypeTraceComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			},
 			expectedEndpoints: operatorv1beta1.GatewayEndpoints{
-				Logs: &operatorv1beta1.OTLPEndpoints{
+				Logs: &operatorv1beta1.OTLPEndpoints{ //nolint:staticcheck // Deprecated field still used for backwards compatibility
 					GRPC: "http://telemetry-otlp-logs.telemetry-system:4317",
 					HTTP: "http://telemetry-otlp-logs.telemetry-system:4318",
 				},
-				Traces: &operatorv1beta1.OTLPEndpoints{
+				Traces: &operatorv1beta1.OTLPEndpoints{ //nolint:staticcheck // Deprecated field still used for backwards compatibility
 					GRPC: "http://telemetry-otlp-traces.telemetry-system:4317",
 					HTTP: "http://telemetry-otlp-traces.telemetry-system:4318",
 				},
-				Metrics: &operatorv1beta1.OTLPEndpoints{
+				Metrics: &operatorv1beta1.OTLPEndpoints{ //nolint:staticcheck // Deprecated field still used for backwards compatibility
 					GRPC: "http://telemetry-otlp-metrics.telemetry-system:4317",
 					HTTP: "http://telemetry-otlp-metrics.telemetry-system:4318",
 				},
@@ -357,9 +358,9 @@ func TestUpdateStatus(t *testing.T) {
 			metricsCheckerReturn: &metav1.Condition{Type: conditions.TypeMetricComponentsHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonAgentNotReady},
 			tracesCheckerReturn:  &metav1.Condition{Type: conditions.TypeTraceComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			resources: []client.Object{
-				new(testutils.NewMetricPipelineBuilder().Build()),
-				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPMetricsService).Build()),
-				new(testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPService).Build()),
+				func() *telemetryv1beta1.MetricPipeline { p := testutils.NewMetricPipelineBuilder().Build(); return &p }(),
+				func() *corev1.Service { s := testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPMetricsService).Build(); return &s }(),
+				func() *corev1.Service { s := testutils.NewServiceBuilder().WithNamespace("telemetry-system").WithName(names.OTLPService).Build(); return &s }(),
 			},
 			expectedState: operatorv1beta1.StateWarning,
 			expectedConditions: []metav1.Condition{
@@ -368,7 +369,7 @@ func TestUpdateStatus(t *testing.T) {
 				{Type: conditions.TypeTraceComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			},
 			expectedEndpoints: operatorv1beta1.GatewayEndpoints{
-				Metrics: &operatorv1beta1.OTLPEndpoints{
+				Metrics: &operatorv1beta1.OTLPEndpoints{ //nolint:staticcheck // Deprecated field still used for backwards compatibility
 					GRPC: "http://telemetry-otlp-metrics.telemetry-system:4317",
 					HTTP: "http://telemetry-otlp-metrics.telemetry-system:4318",
 				},
