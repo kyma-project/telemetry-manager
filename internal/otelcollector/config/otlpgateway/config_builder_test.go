@@ -23,12 +23,14 @@ func marshalEnvVars(envVars common.EnvVars) ([]byte, error) {
 	for k := range envVars {
 		keys = append(keys, k)
 	}
+
 	sort.Strings(keys)
 
 	ordered := make(map[string]string, len(envVars))
 	for _, k := range keys {
 		ordered[k] = string(envVars[k])
 	}
+
 	return yaml.Marshal(ordered)
 }
 
@@ -708,11 +710,13 @@ func TestBuild(t *testing.T) {
 			goldenFilePath := filepath.Join("testdata", tt.goldenFileName)
 			if testutils.ShouldUpdateGoldenFiles() {
 				testutils.UpdateGoldenFileYAML(t, goldenFilePath, configYAML)
+
 				if tt.envVarsGoldenFileName != "" {
 					envVarsYAML, err := marshalEnvVars(envVars)
 					require.NoError(t, err, "failed to marshal env vars")
 					testutils.UpdateGoldenFileYAML(t, filepath.Join("testdata", tt.envVarsGoldenFileName), envVarsYAML)
 				}
+
 				return
 			}
 

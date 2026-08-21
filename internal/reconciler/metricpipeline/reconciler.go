@@ -412,8 +412,10 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 		return fmt.Errorf("failed to get kube-system namespace for cluster UID: %w", err)
 	}
 
-	var telemetrySpec operatorv1beta1.TelemetrySpec
-	var passthroughResolver bool
+	var (
+		telemetrySpec       operatorv1beta1.TelemetrySpec
+		passthroughResolver bool
+	)
 
 	t, err := telemetryutils.GetDefaultTelemetryInstance(ctx, r.Client, r.globals.DefaultTelemetryNamespace())
 	if err == nil {
