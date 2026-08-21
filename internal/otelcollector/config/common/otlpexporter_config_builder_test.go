@@ -306,11 +306,11 @@ func TestPassthroughResolver(t *testing.T) {
 			expectedTLSInsecure: true,
 		},
 		{
-			name:                "enabled: https:// left unchanged",
+			name:                "enabled: https:// stripped and rewritten",
 			endpoint:            "https://otlp.server:4317",
 			protocol:            telemetryv1beta1.OTLPProtocolGRPC,
 			passthroughResolver: true,
-			expectedEndpointVar: "https://otlp.server:4317",
+			expectedEndpointVar: "passthrough:///otlp.server:4317",
 			expectedTLSInsecure: false,
 		},
 		{

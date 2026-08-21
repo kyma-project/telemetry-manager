@@ -258,18 +258,16 @@ func resolveEndpointURL(ctx context.Context, c client.Reader, output *telemetryv
 }
 
 // rewriteAsPassthrough converts a gRPC endpoint to passthrough:///host:port form.
-// Already-correct passthrough:/// URIs and https:// URIs are returned unchanged.
-// http:// is stripped before prefixing (TLS insecure detection uses the original value).
+// Already-correct passthrough:/// URIs are returned unchanged.
+// http:// and https:// scheme prefixes are stripped before prefixing (TLS insecure
+// detection uses the original value, so http:// endpoints still get tls.insecure=true).
 func rewriteAsPassthrough(endpoint []byte) []byte {
 	s := strings.TrimSpace(string(endpoint))
 	if strings.HasPrefix(s, "passthrough:///") {
 		return endpoint
 	}
 
-	if strings.HasPrefix(s, "https://") {
-		return endpoint
-	}
-
+	s = strings.TrimPrefix(s, "https://")
 	s = strings.TrimPrefix(s, "http://")
 
 	return []byte("passthrough:///" + s)

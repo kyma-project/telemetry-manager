@@ -23,9 +23,9 @@ func TestRewriteAsPassthrough(t *testing.T) {
 			expected: "passthrough:///otlp.server:4317",
 		},
 		{
-			name:     "https:// left unchanged",
+			name:     "https:// stripped then prefixed",
 			input:    "https://otlp.server:4317",
-			expected: "https://otlp.server:4317",
+			expected: "passthrough:///otlp.server:4317",
 		},
 		{
 			name:     "already passthrough:/// left unchanged",
