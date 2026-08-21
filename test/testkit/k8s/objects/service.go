@@ -2,7 +2,6 @@ package objects
 
 import (
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/kyma-project/telemetry-manager/test/testkit"
@@ -42,11 +41,9 @@ func (s *Service) K8sObject(labelOpts ...testkit.OptFunc) *corev1.Service {
 	}
 
 	return &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      s.name,
-			Namespace: s.namespace,
-			Labels:    labels,
-		},
+		Name:      s.name,
+		Namespace: s.namespace,
+		Labels:    labels,
 		Spec: corev1.ServiceSpec{
 			Ports:    ports,
 			Selector: labels,

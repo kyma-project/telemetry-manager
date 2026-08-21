@@ -64,7 +64,7 @@ func TestConfigMapUpdate(t *testing.T) {
 
 			flowHealthProberStub := &mocks.FlowHealthProber{}
 			flowHealthProberStub.On("Probe", mock.Anything, tt.pipeline.Name).Return(prober.OTelGatewayProbeResult{
-				PipelineProbeResult: prober.PipelineProbeResult{Healthy: true},
+				Healthy: true,
 			}, nil).Maybe()
 
 			sut := testReconciler(fakeClient, flowHealthProberStub)
@@ -140,11 +140,9 @@ func TestSecretReferenceValidation(t *testing.T) {
 			},
 			setupSecret: func() *corev1.Secret {
 				return &corev1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "existing",
-						Namespace: "default",
-					},
-					Data: map[string][]byte{"endpoint": []byte("http://backend:4317")},
+					Name:      "existing",
+					Namespace: "default",
+					Data:      map[string][]byte{"endpoint": []byte("http://backend:4317")},
 				}
 			},
 			includeSecret:         true,
@@ -171,7 +169,7 @@ func TestSecretReferenceValidation(t *testing.T) {
 
 			flowHealthProberStub := &mocks.FlowHealthProber{}
 			flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{
-				PipelineProbeResult: prober.PipelineProbeResult{Healthy: true},
+				Healthy: true,
 			}, nil).Maybe()
 
 			opts := []ValidatorOption{}
@@ -408,7 +406,7 @@ func TestTLSCertificateValidation(t *testing.T) {
 
 			flowHealthProberStub := &mocks.FlowHealthProber{}
 			flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(prober.OTelGatewayProbeResult{
-				PipelineProbeResult: prober.PipelineProbeResult{Healthy: true},
+				Healthy: true,
 			}, nil).Maybe()
 
 			opts := []ValidatorOption{
@@ -558,11 +556,9 @@ func TestAPIServerFailureHandling(t *testing.T) {
 			},
 			setupClient: func(t *testing.T, pipeline *telemetryv1beta1.TracePipeline) client.Client {
 				secret := &corev1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "existing",
-						Namespace: "default",
-					},
-					Data: map[string][]byte{"endpoint": []byte("http://backend:4317")},
+					Name:      "existing",
+					Namespace: "default",
+					Data:      map[string][]byte{"endpoint": []byte("http://backend:4317")},
 				}
 
 				return fake.NewClientBuilder().WithScheme(testScheme).WithObjects(pipeline, secret).WithStatusSubresource(pipeline).Build()
@@ -719,10 +715,8 @@ func TestPipelineInfoTracking(t *testing.T) {
 				WithOTLPOutput(testutils.OTLPEndpointFromSecret("endpoint-secret", "default", "host")).
 				Build(),
 			secret: &corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "endpoint-secret",
-					Namespace: "default",
-				},
+				Name:      "endpoint-secret",
+				Namespace: "default",
 				Data: map[string][]byte{
 					"host": []byte("endpoint.example.com"),
 				},
@@ -745,7 +739,7 @@ func TestPipelineInfoTracking(t *testing.T) {
 
 			flowHealthProberStub := &mocks.FlowHealthProber{}
 			flowHealthProberStub.On("Probe", mock.Anything, tt.pipeline.Name).Return(prober.OTelGatewayProbeResult{
-				PipelineProbeResult: prober.PipelineProbeResult{Healthy: true},
+				Healthy: true,
 			}, nil).Maybe()
 
 			validator, _ := ottl.NewTransformSpecValidator(pipelines.SignalTypeTrace)
@@ -832,7 +826,7 @@ func TestPipelineNotFound(t *testing.T) {
 // Helper function to create a reconcile request
 func requestFor(name string) ctrl.Request {
 	return ctrl.Request{
-		NamespacedName: types.NamespacedName{Name: name},
+		Name: name,
 	}
 }
 

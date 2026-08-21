@@ -5,9 +5,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -31,11 +29,9 @@ func TestReconcile(t *testing.T) {
 	_ = operatorv1beta1.AddToScheme(scheme)
 
 	telemetry := operatorv1beta1.Telemetry{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "default",
-			Namespace: "default",
-		},
-		Spec: operatorv1beta1.TelemetrySpec{},
+		Name:      "default",
+		Namespace: "default",
+		Spec:      operatorv1beta1.TelemetrySpec{},
 	}
 	fakeClient := fake.NewClientBuilder().
 		WithObjects(&telemetry).
@@ -53,9 +49,7 @@ func TestReconcile(t *testing.T) {
 	}
 
 	_, err := sut.Reconcile(t.Context(), ctrl.Request{
-		NamespacedName: types.NamespacedName{
-			Name: "test",
-		},
+		Name: "test",
 	})
 	require.NoError(t, err)
 }
@@ -99,11 +93,9 @@ func TestReconcile_ServiceAttributesEnrichmentStrategyMetric(t *testing.T) {
 			metrics.ServiceAttributesEnrichmentStrategy.Reset()
 
 			telemetryCR := &operatorv1beta1.Telemetry{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:        telemetryName,
-					Namespace:   telemetryNamespace,
-					Annotations: tt.annotations,
-				},
+				Name:        telemetryName,
+				Namespace:   telemetryNamespace,
+				Annotations: tt.annotations,
 			}
 			fakeClient := newTestClient(t, telemetryCR)
 			sut := newTestReconciler(t, fakeClient)
@@ -130,10 +122,8 @@ func TestReconcile_ServiceAttributesEnrichmentStrategyMetric_Switch(t *testing.T
 
 	// First reconcile with kyma-legacy (default, no annotation)
 	telemetryCR := &operatorv1beta1.Telemetry{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      telemetryName,
-			Namespace: telemetryNamespace,
-		},
+		Name:      telemetryName,
+		Namespace: telemetryNamespace,
 	}
 	fakeClient := newTestClient(t, telemetryCR)
 	sut := newTestReconciler(t, fakeClient)

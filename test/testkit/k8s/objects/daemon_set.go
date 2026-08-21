@@ -39,11 +39,9 @@ func (d *DaemonSet) K8sObject() *appsv1.DaemonSet {
 	maps.Copy(labels, PersistentLabel)
 
 	return &appsv1.DaemonSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      d.name,
-			Namespace: d.namespace,
-			Labels:    d.labels,
-		},
+		Name:      d.name,
+		Namespace: d.namespace,
+		Labels:    d.labels,
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels,

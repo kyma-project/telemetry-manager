@@ -7,7 +7,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
@@ -505,10 +504,8 @@ func TestMissingEndpoint(t *testing.T) {
 func TestEndpointValueFromValid(t *testing.T) {
 	validEndpoint := "http://example.com:8080"
 	secret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test",
-			Namespace: "default",
-		},
+		Name:      "test",
+		Namespace: "default",
 		Data: map[string][]byte{
 			"endpoint": []byte(validEndpoint),
 		},
@@ -546,10 +543,8 @@ func TestEndpointValueFromValid(t *testing.T) {
 func TestEndpointValueFromInvalid(t *testing.T) {
 	invalidEndpoint := "'http://example.com:8080'"
 	secret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test",
-			Namespace: "default",
-		},
+		Name:      "test",
+		Namespace: "default",
 		Data: map[string][]byte{
 			"endpoint": []byte(invalidEndpoint),
 		},
@@ -590,10 +585,8 @@ func TestEndpointValueFromInvalid(t *testing.T) {
 func TestEndpointValueFromMissing(t *testing.T) {
 	validEndpoint := "http://example.com:8080"
 	secret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test",
-			Namespace: "default",
-		},
+		Name:      "test",
+		Namespace: "default",
 		Data: map[string][]byte{
 			"endpoint": []byte(validEndpoint),
 		},

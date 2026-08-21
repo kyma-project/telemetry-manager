@@ -144,11 +144,9 @@ func (pb *PodBuilder) Build() corev1.Pod {
 	}
 
 	pod := corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      pb.name,
-			Namespace: pb.namespace,
-			Labels:    pb.labels,
-		},
+		Name:      pb.name,
+		Namespace: pb.namespace,
+		Labels:    pb.labels,
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
 				{

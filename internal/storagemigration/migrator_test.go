@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/require"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -123,9 +122,7 @@ func TestMigrateLogPipelines(t *testing.T) {
 	scheme := newTestScheme(t)
 
 	logPipeline := &telemetryv1beta1.LogPipeline{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "test-log-pipeline",
-		},
+		Name: "test-log-pipeline",
 		Spec: telemetryv1beta1.LogPipelineSpec{
 			Output: telemetryv1beta1.LogPipelineOutput{
 				FluentBitCustom: "test-output",
@@ -154,15 +151,11 @@ func TestMigrateMetricPipelines(t *testing.T) {
 	scheme := newTestScheme(t)
 
 	metricPipeline := &telemetryv1beta1.MetricPipeline{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "test-metric-pipeline",
-		},
+		Name: "test-metric-pipeline",
 		Spec: telemetryv1beta1.MetricPipelineSpec{
 			Output: telemetryv1beta1.MetricPipelineOutput{
 				OTLP: &telemetryv1beta1.MetricPipelineOTLPOutput{
-					OTLPOutput: telemetryv1beta1.OTLPOutput{
-						Endpoint: telemetryv1beta1.ValueType{Value: "http://example.com"},
-					},
+					Endpoint: telemetryv1beta1.ValueType{Value: "http://example.com"},
 				},
 			},
 		},
@@ -189,9 +182,7 @@ func TestMigrateTracePipelines(t *testing.T) {
 	scheme := newTestScheme(t)
 
 	tracePipeline := &telemetryv1beta1.TracePipeline{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "test-trace-pipeline",
-		},
+		Name: "test-trace-pipeline",
 		Spec: telemetryv1beta1.TracePipelineSpec{
 			Output: telemetryv1beta1.TracePipelineOutput{
 				OTLP: &telemetryv1beta1.OTLPOutput{
@@ -222,10 +213,8 @@ func TestMigrateTelemetries(t *testing.T) {
 	scheme := newTestScheme(t)
 
 	telemetry := &operatorv1beta1.Telemetry{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "default",
-			Namespace: "kyma-system",
-		},
+		Name:      "default",
+		Namespace: "kyma-system",
 	}
 
 	fakeClient := fake.NewClientBuilder().
@@ -333,9 +322,7 @@ func newTestScheme(t *testing.T) *runtime.Scheme {
 
 func newTestCRD(name string, storedVersions []string) *apiextensionsv1.CustomResourceDefinition {
 	return &apiextensionsv1.CustomResourceDefinition{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
-		},
+		Name: name,
 		Spec: apiextensionsv1.CustomResourceDefinitionSpec{
 			Group: "telemetry.kyma-project.io",
 			Names: apiextensionsv1.CustomResourceDefinitionNames{
@@ -655,9 +642,7 @@ func TestMigrateLogPipelines_UpdateError(t *testing.T) {
 	scheme := newTestScheme(t)
 
 	logPipeline := &telemetryv1beta1.LogPipeline{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "test-log-pipeline",
-		},
+		Name: "test-log-pipeline",
 	}
 
 	updateErr := errors.New("update error")
@@ -702,9 +687,7 @@ func TestMigrateMetricPipelines_UpdateError(t *testing.T) {
 	scheme := newTestScheme(t)
 
 	metricPipeline := &telemetryv1beta1.MetricPipeline{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "test-metric-pipeline",
-		},
+		Name: "test-metric-pipeline",
 	}
 
 	updateErr := errors.New("update error")
@@ -749,9 +732,7 @@ func TestMigrateTracePipelines_UpdateError(t *testing.T) {
 	scheme := newTestScheme(t)
 
 	tracePipeline := &telemetryv1beta1.TracePipeline{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "test-trace-pipeline",
-		},
+		Name: "test-trace-pipeline",
 	}
 
 	updateErr := errors.New("update error")
@@ -796,10 +777,8 @@ func TestMigrateTelemetries_UpdateError(t *testing.T) {
 	scheme := newTestScheme(t)
 
 	telemetry := &operatorv1beta1.Telemetry{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "default",
-			Namespace: "kyma-system",
-		},
+		Name:      "default",
+		Namespace: "kyma-system",
 	}
 
 	updateErr := errors.New("update error")
@@ -824,9 +803,7 @@ func TestMigrateLogPipelines_NotFoundError_NoRetry(t *testing.T) {
 	scheme := newTestScheme(t)
 
 	logPipeline := &telemetryv1beta1.LogPipeline{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "test-log-pipeline",
-		},
+		Name: "test-log-pipeline",
 	}
 
 	callCount := 0

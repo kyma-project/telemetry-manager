@@ -101,11 +101,9 @@ func (c *Checker) IsLockHolder(ctx context.Context, obj metav1.Object) error {
 
 func (c *Checker) createLock(ctx context.Context, owner metav1.Object) error {
 	lock := corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      c.lockName.Name,
-			Namespace: c.lockName.Namespace,
-			Labels:    commonresources.ModuleLabels(),
-		},
+		Name:      c.lockName.Name,
+		Namespace: c.lockName.Namespace,
+		Labels:    commonresources.ModuleLabels(),
 	}
 
 	if err := controllerutil.SetOwnerReference(owner, &lock, c.client.Scheme()); err != nil {

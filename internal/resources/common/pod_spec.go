@@ -171,9 +171,7 @@ func WithEnvVarsFromSecret(secretName string) ContainerOption {
 	return func(c *corev1.Container) {
 		c.EnvFrom = append(c.EnvFrom, corev1.EnvFromSource{
 			SecretRef: &corev1.SecretEnvSource{
-				LocalObjectReference: corev1.LocalObjectReference{
-					Name: secretName,
-				},
+				Name:     secretName,
 				Optional: new(true),
 			},
 		})
@@ -305,14 +303,12 @@ func WithClusterTrustBundleVolume(clusterTrustBundleName string) PodSpecOption {
 		if clusterTrustBundleName != "" {
 			pod.Volumes = append(pod.Volumes, corev1.Volume{
 				Name: ClusterTrustBundleVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Projected: &corev1.ProjectedVolumeSource{
-						Sources: []corev1.VolumeProjection{
-							{
-								ClusterTrustBundle: &corev1.ClusterTrustBundleProjection{
-									Name: new(clusterTrustBundleName),
-									Path: ClusterTrustBundleFileName,
-								},
+				Projected: &corev1.ProjectedVolumeSource{
+					Sources: []corev1.VolumeProjection{
+						{
+							ClusterTrustBundle: &corev1.ClusterTrustBundleProjection{
+								Name: new(clusterTrustBundleName),
+								Path: ClusterTrustBundleFileName,
 							},
 						},
 					},

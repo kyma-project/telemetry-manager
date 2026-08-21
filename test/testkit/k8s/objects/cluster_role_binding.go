@@ -2,7 +2,6 @@ package objects
 
 import (
 	rbacv1 "k8s.io/api/rbac/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type ClusterRoleBindingOption func(*ClusterRoleBinding)
@@ -51,9 +50,7 @@ func (c *ClusterRoleBinding) Name() string {
 
 func (c *ClusterRoleBinding) K8sObject() *rbacv1.ClusterRoleBinding {
 	return &rbacv1.ClusterRoleBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: c.name,
-		},
+		Name:     c.name,
 		Subjects: c.subjects,
 		RoleRef:  c.roleRef,
 	}
