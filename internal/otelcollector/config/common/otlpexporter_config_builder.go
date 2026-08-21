@@ -48,38 +48,54 @@ func NewSendingQueue(queueSize int, opts ...SendingQueueOption) SendingQueue {
 	return sq
 }
 
+type OTLPExporterOption func(*OTLPExporterConfigBuilder)
+
+// WithPassthroughResolverIf returns an option that enables the passthrough resolver when enabled is true.
+func WithPassthroughResolverIf(enabled bool) OTLPExporterOption {
+	return func(cb *OTLPExporterConfigBuilder) {
+		if enabled {
+			cb.passthroughResolver = true
+		}
+	}
+}
+
 type OTLPExporterConfigBuilder struct {
-	reader       client.Reader
-	otlpOutput   *telemetryv1beta1.OTLPOutput
-	pipelineRef  pipelines.PipelineRef
-	sendingQueue SendingQueue
+	reader              client.Reader
+	otlpOutput          *telemetryv1beta1.OTLPOutput
+	pipelineRef         pipelines.PipelineRef
+	sendingQueue        SendingQueue
+	passthroughResolver bool
 }
 
 type EnvVars map[string][]byte
 
-func NewOTLPExporterConfigBuilder(reader client.Reader, otlpOutput *telemetryv1beta1.OTLPOutput, pipelineRef pipelines.PipelineRef, sendingQueue SendingQueue) *OTLPExporterConfigBuilder {
-	return &OTLPExporterConfigBuilder{
+func NewOTLPExporterConfigBuilder(reader client.Reader, otlpOutput *telemetryv1beta1.OTLPOutput, pipelineRef pipelines.PipelineRef, sendingQueue SendingQueue, opts ...OTLPExporterOption) *OTLPExporterConfigBuilder {
+	cb := &OTLPExporterConfigBuilder{
 		reader:       reader,
 		otlpOutput:   otlpOutput,
 		pipelineRef:  pipelineRef,
 		sendingQueue: sendingQueue,
 	}
+	for _, opt := range opts {
+		opt(cb)
+	}
+
+	return cb
 }
 
 func (cb *OTLPExporterConfigBuilder) OTLPExporter(ctx context.Context) (*OTLPExporterConfig, EnvVars, error) {
-	envVars, err := makeOTLPExporterEnvVars(ctx, cb.reader, cb.otlpOutput, cb.pipelineRef)
+	envVars, originalEndpoint, err := makeOTLPExporterEnvVars(ctx, cb.reader, cb.otlpOutput, cb.pipelineRef, cb.passthroughResolver)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to make env vars: %w", err)
 	}
 
-	exporter := otlpExporter(cb.otlpOutput, cb.pipelineRef, envVars, cb.sendingQueue)
+	exporter := otlpExporter(cb.otlpOutput, cb.pipelineRef, cb.sendingQueue, originalEndpoint)
 
 	return exporter, envVars, nil
 }
 
-func otlpExporter(otlpOutput *telemetryv1beta1.OTLPOutput, pipelineRef pipelines.PipelineRef, envVars map[string][]byte, sendingQueue SendingQueue) *OTLPExporterConfig {
+func otlpExporter(otlpOutput *telemetryv1beta1.OTLPOutput, pipelineRef pipelines.PipelineRef, sendingQueue SendingQueue, originalEndpoint string) *OTLPExporterConfig {
 	otlpEndpointVariable := formatEnvVarKey(otlpEndpointVariablePrefix, pipelineRef)
-	otlpEndpointValue := string(envVars[otlpEndpointVariable])
 
 	compression := string(otlpOutput.Compression)
 	if compression == "" {
@@ -89,7 +105,7 @@ func otlpExporter(otlpOutput *telemetryv1beta1.OTLPOutput, pipelineRef pipelines
 	exporter := OTLPExporterConfig{
 		Endpoint:     fmt.Sprintf("${%s}", otlpEndpointVariable),
 		Headers:      headers(otlpOutput, pipelineRef),
-		TLS:          tls(otlpOutput, otlpEndpointValue, pipelineRef),
+		TLS:          tls(otlpOutput, originalEndpoint, pipelineRef),
 		Compression:  compression,
 		SendingQueue: sendingQueue,
 		RetryOnFailure: RetryOnFailure{

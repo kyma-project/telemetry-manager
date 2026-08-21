@@ -85,7 +85,7 @@ func (b *Builder) buildMetricPipelines(ctx context.Context, builder *common.Comp
 			b.addMetricUserDefinedFilterProcessor(builder),
 			b.addMetricCumulativeToDeltaProcessor(builder),
 			b.addMetricBatchProcessor(builder),
-			b.addMetricOTLPExporter(builder, queueSize),
+			b.addMetricOTLPExporter(builder, queueSize, opts.PassthroughResolver),
 		); err != nil {
 			return fmt.Errorf("failed to add metric output service pipeline: %w", err)
 		}
@@ -354,7 +354,7 @@ func (b *Builder) addMetricBatchProcessor(builder *common.ComponentBuilder[*tele
 	)
 }
 
-func (b *Builder) addMetricOTLPExporter(builder *common.ComponentBuilder[*telemetryv1beta1.MetricPipeline], queueSize int) buildMetricComponentFunc {
+func (b *Builder) addMetricOTLPExporter(builder *common.ComponentBuilder[*telemetryv1beta1.MetricPipeline], queueSize int, passthroughResolver bool) buildMetricComponentFunc {
 	return builder.AddExporter(
 		formatMetricOTLPExporterID,
 		func(ctx context.Context, mp *telemetryv1beta1.MetricPipeline) (any, common.EnvVars, error) {
@@ -363,6 +363,7 @@ func (b *Builder) addMetricOTLPExporter(builder *common.ComponentBuilder[*teleme
 				&mp.Spec.Output.OTLP.OTLPOutput,
 				pipelines.MetricPipelineRef(mp),
 				common.NewSendingQueue(queueSize),
+				common.WithPassthroughResolverIf(passthroughResolver),
 			)
 
 			return otlpExporterBuilder.OTLPExporter(ctx)
