@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
@@ -18,7 +17,7 @@ func TestCreateRecordModifierFilter(t *testing.T) {
     record cluster_identifier test-cluster-name
 
 `
-	logPipeline := &telemetryv1beta1.LogPipeline{ObjectMeta: metav1.ObjectMeta{Name: "foo"}}
+	logPipeline := &telemetryv1beta1.LogPipeline{Name: "foo"}
 
 	actual := createRecordModifierFilter(logPipeline, "test-cluster-name")
 	require.Equal(t, expected, actual, "Fluent Bit Permanent parser config is invalid")
@@ -33,7 +32,7 @@ func TestCreateLuaFilterWithDefinedHostAndDedot(t *testing.T) {
 
 `
 	logPipeline := &telemetryv1beta1.LogPipeline{
-		ObjectMeta: metav1.ObjectMeta{Name: "foo"},
+		Name: "foo",
 		Spec: telemetryv1beta1.LogPipelineSpec{
 			Output: telemetryv1beta1.LogPipelineOutput{
 				FluentBitHTTP: &telemetryv1beta1.FluentBitHTTPOutput{
@@ -70,7 +69,7 @@ func TestCreateLuaFilterWithDedotFalse(t *testing.T) {
 
 `
 	logPipeline := &telemetryv1beta1.LogPipeline{
-		ObjectMeta: metav1.ObjectMeta{Name: "foo"},
+		Name: "foo",
 		Spec: telemetryv1beta1.LogPipelineSpec{
 			Output: telemetryv1beta1.LogPipelineOutput{
 				FluentBitHTTP: &telemetryv1beta1.FluentBitHTTPOutput{
@@ -93,7 +92,7 @@ func TestCreateTimestampModifyFilter(t *testing.T) {
 
 `
 	logPipeline := &telemetryv1beta1.LogPipeline{
-		ObjectMeta: metav1.ObjectMeta{Name: "foo"},
+		Name: "foo",
 		Spec: telemetryv1beta1.LogPipelineSpec{
 			Output: telemetryv1beta1.LogPipelineOutput{
 				FluentBitHTTP: &telemetryv1beta1.FluentBitHTTPOutput{

@@ -6,7 +6,6 @@ import (
 
 	. "github.com/onsi/gomega"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -39,10 +38,8 @@ func TestStorageMigration(t *testing.T) {
 	)
 
 	telemetry := operatorv1alpha1.Telemetry{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "default",
-			Namespace: "kyma-system",
-		},
+		Name:      "default",
+		Namespace: "kyma-system",
 	}
 
 	Expect(kitk8s.CreateObjects(t, &telemetry)).To(Succeed())
@@ -97,9 +94,7 @@ func verifyStoredVersionEquals(crdName, expectedVersion string) {
 func createLogPipelineWithBackend(backendNs, pipelineName string) (*kitbackend.Backend, telemetryv1alpha1.LogPipeline) {
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsOTel, kitbackend.WithName("log-backend"))
 	pipeline := telemetryv1alpha1.LogPipeline{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: pipelineName,
-		},
+		Name: pipelineName,
 		Spec: telemetryv1alpha1.LogPipelineSpec{
 			Input: telemetryv1alpha1.LogPipelineInput{
 				Application: &telemetryv1alpha1.LogPipelineApplicationInput{
@@ -128,9 +123,7 @@ func createLogPipelineWithBackend(backendNs, pipelineName string) (*kitbackend.B
 func createMetricPipelineWithBackend(backendNs, pipelineName string) (*kitbackend.Backend, telemetryv1alpha1.MetricPipeline) {
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics, kitbackend.WithName("metric-backend"))
 	pipeline := telemetryv1alpha1.MetricPipeline{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: pipelineName,
-		},
+		Name: pipelineName,
 		Spec: telemetryv1alpha1.MetricPipelineSpec{
 			Input: telemetryv1alpha1.MetricPipelineInput{
 				Runtime: &telemetryv1alpha1.MetricPipelineRuntimeInput{
@@ -139,10 +132,8 @@ func createMetricPipelineWithBackend(backendNs, pipelineName string) (*kitbacken
 			},
 			Output: telemetryv1alpha1.MetricPipelineOutput{
 				OTLP: &telemetryv1alpha1.MetricPipelineOTLPOutput{
-					OTLPOutput: telemetryv1alpha1.OTLPOutput{
-						Endpoint: telemetryv1alpha1.ValueType{
-							Value: backend.EndpointHTTP(),
-						},
+					Endpoint: telemetryv1alpha1.ValueType{
+						Value: backend.EndpointHTTP(),
 					},
 				},
 			},
@@ -156,9 +147,7 @@ func createMetricPipelineWithBackend(backendNs, pipelineName string) (*kitbacken
 func createTracePipelineWithBackend(backendNs, pipelineName string) (*kitbackend.Backend, telemetryv1alpha1.TracePipeline) {
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeTraces, kitbackend.WithName("trace-backend"))
 	pipeline := telemetryv1alpha1.TracePipeline{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: pipelineName,
-		},
+		Name: pipelineName,
 		Spec: telemetryv1alpha1.TracePipelineSpec{
 			Output: telemetryv1alpha1.TracePipelineOutput{
 				OTLP: &telemetryv1alpha1.OTLPOutput{

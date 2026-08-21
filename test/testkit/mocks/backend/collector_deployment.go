@@ -54,11 +54,9 @@ func (d *collectorDeploymentBuilder) K8sObject(opts ...testkit.OptFunc) *appsv1.
 	volumes := d.volumes()
 
 	return &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      d.name,
-			Namespace: d.namespace,
-			Labels:    labels,
-		},
+		Name:      d.name,
+		Namespace: d.namespace,
+		Labels:    labels,
 		Spec: appsv1.DeploymentSpec{
 			Replicas: new(d.replicas),
 			Selector: &metav1.LabelSelector{MatchLabels: labels},
@@ -132,27 +130,21 @@ func (d *collectorDeploymentBuilder) volumes() []corev1.Volume {
 	volumes := []corev1.Volume{
 		{
 			Name: "config",
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{Name: d.configmapName},
-				},
+			ConfigMap: &corev1.ConfigMapVolumeSource{
+				Name: d.configmapName,
 			},
 		},
 		{
-			Name: "data",
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
-			},
+			Name:     "data",
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
 		},
 	}
 
 	if d.signalType == SignalTypeLogsFluentBit {
 		volumes = append(volumes, corev1.Volume{
 			Name: "fluentd-config",
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{Name: d.fluentdConfigName},
-				},
+			ConfigMap: &corev1.ConfigMapVolumeSource{
+				Name: d.fluentdConfigName,
 			},
 		})
 	}

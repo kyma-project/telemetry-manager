@@ -56,7 +56,7 @@ func TestTracesGetHealthCondition(t *testing.T) {
 		},
 		{
 			name:                  "Test GetHealthCondition with signal type traces and wrapped error",
-			proberErr:             fmt.Errorf("new error: %w", &workloadstatus.PodIsPendingError{ContainerName: "foo", Message: "foo"}),
+			proberErr:             fmt.Errorf("new error: %w", workloadstatus.PodIsPendingError{ContainerName: "foo", Message: "foo"}),
 			configGeneratedStatus: metav1.ConditionTrue,
 			expectedCondition: &metav1.Condition{
 				Type:    conditions.TypeGatewayHealthy,
@@ -152,7 +152,7 @@ func TestMetricsGetHealthCondition(t *testing.T) {
 		{
 			name:                  "Test GetHealthCondition with signal type metrics and wrapped error",
 			proberAgentErr:        fmt.Errorf("new error: %w", &workloadstatus.PodIsFailingError{Message: "foo"}),
-			preberGatewayErr:      fmt.Errorf("new error: %w", &workloadstatus.PodIsPendingError{ContainerName: "foo", Message: "fooMessage"}),
+			preberGatewayErr:      fmt.Errorf("new error: %w", workloadstatus.PodIsPendingError{ContainerName: "foo", Message: "fooMessage"}),
 			configGeneratedStatus: metav1.ConditionTrue,
 			expectedGatewayCondition: &metav1.Condition{
 				Type:    conditions.TypeGatewayHealthy,

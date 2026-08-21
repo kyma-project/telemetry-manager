@@ -5,7 +5,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -20,7 +19,7 @@ func TestLabeler_Create(t *testing.T) {
 	labeler := NewLabeler(inner, testLabels)
 
 	t.Run("adds default labels to object without labels", func(t *testing.T) {
-		obj := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "no-labels", Namespace: "default"}}
+		obj := &corev1.ConfigMap{Name: "no-labels", Namespace: "default"}
 		require.NoError(t, labeler.Create(t.Context(), obj))
 
 		var got corev1.ConfigMap
@@ -29,11 +28,10 @@ func TestLabeler_Create(t *testing.T) {
 	})
 
 	t.Run("preserves existing labels", func(t *testing.T) {
-		obj := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{
+		obj := &corev1.ConfigMap{
 			Name:      "with-labels",
 			Namespace: "default",
-			Labels:    map[string]string{"custom": "value"},
-		}}
+			Labels:    map[string]string{"custom": "value"}}
 		require.NoError(t, labeler.Create(t.Context(), obj))
 
 		var got corev1.ConfigMap
@@ -47,7 +45,7 @@ func TestLabeler_Update(t *testing.T) {
 	inner := fake.NewClientBuilder().Build()
 	labeler := NewLabeler(inner, testLabels)
 
-	obj := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "update-test", Namespace: "default"}}
+	obj := &corev1.ConfigMap{Name: "update-test", Namespace: "default"}
 	require.NoError(t, inner.Create(t.Context(), obj))
 
 	require.NoError(t, labeler.Update(t.Context(), obj))
@@ -61,7 +59,7 @@ func TestLabeler_Patch(t *testing.T) {
 	inner := fake.NewClientBuilder().Build()
 	labeler := NewLabeler(inner, testLabels)
 
-	obj := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "patch-test", Namespace: "default"}}
+	obj := &corev1.ConfigMap{Name: "patch-test", Namespace: "default"}
 	require.NoError(t, inner.Create(t.Context(), obj))
 
 	obj.Labels = map[string]string{"extra": "label"}
@@ -76,7 +74,7 @@ func TestLabeler_Get(t *testing.T) {
 	inner := fake.NewClientBuilder().Build()
 	labeler := NewLabeler(inner, testLabels)
 
-	obj := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "get-test", Namespace: "default"}}
+	obj := &corev1.ConfigMap{Name: "get-test", Namespace: "default"}
 	require.NoError(t, inner.Create(t.Context(), obj))
 
 	var got corev1.ConfigMap

@@ -109,7 +109,7 @@ func deleteCommonResources(ctx context.Context, c client.Client, name types.Name
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete service account: %w", err))
 	}
 
-	metricsService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: names.MetricsServiceName(name.Name), Namespace: name.Namespace}}
+	metricsService := corev1.Service{Name: names.MetricsServiceName(name.Name), Namespace: name.Namespace}
 	if err := k8sutils.DeleteObject(ctx, c, &metricsService); err != nil {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete metrics service: %w", err))
 	}
@@ -119,10 +119,8 @@ func deleteCommonResources(ctx context.Context, c client.Client, name types.Name
 
 func makeServiceAccount(name types.NamespacedName) *corev1.ServiceAccount {
 	serviceAccount := corev1.ServiceAccount{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name.Name,
-			Namespace: name.Namespace,
-		},
+		Name:      name.Name,
+		Namespace: name.Namespace,
 	}
 
 	return &serviceAccount
@@ -130,10 +128,8 @@ func makeServiceAccount(name types.NamespacedName) *corev1.ServiceAccount {
 
 func makeConfigMap(name types.NamespacedName, collectorConfigYAML string) *corev1.ConfigMap {
 	return &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name.Name,
-			Namespace: name.Namespace,
-		},
+		Name:      name.Name,
+		Namespace: name.Namespace,
 		Data: map[string]string{
 			configFileName: collectorConfigYAML,
 		},
@@ -142,11 +138,9 @@ func makeConfigMap(name types.NamespacedName, collectorConfigYAML string) *corev
 
 func makeSecret(name types.NamespacedName, secretData map[string][]byte) *corev1.Secret {
 	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name.Name,
-			Namespace: name.Namespace,
-		},
-		Data: secretData,
+		Name:      name.Name,
+		Namespace: name.Namespace,
+		Data:      secretData,
 	}
 }
 
@@ -156,15 +150,13 @@ func makeMetricsService(name types.NamespacedName) *corev1.Service {
 	}
 
 	return &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.MetricsServiceName(name.Name),
-			Namespace: name.Namespace,
-			Labels:    labels,
-			Annotations: map[string]string{
-				commonresources.AnnotationKeyPrometheusScrape: "true",
-				commonresources.AnnotationKeyPrometheusPort:   strconv.Itoa(int(ports.Metrics)),
-				commonresources.AnnotationKeyPrometheusScheme: "http",
-			},
+		Name:      names.MetricsServiceName(name.Name),
+		Namespace: name.Namespace,
+		Labels:    labels,
+		Annotations: map[string]string{
+			commonresources.AnnotationKeyPrometheusScrape: "true",
+			commonresources.AnnotationKeyPrometheusPort:   strconv.Itoa(int(ports.Metrics)),
+			commonresources.AnnotationKeyPrometheusScheme: "http",
 		},
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{
@@ -190,10 +182,8 @@ func makeVPA(name types.NamespacedName, minAllowedMemory, maxAllowedMemory resou
 	controlledValues := autoscalingvpav1.ContainerControlledValuesRequestsAndLimits
 
 	return &autoscalingvpav1.VerticalPodAutoscaler{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name.Name,
-			Namespace: name.Namespace,
-		},
+		Name:      name.Name,
+		Namespace: name.Namespace,
 		Spec: autoscalingvpav1.VerticalPodAutoscalerSpec{
 			TargetRef: &autoscalingv1.CrossVersionObjectReference{
 				APIVersion: "apps/v1",

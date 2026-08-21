@@ -80,12 +80,10 @@ func (d *Deployment) K8sObject() *appsv1.Deployment {
 	}
 
 	return &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        d.name,
-			Namespace:   d.namespace,
-			Labels:      labels,
-			Annotations: d.annotations,
-		},
+		Name:        d.name,
+		Namespace:   d.namespace,
+		Labels:      labels,
+		Annotations: d.annotations,
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &d.replicas,
 			Selector: &metav1.LabelSelector{

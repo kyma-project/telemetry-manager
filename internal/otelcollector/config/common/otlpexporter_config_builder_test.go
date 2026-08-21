@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
@@ -13,11 +12,11 @@ import (
 )
 
 func traceRefTest() pipelines.PipelineRef {
-	return pipelines.TracePipelineRef(&telemetryv1beta1.TracePipeline{ObjectMeta: metav1.ObjectMeta{Name: "test"}})
+	return pipelines.TracePipelineRef(&telemetryv1beta1.TracePipeline{Name: "test"})
 }
 
 func metricRefTest() pipelines.PipelineRef {
-	return pipelines.MetricPipelineRef(&telemetryv1beta1.MetricPipeline{ObjectMeta: metav1.ObjectMeta{Name: "test"}})
+	return pipelines.MetricPipelineRef(&telemetryv1beta1.MetricPipeline{Name: "test"})
 }
 
 func TestExporterIDHTTP(t *testing.T) {
@@ -142,10 +141,8 @@ func TestMakeExporterConfigWithOAuth2(t *testing.T) {
 func TestMakeExporterConfigWithCustomHeaders(t *testing.T) {
 	headers := []telemetryv1beta1.Header{
 		{
-			Name: "Authorization",
-			ValueType: telemetryv1beta1.ValueType{
-				Value: "Bearer xyz",
-			},
+			Name:  "Authorization",
+			Value: "Bearer xyz",
 		},
 	}
 	output := &telemetryv1beta1.OTLPOutput{
