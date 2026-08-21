@@ -118,9 +118,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		}
 	}
 
-	requeue := telemetry.Status.State == operatorv1beta1.StateWarning
+	if telemetry.Status.State == operatorv1beta1.StateWarning {
+		return ctrl.Result{RequeueAfter: 0}, err
+	}
 
-	return ctrl.Result{Requeue: requeue}, err
+	return ctrl.Result{}, err
 }
 
 func (r *Reconciler) doReconcile(ctx context.Context, telemetry *operatorv1beta1.Telemetry, logLevel string) error {
