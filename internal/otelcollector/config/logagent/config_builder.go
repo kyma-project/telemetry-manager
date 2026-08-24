@@ -52,6 +52,8 @@ type BuildOptions struct {
 	ServiceEnrichment string
 	// VpaActive indicates whether VPA is active (VPA CRD exists and VPA is enabled via annotation in Telemetry CR).
 	VpaActive bool
+	// PassthroughResolver rewrites all OTLP gRPC exporter endpoints to passthrough:/// form.
+	PassthroughResolver bool
 }
 
 func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1beta1.LogPipeline, opts BuildOptions) (*common.Config, common.EnvVars, error) {
@@ -91,7 +93,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1beta1.LogPip
 			b.addDropKymaAttributesProcessor(),
 			b.addUserDefinedTransformProcessor(),
 			b.addUserDefinedFilterProcessor(),
-			b.addOTLPExporter(),
+			b.addOTLPExporter(opts.PassthroughResolver),
 		); err != nil {
 			return nil, nil, fmt.Errorf("failed to add service pipeline: %w", err)
 		}
@@ -234,7 +236,7 @@ func (b *Builder) addUserDefinedFilterProcessor() buildComponentFunc {
 	)
 }
 
-func (b *Builder) addOTLPExporter() buildComponentFunc {
+func (b *Builder) addOTLPExporter(passthroughResolver bool) buildComponentFunc {
 	return b.AddExporter(
 		formatOTLPExporterID,
 		func(ctx context.Context, lp *telemetryv1beta1.LogPipeline) (any, common.EnvVars, error) {
@@ -250,6 +252,7 @@ func (b *Builder) addOTLPExporter() buildComponentFunc {
 						FlushTimeout: exporterBatchFlushTimeout,
 					}),
 				),
+				common.WithPassthroughResolverIf(passthroughResolver),
 			)
 
 			return otlpExporterBuilder.OTLPExporter(ctx)
