@@ -41,6 +41,8 @@ type BuildOptions struct {
 	GatewayNamespace string
 	// VpaActive indicates whether VPA is active (VPA CRD exists and VPA is enabled via annotation in Telemetry CR).
 	VpaActive bool
+	// PassthroughResolver rewrites all OTLP gRPC exporter endpoints to passthrough:/// form.
+	PassthroughResolver bool
 }
 
 // Build creates OTel Collector configuration from TracePipeline, LogPipeline, and MetricPipeline CRs.

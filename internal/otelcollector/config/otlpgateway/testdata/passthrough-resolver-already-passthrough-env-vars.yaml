@@ -1,0 +1,1 @@
+OTLP_ENDPOINT_TRACEPIPELINE_TEST_TRACE: passthrough:///otlp.server:4317
