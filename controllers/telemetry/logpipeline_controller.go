@@ -322,7 +322,7 @@ func (r *LogPipelineController) mapOTLPGatewayChanges(ctx context.Context, objec
 		pipeline := &pipelineList.Items[i]
 		// Only reconcile pipelines with OTLP input (gateway-based)
 		if pipeline.Spec.Input.OTLP != nil {
-			requests = append(requests, {
+			requests = append(requests, reconcile.Request{
 				NamespacedName: types.NamespacedName{
 					Name: pipeline.Name,
 				},
@@ -489,7 +489,7 @@ func (r *LogPipelineController) enqueueAllPipelines(ctx context.Context) []recon
 
 	requests := make([]reconcile.Request, len(pipelineList.Items))
 	for i := range pipelineList.Items {
-		requests[i] = {
+		requests[i] = reconcile.Request{
 			NamespacedName: types.NamespacedName{
 				Name: pipelineList.Items[i].Name,
 			},
