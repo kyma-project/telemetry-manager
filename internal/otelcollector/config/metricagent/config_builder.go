@@ -57,6 +57,8 @@ type BuildOptions struct {
 	VpaActive bool
 	// CollectionIntervals contains the resolved collection intervals for each pull-based metric input type.
 	CollectionIntervals telemetryutils.MetricCollectionIntervals
+	// PassthroughResolver rewrites all OTLP gRPC exporter endpoints to passthrough:/// form.
+	PassthroughResolver bool
 }
 
 // inputSources represents the enabled input sources for the telemetry Metric Agent.
@@ -241,7 +243,7 @@ func (b *Builder) Build(ctx context.Context, pipelines []telemetryv1beta1.Metric
 			b.addCumulativeToDeltaProcessor(opts),
 			b.addBatchProcessor(), // always last
 			// OTLP exporter
-			b.addOTLPExporter(queueSize),
+			b.addOTLPExporter(queueSize, opts.PassthroughResolver),
 		); err != nil {
 			return nil, nil, fmt.Errorf("failed to add enrichment service pipeline: %w", err)
 		}
@@ -1053,7 +1055,7 @@ func (b *Builder) addBatchProcessor() buildComponentFunc {
 // Exporter builders
 
 //nolint:mnd // all static config from here
-func (b *Builder) addOTLPExporter(queueSize int) buildComponentFunc {
+func (b *Builder) addOTLPExporter(queueSize int, passthroughResolver bool) buildComponentFunc {
 	return b.AddExporter(
 		formatOTLPExporterID,
 		func(ctx context.Context, mp *telemetryv1beta1.MetricPipeline) (any, common.EnvVars, error) {
@@ -1062,6 +1064,7 @@ func (b *Builder) addOTLPExporter(queueSize int) buildComponentFunc {
 				&mp.Spec.Output.OTLP.OTLPOutput,
 				pipelines.MetricPipelineRef(mp),
 				common.NewSendingQueue(queueSize),
+				common.WithPassthroughResolverIf(passthroughResolver),
 			)
 
 			return otlpExporterBuilder.OTLPExporter(ctx)
