@@ -85,6 +85,8 @@ For details, see the [Telemetry specification file](https://github.com/kyma-proj
 | **enrichments.&#x200b;extractPodLabels**  | \[\]object | ExtractPodLabels specifies the list of Pod labels to be used for enrichment. |
 | **enrichments.&#x200b;extractPodLabels.&#x200b;key**  | string | Key specifies the exact label key to be used. |
 | **enrichments.&#x200b;extractPodLabels.&#x200b;keyPrefix**  | string | KeyPrefix specifies a prefix for label keys to be used. |
+| **grpc**  | object | GRPC configures module settings specific to gRPC transport. This field is optional. |
+| **grpc.&#x200b;passthroughResolver**  | boolean | PassthroughResolver configures all OTLP gRPC exporter endpoints to use the passthrough:/// resolver scheme. Enable this for IPv4-only clusters operating in an IPv6 environment to avoid connection failures caused by grpc-go's IPv6-first DNS behavior. |
 | **log**  | object | Log configures module settings specific to the log features. This field is optional. |
 | **log.&#x200b;gateway**  | object | Gateway configures the log gateway (deprecated). |
 | **log.&#x200b;gateway.&#x200b;scaling**  | object | Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.  Deprecated: This field is no longer supported. Setting it will have no effect. |
