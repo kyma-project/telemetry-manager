@@ -1,3 +1,3 @@
 module github.com/kyma-project/telemetry-manager/dependencies/chown
 
-go 1.27.0
+go 1.27.1
