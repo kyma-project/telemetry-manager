@@ -41,11 +41,9 @@ func (s *StatefulSet) K8sObject() *appsv1.StatefulSet {
 	maps.Copy(labels, PersistentLabel)
 
 	return &appsv1.StatefulSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      s.name,
-			Namespace: s.namespace,
-			Labels:    s.labels,
-		},
+		Name:      s.name,
+		Namespace: s.namespace,
+		Labels:    s.labels,
 		Spec: appsv1.StatefulSetSpec{
 			Replicas: &s.replicas,
 			Selector: &metav1.LabelSelector{

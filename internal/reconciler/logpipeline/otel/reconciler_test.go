@@ -560,10 +560,8 @@ func TestPipelineInfoTracking(t *testing.T) {
 				WithOTLPOutput(testutils.OTLPEndpointFromSecret("endpoint-secret", "default", "host")).
 				Build(),
 			secret: &corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "endpoint-secret",
-					Namespace: "default",
-				},
+				Name:      "endpoint-secret",
+				Namespace: "default",
 				Data: map[string][]byte{
 					"host": []byte("loki.example.com"),
 				},

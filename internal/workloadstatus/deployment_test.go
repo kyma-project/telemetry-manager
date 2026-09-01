@@ -177,7 +177,7 @@ func TestDeploymentNotCreated(t *testing.T) {
 
 func createDeployment(desiredScheduled *int32, numberReady int32) *appsv1.Deployment {
 	return &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{Name: "foo", Namespace: "telemetry-system"},
+		Name: "foo", Namespace: "telemetry-system",
 		Spec: appsv1.DeploymentSpec{
 			Replicas: desiredScheduled,
 			Selector: &metav1.LabelSelector{MatchLabels: map[string]string{"app": "foo"}},
@@ -190,12 +190,10 @@ func createDeployment(desiredScheduled *int32, numberReady int32) *appsv1.Deploy
 
 func createReplicaSet(desiredScheduled *int32, numberReady int32, dep appsv1.Deployment) *appsv1.ReplicaSet {
 	return &appsv1.ReplicaSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:            "foo",
-			Namespace:       "telemetry-system",
-			Labels:          dep.Spec.Selector.MatchLabels,
-			OwnerReferences: []metav1.OwnerReference{*metav1.NewControllerRef(&dep, dep.GroupVersionKind())},
-		},
+		Name:            "foo",
+		Namespace:       "telemetry-system",
+		Labels:          dep.Spec.Selector.MatchLabels,
+		OwnerReferences: []metav1.OwnerReference{*metav1.NewControllerRef(&dep, dep.GroupVersionKind())},
 		Spec: appsv1.ReplicaSetSpec{
 			Selector: dep.Spec.Selector,
 			Replicas: desiredScheduled,

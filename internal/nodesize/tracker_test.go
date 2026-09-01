@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	"github.com/kyma-project/telemetry-manager/internal/nodesize"
@@ -16,7 +15,7 @@ import (
 
 func makeNode(name string, memory resource.Quantity) corev1.Node {
 	return corev1.Node{
-		ObjectMeta: metav1.ObjectMeta{Name: name},
+		Name: name,
 		Status: corev1.NodeStatus{
 			Allocatable: corev1.ResourceList{
 				corev1.ResourceMemory: memory,
@@ -104,8 +103,8 @@ func TestUpdateSmallestMemory_Changed_ReturnsTrue(t *testing.T) {
 func TestUpdateSmallestMemory_NodeWithoutAllocatableMemory_IsSkipped(t *testing.T) {
 	node1 := makeNode("node1", resource.MustParse("4Gi"))
 	node2 := corev1.Node{
-		ObjectMeta: metav1.ObjectMeta{Name: "node2"},
-		Status:     corev1.NodeStatus{Allocatable: corev1.ResourceList{}},
+		Name:   "node2",
+		Status: corev1.NodeStatus{Allocatable: corev1.ResourceList{}},
 	}
 	tracker := newTracker(node1, node2)
 

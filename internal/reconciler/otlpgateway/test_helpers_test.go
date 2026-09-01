@@ -8,9 +8,7 @@ import (
 	istiosecurityclientv1 "istio.io/client-go/pkg/apis/security/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -73,16 +71,12 @@ func newTestClient(t *testing.T, objs ...client.Object) client.Client {
 	require.NoError(t, istiosecurityclientv1.AddToScheme(scheme))
 
 	kymaSystemNamespace := &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "kyma-system",
-		},
+		Name: "kyma-system",
 	}
 
 	kubeSystemNamespace := &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "kube-system",
-			UID:  "test-cluster-id",
-		},
+		Name: "kube-system",
+		UID:  "test-cluster-id",
 	}
 
 	allObjs := append([]client.Object{kymaSystemNamespace, kubeSystemNamespace}, objs...)
@@ -138,10 +132,8 @@ func newTestReconciler(fakeClient client.Client, opts ...any) (*testReconciler, 
 
 func newReconcileRequest() ctrl.Request {
 	return ctrl.Request{
-		NamespacedName: types.NamespacedName{
-			Name:      names.OTLPGatewayCoordinationConfigMap,
-			Namespace: "kyma-system",
-		},
+		Name:      names.OTLPGatewayCoordinationConfigMap,
+		Namespace: "kyma-system",
 	}
 }
 

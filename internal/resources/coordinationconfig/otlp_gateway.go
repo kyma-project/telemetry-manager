@@ -7,7 +7,6 @@ import (
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -242,10 +241,8 @@ func parseConfig(cm *corev1.ConfigMap, exists bool) (OTLPGatewayConfigMap, error
 // createConfigMap creates a new ConfigMap with the given YAML data
 func createConfigMap(ctx context.Context, c client.Client, namespace, yamlData string) error {
 	cm := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.OTLPGatewayCoordinationConfigMap,
-			Namespace: namespace,
-		},
+		Name:      names.OTLPGatewayCoordinationConfigMap,
+		Namespace: namespace,
 		Data: map[string]string{
 			ConfigMapDataKey: yamlData,
 		},

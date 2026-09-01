@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -25,9 +24,7 @@ func TestVersionConversion(t *testing.T) {
 	)
 
 	v1Alpha1LogPipeline := telemetryv1alpha1.LogPipeline{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: v1Alpha1PipelineName,
-		},
+		Name: v1Alpha1PipelineName,
 		Spec: telemetryv1alpha1.LogPipelineSpec{
 			Output: telemetryv1alpha1.LogPipelineOutput{
 				FluentBitHTTP: &telemetryv1alpha1.FluentBitHTTPOutput{
@@ -45,9 +42,7 @@ func TestVersionConversion(t *testing.T) {
 	}
 
 	v1Beta1LogPipeline := telemetryv1beta1.LogPipeline{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: v1Beta1PipelineName,
-		},
+		Name: v1Beta1PipelineName,
 		Spec: telemetryv1beta1.LogPipelineSpec{
 			Output: telemetryv1beta1.LogPipelineOutput{
 				FluentBitHTTP: &telemetryv1beta1.FluentBitHTTPOutput{
