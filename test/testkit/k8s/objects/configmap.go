@@ -4,7 +4,6 @@ import (
 	"maps"
 
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type ConfigMap struct {
@@ -38,11 +37,9 @@ func (d *ConfigMap) K8sObject() *corev1.ConfigMap {
 	maps.Copy(labels, PersistentLabel)
 
 	return &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      d.name,
-			Namespace: d.namespace,
-			Labels:    d.labels,
-		},
-		Data: d.data,
+		Name:      d.name,
+		Namespace: d.namespace,
+		Labels:    d.labels,
+		Data:      d.data,
 	}
 }

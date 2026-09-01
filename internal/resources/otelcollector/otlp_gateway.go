@@ -217,22 +217,22 @@ func (o *OTLPGatewayApplierDeleter) DeleteResources(ctx context.Context, c clien
 	}
 
 	// Delete the OTLP service
-	OTLPService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: o.otlpServiceName, Namespace: o.globals.TargetNamespace()}}
+	OTLPService := corev1.Service{Name: o.otlpServiceName, Namespace: o.globals.TargetNamespace()}
 	if err := k8sutils.DeleteObject(ctx, c, &OTLPService); err != nil {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete otlp service: %w", err))
 	}
 
-	legacyLogService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: names.OTLPLogsService, Namespace: o.globals.TargetNamespace()}}
+	legacyLogService := corev1.Service{Name: names.OTLPLogsService, Namespace: o.globals.TargetNamespace()}
 	if err := k8sutils.DeleteObject(ctx, c, &legacyLogService); err != nil {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete legacy log otlp service: %w", err))
 	}
 
-	legacyTraceService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: names.OTLPTracesService, Namespace: o.globals.TargetNamespace()}}
+	legacyTraceService := corev1.Service{Name: names.OTLPTracesService, Namespace: o.globals.TargetNamespace()}
 	if err := k8sutils.DeleteObject(ctx, c, &legacyTraceService); err != nil {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete legacy trace otlp service: %w", err))
 	}
 
-	legacyMetricService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: names.OTLPMetricsService, Namespace: o.globals.TargetNamespace()}}
+	legacyMetricService := corev1.Service{Name: names.OTLPMetricsService, Namespace: o.globals.TargetNamespace()}
 	if err := k8sutils.DeleteObject(ctx, c, &legacyMetricService); err != nil {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete legacy metric otlp service: %w", err))
 	}
@@ -247,7 +247,7 @@ func (o *OTLPGatewayApplierDeleter) DeleteResources(ctx context.Context, c clien
 			}
 		}
 
-		peerAuth := istiosecurityclientv1.PeerAuthentication{ObjectMeta: metav1.ObjectMeta{Name: o.baseName, Namespace: o.globals.TargetNamespace()}}
+		peerAuth := istiosecurityclientv1.PeerAuthentication{Name: o.baseName, Namespace: o.globals.TargetNamespace()}
 		if err := k8sutils.DeleteObject(ctx, c, &peerAuth); err != nil {
 			allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete peerauthentication: %w", err))
 		}
@@ -273,10 +273,8 @@ func (o *OTLPGatewayApplierDeleter) applyVPA(ctx context.Context, c client.Clien
 
 	// If VPA is disabled, ensure that any existing VPA is cleaned up
 	vpa := &autoscalingvpav1.VerticalPodAutoscaler{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name.Name,
-			Namespace: name.Namespace,
-		},
+		Name:      name.Name,
+		Namespace: name.Namespace,
 	}
 	if err := k8sutils.DeleteObject(ctx, c, vpa); err != nil {
 		return fmt.Errorf("failed to delete VPA: %w", err)
@@ -287,10 +285,8 @@ func (o *OTLPGatewayApplierDeleter) applyVPA(ctx context.Context, c client.Clien
 
 func (o *OTLPGatewayApplierDeleter) makeDestinationRule(name string) *istionetworkingclientv1.DestinationRule {
 	return &istionetworkingclientv1.DestinationRule{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: o.globals.TargetNamespace(),
-		},
+		Name:      name,
+		Namespace: o.globals.TargetNamespace(),
 		Spec: v1alpha3.DestinationRule{
 			Host: fmt.Sprintf("%s.%s.svc.cluster.local", name, o.globals.TargetNamespace()),
 			TrafficPolicy: &v1alpha3.TrafficPolicy{
@@ -302,10 +298,8 @@ func (o *OTLPGatewayApplierDeleter) makeDestinationRule(name string) *istionetwo
 
 func (o *OTLPGatewayApplierDeleter) makePeerAuthentication() *istiosecurityclientv1.PeerAuthentication {
 	return &istiosecurityclientv1.PeerAuthentication{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      o.baseName,
-			Namespace: o.globals.TargetNamespace(),
-		},
+		Name:      o.baseName,
+		Namespace: o.globals.TargetNamespace(),
 		Spec: istiosecurityv1.PeerAuthentication{
 			Selector: &istiotypev1beta1.WorkloadSelector{MatchLabels: commonresources.DefaultSelector(o.baseName)},
 			Mtls:     &istiosecurityv1.PeerAuthentication_MutualTLS{Mode: istiosecurityv1.PeerAuthentication_MutualTLS_PERMISSIVE},
@@ -315,10 +309,8 @@ func (o *OTLPGatewayApplierDeleter) makePeerAuthentication() *istiosecurityclien
 
 func (o *OTLPGatewayApplierDeleter) makeOTLPService() *corev1.Service {
 	service := &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      o.otlpServiceName,
-			Namespace: o.globals.TargetNamespace(),
-		},
+		Name:      o.otlpServiceName,
+		Namespace: o.globals.TargetNamespace(),
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{
 				{
@@ -346,10 +338,8 @@ func (o *OTLPGatewayApplierDeleter) makeOTLPService() *corev1.Service {
 // makeLegacyOTLPService creates a service with a legacy name that points to the unified OTLP Gateway
 func (o *OTLPGatewayApplierDeleter) makeLegacyOTLPService(legacyServiceName string) *corev1.Service {
 	return &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      legacyServiceName,
-			Namespace: o.globals.TargetNamespace(),
-		},
+		Name:      legacyServiceName,
+		Namespace: o.globals.TargetNamespace(),
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{
 				{

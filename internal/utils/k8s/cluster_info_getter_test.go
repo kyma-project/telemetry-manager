@@ -5,14 +5,13 @@ import (
 
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestClusterInfoGetter(t *testing.T) {
 	t.Run("Gardener cluster", func(t *testing.T) {
 		shootInfo := &corev1.ConfigMap{
-			ObjectMeta: metav1.ObjectMeta{Name: "shoot-info", Namespace: "kube-system"},
+			Name: "shoot-info", Namespace: "kube-system",
 			Data: map[string]string{
 				"provider": "test-provider",
 			},
@@ -28,7 +27,7 @@ func TestClusterInfoGetter(t *testing.T) {
 
 	t.Run("Gardener converged cloud", func(t *testing.T) {
 		shootInfo := &corev1.ConfigMap{
-			ObjectMeta: metav1.ObjectMeta{Name: "shoot-info", Namespace: "kube-system"},
+			Name: "shoot-info", Namespace: "kube-system",
 			Data: map[string]string{
 				"provider": "openstack",
 			},
@@ -55,10 +54,8 @@ func TestClusterInfoGetter(t *testing.T) {
 func TestGetClusterUID(t *testing.T) {
 	t.Run("returns kube-system namespace UID", func(t *testing.T) {
 		kubeSystemNs := &corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "kube-system",
-				UID:  "test-cluster-uid-12345",
-			},
+			Name: "kube-system",
+			UID:  "test-cluster-uid-12345",
 		}
 
 		fakeClient := fake.NewClientBuilder().WithObjects(kubeSystemNs).Build()

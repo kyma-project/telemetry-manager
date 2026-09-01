@@ -10,7 +10,6 @@ import (
 	. "github.com/onsi/gomega"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitk8sobjects "github.com/kyma-project/telemetry-manager/test/testkit/k8s/objects"
@@ -256,7 +255,7 @@ func cleanupRoleBindings(t *testing.T, testNS string) {
 
 	for _, name := range bindings {
 		crb := &rbacv1.ClusterRoleBinding{
-			ObjectMeta: metav1.ObjectMeta{Name: name},
+			Name: name,
 		}
 
 		err := suite.K8sClient.Delete(suite.Ctx, crb)
@@ -273,10 +272,8 @@ func cleanupRoleBindings(t *testing.T, testNS string) {
 
 	for _, name := range nsBindings {
 		rb := &rbacv1.RoleBinding{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      name,
-				Namespace: kitkyma.SystemNamespaceName,
-			},
+			Name:      name,
+			Namespace: kitkyma.SystemNamespaceName,
 		}
 
 		err := suite.K8sClient.Delete(suite.Ctx, rb)

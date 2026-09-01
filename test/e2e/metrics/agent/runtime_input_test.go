@@ -7,7 +7,6 @@ import (
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -196,7 +195,7 @@ func createPodsWithVolume(pvName, pvcName, podMountingPVCName, podMountingEmptyD
 
 	storageClassName := "test-storage"
 	pv := &corev1.PersistentVolume{
-		ObjectMeta: metav1.ObjectMeta{Name: pvName, Namespace: namespace},
+		Name: pvName, Namespace: namespace,
 		Spec: corev1.PersistentVolumeSpec{
 			Capacity:         corev1.ResourceList{corev1.ResourceStorage: resource.MustParse("500Mi")},
 			AccessModes:      []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
@@ -225,7 +224,7 @@ func createPodsWithVolume(pvName, pvcName, podMountingPVCName, podMountingEmptyD
 	}
 
 	pvc := &corev1.PersistentVolumeClaim{
-		ObjectMeta: metav1.ObjectMeta{Name: pvcName, Namespace: namespace},
+		Name: pvcName, Namespace: namespace,
 		Spec: corev1.PersistentVolumeClaimSpec{
 			StorageClassName: &storageClassName,
 			AccessModes:      []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
@@ -236,15 +235,13 @@ func createPodsWithVolume(pvName, pvcName, podMountingPVCName, podMountingEmptyD
 	}
 
 	podMountingPVC := &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{Name: podMountingPVCName, Namespace: namespace},
+		Name: podMountingPVCName, Namespace: namespace,
 		Spec: corev1.PodSpec{
 			Volumes: []corev1.Volume{
 				{
 					Name: "pvc-volume",
-					VolumeSource: corev1.VolumeSource{
-						PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-							ClaimName: pvcName,
-						},
+					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+						ClaimName: pvcName,
 					},
 				},
 			},
@@ -265,14 +262,12 @@ func createPodsWithVolume(pvName, pvcName, podMountingPVCName, podMountingEmptyD
 
 	// create a pod mounting an emptyDir volume to ensure only metrics for PVC volumes are delivered
 	podMountingEmptyDir := &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{Name: podMountingEmptyDirName, Namespace: namespace},
+		Name: podMountingEmptyDirName, Namespace: namespace,
 		Spec: corev1.PodSpec{
 			Volumes: []corev1.Volume{
 				{
-					Name: "emptydir-volume",
-					VolumeSource: corev1.VolumeSource{
-						EmptyDir: &corev1.EmptyDirVolumeSource{},
-					},
+					Name:     "emptydir-volume",
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
 				},
 			},
 			Containers: []corev1.Container{

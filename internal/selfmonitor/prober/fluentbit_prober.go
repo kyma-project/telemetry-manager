@@ -46,11 +46,9 @@ func (p *FluentBitProber) Probe(ctx context.Context, pipelineName string) (Fluen
 	healthy := !allDropped && !someDropped && !bufferFillingUp && !noLogs
 
 	return FluentBitProbeResult{
-		PipelineProbeResult: PipelineProbeResult{
-			AllDataDropped:  allDropped,
-			SomeDataDropped: someDropped,
-			Healthy:         healthy,
-		},
+		AllDataDropped:  allDropped,
+		SomeDataDropped: someDropped,
+		Healthy:         healthy,
 		NoLogsDelivered: noLogs,
 		BufferFillingUp: bufferFillingUp,
 	}, nil

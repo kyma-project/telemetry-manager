@@ -160,10 +160,8 @@ func fluentBitHostPathCleanupDaemonSet() *appsv1.DaemonSet {
 	grace := int64(60)
 
 	return &appsv1.DaemonSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      fluentBitHostPathCleanupDSName,
-			Namespace: kymaSystemNamespace,
-		},
+		Name:      fluentBitHostPathCleanupDSName,
+		Namespace: kymaSystemNamespace,
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{"app": fluentBitHostPathCleanupDSName},
@@ -194,11 +192,9 @@ func fluentBitHostPathCleanupDaemonSet() *appsv1.DaemonSet {
 					Volumes: []corev1.Volume{
 						{
 							Name: volumeName,
-							VolumeSource: corev1.VolumeSource{
-								HostPath: &corev1.HostPathVolumeSource{
-									Path: fluentBitHostPathOnNode,
-									Type: ptr.To(corev1.HostPathDirectoryOrCreate),
-								},
+							HostPath: &corev1.HostPathVolumeSource{
+								Path: fluentBitHostPathOnNode,
+								Type: ptr.To(corev1.HostPathDirectoryOrCreate),
 							},
 						},
 					},

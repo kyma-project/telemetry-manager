@@ -25,10 +25,8 @@ func MakeNetworkPolicy(
 	opts ...NetworkPolicyOption,
 ) *networkingv1.NetworkPolicy {
 	networkPolicy := &networkingv1.NetworkPolicy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      NetworkPolicyPrefix + name.Name,
-			Namespace: name.Namespace,
-		},
+		Name:      NetworkPolicyPrefix + name.Name,
+		Namespace: name.Namespace,
 		Spec: networkingv1.NetworkPolicySpec{
 			PodSelector: metav1.LabelSelector{
 				MatchLabels: selectorLabels,
@@ -216,10 +214,8 @@ func makeNetworkPolicyPorts(ports []int32) []networkingv1.NetworkPolicyPort {
 
 func CleanupOldNetworkPolicy(ctx context.Context, c client.Client, name types.NamespacedName) error {
 	oldNetworkPolicy := &networkingv1.NetworkPolicy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name.Name,
-			Namespace: name.Namespace,
-		},
+		Name:      name.Name,
+		Namespace: name.Namespace,
 	}
 
 	if err := c.Delete(ctx, oldNetworkPolicy); err != nil {

@@ -9,7 +9,6 @@ import (
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -37,9 +36,7 @@ var (
 	}
 
 	logPipelinesCRD = apiextensionsv1.CustomResourceDefinition{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "logpipelines.telemetry.kyma-project.io",
-		},
+		Name: "logpipelines.telemetry.kyma-project.io",
 		Spec: apiextensionsv1.CustomResourceDefinitionSpec{
 			Conversion: &apiextensionsv1.CustomResourceConversion{
 				Strategy: apiextensionsv1.WebhookConverter,
@@ -51,9 +48,7 @@ var (
 	}
 
 	metricPipelinesCRD = apiextensionsv1.CustomResourceDefinition{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "metricpipelines.telemetry.kyma-project.io",
-		},
+		Name: "metricpipelines.telemetry.kyma-project.io",
 		Spec: apiextensionsv1.CustomResourceDefinitionSpec{
 			Conversion: &apiextensionsv1.CustomResourceConversion{
 				Strategy: apiextensionsv1.WebhookConverter,
@@ -85,10 +80,8 @@ var (
 	servicePort                    = int32(443)
 	timeout                        = int32(15)
 	validatingWebhookConfiguration = admissionregistrationv1.ValidatingWebhookConfiguration{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:   validatingWebhookName,
-			Labels: labels,
-		},
+		Name:   validatingWebhookName,
+		Labels: labels,
 		Webhooks: []admissionregistrationv1.ValidatingWebhook{
 			{
 				AdmissionReviewVersions: []string{"v1beta1", "v1"},
@@ -107,13 +100,11 @@ var (
 				TimeoutSeconds: &timeout,
 				Rules: []admissionregistrationv1.RuleWithOperations{
 					{
-						Operations: operations,
-						Rule: admissionregistrationv1.Rule{
-							APIGroups:   apiGroups,
-							APIVersions: apiVersions,
-							Scope:       &scope,
-							Resources:   []string{"logpipelines"},
-						},
+						Operations:  operations,
+						APIGroups:   apiGroups,
+						APIVersions: apiVersions,
+						Scope:       &scope,
+						Resources:   []string{"logpipelines"},
 					},
 				},
 			},
@@ -121,10 +112,8 @@ var (
 	}
 
 	mutatingWebhookConfiguration = admissionregistrationv1.MutatingWebhookConfiguration{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:   mutatingWebhookName,
-			Labels: labels,
-		},
+		Name:   mutatingWebhookName,
+		Labels: labels,
 		Webhooks: []admissionregistrationv1.MutatingWebhook{
 			{
 				AdmissionReviewVersions: []string{"v1beta1", "v1"},
@@ -143,13 +132,11 @@ var (
 				TimeoutSeconds: &timeout,
 				Rules: []admissionregistrationv1.RuleWithOperations{
 					{
-						Operations: operations,
-						Rule: admissionregistrationv1.Rule{
-							APIGroups:   apiGroups,
-							APIVersions: apiVersions,
-							Scope:       &scope,
-							Resources:   []string{"metricpipelines"},
-						},
+						Operations:  operations,
+						APIGroups:   apiGroups,
+						APIVersions: apiVersions,
+						Scope:       &scope,
+						Resources:   []string{"metricpipelines"},
 					},
 				},
 			},
@@ -170,13 +157,11 @@ var (
 				TimeoutSeconds: &timeout,
 				Rules: []admissionregistrationv1.RuleWithOperations{
 					{
-						Operations: operations,
-						Rule: admissionregistrationv1.Rule{
-							APIGroups:   apiGroups,
-							APIVersions: apiVersions,
-							Scope:       &scope,
-							Resources:   []string{"tracepipelines"},
-						},
+						Operations:  operations,
+						APIGroups:   apiGroups,
+						APIVersions: apiVersions,
+						Scope:       &scope,
+						Resources:   []string{"tracepipelines"},
 					},
 				},
 			},
@@ -197,13 +182,11 @@ var (
 				TimeoutSeconds: &timeout,
 				Rules: []admissionregistrationv1.RuleWithOperations{
 					{
-						Operations: operations,
-						Rule: admissionregistrationv1.Rule{
-							APIGroups:   apiGroups,
-							APIVersions: apiVersions,
-							Scope:       &scope,
-							Resources:   []string{"logpipelines"},
-						},
+						Operations:  operations,
+						APIGroups:   apiGroups,
+						APIVersions: apiVersions,
+						Scope:       &scope,
+						Resources:   []string{"logpipelines"},
 					},
 				},
 			},
