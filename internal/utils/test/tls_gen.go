@@ -157,14 +157,14 @@ func (c *CertBuilder) Build() (*ServerCerts, *ClientCerts, error) {
 	}
 
 	return &ServerCerts{
-			CaCertPem:     caCertPem,
-			ServerCertPem: serverCertPem,
-			ServerKeyPem:  serverKeyPem,
-		}, &ClientCerts{
-			CaCertPem:     caCertPem,
-			ClientCertPem: clientCertPem,
-			ClientKeyPem:  clientKeyPem,
-		}, nil
+		CaCertPem:     caCertPem,
+		ServerCertPem: serverCertPem,
+		ServerKeyPem:  serverKeyPem,
+	}, &ClientCerts{
+		CaCertPem:     caCertPem,
+		ClientCertPem: clientCertPem,
+		ClientKeyPem:  clientKeyPem,
+	}, nil
 }
 
 func (c *CertBuilder) caCertTemplate() *x509.Certificate {

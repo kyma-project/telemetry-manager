@@ -2,7 +2,6 @@ package otelcollector
 
 import (
 	rbacv1 "k8s.io/api/rbac/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
@@ -32,11 +31,9 @@ func newRBAC(name types.NamespacedName, componentType string, options ...RBACOpt
 func withClusterRole(options ...ClusterRoleOption) RBACOption {
 	return func(r *rbac, name types.NamespacedName) {
 		clusterRole := &rbacv1.ClusterRole{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      name.Name,
-				Namespace: name.Namespace,
-			},
-			Rules: []rbacv1.PolicyRule{},
+			Name:      name.Name,
+			Namespace: name.Namespace,
+			Rules:     []rbacv1.PolicyRule{},
 		}
 		for _, o := range options {
 			o(clusterRole)
@@ -49,11 +46,9 @@ func withClusterRole(options ...ClusterRoleOption) RBACOption {
 func withClusterRoleBinding() RBACOption {
 	return func(r *rbac, name types.NamespacedName) {
 		r.clusterRoleBinding = &rbacv1.ClusterRoleBinding{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      name.Name,
-				Namespace: name.Namespace,
-			},
-			Subjects: []rbacv1.Subject{{Name: name.Name, Namespace: name.Namespace, Kind: rbacv1.ServiceAccountKind}},
+			Name:      name.Name,
+			Namespace: name.Namespace,
+			Subjects:  []rbacv1.Subject{{Name: name.Name, Namespace: name.Namespace, Kind: rbacv1.ServiceAccountKind}},
 			RoleRef: rbacv1.RoleRef{
 				APIGroup: "rbac.authorization.k8s.io",
 				Kind:     "ClusterRole",
@@ -66,11 +61,9 @@ func withClusterRoleBinding() RBACOption {
 func withRole(options ...RoleOption) RBACOption {
 	return func(r *rbac, name types.NamespacedName) {
 		role := &rbacv1.Role{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      name.Name,
-				Namespace: name.Namespace,
-			},
-			Rules: []rbacv1.PolicyRule{},
+			Name:      name.Name,
+			Namespace: name.Namespace,
+			Rules:     []rbacv1.PolicyRule{},
 		}
 
 		for _, o := range options {
@@ -84,10 +77,8 @@ func withRole(options ...RoleOption) RBACOption {
 func withRoleBinding() RBACOption {
 	return func(r *rbac, name types.NamespacedName) {
 		r.roleBinding = &rbacv1.RoleBinding{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      name.Name,
-				Namespace: name.Namespace,
-			},
+			Name:      name.Name,
+			Namespace: name.Namespace,
 			Subjects: []rbacv1.Subject{
 				{
 					Kind:      rbacv1.ServiceAccountKind,

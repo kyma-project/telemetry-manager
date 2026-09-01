@@ -7,7 +7,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
@@ -123,10 +122,8 @@ func TestIsValid(t *testing.T) {
 
 func TestResolveValue(t *testing.T) {
 	testSecret := corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-secret",
-			Namespace: "default",
-		},
+		Name:      "test-secret",
+		Namespace: "default",
 		Data: map[string][]byte{
 			"test-key": []byte("secret-value"),
 		},

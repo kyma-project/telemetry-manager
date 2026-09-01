@@ -21,4 +21,5 @@ FROM scratch
 LABEL org.opencontainers.image.source="https://github.com/kyma-project/telemetry-manager"
 WORKDIR /
 COPY --from=builder /app/stdout-log-generator .
+USER 65532:65532
 ENTRYPOINT ["/stdout-log-generator"]

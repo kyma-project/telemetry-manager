@@ -4,14 +4,13 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
 
 func TestCreateCustomFilters(t *testing.T) {
 	testPipeline := &telemetryv1beta1.LogPipeline{
-		ObjectMeta: metav1.ObjectMeta{Name: "foo"},
+		Name: "foo",
 		Spec: telemetryv1beta1.LogPipelineSpec{
 			FluentBitFilters: []telemetryv1beta1.FluentBitFilter{
 				{

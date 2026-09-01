@@ -72,17 +72,13 @@ func TestMergePodAnnotations(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			existing := appsv1.Deployment{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:        "some-deployment",
-					Annotations: tt.existing,
-				},
+				Name:        "some-deployment",
+				Annotations: tt.existing,
 			}
 
 			desired := appsv1.Deployment{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:        "some-deployment",
-					Annotations: tt.desired,
-				},
+				Name:        "some-deployment",
+				Annotations: tt.desired,
 			}
 
 			mergePodAnnotations(&desired.ObjectMeta, existing.ObjectMeta)

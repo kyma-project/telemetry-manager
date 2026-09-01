@@ -84,9 +84,7 @@ func newTestClient(t *testing.T, objs ...client.Object) client.Client {
 	require.NoError(t, telemetryv1beta1.AddToScheme(scheme))
 
 	kubeSystemNamespace := &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "kube-system",
-		},
+		Name: "kube-system",
 	}
 
 	allObjs := append([]client.Object{kubeSystemNamespace}, objs...)
@@ -102,7 +100,7 @@ func reconcileAndGet(t *testing.T, client client.Client, reconciler *testReconci
 	require.NoError(t, client.Get(t.Context(), types.NamespacedName{Name: pipelineName}, &pl))
 
 	res, recErr := reconciler.Reconcile(t.Context(), ctrl.Request{
-		NamespacedName: types.NamespacedName{Name: pipelineName},
+		Name: pipelineName,
 	})
 
 	var updatedPipeline telemetryv1beta1.MetricPipeline

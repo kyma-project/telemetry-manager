@@ -36,9 +36,7 @@ func NewMetricPipelineBuilder() *MetricPipelineBuilder {
 	return &MetricPipelineBuilder{
 		randSource: rand.NewSource(time.Now().UnixNano()),
 		outOTLP: &telemetryv1beta1.MetricPipelineOTLPOutput{
-			OTLPOutput: telemetryv1beta1.OTLPOutput{
-				Endpoint: telemetryv1beta1.ValueType{Value: "http://localhost:4317"},
-			},
+			Endpoint:    telemetryv1beta1.ValueType{Value: "http://localhost:4317"},
 			Temporality: &defaultTemporality,
 		},
 	}
@@ -449,15 +447,11 @@ func (b *MetricPipelineBuilder) Build() telemetryv1beta1.MetricPipeline {
 	}
 
 	pipeline := telemetryv1beta1.MetricPipeline{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: telemetryv1beta1.GroupVersion.String(),
-			Kind:       "MetricPipeline",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        name,
-			Labels:      b.labels,
-			Annotations: b.annotations,
-		},
+		APIVersion:  telemetryv1beta1.GroupVersion.String(),
+		Kind:        "MetricPipeline",
+		Name:        name,
+		Labels:      b.labels,
+		Annotations: b.annotations,
 		Status: telemetryv1beta1.MetricPipelineStatus{
 			Conditions: b.statusConditions,
 		},

@@ -10,10 +10,8 @@ import (
 )
 
 var v1alpha1MetricPipeline = &MetricPipeline{
-	ObjectMeta: metav1.ObjectMeta{
-		Name:      "full-pipeline",
-		Namespace: "default",
-	},
+	Name:      "full-pipeline",
+	Namespace: "default",
 	Spec: MetricPipelineSpec{
 		Input: MetricPipelineInput{
 			Runtime: &MetricPipelineRuntimeInput{
@@ -82,20 +80,18 @@ var v1alpha1MetricPipeline = &MetricPipeline{
 		},
 		Output: MetricPipelineOutput{
 			OTLP: &MetricPipelineOTLPOutput{
-				OTLPOutput: OTLPOutput{
-					Endpoint: ValueType{
-						Value: "otlp-collector:4317",
-					},
-					TLS: &OTLPTLS{
-						Insecure:           true,
-						InsecureSkipVerify: true,
-						CA:                 &ValueType{Value: "ca-cert"},
-						Cert:               &ValueType{Value: "cert"},
-						Key:                &ValueType{Value: "key"},
-					},
-					Headers: []Header{
-						{Name: "header1", ValueType: ValueType{Value: "value1"}, Prefix: "myPrefix"},
-					},
+				Endpoint: ValueType{
+					Value: "otlp-collector:4317",
+				},
+				TLS: &OTLPTLS{
+					Insecure:           true,
+					InsecureSkipVerify: true,
+					CA:                 &ValueType{Value: "ca-cert"},
+					Cert:               &ValueType{Value: "cert"},
+					Key:                &ValueType{Value: "key"},
+				},
+				Headers: []Header{
+					{Name: "header1", Value: "value1", Prefix: "myPrefix"},
 				},
 				Temporality: new(telemetryv1beta1.TemporalityDelta),
 			},
@@ -114,10 +110,8 @@ var v1alpha1MetricPipeline = &MetricPipeline{
 }
 
 var v1beta1MetricPipeline = &telemetryv1beta1.MetricPipeline{
-	ObjectMeta: metav1.ObjectMeta{
-		Name:      "full-pipeline",
-		Namespace: "default",
-	},
+	Name:      "full-pipeline",
+	Namespace: "default",
 	Spec: telemetryv1beta1.MetricPipelineSpec{
 		Input: telemetryv1beta1.MetricPipelineInput{
 			Runtime: &telemetryv1beta1.MetricPipelineRuntimeInput{
@@ -186,20 +180,18 @@ var v1beta1MetricPipeline = &telemetryv1beta1.MetricPipeline{
 		},
 		Output: telemetryv1beta1.MetricPipelineOutput{
 			OTLP: &telemetryv1beta1.MetricPipelineOTLPOutput{
-				OTLPOutput: telemetryv1beta1.OTLPOutput{
-					Endpoint: telemetryv1beta1.ValueType{
-						Value: "otlp-collector:4317",
-					},
-					TLS: &telemetryv1beta1.OutputTLS{
-						Insecure:           true,
-						InsecureSkipVerify: true,
-						CA:                 &telemetryv1beta1.ValueType{Value: "ca-cert"},
-						Cert:               &telemetryv1beta1.ValueType{Value: "cert"},
-						Key:                &telemetryv1beta1.ValueType{Value: "key"},
-					},
-					Headers: []telemetryv1beta1.Header{
-						{Name: "header1", ValueType: telemetryv1beta1.ValueType{Value: "value1"}, Prefix: "myPrefix"},
-					},
+				Endpoint: telemetryv1beta1.ValueType{
+					Value: "otlp-collector:4317",
+				},
+				TLS: &telemetryv1beta1.OutputTLS{
+					Insecure:           true,
+					InsecureSkipVerify: true,
+					CA:                 &telemetryv1beta1.ValueType{Value: "ca-cert"},
+					Cert:               &telemetryv1beta1.ValueType{Value: "cert"},
+					Key:                &telemetryv1beta1.ValueType{Value: "key"},
+				},
+				Headers: []telemetryv1beta1.Header{
+					{Name: "header1", Value: "value1", Prefix: "myPrefix"},
 				},
 				Temporality: new(telemetryv1beta1.TemporalityDelta),
 			},

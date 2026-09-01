@@ -6,7 +6,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -37,7 +36,7 @@ func newTestClient(t *testing.T, objs ...client.Object) client.Client {
 // It's a helper to reduce boilerplate in tests.
 func reconcile(t *testing.T, reconciler *Reconciler, pipelineName string) reconcileResult {
 	res, recErr := reconciler.Reconcile(t.Context(), ctrl.Request{
-		NamespacedName: types.NamespacedName{Name: pipelineName},
+		Name: pipelineName,
 	})
 
 	return reconcileResult{result: res, err: recErr}

@@ -4,7 +4,6 @@ import (
 	"maps"
 
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type Pod struct {
@@ -68,12 +67,10 @@ func (p *Pod) K8sObject() *corev1.Pod {
 	podSpec.RestartPolicy = corev1.RestartPolicyOnFailure
 
 	return &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        p.name,
-			Namespace:   p.namespace,
-			Labels:      labels,
-			Annotations: p.annotations,
-		},
-		Spec: podSpec,
+		Name:        p.name,
+		Namespace:   p.namespace,
+		Labels:      labels,
+		Annotations: p.annotations,
+		Spec:        podSpec,
 	}
 }

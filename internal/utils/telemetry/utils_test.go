@@ -139,10 +139,8 @@ func TestDefaultTelemetryInstanceFound(t *testing.T) {
 	scheme := runtime.NewScheme()
 	_ = operatorv1beta1.AddToScheme(scheme)
 	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&operatorv1beta1.Telemetry{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "default",
-			Namespace: "default",
-		},
+		Name:      "default",
+		Namespace: "default",
 	}).Build()
 
 	telemetry, err := GetDefaultTelemetryInstance(ctx, client, "default")
@@ -180,21 +178,17 @@ func TestGetClusterNameFromTelemetry(t *testing.T) {
 		{
 			name: "enrichments nil returns default cluster name from shoot info",
 			telemetry: &operatorv1beta1.Telemetry{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "default",
-					Namespace: testNamespace,
-				},
-				Spec: operatorv1beta1.TelemetrySpec{},
+				Name:      "default",
+				Namespace: testNamespace,
+				Spec:      operatorv1beta1.TelemetrySpec{},
 			},
 			expectedResult: defaultClusterName,
 		},
 		{
 			name: "cluster nil returns default cluster name from shoot info",
 			telemetry: &operatorv1beta1.Telemetry{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "default",
-					Namespace: testNamespace,
-				},
+				Name:      "default",
+				Namespace: testNamespace,
 				Spec: operatorv1beta1.TelemetrySpec{
 					Enrichments: &operatorv1beta1.EnrichmentSpec{},
 				},
@@ -204,10 +198,8 @@ func TestGetClusterNameFromTelemetry(t *testing.T) {
 		{
 			name: "cluster name empty returns default cluster name from shoot info",
 			telemetry: &operatorv1beta1.Telemetry{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "default",
-					Namespace: testNamespace,
-				},
+				Name:      "default",
+				Namespace: testNamespace,
 				Spec: operatorv1beta1.TelemetrySpec{
 					Enrichments: &operatorv1beta1.EnrichmentSpec{
 						Cluster: &operatorv1beta1.Cluster{
@@ -221,10 +213,8 @@ func TestGetClusterNameFromTelemetry(t *testing.T) {
 		{
 			name: "cluster name configured returns configured value",
 			telemetry: &operatorv1beta1.Telemetry{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "default",
-					Namespace: testNamespace,
-				},
+				Name:      "default",
+				Namespace: testNamespace,
 				Spec: operatorv1beta1.TelemetrySpec{
 					Enrichments: &operatorv1beta1.EnrichmentSpec{
 						Cluster: &operatorv1beta1.Cluster{
@@ -273,22 +263,18 @@ func TestGetServiceEnrichmentFromTelemetryOrDefault(t *testing.T) {
 		{
 			name: "annotations nil returns default",
 			telemetry: &operatorv1beta1.Telemetry{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "default",
-					Namespace: testNamespace,
-				},
+				Name:      "default",
+				Namespace: testNamespace,
 			},
 			expectedResult: commonresources.AnnotationValueTelemetryServiceEnrichmentDefault,
 		},
 		{
 			name: "annotation key not present returns default",
 			telemetry: &operatorv1beta1.Telemetry{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "default",
-					Namespace: testNamespace,
-					Annotations: map[string]string{
-						"other-annotation": "some-value",
-					},
+				Name:      "default",
+				Namespace: testNamespace,
+				Annotations: map[string]string{
+					"other-annotation": "some-value",
 				},
 			},
 			expectedResult: commonresources.AnnotationValueTelemetryServiceEnrichmentDefault,
@@ -296,12 +282,10 @@ func TestGetServiceEnrichmentFromTelemetryOrDefault(t *testing.T) {
 		{
 			name: "annotation value otel returns otel",
 			telemetry: &operatorv1beta1.Telemetry{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "default",
-					Namespace: testNamespace,
-					Annotations: map[string]string{
-						commonresources.AnnotationKeyTelemetryServiceEnrichment: commonresources.AnnotationValueTelemetryServiceEnrichmentOtel,
-					},
+				Name:      "default",
+				Namespace: testNamespace,
+				Annotations: map[string]string{
+					commonresources.AnnotationKeyTelemetryServiceEnrichment: commonresources.AnnotationValueTelemetryServiceEnrichmentOtel,
 				},
 			},
 			expectedResult: commonresources.AnnotationValueTelemetryServiceEnrichmentOtel,
@@ -309,12 +293,10 @@ func TestGetServiceEnrichmentFromTelemetryOrDefault(t *testing.T) {
 		{
 			name: "annotation value kyma-legacy returns kyma-legacy",
 			telemetry: &operatorv1beta1.Telemetry{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "default",
-					Namespace: testNamespace,
-					Annotations: map[string]string{
-						commonresources.AnnotationKeyTelemetryServiceEnrichment: commonresources.AnnotationValueTelemetryServiceEnrichmentKymaLegacy,
-					},
+				Name:      "default",
+				Namespace: testNamespace,
+				Annotations: map[string]string{
+					commonresources.AnnotationKeyTelemetryServiceEnrichment: commonresources.AnnotationValueTelemetryServiceEnrichmentKymaLegacy,
 				},
 			},
 			expectedResult: commonresources.AnnotationValueTelemetryServiceEnrichmentKymaLegacy,
@@ -322,12 +304,10 @@ func TestGetServiceEnrichmentFromTelemetryOrDefault(t *testing.T) {
 		{
 			name: "annotation value invalid returns default",
 			telemetry: &operatorv1beta1.Telemetry{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "default",
-					Namespace: testNamespace,
-					Annotations: map[string]string{
-						commonresources.AnnotationKeyTelemetryServiceEnrichment: "invalid-value",
-					},
+				Name:      "default",
+				Namespace: testNamespace,
+				Annotations: map[string]string{
+					commonresources.AnnotationKeyTelemetryServiceEnrichment: "invalid-value",
 				},
 			},
 			expectedResult: commonresources.AnnotationValueTelemetryServiceEnrichmentDefault,
@@ -370,22 +350,18 @@ func TestIsVpaEnabledInTelemetry(t *testing.T) {
 		{
 			name: "annotations nil returns true (default enabled)",
 			telemetry: &operatorv1beta1.Telemetry{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "default",
-					Namespace: testNamespace,
-				},
+				Name:      "default",
+				Namespace: testNamespace,
 			},
 			expected: true,
 		},
 		{
 			name: "annotation key not present returns true (default enabled)",
 			telemetry: &operatorv1beta1.Telemetry{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "default",
-					Namespace: testNamespace,
-					Annotations: map[string]string{
-						"other-annotation": "some-value",
-					},
+				Name:      "default",
+				Namespace: testNamespace,
+				Annotations: map[string]string{
+					"other-annotation": "some-value",
 				},
 			},
 			expected: true,
@@ -393,12 +369,10 @@ func TestIsVpaEnabledInTelemetry(t *testing.T) {
 		{
 			name: "annotation value true returns true",
 			telemetry: &operatorv1beta1.Telemetry{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "default",
-					Namespace: testNamespace,
-					Annotations: map[string]string{
-						"telemetry.kyma-project.io/enable-vpa": "true",
-					},
+				Name:      "default",
+				Namespace: testNamespace,
+				Annotations: map[string]string{
+					"telemetry.kyma-project.io/enable-vpa": "true",
 				},
 			},
 			expected: true,
@@ -406,12 +380,10 @@ func TestIsVpaEnabledInTelemetry(t *testing.T) {
 		{
 			name: "annotation value false returns false (explicitly disabled)",
 			telemetry: &operatorv1beta1.Telemetry{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "default",
-					Namespace: testNamespace,
-					Annotations: map[string]string{
-						"telemetry.kyma-project.io/enable-vpa": "false",
-					},
+				Name:      "default",
+				Namespace: testNamespace,
+				Annotations: map[string]string{
+					"telemetry.kyma-project.io/enable-vpa": "false",
 				},
 			},
 			expected: false,
@@ -419,12 +391,10 @@ func TestIsVpaEnabledInTelemetry(t *testing.T) {
 		{
 			name: "annotation value invalid returns true (default enabled)",
 			telemetry: &operatorv1beta1.Telemetry{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "default",
-					Namespace: testNamespace,
-					Annotations: map[string]string{
-						"telemetry.kyma-project.io/enable-vpa": "invalid",
-					},
+				Name:      "default",
+				Namespace: testNamespace,
+				Annotations: map[string]string{
+					"telemetry.kyma-project.io/enable-vpa": "invalid",
 				},
 			},
 			expected: true,

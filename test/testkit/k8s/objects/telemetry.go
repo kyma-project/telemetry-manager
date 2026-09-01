@@ -1,8 +1,6 @@
 package objects
 
 import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 )
 
@@ -26,11 +24,9 @@ func (s *Telemetry) K8sObject() *operatorv1alpha1.Telemetry {
 	}
 
 	return &operatorv1alpha1.Telemetry{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      s.Name,
-			Namespace: s.Namespace,
-			Labels:    labels,
-		},
+		Name:      s.Name,
+		Namespace: s.Namespace,
+		Labels:    labels,
 	}
 }
 
