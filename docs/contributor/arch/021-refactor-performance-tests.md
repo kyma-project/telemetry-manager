@@ -12,7 +12,7 @@ Currently, [performance tests](../benchmarks/README.md) are written in bash whic
 
 ### Evaluation of the OpenTelemetry Collector Testbed
 
-We evaluated using the `LoadGenerator` and `MockBackend` from the [OpenTelemetry Collector Testbed](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/testbed). We dockerized both components and ran them as pods in a Kubernetes cluster to test the Log Gateway and Log Agent.
+We evaluated using the `LoadGenerator` and `MockBackend` from the [OpenTelemetry Collector Testbed](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/testbed). We dockerized both components and ran them as Pods in a Kubernetes cluster to test the Log Gateway and Log Agent.
 
 The main advantage is that the testbed exposes the exact number of data items sent and received as a Prometheus metric, enabling precise validation.
 
