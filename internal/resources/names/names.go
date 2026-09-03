@@ -43,8 +43,9 @@ const (
 	ValidatingWebhookConfig  = telemetryPrefix + "validating-webhook.kyma-project.io"
 	MutatingWebhookConfig    = telemetryPrefix + "mutating-webhook.kyma-project.io"
 
-	LogPipelineLock    = telemetryPrefix + "logpipeline-lock"
-	LogPipelineSync    = telemetryPrefix + "logpipeline-sync"
+	LogPipelineLock          = telemetryPrefix + "logpipeline-lock"
+	LogPipelineFluentBitLock = telemetryPrefix + "logpipeline-fluentbit-lock"
+	LogPipelineSync          = telemetryPrefix + "logpipeline-sync"
 	MetricPipelineLock = telemetryPrefix + "metricpipeline-lock"
 	MetricPipelineSync = telemetryPrefix + "metricpipeline-sync"
 	TracePipelineLock  = telemetryPrefix + "tracepipeline-lock"
