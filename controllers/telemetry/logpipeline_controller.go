@@ -73,12 +73,12 @@ type LogPipelineController struct {
 
 	globals config.Global
 
-	reconcileTriggerChan    <-chan event.GenericEvent
-	reconciler              *logpipeline.Reconciler
-	secretWatchClient       *secretwatch.Client
-	pipelineLockName        types.NamespacedName
+	reconcileTriggerChan      <-chan event.GenericEvent
+	reconciler                *logpipeline.Reconciler
+	secretWatchClient         *secretwatch.Client
+	pipelineLockName          types.NamespacedName
 	fluentBitPipelineLockName types.NamespacedName
-	nodeSizeTracker         *nodesize.Tracker
+	nodeSizeTracker           *nodesize.Tracker
 }
 
 type LogPipelineControllerConfig struct {
@@ -299,6 +299,7 @@ func (r *LogPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		ctrlbuilder.WithPredicates(ctrlpredicate.NewPredicateFuncs(func(object client.Object) bool {
 			ns := object.GetNamespace()
 			name := object.GetName()
+
 			return ns == r.pipelineLockName.Namespace &&
 				(name == r.pipelineLockName.Name || name == r.fluentBitPipelineLockName.Name)
 		})),
