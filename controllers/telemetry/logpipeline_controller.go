@@ -100,7 +100,7 @@ func NewLogPipelineController(config LogPipelineControllerConfig, client client.
 		pipelineCount = resourcelock.UnlimitedPipelineCount
 	}
 
-	pipelineLockOTEL := resourcelock.NewLocker(
+	otelPipelineLock := resourcelock.NewLocker(
 		client,
 		types.NamespacedName{
 			Name:      names.LogPipelineLock,
@@ -111,7 +111,7 @@ func NewLogPipelineController(config LogPipelineControllerConfig, client client.
 
 	// FluentBit pipelines use disk-backed buffers, so lifting the limit could exhaust node disk space
 	// and destabilize the cluster. The unlimited pipelines feature is intentionally OTel-only.
-	pipelineLock := resourcelock.NewLocker(
+	fluentBitPipelineLock := resourcelock.NewLocker(
 		client,
 		types.NamespacedName{
 			Name:      names.LogPipelineFluentBitLock,
@@ -143,12 +143,12 @@ func NewLogPipelineController(config LogPipelineControllerConfig, client client.
 		return nil, err
 	}
 
-	fluentBitReconciler, err := configureFluentBitReconciler(config, client, fluentBitFlowHealthProber, pipelineLock)
+	fluentBitReconciler, err := configureFluentBitReconciler(config, client, fluentBitFlowHealthProber, fluentBitPipelineLock)
 	if err != nil {
 		return nil, err
 	}
 
-	otelReconciler, err := configureOTelReconciler(config, client, pipelineLockOTEL, gatewayFlowHealthProber, agentFlowHealthProber, nodeSizeTracker)
+	otelReconciler, err := configureOTelReconciler(config, client, otelPipelineLock, gatewayFlowHealthProber, agentFlowHealthProber, nodeSizeTracker)
 	if err != nil {
 		return nil, err
 	}
