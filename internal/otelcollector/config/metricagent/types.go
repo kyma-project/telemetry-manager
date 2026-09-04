@@ -246,14 +246,14 @@ type PrometheusScrape struct {
 }
 
 type Scrape struct {
-	JobName              string        `yaml:"job_name"`
-	SampleLimit          int           `yaml:"sample_limit,omitempty"`
-	BodySizeLimit        string        `yaml:"body_size_limit,omitempty"`
-	ScrapeInterval       time.Duration `yaml:"scrape_interval,omitempty"`
-	MetricsPath          string        `yaml:"metrics_path,omitempty"`
-	RelabelConfigs       []Relabel     `yaml:"relabel_configs,omitempty"`
-	MetricRelabelConfigs []Relabel     `yaml:"metric_relabel_configs,omitempty"`
-
+	JobName                    string                `yaml:"job_name"`
+	SampleLimit                int                   `yaml:"sample_limit,omitempty"`
+	BodySizeLimit              string                `yaml:"body_size_limit,omitempty"`
+	ScrapeInterval             time.Duration         `yaml:"scrape_interval,omitempty"`
+	MetricsPath                string                `yaml:"metrics_path,omitempty"`
+	RelabelConfigs             []Relabel             `yaml:"relabel_configs,omitempty"`
+	MetricRelabelConfigs       []Relabel             `yaml:"metric_relabel_configs,omitempty"`
+	ExtraScrapeMetrics         bool                  `yaml:"extra_scrape_metrics,omitempty"`
 	KubernetesDiscoveryConfigs []KubernetesDiscovery `yaml:"kubernetes_sd_configs,omitempty"`
 
 	TLS *TLS `yaml:"tls_config,omitempty"`
