@@ -73,11 +73,12 @@ type LogPipelineController struct {
 
 	globals config.Global
 
-	reconcileTriggerChan <-chan event.GenericEvent
-	reconciler           *logpipeline.Reconciler
-	secretWatchClient    *secretwatch.Client
-	pipelineLockName     types.NamespacedName
-	nodeSizeTracker      *nodesize.Tracker
+	reconcileTriggerChan      <-chan event.GenericEvent
+	reconciler                *logpipeline.Reconciler
+	secretWatchClient         *secretwatch.Client
+	pipelineLockName          types.NamespacedName
+	fluentBitPipelineLockName types.NamespacedName
+	nodeSizeTracker           *nodesize.Tracker
 }
 
 type LogPipelineControllerConfig struct {
@@ -99,7 +100,7 @@ func NewLogPipelineController(config LogPipelineControllerConfig, client client.
 		pipelineCount = resourcelock.UnlimitedPipelineCount
 	}
 
-	pipelineLockOTEL := resourcelock.NewLocker(
+	otelPipelineLock := resourcelock.NewLocker(
 		client,
 		types.NamespacedName{
 			Name:      names.LogPipelineLock,
@@ -108,10 +109,12 @@ func NewLogPipelineController(config LogPipelineControllerConfig, client client.
 		pipelineCount,
 	)
 
-	pipelineLock := resourcelock.NewLocker(
+	// FluentBit pipelines use disk-backed buffers, so lifting the limit could exhaust node disk space
+	// and destabilize the cluster. The unlimited pipelines feature is intentionally OTel-only.
+	fluentBitPipelineLock := resourcelock.NewLocker(
 		client,
 		types.NamespacedName{
-			Name:      names.LogPipelineLock,
+			Name:      names.LogPipelineFluentBitLock,
 			Namespace: config.TargetNamespace(),
 		},
 		resourcelock.MaxPipelineCount,
@@ -140,12 +143,12 @@ func NewLogPipelineController(config LogPipelineControllerConfig, client client.
 		return nil, err
 	}
 
-	fluentBitReconciler, err := configureFluentBitReconciler(config, client, fluentBitFlowHealthProber, pipelineLock)
+	fluentBitReconciler, err := configureFluentBitReconciler(config, client, fluentBitFlowHealthProber, fluentBitPipelineLock)
 	if err != nil {
 		return nil, err
 	}
 
-	otelReconciler, err := configureOTelReconciler(config, client, pipelineLockOTEL, gatewayFlowHealthProber, agentFlowHealthProber, nodeSizeTracker)
+	otelReconciler, err := configureOTelReconciler(config, client, otelPipelineLock, gatewayFlowHealthProber, agentFlowHealthProber, nodeSizeTracker)
 	if err != nil {
 		return nil, err
 	}
@@ -167,6 +170,10 @@ func NewLogPipelineController(config LogPipelineControllerConfig, client client.
 		secretWatchClient:    secretWatchClient,
 		pipelineLockName: types.NamespacedName{
 			Name:      names.LogPipelineLock,
+			Namespace: config.TargetNamespace(),
+		},
+		fluentBitPipelineLockName: types.NamespacedName{
+			Name:      names.LogPipelineFluentBitLock,
 			Namespace: config.TargetNamespace(),
 		},
 		nodeSizeTracker: nodeSizeTracker,
@@ -283,13 +290,18 @@ func (r *LogPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 		})),
 	)
 
-	// Watch the pipeline lock ConfigMap to trigger reconciliation of all pipelines when lock changes
-	// This ensures that when a pipeline is deleted and frees up a slot, waiting pipelines get reconciled
+	// Watch the pipeline lock ConfigMaps to trigger reconciliation of all pipelines when a lock changes.
+	// This ensures that when a pipeline is deleted and frees up a slot, waiting pipelines get reconciled.
+	// OTel and FluentBit pipelines have separate locks, so both must be watched.
 	b.Watches(
-		&corev1.ConfigMap{}, // Pipeline lock ConfigMap
+		&corev1.ConfigMap{},
 		handler.EnqueueRequestsFromMapFunc(r.mapLockConfigMapChanges),
 		ctrlbuilder.WithPredicates(ctrlpredicate.NewPredicateFuncs(func(object client.Object) bool {
-			return object.GetName() == r.pipelineLockName.Name && object.GetNamespace() == r.pipelineLockName.Namespace
+			ns := object.GetNamespace()
+			name := object.GetName()
+
+			return ns == r.pipelineLockName.Namespace &&
+				(name == r.pipelineLockName.Name || name == r.fluentBitPipelineLockName.Name)
 		})),
 	)
 
