@@ -128,6 +128,8 @@ The following metrics can be collected from the [kubeletstatsreceiver](https://g
 - `k8s.node.cpu.usage`
 - `k8s.node.filesystem.available`
 - `k8s.node.filesystem.capacity`
+- `k8s.node.filesystem.inode.count`
+- `k8s.node.filesystem.inode.free`
 - `k8s.node.filesystem.usage`
 - `k8s.node.memory.available`
 - `k8s.node.memory.major_page_faults`
