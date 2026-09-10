@@ -86,6 +86,7 @@ func TestCleanupLegacyLock(t *testing.T) {
 			require.NoError(t, err)
 
 			var lock corev1.ConfigMap
+
 			getErr := fakeClient.Get(context.Background(), types.NamespacedName{Name: names.LogPipelineLock, Namespace: testNamespace}, &lock)
 
 			if tt.expectDelete {
@@ -140,6 +141,7 @@ func TestStart(t *testing.T) {
 	require.NoError(t, migrator.Start(context.Background()))
 
 	var lock corev1.ConfigMap
+
 	getErr := fakeClient.Get(context.Background(), types.NamespacedName{Name: names.LogPipelineLock, Namespace: testNamespace}, &lock)
 	require.True(t, apierrors.IsNotFound(getErr), "expected contaminated lock to be deleted")
 }
@@ -167,10 +169,8 @@ func newLogPipeline(name string, uid types.UID, otel bool) *telemetryv1beta1.Log
 	}
 
 	return &telemetryv1beta1.LogPipeline{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
-			UID:  uid,
-		},
+		Name: name,
+		UID:  uid,
 		Spec: telemetryv1beta1.LogPipelineSpec{
 			Output: output,
 		},
@@ -179,11 +179,9 @@ func newLogPipeline(name string, uid types.UID, otel bool) *telemetryv1beta1.Log
 
 func newLock(owners []metav1.OwnerReference) *corev1.ConfigMap {
 	return &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:            names.LogPipelineLock,
-			Namespace:       testNamespace,
-			OwnerReferences: owners,
-		},
+		Name:            names.LogPipelineLock,
+		Namespace:       testNamespace,
+		OwnerReferences: owners,
 	}
 }
 
