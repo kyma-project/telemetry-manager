@@ -2,7 +2,9 @@ package logpipelinelockmigration
 
 import (
 	"context"
+	"errors"
 	"testing"
+	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/require"
@@ -14,6 +16,7 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
@@ -144,6 +147,107 @@ func TestStart(t *testing.T) {
 
 	getErr := fakeClient.Get(context.Background(), types.NamespacedName{Name: names.LogPipelineLock, Namespace: testNamespace}, &lock)
 	require.True(t, apierrors.IsNotFound(getErr), "expected contaminated lock to be deleted")
+}
+
+// TestStart_RetriesUntilContextCancelled verifies that a persistent cleanup error keeps Start
+// looping and that a cancelled context makes it return nil (graceful shutdown).
+func TestStart_RetriesUntilContextCancelled(t *testing.T) {
+	fluentBitPipeline := newLogPipeline("fluentbit-pipeline", "uid-fluentbit", false)
+	contaminatedLock := newLock([]metav1.OwnerReference{ownerRefFor(fluentBitPipeline)})
+
+	fakeClient := fake.NewClientBuilder().
+		WithScheme(newTestScheme(t)).
+		WithObjects(fluentBitPipeline, contaminatedLock).
+		WithInterceptorFuncs(interceptor.Funcs{
+			Get: func(_ context.Context, _ client.WithWatch, _ client.ObjectKey, _ client.Object, _ ...client.GetOption) error {
+				return errors.New("transient error")
+			},
+		}).
+		Build()
+
+	migrator := New(fakeClient, logr.Discard(), testNamespace)
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	// Cancel after a short delay to allow at least one retry attempt.
+	go func() {
+		time.Sleep(50 * time.Millisecond)
+		cancel()
+	}()
+
+	// Start should return nil when the context is cancelled (graceful shutdown).
+	require.NoError(t, migrator.Start(ctx))
+}
+
+// TestStart_SucceedsAfterRetry verifies that Start retries after a transient error and completes
+// the cleanup once the error clears.
+func TestStart_SucceedsAfterRetry(t *testing.T) {
+	fluentBitPipeline := newLogPipeline("fluentbit-pipeline", "uid-fluentbit", false)
+	contaminatedLock := newLock([]metav1.OwnerReference{ownerRefFor(fluentBitPipeline)})
+
+	attemptCount := 0
+	fakeClient := fake.NewClientBuilder().
+		WithScheme(newTestScheme(t)).
+		WithObjects(fluentBitPipeline, contaminatedLock).
+		WithInterceptorFuncs(interceptor.Funcs{
+			Get: func(ctx context.Context, c client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+				attemptCount++
+				// Fail the first attempt, succeed on retry.
+				if attemptCount == 1 {
+					return errors.New("transient error")
+				}
+
+				return c.Get(ctx, key, obj, opts...)
+			},
+		}).
+		Build()
+
+	migrator := New(fakeClient, logr.Discard(), testNamespace)
+
+	require.NoError(t, migrator.Start(context.Background()))
+	require.GreaterOrEqual(t, attemptCount, 2, "should have retried at least once")
+
+	var lock corev1.ConfigMap
+
+	getErr := fakeClient.Get(context.Background(), types.NamespacedName{Name: names.LogPipelineLock, Namespace: testNamespace}, &lock)
+	require.True(t, apierrors.IsNotFound(getErr), "expected contaminated lock to be deleted after retry")
+}
+
+// TestCleanup_GetError verifies that a non-NotFound error while fetching the lock is propagated.
+func TestCleanup_GetError(t *testing.T) {
+	fakeClient := fake.NewClientBuilder().
+		WithScheme(newTestScheme(t)).
+		WithInterceptorFuncs(interceptor.Funcs{
+			Get: func(_ context.Context, _ client.WithWatch, _ client.ObjectKey, _ client.Object, _ ...client.GetOption) error {
+				return errors.New("api error")
+			},
+		}).
+		Build()
+
+	migrator := New(fakeClient, logr.Discard(), testNamespace)
+
+	require.Error(t, migrator.cleanupOldLockIfNeeded(context.Background()))
+}
+
+// TestCleanup_ListError verifies that an error while listing LogPipelines (to resolve owner modes)
+// is propagated.
+func TestCleanup_ListError(t *testing.T) {
+	fluentBitPipeline := newLogPipeline("fluentbit-pipeline", "uid-fluentbit", false)
+	contaminatedLock := newLock([]metav1.OwnerReference{ownerRefFor(fluentBitPipeline)})
+
+	fakeClient := fake.NewClientBuilder().
+		WithScheme(newTestScheme(t)).
+		WithObjects(fluentBitPipeline, contaminatedLock).
+		WithInterceptorFuncs(interceptor.Funcs{
+			List: func(_ context.Context, _ client.WithWatch, _ client.ObjectList, _ ...client.ListOption) error {
+				return errors.New("list error")
+			},
+		}).
+		Build()
+
+	migrator := New(fakeClient, logr.Discard(), testNamespace)
+
+	require.Error(t, migrator.cleanupOldLockIfNeeded(context.Background()))
 }
 
 func newTestScheme(t *testing.T) *runtime.Scheme {
