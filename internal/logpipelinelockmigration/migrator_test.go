@@ -150,7 +150,7 @@ func TestStart(t *testing.T) {
 }
 
 // TestStart_RetriesUntilContextCancelled verifies that a persistent cleanup error keeps Start
-// looping and that a cancelled context makes it return nil (graceful shutdown).
+// looping and that a canceled context makes it return nil (graceful shutdown).
 func TestStart_RetriesUntilContextCancelled(t *testing.T) {
 	fluentBitPipeline := newLogPipeline("fluentbit-pipeline", "uid-fluentbit", false)
 	contaminatedLock := newLock([]metav1.OwnerReference{ownerRefFor(fluentBitPipeline)})
@@ -175,7 +175,7 @@ func TestStart_RetriesUntilContextCancelled(t *testing.T) {
 		cancel()
 	}()
 
-	// Start should return nil when the context is cancelled (graceful shutdown).
+	// Start should return nil when the context is canceled (graceful shutdown).
 	require.NoError(t, migrator.Start(ctx))
 }
 
