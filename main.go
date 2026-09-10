@@ -63,6 +63,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/featureflags"
 	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
 	"github.com/kyma-project/telemetry-manager/internal/labelupdater"
+	"github.com/kyma-project/telemetry-manager/internal/logpipelinelockmigration"
 	mgrports "github.com/kyma-project/telemetry-manager/internal/manager/ports"
 	"github.com/kyma-project/telemetry-manager/internal/metrics"
 	"github.com/kyma-project/telemetry-manager/internal/nodesize"
@@ -223,6 +224,15 @@ func run() error {
 	labelUpdater := labelupdater.New(mgr.GetAPIReader(), mgr.GetClient(), setupLog, globals.TargetNamespace())
 	if err := mgr.Add(labelUpdater); err != nil {
 		return fmt.Errorf("failed to add label updater runnable: %w", err)
+	}
+
+	// Add LogPipeline lock migration to clean up the legacy shared lock after
+	// separate OTel/FluentBit pipeline limits were introduced. Stale FluentBit
+	// owner references left in the old lock would otherwise count against the
+	// OTel pipeline limit.
+	logPipelineLockMigrator := logpipelinelockmigration.New(mgr.GetClient(), setupLog, globals.TargetNamespace())
+	if err := mgr.Add(logPipelineLockMigrator); err != nil {
+		return fmt.Errorf("failed to add LogPipeline lock migration runnable: %w", err)
 	}
 
 	// +kubebuilder:scaffold:builder
