@@ -49,6 +49,14 @@ service:
                 - transform/set-kyma-input-name-runtime
             exporters:
                 - routing/runtime-input
+        metrics/ops-scrape-metrics:
+            receivers:
+                - routing/enrichment
+            processors:
+                - filter/ops-keep-scrape-metrics
+                - filter/ops-drop-healthy-scrape-metrics
+            exporters:
+                - prometheus/ops-scrape-metrics
         metrics/output-test:
             receivers:
                 - routing/enrichment
@@ -201,6 +209,7 @@ receivers:
                     - regex: __meta_kubernetes_pod_annotation_prometheus_io_param_(.+)
                       replacement: __param_$1
                       action: labelmap
+                  extra_scrape_metrics: true
                   kubernetes_sd_configs:
                     - role: pod
                       selectors:
@@ -256,6 +265,7 @@ receivers:
                     - source_labels: [__meta_kubernetes_service_name]
                       target_label: service
                       action: replace
+                  extra_scrape_metrics: true
                   kubernetes_sd_configs:
                     - role: endpoints
                       selectors:
@@ -270,7 +280,7 @@ processors:
         error_mode: ignore
         metric_conditions:
             - conditions:
-                - resource.attributes["kyma.input.name"] == "prometheus" and (metric.name == "up" or metric.name == "scrape_duration_seconds" or metric.name == "scrape_samples_scraped" or metric.name == "scrape_samples_post_metric_relabeling" or metric.name == "scrape_series_added")
+                - resource.attributes["kyma.input.name"] == "prometheus" and (metric.name == "up" or metric.name == "scrape_duration_seconds" or metric.name == "scrape_timeout_seconds" or metric.name == "scrape_samples_scraped" or metric.name == "scrape_samples_post_metric_relabeling" or metric.name == "scrape_sample_limit" or metric.name == "scrape_series_added" or metric.name == "scrape_body_size_bytes")
     filter/drop-envoy-metrics-if-disabled:
         error_mode: ignore
         metric_conditions:
@@ -286,6 +296,17 @@ processors:
         metric_conditions:
             - conditions:
                 - IsMatch(metric.name, "^k8s.node.network.*") and not(IsMatch(datapoint.attributes["interface"], "^(eth|en).*"))
+    filter/ops-drop-healthy-scrape-metrics:
+        error_mode: ignore
+        metric_conditions:
+            - conditions:
+                - metric.name == "up" and datapoint.value_int == 1
+                - metric.name == "scrape_body_size_bytes" and datapoint.value_double > 0
+    filter/ops-keep-scrape-metrics:
+        error_mode: ignore
+        metric_conditions:
+            - conditions:
+                - not(metric.name == "up" or metric.name == "scrape_duration_seconds" or metric.name == "scrape_samples_scraped" or metric.name == "scrape_samples_post_metric_relabeling" or metric.name == "scrape_series_added" or metric.name == "scrape_body_size_bytes")
     k8s_attributes:
         auth_type: serviceAccount
         passthrough: false
@@ -407,6 +428,11 @@ exporters:
             initial_interval: 5s
             max_interval: 30s
             max_elapsed_time: 300s
+    prometheus/ops-scrape-metrics:
+        endpoint: ${MY_POD_IP}:9090
+        metric_expiration: 5m
+        resource_to_telemetry_conversion:
+            enabled: true
 connectors:
     routing/enrichment:
         default_pipelines: []
@@ -419,6 +445,7 @@ connectors:
             - statement: route() where resource.attributes["kyma.input.name"] == "prometheus"
               pipelines:
                 - metrics/output-test
+                - metrics/ops-scrape-metrics
               context: metric
     routing/prometheus-input:
         default_pipelines:

@@ -185,6 +185,16 @@ type Auth struct {
 	Authenticator string `yaml:"authenticator"`
 }
 
+type PrometheusExporterConfig struct {
+	Endpoint                      string                         `yaml:"endpoint"`
+	MetricExpiration              string                         `yaml:"metric_expiration,omitempty"`
+	ResourceToTelemetryConversion *ResourceToTelemetryConversion `yaml:"resource_to_telemetry_conversion,omitempty"`
+}
+
+type ResourceToTelemetryConversion struct {
+	Enabled bool `yaml:"enabled"`
+}
+
 // =============================================================================
 // PROCESSOR TYPES
 // =============================================================================

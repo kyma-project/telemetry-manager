@@ -127,6 +127,8 @@ const ComponentIDDropSkipEnrichmentAttributeProcessor ComponentID = "transform/d
 const ComponentIDSetInstrumentationScopePrometheusProcessor ComponentID = "transform/set-instrumentation-scope-prometheus"
 const ComponentIDSetInstrumentationScopeIstioProcessor ComponentID = "transform/set-instrumentation-scope-istio"
 const ComponentIDInsertSkipEnrichmentAttributeProcessor ComponentID = "transform/insert-skip-enrichment-attribute"
+const ComponentIDOpsKeepScrapeMetricsProcessor ComponentID = "filter/ops-keep-scrape-metrics"
+const ComponentIDOpsDropHealthyScrapeMetricsProcessor ComponentID = "filter/ops-drop-healthy-scrape-metrics"
 
 // TRACE-SPECIFIC PROCESSORS ======================================================
 
@@ -147,6 +149,8 @@ func ComponentIDOTLPExporter(protocol telemetryv1beta1.OTLPProtocol, pipelineRef
 
 	return fmt.Sprintf("otlp_grpc/%s", pipelineRef.QualifiedName())
 }
+
+const ComponentIDOpsScrapeMetricsExporter ComponentID = "prometheus/ops-scrape-metrics"
 
 // ================================================================================
 // CONNECTORS
