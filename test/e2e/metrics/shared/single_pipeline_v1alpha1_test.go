@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -73,17 +72,13 @@ func TestSinglePipelineV1Alpha1(t *testing.T) {
 
 			backend := kitbackend.New(backendNs, kitbackend.SignalTypeMetrics)
 			pipeline := telemetryv1alpha1.MetricPipeline{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: pipelineName,
-				},
+				Name: pipelineName,
 				Spec: telemetryv1alpha1.MetricPipelineSpec{
 					Input: tc.input,
 					Output: telemetryv1alpha1.MetricPipelineOutput{
 						OTLP: &telemetryv1alpha1.MetricPipelineOTLPOutput{
-							OTLPOutput: telemetryv1alpha1.OTLPOutput{
-								Endpoint: telemetryv1alpha1.ValueType{
-									Value: backend.EndpointHTTP(),
-								},
+							Endpoint: telemetryv1alpha1.ValueType{
+								Value: backend.EndpointHTTP(),
 							},
 						},
 					},

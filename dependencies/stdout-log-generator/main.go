@@ -89,7 +89,7 @@ func main() {
 		limitPerSecond = rate.Inf
 	}
 
-	// On linux, the minimum possible sleep time is around 2ms (this is practically proven in the POC ../../docs/contributor/pocs/sleep-tester/sleep-tester.md)
+	// On linux, the minimum possible sleep time is around 2ms
 	// So, to achieve for example a rate of around 70,000 logs per second (70 logs every 1ms), we need to have 140 logs every 2ms
 	// And since the timer will only be able to tick every 2ms, the burst size needs to be 140
 	// This will allow 140 logs back-to-back followed by around 2ms sleep, then another 140 logs back-to-back followed by around 2ms, etc.

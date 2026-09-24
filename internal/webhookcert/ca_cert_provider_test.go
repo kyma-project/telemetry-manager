@@ -8,7 +8,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -73,10 +72,8 @@ func TestProvideCACert(t *testing.T) {
 		fakeCertPEM := []byte{1, 2, 3}
 		fakeKeyPEM := []byte{4, 5, 6}
 		fakeClient := fake.NewClientBuilder().WithObjects(&corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "ca-cert",
-				Namespace: "default",
-			},
+			Name:      "ca-cert",
+			Namespace: "default",
 			Data: map[string][]byte{
 				"ca.certificate": {7, 8, 9},
 				"ca.key":         {10, 11, 12},
@@ -105,10 +102,8 @@ func TestProvideCACert(t *testing.T) {
 		fakeExpiringCertPEM, fakeExpiringKeyPEM := []byte{1, 2, 3}, []byte{4, 5, 6}
 		fakeNewCertPEM, fakeNewKeyPEM := []byte{7, 8, 9}, []byte{10, 11, 12}
 		fakeClient := fake.NewClientBuilder().WithObjects(&corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "ca-cert",
-				Namespace: "default",
-			},
+			Name:      "ca-cert",
+			Namespace: "default",
 			Data: map[string][]byte{
 				"ca.crt": fakeExpiringCertPEM,
 				"ca.key": fakeExpiringKeyPEM,
@@ -141,10 +136,8 @@ func TestProvideCACert(t *testing.T) {
 		fakeExpiringCertPEM, fakeExpiringKeyPEM := []byte{1, 2, 3}, []byte{4, 5, 6}
 		fakeNewCertPEM, fakeNewKeyPEM := []byte{7, 8, 9}, []byte{10, 11, 12}
 		fakeClient := fake.NewClientBuilder().WithObjects(&corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "ca-cert",
-				Namespace: "default",
-			},
+			Name:      "ca-cert",
+			Namespace: "default",
 			Data: map[string][]byte{
 				"ca.crt": fakeExpiringCertPEM,
 				"ca.key": fakeExpiringKeyPEM,
@@ -177,10 +170,8 @@ func TestProvideCACert(t *testing.T) {
 		fakeCertPEM := []byte{1, 2, 3}
 		fakeKeyPEM := []byte{4, 5, 6}
 		fakeClient := fake.NewClientBuilder().WithObjects(&corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "ca-cert",
-				Namespace: "default",
-			},
+			Name:      "ca-cert",
+			Namespace: "default",
 			Data: map[string][]byte{
 				"ca.crt": fakeCertPEM,
 				"ca.key": fakeKeyPEM,
@@ -211,10 +202,8 @@ func TestProvideCACert(t *testing.T) {
 		fakeCertPEM := []byte{1, 2, 3}
 		fakeKeyPEM := []byte{4, 5, 6}
 		fakeClient := fake.NewClientBuilder().WithObjects(&corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "ca-cert",
-				Namespace: "default",
-			},
+			Name:      "ca-cert",
+			Namespace: "default",
 			Data: map[string][]byte{
 				"ca.crt": fakeCertPEM,
 				"ca.key": fakeKeyPEM,

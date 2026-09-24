@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -36,10 +35,10 @@ func TestStart(t *testing.T) {
 			name: "patches label on resources without it",
 			existingObjects: []runtime.Object{
 				&corev1.ServiceAccount{
-					ObjectMeta: metav1.ObjectMeta{Name: names.FluentBit, Namespace: testNamespace},
+					Name: names.FluentBit, Namespace: testNamespace,
 				},
 				&rbacv1.ClusterRoleBinding{
-					ObjectMeta: metav1.ObjectMeta{Name: names.FluentBit},
+					Name: names.FluentBit,
 				},
 			},
 			expectedLabelsSA: map[string]string{
@@ -53,14 +52,12 @@ func TestStart(t *testing.T) {
 			name: "preserves existing labels",
 			existingObjects: []runtime.Object{
 				&corev1.ServiceAccount{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      names.FluentBit,
-						Namespace: testNamespace,
-						Labels:    map[string]string{"existing-label": "existing-value"},
-					},
+					Name:      names.FluentBit,
+					Namespace: testNamespace,
+					Labels:    map[string]string{"existing-label": "existing-value"},
 				},
 				&rbacv1.ClusterRoleBinding{
-					ObjectMeta: metav1.ObjectMeta{Name: names.FluentBit},
+					Name: names.FluentBit,
 				},
 			},
 			expectedLabelsSA: map[string]string{
@@ -75,17 +72,13 @@ func TestStart(t *testing.T) {
 			name: "skips resources already labeled",
 			existingObjects: []runtime.Object{
 				&corev1.ServiceAccount{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      names.FluentBit,
-						Namespace: testNamespace,
-						Labels:    map[string]string{commonresources.LabelKeyKymaModule: commonresources.LabelValueKymaModule},
-					},
+					Name:      names.FluentBit,
+					Namespace: testNamespace,
+					Labels:    map[string]string{commonresources.LabelKeyKymaModule: commonresources.LabelValueKymaModule},
 				},
 				&rbacv1.ClusterRoleBinding{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:   names.FluentBit,
-						Labels: map[string]string{commonresources.LabelKeyKymaModule: commonresources.LabelValueKymaModule},
-					},
+					Name:   names.FluentBit,
+					Labels: map[string]string{commonresources.LabelKeyKymaModule: commonresources.LabelValueKymaModule},
 				},
 			},
 			expectedLabelsSA: map[string]string{
@@ -129,7 +122,7 @@ func TestStart_RetriesUntilContextCancelled(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().
 		WithScheme(newTestScheme(t)).
 		WithRuntimeObjects(
-			&corev1.ServiceAccount{ObjectMeta: metav1.ObjectMeta{Name: names.FluentBit, Namespace: testNamespace}},
+			&corev1.ServiceAccount{Name: names.FluentBit, Namespace: testNamespace},
 		).
 		WithInterceptorFuncs(interceptor.Funcs{
 			Get: func(_ context.Context, _ client.WithWatch, _ client.ObjectKey, _ client.Object, _ ...client.GetOption) error {
@@ -158,8 +151,8 @@ func TestStart_SucceedsAfterRetry(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().
 		WithScheme(newTestScheme(t)).
 		WithRuntimeObjects(
-			&corev1.ServiceAccount{ObjectMeta: metav1.ObjectMeta{Name: names.FluentBit, Namespace: testNamespace}},
-			&rbacv1.ClusterRoleBinding{ObjectMeta: metav1.ObjectMeta{Name: names.FluentBit}},
+			&corev1.ServiceAccount{Name: names.FluentBit, Namespace: testNamespace},
+			&rbacv1.ClusterRoleBinding{Name: names.FluentBit},
 		).
 		WithInterceptorFuncs(interceptor.Funcs{
 			Get: func(ctx context.Context, c client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {

@@ -316,15 +316,11 @@ func (b *LogPipelineBuilder) Build() telemetryv1beta1.LogPipeline {
 	}
 
 	logPipeline := telemetryv1beta1.LogPipeline{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: telemetryv1beta1.GroupVersion.String(),
-			Kind:       "LogPipeline",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:       b.name,
-			Labels:     b.labels,
-			Finalizers: b.finalizers,
-		},
+		APIVersion: telemetryv1beta1.GroupVersion.String(),
+		Kind:       "LogPipeline",
+		Name:       b.name,
+		Labels:     b.labels,
+		Finalizers: b.finalizers,
 		Spec: telemetryv1beta1.LogPipelineSpec{
 			Input:            b.input,
 			FluentBitFilters: b.fluentBitFilters,

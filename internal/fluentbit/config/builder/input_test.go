@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
@@ -29,7 +28,7 @@ func TestCreateInput(t *testing.T) {
 
 `
 	logPipeline := &telemetryv1beta1.LogPipeline{
-		ObjectMeta: metav1.ObjectMeta{Name: "test-logpipeline"},
+		Name: "test-logpipeline",
 		Spec: telemetryv1beta1.LogPipelineSpec{
 			Input: telemetryv1beta1.LogPipelineInput{},
 		},
@@ -50,7 +49,7 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 		{
 			"empty",
 			&telemetryv1beta1.LogPipeline{
-				ObjectMeta: metav1.ObjectMeta{Name: "test-logpipeline"},
+				Name: "test-logpipeline",
 			},
 			false,
 			[]string{
@@ -69,7 +68,7 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 		{
 			"include agent logs",
 			&telemetryv1beta1.LogPipeline{
-				ObjectMeta: metav1.ObjectMeta{Name: "test-logpipeline"},
+				Name: "test-logpipeline",
 			},
 			true,
 			[]string{
@@ -329,7 +328,7 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 		{
 			"empty include namespace list",
 			&telemetryv1beta1.LogPipeline{
-				ObjectMeta: metav1.ObjectMeta{Name: "test-logpipeline"},
+				Name: "test-logpipeline",
 				Spec: telemetryv1beta1.LogPipelineSpec{
 					Input: telemetryv1beta1.LogPipelineInput{
 						Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
@@ -354,7 +353,7 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 		{
 			"empty include container list",
 			&telemetryv1beta1.LogPipeline{
-				ObjectMeta: metav1.ObjectMeta{Name: "test-logpipeline"},
+				Name: "test-logpipeline",
 				Spec: telemetryv1beta1.LogPipelineSpec{
 					Input: telemetryv1beta1.LogPipelineInput{
 						Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
@@ -382,7 +381,7 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 		{
 			"empty exclude namespace list - should include system namespaces",
 			&telemetryv1beta1.LogPipeline{
-				ObjectMeta: metav1.ObjectMeta{Name: "test-logpipeline"},
+				Name: "test-logpipeline",
 				Spec: telemetryv1beta1.LogPipelineSpec{
 					Input: telemetryv1beta1.LogPipelineInput{
 						Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
@@ -408,7 +407,7 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 		{
 			"empty exclude container list",
 			&telemetryv1beta1.LogPipeline{
-				ObjectMeta: metav1.ObjectMeta{Name: "test-logpipeline"},
+				Name: "test-logpipeline",
 				Spec: telemetryv1beta1.LogPipelineSpec{
 					Input: telemetryv1beta1.LogPipelineInput{
 						Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{

@@ -2,7 +2,6 @@ package objects
 
 import (
 	rbacv1 "k8s.io/api/rbac/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type ClusterRoleOption func(*ClusterRole)
@@ -40,9 +39,7 @@ func (c *ClusterRole) Name() string {
 
 func (c *ClusterRole) K8sObject() *rbacv1.ClusterRole {
 	return &rbacv1.ClusterRole{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: c.name,
-		},
+		Name:  c.name,
 		Rules: c.rules,
 	}
 }

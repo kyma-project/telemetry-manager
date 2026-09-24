@@ -54,12 +54,10 @@ func MakeWorkloadMetadata(globals *config.Global, baseName string, componentType
 // makeDaemonSet creates a DaemonSet with the given configuration (for agents)
 func makeDaemonSet(baseName string, namespace string, metadata WorkloadMetadata, podSpec corev1.PodSpec) *appsv1.DaemonSet {
 	return &appsv1.DaemonSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        baseName,
-			Namespace:   namespace,
-			Labels:      metadata.ResourceLabels,
-			Annotations: metadata.ResourceAnnotations,
-		},
+		Name:        baseName,
+		Namespace:   namespace,
+		Labels:      metadata.ResourceLabels,
+		Annotations: metadata.ResourceAnnotations,
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: commonresources.DefaultSelector(baseName),
@@ -78,12 +76,10 @@ func makeDaemonSet(baseName string, namespace string, metadata WorkloadMetadata,
 // makeGatewayDaemonSet creates a DaemonSet with UpdateStrategy for gateways
 func makeGatewayDaemonSet(baseName string, namespace string, metadata WorkloadMetadata, podSpec corev1.PodSpec) *appsv1.DaemonSet {
 	return &appsv1.DaemonSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        baseName,
-			Namespace:   namespace,
-			Labels:      metadata.ResourceLabels,
-			Annotations: metadata.ResourceAnnotations,
-		},
+		Name:        baseName,
+		Namespace:   namespace,
+		Labels:      metadata.ResourceLabels,
+		Annotations: metadata.ResourceAnnotations,
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: commonresources.DefaultSelector(baseName),
@@ -109,12 +105,10 @@ func makeGatewayDaemonSet(baseName string, namespace string, metadata WorkloadMe
 // makeDeployment creates a Deployment with the given configuration
 func makeDeployment(baseName string, namespace string, replicas int32, metadata WorkloadMetadata, podSpec corev1.PodSpec) *appsv1.Deployment {
 	return &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        baseName,
-			Namespace:   namespace,
-			Labels:      metadata.ResourceLabels,
-			Annotations: metadata.ResourceAnnotations,
-		},
+		Name:        baseName,
+		Namespace:   namespace,
+		Labels:      metadata.ResourceLabels,
+		Annotations: metadata.ResourceAnnotations,
 		Spec: appsv1.DeploymentSpec{
 			Replicas: new(replicas),
 			Selector: &metav1.LabelSelector{

@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.21.0
+    controller-gen.kubebuilder.io/version: v0.22.0
   labels:
     app.kubernetes.io/component: controller
     app.kubernetes.io/managed-by: kyma
@@ -454,6 +454,16 @@ spec:
                       - message: Either 'key' or 'keyPrefix' must be specified
                         rule: '!(has(self.key) && has(self.keyPrefix))'
                     type: array
+                type: object
+              grpc:
+                description: GRPC configures module settings specific to gRPC transport.
+                  This field is optional.
+                properties:
+                  passthroughResolver:
+                    description: |-
+                      PassthroughResolver configures all OTLP gRPC exporter endpoints to use the passthrough:/// resolver scheme.
+                      Enable this for IPv4-only clusters operating in an IPv6 environment to avoid connection failures caused by grpc-go's IPv6-first DNS behavior.
+                    type: boolean
                 type: object
               log:
                 description: Log configures module settings specific to the log features.

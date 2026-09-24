@@ -48,7 +48,7 @@ func (b *Builder) buildLogPipelines(ctx context.Context, builder *common.Compone
 			b.addLogUserDefinedTransformProcessor(builder),
 			b.addLogUserDefinedFilterProcessor(builder),
 			b.addLogBatchProcessor(builder),
-			b.addLogOTLPExporter(builder, queueSize),
+			b.addLogOTLPExporter(builder, queueSize, opts.PassthroughResolver),
 		); err != nil {
 			return fmt.Errorf("failed to add log service pipeline: %w", err)
 		}
@@ -241,7 +241,7 @@ func (b *Builder) addLogBatchProcessor(builder *common.ComponentBuilder[*telemet
 	)
 }
 
-func (b *Builder) addLogOTLPExporter(builder *common.ComponentBuilder[*telemetryv1beta1.LogPipeline], queueSize int) buildLogComponentFunc {
+func (b *Builder) addLogOTLPExporter(builder *common.ComponentBuilder[*telemetryv1beta1.LogPipeline], queueSize int, passthroughResolver bool) buildLogComponentFunc {
 	return builder.AddExporter(
 		formatLogOTLPExporterID,
 		func(ctx context.Context, lp *telemetryv1beta1.LogPipeline) (any, common.EnvVars, error) {
@@ -250,6 +250,7 @@ func (b *Builder) addLogOTLPExporter(builder *common.ComponentBuilder[*telemetry
 				lp.Spec.Output.OTLP,
 				pipelines.LogPipelineRef(lp),
 				common.NewSendingQueue(queueSize),
+				common.WithPassthroughResolverIf(passthroughResolver),
 			)
 
 			return otlpExporterBuilder.OTLPExporter(ctx)

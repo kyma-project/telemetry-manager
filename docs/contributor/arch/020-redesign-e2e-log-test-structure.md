@@ -105,7 +105,5 @@ Because we are going to rewrite our e2e tests, we decided to migrate from Ginkgo
 * Better support of table-driven tests
 * No need to wrap tests in Ginkgo's `Describe` and `It` blocks, the descriptions are usually just blindly copy-pasted and have no value
 
-Technical details are described in [Migrate Ginkgo Tests to Go Testing PoC](../pocs/ginkgo-to-go-testing/ginkgo-to-go-testing.md).
-
 > **NOTE:**
 > Changing all of the tests at once is not feasible. We will migrate the tests incrementally as we rewrite them. This means we will need two different Github Action jobs for Ginkgo and vanilla Go tests. When all tests are migrated, we will remove the Ginkgo job.

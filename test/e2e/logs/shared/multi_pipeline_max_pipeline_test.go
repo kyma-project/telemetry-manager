@@ -8,7 +8,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
@@ -26,7 +25,9 @@ import (
 
 const maxNumberOfLogPipelines = resourcelock.MaxPipelineCount
 
-// TestMultiPipelineMaxPipeline tests max pipeline limits with mixed FluentBit and OTel pipelines.
+// TestMultiPipelineMaxPipeline tests that OTel and FluentBit pipelines have independent limits.
+// 5 FB + 5 OTel pipelines can all be healthy simultaneously (10 total).
+// A 6th FB pipeline is rejected by the FB limit, and a 6th OTel pipeline is rejected by the OTel limit.
 // This test uses FluentBit pipelines so it only runs in no-fips mode.
 func TestMultiPipelineMaxPipeline(t *testing.T) {
 	suite.SetupTestWithOptions(t, []string{suite.LabelLogs, suite.LabelMaxPipeline}, kubeprep.WithOverrideFIPSMode(false))
@@ -45,26 +46,21 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 	backend := kitbackend.New(backendNs, kitbackend.SignalTypeLogsFluentBit)
 
 	for i := range maxNumberOfLogPipelines {
-		pipelineName := fmt.Sprintf("%s-%d", pipelineBase, i)
-		// every other pipeline will have an HTTP output
-		var pipeline telemetryv1beta1.LogPipeline
-		if i%2 == 0 {
-			// FluentBit pipeline
-			pipeline = testutils.NewLogPipelineBuilder().
-				WithName(pipelineName).
-				WithRuntimeInput(true).
-				WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
-				Build()
-		} else {
-			// OTel pipeline
-			pipeline = testutils.NewLogPipelineBuilder().
-				WithName(pipelineName).
-				WithInput(testutils.BuildLogPipelineRuntimeInput()).
-				WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
-				Build()
-		}
+		fbPipelineName := fmt.Sprintf("%s-fb-%d", pipelineBase, i)
+		fbPipeline := testutils.NewLogPipelineBuilder().
+			WithName(fbPipelineName).
+			WithRuntimeInput(true).
+			WithHTTPOutput(testutils.HTTPHost(backend.Host()), testutils.HTTPPort(backend.Port())).
+			Build()
+		pipelines = append(pipelines, &fbPipeline)
 
-		pipelines = append(pipelines, &pipeline)
+		otelPipelineName := fmt.Sprintf("%s-otel-%d", pipelineBase, i)
+		otelPipeline := testutils.NewLogPipelineBuilder().
+			WithName(otelPipelineName).
+			WithInput(testutils.BuildLogPipelineRuntimeInput()).
+			WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
+			Build()
+		pipelines = append(pipelines, &otelPipeline)
 	}
 
 	additionalFBPipeline := testutils.NewLogPipelineBuilder().
@@ -92,7 +88,7 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 	assert.BackendReachable(t, backend)
 	assert.DaemonSetReady(t, kitkyma.FluentBitDaemonSetName)
 
-	t.Log("Asserting all pipelines are healthy")
+	t.Log("Asserting all pipelines are healthy (5 FB + 5 OTel with independent limits)")
 
 	for i, pipeline := range pipelines {
 		if i%2 == 0 {
@@ -102,7 +98,7 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 		}
 	}
 
-	t.Log("Attempting to create a FluentBit pipeline that exceeds the maximum allowed number of pipelines")
+	t.Log("Attempting to create a FluentBit pipeline that exceeds the FB limit")
 	Expect(kitk8s.CreateObjects(t, &additionalFBPipeline)).To(Succeed())
 	assert.LogPipelineHasCondition(t, additionalFBPipeline.GetName(), metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
@@ -115,13 +111,7 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 		Reason: conditions.ReasonSelfMonConfigNotGenerated,
 	})
 
-	t.Log("Deleting one previously healthy pipeline and expecting the additional FluentBit pipeline to be healthy")
-
-	deletePipeline := pipelines[0]
-	Expect(kitk8s.DeleteObjects(deletePipeline)).To(Succeed())
-	assert.FluentBitLogPipelineHealthy(t, additionalFBPipeline.GetName())
-
-	t.Log("Attempting to create a OTel pipeline that exceeds the maximum allowed number of pipelines")
+	t.Log("Attempting to create an OTel pipeline that exceeds the OTel limit")
 	Expect(kitk8s.CreateObjects(t, &additionalOTelPipeline)).To(Succeed())
 	assert.LogPipelineHasCondition(t, additionalOTelPipeline.GetName(), metav1.Condition{
 		Type:   conditions.TypeConfigurationGenerated,
@@ -134,14 +124,16 @@ func TestMultiPipelineMaxPipeline(t *testing.T) {
 		Reason: conditions.ReasonSelfMonConfigNotGenerated,
 	})
 
-	t.Log("Verifying logs are delivered for valid pipelines")
+	t.Log("Verifying logs are delivered for valid FB pipelines")
 	assert.FluentBitLogsFromNamespaceDelivered(t, backend, genNs)
 
-	t.Log("Deleting one previously healthy pipeline and expecting the additional OTel pipeline to be healthy")
-
-	deletePipeline = pipelines[1]
-	Expect(kitk8s.DeleteObjects(deletePipeline)).To(Succeed())
+	t.Log("Deleting one FB pipeline and expecting the additional FB pipeline to become healthy")
+	Expect(kitk8s.DeleteObjects(pipelines[0])).To(Succeed())
 	assert.FluentBitLogPipelineHealthy(t, additionalFBPipeline.GetName())
+
+	t.Log("Deleting one OTel pipeline and expecting the additional OTel pipeline to become healthy")
+	Expect(kitk8s.DeleteObjects(pipelines[1])).To(Succeed())
+	assert.OTelLogPipelineHealthy(t, additionalOTelPipeline.GetName())
 }
 
 func TestMultiPipelineMaxPipeline_OTel(t *testing.T) {

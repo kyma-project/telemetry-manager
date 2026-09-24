@@ -74,6 +74,10 @@ type TelemetrySpec struct {
 	// Enrichments configures optional enrichments of all telemetry data collected by pipelines. This field is optional.
 	// +kubebuilder:validation:Optional
 	Enrichments *EnrichmentSpec `json:"enrichments,omitempty"`
+
+	// GRPC configures module settings specific to gRPC transport. This field is optional.
+	// +kubebuilder:validation:Optional
+	GRPC *GRPCSpec `json:"grpc,omitempty"`
 }
 
 // MetricSpec configures module settings specific to the metric features.
@@ -151,6 +155,14 @@ type Scaling struct {
 	// StaticScalingStrategyType.
 	// +kubebuilder:validation:Optional
 	Static *StaticScaling `json:"static,omitempty"`
+}
+
+// GRPCSpec configures module-level gRPC transport settings.
+type GRPCSpec struct {
+	// PassthroughResolver configures all OTLP gRPC exporter endpoints to use the passthrough:/// resolver scheme.
+	// Enable this for IPv4-only clusters operating in an IPv6 environment to avoid connection failures caused by grpc-go's IPv6-first DNS behavior.
+	// +kubebuilder:validation:Optional
+	PassthroughResolver bool `json:"passthroughResolver,omitempty"`
 }
 
 // EnrichmentSpec defines settings to configure enrichment and specify pod labels for enrichment.

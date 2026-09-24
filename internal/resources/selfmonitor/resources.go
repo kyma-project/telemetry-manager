@@ -144,10 +144,8 @@ func (ad *ApplierDeleter) ApplyResources(ctx context.Context, c client.Client, o
 
 func (ad *ApplierDeleter) makeServiceAccount() *corev1.ServiceAccount {
 	serviceAccount := corev1.ServiceAccount{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.SelfMonitor,
-			Namespace: ad.Config.TargetNamespace(),
-		},
+		Name:      names.SelfMonitor,
+		Namespace: ad.Config.TargetNamespace(),
 	}
 
 	return &serviceAccount
@@ -155,10 +153,8 @@ func (ad *ApplierDeleter) makeServiceAccount() *corev1.ServiceAccount {
 
 func (ad *ApplierDeleter) makeRole() *rbacv1.Role {
 	role := rbacv1.Role{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.SelfMonitor,
-			Namespace: ad.Config.TargetNamespace(),
-		},
+		Name:      names.SelfMonitor,
+		Namespace: ad.Config.TargetNamespace(),
 		Rules: []rbacv1.PolicyRule{
 			{
 				APIGroups: []string{""},
@@ -173,11 +169,9 @@ func (ad *ApplierDeleter) makeRole() *rbacv1.Role {
 
 func (ad *ApplierDeleter) makeRoleBinding() *rbacv1.RoleBinding {
 	roleBinding := rbacv1.RoleBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.SelfMonitor,
-			Namespace: ad.Config.TargetNamespace(),
-		},
-		Subjects: []rbacv1.Subject{{Name: names.SelfMonitor, Namespace: ad.Config.TargetNamespace(), Kind: rbacv1.ServiceAccountKind}},
+		Name:      names.SelfMonitor,
+		Namespace: ad.Config.TargetNamespace(),
+		Subjects:  []rbacv1.Subject{{Name: names.SelfMonitor, Namespace: ad.Config.TargetNamespace(), Kind: rbacv1.ServiceAccountKind}},
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
 			Kind:     "Role",
@@ -190,10 +184,8 @@ func (ad *ApplierDeleter) makeRoleBinding() *rbacv1.RoleBinding {
 
 func (ad *ApplierDeleter) makeConfigMap(prometheusConfigFileName, prometheusConfigYAML, alertRulesFileName, alertRulesYAML string) *corev1.ConfigMap {
 	return &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.SelfMonitor,
-			Namespace: ad.Config.TargetNamespace(),
-		},
+		Name:      names.SelfMonitor,
+		Namespace: ad.Config.TargetNamespace(),
 		Data: map[string]string{
 			prometheusConfigFileName: prometheusConfigYAML,
 			alertRulesFileName:       alertRulesYAML,
@@ -227,12 +219,10 @@ func (ad *ApplierDeleter) makeDeployment(configChecksum, configPath, configFile,
 	podSpec := ad.makePodSpec(ad.Config.Image, configPath, configFile, logLevel)
 
 	return &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        names.SelfMonitor,
-			Namespace:   ad.Config.TargetNamespace(),
-			Labels:      resourceLabels,
-			Annotations: resourceAnnotations,
-		},
+		Name:        names.SelfMonitor,
+		Namespace:   ad.Config.TargetNamespace(),
+		Labels:      resourceLabels,
+		Annotations: resourceAnnotations,
 		Spec: appsv1.DeploymentSpec{
 			Replicas: new(replicas),
 			Selector: &metav1.LabelSelector{
@@ -268,21 +258,15 @@ func (ad *ApplierDeleter) makePodSpec(image, configPath, configFile, logLevel st
 	volumes := []corev1.Volume{
 		{
 			Name: configFileMountName,
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					DefaultMode: &defaultMode,
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: names.SelfMonitor,
-					},
-				},
+			ConfigMap: &corev1.ConfigMapVolumeSource{
+				DefaultMode: &defaultMode,
+				Name:        names.SelfMonitor,
 			},
 		},
 		{
 			Name: storageMountName,
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{
-					SizeLimit: &storageVolumeSize,
-				},
+			EmptyDir: &corev1.EmptyDirVolumeSource{
+				SizeLimit: &storageVolumeSize,
 			},
 		},
 	}
@@ -293,11 +277,9 @@ func (ad *ApplierDeleter) makePodSpec(image, configPath, configFile, logLevel st
 	}
 
 	liveness := &corev1.Probe{
-		ProbeHandler: corev1.ProbeHandler{
-			HTTPGet: &corev1.HTTPGetAction{
-				Path: "/-/healthy",
-				Port: intstr.IntOrString{IntVal: selfmonports.PrometheusPort},
-			},
+		HTTPGet: &corev1.HTTPGetAction{
+			Path: "/-/healthy",
+			Port: intstr.IntOrString{IntVal: selfmonports.PrometheusPort},
 		},
 		FailureThreshold: 5, //nolint:mnd // 5 failures
 		PeriodSeconds:    5, //nolint:mnd // 5 failures
@@ -306,11 +288,9 @@ func (ad *ApplierDeleter) makePodSpec(image, configPath, configFile, logLevel st
 	}
 
 	readiness := &corev1.Probe{
-		ProbeHandler: corev1.ProbeHandler{
-			HTTPGet: &corev1.HTTPGetAction{
-				Path: "/-/ready",
-				Port: intstr.IntOrString{IntVal: selfmonports.PrometheusPort},
-			},
+		HTTPGet: &corev1.HTTPGetAction{
+			Path: "/-/ready",
+			Port: intstr.IntOrString{IntVal: selfmonports.PrometheusPort},
 		},
 		FailureThreshold: 3, //nolint:mnd // 5 failures
 		PeriodSeconds:    5, //nolint:mnd // 5 failures
@@ -347,10 +327,8 @@ func (ad *ApplierDeleter) makePodSpec(image, configPath, configFile, logLevel st
 
 func (ad *ApplierDeleter) makeService(port int32) *corev1.Service {
 	return &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.SelfMonitor,
-			Namespace: ad.Config.TargetNamespace(),
-		},
+		Name:      names.SelfMonitor,
+		Namespace: ad.Config.TargetNamespace(),
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{
 				{

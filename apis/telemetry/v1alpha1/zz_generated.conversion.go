@@ -24,7 +24,6 @@ import (
 	unsafe "unsafe"
 
 	v1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	conversion "k8s.io/apimachinery/pkg/conversion"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
@@ -470,8 +469,7 @@ func RegisterConversions(s *runtime.Scheme) error {
 }
 
 func autoConvert_v1alpha1_AuthenticationOptions_To_v1beta1_AuthenticationOptions(in *AuthenticationOptions, out *v1beta1.AuthenticationOptions, s conversion.Scope) error {
-	out.Basic = (*v1beta1.BasicAuthOptions)(unsafe.Pointer(in.Basic))
-	out.OAuth2 = (*v1beta1.OAuth2Options)(unsafe.Pointer(in.OAuth2))
+	*out = *(*v1beta1.AuthenticationOptions)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -481,8 +479,7 @@ func Convert_v1alpha1_AuthenticationOptions_To_v1beta1_AuthenticationOptions(in 
 }
 
 func autoConvert_v1beta1_AuthenticationOptions_To_v1alpha1_AuthenticationOptions(in *v1beta1.AuthenticationOptions, out *AuthenticationOptions, s conversion.Scope) error {
-	out.Basic = (*BasicAuthOptions)(unsafe.Pointer(in.Basic))
-	out.OAuth2 = (*OAuth2Options)(unsafe.Pointer(in.OAuth2))
+	*out = *(*AuthenticationOptions)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -492,12 +489,7 @@ func Convert_v1beta1_AuthenticationOptions_To_v1alpha1_AuthenticationOptions(in 
 }
 
 func autoConvert_v1alpha1_BasicAuthOptions_To_v1beta1_BasicAuthOptions(in *BasicAuthOptions, out *v1beta1.BasicAuthOptions, s conversion.Scope) error {
-	if err := Convert_v1alpha1_ValueType_To_v1beta1_ValueType(&in.User, &out.User, s); err != nil {
-		return err
-	}
-	if err := Convert_v1alpha1_ValueType_To_v1beta1_ValueType(&in.Password, &out.Password, s); err != nil {
-		return err
-	}
+	*out = *(*v1beta1.BasicAuthOptions)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -507,12 +499,7 @@ func Convert_v1alpha1_BasicAuthOptions_To_v1beta1_BasicAuthOptions(in *BasicAuth
 }
 
 func autoConvert_v1beta1_BasicAuthOptions_To_v1alpha1_BasicAuthOptions(in *v1beta1.BasicAuthOptions, out *BasicAuthOptions, s conversion.Scope) error {
-	if err := Convert_v1beta1_ValueType_To_v1alpha1_ValueType(&in.User, &out.User, s); err != nil {
-		return err
-	}
-	if err := Convert_v1beta1_ValueType_To_v1alpha1_ValueType(&in.Password, &out.Password, s); err != nil {
-		return err
-	}
+	*out = *(*BasicAuthOptions)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -522,7 +509,7 @@ func Convert_v1beta1_BasicAuthOptions_To_v1alpha1_BasicAuthOptions(in *v1beta1.B
 }
 
 func autoConvert_v1alpha1_EnvoyMetrics_To_v1beta1_EnvoyMetrics(in *EnvoyMetrics, out *v1beta1.EnvoyMetrics, s conversion.Scope) error {
-	out.Enabled = (*bool)(unsafe.Pointer(in.Enabled))
+	*out = *(*v1beta1.EnvoyMetrics)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -532,7 +519,7 @@ func Convert_v1alpha1_EnvoyMetrics_To_v1beta1_EnvoyMetrics(in *EnvoyMetrics, out
 }
 
 func autoConvert_v1beta1_EnvoyMetrics_To_v1alpha1_EnvoyMetrics(in *v1beta1.EnvoyMetrics, out *EnvoyMetrics, s conversion.Scope) error {
-	out.Enabled = (*bool)(unsafe.Pointer(in.Enabled))
+	*out = *(*EnvoyMetrics)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -542,7 +529,7 @@ func Convert_v1beta1_EnvoyMetrics_To_v1alpha1_EnvoyMetrics(in *v1beta1.EnvoyMetr
 }
 
 func autoConvert_v1alpha1_FilterSpec_To_v1beta1_FilterSpec(in *FilterSpec, out *v1beta1.FilterSpec, s conversion.Scope) error {
-	out.Conditions = *(*[]string)(unsafe.Pointer(&in.Conditions))
+	*out = *(*v1beta1.FilterSpec)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -552,7 +539,7 @@ func Convert_v1alpha1_FilterSpec_To_v1beta1_FilterSpec(in *FilterSpec, out *v1be
 }
 
 func autoConvert_v1beta1_FilterSpec_To_v1alpha1_FilterSpec(in *v1beta1.FilterSpec, out *FilterSpec, s conversion.Scope) error {
-	out.Conditions = *(*[]string)(unsafe.Pointer(&in.Conditions))
+	*out = *(*FilterSpec)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -562,8 +549,7 @@ func Convert_v1beta1_FilterSpec_To_v1alpha1_FilterSpec(in *v1beta1.FilterSpec, o
 }
 
 func autoConvert_v1alpha1_FluentBitFile_To_v1beta1_FluentBitFile(in *FluentBitFile, out *v1beta1.FluentBitFile, s conversion.Scope) error {
-	out.Name = in.Name
-	out.Content = in.Content
+	*out = *(*v1beta1.FluentBitFile)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -573,8 +559,7 @@ func Convert_v1alpha1_FluentBitFile_To_v1beta1_FluentBitFile(in *FluentBitFile, 
 }
 
 func autoConvert_v1beta1_FluentBitFile_To_v1alpha1_FluentBitFile(in *v1beta1.FluentBitFile, out *FluentBitFile, s conversion.Scope) error {
-	out.Name = in.Name
-	out.Content = in.Content
+	*out = *(*FluentBitFile)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -584,7 +569,7 @@ func Convert_v1beta1_FluentBitFile_To_v1alpha1_FluentBitFile(in *v1beta1.FluentB
 }
 
 func autoConvert_v1alpha1_FluentBitFilter_To_v1beta1_FluentBitFilter(in *FluentBitFilter, out *v1beta1.FluentBitFilter, s conversion.Scope) error {
-	out.Custom = in.Custom
+	*out = *(*v1beta1.FluentBitFilter)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -594,7 +579,7 @@ func Convert_v1alpha1_FluentBitFilter_To_v1beta1_FluentBitFilter(in *FluentBitFi
 }
 
 func autoConvert_v1beta1_FluentBitFilter_To_v1alpha1_FluentBitFilter(in *v1beta1.FluentBitFilter, out *FluentBitFilter, s conversion.Scope) error {
-	out.Custom = in.Custom
+	*out = *(*FluentBitFilter)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -648,10 +633,7 @@ func Convert_v1beta1_FluentBitHTTPOutput_To_v1alpha1_FluentBitHTTPOutput(in *v1b
 }
 
 func autoConvert_v1alpha1_FluentBitVariable_To_v1beta1_FluentBitVariable(in *FluentBitVariable, out *v1beta1.FluentBitVariable, s conversion.Scope) error {
-	out.Name = in.Name
-	if err := Convert_v1alpha1_ValueFromSource_To_v1beta1_ValueFromSource(&in.ValueFrom, &out.ValueFrom, s); err != nil {
-		return err
-	}
+	*out = *(*v1beta1.FluentBitVariable)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -661,10 +643,7 @@ func Convert_v1alpha1_FluentBitVariable_To_v1beta1_FluentBitVariable(in *FluentB
 }
 
 func autoConvert_v1beta1_FluentBitVariable_To_v1alpha1_FluentBitVariable(in *v1beta1.FluentBitVariable, out *FluentBitVariable, s conversion.Scope) error {
-	out.Name = in.Name
-	if err := Convert_v1beta1_ValueFromSource_To_v1alpha1_ValueFromSource(&in.ValueFrom, &out.ValueFrom, s); err != nil {
-		return err
-	}
+	*out = *(*FluentBitVariable)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -674,11 +653,7 @@ func Convert_v1beta1_FluentBitVariable_To_v1alpha1_FluentBitVariable(in *v1beta1
 }
 
 func autoConvert_v1alpha1_Header_To_v1beta1_Header(in *Header, out *v1beta1.Header, s conversion.Scope) error {
-	if err := Convert_v1alpha1_ValueType_To_v1beta1_ValueType(&in.ValueType, &out.ValueType, s); err != nil {
-		return err
-	}
-	out.Name = in.Name
-	out.Prefix = in.Prefix
+	*out = *(*v1beta1.Header)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -688,11 +663,7 @@ func Convert_v1alpha1_Header_To_v1beta1_Header(in *Header, out *v1beta1.Header, 
 }
 
 func autoConvert_v1beta1_Header_To_v1alpha1_Header(in *v1beta1.Header, out *Header, s conversion.Scope) error {
-	if err := Convert_v1beta1_ValueType_To_v1alpha1_ValueType(&in.ValueType, &out.ValueType, s); err != nil {
-		return err
-	}
-	out.Name = in.Name
-	out.Prefix = in.Prefix
+	*out = *(*Header)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -734,8 +705,7 @@ func Convert_v1beta1_LogPipeline_To_v1alpha1_LogPipeline(in *v1beta1.LogPipeline
 }
 
 func autoConvert_v1alpha1_LogPipelineContainerSelector_To_v1beta1_LogPipelineContainerSelector(in *LogPipelineContainerSelector, out *v1beta1.LogPipelineContainerSelector, s conversion.Scope) error {
-	out.Include = *(*[]string)(unsafe.Pointer(&in.Include))
-	out.Exclude = *(*[]string)(unsafe.Pointer(&in.Exclude))
+	*out = *(*v1beta1.LogPipelineContainerSelector)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -745,8 +715,7 @@ func Convert_v1alpha1_LogPipelineContainerSelector_To_v1beta1_LogPipelineContain
 }
 
 func autoConvert_v1beta1_LogPipelineContainerSelector_To_v1alpha1_LogPipelineContainerSelector(in *v1beta1.LogPipelineContainerSelector, out *LogPipelineContainerSelector, s conversion.Scope) error {
-	out.Include = *(*[]string)(unsafe.Pointer(&in.Include))
-	out.Exclude = *(*[]string)(unsafe.Pointer(&in.Exclude))
+	*out = *(*LogPipelineContainerSelector)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -922,8 +891,7 @@ func Convert_v1beta1_LogPipelineSpec_To_v1alpha1_LogPipelineSpec(in *v1beta1.Log
 }
 
 func autoConvert_v1alpha1_LogPipelineStatus_To_v1beta1_LogPipelineStatus(in *LogPipelineStatus, out *v1beta1.LogPipelineStatus, s conversion.Scope) error {
-	out.Conditions = *(*[]v1.Condition)(unsafe.Pointer(&in.Conditions))
-	out.UnsupportedMode = (*bool)(unsafe.Pointer(in.UnsupportedMode))
+	*out = *(*v1beta1.LogPipelineStatus)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -933,8 +901,7 @@ func Convert_v1alpha1_LogPipelineStatus_To_v1beta1_LogPipelineStatus(in *LogPipe
 }
 
 func autoConvert_v1beta1_LogPipelineStatus_To_v1alpha1_LogPipelineStatus(in *v1beta1.LogPipelineStatus, out *LogPipelineStatus, s conversion.Scope) error {
-	out.Conditions = *(*[]v1.Condition)(unsafe.Pointer(&in.Conditions))
-	out.UnsupportedMode = (*bool)(unsafe.Pointer(in.UnsupportedMode))
+	*out = *(*LogPipelineStatus)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -1034,10 +1001,7 @@ func Convert_v1beta1_MetricPipelineInput_To_v1alpha1_MetricPipelineInput(in *v1b
 }
 
 func autoConvert_v1alpha1_MetricPipelineIstioInput_To_v1beta1_MetricPipelineIstioInput(in *MetricPipelineIstioInput, out *v1beta1.MetricPipelineIstioInput, s conversion.Scope) error {
-	out.Enabled = (*bool)(unsafe.Pointer(in.Enabled))
-	out.Namespaces = (*v1beta1.NamespaceSelector)(unsafe.Pointer(in.Namespaces))
-	out.DiagnosticMetrics = (*v1beta1.MetricPipelineIstioInputDiagnosticMetrics)(unsafe.Pointer(in.DiagnosticMetrics))
-	out.EnvoyMetrics = (*v1beta1.EnvoyMetrics)(unsafe.Pointer(in.EnvoyMetrics))
+	*out = *(*v1beta1.MetricPipelineIstioInput)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -1047,10 +1011,7 @@ func Convert_v1alpha1_MetricPipelineIstioInput_To_v1beta1_MetricPipelineIstioInp
 }
 
 func autoConvert_v1beta1_MetricPipelineIstioInput_To_v1alpha1_MetricPipelineIstioInput(in *v1beta1.MetricPipelineIstioInput, out *MetricPipelineIstioInput, s conversion.Scope) error {
-	out.Enabled = (*bool)(unsafe.Pointer(in.Enabled))
-	out.Namespaces = (*NamespaceSelector)(unsafe.Pointer(in.Namespaces))
-	out.DiagnosticMetrics = (*MetricPipelineIstioInputDiagnosticMetrics)(unsafe.Pointer(in.DiagnosticMetrics))
-	out.EnvoyMetrics = (*EnvoyMetrics)(unsafe.Pointer(in.EnvoyMetrics))
+	*out = *(*MetricPipelineIstioInput)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -1060,7 +1021,7 @@ func Convert_v1beta1_MetricPipelineIstioInput_To_v1alpha1_MetricPipelineIstioInp
 }
 
 func autoConvert_v1alpha1_MetricPipelineIstioInputDiagnosticMetrics_To_v1beta1_MetricPipelineIstioInputDiagnosticMetrics(in *MetricPipelineIstioInputDiagnosticMetrics, out *v1beta1.MetricPipelineIstioInputDiagnosticMetrics, s conversion.Scope) error {
-	out.Enabled = (*bool)(unsafe.Pointer(in.Enabled))
+	*out = *(*v1beta1.MetricPipelineIstioInputDiagnosticMetrics)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -1070,7 +1031,7 @@ func Convert_v1alpha1_MetricPipelineIstioInputDiagnosticMetrics_To_v1beta1_Metri
 }
 
 func autoConvert_v1beta1_MetricPipelineIstioInputDiagnosticMetrics_To_v1alpha1_MetricPipelineIstioInputDiagnosticMetrics(in *v1beta1.MetricPipelineIstioInputDiagnosticMetrics, out *MetricPipelineIstioInputDiagnosticMetrics, s conversion.Scope) error {
-	out.Enabled = (*bool)(unsafe.Pointer(in.Enabled))
+	*out = *(*MetricPipelineIstioInputDiagnosticMetrics)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -1184,9 +1145,7 @@ func Convert_v1beta1_MetricPipelineOutput_To_v1alpha1_MetricPipelineOutput(in *v
 }
 
 func autoConvert_v1alpha1_MetricPipelinePrometheusInput_To_v1beta1_MetricPipelinePrometheusInput(in *MetricPipelinePrometheusInput, out *v1beta1.MetricPipelinePrometheusInput, s conversion.Scope) error {
-	out.Enabled = (*bool)(unsafe.Pointer(in.Enabled))
-	out.Namespaces = (*v1beta1.NamespaceSelector)(unsafe.Pointer(in.Namespaces))
-	out.DiagnosticMetrics = (*v1beta1.MetricPipelineIstioInputDiagnosticMetrics)(unsafe.Pointer(in.DiagnosticMetrics))
+	*out = *(*v1beta1.MetricPipelinePrometheusInput)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -1196,9 +1155,7 @@ func Convert_v1alpha1_MetricPipelinePrometheusInput_To_v1beta1_MetricPipelinePro
 }
 
 func autoConvert_v1beta1_MetricPipelinePrometheusInput_To_v1alpha1_MetricPipelinePrometheusInput(in *v1beta1.MetricPipelinePrometheusInput, out *MetricPipelinePrometheusInput, s conversion.Scope) error {
-	out.Enabled = (*bool)(unsafe.Pointer(in.Enabled))
-	out.Namespaces = (*NamespaceSelector)(unsafe.Pointer(in.Namespaces))
-	out.DiagnosticMetrics = (*MetricPipelineIstioInputDiagnosticMetrics)(unsafe.Pointer(in.DiagnosticMetrics))
+	*out = *(*MetricPipelinePrometheusInput)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -1229,7 +1186,7 @@ func Convert_v1beta1_MetricPipelineRuntimeInput_To_v1alpha1_MetricPipelineRuntim
 }
 
 func autoConvert_v1alpha1_MetricPipelineRuntimeInputResource_To_v1beta1_MetricPipelineRuntimeInputResource(in *MetricPipelineRuntimeInputResource, out *v1beta1.MetricPipelineRuntimeInputResource, s conversion.Scope) error {
-	out.Enabled = (*bool)(unsafe.Pointer(in.Enabled))
+	*out = *(*v1beta1.MetricPipelineRuntimeInputResource)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -1239,7 +1196,7 @@ func Convert_v1alpha1_MetricPipelineRuntimeInputResource_To_v1beta1_MetricPipeli
 }
 
 func autoConvert_v1beta1_MetricPipelineRuntimeInputResource_To_v1alpha1_MetricPipelineRuntimeInputResource(in *v1beta1.MetricPipelineRuntimeInputResource, out *MetricPipelineRuntimeInputResource, s conversion.Scope) error {
-	out.Enabled = (*bool)(unsafe.Pointer(in.Enabled))
+	*out = *(*MetricPipelineRuntimeInputResource)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -1249,14 +1206,7 @@ func Convert_v1beta1_MetricPipelineRuntimeInputResource_To_v1alpha1_MetricPipeli
 }
 
 func autoConvert_v1alpha1_MetricPipelineRuntimeInputResources_To_v1beta1_MetricPipelineRuntimeInputResources(in *MetricPipelineRuntimeInputResources, out *v1beta1.MetricPipelineRuntimeInputResources, s conversion.Scope) error {
-	out.Pod = (*v1beta1.MetricPipelineRuntimeInputResource)(unsafe.Pointer(in.Pod))
-	out.Container = (*v1beta1.MetricPipelineRuntimeInputResource)(unsafe.Pointer(in.Container))
-	out.Node = (*v1beta1.MetricPipelineRuntimeInputResource)(unsafe.Pointer(in.Node))
-	out.Volume = (*v1beta1.MetricPipelineRuntimeInputResource)(unsafe.Pointer(in.Volume))
-	out.DaemonSet = (*v1beta1.MetricPipelineRuntimeInputResource)(unsafe.Pointer(in.DaemonSet))
-	out.Deployment = (*v1beta1.MetricPipelineRuntimeInputResource)(unsafe.Pointer(in.Deployment))
-	out.StatefulSet = (*v1beta1.MetricPipelineRuntimeInputResource)(unsafe.Pointer(in.StatefulSet))
-	out.Job = (*v1beta1.MetricPipelineRuntimeInputResource)(unsafe.Pointer(in.Job))
+	*out = *(*v1beta1.MetricPipelineRuntimeInputResources)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -1266,14 +1216,7 @@ func Convert_v1alpha1_MetricPipelineRuntimeInputResources_To_v1beta1_MetricPipel
 }
 
 func autoConvert_v1beta1_MetricPipelineRuntimeInputResources_To_v1alpha1_MetricPipelineRuntimeInputResources(in *v1beta1.MetricPipelineRuntimeInputResources, out *MetricPipelineRuntimeInputResources, s conversion.Scope) error {
-	out.Pod = (*MetricPipelineRuntimeInputResource)(unsafe.Pointer(in.Pod))
-	out.Container = (*MetricPipelineRuntimeInputResource)(unsafe.Pointer(in.Container))
-	out.Node = (*MetricPipelineRuntimeInputResource)(unsafe.Pointer(in.Node))
-	out.Volume = (*MetricPipelineRuntimeInputResource)(unsafe.Pointer(in.Volume))
-	out.DaemonSet = (*MetricPipelineRuntimeInputResource)(unsafe.Pointer(in.DaemonSet))
-	out.Deployment = (*MetricPipelineRuntimeInputResource)(unsafe.Pointer(in.Deployment))
-	out.StatefulSet = (*MetricPipelineRuntimeInputResource)(unsafe.Pointer(in.StatefulSet))
-	out.Job = (*MetricPipelineRuntimeInputResource)(unsafe.Pointer(in.Job))
+	*out = *(*MetricPipelineRuntimeInputResources)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -1317,7 +1260,7 @@ func Convert_v1beta1_MetricPipelineSpec_To_v1alpha1_MetricPipelineSpec(in *v1bet
 }
 
 func autoConvert_v1alpha1_MetricPipelineStatus_To_v1beta1_MetricPipelineStatus(in *MetricPipelineStatus, out *v1beta1.MetricPipelineStatus, s conversion.Scope) error {
-	out.Conditions = *(*[]v1.Condition)(unsafe.Pointer(&in.Conditions))
+	*out = *(*v1beta1.MetricPipelineStatus)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -1327,7 +1270,7 @@ func Convert_v1alpha1_MetricPipelineStatus_To_v1beta1_MetricPipelineStatus(in *M
 }
 
 func autoConvert_v1beta1_MetricPipelineStatus_To_v1alpha1_MetricPipelineStatus(in *v1beta1.MetricPipelineStatus, out *MetricPipelineStatus, s conversion.Scope) error {
-	out.Conditions = *(*[]v1.Condition)(unsafe.Pointer(&in.Conditions))
+	*out = *(*MetricPipelineStatus)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -1337,8 +1280,7 @@ func Convert_v1beta1_MetricPipelineStatus_To_v1alpha1_MetricPipelineStatus(in *v
 }
 
 func autoConvert_v1alpha1_NamespaceSelector_To_v1beta1_NamespaceSelector(in *NamespaceSelector, out *v1beta1.NamespaceSelector, s conversion.Scope) error {
-	out.Include = *(*[]string)(unsafe.Pointer(&in.Include))
-	out.Exclude = *(*[]string)(unsafe.Pointer(&in.Exclude))
+	*out = *(*v1beta1.NamespaceSelector)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -1348,8 +1290,7 @@ func Convert_v1alpha1_NamespaceSelector_To_v1beta1_NamespaceSelector(in *Namespa
 }
 
 func autoConvert_v1beta1_NamespaceSelector_To_v1alpha1_NamespaceSelector(in *v1beta1.NamespaceSelector, out *NamespaceSelector, s conversion.Scope) error {
-	out.Include = *(*[]string)(unsafe.Pointer(&in.Include))
-	out.Exclude = *(*[]string)(unsafe.Pointer(&in.Exclude))
+	*out = *(*NamespaceSelector)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -1359,17 +1300,7 @@ func Convert_v1beta1_NamespaceSelector_To_v1alpha1_NamespaceSelector(in *v1beta1
 }
 
 func autoConvert_v1alpha1_OAuth2Options_To_v1beta1_OAuth2Options(in *OAuth2Options, out *v1beta1.OAuth2Options, s conversion.Scope) error {
-	if err := Convert_v1alpha1_ValueType_To_v1beta1_ValueType(&in.TokenURL, &out.TokenURL, s); err != nil {
-		return err
-	}
-	if err := Convert_v1alpha1_ValueType_To_v1beta1_ValueType(&in.ClientID, &out.ClientID, s); err != nil {
-		return err
-	}
-	if err := Convert_v1alpha1_ValueType_To_v1beta1_ValueType(&in.ClientSecret, &out.ClientSecret, s); err != nil {
-		return err
-	}
-	out.Scopes = *(*[]string)(unsafe.Pointer(&in.Scopes))
-	out.Params = *(*map[string]string)(unsafe.Pointer(&in.Params))
+	*out = *(*v1beta1.OAuth2Options)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -1379,17 +1310,7 @@ func Convert_v1alpha1_OAuth2Options_To_v1beta1_OAuth2Options(in *OAuth2Options, 
 }
 
 func autoConvert_v1beta1_OAuth2Options_To_v1alpha1_OAuth2Options(in *v1beta1.OAuth2Options, out *OAuth2Options, s conversion.Scope) error {
-	if err := Convert_v1beta1_ValueType_To_v1alpha1_ValueType(&in.TokenURL, &out.TokenURL, s); err != nil {
-		return err
-	}
-	if err := Convert_v1beta1_ValueType_To_v1alpha1_ValueType(&in.ClientID, &out.ClientID, s); err != nil {
-		return err
-	}
-	if err := Convert_v1beta1_ValueType_To_v1alpha1_ValueType(&in.ClientSecret, &out.ClientSecret, s); err != nil {
-		return err
-	}
-	out.Scopes = *(*[]string)(unsafe.Pointer(&in.Scopes))
-	out.Params = *(*map[string]string)(unsafe.Pointer(&in.Params))
+	*out = *(*OAuth2Options)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -1441,9 +1362,7 @@ func autoConvert_v1beta1_OTLPOutput_To_v1alpha1_OTLPOutput(in *v1beta1.OTLPOutpu
 }
 
 func autoConvert_v1alpha1_SecretKeyRef_To_v1beta1_SecretKeyRef(in *SecretKeyRef, out *v1beta1.SecretKeyRef, s conversion.Scope) error {
-	out.Name = in.Name
-	out.Namespace = in.Namespace
-	out.Key = in.Key
+	*out = *(*v1beta1.SecretKeyRef)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -1453,9 +1372,7 @@ func Convert_v1alpha1_SecretKeyRef_To_v1beta1_SecretKeyRef(in *SecretKeyRef, out
 }
 
 func autoConvert_v1beta1_SecretKeyRef_To_v1alpha1_SecretKeyRef(in *v1beta1.SecretKeyRef, out *SecretKeyRef, s conversion.Scope) error {
-	out.Name = in.Name
-	out.Namespace = in.Namespace
-	out.Key = in.Key
+	*out = *(*SecretKeyRef)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -1603,7 +1520,7 @@ func Convert_v1beta1_TracePipelineSpec_To_v1alpha1_TracePipelineSpec(in *v1beta1
 }
 
 func autoConvert_v1alpha1_TracePipelineStatus_To_v1beta1_TracePipelineStatus(in *TracePipelineStatus, out *v1beta1.TracePipelineStatus, s conversion.Scope) error {
-	out.Conditions = *(*[]v1.Condition)(unsafe.Pointer(&in.Conditions))
+	*out = *(*v1beta1.TracePipelineStatus)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -1613,7 +1530,7 @@ func Convert_v1alpha1_TracePipelineStatus_To_v1beta1_TracePipelineStatus(in *Tra
 }
 
 func autoConvert_v1beta1_TracePipelineStatus_To_v1alpha1_TracePipelineStatus(in *v1beta1.TracePipelineStatus, out *TracePipelineStatus, s conversion.Scope) error {
-	out.Conditions = *(*[]v1.Condition)(unsafe.Pointer(&in.Conditions))
+	*out = *(*TracePipelineStatus)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -1623,8 +1540,7 @@ func Convert_v1beta1_TracePipelineStatus_To_v1alpha1_TracePipelineStatus(in *v1b
 }
 
 func autoConvert_v1alpha1_TransformSpec_To_v1beta1_TransformSpec(in *TransformSpec, out *v1beta1.TransformSpec, s conversion.Scope) error {
-	out.Conditions = *(*[]string)(unsafe.Pointer(&in.Conditions))
-	out.Statements = *(*[]string)(unsafe.Pointer(&in.Statements))
+	*out = *(*v1beta1.TransformSpec)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -1634,8 +1550,7 @@ func Convert_v1alpha1_TransformSpec_To_v1beta1_TransformSpec(in *TransformSpec, 
 }
 
 func autoConvert_v1beta1_TransformSpec_To_v1alpha1_TransformSpec(in *v1beta1.TransformSpec, out *TransformSpec, s conversion.Scope) error {
-	out.Conditions = *(*[]string)(unsafe.Pointer(&in.Conditions))
-	out.Statements = *(*[]string)(unsafe.Pointer(&in.Statements))
+	*out = *(*TransformSpec)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -1645,7 +1560,7 @@ func Convert_v1beta1_TransformSpec_To_v1alpha1_TransformSpec(in *v1beta1.Transfo
 }
 
 func autoConvert_v1alpha1_ValueFromSource_To_v1beta1_ValueFromSource(in *ValueFromSource, out *v1beta1.ValueFromSource, s conversion.Scope) error {
-	out.SecretKeyRef = (*v1beta1.SecretKeyRef)(unsafe.Pointer(in.SecretKeyRef))
+	*out = *(*v1beta1.ValueFromSource)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -1655,7 +1570,7 @@ func Convert_v1alpha1_ValueFromSource_To_v1beta1_ValueFromSource(in *ValueFromSo
 }
 
 func autoConvert_v1beta1_ValueFromSource_To_v1alpha1_ValueFromSource(in *v1beta1.ValueFromSource, out *ValueFromSource, s conversion.Scope) error {
-	out.SecretKeyRef = (*SecretKeyRef)(unsafe.Pointer(in.SecretKeyRef))
+	*out = *(*ValueFromSource)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -1665,8 +1580,7 @@ func Convert_v1beta1_ValueFromSource_To_v1alpha1_ValueFromSource(in *v1beta1.Val
 }
 
 func autoConvert_v1alpha1_ValueType_To_v1beta1_ValueType(in *ValueType, out *v1beta1.ValueType, s conversion.Scope) error {
-	out.Value = in.Value
-	out.ValueFrom = (*v1beta1.ValueFromSource)(unsafe.Pointer(in.ValueFrom))
+	*out = *(*v1beta1.ValueType)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -1676,8 +1590,7 @@ func Convert_v1alpha1_ValueType_To_v1beta1_ValueType(in *ValueType, out *v1beta1
 }
 
 func autoConvert_v1beta1_ValueType_To_v1alpha1_ValueType(in *v1beta1.ValueType, out *ValueType, s conversion.Scope) error {
-	out.Value = in.Value
-	out.ValueFrom = (*ValueFromSource)(unsafe.Pointer(in.ValueFrom))
+	*out = *(*ValueType)(unsafe.Pointer(in))
 	return nil
 }
 

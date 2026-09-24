@@ -31,32 +31,27 @@ const (
 // Env Vars Builders
 // =============================================================================
 
-func makeOTLPExporterEnvVars(ctx context.Context, c client.Reader, output *telemetryv1beta1.OTLPOutput, pipelineRef pipelines.PipelineRef) (map[string][]byte, error) {
-	var err error
-
+func makeOTLPExporterEnvVars(ctx context.Context, c client.Reader, output *telemetryv1beta1.OTLPOutput, pipelineRef pipelines.PipelineRef, passthroughResolver bool) (map[string][]byte, string, error) {
 	secretData := make(map[string][]byte)
 
-	err = makeBasicAuthEnvVar(ctx, c, secretData, output, pipelineRef)
-	if err != nil {
-		return nil, err
+	if err := makeBasicAuthEnvVar(ctx, c, secretData, output, pipelineRef); err != nil {
+		return nil, "", err
 	}
 
-	err = makeOTLPEndpointEnvVar(ctx, c, secretData, output, pipelineRef)
+	originalEndpointURL, err := makeOTLPEndpointEnvVar(ctx, c, secretData, output, pipelineRef, passthroughResolver)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
-	err = makeHeaderEnvVar(ctx, c, secretData, output, pipelineRef)
-	if err != nil {
-		return nil, err
+	if err := makeHeaderEnvVar(ctx, c, secretData, output, pipelineRef); err != nil {
+		return nil, "", err
 	}
 
-	err = makeTLSEnvVar(ctx, c, secretData, output, pipelineRef)
-	if err != nil {
-		return nil, err
+	if err := makeTLSEnvVar(ctx, c, secretData, output, pipelineRef); err != nil {
+		return nil, "", err
 	}
 
-	return secretData, nil
+	return secretData, string(originalEndpointURL), nil
 }
 
 func makeOAuth2ExtensionEnvVars(ctx context.Context, c client.Reader, oauth2Options *telemetryv1beta1.OAuth2Options, pipelineRef pipelines.PipelineRef) (map[string][]byte, error) {
@@ -102,17 +97,17 @@ func makeBasicAuthEnvVar(ctx context.Context, c client.Reader, secretData map[st
 	return nil
 }
 
-func makeOTLPEndpointEnvVar(ctx context.Context, c client.Reader, secretData map[string][]byte, output *telemetryv1beta1.OTLPOutput, pipelineRef pipelines.PipelineRef) error {
+func makeOTLPEndpointEnvVar(ctx context.Context, c client.Reader, secretData map[string][]byte, output *telemetryv1beta1.OTLPOutput, pipelineRef pipelines.PipelineRef, passthroughResolver bool) (originalEndpointURL []byte, err error) {
 	otlpEndpointVariable := formatEnvVarKey(otlpEndpointVariablePrefix, pipelineRef)
 
-	endpointURL, err := resolveEndpointURL(ctx, c, output)
+	endpointURL, originalEndpointURL, err := resolveEndpointURL(ctx, c, output, passthroughResolver)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	secretData[otlpEndpointVariable] = endpointURL
 
-	return err
+	return originalEndpointURL, nil
 }
 
 func makeHeaderEnvVar(ctx context.Context, c client.Reader, secretData map[string][]byte, output *telemetryv1beta1.OTLPOutput, pipelineRef pipelines.PipelineRef) error {
@@ -222,30 +217,52 @@ func prefixHeaderValue(header telemetryv1beta1.Header, value []byte) []byte {
 	return value
 }
 
-func resolveEndpointURL(ctx context.Context, c client.Reader, output *telemetryv1beta1.OTLPOutput) ([]byte, error) {
+func resolveEndpointURL(ctx context.Context, c client.Reader, output *telemetryv1beta1.OTLPOutput, passthroughResolver bool) (resolved []byte, original []byte, err error) {
 	endpoint, err := sharedtypesutils.ResolveValue(ctx, c, output.Endpoint)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if len(output.Path) > 0 {
 		u, err := url.Parse(string(endpoint))
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		pathRef, err := url.Parse(output.Path)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		u.Path = path.Join(u.Path, pathRef.Path)
 		u.RawQuery = pathRef.RawQuery
 
-		return []byte(u.String()), nil
+		endpoint = []byte(u.String())
 	}
 
-	return endpoint, nil
+	original = endpoint
+
+	if passthroughResolver && output.Protocol != telemetryv1beta1.OTLPProtocolHTTP {
+		endpoint = rewriteAsPassthrough(endpoint)
+	}
+
+	return endpoint, original, nil
+}
+
+// rewriteAsPassthrough converts a gRPC endpoint to passthrough:///host:port form.
+// Already-correct passthrough:/// URIs are returned unchanged.
+// http:// and https:// scheme prefixes are stripped before prefixing (TLS insecure
+// detection uses the original value, so http:// endpoints still get tls.insecure=true).
+func rewriteAsPassthrough(endpoint []byte) []byte {
+	s := strings.TrimSpace(string(endpoint))
+	if strings.HasPrefix(s, "passthrough:///") {
+		return []byte(s)
+	}
+
+	s = strings.TrimPrefix(s, "https://")
+	s = strings.TrimPrefix(s, "http://")
+
+	return []byte("passthrough:///" + s)
 }
 
 func formatBasicAuthHeader(username string, password string) string {

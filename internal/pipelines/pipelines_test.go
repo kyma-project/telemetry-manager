@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 )
@@ -18,7 +17,7 @@ func TestSignalTypeValidate(t *testing.T) {
 }
 
 func TestLogPipelineRef(t *testing.T) {
-	lp := &telemetryv1beta1.LogPipeline{ObjectMeta: metav1.ObjectMeta{Name: "my-log"}}
+	lp := &telemetryv1beta1.LogPipeline{Name: "my-log"}
 	ref := LogPipelineRef(lp)
 	require.Equal(t, "my-log", ref.Name())
 	require.Equal(t, SignalTypeLog, ref.SignalType())
@@ -27,7 +26,7 @@ func TestLogPipelineRef(t *testing.T) {
 }
 
 func TestMetricPipelineRef(t *testing.T) {
-	mp := &telemetryv1beta1.MetricPipeline{ObjectMeta: metav1.ObjectMeta{Name: "my-metric"}}
+	mp := &telemetryv1beta1.MetricPipeline{Name: "my-metric"}
 	ref := MetricPipelineRef(mp)
 	require.Equal(t, "my-metric", ref.Name())
 	require.Equal(t, SignalTypeMetric, ref.SignalType())
@@ -36,7 +35,7 @@ func TestMetricPipelineRef(t *testing.T) {
 }
 
 func TestTracePipelineRef(t *testing.T) {
-	tp := &telemetryv1beta1.TracePipeline{ObjectMeta: metav1.ObjectMeta{Name: "my-trace"}}
+	tp := &telemetryv1beta1.TracePipeline{Name: "my-trace"}
 	ref := TracePipelineRef(tp)
 	require.Equal(t, "my-trace", ref.Name())
 	require.Equal(t, SignalTypeTrace, ref.SignalType())

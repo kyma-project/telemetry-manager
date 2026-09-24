@@ -34,10 +34,8 @@ func newTestClient(t *testing.T, objs ...client.Object) client.Client {
 
 	// Create kube-system namespace required by reconciler for cluster UID
 	kubeSystemNs := &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "kube-system",
-			UID:  "test-cluster-uid",
-		},
+		Name: "kube-system",
+		UID:  "test-cluster-uid",
 	}
 
 	allObjs := append([]client.Object{kubeSystemNs}, objs...)

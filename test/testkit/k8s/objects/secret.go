@@ -3,7 +3,6 @@ package objects
 import (
 	"github.com/google/uuid"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
@@ -41,11 +40,9 @@ func (s *Secret) K8sObject() *corev1.Secret {
 	}
 
 	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      s.name,
-			Namespace: s.namespace,
-			Labels:    labels,
-		},
+		Name:       s.name,
+		Namespace:  s.namespace,
+		Labels:     labels,
 		Type:       s.secretType,
 		StringData: s.stringData,
 	}

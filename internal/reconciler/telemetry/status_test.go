@@ -44,7 +44,7 @@ func TestUpdateStatus(t *testing.T) {
 			config: &Config{
 				Global: config.NewGlobal(config.WithTargetNamespace("telemetry-system")),
 			},
-			telemetry:            &operatorv1beta1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
+			telemetry:            &operatorv1beta1.Telemetry{Name: "default"},
 			logsCheckerReturn:    &metav1.Condition{Type: conditions.TypeLogComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			metricsCheckerReturn: &metav1.Condition{Type: conditions.TypeMetricComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			tracesCheckerReturn:  &metav1.Condition{Type: conditions.TypeTraceComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
@@ -96,7 +96,7 @@ func TestUpdateStatus(t *testing.T) {
 			config: &Config{
 				Global: config.NewGlobal(config.WithTargetNamespace("telemetry-system")),
 			},
-			telemetry:            &operatorv1beta1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
+			telemetry:            &operatorv1beta1.Telemetry{Name: "default"},
 			logsCheckerReturn:    &metav1.Condition{Type: conditions.TypeLogComponentsHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonAgentNotReady},
 			metricsCheckerReturn: &metav1.Condition{Type: conditions.TypeMetricComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			tracesCheckerReturn:  &metav1.Condition{Type: conditions.TypeTraceComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
@@ -148,7 +148,7 @@ func TestUpdateStatus(t *testing.T) {
 			config: &Config{
 				Global: config.NewGlobal(config.WithTargetNamespace("telemetry-system")),
 			},
-			telemetry:            &operatorv1beta1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
+			telemetry:            &operatorv1beta1.Telemetry{Name: "default"},
 			logsCheckerReturn:    &metav1.Condition{Type: conditions.TypeLogComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			metricsCheckerReturn: &metav1.Condition{Type: conditions.TypeMetricComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			tracesCheckerReturn:  &metav1.Condition{Type: conditions.TypeTraceComponentsHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonGatewayNotReady},
@@ -200,7 +200,7 @@ func TestUpdateStatus(t *testing.T) {
 			config: &Config{
 				Global: config.NewGlobal(config.WithTargetNamespace("telemetry-system")),
 			},
-			telemetry:            &operatorv1beta1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
+			telemetry:            &operatorv1beta1.Telemetry{Name: "default"},
 			logsCheckerReturn:    &metav1.Condition{Type: conditions.TypeLogComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			metricsCheckerReturn: &metav1.Condition{Type: conditions.TypeMetricComponentsHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonGatewayNotReady},
 			tracesCheckerReturn:  &metav1.Condition{Type: conditions.TypeTraceComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
@@ -249,7 +249,7 @@ func TestUpdateStatus(t *testing.T) {
 		},
 		{
 			name:                 "log components check error",
-			telemetry:            &operatorv1beta1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
+			telemetry:            &operatorv1beta1.Telemetry{Name: "default"},
 			logsCheckerError:     fmt.Errorf("logs check error"),
 			metricsCheckerReturn: &metav1.Condition{Type: conditions.TypeMetricComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			tracesCheckerReturn:  &metav1.Condition{Type: conditions.TypeTraceComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
@@ -257,7 +257,7 @@ func TestUpdateStatus(t *testing.T) {
 		},
 		{
 			name:                "metric components check error",
-			telemetry:           &operatorv1beta1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
+			telemetry:           &operatorv1beta1.Telemetry{Name: "default"},
 			logsCheckerReturn:   &metav1.Condition{Type: conditions.TypeLogComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			metricsCheckerError: fmt.Errorf("metrics check error"),
 			tracesCheckerReturn: &metav1.Condition{Type: conditions.TypeTraceComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
@@ -268,7 +268,7 @@ func TestUpdateStatus(t *testing.T) {
 		},
 		{
 			name:                 "trace components check error",
-			telemetry:            &operatorv1beta1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
+			telemetry:            &operatorv1beta1.Telemetry{Name: "default"},
 			logsCheckerReturn:    &metav1.Condition{Type: conditions.TypeLogComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			metricsCheckerReturn: &metav1.Condition{Type: conditions.TypeMetricComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			tracesCheckerError:   fmt.Errorf("traces check error"),
@@ -284,11 +284,9 @@ func TestUpdateStatus(t *testing.T) {
 				Global: config.NewGlobal(config.WithTargetNamespace("telemetry-system")),
 			},
 			telemetry: &operatorv1beta1.Telemetry{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:              "default",
-					DeletionTimestamp: new(metav1.Now()),
-					Finalizers:        []string{"telemetry.kyma-project.io/finalizer"},
-				},
+				Name:              "default",
+				DeletionTimestamp: new(metav1.Now()),
+				Finalizers:        []string{"telemetry.kyma-project.io/finalizer"},
 			},
 			logsCheckerReturn:    &metav1.Condition{Type: conditions.TypeLogComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			metricsCheckerReturn: &metav1.Condition{Type: conditions.TypeMetricComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
@@ -342,11 +340,9 @@ func TestUpdateStatus(t *testing.T) {
 				Global: config.NewGlobal(config.WithTargetNamespace("telemetry-system")),
 			},
 			telemetry: &operatorv1beta1.Telemetry{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:              "default",
-					DeletionTimestamp: new(metav1.Now()),
-					Finalizers:        []string{"telemetry.kyma-project.io/finalizer"},
-				},
+				Name:              "default",
+				DeletionTimestamp: new(metav1.Now()),
+				Finalizers:        []string{"telemetry.kyma-project.io/finalizer"},
 			},
 			logsCheckerReturn:    &metav1.Condition{Type: conditions.TypeLogComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			metricsCheckerReturn: &metav1.Condition{Type: conditions.TypeMetricComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
@@ -376,7 +372,7 @@ func TestUpdateStatus(t *testing.T) {
 			config: &Config{
 				Global: config.NewGlobal(config.WithTargetNamespace("telemetry-system")),
 			},
-			telemetry:            &operatorv1beta1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
+			telemetry:            &operatorv1beta1.Telemetry{Name: "default"},
 			logsCheckerReturn:    &metav1.Condition{Type: conditions.TypeLogComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			metricsCheckerReturn: &metav1.Condition{Type: conditions.TypeMetricComponentsHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonAgentNotReady},
 			tracesCheckerReturn:  &metav1.Condition{Type: conditions.TypeTraceComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
@@ -428,7 +424,7 @@ func TestUpdateStatus(t *testing.T) {
 			config: &Config{
 				Global: config.NewGlobal(config.WithTargetNamespace("telemetry-system")),
 			},
-			telemetry:            &operatorv1beta1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
+			telemetry:            &operatorv1beta1.Telemetry{Name: "default"},
 			logsCheckerReturn:    &metav1.Condition{Type: conditions.TypeLogComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},
 			metricsCheckerReturn: &metav1.Condition{Type: conditions.TypeMetricComponentsHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonAgentNotReady},
 			tracesCheckerReturn:  &metav1.Condition{Type: conditions.TypeTraceComponentsHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonComponentsRunning},

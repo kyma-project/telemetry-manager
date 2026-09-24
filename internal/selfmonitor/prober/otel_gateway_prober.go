@@ -63,12 +63,10 @@ func (p *OTelGatewayProber) Probe(ctx context.Context, pipelineName string) (OTe
 	healthy := !allDropped && !someDropped && !throttling
 
 	return OTelGatewayProbeResult{
-		PipelineProbeResult: PipelineProbeResult{
-			AllDataDropped:  allDropped,
-			SomeDataDropped: someDropped,
-			Healthy:         healthy,
-		},
-		Throttling: throttling,
+		AllDataDropped:  allDropped,
+		SomeDataDropped: someDropped,
+		Healthy:         healthy,
+		Throttling:      throttling,
 	}, nil
 }
 

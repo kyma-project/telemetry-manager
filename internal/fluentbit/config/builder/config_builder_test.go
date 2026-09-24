@@ -5,7 +5,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
@@ -76,29 +75,23 @@ func TestBuildEnvConfigSecret(t *testing.T) {
 	ctx := t.Context()
 	fakeClient := fake.NewClientBuilder().WithObjects(
 		&corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      hostSecretName,
-				Namespace: secretNamespace,
-			},
+			Name:      hostSecretName,
+			Namespace: secretNamespace,
 			Data: map[string][]byte{
 				hostSecretKey: []byte(hostSecretValue),
 			},
 		},
 		&corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      basicAuthSecretName,
-				Namespace: secretNamespace,
-			},
+			Name:      basicAuthSecretName,
+			Namespace: secretNamespace,
 			Data: map[string][]byte{
 				basicAuthUserKey:     []byte(basicAuthUserValue),
 				basicAuthPasswordKey: []byte(basicAuthPasswordValue),
 			},
 		},
 		&corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      varSecretName,
-				Namespace: secretNamespace,
-			},
+			Name:      varSecretName,
+			Namespace: secretNamespace,
 			Data: map[string][]byte{
 				varSecretKey: []byte(varSecretValue),
 			},
@@ -260,10 +253,8 @@ func TestBuildTLSConfigSecret(t *testing.T) {
 	ctx := t.Context()
 	fakeClient := fake.NewClientBuilder().WithObjects(
 		&corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      tlsSecretName,
-				Namespace: secretNamespace,
-			},
+			Name:      tlsSecretName,
+			Namespace: secretNamespace,
 			Data: map[string][]byte{
 				ca:   []byte(caValue),
 				cert: []byte(certValue),

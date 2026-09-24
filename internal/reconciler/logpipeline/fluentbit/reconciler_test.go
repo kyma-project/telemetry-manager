@@ -305,11 +305,9 @@ func TestSecretReferenceValidation(t *testing.T) {
 			name: "referenced secret exists",
 			setupObjs: func() (telemetryv1beta1.LogPipeline, []client.Object) {
 				secret := &corev1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "some-secret",
-						Namespace: "some-namespace",
-					},
-					Data: map[string][]byte{"host": nil},
+					Name:      "some-secret",
+					Namespace: "some-namespace",
+					Data:      map[string][]byte{"host": nil},
 				}
 				p := testutils.NewLogPipelineBuilder().
 					WithHTTPOutput(testutils.HTTPHostFromSecret("some-secret", "some-namespace", "host")).
@@ -757,10 +755,8 @@ func TestPipelineInfoTracking(t *testing.T) {
 				WithHTTPOutput(testutils.HTTPHostFromSecret("endpoint-secret", "default", "host")).
 				Build(),
 			secret: &corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "endpoint-secret",
-					Namespace: "default",
-				},
+				Name:      "endpoint-secret",
+				Namespace: "default",
 				Data: map[string][]byte{
 					"host": []byte("endpoint.example.com"),
 				},

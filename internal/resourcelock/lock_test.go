@@ -7,7 +7,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -22,22 +21,16 @@ var (
 
 func TestTryAcquireLock(t *testing.T) {
 	owner1 := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "owner1",
-			Namespace: "default",
-		},
+		Name:      "owner1",
+		Namespace: "default",
 	}
 	owner2 := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "owner2",
-			Namespace: "default",
-		},
+		Name:      "owner2",
+		Namespace: "default",
 	}
 	owner3 := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "owner3",
-			Namespace: "default",
-		},
+		Name:      "owner3",
+		Namespace: "default",
 	}
 
 	ctx := t.Context()
@@ -56,22 +49,16 @@ func TestTryAcquireLock(t *testing.T) {
 
 func TestIsLockHolder(t *testing.T) {
 	owner1 := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "owner1",
-			Namespace: "default",
-		},
+		Name:      "owner1",
+		Namespace: "default",
 	}
 	owner2 := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "owner2",
-			Namespace: "default",
-		},
+		Name:      "owner2",
+		Namespace: "default",
 	}
 	owner3 := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "owner3",
-			Namespace: "default",
-		},
+		Name:      "owner3",
+		Namespace: "default",
 	}
 
 	ctx := t.Context()
@@ -98,10 +85,8 @@ func TestTryAcquireLock_UnlimitedPipelines(t *testing.T) {
 	owners := make([]*corev1.ConfigMap, 6)
 	for i := range owners {
 		owners[i] = &corev1.ConfigMap{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      fmt.Sprintf("owner%d", i+1),
-				Namespace: "default",
-			},
+			Name:      fmt.Sprintf("owner%d", i+1),
+			Namespace: "default",
 		}
 	}
 

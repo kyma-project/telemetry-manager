@@ -7,7 +7,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
@@ -20,6 +19,7 @@ const (
 	errMsgPortInvalidMultipleColons = "address %s: too many colons in address"
 	errMsgPortMissing               = "missing port"
 	errMsgUnsupportedScheme         = "missing or unsupported protocol scheme"
+	errMsgIncorrectGRPCURI          = "incorrect gRPC URI: use triple-slash form (e.g. passthrough:///host:port)"
 	errMsgGRPCOAuth2NoTLS           = "OAuth2 requires TLS when using gRPC protocol"
 	errMsgHTTPWithTLS               = "HTTP scheme with TLS not allowed"
 	errMsgGRPCWithPath              = "gRPC endpoints cannot contain paths"
@@ -367,12 +367,68 @@ var testScenarios = []struct {
 		errOTLPHTTP:    ErrUnsupportedScheme,
 		errMsgOTLPHTTP: errMsgUnsupportedScheme,
 
-		errFluentdHTTP:    nil,
-		errMsgFluentdHTTP: "",
+		errFluentdHTTP:    ErrUnsupportedScheme,
+		errMsgFluentdHTTP: errMsgUnsupportedScheme,
 	},
 	{
 		name:     "random scheme: with port",
 		endpoint: "rand://example.com:8080",
+
+		errOTLPGRPC:    ErrIncorrectGRPCURI,
+		errMsgOTLPGRPC: errMsgIncorrectGRPCURI,
+
+		errOTLPHTTP:    ErrUnsupportedScheme,
+		errMsgOTLPHTTP: errMsgUnsupportedScheme,
+
+		errFluentdHTTP:    ErrUnsupportedScheme,
+		errMsgFluentdHTTP: errMsgUnsupportedScheme,
+	},
+	{
+		name:     "random scheme: no port",
+		endpoint: "rand://example.com",
+
+		errOTLPGRPC:    ErrIncorrectGRPCURI,
+		errMsgOTLPGRPC: errMsgIncorrectGRPCURI,
+
+		errOTLPHTTP:    ErrUnsupportedScheme,
+		errMsgOTLPHTTP: errMsgUnsupportedScheme,
+
+		errFluentdHTTP:    ErrUnsupportedScheme,
+		errMsgFluentdHTTP: errMsgUnsupportedScheme,
+	},
+	{
+		// passthrough:// (double slash) puts the host in the authority, not the path — invalid for gRPC resolver schemes
+		name:     "passthrough scheme double slash: with port",
+		endpoint: "passthrough://example.com:4317",
+
+		errOTLPGRPC:    ErrIncorrectGRPCURI,
+		errMsgOTLPGRPC: errMsgIncorrectGRPCURI,
+
+		errOTLPHTTP:    ErrUnsupportedScheme,
+		errMsgOTLPHTTP: errMsgUnsupportedScheme,
+
+		errFluentdHTTP:    ErrUnsupportedScheme,
+		errMsgFluentdHTTP: errMsgUnsupportedScheme,
+	},
+	{
+		// passthrough:// with no authority — invalid, must be rejected
+		name:     "passthrough scheme double slash: no authority",
+		endpoint: "passthrough://",
+
+		errOTLPGRPC:    ErrPortMissing,
+		errMsgOTLPGRPC: errMsgPortMissing,
+
+		errOTLPHTTP:    ErrPortMissing,
+		errMsgOTLPHTTP: errMsgPortMissing,
+
+		errFluentdHTTP:    ErrPortMissing,
+		errMsgFluentdHTTP: errMsgPortMissing,
+	},
+	{
+		// passthrough:/// (triple slash) — canonical gRPC URI form; url.Parse sets host="" so
+		// the validator must preserve the scheme instead of stripping it via the placeholder path.
+		name:     "passthrough scheme triple slash: with port",
+		endpoint: "passthrough:///example.com:4317",
 
 		errOTLPGRPC:    nil,
 		errMsgOTLPGRPC: "",
@@ -380,21 +436,64 @@ var testScenarios = []struct {
 		errOTLPHTTP:    ErrUnsupportedScheme,
 		errMsgOTLPHTTP: errMsgUnsupportedScheme,
 
-		errFluentdHTTP:    nil,
-		errMsgFluentdHTTP: "",
+		errFluentdHTTP:    ErrUnsupportedScheme,
+		errMsgFluentdHTTP: errMsgUnsupportedScheme,
 	},
 	{
-		name:     "random scheme: no port",
-		endpoint: "rand://example.com",
+		// dns:/// is a valid gRPC resolver scheme — collector passes it verbatim to grpc.NewClient
+		name:     "dns scheme triple slash: with port",
+		endpoint: "dns:///example.com:4317",
 
-		errOTLPGRPC:    ErrPortMissing,
-		errMsgOTLPGRPC: errMsgPortMissing,
+		errOTLPGRPC:    nil,
+		errMsgOTLPGRPC: "",
 
 		errOTLPHTTP:    ErrUnsupportedScheme,
 		errMsgOTLPHTTP: errMsgUnsupportedScheme,
 
-		errFluentdHTTP:    nil,
-		errMsgFluentdHTTP: "",
+		errFluentdHTTP:    ErrUnsupportedScheme,
+		errMsgFluentdHTTP: errMsgUnsupportedScheme,
+	},
+	{
+		// xds:/// is a valid gRPC resolver scheme — collector passes it verbatim to grpc.NewClient
+		name:     "xds scheme triple slash: with port",
+		endpoint: "xds:///example.com:4317",
+
+		errOTLPGRPC:    nil,
+		errMsgOTLPGRPC: "",
+
+		errOTLPHTTP:    ErrUnsupportedScheme,
+		errMsgOTLPHTTP: errMsgUnsupportedScheme,
+
+		errFluentdHTTP:    ErrUnsupportedScheme,
+		errMsgFluentdHTTP: errMsgUnsupportedScheme,
+	},
+	{
+		// grpc:// with a valid port — scheme is rejected after port validation
+		name:     "grpc scheme double slash: with port",
+		endpoint: "grpc://example.com:4317",
+
+		errOTLPGRPC:    ErrUnsupportedScheme,
+		errMsgOTLPGRPC: errMsgUnsupportedScheme,
+
+		errOTLPHTTP:    ErrUnsupportedScheme,
+		errMsgOTLPHTTP: errMsgUnsupportedScheme,
+
+		errFluentdHTTP:    ErrUnsupportedScheme,
+		errMsgFluentdHTTP: errMsgUnsupportedScheme,
+	},
+	{
+		// Ensure a user-supplied double-slash scheme doesn't sneak through via some path
+		name:     "dns double slash: with port",
+		endpoint: "dns://example.com:4317",
+
+		errOTLPGRPC:    ErrIncorrectGRPCURI,
+		errMsgOTLPGRPC: errMsgIncorrectGRPCURI,
+
+		errOTLPHTTP:    ErrUnsupportedScheme,
+		errMsgOTLPHTTP: errMsgUnsupportedScheme,
+
+		errFluentdHTTP:    ErrUnsupportedScheme,
+		errMsgFluentdHTTP: errMsgUnsupportedScheme,
 	},
 }
 
@@ -505,10 +604,8 @@ func TestMissingEndpoint(t *testing.T) {
 func TestEndpointValueFromValid(t *testing.T) {
 	validEndpoint := "http://example.com:8080"
 	secret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test",
-			Namespace: "default",
-		},
+		Name:      "test",
+		Namespace: "default",
 		Data: map[string][]byte{
 			"endpoint": []byte(validEndpoint),
 		},
@@ -546,10 +643,8 @@ func TestEndpointValueFromValid(t *testing.T) {
 func TestEndpointValueFromInvalid(t *testing.T) {
 	invalidEndpoint := "'http://example.com:8080'"
 	secret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test",
-			Namespace: "default",
-		},
+		Name:      "test",
+		Namespace: "default",
 		Data: map[string][]byte{
 			"endpoint": []byte(invalidEndpoint),
 		},
@@ -590,10 +685,8 @@ func TestEndpointValueFromInvalid(t *testing.T) {
 func TestEndpointValueFromMissing(t *testing.T) {
 	validEndpoint := "http://example.com:8080"
 	secret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test",
-			Namespace: "default",
-		},
+		Name:      "test",
+		Namespace: "default",
 		Data: map[string][]byte{
 			"endpoint": []byte(validEndpoint),
 		},

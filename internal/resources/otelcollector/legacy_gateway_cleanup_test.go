@@ -78,12 +78,10 @@ func TestDeleteLegacyGatewayResources(t *testing.T) {
 
 			// Add NetworkPolicy with labels
 			networkPolicy := &networkingv1.NetworkPolicy{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      tt.gatewayName + "-network-policy",
-					Namespace: "kyma-system",
-					Labels: map[string]string{
-						commonresources.LabelKeyK8sName: tt.gatewayName,
-					},
+				Name:      tt.gatewayName + "-network-policy",
+				Namespace: "kyma-system",
+				Labels: map[string]string{
+					commonresources.LabelKeyK8sName: tt.gatewayName,
 				},
 			}
 			resources = append(resources, networkPolicy)

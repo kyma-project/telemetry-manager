@@ -8,7 +8,6 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	"github.com/kyma-project/telemetry-manager/internal/config"
@@ -87,11 +86,9 @@ tracing:
 
 			if tt.configMapData != nil {
 				configMap := &corev1.ConfigMap{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      names.OverrideConfigMap,
-						Namespace: "test-namespace",
-					},
-					Data: tt.configMapData,
+					Name:      names.OverrideConfigMap,
+					Namespace: "test-namespace",
+					Data:      tt.configMapData,
 				}
 
 				err := fakeClient.Create(t.Context(), configMap)
@@ -117,10 +114,8 @@ tracing:
 func TestLoadOverridesResetsLogLevelIfNoConfigMapFound(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().Build()
 	configMap := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.OverrideConfigMap,
-			Namespace: "test-namespace",
-		},
+		Name:      names.OverrideConfigMap,
+		Namespace: "test-namespace",
 		Data: map[string]string{
 			configKey: `global:
   logLevel: debug

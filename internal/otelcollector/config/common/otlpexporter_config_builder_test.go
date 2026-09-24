@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
@@ -13,11 +12,11 @@ import (
 )
 
 func traceRefTest() pipelines.PipelineRef {
-	return pipelines.TracePipelineRef(&telemetryv1beta1.TracePipeline{ObjectMeta: metav1.ObjectMeta{Name: "test"}})
+	return pipelines.TracePipelineRef(&telemetryv1beta1.TracePipeline{Name: "test"})
 }
 
 func metricRefTest() pipelines.PipelineRef {
-	return pipelines.MetricPipelineRef(&telemetryv1beta1.MetricPipeline{ObjectMeta: metav1.ObjectMeta{Name: "test"}})
+	return pipelines.MetricPipelineRef(&telemetryv1beta1.MetricPipeline{Name: "test"})
 }
 
 func TestExporterIDHTTP(t *testing.T) {
@@ -142,10 +141,8 @@ func TestMakeExporterConfigWithOAuth2(t *testing.T) {
 func TestMakeExporterConfigWithCustomHeaders(t *testing.T) {
 	headers := []telemetryv1beta1.Header{
 		{
-			Name: "Authorization",
-			ValueType: telemetryv1beta1.ValueType{
-				Value: "Bearer xyz",
-			},
+			Name:  "Authorization",
+			Value: "Bearer xyz",
 		},
 	}
 	output := &telemetryv1beta1.OTLPOutput{
@@ -268,6 +265,89 @@ func TestMakeExporterConfigCompression(t *testing.T) {
 			require.NotNil(t, envVars)
 
 			require.Equal(t, tt.expectedCompression, otlpExporterConfig.Compression)
+		})
+	}
+}
+
+func TestPassthroughResolver(t *testing.T) {
+	tests := []struct {
+		name                string
+		endpoint            string
+		protocol            telemetryv1beta1.OTLPProtocol
+		passthroughResolver bool
+		expectedEndpointVar string
+		expectedTLSInsecure bool
+	}{
+		{
+			name:                "disabled: bare host:port unchanged",
+			endpoint:            "otlp.server:4317",
+			protocol:            telemetryv1beta1.OTLPProtocolGRPC,
+			passthroughResolver: false,
+			expectedEndpointVar: "otlp.server:4317",
+			expectedTLSInsecure: false,
+		},
+		{
+			name:                "enabled: bare host:port rewritten",
+			endpoint:            "otlp.server:4317",
+			protocol:            telemetryv1beta1.OTLPProtocolGRPC,
+			passthroughResolver: true,
+			expectedEndpointVar: "passthrough:///otlp.server:4317",
+			expectedTLSInsecure: false,
+		},
+		{
+			name:                "enabled: http:// stripped and rewritten, insecure=true",
+			endpoint:            "http://otlp.server:4317",
+			protocol:            telemetryv1beta1.OTLPProtocolGRPC,
+			passthroughResolver: true,
+			expectedEndpointVar: "passthrough:///otlp.server:4317",
+			expectedTLSInsecure: true,
+		},
+		{
+			name:                "enabled: https:// stripped and rewritten",
+			endpoint:            "https://otlp.server:4317",
+			protocol:            telemetryv1beta1.OTLPProtocolGRPC,
+			passthroughResolver: true,
+			expectedEndpointVar: "passthrough:///otlp.server:4317",
+			expectedTLSInsecure: false,
+		},
+		{
+			name:                "enabled: already passthrough:/// left unchanged",
+			endpoint:            "passthrough:///otlp.server:4317",
+			protocol:            telemetryv1beta1.OTLPProtocolGRPC,
+			passthroughResolver: true,
+			expectedEndpointVar: "passthrough:///otlp.server:4317",
+			expectedTLSInsecure: false,
+		},
+		{
+			name:                "enabled: HTTP protocol skips rewrite",
+			endpoint:            "otlp.server:4317",
+			protocol:            telemetryv1beta1.OTLPProtocolHTTP,
+			passthroughResolver: true,
+			expectedEndpointVar: "otlp.server:4317",
+			expectedTLSInsecure: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			output := &telemetryv1beta1.OTLPOutput{
+				Endpoint: telemetryv1beta1.ValueType{Value: tt.endpoint},
+				Protocol: tt.protocol,
+			}
+
+			cb := NewOTLPExporterConfigBuilder(
+				fake.NewClientBuilder().Build(),
+				output,
+				traceRefTest(),
+				NewSendingQueue(512),
+				WithPassthroughResolverIf(tt.passthroughResolver),
+			)
+			otlpExporterConfig, envVars, err := cb.OTLPExporter(t.Context())
+			require.NoError(t, err)
+			require.NotNil(t, envVars)
+
+			require.Equal(t, tt.expectedEndpointVar, string(envVars["OTLP_ENDPOINT_TRACEPIPELINE_TEST"]))
+			require.Equal(t, tt.expectedTLSInsecure, otlpExporterConfig.TLS.Insecure)
 		})
 	}
 }

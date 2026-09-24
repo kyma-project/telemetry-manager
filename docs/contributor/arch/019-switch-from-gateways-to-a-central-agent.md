@@ -91,7 +91,7 @@ Introducing a shared collector handling OTLP data for all three telemetry types 
 
 #### Downtime During Updates  
 
-Unlike deployments, the agent cannot be rolled out in a rolling manner, meaning updates will always result in some downtime. However, this should be mitigated by the retry mechanism in the OpenTelemetry SDK (according to our [tests](../../contributor/pocs/otelcol-downtime/otelcol-downtime.md), it's not yet the case).
+Unlike deployments, the agent cannot be rolled out in a rolling manner, meaning updates will always result in some downtime. However, this should be mitigated by the retry mechanism in the OpenTelemetry SDK (our tests show it's not yet the case).
 
 ### Additional Benefits  
 
@@ -103,12 +103,6 @@ A small persistent buffer can be introduced in all components using the node fil
 
 Neither the application nor its components will depend on Istio anymore. However, the metric agent should still support scraping Istio-instrumented endpoints.  
 
-
-## PoCs
-
-We conducted the following PoCs:
-- [OTel Collector Downtime](../../contributor/pocs/otelcol-downtime/otelcol-downtime.md) explores if OTeL SDK performs retries during downtime.
-- [Node local traffic](../../contributor/pocs/node-local-traffic/node-local-traffic.md) explores if the node-local traffic is possible with and without Istio.
 
 ## Conclusion
 

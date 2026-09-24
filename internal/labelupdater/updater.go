@@ -9,7 +9,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -66,8 +65,8 @@ func (u *Updater) ensureLabels(ctx context.Context) error {
 	u.logger.Info("Checking for resources missing the module label")
 
 	resources := []client.Object{
-		&corev1.ServiceAccount{ObjectMeta: metav1.ObjectMeta{Name: names.FluentBit, Namespace: u.namespace}},
-		&rbacv1.ClusterRoleBinding{ObjectMeta: metav1.ObjectMeta{Name: names.FluentBit}},
+		&corev1.ServiceAccount{Name: names.FluentBit, Namespace: u.namespace},
+		&rbacv1.ClusterRoleBinding{Name: names.FluentBit},
 	}
 
 	for _, r := range resources {
