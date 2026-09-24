@@ -18,8 +18,8 @@ require (
 	golang.org/x/tools v0.50.0
 	gotest.tools/gotestsum v1.13.0
 	helm.sh/helm/v4 v4.3.0
-	k8s.io/code-generator v0.37.0
-	sigs.k8s.io/controller-tools v0.21.0
+	k8s.io/code-generator v0.37.1
+	sigs.k8s.io/controller-tools v0.22.0
 )
 
 require (
@@ -520,7 +520,7 @@ require (
 	honnef.co/go/tools v0.8.1 // indirect
 	k8s.io/api v0.37.0 // indirect
 	k8s.io/apiextensions-apiserver v0.37.0 // indirect
-	k8s.io/apimachinery v0.37.0 // indirect
+	k8s.io/apimachinery v0.37.1 // indirect
 	k8s.io/apiserver v0.37.0 // indirect
 	k8s.io/cli-runtime v0.37.0 // indirect
 	k8s.io/client-go v0.37.0 // indirect
