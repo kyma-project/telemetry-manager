@@ -18,10 +18,19 @@ func NewOTLPGatewayConfigBuilder(t interface {
 	mock.TestingT
 	Cleanup(func())
 }) *OTLPGatewayConfigBuilder {
+	if helper, ok := t.(interface{ Helper() }); ok {
+		helper.Helper()
+	}
+
 	mock := &OTLPGatewayConfigBuilder{}
 	mock.Mock.Test(t)
 
-	t.Cleanup(func() { mock.AssertExpectations(t) })
+	t.Cleanup(func() {
+		if helper, ok := t.(interface{ Helper() }); ok {
+			helper.Helper()
+		}
+		mock.AssertExpectations(t)
+	})
 
 	return mock
 }
