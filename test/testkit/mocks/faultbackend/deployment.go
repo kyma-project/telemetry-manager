@@ -12,11 +12,9 @@ func (fb *FaultBackend) buildDeployment() *appsv1.Deployment {
 	labels := map[string]string{"app": fb.name}
 
 	return &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      fb.name,
-			Namespace: fb.namespace,
-			Labels:    labels,
-		},
+		Name:      fb.name,
+		Namespace: fb.namespace,
+		Labels:    labels,
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &fb.replicas,
 			Selector: &metav1.LabelSelector{MatchLabels: labels},

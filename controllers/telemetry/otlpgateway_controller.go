@@ -26,7 +26,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	"k8s.io/apimachinery/pkg/types"
 	autoscalingvpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
@@ -242,10 +241,8 @@ func (r *OTLPGatewayController) mapNodeChanges(ctx context.Context, object clien
 func (r *OTLPGatewayController) enqueueConfigMap() []reconcile.Request {
 	return []reconcile.Request{
 		{
-			NamespacedName: types.NamespacedName{
-				Name:      names.OTLPGatewayCoordinationConfigMap,
-				Namespace: r.reconciler.Globals().TargetNamespace(),
-			},
+			Name:      names.OTLPGatewayCoordinationConfigMap,
+			Namespace: r.reconciler.Globals().TargetNamespace(),
 		},
 	}
 }

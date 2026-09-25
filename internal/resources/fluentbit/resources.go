@@ -207,12 +207,12 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete clusterolebinding: %w", err))
 	}
 
-	exporterMetricsService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: names.FluentBitExporterMetricsService, Namespace: aad.namespace}}
+	exporterMetricsService := corev1.Service{Name: names.FluentBitExporterMetricsService, Namespace: aad.namespace}
 	if err := k8sutils.DeleteObject(ctx, c, &exporterMetricsService); err != nil {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete exporter metric service: %w", err))
 	}
 
-	metricsService := corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: names.FluentBitMetricsService, Namespace: aad.namespace}}
+	metricsService := corev1.Service{Name: names.FluentBitMetricsService, Namespace: aad.namespace}
 	if err := k8sutils.DeleteObject(ctx, c, &metricsService); err != nil {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete metric service: %w", err))
 	}
@@ -222,26 +222,23 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete configmap: %w", err))
 	}
 
-	luaCm := corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{
+	luaCm := corev1.ConfigMap{
 		Name:      names.FluentBitLuaScriptsConfigMap,
-		Namespace: aad.namespace,
-	}}
+		Namespace: aad.namespace}
 	if err := k8sutils.DeleteObject(ctx, c, &luaCm); err != nil {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete lua configmap: %w", err))
 	}
 
-	sectionCm := corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{
+	sectionCm := corev1.ConfigMap{
 		Name:      names.FluentBitSectionsConfigMap,
-		Namespace: aad.namespace,
-	}}
+		Namespace: aad.namespace}
 	if err := k8sutils.DeleteObject(ctx, c, &sectionCm); err != nil {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete section configmap: %w", err))
 	}
 
-	filesCm := corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{
+	filesCm := corev1.ConfigMap{
 		Name:      names.FluentBitFilesConfigMap,
-		Namespace: aad.namespace,
-	}}
+		Namespace: aad.namespace}
 	if err := k8sutils.DeleteObject(ctx, c, &filesCm); err != nil {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete files configmap: %w", err))
 	}
@@ -259,18 +256,16 @@ func (aad *AgentApplierDeleter) DeleteResources(ctx context.Context, c client.Cl
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete networkpolicy: %w", err))
 	}
 
-	envSecret := corev1.Secret{ObjectMeta: metav1.ObjectMeta{
+	envSecret := corev1.Secret{
 		Name:      names.FluentBitEnvSecret,
-		Namespace: aad.namespace,
-	}}
+		Namespace: aad.namespace}
 	if err := k8sutils.DeleteObject(ctx, c, &envSecret); err != nil {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete env config secret: %w", err))
 	}
 
-	tlsSecret := corev1.Secret{ObjectMeta: metav1.ObjectMeta{
+	tlsSecret := corev1.Secret{
 		Name:      names.FluentBitTLSConfigSecret,
-		Namespace: aad.namespace,
-	}}
+		Namespace: aad.namespace}
 	if err := k8sutils.DeleteObject(ctx, c, &tlsSecret); err != nil {
 		allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete tls file config secret: %w", err))
 	}
@@ -313,13 +308,11 @@ func (aad *AgentApplierDeleter) makeDaemonSet(namespace string, checksum string)
 	)
 
 	ds := &appsv1.DaemonSet{
-		TypeMeta: metav1.TypeMeta{},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        names.FluentBit,
-			Namespace:   namespace,
-			Labels:      resourceLabels,
-			Annotations: resourceAnnotations,
-		},
+		TypeMeta:    metav1.TypeMeta{},
+		Name:        names.FluentBit,
+		Namespace:   namespace,
+		Labels:      resourceLabels,
+		Annotations: resourceAnnotations,
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: defaultFluentBitSelector(),
@@ -368,20 +361,16 @@ func (aad *AgentApplierDeleter) makeDaemonSet(namespace string, checksum string)
 
 func (aad *AgentApplierDeleter) fluentBitLivenessProbe() *corev1.Probe {
 	return &corev1.Probe{
-		ProbeHandler: corev1.ProbeHandler{
-			TCPSocket: &corev1.TCPSocketAction{
-				Port: intstr.FromString("http"),
-			},
+		TCPSocket: &corev1.TCPSocketAction{
+			Port: intstr.FromString("http"),
 		},
 	}
 }
 
 func (aad *AgentApplierDeleter) fluentBitReadinessProbe() *corev1.Probe {
 	return &corev1.Probe{
-		ProbeHandler: corev1.ProbeHandler{
-			TCPSocket: &corev1.TCPSocketAction{
-				Port: intstr.FromString("http"),
-			},
+		TCPSocket: &corev1.TCPSocketAction{
+			Port: intstr.FromString("http"),
 		},
 	}
 }
@@ -416,62 +405,46 @@ func (aad *AgentApplierDeleter) fluentBitVolumes() []corev1.Volume {
 	return []corev1.Volume{
 		{
 			Name: configVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{Name: names.FluentBit},
-				},
+			ConfigMap: &corev1.ConfigMapVolumeSource{
+				Name: names.FluentBit,
 			},
 		},
 		{
 			Name: luaScriptsVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{Name: names.FluentBitLuaScriptsConfigMap},
-				},
+			ConfigMap: &corev1.ConfigMapVolumeSource{
+				Name: names.FluentBitLuaScriptsConfigMap,
 			},
 		},
 		{
-			Name: varLogVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				HostPath: &corev1.HostPathVolumeSource{Path: "/var/log"},
-			},
+			Name:     varLogVolumeName,
+			HostPath: &corev1.HostPathVolumeSource{Path: "/var/log"},
 		},
 		{
-			Name: sharedFluentBitConfigVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
-			},
+			Name:     sharedFluentBitConfigVolumeName,
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
 		},
 		{
 			Name: dynamicConfigVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{Name: names.FluentBitSectionsConfigMap},
-					Optional:             new(true),
-				},
+			ConfigMap: &corev1.ConfigMapVolumeSource{
+				Name:     names.FluentBitSectionsConfigMap,
+				Optional: new(true),
 			},
 		},
 		{
 			Name: dynamicFilesVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{Name: names.FluentBitFilesConfigMap},
-					Optional:             new(true),
-				},
+			ConfigMap: &corev1.ConfigMapVolumeSource{
+				Name:     names.FluentBitFilesConfigMap,
+				Optional: new(true),
 			},
 		},
 		{
-			Name: varFluentBitVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				HostPath: &corev1.HostPathVolumeSource{Path: fmt.Sprintf("/var/%s", names.FluentBit)},
-			},
+			Name:     varFluentBitVolumeName,
+			HostPath: &corev1.HostPathVolumeSource{Path: fmt.Sprintf("/var/%s", names.FluentBit)},
 		},
 		{
 			Name: outputTLSConfigVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: names.FluentBitTLSConfigSecret,
-				},
+			Secret: &corev1.SecretVolumeSource{
+				SecretName: names.FluentBitTLSConfigSecret,
 			},
 		},
 	}
@@ -479,10 +452,8 @@ func (aad *AgentApplierDeleter) fluentBitVolumes() []corev1.Volume {
 
 func makeClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
 	clusterRole := rbacv1.ClusterRole{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name.Name,
-			Namespace: name.Namespace,
-		},
+		Name:      name.Name,
+		Namespace: name.Namespace,
 		Rules: []rbacv1.PolicyRule{
 			{
 				APIGroups: []string{""},
@@ -501,16 +472,14 @@ func makeMetricsService(name types.NamespacedName) *corev1.Service {
 	}
 
 	return &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.MetricsServiceName(name.Name),
-			Namespace: name.Namespace,
-			Labels:    serviceLabels,
-			Annotations: map[string]string{
-				commonresources.AnnotationKeyPrometheusScrape: "true",
-				commonresources.AnnotationKeyPrometheusPort:   strconv.Itoa(fbports.HTTP),
-				commonresources.AnnotationKeyPrometheusScheme: "http",
-				commonresources.AnnotationKeyPrometheusPath:   "/api/v2/metrics/prometheus",
-			},
+		Name:      names.MetricsServiceName(name.Name),
+		Namespace: name.Namespace,
+		Labels:    serviceLabels,
+		Annotations: map[string]string{
+			commonresources.AnnotationKeyPrometheusScrape: "true",
+			commonresources.AnnotationKeyPrometheusPort:   strconv.Itoa(fbports.HTTP),
+			commonresources.AnnotationKeyPrometheusScheme: "http",
+			commonresources.AnnotationKeyPrometheusPath:   "/api/v2/metrics/prometheus",
 		},
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{
@@ -529,14 +498,12 @@ func makeMetricsService(name types.NamespacedName) *corev1.Service {
 
 func makeExporterMetricsService(name types.NamespacedName) *corev1.Service {
 	return &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.FluentBitExporterMetricsService,
-			Namespace: name.Namespace,
-			Annotations: map[string]string{
-				commonresources.AnnotationKeyPrometheusScrape: "true",
-				commonresources.AnnotationKeyPrometheusPort:   strconv.Itoa(fbports.ExporterMetrics),
-				commonresources.AnnotationKeyPrometheusScheme: "http",
-			},
+		Name:      names.FluentBitExporterMetricsService,
+		Namespace: name.Namespace,
+		Annotations: map[string]string{
+			commonresources.AnnotationKeyPrometheusScrape: "true",
+			commonresources.AnnotationKeyPrometheusPort:   strconv.Itoa(fbports.ExporterMetrics),
+			commonresources.AnnotationKeyPrometheusScheme: "http",
 		},
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{
@@ -577,10 +544,8 @@ func makeConfigMap(name types.NamespacedName) *corev1.ConfigMap {
 	fluentBitConfig = strings.Replace(fluentBitConfig, "{{ HTTP_PORT }}", strconv.Itoa(fbports.HTTP), 1)
 
 	return &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name.Name,
-			Namespace: name.Namespace,
-		},
+		Name:      name.Name,
+		Namespace: name.Namespace,
 		Data: map[string]string{
 			"fluent-bit.conf": fluentBitConfig,
 			"parsers.conf":    parsersConfig,
@@ -590,21 +555,17 @@ func makeConfigMap(name types.NamespacedName) *corev1.ConfigMap {
 
 func makeSectionsConfigMap(name types.NamespacedName, sectionsConfig map[string]string) *corev1.ConfigMap {
 	return &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name.Name,
-			Namespace: name.Namespace,
-		},
-		Data: sectionsConfig,
+		Name:      name.Name,
+		Namespace: name.Namespace,
+		Data:      sectionsConfig,
 	}
 }
 
 func makeFilesConfigMap(name types.NamespacedName, filesConfig map[string]string) *corev1.ConfigMap {
 	return &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name.Name,
-			Namespace: name.Namespace,
-		},
-		Data: filesConfig,
+		Name:      name.Name,
+		Namespace: name.Namespace,
+		Data:      filesConfig,
 	}
 }
 
@@ -656,31 +617,25 @@ end
 `
 
 	return &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name.Name,
-			Namespace: name.Namespace,
-		},
-		Data: map[string]string{"filter-script.lua": luaFilter},
+		Name:      name.Name,
+		Namespace: name.Namespace,
+		Data:      map[string]string{"filter-script.lua": luaFilter},
 	}
 }
 
 func makeEnvConfigSecret(name types.NamespacedName, envConfigSecret map[string][]byte) *corev1.Secret {
 	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name.Name,
-			Namespace: name.Namespace,
-		},
-		Data: envConfigSecret,
+		Name:      name.Name,
+		Namespace: name.Namespace,
+		Data:      envConfigSecret,
 	}
 }
 
 func makeTLSFileConfigSecret(name types.NamespacedName, tlsFileConfigSecret map[string][]byte) *corev1.Secret {
 	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name.Name,
-			Namespace: name.Namespace,
-		},
-		Data: tlsFileConfigSecret,
+		Name:      name.Name,
+		Namespace: name.Namespace,
+		Data:      tlsFileConfigSecret,
 	}
 }
 

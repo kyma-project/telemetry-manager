@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -13,37 +12,37 @@ import (
 )
 
 func newNamespace(name string) *corev1.Namespace {
-	return &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: name}}
+	return &corev1.Namespace{Name: name}
 }
 
 const name = "name"
 
 func newMetricPipelineAlpha() *telemetryv1alpha1.MetricPipeline {
-	return &telemetryv1alpha1.MetricPipeline{ObjectMeta: metav1.ObjectMeta{Name: name}}
+	return &telemetryv1alpha1.MetricPipeline{Name: name}
 }
 
 func newTracePipelineAlpha() *telemetryv1alpha1.TracePipeline {
-	return &telemetryv1alpha1.TracePipeline{ObjectMeta: metav1.ObjectMeta{Name: name}}
+	return &telemetryv1alpha1.TracePipeline{Name: name}
 }
 
 func newLogPipelineAlpha() *telemetryv1alpha1.LogPipeline {
-	return &telemetryv1alpha1.LogPipeline{ObjectMeta: metav1.ObjectMeta{Name: name}}
+	return &telemetryv1alpha1.LogPipeline{Name: name}
 }
 
 func newMetricPipelineBeta() *telemetryv1beta1.MetricPipeline {
-	return &telemetryv1beta1.MetricPipeline{ObjectMeta: metav1.ObjectMeta{Name: name}}
+	return &telemetryv1beta1.MetricPipeline{Name: name}
 }
 
 func newTracePipelineBeta() *telemetryv1beta1.TracePipeline {
-	return &telemetryv1beta1.TracePipeline{ObjectMeta: metav1.ObjectMeta{Name: name}}
+	return &telemetryv1beta1.TracePipeline{Name: name}
 }
 
 func newLogPipelineBeta() *telemetryv1beta1.LogPipeline {
-	return &telemetryv1beta1.LogPipeline{ObjectMeta: metav1.ObjectMeta{Name: name}}
+	return &telemetryv1beta1.LogPipeline{Name: name}
 }
 
 func newConfigMap(name string) *corev1.ConfigMap {
-	return &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: name}}
+	return &corev1.ConfigMap{Name: name}
 }
 
 func Test_sortObjects(t *testing.T) {

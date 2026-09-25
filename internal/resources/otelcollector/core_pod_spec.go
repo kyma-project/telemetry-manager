@@ -27,13 +27,9 @@ func makePodSpec(
 	volumes := []corev1.Volume{
 		{
 			Name: "config",
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: baseName,
-					},
-					Items: []corev1.KeyToPath{{Key: configFileName, Path: configFileName}},
-				},
+			ConfigMap: &corev1.ConfigMapVolumeSource{
+				Name:  baseName,
+				Items: []corev1.KeyToPath{{Key: configFileName, Path: configFileName}},
 			},
 		},
 	}
@@ -41,9 +37,7 @@ func makePodSpec(
 	volumeMounts := []corev1.VolumeMount{{Name: "config", MountPath: "/conf"}}
 
 	healthProbe := &corev1.Probe{
-		ProbeHandler: corev1.ProbeHandler{
-			HTTPGet: &corev1.HTTPGetAction{Path: "/", Port: intstr.IntOrString{IntVal: ports.HealthCheck}},
-		},
+		HTTPGet: &corev1.HTTPGetAction{Path: "/", Port: intstr.IntOrString{IntVal: ports.HealthCheck}},
 	}
 
 	defaultContainerOpts := []commonresources.ContainerOption{

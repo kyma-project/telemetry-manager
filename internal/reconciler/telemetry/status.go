@@ -108,9 +108,9 @@ func (r *Reconciler) updateGatewayEndpoints(ctx context.Context, telemetry *oper
 	}
 
 	telemetry.Status.Endpoints = operatorv1beta1.GatewayEndpoints{
-		Logs:    logEndpoints,
-		Traces:  traceEndpoints,
-		Metrics: metricEndpoints,
+		Logs:    logEndpoints,    //nolint:staticcheck // Deprecated field still used for backwards compatibility
+		Traces:  traceEndpoints,  //nolint:staticcheck // Deprecated field still used for backwards compatibility
+		Metrics: metricEndpoints, //nolint:staticcheck // Deprecated field still used for backwards compatibility
 		OTLP:    otlpEndpoints,
 	}
 

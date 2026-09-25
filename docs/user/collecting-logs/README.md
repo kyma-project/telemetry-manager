@@ -60,4 +60,4 @@ You can customize your LogPipeline using the available parameters and attributes
   - The Log Agent, running one instance per node, handles tailing logs from stdout using the **runtime** input. When writing logs of an average size of 2KB to stdout, a single Log Agent instance can process approximately 9,000 LPS.
 - **Unavailability of Output**: For up to 5 minutes, a retry for data is attempted when the destination is unavailable. After that, data is dropped.
 - **No Guaranteed Delivery**: The used buffers are volatile. If any gateway or agent instance crashes, logs data can be lost.
-- **Multiple LogPipeline Support**: The maximum amount of LogPipeline resources is 5.
+- **Multiple LogPipeline Support**: The maximum amount of OTel LogPipeline resources is 5, and the maximum amount of Fluent Bit LogPipeline resources is 5, for a total of 10.

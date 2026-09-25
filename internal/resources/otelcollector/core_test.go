@@ -9,7 +9,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -88,7 +87,7 @@ func TestApplyCommonResources_ClusterRoleError(t *testing.T) {
 	name := types.NamespacedName{Name: "test", Namespace: "test-ns"}
 	testRBAC := rbac{
 		clusterRole: &rbacv1.ClusterRole{
-			ObjectMeta: metav1.ObjectMeta{Name: "test-cr"},
+			Name: "test-cr",
 		},
 	}
 
@@ -106,7 +105,7 @@ func TestApplyCommonResources_ClusterRoleBindingError(t *testing.T) {
 	name := types.NamespacedName{Name: "test", Namespace: "test-ns"}
 	testRBAC := rbac{
 		clusterRoleBinding: &rbacv1.ClusterRoleBinding{
-			ObjectMeta: metav1.ObjectMeta{Name: "test-crb"},
+			Name: "test-crb",
 		},
 	}
 
@@ -124,7 +123,7 @@ func TestApplyCommonResources_RoleError(t *testing.T) {
 	name := types.NamespacedName{Name: "test", Namespace: "test-ns"}
 	testRBAC := rbac{
 		role: &rbacv1.Role{
-			ObjectMeta: metav1.ObjectMeta{Name: "test-role", Namespace: "test-ns"},
+			Name: "test-role", Namespace: "test-ns",
 		},
 	}
 
@@ -142,7 +141,7 @@ func TestApplyCommonResources_RoleBindingError(t *testing.T) {
 	name := types.NamespacedName{Name: "test", Namespace: "test-ns"}
 	testRBAC := rbac{
 		roleBinding: &rbacv1.RoleBinding{
-			ObjectMeta: metav1.ObjectMeta{Name: "test-rb", Namespace: "test-ns"},
+			Name: "test-rb", Namespace: "test-ns",
 		},
 	}
 

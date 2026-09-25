@@ -2,7 +2,6 @@ package objects
 
 import (
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type NamepaceOption func(*Namespace)
@@ -40,9 +39,7 @@ func (n *Namespace) Name() string {
 
 func (n *Namespace) K8sObject() *corev1.Namespace {
 	return &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:   n.name,
-			Labels: n.labels,
-		},
+		Name:   n.name,
+		Labels: n.labels,
 	}
 }

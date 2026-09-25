@@ -7,7 +7,6 @@ import (
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
@@ -269,12 +268,10 @@ func (p *Pod) K8sObject() *corev1.Pod {
 	maps.Copy(labels, selectorLabels)
 
 	return &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        p.name,
-			Namespace:   p.namespace,
-			Labels:      labels,
-			Annotations: p.annotations,
-		},
+		Name:        p.name,
+		Namespace:   p.namespace,
+		Labels:      labels,
+		Annotations: p.annotations,
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
 				{
@@ -333,12 +330,10 @@ func (s *Service) WithPrometheusAnnotations(scheme ScrapingScheme) *Service {
 
 func (s *Service) K8sObject() *corev1.Service {
 	return &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        s.name,
-			Namespace:   s.namespace,
-			Annotations: s.annotations,
-			Labels:      selectorLabels,
-		},
+		Name:        s.name,
+		Namespace:   s.namespace,
+		Annotations: s.annotations,
+		Labels:      selectorLabels,
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{
 				{

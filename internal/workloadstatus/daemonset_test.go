@@ -71,7 +71,7 @@ func TestDaemonSetProber_WithStaticErrors(t *testing.T) {
 			t.Parallel()
 
 			daemonSet := &appsv1.DaemonSet{
-				ObjectMeta: metav1.ObjectMeta{Name: "foo", Namespace: "telemetry-system", Generation: tc.desiredGeneration},
+				Name: "foo", Namespace: "telemetry-system", Generation: tc.desiredGeneration,
 				Spec: appsv1.DaemonSetSpec{Selector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{"app": "foo"},
 				}},
@@ -197,7 +197,7 @@ func TestDaemonSet_WithErrorAssert(t *testing.T) {
 			t.Parallel()
 
 			daemonSet := &appsv1.DaemonSet{
-				ObjectMeta: metav1.ObjectMeta{Name: "foo", Namespace: "telemetry-system", Generation: tc.desiredGeneration},
+				Name: "foo", Namespace: "telemetry-system", Generation: tc.desiredGeneration,
 				Spec: appsv1.DaemonSetSpec{Selector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{"app": "foo"},
 				}},
@@ -231,7 +231,7 @@ func TestDaemonSetNotCreated(t *testing.T) {
 
 func TestDaemonSetRollout(t *testing.T) {
 	daemonSet := &appsv1.DaemonSet{
-		ObjectMeta: metav1.ObjectMeta{Name: "foo", Namespace: "telemetry-system", Generation: 1},
+		Name: "foo", Namespace: "telemetry-system", Generation: 1,
 		Spec: appsv1.DaemonSetSpec{Selector: &metav1.LabelSelector{
 			MatchLabels: map[string]string{"app": "foo"},
 		}},

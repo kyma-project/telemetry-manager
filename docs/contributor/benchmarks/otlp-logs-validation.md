@@ -17,19 +17,15 @@ To configure the log agent, deploy the [OTLP Logs Validation YAML](./otlp-logs-v
     ``` bash
     k apply -f telemetry-manager/samples/operator_v1alpha1_telemetry.yaml
 
-    // Execute knowledge-hub/scripts/create_cls_log_pipeline.sh with the corresponding environment variables 
-
     helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
 
-    helm install -n kyma-system logging open-telemetry/opentelemetry-collector -f telemetry-manager/docs/contributor/pocs/assets/otel-log-agent-values.yaml
+    helm install -n kyma-system logging open-telemetry/opentelemetry-collector -f docs/contributor/benchmarks/assets/otel-log-agent-values.yaml
     ```
 
 - To set up the log agent manually, run:
 
     ``` bash
     k apply -f telemetry-manager/samples/operator_v1alpha1_telemetry.yaml
-
-    // Execute knowledge-hub/scripts/create_cls_log_pipeline.sh with the corresponding environment variables 
 
     k apply -f ./otlp-logs-validation.yaml
     ```
@@ -57,6 +53,12 @@ By enabling the storeCheckpoint preset (Helm), the `file_storage` extension is a
 
 
 ## Benchmarking Setup
+
+The Helm values files used in the benchmarks are in the [`assets/`](./assets/) directory:
+- [`otel-log-agent-values.yaml`](./assets/otel-log-agent-values.yaml) — log agent DaemonSet config
+- [`otel-log-gateway-values.yaml`](./assets/otel-log-gateway-values.yaml) — log gateway Deployment config
+- [`otel-logs-values.yaml`](./assets/otel-logs-values.yaml) — combined agent+gateway config
+- [`otel-gateway-pvc.yaml`](./assets/otel-gateway-pvc.yaml) — PVC for the gateway persistent queue
 
 1. Apply the configuration (with Prometheus):
     ``` bash
@@ -408,4 +410,4 @@ In the FluentBit setup, for the very same (initial) scenario (that is, 10 genera
   - We now better understand the performance impact of each OTel processor and of enabling or disabling compression.
   - The generators' configuration greatly influences the setup: More generators exporting less data and taking less CPU leads to higher throughput than fewer generators taking more CPU and exporting more data.
   - There is a hard limit (see debug endpoint scenario) that we still don't fully understand, because strictly based on the benchmarking numbers of OTel, we should be getting higher throughput. It's possible that something related to the infrastructure could be influencing this.
-  - We  now have a more performant setup configuration, being more comparable with the numbers from the FluentBit setup
+  - We now have a more performant setup configuration, being more comparable with the numbers from the FluentBit setup

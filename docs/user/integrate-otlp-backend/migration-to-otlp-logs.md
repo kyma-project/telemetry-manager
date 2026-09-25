@@ -1,5 +1,6 @@
 # Migrate Your LogPipeline From HTTP to OTLP
 
+<!--- custom output/unsupported mode is not part of Help Portal docs --->
 To use the OpenTelemetry Protocol (OTLP) for sending logs, you must migrate your LogPipeline from the `http` or `custom` output to the `otlp` output. With OTLP, you can correlate logs with traces and metrics, collect logs pushed directly from applications, and use features available only for the OTLP-based stack.
 
 ## Prerequisites
@@ -7,6 +8,7 @@ To use the OpenTelemetry Protocol (OTLP) for sending logs, you must migrate your
 * You have an active Kyma cluster with the Telemetry module added.
 * Your observability backend has an OTLP ingestion endpoint.
   If your backend doesn't support OTLP natively, you must run a custom OTel Collector as gateway between the Telemetry module and the target backend.
+<!--- custom output/unsupported mode is not part of Help Portal docs --->
 * You have one or more LogPipeline resources that use the `http` or `custom` output.
   > **TIP:** If your LogPipeline still uses the `v1alpha1` API, migrate it to `v1beta1`. For details, see [Migrate Telemetry Pipelines to v1beta1](../migration-to-v1beta1-api.md).
 
@@ -18,6 +20,7 @@ You can't modify an existing LogPipeline to change its output type. You must cre
 
 In the following sample LogPipeline, see the fields that you must change or remove for the migration:
 
+<!--- custom output/unsupported mode is not part of Help Portal docs --->
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1beta1
 kind: LogPipeline
@@ -52,6 +55,7 @@ See how the deprecated fields map to their new OTLP-based counterparts:
 | :---: | :---: |
 | **spec.output.http** or **spec.output.custom** | Replace with **spec.output.otlp**. |
 | **spec.output.http.uri** | OTLP uses a predefined index that you can't change. If you need a custom index, use reindexing (see [OpenSearch: Reindex Data](https://docs.opensearch.org/latest/im-plugin/reindex-data/)). |
+<!--- custom output/unsupported mode is not part of Help Portal docs --->
 | **spec.filters** | Rewrite custom Fluent Bit filters as OTTL transform or filter expressions. |
 | **spec.variables** and **spec.files** | Incorporate the logic of your custom filters into your new OTTL transform or filter expressions. |
 | **spec.input.runtime.dropLabels** | Configure label enrichment in the central Telemetry resource instead. |
@@ -79,6 +83,7 @@ See how the deprecated fields map to their new OTLP-based counterparts:
             value: "my-backend:4317"
     ```
 
+<!--- custom output/unsupported mode is not part of Help Portal docs --->
 1. (Optional) If your old pipeline uses `custom` filters, rewrite them using the [OpenTelemetry Transformation Language (OTTL)](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/ottl/README.md) and add them to your new LogPipeline (see [Transform and Filter with OTTL](./../filter-and-process/ottl-transform-and-filter/README.md)).
   
    Example: You want to replace a legacy Fluent Bit filter that dropped health checks and added a **tenant** attribute:

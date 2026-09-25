@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"sort"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -16,19 +17,38 @@ import (
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
+// marshalEnvVars converts the env vars map to sorted YAML for deterministic golden file comparison.
+func marshalEnvVars(envVars common.EnvVars) ([]byte, error) {
+	keys := make([]string, 0, len(envVars))
+	for k := range envVars {
+		keys = append(keys, k)
+	}
+
+	sort.Strings(keys)
+
+	ordered := make(map[string]string, len(envVars))
+	for _, k := range keys {
+		ordered[k] = string(envVars[k])
+	}
+
+	return yaml.Marshal(ordered)
+}
+
 func TestBuild(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().Build()
 	sut := Builder{Reader: fakeClient}
 
 	tests := []struct {
-		name              string
-		goldenFileName    string
-		tracePipelines    []telemetryv1beta1.TracePipeline
-		logPipelines      []telemetryv1beta1.LogPipeline
-		metricPipelines   []telemetryv1beta1.MetricPipeline
-		serviceEnrichment string
-		moduleVersion     string
-		vpaActive         bool
+		name                  string
+		goldenFileName        string
+		envVarsGoldenFileName string
+		tracePipelines        []telemetryv1beta1.TracePipeline
+		logPipelines          []telemetryv1beta1.LogPipeline
+		metricPipelines       []telemetryv1beta1.MetricPipeline
+		serviceEnrichment     string
+		moduleVersion         string
+		vpaActive             bool
+		passthroughResolver   bool
 	}{
 		{
 			name:           "gateway with VPA active - all signals",
@@ -578,6 +598,91 @@ func TestBuild(t *testing.T) {
 					Build(),
 			},
 		},
+		// PassthroughResolver scenarios
+		{
+			name:                  "passthrough resolver: all signals with bare host:port endpoints",
+			goldenFileName:        "passthrough-resolver-all-signals.yaml",
+			envVarsGoldenFileName: "passthrough-resolver-all-signals-env-vars.yaml",
+			moduleVersion:         "1.0.0",
+			passthroughResolver:   true,
+			tracePipelines: []telemetryv1beta1.TracePipeline{
+				testutils.NewTracePipelineBuilder().
+					WithName("test-trace").
+					WithOTLPOutput(testutils.OTLPEndpoint("otlp.server:4317")).
+					Build(),
+			},
+			logPipelines: []telemetryv1beta1.LogPipeline{
+				testutils.NewLogPipelineBuilder().
+					WithName("test-log").
+					WithOTLPOutput(testutils.OTLPEndpoint("otlp.server:4317")).
+					Build(),
+			},
+			metricPipelines: []telemetryv1beta1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().
+					WithName("test-metric").
+					WithOTLPInput(true).
+					WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("otlp.server:4317")).
+					Build(),
+			},
+		},
+		{
+			name:                  "passthrough resolver: http:// endpoint stripped to passthrough (insecure)",
+			goldenFileName:        "passthrough-resolver-http-endpoint.yaml",
+			envVarsGoldenFileName: "passthrough-resolver-http-endpoint-env-vars.yaml",
+			moduleVersion:         "1.0.0",
+			passthroughResolver:   true,
+			tracePipelines: []telemetryv1beta1.TracePipeline{
+				testutils.NewTracePipelineBuilder().
+					WithName("test-trace").
+					WithOTLPOutput(testutils.OTLPEndpoint("http://otlp.server:4317")).
+					Build(),
+			},
+		},
+		{
+			name:                  "passthrough resolver: https:// endpoint stripped to passthrough (secure)",
+			goldenFileName:        "passthrough-resolver-https-endpoint.yaml",
+			envVarsGoldenFileName: "passthrough-resolver-https-endpoint-env-vars.yaml",
+			moduleVersion:         "1.0.0",
+			passthroughResolver:   true,
+			tracePipelines: []telemetryv1beta1.TracePipeline{
+				testutils.NewTracePipelineBuilder().
+					WithName("test-trace").
+					WithOTLPOutput(testutils.OTLPEndpoint("https://otlp.server:4317")).
+					Build(),
+			},
+		},
+		{
+			name:                  "passthrough resolver: already-passthrough endpoint unchanged",
+			goldenFileName:        "passthrough-resolver-already-passthrough.yaml",
+			envVarsGoldenFileName: "passthrough-resolver-already-passthrough-env-vars.yaml",
+			moduleVersion:         "1.0.0",
+			passthroughResolver:   true,
+			tracePipelines: []telemetryv1beta1.TracePipeline{
+				testutils.NewTracePipelineBuilder().
+					WithName("test-trace").
+					WithOTLPOutput(
+						testutils.OTLPEndpoint("passthrough:///otlp.server:4317"),
+						testutils.OTLPInsecure(true),
+					).
+					Build(),
+			},
+		},
+		{
+			name:                  "passthrough resolver: http protocol pipelines not rewritten",
+			goldenFileName:        "passthrough-resolver-http-protocol-unchanged.yaml",
+			envVarsGoldenFileName: "passthrough-resolver-http-protocol-unchanged-env-vars.yaml",
+			moduleVersion:         "1.0.0",
+			passthroughResolver:   true,
+			tracePipelines: []telemetryv1beta1.TracePipeline{
+				testutils.NewTracePipelineBuilder().
+					WithName("test-trace").
+					WithOTLPOutput(
+						testutils.OTLPProtocol("http"),
+						testutils.OTLPEndpoint("http://otlp.server:4318"),
+					).
+					Build(),
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -590,13 +695,14 @@ func TestBuild(t *testing.T) {
 					ClusterName:   "${KUBERNETES_SERVICE_HOST}",
 					CloudProvider: "test-cloud-provider",
 				},
-				ServiceEnrichment: tt.serviceEnrichment,
-				ModuleVersion:     tt.moduleVersion,
-				GatewayNamespace:  "kyma-system",
-				VpaActive:         tt.vpaActive,
+				ServiceEnrichment:   tt.serviceEnrichment,
+				ModuleVersion:       tt.moduleVersion,
+				GatewayNamespace:    "kyma-system",
+				VpaActive:           tt.vpaActive,
+				PassthroughResolver: tt.passthroughResolver,
 			}
 
-			config, _, err := sut.Build(context.Background(), buildOptions)
+			config, envVars, err := sut.Build(context.Background(), buildOptions)
 			require.NoError(t, err)
 			configYAML, err := yaml.Marshal(config)
 			require.NoError(t, err, "failed to marshal config")
@@ -604,12 +710,27 @@ func TestBuild(t *testing.T) {
 			goldenFilePath := filepath.Join("testdata", tt.goldenFileName)
 			if testutils.ShouldUpdateGoldenFiles() {
 				testutils.UpdateGoldenFileYAML(t, goldenFilePath, configYAML)
+
+				if tt.envVarsGoldenFileName != "" {
+					envVarsYAML, err := marshalEnvVars(envVars)
+					require.NoError(t, err, "failed to marshal env vars")
+					testutils.UpdateGoldenFileYAML(t, filepath.Join("testdata", tt.envVarsGoldenFileName), envVarsYAML)
+				}
+
 				return
 			}
 
 			goldenFile, err := os.ReadFile(goldenFilePath)
 			require.NoError(t, err, "failed to load golden file")
 			require.Equal(t, string(goldenFile), string(configYAML))
+
+			if tt.envVarsGoldenFileName != "" {
+				envVarsYAML, err := marshalEnvVars(envVars)
+				require.NoError(t, err, "failed to marshal env vars")
+				envVarsGoldenFile, err := os.ReadFile(filepath.Join("testdata", tt.envVarsGoldenFileName))
+				require.NoError(t, err, "failed to load env vars golden file")
+				require.Equal(t, string(envVarsGoldenFile), string(envVarsYAML))
+			}
 		})
 	}
 }

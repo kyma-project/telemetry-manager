@@ -47,11 +47,9 @@ func (p *OTelAgentProber) Probe(ctx context.Context, pipelineName string) (OTelA
 	healthy := !allDropped && !someDropped
 
 	return OTelAgentProbeResult{
-		PipelineProbeResult: PipelineProbeResult{
-			AllDataDropped:  allDropped,
-			SomeDataDropped: someDropped,
-			Healthy:         healthy,
-		},
+		AllDataDropped:  allDropped,
+		SomeDataDropped: someDropped,
+		Healthy:         healthy,
 	}, nil
 }
 

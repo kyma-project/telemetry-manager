@@ -41,6 +41,7 @@ const (
 	metricK8sResourceQuotaUsed                = "k8s.resource_quota.used"
 	metricK8sStatefulSetCurrentPods           = "k8s.statefulset.current_pods"
 	metricK8sStatefulSetDesiredPods           = "k8s.statefulset.desired_pods"
+	metricK8sStatefulSetPodAvailable          = "k8s.statefulset.pod.available"
 	metricK8sStatefulSetReadyPods             = "k8s.statefulset.ready_pods"
 	metricK8sStatefulSetUpdatedPods           = "k8s.statefulset.updated_pods"
 
@@ -123,6 +124,7 @@ var k8sClusterReceiverExtraMetrics = []string{
 	metricK8sResourceQuotaHardLimit,
 	metricK8sResourceQuotaUsed,
 	metricK8sCronJobActiveJobs,
+	metricK8sStatefulSetPodAvailable,
 
 	// Upstream optional metrics
 	metricK8sContainerStatusReason,

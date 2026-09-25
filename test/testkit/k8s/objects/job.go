@@ -42,11 +42,9 @@ func (j *Job) K8sObject() *batchv1.Job {
 	podSpec.RestartPolicy = corev1.RestartPolicyNever
 
 	return &batchv1.Job{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      j.name,
-			Namespace: j.namespace,
-			Labels:    j.labels,
-		},
+		Name:      j.name,
+		Namespace: j.namespace,
+		Labels:    j.labels,
 		Spec: batchv1.JobSpec{
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{

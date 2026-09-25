@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
@@ -20,9 +19,7 @@ func TestLogPipelineValidator_ValidateCreate(t *testing.T) {
 		{
 			name: "custom output",
 			pipeline: &telemetryv1alpha1.LogPipeline{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "custom-output",
-				},
+				Name: "custom-output",
 				Spec: telemetryv1alpha1.LogPipelineSpec{
 					Output: telemetryv1alpha1.LogPipelineOutput{
 						FluentBitCustom: "custom-fluentbit-output",
@@ -107,9 +104,7 @@ func TestLogPipelineValidator_ValidateUpdate(t *testing.T) {
 			name:        "custom output",
 			oldPipeline: &telemetryv1alpha1.LogPipeline{},
 			newPipeline: &telemetryv1alpha1.LogPipeline{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "custom-output",
-				},
+				Name: "custom-output",
 				Spec: telemetryv1alpha1.LogPipelineSpec{
 					Output: telemetryv1alpha1.LogPipelineOutput{
 						FluentBitCustom: "custom-fluentbit-output",

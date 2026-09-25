@@ -2,7 +2,6 @@ package objects
 
 import (
 	rbacv1 "k8s.io/api/rbac/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type RoleBindingOption func(*RoleBinding)
@@ -57,11 +56,9 @@ func (r *RoleBinding) Namespace() string {
 
 func (r *RoleBinding) K8sObject() *rbacv1.RoleBinding {
 	return &rbacv1.RoleBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      r.name,
-			Namespace: r.namespace,
-		},
-		Subjects: r.subjects,
-		RoleRef:  r.roleRef,
+		Name:      r.name,
+		Namespace: r.namespace,
+		Subjects:  r.subjects,
+		RoleRef:   r.roleRef,
 	}
 }

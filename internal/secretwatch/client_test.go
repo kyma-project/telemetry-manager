@@ -46,10 +46,8 @@ func TestSecretWatchTriggersEvent(t *testing.T) {
 		eventChan := make(chan event.GenericEvent, 10)
 
 		secret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testSecretName1,
-				Namespace: testNamespace,
-			},
+			Name:      testSecretName1,
+			Namespace: testNamespace,
 			Data: map[string][]byte{
 				"key": []byte("value"),
 			},
@@ -117,10 +115,8 @@ func TestSecretWatchTriggersEvent(t *testing.T) {
 
 		// Simulate secret creation via the fake watcher
 		secret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testSecretName1,
-				Namespace: testNamespace,
-			},
+			Name:      testSecretName1,
+			Namespace: testNamespace,
 		}
 		fakeWatcher.Add(secret)
 
@@ -134,10 +130,8 @@ func TestSecretWatchTriggersEvent(t *testing.T) {
 		eventChan := make(chan event.GenericEvent, 10)
 
 		secret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testSecretName1,
-				Namespace: testNamespace,
-			},
+			Name:      testSecretName1,
+			Namespace: testNamespace,
 		}
 		clientset := fake.NewClientset(secret)
 
@@ -189,10 +183,8 @@ func TestSecretWatchTriggersEvent(t *testing.T) {
 		eventChan := make(chan event.GenericEvent, 10)
 
 		secret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testSecretName1,
-				Namespace: testNamespace,
-			},
+			Name:      testSecretName1,
+			Namespace: testNamespace,
 		}
 		clientset := fake.NewClientset(secret)
 
@@ -232,10 +224,8 @@ func TestSyncWatchersMultipleCalls(t *testing.T) {
 		eventChan := make(chan event.GenericEvent, 10)
 
 		secret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testSecretName1,
-				Namespace: testNamespace,
-			},
+			Name:      testSecretName1,
+			Namespace: testNamespace,
 		}
 		clientset := fake.NewClientset(secret)
 
@@ -283,10 +273,8 @@ func TestSyncWatchersMultipleCalls(t *testing.T) {
 		eventChan := make(chan event.GenericEvent, 10)
 
 		secret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testSecretName1,
-				Namespace: testNamespace,
-			},
+			Name:      testSecretName1,
+			Namespace: testNamespace,
 		}
 		clientset := fake.NewClientset(secret)
 
@@ -332,10 +320,8 @@ func TestSyncWatchersMultipleCalls(t *testing.T) {
 		eventChan := make(chan event.GenericEvent, 10)
 
 		secret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testSecretName1,
-				Namespace: testNamespace,
-			},
+			Name:      testSecretName1,
+			Namespace: testNamespace,
 		}
 		clientset := fake.NewClientset(secret)
 
@@ -379,16 +365,12 @@ func TestSyncWatchersMultipleCalls(t *testing.T) {
 		eventChan := make(chan event.GenericEvent, 10)
 
 		secret1 := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testSecretName1,
-				Namespace: testNamespace,
-			},
+			Name:      testSecretName1,
+			Namespace: testNamespace,
 		}
 		secret2 := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testSecretName2,
-				Namespace: testNamespace,
-			},
+			Name:      testSecretName2,
+			Namespace: testNamespace,
 		}
 		clientset := fake.NewClientset(secret1, secret2)
 
@@ -471,16 +453,12 @@ func TestSyncWatchersMultipleCalls(t *testing.T) {
 		eventChan := make(chan event.GenericEvent, 10)
 
 		secret1 := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testSecretName1,
-				Namespace: testNamespace,
-			},
+			Name:      testSecretName1,
+			Namespace: testNamespace,
 		}
 		secret2 := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testSecretName2,
-				Namespace: testNamespace,
-			},
+			Name:      testSecretName2,
+			Namespace: testNamespace,
 		}
 		clientset := fake.NewClientset(secret1, secret2)
 
@@ -562,10 +540,8 @@ func TestSyncWatchersMultipleCalls(t *testing.T) {
 		eventChan := make(chan event.GenericEvent, 10)
 
 		secret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testSecretName1,
-				Namespace: testNamespace,
-			},
+			Name:      testSecretName1,
+			Namespace: testNamespace,
 		}
 		clientset := fake.NewClientset(secret)
 
@@ -636,10 +612,8 @@ func TestSyncWatchersMultipleCalls(t *testing.T) {
 		eventChan := make(chan event.GenericEvent, 10)
 
 		secret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testSecretName1,
-				Namespace: testNamespace,
-			},
+			Name:      testSecretName1,
+			Namespace: testNamespace,
 		}
 		clientset := fake.NewClientset(secret)
 
@@ -739,10 +713,8 @@ func TestPipelinesWithSameNameButDifferentTypes(t *testing.T) {
 		eventChan := make(chan event.GenericEvent, 10)
 
 		secret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testSecretName1,
-				Namespace: testNamespace,
-			},
+			Name:      testSecretName1,
+			Namespace: testNamespace,
 		}
 		clientset := fake.NewClientset(secret)
 
@@ -801,10 +773,8 @@ func TestWatcherErrorHandling(t *testing.T) {
 		eventChan := make(chan event.GenericEvent, 10)
 
 		secret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testSecretName1,
-				Namespace: testNamespace,
-			},
+			Name:      testSecretName1,
+			Namespace: testNamespace,
 		}
 		clientset := fake.NewClientset(secret)
 
@@ -911,16 +881,12 @@ func TestRemoveFromWatchers(t *testing.T) {
 		eventChan := make(chan event.GenericEvent, 10)
 
 		secret1 := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testSecretName1,
-				Namespace: testNamespace,
-			},
+			Name:      testSecretName1,
+			Namespace: testNamespace,
 		}
 		secret2 := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testSecretName2,
-				Namespace: testNamespace,
-			},
+			Name:      testSecretName2,
+			Namespace: testNamespace,
 		}
 		clientset := fake.NewClientset(secret1, secret2)
 
@@ -986,10 +952,8 @@ func TestRemoveFromWatchers(t *testing.T) {
 		eventChan := make(chan event.GenericEvent, 10)
 
 		secret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testSecretName1,
-				Namespace: testNamespace,
-			},
+			Name:      testSecretName1,
+			Namespace: testNamespace,
 		}
 		clientset := fake.NewClientset(secret)
 

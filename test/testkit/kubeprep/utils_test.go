@@ -6,7 +6,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -18,11 +17,9 @@ func TestApplyYAML_UpdatesExistingResources(t *testing.T) {
 	_ = corev1.AddToScheme(scheme)
 
 	existingCM := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:            "test-cm",
-			Namespace:       "default",
-			ResourceVersion: "12345",
-		},
+		Name:            "test-cm",
+		Namespace:       "default",
+		ResourceVersion: "12345",
 		Data: map[string]string{
 			"old-key": "old-value",
 		},

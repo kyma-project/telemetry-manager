@@ -11,9 +11,7 @@ import (
 )
 
 var v1alpha1LogPipeline = &LogPipeline{
-	ObjectMeta: metav1.ObjectMeta{
-		Name: "log-pipeline-test",
-	},
+	Name: "log-pipeline-test",
 	Spec: LogPipelineSpec{
 		Input: LogPipelineInput{
 			Application: &LogPipelineApplicationInput{
@@ -111,17 +109,13 @@ var v1alpha1LogPipeline = &LogPipeline{
 				},
 				Headers: []Header{
 					{
-						Name: "header1",
-						ValueType: ValueType{
-							Value: "value1",
-						},
+						Name:   "header1",
+						Value:  "value1",
 						Prefix: "prefix1",
 					},
 					{
-						Name: "header2",
-						ValueType: ValueType{
-							Value: "value2",
-						},
+						Name:   "header2",
+						Value:  "value2",
 						Prefix: "prefix2",
 					},
 				},
@@ -155,9 +149,7 @@ var v1alpha1LogPipeline = &LogPipeline{
 }
 
 var v1beta1LogPipeline = &telemetryv1beta1.LogPipeline{
-	ObjectMeta: metav1.ObjectMeta{
-		Name: "log-pipeline-test",
-	},
+	Name: "log-pipeline-test",
 	Spec: telemetryv1beta1.LogPipelineSpec{
 		Input: telemetryv1beta1.LogPipelineInput{
 			Runtime: &telemetryv1beta1.LogPipelineRuntimeInput{
@@ -250,17 +242,13 @@ var v1beta1LogPipeline = &telemetryv1beta1.LogPipeline{
 				}},
 				Headers: []telemetryv1beta1.Header{
 					{
-						Name: "header1",
-						ValueType: telemetryv1beta1.ValueType{
-							Value: "value1",
-						},
+						Name:   "header1",
+						Value:  "value1",
 						Prefix: "prefix1",
 					},
 					{
-						Name: "header2",
-						ValueType: telemetryv1beta1.ValueType{
-							Value: "value2",
-						},
+						Name:   "header2",
+						Value:  "value2",
 						Prefix: "prefix2",
 					},
 				},

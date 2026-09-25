@@ -42,7 +42,7 @@ func (b *Builder) buildTracePipelines(ctx context.Context, builder *common.Compo
 			b.addTraceUserDefinedTransformProcessor(builder),
 			b.addTraceUserDefinedFilterProcessor(builder),
 			b.addTraceBatchProcessor(builder),
-			b.addTraceOTLPExporter(builder, queueSize),
+			b.addTraceOTLPExporter(builder, queueSize, opts.PassthroughResolver),
 		); err != nil {
 			return fmt.Errorf("failed to add trace service pipeline: %w", err)
 		}
@@ -204,7 +204,7 @@ func (b *Builder) addTraceBatchProcessor(builder *common.ComponentBuilder[*telem
 	)
 }
 
-func (b *Builder) addTraceOTLPExporter(builder *common.ComponentBuilder[*telemetryv1beta1.TracePipeline], queueSize int) buildTraceComponentFunc {
+func (b *Builder) addTraceOTLPExporter(builder *common.ComponentBuilder[*telemetryv1beta1.TracePipeline], queueSize int, passthroughResolver bool) buildTraceComponentFunc {
 	return builder.AddExporter(
 		formatTraceOTLPExporterID,
 		func(ctx context.Context, tp *telemetryv1beta1.TracePipeline) (any, common.EnvVars, error) {
@@ -213,6 +213,7 @@ func (b *Builder) addTraceOTLPExporter(builder *common.ComponentBuilder[*telemet
 				tp.Spec.Output.OTLP,
 				pipelines.TracePipelineRef(tp),
 				common.NewSendingQueue(queueSize),
+				common.WithPassthroughResolverIf(passthroughResolver),
 			)
 
 			return otlpExporterBuilder.OTLPExporter(ctx)

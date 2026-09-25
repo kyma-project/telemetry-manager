@@ -2,7 +2,6 @@ package backend
 
 import (
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
@@ -99,10 +98,8 @@ func (cm *fluentdConfigMapBuilder) K8sObject() *corev1.ConfigMap {
 	}
 
 	return &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      cm.name,
-			Namespace: cm.namespace,
-		},
-		Data: data,
+		Name:      cm.name,
+		Namespace: cm.namespace,
+		Data:      data,
 	}
 }

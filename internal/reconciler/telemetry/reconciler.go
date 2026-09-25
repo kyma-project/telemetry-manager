@@ -8,7 +8,6 @@ import (
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	autoscalingvpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -118,9 +117,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		}
 	}
 
-	requeue := telemetry.Status.State == operatorv1beta1.StateWarning
+	if telemetry.Status.State == operatorv1beta1.StateWarning {
+		return ctrl.Result{RequeueAfter: 0}, err
+	}
 
-	return ctrl.Result{Requeue: requeue}, err
+	return ctrl.Result{}, err
 }
 
 func (r *Reconciler) doReconcile(ctx context.Context, telemetry *operatorv1beta1.Telemetry, logLevel string) error {
@@ -213,10 +214,8 @@ func (r *Reconciler) cleanupSelfMonitorVPA(ctx context.Context) error {
 	}
 
 	vpa := &autoscalingvpav1.VerticalPodAutoscaler{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.SelfMonitor,
-			Namespace: r.config.TargetNamespace(),
-		},
+		Name:      names.SelfMonitor,
+		Namespace: r.config.TargetNamespace(),
 	}
 
 	if err := k8sutils.DeleteObject(ctx, r.Client, vpa); err != nil {

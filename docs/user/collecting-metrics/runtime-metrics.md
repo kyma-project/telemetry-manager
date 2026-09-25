@@ -128,6 +128,8 @@ The following metrics can be collected from the [kubeletstatsreceiver](https://g
 - `k8s.node.cpu.usage`
 - `k8s.node.filesystem.available`
 - `k8s.node.filesystem.capacity`
+- `k8s.node.filesystem.inode.count`
+- `k8s.node.filesystem.inode.free`
 - `k8s.node.filesystem.usage`
 - `k8s.node.memory.available`
 - `k8s.node.memory.major_page_faults`
@@ -225,5 +227,6 @@ The following metrics can be collected from the [k8sclusterreceiver](https://git
 - `k8s.service.load_balancer.ingress.count`
 - `k8s.statefulset.current_pods`
 - `k8s.statefulset.desired_pods`
+- `k8s.statefulset.pod.available`
 - `k8s.statefulset.ready_pods`
 - `k8s.statefulset.updated_pods`

@@ -106,7 +106,7 @@ After you complete the preparation steps, update the dependency versions in the 
 2. Run `make generate`. This automatically updates the `telemetrygen` version in other files, such as `test/testkit/images.go`.
 3. Update the dependency versions for `github.com/open-telemetry/opentelemetry-collector-contrib` in the `go.mod` file.
 4. Run `make tidy`.
-5. Create a bump PR that references the merged `opentelemetry-collector-components` PR.
+5. If Renovate already opened a PR for bumping the OTel packages, use it and change the title to `feat: bump OTel Collector to x.y.z`. Otherwise, create a new bump PR. Either way, reference the merged `opentelemetry-collector-components` PR.
 6. Add the `build-image` label to the PR to trigger the `Build Manager Image` workflow and approve the workflow run. The workflow builds an image from the PR, which is required to run load tests before merging.
 7. After the `Build Manager Image` workflow finishes execution, manually run the `PR Load Test` GitHub workflow, and document the performance results of the load test in the [benchmark documentation](./benchmarks/results).
 8. Merge the PR.

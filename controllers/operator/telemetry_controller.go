@@ -248,10 +248,8 @@ func (r *TelemetryController) createTelemetryRequests(ctx context.Context) []rec
 	var requests []reconcile.Request
 	for _, t := range telemetries.Items {
 		requests = append(requests, reconcile.Request{
-			NamespacedName: client.ObjectKey{
-				Name:      t.Name,
-				Namespace: t.Namespace,
-			},
+			Name:      t.Name,
+			Namespace: t.Namespace,
 		})
 	}
 

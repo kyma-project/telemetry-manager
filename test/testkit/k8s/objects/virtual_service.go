@@ -6,7 +6,6 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 	istionetworkingv1 "istio.io/api/networking/v1"
 	istionetworkingclientv1 "istio.io/client-go/pkg/apis/networking/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // VirtualService builds an Istio VirtualService with optional HTTP fault injection (delay / abort).
@@ -78,10 +77,8 @@ func (s *VirtualService) WithFaultDelay(percentage float64, delay time.Duration)
 
 func (s *VirtualService) K8sObject() *istionetworkingclientv1.VirtualService {
 	return &istionetworkingclientv1.VirtualService{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      s.name,
-			Namespace: s.namespace,
-		},
+		Name:      s.name,
+		Namespace: s.namespace,
 		Spec: istionetworkingv1.VirtualService{
 			Hosts: []string{s.host},
 			Http: []*istionetworkingv1.HTTPRoute{

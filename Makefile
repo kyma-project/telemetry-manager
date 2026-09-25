@@ -276,6 +276,11 @@ docker-build: ## Build docker image with the manager
 docker-build-local: ## Build docker image for local E2E testing (tagged as telemetry-manager:latest for k3d auto-import)
 	docker build -t telemetry-manager:latest .
 
+.PHONY: deploy-local
+deploy-local: docker-build-local ## Build, import into k3d, and restart telemetry-manager
+	k3d image import telemetry-manager:latest -c kyma
+	$(KUBECTL) rollout restart deployment -n kyma-system telemetry-manager
+
 .PHONY: docker-push
 docker-push: ## Push docker image with the manager
 	docker push ${MANAGER_IMAGE}

@@ -194,10 +194,8 @@ func (aad *AgentApplierDeleter) ApplyResources(ctx context.Context, c client.Cli
 		} else {
 			// If VPA is disabled, ensure that any existing VPA is cleaned up
 			vpa := &autoscalingvpav1.VerticalPodAutoscaler{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      name.Name,
-					Namespace: name.Namespace,
-				},
+				Name:      name.Name,
+				Namespace: name.Namespace,
 			}
 			if err := k8sutils.DeleteObject(ctx, c, vpa); err != nil {
 				return fmt.Errorf("failed to delete VPA: %w", err)
@@ -345,10 +343,8 @@ proxyMetadata:
 func makeIstioCertVolume() corev1.Volume {
 	// emptyDir volume for Istio certificates
 	return corev1.Volume{
-		Name: istioCertVolumeName,
-		VolumeSource: corev1.VolumeSource{
-			EmptyDir: &corev1.EmptyDirVolumeSource{},
-		},
+		Name:     istioCertVolumeName,
+		EmptyDir: &corev1.EmptyDirVolumeSource{},
 	}
 }
 
@@ -363,11 +359,9 @@ func makeIstioCertVolumeMount() corev1.VolumeMount {
 func makePodLogsVolume() corev1.Volume {
 	return corev1.Volume{
 		Name: logVolumeName,
-		VolumeSource: corev1.VolumeSource{
-			HostPath: &corev1.HostPathVolumeSource{
-				Path: logVolumePath,
-				Type: nil,
-			},
+		HostPath: &corev1.HostPathVolumeSource{
+			Path: logVolumePath,
+			Type: nil,
 		},
 	}
 }
@@ -383,11 +377,9 @@ func makePodLogsVolumeMount() corev1.VolumeMount {
 func makeFileLogCheckpointVolume() corev1.Volume {
 	return corev1.Volume{
 		Name: checkpointVolumeName,
-		VolumeSource: corev1.VolumeSource{
-			HostPath: &corev1.HostPathVolumeSource{
-				Path: CheckpointVolumePath,
-				Type: ptr.To(corev1.HostPathDirectoryOrCreate),
-			},
+		HostPath: &corev1.HostPathVolumeSource{
+			Path: CheckpointVolumePath,
+			Type: ptr.To(corev1.HostPathDirectoryOrCreate),
 		},
 	}
 }

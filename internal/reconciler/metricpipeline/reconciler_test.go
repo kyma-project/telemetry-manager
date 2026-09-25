@@ -162,12 +162,10 @@ func TestAgentHealthCondition(t *testing.T) {
 func TestSecretReferenceValidation(t *testing.T) {
 	t.Run("referenced secret exists", func(t *testing.T) {
 		secret := &corev1.Secret{
-			TypeMeta: metav1.TypeMeta{},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "some-secret",
-				Namespace: "some-namespace",
-			},
-			Data: map[string][]byte{"user": {}, "password": {}},
+			TypeMeta:  metav1.TypeMeta{},
+			Name:      "some-secret",
+			Namespace: "some-namespace",
+			Data:      map[string][]byte{"user": {}, "password": {}},
 		}
 		pipeline := testutils.NewMetricPipelineBuilder().WithMetricPipelineOTLPOutput(testutils.OTLPBasicAuthFromSecret(secret.Name, secret.Namespace, "user", "password")).Build()
 		fakeClient := newTestClient(t, &pipeline)
@@ -1163,10 +1161,8 @@ func TestUsageTracking(t *testing.T) {
 				WithMetricPipelineOTLPOutput(testutils.OTLPEndpointFromSecret("endpoint-secret", "default", "host")).
 				Build(),
 			secret: &corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "endpoint-secret",
-					Namespace: "default",
-				},
+				Name:      "endpoint-secret",
+				Namespace: "default",
 				Data: map[string][]byte{
 					"host": []byte("endpoint.example.com"),
 				},

@@ -82,10 +82,8 @@ func OTLPBasicAuthFromSecret(secretName, secretNamespace, userKey, passwordKey s
 func OTLPCustomHeader(name, value, prefix string) OTLPOutputOption {
 	return func(output *telemetryv1beta1.OTLPOutput) {
 		output.Headers = append(output.Headers, telemetryv1beta1.Header{
-			Name: name,
-			ValueType: telemetryv1beta1.ValueType{
-				Value: value,
-			},
+			Name:   name,
+			Value:  value,
 			Prefix: prefix,
 		})
 	}

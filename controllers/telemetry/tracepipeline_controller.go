@@ -228,9 +228,7 @@ func (r *TracePipelineController) enqueueAllPipelines(ctx context.Context) []rec
 	requests := make([]reconcile.Request, len(pipelineList.Items))
 	for i := range pipelineList.Items {
 		requests[i] = reconcile.Request{
-			NamespacedName: types.NamespacedName{
-				Name: pipelineList.Items[i].Name,
-			},
+			Name: pipelineList.Items[i].Name,
 		}
 	}
 

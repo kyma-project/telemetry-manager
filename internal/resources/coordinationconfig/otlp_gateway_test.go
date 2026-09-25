@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -74,11 +73,9 @@ func TestReadOTLPGatewayConfig_EmptyConfigMap(t *testing.T) {
 	_ = corev1.AddToScheme(scheme)
 
 	cm := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.OTLPGatewayCoordinationConfigMap,
-			Namespace: "kyma-system",
-		},
-		Data: map[string]string{},
+		Name:      names.OTLPGatewayCoordinationConfigMap,
+		Namespace: "kyma-system",
+		Data:      map[string]string{},
 	}
 
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cm).Build()
@@ -103,10 +100,8 @@ func TestReadOTLPGatewayConfig_WithPipelines(t *testing.T) {
 `
 
 	cm := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.OTLPGatewayCoordinationConfigMap,
-			Namespace: "kyma-system",
-		},
+		Name:      names.OTLPGatewayCoordinationConfigMap,
+		Namespace: "kyma-system",
 		Data: map[string]string{
 			ConfigMapDataKey: yamlData,
 		},
@@ -141,10 +136,8 @@ func TestReadOTLPGatewayConfig_InvalidYAML(t *testing.T) {
 	_ = corev1.AddToScheme(scheme)
 
 	cm := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.OTLPGatewayCoordinationConfigMap,
-			Namespace: "kyma-system",
-		},
+		Name:      names.OTLPGatewayCoordinationConfigMap,
+		Namespace: "kyma-system",
 		Data: map[string]string{
 			ConfigMapDataKey: "invalid: yaml: [}",
 		},
@@ -173,10 +166,8 @@ metricPipelines:
 `
 
 	cm := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.OTLPGatewayCoordinationConfigMap,
-			Namespace: "kyma-system",
-		},
+		Name:      names.OTLPGatewayCoordinationConfigMap,
+		Namespace: "kyma-system",
 		Data: map[string]string{
 			ConfigMapDataKey: yamlData,
 		},
@@ -247,10 +238,8 @@ func TestWritePipelineReference_AddToExistingConfigMap(t *testing.T) {
 `, yamlKey)
 
 			cm := &corev1.ConfigMap{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      names.OTLPGatewayCoordinationConfigMap,
-					Namespace: "kyma-system",
-				},
+				Name:      names.OTLPGatewayCoordinationConfigMap,
+				Namespace: "kyma-system",
 				Data: map[string]string{
 					ConfigMapDataKey: yamlData,
 				},
@@ -303,10 +292,8 @@ func TestWritePipelineReference_UpdateExisting(t *testing.T) {
 `, yamlKey)
 
 			cm := &corev1.ConfigMap{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      names.OTLPGatewayCoordinationConfigMap,
-					Namespace: "kyma-system",
-				},
+				Name:      names.OTLPGatewayCoordinationConfigMap,
+				Namespace: "kyma-system",
 				Data: map[string]string{
 					ConfigMapDataKey: yamlData,
 				},
@@ -345,10 +332,8 @@ func TestWritePipelineReference_InvalidYAMLInExisting(t *testing.T) {
 	_ = corev1.AddToScheme(scheme)
 
 	cm := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.OTLPGatewayCoordinationConfigMap,
-			Namespace: "kyma-system",
-		},
+		Name:      names.OTLPGatewayCoordinationConfigMap,
+		Namespace: "kyma-system",
 		Data: map[string]string{
 			ConfigMapDataKey: "invalid: yaml: [}",
 		},
@@ -378,10 +363,8 @@ func TestWritePipelineReference_UpdateError(t *testing.T) {
 	_ = corev1.AddToScheme(scheme)
 
 	cm := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.OTLPGatewayCoordinationConfigMap,
-			Namespace: "kyma-system",
-		},
+		Name:      names.OTLPGatewayCoordinationConfigMap,
+		Namespace: "kyma-system",
 		Data: map[string]string{
 			ConfigMapDataKey: "tracePipelines: []",
 		},
@@ -410,10 +393,8 @@ func TestRemovePipelineReference_RemoveFromExisting(t *testing.T) {
 `, yamlKey)
 
 			cm := &corev1.ConfigMap{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      names.OTLPGatewayCoordinationConfigMap,
-					Namespace: "kyma-system",
-				},
+				Name:      names.OTLPGatewayCoordinationConfigMap,
+				Namespace: "kyma-system",
 				Data: map[string]string{
 					ConfigMapDataKey: yamlData,
 				},
@@ -448,10 +429,8 @@ func TestRemovePipelineReference_Idempotent(t *testing.T) {
 `, yamlKey)
 
 			cm := &corev1.ConfigMap{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      names.OTLPGatewayCoordinationConfigMap,
-					Namespace: "kyma-system",
-				},
+				Name:      names.OTLPGatewayCoordinationConfigMap,
+				Namespace: "kyma-system",
 				Data: map[string]string{
 					ConfigMapDataKey: yamlData,
 				},
@@ -486,10 +465,8 @@ func TestRemovePipelineReference_RemoveAll(t *testing.T) {
 `, yamlKey)
 
 			cm := &corev1.ConfigMap{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      names.OTLPGatewayCoordinationConfigMap,
-					Namespace: "kyma-system",
-				},
+				Name:      names.OTLPGatewayCoordinationConfigMap,
+				Namespace: "kyma-system",
 				Data: map[string]string{
 					ConfigMapDataKey: yamlData,
 				},
@@ -650,11 +627,9 @@ func TestCollectSecretVersions(t *testing.T) {
 
 	t.Run("CollectsVersionFromExistingSecret", func(t *testing.T) {
 		secret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:            "my-secret",
-				Namespace:       "kyma-system",
-				ResourceVersion: "12345",
-			},
+			Name:            "my-secret",
+			Namespace:       "kyma-system",
+			ResourceVersion: "12345",
 			Data: map[string][]byte{
 				"endpoint": []byte("http://backend:4318"),
 			},
@@ -708,11 +683,9 @@ func TestCollectSecretVersions(t *testing.T) {
 
 	t.Run("DeduplicatesByNamespace", func(t *testing.T) {
 		secret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:            "my-secret",
-				Namespace:       "kyma-system",
-				ResourceVersion: "12345",
-			},
+			Name:            "my-secret",
+			Namespace:       "kyma-system",
+			ResourceVersion: "12345",
 			Data: map[string][]byte{
 				"endpoint": []byte("http://backend:4318"),
 				"token":    []byte("secret-token"),
@@ -743,18 +716,14 @@ func TestCollectSecretVersions(t *testing.T) {
 
 	t.Run("HandlesMultipleSecrets", func(t *testing.T) {
 		secret1 := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:            "secret1",
-				Namespace:       "kyma-system",
-				ResourceVersion: "111",
-			},
+			Name:            "secret1",
+			Namespace:       "kyma-system",
+			ResourceVersion: "111",
 		}
 		secret2 := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:            "secret2",
-				Namespace:       "default",
-				ResourceVersion: "222",
-			},
+			Name:            "secret2",
+			Namespace:       "default",
+			ResourceVersion: "222",
 		}
 
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(secret1, secret2).Build()
@@ -868,10 +837,8 @@ func TestWritePipelineReference_ConflictReturnsError(t *testing.T) {
 	_ = corev1.AddToScheme(scheme)
 
 	cm := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      names.OTLPGatewayCoordinationConfigMap,
-			Namespace: "kyma-system",
-		},
+		Name:      names.OTLPGatewayCoordinationConfigMap,
+		Namespace: "kyma-system",
 		Data: map[string]string{
 			ConfigMapDataKey: "tracePipelines: []",
 		},
