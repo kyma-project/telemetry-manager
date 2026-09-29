@@ -1,0 +1,29 @@
+name: Triage
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  label-external-issues:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+    permissions:
+      issues: write
+      members: read
+    steps:
+      - name: Add needs-triage label for non-team members
+        run: |
+          author="${{ github.event.issue.user.login }}"
+          issue_number="${{ github.event.issue.number }}"
+
+          status=$(gh api \
+            -H "Accept: application/vnd.github+json" \
+            /orgs/kyma-project/teams/observability/memberships/${author} \
+            --jq '.state' 2>/dev/null || echo "not_found")
+
+          if [ "$status" != "active" ]; then
+            gh issue edit "$issue_number" --repo "$GH_REPO" --add-label "needs-triage"
+          fi
