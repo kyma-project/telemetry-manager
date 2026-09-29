@@ -42,6 +42,7 @@ tls.key
 .claude/cve-triage/*
 !.claude/cve-triage/context.md
 !.claude/cve-triage/history.md
+!.claude/skills/
 CLAUDE.local.md
 
 dependencies/sample-app/vendor
