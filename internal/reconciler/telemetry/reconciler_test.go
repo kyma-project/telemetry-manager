@@ -6,6 +6,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -144,4 +145,42 @@ func TestReconcile_ServiceAttributesEnrichmentStrategyMetric_Switch(t *testing.T
 
 	require.Equal(t, 0.0, testutil.ToFloat64(metrics.ServiceAttributesEnrichmentStrategy.WithLabelValues("kyma-legacy")))
 	require.Equal(t, 1.0, testutil.ToFloat64(metrics.ServiceAttributesEnrichmentStrategy.WithLabelValues("otel")))
+}
+
+func TestEnsureModuleLabel(t *testing.T) {
+	tests := []struct {
+		name           string
+		existingLabels map[string]string
+	}{
+		{
+			name:           "adds module label when absent",
+			existingLabels: nil,
+		},
+		{
+			name:           "adds module label when other labels exist",
+			existingLabels: map[string]string{"some-other": "label"},
+		},
+		{
+			name:           "no-ops when module label already present",
+			existingLabels: map[string]string{commonresources.LabelKeyKymaModule: commonresources.LabelValueKymaModule},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			telemetryCR := &operatorv1beta1.Telemetry{
+				Name:      telemetryName,
+				Namespace: telemetryNamespace,
+				Labels:    tt.existingLabels,
+			}
+			fakeClient := newTestClient(t, telemetryCR)
+			sut := newTestReconciler(t, fakeClient)
+
+			reconcileAndGet(t, sut, telemetryName, telemetryNamespace)
+
+			var updated operatorv1beta1.Telemetry
+			require.NoError(t, fakeClient.Get(t.Context(), types.NamespacedName{Name: telemetryName, Namespace: telemetryNamespace}, &updated))
+			require.Equal(t, commonresources.LabelValueKymaModule, updated.Labels[commonresources.LabelKeyKymaModule])
+		})
+	}
 }

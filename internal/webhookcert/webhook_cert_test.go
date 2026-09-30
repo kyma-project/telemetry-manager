@@ -373,6 +373,7 @@ func TestCreateSecret(t *testing.T) {
 
 	require.Contains(t, secret.Data, "ca.crt")
 	require.Contains(t, secret.Data, "ca.key")
+	require.Equal(t, "telemetry", secret.Labels["kyma-project.io/module"])
 }
 
 func TestReuseExistingCertificate(t *testing.T) {
