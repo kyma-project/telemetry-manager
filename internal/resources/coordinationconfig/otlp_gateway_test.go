@@ -862,6 +862,7 @@ func TestAddPipelineReference_NewConfigMapHasModuleLabel(t *testing.T) {
 	require.NoError(t, err)
 
 	var cm corev1.ConfigMap
+
 	err = fakeClient.Get(context.Background(), types.NamespacedName{Name: names.OTLPGatewayCoordinationConfigMap, Namespace: "kyma-system"}, &cm)
 	require.NoError(t, err)
 	assert.Equal(t, "telemetry", cm.Labels["kyma-project.io/module"])
