@@ -123,7 +123,9 @@ func makeCASecret(certificate []byte, key []byte, name types.NamespacedName) cor
 		TypeMeta:  metav1.TypeMeta{},
 		Name:      name.Name,
 		Namespace: name.Namespace,
-		Labels:    commonresources.ModuleLabels(),
+		Labels: map[string]string{
+			commonresources.LabelKeyKymaModule: commonresources.LabelValueKymaModule,
+		},
 		Data: map[string][]byte{
 			caCertFile: certificate,
 			caKeyFile:  key,

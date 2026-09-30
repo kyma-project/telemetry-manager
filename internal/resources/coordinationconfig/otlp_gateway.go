@@ -244,7 +244,9 @@ func createConfigMap(ctx context.Context, c client.Client, namespace, yamlData s
 	cm := &corev1.ConfigMap{
 		Name:      names.OTLPGatewayCoordinationConfigMap,
 		Namespace: namespace,
-		Labels:    commonresources.ModuleLabels(),
+		Labels: map[string]string{
+			commonresources.LabelKeyKymaModule: commonresources.LabelValueKymaModule,
+		},
 		Data: map[string]string{
 			ConfigMapDataKey: yamlData,
 		},
