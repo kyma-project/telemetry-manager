@@ -12,6 +12,7 @@ import (
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/pipelines"
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 )
 
@@ -243,6 +244,7 @@ func createConfigMap(ctx context.Context, c client.Client, namespace, yamlData s
 	cm := &corev1.ConfigMap{
 		Name:      names.OTLPGatewayCoordinationConfigMap,
 		Namespace: namespace,
+		Labels:    commonresources.ModuleLabels(),
 		Data: map[string]string{
 			ConfigMapDataKey: yamlData,
 		},

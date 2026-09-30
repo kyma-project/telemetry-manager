@@ -12,6 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 )
 
@@ -122,6 +123,7 @@ func makeCASecret(certificate []byte, key []byte, name types.NamespacedName) cor
 		TypeMeta:  metav1.TypeMeta{},
 		Name:      name.Name,
 		Namespace: name.Namespace,
+		Labels:    commonresources.ModuleLabels(),
 		Data: map[string][]byte{
 			caCertFile: certificate,
 			caKeyFile:  key,

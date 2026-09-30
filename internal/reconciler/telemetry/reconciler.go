@@ -131,6 +131,10 @@ func (r *Reconciler) doReconcile(ctx context.Context, telemetry *operatorv1beta1
 		return fmt.Errorf("failed to manage finalizer: %w", err)
 	}
 
+	if err := r.ensureModuleLabel(ctx, telemetry); err != nil {
+		return fmt.Errorf("failed to ensure module label: %w", err)
+	}
+
 	// Clean up any leftover VPA resources from previous versions
 	if err := r.cleanupSelfMonitorVPA(ctx); err != nil {
 		logf.FromContext(ctx).Error(err, "Failed to cleanup self-monitor VPA, will retry on next reconciliation")
@@ -143,6 +147,25 @@ func (r *Reconciler) doReconcile(ctx context.Context, telemetry *operatorv1beta1
 
 	if err := r.reconcileSelfMonitor(ctx, telemetry, logLevel); err != nil {
 		return fmt.Errorf("failed to reconcile self-monitor deployment: %w", err)
+	}
+
+	return nil
+}
+
+func (r *Reconciler) ensureModuleLabel(ctx context.Context, telemetry *operatorv1beta1.Telemetry) error {
+	if telemetry.Labels[commonresources.LabelKeyKymaModule] == commonresources.LabelValueKymaModule {
+		return nil
+	}
+
+	base := telemetry.DeepCopy()
+	if telemetry.Labels == nil {
+		telemetry.Labels = make(map[string]string)
+	}
+
+	telemetry.Labels[commonresources.LabelKeyKymaModule] = commonresources.LabelValueKymaModule
+
+	if err := r.Patch(ctx, telemetry, client.MergeFrom(base)); err != nil {
+		return fmt.Errorf("failed to patch module label: %w", err)
 	}
 
 	return nil
