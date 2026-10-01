@@ -4,6 +4,8 @@ kind: Telemetry
 metadata:
   name: default
   namespace: kyma-system
+  labels:
+    kyma-project.io/module: telemetry
 spec:
   enrichments:
     extractPodLabels:

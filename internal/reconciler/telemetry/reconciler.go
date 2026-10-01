@@ -152,6 +152,8 @@ func (r *Reconciler) doReconcile(ctx context.Context, telemetry *operatorv1beta1
 	return nil
 }
 
+// TODO: Remove after next Telemetry Manager release. The label is now set statically in the Telemetry CR sample YAML
+// used by lifecycle-manager for fresh installs. This patch covers existing clusters created before that change.
 func (r *Reconciler) ensureModuleLabel(ctx context.Context, telemetry *operatorv1beta1.Telemetry) error {
 	if telemetry.Labels[commonresources.LabelKeyKymaModule] == commonresources.LabelValueKymaModule {
 		return nil
