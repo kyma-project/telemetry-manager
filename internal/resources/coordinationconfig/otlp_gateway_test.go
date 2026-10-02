@@ -482,6 +482,10 @@ func TestRemovePipelineReference_RemoveAll(t *testing.T) {
 
 			refs := getPipelineRefs(config, signalType)
 			require.Empty(t, refs)
+
+			// the ConfigMap is deleted when the last reference is removed
+			err = fakeClient.Get(context.Background(), types.NamespacedName{Name: names.OTLPGatewayCoordinationConfigMap, Namespace: "kyma-system"}, &corev1.ConfigMap{})
+			require.True(t, apierrors.IsNotFound(err))
 		})
 	}
 }
@@ -502,6 +506,10 @@ func TestRemovePipelineReference_NoConfigMap(t *testing.T) {
 
 			refs := getPipelineRefs(config, signalType)
 			require.Empty(t, refs)
+
+			// no empty ConfigMap is created
+			err = fakeClient.Get(context.Background(), types.NamespacedName{Name: names.OTLPGatewayCoordinationConfigMap, Namespace: "kyma-system"}, &corev1.ConfigMap{})
+			require.True(t, apierrors.IsNotFound(err))
 		})
 	}
 }
@@ -850,6 +858,22 @@ func TestWritePipelineReference_ConflictReturnsError(t *testing.T) {
 	err := AddPipelineReference(context.Background(), c, "kyma-system", pipelines.SignalTypeTrace, PipelineReferenceInput{Name: "my-pipeline", Generation: 1})
 	require.Error(t, err)
 	require.True(t, apierrors.IsConflict(err))
+}
+
+func TestAddPipelineReference_NewConfigMapHasModuleLabel(t *testing.T) {
+	scheme := runtime.NewScheme()
+	_ = corev1.AddToScheme(scheme)
+
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
+
+	err := AddPipelineReference(context.Background(), fakeClient, "kyma-system", pipelines.SignalTypeTrace, PipelineReferenceInput{Name: "my-pipeline", Generation: 1})
+	require.NoError(t, err)
+
+	var cm corev1.ConfigMap
+
+	err = fakeClient.Get(context.Background(), types.NamespacedName{Name: names.OTLPGatewayCoordinationConfigMap, Namespace: "kyma-system"}, &cm)
+	require.NoError(t, err)
+	assert.Equal(t, "telemetry", cm.Labels["kyma-project.io/module"])
 }
 
 // conflictOnUpdateClient always returns Conflict on Update.

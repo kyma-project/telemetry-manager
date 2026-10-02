@@ -188,12 +188,7 @@ func CreateOrUpdateSecret(ctx context.Context, c client.Client, desired *corev1.
 		return c.Create(ctx, desired)
 	}
 
-	mutated := existing.DeepCopy()
-	mergeMetadata(&desired.ObjectMeta, mutated.ObjectMeta)
-
-	if apiequality.Semantic.DeepEqual(mutated, desired) {
-		return nil
-	}
+	mergeMetadata(&desired.ObjectMeta, existing.ObjectMeta)
 
 	return c.Update(ctx, desired)
 }

@@ -322,7 +322,9 @@ func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1
 		return fmt.Errorf("failed to set owner reference for secret: %w", err)
 	}
 
-	if err := k8sutils.CreateOrUpdateSecret(ctx, r.Client, &secret); err != nil {
+	labelerClient := k8sclients.NewLabeler(r.Client, commonresources.DefaultLabels(names.ManagerName, commonresources.LabelValueK8sComponentController))
+
+	if err := k8sutils.CreateOrUpdateSecret(ctx, labelerClient, &secret); err != nil {
 		return fmt.Errorf("failed to update secret: %w", err)
 	}
 
