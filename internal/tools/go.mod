@@ -15,7 +15,7 @@ require (
 	github.com/vladopajic/go-test-coverage/v2 v2.19.0
 	github.com/yannh/kubeconform v0.8.0
 	github.com/yeya24/promlinter v0.3.0
-	golang.org/x/tools v0.50.0
+	golang.org/x/tools v0.51.0
 	gotest.tools/gotestsum v1.13.0
 	helm.sh/helm/v4 v4.3.0
 	k8s.io/code-generator v0.37.1
@@ -507,7 +507,7 @@ require (
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
 	google.golang.org/api v0.293.0 // indirect
 	google.golang.org/genproto v0.0.0-20260715232425-e75dac1f907d // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20260720211330-0afa2a65878a // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20260803160001-6ac0973c030d // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260819154853-08b0e4226688 // indirect
 	google.golang.org/grpc v1.83.2 // indirect
 	google.golang.org/protobuf v1.36.12 // indirect
