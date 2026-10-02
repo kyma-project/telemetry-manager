@@ -68,6 +68,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/metrics"
 	"github.com/kyma-project/telemetry-manager/internal/nodesize"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
+	"github.com/kyma-project/telemetry-manager/internal/pipelinesyncermigration"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	"github.com/kyma-project/telemetry-manager/internal/secretwatch"
@@ -233,6 +234,13 @@ func run() error {
 	logPipelineLockMigrator := logpipelinelockmigration.New(mgr.GetClient(), setupLog, globals.TargetNamespace())
 	if err := mgr.Add(logPipelineLockMigrator); err != nil {
 		return fmt.Errorf("failed to add LogPipeline lock migration runnable: %w", err)
+	}
+
+	// Add pipeline syncer migration to delete legacy "-sync-syncer" ConfigMaps whose names
+	// had a redundant "-sync-" infix. The controller recreates them with correct names on next reconcile.
+	pipelineSyncerMigrator := pipelinesyncermigration.New(mgr.GetClient(), setupLog, globals.TargetNamespace())
+	if err := mgr.Add(pipelineSyncerMigrator); err != nil {
+		return fmt.Errorf("failed to add pipeline syncer migration runnable: %w", err)
 	}
 
 	// +kubebuilder:scaffold:builder
