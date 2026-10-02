@@ -12,7 +12,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
+	"github.com/kyma-project/telemetry-manager/internal/k8sclients"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 )
 
@@ -73,8 +75,11 @@ func (p *caCertProviderImpl) provideCert(ctx context.Context, caSecretName types
 			return nil, nil, fmt.Errorf("failed to generateCert ca cert: %w", err)
 		}
 
+		labelerClient := k8sclients.NewLabeler(p.client, commonresources.DefaultLabels(names.ManagerName, commonresources.LabelValueK8sComponentController))
+
 		newSecret := makeCASecret(caCertPEM, caKeyPEM, caSecretName)
-		if err = k8sutils.CreateOrUpdateSecret(ctx, p.client, &newSecret); err != nil {
+
+		if err = k8sutils.CreateOrUpdateSecret(ctx, labelerClient, &newSecret); err != nil {
 			return nil, nil, fmt.Errorf("failed to create ca cert caSecretName: %w", err)
 		}
 
@@ -123,9 +128,6 @@ func makeCASecret(certificate []byte, key []byte, name types.NamespacedName) cor
 		TypeMeta:  metav1.TypeMeta{},
 		Name:      name.Name,
 		Namespace: name.Namespace,
-		Labels: map[string]string{
-			commonresources.LabelKeyKymaModule: commonresources.LabelValueKymaModule,
-		},
 		Data: map[string][]byte{
 			caCertFile: certificate,
 			caKeyFile:  key,
