@@ -482,6 +482,10 @@ func TestRemovePipelineReference_RemoveAll(t *testing.T) {
 
 			refs := getPipelineRefs(config, signalType)
 			require.Empty(t, refs)
+
+			// the ConfigMap is deleted when the last reference is removed
+			err = fakeClient.Get(context.Background(), types.NamespacedName{Name: names.OTLPGatewayCoordinationConfigMap, Namespace: "kyma-system"}, &corev1.ConfigMap{})
+			require.True(t, apierrors.IsNotFound(err))
 		})
 	}
 }
@@ -502,6 +506,10 @@ func TestRemovePipelineReference_NoConfigMap(t *testing.T) {
 
 			refs := getPipelineRefs(config, signalType)
 			require.Empty(t, refs)
+
+			// no empty ConfigMap is created
+			err = fakeClient.Get(context.Background(), types.NamespacedName{Name: names.OTLPGatewayCoordinationConfigMap, Namespace: "kyma-system"}, &corev1.ConfigMap{})
+			require.True(t, apierrors.IsNotFound(err))
 		})
 	}
 }
