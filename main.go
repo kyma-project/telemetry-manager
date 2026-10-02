@@ -62,6 +62,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/featureflags"
 	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
+	"github.com/kyma-project/telemetry-manager/internal/k8sclients"
 	"github.com/kyma-project/telemetry-manager/internal/labelupdater"
 	"github.com/kyma-project/telemetry-manager/internal/logpipelinelockmigration"
 	mgrports "github.com/kyma-project/telemetry-manager/internal/manager/ports"
@@ -655,7 +656,11 @@ func ensureWebhookCert(webhookCertConfig webhookcert.Config, mgr manager.Manager
 		return fmt.Errorf("failed to create webhook client: %w", err)
 	}
 
-	if err = webhookcert.EnsureCertificate(context.Background(), k8sClient, webhookCertConfig); err != nil {
+	// Wrap the client with the Labeler so the generated CA secret and webhook
+	// configurations are stamped with the module labels.
+	labeledClient := k8sclients.NewLabeler(k8sClient, commonresources.ModuleLabels())
+
+	if err = webhookcert.EnsureCertificate(context.Background(), labeledClient, webhookCertConfig); err != nil {
 		return fmt.Errorf("failed to ensure webhook cert: %w", err)
 	}
 

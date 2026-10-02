@@ -95,9 +95,9 @@ const (
 // These labels are shared by all telemetry-managed resources regardless of component type.
 func ModuleLabels() map[string]string {
 	return map[string]string{
-		LabelKeyKymaModule:   LabelValueKymaModule,
-		LabelKeyK8sPartOf:    LabelValueK8sPartOf,
-		LabelKeyK8sManagedBy: LabelValueK8sManagedBy,
+		LabelKeyKymaModule:         LabelValueKymaModule,
+		LabelKeyK8sPartOf:          LabelValueK8sPartOf,
+		LabelKeyK8sManagedBy:       LabelValueK8sManagedBy,
 	}
 }
 

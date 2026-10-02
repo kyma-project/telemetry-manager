@@ -45,6 +45,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/config"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
+	"github.com/kyma-project/telemetry-manager/internal/k8sclients"
 	"github.com/kyma-project/telemetry-manager/internal/nodesize"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/logagent"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
@@ -53,6 +54,7 @@ import (
 	logpipelinefluentbit "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/fluentbit"
 	logpipelineotel "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/otel"
 	"github.com/kyma-project/telemetry-manager/internal/resourcelock"
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
@@ -100,8 +102,12 @@ func NewLogPipelineController(config LogPipelineControllerConfig, client client.
 		pipelineCount = resourcelock.UnlimitedPipelineCount
 	}
 
+	// Wrap the client with the Labeler so the lock and syncer ConfigMaps are
+	// stamped with the module labels on both create and update.
+	labeledClient := k8sclients.NewLabeler(client, commonresources.ModuleLabels())
+
 	otelPipelineLock := resourcelock.NewLocker(
-		client,
+		labeledClient,
 		types.NamespacedName{
 			Name:      names.LogPipelineLock,
 			Namespace: config.TargetNamespace(),
@@ -112,7 +118,7 @@ func NewLogPipelineController(config LogPipelineControllerConfig, client client.
 	// FluentBit pipelines use disk-backed buffers, so lifting the limit could exhaust node disk space
 	// and destabilize the cluster. The unlimited pipelines feature is intentionally OTel-only.
 	fluentBitPipelineLock := resourcelock.NewLocker(
-		client,
+		labeledClient,
 		types.NamespacedName{
 			Name:      names.LogPipelineFluentBitLock,
 			Namespace: config.TargetNamespace(),
@@ -121,7 +127,7 @@ func NewLogPipelineController(config LogPipelineControllerConfig, client client.
 	)
 
 	pipelineSyncer := resourcelock.NewSyncer(
-		client,
+		labeledClient,
 		types.NamespacedName{
 			Name:      names.LogPipelineSync,
 			Namespace: config.TargetNamespace(),
