@@ -126,7 +126,7 @@ Setting the argument to `"0"` means the agent never starts a new trace on its ow
 > [!WARNING]
 > If you set the argument to `"1"` instead, the agent generates spans for every request it handles as a root span, including internal endpoints. Those spans are collected regardless of Istio's sampling decision.
 
-For full details on Istio tracing configuration, see [Configure Istio Tracing](./istio-support.md).
+For full details on Istio tracing configuration, see [Configure Istio Tracing](../../collecting-traces/istio-support.md).
 
 ## Resource Limits
 
