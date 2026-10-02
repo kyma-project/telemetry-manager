@@ -15,6 +15,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 	"github.com/kyma-project/telemetry-manager/test/testkit"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 )
@@ -244,7 +245,16 @@ func allRuntimeResourcesDeleted(ctx context.Context, k8sClient client.Client) fu
 			return fmt.Errorf("failed to list secrets: %w", err)
 		}
 
-		if n := len(secrets.Items); n > 0 {
+		// The webhook cert secret is owned by the Telemetry CR and must outlive all pipelines
+		n := 0
+
+		for _, secret := range secrets.Items {
+			if secret.Name != names.ManagerWebhookCertSecret {
+				n++
+			}
+		}
+
+		if n > 0 {
 			return fmt.Errorf("%d secret(s) still exist", n)
 		}
 
