@@ -5,7 +5,12 @@ import (
 
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	"github.com/kyma-project/telemetry-manager/internal/k8sclients"
 )
 
 func TestMergePodAnnotations(t *testing.T) {
@@ -119,4 +124,28 @@ func TestMergeOwnerReference(t *testing.T) {
 
 	merged := mergeOwnerReferences(newOwners, oldOwners)
 	require.Equal(t, 3, len(merged))
+}
+
+func TestCreateOrUpdateSecret_AppliesLabelsToUnchangedExistingSecret(t *testing.T) {
+	key := types.NamespacedName{Name: "secret", Namespace: "default"}
+
+	existing := &corev1.Secret{
+		Name:      key.Name,
+		Namespace: key.Namespace,
+		Labels:    map[string]string{"existing": "label"},
+		Data:      map[string][]byte{"key": []byte("value")},
+	}
+
+	fakeClient := fake.NewClientBuilder().WithObjects(existing).Build()
+	labelerClient := k8sclients.NewLabeler(fakeClient, map[string]string{"added": "label"})
+
+	var desired corev1.Secret
+	require.NoError(t, fakeClient.Get(t.Context(), key, &desired))
+
+	require.NoError(t, CreateOrUpdateSecret(t.Context(), labelerClient, &desired))
+
+	var updated corev1.Secret
+	require.NoError(t, fakeClient.Get(t.Context(), key, &updated))
+	require.Equal(t, map[string]string{"existing": "label", "added": "label"}, updated.Labels)
+	require.Equal(t, existing.Data, updated.Data)
 }
