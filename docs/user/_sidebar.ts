@@ -14,7 +14,6 @@ export default [
   {
     text: 'Collecting Traces', link: './collecting-traces/README', collapsed: true, items: [
       { text: 'Configure Istio Tracing', link: './collecting-traces/istio-support' },
-      { text: 'Configure OpenTelemetry Zero-Code Instrumentation', link: './collecting-traces/auto-instrumentation.md' },
     ]
   },
   {
@@ -68,6 +67,7 @@ export default [
       { text: 'Amazon CloudWatch', link: './integration/aws-cloudwatch/README' },
       { text: 'Kubernetes Events', link: './integration/k8s-events/README' },
       { text: 'OpenTelemetry Demo App', link: './integration/opentelemetry-demo/README' },
+      { text: 'OTel Operator Auto-Instrumentation', link: './integration/otel-operator/README' },
       { text: 'Sample App', link: './integration/sample-app/README' },
     ]
   },
