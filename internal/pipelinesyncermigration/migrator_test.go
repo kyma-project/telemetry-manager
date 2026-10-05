@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -65,6 +64,7 @@ func TestDeleteOldSyncersIfNeeded(t *testing.T) {
 
 			for _, name := range legacySyncerNames {
 				var cm corev1.ConfigMap
+
 				getErr := fakeClient.Get(context.Background(), types.NamespacedName{Name: name, Namespace: testNamespace}, &cm)
 				require.True(t, apierrors.IsNotFound(getErr), "expected %q to be deleted or absent", name)
 			}
@@ -134,9 +134,7 @@ func newTestScheme(t *testing.T) *runtime.Scheme {
 
 func newConfigMap(name string) *corev1.ConfigMap {
 	return &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: testNamespace,
-		},
+		Name:      name,
+		Namespace: testNamespace,
 	}
 }
