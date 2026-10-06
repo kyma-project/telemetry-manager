@@ -2,11 +2,11 @@
 
 ## Overview
 
-| Category | |
-| - | - |
-| Signal types | traces |
+| Category     |                                       |
+| ------------ | ------------------------------------- |
+| Signal types | traces                                |
 | Backend type | custom in-cluster, third-party remote |
-| OTLP-native | yes |
+| OTLP-native  | yes                                   |
 
 Learn how to use the [OpenTelemetry (OTel) Operator](https://opentelemetry.io/docs/kubernetes/operator/) to collect traces from your Kubernetes workloads without modifying application code. The operator injects an instrumentation agent into your Pods at creation time and exports traces to the Kyma Telemetry module's OTLP endpoint. Install the operator independently and point its Instrumentation CR at the module's OTLP endpoint. Both components run side by side without competing for the same resources.
 
@@ -171,7 +171,7 @@ For full details on Istio tracing configuration, see [Configure Istio Tracing](.
 
 Rewriting bytecode for Java or attaching eBPF probes for Go adds CPU and memory overhead. If limits are too low, Pod startup slows significantly.
 
-Set limits in the Instrumentation CR under the runtime key. The right values depend on your workload. For guidance on sizing, see the [OTel Operator resource documentation](https://opentelemetry.io/docs/kubernetes/operator/automatic/).
+Set limits and requests in the Instrumentation CR under the language-specific key. The right values depend on your workload. For guidance on sizing, see the [OTel Operator resource documentation](https://opentelemetry.io/docs/kubernetes/operator/automatic/).
 
 ```yaml
 spec:
@@ -254,6 +254,11 @@ spec:
     type: parentbased_traceidratio
     argument: "1"
   nodejs:
+    env:
+      - name: OTEL_METRICS_EXPORTER
+        value: none
+      - name: OTEL_LOGS_EXPORTER
+        value: none
     resourceRequirements:
       limits:
         cpu: 200m
@@ -299,9 +304,10 @@ spec:
 Annotate the Pod template of your Deployment:
 
 ```yaml
-annotations:
-  instrumentation.opentelemetry.io/inject-go: "my-instrumentation-go"
-  instrumentation.opentelemetry.io/otel-go-instrumentation-container: "my-container-name"
+metadata:
+  annotations:
+    instrumentation.opentelemetry.io/inject-go: "my-instrumentation-go"
+    instrumentation.opentelemetry.io/otel-go-instrumentation-container: "my-container-name"
 spec:
   containers:
     - name: my-container-name
@@ -314,7 +320,7 @@ spec:
 
 ## Verify the Installation
 
-1. Check that the Instrumentation CR is ready:
+1. Check that the Instrumentation CR was created successfully:
 
    ```bash
    kubectl get instrumentation -n my-app
