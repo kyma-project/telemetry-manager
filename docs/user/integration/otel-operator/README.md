@@ -167,7 +167,7 @@ The agent always honors the sampling decision in an incoming `traceparent` heade
 
 For full details on Istio tracing configuration, see [Configure Istio Tracing](../../collecting-traces/istio-support.md).
 
-## Resource Limits
+## Set Resource Limits
 
 Rewriting bytecode for Java or attaching eBPF probes for Go adds CPU and memory overhead. If limits are too low, Pod startup slows significantly.
 
