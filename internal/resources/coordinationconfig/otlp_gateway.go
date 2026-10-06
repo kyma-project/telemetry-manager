@@ -3,11 +3,14 @@ package coordinationconfig
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
@@ -176,11 +179,38 @@ func getPipelineSlice(config *OTLPGatewayConfigMap, pipelineType pipelines.Signa
 	}
 }
 
+const (
+	configUpdateRetrySteps    = 5
+	configUpdateRetryInterval = 50 * time.Millisecond
+	configUpdateRetryFactor   = 2.0
+	configUpdateRetryJitter   = 0.1
+)
+
+// configUpdateBackoff gives the client cache time to catch up with a concurrent write before the update is retried (about 750ms in total)
+var configUpdateBackoff = wait.Backoff{
+	Steps:    configUpdateRetrySteps,
+	Duration: configUpdateRetryInterval,
+	Factor:   configUpdateRetryFactor,
+	Jitter:   configUpdateRetryJitter,
+}
+
 // applyConfigUpdate reads the coordination ConfigMap, applies updateFn to it, and writes it back.
-// Errors are returned directly and propagated to the caller's reconciliation loop.
+// Pipeline controllers update the ConfigMap concurrently and read it from a cache that can be stale,
+// so a conflict (stale resource version) or an AlreadyExists on create (stale NotFound) is retried.
+// Other errors are returned directly and propagated to the caller's reconciliation loop.
 func applyConfigUpdate(ctx context.Context, c client.Client, namespace string, updateFn func(*OTLPGatewayConfigMap) error) error {
 	labelerClient := k8sclients.NewLabeler(c, commonresources.DefaultLabels(names.ManagerName, commonresources.LabelValueK8sComponentController))
 
+	isRetryable := func(err error) bool {
+		return apierrors.IsConflict(err) || apierrors.IsAlreadyExists(err)
+	}
+
+	return retry.OnError(configUpdateBackoff, isRetryable, func() error {
+		return applyConfigUpdateOnce(ctx, labelerClient, namespace, updateFn)
+	})
+}
+
+func applyConfigUpdateOnce(ctx context.Context, labelerClient client.Client, namespace string, updateFn func(*OTLPGatewayConfigMap) error) error {
 	cm, exists, err := getConfigMap(ctx, labelerClient, namespace)
 	if err != nil {
 		return err

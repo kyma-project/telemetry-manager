@@ -860,6 +860,47 @@ func TestWritePipelineReference_ConflictReturnsError(t *testing.T) {
 	require.True(t, apierrors.IsConflict(err))
 }
 
+func TestRemovePipelineReference_RetriesOnConflict(t *testing.T) {
+	scheme := runtime.NewScheme()
+	_ = corev1.AddToScheme(scheme)
+
+	cm := &corev1.ConfigMap{
+		Name:      names.OTLPGatewayCoordinationConfigMap,
+		Namespace: "kyma-system",
+		Data: map[string]string{
+			ConfigMapDataKey: "tracePipelines:\n- name: pipeline-1\n  generation: 1\n- name: pipeline-2\n  generation: 1\n",
+		},
+	}
+
+	// the first update conflicts, as if another pipeline controller had updated the ConfigMap in the meantime
+	c := &failOnceClient{Client: fake.NewClientBuilder().WithScheme(scheme).WithObjects(cm).Build(), updateErr: apierrors.NewConflict(schema.GroupResource{Resource: "configmaps"}, cm.Name, fmt.Errorf("resource version mismatch"))}
+
+	err := RemovePipelineReference(context.Background(), c, "kyma-system", pipelines.SignalTypeTrace, "pipeline-1")
+	require.NoError(t, err)
+	require.Equal(t, 2, c.updateCalls)
+
+	config, err := ReadOTLPGatewayConfig(context.Background(), c, "kyma-system")
+	require.NoError(t, err)
+	require.Len(t, config.TracePipelineReferences, 1)
+	require.Equal(t, "pipeline-2", config.TracePipelineReferences[0].Name)
+}
+
+func TestAddPipelineReference_RetriesOnAlreadyExists(t *testing.T) {
+	scheme := runtime.NewScheme()
+	_ = corev1.AddToScheme(scheme)
+
+	// the first create fails as if a stale cache had reported the ConfigMap as missing although it already exists
+	c := &failOnceClient{Client: fake.NewClientBuilder().WithScheme(scheme).Build(), createErr: apierrors.NewAlreadyExists(schema.GroupResource{Resource: "configmaps"}, names.OTLPGatewayCoordinationConfigMap)}
+
+	err := AddPipelineReference(context.Background(), c, "kyma-system", pipelines.SignalTypeTrace, PipelineReferenceInput{Name: "my-pipeline", Generation: 1})
+	require.NoError(t, err)
+	require.Equal(t, 2, c.createCalls)
+
+	config, err := ReadOTLPGatewayConfig(context.Background(), c, "kyma-system")
+	require.NoError(t, err)
+	require.Len(t, config.TracePipelineReferences, 1)
+}
+
 func TestAddPipelineReference_NewConfigMapHasModuleLabel(t *testing.T) {
 	scheme := runtime.NewScheme()
 	_ = corev1.AddToScheme(scheme)
@@ -874,6 +915,34 @@ func TestAddPipelineReference_NewConfigMapHasModuleLabel(t *testing.T) {
 	err = fakeClient.Get(context.Background(), types.NamespacedName{Name: names.OTLPGatewayCoordinationConfigMap, Namespace: "kyma-system"}, &cm)
 	require.NoError(t, err)
 	assert.Equal(t, "telemetry", cm.Labels["kyma-project.io/module"])
+}
+
+// failOnceClient returns the configured error on the first Update and/or the first Create, and delegates all further calls
+type failOnceClient struct {
+	client.Client
+
+	updateErr   error
+	createErr   error
+	updateCalls int
+	createCalls int
+}
+
+func (c *failOnceClient) Update(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error {
+	c.updateCalls++
+	if c.updateCalls == 1 && c.updateErr != nil {
+		return c.updateErr
+	}
+
+	return c.Client.Update(ctx, obj, opts...)
+}
+
+func (c *failOnceClient) Create(ctx context.Context, obj client.Object, opts ...client.CreateOption) error {
+	c.createCalls++
+	if c.createCalls == 1 && c.createErr != nil {
+		return c.createErr
+	}
+
+	return c.Client.Create(ctx, obj, opts...)
 }
 
 // conflictOnUpdateClient always returns Conflict on Update.
