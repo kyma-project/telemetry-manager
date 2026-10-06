@@ -73,36 +73,23 @@ Before you run the pre-release workflow, prepare all component dependencies:
    > [!IMPORTANT]
    > Do **not** release OCC again on release day. Reuse the same OCC image version that was used for the pre-release.
 
-2. **Verify that the component images exist**: The directory-size-exporter, self-monitor, and chown images are built automatically on every push to `main`, so the tags you need should be already published. You only need to pick the correct tags. Browse the available tags in Artifact Registry (requires access to the `kyma-project` Google Cloud project):
+2. **Verify that the component images exist**: The directory-size-exporter, self-monitor, and chown images are built automatically on every push to `main`, so the tags you need should be already published. You only need to pick the latest tags built from main. Browse the available tags in Artifact Registry (requires access to the `kyma-project` Google Cloud project):
    - [telemetry-chown](https://console.cloud.google.com/artifacts/docker/kyma-project/europe/prod/telemetry-chown)
    - [directory-size-exporter](https://console.cloud.google.com/artifacts/docker/kyma-project/europe/prod/directory-size-exporter)
    - [telemetry-self-monitor](https://console.cloud.google.com/artifacts/docker/kyma-project/europe/prod/tpi%2Ftelemetry-self-monitor)
-
-   Alternatively, confirm each image from the command line:
-   ```bash
-   docker manifest inspect europe-docker.pkg.dev/kyma-project/prod/kyma-otel-collector:{OCC_VERSION}-{TELEMETRY_VERSION}
-   docker manifest inspect europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:{DIR_SIZE_TAG}
-   docker manifest inspect europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:{SELF_MONITOR_TAG}
-   docker manifest inspect europe-docker.pkg.dev/kyma-project/prod/telemetry-chown:{CHOWN_TAG}
-   ```
-
-3. **Build newer component images (only if needed)**: If you need a tag that is newer than the latest automatically built image, for example because a component change was merged after the last build, trigger the corresponding workflow, wait for it to finish, and then verify the new tag as described in step 2:
-   - [Build Chown Image](https://github.com/kyma-project/telemetry-manager/actions/workflows/build-chown-image.yaml)
-   - [Build Directory Size Exporter Image](https://github.com/kyma-project/telemetry-manager/actions/workflows/build-directory-size-reporter-image.yml)
-   - [Build Self Monitor Image](https://github.com/kyma-project/telemetry-manager/actions/workflows/build-self-monitor-image.yml)
 
 ### 2. Start the Pre-Release Workflow
 
 In the telemetry-manager repository, go to **Actions**, select [Create Release](https://github.com/kyma-project/telemetry-manager/actions/workflows/create-release.yml), and run the workflow with the following inputs:
 
-| Input                      | Description                                                                               | Example              |
-|----------------------------|-------------------------------------------------------------------------------------------|----------------------|
-| **version**                | Target release version in X.Y.Z format (not the rc tag)                                   | `1.2.3`              |
-| **occ_image_version**      | OCC image version in X.Y.Z-A.B.C format                                                   | `0.100.0-1.2.3`      |
-| **self_monitor_image_tag** | Self-monitor image tag in vYYYYMMDD-HASH format                                           | `v20260302-bbf32a3b` |
-| **dir_size_image_tag**     | Directory size exporter image tag in vYYYYMMDD-HASH format                                | `v20260302-12345678` |
-| **chown_image_tag**        | Chown image tag in vYYYYMMDD-HASH format                                                  | `v20260302-9f8e7d6c` |
-| **pre_release**            | Set to `true`                                                                             | `true`               |
+| Input                      | Description                                                                                   | Example              |
+| -------------------------- | --------------------------------------------------------------------------------------------- | -------------------- |
+| **version**                | Target release version in X.Y.Z format (not the rc tag)                                       | `1.2.3`              |
+| **occ_image_version**      | OCC image version in X.Y.Z-A.B.C format                                                       | `0.100.0-1.2.3`      |
+| **self_monitor_image_tag** | Self-monitor image tag in vYYYYMMDD-HASH format                                               | `v20260302-bbf32a3b` |
+| **dir_size_image_tag**     | Directory size exporter image tag in vYYYYMMDD-HASH format                                    | `v20260302-12345678` |
+| **chown_image_tag**        | Chown image tag in vYYYYMMDD-HASH format                                                      | `v20260302-9f8e7d6c` |
+| **pre_release**            | Set to `true`                                                                                 | `true`               |
 | **module_release**         | Trigger module submission for dev channel only (not fast or experimental). Defaults to `true` | `true`               |
 
 The workflow automatically computes the rc tag (`{VERSION}-rc1`, `{VERSION}-rc2`, and so on) by finding the next unused rc number for that version.
@@ -190,7 +177,7 @@ In the telemetry-manager repository, go to **Actions**, select [Create Release](
 
 
 | Input                      | Description                                                                               | Example              |
-|----------------------------|-------------------------------------------------------------------------------------------|----------------------|
+| -------------------------- | ----------------------------------------------------------------------------------------- | -------------------- |
 | **version**                | Release version in X.Y.Z format                                                           | `1.2.3`              |
 | **occ_image_version**      | OCC image version in X.Y.Z-A.B.C format                                                   | `0.100.0-1.2.3`      |
 | **self_monitor_image_tag** | Self-monitor image tag in vYYYYMMDD-HASH format                                           | `v20260302-bbf32a3b` |
@@ -247,7 +234,7 @@ The PR contains the following changes:
 - Updated variables in the `.env` file:
 
   | Variable                           | New value                  |
-  |------------------------------------|----------------------------|
+  | ---------------------------------- | -------------------------- |
   | `ENV_HELM_RELEASE_VERSION`         | `{VERSION}`                |
   | `ENV_MANAGER_IMAGE` tag            | `{VERSION}`                |
   | `ENV_OTEL_COLLECTOR_IMAGE` tag     | `{OCC_IMAGE_VERSION}`      |
@@ -289,7 +276,7 @@ If `module_release` is set to `true` (the default), the workflow triggers module
 The workflow triggers module releases for the following channels:
 
 | Channel        | Auto-merge | Target Repository       |
-|----------------|------------|-------------------------|
+| -------------- | ---------- | ----------------------- |
 | `dev`          | Enabled    | `kyma/module-manifests` |
 | `fast`         | Enabled    | `kyma/module-manifests` |
 | `experimental` | Enabled    | `kyma/module-manifests` |
