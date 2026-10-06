@@ -355,7 +355,7 @@ spec:
         runAsUser: 0
 ```
 
-> [!CAUTION]
+> [!WARNING]
 > `runAsUser: 0` conflicts with a `Restricted` PodSecurityAdmission policy. You must grant the namespace a `Privileged` or `Baseline` exemption before you deploy. Many production environments do not accept this. Evaluate this requirement before you use Go auto-instrumentation.
 
 ## Verify the Installation
