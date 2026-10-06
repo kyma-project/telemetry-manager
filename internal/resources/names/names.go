@@ -45,11 +45,11 @@ const (
 
 	LogPipelineLock          = telemetryPrefix + "logpipeline-lock"
 	LogPipelineFluentBitLock = telemetryPrefix + "logpipeline-fluentbit-lock"
-	LogPipelineSync          = telemetryPrefix + "logpipeline-sync"
+	LogPipelineSync          = telemetryPrefix + "logpipeline-syncer"
 	MetricPipelineLock       = telemetryPrefix + "metricpipeline-lock"
-	MetricPipelineSync       = telemetryPrefix + "metricpipeline-sync"
+	MetricPipelineSync       = telemetryPrefix + "metricpipeline-syncer"
 	TracePipelineLock        = telemetryPrefix + "tracepipeline-lock"
-	TracePipelineSync        = telemetryPrefix + "tracepipeline-sync"
+	TracePipelineSync        = telemetryPrefix + "tracepipeline-syncer"
 
 	OverrideConfigMap = telemetryPrefix + "overrides"
 	DefaultTelemetry  = "default" // default module resource must be named "default"
