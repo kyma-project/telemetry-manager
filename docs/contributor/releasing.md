@@ -176,7 +176,7 @@ Before running the release workflow, complete the following tasks:
 
 2. **Component Image Versions**: If you ran the pre-release workflow the day before, all component images are already built. Use the same image versions that were used for the pre-release.
 
-   If you are running the release without a prior pre-release, use the latest images that were built automatically on push to `main`, or build newer ones only if needed:
+   If you are running the release without a prior pre-release, use the latest images that were built automatically on push to `main`:
    - [Build Chown Image](https://github.com/kyma-project/telemetry-manager/actions/workflows/build-chown-image.yaml) - Produces image tags like `v20260302-9f8e7d6c`
    - [Build Directory Size Exporter Image](https://github.com/kyma-project/telemetry-manager/actions/workflows/build-directory-size-reporter-image.yml) - Produces image tags like `v20260302-12345678`
    - [Build Self Monitor Image](https://github.com/kyma-project/telemetry-manager/actions/workflows/build-self-monitor-image.yml) - Produces image tags like `v20260302-bbf32a3b`
