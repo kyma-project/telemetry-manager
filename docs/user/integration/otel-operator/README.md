@@ -76,7 +76,7 @@ The operator installs its CRDs, Instrumentation and OpenTelemetryCollector, and 
 
 ## Create an Instrumentation CR
 
-The Instrumentation CR tells the operator which OTLP endpoint to export to, which propagators to use, and how to sample. By default, the operator looks for the CR in the same namespace as the workload. To reuse a single CR across namespaces, reference it using `"<namespace>/<name>"` in the annotation.
+The Instrumentation CR tells the operator which OTLP endpoint to export to, which propagators to use, and how to sample. By default, the operator looks for the CR in the same namespace as the workload. To reuse a single CR across namespaces, reference it using `"{NAMESPACE}/{NAME}"` in the annotation.
 
 1. Create an Instrumentation CR:
 
@@ -187,13 +187,53 @@ spec:
         memory: 128Mi
 ```
 
+## Exporting Metrics and Logs
+
+By default, the OpenTelemetry SDK attempts to export traces, metrics, and logs using OTLP. The `exporter.endpoint` used in this guide, `telemetry-otlp-traces.kyma-system.svc.cluster.local:4318`, accepts only traces. Therefore, the language-specific examples below explicitly configure the metrics and logs exporters to avoid sending them to the trace-only endpoint.
+
+To collect metrics and logs, you must explicitly configure where to send them. You can use the following approaches.
+
+### Route to Kyma Telemetry Pipelines
+
+If you configured a `TracePipeline`, `MetricPipeline`, or `LogPipeline` using the Kyma Telemetry module, you can route the signals to their respective OTLP endpoints by overriding the environment variables in your `Instrumentation` CR.
+
+For a complete list of standard OTLP endpoint environment variables, see the [OpenTelemetry SDK Environment Variables Specification](https://opentelemetry.io/docs/specs/otel/protocol/exporter/).
+
+```yaml
+spec:
+  env:
+    - name: OTEL_EXPORTER_OTLP_METRICS_ENDPOINT
+      value: "http://telemetry-otlp-metrics.kyma-system.svc.cluster.local:4318/v1/metrics"
+    - name: OTEL_EXPORTER_OTLP_LOGS_ENDPOINT
+      value: "http://telemetry-otlp-logs.kyma-system.svc.cluster.local:4318/v1/logs"
+```
+
+### Use Alternative Built-In Exporters
+
+Alternatively, you can bypass OTLP for metrics and logs entirely. For example, you can expose metrics for Prometheus to scrape and disable logs to avoid duplicating your application's standard output. For debugging, you can set logs to `console` instead.
+
+The availability of built-in exporters such as `prometheus` or `console` is language-specific. For example, Java and Node.js support them, but the Go eBPF auto-instrumentation currently does not. To confirm support, always check the official OpenTelemetry documentation for your specific language.
+
+For the full list of supported built-in exporters, see the [Exporter Selection Specification](https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/#exporter-selection).
+
+```yaml
+spec:
+  env:
+    - name: OTEL_METRICS_EXPORTER
+      value: prometheus
+    - name: OTEL_LOGS_EXPORTER
+      value: none
+```
+
+Setting `prometheus` starts a local HTTP server on the Pod, typically on port `9464`, exposing a `/metrics` path. Setting `console` prints all OpenTelemetry logs to the container's `stdout`, which can cause duplicate logging if your application already logs to standard output.
+
 ## Language-Specific Examples
 
-The OTel Operator controls which languages are supported for auto-instrumentation. The list may change as the operator evolves. This guide provides tested examples for Java, Node.js, and Go. For other supported languages such as Python and .NET, see the [OTel auto-instrumentation documentation](https://opentelemetry.io/docs/kubernetes/operator/automatic/).
+The OTel Operator controls which languages are supported for auto-instrumentation. The list might change as the operator evolves. This guide provides tested examples for Java, Node.js, and Go. For other supported languages such as Python and .NET, see the [OTel auto-instrumentation documentation](https://opentelemetry.io/docs/kubernetes/operator/automatic/).
 
 ### Java
 
-The Java agent modifies bytecode at startup using an init container. It enables metrics and logs exporters by default. If you want to collect only traces, disable them, because the `telemetry-otlp-traces` endpoint accepts only `/v1/traces`:
+The Java agent modifies bytecode at startup using an init container:
 
 ```yaml
 apiVersion: opentelemetry.io/v1alpha1
@@ -213,7 +253,7 @@ spec:
   java:
     env:
       - name: OTEL_METRICS_EXPORTER
-        value: none
+        value: prometheus
       - name: OTEL_LOGS_EXPORTER
         value: none
     resources:
@@ -236,7 +276,7 @@ Expect additional startup time because the agent modifies bytecode before the ap
 
 ### Node.js
 
-The Node.js agent attaches at process startup by prepending the OTel SDK to the Node.js require chain using an init container, requiring no changes to your application code.
+The Node.js agent attaches at process startup by prepending the OTel SDK to the Node.js require chain using an init container, requiring no changes to your application code:
 
 ```yaml
 apiVersion: opentelemetry.io/v1alpha1
@@ -256,7 +296,7 @@ spec:
   nodejs:
     env:
       - name: OTEL_METRICS_EXPORTER
-        value: none
+        value: prometheus
       - name: OTEL_LOGS_EXPORTER
         value: none
     resourceRequirements:
@@ -329,12 +369,22 @@ spec:
 1. If you have an annotated workload, verify that the agent was injected into the Pod. For Java and Node.js, look for an init container; for Go, look for a sidecar container:
 
    ```bash
-   kubectl describe pod -n <your-namespace> -l <your-workload-label>
+   kubectl describe pod --namespace {NAMESPACE} -l {WORKLOAD_LABEL}
    ```
 
    For Java and Node.js, look for `opentelemetry-auto-instrumentation` in the init containers. For Go, look for `opentelemetry-auto-instrumentation-go` in the containers.
 
 1. Verify that traces appear in your trace backend.
+
+1. If you configured `OTEL_METRICS_EXPORTER` to `prometheus`, verify that metrics are exposed. Port-forward the default metrics port `9464` and send a request to the endpoint:
+
+   ```bash
+   kubectl port-forward --namespace {NAMESPACE} pod/{POD_NAME} 9464:9464
+   ```
+
+   ```bash
+   curl http://localhost:9464/metrics
+   ```
 
 ## Clean Up
 
@@ -343,7 +393,7 @@ spec:
 1. Restart the Deployment to apply the change:
 
    ```bash
-   kubectl rollout restart deployment/<your-deployment> -n <your-namespace>
+   kubectl rollout restart deployment/{DEPLOYMENT_NAME} --namespace {NAMESPACE}
    ```
 
 1. Delete the Instrumentation CR:
