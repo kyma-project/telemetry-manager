@@ -276,7 +276,7 @@ Expect additional startup time because the agent modifies bytecode before the ap
 
 ### Node.js
 
-The Node.js agent attaches at process startup by prepending the OTel SDK to the Node.js require chain using an init container, requiring no changes to your application code:
+The Node.js agent attaches at process startup using an init container. It prepends the OTel SDK to the Node.js require chain, so no changes to your application code are needed:
 
 ```yaml
 apiVersion: opentelemetry.io/v1alpha1
