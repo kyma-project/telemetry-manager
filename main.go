@@ -238,6 +238,7 @@ func run() error {
 
 	// Add pipeline syncer migration to delete legacy "-sync-syncer" ConfigMaps whose names
 	// had a redundant "-sync-" infix. The controller recreates them with correct names on next reconcile.
+	// TODO: Remove this migration once all clusters have upgraded past the release that renamed the syncer ConfigMaps (1.74.0).
 	pipelineSyncerMigrator := pipelinesyncermigration.New(mgr.GetClient(), setupLog, globals.TargetNamespace())
 	if err := mgr.Add(pipelineSyncerMigrator); err != nil {
 		return fmt.Errorf("failed to add pipeline syncer migration runnable: %w", err)
