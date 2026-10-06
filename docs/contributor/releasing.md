@@ -73,7 +73,7 @@ Before you run the pre-release workflow, prepare all component dependencies:
    > [!IMPORTANT]
    > Do **not** release OCC again on release day. Reuse the same OCC image version that was used for the pre-release.
 
-2. **Verify that the component images exist**: The directory-size-exporter, self-monitor, and chown images are built automatically on every push to `main`, so the tags you need are usually already published. You only need to pick the tags and confirm they exist. Browse the available tags in Artifact Registry (requires access to the `kyma-project` Google Cloud project):
+2. **Verify that the component images exist**: The directory-size-exporter, self-monitor, and chown images are built automatically on every push to `main`, so the tags you need should be already published. You only need to pick the correct tags. Browse the available tags in Artifact Registry (requires access to the `kyma-project` Google Cloud project):
    - [telemetry-chown](https://console.cloud.google.com/artifacts/docker/kyma-project/europe/prod/telemetry-chown)
    - [directory-size-exporter](https://console.cloud.google.com/artifacts/docker/kyma-project/europe/prod/directory-size-exporter)
    - [telemetry-self-monitor](https://console.cloud.google.com/artifacts/docker/kyma-project/europe/prod/tpi%2Ftelemetry-self-monitor)
