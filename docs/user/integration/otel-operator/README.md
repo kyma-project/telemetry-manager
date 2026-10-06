@@ -132,7 +132,7 @@ The operator watches for Pod annotations and injects the appropriate agent at Po
 
    Namespace-level injection works for Java, Node.js, Python, and .NET. For Go, you must still set the `instrumentation.opentelemetry.io/otel-go-instrumentation-container` annotation on each Pod, so namespace-level injection alone is insufficient.
 
-## Sampler Configuration and Istio
+## Configure Sampling with Istio
 
 When Istio is active in your cluster, its Envoy proxies propagate the W3C `traceparent` header, which carries the sampling decision. Because the OTel agent uses `parentbased_traceidratio`, it honors the sampling flag set by Istio. If Istio decides not to sample a request, the agent does not report a span for it either.
 
