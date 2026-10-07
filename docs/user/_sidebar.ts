@@ -67,6 +67,7 @@ export default [
       { text: 'Amazon CloudWatch', link: './integration/aws-cloudwatch/README' },
       { text: 'Kubernetes Events', link: './integration/k8s-events/README' },
       { text: 'OpenTelemetry Demo App', link: './integration/opentelemetry-demo/README' },
+      { text: 'OTel Operator Auto-Instrumentation', link: './integration/otel-operator/README' },
       { text: 'Sample App', link: './integration/sample-app/README' },
     ]
   },
