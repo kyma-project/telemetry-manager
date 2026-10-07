@@ -84,11 +84,11 @@ In the telemetry-manager repository, go to **Actions**, select [Create Release](
 
 | Input                      | Description                                                                                   | Example              |
 | -------------------------- | --------------------------------------------------------------------------------------------- | -------------------- |
-| **version**                | Target release version in X.Y.Z format (not the rc tag)                                       | `1.2.3`              |
-| **occ_image_version**      | OCC image version in X.Y.Z-A.B.C format                                                       | `0.100.0-1.2.3`      |
-| **self_monitor_image_tag** | Self-monitor image tag in vYYYYMMDD-HASH format                                               | `v20260302-bbf32a3b` |
-| **dir_size_image_tag**     | Directory size exporter image tag in vYYYYMMDD-HASH format                                    | `v20260302-12345678` |
-| **chown_image_tag**        | Chown image tag in vYYYYMMDD-HASH format                                                      | `v20260302-9f8e7d6c` |
+| **version**                | Target release version in `X.Y.Z` format (not the rc tag)                                       | `1.2.3`              |
+| **occ_image_version**      | OCC image version in `X.Y.Z-A.B.C` format                                                       | `0.100.0-1.2.3`      |
+| **self_monitor_image_tag** | Self-monitor image tag in `vYYYYMMDD-HASH` format                                               | `v20260302-bbf32a3b` |
+| **dir_size_image_tag**     | Directory size exporter image tag in `vYYYYMMDD-HASH` format                                    | `v20260302-12345678` |
+| **chown_image_tag**        | Chown image tag in `vYYYYMMDD-HASH` format                                                      | `v20260302-9f8e7d6c` |
 | **pre_release**            | Set to `true`                                                                                 | `true`               |
 | **module_release**         | Trigger module submission for dev channel only (not fast or experimental). Defaults to `true` | `true`               |
 
@@ -174,11 +174,11 @@ In the telemetry-manager repository, go to **Actions**, select [Create Release](
 
 | Input                      | Description                                                                               | Example              |
 | -------------------------- | ----------------------------------------------------------------------------------------- | -------------------- |
-| **version**                | Release version in X.Y.Z format                                                           | `1.2.3`              |
-| **occ_image_version**      | OCC image version in X.Y.Z-A.B.C format                                                   | `0.100.0-1.2.3`      |
-| **self_monitor_image_tag** | Self-monitor image tag in vYYYYMMDD-HASH format                                           | `v20260302-bbf32a3b` |
-| **dir_size_image_tag**     | Directory size exporter image tag in vYYYYMMDD-HASH format                                | `v20260302-12345678` |
-| **chown_image_tag**        | Chown image tag in vYYYYMMDD-HASH format                                                  | `v20260302-9f8e7d6c` |
+| **version**                | Release version in `X.Y.Z` format                                                           | `1.2.3`              |
+| **occ_image_version**      | OCC image version in `X.Y.Z-A.B.C` format                                                   | `0.100.0-1.2.3`      |
+| **self_monitor_image_tag** | Self-monitor image tag in `vYYYYMMDD-HASH` format                                           | `v20260302-bbf32a3b` |
+| **dir_size_image_tag**     | Directory size exporter image tag in `vYYYYMMDD-HASH` format                                | `v20260302-12345678` |
+| **chown_image_tag**        | Chown image tag in `vYYYYMMDD-HASH` format                                                  | `v20260302-9f8e7d6c` |
 | **dry_run**                | Test the release process without creating tags/releases                                   |                      |
 | **force**                  | Recreate existing release (use with caution)                                              |                      |
 | **module_release**         | Trigger module submission for dev, fast, and experimental channels after the main release |                      |
