@@ -539,6 +539,7 @@ func setupLogPipelineController(globals config.Global, cfg envConfig, mgr manage
 			RestConfig:                 mgr.GetConfig(),
 		},
 		mgr.GetClient(),
+		mgr.GetAPIReader(),
 		reconcileTriggerChan,
 		secretWatchClient,
 		nodeSizeTracker,
@@ -564,6 +565,7 @@ func setupTracePipelineController(globals config.Global, envCfg envConfig, mgr m
 			OTelCollectorImage: envCfg.OTelCollectorImage,
 		},
 		mgr.GetClient(),
+		mgr.GetAPIReader(),
 		reconcileTriggerChan,
 		secretWatchClient,
 	)
@@ -614,6 +616,7 @@ func setupMetricPipelineController(globals config.Global, cfg envConfig, mgr man
 			RestConfig:                   mgr.GetConfig(),
 		},
 		mgr.GetClient(),
+		mgr.GetAPIReader(),
 		reconcileTriggerChan,
 		secretWatchClient,
 		nodeSizeTracker,

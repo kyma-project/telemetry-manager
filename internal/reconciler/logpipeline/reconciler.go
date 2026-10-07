@@ -26,6 +26,7 @@ type Reconciler struct {
 	client.Client
 
 	globals          config.Global
+	apiReader        client.Reader // reads directly from the API server, bypassing the client cache
 	overridesHandler OverridesHandler
 	reconcilers      map[logpipelineutils.Mode]LogPipelineReconciler
 
@@ -40,6 +41,13 @@ type Option func(*Reconciler)
 func WithGlobals(globals config.Global) Option {
 	return func(r *Reconciler) {
 		r.globals = globals
+	}
+}
+
+// WithAPIReader sets the reader that bypasses the client cache.
+func WithAPIReader(reader client.Reader) Option {
+	return func(r *Reconciler) {
+		r.apiReader = reader
 	}
 }
 
@@ -116,7 +124,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		}
 
 		// Remove pipeline reference from OTLP Gateway Coordination ConfigMap
-		if err := coordinationconfig.RemovePipelineReference(ctx, r.Client, r.globals.TargetNamespace(), pipelines.SignalTypeLog, req.Name); err != nil {
+		if err := coordinationconfig.RemovePipelineReference(ctx, r.Client, r.apiReader, r.globals.TargetNamespace(), pipelines.SignalTypeLog, req.Name); err != nil {
 			return ctrl.Result{}, fmt.Errorf("failed to remove pipeline reference from OTLP Gateway Coordination ConfigMap: %w", err)
 		}
 

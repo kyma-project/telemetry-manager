@@ -44,6 +44,9 @@ type Reconciler struct {
 
 	globals config.Global
 
+	// apiReader reads directly from the API server, bypassing the client cache
+	apiReader client.Reader
+
 	// Dependencies
 	flowHealthProber  FlowHealthProber
 	gatewayProber     commonstatus.Prober
@@ -62,6 +65,13 @@ type Option func(*Reconciler)
 func WithGlobals(globals config.Global) Option {
 	return func(r *Reconciler) {
 		r.globals = globals
+	}
+}
+
+// WithAPIReader sets the reader that bypasses the client cache for the Reconciler.
+func WithAPIReader(reader client.Reader) Option {
+	return func(r *Reconciler) {
+		r.apiReader = reader
 	}
 }
 
@@ -164,7 +174,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		}
 
 		// Remove pipeline reference from OTLP Gateway Coordination ConfigMap
-		if err := coordinationconfig.RemovePipelineReference(ctx, r.Client, r.globals.TargetNamespace(), pipelines.SignalTypeTrace, req.Name); err != nil {
+		if err := coordinationconfig.RemovePipelineReference(ctx, r.Client, r.apiReader, r.globals.TargetNamespace(), pipelines.SignalTypeTrace, req.Name); err != nil {
 			return ctrl.Result{}, fmt.Errorf("failed to remove pipeline reference from OTLP Gateway Coordination ConfigMap: %w", err)
 		}
 
@@ -250,7 +260,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 			"generation", pipeline.Generation,
 			"secretCount", len(secretVersions))
 
-		if err := coordinationconfig.AddPipelineReference(ctx, r.Client, r.globals.TargetNamespace(), pipelines.SignalTypeTrace, coordinationconfig.PipelineReferenceInput{
+		if err := coordinationconfig.AddPipelineReference(ctx, r.Client, r.apiReader, r.globals.TargetNamespace(), pipelines.SignalTypeTrace, coordinationconfig.PipelineReferenceInput{
 			Name:           pipeline.Name,
 			Generation:     pipeline.Generation,
 			SecretVersions: secretVersions,
@@ -262,7 +272,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 		// Remove current pipeline reference from OTLP Gateway Coordination ConfigMap
 		logf.FromContext(ctx).V(1).Info("Removing pipeline reference from OTLP Gateway Coordination ConfigMap", "pipeline", pipeline.Name)
 
-		if err := coordinationconfig.RemovePipelineReference(ctx, r.Client, r.globals.TargetNamespace(), pipelines.SignalTypeTrace, pipeline.Name); err != nil {
+		if err := coordinationconfig.RemovePipelineReference(ctx, r.Client, r.apiReader, r.globals.TargetNamespace(), pipelines.SignalTypeTrace, pipeline.Name); err != nil {
 			return fmt.Errorf("failed to remove pipeline reference from OTLP Gateway Coordination ConfigMap: %w", err)
 		}
 	}

@@ -116,9 +116,9 @@ func CollectSecretVersions(ctx context.Context, c client.Client, refs []telemetr
 }
 
 // AddPipelineReference adds or updates a pipeline reference of any type.
-// Uses optimistic locking to handle concurrent updates safely.
-func AddPipelineReference(ctx context.Context, c client.Client, namespace string, pipelineType pipelines.SignalType, input PipelineReferenceInput) error {
-	return applyConfigUpdate(ctx, c, namespace, func(config *OTLPGatewayConfigMap) error {
+// Uses optimistic locking to handle concurrent updates safely. The reader must bypass the client cache (for example, mgr.GetAPIReader()).
+func AddPipelineReference(ctx context.Context, c client.Client, reader client.Reader, namespace string, pipelineType pipelines.SignalType, input PipelineReferenceInput) error {
+	return applyConfigUpdate(ctx, c, reader, namespace, func(config *OTLPGatewayConfigMap) error {
 		pipelineSlice := getPipelineSlice(config, pipelineType)
 		if pipelineSlice == nil {
 			return fmt.Errorf("invalid pipeline type: %s", pipelineType)
@@ -143,9 +143,9 @@ func AddPipelineReference(ctx context.Context, c client.Client, namespace string
 }
 
 // RemovePipelineReference removes a pipeline reference of any type.
-// Uses optimistic locking to handle concurrent updates safely.
-func RemovePipelineReference(ctx context.Context, c client.Client, namespace string, pipelineType pipelines.SignalType, name string) error {
-	return applyConfigUpdate(ctx, c, namespace, func(config *OTLPGatewayConfigMap) error {
+// Uses optimistic locking to handle concurrent updates safely. The reader must bypass the client cache (for example, mgr.GetAPIReader()).
+func RemovePipelineReference(ctx context.Context, c client.Client, reader client.Reader, namespace string, pipelineType pipelines.SignalType, name string) error {
+	return applyConfigUpdate(ctx, c, reader, namespace, func(config *OTLPGatewayConfigMap) error {
 		pipelineSlice := getPipelineSlice(config, pipelineType)
 		if pipelineSlice == nil {
 			return fmt.Errorf("invalid pipeline type: %s", pipelineType)
@@ -186,7 +186,7 @@ const (
 	configUpdateRetryJitter   = 0.1
 )
 
-// configUpdateBackoff gives the client cache time to catch up with a concurrent write before the update is retried (about 750ms in total)
+// configUpdateBackoff spaces out the retries of concurrent updates, with jitter so that competing controllers do not retry in lockstep (about 750ms in total)
 var configUpdateBackoff = wait.Backoff{
 	Steps:    configUpdateRetrySteps,
 	Duration: configUpdateRetryInterval,
@@ -195,10 +195,11 @@ var configUpdateBackoff = wait.Backoff{
 }
 
 // applyConfigUpdate reads the coordination ConfigMap, applies updateFn to it, and writes it back.
-// Pipeline controllers update the ConfigMap concurrently and read it from a cache that can be stale,
-// so a conflict (stale resource version) or an AlreadyExists on create (stale NotFound) is retried.
+// Pipeline controllers update the ConfigMap concurrently, so a conflict (another controller wrote first)
+// or an AlreadyExists on create (another controller created it first) is retried.
+// Every attempt reads the ConfigMap with the uncached reader, because the client cache can still return the state before the competing write.
 // Other errors are returned directly and propagated to the caller's reconciliation loop.
-func applyConfigUpdate(ctx context.Context, c client.Client, namespace string, updateFn func(*OTLPGatewayConfigMap) error) error {
+func applyConfigUpdate(ctx context.Context, c client.Client, reader client.Reader, namespace string, updateFn func(*OTLPGatewayConfigMap) error) error {
 	labelerClient := k8sclients.NewLabeler(c, commonresources.DefaultLabels(names.ManagerName, commonresources.LabelValueK8sComponentController))
 
 	isRetryable := func(err error) bool {
@@ -206,12 +207,12 @@ func applyConfigUpdate(ctx context.Context, c client.Client, namespace string, u
 	}
 
 	return retry.OnError(configUpdateBackoff, isRetryable, func() error {
-		return applyConfigUpdateOnce(ctx, labelerClient, namespace, updateFn)
+		return applyConfigUpdateOnce(ctx, labelerClient, reader, namespace, updateFn)
 	})
 }
 
-func applyConfigUpdateOnce(ctx context.Context, labelerClient client.Client, namespace string, updateFn func(*OTLPGatewayConfigMap) error) error {
-	cm, exists, err := getConfigMap(ctx, labelerClient, namespace)
+func applyConfigUpdateOnce(ctx context.Context, labelerClient client.Client, reader client.Reader, namespace string, updateFn func(*OTLPGatewayConfigMap) error) error {
+	cm, exists, err := getConfigMap(ctx, reader, namespace)
 	if err != nil {
 		return err
 	}
@@ -247,10 +248,10 @@ func applyConfigUpdateOnce(ctx context.Context, labelerClient client.Client, nam
 }
 
 // getConfigMap fetches the ConfigMap and returns whether it exists
-func getConfigMap(ctx context.Context, c client.Client, namespace string) (*corev1.ConfigMap, bool, error) {
+func getConfigMap(ctx context.Context, reader client.Reader, namespace string) (*corev1.ConfigMap, bool, error) {
 	var cm corev1.ConfigMap
 
-	err := c.Get(ctx, types.NamespacedName{
+	err := reader.Get(ctx, types.NamespacedName{
 		Name:      names.OTLPGatewayCoordinationConfigMap,
 		Namespace: namespace,
 	}, &cm)

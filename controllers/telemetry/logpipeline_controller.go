@@ -93,7 +93,7 @@ type LogPipelineControllerConfig struct {
 	RestConfig                 *rest.Config
 }
 
-func NewLogPipelineController(config LogPipelineControllerConfig, client client.Client, reconcileTriggerChan <-chan event.GenericEvent, secretWatchClient *secretwatch.Client, nodeSizeTracker *nodesize.Tracker) (*LogPipelineController, error) {
+func NewLogPipelineController(config LogPipelineControllerConfig, client client.Client, apiReader client.Reader, reconcileTriggerChan <-chan event.GenericEvent, secretWatchClient *secretwatch.Client, nodeSizeTracker *nodesize.Tracker) (*LogPipelineController, error) {
 	pipelineCount := resourcelock.MaxPipelineCount
 
 	if config.UnlimitedPipelines() {
@@ -148,13 +148,14 @@ func NewLogPipelineController(config LogPipelineControllerConfig, client client.
 		return nil, err
 	}
 
-	otelReconciler, err := configureOTelReconciler(config, client, otelPipelineLock, gatewayFlowHealthProber, agentFlowHealthProber, nodeSizeTracker)
+	otelReconciler, err := configureOTelReconciler(config, client, apiReader, otelPipelineLock, gatewayFlowHealthProber, agentFlowHealthProber, nodeSizeTracker)
 	if err != nil {
 		return nil, err
 	}
 
 	reconciler := logpipeline.New(
 		client,
+		logpipeline.WithAPIReader(apiReader),
 		logpipeline.WithGlobals(config.Global),
 		logpipeline.WithOverridesHandler(overrides.New(config.Global, client)),
 		logpipeline.WithPipelineSyncer(pipelineSyncer),
@@ -415,7 +416,7 @@ func configureFluentBitReconciler(config LogPipelineControllerConfig, client cli
 }
 
 //nolint:unparam // error is always nil: An error could be returned after implementing the IstioStatusChecker (TODO)
-func configureOTelReconciler(config LogPipelineControllerConfig, client client.Client, pipelineLock logpipelineotel.PipelineLock, gatewayFlowHealthProber *prober.OTelGatewayProber, agentFlowHealthProber *prober.OTelAgentProber, nodeSizeTracker *nodesize.Tracker) (*logpipelineotel.Reconciler, error) {
+func configureOTelReconciler(config LogPipelineControllerConfig, client client.Client, apiReader client.Reader, pipelineLock logpipelineotel.PipelineLock, gatewayFlowHealthProber *prober.OTelGatewayProber, agentFlowHealthProber *prober.OTelAgentProber, nodeSizeTracker *nodesize.Tracker) (*logpipelineotel.Reconciler, error) {
 	transformSpecValidator, err := ottl.NewTransformSpecValidator(pipelines.SignalTypeLog)
 	if err != nil {
 		return nil, err
@@ -451,6 +452,7 @@ func configureOTelReconciler(config LogPipelineControllerConfig, client client.C
 
 	otelReconciler := logpipelineotel.New(
 		logpipelineotel.WithClient(client),
+		logpipelineotel.WithAPIReader(apiReader),
 		logpipelineotel.WithGlobals(config.Global),
 
 		logpipelineotel.WithAgentApplierDeleter(agentApplierDeleter),
