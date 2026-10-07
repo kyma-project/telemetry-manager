@@ -73,7 +73,7 @@ Before you run the pre-release workflow, prepare all component dependencies:
    > [!IMPORTANT]
    > Do **not** release OCC again on release day. Reuse the same OCC image version that was used for the pre-release.
 
-2. **Verify that the component images exist**: The directory-size-exporter, self-monitor, and chown images are built automatically on every push to `main`, so the tags you need should be already published. You only need to pick the latest tags built from main. Browse the available tags in Artifact Registry (requires access to the `kyma-project` Google Cloud project):
+2. **Verify that the component images exist**: The directory-size-exporter, self-monitor, and chown images are built automatically on every push to main, so the tags you need are already published. In Artifact Registry, each image digest can carry several tags — use the tag in vYYYYMMDD-HASH format from the digest that also carries the main tag. Browse the available tags in Artifact Registry (requires access to the `kyma-project` Google Cloud project):
    - [telemetry-chown](https://console.cloud.google.com/artifacts/docker/kyma-project/europe/prod/telemetry-chown)
    - [directory-size-exporter](https://console.cloud.google.com/artifacts/docker/kyma-project/europe/prod/directory-size-exporter)
    - [telemetry-self-monitor](https://console.cloud.google.com/artifacts/docker/kyma-project/europe/prod/tpi%2Ftelemetry-self-monitor)
@@ -163,13 +163,9 @@ Before running the release workflow, complete the following tasks:
 
 2. **Component Image Versions**: If you ran the pre-release workflow the day before, all component images are already built. Use the same image versions that were used for the pre-release.
 
-   If you are running the release without a prior pre-release, use the latest images that were built automatically on push to `main`:
-   - [Build Chown Image](https://github.com/kyma-project/telemetry-manager/actions/workflows/build-chown-image.yaml) - Produces image tags like `v20260302-9f8e7d6c`
-   - [Build Directory Size Exporter Image](https://github.com/kyma-project/telemetry-manager/actions/workflows/build-directory-size-reporter-image.yml) - Produces image tags like `v20260302-12345678`
-   - [Build Self Monitor Image](https://github.com/kyma-project/telemetry-manager/actions/workflows/build-self-monitor-image.yml) - Produces image tags like `v20260302-bbf32a3b`
-   - [OpenTelemetry Collector Components Create Release](https://github.com/kyma-project/opentelemetry-collector-components/actions/workflows/create-release.yaml) - Version format: **`{OCC_VERSION}`**-**`{TELEMETRY_VERSION}`**, such as `0.100.0-1.2.3`
-
-3. **Verify Docker Image Availability**: Confirm that all required Docker images exist (see [2. Verify that the component images exist](#1-prepare-the-pre-release) above).
+   If you are running the release without a prior pre-release, find the latest tags for each component image in Artifact Registry:
+   - For the chown, directory-size-exporter, and self-monitor images, use the `vYYYYMMDD-HASH` tag from the digest that also carries the `main` tag (see [2. Verify that the component images exist](#1-prepare-the-pre-release) above).
+   - For the OCC image, follow the [OCC release process](https://github.com/kyma-project/opentelemetry-collector-components/blob/main/docs/contributor/releasing.md) to create a new release; the resulting version has the format `{OCC_VERSION}-{TELEMETRY_VERSION}`, such as `0.100.0-1.2.3`.
 
 ### 2. Start the Release Workflow
 
