@@ -157,7 +157,6 @@ func newTestReconciler(client client.Client, opts ...Option) *Reconciler {
 	// Build default options with all mocked dependencies
 	allOpts := []Option{
 		WithClient(client),
-		WithAPIReader(client),
 		WithGlobals(config.NewGlobal(config.WithTargetNamespace("default"), config.WithVersion("1.0.0"))),
 		WithAgentFlowHealthProber(agentFlowHealthProberMock),
 		WithGatewayFlowHealthProber(gatewayFlowHealthProberMock),

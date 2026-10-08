@@ -68,7 +68,7 @@ type TracePipelineControllerConfig struct {
 	OTelCollectorImage string
 }
 
-func NewTracePipelineController(config TracePipelineControllerConfig, client client.Client, apiReader client.Reader, reconcileTriggerChan <-chan event.GenericEvent, secretWatchClient *secretwatch.Client) (*TracePipelineController, error) {
+func NewTracePipelineController(config TracePipelineControllerConfig, client client.Client, reconcileTriggerChan <-chan event.GenericEvent, secretWatchClient *secretwatch.Client) (*TracePipelineController, error) {
 	pipelineCount := resourcelock.MaxPipelineCount
 
 	if config.UnlimitedPipelines() {
@@ -118,7 +118,6 @@ func NewTracePipelineController(config TracePipelineControllerConfig, client cli
 
 	reconciler := tracepipeline.New(
 		tracepipeline.WithClient(client),
-		tracepipeline.WithAPIReader(apiReader),
 		tracepipeline.WithGlobals(config.Global),
 
 		tracepipeline.WithFlowHealthProber(flowHealthProber),

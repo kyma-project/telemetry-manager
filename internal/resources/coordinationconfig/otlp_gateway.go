@@ -3,14 +3,11 @@ package coordinationconfig
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
@@ -116,9 +113,9 @@ func CollectSecretVersions(ctx context.Context, c client.Client, refs []telemetr
 }
 
 // AddPipelineReference adds or updates a pipeline reference of any type.
-// Uses optimistic locking to handle concurrent updates safely. The reader must bypass the client cache (for example, mgr.GetAPIReader()).
-func AddPipelineReference(ctx context.Context, c client.Client, reader client.Reader, namespace string, pipelineType pipelines.SignalType, input PipelineReferenceInput) error {
-	return applyConfigUpdate(ctx, c, reader, namespace, func(config *OTLPGatewayConfigMap) error {
+// Uses optimistic locking to handle concurrent updates safely.
+func AddPipelineReference(ctx context.Context, c client.Client, namespace string, pipelineType pipelines.SignalType, input PipelineReferenceInput) error {
+	return applyConfigUpdate(ctx, c, namespace, func(config *OTLPGatewayConfigMap) error {
 		pipelineSlice := getPipelineSlice(config, pipelineType)
 		if pipelineSlice == nil {
 			return fmt.Errorf("invalid pipeline type: %s", pipelineType)
@@ -143,9 +140,9 @@ func AddPipelineReference(ctx context.Context, c client.Client, reader client.Re
 }
 
 // RemovePipelineReference removes a pipeline reference of any type.
-// Uses optimistic locking to handle concurrent updates safely. The reader must bypass the client cache (for example, mgr.GetAPIReader()).
-func RemovePipelineReference(ctx context.Context, c client.Client, reader client.Reader, namespace string, pipelineType pipelines.SignalType, name string) error {
-	return applyConfigUpdate(ctx, c, reader, namespace, func(config *OTLPGatewayConfigMap) error {
+// Uses optimistic locking to handle concurrent updates safely.
+func RemovePipelineReference(ctx context.Context, c client.Client, namespace string, pipelineType pipelines.SignalType, name string) error {
+	return applyConfigUpdate(ctx, c, namespace, func(config *OTLPGatewayConfigMap) error {
 		pipelineSlice := getPipelineSlice(config, pipelineType)
 		if pipelineSlice == nil {
 			return fmt.Errorf("invalid pipeline type: %s", pipelineType)
@@ -179,40 +176,12 @@ func getPipelineSlice(config *OTLPGatewayConfigMap, pipelineType pipelines.Signa
 	}
 }
 
-const (
-	configUpdateRetrySteps    = 5
-	configUpdateRetryInterval = 50 * time.Millisecond
-	configUpdateRetryFactor   = 2.0
-	configUpdateRetryJitter   = 0.1
-)
-
-// configUpdateBackoff spaces out the retries of concurrent updates, with jitter so that competing controllers do not retry in lockstep (about 750ms in total)
-var configUpdateBackoff = wait.Backoff{
-	Steps:    configUpdateRetrySteps,
-	Duration: configUpdateRetryInterval,
-	Factor:   configUpdateRetryFactor,
-	Jitter:   configUpdateRetryJitter,
-}
-
 // applyConfigUpdate reads the coordination ConfigMap, applies updateFn to it, and writes it back.
-// Pipeline controllers update the ConfigMap concurrently, so a conflict (another controller wrote first)
-// or an AlreadyExists on create (another controller created it first) is retried.
-// Every attempt reads the ConfigMap with the uncached reader, because the client cache can still return the state before the competing write.
-// Other errors are returned directly and propagated to the caller's reconciliation loop.
-func applyConfigUpdate(ctx context.Context, c client.Client, reader client.Reader, namespace string, updateFn func(*OTLPGatewayConfigMap) error) error {
+// Errors are returned directly and propagated to the caller's reconciliation loop.
+func applyConfigUpdate(ctx context.Context, c client.Client, namespace string, updateFn func(*OTLPGatewayConfigMap) error) error {
 	labelerClient := k8sclients.NewLabeler(c, commonresources.DefaultLabels(names.ManagerName, commonresources.LabelValueK8sComponentController))
 
-	isRetryable := func(err error) bool {
-		return apierrors.IsConflict(err) || apierrors.IsAlreadyExists(err)
-	}
-
-	return retry.OnError(configUpdateBackoff, isRetryable, func() error {
-		return applyConfigUpdateOnce(ctx, labelerClient, reader, namespace, updateFn)
-	})
-}
-
-func applyConfigUpdateOnce(ctx context.Context, labelerClient client.Client, reader client.Reader, namespace string, updateFn func(*OTLPGatewayConfigMap) error) error {
-	cm, exists, err := getConfigMap(ctx, reader, namespace)
+	cm, exists, err := getConfigMap(ctx, labelerClient, namespace)
 	if err != nil {
 		return err
 	}
@@ -248,10 +217,10 @@ func applyConfigUpdateOnce(ctx context.Context, labelerClient client.Client, rea
 }
 
 // getConfigMap fetches the ConfigMap and returns whether it exists
-func getConfigMap(ctx context.Context, reader client.Reader, namespace string) (*corev1.ConfigMap, bool, error) {
+func getConfigMap(ctx context.Context, c client.Client, namespace string) (*corev1.ConfigMap, bool, error) {
 	var cm corev1.ConfigMap
 
-	err := reader.Get(ctx, types.NamespacedName{
+	err := c.Get(ctx, types.NamespacedName{
 		Name:      names.OTLPGatewayCoordinationConfigMap,
 		Namespace: namespace,
 	}, &cm)

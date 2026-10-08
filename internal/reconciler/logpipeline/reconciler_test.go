@@ -192,9 +192,9 @@ func TestPipelineDeletionCleanup(t *testing.T) {
 				WithSecretWatcher(secretWatcher),
 			)
 
-			// Mock ConfigMap operations for reference removal (the coordination ConfigMap is read through the API reader)
+			// Mock ConfigMap operations for reference removal
 			if tt.removeReferenceError != nil {
-				rec.apiReader = &removeReferenceErrorClient{Client: fakeClient, err: tt.removeReferenceError}
+				rec.Client = &removeReferenceErrorClient{Client: fakeClient, err: tt.removeReferenceError}
 			}
 
 			result := reconcile(t, rec, "deleted-pipeline")

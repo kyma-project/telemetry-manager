@@ -182,7 +182,7 @@ metricPipelines:
 	require.Len(t, config.MetricPipelineReferences, 1)
 
 	// Add another trace pipeline - should not affect other signal types
-	err = AddPipelineReference(context.Background(), fakeClient, fakeClient, "kyma-system", pipelines.SignalTypeTrace, PipelineReferenceInput{Name: "trace-pipeline-2", Generation: 5})
+	err = AddPipelineReference(context.Background(), fakeClient, "kyma-system", pipelines.SignalTypeTrace, PipelineReferenceInput{Name: "trace-pipeline-2", Generation: 5})
 	require.NoError(t, err)
 
 	config, err = ReadOTLPGatewayConfig(context.Background(), fakeClient, "kyma-system")
@@ -192,7 +192,7 @@ metricPipelines:
 	require.Len(t, config.MetricPipelineReferences, 1)
 
 	// Remove trace pipeline - should not affect other signal types
-	err = RemovePipelineReference(context.Background(), fakeClient, fakeClient, "kyma-system", pipelines.SignalTypeTrace, "trace-pipeline")
+	err = RemovePipelineReference(context.Background(), fakeClient, "kyma-system", pipelines.SignalTypeTrace, "trace-pipeline")
 	require.NoError(t, err)
 
 	config, err = ReadOTLPGatewayConfig(context.Background(), fakeClient, "kyma-system")
@@ -211,7 +211,7 @@ func TestWritePipelineReference_CreateNewConfigMap(t *testing.T) {
 
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
 
-			err := AddPipelineReference(context.Background(), fakeClient, fakeClient, "kyma-system", signalType, PipelineReferenceInput{Name: "my-pipeline", Generation: 1})
+			err := AddPipelineReference(context.Background(), fakeClient, "kyma-system", signalType, PipelineReferenceInput{Name: "my-pipeline", Generation: 1})
 			require.NoError(t, err)
 
 			config, err := ReadOTLPGatewayConfig(context.Background(), fakeClient, "kyma-system")
@@ -247,7 +247,7 @@ func TestWritePipelineReference_AddToExistingConfigMap(t *testing.T) {
 
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cm).Build()
 
-			err := AddPipelineReference(context.Background(), fakeClient, fakeClient, "kyma-system", signalType, PipelineReferenceInput{Name: "new-pipeline", Generation: 1})
+			err := AddPipelineReference(context.Background(), fakeClient, "kyma-system", signalType, PipelineReferenceInput{Name: "new-pipeline", Generation: 1})
 			require.NoError(t, err)
 
 			config, err := ReadOTLPGatewayConfig(context.Background(), fakeClient, "kyma-system")
@@ -301,7 +301,7 @@ func TestWritePipelineReference_UpdateExisting(t *testing.T) {
 
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cm).Build()
 
-			err := AddPipelineReference(context.Background(), fakeClient, fakeClient, "kyma-system", signalType, PipelineReferenceInput{Name: "my-pipeline", Generation: 10})
+			err := AddPipelineReference(context.Background(), fakeClient, "kyma-system", signalType, PipelineReferenceInput{Name: "my-pipeline", Generation: 10})
 			require.NoError(t, err)
 
 			config, err := ReadOTLPGatewayConfig(context.Background(), fakeClient, "kyma-system")
@@ -322,7 +322,7 @@ func TestWritePipelineReference_GetError(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
 	errorClient := &errorGetClient{Client: fakeClient}
 
-	err := AddPipelineReference(context.Background(), errorClient, errorClient, "kyma-system", pipelines.SignalTypeTrace, PipelineReferenceInput{Name: "my-pipeline", Generation: 1})
+	err := AddPipelineReference(context.Background(), errorClient, "kyma-system", pipelines.SignalTypeTrace, PipelineReferenceInput{Name: "my-pipeline", Generation: 1})
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "failed to get ConfigMap")
 }
@@ -341,7 +341,7 @@ func TestWritePipelineReference_InvalidYAMLInExisting(t *testing.T) {
 
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cm).Build()
 
-	err := AddPipelineReference(context.Background(), fakeClient, fakeClient, "kyma-system", pipelines.SignalTypeTrace, PipelineReferenceInput{Name: "my-pipeline", Generation: 1})
+	err := AddPipelineReference(context.Background(), fakeClient, "kyma-system", pipelines.SignalTypeTrace, PipelineReferenceInput{Name: "my-pipeline", Generation: 1})
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "failed to unmarshal ConfigMap")
 }
@@ -353,7 +353,7 @@ func TestWritePipelineReference_CreateError(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
 	errorClient := &errorCreateClient{Client: fakeClient}
 
-	err := AddPipelineReference(context.Background(), errorClient, errorClient, "kyma-system", pipelines.SignalTypeTrace, PipelineReferenceInput{Name: "my-pipeline", Generation: 1})
+	err := AddPipelineReference(context.Background(), errorClient, "kyma-system", pipelines.SignalTypeTrace, PipelineReferenceInput{Name: "my-pipeline", Generation: 1})
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "failed to create ConfigMap")
 }
@@ -373,7 +373,7 @@ func TestWritePipelineReference_UpdateError(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cm).Build()
 	errorClient := &errorUpdateClient{Client: fakeClient}
 
-	err := AddPipelineReference(context.Background(), errorClient, errorClient, "kyma-system", pipelines.SignalTypeTrace, PipelineReferenceInput{Name: "my-pipeline", Generation: 1})
+	err := AddPipelineReference(context.Background(), errorClient, "kyma-system", pipelines.SignalTypeTrace, PipelineReferenceInput{Name: "my-pipeline", Generation: 1})
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "failed to update ConfigMap")
 }
@@ -402,7 +402,7 @@ func TestRemovePipelineReference_RemoveFromExisting(t *testing.T) {
 
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cm).Build()
 
-			err := RemovePipelineReference(context.Background(), fakeClient, fakeClient, "kyma-system", signalType, "pipeline-1")
+			err := RemovePipelineReference(context.Background(), fakeClient, "kyma-system", signalType, "pipeline-1")
 			require.NoError(t, err)
 
 			config, err := ReadOTLPGatewayConfig(context.Background(), fakeClient, "kyma-system")
@@ -439,7 +439,7 @@ func TestRemovePipelineReference_Idempotent(t *testing.T) {
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cm).Build()
 
 			// Remove non-existent pipeline (should not error)
-			err := RemovePipelineReference(context.Background(), fakeClient, fakeClient, "kyma-system", signalType, "non-existent")
+			err := RemovePipelineReference(context.Background(), fakeClient, "kyma-system", signalType, "non-existent")
 			require.NoError(t, err)
 
 			config, err := ReadOTLPGatewayConfig(context.Background(), fakeClient, "kyma-system")
@@ -474,7 +474,7 @@ func TestRemovePipelineReference_RemoveAll(t *testing.T) {
 
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cm).Build()
 
-			err := RemovePipelineReference(context.Background(), fakeClient, fakeClient, "kyma-system", signalType, "pipeline-1")
+			err := RemovePipelineReference(context.Background(), fakeClient, "kyma-system", signalType, "pipeline-1")
 			require.NoError(t, err)
 
 			config, err := ReadOTLPGatewayConfig(context.Background(), fakeClient, "kyma-system")
@@ -498,7 +498,7 @@ func TestRemovePipelineReference_NoConfigMap(t *testing.T) {
 
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
 
-			err := RemovePipelineReference(context.Background(), fakeClient, fakeClient, "kyma-system", signalType, "pipeline-1")
+			err := RemovePipelineReference(context.Background(), fakeClient, "kyma-system", signalType, "pipeline-1")
 			require.NoError(t, err)
 
 			config, err := ReadOTLPGatewayConfig(context.Background(), fakeClient, "kyma-system")
@@ -521,13 +521,13 @@ func TestMixedPipelineUpdates(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
 
 	// Add one pipeline per signal type
-	err := AddPipelineReference(context.Background(), fakeClient, fakeClient, "kyma-system", pipelines.SignalTypeTrace, PipelineReferenceInput{Name: "trace-1", Generation: 1})
+	err := AddPipelineReference(context.Background(), fakeClient, "kyma-system", pipelines.SignalTypeTrace, PipelineReferenceInput{Name: "trace-1", Generation: 1})
 	require.NoError(t, err)
 
-	err = AddPipelineReference(context.Background(), fakeClient, fakeClient, "kyma-system", pipelines.SignalTypeLog, PipelineReferenceInput{Name: "log-1", Generation: 2})
+	err = AddPipelineReference(context.Background(), fakeClient, "kyma-system", pipelines.SignalTypeLog, PipelineReferenceInput{Name: "log-1", Generation: 2})
 	require.NoError(t, err)
 
-	err = AddPipelineReference(context.Background(), fakeClient, fakeClient, "kyma-system", pipelines.SignalTypeMetric, PipelineReferenceInput{Name: "metric-1", Generation: 3})
+	err = AddPipelineReference(context.Background(), fakeClient, "kyma-system", pipelines.SignalTypeMetric, PipelineReferenceInput{Name: "metric-1", Generation: 3})
 	require.NoError(t, err)
 
 	// Verify all exist
@@ -541,7 +541,7 @@ func TestMixedPipelineUpdates(t *testing.T) {
 	require.Equal(t, "metric-1", config.MetricPipelineReferences[0].Name)
 
 	// Update trace pipeline generation - others should be unchanged
-	err = AddPipelineReference(context.Background(), fakeClient, fakeClient, "kyma-system", pipelines.SignalTypeTrace, PipelineReferenceInput{Name: "trace-1", Generation: 5})
+	err = AddPipelineReference(context.Background(), fakeClient, "kyma-system", pipelines.SignalTypeTrace, PipelineReferenceInput{Name: "trace-1", Generation: 5})
 	require.NoError(t, err)
 
 	config, err = ReadOTLPGatewayConfig(context.Background(), fakeClient, "kyma-system")
@@ -551,7 +551,7 @@ func TestMixedPipelineUpdates(t *testing.T) {
 	require.Equal(t, int64(3), config.MetricPipelineReferences[0].Generation)
 
 	// Remove trace pipeline - others should be unchanged
-	err = RemovePipelineReference(context.Background(), fakeClient, fakeClient, "kyma-system", pipelines.SignalTypeTrace, "trace-1")
+	err = RemovePipelineReference(context.Background(), fakeClient, "kyma-system", pipelines.SignalTypeTrace, "trace-1")
 	require.NoError(t, err)
 
 	config, err = ReadOTLPGatewayConfig(context.Background(), fakeClient, "kyma-system")
@@ -563,7 +563,7 @@ func TestMixedPipelineUpdates(t *testing.T) {
 	require.Equal(t, "metric-1", config.MetricPipelineReferences[0].Name)
 
 	// Remove metric pipeline - log should be unchanged
-	err = RemovePipelineReference(context.Background(), fakeClient, fakeClient, "kyma-system", pipelines.SignalTypeMetric, "metric-1")
+	err = RemovePipelineReference(context.Background(), fakeClient, "kyma-system", pipelines.SignalTypeMetric, "metric-1")
 	require.NoError(t, err)
 
 	config, err = ReadOTLPGatewayConfig(context.Background(), fakeClient, "kyma-system")
@@ -613,7 +613,7 @@ func TestAddPipelineReference_InvalidSignalType(t *testing.T) {
 
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
 
-	err := AddPipelineReference(context.Background(), fakeClient, fakeClient, "kyma-system", pipelines.SignalType("invalid"), PipelineReferenceInput{Name: "my-pipeline", Generation: 1})
+	err := AddPipelineReference(context.Background(), fakeClient, "kyma-system", pipelines.SignalType("invalid"), PipelineReferenceInput{Name: "my-pipeline", Generation: 1})
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "invalid pipeline type")
 }
@@ -624,7 +624,7 @@ func TestRemovePipelineReference_InvalidSignalType(t *testing.T) {
 
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
 
-	err := RemovePipelineReference(context.Background(), fakeClient, fakeClient, "kyma-system", pipelines.SignalType("invalid"), "my-pipeline")
+	err := RemovePipelineReference(context.Background(), fakeClient, "kyma-system", pipelines.SignalType("invalid"), "my-pipeline")
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "invalid pipeline type")
 }
@@ -764,7 +764,7 @@ func TestWritePipelineReferenceWithSecretVersions(t *testing.T) {
 					"kyma-system/secret2": "222",
 				}
 
-				err := AddPipelineReference(context.Background(), fakeClient, fakeClient, "kyma-system", signalType, PipelineReferenceInput{
+				err := AddPipelineReference(context.Background(), fakeClient, "kyma-system", signalType, PipelineReferenceInput{
 					Name:           "my-pipeline",
 					Generation:     5,
 					SecretVersions: secretVersions,
@@ -788,7 +788,7 @@ func TestWritePipelineReferenceWithSecretVersions(t *testing.T) {
 			t.Run(string(signalType), func(t *testing.T) {
 				fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
 
-				err := AddPipelineReference(context.Background(), fakeClient, fakeClient, "kyma-system", signalType, PipelineReferenceInput{
+				err := AddPipelineReference(context.Background(), fakeClient, "kyma-system", signalType, PipelineReferenceInput{
 					Name:       "my-pipeline",
 					Generation: 5,
 					SecretVersions: map[string]string{
@@ -797,7 +797,7 @@ func TestWritePipelineReferenceWithSecretVersions(t *testing.T) {
 				})
 				require.NoError(t, err)
 
-				err = AddPipelineReference(context.Background(), fakeClient, fakeClient, "kyma-system", signalType, PipelineReferenceInput{
+				err = AddPipelineReference(context.Background(), fakeClient, "kyma-system", signalType, PipelineReferenceInput{
 					Name:       "my-pipeline",
 					Generation: 6,
 					SecretVersions: map[string]string{
@@ -822,7 +822,7 @@ func TestWritePipelineReferenceWithSecretVersions(t *testing.T) {
 			t.Run(string(signalType), func(t *testing.T) {
 				fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
 
-				err := AddPipelineReference(context.Background(), fakeClient, fakeClient, "kyma-system", signalType, PipelineReferenceInput{
+				err := AddPipelineReference(context.Background(), fakeClient, "kyma-system", signalType, PipelineReferenceInput{
 					Name:           "my-pipeline",
 					Generation:     1,
 					SecretVersions: nil,
@@ -855,75 +855,9 @@ func TestWritePipelineReference_ConflictReturnsError(t *testing.T) {
 	innerFake := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cm).Build()
 	c := &conflictOnUpdateClient{Client: innerFake}
 
-	err := AddPipelineReference(context.Background(), c, c, "kyma-system", pipelines.SignalTypeTrace, PipelineReferenceInput{Name: "my-pipeline", Generation: 1})
+	err := AddPipelineReference(context.Background(), c, "kyma-system", pipelines.SignalTypeTrace, PipelineReferenceInput{Name: "my-pipeline", Generation: 1})
 	require.Error(t, err)
 	require.True(t, apierrors.IsConflict(err))
-}
-
-func TestRemovePipelineReference_RetriesOnConflict(t *testing.T) {
-	scheme := runtime.NewScheme()
-	_ = corev1.AddToScheme(scheme)
-
-	cm := &corev1.ConfigMap{
-		Name:      names.OTLPGatewayCoordinationConfigMap,
-		Namespace: "kyma-system",
-		Data: map[string]string{
-			ConfigMapDataKey: "tracePipelines:\n- name: pipeline-1\n  generation: 1\n- name: pipeline-2\n  generation: 1\n",
-		},
-	}
-
-	// the first update conflicts, as if another pipeline controller had updated the ConfigMap in the meantime
-	c := &failOnceClient{Client: fake.NewClientBuilder().WithScheme(scheme).WithObjects(cm).Build(), updateErr: apierrors.NewConflict(schema.GroupResource{Resource: "configmaps"}, cm.Name, fmt.Errorf("resource version mismatch"))}
-
-	err := RemovePipelineReference(context.Background(), c, c, "kyma-system", pipelines.SignalTypeTrace, "pipeline-1")
-	require.NoError(t, err)
-	require.Equal(t, 2, c.updateCalls)
-
-	config, err := ReadOTLPGatewayConfig(context.Background(), c, "kyma-system")
-	require.NoError(t, err)
-	require.Len(t, config.TracePipelineReferences, 1)
-	require.Equal(t, "pipeline-2", config.TracePipelineReferences[0].Name)
-}
-
-func TestAddPipelineReference_RetriesOnAlreadyExists(t *testing.T) {
-	scheme := runtime.NewScheme()
-	_ = corev1.AddToScheme(scheme)
-
-	// the first create fails as if a stale cache had reported the ConfigMap as missing although it already exists
-	c := &failOnceClient{Client: fake.NewClientBuilder().WithScheme(scheme).Build(), createErr: apierrors.NewAlreadyExists(schema.GroupResource{Resource: "configmaps"}, names.OTLPGatewayCoordinationConfigMap)}
-
-	err := AddPipelineReference(context.Background(), c, c, "kyma-system", pipelines.SignalTypeTrace, PipelineReferenceInput{Name: "my-pipeline", Generation: 1})
-	require.NoError(t, err)
-	require.Equal(t, 2, c.createCalls)
-
-	config, err := ReadOTLPGatewayConfig(context.Background(), c, "kyma-system")
-	require.NoError(t, err)
-	require.Len(t, config.TracePipelineReferences, 1)
-}
-
-func TestRemovePipelineReference_ReadsFromReaderNotFromClient(t *testing.T) {
-	scheme := runtime.NewScheme()
-	_ = corev1.AddToScheme(scheme)
-
-	cm := &corev1.ConfigMap{
-		Name:      names.OTLPGatewayCoordinationConfigMap,
-		Namespace: "kyma-system",
-		Data: map[string]string{
-			ConfigMapDataKey: "tracePipelines:\n- name: pipeline-1\n  generation: 1\n",
-		},
-	}
-
-	apiServer := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cm).Build()
-
-	// the client misses the existing ConfigMap like a stale cache, the reader returns the current state
-	staleClient := &notFoundOnGetClient{Client: apiServer}
-
-	err := RemovePipelineReference(context.Background(), staleClient, apiServer, "kyma-system", pipelines.SignalTypeTrace, "pipeline-1")
-	require.NoError(t, err)
-
-	// the last reference was removed, so the ConfigMap is deleted instead of keeping a stale entry
-	err = apiServer.Get(context.Background(), types.NamespacedName{Name: names.OTLPGatewayCoordinationConfigMap, Namespace: "kyma-system"}, &corev1.ConfigMap{})
-	require.True(t, apierrors.IsNotFound(err))
 }
 
 func TestAddPipelineReference_NewConfigMapHasModuleLabel(t *testing.T) {
@@ -932,7 +866,7 @@ func TestAddPipelineReference_NewConfigMapHasModuleLabel(t *testing.T) {
 
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
 
-	err := AddPipelineReference(context.Background(), fakeClient, fakeClient, "kyma-system", pipelines.SignalTypeTrace, PipelineReferenceInput{Name: "my-pipeline", Generation: 1})
+	err := AddPipelineReference(context.Background(), fakeClient, "kyma-system", pipelines.SignalTypeTrace, PipelineReferenceInput{Name: "my-pipeline", Generation: 1})
 	require.NoError(t, err)
 
 	var cm corev1.ConfigMap
@@ -940,43 +874,6 @@ func TestAddPipelineReference_NewConfigMapHasModuleLabel(t *testing.T) {
 	err = fakeClient.Get(context.Background(), types.NamespacedName{Name: names.OTLPGatewayCoordinationConfigMap, Namespace: "kyma-system"}, &cm)
 	require.NoError(t, err)
 	assert.Equal(t, "telemetry", cm.Labels["kyma-project.io/module"])
-}
-
-// failOnceClient returns the configured error on the first Update and/or the first Create, and delegates all further calls
-type failOnceClient struct {
-	client.Client
-
-	updateErr   error
-	createErr   error
-	updateCalls int
-	createCalls int
-}
-
-func (c *failOnceClient) Update(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error {
-	c.updateCalls++
-	if c.updateCalls == 1 && c.updateErr != nil {
-		return c.updateErr
-	}
-
-	return c.Client.Update(ctx, obj, opts...)
-}
-
-func (c *failOnceClient) Create(ctx context.Context, obj client.Object, opts ...client.CreateOption) error {
-	c.createCalls++
-	if c.createCalls == 1 && c.createErr != nil {
-		return c.createErr
-	}
-
-	return c.Client.Create(ctx, obj, opts...)
-}
-
-// notFoundOnGetClient returns NotFound on every Get, like a cache that has not seen the object yet, and delegates all other calls.
-type notFoundOnGetClient struct {
-	client.Client
-}
-
-func (c *notFoundOnGetClient) Get(_ context.Context, key client.ObjectKey, _ client.Object, _ ...client.GetOption) error {
-	return apierrors.NewNotFound(schema.GroupResource{Resource: "configmaps"}, key.Name)
 }
 
 // conflictOnUpdateClient always returns Conflict on Update.

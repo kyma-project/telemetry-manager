@@ -56,7 +56,6 @@ func newTestReconciler(client client.Client, opts ...Option) *Reconciler {
 
 	// Build default options with mocked dependencies
 	allOpts := []Option{
-		WithAPIReader(client),
 		WithOverridesHandler(&stubs.OverridesHandler{}),
 		WithPipelineSyncer(pipelineSync),
 		WithSecretWatcher(stubs.NewSecretWatcher(nil)),

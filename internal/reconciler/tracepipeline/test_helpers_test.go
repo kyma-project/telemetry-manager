@@ -45,7 +45,6 @@ func testReconcilerWithPipelineLock(fakeClient client.Client, flowHealthProber F
 
 	return New(
 		WithClient(fakeClient),
-		WithAPIReader(fakeClient),
 		WithGlobals(cfg),
 		WithFlowHealthProber(flowHealthProber),
 		WithGatewayProber(gatewayProber),

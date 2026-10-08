@@ -36,9 +36,6 @@ type Reconciler struct {
 
 	globals config.Global
 
-	// apiReader reads directly from the API server, bypassing the client cache
-	apiReader client.Reader
-
 	// Dependencies
 	agentFlowHealthProber   AgentFlowHealthProber
 	gatewayFlowHealthProber GatewayFlowHealthProber
@@ -155,13 +152,6 @@ func WithClient(client client.Client) Option {
 	}
 }
 
-// WithAPIReader sets the reader that bypasses the client cache.
-func WithAPIReader(reader client.Reader) Option {
-	return func(r *Reconciler) {
-		r.apiReader = reader
-	}
-}
-
 // New creates a new Reconciler with the provided client and functional options.
 // All dependencies must be provided via functional options.
 func New(opts ...Option) *Reconciler {
@@ -243,7 +233,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 			"generation", pipeline.Generation,
 			"secretCount", len(secretVersions))
 
-		if err := coordinationconfig.AddPipelineReference(ctx, r.Client, r.apiReader, r.globals.TargetNamespace(), pipelines.SignalTypeLog, coordinationconfig.PipelineReferenceInput{
+		if err := coordinationconfig.AddPipelineReference(ctx, r.Client, r.globals.TargetNamespace(), pipelines.SignalTypeLog, coordinationconfig.PipelineReferenceInput{
 			Name:           pipeline.Name,
 			Generation:     pipeline.Generation,
 			SecretVersions: secretVersions,
@@ -255,7 +245,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1
 		// Remove current pipeline reference from OTLP Gateway Coordination ConfigMap
 		logf.FromContext(ctx).V(1).Info("Removing pipeline reference from OTLP Gateway Coordination ConfigMap", "pipeline", pipeline.Name)
 
-		if err := coordinationconfig.RemovePipelineReference(ctx, r.Client, r.apiReader, r.globals.TargetNamespace(), pipelines.SignalTypeLog, pipeline.Name); err != nil {
+		if err := coordinationconfig.RemovePipelineReference(ctx, r.Client, r.globals.TargetNamespace(), pipelines.SignalTypeLog, pipeline.Name); err != nil {
 			return fmt.Errorf("failed to remove pipeline reference from OTLP Gateway Coordination ConfigMap: %w", err)
 		}
 	}

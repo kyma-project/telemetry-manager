@@ -85,7 +85,7 @@ type MetricPipelineControllerConfig struct {
 	RestConfig                   *rest.Config
 }
 
-func NewMetricPipelineController(config MetricPipelineControllerConfig, client client.Client, apiReader client.Reader, reconcileTriggerChan <-chan event.GenericEvent, secretWatchClient *secretwatch.Client, nodeSizeTracker *nodesize.Tracker) (*MetricPipelineController, error) {
+func NewMetricPipelineController(config MetricPipelineControllerConfig, client client.Client, reconcileTriggerChan <-chan event.GenericEvent, secretWatchClient *secretwatch.Client, nodeSizeTracker *nodesize.Tracker) (*MetricPipelineController, error) {
 	pipelineCount := resourcelock.MaxPipelineCount
 
 	if config.UnlimitedPipelines() {
@@ -148,7 +148,6 @@ func NewMetricPipelineController(config MetricPipelineControllerConfig, client c
 
 	reconciler := metricpipeline.New(
 		metricpipeline.WithClient(client),
-		metricpipeline.WithAPIReader(apiReader),
 		metricpipeline.WithGlobals(config.Global),
 
 		metricpipeline.WithAgentApplierDeleter(otelcollector.NewMetricAgentApplierDeleter(config.Global, config.OTelCollectorImage, config.MetricAgentPriorityClassName)),

@@ -201,7 +201,6 @@ func newTestReconciler(client client.Client, opts ...any) (*testReconciler, func
 	// Build default options with mocked dependencies
 	reconcilerOpts := []Option{
 		WithClient(client),
-		WithAPIReader(client),
 		WithGlobals(config.NewGlobal(config.WithTargetNamespace("default"))),
 		WithAgentConfigBuilder(agentConfigBuilder),
 		WithAgentApplierDeleter(agentApplierDeleter),
