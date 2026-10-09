@@ -152,4 +152,14 @@ feat(metrics): support histogram aggregation
 
 ## Documentation Guidelines
 
-When adding, updating, or removing any documentation inside the `docs/` folder, you must always follow the guidelines in [docs/claude-docs.md](docs/CLAUDE.md).
+When reviewing or editing documentation files (`docs/**/*.md`), load the SAP/Kyma technical writing style guide:
+
+<https://raw.githubusercontent.com/kyma-project/community/refs/heads/main/docs/guidelines/content-guidelines/agentic.md>
+
+- For routine edits: apply Pass 1 (formatting) and Pass 2 (language). Silently fix typos, grammar, and formatting issues without asking for confirmation.
+- For new documentation or major rewrites: apply all four passes (formatting, language, terminology, and reconciliation). List structural changes in a summary.
+
+Repo-specific notes:
+
+- VitePress callout syntax (`[!NOTE]`, `[!WARNING]`, `[!TIP]`) is valid in this repo.
+- Use the document templates from the [Kyma template repository](https://github.com/kyma-project/template-repository/tree/main/docs/user/assets/templates).
