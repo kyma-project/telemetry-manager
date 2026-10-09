@@ -2,7 +2,6 @@ package resourcelock
 
 import (
 	"fmt"
-	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -163,7 +162,9 @@ func Test_new(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := newChecker(tt.args.client, tt.args.lockName, tt.args.maxOwners, tt.args.suffix); !reflect.DeepEqual(got, tt.want) {
+			got := newChecker(tt.args.client, tt.args.lockName, tt.args.maxOwners, tt.args.suffix)
+			// the client is wrapped by the labeler, so only compare the remaining fields
+			if got.lockName != tt.want.lockName || got.maxOwners != tt.want.maxOwners {
 				t.Errorf("newChecker() = %v, want %v", got, tt.want)
 			}
 		})
