@@ -8,7 +8,7 @@
 
 Configure the Telemetry module to send logs, metrics, and traces from your cluster to an SAP Cloud Logging instance. By centralizing this data in your SAP Cloud Logging instance, you can store, visualize, and analyze the observability of your applications.
 
-## Table of Content
+## Table of Contents
 
 - [Prerequisites](#prerequisites)
 - [Context](#context)

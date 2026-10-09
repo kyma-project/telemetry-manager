@@ -8,7 +8,7 @@
 
 Learn how to configure the Telemetry module to ingest metrics in a custom [Prometheus](https://prometheus.io/) instance deployed with the [`kube-prometheus-stack`](https://github.com/prometheus-community/helm-charts/blob/main/charts/kube-prometheus-stack). Additionally install Grafana and Kiali for visualizations.
 
-## Table of Content
+## Table of Contents
 
 - [Prerequisites](#prerequisites)
 - [Context](#context)
