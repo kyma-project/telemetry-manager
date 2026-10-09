@@ -10,6 +10,8 @@
 
 Learn how to use the [OpenTelemetry (OTel) Operator](https://opentelemetry.io/docs/kubernetes/operator/) to collect traces, metrics, and logs from your Kubernetes workloads without modifying application code. The operator injects an instrumentation agent into your Pods at creation time and exports the signals to the Kyma Telemetry module's OTLP endpoint. Install the operator independently and point its `Instrumentation` CR at the module's unified OTLP endpoint, `http://telemetry-otlp.kyma-system.svc.cluster.local:4318`, which accepts traces, metrics, and logs. Both components run side by side without competing for the same resources.
 
+![OTel Operator auto-instrumentation injecting agents that export signals to the Telemetry module's OTLP endpoint](./../assets/otel-operator-auto-instrumentation.drawio.svg)
+
 ## Table of Contents
 
 - [Benefits and Limitations](#benefits-and-limitations)
@@ -80,18 +82,18 @@ The operator installs its CRDs, `Instrumentation` and `OpenTelemetryCollector`, 
 
 To receive the signals, you must create a `TracePipeline`, `MetricPipeline`, and `LogPipeline`. The following example also deploys an `OpenTelemetryCollector` with a `debug` exporter into the `opentelemetry-demo` namespace, so you can inspect the collected signals in the collector's logs. The namespace already exists because the operator install created it.
 
-1. Apply the collector and the three pipelines:
+To apply the collector and the three pipelines, run:
 
-   ```bash
-   kubectl apply -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/refs/heads/main/docs/user/integration/opentelemetry-operator/otel-collector-and-pipelines.yaml
-   ```
+```bash
+kubectl apply -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/refs/heads/main/docs/user/integration/opentelemetry-operator/otel-collector-and-pipelines.yaml
+```
 
-   The manifest deploys the following resources:
+The manifest deploys the following resources:
 
-   - An `OpenTelemetryCollector` named `otel-debug-collector` in the `opentelemetry-demo` namespace, with a `debug` exporter that prints all received signals to its own logs.
-   - A `TracePipeline`, `MetricPipeline`, and `LogPipeline`, each routing its signal to the collector.
+- An `OpenTelemetryCollector` named `otel-debug-collector` in the `opentelemetry-demo` namespace, with a `debug` exporter that prints all received signals to its own logs.
+- A `TracePipeline`, `MetricPipeline`, and `LogPipeline`, each routing its signal to the collector.
 
-   The debug collector is for following this guide. For production, replace it with your own backend, or route the pipelines directly to a third-party remote backend.
+The debug collector is for following this guide. For production, replace it with your own backend, or route the pipelines directly to a third-party remote backend.
 
 ## Create an Instrumentation CR
 
@@ -99,39 +101,43 @@ The `Instrumentation` CR tells the operator which OTLP endpoint to export to, wh
 
 The CR carries one resource block per language. The operator applies only the block for the language you inject, so this single CR serves Java, Node.js, Go, and other supported languages.
 
-1. Create the `Instrumentation` CR:
+To create the `Instrumentation` CR, apply the following manifest:
 
-   ```yaml
-   apiVersion: opentelemetry.io/v1alpha1
-   kind: Instrumentation
-   metadata:
-     name: my-instrumentation
-     namespace: opentelemetry-demo
-   spec:
-     exporter:
-       endpoint: http://telemetry-otlp.kyma-system.svc.cluster.local:4318
-     propagators:
-       - tracecontext
-       - baggage
-     sampler:
-       type: parentbased_traceidratio
-       argument: "1"
-     java:
-       resources:
-         limits:
-           cpu: 200m
-           memory: 256Mi
-     nodejs:
-       resourceRequirements:
-         limits:
-           cpu: 200m
-           memory: 128Mi
-     go:
-       resourceRequirements:
-         limits:
-           cpu: 200m
-           memory: 128Mi
-   ```
+```bash
+kubectl apply -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/refs/heads/main/docs/user/integration/opentelemetry-operator/instrumentation.yaml
+```
+
+```yaml
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: my-instrumentation
+  namespace: opentelemetry-demo
+spec:
+  exporter:
+    endpoint: http://telemetry-otlp.kyma-system.svc.cluster.local:4318
+  propagators:
+    - tracecontext
+    - baggage
+  sampler:
+    type: parentbased_traceidratio
+    argument: "1"
+  java:
+    resources:
+      limits:
+        cpu: 200m
+        memory: 256Mi
+  nodejs:
+    resourceRequirements:
+      limits:
+        cpu: 200m
+        memory: 128Mi
+  go:
+    resourceRequirements:
+      limits:
+        cpu: 200m
+        memory: 128Mi
+```
 
 > [!NOTE]
 > The `Instrumentation` CR exports using HTTP/protobuf only, so you must use port `4318`. Check the [OTel auto-instrumentation docs](https://opentelemetry.io/docs/kubernetes/operator/automatic/) for any language-specific endpoint requirements.
@@ -172,7 +178,13 @@ The operator watches for Pod annotations and injects the appropriate agent at Po
 
 When Istio is active in your cluster, its Envoy proxies propagate the W3C `traceparent` header, which carries the sampling decision. Because the OTel agent uses `parentbased_traceidratio`, it honors the sampling flag set by Istio. If Istio decides not to sample a request, the agent does not report a span for it either.
 
-To control trace volume entirely through Istio, set `randomSamplingPercentage` in your Istio Telemetry CR and set the instrumentation sampler argument to `"0"`:
+To control trace volume entirely through Istio, set `randomSamplingPercentage` in your Istio Telemetry CR and set the instrumentation sampler argument to `"0"`.
+
+Apply the Istio Telemetry CR:
+
+```bash
+kubectl apply -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/refs/heads/main/docs/user/integration/opentelemetry-operator/istio-telemetry.yaml
+```
 
 ```yaml
 apiVersion: telemetry.istio.io/v1
@@ -186,6 +198,8 @@ spec:
         - name: "kyma-traces"
       randomSamplingPercentage: 1.00 # adjust this value
 ```
+
+Set the sampler argument to `"0"` in the shared `my-instrumentation` CR:
 
 ```yaml
 apiVersion: opentelemetry.io/v1alpha1
@@ -314,7 +328,13 @@ spec:
 1. Delete the `Instrumentation` CR:
 
    ```bash
-   kubectl delete instrumentation my-instrumentation -n opentelemetry-demo
+   kubectl delete -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/refs/heads/main/docs/user/integration/opentelemetry-operator/instrumentation.yaml
+   ```
+
+1. If you applied the Istio Telemetry CR, delete it. This removes the shared `mesh-default` CR in `istio-system`:
+
+   ```bash
+   kubectl delete -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/refs/heads/main/docs/user/integration/opentelemetry-operator/istio-telemetry.yaml
    ```
 
 1. Delete the debug collector and the pipelines:
