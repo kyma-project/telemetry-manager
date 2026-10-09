@@ -14,7 +14,7 @@ Because CloudWatch doesn't support native OTLP ingestion for metrics, and OTLP s
 
 ![overview](../assets/cloudwatch.drawio.svg)
 
-## Table of Content
+## Table of Contents
 
 - [Prerequisites](#prerequisites)
 - [Prepare the Namespace](#prepare-the-namespace)
