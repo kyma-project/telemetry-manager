@@ -19,6 +19,9 @@ Configure the Telemetry module to send logs, metrics, and traces from your clust
 - [Use SAP Cloud Logging Alerts](#use-sap-cloud-logging-alerts)
 - [Use SAP Cloud Logging Dashboards](#use-sap-cloud-logging-dashboards)
 
+> [!TIP]
+> If you have an existing Fluent Bit-based integration with SAP Cloud Logging, see [Migrate from Fluent Bit to the OTel Log Pipeline](./migration-from-fluent-bit.md).
+
 ## Prerequisites
 
 - Kyma as the target deployment environment, with the following modules added (see [Quick Install](https://kyma-project.io/02-get-started/01-quick-install)):
