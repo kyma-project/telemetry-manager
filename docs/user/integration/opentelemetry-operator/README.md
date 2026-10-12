@@ -45,7 +45,7 @@ However, the following limitations apply:
 - Auto-instrumentation produces less detailed traces than code-based instrumentation.
 - Changes to the `Instrumentation` CR take effect only after a Pod restart.
 - The `Instrumentation` CR uses the `v1alpha1` API, which can change without a deprecation period.
-- Go instrumentation requires the eBPF sidecar to run as root, which is incompatible with `Restricted` PodSecurityAdmission policies.
+- Some instrumentations require elevated kernel permissions, such as root access, which can conflict with company security policies or `Restricted` PodSecurityAdmission policies. Evaluate the security requirements of each language's instrumentation method before enabling it.
 
 ## Prerequisites
 
@@ -72,11 +72,13 @@ However, the following limitations apply:
    ```bash
    helm install my-opentelemetry-operator opentelemetry-helm/opentelemetry-operator \
      --namespace opentelemetry-demo --create-namespace \
-     --version 0.123.1 \
-     --set manager.autoInstrumentation.go.enabled=true
+     --version 0.123.1
    ```
 
-The operator installs its CRDs, `Instrumentation` and `OpenTelemetryCollector`, and a mutating webhook that injects agents at Pod creation time. The `--create-namespace` flag creates the `opentelemetry-demo` namespace, which this guide uses for the operator, the debug collector, and the `Instrumentation` CR. Go auto-instrumentation is off by default, so you must enable it explicitly with `manager.autoInstrumentation.go.enabled=true`. For other languages, you can omit this flag.
+The operator installs its CRDs, `Instrumentation` and `OpenTelemetryCollector`, and a mutating webhook that injects agents at Pod creation time. The `--create-namespace` flag creates the `opentelemetry-demo` namespace, which this guide uses for the operator, the debug collector, and the `Instrumentation` CR.
+
+> [!NOTE]
+> Some instrumentations are disabled by default and must be explicitly enabled using `--set` flags during installation. For example, Go auto-instrumentation is disabled by default and requires `--set manager.autoInstrumentation.go.enabled=true`.
 
 ## Create Telemetry Pipelines
 
@@ -99,7 +101,7 @@ The debug collector is for following this guide. For production, replace it with
 
 The `Instrumentation` CR tells the operator which OTLP endpoint to export to, which propagators to use, and how to sample. This guide uses a single CR named `my-instrumentation` in the `opentelemetry-demo` namespace for the whole cluster. By default, the operator looks for the CR in the same namespace as the workload. To reference the shared CR from a workload in another namespace, use the `"{NAMESPACE}/{NAME}"` form in the annotation, such as `"opentelemetry-demo/my-instrumentation"`.
 
-The CR carries one resource block per language. The operator applies only the block for the language you inject, so this single CR serves Java, Node.js, Go, and other supported languages.
+The CR carries one resource block per language. The operator applies only the block for the language you inject, so this single CR serves Java, Node.js, and other supported languages.
 
 To create the `Instrumentation` CR, apply the following manifest:
 
@@ -132,11 +134,6 @@ spec:
       limits:
         cpu: 200m
         memory: 128Mi
-  go:
-    resourceRequirements:
-      limits:
-        cpu: 200m
-        memory: 128Mi
 ```
 
 > [!NOTE]
@@ -154,9 +151,6 @@ The operator watches for Pod annotations and injects the appropriate agent at Po
 
    # Node.js
    instrumentation.opentelemetry.io/inject-nodejs: "opentelemetry-demo/my-instrumentation"
-
-   # Go, which uses the eBPF sidecar described in the Go section
-   instrumentation.opentelemetry.io/inject-go: "opentelemetry-demo/my-instrumentation"
    ```
 
    For a workload in the `opentelemetry-demo` namespace, you can use the bare name `"my-instrumentation"` instead.
@@ -172,7 +166,7 @@ The operator watches for Pod annotations and injects the appropriate agent at Po
        instrumentation.opentelemetry.io/inject-java: "opentelemetry-demo/my-instrumentation"
    ```
 
-   Namespace-level injection works for Java, Node.js, Python, and .NET. For Go, you must still set the `instrumentation.opentelemetry.io/otel-go-instrumentation-container` annotation on each Pod, so namespace-level injection alone is insufficient.
+   Namespace-level injection works for Java, Node.js, and Python. For some languages, for example Go, you must also set additional annotations on each Pod, so namespace-level injection alone is insufficient.
 
 ## Configure Sampling with Istio
 
@@ -219,7 +213,7 @@ For full details on Istio tracing configuration, see [Configure Istio Tracing](.
 
 ## Set Resource Limits
 
-Rewriting bytecode for Java or attaching eBPF probes for Go adds CPU and memory overhead. If limits are too low, Pod startup slows significantly.
+Some instrumentations add CPU and memory overhead. For example, rewriting bytecode for Java can slow Pod startup significantly if limits are too low.
 
 Set limits and requests in the shared `my-instrumentation` CR under the language-specific key, as shown in [Create an Instrumentation CR](#create-an-instrumentation-cr). The right values depend on your workload. For guidance on sizing, see the [OTel Operator resource documentation](https://opentelemetry.io/docs/kubernetes/operator/automatic/).
 
@@ -238,11 +232,11 @@ spec:
       value: none # disable OTLP log export, for example when a LogPipeline collects stdout
 ```
 
-The availability of built-in exporters such as `prometheus` or `console` is language-specific. For example, Java and Node.js support them, but the Go eBPF auto-instrumentation currently does not. For the full list of supported exporters, see the [Exporter Selection Specification](https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/#exporter-selection).
+The availability of built-in exporters such as `prometheus` or `console` is language-specific. For example, Java and Node.js support them, but the Go eBPF auto-instrumentation does not. For the full list of supported exporters, see the [Exporter Selection Specification](https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/#exporter-selection).
 
 ## Language-Specific Examples
 
-The OTel Operator controls which languages are supported for auto-instrumentation. The list might change as the operator evolves. This guide provides tested examples for Java, Node.js, and Go. For other supported languages such as Python and .NET, see the [OTel auto-instrumentation documentation](https://opentelemetry.io/docs/kubernetes/operator/automatic/).
+The OTel Operator controls which languages are supported for auto-instrumentation. The list might change as the operator evolves. This guide provides tested examples for Java and Node.js. For other supported languages such as Python and .NET, see the [OTel auto-instrumentation documentation](https://opentelemetry.io/docs/kubernetes/operator/automatic/).
 
 All examples reuse the shared `my-instrumentation` CR and differ only in the injection annotation.
 
@@ -253,27 +247,6 @@ The Java agent modifies bytecode at startup using an init container. Expect addi
 ### Node.js
 
 The Node.js agent attaches at process startup using an init container. It prepends the OTel SDK to the Node.js require chain, so no changes to your application code are needed. Annotate the Pod template with `instrumentation.opentelemetry.io/inject-nodejs`, as shown in [Annotate Workloads](#annotate-workloads).
-
-### Go eBPF Sidecar
-
-Go auto-instrumentation uses an eBPF sidecar rather than an init container. The sidecar attaches to the target process using eBPF probes at the kernel level, intercepting function calls without modifying the application binary. The sidecar must run as root to access eBPF maps.
-
-Unlike the other languages, Go needs an extra annotation naming the target container, and that container must run as root:
-
-```yaml
-metadata:
-  annotations:
-    instrumentation.opentelemetry.io/inject-go: "opentelemetry-demo/my-instrumentation"
-    instrumentation.opentelemetry.io/otel-go-instrumentation-container: "my-container-name"
-spec:
-  containers:
-    - name: my-container-name
-      securityContext:
-        runAsUser: 0
-```
-
-> [!WARNING]
-> `runAsUser: 0` conflicts with a `Restricted` PodSecurityAdmission policy. You must grant the namespace a `Privileged` or `Baseline` exemption before you deploy. Many production environments do not accept this. Evaluate this requirement before you use Go auto-instrumentation.
 
 ## Verify the Installation
 
@@ -289,13 +262,13 @@ spec:
    kubectl get instrumentation -n opentelemetry-demo
    ```
 
-1. If you have an annotated workload, verify that the agent was injected into the Pod. For Java and Node.js, look for an init container; for Go, look for a sidecar container:
+1. If you have an annotated workload, verify that the agent was injected into the Pod. Java and Node.js use an init container, while some languages use a sidecar container:
 
    ```bash
    kubectl describe pod --namespace {NAMESPACE} -l {WORKLOAD_LABEL}
    ```
 
-   For Java and Node.js, look for `opentelemetry-auto-instrumentation` in the init containers. For Go, look for `opentelemetry-auto-instrumentation-go` in the containers.
+   For Java and Node.js, look for `opentelemetry-auto-instrumentation` in the init containers.
 
 1. Verify that the signals arrive. If you deployed the debug collector, check its logs for traces, metrics, and logs:
 
