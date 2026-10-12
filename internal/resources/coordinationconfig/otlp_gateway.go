@@ -11,7 +11,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+	"github.com/kyma-project/telemetry-manager/internal/k8sclients"
 	"github.com/kyma-project/telemetry-manager/internal/pipelines"
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 )
 
@@ -26,6 +28,10 @@ type OTLPGatewayConfigMap struct {
 	TracePipelineReferences  []PipelineReference `yaml:"tracePipelines,omitempty"`
 	LogPipelineReferences    []PipelineReference `yaml:"logPipelines,omitempty"`
 	MetricPipelineReferences []PipelineReference `yaml:"metricPipelines,omitempty"`
+}
+
+func (c *OTLPGatewayConfigMap) isEmpty() bool {
+	return len(c.TracePipelineReferences) == 0 && len(c.LogPipelineReferences) == 0 && len(c.MetricPipelineReferences) == 0
 }
 
 // PipelineReference contains minimal information about a pipeline.
@@ -173,7 +179,9 @@ func getPipelineSlice(config *OTLPGatewayConfigMap, pipelineType pipelines.Signa
 // applyConfigUpdate reads the coordination ConfigMap, applies updateFn to it, and writes it back.
 // Errors are returned directly and propagated to the caller's reconciliation loop.
 func applyConfigUpdate(ctx context.Context, c client.Client, namespace string, updateFn func(*OTLPGatewayConfigMap) error) error {
-	cm, exists, err := getConfigMap(ctx, c, namespace)
+	labelerClient := k8sclients.NewLabeler(c, commonresources.DefaultLabels(names.ManagerName, commonresources.LabelValueK8sComponentController))
+
+	cm, exists, err := getConfigMap(ctx, labelerClient, namespace)
 	if err != nil {
 		return err
 	}
@@ -187,16 +195,25 @@ func applyConfigUpdate(ctx context.Context, c client.Client, namespace string, u
 		return fmt.Errorf("update function failed: %w", err)
 	}
 
+	// Without any pipeline reference the ConfigMap has no purpose, so it is removed instead of being kept empty
+	if config.isEmpty() {
+		if !exists {
+			return nil
+		}
+
+		return deleteConfigMap(ctx, labelerClient, cm)
+	}
+
 	yamlData, err := yaml.Marshal(&config)
 	if err != nil {
 		return fmt.Errorf("failed to marshal config: %w", err)
 	}
 
 	if !exists {
-		return createConfigMap(ctx, c, namespace, string(yamlData))
+		return createConfigMap(ctx, labelerClient, namespace, string(yamlData))
 	}
 
-	return updateConfigMap(ctx, c, cm, string(yamlData))
+	return updateConfigMap(ctx, labelerClient, cm, string(yamlData))
 }
 
 // getConfigMap fetches the ConfigMap and returns whether it exists
@@ -250,6 +267,18 @@ func createConfigMap(ctx context.Context, c client.Client, namespace, yamlData s
 
 	if err := c.Create(ctx, cm); err != nil {
 		return fmt.Errorf("failed to create ConfigMap: %w", err)
+	}
+
+	return nil
+}
+
+// deleteConfigMap deletes the ConfigMap. The ResourceVersion precondition makes the delete fail with a conflict
+// if a pipeline reference was added concurrently, so that the reference is not lost. The caller's reconciliation retries.
+func deleteConfigMap(ctx context.Context, c client.Client, cm *corev1.ConfigMap) error {
+	resourceVersion := cm.ResourceVersion
+
+	if err := c.Delete(ctx, cm, client.Preconditions{ResourceVersion: &resourceVersion}); err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("failed to delete ConfigMap: %w", err)
 	}
 
 	return nil

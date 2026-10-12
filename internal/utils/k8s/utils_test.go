@@ -5,7 +5,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestMergePodAnnotations(t *testing.T) {
@@ -119,4 +122,41 @@ func TestMergeOwnerReference(t *testing.T) {
 
 	merged := mergeOwnerReferences(newOwners, oldOwners)
 	require.Equal(t, 3, len(merged))
+}
+
+func TestCreateOrUpdateSecret_BackfillsLabelsOnce(t *testing.T) {
+	key := types.NamespacedName{Name: "secret", Namespace: "default"}
+
+	existing := &corev1.Secret{
+		Name:      key.Name,
+		Namespace: key.Namespace,
+		Labels:    map[string]string{"existing": "label"},
+		Data:      map[string][]byte{"key": []byte("value")},
+	}
+
+	fakeClient := fake.NewClientBuilder().WithObjects(existing).Build()
+
+	// reconcile as the telemetry reconciler does: fetch the secret and set the labels explicitly on it
+	reconcile := func() {
+		var desired corev1.Secret
+		require.NoError(t, fakeClient.Get(t.Context(), key, &desired))
+
+		desired.Labels["added"] = "label"
+
+		require.NoError(t, CreateOrUpdateSecret(t.Context(), fakeClient, &desired))
+	}
+
+	reconcile()
+
+	var updated corev1.Secret
+	require.NoError(t, fakeClient.Get(t.Context(), key, &updated))
+	require.Equal(t, map[string]string{"existing": "label", "added": "label"}, updated.Labels)
+	require.Equal(t, existing.Data, updated.Data)
+
+	// the second reconcile detects no difference and does not update the secret again
+	reconcile()
+
+	var unchanged corev1.Secret
+	require.NoError(t, fakeClient.Get(t.Context(), key, &unchanged))
+	require.Equal(t, updated.ResourceVersion, unchanged.ResourceVersion)
 }

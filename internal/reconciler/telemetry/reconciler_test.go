@@ -100,7 +100,7 @@ func TestReconcile_ServiceAttributesEnrichmentStrategyMetric(t *testing.T) {
 			fakeClient := newTestClient(t, telemetryCR)
 			sut := newTestReconciler(t, fakeClient)
 
-			reconcileAndGet(t, sut, telemetryName, telemetryNamespace)
+			reconcileAndGet(t, sut)
 
 			activeValue := testutil.ToFloat64(metrics.ServiceAttributesEnrichmentStrategy.WithLabelValues(tt.expectedStrategy))
 			require.Equal(t, 1.0, activeValue, "expected strategy %q to be active (1)", tt.expectedStrategy)
@@ -128,7 +128,7 @@ func TestReconcile_ServiceAttributesEnrichmentStrategyMetric_Switch(t *testing.T
 	fakeClient := newTestClient(t, telemetryCR)
 	sut := newTestReconciler(t, fakeClient)
 
-	reconcileAndGet(t, sut, telemetryName, telemetryNamespace)
+	reconcileAndGet(t, sut)
 
 	require.Equal(t, 1.0, testutil.ToFloat64(metrics.ServiceAttributesEnrichmentStrategy.WithLabelValues("kyma-legacy")))
 	require.Equal(t, 0.0, testutil.ToFloat64(metrics.ServiceAttributesEnrichmentStrategy.WithLabelValues("otel")))
@@ -140,7 +140,7 @@ func TestReconcile_ServiceAttributesEnrichmentStrategyMetric_Switch(t *testing.T
 	fakeClient = newTestClient(t, telemetryCR)
 	sut.Client = fakeClient
 
-	reconcileAndGet(t, sut, telemetryName, telemetryNamespace)
+	reconcileAndGet(t, sut)
 
 	require.Equal(t, 0.0, testutil.ToFloat64(metrics.ServiceAttributesEnrichmentStrategy.WithLabelValues("kyma-legacy")))
 	require.Equal(t, 1.0, testutil.ToFloat64(metrics.ServiceAttributesEnrichmentStrategy.WithLabelValues("otel")))

@@ -3,6 +3,7 @@ package telemetry
 import (
 	"context"
 	"fmt"
+	"maps"
 
 	"gopkg.in/yaml.v3"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -321,6 +322,12 @@ func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1
 	if err := controllerutil.SetOwnerReference(telemetry, &secret, r.scheme); err != nil {
 		return fmt.Errorf("failed to set owner reference for secret: %w", err)
 	}
+
+	if secret.Labels == nil {
+		secret.Labels = make(map[string]string)
+	}
+
+	maps.Copy(secret.Labels, commonresources.DefaultLabels(names.ManagerName, commonresources.LabelValueK8sComponentController))
 
 	if err := k8sutils.CreateOrUpdateSecret(ctx, r.Client, &secret); err != nil {
 		return fmt.Errorf("failed to update secret: %w", err)
