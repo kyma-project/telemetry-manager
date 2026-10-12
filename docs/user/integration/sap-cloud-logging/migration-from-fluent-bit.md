@@ -20,7 +20,7 @@ The new OTel-based setup differs in several ways:
 
 ## Prerequisites
 
-- Your SAP Cloud Logging instance has OTLP ingestion enabled. You can enable it on an existing instance by updating the service instance parameter `ingest_otlp.enabled: true` — no new instance is needed. Note that `ingest_otlp` is a separately billed component.
+- Your SAP Cloud Logging instance has OTLP ingestion enabled. You can enable it on an existing instance by updating the service instance parameter `ingest_otlp.enabled: true` — no new instance is needed.
 - After enabling OTLP on the instance, create a new ServiceBinding (or service key). The `ingest-otlp-*` Secret keys are only present in bindings created **after** OTLP was enabled.
 - Running both the old Fluent Bit pipelines and the new OTel pipeline in parallel on the same CLS instance is safe — they write to different indices and do not produce duplicates.
 
