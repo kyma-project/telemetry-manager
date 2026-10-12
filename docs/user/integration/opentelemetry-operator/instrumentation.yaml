@@ -22,8 +22,3 @@ spec:
       limits:
         cpu: 200m
         memory: 128Mi
-  go:
-    resourceRequirements:
-      limits:
-        cpu: 200m
-        memory: 128Mi
