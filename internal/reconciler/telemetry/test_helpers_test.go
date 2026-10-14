@@ -45,12 +45,12 @@ func newTestClient(t *testing.T, objs ...client.Object) client.Client {
 }
 
 // reconcileAndGet performs a reconciliation.
-func reconcileAndGet(t *testing.T, sut *Reconciler, name, namespace string) {
+func reconcileAndGet(t *testing.T, sut *Reconciler) {
 	t.Helper()
 
 	sut.Reconcile(t.Context(), ctrl.Request{
-		Name:      name,
-		Namespace: namespace,
+		Name:      telemetryName,
+		Namespace: telemetryNamespace,
 	})
 }
 
