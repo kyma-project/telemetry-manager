@@ -13,7 +13,7 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl v0.161.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor v0.161.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor v0.161.0
-	github.com/prometheus/client_golang v1.24.1
+	github.com/prometheus/client_golang v1.25.0
 	github.com/prometheus/client_model v0.6.3
 	github.com/prometheus/common v0.72.0
 	github.com/stretchr/testify v1.12.1
