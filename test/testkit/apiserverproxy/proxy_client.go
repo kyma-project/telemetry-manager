@@ -102,6 +102,28 @@ func (a Client) GetWithContext(ctx context.Context, proxyURL string) (*http.Resp
 	return client.Do(req) //nolint:gosec // G704: URL is constructed internally from trusted proxy path
 }
 
+// GetWithHeaders performs an HTTPS GET request with additional custom HTTP headers.
+func (a Client) GetWithHeaders(ctx context.Context, proxyURL string, headers map[string]string) (*http.Response, error) {
+	client := &http.Client{Transport: &http.Transport{
+		TLSClientConfig: a.tlsClientConfig,
+	}}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, proxyURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(a.bearerToken) > 0 {
+		req.Header.Set("Authorization", a.bearerToken)
+	}
+
+	for k, v := range headers {
+		req.Header.Set(k, v)
+	}
+
+	return client.Do(req) //nolint:gosec // G704: URL is constructed internally from trusted proxy path
+}
+
 // Post performs an HTTPS POST request to the in-cluster resource identifiable by ProxyURLForService or ProxyURLForPod.
 func (a Client) Post(ctx context.Context, proxyURL, contentType string, body io.Reader) (*http.Response, error) {
 	client := &http.Client{Transport: &http.Transport{

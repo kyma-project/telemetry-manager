@@ -40,6 +40,11 @@ func applyFromURL(ctx context.Context, k8sClient client.Client, url string) erro
 	return applyYAML(ctx, k8sClient, string(body))
 }
 
+// ApplyYAML parses YAML content and applies each object to the cluster using server-side apply.
+func ApplyYAML(ctx context.Context, k8sClient client.Client, yamlContent string) error {
+	return applyYAML(ctx, k8sClient, yamlContent)
+}
+
 // applyYAML parses YAML content and applies each object to the cluster using server-side apply.
 // This creates new resources or updates existing ones.
 func applyYAML(ctx context.Context, k8sClient client.Client, yamlContent string) error {
