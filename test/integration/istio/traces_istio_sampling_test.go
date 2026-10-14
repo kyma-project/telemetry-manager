@@ -1,7 +1,6 @@
 package istio
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"testing"
@@ -28,29 +27,26 @@ const (
 	// All of them should appear in the backend if Istio honours the flag — but it doesn't.
 	forceSamplingRequests = 20
 
-	// samplingRate is chosen low enough that random sampling alone would not produce
-	// forceSamplingRequests spans, so a positive assertion would only pass if the
+	// lowSamplingRate is chosen low enough that random sampling alone would not produce
+	// forceSamplingRequests spans, so the positive assertion only passes if the
 	// traceparent flag is actually honoured.
-	samplingRate = 10.0
+	lowSamplingRate = 10.0
 )
 
-// istioCR returns a mesh-wide Istio Telemetry CR YAML with the given randomSamplingPercentage.
-func istioCR(rate float64) string {
+// namespaceScopedTracingCR returns an Istio Telemetry CR scoped to a specific namespace,
+// overriding the mesh-wide sampling rate for workloads in that namespace only.
+func namespaceScopedTracingCR(namespace string, rate float64) string {
 	return fmt.Sprintf(`apiVersion: telemetry.istio.io/v1
 kind: Telemetry
 metadata:
-  name: access-config
-  namespace: istio-system
+  name: sampling-override
+  namespace: %s
 spec:
-  accessLogging:
-    - providers:
-        - name: stdout-json
-        - name: kyma-logs
   tracing:
     - providers:
         - name: kyma-traces
       randomSamplingPercentage: %.2f
-`, rate)
+`, namespace, rate)
 }
 
 // TestIstioTracingSamplingForcedViaTraceparent verifies that sending traceparent with
@@ -97,13 +93,11 @@ func TestIstioTracingSamplingForcedViaTraceparent(t *testing.T) {
 
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
-	// Set a low global sampling rate so random sampling alone cannot produce all spans.
+	// Apply a namespace-scoped Telemetry CR with a low sampling rate.
+	// This overrides the mesh-wide rate for the app namespace only, without affecting other tests.
+	// kitk8s.CreateObjects registered t.Cleanup to delete the namespace, which also removes this CR.
 	ctx := t.Context()
-	Expect(kubeprep.ApplyYAML(ctx, suite.K8sClient, istioCR(samplingRate))).To(Succeed())
-	t.Cleanup(func() {
-		// Restore the default 100% rate used by other integration tests.
-		_ = kubeprep.ApplyYAML(context.Background(), suite.K8sClient, istioCR(100.0))
-	})
+	Expect(kubeprep.ApplyYAML(ctx, suite.K8sClient, namespaceScopedTracingCR(appNs, lowSamplingRate))).To(Succeed())
 
 	assert.BackendReachable(t, backend)
 	assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
@@ -125,26 +119,17 @@ func TestIstioTracingSamplingForcedViaTraceparent(t *testing.T) {
 		}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 	}
 
-	// Assert that all sent traces appear in the backend.
-	// This assertion DOCUMENTS THE EXPECTED (but unimplemented) BEHAVIOUR.
-	// It will fail because Envoy ignores traceparent sampling=1 at Layer 1.
-	assert.BackendDataEventuallyMatches(t, backend,
-		HaveFlatTraces(
-			ContainElement(
-				HaveSpanAttributes(HaveKeyWithValue("component", "proxy")),
-			),
-		),
-	)
-
-	// The critical assertion: all forceSamplingRequests spans must be present.
+	// The critical assertion: all forceSamplingRequests proxy spans must be present.
 	// With a 10% sampling rate and 20 requests, random sampling produces ~2 spans.
-	// If traceparent is honoured, we get 20. This assertion will fail.
+	// If traceparent is honoured, we get 20.
+	// This assertion DOCUMENTS THE EXPECTED (but unimplemented) BEHAVIOUR and will fail.
 	assert.BackendDataEventuallyMatches(t, backend,
 		HaveFlatTraces(
 			WithTransform(func(fts []FlatTrace) []FlatTrace {
 				var matching []FlatTrace
 				for _, ft := range fts {
-					if ft.SpanAttributes["component"] == "proxy" {
+					if ft.SpanAttributes["component"] == "proxy" &&
+						ft.SpanAttributes["istio.namespace"] == appNs {
 						matching = append(matching, ft)
 					}
 				}
@@ -188,10 +173,11 @@ func TestIstioTracingSamplingSuppressionViaTraceparent(t *testing.T) {
 
 	Expect(kitk8s.CreateObjects(t, resources...)).To(Succeed())
 
-	// Use 100% sampling rate so Envoy's Layer 1 always decides to trace,
-	// giving Layer 2 a chance to honour the sampling=0 flag.
+	// Apply a namespace-scoped Telemetry CR at 100% so Envoy's Layer 1 always decides to
+	// trace, giving Layer 2 (the OTel tracer) a chance to honour the sampling=0 flag.
+	// The namespace is deleted in t.Cleanup registered by kitk8s.CreateObjects.
 	ctx := t.Context()
-	Expect(kubeprep.ApplyYAML(ctx, suite.K8sClient, istioCR(100.0))).To(Succeed())
+	Expect(kubeprep.ApplyYAML(ctx, suite.K8sClient, namespaceScopedTracingCR(appNs, 100.0))).To(Succeed())
 
 	assert.BackendReachable(t, backend)
 	assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
