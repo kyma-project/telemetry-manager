@@ -46,7 +46,6 @@ const (
 // sampled flag — the OTel tracer plugin (which does read traceparent) only runs after
 // the decision is already made, so sampling=1 cannot force tracing.
 //
-// See: https://sap.stackenterprise.co/questions/96869
 // Envoy source: source/extensions/tracers/opentelemetry/span_context_extractor.cc
 // Envoy source: source/common/http/conn_manager_utility.cc (mutateTracingRequestHeader)
 func TestIstioTracingSampling_ForcedViaTraceparent(t *testing.T) {
