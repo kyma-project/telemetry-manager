@@ -95,12 +95,28 @@ func (t *TrafficGen) curlScript() string {
 
 	var sb strings.Builder
 
-	// Wait for Envoy sidecar to be ready before sending traced requests.
-	// Without this, curl fires before the sidecar proxy is up and the spans are lost.
-	sb.WriteString("until curl -sf http://localhost:15000/ready; do sleep 1; done; ")
+	// 1. Wait for the destination to answer with HTTP 200 before sending the measured
+	// requests. This also implicitly waits for our own sidecar: the request cannot succeed
+	// until the local Envoy is up and routing mesh traffic. PodReady on the destination does
+	// not guarantee its sidecar accepts mesh traffic yet, so without this warm-up the first
+	// requests race the destination and get lost. These warm-up probes carry no traceparent,
+	// so they do not pollute the measured trace IDs.
+	fmt.Fprintf(&sb,
+		"until [ \"$(curl -s -o /dev/null -w '%%{http_code}' http://%s:%d)\" = '200' ]; "+
+			"do echo 'waiting for destination to return 200'; sleep 1; done; ",
+		destinationName, destinationPort)
 
+	// 2. Send one measured request per traceparent, printing a per-request timestamp,
+	// traceparent, and HTTP status so failures (non-200s) are easy to spot in the pod logs.
+	// The response body is discarded (-o /dev/null) to keep the logs free of the
+	// destination's HTML. date is in single quotes so the shell evaluates it per request,
+	// not once when the command line is parsed.
 	for _, tp := range t.traceparentHeaders {
-		fmt.Fprintf(&sb, "curl -H 'traceparent: %s' http://%s:%d; ", tp, destinationName, destinationPort)
+		fmt.Fprintf(&sb,
+			"printf '[%%s] traceparent=%s ' \"$(date -u +%%H:%%M:%%S)\"; "+
+				"curl -s -o /dev/null -w 'HTTP %%{http_code} in %%{time_total}s\\n' "+
+				"-H 'traceparent: %s' http://%s:%d; ",
+			tp, tp, destinationName, destinationPort)
 	}
 
 	return sb.String()
