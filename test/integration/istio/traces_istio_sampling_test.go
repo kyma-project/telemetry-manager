@@ -21,11 +21,100 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/unique"
 )
 
-const (
-	samplingRequests = 20
-	lowSamplingRate  = 10.0
-)
+// samplingRequests is the number of distinct requests the source sends, each carrying its own
+// traceparent with a distinct trace ID. Sending many makes the two outcomes unambiguous: with a
+// low random rate, "all forced through" (20) stands clearly apart from "a random handful" (~2).
+const samplingRequests = 20
 
+// These tests verify that the W3C traceparent sampled flag overrides Istio's
+// randomSamplingPercentage, as the Istio reference documents for randomSamplingPercentage:
+//
+//	"If a prior sampling decision has been made, that decision will be respected. However, if no
+//	 sampling decision has been made [...] the traffic will be selected for telemetry generation
+//	 at the percentage specified."
+//
+// Both tests drive real pod-to-pod traffic through the Istio sidecars (via trafficgen) so the
+// kyma-traces OpenTelemetry provider path is exercised exactly as a user's workload hits it, and
+// assert on the trace IDs that reach the trace backend.
+
+// TestIstioTracingSampling_ForceSampledViaTraceparent verifies that an inbound traceparent with
+// the sampled flag set (flags=01) forces tracing even when randomSamplingPercentage is low: all
+// requests are reported regardless of the random rate.
+func TestIstioTracingSampling_ForceSampledViaTraceparent(t *testing.T) {
+	const samplingRate = 10.0
+
+	backend, traceIDs := setupSamplingTest(t, samplingRate, "01")
+
+	// Every forced request must be reported: at a 10% random rate only a random handful would
+	// arrive, so observing all 20 proves the sampled=1 flag overrode the rate.
+	assert.BackendDataEventuallyMatches(t, backend,
+		HaveFlatTraces(ContainElements(traceIDMatchers(traceIDs)...)),
+	)
+}
+
+// TestIstioTracingSampling_ForceNotSampledViaTraceparent verifies that an inbound traceparent with
+// the sampled flag cleared (flags=00) suppresses tracing even when randomSamplingPercentage is
+// 100%: none of the requests are reported.
+func TestIstioTracingSampling_ForceNotSampledViaTraceparent(t *testing.T) {
+	const samplingRate = 100.0
+
+	backend, traceIDs := setupSamplingTest(t, samplingRate, "00")
+
+	// None of the suppressed requests may be reported: at a 100% random rate every request would
+	// otherwise arrive, so observing none proves the sampled=0 flag overrode the rate.
+	assert.BackendDataConsistentlyMatches(t, backend,
+		Not(HaveFlatTraces(ContainElements(traceIDMatchers(traceIDs)...))),
+	)
+}
+
+// setupSamplingTest provisions a namespace-scoped Istio Telemetry CR at the given sampling rate,
+// a trace pipeline with a backend, and a source/destination traffic generator that sends one
+// request per traceparent (each with a distinct trace ID and the given trace-flags byte: "01" =
+// sampled, "00" = not sampled). It returns the backend and the sent trace IDs for assertions.
+func setupSamplingTest(t *testing.T, samplingRate float64, flagByte string) (*kitbackend.Backend, []string) {
+	t.Helper()
+
+	suite.SetupTestWithOptions(t, []string{suite.LabelGardener}, kubeprep.WithIstio())
+
+	uniquePrefix := unique.Prefix()
+	pipelineName := uniquePrefix("pipeline")
+	backendNs := uniquePrefix("backend")
+	appNs := uniquePrefix("app")
+
+	backend := kitbackend.New(backendNs, kitbackend.SignalTypeTraces)
+	pipeline := testutils.NewTracePipelineBuilder().
+		WithName(pipelineName).
+		WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
+		Build()
+
+	traceparents, traceIDs := makeTraceparents(flagByte)
+	tg := trafficgen.New(appNs).WithTraceparentHeaders(traceparents)
+
+	firstWave := []client.Object{
+		kitk8sobjects.NewNamespace(backendNs).K8sObject(),
+		kitk8sobjects.NewNamespace(appNs, kitk8sobjects.WithIstioInjection()).K8sObject(),
+		kitk8sobjects.NewIstioTelemetry("sampling-override", appNs).WithSamplingPercentage(samplingRate).K8sObject(),
+		&pipeline,
+	}
+	firstWave = append(firstWave, backend.K8sObjects()...)
+	firstWave = append(firstWave, tg.Destination().K8sObjects()...)
+	Expect(kitk8s.CreateObjects(t, firstWave...)).To(Succeed())
+
+	assert.BackendReachable(t, backend)
+	assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
+	assert.TracePipelineHealthy(t, pipelineName)
+	assert.PodReady(t, types.NamespacedName{Name: "destination", Namespace: appNs})
+
+	// The destination is ready, so start the source. It waits for the destination to return HTTP
+	// 200 before sending the measured requests (see trafficgen), so none are lost to a race.
+	Expect(kitk8s.CreateObjects(t, tg.Source().K8sObjects()...)).To(Succeed())
+
+	return backend, traceIDs
+}
+
+// makeTraceparents builds samplingRequests W3C traceparent headers, each with a distinct,
+// deterministic trace ID and the given trace-flags byte ("01" = sampled, "00" = not sampled).
+// It returns the headers and the matching trace IDs (lowercase hex, as the backend reports them).
 func makeTraceparents(flagByte string) ([]string, []string) {
 	traceparents := make([]string, samplingRequests)
 	traceIDs := make([]string, samplingRequests)
@@ -37,113 +126,6 @@ func makeTraceparents(flagByte string) ([]string, []string) {
 	}
 
 	return traceparents, traceIDs
-}
-
-// TestIstioTracingSampling_ForcedViaTraceparent verifies that sending traceparent with
-// sampling=1 forces Envoy to report spans even when randomSamplingPercentage is low.
-//
-// According to the Istio documentation for randomSamplingPercentage:
-//
-//	"If a prior sampling decision has been made, that decision will be respected."
-//
-// This test encodes that documented contract. It is EXPECTED TO FAIL because Envoy's
-// connection manager layer makes the sampling decision without reading the traceparent
-// sampled flag — the OTel tracer plugin (which does read traceparent) only runs after
-// the decision is already made, so sampling=1 cannot force tracing.
-//
-// Envoy source: source/extensions/tracers/opentelemetry/span_context_extractor.cc
-// Envoy source: source/common/http/conn_manager_utility.cc (mutateTracingRequestHeader)
-func TestIstioTracingSampling_ForcedViaTraceparent(t *testing.T) {
-	suite.SetupTestWithOptions(t, []string{suite.LabelGardener}, kubeprep.WithIstio())
-
-	var (
-		uniquePrefix = unique.Prefix()
-		pipelineName = uniquePrefix("pipeline")
-		backendNs    = uniquePrefix("backend")
-		appNs        = uniquePrefix("app")
-	)
-
-	backend := kitbackend.New(backendNs, kitbackend.SignalTypeTraces)
-	pipeline := testutils.NewTracePipelineBuilder().
-		WithName(pipelineName).
-		WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
-		Build()
-
-	traceparents, traceIDs := makeTraceparents("01")
-	tg := trafficgen.New(appNs).WithTraceparentHeaders(traceparents)
-
-	firstWave := []client.Object{
-		kitk8sobjects.NewNamespace(backendNs).K8sObject(),
-		kitk8sobjects.NewNamespace(appNs, kitk8sobjects.WithIstioInjection()).K8sObject(),
-		kitk8sobjects.NewIstioTelemetry("sampling-override", appNs).WithSamplingPercentage(lowSamplingRate).K8sObject(),
-		&pipeline,
-	}
-	firstWave = append(firstWave, backend.K8sObjects()...)
-	firstWave = append(firstWave, tg.Destination().K8sObjects()...)
-	Expect(kitk8s.CreateObjects(t, firstWave...)).To(Succeed())
-
-	assert.BackendReachable(t, backend)
-	assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
-	assert.TracePipelineHealthy(t, pipelineName)
-	assert.PodReady(t, types.NamespacedName{Name: "destination", Namespace: appNs})
-
-	Expect(kitk8s.CreateObjects(t, tg.Source().K8sObjects()...)).To(Succeed())
-
-	// This assertion DOCUMENTS THE EXPECTED (but unimplemented) BEHAVIOR and will fail.
-	// At 10% sampling, random sampling produces ~2/20 spans regardless of traceparent.
-	// If sampling=1 were honored, all 20 trace IDs would appear in the backend.
-	assert.BackendDataEventuallyMatches(t, backend,
-		HaveFlatTraces(ContainElements(traceIDMatchers(traceIDs)...)),
-	)
-}
-
-// TestIstioTracingSampling_SuppressionViaTraceparent verifies that sending traceparent
-// with sampling=0 suppresses span reporting even when randomSamplingPercentage is 100%.
-//
-// This is the working direction of the asymmetry: at 100% rate Envoy's Layer 1 always
-// decides to trace, which allows Layer 2 (the OTel tracer) to run and honor sampling=0.
-func TestIstioTracingSampling_SuppressionViaTraceparent(t *testing.T) {
-	suite.SetupTestWithOptions(t, []string{suite.LabelGardener}, kubeprep.WithIstio())
-
-	var (
-		uniquePrefix = unique.Prefix()
-		pipelineName = uniquePrefix("pipeline")
-		backendNs    = uniquePrefix("backend")
-		appNs        = uniquePrefix("app")
-	)
-
-	backend := kitbackend.New(backendNs, kitbackend.SignalTypeTraces)
-	pipeline := testutils.NewTracePipelineBuilder().
-		WithName(pipelineName).
-		WithOTLPOutput(testutils.OTLPEndpoint(backend.EndpointHTTP())).
-		Build()
-
-	traceparents, _ := makeTraceparents("00")
-	tg := trafficgen.New(appNs).WithTraceparentHeaders(traceparents)
-
-	firstWave := []client.Object{
-		kitk8sobjects.NewNamespace(backendNs).K8sObject(),
-		kitk8sobjects.NewNamespace(appNs, kitk8sobjects.WithIstioInjection()).K8sObject(),
-		kitk8sobjects.NewIstioTelemetry("sampling-override", appNs).WithSamplingPercentage(100.0).K8sObject(),
-		&pipeline,
-	}
-	firstWave = append(firstWave, backend.K8sObjects()...)
-	firstWave = append(firstWave, tg.Destination().K8sObjects()...)
-	Expect(kitk8s.CreateObjects(t, firstWave...)).To(Succeed())
-
-	assert.BackendReachable(t, backend)
-	assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
-	assert.TracePipelineHealthy(t, pipelineName)
-	assert.PodReady(t, types.NamespacedName{Name: "destination", Namespace: appNs})
-
-	Expect(kitk8s.CreateObjects(t, tg.Source().K8sObjects()...)).To(Succeed())
-
-	assert.BackendDataConsistentlyMatches(t, backend,
-		Not(HaveFlatTraces(ContainElement(SatisfyAll(
-			HaveSpanAttributes(HaveKeyWithValue("component", "proxy")),
-			HaveSpanAttributes(HaveKeyWithValue("istio.namespace", appNs)),
-		)))),
-	)
 }
 
 func traceIDMatchers(traceIDs []string) []any {
