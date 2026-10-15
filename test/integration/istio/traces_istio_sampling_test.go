@@ -42,8 +42,9 @@ const samplingRequests = 20
 // requests are reported regardless of the random rate.
 func TestIstioTracingSampling_ForceSampledViaTraceparent(t *testing.T) {
 	const samplingRate = 10.0
+	uniquePrefix := unique.Prefix()
 
-	backend, traceIDs := setupSamplingTest(t, samplingRate, "01")
+	backend, traceIDs := setupSamplingTest(t, uniquePrefix, samplingRate, "01")
 
 	// Every forced request must be reported: at a 10% random rate only a random handful would
 	// arrive, so observing all 20 proves the sampled=1 flag overrode the rate.
@@ -57,8 +58,9 @@ func TestIstioTracingSampling_ForceSampledViaTraceparent(t *testing.T) {
 // 100%: none of the requests are reported.
 func TestIstioTracingSampling_ForceNotSampledViaTraceparent(t *testing.T) {
 	const samplingRate = 100.0
+	uniquePrefix := unique.Prefix()
 
-	backend, traceIDs := setupSamplingTest(t, samplingRate, "00")
+	backend, traceIDs := setupSamplingTest(t, uniquePrefix, samplingRate, "00")
 
 	// None of the suppressed requests may be reported: at a 100% random rate every request would
 	// otherwise arrive, so observing none proves the sampled=0 flag overrode the rate.
@@ -71,12 +73,11 @@ func TestIstioTracingSampling_ForceNotSampledViaTraceparent(t *testing.T) {
 // a trace pipeline with a backend, and a source/destination traffic generator that sends one
 // request per traceparent (each with a distinct trace ID and the given trace-flags byte: "01" =
 // sampled, "00" = not sampled). It returns the backend and the sent trace IDs for assertions.
-func setupSamplingTest(t *testing.T, samplingRate float64, flagByte string) (*kitbackend.Backend, []string) {
+func setupSamplingTest(t *testing.T, uniquePrefix func(...string) string, samplingRate float64, flagByte string) (*kitbackend.Backend, []string) {
 	t.Helper()
 
 	suite.SetupTestWithOptions(t, []string{suite.LabelGardener}, kubeprep.WithIstio())
 
-	uniquePrefix := unique.Prefix()
 	pipelineName := uniquePrefix("pipeline")
 	backendNs := uniquePrefix("backend")
 	appNs := uniquePrefix("app")
