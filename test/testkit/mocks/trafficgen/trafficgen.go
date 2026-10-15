@@ -20,55 +20,90 @@ const (
 )
 
 type TrafficGen struct {
-	namespace string
-	headers   map[string]string
+	namespace          string
+	traceparentHeaders []string
 }
 
 func New(namespace string) *TrafficGen {
-	return &TrafficGen{
-		namespace: namespace,
-		headers:   map[string]string{},
-	}
+	return &TrafficGen{namespace: namespace}
 }
 
-func (t *TrafficGen) WithHeader(key, value string) *TrafficGen {
-	t.headers[key] = value
+// WithTraceparentHeaders configures the source pod to send one request per traceparent
+// value (in order) and then stop. Use this when you need to verify specific trace IDs
+// in the backend. Without this option the source pod loops indefinitely.
+func (t *TrafficGen) WithTraceparentHeaders(traceparents []string) *TrafficGen {
+	t.traceparentHeaders = traceparents
 	return t
 }
 
-func (t *TrafficGen) K8sObjects() []client.Object {
-	return []client.Object{
-		kitk8sobjects.NewPod(sourceName, t.namespace).WithPodSpec(t.sourcePodSpec()).K8sObject(),
-		kitk8sobjects.NewPod(destinationName, t.namespace).WithPodSpec(destinationPodSpec()).WithLabel(appLabelKey, destinationName).K8sObject(),
-		kitk8sobjects.NewService(destinationName, t.namespace).WithPort("http", destinationPort).K8sObject(kitk8sobjects.WithLabel(appLabelKey, destinationName)),
-	}
+// Destination returns a view that exposes only the destination (nginx + service) objects.
+// Deploy these first and wait for readiness before deploying the source.
+func (t *TrafficGen) Destination() *Destination {
+	return &Destination{tg: t}
 }
 
-// K8sObjects is a convenience function for the common case of no extra headers.
+// Source returns a view that exposes only the source (curl) object.
+// Deploy after the destination is ready.
+func (t *TrafficGen) Source() *Source {
+	return &Source{tg: t}
+}
+
+// K8sObjects returns all objects (source + destination) in one call.
+// Use this for continuous-traffic scenarios where ordering doesn't matter.
+func (t *TrafficGen) K8sObjects() []client.Object {
+	return append(t.Destination().K8sObjects(), t.Source().K8sObjects()...)
+}
+
+// K8sObjects is a convenience function for the common case of continuous traffic with no custom headers.
 func K8sObjects(namespace string) []client.Object {
 	return New(namespace).K8sObjects()
 }
 
-func (t *TrafficGen) sourcePodSpec() corev1.PodSpec {
-	var sb strings.Builder
+type Destination struct{ tg *TrafficGen }
 
-	for k, v := range t.headers {
-		fmt.Fprintf(&sb, " -H '%s: %s'", k, v)
+func (d *Destination) K8sObjects() []client.Object {
+	return []client.Object{
+		kitk8sobjects.NewPod(destinationName, d.tg.namespace).WithPodSpec(destinationPodSpec()).WithLabel(appLabelKey, destinationName).K8sObject(),
+		kitk8sobjects.NewService(destinationName, d.tg.namespace).WithPort("http", destinationPort).K8sObject(kitk8sobjects.WithLabel(appLabelKey, destinationName)),
 	}
+}
 
+type Source struct{ tg *TrafficGen }
+
+func (s *Source) K8sObjects() []client.Object {
+	return []client.Object{
+		kitk8sobjects.NewPod(sourceName, s.tg.namespace).WithPodSpec(s.tg.sourcePodSpec()).K8sObject(),
+	}
+}
+
+func (t *TrafficGen) sourcePodSpec() corev1.PodSpec {
 	return corev1.PodSpec{
 		Containers: []corev1.Container{
 			{
-				Name:  "source",
-				Image: curlImage,
-				Command: []string{
-					"/bin/sh",
-					"-c",
-					fmt.Sprintf("while true; do curl%s http://%s:%d; sleep 1; done", sb.String(), destinationName, destinationPort),
-				},
+				Name:    "source",
+				Image:   curlImage,
+				Command: []string{"/bin/sh", "-c", t.curlScript()},
 			},
 		},
 	}
+}
+
+func (t *TrafficGen) curlScript() string {
+	if len(t.traceparentHeaders) == 0 {
+		return fmt.Sprintf("while true; do curl http://%s:%d; sleep 1; done", destinationName, destinationPort)
+	}
+
+	var sb strings.Builder
+
+	// Wait for Envoy sidecar to be ready before sending traced requests.
+	// Without this, curl fires before the sidecar proxy is up and the spans are lost.
+	sb.WriteString("until curl -sf http://localhost:15000/ready; do sleep 1; done; ")
+
+	for _, tp := range t.traceparentHeaders {
+		fmt.Fprintf(&sb, "curl -H 'traceparent: %s' http://%s:%d; ", tp, destinationName, destinationPort)
+	}
+
+	return sb.String()
 }
 
 func destinationPodSpec() corev1.PodSpec {
