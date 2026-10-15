@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
+	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
@@ -33,7 +34,7 @@ const (
 	lowSamplingRate = 10.0
 )
 
-// TestIstioTracingSamplingForcedViaTraceparent verifies that sending traceparent with
+// TestIstioTracingSampling_ForcedViaTraceparent verifies that sending traceparent with
 // sampling=1 forces Envoy to report spans even when randomSamplingPercentage is low.
 //
 // According to the Istio documentation for randomSamplingPercentage:
@@ -48,7 +49,7 @@ const (
 // See: https://sap.stackenterprise.co/questions/96869
 // Envoy source: source/extensions/tracers/opentelemetry/span_context_extractor.cc
 // Envoy source: source/common/http/conn_manager_utility.cc (mutateTracingRequestHeader)
-func TestIstioTracingSamplingForcedViaTraceparent(t *testing.T) {
+func TestIstioTracingSampling_ForcedViaTraceparent(t *testing.T) {
 	suite.SetupTestWithOptions(t, []string{suite.LabelGardener}, kubeprep.WithIstio())
 
 	var (
@@ -81,6 +82,10 @@ func TestIstioTracingSamplingForcedViaTraceparent(t *testing.T) {
 	assert.BackendReachable(t, backend)
 	assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 	assert.TracePipelineHealthy(t, pipelineName)
+	assert.PodsReady(t, client.ListOptions{
+		LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": "metric-producer"}),
+		Namespace:     appNs,
+	})
 
 	ctx := t.Context()
 
@@ -123,12 +128,12 @@ func TestIstioTracingSamplingForcedViaTraceparent(t *testing.T) {
 	)
 }
 
-// TestIstioTracingSamplingSuppressionViaTraceparent verifies that sending traceparent
+// TestIstioTracingSampling_SuppressionViaTraceparent verifies that sending traceparent
 // with sampling=0 suppresses span reporting even when randomSamplingPercentage is 100%.
 //
 // This is the working direction of the asymmetry: at 100% rate Envoy's Layer 1 always
 // decides to trace, which allows Layer 2 (the OTel tracer) to run and honor sampling=0.
-func TestIstioTracingSamplingSuppressionViaTraceparent(t *testing.T) {
+func TestIstioTracingSampling_SuppressionViaTraceparent(t *testing.T) {
 	suite.SetupTestWithOptions(t, []string{suite.LabelGardener}, kubeprep.WithIstio())
 
 	var (
@@ -161,6 +166,10 @@ func TestIstioTracingSamplingSuppressionViaTraceparent(t *testing.T) {
 	assert.BackendReachable(t, backend)
 	assert.DaemonSetReady(t, kitkyma.OTLPGatewayName)
 	assert.TracePipelineHealthy(t, pipelineName)
+	assert.PodsReady(t, client.ListOptions{
+		LabelSelector: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": "metric-producer"}),
+		Namespace:     appNs,
+	})
 
 	ctx := t.Context()
 
