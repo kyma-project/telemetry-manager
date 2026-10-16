@@ -387,6 +387,14 @@ var kubeletStatsMetricEnablers = map[string]func(*KubeletStatsMetrics){
 		initKubeletStatsOptionalMetrics(m)
 		m.K8sNodeFSInodeFree = &Metric{Enabled: true}
 	},
+	metricK8sNodePidLimit: func(m *KubeletStatsMetrics) {
+		initKubeletStatsOptionalMetrics(m)
+		m.K8sNodePidLimit = &Metric{Enabled: true}
+	},
+	metricK8sNodePidUsage: func(m *KubeletStatsMetrics) {
+		initKubeletStatsOptionalMetrics(m)
+		m.K8sNodePidUsage = &Metric{Enabled: true}
+	},
 	metricK8sNodeSystemContainerCPUTime: func(m *KubeletStatsMetrics) {
 		initKubeletStatsOptionalMetrics(m)
 		m.K8sNodeSystemContainerCPUTime = &Metric{Enabled: true}
