@@ -42,6 +42,7 @@ const samplingRequests = 20
 // requests are reported regardless of the random rate.
 func TestIstioTracingSampling_ForceSampledViaTraceparent(t *testing.T) {
 	const samplingRate = 10.0
+
 	uniquePrefix := unique.Prefix()
 
 	backend, traceIDs := setupSamplingTest(t, uniquePrefix, samplingRate, "01")
@@ -58,6 +59,7 @@ func TestIstioTracingSampling_ForceSampledViaTraceparent(t *testing.T) {
 // 100%: none of the requests are reported.
 func TestIstioTracingSampling_ForceNotSampledViaTraceparent(t *testing.T) {
 	const samplingRate = 100.0
+
 	uniquePrefix := unique.Prefix()
 
 	backend, traceIDs := setupSamplingTest(t, uniquePrefix, samplingRate, "00")
