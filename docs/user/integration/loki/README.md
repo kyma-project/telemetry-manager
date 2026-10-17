@@ -15,7 +15,7 @@ Learn how to use [Loki](https://github.com/grafana/loki/tree/main/production/hel
 
 ![setup](./../assets/loki.drawio.svg)
 
-## Table of Content
+## Table of Contents
 
 - [Prerequisites](#prerequisites)
 - [Preparation](#preparation)

@@ -14,7 +14,7 @@ Combined with the Kyma Telemetry module, you can collect custom spans and metric
 
 ![setup](./../assets/dynatrace.drawio.svg)
 
-## Table of Content
+## Table of Contents
 
 - [Prerequisites](#prerequisites)
 - [Prepare the Namespace](#prepare-the-namespace)

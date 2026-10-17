@@ -15,7 +15,7 @@ Learn how to collect Kubernetes cluster events and forward them as OTLP  logs to
 
 ![setup](./../assets/k8s-events.drawio.svg)
 
-## Table of Content
+## Table of Contents
 
 - [Prerequisites](#prerequisites)
 - [Prepare the Environment](#prepare-the-environment)
