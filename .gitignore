@@ -42,6 +42,8 @@ tls.key
 .claude/cve-triage/*
 !.claude/cve-triage/context.md
 !.claude/cve-triage/history.md
+!.claude/otel-collector/
+!.claude/otel-collector/context.md
 CLAUDE.local.md
 
 dependencies/sample-app/vendor
