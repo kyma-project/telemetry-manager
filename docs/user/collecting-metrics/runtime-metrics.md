@@ -139,6 +139,8 @@ The following metrics can be collected from the [kubeletstatsreceiver](https://g
 - `k8s.node.memory.working_set`
 - `k8s.node.network.errors`
 - `k8s.node.network.io`
+- `k8s.node.pid.limit`
+- `k8s.node.pid.usage`
 - `k8s.pod.cpu.time`
 - `k8s.pod.cpu.usage`
 - `k8s.pod.filesystem.available`
