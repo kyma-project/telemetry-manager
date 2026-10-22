@@ -1,6 +1,7 @@
 package resourcelock
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -9,6 +10,10 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
+
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
+	"github.com/kyma-project/telemetry-manager/internal/resources/names"
 )
 
 var (
@@ -108,6 +113,46 @@ func TestTryAcquireLock_UnlimitedPipelines(t *testing.T) {
 
 	getOwners := lock.GetOwnerReferences()
 	require.Len(t, getOwners, 6)
+}
+
+func TestTryAcquireLock_EnsuresLabels(t *testing.T) {
+	owner := &corev1.ConfigMap{
+		Name:      "owner1",
+		Namespace: "default",
+	}
+	lockKey := types.NamespacedName{Name: lockName.Name + "-lock", Namespace: lockName.Namespace}
+	expectedLabels := commonresources.DefaultLabels(names.ManagerName, commonresources.LabelValueK8sComponentController)
+
+	ctx := t.Context()
+	updates := 0
+	fakeClient := fake.NewClientBuilder().WithInterceptorFuncs(interceptor.Funcs{
+		Update: func(ctx context.Context, c client.WithWatch, obj client.Object, opts ...client.UpdateOption) error {
+			updates++
+			return c.Update(ctx, obj, opts...)
+		},
+	}).Build()
+	l := NewLocker(fakeClient, lockName, 2)
+
+	require.NoError(t, l.TryAcquireLock(ctx, owner))
+
+	// already labeled lock with existing owner must not be updated
+	require.NoError(t, l.TryAcquireLock(ctx, owner))
+	require.Equal(t, 0, updates)
+
+	// simulate lock created before labeling was introduced
+	var lock corev1.ConfigMap
+	require.NoError(t, fakeClient.Get(ctx, lockKey, &lock))
+	lock.Labels = nil
+	require.NoError(t, fakeClient.Update(ctx, &lock))
+
+	updates = 0
+
+	require.NoError(t, l.TryAcquireLock(ctx, owner))
+	require.Equal(t, 1, updates)
+
+	require.NoError(t, fakeClient.Get(ctx, lockKey, &lock))
+	require.Subset(t, lock.Labels, expectedLabels)
+	require.Len(t, lock.GetOwnerReferences(), 1)
 }
 
 func Test_new(t *testing.T) {
