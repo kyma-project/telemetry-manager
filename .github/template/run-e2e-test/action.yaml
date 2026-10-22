@@ -101,6 +101,7 @@ runs:
       with:
         name: ${{ inputs.artifact-prefix }}${{ inputs.test-id }}-report
         path: junit-report-*.xml
+        overwrite: true
 
     - name: Print pods on failure
       if: failure()
