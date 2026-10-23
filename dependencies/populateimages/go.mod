@@ -1,6 +1,6 @@
 module github.com/kyma-project/telemetry-manager/dependencies/populateimages
 
-go 1.27.2
+go 1.27.3
 
 require (
 	github.com/joho/godotenv v1.5.1
