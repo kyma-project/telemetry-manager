@@ -1,6 +1,6 @@
 module github.com/kyma-project/telemetry-manager/internal/tools
 
-go 1.27.2
+go 1.27.3
 
 require (
 	github.com/g4s8/envdoc v1.12.0
@@ -371,7 +371,7 @@ require (
 	github.com/moby/patternmatcher v0.6.1 // indirect
 	github.com/moby/sys/atomicwriter v0.1.0 // indirect
 	github.com/moby/sys/sequential v0.6.0 // indirect
-	github.com/moby/sys/user v0.4.0 // indirect
+	github.com/moby/sys/user v0.4.1 // indirect
 	github.com/moby/sys/userns v0.1.0 // indirect
 	github.com/moby/term v0.5.2 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
