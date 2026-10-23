@@ -163,6 +163,7 @@ jobs:
         with:
           name: ${{ env.ARTIFACT_PREFIX }}${{ github.job }}-${{ matrix.k8s_version }}-report
           path: junit-report*.xml
+          overwrite: true
 
       - name: Print pods on failure
         if: failure()
