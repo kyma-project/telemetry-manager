@@ -19,7 +19,7 @@ require (
 	gotest.tools/gotestsum v1.13.0
 	helm.sh/helm/v4 v4.3.1
 	k8s.io/code-generator v0.37.1
-	sigs.k8s.io/controller-tools v0.22.0
+	sigs.k8s.io/controller-tools v0.23.0
 )
 
 require (
