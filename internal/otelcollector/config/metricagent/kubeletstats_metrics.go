@@ -59,6 +59,8 @@ const (
 	metricK8sContainerMemRequestUtilization      = "k8s.container.memory_request_utilization"
 	metricK8sNodeFSInodeCount                    = "k8s.node.filesystem.inode.count"
 	metricK8sNodeFSInodeFree                     = "k8s.node.filesystem.inode.free"
+	metricK8sNodePidLimit                        = "k8s.node.pid.limit"
+	metricK8sNodePidUsage                        = "k8s.node.pid.usage"
 	metricK8sNodeSystemContainerCPUTime          = "k8s.node.system_container.cpu.time"
 	metricK8sNodeSystemContainerCPUUsage         = "k8s.node.system_container.cpu.usage"
 	metricK8sNodeSystemContainerMemoryUsage      = "k8s.node.system_container.memory.usage"
@@ -147,6 +149,8 @@ var kubeletStatsReceiverExtraMetrics = []string{
 	metricK8sContainerMemRequestUtilization,
 	metricK8sNodeFSInodeCount,
 	metricK8sNodeFSInodeFree,
+	metricK8sNodePidLimit,
+	metricK8sNodePidUsage,
 	metricK8sNodeSystemContainerCPUTime,
 	metricK8sNodeSystemContainerCPUUsage,
 	metricK8sNodeSystemContainerMemoryUsage,
