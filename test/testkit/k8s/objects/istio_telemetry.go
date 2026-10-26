@@ -9,7 +9,7 @@ import (
 type IstioTelemetry struct {
 	name               string
 	namespace          string
-	samplingPercentage float64
+	samplingPercentage *float64
 }
 
 func NewIstioTelemetry(name, namespace string) *IstioTelemetry {
@@ -20,19 +20,24 @@ func NewIstioTelemetry(name, namespace string) *IstioTelemetry {
 }
 
 func (t *IstioTelemetry) WithSamplingPercentage(rate float64) *IstioTelemetry {
-	t.samplingPercentage = rate
+	t.samplingPercentage = &rate
 	return t
 }
 
 func (t *IstioTelemetry) K8sObject() *istiotelemetryclientv1.Telemetry {
+	tracing := &istiotelemetryv1alpha1.Tracing{
+		Providers: []*istiotelemetryv1alpha1.ProviderRef{{Name: "kyma-traces"}},
+	}
+
+	if t.samplingPercentage != nil {
+		tracing.RandomSamplingPercentage = wrapperspb.Double(*t.samplingPercentage)
+	}
+
 	return &istiotelemetryclientv1.Telemetry{
 		Name:      t.name,
 		Namespace: t.namespace,
 		Spec: istiotelemetryv1alpha1.Telemetry{
-			Tracing: []*istiotelemetryv1alpha1.Tracing{{
-				Providers:                []*istiotelemetryv1alpha1.ProviderRef{{Name: "kyma-traces"}},
-				RandomSamplingPercentage: wrapperspb.Double(t.samplingPercentage),
-			}},
+			Tracing: []*istiotelemetryv1alpha1.Tracing{tracing},
 		},
 	}
 }

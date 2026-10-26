@@ -67,7 +67,7 @@ func TestIstioTracingSampling_ForceNotSampledViaTraceparent(t *testing.T) {
 	// None of the suppressed requests may be reported: at a 100% random rate every request would
 	// otherwise arrive, so observing none proves the sampled=0 flag overrode the rate.
 	assert.BackendDataConsistentlyMatches(t, backend,
-		Not(HaveFlatTraces(ContainElements(traceIDMatchers(traceIDs)...))),
+		Not(HaveFlatTraces(ContainElement(SatisfyAny(traceIDMatchers(traceIDs)...)))),
 	)
 }
 
@@ -111,6 +111,7 @@ func setupSamplingTest(t *testing.T, uniquePrefix func(...string) string, sampli
 	// The destination is ready, so start the source. It waits for the destination to return HTTP
 	// 200 before sending the measured requests (see trafficgen), so none are lost to a race.
 	Expect(kitk8s.CreateObjects(t, tg.Source().K8sObjects()...)).To(Succeed())
+	assert.PodReady(t, types.NamespacedName{Name: "source", Namespace: appNs})
 
 	return backend, traceIDs
 }
