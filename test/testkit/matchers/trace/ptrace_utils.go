@@ -13,6 +13,7 @@ import (
 // Introducing a go struct with a flat data structure by extracting necessary information from different levels of ptraces makes accessing the information easier than using ptrace.Traces directly and improves the readability of the test output logs.
 type FlatTrace struct {
 	Name                               string
+	TraceID                            string
 	ResourceAttributes, SpanAttributes map[string]string
 }
 
@@ -48,6 +49,7 @@ func flattenTraces(td ptrace.Traces) []FlatTrace {
 				span := scopeSpans.Spans().At(k)
 				flatTraces = append(flatTraces, FlatTrace{
 					Name:               span.Name(),
+					TraceID:            span.TraceID().String(),
 					ResourceAttributes: attributesToMap(resourceSpans.Resource().Attributes()),
 					SpanAttributes:     attributesToMap(span.Attributes()),
 				})
