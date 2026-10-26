@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
+	gomegatypes "github.com/onsi/gomega/types"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -50,7 +51,7 @@ func TestIstioTracingSampling_ForceSampledViaTraceparent(t *testing.T) {
 	// Every forced request must be reported: at a 10% random rate only a random handful would
 	// arrive, so observing all 20 proves the sampled=1 flag overrode the rate.
 	assert.BackendDataEventuallyMatches(t, backend,
-		HaveFlatTraces(ContainElements(traceIDMatchers(traceIDs)...)),
+		HaveFlatTraces(ContainElements(traceIDMatchers(traceIDs))),
 	)
 }
 
@@ -132,8 +133,8 @@ func makeTraceparents(flagByte string) ([]string, []string) {
 	return traceparents, traceIDs
 }
 
-func traceIDMatchers(traceIDs []string) []any {
-	matchers := make([]any, len(traceIDs))
+func traceIDMatchers(traceIDs []string) []gomegatypes.GomegaMatcher {
+	matchers := make([]gomegatypes.GomegaMatcher, len(traceIDs))
 
 	for i, id := range traceIDs {
 		matchers[i] = HaveTraceID(id)
