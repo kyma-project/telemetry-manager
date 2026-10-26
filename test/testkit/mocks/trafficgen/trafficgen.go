@@ -22,6 +22,7 @@ const (
 type TrafficGen struct {
 	namespace          string
 	traceparentHeaders []string
+	extraHeaders       []string
 }
 
 func New(namespace string) *TrafficGen {
@@ -33,6 +34,12 @@ func New(namespace string) *TrafficGen {
 // in the backend. Without this option the source pod loops indefinitely.
 func (t *TrafficGen) WithTraceparentHeaders(traceparents []string) *TrafficGen {
 	t.traceparentHeaders = traceparents
+	return t
+}
+
+// WithExtraHeaders adds additional HTTP headers to every measured request sent by the source pod.
+func (t *TrafficGen) WithExtraHeaders(headers []string) *TrafficGen {
+	t.extraHeaders = headers
 	return t
 }
 
@@ -112,11 +119,16 @@ func (t *TrafficGen) curlScript() string {
 	// destination's HTML. date is in single quotes so the shell evaluates it per request,
 	// not once when the command line is parsed.
 	for _, tp := range t.traceparentHeaders {
+		extraHeaderFlags := ""
+		for _, h := range t.extraHeaders {
+			extraHeaderFlags += fmt.Sprintf("-H '%s' ", h)
+		}
+
 		fmt.Fprintf(&sb,
 			"printf '[%%s] traceparent=%s ' \"$(date -u +%%H:%%M:%%S)\"; "+
 				"curl -s -o /dev/null -w 'HTTP %%{http_code} in %%{time_total}s\\n' "+
-				"-H 'traceparent: %s' http://%s:%d; ",
-			tp, tp, destinationName, destinationPort)
+				"-H 'traceparent: %s' %shttp://%s:%d; ",
+			tp, tp, extraHeaderFlags, destinationName, destinationPort)
 	}
 
 	return sb.String()
