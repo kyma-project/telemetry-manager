@@ -119,16 +119,17 @@ func (t *TrafficGen) curlScript() string {
 	// destination's HTML. date is in single quotes so the shell evaluates it per request,
 	// not once when the command line is parsed.
 	for _, tp := range t.traceparentHeaders {
-		extraHeaderFlags := ""
+		var extraHeaderFlags strings.Builder
+
 		for _, h := range t.extraHeaders {
-			extraHeaderFlags += fmt.Sprintf("-H '%s' ", h)
+			fmt.Fprintf(&extraHeaderFlags, "-H '%s' ", h)
 		}
 
 		fmt.Fprintf(&sb,
 			"printf '[%%s] traceparent=%s ' \"$(date -u +%%H:%%M:%%S)\"; "+
 				"curl -s -o /dev/null -w 'HTTP %%{http_code} in %%{time_total}s\\n' "+
 				"-H 'traceparent: %s' %shttp://%s:%d; ",
-			tp, tp, extraHeaderFlags, destinationName, destinationPort)
+			tp, tp, extraHeaderFlags.String(), destinationName, destinationPort)
 	}
 
 	return sb.String()
