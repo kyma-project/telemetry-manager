@@ -1,6 +1,6 @@
 # Populate Images
 
-Small tool for generating the security scanner config file out of the images configured in the .env file.
+Small tool for generating the component config file out of the images configured in the .env file.
 
 ## Build locally
 
