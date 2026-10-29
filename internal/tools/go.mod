@@ -12,7 +12,7 @@ require (
 	github.com/kyma-project/kyma/hack/table-gen v0.0.0-20250404123224-5afb7a10791b
 	github.com/mikefarah/yq/v4 v4.53.6
 	github.com/vektra/mockery/v3 v3.8.1
-	github.com/vladopajic/go-test-coverage/v2 v2.20.1
+	github.com/vladopajic/go-test-coverage/v2 v2.21.0
 	github.com/yannh/kubeconform v0.8.0
 	github.com/yeya24/promlinter v0.3.0
 	golang.org/x/tools v0.52.0
@@ -202,7 +202,7 @@ require (
 	github.com/go-git/go-git/v5 v5.19.3 // indirect
 	github.com/go-gorp/gorp/v3 v3.1.0 // indirect
 	github.com/go-ini/ini v1.67.0 // indirect
-	github.com/go-jose/go-jose/v4 v4.1.4 // indirect
+	github.com/go-jose/go-jose/v4 v4.1.6 // indirect
 	github.com/go-logr/logr v1.4.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-openapi/jsonpointer v1.0.0 // indirect
