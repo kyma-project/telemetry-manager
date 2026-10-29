@@ -82,12 +82,8 @@ func newFilterParserCollectionOpts(signalType pipelines.SignalType) []genericPar
 		)
 	case pipelines.SignalTypeMetric:
 		opts = append(opts,
-			// Since context inference is not available in the filter processor yet,
-			// we set the context to datapoint as the minimum required context.
-			// That is why metric-context-only functions (like HasAttrKeyOnDatapoint or HasAttrOnDatapoint) are not supported here
-			// and only standard converters are included.
 			withMetricParser(
-				ottlfuncs.StandardConverters[*ottlmetric.TransformContext](),
+				ottl.CreateFactoryMap(filterprocessor.DefaultMetricFunctions()...),
 				ottl.WithConditionConverter(nopConditionConverter[*ottlmetric.TransformContext]),
 			),
 			withDataPointParser(

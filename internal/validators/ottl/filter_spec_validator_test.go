@@ -317,12 +317,11 @@ func filterMetricContextTestCases() []filterTestCase {
 			isErrorExpected: true,
 		},
 		{
-			name: "unsupported metric context-only functions",
+			name: "uses HasAttrKeyOnDatapoint(key) and HasAttrOnDatapoint(key, value) functions",
 			conditions: []string{
-				`HasAttrKeyOnDatapoint("metric, "environment")`,
-				`HasAttrOnDatapoint(metric, "environment", "production")`,
+				`metric.name == "http_requests_total" and HasAttrKeyOnDatapoint("environment")`,
+				`metric.name == "http_requests_total" and HasAttrOnDatapoint("environment", "production")`,
 			},
-			isErrorExpected: true,
 		},
 	}
 }
