@@ -3,6 +3,7 @@ package logpipeline
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -59,6 +60,44 @@ func IsCustomFilterDefined(filters []telemetryv1beta1.FluentBitFilter) bool {
 	}
 
 	return false
+}
+
+// CustomOutputPluginName returns the Fluent Bit plugin name from the custom output config,
+// or "unknown" if the Name key is absent.
+func CustomOutputPluginName(o *telemetryv1beta1.LogPipelineOutput) string {
+	return extractFluentBitPluginName(o.FluentBitCustom)
+}
+
+// CustomFilterPluginNames returns the Fluent Bit plugin name for each custom filter that has one.
+func CustomFilterPluginNames(filters []telemetryv1beta1.FluentBitFilter) []string {
+	var names []string
+	for _, f := range filters {
+		if f.Custom != "" {
+			names = append(names, extractFluentBitPluginName(f.Custom))
+		}
+	}
+
+	return names
+}
+
+func extractFluentBitPluginName(raw string) string {
+	for _, line := range strings.Split(raw, "\n") {
+		line = strings.TrimSpace(line)
+		if len(line) == 0 || strings.HasPrefix(line, "#") {
+			continue
+		}
+
+		key, value, found := strings.Cut(line, " ")
+		if !found {
+			continue
+		}
+
+		if strings.EqualFold(strings.TrimSpace(key), "name") {
+			return strings.ToLower(strings.TrimSpace(value))
+		}
+	}
+
+	return "unknown"
 }
 
 func GetPipelinesForType(ctx context.Context, client client.Client, mode Mode) ([]telemetryv1beta1.LogPipeline, error) {
