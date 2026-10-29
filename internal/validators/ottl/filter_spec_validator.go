@@ -10,6 +10,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlresource"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlscope"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlspan"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlspanevent"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/ottlfuncs"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor"
 
@@ -63,12 +64,13 @@ func newFilterParserCollectionOpts(signalType pipelines.SignalType) []genericPar
 	switch signalType { //nolint:exhaustive // no OTTL for FluentBit
 	case pipelines.SignalTypeTrace:
 		opts = append(opts,
-			// Since context inference is not available in the filter processor yet,
-			// we set the context to span as the minimum required context.
-			// Span event context is not supported.
 			withSpanParser(
 				ottl.CreateFactoryMap(filterprocessor.DefaultSpanFunctions()...),
 				ottl.WithConditionConverter(nopConditionConverter[*ottlspan.TransformContext]),
+			),
+			withSpanEventParser(
+				ottl.CreateFactoryMap(filterprocessor.DefaultSpanEventFunctions()...),
+				ottl.WithConditionConverter(nopConditionConverter[*ottlspanevent.TransformContext]),
 			),
 		)
 	case pipelines.SignalTypeLog:
