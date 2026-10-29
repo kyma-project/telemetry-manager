@@ -702,7 +702,7 @@ func TestPipelineInfoTracking(t *testing.T) {
 				metrics.FeatureInputRuntime,
 			},
 			expectedCustomFilterPlugins: []string{"grep"},
-		},		{
+		}, {
 			name: "variables",
 			pipeline: testutils.NewLogPipelineBuilder().
 				WithName("pipeline-variables").

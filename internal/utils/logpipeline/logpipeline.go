@@ -71,6 +71,7 @@ func CustomOutputPluginName(o *telemetryv1beta1.LogPipelineOutput) string {
 // CustomFilterPluginNames returns the Fluent Bit plugin name for each custom filter that has one.
 func CustomFilterPluginNames(filters []telemetryv1beta1.FluentBitFilter) []string {
 	var names []string
+
 	for _, f := range filters {
 		if f.Custom != "" {
 			names = append(names, extractFluentBitPluginName(f.Custom))
@@ -81,7 +82,7 @@ func CustomFilterPluginNames(filters []telemetryv1beta1.FluentBitFilter) []strin
 }
 
 func extractFluentBitPluginName(raw string) string {
-	for _, line := range strings.Split(raw, "\n") {
+	for line := range strings.SplitSeq(raw, "\n") {
 		line = strings.TrimSpace(line)
 		if len(line) == 0 || strings.HasPrefix(line, "#") {
 			continue

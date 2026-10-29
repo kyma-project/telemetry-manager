@@ -290,6 +290,7 @@ func (r *Reconciler) trackPipelineInfoMetric(ctx context.Context, pipelines []te
 		if logpipelineutils.IsCustomOutputDefined(&pipeline.Spec.Output) {
 			features = append(features, metrics.FeatureOutputCustom)
 		}
+
 		if logpipelineutils.IsHTTPOutputDefined(&pipeline.Spec.Output) {
 			features = append(features, metrics.FeatureOutputHTTP)
 		}
