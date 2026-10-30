@@ -49,33 +49,45 @@ func TestLogPipelineOutput(t *testing.T) {
 	}
 }
 
-func TestLogPipelineContainsCustomPluginWithCustomFilter(t *testing.T) {
-	logPipeline := &telemetryv1beta1.LogPipeline{
-		Spec: telemetryv1beta1.LogPipelineSpec{
-			FluentBitFilters: []telemetryv1beta1.FluentBitFilter{
-				{Custom: `
-    Name    some-filter`,
+func TestLogPipelineContainsCustomPlugin(t *testing.T) {
+	tests := []struct {
+		name     string
+		given    telemetryv1beta1.LogPipelineSpec
+		expected bool
+	}{
+		{
+			name: "custom filter",
+			given: telemetryv1beta1.LogPipelineSpec{
+				FluentBitFilters: []telemetryv1beta1.FluentBitFilter{
+					{Custom: `
+    Name    some-filter`},
 				},
 			},
+			expected: true,
 		},
-	}
-
-	result := ContainsCustomPlugin(logPipeline)
-	require.True(t, result)
-}
-
-func TestLogPipelineContainsCustomPluginWithCustomOutput(t *testing.T) {
-	logPipeline := &telemetryv1beta1.LogPipeline{
-		Spec: telemetryv1beta1.LogPipelineSpec{
-			Output: telemetryv1beta1.LogPipelineOutput{
-				FluentBitCustom: `
+		{
+			name: "custom output",
+			given: telemetryv1beta1.LogPipelineSpec{
+				Output: telemetryv1beta1.LogPipelineOutput{
+					FluentBitCustom: `
     Name    some-output`,
+				},
 			},
+			expected: true,
+		},
+		{
+			name:     "no custom plugins",
+			given:    telemetryv1beta1.LogPipelineSpec{},
+			expected: false,
 		},
 	}
 
-	result := ContainsCustomPlugin(logPipeline)
-	require.True(t, result)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			logPipeline := &telemetryv1beta1.LogPipeline{Spec: test.given}
+			require.Equal(t, test.expected, ContainsCustomPlugin(logPipeline))
+		})
+	}
 }
 
 func TestCustomOutputPluginName(t *testing.T) {
