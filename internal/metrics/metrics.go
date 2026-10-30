@@ -35,9 +35,10 @@ const (
 
 	// MetricPipeline features
 
-	FeatureInputPrometheus        = "input-prometheus"
-	FeatureInputIstio             = "input-istio"
-	FeatureOutputDeltaTemporality = "output-delta-temporality"
+	FeatureInputPrometheus               = "input-prometheus"
+	FeatureInputIstio                    = "input-istio"
+	FeatureOutputDeltaTemporality        = "output-delta-temporality"
+	FeatureInputRuntimeAdditionalMetrics = "input-runtime-additional-metrics"
 
 	// FluentBit features
 
@@ -46,10 +47,6 @@ const (
 	FeatureFiles        = "files"
 	FeatureVariables    = "variables"
 	FeatureFilters      = "filters-custom"
-
-	// MetricPipeline runtime features
-
-	FeatureInputRuntimeAdditionalMetrics = "input-runtime-additional-metrics"
 )
 
 var (
