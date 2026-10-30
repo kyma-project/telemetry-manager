@@ -1151,6 +1151,7 @@ func TestUsageTracking(t *testing.T) {
 					Conditions: []string{"resource.attributes[\"test\"] == \"value\""},
 				}).
 				WithRuntimeInput(true).
+				WithRuntimeInputAdditionalMetrics("k8s.node.uptime").
 				WithPrometheusInput(true).
 				WithIstioInput(true).
 				WithOTLPInput(true).
@@ -1166,6 +1167,7 @@ func TestUsageTracking(t *testing.T) {
 				metrics.FeatureInputPrometheus,
 				metrics.FeatureInputIstio,
 				metrics.FeatureOutputDeltaTemporality,
+				metrics.FeatureInputRuntimeAdditionalMetrics,
 			},
 		},
 		{
