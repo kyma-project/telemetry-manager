@@ -8,6 +8,11 @@ const (
 	// EventuallyTimeout is used when asserting an event with Eventually. Should be larger than periodic reconciliation interval.
 	EventuallyTimeout = time.Second * 120
 
+	// ManagedResourceCleanupTimeout is used when waiting for the manager to delete all runtime-created resources
+	// (collectors, agents, coordination ConfigMap) after all pipelines are removed. Three pipeline reconcile cycles
+	// must complete sequentially, which can exceed EventuallyTimeout on loaded CI clusters.
+	ManagedResourceCleanupTimeout = time.Second * 300
+
 	// FlowHealthConditionTransitionTimeout is used when waiting for Log/Metric/Trace pipeline FlowHealthy to match a
 	// self-monitor-driven reason (e.g. GatewayAllTelemetryDataDropped). Alert rules use a 5m rate() window and
 	// typically `for: 1m`, then Prometheus must evaluate, the manager must reconcile, and scrapes must run — which
