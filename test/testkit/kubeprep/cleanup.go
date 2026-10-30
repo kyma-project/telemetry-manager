@@ -239,7 +239,7 @@ func allRuntimeResourcesDeleted(ctx context.Context, k8sClient client.Client) fu
 			return fmt.Errorf("failed to list daemonsets: %w", err)
 		}
 
-		if n := len(daemonSets.Items); n > 0 {
+		if n = len(daemonSets.Items); n > 0 {
 			return fmt.Errorf("%d daemonset(s) still exist", n)
 		}
 
@@ -248,7 +248,7 @@ func allRuntimeResourcesDeleted(ctx context.Context, k8sClient client.Client) fu
 			return fmt.Errorf("failed to list configmaps: %w", err)
 		}
 
-		if n := len(configMaps.Items); n > 0 {
+		if n = len(configMaps.Items); n > 0 {
 			return fmt.Errorf("%d configmap(s) still exist", n)
 		}
 
