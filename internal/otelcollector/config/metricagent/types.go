@@ -5,16 +5,16 @@ import (
 )
 
 type KubeletStatsReceiverConfig struct {
-	CollectionInterval          string                         `yaml:"collection_interval"`
-	AuthType                    string                         `yaml:"auth_type"`
-	Endpoint                    string                         `yaml:"endpoint"`
-	InsecureSkipVerify          bool                           `yaml:"insecure_skip_verify"`
-	MetricGroups                []MetricGroupType              `yaml:"metric_groups"`
-	Metrics                     KubeletStatsMetrics            `yaml:"metrics"`
-	ExtraMetadataLabels         []string                       `yaml:"extra_metadata_labels,omitempty"`
-	CollectAllNetworkInterfaces NetworkInterfacesEnabler       `yaml:"collect_all_network_interfaces"`
-	Node                        string                         `yaml:"node"`
-	K8sApiConfig                K8sAPIConfig                   `yaml:"k8s_api_config"`
+	CollectionInterval          string                   `yaml:"collection_interval"`
+	AuthType                    string                   `yaml:"auth_type"`
+	Endpoint                    string                   `yaml:"endpoint"`
+	InsecureSkipVerify          bool                     `yaml:"insecure_skip_verify"`
+	MetricGroups                []MetricGroupType        `yaml:"metric_groups"`
+	Metrics                     KubeletStatsMetrics      `yaml:"metrics"`
+	ExtraMetadataLabels         []string                 `yaml:"extra_metadata_labels,omitempty"`
+	CollectAllNetworkInterfaces NetworkInterfacesEnabler `yaml:"collect_all_network_interfaces"`
+	Node                        string                   `yaml:"node"`
+	K8sApiConfig                K8sAPIConfig             `yaml:"k8s_api_config"`
 }
 
 type NetworkInterfacesEnabler struct {

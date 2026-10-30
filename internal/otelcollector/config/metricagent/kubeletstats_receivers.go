@@ -26,12 +26,12 @@ func kubeletStatsReceiver(runtimeResources runtimeResourceSources, additionalMet
 	}
 
 	return &KubeletStatsReceiverConfig{
-		CollectionInterval: collectionInterval.String(),
-		AuthType:           "serviceAccount",
-		InsecureSkipVerify: true,
-		Endpoint:           fmt.Sprintf("https://${%s}:%d", common.EnvVarCurrentNodeName, portKubelet),
-		MetricGroups:       kubeletStatsMetricGroups(runtimeResources, runtimeAdditionalMetricsResourcesConfig),
-		Metrics:            kubeletStatsMetrics(runtimeResources, runtimeAdditionalMetricsResourcesConfig, additionalMetrics),
+		CollectionInterval:  collectionInterval.String(),
+		AuthType:            "serviceAccount",
+		InsecureSkipVerify:  true,
+		Endpoint:            fmt.Sprintf("https://${%s}:%d", common.EnvVarCurrentNodeName, portKubelet),
+		MetricGroups:        kubeletStatsMetricGroups(runtimeResources, runtimeAdditionalMetricsResourcesConfig),
+		Metrics:             kubeletStatsMetrics(runtimeResources, runtimeAdditionalMetricsResourcesConfig, additionalMetrics),
 		ExtraMetadataLabels: []string{"k8s.volume.type"},
 		CollectAllNetworkInterfaces: NetworkInterfacesEnabler{
 			NodeMetrics: true,
