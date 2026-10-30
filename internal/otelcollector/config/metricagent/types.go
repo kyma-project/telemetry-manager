@@ -17,15 +17,6 @@ type KubeletStatsReceiverConfig struct {
 	K8sApiConfig                K8sAPIConfig                   `yaml:"k8s_api_config"`
 }
 
-type KubeletStatsResourceAttributes struct {
-	AWSVolumeID            Metric `yaml:"aws.volume.id"`
-	FSType                 Metric `yaml:"fs.type"`
-	GCEPDName              Metric `yaml:"gce.pd.name"`
-	GlusterFSEndpointsName Metric `yaml:"glusterfs.endpoints.name"`
-	GlusterFSPath          Metric `yaml:"glusterfs.path"`
-	Partition              Metric `yaml:"partition"`
-}
-
 type NetworkInterfacesEnabler struct {
 	NodeMetrics bool `yaml:"node"`
 }
