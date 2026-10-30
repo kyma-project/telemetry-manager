@@ -11,7 +11,6 @@ type KubeletStatsReceiverConfig struct {
 	InsecureSkipVerify          bool                           `yaml:"insecure_skip_verify"`
 	MetricGroups                []MetricGroupType              `yaml:"metric_groups"`
 	Metrics                     KubeletStatsMetrics            `yaml:"metrics"`
-	ResourceAttributes          KubeletStatsResourceAttributes `yaml:"resource_attributes"`
 	ExtraMetadataLabels         []string                       `yaml:"extra_metadata_labels,omitempty"`
 	CollectAllNetworkInterfaces NetworkInterfacesEnabler       `yaml:"collect_all_network_interfaces"`
 	Node                        string                         `yaml:"node"`

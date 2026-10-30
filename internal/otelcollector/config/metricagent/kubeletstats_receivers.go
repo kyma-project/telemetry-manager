@@ -32,17 +32,6 @@ func kubeletStatsReceiver(runtimeResources runtimeResourceSources, additionalMet
 		Endpoint:           fmt.Sprintf("https://${%s}:%d", common.EnvVarCurrentNodeName, portKubelet),
 		MetricGroups:       kubeletStatsMetricGroups(runtimeResources, runtimeAdditionalMetricsResourcesConfig),
 		Metrics:            kubeletStatsMetrics(runtimeResources, runtimeAdditionalMetricsResourcesConfig, additionalMetrics),
-		// These resource attributes have been deprecated by OTel and will be removed in future versions.
-		// The volume types associated with them have already been removed for the K8S versions that we use (v1.28+).
-		// See: https://github.com/open-telemetry/opentelemetry-collector-contrib/pull/45896
-		ResourceAttributes: KubeletStatsResourceAttributes{
-			AWSVolumeID:            Metric{Enabled: false},
-			FSType:                 Metric{Enabled: false},
-			GCEPDName:              Metric{Enabled: false},
-			GlusterFSEndpointsName: Metric{Enabled: false},
-			GlusterFSPath:          Metric{Enabled: false},
-			Partition:              Metric{Enabled: false},
-		},
 		ExtraMetadataLabels: []string{"k8s.volume.type"},
 		CollectAllNetworkInterfaces: NetworkInterfacesEnabler{
 			NodeMetrics: true,
