@@ -218,7 +218,19 @@ func allRuntimeResourcesDeleted(ctx context.Context, k8sClient client.Client) fu
 			return fmt.Errorf("failed to list deployments: %w", err)
 		}
 
-		if n := len(deployments.Items); n > 0 {
+		// The selfmonitor Deployment is owned by the Telemetry CR reconciler, not by the
+		// pipeline controllers. It is deleted when the Telemetry CR reconciler detects no
+		// pipelines remain — which is an independent reconcile loop that may fire much later
+		// than the pipeline cleanup. Skip it here; it will be gone by the next test's setup.
+		n := 0
+
+		for _, d := range deployments.Items {
+			if d.Name != names.SelfMonitor {
+				n++
+			}
+		}
+
+		if n > 0 {
 			return fmt.Errorf("%d deployment(s) still exist", n)
 		}
 
@@ -246,7 +258,7 @@ func allRuntimeResourcesDeleted(ctx context.Context, k8sClient client.Client) fu
 		}
 
 		// The webhook cert secret is owned by the Telemetry CR and must outlive all pipelines
-		n := 0
+		n = 0
 
 		for _, secret := range secrets.Items {
 			if secret.Name != names.ManagerWebhookCertSecret {
