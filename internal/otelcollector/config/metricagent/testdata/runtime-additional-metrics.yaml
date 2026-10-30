@@ -179,19 +179,6 @@ receivers:
                 enabled: true
             k8s.pod.cpu_request_utilization:
                 enabled: true
-        resource_attributes:
-            aws.volume.id:
-                enabled: false
-            fs.type:
-                enabled: false
-            gce.pd.name:
-                enabled: false
-            glusterfs.endpoints.name:
-                enabled: false
-            glusterfs.path:
-                enabled: false
-            partition:
-                enabled: false
         extra_metadata_labels:
             - k8s.volume.type
         collect_all_network_interfaces:

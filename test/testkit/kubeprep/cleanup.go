@@ -41,7 +41,7 @@ var runtimeResourceSelector = client.MatchingLabels{
 // deleted, giving the manager time to reconcile and remove dependent resources
 // like collectors, agents, and the selfmonitor.
 func WaitForManagedResourceCleanup(ctx context.Context, k8sClient client.Client) {
-	Eventually(allRuntimeResourcesDeleted(ctx, k8sClient), periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+	Eventually(allRuntimeResourcesDeleted(ctx, k8sClient), periodic.ManagedResourceCleanupTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
 // CleanupFluentBitHostPath deploys a short-lived DaemonSet that mounts the Fluent Bit hostPath,
