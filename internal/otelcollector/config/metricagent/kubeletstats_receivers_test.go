@@ -281,14 +281,6 @@ func TestKubeletStatsReceiverConfig(t *testing.T) {
 			InsecureSkipVerify: true,
 			MetricGroups:       test.expectedMetricGroups,
 			Metrics:            test.expectedMetrics,
-			ResourceAttributes: KubeletStatsResourceAttributes{
-				AWSVolumeID:            Metric{Enabled: false},
-				FSType:                 Metric{Enabled: false},
-				GCEPDName:              Metric{Enabled: false},
-				GlusterFSEndpointsName: Metric{Enabled: false},
-				GlusterFSPath:          Metric{Enabled: false},
-				Partition:              Metric{Enabled: false},
-			},
 			ExtraMetadataLabels: []string{
 				"k8s.volume.type",
 			},
