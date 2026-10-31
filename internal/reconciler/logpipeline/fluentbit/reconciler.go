@@ -308,6 +308,16 @@ func (r *Reconciler) trackPipelineInfoMetric(ctx context.Context, pipelines []te
 
 		// Record info metric
 		metrics.RecordLogPipelineInfo(pipeline.Name, endpoint, features...)
+
+		// Record custom plugin metrics
+		if logpipelineutils.IsCustomOutputDefined(&pipeline.Spec.Output) {
+			plugin := logpipelineutils.CustomOutputPluginName(&pipeline.Spec.Output)
+			metrics.LogPipelineCustomOutputInfo.WithLabelValues(pipeline.Name, plugin).Set(1)
+		}
+
+		for _, filterPlugin := range logpipelineutils.CustomFilterPluginNames(pipeline.Spec.FluentBitFilters) {
+			metrics.LogPipelineCustomFilterInfo.WithLabelValues(pipeline.Name, filterPlugin).Set(1)
+		}
 	}
 }
 
