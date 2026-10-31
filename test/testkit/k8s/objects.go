@@ -136,6 +136,13 @@ func allObjectsDeleted(resources ...client.Object) func() error {
 				continue
 			}
 
+			// Namespaces take O(minutes) to fully terminate under Istio (sidecar teardown,
+			// namespace finalizers). Skip them here — the important signal is that pipeline
+			// CRs are gone so the manager can run cleanup.
+			if _, ok := r.(*corev1.Namespace); ok {
+				continue
+			}
+
 			err := suite.K8sClient.Get(context.Background(), types.NamespacedName{Name: r.GetName(), Namespace: r.GetNamespace()}, r)
 			if err == nil {
 				return fmt.Errorf("%T %s/%s still exists", r, r.GetNamespace(), r.GetName())
