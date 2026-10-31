@@ -271,7 +271,7 @@ func checkDaemonSetsGone(ctx context.Context, k8sClient client.Client, ns client
 	}
 
 	if n > 0 {
-		return fmt.Errorf("%d daemonset(s) still exist", n)
+		return fmt.Errorf("%d %s daemonset(s) still exist", n, daemonSets.Items[0].Name)
 	}
 
 	return nil
@@ -284,7 +284,7 @@ func checkConfigMapsGone(ctx context.Context, k8sClient client.Client, ns client
 	}
 
 	if n := len(configMaps.Items); n > 0 {
-		return fmt.Errorf("%d configmap(s) still exist", n)
+		return fmt.Errorf("%d %s configmap(s) still exist", n, configMaps.Items[0].Name)
 	}
 
 	return nil
