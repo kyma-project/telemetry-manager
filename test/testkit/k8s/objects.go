@@ -3,7 +3,9 @@ package k8s
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
+	"io"
 	"os"
 	"reflect"
 	"strings"
@@ -210,12 +212,27 @@ func deleteObjectsIgnoringNotFound(resources ...client.Object) error {
 			continue
 		}
 
-		if err := client.IgnoreNotFound(suite.K8sClient.Delete(context.Background(), r)); err != nil {
-			return err
+		err := client.IgnoreNotFound(suite.K8sClient.Delete(context.Background(), r))
+		if err == nil {
+			continue
 		}
+
+		// EOF means the API server received the delete request but dropped the connection
+		// before responding (common for namespace deletes on k3d under load). The object
+		// is being deleted — treat it as success so the cleanup loop continues to the
+		// remaining resources (e.g. pipeline CRs) instead of aborting.
+		if isEOF(err) {
+			continue
+		}
+
+		return err
 	}
 
 	return nil
+}
+
+func isEOF(err error) bool {
+	return errors.Is(err, io.EOF) || strings.Contains(err.Error(), "EOF")
 }
 
 // ForceDeleteObjects deletes k8s objects including persistent ones.

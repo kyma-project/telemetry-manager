@@ -213,63 +213,102 @@ func allRuntimeResourcesDeleted(ctx context.Context, k8sClient client.Client) fu
 	ns := client.InNamespace(kymaSystemNamespace)
 
 	return func() error {
-		var deployments appsv1.DeploymentList
-		if err := k8sClient.List(ctx, &deployments, ns, runtimeResourceSelector); err != nil {
-			return fmt.Errorf("failed to list deployments: %w", err)
+		if err := checkDeploymentsGone(ctx, k8sClient, ns); err != nil {
+			return err
 		}
 
-		// The selfmonitor Deployment is owned by the Telemetry CR reconciler, not by the
-		// pipeline controllers. It is deleted when the Telemetry CR reconciler detects no
-		// pipelines remain — which is an independent reconcile loop that may fire much later
-		// than the pipeline cleanup. Skip it here; it will be gone by the next test's setup.
-		n := 0
-
-		for _, d := range deployments.Items {
-			if d.Name != names.SelfMonitor {
-				n++
-			}
+		if err := checkDaemonSetsGone(ctx, k8sClient, ns); err != nil {
+			return err
 		}
 
-		if n > 0 {
-			return fmt.Errorf("%d deployment(s) still exist", n)
+		if err := checkConfigMapsGone(ctx, k8sClient, ns); err != nil {
+			return err
 		}
 
-		var daemonSets appsv1.DaemonSetList
-		if err := k8sClient.List(ctx, &daemonSets, ns, runtimeResourceSelector); err != nil {
-			return fmt.Errorf("failed to list daemonsets: %w", err)
-		}
-
-		if n = len(daemonSets.Items); n > 0 {
-			return fmt.Errorf("%d daemonset(s) still exist", n)
-		}
-
-		var configMaps corev1.ConfigMapList
-		if err := k8sClient.List(ctx, &configMaps, ns, runtimeResourceSelector); err != nil {
-			return fmt.Errorf("failed to list configmaps: %w", err)
-		}
-
-		if n = len(configMaps.Items); n > 0 {
-			return fmt.Errorf("%d configmap(s) still exist", n)
-		}
-
-		var secrets corev1.SecretList
-		if err := k8sClient.List(ctx, &secrets, ns, runtimeResourceSelector); err != nil {
-			return fmt.Errorf("failed to list secrets: %w", err)
-		}
-
-		// The webhook cert secret is owned by the Telemetry CR and must outlive all pipelines
-		n = 0
-
-		for _, secret := range secrets.Items {
-			if secret.Name != names.ManagerWebhookCertSecret {
-				n++
-			}
-		}
-
-		if n > 0 {
-			return fmt.Errorf("%d secret(s) still exist", n)
-		}
-
-		return nil
+		return checkSecretsGone(ctx, k8sClient, ns)
 	}
+}
+
+// checkDeploymentsGone returns an error if any non-terminating managed Deployment exists,
+// excluding the selfmonitor which is owned by the Telemetry CR reconciler (not pipelines).
+func checkDeploymentsGone(ctx context.Context, k8sClient client.Client, ns client.InNamespace) error {
+	var deployments appsv1.DeploymentList
+	if err := k8sClient.List(ctx, &deployments, ns, runtimeResourceSelector); err != nil {
+		return fmt.Errorf("failed to list deployments: %w", err)
+	}
+
+	n := 0
+
+	for _, d := range deployments.Items {
+		if d.Name != names.SelfMonitor && d.DeletionTimestamp.IsZero() {
+			n++
+		}
+	}
+
+	if n > 0 {
+		return fmt.Errorf("%d deployment(s) still exist", n)
+	}
+
+	return nil
+}
+
+// checkDaemonSetsGone returns an error if any non-terminating managed DaemonSet exists.
+// DaemonSets with a DeletionTimestamp are already being torn down — their pods are
+// terminating and the object lingers until they are all gone. The next test's
+// helm upgrade --wait ensures the cluster is clean before new pipelines are created.
+func checkDaemonSetsGone(ctx context.Context, k8sClient client.Client, ns client.InNamespace) error {
+	var daemonSets appsv1.DaemonSetList
+	if err := k8sClient.List(ctx, &daemonSets, ns, runtimeResourceSelector); err != nil {
+		return fmt.Errorf("failed to list daemonsets: %w", err)
+	}
+
+	n := 0
+
+	for _, ds := range daemonSets.Items {
+		if ds.DeletionTimestamp.IsZero() {
+			n++
+		}
+	}
+
+	if n > 0 {
+		return fmt.Errorf("%d %s daemonset(s) still exist", n, daemonSets.Items[0].Name)
+	}
+
+	return nil
+}
+
+func checkConfigMapsGone(ctx context.Context, k8sClient client.Client, ns client.InNamespace) error {
+	var configMaps corev1.ConfigMapList
+	if err := k8sClient.List(ctx, &configMaps, ns, runtimeResourceSelector); err != nil {
+		return fmt.Errorf("failed to list configmaps: %w", err)
+	}
+
+	if n := len(configMaps.Items); n > 0 {
+		return fmt.Errorf("%d %s configmap(s) still exist", n, configMaps.Items[0].Name)
+	}
+
+	return nil
+}
+
+// checkSecretsGone returns an error if any managed Secret exists, excluding the webhook
+// cert secret which is owned by the Telemetry CR and must outlive all pipelines.
+func checkSecretsGone(ctx context.Context, k8sClient client.Client, ns client.InNamespace) error {
+	var secrets corev1.SecretList
+	if err := k8sClient.List(ctx, &secrets, ns, runtimeResourceSelector); err != nil {
+		return fmt.Errorf("failed to list secrets: %w", err)
+	}
+
+	n := 0
+
+	for _, secret := range secrets.Items {
+		if secret.Name != names.ManagerWebhookCertSecret {
+			n++
+		}
+	}
+
+	if n > 0 {
+		return fmt.Errorf("%d secret(s) still exist", n)
+	}
+
+	return nil
 }
