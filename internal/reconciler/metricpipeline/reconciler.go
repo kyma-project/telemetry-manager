@@ -506,6 +506,10 @@ func (r *Reconciler) trackPipelineInfoMetric(ctx context.Context, pipelines []te
 
 		if metricpipelineutils.IsRuntimeInputEnabled(pipeline.Spec.Input) {
 			features = append(features, metrics.FeatureInputRuntime)
+
+			if len(pipeline.Spec.Input.Runtime.AdditionalMetrics) > 0 {
+				features = append(features, metrics.FeatureInputRuntimeAdditionalMetrics)
+			}
 		}
 
 		if metricpipelineutils.IsPrometheusInputEnabled(pipeline.Spec.Input) {
