@@ -19,6 +19,7 @@ package otlpgateway
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"gopkg.in/yaml.v3"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -38,6 +39,8 @@ import (
 	k8sutils "github.com/kyma-project/telemetry-manager/internal/utils/k8s"
 	telemetryutils "github.com/kyma-project/telemetry-manager/internal/utils/telemetry"
 )
+
+const defaultRequeueDuration = 30
 
 // Reconciler reconciles the OTLP Gateway DaemonSet based on pipeline references in the coordination ConfigMap.
 type Reconciler struct {
@@ -145,7 +148,9 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, err
 	}
 
-	return ctrl.Result{}, nil
+	// Requeue periodically so that any missed Delete event on the coordination ConfigMap
+	// (e.g. due to a race between two pipeline reconcilers) is eventually recovered.
+	return ctrl.Result{RequeueAfter: defaultRequeueDuration * time.Second}, nil
 }
 
 // processConfigAndBuildResources handles config building and resource deployment.
