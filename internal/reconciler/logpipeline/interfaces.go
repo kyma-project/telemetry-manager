@@ -32,6 +32,10 @@ type LogPipelineReconciler interface {
 
 	// SupportedOutput returns the output mode that this reconciler supports (e.g., FluentBit or OTel).
 	SupportedOutput() logpipelineutils.Mode
+
+	// DeleteAgentResources removes all agent resources (DaemonSet, ConfigMaps, etc.) managed by this reconciler.
+	// Called when the last pipeline of this type is deleted, to ensure no orphaned resources remain.
+	DeleteAgentResources(ctx context.Context) error
 }
 
 // OverridesHandler manages loading and processing of configuration overrides.

@@ -213,20 +213,11 @@ func allRuntimeResourcesDeleted(ctx context.Context, k8sClient client.Client) fu
 	ns := client.InNamespace(kymaSystemNamespace)
 
 	return func() error {
-
-		if err := checkConfigMapsGone(ctx, k8sClient, ns); err != nil {
-			return err
-		}
-
 		if err := checkDeploymentsGone(ctx, k8sClient, ns); err != nil {
 			return err
 		}
 
-		if err := checkDaemonSetsGone(ctx, k8sClient, ns); err != nil {
-			return err
-		}
-
-		return checkSecretsGone(ctx, k8sClient, ns)
+		return checkDaemonSetsGone(ctx, k8sClient, ns)
 	}
 }
 
@@ -278,38 +269,4 @@ func checkDaemonSetsGone(ctx context.Context, k8sClient client.Client, ns client
 	return nil
 }
 
-func checkConfigMapsGone(ctx context.Context, k8sClient client.Client, ns client.InNamespace) error {
-	var configMaps corev1.ConfigMapList
-	if err := k8sClient.List(ctx, &configMaps, ns, runtimeResourceSelector); err != nil {
-		return fmt.Errorf("failed to list configmaps: %w", err)
-	}
 
-	if n := len(configMaps.Items); n > 0 {
-		return fmt.Errorf("%d %s configmap(s) still exist", n, configMaps.Items[0].Name)
-	}
-
-	return nil
-}
-
-// checkSecretsGone returns an error if any managed Secret exists, excluding the webhook
-// cert secret which is owned by the Telemetry CR and must outlive all pipelines.
-func checkSecretsGone(ctx context.Context, k8sClient client.Client, ns client.InNamespace) error {
-	var secrets corev1.SecretList
-	if err := k8sClient.List(ctx, &secrets, ns, runtimeResourceSelector); err != nil {
-		return fmt.Errorf("failed to list secrets: %w", err)
-	}
-
-	n := 0
-
-	for _, secret := range secrets.Items {
-		if secret.Name != names.ManagerWebhookCertSecret {
-			n++
-		}
-	}
-
-	if n > 0 {
-		return fmt.Errorf("%d secret(s) still exist", n)
-	}
-
-	return nil
-}

@@ -194,6 +194,15 @@ func (r *Reconciler) SupportedOutput() logpipelineutils.Mode {
 	return logpipelineutils.OTel
 }
 
+func (r *Reconciler) DeleteAgentResources(ctx context.Context) error {
+	vpaCRDExists, err := r.vpaStatusChecker.VpaCRDExists(ctx, r.Client)
+	if err != nil {
+		return fmt.Errorf("failed to check VPA CRD: %w", err)
+	}
+
+	return r.agentApplierDeleter.DeleteResources(ctx, r.Client, vpaCRDExists)
+}
+
 func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) error {
 	if err := r.pipelineLock.TryAcquireLock(ctx, pipeline); err != nil {
 		if errors.Is(err, resourcelock.ErrMaxPipelinesExceeded) {

@@ -120,6 +120,23 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			return ctrl.Result{}, fmt.Errorf("failed to remove pipeline reference from OTLP Gateway Coordination ConfigMap: %w", err)
 		}
 
+		// If this was the last log pipeline, delete agent resources immediately.
+		// Without this, DeleteResources is only triggered from doReconcile when a pipeline object
+		// still exists but is non-reconcilable. Since pipelines have no finalizer they vanish
+		// from etcd before doReconcile can run, leaving the DaemonSet and ConfigMaps behind.
+		var remaining telemetryv1beta1.LogPipelineList
+		if err := r.List(ctx, &remaining); err != nil {
+			return ctrl.Result{}, fmt.Errorf("failed to list log pipelines: %w", err)
+		}
+
+		if len(remaining.Items) == 0 {
+			for _, rec := range r.reconcilers {
+				if err := rec.DeleteAgentResources(ctx); err != nil {
+					return ctrl.Result{}, fmt.Errorf("failed to delete agent resources: %w", err)
+				}
+			}
+		}
+
 		return ctrl.Result{}, nil
 	}
 
