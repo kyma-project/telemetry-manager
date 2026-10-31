@@ -137,6 +137,10 @@ func allObjectsDeleted(resources ...client.Object) func() error {
 			}
 
 			err := suite.K8sClient.Get(context.Background(), types.NamespacedName{Name: r.GetName(), Namespace: r.GetNamespace()}, r)
+			if err == nil {
+				return fmt.Errorf("%T %s/%s still exists", r, r.GetNamespace(), r.GetName())
+			}
+
 			if !apierrors.IsNotFound(err) {
 				return err
 			}
