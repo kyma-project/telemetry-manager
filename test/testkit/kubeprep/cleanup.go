@@ -213,15 +213,16 @@ func allRuntimeResourcesDeleted(ctx context.Context, k8sClient client.Client) fu
 	ns := client.InNamespace(kymaSystemNamespace)
 
 	return func() error {
+
+		if err := checkConfigMapsGone(ctx, k8sClient, ns); err != nil {
+			return err
+		}
+
 		if err := checkDeploymentsGone(ctx, k8sClient, ns); err != nil {
 			return err
 		}
 
 		if err := checkDaemonSetsGone(ctx, k8sClient, ns); err != nil {
-			return err
-		}
-
-		if err := checkConfigMapsGone(ctx, k8sClient, ns); err != nil {
 			return err
 		}
 
