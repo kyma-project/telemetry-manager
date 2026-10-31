@@ -22,3 +22,7 @@ func (r *ReconcilerStub) Reconcile(_ context.Context, _ *telemetryv1beta1.LogPip
 func (r *ReconcilerStub) SupportedOutput() logpipelineutils.Mode {
 	return r.OutputType
 }
+
+func (r *ReconcilerStub) DeleteAgentResources(_ context.Context) error {
+	return r.Result
+}

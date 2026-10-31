@@ -130,6 +130,10 @@ func New(opts ...Option) *Reconciler {
 	return r
 }
 
+func (r *Reconciler) DeleteAgentResources(ctx context.Context) error {
+	return r.agentApplierDeleter.DeleteResources(ctx, r.Client)
+}
+
 func (r *Reconciler) Reconcile(ctx context.Context, pipeline *telemetryv1beta1.LogPipeline) (ctrl.Result, error) {
 	logf.FromContext(ctx).V(1).Info("Reconciling FluentBit LogPipeline")
 

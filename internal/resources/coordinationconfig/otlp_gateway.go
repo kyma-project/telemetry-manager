@@ -8,6 +8,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
@@ -177,43 +178,46 @@ func getPipelineSlice(config *OTLPGatewayConfigMap, pipelineType pipelines.Signa
 }
 
 // applyConfigUpdate reads the coordination ConfigMap, applies updateFn to it, and writes it back.
-// Errors are returned directly and propagated to the caller's reconciliation loop.
+// Uses RetryOnConflict so that concurrent pipeline reconcilers converge immediately instead of
+// waiting for the full controller-runtime exponential backoff between retries.
 func applyConfigUpdate(ctx context.Context, c client.Client, namespace string, updateFn func(*OTLPGatewayConfigMap) error) error {
 	labelerClient := k8sclients.NewLabeler(c, commonresources.DefaultLabels(names.ManagerName, commonresources.LabelValueK8sComponentController))
 
-	cm, exists, err := getConfigMap(ctx, labelerClient, namespace)
-	if err != nil {
-		return err
-	}
-
-	config, err := parseConfig(cm, exists)
-	if err != nil {
-		return err
-	}
-
-	if err := updateFn(&config); err != nil {
-		return fmt.Errorf("update function failed: %w", err)
-	}
-
-	// Without any pipeline reference the ConfigMap has no purpose, so it is removed instead of being kept empty
-	if config.isEmpty() {
-		if !exists {
-			return nil
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		cm, exists, err := getConfigMap(ctx, labelerClient, namespace)
+		if err != nil {
+			return err
 		}
 
-		return deleteConfigMap(ctx, labelerClient, cm)
-	}
+		config, err := parseConfig(cm, exists)
+		if err != nil {
+			return err
+		}
 
-	yamlData, err := yaml.Marshal(&config)
-	if err != nil {
-		return fmt.Errorf("failed to marshal config: %w", err)
-	}
+		if err := updateFn(&config); err != nil {
+			return fmt.Errorf("update function failed: %w", err)
+		}
 
-	if !exists {
-		return createConfigMap(ctx, labelerClient, namespace, string(yamlData))
-	}
+		// Without any pipeline reference the ConfigMap has no purpose, so it is removed instead of being kept empty
+		if config.isEmpty() {
+			if !exists {
+				return nil
+			}
 
-	return updateConfigMap(ctx, labelerClient, cm, string(yamlData))
+			return deleteConfigMap(ctx, labelerClient, cm)
+		}
+
+		yamlData, err := yaml.Marshal(&config)
+		if err != nil {
+			return fmt.Errorf("failed to marshal config: %w", err)
+		}
+
+		if !exists {
+			return createConfigMap(ctx, labelerClient, namespace, string(yamlData))
+		}
+
+		return updateConfigMap(ctx, labelerClient, cm, string(yamlData))
+	})
 }
 
 // getConfigMap fetches the ConfigMap and returns whether it exists
