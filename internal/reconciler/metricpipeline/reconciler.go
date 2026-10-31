@@ -212,29 +212,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			return ctrl.Result{}, err
 		}
 
-		// Remove pipeline reference from OTLP Gateway Coordination ConfigMap
-		if err := coordinationconfig.RemovePipelineReference(ctx, r.Client, r.globals.TargetNamespace(), pipelines.SignalTypeMetric, req.Name); err != nil {
-			return ctrl.Result{}, fmt.Errorf("failed to remove pipeline reference from OTLP Gateway Coordination ConfigMap: %w", err)
-		}
-
-		// If this was the last metric pipeline, delete the metric agent resources immediately.
-		// Without this, DeleteResources is only triggered from doReconcile when a pipeline object
-		// still exists but is non-reconcilable. Since pipelines have no finalizer they vanish
-		// from etcd before doReconcile can run, leaving the DaemonSet and ConfigMaps behind.
-		var remaining telemetryv1beta1.MetricPipelineList
-		if err := r.List(ctx, &remaining); err != nil {
-			return ctrl.Result{}, fmt.Errorf("failed to list metric pipelines: %w", err)
-		}
-
-		if len(remaining.Items) == 0 {
-			vpaCRDExists, err := r.vpaStatusChecker.VpaCRDExists(ctx, r.Client)
-			if err != nil {
-				return ctrl.Result{}, fmt.Errorf("failed to check VPA CRD: %w", err)
-			}
-
-			if err := r.agentApplierDeleter.DeleteResources(ctx, r.Client, vpaCRDExists); err != nil {
-				return ctrl.Result{}, fmt.Errorf("failed to delete metric agent resources: %w", err)
-			}
+		if err := r.handleDeletedPipeline(ctx, req.Name); err != nil {
+			return ctrl.Result{}, err
 		}
 
 		return ctrl.Result{}, nil
@@ -274,6 +253,30 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	return ctrl.Result{}, nil
+}
+
+func (r *Reconciler) handleDeletedPipeline(ctx context.Context, name string) error {
+	if err := coordinationconfig.RemovePipelineReference(ctx, r.Client, r.globals.TargetNamespace(), pipelines.SignalTypeMetric, name); err != nil {
+		return fmt.Errorf("failed to remove pipeline reference from OTLP Gateway Coordination ConfigMap: %w", err)
+	}
+
+	var remaining telemetryv1beta1.MetricPipelineList
+	if err := r.List(ctx, &remaining); err != nil {
+		return fmt.Errorf("failed to list metric pipelines: %w", err)
+	}
+
+	if len(remaining.Items) == 0 {
+		vpaCRDExists, err := r.vpaStatusChecker.VpaCRDExists(ctx, r.Client)
+		if err != nil {
+			return fmt.Errorf("failed to check VPA CRD: %w", err)
+		}
+
+		if err := r.agentApplierDeleter.DeleteResources(ctx, r.Client, vpaCRDExists); err != nil {
+			return fmt.Errorf("failed to delete metric agent resources: %w", err)
+		}
+	}
+
+	return nil
 }
 
 func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1beta1.MetricPipeline) error {

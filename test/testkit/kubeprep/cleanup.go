@@ -268,5 +268,3 @@ func checkDaemonSetsGone(ctx context.Context, k8sClient client.Client, ns client
 
 	return nil
 }
-
-
