@@ -12,14 +12,14 @@ require (
 	github.com/kyma-project/kyma/hack/table-gen v0.0.0-20250404123224-5afb7a10791b
 	github.com/mikefarah/yq/v4 v4.54.1
 	github.com/vektra/mockery/v3 v3.8.0
-	github.com/vladopajic/go-test-coverage/v2 v2.20.1
+	github.com/vladopajic/go-test-coverage/v2 v2.21.0
 	github.com/yannh/kubeconform v0.8.0
 	github.com/yeya24/promlinter v0.3.0
 	golang.org/x/tools v0.52.0
 	gotest.tools/gotestsum v1.13.0
 	helm.sh/helm/v4 v4.3.1
-	k8s.io/code-generator v0.37.1
-	sigs.k8s.io/controller-tools v0.22.0
+	k8s.io/code-generator v0.37.2
+	sigs.k8s.io/controller-tools v0.23.0
 )
 
 require (
@@ -524,7 +524,7 @@ require (
 	honnef.co/go/tools v0.8.2 // indirect
 	k8s.io/api v0.37.1 // indirect
 	k8s.io/apiextensions-apiserver v0.37.1 // indirect
-	k8s.io/apimachinery v0.37.1 // indirect
+	k8s.io/apimachinery v0.37.2 // indirect
 	k8s.io/apiserver v0.37.1 // indirect
 	k8s.io/cli-runtime v0.37.1 // indirect
 	k8s.io/client-go v0.37.1 // indirect
