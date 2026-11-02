@@ -21,7 +21,6 @@ Learn how to use the [OpenTelemetry (OTel) Operator](https://opentelemetry.io/do
 - [Create an Instrumentation CR](#create-an-instrumentation-cr)
 - [Annotate Workloads](#annotate-workloads)
 - [Configure Sampling with Istio](#configure-sampling-with-istio)
-- [Set Resource Limits](#set-resource-limits)
 - [Customize the Signal Exporters](#customize-the-signal-exporters)
 - [Language-Specific Examples](#language-specific-examples)
 - [Verify the Installation](#verify-the-installation)
@@ -50,14 +49,6 @@ However, the following limitations apply:
 ## Prerequisites
 
 - The [Telemetry](https://kyma-project.io/external-content/telemetry-manager/docs/user/README.html) and [Istio](https://kyma-project.io/external-content/istio/docs/user/README.html) modules are [added](https://kyma-project.io/02-get-started/01-quick-install).
-- **cert-manager** installed, which the operator uses by default to provision its admission webhook certificates. To install only the CRDs and controller, run:
-
-  ```bash
-  helm install cert-manager oci://quay.io/jetstack/charts/cert-manager \
-    --namespace cert-manager --create-namespace \
-    --version v1.21.2 \
-    --set crds.enabled=true
-  ```
 
 ## Install the OTel Operator
 
@@ -72,10 +63,12 @@ However, the following limitations apply:
    ```bash
    helm install my-opentelemetry-operator opentelemetry-helm/opentelemetry-operator \
      --namespace opentelemetry-demo --create-namespace \
-     --version 0.123.1
+     --version 0.123.1 \
+     --set admissionWebhooks.certManager.enabled=false \
+     --set admissionWebhooks.autoGenerateCert.enabled=true
    ```
 
-The operator installs its CRDs, `Instrumentation` and `OpenTelemetryCollector`, and a mutating webhook that injects agents at Pod creation time. The `--create-namespace` flag creates the `opentelemetry-demo` namespace, which this guide uses for the operator, the debug collector, and the `Instrumentation` CR.
+The operator installs its CRDs, `Instrumentation` and `OpenTelemetryCollector`, and a mutating webhook that injects agents at Pod creation time. The `--create-namespace` flag creates the `opentelemetry-demo` namespace, which this guide uses for the operator, the debug collector, and the `Instrumentation` CR. The `admissionWebhooks.autoGenerateCert.enabled=true` and `admissionWebhooks.certManager.enabled=false` flags are suitable for local testing only. For production, use cert-manager instead by omitting both flags.
 
 > [!NOTE]
 > Some instrumentations are disabled by default and must be explicitly enabled using `--set` flags during installation. For example, Go auto-instrumentation is disabled by default and requires `--set manager.autoInstrumentation.go.enabled=true`.
@@ -138,6 +131,8 @@ spec:
 
 > [!NOTE]
 > The `Instrumentation` CR exports using HTTP/protobuf only, so you must use port `4318`. Check the [OTel auto-instrumentation docs](https://opentelemetry.io/docs/kubernetes/operator/automatic/) for any language-specific endpoint requirements.
+
+The CR's language-specific blocks, such as `java` and `nodejs`, also accept a `resources` key where you can set CPU and memory limits. Some instrumentations add overhead. For example, Java bytecode rewriting can slow Pod startup if limits are too low. For guidance on sizing, see the [OTel Operator resource documentation](https://opentelemetry.io/docs/kubernetes/operator/automatic/).
 
 ## Annotate Workloads
 
@@ -211,28 +206,20 @@ The agent always honors the sampling decision in an incoming `traceparent` heade
 
 For full details on Istio tracing configuration, see [Configure Istio Tracing](../../collecting-traces/istio-support.md).
 
-## Set Resource Limits
-
-Some instrumentations add CPU and memory overhead. For example, rewriting bytecode for Java can slow Pod startup significantly if limits are too low.
-
-Set limits and requests in the shared `my-instrumentation` CR under the language-specific key, as shown in [Create an Instrumentation CR](#create-an-instrumentation-cr). The right values depend on your workload. For guidance on sizing, see the [OTel Operator resource documentation](https://opentelemetry.io/docs/kubernetes/operator/automatic/).
-
 ## Customize the Signal Exporters
 
 By default, the OpenTelemetry SDK exports traces, metrics, and logs using OTLP. Because this guide points the `Instrumentation` CR at the unified endpoint `http://telemetry-otlp.kyma-system.svc.cluster.local:4318`, all three signals reach the Kyma Telemetry module without extra configuration.
 
-You can override this default per signal with environment variables in your `Instrumentation` CR. This is useful if your observability strategy handles a signal differently. For example, if you scrape metrics with Prometheus, you can expose them with the `prometheus` exporter instead of sending them using OTLP. If your application already logs to standard output and a `LogPipeline` collects that output, you can disable OTLP log export to avoid duplicates.
+You can override the default per signal with environment variables in your `Instrumentation` CR. This is useful if your observability strategy handles a signal differently. For example, if your application already logs to standard output and a `LogPipeline` collects that output, you can disable OTLP log export to avoid duplicates.
 
 ```yaml
 spec:
   env:
-    - name: OTEL_METRICS_EXPORTER
-      value: prometheus # expose metrics for Prometheus to scrape instead of OTLP
     - name: OTEL_LOGS_EXPORTER
       value: none # disable OTLP log export, for example when a LogPipeline collects stdout
 ```
 
-The availability of built-in exporters such as `prometheus` or `console` is language-specific. For example, Java and Node.js support them, but the Go eBPF auto-instrumentation does not. For the full list of supported exporters, see the [Exporter Selection Specification](https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/#exporter-selection).
+The available exporters are language-specific. For example, Java and Node.js support exporters such as `prometheus` and `console`, but Go eBPF auto-instrumentation does not. For the full list, see the [Exporter Selection Specification](https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/#exporter-selection).
 
 ## Language-Specific Examples
 
@@ -278,16 +265,6 @@ The Node.js agent attaches at process startup using an init container. It prepen
 
    Otherwise, verify that the signals appear in your backend.
 
-1. If you configured `OTEL_METRICS_EXPORTER` to `prometheus`, verify that metrics are exposed. Port-forward the default metrics port `9464` and send a request to the endpoint:
-
-   ```bash
-   kubectl port-forward --namespace {NAMESPACE} pod/{POD_NAME} 9464:9464
-   ```
-
-   ```bash
-   curl http://localhost:9464/metrics
-   ```
-
 ## Clean Up
 
 1. Remove the injection annotation from your workload's Pod template to stop agent injection.
@@ -326,10 +303,4 @@ The Node.js agent attaches at process startup using an init container. It prepen
 
    ```bash
    kubectl delete namespace opentelemetry-demo
-   ```
-
-1. If you installed cert-manager only for this guide, remove it:
-
-   ```bash
-   helm uninstall cert-manager -n cert-manager
    ```
