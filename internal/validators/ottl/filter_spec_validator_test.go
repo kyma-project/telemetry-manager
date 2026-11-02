@@ -190,13 +190,42 @@ func filterSpanContextTestCases() []filterTestCase {
 func filterSpanEventContextTestCases() []filterTestCase {
 	return []filterTestCase{
 		{
-			name:            "spanevent not supported",
-			conditions:      []string{`spanevent.name == "exception"`},
-			isErrorExpected: true,
+			name:       "simple condition",
+			conditions: []string{`spanevent.name == "exception"`},
+		},
+		{
+			name: "multiple conditions",
+			conditions: []string{
+				`spanevent.name == "exception"`,
+				`spanevent.dropped_attributes_count == 0`,
+			},
+		},
+		{
+			name:       "attributes access",
+			conditions: []string{`spanevent.attributes["exception.type"] == "java.lang.RuntimeException"`},
+		},
+		{
+			name:       "timestamp access",
+			conditions: []string{`spanevent.time_unix_nano != nil`},
 		},
 		{
 			name:            "invalid syntax",
 			conditions:      []string{`spanevent.name == "exception`},
+			isErrorExpected: true,
+		},
+		{
+			name:            "invalid function",
+			conditions:      []string{`invalid_func(spanevent.name) == "exception"`},
+			isErrorExpected: true,
+		},
+		{
+			name:            "editor function",
+			conditions:      []string{`truncate_all(spanevent.attributes, 100)`},
+			isErrorExpected: true,
+		},
+		{
+			name:            "invalid path",
+			conditions:      []string{`spanevent.invalid == "value"`},
 			isErrorExpected: true,
 		},
 	}
@@ -288,12 +317,11 @@ func filterMetricContextTestCases() []filterTestCase {
 			isErrorExpected: true,
 		},
 		{
-			name: "unsupported metric context-only functions",
+			name: "uses HasAttrKeyOnDatapoint(key) and HasAttrOnDatapoint(key, value) functions",
 			conditions: []string{
-				`HasAttrKeyOnDatapoint("metric, "environment")`,
-				`HasAttrOnDatapoint(metric, "environment", "production")`,
+				`metric.name == "http_requests_total" and HasAttrKeyOnDatapoint("environment")`,
+				`metric.name == "http_requests_total" and HasAttrOnDatapoint("environment", "production")`,
 			},
-			isErrorExpected: true,
 		},
 	}
 }
