@@ -178,12 +178,15 @@ func getPipelineSlice(config *OTLPGatewayConfigMap, pipelineType pipelines.Signa
 }
 
 // applyConfigUpdate reads the coordination ConfigMap, applies updateFn to it, and writes it back.
-// Uses RetryOnConflict so that concurrent pipeline reconcilers converge immediately instead of
+// Uses retry.OnError to handle concurrent pipeline reconcilers converging immediately instead of
 // waiting for the full controller-runtime exponential backoff between retries.
+// Both Conflict (concurrent update) and AlreadyExists (concurrent create) are retried.
 func applyConfigUpdate(ctx context.Context, c client.Client, namespace string, updateFn func(*OTLPGatewayConfigMap) error) error {
 	labelerClient := k8sclients.NewLabeler(c, commonresources.DefaultLabels(names.ManagerName, commonresources.LabelValueK8sComponentController))
 
-	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+	return retry.OnError(retry.DefaultRetry, func(err error) bool {
+		return apierrors.IsConflict(err) || apierrors.IsAlreadyExists(err)
+	}, func() error {
 		cm, exists, err := getConfigMap(ctx, labelerClient, namespace)
 		if err != nil {
 			return err

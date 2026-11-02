@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
@@ -1221,6 +1222,77 @@ func TestUsageTracking(t *testing.T) {
 			assertAll(t)
 		})
 	}
+}
+
+func TestPipelineDeletion(t *testing.T) {
+	t.Run("last pipeline deleted deletes agent resources", func(t *testing.T) {
+		// No pipeline in the fake client — simulates the pipeline already removed from etcd
+		fakeClient := newTestClient(t)
+
+		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
+		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
+
+		sut, assertAll := newTestReconciler(fakeClient,
+			withAgentApplierDeleterAssert(agentApplierDeleterMock),
+		)
+
+		_, err := sut.Reconcile(t.Context(), ctrl.Request{Name: "deleted-pipeline"})
+		require.NoError(t, err)
+
+		assertAll(t)
+	})
+
+	t.Run("pipeline deleted but others remain skips agent resource deletion", func(t *testing.T) {
+		remaining := testutils.NewMetricPipelineBuilder().WithName("other-pipeline").Build()
+		fakeClient := newTestClient(t, &remaining)
+
+		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
+		// DeleteResources must NOT be called when other pipelines still exist
+		agentApplierDeleterMock.On("ApplyResources", mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
+
+		sut, assertAll := newTestReconciler(fakeClient,
+			withAgentApplierDeleterAssert(agentApplierDeleterMock),
+		)
+
+		_, err := sut.Reconcile(t.Context(), ctrl.Request{Name: "deleted-pipeline"})
+		require.NoError(t, err)
+
+		agentApplierDeleterMock.AssertNotCalled(t, "DeleteResources", mock.Anything, mock.Anything, mock.Anything)
+		assertAll(t)
+	})
+
+	t.Run("agent resource deletion failure is propagated", func(t *testing.T) {
+		fakeClient := newTestClient(t)
+
+		deleteErr := errors.New("delete failed")
+		agentApplierDeleterMock := &mocks.AgentApplierDeleter{}
+		agentApplierDeleterMock.On("DeleteResources", mock.Anything, mock.Anything, mock.Anything).Return(deleteErr).Once()
+
+		sut, assertAll := newTestReconciler(fakeClient,
+			withAgentApplierDeleterAssert(agentApplierDeleterMock),
+		)
+
+		_, err := sut.Reconcile(t.Context(), ctrl.Request{Name: "deleted-pipeline"})
+		require.Error(t, err)
+		require.ErrorContains(t, err, "delete failed")
+
+		assertAll(t)
+	})
+
+	t.Run("VPA check failure on deletion is propagated", func(t *testing.T) {
+		fakeClient := newTestClient(t)
+
+		vpaErr := errors.New("vpa check failed")
+		sut, assertAll := newTestReconciler(fakeClient,
+			WithVpaStatusChecker(&stubs.VpaStatusCheckerWithErr{Err: vpaErr}),
+		)
+
+		_, err := sut.Reconcile(t.Context(), ctrl.Request{Name: "deleted-pipeline"})
+		require.Error(t, err)
+		require.ErrorContains(t, err, "vpa check failed")
+
+		assertAll(t)
+	})
 }
 
 func buildMetricPipelineLabelValues(pipelineName, endpoint string, enabledFeatures []string) []string {

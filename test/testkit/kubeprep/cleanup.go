@@ -229,16 +229,16 @@ func checkDeploymentsGone(ctx context.Context, k8sClient client.Client, ns clien
 		return fmt.Errorf("failed to list deployments: %w", err)
 	}
 
-	n := 0
+	var live []string
 
 	for _, d := range deployments.Items {
 		if d.Name != names.SelfMonitor && d.DeletionTimestamp.IsZero() {
-			n++
+			live = append(live, d.Name)
 		}
 	}
 
-	if n > 0 {
-		return fmt.Errorf("%d deployment(s) still exist", n)
+	if len(live) > 0 {
+		return fmt.Errorf("deployment(s) still exist: %v", live)
 	}
 
 	return nil
@@ -254,16 +254,16 @@ func checkDaemonSetsGone(ctx context.Context, k8sClient client.Client, ns client
 		return fmt.Errorf("failed to list daemonsets: %w", err)
 	}
 
-	n := 0
+	var live []string
 
 	for _, ds := range daemonSets.Items {
 		if ds.DeletionTimestamp.IsZero() {
-			n++
+			live = append(live, ds.Name)
 		}
 	}
 
-	if n > 0 {
-		return fmt.Errorf("%d %s daemonset(s) still exist", n, daemonSets.Items[0].Name)
+	if len(live) > 0 {
+		return fmt.Errorf("daemonset(s) still exist: %v", live)
 	}
 
 	return nil

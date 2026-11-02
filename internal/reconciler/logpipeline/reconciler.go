@@ -130,10 +130,16 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		}
 
 		if len(remaining.Items) == 0 {
+			var allErrors error
+
 			for _, rec := range r.reconcilers {
 				if err := rec.DeleteAgentResources(ctx); err != nil {
-					return ctrl.Result{}, fmt.Errorf("failed to delete agent resources: %w", err)
+					allErrors = errors.Join(allErrors, fmt.Errorf("failed to delete agent resources: %w", err))
 				}
+			}
+
+			if allErrors != nil {
+				return ctrl.Result{}, allErrors
 			}
 		}
 
