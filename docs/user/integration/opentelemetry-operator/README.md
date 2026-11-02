@@ -49,6 +49,16 @@ However, the following limitations apply:
 ## Prerequisites
 
 - The [Telemetry](https://kyma-project.io/external-content/telemetry-manager/docs/user/README.html) and [Istio](https://kyma-project.io/external-content/istio/docs/user/README.html) modules are [added](https://kyma-project.io/02-get-started/01-quick-install).
+- **cert-manager** installed, which the OTel Operator uses to provision its admission webhook certificates. To install it, run:
+
+  ```bash
+  helm install cert-manager oci://quay.io/jetstack/charts/cert-manager \
+    --namespace cert-manager --create-namespace \
+    --version v1.21.3 \
+    --values https://raw.githubusercontent.com/kyma-project/telemetry-manager/refs/heads/main/docs/user/integration/opentelemetry-operator/cert-manager-values.yaml
+  ```
+
+  The provided values are tuned for Gardener shoots. Review them before using in a different environment.
 
 ## Install the OTel Operator
 
@@ -63,12 +73,10 @@ However, the following limitations apply:
    ```bash
    helm install my-opentelemetry-operator opentelemetry-helm/opentelemetry-operator \
      --namespace opentelemetry-demo --create-namespace \
-     --version 0.123.1 \
-     --set admissionWebhooks.certManager.enabled=false \
-     --set admissionWebhooks.autoGenerateCert.enabled=true
+     --version 0.123.1
    ```
 
-The operator installs its CRDs, `Instrumentation` and `OpenTelemetryCollector`, and a mutating webhook that injects agents at Pod creation time. The `--create-namespace` flag creates the `opentelemetry-demo` namespace, which this guide uses for the operator, the debug collector, and the `Instrumentation` CR. The `admissionWebhooks.autoGenerateCert.enabled=true` and `admissionWebhooks.certManager.enabled=false` flags are suitable for local testing only. For production, use cert-manager instead by omitting both flags.
+The operator installs its CRDs, `Instrumentation` and `OpenTelemetryCollector`, and a mutating webhook that injects agents at Pod creation time. The `--create-namespace` flag creates the `opentelemetry-demo` namespace, which this guide uses for the operator, the debug collector, and the `Instrumentation` CR.
 
 > [!NOTE]
 > Some instrumentations are disabled by default and must be explicitly enabled using `--set` flags during installation. For example, Go auto-instrumentation is disabled by default and requires `--set manager.autoInstrumentation.go.enabled=true`.
@@ -303,4 +311,10 @@ The Node.js agent attaches at process startup using an init container. It prepen
 
    ```bash
    kubectl delete namespace opentelemetry-demo
+   ```
+
+1. If you installed cert-manager only for this guide, uninstall it:
+
+   ```bash
+   helm uninstall cert-manager -n cert-manager
    ```
