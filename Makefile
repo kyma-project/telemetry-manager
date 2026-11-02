@@ -202,12 +202,12 @@ generate: $(CONTROLLER_GEN) $(MOCKERY) $(STRINGER) $(YQ) $(YAMLFMT) $(POPULATE_I
 
 .PHONY: manifests
 manifests: $(CONTROLLER_GEN) $(YQ) $(YAMLFMT) ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition for v1alpha1 and v1beta1
-	$(CONTROLLER_GEN) rbac:roleName=manager-role webhook crd paths="./..." output:crd:artifacts:config=helm/charts/default/templates
+	$(CONTROLLER_GEN) rbac:roleName=manager-role webhook crd:omitToolVersion=true paths="./..." output:crd:artifacts:config=helm/charts/default/templates
 	$(YAMLFMT)
 
 .PHONY: manifests-experimental
 manifests-experimental: $(CONTROLLER_GEN) $(YAMLFMT) ## Generate manifests for experimental features (v1alpha1 and v1beta1)
-	$(CONTROLLER_GEN) rbac:roleName=manager-role webhook crd paths="./..." output:crd:artifacts:config=helm/charts/experimental/templates
+	$(CONTROLLER_GEN) rbac:roleName=manager-role webhook crd:omitToolVersion=true paths="./..." output:crd:artifacts:config=helm/charts/experimental/templates
 	$(YAMLFMT)
 
 .PHONY: crd-docs-gen
