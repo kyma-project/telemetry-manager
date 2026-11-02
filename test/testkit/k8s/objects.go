@@ -228,10 +228,17 @@ func deleteObjectsIgnoringNotFound(resources ...client.Object) error {
 			continue
 		}
 
+		// Namespace deletion is best-effort: k3d may drop the connection (EOF), return
+		// a transient error, or reject the request if the namespace is already terminating.
+		// None of these prevent the namespace from being cleaned up — skip and continue
+		// so that cluster-scoped pipeline CRs (which have no cascade) are always deleted.
+		if _, ok := r.(*corev1.Namespace); ok {
+			continue
+		}
+
 		// EOF means the API server received the delete request but dropped the connection
 		// before responding (common for namespace deletes on k3d under load). The object
-		// is being deleted — treat it as success so the cleanup loop continues to the
-		// remaining resources (e.g. pipeline CRs) instead of aborting.
+		// is being deleted — treat it as success so the cleanup loop continues.
 		if isEOF(err) {
 			continue
 		}
