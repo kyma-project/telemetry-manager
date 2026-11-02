@@ -1127,6 +1127,21 @@ func TestUsageTracking(t *testing.T) {
 			},
 		},
 		{
+			name: "pipeline with runtime input and additional metrics",
+			pipeline: testutils.NewMetricPipelineBuilder().
+				WithName("pipeline-runtime-additional").
+				WithOTLPInput(false).
+				WithRuntimeInput(true).
+				WithRuntimeInputAdditionalMetrics("k8s.node.uptime").
+				WithMetricPipelineOTLPOutput(testutils.OTLPEndpoint("test")).
+				Build(),
+			expectedEndpoint: "test",
+			expectedFeatureUsage: []string{
+				metrics.FeatureInputRuntime,
+				metrics.FeatureInputRuntimeAdditionalMetrics,
+			},
+		},
+		{
 			name: "pipeline with all features",
 			pipeline: testutils.NewMetricPipelineBuilder().
 				WithName("pipeline-10").
@@ -1137,6 +1152,7 @@ func TestUsageTracking(t *testing.T) {
 					Conditions: []string{"resource.attributes[\"test\"] == \"value\""},
 				}).
 				WithRuntimeInput(true).
+				WithRuntimeInputAdditionalMetrics("k8s.node.uptime").
 				WithPrometheusInput(true).
 				WithIstioInput(true).
 				WithOTLPInput(true).
@@ -1152,6 +1168,7 @@ func TestUsageTracking(t *testing.T) {
 				metrics.FeatureInputPrometheus,
 				metrics.FeatureInputIstio,
 				metrics.FeatureOutputDeltaTemporality,
+				metrics.FeatureInputRuntimeAdditionalMetrics,
 			},
 		},
 		{
