@@ -218,9 +218,9 @@ crd-docs-gen: $(TABLE_GEN) manifests ## Generate CRD documentation in markdown f
 	$(TABLE_GEN) --crd-filename ./helm/charts/default/templates/telemetry.kyma-project.io_metricpipelines.yaml --md-filename ./docs/user/resources/05-metricpipeline.md
 
 .PHONY: check-clean
-check-clean: generate manifests manifests-experimental crd-docs-gen ## Check if repo is clean and up-to-date after code generation
+check-clean: generate manifests manifests-experimental crd-docs-gen metrics-docs-gen ## Check if repo is clean and up-to-date after code generation
 	@echo "Checking if all generated files are up-to-date"
-	@git diff --name-only --exit-code || (echo "Generated files are not up-to-date. Please run 'make generate manifests manifests-experimental crd-docs-gen' to update them." && exit 1)
+	@git diff --name-only --exit-code || (echo "Generated files are not up-to-date. Please run 'make generate manifests manifests-experimental crd-docs-gen metrics-docs-gen' to update them." && exit 1)
 
 ##@ Testing
 
@@ -443,6 +443,6 @@ undeploy-experimental: $(HELM) ## Undeploy telemetry manager with experimental f
 
 ##@ Documentation
 
-.PHONY: update-metrics-docs
-update-metrics-docs: $(PROMLINTER) $(GOMPLATE) ## Update internal metrics documentation
+.PHONY: metrics-docs-gen
+metrics-docs-gen: $(PROMLINTER) $(GOMPLATE) ## Generate internal metrics documentation in markdown format
 	@metrics=$$(mktemp).json; echo $${metrics}; $(PROMLINTER) list -ojson internal > $${metrics}; $(GOMPLATE) -d telemetry=$${metrics} -f hack/telemetry-internal-metrics.md.tpl > docs/contributor/telemetry-internal-metrics.md
