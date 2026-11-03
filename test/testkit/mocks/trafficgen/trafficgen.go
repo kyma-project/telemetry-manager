@@ -78,6 +78,15 @@ func (d *Destination) K8sObjects() []client.Object {
 type Source struct{ tg *TrafficGen }
 
 func (s *Source) K8sObjects() []client.Object {
+	// A finite script (traceparentHeaders set) exits after sending its requests, so a Pod
+	// would immediately enter Terminated:Completed and PodReady would time out. Use a Job
+	// instead: it is designed for finite workloads and CreateObjects does not wait on it.
+	if len(s.tg.traceparentHeaders) > 0 {
+		return []client.Object{
+			kitk8sobjects.NewJob(sourceName, s.tg.namespace).WithPodSpec(s.tg.sourcePodSpec()).K8sObject(),
+		}
+	}
+
 	return []client.Object{
 		kitk8sobjects.NewPod(sourceName, s.tg.namespace).WithPodSpec(s.tg.sourcePodSpec()).K8sObject(),
 	}
