@@ -29,6 +29,7 @@ const (
 
 type Checker struct {
 	client    client.Client
+	labels    map[string]string
 	lockName  types.NamespacedName
 	maxOwners int
 }
@@ -38,8 +39,11 @@ func newChecker(client client.Client, lockName types.NamespacedName, maxOwners i
 		lockName.Name = fmt.Sprintf("%s-%s", lockName.Name, suffix)
 	}
 
+	labels := commonresources.DefaultLabels(names.ManagerName, commonresources.LabelValueK8sComponentController)
+
 	return &Checker{
-		client:    k8sclients.NewLabeler(client, commonresources.DefaultLabels(names.ManagerName, commonresources.LabelValueK8sComponentController)),
+		client:    k8sclients.NewLabeler(client, labels),
+		labels:    labels,
 		lockName:  lockName,
 		maxOwners: maxOwners,
 	}
@@ -65,7 +69,7 @@ func (c *Checker) TryAcquireLock(ctx context.Context, owner metav1.Object) error
 
 	for _, ref := range lock.GetOwnerReferences() {
 		if ref.Name == owner.GetName() && ref.UID == owner.GetUID() {
-			return nil
+			return c.ensureLabels(ctx, &lock)
 		}
 	}
 
@@ -113,6 +117,22 @@ func (c *Checker) createLock(ctx context.Context, owner metav1.Object) error {
 
 	if err := c.client.Create(ctx, &lock); err != nil {
 		return fmt.Errorf("failed to create lock: %w", err)
+	}
+
+	return nil
+}
+
+// ensureLabels backfills labels on lock ConfigMaps created before 1.74.0; an existing owner never triggers a write otherwise.
+// TODO: Remove this migration (method, call site, labels field) once all clusters have upgraded past 1.74.1.
+func (c *Checker) ensureLabels(ctx context.Context, lock *corev1.ConfigMap) error {
+	for k, v := range c.labels {
+		if lock.Labels[k] != v {
+			if err := c.client.Update(ctx, lock); err != nil {
+				return fmt.Errorf("failed to update lock labels: %w", err)
+			}
+
+			return nil
+		}
 	}
 
 	return nil

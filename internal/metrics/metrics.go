@@ -35,9 +35,10 @@ const (
 
 	// MetricPipeline features
 
-	FeatureInputPrometheus        = "input-prometheus"
-	FeatureInputIstio             = "input-istio"
-	FeatureOutputDeltaTemporality = "output-delta-temporality"
+	FeatureInputPrometheus               = "input-prometheus"
+	FeatureInputIstio                    = "input-istio"
+	FeatureOutputDeltaTemporality        = "output-delta-temporality"
+	FeatureInputRuntimeAdditionalMetrics = "input-runtime-additional-metrics"
 
 	// FluentBit features
 
@@ -61,6 +62,7 @@ var (
 		FeatureInputPrometheus,
 		FeatureInputIstio,
 		FeatureOutputDeltaTemporality,
+		FeatureInputRuntimeAdditionalMetrics,
 	}
 
 	LogPipelineFeatures = []string{
@@ -131,6 +133,26 @@ var (
 			Help:      "Feature and endpoint information of TracePipelines",
 		},
 		append(GeneralPipelineLabels, TracePipelineFeatures...),
+	)
+
+	LogPipelineCustomOutputInfo = promauto.With(registry).NewGaugeVec(
+		prometheus.GaugeOpts{
+			Namespace: defaultNamespace,
+			Subsystem: subsystemPipelines,
+			Name:      "log_pipeline_custom_output_info",
+			Help:      "Custom Fluent Bit output plugin in use per LogPipeline",
+		},
+		[]string{LabelPipelineName, "plugin"},
+	)
+
+	LogPipelineCustomFilterInfo = promauto.With(registry).NewGaugeVec(
+		prometheus.GaugeOpts{
+			Namespace: defaultNamespace,
+			Subsystem: subsystemPipelines,
+			Name:      "log_pipeline_custom_filter_info",
+			Help:      "Custom Fluent Bit filter plugins in use per LogPipeline",
+		},
+		[]string{LabelPipelineName, "plugin"},
 	)
 
 	SelfMonitorProberRequestsInFlight = promauto.With(registry).NewGauge(

@@ -35,7 +35,7 @@ func CreateObjects(t *testing.T, resources ...client.Object) error {
 	t.Cleanup(func() {
 		// Delete created objects after test completion. We dont care for not found errors here.
 		gomega.Expect(deleteObjectsIgnoringNotFound(resources...)).To(gomega.Succeed())
-		gomega.Eventually(allObjectsDeleted(resources...), periodic.EventuallyTimeout).Should(gomega.Succeed())
+		gomega.Eventually(allObjectsDeleted(resources...), periodic.EventuallyTimeout, periodic.DefaultInterval).Should(gomega.Succeed())
 	})
 
 	return createObjects(t, resources...)
@@ -127,19 +127,21 @@ func createObject(t *testing.T, resource client.Object) error {
 	return suite.K8sClient.Create(t.Context(), resource)
 }
 
-func allObjectsDeleted(resources ...client.Object) error {
-	for _, r := range resources {
-		if hasPersistentLabel(r.GetLabels()) {
-			continue
+func allObjectsDeleted(resources ...client.Object) func() error {
+	return func() error {
+		for _, r := range resources {
+			if hasPersistentLabel(r.GetLabels()) {
+				continue
+			}
+
+			err := suite.K8sClient.Get(context.Background(), types.NamespacedName{Name: r.GetName(), Namespace: r.GetNamespace()}, r)
+			if !apierrors.IsNotFound(err) {
+				return err
+			}
 		}
 
-		err := suite.K8sClient.Get(context.Background(), types.NamespacedName{Name: r.GetName(), Namespace: r.GetNamespace()}, r)
-		if !apierrors.IsNotFound(err) {
-			return err
-		}
+		return nil
 	}
-
-	return nil
 }
 
 func sortObjects(resources []client.Object) ([]client.Object, []client.Object, []client.Object) {

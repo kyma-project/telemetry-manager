@@ -243,6 +243,8 @@ func TestKubeletStatsReceiverConfig(t *testing.T) {
 					K8sContainerMemRequestUtilization:      &Metric{Enabled: true},
 					K8sNodeFSInodeCount:                    &Metric{Enabled: true},
 					K8sNodeFSInodeFree:                     &Metric{Enabled: true},
+					K8sNodePidLimit:                        &Metric{Enabled: true},
+					K8sNodePidUsage:                        &Metric{Enabled: true},
 					K8sNodeSystemContainerCPUTime:          &Metric{Enabled: true},
 					K8sNodeSystemContainerCPUUsage:         &Metric{Enabled: true},
 					K8sNodeSystemContainerMemoryUsage:      &Metric{Enabled: true},
@@ -279,14 +281,6 @@ func TestKubeletStatsReceiverConfig(t *testing.T) {
 			InsecureSkipVerify: true,
 			MetricGroups:       test.expectedMetricGroups,
 			Metrics:            test.expectedMetrics,
-			ResourceAttributes: KubeletStatsResourceAttributes{
-				AWSVolumeID:            Metric{Enabled: false},
-				FSType:                 Metric{Enabled: false},
-				GCEPDName:              Metric{Enabled: false},
-				GlusterFSEndpointsName: Metric{Enabled: false},
-				GlusterFSPath:          Metric{Enabled: false},
-				Partition:              Metric{Enabled: false},
-			},
 			ExtraMetadataLabels: []string{
 				"k8s.volume.type",
 			},

@@ -16,21 +16,13 @@ const yamlIndent = 2
 
 const (
 	envFileName             = ".env"
-	secScannersConfigName   = "sec-scanners-config.yaml"
 	componentConfigFileName = "component-config.yaml"
 	imagesGoRelPath         = "test/testkit/images.go"
 )
 
 const (
-	moduleName    = "telemetry"
-	moduleKind    = "kyma"
 	componentName = "kyma-project.io/module/telemetry"
 	teamSlug      = "kyma/Huskies"
-)
-
-const (
-	mendLanguage    = "golang-mod"
-	checkmarxPreset = "go-default"
 )
 
 var templates = map[string]string{
@@ -65,42 +57,10 @@ var prodImageEnvVars = []string{
 	"ENV_CHOWN_IMAGE",
 }
 
-var scannerExcludes = []string{
-	"**/mocks/**",
-	"**/stubs/**",
-	"**/test/**",
-	"**/*_test.go",
-	"docs/**",
-	"dependencies/populateimages/**",
-	"dependencies/sample-app/**",
-	"dependencies/stdout-log-generator/**",
-	"dependencies/fault-backend/**",
-	"internal/tools/**",
-	"apis/telemetry/v1alpha1/zz_generated.conversion.go",
-}
-
-type secScanConfig struct {
-	ModuleName   string       `yaml:"module-name"`
-	Kind         string       `yaml:"kind"`
-	BDBA         []string     `yaml:"bdba"`
-	Mend         mend         `yaml:"mend"`
-	CheckmarxOne checkmarxOne `yaml:"checkmarx-one"`
-}
-
 type componentConfig struct {
 	Name   string   `yaml:"name"`
 	Team   string   `yaml:"team"`
 	Images []string `yaml:"images"`
-}
-
-type mend struct {
-	Language string   `yaml:"language"`
-	Exclude  []string `yaml:"exclude"`
-}
-
-type checkmarxOne struct {
-	Preset  string   `yaml:"preset"`
-	Exclude []string `yaml:"exclude"`
 }
 
 func main() {
@@ -132,16 +92,6 @@ func run(inputDir, outputDir string) error {
 	imgs, err := prodImages(data)
 	if err != nil {
 		return err
-	}
-
-	if err := writeYAML(filepath.Join(outputDir, secScannersConfigName), secScanConfig{
-		ModuleName:   moduleName,
-		Kind:         moduleKind,
-		BDBA:         imgs,
-		Mend:         mend{Language: mendLanguage, Exclude: scannerExcludes},
-		CheckmarxOne: checkmarxOne{Preset: checkmarxPreset, Exclude: scannerExcludes},
-	}); err != nil {
-		return fmt.Errorf("error generating sec scan config: %w", err)
 	}
 
 	if err := writeYAML(filepath.Join(outputDir, componentConfigFileName), componentConfig{
