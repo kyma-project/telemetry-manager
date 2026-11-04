@@ -300,6 +300,11 @@ func isPodReady(t *testing.T, name types.NamespacedName) (bool, error) {
 
 	for _, containerStatus := range pod.Status.ContainerStatuses {
 		if containerStatus.State.Running == nil {
+			terminated := containerStatus.State.Terminated
+			if terminated != nil && terminated.Reason == "Completed" {
+				continue
+			}
+
 			return false, generateContainerError(pod.Name, containerStatus)
 		}
 	}
@@ -320,6 +325,11 @@ func arePodsReady(t *testing.T, listOptions client.ListOptions) (bool, error) {
 	for _, pod := range pods.Items {
 		for _, containerStatus := range pod.Status.ContainerStatuses {
 			if containerStatus.State.Running == nil {
+				terminated := containerStatus.State.Terminated
+				if terminated != nil && terminated.Reason == "Completed" {
+					continue
+				}
+
 				return false, generateContainerError(pod.Name, containerStatus)
 			}
 		}
