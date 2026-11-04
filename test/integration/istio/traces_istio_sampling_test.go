@@ -114,9 +114,10 @@ func setupSamplingTest(t *testing.T, uniquePrefix func(...string) string, sampli
 	assert.PodReady(t, types.NamespacedName{Name: "destination", Namespace: appNs})
 
 	// The destination is ready, so start the source. It waits for the destination to return HTTP
-	// 200 before sending the measured requests (see trafficgen), so none are lost to a race.
+	// 200 before sending the measured requests (see trafficgen), so none are lost to a race. Wait
+	// for the source Job to complete so all requests are known to be sent before asserting.
 	Expect(kitk8s.CreateObjects(t, tg.Source().K8sObjects()...)).To(Succeed())
-	assert.JobReady(t, types.NamespacedName{Name: "source", Namespace: appNs})
+	assert.JobCompleted(t, types.NamespacedName{Name: "source", Namespace: appNs})
 
 	return backend, traceIDs
 }

@@ -134,6 +134,14 @@ func JobReady(t *testing.T, name types.NamespacedName) {
 	isReady(t, isJobSuccessful, name, "Job")
 }
 
+// JobCompleted waits until the Job has at least one successful completion. Unlike JobReady
+// (which checks Status.Active > 0, true only while a pod is running), this is monotonic: once
+// the Job succeeds it stays succeeded, so it is race-free for finite jobs that exit quickly.
+func JobCompleted(t *testing.T, name types.NamespacedName) {
+	t.Helper()
+	isReady(t, isJobCompleted, name, "Job")
+}
+
 func PodReady(t *testing.T, name types.NamespacedName) {
 	t.Helper()
 	isReady(t, isPodReady, name, "Pod")
@@ -286,6 +294,23 @@ func isJobSuccessful(t *testing.T, name types.NamespacedName) (bool, error) {
 	}
 
 	return job.Status.Active > 0, nil
+}
+
+func isJobCompleted(t *testing.T, name types.NamespacedName) (bool, error) {
+	t.Helper()
+
+	var job batchv1.Job
+
+	err := suite.K8sClient.Get(t.Context(), name, &job)
+	if err != nil {
+		return false, fmt.Errorf("failed to get Job %s: %w", name.String(), err)
+	}
+
+	if job.Status.Succeeded == 0 {
+		return false, fmt.Errorf("job %s has not completed yet: %d active, %d failed", name.String(), job.Status.Active, job.Status.Failed)
+	}
+
+	return true, nil
 }
 
 func isPodReady(t *testing.T, name types.NamespacedName) (bool, error) {
