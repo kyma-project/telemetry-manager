@@ -73,7 +73,7 @@ However, the following limitations apply:
    ```bash
    helm install my-opentelemetry-operator opentelemetry-helm/opentelemetry-operator \
      --namespace opentelemetry-demo --create-namespace \
-     --version 0.123.1
+     --version 0.128.0
    ```
 
 The operator installs its CRDs, `Instrumentation` and `OpenTelemetryCollector`, and a mutating webhook that injects agents at Pod creation time. The `--create-namespace` flag creates the `opentelemetry-demo` namespace, which this guide uses for the operator, the debug collector, and the `Instrumentation` CR.
