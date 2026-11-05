@@ -49,7 +49,7 @@ However, the following limitations apply:
 ## Prerequisites
 
 - The [Telemetry](https://kyma-project.io/external-content/telemetry-manager/docs/user/README.html) and [Istio](https://kyma-project.io/external-content/istio/docs/user/README.html) modules are [added](https://kyma-project.io/02-get-started/01-quick-install).
-- **cert-manager** installed, which the OTel Operator uses to provision its admission webhook certificates. To install it, run:
+- **cert-manager** is installed, which the OTel Operator uses to provision its admission webhook certificates. To install it, run:
 
   ```bash
   helm install cert-manager oci://quay.io/jetstack/charts/cert-manager \
@@ -58,7 +58,7 @@ However, the following limitations apply:
     --values https://raw.githubusercontent.com/kyma-project/telemetry-manager/refs/heads/main/docs/user/integration/opentelemetry-operator/cert-manager-values.yaml
   ```
 
-  The provided values are tuned for Gardener shoots. Review them before using in a different environment.
+  The provided values are tuned for Gardener shoots. If you use a different environment, review and adjust the values before installing.
 
 ## Install the OTel Operator
 
@@ -79,7 +79,7 @@ However, the following limitations apply:
 The operator installs its CRDs, `Instrumentation` and `OpenTelemetryCollector`, and a mutating webhook that injects agents at Pod creation time. The `--create-namespace` flag creates the `opentelemetry-demo` namespace, which this guide uses for the operator, the debug collector, and the `Instrumentation` CR.
 
 > [!NOTE]
-> Some instrumentations are disabled by default and must be explicitly enabled using `--set` flags during installation. For example, Go auto-instrumentation is disabled by default and requires `--set manager.autoInstrumentation.go.enabled=true`.
+> By default, some instrumentations are disabled. To enable them, add `--set` flags during installation. For example, to enable Go auto-instrumentation, add `--set manager.autoInstrumentation.go.enabled=true`.
 
 ## Create Telemetry Pipelines
 
@@ -96,7 +96,7 @@ The manifest deploys the following resources:
 - An `OpenTelemetryCollector` named `otel-debug-collector` in the `opentelemetry-demo` namespace, with a `debug` exporter that prints all received signals to its own logs.
 - A `TracePipeline`, `MetricPipeline`, and `LogPipeline`, each routing its signal to the collector.
 
-The debug collector is for following this guide. For production, replace it with your own backend, or route the pipelines directly to a third-party remote backend.
+Use the debug collector only for this guide. For production use, replace it with your own backend, or route the pipelines directly to a third-party remote backend.
 
 ## Create an Instrumentation CR
 
@@ -173,7 +173,7 @@ The operator watches for Pod annotations and injects the appropriate agent at Po
 
 ## Configure Sampling with Istio
 
-When Istio is active in your cluster, its Envoy proxies propagate the W3C `traceparent` header, which carries the sampling decision. Because the OTel agent uses `parentbased_traceidratio`, it honors the sampling flag set by Istio. If Istio decides not to sample a request, the agent does not report a span for it either.
+When Istio is active in your cluster, its Envoy proxies propagate the W3C `traceparent` header, which carries the sampling decision. Because the OTel agent uses `parentbased_traceidratio`, it honors the sampling flag set by Istio. If Istio decides not to sample a request, the agent does not report a span for that request.
 
 To control trace volume entirely through Istio, set `randomSamplingPercentage` in your Istio Telemetry CR and set the instrumentation sampler argument to `"0"`.
 
@@ -210,7 +210,7 @@ spec:
     argument: "0" # only adds app spans when Istio already decided to sample
 ```
 
-The agent always honors the sampling decision in an incoming `traceparent` header. The argument applies only to requests that arrive without a parent, such as a kubelet health probe that reaches the Pod directly instead of through Istio. With `"0"`, the agent starts no trace for such requests. With `"1"`, the agent starts a root span for each one, so health checks produce spans that Istio never saw.
+The agent always honors the sampling decision in an incoming `traceparent` header. The argument applies only to requests that arrive without a parent, such as a kubelet health probe that reaches the Pod directly instead of through Istio. With `"0"`, the agent starts no trace for parentless requests. With `"1"`, the agent starts a root span for each parentless request, so health checks produce spans that Istio never sees.
 
 For full details on Istio tracing configuration, see [Configure Istio Tracing](../../collecting-traces/istio-support.md).
 
@@ -218,7 +218,7 @@ For full details on Istio tracing configuration, see [Configure Istio Tracing](.
 
 By default, the OpenTelemetry SDK exports traces, metrics, and logs using OTLP. Because this guide points the `Instrumentation` CR at the unified endpoint `http://telemetry-otlp.kyma-system.svc.cluster.local:4318`, all three signals reach the Kyma Telemetry module without extra configuration.
 
-You can override the default per signal with environment variables in your `Instrumentation` CR. This is useful if your observability strategy handles a signal differently. For example, if your application already logs to standard output and a `LogPipeline` collects that output, you can disable OTLP log export to avoid duplicates.
+To override the default exporter for a specific signal, add environment variables to your `Instrumentation` CR. For example, if your application already logs to standard output and a `LogPipeline` collects that output, you can disable OTLP log export to avoid duplicates.
 
 ```yaml
 spec:
@@ -237,11 +237,11 @@ All examples reuse the shared `my-instrumentation` CR and differ only in the inj
 
 ### Java
 
-The Java agent modifies bytecode at startup using an init container. Expect additional startup time because the agent modifies bytecode before the application starts. Annotate the Pod template with `instrumentation.opentelemetry.io/inject-java`, as shown in [Annotate Workloads](#annotate-workloads). Tune the `java` resource limits in the CR according to the [OTel Java agent docs](https://opentelemetry.io/docs/zero-code/java/agent/).
+The Java agent uses an init container to modify bytecode at startup. This bytecode rewriting adds startup time. Annotate the Pod template with `instrumentation.opentelemetry.io/inject-java`, as shown in [Annotate Workloads](#annotate-workloads). Tune the `java` resource limits in the CR according to the [OTel Java agent docs](https://opentelemetry.io/docs/zero-code/java/agent/).
 
 ### Node.js
 
-The Node.js agent attaches at process startup using an init container. It prepends the OTel SDK to the Node.js require chain, so no changes to your application code are needed. Annotate the Pod template with `instrumentation.opentelemetry.io/inject-nodejs`, as shown in [Annotate Workloads](#annotate-workloads).
+The Node.js agent attaches at process startup using an init container. The agent prepends the OTel SDK to the Node.js require chain, so you don't need to change your application code. Annotate the Pod template with `instrumentation.opentelemetry.io/inject-nodejs`, as shown in [Annotate Workloads](#annotate-workloads).
 
 ## Verify the Installation
 
@@ -289,7 +289,7 @@ The Node.js agent attaches at process startup using an init container. It prepen
    kubectl delete -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/refs/heads/main/docs/user/integration/opentelemetry-operator/instrumentation.yaml
    ```
 
-1. If you applied the Istio Telemetry CR, delete it. This removes the shared `mesh-default` CR in `istio-system`:
+1. If you applied the Istio Telemetry CR, delete it. The following command removes the `mesh-default` resource from the `istio-system` namespace:
 
    ```bash
    kubectl delete -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/refs/heads/main/docs/user/integration/opentelemetry-operator/istio-telemetry.yaml
