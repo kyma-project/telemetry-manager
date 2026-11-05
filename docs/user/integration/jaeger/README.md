@@ -12,7 +12,7 @@ Learn how to use [Jaeger](https://github.com/jaegertracing/helm-charts/tree/main
 
 ![setup](./../assets/jaeger.drawio.svg)
 
-## Table of Content
+## Table of Contents
 
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
