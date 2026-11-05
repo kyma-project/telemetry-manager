@@ -1,0 +1,28 @@
+crds:
+  enabled: true
+
+global:
+  leaderElection:
+    namespace: "cert-manager"
+
+webhook:
+  timeoutSeconds: 5
+  validatingWebhookConfiguration:
+    namespaceSelector:
+      matchExpressions:
+        - key: "cert-manager.io/disable-validation"
+          operator: "NotIn"
+          values:
+            - "true"
+        - key: "kubernetes.io/metadata.name"
+          operator: "NotIn"
+          values:
+            - "kube-system"
+
+  mutatingWebhookConfiguration:
+    namespaceSelector:
+      matchExpressions:
+        - key: "kubernetes.io/metadata.name"
+          operator: "NotIn"
+          values:
+            - "kube-system"

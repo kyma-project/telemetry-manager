@@ -1,0 +1,61 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: otel-debug-collector
+  namespace: opentelemetry-demo
+spec:
+  image: otel/opentelemetry-collector:latest
+  replicas: 1
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+    exporters:
+      debug:
+        verbosity: detailed
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          exporters: [debug]
+        metrics:
+          receivers: [otlp]
+          exporters: [debug]
+        logs:
+          receivers: [otlp]
+          exporters: [debug]
+---
+apiVersion: telemetry.kyma-project.io/v1beta1
+kind: TracePipeline
+metadata:
+  name: demo-trace-pipeline
+spec:
+  output:
+    otlp:
+      protocol: grpc
+      endpoint:
+        value: http://otel-debug-collector-collector.opentelemetry-demo.svc.cluster.local:4317
+---
+apiVersion: telemetry.kyma-project.io/v1beta1
+kind: LogPipeline
+metadata:
+  name: demo-log-pipeline
+spec:
+  output:
+    otlp:
+      protocol: grpc
+      endpoint:
+        value: http://otel-debug-collector-collector.opentelemetry-demo.svc.cluster.local:4317
+---
+apiVersion: telemetry.kyma-project.io/v1beta1
+kind: MetricPipeline
+metadata:
+  name: demo-metrics-pipeline
+spec:
+  output:
+    otlp:
+      protocol: grpc
+      endpoint:
+        value: http://otel-debug-collector-collector.opentelemetry-demo.svc.cluster.local:4317
