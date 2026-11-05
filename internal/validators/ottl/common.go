@@ -159,7 +159,7 @@ func (gpc *genericParserCollection) parseConditions(conditions []string) error {
 	return nil
 }
 
-// Since we do not need to evluate OTTL expressions in the validators, these converters are no-ops that just return the parsed conditions/statements.
+// Since we do not need to evaluate OTTL expressions in the validators, these converters are no-ops that just return the parsed conditions/statements.
 
 func nopConditionConverter[T any](_ *ottl.ParserCollection[any], _ ottl.ConditionsGetter, parsedConditions []*ottl.Condition[T]) (any, error) {
 	return parsedConditions, nil
