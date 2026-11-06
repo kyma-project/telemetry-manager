@@ -327,6 +327,8 @@ jobs:
             label: "set-a"
           - name: "-b"
             label: "set-b"
+          - name: "-c"
+            label: "set-c"
     name: e2e-misc${{ matrix.set.name }}
     steps:
       - name: Checkout code
@@ -391,6 +393,8 @@ jobs:
             label: "set-a"
           - name: "-b"
             label: "set-b"
+          - name: "-c"
+            label: "set-c"
     name: integration${{ matrix.set.name }}
     steps:
       - name: Checkout code
