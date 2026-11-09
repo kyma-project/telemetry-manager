@@ -5,12 +5,14 @@ import (
 	"fmt"
 
 	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/pipelines"
+	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 	webhookutils "github.com/kyma-project/telemetry-manager/webhook/utils"
 )
 
@@ -19,23 +21,28 @@ const (
 )
 
 type validator struct {
+	secretAccessValidator *secretref.AccessValidator
+}
+
+func newValidator(c client.Client) *validator {
+	return &validator{secretAccessValidator: &secretref.AccessValidator{Client: c}}
 }
 
 var _ admission.Validator[*telemetryv1alpha1.LogPipeline] = &validator{}
 
 func (v *validator) ValidateCreate(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) (admission.Warnings, error) {
-	return validate(ctx, pipeline)
+	return v.validate(ctx, pipeline)
 }
 
 func (v *validator) ValidateUpdate(ctx context.Context, _, newPipeline *telemetryv1alpha1.LogPipeline) (admission.Warnings, error) {
-	return validate(ctx, newPipeline)
+	return v.validate(ctx, newPipeline)
 }
 
 func (v *validator) ValidateDelete(_ context.Context, _ *telemetryv1alpha1.LogPipeline) (admission.Warnings, error) {
 	return nil, nil
 }
 
-func validate(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) (admission.Warnings, error) {
+func (v *validator) validate(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) (admission.Warnings, error) {
 	var warnings admission.Warnings
 
 	filterSpec, transformSpec, err := webhookutils.ConvertFilterTransformToBeta(pipeline.Spec.Filters, pipeline.Spec.Transforms)
@@ -73,6 +80,21 @@ func validate(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) (adm
 
 	if isApplicationInputEnabled(&pipeline.Spec.Input) && pipeline.Spec.Input.Application.FluentBitKeepAnnotations != nil {
 		warnings = append(warnings, renderDeprecationWarning(pipeline.Name, "input.application.keepAnnotations"))
+	}
+
+	req, err := admission.RequestFromContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get admission request from context: %w", err)
+	}
+
+	converted := &telemetryv1beta1.LogPipeline{}
+	if err := pipeline.ConvertTo(converted); err != nil {
+		return nil, fmt.Errorf("failed to convert pipeline for secret access check: %w", err)
+	}
+
+	refs := secretref.GetSecretRefsLogPipeline(converted)
+	if err := v.secretAccessValidator.ValidateSecretAccess(ctx, req.UserInfo, refs); err != nil {
+		return nil, err
 	}
 
 	return warnings, nil

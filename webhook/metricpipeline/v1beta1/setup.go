@@ -27,6 +27,6 @@ func SetupWithManager(mgr ctrl.Manager) error {
 			DiagnosticMetricsEnabled:     false,
 			EnvoyMetricsEnabled:          false,
 		}).
-		WithValidator(&validator{}).
+		WithValidator(newValidator(mgr.GetClient())).
 		Complete()
 }
