@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	authenticationv1 "k8s.io/api/authentication/v1"
 	authorizationv1 "k8s.io/api/authorization/v1"
-	authnv1 "k8s.io/api/authentication/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
@@ -21,7 +21,7 @@ type AccessValidator struct {
 // ValidateSecretAccess performs a SubjectAccessReview for every SecretKeyRef in refs
 // using the identity from the admission request context. Returns an error if the user
 // is not permitted to get any of the referenced secrets.
-func (v *AccessValidator) ValidateSecretAccess(ctx context.Context, userInfo authnv1.UserInfo, refs []telemetryv1beta1.SecretKeyRef) error {
+func (v *AccessValidator) ValidateSecretAccess(ctx context.Context, userInfo authenticationv1.UserInfo, refs []telemetryv1beta1.SecretKeyRef) error {
 	for _, ref := range refs {
 		if err := checkForMissingFields(ref); err != nil {
 			// Field-level validation is handled by the existing Validator; skip refs
@@ -37,7 +37,7 @@ func (v *AccessValidator) ValidateSecretAccess(ctx context.Context, userInfo aut
 	return nil
 }
 
-func (v *AccessValidator) canGetSecret(ctx context.Context, userInfo authnv1.UserInfo, ref telemetryv1beta1.SecretKeyRef) error {
+func (v *AccessValidator) canGetSecret(ctx context.Context, userInfo authenticationv1.UserInfo, ref telemetryv1beta1.SecretKeyRef) error {
 	extra := convertExtra(userInfo.Extra)
 
 	sar := &authorizationv1.SubjectAccessReview{
@@ -71,7 +71,7 @@ func (v *AccessValidator) canGetSecret(ctx context.Context, userInfo authnv1.Use
 	return nil
 }
 
-func convertExtra(extra map[string]authnv1.ExtraValue) map[string]authorizationv1.ExtraValue {
+func convertExtra(extra map[string]authenticationv1.ExtraValue) map[string]authorizationv1.ExtraValue {
 	if len(extra) == 0 {
 		return nil
 	}

@@ -10,8 +10,8 @@ import (
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/pipelines"
-	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 	logpipelineutils "github.com/kyma-project/telemetry-manager/internal/utils/logpipeline"
+	"github.com/kyma-project/telemetry-manager/internal/validators/secretref"
 	webhookutils "github.com/kyma-project/telemetry-manager/webhook/utils"
 )
 

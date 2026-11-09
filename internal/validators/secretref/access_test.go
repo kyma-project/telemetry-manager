@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	authnv1 "k8s.io/api/authentication/v1"
+	authenticationv1 "k8s.io/api/authentication/v1"
 	authorizationv1 "k8s.io/api/authorization/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -50,7 +50,7 @@ func TestAccessValidator_ValidateSecretAccess_Allowed(t *testing.T) {
 	refs := []telemetryv1beta1.SecretKeyRef{
 		{Name: "my-secret", Namespace: "default", Key: "password"},
 	}
-	userInfo := authnv1.UserInfo{Username: "alice", Groups: []string{"system:authenticated"}}
+	userInfo := authenticationv1.UserInfo{Username: "alice", Groups: []string{"system:authenticated"}}
 
 	err := v.ValidateSecretAccess(t.Context(), userInfo, refs)
 	assert.NoError(t, err)
@@ -62,7 +62,7 @@ func TestAccessValidator_ValidateSecretAccess_Denied(t *testing.T) {
 	refs := []telemetryv1beta1.SecretKeyRef{
 		{Name: "service-account-token", Namespace: "kube-system", Key: "token"},
 	}
-	userInfo := authnv1.UserInfo{Username: "bob", Groups: []string{"system:authenticated"}}
+	userInfo := authenticationv1.UserInfo{Username: "bob", Groups: []string{"system:authenticated"}}
 
 	err := v.ValidateSecretAccess(t.Context(), userInfo, refs)
 	require.Error(t, err)
@@ -102,7 +102,7 @@ func TestAccessValidator_ValidateSecretAccess_DeniedOnSecondRef(t *testing.T) {
 		{Name: "allowed-secret", Namespace: "default", Key: "key"},
 		{Name: "denied-secret", Namespace: "kube-system", Key: "token"},
 	}
-	userInfo := authnv1.UserInfo{Username: "eve"}
+	userInfo := authenticationv1.UserInfo{Username: "eve"}
 
 	err := v.ValidateSecretAccess(t.Context(), userInfo, refs)
 	require.Error(t, err)
@@ -117,7 +117,7 @@ func TestAccessValidator_ValidateSecretAccess_SkipsMissingFieldRefs(t *testing.T
 	refs := []telemetryv1beta1.SecretKeyRef{
 		{Name: "", Namespace: "default", Key: "key"},
 	}
-	userInfo := authnv1.UserInfo{Username: "alice"}
+	userInfo := authenticationv1.UserInfo{Username: "alice"}
 
 	// No SAR was called (would return denied), so no error.
 	err := v.ValidateSecretAccess(t.Context(), userInfo, refs)
@@ -127,12 +127,12 @@ func TestAccessValidator_ValidateSecretAccess_SkipsMissingFieldRefs(t *testing.T
 func TestAccessValidator_ValidateSecretAccess_EmptyRefs(t *testing.T) {
 	v := &AccessValidator{Client: sarAllowingClient(t, false, "should not be called")}
 
-	err := v.ValidateSecretAccess(t.Context(), authnv1.UserInfo{Username: "alice"}, nil)
+	err := v.ValidateSecretAccess(t.Context(), authenticationv1.UserInfo{Username: "alice"}, nil)
 	assert.NoError(t, err)
 }
 
 func TestAccessValidator_ConvertExtra(t *testing.T) {
-	extra := map[string]authnv1.ExtraValue{
+	extra := map[string]authenticationv1.ExtraValue{
 		"scopes": {"read", "write"},
 	}
 

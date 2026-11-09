@@ -29,6 +29,7 @@ func sarAllowingClient(t *testing.T) client.Client {
 					sar.Status = authorizationv1.SubjectAccessReviewStatus{Allowed: true}
 					return nil
 				}
+
 				return c.Create(ctx, obj, opts...)
 			},
 		}).
