@@ -256,13 +256,11 @@ func TestTracePipelineValidator_SecretAccessAllowed(t *testing.T) {
 					Headers: []telemetryv1alpha1.Header{
 						{
 							Name: "X-Token",
-							ValueType: telemetryv1alpha1.ValueType{
-								ValueFrom: &telemetryv1alpha1.ValueFromSource{
-									SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
-										Name:      "header-secret",
-										Namespace: "default",
-										Key:       "token",
-									},
+							ValueFrom: &telemetryv1alpha1.ValueFromSource{
+								SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+									Name:      "header-secret",
+									Namespace: "default",
+									Key:       "token",
 								},
 							},
 						},
@@ -343,5 +341,3 @@ func TestTracePipelineValidator_NilOTLPOutput(t *testing.T) {
 	_, err := v.ValidateCreate(ctx, pipeline)
 	assert.NoError(t, err)
 }
-
-

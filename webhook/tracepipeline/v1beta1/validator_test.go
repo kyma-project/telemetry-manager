@@ -248,5 +248,4 @@ func TestTracePipelineValidator_SecretAccessAllowed(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-
 // sarAllowingClient builds a fake client that approves every SubjectAccessReview.

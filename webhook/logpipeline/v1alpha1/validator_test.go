@@ -300,5 +300,3 @@ func TestLogPipelineValidator_SecretAccessAllowed(t *testing.T) {
 	_, err := v.ValidateCreate(ctx, pipeline)
 	assert.NoError(t, err)
 }
-
-
