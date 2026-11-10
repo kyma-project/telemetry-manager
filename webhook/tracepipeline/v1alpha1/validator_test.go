@@ -36,6 +36,27 @@ func sarAllowingClient(t *testing.T) client.Client {
 		Build()
 }
 
+func sarDenyingClient(t *testing.T) client.Client {
+	t.Helper()
+
+	scheme := runtime.NewScheme()
+	_ = authorizationv1.AddToScheme(scheme)
+
+	return fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithInterceptorFuncs(interceptor.Funcs{
+			Create: func(ctx context.Context, c client.WithWatch, obj client.Object, opts ...client.CreateOption) error {
+				if sar, ok := obj.(*authorizationv1.SubjectAccessReview); ok {
+					sar.Status = authorizationv1.SubjectAccessReviewStatus{Allowed: false, Reason: "access denied"}
+					return nil
+				}
+
+				return c.Create(ctx, obj, opts...)
+			},
+		}).
+		Build()
+}
+
 func TestTracePipelineValidator_ValidateCreate(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -168,3 +189,159 @@ func TestTracePipelineValidator_ValidateDelete(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Empty(t, warnings)
 }
+
+func TestTracePipelineValidator_SecretAccessDenied(t *testing.T) {
+	pipeline := &telemetryv1alpha1.TracePipeline{
+		Spec: telemetryv1alpha1.TracePipelineSpec{
+			Output: telemetryv1alpha1.TracePipelineOutput{
+				OTLP: &telemetryv1alpha1.OTLPOutput{
+					Endpoint: telemetryv1alpha1.ValueType{
+						ValueFrom: &telemetryv1alpha1.ValueFromSource{
+							SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+								Name:      "my-secret",
+								Namespace: "kube-system",
+								Key:       "token",
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	v := newValidator(sarDenyingClient(t))
+	ctx := testutils.ContextWithAdmissionRequest(t, "test-user")
+
+	_, err := v.ValidateCreate(ctx, pipeline)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "my-secret")
+}
+
+func TestTracePipelineValidator_SecretAccessAllowed(t *testing.T) {
+	pipeline := &telemetryv1alpha1.TracePipeline{
+		Spec: telemetryv1alpha1.TracePipelineSpec{
+			Output: telemetryv1alpha1.TracePipelineOutput{
+				OTLP: &telemetryv1alpha1.OTLPOutput{
+					Endpoint: telemetryv1alpha1.ValueType{
+						ValueFrom: &telemetryv1alpha1.ValueFromSource{
+							SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+								Name:      "my-secret",
+								Namespace: "default",
+								Key:       "endpoint",
+							},
+						},
+					},
+					Authentication: &telemetryv1alpha1.AuthenticationOptions{
+						Basic: &telemetryv1alpha1.BasicAuthOptions{
+							User: telemetryv1alpha1.ValueType{
+								ValueFrom: &telemetryv1alpha1.ValueFromSource{
+									SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+										Name:      "auth-secret",
+										Namespace: "default",
+										Key:       "user",
+									},
+								},
+							},
+							Password: telemetryv1alpha1.ValueType{
+								ValueFrom: &telemetryv1alpha1.ValueFromSource{
+									SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+										Name:      "auth-secret",
+										Namespace: "default",
+										Key:       "password",
+									},
+								},
+							},
+						},
+					},
+					Headers: []telemetryv1alpha1.Header{
+						{
+							Name: "X-Token",
+							ValueType: telemetryv1alpha1.ValueType{
+								ValueFrom: &telemetryv1alpha1.ValueFromSource{
+									SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+										Name:      "header-secret",
+										Namespace: "default",
+										Key:       "token",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	v := newValidator(sarAllowingClient(t))
+	ctx := testutils.ContextWithAdmissionRequest(t, "test-user")
+
+	_, err := v.ValidateCreate(ctx, pipeline)
+	assert.NoError(t, err)
+}
+
+func TestTracePipelineValidator_SecretAccessAllowed_OAuth2(t *testing.T) {
+	pipeline := &telemetryv1alpha1.TracePipeline{
+		Spec: telemetryv1alpha1.TracePipelineSpec{
+			Output: telemetryv1alpha1.TracePipelineOutput{
+				OTLP: &telemetryv1alpha1.OTLPOutput{
+					Endpoint: telemetryv1alpha1.ValueType{Value: "http://collector:4317"},
+					Authentication: &telemetryv1alpha1.AuthenticationOptions{
+						OAuth2: &telemetryv1alpha1.OAuth2Options{
+							TokenURL: telemetryv1alpha1.ValueType{
+								ValueFrom: &telemetryv1alpha1.ValueFromSource{
+									SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+										Name:      "oauth-secret",
+										Namespace: "default",
+										Key:       "tokenURL",
+									},
+								},
+							},
+							ClientID: telemetryv1alpha1.ValueType{
+								ValueFrom: &telemetryv1alpha1.ValueFromSource{
+									SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+										Name:      "oauth-secret",
+										Namespace: "default",
+										Key:       "clientID",
+									},
+								},
+							},
+							ClientSecret: telemetryv1alpha1.ValueType{
+								ValueFrom: &telemetryv1alpha1.ValueFromSource{
+									SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+										Name:      "oauth-secret",
+										Namespace: "default",
+										Key:       "clientSecret",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	v := newValidator(sarAllowingClient(t))
+	ctx := testutils.ContextWithAdmissionRequest(t, "test-user")
+
+	_, err := v.ValidateCreate(ctx, pipeline)
+	assert.NoError(t, err)
+}
+
+func TestTracePipelineValidator_NilOTLPOutput(t *testing.T) {
+	pipeline := &telemetryv1alpha1.TracePipeline{
+		Spec: telemetryv1alpha1.TracePipelineSpec{
+			Output: telemetryv1alpha1.TracePipelineOutput{
+				OTLP: nil,
+			},
+		},
+	}
+
+	v := newValidator(sarAllowingClient(t))
+	ctx := testutils.ContextWithAdmissionRequest(t, "test-user")
+
+	_, err := v.ValidateCreate(ctx, pipeline)
+	assert.NoError(t, err)
+}
+
+

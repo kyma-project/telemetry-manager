@@ -36,6 +36,27 @@ func sarAllowingClient(t *testing.T) client.Client {
 		Build()
 }
 
+func sarDenyingClient(t *testing.T) client.Client {
+	t.Helper()
+
+	scheme := runtime.NewScheme()
+	_ = authorizationv1.AddToScheme(scheme)
+
+	return fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithInterceptorFuncs(interceptor.Funcs{
+			Create: func(ctx context.Context, c client.WithWatch, obj client.Object, opts ...client.CreateOption) error {
+				if sar, ok := obj.(*authorizationv1.SubjectAccessReview); ok {
+					sar.Status = authorizationv1.SubjectAccessReviewStatus{Allowed: false, Reason: "access denied"}
+					return nil
+				}
+
+				return c.Create(ctx, obj, opts...)
+			},
+		}).
+		Build()
+}
+
 func TestLogPipelineValidator_ValidateCreate(t *testing.T) {
 	tests := []struct {
 		name              string
@@ -56,6 +77,19 @@ func TestLogPipelineValidator_ValidateCreate(t *testing.T) {
 			},
 			expectWarnings:    1,
 			expectWarningsMsg: renderDeprecationWarning("custom-output", "output.custom"),
+		},
+		{
+			name: "custom filter",
+			pipeline: &telemetryv1alpha1.LogPipeline{
+				Name: "custom-filter",
+				Spec: telemetryv1alpha1.LogPipelineSpec{
+					FluentBitFilters: []telemetryv1alpha1.FluentBitFilter{
+						{Custom: "custom-filter-content"},
+					},
+				},
+			},
+			expectWarnings:    1,
+			expectWarningsMsg: renderDeprecationWarning("custom-filter", "filters"),
 		},
 		{
 			name: "valid filter",
@@ -215,3 +249,56 @@ func TestLogPipelineValidator_ValidateDelete(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Empty(t, warnings)
 }
+
+func TestLogPipelineValidator_SecretAccessDenied(t *testing.T) {
+	pipeline := &telemetryv1alpha1.LogPipeline{
+		Spec: telemetryv1alpha1.LogPipelineSpec{
+			FluentBitVariables: []telemetryv1alpha1.FluentBitVariable{
+				{
+					Name: "MY_TOKEN",
+					ValueFrom: telemetryv1alpha1.ValueFromSource{
+						SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+							Name:      "restricted-secret",
+							Namespace: "kube-system",
+							Key:       "token",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	v := newValidator(sarDenyingClient(t))
+	ctx := testutils.ContextWithAdmissionRequest(t, "test-user")
+
+	_, err := v.ValidateCreate(ctx, pipeline)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "restricted-secret")
+}
+
+func TestLogPipelineValidator_SecretAccessAllowed(t *testing.T) {
+	pipeline := &telemetryv1alpha1.LogPipeline{
+		Spec: telemetryv1alpha1.LogPipelineSpec{
+			FluentBitVariables: []telemetryv1alpha1.FluentBitVariable{
+				{
+					Name: "MY_TOKEN",
+					ValueFrom: telemetryv1alpha1.ValueFromSource{
+						SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+							Name:      "my-secret",
+							Namespace: "default",
+							Key:       "token",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	v := newValidator(sarAllowingClient(t))
+	ctx := testutils.ContextWithAdmissionRequest(t, "test-user")
+
+	_, err := v.ValidateCreate(ctx, pipeline)
+	assert.NoError(t, err)
+}
+
+

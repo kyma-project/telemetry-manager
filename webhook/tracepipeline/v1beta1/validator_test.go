@@ -37,6 +37,27 @@ func sarAllowingClient(t *testing.T) client.Client {
 		Build()
 }
 
+func sarDenyingClient(t *testing.T) client.Client {
+	t.Helper()
+
+	scheme := runtime.NewScheme()
+	_ = authorizationv1.AddToScheme(scheme)
+
+	return fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithInterceptorFuncs(interceptor.Funcs{
+			Create: func(ctx context.Context, c client.WithWatch, obj client.Object, opts ...client.CreateOption) error {
+				if sar, ok := obj.(*authorizationv1.SubjectAccessReview); ok {
+					sar.Status = authorizationv1.SubjectAccessReviewStatus{Allowed: false, Reason: "access denied"}
+					return nil
+				}
+
+				return c.Create(ctx, obj, opts...)
+			},
+		}).
+		Build()
+}
+
 func TestTracePipelineValidator_ValidateCreate(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -169,3 +190,63 @@ func TestTracePipelineValidator_ValidateDelete(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Empty(t, warnings)
 }
+
+func TestTracePipelineValidator_SecretAccessDenied(t *testing.T) {
+	secretRef := telemetryv1beta1.ValueType{
+		ValueFrom: &telemetryv1beta1.ValueFromSource{
+			SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
+				Name:      "my-secret",
+				Namespace: "kube-system",
+				Key:       "token",
+			},
+		},
+	}
+
+	pipeline := &telemetryv1beta1.TracePipeline{
+		Spec: telemetryv1beta1.TracePipelineSpec{
+			Output: telemetryv1beta1.TracePipelineOutput{
+				OTLP: &telemetryv1beta1.OTLPOutput{
+					Endpoint: secretRef,
+				},
+			},
+		},
+	}
+
+	v := newValidator(sarDenyingClient(t))
+	ctx := testutils.ContextWithAdmissionRequest(t, "test-user")
+
+	_, err := v.ValidateCreate(ctx, pipeline)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "my-secret")
+}
+
+func TestTracePipelineValidator_SecretAccessAllowed(t *testing.T) {
+	secretRef := telemetryv1beta1.ValueType{
+		ValueFrom: &telemetryv1beta1.ValueFromSource{
+			SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
+				Name:      "my-secret",
+				Namespace: "default",
+				Key:       "token",
+			},
+		},
+	}
+
+	pipeline := &telemetryv1beta1.TracePipeline{
+		Spec: telemetryv1beta1.TracePipelineSpec{
+			Output: telemetryv1beta1.TracePipelineOutput{
+				OTLP: &telemetryv1beta1.OTLPOutput{
+					Endpoint: secretRef,
+				},
+			},
+		},
+	}
+
+	v := newValidator(sarAllowingClient(t))
+	ctx := testutils.ContextWithAdmissionRequest(t, "test-user")
+
+	_, err := v.ValidateCreate(ctx, pipeline)
+	assert.NoError(t, err)
+}
+
+
+// sarAllowingClient builds a fake client that approves every SubjectAccessReview.
