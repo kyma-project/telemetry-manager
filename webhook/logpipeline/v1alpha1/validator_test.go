@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
 func TestLogPipelineValidator_ValidateCreate(t *testing.T) {
@@ -28,6 +29,19 @@ func TestLogPipelineValidator_ValidateCreate(t *testing.T) {
 			},
 			expectWarnings:    1,
 			expectWarningsMsg: renderDeprecationWarning("custom-output", "output.custom"),
+		},
+		{
+			name: "custom filter",
+			pipeline: &telemetryv1alpha1.LogPipeline{
+				Name: "custom-filter",
+				Spec: telemetryv1alpha1.LogPipelineSpec{
+					FluentBitFilters: []telemetryv1alpha1.FluentBitFilter{
+						{Custom: "custom-filter-content"},
+					},
+				},
+			},
+			expectWarnings:    1,
+			expectWarningsMsg: renderDeprecationWarning("custom-filter", "filters"),
 		},
 		{
 			name: "valid filter",
@@ -70,9 +84,10 @@ func TestLogPipelineValidator_ValidateCreate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			validator := &validator{}
+			v := newValidator(testutils.SARAllowingClient(t))
+			ctx := testutils.ContextWithAdmissionRequest(t, "test-user")
 
-			warnings, err := validator.ValidateCreate(t.Context(), tt.pipeline)
+			warnings, err := v.ValidateCreate(ctx, tt.pipeline)
 
 			if tt.expectErr {
 				assert.Error(t, err)
@@ -154,9 +169,10 @@ func TestLogPipelineValidator_ValidateUpdate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			validator := &validator{}
+			v := newValidator(testutils.SARAllowingClient(t))
+			ctx := testutils.ContextWithAdmissionRequest(t, "test-user")
 
-			warnings, err := validator.ValidateUpdate(t.Context(), tt.oldPipeline, tt.newPipeline)
+			warnings, err := v.ValidateUpdate(ctx, tt.oldPipeline, tt.newPipeline)
 
 			if tt.expectErr {
 				assert.Error(t, err)
@@ -176,12 +192,63 @@ func TestLogPipelineValidator_ValidateUpdate(t *testing.T) {
 }
 
 func TestLogPipelineValidator_ValidateDelete(t *testing.T) {
-	validator := &validator{}
+	v := newValidator(testutils.SARAllowingClient(t))
 
 	pipeline := &telemetryv1alpha1.LogPipeline{}
 
-	warnings, err := validator.ValidateDelete(t.Context(), pipeline)
+	warnings, err := v.ValidateDelete(t.Context(), pipeline)
 
 	assert.NoError(t, err)
 	assert.Empty(t, warnings)
+}
+
+func TestLogPipelineValidator_SecretAccessDenied(t *testing.T) {
+	pipeline := &telemetryv1alpha1.LogPipeline{
+		Spec: telemetryv1alpha1.LogPipelineSpec{
+			FluentBitVariables: []telemetryv1alpha1.FluentBitVariable{
+				{
+					Name: "MY_TOKEN",
+					ValueFrom: telemetryv1alpha1.ValueFromSource{
+						SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+							Name:      "restricted-secret",
+							Namespace: "kube-system",
+							Key:       "token",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	v := newValidator(testutils.SARDenyingClient(t))
+	ctx := testutils.ContextWithAdmissionRequest(t, "test-user")
+
+	_, err := v.ValidateCreate(ctx, pipeline)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "restricted-secret")
+}
+
+func TestLogPipelineValidator_SecretAccessAllowed(t *testing.T) {
+	pipeline := &telemetryv1alpha1.LogPipeline{
+		Spec: telemetryv1alpha1.LogPipelineSpec{
+			FluentBitVariables: []telemetryv1alpha1.FluentBitVariable{
+				{
+					Name: "MY_TOKEN",
+					ValueFrom: telemetryv1alpha1.ValueFromSource{
+						SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+							Name:      "my-secret",
+							Namespace: "default",
+							Key:       "token",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	v := newValidator(testutils.SARAllowingClient(t))
+	ctx := testutils.ContextWithAdmissionRequest(t, "test-user")
+
+	_, err := v.ValidateCreate(ctx, pipeline)
+	assert.NoError(t, err)
 }

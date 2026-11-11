@@ -11,6 +11,6 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		WithDefaulter(&defaulter{
 			DefaultOTLPOutputProtocol: telemetryv1alpha1.OTLPProtocolGRPC,
 		}).
-		WithValidator(&validator{}).
+		WithValidator(newValidator(mgr.GetClient())).
 		Complete()
 }
