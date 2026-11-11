@@ -48,13 +48,13 @@ func (v *validator) validate(ctx context.Context, pipeline *telemetryv1alpha1.Me
 		return nil, err
 	}
 
-	v1beta1Pipeline := &telemetryv1beta1.MetricPipeline{}
-	if err := pipeline.ConvertTo(v1beta1Pipeline); err != nil {
-		return nil, err
+	var v1beta1Pipeline telemetryv1beta1.MetricPipeline
+	if err := telemetryv1alpha1.Convert_v1alpha1_MetricPipeline_To_v1beta1_MetricPipeline(pipeline, &v1beta1Pipeline, nil); err != nil {
+		return nil, fmt.Errorf("failed to convert MetricPipeline to v1beta1: %w", err)
 	}
 
 	runtimeAdditionalMetricsValidator := &runtimemetrics.Validator{}
-	if err := runtimeAdditionalMetricsValidator.Validate(v1beta1Pipeline); err != nil {
+	if err := runtimeAdditionalMetricsValidator.Validate(&v1beta1Pipeline); err != nil {
 		return nil, err
 	}
 
@@ -63,7 +63,7 @@ func (v *validator) validate(ctx context.Context, pipeline *telemetryv1alpha1.Me
 		return nil, fmt.Errorf("failed to get admission request from context: %w", err)
 	}
 
-	refs := secretref.GetSecretRefsMetricPipeline(v1beta1Pipeline)
+	refs := secretref.GetSecretRefsMetricPipeline(&v1beta1Pipeline)
 	if err := v.secretAccessValidator.ValidateSecretAccess(ctx, req.UserInfo, refs); err != nil {
 		return nil, err
 	}

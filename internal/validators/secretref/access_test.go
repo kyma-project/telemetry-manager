@@ -113,7 +113,7 @@ func TestAccessValidator_ValidateSecretAccess_DeniedOnSecondRef(t *testing.T) {
 func TestAccessValidator_ValidateSecretAccess_SkipsMissingFieldRefs(t *testing.T) {
 	v := &AccessValidator{Client: sarAllowingClient(t, false, "should not be called")}
 
-	// Ref with missing fields — validation deferred to existing Validator; SAR skipped.
+	// Ref with missing Name — SAR skipped (no meaningful secret to check).
 	refs := []telemetryv1beta1.SecretKeyRef{
 		{Name: "", Namespace: "default", Key: "key"},
 	}
@@ -124,11 +124,61 @@ func TestAccessValidator_ValidateSecretAccess_SkipsMissingFieldRefs(t *testing.T
 	assert.NoError(t, err)
 }
 
+func TestAccessValidator_ValidateSecretAccess_EmptyKeyIsChecked(t *testing.T) {
+	// A ref with Name+Namespace set but empty Key is still checked at the secret level;
+	// Key is irrelevant for access control — only Name and Namespace identify the secret.
+	v := &AccessValidator{Client: sarAllowingClient(t, true, "")}
+
+	refs := []telemetryv1beta1.SecretKeyRef{
+		{Name: "my-secret", Namespace: "default", Key: ""},
+	}
+	userInfo := authenticationv1.UserInfo{Username: "alice"}
+
+	err := v.ValidateSecretAccess(t.Context(), userInfo, refs)
+	assert.NoError(t, err)
+}
+
 func TestAccessValidator_ValidateSecretAccess_EmptyRefs(t *testing.T) {
 	v := &AccessValidator{Client: sarAllowingClient(t, false, "should not be called")}
 
 	err := v.ValidateSecretAccess(t.Context(), authenticationv1.UserInfo{Username: "alice"}, nil)
 	assert.NoError(t, err)
+}
+
+func TestAccessValidator_ValidateSecretAccess_DeduplicatesPerSecret(t *testing.T) {
+	scheme := runtime.NewScheme()
+	require.NoError(t, authorizationv1.AddToScheme(scheme))
+
+	callCount := 0
+
+	c := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithInterceptorFuncs(interceptor.Funcs{
+			Create: func(ctx context.Context, cl client.WithWatch, obj client.Object, opts ...client.CreateOption) error {
+				if sar, ok := obj.(*authorizationv1.SubjectAccessReview); ok {
+					callCount++
+					sar.Status = authorizationv1.SubjectAccessReviewStatus{Allowed: true}
+
+					return nil
+				}
+
+				return cl.Create(ctx, obj, opts...)
+			},
+		}).
+		Build()
+
+	// Three refs, but only two distinct secrets (my-secret/default appears twice).
+	refs := []telemetryv1beta1.SecretKeyRef{
+		{Name: "my-secret", Namespace: "default", Key: "host"},
+		{Name: "my-secret", Namespace: "default", Key: "password"},
+		{Name: "other-secret", Namespace: "default", Key: "token"},
+	}
+	userInfo := authenticationv1.UserInfo{Username: "alice"}
+
+	v := &AccessValidator{Client: c}
+	err := v.ValidateSecretAccess(t.Context(), userInfo, refs)
+	assert.NoError(t, err)
+	assert.Equal(t, 2, callCount, "expected one SAR per unique secret, not one per ref")
 }
 
 func TestAccessValidator_ConvertExtra(t *testing.T) {

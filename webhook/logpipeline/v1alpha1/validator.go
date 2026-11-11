@@ -87,12 +87,12 @@ func (v *validator) validate(ctx context.Context, pipeline *telemetryv1alpha1.Lo
 		return nil, fmt.Errorf("failed to get admission request from context: %w", err)
 	}
 
-	converted := &telemetryv1beta1.LogPipeline{}
-	if err := pipeline.ConvertTo(converted); err != nil {
-		return nil, fmt.Errorf("failed to convert pipeline for secret access check: %w", err)
+	var converted telemetryv1beta1.LogPipeline
+	if err := telemetryv1alpha1.Convert_v1alpha1_LogPipeline_To_v1beta1_LogPipeline(pipeline, &converted, nil); err != nil {
+		return nil, fmt.Errorf("failed to convert LogPipeline to v1beta1: %w", err)
 	}
 
-	refs := secretref.GetSecretRefsLogPipeline(converted)
+	refs := secretref.GetSecretRefsLogPipeline(&converted)
 	if err := v.secretAccessValidator.ValidateSecretAccess(ctx, req.UserInfo, refs); err != nil {
 		return nil, err
 	}

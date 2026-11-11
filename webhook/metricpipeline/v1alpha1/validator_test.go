@@ -1,40 +1,13 @@
 package v1alpha1
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	authorizationv1 "k8s.io/api/authorization/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
-
-func sarAllowingClient(t *testing.T) client.Client {
-	t.Helper()
-
-	scheme := runtime.NewScheme()
-	_ = authorizationv1.AddToScheme(scheme)
-
-	return fake.NewClientBuilder().
-		WithScheme(scheme).
-		WithInterceptorFuncs(interceptor.Funcs{
-			Create: func(ctx context.Context, c client.WithWatch, obj client.Object, opts ...client.CreateOption) error {
-				if sar, ok := obj.(*authorizationv1.SubjectAccessReview); ok {
-					sar.Status = authorizationv1.SubjectAccessReviewStatus{Allowed: true}
-					return nil
-				}
-
-				return c.Create(ctx, obj, opts...)
-			},
-		}).
-		Build()
-}
 
 func TestMetricPipelineValidator_ValidateCreate_ValidateUpdate(t *testing.T) {
 	tests := []struct {
@@ -111,7 +84,7 @@ func TestMetricPipelineValidator_ValidateCreate_ValidateUpdate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			v := newValidator(sarAllowingClient(t))
+			v := newValidator(testutils.SARAllowingClient(t))
 			ctx := testutils.ContextWithAdmissionRequest(t, "test-user")
 
 			_, validateCreateErr := v.ValidateCreate(ctx, tt.pipeline)
@@ -131,7 +104,7 @@ func TestMetricPipelineValidator_ValidateCreate_ValidateUpdate(t *testing.T) {
 }
 
 func TestMetricPipelineValidator_ValidateDelete(t *testing.T) {
-	v := newValidator(sarAllowingClient(t))
+	v := newValidator(testutils.SARAllowingClient(t))
 
 	pipeline := &telemetryv1alpha1.MetricPipeline{}
 
@@ -139,4 +112,64 @@ func TestMetricPipelineValidator_ValidateDelete(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Empty(t, warnings)
+}
+
+func TestMetricPipelineValidator_SecretAccessDenied(t *testing.T) {
+	pipeline := &telemetryv1alpha1.MetricPipeline{
+		Spec: telemetryv1alpha1.MetricPipelineSpec{
+			Output: telemetryv1alpha1.MetricPipelineOutput{
+				OTLP: &telemetryv1alpha1.MetricPipelineOTLPOutput{
+					Endpoint: telemetryv1alpha1.ValueType{
+						ValueFrom: &telemetryv1alpha1.ValueFromSource{
+							SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+								Name:      "restricted-secret",
+								Namespace: "kube-system",
+								Key:       "endpoint",
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	v := newValidator(testutils.SARDenyingClient(t))
+	ctx := testutils.ContextWithAdmissionRequest(t, "test-user")
+
+	_, err := v.ValidateCreate(ctx, pipeline)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "restricted-secret")
+
+	_, err = v.ValidateUpdate(ctx, &telemetryv1alpha1.MetricPipeline{}, pipeline)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "restricted-secret")
+}
+
+func TestMetricPipelineValidator_SecretAccessAllowed(t *testing.T) {
+	pipeline := &telemetryv1alpha1.MetricPipeline{
+		Spec: telemetryv1alpha1.MetricPipelineSpec{
+			Output: telemetryv1alpha1.MetricPipelineOutput{
+				OTLP: &telemetryv1alpha1.MetricPipelineOTLPOutput{
+					Endpoint: telemetryv1alpha1.ValueType{
+						ValueFrom: &telemetryv1alpha1.ValueFromSource{
+							SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+								Name:      "my-secret",
+								Namespace: "default",
+								Key:       "endpoint",
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	v := newValidator(testutils.SARAllowingClient(t))
+	ctx := testutils.ContextWithAdmissionRequest(t, "test-user")
+
+	_, err := v.ValidateCreate(ctx, pipeline)
+	assert.NoError(t, err)
+
+	_, err = v.ValidateUpdate(ctx, &telemetryv1alpha1.MetricPipeline{}, pipeline)
+	assert.NoError(t, err)
 }

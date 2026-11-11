@@ -1,60 +1,17 @@
 package v1beta1
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	authorizationv1 "k8s.io/api/authorization/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	testutils "github.com/kyma-project/telemetry-manager/internal/utils/test"
 )
 
-func sarAllowingClient(t *testing.T) client.Client {
-	t.Helper()
-
-	scheme := runtime.NewScheme()
-	_ = authorizationv1.AddToScheme(scheme)
-
-	return fake.NewClientBuilder().
-		WithScheme(scheme).
-		WithInterceptorFuncs(interceptor.Funcs{
-			Create: func(ctx context.Context, c client.WithWatch, obj client.Object, opts ...client.CreateOption) error {
-				if sar, ok := obj.(*authorizationv1.SubjectAccessReview); ok {
-					sar.Status = authorizationv1.SubjectAccessReviewStatus{Allowed: true}
-					return nil
-				}
-
-				return c.Create(ctx, obj, opts...)
-			},
-		}).
-		Build()
-}
-
-func sarDenyingClient(t *testing.T) client.Client {
-	t.Helper()
-
-	scheme := runtime.NewScheme()
-	_ = authorizationv1.AddToScheme(scheme)
-
-	return fake.NewClientBuilder().
-		WithScheme(scheme).
-		WithInterceptorFuncs(interceptor.Funcs{
-			Create: func(ctx context.Context, c client.WithWatch, obj client.Object, opts ...client.CreateOption) error {
-				if sar, ok := obj.(*authorizationv1.SubjectAccessReview); ok {
-					sar.Status = authorizationv1.SubjectAccessReviewStatus{Allowed: false, Reason: "access denied"}
-					return nil
-				}
-
-				return c.Create(ctx, obj, opts...)
-			},
-		}).
-		Build()
+func buildLog(b *testutils.LogPipelineBuilder) *telemetryv1beta1.LogPipeline {
+	p := b.Build()
+	return &p
 }
 
 func TestLogPipelineValidator_ValidateCreate(t *testing.T) {
@@ -67,72 +24,47 @@ func TestLogPipelineValidator_ValidateCreate(t *testing.T) {
 	}{
 		{
 			name: "custom output",
-			pipeline: &telemetryv1beta1.LogPipeline{
-				Name: "custom-output",
-				Spec: telemetryv1beta1.LogPipelineSpec{
-					Output: telemetryv1beta1.LogPipelineOutput{
-						FluentBitCustom: "custom-fluentbit-output",
-					},
-				},
-			},
+			pipeline: buildLog(testutils.NewLogPipelineBuilder().
+				WithName("custom-output").
+				WithCustomOutput("custom-fluentbit-output")),
 			expectWarnings:    1,
 			expectWarningsMsg: renderDeprecationWarning("custom-output", "output.custom"),
 		},
 		{
 			name: "custom filter",
-			pipeline: &telemetryv1beta1.LogPipeline{
-				Name: "custom-filter",
-				Spec: telemetryv1beta1.LogPipelineSpec{
-					FluentBitFilters: []telemetryv1beta1.FluentBitFilter{
-						{Custom: "custom-filter"},
-					},
-				},
-			},
+			pipeline: buildLog(testutils.NewLogPipelineBuilder().
+				WithName("custom-filter").
+				WithCustomFilter("custom-filter-content").
+				WithOTLPOutput()),
 			expectWarnings:    1,
 			expectWarningsMsg: renderDeprecationWarning("custom-filter", "filters"),
 		},
 		{
 			name: "valid filter",
-			pipeline: &telemetryv1beta1.LogPipeline{
-				Spec: telemetryv1beta1.LogPipelineSpec{
-					Filters: []telemetryv1beta1.FilterSpec{
-						{
-							Conditions: []string{`log.severity_number < SEVERITY_NUMBER_WARN`},
-						},
-					},
-					Transforms: []telemetryv1beta1.TransformSpec{},
-				},
-			},
+			pipeline: buildLog(testutils.NewLogPipelineBuilder().
+				WithFilter(telemetryv1beta1.FilterSpec{
+					Conditions: []string{`log.severity_number < SEVERITY_NUMBER_WARN`},
+				})),
 			expectErr: false,
 		},
 		{
 			name: "invalid filter - bad OTTL expression",
-			pipeline: &telemetryv1beta1.LogPipeline{
-				Spec: telemetryv1beta1.LogPipelineSpec{
-					Filters: []telemetryv1beta1.FilterSpec{
-						{
-							Conditions: []string{`log.severity_number <? SEVERITY_NUMBER_WARN`},
-						},
-					},
-				},
-			},
+			pipeline: buildLog(testutils.NewLogPipelineBuilder().
+				WithFilter(telemetryv1beta1.FilterSpec{
+					Conditions: []string{`log.severity_number <? SEVERITY_NUMBER_WARN`},
+				})),
 			expectErr: true,
 		},
 		{
-			name: "empty fields - should pass",
-			pipeline: &telemetryv1beta1.LogPipeline{
-				Spec: telemetryv1beta1.LogPipelineSpec{
-					Filters:    []telemetryv1beta1.FilterSpec{},
-					Transforms: []telemetryv1beta1.TransformSpec{},
-				},
-			},
+			name:      "empty fields - should pass",
+			pipeline:  buildLog(testutils.NewLogPipelineBuilder()),
 			expectErr: false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			v := newValidator(sarAllowingClient(t))
+			v := newValidator(testutils.SARAllowingClient(t))
 			ctx := testutils.ContextWithAdmissionRequest(t, "test-user")
 
 			warnings, err := v.ValidateCreate(ctx, tt.pipeline)
@@ -165,59 +97,36 @@ func TestLogPipelineValidator_ValidateUpdate(t *testing.T) {
 	}{
 		{
 			name:        "custom output",
-			oldPipeline: &telemetryv1beta1.LogPipeline{},
-			newPipeline: &telemetryv1beta1.LogPipeline{
-				Name: "custom-output",
-				Spec: telemetryv1beta1.LogPipelineSpec{
-					Output: telemetryv1beta1.LogPipelineOutput{
-						FluentBitCustom: "custom-fluentbit-output",
-					},
-				},
-			},
+			oldPipeline: buildLog(testutils.NewLogPipelineBuilder()),
+			newPipeline: buildLog(testutils.NewLogPipelineBuilder().
+				WithName("custom-output").
+				WithCustomOutput("custom-fluentbit-output")),
 			expectWarnings:    1,
 			expectWarningsMsg: renderDeprecationWarning("custom-output", "output.custom"),
 		},
 		{
-			name: "valid update",
-			oldPipeline: &telemetryv1beta1.LogPipeline{
-				Spec: telemetryv1beta1.LogPipelineSpec{
-					Filters: []telemetryv1beta1.FilterSpec{},
-				},
-			},
-			newPipeline: &telemetryv1beta1.LogPipeline{
-				Spec: telemetryv1beta1.LogPipelineSpec{
-					Filters: []telemetryv1beta1.FilterSpec{
-						{
-							Conditions: []string{`log.severity_number < SEVERITY_NUMBER_WARN`},
-						},
-					},
-				},
-			},
+			name:        "valid update",
+			oldPipeline: buildLog(testutils.NewLogPipelineBuilder()),
+			newPipeline: buildLog(testutils.NewLogPipelineBuilder().
+				WithFilter(telemetryv1beta1.FilterSpec{
+					Conditions: []string{`log.severity_number < SEVERITY_NUMBER_WARN`},
+				})),
 			expectErr: false,
 		},
 		{
-			name: "invalid update - bad filter",
-			oldPipeline: &telemetryv1beta1.LogPipeline{
-				Spec: telemetryv1beta1.LogPipelineSpec{
-					Filters: []telemetryv1beta1.FilterSpec{},
-				},
-			},
-			newPipeline: &telemetryv1beta1.LogPipeline{
-				Spec: telemetryv1beta1.LogPipelineSpec{
-					Filters: []telemetryv1beta1.FilterSpec{
-						{
-							Conditions: []string{`log.severity_number <? SEVERITY_NUMBER_WARN`},
-						},
-					},
-				},
-			},
+			name:        "invalid update - bad filter",
+			oldPipeline: buildLog(testutils.NewLogPipelineBuilder()),
+			newPipeline: buildLog(testutils.NewLogPipelineBuilder().
+				WithFilter(telemetryv1beta1.FilterSpec{
+					Conditions: []string{`log.severity_number <? SEVERITY_NUMBER_WARN`},
+				})),
 			expectErr: true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			v := newValidator(sarAllowingClient(t))
+			v := newValidator(testutils.SARAllowingClient(t))
 			ctx := testutils.ContextWithAdmissionRequest(t, "test-user")
 
 			warnings, err := v.ValidateUpdate(ctx, tt.oldPipeline, tt.newPipeline)
@@ -240,9 +149,8 @@ func TestLogPipelineValidator_ValidateUpdate(t *testing.T) {
 }
 
 func TestLogPipelineValidator_ValidateDelete(t *testing.T) {
-	v := newValidator(sarAllowingClient(t))
-
-	pipeline := &telemetryv1beta1.LogPipeline{}
+	v := newValidator(testutils.SARAllowingClient(t))
+	pipeline := buildLog(testutils.NewLogPipelineBuilder())
 
 	warnings, err := v.ValidateDelete(t.Context(), pipeline)
 
@@ -251,24 +159,10 @@ func TestLogPipelineValidator_ValidateDelete(t *testing.T) {
 }
 
 func TestLogPipelineValidator_SecretAccessDenied(t *testing.T) {
-	pipeline := &telemetryv1beta1.LogPipeline{
-		Spec: telemetryv1beta1.LogPipelineSpec{
-			FluentBitVariables: []telemetryv1beta1.FluentBitVariable{
-				{
-					Name: "MY_TOKEN",
-					ValueFrom: telemetryv1beta1.ValueFromSource{
-						SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
-							Name:      "restricted-secret",
-							Namespace: "kube-system",
-							Key:       "token",
-						},
-					},
-				},
-			},
-		},
-	}
+	pipeline := buildLog(testutils.NewLogPipelineBuilder().
+		WithVariable("MY_TOKEN", "restricted-secret", "kube-system", "token"))
 
-	v := newValidator(sarDenyingClient(t))
+	v := newValidator(testutils.SARDenyingClient(t))
 	ctx := testutils.ContextWithAdmissionRequest(t, "test-user")
 
 	_, err := v.ValidateCreate(ctx, pipeline)
@@ -277,24 +171,10 @@ func TestLogPipelineValidator_SecretAccessDenied(t *testing.T) {
 }
 
 func TestLogPipelineValidator_SecretAccessAllowed(t *testing.T) {
-	pipeline := &telemetryv1beta1.LogPipeline{
-		Spec: telemetryv1beta1.LogPipelineSpec{
-			FluentBitVariables: []telemetryv1beta1.FluentBitVariable{
-				{
-					Name: "MY_TOKEN",
-					ValueFrom: telemetryv1beta1.ValueFromSource{
-						SecretKeyRef: &telemetryv1beta1.SecretKeyRef{
-							Name:      "my-secret",
-							Namespace: "default",
-							Key:       "token",
-						},
-					},
-				},
-			},
-		},
-	}
+	pipeline := buildLog(testutils.NewLogPipelineBuilder().
+		WithVariable("MY_TOKEN", "my-secret", "default", "token"))
 
-	v := newValidator(sarAllowingClient(t))
+	v := newValidator(testutils.SARAllowingClient(t))
 	ctx := testutils.ContextWithAdmissionRequest(t, "test-user")
 
 	_, err := v.ValidateCreate(ctx, pipeline)

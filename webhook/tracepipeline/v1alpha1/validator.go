@@ -52,64 +52,17 @@ func (v *validator) validate(ctx context.Context, pipeline *telemetryv1alpha1.Tr
 		return nil, fmt.Errorf("failed to get admission request from context: %w", err)
 	}
 
-	refs := getSecretRefs(pipeline)
+	var converted telemetryv1beta1.TracePipeline
+	if err := telemetryv1alpha1.Convert_v1alpha1_TracePipeline_To_v1beta1_TracePipeline(pipeline, &converted, nil); err != nil {
+		return nil, fmt.Errorf("failed to convert TracePipeline to v1beta1: %w", err)
+	}
+
+	refs := secretref.GetSecretRefsTracePipeline(&converted)
 	if err := v.secretAccessValidator.ValidateSecretAccess(ctx, req.UserInfo, refs); err != nil {
 		return nil, err
 	}
 
 	return nil, nil
-}
-
-// getSecretRefs extracts all SecretKeyRefs from a v1alpha1 TracePipeline.
-// v1alpha1 is the hub type so there is no ConvertTo method; refs are gathered directly.
-func getSecretRefs(pipeline *telemetryv1alpha1.TracePipeline) []telemetryv1beta1.SecretKeyRef {
-	if pipeline.Spec.Output.OTLP == nil {
-		return nil
-	}
-
-	return getRefsFromOTLPOutput(pipeline.Spec.Output.OTLP)
-}
-
-func getRefsFromOTLPOutput(out *telemetryv1alpha1.OTLPOutput) []telemetryv1beta1.SecretKeyRef {
-	var refs []telemetryv1beta1.SecretKeyRef
-
-	refs = appendRef(refs, &out.Endpoint)
-
-	if out.Authentication != nil && out.Authentication.Basic != nil {
-		refs = appendRef(refs, &out.Authentication.Basic.User)
-		refs = appendRef(refs, &out.Authentication.Basic.Password)
-	}
-
-	if out.Authentication != nil && out.Authentication.OAuth2 != nil {
-		refs = appendRef(refs, &out.Authentication.OAuth2.TokenURL)
-		refs = appendRef(refs, &out.Authentication.OAuth2.ClientID)
-		refs = appendRef(refs, &out.Authentication.OAuth2.ClientSecret)
-	}
-
-	for _, h := range out.Headers {
-		refs = appendRef(refs, &h.ValueType)
-	}
-
-	if out.TLS != nil && !out.TLS.Insecure {
-		refs = appendRef(refs, out.TLS.CA)
-		refs = appendRef(refs, out.TLS.Cert)
-		refs = appendRef(refs, out.TLS.Key)
-	}
-
-	return refs
-}
-
-func appendRef(refs []telemetryv1beta1.SecretKeyRef, vt *telemetryv1alpha1.ValueType) []telemetryv1beta1.SecretKeyRef {
-	if vt != nil && vt.Value == "" && vt.ValueFrom != nil && vt.ValueFrom.SecretKeyRef != nil {
-		r := vt.ValueFrom.SecretKeyRef
-		refs = append(refs, telemetryv1beta1.SecretKeyRef{
-			Name:      r.Name,
-			Namespace: r.Namespace,
-			Key:       r.Key,
-		})
-	}
-
-	return refs
 }
 
 func validateFilterTransform(ctx context.Context, filterSpec []telemetryv1beta1.FilterSpec, transformSpec []telemetryv1beta1.TransformSpec) error {
