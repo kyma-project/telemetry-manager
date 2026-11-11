@@ -17,39 +17,25 @@ func TestMetricPipelineValidator_ValidateCreate_ValidateUpdate(t *testing.T) {
 	}{
 		{
 			name: "valid ottl filter",
-			pipeline: telemetryv1beta1.MetricPipeline{
-				Spec: telemetryv1beta1.MetricPipelineSpec{
-					Filters: []telemetryv1beta1.FilterSpec{
-						{
-							Conditions: []string{`IsMatch(metric.name, "envoy") == true`},
-						},
-					},
-					Transforms: []telemetryv1beta1.TransformSpec{},
-				},
-			},
+			pipeline: testutils.NewMetricPipelineBuilder().
+				WithFilter(telemetryv1beta1.FilterSpec{
+					Conditions: []string{`IsMatch(metric.name, "envoy") == true`},
+				}).
+				Build(),
 			expectErr: false,
 		},
 		{
 			name: "invalid ottl filter - bad OTTL expression",
-			pipeline: telemetryv1beta1.MetricPipeline{
-				Spec: telemetryv1beta1.MetricPipelineSpec{
-					Filters: []telemetryv1beta1.FilterSpec{
-						{
-							Conditions: []string{`IsMatch(metric.name, "envoy") ?= true`},
-						},
-					},
-				},
-			},
+			pipeline: testutils.NewMetricPipelineBuilder().
+				WithFilter(telemetryv1beta1.FilterSpec{
+					Conditions: []string{`IsMatch(metric.name, "envoy") ?= true`},
+				}).
+				Build(),
 			expectErr: true,
 		},
 		{
-			name: "empty ottl filters and transforms - should pass",
-			pipeline: telemetryv1beta1.MetricPipeline{
-				Spec: telemetryv1beta1.MetricPipelineSpec{
-					Filters:    []telemetryv1beta1.FilterSpec{},
-					Transforms: []telemetryv1beta1.TransformSpec{},
-				},
-			},
+			name:      "empty ottl filters and transforms - should pass",
+			pipeline:  testutils.NewMetricPipelineBuilder().Build(),
 			expectErr: false,
 		},
 		{
@@ -72,12 +58,13 @@ func TestMetricPipelineValidator_ValidateCreate_ValidateUpdate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			validator := &validator{}
+			v := newValidator(testutils.SARAllowingClient(t))
+			ctx := testutils.ContextWithAdmissionRequest(t, "test-user")
 
-			_, validateCreateErr := validator.ValidateCreate(t.Context(), &tt.pipeline)
+			_, validateCreateErr := v.ValidateCreate(ctx, &tt.pipeline)
 
-			oldPipeline := &telemetryv1beta1.MetricPipeline{}
-			_, validateUpdateErr := validator.ValidateUpdate(t.Context(), oldPipeline, &tt.pipeline)
+			oldPipeline := testutils.NewMetricPipelineBuilder().Build()
+			_, validateUpdateErr := v.ValidateUpdate(ctx, &oldPipeline, &tt.pipeline)
 
 			if tt.expectErr {
 				assert.Error(t, validateCreateErr)
@@ -91,12 +78,45 @@ func TestMetricPipelineValidator_ValidateCreate_ValidateUpdate(t *testing.T) {
 }
 
 func TestMetricPipelineValidator_ValidateDelete(t *testing.T) {
-	validator := &validator{}
+	v := newValidator(testutils.SARAllowingClient(t))
+	pipeline := testutils.NewMetricPipelineBuilder().Build()
 
-	pipeline := &telemetryv1beta1.MetricPipeline{}
-
-	warnings, err := validator.ValidateDelete(t.Context(), pipeline)
+	warnings, err := v.ValidateDelete(t.Context(), &pipeline)
 
 	assert.NoError(t, err)
 	assert.Empty(t, warnings)
+}
+
+func TestMetricPipelineValidator_SecretAccessDenied(t *testing.T) {
+	pipeline := testutils.NewMetricPipelineBuilder().
+		WithMetricPipelineOTLPOutput(testutils.OTLPEndpointFromSecret("restricted-secret", "kube-system", "endpoint")).
+		Build()
+
+	v := newValidator(testutils.SARDenyingClient(t))
+	ctx := testutils.ContextWithAdmissionRequest(t, "test-user")
+
+	_, err := v.ValidateCreate(ctx, &pipeline)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "restricted-secret")
+
+	oldPipeline := testutils.NewMetricPipelineBuilder().Build()
+	_, err = v.ValidateUpdate(ctx, &oldPipeline, &pipeline)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "restricted-secret")
+}
+
+func TestMetricPipelineValidator_SecretAccessAllowed(t *testing.T) {
+	pipeline := testutils.NewMetricPipelineBuilder().
+		WithMetricPipelineOTLPOutput(testutils.OTLPEndpointFromSecret("my-secret", "default", "endpoint")).
+		Build()
+
+	v := newValidator(testutils.SARAllowingClient(t))
+	ctx := testutils.ContextWithAdmissionRequest(t, "test-user")
+
+	_, err := v.ValidateCreate(ctx, &pipeline)
+	assert.NoError(t, err)
+
+	oldPipeline := testutils.NewMetricPipelineBuilder().Build()
+	_, err = v.ValidateUpdate(ctx, &oldPipeline, &pipeline)
+	assert.NoError(t, err)
 }
