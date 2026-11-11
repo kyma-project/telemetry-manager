@@ -1,6 +1,6 @@
 module github.com/kyma-project/telemetry-manager
 
-go 1.27.3
+go 1.27.4
 
 require (
 	github.com/caarlos0/env/v11 v11.4.2
@@ -22,8 +22,8 @@ require (
 	go.uber.org/zap v1.28.0
 	google.golang.org/protobuf v1.36.12
 	gopkg.in/yaml.v3 v3.0.1
-	istio.io/api v1.31.3-0.20261021173654-6bc70d5e00c2
-	istio.io/client-go v1.31.3
+	istio.io/api v1.32.0
+	istio.io/client-go v1.32.0
 	k8s.io/api v0.37.2
 	k8s.io/apiextensions-apiserver v0.37.2
 	k8s.io/apimachinery v0.37.2

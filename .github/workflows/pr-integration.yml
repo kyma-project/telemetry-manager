@@ -283,7 +283,7 @@ jobs:
           google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
           artifact-prefix: ${{ env.ARTIFACT_PREFIX }}
 
-  # e2e-traces and e2e-misc (non-experimental) without set splitting
+  # e2e-traces (non-experimental) without set splitting
   e2e:
     needs: [setup, check-skip-e2e]
     if: needs.check-skip-e2e.outputs.skip-e2e == 'false'
@@ -294,8 +294,6 @@ jobs:
         suite:
           - name: e2e-traces
             path: ./test/e2e/traces/...
-          - name: e2e-misc
-            path: ./test/e2e/misc/...
     name: ${{ matrix.suite.name }}
     steps:
       - name: Checkout code
@@ -316,6 +314,41 @@ jobs:
           google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
           artifact-prefix: ${{ env.ARTIFACT_PREFIX }}
 
+  # e2e-misc split by set labels for parallel execution
+  e2e-misc:
+    needs: [setup, check-skip-e2e]
+    if: needs.check-skip-e2e.outputs.skip-e2e == 'false'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        set:
+          - name: "-a"
+            label: "set-a"
+          - name: "-b"
+            label: "set-b"
+          - name: "-c"
+            label: "set-c"
+    name: e2e-misc${{ matrix.set.name }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: '0'
+          ref: ${{ inputs.ref || github.ref }}
+
+      - name: Run E2E test
+        uses: ./.github/template/run-e2e-test
+        with:
+          test-id: e2e-misc${{ matrix.set.name }}
+          test-path: ./test/e2e/misc/...
+          test-labels: not experimental and ${{ matrix.set.label }}
+          manager-image: ${{ needs.setup.outputs.manager-image }}
+          manager-image-archive: ${{ github.event_name == 'pull_request' && 'manager-image' || '' }}
+          fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
+          google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
+          artifact-prefix: ${{ env.ARTIFACT_PREFIX }}
+
   # Upgrade and integration tests
   e2e-other:
     needs: [setup, check-skip-e2e]
@@ -327,8 +360,6 @@ jobs:
         suite:
           - name: e2e-upgrade
             path: ./test/e2e/upgrade/...
-          - name: integration
-            path: ./test/integration/...
     name: ${{ matrix.suite.name }}
     steps:
       - name: Checkout code
@@ -343,6 +374,41 @@ jobs:
           test-id: ${{ matrix.suite.name }}
           test-path: ${{ matrix.suite.path }}
           test-labels: ""
+          manager-image: ${{ needs.setup.outputs.manager-image }}
+          manager-image-archive: ${{ github.event_name == 'pull_request' && 'manager-image' || '' }}
+          fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
+          google-credentials: ${{ secrets.GOOGLE_CLOUD_SA_KEY }}
+          artifact-prefix: ${{ env.ARTIFACT_PREFIX }}
+
+  # integration tests split by set labels for parallel execution
+  integration:
+    needs: [setup, check-skip-e2e]
+    if: needs.check-skip-e2e.outputs.skip-e2e == 'false'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        set:
+          - name: "-a"
+            label: "set-a"
+          - name: "-b"
+            label: "set-b"
+          - name: "-c"
+            label: "set-c"
+    name: integration${{ matrix.set.name }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: '0'
+          ref: ${{ inputs.ref || github.ref }}
+
+      - name: Run E2E test
+        uses: ./.github/template/run-e2e-test
+        with:
+          test-id: integration${{ matrix.set.name }}
+          test-path: ./test/integration/...
+          test-labels: ${{ matrix.set.label }}
           manager-image: ${{ needs.setup.outputs.manager-image }}
           manager-image-archive: ${{ github.event_name == 'pull_request' && 'manager-image' || '' }}
           fips-image-available: ${{ env.FIPS_IMAGE_AVAILABLE }}
@@ -417,7 +483,7 @@ jobs:
           artifact-prefix: ${{ env.ARTIFACT_PREFIX }}
 
   summary:
-    needs: [check-skip-e2e, e2e-logs, e2e-metrics, e2e-experimental, e2e, e2e-other, selfmonitor-healthy, selfmonitor]
+    needs: [check-skip-e2e, e2e-logs, e2e-metrics, e2e-experimental, e2e, e2e-misc, e2e-other, integration, selfmonitor-healthy, selfmonitor]
     runs-on: ubuntu-latest
     if: always()
     steps:
