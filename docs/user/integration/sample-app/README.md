@@ -14,7 +14,7 @@ For examples using the OTel SDK in a different language, refer to the official [
 
 ![setup](./../assets/sample-app.drawio.svg)
 
-## Table of Content
+## Table of Contents
 
 - [Prerequisites](#prerequisites)
 - [Exploring the Sample App](#exploring-the-sample-app)

@@ -5,26 +5,16 @@ import (
 )
 
 type KubeletStatsReceiverConfig struct {
-	CollectionInterval          string                         `yaml:"collection_interval"`
-	AuthType                    string                         `yaml:"auth_type"`
-	Endpoint                    string                         `yaml:"endpoint"`
-	InsecureSkipVerify          bool                           `yaml:"insecure_skip_verify"`
-	MetricGroups                []MetricGroupType              `yaml:"metric_groups"`
-	Metrics                     KubeletStatsMetrics            `yaml:"metrics"`
-	ResourceAttributes          KubeletStatsResourceAttributes `yaml:"resource_attributes"`
-	ExtraMetadataLabels         []string                       `yaml:"extra_metadata_labels,omitempty"`
-	CollectAllNetworkInterfaces NetworkInterfacesEnabler       `yaml:"collect_all_network_interfaces"`
-	Node                        string                         `yaml:"node"`
-	K8sApiConfig                K8sAPIConfig                   `yaml:"k8s_api_config"`
-}
-
-type KubeletStatsResourceAttributes struct {
-	AWSVolumeID            Metric `yaml:"aws.volume.id"`
-	FSType                 Metric `yaml:"fs.type"`
-	GCEPDName              Metric `yaml:"gce.pd.name"`
-	GlusterFSEndpointsName Metric `yaml:"glusterfs.endpoints.name"`
-	GlusterFSPath          Metric `yaml:"glusterfs.path"`
-	Partition              Metric `yaml:"partition"`
+	CollectionInterval          string                   `yaml:"collection_interval"`
+	AuthType                    string                   `yaml:"auth_type"`
+	Endpoint                    string                   `yaml:"endpoint"`
+	InsecureSkipVerify          bool                     `yaml:"insecure_skip_verify"`
+	MetricGroups                []MetricGroupType        `yaml:"metric_groups"`
+	Metrics                     KubeletStatsMetrics      `yaml:"metrics"`
+	ExtraMetadataLabels         []string                 `yaml:"extra_metadata_labels,omitempty"`
+	CollectAllNetworkInterfaces NetworkInterfacesEnabler `yaml:"collect_all_network_interfaces"`
+	Node                        string                   `yaml:"node"`
+	K8sApiConfig                K8sAPIConfig             `yaml:"k8s_api_config"`
 }
 
 type NetworkInterfacesEnabler struct {
@@ -116,6 +106,8 @@ type KubeletStatsOptionalMetrics struct {
 	K8sContainerMemRequestUtilization      *Metric `yaml:"k8s.container.memory_request_utilization,omitempty"`
 	K8sNodeFSInodeCount                    *Metric `yaml:"k8s.node.filesystem.inode.count,omitempty"`
 	K8sNodeFSInodeFree                     *Metric `yaml:"k8s.node.filesystem.inode.free,omitempty"`
+	K8sNodePidLimit                        *Metric `yaml:"k8s.node.pid.limit,omitempty"`
+	K8sNodePidUsage                        *Metric `yaml:"k8s.node.pid.usage,omitempty"`
 	K8sNodeSystemContainerCPUTime          *Metric `yaml:"k8s.node.system_container.cpu.time,omitempty"`
 	K8sNodeSystemContainerCPUUsage         *Metric `yaml:"k8s.node.system_container.cpu.usage,omitempty"`
 	K8sNodeSystemContainerMemoryUsage      *Metric `yaml:"k8s.node.system_container.memory.usage,omitempty"`

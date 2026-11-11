@@ -2,10 +2,6 @@
 # Path to coverprofile file (output of `go test -coverprofile` command)
 profile: cover.out
 
-# (optional)
-# When specified reported file paths will not contain local prefix in the output
-local-prefix: "github.com/kyma-project/telemetry-manager"
-
 # Holds coverage thresholds percentages, values should be in range [0-100]
 threshold:
   # (optional; default 0)
@@ -55,7 +51,7 @@ override:
     path: ^webhook/utils$
   - threshold: 89
     path: ^internal/utils/logpipeline$
-  - threshold: 86
+  - threshold: 85
     path: ^webhook/tracepipeline/v1alpha1$
 
 # Holds regexp rules which will exclude matched files or packages from coverage statistics

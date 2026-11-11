@@ -13,6 +13,6 @@ func SetupWithManager(mgr ctrl.Manager) error {
 			ApplicationInputKeepOriginalBody: true,
 			DefaultOTLPProtocol:              telemetryv1alpha1.OTLPProtocolGRPC,
 		}).
-		WithValidator(&validator{}).
+		WithValidator(newValidator(mgr.GetClient())).
 		Complete()
 }

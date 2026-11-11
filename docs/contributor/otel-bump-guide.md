@@ -2,10 +2,10 @@
 
 As a maintainer or contributor, follow these steps to update the `opentelemetry-collector` and `opentelemetry-collector-contrib` dependencies safely. Afterwards, verify the changes.
 
-## Table of Content
+## Table of Contents
 
 - [OpenTelemetry Dependency Bump Guide](#opentelemetry-dependency-bump-guide)
-  - [Table of Content](#table-of-content)
+  - [Table of Contents](#table-of-contents)
   - [Preparation](#preparation)
     - [1. Review Changed Components](#1-review-changed-components)
     - [2. Detect OTTL Changes](#2-detect-ottl-changes)

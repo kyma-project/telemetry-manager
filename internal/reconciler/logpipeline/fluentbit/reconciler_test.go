@@ -652,11 +652,13 @@ func TestFIPSMode(t *testing.T) {
 
 func TestPipelineInfoTracking(t *testing.T) {
 	tests := []struct {
-		name                 string
-		pipeline             telemetryv1beta1.LogPipeline
-		secret               *corev1.Secret
-		expectedEndpoint     string
-		expectedFeatureUsage []string
+		name                        string
+		pipeline                    telemetryv1beta1.LogPipeline
+		secret                      *corev1.Secret
+		expectedEndpoint            string
+		expectedFeatureUsage        []string
+		expectedCustomOutputPlugin  string
+		expectedCustomFilterPlugins []string
 	}{
 		{
 			name: "basic HTTP output with runtime input",
@@ -683,6 +685,7 @@ func TestPipelineInfoTracking(t *testing.T) {
 				metrics.FeatureOutputCustom,
 				metrics.FeatureInputRuntime,
 			},
+			expectedCustomOutputPlugin: "stdout",
 		},
 		{
 			name: "custom filters",
@@ -698,8 +701,8 @@ func TestPipelineInfoTracking(t *testing.T) {
 				metrics.FeatureOutputHTTP,
 				metrics.FeatureInputRuntime,
 			},
-		},
-		{
+			expectedCustomFilterPlugins: []string{"grep"},
+		}, {
 			name: "variables",
 			pipeline: testutils.NewLogPipelineBuilder().
 				WithName("pipeline-variables").
@@ -809,6 +812,16 @@ func TestPipelineInfoTracking(t *testing.T) {
 
 			metricValue := testutil.ToFloat64(metrics.LogPipelineInfo.WithLabelValues(labelValues...))
 			require.Equal(t, float64(1), metricValue, "pipeline info metric should match for pipeline %q with endpoint %q and features %v", tt.pipeline.Name, tt.expectedEndpoint, tt.expectedFeatureUsage)
+
+			if tt.expectedCustomOutputPlugin != "" {
+				v := testutil.ToFloat64(metrics.LogPipelineCustomOutputInfo.WithLabelValues(tt.pipeline.Name, tt.expectedCustomOutputPlugin))
+				require.Equal(t, float64(1), v, "custom output plugin metric should be set for pipeline %q with plugin %q", tt.pipeline.Name, tt.expectedCustomOutputPlugin)
+			}
+
+			for _, plugin := range tt.expectedCustomFilterPlugins {
+				v := testutil.ToFloat64(metrics.LogPipelineCustomFilterInfo.WithLabelValues(tt.pipeline.Name, plugin))
+				require.Equal(t, float64(1), v, "custom filter plugin metric should be set for pipeline %q with plugin %q", tt.pipeline.Name, plugin)
+			}
 		})
 	}
 }

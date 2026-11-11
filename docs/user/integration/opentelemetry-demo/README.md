@@ -12,7 +12,7 @@ Learn how to install the OpenTelemetry [demo application](https://github.com/ope
 
 ![setup](./../assets/otel-demo.drawio.svg)
 
-## Table of Content
+## Table of Contents
 
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)

@@ -40,3 +40,10 @@ func HaveSpanAttributes(matcher gomegatypes.GomegaMatcher) gomegatypes.GomegaMat
 		return ft.SpanAttributes
 	}, matcher)
 }
+
+// HaveTraceID matches a FlatTrace whose TraceID equals the given value.
+func HaveTraceID(traceID string) gomegatypes.GomegaMatcher {
+	return gomega.WithTransform(func(ft FlatTrace) string {
+		return ft.TraceID
+	}, gomega.Equal(traceID))
+}
