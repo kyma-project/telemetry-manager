@@ -99,10 +99,18 @@ func checkForMissingFields(ref telemetryv1beta1.SecretKeyRef) error {
 }
 
 func GetSecretRefsTracePipeline(tp *telemetryv1beta1.TracePipeline) []telemetryv1beta1.SecretKeyRef {
+	if tp.Spec.Output.OTLP == nil {
+		return nil
+	}
+
 	return getSecretRefsInOTLPOutput(tp.Spec.Output.OTLP)
 }
 
 func GetSecretRefsMetricPipeline(mp *telemetryv1beta1.MetricPipeline) []telemetryv1beta1.SecretKeyRef {
+	if mp.Spec.Output.OTLP == nil {
+		return nil
+	}
+
 	return getSecretRefsInOTLPOutput(&mp.Spec.Output.OTLP.OTLPOutput)
 }
 
