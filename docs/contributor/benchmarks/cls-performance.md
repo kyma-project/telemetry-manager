@@ -40,7 +40,7 @@ The test uses a basic LogPipeline with an enabled OTLP input and a default outpu
 # Goal
 
 Validate if a default Telemetry module deployment can saturate one CLS-Instance (large).
-Large instances support up to 30.000 logs per second if the logs are ingested using [OTLP](https://pages.github.tools.sap/perfx/cloud-logging-service/plans-and-prices/#storage-limitations).
+Large instances support up to 30.000 logs per second if the logs are ingested using OTLP.
 
 # Direct Setup
 
