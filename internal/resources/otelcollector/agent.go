@@ -15,7 +15,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	autoscalingvpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/config"
@@ -379,7 +378,7 @@ func makeFileLogCheckpointVolume() corev1.Volume {
 		Name: checkpointVolumeName,
 		HostPath: &corev1.HostPathVolumeSource{
 			Path: CheckpointVolumePath,
-			Type: ptr.To(corev1.HostPathDirectoryOrCreate),
+			Type: new(corev1.HostPathDirectoryOrCreate),
 		},
 	}
 }
