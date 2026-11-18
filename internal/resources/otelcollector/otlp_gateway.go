@@ -19,7 +19,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	autoscalingvpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/config"
@@ -328,7 +327,7 @@ func (o *OTLPGatewayApplierDeleter) makeOTLPService() *corev1.Service {
 			},
 			Selector:              commonresources.DefaultSelector(o.baseName),
 			Type:                  corev1.ServiceTypeClusterIP,
-			InternalTrafficPolicy: ptr.To(corev1.ServiceInternalTrafficPolicyLocal),
+			InternalTrafficPolicy: new(corev1.ServiceInternalTrafficPolicyLocal),
 		},
 	}
 
@@ -357,7 +356,7 @@ func (o *OTLPGatewayApplierDeleter) makeLegacyOTLPService(legacyServiceName stri
 			},
 			Selector:              commonresources.DefaultSelector(o.baseName),
 			Type:                  corev1.ServiceTypeClusterIP,
-			InternalTrafficPolicy: ptr.To(corev1.ServiceInternalTrafficPolicyLocal),
+			InternalTrafficPolicy: new(corev1.ServiceInternalTrafficPolicyLocal),
 		},
 	}
 }
