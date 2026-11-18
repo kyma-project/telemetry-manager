@@ -11,7 +11,6 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
@@ -195,7 +194,7 @@ func fluentBitHostPathCleanupDaemonSet() *appsv1.DaemonSet {
 							Name: volumeName,
 							HostPath: &corev1.HostPathVolumeSource{
 								Path: fluentBitHostPathOnNode,
-								Type: ptr.To(corev1.HostPathDirectoryOrCreate),
+								Type: new(corev1.HostPathDirectoryOrCreate),
 							},
 						},
 					},
