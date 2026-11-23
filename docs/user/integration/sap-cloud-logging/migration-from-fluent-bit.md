@@ -1,28 +1,8 @@
 # Migrate from Fluent Bit to the OTel Log Pipeline (SAP Cloud Logging)
 
-## Context
+If you have an existing Fluent Bit-based integration with SAP Cloud Logging (CLS), use this guide to migrate to the OTel-based log pipeline. The OTel pipeline consolidates your two Fluent Bit LogPipelines into one, simplifies secret management, and routes logs to the unified `logs-otel-v1-*` index used by the predefined **OpenTelemetry** dashboards in CLS.
 
-If you have an existing Fluent Bit-based integration with SAP Cloud Logging, you likely have at least two LogPipelines routing logs to two custom OpenSearch indices that are part of the predefined **Kyma** dashboard section in SAP Cloud Logging:
-
-| Pipeline | URI | OpenSearch index |
-|---|---|---|
-| `sap-cloud-logging-application-logs` | `/customindex/kyma` | `logs-json-kyma-*` |
-| `sap-cloud-logging-access-logs` | `/customindex/istio-envoy-kyma` | `logs-json-istio-envoy-kyma-*` |
-
-Both pipelines used the `ingest-mtls-endpoint`, `ingest-mtls-cert`, and `ingest-mtls-key` Secret keys. Istio access logs were collected by Fluent Bit from stdout, so Istio had to be configured with the `stdout-json` extension provider.
-
-The new OTel-based setup differs in several ways:
-
-- A single LogPipeline replaces both, using the `ingest-otlp-endpoint`, `ingest-otlp-cert`, and `ingest-otlp-key` Secret keys
-- All logs land in the `logs-otel-v1-*` index
-- Istio must use the `kyma-logs` extension provider instead of `stdout-json`. The `kyma-logs` provider emits access logs as OTel log records with semantic-convention attributes, which are compatible with the `logs-otel-v1-*` index and the **OpenTelemetry** dashboards in SAP Cloud Logging. The `stdout-json` provider emits Envoy-native JSON that was designed for the legacy **Kyma** dashboards and cannot be received by an OTel LogPipeline at all.
-- The predefined **Kyma** dashboards in SAP Cloud Logging are built for the old Fluent Bit index format and are not compatible with OTel logs — use the **OpenTelemetry** section in OpenSearch Dashboards instead
-
-## Prerequisites
-
-- Your SAP Cloud Logging instance has OTLP ingestion enabled. You can enable it on an existing instance by updating the service instance parameter `ingest_otlp.enabled: true` — no new instance is needed.
-- After enabling OTLP on the instance, create a new ServiceBinding (or service key). The `ingest-otlp-*` Secret keys are only present in bindings created **after** OTLP was enabled.
-- Running both the old Fluent Bit pipelines and the new OTel pipeline in parallel on the same CLS instance is safe — they write to different indices and do not produce duplicates.
+You can run the old and new pipelines in parallel during the migration — they write to separate indices and don't produce duplicates, so there's no risk of data loss or gaps in your logs.
 
 ## What Changes
 
@@ -36,9 +16,17 @@ The new OTel-based setup differs in several ways:
 | Predefined CLS dashboards | **Kyma** section | **OpenTelemetry** section |
 | Kyma dashboard ConfigMap | `kyma-dashboard-http-configmap.yaml` | `kyma-dashboard-configmap.yaml` |
 
+## Prerequisites
+
+- You have an existing Fluent Bit-based CLS integration with the `sap-cloud-logging-application-logs` and `sap-cloud-logging-access-logs` LogPipelines deployed.
+- You have permission to update your CLS service instance parameters and create new ServiceBindings.
+
+> [!WARNING]
+> After enabling OTLP on your CLS instance, you must create a new ServiceBinding (or service key). The `ingest-otlp-*` secret keys are only present in bindings created **after** OTLP ingestion was enabled on the instance.
+
 ## Procedure
 
-1. **Enable OTLP ingestion** on your existing CLS instance by updating the service instance parameter:
+1. Enable OTLP ingestion on your existing CLS instance by updating the service instance parameter:
 
    ```json
    {
@@ -48,11 +36,11 @@ The new OTel-based setup differs in several ways:
    }
    ```
 
-   For details, see [Configuration Parameters](https://help.sap.com/docs/cloud-logging/cloud-logging/configuration-parameters).
+   No new CLS instance is needed. For details, see [Configuration Parameters](https://help.sap.com/docs/cloud-logging/cloud-logging/configuration-parameters).
 
-2. **Create a new ServiceBinding** to get the `ingest-otlp-*` Secret keys, and make the resulting Secret available in your cluster under the name and namespace you use for the existing `sap-cloud-logging` Secret.
+2. Create a new ServiceBinding to get the `ingest-otlp-*` secret keys. Make the resulting secret available in your cluster under the same name and namespace as the existing `sap-cloud-logging` secret.
 
-3. **Create the new OTel LogPipeline** alongside your existing ones:
+3. Create the new OTel LogPipeline alongside your existing Fluent Bit pipelines:
 
    ```bash
    kubectl apply -f - <<EOF
@@ -90,7 +78,7 @@ The new OTel-based setup differs in several ways:
    EOF
    ```
 
-4. **Reconfigure Istio** to use the `kyma-logs` provider. Update your existing Istio `Telemetry` resource — replace `stdout-json` with `kyma-logs`:
+4. Reconfigure Istio to use the `kyma-logs` extension provider. Update your existing Istio Telemetry resource — replace `stdout-json` with `kyma-logs`:
 
    ```yaml
    spec:
@@ -99,17 +87,20 @@ The new OTel-based setup differs in several ways:
          - name: kyma-logs
    ```
 
-   For details, see [Configure Istio Access Logs](./../../collecting-logs/istio-support.md).
+   The `kyma-logs` provider emits access logs as OTel log records with semantic-convention attributes, which are compatible with the `logs-otel-v1-*` index. The `stdout-json` provider emits Envoy-native JSON that an OTel LogPipeline can't receive. For details on Istio access log configuration, see [Collect Istio Access Logs](./../../collecting-logs/istio-support.md).
 
-5. **Verify** the new pipeline is healthy and logs appear in SAP Cloud Logging:
+5. Verify the new pipeline is healthy:
 
    ```bash
    kubectl get logpipeline sap-cloud-logging
    ```
 
-   In OpenSearch Dashboards, open the **OpenTelemetry** section and confirm that application logs and Istio access logs are arriving in the `logs-otel-v1-*` index.
+   Wait until the pipeline shows `Running` status. Then open the **OpenTelemetry** section in OpenSearch Dashboards and confirm application logs and Istio access logs are arriving in the `logs-otel-v1-*` index.
 
-6. **Delete the old Fluent Bit LogPipelines.** For the default setup:
+   > [!NOTE]
+   > Don't proceed to the next step until verification succeeds. Your old Fluent Bit pipelines are still running — if the new pipeline isn't healthy, troubleshoot it before removing the old ones.
+
+6. Delete the old Fluent Bit LogPipelines:
 
    ```bash
    kubectl delete logpipeline sap-cloud-logging-application-logs
@@ -118,12 +109,23 @@ The new OTel-based setup differs in several ways:
 
    If you have additional Fluent Bit pipelines targeting CLS, delete those too.
 
-7. **Update the Kyma dashboard ConfigMap**:
+7. Update the Kyma dashboard ConfigMap:
 
    ```bash
    kubectl apply -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/kyma-dashboard-configmap.yaml
    ```
 
-8. **Switch to the OpenTelemetry predefined dashboards**: The predefined **Kyma** dashboards in SAP Cloud Logging are no longer populated. Use the **OpenTelemetry** section in OpenSearch Dashboards for application and Istio access logs going forward.
+8. Switch to the predefined OpenTelemetry dashboards in CLS. The **Kyma** dashboard section is no longer populated after the migration. Use the **OpenTelemetry** section in OpenSearch Dashboards for application and Istio access logs going forward.
 
-9. **Migrate custom dashboards**: If you have custom OpenSearch dashboards based on the `logs-json-kyma-*` or `logs-json-istio-envoy-kyma-*` indices, update them to use the `logs-otel-v1-*` index. Note that the log record structure also changed — the fields are now OTel semantic-convention attributes, so any field references in your visualizations need to be updated accordingly.
+9. Migrate any custom OpenSearch dashboards that target the `logs-json-kyma-*` or `logs-json-istio-envoy-kyma-*` indices. Update index patterns to `logs-otel-v1-*` and update any field references — the log record structure changed from Envoy-native JSON to OTel semantic-convention attributes. For the full attribute reference, see the [OTel Log Data Model](https://opentelemetry.io/docs/specs/otel/logs/data-model/).
+
+## Result
+
+Your cluster sends all logs through a single OTel LogPipeline to CLS. Logs appear in the `logs-otel-v1-*` index, and the predefined **OpenTelemetry** dashboards in CLS are populated. The legacy Fluent Bit pipelines and their `ingest-mtls-*` credentials are no longer in use.
+
+## Related Information
+
+- [Set Up SAP Cloud Logging](./README.md)
+- [Collect Istio Access Logs](./../../collecting-logs/istio-support.md)
+- [OTel Log Data Model](https://opentelemetry.io/docs/specs/otel/logs/data-model/)
+- [CLS Configuration Parameters](https://help.sap.com/docs/cloud-logging/cloud-logging/configuration-parameters)
