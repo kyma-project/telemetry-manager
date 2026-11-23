@@ -34,10 +34,11 @@ func CreateOrUpdateClusterRoleBinding(ctx context.Context, c client.Client, desi
 		return c.Create(ctx, desired)
 	}
 
-	mutated := existing.DeepCopy()
-	mergeMetadata(&desired.ObjectMeta, mutated.ObjectMeta)
+	mergeMetadata(&desired.ObjectMeta, existing.ObjectMeta)
 
-	if apiequality.Semantic.DeepEqual(mutated, desired) {
+	if !metadataChanged(existing.ObjectMeta, desired.ObjectMeta) &&
+		apiequality.Semantic.DeepEqual(existing.RoleRef, desired.RoleRef) &&
+		apiequality.Semantic.DeepEqual(existing.Subjects, desired.Subjects) {
 		return nil
 	}
 
@@ -56,10 +57,10 @@ func CreateOrUpdateClusterRole(ctx context.Context, c client.Client, desired *rb
 		return c.Create(ctx, desired)
 	}
 
-	mutated := existing.DeepCopy()
-	mergeMetadata(&desired.ObjectMeta, mutated.ObjectMeta)
+	mergeMetadata(&desired.ObjectMeta, existing.ObjectMeta)
 
-	if apiequality.Semantic.DeepEqual(mutated, desired) {
+	if !metadataChanged(existing.ObjectMeta, desired.ObjectMeta) &&
+		apiequality.Semantic.DeepEqual(existing.Rules, desired.Rules) {
 		return nil
 	}
 
@@ -78,10 +79,11 @@ func CreateOrUpdateRoleBinding(ctx context.Context, c client.Client, desired *rb
 		return c.Create(ctx, desired)
 	}
 
-	mutated := existing.DeepCopy()
-	mergeMetadata(&desired.ObjectMeta, mutated.ObjectMeta)
+	mergeMetadata(&desired.ObjectMeta, existing.ObjectMeta)
 
-	if apiequality.Semantic.DeepEqual(mutated, desired) {
+	if !metadataChanged(existing.ObjectMeta, desired.ObjectMeta) &&
+		apiequality.Semantic.DeepEqual(existing.RoleRef, desired.RoleRef) &&
+		apiequality.Semantic.DeepEqual(existing.Subjects, desired.Subjects) {
 		return nil
 	}
 
@@ -100,10 +102,10 @@ func CreateOrUpdateRole(ctx context.Context, c client.Client, desired *rbacv1.Ro
 		return c.Create(ctx, desired)
 	}
 
-	mutated := existing.DeepCopy()
-	mergeMetadata(&desired.ObjectMeta, mutated.ObjectMeta)
+	mergeMetadata(&desired.ObjectMeta, existing.ObjectMeta)
 
-	if apiequality.Semantic.DeepEqual(mutated, desired) {
+	if !metadataChanged(existing.ObjectMeta, desired.ObjectMeta) &&
+		apiequality.Semantic.DeepEqual(existing.Rules, desired.Rules) {
 		return nil
 	}
 
@@ -122,10 +124,9 @@ func CreateOrUpdateServiceAccount(ctx context.Context, c client.Client, desired 
 		return c.Create(ctx, desired)
 	}
 
-	mutated := existing.DeepCopy()
-	mergeMetadata(&desired.ObjectMeta, mutated.ObjectMeta)
+	mergeMetadata(&desired.ObjectMeta, existing.ObjectMeta)
 
-	if apiequality.Semantic.DeepEqual(mutated, desired) {
+	if !metadataChanged(existing.ObjectMeta, desired.ObjectMeta) {
 		return nil
 	}
 
@@ -144,10 +145,11 @@ func CreateOrUpdateConfigMap(ctx context.Context, c client.Client, desired *core
 		return c.Create(ctx, desired)
 	}
 
-	mutated := existing.DeepCopy()
-	mergeMetadata(&desired.ObjectMeta, mutated.ObjectMeta)
+	mergeMetadata(&desired.ObjectMeta, existing.ObjectMeta)
 
-	if apiequality.Semantic.DeepEqual(mutated, desired) {
+	if !metadataChanged(existing.ObjectMeta, desired.ObjectMeta) &&
+		apiequality.Semantic.DeepEqual(existing.Data, desired.Data) &&
+		apiequality.Semantic.DeepEqual(existing.BinaryData, desired.BinaryData) {
 		return nil
 	}
 
@@ -166,10 +168,10 @@ func CreateOrUpdateNetworkPolicy(ctx context.Context, c client.Client, desired *
 		return c.Create(ctx, desired)
 	}
 
-	mutated := existing.DeepCopy()
-	mergeMetadata(&desired.ObjectMeta, mutated.ObjectMeta)
+	mergeMetadata(&desired.ObjectMeta, existing.ObjectMeta)
 
-	if apiequality.Semantic.DeepEqual(mutated, desired) {
+	if !metadataChanged(existing.ObjectMeta, desired.ObjectMeta) &&
+		apiequality.Semantic.DeepEqual(existing.Spec, desired.Spec) {
 		return nil
 	}
 
@@ -188,10 +190,12 @@ func CreateOrUpdateSecret(ctx context.Context, c client.Client, desired *corev1.
 		return c.Create(ctx, desired)
 	}
 
-	mutated := existing.DeepCopy()
-	mergeMetadata(&desired.ObjectMeta, mutated.ObjectMeta)
+	mergeMetadata(&desired.ObjectMeta, existing.ObjectMeta)
 
-	if apiequality.Semantic.DeepEqual(mutated, desired) {
+	if !metadataChanged(existing.ObjectMeta, desired.ObjectMeta) &&
+		apiequality.Semantic.DeepEqual(existing.Data, desired.Data) &&
+		apiequality.Semantic.DeepEqual(existing.StringData, desired.StringData) &&
+		existing.Type == desired.Type {
 		return nil
 	}
 
@@ -331,6 +335,12 @@ func mergeMetadata(newMeta *metav1.ObjectMeta, oldMeta metav1.ObjectMeta) {
 	newMeta.SetLabels(mergeMaps(newMeta.Labels, oldMeta.Labels))
 	newMeta.SetAnnotations(mergeMaps(newMeta.Annotations, oldMeta.Annotations))
 	newMeta.SetOwnerReferences(mergeOwnerReferences(newMeta.OwnerReferences, oldMeta.OwnerReferences))
+}
+
+func metadataChanged(existing, desired metav1.ObjectMeta) bool {
+	return !apiequality.Semantic.DeepEqual(existing.Labels, desired.Labels) ||
+		!apiequality.Semantic.DeepEqual(existing.Annotations, desired.Annotations) ||
+		!apiequality.Semantic.DeepEqual(existing.OwnerReferences, desired.OwnerReferences)
 }
 
 func ownerSliceContains(owners []metav1.OwnerReference, owner metav1.OwnerReference) bool {
