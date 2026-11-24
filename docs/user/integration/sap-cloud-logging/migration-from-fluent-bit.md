@@ -29,9 +29,6 @@ You can run the old and new pipelines in parallel during the migration. They wri
 <!-- markdown-link-check-enable -->
 - UNIX shell or Windows Subsystem for Linux (WSL) to execute commands.
 
-> [!WARNING]
-> After enabling OTLP on your SAP Cloud Logging instance, you must delete the existing service binding and create a new one. The `ingest-otlp-*` secret keys are only present in bindings created **after** OTLP ingestion was enabled on the instance.
-
 ## Procedure
 
 1. Enable OTLP ingestion on your existing SAP Cloud Logging instance by updating the service instance parameter:
@@ -45,6 +42,9 @@ You can run the old and new pipelines in parallel during the migration. They wri
    ```
 
    No new SAP Cloud Logging instance is needed. For details, see [Configuration Parameters](https://help.sap.com/docs/cloud-logging/cloud-logging/configuration-parameters).
+
+   > [!WARNING]
+   > You must delete the existing service binding and create a new one after enabling OTLP. The `ingest-otlp-*` secret keys are only present in bindings created **after** OTLP ingestion was enabled on the instance.
 
 2. Delete the existing service binding and create a new one with the same name to get the `ingest-otlp-*` secret keys:
 
