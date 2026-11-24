@@ -97,6 +97,14 @@ You can run the old and new pipelines in parallel during the migration. They wri
    EOF
    ```
 
+   Verify the LogPipeline is healthy before proceeding:
+
+   ```bash
+   kubectl get logpipeline sap-cloud-logging
+   ```
+
+   Wait until the LogPipeline shows `Running` status.
+
 4. Update your existing Istio Telemetry custom resource to add `kyma-logs` alongside `stdout-json`, so both providers emit access logs in parallel:
 
    ```yaml
@@ -109,49 +117,43 @@ You can run the old and new pipelines in parallel during the migration. They wri
 
    The `kyma-logs` provider emits access logs as OTel log records with semantic-convention attributes, which are compatible with the `logs-otel-v1-*` index. The `stdout-json` provider continues to feed the existing Fluent Bit LogPipeline during the migration. For details on Istio access log configuration, see [Collect Istio Access Logs](./../../collecting-logs/istio-support.md).
 
-5. Verify the new LogPipeline is healthy:
-
-   ```bash
-   kubectl get logpipeline sap-cloud-logging
-   ```
-
-   Wait until the LogPipeline shows `Running` status. Then open the **OpenTelemetry** section in OpenSearch Dashboards and confirm application logs and Istio access logs are arriving in the `logs-otel-v1-*` index.
+5. Confirm application logs and Istio access logs are arriving in the `logs-otel-v1-*` index by opening the **OpenTelemetry** section in OpenSearch Dashboards.
 
    > [!NOTE]
-   > Do not proceed to the next step until verification succeeds. Your old Fluent Bit pipelines are still running. If the new LogPipeline is not healthy, troubleshoot it before removing the old ones.
+   > Do not proceed to the next step until verification succeeds. Your old Fluent Bit LogPipelines are still running. If logs are not arriving, troubleshoot the new LogPipeline before removing the old ones.
 
-6. Delete the old Fluent Bit LogPipelines and remove `stdout-json` from the Istio Telemetry resource:
-
-   ```bash
-   kubectl delete logpipeline sap-cloud-logging-application-logs
-   kubectl delete logpipeline sap-cloud-logging-access-logs
-   ```
-
-   If you have additional Fluent Bit LogPipelines targeting SAP Cloud Logging, delete those too.
-
-   Then update the Istio Telemetry resource to remove `stdout-json`:
-
-   ```yaml
-   spec:
-     accessLogging:
-       - providers:
-         - name: kyma-logs
-   ```
-
-7. Update the Kyma dashboard ConfigMap:
+6. Update the Kyma dashboard ConfigMap:
 
    ```bash
    kubectl apply -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/kyma-dashboard-configmap.yaml
    ```
 
-8. Switch to the predefined OpenTelemetry dashboards in SAP Cloud Logging. The **Kyma** dashboard section is no longer populated after the migration. Use the **OpenTelemetry** section in OpenSearch Dashboards for application and Istio access logs going forward.
+7. Switch to the predefined OpenTelemetry dashboards in SAP Cloud Logging. The **Kyma** dashboard section is no longer populated after the migration. Use the **OpenTelemetry** section in OpenSearch Dashboards for application and Istio access logs going forward.
 
-9. Replace the predefined dashboards and alert monitors. The predefined dashboards and monitors from the Fluent Bit integration target the `logs-json-kyma-*` and `logs-json-istio-envoy-kyma-*` indices and no longer receive data after the migration. Delete them in OpenSearch Dashboards, then re-import the current versions. For instructions, see [Use SAP Cloud Logging Alerts](./README.md#use-sap-cloud-logging-alerts) and [Use SAP Cloud Logging Dashboards](./README.md#use-sap-cloud-logging-dashboards).
+8. Replace the predefined dashboards and alert monitors. The predefined dashboards and monitors from the Fluent Bit integration target the `logs-json-kyma-*` and `logs-json-istio-envoy-kyma-*` indices and no longer receive data after the migration. Delete them in OpenSearch Dashboards, then re-import the current versions. For instructions, see [Use SAP Cloud Logging Alerts](./README.md#use-sap-cloud-logging-alerts) and [Use SAP Cloud Logging Dashboards](./README.md#use-sap-cloud-logging-dashboards).
 
-10. Update any custom dashboards, visualizations, or alert monitors you created based on the old Fluent Bit indices or log record structure:
+9. Update any custom dashboards, visualizations, or alert monitors you created based on the old Fluent Bit indices or log record structure:
 
-    - **Saved objects** (dashboards, visualizations, index patterns): Update index patterns from `logs-json-kyma-*` and `logs-json-istio-envoy-kyma-*` to `logs-otel-v1-*`. Update field references to match OTel semantic-convention attributes. For the full attribute reference, see the [OTel Log Data Model](https://opentelemetry.io/docs/specs/otel/logs/data-model/).
-    - **Alert monitors**: Update the queried index from `logs-json-kyma-*` or `logs-json-istio-envoy-kyma-*` to `logs-otel-v1-*`. Update any field-level conditions to match the new OTel attribute names.
+   - **Saved objects** (dashboards, visualizations, index patterns): Update index patterns from `logs-json-kyma-*` and `logs-json-istio-envoy-kyma-*` to `logs-otel-v1-*`. Update field references to match OTel semantic-convention attributes. For the full attribute reference, see the [OTel Log Data Model](https://opentelemetry.io/docs/specs/otel/logs/data-model/).
+   - **Alert monitors**: Update the queried index from `logs-json-kyma-*` or `logs-json-istio-envoy-kyma-*` to `logs-otel-v1-*`. Update any field-level conditions to match the new OTel attribute names.
+
+10. Delete the old Fluent Bit LogPipelines and remove `stdout-json` from the Istio Telemetry resource:
+
+    ```bash
+    kubectl delete logpipeline sap-cloud-logging-application-logs
+    kubectl delete logpipeline sap-cloud-logging-access-logs
+    ```
+
+    If you have additional Fluent Bit LogPipelines targeting SAP Cloud Logging, delete those too.
+
+    Then update the Istio Telemetry resource to remove `stdout-json`:
+
+    ```yaml
+    spec:
+      accessLogging:
+        - providers:
+          - name: kyma-logs
+    ```
 
 ## Result
 
