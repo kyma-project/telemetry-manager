@@ -117,11 +117,16 @@ You can run the old and new pipelines in parallel during the migration — they 
 
 8. Switch to the predefined OpenTelemetry dashboards in CLS. The **Kyma** dashboard section is no longer populated after the migration. Use the **OpenTelemetry** section in OpenSearch Dashboards for application and Istio access logs going forward.
 
-9. Migrate any custom OpenSearch dashboards that target the `logs-json-kyma-*` or `logs-json-istio-envoy-kyma-*` indices. Update index patterns to `logs-otel-v1-*` and update any field references — the log record structure changed from Envoy-native JSON to OTel semantic-convention attributes. For the full attribute reference, see the [OTel Log Data Model](https://opentelemetry.io/docs/specs/otel/logs/data-model/).
+9. Replace predefined dashboards and alert monitors. The predefined dashboards and monitors from the Fluent Bit integration are based on the `logs-json-kyma-*` and `logs-json-istio-envoy-kyma-*` indices and no longer receive data after the migration. Delete them in OpenSearch Dashboards and re-import the current versions from the [integration guide](./README.md#use-sap-cloud-logging-alerts).
+
+10. Migrate custom OpenSearch saved objects and monitors. If you created custom dashboards, visualizations, or alert monitors based on the old Fluent Bit indices or log record structure, update them as follows:
+
+    - **Saved objects** (dashboards, visualizations, index patterns): Update index patterns from `logs-json-kyma-*` and `logs-json-istio-envoy-kyma-*` to `logs-otel-v1-*`. Update any field references — the log record structure changed from Envoy-native JSON to OTel semantic-convention attributes. For the full attribute reference, see the [OTel Log Data Model](https://opentelemetry.io/docs/specs/otel/logs/data-model/).
+    - **Alert monitors**: Update the index in the monitor query from `logs-json-kyma-*` or `logs-json-istio-envoy-kyma-*` to `logs-otel-v1-*`. Update any field-level conditions to match the new OTel attribute names.
 
 ## Result
 
-Your cluster sends all logs through a single OTel LogPipeline to CLS. Logs appear in the `logs-otel-v1-*` index, and the predefined **OpenTelemetry** dashboards in CLS are populated. The legacy Fluent Bit pipelines and their `ingest-mtls-*` credentials are no longer in use.
+Your cluster sends all logs through a single OTel LogPipeline to CLS. Logs appear in the `logs-otel-v1-*` index, and the predefined **OpenTelemetry** dashboards in CLS are populated. The legacy Fluent Bit pipelines, their `ingest-mtls-*` credentials, and the old Fluent Bit-based dashboards and monitors are no longer in use.
 
 ## Related Information
 
