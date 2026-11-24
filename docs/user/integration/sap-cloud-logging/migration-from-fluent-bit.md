@@ -119,10 +119,10 @@ You can run the old and new pipelines in parallel during the migration. They wri
 
 5. Confirm application logs and Istio access logs are arriving in the `logs-otel-v1-*` index by opening the **OpenTelemetry** section in OpenSearch Dashboards.
 
-6. Update any custom dashboards, visualizations, or alert monitors you created based on the old Fluent Bit indices or log record structure:
+6. Update any saved objects and monitors that target the old Fluent Bit indices:
 
-   - **Saved objects** (dashboards, visualizations, index patterns): Update index patterns from `logs-json-kyma-*` and `logs-json-istio-envoy-kyma-*` to `logs-otel-v1-*`. Update field references to match OTel semantic-convention attributes. For the full attribute reference, see the [OTel Log Data Model](https://opentelemetry.io/docs/specs/otel/logs/data-model/).
-   - **Alert monitors**: Update the queried index from `logs-json-kyma-*` or `logs-json-istio-envoy-kyma-*` to `logs-otel-v1-*`. Update any field-level conditions to match the new OTel attribute names.
+   - **Saved objects** (dashboards, visualizations, index patterns): Replace index patterns targeting `logs-json-kyma-*` or `logs-json-istio-envoy-kyma-*` with `logs-otel-v1-*`. Review all field references — OTel log records use semantic-convention attributes that may differ structurally from the Fluent Bit JSON fields.
+   - **Alerting monitors**: Replace index patterns the same way. Review all field-level conditions — the same attribute differences apply.
 
 7. Delete the old Fluent Bit LogPipelines and remove `stdout-json` from the Istio Telemetry resource:
 
@@ -161,5 +161,4 @@ Your cluster sends all logs through a single OTel LogPipeline to SAP Cloud Loggi
 
 - [Set Up SAP Cloud Logging](./README.md)
 - [Collect Istio Access Logs](./../../collecting-logs/istio-support.md)
-- [OTel Log Data Model](https://opentelemetry.io/docs/specs/otel/logs/data-model/)
 - [SAP Cloud Logging Configuration Parameters](https://help.sap.com/docs/cloud-logging/cloud-logging/configuration-parameters)
