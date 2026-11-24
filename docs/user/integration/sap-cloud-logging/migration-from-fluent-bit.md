@@ -8,9 +8,9 @@ You can run the old and new pipelines in parallel during the migration. They wri
 
 | | Before (Fluent Bit) | After (OTel) |
 |---|---|---|
-| LogPipelines (app and access logs) | 2 with HTTP output | 1 with OTLP output |
+| LogPipelines (application and access logs) | 2 with HTTP output | 1 with OTLP output |
 | Secret keys | `ingest-mtls-endpoint`, `ingest-mtls-cert`, `ingest-mtls-key` | `ingest-otlp-endpoint`, `ingest-otlp-cert`, `ingest-otlp-key` |
-| OpenSearch index (app logs) | `logs-json-kyma-*` | `logs-otel-v1-*` |
+| OpenSearch index (application logs) | `logs-json-kyma-*` | `logs-otel-v1-*` |
 | OpenSearch index (Istio access logs) | `logs-json-istio-envoy-kyma-*` | `logs-otel-v1-*` |
 | Istio extension provider | `stdout-json` | `kyma-logs` |
 | Predefined SAP Cloud Logging dashboards | **Kyma** section | **OpenTelemetry** section |
@@ -38,7 +38,26 @@ You can run the old and new pipelines in parallel during the migration. They wri
 
    No new SAP Cloud Logging instance is needed. For details, see [Configuration Parameters](https://help.sap.com/docs/cloud-logging/cloud-logging/configuration-parameters).
 
-2. Create a new service binding to get the `ingest-otlp-*` secret keys. Make the resulting secret available in your cluster under the same name and namespace as the existing `sap-cloud-logging` secret.
+2. Create a new service binding named `sap-cloud-logging-otlp` to get the `ingest-otlp-*` secret keys:
+
+   ```bash
+   kubectl apply -f - <<EOF
+   apiVersion: services.cloud.sap.com/v1
+   kind: ServiceBinding
+   metadata:
+     name: sap-cloud-logging-otlp
+     namespace: sap-cloud-logging-integration
+   spec:
+     serviceInstanceName: sap-cloud-logging
+     secretName: sap-cloud-logging-otlp
+   EOF
+   ```
+
+   Wait until the binding status is `Created` before proceeding:
+
+   ```bash
+   kubectl get servicebinding sap-cloud-logging-otlp -n sap-cloud-logging-integration
+   ```
 
 3. Create the new OTel LogPipeline alongside your existing Fluent Bit pipelines:
 
@@ -59,35 +78,36 @@ You can run the old and new pipelines in parallel during the migration. They wri
          endpoint:
            valueFrom:
              secretKeyRef:
-               name: sap-cloud-logging
+               name: sap-cloud-logging-otlp
                namespace: sap-cloud-logging-integration
                key: ingest-otlp-endpoint
          tls:
            cert:
              valueFrom:
                secretKeyRef:
-                 name: sap-cloud-logging
+                 name: sap-cloud-logging-otlp
                  namespace: sap-cloud-logging-integration
                  key: ingest-otlp-cert
            key:
              valueFrom:
                secretKeyRef:
-                 name: sap-cloud-logging
+                 name: sap-cloud-logging-otlp
                  namespace: sap-cloud-logging-integration
                  key: ingest-otlp-key
    EOF
    ```
 
-4. Reconfigure Istio to use the `kyma-logs` extension provider. Update your existing Istio Telemetry custom resource - replace `stdout-json` with `kyma-logs`:
+4. Update your existing Istio Telemetry custom resource to add `kyma-logs` alongside `stdout-json`, so both providers emit access logs in parallel:
 
    ```yaml
    spec:
      accessLogging:
        - providers:
+         - name: stdout-json
          - name: kyma-logs
    ```
 
-   The `kyma-logs` provider emits access logs as OTel log records with semantic-convention attributes, which are compatible with the `logs-otel-v1-*` index. The `stdout-json` provider emits Envoy-native JSON that an OTel LogPipeline can't receive. For details on Istio access log configuration, see [Collect Istio Access Logs](./../../collecting-logs/istio-support.md).
+   The `kyma-logs` provider emits access logs as OTel log records with semantic-convention attributes, which are compatible with the `logs-otel-v1-*` index. The `stdout-json` provider continues to feed the existing Fluent Bit LogPipeline during the migration. For details on Istio access log configuration, see [Collect Istio Access Logs](./../../collecting-logs/istio-support.md).
 
 5. Verify the new LogPipeline is healthy:
 
@@ -100,7 +120,7 @@ You can run the old and new pipelines in parallel during the migration. They wri
    > [!NOTE]
    > Do not proceed to the next step until verification succeeds. Your old Fluent Bit pipelines are still running. If the new LogPipeline is not healthy, troubleshoot it before removing the old ones.
 
-6. Delete the old Fluent Bit LogPipelines:
+6. Delete the old Fluent Bit LogPipelines and remove `stdout-json` from the Istio Telemetry resource:
 
    ```bash
    kubectl delete logpipeline sap-cloud-logging-application-logs
@@ -108,6 +128,15 @@ You can run the old and new pipelines in parallel during the migration. They wri
    ```
 
    If you have additional Fluent Bit LogPipelines targeting SAP Cloud Logging, delete those too.
+
+   Then update the Istio Telemetry resource to remove `stdout-json`:
+
+   ```yaml
+   spec:
+     accessLogging:
+       - providers:
+         - name: kyma-logs
+   ```
 
 7. Update the Kyma dashboard ConfigMap:
 
