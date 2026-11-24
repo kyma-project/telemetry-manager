@@ -1,4 +1,4 @@
-# Migrate from Fluent Bit to the OTel LogPipeline (SAP Cloud Logging)
+# Migrate from Fluent Bit to the OpenTelemetry LogPipeline (SAP Cloud Logging)
 
 If you have an existing Fluent Bit-based integration with SAP Cloud Logging, use this guide to migrate to the OTel LogPipeline. It consolidates your two Fluent Bit LogPipelines into one, simplifies secret management, and routes logs to the unified `logs-otel-v1-*` index used by the predefined **OpenTelemetry** dashboards in SAP Cloud Logging.
 
@@ -25,9 +25,9 @@ You can run the old and new pipelines in parallel during the migration. They wri
 - You have an existing Fluent Bit-based SAP Cloud Logging integration with the `sap-cloud-logging-application-logs` and `sap-cloud-logging-access-logs` LogPipelines deployed.
 - You have permission to update your SAP Cloud Logging service instance parameters and create new service bindings.
 <!-- markdown-link-check-disable -->
-- Kubernetes CLI (kubectl) (see [Install the Kubernetes Command Line Tool](https://developers.sap.com/tutorials/cp-kyma-download-cli.html)).
+- You have Kubernetes CLI (kubectl) installed (see [Install the Kubernetes Command Line Tool](https://developers.sap.com/tutorials/cp-kyma-download-cli.html)).
 <!-- markdown-link-check-enable -->
-- UNIX shell or Windows Subsystem for Linux (WSL) to execute commands.
+- You have a UNIX shell or Windows Subsystem for Linux (WSL) to execute commands.
 
 ## Procedure
 
@@ -46,7 +46,7 @@ You can run the old and new pipelines in parallel during the migration. They wri
    > [!WARNING]
    > You must delete the existing service binding and create a new one after enabling OTLP. The `ingest-otlp-*` secret keys are only present in bindings created **after** OTLP ingestion was enabled on the instance.
 
-2. Delete the existing service binding and create a new one with the same name to get the `ingest-otlp-*` secret keys:
+2. Recreate the service binding to get the `ingest-otlp-*` secret keys:
 
    ```bash
    kubectl delete servicebinding sap-cloud-logging -n sap-cloud-logging-integration
@@ -68,7 +68,7 @@ You can run the old and new pipelines in parallel during the migration. They wri
    kubectl get servicebinding sap-cloud-logging -n sap-cloud-logging-integration
    ```
 
-3. Create the new OTel LogPipeline alongside your existing Fluent Bit pipelines:
+3. Deploy the new OTel LogPipeline alongside your existing Fluent Bit pipelines:
 
    ```bash
    kubectl apply -f - <<EOF
@@ -106,10 +106,10 @@ You can run the old and new pipelines in parallel during the migration. They wri
    EOF
    ```
 
-   Verify the LogPipeline is healthy before proceeding:
+   Verify that the LogPipeline is running:
 
    ```bash
-   kubectl get logpipeline sap-cloud-logging
+   kubectl get logpipelines
    ```
 
    Wait until the LogPipeline shows `Running` status.
@@ -135,24 +135,24 @@ You can run the old and new pipelines in parallel during the migration. They wri
 
 7. Delete the old Fluent Bit LogPipelines and remove `stdout-json` from the Istio Telemetry resource:
 
-    > [!NOTE]
-    > Only proceed if verification in step 5 succeeded. If logs are not arriving in the `logs-otel-v1-*` index, troubleshoot the new LogPipeline before removing the old ones.
+   > [!NOTE]
+   > Only proceed if verification in step 5 succeeded. If logs are not arriving in the `logs-otel-v1-*` index, troubleshoot the new LogPipeline before removing the old ones.
 
-    ```bash
-    kubectl delete logpipeline sap-cloud-logging-application-logs
-    kubectl delete logpipeline sap-cloud-logging-access-logs
-    ```
+   ```bash
+   kubectl delete logpipeline sap-cloud-logging-application-logs
+   kubectl delete logpipeline sap-cloud-logging-access-logs
+   ```
 
-    If you have additional Fluent Bit LogPipelines targeting SAP Cloud Logging, delete those too.
+   If you have additional Fluent Bit LogPipelines targeting SAP Cloud Logging, delete those too.
 
-    Then update the Istio Telemetry resource to remove `stdout-json`:
+   Then update the Istio Telemetry resource to remove `stdout-json`:
 
-    ```yaml
-    spec:
-      accessLogging:
-        - providers:
-          - name: kyma-logs
-    ```
+   ```yaml
+   spec:
+     accessLogging:
+       - providers:
+         - name: kyma-logs
+   ```
 
 8. Update the Kyma dashboard ConfigMap:
 
@@ -164,7 +164,7 @@ You can run the old and new pipelines in parallel during the migration. They wri
 
 ## Result
 
-Your cluster sends all logs through a single OTel LogPipeline to SAP Cloud Logging. Logs appear in the `logs-otel-v1-*` index, and the predefined **OpenTelemetry** dashboards in SAP Cloud Logging are populated. The legacy Fluent Bit LogPipelines, their `ingest-mtls-*` credentials, and the old Fluent Bit-based dashboards and monitors are no longer in use.
+Your cluster sends all logs through a single OpenTelemetry LogPipeline to SAP Cloud Logging. Logs appear in the `logs-otel-v1-*` index, and the predefined **OpenTelemetry** dashboards in SAP Cloud Logging are populated. The legacy Fluent Bit LogPipelines, their `ingest-mtls-*` credentials, and the old Fluent Bit-based dashboards and monitors are no longer in use.
 
 ## Related Information
 
