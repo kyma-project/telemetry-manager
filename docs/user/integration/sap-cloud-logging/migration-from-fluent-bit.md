@@ -19,7 +19,15 @@ You can run the old and new pipelines in parallel during the migration. They wri
 ## Prerequisites
 
 - You have an existing Fluent Bit-based SAP Cloud Logging integration with the `sap-cloud-logging-application-logs` and `sap-cloud-logging-access-logs` LogPipelines deployed.
+- Kyma as the target deployment environment, with the following modules added (see [Quick Install](https://kyma-project.io/02-get-started/01-quick-install)):
+  - Telemetry module
+  - Istio module (default module)
+  - SAP BTP Operator module (default module)
 - You have permission to update your SAP Cloud Logging service instance parameters and create new service bindings.
+<!-- markdown-link-check-disable -->
+- Kubernetes CLI (kubectl) (see [Install the Kubernetes Command Line Tool](https://developers.sap.com/tutorials/cp-kyma-download-cli.html)).
+<!-- markdown-link-check-enable -->
+- UNIX shell or Windows Subsystem for Linux (WSL) to execute commands.
 
 > [!WARNING]
 > After enabling OTLP on your SAP Cloud Logging instance, you must delete the existing service binding and create a new one. The `ingest-otlp-*` secret keys are only present in bindings created **after** OTLP ingestion was enabled on the instance.
@@ -120,10 +128,10 @@ You can run the old and new pipelines in parallel during the migration. They wri
 
 5. Confirm application logs and Istio access logs are arriving in the `logs-otel-v1-*` index by opening the **OpenTelemetry** section in OpenSearch Dashboards.
 
-6. Update any saved objects and monitors that target the old Fluent Bit indices:
+6. Update any saved objects and monitors that target the old Fluent Bit indices. If you imported saved objects or alerting monitors from the previous Fluent Bit-based integration guide, delete the old ones and re-import the current versions from [Set Up SAP Cloud Logging](./README.md).
 
    - **Saved objects** (dashboards, visualizations, index patterns): Replace index patterns targeting `logs-json-kyma-*` or `logs-json-istio-envoy-kyma-*` with `logs-otel-v1-*`. Review all field references — OTel log records use semantic-convention attributes that may differ structurally from the Fluent Bit JSON fields.
-   - **Alerting monitors**: Replace index patterns the same way. Review all field-level conditions — the same attribute differences apply. To replace predefined monitors from the previous integration guide, delete the old ones and re-import the current versions from [Use SAP Cloud Logging Alerts](./README.md#use-sap-cloud-logging-alerts).
+   - **Alerting monitors**: Replace index patterns the same way. Review all field-level conditions — the same attribute differences apply.
 
 7. Delete the old Fluent Bit LogPipelines and remove `stdout-json` from the Istio Telemetry resource:
 
@@ -152,7 +160,7 @@ You can run the old and new pipelines in parallel during the migration. They wri
    kubectl apply -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/kyma-dashboard-configmap.yaml
    ```
 
-9. The **Kyma** dashboard section in OpenSearch Dashboards no longer receives data after the Fluent Bit pipelines are deleted. Use the **OpenTelemetry** section for application and Istio access logs going forward.
+9. The **Kyma** section in OpenSearch Dashboards no longer receives data after the Fluent Bit pipelines are deleted. Use the **OpenTelemetry** section for application and Istio access logs going forward.
 
 ## Result
 
