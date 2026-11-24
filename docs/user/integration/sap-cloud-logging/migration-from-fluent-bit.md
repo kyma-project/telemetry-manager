@@ -1,8 +1,8 @@
 # Migrate from Fluent Bit to the OTel Log Pipeline (SAP Cloud Logging)
 
-If you have an existing Fluent Bit-based integration with SAP Cloud Logging (CLS), use this guide to migrate to the OTel-based log pipeline. The OTel pipeline consolidates your two Fluent Bit LogPipelines into one, simplifies secret management, and routes logs to the unified `logs-otel-v1-*` index used by the predefined **OpenTelemetry** dashboards in CLS.
+If you have an existing Fluent Bit-based integration with SAP Cloud Logging (CLS), use this guide to migrate to the OTel LogPipeline. It consolidates your two Fluent Bit LogPipelines into one, simplifies secret management, and routes logs to the unified `logs-otel-v1-*` index used by the predefined **OpenTelemetry** dashboards in CLS.
 
-You can run the old and new pipelines in parallel during the migration — they write to separate indices and don't produce duplicates, so there's no risk of data loss or gaps in your logs.
+You can run the old and new pipelines in parallel during the migration. They write to separate indices and produce no duplicates, so the migration carries no risk of data loss or gaps in your logs.
 
 ## What Changes
 
@@ -19,10 +19,10 @@ You can run the old and new pipelines in parallel during the migration — they 
 ## Prerequisites
 
 - You have an existing Fluent Bit-based CLS integration with the `sap-cloud-logging-application-logs` and `sap-cloud-logging-access-logs` LogPipelines deployed.
-- You have permission to update your CLS service instance parameters and create new ServiceBindings.
+- You have permission to update your CLS service instance parameters and create new service bindings.
 
 > [!WARNING]
-> After enabling OTLP on your CLS instance, you must create a new ServiceBinding (or service key). The `ingest-otlp-*` secret keys are only present in bindings created **after** OTLP ingestion was enabled on the instance.
+> After enabling OTLP on your CLS instance, you must create a new service binding (or service key). The `ingest-otlp-*` secret keys are only present in bindings created **after** OTLP ingestion was enabled on the instance.
 
 ## Procedure
 
@@ -38,7 +38,7 @@ You can run the old and new pipelines in parallel during the migration — they 
 
    No new CLS instance is needed. For details, see [Configuration Parameters](https://help.sap.com/docs/cloud-logging/cloud-logging/configuration-parameters).
 
-2. Create a new ServiceBinding to get the `ingest-otlp-*` secret keys. Make the resulting secret available in your cluster under the same name and namespace as the existing `sap-cloud-logging` secret.
+2. Create a new service binding to get the `ingest-otlp-*` secret keys. Make the resulting secret available in your cluster under the same name and namespace as the existing `sap-cloud-logging` secret.
 
 3. Create the new OTel LogPipeline alongside your existing Fluent Bit pipelines:
 
@@ -78,7 +78,7 @@ You can run the old and new pipelines in parallel during the migration — they 
    EOF
    ```
 
-4. Reconfigure Istio to use the `kyma-logs` extension provider. Update your existing Istio Telemetry resource — replace `stdout-json` with `kyma-logs`:
+4. Reconfigure Istio to use the `kyma-logs` extension provider. Update your existing Istio Telemetry custom resource - replace `stdout-json` with `kyma-logs`:
 
    ```yaml
    spec:
@@ -98,7 +98,7 @@ You can run the old and new pipelines in parallel during the migration — they 
    Wait until the pipeline shows `Running` status. Then open the **OpenTelemetry** section in OpenSearch Dashboards and confirm application logs and Istio access logs are arriving in the `logs-otel-v1-*` index.
 
    > [!NOTE]
-   > Don't proceed to the next step until verification succeeds. Your old Fluent Bit pipelines are still running — if the new pipeline isn't healthy, troubleshoot it before removing the old ones.
+   > Do not proceed to the next step until verification succeeds. Your old Fluent Bit pipelines are still running. If the new pipeline is not healthy, troubleshoot it before removing the old ones.
 
 6. Delete the old Fluent Bit LogPipelines:
 
@@ -117,12 +117,12 @@ You can run the old and new pipelines in parallel during the migration — they 
 
 8. Switch to the predefined OpenTelemetry dashboards in CLS. The **Kyma** dashboard section is no longer populated after the migration. Use the **OpenTelemetry** section in OpenSearch Dashboards for application and Istio access logs going forward.
 
-9. Replace predefined dashboards and alert monitors. The predefined dashboards and monitors from the Fluent Bit integration are based on the `logs-json-kyma-*` and `logs-json-istio-envoy-kyma-*` indices and no longer receive data after the migration. Delete them in OpenSearch Dashboards and re-import the current versions from the [integration guide](./README.md#use-sap-cloud-logging-alerts).
+9. Replace the predefined dashboards and alert monitors. The predefined dashboards and monitors from the Fluent Bit integration target the `logs-json-kyma-*` and `logs-json-istio-envoy-kyma-*` indices and no longer receive data after the migration. Delete them in OpenSearch Dashboards, then re-import the current versions. For instructions, see [Use SAP Cloud Logging Alerts](./README.md#use-sap-cloud-logging-alerts) and [Use SAP Cloud Logging Dashboards](./README.md#use-sap-cloud-logging-dashboards).
 
-10. Migrate custom OpenSearch saved objects and monitors. If you created custom dashboards, visualizations, or alert monitors based on the old Fluent Bit indices or log record structure, update them as follows:
+10. Update any custom dashboards, visualizations, or alert monitors you created based on the old Fluent Bit indices or log record structure:
 
-    - **Saved objects** (dashboards, visualizations, index patterns): Update index patterns from `logs-json-kyma-*` and `logs-json-istio-envoy-kyma-*` to `logs-otel-v1-*`. Update any field references — the log record structure changed from Envoy-native JSON to OTel semantic-convention attributes. For the full attribute reference, see the [OTel Log Data Model](https://opentelemetry.io/docs/specs/otel/logs/data-model/).
-    - **Alert monitors**: Update the index in the monitor query from `logs-json-kyma-*` or `logs-json-istio-envoy-kyma-*` to `logs-otel-v1-*`. Update any field-level conditions to match the new OTel attribute names.
+    - **Saved objects** (dashboards, visualizations, index patterns): Update index patterns from `logs-json-kyma-*` and `logs-json-istio-envoy-kyma-*` to `logs-otel-v1-*`. Update field references to match OTel semantic-convention attributes. For the full attribute reference, see the [OTel Log Data Model](https://opentelemetry.io/docs/specs/otel/logs/data-model/).
+    - **Alert monitors**: Update the queried index from `logs-json-kyma-*` or `logs-json-istio-envoy-kyma-*` to `logs-otel-v1-*`. Update any field-level conditions to match the new OTel attribute names.
 
 ## Result
 
