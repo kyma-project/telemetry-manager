@@ -18,11 +18,11 @@ You can run the old and new pipelines in parallel during the migration. They wri
 
 ## Prerequisites
 
-- You have an existing Fluent Bit-based SAP Cloud Logging integration with the `sap-cloud-logging-application-logs` and `sap-cloud-logging-access-logs` LogPipelines deployed.
 - Kyma as the target deployment environment, with the following modules added (see [Quick Install](https://kyma-project.io/02-get-started/01-quick-install)):
   - Telemetry module
   - Istio module (default module)
   - SAP BTP Operator module (default module)
+- You have an existing Fluent Bit-based SAP Cloud Logging integration with the `sap-cloud-logging-application-logs` and `sap-cloud-logging-access-logs` LogPipelines deployed.
 - You have permission to update your SAP Cloud Logging service instance parameters and create new service bindings.
 <!-- markdown-link-check-disable -->
 - Kubernetes CLI (kubectl) (see [Install the Kubernetes Command Line Tool](https://developers.sap.com/tutorials/cp-kyma-download-cli.html)).
