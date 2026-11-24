@@ -68,7 +68,7 @@ You can run the old and new pipelines in parallel during the migration. They wri
    kubectl get servicebinding sap-cloud-logging -n sap-cloud-logging-integration
    ```
 
-3. Deploy the new OTel LogPipeline alongside your existing Fluent Bit pipelines:
+3. Deploy the new OTel LogPipeline alongside your existing Fluent Bit pipelines. The following example covers the standard setup. If your existing LogPipelines use custom fields or filters, see [Migrate Your LogPipeline From HTTP to OTLP](./../../integrate-otlp-backend/migration-to-otlp-logs.md) for the general migration pattern.
 
    ```bash
    kubectl apply -f - <<EOF
