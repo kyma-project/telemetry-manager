@@ -8,13 +8,13 @@ You can run the old and new pipelines in parallel during the migration. They wri
 
 | | Before (Fluent Bit) | After (OTel) |
 |---|---|---|
-| LogPipelines for logs | 2 (minimum) | 1 |
+| LogPipelines (app and access logs) | 2 with HTTP output | 1 with OTLP output |
 | Secret keys | `ingest-mtls-endpoint`, `ingest-mtls-cert`, `ingest-mtls-key` | `ingest-otlp-endpoint`, `ingest-otlp-cert`, `ingest-otlp-key` |
 | OpenSearch index (app logs) | `logs-json-kyma-*` | `logs-otel-v1-*` |
 | OpenSearch index (Istio access logs) | `logs-json-istio-envoy-kyma-*` | `logs-otel-v1-*` |
 | Istio extension provider | `stdout-json` | `kyma-logs` |
 | Predefined SAP Cloud Logging dashboards | **Kyma** section | **OpenTelemetry** section |
-| Kyma dashboard ConfigMap | `kyma-dashboard-http-configmap.yaml` | `kyma-dashboard-configmap.yaml` |
+| Kyma dashboard extension | Deep links use `ingest-mtls-*` secret keys | Deep links use `ingest-otlp-*` secret keys |
 
 ## Prerequisites
 
