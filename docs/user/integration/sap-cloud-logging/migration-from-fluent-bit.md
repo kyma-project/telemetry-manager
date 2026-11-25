@@ -162,9 +162,7 @@ You can run the old and new pipelines in parallel during the migration. They wri
 
 ## Result
 
-Your cluster sends all logs through a single OpenTelemetry LogPipeline to SAP Cloud Logging. Logs appear in the `logs-otel-v1-*` index, and the predefined **OpenTelemetry** dashboards in SAP Cloud Logging are populated. The legacy Fluent Bit LogPipelines, their `ingest-mtls-*` credentials, and the old Fluent Bit-based dashboards and monitors are no longer in use.
-
-The **Kyma** section in OpenSearch Dashboards no longer receives data. Use the **OpenTelemetry** section for application and Istio access logs going forward.
+Your cluster sends all logs through a single OpenTelemetry LogPipeline to SAP Cloud Logging. Logs appear in the `logs-otel-v1-*` index and are visible in the **OpenTelemetry** section in OpenSearch Dashboards. The legacy Fluent Bit LogPipelines, their `ingest-mtls-*` credentials, and the old Fluent Bit-based dashboards and monitors are no longer in use. The **Kyma** section in OpenSearch Dashboards no longer receives data.
 
 ## Related Information
 
