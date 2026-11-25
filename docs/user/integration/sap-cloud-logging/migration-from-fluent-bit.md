@@ -31,7 +31,7 @@ You can run the old and new pipelines in parallel during the migration. They wri
 
 ## Procedure
 
-1. Enable OTLP ingestion on your existing SAP Cloud Logging instance by updating the service instance parameter:
+1. To enable OTLP ingestion on your existing SAP Cloud Logging instance, update the service instance parameter.
 
    ```json
    {
@@ -41,12 +41,12 @@ You can run the old and new pipelines in parallel during the migration. They wri
    }
    ```
 
-   No new SAP Cloud Logging instance is needed. For details, see [Configuration Parameters](https://help.sap.com/docs/cloud-logging/cloud-logging/configuration-parameters).
+   You don't need a new SAP Cloud Logging instance. For details, see [Configuration Parameters](https://help.sap.com/docs/cloud-logging/cloud-logging/configuration-parameters).
 
    > [!WARNING]
-   > You must delete the existing service binding and create a new one after enabling OTLP. The `ingest-otlp-*` secret keys are only present in bindings created **after** OTLP ingestion was enabled on the instance.
+   > After enabling OTLP, you must delete the existing service binding and create a new one. The `ingest-otlp-*` secret keys are only present in bindings created **after** OTLP ingestion was enabled on the instance.
 
-2. Recreate the service binding to get the `ingest-otlp-*` secret keys:
+2. To get the `ingest-otlp-*` secret keys, recreate the service binding.
 
    ```bash
    kubectl delete servicebinding sap-cloud-logging -n sap-cloud-logging-integration
@@ -62,7 +62,7 @@ You can run the old and new pipelines in parallel during the migration. They wri
    EOF
    ```
 
-   Wait until the binding status is `Created` before proceeding:
+   Before proceeding, verify that the binding status is `Created`.
 
    ```bash
    kubectl get servicebinding sap-cloud-logging -n sap-cloud-logging-integration
@@ -106,7 +106,7 @@ You can run the old and new pipelines in parallel during the migration. They wri
    EOF
    ```
 
-   Verify that the LogPipeline is running:
+   Verify that the LogPipeline is running.
 
    ```bash
    kubectl get logpipelines
@@ -114,7 +114,7 @@ You can run the old and new pipelines in parallel during the migration. They wri
 
    Wait until the LogPipeline shows `Running` status.
 
-4. Update your existing Istio Telemetry custom resource to add `kyma-logs` alongside `stdout-json`, so both providers emit access logs in parallel:
+4. Update your existing Istio Telemetry custom resource (CR) to add `kyma-logs` alongside `stdout-json`, so both providers emit access logs in parallel.
 
    ```yaml
    spec:
@@ -126,17 +126,17 @@ You can run the old and new pipelines in parallel during the migration. They wri
 
    The `kyma-logs` provider emits access logs as OTel log records with semantic-convention attributes, which are compatible with the `logs-otel-v1-*` index. The `stdout-json` provider continues to feed the existing Fluent Bit LogPipeline during the migration. For details on Istio access log configuration, see [Collect Istio Access Logs](./../../collecting-logs/istio-support.md).
 
-5. Confirm application logs and Istio access logs are arriving in the `logs-otel-v1-*` index by opening the **OpenTelemetry** section in OpenSearch Dashboards.
+5. To confirm that application logs and Istio access logs are arriving in the `logs-otel-v1-*` index, open the **OpenTelemetry** section in OpenSearch Dashboards.
 
-6. Update any saved objects and monitors that target the old Fluent Bit indices. If you imported saved objects or alerting monitors from the previous Fluent Bit-based integration guide, delete the old ones and re-import the current versions from [Set Up SAP Cloud Logging](./README.md).
+6. Update any saved objects and monitors that target the old Fluent Bit indices. If you imported saved objects or alerting monitors from the previous Fluent Bit-based integration guide, delete the old ones and reimport the current versions as described in [Integrate with SAP Cloud Logging](./README.md).
 
-   - **Saved objects** (dashboards, visualizations, index patterns): Replace index patterns targeting `logs-json-kyma-*` or `logs-json-istio-envoy-kyma-*` with `logs-otel-v1-*`. Review all field references — OTel log records use semantic-convention attributes that may differ structurally from the Fluent Bit JSON fields.
-   - **Alerting monitors**: Replace index patterns the same way. Review all field-level conditions — the same attribute differences apply.
+   - Saved objects (dashboards, visualizations, index patterns): Replace index patterns targeting `logs-json-kyma-*` or `logs-json-istio-envoy-kyma-*` with `logs-otel-v1-*`. Review all field references - OTel log records use semantic-convention attributes that may differ structurally from the Fluent Bit JSON fields.
+   - Alerting monitors: Replace index patterns the same way. Review all field-level conditions - the same attribute differences apply.
 
-7. Delete the old Fluent Bit LogPipelines and remove `stdout-json` from the Istio Telemetry resource:
+7. Delete the old Fluent Bit LogPipelines and remove `stdout-json` from the Istio Telemetry resource.
 
-   > [!NOTE]
-   > Only proceed if verification in step 5 succeeded. If logs are not arriving in the `logs-otel-v1-*` index, troubleshoot the new LogPipeline before removing the old ones.
+   > [!WARNING]
+   > Only proceed if you have previously verified that application logs and Istio access logs are arriving in the logs-otel-v1-* index. If they are not, troubleshoot the new LogPipeline before removing the old ones.
 
    ```bash
    kubectl delete logpipeline sap-cloud-logging-application-logs
@@ -145,7 +145,7 @@ You can run the old and new pipelines in parallel during the migration. They wri
 
    If you have additional Fluent Bit LogPipelines targeting SAP Cloud Logging, delete those too.
 
-   Then update the Istio Telemetry resource to remove `stdout-json`:
+   Then update the Istio Telemetry resource to remove `stdout-json`.
 
    ```yaml
    spec:
@@ -168,6 +168,6 @@ The **Kyma** section in OpenSearch Dashboards no longer receives data. Use the *
 
 ## Related Information
 
-- [Set Up SAP Cloud Logging](./README.md)
-- [Collect Istio Access Logs](./../../collecting-logs/istio-support.md)
+- [Integrate with SAP Cloud Logging](./README.md)
+- [Configure Istio Access Logs](./../../collecting-logs/istio-support.md)
 - [SAP Cloud Logging Configuration Parameters](https://help.sap.com/docs/cloud-logging/cloud-logging/configuration-parameters)
