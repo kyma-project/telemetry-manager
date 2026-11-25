@@ -160,11 +160,11 @@ You can run the old and new pipelines in parallel during the migration. They wri
    kubectl apply -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/kyma-dashboard-configmap.yaml
    ```
 
-9. The **Kyma** section in OpenSearch Dashboards no longer receives data after the Fluent Bit pipelines are deleted. Use the **OpenTelemetry** section for application and Istio access logs going forward.
-
 ## Result
 
 Your cluster sends all logs through a single OpenTelemetry LogPipeline to SAP Cloud Logging. Logs appear in the `logs-otel-v1-*` index, and the predefined **OpenTelemetry** dashboards in SAP Cloud Logging are populated. The legacy Fluent Bit LogPipelines, their `ingest-mtls-*` credentials, and the old Fluent Bit-based dashboards and monitors are no longer in use.
+
+The **Kyma** section in OpenSearch Dashboards no longer receives data. Use the **OpenTelemetry** section for application and Istio access logs going forward.
 
 ## Related Information
 
