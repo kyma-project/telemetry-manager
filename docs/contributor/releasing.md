@@ -323,7 +323,7 @@ Monitor the release workflow at: [Actions > Create Release](https://github.com/k
 
 Monitor module releases at: [Actions > Submit Module](https://github.com/kyma-project/telemetry-manager/actions/workflows/submit-module.yml)
 
-Check the pull requests for dev, fast, and experimental channels in the [module-manifests repository](https://github.tools.sap/kyma/module-manifests/pulls).
+Check the pull requests for dev, fast, and experimental channels in the module-manifests repository.
 
 ## Troubleshooting
 
