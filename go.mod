@@ -4,7 +4,7 @@ go 1.27.4
 
 require (
 	github.com/caarlos0/env/v11 v11.4.2
-	github.com/expr-lang/expr v1.17.8
+	github.com/expr-lang/expr v1.18.1
 	github.com/go-logr/logr v1.4.4
 	github.com/go-logr/zapr v1.3.0
 	github.com/google/go-cmp v0.7.0
